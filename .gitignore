@@ -1,0 +1,8 @@
+# Backup files
+*.sw[po]
+*~
+
+# System cruft
+Thumbs.db
+.DS_Store
+/.idea/
