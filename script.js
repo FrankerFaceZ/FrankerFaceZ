@@ -55,6 +55,7 @@ var ffz = function() {
 ffz.prototype.last_set = 0;
 ffz.prototype.last_emote = 0;
 ffz.prototype.manger = null;
+ffz.prototype.has_bttv = false;
 
 ffz.commands = {};
 
@@ -162,6 +163,9 @@ ffz.prototype.setup = function() {
 		document.addEventListener("DOMContentLoaded", this.listen_dom, false);
 	}
 
+	// Detect BetterTTV
+	this.find_bttv(10);
+
 	this.log("Initialization complete.");
 };
 
@@ -198,7 +202,10 @@ ffz.prototype.listen_dom = function() {
 // Commands
 // -----------------
 
-var msg = function(room, out) {
+ffz.prototype._msg = function(room, out) {
+	if ( this.has_bttv )
+		return BetterTTV.chat.helpers.serverMessage(out.replace(/\n/g, "<br>"));
+
 	out = out.split("\n");
 	for(var i=0; i < out.length; i++)
 		room.addMessage({style: 'ffz admin', from: 'FFZ', message: out[i]});
@@ -216,7 +223,7 @@ ffz.prototype.run_command = function(room, m) {
 	else
 		out = "No such sub-command.";
 
-	if ( out ) msg(room, out);
+	if ( out ) this._msg(room, out);
 }
 
 ffz.commands['help'] = function(room, args) {
@@ -335,10 +342,12 @@ ffz.commands['log'] = function(room, args) {
 ffz.commands['log'].help = "Usage: /ffz log\nOpen a window with FFZ's debugging output.";
 
 ffz.commands['list'] = function(room, args) {
-	var output = '', filter;
+	var output = '', filter, html = this.has_bttv;
 
 	if ( args && args.length > 0 )
 		filter = args.join(" ").toLowerCase();
+
+	if ( html ) output += "<table style=\"width:100%\">";
 
 	for(var name in this.collections) {
 		if ( ! this.collections.hasOwnProperty(name) )
@@ -353,19 +362,30 @@ ffz.commands['list'] = function(room, args) {
 		if ( !include )
 			continue;
 
+		if ( html )
+			output += "<thead><th colspan=\"2\">" + name + "</th></thead><tbody>";
+		else
+			output += name + "\n";
+
 		var em = this.collections[name];
-		output += name + "\n";
 		for(var e in em) {
 			if ( em.hasOwnProperty(e) ) {
 				var emote = em[e], t = emote.text;
-				t = t[0] + "\u200B" + t.substr(1);
-				output += "  " + t + " = " + emote.text + "\n";
+				if ( html )
+					output += "<tr style=\"line-height:" + emote.image.height + "px\"><td>" + t + "</td><td>" + emote.image.html + "</td></tr>";
+				else {
+					t = t[0] + "\u200B" + t.substr(1);
+					output += "  " + t + " = " + emote.text + "\n";
+				}
 			}
 		}
+		if ( html ) output += "</tbody>";
 	}
 
+	if ( html ) output += "</table>";
+
 	// Make sure we actually have output.
-	if ( output.indexOf('\u200B') === -1 )
+	if ( output.indexOf(html ? '<td>' : '\u200B') === -1 )
 		return "There are no available FFZ channel emoticons. If this is in error, please try the /ffz reload command.";
 	else
 		return "The following emotes are available:\n" + output;
@@ -393,7 +413,7 @@ ffz.commands['inject'] = function(room, args) {
 		return "/ffz inject requires exactly 1 argument.";
 
 	var album = args[0].split('/').pop().split('?').shift().split('#').shift();
-	room.addMessage({style: 'ffz admin', message: "Attempting to load test emoticons from imgur album \"" + album + "\"..."});
+	this._msg(room, "Attempting to load test emoticons from imgur album \"" + album + "\"...");
 
 	// Make sure there's no cache hits.
 	var res = "https://api.imgur.com/3/album/" + album;
@@ -404,13 +424,13 @@ ffz.commands['inject'] = function(room, args) {
 		{'Accept': 'application/json', 'Authorization': 'Client-ID ' + IMGUR_KEY},
 		5);
 }
-ffz.commands['inject'].help = "Usage: /ffz inject <album-id>\nLoads emoticons from an imgur album for testing. album-id can simply be the album URL. Ex: /ffz inject http://imgur.com/a/v4aZr";
+ffz.commands['inject'].help = "Usage: /ffz inject [album-id]\nLoads emoticons from an imgur album for testing. album-id can simply be the album URL. Ex: /ffz inject http://imgur.com/a/v4aZr";
 
 ffz.prototype.do_imgur = function(room, album, data) {
 	if ( data === undefined )
-		return msg(room, "An error occurred communicating with Imgur.");
+		return this._msg(room, "An error occurred communicating with Imgur.");
 	else if ( !data )
-		return msg(room, "The named album does not exist or is private.");
+		return this._msg(room, "The named album does not exist or is private.");
 
 	// Get our data structure.
 	data = JSON.parse(data).data;
@@ -438,8 +458,56 @@ ffz.prototype.do_imgur = function(room, album, data) {
 	}
 
 	var count = this.process_css('imgur-' + album, 'FFZ Global Emotes - Imgur Album: ' + album, css);
-	msg(room, "Loaded " + count + " emoticons from Imgur.");
-	msg(room, ffz.commands['list'].bind(this)(room, [album]));
+	this._msg(room, "Loaded " + count + " emoticons from Imgur.");
+	this._msg(room, ffz.commands['list'].bind(this)(room, [album]));
+}
+
+
+// -----------------
+// BetterTTV Hooks
+// -----------------
+
+ffz.prototype.find_bttv = function(increment, delay) {
+	if ( !this.alive ) return;
+
+	if ( window.BTTVLOADED )
+		return this.setup_bttv();
+
+	else if ( delay === undefined )
+		this.log("BetterTTV not yet loaded. Waiting...");
+
+	if ( delay >= 60000 )
+		this.log("BetterTTV not detected in \"" + location.toString() + "\". Giving up.");
+	else
+		setTimeout(this.find_bttv.bind(this, increment, (delay||0) + increment),
+			increment);
+}
+
+var donor_badge = {type: 'ffz-donor', name: '', description: 'FFZ Donor'};
+
+ffz.prototype.setup_bttv = function() {
+	this.log("BetterTTV was detected. Installing hook.");
+	this.has_bttv = true;
+
+	// Add badge handling to BetterTTV chat.
+	var privmsg = BetterTTV.chat.templates.privmsg, f = this;
+	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
+		if ( f.check_donor(data.sender) ) {
+			var inserted = false;
+			for(var i=0; i < data.badges.length; i++) {
+				var t = data.badges[i].type;
+				if ( t != 'turbo' && t != 'subscriber' )
+					continue;
+				data.badges.insertAt(i, donor_badge);
+				inserted = true;
+				break;
+			}
+			if ( ! inserted )
+				data.badges.push(donor_badge);
+		}
+
+		return privmsg(highlight, action, server, isMod, data);
+	}
 }
 
 
@@ -600,8 +668,9 @@ ffz.prototype.add_channel = function(id, room) {
 
 	// Do we have log messages?
 	if ( this._log2.length > 0 ) {
+		var func = this.has_bttv ? BetterTTV.chat.helpers.serverMessage : room.addTmiMessage;
 		while ( this._log2.length )
-			room.addTmiMessage(this._log2.shift());
+			func(this._log2.shift());
 	}
 
 	// Load the emotes for this channel.
@@ -730,8 +799,9 @@ ffz.prototype.process_css = function(group, channel, data) {
 	this.log("Loaded " + count + " emotes from collection: " + group);
 
 	// Notify the manager that we've added emotes.
-	if ( this.manager )
-		this.manager.notifyPropertyChange('emoticons');
+	// Don't notify the manager for now because of BTTV.
+	//if ( this.manager && ! this.has_bttv )
+	//	this.manager.notifyPropertyChange('emoticons');
 
 	return count;
 }
@@ -791,8 +861,9 @@ ffz.prototype.unload_emotes = function(group) {
 	this.emoticons = this.emoticons.filter(filt);
 
 	// Update the emoticons with the manager.
-	if ( this.manager )
-		this.manager.notifyPropertyChange('emoticons');
+	// Don't notify the manager for now for BTTV.
+	//if ( this.manager && ! this.has_bttv )
+	//	this.manager.notifyPropertyChange('emoticons');
 }
 
 
