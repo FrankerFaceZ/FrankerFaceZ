@@ -447,44 +447,46 @@ ffz.prototype.do_imgur = function(room, album, data) {
 // Ember Hooks
 // -----------------
 
+ffz.prototype.add_badge = function(sender, badges) {
+	// Is the sender a donor?
+	if ( ! this.check_donor(sender) )
+		return;
+
+	// Create the FFZ Donor badge.
+	var c = document.createElement('span');
+	c.className = 'badge-container tooltip';
+	c.setAttribute('title', 'FFZ Donor');
+
+	var b = document.createElement('div');
+	b.className = 'badge ffz-donor';
+	c.appendChild(b);
+	c.appendChild(document.createTextNode(' '));
+
+	// Figure out where to place the badge.
+	var before = badges.find('.badge-container').filter(function(i) {
+		var t = this.title.toLowerCase();
+		return t == "subscriber" || t == "turbo";
+		}).first();
+
+	if ( before.length )
+		before.before(c);
+	else
+		badges.append(c);
+}
+
 ffz.prototype.modify_lines = function() {
 	var f = this;
 	App.LineView.reopen({
 		didInsertElement: function() {
 			this._super();
-			// Check for Donor Messages
-			var sender = this.get('context.model.from');
-			if ( ! f.check_donor(sender) )
-				return;
-
-			// Create the FFZ Donor badge.
-			var c = document.createElement('span');
-			c.className = 'badge-container tooltip';
-			c.setAttribute('title', 'FFZ Donor');
-
-			var b = document.createElement('div');
-			b.className = 'badge ffz-donor';
-			c.appendChild(b);
-			c.appendChild(document.createTextNode(' '));
-
-			// Get the badge list.
-			var badges = this.$('.badges');
-			var before = badges.find('.badge-container').filter(function(i) {
-				var t = this.title.toLowerCase();
-				return t == "subscriber" || t == "turbo";
-				}).first();
-
-			if ( before.length )
-				before.before(c);
-			else
-				badges.append(c);
+			f.add_badge(this.get('context.model.from'), this.$('.badges'));
 		}
 	});
 }
 
-ffz.prototype.modify_room = function() {
+ffz.prototype._modify_room = function(room) {
 	var f = this;
-	App.Room.reopen({
+	room.reopen({
 		init: function() {
 			this._super();
 			if ( f.alive )
@@ -506,48 +508,31 @@ ffz.prototype.modify_room = function() {
 				return this._super(e);
 		}
 	});
-	
+}
+
+ffz.prototype.modify_room = function() {
+	this._modify_room(App.Room);
+
 	var inst = App.Room.instances;
 	for(var n in inst) {
 		if ( ! inst.hasOwnProperty(n) ) continue;
 		var i = inst[n];
-		if ( f.alive )
-			f.add_channel(i.id, i);
+		if ( this.alive )
+			this.add_channel(i.id, i);
 
-		if ( i.tmiRoom && f.alive )
-			f.alter_tmi(i.id, i.tmiRoom);
-		else if ( i.viewers ) {
-			i.viewers.reopen({
-				tmiRoom: Ember.computed(function(key, val) {
-					if ( arguments.length > 1 ) {
-						this.tmiRoom = val;
-						if ( f.alive )
-							f.alter_tmi(this.id, val);
-					}
-					return undefined;
-				})
-			});
-		}
+		if ( i.tmiRoom && this.alive )
+			this.alter_tmi(i.id, i.tmiRoom);
+		else if ( i.viewers )
+			this._modify_viewers(i.viewers);
 
-		i.reopen({
-			willDestroy: function() {
-				this._super();
-				if ( f.alive ) f.remove_channel(this.id);
-			},
-			send: function(e) {
-				if ( f.alive && (e.substr(0,5) == "/ffz " || e == '/ffz') ) {
-					this.set("messageToSend", "");
-					f.run_command(this, e);
-				} else
-					return this._super(e);
-			}
-		});
+		this._modify_room(i);
 	}
 };
 
-ffz.prototype.modify_viewers = function() {
+
+ffz.prototype._modify_viewers = function(vwrs) {
 	var f = this;
-	App.Room.Viewers.reopen({
+	vwrs.reopen({
 		tmiRoom: Ember.computed(function(key, val) {
 			if ( arguments.length > 1 ) {
 				this.tmiRoom = val;
@@ -557,22 +542,22 @@ ffz.prototype.modify_viewers = function() {
 			return undefined;
 		})
 	});
+}
+
+ffz.prototype.modify_viewers = function() {
+	this._modify_viewers(App.Room.Viewers);
 };
 
-ffz.prototype.modify_emotes = function() {
+
+ffz.prototype._modify_emotes = function(ec) {
 	var f = this;
-	App.EmoticonsController.reopen({
+	ec.reopen({
 		_emoticons: [],
 
 		init: function() {
 			this._super();
-			if ( f.alive ) {
-				f.manager = this;
-				for(var key in f.emotesets) {
-					if ( f.emotesets.hasOwnProperty(key) )
-						this.emoticonSets[key] = f.emotesets[key];
-				}
-			}
+			if ( f.alive )
+				f.get_manager(this);
 		},
 
 		emoticons: Ember.computed(function(key, val) {
@@ -583,26 +568,26 @@ ffz.prototype.modify_emotes = function() {
 			return f.alive ? _.union(this._emoticons, f.emoticons) : this._emoticons;
 		})
 	});
+}
+
+ffz.prototype.modify_emotes = function() {
+	this._modify_emotes(App.EmoticonsController);
 
 	var ec = App.__container__.lookup("controller:emoticons");
 	if ( ! ec ) return;
 
-	f.manager = ec;
-	for(var key in f.emotesets)
-		if ( f.emotesets.hasOwnProperty(key) )
-			ec.emoticonSets[key] = f.emotesets[key];
-
-	ec.reopen({
-		_emoticons: ec.emoticons,
-		emoticons: Ember.computed(function(key, val) {
-			if ( arguments.length > 1 ) {
-				this._emoticons = val;
-				f.log("Twitch standard emoticons loaded.");
-			}
-			return f.alive ? _.union(this._emoticons, f.emoticons) : this._emoticons;
-		})
-	});
+	this._modify_emotes(ec);
+	this.get_manager(ec);
 };
+
+ffz.prototype.get_manager = function(manager) {
+	this.manager = manager;
+	for(var key in this.emotesets) {
+		if ( this.emotesets.hasOwnProperty(key) )
+			manager.emoticonSets[key] = this.emotesets[key];
+	}
+}
+
 
 // -----------------
 // Channel Management
