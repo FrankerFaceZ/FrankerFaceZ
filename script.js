@@ -14,8 +14,9 @@ if ( injectNeeded ) {
 // Global Variables
 // -----------------
 
-var CSS = /\.([\w\-_]+) \{content:.*?"([^"]+)";.*?background-image: url\("([^"]+)"\);.*?height:.*?(\d+).+?width:.*?(\d+)[^}]*\}/mg,
+var CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)[^}]*\}/mg,
 	IMGUR_KEY = 'e48d122e3437051', CACHE_LENGTH = 10800000,
+	SERVER = '//commondatastorage.googleapis.com/frankerfacez/',
 	DEBUG = location.search.indexOf('frankerfacez') !== -1;
 
 
@@ -96,12 +97,6 @@ ffz.prototype.init = function(increment, delay) {
 	// hook into the Twitch Ember application.
 	if ( !this.alive ) return;
 
-	// A secondary check for old chat.
-	if ( window.CurrentChat && window.CurrentChat.emoticons ) {
-		this.log("Detected old chat. Injecting old FFZ.");
-		return this.inject_old();
-	}
-
 	var loaded = window.Ember != undefined && 
 				 window.App != undefined &&
 				 App.EmoticonsController != undefined && 
@@ -117,30 +112,8 @@ ffz.prototype.init = function(increment, delay) {
 		return;
 	}
 
-	// Inject the old FFZ script if we can't use new chat.
-	if ( App.hasOwnProperty('useNewChat') && !App.useNewChat ) {
-		this.log("Detected old chat. Injecting old FFZ.");
-		return this.inject_old();
-	}
-
 	this.setup();
 };
-
-ffz.prototype.inject_old = function() {
-	if ( this._dom )
-		document.removeEventListener("DOMContentLoaded", this._dom, false);
-
-	if ( !document.body ) {
-		this._dom = this.inject_old.bind(this);
-		document.addEventListener("DOMContentLoaded", this._dom, false);
-		return;
-	}
-
-	var s = document.createElement('script');
-	s.src = "//commondatastorage.googleapis.com/frankerfacez/script/old-frankerfacez.js";
-	document.body.appendChild(s);
-	document.body.removeChild(s);
-}
 
 ffz.prototype.setup = function() {
 	if ( !this.alive ) return;
@@ -620,7 +593,7 @@ ffz.prototype.modify_viewers = function() {
 ffz.prototype._modify_emotes = function(ec) {
 	var f = this;
 	ec.reopen({
-		_emoticons: [],
+		_emoticons: ec.emoticons || [],
 
 		init: function() {
 			this._super();
@@ -714,7 +687,12 @@ ffz.prototype.alter_tmi = function(id, tmi) {
 // -----------------
 
 ffz.prototype.load_emotes = function(group, refresh) {
-	this.get("//commondatastorage.googleapis.com/frankerfacez/" + group + ".css",
+	// TEMPORARY GROUP CHAT
+	var m = /^_(.+)_\d+$/.exec(group), name = group;
+	if ( m != null )
+		name = m[1];
+
+	this.get(SERVER + name + ".css",
 		this.process_css.bind(this, group, undefined), refresh ? 1 : CACHE_LENGTH);
 }
 
@@ -874,7 +852,7 @@ ffz.prototype.unload_emotes = function(group) {
 ffz.prototype.check_donor = function(username) { return this.donors[username] || false; }
 
 ffz.prototype.load_donors = function(refresh) {
-	this.get("//commondatastorage.googleapis.com/frankerfacez/donors.txt",
+	this.get(SERVER + "donors.txt",
 		this.process_donors.bind(this), refresh ? 1 : CACHE_LENGTH);
 }
 
