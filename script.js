@@ -466,17 +466,21 @@ ffz.prototype.setup_bttv = function() {
 	var privmsg = BetterTTV.chat.templates.privmsg, f = this;
 	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
 		if ( f.check_donor(data.sender) ) {
+			var badge = _.defaults({}, donor_badge);
+			if ( BetterTTV.settings.get('alphaTags') )
+				badge['type'] = badge['type'] + ' alpha';
+
 			var inserted = false;
 			for(var i=0; i < data.badges.length; i++) {
 				var t = data.badges[i].type;
 				if ( t != 'turbo' && t != 'subscriber' )
 					continue;
-				data.badges.insertAt(i, donor_badge);
+				data.badges.insertAt(i, badge);
 				inserted = true;
 				break;
 			}
 			if ( ! inserted )
-				data.badges.push(donor_badge);
+				data.badges.push(badge);
 		}
 
 		return privmsg(highlight, action, server, isMod, data);
