@@ -16,7 +16,7 @@ if ( injectNeeded ) {
 
 var CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)[^}]*\}/mg,
 	IMGUR_KEY = 'e48d122e3437051', CACHE_LENGTH = 10800000,
-	SERVER = '//commondatastorage.googleapis.com/frankerfacez/',
+	SERVER = '//cdn.frankerfacez.com/',
 	DEBUG = location.search.indexOf('frankerfacez') !== -1;
 
 
@@ -696,7 +696,7 @@ ffz.prototype.load_emotes = function(group, refresh) {
 	if ( m != null )
 		name = m[1];
 
-	this.get(SERVER + name + ".css",
+	this.get(SERVER + "channel/" + name + ".css",
 		this.process_css.bind(this, group, undefined), refresh ? 1 : CACHE_LENGTH);
 }
 
@@ -856,7 +856,7 @@ ffz.prototype.unload_emotes = function(group) {
 ffz.prototype.check_donor = function(username) { return this.donors[username] || false; }
 
 ffz.prototype.load_donors = function(refresh) {
-	this.get(SERVER + "donors.txt",
+	this.get(SERVER + "scripts/donors.txt",
 		this.process_donors.bind(this), refresh ? 1 : CACHE_LENGTH);
 }
 
