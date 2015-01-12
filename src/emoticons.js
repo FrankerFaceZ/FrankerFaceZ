@@ -73,12 +73,21 @@ FFZ.prototype.unload_set = function(set_id) {
 }
 
 
-var build_css = function(emote) {
+var build_legacy_css = function(emote) {
 	var margin = emote.margins;
 	if ( ! margin )
 		margin = ((emote.height - 18) / -2) + "px 0";
 	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
 }
+
+var build_css = function(emote) {
+	if ( ! emote.margins && ! emote.extra_css )
+		return "";
+
+	return 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
+}
+
+
 
 FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	// Store our set.

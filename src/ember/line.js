@@ -14,6 +14,8 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
+			var tokens = f._emoticonize(this, this._super());
+			f.log("Chat Tokens", tokens);
 			return f._emoticonize(this, this._super());
 
 		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
@@ -80,7 +82,8 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// with an object telling Twitch's line template how to render the
 	// emoticon.
 	_.each(emotes, function(emote) {
-		var eo = {isEmoticon:true, cls: emote.klass};
+		//var eo = {isEmoticon:true, cls: emote.klass};
+		var eo = {emoticonSrc: emote.url, altText: emote.name};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )

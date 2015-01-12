@@ -106,8 +106,9 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 				continue;
 
 			c++;
-			var s = document.createElement('span');
-			s.className = 'emoticon ' + emote.klass + ' tooltip';
+			var s = document.createElement('img');
+			s.src = emote.url;
+			//s.className = 'emoticon ' + emote.klass + ' tooltip';
 			s.title = emote.name;
 			s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
 			grid.appendChild(s);

@@ -242,6 +242,8 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
+			var tokens = f._emoticonize(this, this._super());
+			f.log("Chat Tokens", tokens);
 			return f._emoticonize(this, this._super());
 
 		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
@@ -308,7 +310,8 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// with an object telling Twitch's line template how to render the
 	// emoticon.
 	_.each(emotes, function(emote) {
-		var eo = {isEmoticon:true, cls: emote.klass};
+		//var eo = {isEmoticon:true, cls: emote.klass};
+		var eo = {emoticonSrc: emote.url, altText: emote.name};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )
@@ -688,12 +691,21 @@ FFZ.prototype.unload_set = function(set_id) {
 }
 
 
-var build_css = function(emote) {
+var build_legacy_css = function(emote) {
 	var margin = emote.margins;
 	if ( ! margin )
 		margin = ((emote.height - 18) / -2) + "px 0";
 	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
 }
+
+var build_css = function(emote) {
+	if ( ! emote.margins && ! emote.extra_css )
+		return "";
+
+	return 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
+}
+
+
 
 FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	// Store our set.
@@ -1120,8 +1132,9 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 				continue;
 
 			c++;
-			var s = document.createElement('span');
-			s.className = 'emoticon ' + emote.klass + ' tooltip';
+			var s = document.createElement('img');
+			s.src = emote.url;
+			//s.className = 'emoticon ' + emote.klass + ' tooltip';
 			s.title = emote.name;
 			s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
 			grid.appendChild(s);
