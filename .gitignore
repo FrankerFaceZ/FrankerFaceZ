@@ -1,8 +1,3 @@
-# Backup files
-*.sw[po]
-*~
-
-# System cruft
-Thumbs.db
-.DS_Store
-/.idea/
+node_modules
+npm_debug.log
+build

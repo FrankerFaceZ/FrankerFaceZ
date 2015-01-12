@@ -1,0 +1,28 @@
+{
+  "name": "FrankerFaceZ",
+  "author": "Stendec",
+  "version": "3.0.0",
+  "description": "FrankerFaceZ gives Twitch users custom emoticons.",
+  "main": "script.js",
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-browserify": "^0.5.1",
+    "gulp-changed": "^1.1.0",
+    "gulp-clean": "^0.3.1",
+    "gulp-concat": "^2.4.3",
+    "gulp-filesize": "0.0.6",
+    "gulp-footer": "^1.0.5",
+    "gulp-header": "^1.2.2",
+    "gulp-rename": "^1.2.0",
+    "gulp-uglify": "^1.0.2",
+    "gulp-util": "^3.0.2",
+    "request": "^2.51.0"
+  },
+  "scripts": {
+    "test": "node test/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://bitbucket.org/stendec/frankerfacez.git"
+  }
+}

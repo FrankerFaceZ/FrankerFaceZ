@@ -1,1011 +1,1294 @@
-(function wrapper(window, injectNeeded) {
-'use strict';
-
-// Script injection as necessary.
-if ( injectNeeded ) {
-	var script = document.createElement('script');
-	script.textContent = '(' + wrapper + ')(window, false)';
-	document.body.appendChild(script);
-	document.body.removeChild(script);
-	return;
-}
-
-// -----------------
-// Global Variables
-// -----------------
-
-var CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)[^}]*\}/mg,
-	IMGUR_KEY = 'e48d122e3437051', CACHE_LENGTH = 10800000,
-	SERVER = '//cdn.frankerfacez.com/',
-	DEBUG = location.search.indexOf('frankerfacez') !== -1;
+(function(window) {(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('./constants'),
+	utils = require('./utils');
 
 
-// -----------------
-// The Constructor
-// -----------------
-
-var ffz = function() {
-	this.alive = true;
-	this.donors = {};
-	this.getting = {};
-
-	// Master Emoticon Storage
-	this.emoticons = [];
-	this.emotesets = {};
-
-	// Channel Storage
-	this.channels = {};
-
-	// Global Sets Storage
-	this.collections = {};
-	this.globals = {};
-	this.global_sets = [];
-	this.styles = {};
-
-	// Pending Styles -- For Super Early Initialization
-	this.pending_styles = [];
-
-	// Keep track of all logging too.
-	this._log = [];
-	this._log2 = [];
-
-	// Now, let's do this!
-	this.init(10);
-};
-
-ffz.prototype.last_set = 0;
-ffz.prototype.last_emote = 0;
-ffz.prototype.manger = null;
-ffz.prototype.has_bttv = false;
-
-ffz.commands = {};
-
-
-// -----------------
-// Logging
-// -----------------
-
-ffz.prototype.log = function(msg) {
-	this._log.push(msg);
-	msg = "FFZ" + (this.alive ? ": " : " (Dead): ") + msg;
-	console.log(msg);
-
-	// Don't echo to chat if we're not debugging.
-	if ( !DEBUG ) return;
-
-	var chan;
-	for(var name in this.channels) {
-		if ( this.channels[name] && this.channels[name].room ) {
-			chan = this.channels[name];
-			break;
-		}
-	}
-
-	if ( chan )
-		chan.room.addTmiMessage(msg);
-	else
-		this._log2.push(msg);
-};
-
-
-// -----------------
+// --------------------
 // Initialization
-// -----------------
+// --------------------
 
-ffz.prototype.init = function(increment, delay) {
-	// This function exists to ensure FFZ doesn't run until it can properly
-	// hook into the Twitch Ember application.
-	if ( !this.alive ) return;
+FFZ.prototype.setup_badges = function() {
+	this.log("Preparing badge system.");
+	this.badges = {};
 
-	var loaded = window.Ember != undefined && 
-				 window.App != undefined &&
-				 App.EmoticonsController != undefined && 
-				 App.Room != undefined;
+	this.log("Creating badge style element.");
+	var s = this._badge_style = document.createElement('style');
+	s.id = "ffz-badge-css";
+	document.head.appendChild(s);
 
-	if ( !loaded ) {
-		// Only try loading for 60 seconds.
-		if ( delay >= 60000 )
-			this.log("Twitch API not detected in \"" + location.toString() + "\". Aborting.");
-		else
-			setTimeout(this.init.bind(this, increment, (delay||0) + increment),
-				increment);
-		return;
-	}
-
-	this.setup();
-};
-
-ffz.prototype.setup = function() {
-	if ( !this.alive ) return;
-
-	// Hook into the Ember application.
-	this.log("Hooking Ember application.");
-	this.modify_room();
-	this.modify_viewers();
-	this.modify_emotes();
-	this.modify_lines();
-
-	this.log("Loading data.");
-	this.load_donors();
-	this.load_emotes('global');
-
-	if ( ! document.body ) {
-		// We need to listen for the DOM to load in case any style elements
-		// get created before we can add them.
-		this.listen_dom = this.listen_dom.bind(this);
-		document.addEventListener("DOMContentLoaded", this.listen_dom, false);
-	}
-
-	// Detect BetterTTV
-	this.find_bttv(10);
-
-	this.log("Initialization complete.");
-};
-
-ffz.prototype.destroy = function() {
-	if ( !this.alive ) return;
-
-	// TODO: Teardown stuff.
-
-	// Mark us as dead and remove our reference.
-	alive = false;
-	if ( window.ffz === this )
-		window.ffz = undefined;
-
-	// And, before the door hits us... delete the log.
-	delete this._log;
-	delete this._log2;
+	this.log("Adding legacy donor badges.");
+	this._legacy_add_donors();
 }
 
 
-// -----------------
-// DOM Listening
-// -----------------
+// --------------------
+// Badge CSS
+// --------------------
 
-ffz.prototype.listen_dom = function() {
-	document.removeEventListener("DOMContentLoaded", this.listen_dom, false);
-
-	// Check for waiting styles.
-	while ( this.pending_styles.length )
-		document.body.appendChild(this.pending_styles.pop());
+var badge_css = function(badge) {
+	return ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.extra_css || "") + '}';
 }
 
 
-// -----------------
-// Commands
-// -----------------
+// --------------------
+// Render Badge
+// --------------------
 
-ffz.prototype._msg = function(room, out) {
-	if ( this.has_bttv )
-		return BetterTTV.chat.helpers.serverMessage(out.replace(/\n/g, "<br>"));
+FFZ.prototype.render_badge = function(view) {
+	var user = view.get('context.model.from'),
+		room_id = view.get('context.parentController.content.id'),
+		badges = view.$('.badges');
 
-	out = out.split("\n");
-	for(var i=0; i < out.length; i++)
-		room.addMessage({style: 'ffz admin', from: 'FFZ', message: out[i]});
-}
-
-ffz.prototype.run_command = function(room, m) {
-	var args = (m.substr(5) || "list").split(' '),
-		cmd = args.shift().toLowerCase();
-
-	this.log("Got FFZ Command: " + cmd + " " + JSON.stringify(args));
-
-	var c = ffz.commands[cmd], out;
-	if ( c )
-		out = c.bind(this)(room, args);
-	else
-		out = "No such sub-command.";
-
-	if ( out ) this._msg(room, out);
-}
-
-ffz.commands['help'] = function(room, args) {
-	if ( args && args.length > 0 ) {
-		var c = ffz.commands[args[0].toLowerCase()];
-		if ( !c )
-			return "No such sub-command: " + args[0];
-		else if ( c && c.help == undefined )
-			return "No help available for: " + args[0];
-		else
-			return c.help;
-	}
-
-	var l = [];
-	for (var c in ffz.commands)
-		ffz.commands.hasOwnProperty(c) ? l.push(c) : false;
-
-	return "Available sub-commands are: " + l.join(", ");
-}
-ffz.commands['help'].help = "Usage: /ffz help [command]\nList available commands, or show help for a specific command.";
-
-ffz.commands['log'] = function(room, args) {
-	var out = "FrankerFaceZ Session Log\n\n" + this._log.join("\n");
-	
-	out += "\n\n--------------------------------------------------------------------------------\n" +
-		"Internal State\n\n";
-
-	out += "Channels:\n";
-	for(var id in this.channels) {
-		if ( !this.channels.hasOwnProperty(id) )
-			continue;
-
-		var chan = this.channels[id];
-		if ( !chan ) {
-			out += "  " + id + " (Unloaded)\n";
-			continue;
-		}
-
-		out += "  " + id + ":\n";
-		out += "    set_id: " + chan.set_id + "\n";
-		
-		if ( ! chan.set ) {
-			out += "    set (Unloaded)\n";
-		} else {
-			out += "    set:\n";
-			for(var i=0; i < chan.set.length; i++) {
-				var e = chan.set[i];
-				out += "      isEmoticon: " + e.isEmoticon + ", cls: " + JSON.stringify(e.cls) + ", regex: " + e.regex.toString() + "\n";
-			}
-			out += "\n";
-		}
-
-		if ( ! chan.style) {
-			out += "    style (Unloaded)";
-		} else {
-			var s = chan.style.innerHTML.split("\n");
-			out += "    style:\n";
-			for (var i=0; i < s.length; i++)
-				out += "      " + s[i] + "\n";
-			out += "\n";
-		}
-	}
-
-	out += "\nGlobal Sets:\n";
-	for(var id in this.globals) {
-		if ( !this.globals.hasOwnProperty(id) )
-			continue;
-
-		var set_id = this.globals[id];
-		if ( !set_id ) {
-			out += "  " + id + " (Unloaded)\n";
-			continue;
-		}
-
-		out += "  " + id + ":\n";
-		out += "    set_id: " + set_id + "\n";
-
-		var set = this.emotesets[set_id];
-		if ( !set ) {
-			out += "    set (Unloaded)\n";
-		} else {
-			out += "    set:\n";
-			for(var i=0; i < set.length; i++) {
-				var e = set[i];
-				out += "      isEmoticon: " + e.isEmoticon + ", cls: " + JSON.stringify(e.cls) + ", regex: " + e.regex.toString() + "\n";
-			}
-			out += "\n";
-		}
-
-		var style = this.styles[id];
-		if ( !style ) {
-			out += "    style (Unloaded)\n";
-		} else {
-			var s = style.innerHTML.split("\n");
-			out += "    style:\n";
-			for (var i=0; i < s.length; i++)
-				out += "      " + s[i] + "\n";
-			out += "\n";
-		}
-	}
-
-	out += "\nEmotes:\n";
-	for(var i=0; i < this.emoticons.length; i++) {
-		var e = this.emoticons[i];
-		out += "  " + e.text + " (" + e.image.id + ")\n";
-		out += "     ffzset: " + e.ffzset + " (" + e.image.emoticon_set + ")\n";
-		out += "    channel: " + e.channel + "\n";
-		out += "      regex: " + e.regex.toString() + "\n";
-		out += "     height: " + e.image.height + ", width: " + e.image.width + "\n";
-		out += "        url: " + e.image.url + "\n"
-		out += "       html: " + e.image.html + "\n\n";
-	}
-
-	window.open("data:text/plain," + encodeURIComponent(out), "_blank");
-}
-ffz.commands['log'].help = "Usage: /ffz log\nOpen a window with FFZ's debugging output.";
-
-ffz.commands['list'] = function(room, args) {
-	var output = '', filter, html = this.has_bttv;
-
-	if ( args && args.length > 0 )
-		filter = args.join(" ").toLowerCase();
-
-	if ( html ) output += "<table style=\"width:100%\">";
-
-	for(var name in this.collections) {
-		if ( ! this.collections.hasOwnProperty(name) )
-			return;
-
-		var include;
-		if ( filter )
-			include = name.toLowerCase().indexOf(filter) !== -1;
-		else
-			include = name !== "FFZ Global Emotes";
-
-		if ( !include )
-			continue;
-
-		if ( html )
-			output += "<thead><th colspan=\"2\">" + name + "</th></thead><tbody>";
-		else
-			output += name + "\n";
-
-		var em = this.collections[name];
-		for(var e in em) {
-			if ( em.hasOwnProperty(e) ) {
-				var emote = em[e], t = emote.text;
-				if ( html )
-					output += "<tr style=\"line-height:" + emote.image.height + "px\"><td>" + t + "</td><td>" + emote.image.html + "</td></tr>";
-				else {
-					t = t[0] + "\u200B" + t.substr(1);
-					output += "  " + t + " = " + emote.text + "\n";
-				}
-			}
-		}
-		if ( html ) output += "</tbody>";
-	}
-
-	if ( html ) output += "</table>";
-
-	// Make sure we actually have output.
-	if ( output.indexOf(html ? '<td>' : '\u200B') === -1 )
-		return "There are no available FFZ channel emoticons. If this is in error, please try the /ffz reload command.";
-	else
-		return "The following emotes are available:\n" + output;
-}
-ffz.commands['list'].help = "Usage: /ffz list [global]\nList available FFZ emoticons. Use the global parameter to list ALL FFZ emoticons, or filter for a specific set.";
-
-ffz.commands['global'] = function(room, args) {
-	return ffz.commands['list'].bind(this)(room, ['global']); }
-ffz.commands['global'].help = "Usage: /ffz global\nShorthand for /ffz list global. List ALL FFZ emoticons, including FFZ global emoticons.";
-
-ffz.commands['reload'] = function(room, args) {
-	for(var id in this.channels)
-		if ( this.channels.hasOwnProperty(id) && this.channels[id] )
-			this.load_emotes(id, true);
-
-	this.load_emotes('global');
-	this.load_donors();
-
-	return "Attempting to reload FFZ data from the server.";
-}
-ffz.commands['reload'].help = "Usage: /ffz reload\nAttempt to reload FFZ emoticons and donors.";
-
-ffz.commands['inject'] = function(room, args) {
-	if ( !args || args.length !== 1 )
-		return "/ffz inject requires exactly 1 argument.";
-
-	var album = args[0].split('/').pop().split('?').shift().split('#').shift();
-	this._msg(room, "Attempting to load test emoticons from imgur album \"" + album + "\"...");
-
-	// Make sure there's no cache hits.
-	var res = "https://api.imgur.com/3/album/" + album;
-	if ( window.localStorage )
-		localStorage.removeItem("ffz_" + res);
-
-	this.get(res, this.do_imgur.bind(this, room, album), 1,
-		{'Accept': 'application/json', 'Authorization': 'Client-ID ' + IMGUR_KEY},
-		5);
-}
-ffz.commands['inject'].help = "Usage: /ffz inject [album-id]\nLoads emoticons from an imgur album for testing. album-id can simply be the album URL. Ex: /ffz inject http://imgur.com/a/v4aZr";
-
-ffz.prototype.do_imgur = function(room, album, data) {
-	if ( data === undefined )
-		return this._msg(room, "An error occurred communicating with Imgur.");
-	else if ( !data )
-		return this._msg(room, "The named album does not exist or is private.");
-
-	// Get our data structure.
-	data = JSON.parse(data).data;
-
-	var images = data.images, css = "";
-	for (var i=0; i < images.length; i++) {
-		var im = images[i],
-			name = im.title ? im.title : album + (i+1),
-			marg = im.height > 18 ? (im.height - 18) / -2 : 0,
-			desc = im.description ? im.description.trim().split(/(?:\W*\n\W*)+/) : undefined,
-			extra_css = '';
-
-		if ( desc ) {
-			for (var q=0; q < desc.length; q++) {
-				if ( desc[q].substr(0, 5).toLowerCase() === "css: " ) {
-					extra_css = desc[q].substr(5);
-					break;
-				}
-			}
-		}
-
-		css += ".imgur-" + album + "-" + (i+1) + ' {content: "' + name +
-			'"; background-image: url("' + im.link + '"); height: ' + im.height +
-			'px; width: ' + im.width + 'px; margin: ' + marg + 'px 0px; ' + extra_css + '}\n';
-	}
-
-	var count = this.process_css('imgur-' + album, 'FFZ Global Emotes - Imgur Album: ' + album, css);
-	this._msg(room, "Loaded " + count + " emoticons from Imgur.");
-	this._msg(room, ffz.commands['list'].bind(this)(room, [album]));
-}
-
-
-// -----------------
-// BetterTTV Hooks
-// -----------------
-
-ffz.prototype.find_bttv = function(increment, delay) {
-	if ( !this.alive ) return;
-
-	if ( window.BTTVLOADED )
-		return this.setup_bttv();
-
-	else if ( delay === undefined )
-		this.log("BetterTTV not yet loaded. Waiting...");
-
-	if ( delay >= 60000 )
-		this.log("BetterTTV not detected in \"" + location.toString() + "\". Giving up.");
-	else
-		setTimeout(this.find_bttv.bind(this, increment, (delay||0) + increment),
-			increment);
-}
-
-var donor_badge = {type: 'ffz-donor', name: '', description: 'FFZ Donor'};
-
-ffz.prototype.setup_bttv = function() {
-	this.log("BetterTTV was detected. Installing hook.");
-	this.has_bttv = true;
-
-	// Add badge handling to BetterTTV chat.
-	var privmsg = BetterTTV.chat.templates.privmsg, f = this;
-	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
-		if ( f.check_donor(data.sender) ) {
-			var badge = _.defaults({}, donor_badge);
-			if ( BetterTTV.settings.get('alphaTags') )
-				badge['type'] = badge['type'] + ' alpha';
-
-			var inserted = false;
-			for(var i=0; i < data.badges.length; i++) {
-				var t = data.badges[i].type;
-				if ( t != 'turbo' && t != 'subscriber' )
-					continue;
-				data.badges.insertAt(i, badge);
-				inserted = true;
-				break;
-			}
-			if ( ! inserted )
-				data.badges.push(badge);
-		}
-
-		return privmsg(highlight, action, server, isMod, data);
-	}
-}
-
-
-// -----------------
-// Ember Hooks
-// -----------------
-
-ffz.prototype.add_badge = function(sender, badges) {
-	// Is the sender a donor?
-	if ( ! this.check_donor(sender) )
+	var data = this.users[user];
+	if ( ! data || ! data.badges )
 		return;
 
-	// Create the FFZ Donor badge.
-	var c = document.createElement('span');
-	c.className = 'badge-container tooltip';
-	c.setAttribute('title', 'FFZ Donor');
-
-	var b = document.createElement('div');
-	b.className = 'badge ffz-donor';
-	c.appendChild(b);
-	c.appendChild(document.createTextNode(' '));
-
-	// Figure out where to place the badge.
-	var before = badges.find('.badge-container').filter(function(i) {
+	// Figure out where to place our badge(s).
+	var before = badges.find('.badge').filter(function(i) {
 		var t = this.title.toLowerCase();
 		return t == "subscriber" || t == "turbo";
-		}).first();
+	}).first();
 
-	if ( before.length )
-		before.before(c);
-	else
-		badges.append(c);
+	var badges_out = [], reverse = !(!before.length);
+	for ( var slot in data.badges ) {
+		if ( ! data.badges.hasOwnProperty(slot) )
+			continue;
+
+		var badge = data.badges[slot],
+			full_badge = this.badges[badge.id] || {};
+
+		var el = document.createElement('div');
+		el.className = 'badge float-left tooltip ffz-badge-' + badge.id;
+		el.setAttribute('title', badge.title || full_badge.title);
+
+		if ( badge.image )
+			el.style.backgroundImage = 'url("' + badge.image + '")';
+
+		if ( badge.color )
+			el.style.backgroundColor = badge.color;
+
+		if ( badge.extra_css )
+			el.style.cssText += badge.extra_css;
+
+		badges_out.push([((reverse ? 1 : -1) * slot), el]);
+	}
+
+	badges_out.sort(function(a,b){return a[0] - b[0]});
+
+	if ( reverse ) {
+		while(badges_out.length)
+			before.before(badges_out.shift()[1]);
+	} else {
+		while(badges_out.length)
+			badges.append(badges_out.shift()[1]);
+	}
 }
 
-ffz.prototype.modify_lines = function() {
+
+// --------------------
+// Legacy Support
+// --------------------
+
+FFZ.prototype._legacy_add_donors = function(tries) {
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "http://cdn.frankerfacez.com/channel/global/donoricon.png"};
+	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
+
+	// Developer Badges
+	// TODO: Upload the badge to the proper CDN.
+	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "http://sir.stendec.me/devicon.png"};
+	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
+	this.users.sirstendec = {badges: {0: {id:0}}};
+
+	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
+		.done(function(data) {
+			this._legacy_parse_donors(data);
+
+		}).fail(function(data) {
+			if ( data.status == 404 )
+				return;
+
+			tries = (tries || 0) + 1;
+			if ( tries < 10 )
+				return this._legacy_add_donors(tries);
+		});
+}
+
+
+FFZ.prototype._legacy_parse_donors = function(data) {
+	var count = 0;
+	if ( data != null ) {
+		var lines = data.trim().split(/\W+/);
+		for(var i=0; i < lines.length; i++) {
+			var user_id = lines[i],
+				user = this.users[user_id] = this.users[user_id] || {},
+				badges = user.badges = user.badges || {};
+
+			if ( badges[0] )
+				continue;
+
+			badges[0] = {id:1};
+			count += 1;
+		}
+	}
+
+	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
+}
+},{"./constants":2,"./utils":16}],2:[function(require,module,exports){
+var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
+	DEBUG = localStorage.ffzDebugMode == "true";
+
+module.exports = {
+	DEBUG: DEBUG,
+	SERVER: DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/",
+
+	SVGPATH: SVGPATH,
+	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
+	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>'
+}
+},{}],3:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Debug Command
+// --------------------
+
+FFZ.chat_commands.debug = function(room, args) {
+	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
+	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
+		enabled = true;
+	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
+		enabled = false;
+
+	if ( enabled === undefined )
+		enabled = !(localStorage.ffzDebugMode == "true");
+
+	localStorage.ffzDebugMode = enabled;
+	return "Debug Mode is now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
+}
+
+FFZ.chat_commands.debug.help = "Usage: /ffz debug [on|off]\nEnable or disable Debug Mode. When Debug Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
+},{}],4:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_chatview = function() {
+	this.log("Hooking the Ember Chat view.");
+
+	var Chat = App.__container__.resolve('view:chat');
+	this._modify_cview(Chat);
+
+	// For some reason, this doesn't work unless we create an instance of the
+	// chat view and then destroy it immediately.
+	Chat.create().destroy();
+
+	// Modify all existing Chat views.
+	for(var key in Ember.View.views) {
+		if ( ! Ember.View.views.hasOwnProperty(key) )
+			continue;
+
+		var view = Ember.View.views[key];
+		if ( !(view instanceof Chat) )
+			continue;
+
+		this.log("Adding UI link manually to Chat view.", view);
+		view.$('.textarea-contain').append(this.build_ui_link(view));
+	}
+}
+
+
+// --------------------
+// Modify Chat View
+// --------------------
+
+FFZ.prototype._modify_cview = function(view) {
 	var f = this;
-	App.LineView.reopen({
+
+	view.reopen({
 		didInsertElement: function() {
 			this._super();
-			f.add_badge(this.get('context.model.from'), this.$('.badges'));
+			this.$() && this.$('.textarea-contain').append(f.build_ui_link(this));
+		},
+
+		willClearRender: function() {
+			this._super();
+			this.$(".ffz-ui-toggle").remove();
+		},
+
+		ffzUpdateLink: Ember.observer('controller.currentRoom', function() {
+			f.update_ui_link();
+		})
+	});
+}
+},{}],5:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// ---------------------
+// Initialization
+// ---------------------
+
+FFZ.prototype.setup_line = function() {
+	this.log("Hooking the Ember Line controller.");
+
+	var Line = App.__container__.resolve('controller:line'),
+		f = this;
+
+	Line.reopen({
+		tokenizedMessage: function() {
+			// Add our own step to the tokenization procedure.
+			return f._emoticonize(this, this._super());
+
+		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
+		// TODO: Copy the new properties from the new Twitch!
+	});
+
+
+	this.log("Hooking the Ember Line view.");
+	var Line = App.__container__.resolve('view:line');
+
+	Line.reopen({
+		didInsertElement: function() {
+			this._super();
+
+			var el = this.get('element');
+			el.setAttribute('data-room', this.get('context.parentController.content.id'));
+			el.setAttribute('data-sender', this.get('context.model.from'));
+
+			f.render_badge(this);
 		}
 	});
 }
 
-ffz.prototype._modify_room = function(room) {
+
+// ---------------------
+// Emoticon Replacement
+// ---------------------
+
+FFZ.prototype._emoticonize = function(controller, tokens) {
+	var room_id = controller.get("parentController.model.id"),
+		user_id = controller.get("model.from"),
+		user = this.users[user_id],
+		room = this.rooms[room_id],
+		f = this;
+
+	// Get our sets.
+	var sets = _.union(user && user.sets || [], room && room.sets || [], f.global_sets),
+		emotes = [];
+
+	// Build a list of emotes that match.
+	_.each(sets, function(set_id) {
+		var set = f.emote_sets[set_id];
+		if ( ! set )
+			return;
+
+		_.each(set.emotes, function(emote) {
+			_.any(tokens, function(token) {
+				return _.isString(token) && token.match(emote.regex);
+			}) && emotes.push(emote);
+		});
+	});
+
+	// Don't bother proceeding if we have no emotes.
+	if ( ! emotes.length )
+		return tokens;
+
+	// Now that we have all the matching tokens, do crazy stuff.
+	if ( typeof tokens == "string" )
+		tokens = [tokens];
+
+	// This is weird stuff I basically copied from the old Twitch code.
+	// Here, for each emote, we split apart every text token and we
+	// put it back together with the matching bits of text replaced
+	// with an object telling Twitch's line template how to render the
+	// emoticon.
+	_.each(emotes, function(emote) {
+		var eo = {isEmoticon:true, cls: emote.klass};
+
+		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
+			if ( _.isObject(token) )
+				return token;
+
+			var tbits = token.split(emote.regex), bits = [];
+			tbits.forEach(function(val, ind) {
+				bits.push(val);
+				if ( ind !== tbits.length - 1 )
+					bits.push(eo);
+			});
+			return bits;
+		})));
+	});
+
+	return tokens;
+}
+},{}],6:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
+	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
+	GROUP_CHAT = /^_([^_]+)_\d+$/,
+	constants = require('../constants'),
+	utils = require('../utils'),
+
+
+	moderator_css = function(room) {
+		if ( ! room.moderator_badge )
+			return "";
+
+		return '.chat-line[data-room="' + room.id + '"] .badges .moderator { background-image:url("' + room.moderator_badge + '") !important; }';
+	}
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_room = function() {
+	this.rooms = {};
+
+	this.log("Creating room style element.");
+	var s = this._room_style = document.createElement("style");
+	s.id = "ffz-room-css";
+	document.head.appendChild(s);
+
+	this.log("Hooking the Ember Room model.");
+
+	var Room = App.__container__.resolve('model:room');
+	this._modify_room(Room);
+
+	// Modify all current instances of Room, as the changes to the base
+	// class won't be inherited automatically.
+	var instances = Room.instances;
+	for(var key in instances) {
+		if ( ! instances.hasOwnProperty(key) )
+			continue;
+
+		var inst = instances[key];
+		this.add_room(inst.id, inst);
+		this._modify_room(inst);
+	}
+}
+
+
+// --------------------
+// Command System
+// --------------------
+
+FFZ.chat_commands = {};
+
+
+FFZ.prototype.room_message = function(room, text) {
+	var lines = text.split("\n");
+	for(var i=0; i < lines.length; i++)
+		room.room.addMessage({style: 'ffz admin', from: 'FFZ', message: lines[i]});
+}
+
+
+FFZ.prototype.run_command = function(text, room_id) {
+	var room = this.rooms[room_id];
+	if ( ! room || !room.room )
+		return;
+
+	if ( ! text )
+		text = "help";
+
+	var args = text.split(" "),
+		cmd = args.shift().toLowerCase();
+
+	this.log("Received Command: " + cmd, args, true);
+
+	var command = FFZ.chat_commands[cmd], output;
+	if ( command ) {
+		try {
+			output = command.bind(this)(room, args);
+		} catch(err) {
+			this.log("Error Running Command - " + cmd + ": " + err, room);
+			output = "There was an error running the command.";
+		}
+	} else
+		output = 'There is no "' + cmd + '" command.';
+
+	if ( output )
+		this.room_message(room, output);
+}
+
+
+FFZ.chat_commands.help = function(room, args) {
+	if ( args && args.length ) {
+		var command = FFZ.chat_commands[args[0].toLowerCase()];
+		if ( ! command )
+			return 'There is no "' + args[0] + '" command.';
+
+		else if ( ! command.help )
+			return 'No help is available for the command "' + args[0] + '".';
+
+		else
+			return command.help;
+	}
+
+	var cmds = [];
+	for(var c in FFZ.chat_commands)
+		FFZ.chat_commands.hasOwnProperty(c) && cmds.push(c);
+
+	return "The available commands are: " + cmds.join(", ");
+}
+
+FFZ.chat_commands.help.help = "Usage: /ffz help [command]\nList available commands, or show help for a specific command.";
+
+
+// --------------------
+// Room Management
+// --------------------
+
+FFZ.prototype.add_room = function(id, room) {
+	if ( this.rooms[id] )
+		return this.log("Tried to add existing room: " + id);
+
+	this.log("Adding Room: " + id);
+
+	// Create a basic data table for this room.
+	this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null};
+
+	// Let the server know where we are.
+	this.ws_send("sub", id);
+
+	// For now, we use the legacy function to grab the .css file.
+	this._legacy_add_room(id);
+}
+
+
+FFZ.prototype.remove_room = function(id) {
+	var room = this.rooms[id];
+	if ( ! room )
+		return;
+
+	this.log("Removing Room: " + id);
+
+	// Remove the CSS
+	if ( room.css || room.moderator_badge )
+		utils.update_css(this._room_style, id, null);
+
+	// Let the server know we're gone and delete our data for this room.
+	this.ws_send("unsub", id);
+	delete this.rooms[id];
+
+	// Clean up sets we aren't using any longer.
+	for(var i=0; i < room.sets.length; i++) {
+		var set_id = room.sets[i], set = this.emote_sets[set_id];
+		if ( ! set )
+			continue;
+
+		set.users.removeObject(id);
+		if ( !set.global && !set.users.length )
+			this.unload_set(set_id);
+	}
+}
+
+
+// --------------------
+// Receiving Set Info
+// --------------------
+
+FFZ.prototype.load_room = function(room_id, callback) {
+	return this._legacy_load_room(room_id, callback);
+}
+
+
+FFZ.prototype._load_room_json = function(room_id, callback, data) {
+	// Preserve the pointer to the Room instance.
+	if ( this.rooms[room_id] )
+		data.room = this.rooms[room_id].room;
+
+	this.rooms[room_id] = data;
+
+	if ( data.css || data.moderator_badge )
+		utils.update_css(this._room_style, room_id, moderator_css(data) + (data.css||""));
+
+	for(var i=0; i < data.sets.length; i++) {
+		var set_id = data.sets[i];
+		if ( ! this.emote_sets.hasOwnProperty(set_id) )
+			this.load_set(set_id);
+	}
+
+	this.update_ui_link();
+
+	if ( callback )
+		callback(true, data);
+}
+
+
+/*FFZ.ws_commands.sets_for_room = function(data) {
+	var room = this.rooms[data.room];
+	if ( ! room )
+		return;
+
+	for(var i=0; i < data.sets.length; i++) {
+		var set = data.sets[i];
+		if ( room.sets.contains(set) )
+			continue;
+
+		room.sets.push(set);
+		this.load_set(set);
+	}
+}*/
+
+
+// --------------------
+// Ember Modifications
+// --------------------
+
+FFZ.prototype._modify_room = function(room) {
 	var f = this;
 	room.reopen({
 		init: function() {
 			this._super();
-			if ( f.alive )
-				f.add_channel(this.id, this);
+			f.add_room(this.id, this);
 		},
 
 		willDestroy: function() {
 			this._super();
-			if ( f.alive )
-				f.remove_channel(this.id);
+			f.remove_room(this.id);
 		},
 
-		send: function(e) {
-			if ( f.alive && (e.substr(0,5) == '/ffz ' || e == '/ffz') ) {
-				// Clear the input box.
+		send: function(text) {
+			var cmd = text.split(' ', 1)[0].toLowerCase();
+			if ( cmd === "/ffz" ) {
 				this.set("messageToSend", "");
-				f.run_command(this, e);
+				f.run_command(text.substr(5), this.get('id'));
 			} else
-				return this._super(e);
+				return this._super(text);
 		}
 	});
 }
 
-ffz.prototype.modify_room = function() {
-	this._modify_room(App.Room);
 
-	var inst = App.Room.instances;
-	for(var n in inst) {
-		if ( ! inst.hasOwnProperty(n) ) continue;
-		var i = inst[n];
-		if ( this.alive )
-			this.add_channel(i.id, i);
+// --------------------
+// Legacy Data Support
+// --------------------
 
-		if ( i.tmiRoom && this.alive )
-			this.alter_tmi(i.id, i.tmiRoom);
-		else if ( i.viewers )
-			this._modify_viewers(i.viewers);
+FFZ.prototype._legacy_add_room = function(room_id, callback, tries) {
+	jQuery.ajax(constants.SERVER + "channel/" + room_id + ".css", {cache: false, context:this})
+		.done(function(data) {
+			this._legacy_load_room_css(room_id, callback, data);
 
-		this._modify_room(i);
-	}
-};
+		}).fail(function(data) {
+			if ( data.status == 404 )
+				return this._legacy_load_room_css(room_id, callback, null);
 
-
-ffz.prototype._modify_viewers = function(vwrs) {
-	var f = this;
-	vwrs.reopen({
-		tmiRoom: Ember.computed(function(key, val) {
-			if ( arguments.length > 1 ) {
-				this.tmiRoom = val;
-				if ( f.alive )
-					f.alter_tmi(this.id, val);
-			}
-			return undefined;
-		})
-	});
-}
-
-ffz.prototype.modify_viewers = function() {
-	this._modify_viewers(App.Room.Viewers);
-};
-
-
-ffz.prototype._modify_emotes = function(ec) {
-	var f = this;
-	ec.reopen({
-		_emoticons: ec.emoticons || [],
-
-		init: function() {
-			this._super();
-			if ( f.alive )
-				f.get_manager(this);
-		},
-
-		emoticons: Ember.computed(function(key, val) {
-			if ( arguments.length > 1 ) {
-				this._emoticons = val;
-				f.log("Twitch standard emoticons loaded.");
-			}
-			return f.alive ? _.union(this._emoticons, f.emoticons) : this._emoticons;
-		})
-	});
-}
-
-ffz.prototype.modify_emotes = function() {
-	this._modify_emotes(App.EmoticonsController);
-
-	var ec = App.__container__.lookup("controller:emoticons");
-	if ( ! ec ) return;
-
-	this._modify_emotes(ec);
-	this.get_manager(ec);
-};
-
-ffz.prototype.get_manager = function(manager) {
-	this.manager = manager;
-	for(var key in this.emotesets) {
-		if ( this.emotesets.hasOwnProperty(key) )
-			manager.emoticonSets[key] = this.emotesets[key];
-	}
+			tries = tries || 0;
+			tries++;
+			if ( tries < 10 )
+				return this._legacy_add_room(room_id, callback, tries);
+		});
 }
 
 
-// -----------------
-// Channel Management
-// -----------------
+FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
+	var set_id = room_id,
+		match = set_id.match(GROUP_CHAT);
 
-ffz.prototype.add_channel = function(id, room) {
-	if ( !this.alive ) return;
-	this.log("Registered channel: " + id);
-	var chan = this.channels[id] = {id: id, room: room, tmi: null, style: null};
+	if ( match && match[1] )
+		set_id = match[1];
 
-	// Do we have log messages?
-	if ( this._log2.length > 0 ) {
-		var func = this.has_bttv ? BetterTTV.chat.helpers.serverMessage : room.addTmiMessage;
-		while ( this._log2.length )
-			func(this._log2.shift());
+	var output = {id: room_id, menu_sets: [set_id], sets: [set_id], moderator_badge: null, css: null};
+
+	if ( data )
+		data = data.replace(CSS, "").trim();
+
+	if ( data ) {
+		data = data.replace(MOD_CSS, function(match, url) {
+			if ( output.moderator_badge || url.substr(-11) !== 'modicon.png' )
+				return match;
+
+			output.moderator_badge = url;
+			return "";
+		});
 	}
 
-	// Load the emotes for this channel.
-	this.load_emotes(id);
+	output.css = data || null;
+	return this._load_room_json(room_id, callback, output);
 }
-
-ffz.prototype.remove_channel = function(id) {
-	var chan = this.channels[id];
-	if ( !chan ) return;
-
-	this.log("Removing channel: " + id);
-
-	// Unload the associated emotes.
-	this.unload_emotes(id);
-
-	// If we have a tmiRoom for this channel, restore its getEmotes function.
-	if ( chan.tmi )
-		delete chan.tmi.getEmotes;
-
-	// Delete this channel.
-	this.channels[id] = false;
-}
-
-ffz.prototype.alter_tmi = function(id, tmi) {
-	var chan = this.channels[id], f = this;
-	if ( !chan || !this.alive ) return;
-
-	// Store the TMI instance.
-	if ( chan.tmi) return;
-	chan.tmi = tmi;
-
-	var tp = tmi.__proto__.getEmotes.bind(tmi);
-	tmi.getEmotes = function(name) {
-		return _.union([chan.set_id], f.global_sets, tp(name)||[]);
-	}
-}
+},{"../constants":2,"../utils":16}],7:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
+	constants = require('./constants'),
+	utils = require('./utils');
 
 
-// -----------------
-// Emote Handling
-// -----------------
-
-ffz.prototype.load_emotes = function(group, refresh) {
-	// TEMPORARY GROUP CHAT
-	var m = /^_(.+)_\d+$/.exec(group), name = group;
-	if ( m != null )
-		name = m[1];
-
-	this.get(SERVER + "channel/" + name + ".css",
-		this.process_css.bind(this, group, undefined), refresh ? 1 : CACHE_LENGTH);
-}
-
-ffz.prototype.process_css = function(group, channel, data) {
-	if ( !this.alive ) return 0;
-	if ( data === undefined ) return 0;
-
-	// Before we go anywhere, let's start clean.
-	this.unload_emotes(group);
-
-	// If data is null, we've got no emotes.
-	if ( data == null )
-		return 0;
-
-	// Let's look up this group to see where it goes! Is it a channel?
-	var chan = this.channels[group];
-	if ( chan === false )
-		// It's for an unloaded channel. Stop here.
+var loaded_global = function(set_id, success, data) {
+	if ( ! success )
 		return;
 
-	// Get our new stuff.
-	var set_id = --this.last_set, set = [], channel,
-		style = document.createElement('style');
+	data.global = true;
+	this.global_sets.push(set_id);
+}
 
-	// Let's store our things right now.
-	if ( chan ) {
-		chan.set_id = set_id;
-		chan.set = set;
-		chan.style = style;
-		channel = "FFZ Channel Emotes: " + group;
+var check_margins = function(margins, height) {
+	var mlist = margins.split(/ +/);
+	if ( mlist.length != 2 )
+		return margins;
 
-	} else {
-		this.globals[group] = set_id;
-		this.global_sets.push(set_id);
-		this.styles[group] = style;
+	mlist[0] = parseFloat(mlist[0]);
+	mlist[1] = parseFloat(mlist[1]);
 
-		if ( !channel )
-			channel = "FFZ Global Emotes" + (group != "global" ? ": " + group : "");
+	if ( mlist[0] == (height - 18) / -2 && mlist[1] == 0 )
+		return null;
+
+	return margins;
+}
+
+
+FFZ.prototype.setup_emoticons = function() {
+	this.log("Preparing emoticon system.");
+
+	this.emote_sets = {};
+	this.global_sets = [];
+	this._last_emote_id = 0;
+
+	this.log("Creating emoticon style element.");
+	var s = this._emote_style = document.createElement('style');
+	s.id = "ffz-emoticon-css";
+	document.head.appendChild(s);
+
+	this.log("Loading global emote set.");
+	this.load_set("global", loaded_global.bind(this, "global"));
+}
+
+
+
+FFZ.ws_commands.reload_set = function(set_id) {
+	this.load_set(set_id);
+}
+
+
+FFZ.prototype.load_set = function(set_id, callback) {
+	return this._legacy_load_set(set_id, callback);
+}
+
+
+FFZ.prototype.unload_set = function(set_id) {
+	var set = this.emote_sets[set_id];
+	if ( ! set )
+		return;
+
+	this.log("Unloading emoticons for set: " + set_id);
+
+	utils.update_css(this._emote_style, set_id, null);
+	delete this.emote_sets[set_id];
+
+	for(var i=0; i < set.users.length; i++) {
+		var room = this.rooms[set.users[i]];
+		if ( room )
+			room.sets.removeObject(set_id);
 	}
+}
 
-	// Register this set with the manager.
-	this.emotesets[set_id] = set;
-	if ( this.manager )
-		this.manager.emoticonSets[set_id] = set;
 
-	// Update the style.
-	style.type = 'text/css';
-	style.innerHTML = data;
-	if ( document.body )
-		document.body.appendChild(style);
-	else
-		this.pending_styles.push(style);
+var build_css = function(emote) {
+	var margin = emote.margins;
+	if ( ! margin )
+		margin = ((emote.height - 18) / -2) + "px 0";
+	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
+}
 
-	// Parse out the usable emoticons.
-	var count = 0, f = this;
+FFZ.prototype._load_set_json = function(set_id, callback, data) {
+	// Store our set.
+	this.emote_sets[set_id] = data;
+	data.users = [];
+	data.global = false;
 
-	// Store our emotes in an extra place.
-	var col = this.collections[channel] = [];
+	// Iterate through all the emoticons, building CSS and regex objects as appropriate.
+	var output_css = "";
 
-	data.replace(CSS, function(match, klass, name, path, height, width) {
-		height = parseInt(height); width = parseInt(width);
-		var image_data = {
-			emoticon_set: set_id, height: height, width: width, url: path,
-			html: '<span class="' + klass + ' emoticon" title="' + name + '"></span>',
-			id: --f.last_emote}, regex;
+	for(var key in data.emotes) {
+		if ( ! data.emotes.hasOwnProperty(key) )
+			continue;
 
-		if ( name[name.length-1] === '!' )
-			regex = new RegExp('\\b' + name + '(?=\\W|$)', 'g');
+		var emote = data.emotes[key];
+		emote.klass = "ffz-emote-" + emote.id;
+
+		if ( emote.name[emote.name.length-1] === "!" )
+			emote.regex = new RegExp("\\b" + emote.name + "(?=\\W|$)", "g");
 		else
-			regex = new RegExp('\\b' + name + '\\b', 'g');
+			emote.regex = new RegExp("\\b" + emote.name + "\\b", "g");
 
-		var emote = {
-			image: image_data, images: [image_data], text: name,
-			channel: channel, hidden: false, regex: regex, ffzset: group};
+		output_css += build_css(emote);
+	}
 
-		col.push(emote);
-		f.emoticons.push(emote);
-		set.push({isEmoticon: !0, cls: klass, regex: regex});
-		count++;
+	utils.update_css(this._emote_style, set_id, output_css + (data.extra_css || ""));
+	this.log("Updated emoticons for set: " + set_id, data);
+
+	if ( callback )
+		callback(true, data);
+}
+
+
+FFZ.prototype._legacy_load_set = function(set_id, callback, tries) {
+	jQuery.ajax(constants.SERVER + "channel/" + set_id + ".css", {cache: false, context:this})
+		.done(function(data) {
+			this._legacy_load_css(set_id, callback, data);
+
+		}).fail(function(data) {
+			if ( data.status == 404 )
+				return callback && callback(false);
+
+			tries = tries || 0;
+			tries++;
+			if ( tries < 10 )
+				return this._legacy_load_set(set_id, callback, tries);
+
+			return callback && callback(false);
+		});
+}
+
+
+FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
+	var emotes = {}, output = {id: set_id, emotes: emotes, extra_css: null}, f = this;
+
+	data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
+		height = parseInt(height); width = parseInt(width);
+		margins = check_margins(margins, height);
+		var hidden = path.substr(path.lastIndexOf("/") + 1, 1) === ".",
+			id = ++f._last_emote_id,
+			emote = {id: id, hidden: hidden, name: name, height: height, width: width, url: path, margins: margins, extra_css: extra};
+
+		emotes[id] = emote;
+		return "";
 	});
 
-	this.log("Loaded " + count + " emotes from collection: " + group);
+	this._load_set_json(set_id, callback, output);
+}
+},{"./constants":2,"./utils":16}],8:[function(require,module,exports){
+// Modify Array and others.
+require('./shims');
 
-	// Notify the manager that we've added emotes.
-	// Don't notify the manager for now because of BTTV.
-	//if ( this.manager && ! this.has_bttv )
-	//	this.manager.notifyPropertyChange('emoticons');
 
-	return count;
+// ----------------
+// The Constructor
+// ----------------
+
+var FFZ = window.FrankerFaceZ = function() {
+	FFZ.instance = this;
+
+	// Get things started.
+	this.initialize();
 }
 
 
-ffz.prototype.unload_emotes = function(group) {
-	if ( !this.alive ) return;
+FFZ.get = function() { return FFZ.instance; }
 
-	// Is it a channel?
-	var chan = this.channels[group], set, set_id, style, channel;
-	if ( chan === false )
-		return;
-	else if ( chan ) {
-		// It's a channel.
-		set = chan.set;
-		set_id = chan.set_id;
-		style = chan.style;
-		channel = "FFZ Channel Emotes: " + group;
 
-		// Clear it out.
-		delete chan.set;
-		delete chan.set_id;
-		delete chan.style;
-
-	} else {
-		// It must be global.
-		set_id = this.globals[group];
-		set = this.emotesets[set_id];
-		style = this.styles[group];
-		channel = "FFZ Global Emotes" + (group != "global" ? ": " + group : "");
-
-		// Clear out the basics.
-		delete this.globals[group];
-		delete this.styles[group];
-		
-		var ind = this.global_sets.indexOf(set_id);
-		if ( ind !== -1 )
-			this.global_sets.splice(ind, 1);
+// Version
+var VER = FFZ.version_info = {
+	major: 3, minor: 0, revision: 0,
+	toString: function() {
+		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
-
-	// Do we have a collection?
-	if ( this.collections[channel] )
-		delete this.collections[channel];
-
-	// Do we have a style?
-	if ( style )
-		// Remove it from its parent.
-		try { style.parentNode.removeChild(style); } catch(err) {}
-
-	// Remove the emoteset from circulation.
-	delete this.emotesets[set_id];
-	if ( this.manager )
-		delete this.manager.emoticonSets[set_id];
-
-	// Remove every emote from this group.
-	var filt = function(e) { return e.ffzgroup !== group; }
-	this.emoticons = this.emoticons.filter(filt);
-
-	// Update the emoticons with the manager.
-	// Don't notify the manager for now for BTTV.
-	//if ( this.manager && ! this.has_bttv )
-	//	this.manager.notifyPropertyChange('emoticons');
 }
 
 
-// -----------------
-// Donor Processing
-// -----------------
+// Logging
 
-ffz.prototype.check_donor = function(username) { return this.donors[username] || false; }
-
-ffz.prototype.load_donors = function(refresh) {
-	this.get(SERVER + "scripts/donors.txt",
-		this.process_donors.bind(this), refresh ? 1 : CACHE_LENGTH);
-}
-
-ffz.prototype.process_donors = function(text) {
-	if ( !this.alive ) return;
-	this.donors = {};
-	var count = 0;
-
-	if ( text != null ) {
-		var l = text.trim().split(/\W+/);
-		for (var i=0; i < l.length; i++)
-			this.donors[l[i]] = true;
-		count += l.length;
-	}
-
-	this.log("Loaded " + count + " donors.");
-}
-
-
-// -----------------
-// Networking
-// -----------------
-
-ffz.prototype.get = function(resource, callback, expires, headers, max_attempts) {
-	if ( !this.alive ) return;
-	if ( this.getting[resource] ) {
-		this.log("Already getting resource: " + resource);
-		return;
-	}
-	this.getting[resource] = true;
-
-	max_attempts = max_attempts || 10;
-	var age = 0, now = new Date().getTime();
-
-	// First, immediately try using the resource from cache.
-	if ( window.localStorage ) {
-		var res = localStorage.getItem("ffz_" + resource);
-		if ( res != null ) {
-			this.log("Found resource in localStorage: " + resource);
-			try {
-				callback(JSON.parse(res));
-			} catch(err) { this.log("Error in callback: " + err); }
-
-			// Also, get the age to see if we need to fetch it again.
-			age = parseInt(localStorage.getItem("ffz_age_" + resource)||0);
-		}
-	}
-
-	if ( DEBUG || !age || (expires !== undefined && expires !== null && (now-age) > expires) ) {
-		// Try getting it again.
-		this.log("Resource expired. Fetching: " + resource);
-		this.do_get(resource, callback, 0, headers, max_attempts);
+FFZ.prototype.log = function(msg, data, to_json) {
+	msg = "FFZ: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+	if ( data !== undefined && console.groupCollapsed && console.dir ) {
+		console.groupCollapsed(msg);
+		console.dir(data);
+		console.groupEnd(msg);
 	} else
-		this.getting[resource] = false;
+		console.log(msg);
 }
 
-ffz.prototype.do_get = function(resource, callback, attempts, headers, max_attempts) {
-	if ( !this.alive ) {
-		this.getting[resource] = false;
+
+// -------------------
+// User Data
+// -------------------
+
+FFZ.prototype.get_user = function() {
+	if ( window.PP && PP.login ) {
+		return PP;
+	} else if ( window.App ) {
+		var nc = App.__container__.lookup("controller:navigation");
+		return nc ? nc.get("userData") : undefined;
+	}
+}
+
+
+// -------------------
+// Import Everything!
+// -------------------
+
+require('./socket');
+require('./emoticons');
+require('./badges');
+
+require('./ember/room');
+require('./ember/line');
+require('./ember/chatview');
+
+require('./debug');
+
+require('./ui/styles');
+require('./ui/notifications');
+require('./ui/viewer_count');
+
+require('./ui/menu_button');
+require('./ui/menu');
+
+// ---------------
+// Initialization
+// ---------------
+
+FFZ.prototype.initialize = function(increment, delay) {
+	// Make sure that FrankerFaceZ doesn't start setting itself up until the
+	// Twitch ember application is ready.
+
+	// TODO: Special Dashboard check.
+
+	var loaded = window.App != undefined &&
+				 App.__container__ != undefined &&
+				 App.__container__.resolve('model:room') != undefined;
+
+	if ( !loaded ) {
+		increment = increment || 10;
+		if ( delay >= 60000 )
+			this.log("Twitch application not detected in \"" + location.toString() + "\". Aborting.");
+		else
+			setTimeout(this.initialize.bind(this, increment, (delay||0) + increment),
+				increment);
 		return;
 	}
 
-	var http = new XMLHttpRequest();
-	http.open("GET", resource);
+	this.setup(delay);
+}
 
-	if ( headers ) {
-		for (var hdr in headers) {
-			if ( headers.hasOwnProperty(hdr) )
-				http.setRequestHeader(hdr, headers[hdr]);
-		}
+
+FFZ.prototype.setup = function(delay) {
+	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+
+	try {
+		this.ws_create();
+		this.setup_emoticons();
+		this.setup_badges();
+
+		this.setup_room();
+		this.setup_line();
+		this.setup_chatview();
+
+		this.setup_css();
+		this.setup_menu();
+
+	} catch(err) {
+		this.log("An error occurred while starting FrankerFaceZ: " + err);
+		return;
 	}
 
+	this.log("Initialization complete.");
+}
+},{"./badges":1,"./debug":3,"./ember/chatview":4,"./ember/line":5,"./ember/room":6,"./emoticons":7,"./shims":9,"./socket":10,"./ui/menu":11,"./ui/menu_button":12,"./ui/notifications":13,"./ui/styles":14,"./ui/viewer_count":15}],9:[function(require,module,exports){
+Array.prototype.equals = function (array) {
+	// if the other array is a falsy value, return
+	if (!array)
+		return false;
+
+	// compare lengths - can save a lot of time 
+	if (this.length != array.length)
+		return false;
+
+	for (var i = 0, l=this.length; i < l; i++) {
+		// Check if we have nested arrays
+		if (this[i] instanceof Array && array[i] instanceof Array) {
+			// recurse into the nested arrays
+			if (!this[i].equals(array[i]))
+				return false;
+		}
+		else if (this[i] != array[i]) { 
+			// Warning - two different object instances will never be equal: {x:20} != {x:20}
+			return false;
+		}
+	}
+	return true;
+}
+
+
+},{}],10:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+FFZ.prototype._ws_open = false;
+FFZ.prototype._ws_delay = 0;
+
+FFZ.ws_commands = {};
+
+
+// ----------------
+// Socket Creation
+// ----------------
+
+FFZ.prototype.ws_create = function() {
 	var f = this;
-	function try_again() {
-		var attempt = (attempts || 0) + 1, delay = 1000;
-		if ( !max_attempts || attempt <= max_attempts ) {
-			setTimeout(f.do_get.bind(f, resource, callback, attempt, headers, max_attempts), delay);
-			return true;
-		}
+
+	this._ws_last_req = 0;
+	this._ws_callbacks = {};
+
+	var ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+
+	ws.onopen = function(e) {
+		f._ws_open = true;
+		f._ws_delay = 0;
+		f.log("Socket connected.");
+
+		var user = f.get_user();
+		if ( user )
+			f.ws_send("setuser", user.login);
+
+		// Send the current rooms.
+		for(var room_id in f.rooms)
+			f.ws_send("sub", room_id);
 	}
 
-	http.addEventListener("error", function(e) {
-		if ( try_again() )
-			return;
+	ws.onclose = function(e) {
+		f.log("Socket closed.");
+		f._ws_open = false;
 
-		f.getting[resource] = false;
-		try {
-			callback(undefined);
-		} catch(err) { f.log("Error in callback: " + err); }
-	}, false);
+		// We never ever want to not have a socket.
+		if ( f._ws_delay < 30000 )
+			f._ws_delay += 5000;
 
-	http.addEventListener("load", function(e) {
-		var result;
-		if ( http.status === 200 ) {
-			// Success!
-			result = http.responseText;
+		setTimeout(f.ws_create.bind(f), f._ws_delay);
+	}
 
-			// Let's see if it was modified?
-			if ( window.localStorage ) {
-				var last = localStorage.getItem("ffz_last_" + resource),
-					nl = http.getResponseHeader("Last-Modified");
-				
-				if ( last && last == nl ) {
-					// No change! Let's go.
-					f.log("Resource not modified: " + resource);
-					localStorage.setItem("ffz_age_" + resource, new Date().getTime());
-					f.getting[resource] = false;
-					return;
-				} else
-					// Save it!
-					localStorage.setItem("ffz_last_" + resource, nl);
-			}
+	ws.onmessage = function(e) {
+		// Messages are formatted as REQUEST_ID SUCCESS/FUNCTION_NAME[ JSON_DATA]
+		var cmd, data, ind = e.data.indexOf(" "),
+			msg = e.data.substr(ind + 1),
+			request = parseInt(e.data.slice(0, ind));
 
-		} else if ( http.status === 304 ) {
-			// Not Modified!
-			f.log("Resource not modified: " + resource);
-			if ( window.localStorage )
-				localStorage.setItem("ffz_age_" + resource, new Date().getTime());
-			f.getting[resource] = false;
-			return;
+		ind = msg.indexOf(" ");
+		if ( ind === -1 )
+			ind = msg.length;
 
-		} else if ( http.status === 404 ) {
-			// Not Found!
-			result = null;
+		cmd = msg.slice(0, ind);
+		msg = msg.substr(ind + 1);
+		if ( msg )
+			data = JSON.parse(msg);
+
+		if ( request === -1 ) {
+			// It's a command from the server.
+			var command = FFZ.ws_commands[cmd];
+			if ( command )
+				command.bind(f)(data);
+			else
+				f.log("Invalid command: " + cmd, data);
 
 		} else {
-			// Try Again
-			if ( try_again() )
-				return;
-			result = undefined;
+			var success = cmd === 'True',
+				callback = f._ws_callbacks[request];
+			f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+			if ( callback ) {
+				delete f._ws_callbacks[request];
+				callback(success, data);
+			}
 		}
-
-		// Store it in localStorage if we can.
-		if ( window.localStorage && result !== undefined ) {
-			localStorage.setItem("ffz_" + resource, JSON.stringify(result));
-			localStorage.setItem("ffz_age_" + resource, new Date().getTime());
-		}
-
-		// And send it along.
-		f.getting[resource] = false;
-		try {
-			callback(result);
-		} catch(err) { f.log("Error in callback: " + err); }
-	}, false);
-
-	http.send();
+	}
 }
 
 
-// Finally, initialize FFZ.
-window.ffz = new ffz();
-})(this.unsafeWindow || window, window.chrome ? true : false);
+FFZ.prototype.ws_send = function(func, data, callback) {
+	if ( ! this._ws_open ) return false;
+
+	var request = ++this._ws_last_req;
+	data = data !== undefined ? " " + JSON.stringify(data) : "";
+
+	if ( callback )
+		this._ws_callbacks[request] = callback;
+
+	this._ws_sock.send(request + " " + func + data);
+	return request;
+}
+},{}],11:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Initializer
+// --------------------
+
+FFZ.prototype.setup_menu = function() {
+	this.log("Installing mouse-up event to auto-close menus.");
+	var f = this;
+
+	jQuery(document).mouseup(function(e) {
+		var popup = f._popup, parent;
+		if ( ! popup ) return;
+		popup = jQuery(popup);
+		parent = popup.parent();
+
+		if ( ! parent.is(e.target) && parent.has(e.target).length === 0 ) {
+			popup.remove();
+			delete f._popup;
+		}
+	});
+}
+
+
+// --------------------
+// Create Menu
+// --------------------
+
+FFZ.prototype.build_ui_popup = function(view) {
+	var popup = this._popup;
+	if ( popup ) {
+		popup.parentElement.removeChild(popup);
+		delete this._popup;
+		return;
+	}
+
+	// Start building the DOM.
+	var container = document.createElement('div'),
+		inner = document.createElement('div');
+
+	container.className = 'emoticon-selector chat-menu ffz-ui-popup';
+	inner.className = 'emoticon-selector-box dropmenu';
+	container.appendChild(inner);
+
+	// TODO: Modularize for multiple menu pages!
+
+	// Get the current room.
+	var room_id = view.get('controller.currentRoom.id'),
+		room = this.rooms[room_id];
+
+	this.log("Menu for Room: " + room_id, room);
+
+	// Add the header and ad button.
+	var btn = document.createElement('a');
+	btn.className = 'button glyph-only ffz-button';
+	btn.title = 'Advertise for FrankerFaceZ in chat!';
+	btn.href = '#';
+	btn.innerHTML = '<svg class="svg-followers" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>';
+
+	var hdr = document.createElement('div');
+	hdr.className = 'list-header first';
+	hdr.appendChild(btn);
+	hdr.appendChild(document.createTextNode('FrankerFaceZ'));
+	inner.appendChild(hdr);
+
+	var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+
+	if ( c === 0 )
+		btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
+	else
+		btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+
+
+	// Add the menu to the DOM.
+	this._popup = container;
+	inner.style.maxHeight = Math.max(300, view.$().height() - 171) + "px";
+	view.$('.chat-interface').append(container);
+}
+
+
+// --------------------
+// Emotes for Sets
+// --------------------
+
+FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
+	if ( header != null ) {
+		var el_header = document.createElement('div');
+		el_header.className = 'list-header';
+		el_header.appendChild(document.createTextNode(header));
+
+		if ( btn )
+			el_header.appendChild(btn);
+
+		parent.appendChild(el_header);
+	}
+
+	var grid = document.createElement('div'), c = 0;
+	grid.className = 'emoticon-grid';
+
+	for(var i=0; i < sets.length; i++) {
+		var set = this.emote_sets[sets[i]];
+		for(var eid in set.emotes) {
+			var emote = set.emotes[eid];
+			if ( !set.emotes.hasOwnProperty(eid) || emote.hidden )
+				continue;
+
+			c++;
+			var s = document.createElement('span');
+			s.className = 'emoticon ' + emote.klass + ' tooltip';
+			s.title = emote.name;
+			s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
+			grid.appendChild(s);
+		}
+	}
+
+	if ( !c ) {
+		grid.innerHTML = "This channel has no emoticons.";
+		grid.className = "chat-menu-content ffz-no-emotes center";
+	}
+
+	parent.appendChild(grid);
+}
+
+
+FFZ.prototype._add_emote = function(view, emote) {
+	var room = view.get('controller.currentRoom'),
+		current_text = room.get('messageToSend') || '';
+
+	if ( current_text && current_text.substr(-1) !== " " )
+		current_text += ' ';
+
+	room.set('messageToSend', current_text + (emote.name || emote));
+}
+},{}],12:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('../constants');
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.build_ui_link = function(view) {
+	// TODO: Detect dark mode from BTTV.
+
+	var link = document.createElement('a');
+	link.className = 'ffz-ui-toggle';
+	link.innerHTML = constants.CHAT_BUTTON;
+
+	link.addEventListener('click', this.build_ui_popup.bind(this, view));
+
+	this.update_ui_link(link);
+	return link;
+}
+
+
+FFZ.prototype.update_ui_link = function(link) {
+	var controller = App.__container__.lookup('controller:chat');
+	link = link || document.querySelector('a.ffz-ui-toggle');
+	if ( !link || !controller ) return;
+
+	var room_id = controller.get('currentRoom.id'),
+		room = this.rooms[room_id],
+		has_emotes = room && room.sets.length > 0;
+
+	if ( has_emotes )
+		link.classList.remove('no-emotes');
+	else
+		link.classList.add('no-emotes');
+}
+},{"../constants":2}],13:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+FFZ.prototype.show_notification = function(message) {
+	window.noty({
+		text: message,
+		theme: "ffzTheme",
+		layout: "bottomCenter",
+		closeWith: ["button"]
+		}).show();
+}
+
+
+FFZ.ws_commands.message = function(message) {
+	this.show_notification(message);
+}
+},{}],14:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('../constants');
+
+FFZ.prototype.setup_css = function() {
+	this.log("Injecting main FrankerFaceZ CSS.");
+
+	var s = this._main_style = document.createElement('link');
+
+	s.id = "ffz-ui-css";
+	s.setAttribute('rel', 'stylesheet');
+	s.setAttribute('href', constants.SERVER + "script/style.css");
+	document.head.appendChild(s);
+
+	jQuery.noty.themes.ffzTheme = {
+		name: "ffzTheme",
+		style: function() {
+			this.$bar.removeClass().addClass("noty_bar").addClass("ffz-noty").addClass(this.options.type);
+			},
+		callback: {
+			onShow: function() {},
+			onClose: function() {}
+		}
+	};
+}
+},{"../constants":2}],15:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('../constants'),
+	utils = require('../utils');
+
+// ------------
+// Set Viewers
+// ------------
+
+FFZ.ws_commands.viewers = function(data) {
+	var channel = data[0], count = data[1];
+
+	var controller = App.__container__.lookup('controller:channel'),
+		id = controller && controller.get && controller.get('id');
+
+	if ( id !== channel )
+		return;
+
+	var view_count = document.querySelector('.channel-stats .ffz.stat'),
+		content = constants.ZREKNARF + ' ' + utils.number_commas(count);
+
+	if ( view_count )
+		view_count.innerHTML = content;
+	else {
+		var parent = document.querySelector('.channel-stats');
+		if ( ! parent )
+			return;
+
+		view_count = document.createElement('span');
+		view_count.className = 'ffz stat';
+		view_count.title = 'Viewers with FrankerFaceZ';
+		view_count.innerHTML = content;
+
+		parent.appendChild(view_count);
+		jQuery(view_count).tipsy();
+	}
+}
+},{"../constants":2,"../utils":16}],16:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('./constants');
+
+module.exports = {
+	update_css: function(element, id, css) {
+		var all = element.innerHTML,
+			start = "/*BEGIN " + id + "*/",
+			end = "/*END " + id + "*/",
+			s_ind = all.indexOf(start),
+			e_ind = all.indexOf(end),
+			found = s_ind !== -1 && e_ind !== -1 && e_ind > s_ind;
+
+		if ( !found && !css )
+			return;
+
+		if ( found )
+			all = all.substr(0, s_ind) + all.substr(e_ind + end.length);
+
+		if ( css )
+			all += start + css + end;
+
+		element.innerHTML = all;
+	},
+
+	number_commas: function(x) {
+		var parts = x.toString().split(".");
+		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		return parts.join(".");
+	}
+}
+},{"./constants":2}]},{},[8]);window.ffz = new FrankerFaceZ()}(window));
