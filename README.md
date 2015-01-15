@@ -17,34 +17,23 @@ server for development. To get everything you need:
 2. Run ```npm install``` within the FrankerFaceZ directory.
 
 
-From there, you can use gulp to build the extension from source:
+From there, you can use gulp to build the extension from source simply by
+running ```gulp```. For development, you can instruct gulp to watch the source
+files for changes and re-build automatically with ```gulp watch```
 
-```
-gulp
-```
-
-Gulp can also watch source files for modifications and rebuild it immediately:
-
-```
-gulp watch
-```
+FrankerFaceZ comes with a local development server that listens on port 8000
+and it serves up local development copies of files, falling back to the CDN
+when a local copy of a file isn't present. To start the server,
+run ```npm test```
 
 
-To start the development server, run ```npm test```. The development server listens
-on port 8000.
-
-
-You will also need to use the version of the Chrome extension included in the
-repository. Remove any existing copy of FrankerFaceZ from your browser and load
+At this time, you will also need to use the included version of the Chrome
+extension. Remove any existing copy of FrankerFaceZ from your browser and load
 the unpacked extension in the ```Chrome Extension``` folder.
 
-Once you're using that extension, use the command ```/ffz debug``` in Twitch chat
-to enable debug mode, and then refresh the page. If the current version of FFZ
-does not support the debug command, then open the JavaScript console on twitch.tv
-and run:
-
-```
-localStorage.ffzDebugMode = true;
-```
-
-Refresh the page once debug mode is enabled to use the local version of the script.
+Once you're using that extension, use the command ```/ffz developer_mode on```
+or ```/ffz developer_mode off``` in Twitch chat to toggle developer mode on or
+off. You must then refresh the page for changes to take effect. If FFZ is not
+working or the command otherwise fails to work, you can open the JavaScript
+console on twitch.tv and run ```localStorage.ffzDebugMode = true;``` or
+```localStorage.ffzDebugMode = false;``` to enable or disable the feature.
