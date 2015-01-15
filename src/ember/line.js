@@ -14,8 +14,6 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
-			var tokens = f._emoticonize(this, this._super());
-			f.log("Chat Tokens", tokens);
 			return f._emoticonize(this, this._super());
 
 		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
@@ -30,14 +28,43 @@ FFZ.prototype.setup_line = function() {
 		didInsertElement: function() {
 			this._super();
 
-			var el = this.get('element');
+			var el = this.get('element'),
+				user = this.get('context.model.from');
+
 			el.setAttribute('data-room', this.get('context.parentController.content.id'));
-			el.setAttribute('data-sender', this.get('context.model.from'));
+			el.setAttribute('data-sender', user);
 
 			f.render_badge(this);
+			f.capitalize(this, user);
+
 		}
 	});
 }
+
+
+// ---------------------
+// Capitalization
+// ---------------------
+
+FFZ.capitalization = {};
+
+FFZ.prototype.capitalize = function(view, user) {
+	if ( FFZ.capitalization[user] )
+		return view.$('.from').text(FFZ.capitalization[user]);
+
+	var f = this;
+	jQuery.getJSON("https://api.twitch.tv/kraken/channels/" + user + "?callback=?")
+		.always(function(data) {
+			if ( data.display_name == undefined )
+				FFZ.capitalization[user] = user;
+			else
+				FFZ.capitalization[user] = data.display_name;
+
+			f.capitalize(view, user);
+		});
+}
+
+
 
 
 // ---------------------
@@ -83,7 +110,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {emoticonSrc: emote.url, altText: emote.name};
+		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: emote.name};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )

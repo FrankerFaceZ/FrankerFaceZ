@@ -100,15 +100,20 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 
 	for(var i=0; i < sets.length; i++) {
 		var set = this.emote_sets[sets[i]];
+		if ( ! set || ! set.emotes )
+			continue;
+
 		for(var eid in set.emotes) {
 			var emote = set.emotes[eid];
 			if ( !set.emotes.hasOwnProperty(eid) || emote.hidden )
 				continue;
 
 			c++;
-			var s = document.createElement('img');
-			s.src = emote.url;
-			//s.className = 'emoticon ' + emote.klass + ' tooltip';
+			var s = document.createElement('span');
+			s.className = 'emoticon tooltip';
+			s.style.backgroundImage = 'url("' + emote.url + '")';
+			s.style.width = emote.width + "px";
+			s.style.height = emote.height + "px";
 			s.title = emote.name;
 			s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
 			grid.appendChild(s);

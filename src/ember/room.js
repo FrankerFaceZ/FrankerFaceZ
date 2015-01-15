@@ -54,8 +54,14 @@ FFZ.chat_commands = {};
 
 FFZ.prototype.room_message = function(room, text) {
 	var lines = text.split("\n");
-	for(var i=0; i < lines.length; i++)
-		room.room.addMessage({style: 'ffz admin', from: 'FFZ', message: lines[i]});
+	if ( this.has_bttv ) {
+		for(var i=0; i < lines.length; i++)
+			BetterTTV.chat.handlers.onPrivmsg(room.id, {style: 'admin', date: new Date(), from: 'jtv', message: lines[i]});
+
+	} else {
+		for(var i=0; i < lines.length; i++)
+			room.room.addMessage({style: 'ffz admin', date: new Date(), from: 'FFZ', message: lines[i]});
+	}
 }
 
 
@@ -190,22 +196,6 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	if ( callback )
 		callback(true, data);
 }
-
-
-/*FFZ.ws_commands.sets_for_room = function(data) {
-	var room = this.rooms[data.room];
-	if ( ! room )
-		return;
-
-	for(var i=0; i < data.sets.length; i++) {
-		var set = data.sets[i];
-		if ( room.sets.contains(set) )
-			continue;
-
-		room.sets.push(set);
-		this.load_set(set);
-	}
-}*/
 
 
 // --------------------

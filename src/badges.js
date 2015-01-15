@@ -34,6 +34,62 @@ var badge_css = function(badge) {
 // Render Badge
 // --------------------
 
+FFZ.prototype.bttv_badges = function(data) {
+	var user_id = data.sender,
+		user = this.users[user_id],
+		badges_out = [],
+		insert_at = -1;
+
+	if ( ! user || ! user.badges )
+		return;
+
+	// Determine where in the list to insert these badges.
+	for(var i=0; i < data.badges.length; i++) {
+		var badge = data.badges[i];
+		if ( badge.type == "subscriber" || badge.type == "turbo" ) {
+			insert_at = i;
+			break;
+		}
+	}
+
+
+	for (var slot in user.badges) {
+		if ( ! user.badges.hasOwnProperty(slot) )
+			continue;
+
+		var badge = user.badges[slot],
+			full_badge = this.badges[badge.id] || {},
+			desc = badge.title || full_badge.title,
+			style = "",
+			alpha = BetterTTV.settings.get('alphaTags');
+
+		if ( badge.image )
+			style += 'background-image: url(\\"' + badge.image + '\\"); ';
+
+		if ( badge.color && ! alpha )
+			style += 'background-color: ' + badge.color + '; ';
+
+		if ( badge.extra_css )
+			style += badge.extra_css;
+
+		if ( style )
+			desc += '" style="' + style;
+
+		badges_out.push([(insert_at == -1 ? 1 : -1) * slot, {type: "ffz-badge-" + badge.id + (alpha ? " alpha" : ""), name: "", description: desc}]);
+	}
+
+	badges_out.sort(function(a,b){return a[0] - b[0]});
+
+	if ( insert_at == -1 ) {
+		while(badges_out.length)
+			data.badges.push(badges_out.shift()[1]);
+	} else {
+		while(badges_out.length)
+			data.badges.insertAt(insert_at, badges_out.shift()[1]);
+	}
+}
+
+
 FFZ.prototype.render_badge = function(view) {
 	var user = view.get('context.model.from'),
 		room_id = view.get('context.parentController.content.id'),

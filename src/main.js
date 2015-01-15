@@ -67,12 +67,15 @@ require('./ember/chatview');
 
 require('./debug');
 
+require('./betterttv');
+
 require('./ui/styles');
 require('./ui/notifications');
 require('./ui/viewer_count');
 
 require('./ui/menu_button');
 require('./ui/menu');
+
 
 // ---------------
 // Initialization
@@ -118,6 +121,9 @@ FFZ.prototype.setup = function(delay) {
 
 		this.setup_css();
 		this.setup_menu();
+
+		this.find_bttv(10);
+
 
 	} catch(err) {
 		this.log("An error occurred while starting FrankerFaceZ: " + err);

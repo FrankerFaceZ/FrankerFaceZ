@@ -35,6 +35,62 @@ var badge_css = function(badge) {
 // Render Badge
 // --------------------
 
+FFZ.prototype.bttv_badges = function(data) {
+	var user_id = data.sender,
+		user = this.users[user_id],
+		badges_out = [],
+		insert_at = -1;
+
+	if ( ! user || ! user.badges )
+		return;
+
+	// Determine where in the list to insert these badges.
+	for(var i=0; i < data.badges.length; i++) {
+		var badge = data.badges[i];
+		if ( badge.type == "subscriber" || badge.type == "turbo" ) {
+			insert_at = i;
+			break;
+		}
+	}
+
+
+	for (var slot in user.badges) {
+		if ( ! user.badges.hasOwnProperty(slot) )
+			continue;
+
+		var badge = user.badges[slot],
+			full_badge = this.badges[badge.id] || {},
+			desc = badge.title || full_badge.title,
+			style = "",
+			alpha = BetterTTV.settings.get('alphaTags');
+
+		if ( badge.image )
+			style += 'background-image: url(\\"' + badge.image + '\\"); ';
+
+		if ( badge.color && ! alpha )
+			style += 'background-color: ' + badge.color + '; ';
+
+		if ( badge.extra_css )
+			style += badge.extra_css;
+
+		if ( style )
+			desc += '" style="' + style;
+
+		badges_out.push([(insert_at == -1 ? 1 : -1) * slot, {type: "ffz-badge-" + badge.id + (alpha ? " alpha" : ""), name: "", description: desc}]);
+	}
+
+	badges_out.sort(function(a,b){return a[0] - b[0]});
+
+	if ( insert_at == -1 ) {
+		while(badges_out.length)
+			data.badges.push(badges_out.shift()[1]);
+	} else {
+		while(badges_out.length)
+			data.badges.insertAt(insert_at, badges_out.shift()[1]);
+	}
+}
+
+
 FFZ.prototype.render_badge = function(view) {
 	var user = view.get('context.model.from'),
 		room_id = view.get('context.parentController.content.id'),
@@ -134,9 +190,142 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":2,"./utils":16}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":17}],2:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.find_bttv = function(increment, delay) {
+	this.has_bttv = false;
+	if ( window.BTTVLOADED )
+		return this.setup_bttv();
+
+	if ( delay >= 60000 )
+		this.log("BetterTTV was not detected after 60 seconds.");
+	else
+		setTimeout(this.find_bttv.bind(this, increment, (delay||0) + increment),
+			increment);
+}
+
+
+FFZ.prototype.setup_bttv = function() {
+	this.log("BetterTTV was detected. Hooking.");
+	this.has_bttv = true;
+
+
+	// Send Message Behavior
+	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
+	BetterTTV.chat.helpers.sendMessage = function(message) {
+		var cmd = message.split(' ', 1)[0].toLowerCase();
+
+		if ( cmd === "/ffz" )
+			f.run_command(message.substr(5), BetterTTV.chat.store.currentRoom);
+		else
+			return original_send(message);
+	}
+
+
+	// Ugly Hack for Current Room
+	var original_handler = BetterTTV.chat.handlers.privmsg,
+		received_room;
+	BetterTTV.chat.handlers.privmsg = function(room, data) {
+		received_room = room;
+		var output = original_handler(room, data);
+		received_room = null;
+		return output;
+	}
+
+
+	// Message Display Behavior
+	var original_privmsg = BetterTTV.chat.templates.privmsg;
+	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
+		// Handle badges.
+		f.bttv_badges(data);
+
+		var output = original_privmsg(highlight, action, server, isMod, data);
+		return output.replace(SENDER_REGEX, '$1 data-room="' + received_room + '"');
+	}
+
+
+	// Ugly Hack for Current Sender
+	var original_template = BetterTTV.chat.templates.message,
+		received_sender;
+	BetterTTV.chat.templates.message = function(sender, message, emotes, colored) {
+		received_sender = sender;
+		var output = original_template(sender, message, emotes, colored);
+		received_sender = null;
+		return output;
+	}
+
+
+	// Emoticonize
+	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
+	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
+		var tokens = original_emoticonize(message, emotes),
+			user = f.users[received_sender],
+			room = f.rooms[received_room];
+
+		// Get our sets.
+		var sets = _.union(user && user.sets || [], room && room.sets || [], f.global_sets),
+			emotes = [];
+
+		// Build a list of emotes that match.
+		_.each(sets, function(set_id) {
+			var set = f.emote_sets[set_id];
+			if ( ! set )
+				return;
+
+			_.each(set.emotes, function(emote) {
+				_.any(tokens, function(token) {
+					return _.isString(token) && token.match(emote.regex);
+				}) && emotes.push(emote);
+			});
+		});
+
+		// Don't bother proceeding if we have no emotes.
+		if ( ! emotes.length )
+			return tokens;
+
+		// Why is emote parsing so bad? ;_;
+		_.each(emotes, function(emote) {
+			var eo = ['<img class="emoticon" src="' + emote.url + '" alt="' + emote.title + '" />'],
+				old_tokens = tokens;
+
+			tokens = [];
+
+			if ( ! old_tokens || ! old_tokens.length )
+				return tokens;
+
+			for(var i=0; i < old_tokens.length; i++) {
+				var token = old_tokens[i];
+				if ( typeof token != "string" ) {
+					tokens.push(token);
+					continue;
+				}
+
+				var tbits = token.split(emote.regex);
+				tbits.forEach(function(val, ind) {
+					if ( val && val.length )
+						tokens.push(val);
+
+					if ( ind !== tbits.length - 1 )
+						tokens.push(eo);
+				});
+			}
+		});
+
+		return tokens;
+	}
+
+	this.update_ui_link();
+}
+},{}],3:[function(require,module,exports){
 var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
-	DEBUG = localStorage.ffzDebugMode == "true";
+	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev');
 
 module.exports = {
 	DEBUG: DEBUG,
@@ -146,15 +335,15 @@ module.exports = {
 	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
 	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>'
 }
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
-// --------------------
-// Debug Command
-// --------------------
+// -----------------------
+// Developer Mode Command
+// -----------------------
 
-FFZ.chat_commands.debug = function(room, args) {
+FFZ.chat_commands.developer_mode = function(room, args) {
 	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
 	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
 		enabled = true;
@@ -162,14 +351,15 @@ FFZ.chat_commands.debug = function(room, args) {
 		enabled = false;
 
 	if ( enabled === undefined )
-		enabled = !(localStorage.ffzDebugMode == "true");
+		return "Developer Mode is currently " + (localStorage.ffzDebugMode == "true" ? "enabled." : "disabled.");
 
 	localStorage.ffzDebugMode = enabled;
-	return "Debug Mode is now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
+	return "Developer Mode is now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
 }
 
-FFZ.chat_commands.debug.help = "Usage: /ffz debug [on|off]\nEnable or disable Debug Mode. When Debug Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
-},{}],4:[function(require,module,exports){
+FFZ.chat_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
+
+},{}],5:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -225,7 +415,7 @@ FFZ.prototype._modify_cview = function(view) {
 		})
 	});
 }
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -242,8 +432,6 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
-			var tokens = f._emoticonize(this, this._super());
-			f.log("Chat Tokens", tokens);
 			return f._emoticonize(this, this._super());
 
 		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
@@ -258,14 +446,43 @@ FFZ.prototype.setup_line = function() {
 		didInsertElement: function() {
 			this._super();
 
-			var el = this.get('element');
+			var el = this.get('element'),
+				user = this.get('context.model.from');
+
 			el.setAttribute('data-room', this.get('context.parentController.content.id'));
-			el.setAttribute('data-sender', this.get('context.model.from'));
+			el.setAttribute('data-sender', user);
 
 			f.render_badge(this);
+			f.capitalize(this, user);
+
 		}
 	});
 }
+
+
+// ---------------------
+// Capitalization
+// ---------------------
+
+FFZ.capitalization = {};
+
+FFZ.prototype.capitalize = function(view, user) {
+	if ( FFZ.capitalization[user] )
+		return view.$('.from').text(FFZ.capitalization[user]);
+
+	var f = this;
+	jQuery.getJSON("https://api.twitch.tv/kraken/channels/" + user + "?callback=?")
+		.always(function(data) {
+			if ( data.display_name == undefined )
+				FFZ.capitalization[user] = user;
+			else
+				FFZ.capitalization[user] = data.display_name;
+
+			f.capitalize(view, user);
+		});
+}
+
+
 
 
 // ---------------------
@@ -311,7 +528,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {emoticonSrc: emote.url, altText: emote.name};
+		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: emote.name};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )
@@ -329,7 +546,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -386,8 +603,14 @@ FFZ.chat_commands = {};
 
 FFZ.prototype.room_message = function(room, text) {
 	var lines = text.split("\n");
-	for(var i=0; i < lines.length; i++)
-		room.room.addMessage({style: 'ffz admin', from: 'FFZ', message: lines[i]});
+	if ( this.has_bttv ) {
+		for(var i=0; i < lines.length; i++)
+			BetterTTV.chat.handlers.onPrivmsg(room.id, {style: 'admin', date: new Date(), from: 'jtv', message: lines[i]});
+
+	} else {
+		for(var i=0; i < lines.length; i++)
+			room.room.addMessage({style: 'ffz admin', date: new Date(), from: 'FFZ', message: lines[i]});
+	}
 }
 
 
@@ -524,22 +747,6 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 }
 
 
-/*FFZ.ws_commands.sets_for_room = function(data) {
-	var room = this.rooms[data.room];
-	if ( ! room )
-		return;
-
-	for(var i=0; i < data.sets.length; i++) {
-		var set = data.sets[i];
-		if ( room.sets.contains(set) )
-			continue;
-
-		room.sets.push(set);
-		this.load_set(set);
-	}
-}*/
-
-
 // --------------------
 // Ember Modifications
 // --------------------
@@ -615,7 +822,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":2,"../utils":16}],7:[function(require,module,exports){
+},{"../constants":3,"../utils":17}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	constants = require('./constants'),
@@ -698,12 +905,14 @@ var build_legacy_css = function(emote) {
 	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
 }
 
-var build_css = function(emote) {
+var build_new_css = function(emote) {
 	if ( ! emote.margins && ! emote.extra_css )
-		return "";
+		return build_legacy_css(emote);
 
-	return 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
+	return build_legacy_css(emote) + 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
 }
+
+var build_css = build_new_css;
 
 
 
@@ -712,6 +921,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	this.emote_sets[set_id] = data;
 	data.users = [];
 	data.global = false;
+	data.count = 0;
 
 	// Iterate through all the emoticons, building CSS and regex objects as appropriate.
 	var output_css = "";
@@ -729,10 +939,12 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 			emote.regex = new RegExp("\\b" + emote.name + "\\b", "g");
 
 		output_css += build_css(emote);
+		data.count++;
 	}
 
 	utils.update_css(this._emote_style, set_id, output_css + (data.extra_css || ""));
 	this.log("Updated emoticons for set: " + set_id, data);
+	this.update_ui_link();
 
 	if ( callback )
 		callback(true, data);
@@ -774,7 +986,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":2,"./utils":16}],8:[function(require,module,exports){
+},{"./constants":3,"./utils":17}],9:[function(require,module,exports){
 // Modify Array and others.
 require('./shims');
 
@@ -844,12 +1056,15 @@ require('./ember/chatview');
 
 require('./debug');
 
+require('./betterttv');
+
 require('./ui/styles');
 require('./ui/notifications');
 require('./ui/viewer_count');
 
 require('./ui/menu_button');
 require('./ui/menu');
+
 
 // ---------------
 // Initialization
@@ -896,6 +1111,9 @@ FFZ.prototype.setup = function(delay) {
 		this.setup_css();
 		this.setup_menu();
 
+		this.find_bttv(10);
+
+
 	} catch(err) {
 		this.log("An error occurred while starting FrankerFaceZ: " + err);
 		return;
@@ -903,7 +1121,7 @@ FFZ.prototype.setup = function(delay) {
 
 	this.log("Initialization complete.");
 }
-},{"./badges":1,"./debug":3,"./ember/chatview":4,"./ember/line":5,"./ember/room":6,"./emoticons":7,"./shims":9,"./socket":10,"./ui/menu":11,"./ui/menu_button":12,"./ui/notifications":13,"./ui/styles":14,"./ui/viewer_count":15}],9:[function(require,module,exports){
+},{"./badges":1,"./betterttv":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./emoticons":8,"./shims":10,"./socket":11,"./ui/menu":12,"./ui/menu_button":13,"./ui/notifications":14,"./ui/styles":15,"./ui/viewer_count":16}],10:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -929,7 +1147,7 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -1023,7 +1241,7 @@ FFZ.prototype.ws_send = function(func, data, callback) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1126,15 +1344,20 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 
 	for(var i=0; i < sets.length; i++) {
 		var set = this.emote_sets[sets[i]];
+		if ( ! set || ! set.emotes )
+			continue;
+
 		for(var eid in set.emotes) {
 			var emote = set.emotes[eid];
 			if ( !set.emotes.hasOwnProperty(eid) || emote.hidden )
 				continue;
 
 			c++;
-			var s = document.createElement('img');
-			s.src = emote.url;
-			//s.className = 'emoticon ' + emote.klass + ' tooltip';
+			var s = document.createElement('span');
+			s.className = 'emoticon tooltip';
+			s.style.backgroundImage = 'url("' + emote.url + '")';
+			s.style.width = emote.width + "px";
+			s.style.height = emote.height + "px";
 			s.title = emote.name;
 			s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
 			grid.appendChild(s);
@@ -1159,7 +1382,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1168,8 +1391,6 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 
 FFZ.prototype.build_ui_link = function(view) {
-	// TODO: Detect dark mode from BTTV.
-
 	var link = document.createElement('a');
 	link.className = 'ffz-ui-toggle';
 	link.innerHTML = constants.CHAT_BUTTON;
@@ -1184,18 +1405,32 @@ FFZ.prototype.build_ui_link = function(view) {
 FFZ.prototype.update_ui_link = function(link) {
 	var controller = App.__container__.lookup('controller:chat');
 	link = link || document.querySelector('a.ffz-ui-toggle');
-	if ( !link || !controller ) return;
+	if ( !link || !controller ) return this.log("No button.");
 
 	var room_id = controller.get('currentRoom.id'),
 		room = this.rooms[room_id],
-		has_emotes = room && room.sets.length > 0;
+		has_emotes = false,
 
-	if ( has_emotes )
-		link.classList.remove('no-emotes');
-	else
-		link.classList.add('no-emotes');
+		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false),
+		blue = (this.has_bttv ? BetterTTV.settings.get('showBlueButtons') : false);
+
+
+	// Check for emoticons.
+	if ( room && room.sets.length ) {
+		for(var i=0; i < room.sets.length; i++) {
+			var set = this.emote_sets[room.sets[i]];
+			if ( set && set.count > 0 ) {
+				has_emotes = true;
+				break;
+			}
+		}
+	}
+
+	link.classList.toggle('no-emotes', ! has_emotes);
+	link.classList.toggle('dark', dark);
+	link.classList.toggle('blue', blue);
 }
-},{"../constants":2}],13:[function(require,module,exports){
+},{"../constants":3}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype.show_notification = function(message) {
@@ -1211,7 +1446,7 @@ FFZ.prototype.show_notification = function(message) {
 FFZ.ws_commands.message = function(message) {
 	this.show_notification(message);
 }
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1236,7 +1471,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":2}],15:[function(require,module,exports){
+},{"../constants":3}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -1273,7 +1508,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":2,"../utils":16}],16:[function(require,module,exports){
+},{"../constants":3,"../utils":17}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1304,4 +1539,4 @@ module.exports = {
 		return parts.join(".");
 	}
 }
-},{"./constants":2}]},{},[8]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":3}]},{},[9]);window.ffz = new FrankerFaceZ()}(window));

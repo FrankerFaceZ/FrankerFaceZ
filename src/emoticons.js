@@ -80,12 +80,14 @@ var build_legacy_css = function(emote) {
 	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
 }
 
-var build_css = function(emote) {
+var build_new_css = function(emote) {
 	if ( ! emote.margins && ! emote.extra_css )
-		return "";
+		return build_legacy_css(emote);
 
-	return 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
+	return build_legacy_css(emote) + 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
 }
+
+var build_css = build_new_css;
 
 
 
@@ -94,6 +96,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	this.emote_sets[set_id] = data;
 	data.users = [];
 	data.global = false;
+	data.count = 0;
 
 	// Iterate through all the emoticons, building CSS and regex objects as appropriate.
 	var output_css = "";
@@ -111,10 +114,12 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 			emote.regex = new RegExp("\\b" + emote.name + "\\b", "g");
 
 		output_css += build_css(emote);
+		data.count++;
 	}
 
 	utils.update_css(this._emote_style, set_id, output_css + (data.extra_css || ""));
 	this.log("Updated emoticons for set: " + set_id, data);
+	this.update_ui_link();
 
 	if ( callback )
 		callback(true, data);
