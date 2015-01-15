@@ -1,0 +1,131 @@
+.ffz-ui-toggle {
+	display: block;
+	position: absolute;
+	top: 5px; right: 5px;
+	height: 18px; width: 24px;
+	cursor: pointer;
+}
+
+.emoticon-selector-toggle + script + .ffz-ui-toggle svg { height: 14px; width: 18px; }
+
+.emoticon-selector-toggle + script + .ffz-ui-toggle {
+	height: 14px; width: 18px;
+	top: 28px;
+}
+
+.ffz-ui-toggle svg.svg-emoticons path { fill: rgba(0,0,0,0.2); }
+.ffz-ui-toggle:hover svg.svg-emoticons path { fill: rgba(0,0,0,0.5); }
+
+.chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,.app-main.theatre .ffz-ui-toggle svg.svg-emoticons path,.ffz-ui-toggle.dark svg.svg-emoticons path { fill: #888; }
+.chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,.app-main.theatre .ffz-ui-toggle:hover svg.svg-emoticons path,.ffz-ui-toggle.dark:hover svg.svg-emoticons path { fill: #777; }
+
+.ffz-ui-toggle.no-emotes svg.svg-emoticons path { fill: rgba(80,0,0,0.2); }
+.ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path { fill: rgba(80,0,0,0.5); }
+
+.ffz-ui-toggle.live svg.svg-emoticons path { fill: rgba(100,65,165,0.5); }
+.ffz-ui-toggle.live:hover svg.svg-emoticons path { fill: rgba(100,65,165,1); }
+
+.ffz-ui-toggle.blue.live svg.svg-emoticons path { fill: rgba(47,88,185,0.5); }
+.ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill: rgba(47,88,185,1); }
+
+.app-main.theatre .ffz-ui-toggle.no-emotes svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes svg.svg-emoticons path { fill: #543f3f; }
+.app-main.theatre .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes:hover svg.svg-emoticons path { fill: #453434; }
+
+.app-main.theatre .ffz-ui-toggle.live svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.live svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live svg.svg-emoticons path { fill: #5b4487; }
+.app-main.theatre .ffz-ui-toggle.live:hover svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.live:hover svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live:hover svg.svg-emoticons path { fill: #513c78; }
+
+.app-main.theatre .ffz-ui-toggle.blue.live svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.blue.live svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live svg.svg-emoticons path { fill: #445887; }
+.app-main.theatre .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live:hover svg.svg-emoticons path { fill: #3c4e78; }
+
+.ffz-ui-toggle.live {
+	animation: ffzfade 8s linear infinite;
+	-webkit-animation: ffzfade 8s linear infinite;
+}
+
+@-webkit-keyframes ffzfade {
+	from, to { opacity: 1; }
+	50% { opacity: 0.75; }
+}
+
+@keyframes ffzfade {
+	from, to { opacity: 1; }
+	50% { opacity: 0.75; }
+}
+
+
+.ember-chat .chat-menu.ffz-ui-popup { padding: 0; }
+.ffz-ui-popup .emoticon-selector-box { overflow-y: auto; }
+
+.ffz-button {
+	float: right;
+	margin-top: -6px;
+}
+
+.ffz-noty .noty_message {
+	background-image: url("//cdn.frankerfacez.com/icon32.png") !important;
+	background-repeat: no-repeat !important;
+	background-position: 5px 10px !important;
+	padding-left: 42px !important;
+	text-align: left;
+}
+
+.ember-chat .badges .ffz-dev { background: #ccad00 url("http://cdn.frankerfacez.com/channel/global/donoricon.png"); }
+
+.ffz-ui-popup .button.live { overflow: hidden; background: #6441A5; color: #fff; }
+.ffz-ui-popup .button.live span { z-index: 2; position: relative; }
+
+.ffz-ui-popup .button.live:before, .ffz-ui-popup .button.live:after {
+	content: "";
+	display: block;
+	position: absolute;
+	width: 0px;
+	height: 0px;
+	border-radius: 999px;
+	-moz-border-radius: 999px;
+	-webkit-border-radius: 999px;
+	top: 50%;
+	left: 50%;
+	z-index: 1
+}
+
+.ffz-ui-popup .button.live.purple:before, .ffz-ui-popup .button.live.purple:after {
+	box-shadow: 0 0 3px 1px #a68ed2,inset 0 0 3px 1px #a68ed2;
+	-moz-box-shadow: 0 0 3px 1px #a68ed2,inset 0 0 3px 1px #a68ed2;
+	-webkit-box-shadow: 0 0 3px 1px #a68ed2,inset 0 0 3px 1px #a68ed2;
+}
+
+.ffz-ui-popup .button.live.blue:before, .ffz-ui-popup .button.live.blue:after {
+	box-shadow: 0 0 3px 1px #8ea2d1,inset 0 0 3px 1px #8ea2d1;
+	-moz-box-shadow: 0 0 3px 1px #8ea2d1,inset 0 0 3px 1px #8ea2d1;
+	-webkit-box-shadow: 0 0 3px 1px #8ea2d1,inset 0 0 3px 1px #8ea2d1;
+}
+
+.ffz-ui-popup .button.live:before {
+	animation: expand 1500ms infinite ease-in;
+	-moz-animation: expand 1500ms infinite ease-in;
+	-webkit-animation: expand 1500ms infinite ease-in;
+	-o-animation: expand 1500ms infinite ease-in
+}
+
+.ffz-ui-popup .button.live:after {
+	animation: expand 1500ms infinite 750ms ease-in;
+	-moz-animation: expand 1500ms infinite 750ms ease-in;
+	-webkit-animation: expand 1500ms infinite 750ms ease-in;
+	-o-animation: expand 1500ms infinite 750ms ease-in
+}
+
+#dash_main #stats .stat.dark#ffz_count svg path { fill: #cacaca; }
+
+.ffz-agdq .follow-button span.follow {
+	padding: 0 10px !important;
+	width: inherit !important;
+}
+
+.ffz-agdq span.notify { cursor: pointer; }
+
+#ffz-agdq-popup {
+	background-image: url('//cdn.frankerfacez.com/channel/602race/zreknarf.png');
+	background-repeat: no-repeat;
+	background-position: 115% -75%;
+	background-size: 50%;
+}
