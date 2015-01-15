@@ -79,8 +79,11 @@ FFZ.prototype._modify_viewers = function(controller) {
 
 				// Push the chatters, capitalizing them as we go.
 				chatters.sort();
-				while(chatters.length)
-					viewers.push({chatter: FFZ.get_capitalization(chatters.shift())});
+				while(chatters.length) {
+					var viewer = chatters.shift();
+					viewer = f.has_bttv ? BetterTTV.chat.helpers.lookupDisplayName(viewer) : FFZ.get_capitalization(viewer);
+					viewers.push({chatter: viewer});
+				}
 			}
 
 			return viewers;
