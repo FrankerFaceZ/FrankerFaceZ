@@ -15,13 +15,26 @@ function ffz_init()
 
 	var debug = localStorage.ffzDebugMode == "true";
 
-	if ( debug )
-		script.src = "//localhost:8000/script/script.js";
-	else
-		script.src = "//cdn.frankerfacez.com/script/script.min.js";
+	if ( debug ) {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "http://localhost:8000/dev_server", true);
+		xhr.onload = function(e) {
+			var resp = JSON.parse(xhr.responseText);
+			console.log("FFZ: Development Server is present. Version " + resp.version + " running from: " + resp.path);
+			script.src = "//localhost:8000/script/script.js";
+			document.body.classList.add("ffz-dev");
+			document.head.appendChild(script);
+		};
+		xhr.onerror = function(e) {
+			console.log("FFZ: Development Server is not present. Using CDN.");
+			script.src = "//cdn.frankerfacez.com/script/script.min.js";
+			document.head.appendChild(script);
+		};
+		return xhr.send(null);
+	}
 
-	var head = document.getElementsByTagName('head')[0];
-	if(head) head.appendChild(script);
+	script.src = "//cdn.frankerfacez.com/script/script.min.js";
+	document.head.appendChild(script);
 }
 
 ffz_init();
