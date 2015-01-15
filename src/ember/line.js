@@ -47,24 +47,36 @@ FFZ.prototype.setup_line = function() {
 // ---------------------
 
 FFZ.capitalization = {};
+FFZ._cap_fetching = 0;
 
-FFZ.prototype.capitalize = function(view, user) {
-	if ( FFZ.capitalization[user] )
-		return view.$('.from').text(FFZ.capitalization[user]);
+FFZ.get_capitalization = function(name, callback) {
+	name = name.toLowerCase();
+	var old_data = FFZ.capitalization[name];
+	if ( old_data ) {
+		if ( Date.now() - old_data[1] < 3600000 )
+			return old_data[0];
+	}
 
-	var f = this;
-	jQuery.getJSON("https://api.twitch.tv/kraken/channels/" + user + "?callback=?")
-		.always(function(data) {
-			if ( data.display_name == undefined )
-				FFZ.capitalization[user] = user;
-			else
-				FFZ.capitalization[user] = data.display_name;
+	if ( FFZ._cap_fetching < 5 ) {
+		FFZ._cap_fetching++;
+		Twitch.api.get("users/" + name)
+			.always(function(data) {
+				var cap_name = data.display_name || name;
+				FFZ.capitalization[name] = [cap_name, Date.now()];
+				FFZ._cap_fetching--;
+				callback && callback(cap_name);
+			});
+	}
 
-			f.capitalize(view, user);
-		});
+	return old_data ? old_data[0] : name;
 }
 
 
+FFZ.prototype.capitalize = function(view, user) {
+	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
+	if ( name )
+		view.$('.from').text(name);
+}
 
 
 // ---------------------

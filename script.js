@@ -190,7 +190,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":17}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":18}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -465,24 +465,36 @@ FFZ.prototype.setup_line = function() {
 // ---------------------
 
 FFZ.capitalization = {};
+FFZ._cap_fetching = 0;
 
-FFZ.prototype.capitalize = function(view, user) {
-	if ( FFZ.capitalization[user] )
-		return view.$('.from').text(FFZ.capitalization[user]);
+FFZ.get_capitalization = function(name, callback) {
+	name = name.toLowerCase();
+	var old_data = FFZ.capitalization[name];
+	if ( old_data ) {
+		if ( Date.now() - old_data[1] < 3600000 )
+			return old_data[0];
+	}
 
-	var f = this;
-	jQuery.getJSON("https://api.twitch.tv/kraken/channels/" + user + "?callback=?")
-		.always(function(data) {
-			if ( data.display_name == undefined )
-				FFZ.capitalization[user] = user;
-			else
-				FFZ.capitalization[user] = data.display_name;
+	if ( FFZ._cap_fetching < 5 ) {
+		FFZ._cap_fetching++;
+		Twitch.api.get("users/" + name)
+			.always(function(data) {
+				var cap_name = data.display_name || name;
+				FFZ.capitalization[name] = [cap_name, Date.now()];
+				FFZ._cap_fetching--;
+				callback && callback(cap_name);
+			});
+	}
 
-			f.capitalize(view, user);
-		});
+	return old_data ? old_data[0] : name;
 }
 
 
+FFZ.prototype.capitalize = function(view, user) {
+	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
+	if ( name )
+		view.$('.from').text(name);
+}
 
 
 // ---------------------
@@ -822,7 +834,97 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":17}],8:[function(require,module,exports){
+},{"../constants":3,"../utils":18}],8:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_viewers = function() {
+	this.log("Hooking the Ember Viewers controller.");
+
+	var Viewers = App.__container__.resolve('controller:viewers');
+	this._modify_viewers(Viewers);
+}
+
+
+FFZ.prototype._modify_viewers = function(controller) {
+	var f = this;
+
+	controller.reopen({
+		lines: function() {
+			var viewers = this._super(),
+				categories = [],
+				data = {},
+				last_category = null;
+
+			// Get the broadcaster name.
+			var Channel = App.__container__.lookup('controller:channel'),
+				room_id = this.get('parentController.model.id'),
+				broadcaster = Channel && Channel.get('id');
+
+			// We can get capitalization for the broadcaster from the channel.
+			if ( broadcaster ) {
+				var display_name = Channel.get('display_name');
+				if ( display_name )
+					FFZ.capitalization[broadcaster] = [display_name, Date.now()];
+			}
+
+			// If the current room isn't the channel's chat, then we shouldn't
+			// display them as the broadcaster.
+			if ( room_id != broadcaster )
+				broadcaster = null;
+
+			// Now, break the viewer array down into something we can use.
+			for(var i=0; i < viewers.length; i++) {
+				var entry = viewers[i];
+				if ( entry.category ) {
+					last_category = entry.category;
+					categories.push(last_category);
+					data[last_category] = [];
+
+				} else {
+					var viewer = entry.chatter.toLowerCase();
+					if ( ! viewer )
+						continue;
+
+					// If the viewer is the broadcaster, give them their own
+					// group. Don't put them with normal mods!
+					if ( viewer == broadcaster ) {
+						categories.unshift("Broadcaster");
+						data["Broadcaster"] = [viewer];
+
+					} else if ( data.hasOwnProperty(last_category) )
+						data[last_category].push(viewer);
+				}
+			}
+
+			// Now, rebuild the viewer list. However, we're going to actually
+			// sort it this time.
+			viewers = [];
+			for(var i=0; i < categories.length; i++) {
+				var category = categories[i],
+					chatters = data[category];
+
+				if ( ! chatters || ! chatters.length )
+					continue;
+
+				viewers.push({category: category});
+				viewers.push({chatter: ""});
+
+				// Push the chatters, capitalizing them as we go.
+				chatters.sort();
+				while(chatters.length)
+					viewers.push({chatter: FFZ.get_capitalization(chatters.shift())});
+			}
+
+			return viewers;
+		}.property("content.chatters")
+	});
+}
+},{}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	constants = require('./constants'),
@@ -986,7 +1088,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":17}],9:[function(require,module,exports){
+},{"./constants":3,"./utils":18}],10:[function(require,module,exports){
 // Modify Array and others.
 require('./shims');
 
@@ -1021,7 +1123,11 @@ FFZ.prototype.log = function(msg, data, to_json) {
 	msg = "FFZ: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
 		console.groupCollapsed(msg);
-		console.dir(data);
+		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
+			console.log(data);
+		else
+			console.dir(data);
+
 		console.groupEnd(msg);
 	} else
 		console.log(msg);
@@ -1053,6 +1159,7 @@ require('./badges');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
+require('./ember/viewers');
 
 require('./debug');
 
@@ -1095,10 +1202,24 @@ FFZ.prototype.initialize = function(increment, delay) {
 
 
 FFZ.prototype.setup = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 
+	// Cleanup localStorage
+	for(var key in localStorage) {
+		if ( key.substr(0,4) == "ffz_" )
+			localStorage.removeItem(key);
+	}
+
+	// Store the capitalization of our own name.
+	var user = this.get_user();
+	if ( user && user.name )
+		FFZ.capitalization[user.login] = [user.name, Date.now()];
+
+
+	// Initialize all the modules.
 	try {
 		this.ws_create();
 		this.setup_emoticons();
@@ -1107,6 +1228,7 @@ FFZ.prototype.setup = function(delay) {
 		this.setup_room();
 		this.setup_line();
 		this.setup_chatview();
+		this.setup_viewers();
 
 		this.setup_css();
 		this.setup_menu();
@@ -1119,9 +1241,15 @@ FFZ.prototype.setup = function(delay) {
 		return;
 	}
 
-	this.log("Initialization complete.");
+	if ( window.console && console.time )
+		console.timeEnd("FrankerFaceZ Initialization");
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./betterttv":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./emoticons":8,"./shims":10,"./socket":11,"./ui/menu":12,"./ui/menu_button":13,"./ui/notifications":14,"./ui/styles":15,"./ui/viewer_count":16}],10:[function(require,module,exports){
+},{"./badges":1,"./betterttv":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/viewers":8,"./emoticons":9,"./shims":11,"./socket":12,"./ui/menu":13,"./ui/menu_button":14,"./ui/notifications":15,"./ui/styles":16,"./ui/viewer_count":17}],11:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -1147,7 +1275,7 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -1241,7 +1369,7 @@ FFZ.prototype.ws_send = function(func, data, callback) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1382,7 +1510,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1430,7 +1558,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],14:[function(require,module,exports){
+},{"../constants":3}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype.show_notification = function(message) {
@@ -1446,7 +1574,7 @@ FFZ.prototype.show_notification = function(message) {
 FFZ.ws_commands.message = function(message) {
 	this.show_notification(message);
 }
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1471,7 +1599,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],16:[function(require,module,exports){
+},{"../constants":3}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -1508,7 +1636,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":17}],17:[function(require,module,exports){
+},{"../constants":3,"../utils":18}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1539,4 +1667,4 @@ module.exports = {
 		return parts.join(".");
 	}
 }
-},{"./constants":3}]},{},[9]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":3}]},{},[10]);window.ffz = new FrankerFaceZ()}(window));
