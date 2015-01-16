@@ -1,31 +1,55 @@
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	constants = require('./constants'),
-	utils = require('./utils');
+	utils = require('./utils'),
 
 
-var loaded_global = function(set_id, success, data) {
-	if ( ! success )
-		return;
+	loaded_global = function(set_id, success, data) {
+		if ( ! success )
+			return;
 
-	data.global = true;
-	this.global_sets.push(set_id);
-}
+		data.global = true;
+		this.global_sets.push(set_id);
+	},
 
-var check_margins = function(margins, height) {
-	var mlist = margins.split(/ +/);
-	if ( mlist.length != 2 )
+
+	check_margins = function(margins, height) {
+		var mlist = margins.split(/ +/);
+		if ( mlist.length != 2 )
+			return margins;
+
+		mlist[0] = parseFloat(mlist[0]);
+		mlist[1] = parseFloat(mlist[1]);
+
+		if ( mlist[0] == (height - 18) / -2 && mlist[1] == 0 )
+			return null;
+
 		return margins;
+	},
 
-	mlist[0] = parseFloat(mlist[0]);
-	mlist[1] = parseFloat(mlist[1]);
 
-	if ( mlist[0] == (height - 18) / -2 && mlist[1] == 0 )
-		return null;
+	build_legacy_css = function(emote) {
+		var margin = emote.margins;
+		if ( ! margin )
+			margin = ((emote.height - 18) / -2) + "px 0";
+		return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
+	},
 
-	return margins;
-}
 
+	build_new_css = function(emote) {
+		if ( ! emote.margins && ! emote.extra_css )
+			return build_legacy_css(emote);
+
+		return build_legacy_css(emote) + 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
+	},
+
+
+	build_css = build_new_css;
+
+
+// ---------------------
+// Initialization
+// ---------------------
 
 FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
@@ -44,11 +68,30 @@ FFZ.prototype.setup_emoticons = function() {
 }
 
 
+// ---------------------
+// Set Management
+// ---------------------
+
+FFZ.prototype.getEmotes = function(user_id, room_id) {
+	var user = this.users[user_id],
+		room = this.rooms[room_id];
+
+	return _.union(user && user.sets || [], room && room.sets || [], this.global_sets);
+}
+
+
+// ---------------------
+// Commands
+// ---------------------
 
 FFZ.ws_commands.reload_set = function(set_id) {
 	this.load_set(set_id);
 }
 
+
+// ---------------------
+// Set Loading
+// ---------------------
 
 FFZ.prototype.load_set = function(set_id, callback) {
 	return this._legacy_load_set(set_id, callback);
@@ -71,24 +114,6 @@ FFZ.prototype.unload_set = function(set_id) {
 			room.sets.removeObject(set_id);
 	}
 }
-
-
-var build_legacy_css = function(emote) {
-	var margin = emote.margins;
-	if ( ! margin )
-		margin = ((emote.height - 18) / -2) + "px 0";
-	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
-}
-
-var build_new_css = function(emote) {
-	if ( ! emote.margins && ! emote.extra_css )
-		return build_legacy_css(emote);
-
-	return build_legacy_css(emote) + 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
-}
-
-var build_css = build_new_css;
-
 
 
 FFZ.prototype._load_set_json = function(set_id, callback, data) {

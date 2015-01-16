@@ -50,6 +50,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 		room = this.rooms[room_id];
 
 	this.log("Menu for Room: " + room_id, room);
+	this.track('trackEvent', 'Menu', 'Open', room_id);
 
 	// Add the header and ad button.
 	var btn = document.createElement('a');

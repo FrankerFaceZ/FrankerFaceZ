@@ -70,8 +70,14 @@ FFZ.prototype.run_command = function(text, room_id) {
 	if ( ! room || !room.room )
 		return;
 
-	if ( ! text )
+	if ( ! text ) {
+		// Try to pop-up the menu.
+		var link = document.querySelector('a.ffz-ui-toggle');
+		if ( link )
+			return link.click();
+
 		text = "help";
+	}
 
 	var args = text.split(" "),
 		cmd = args.shift().toLowerCase();

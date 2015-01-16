@@ -105,12 +105,10 @@ FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEn
 FFZ.prototype._emoticonize = function(controller, tokens) {
 	var room_id = controller.get("parentController.model.id"),
 		user_id = controller.get("model.from"),
-		user = this.users[user_id],
-		room = this.rooms[room_id],
 		f = this;
 
 	// Get our sets.
-	var sets = _.union(user && user.sets || [], room && room.sets || [], f.global_sets),
+	var sets = this.getEmotes(user_id, room_id),
 		emotes = [];
 
 	// Build a list of emotes that match.

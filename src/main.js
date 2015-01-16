@@ -65,10 +65,13 @@ require('./socket');
 require('./emoticons');
 require('./badges');
 
+require('./ember/router');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
+
+require('./tracking');
 
 require('./debug');
 
@@ -82,6 +85,8 @@ require('./ui/viewer_count');
 
 require('./ui/menu_button');
 require('./ui/menu');
+
+require('./commands');
 
 
 // ---------------
@@ -136,6 +141,9 @@ FFZ.prototype.setup = function(delay) {
 		this.setup_emoticons();
 		this.setup_badges();
 
+		this.setup_piwik();
+
+		this.setup_router();
 		this.setup_room();
 		this.setup_line();
 		this.setup_chatview();

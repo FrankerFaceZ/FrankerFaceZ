@@ -190,7 +190,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":19}],2:[function(require,module,exports){
+},{"./constants":4,"./utils":22}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -216,6 +216,7 @@ FFZ.prototype.setup_bttv = function() {
 	this.log("BetterTTV was detected. Hooking.");
 	this.has_bttv = true;
 
+	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
@@ -266,11 +267,7 @@ FFZ.prototype.setup_bttv = function() {
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
-			user = f.users[received_sender],
-			room = f.rooms[received_room];
-
-		// Get our sets.
-		var sets = _.union(user && user.sets || [], room && room.sets || [], f.global_sets),
+			sets = f.getEmotes(received_sender, received_room),
 			emotes = [];
 
 		// Build a list of emotes that match.
@@ -324,6 +321,66 @@ FFZ.prototype.setup_bttv = function() {
 	this.update_ui_link();
 }
 },{}],3:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+// -----------------
+// Mass Unmod
+// -----------------
+
+FFZ.chat_commands.massunmod = function(room, args) {
+	args = args.join(" ").trim();
+
+	if ( ! args.length )
+		return "You must provide a list of users to unmod.";
+
+	args = args.split(/\W*,\W*/);
+
+	var user = this.get_user();
+	if ( ! user || ! user.login == room.id )
+		return "You must be the broadcaster to use massunmod.";
+
+	if ( args.length > 50 )
+		return "Each user you unmod counts as a single message. To avoid being globally banned, please limit yourself to 50 at a time and wait between uses.";
+
+	var count = args.length;
+	while(args.length) {
+		var name = args.shift();
+		room.room.tmiRoom.sendMessage("/unmod " + name);
+	}
+
+	return "Sent unmod command for " + count + " users.";
+}
+
+FFZ.chat_commands.massunmod.help = "Usage: /ffz massunmod <list, of, users>\nBroadcaster only. Unmod all the users in the provided list.";
+
+
+FFZ.chat_commands.massmod = function(room, args) {
+	args = args.join(" ").trim();
+
+	if ( ! args.length )
+		return "You must provide a list of users to mod.";
+
+	args = args.split(/\W*,\W*/);
+
+	var user = this.get_user();
+	if ( ! user || ! user.login == room.id )
+		return "You must be the broadcaster to use massmod.";
+
+	if ( args.length > 50 )
+		return "Each user you mod counts as a single message. To avoid being globally banned, please limit yourself to 50 at a time and wait between uses.";
+
+		
+	var count = args.length;
+	while(args.length) {
+		var name = args.shift();
+		room.room.tmiRoom.sendMessage("/mod " + name);
+	}
+
+	return "Sent mod command for " + count + " users.";
+}
+
+FFZ.chat_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
+},{}],4:[function(require,module,exports){
 var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
 	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev');
 
@@ -335,7 +392,7 @@ module.exports = {
 	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
 	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>'
 }
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -359,7 +416,7 @@ FFZ.chat_commands.developer_mode = function(room, args) {
 
 FFZ.chat_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -415,7 +472,7 @@ FFZ.prototype._modify_cview = function(view) {
 		})
 	});
 }
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -523,12 +580,10 @@ FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEn
 FFZ.prototype._emoticonize = function(controller, tokens) {
 	var room_id = controller.get("parentController.model.id"),
 		user_id = controller.get("model.from"),
-		user = this.users[user_id],
-		room = this.rooms[room_id],
 		f = this;
 
 	// Get our sets.
-	var sets = _.union(user && user.sets || [], room && room.sets || [], f.global_sets),
+	var sets = this.getEmotes(user_id, room_id),
 		emotes = [];
 
 	// Build a list of emotes that match.
@@ -577,7 +632,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -650,8 +705,14 @@ FFZ.prototype.run_command = function(text, room_id) {
 	if ( ! room || !room.room )
 		return;
 
-	if ( ! text )
+	if ( ! text ) {
+		// Try to pop-up the menu.
+		var link = document.querySelector('a.ffz-ui-toggle');
+		if ( link )
+			return link.click();
+
 		text = "help";
+	}
 
 	var args = text.split(" "),
 		cmd = args.shift().toLowerCase();
@@ -853,7 +914,25 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":19}],8:[function(require,module,exports){
+},{"../constants":4,"../utils":22}],9:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_router = function() {
+	this.log("Hooking the Ember router.");
+
+	var f = this;
+	App.__container__.lookup('router:main').reopen({
+		ffzTransition: function() {
+			f.track_page();
+		}.on('didTransition')
+	});
+}
+},{}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -946,35 +1025,59 @@ FFZ.prototype._modify_viewers = function(controller) {
 		}.property("content.chatters")
 	});
 }
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	constants = require('./constants'),
-	utils = require('./utils');
+	utils = require('./utils'),
 
 
-var loaded_global = function(set_id, success, data) {
-	if ( ! success )
-		return;
+	loaded_global = function(set_id, success, data) {
+		if ( ! success )
+			return;
 
-	data.global = true;
-	this.global_sets.push(set_id);
-}
+		data.global = true;
+		this.global_sets.push(set_id);
+	},
 
-var check_margins = function(margins, height) {
-	var mlist = margins.split(/ +/);
-	if ( mlist.length != 2 )
+
+	check_margins = function(margins, height) {
+		var mlist = margins.split(/ +/);
+		if ( mlist.length != 2 )
+			return margins;
+
+		mlist[0] = parseFloat(mlist[0]);
+		mlist[1] = parseFloat(mlist[1]);
+
+		if ( mlist[0] == (height - 18) / -2 && mlist[1] == 0 )
+			return null;
+
 		return margins;
+	},
 
-	mlist[0] = parseFloat(mlist[0]);
-	mlist[1] = parseFloat(mlist[1]);
 
-	if ( mlist[0] == (height - 18) / -2 && mlist[1] == 0 )
-		return null;
+	build_legacy_css = function(emote) {
+		var margin = emote.margins;
+		if ( ! margin )
+			margin = ((emote.height - 18) / -2) + "px 0";
+		return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
+	},
 
-	return margins;
-}
 
+	build_new_css = function(emote) {
+		if ( ! emote.margins && ! emote.extra_css )
+			return build_legacy_css(emote);
+
+		return build_legacy_css(emote) + 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
+	},
+
+
+	build_css = build_new_css;
+
+
+// ---------------------
+// Initialization
+// ---------------------
 
 FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
@@ -993,11 +1096,30 @@ FFZ.prototype.setup_emoticons = function() {
 }
 
 
+// ---------------------
+// Set Management
+// ---------------------
+
+FFZ.prototype.getEmotes = function(user_id, room_id) {
+	var user = this.users[user_id],
+		room = this.rooms[room_id];
+
+	return _.union(user && user.sets || [], room && room.sets || [], this.global_sets);
+}
+
+
+// ---------------------
+// Commands
+// ---------------------
 
 FFZ.ws_commands.reload_set = function(set_id) {
 	this.load_set(set_id);
 }
 
+
+// ---------------------
+// Set Loading
+// ---------------------
 
 FFZ.prototype.load_set = function(set_id, callback) {
 	return this._legacy_load_set(set_id, callback);
@@ -1020,24 +1142,6 @@ FFZ.prototype.unload_set = function(set_id) {
 			room.sets.removeObject(set_id);
 	}
 }
-
-
-var build_legacy_css = function(emote) {
-	var margin = emote.margins;
-	if ( ! margin )
-		margin = ((emote.height - 18) / -2) + "px 0";
-	return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.url + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (emote.extra_css ? "; " + emote.extra_css : "") + "}\n";
-}
-
-var build_new_css = function(emote) {
-	if ( ! emote.margins && ! emote.extra_css )
-		return build_legacy_css(emote);
-
-	return build_legacy_css(emote) + 'img[src="' + emote.url + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.extra_css || "") + " }\n";
-}
-
-var build_css = build_new_css;
-
 
 
 FFZ.prototype._load_set_json = function(set_id, callback, data) {
@@ -1110,7 +1214,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":19}],10:[function(require,module,exports){
+},{"./constants":4,"./utils":22}],12:[function(require,module,exports){
 // Modify Array and others.
 require('./shims');
 
@@ -1178,10 +1282,13 @@ require('./socket');
 require('./emoticons');
 require('./badges');
 
+require('./ember/router');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
+
+require('./tracking');
 
 require('./debug');
 
@@ -1195,6 +1302,8 @@ require('./ui/viewer_count');
 
 require('./ui/menu_button');
 require('./ui/menu');
+
+require('./commands');
 
 
 // ---------------
@@ -1249,6 +1358,9 @@ FFZ.prototype.setup = function(delay) {
 		this.setup_emoticons();
 		this.setup_badges();
 
+		this.setup_piwik();
+
+		this.setup_router();
 		this.setup_room();
 		this.setup_line();
 		this.setup_chatview();
@@ -1274,7 +1386,7 @@ FFZ.prototype.setup = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./betterttv":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/viewers":8,"./emoticons":9,"./featurefriday":11,"./shims":12,"./socket":13,"./ui/menu":14,"./ui/menu_button":15,"./ui/notifications":16,"./ui/styles":17,"./ui/viewer_count":18}],11:[function(require,module,exports){
+},{"./badges":1,"./betterttv":2,"./commands":3,"./debug":5,"./ember/chatview":6,"./ember/line":7,"./ember/room":8,"./ember/router":9,"./ember/viewers":10,"./emoticons":11,"./featurefriday":13,"./shims":14,"./socket":15,"./tracking":16,"./ui/menu":17,"./ui/menu_button":18,"./ui/notifications":19,"./ui/styles":20,"./ui/viewer_count":21}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1294,21 +1406,19 @@ FFZ.prototype.check_ff = function(tries) {
 	if ( ! tries )
 		this.log("Checking for Feature Friday data...");
 
-	var f = this;
-	jQuery.getJSON(constants.SERVER + "script/event.json")
+	jQuery.ajax(constants.SERVER + "script/event.json", {cache: false, dataType: "json", context: this})
 		.done(function(data) {
-			return f._load_ff(data);
-
+			return this._load_ff(data);
 		}).fail(function(data) {
 			if ( data.status == 404 )
-				return f._load_ff(null);
+				return this._load_ff(null);
 
 			tries = tries || 0;
 			tries++;
 			if ( tries < 10 )
-				return setTimeout(f.check_ff.bind(this, tries), 250);
+				return setTimeout(this.check_ff.bind(this, tries), 250);
 
-			return f._load_ff(null);
+			return this._load_ff(null);
 		});
 }
 
@@ -1335,7 +1445,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 		return;
 
 
-	var ff = this.feature_friday,
+	var ff = this.feature_friday, f = this,
 		btnc = document.createElement('div'),
 		btn = document.createElement('a');
 
@@ -1352,6 +1462,9 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	btn.title = message;
 	btn.target = "_new";
 	btn.innerHTML = "<span>" + message + "</span>";
+
+	// Track the number of users to click this button.
+	btn.addEventListener('click', function() { f.track('trackLink', this.href, 'link'); });
 
 	btnc.appendChild(btn);
 	parent.appendChild(btnc);
@@ -1420,7 +1533,7 @@ FFZ.prototype._update_ff_name = function(name) {
 	if ( this.feature_friday )
 		this.feature_friday.display_name = name;
 }
-},{"./constants":3}],12:[function(require,module,exports){
+},{"./constants":4}],14:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -1446,7 +1559,7 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -1540,7 +1653,139 @@ FFZ.prototype.ws_send = function(func, data, callback) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('./constants'),
+	PIWIK = ("https:" == document.location.protocol ? 'https:' : 'http:') + '//sir.stendec.me/ffz_piwik/';
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_piwik = function() {
+	if ( window._paq != undefined ) {
+		this.log("Piwik is already present. Disabling analytics.");
+		this._tracking = false;
+		return;
+	}
+
+	if ( localStorage['ffzTracking'] == "false" ) {
+		this.log("The user has opted out of tracking. Disabling analytics.");
+		this._tracking = false;
+		return;
+	}
+
+	this.log("Initializing Piwik.");
+	this._tracking = true;
+	var _paq = window._paq = [];
+
+	_paq.push(['setSiteId', 1]);
+	_paq.push(['setTrackerUrl', PIWIK + 'piwik.php']);
+
+	if ( this.has_bttv )
+		_paq.push(['setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString()]);
+
+	var user = this.get_user(), f = this;
+	if ( user ) {
+		_paq.push(['setCustomVariable', '1', 'Partnered', user.is_partner ? "Yes" : "No"])
+		_paq.push(['setCustomVariable', '2', 'User Type', user.is_staff ? "Staff" : (user.is_admin ? "Admin" : "User")]);
+		_paq.push(['setUserId', user.login]);
+
+		Twitch.api.get("channels/" + user.login)
+			.done(function(data) {
+				if ( data.logo )
+					f.track('setCustomVariable', '4', 'Avatar', data.logo);
+			}).always(function() { f.track_page(); });
+
+	} else
+		this.track_page();
+
+	// If someone turned analytics back ON, track that.
+	if ( localStorage['ffzTracking'] == "true" ) {
+		this.track('trackEvent', 'Analytics', 'Enable');
+		localStorage.removeItem('ffzTracking');
+	}
+
+	var script = document.createElement('script');
+	script.type = 'text/javascript';
+	script.defer = true;
+	script.async = true;
+	script.src = PIWIK + 'piwik.js';
+	document.head.appendChild(script);
+}
+
+
+// --------------------
+// Command
+// --------------------
+
+FFZ.chat_commands.analytics = function(room, args) {
+	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
+	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
+		enabled = true;
+	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
+		enabled = false;
+
+	if ( enabled === undefined )
+		return "Analytics are currently " + (localStorage.ffzTracking != "false" ? "enabled." : "disabled.");
+
+	// Track that someone turned off analytics.
+	if ( this._tracking && ! enabled && localStorage.ffzTracking != "false" )
+		this.track('trackEvent', 'Analytics', 'Disable');
+
+	localStorage.ffzTracking = enabled;
+
+	return "Analytics are now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
+}
+
+FFZ.chat_commands.analytics.help = "Usage: /ffz analytics <on|off>\nEnable or disable FrankerFaceZ analytics. We collect some data about your browser and how you use FrankerFaceZ to help us improve the script. Turn off analytics if you'd rather we not.";
+
+
+
+// --------------------
+// Tracking Helpers
+// --------------------
+
+FFZ.prototype.track = function() {
+	if ( ! this._tracking )
+		return;
+
+	window._paq && _paq.push(Array.prototype.slice.call(arguments));
+}
+
+
+FFZ.prototype.track_page = function() {
+	if ( ! this._tracking )
+		return;
+
+	if ( this._old_url )
+		this.track('setReferrerUrl', this._old_url);
+
+	this._old_url = document.location.toString();
+	this.track('setCustomUrl', this._old_url);
+
+	this.track('deleteCustomVariable', '1', 'page');
+	this.track('deleteCustomVariable', '3', 'page');
+
+	var routes = App.__container__.resolve('router:main').router.currentHandlerInfos;
+	if ( ! routes || routes.length == 0 )
+		return;
+
+	var last = routes[routes.length - 1];
+	if ( last.name == "channel.index" && last.context ) {
+		var following = last.context.get("isFollowing.isFollowing");
+		if ( following !== undefined && following !== null )
+			this.track('setCustomVariable', '1', 'Following', (following ? "Yes" : "No"), 'page');
+
+		var game = last.context.get("game");
+		if ( game )
+			this.track("setCustomVariable", "3", "Game", game, "page");
+
+		this.track("trackPageView", document.title);
+	}
+}
+},{"./constants":4}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1593,6 +1838,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 		room = this.rooms[room_id];
 
 	this.log("Menu for Room: " + room_id, room);
+	this.track('trackEvent', 'Menu', 'Open', room_id);
 
 	// Add the header and ad button.
 	var btn = document.createElement('a');
@@ -1683,7 +1929,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{}],15:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1733,7 +1979,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],16:[function(require,module,exports){
+},{"../constants":4}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype.show_notification = function(message) {
@@ -1749,7 +1995,7 @@ FFZ.prototype.show_notification = function(message) {
 FFZ.ws_commands.message = function(message) {
 	this.show_notification(message);
 }
-},{}],17:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1774,7 +2020,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],18:[function(require,module,exports){
+},{"../constants":4}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -1811,7 +2057,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":19}],19:[function(require,module,exports){
+},{"../constants":4,"../utils":22}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1842,4 +2088,4 @@ module.exports = {
 		return parts.join(".");
 	}
 }
-},{"./constants":3}]},{},[10]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":4}]},{},[12]);window.ffz = new FrankerFaceZ()}(window));

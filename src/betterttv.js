@@ -23,6 +23,7 @@ FFZ.prototype.setup_bttv = function() {
 	this.log("BetterTTV was detected. Hooking.");
 	this.has_bttv = true;
 
+	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
@@ -73,11 +74,7 @@ FFZ.prototype.setup_bttv = function() {
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
-			user = f.users[received_sender],
-			room = f.rooms[received_room];
-
-		// Get our sets.
-		var sets = _.union(user && user.sets || [], room && room.sets || [], f.global_sets),
+			sets = f.getEmotes(received_sender, received_room),
 			emotes = [];
 
 		// Build a list of emotes that match.

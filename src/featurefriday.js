@@ -17,21 +17,19 @@ FFZ.prototype.check_ff = function(tries) {
 	if ( ! tries )
 		this.log("Checking for Feature Friday data...");
 
-	var f = this;
-	jQuery.getJSON(constants.SERVER + "script/event.json")
+	jQuery.ajax(constants.SERVER + "script/event.json", {cache: false, dataType: "json", context: this})
 		.done(function(data) {
-			return f._load_ff(data);
-
+			return this._load_ff(data);
 		}).fail(function(data) {
 			if ( data.status == 404 )
-				return f._load_ff(null);
+				return this._load_ff(null);
 
 			tries = tries || 0;
 			tries++;
 			if ( tries < 10 )
-				return setTimeout(f.check_ff.bind(this, tries), 250);
+				return setTimeout(this.check_ff.bind(this, tries), 250);
 
-			return f._load_ff(null);
+			return this._load_ff(null);
 		});
 }
 
@@ -58,7 +56,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 		return;
 
 
-	var ff = this.feature_friday,
+	var ff = this.feature_friday, f = this,
 		btnc = document.createElement('div'),
 		btn = document.createElement('a');
 
@@ -75,6 +73,9 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	btn.title = message;
 	btn.target = "_new";
 	btn.innerHTML = "<span>" + message + "</span>";
+
+	// Track the number of users to click this button.
+	btn.addEventListener('click', function() { f.track('trackLink', this.href, 'link'); });
 
 	btnc.appendChild(btn);
 	parent.appendChild(btnc);
