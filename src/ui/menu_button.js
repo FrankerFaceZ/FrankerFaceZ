@@ -27,7 +27,8 @@ FFZ.prototype.update_ui_link = function(link) {
 		has_emotes = false,
 
 		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false),
-		blue = (this.has_bttv ? BetterTTV.settings.get('showBlueButtons') : false);
+		blue = (this.has_bttv ? BetterTTV.settings.get('showBlueButtons') : false),
+		live = (this.feature_friday && this.feature_friday.live);
 
 
 	// Check for emoticons.
@@ -42,6 +43,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	}
 
 	link.classList.toggle('no-emotes', ! has_emotes);
+	link.classList.toggle('live', live);
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }

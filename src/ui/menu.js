@@ -71,6 +71,8 @@ FFZ.prototype.build_ui_popup = function(view) {
 	else
 		btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
 
+	// Feature Friday!
+	this._feature_friday_ui(room_id, inner, view);
 
 	// Add the menu to the DOM.
 	this._popup = container;

@@ -35,7 +35,9 @@ FFZ.prototype.setup_line = function() {
 			el.setAttribute('data-sender', user);
 
 			f.render_badge(this);
-			f.capitalize(this, user);
+
+			if ( localStorage['ffzCapitalize'] != 'false' )
+				f.capitalize(this, user);
 
 		}
 	});
@@ -77,6 +79,23 @@ FFZ.prototype.capitalize = function(view, user) {
 	if ( name )
 		view.$('.from').text(name);
 }
+
+
+FFZ.chat_commands.capitalization = function(room, args) {
+	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
+	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
+		enabled = true;
+	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
+		enabled = false;
+
+	if ( enabled === undefined )
+		return "Chat Name Capitalization is currently " + (localStorage.ffzCapitalize != "false" ? "enabled." : "disabled.");
+
+	localStorage.ffzCapitalize = enabled;
+	return "Chat Name Capitalization is now " + (enabled ? "enabled." : "disabled.");
+}
+
+FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEnable or disable Chat Name Capitalization. This setting does not work with BetterTTV.";
 
 
 // ---------------------
@@ -122,7 +141,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: emote.name};
+		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: (emote.hidden ? "???" : emote.name)};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )

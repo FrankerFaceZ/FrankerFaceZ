@@ -74,6 +74,8 @@ require('./debug');
 
 require('./betterttv');
 
+require('./featurefriday');
+
 require('./ui/styles');
 require('./ui/notifications');
 require('./ui/viewer_count');
@@ -144,6 +146,7 @@ FFZ.prototype.setup = function(delay) {
 
 		this.find_bttv(10);
 
+		this.check_ff();
 
 	} catch(err) {
 		this.log("An error occurred while starting FrankerFaceZ: " + err);

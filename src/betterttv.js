@@ -99,7 +99,7 @@ FFZ.prototype.setup_bttv = function() {
 
 		// Why is emote parsing so bad? ;_;
 		_.each(emotes, function(emote) {
-			var eo = ['<img class="emoticon" src="' + emote.url + '" alt="' + emote.title + '" />'],
+			var eo = ['<img class="emoticon" src="' + emote.url + (emote.hidden ? "" : '" alt="' + emote.name + '" title="' + emote.name) + '" />'],
 				old_tokens = tokens;
 
 			tokens = [];

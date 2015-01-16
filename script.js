@@ -190,7 +190,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":18}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":19}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -292,7 +292,7 @@ FFZ.prototype.setup_bttv = function() {
 
 		// Why is emote parsing so bad? ;_;
 		_.each(emotes, function(emote) {
-			var eo = ['<img class="emoticon" src="' + emote.url + '" alt="' + emote.title + '" />'],
+			var eo = ['<img class="emoticon" src="' + emote.url + (emote.hidden ? "" : '" alt="' + emote.name + '" title="' + emote.name) + '" />'],
 				old_tokens = tokens;
 
 			tokens = [];
@@ -453,7 +453,9 @@ FFZ.prototype.setup_line = function() {
 			el.setAttribute('data-sender', user);
 
 			f.render_badge(this);
-			f.capitalize(this, user);
+
+			if ( localStorage['ffzCapitalize'] != 'false' )
+				f.capitalize(this, user);
 
 		}
 	});
@@ -495,6 +497,23 @@ FFZ.prototype.capitalize = function(view, user) {
 	if ( name )
 		view.$('.from').text(name);
 }
+
+
+FFZ.chat_commands.capitalization = function(room, args) {
+	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
+	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
+		enabled = true;
+	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
+		enabled = false;
+
+	if ( enabled === undefined )
+		return "Chat Name Capitalization is currently " + (localStorage.ffzCapitalize != "false" ? "enabled." : "disabled.");
+
+	localStorage.ffzCapitalize = enabled;
+	return "Chat Name Capitalization is now " + (enabled ? "enabled." : "disabled.");
+}
+
+FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEnable or disable Chat Name Capitalization. This setting does not work with BetterTTV.";
 
 
 // ---------------------
@@ -540,7 +559,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: emote.name};
+		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: (emote.hidden ? "???" : emote.name)};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )
@@ -834,7 +853,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":18}],8:[function(require,module,exports){
+},{"../constants":3,"../utils":19}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1091,7 +1110,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":18}],10:[function(require,module,exports){
+},{"./constants":3,"./utils":19}],10:[function(require,module,exports){
 // Modify Array and others.
 require('./shims');
 
@@ -1168,6 +1187,8 @@ require('./debug');
 
 require('./betterttv');
 
+require('./featurefriday');
+
 require('./ui/styles');
 require('./ui/notifications');
 require('./ui/viewer_count');
@@ -1238,6 +1259,7 @@ FFZ.prototype.setup = function(delay) {
 
 		this.find_bttv(10);
 
+		this.check_ff();
 
 	} catch(err) {
 		this.log("An error occurred while starting FrankerFaceZ: " + err);
@@ -1252,7 +1274,153 @@ FFZ.prototype.setup = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./betterttv":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/viewers":8,"./emoticons":9,"./shims":11,"./socket":12,"./ui/menu":13,"./ui/menu_button":14,"./ui/notifications":15,"./ui/styles":16,"./ui/viewer_count":17}],11:[function(require,module,exports){
+},{"./badges":1,"./betterttv":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/viewers":8,"./emoticons":9,"./featurefriday":11,"./shims":12,"./socket":13,"./ui/menu":14,"./ui/menu_button":15,"./ui/notifications":16,"./ui/styles":17,"./ui/viewer_count":18}],11:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('./constants');
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.feature_friday = null;
+
+
+// --------------------
+// Check FF
+// --------------------
+
+FFZ.prototype.check_ff = function(tries) {
+	if ( ! tries )
+		this.log("Checking for Feature Friday data...");
+
+	var f = this;
+	jQuery.getJSON(constants.SERVER + "script/event.json")
+		.done(function(data) {
+			return f._load_ff(data);
+
+		}).fail(function(data) {
+			if ( data.status == 404 )
+				return f._load_ff(null);
+
+			tries = tries || 0;
+			tries++;
+			if ( tries < 10 )
+				return setTimeout(f.check_ff.bind(this, tries), 250);
+
+			return f._load_ff(null);
+		});
+}
+
+
+FFZ.ws_commands.reload_ff = function() {
+	this.check_ff();
+}
+
+
+// --------------------
+// Rendering UI
+// --------------------
+
+FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
+	if ( ! this.feature_friday || this.feature_friday.channel == room_id )
+		return;
+
+	this._emotes_for_sets(parent, view, [this.feature_friday.set], "Feature Friday");
+
+	// Before we add the button, make sure the channel isn't the
+	// current channel.
+	var Channel = App.__container__.lookup('controller:channel');
+	if ( Channel && Channel.get('id') == this.feature_friday.channel )
+		return;
+
+
+	var ff = this.feature_friday,
+		btnc = document.createElement('div'),
+		btn = document.createElement('a');
+
+	btnc.className = 'chat-menu-content';
+	btnc.style.textAlign = 'center';
+
+	var message = ff.display_name + (ff.live ? " is live now!" : "");
+
+	btn.className = 'button primary';
+	btn.classList.toggle('live', ff.live);
+	btn.classList.toggle('blue', this.has_bttv && BetterTTV.settings.get('showBlueButtons'));
+
+	btn.href = "http://www.twitch.tv/" + ff.channel;
+	btn.title = message;
+	btn.target = "_new";
+	btn.innerHTML = "<span>" + message + "</span>";
+
+	btnc.appendChild(btn);
+	parent.appendChild(btnc);
+}
+
+
+// --------------------
+// Loading Data
+// --------------------
+
+FFZ.prototype._load_ff = function(data) {
+	// Check for previous Feature Friday data and remove it.
+	if ( this.feature_friday ) {
+		// Remove the global set, delete the data, and reset the UI link.
+		this.global_sets.removeObject(this.feature_friday.set);
+
+		var set = this.emote_sets[this.feature_friday.set];
+		if ( set )
+			set.global = false;
+
+		this.feature_friday = null;
+		this.update_ui_link();
+	}
+
+	// If there's no data, just leave.
+	if ( ! data || ! data.set || ! data.channel )
+		return;
+
+	// We have our data! Set it up.
+	this.feature_friday = {set: data.set, channel: data.channel, live: false,
+			display_name: FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this))};
+
+	// Add the set.
+	this.global_sets.push(data.set);
+	this.load_set(data.set, this._update_ff_set.bind(this));
+
+	// Check to see if the channel is live.
+	this._update_ff_live();
+}
+
+
+FFZ.prototype._update_ff_live = function() {
+	if ( ! this.feature_friday )
+		return;
+
+	var f = this;
+	Twitch.api.get("streams/" + this.feature_friday.channel)
+		.done(function(data) {
+			f.feature_friday.live = data.stream != null;
+			f.update_ui_link();
+		})
+		.always(function() {
+			f.feature_friday.timer = setTimeout(f._update_ff_live.bind(f), 120000);
+		});
+}
+
+
+FFZ.prototype._update_ff_set = function(success, set) {
+	// Prevent the set from being unloaded.
+	if ( set )
+		set.global = true;
+}
+
+
+FFZ.prototype._update_ff_name = function(name) {
+	if ( this.feature_friday )
+		this.feature_friday.display_name = name;
+}
+},{"./constants":3}],12:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -1278,7 +1446,7 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -1372,7 +1540,7 @@ FFZ.prototype.ws_send = function(func, data, callback) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1446,6 +1614,8 @@ FFZ.prototype.build_ui_popup = function(view) {
 	else
 		btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
 
+	// Feature Friday!
+	this._feature_friday_ui(room_id, inner, view);
 
 	// Add the menu to the DOM.
 	this._popup = container;
@@ -1513,7 +1683,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1543,7 +1713,8 @@ FFZ.prototype.update_ui_link = function(link) {
 		has_emotes = false,
 
 		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false),
-		blue = (this.has_bttv ? BetterTTV.settings.get('showBlueButtons') : false);
+		blue = (this.has_bttv ? BetterTTV.settings.get('showBlueButtons') : false),
+		live = (this.feature_friday && this.feature_friday.live);
 
 
 	// Check for emoticons.
@@ -1558,10 +1729,11 @@ FFZ.prototype.update_ui_link = function(link) {
 	}
 
 	link.classList.toggle('no-emotes', ! has_emotes);
+	link.classList.toggle('live', live);
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],15:[function(require,module,exports){
+},{"../constants":3}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype.show_notification = function(message) {
@@ -1577,7 +1749,7 @@ FFZ.prototype.show_notification = function(message) {
 FFZ.ws_commands.message = function(message) {
 	this.show_notification(message);
 }
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1602,7 +1774,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],17:[function(require,module,exports){
+},{"../constants":3}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -1639,7 +1811,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":18}],18:[function(require,module,exports){
+},{"../constants":3,"../utils":19}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
