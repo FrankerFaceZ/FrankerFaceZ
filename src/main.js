@@ -70,12 +70,14 @@ require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
+//require('./ember/teams');
 
 require('./tracking');
 
 require('./debug');
 
-require('./betterttv');
+require('./ext/betterttv');
+require('./ext/emote_menu');
 
 require('./featurefriday');
 
@@ -113,11 +115,11 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return;
 	}
 
-	this.setup(delay);
+	this.setup_ember(delay);
 }
 
 
-FFZ.prototype.setup = function(delay) {
+FFZ.prototype.setup_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -129,40 +131,28 @@ FFZ.prototype.setup = function(delay) {
 			localStorage.removeItem(key);
 	}
 
-	// Store the capitalization of our own name.
-	var user = this.get_user();
-	if ( user && user.name )
-		FFZ.capitalization[user.login] = [user.name, Date.now()];
-
-
 	// Initialize all the modules.
-	try {
-		this.ws_create();
-		this.setup_emoticons();
-		this.setup_badges();
+	this.ws_create();
+	this.setup_emoticons();
+	this.setup_badges();
 
-		this.setup_piwik();
+	this.setup_piwik();
 
-		this.setup_router();
-		this.setup_room();
-		this.setup_line();
-		this.setup_chatview();
-		this.setup_viewers();
+	this.setup_router();
+	this.setup_room();
+	this.setup_line();
+	this.setup_chatview();
+	this.setup_viewers();
 
-		this.setup_css();
-		this.setup_menu();
+	//this.setup_teams();
 
-		this.find_bttv(10);
+	this.setup_css();
+	this.setup_menu();
 
-		this.check_ff();
+	this.find_bttv(10);
+	this.find_emote_menu(10);
 
-	} catch(err) {
-		this.log("An error occurred while starting FrankerFaceZ: " + err);
-		return;
-	}
-
-	if ( window.console && console.time )
-		console.timeEnd("FrankerFaceZ Initialization");
+	this.check_ff();
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;

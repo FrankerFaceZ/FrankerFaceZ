@@ -147,12 +147,12 @@ FFZ.prototype.render_badge = function(view) {
 // --------------------
 
 FFZ.prototype._legacy_add_donors = function(tries) {
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "http://cdn.frankerfacez.com/channel/global/donoricon.png"};
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Developer Badges
 	// TODO: Upload the badge to the proper CDN.
-	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "http://sir.stendec.me/devicon.png"};
+	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
 	this.users.sirstendec = {badges: {0: {id:0}}};
 
@@ -190,141 +190,12 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":4,"./utils":22}],2:[function(require,module,exports){
-var FFZ = window.FrankerFaceZ,
-	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
-
-
-// --------------------
-// Initialization
-// --------------------
-
-FFZ.prototype.find_bttv = function(increment, delay) {
-	this.has_bttv = false;
-	if ( window.BTTVLOADED )
-		return this.setup_bttv();
-
-	if ( delay >= 60000 )
-		this.log("BetterTTV was not detected after 60 seconds.");
-	else
-		setTimeout(this.find_bttv.bind(this, increment, (delay||0) + increment),
-			increment);
-}
-
-
-FFZ.prototype.setup_bttv = function() {
-	this.log("BetterTTV was detected. Hooking.");
-	this.has_bttv = true;
-
-	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
-
-	// Send Message Behavior
-	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
-	BetterTTV.chat.helpers.sendMessage = function(message) {
-		var cmd = message.split(' ', 1)[0].toLowerCase();
-
-		if ( cmd === "/ffz" )
-			f.run_command(message.substr(5), BetterTTV.chat.store.currentRoom);
-		else
-			return original_send(message);
-	}
-
-
-	// Ugly Hack for Current Room
-	var original_handler = BetterTTV.chat.handlers.privmsg,
-		received_room;
-	BetterTTV.chat.handlers.privmsg = function(room, data) {
-		received_room = room;
-		var output = original_handler(room, data);
-		received_room = null;
-		return output;
-	}
-
-
-	// Message Display Behavior
-	var original_privmsg = BetterTTV.chat.templates.privmsg;
-	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
-		// Handle badges.
-		f.bttv_badges(data);
-
-		var output = original_privmsg(highlight, action, server, isMod, data);
-		return output.replace(SENDER_REGEX, '$1 data-room="' + received_room + '"');
-	}
-
-
-	// Ugly Hack for Current Sender
-	var original_template = BetterTTV.chat.templates.message,
-		received_sender;
-	BetterTTV.chat.templates.message = function(sender, message, emotes, colored) {
-		received_sender = sender;
-		var output = original_template(sender, message, emotes, colored);
-		received_sender = null;
-		return output;
-	}
-
-
-	// Emoticonize
-	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
-	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
-		var tokens = original_emoticonize(message, emotes),
-			sets = f.getEmotes(received_sender, received_room),
-			emotes = [];
-
-		// Build a list of emotes that match.
-		_.each(sets, function(set_id) {
-			var set = f.emote_sets[set_id];
-			if ( ! set )
-				return;
-
-			_.each(set.emotes, function(emote) {
-				_.any(tokens, function(token) {
-					return _.isString(token) && token.match(emote.regex);
-				}) && emotes.push(emote);
-			});
-		});
-
-		// Don't bother proceeding if we have no emotes.
-		if ( ! emotes.length )
-			return tokens;
-
-		// Why is emote parsing so bad? ;_;
-		_.each(emotes, function(emote) {
-			var eo = ['<img class="emoticon" src="' + emote.url + (emote.hidden ? "" : '" alt="' + emote.name + '" title="' + emote.name) + '" />'],
-				old_tokens = tokens;
-
-			tokens = [];
-
-			if ( ! old_tokens || ! old_tokens.length )
-				return tokens;
-
-			for(var i=0; i < old_tokens.length; i++) {
-				var token = old_tokens[i];
-				if ( typeof token != "string" ) {
-					tokens.push(token);
-					continue;
-				}
-
-				var tbits = token.split(emote.regex);
-				tbits.forEach(function(val, ind) {
-					if ( val && val.length )
-						tokens.push(val);
-
-					if ( ind !== tbits.length - 1 )
-						tokens.push(eo);
-				});
-			}
-		});
-
-		return tokens;
-	}
-
-	this.update_ui_link();
-}
-},{}],3:[function(require,module,exports){
+},{"./constants":3,"./utils":23}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
+
 // -----------------
-// Mass Unmod
+// Mass Moderation
 // -----------------
 
 FFZ.chat_commands.massunmod = function(room, args) {
@@ -380,7 +251,7 @@ FFZ.chat_commands.massmod = function(room, args) {
 }
 
 FFZ.chat_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
 	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev');
 
@@ -392,7 +263,7 @@ module.exports = {
 	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
 	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>'
 }
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -416,7 +287,7 @@ FFZ.chat_commands.developer_mode = function(room, args) {
 
 FFZ.chat_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -472,7 +343,7 @@ FFZ.prototype._modify_cview = function(view) {
 		})
 	});
 }
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -516,6 +387,11 @@ FFZ.prototype.setup_line = function() {
 
 		}
 	});
+
+	// Store the capitalization of our own name.
+	var user = this.get_user();
+	if ( user && user.name )
+		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
 
 
@@ -528,6 +404,9 @@ FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
 	name = name.toLowerCase();
+	if ( name == "jtv" || name == "twitchnotify" )
+		return name;
+
 	var old_data = FFZ.capitalization[name];
 	if ( old_data ) {
 		if ( Date.now() - old_data[1] < 3600000 )
@@ -632,7 +511,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -914,7 +793,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":4,"../utils":22}],9:[function(require,module,exports){
+},{"../constants":3,"../utils":23}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -932,7 +811,7 @@ FFZ.prototype.setup_router = function() {
 		}.on('didTransition')
 	});
 }
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1025,9 +904,10 @@ FFZ.prototype._modify_viewers = function(controller) {
 		}.property("content.chatters")
 	});
 }
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
+	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
@@ -1201,7 +1081,7 @@ FFZ.prototype._legacy_load_set = function(set_id, callback, tries) {
 FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 	var emotes = {}, output = {id: set_id, emotes: emotes, extra_css: null}, f = this;
 
-	data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
+	data = data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
 		height = parseInt(height); width = parseInt(width);
 		margins = check_margins(margins, height);
 		var hidden = path.substr(path.lastIndexOf("/") + 1, 1) === ".",
@@ -1210,11 +1090,224 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 		emotes[id] = emote;
 		return "";
-	});
+	}).trim();
+
+	if ( data )
+		data.replace(MOD_CSS, function(match, url) {
+			if ( output.icon || url.substr(-11) !== 'modicon.png' )
+				return;
+
+			output.icon = url;
+		});
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":4,"./utils":22}],12:[function(require,module,exports){
+},{"./constants":3,"./utils":23}],11:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.find_bttv = function(increment, delay) {
+	this.has_bttv = false;
+	if ( window.BTTVLOADED )
+		return this.setup_bttv(delay||0);
+
+	if ( delay >= 60000 )
+		this.log("BetterTTV was not detected after 60 seconds.");
+	else
+		setTimeout(this.find_bttv.bind(this, increment, (delay||0) + increment),
+			increment);
+}
+
+
+FFZ.prototype.setup_bttv = function(delay) {
+	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
+	this.has_bttv = true;
+
+	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
+
+	// Send Message Behavior
+	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
+	BetterTTV.chat.helpers.sendMessage = function(message) {
+		var cmd = message.split(' ', 1)[0].toLowerCase();
+
+		if ( cmd === "/ffz" )
+			f.run_command(message.substr(5), BetterTTV.chat.store.currentRoom);
+		else
+			return original_send(message);
+	}
+
+
+	// Ugly Hack for Current Room
+	var original_handler = BetterTTV.chat.handlers.privmsg,
+		received_room;
+	BetterTTV.chat.handlers.privmsg = function(room, data) {
+		received_room = room;
+		var output = original_handler(room, data);
+		received_room = null;
+		return output;
+	}
+
+
+	// Message Display Behavior
+	var original_privmsg = BetterTTV.chat.templates.privmsg;
+	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
+		// Handle badges.
+		f.bttv_badges(data);
+
+		var output = original_privmsg(highlight, action, server, isMod, data);
+		return output.replace(SENDER_REGEX, '$1 data-room="' + received_room + '"');
+	}
+
+
+	// Ugly Hack for Current Sender
+	var original_template = BetterTTV.chat.templates.message,
+		received_sender;
+	BetterTTV.chat.templates.message = function(sender, message, emotes, colored) {
+		received_sender = sender;
+		var output = original_template(sender, message, emotes, colored);
+		received_sender = null;
+		return output;
+	}
+
+
+	// Emoticonize
+	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
+	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
+		var tokens = original_emoticonize(message, emotes),
+			sets = f.getEmotes(received_sender, received_room),
+			emotes = [];
+
+		// Build a list of emotes that match.
+		_.each(sets, function(set_id) {
+			var set = f.emote_sets[set_id];
+			if ( ! set )
+				return;
+
+			_.each(set.emotes, function(emote) {
+				_.any(tokens, function(token) {
+					return _.isString(token) && token.match(emote.regex);
+				}) && emotes.push(emote);
+			});
+		});
+
+		// Don't bother proceeding if we have no emotes.
+		if ( ! emotes.length )
+			return tokens;
+
+		// Why is emote parsing so bad? ;_;
+		_.each(emotes, function(emote) {
+			var eo = ['<img class="emoticon" src="' + emote.url + (emote.hidden ? "" : '" alt="' + emote.name + '" title="' + emote.name) + '" />'],
+				old_tokens = tokens;
+
+			tokens = [];
+
+			if ( ! old_tokens || ! old_tokens.length )
+				return tokens;
+
+			for(var i=0; i < old_tokens.length; i++) {
+				var token = old_tokens[i];
+				if ( typeof token != "string" ) {
+					tokens.push(token);
+					continue;
+				}
+
+				var tbits = token.split(emote.regex);
+				tbits.forEach(function(val, ind) {
+					if ( val && val.length )
+						tokens.push(val);
+
+					if ( ind !== tbits.length - 1 )
+						tokens.push(eo);
+				});
+			}
+		});
+
+		return tokens;
+	}
+
+	this.update_ui_link();
+}
+},{}],12:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.find_emote_menu = function(increment, delay) {
+	this.has_emote_menu = false;
+	if ( window.emoteMenu && emoteMenu.registerEmoteGetter )
+		return this.setup_emote_menu(delay||0);
+
+	if ( delay >= 60000 )
+		this.log("Emote Menu for Twitch was not detected after 60 seconds.");
+	else
+		setTimeout(this.find_emote_menu.bind(this, increment, (delay||0) + increment),
+			increment);
+}
+
+
+FFZ.prototype.setup_emote_menu = function(delay) {
+	this.log("Emote Menu for Twitch was detected after " + delay + "ms. Registering emote enumerator.");
+	emoteMenu.registerEmoteGetter("FrankerFaceZ", this._emote_menu_enumerator.bind(this));
+}
+
+
+// --------------------
+// Emote Enumerator
+// --------------------
+
+FFZ.prototype._emote_menu_enumerator = function() {
+	var twitch_user = this.get_user(),
+		user_id = twitch_user ? twitch_user.login : null,
+		controller = App.__container__.lookup('controller:chat'),
+		room_id = controller ? controller.get('currentRoom.id') : null,
+		sets = this.getEmotes(user_id, room_id),
+		emotes = [];
+
+	for(var x = 0; x < sets.length; x++) {
+		var set = this.emote_sets[sets[x]];
+		if ( ! set || ! set.emotes )
+			continue;
+
+		for(var emote_id in set.emotes) {
+			if ( ! set.emotes.hasOwnProperty(emote_id) )
+				continue;
+
+			var emote = set.emotes[emote_id];
+			if ( emote.hidden )
+				continue;
+
+			// TODO: Stop having to calculate this here.
+			var title = set.title, badge = set.icon || null;
+			if ( ! title ) {
+				if ( set.id == "global" )
+					title = "FrankerFaceZ Global Emotes";
+
+				else if ( set.id == "globalevent" )
+					title = "FrankerFaceZ Event Emotes";
+
+				else if ( this.feature_friday && set.id == this.feature_friday.set )
+					title = "FrankerFaceZ Feature Friday: " + this.feature_friday.channel;
+
+				else
+					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);
+			}
+
+			emotes.push({text: emote.name, url: emote.url,
+				hidden: false, channel: title, badge: badge});
+		}
+	}
+
+	return emotes;
+}
+},{}],13:[function(require,module,exports){
 // Modify Array and others.
 require('./shims');
 
@@ -1287,12 +1380,14 @@ require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
+//require('./ember/teams');
 
 require('./tracking');
 
 require('./debug');
 
-require('./betterttv');
+require('./ext/betterttv');
+require('./ext/emote_menu');
 
 require('./featurefriday');
 
@@ -1330,11 +1425,11 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return;
 	}
 
-	this.setup(delay);
+	this.setup_ember(delay);
 }
 
 
-FFZ.prototype.setup = function(delay) {
+FFZ.prototype.setup_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -1346,47 +1441,35 @@ FFZ.prototype.setup = function(delay) {
 			localStorage.removeItem(key);
 	}
 
-	// Store the capitalization of our own name.
-	var user = this.get_user();
-	if ( user && user.name )
-		FFZ.capitalization[user.login] = [user.name, Date.now()];
-
-
 	// Initialize all the modules.
-	try {
-		this.ws_create();
-		this.setup_emoticons();
-		this.setup_badges();
+	this.ws_create();
+	this.setup_emoticons();
+	this.setup_badges();
 
-		this.setup_piwik();
+	this.setup_piwik();
 
-		this.setup_router();
-		this.setup_room();
-		this.setup_line();
-		this.setup_chatview();
-		this.setup_viewers();
+	this.setup_router();
+	this.setup_room();
+	this.setup_line();
+	this.setup_chatview();
+	this.setup_viewers();
 
-		this.setup_css();
-		this.setup_menu();
+	//this.setup_teams();
 
-		this.find_bttv(10);
+	this.setup_css();
+	this.setup_menu();
 
-		this.check_ff();
+	this.find_bttv(10);
+	this.find_emote_menu(10);
 
-	} catch(err) {
-		this.log("An error occurred while starting FrankerFaceZ: " + err);
-		return;
-	}
-
-	if ( window.console && console.time )
-		console.timeEnd("FrankerFaceZ Initialization");
+	this.check_ff();
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./betterttv":2,"./commands":3,"./debug":5,"./ember/chatview":6,"./ember/line":7,"./ember/room":8,"./ember/router":9,"./ember/viewers":10,"./emoticons":11,"./featurefriday":13,"./shims":14,"./socket":15,"./tracking":16,"./ui/menu":17,"./ui/menu_button":18,"./ui/notifications":19,"./ui/styles":20,"./ui/viewer_count":21}],13:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/router":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./shims":15,"./socket":16,"./tracking":17,"./ui/menu":18,"./ui/menu_button":19,"./ui/notifications":20,"./ui/styles":21,"./ui/viewer_count":22}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1533,7 +1616,7 @@ FFZ.prototype._update_ff_name = function(name) {
 	if ( this.feature_friday )
 		this.feature_friday.display_name = name;
 }
-},{"./constants":4}],14:[function(require,module,exports){
+},{"./constants":3}],15:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -1559,7 +1642,7 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -1577,6 +1660,7 @@ FFZ.prototype.ws_create = function() {
 
 	this._ws_last_req = 0;
 	this._ws_callbacks = {};
+	this._ws_pending = this._ws_pending || [];
 
 	var ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
 
@@ -1592,6 +1676,15 @@ FFZ.prototype.ws_create = function() {
 		// Send the current rooms.
 		for(var room_id in f.rooms)
 			f.ws_send("sub", room_id);
+
+		// Send any pending commands.
+		var pending = f._ws_pending;
+		f._ws_pending = [];
+
+		for(var i=0; i < pending.length; i++) {
+			var d = pending[i];
+			f.ws_send(d[0], d[1], d[2]);
+		}
 	}
 
 	ws.onclose = function(e) {
@@ -1641,8 +1734,15 @@ FFZ.prototype.ws_create = function() {
 }
 
 
-FFZ.prototype.ws_send = function(func, data, callback) {
-	if ( ! this._ws_open ) return false;
+FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
+	if ( ! this._ws_open ) {
+		if ( can_wait ) {
+			var pending = this._ws_pending = this._ws_pending || [];
+			pending.push([func, data, callback]);
+			return true;
+		} else
+			return false;
+	}
 
 	var request = ++this._ws_last_req;
 	data = data !== undefined ? " " + JSON.stringify(data) : "";
@@ -1653,7 +1753,7 @@ FFZ.prototype.ws_send = function(func, data, callback) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	PIWIK = ("https:" == document.location.protocol ? 'https:' : 'http:') + '//sir.stendec.me/ffz_piwik/';
@@ -1785,7 +1885,7 @@ FFZ.prototype.track_page = function() {
 		this.track("trackPageView", document.title);
 	}
 }
-},{"./constants":4}],17:[function(require,module,exports){
+},{"./constants":3}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1929,7 +2029,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -1952,7 +2052,8 @@ FFZ.prototype.build_ui_link = function(view) {
 FFZ.prototype.update_ui_link = function(link) {
 	var controller = App.__container__.lookup('controller:chat');
 	link = link || document.querySelector('a.ffz-ui-toggle');
-	if ( !link || !controller ) return this.log("No button.");
+	if ( !link || !controller )
+		return;
 
 	var room_id = controller.get('currentRoom.id'),
 		room = this.rooms[room_id],
@@ -1979,7 +2080,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":4}],19:[function(require,module,exports){
+},{"../constants":3}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype.show_notification = function(message) {
@@ -1995,7 +2096,7 @@ FFZ.prototype.show_notification = function(message) {
 FFZ.ws_commands.message = function(message) {
 	this.show_notification(message);
 }
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -2020,7 +2121,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":4}],21:[function(require,module,exports){
+},{"../constants":3}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -2057,7 +2158,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":4,"../utils":22}],22:[function(require,module,exports){
+},{"../constants":3,"../utils":23}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -2088,4 +2189,4 @@ module.exports = {
 		return parts.join(".");
 	}
 }
-},{"./constants":4}]},{},[12]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":3}]},{},[13]);window.ffz = new FrankerFaceZ()}(window));

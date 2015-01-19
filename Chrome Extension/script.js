@@ -18,7 +18,7 @@ function ffz_init()
 		// we include the script, otherwise someone could break their
 		// experience and not be able to recover.
 		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "http://localhost:8000/dev_server", true);
+		xhr.open("GET", "//localhost:8000/dev_server", true);
 		xhr.onload = function(e) {
 			var resp = JSON.parse(xhr.responseText);
 			console.log("FFZ: Development Server is present. Version " + resp.version + " running from: " + resp.path);

@@ -15,6 +15,7 @@ FFZ.prototype.ws_create = function() {
 
 	this._ws_last_req = 0;
 	this._ws_callbacks = {};
+	this._ws_pending = this._ws_pending || [];
 
 	var ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
 
@@ -30,6 +31,15 @@ FFZ.prototype.ws_create = function() {
 		// Send the current rooms.
 		for(var room_id in f.rooms)
 			f.ws_send("sub", room_id);
+
+		// Send any pending commands.
+		var pending = f._ws_pending;
+		f._ws_pending = [];
+
+		for(var i=0; i < pending.length; i++) {
+			var d = pending[i];
+			f.ws_send(d[0], d[1], d[2]);
+		}
 	}
 
 	ws.onclose = function(e) {
@@ -79,8 +89,15 @@ FFZ.prototype.ws_create = function() {
 }
 
 
-FFZ.prototype.ws_send = function(func, data, callback) {
-	if ( ! this._ws_open ) return false;
+FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
+	if ( ! this._ws_open ) {
+		if ( can_wait ) {
+			var pending = this._ws_pending = this._ws_pending || [];
+			pending.push([func, data, callback]);
+			return true;
+		} else
+			return false;
+	}
 
 	var request = ++this._ws_last_req;
 	data = data !== undefined ? " " + JSON.stringify(data) : "";

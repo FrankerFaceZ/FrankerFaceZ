@@ -9,7 +9,7 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype.find_bttv = function(increment, delay) {
 	this.has_bttv = false;
 	if ( window.BTTVLOADED )
-		return this.setup_bttv();
+		return this.setup_bttv(delay||0);
 
 	if ( delay >= 60000 )
 		this.log("BetterTTV was not detected after 60 seconds.");
@@ -19,8 +19,8 @@ FFZ.prototype.find_bttv = function(increment, delay) {
 }
 
 
-FFZ.prototype.setup_bttv = function() {
-	this.log("BetterTTV was detected. Hooking.");
+FFZ.prototype.setup_bttv = function(delay) {
+	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
 	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());

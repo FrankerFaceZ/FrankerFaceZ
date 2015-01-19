@@ -20,7 +20,8 @@ FFZ.prototype.build_ui_link = function(view) {
 FFZ.prototype.update_ui_link = function(link) {
 	var controller = App.__container__.lookup('controller:chat');
 	link = link || document.querySelector('a.ffz-ui-toggle');
-	if ( !link || !controller ) return this.log("No button.");
+	if ( !link || !controller )
+		return;
 
 	var room_id = controller.get('currentRoom.id'),
 		room = this.rooms[room_id],

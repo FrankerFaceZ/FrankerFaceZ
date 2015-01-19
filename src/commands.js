@@ -1,7 +1,8 @@
 var FFZ = window.FrankerFaceZ;
 
+
 // -----------------
-// Mass Unmod
+// Mass Moderation
 // -----------------
 
 FFZ.chat_commands.massunmod = function(room, args) {

@@ -146,12 +146,12 @@ FFZ.prototype.render_badge = function(view) {
 // --------------------
 
 FFZ.prototype._legacy_add_donors = function(tries) {
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "http://cdn.frankerfacez.com/channel/global/donoricon.png"};
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Developer Badges
 	// TODO: Upload the badge to the proper CDN.
-	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "http://sir.stendec.me/devicon.png"};
+	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
 	this.users.sirstendec = {badges: {0: {id:0}}};
 

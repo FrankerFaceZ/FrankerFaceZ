@@ -41,6 +41,11 @@ FFZ.prototype.setup_line = function() {
 
 		}
 	});
+
+	// Store the capitalization of our own name.
+	var user = this.get_user();
+	if ( user && user.name )
+		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
 
 
@@ -53,6 +58,9 @@ FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
 	name = name.toLowerCase();
+	if ( name == "jtv" || name == "twitchnotify" )
+		return name;
+
 	var old_data = FFZ.capitalization[name];
 	if ( old_data ) {
 		if ( Date.now() - old_data[1] < 3600000 )

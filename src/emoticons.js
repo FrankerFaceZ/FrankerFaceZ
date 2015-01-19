@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
+	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
@@ -173,7 +174,7 @@ FFZ.prototype._legacy_load_set = function(set_id, callback, tries) {
 FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 	var emotes = {}, output = {id: set_id, emotes: emotes, extra_css: null}, f = this;
 
-	data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
+	data = data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
 		height = parseInt(height); width = parseInt(width);
 		margins = check_margins(margins, height);
 		var hidden = path.substr(path.lastIndexOf("/") + 1, 1) === ".",
@@ -182,7 +183,15 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 		emotes[id] = emote;
 		return "";
-	});
+	}).trim();
+
+	if ( data )
+		data.replace(MOD_CSS, function(match, url) {
+			if ( output.icon || url.substr(-11) !== 'modicon.png' )
+				return;
+
+			output.icon = url;
+		});
 
 	this._load_set_json(set_id, callback, output);
 }
