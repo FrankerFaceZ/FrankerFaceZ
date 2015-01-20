@@ -129,3 +129,11 @@
 	background-position: 115% -75%;
 	background-size: 50%;
 }
+
+.ffz-live-team-channel .ffz-game {
+	display: inline-block;
+	max-width: 150px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	margin-bottom: -5px;
+}
