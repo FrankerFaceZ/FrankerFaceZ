@@ -159,14 +159,14 @@ FFZ.prototype._legacy_load_set = function(set_id, callback, tries) {
 
 		}).fail(function(data) {
 			if ( data.status == 404 )
-				return callback && callback(false);
+				return typeof callback == "function" && callback(false);
 
 			tries = tries || 0;
 			tries++;
 			if ( tries < 10 )
 				return this._legacy_load_set(set_id, callback, tries);
 
-			return callback && callback(false);
+			return typeof callback == "function" && callback(false);
 		});
 }
 

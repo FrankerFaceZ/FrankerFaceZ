@@ -1,4 +1,8 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+
+	reg_escape = function(str) {
+		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+	};
 
 
 // ---------------------
@@ -14,7 +18,13 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
-			return f._emoticonize(this, this._super());
+			var tokens = f._emoticonize(this, this._super()),
+				user = f.get_user();
+
+			if ( ! user || this.get("model.from") != user.login )
+				tokens = f._mentionize(this, tokens);
+
+			return tokens;
 
 		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
 		// TODO: Copy the new properties from the new Twitch!
@@ -36,7 +46,7 @@ FFZ.prototype.setup_line = function() {
 
 			f.render_badge(this);
 
-			if ( localStorage['ffzCapitalize'] != 'false' )
+			if ( localStorage.ffzCapitalize != 'false' )
 				f.capitalize(this, user);
 
 		}
@@ -46,6 +56,12 @@ FFZ.prototype.setup_line = function() {
 	var user = this.get_user();
 	if ( user && user.name )
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
+
+	// Load the mention words.
+	if ( localStorage.ffzMentionize )
+		this.mention_words = JSON.parse(localStorage.ffzMentionize);
+	else
+		this.mention_words = [];
 }
 
 
@@ -74,7 +90,7 @@ FFZ.get_capitalization = function(name, callback) {
 				var cap_name = data.display_name || name;
 				FFZ.capitalization[name] = [cap_name, Date.now()];
 				FFZ._cap_fetching--;
-				callback && callback(cap_name);
+				typeof callback === "function" && callback(cap_name);
 			});
 	}
 
@@ -104,6 +120,63 @@ FFZ.chat_commands.capitalization = function(room, args) {
 }
 
 FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEnable or disable Chat Name Capitalization. This setting does not work with BetterTTV.";
+
+
+// ---------------------
+// Extra Mentions
+// ---------------------
+
+FFZ._regex_cache = {};
+
+FFZ.get_regex = function(word) {
+	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "i");
+}
+
+
+FFZ.prototype._mentionize = function(controller, tokens) {
+	if ( ! this.mention_words )
+		return tokens;
+
+	if ( typeof tokens == "string" )
+		tokens = [tokens];
+
+	_.each(this.mention_words, function(word) {
+		var eo = {mentionedUser: word, own: false};
+
+		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
+			if ( _.isObject(token) )
+				return token;
+
+			var tbits = token.split(FFZ.get_regex(word)), bits = [];
+			tbits.forEach(function(val, ind) {
+				bits.push(val);
+				if ( ind !== tbits.length - 1 )
+					bits.push(eo);
+			});
+			return bits;
+		})));
+	});
+
+	return tokens;
+}
+
+
+FFZ.chat_commands.mentionize = function(room, args) {
+	if ( args && args.length ) {
+		this.mention_words = args.join(" ").trim().split(/\W*,\W*/);
+		if ( this.mention_words.length == 1 && this.mention_words[0] == "disable" )
+			this.mention_words = [];
+
+		localStorage.ffzMentionize = JSON.stringify(this.mention_words);
+	}
+
+	if ( this.mention_words.length )
+		return "The following words will be treated as mentions: " + this.mention_words.join(", ");
+	else
+		return "There are no words set that will be treated as mentions.";
+}
+
+FFZ.chat_commands.mentionize.help = "Usage: /ffz mentionize <comma, separated, word, list|disable>\nSet a list of words that will also be treated as mentions and be displayed specially in chat.";
 
 
 // ---------------------

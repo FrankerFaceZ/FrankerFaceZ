@@ -211,6 +211,7 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 FFZ.prototype._modify_room = function(room) {
 	var f = this;
 	room.reopen({
+		// Track which rooms the user is currently in.
 		init: function() {
 			this._super();
 			f.add_room(this.id, this);
@@ -219,6 +220,18 @@ FFZ.prototype._modify_room = function(room) {
 		willDestroy: function() {
 			this._super();
 			f.remove_room(this.id);
+		},
+
+		getSuggestions: function() {
+			// This returns auto-complete suggestions for use in chat. We want
+			// to apply our capitalizations here. Overriding the
+			// filteredSuggestions property of the chat-input component would
+			// be even better, but I was already hooking the room model.
+			var suggestions = this._super();
+			if ( localStorage.ffzCapitalize != 'false' )
+				suggestions = _.map(suggestions, FFZ.get_capitalization);
+
+			return suggestions;
 		},
 
 		send: function(text) {
