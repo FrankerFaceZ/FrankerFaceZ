@@ -137,3 +137,47 @@
 	overflow: hidden;
 	margin-bottom: -5px;
 }
+
+/* Theater Mode hover bar */
+
+.app-main.theatre .player-column:focus .stats-and-actions, .app-main.theatre .player-column:hover .stats-and-actions {
+	background-color: #19191f;
+
+	color: #aaa;
+
+	position: absolute;
+	bottom: 10px;
+	right: 10px;
+	z-index: 7;
+	padding: 10px;
+	opacity: 0.95;
+}
+
+.app-main.theatre .channel-stats .stat { color: #aaa; }
+
+.app-main.theatre .channel-stats span:not(.live-count) svg path {
+	fill: rgba(255,255,255,0.35) !important;
+}
+
+.app-main.theatre .follow-button .notify:before, .app-main.theatre .button.drop:after, .app-main.theatre .follow-button .drop.follow:after {
+	border: 5px solid rgba(255,255,255,0.35);
+	border-left-color: transparent;
+	border-right-color: transparent;
+	border-bottom-color: transparent;
+}
+
+.app-main.theatre .follow-button .notify {
+	background-color: #25252a;
+}
+
+.app-main.theatre .button {
+	color: #a68ed2;
+}
+
+.app-main.theatre .button.glyph-only svg path {
+	fill: #a68ed2;
+}
+
+.app-main.theatre .button.primary.subscribe-button {
+	color: #fff;
+}
