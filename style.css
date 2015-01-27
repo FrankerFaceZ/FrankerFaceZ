@@ -59,6 +59,7 @@
 .ffz-button {
 	float: right;
 	margin-top: -6px;
+	text-transform: none;
 }
 
 .ffz-noty .noty_message {
@@ -147,7 +148,8 @@
 
 	position: absolute;
 	bottom: 10px;
-	right: 10px;
+	margin-right: 150px;
+	left: 10px;
 	z-index: 7;
 	padding: 10px;
 	opacity: 0.95;

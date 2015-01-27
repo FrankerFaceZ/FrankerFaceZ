@@ -1742,13 +1742,20 @@ FFZ.ws_commands = {};
 // ----------------
 
 FFZ.prototype.ws_create = function() {
-	var f = this;
+	var f = this, ws;
 
 	this._ws_last_req = 0;
 	this._ws_callbacks = {};
 	this._ws_pending = this._ws_pending || [];
 
-	var ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+	try {
+		ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+	} catch(err) {
+		this._ws_exists = false;
+		return this.log("Error Creating WebSocket: " + err);
+	}
+
+	this._ws_exists = true;
 
 	ws.onopen = function(e) {
 		f._ws_open = true;
@@ -2041,10 +2048,18 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
 
-	if ( c === 0 )
-		btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
-	else
-		btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+	if ( ! this._ws_exists ) {
+		btn.className = "button ffz-button primary";
+		btn.innerHTML = "Server Error";
+		btn.title = "FFZ Server Error";
+		btn.addEventListener('click', alert.bind(window, "The FrankerFaceZ client was unable to create a WebSocket to communicate with the FrankerFaceZ server.\n\nThis is most likely due to your browser's configuration either disabling WebSockets entirely or limiting the number of simultaneous connections. Please ensure that WebSockets have not been disabled."));
+
+	} else {
+		if ( c === 0 )
+			btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
+		else
+			btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+	}
 
 	// Feature Friday!
 	this._feature_friday_ui(room_id, inner, view);

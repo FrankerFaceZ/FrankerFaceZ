@@ -11,13 +11,20 @@ FFZ.ws_commands = {};
 // ----------------
 
 FFZ.prototype.ws_create = function() {
-	var f = this;
+	var f = this, ws;
 
 	this._ws_last_req = 0;
 	this._ws_callbacks = {};
 	this._ws_pending = this._ws_pending || [];
 
-	var ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+	try {
+		ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+	} catch(err) {
+		this._ws_exists = false;
+		return this.log("Error Creating WebSocket: " + err);
+	}
+
+	this._ws_exists = true;
 
 	ws.onopen = function(e) {
 		f._ws_open = true;
