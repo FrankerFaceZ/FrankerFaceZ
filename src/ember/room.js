@@ -228,7 +228,7 @@ FFZ.prototype._modify_room = function(room) {
 			// filteredSuggestions property of the chat-input component would
 			// be even better, but I was already hooking the room model.
 			var suggestions = this._super();
-			if ( localStorage.ffzCapitalize != 'false' )
+			if ( this.settings.capitalize )
 				suggestions = _.map(suggestions, FFZ.get_capitalization);
 
 			return suggestions;

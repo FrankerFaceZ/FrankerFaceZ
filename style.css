@@ -54,7 +54,6 @@
 
 
 .ember-chat .chat-menu.ffz-ui-popup { padding: 0; }
-.ffz-ui-popup .emoticon-selector-box { overflow-y: auto; }
 
 .ffz-button {
 	float: right;
@@ -69,8 +68,6 @@
 	padding-left: 42px !important;
 	text-align: left;
 }
-
-.ember-chat .badges .ffz-dev { background: #ccad00 url("http://cdn.frankerfacez.com/channel/global/donoricon.png"); }
 
 .ffz-ui-popup .button.live { overflow: hidden; background: #6441A5; color: #fff; }
 .ffz-ui-popup .button.live span { z-index: 2; position: relative; }
@@ -182,4 +179,247 @@
 
 .app-main.theatre .button.primary.subscribe-button {
 	color: #fff;
+}
+
+
+/* SRL Race Support */
+
+#ffz-ui-race {
+	position: relative;
+}
+
+#ffz-ui-race .button span {
+	display: inline-block;
+	height: 30px;
+	background: no-repeat 0 50%;
+}
+
+#ffz-ui-race .button span.logo {
+	padding-left: 44px;
+	background-image: url("//cdn.frankerfacez.com/channel/global/srl_button.png");
+}
+
+
+#ffz-race-popup {
+	position: absolute;
+	bottom: 5px;
+	background-image: url("//cdn.frankerfacez.com/channel/602race/zreknarf.png");
+	background-repeat: no-repeat;
+	background-position: 115% 110%;
+}
+
+#ffz-race-popup.right { right: 10px; }
+
+#ffz-race-popup .heading {
+	margin: -20px -20px 20px;
+	width: 340px; height: 65px;
+	position: relative;
+}
+
+#ffz-race-popup .heading div {
+	padding: 10px 0 0 20px;
+	max-width: 240px;
+}
+
+#ffz-race-popup .heading h2 {
+	font-size: 1.5em;
+	padding-bottom: 5px;
+	display: block;
+	width: 240px;
+	max-height: 45px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#ffz-race-popup .heading span {
+	line-height: 30px;
+	position: absolute;
+	top: 17.5px;
+	right: 20px;
+	padding: 0 5px;
+	background: rgba(0,0,0,0.5);
+	color: #fff;
+	border-radius: 5px;
+}
+
+#ffz-race-popup .right { text-align: right; }
+
+#ffz-race-popup .table {
+	overflow-y: auto;
+}
+
+#ffz-race-popup table {
+	width: 100%;
+	text-align: center;
+	border-spacing: 0;
+}
+
+#ffz-race-popup table a {
+	color: inherit;
+}
+
+#ffz-race-popup a.twitch, #ffz-race-popup a.hitbox {
+	display: inline-block;
+	height: 16px;
+	margin: 0 5px;
+	background-repeat: no-repeat;
+}
+
+#ffz-race-popup a.twitch {
+	width: 15px;
+	background-image: url("//cdn.frankerfacez.com/channel/global/twitch_logo.png");
+}
+
+#ffz-race-popup a.hitbox {
+	width: 12px;
+	background-image: url("//cdn.frankerfacez.com/channel/global/hitbox_logo.png");
+}
+
+#ffz-race-popup table tbody tr.done:nth-child(0n+1) td { background-color: rgba(255,255,0,.2); }
+#ffz-race-popup table tbody tr.done:nth-child(0n+2) td { background-color: rgba(128,128,128,.2); }
+#ffz-race-popup table tbody tr.done:nth-child(0n+3) td { background-color: rgba(210,100,0,.2); }
+#ffz-race-popup table tbody tr.forfeit td { opacity: 0.5; background-color: rgba(210,100,100,.2); }
+#ffz-race-popup table tbody tr.racing td.time { opacity: 0.5; }
+
+#ffz-race-popup table th, #ffz-race-popup td { padding: 1px; }
+#ffz-race-popup table th { border-bottom: 1px solid; }
+
+
+/* Menu Options */
+
+.ffz-ui-menu-page {
+	overflow-y: auto;
+	padding: 0 20px;
+	margin: 0 -20px;
+}
+
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content {
+	padding: 10px 0;
+	background-color: transparent;
+}
+
+.ffz-ui-menu-page span.help {
+	display: block;
+	opacity: 0.75;
+}
+
+.ffz-ui-menu-page span.help, .ffz-ui-menu-page p.option a {
+	margin-left: 50px;
+}
+
+.ffz-ui-popup ul.menu {
+	list-style-type: none;
+	margin: -20px;
+	margin-bottom: 0;
+	border-bottom: 1px solid rgba(0,0,0,0.2);
+	background-color: #eee;
+}
+
+.ffz-ui-popup.dark ul.menu {
+	background-color: #282828;
+}
+
+.ffz-ui-popup ul.menu li.item {
+	float: right;
+}
+
+.ffz-ui-popup ul.menu li.title {
+	float: left;
+}
+
+.ffz-ui-popup ul.menu li.title span {
+	display: block;
+	padding: 10px 20px;
+	line-height: 16px;
+	cursor: pointer;
+}
+
+.ffz-ui-popup ul.menu a {
+	display: block;
+	padding: 10px;
+	height: 16px;
+	margin-bottom: -1px;
+	cursor: pointer;
+	border-left: 1px solid rgba(0,0,0,0.2);
+	border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.ffz-ui-popup ul.menu li.active {
+	background-color: #fff;
+}
+
+.ffz-ui-popup ul.menu li.active a {
+	border-bottom-color: #fff;
+}
+
+.ffz-ui-popup.dark ul.menu li.active {
+	background-color: #1e1e1e;
+}
+
+.ffz-ui-popup.dark ul.menu li.active a {
+	border-bottom-color: #1e1e1e;
+}
+
+.ffz-ui-popup.dark .ffz-ui-menu-page a { color: #fff; }
+
+.ffz-ui-popup.dark ul.menu svg path { fill: #d3d3d3; }
+.ffz-ui-popup ul.menu svg path { fill: #333; }
+
+
+/* Chat Mentions */
+.ffz-chat-background .ember-chat .mentioned {
+	border-radius: 10px;
+	padding: 3px 7px;
+	font-weight: bold;
+	color: #32323e;
+	background-color: rgba(255,255,255, 0.75);
+}
+
+.ffz-chat-background.theatre .chat-container .chat-line .mentioned, .ffz-chat-background .chat-container.dark .chat-line .mentioned {
+	color: #8c8c9c;
+	background-color: rgba(16,16,20, 0.75);
+}
+
+
+/* Chat Rows */
+.ffz-chat-background .more-messages-indicator {
+	/* This looks better when it's full width. */
+	margin: 0 -20px;
+}
+
+.ffz-chat-background .chat-line .message {
+	word-break: break-word;
+}
+
+.ffz-chat-background .ember-chat .chat-messages .tse-scroll-content {
+	padding: 0;
+}
+
+.ffz-chat-background .ember-chat .chat-messages .chat-line {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-alternate {
+	background-color: rgba(0,0,0, 0.1);
+}
+
+.theatre.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-alternate, .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-alternate {
+	background-color: rgba(255,255,255, 0.1);
+}
+
+.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned {
+	background-color: rgba(255,127,127, 0.2);
+}
+
+.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate {
+	background-color: rgba(255,127,127, 0.4);
+}
+
+.theatre.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned, .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned {
+	background-color: rgba(255,0,0, 0.2);
+}
+
+.theatre.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate, .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate {
+	background-color: rgba(255,0,0, 0.3);
 }

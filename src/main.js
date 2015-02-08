@@ -61,6 +61,10 @@ FFZ.prototype.get_user = function() {
 // Import Everything!
 // -------------------
 
+//require('./templates');
+
+require('./settings');
+
 require('./socket');
 require('./emoticons');
 require('./badges');
@@ -82,11 +86,13 @@ require('./ext/emote_menu');
 require('./featurefriday');
 
 require('./ui/styles');
+//require('./ui/dark');
 require('./ui/notifications');
 require('./ui/viewer_count');
 
 require('./ui/menu_button');
 require('./ui/menu');
+require('./ui/races');
 
 require('./commands');
 
@@ -125,13 +131,12 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.users = {};
 
-	// Cleanup localStorage
-	for(var key in localStorage) {
-		if ( key.substr(0,4) == "ffz_" )
-			localStorage.removeItem(key);
-	}
-
 	// Initialize all the modules.
+	this.load_settings();
+
+	// Start this early, for quick loading.
+	//this.setup_dark();
+
 	this.ws_create();
 	this.setup_emoticons();
 	this.setup_badges();
@@ -146,8 +151,10 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	//this.setup_teams();
 
+	this.setup_notifications();
 	this.setup_css();
 	this.setup_menu();
+	this.setup_races();
 
 	this.find_bttv(10);
 	this.find_emote_menu(10);

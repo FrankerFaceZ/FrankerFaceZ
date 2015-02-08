@@ -190,7 +190,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":23}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":25}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -261,7 +261,10 @@ module.exports = {
 
 	SVGPATH: SVGPATH,
 	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
-	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>'
+	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>',
+
+	GEAR: '<svg class="svg-gear" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M15,7v2h-2.115c-0.125,0.615-0.354,1.215-0.713,1.758l1.484,1.484l-1.414,1.414l-1.484-1.484C10.215,12.531,9.615,12.76,9,12.885V15H7v-2.12c-0.614-0.126-1.21-0.356-1.751-0.714l-1.491,1.49l-1.414-1.414l1.491-1.49C3.477,10.211,3.247,9.613,3.12,9H1V7h2.116C3.24,6.384,3.469,5.785,3.829,5.242L2.343,3.757l1.414-1.414l1.485,1.485C5.785,3.469,6.384,3.24,7,3.115V1h2v2.12c0.613,0.126,1.211,0.356,1.752,0.714l1.49-1.491l1.414,1.414l-1.49,1.492C12.523,5.79,12.754,6.387,12.88,7H15z M8,6C6.896,6,6,6.896,6,8s0.896,2,2,2s2-0.896,2-2S9.104,6,8,6z" fill-rule="evenodd"></path></svg>',
+	HEART: '<svg class="svg-heart" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>'
 }
 },{}],4:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
@@ -352,10 +355,71 @@ var FFZ = window.FrankerFaceZ,
 
 
 // ---------------------
+// Settings
+// ---------------------
+
+FFZ.settings_info.capitalize = {
+	type: "boolean",
+	value: true,
+
+	visible: function() { return ! this.has_bttv },
+
+	name: "Username Capitalization",
+	help: "Display names in chat with proper capitalization."
+	};
+
+
+FFZ.settings_info.keywords = {
+	type: "button",
+	value: [],
+
+	visible: function() { return ! this.has_bttv },
+
+	name: "Highlight Keywords",
+	help: "Set additional keywords that will be highlighted in chat.",
+
+	method: function() {
+			var old_val = this.settings.keywords.join(", "),
+				new_val = prompt("Highlight Keywords\n\nPlease enter a comma-separated list of words that you would like to be highlighted in chat.", old_val);
+
+			if ( ! new_val )
+				return;
+
+			// Split them up.
+			new_val = new_val.trim().split(/\W*,\W*/);
+
+			if ( new_val.length == 1 && (new_val[0] == "" || new_val[0] == "disable") )
+				new_val = [];
+
+			this.settings.set("keywords", new_val);
+		}
+	};
+
+
+FFZ.settings_info.chat_rows = {
+	type: "boolean",
+	value: false,
+
+	visible: function() { return ! this.has_bttv },
+
+	name: "Chat Line Backgrounds",
+	help: "Display alternating background colors for lines in chat.",
+
+	on_update: function(val) {
+			document.querySelector(".app-main").classList.toggle("ffz-chat-background", val);
+		}
+	};
+
+
+// ---------------------
 // Initialization
 // ---------------------
 
 FFZ.prototype.setup_line = function() {
+	// Alternating Background
+	document.querySelector('.app-main').classList.toggle('ffz-chat-background', this.settings.chat_rows);
+	this._last_row = {};
+
 	this.log("Hooking the Ember Line controller.");
 
 	var Line = App.__container__.resolve('controller:line'),
@@ -372,8 +436,7 @@ FFZ.prototype.setup_line = function() {
 
 			return tokens;
 
-		}.property("model.message", "isModeratorOrHigher", "controllers.emoticons.emoticons.[]")
-		// TODO: Copy the new properties from the new Twitch!
+		}.property("model.message", "isModeratorOrHigher")
 	});
 
 
@@ -385,16 +448,55 @@ FFZ.prototype.setup_line = function() {
 			this._super();
 
 			var el = this.get('element'),
-				user = this.get('context.model.from');
+				user = this.get('context.model.from'),
+				room = this.get('context.parentController.content.id'),
+				row_type = this.get('context.model.ffzAlternate');
 
-			el.setAttribute('data-room', this.get('context.parentController.content.id'));
+			if ( row_type === undefined ) {
+				row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
+				this.set("context.model.ffzAlternate", row_type);
+			}
+
+			el.classList.toggle('ffz-alternate', row_type);
+			el.setAttribute('data-room', room);
 			el.setAttribute('data-sender', user);
 
 			f.render_badge(this);
 
-			if ( localStorage.ffzCapitalize != 'false' )
+			if ( f.settings.capitalize )
 				f.capitalize(this, user);
 
+			// Check for any mentions.
+			var mentioned = el.querySelector('span.mentioned');
+			if ( mentioned ) {
+				el.classList.add("ffz-mentioned");
+
+				if ( ! document.hasFocus() && ! this.get('context.model.ffzNotified') && f.settings.highlight_notifications ) {
+					var cap_room = FFZ.get_capitalization(room),
+						cap_user = FFZ.get_capitalization(user),
+						room_name = cap_room,
+						msg = this.get("context.model.message");
+
+					if ( this.get("context.parentController.content.isGroupRoom") )
+						room_name = this.get("context.parentController.content.tmiRoom.displayName");
+
+					if ( this.get("context.model.style") == "action" )
+						msg = "* " + cap_user + " " + msg;
+					else
+						msg = cap_user + ": " + msg;
+
+					f.show_notification(
+						msg,
+						"Twitch Chat Mention in " + room_name,
+						cap_room,
+						60000,
+						window.focus.bind(window)
+						);
+				}
+			}
+
+			// Mark that we've checked this message for mentions.
+			this.set('context.model.ffzNotified', true);
 		}
 	});
 
@@ -402,12 +504,6 @@ FFZ.prototype.setup_line = function() {
 	var user = this.get_user();
 	if ( user && user.name )
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
-
-	// Load the mention words.
-	if ( localStorage.ffzMentionize )
-		this.mention_words = JSON.parse(localStorage.ffzMentionize);
-	else
-		this.mention_words = [];
 }
 
 
@@ -419,6 +515,10 @@ FFZ.capitalization = {};
 FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
+	// Use the BTTV code if it's present.
+	if ( window.BetterTTV )
+		return BetterTTV.chat.helpers.lookupDisplayName(name);
+
 	name = name.toLowerCase();
 	if ( name == "jtv" || name == "twitchnotify" )
 		return name;
@@ -459,9 +559,9 @@ FFZ.chat_commands.capitalization = function(room, args) {
 		enabled = false;
 
 	if ( enabled === undefined )
-		return "Chat Name Capitalization is currently " + (localStorage.ffzCapitalize != "false" ? "enabled." : "disabled.");
+		return "Chat Name Capitalization is currently " + (this.settings.capitalize ? "enabled." : "disabled.");
 
-	localStorage.ffzCapitalize = enabled;
+	this.settings.set("capitalize", enabled);
 	return "Chat Name Capitalization is now " + (enabled ? "enabled." : "disabled.");
 }
 
@@ -474,55 +574,61 @@ FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEn
 
 FFZ._regex_cache = {};
 
-FFZ.get_regex = function(word) {
-	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "i");
+FFZ._get_rex = function(word) {
+	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "ig");
+}
+
+FFZ._mentions_to_regex = function(list) {
+	return FFZ._regex_cache[list] = FFZ._regex_cache[list] || RegExp("\\b(?:" + _.chain(list).map(reg_escape).value().join("|") + ")\\b", "ig");
 }
 
 
 FFZ.prototype._mentionize = function(controller, tokens) {
-	if ( ! this.mention_words )
+	var mention_words = this.settings.keywords;
+	if ( ! mention_words )
 		return tokens;
 
 	if ( typeof tokens == "string" )
 		tokens = [tokens];
 
-	_.each(this.mention_words, function(word) {
-		var eo = {mentionedUser: word, own: false};
+	var regex = FFZ._mentions_to_regex(mention_words);
 
-		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
-			if ( _.isObject(token) )
-				return token;
+	return _.chain(tokens).map(function(token) {
+		if ( !_.isString(token) )
+			return token;
+		else if ( !token.match(regex) )
+			return [token];
 
-			var tbits = token.split(FFZ.get_regex(word)), bits = [];
-			tbits.forEach(function(val, ind) {
-				bits.push(val);
-				if ( ind !== tbits.length - 1 )
-					bits.push(eo);
-			});
-			return bits;
-		})));
-	});
-
-	return tokens;
+		return _.zip(
+			_.map(token.split(regex), _.identity),
+			_.map(token.match(regex), function(e) {
+				return {
+					mentionedUser: e,
+					own: false
+					};
+				})
+			);
+		}).flatten().compact().value();
 }
 
 
 FFZ.chat_commands.mentionize = function(room, args) {
 	if ( args && args.length ) {
-		this.mention_words = args.join(" ").trim().split(/\W*,\W*/);
-		if ( this.mention_words.length == 1 && this.mention_words[0] == "disable" )
-			this.mention_words = [];
+		var mention_words = args.join(" ").trim().split(/\W*,\W*/);
+		if ( mention_words.length == 1 && mention_words[0] == "disable" )
+			mention_words = [];
 
-		localStorage.ffzMentionize = JSON.stringify(this.mention_words);
+		this.settings.set("keywords", mention_words);
 	}
 
-	if ( this.mention_words.length )
-		return "The following words will be treated as mentions: " + this.mention_words.join(", ");
+	var mention_words = this.settings.keywords;
+	if ( mention_words.length )
+		return "The following words will be highlighted: " + mention_words.join(", ");
 	else
-		return "There are no words set that will be treated as mentions.";
+		return "There are no words set that will be highlighted.";
 }
 
-FFZ.chat_commands.mentionize.help = "Usage: /ffz mentionize <comma, separated, word, list|disable>\nSet a list of words that will also be treated as mentions and be displayed specially in chat.";
+FFZ.chat_commands.mentionize.help = "Usage: /ffz mentionize <comma, separated, word, list|disable>\nSet a list of words that will also be highlighted in chat.";
 
 
 // ---------------------
@@ -815,7 +921,7 @@ FFZ.prototype._modify_room = function(room) {
 			// filteredSuggestions property of the chat-input component would
 			// be even better, but I was already hooking the room model.
 			var suggestions = this._super();
-			if ( localStorage.ffzCapitalize != 'false' )
+			if ( this.settings.capitalize )
 				suggestions = _.map(suggestions, FFZ.get_capitalization);
 
 			return suggestions;
@@ -879,7 +985,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":23}],8:[function(require,module,exports){
+},{"../constants":3,"../utils":25}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -981,7 +1087,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 				chatters.sort();
 				while(chatters.length) {
 					var viewer = chatters.shift();
-					viewer = f.has_bttv ? BetterTTV.chat.helpers.lookupDisplayName(viewer) : FFZ.get_capitalization(viewer);
+					viewer = FFZ.get_capitalization(viewer);
 					viewers.push({chatter: viewer});
 				}
 			}
@@ -1188,7 +1294,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":23}],11:[function(require,module,exports){
+},{"./constants":3,"./utils":25}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -1457,6 +1563,10 @@ FFZ.prototype.get_user = function() {
 // Import Everything!
 // -------------------
 
+//require('./templates');
+
+require('./settings');
+
 require('./socket');
 require('./emoticons');
 require('./badges');
@@ -1478,11 +1588,13 @@ require('./ext/emote_menu');
 require('./featurefriday');
 
 require('./ui/styles');
+//require('./ui/dark');
 require('./ui/notifications');
 require('./ui/viewer_count');
 
 require('./ui/menu_button');
 require('./ui/menu');
+require('./ui/races');
 
 require('./commands');
 
@@ -1521,13 +1633,12 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.users = {};
 
-	// Cleanup localStorage
-	for(var key in localStorage) {
-		if ( key.substr(0,4) == "ffz_" )
-			localStorage.removeItem(key);
-	}
-
 	// Initialize all the modules.
+	this.load_settings();
+
+	// Start this early, for quick loading.
+	//this.setup_dark();
+
 	this.ws_create();
 	this.setup_emoticons();
 	this.setup_badges();
@@ -1542,8 +1653,10 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	//this.setup_teams();
 
+	this.setup_notifications();
 	this.setup_css();
 	this.setup_menu();
+	this.setup_races();
 
 	this.find_bttv(10);
 	this.find_emote_menu(10);
@@ -1555,7 +1668,7 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/router":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./shims":15,"./socket":16,"./tracking":17,"./ui/menu":18,"./ui/menu_button":19,"./ui/notifications":20,"./ui/styles":21,"./ui/viewer_count":22}],14:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/router":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./tracking":18,"./ui/menu":19,"./ui/menu_button":20,"./ui/notifications":21,"./ui/races":22,"./ui/styles":23,"./ui/viewer_count":24}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1703,6 +1816,139 @@ FFZ.prototype._update_ff_name = function(name) {
 		this.feature_friday.display_name = name;
 }
 },{"./constants":3}],15:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+
+
+	make_ls = function(key) {
+		return "ffz_setting_" + key;
+	};
+
+
+// --------------------
+// Initializer
+// --------------------
+
+FFZ.settings_info = {};
+
+FFZ.prototype.load_settings = function() {
+	this.log("Loading settings.");
+
+	// Build a settings object.
+	this.settings = {};
+
+	for(var key in FFZ.settings_info) {
+		var ls_key = make_ls(key),
+			info = FFZ.settings_info[key],
+			val = info.hasOwnProperty("value") ? info.value : undefined;
+
+		if ( localStorage.hasOwnProperty(ls_key) ) {
+			try {
+				val = JSON.parse(localStorage.getItem(ls_key));
+			} catch(err) {
+				this.log('Error loading value for "' + key + '": ' + err);
+			}
+		}
+
+		this.settings[key] = val;
+	}
+
+	// Helpers
+	this.settings.get = this._setting_get.bind(this);
+	this.settings.set = this._setting_set.bind(this);
+	this.settings.del = this._setting_del.bind(this);
+
+	// Listen for Changes
+	window.addEventListener("storage", this._setting_update.bind(this));
+}
+
+
+// --------------------
+// Tracking Updates
+// --------------------
+
+FFZ.prototype._setting_update = function(e) {
+	if ( ! e )
+		e = window.event;
+
+	this.log("Storage Event", e);
+
+	if ( ! e.key || e.key.substr(0, 12) !== "ffz_setting_" )
+		return;
+
+	var ls_key = e.key,
+		key = ls_key.substr(12),
+		val = undefined,
+		info = FFZ.settings_info[key];
+
+	this.log("Updated Setting: " + key);
+
+	try {
+		val = JSON.parse(e.newValue);
+	} catch(err) {
+		this.log('Error loading new value for "' + key + '": ' + err);
+		val = info.value || undefined;
+	}
+
+	this.settings[key] = val;
+	if ( info.on_update )
+		try {
+			info.on_update.bind(this)(val, false);
+		} catch(err) {
+			this.log('Error running updater for setting "' + key + '": ' + err);
+		}
+}
+
+
+
+// --------------------
+// Settings Access
+// --------------------
+
+FFZ.prototype._setting_get = function(key) {
+	return this.settings[key];
+}
+
+
+FFZ.prototype._setting_set = function(key, val) {
+	var ls_key = make_ls(key),
+		info = FFZ.settings_info[key],
+		jval = JSON.stringify(val);
+
+	this.settings[key] = val;
+	localStorage.setItem(ls_key, jval);
+
+	this.log('Changed Setting "' + key + '" to: ' + jval);
+
+	if ( info.on_update )
+		try {
+			info.on_update.bind(this)(val, true);
+		} catch(err) {
+			this.log('Error running updater for setting "' + key + '": ' + err);
+		}
+}
+
+
+FFZ.prototype._setting_del = function(key) {
+	var ls_key = make_ls(key),
+		info = FFZ.settings_info[key],
+		val = undefined;
+
+	if ( localStorage.hasOwnProperty(ls_key) )
+		localStorage.removeItem(ls_key);
+
+	delete this.settings[key];
+
+	if ( info )
+		val = this.settings[key] = info.hasOwnProperty("value") ? info.value : undefined;
+
+	if ( info.on_update )
+		try {
+			info.on_update.bind(this)(val, true);
+		} catch(err) {
+			this.log('Error running updater for setting "' + key + '": ' + err);
+		}
+}
+},{}],16:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -1728,13 +1974,14 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 
 FFZ.ws_commands = {};
+FFZ.ws_on_close = [];
 
 
 // ----------------
@@ -1784,6 +2031,15 @@ FFZ.prototype.ws_create = function() {
 		f.log("Socket closed.");
 		f._ws_open = false;
 
+		// When the connection closes, run our callbacks.
+		for(var i=0; i < FFZ.ws_on_close.length; i++) {
+			try {
+				FFZ.ws_on_close[i].bind(f)();
+			} catch(err) {
+				f.log("Error on Socket Close Callback: " + err);
+			}
+		}
+		
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 30000 )
 			f._ws_delay += 5000;
@@ -1846,7 +2102,7 @@ FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	PIWIK = ("https:" == document.location.protocol ? 'https:' : 'http:') + '//sir.stendec.me/ffz_piwik/';
@@ -1978,8 +2234,9 @@ FFZ.prototype.track_page = function() {
 		this.track("trackPageView", document.title);
 	}
 }
-},{"./constants":3}],18:[function(require,module,exports){
-var FFZ = window.FrankerFaceZ;
+},{"./constants":3}],19:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require('../constants');
 
 
 // --------------------
@@ -1999,9 +2256,14 @@ FFZ.prototype.setup_menu = function() {
 		if ( ! parent.is(e.target) && parent.has(e.target).length === 0 ) {
 			popup.remove();
 			delete f._popup;
+			f._popup_kill && f._popup_kill();
+			delete f._popup_kill;
 		}
 	});
 }
+
+
+FFZ.menu_pages = {};
 
 
 // --------------------
@@ -2013,62 +2275,242 @@ FFZ.prototype.build_ui_popup = function(view) {
 	if ( popup ) {
 		popup.parentElement.removeChild(popup);
 		delete this._popup;
+		this._popup_kill && this._popup_kill();
+		delete this._popup_kill;
 		return;
 	}
 
 	// Start building the DOM.
 	var container = document.createElement('div'),
-		inner = document.createElement('div');
+		inner = document.createElement('div'),
+		menu = document.createElement('ul'),
+
+		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false);
 
 	container.className = 'emoticon-selector chat-menu ffz-ui-popup';
 	inner.className = 'emoticon-selector-box dropmenu';
 	container.appendChild(inner);
 
-	// TODO: Modularize for multiple menu pages!
+	container.classList.toggle('dark', dark);
 
-	// Get the current room.
-	var room_id = view.get('controller.currentRoom.id'),
-		room = this.rooms[room_id];
+	// Render Menu
+	menu.className = 'menu clearfix';
+	inner.appendChild(menu);
 
-	this.log("Menu for Room: " + room_id, room);
-	this.track('trackEvent', 'Menu', 'Open', room_id);
+	var el = document.createElement('li');
+	el.className = 'title';
+	el.innerHTML = "<span>FrankerFaceZ</span>";
+	menu.appendChild(el);
 
-	// Add the header and ad button.
-	var btn = document.createElement('a');
-	btn.className = 'button glyph-only ffz-button';
-	btn.title = 'Advertise for FrankerFaceZ in chat!';
-	btn.href = '#';
-	btn.innerHTML = '<svg class="svg-followers" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>';
+	el.addEventListener("click", this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
 
-	var hdr = document.createElement('div');
-	hdr.className = 'list-header first';
-	hdr.appendChild(btn);
-	hdr.appendChild(document.createTextNode('FrankerFaceZ'));
-	inner.appendChild(hdr);
+	var sub_container = document.createElement('div');
+	sub_container.className = 'ffz-ui-menu-page';
+	inner.appendChild(sub_container);
 
-	var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+	for(var key in FFZ.menu_pages) {
+		var page = FFZ.menu_pages[key];
+		if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)()))) )
+			continue;
 
-	if ( ! this._ws_exists ) {
-		btn.className = "button ffz-button primary";
-		btn.innerHTML = "Server Error";
-		btn.title = "FFZ Server Error";
-		btn.addEventListener('click', alert.bind(window, "The FrankerFaceZ client was unable to create a WebSocket to communicate with the FrankerFaceZ server.\n\nThis is most likely due to your browser's configuration either disabling WebSockets entirely or limiting the number of simultaneous connections. Please ensure that WebSockets have not been disabled."));
+		var el = document.createElement('li'),
+			link = document.createElement('a');
 
-	} else {
-		if ( c === 0 )
-			btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
-		else
-			btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+		el.className = 'item';
+		el.id = "ffz-menu-page-" + key;
+		link.title = page.name;
+		link.innerHTML = page.icon;
+
+		link.addEventListener("click", this._ui_change_page.bind(this, view, menu, sub_container, key));
+
+		el.appendChild(link);
+		menu.appendChild(el);
 	}
 
-	// Feature Friday!
-	this._feature_friday_ui(room_id, inner, view);
+	// Render Current Page
+	this._ui_change_page(view, menu, sub_container, this._last_page || "channel");
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	inner.style.maxHeight = Math.max(300, view.$().height() - 171) + "px";
+	sub_container.style.maxHeight = Math.max(300, view.$().height() - 212) + "px";
 	view.$('.chat-interface').append(container);
 }
+
+
+FFZ.prototype._ui_change_page = function(view, menu, container, page) {
+	this._last_page = page;
+	container.innerHTML = "";
+
+	var els = menu.querySelectorAll('li.active');
+	for(var i=0; i < els.length; i++)
+		els[i].classList.remove('active');
+
+	var el = menu.querySelector('#ffz-menu-page-' + page);
+	if ( el )
+		el.classList.add('active');
+	else
+		this.log("No matching page: " + page);
+
+	FFZ.menu_pages[page].render.bind(this)(view, container);
+}
+
+
+// --------------------
+// Settings Page
+// --------------------
+
+FFZ.menu_pages.settings = {
+	render: function(view, container) {
+			var menu = document.createElement('div');
+			menu.className = 'chat-menu-content';
+
+			var settings = [];
+			for(var key in FFZ.settings_info)
+				settings.push([key, FFZ.settings_info[key]]);
+
+			settings.sort(function(a,b) {
+				var ai = a[1],
+					bi = b[1],
+
+					an = ai.name.toLowerCase(),
+					bn = bi.name.toLowerCase();
+
+				if ( an < bn ) return -1;
+				else if ( an > bn ) return 1;
+				return 0;
+				});
+
+
+			for(var i=0; i < settings.length; i++) {
+				var key = settings[i][0],
+					info = settings[i][1],
+					el = document.createElement('p'),
+					val = this.settings.get(key);
+
+				if ( info.visible !== undefined && info.visible !== null ) {
+					var visible = info.visible;
+					if ( typeof info.visible == "function" )
+						visible = info.visible.bind(this)();
+
+					if ( ! visible )
+						continue;
+				}
+
+				el.className = 'clearfix';
+
+				if ( info.type == "boolean" ) {
+					var swit = document.createElement('a'),
+						label = document.createElement('span');
+
+					swit.className = 'switch';
+					swit.classList.toggle('active', val);
+					swit.innerHTML = "<span></span>";
+
+					label.className = 'switch-label';
+					label.innerHTML = info.name;
+
+					el.appendChild(swit);
+					el.appendChild(label);
+
+					swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
+
+				} else {
+					el.classList.add("option");
+					var link = document.createElement('a');
+					link.innerHTML = info.name;
+					link.href = "#";
+					el.appendChild(link);
+
+					link.addEventListener("click", info.method.bind(this));
+				}
+
+				if ( info.help ) {
+					var help = document.createElement('span');
+					help.className = 'help';
+					help.innerHTML = info.help;
+					el.appendChild(help);
+				}
+
+				menu.appendChild(el);
+			}
+
+			container.appendChild(menu);
+		},
+
+	name: "Settings",
+	icon: constants.GEAR
+	};
+
+
+FFZ.prototype._ui_toggle_setting = function(swit, key) {
+	var val = ! this.settings.get(key);
+	this.settings.set(key, val);
+	swit.classList.toggle('active', val);
+}
+
+
+// --------------------
+// Favorites Page
+// --------------------
+
+/*FFZ.menu_pages.favorites = {
+	render: function(view, container) {
+	
+		},
+
+	name: "Favorites",
+	icon: constants.HEART
+	};*/
+
+
+// --------------------
+// Channel Page
+// --------------------
+
+FFZ.menu_pages.channel = {
+	render: function(view, inner) {
+			// Get the current room.
+			var room_id = view.get('controller.currentRoom.id'),
+				room = this.rooms[room_id];
+
+			this.log("Menu for Room: " + room_id, room);
+			this.track('trackEvent', 'Menu', 'Open', room_id);
+
+			// Add the header and ad button.
+			/*var btn = document.createElement('a');
+			btn.className = 'button glyph-only ffz-button';
+			btn.title = 'Advertise for FrankerFaceZ in chat!';
+			btn.href = '#';
+			btn.innerHTML = '<svg class="svg-followers" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>';
+
+			var hdr = document.createElement('div');
+			hdr.className = 'list-header first';
+			hdr.appendChild(btn);
+			hdr.appendChild(document.createTextNode('FrankerFaceZ'));
+			inner.appendChild(hdr);*/
+
+			var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+
+			/*if ( ! this._ws_exists ) {
+				btn.className = "button ffz-button primary";
+				btn.innerHTML = "Server Error";
+				btn.title = "FFZ Server Error";
+				btn.addEventListener('click', alert.bind(window, "The FrankerFaceZ client was unable to create a WebSocket to communicate with the FrankerFaceZ server.\n\nThis is most likely due to your browser's configuration either disabling WebSockets entirely or limiting the number of simultaneous connections. Please ensure that WebSockets have not been disabled."));
+
+			} else {
+				if ( c === 0 )
+					btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
+				else
+					btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+			}*/
+
+			// Feature Friday!
+			this._feature_friday_ui(room_id, inner, view);
+		},
+
+	name: "Channel",
+	icon: constants.ZREKNARF
+	};
 
 
 // --------------------
@@ -2130,7 +2572,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{}],19:[function(require,module,exports){
+},{"../constants":3}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -2181,10 +2623,147 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],20:[function(require,module,exports){
+},{"../constants":3}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
-FFZ.prototype.show_notification = function(message) {
+
+// ---------------------
+// Initialization
+// ---------------------
+
+FFZ.prototype.setup_notifications = function() {
+	this.log("Adding event handler for window focus.");
+	window.addEventListener("focus", this.clear_notifications.bind(this));
+}
+
+
+// ---------------------
+// Settings
+// ---------------------
+
+FFZ.settings_info.highlight_notifications = {
+	type: "boolean",
+	value: false,
+
+	visible: function() { return ! this.has_bttv },
+
+	name: "Highlight Notifications",
+	help: "Display notifications when a highlighted word appears in chat in an unfocused tab.",
+
+	on_update: function(val, direct) {
+			// Check to see if we have notification permission. If this is
+			// enabled, at least.
+			if ( ! val || ! direct )
+				return;
+
+			if ( Notification.permission === "denied" ) {
+				this.log("Notifications have been denied by the user.");
+				this.settings.set("highlight_notifications", false);
+				return;
+
+			} else if ( Notification.permission === "granted" )
+				return;
+
+			var f = this;
+			Notification.requestPermission(function(e) {
+				if ( e === "denied" ) {
+					f.log("Notifications have been denied by the user.");
+					f.settings.set("highlight_notifications", false);
+				}
+			});
+		}
+	};
+
+
+// ---------------------
+// Socket Commands
+// ---------------------
+
+FFZ.ws_commands.message = function(message) {
+	this.show_mesage(message);
+}
+
+
+// ---------------------
+// Notifications
+// ---------------------
+
+FFZ._notifications = {};
+FFZ._last_notification = 0;
+
+FFZ.prototype.clear_notifications = function() {
+	for(var k in FFZ._notifications) {
+		var n = FFZ._notifications[k];
+		if ( n )
+			try {
+				n.close();
+			} catch(err) { }
+	}
+
+	FFZ._notifications = {};
+	FFZ._last_notification = 0;
+}
+
+
+FFZ.prototype.show_notification = function(message, title, tag, timeout, on_click, on_close) {
+	var perm = Notification.permission;
+	if ( perm === "denied " )
+		return false;
+
+	if ( perm === "granted" ) {
+		title = title || "FrankerFaceZ";
+		timeout = timeout || 10000;
+
+		var options = {
+			lang: "en-US",
+			dir: "ltr",
+			body: message,
+			tag: tag || "FrankerFaceZ",
+			icon: "http://cdn.frankerfacez.com/icon32.png"
+			};
+
+		var f = this,
+			n = new Notification(title, options),
+			nid = FFZ._last_notification++;
+
+		FFZ._notifications[nid] = n;
+
+		n.addEventListener("click", function() {
+			delete FFZ._notifications[nid];
+			if ( on_click )
+				on_click.bind(f)();
+			});
+
+		n.addEventListener("close", function() {
+			delete FFZ._notifications[nid];
+			if ( on_close )
+				on_close.bind(f)();
+			});
+
+		if ( typeof timeout == "number" )
+			n.addEventListener("show", function() {
+				setTimeout(function() {
+					delete FFZ._notifications[nid];
+					n.close();
+					}, timeout);
+				});
+
+		return;
+	}
+
+	var f = this;
+	Notification.requestPermission(function(e) {
+		f.show_notification(message, title, tag);
+	});
+}
+
+
+
+// ---------------------
+// Noty Notification
+// ---------------------
+
+FFZ.prototype.show_message = function(message) {
 	window.noty({
 		text: message,
 		theme: "ffzTheme",
@@ -2192,12 +2771,310 @@ FFZ.prototype.show_notification = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
+},{}],22:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	utils = require('../utils');
 
 
-FFZ.ws_commands.message = function(message) {
-	this.show_notification(message);
+// ---------------
+// Initialization
+// ---------------
+
+FFZ.prototype.setup_races = function() {
+	this.log("Initializing race support.");
+	this.srl_races = {};
 }
-},{}],21:[function(require,module,exports){
+
+
+// ---------------
+// Settings
+// ---------------
+
+FFZ.settings_info.srl_races = {
+	type: "boolean",
+	value: true,
+	name: "SRL Race Information",
+	help: 'Display information about <a href="http://www.speedrunslive.com/" target="_new">SpeedRunsLive</a> races under channels.',
+	on_update: function(val) {
+			this.rebuild_race_ui();
+		}
+	};
+
+
+// ---------------
+// Socket Handler
+// ---------------
+
+FFZ.ws_on_close.push(function() {
+	var controller = App.__container__.lookup('controller:channel'),
+		current_id = controller.get('id'),
+		need_update = false;
+
+	for(var chan in this.srl_races) {
+		delete this.srl_races[chan];
+		if ( chan == current_id )
+			need_update = true;
+	}
+
+	if ( need_update )
+		this.rebuild_race_ui();
+});
+
+FFZ.ws_commands.srl_race = function(data) {
+	var controller = App.__container__.lookup('controller:channel'),
+		current_id = controller.get('id'),
+		need_update = false;
+
+	for(var i=0; i < data[0].length; i++) {
+		var channel_id = data[0][i];
+		this.srl_races[channel_id] = data[1];
+		if ( channel_id == current_id )
+			need_update = true;
+	}
+	
+	if ( data[1] ) {
+		var race = data[1],
+			tte = race.twitch_entrants = {};
+
+		for(var ent in race.entrants) {
+			if ( ! race.entrants.hasOwnProperty(ent) ) continue;
+			if ( race.entrants[ent].channel )
+				tte[race.entrants[ent].channel] = ent;
+			race.entrants[ent].name = ent;
+		}
+	}
+
+	if ( need_update )
+		this.rebuild_race_ui();
+}
+
+
+// ---------------
+// Race UI
+// ---------------
+
+FFZ.prototype.rebuild_race_ui = function() {
+	var controller = App.__container__.lookup('controller:channel'),
+		channel_id = controller.get('id'),
+		race = this.srl_races[channel_id],
+		enable_ui = this.settings.srl_races,
+
+		actions = document.querySelector('.stats-and-actions .channel-actions'),
+		race_container = actions.querySelector('#ffz-ui-race');
+
+	if ( ! race || ! enable_ui ) {
+		if ( race_container )
+			race_container.parentElement.removeChild(race_container);
+		if ( this._popup && this._popup.id == "ffz-race-popup" ) {
+			delete this._popup;
+			this._popup_kill && this._popup_kill();
+			delete this._popup_kill;
+		}
+		return;
+	}
+
+	if ( race_container )
+		return this._update_race(true);
+
+	race_container = document.createElement('span');
+	race_container.setAttribute('data-channel', channel_id);
+	race_container.id = 'ffz-ui-race';
+
+	var btn = document.createElement('span');
+	btn.className = 'button drop action';
+	btn.title = "SpeedRunsLive Race";
+	btn.innerHTML = '<span class="logo"><span>';
+
+	btn.addEventListener('click', this.build_race_popup.bind(this));
+
+	race_container.appendChild(btn);
+	actions.appendChild(race_container);
+	this._update_race(true);
+}
+
+
+// ---------------
+// Race Popup
+// ---------------
+
+FFZ.prototype._race_kill = function() {
+	if ( this._race_timer ) {
+		clearTimeout(this._race_timer);
+		delete this._race_timer;
+	}
+
+	delete this._race_game;
+	delete this._race_goal;
+}
+
+
+FFZ.prototype.build_race_popup = function() {
+	var popup = this._popup;
+	if ( popup ) {
+		popup.parentElement.removeChild(popup);
+		delete this._popup;
+		this._popup_kill && this._popup_kill();
+		delete this._popup_kill;
+
+		if ( popup.id == "ffz-race-popup" )
+			return;
+	}
+
+	var container = document.querySelector('#ffz-ui-race');
+	if ( ! container )
+		return;
+
+	var el = container.querySelector('.button'),
+		pos = el.offsetLeft + el.offsetWidth,
+
+		channel_id = container.getAttribute('data-channel'),
+		race = this.srl_races[channel_id];
+
+	var popup = document.createElement('div'), out = '';
+	popup.id = 'ffz-race-popup';
+	popup.className = (pos >= 300 ? 'right' : 'left') + ' share dropmenu';
+	
+	this._popup_kill = this._race_kill.bind(this);
+	this._popup = popup;
+	
+	var link = 'http://kadgar.net/live',
+		has_entrant = false;
+	for(var ent in race.entrants) {
+		var state = race.entrants[ent].state;
+		if ( race.entrants.hasOwnProperty(ent) && race.entrants[ent].channel && (state == "racing" || state == "entered") ) {
+			link += "/" + race.entrants[ent].channel;
+			has_entrant = true;
+		}
+	}
+
+	var height = document.querySelector('.app-main.theatre') ? document.body.clientHeight - 300 : container.parentElement.offsetTop - 175,
+		controller = App.__container__.lookup('controller:channel'),
+		display_name = controller ? controller.get('display_name') : FFZ.get_capitalization(channel_id),
+		tweet = encodeURIComponent("I'm watching " + display_name + " race " + race.goal + " in " + race.game + " on SpeedRunsLive!");
+
+	out = '<div class="heading"><div></div><span></span></div>';
+	out += '<div class="table" style="max-height:' + height + 'px"><table><thead><tr><th>#</th><th>Entrant</th><th>&nbsp;</th><th>Time</th></tr></thead>';
+	out += '<tbody></tbody></table></div>';
+	out += '<div class="divider"></div>';
+	
+	out += '<iframe class="twitter_share_button" style="width:110px; height:20px" src="https://platform.twitter.com/widgets/tweet_button.html?text=' + tweet + '%20Watch%20at&via=Twitch&url=http://www.twitch.tv/' + channel_id + '"></iframe>';
+	
+	out += '<p class="right"><a target="_new" href="http://www.speedrunslive.com/race/?id=' + race.id + '">SRL</a>';
+	
+	if ( has_entrant )
+		out += ' &nbsp; <a target="_new" href="' + link + '">Multitwitch</a>';
+	
+	out += '</p>';
+	popup.innerHTML = out;
+	container.appendChild(popup);
+
+	this._update_race(true);
+}
+
+
+FFZ.prototype._update_race = function(not_timer) {
+	if ( this._race_timer && not_timer ) {
+		clearTimeout(this._race_timer);
+		delete this._race_timer;
+	}
+
+	var container = document.querySelector('#ffz-ui-race');
+	if ( ! container )
+		return;
+
+	var channel_id = container.getAttribute('data-channel'),
+		race = this.srl_races[channel_id];
+
+	if ( ! race ) {
+		// No race. Abort.
+		container.parentElement.removeChild(container);
+		this._popup_kill && this._popup_kill();
+		if ( this._popup ) {
+			delete this._popup;
+			delete this._popup_kill;
+		}
+		return;
+	}
+
+	var entrant_id = race.twitch_entrants[channel_id],
+		entrant = race.entrants[entrant_id],
+
+		popup = container.querySelector('#ffz-race-popup'),
+		now = Date.now() / 1000,
+		elapsed = Math.floor(now - race.time);
+
+	container.querySelector('.logo').innerHTML = utils.placement(entrant);
+
+	if ( popup ) {
+		var tbody = popup.querySelector('tbody'),
+			timer = popup.querySelector('.heading span'),
+			info = popup.querySelector('.heading div');
+
+		tbody.innerHTML = '';
+		var entrants = [], done = true;
+		for(var ent in race.entrants) {
+			if ( ! race.entrants.hasOwnProperty(ent) ) continue;
+			if ( race.entrants[ent].state == "racing" )
+				done = false;
+			entrants.push(race.entrants[ent]);
+		}
+
+		entrants.sort(function(a,b) {
+			var a_place = a.place || 9999,
+				b_place = b.place || 9999,
+
+				a_time = a.time || elapsed,
+				b_time = b.time || elapsed;
+
+			if ( a.state == "forfeit" || a.state == "dq" )
+				a_place = 10000;
+
+			if ( b.state == "forfeit" || b.state == "dq" )
+				b_place = 10000;
+
+			if ( a_place < b_place ) return -1;
+			else if ( a_place > b_place ) return 1;
+
+			else if ( a.name < b.name ) return -1;
+			else if ( a.name > b.name ) return 1;
+
+			else if ( a_time < b_time ) return -1;
+			else if ( a_time > b_time ) return 1;
+			});
+
+		for(var i=0; i < entrants.length; i++) {
+			var ent = entrants[i],
+				name = '<a target="_new" href="http://www.speedrunslive.com/profiles/#!/' + utils.sanitize(ent.name) + '">' + ent.display_name + '</a>',
+				twitch_link = ent.channel ? '<a target="_new" class="twitch" href="http://www.twitch.tv/' + utils.sanitize(ent.channel) + '"></a>' : '',
+				hitbox_link = ent.hitbox ? '<a target="_new" class="hitbox" href="http://www.hitbox.tv/' + utils.sanitize(ent.hitbox) + '"></a>' : '',
+				time = elapsed ? utils.time_to_string(ent.time||elapsed) : "",
+				place = utils.place_string(ent.place),
+				comment = ent.comment ? utils.sanitize(ent.comment) : "";
+
+			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
+		}
+		
+		if ( this._race_game != race.game || this._race_goal != race.goal ) {
+			this._race_game = race.game;
+			this._race_goal = race.goal;
+
+			var game = utils.sanitize(race.game),
+				goal = utils.sanitize(race.goal);
+
+			info.innerHTML = '<h2 title="' + game + '">' + game + "</h2><b>Goal: </b>" + goal;
+		}
+
+		if ( ! elapsed )
+			timer.innerHTML = "Entry Open";
+		else if ( done )
+			timer.innerHTML = "Done";
+		else {
+			timer.innerHTML = utils.time_to_string(elapsed);
+			this._race_timer = setTimeout(this._update_race.bind(this), 1000);
+		}
+	}
+}
+},{"../utils":25}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -2222,7 +3099,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],22:[function(require,module,exports){
+},{"../constants":3}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -2259,9 +3136,21 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":23}],23:[function(require,module,exports){
+},{"../constants":3,"../utils":25}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
+
+
+var sanitize_cache = {},
+	sanitize_el = document.createElement('span'),
+
+	place_string = function(num) {
+		if ( num == 1 ) return '1st';
+		else if ( num == 2 ) return '2nd';
+		else if ( num == 3 ) return '3rd';
+		else if ( num == null ) return '---';
+		return num + "th";
+	};
 
 module.exports = {
 	update_css: function(element, id, css) {
@@ -2288,6 +3177,35 @@ module.exports = {
 		var parts = x.toString().split(".");
 		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 		return parts.join(".");
+	},
+
+	place_string: place_string,
+	
+	placement: function(entrant) {
+		if ( entrant.state == "forfeit" ) return "Forfeit";
+		else if ( entrant.state == "dq" ) return "DQed";
+		else if ( entrant.place ) return place_string(entrant.place);
+		return "";
+	},
+
+	sanitize: function(msg) {
+		var m = sanitize_cache[msg];
+		if ( ! m ) {
+			sanitize_el.textContent = msg;
+			m = sanitize_cache[msg] = sanitize_el.innerHTML;
+			sanitize_el.innerHTML = "";
+		}
+		return m;
+	},
+
+	time_to_string: function(elapsed) {
+		var seconds = elapsed % 60,
+			minutes = Math.floor(elapsed / 60),
+			hours = Math.floor(minutes / 60);
+
+		minutes = minutes % 60;
+
+		return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 	}
 }
 },{"./constants":3}]},{},[13]);window.ffz = new FrankerFaceZ()}(window));

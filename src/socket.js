@@ -4,6 +4,7 @@ FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 
 FFZ.ws_commands = {};
+FFZ.ws_on_close = [];
 
 
 // ----------------
@@ -53,6 +54,15 @@ FFZ.prototype.ws_create = function() {
 		f.log("Socket closed.");
 		f._ws_open = false;
 
+		// When the connection closes, run our callbacks.
+		for(var i=0; i < FFZ.ws_on_close.length; i++) {
+			try {
+				FFZ.ws_on_close[i].bind(f)();
+			} catch(err) {
+				f.log("Error on Socket Close Callback: " + err);
+			}
+		}
+		
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 30000 )
 			f._ws_delay += 5000;

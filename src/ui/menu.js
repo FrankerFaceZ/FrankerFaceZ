@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+	constants = require('../constants');
 
 
 // --------------------
@@ -18,9 +19,14 @@ FFZ.prototype.setup_menu = function() {
 		if ( ! parent.is(e.target) && parent.has(e.target).length === 0 ) {
 			popup.remove();
 			delete f._popup;
+			f._popup_kill && f._popup_kill();
+			delete f._popup_kill;
 		}
 	});
 }
+
+
+FFZ.menu_pages = {};
 
 
 // --------------------
@@ -32,62 +38,242 @@ FFZ.prototype.build_ui_popup = function(view) {
 	if ( popup ) {
 		popup.parentElement.removeChild(popup);
 		delete this._popup;
+		this._popup_kill && this._popup_kill();
+		delete this._popup_kill;
 		return;
 	}
 
 	// Start building the DOM.
 	var container = document.createElement('div'),
-		inner = document.createElement('div');
+		inner = document.createElement('div'),
+		menu = document.createElement('ul'),
+
+		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false);
 
 	container.className = 'emoticon-selector chat-menu ffz-ui-popup';
 	inner.className = 'emoticon-selector-box dropmenu';
 	container.appendChild(inner);
 
-	// TODO: Modularize for multiple menu pages!
+	container.classList.toggle('dark', dark);
 
-	// Get the current room.
-	var room_id = view.get('controller.currentRoom.id'),
-		room = this.rooms[room_id];
+	// Render Menu
+	menu.className = 'menu clearfix';
+	inner.appendChild(menu);
 
-	this.log("Menu for Room: " + room_id, room);
-	this.track('trackEvent', 'Menu', 'Open', room_id);
+	var el = document.createElement('li');
+	el.className = 'title';
+	el.innerHTML = "<span>FrankerFaceZ</span>";
+	menu.appendChild(el);
 
-	// Add the header and ad button.
-	var btn = document.createElement('a');
-	btn.className = 'button glyph-only ffz-button';
-	btn.title = 'Advertise for FrankerFaceZ in chat!';
-	btn.href = '#';
-	btn.innerHTML = '<svg class="svg-followers" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>';
+	el.addEventListener("click", this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
 
-	var hdr = document.createElement('div');
-	hdr.className = 'list-header first';
-	hdr.appendChild(btn);
-	hdr.appendChild(document.createTextNode('FrankerFaceZ'));
-	inner.appendChild(hdr);
+	var sub_container = document.createElement('div');
+	sub_container.className = 'ffz-ui-menu-page';
+	inner.appendChild(sub_container);
 
-	var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+	for(var key in FFZ.menu_pages) {
+		var page = FFZ.menu_pages[key];
+		if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)()))) )
+			continue;
 
-	if ( ! this._ws_exists ) {
-		btn.className = "button ffz-button primary";
-		btn.innerHTML = "Server Error";
-		btn.title = "FFZ Server Error";
-		btn.addEventListener('click', alert.bind(window, "The FrankerFaceZ client was unable to create a WebSocket to communicate with the FrankerFaceZ server.\n\nThis is most likely due to your browser's configuration either disabling WebSockets entirely or limiting the number of simultaneous connections. Please ensure that WebSockets have not been disabled."));
+		var el = document.createElement('li'),
+			link = document.createElement('a');
 
-	} else {
-		if ( c === 0 )
-			btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
-		else
-			btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+		el.className = 'item';
+		el.id = "ffz-menu-page-" + key;
+		link.title = page.name;
+		link.innerHTML = page.icon;
+
+		link.addEventListener("click", this._ui_change_page.bind(this, view, menu, sub_container, key));
+
+		el.appendChild(link);
+		menu.appendChild(el);
 	}
 
-	// Feature Friday!
-	this._feature_friday_ui(room_id, inner, view);
+	// Render Current Page
+	this._ui_change_page(view, menu, sub_container, this._last_page || "channel");
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	inner.style.maxHeight = Math.max(300, view.$().height() - 171) + "px";
+	sub_container.style.maxHeight = Math.max(300, view.$().height() - 212) + "px";
 	view.$('.chat-interface').append(container);
 }
+
+
+FFZ.prototype._ui_change_page = function(view, menu, container, page) {
+	this._last_page = page;
+	container.innerHTML = "";
+
+	var els = menu.querySelectorAll('li.active');
+	for(var i=0; i < els.length; i++)
+		els[i].classList.remove('active');
+
+	var el = menu.querySelector('#ffz-menu-page-' + page);
+	if ( el )
+		el.classList.add('active');
+	else
+		this.log("No matching page: " + page);
+
+	FFZ.menu_pages[page].render.bind(this)(view, container);
+}
+
+
+// --------------------
+// Settings Page
+// --------------------
+
+FFZ.menu_pages.settings = {
+	render: function(view, container) {
+			var menu = document.createElement('div');
+			menu.className = 'chat-menu-content';
+
+			var settings = [];
+			for(var key in FFZ.settings_info)
+				settings.push([key, FFZ.settings_info[key]]);
+
+			settings.sort(function(a,b) {
+				var ai = a[1],
+					bi = b[1],
+
+					an = ai.name.toLowerCase(),
+					bn = bi.name.toLowerCase();
+
+				if ( an < bn ) return -1;
+				else if ( an > bn ) return 1;
+				return 0;
+				});
+
+
+			for(var i=0; i < settings.length; i++) {
+				var key = settings[i][0],
+					info = settings[i][1],
+					el = document.createElement('p'),
+					val = this.settings.get(key);
+
+				if ( info.visible !== undefined && info.visible !== null ) {
+					var visible = info.visible;
+					if ( typeof info.visible == "function" )
+						visible = info.visible.bind(this)();
+
+					if ( ! visible )
+						continue;
+				}
+
+				el.className = 'clearfix';
+
+				if ( info.type == "boolean" ) {
+					var swit = document.createElement('a'),
+						label = document.createElement('span');
+
+					swit.className = 'switch';
+					swit.classList.toggle('active', val);
+					swit.innerHTML = "<span></span>";
+
+					label.className = 'switch-label';
+					label.innerHTML = info.name;
+
+					el.appendChild(swit);
+					el.appendChild(label);
+
+					swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
+
+				} else {
+					el.classList.add("option");
+					var link = document.createElement('a');
+					link.innerHTML = info.name;
+					link.href = "#";
+					el.appendChild(link);
+
+					link.addEventListener("click", info.method.bind(this));
+				}
+
+				if ( info.help ) {
+					var help = document.createElement('span');
+					help.className = 'help';
+					help.innerHTML = info.help;
+					el.appendChild(help);
+				}
+
+				menu.appendChild(el);
+			}
+
+			container.appendChild(menu);
+		},
+
+	name: "Settings",
+	icon: constants.GEAR
+	};
+
+
+FFZ.prototype._ui_toggle_setting = function(swit, key) {
+	var val = ! this.settings.get(key);
+	this.settings.set(key, val);
+	swit.classList.toggle('active', val);
+}
+
+
+// --------------------
+// Favorites Page
+// --------------------
+
+/*FFZ.menu_pages.favorites = {
+	render: function(view, container) {
+	
+		},
+
+	name: "Favorites",
+	icon: constants.HEART
+	};*/
+
+
+// --------------------
+// Channel Page
+// --------------------
+
+FFZ.menu_pages.channel = {
+	render: function(view, inner) {
+			// Get the current room.
+			var room_id = view.get('controller.currentRoom.id'),
+				room = this.rooms[room_id];
+
+			this.log("Menu for Room: " + room_id, room);
+			this.track('trackEvent', 'Menu', 'Open', room_id);
+
+			// Add the header and ad button.
+			/*var btn = document.createElement('a');
+			btn.className = 'button glyph-only ffz-button';
+			btn.title = 'Advertise for FrankerFaceZ in chat!';
+			btn.href = '#';
+			btn.innerHTML = '<svg class="svg-followers" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>';
+
+			var hdr = document.createElement('div');
+			hdr.className = 'list-header first';
+			hdr.appendChild(btn);
+			hdr.appendChild(document.createTextNode('FrankerFaceZ'));
+			inner.appendChild(hdr);*/
+
+			var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+
+			/*if ( ! this._ws_exists ) {
+				btn.className = "button ffz-button primary";
+				btn.innerHTML = "Server Error";
+				btn.title = "FFZ Server Error";
+				btn.addEventListener('click', alert.bind(window, "The FrankerFaceZ client was unable to create a WebSocket to communicate with the FrankerFaceZ server.\n\nThis is most likely due to your browser's configuration either disabling WebSockets entirely or limiting the number of simultaneous connections. Please ensure that WebSockets have not been disabled."));
+
+			} else {
+				if ( c === 0 )
+					btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
+				else
+					btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
+			}*/
+
+			// Feature Friday!
+			this._feature_friday_ui(room_id, inner, view);
+		},
+
+	name: "Channel",
+	icon: constants.ZREKNARF
+	};
 
 
 // --------------------
