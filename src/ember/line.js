@@ -170,6 +170,9 @@ FFZ.get_capitalization = function(name, callback) {
 	if ( window.BetterTTV )
 		return BetterTTV.chat.helpers.lookupDisplayName(name);
 
+	if ( ! name )
+		return name;
+
 	name = name.toLowerCase();
 	if ( name == "jtv" || name == "twitchnotify" )
 		return name;
@@ -236,7 +239,7 @@ FFZ._mentions_to_regex = function(list) {
 
 FFZ.prototype._mentionize = function(controller, tokens) {
 	var mention_words = this.settings.keywords;
-	if ( ! mention_words )
+	if ( ! mention_words || ! mention_words.length )
 		return tokens;
 
 	if ( typeof tokens == "string" )
