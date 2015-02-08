@@ -1322,6 +1322,13 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
+	// Disable Dark if it's enabled.
+	document.querySelector(".app-main").classList.remove("ffz-dark");
+	if ( this._dark_style ) {
+		this._dark_style.parentElement.removeChild(this._dark_style);
+		delete this._dark_style;
+	}
+
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
 	BetterTTV.chat.helpers.sendMessage = function(message) {

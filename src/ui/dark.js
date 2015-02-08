@@ -16,6 +16,9 @@ FFZ.settings_info.dark_twitch = {
 	help: "View the entire site with a dark theme.",
 
 	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+
 			document.querySelector(".app-main").classList.toggle("ffz-dark", val);
 			if ( val )
 				this._load_dark_css();
@@ -28,6 +31,9 @@ FFZ.settings_info.dark_twitch = {
 // ---------------------
 
 FFZ.prototype.setup_dark = function() {
+	if ( this.has_bttv )
+		return;
+
 	document.querySelector(".app-main").classList.toggle("ffz-dark", this.settings.dark_twitch);
 	if ( this.settings.dark_twitch )
 		this._load_dark_css();
