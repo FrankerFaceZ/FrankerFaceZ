@@ -16,7 +16,7 @@
    "manifest_version": 2,
    "name": "FrankerFaceZ",
    "short_name": "FFZ",
-   "permissions": [ "*://*.twitch.tv/*", "http://*.frankerfacez.com/*", "https://*.frankerfacez.com/*" ],
+   "permissions": [ "*://*.twitch.tv/*", "*://*.frankerfacez.com/*" ],
    "update_url": "https://clients2.google.com/service/update2/crx",
    "version": "1.57"
 }
