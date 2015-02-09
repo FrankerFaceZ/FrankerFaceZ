@@ -1,22 +1,22 @@
 {
-   "content_scripts": [ {
-      "all_frames": true,
-      "js": [ "script.js" ],
-      "matches": [ "*://*.twitch.tv/*" ],
-      "exclude_matches": [ "*://api.twitch.tv/*" ]
-   } ],
-   "description": "Use a variety of unique faces on Twitch!",
-   "homepage_url": "http://frankerfacez.com",
-   "icons": {
-      "128": "icon128.png",
-      "16": "icon16.png",
-      "48": "icon48.png"
-   },
-   "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCA3cSXpMpzaLzuVA7YPnrUd5RLNhjWp4uz6UnspMZSutwvF1wMdIBQdEI5/mT7twy7wiAdCKLDo+dpq95y0Hqyuv6MpQTj783fxDl12vSxcib78GaViQm4RNjlaLbPow7ooPJGRLHDQSVNeeogFOX+5/hdNdFfxIRqkNav1sCCPQIDAQAB",
-   "manifest_version": 2,
-   "name": "FrankerFaceZ",
-   "short_name": "FFZ",
-   "permissions": [ "*://*.twitch.tv/*", "*://*.frankerfacez.com/*" ],
-   "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.57"
+	"manifest_version": 2,
+	"name": "FrankerFaceZ",
+	"short_name": "FFZ",
+	"version": "1.57",
+	"description": "Use a variety of unique faces on Twitch!",
+	"homepage_url": "http://www.frankerfacez.com",
+	"icons": {
+		"16": "icon16.png",
+		"48": "icon48.png",
+		"128": "icon128.png" },
+	"content_scripts": [ {
+		"all_frames": true,
+		"js": [ "script.js" ],
+		"matches": [ "*://*.twitch.tv/*" ],
+		"exclude_globs": [ "*://api.twitch.tv/*" ]
+	} ],
+	"permissions": [
+		"*://*.twitch.tv/*",
+		"*://*.frankerfacez.com/*"
+	]
 }
