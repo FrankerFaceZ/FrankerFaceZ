@@ -1,13 +1,10 @@
 {
    "content_scripts": [ {
-      "exclude_globs": [ "*api.twitch.tv/*" ],
-      "exclude_matches": [  ],
-      "include_globs": [ "*twitch.tv/*" ],
+      "all_frames": true,
       "js": [ "script.js" ],
-      "matches": [ "http://*.twitch.tv/*" ],
-      "run_at": "document_idle"
+      "matches": [ "*://*.twitch.tv/*" ],
+      "exclude_matches": [ "*://api.twitch.tv/*" ]
    } ],
-   "converted_from_user_script": true,
    "description": "Use a variety of unique faces on Twitch!",
    "homepage_url": "http://frankerfacez.com",
    "icons": {
@@ -18,7 +15,8 @@
    "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCA3cSXpMpzaLzuVA7YPnrUd5RLNhjWp4uz6UnspMZSutwvF1wMdIBQdEI5/mT7twy7wiAdCKLDo+dpq95y0Hqyuv6MpQTj783fxDl12vSxcib78GaViQm4RNjlaLbPow7ooPJGRLHDQSVNeeogFOX+5/hdNdFfxIRqkNav1sCCPQIDAQAB",
    "manifest_version": 2,
    "name": "FrankerFaceZ",
-   "permissions": [ "http://cdn.frankerfacez.com/" ],
+   "short_name": "FFZ",
+   "permissions": [ "*://*.twitch.tv/*", "http://*.frankerfacez.com/*", "https://*.frankerfacez.com/*" ],
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.56"
+   "version": "1.57"
 }
