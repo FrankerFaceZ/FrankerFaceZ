@@ -432,44 +432,44 @@
 
 /* Fix Moderation Cards */
 
-.ember-chat .moderation-card {
+.ember-chat .ffz-moderation-card {
 	box-shadow: #808080 0 0 5px;
 }
 
-.ember-chat .moderation-card button {
+.ember-chat .ffz-moderation-card button {
 	margin: 0;
 	padding: 0 5px;
 }
 
-.ember-chat .moderation-card button:not(.glyph-only):hover,
-.ember-chat .moderation-card button:not(.glyph-only):focus {
+.ember-chat .ffz-moderation-card button:not(.glyph-only):hover,
+.ember-chat .ffz-moderation-card button:not(.glyph-only):focus {
 	color: #fff;
 	background-color: rgba(117,80,186, 1);
 }
 
-.ember-chat .moderation-card button.message {
+.ember-chat .ffz-moderation-card button.message {
 	height: 30px; width: 28px;
 }
 
-.ember-chat .ffz-moderation-card .interface .mod-controls:last-of-type,
-.ember-chat .moderation-card .interface span.right {
+.ember-chat .ffz-moderation-card.ffz-is-mod .interface .mod-controls:last-of-type,
+.ember-chat .ffz-moderation-card .interface span.right {
 	float: right;
 }
 
-.ember-chat .moderation-card:focus {
+.ember-chat .ffz-moderation-card:focus {
 	outline: none;
 	box-shadow: #000 0 0 5px;
 }
 
-.ember-chat-container.dark .ember-chat .moderation-card:focus,
-.chat-container.dark .ember-chat .moderation-card:focus,
-.app-main.theatre .ember-chat .moderation-card:focus {
+.ember-chat-container.dark .ember-chat .ffz-moderation-card:focus,
+.chat-container.dark .ember-chat .ffz-moderation-card:focus,
+.app-main.theatre .ember-chat .ffz-moderation-card:focus {
 	box-shadow: #fff 0 0 5px;
 }
 
-.ember-chat-container.dark .ember-chat .moderation-card .interface,
-.chat-container.dark .ember-chat .moderation-card .interface,
-.app-main.theatre .ember-chat .moderation-card .interface {
+.ember-chat-container.dark .ember-chat .ffz-moderation-card .interface,
+.chat-container.dark .ember-chat .ffz-moderation-card .interface,
+.app-main.theatre .ember-chat .ffz-moderation-card .interface {
 	background-color: #232329;
 }
 
@@ -478,16 +478,16 @@
 	padding-bottom: 0;
 }
 
-.ember-chat .moderation-card .interface {
+.ember-chat .ffz-moderation-card .interface {
 	border-top: none;
 }
 
-.ember-chat .moderation-card h3.name {
+.ember-chat .ffz-moderation-card h3.name {
 	display: inline-block;
 	text-shadow: black 0 0 5px;
 }
 
-.ember-chat .moderation-card .channel_background {
+.ember-chat .ffz-moderation-card .channel_background {
 	width: 100%;
 	top: 0;
 }

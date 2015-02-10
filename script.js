@@ -835,7 +835,8 @@ var FFZ = window.FrankerFaceZ,
 		['12hr', 43200],
 		['24hr', 86400]],
 
-	MESSAGE = '<svg class="svg-messages" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,15V3h16v12H1z M15.354,5.354l-0.707-0.707L9,10.293L3.354,4.646L2.646,5.354L6.293,9l-3.646,3.646l0.707,0.707L7,9.707l1.646,1.646h0.707L11,9.707l3.646,3.646l0.707-0.707L11.707,9L15.354,5.354z" fill-rule="evenodd"></path></svg>';
+	MESSAGE = '<svg class="svg-messages" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,15V3h16v12H1z M15.354,5.354l-0.707-0.707L9,10.293L3.354,4.646L2.646,5.354L6.293,9l-3.646,3.646l0.707,0.707L7,9.707l1.646,1.646h0.707L11,9.707l3.646,3.646l0.707-0.707L11.707,9L15.354,5.354z" fill-rule="evenodd"></path></svg>',
+	CHECK = '<svg class="svg-unban" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M6.5,12.75L2,8.25l2-2l2.5,2.5l5.5-5.5l2,2L6.5,12.75z"/></svg>';
 
 
 // ----------------
@@ -867,15 +868,18 @@ FFZ.prototype.setup_mod_card = function() {
 		didInsertElement: function() {
 			this._super();
 			try {
-				if ( ! f.settings.enhanced_moderation )
+				if ( f.has_bttv || ! f.settings.enhanced_moderation )
 					return;
 
 				var el = this.get('element'),
 					controller = this.get('context');
 
+				// Style it!
+				el.classList.add('ffz-moderation-card');
+
 				// Only do the big stuff if we're mod.
 				if ( controller.get('parentController.model.isModeratorOrHigher') ) {
-					el.classList.add('ffz-moderation-card');
+					el.classList.add('ffz-is-mod');
 					el.setAttribute('tabindex', 1);
 
 					// Key Handling
@@ -947,7 +951,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 					var unban_btn = document.createElement('button');
 					unban_btn.className = 'unban button glyph-only light';
-					unban_btn.innerHTML = "&#x2713;";
+					unban_btn.innerHTML = CHECK;
 					unban_btn.title = "(U)nban User";
 
 					jQuery(unban_btn).tipsy();
