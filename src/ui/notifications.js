@@ -19,6 +19,7 @@ FFZ.settings_info.highlight_notifications = {
 	type: "boolean",
 	value: false,
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
@@ -54,7 +55,7 @@ FFZ.settings_info.highlight_notifications = {
 // ---------------------
 
 FFZ.ws_commands.message = function(message) {
-	this.show_mesage(message);
+	this.show_message(message);
 }
 
 

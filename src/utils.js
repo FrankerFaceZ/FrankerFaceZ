@@ -11,7 +11,41 @@ var sanitize_cache = {},
 		else if ( num == 3 ) return '3rd';
 		else if ( num == null ) return '---';
 		return num + "th";
+	},
+
+	brighten = function(rgb, amount) {
+		amount = (amount === 0) ? 0 : (amount || 1);
+		amount = Math.round(255 * -(amount / 100));
+
+		var r = Math.max(0, Math.min(255, rgb[0] - amount)),
+			g = Math.max(0, Math.min(255, rgb[1] - amount)),
+			b = Math.max(0, Math.min(255, rgb[2] - amount));
+
+		return [r,g,b];
+	},
+
+	rgb_to_css = function(rgb) {
+		return "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+	},
+
+	darken = function(rgb, amount) {
+		amount = (amount === 0) ? 0 : (amount || 1);
+		return brighten(rgb, -amount);
+	},
+
+	get_luminance = function(rgb) {
+		rgb = [rgb[0]/255, rgb[1]/255, rgb[2]/255];
+		for (var i =0; i<rgb.length; i++) {
+			if (rgb[i] <= 0.03928) {
+				rgb[i] = rgb[i] / 12.92;
+			} else {
+				rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
+			}
+		}
+		var l = (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
+		return l;
 	};
+
 
 module.exports = {
 	update_css: function(element, id, css) {
@@ -34,6 +68,11 @@ module.exports = {
 		element.innerHTML = all;
 	},
 
+	get_luminance: get_luminance,
+	brighten: brighten,
+	darken: darken,
+	rgb_to_css: rgb_to_css,
+
 	number_commas: function(x) {
 		var parts = x.toString().split(".");
 		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -41,7 +80,7 @@ module.exports = {
 	},
 
 	place_string: place_string,
-	
+
 	placement: function(entrant) {
 		if ( entrant.state == "forfeit" ) return "Forfeit";
 		else if ( entrant.state == "dq" ) return "DQed";

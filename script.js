@@ -190,15 +190,29 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":25}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":24}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
+
+
+// -----------------
+// Log Export
+// -----------------
+
+FFZ.ffz_commands.log = function(room, args) {
+	this._pastebin(this._log_data.join("\n"), function(url) {
+		if ( ! url )
+			return this.room_message(room, "There was an error uploading the FrankerFaceZ log.");
+
+		this.room_message(room, "Your FrankerFaceZ log has been pasted to: " + url);
+	});
+};
 
 
 // -----------------
 // Mass Moderation
 // -----------------
 
-FFZ.chat_commands.massunmod = function(room, args) {
+FFZ.ffz_commands.massunmod = function(room, args) {
 	args = args.join(" ").trim();
 
 	if ( ! args.length )
@@ -222,10 +236,10 @@ FFZ.chat_commands.massunmod = function(room, args) {
 	return "Sent unmod command for " + count + " users.";
 }
 
-FFZ.chat_commands.massunmod.help = "Usage: /ffz massunmod <list, of, users>\nBroadcaster only. Unmod all the users in the provided list.";
+FFZ.ffz_commands.massunmod.help = "Usage: /ffz massunmod <list, of, users>\nBroadcaster only. Unmod all the users in the provided list.";
 
 
-FFZ.chat_commands.massmod = function(room, args) {
+FFZ.ffz_commands.massmod = function(room, args) {
 	args = args.join(" ").trim();
 
 	if ( ! args.length )
@@ -240,7 +254,6 @@ FFZ.chat_commands.massmod = function(room, args) {
 	if ( args.length > 50 )
 		return "Each user you mod counts as a single message. To avoid being globally banned, please limit yourself to 50 at a time and wait between uses.";
 
-		
 	var count = args.length;
 	while(args.length) {
 		var name = args.shift();
@@ -250,7 +263,7 @@ FFZ.chat_commands.massmod = function(room, args) {
 	return "Sent mod command for " + count + " users.";
 }
 
-FFZ.chat_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
+FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
 },{}],3:[function(require,module,exports){
 var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
 	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev');
@@ -274,7 +287,7 @@ var FFZ = window.FrankerFaceZ;
 // Developer Mode Command
 // -----------------------
 
-FFZ.chat_commands.developer_mode = function(room, args) {
+FFZ.ffz_commands.developer_mode = function(room, args) {
 	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
 	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
 		enabled = true;
@@ -288,7 +301,7 @@ FFZ.chat_commands.developer_mode = function(room, args) {
 	return "Developer Mode is now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
 }
 
-FFZ.chat_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
+FFZ.ffz_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
 
 },{}],5:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
@@ -318,7 +331,11 @@ FFZ.prototype.setup_chatview = function() {
 			continue;
 
 		this.log("Adding UI link manually to Chat view.", view);
-		view.$('.textarea-contain').append(this.build_ui_link(view));
+		try {
+			view.$('.textarea-contain').append(this.build_ui_link(view));
+		} catch(err) {
+			this.error("setup: build_ui_link: " + err);
+		}
 	}
 }
 
@@ -333,21 +350,34 @@ FFZ.prototype._modify_cview = function(view) {
 	view.reopen({
 		didInsertElement: function() {
 			this._super();
-			this.$() && this.$('.textarea-contain').append(f.build_ui_link(this));
+			try {
+				this.$() && this.$('.textarea-contain').append(f.build_ui_link(this));
+			} catch(err) {
+				f.error("didInsertElement: build_ui_link: " + err);
+			}
 		},
 
 		willClearRender: function() {
 			this._super();
-			this.$(".ffz-ui-toggle").remove();
+			try {
+				this.$(".ffz-ui-toggle").remove();
+			} catch(err) {
+				f.error("willClearRender: remove ui link: " + err);
+			}
 		},
 
 		ffzUpdateLink: Ember.observer('controller.currentRoom', function() {
-			f.update_ui_link();
+			try {
+				f.update_ui_link();
+			} catch(err) {
+				f.error("ffzUpdateLink: update_ui_link: " + err);
+			}
 		})
 	});
 }
 },{}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
+	utils = require("../utils"),
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
@@ -362,6 +392,7 @@ FFZ.settings_info.capitalize = {
 	type: "boolean",
 	value: true,
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Username Capitalization",
@@ -373,6 +404,7 @@ FFZ.settings_info.keywords = {
 	type: "button",
 	value: [],
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Keywords",
@@ -382,7 +414,7 @@ FFZ.settings_info.keywords = {
 			var old_val = this.settings.keywords.join(", "),
 				new_val = prompt("Highlight Keywords\n\nPlease enter a comma-separated list of words that you would like to be highlighted in chat.", old_val);
 
-			if ( ! new_val )
+			if ( new_val === null || new_val === undefined )
 				return;
 
 			// Split them up.
@@ -396,17 +428,40 @@ FFZ.settings_info.keywords = {
 	};
 
 
+FFZ.settings_info.fix_color = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat",
+	visible: function() { return ! this.has_bttv },
+
+	name: "Adjust Username Colors",
+	help: "Ensure that username colors contrast with the background enough to be readable.",
+
+	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-chat-colors", val);
+		}
+	};
+
+
 FFZ.settings_info.chat_rows = {
 	type: "boolean",
 	value: false,
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Chat Line Backgrounds",
 	help: "Display alternating background colors for lines in chat.",
 
 	on_update: function(val) {
-			document.querySelector(".app-main").classList.toggle("ffz-chat-background", val);
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-chat-background", val);
 		}
 	};
 
@@ -416,9 +471,18 @@ FFZ.settings_info.chat_rows = {
 // ---------------------
 
 FFZ.prototype.setup_line = function() {
-	// Alternating Background
-	document.querySelector('.app-main').classList.toggle('ffz-chat-background', this.settings.chat_rows);
+	// Chat Enhancements
+	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color);
+	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
+
+	this._colors = {};
 	this._last_row = {};
+
+	var s = this._fix_color_style = document.createElement('style');
+	s.id = "ffz-style-username-colors";
+	s.type = 'text/css';
+	document.head.appendChild(s);
+
 
 	this.log("Hooking the Ember Line controller.");
 
@@ -428,11 +492,20 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
-			var tokens = f._emoticonize(this, this._super()),
-				user = f.get_user();
+			var tokens = this._super();
 
-			if ( ! user || this.get("model.from") != user.login )
-				tokens = f._mentionize(this, tokens);
+			try {
+				tokens = f._emoticonize(this, tokens);
+				var user = f.get_user();
+
+				if ( ! user || this.get("model.from") != user.login )
+					tokens = f._mentionize(this, tokens);
+
+			} catch(err) {
+				try {
+					f.error("LineController tokenizedMessage: " + err);
+				} catch(err) { }
+			}
 
 			return tokens;
 
@@ -446,65 +519,152 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		didInsertElement: function() {
 			this._super();
+			try {
+				var el = this.get('element'),
+					user = this.get('context.model.from'),
+					room = this.get('context.parentController.content.id'),
+					color = this.get('context.model.color'),
 
-			var el = this.get('element'),
-				user = this.get('context.model.from'),
-				room = this.get('context.parentController.content.id'),
-				row_type = this.get('context.model.ffzAlternate');
+					row_type = this.get('context.model.ffz_alternate');
 
-			if ( row_type === undefined ) {
-				row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
-				this.set("context.model.ffzAlternate", row_type);
-			}
 
-			el.classList.toggle('ffz-alternate', row_type);
-			el.setAttribute('data-room', room);
-			el.setAttribute('data-sender', user);
+				// Color Processing
+				if ( color )
+					f._handle_color(color);
 
-			f.render_badge(this);
 
-			if ( f.settings.capitalize )
-				f.capitalize(this, user);
-
-			// Check for any mentions.
-			var mentioned = el.querySelector('span.mentioned');
-			if ( mentioned ) {
-				el.classList.add("ffz-mentioned");
-
-				if ( ! document.hasFocus() && ! this.get('context.model.ffzNotified') && f.settings.highlight_notifications ) {
-					var cap_room = FFZ.get_capitalization(room),
-						cap_user = FFZ.get_capitalization(user),
-						room_name = cap_room,
-						msg = this.get("context.model.message");
-
-					if ( this.get("context.parentController.content.isGroupRoom") )
-						room_name = this.get("context.parentController.content.tmiRoom.displayName");
-
-					if ( this.get("context.model.style") == "action" )
-						msg = "* " + cap_user + " " + msg;
-					else
-						msg = cap_user + ": " + msg;
-
-					f.show_notification(
-						msg,
-						"Twitch Chat Mention in " + room_name,
-						cap_room,
-						60000,
-						window.focus.bind(window)
-						);
+				// Row Alternation
+				if ( row_type === undefined ) {
+					row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
+					this.set("context.model.ffz_alternate", row_type);
 				}
-			}
 
-			// Mark that we've checked this message for mentions.
-			this.set('context.model.ffzNotified', true);
+				el.classList.toggle('ffz-alternate', row_type);
+
+
+				// Basic Data
+				el.setAttribute('data-room', room);
+				el.setAttribute('data-sender', user);
+
+
+				// Badge
+				f.render_badge(this);
+
+
+				// Capitalization
+				if ( f.settings.capitalize )
+					f.capitalize(this, user);
+
+
+				// Mention Highlighting
+				var mentioned = el.querySelector('span.mentioned');
+				if ( mentioned ) {
+					el.classList.add("ffz-mentioned");
+
+					if ( ! document.hasFocus() && ! this.get('context.model.ffz_notified') && f.settings.highlight_notifications ) {
+						var cap_room = FFZ.get_capitalization(room),
+							cap_user = FFZ.get_capitalization(user),
+							room_name = cap_room,
+							msg = this.get("context.model.message");
+
+						if ( this.get("context.parentController.content.isGroupRoom") )
+							room_name = this.get("context.parentController.content.tmiRoom.displayName");
+
+						if ( this.get("context.model.style") == "action" )
+							msg = "* " + cap_user + " " + msg;
+						else
+							msg = cap_user + ": " + msg;
+
+						f.show_notification(
+							msg,
+							"Twitch Chat Mention in " + room_name,
+							cap_room,
+							60000,
+							window.focus.bind(window)
+							);
+					}
+				}
+
+				// Mark that we've checked this message for mentions.
+				this.set('context.model.ffz_notified', true);
+
+			} catch(err) {
+				try {
+					f.error("LineView didInsertElement: " + err);
+				} catch(err) { }
+			}
 		}
 	});
+
 
 	// Store the capitalization of our own name.
 	var user = this.get_user();
 	if ( user && user.name )
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
+
+
+// ---------------------
+// Fix Name Colors
+// ---------------------
+
+FFZ.prototype._handle_color = function(color) {
+	if ( ! color || this._colors[color] )
+		return;
+
+	this._colors[color] = true;
+
+	// Parse the color.
+	var raw = parseInt(color.substr(1), 16),
+		rgb = [
+			(raw >> 16),
+			(raw >> 8 & 0x00FF),
+			(raw & 0x0000FF)
+			],
+
+		lum = utils.get_luminance(rgb),
+
+		output = "",
+		rule = 'span[style="color:' + color + '"]',
+		matched = false;
+
+	if ( lum > 0.3 ) {
+		// Color Too Bright. We need a lum of 0.3 or less.
+		matched = true;
+
+		var s = 255,
+			nc = rgb;
+		while(s--) {
+			nc = utils.darken(nc);
+			if ( utils.get_luminance(nc) <= 0.3 )
+				break;
+		}
+
+		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
+	} else
+		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
+
+	if ( lum < 0.1 ) {
+		// Color Too Dark. We need a lum of 0.1 or more.
+		matched = true;
+
+		var s = 255,
+			nc = rgb;
+		while(s--) {
+			nc = utils.brighten(nc);
+			if ( utils.get_luminance(nc) >= 0.1 )
+				break;
+		}
+
+		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
+	} else
+		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
+
+
+	if ( matched )
+		this._fix_color_style.innerHTML += output;
+}
+
 
 
 // ---------------------
@@ -554,30 +714,13 @@ FFZ.prototype.capitalize = function(view, user) {
 }
 
 
-FFZ.chat_commands.capitalization = function(room, args) {
-	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
-	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
-		enabled = true;
-	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
-		enabled = false;
-
-	if ( enabled === undefined )
-		return "Chat Name Capitalization is currently " + (this.settings.capitalize ? "enabled." : "disabled.");
-
-	this.settings.set("capitalize", enabled);
-	return "Chat Name Capitalization is now " + (enabled ? "enabled." : "disabled.");
-}
-
-FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEnable or disable Chat Name Capitalization. This setting does not work with BetterTTV.";
-
-
 // ---------------------
 // Extra Mentions
 // ---------------------
 
 FFZ._regex_cache = {};
 
-FFZ._get_rex = function(word) {
+FFZ._get_regex = function(word) {
 	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "ig");
 }
 
@@ -613,25 +756,6 @@ FFZ.prototype._mentionize = function(controller, tokens) {
 			);
 		}).flatten().compact().value();
 }
-
-
-FFZ.chat_commands.mentionize = function(room, args) {
-	if ( args && args.length ) {
-		var mention_words = args.join(" ").trim().split(/\W*,\W*/);
-		if ( mention_words.length == 1 && mention_words[0] == "disable" )
-			mention_words = [];
-
-		this.settings.set("keywords", mention_words);
-	}
-
-	var mention_words = this.settings.keywords;
-	if ( mention_words.length )
-		return "The following words will be highlighted: " + mention_words.join(", ");
-	else
-		return "There are no words set that will be highlighted.";
-}
-
-FFZ.chat_commands.mentionize.help = "Usage: /ffz mentionize <comma, separated, word, list|disable>\nSet a list of words that will also be highlighted in chat.";
 
 
 // ---------------------
@@ -693,7 +817,255 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{}],7:[function(require,module,exports){
+},{"../utils":24}],7:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	utils = require("../utils"),
+
+	keycodes = {
+		ESC: 27,
+		P: 80,
+		B: 66,
+		T: 84
+		},
+
+	btns = [
+		['5m', 300],
+		['10m', 600],
+		['1hr', 3600],
+		['12hr', 43200],
+		['24hr', 86400]],
+
+	MESSAGE = '<svg class="svg-messages" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,15V3h16v12H1z M15.354,5.354l-0.707-0.707L9,10.293L3.354,4.646L2.646,5.354L6.293,9l-3.646,3.646l0.707,0.707L7,9.707l1.646,1.646h0.707L11,9.707l3.646,3.646l0.707-0.707L11.707,9L15.354,5.354z" fill-rule="evenodd"></path></svg>';
+
+
+// ----------------
+// Settings
+// ----------------
+
+FFZ.settings_info.enhanced_moderation = {
+	type: "boolean",
+	value: false,
+
+	visible: function() { return ! this.has_bttv },
+	category: "Chat",
+
+	name: "Enhanced Moderation",
+	help: "Use /p, /t, /u and /b in chat to moderator, or use hotkeys with moderation cards."
+	};
+
+
+// ----------------
+// Initialization
+// ----------------
+
+FFZ.prototype.setup_mod_card = function() {
+	this.log("Hooking the Ember Moderation Card view.");
+	var Card = App.__container__.resolve('view:moderation-card'),
+		f = this;
+
+	Card.reopen({
+		didInsertElement: function() {
+			this._super();
+			try {
+				if ( ! f.settings.enhanced_moderation )
+					return;
+
+				var el = this.get('element'),
+					controller = this.get('context');
+
+				// Only do the big stuff if we're mod.
+				if ( controller.get('parentController.model.isModeratorOrHigher') ) {
+					el.classList.add('ffz-moderation-card');
+					el.setAttribute('tabindex', 1);
+
+					// Key Handling
+					el.addEventListener('keyup', function(e) {
+						var key = e.keyCode || e.which,
+							user_id = controller.get('model.user.id'),
+							room = controller.get('parentController.model');
+
+						if ( key == keycodes.P )
+							room.send("/timeout " + user_id + " 1");
+
+						else if ( key == keycodes.B )
+							room.send("/ban " + user_id);
+
+						else if ( key == keycodes.T )
+							room.send("/timeout " + user_id + " 600");
+
+						else if ( key != keycodes.ESC )
+							return;
+
+						controller.send('hideModOverlay');
+					});
+
+
+					// Extra Moderation
+					var line = document.createElement('div');
+					line.className = 'interface clearfix';
+
+					var btn_click = function(timeout) {
+							var user_id = controller.get('model.user.id'),
+								room = controller.get('parentController.model');
+
+								if ( timeout === -1 )
+									room.send("/unban " + user_id);
+								else
+									room.send("/timeout " + user_id + " " + timeout);
+							},
+
+						btn_make = function(text, timeout) {
+								var btn = document.createElement('button');
+								btn.className = 'button';
+								btn.innerHTML = text;
+								btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
+
+								if ( timeout === 600 )
+									btn.title = "(T)" + btn.title.substr(1);
+								else if ( timeout === 1 )
+									btn.title = "(P)urge - " + btn.title;
+
+								jQuery(btn).tipsy();
+
+								btn.addEventListener('click', btn_click.bind(this, timeout));
+								return btn;
+							};
+
+					line.appendChild(btn_make('Purge', 1));
+
+					var s = document.createElement('span');
+					s.className = 'right';
+					line.appendChild(s);
+
+					for(var i=0; i < btns.length; i++)
+						s.appendChild(btn_make(btns[i][0], btns[i][1]));
+
+					el.appendChild(line);
+
+
+					// Unban Button
+
+					var unban_btn = document.createElement('button');
+					unban_btn.className = 'unban button glyph-only light';
+					unban_btn.innerHTML = "&#x2713;";
+					unban_btn.title = "(U)nban User";
+
+					jQuery(unban_btn).tipsy();
+					unban_btn.addEventListener("click", btn_click.bind(this, -1));
+
+					var ban_btn = el.querySelector('button.ban');
+					ban_btn.setAttribute('title', '(B)an User');
+
+					jQuery(ban_btn).after(unban_btn);
+
+
+					// Fix Other Buttons
+					this.$("button.timeout").remove();
+				}
+
+
+				// More Fixing Other Buttons
+				var op_btn = el.querySelector('button.mod');
+				if ( op_btn ) {
+					var model = controller.get('parentController.model'),
+						can_op = model.get('isBroadcaster') || model.get('isStaff') || model.get('isAdmin');
+
+					if ( ! can_op )
+						op_btn.parentElement.removeChild(op_btn);
+				}
+
+
+				var msg_btn = el.querySelector(".interface > button");
+				if ( msg_btn && msg_btn.className == "button" ) {
+					msg_btn.innerHTML = MESSAGE;
+					msg_btn.classList.add('glyph-only');
+					msg_btn.classList.add('message');
+
+					msg_btn.title = "Message User";
+					jQuery(msg_btn).tipsy();
+				}
+
+
+				// Focus the Element
+				this.$().draggable({
+					start: function() {
+						el.focus();
+						}});
+
+				el.focus();
+
+			} catch(err) {
+				try {
+					f.error("ModerationCardView didInsertElement: " + err);
+				} catch(err) { }
+			}
+		}});
+}
+
+
+// ----------------
+// Chat Commands
+// ----------------
+
+FFZ.chat_commands.purge = FFZ.chat_commands.p = function(room, args) {
+	if ( ! args || ! args.length )
+		return "Purge Usage: /p username [more usernames separated by spaces]";
+
+	if ( args.length > 10 )
+		return "Please only purge up to 10 users at once.";
+
+	for(var i=0; i < args.length; i++) {
+		var name = args[i];
+		if ( name )
+			room.room.send("/timeout " + name + " 1");
+	}
+}
+
+FFZ.chat_commands.p.enabled = function() { return this.settings.enhanced_moderation; }
+
+
+FFZ.chat_commands.t = function(room, args) {
+	if ( ! args || ! args.length )
+		return "Timeout Usage: /t username [duration]";
+	room.room.send("/timeout " + args.join(" "));
+}
+
+FFZ.chat_commands.t.enabled = function() { return this.settings.enhanced_moderation; }
+
+
+FFZ.chat_commands.b = function(room, args) {
+	if ( ! args || ! args.length )
+		return "Ban Usage: /b username [more usernames separated by spaces]";
+
+	if ( args.length > 10 )
+		return "Please only ban up to 10 users at once.";
+
+	for(var i=0; i < args.length; i++) {
+		var name = args[i];
+		if ( name )
+			room.room.send("/ban " + name);
+	}
+}
+
+FFZ.chat_commands.b.enabled = function() { return this.settings.enhanced_moderation; }
+
+
+FFZ.chat_commands.u = function(room, args) {
+	if ( ! args || ! args.length )
+		return "Unban Usage: /b username [more usernames separated by spaces]";
+
+	if ( args.length > 10 )
+		return "Please only unban up to 10 users at once.";
+
+	for(var i=0; i < args.length; i++) {
+		var name = args[i];
+		if ( name )
+			room.room.send("/unban " + name);
+	}
+}
+
+FFZ.chat_commands.u.enabled = function() { return this.settings.enhanced_moderation; }
+},{"../utils":24}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -746,6 +1118,7 @@ FFZ.prototype.setup_room = function() {
 // --------------------
 
 FFZ.chat_commands = {};
+FFZ.ffz_commands = {};
 
 
 FFZ.prototype.room_message = function(room, text) {
@@ -762,6 +1135,54 @@ FFZ.prototype.room_message = function(room, text) {
 
 
 FFZ.prototype.run_command = function(text, room_id) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return false;
+
+	if ( ! text )
+		return;
+
+	var args = text.split(" "),
+		cmd = args.shift().substr(1).toLowerCase(),
+
+		command = FFZ.chat_commands[cmd],
+		output;
+
+	if ( ! command )
+		return false;
+
+	if ( command.hasOwnProperty('enabled') ) {
+		var val = command.enabled;
+		if ( typeof val == "function" ) {
+			try {
+				val = command.enabled.bind(this)(room, args);
+			} catch(err) {
+				this.error('command "' + cmd + '" enabled: ' + err);
+				val = false;
+			}
+		}
+
+		if ( ! val )
+			return false;
+	}
+
+	this.log("Received Command: " + cmd, args, true);
+
+	try {
+		output = command.bind(this)(room, args);
+	} catch(err) {
+		this.error('command "' + cmd + '" runner: ' + err);
+		output = "There was an error running the command.";
+	}
+
+	if ( output )
+		this.room_message(room, output);
+
+	return true;
+}
+
+
+FFZ.prototype.run_ffz_command = function(text, room_id) {
 	var room = this.rooms[room_id];
 	if ( ! room || !room.room )
 		return;
@@ -780,7 +1201,7 @@ FFZ.prototype.run_command = function(text, room_id) {
 
 	this.log("Received Command: " + cmd, args, true);
 
-	var command = FFZ.chat_commands[cmd], output;
+	var command = FFZ.ffz_commands[cmd], output;
 	if ( command ) {
 		try {
 			output = command.bind(this)(room, args);
@@ -796,9 +1217,9 @@ FFZ.prototype.run_command = function(text, room_id) {
 }
 
 
-FFZ.chat_commands.help = function(room, args) {
+FFZ.ffz_commands.help = function(room, args) {
 	if ( args && args.length ) {
-		var command = FFZ.chat_commands[args[0].toLowerCase()];
+		var command = FFZ.ffz_commands[args[0].toLowerCase()];
 		if ( ! command )
 			return 'There is no "' + args[0] + '" command.';
 
@@ -810,13 +1231,13 @@ FFZ.chat_commands.help = function(room, args) {
 	}
 
 	var cmds = [];
-	for(var c in FFZ.chat_commands)
-		FFZ.chat_commands.hasOwnProperty(c) && cmds.push(c);
+	for(var c in FFZ.ffz_commands)
+		FFZ.ffz_commands.hasOwnProperty(c) && cmds.push(c);
 
 	return "The available commands are: " + cmds.join(", ");
 }
 
-FFZ.chat_commands.help.help = "Usage: /ffz help [command]\nList available commands, or show help for a specific command.";
+FFZ.ffz_commands.help.help = "Usage: /ffz help [command]\nList available commands, or show help for a specific command.";
 
 
 // --------------------
@@ -910,12 +1331,20 @@ FFZ.prototype._modify_room = function(room) {
 		// Track which rooms the user is currently in.
 		init: function() {
 			this._super();
-			f.add_room(this.id, this);
+			try {
+				f.add_room(this.id, this);
+			} catch(err) {
+				f.error("add_room: " + err);
+			}
 		},
 
 		willDestroy: function() {
 			this._super();
-			f.remove_room(this.id);
+			try {
+				f.remove_room(this.id);
+			} catch(err) {
+				f.error("remove_room: " + err);
+			}
 		},
 
 		getSuggestions: function() {
@@ -924,19 +1353,35 @@ FFZ.prototype._modify_room = function(room) {
 			// filteredSuggestions property of the chat-input component would
 			// be even better, but I was already hooking the room model.
 			var suggestions = this._super();
-			if ( this.settings.capitalize )
-				suggestions = _.map(suggestions, FFZ.get_capitalization);
+
+			try {
+				if ( f.settings.capitalize )
+					suggestions = _.map(suggestions, FFZ.get_capitalization);
+			} catch(err) {
+				f.error("get_suggestions: " + err);
+			}
 
 			return suggestions;
 		},
 
 		send: function(text) {
-			var cmd = text.split(' ', 1)[0].toLowerCase();
-			if ( cmd === "/ffz" ) {
-				this.set("messageToSend", "");
-				f.run_command(text.substr(5), this.get('id'));
-			} else
-				return this._super(text);
+			try {
+				var cmd = text.split(' ', 1)[0].toLowerCase();
+				if ( cmd === "/ffz" ) {
+					this.set("messageToSend", "");
+					f.run_ffz_command(text.substr(5), this.get('id'));
+					return;
+
+				} else if ( cmd.charAt(0) === "/" && f.run_command(text, this.get('id')) ) {
+					this.set("messageToSend", "");
+					return;
+				}
+
+			} catch(err) {
+				f.error("send: " + err);
+			}
+
+			return this._super(text);
 		}
 	});
 }
@@ -988,25 +1433,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":25}],8:[function(require,module,exports){
-var FFZ = window.FrankerFaceZ;
-
-
-// --------------------
-// Initialization
-// --------------------
-
-FFZ.prototype.setup_router = function() {
-	this.log("Hooking the Ember router.");
-
-	var f = this;
-	App.__container__.lookup('router:main').reopen({
-		ffzTransition: function() {
-			f.track_page();
-		}.on('didTransition')
-	});
-}
-},{}],9:[function(require,module,exports){
+},{"../constants":3,"../utils":24}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1027,72 +1454,77 @@ FFZ.prototype._modify_viewers = function(controller) {
 
 	controller.reopen({
 		lines: function() {
-			var viewers = this._super(),
-				categories = [],
-				data = {},
-				last_category = null;
+			var viewers = this._super();
+			try {
+				var categories = [],
+					data = {},
+					last_category = null;
 
-			// Get the broadcaster name.
-			var Channel = App.__container__.lookup('controller:channel'),
-				room_id = this.get('parentController.model.id'),
-				broadcaster = Channel && Channel.get('id');
+				// Get the broadcaster name.
+				var Channel = App.__container__.lookup('controller:channel'),
+					room_id = this.get('parentController.model.id'),
+					broadcaster = Channel && Channel.get('id');
 
-			// We can get capitalization for the broadcaster from the channel.
-			if ( broadcaster ) {
-				var display_name = Channel.get('display_name');
-				if ( display_name )
-					FFZ.capitalization[broadcaster] = [display_name, Date.now()];
-			}
+				// We can get capitalization for the broadcaster from the channel.
+				if ( broadcaster ) {
+					var display_name = Channel.get('display_name');
+					if ( display_name )
+						FFZ.capitalization[broadcaster] = [display_name, Date.now()];
+				}
 
-			// If the current room isn't the channel's chat, then we shouldn't
-			// display them as the broadcaster.
-			if ( room_id != broadcaster )
-				broadcaster = null;
+				// If the current room isn't the channel's chat, then we shouldn't
+				// display them as the broadcaster.
+				if ( room_id != broadcaster )
+					broadcaster = null;
 
-			// Now, break the viewer array down into something we can use.
-			for(var i=0; i < viewers.length; i++) {
-				var entry = viewers[i];
-				if ( entry.category ) {
-					last_category = entry.category;
-					categories.push(last_category);
-					data[last_category] = [];
+				// Now, break the viewer array down into something we can use.
+				for(var i=0; i < viewers.length; i++) {
+					var entry = viewers[i];
+					if ( entry.category ) {
+						last_category = entry.category;
+						categories.push(last_category);
+						data[last_category] = [];
 
-				} else {
-					var viewer = entry.chatter.toLowerCase();
-					if ( ! viewer )
+					} else {
+						var viewer = entry.chatter.toLowerCase();
+						if ( ! viewer )
+							continue;
+
+						// If the viewer is the broadcaster, give them their own
+						// group. Don't put them with normal mods!
+						if ( viewer == broadcaster ) {
+							categories.unshift("Broadcaster");
+							data["Broadcaster"] = [viewer];
+
+						} else if ( data.hasOwnProperty(last_category) )
+							data[last_category].push(viewer);
+					}
+				}
+
+				// Now, rebuild the viewer list. However, we're going to actually
+				// sort it this time.
+				viewers = [];
+				for(var i=0; i < categories.length; i++) {
+					var category = categories[i],
+						chatters = data[category];
+
+					if ( ! chatters || ! chatters.length )
 						continue;
 
-					// If the viewer is the broadcaster, give them their own
-					// group. Don't put them with normal mods!
-					if ( viewer == broadcaster ) {
-						categories.unshift("Broadcaster");
-						data["Broadcaster"] = [viewer];
+					viewers.push({category: category});
+					viewers.push({chatter: ""});
 
-					} else if ( data.hasOwnProperty(last_category) )
-						data[last_category].push(viewer);
+					// Push the chatters, capitalizing them as we go.
+					chatters.sort();
+					while(chatters.length) {
+						var viewer = chatters.shift();
+						viewer = FFZ.get_capitalization(viewer);
+						viewers.push({chatter: viewer});
+					}
 				}
-			}
 
-			// Now, rebuild the viewer list. However, we're going to actually
-			// sort it this time.
-			viewers = [];
-			for(var i=0; i < categories.length; i++) {
-				var category = categories[i],
-					chatters = data[category];
-
-				if ( ! chatters || ! chatters.length )
-					continue;
-
-				viewers.push({category: category});
-				viewers.push({chatter: ""});
-
-				// Push the chatters, capitalizing them as we go.
-				chatters.sort();
-				while(chatters.length) {
-					var viewer = chatters.shift();
-					viewer = FFZ.get_capitalization(viewer);
-					viewers.push({chatter: viewer});
-				}
+			} catch(err) {
+				f.error("ViewersController lines: " + err);
 			}
 
 			return viewers;
@@ -1297,7 +1729,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":25}],11:[function(require,module,exports){
+},{"./constants":3,"./utils":24}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -1323,14 +1755,19 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
-	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
+	// this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Disable Dark if it's enabled.
-	document.querySelector(".app-main").classList.remove("ffz-dark");
+	document.body.classList.remove("ffz-dark");
 	if ( this._dark_style ) {
 		this._dark_style.parentElement.removeChild(this._dark_style);
 		delete this._dark_style;
 	}
+
+	// Disable other features too.
+	document.body.classList.remove("ffz-chat-colors");
+	document.body.classList.remove("ffz-chat-background");
+
 
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
@@ -1338,7 +1775,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 		var cmd = message.split(' ', 1)[0].toLowerCase();
 
 		if ( cmd === "/ffz" )
-			f.run_command(message.substr(5), BetterTTV.chat.store.currentRoom);
+			f.run_ffz_command(message.substr(5), BetterTTV.chat.store.currentRoom);
 		else
 			return original_send(message);
 	}
@@ -1521,6 +1958,9 @@ require('./shims');
 var FFZ = window.FrankerFaceZ = function() {
 	FFZ.instance = this;
 
+	// Logging
+	this._log_data = [];
+
 	// Get things started.
 	this.initialize();
 }
@@ -1531,7 +1971,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 0, revision: 0,
+	major: 3, minor: 1, revision: 0,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -1542,6 +1982,8 @@ var VER = FFZ.version_info = {
 
 FFZ.prototype.log = function(msg, data, to_json) {
 	msg = "FFZ: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+	this._log_data.push(msg);
+
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
 		console.groupCollapsed(msg);
 		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
@@ -1552,6 +1994,43 @@ FFZ.prototype.log = function(msg, data, to_json) {
 		console.groupEnd(msg);
 	} else
 		console.log(msg);
+}
+
+
+FFZ.prototype.error = function(msg, data, to_json) {
+	msg = "FFZ Error: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+	this._log_data.push(msg);
+
+	if ( data !== undefined && console.groupCollapsed && console.dir ) {
+		console.groupCollapsed(msg);
+		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
+			console.log(data);
+		else
+			console.dir(data);
+
+		console.groupEnd(msg);
+	} else
+		console.assert(false, msg);
+}
+
+
+FFZ.prototype.paste_logs = function() {
+	this._pastebin(this._log_data.join("\n"), function(url) {
+		if ( ! url )
+			return console.log("FFZ Error: Unable to upload log to pastebin.");
+
+		console.log("FFZ: Your FrankerFaceZ log has been pasted to: " + url);
+	});
+}
+
+
+FFZ.prototype._pastebin = function(data, callback) {
+	jQuery.ajax({url: "http://putco.de/", type: "PUT", data: data, context: this})
+		.success(function(e) {
+			callback.bind(this)(e.trim() + ".log");
+		}).fail(function(e) {
+			callback.bind(this)(null);
+		});
 }
 
 
@@ -1581,14 +2060,15 @@ require('./socket');
 require('./emoticons');
 require('./badges');
 
-require('./ember/router');
+// Analytics: require('./ember/router');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
+require('./ember/moderation-card');
 //require('./ember/teams');
 
-require('./tracking');
+// Analytics: require('./tracking');
 
 require('./debug');
 
@@ -1653,13 +2133,14 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_emoticons();
 	this.setup_badges();
 
-	this.setup_piwik();
+	//this.setup_piwik();
 
-	this.setup_router();
+	//this.setup_router();
 	this.setup_room();
 	this.setup_line();
 	this.setup_chatview();
 	this.setup_viewers();
+	this.setup_mod_card();
 
 	//this.setup_teams();
 
@@ -1678,7 +2159,7 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/room":7,"./ember/router":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./tracking":18,"./ui/menu":19,"./ui/menu_button":20,"./ui/notifications":21,"./ui/races":22,"./ui/styles":23,"./ui/viewer_count":24}],14:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/moderation-card":7,"./ember/room":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./ui/menu":18,"./ui/menu_button":19,"./ui/notifications":20,"./ui/races":21,"./ui/styles":22,"./ui/viewer_count":23}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -1756,7 +2237,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	btn.innerHTML = "<span>" + message + "</span>";
 
 	// Track the number of users to click this button.
-	btn.addEventListener('click', function() { f.track('trackLink', this.href, 'link'); });
+	// btn.addEventListener('click', function() { f.track('trackLink', this.href, 'link'); });
 
 	btnc.appendChild(btn);
 	parent.appendChild(btnc);
@@ -2114,138 +2595,6 @@ FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
 }
 },{}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
-	constants = require('./constants'),
-	PIWIK = ("https:" == document.location.protocol ? 'https:' : 'http:') + '//sir.stendec.me/ffz_piwik/';
-
-
-// --------------------
-// Initialization
-// --------------------
-
-FFZ.prototype.setup_piwik = function() {
-	if ( window._paq != undefined ) {
-		this.log("Piwik is already present. Disabling analytics.");
-		this._tracking = false;
-		return;
-	}
-
-	if ( localStorage['ffzTracking'] == "false" ) {
-		this.log("The user has opted out of tracking. Disabling analytics.");
-		this._tracking = false;
-		return;
-	}
-
-	this.log("Initializing Piwik.");
-	this._tracking = true;
-	var _paq = window._paq = [];
-
-	_paq.push(['setSiteId', 1]);
-	_paq.push(['setTrackerUrl', PIWIK + 'piwik.php']);
-
-	if ( this.has_bttv )
-		_paq.push(['setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString()]);
-
-	var user = this.get_user(), f = this;
-	if ( user ) {
-		_paq.push(['setCustomVariable', '1', 'Partnered', user.is_partner ? "Yes" : "No"])
-		_paq.push(['setCustomVariable', '2', 'User Type', user.is_staff ? "Staff" : (user.is_admin ? "Admin" : "User")]);
-		_paq.push(['setUserId', user.login]);
-
-		Twitch.api.get("channels/" + user.login)
-			.done(function(data) {
-				if ( data.logo )
-					f.track('setCustomVariable', '4', 'Avatar', data.logo);
-			}).always(function() { f.track_page(); });
-
-	} else
-		this.track_page();
-
-	// If someone turned analytics back ON, track that.
-	if ( localStorage['ffzTracking'] == "true" ) {
-		this.track('trackEvent', 'Analytics', 'Enable');
-		localStorage.removeItem('ffzTracking');
-	}
-
-	var script = document.createElement('script');
-	script.type = 'text/javascript';
-	script.defer = true;
-	script.async = true;
-	script.src = PIWIK + 'piwik.js';
-	document.head.appendChild(script);
-}
-
-
-// --------------------
-// Command
-// --------------------
-
-FFZ.chat_commands.analytics = function(room, args) {
-	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
-	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
-		enabled = true;
-	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
-		enabled = false;
-
-	if ( enabled === undefined )
-		return "Analytics are currently " + (localStorage.ffzTracking != "false" ? "enabled." : "disabled.");
-
-	// Track that someone turned off analytics.
-	if ( this._tracking && ! enabled && localStorage.ffzTracking != "false" )
-		this.track('trackEvent', 'Analytics', 'Disable');
-
-	localStorage.ffzTracking = enabled;
-
-	return "Analytics are now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
-}
-
-FFZ.chat_commands.analytics.help = "Usage: /ffz analytics <on|off>\nEnable or disable FrankerFaceZ analytics. We collect some data about your browser and how you use FrankerFaceZ to help us improve the script. Turn off analytics if you'd rather we not.";
-
-
-
-// --------------------
-// Tracking Helpers
-// --------------------
-
-FFZ.prototype.track = function() {
-	if ( ! this._tracking )
-		return;
-
-	window._paq && _paq.push(Array.prototype.slice.call(arguments));
-}
-
-
-FFZ.prototype.track_page = function() {
-	if ( ! this._tracking )
-		return;
-
-	if ( this._old_url )
-		this.track('setReferrerUrl', this._old_url);
-
-	this._old_url = document.location.toString();
-	this.track('setCustomUrl', this._old_url);
-
-	this.track('deleteCustomVariable', '1', 'page');
-	this.track('deleteCustomVariable', '3', 'page');
-
-	var routes = App.__container__.resolve('router:main').router.currentHandlerInfos;
-	if ( ! routes || routes.length == 0 )
-		return;
-
-	var last = routes[routes.length - 1];
-	if ( last.name == "channel.index" && last.context ) {
-		var following = last.context.get("isFollowing.isFollowing");
-		if ( following !== undefined && following !== null )
-			this.track('setCustomVariable', '1', 'Following', (following ? "Yes" : "No"), 'page');
-
-		var game = last.context.get("game");
-		if ( game )
-			this.track("setCustomVariable", "3", "Game", game, "page");
-
-		this.track("trackPageView", document.title);
-	}
-}
-},{"./constants":3}],19:[function(require,module,exports){
-var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
 
@@ -2342,7 +2691,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(300, view.$().height() - 212) + "px";
+	sub_container.style.maxHeight = Math.max(100, view.$().height() - 162) + "px";
 	view.$('.chat-interface').append(container);
 }
 
@@ -2371,31 +2720,12 @@ FFZ.prototype._ui_change_page = function(view, menu, container, page) {
 
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
-			var menu = document.createElement('div');
-			menu.className = 'chat-menu-content';
-
-			var settings = [];
-			for(var key in FFZ.settings_info)
-				settings.push([key, FFZ.settings_info[key]]);
-
-			settings.sort(function(a,b) {
-				var ai = a[1],
-					bi = b[1],
-
-					an = ai.name.toLowerCase(),
-					bn = bi.name.toLowerCase();
-
-				if ( an < bn ) return -1;
-				else if ( an > bn ) return 1;
-				return 0;
-				});
-
-
-			for(var i=0; i < settings.length; i++) {
-				var key = settings[i][0],
-					info = settings[i][1],
-					el = document.createElement('p'),
-					val = this.settings.get(key);
+			var settings = {},
+				categories = [];
+			for(var key in FFZ.settings_info) {
+				var info = FFZ.settings_info[key],
+					cat = info.category || "Miscellaneous",
+					cs = settings[cat];
 
 				if ( info.visible !== undefined && info.visible !== null ) {
 					var visible = info.visible;
@@ -2406,45 +2736,94 @@ FFZ.menu_pages.settings = {
 						continue;
 				}
 
-				el.className = 'clearfix';
-
-				if ( info.type == "boolean" ) {
-					var swit = document.createElement('a'),
-						label = document.createElement('span');
-
-					swit.className = 'switch';
-					swit.classList.toggle('active', val);
-					swit.innerHTML = "<span></span>";
-
-					label.className = 'switch-label';
-					label.innerHTML = info.name;
-
-					el.appendChild(swit);
-					el.appendChild(label);
-
-					swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
-
-				} else {
-					el.classList.add("option");
-					var link = document.createElement('a');
-					link.innerHTML = info.name;
-					link.href = "#";
-					el.appendChild(link);
-
-					link.addEventListener("click", info.method.bind(this));
+				if ( ! cs ) {
+					categories.push(cat);
+					cs = settings[cat] = [];
 				}
 
-				if ( info.help ) {
-					var help = document.createElement('span');
-					help.className = 'help';
-					help.innerHTML = info.help;
-					el.appendChild(help);
-				}
-
-				menu.appendChild(el);
+				cs.push([key, info]);
 			}
 
-			container.appendChild(menu);
+			categories.sort(function(a,b) {
+				var a = a.toLowerCase(),
+					b = b.toLowerCase();
+
+				if ( a < b ) return -1;
+				else if ( a > b ) return 1;
+				return 0;
+				});
+
+			for(var ci=0; ci < categories.length; ci++) {
+				var category = categories[ci],
+					cset = settings[category],
+
+					menu = document.createElement('div'),
+					heading = document.createElement('div');
+
+				heading.className = 'heading';
+				menu.className = 'chat-menu-content';
+				heading.innerHTML = category;
+				menu.appendChild(heading);
+
+				cset.sort(function(a,b) {
+					var ai = a[1],
+						bi = b[1],
+
+						an = ai.name.toLowerCase(),
+						bn = bi.name.toLowerCase();
+
+					if ( an < bn ) return -1;
+					else if ( an > bn ) return 1;
+					return 0;
+					});
+
+
+				for(var i=0; i < cset.length; i++) {
+					var key = cset[i][0],
+						info = cset[i][1],
+						el = document.createElement('p'),
+						val = this.settings.get(key);
+
+					el.className = 'clearfix';
+
+					if ( info.type == "boolean" ) {
+						var swit = document.createElement('a'),
+							label = document.createElement('span');
+
+						swit.className = 'switch';
+						swit.classList.toggle('active', val);
+						swit.innerHTML = "<span></span>";
+
+						label.className = 'switch-label';
+						label.innerHTML = info.name;
+
+						el.appendChild(swit);
+						el.appendChild(label);
+
+						swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
+
+					} else {
+						el.classList.add("option");
+						var link = document.createElement('a');
+						link.innerHTML = info.name;
+						link.href = "#";
+						el.appendChild(link);
+
+						link.addEventListener("click", info.method.bind(this));
+					}
+
+					if ( info.help ) {
+						var help = document.createElement('span');
+						help.className = 'help';
+						help.innerHTML = info.help;
+						el.appendChild(help);
+					}
+
+					menu.appendChild(el);
+				}
+
+				container.appendChild(menu);
+			}
 		},
 
 	name: "Settings",
@@ -2483,8 +2862,7 @@ FFZ.menu_pages.channel = {
 			var room_id = view.get('controller.currentRoom.id'),
 				room = this.rooms[room_id];
 
-			this.log("Menu for Room: " + room_id, room);
-			this.track('trackEvent', 'Menu', 'Open', room_id);
+			//this.track('trackEvent', 'Menu', 'Open', room_id);
 
 			// Add the header and ad button.
 			/*var btn = document.createElement('a');
@@ -2582,7 +2960,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 
 	room.set('messageToSend', current_text + (emote.name || emote));
 }
-},{"../constants":3}],20:[function(require,module,exports){
+},{"../constants":3}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -2633,7 +3011,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],21:[function(require,module,exports){
+},{"../constants":3}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -2655,6 +3033,7 @@ FFZ.settings_info.highlight_notifications = {
 	type: "boolean",
 	value: false,
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
@@ -2690,7 +3069,7 @@ FFZ.settings_info.highlight_notifications = {
 // ---------------------
 
 FFZ.ws_commands.message = function(message) {
-	this.show_mesage(message);
+	this.show_message(message);
 }
 
 
@@ -2781,7 +3160,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -2803,6 +3182,8 @@ FFZ.prototype.setup_races = function() {
 FFZ.settings_info.srl_races = {
 	type: "boolean",
 	value: true,
+
+	category: "Channel Metadata",
 	name: "SRL Race Information",
 	help: 'Display information about <a href="http://www.speedrunslive.com/" target="_new">SpeedRunsLive</a> races under channels.',
 	on_update: function(val) {
@@ -3084,7 +3465,7 @@ FFZ.prototype._update_race = function(not_timer) {
 		}
 	}
 }
-},{"../utils":25}],23:[function(require,module,exports){
+},{"../utils":24}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -3109,7 +3490,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],24:[function(require,module,exports){
+},{"../constants":3}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -3146,7 +3527,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":25}],25:[function(require,module,exports){
+},{"../constants":3,"../utils":24}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -3160,7 +3541,41 @@ var sanitize_cache = {},
 		else if ( num == 3 ) return '3rd';
 		else if ( num == null ) return '---';
 		return num + "th";
+	},
+
+	brighten = function(rgb, amount) {
+		amount = (amount === 0) ? 0 : (amount || 1);
+		amount = Math.round(255 * -(amount / 100));
+
+		var r = Math.max(0, Math.min(255, rgb[0] - amount)),
+			g = Math.max(0, Math.min(255, rgb[1] - amount)),
+			b = Math.max(0, Math.min(255, rgb[2] - amount));
+
+		return [r,g,b];
+	},
+
+	rgb_to_css = function(rgb) {
+		return "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+	},
+
+	darken = function(rgb, amount) {
+		amount = (amount === 0) ? 0 : (amount || 1);
+		return brighten(rgb, -amount);
+	},
+
+	get_luminance = function(rgb) {
+		rgb = [rgb[0]/255, rgb[1]/255, rgb[2]/255];
+		for (var i =0; i<rgb.length; i++) {
+			if (rgb[i] <= 0.03928) {
+				rgb[i] = rgb[i] / 12.92;
+			} else {
+				rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
+			}
+		}
+		var l = (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
+		return l;
 	};
+
 
 module.exports = {
 	update_css: function(element, id, css) {
@@ -3183,6 +3598,11 @@ module.exports = {
 		element.innerHTML = all;
 	},
 
+	get_luminance: get_luminance,
+	brighten: brighten,
+	darken: darken,
+	rgb_to_css: rgb_to_css,
+
 	number_commas: function(x) {
 		var parts = x.toString().split(".");
 		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -3190,7 +3610,7 @@ module.exports = {
 	},
 
 	place_string: place_string,
-	
+
 	placement: function(entrant) {
 		if ( entrant.state == "forfeit" ) return "Forfeit";
 		else if ( entrant.state == "dq" ) return "DQed";

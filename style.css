@@ -16,8 +16,17 @@
 .ffz-ui-toggle svg.svg-emoticons path { fill: rgba(0,0,0,0.2); }
 .ffz-ui-toggle:hover svg.svg-emoticons path { fill: rgba(0,0,0,0.5); }
 
-.chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,.app-main.theatre .ffz-ui-toggle svg.svg-emoticons path,.ffz-ui-toggle.dark svg.svg-emoticons path { fill: #888; }
-.chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,.app-main.theatre .ffz-ui-toggle:hover svg.svg-emoticons path,.ffz-ui-toggle.dark:hover svg.svg-emoticons path { fill: #777; }
+
+.ember-chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle svg.svg-emoticons path,
+.ffz-ui-toggle.dark svg.svg-emoticons path { fill: #888; }
+
+.ember-chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle:hover svg.svg-emoticons path,
+.ffz-ui-toggle.dark:hover svg.svg-emoticons path { fill: #777; }
+
 
 .ffz-ui-toggle.no-emotes svg.svg-emoticons path { fill: rgba(80,0,0,0.2); }
 .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path { fill: rgba(80,0,0,0.5); }
@@ -28,14 +37,37 @@
 .ffz-ui-toggle.blue.live svg.svg-emoticons path { fill: rgba(47,88,185,0.5); }
 .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill: rgba(47,88,185,1); }
 
-.app-main.theatre .ffz-ui-toggle.no-emotes svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes svg.svg-emoticons path { fill: #543f3f; }
-.app-main.theatre .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes:hover svg.svg-emoticons path { fill: #453434; }
 
-.app-main.theatre .ffz-ui-toggle.live svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.live svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live svg.svg-emoticons path { fill: #5b4487; }
-.app-main.theatre .ffz-ui-toggle.live:hover svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.live:hover svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live:hover svg.svg-emoticons path { fill: #513c78; }
+.ember-chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes svg.svg-emoticons path { fill: #453434; }
 
-.app-main.theatre .ffz-ui-toggle.blue.live svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.blue.live svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live svg.svg-emoticons path { fill: #445887; }
-.app-main.theatre .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,.chat-container.dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live:hover svg.svg-emoticons path { fill: #3c4e78; }
+.ember-chat-container.dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes:hover svg.svg-emoticons path { fill: #543f3f; }
+
+.ember-chat-container.dark .ffz-ui-toggle.live svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.live svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.live svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live svg.svg-emoticons path { fill: #513c78; }
+
+.ember-chat-container.dark .ffz-ui-toggle.live:hover svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.live:hover svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.live:hover svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live:hover svg.svg-emoticons path { fill: #5b4487; }
+
+.ember-chat-container.dark .ffz-ui-toggle.blue.live svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.blue.live svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.blue.live svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live svg.svg-emoticons path { fill: #3c4e78; }
+
+.ember-chat-container.dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live:hover svg.svg-emoticons path { fill: #445887; }
+
 
 .ffz-ui-toggle.live {
 	animation: ffzfade 8s linear infinite;
@@ -158,7 +190,9 @@
 	fill: rgba(255,255,255,0.35) !important;
 }
 
-.app-main.theatre .follow-button .notify:before, .app-main.theatre .button.drop:after, .app-main.theatre .follow-button .drop.follow:after {
+.app-main.theatre .follow-button .notify:before,
+.app-main.theatre .button.drop:after,
+.app-main.theatre .follow-button .drop.follow:after {
 	border: 5px solid rgba(255,255,255,0.35);
 	border-left-color: transparent;
 	border-right-color: transparent;
@@ -258,7 +292,8 @@
 	color: inherit;
 }
 
-#ffz-race-popup a.twitch, #ffz-race-popup a.hitbox {
+#ffz-race-popup a.twitch,
+#ffz-race-popup a.hitbox {
 	display: inline-block;
 	height: 16px;
 	margin: 0 5px;
@@ -287,10 +322,22 @@
 
 /* Menu Options */
 
+@media screen and (max-width: 369px) {
+	.ember-chat-container .ember-chat .chat-interface .emoticon-selector {
+		right: -10px;
+	}
+}
+
+
 .ffz-ui-menu-page {
 	overflow-y: auto;
 	padding: 0 20px;
 	margin: 0 -20px;
+}
+
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading {
+	margin-bottom: 5px;
+	border-bottom: 1px solid rgba(0,0,0, 0.2);
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content {
@@ -341,7 +388,7 @@
 	margin-bottom: -1px;
 	cursor: pointer;
 	border-left: 1px solid rgba(0,0,0,0.2);
-	border-bottom: 1px solid rgba(0,0,0,0.2);
+	border-bottom: 1px solid transparent;
 }
 
 .ffz-ui-popup ul.menu li.active {
@@ -375,13 +422,79 @@
 	background-color: rgba(255,255,255, 0.75);
 }
 
-.ffz-chat-background.theatre .chat-container .chat-line .mentioned, .ffz-chat-background .chat-container.dark .chat-line .mentioned {
+.ffz-chat-background .app-main.theatre .chat-container .chat-line .mentioned,
+.ffz-chat-background .ember-chat-container.dark .chat-line .mentioned,
+.ffz-chat-background .chat-container.dark .chat-line .mentioned {
 	color: #8c8c9c;
 	background-color: rgba(16,16,20, 0.75);
 }
 
 
+/* Fix Moderation Cards */
+
+.ember-chat .moderation-card {
+	box-shadow: #808080 0 0 5px;
+}
+
+.ember-chat .moderation-card button {
+	margin: 0;
+	padding: 0 5px;
+}
+
+.ember-chat .moderation-card button:not(.glyph-only):hover,
+.ember-chat .moderation-card button:not(.glyph-only):focus {
+	color: #fff;
+	background-color: rgba(117,80,186, 1);
+}
+
+.ember-chat .moderation-card button.message {
+	height: 30px; width: 28px;
+}
+
+.ember-chat .ffz-moderation-card .interface .mod-controls:last-of-type,
+.ember-chat .moderation-card .interface span.right {
+	float: right;
+}
+
+.ember-chat .moderation-card:focus {
+	outline: none;
+	box-shadow: #000 0 0 5px;
+}
+
+.ember-chat-container.dark .ember-chat .moderation-card:focus,
+.chat-container.dark .ember-chat .moderation-card:focus,
+.app-main.theatre .ember-chat .moderation-card:focus {
+	box-shadow: #fff 0 0 5px;
+}
+
+.ember-chat-container.dark .ember-chat .moderation-card .interface,
+.chat-container.dark .ember-chat .moderation-card .interface,
+.app-main.theatre .ember-chat .moderation-card .interface {
+	background-color: #232329;
+}
+
+.ember-chat .ffz-moderation-card .interface:not(:last-of-type) {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+.ember-chat .moderation-card .interface {
+	border-top: none;
+}
+
+.ember-chat .moderation-card h3.name {
+	display: inline-block;
+	text-shadow: black 0 0 5px;
+}
+
+.ember-chat .moderation-card .channel_background {
+	width: 100%;
+	top: 0;
+}
+
+
 /* Chat Rows */
+
 .ffz-chat-background .more-messages-indicator {
 	/* This looks better when it's full width. */
 	margin: 0 -20px;
@@ -404,10 +517,6 @@
 	background-color: rgba(0,0,0, 0.1);
 }
 
-.theatre.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-alternate, .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-alternate {
-	background-color: rgba(255,255,255, 0.05);
-}
-
 .ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned {
 	background-color: rgba(255,127,127, 0.2);
 }
@@ -416,10 +525,20 @@
 	background-color: rgba(255,127,127, 0.4);
 }
 
-.theatre.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned, .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned {
+.ffz-chat-background .app-main.theatre .ember-chat .chat-messages .chat-line.ffz-alternate,
+.ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-alternate,
+.ffz-chat-background .ember-chat-container.dark .ember-chat .chat-messages .chat-line.ffz-alternate {
+	background-color: rgba(255,255,255, 0.05);
+}
+
+.ffz-chat-background .app-main.theatre .ember-chat .chat-messages .chat-line.ffz-mentioned,
+.ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned,
+.ffz-chat-background .ember-chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned {
 	background-color: rgba(255,0,0, 0.2);
 }
 
-.theatre.ffz-chat-background .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate, .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate {
+.ffz-chat-background .app-main.theatre .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate,
+.ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate,
+.ffz-chat-background .ember-chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate {
 	background-color: rgba(255,0,0, 0.3);
 }

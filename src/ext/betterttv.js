@@ -23,14 +23,19 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
-	this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
+	// this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Disable Dark if it's enabled.
-	document.querySelector(".app-main").classList.remove("ffz-dark");
+	document.body.classList.remove("ffz-dark");
 	if ( this._dark_style ) {
 		this._dark_style.parentElement.removeChild(this._dark_style);
 		delete this._dark_style;
 	}
+
+	// Disable other features too.
+	document.body.classList.remove("ffz-chat-colors");
+	document.body.classList.remove("ffz-chat-background");
+
 
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
@@ -38,7 +43,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 		var cmd = message.split(' ', 1)[0].toLowerCase();
 
 		if ( cmd === "/ffz" )
-			f.run_command(message.substr(5), BetterTTV.chat.store.currentRoom);
+			f.run_ffz_command(message.substr(5), BetterTTV.chat.store.currentRoom);
 		else
 			return original_send(message);
 	}

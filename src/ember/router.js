@@ -11,7 +11,11 @@ FFZ.prototype.setup_router = function() {
 	var f = this;
 	App.__container__.lookup('router:main').reopen({
 		ffzTransition: function() {
-			f.track_page();
+			try {
+				f.track_page();
+			} catch(err) {
+				f.error("ffzTransition: " + err);
+			}
 		}.on('didTransition')
 	});
 }

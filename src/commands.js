@@ -2,10 +2,24 @@ var FFZ = window.FrankerFaceZ;
 
 
 // -----------------
+// Log Export
+// -----------------
+
+FFZ.ffz_commands.log = function(room, args) {
+	this._pastebin(this._log_data.join("\n"), function(url) {
+		if ( ! url )
+			return this.room_message(room, "There was an error uploading the FrankerFaceZ log.");
+
+		this.room_message(room, "Your FrankerFaceZ log has been pasted to: " + url);
+	});
+};
+
+
+// -----------------
 // Mass Moderation
 // -----------------
 
-FFZ.chat_commands.massunmod = function(room, args) {
+FFZ.ffz_commands.massunmod = function(room, args) {
 	args = args.join(" ").trim();
 
 	if ( ! args.length )
@@ -29,10 +43,10 @@ FFZ.chat_commands.massunmod = function(room, args) {
 	return "Sent unmod command for " + count + " users.";
 }
 
-FFZ.chat_commands.massunmod.help = "Usage: /ffz massunmod <list, of, users>\nBroadcaster only. Unmod all the users in the provided list.";
+FFZ.ffz_commands.massunmod.help = "Usage: /ffz massunmod <list, of, users>\nBroadcaster only. Unmod all the users in the provided list.";
 
 
-FFZ.chat_commands.massmod = function(room, args) {
+FFZ.ffz_commands.massmod = function(room, args) {
 	args = args.join(" ").trim();
 
 	if ( ! args.length )
@@ -47,7 +61,6 @@ FFZ.chat_commands.massmod = function(room, args) {
 	if ( args.length > 50 )
 		return "Each user you mod counts as a single message. To avoid being globally banned, please limit yourself to 50 at a time and wait between uses.";
 
-		
 	var count = args.length;
 	while(args.length) {
 		var name = args.shift();
@@ -57,4 +70,4 @@ FFZ.chat_commands.massmod = function(room, args) {
 	return "Sent mod command for " + count + " users.";
 }
 
-FFZ.chat_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
+FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";

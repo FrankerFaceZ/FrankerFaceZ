@@ -18,72 +18,77 @@ FFZ.prototype._modify_viewers = function(controller) {
 
 	controller.reopen({
 		lines: function() {
-			var viewers = this._super(),
-				categories = [],
-				data = {},
-				last_category = null;
+			var viewers = this._super();
+			try {
+				var categories = [],
+					data = {},
+					last_category = null;
 
-			// Get the broadcaster name.
-			var Channel = App.__container__.lookup('controller:channel'),
-				room_id = this.get('parentController.model.id'),
-				broadcaster = Channel && Channel.get('id');
+				// Get the broadcaster name.
+				var Channel = App.__container__.lookup('controller:channel'),
+					room_id = this.get('parentController.model.id'),
+					broadcaster = Channel && Channel.get('id');
 
-			// We can get capitalization for the broadcaster from the channel.
-			if ( broadcaster ) {
-				var display_name = Channel.get('display_name');
-				if ( display_name )
-					FFZ.capitalization[broadcaster] = [display_name, Date.now()];
-			}
+				// We can get capitalization for the broadcaster from the channel.
+				if ( broadcaster ) {
+					var display_name = Channel.get('display_name');
+					if ( display_name )
+						FFZ.capitalization[broadcaster] = [display_name, Date.now()];
+				}
 
-			// If the current room isn't the channel's chat, then we shouldn't
-			// display them as the broadcaster.
-			if ( room_id != broadcaster )
-				broadcaster = null;
+				// If the current room isn't the channel's chat, then we shouldn't
+				// display them as the broadcaster.
+				if ( room_id != broadcaster )
+					broadcaster = null;
 
-			// Now, break the viewer array down into something we can use.
-			for(var i=0; i < viewers.length; i++) {
-				var entry = viewers[i];
-				if ( entry.category ) {
-					last_category = entry.category;
-					categories.push(last_category);
-					data[last_category] = [];
+				// Now, break the viewer array down into something we can use.
+				for(var i=0; i < viewers.length; i++) {
+					var entry = viewers[i];
+					if ( entry.category ) {
+						last_category = entry.category;
+						categories.push(last_category);
+						data[last_category] = [];
 
-				} else {
-					var viewer = entry.chatter.toLowerCase();
-					if ( ! viewer )
+					} else {
+						var viewer = entry.chatter.toLowerCase();
+						if ( ! viewer )
+							continue;
+
+						// If the viewer is the broadcaster, give them their own
+						// group. Don't put them with normal mods!
+						if ( viewer == broadcaster ) {
+							categories.unshift("Broadcaster");
+							data["Broadcaster"] = [viewer];
+
+						} else if ( data.hasOwnProperty(last_category) )
+							data[last_category].push(viewer);
+					}
+				}
+
+				// Now, rebuild the viewer list. However, we're going to actually
+				// sort it this time.
+				viewers = [];
+				for(var i=0; i < categories.length; i++) {
+					var category = categories[i],
+						chatters = data[category];
+
+					if ( ! chatters || ! chatters.length )
 						continue;
 
-					// If the viewer is the broadcaster, give them their own
-					// group. Don't put them with normal mods!
-					if ( viewer == broadcaster ) {
-						categories.unshift("Broadcaster");
-						data["Broadcaster"] = [viewer];
+					viewers.push({category: category});
+					viewers.push({chatter: ""});
 
-					} else if ( data.hasOwnProperty(last_category) )
-						data[last_category].push(viewer);
+					// Push the chatters, capitalizing them as we go.
+					chatters.sort();
+					while(chatters.length) {
+						var viewer = chatters.shift();
+						viewer = FFZ.get_capitalization(viewer);
+						viewers.push({chatter: viewer});
+					}
 				}
-			}
 
-			// Now, rebuild the viewer list. However, we're going to actually
-			// sort it this time.
-			viewers = [];
-			for(var i=0; i < categories.length; i++) {
-				var category = categories[i],
-					chatters = data[category];
-
-				if ( ! chatters || ! chatters.length )
-					continue;
-
-				viewers.push({category: category});
-				viewers.push({chatter: ""});
-
-				// Push the chatters, capitalizing them as we go.
-				chatters.sort();
-				while(chatters.length) {
-					var viewer = chatters.shift();
-					viewer = FFZ.get_capitalization(viewer);
-					viewers.push({chatter: viewer});
-				}
+			} catch(err) {
+				f.error("ViewersController lines: " + err);
 			}
 
 			return viewers;

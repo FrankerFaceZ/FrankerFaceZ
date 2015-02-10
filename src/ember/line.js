@@ -1,4 +1,5 @@
 var FFZ = window.FrankerFaceZ,
+	utils = require("../utils"),
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
@@ -13,6 +14,7 @@ FFZ.settings_info.capitalize = {
 	type: "boolean",
 	value: true,
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Username Capitalization",
@@ -24,6 +26,7 @@ FFZ.settings_info.keywords = {
 	type: "button",
 	value: [],
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Keywords",
@@ -33,7 +36,7 @@ FFZ.settings_info.keywords = {
 			var old_val = this.settings.keywords.join(", "),
 				new_val = prompt("Highlight Keywords\n\nPlease enter a comma-separated list of words that you would like to be highlighted in chat.", old_val);
 
-			if ( ! new_val )
+			if ( new_val === null || new_val === undefined )
 				return;
 
 			// Split them up.
@@ -47,17 +50,40 @@ FFZ.settings_info.keywords = {
 	};
 
 
+FFZ.settings_info.fix_color = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat",
+	visible: function() { return ! this.has_bttv },
+
+	name: "Adjust Username Colors",
+	help: "Ensure that username colors contrast with the background enough to be readable.",
+
+	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-chat-colors", val);
+		}
+	};
+
+
 FFZ.settings_info.chat_rows = {
 	type: "boolean",
 	value: false,
 
+	category: "Chat",
 	visible: function() { return ! this.has_bttv },
 
 	name: "Chat Line Backgrounds",
 	help: "Display alternating background colors for lines in chat.",
 
 	on_update: function(val) {
-			document.querySelector(".app-main").classList.toggle("ffz-chat-background", val);
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-chat-background", val);
 		}
 	};
 
@@ -67,9 +93,18 @@ FFZ.settings_info.chat_rows = {
 // ---------------------
 
 FFZ.prototype.setup_line = function() {
-	// Alternating Background
-	document.querySelector('.app-main').classList.toggle('ffz-chat-background', this.settings.chat_rows);
+	// Chat Enhancements
+	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color);
+	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
+
+	this._colors = {};
 	this._last_row = {};
+
+	var s = this._fix_color_style = document.createElement('style');
+	s.id = "ffz-style-username-colors";
+	s.type = 'text/css';
+	document.head.appendChild(s);
+
 
 	this.log("Hooking the Ember Line controller.");
 
@@ -79,11 +114,20 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
-			var tokens = f._emoticonize(this, this._super()),
-				user = f.get_user();
+			var tokens = this._super();
 
-			if ( ! user || this.get("model.from") != user.login )
-				tokens = f._mentionize(this, tokens);
+			try {
+				tokens = f._emoticonize(this, tokens);
+				var user = f.get_user();
+
+				if ( ! user || this.get("model.from") != user.login )
+					tokens = f._mentionize(this, tokens);
+
+			} catch(err) {
+				try {
+					f.error("LineController tokenizedMessage: " + err);
+				} catch(err) { }
+			}
 
 			return tokens;
 
@@ -97,65 +141,152 @@ FFZ.prototype.setup_line = function() {
 	Line.reopen({
 		didInsertElement: function() {
 			this._super();
+			try {
+				var el = this.get('element'),
+					user = this.get('context.model.from'),
+					room = this.get('context.parentController.content.id'),
+					color = this.get('context.model.color'),
 
-			var el = this.get('element'),
-				user = this.get('context.model.from'),
-				room = this.get('context.parentController.content.id'),
-				row_type = this.get('context.model.ffzAlternate');
+					row_type = this.get('context.model.ffz_alternate');
 
-			if ( row_type === undefined ) {
-				row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
-				this.set("context.model.ffzAlternate", row_type);
-			}
 
-			el.classList.toggle('ffz-alternate', row_type);
-			el.setAttribute('data-room', room);
-			el.setAttribute('data-sender', user);
+				// Color Processing
+				if ( color )
+					f._handle_color(color);
 
-			f.render_badge(this);
 
-			if ( f.settings.capitalize )
-				f.capitalize(this, user);
-
-			// Check for any mentions.
-			var mentioned = el.querySelector('span.mentioned');
-			if ( mentioned ) {
-				el.classList.add("ffz-mentioned");
-
-				if ( ! document.hasFocus() && ! this.get('context.model.ffzNotified') && f.settings.highlight_notifications ) {
-					var cap_room = FFZ.get_capitalization(room),
-						cap_user = FFZ.get_capitalization(user),
-						room_name = cap_room,
-						msg = this.get("context.model.message");
-
-					if ( this.get("context.parentController.content.isGroupRoom") )
-						room_name = this.get("context.parentController.content.tmiRoom.displayName");
-
-					if ( this.get("context.model.style") == "action" )
-						msg = "* " + cap_user + " " + msg;
-					else
-						msg = cap_user + ": " + msg;
-
-					f.show_notification(
-						msg,
-						"Twitch Chat Mention in " + room_name,
-						cap_room,
-						60000,
-						window.focus.bind(window)
-						);
+				// Row Alternation
+				if ( row_type === undefined ) {
+					row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
+					this.set("context.model.ffz_alternate", row_type);
 				}
-			}
 
-			// Mark that we've checked this message for mentions.
-			this.set('context.model.ffzNotified', true);
+				el.classList.toggle('ffz-alternate', row_type);
+
+
+				// Basic Data
+				el.setAttribute('data-room', room);
+				el.setAttribute('data-sender', user);
+
+
+				// Badge
+				f.render_badge(this);
+
+
+				// Capitalization
+				if ( f.settings.capitalize )
+					f.capitalize(this, user);
+
+
+				// Mention Highlighting
+				var mentioned = el.querySelector('span.mentioned');
+				if ( mentioned ) {
+					el.classList.add("ffz-mentioned");
+
+					if ( ! document.hasFocus() && ! this.get('context.model.ffz_notified') && f.settings.highlight_notifications ) {
+						var cap_room = FFZ.get_capitalization(room),
+							cap_user = FFZ.get_capitalization(user),
+							room_name = cap_room,
+							msg = this.get("context.model.message");
+
+						if ( this.get("context.parentController.content.isGroupRoom") )
+							room_name = this.get("context.parentController.content.tmiRoom.displayName");
+
+						if ( this.get("context.model.style") == "action" )
+							msg = "* " + cap_user + " " + msg;
+						else
+							msg = cap_user + ": " + msg;
+
+						f.show_notification(
+							msg,
+							"Twitch Chat Mention in " + room_name,
+							cap_room,
+							60000,
+							window.focus.bind(window)
+							);
+					}
+				}
+
+				// Mark that we've checked this message for mentions.
+				this.set('context.model.ffz_notified', true);
+
+			} catch(err) {
+				try {
+					f.error("LineView didInsertElement: " + err);
+				} catch(err) { }
+			}
 		}
 	});
+
 
 	// Store the capitalization of our own name.
 	var user = this.get_user();
 	if ( user && user.name )
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
+
+
+// ---------------------
+// Fix Name Colors
+// ---------------------
+
+FFZ.prototype._handle_color = function(color) {
+	if ( ! color || this._colors[color] )
+		return;
+
+	this._colors[color] = true;
+
+	// Parse the color.
+	var raw = parseInt(color.substr(1), 16),
+		rgb = [
+			(raw >> 16),
+			(raw >> 8 & 0x00FF),
+			(raw & 0x0000FF)
+			],
+
+		lum = utils.get_luminance(rgb),
+
+		output = "",
+		rule = 'span[style="color:' + color + '"]',
+		matched = false;
+
+	if ( lum > 0.3 ) {
+		// Color Too Bright. We need a lum of 0.3 or less.
+		matched = true;
+
+		var s = 255,
+			nc = rgb;
+		while(s--) {
+			nc = utils.darken(nc);
+			if ( utils.get_luminance(nc) <= 0.3 )
+				break;
+		}
+
+		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
+	} else
+		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
+
+	if ( lum < 0.1 ) {
+		// Color Too Dark. We need a lum of 0.1 or more.
+		matched = true;
+
+		var s = 255,
+			nc = rgb;
+		while(s--) {
+			nc = utils.brighten(nc);
+			if ( utils.get_luminance(nc) >= 0.1 )
+				break;
+		}
+
+		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
+	} else
+		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
+
+
+	if ( matched )
+		this._fix_color_style.innerHTML += output;
+}
+
 
 
 // ---------------------
@@ -205,30 +336,13 @@ FFZ.prototype.capitalize = function(view, user) {
 }
 
 
-FFZ.chat_commands.capitalization = function(room, args) {
-	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
-	if ( args == "y" || args == "yes" || args == "true" || args == "on" )
-		enabled = true;
-	else if ( args == "n" || args == "no" || args == "false" || args == "off" )
-		enabled = false;
-
-	if ( enabled === undefined )
-		return "Chat Name Capitalization is currently " + (this.settings.capitalize ? "enabled." : "disabled.");
-
-	this.settings.set("capitalize", enabled);
-	return "Chat Name Capitalization is now " + (enabled ? "enabled." : "disabled.");
-}
-
-FFZ.chat_commands.capitalization.help = "Usage: /ffz capitalization <on|off>\nEnable or disable Chat Name Capitalization. This setting does not work with BetterTTV.";
-
-
 // ---------------------
 // Extra Mentions
 // ---------------------
 
 FFZ._regex_cache = {};
 
-FFZ._get_rex = function(word) {
+FFZ._get_regex = function(word) {
 	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "ig");
 }
 
@@ -264,25 +378,6 @@ FFZ.prototype._mentionize = function(controller, tokens) {
 			);
 		}).flatten().compact().value();
 }
-
-
-FFZ.chat_commands.mentionize = function(room, args) {
-	if ( args && args.length ) {
-		var mention_words = args.join(" ").trim().split(/\W*,\W*/);
-		if ( mention_words.length == 1 && mention_words[0] == "disable" )
-			mention_words = [];
-
-		this.settings.set("keywords", mention_words);
-	}
-
-	var mention_words = this.settings.keywords;
-	if ( mention_words.length )
-		return "The following words will be highlighted: " + mention_words.join(", ");
-	else
-		return "There are no words set that will be highlighted.";
-}
-
-FFZ.chat_commands.mentionize.help = "Usage: /ffz mentionize <comma, separated, word, list|disable>\nSet a list of words that will also be highlighted in chat.";
 
 
 // ---------------------

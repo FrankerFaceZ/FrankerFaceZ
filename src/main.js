@@ -9,6 +9,9 @@ require('./shims');
 var FFZ = window.FrankerFaceZ = function() {
 	FFZ.instance = this;
 
+	// Logging
+	this._log_data = [];
+
 	// Get things started.
 	this.initialize();
 }
@@ -19,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 0, revision: 0,
+	major: 3, minor: 1, revision: 0,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -30,6 +33,8 @@ var VER = FFZ.version_info = {
 
 FFZ.prototype.log = function(msg, data, to_json) {
 	msg = "FFZ: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+	this._log_data.push(msg);
+
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
 		console.groupCollapsed(msg);
 		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
@@ -40,6 +45,43 @@ FFZ.prototype.log = function(msg, data, to_json) {
 		console.groupEnd(msg);
 	} else
 		console.log(msg);
+}
+
+
+FFZ.prototype.error = function(msg, data, to_json) {
+	msg = "FFZ Error: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+	this._log_data.push(msg);
+
+	if ( data !== undefined && console.groupCollapsed && console.dir ) {
+		console.groupCollapsed(msg);
+		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
+			console.log(data);
+		else
+			console.dir(data);
+
+		console.groupEnd(msg);
+	} else
+		console.assert(false, msg);
+}
+
+
+FFZ.prototype.paste_logs = function() {
+	this._pastebin(this._log_data.join("\n"), function(url) {
+		if ( ! url )
+			return console.log("FFZ Error: Unable to upload log to pastebin.");
+
+		console.log("FFZ: Your FrankerFaceZ log has been pasted to: " + url);
+	});
+}
+
+
+FFZ.prototype._pastebin = function(data, callback) {
+	jQuery.ajax({url: "http://putco.de/", type: "PUT", data: data, context: this})
+		.success(function(e) {
+			callback.bind(this)(e.trim() + ".log");
+		}).fail(function(e) {
+			callback.bind(this)(null);
+		});
 }
 
 
@@ -69,14 +111,15 @@ require('./socket');
 require('./emoticons');
 require('./badges');
 
-require('./ember/router');
+// Analytics: require('./ember/router');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
+require('./ember/moderation-card');
 //require('./ember/teams');
 
-require('./tracking');
+// Analytics: require('./tracking');
 
 require('./debug');
 
@@ -141,13 +184,14 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_emoticons();
 	this.setup_badges();
 
-	this.setup_piwik();
+	//this.setup_piwik();
 
-	this.setup_router();
+	//this.setup_router();
 	this.setup_room();
 	this.setup_line();
 	this.setup_chatview();
 	this.setup_viewers();
+	this.setup_mod_card();
 
 	//this.setup_teams();
 

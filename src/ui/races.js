@@ -19,6 +19,8 @@ FFZ.prototype.setup_races = function() {
 FFZ.settings_info.srl_races = {
 	type: "boolean",
 	value: true,
+
+	category: "Channel Metadata",
 	name: "SRL Race Information",
 	help: 'Display information about <a href="http://www.speedrunslive.com/" target="_new">SpeedRunsLive</a> races under channels.',
 	on_update: function(val) {

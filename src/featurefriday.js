@@ -75,7 +75,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	btn.innerHTML = "<span>" + message + "</span>";
 
 	// Track the number of users to click this button.
-	btn.addEventListener('click', function() { f.track('trackLink', this.href, 'link'); });
+	// btn.addEventListener('click', function() { f.track('trackLink', this.href, 'link'); });
 
 	btnc.appendChild(btn);
 	parent.appendChild(btnc);

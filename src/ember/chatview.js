@@ -25,7 +25,11 @@ FFZ.prototype.setup_chatview = function() {
 			continue;
 
 		this.log("Adding UI link manually to Chat view.", view);
-		view.$('.textarea-contain').append(this.build_ui_link(view));
+		try {
+			view.$('.textarea-contain').append(this.build_ui_link(view));
+		} catch(err) {
+			this.error("setup: build_ui_link: " + err);
+		}
 	}
 }
 
@@ -40,16 +44,28 @@ FFZ.prototype._modify_cview = function(view) {
 	view.reopen({
 		didInsertElement: function() {
 			this._super();
-			this.$() && this.$('.textarea-contain').append(f.build_ui_link(this));
+			try {
+				this.$() && this.$('.textarea-contain').append(f.build_ui_link(this));
+			} catch(err) {
+				f.error("didInsertElement: build_ui_link: " + err);
+			}
 		},
 
 		willClearRender: function() {
 			this._super();
-			this.$(".ffz-ui-toggle").remove();
+			try {
+				this.$(".ffz-ui-toggle").remove();
+			} catch(err) {
+				f.error("willClearRender: remove ui link: " + err);
+			}
 		},
 
 		ffzUpdateLink: Ember.observer('controller.currentRoom', function() {
-			f.update_ui_link();
+			try {
+				f.update_ui_link();
+			} catch(err) {
+				f.error("ffzUpdateLink: update_ui_link: " + err);
+			}
 		})
 	});
 }

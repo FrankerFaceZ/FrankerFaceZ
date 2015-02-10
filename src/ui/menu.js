@@ -95,7 +95,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(300, view.$().height() - 212) + "px";
+	sub_container.style.maxHeight = Math.max(100, view.$().height() - 162) + "px";
 	view.$('.chat-interface').append(container);
 }
 
@@ -124,31 +124,12 @@ FFZ.prototype._ui_change_page = function(view, menu, container, page) {
 
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
-			var menu = document.createElement('div');
-			menu.className = 'chat-menu-content';
-
-			var settings = [];
-			for(var key in FFZ.settings_info)
-				settings.push([key, FFZ.settings_info[key]]);
-
-			settings.sort(function(a,b) {
-				var ai = a[1],
-					bi = b[1],
-
-					an = ai.name.toLowerCase(),
-					bn = bi.name.toLowerCase();
-
-				if ( an < bn ) return -1;
-				else if ( an > bn ) return 1;
-				return 0;
-				});
-
-
-			for(var i=0; i < settings.length; i++) {
-				var key = settings[i][0],
-					info = settings[i][1],
-					el = document.createElement('p'),
-					val = this.settings.get(key);
+			var settings = {},
+				categories = [];
+			for(var key in FFZ.settings_info) {
+				var info = FFZ.settings_info[key],
+					cat = info.category || "Miscellaneous",
+					cs = settings[cat];
 
 				if ( info.visible !== undefined && info.visible !== null ) {
 					var visible = info.visible;
@@ -159,45 +140,94 @@ FFZ.menu_pages.settings = {
 						continue;
 				}
 
-				el.className = 'clearfix';
-
-				if ( info.type == "boolean" ) {
-					var swit = document.createElement('a'),
-						label = document.createElement('span');
-
-					swit.className = 'switch';
-					swit.classList.toggle('active', val);
-					swit.innerHTML = "<span></span>";
-
-					label.className = 'switch-label';
-					label.innerHTML = info.name;
-
-					el.appendChild(swit);
-					el.appendChild(label);
-
-					swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
-
-				} else {
-					el.classList.add("option");
-					var link = document.createElement('a');
-					link.innerHTML = info.name;
-					link.href = "#";
-					el.appendChild(link);
-
-					link.addEventListener("click", info.method.bind(this));
+				if ( ! cs ) {
+					categories.push(cat);
+					cs = settings[cat] = [];
 				}
 
-				if ( info.help ) {
-					var help = document.createElement('span');
-					help.className = 'help';
-					help.innerHTML = info.help;
-					el.appendChild(help);
-				}
-
-				menu.appendChild(el);
+				cs.push([key, info]);
 			}
 
-			container.appendChild(menu);
+			categories.sort(function(a,b) {
+				var a = a.toLowerCase(),
+					b = b.toLowerCase();
+
+				if ( a < b ) return -1;
+				else if ( a > b ) return 1;
+				return 0;
+				});
+
+			for(var ci=0; ci < categories.length; ci++) {
+				var category = categories[ci],
+					cset = settings[category],
+
+					menu = document.createElement('div'),
+					heading = document.createElement('div');
+
+				heading.className = 'heading';
+				menu.className = 'chat-menu-content';
+				heading.innerHTML = category;
+				menu.appendChild(heading);
+
+				cset.sort(function(a,b) {
+					var ai = a[1],
+						bi = b[1],
+
+						an = ai.name.toLowerCase(),
+						bn = bi.name.toLowerCase();
+
+					if ( an < bn ) return -1;
+					else if ( an > bn ) return 1;
+					return 0;
+					});
+
+
+				for(var i=0; i < cset.length; i++) {
+					var key = cset[i][0],
+						info = cset[i][1],
+						el = document.createElement('p'),
+						val = this.settings.get(key);
+
+					el.className = 'clearfix';
+
+					if ( info.type == "boolean" ) {
+						var swit = document.createElement('a'),
+							label = document.createElement('span');
+
+						swit.className = 'switch';
+						swit.classList.toggle('active', val);
+						swit.innerHTML = "<span></span>";
+
+						label.className = 'switch-label';
+						label.innerHTML = info.name;
+
+						el.appendChild(swit);
+						el.appendChild(label);
+
+						swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
+
+					} else {
+						el.classList.add("option");
+						var link = document.createElement('a');
+						link.innerHTML = info.name;
+						link.href = "#";
+						el.appendChild(link);
+
+						link.addEventListener("click", info.method.bind(this));
+					}
+
+					if ( info.help ) {
+						var help = document.createElement('span');
+						help.className = 'help';
+						help.innerHTML = info.help;
+						el.appendChild(help);
+					}
+
+					menu.appendChild(el);
+				}
+
+				container.appendChild(menu);
+			}
 		},
 
 	name: "Settings",
@@ -236,8 +266,7 @@ FFZ.menu_pages.channel = {
 			var room_id = view.get('controller.currentRoom.id'),
 				room = this.rooms[room_id];
 
-			this.log("Menu for Room: " + room_id, room);
-			this.track('trackEvent', 'Menu', 'Open', room_id);
+			//this.track('trackEvent', 'Menu', 'Open', room_id);
 
 			// Add the header and ad button.
 			/*var btn = document.createElement('a');

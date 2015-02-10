@@ -50,6 +50,7 @@ FFZ.prototype.setup_room = function() {
 // --------------------
 
 FFZ.chat_commands = {};
+FFZ.ffz_commands = {};
 
 
 FFZ.prototype.room_message = function(room, text) {
@@ -66,6 +67,54 @@ FFZ.prototype.room_message = function(room, text) {
 
 
 FFZ.prototype.run_command = function(text, room_id) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return false;
+
+	if ( ! text )
+		return;
+
+	var args = text.split(" "),
+		cmd = args.shift().substr(1).toLowerCase(),
+
+		command = FFZ.chat_commands[cmd],
+		output;
+
+	if ( ! command )
+		return false;
+
+	if ( command.hasOwnProperty('enabled') ) {
+		var val = command.enabled;
+		if ( typeof val == "function" ) {
+			try {
+				val = command.enabled.bind(this)(room, args);
+			} catch(err) {
+				this.error('command "' + cmd + '" enabled: ' + err);
+				val = false;
+			}
+		}
+
+		if ( ! val )
+			return false;
+	}
+
+	this.log("Received Command: " + cmd, args, true);
+
+	try {
+		output = command.bind(this)(room, args);
+	} catch(err) {
+		this.error('command "' + cmd + '" runner: ' + err);
+		output = "There was an error running the command.";
+	}
+
+	if ( output )
+		this.room_message(room, output);
+
+	return true;
+}
+
+
+FFZ.prototype.run_ffz_command = function(text, room_id) {
 	var room = this.rooms[room_id];
 	if ( ! room || !room.room )
 		return;
@@ -84,7 +133,7 @@ FFZ.prototype.run_command = function(text, room_id) {
 
 	this.log("Received Command: " + cmd, args, true);
 
-	var command = FFZ.chat_commands[cmd], output;
+	var command = FFZ.ffz_commands[cmd], output;
 	if ( command ) {
 		try {
 			output = command.bind(this)(room, args);
@@ -100,9 +149,9 @@ FFZ.prototype.run_command = function(text, room_id) {
 }
 
 
-FFZ.chat_commands.help = function(room, args) {
+FFZ.ffz_commands.help = function(room, args) {
 	if ( args && args.length ) {
-		var command = FFZ.chat_commands[args[0].toLowerCase()];
+		var command = FFZ.ffz_commands[args[0].toLowerCase()];
 		if ( ! command )
 			return 'There is no "' + args[0] + '" command.';
 
@@ -114,13 +163,13 @@ FFZ.chat_commands.help = function(room, args) {
 	}
 
 	var cmds = [];
-	for(var c in FFZ.chat_commands)
-		FFZ.chat_commands.hasOwnProperty(c) && cmds.push(c);
+	for(var c in FFZ.ffz_commands)
+		FFZ.ffz_commands.hasOwnProperty(c) && cmds.push(c);
 
 	return "The available commands are: " + cmds.join(", ");
 }
 
-FFZ.chat_commands.help.help = "Usage: /ffz help [command]\nList available commands, or show help for a specific command.";
+FFZ.ffz_commands.help.help = "Usage: /ffz help [command]\nList available commands, or show help for a specific command.";
 
 
 // --------------------
@@ -214,12 +263,20 @@ FFZ.prototype._modify_room = function(room) {
 		// Track which rooms the user is currently in.
 		init: function() {
 			this._super();
-			f.add_room(this.id, this);
+			try {
+				f.add_room(this.id, this);
+			} catch(err) {
+				f.error("add_room: " + err);
+			}
 		},
 
 		willDestroy: function() {
 			this._super();
-			f.remove_room(this.id);
+			try {
+				f.remove_room(this.id);
+			} catch(err) {
+				f.error("remove_room: " + err);
+			}
 		},
 
 		getSuggestions: function() {
@@ -228,19 +285,35 @@ FFZ.prototype._modify_room = function(room) {
 			// filteredSuggestions property of the chat-input component would
 			// be even better, but I was already hooking the room model.
 			var suggestions = this._super();
-			if ( this.settings.capitalize )
-				suggestions = _.map(suggestions, FFZ.get_capitalization);
+
+			try {
+				if ( f.settings.capitalize )
+					suggestions = _.map(suggestions, FFZ.get_capitalization);
+			} catch(err) {
+				f.error("get_suggestions: " + err);
+			}
 
 			return suggestions;
 		},
 
 		send: function(text) {
-			var cmd = text.split(' ', 1)[0].toLowerCase();
-			if ( cmd === "/ffz" ) {
-				this.set("messageToSend", "");
-				f.run_command(text.substr(5), this.get('id'));
-			} else
-				return this._super(text);
+			try {
+				var cmd = text.split(' ', 1)[0].toLowerCase();
+				if ( cmd === "/ffz" ) {
+					this.set("messageToSend", "");
+					f.run_ffz_command(text.substr(5), this.get('id'));
+					return;
+
+				} else if ( cmd.charAt(0) === "/" && f.run_command(text, this.get('id')) ) {
+					this.set("messageToSend", "");
+					return;
+				}
+
+			} catch(err) {
+				f.error("send: " + err);
+			}
+
+			return this._super(text);
 		}
 	});
 }
