@@ -437,6 +437,16 @@
 .ffz-ui-popup ul.menu svg path { fill: #333; }
 
 
+.ffz-ui-popup .switch-label span {
+	opacity: 0.8;
+	font-size: 10px;
+	line-height: 20px;
+	padding: 4px;
+	background: rgba(0,0,0,0.2);
+	vertical-align: top;
+}
+
+
 /* Chat Mentions */
 .ember-chat .mentioned:empty,
 .ember-chat .mentioning:empty {

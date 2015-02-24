@@ -1,0 +1,169 @@
+/* host mode */
+.ffz-dark #hostmode,.hostmode{
+    background-color:rgb(16,16,16)!important;
+}
+
+.ffz-dark div#channel > .target-frame.active{
+    background-color:rgb(16,16,16)!important;
+}
+
+.ffz-dark .hostmode-title-container{
+    background-color:rgb(16,16,16)!important;
+    box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.4) inset;
+}
+
+.ffz-dark div.hostmode-title.clearfix{
+    background-color:rgb(24,24,24)!important;
+    box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.4) inset;
+}
+
+.ffz-dark .close-hostmode{
+    background-color:rgb(16,16,16)!important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
+
+/* hidden chat */
+.ffz-dark .ember-chat .chat-hidden-overlay{
+    background-color:rgb(24,24,24)!important;
+}
+
+
+
+/* edit icon */
+.ffz-dark #channel .player-column #broadcast-meta .info .edit-link svg path{
+    fill:rgba(255,255,255,0.5)!important;
+}
+
+/* vod icons */
+.ffz-dark #main_col .content #stats_and_actions #channel_stats .stat svg path{
+    fill:rgba(255,255,255,0.5)!important;
+}
+
+
+/* hover icon for chats menu */
+.ffz-dark .ember-chat .chat-menu-button-container:hover svg path{
+    fill:#fff!important;
+} 
+
+
+/* dropdown arrows */
+.ffz-dark .button.drop:after{
+border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
+}
+
+/* hovering buttons */
+.ffz-dark .button:hover{
+    color:rgb(222,222,222)!important;
+}
+
+/* stats */
+.ffz-dark #channel .player-column .stats-and-actions .channel-stats .stat svg:not(.svg-glyph_live) path{
+    fill:rgba(255,255,255,0.35)!important;
+}
+
+/* Scrollbar */
+.ffz-dark .tse-scrollbar .drag-handle {
+    background: none repeat scroll 0% 0% rgba(255, 255, 255, 0.6)!important;
+}
+
+
+
+/* main column */
+.ffz-dark div#main_col.column{
+    background:rgb(16,16,16)!important;
+    color:rgb(195,195,195)!important;
+    border-right:1px solid rgb(0,0,0)!important;
+}
+
+
+/* stream title */
+.ffz-dark span.real_title{
+    color:rgb(245,245,245)!important;
+}
+
+/* name playing x on x */
+.ffz-dark span.playing,span#team_membership,.ffz-dark #channel .player-column #broadcast-meta .info .channel {
+    color:rgb(195,195,195)!important;
+}
+
+.ffz-dark div.title > span.real,
+.ffz-dark div.title > span.over{
+    color:rgb(222,222,222)!important;
+    background-color:rgb(16,16,16)!important;
+}
+
+.ffz-dark div.title > span.over:hover,
+.ffz-dark div.title > span.real:hover {
+    background-color:rgb(16,16,16)!important;
+    color:rgb(255,255,255)!important;
+}
+
+/* Other stuff */
+
+.ffz-dark .panel-formatting .panel {
+    color: #8c8c9c;
+}
+
+.ffz-dark a {
+	color: #a68ed2;
+}
+
+.ffz-dark #flyout a,
+.ffz-dark .dropmenu a,
+.ffz-dark .ember-chat-container a,
+.ffz-dark .chat-container a {
+	color: #6441a5;
+}
+
+.ffz-dark .panel-formatting .panel h3 {
+    color: inherit;
+}
+
+.ffz-dark .follow-button .notify:before,
+.ffz-dark .button.drop:after,
+.ffz-dark .follow-button .drop.follow:after {
+    border: 5px solid rgba(255,255,255,0.35);
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+}
+
+.ffz-dark .follow-button .notify {
+    background-color: #25252a;
+}
+
+.ffz-dark .button:not(.primary) {
+    color: #a68ed2;
+}
+
+.ffz-dark .button.glyph-only svg path {
+    fill: #a68ed2;
+}
+
+.ffz-dark .button.glyph-only:hover svg path {
+    fill: #fff;
+}
+
+.ffz-dark .button.primary.subscribe-button {
+    color: #fff;
+}
+
+/* Profile page fixes */
+
+.ffz-dark .items-grid .meta p a {
+    color: #9c9c9c;
+}
+
+.ffz-dark .items-grid .meta .info {
+    color: #6c6c6c;
+}
+
+.ffz-dark ul.tabs li>a:hover, .ffz-dark .directory_header .nav li>a:hover, .ffz-dark ul.tabs_fake li>a:hover, .ffz-dark ul.tabs li>a.active, .ffz-dark .directory_header .nav li>a.active, .ffz-dark ul.tabs_fake li>a.active {
+    color: #aaa;
+    border-color: #ccc !important;
+}
+
+/* Hide the chat Dark Mode control */
+.ffz-dark .toggle-darkmode { display: none; }

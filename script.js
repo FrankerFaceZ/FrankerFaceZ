@@ -114,6 +114,15 @@ FFZ.prototype.render_badge = function(view) {
 		var badge = data.badges[slot],
 			full_badge = this.badges[badge.id] || {};
 
+		if ( full_badge.visible !== undefined ) {
+			var visible = full_badge.visible;
+			if ( typeof visible == "function" )
+				try { visible = visible.bind(this)(room_id, user); } catch(err) { }
+
+			if ( ! visible )
+				continue;
+		}
+
 		var el = document.createElement('div');
 		el.className = 'badge float-left tooltip ffz-badge-' + badge.id;
 		el.setAttribute('title', badge.title || full_badge.title);
@@ -146,15 +155,25 @@ FFZ.prototype.render_badge = function(view) {
 // Legacy Support
 // --------------------
 
+FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "nightbot", "moobot", "xanbot"];
+
 FFZ.prototype._legacy_add_donors = function(tries) {
 	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Developer Badges
-	// TODO: Upload the badge to the proper CDN.
 	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
 	this.users.sirstendec = {badges: {0: {id:0}}};
+
+	// Bot Badges
+	/*this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
+		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots[user]); }};
+	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
+
+	for(var i=0;i<FFZ.known_bots.length;i++)
+		this.users[FFZ.known_bots[i]] = {badges: {1: {id:2}}};*/
+
 
 	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
 		.done(function(data) {
@@ -2033,6 +2052,8 @@ var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
 
+FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
+
 // --------------------
 // Initialization
 // --------------------
@@ -3192,22 +3213,36 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // ---------------------
 
+FFZ.settings_info.twitch_chat_dark = {
+	type: "boolean",
+	value: false,
+	visible: false
+	};
+
+
 FFZ.settings_info.dark_twitch = {
 	type: "boolean",
 	value: false,
 
 	visible: function() { return ! this.has_bttv },
 
-	name: "Dark Twitch",
-	help: "View the entire site with a dark theme.",
+	name: "Dark Twitch <span>Beta</span>",
+	help: "Apply a dark background to channels and other related pages for easier viewing.",
 
 	on_update: function(val) {
 			if ( this.has_bttv )
 				return;
 
 			document.body.classList.toggle("ffz-dark", val);
-			if ( val )
+
+			var model = App.__container__.lookup('controller:settings').get('model');
+
+			if ( val ) {
 				this._load_dark_css();
+				this.settings.set('twitch_chat_dark', model.get('darkMode'));
+				model.set('darkMode', true);
+			} else
+				model.set('darkMode', this.settings.twitch_chat_dark);
 		}
 	};
 
@@ -3221,6 +3256,9 @@ FFZ.prototype.setup_dark = function() {
 		return;
 
 	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
+	if ( this.settings.dark_twitch )
+		App.__container__.lookup('controller:settings').set('model.darkMode', true);
+
 	if ( this.settings.dark_twitch )
 		this._load_dark_css();
 }

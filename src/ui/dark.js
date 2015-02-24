@@ -6,22 +6,36 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // ---------------------
 
+FFZ.settings_info.twitch_chat_dark = {
+	type: "boolean",
+	value: false,
+	visible: false
+	};
+
+
 FFZ.settings_info.dark_twitch = {
 	type: "boolean",
 	value: false,
 
 	visible: function() { return ! this.has_bttv },
 
-	name: "Dark Twitch",
-	help: "View the entire site with a dark theme.",
+	name: "Dark Twitch <span>Beta</span>",
+	help: "Apply a dark background to channels and other related pages for easier viewing.",
 
 	on_update: function(val) {
 			if ( this.has_bttv )
 				return;
 
 			document.body.classList.toggle("ffz-dark", val);
-			if ( val )
+
+			var model = App.__container__.lookup('controller:settings').get('model');
+
+			if ( val ) {
 				this._load_dark_css();
+				this.settings.set('twitch_chat_dark', model.get('darkMode'));
+				model.set('darkMode', true);
+			} else
+				model.set('darkMode', this.settings.twitch_chat_dark);
 		}
 	};
 
@@ -35,6 +49,9 @@ FFZ.prototype.setup_dark = function() {
 		return;
 
 	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
+	if ( this.settings.dark_twitch )
+		App.__container__.lookup('controller:settings').set('model.darkMode', true);
+
 	if ( this.settings.dark_twitch )
 		this._load_dark_css();
 }

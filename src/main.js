@@ -132,7 +132,7 @@ require('./ext/emote_menu');
 require('./featurefriday');
 
 require('./ui/styles');
-//require('./ui/dark');
+require('./ui/dark');
 require('./ui/notifications');
 require('./ui/viewer_count');
 
@@ -182,7 +182,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.load_settings();
 
 	// Start this early, for quick loading.
-	//this.setup_dark();
+	this.setup_dark();
 
 	this.ws_create();
 	this.setup_emoticons();
