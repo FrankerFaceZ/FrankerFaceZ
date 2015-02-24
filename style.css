@@ -346,7 +346,7 @@
 .ffz-ui-menu-page {
 	overflow-y: auto;
 	padding: 0 20px;
-	margin: 0 -20px;
+	margin: -20px -20px 0;
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
@@ -381,9 +381,8 @@
 
 .ffz-ui-popup ul.menu {
 	list-style-type: none;
-	margin: -20px;
-	margin-bottom: 0;
-	border-bottom: 1px solid rgba(0,0,0,0.2);
+	margin: 0 -20px;
+	border-top: 1px solid rgba(0,0,0,0.2);
 	background-color: #eee;
 }
 
@@ -410,10 +409,10 @@
 	display: block;
 	padding: 10px;
 	height: 16px;
-	margin-bottom: -1px;
+	margin-top: -1px;
 	cursor: pointer;
 	border-left: 1px solid rgba(0,0,0,0.2);
-	border-bottom: 1px solid transparent;
+	border-top: 1px solid transparent;
 }
 
 .ffz-ui-popup ul.menu li.active {
@@ -421,7 +420,7 @@
 }
 
 .ffz-ui-popup ul.menu li.active a {
-	border-bottom-color: #fff;
+	border-top-color: #fff;
 }
 
 .ffz-ui-popup.dark ul.menu li.active {
@@ -429,7 +428,7 @@
 }
 
 .ffz-ui-popup.dark ul.menu li.active a {
-	border-bottom-color: #1e1e1e;
+	border-top-color: #1e1e1e;
 }
 
 .ffz-ui-popup.dark .ffz-ui-menu-page a { color: #fff; }

@@ -91,10 +91,10 @@ FFZ.menu_pages.settings = {
 				var a = a.toLowerCase(),
 					b = b.toLowerCase();
 
-				if ( a === "Debugging" )
+				if ( a === "debugging" )
 					a = "zzz" + a;
 
-				if ( b === "Debugging" )
+				if ( b === "debugging" )
 					b = "zzz" + b;
 
 				if ( a < b ) return -1;

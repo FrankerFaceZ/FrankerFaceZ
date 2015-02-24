@@ -190,7 +190,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":26}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":27}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1112,7 +1112,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{"../utils":26}],7:[function(require,module,exports){
+},{"../utils":27}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
@@ -1364,7 +1364,7 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.enhanced_moderation; }
-},{"../utils":26}],8:[function(require,module,exports){
+},{"../utils":27}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -1732,7 +1732,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":26}],9:[function(require,module,exports){
+},{"../constants":3,"../utils":27}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -2028,7 +2028,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":26}],11:[function(require,module,exports){
+},{"./constants":3,"./utils":27}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -2380,7 +2380,7 @@ require('./ext/emote_menu');
 require('./featurefriday');
 
 require('./ui/styles');
-//require('./ui/dark');
+require('./ui/dark');
 require('./ui/notifications');
 require('./ui/viewer_count');
 
@@ -2430,7 +2430,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.load_settings();
 
 	// Start this early, for quick loading.
-	//this.setup_dark();
+	this.setup_dark();
 
 	this.ws_create();
 	this.setup_emoticons();
@@ -2463,7 +2463,7 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/moderation-card":7,"./ember/room":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./ui/about_page":18,"./ui/menu":19,"./ui/menu_button":20,"./ui/my_emotes":21,"./ui/notifications":22,"./ui/races":23,"./ui/styles":24,"./ui/viewer_count":25}],14:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/moderation-card":7,"./ember/room":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./ui/about_page":18,"./ui/dark":19,"./ui/menu":20,"./ui/menu_button":21,"./ui/my_emotes":22,"./ui/notifications":23,"./ui/races":24,"./ui/styles":25,"./ui/viewer_count":26}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -2704,10 +2704,10 @@ FFZ.menu_pages.settings = {
 				var a = a.toLowerCase(),
 					b = b.toLowerCase();
 
-				if ( a === "Debugging" )
+				if ( a === "debugging" )
 					a = "zzz" + a;
 
-				if ( b === "Debugging" )
+				if ( b === "debugging" )
 					b = "zzz" + b;
 
 				if ( a < b ) return -1;
@@ -3097,9 +3097,9 @@ var FFZ = window.FrankerFaceZ,
 // -------------------
 
 FFZ.menu_pages.about = {
-	name: "About FrankerFaceZ",
+	name: "About",
 	icon: constants.HEART,
-	sort_order: 998,
+	sort_order: 100000,
 
 	render: function(view, container) {
 		var room = this.rooms[view.get("context.currentRoom.id")],
@@ -3185,6 +3185,62 @@ FFZ.menu_pages.about = {
 }
 },{"../constants":3}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
+	constants = require("../constants");
+
+
+// ---------------------
+// Settings
+// ---------------------
+
+FFZ.settings_info.dark_twitch = {
+	type: "boolean",
+	value: false,
+
+	visible: function() { return ! this.has_bttv },
+
+	name: "Dark Twitch",
+	help: "View the entire site with a dark theme.",
+
+	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-dark", val);
+			if ( val )
+				this._load_dark_css();
+		}
+	};
+
+
+// ---------------------
+// Initialization
+// ---------------------
+
+FFZ.prototype.setup_dark = function() {
+	if ( this.has_bttv )
+		return;
+
+	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
+	if ( this.settings.dark_twitch )
+		this._load_dark_css();
+}
+
+
+FFZ.prototype._load_dark_css = function() {
+	if ( this._dark_style )
+		return;
+
+	this.log("Injecting FrankerFaceZ Dark Twitch CSS.");
+
+	var s = this._dark_style = document.createElement('link');
+
+	s.id = "ffz-dark-css";
+	s.setAttribute('rel', 'stylesheet');
+	s.setAttribute('href', constants.SERVER + "script/dark.css");
+	document.head.appendChild(s);
+}
+},{"../constants":3}],20:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
 
@@ -3242,7 +3298,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	container.classList.toggle('dark', dark);
 
-	// Render Menu
+	// Menu Container
+	var sub_container = document.createElement('div');
+	sub_container.className = 'ffz-ui-menu-page';
+	inner.appendChild(sub_container);
+
+	// Render Menu Tabs
 	menu.className = 'menu clearfix';
 	inner.appendChild(menu);
 
@@ -3250,10 +3311,6 @@ FFZ.prototype.build_ui_popup = function(view) {
 	heading.className = 'title';
 	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
 	menu.appendChild(heading);
-
-	var sub_container = document.createElement('div');
-	sub_container.className = 'ffz-ui-menu-page';
-	inner.appendChild(sub_container);
 
 	var menu_pages = [];
 	for(var key in FFZ.menu_pages) {
@@ -3470,7 +3527,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 	else
 		room.set('messageToSend', text);
 }
-},{"../constants":3}],20:[function(require,module,exports){
+},{"../constants":3}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -3521,7 +3578,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],21:[function(require,module,exports){
+},{"../constants":3}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 
@@ -3821,7 +3878,7 @@ FFZ.menu_pages.my_emotes = {
 		}
 	};
 
-},{"../constants":3}],22:[function(require,module,exports){
+},{"../constants":3}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -3970,7 +4027,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -4275,7 +4332,7 @@ FFZ.prototype._update_race = function(not_timer) {
 		}
 	}
 }
-},{"../utils":26}],24:[function(require,module,exports){
+},{"../utils":27}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -4300,7 +4357,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],25:[function(require,module,exports){
+},{"../constants":3}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -4337,7 +4394,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":26}],26:[function(require,module,exports){
+},{"../constants":3,"../utils":27}],27:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 

@@ -56,7 +56,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	container.classList.toggle('dark', dark);
 
-	// Render Menu
+	// Menu Container
+	var sub_container = document.createElement('div');
+	sub_container.className = 'ffz-ui-menu-page';
+	inner.appendChild(sub_container);
+
+	// Render Menu Tabs
 	menu.className = 'menu clearfix';
 	inner.appendChild(menu);
 
@@ -64,10 +69,6 @@ FFZ.prototype.build_ui_popup = function(view) {
 	heading.className = 'title';
 	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
 	menu.appendChild(heading);
-
-	var sub_container = document.createElement('div');
-	sub_container.className = 'ffz-ui-menu-page';
-	inner.appendChild(sub_container);
 
 	var menu_pages = [];
 	for(var key in FFZ.menu_pages) {

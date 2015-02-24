@@ -7,9 +7,9 @@ var FFZ = window.FrankerFaceZ,
 // -------------------
 
 FFZ.menu_pages.about = {
-	name: "About FrankerFaceZ",
+	name: "About",
 	icon: constants.HEART,
-	sort_order: 998,
+	sort_order: 100000,
 
 	render: function(view, container) {
 		var room = this.rooms[view.get("context.currentRoom.id")],
