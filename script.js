@@ -190,7 +190,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 
 	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":24}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":26}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -277,15 +277,32 @@ module.exports = {
 	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>',
 
 	GEAR: '<svg class="svg-gear" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M15,7v2h-2.115c-0.125,0.615-0.354,1.215-0.713,1.758l1.484,1.484l-1.414,1.414l-1.484-1.484C10.215,12.531,9.615,12.76,9,12.885V15H7v-2.12c-0.614-0.126-1.21-0.356-1.751-0.714l-1.491,1.49l-1.414-1.414l1.491-1.49C3.477,10.211,3.247,9.613,3.12,9H1V7h2.116C3.24,6.384,3.469,5.785,3.829,5.242L2.343,3.757l1.414-1.414l1.485,1.485C5.785,3.469,6.384,3.24,7,3.115V1h2v2.12c0.613,0.126,1.211,0.356,1.752,0.714l1.49-1.491l1.414,1.414l-1.49,1.492C12.523,5.79,12.754,6.387,12.88,7H15z M8,6C6.896,6,6,6.896,6,8s0.896,2,2,2s2-0.896,2-2S9.104,6,8,6z" fill-rule="evenodd"></path></svg>',
-	HEART: '<svg class="svg-heart" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>'
+	HEART: '<svg class="svg-heart" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>',
+	EMOTE: '<svg class="svg-emote" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M9,18c-4.971,0-9-4.029-9-9s4.029-9,9-9s9,4.029,9,9S13.971,18,9,18z M14,4.111V4h-0.111C12.627,2.766,10.904,2,9,2C7.095,2,5.373,2.766,4.111,4H4v0.111C2.766,5.373,2,7.096,2,9s0.766,3.627,2,4.889V14l0.05-0.051C5.317,15.217,7.067,16,9,16c1.934,0,3.684-0.783,4.949-2.051L14,14v-0.111c1.234-1.262,2-2.984,2-4.889S15.234,5.373,14,4.111zM11,6h2v4h-2V6z M12.535,12.535C11.631,13.44,10.381,14,9,14s-2.631-0.56-3.536-1.465l0.707-0.707C6.896,12.553,7.896,13,9,13s2.104-0.447,2.828-1.172L12.535,12.535z M5,6h2v4H5V6z" fill-rule="evenodd"></path></svg>'
 }
 },{}],4:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
 // -----------------------
-// Developer Mode Command
+// Developer Mode
 // -----------------------
+
+FFZ.settings_info.developer_mode = {
+	type: "boolean",
+	value: false,
+	storage_key: "ffzDebugMode",
+
+	visible: function() { return this.settings.developer_mode || (Date.now() - parseInt(localStorage.ffzLastDevMode || "0")) < 604800000; },
+	category: "Debugging",
+	name: "Developer Mode",
+	help: "Load FrankerFaceZ from the local development server instead of the CDN. Please refresh after changing this setting.",
+
+	on_update: function() {
+		localStorage.ffzLastDevMode = Date.now();
+		}
+	};
+
 
 FFZ.ffz_commands.developer_mode = function(room, args) {
 	var enabled, args = args && args.length ? args[0].toLowerCase() : null;
@@ -295,9 +312,9 @@ FFZ.ffz_commands.developer_mode = function(room, args) {
 		enabled = false;
 
 	if ( enabled === undefined )
-		return "Developer Mode is currently " + (localStorage.ffzDebugMode == "true" ? "enabled." : "disabled.");
+		return "Developer Mode is currently " + (this.settings.developer_mode ? "enabled." : "disabled.");
 
-	localStorage.ffzDebugMode = enabled;
+	this.settings.set("developer_mode", enabled);
 	return "Developer Mode is now " + (enabled ? "enabled" : "disabled") + ". Please refresh your browser.";
 }
 
@@ -319,7 +336,10 @@ FFZ.prototype.setup_chatview = function() {
 
 	// For some reason, this doesn't work unless we create an instance of the
 	// chat view and then destroy it immediately.
-	Chat.create().destroy();
+	try {
+		Chat.create().destroy();
+	} catch(err) { }
+
 
 	// Modify all existing Chat views.
 	for(var key in Ember.View.views) {
@@ -381,6 +401,80 @@ var FFZ = window.FrankerFaceZ,
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+	},
+
+	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
+	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
+
+	quote_attr = function(attr) {
+		return (attr + '')
+			.replace(/&/g, "&amp;")
+			.replace(/'/g, "&apos;")
+			.replace(/"/g, "&quot;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
+	},
+
+
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	build_srcset = function(id) {
+		return TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+	},
+
+
+	data_to_tooltip = function(data) {
+		var output = "<tr><td>Emoticon</td><td>" + data.code + "</td></tr>",
+			set = data.set,
+			set_type = data.set_type;
+
+		if ( set_type === undefined )
+			set_type = "Channel";
+
+		if ( ! set )
+			return data.code;
+
+		else if ( set == "00000turbo" || set == "turbo" ) {
+			set = "Twitch Turbo";
+			set_type = null;
+		}
+
+		if ( ! set_type )
+			output += '<tr><td class="center" colspan="2">' + set + '</td></tr>';
+		else
+			output += "<tr><td>" + set_type + "</td><td>" + set + "</td></tr>";
+
+		return '<table class="emote-data">' + output + '</table>';
+	},
+
+	build_tooltip = function(id) {
+		var emote_data = this._twitch_emotes[id],
+			set = emote_data ? emote_data.set : null;
+
+		if ( ! emote_data )
+			return "???";
+
+		if ( typeof emote_data == "string" )
+			return emote_data;
+
+		if ( emote_data.tooltip )
+			return emote_data.tooltip;
+
+		return emote_data.tooltip = data_to_tooltip(emote_data);
+	},
+
+	load_emote_data = function(id, code, success, data) {
+		if ( ! success )
+			return;
+
+		if ( code )
+			data.code = code;
+
+		this._twitch_emotes[id] = data;
+		var tooltip = build_tooltip.bind(this)(id);
+
+		var images = document.querySelectorAll('img[emote-id="' + id + '"]');
+		for(var x=0; x < images.length; x++)
+			images[x].title = tooltip;
 	};
 
 
@@ -397,6 +491,37 @@ FFZ.settings_info.capitalize = {
 
 	name: "Username Capitalization",
 	help: "Display names in chat with proper capitalization."
+	};
+
+
+FFZ.settings_info.banned_words = {
+	type: "button",
+	value: [],
+
+	category: "Chat",
+	visible: function() { return ! this.has_bttv },
+
+	name: "Banned Words",
+	help: "Set a list of words that will be locally removed from chat messages.",
+
+	method: function() {
+			var old_val = this.settings.banned_words.join(", "),
+				new_val = prompt("Banned Words\n\nPlease enter a comma-separated list of words that you would like to be removed from chat messages.", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			new_val = new_val.trim().split(SPLITTER);
+			var vals = [];
+
+			for(var i=0; i < new_val.length; i++)
+				new_val[i] && vals.push(new_val[i]);
+
+			if ( vals.length == 1 && vals[0] == "disable" )
+				vals = [];
+
+			this.settings.set("banned_words", vals);
+		}
 	};
 
 
@@ -418,12 +543,16 @@ FFZ.settings_info.keywords = {
 				return;
 
 			// Split them up.
-			new_val = new_val.trim().split(/\W*,\W*/);
+			new_val = new_val.trim().split(SPLITTER);
+			var vals = [];
 
-			if ( new_val.length == 1 && (new_val[0] == "" || new_val[0] == "disable") )
-				new_val = [];
+			for(var i=0; i < new_val.length; i++)
+				new_val[i] && vals.push(new_val[i]);
 
-			this.settings.set("keywords", new_val);
+			if ( vals.length == 1 && vals[0] == "disable" )
+				vals = [];
+
+			this.settings.set("keywords", vals);
 		}
 	};
 
@@ -484,6 +613,10 @@ FFZ.prototype.setup_line = function() {
 	document.head.appendChild(s);
 
 
+	// Emoticon Data
+	this._twitch_emotes = {};
+
+
 	this.log("Hooking the Ember Line controller.");
 
 	var Line = App.__container__.resolve('controller:line'),
@@ -495,6 +628,7 @@ FFZ.prototype.setup_line = function() {
 			var tokens = this._super();
 
 			try {
+				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
 				var user = f.get_user();
 
@@ -521,11 +655,12 @@ FFZ.prototype.setup_line = function() {
 			this._super();
 			try {
 				var el = this.get('element'),
-					user = this.get('context.model.from'),
-					room = this.get('context.parentController.content.id'),
-					color = this.get('context.model.color'),
+					controller = this.get('context'),
+					user = controller.get('model.from'),
+					room = controller.get('parentController.content.id'),
+					color = controller.get('model.color'),
 
-					row_type = this.get('context.model.ffz_alternate');
+					row_type = controller.get('model.ffz_alternate');
 
 
 				// Color Processing
@@ -587,6 +722,107 @@ FFZ.prototype.setup_line = function() {
 
 				// Mark that we've checked this message for mentions.
 				this.set('context.model.ffz_notified', true);
+
+
+				// Banned Links
+				var bad_links = el.querySelectorAll('a.deleted-link');
+				for(var i=0; i < bad_links.length; i++) {
+					var link = bad_links[i]; 
+
+					link.addEventListener("click", function(e) {
+						if ( ! this.classList.contains("deleted-link") )
+							return true;
+
+						// Get the URL
+						var href = this.getAttribute('data-url'),
+							link = href;
+
+						// Delete Old Stuff
+						this.classList.remove('deleted-link');
+						this.removeAttribute("data-url");
+						this.removeAttribute("title");
+						this.removeAttribute("original-title");
+
+						// Process URL
+						if ( href.indexOf("@") > -1 && (-1 === href.indexOf("/") || href.indexOf("@") < href.indexOf("/")) )
+							href = "mailto:" + href;
+						else if ( ! href.match(/^https?:\/\//) )
+							href = "http://" + href;
+
+						// Set up the Link
+						this.href = href;
+						this.target = "_new";
+						this.textContent = link;
+
+						// Stop from Navigating
+						e.preventDefault();
+					});
+
+					// Also add a nice tooltip.
+					jQuery(link).tipsy();
+				}
+
+
+				// Enhanced Emotes
+				var images = el.querySelectorAll('img');
+				for(var i=0; i < images.length; i++) {
+					var img = images[i],
+						name = img.alt,
+						match = /\/emoticons\/v1\/(\d+)\/1\.0/.exec(img.src),
+						id = match ? parseInt(match[1]) : null;
+
+					if ( id !== null ) {
+						// High-DPI Images
+						img.setAttribute('srcset', build_srcset(id));
+						img.setAttribute('emote-id', id);
+
+						// Source Lookup
+						var emote_data = f._twitch_emotes[id];
+						if ( emote_data ) {
+							if ( typeof emote_data != "string" )
+								img.title = emote_data.tooltip;
+
+						} else {
+							f._twitch_emotes[id] = img.alt;
+							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
+						}
+
+						jQuery(img).tipsy({html:true});
+
+					} else if ( img.getAttribute('data-ffz-emote') ) {
+						var data = JSON.parse(decodeURIComponent(img.getAttribute('data-ffz-emote'))),
+							id = data && data[0] || null,
+							set_id = data && data[1] || null,
+
+							set = f.emote_sets[set_id],
+							emote = set ? set.emotes[id] : null,
+
+							set_name = set.id,
+							set_type = "FFZ Channel";
+
+						if ( set.id == "global" ) {
+							set_name = "FrankerFaceZ Global";
+							set_type = null;
+
+						} else if ( set.id == "globalevent" ) {
+							set_name = "FrankerFaceZ Event";
+							set_type = null;
+
+						} else if ( f.feature_friday && set.id == f.feature_friday.set )
+							set_name = "Feature Friday - " + f.feature_friday.channel;
+
+						img.title = data_to_tooltip({
+							code: emote.hidden ? "???" : emote.name,
+							set: set_name,
+							set_type: set_type
+							});
+
+						jQuery(img).tipsy({html:true});
+
+					} else
+						jQuery(img).tipsy();
+				}
+
 
 			} catch(err) {
 				try {
@@ -666,7 +902,6 @@ FFZ.prototype._handle_color = function(color) {
 }
 
 
-
 // ---------------------
 // Capitalization
 // ---------------------
@@ -676,7 +911,7 @@ FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
 	// Use the BTTV code if it's present.
-	if ( window.BetterTTV )
+	if ( window.BetterTTV && BetterTTV.chat && BetterTTV.chat.helpers.lookupDisplayName )
 		return BetterTTV.chat.helpers.lookupDisplayName(name);
 
 	if ( ! name )
@@ -692,15 +927,14 @@ FFZ.get_capitalization = function(name, callback) {
 			return old_data[0];
 	}
 
-	if ( FFZ._cap_fetching < 5 ) {
+	if ( FFZ._cap_fetching < 25 ) {
 		FFZ._cap_fetching++;
-		Twitch.api.get("users/" + name)
-			.always(function(data) {
-				var cap_name = data.display_name || name;
-				FFZ.capitalization[name] = [cap_name, Date.now()];
-				FFZ._cap_fetching--;
-				typeof callback === "function" && callback(cap_name);
-			});
+		FFZ.get().ws_send("get_display_name", name, function(success, data) {
+			var cap_name = success ? data : name;
+			FFZ.capitalization[name] = [cap_name, Date.now()];
+			FFZ._cap_fetching--;
+			typeof callback === "function" && callback(cap_name);
+		});
 	}
 
 	return old_data ? old_data[0] : name;
@@ -709,7 +943,7 @@ FFZ.get_capitalization = function(name, callback) {
 
 FFZ.prototype.capitalize = function(view, user) {
 	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
-	if ( name )
+	if ( name && view )
 		view.$('.from').text(name);
 }
 
@@ -724,8 +958,21 @@ FFZ._get_regex = function(word) {
 	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "ig");
 }
 
-FFZ._mentions_to_regex = function(list) {
-	return FFZ._regex_cache[list] = FFZ._regex_cache[list] || RegExp("\\b(?:" + _.chain(list).map(reg_escape).value().join("|") + ")\\b", "ig");
+FFZ._words_to_regex = function(list) {
+	var regex = FFZ._regex_cache[list];
+	if ( ! regex ) {
+		var reg = "";
+		for(var i=0; i < list.length; i++) {
+			if ( ! list[i] )
+				continue;
+
+			reg += (reg ? "|" : "") + reg_escape(list[i]);
+		}
+
+		regex = FFZ._regex_cache[list] = new RegExp("(^|.*?" + SEPARATORS + ")(" + reg + ")(?=$|" + SEPARATORS + ")", "ig");
+	}
+
+	return regex;
 }
 
 
@@ -737,24 +984,72 @@ FFZ.prototype._mentionize = function(controller, tokens) {
 	if ( typeof tokens == "string" )
 		tokens = [tokens];
 
-	var regex = FFZ._mentions_to_regex(mention_words);
+	var regex = FFZ._words_to_regex(mention_words),
+		new_tokens = [];
 
-	return _.chain(tokens).map(function(token) {
-		if ( !_.isString(token) )
-			return token;
-		else if ( !token.match(regex) )
-			return [token];
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( ! _.isString(token) ) {
+			new_tokens.push(token);
+			continue;
+		}
 
-		return _.zip(
-			_.map(token.split(regex), _.identity),
-			_.map(token.match(regex), function(e) {
-				return {
-					mentionedUser: e,
-					own: false
-					};
-				})
-			);
-		}).flatten().compact().value();
+		if ( ! token.match(regex) ) {
+			new_tokens.push(token);
+			continue;
+		}
+
+		token = token.replace(regex, function(all, prefix, match) {
+			new_tokens.push(prefix);
+			new_tokens.push({
+				mentionedUser: match,
+				own: false
+				});
+
+			return "";
+		});
+
+		if ( token )
+			new_tokens.push(token);
+	}
+
+	return new_tokens;
+}
+
+
+// ---------------------
+// Banned Words
+// ---------------------
+
+FFZ.prototype._remove_banned = function(tokens) {
+	var banned_words = this.settings.banned_words;
+	if ( ! banned_words || ! banned_words.length )
+		return tokens;
+
+	if ( typeof tokens == "string" )
+		tokens = [tokens];
+
+	var regex = FFZ._words_to_regex(banned_words),
+		new_tokens = [];
+
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( ! _.isString(token ) ) {
+			if ( token.emoticonSrc && regex.test(token.altText) )
+				new_tokens.push(token.altText.replace(regex, "$1***"));
+			else if ( token.isLink && regex.test(token.href) )
+				new_tokens.push({
+					mentionedUser: '</span><a class="deleted-link" title="' + quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
+					own: true
+					});
+			else
+				new_tokens.push(token);
+
+		} else
+			new_tokens.push(token.replace(regex, "$1***"));
+	}
+
+	return new_tokens;
 }
 
 
@@ -799,7 +1094,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: (emote.hidden ? "???" : emote.name)};
+		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )
@@ -817,7 +1112,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{"../utils":24}],7:[function(require,module,exports){
+},{"../utils":26}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
@@ -851,7 +1146,7 @@ FFZ.settings_info.enhanced_moderation = {
 	category: "Chat",
 
 	name: "Enhanced Moderation",
-	help: "Use /p, /t, /u and /b in chat to moderator, or use hotkeys with moderation cards."
+	help: "Use /p, /t, /u and /b in chat to moderate chat, or use hotkeys with moderation cards."
 	};
 
 
@@ -1056,7 +1351,7 @@ FFZ.chat_commands.b.enabled = function() { return this.settings.enhanced_moderat
 
 FFZ.chat_commands.u = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Unban Usage: /b username [more usernames separated by spaces]";
+		return "Unban Usage: /u username [more usernames separated by spaces]";
 
 	if ( args.length > 10 )
 		return "Please only unban up to 10 users at once.";
@@ -1069,7 +1364,7 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.enhanced_moderation; }
-},{"../utils":24}],8:[function(require,module,exports){
+},{"../utils":26}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -1437,7 +1732,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":24}],9:[function(require,module,exports){
+},{"../constants":3,"../utils":26}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1717,7 +2012,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 		margins = check_margins(margins, height);
 		var hidden = path.substr(path.lastIndexOf("/") + 1, 1) === ".",
 			id = ++f._last_emote_id,
-			emote = {id: id, hidden: hidden, name: name, height: height, width: width, url: path, margins: margins, extra_css: extra};
+			emote = {id: id, set_id: set_id, hidden: hidden, name: name, height: height, width: width, url: path, margins: margins, extra_css: extra};
 
 		emotes[id] = emote;
 		return "";
@@ -1733,7 +2028,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":24}],11:[function(require,module,exports){
+},{"./constants":3,"./utils":26}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -1975,7 +2270,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 1, revision: 0,
+	major: 3, minor: 2, revision: 1,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -2058,9 +2353,12 @@ FFZ.prototype.get_user = function() {
 
 //require('./templates');
 
+// Import these first to set up data structures
+require('./ui/menu');
 require('./settings');
-
 require('./socket');
+
+
 require('./emoticons');
 require('./badges');
 
@@ -2087,8 +2385,9 @@ require('./ui/notifications');
 require('./ui/viewer_count');
 
 require('./ui/menu_button');
-require('./ui/menu');
 require('./ui/races');
+require('./ui/my_emotes');
+require('./ui/about_page');
 
 require('./commands');
 
@@ -2151,6 +2450,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_notifications();
 	this.setup_css();
 	this.setup_menu();
+	this.setup_my_emotes();
 	this.setup_races();
 
 	this.find_bttv(10);
@@ -2163,7 +2463,7 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/moderation-card":7,"./ember/room":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./ui/menu":18,"./ui/menu_button":19,"./ui/notifications":20,"./ui/races":21,"./ui/styles":22,"./ui/viewer_count":23}],14:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/moderation-card":7,"./ember/room":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./ui/about_page":18,"./ui/menu":19,"./ui/menu_button":20,"./ui/my_emotes":21,"./ui/notifications":22,"./ui/races":23,"./ui/styles":24,"./ui/viewer_count":25}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -2312,10 +2612,17 @@ FFZ.prototype._update_ff_name = function(name) {
 }
 },{"./constants":3}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
+	constants = require("./constants");
 
 
 	make_ls = function(key) {
 		return "ffz_setting_" + key;
+	},
+
+	toggle_setting = function(swit, key) {
+		var val = ! this.settings.get(key);
+		this.settings.set(key, val);
+		swit.classList.toggle('active', val);
 	};
 
 
@@ -2332,8 +2639,11 @@ FFZ.prototype.load_settings = function() {
 	this.settings = {};
 
 	for(var key in FFZ.settings_info) {
-		var ls_key = make_ls(key),
-			info = FFZ.settings_info[key],
+		if ( ! FFZ.settings_info.hasOwnProperty(key) )
+			continue;
+
+		var info = FFZ.settings_info[key],
+			ls_key = info.storage_key || make_ls(key),
 			val = info.hasOwnProperty("value") ? info.value : undefined;
 
 		if ( localStorage.hasOwnProperty(ls_key) ) {
@@ -2353,8 +2663,141 @@ FFZ.prototype.load_settings = function() {
 	this.settings.del = this._setting_del.bind(this);
 
 	// Listen for Changes
-	window.addEventListener("storage", this._setting_update.bind(this));
+	window.addEventListener("storage", this._setting_update.bind(this), false);
 }
+
+
+// --------------------
+// Menu Page
+// --------------------
+
+FFZ.menu_pages.settings = {
+	render: function(view, container) {
+			var settings = {},
+				categories = [];
+			for(var key in FFZ.settings_info) {
+				if ( ! FFZ.settings_info.hasOwnProperty(key) )
+					continue;
+
+				var info = FFZ.settings_info[key],
+					cat = info.category || "Miscellaneous",
+					cs = settings[cat];
+
+				if ( info.visible !== undefined && info.visible !== null ) {
+					var visible = info.visible;
+					if ( typeof info.visible == "function" )
+						visible = info.visible.bind(this)();
+
+					if ( ! visible )
+						continue;
+				}
+
+				if ( ! cs ) {
+					categories.push(cat);
+					cs = settings[cat] = [];
+				}
+
+				cs.push([key, info]);
+			}
+
+			categories.sort(function(a,b) {
+				var a = a.toLowerCase(),
+					b = b.toLowerCase();
+
+				if ( a === "Debugging" )
+					a = "zzz" + a;
+
+				if ( b === "Debugging" )
+					b = "zzz" + b;
+
+				if ( a < b ) return -1;
+				else if ( a > b ) return 1;
+				return 0;
+			});
+
+			for(var ci=0; ci < categories.length; ci++) {
+				var category = categories[ci],
+					cset = settings[category],
+
+					menu = document.createElement('div'),
+					heading = document.createElement('div');
+
+				heading.className = 'heading';
+				menu.className = 'chat-menu-content';
+				heading.innerHTML = category;
+				menu.appendChild(heading);
+
+				cset.sort(function(a,b) {
+					var a = a[1],
+						b = b[1],
+
+						at = a.type,
+						bt = b.type,
+
+						an = a.name.toLowerCase(),
+						bn = b.name.toLowerCase();
+
+					if ( at < bt ) return -1;
+					else if ( at > bt ) return 1;
+
+					else if ( an < bn ) return -1;
+					else if ( an > bn ) return 1;
+
+					return 0;
+				});
+
+				for(var i=0; i < cset.length; i++) {
+					var key = cset[i][0],
+						info = cset[i][1],
+						el = document.createElement('p'),
+						val = this.settings.get(key);
+
+					el.className = 'clearfix';
+
+					if ( info.type == "boolean" ) {
+						var swit = document.createElement('a'),
+							label = document.createElement('span');
+
+						swit.className = 'switch';
+						swit.classList.toggle('active', val);
+						swit.innerHTML = "<span></span>";
+
+						label.className = 'switch-label';
+						label.innerHTML = info.name;
+
+						el.appendChild(swit);
+						el.appendChild(label);
+
+						swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+
+					} else {
+						el.classList.add("option");
+						var link = document.createElement('a');
+						link.innerHTML = info.name;
+						link.href = "#";
+						el.appendChild(link);
+
+						link.addEventListener("click", info.method.bind(this));
+					}
+
+					if ( info.help ) {
+						var help = document.createElement('span');
+						help.className = 'help';
+						help.innerHTML = info.help;
+						el.appendChild(help);
+					}
+
+					menu.appendChild(el);
+				}
+
+				container.appendChild(menu);
+			}
+		},
+
+	name: "Settings",
+	icon: constants.GEAR,
+	sort_order: 99999
+	};
 
 
 // --------------------
@@ -2374,6 +2817,22 @@ FFZ.prototype._setting_update = function(e) {
 		key = ls_key.substr(12),
 		val = undefined,
 		info = FFZ.settings_info[key];
+
+	if ( ! info ) {
+		// Try iterating to find the key.
+		for(key in FFZ.settings_info) {
+			if ( ! FFZ.settings_info.hasOwnProperty(key) )
+				continue;
+
+			info = FFZ.settings_info[key];
+			if ( info.storage_key == ls_key )
+				break;
+		}
+
+		// Not us.
+		if ( info.storage_key != ls_key )
+			return;
+	}
 
 	this.log("Updated Setting: " + key);
 
@@ -2405,8 +2864,8 @@ FFZ.prototype._setting_get = function(key) {
 
 
 FFZ.prototype._setting_set = function(key, val) {
-	var ls_key = make_ls(key),
-		info = FFZ.settings_info[key],
+	var info = FFZ.settings_info[key],
+		ls_key = info.storage_key || make_ls(key),
 		jval = JSON.stringify(val);
 
 	this.settings[key] = val;
@@ -2424,8 +2883,8 @@ FFZ.prototype._setting_set = function(key, val) {
 
 
 FFZ.prototype._setting_del = function(key) {
-	var ls_key = make_ls(key),
-		info = FFZ.settings_info[key],
+	var info = FFZ.settings_info[key],
+		ls_key = info.storage_key || make_ls(key),
 		val = undefined;
 
 	if ( localStorage.hasOwnProperty(ls_key) )
@@ -2443,7 +2902,7 @@ FFZ.prototype._setting_del = function(key) {
 			this.log('Error running updater for setting "' + key + '": ' + err);
 		}
 }
-},{}],16:[function(require,module,exports){
+},{"./constants":3}],16:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -2510,7 +2969,7 @@ FFZ.prototype.ws_create = function() {
 
 		// Send the current rooms.
 		for(var room_id in f.rooms)
-			f.ws_send("sub", room_id);
+			f.rooms.hasOwnProperty(room_id) && f.ws_send("sub", room_id);
 
 		// Send any pending commands.
 		var pending = f._ws_pending;
@@ -2536,8 +2995,11 @@ FFZ.prototype.ws_create = function() {
 		}
 		
 		// We never ever want to not have a socket.
-		if ( f._ws_delay < 30000 )
+		if ( f._ws_delay < 60000 )
 			f._ws_delay += 5000;
+		else
+			// Randomize delay.
+			f._ws_delay = (Math.floor(Math.random()*60)+30)*1000;
 
 		setTimeout(f.ws_create.bind(f), f._ws_delay);
 	}
@@ -2597,7 +3059,131 @@ FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
+
+// ----------------
+// Authorization
+// ----------------
+
+FFZ.ws_commands.do_authorize = function(data) {
+	// Try finding a channel we can send on.
+	var conn;
+	for(var room_id in this.rooms) {
+		if ( ! this.rooms.hasOwnProperty(room_id) )
+			continue;
+
+		var r = this.rooms[room_id];
+		if ( r && r.room && !r.room.get('roomProperties.eventchat') && !r.room.get('isGroupRoom') && r.room.tmiRoom ) {
+			var c = r.room.tmiRoom._getConnection();
+			if ( c.isConnected ) {
+				conn = c;
+				break;
+			}
+		}
+	}
+
+	if ( conn )
+		conn._send("PRIVMSG #frankerfacezauthorizer :AUTH " + data);
+	else
+		// Try again shortly.
+		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
+}
 },{}],18:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require("../constants");
+
+
+// -------------------
+// About Page
+// -------------------
+
+FFZ.menu_pages.about = {
+	name: "About FrankerFaceZ",
+	icon: constants.HEART,
+	sort_order: 998,
+
+	render: function(view, container) {
+		var room = this.rooms[view.get("context.currentRoom.id")],
+			has_emotes = false, f = this;
+
+		// Check for emoticons.
+		if ( room && room.sets.length ) {
+			for(var i=0; i < room.sets.length; i++) {
+				var set = this.emote_sets[room.sets[i]];
+				if ( set && set.count > 0 ) {
+					has_emotes = true;
+					break;
+				}
+			}
+		}
+
+		// Heading
+		var heading = document.createElement('div'),
+			content = '';
+
+		content += "<h1>FrankerFaceZ</h1>";
+		content += '<div class="ffz-about-subheading">new ways to woof</div>';
+
+		heading.className = 'chat-menu-content center';
+		heading.innerHTML = content;
+		container.appendChild(heading);
+
+
+		// Advertising
+		var btn_container = document.createElement('div'),
+			ad_button = document.createElement('a'),
+			message = "To use custom emoticons in " + (has_emotes ? "this channel" : "tons of channels") + ", get FrankerFaceZ from http://www.frankerfacez.com";
+
+		ad_button.className = 'button primary';
+		ad_button.innerHTML = "Advertise in Chat";
+		ad_button.addEventListener('click', this._add_emote.bind(this, view, message));
+
+		btn_container.appendChild(ad_button);
+
+		// Donate
+		var donate_button = document.createElement('a');
+
+		donate_button.className = 'button ffz-donate';
+		donate_button.href = "http://www.frankerfacez.com/donate.html";
+		donate_button.target = "_new";
+		donate_button.innerHTML = "Donate";
+
+		btn_container.appendChild(donate_button);
+		btn_container.className = 'chat-menu-content center';
+		container.appendChild(btn_container);
+
+		// Credits
+		var credits = document.createElement('div');
+
+		content = '<table class="ffz-about-table">';
+		content += '<tr><th colspan="4">Developers</th></tr>';
+		content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="http://www.twitch.tv/dansalvato" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato1" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_new">&nbsp;</a></td></tr>';
+		content += '<tr><td>Stendec</td><td><a class="twitch" href="http://www.twitch.tv/sirstendec" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/SirStendec" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/channel/UCnxuvmK1DCPCXSJ-mXIh4KQ" title="YouTube" target="_new">&nbsp;</a></td></tr>';
+
+		content += '<tr class="debug"><td>Version ' + FFZ.version_info + '</td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';
+
+		credits.className = 'chat-menu-content center';
+		credits.innerHTML = content;
+
+		// Make the Logs button functional.
+		var getting_logs = false;
+		credits.querySelector('#ffz-debug-logs').addEventListener('click', function() {
+			if ( getting_logs )
+				return;
+
+			getting_logs = true;
+			f._pastebin(f._log_data.join("\n"), function(url) {
+				getting_logs = false;
+				if ( ! url )
+					alert("There was an error uploading the FrankerFaceZ logs.");
+				else
+					prompt("Your FrankerFaceZ logs have been uploaded to the URL:", url);
+			});
+		});
+
+		container.appendChild(credits);
+	}
+}
+},{"../constants":3}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -2660,29 +3246,51 @@ FFZ.prototype.build_ui_popup = function(view) {
 	menu.className = 'menu clearfix';
 	inner.appendChild(menu);
 
-	var el = document.createElement('li');
-	el.className = 'title';
-	el.innerHTML = "<span>FrankerFaceZ</span>";
-	menu.appendChild(el);
-
-	el.addEventListener("click", this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
+	var heading = document.createElement('li');
+	heading.className = 'title';
+	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
+	menu.appendChild(heading);
 
 	var sub_container = document.createElement('div');
 	sub_container.className = 'ffz-ui-menu-page';
 	inner.appendChild(sub_container);
 
+	var menu_pages = [];
 	for(var key in FFZ.menu_pages) {
+		if ( ! FFZ.menu_pages.hasOwnProperty(key) )
+			continue;
+
 		var page = FFZ.menu_pages[key];
 		if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)()))) )
 			continue;
 
-		var el = document.createElement('li'),
+		menu_pages.push([page.sort_order || 0, key, page]);
+	}
+
+	menu_pages.sort(function(a,b) {
+		if ( a[0] < b[0] ) return 1;
+		else if ( a[0] > b[0] ) return -1;
+
+		var al = a[1].toLowerCase(),
+			bl = b[1].toLowerCase();
+
+		if ( al < bl ) return 1;
+		if ( al > bl ) return -1;
+		return 0;
+	});
+
+	for(var i=0; i < menu_pages.length; i++) {
+		var key = menu_pages[i][1],
+			page = menu_pages[i][2],
+			el = document.createElement('li'),
 			link = document.createElement('a');
 
 		el.className = 'item';
 		el.id = "ffz-menu-page-" + key;
 		link.title = page.name;
 		link.innerHTML = page.icon;
+
+		jQuery(link).tipsy();
 
 		link.addEventListener("click", this._ui_change_page.bind(this, view, menu, sub_container, key));
 
@@ -2703,6 +3311,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 FFZ.prototype._ui_change_page = function(view, menu, container, page) {
 	this._last_page = page;
 	container.innerHTML = "";
+	container.setAttribute('data-page', page);
 
 	var els = menu.querySelectorAll('li.active');
 	for(var i=0; i < els.length; i++)
@@ -2719,136 +3328,47 @@ FFZ.prototype._ui_change_page = function(view, menu, container, page) {
 
 
 // --------------------
-// Settings Page
-// --------------------
-
-FFZ.menu_pages.settings = {
-	render: function(view, container) {
-			var settings = {},
-				categories = [];
-			for(var key in FFZ.settings_info) {
-				var info = FFZ.settings_info[key],
-					cat = info.category || "Miscellaneous",
-					cs = settings[cat];
-
-				if ( info.visible !== undefined && info.visible !== null ) {
-					var visible = info.visible;
-					if ( typeof info.visible == "function" )
-						visible = info.visible.bind(this)();
-
-					if ( ! visible )
-						continue;
-				}
-
-				if ( ! cs ) {
-					categories.push(cat);
-					cs = settings[cat] = [];
-				}
-
-				cs.push([key, info]);
-			}
-
-			categories.sort(function(a,b) {
-				var a = a.toLowerCase(),
-					b = b.toLowerCase();
-
-				if ( a < b ) return -1;
-				else if ( a > b ) return 1;
-				return 0;
-				});
-
-			for(var ci=0; ci < categories.length; ci++) {
-				var category = categories[ci],
-					cset = settings[category],
-
-					menu = document.createElement('div'),
-					heading = document.createElement('div');
-
-				heading.className = 'heading';
-				menu.className = 'chat-menu-content';
-				heading.innerHTML = category;
-				menu.appendChild(heading);
-
-				cset.sort(function(a,b) {
-					var ai = a[1],
-						bi = b[1],
-
-						an = ai.name.toLowerCase(),
-						bn = bi.name.toLowerCase();
-
-					if ( an < bn ) return -1;
-					else if ( an > bn ) return 1;
-					return 0;
-					});
-
-
-				for(var i=0; i < cset.length; i++) {
-					var key = cset[i][0],
-						info = cset[i][1],
-						el = document.createElement('p'),
-						val = this.settings.get(key);
-
-					el.className = 'clearfix';
-
-					if ( info.type == "boolean" ) {
-						var swit = document.createElement('a'),
-							label = document.createElement('span');
-
-						swit.className = 'switch';
-						swit.classList.toggle('active', val);
-						swit.innerHTML = "<span></span>";
-
-						label.className = 'switch-label';
-						label.innerHTML = info.name;
-
-						el.appendChild(swit);
-						el.appendChild(label);
-
-						swit.addEventListener("click", this._ui_toggle_setting.bind(this, swit, key));
-
-					} else {
-						el.classList.add("option");
-						var link = document.createElement('a');
-						link.innerHTML = info.name;
-						link.href = "#";
-						el.appendChild(link);
-
-						link.addEventListener("click", info.method.bind(this));
-					}
-
-					if ( info.help ) {
-						var help = document.createElement('span');
-						help.className = 'help';
-						help.innerHTML = info.help;
-						el.appendChild(help);
-					}
-
-					menu.appendChild(el);
-				}
-
-				container.appendChild(menu);
-			}
-		},
-
-	name: "Settings",
-	icon: constants.GEAR
-	};
-
-
-FFZ.prototype._ui_toggle_setting = function(swit, key) {
-	var val = ! this.settings.get(key);
-	this.settings.set(key, val);
-	swit.classList.toggle('active', val);
-}
-
-
-// --------------------
 // Favorites Page
 // --------------------
 
+FFZ.prototype._tokenize_message = function(message, room_id) {
+	var lc = App.__container__.lookup('controller:line'),
+		rc = App.__container__.lookup('controller:room'),
+		room = this.rooms[room_id],
+		user = this.get_user();
+
+	if ( ! lc || ! rc || ! room )
+		return [message];
+
+	rc.set('model', room.room);
+	lc.set('parentController', rc);
+
+	var model = {
+		from: user && user.login || "FrankerFaceZ",
+		message: message,
+		tags: {
+			emotes: room.room.tmiSession._emotesParser.parseEmotesTag(message)
+			}
+		};
+
+	lc.set('model', model);
+
+	var tokens = lc.get('tokenizedMessage');
+
+	lc.set('model', null);
+	rc.set('model', null);
+	lc.set('parentController', null);
+
+	return tokens;
+}
+
+
 /*FFZ.menu_pages.favorites = {
 	render: function(view, container) {
-	
+			// Get the current room.
+			var room_id = view.get('controller.currentRoom.id');
+
+			
 		},
 
 	name: "Favorites",
@@ -2866,35 +3386,8 @@ FFZ.menu_pages.channel = {
 			var room_id = view.get('controller.currentRoom.id'),
 				room = this.rooms[room_id];
 
-			//this.track('trackEvent', 'Menu', 'Open', room_id);
-
-			// Add the header and ad button.
-			/*var btn = document.createElement('a');
-			btn.className = 'button glyph-only ffz-button';
-			btn.title = 'Advertise for FrankerFaceZ in chat!';
-			btn.href = '#';
-			btn.innerHTML = '<svg class="svg-followers" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>';
-
-			var hdr = document.createElement('div');
-			hdr.className = 'list-header first';
-			hdr.appendChild(btn);
-			hdr.appendChild(document.createTextNode('FrankerFaceZ'));
-			inner.appendChild(hdr);*/
-
-			var c = this._emotes_for_sets(inner, view, room && room.menu_sets || []);
-
-			/*if ( ! this._ws_exists ) {
-				btn.className = "button ffz-button primary";
-				btn.innerHTML = "Server Error";
-				btn.title = "FFZ Server Error";
-				btn.addEventListener('click', alert.bind(window, "The FrankerFaceZ client was unable to create a WebSocket to communicate with the FrankerFaceZ server.\n\nThis is most likely due to your browser's configuration either disabling WebSockets entirely or limiting the number of simultaneous connections. Please ensure that WebSockets have not been disabled."));
-
-			} else {
-				if ( c === 0 )
-					btn.addEventListener('click', this._add_emote.bind(this, view, "To use custom emoticons in tons of channels, get FrankerFaceZ from http://www.frankerfacez.com"));
-				else
-					btn.addEventListener('click', this._add_emote.bind(this, view, "To view this channel's emoticons, get FrankerFaceZ from http://www.frankerfacez.com"));
-			}*/
+			// Basic Emote Sets
+			this._emotes_for_sets(inner, view, room && room.menu_sets || []);
 
 			// Feature Friday!
 			this._feature_friday_ui(room_id, inner, view);
@@ -2930,6 +3423,9 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 			continue;
 
 		for(var eid in set.emotes) {
+			if ( ! set.emotes.hasOwnProperty(eid) )
+				continue;
+
 			var emote = set.emotes[eid];
 			if ( !set.emotes.hasOwnProperty(eid) || emote.hidden )
 				continue;
@@ -2956,15 +3452,25 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 
 
 FFZ.prototype._add_emote = function(view, emote) {
-	var room = view.get('controller.currentRoom'),
-		current_text = room.get('messageToSend') || '';
+	var input_el, text, room;
 
-	if ( current_text && current_text.substr(-1) !== " " )
-		current_text += ' ';
+	if ( this.has_bttv ) {
+		input_el = view.get('element').querySelector('textarea');
+		text = input_el.value;
 
-	room.set('messageToSend', current_text + (emote.name || emote));
+	} else {
+		room = view.get('controller.currentRoom');
+		text = room.get('messageToSend') || '';
+	}
+
+	text += (text && text.substr(-1) !== " " ? " " : "")  + (emote.name || emote);
+
+	if ( input_el )
+		input_el.value = text;
+	else
+		room.set('messageToSend', text);
 }
-},{"../constants":3}],19:[function(require,module,exports){
+},{"../constants":3}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -3015,7 +3521,307 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],20:[function(require,module,exports){
+},{"../constants":3}],21:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	constants = require("../constants"),
+
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	BANNED_SETS = {"00000turbo":true},
+
+
+	get_emotes = function(ffz) {
+		var Chat = App.__container__.lookup('controller:chat'),
+			room_id = Chat.get('currentRoom.id'),
+			room = ffz.rooms[room_id],
+			tmiSession = room ? room.room.tmiSession : null,
+
+			set_ids = tmiSession && tmiSession._emotesParser && tmiSession._emotesParser.emoticonSetIds || "0",
+			user = ffz.get_user(),
+			user_sets = user && ffz.users[user.login] && ffz.users[user.login].sets || [];
+
+		// Remove the 'default' set.
+		set_ids = set_ids.split(",").removeObject("0")
+
+		return [set_ids, user_sets];
+	};
+
+
+// -------------------
+// Initialization
+// -------------------
+
+FFZ.prototype.setup_my_emotes = function() {
+	this._twitch_emote_sets = {};
+	this._twitch_set_to_channel = {};
+
+	if ( localStorage.ffzTwitchSets ) {
+		try {
+			this._twitch_set_to_channel = JSON.parse(localStorage.ffzTwitchSets);
+		} catch(err) { }
+	}
+}
+
+
+// -------------------
+// Menu Page
+// -------------------
+
+FFZ.menu_pages.my_emotes = {
+	name: "My Emoticons",
+	icon: constants.EMOTE,
+
+	visible: function() {
+		var emotes = get_emotes(this);
+		return emotes[0].length > 0 || emotes[1].length > 0;
+	},
+
+	render: function(view, container) {
+			var emotes = get_emotes(this), f = this;
+
+			new RSVP.Promise(function(done) {
+				var needed_sets = [];
+				for(var i=0; i < emotes[0].length; i++) {
+					var set_id = emotes[0][i];
+					if ( ! f._twitch_emote_sets[set_id] )
+						needed_sets.push(set_id);
+				}
+
+				RSVP.all([
+					new RSVP.Promise(function(d) {
+						if ( ! needed_sets.length )
+							return d();
+
+						Twitch.api.get("chat/emoticon_images", {emotesets: needed_sets.join(",")}, {version: 3})
+							.done(function(data) {
+								if ( data.emoticon_sets ) {
+									for(var set_id in data.emoticon_sets) {
+										if ( ! data.emoticon_sets.hasOwnProperty(set_id) )
+											continue;
+
+										var set = f._twitch_emote_sets[set_id] = f._twitch_emote_sets[set_id] || {};
+										set.emotes = data.emoticon_sets[set_id];
+										set.source = "Twitch";
+									}
+								}
+								d();
+							}).fail(function() {
+								d();
+							});
+					}),
+					new RSVP.Promise(function(d) {
+						if ( ! needed_sets.length )
+							return d();
+
+						var promises = [],
+							old_needed = needed_sets,
+							handle_set = function(id, name) {
+								var set = f._twitch_emote_sets[id] = f._twitch_emote_sets[id] || {};
+
+								if ( !name || BANNED_SETS[name] )
+									return;
+
+								if ( name == "turbo" ) {
+									set.channel = "Twitch Turbo";
+									set.badge = "//cdn.frankerfacez.com/script/turbo_badge.png";
+									return;
+								}
+
+								// Badge Lookup
+								promises.push(new RSVP.Promise(function(set, name, dn) {
+									Twitch.api.get("chat/" + name + "/badges", null, {version: 3})
+										.done(function(data) {
+											if ( data.subscriber && data.subscriber.image )
+												set.badge = data.subscriber.image;
+											dn();
+										}).fail(dn)}.bind(this,set,name)));
+
+								// Mess Up Capitalization
+								var lname = name.toLowerCase(),
+									old_data = FFZ.capitalization[lname];
+								if ( old_data && Date.now() - old_data[1] < 3600000 ) {
+									set.channel = old_data[0];
+									return;
+								}
+
+								promises.push(new RSVP.Promise(function(set, lname, name, dn) {
+									if ( ! f.ws_send("get_display_name", lname, function(success, data) {
+										var cap_name = success ? data : name;
+										FFZ.capitalization[lname] = [cap_name, Date.now()];
+										set.channel = cap_name;
+										dn();
+									}) ) {
+										// Can't use socket.
+										set.channel = name;
+										dn();
+									}
+
+									// Timeout
+									setTimeout(function(set,name,dn) {
+										if ( ! set.channel )
+											set.channel = name;
+										dn();
+									}.bind(this,set,name,dn), 5000);
+								}.bind(this, set, lname, name)));
+							},
+							handle_promises = function() {
+								if ( promises.length )
+									RSVP.all(promises).then(d,d);
+								else
+									d();
+							};
+
+						// Process all the sets we already have.
+						needed_sets = [];
+						for(var i=0;i<old_needed.length;i++) {
+							var set_id = old_needed[i];
+							if ( f._twitch_set_to_channel[set_id] )
+								handle_set(set_id, f._twitch_set_to_channel[set_id]);
+							else
+								needed_sets.push(set_id);
+						}
+
+						if ( needed_sets.length > 0 ) {
+							f.ws_send("twitch_sets", needed_sets, function(success, data) {
+								needed_sets = [];
+								if ( success ) {
+									for(var set_id in data) {
+										if ( ! data.hasOwnProperty(set_id) )
+											continue;
+
+										f._twitch_set_to_channel[set_id] = data[set_id];
+										handle_set(set_id, data[set_id]);
+									}
+
+									localStorage.ffzTwitchSets = JSON.stringify(f._twitch_set_to_channel);
+								}
+
+								handle_promises();
+							});
+
+							// Timeout!
+							setTimeout(function() {
+								if ( needed_sets.length )
+									handle_promises();
+								}, 5000);
+
+						} else
+							handle_promises();
+					})
+				]).then(function() {
+					var sets = {};
+					for(var i=0; i < emotes[0].length; i++) {
+						var set_id = emotes[0][i];
+						if ( f._twitch_emote_sets[set_id] )
+							sets[set_id] = f._twitch_emote_sets[set_id];
+					}
+					done(sets);
+				}, function() { done({}); })
+			}).then(function(twitch_sets) {
+				try {
+
+				// Don't override a different page. We can wait.
+				if ( container.getAttribute('data-page') != "my_emotes" )
+					return;
+
+				container.innerHTML = "";
+
+				var ffz_sets = {},
+					sets = [];
+
+				for(var set_id in twitch_sets) {
+					if ( ! twitch_sets.hasOwnProperty(set_id) )
+						continue;
+
+					var set = twitch_sets[set_id];
+					if ( set.channel && set.emotes && set.emotes.length )
+						sets.push([1, set.channel, set]);
+				}
+
+				sets.sort(function(a,b) {
+					if ( a[0] < b[0] ) return -1;
+					else if ( a[0] > b[0] ) return 1;
+
+					var an = a[1].toLowerCase(),
+						bn = b[1].toLowerCase();
+
+					if ( an === "twitch turbo" )
+						an = "zzz" + an;
+
+					if ( bn === "twitch turbo" )
+						bn = "zzz" + bn;
+
+					if ( an < bn ) return -1;
+					else if ( an > bn ) return 1;
+					return 0;
+				});
+
+				for(var i=0; i < sets.length; i++) {
+					var set = sets[i][2],
+						heading = document.createElement('div'),
+						menu = document.createElement('div');
+
+					heading.className = 'heading';
+					heading.innerHTML = '<span class="right">' + set.source + '</span>' + FFZ.get_capitalization(set.channel);
+					if ( set.badge )
+						heading.style.backgroundImage = 'url("' + set.badge + '")';
+
+					menu.className = 'emoticon-grid';
+					menu.appendChild(heading);
+
+					for(var x=0; x < set.emotes.length; x++) {
+						var emote = set.emotes[x];
+
+						var s = document.createElement('span');
+						s.className = 'emoticon tooltip';
+						s.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+
+						var img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+						s.style.backgroundImage = '-webkit-' + img_set;
+						s.style.backgroundImage = '-moz-' + img_set;
+						s.style.backgroundImage = '-ms-' + img_set;
+						s.style.backgroundImage = img_set;
+
+						s.title = emote.code;
+						s.addEventListener('click', f._add_emote.bind(f, view, emote.code));
+						menu.appendChild(s);
+					}
+
+					container.appendChild(menu);
+				}
+
+				if ( ! sets.length ) {
+					var menu = document.createElement('div');
+
+					menu.className = 'chat-menu-content center';
+					menu.innerHTML = "Error Loading Subscriptions";
+
+					container.appendChild(menu);
+				}
+
+				} catch(err) {
+					f.log("My Emotes Menu Error", err);
+					container.innerHTML = "";
+
+					var menu = document.createElement('div'),
+						heading = document.createElement('div'),
+						p = document.createElement('p');
+
+					heading.className = 'heading';
+					heading.innerHTML = 'Error Loading Menu';
+					menu.appendChild(heading);
+
+					p.className = 'clearfix';
+					p.textContent = err;
+					menu.appendChild(p);
+
+					menu.className = 'chat-menu-content';
+					container.appendChild(menu);
+				}
+			});
+		}
+	};
+
+},{"../constants":3}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -3164,7 +3970,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -3469,7 +4275,7 @@ FFZ.prototype._update_race = function(not_timer) {
 		}
 	}
 }
-},{"../utils":24}],22:[function(require,module,exports){
+},{"../utils":26}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -3480,7 +4286,7 @@ FFZ.prototype.setup_css = function() {
 
 	s.id = "ffz-ui-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/style.css");
+	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + Date.now());
 	document.head.appendChild(s);
 
 	jQuery.noty.themes.ffzTheme = {
@@ -3494,7 +4300,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],23:[function(require,module,exports){
+},{"../constants":3}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -3531,7 +4337,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy();
 	}
 }
-},{"../constants":3,"../utils":24}],24:[function(require,module,exports){
+},{"../constants":3,"../utils":26}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -3576,8 +4382,7 @@ var sanitize_cache = {},
 				rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
 			}
 		}
-		var l = (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
-		return l;
+		return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
 	};
 
 

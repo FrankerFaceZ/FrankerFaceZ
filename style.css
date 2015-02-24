@@ -292,15 +292,29 @@
 	color: inherit;
 }
 
+.ffz-about-table a.twitch,
+.ffz-about-table a.youtube,
+.ffz-about-table a.twitter,
 #ffz-race-popup a.twitch,
 #ffz-race-popup a.hitbox {
 	display: inline-block;
 	height: 16px;
-	margin: 0 5px;
+	margin-left: 5px;
 	background-repeat: no-repeat;
 }
 
-#ffz-race-popup a.twitch {
+.ffz-about-table a.youtube {
+	width: 23px;
+	background-image: url("//cdn.frankerfacez.com/channel/global/youtube_logo.png");
+}
+
+.ffz-about-table a.twitter {
+	width: 20px;
+	background-image: url("//cdn.frankerfacez.com/channel/global/twitter_logo.png");
+}
+
+#ffz-race-popup a.twitch,
+.ffz-about-table a.twitch {
 	width: 15px;
 	background-image: url("//cdn.frankerfacez.com/channel/global/twitch_logo.png");
 }
@@ -335,14 +349,25 @@
 	margin: 0 -20px;
 }
 
-.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading {
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
 	margin-bottom: 5px;
 	border-bottom: 1px solid rgba(0,0,0, 0.2);
+	text-align: left;
+}
+
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
+	padding-left: 23px;
+	background-repeat: no-repeat;
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content {
 	padding: 10px 0;
 	background-color: transparent;
+}
+
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content + .chat-menu-content {
+	padding-top: 0;
 }
 
 .ffz-ui-menu-page span.help {
@@ -366,6 +391,7 @@
 	background-color: #282828;
 }
 
+.ffz-ui-menu-page .heading .right,
 .ffz-ui-popup ul.menu li.item {
 	float: right;
 }
@@ -374,11 +400,10 @@
 	float: left;
 }
 
-.ffz-ui-popup ul.menu li.title span {
+.ffz-ui-popup ul.menu li.title > span {
 	display: block;
 	padding: 10px 20px;
 	line-height: 16px;
-	cursor: pointer;
 }
 
 .ffz-ui-popup ul.menu a {
@@ -414,6 +439,12 @@
 
 
 /* Chat Mentions */
+.ember-chat .mentioned:empty,
+.ember-chat .mentioning:empty {
+	display: none;
+}
+
+.ffz-chat-background .ember-chat .mentioning,
 .ffz-chat-background .ember-chat .mentioned {
 	border-radius: 10px;
 	padding: 3px 7px;
@@ -424,7 +455,10 @@
 
 .ffz-chat-background .app-main.theatre .chat-container .chat-line .mentioned,
 .ffz-chat-background .ember-chat-container.dark .chat-line .mentioned,
-.ffz-chat-background .chat-container.dark .chat-line .mentioned {
+.ffz-chat-background .chat-container.dark .chat-line .mentioned,
+.ffz-chat-background .app-main.theatre .chat-container .chat-line .mentioning,
+.ffz-chat-background .ember-chat-container.dark .chat-line .mentioning,
+.ffz-chat-background .chat-container.dark .chat-line .mentioning {
 	color: #8c8c9c;
 	background-color: rgba(16,16,20, 0.75);
 }
@@ -541,4 +575,89 @@
 .ffz-chat-background .chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate,
 .ffz-chat-background .ember-chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate {
 	background-color: rgba(255,0,0, 0.3);
+}
+
+/* Emoticon Tooltips */
+
+.tipsy table.emote-data td { padding: 0 2px; }
+
+.tipsy table.emote-data td:first-of-type {
+	text-align: right;
+	font-weight: bold;
+	padding-left: 0;
+}
+
+.tipsy table.emote-data td:last-of-type {
+	text-align: left;
+	padding-right: 0;
+	white-space: nowrap;
+}
+
+.tipsy table.emote-data td.center { text-align: center; }
+
+/* Menu Page Loader */
+
+.ffz-ui-menu-page:empty {
+	overflow: hidden;
+}
+
+.ffz-ui-menu-page:empty::after {
+	content: " ";
+	display: block;
+	width: 80px;
+	height: 63px;
+	background-image: url("//cdn.frankerfacez.com/script/spinner-dark.png");
+
+	margin: 50px auto;
+	-webkit-animation: ffz-rotateplane 1.2s infinite linear;
+	animation: ffz-rotateplane 1.2s infinite linear;
+}
+
+@-webkit-keyframes ffz-rotateplane {
+	0% { -webkit-transform: perspective(120px) rotateY(90deg) }
+	25% { -webkit-transform: perspective(120px) rotateY(180deg) }
+	75% { -webkit-transform: perspective(120px) rotateY(180deg) rotateX(180deg) }
+	100% { -webkit-transform: perspective(120px) rotateY(90deg) rotateX(180deg) }
+}
+
+@keyframes ffz-rotateplane {
+	0% { transform: perspective(120px) rotateY(90deg) }
+	25% { transform: perspective(120px) rotateY(180deg) }
+	75% { transform: perspective(120px) rotateY(180deg) rotateX(180deg) }
+	100% { transform: perspective(120px) rotateY(90deg) rotateX(180deg) }
+}
+
+/* Menu About Page */
+
+.ffz-about-table {
+	width: 100%;
+}
+
+.ffz-about-table td:first-child {
+	text-align: left;
+	width: 100%;
+}
+
+.ffz-about-table .debug td {
+	padding-top: 10px;
+	opacity: 0.8;
+	font-size: 10px;
+}
+
+.ffz-about-subheading {
+	/*text-transform: uppercase;*/
+	letter-spacing: 2px;
+	margin: -5px 0 5px;
+}
+
+.button.ffz-donate {
+	margin-left: 10px;
+	background: #00b132;
+	color: #fff !important;
+	padding: 0 10px;
+	font-size: 12px;
+}
+
+.button.ffz-donate:not(.disabled):hover {
+	background: #08c43d;
 }

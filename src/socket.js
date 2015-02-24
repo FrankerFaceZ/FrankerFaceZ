@@ -38,7 +38,7 @@ FFZ.prototype.ws_create = function() {
 
 		// Send the current rooms.
 		for(var room_id in f.rooms)
-			f.ws_send("sub", room_id);
+			f.rooms.hasOwnProperty(room_id) && f.ws_send("sub", room_id);
 
 		// Send any pending commands.
 		var pending = f._ws_pending;
@@ -64,8 +64,11 @@ FFZ.prototype.ws_create = function() {
 		}
 		
 		// We never ever want to not have a socket.
-		if ( f._ws_delay < 30000 )
+		if ( f._ws_delay < 60000 )
 			f._ws_delay += 5000;
+		else
+			// Randomize delay.
+			f._ws_delay = (Math.floor(Math.random()*60)+30)*1000;
 
 		setTimeout(f.ws_create.bind(f), f._ws_delay);
 	}
@@ -124,4 +127,32 @@ FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
 
 	this._ws_sock.send(request + " " + func + data);
 	return request;
+}
+
+// ----------------
+// Authorization
+// ----------------
+
+FFZ.ws_commands.do_authorize = function(data) {
+	// Try finding a channel we can send on.
+	var conn;
+	for(var room_id in this.rooms) {
+		if ( ! this.rooms.hasOwnProperty(room_id) )
+			continue;
+
+		var r = this.rooms[room_id];
+		if ( r && r.room && !r.room.get('roomProperties.eventchat') && !r.room.get('isGroupRoom') && r.room.tmiRoom ) {
+			var c = r.room.tmiRoom._getConnection();
+			if ( c.isConnected ) {
+				conn = c;
+				break;
+			}
+		}
+	}
+
+	if ( conn )
+		conn._send("PRIVMSG #frankerfacezauthorizer :AUTH " + data);
+	else
+		// Try again shortly.
+		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
 }

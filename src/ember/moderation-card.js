@@ -31,7 +31,7 @@ FFZ.settings_info.enhanced_moderation = {
 	category: "Chat",
 
 	name: "Enhanced Moderation",
-	help: "Use /p, /t, /u and /b in chat to moderator, or use hotkeys with moderation cards."
+	help: "Use /p, /t, /u and /b in chat to moderate chat, or use hotkeys with moderation cards."
 	};
 
 
@@ -236,7 +236,7 @@ FFZ.chat_commands.b.enabled = function() { return this.settings.enhanced_moderat
 
 FFZ.chat_commands.u = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Unban Usage: /b username [more usernames separated by spaces]";
+		return "Unban Usage: /u username [more usernames separated by spaces]";
 
 	if ( args.length > 10 )
 		return "Please only unban up to 10 users at once.";

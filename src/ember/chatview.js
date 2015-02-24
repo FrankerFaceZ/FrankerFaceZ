@@ -13,7 +13,10 @@ FFZ.prototype.setup_chatview = function() {
 
 	// For some reason, this doesn't work unless we create an instance of the
 	// chat view and then destroy it immediately.
-	Chat.create().destroy();
+	try {
+		Chat.create().destroy();
+	} catch(err) { }
+
 
 	// Modify all existing Chat views.
 	for(var key in Ember.View.views) {

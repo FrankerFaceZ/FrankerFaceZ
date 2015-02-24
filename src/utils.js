@@ -42,8 +42,7 @@ var sanitize_cache = {},
 				rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
 			}
 		}
-		var l = (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
-		return l;
+		return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
 	};
 
 

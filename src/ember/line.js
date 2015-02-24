@@ -3,6 +3,80 @@ var FFZ = window.FrankerFaceZ,
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+	},
+
+	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
+	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
+
+	quote_attr = function(attr) {
+		return (attr + '')
+			.replace(/&/g, "&amp;")
+			.replace(/'/g, "&apos;")
+			.replace(/"/g, "&quot;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
+	},
+
+
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	build_srcset = function(id) {
+		return TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+	},
+
+
+	data_to_tooltip = function(data) {
+		var output = "<tr><td>Emoticon</td><td>" + data.code + "</td></tr>",
+			set = data.set,
+			set_type = data.set_type;
+
+		if ( set_type === undefined )
+			set_type = "Channel";
+
+		if ( ! set )
+			return data.code;
+
+		else if ( set == "00000turbo" || set == "turbo" ) {
+			set = "Twitch Turbo";
+			set_type = null;
+		}
+
+		if ( ! set_type )
+			output += '<tr><td class="center" colspan="2">' + set + '</td></tr>';
+		else
+			output += "<tr><td>" + set_type + "</td><td>" + set + "</td></tr>";
+
+		return '<table class="emote-data">' + output + '</table>';
+	},
+
+	build_tooltip = function(id) {
+		var emote_data = this._twitch_emotes[id],
+			set = emote_data ? emote_data.set : null;
+
+		if ( ! emote_data )
+			return "???";
+
+		if ( typeof emote_data == "string" )
+			return emote_data;
+
+		if ( emote_data.tooltip )
+			return emote_data.tooltip;
+
+		return emote_data.tooltip = data_to_tooltip(emote_data);
+	},
+
+	load_emote_data = function(id, code, success, data) {
+		if ( ! success )
+			return;
+
+		if ( code )
+			data.code = code;
+
+		this._twitch_emotes[id] = data;
+		var tooltip = build_tooltip.bind(this)(id);
+
+		var images = document.querySelectorAll('img[emote-id="' + id + '"]');
+		for(var x=0; x < images.length; x++)
+			images[x].title = tooltip;
 	};
 
 
@@ -19,6 +93,37 @@ FFZ.settings_info.capitalize = {
 
 	name: "Username Capitalization",
 	help: "Display names in chat with proper capitalization."
+	};
+
+
+FFZ.settings_info.banned_words = {
+	type: "button",
+	value: [],
+
+	category: "Chat",
+	visible: function() { return ! this.has_bttv },
+
+	name: "Banned Words",
+	help: "Set a list of words that will be locally removed from chat messages.",
+
+	method: function() {
+			var old_val = this.settings.banned_words.join(", "),
+				new_val = prompt("Banned Words\n\nPlease enter a comma-separated list of words that you would like to be removed from chat messages.", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			new_val = new_val.trim().split(SPLITTER);
+			var vals = [];
+
+			for(var i=0; i < new_val.length; i++)
+				new_val[i] && vals.push(new_val[i]);
+
+			if ( vals.length == 1 && vals[0] == "disable" )
+				vals = [];
+
+			this.settings.set("banned_words", vals);
+		}
 	};
 
 
@@ -40,12 +145,16 @@ FFZ.settings_info.keywords = {
 				return;
 
 			// Split them up.
-			new_val = new_val.trim().split(/\W*,\W*/);
+			new_val = new_val.trim().split(SPLITTER);
+			var vals = [];
 
-			if ( new_val.length == 1 && (new_val[0] == "" || new_val[0] == "disable") )
-				new_val = [];
+			for(var i=0; i < new_val.length; i++)
+				new_val[i] && vals.push(new_val[i]);
 
-			this.settings.set("keywords", new_val);
+			if ( vals.length == 1 && vals[0] == "disable" )
+				vals = [];
+
+			this.settings.set("keywords", vals);
 		}
 	};
 
@@ -106,6 +215,10 @@ FFZ.prototype.setup_line = function() {
 	document.head.appendChild(s);
 
 
+	// Emoticon Data
+	this._twitch_emotes = {};
+
+
 	this.log("Hooking the Ember Line controller.");
 
 	var Line = App.__container__.resolve('controller:line'),
@@ -117,6 +230,7 @@ FFZ.prototype.setup_line = function() {
 			var tokens = this._super();
 
 			try {
+				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
 				var user = f.get_user();
 
@@ -143,11 +257,12 @@ FFZ.prototype.setup_line = function() {
 			this._super();
 			try {
 				var el = this.get('element'),
-					user = this.get('context.model.from'),
-					room = this.get('context.parentController.content.id'),
-					color = this.get('context.model.color'),
+					controller = this.get('context'),
+					user = controller.get('model.from'),
+					room = controller.get('parentController.content.id'),
+					color = controller.get('model.color'),
 
-					row_type = this.get('context.model.ffz_alternate');
+					row_type = controller.get('model.ffz_alternate');
 
 
 				// Color Processing
@@ -209,6 +324,107 @@ FFZ.prototype.setup_line = function() {
 
 				// Mark that we've checked this message for mentions.
 				this.set('context.model.ffz_notified', true);
+
+
+				// Banned Links
+				var bad_links = el.querySelectorAll('a.deleted-link');
+				for(var i=0; i < bad_links.length; i++) {
+					var link = bad_links[i]; 
+
+					link.addEventListener("click", function(e) {
+						if ( ! this.classList.contains("deleted-link") )
+							return true;
+
+						// Get the URL
+						var href = this.getAttribute('data-url'),
+							link = href;
+
+						// Delete Old Stuff
+						this.classList.remove('deleted-link');
+						this.removeAttribute("data-url");
+						this.removeAttribute("title");
+						this.removeAttribute("original-title");
+
+						// Process URL
+						if ( href.indexOf("@") > -1 && (-1 === href.indexOf("/") || href.indexOf("@") < href.indexOf("/")) )
+							href = "mailto:" + href;
+						else if ( ! href.match(/^https?:\/\//) )
+							href = "http://" + href;
+
+						// Set up the Link
+						this.href = href;
+						this.target = "_new";
+						this.textContent = link;
+
+						// Stop from Navigating
+						e.preventDefault();
+					});
+
+					// Also add a nice tooltip.
+					jQuery(link).tipsy();
+				}
+
+
+				// Enhanced Emotes
+				var images = el.querySelectorAll('img');
+				for(var i=0; i < images.length; i++) {
+					var img = images[i],
+						name = img.alt,
+						match = /\/emoticons\/v1\/(\d+)\/1\.0/.exec(img.src),
+						id = match ? parseInt(match[1]) : null;
+
+					if ( id !== null ) {
+						// High-DPI Images
+						img.setAttribute('srcset', build_srcset(id));
+						img.setAttribute('emote-id', id);
+
+						// Source Lookup
+						var emote_data = f._twitch_emotes[id];
+						if ( emote_data ) {
+							if ( typeof emote_data != "string" )
+								img.title = emote_data.tooltip;
+
+						} else {
+							f._twitch_emotes[id] = img.alt;
+							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
+						}
+
+						jQuery(img).tipsy({html:true});
+
+					} else if ( img.getAttribute('data-ffz-emote') ) {
+						var data = JSON.parse(decodeURIComponent(img.getAttribute('data-ffz-emote'))),
+							id = data && data[0] || null,
+							set_id = data && data[1] || null,
+
+							set = f.emote_sets[set_id],
+							emote = set ? set.emotes[id] : null,
+
+							set_name = set.id,
+							set_type = "FFZ Channel";
+
+						if ( set.id == "global" ) {
+							set_name = "FrankerFaceZ Global";
+							set_type = null;
+
+						} else if ( set.id == "globalevent" ) {
+							set_name = "FrankerFaceZ Event";
+							set_type = null;
+
+						} else if ( f.feature_friday && set.id == f.feature_friday.set )
+							set_name = "Feature Friday - " + f.feature_friday.channel;
+
+						img.title = data_to_tooltip({
+							code: emote.hidden ? "???" : emote.name,
+							set: set_name,
+							set_type: set_type
+							});
+
+						jQuery(img).tipsy({html:true});
+
+					} else
+						jQuery(img).tipsy();
+				}
+
 
 			} catch(err) {
 				try {
@@ -288,7 +504,6 @@ FFZ.prototype._handle_color = function(color) {
 }
 
 
-
 // ---------------------
 // Capitalization
 // ---------------------
@@ -298,7 +513,7 @@ FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
 	// Use the BTTV code if it's present.
-	if ( window.BetterTTV )
+	if ( window.BetterTTV && BetterTTV.chat && BetterTTV.chat.helpers.lookupDisplayName )
 		return BetterTTV.chat.helpers.lookupDisplayName(name);
 
 	if ( ! name )
@@ -314,15 +529,14 @@ FFZ.get_capitalization = function(name, callback) {
 			return old_data[0];
 	}
 
-	if ( FFZ._cap_fetching < 5 ) {
+	if ( FFZ._cap_fetching < 25 ) {
 		FFZ._cap_fetching++;
-		Twitch.api.get("users/" + name)
-			.always(function(data) {
-				var cap_name = data.display_name || name;
-				FFZ.capitalization[name] = [cap_name, Date.now()];
-				FFZ._cap_fetching--;
-				typeof callback === "function" && callback(cap_name);
-			});
+		FFZ.get().ws_send("get_display_name", name, function(success, data) {
+			var cap_name = success ? data : name;
+			FFZ.capitalization[name] = [cap_name, Date.now()];
+			FFZ._cap_fetching--;
+			typeof callback === "function" && callback(cap_name);
+		});
 	}
 
 	return old_data ? old_data[0] : name;
@@ -331,7 +545,7 @@ FFZ.get_capitalization = function(name, callback) {
 
 FFZ.prototype.capitalize = function(view, user) {
 	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
-	if ( name )
+	if ( name && view )
 		view.$('.from').text(name);
 }
 
@@ -346,8 +560,21 @@ FFZ._get_regex = function(word) {
 	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "ig");
 }
 
-FFZ._mentions_to_regex = function(list) {
-	return FFZ._regex_cache[list] = FFZ._regex_cache[list] || RegExp("\\b(?:" + _.chain(list).map(reg_escape).value().join("|") + ")\\b", "ig");
+FFZ._words_to_regex = function(list) {
+	var regex = FFZ._regex_cache[list];
+	if ( ! regex ) {
+		var reg = "";
+		for(var i=0; i < list.length; i++) {
+			if ( ! list[i] )
+				continue;
+
+			reg += (reg ? "|" : "") + reg_escape(list[i]);
+		}
+
+		regex = FFZ._regex_cache[list] = new RegExp("(^|.*?" + SEPARATORS + ")(" + reg + ")(?=$|" + SEPARATORS + ")", "ig");
+	}
+
+	return regex;
 }
 
 
@@ -359,24 +586,72 @@ FFZ.prototype._mentionize = function(controller, tokens) {
 	if ( typeof tokens == "string" )
 		tokens = [tokens];
 
-	var regex = FFZ._mentions_to_regex(mention_words);
+	var regex = FFZ._words_to_regex(mention_words),
+		new_tokens = [];
 
-	return _.chain(tokens).map(function(token) {
-		if ( !_.isString(token) )
-			return token;
-		else if ( !token.match(regex) )
-			return [token];
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( ! _.isString(token) ) {
+			new_tokens.push(token);
+			continue;
+		}
 
-		return _.zip(
-			_.map(token.split(regex), _.identity),
-			_.map(token.match(regex), function(e) {
-				return {
-					mentionedUser: e,
-					own: false
-					};
-				})
-			);
-		}).flatten().compact().value();
+		if ( ! token.match(regex) ) {
+			new_tokens.push(token);
+			continue;
+		}
+
+		token = token.replace(regex, function(all, prefix, match) {
+			new_tokens.push(prefix);
+			new_tokens.push({
+				mentionedUser: match,
+				own: false
+				});
+
+			return "";
+		});
+
+		if ( token )
+			new_tokens.push(token);
+	}
+
+	return new_tokens;
+}
+
+
+// ---------------------
+// Banned Words
+// ---------------------
+
+FFZ.prototype._remove_banned = function(tokens) {
+	var banned_words = this.settings.banned_words;
+	if ( ! banned_words || ! banned_words.length )
+		return tokens;
+
+	if ( typeof tokens == "string" )
+		tokens = [tokens];
+
+	var regex = FFZ._words_to_regex(banned_words),
+		new_tokens = [];
+
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( ! _.isString(token ) ) {
+			if ( token.emoticonSrc && regex.test(token.altText) )
+				new_tokens.push(token.altText.replace(regex, "$1***"));
+			else if ( token.isLink && regex.test(token.href) )
+				new_tokens.push({
+					mentionedUser: '</span><a class="deleted-link" title="' + quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
+					own: true
+					});
+			else
+				new_tokens.push(token);
+
+		} else
+			new_tokens.push(token.replace(regex, "$1***"));
+	}
+
+	return new_tokens;
 }
 
 
@@ -421,7 +696,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url, altText: (emote.hidden ? "???" : emote.name)};
+		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )

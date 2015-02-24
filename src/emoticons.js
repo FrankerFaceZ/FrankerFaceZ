@@ -179,7 +179,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 		margins = check_margins(margins, height);
 		var hidden = path.substr(path.lastIndexOf("/") + 1, 1) === ".",
 			id = ++f._last_emote_id,
-			emote = {id: id, hidden: hidden, name: name, height: height, width: width, url: path, margins: margins, extra_css: extra};
+			emote = {id: id, set_id: set_id, hidden: hidden, name: name, height: height, width: width, url: path, margins: margins, extra_css: extra};
 
 		emotes[id] = emote;
 		return "";

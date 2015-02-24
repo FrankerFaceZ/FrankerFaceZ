@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 1, revision: 0,
+	major: 3, minor: 2, revision: 1,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -105,9 +105,12 @@ FFZ.prototype.get_user = function() {
 
 //require('./templates');
 
+// Import these first to set up data structures
+require('./ui/menu');
 require('./settings');
-
 require('./socket');
+
+
 require('./emoticons');
 require('./badges');
 
@@ -134,8 +137,9 @@ require('./ui/notifications');
 require('./ui/viewer_count');
 
 require('./ui/menu_button');
-require('./ui/menu');
 require('./ui/races');
+require('./ui/my_emotes');
+require('./ui/about_page');
 
 require('./commands');
 
@@ -198,6 +202,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_notifications();
 	this.setup_css();
 	this.setup_menu();
+	this.setup_my_emotes();
 	this.setup_races();
 
 	this.find_bttv(10);
