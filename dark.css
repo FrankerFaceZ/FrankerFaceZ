@@ -54,8 +54,12 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 }
 
 /* hovering buttons */
-.ffz-dark .button:hover{
+.ffz-dark .button:not(.primary):not(.ffz-donate):hover{
     color:rgb(222,222,222)!important;
+}
+
+.ffz-dark .moderation-card .button:not(.glyph-only):hover {
+	color: #fff !important;
 }
 
 /* stats */
@@ -100,21 +104,63 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
     color:rgb(255,255,255)!important;
 }
 
+/* Right Column */
+
+.ffz-dark #right_col {
+	background-color: rgb(25,25,31);
+	color: #fff;
+}
+
+
+/* Popups */
+
+.ffz-dark .card,
+.ffz-dark #flyout .content,
+.ffz-dark .dropmenu,
+.ffz-dark form.js-new_panel_form,
+.ffz-dark .js-new_panel_btn,
+.ffz-dark .manager .videos-grid .video .meta,
+.ffz-dark .ember-chat .chat-room-list {
+	background-color: rgb(16,16,16);
+	color: rgb(195,195,195); /*#acacbf;*/
+	border-color: #32323e;
+}
+
+.ffz-dark #flyout .point::before {
+	border-right-color: rgb(16,16,16); /*rgb(25,25,31);*/
+}
+
+.ffz-dark #flyout .point::after {
+	border-right-color: #32323e;
+}
+
+.ffz-dark .change-banner .banner-preview,
+.ffz-dark form.js-new_panel_form input,
+.ffz-dark form.js-new_panel_form textarea,
+.ffz-dark .card input,
+.ffz-dark .card textarea,
+.ffz-dark .dropmenu input,
+.ffz-dark input.text,
+.ffz-dark input.string,
+.ffz-dark textarea,
+.ffz-dark .directory_header #custom_filter input {
+	background-color: rgba(255,255,255,0.05);
+	border-color: rgba(255,255,255,0.1);
+	color: #fff;
+}
+
+
 /* Other stuff */
 
 .ffz-dark .panel-formatting .panel {
     color: #8c8c9c;
 }
 
-.ffz-dark a {
+.ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
+.ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
+.ffz-dark .dropmenu_action:not(:hover) span,
+.ffz-dark a:not(.switch):not(.follow) {
 	color: #a68ed2;
-}
-
-.ffz-dark #flyout a,
-.ffz-dark .dropmenu a,
-.ffz-dark .ember-chat-container a,
-.ffz-dark .chat-container a {
-	color: #6441a5;
 }
 
 .ffz-dark .panel-formatting .panel h3 {
@@ -150,8 +196,77 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
     color: #fff;
 }
 
+.ffz-dark .ember-chat .moderation-card img.channel_logo {
+	border-color: rgb(16,16,16);
+}
+
+/* Video Manager */
+
+.ffz-dark .manager .videos-grid .video .meta .actions {
+	border-top-color: rgba(255,255,255,0.25);
+}
+
+.ffz-dark #highlighter .highlight-content .form-container li label {
+	color: #fff;
+}
+
+
+/* Subscriptions Page */
+
+.ffz-dark .tickets .ticket .benefits {
+	background-color: rgb(16,16,16);
+	color: rgb(195,195,195); /*#acacbf;*/
+	border-color: #32323e;
+}
+
+
+/* Directory Pages */
+
+.ffz-dark .following-col .col-header .search-contain .search .search-button svg path {
+	fill: rgba(255,255,255,0.25);
+}
+
+.ffz-dark .following-col .col-header .search-contain .search .search-button:hover svg path {
+	fill: rgba(255,255,255,0.5);
+}
+
+.ffz-dark .following-col .col-header,
+.ffz-dark .following-col .header {
+	border-color: #32323e;
+}
+
+.ffz-dark .following-col .following-list .load-more span,
+.ffz-dark .viewall a {
+	background-color: rgb(25,25,31);
+}
+
+.ffz-dark .following-col .following-list .load-more:hover span {
+	color: #fff;
+}
+
+.ffz-dark .following-col .following-list .load-more:hover span,
+.ffz-dark .viewall a:hover {
+	background-color: rgb(35,35,41);
+}
+
+.ffz-dark .viewall a .text span:first-child {
+	color: #a68ed2;
+}
+
+
 /* Profile page fixes */
 
+.ffz-dark .streams .stream .content .thumb .boxart,
+.ffz-dark .videos .video .content .thumb .boxart {
+	border-color: rgb(16,16,16);
+}
+
+.ffz-dark .ember-chat .moderation-card img.channel_logo,
+.ffz-dark .channel-link .profile-photo {
+	background-color: rgb(16,16,16);
+}
+
+.ffz-dark .items-grid .meta .title,
 .ffz-dark .items-grid .meta p a {
     color: #9c9c9c;
 }
@@ -160,10 +275,74 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
     color: #6c6c6c;
 }
 
-.ffz-dark ul.tabs li>a:hover, .ffz-dark .directory_header .nav li>a:hover, .ffz-dark ul.tabs_fake li>a:hover, .ffz-dark ul.tabs li>a.active, .ffz-dark .directory_header .nav li>a.active, .ffz-dark ul.tabs_fake li>a.active {
-    color: #aaa;
-    border-color: #ccc !important;
+.ffz-dark ul.tabs li > a,
+.ffz-dark .directory_header .nav li > a,
+.ffz-dark ul.tabs_fake li > a {
+	color: #a68ed2;
+}
+
+.ffz-dark ul.tabs:before,
+.ffz-dark .direcotry_header .nav:before,
+.ffz-dark ul.tabs_fake:before {
+	border-color: #32323e;
+}
+
+.ffz-dark ul.tabs li.selected a,
+.ffz-dark .directory_header .nav li.selected a,
+.ffz-dark ul.tabs_fake li.selected a,
+.ffz-dark ul.tabs li>a:hover,
+.ffz-dark .directory_header .nav li>a:hover,
+.ffz-dark ul.tabs_fake li>a:hover,
+.ffz-dark ul.tabs li>a.active,
+.ffz-dark .directory_header .nav li>a.active,
+.ffz-dark ul.tabs_fake li>a.active {
+	color: #aaa;
+	border-color: #ccc !important;
 }
 
 /* Hide the chat Dark Mode control */
 .ffz-dark .toggle-darkmode { display: none; }
+
+/* Chat Text Contrast */
+.ffz-dark .ember-chat-container.dark .chat-line,
+.ffz-dark .chat-container.dark .chat-line {
+	color: #acacbf;
+}
+
+.ffz-dark .ember-chat .chat-settings .chat-colors .chat-colors-swatch:hover,
+.ffz-dark .ember-chat .chat-settings .chat-colors .chat-colors-switch.selected {
+	border-color: #777;
+	box-shadow: inset 0 0 0 1px #32323e;
+}
+
+/* FrankerFaceZ Menu */
+
+.ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
+.ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
+.ffz-dark .ffz-ui-popup ul.menu,
+.ffz-dark .ffz-ui-popup ul.menu a {
+	border-color: #32323e;
+}
+
+.ffz-dark .ffz-ui-popup ul.menu {
+	background-color: rgb(33,33,33);
+}
+
+.ffz-dark .ffz-ui-popup ul.menu li.active {
+	background-color: rgb(16,16,16);
+}
+
+.ffz-dark .ffz-ui-popup ul.menu li.active a {
+	border-top-color: rgb(16,16,16);
+}
+
+/* New User Prompt */
+
+.ffz-dark #new-user-prompt {
+	background-color: rgb(25,25,31);
+	color: #acacbf;
+}
+
+.ffz-dark #new-user-prompt .message .title {
+	color: #fff;
+}

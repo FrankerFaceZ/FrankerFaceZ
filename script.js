@@ -5,6 +5,20 @@ var FFZ = window.FrankerFaceZ,
 
 
 // --------------------
+// Settings
+// --------------------
+
+FFZ.settings_info.bot_badges = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	name: "Bot Badges",
+	help: "Give special badges to known bots."
+	};
+
+
+// --------------------
 // Initialization
 // --------------------
 
@@ -39,7 +53,8 @@ FFZ.prototype.bttv_badges = function(data) {
 	var user_id = data.sender,
 		user = this.users[user_id],
 		badges_out = [],
-		insert_at = -1;
+		insert_at = -1,
+		alpha = BetterTTV.settings.get('alphaTags');
 
 	if ( ! user || ! user.badges )
 		return;
@@ -53,7 +68,6 @@ FFZ.prototype.bttv_badges = function(data) {
 		}
 	}
 
-
 	for (var slot in user.badges) {
 		if ( ! user.badges.hasOwnProperty(slot) )
 			continue;
@@ -61,8 +75,16 @@ FFZ.prototype.bttv_badges = function(data) {
 		var badge = user.badges[slot],
 			full_badge = this.badges[badge.id] || {},
 			desc = badge.title || full_badge.title,
-			style = "",
-			alpha = BetterTTV.settings.get('alphaTags');
+			style = "";
+
+		if ( full_badge.visible !== undefined ) {
+			var visible = full_badge.visible;
+			if ( typeof visible == "function" )
+				visible = visible.bind(this)(null, user_id);
+
+			if ( ! visible )
+				continue;
+		}
 
 		if ( badge.image )
 			style += 'background-image: url(\\"' + badge.image + '\\"); ';
@@ -117,10 +139,19 @@ FFZ.prototype.render_badge = function(view) {
 		if ( full_badge.visible !== undefined ) {
 			var visible = full_badge.visible;
 			if ( typeof visible == "function" )
-				try { visible = visible.bind(this)(room_id, user); } catch(err) { }
+				visible = visible.bind(this)(room_id, user);
 
 			if ( ! visible )
 				continue;
+		}
+
+		if ( full_badge.replaces ) {
+			var el = badges[0].querySelector('.badge.' + full_badge.replaces);
+			if ( el ) {
+				el.style.backgroundImage = 'url("' + (badge.image || full_badge.image) + '")';
+				el.title += ", " + (badge.title || full_badge.title);
+				return;
+			}
 		}
 
 		var el = document.createElement('div');
@@ -155,24 +186,33 @@ FFZ.prototype.render_badge = function(view) {
 // Legacy Support
 // --------------------
 
-FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "nightbot", "moobot", "xanbot"];
+FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
+FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot"];
+
 
 FFZ.prototype._legacy_add_donors = function(tries) {
 	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
-	// Developer Badges
+	// Developer Badge
 	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
-	this.users.sirstendec = {badges: {0: {id:0}}};
 
-	// Bot Badges
-	/*this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
-		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots[user]); }};
+	// Bot Badge
+	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
+		replaces: 'moderator',
+		visible: function(r,user) { return this.settings.bot_badges && !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
+	for(var i=0;i<FFZ.bttv_known_bots.length;i++)
+		this.users[FFZ.bttv_known_bots[i]] = {badges: {0: {id:2}}};
+
 	for(var i=0;i<FFZ.known_bots.length;i++)
-		this.users[FFZ.known_bots[i]] = {badges: {1: {id:2}}};*/
+		this.users[FFZ.known_bots[i]] = {badges: {0: {id:2}}};
+
+	// Special Badges
+	this.users.sirstendec = {badges: {1: {id:0}}};
+	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/channel/global/momiglee_badge.png", title: "WAN"}}};
 
 
 	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
@@ -202,7 +242,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 			if ( badges[0] )
 				continue;
 
-			badges[0] = {id:1};
+			badges[1] = {id:1};
 			count += 1;
 		}
 	}
@@ -442,8 +482,7 @@ var FFZ = window.FrankerFaceZ,
 
 
 	data_to_tooltip = function(data) {
-		var output = "<tr><td>Emoticon</td><td>" + data.code + "</td></tr>",
-			set = data.set,
+		var set = data.set,
 			set_type = data.set_type;
 
 		if ( set_type === undefined )
@@ -457,12 +496,7 @@ var FFZ = window.FrankerFaceZ,
 			set_type = null;
 		}
 
-		if ( ! set_type )
-			output += '<tr><td class="center" colspan="2">' + set + '</td></tr>';
-		else
-			output += "<tr><td>" + set_type + "</td><td>" + set + "</td></tr>";
-
-		return '<table class="emote-data">' + output + '</table>';
+		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set;
 	},
 
 	build_tooltip = function(id) {
@@ -578,7 +612,7 @@ FFZ.settings_info.keywords = {
 
 FFZ.settings_info.fix_color = {
 	type: "boolean",
-	value: false,
+	value: true,
 
 	category: "Chat",
 	visible: function() { return ! this.has_bttv },
@@ -647,12 +681,17 @@ FFZ.prototype.setup_line = function() {
 			var tokens = this._super();
 
 			try {
+				var start = performance.now();
 				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
 				var user = f.get_user();
 
 				if ( ! user || this.get("model.from") != user.login )
 					tokens = f._mentionize(this, tokens);
+
+				var end = performance.now();
+				if ( end - start > 5 )
+					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms - " + JSON.stringify(tokens));
 
 			} catch(err) {
 				try {
@@ -673,6 +712,8 @@ FFZ.prototype.setup_line = function() {
 		didInsertElement: function() {
 			this._super();
 			try {
+				var start = performance.now();
+
 				var el = this.get('element'),
 					controller = this.get('context'),
 					user = controller.get('model.from'),
@@ -715,7 +756,7 @@ FFZ.prototype.setup_line = function() {
 				if ( mentioned ) {
 					el.classList.add("ffz-mentioned");
 
-					if ( ! document.hasFocus() && ! this.get('context.model.ffz_notified') && f.settings.highlight_notifications ) {
+					if ( f.settings.highlight_notifications && !document.hasFocus() && !this.get('context.model.ffz_notified') ) {
 						var cap_room = FFZ.get_capitalization(room),
 							cap_user = FFZ.get_capitalization(user),
 							room_name = cap_room,
@@ -746,7 +787,7 @@ FFZ.prototype.setup_line = function() {
 				// Banned Links
 				var bad_links = el.querySelectorAll('a.deleted-link');
 				for(var i=0; i < bad_links.length; i++) {
-					var link = bad_links[i]; 
+					var link = bad_links[i];
 
 					link.addEventListener("click", function(e) {
 						if ( ! this.classList.contains("deleted-link") )
@@ -783,7 +824,7 @@ FFZ.prototype.setup_line = function() {
 
 
 				// Enhanced Emotes
-				var images = el.querySelectorAll('img');
+				var images = el.querySelectorAll('img.emoticon');
 				for(var i=0; i < images.length; i++) {
 					var img = images[i],
 						name = img.alt,
@@ -805,8 +846,6 @@ FFZ.prototype.setup_line = function() {
 							f._twitch_emotes[id] = img.alt;
 							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
 						}
-
-						jQuery(img).tipsy({html:true});
 
 					} else if ( img.getAttribute('data-ffz-emote') ) {
 						var data = JSON.parse(decodeURIComponent(img.getAttribute('data-ffz-emote'))),
@@ -835,13 +874,15 @@ FFZ.prototype.setup_line = function() {
 							set: set_name,
 							set_type: set_type
 							});
-
-						jQuery(img).tipsy({html:true});
-
-					} else
-						jQuery(img).tipsy();
+					}
 				}
 
+				jQuery(images).tipsy();
+
+
+				var duration = performance.now() - start;
+				if ( duration > 5 )
+					f.log("Line Took Too Long - " + duration + "ms - " + el.innerHTML);
 
 			} catch(err) {
 				try {
@@ -887,7 +928,7 @@ FFZ.prototype._handle_color = function(color) {
 		// Color Too Bright. We need a lum of 0.3 or less.
 		matched = true;
 
-		var s = 255,
+		var s = 127,
 			nc = rgb;
 		while(s--) {
 			nc = utils.darken(nc);
@@ -899,15 +940,15 @@ FFZ.prototype._handle_color = function(color) {
 	} else
 		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
 
-	if ( lum < 0.1 ) {
+	if ( lum < 0.15 ) {
 		// Color Too Dark. We need a lum of 0.1 or more.
 		matched = true;
 
-		var s = 255,
+		var s = 127,
 			nc = rgb;
 		while(s--) {
 			nc = utils.brighten(nc);
-			if ( utils.get_luminance(nc) >= 0.1 )
+			if ( utils.get_luminance(nc) >= 0.15 )
 				break;
 		}
 
@@ -962,8 +1003,11 @@ FFZ.get_capitalization = function(name, callback) {
 
 FFZ.prototype.capitalize = function(view, user) {
 	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
-	if ( name && view )
-		view.$('.from').text(name);
+	if ( !name || !view )
+		return;
+
+	var from = view.$('.from');
+	from && from.text(name);
 }
 
 
@@ -1396,7 +1440,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! room.moderator_badge )
 			return "";
 
-		return '.chat-line[data-room="' + room.id + '"] .badges .moderator { background-image:url("' + room.moderator_badge + '") !important; }';
+		return '.chat-line[data-room="' + room.id + '"] .badges .moderator { background-image:url("' + room.moderator_badge + '"); }';
 	}
 
 
@@ -2052,8 +2096,6 @@ var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
 
-FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
-
 // --------------------
 // Initialization
 // --------------------
@@ -2291,7 +2333,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 2, revision: 1,
+	major: 3, minor: 2, revision: 2,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -3051,7 +3093,10 @@ FFZ.prototype.ws_create = function() {
 		} else {
 			var success = cmd === 'True',
 				callback = f._ws_callbacks[request];
-			f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+
+			if ( ! success || ! callback )
+				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+
 			if ( callback ) {
 				delete f._ws_callbacks[request];
 				callback(success, data);
@@ -3623,6 +3668,22 @@ var FFZ = window.FrankerFaceZ,
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	BANNED_SETS = {"00000turbo":true},
 
+	KNOWN_CODES = {
+		"B-?\\)": "B-)",
+		"\\:-?[z|Z|\\|]": ":-Z",
+		"\\:-?\\)": ":-)",
+		"\\:-?\\(": ":-(",
+		"\\:-?(p|P)": ":-P",
+		"\\;-?(p|P)": ";-P",
+		"\\&lt\\;3": "<3",
+		"\\:-?(?:\\/|\\\\)(?!\\/)": ":-/",
+		"\\;-?\\)": ";-)",
+		"R-?\\)": "R-)",
+		"[o|O](_|\\.)[o|O]": "O.o",
+		"\\:-?D": ":-D",
+		"\\:-?(o|O)": ":-O",
+		"\\&gt\\;\\(": ">(",
+		},
 
 	get_emotes = function(ffz) {
 		var Chat = App.__container__.lookup('controller:chat'),
@@ -3637,6 +3698,9 @@ var FFZ = window.FrankerFaceZ,
 		// Remove the 'default' set.
 		set_ids = set_ids.split(",").removeObject("0")
 
+		if ( ffz.settings.global_emotes_in_menu )
+			set_ids.push("0");
+
 		return [set_ids, user_sets];
 	};
 
@@ -3644,6 +3708,15 @@ var FFZ = window.FrankerFaceZ,
 // -------------------
 // Initialization
 // -------------------
+
+FFZ.settings_info.global_emotes_in_menu = {
+	type: "boolean",
+	value: false,
+
+	name: "Display Global Emotes in My Emotes",
+	help: "Display the global Twitch emotes in the My Emoticons menu."
+	};
+
 
 FFZ.prototype.setup_my_emotes = function() {
 	this._twitch_emote_sets = {};
@@ -3654,6 +3727,8 @@ FFZ.prototype.setup_my_emotes = function() {
 			this._twitch_set_to_channel = JSON.parse(localStorage.ffzTwitchSets);
 		} catch(err) { }
 	}
+
+	this._twitch_set_to_channel[0] = "twitch_global";
 }
 
 
@@ -3714,6 +3789,13 @@ FFZ.menu_pages.my_emotes = {
 
 								if ( !name || BANNED_SETS[name] )
 									return;
+
+								if ( name == "twitch_global" ) {
+									FFZ.capitalization["global emoticons"] = ["Global Emoticons", Date.now()];
+									set.channel = "Global Emoticons";
+									set.badge = "//cdn.frankerfacez.com/channel/global/twitch_logo.png";
+									return;
+								}
 
 								if ( name == "turbo" ) {
 									set.channel = "Twitch Turbo";
@@ -3839,10 +3921,10 @@ FFZ.menu_pages.my_emotes = {
 					var an = a[1].toLowerCase(),
 						bn = b[1].toLowerCase();
 
-					if ( an === "twitch turbo" )
+					if ( an === "twitch turbo" || an === "global emoticons" )
 						an = "zzz" + an;
 
-					if ( bn === "twitch turbo" )
+					if ( bn === "twitch turbo" || bn === "global emoticons" )
 						bn = "zzz" + bn;
 
 					if ( an < bn ) return -1;
@@ -3864,7 +3946,8 @@ FFZ.menu_pages.my_emotes = {
 					menu.appendChild(heading);
 
 					for(var x=0; x < set.emotes.length; x++) {
-						var emote = set.emotes[x];
+						var emote = set.emotes[x],
+							code = KNOWN_CODES[emote.code] || emote.code;
 
 						var s = document.createElement('span');
 						s.className = 'emoticon tooltip';
@@ -3876,8 +3959,8 @@ FFZ.menu_pages.my_emotes = {
 						s.style.backgroundImage = '-ms-' + img_set;
 						s.style.backgroundImage = img_set;
 
-						s.title = emote.code;
-						s.addEventListener('click', f._add_emote.bind(f, view, emote.code));
+						s.title = code;
+						s.addEventListener('click', f._add_emote.bind(f, view, code));
 						menu.appendChild(s);
 					}
 

@@ -4,6 +4,20 @@ var FFZ = window.FrankerFaceZ,
 
 
 // --------------------
+// Settings
+// --------------------
+
+FFZ.settings_info.bot_badges = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	name: "Bot Badges",
+	help: "Give special badges to known bots."
+	};
+
+
+// --------------------
 // Initialization
 // --------------------
 
@@ -38,7 +52,8 @@ FFZ.prototype.bttv_badges = function(data) {
 	var user_id = data.sender,
 		user = this.users[user_id],
 		badges_out = [],
-		insert_at = -1;
+		insert_at = -1,
+		alpha = BetterTTV.settings.get('alphaTags');
 
 	if ( ! user || ! user.badges )
 		return;
@@ -52,7 +67,6 @@ FFZ.prototype.bttv_badges = function(data) {
 		}
 	}
 
-
 	for (var slot in user.badges) {
 		if ( ! user.badges.hasOwnProperty(slot) )
 			continue;
@@ -60,8 +74,16 @@ FFZ.prototype.bttv_badges = function(data) {
 		var badge = user.badges[slot],
 			full_badge = this.badges[badge.id] || {},
 			desc = badge.title || full_badge.title,
-			style = "",
-			alpha = BetterTTV.settings.get('alphaTags');
+			style = "";
+
+		if ( full_badge.visible !== undefined ) {
+			var visible = full_badge.visible;
+			if ( typeof visible == "function" )
+				visible = visible.bind(this)(null, user_id);
+
+			if ( ! visible )
+				continue;
+		}
 
 		if ( badge.image )
 			style += 'background-image: url(\\"' + badge.image + '\\"); ';
@@ -116,10 +138,19 @@ FFZ.prototype.render_badge = function(view) {
 		if ( full_badge.visible !== undefined ) {
 			var visible = full_badge.visible;
 			if ( typeof visible == "function" )
-				try { visible = visible.bind(this)(room_id, user); } catch(err) { }
+				visible = visible.bind(this)(room_id, user);
 
 			if ( ! visible )
 				continue;
+		}
+
+		if ( full_badge.replaces ) {
+			var el = badges[0].querySelector('.badge.' + full_badge.replaces);
+			if ( el ) {
+				el.style.backgroundImage = 'url("' + (badge.image || full_badge.image) + '")';
+				el.title += ", " + (badge.title || full_badge.title);
+				return;
+			}
 		}
 
 		var el = document.createElement('div');
@@ -154,24 +185,33 @@ FFZ.prototype.render_badge = function(view) {
 // Legacy Support
 // --------------------
 
-FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "nightbot", "moobot", "xanbot"];
+FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
+FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot"];
+
 
 FFZ.prototype._legacy_add_donors = function(tries) {
 	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
-	// Developer Badges
+	// Developer Badge
 	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
-	this.users.sirstendec = {badges: {0: {id:0}}};
 
-	// Bot Badges
-	/*this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
-		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots[user]); }};
+	// Bot Badge
+	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
+		replaces: 'moderator',
+		visible: function(r,user) { return this.settings.bot_badges && !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
+	for(var i=0;i<FFZ.bttv_known_bots.length;i++)
+		this.users[FFZ.bttv_known_bots[i]] = {badges: {0: {id:2}}};
+
 	for(var i=0;i<FFZ.known_bots.length;i++)
-		this.users[FFZ.known_bots[i]] = {badges: {1: {id:2}}};*/
+		this.users[FFZ.known_bots[i]] = {badges: {0: {id:2}}};
+
+	// Special Badges
+	this.users.sirstendec = {badges: {1: {id:0}}};
+	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/channel/global/momiglee_badge.png", title: "WAN"}}};
 
 
 	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
@@ -201,7 +241,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 			if ( badges[0] )
 				continue;
 
-			badges[0] = {id:1};
+			badges[1] = {id:1};
 			count += 1;
 		}
 	}

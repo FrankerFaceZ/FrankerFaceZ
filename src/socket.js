@@ -99,7 +99,10 @@ FFZ.prototype.ws_create = function() {
 		} else {
 			var success = cmd === 'True',
 				callback = f._ws_callbacks[request];
-			f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+
+			if ( ! success || ! callback )
+				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+
 			if ( callback ) {
 				delete f._ws_callbacks[request];
 				callback(success, data);

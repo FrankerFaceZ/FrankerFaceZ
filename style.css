@@ -352,7 +352,7 @@
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
 	margin-bottom: 5px;
-	border-bottom: 1px solid rgba(0,0,0, 0.2);
+	border-bottom: 1px solid rgba(0,0,0,0.2);
 	text-align: left;
 }
 
@@ -433,7 +433,9 @@
 
 .ffz-ui-popup.dark .ffz-ui-menu-page a { color: #fff; }
 
+.ffz-dark .ffz-ui-popup ul.menu svg path,
 .ffz-ui-popup.dark ul.menu svg path { fill: #d3d3d3; }
+
 .ffz-ui-popup ul.menu svg path { fill: #333; }
 
 
@@ -588,21 +590,9 @@
 
 /* Emoticon Tooltips */
 
-.tipsy table.emote-data td { padding: 0 2px; }
-
-.tipsy table.emote-data td:first-of-type {
-	text-align: right;
-	font-weight: bold;
-	padding-left: 0;
+.tipsy .tipsy-inner {
+	white-space: pre-wrap;
 }
-
-.tipsy table.emote-data td:last-of-type {
-	text-align: left;
-	padding-right: 0;
-	white-space: nowrap;
-}
-
-.tipsy table.emote-data td.center { text-align: center; }
 
 /* Menu Page Loader */
 

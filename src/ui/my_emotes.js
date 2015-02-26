@@ -4,6 +4,22 @@ var FFZ = window.FrankerFaceZ,
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	BANNED_SETS = {"00000turbo":true},
 
+	KNOWN_CODES = {
+		"B-?\\)": "B-)",
+		"\\:-?[z|Z|\\|]": ":-Z",
+		"\\:-?\\)": ":-)",
+		"\\:-?\\(": ":-(",
+		"\\:-?(p|P)": ":-P",
+		"\\;-?(p|P)": ";-P",
+		"\\&lt\\;3": "<3",
+		"\\:-?(?:\\/|\\\\)(?!\\/)": ":-/",
+		"\\;-?\\)": ";-)",
+		"R-?\\)": "R-)",
+		"[o|O](_|\\.)[o|O]": "O.o",
+		"\\:-?D": ":-D",
+		"\\:-?(o|O)": ":-O",
+		"\\&gt\\;\\(": ">(",
+		},
 
 	get_emotes = function(ffz) {
 		var Chat = App.__container__.lookup('controller:chat'),
@@ -18,6 +34,9 @@ var FFZ = window.FrankerFaceZ,
 		// Remove the 'default' set.
 		set_ids = set_ids.split(",").removeObject("0")
 
+		if ( ffz.settings.global_emotes_in_menu )
+			set_ids.push("0");
+
 		return [set_ids, user_sets];
 	};
 
@@ -25,6 +44,15 @@ var FFZ = window.FrankerFaceZ,
 // -------------------
 // Initialization
 // -------------------
+
+FFZ.settings_info.global_emotes_in_menu = {
+	type: "boolean",
+	value: false,
+
+	name: "Display Global Emotes in My Emotes",
+	help: "Display the global Twitch emotes in the My Emoticons menu."
+	};
+
 
 FFZ.prototype.setup_my_emotes = function() {
 	this._twitch_emote_sets = {};
@@ -35,6 +63,8 @@ FFZ.prototype.setup_my_emotes = function() {
 			this._twitch_set_to_channel = JSON.parse(localStorage.ffzTwitchSets);
 		} catch(err) { }
 	}
+
+	this._twitch_set_to_channel[0] = "twitch_global";
 }
 
 
@@ -95,6 +125,13 @@ FFZ.menu_pages.my_emotes = {
 
 								if ( !name || BANNED_SETS[name] )
 									return;
+
+								if ( name == "twitch_global" ) {
+									FFZ.capitalization["global emoticons"] = ["Global Emoticons", Date.now()];
+									set.channel = "Global Emoticons";
+									set.badge = "//cdn.frankerfacez.com/channel/global/twitch_logo.png";
+									return;
+								}
 
 								if ( name == "turbo" ) {
 									set.channel = "Twitch Turbo";
@@ -220,10 +257,10 @@ FFZ.menu_pages.my_emotes = {
 					var an = a[1].toLowerCase(),
 						bn = b[1].toLowerCase();
 
-					if ( an === "twitch turbo" )
+					if ( an === "twitch turbo" || an === "global emoticons" )
 						an = "zzz" + an;
 
-					if ( bn === "twitch turbo" )
+					if ( bn === "twitch turbo" || bn === "global emoticons" )
 						bn = "zzz" + bn;
 
 					if ( an < bn ) return -1;
@@ -245,7 +282,8 @@ FFZ.menu_pages.my_emotes = {
 					menu.appendChild(heading);
 
 					for(var x=0; x < set.emotes.length; x++) {
-						var emote = set.emotes[x];
+						var emote = set.emotes[x],
+							code = KNOWN_CODES[emote.code] || emote.code;
 
 						var s = document.createElement('span');
 						s.className = 'emoticon tooltip';
@@ -257,8 +295,8 @@ FFZ.menu_pages.my_emotes = {
 						s.style.backgroundImage = '-ms-' + img_set;
 						s.style.backgroundImage = img_set;
 
-						s.title = emote.code;
-						s.addEventListener('click', f._add_emote.bind(f, view, emote.code));
+						s.title = code;
+						s.addEventListener('click', f._add_emote.bind(f, view, code));
 						menu.appendChild(s);
 					}
 

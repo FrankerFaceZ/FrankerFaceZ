@@ -25,8 +25,7 @@ var FFZ = window.FrankerFaceZ,
 
 
 	data_to_tooltip = function(data) {
-		var output = "<tr><td>Emoticon</td><td>" + data.code + "</td></tr>",
-			set = data.set,
+		var set = data.set,
 			set_type = data.set_type;
 
 		if ( set_type === undefined )
@@ -40,12 +39,7 @@ var FFZ = window.FrankerFaceZ,
 			set_type = null;
 		}
 
-		if ( ! set_type )
-			output += '<tr><td class="center" colspan="2">' + set + '</td></tr>';
-		else
-			output += "<tr><td>" + set_type + "</td><td>" + set + "</td></tr>";
-
-		return '<table class="emote-data">' + output + '</table>';
+		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set;
 	},
 
 	build_tooltip = function(id) {
@@ -161,7 +155,7 @@ FFZ.settings_info.keywords = {
 
 FFZ.settings_info.fix_color = {
 	type: "boolean",
-	value: false,
+	value: true,
 
 	category: "Chat",
 	visible: function() { return ! this.has_bttv },
@@ -230,12 +224,17 @@ FFZ.prototype.setup_line = function() {
 			var tokens = this._super();
 
 			try {
+				var start = performance.now();
 				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
 				var user = f.get_user();
 
 				if ( ! user || this.get("model.from") != user.login )
 					tokens = f._mentionize(this, tokens);
+
+				var end = performance.now();
+				if ( end - start > 5 )
+					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms - " + JSON.stringify(tokens));
 
 			} catch(err) {
 				try {
@@ -256,6 +255,8 @@ FFZ.prototype.setup_line = function() {
 		didInsertElement: function() {
 			this._super();
 			try {
+				var start = performance.now();
+
 				var el = this.get('element'),
 					controller = this.get('context'),
 					user = controller.get('model.from'),
@@ -298,7 +299,7 @@ FFZ.prototype.setup_line = function() {
 				if ( mentioned ) {
 					el.classList.add("ffz-mentioned");
 
-					if ( ! document.hasFocus() && ! this.get('context.model.ffz_notified') && f.settings.highlight_notifications ) {
+					if ( f.settings.highlight_notifications && !document.hasFocus() && !this.get('context.model.ffz_notified') ) {
 						var cap_room = FFZ.get_capitalization(room),
 							cap_user = FFZ.get_capitalization(user),
 							room_name = cap_room,
@@ -329,7 +330,7 @@ FFZ.prototype.setup_line = function() {
 				// Banned Links
 				var bad_links = el.querySelectorAll('a.deleted-link');
 				for(var i=0; i < bad_links.length; i++) {
-					var link = bad_links[i]; 
+					var link = bad_links[i];
 
 					link.addEventListener("click", function(e) {
 						if ( ! this.classList.contains("deleted-link") )
@@ -366,7 +367,7 @@ FFZ.prototype.setup_line = function() {
 
 
 				// Enhanced Emotes
-				var images = el.querySelectorAll('img');
+				var images = el.querySelectorAll('img.emoticon');
 				for(var i=0; i < images.length; i++) {
 					var img = images[i],
 						name = img.alt,
@@ -388,8 +389,6 @@ FFZ.prototype.setup_line = function() {
 							f._twitch_emotes[id] = img.alt;
 							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
 						}
-
-						jQuery(img).tipsy({html:true});
 
 					} else if ( img.getAttribute('data-ffz-emote') ) {
 						var data = JSON.parse(decodeURIComponent(img.getAttribute('data-ffz-emote'))),
@@ -418,13 +417,15 @@ FFZ.prototype.setup_line = function() {
 							set: set_name,
 							set_type: set_type
 							});
-
-						jQuery(img).tipsy({html:true});
-
-					} else
-						jQuery(img).tipsy();
+					}
 				}
 
+				jQuery(images).tipsy();
+
+
+				var duration = performance.now() - start;
+				if ( duration > 5 )
+					f.log("Line Took Too Long - " + duration + "ms - " + el.innerHTML);
 
 			} catch(err) {
 				try {
@@ -470,7 +471,7 @@ FFZ.prototype._handle_color = function(color) {
 		// Color Too Bright. We need a lum of 0.3 or less.
 		matched = true;
 
-		var s = 255,
+		var s = 127,
 			nc = rgb;
 		while(s--) {
 			nc = utils.darken(nc);
@@ -482,15 +483,15 @@ FFZ.prototype._handle_color = function(color) {
 	} else
 		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
 
-	if ( lum < 0.1 ) {
+	if ( lum < 0.15 ) {
 		// Color Too Dark. We need a lum of 0.1 or more.
 		matched = true;
 
-		var s = 255,
+		var s = 127,
 			nc = rgb;
 		while(s--) {
 			nc = utils.brighten(nc);
-			if ( utils.get_luminance(nc) >= 0.1 )
+			if ( utils.get_luminance(nc) >= 0.15 )
 				break;
 		}
 
@@ -545,8 +546,11 @@ FFZ.get_capitalization = function(name, callback) {
 
 FFZ.prototype.capitalize = function(view, user) {
 	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
-	if ( name && view )
-		view.$('.from').text(name);
+	if ( !name || !view )
+		return;
+
+	var from = view.$('.from');
+	from && from.text(name);
 }
 
 
