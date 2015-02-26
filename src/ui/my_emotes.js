@@ -34,8 +34,10 @@ var FFZ = window.FrankerFaceZ,
 		// Remove the 'default' set.
 		set_ids = set_ids.split(",").removeObject("0")
 
-		if ( ffz.settings.global_emotes_in_menu )
+		if ( ffz.settings.global_emotes_in_menu ) {
 			set_ids.push("0");
+			user_sets = _.union(user_sets, ffz.global_sets);
+		}
 
 		return [set_ids, user_sets];
 	};
@@ -238,7 +240,7 @@ FFZ.menu_pages.my_emotes = {
 
 				container.innerHTML = "";
 
-				var ffz_sets = {},
+				var ffz_sets = emotes[1],
 					sets = [];
 
 				for(var set_id in twitch_sets) {
@@ -248,6 +250,17 @@ FFZ.menu_pages.my_emotes = {
 					var set = twitch_sets[set_id];
 					if ( set.channel && set.emotes && set.emotes.length )
 						sets.push([1, set.channel, set]);
+				}
+
+				for(var i=0; i < ffz_sets.length; i++) {
+					var set_id = ffz_sets[i],
+						set = f.emote_sets[set_id];
+
+					if ( f.feature_friday && set_id == f.feature_friday.set )
+						continue;
+
+					if ( set.count > 0 )
+						sets.push([2, set.id, set]);
 				}
 
 				sets.sort(function(a,b) {
@@ -269,31 +282,69 @@ FFZ.menu_pages.my_emotes = {
 				});
 
 				for(var i=0; i < sets.length; i++) {
-					var set = sets[i][2],
+					var ffz_set = sets[i][0] === 2,
+						set = sets[i][2],
 						heading = document.createElement('div'),
-						menu = document.createElement('div');
+						menu = document.createElement('div'),
+
+						source = ffz_set ? "FrankerFaceZ" : set.source,
+						badge, title, ems;
+
+					if ( ffz_set ) {
+						ems = [];
+						for(var emote_id in set.emotes) {
+							var emote = set.emotes[emote_id];
+							if ( emote.hidden )
+								continue;
+
+							ems.push({code: emote.name, url: emote.url, width: emote.width, height: emote.height});
+						}
+
+						if ( set.id === "global" )
+							title = "Global Emoticons";
+						else
+							title = set.id;
+
+						badge = set.icon || "http://cdn.frankerfacez.com/channel/global/devicon.png";
+
+					} else {
+						ems = set.emotes;
+						title = FFZ.get_capitalization(set.channel);
+						badge = set.badge;
+					}
+
+					if ( ! ems.length )
+						continue;
 
 					heading.className = 'heading';
-					heading.innerHTML = '<span class="right">' + set.source + '</span>' + FFZ.get_capitalization(set.channel);
-					if ( set.badge )
-						heading.style.backgroundImage = 'url("' + set.badge + '")';
+					heading.innerHTML = '<span class="right">' + source + '</span>' + title;
+					if ( badge )
+						heading.style.backgroundImage = 'url("' + badge + '")';
 
 					menu.className = 'emoticon-grid';
 					menu.appendChild(heading);
 
-					for(var x=0; x < set.emotes.length; x++) {
-						var emote = set.emotes[x],
+					for(var x=0; x < ems.length; x++) {
+						var emote = ems[x],
 							code = KNOWN_CODES[emote.code] || emote.code;
 
 						var s = document.createElement('span');
 						s.className = 'emoticon tooltip';
-						s.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+						s.style.backgroundImage = 'url("' + (emote.url ? emote.url : (TWITCH_BASE + emote.id + '/1.0')) + '")';
 
-						var img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
-						s.style.backgroundImage = '-webkit-' + img_set;
-						s.style.backgroundImage = '-moz-' + img_set;
-						s.style.backgroundImage = '-ms-' + img_set;
-						s.style.backgroundImage = img_set;
+						if ( emote.height )
+							s.style.height = emote.height + "px";
+
+						if ( emote.width )
+							s.style.width = emote.width + "px";
+
+						if ( ! emote.url ) {
+							var img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+							s.style.backgroundImage = '-webkit-' + img_set;
+							s.style.backgroundImage = '-moz-' + img_set;
+							s.style.backgroundImage = '-ms-' + img_set;
+							s.style.backgroundImage = img_set;
+						}
 
 						s.title = code;
 						s.addEventListener('click', f._add_emote.bind(f, view, code));

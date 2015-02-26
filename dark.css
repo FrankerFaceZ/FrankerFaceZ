@@ -317,6 +317,10 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 
 /* FrankerFaceZ Menu */
 
+.ffz-dark .ember-chat .chat-menu .list-header {
+	border-top-color: rgba(255,255,255,0.2);
+}
+
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
 .ffz-dark .ffz-ui-popup ul.menu,
