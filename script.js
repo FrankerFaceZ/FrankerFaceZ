@@ -187,7 +187,7 @@ FFZ.prototype.render_badge = function(view) {
 // --------------------
 
 FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
-FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot"];
+FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot", "wooferedmilk"];
 
 
 FFZ.prototype._legacy_add_donors = function(tries) {
@@ -239,7 +239,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 				user = this.users[user_id] = this.users[user_id] || {},
 				badges = user.badges = user.badges || {};
 
-			if ( badges[0] )
+			if ( badges[1] )
 				continue;
 
 			badges[1] = {id:1};
@@ -3770,8 +3770,20 @@ FFZ.menu_pages.my_emotes = {
 										if ( ! data.emoticon_sets.hasOwnProperty(set_id) )
 											continue;
 
-										var set = f._twitch_emote_sets[set_id] = f._twitch_emote_sets[set_id] || {};
-										set.emotes = data.emoticon_sets[set_id];
+										var set = f._twitch_emote_sets[set_id] = f._twitch_emote_sets[set_id] || {},
+											emotes = data.emoticon_sets[set_id];
+
+										// Sort Emoticons
+										emotes.sort(function(a,b) {
+											var a = (KNOWN_CODES[a.code] ? "000" + KNOWN_CODES[a.code] : a.code).toLowerCase(),
+												b = (KNOWN_CODES[b.code] ? "000" + KNOWN_CODES[b.code] : b.code).toLowerCase();
+
+											if ( a < b ) return -1;
+											else if ( a > b ) return 1;
+											return 0;
+										});
+
+										set.emotes = emotes;
 										set.source = "Twitch";
 									}
 								}

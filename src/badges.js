@@ -186,7 +186,7 @@ FFZ.prototype.render_badge = function(view) {
 // --------------------
 
 FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
-FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot"];
+FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot", "wooferedmilk"];
 
 
 FFZ.prototype._legacy_add_donors = function(tries) {
@@ -238,7 +238,7 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 				user = this.users[user_id] = this.users[user_id] || {},
 				badges = user.badges = user.badges || {};
 
-			if ( badges[0] )
+			if ( badges[1] )
 				continue;
 
 			badges[1] = {id:1};

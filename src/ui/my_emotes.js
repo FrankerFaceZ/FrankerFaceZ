@@ -106,8 +106,20 @@ FFZ.menu_pages.my_emotes = {
 										if ( ! data.emoticon_sets.hasOwnProperty(set_id) )
 											continue;
 
-										var set = f._twitch_emote_sets[set_id] = f._twitch_emote_sets[set_id] || {};
-										set.emotes = data.emoticon_sets[set_id];
+										var set = f._twitch_emote_sets[set_id] = f._twitch_emote_sets[set_id] || {},
+											emotes = data.emoticon_sets[set_id];
+
+										// Sort Emoticons
+										emotes.sort(function(a,b) {
+											var a = (KNOWN_CODES[a.code] ? "000" + KNOWN_CODES[a.code] : a.code).toLowerCase(),
+												b = (KNOWN_CODES[b.code] ? "000" + KNOWN_CODES[b.code] : b.code).toLowerCase();
+
+											if ( a < b ) return -1;
+											else if ( a > b ) return 1;
+											return 0;
+										});
+
+										set.emotes = emotes;
 										set.source = "Twitch";
 									}
 								}
