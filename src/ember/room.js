@@ -10,7 +10,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! room.moderator_badge )
 			return "";
 
-		return '.chat-line[data-room="' + room.id + '"] .badges .moderator { background-image:url("' + room.moderator_badge + '"); }';
+		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-image:url("' + room.moderator_badge + '") !important; }';
 	}
 
 

@@ -43,6 +43,24 @@ var sanitize_cache = {},
 			}
 		}
 		return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
+	},
+
+	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
+
+	parse_date = function(str) {
+		var parts = str.match(date_regex);
+		if ( ! parts )
+			return null;
+
+		var unix = Date.UTC(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6], parts[7] || 0);
+
+		// Check Offset
+		if ( parts[9] ) {
+			var offset = (parts[9] == "-" ? 1 : -1) * 60000 * (60*parts[10] + 1*parts[11]);
+			unix += offset;
+		}
+
+		return new Date(unix);
 	};
 
 
@@ -71,6 +89,8 @@ module.exports = {
 	brighten: brighten,
 	darken: darken,
 	rgb_to_css: rgb_to_css,
+
+	parse_date: parse_date,
 
 	number_commas: function(x) {
 		var parts = x.toString().split(".");

@@ -283,6 +283,7 @@ FFZ.prototype.setup_line = function() {
 				// Basic Data
 				el.setAttribute('data-room', room);
 				el.setAttribute('data-sender', user);
+				el.setAttribute('data-deleted', controller.get('model.deleted'));
 
 
 				// Badge

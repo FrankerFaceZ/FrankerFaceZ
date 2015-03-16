@@ -62,7 +62,7 @@ FFZ.prototype.ws_create = function() {
 				f.log("Error on Socket Close Callback: " + err);
 			}
 		}
-		
+
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 60000 )
 			f._ws_delay += 5000;

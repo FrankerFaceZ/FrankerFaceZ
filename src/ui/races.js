@@ -34,9 +34,12 @@ FFZ.settings_info.srl_races = {
 // ---------------
 
 FFZ.ws_on_close.push(function() {
-	var controller = App.__container__.lookup('controller:channel'),
-		current_id = controller.get('id'),
+	var controller = window.App && App.__container__.lookup('controller:channel'),
+		current_id = controller && controller.get('id'),
 		need_update = false;
+
+	if ( ! controller )
+		return;
 
 	for(var chan in this.srl_races) {
 		delete this.srl_races[chan];

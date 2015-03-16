@@ -37,6 +37,31 @@ FFZ.prototype.setup_badges = function() {
 
 
 // --------------------
+// Reloading Badges
+// --------------------
+
+FFZ.ws_commands.reload_badges = function() {
+	this._legacy_load_bots();
+	this._legacy_load_donors();
+}
+
+
+FFZ.ws_commands.set_badge = function(data) {
+	var user_id = data[0],
+		slot = data[1],
+		badge = data[2],
+
+		user = this.users[user_id] = this.users[user_id] || {},
+		badges = user.badges = user.badges || {};
+
+	if ( badge === undefined )
+		delete badges[slot];
+	else
+		badges[slot] = badge;
+}
+
+
+// --------------------
 // Badge CSS
 // --------------------
 
@@ -86,8 +111,25 @@ FFZ.prototype.bttv_badges = function(data) {
 				continue;
 		}
 
+		if ( full_badge.replaces ) {
+			var replaced = false;
+			for(var i=0; i < data.badges.length; i++) {
+				var b = data.badges[i];
+				if ( b.type == full_badge.replaces ) {
+					b.type = "ffz-badge-replacement " + b.type;
+					b.description += ", " + (badge.title || full_badge.title) +
+						'" style="background-image: url(&quot;' + (badge.image || full_badge.image) + "&quot;)";
+					replaced = true;
+					break;
+				}
+			}
+
+			if ( replaced )
+				continue;
+		}
+
 		if ( badge.image )
-			style += 'background-image: url(\\"' + badge.image + '\\"); ';
+			style += 'background-image: url(&quot;' + badge.image + '&quot;); ';
 
 		if ( badge.color && ! alpha )
 			style += 'background-color: ' + badge.color + '; ';
@@ -149,6 +191,7 @@ FFZ.prototype.render_badge = function(view) {
 			var el = badges[0].querySelector('.badge.' + full_badge.replaces);
 			if ( el ) {
 				el.style.backgroundImage = 'url("' + (badge.image || full_badge.image) + '")';
+				el.classList.add("ffz-badge-replacement");
 				el.title += ", " + (badge.title || full_badge.title);
 				return;
 			}
@@ -187,16 +230,16 @@ FFZ.prototype.render_badge = function(view) {
 // --------------------
 
 FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
-FFZ.known_bots = ["quoteconut", "quoconut", "zenwan", "triiharder", "wobblerbot", "theroflbotr", "acebot", "wooferedmilk"];
 
 
-FFZ.prototype._legacy_add_donors = function(tries) {
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
-	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
-
+FFZ.prototype._legacy_add_donors = function() {
 	// Developer Badge
 	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
+
+	// Donor Badge
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
+	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Bot Badge
 	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
@@ -204,20 +247,18 @@ FFZ.prototype._legacy_add_donors = function(tries) {
 		visible: function(r,user) { return this.settings.bot_badges && !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
-	for(var i=0;i<FFZ.bttv_known_bots.length;i++)
-		this.users[FFZ.bttv_known_bots[i]] = {badges: {0: {id:2}}};
-
-	for(var i=0;i<FFZ.known_bots.length;i++)
-		this.users[FFZ.known_bots[i]] = {badges: {0: {id:2}}};
-
 	// Special Badges
 	this.users.sirstendec = {badges: {1: {id:0}}};
 	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/channel/global/momiglee_badge.png", title: "WAN"}}};
 
+	this._legacy_load_bots();
+	this._legacy_load_donors();
+}
 
-	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
+FFZ.prototype._legacy_load_bots = function(tries) {
+	jQuery.ajax(constants.SERVER + "script/bots.txt", {cache: false, context: this})
 		.done(function(data) {
-			this._legacy_parse_donors(data);
+			this._legacy_parse_badges(data, 0, 2);
 
 		}).fail(function(data) {
 			if ( data.status == 404 )
@@ -225,12 +266,27 @@ FFZ.prototype._legacy_add_donors = function(tries) {
 
 			tries = (tries || 0) + 1;
 			if ( tries < 10 )
-				return this._legacy_add_donors(tries);
+				this._legacy_load_bots(tries);
+		});
+}
+
+FFZ.prototype._legacy_load_donors = function(tries) {
+	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
+		.done(function(data) {
+			this._legacy_parse_badges(data, 1, 1);
+
+		}).fail(function(data) {
+			if ( data.status == 404 )
+				return;
+
+			tries = (tries || 0) + 1;
+			if ( tries < 10 )
+				return this._legacy_load_donors(tries);
 		});
 }
 
 
-FFZ.prototype._legacy_parse_donors = function(data) {
+FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 	var count = 0;
 	if ( data != null ) {
 		var lines = data.trim().split(/\W+/);
@@ -239,15 +295,16 @@ FFZ.prototype._legacy_parse_donors = function(data) {
 				user = this.users[user_id] = this.users[user_id] || {},
 				badges = user.badges = user.badges || {};
 
-			if ( badges[1] )
+			if ( badges[slot] )
 				continue;
 
-			badges[1] = {id:1};
+			badges[slot] = {id:badge_id};
 			count += 1;
 		}
 	}
 
-	this.log("Added donor badge to " + utils.number_commas(count) + " users.");
+	var title = this.badges[badge_id].title;
+	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
 },{"./constants":3,"./utils":27}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
@@ -740,6 +797,7 @@ FFZ.prototype.setup_line = function() {
 				// Basic Data
 				el.setAttribute('data-room', room);
 				el.setAttribute('data-sender', user);
+				el.setAttribute('data-deleted', controller.get('model.deleted'));
 
 
 				// Badge
@@ -1440,7 +1498,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! room.moderator_badge )
 			return "";
 
-		return '.chat-line[data-room="' + room.id + '"] .badges .moderator { background-image:url("' + room.moderator_badge + '"); }';
+		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-image:url("' + room.moderator_badge + '") !important; }';
 	}
 
 
@@ -2333,7 +2391,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 2, revision: 3,
+	major: 3, minor: 2, revision: 4,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -3056,7 +3114,7 @@ FFZ.prototype.ws_create = function() {
 				f.log("Error on Socket Close Callback: " + err);
 			}
 		}
-		
+
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 60000 )
 			f._ws_delay += 5000;
@@ -3384,6 +3442,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 	// Menu Container
 	var sub_container = document.createElement('div');
 	sub_container.className = 'ffz-ui-menu-page';
+
 	inner.appendChild(sub_container);
 
 	// Render Menu Tabs
@@ -4248,9 +4307,12 @@ FFZ.settings_info.srl_races = {
 // ---------------
 
 FFZ.ws_on_close.push(function() {
-	var controller = App.__container__.lookup('controller:channel'),
-		current_id = controller.get('id'),
+	var controller = window.App && App.__container__.lookup('controller:channel'),
+		current_id = controller && controller.get('id'),
 		need_update = false;
+
+	if ( ! controller )
+		return;
 
 	for(var chan in this.srl_races) {
 		delete this.srl_races[chan];
@@ -4624,6 +4686,24 @@ var sanitize_cache = {},
 			}
 		}
 		return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
+	},
+
+	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
+
+	parse_date = function(str) {
+		var parts = str.match(date_regex);
+		if ( ! parts )
+			return null;
+
+		var unix = Date.UTC(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6], parts[7] || 0);
+
+		// Check Offset
+		if ( parts[9] ) {
+			var offset = (parts[9] == "-" ? 1 : -1) * 60000 * (60*parts[10] + 1*parts[11]);
+			unix += offset;
+		}
+
+		return new Date(unix);
 	};
 
 
@@ -4652,6 +4732,8 @@ module.exports = {
 	brighten: brighten,
 	darken: darken,
 	rgb_to_css: rgb_to_css,
+
+	parse_date: parse_date,
 
 	number_commas: function(x) {
 		var parts = x.toString().split(".");

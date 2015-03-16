@@ -59,6 +59,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 	// Menu Container
 	var sub_container = document.createElement('div');
 	sub_container.className = 'ffz-ui-menu-page';
+
 	inner.appendChild(sub_container);
 
 	// Render Menu Tabs
