@@ -192,7 +192,7 @@ FFZ.prototype.render_badge = function(view) {
 				el.style.backgroundImage = 'url("' + (badge.image || full_badge.image) + '")';
 				el.classList.add("ffz-badge-replacement");
 				el.title += ", " + (badge.title || full_badge.title);
-				return;
+				continue;
 			}
 		}
 
