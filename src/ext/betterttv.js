@@ -23,6 +23,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
+	this.log("WOO");
+
 	// this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Disable Dark if it's enabled.
@@ -49,11 +51,13 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 
-	// Ugly Hack for Current Room
-	var original_handler = BetterTTV.chat.handlers.privmsg,
+	// Ugly Hack for Current Room, as this is stripped out before we get to
+	// the actual privmsg renderer.
+	var original_handler = BetterTTV.chat.handlers.onPrivmsg,
 		received_room;
-	BetterTTV.chat.handlers.privmsg = function(room, data) {
+	BetterTTV.chat.handlers.onPrivmsg = function(room, data) {
 		received_room = room;
+		f.log("Room: " + room);
 		var output = original_handler(room, data);
 		received_room = null;
 		return output;
@@ -63,23 +67,56 @@ FFZ.prototype.setup_bttv = function(delay) {
 	// Message Display Behavior
 	var original_privmsg = BetterTTV.chat.templates.privmsg;
 	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
-		// Handle badges.
-		f.bttv_badges(data);
+		try {
+			// Handle badges.
+			f.log("Got Message", data);
+			f.bttv_badges(data);
 
-		var output = original_privmsg(highlight, action, server, isMod, data);
-		return output.replace(SENDER_REGEX, '$1 data-room="' + received_room + '"');
+			// Now, do everything else manually because things are hard-coded.
+			return '<div class="chat-line'+(highlight?' highlight':'')+(action?' action':'')+(server?' admin':'')+'" data-sender="'+data.sender+'" data-room="'+received_room+'">'+
+				BetterTTV.chat.templates.timestamp(data.time)+' '+
+				(isMod?BetterTTV.chat.templates.modicons():'')+' '+
+				BetterTTV.chat.templates.badges(data.badges)+
+				BetterTTV.chat.templates.from(data.nickname, data.color)+
+				BetterTTV.chat.templates.message(data.sender, data.message, data.emotes, action?data.color:false)+
+				'</div>';
+		} catch(err) {
+			f.log("Error: ", err);
+			return original_privmsg(highlight, action, server, isMod, data);
+		}
 	}
 
-
-	// Ugly Hack for Current Sender
-	var original_template = BetterTTV.chat.templates.message,
+	// Message Renderer. I had to completely rewrite this method to get it to
+	// use my replacement emoticonizer.
+	var original_message = BetterTTV.chat.templates.message,
 		received_sender;
 	BetterTTV.chat.templates.message = function(sender, message, emotes, colored) {
-		received_sender = sender;
-		var output = original_template(sender, message, emotes, colored);
-		received_sender = null;
-		return output;
-	}
+		try {
+			colored = colored || false;
+			var rawMessage = encodeURIComponent(message);
+
+			if(sender !== 'jtv') {
+				received_sender = sender;
+				var tokenizedMessage = BetterTTV.chat.templates.emoticonize(message, emotes);
+				received_sender = null;
+
+				for(var i=0; i<tokenizedMessage.length; i++) {
+					if(typeof tokenizedMessage[i] === 'string') {
+						tokenizedMessage[i] = BetterTTV.chat.templates.bttvMessageTokenize(sender, tokenizedMessage[i]);
+					} else {
+						tokenizedMessage[i] = tokenizedMessage[i][0];
+					}
+				}
+
+				message = tokenizedMessage.join(' ');
+			}
+
+			return '<span class="message" '+(colored?'style="color: '+colored+'" ':'')+'data-raw="'+rawMessage+'">'+message+'</span>';
+		} catch(err) {
+			f.log("Error: ", err);
+			return original_message(sender, message, emotes, colored);
+		}
+	};
 
 
 	// Emoticonize

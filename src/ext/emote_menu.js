@@ -63,7 +63,8 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 				else
 					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);
-			}
+			} else
+				title = "FrankerFaceZ: " + title;
 
 			emotes.push({text: emote.name, url: emote.url,
 				hidden: false, channel: title, badge: badge});

@@ -234,7 +234,7 @@ FFZ.prototype.setup_line = function() {
 
 				var end = performance.now();
 				if ( end - start > 5 )
-					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms - " + JSON.stringify(tokens));
+					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
 
 			} catch(err) {
 				try {
@@ -399,22 +399,14 @@ FFZ.prototype.setup_line = function() {
 							set = f.emote_sets[set_id],
 							emote = set ? set.emotes[id] : null,
 
-							set_name = set.id,
-							set_type = "FFZ Channel";
+							set_name = set ? (set.title || set.id) : "Unknown FFZ Set",
+							set_type = (set && set.title) ? "FrankerFaceZ" : "FFZ Channel";
 
-						if ( set.id == "global" ) {
-							set_name = "FrankerFaceZ Global";
-							set_type = null;
-
-						} else if ( set.id == "globalevent" ) {
-							set_name = "FrankerFaceZ Event";
-							set_type = null;
-
-						} else if ( f.feature_friday && set.id == f.feature_friday.set )
+						if ( set && f.feature_friday && set.id == f.feature_friday.set )
 							set_name = "Feature Friday - " + f.feature_friday.channel;
 
 						img.title = data_to_tooltip({
-							code: emote.hidden ? "???" : emote.name,
+							code: emote ? (emote.hidden ? "???" : emote.name) : name,
 							set: set_name,
 							set_type: set_type
 							});
@@ -426,7 +418,7 @@ FFZ.prototype.setup_line = function() {
 
 				var duration = performance.now() - start;
 				if ( duration > 5 )
-					f.log("Line Took Too Long - " + duration + "ms - " + el.innerHTML);
+					f.log("Line Took Too Long - " + duration + "ms", el.innerHTML, false, true);
 
 			} catch(err) {
 				try {

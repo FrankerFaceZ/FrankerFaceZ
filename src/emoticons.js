@@ -174,6 +174,13 @@ FFZ.prototype._legacy_load_set = function(set_id, callback, tries) {
 FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 	var emotes = {}, output = {id: set_id, emotes: emotes, extra_css: null}, f = this;
 
+	if ( set_id == "global" )
+		output.title = "Global";
+	else if ( set_id == "globalevent" )
+		output.title = "Global Event";
+	else if ( set_id == ".donor" )
+		output.title = "Donor";
+
 	data = data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
 		height = parseInt(height); width = parseInt(width);
 		margins = check_margins(margins, height);

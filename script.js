@@ -247,9 +247,21 @@ FFZ.prototype._legacy_add_donors = function() {
 		visible: function(r,user) { return this.settings.bot_badges && !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
+	// Load BTTV Bots
+	for(var i=0; i < FFZ.bttv_known_bots.length; i++) {
+		var name = FFZ.bttv_known_bots[i],
+			user = this.users[name] = this.users[name] || {},
+			badges = user.badges = user.badges || {};
+
+		if ( ! badges[0] )
+			badges[0] = {id:2};
+	}
+
 	// Special Badges
 	this.users.sirstendec = {badges: {1: {id:0}}};
 	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/channel/global/momiglee_badge.png", title: "WAN"}}};
+
+	this.load_set(".donor");
 
 	this._legacy_load_bots();
 	this._legacy_load_donors();
@@ -287,13 +299,20 @@ FFZ.prototype._legacy_load_donors = function(tries) {
 
 
 FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
-	var count = 0;
+	var title = this.badges[badge_id].title,
+		count = 0;
+		ds = badge_id == 1 ? ".donor" : "";
+
 	if ( data != null ) {
 		var lines = data.trim().split(/\W+/);
 		for(var i=0; i < lines.length; i++) {
 			var user_id = lines[i],
 				user = this.users[user_id] = this.users[user_id] || {},
-				badges = user.badges = user.badges || {};
+				badges = user.badges = user.badges || {},
+				sets = user.sets = user.sets || [];
+
+			if ( sets.indexOf(ds) === -1 )
+				sets.push(ds);
 
 			if ( badges[slot] )
 				continue;
@@ -303,7 +322,6 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 		}
 	}
 
-	var title = this.badges[badge_id].title;
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
 },{"./constants":3,"./utils":27}],2:[function(require,module,exports){
@@ -748,7 +766,7 @@ FFZ.prototype.setup_line = function() {
 
 				var end = performance.now();
 				if ( end - start > 5 )
-					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms - " + JSON.stringify(tokens));
+					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
 
 			} catch(err) {
 				try {
@@ -913,22 +931,14 @@ FFZ.prototype.setup_line = function() {
 							set = f.emote_sets[set_id],
 							emote = set ? set.emotes[id] : null,
 
-							set_name = set.id,
-							set_type = "FFZ Channel";
+							set_name = set ? (set.title || set.id) : "Unknown FFZ Set",
+							set_type = (set && set.title) ? "FrankerFaceZ" : "FFZ Channel";
 
-						if ( set.id == "global" ) {
-							set_name = "FrankerFaceZ Global";
-							set_type = null;
-
-						} else if ( set.id == "globalevent" ) {
-							set_name = "FrankerFaceZ Event";
-							set_type = null;
-
-						} else if ( f.feature_friday && set.id == f.feature_friday.set )
+						if ( set && f.feature_friday && set.id == f.feature_friday.set )
 							set_name = "Feature Friday - " + f.feature_friday.channel;
 
 						img.title = data_to_tooltip({
-							code: emote.hidden ? "???" : emote.name,
+							code: emote ? (emote.hidden ? "???" : emote.name) : name,
 							set: set_name,
 							set_type: set_type
 							});
@@ -940,7 +950,7 @@ FFZ.prototype.setup_line = function() {
 
 				var duration = performance.now() - start;
 				if ( duration > 5 )
-					f.log("Line Took Too Long - " + duration + "ms - " + el.innerHTML);
+					f.log("Line Took Too Long - " + duration + "ms", el.innerHTML, false, true);
 
 			} catch(err) {
 				try {
@@ -2128,6 +2138,13 @@ FFZ.prototype._legacy_load_set = function(set_id, callback, tries) {
 FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 	var emotes = {}, output = {id: set_id, emotes: emotes, extra_css: null}, f = this;
 
+	if ( set_id == "global" )
+		output.title = "Global";
+	else if ( set_id == "globalevent" )
+		output.title = "Global Event";
+	else if ( set_id == ".donor" )
+		output.title = "Donor";
+
 	data = data.replace(CSS, function(match, klass, name, path, height, width, margins, extra) {
 		height = parseInt(height); width = parseInt(width);
 		margins = check_margins(margins, height);
@@ -2175,6 +2192,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
+	this.log("WOO");
+
 	// this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Disable Dark if it's enabled.
@@ -2201,11 +2220,13 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 
-	// Ugly Hack for Current Room
-	var original_handler = BetterTTV.chat.handlers.privmsg,
+	// Ugly Hack for Current Room, as this is stripped out before we get to
+	// the actual privmsg renderer.
+	var original_handler = BetterTTV.chat.handlers.onPrivmsg,
 		received_room;
-	BetterTTV.chat.handlers.privmsg = function(room, data) {
+	BetterTTV.chat.handlers.onPrivmsg = function(room, data) {
 		received_room = room;
+		f.log("Room: " + room);
 		var output = original_handler(room, data);
 		received_room = null;
 		return output;
@@ -2215,23 +2236,56 @@ FFZ.prototype.setup_bttv = function(delay) {
 	// Message Display Behavior
 	var original_privmsg = BetterTTV.chat.templates.privmsg;
 	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
-		// Handle badges.
-		f.bttv_badges(data);
+		try {
+			// Handle badges.
+			f.log("Got Message", data);
+			f.bttv_badges(data);
 
-		var output = original_privmsg(highlight, action, server, isMod, data);
-		return output.replace(SENDER_REGEX, '$1 data-room="' + received_room + '"');
+			// Now, do everything else manually because things are hard-coded.
+			return '<div class="chat-line'+(highlight?' highlight':'')+(action?' action':'')+(server?' admin':'')+'" data-sender="'+data.sender+'" data-room="'+received_room+'">'+
+				BetterTTV.chat.templates.timestamp(data.time)+' '+
+				(isMod?BetterTTV.chat.templates.modicons():'')+' '+
+				BetterTTV.chat.templates.badges(data.badges)+
+				BetterTTV.chat.templates.from(data.nickname, data.color)+
+				BetterTTV.chat.templates.message(data.sender, data.message, data.emotes, action?data.color:false)+
+				'</div>';
+		} catch(err) {
+			f.log("Error: ", err);
+			return original_privmsg(highlight, action, server, isMod, data);
+		}
 	}
 
-
-	// Ugly Hack for Current Sender
-	var original_template = BetterTTV.chat.templates.message,
+	// Message Renderer. I had to completely rewrite this method to get it to
+	// use my replacement emoticonizer.
+	var original_message = BetterTTV.chat.templates.message,
 		received_sender;
 	BetterTTV.chat.templates.message = function(sender, message, emotes, colored) {
-		received_sender = sender;
-		var output = original_template(sender, message, emotes, colored);
-		received_sender = null;
-		return output;
-	}
+		try {
+			colored = colored || false;
+			var rawMessage = encodeURIComponent(message);
+
+			if(sender !== 'jtv') {
+				received_sender = sender;
+				var tokenizedMessage = BetterTTV.chat.templates.emoticonize(message, emotes);
+				received_sender = null;
+
+				for(var i=0; i<tokenizedMessage.length; i++) {
+					if(typeof tokenizedMessage[i] === 'string') {
+						tokenizedMessage[i] = BetterTTV.chat.templates.bttvMessageTokenize(sender, tokenizedMessage[i]);
+					} else {
+						tokenizedMessage[i] = tokenizedMessage[i][0];
+					}
+				}
+
+				message = tokenizedMessage.join(' ');
+			}
+
+			return '<span class="message" '+(colored?'style="color: '+colored+'" ':'')+'data-raw="'+rawMessage+'">'+message+'</span>';
+		} catch(err) {
+			f.log("Error: ", err);
+			return original_message(sender, message, emotes, colored);
+		}
+	};
 
 
 	// Emoticonize
@@ -2357,7 +2411,8 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 				else
 					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);
-			}
+			} else
+				title = "FrankerFaceZ: " + title;
 
 			emotes.push({text: emote.name, url: emote.url,
 				hidden: false, channel: title, badge: badge});
@@ -2391,7 +2446,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 2, revision: 4,
+	major: 3, minor: 2, revision: 5,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -2400,9 +2455,9 @@ var VER = FFZ.version_info = {
 
 // Logging
 
-FFZ.prototype.log = function(msg, data, to_json) {
+FFZ.prototype.log = function(msg, data, to_json, log_json) {
 	msg = "FFZ: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
-	this._log_data.push(msg);
+	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
 		console.groupCollapsed(msg);
@@ -2510,6 +2565,8 @@ require('./ui/races');
 require('./ui/my_emotes');
 require('./ui/about_page');
 
+//require('./ui/group_chat');
+
 require('./commands');
 
 
@@ -2573,6 +2630,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_menu();
 	this.setup_my_emotes();
 	this.setup_races();
+	//this.setup_group_chat();
 
 	this.find_bttv(10);
 	this.find_emote_menu(10);
@@ -3071,7 +3129,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_pending = this._ws_pending || [];
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+		ws = this._ws_sock = new WebSocket("ws://catbag.frankerfacez.com/");
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
@@ -3103,7 +3161,7 @@ FFZ.prototype.ws_create = function() {
 	}
 
 	ws.onclose = function(e) {
-		f.log("Socket closed.");
+		f.log("Socket closed. (Code: " + e.code + ", Reason: " + e.reason + ")");
 		f._ws_open = false;
 
 		// When the connection closes, run our callbacks.
@@ -3146,14 +3204,14 @@ FFZ.prototype.ws_create = function() {
 			if ( command )
 				command.bind(f)(data);
 			else
-				f.log("Invalid command: " + cmd, data);
+				f.log("Invalid command: " + cmd, data, false, true);
 
 		} else {
 			var success = cmd === 'True',
 				callback = f._ws_callbacks[request];
 
 			if ( ! success || ! callback )
-				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);
 
 			if ( callback ) {
 				delete f._ws_callbacks[request];
@@ -3910,7 +3968,7 @@ FFZ.menu_pages.my_emotes = {
 										if ( ! set.channel )
 											set.channel = name;
 										dn();
-									}.bind(this,set,name,dn), 5000);
+									}.bind(this,set,name,dn), 2000);
 								}.bind(this, set, lname, name)));
 							},
 							handle_promises = function() {
@@ -3952,7 +4010,7 @@ FFZ.menu_pages.my_emotes = {
 							setTimeout(function() {
 								if ( needed_sets.length )
 									handle_promises();
-								}, 5000);
+								}, 2000);
 
 						} else
 							handle_promises();
@@ -4038,7 +4096,7 @@ FFZ.menu_pages.my_emotes = {
 						if ( set.id === "global" )
 							title = "Global Emoticons";
 						else
-							title = set.id;
+							title = set.title || set.id;
 
 						badge = set.icon || "http://cdn.frankerfacez.com/channel/global/devicon.png";
 

@@ -19,7 +19,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_pending = this._ws_pending || [];
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://ffz.stendec.me/");
+		ws = this._ws_sock = new WebSocket("ws://catbag.frankerfacez.com/");
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
@@ -51,7 +51,7 @@ FFZ.prototype.ws_create = function() {
 	}
 
 	ws.onclose = function(e) {
-		f.log("Socket closed.");
+		f.log("Socket closed. (Code: " + e.code + ", Reason: " + e.reason + ")");
 		f._ws_open = false;
 
 		// When the connection closes, run our callbacks.
@@ -94,14 +94,14 @@ FFZ.prototype.ws_create = function() {
 			if ( command )
 				command.bind(f)(data);
 			else
-				f.log("Invalid command: " + cmd, data);
+				f.log("Invalid command: " + cmd, data, false, true);
 
 		} else {
 			var success = cmd === 'True',
 				callback = f._ws_callbacks[request];
 
 			if ( ! success || ! callback )
-				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data);
+				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);
 
 			if ( callback ) {
 				delete f._ws_callbacks[request];

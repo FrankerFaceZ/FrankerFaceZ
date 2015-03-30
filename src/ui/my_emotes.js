@@ -187,7 +187,7 @@ FFZ.menu_pages.my_emotes = {
 										if ( ! set.channel )
 											set.channel = name;
 										dn();
-									}.bind(this,set,name,dn), 5000);
+									}.bind(this,set,name,dn), 2000);
 								}.bind(this, set, lname, name)));
 							},
 							handle_promises = function() {
@@ -229,7 +229,7 @@ FFZ.menu_pages.my_emotes = {
 							setTimeout(function() {
 								if ( needed_sets.length )
 									handle_promises();
-								}, 5000);
+								}, 2000);
 
 						} else
 							handle_promises();
@@ -315,7 +315,7 @@ FFZ.menu_pages.my_emotes = {
 						if ( set.id === "global" )
 							title = "Global Emoticons";
 						else
-							title = set.id;
+							title = set.title || set.id;
 
 						badge = set.icon || "http://cdn.frankerfacez.com/channel/global/devicon.png";
 

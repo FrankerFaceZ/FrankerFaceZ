@@ -246,9 +246,21 @@ FFZ.prototype._legacy_add_donors = function() {
 		visible: function(r,user) { return this.settings.bot_badges && !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
+	// Load BTTV Bots
+	for(var i=0; i < FFZ.bttv_known_bots.length; i++) {
+		var name = FFZ.bttv_known_bots[i],
+			user = this.users[name] = this.users[name] || {},
+			badges = user.badges = user.badges || {};
+
+		if ( ! badges[0] )
+			badges[0] = {id:2};
+	}
+
 	// Special Badges
 	this.users.sirstendec = {badges: {1: {id:0}}};
 	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/channel/global/momiglee_badge.png", title: "WAN"}}};
+
+	this.load_set(".donor");
 
 	this._legacy_load_bots();
 	this._legacy_load_donors();
@@ -286,13 +298,20 @@ FFZ.prototype._legacy_load_donors = function(tries) {
 
 
 FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
-	var count = 0;
+	var title = this.badges[badge_id].title,
+		count = 0;
+		ds = badge_id == 1 ? ".donor" : "";
+
 	if ( data != null ) {
 		var lines = data.trim().split(/\W+/);
 		for(var i=0; i < lines.length; i++) {
 			var user_id = lines[i],
 				user = this.users[user_id] = this.users[user_id] || {},
-				badges = user.badges = user.badges || {};
+				badges = user.badges = user.badges || {},
+				sets = user.sets = user.sets || [];
+
+			if ( sets.indexOf(ds) === -1 )
+				sets.push(ds);
 
 			if ( badges[slot] )
 				continue;
@@ -302,6 +321,5 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 		}
 	}
 
-	var title = this.badges[badge_id].title;
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
