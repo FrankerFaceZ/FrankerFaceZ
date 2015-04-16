@@ -59,7 +59,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 					title = "FrankerFaceZ Event Emotes";
 
 				else if ( this.feature_friday && set.id == this.feature_friday.set )
-					title = "FrankerFaceZ Feature Friday: " + this.feature_friday.channel;
+					title = "FrankerFaceZ " + this.feature_friday.title + ": " + this.feature_friday.display_name;
 
 				else
 					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);

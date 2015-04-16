@@ -859,7 +859,6 @@ FFZ.prototype.setup_line = function() {
 				// Mark that we've checked this message for mentions.
 				this.set('context.model.ffz_notified', true);
 
-
 				// Banned Links
 				var bad_links = el.querySelectorAll('a.deleted-link');
 				for(var i=0; i < bad_links.length; i++) {
@@ -935,7 +934,7 @@ FFZ.prototype.setup_line = function() {
 							set_type = (set && set.title) ? "FrankerFaceZ" : "FFZ Channel";
 
 						if ( set && f.feature_friday && set.id == f.feature_friday.set )
-							set_name = "Feature Friday - " + f.feature_friday.channel;
+							set_name = f.feature_friday.title + " - " + f.feature_friday.display_name;
 
 						img.title = data_to_tooltip({
 							code: emote ? (emote.hidden ? "???" : emote.name) : name,
@@ -1225,7 +1224,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
+		var eo = {isEmoticon:true, cls: emote.klass,srcSet: emote.url + ' 1x', emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )
@@ -2226,7 +2225,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 		received_room;
 	BetterTTV.chat.handlers.onPrivmsg = function(room, data) {
 		received_room = room;
-		f.log("Room: " + room);
 		var output = original_handler(room, data);
 		received_room = null;
 		return output;
@@ -2238,7 +2236,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
 		try {
 			// Handle badges.
-			f.log("Got Message", data);
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.
@@ -2407,7 +2404,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 					title = "FrankerFaceZ Event Emotes";
 
 				else if ( this.feature_friday && set.id == this.feature_friday.set )
-					title = "FrankerFaceZ Feature Friday: " + this.feature_friday.channel;
+					title = "FrankerFaceZ " + this.feature_friday.title + ": " + this.feature_friday.display_name;
 
 				else
 					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);
@@ -2692,7 +2689,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	if ( ! this.feature_friday || this.feature_friday.channel == room_id )
 		return;
 
-	this._emotes_for_sets(parent, view, [this.feature_friday.set], "Feature Friday");
+	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title);
 
 	// Before we add the button, make sure the channel isn't the
 	// current channel.
@@ -2751,6 +2748,7 @@ FFZ.prototype._load_ff = function(data) {
 
 	// We have our data! Set it up.
 	this.feature_friday = {set: data.set, channel: data.channel, live: false,
+			title: data.title || "Feature Friday",
 			display_name: FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this))};
 
 	// Add the set.
@@ -3800,6 +3798,7 @@ var FFZ = window.FrankerFaceZ,
 		"\\:-?D": ":-D",
 		"\\:-?(o|O)": ":-O",
 		"\\&gt\\;\\(": ">(",
+		"Gr(a|e)yFace": "GrayFace"
 		},
 
 	get_emotes = function(ffz) {
@@ -3894,6 +3893,9 @@ FFZ.menu_pages.my_emotes = {
 										emotes.sort(function(a,b) {
 											var a = (KNOWN_CODES[a.code] ? "000" + KNOWN_CODES[a.code] : a.code).toLowerCase(),
 												b = (KNOWN_CODES[b.code] ? "000" + KNOWN_CODES[b.code] : b.code).toLowerCase();
+
+											if ( a == "000grayface" ) a = "grayface";
+											if ( b == "000grayface" ) b = "grayface";
 
 											if ( a < b ) return -1;
 											else if ( a > b ) return 1;

@@ -327,7 +327,6 @@ FFZ.prototype.setup_line = function() {
 				// Mark that we've checked this message for mentions.
 				this.set('context.model.ffz_notified', true);
 
-
 				// Banned Links
 				var bad_links = el.querySelectorAll('a.deleted-link');
 				for(var i=0; i < bad_links.length; i++) {
@@ -403,7 +402,7 @@ FFZ.prototype.setup_line = function() {
 							set_type = (set && set.title) ? "FrankerFaceZ" : "FFZ Channel";
 
 						if ( set && f.feature_friday && set.id == f.feature_friday.set )
-							set_name = "Feature Friday - " + f.feature_friday.channel;
+							set_name = f.feature_friday.title + " - " + f.feature_friday.display_name;
 
 						img.title = data_to_tooltip({
 							code: emote ? (emote.hidden ? "???" : emote.name) : name,
@@ -693,7 +692,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 	// emoticon.
 	_.each(emotes, function(emote) {
 		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass, emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
+		var eo = {isEmoticon:true, cls: emote.klass,srcSet: emote.url + ' 1x', emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
 
 		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
 			if ( _.isObject(token) )

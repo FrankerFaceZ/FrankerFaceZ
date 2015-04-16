@@ -57,7 +57,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 		received_room;
 	BetterTTV.chat.handlers.onPrivmsg = function(room, data) {
 		received_room = room;
-		f.log("Room: " + room);
 		var output = original_handler(room, data);
 		received_room = null;
 		return output;
@@ -69,7 +68,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
 		try {
 			// Handle badges.
-			f.log("Got Message", data);
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.

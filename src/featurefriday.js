@@ -47,7 +47,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	if ( ! this.feature_friday || this.feature_friday.channel == room_id )
 		return;
 
-	this._emotes_for_sets(parent, view, [this.feature_friday.set], "Feature Friday");
+	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title);
 
 	// Before we add the button, make sure the channel isn't the
 	// current channel.
@@ -106,6 +106,7 @@ FFZ.prototype._load_ff = function(data) {
 
 	// We have our data! Set it up.
 	this.feature_friday = {set: data.set, channel: data.channel, live: false,
+			title: data.title || "Feature Friday",
 			display_name: FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this))};
 
 	// Add the set.

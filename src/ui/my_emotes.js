@@ -19,6 +19,7 @@ var FFZ = window.FrankerFaceZ,
 		"\\:-?D": ":-D",
 		"\\:-?(o|O)": ":-O",
 		"\\&gt\\;\\(": ">(",
+		"Gr(a|e)yFace": "GrayFace"
 		},
 
 	get_emotes = function(ffz) {
@@ -113,6 +114,9 @@ FFZ.menu_pages.my_emotes = {
 										emotes.sort(function(a,b) {
 											var a = (KNOWN_CODES[a.code] ? "000" + KNOWN_CODES[a.code] : a.code).toLowerCase(),
 												b = (KNOWN_CODES[b.code] ? "000" + KNOWN_CODES[b.code] : b.code).toLowerCase();
+
+											if ( a == "000grayface" ) a = "grayface";
+											if ( b == "000grayface" ) b = "grayface";
 
 											if ( a < b ) return -1;
 											else if ( a > b ) return 1;
