@@ -187,14 +187,14 @@ FFZ.prototype.build_race_popup = function() {
 	out += '<div class="table" style="max-height:' + height + 'px"><table><thead><tr><th>#</th><th>Entrant</th><th>&nbsp;</th><th>Time</th></tr></thead>';
 	out += '<tbody></tbody></table></div>';
 	out += '<div class="divider"></div>';
-	
-	out += '<iframe class="twitter_share_button" style="width:110px; height:20px" src="https://platform.twitter.com/widgets/tweet_button.html?text=' + tweet + '%20Watch%20at&via=Twitch&url=http://www.twitch.tv/' + channel_id + '"></iframe>';
-	
+
+	out += '<iframe class="twitter_share_button" style="width:130px; height:25px" src="https://platform.twitter.com/widgets/tweet_button.html?text=' + tweet + '%20Watch%20at&via=Twitch&url=http://www.twitch.tv/' + channel_id + '"></iframe>';
+
 	out += '<p class="right"><a target="_new" href="http://www.speedrunslive.com/race/?id=' + race.id + '">SRL</a>';
-	
+
 	if ( has_entrant )
 		out += ' &nbsp; <a target="_new" href="' + link + '">Multitwitch</a>';
-	
+
 	out += '</p>';
 	popup.innerHTML = out;
 	container.appendChild(popup);
@@ -284,7 +284,7 @@ FFZ.prototype._update_race = function(not_timer) {
 
 			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
 		}
-		
+
 		if ( this._race_game != race.game || this._race_goal != race.goal ) {
 			this._race_game = race.game;
 			this._race_goal = race.goal;

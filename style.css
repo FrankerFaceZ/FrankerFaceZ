@@ -1,3 +1,9 @@
+.ffz-flip {
+	-ms-transform: rotate(180deg);
+	-webkit-transform: rotate(180deg);
+	transform: rotate(180deg);
+}
+
 .ffz-ui-toggle {
 	display: block;
 	position: absolute;
@@ -6,9 +12,13 @@
 	cursor: pointer;
 }
 
-.emoticon-selector-toggle + script + .ffz-ui-toggle svg { height: 14px; width: 18px; }
+.ffz-menu-replace .emoticon-selector-toggle {
+	display: none !important;
+}
 
-.emoticon-selector-toggle + script + .ffz-ui-toggle {
+body:not(.ffz-menu-replace) .emoticon-selector-toggle + script + .ffz-ui-toggle svg { height: 14px; width: 18px; }
+
+body:not(.ffz-menu-replace) .emoticon-selector-toggle + script + .ffz-ui-toggle {
 	height: 14px; width: 18px;
 	top: 28px;
 }
@@ -169,6 +179,32 @@
 }
 
 /* Theater Mode hover bar */
+
+.app-main.theatre #channel .player-column:focus #broadcast-meta,
+.app-main.theatre #channel .player-column:hover #broadcast-meta {
+	background-color: #19191f;
+	color: #aaa;
+
+	position: absolute;
+	top: -25px;
+	left: 120px;
+	right: 10px;
+	z-index: 7;
+	opacity: 0.95;
+	height: 20px;
+}
+
+.app-main.theatre #channel .player-column #broadcast-meta .info { padding-left: 5px; }
+.app-main.theatre #channel .player-column #broadcast-meta .info .title {
+	font-size: 12px;
+	line-height: 20px;
+}
+
+.app-main.theatre #channel .player-column #broadcast-meta .info .channel,
+.app-main.theatre #channel .player-column #broadcast-meta .info .edit-link,
+.app-main.theatre #broadcast-meta .profile-link {
+	display: none;
+}
 
 .app-main.theatre .player-column:focus .stats-and-actions, .app-main.theatre .player-column:hover .stats-and-actions {
 	background-color: #19191f;
@@ -342,23 +378,31 @@
 	}
 }
 
+.ffz-ui-menu-page { overflow-y: auto; }
 
-.ffz-ui-menu-page {
-	overflow-y: auto;
-	padding: 0 20px;
-	margin: -20px -20px 0;
-}
+.ffz-ui-menu-page[data-page="about"],
+.ffz-ui-menu-page .chat-menu-content p { padding: 0 20px; }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
-	margin-bottom: 5px;
-	border-bottom: 1px solid rgba(0,0,0,0.2);
+	padding: 10px 20px;
+	border-top: 1px solid rgba(0,0,0,0.2);
 	text-align: left;
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
-	padding-left: 23px;
+	padding-left: 43px;
 	background-repeat: no-repeat;
+	background-position: 20px 10px;
+}
+
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid + .emoticon-grid { padding-top: 0; }
+
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content:first-of-type .heading,
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid:first-of-type .heading {
+	border-top: none;
+	padding-top: 0;
+	background-position-y: 0;
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content {
@@ -375,17 +419,27 @@
 	opacity: 0.75;
 }
 
-.ffz-ui-menu-page span.help, .ffz-ui-menu-page p.option a {
+.ffz-ui-menu-page p.disabled span.switch-label,
+.ffz-ui-menu-page span.help,
+.ffz-ui-menu-page p.option a {
 	margin-left: 50px;
 }
 
 .ffz-ui-popup ul.menu {
 	list-style-type: none;
-	margin: 0 -20px;
 	border-top: 1px solid rgba(0,0,0,0.2);
 	background-color: #eee;
 }
 
+.ffz-ui-popup .emoticon-selector-box {
+	width: 10000px !important; /* Max-width has our back */
+	max-width: 300px;
+}
+
+.ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon-grid { background-color: transparent; }
+
+.app-main.theatre .ffz-ui-popup ul.menu,
+.chat-container.dark .ffz-ui-popup ul.menu,
 .ffz-ui-popup.dark ul.menu {
 	background-color: #282828;
 }
@@ -448,6 +502,40 @@
 	vertical-align: top;
 }
 
+/* BTTV Menu Fixes */
+
+.ffz-ui-popup.dark .emoticon-grid .heading,
+.ffz-ui-popup.dark li.title { color: #fff; }
+.ffz-ui-popup.dark .ffz-ui-menu-page { background-color: #1e1e1e; }
+
+
+/* Menu Scrollbar */
+
+#ffz-race-popup .table::-webkit-scrollbar,
+.emoticon-selector-box .all-emotes::-webkit-scrollbar,
+.ffz-ui-menu-page::-webkit-scrollbar {
+	width: 6px;
+}
+
+#ffz-race-popup .table::-webkit-scrollbar-thumb,
+.emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
+.ffz-ui-menu-page::-webkit-scrollbar-thumb {
+	border-radius: 7px;
+	background: rgba(0,0,0,0.7);
+	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
+}
+
+.ffz-dark .table::-webkit-scrollbar-thumb,
+.ember-chat-container.dark .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
+.chat-container.dark .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
+.app-main.theatre .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
+.ember-chat-container.dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
+.chat-container.dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
+.app-main.theatre .ffz-ui-menu-page::-webkit-scrollbar-thumb {
+	background: rgba(255,255,255,0.6);
+	box-shadow: 0 0 1px 1px rgba(0,0,0,0.25);
+}
+
 
 /* Chat Mentions */
 .ember-chat .mentioned:empty,
@@ -478,7 +566,8 @@
 /* Fix Moderation Cards */
 
 .ember-chat .ffz-moderation-card {
-	box-shadow: #808080 0 0 5px;
+	border: 2px solid #cbcbcb;
+	/*box-shadow: #808080 0 0 5px;*/
 }
 
 .ember-chat .ffz-moderation-card button {
@@ -503,19 +592,8 @@
 
 .ember-chat .ffz-moderation-card:focus {
 	outline: none;
-	box-shadow: #000 0 0 5px;
-}
-
-.ember-chat-container.dark .ember-chat .ffz-moderation-card:focus,
-.chat-container.dark .ember-chat .ffz-moderation-card:focus,
-.app-main.theatre .ember-chat .ffz-moderation-card:focus {
-	box-shadow: #fff 0 0 5px;
-}
-
-.ember-chat-container.dark .ember-chat .ffz-moderation-card .interface,
-.chat-container.dark .ember-chat .ffz-moderation-card .interface,
-.app-main.theatre .ember-chat .ffz-moderation-card .interface {
-	background-color: #232329;
+	border-color: #444;
+	/*box-shadow: #000 0 0 5px;*/
 }
 
 .ember-chat .ffz-moderation-card .interface:not(:last-of-type) {
@@ -659,4 +737,20 @@
 
 .button.ffz-donate:not(.disabled):hover {
 	background: #08c43d;
+}
+
+/* Dumb Fixes */
+
+.dropmenu, .ui-menu, .ui-multiselect-menu {
+	margin-bottom: 0;
+}
+
+/* Unsafe Links */
+
+a.unsafe-link {
+	color: #a64141 !important;
+}
+
+.chat-container.dark .chat-line a.unsafe-link {
+	color: #d28e8e !important;
 }

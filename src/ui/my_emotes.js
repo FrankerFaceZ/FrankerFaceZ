@@ -5,6 +5,12 @@ var FFZ = window.FrankerFaceZ,
 	BANNED_SETS = {"00000turbo":true},
 
 	KNOWN_CODES = {
+		"#-?[\\\\/]": "#-/",
+		":-?(?:7|L)": ":-7",
+		"\\&lt\\;\\]": "<]",
+		"\\:-?(S|s)": ":-S",
+		"\\:-?\\\\": ":-\\",
+		"\\:\\&gt\\;": ":>",
 		"B-?\\)": "B-)",
 		"\\:-?[z|Z|\\|]": ":-Z",
 		"\\:-?\\)": ":-)",
@@ -12,7 +18,7 @@ var FFZ = window.FrankerFaceZ,
 		"\\:-?(p|P)": ":-P",
 		"\\;-?(p|P)": ";-P",
 		"\\&lt\\;3": "<3",
-		"\\:-?(?:\\/|\\\\)(?!\\/)": ":-/",
+		"\\:-?[\\\\/]": ":-/",
 		"\\;-?\\)": ";-)",
 		"R-?\\)": "R-)",
 		"[o|O](_|\\.)[o|O]": "O.o",
@@ -33,7 +39,7 @@ var FFZ = window.FrankerFaceZ,
 			user_sets = user && ffz.users[user.login] && ffz.users[user.login].sets || [];
 
 		// Remove the 'default' set.
-		set_ids = set_ids.split(",").removeObject("0")
+		set_ids = set_ids.split(",").removeObject("0");
 
 		if ( ffz.settings.global_emotes_in_menu ) {
 			set_ids.push("0");
@@ -68,6 +74,8 @@ FFZ.prototype.setup_my_emotes = function() {
 	}
 
 	this._twitch_set_to_channel[0] = "twitch_global";
+	this._twitch_set_to_channel[33] = "twitch_tfaces";
+	this._twitch_set_to_channel[42] = "twitch_tfaces";
 }
 
 
@@ -151,7 +159,7 @@ FFZ.menu_pages.my_emotes = {
 									return;
 								}
 
-								if ( name == "turbo" ) {
+								if ( name == "turbo" || name == "twitch_tfaces" ) {
 									set.channel = "Twitch Turbo";
 									set.badge = "//cdn.frankerfacez.com/script/turbo_badge.png";
 									return;
@@ -191,7 +199,7 @@ FFZ.menu_pages.my_emotes = {
 										if ( ! set.channel )
 											set.channel = name;
 										dn();
-									}.bind(this,set,name,dn), 2000);
+									}.bind(this,set,name,dn), 500);
 								}.bind(this, set, lname, name)));
 							},
 							handle_promises = function() {
@@ -286,11 +294,16 @@ FFZ.menu_pages.my_emotes = {
 					var an = a[1].toLowerCase(),
 						bn = b[1].toLowerCase();
 
-					if ( an === "twitch turbo" || an === "global emoticons" )
-						an = "zzz" + an;
+					if ( an === "twitch turbo" || an === "twitch_tfaces" )
+						an = "zza|" + an;
+						
+					else if ( an === "global emoticons" )
+						an = "zzz|" + an;
 
-					if ( bn === "twitch turbo" || bn === "global emoticons" )
-						bn = "zzz" + bn;
+					if ( bn === "twitch turbo" || bn === "twitch_tfaces" )
+						bn = "zza|" + bn;
+					else if ( bn === "global emoticons" )
+						bn = "zzz|" + bn;
 
 					if ( an < bn ) return -1;
 					else if ( an > bn ) return 1;
@@ -325,7 +338,7 @@ FFZ.menu_pages.my_emotes = {
 
 					} else {
 						ems = set.emotes;
-						title = FFZ.get_capitalization(set.channel);
+						title = set.channel == "Twitch Turbo" ? set.channel : FFZ.get_capitalization(set.channel);
 						badge = set.badge;
 					}
 

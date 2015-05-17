@@ -1,107 +1,131 @@
 /* host mode */
 .ffz-dark #hostmode,.hostmode{
-    background-color:rgb(16,16,16)!important;
+	background-color:rgb(16,16,16)!important;
 }
 
 .ffz-dark div#channel > .target-frame.active{
-    background-color:rgb(16,16,16)!important;
+	background-color:rgb(16,16,16)!important;
 }
 
 .ffz-dark .hostmode-title-container{
-    background-color:rgb(16,16,16)!important;
-    box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.4) inset;
+	background-color:rgb(16,16,16)!important;
+	box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.4) inset;
 }
 
 .ffz-dark div.hostmode-title.clearfix{
-    background-color:rgb(24,24,24)!important;
-    box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.4) inset;
+	background-color:rgb(24,24,24)!important;
+	box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.4) inset;
 }
 
 .ffz-dark .close-hostmode{
-    background-color:rgb(16,16,16)!important;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+	background-color:rgb(16,16,16)!important;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 
 
 /* hidden chat */
 .ffz-dark .ember-chat .chat-hidden-overlay{
-    background-color:rgb(24,24,24)!important;
+	background-color:rgb(24,24,24)!important;
 }
 
 
 
 /* edit icon */
 .ffz-dark #channel .player-column #broadcast-meta .info .edit-link svg path{
-    fill:rgba(255,255,255,0.5)!important;
+	fill:rgba(255,255,255,0.5)!important;
 }
 
 /* vod icons */
+.ffz-dark #stats .stat svg:not(.svg-glyph_live) path,
 .ffz-dark #main_col .content #stats_and_actions #channel_stats .stat svg path{
-    fill:rgba(255,255,255,0.5)!important;
+	fill:rgba(255,255,255,0.5)!important;
 }
 
 
 /* hover icon for chats menu */
 .ffz-dark .ember-chat .chat-menu-button-container:hover svg path{
-    fill:#fff!important;
+	fill:#fff!important;
 } 
 
 
 /* dropdown arrows */
 .ffz-dark .button.drop:after{
-border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
+	border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 }
 
 /* hovering buttons */
 .ffz-dark .button:not(.primary):not(.ffz-donate):hover{
-    color:rgb(222,222,222)!important;
+	color:rgb(222,222,222)!important;
 }
 
 .ffz-dark .moderation-card .button:not(.glyph-only):hover {
 	color: #fff !important;
 }
 
+/* moderation card */
+
+.ember-chat-container.dark .ember-chat .ffz-moderation-card,
+.chat-container.dark .ember-chat .ffz-moderation-card,
+.app-main.theatre .ember-chat .ffz-moderation-card {
+	border-color: #1b1b20;
+}
+
+.ember-chat-container.dark .ember-chat .moderation-card:focus,
+.chat-container.dark .ember-chat .moderation-card:focus,
+.app-main.theatre .ember-chat .moderation-card:focus {
+	border-color: #cbcbcb;
+}
+
+.ember-chat-container.dark .ember-chat .moderation-card .interface,
+.chat-container.dark .ember-chat .moderation-card .interface,
+.app-main.theatre .ember-chat .moderation-card .interface {
+	background-color: #232329;
+}
+
+.moderation-card h3.name a { color: #fff !important; }
+
+
 /* stats */
 .ffz-dark #channel .player-column .stats-and-actions .channel-stats .stat svg:not(.svg-glyph_live) path{
-    fill:rgba(255,255,255,0.35)!important;
+	fill:rgba(255,255,255,0.35)!important;
 }
 
 /* Scrollbar */
 .ffz-dark .tse-scrollbar .drag-handle {
-    background: none repeat scroll 0% 0% rgba(255, 255, 255, 0.6)!important;
+	background: none repeat scroll 0% 0% rgba(255, 255, 255, 0.6)!important;
 }
 
 
 
 /* main column */
-.ffz-dark div#main_col.column{
-    background:rgb(16,16,16)!important;
-    color:rgb(195,195,195)!important;
-    border-right:1px solid rgb(0,0,0)!important;
+.ffz-dark div#main_col {
+	background:rgb(16,16,16)!important;
+	color:rgb(195,195,195)!important;
+	border-right:1px solid rgb(0,0,0)!important;
 }
 
 
 /* stream title */
 .ffz-dark span.real_title{
-    color:rgb(245,245,245)!important;
+	color:rgb(245,245,245)!important;
 }
 
 /* name playing x on x */
 .ffz-dark span.playing,span#team_membership,.ffz-dark #channel .player-column #broadcast-meta .info .channel {
-    color:rgb(195,195,195)!important;
+	color:rgb(195,195,195)!important;
 }
 
 .ffz-dark div.title > span.real,
 .ffz-dark div.title > span.over{
-    color:rgb(222,222,222)!important;
-    background-color:rgb(16,16,16)!important;
+	color:rgb(222,222,222)!important;
+	background-color:rgb(16,16,16)!important;
 }
 
 .ffz-dark div.title > span.over:hover,
 .ffz-dark div.title > span.real:hover {
-    background-color:rgb(16,16,16)!important;
-    color:rgb(255,255,255)!important;
+	background-color:rgb(16,16,16)!important;
+	color:rgb(255,255,255)!important;
 }
 
 /* Right Column */
@@ -114,8 +138,10 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 
 /* Popups */
 
+.ffz-dark .ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
 .ffz-dark .card,
 .ffz-dark #flyout .content,
+.ffz-dark .ui-menu,
 .ffz-dark .dropmenu,
 .ffz-dark .top-dropdown,
 .ffz-dark form.js-new_panel_form,
@@ -125,6 +151,10 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 	background-color: rgb(16,16,16);
 	color: rgb(195,195,195); /*#acacbf;*/
 	border-color: #32323e;
+}
+
+.ffz-dark .js-new_panel_btn:hover {
+	background-color: rgb(24,24,24);
 }
 
 .ffz-dark #flyout .point::before {
@@ -153,52 +183,77 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 
 /* Other stuff */
 
+.ffz-dark #channel .player-column #broadcast-meta .info .edit-link span {
+	color: inherit;
+}
+
+.ffz-dark .no-login-contain li {
+	background-color: rgb(25,25,31);
+}
+
+.ffz-dark .no-login-contain h3 {
+	color: #ccc;
+}
+
 .ffz-dark .panel-formatting .panel {
-    color: #8c8c9c;
+	color: #8c8c9c;
 }
 
 .ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
 .ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
 .ffz-dark .dropmenu_action:not(:hover) span,
-.ffz-dark a:not(.switch):not(.follow) {
+.ffz-dark a:not(.button):not(.switch):not(.follow):not(.fb_button) {
 	color: #a68ed2;
 }
 
+.ffz-dark a.dropmenu_action:hover {
+	color: #fff !important;
+}
+
 .ffz-dark .panel-formatting .panel h3 {
-    color: inherit;
+	color: inherit;
 }
 
 .ffz-dark .follow-button .notify:before,
 .ffz-dark .button.drop:after,
 .ffz-dark .follow-button .drop.follow:after {
-    border: 5px solid rgba(255,255,255,0.35);
-    border-left-color: transparent;
-    border-right-color: transparent;
-    border-bottom-color: transparent;
+	border: 5px solid rgba(255,255,255,0.35);
+	border-left-color: transparent;
+	border-right-color: transparent;
+	border-bottom-color: transparent;
 }
 
 .ffz-dark .follow-button .notify {
-    background-color: #25252a;
+	background-color: #25252a;
 }
 
 .ffz-dark .button:not(.primary) {
-    color: #a68ed2;
+	color: #a68ed2;
 }
 
 .ffz-dark .button.glyph-only svg path {
-    fill: #a68ed2;
+	fill: #a68ed2;
 }
 
 .ffz-dark .button.glyph-only:hover svg path {
-    fill: #fff;
+	fill: #fff;
 }
 
 .ffz-dark .button.primary.subscribe-button {
-    color: #fff;
+	color: #fff;
 }
 
 .ffz-dark .ember-chat .moderation-card img.channel_logo {
 	border-color: rgb(16,16,16);
+}
+
+/* Upsell banner */
+.ffz-dark .upsell-banner {
+	background-color: rgb(25,25,31);
+}
+
+.ffz-dark .upsell-banner .message .title {
+	color: #ccc;
 }
 
 /* Video Manager */
@@ -257,6 +312,16 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 
 /* Profile page fixes */
 
+.ffz-dark pre {
+	background-color: rgb(8,8,8);
+	box-shadow: inset 0 0 0 1px #333;
+	border-left-color: #6441a5;
+}
+
+.ffz-dark code {
+	color: #999;
+}
+
 .ffz-dark .streams .stream .content .thumb .boxart,
 .ffz-dark .videos .video .content .thumb .boxart {
 	border-color: rgb(16,16,16);
@@ -269,11 +334,11 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 
 .ffz-dark .items-grid .meta .title,
 .ffz-dark .items-grid .meta p a {
-    color: #9c9c9c;
+	color: #9c9c9c !important;
 }
 
 .ffz-dark .items-grid .meta .info {
-    color: #6c6c6c;
+	color: #6c6c6c;
 }
 
 .ffz-dark ul.tabs li > a,
@@ -316,6 +381,15 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 	box-shadow: inset 0 0 0 1px #32323e;
 }
 
+
+/* Autocomplete Suggestions */
+
+.ffz-dark .ember-chat .chat-interface .suggestions {
+	background-color: rgb(16,16,16);
+	border-color: rgba(255,255,255,0.2);
+}
+
+
 /* FrankerFaceZ Menu */
 
 .ffz-dark .ember-chat .chat-menu .list-header {
@@ -350,4 +424,284 @@ border-color: rgba(255, 255, 255, 0.35) transparent transparent!important;;
 
 .ffz-dark #new-user-prompt .message .title {
 	color: #fff;
+}
+
+/* Messages Table */
+
+.ffz-dark .messages #send_message_form #bottom_buttons,
+.messages #reply_message_form #bottom_buttons {
+	border-color: rgba(255,255,255,0.2);
+	box-shadow: none;
+}
+
+.ffz-dark .messages #send_message_form .button_group,
+.ffz-dark .messages #reply_message_form .button_group,
+.ffz-dark .messages #send_message_form,
+.ffz-dark .messages #reply_message_form {
+	background: transparent;
+}
+
+.ffz-dark .messages #send_message_form,
+.ffz-dark .messages #reply_message_form
+{ padding: 10px 0 0 0; }
+
+.ffz-dark .messages #message_actions {
+	background-color: rgb(48,48,48);
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .messages #send_message_form,
+.ffz-dark .messages .divider {
+	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .messages .message_action.delete {
+	display: block;
+	width: 16px;
+	height: 16px;
+	background: url(trash_button.png) no-repeat;
+}
+
+.ffz-dark .messages .message_action.delete img { display: none; }
+
+.ffz-dark .messages .message_action.block {
+	background-image: url(block_button.png);
+	color: #c1c1c1 !important;
+}
+
+.ffz-dark .messages div.message {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .messages div.message:last-of-type { border-bottom-color: transparent; }
+
+.ffz-dark .messages div.preview {
+	background-color: rgb(16,16,16);
+	border-bottom-color: rgba(255,255,255,0.2);
+	border-left-color: transparent;
+}
+
+.ffz-dark .messages div.preview.unread {
+	background-color: rgb(32,32,32);
+	border-left-color: #6441a5;
+}
+
+.ffz-dark .messages div.preview:hover {
+	background-color: rgb(8,8,8);
+}
+
+.ffz-dark .messages #messages_column {
+	background-color: transparent;
+}
+
+.ffz-dark .page_links em {
+	background-color: #EEE;
+	color: #000;
+}
+
+.ffz-dark .page_links a.disabled.previous_page b,
+.ffz-dark .page_links span.disabled.previous_page b { border-right-color: transparent; }
+
+.ffz-dark .page_links a.disabled.next_page b,
+.ffz-dark .page_links span.disabled.next_page b { border-left-color: transparent; }
+
+/* Tshirts are weird */
+
+.ffz-dark .teespring-panel-progress {
+	background-color: #393939;
+}
+
+.ffz-dark .teespring-panel-image a {
+	cursor: pointer;
+}
+
+.ffz-dark .teespring-panel-image img {
+	filter: drop-shadow(0px 0px 10px white);
+	-moz-filter: drop-shadow(0px 0px 10px white);
+	-webkit-filter: drop-shadow(0px 0px 10px white);
+}
+
+.ffz-dark .teespring-panel {
+	cursor: inherit;
+	background-color: rgb(8,8,8);
+	border-color: rgba(255,255,255,0.2);
+}
+
+/* Settings */
+
+.ffz-dark .app_title { color: #ccc; }
+
+.ffz-dark .connect_items .connect-item-info .details-toggle,
+.ffz-dark .connect_items .connect-item-info,
+.ffz-dark ul.manage_simple span.obj {
+	background-color: rgb(8,8,8);
+}
+
+.ffz-dark .connect_items .connect-item-info .details-toggle {
+	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .connect_items .connect-item-info .details-toggle:hover {
+	border-color: rgba(255,255,255,0.4);
+}
+
+.ffz-dark .connect_items .connect-item-info .status,
+.ffz-dark #settings #followers_content .hdr,
+.ffz-dark table.simple_table th {
+	background-color: rgb(32,32,32);
+	border-color: transparent;
+}
+
+.ffz-dark .multi_select li form:hover,
+.ffz-dark .multi_select li .ms-int:hover,
+.ffz-dark .multi_select li label:hover {
+	background-color: rgb(8,8,8);
+}
+
+.ffz-dark #turbo_chat_color,
+.ffz-dark #turbo_emote_set {
+	background-color: rgba(255,255,255,0.05);
+}
+
+.ffz-dark .ui-slider-horizontal {
+	background-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .cl-container .section-header,
+.ffz-dark .cl-container .cl-section .cl-subheader {
+	background-color: rgb(32,32,32);
+}
+
+.ffz-dark .cl-container .cl-section {
+	background-color: rgb(16,16,16);
+}
+
+.ffz-dark table.simple_table td,
+.ffz-dark table.simple_table th,
+.ffz-dark .cl-container .section-header,
+.ffz-dark .cl-container fieldset {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .cl-container fieldset .label-wrapper label {
+	color: #ccc;
+}
+
+.ffz-dark #emoticons #emote_switch .set-button,
+.ffz-dark #example .line {
+	background-color: #19191f;
+	color: #acacbf;
+}
+
+/* Dashboard */
+
+.ffz-dark .js-show-stream-key,
+.ffz-dark .js-reset-stream-key {
+	display: block;
+	margin: 15px auto;
+	padding: 0;
+	text-align: center;
+	width: 100px;
+	color: #fff !important;
+}
+
+.ffz-dark .js-show-stream-key { background-color: #804400; }
+.ffz-dark .js-reset-stream-key { r-color: rgb(128,0,0); }
+
+.ffz-dark .js-show-stream-key:hover,
+.ffz-dark .js-show-stream-key:focus,
+.ffz-dark .js-reset-stream-key:hover,
+.ffz-dark .js-reset-stream-key:focus {
+	padding: 5px;
+	margin: 10px auto;
+}
+
+.ffz-dark .js-show-stream-key:hover,
+.ffz-dark .js-show-stream-key:focus { background-color: rgb(192,102,0); }
+
+.ffz-dark .js-reset-stream-key:hover,
+.ffz-dark .js-reset-stream-key:focus { background-color: rgb(192,0,0); }
+
+.ffz-dark .statchart_aggregator .statchart_first_column {
+	background-color: rgb(32,32,32);
+	color: #ccc;
+	text-shadow: none;
+}
+
+.ffz-dark .statchart_aggregator {
+	margin-top: 10px;
+}
+
+.ffz-dark .statchart_aggregator td {
+	border-color: #3f3f42;
+}
+
+.ffz-dark .statchart_aggregator .statchart_first_column[style="color: #6441A5"] {
+	color: #a68ed2 !important;
+}
+
+.ffz-dark .whatisthis {
+	background-color: #333;
+	box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+}
+
+.ffz-dark #chart_container svg rect[fill="#FFFFFF"] {
+	fill: rgb(32,32,32) !important;
+}
+
+.ffz-dark #chart_container svg rect[fill="rgb(255,255,255)"] {
+	fill: rgb(8,8,8) !important;
+}
+
+.ffz-dark #chart_container svg text[x="5"] {
+	color: #fff !important;
+	fill: #fff !important;
+}
+
+.ffz-dark #chart_container svg text.highcharts-title {
+	fill: #a68ed2 !important;
+}
+
+.ffz-dark #chart_container svg text {
+	fill: #fff;
+}
+
+.ffz-dark ul.subtabs li.selected {
+	background-color: #333;
+	border-radius: 4px;
+}
+
+.ffz-dark .dropmenu .menu-divider {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark #header_logo svg path {
+	fill: #fff;
+}
+
+.ffz-dark #dash_main .action .content .data,
+.ffz-dark #site_header {
+	background-color: rgb(32,32,32);
+}
+
+.ffz-dark .header_divider {
+	border-right-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .dash-hostmode-list-contain {
+	border-top-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark #dash_main #controls_column .section_header {
+	color: #ccc;
+}
+
+.ffz-dark .main,
+.ffz-dark .fullwidth_main {
+	color: #ccc;
+	background-color: transparent;
+}
+
+.ffz-dark .dash-chat-column {
+	border-color: rgba(255,255,255,0.2);
 }

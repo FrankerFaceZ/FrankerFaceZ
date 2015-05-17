@@ -28,6 +28,16 @@ FFZ.prototype.setup_room = function() {
 
 	this.log("Hooking the Ember Room model.");
 
+	// Responsive ban button.
+	var RC = App.__container__.lookup('controller:room');
+	if ( RC ) {
+		var orig_action = RC._actions.banUser;
+		RC._actions.banUser = function(e) {
+			orig_action.bind(this)(e);
+			this.get("model").clearMessages(e.user);
+		}
+	}
+
 	var Room = App.__container__.resolve('model:room');
 	this._modify_room(Room);
 
@@ -287,8 +297,7 @@ FFZ.prototype._modify_room = function(room) {
 			var suggestions = this._super();
 
 			try {
-				if ( f.settings.capitalize )
-					suggestions = _.map(suggestions, FFZ.get_capitalization);
+				suggestions = _.map(suggestions, FFZ.get_capitalization);
 			} catch(err) {
 				f.error("get_suggestions: " + err);
 			}

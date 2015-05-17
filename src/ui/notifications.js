@@ -20,7 +20,8 @@ FFZ.settings_info.highlight_notifications = {
 	value: false,
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
 	help: "Display notifications when a highlighted word appears in chat in an unfocused tab.",

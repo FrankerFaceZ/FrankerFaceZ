@@ -1,5 +1,8 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('../constants');
+	constants = require('../constants'),
+	utils = require('../utils'),
+
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/";
 
 
 // --------------------
@@ -23,6 +26,8 @@ FFZ.prototype.setup_menu = function() {
 			delete f._popup_kill;
 		}
 	});
+
+	document.body.classList.toggle("ffz-menu-replace", this.settings.replace_twitch_menu);
 }
 
 
@@ -108,26 +113,30 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 		jQuery(link).tipsy();
 
-		link.addEventListener("click", this._ui_change_page.bind(this, view, menu, sub_container, key));
+		link.addEventListener("click", this._ui_change_page.bind(this, view, inner, menu, sub_container, key));
 
 		el.appendChild(link);
 		menu.appendChild(el);
 	}
 
 	// Render Current Page
-	this._ui_change_page(view, menu, sub_container, this._last_page || "channel");
+	this._ui_change_page(view, inner, menu, sub_container, this._last_page || "channel");
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(100, view.$().height() - 162) + "px";
+	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
 	view.$('.chat-interface').append(container);
 }
 
 
-FFZ.prototype._ui_change_page = function(view, menu, container, page) {
+FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 	this._last_page = page;
 	container.innerHTML = "";
 	container.setAttribute('data-page', page);
+
+	// Allow settings to be wide. We need to know if chat is stand-alone.
+	var app = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+	inner.style.maxWidth = (!FFZ.menu_pages[page].wide || (typeof FFZ.menu_pages[page].wide == "function" && !FFZ.menu_pages[page].wide.bind(this)())) ? "" : (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600) + "px";
 
 	var els = menu.querySelectorAll('li.active');
 	for(var i=0; i < els.length; i++)
@@ -144,55 +153,6 @@ FFZ.prototype._ui_change_page = function(view, menu, container, page) {
 
 
 // --------------------
-// Favorites Page
-// --------------------
-
-FFZ.prototype._tokenize_message = function(message, room_id) {
-	var lc = App.__container__.lookup('controller:line'),
-		rc = App.__container__.lookup('controller:room'),
-		room = this.rooms[room_id],
-		user = this.get_user();
-
-	if ( ! lc || ! rc || ! room )
-		return [message];
-
-	rc.set('model', room.room);
-	lc.set('parentController', rc);
-
-	var model = {
-		from: user && user.login || "FrankerFaceZ",
-		message: message,
-		tags: {
-			emotes: room.room.tmiSession._emotesParser.parseEmotesTag(message)
-			}
-		};
-
-	lc.set('model', model);
-
-	var tokens = lc.get('tokenizedMessage');
-
-	lc.set('model', null);
-	rc.set('model', null);
-	lc.set('parentController', null);
-
-	return tokens;
-}
-
-
-/*FFZ.menu_pages.favorites = {
-	render: function(view, container) {
-			// Get the current room.
-			var room_id = view.get('controller.currentRoom.id');
-
-			
-		},
-
-	name: "Favorites",
-	icon: constants.HEART
-	};*/
-
-
-// --------------------
 // Channel Page
 // --------------------
 
@@ -200,10 +160,107 @@ FFZ.menu_pages.channel = {
 	render: function(view, inner) {
 			// Get the current room.
 			var room_id = view.get('controller.currentRoom.id'),
-				room = this.rooms[room_id];
+				room = this.rooms[room_id],
+				has_product = false;
+
+			// Check for a product.
+			if ( this.settings.replace_twitch_menu ) {
+				var product = room.room.get("product");
+				if ( product && !product.get("error") ) {
+					// We have a product, and no error~!
+					has_product = true;
+					var is_subscribed = room.room.get("channel.isSubscribed.content"),
+						icon = room.room.get("badgeSet.subscriber.image"),
+
+						grid = document.createElement("div"),
+						header = document.createElement("div"),
+						c = 0;
+
+					// Weird is_subscribed check. Might be more accurate?
+					is_subscribed = is_subscribed && is_subscribed.length > 0;
+
+					grid.className = "emoticon-grid";
+					header.className = "heading";
+					if ( icon )
+						header.style.backgroundImage = 'url("' + icon + '")';
+
+					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
+					grid.appendChild(header);
+
+					for(var emotes=product.get("emoticons"), i=0; i < emotes.length; i++) {
+						var emote = emotes[i];
+						if ( emote.state !== "active" )
+							continue;
+
+						var s = document.createElement('span'),
+							can_use = is_subscribed || !emote.subscriber_only,
+							img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+
+						s.className = 'emoticon tooltip' + (!can_use ? " locked" : "");
+
+						s.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+						s.style.backgroundImage = '-webkit-' + img_set;
+						s.style.backgroundImage = '-moz-' + img_set;
+						s.style.backgroundImage = '-ms-' + img_set;
+						s.style.backgroundImage = img_set;
+
+						s.style.width = emote.width + "px";
+						s.style.height = emote.height + "px";
+						s.title = emote.regex;
+						if ( can_use )
+							s.addEventListener('click', this._add_emote.bind(this, view, emote.regex));
+						grid.appendChild(s);
+						c++;
+					}
+
+					if ( c > 0 )
+						inner.appendChild(grid);
+
+					if ( ! is_subscribed ) {
+						var sub_message = document.createElement("div"),
+							nonsub_message = document.createElement("div"),
+							unlock_text = document.createElement("span"),
+							sub_link = document.createElement("a");
+
+						sub_message.className = "subscribe-message";
+						nonsub_message.className = "non-subscriber-message";
+						sub_message.appendChild(nonsub_message);
+
+						unlock_text.className = "unlock-text";
+						unlock_text.innerHTML = "Subscribe to unlock Emoticons";
+						nonsub_message.appendChild(unlock_text);
+
+						sub_link.className = "action subscribe-button button primary";
+						sub_link.href = product.get("product_url");
+						sub_link.innerHTML = '<span class="subscribe-text">Subscribe</span><span class="subscribe-price">' + product.get("price") + '</span>';
+						nonsub_message.appendChild(sub_link);
+
+						inner.appendChild(sub_message);
+					} else {
+						var last_content = room.room.get("channel.isSubscribed.content");
+						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
+						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
+							var ends_at = utils.parse_date(last_content.access_end || "");
+								sub_message = document.createElement("div"),
+								nonsub_message = document.createElement("div"),
+								unlock_text = document.createElement("span"),
+								end_time = ends_at ? Math.floor((ends_at.getTime() - Date.now()) / 1000) : null;
+
+							sub_message.className = "subscribe-message";
+							nonsub_message.className = "non-subscriber-message";
+							sub_message.appendChild(nonsub_message);
+
+							unlock_text.className = "unlock-text";
+							unlock_text.innerHTML = "Subscription expires in " + utils.time_to_string(end_time, true, true);
+							nonsub_message.appendChild(unlock_text);
+							inner.appendChild(sub_message);
+						}
+					}
+				}
+			}
 
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+			this._emotes_for_sets(inner, view, room && room.menu_sets || [], (this.feature_friday || has_product) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/channel/global/devicon.png", "FrankerFaceZ");
 
 			// Feature Friday!
 			this._feature_friday_ui(room_id, inner, view);
@@ -218,20 +275,28 @@ FFZ.menu_pages.channel = {
 // Emotes for Sets
 // --------------------
 
-FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
-	if ( header != null ) {
-		var el_header = document.createElement('div');
-		el_header.className = 'list-header';
-		el_header.appendChild(document.createTextNode(header));
-
-		if ( btn )
-			el_header.appendChild(btn);
-
-		parent.appendChild(el_header);
-	}
-
+FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text) {
 	var grid = document.createElement('div'), c = 0;
 	grid.className = 'emoticon-grid';
+
+	if ( header != null ) {
+		var el_header = document.createElement('div');
+		el_header.className = 'heading';
+
+		if ( sub_text ) {
+			var s = document.createElement("span");
+			s.className = "right";
+			s.appendChild(document.createTextNode(sub_text));
+			el_header.appendChild(s);
+		}
+
+		el_header.appendChild(document.createTextNode(header));
+
+		if ( image )
+			el_header.style.backgroundImage = 'url("' + image + '")';
+
+		grid.appendChild(el_header);
+	}
 
 	for(var i=0; i < sets.length; i++) {
 		var set = this.emote_sets[sets[i]];
@@ -259,8 +324,8 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 	}
 
 	if ( !c ) {
-		grid.innerHTML = "This channel has no emoticons.";
-		grid.className = "chat-menu-content ffz-no-emotes center";
+		grid.innerHTML += "This channel has no emoticons.";
+		grid.className = "emoticon-grid ffz-no-emotes center";
 	}
 
 	parent.appendChild(grid);

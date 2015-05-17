@@ -324,7 +324,7 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":27}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":28}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -410,6 +410,7 @@ module.exports = {
 	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
 	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>',
 
+	CLOCK: '<svg class="svg-glyph_views svg-clock" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M8,15c-3.866,0-7-3.134-7-7s3.134-7,7-7s7,3.134,7,7 S11.866,15,8,15z M8,3C5.238,3,3,5.238,3,8s2.238,5,5,5s5-2.238,5-5S10.762,3,8,3z M7.293,8.707L7,8l1-4l0.902,3.607L11,11 L7.293,8.707z"/></svg>',
 	GEAR: '<svg class="svg-gear" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M15,7v2h-2.115c-0.125,0.615-0.354,1.215-0.713,1.758l1.484,1.484l-1.414,1.414l-1.484-1.484C10.215,12.531,9.615,12.76,9,12.885V15H7v-2.12c-0.614-0.126-1.21-0.356-1.751-0.714l-1.491,1.49l-1.414-1.414l1.491-1.49C3.477,10.211,3.247,9.613,3.12,9H1V7h2.116C3.24,6.384,3.469,5.785,3.829,5.242L2.343,3.757l1.414-1.414l1.485,1.485C5.785,3.469,6.384,3.24,7,3.115V1h2v2.12c0.613,0.126,1.211,0.356,1.752,0.714l1.49-1.491l1.414,1.414l-1.49,1.492C12.523,5.79,12.754,6.387,12.88,7H15z M8,6C6.896,6,6,6.896,6,8s0.896,2,2,2s2-0.896,2-2S9.104,6,8,6z" fill-rule="evenodd"></path></svg>',
 	HEART: '<svg class="svg-heart" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>',
 	EMOTE: '<svg class="svg-emote" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M9,18c-4.971,0-9-4.029-9-9s4.029-9,9-9s9,4.029,9,9S13.971,18,9,18z M14,4.111V4h-0.111C12.627,2.766,10.904,2,9,2C7.095,2,5.373,2.766,4.111,4H4v0.111C2.766,5.373,2,7.096,2,9s0.766,3.627,2,4.889V14l0.05-0.051C5.317,15.217,7.067,16,9,16c1.934,0,3.684-0.783,4.949-2.051L14,14v-0.111c1.234-1.262,2-2.984,2-4.889S15.234,5.373,14,4.111zM11,6h2v4h-2V6z M12.535,12.535C11.631,13.44,10.381,14,9,14s-2.631-0.56-3.536-1.465l0.707-0.707C6.896,12.553,7.896,13,9,13s2.104-0.447,2.828-1.172L12.535,12.535z M5,6h2v4H5V6z" fill-rule="evenodd"></path></svg>'
@@ -455,6 +456,178 @@ FFZ.ffz_commands.developer_mode = function(room, args) {
 FFZ.ffz_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
 
 },{}],5:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	utils = require('../utils'),
+	constants = require('../constants');
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_channel = function() {
+	this.channels = {};
+
+	this.log("Creating channel style element.");
+	var s = this._channel_style = document.createElement('style');
+	s.id = "ffz-channel-css";
+	document.head.appendChild(s);
+
+	this.log("Hooking the Ember Channel view.");
+
+	var Channel = App.__container__.lookup('controller:channel'),
+		f = this;
+
+	if ( ! Channel )
+		return;
+
+	Channel.reopen({
+		ffzUpdateUptime: function() {
+			f.update_uptime();
+		}.observes("isLive", "content.id").on("init")
+
+		/*ffzUpdateInfo: function() {
+			f.log("Updated! ID: " + this.get("content.id"));
+			f.update_stream_info(true);
+		}.observes("content.id").on("init")*/
+	});
+
+	// Do uptime the first time.
+	this.update_uptime();
+	//this.update_stream_info(true);
+}
+
+
+// ---------------
+// Settings
+// ---------------
+
+FFZ.settings_info.stream_uptime = {
+	type: "boolean",
+	value: false,
+
+	category: "Channel Metadata",
+	name: "Stream Uptime",
+	help: 'Display the stream uptime under a channel by the viewer count.',
+	on_update: function(val) {
+			this.update_uptime();
+		}
+	};
+
+
+// --------------------
+// Stream Data Update
+// --------------------
+
+/*FFZ.prototype.update_stream_info = function(just_schedule) {
+	if ( this._stream_info_update ) {
+		clearTimeout(this._stream_info_update);
+		delete this._stream_info_update;
+	}
+
+	this._stream_info_update = setTimeout(this.update_stream_info.bind(this), 90000);
+
+	if ( just_schedule )
+		return;
+
+	var Channel = App.__container__.lookup('controller:channel'),
+		channel_id = Channel ? Channel.get('content.id') : undefined,
+		f = this;
+	if ( ! channel_id )
+		return;
+
+	Twitch.api.get("streams/" + channel_id, {}, {version: 3})
+		.done(function(data) {
+			var channel_id = Channel.get('content.id'), d = data.stream;
+			if ( ! data.stream || d.channel.name != channel_id )
+				return;
+
+			// Override the data in Twitch. We can't just .load() the stream
+			// because that resets the whole channel layout, resetting the
+			// video player. Twitch pls fix
+			var old_created = Channel.get('content.stream.created_at');
+
+			Channel.set('content.stream.created_at', d.created_at);
+			Channel.set('content.stream.average_fps', d.average_fps);
+			Channel.set('content.stream.viewers', d.viewers);
+			Channel.set('content.stream.video_height', d.video_height);
+			Channel.set('content.stream.csGoSkill', Twitch.uri.csGoSkillImg(("0" + d.skill).slice(-2)));
+
+			Channel.set('content.stream.game', d.game);
+			Channel.set('content.stream.gameUrl', Twitch.uri.game(d.game));
+			Channel.set('content.stream.gameBoxart', Twitch.uri.gameBoxArtJpg(d.game));
+
+
+			// Update the uptime display.
+			if ( f.settings.stream_uptime && old_created != d.created_at )
+				f.update_uptime(true) && f.update_uptime();
+		});
+}*/
+
+
+// --------------------
+// Uptime Display
+// --------------------
+
+FFZ.prototype.update_uptime = function(destroy) {
+	if ( this._uptime_update ) {
+		clearTimeout(this._uptime_update);
+		delete this._uptime_update;
+	}
+
+	var Channel = App.__container__.lookup('controller:channel');
+	if ( destroy || ! this.settings.stream_uptime || ! Channel || ! Channel.get('isLiveAccordingToKraken') ) {
+		var el = document.querySelector("#ffz-uptime-display");
+		if ( el )
+			el.parentElement.removeChild(el);
+		return;
+	}
+
+	// Schedule an update.
+	this._update_uptime = setTimeout(this.update_uptime.bind(this), 1000);
+
+	// Determine when the channel last went live.
+	var online = Channel.get('content.stream.created_at');
+	if ( ! online ) return;
+
+	online = utils.parse_date(online);
+	if ( ! online ) return;
+
+	var uptime = Math.floor((Date.now() - online.getTime()) / 1000);
+	if ( uptime < 0 ) return;
+
+	var el = document.querySelector("#ffz-uptime-display span");
+	if ( ! el ) {
+		var cont = document.querySelector("#channel .stats-and-actions .channel-stats");
+		if ( ! cont ) return;
+
+		var stat = document.createElement("span");
+		stat.className = "ffz stat";
+		stat.id = "ffz-uptime-display";
+		stat.title = "Stream Uptime <nobr>(since " + online.toLocaleString() + ")</nobr>";
+
+		stat.innerHTML = constants.CLOCK + " ";
+		el = document.createElement("span");
+		stat.appendChild(el);
+
+		var viewers = cont.querySelector(".live-count");
+		if ( viewers )
+			cont.insertBefore(stat, viewers.nextSibling);
+		else {
+			try {
+				viewers = cont.querySelector("script:nth-child(0n+2)");
+				cont.insertBefore(stat, viewers.nextSibling);
+			} catch(err) {
+				cont.insertBefore(stat, cont.childNodes[0]);
+			}
+		}
+
+		jQuery(stat).tipsy({html:true});
+	}
+
+	el.innerHTML = utils.time_to_string(uptime);
+}
+},{"../constants":3,"../utils":28}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -529,7 +702,7 @@ FFZ.prototype._modify_cview = function(view) {
 		})
 	});
 }
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
@@ -603,6 +776,106 @@ var FFZ = window.FrankerFaceZ,
 		var images = document.querySelectorAll('img[emote-id="' + id + '"]');
 		for(var x=0; x < images.length; x++)
 			images[x].title = tooltip;
+	},
+
+	build_link_tooltip = function(href) {
+		var link_data = this._link_data[href],
+			tooltip;
+
+		if ( ! link_data )
+			return "";
+
+		if ( link_data.tooltip )
+			return link_data.tooltip;
+
+		if ( link_data.type == "youtube" ) {
+			tooltip = "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
+			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
+
+		} else if ( link_data.type == "strawpoll" ) {
+			tooltip = "<b>Strawpoll: " + utils.sanitize(link_data.title) + "</b><hr><table><tbody>";
+			for(var key in link_data.items) {
+				var votes = link_data.items[key],
+					percentage = Math.floor((votes / link_data.total) * 100);
+				tooltip += '<tr><td style="text-align:left">' + utils.sanitize(key) + '</td><td style="text-align:right">' + utils.number_commas(votes) + "</td></tr>";
+			}
+			tooltip += "</tbody></table><hr>Total: " + utils.number_commas(link_data.total);
+			var fetched = utils.parse_date(link_data.fetched);
+			if ( fetched ) {
+				var age = Math.floor((fetched.getTime() - Date.now()) / 1000);
+				if ( age > 60 )
+					tooltip += "<br><small>Data was cached " + utils.time_to_string(age) + " ago.</small>";
+			}
+
+
+		} else if ( link_data.type == "twitch" ) {
+			tooltip = "<b>Twitch: " + utils.sanitize(link_data.display_name) + "</b><hr>";
+			var since = utils.parse_date(link_data.since);
+			if ( since )
+				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
+			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
+
+
+		} else if ( link_data.type == "twitter" ) {
+			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
+			tooltip += utils.sanitize(link_data.tweet);
+
+
+		} else if ( link_data.type == "reputation" ) {
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
+				tooltip += "<hr>";
+				var had_extra = false;
+				if ( link_data.trust < 50 || link_data.safety < 50 ) {
+					link_data.unsafe = true;
+					tooltip += "<b>Potentially Unsafe Link</b><br>";
+					tooltip += "Trust: " + link_data.trust + "% | Child Safety: " + link_data.safety + "%";
+					had_extra = true;
+				}
+
+				if ( link_data.tags && link_data.tags.length > 0 )
+					tooltip += (had_extra ? "<br>" : "") + "Tags: " + link_data.tags.join(", ");
+
+				tooltip += "<br>Data Source: WOT";
+			}
+
+
+		} else if ( link_data.full )
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+
+		if ( ! tooltip )
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
+
+		link_data.tooltip = tooltip;
+		return tooltip;
+	},
+
+	load_link_data = function(href, success, data) {
+		if ( ! success )
+			return;
+
+		this._link_data[href] = data;
+		data.unsafe = false;
+
+		var tooltip = build_link_tooltip.bind(this)(href), links,
+			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
+
+		if ( no_trail )
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[href="' + no_trail + '"], span.message a[data-url="' + href + '"], span.message a[data-url="' + no_trail + '"]');
+		else
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[data-url="' + href + '"]');
+
+		if ( ! this.settings.link_info )
+			return;
+
+		for(var x=0; x < links.length; x++) {
+			if ( data.unsafe )
+				links[x].classList.add('unsafe-link');
+
+			if ( ! links[x].classList.contains('deleted-link') )
+				links[x].title = tooltip;
+		}
 	};
 
 
@@ -610,24 +883,13 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // ---------------------
 
-FFZ.settings_info.capitalize = {
-	type: "boolean",
-	value: true,
-
-	category: "Chat",
-	visible: function() { return ! this.has_bttv },
-
-	name: "Username Capitalization",
-	help: "Display names in chat with proper capitalization."
-	};
-
-
 FFZ.settings_info.banned_words = {
 	type: "button",
 	value: [],
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Banned Words",
 	help: "Set a list of words that will be locally removed from chat messages.",
@@ -658,7 +920,8 @@ FFZ.settings_info.keywords = {
 	value: [],
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
@@ -690,7 +953,8 @@ FFZ.settings_info.fix_color = {
 	value: true,
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Adjust Username Colors",
 	help: "Ensure that username colors contrast with the background enough to be readable.",
@@ -704,12 +968,26 @@ FFZ.settings_info.fix_color = {
 	};
 
 
+FFZ.settings_info.link_info = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
+
+	name: "Link Tooltips <span>Beta</span>",
+	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
+	};
+
+
 FFZ.settings_info.chat_rows = {
 	type: "boolean",
 	value: false,
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Chat Line Backgrounds",
 	help: "Display alternating background colors for lines in chat.",
@@ -743,6 +1021,7 @@ FFZ.prototype.setup_line = function() {
 
 	// Emoticon Data
 	this._twitch_emotes = {};
+	this._link_data = {};
 
 
 	this.log("Hooking the Ember Line controller.");
@@ -763,6 +1042,11 @@ FFZ.prototype.setup_line = function() {
 
 				if ( ! user || this.get("model.from") != user.login )
 					tokens = f._mentionize(this, tokens);
+
+				// Store the capitalization.
+				var display = this.get("model.tags.display-name");
+				if ( display && display.length )
+					FFZ.capitalization[this.get("model.from")] = [display.trim(), Date.now()];
 
 				var end = performance.now();
 				if ( end - start > 5 )
@@ -797,7 +1081,6 @@ FFZ.prototype.setup_line = function() {
 
 					row_type = controller.get('model.ffz_alternate');
 
-
 				// Color Processing
 				if ( color )
 					f._handle_color(color);
@@ -820,11 +1103,6 @@ FFZ.prototype.setup_line = function() {
 
 				// Badge
 				f.render_badge(this);
-
-
-				// Capitalization
-				if ( f.settings.capitalize )
-					f.capitalize(this, user);
 
 
 				// Mention Highlighting
@@ -889,12 +1167,52 @@ FFZ.prototype.setup_line = function() {
 						this.target = "_new";
 						this.textContent = link;
 
+						// Now, check for a tooltip.
+						var link_data = f._link_data[link];
+						if ( link_data && typeof link_data != "boolean" ) {
+							this.title = link_data.tooltip;
+							if ( link_data.unsafe )
+								this.classList.add('unsafe-link');
+						}
+
 						// Stop from Navigating
 						e.preventDefault();
 					});
 
 					// Also add a nice tooltip.
-					jQuery(link).tipsy();
+					jQuery(link).tipsy({html:true});
+				}
+
+
+				// Link Tooltips
+				if ( f.settings.link_info ) {
+					var links = el.querySelectorAll("span.message a");
+					for(var i=0; i < links.length; i++) {
+						var link = links[i],
+							href = link.href,
+							deleted = false;
+
+						if ( link.classList.contains("deleted-link") ) {
+							href = link.getAttribute("data-url");
+							deleted = true;
+						}
+
+						// Check the cache.
+						var link_data = f._link_data[href];
+						if ( link_data ) {
+							if ( !deleted && typeof link_data != "boolean" )
+								link.title = link_data.tooltip;
+
+							if ( link_data.unsafe )
+								link.classList.add('unsafe-link');
+
+						} else if ( ! /^mailto:/.test(href) ) {
+							f._link_data[href] = true;
+							f.ws_send("get_link", href, load_link_data.bind(f, href));
+						}
+					}
+
+					jQuery(links).tipsy({html:true});
 				}
 
 
@@ -1068,16 +1386,6 @@ FFZ.get_capitalization = function(name, callback) {
 }
 
 
-FFZ.prototype.capitalize = function(view, user) {
-	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
-	if ( !name || !view )
-		return;
-
-	var from = view.$('.from');
-	from && from.text(name);
-}
-
-
 // ---------------------
 // Extra Mentions
 // ---------------------
@@ -1242,7 +1550,7 @@ FFZ.prototype._emoticonize = function(controller, tokens) {
 
 	return tokens;
 }
-},{"../utils":27}],7:[function(require,module,exports){
+},{"../utils":28}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
@@ -1250,7 +1558,8 @@ var FFZ = window.FrankerFaceZ,
 		ESC: 27,
 		P: 80,
 		B: 66,
-		T: 84
+		T: 84,
+		U: 85
 		},
 
 	btns = [
@@ -1272,7 +1581,8 @@ FFZ.settings_info.enhanced_moderation = {
 	type: "boolean",
 	value: false,
 
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 	category: "Chat",
 
 	name: "Enhanced Moderation",
@@ -1286,32 +1596,33 @@ FFZ.settings_info.enhanced_moderation = {
 
 FFZ.prototype.setup_mod_card = function() {
 	this.log("Hooking the Ember Moderation Card view.");
-	var Card = App.__container__.resolve('view:moderation-card'),
+	var Card = App.__container__.resolve('component:moderation-card'),
 		f = this;
 
 	Card.reopen({
 		didInsertElement: function() {
 			this._super();
+			window._card = this;
 			try {
 				if ( f.has_bttv || ! f.settings.enhanced_moderation )
 					return;
 
 				var el = this.get('element'),
-					controller = this.get('context');
+					controller = this.get('controller');
 
 				// Style it!
 				el.classList.add('ffz-moderation-card');
 
 				// Only do the big stuff if we're mod.
-				if ( controller.get('parentController.model.isModeratorOrHigher') ) {
+				if ( controller.get('cardInfo.isModeratorOrHigher') ) {
 					el.classList.add('ffz-is-mod');
 					el.setAttribute('tabindex', 1);
 
 					// Key Handling
 					el.addEventListener('keyup', function(e) {
 						var key = e.keyCode || e.which,
-							user_id = controller.get('model.user.id'),
-							room = controller.get('parentController.model');
+							user_id = controller.get('cardInfo.user.id'),
+							room = App.__container__.lookup('controller:chat').get('currentRoom');
 
 						if ( key == keycodes.P )
 							room.send("/timeout " + user_id + " 1");
@@ -1321,6 +1632,9 @@ FFZ.prototype.setup_mod_card = function() {
 
 						else if ( key == keycodes.T )
 							room.send("/timeout " + user_id + " 600");
+
+						else if ( key == keycodes.U )
+							room.send("/unban " + user_id);
 
 						else if ( key != keycodes.ESC )
 							return;
@@ -1334,8 +1648,8 @@ FFZ.prototype.setup_mod_card = function() {
 					line.className = 'interface clearfix';
 
 					var btn_click = function(timeout) {
-							var user_id = controller.get('model.user.id'),
-								room = controller.get('parentController.model');
+							var user_id = controller.get('cardInfo.user.id'),
+								room = App.__container__.lookup('controller:chat').get('currentRoom');
 
 								if ( timeout === -1 )
 									room.send("/unban " + user_id);
@@ -1396,8 +1710,9 @@ FFZ.prototype.setup_mod_card = function() {
 				// More Fixing Other Buttons
 				var op_btn = el.querySelector('button.mod');
 				if ( op_btn ) {
-					var model = controller.get('parentController.model'),
-						can_op = model.get('isBroadcaster') || model.get('isStaff') || model.get('isAdmin');
+					var is_owner = controller.get('cardInfo.isChannelOwner'),
+						user = ffz.get_user();
+						can_op = is_owner || (user && user.is_admin) || (user && user.is_staff);
 
 					if ( ! can_op )
 						op_btn.parentElement.removeChild(op_btn);
@@ -1405,7 +1720,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 				var msg_btn = el.querySelector(".interface > button");
-				if ( msg_btn && msg_btn.className == "button" ) {
+				if ( msg_btn && msg_btn.classList.contains("message-button") ) {
 					msg_btn.innerHTML = MESSAGE;
 					msg_btn.classList.add('glyph-only');
 					msg_btn.classList.add('message');
@@ -1494,7 +1809,7 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.enhanced_moderation; }
-},{"../utils":27}],8:[function(require,module,exports){
+},{"../utils":28}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -1524,6 +1839,16 @@ FFZ.prototype.setup_room = function() {
 	document.head.appendChild(s);
 
 	this.log("Hooking the Ember Room model.");
+
+	// Responsive ban button.
+	var RC = App.__container__.lookup('controller:room');
+	if ( RC ) {
+		var orig_action = RC._actions.banUser;
+		RC._actions.banUser = function(e) {
+			orig_action.bind(this)(e);
+			this.get("model").clearMessages(e.user);
+		}
+	}
 
 	var Room = App.__container__.resolve('model:room');
 	this._modify_room(Room);
@@ -1784,8 +2109,7 @@ FFZ.prototype._modify_room = function(room) {
 			var suggestions = this._super();
 
 			try {
-				if ( f.settings.capitalize )
-					suggestions = _.map(suggestions, FFZ.get_capitalization);
+				suggestions = _.map(suggestions, FFZ.get_capitalization);
 			} catch(err) {
 				f.error("get_suggestions: " + err);
 			}
@@ -1862,7 +2186,7 @@ FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
 	output.css = data || null;
 	return this._load_room_json(room_id, callback, output);
 }
-},{"../constants":3,"../utils":27}],9:[function(require,module,exports){
+},{"../constants":3,"../utils":28}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -1960,7 +2284,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 		}.property("content.chatters")
 	});
 }
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -2165,7 +2489,7 @@ FFZ.prototype._legacy_load_css = function(set_id, callback, data) {
 
 	this._load_set_json(set_id, callback, output);
 }
-},{"./constants":3,"./utils":27}],11:[function(require,module,exports){
+},{"./constants":3,"./utils":28}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
@@ -2342,7 +2666,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	this.update_ui_link();
 }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -2418,7 +2742,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 	return emotes;
 }
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 // Modify Array and others.
 require('./shims');
 
@@ -2443,7 +2767,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 2, revision: 5,
+	major: 3, minor: 3, revision: 1,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -2514,7 +2838,7 @@ FFZ.prototype.get_user = function() {
 	if ( window.PP && PP.login ) {
 		return PP;
 	} else if ( window.App ) {
-		var nc = App.__container__.lookup("controller:navigation");
+		var nc = App.__container__.lookup("controller:login");
 		return nc ? nc.get("userData") : undefined;
 	}
 }
@@ -2536,6 +2860,7 @@ require('./emoticons');
 require('./badges');
 
 // Analytics: require('./ember/router');
+require('./ember/channel');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
@@ -2575,7 +2900,17 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Make sure that FrankerFaceZ doesn't start setting itself up until the
 	// Twitch ember application is ready.
 
-	// TODO: Special Dashboard check.
+	// Check for special non-ember pages.
+	if ( /\/(?:settings|messages?\/)/.test(location.pathname) ) {
+		this.setup_normal(delay);
+		return;
+	}
+
+	// Check for the dashboard.
+	if ( /\/[A-Za-z_-]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
+		this.setup_dashboard(delay);
+		return;
+	}
 
 	var loaded = window.App != undefined &&
 				 App.__container__ != undefined &&
@@ -2592,6 +2927,65 @@ FFZ.prototype.initialize = function(increment, delay) {
 	}
 
 	this.setup_ember(delay);
+}
+
+
+FFZ.prototype.setup_normal = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+
+	// Initialize all the modules.
+	this.load_settings();
+
+	// Start this early, for quick loading.
+	this.setup_dark();
+
+	this.ws_create();
+	this.setup_emoticons();
+	this.setup_badges();
+
+	this.setup_notifications();
+	this.setup_css();
+
+	this.find_bttv(10);
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
+}
+
+
+FFZ.prototype.is_dashboard = false;
+
+FFZ.prototype.setup_dashboard = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found Twitch Dashboard after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+	this.is_dashboard = true;
+
+	// Initialize all the modules.
+	this.load_settings();
+
+	// Start this early, for quick loading.
+	this.setup_dark();
+
+	this.ws_create();
+	this.setup_emoticons();
+	this.setup_badges();
+
+	this.setup_notifications();
+	this.setup_css();
+
+	this.find_bttv(10);
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
 }
 
 
@@ -2614,6 +3008,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	//this.setup_piwik();
 
 	//this.setup_router();
+	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
 	this.setup_chatview();
@@ -2639,7 +3034,7 @@ FFZ.prototype.setup_ember = function(delay) {
 
 	this.log("Initialization complete in " + duration + "ms");
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/chatview":5,"./ember/line":6,"./ember/moderation-card":7,"./ember/room":8,"./ember/viewers":9,"./emoticons":10,"./ext/betterttv":11,"./ext/emote_menu":12,"./featurefriday":14,"./settings":15,"./shims":16,"./socket":17,"./ui/about_page":18,"./ui/dark":19,"./ui/menu":20,"./ui/menu_button":21,"./ui/my_emotes":22,"./ui/notifications":23,"./ui/races":24,"./ui/styles":25,"./ui/viewer_count":26}],14:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/channel":5,"./ember/chatview":6,"./ember/line":7,"./ember/moderation-card":8,"./ember/room":9,"./ember/viewers":10,"./emoticons":11,"./ext/betterttv":12,"./ext/emote_menu":13,"./featurefriday":15,"./settings":16,"./shims":17,"./socket":18,"./ui/about_page":19,"./ui/dark":20,"./ui/menu":21,"./ui/menu_button":22,"./ui/my_emotes":23,"./ui/notifications":24,"./ui/races":25,"./ui/styles":26,"./ui/viewer_count":27}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -2689,7 +3084,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	if ( ! this.feature_friday || this.feature_friday.channel == room_id )
 		return;
 
-	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title);
+	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title, this.feature_friday.icon, "FrankerFaceZ");
 
 	// Before we add the button, make sure the channel isn't the
 	// current channel.
@@ -2787,7 +3182,7 @@ FFZ.prototype._update_ff_name = function(name) {
 	if ( this.feature_friday )
 		this.feature_friday.display_name = name;
 }
-},{"./constants":3}],15:[function(require,module,exports){
+},{"./constants":3}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("./constants");
 
@@ -2847,6 +3242,19 @@ FFZ.prototype.load_settings = function() {
 // --------------------
 // Menu Page
 // --------------------
+
+FFZ.settings_info.replace_twitch_menu = {
+	type: "boolean",
+	value: false,
+
+	name: "Replace Twitch Emoticon Menu <span>Beta</span>",
+	help: "Completely replace the default Twitch emoticon menu.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-menu-replace", val);
+		}
+	};
+
 
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
@@ -2931,37 +3339,53 @@ FFZ.menu_pages.settings = {
 
 					el.className = 'clearfix';
 
-					if ( info.type == "boolean" ) {
-						var swit = document.createElement('a'),
-							label = document.createElement('span');
-
-						swit.className = 'switch';
-						swit.classList.toggle('active', val);
-						swit.innerHTML = "<span></span>";
-
+					if ( this.has_bttv && info.no_bttv ) {
+						var label = document.createElement('span'),
+							help = document.createElement('span');
 						label.className = 'switch-label';
 						label.innerHTML = info.name;
 
-						el.appendChild(swit);
-						el.appendChild(label);
+						help = document.createElement('span');
+						help.className = 'help';
+						help.innerHTML = 'Disabled due to incompatibility with BetterTTV.';
 
-						swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+						el.classList.add('disabled');
+						el.appendChild(label);
+						el.appendChild(help);
 
 					} else {
-						el.classList.add("option");
-						var link = document.createElement('a');
-						link.innerHTML = info.name;
-						link.href = "#";
-						el.appendChild(link);
+						if ( info.type == "boolean" ) {
+							var swit = document.createElement('a'),
+								label = document.createElement('span');
 
-						link.addEventListener("click", info.method.bind(this));
-					}
+							swit.className = 'switch';
+							swit.classList.toggle('active', val);
+							swit.innerHTML = "<span></span>";
 
-					if ( info.help ) {
-						var help = document.createElement('span');
-						help.className = 'help';
-						help.innerHTML = info.help;
-						el.appendChild(help);
+							label.className = 'switch-label';
+							label.innerHTML = info.name;
+
+							el.appendChild(swit);
+							el.appendChild(label);
+
+							swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+
+						} else {
+							el.classList.add("option");
+							var link = document.createElement('a');
+							link.innerHTML = info.name;
+							link.href = "#";
+							el.appendChild(link);
+
+							link.addEventListener("click", info.method.bind(this));
+						}
+
+						if ( info.help ) {
+							var help = document.createElement('span');
+							help.className = 'help';
+							help.innerHTML = info.help;
+							el.appendChild(help);
+						}
 					}
 
 					menu.appendChild(el);
@@ -2973,7 +3397,8 @@ FFZ.menu_pages.settings = {
 
 	name: "Settings",
 	icon: constants.GEAR,
-	sort_order: 99999
+	sort_order: 99999,
+	wide: true
 	};
 
 
@@ -2984,8 +3409,6 @@ FFZ.menu_pages.settings = {
 FFZ.prototype._setting_update = function(e) {
 	if ( ! e )
 		e = window.event;
-
-	this.log("Storage Event", e);
 
 	if ( ! e.key || e.key.substr(0, 12) !== "ffz_setting_" )
 		return;
@@ -3079,7 +3502,7 @@ FFZ.prototype._setting_del = function(key) {
 			this.log('Error running updater for setting "' + key + '": ' + err);
 		}
 }
-},{"./constants":3}],16:[function(require,module,exports){
+},{"./constants":3}],17:[function(require,module,exports){
 Array.prototype.equals = function (array) {
 	// if the other array is a falsy value, return
 	if (!array)
@@ -3105,7 +3528,7 @@ Array.prototype.equals = function (array) {
 }
 
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -3143,6 +3566,13 @@ FFZ.prototype.ws_create = function() {
 		var user = f.get_user();
 		if ( user )
 			f.ws_send("setuser", user.login);
+
+		// Join the right channel if we're in the dashboard.
+		if ( f.is_dashboard ) {
+			var match = location.pathname.match(/\/([^\/]+)/);
+			if ( match )
+				f.ws_send("sub", match[1]);
+		}
 
 		// Send the current rooms.
 		for(var room_id in f.rooms)
@@ -3267,7 +3697,7 @@ FFZ.ws_commands.do_authorize = function(data) {
 		// Try again shortly.
 		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
 }
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -3306,6 +3736,18 @@ FFZ.menu_pages.about = {
 		heading.className = 'chat-menu-content center';
 		heading.innerHTML = content;
 		container.appendChild(heading);
+
+		var clicks = 0, head = heading.querySelector("h1");
+		head && head.addEventListener("click", function() {
+			head.style.cursor = "pointer";
+			clicks++;
+			if ( clicks >= 3 ) {
+				clicks = 0;
+				var el = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+				el && el.classList.toggle('ffz-flip');
+			}
+			setTimeout(function(){clicks=0;head.style.cursor=""},2000);
+		});
 
 
 		// Advertising
@@ -3363,7 +3805,7 @@ FFZ.menu_pages.about = {
 		container.appendChild(credits);
 	}
 }
-},{"../constants":3}],19:[function(require,module,exports){
+},{"../constants":3}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -3383,9 +3825,10 @@ FFZ.settings_info.dark_twitch = {
 	type: "boolean",
 	value: false,
 
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
-	name: "Dark Twitch <span>Beta</span>",
+	name: "Dark Twitch",
 	help: "Apply a dark background to channels and other related pages for easier viewing.",
 
 	on_update: function(val) {
@@ -3394,14 +3837,14 @@ FFZ.settings_info.dark_twitch = {
 
 			document.body.classList.toggle("ffz-dark", val);
 
-			var model = App.__container__.lookup('controller:settings').get('model');
+			var model = window.App ? App.__container__.lookup('controller:settings').get('model') : undefined;
 
 			if ( val ) {
 				this._load_dark_css();
-				this.settings.set('twitch_chat_dark', model.get('darkMode'));
-				model.set('darkMode', true);
+				model && this.settings.set('twitch_chat_dark', model.get('darkMode'));
+				model && model.set('darkMode', true);
 			} else
-				model.set('darkMode', this.settings.twitch_chat_dark);
+				model && model.set('darkMode', this.settings.twitch_chat_dark);
 		}
 	};
 
@@ -3416,7 +3859,7 @@ FFZ.prototype.setup_dark = function() {
 
 	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
 	if ( this.settings.dark_twitch )
-		App.__container__.lookup('controller:settings').set('model.darkMode', true);
+		window.App && App.__container__.lookup('controller:settings').set('model.darkMode', true);
 
 	if ( this.settings.dark_twitch )
 		this._load_dark_css();
@@ -3436,9 +3879,12 @@ FFZ.prototype._load_dark_css = function() {
 	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + Date.now());
 	document.head.appendChild(s);
 }
-},{"../constants":3}],20:[function(require,module,exports){
+},{"../constants":3}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
-	constants = require('../constants');
+	constants = require('../constants'),
+	utils = require('../utils'),
+
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/";
 
 
 // --------------------
@@ -3462,6 +3908,8 @@ FFZ.prototype.setup_menu = function() {
 			delete f._popup_kill;
 		}
 	});
+
+	document.body.classList.toggle("ffz-menu-replace", this.settings.replace_twitch_menu);
 }
 
 
@@ -3547,26 +3995,30 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 		jQuery(link).tipsy();
 
-		link.addEventListener("click", this._ui_change_page.bind(this, view, menu, sub_container, key));
+		link.addEventListener("click", this._ui_change_page.bind(this, view, inner, menu, sub_container, key));
 
 		el.appendChild(link);
 		menu.appendChild(el);
 	}
 
 	// Render Current Page
-	this._ui_change_page(view, menu, sub_container, this._last_page || "channel");
+	this._ui_change_page(view, inner, menu, sub_container, this._last_page || "channel");
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(100, view.$().height() - 162) + "px";
+	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
 	view.$('.chat-interface').append(container);
 }
 
 
-FFZ.prototype._ui_change_page = function(view, menu, container, page) {
+FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 	this._last_page = page;
 	container.innerHTML = "";
 	container.setAttribute('data-page', page);
+
+	// Allow settings to be wide. We need to know if chat is stand-alone.
+	var app = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+	inner.style.maxWidth = (!FFZ.menu_pages[page].wide || (typeof FFZ.menu_pages[page].wide == "function" && !FFZ.menu_pages[page].wide.bind(this)())) ? "" : (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600) + "px";
 
 	var els = menu.querySelectorAll('li.active');
 	for(var i=0; i < els.length; i++)
@@ -3583,55 +4035,6 @@ FFZ.prototype._ui_change_page = function(view, menu, container, page) {
 
 
 // --------------------
-// Favorites Page
-// --------------------
-
-FFZ.prototype._tokenize_message = function(message, room_id) {
-	var lc = App.__container__.lookup('controller:line'),
-		rc = App.__container__.lookup('controller:room'),
-		room = this.rooms[room_id],
-		user = this.get_user();
-
-	if ( ! lc || ! rc || ! room )
-		return [message];
-
-	rc.set('model', room.room);
-	lc.set('parentController', rc);
-
-	var model = {
-		from: user && user.login || "FrankerFaceZ",
-		message: message,
-		tags: {
-			emotes: room.room.tmiSession._emotesParser.parseEmotesTag(message)
-			}
-		};
-
-	lc.set('model', model);
-
-	var tokens = lc.get('tokenizedMessage');
-
-	lc.set('model', null);
-	rc.set('model', null);
-	lc.set('parentController', null);
-
-	return tokens;
-}
-
-
-/*FFZ.menu_pages.favorites = {
-	render: function(view, container) {
-			// Get the current room.
-			var room_id = view.get('controller.currentRoom.id');
-
-			
-		},
-
-	name: "Favorites",
-	icon: constants.HEART
-	};*/
-
-
-// --------------------
 // Channel Page
 // --------------------
 
@@ -3639,10 +4042,107 @@ FFZ.menu_pages.channel = {
 	render: function(view, inner) {
 			// Get the current room.
 			var room_id = view.get('controller.currentRoom.id'),
-				room = this.rooms[room_id];
+				room = this.rooms[room_id],
+				has_product = false;
+
+			// Check for a product.
+			if ( this.settings.replace_twitch_menu ) {
+				var product = room.room.get("product");
+				if ( product && !product.get("error") ) {
+					// We have a product, and no error~!
+					has_product = true;
+					var is_subscribed = room.room.get("channel.isSubscribed.content"),
+						icon = room.room.get("badgeSet.subscriber.image"),
+
+						grid = document.createElement("div"),
+						header = document.createElement("div"),
+						c = 0;
+
+					// Weird is_subscribed check. Might be more accurate?
+					is_subscribed = is_subscribed && is_subscribed.length > 0;
+
+					grid.className = "emoticon-grid";
+					header.className = "heading";
+					if ( icon )
+						header.style.backgroundImage = 'url("' + icon + '")';
+
+					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
+					grid.appendChild(header);
+
+					for(var emotes=product.get("emoticons"), i=0; i < emotes.length; i++) {
+						var emote = emotes[i];
+						if ( emote.state !== "active" )
+							continue;
+
+						var s = document.createElement('span'),
+							can_use = is_subscribed || !emote.subscriber_only,
+							img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+
+						s.className = 'emoticon tooltip' + (!can_use ? " locked" : "");
+
+						s.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+						s.style.backgroundImage = '-webkit-' + img_set;
+						s.style.backgroundImage = '-moz-' + img_set;
+						s.style.backgroundImage = '-ms-' + img_set;
+						s.style.backgroundImage = img_set;
+
+						s.style.width = emote.width + "px";
+						s.style.height = emote.height + "px";
+						s.title = emote.regex;
+						if ( can_use )
+							s.addEventListener('click', this._add_emote.bind(this, view, emote.regex));
+						grid.appendChild(s);
+						c++;
+					}
+
+					if ( c > 0 )
+						inner.appendChild(grid);
+
+					if ( ! is_subscribed ) {
+						var sub_message = document.createElement("div"),
+							nonsub_message = document.createElement("div"),
+							unlock_text = document.createElement("span"),
+							sub_link = document.createElement("a");
+
+						sub_message.className = "subscribe-message";
+						nonsub_message.className = "non-subscriber-message";
+						sub_message.appendChild(nonsub_message);
+
+						unlock_text.className = "unlock-text";
+						unlock_text.innerHTML = "Subscribe to unlock Emoticons";
+						nonsub_message.appendChild(unlock_text);
+
+						sub_link.className = "action subscribe-button button primary";
+						sub_link.href = product.get("product_url");
+						sub_link.innerHTML = '<span class="subscribe-text">Subscribe</span><span class="subscribe-price">' + product.get("price") + '</span>';
+						nonsub_message.appendChild(sub_link);
+
+						inner.appendChild(sub_message);
+					} else {
+						var last_content = room.room.get("channel.isSubscribed.content");
+						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
+						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
+							var ends_at = utils.parse_date(last_content.access_end || "");
+								sub_message = document.createElement("div"),
+								nonsub_message = document.createElement("div"),
+								unlock_text = document.createElement("span"),
+								end_time = ends_at ? Math.floor((ends_at.getTime() - Date.now()) / 1000) : null;
+
+							sub_message.className = "subscribe-message";
+							nonsub_message.className = "non-subscriber-message";
+							sub_message.appendChild(nonsub_message);
+
+							unlock_text.className = "unlock-text";
+							unlock_text.innerHTML = "Subscription expires in " + utils.time_to_string(end_time, true, true);
+							nonsub_message.appendChild(unlock_text);
+							inner.appendChild(sub_message);
+						}
+					}
+				}
+			}
 
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.menu_sets || []);
+			this._emotes_for_sets(inner, view, room && room.menu_sets || [], (this.feature_friday || has_product) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/channel/global/devicon.png", "FrankerFaceZ");
 
 			// Feature Friday!
 			this._feature_friday_ui(room_id, inner, view);
@@ -3657,20 +4157,28 @@ FFZ.menu_pages.channel = {
 // Emotes for Sets
 // --------------------
 
-FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
-	if ( header != null ) {
-		var el_header = document.createElement('div');
-		el_header.className = 'list-header';
-		el_header.appendChild(document.createTextNode(header));
-
-		if ( btn )
-			el_header.appendChild(btn);
-
-		parent.appendChild(el_header);
-	}
-
+FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text) {
 	var grid = document.createElement('div'), c = 0;
 	grid.className = 'emoticon-grid';
+
+	if ( header != null ) {
+		var el_header = document.createElement('div');
+		el_header.className = 'heading';
+
+		if ( sub_text ) {
+			var s = document.createElement("span");
+			s.className = "right";
+			s.appendChild(document.createTextNode(sub_text));
+			el_header.appendChild(s);
+		}
+
+		el_header.appendChild(document.createTextNode(header));
+
+		if ( image )
+			el_header.style.backgroundImage = 'url("' + image + '")';
+
+		grid.appendChild(el_header);
+	}
 
 	for(var i=0; i < sets.length; i++) {
 		var set = this.emote_sets[sets[i]];
@@ -3698,8 +4206,8 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, btn) {
 	}
 
 	if ( !c ) {
-		grid.innerHTML = "This channel has no emoticons.";
-		grid.className = "chat-menu-content ffz-no-emotes center";
+		grid.innerHTML += "This channel has no emoticons.";
+		grid.className = "emoticon-grid ffz-no-emotes center";
 	}
 
 	parent.appendChild(grid);
@@ -3725,7 +4233,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 	else
 		room.set('messageToSend', text);
 }
-},{"../constants":3}],21:[function(require,module,exports){
+},{"../constants":3,"../utils":28}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -3746,7 +4254,7 @@ FFZ.prototype.build_ui_link = function(view) {
 
 
 FFZ.prototype.update_ui_link = function(link) {
-	var controller = App.__container__.lookup('controller:chat');
+	var controller = window.App && App.__container__.lookup('controller:chat');
 	link = link || document.querySelector('a.ffz-ui-toggle');
 	if ( !link || !controller )
 		return;
@@ -3776,7 +4284,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],22:[function(require,module,exports){
+},{"../constants":3}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 
@@ -3784,6 +4292,12 @@ var FFZ = window.FrankerFaceZ,
 	BANNED_SETS = {"00000turbo":true},
 
 	KNOWN_CODES = {
+		"#-?[\\\\/]": "#-/",
+		":-?(?:7|L)": ":-7",
+		"\\&lt\\;\\]": "<]",
+		"\\:-?(S|s)": ":-S",
+		"\\:-?\\\\": ":-\\",
+		"\\:\\&gt\\;": ":>",
 		"B-?\\)": "B-)",
 		"\\:-?[z|Z|\\|]": ":-Z",
 		"\\:-?\\)": ":-)",
@@ -3791,7 +4305,7 @@ var FFZ = window.FrankerFaceZ,
 		"\\:-?(p|P)": ":-P",
 		"\\;-?(p|P)": ";-P",
 		"\\&lt\\;3": "<3",
-		"\\:-?(?:\\/|\\\\)(?!\\/)": ":-/",
+		"\\:-?[\\\\/]": ":-/",
 		"\\;-?\\)": ";-)",
 		"R-?\\)": "R-)",
 		"[o|O](_|\\.)[o|O]": "O.o",
@@ -3812,7 +4326,7 @@ var FFZ = window.FrankerFaceZ,
 			user_sets = user && ffz.users[user.login] && ffz.users[user.login].sets || [];
 
 		// Remove the 'default' set.
-		set_ids = set_ids.split(",").removeObject("0")
+		set_ids = set_ids.split(",").removeObject("0");
 
 		if ( ffz.settings.global_emotes_in_menu ) {
 			set_ids.push("0");
@@ -3847,6 +4361,8 @@ FFZ.prototype.setup_my_emotes = function() {
 	}
 
 	this._twitch_set_to_channel[0] = "twitch_global";
+	this._twitch_set_to_channel[33] = "twitch_tfaces";
+	this._twitch_set_to_channel[42] = "twitch_tfaces";
 }
 
 
@@ -3930,7 +4446,7 @@ FFZ.menu_pages.my_emotes = {
 									return;
 								}
 
-								if ( name == "turbo" ) {
+								if ( name == "turbo" || name == "twitch_tfaces" ) {
 									set.channel = "Twitch Turbo";
 									set.badge = "//cdn.frankerfacez.com/script/turbo_badge.png";
 									return;
@@ -3970,7 +4486,7 @@ FFZ.menu_pages.my_emotes = {
 										if ( ! set.channel )
 											set.channel = name;
 										dn();
-									}.bind(this,set,name,dn), 2000);
+									}.bind(this,set,name,dn), 500);
 								}.bind(this, set, lname, name)));
 							},
 							handle_promises = function() {
@@ -4065,11 +4581,16 @@ FFZ.menu_pages.my_emotes = {
 					var an = a[1].toLowerCase(),
 						bn = b[1].toLowerCase();
 
-					if ( an === "twitch turbo" || an === "global emoticons" )
-						an = "zzz" + an;
+					if ( an === "twitch turbo" || an === "twitch_tfaces" )
+						an = "zza|" + an;
+						
+					else if ( an === "global emoticons" )
+						an = "zzz|" + an;
 
-					if ( bn === "twitch turbo" || bn === "global emoticons" )
-						bn = "zzz" + bn;
+					if ( bn === "twitch turbo" || bn === "twitch_tfaces" )
+						bn = "zza|" + bn;
+					else if ( bn === "global emoticons" )
+						bn = "zzz|" + bn;
 
 					if ( an < bn ) return -1;
 					else if ( an > bn ) return 1;
@@ -4104,7 +4625,7 @@ FFZ.menu_pages.my_emotes = {
 
 					} else {
 						ems = set.emotes;
-						title = FFZ.get_capitalization(set.channel);
+						title = set.channel == "Twitch Turbo" ? set.channel : FFZ.get_capitalization(set.channel);
 						badge = set.badge;
 					}
 
@@ -4181,7 +4702,7 @@ FFZ.menu_pages.my_emotes = {
 		}
 	};
 
-},{"../constants":3}],23:[function(require,module,exports){
+},{"../constants":3}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -4204,7 +4725,8 @@ FFZ.settings_info.highlight_notifications = {
 	value: false,
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
 	help: "Display notifications when a highlighted word appears in chat in an unfocused tab.",
@@ -4330,7 +4852,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -4520,14 +5042,14 @@ FFZ.prototype.build_race_popup = function() {
 	out += '<div class="table" style="max-height:' + height + 'px"><table><thead><tr><th>#</th><th>Entrant</th><th>&nbsp;</th><th>Time</th></tr></thead>';
 	out += '<tbody></tbody></table></div>';
 	out += '<div class="divider"></div>';
-	
-	out += '<iframe class="twitter_share_button" style="width:110px; height:20px" src="https://platform.twitter.com/widgets/tweet_button.html?text=' + tweet + '%20Watch%20at&via=Twitch&url=http://www.twitch.tv/' + channel_id + '"></iframe>';
-	
+
+	out += '<iframe class="twitter_share_button" style="width:130px; height:25px" src="https://platform.twitter.com/widgets/tweet_button.html?text=' + tweet + '%20Watch%20at&via=Twitch&url=http://www.twitch.tv/' + channel_id + '"></iframe>';
+
 	out += '<p class="right"><a target="_new" href="http://www.speedrunslive.com/race/?id=' + race.id + '">SRL</a>';
-	
+
 	if ( has_entrant )
 		out += ' &nbsp; <a target="_new" href="' + link + '">Multitwitch</a>';
-	
+
 	out += '</p>';
 	popup.innerHTML = out;
 	container.appendChild(popup);
@@ -4617,7 +5139,7 @@ FFZ.prototype._update_race = function(not_timer) {
 
 			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
 		}
-		
+
 		if ( this._race_game != race.game || this._race_goal != race.goal ) {
 			this._race_game = race.game;
 			this._race_goal = race.goal;
@@ -4638,7 +5160,7 @@ FFZ.prototype._update_race = function(not_timer) {
 		}
 	}
 }
-},{"../utils":27}],25:[function(require,module,exports){
+},{"../utils":28}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -4663,7 +5185,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],26:[function(require,module,exports){
+},{"../constants":3}],27:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -4675,32 +5197,34 @@ var FFZ = window.FrankerFaceZ,
 FFZ.ws_commands.viewers = function(data) {
 	var channel = data[0], count = data[1];
 
-	var controller = App.__container__.lookup('controller:channel'),
-		id = controller && controller.get && controller.get('id');
+	var controller = window.App && App.__container__.lookup('controller:channel'),
+		match = this.is_dashboard ? location.pathname.match(/\/([^\/]+)/) : undefined,
+		id = this.is_dashboard ? match && match[1] : controller && controller.get && controller.get('id');
 
 	if ( id !== channel )
 		return;
 
-	var view_count = document.querySelector('.channel-stats .ffz.stat'),
+	var view_count = document.querySelector('#ffz-viewer-display'),
 		content = constants.ZREKNARF + ' ' + utils.number_commas(count);
 
 	if ( view_count )
 		view_count.innerHTML = content;
 	else {
-		var parent = document.querySelector('.channel-stats');
+		var parent = document.querySelector(this.is_dashboard ? "#stats" : '.stats-and-actions .channel-stats');
 		if ( ! parent )
 			return;
 
 		view_count = document.createElement('span');
+		view_count.id = "ffz-viewer-display";
 		view_count.className = 'ffz stat';
-		view_count.title = 'Viewers with FrankerFaceZ';
+		view_count.title = 'Chatters with FrankerFaceZ';
 		view_count.innerHTML = content;
 
 		parent.appendChild(view_count);
-		jQuery(view_count).tipsy();
+		jQuery(view_count).tipsy(this.is_dashboard ? {"gravity":"s"} : undefined);
 	}
 }
-},{"../constants":3,"../utils":27}],27:[function(require,module,exports){
+},{"../constants":3,"../utils":28}],28:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -4820,14 +5344,28 @@ module.exports = {
 		return m;
 	},
 
-	time_to_string: function(elapsed) {
+	date_string: function(date) {
+		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();
+	},
+
+	time_to_string: function(elapsed, separate_days, days_only) {
 		var seconds = elapsed % 60,
 			minutes = Math.floor(elapsed / 60),
-			hours = Math.floor(minutes / 60);
+			hours = Math.floor(minutes / 60),
+			days = "";
 
 		minutes = minutes % 60;
 
-		return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+		if ( separate_days ) {
+			days = Math.floor(hours / 24);
+			hours = hours % 24;
+			if ( days_only && days > 0 )
+				return days + " days";
+
+			days = ( days > 0 ) ? days + " days, " : "";
+		}
+
+		return days + (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 	}
 }
-},{"./constants":3}]},{},[13]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":3}]},{},[14]);window.ffz = new FrankerFaceZ()}(window));

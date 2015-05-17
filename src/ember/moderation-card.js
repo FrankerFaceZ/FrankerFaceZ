@@ -5,7 +5,8 @@ var FFZ = window.FrankerFaceZ,
 		ESC: 27,
 		P: 80,
 		B: 66,
-		T: 84
+		T: 84,
+		U: 85
 		},
 
 	btns = [
@@ -27,7 +28,8 @@ FFZ.settings_info.enhanced_moderation = {
 	type: "boolean",
 	value: false,
 
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 	category: "Chat",
 
 	name: "Enhanced Moderation",
@@ -41,32 +43,33 @@ FFZ.settings_info.enhanced_moderation = {
 
 FFZ.prototype.setup_mod_card = function() {
 	this.log("Hooking the Ember Moderation Card view.");
-	var Card = App.__container__.resolve('view:moderation-card'),
+	var Card = App.__container__.resolve('component:moderation-card'),
 		f = this;
 
 	Card.reopen({
 		didInsertElement: function() {
 			this._super();
+			window._card = this;
 			try {
 				if ( f.has_bttv || ! f.settings.enhanced_moderation )
 					return;
 
 				var el = this.get('element'),
-					controller = this.get('context');
+					controller = this.get('controller');
 
 				// Style it!
 				el.classList.add('ffz-moderation-card');
 
 				// Only do the big stuff if we're mod.
-				if ( controller.get('parentController.model.isModeratorOrHigher') ) {
+				if ( controller.get('cardInfo.isModeratorOrHigher') ) {
 					el.classList.add('ffz-is-mod');
 					el.setAttribute('tabindex', 1);
 
 					// Key Handling
 					el.addEventListener('keyup', function(e) {
 						var key = e.keyCode || e.which,
-							user_id = controller.get('model.user.id'),
-							room = controller.get('parentController.model');
+							user_id = controller.get('cardInfo.user.id'),
+							room = App.__container__.lookup('controller:chat').get('currentRoom');
 
 						if ( key == keycodes.P )
 							room.send("/timeout " + user_id + " 1");
@@ -76,6 +79,9 @@ FFZ.prototype.setup_mod_card = function() {
 
 						else if ( key == keycodes.T )
 							room.send("/timeout " + user_id + " 600");
+
+						else if ( key == keycodes.U )
+							room.send("/unban " + user_id);
 
 						else if ( key != keycodes.ESC )
 							return;
@@ -89,8 +95,8 @@ FFZ.prototype.setup_mod_card = function() {
 					line.className = 'interface clearfix';
 
 					var btn_click = function(timeout) {
-							var user_id = controller.get('model.user.id'),
-								room = controller.get('parentController.model');
+							var user_id = controller.get('cardInfo.user.id'),
+								room = App.__container__.lookup('controller:chat').get('currentRoom');
 
 								if ( timeout === -1 )
 									room.send("/unban " + user_id);
@@ -151,8 +157,9 @@ FFZ.prototype.setup_mod_card = function() {
 				// More Fixing Other Buttons
 				var op_btn = el.querySelector('button.mod');
 				if ( op_btn ) {
-					var model = controller.get('parentController.model'),
-						can_op = model.get('isBroadcaster') || model.get('isStaff') || model.get('isAdmin');
+					var is_owner = controller.get('cardInfo.isChannelOwner'),
+						user = ffz.get_user();
+						can_op = is_owner || (user && user.is_admin) || (user && user.is_staff);
 
 					if ( ! can_op )
 						op_btn.parentElement.removeChild(op_btn);
@@ -160,7 +167,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 				var msg_btn = el.querySelector(".interface > button");
-				if ( msg_btn && msg_btn.className == "button" ) {
+				if ( msg_btn && msg_btn.classList.contains("message-button") ) {
 					msg_btn.innerHTML = MESSAGE;
 					msg_btn.classList.add('glyph-only');
 					msg_btn.classList.add('message');

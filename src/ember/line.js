@@ -1,4 +1,4 @@
-var FFZ = window.FrankerFaceZ,
+﻿var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
 	reg_escape = function(str) {
@@ -71,6 +71,106 @@ var FFZ = window.FrankerFaceZ,
 		var images = document.querySelectorAll('img[emote-id="' + id + '"]');
 		for(var x=0; x < images.length; x++)
 			images[x].title = tooltip;
+	},
+
+	build_link_tooltip = function(href) {
+		var link_data = this._link_data[href],
+			tooltip;
+
+		if ( ! link_data )
+			return "";
+
+		if ( link_data.tooltip )
+			return link_data.tooltip;
+
+		if ( link_data.type == "youtube" ) {
+			tooltip = "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
+			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
+
+		} else if ( link_data.type == "strawpoll" ) {
+			tooltip = "<b>Strawpoll: " + utils.sanitize(link_data.title) + "</b><hr><table><tbody>";
+			for(var key in link_data.items) {
+				var votes = link_data.items[key],
+					percentage = Math.floor((votes / link_data.total) * 100);
+				tooltip += '<tr><td style="text-align:left">' + utils.sanitize(key) + '</td><td style="text-align:right">' + utils.number_commas(votes) + "</td></tr>";
+			}
+			tooltip += "</tbody></table><hr>Total: " + utils.number_commas(link_data.total);
+			var fetched = utils.parse_date(link_data.fetched);
+			if ( fetched ) {
+				var age = Math.floor((fetched.getTime() - Date.now()) / 1000);
+				if ( age > 60 )
+					tooltip += "<br><small>Data was cached " + utils.time_to_string(age) + " ago.</small>";
+			}
+
+
+		} else if ( link_data.type == "twitch" ) {
+			tooltip = "<b>Twitch: " + utils.sanitize(link_data.display_name) + "</b><hr>";
+			var since = utils.parse_date(link_data.since);
+			if ( since )
+				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
+			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
+
+
+		} else if ( link_data.type == "twitter" ) {
+			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
+			tooltip += utils.sanitize(link_data.tweet);
+
+
+		} else if ( link_data.type == "reputation" ) {
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
+				tooltip += "<hr>";
+				var had_extra = false;
+				if ( link_data.trust < 50 || link_data.safety < 50 ) {
+					link_data.unsafe = true;
+					tooltip += "<b>Potentially Unsafe Link</b><br>";
+					tooltip += "Trust: " + link_data.trust + "% | Child Safety: " + link_data.safety + "%";
+					had_extra = true;
+				}
+
+				if ( link_data.tags && link_data.tags.length > 0 )
+					tooltip += (had_extra ? "<br>" : "") + "Tags: " + link_data.tags.join(", ");
+
+				tooltip += "<br>Data Source: WOT";
+			}
+
+
+		} else if ( link_data.full )
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+
+		if ( ! tooltip )
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
+
+		link_data.tooltip = tooltip;
+		return tooltip;
+	},
+
+	load_link_data = function(href, success, data) {
+		if ( ! success )
+			return;
+
+		this._link_data[href] = data;
+		data.unsafe = false;
+
+		var tooltip = build_link_tooltip.bind(this)(href), links,
+			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
+
+		if ( no_trail )
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[href="' + no_trail + '"], span.message a[data-url="' + href + '"], span.message a[data-url="' + no_trail + '"]');
+		else
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[data-url="' + href + '"]');
+
+		if ( ! this.settings.link_info )
+			return;
+
+		for(var x=0; x < links.length; x++) {
+			if ( data.unsafe )
+				links[x].classList.add('unsafe-link');
+
+			if ( ! links[x].classList.contains('deleted-link') )
+				links[x].title = tooltip;
+		}
 	};
 
 
@@ -78,24 +178,13 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // ---------------------
 
-FFZ.settings_info.capitalize = {
-	type: "boolean",
-	value: true,
-
-	category: "Chat",
-	visible: function() { return ! this.has_bttv },
-
-	name: "Username Capitalization",
-	help: "Display names in chat with proper capitalization."
-	};
-
-
 FFZ.settings_info.banned_words = {
 	type: "button",
 	value: [],
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Banned Words",
 	help: "Set a list of words that will be locally removed from chat messages.",
@@ -126,7 +215,8 @@ FFZ.settings_info.keywords = {
 	value: [],
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
@@ -158,7 +248,8 @@ FFZ.settings_info.fix_color = {
 	value: true,
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Adjust Username Colors",
 	help: "Ensure that username colors contrast with the background enough to be readable.",
@@ -172,12 +263,26 @@ FFZ.settings_info.fix_color = {
 	};
 
 
+FFZ.settings_info.link_info = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
+
+	name: "Link Tooltips <span>Beta</span>",
+	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
+	};
+
+
 FFZ.settings_info.chat_rows = {
 	type: "boolean",
 	value: false,
 
 	category: "Chat",
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
 	name: "Chat Line Backgrounds",
 	help: "Display alternating background colors for lines in chat.",
@@ -211,6 +316,7 @@ FFZ.prototype.setup_line = function() {
 
 	// Emoticon Data
 	this._twitch_emotes = {};
+	this._link_data = {};
 
 
 	this.log("Hooking the Ember Line controller.");
@@ -231,6 +337,11 @@ FFZ.prototype.setup_line = function() {
 
 				if ( ! user || this.get("model.from") != user.login )
 					tokens = f._mentionize(this, tokens);
+
+				// Store the capitalization.
+				var display = this.get("model.tags.display-name");
+				if ( display && display.length )
+					FFZ.capitalization[this.get("model.from")] = [display.trim(), Date.now()];
 
 				var end = performance.now();
 				if ( end - start > 5 )
@@ -265,7 +376,6 @@ FFZ.prototype.setup_line = function() {
 
 					row_type = controller.get('model.ffz_alternate');
 
-
 				// Color Processing
 				if ( color )
 					f._handle_color(color);
@@ -288,11 +398,6 @@ FFZ.prototype.setup_line = function() {
 
 				// Badge
 				f.render_badge(this);
-
-
-				// Capitalization
-				if ( f.settings.capitalize )
-					f.capitalize(this, user);
 
 
 				// Mention Highlighting
@@ -357,12 +462,52 @@ FFZ.prototype.setup_line = function() {
 						this.target = "_new";
 						this.textContent = link;
 
+						// Now, check for a tooltip.
+						var link_data = f._link_data[link];
+						if ( link_data && typeof link_data != "boolean" ) {
+							this.title = link_data.tooltip;
+							if ( link_data.unsafe )
+								this.classList.add('unsafe-link');
+						}
+
 						// Stop from Navigating
 						e.preventDefault();
 					});
 
 					// Also add a nice tooltip.
-					jQuery(link).tipsy();
+					jQuery(link).tipsy({html:true});
+				}
+
+
+				// Link Tooltips
+				if ( f.settings.link_info ) {
+					var links = el.querySelectorAll("span.message a");
+					for(var i=0; i < links.length; i++) {
+						var link = links[i],
+							href = link.href,
+							deleted = false;
+
+						if ( link.classList.contains("deleted-link") ) {
+							href = link.getAttribute("data-url");
+							deleted = true;
+						}
+
+						// Check the cache.
+						var link_data = f._link_data[href];
+						if ( link_data ) {
+							if ( !deleted && typeof link_data != "boolean" )
+								link.title = link_data.tooltip;
+
+							if ( link_data.unsafe )
+								link.classList.add('unsafe-link');
+
+						} else if ( ! /^mailto:/.test(href) ) {
+							f._link_data[href] = true;
+							f.ws_send("get_link", href, load_link_data.bind(f, href));
+						}
+					}
+
+					jQuery(links).tipsy({html:true});
 				}
 
 
@@ -533,16 +678,6 @@ FFZ.get_capitalization = function(name, callback) {
 	}
 
 	return old_data ? old_data[0] : name;
-}
-
-
-FFZ.prototype.capitalize = function(view, user) {
-	var name = FFZ.get_capitalization(user, this.capitalize.bind(this, view));
-	if ( !name || !view )
-		return;
-
-	var from = view.$('.from');
-	from && from.text(name);
 }
 
 

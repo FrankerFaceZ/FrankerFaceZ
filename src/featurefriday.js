@@ -47,7 +47,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	if ( ! this.feature_friday || this.feature_friday.channel == room_id )
 		return;
 
-	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title);
+	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title, this.feature_friday.icon, "FrankerFaceZ");
 
 	// Before we add the button, make sure the channel isn't the
 	// current channel.

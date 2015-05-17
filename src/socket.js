@@ -36,6 +36,13 @@ FFZ.prototype.ws_create = function() {
 		if ( user )
 			f.ws_send("setuser", user.login);
 
+		// Join the right channel if we're in the dashboard.
+		if ( f.is_dashboard ) {
+			var match = location.pathname.match(/\/([^\/]+)/);
+			if ( match )
+				f.ws_send("sub", match[1]);
+		}
+
 		// Send the current rooms.
 		for(var room_id in f.rooms)
 			f.rooms.hasOwnProperty(room_id) && f.ws_send("sub", room_id);

@@ -117,13 +117,27 @@ module.exports = {
 		return m;
 	},
 
-	time_to_string: function(elapsed) {
+	date_string: function(date) {
+		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();
+	},
+
+	time_to_string: function(elapsed, separate_days, days_only) {
 		var seconds = elapsed % 60,
 			minutes = Math.floor(elapsed / 60),
-			hours = Math.floor(minutes / 60);
+			hours = Math.floor(minutes / 60),
+			days = "";
 
 		minutes = minutes % 60;
 
-		return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+		if ( separate_days ) {
+			days = Math.floor(hours / 24);
+			hours = hours % 24;
+			if ( days_only && days > 0 )
+				return days + " days";
+
+			days = ( days > 0 ) ? days + " days, " : "";
+		}
+
+		return days + (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 	}
 }

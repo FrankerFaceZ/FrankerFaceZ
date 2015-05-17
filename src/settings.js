@@ -58,6 +58,19 @@ FFZ.prototype.load_settings = function() {
 // Menu Page
 // --------------------
 
+FFZ.settings_info.replace_twitch_menu = {
+	type: "boolean",
+	value: false,
+
+	name: "Replace Twitch Emoticon Menu <span>Beta</span>",
+	help: "Completely replace the default Twitch emoticon menu.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-menu-replace", val);
+		}
+	};
+
+
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
 			var settings = {},
@@ -141,37 +154,53 @@ FFZ.menu_pages.settings = {
 
 					el.className = 'clearfix';
 
-					if ( info.type == "boolean" ) {
-						var swit = document.createElement('a'),
-							label = document.createElement('span');
-
-						swit.className = 'switch';
-						swit.classList.toggle('active', val);
-						swit.innerHTML = "<span></span>";
-
+					if ( this.has_bttv && info.no_bttv ) {
+						var label = document.createElement('span'),
+							help = document.createElement('span');
 						label.className = 'switch-label';
 						label.innerHTML = info.name;
 
-						el.appendChild(swit);
-						el.appendChild(label);
+						help = document.createElement('span');
+						help.className = 'help';
+						help.innerHTML = 'Disabled due to incompatibility with BetterTTV.';
 
-						swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+						el.classList.add('disabled');
+						el.appendChild(label);
+						el.appendChild(help);
 
 					} else {
-						el.classList.add("option");
-						var link = document.createElement('a');
-						link.innerHTML = info.name;
-						link.href = "#";
-						el.appendChild(link);
+						if ( info.type == "boolean" ) {
+							var swit = document.createElement('a'),
+								label = document.createElement('span');
 
-						link.addEventListener("click", info.method.bind(this));
-					}
+							swit.className = 'switch';
+							swit.classList.toggle('active', val);
+							swit.innerHTML = "<span></span>";
 
-					if ( info.help ) {
-						var help = document.createElement('span');
-						help.className = 'help';
-						help.innerHTML = info.help;
-						el.appendChild(help);
+							label.className = 'switch-label';
+							label.innerHTML = info.name;
+
+							el.appendChild(swit);
+							el.appendChild(label);
+
+							swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+
+						} else {
+							el.classList.add("option");
+							var link = document.createElement('a');
+							link.innerHTML = info.name;
+							link.href = "#";
+							el.appendChild(link);
+
+							link.addEventListener("click", info.method.bind(this));
+						}
+
+						if ( info.help ) {
+							var help = document.createElement('span');
+							help.className = 'help';
+							help.innerHTML = info.help;
+							el.appendChild(help);
+						}
 					}
 
 					menu.appendChild(el);
@@ -183,7 +212,8 @@ FFZ.menu_pages.settings = {
 
 	name: "Settings",
 	icon: constants.GEAR,
-	sort_order: 99999
+	sort_order: 99999,
+	wide: true
 	};
 
 
@@ -194,8 +224,6 @@ FFZ.menu_pages.settings = {
 FFZ.prototype._setting_update = function(e) {
 	if ( ! e )
 		e = window.event;
-
-	this.log("Storage Event", e);
 
 	if ( ! e.key || e.key.substr(0, 12) !== "ffz_setting_" )
 		return;

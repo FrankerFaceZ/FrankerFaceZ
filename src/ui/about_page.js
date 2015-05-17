@@ -37,6 +37,18 @@ FFZ.menu_pages.about = {
 		heading.innerHTML = content;
 		container.appendChild(heading);
 
+		var clicks = 0, head = heading.querySelector("h1");
+		head && head.addEventListener("click", function() {
+			head.style.cursor = "pointer";
+			clicks++;
+			if ( clicks >= 3 ) {
+				clicks = 0;
+				var el = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+				el && el.classList.toggle('ffz-flip');
+			}
+			setTimeout(function(){clicks=0;head.style.cursor=""},2000);
+		});
+
 
 		// Advertising
 		var btn_container = document.createElement('div'),

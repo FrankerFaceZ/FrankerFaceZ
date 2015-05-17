@@ -17,9 +17,10 @@ FFZ.settings_info.dark_twitch = {
 	type: "boolean",
 	value: false,
 
-	visible: function() { return ! this.has_bttv },
+	no_bttv: true,
+	//visible: function() { return ! this.has_bttv },
 
-	name: "Dark Twitch <span>Beta</span>",
+	name: "Dark Twitch",
 	help: "Apply a dark background to channels and other related pages for easier viewing.",
 
 	on_update: function(val) {
@@ -28,14 +29,14 @@ FFZ.settings_info.dark_twitch = {
 
 			document.body.classList.toggle("ffz-dark", val);
 
-			var model = App.__container__.lookup('controller:settings').get('model');
+			var model = window.App ? App.__container__.lookup('controller:settings').get('model') : undefined;
 
 			if ( val ) {
 				this._load_dark_css();
-				this.settings.set('twitch_chat_dark', model.get('darkMode'));
-				model.set('darkMode', true);
+				model && this.settings.set('twitch_chat_dark', model.get('darkMode'));
+				model && model.set('darkMode', true);
 			} else
-				model.set('darkMode', this.settings.twitch_chat_dark);
+				model && model.set('darkMode', this.settings.twitch_chat_dark);
 		}
 	};
 
@@ -50,7 +51,7 @@ FFZ.prototype.setup_dark = function() {
 
 	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
 	if ( this.settings.dark_twitch )
-		App.__container__.lookup('controller:settings').set('model.darkMode', true);
+		window.App && App.__container__.lookup('controller:settings').set('model.darkMode', true);
 
 	if ( this.settings.dark_twitch )
 		this._load_dark_css();

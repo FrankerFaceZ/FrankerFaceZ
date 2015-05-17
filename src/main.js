@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 2, revision: 5,
+	major: 3, minor: 3, revision: 1,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -93,7 +93,7 @@ FFZ.prototype.get_user = function() {
 	if ( window.PP && PP.login ) {
 		return PP;
 	} else if ( window.App ) {
-		var nc = App.__container__.lookup("controller:navigation");
+		var nc = App.__container__.lookup("controller:login");
 		return nc ? nc.get("userData") : undefined;
 	}
 }
@@ -115,6 +115,7 @@ require('./emoticons');
 require('./badges');
 
 // Analytics: require('./ember/router');
+require('./ember/channel');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
@@ -154,7 +155,17 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Make sure that FrankerFaceZ doesn't start setting itself up until the
 	// Twitch ember application is ready.
 
-	// TODO: Special Dashboard check.
+	// Check for special non-ember pages.
+	if ( /\/(?:settings|messages?\/)/.test(location.pathname) ) {
+		this.setup_normal(delay);
+		return;
+	}
+
+	// Check for the dashboard.
+	if ( /\/[A-Za-z_-]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
+		this.setup_dashboard(delay);
+		return;
+	}
 
 	var loaded = window.App != undefined &&
 				 App.__container__ != undefined &&
@@ -171,6 +182,65 @@ FFZ.prototype.initialize = function(increment, delay) {
 	}
 
 	this.setup_ember(delay);
+}
+
+
+FFZ.prototype.setup_normal = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+
+	// Initialize all the modules.
+	this.load_settings();
+
+	// Start this early, for quick loading.
+	this.setup_dark();
+
+	this.ws_create();
+	this.setup_emoticons();
+	this.setup_badges();
+
+	this.setup_notifications();
+	this.setup_css();
+
+	this.find_bttv(10);
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
+}
+
+
+FFZ.prototype.is_dashboard = false;
+
+FFZ.prototype.setup_dashboard = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found Twitch Dashboard after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+	this.is_dashboard = true;
+
+	// Initialize all the modules.
+	this.load_settings();
+
+	// Start this early, for quick loading.
+	this.setup_dark();
+
+	this.ws_create();
+	this.setup_emoticons();
+	this.setup_badges();
+
+	this.setup_notifications();
+	this.setup_css();
+
+	this.find_bttv(10);
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
 }
 
 
@@ -193,6 +263,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	//this.setup_piwik();
 
 	//this.setup_router();
+	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
 	this.setup_chatview();
