@@ -7,13 +7,13 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
-FFZ.settings_info.bot_badges = {
+FFZ.settings_info.show_badges = {
 	type: "boolean",
 	value: true,
 
 	category: "Chat",
-	name: "Bot Badges",
-	help: "Give special badges to known bots."
+	name: "Additional Badges",
+	help: "Show additional badges for bots, FrankerFaceZ donors, and other special users."
 	};
 
 
@@ -74,6 +74,9 @@ var badge_css = function(badge) {
 // --------------------
 
 FFZ.prototype.bttv_badges = function(data) {
+	if ( ! this.settings.show_badges )
+		return;
+
 	var user_id = data.sender,
 		user = this.users[user_id],
 		badges_out = [],
@@ -154,10 +157,13 @@ FFZ.prototype.bttv_badges = function(data) {
 }
 
 
-FFZ.prototype.render_badge = function(view) {
-	var user = view.get('context.model.from'),
-		room_id = view.get('context.parentController.content.id'),
-		badges = view.$('.badges');
+FFZ.prototype.render_badge = function(component) {
+	if ( ! this.settings.show_badges )
+		return;
+
+	var user = component.get('msgObject.from'),
+		room_id = App.__container__.lookup('controller:chat').get('currentRoom.id'),
+		badges = component.$('.badges');
 
 	var data = this.users[user];
 	if ( ! data || ! data.badges )
@@ -233,17 +239,17 @@ FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot"
 
 FFZ.prototype._legacy_add_donors = function() {
 	// Developer Badge
-	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/channel/global/devicon.png"};
+	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
 
 	// Donor Badge
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/channel/global/donoricon.png"};
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/script/donoricon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Bot Badge
-	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/channel/global/boticon.png",
+	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/script/boticon.png",
 		replaces: 'moderator',
-		visible: function(r,user) { return this.settings.bot_badges && !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
+		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
 	// Load BTTV Bots
@@ -257,10 +263,8 @@ FFZ.prototype._legacy_add_donors = function() {
 	}
 
 	// Special Badges
-	this.users.sirstendec = {badges: {1: {id:0}}};
-	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/channel/global/momiglee_badge.png", title: "WAN"}}};
-
-	this.load_set(".donor");
+	this.users.sirstendec = {badges: {1: {id:0}}, sets: [4330]};
+	this.users.zenwan = {badges: {0: {id:2, image: "//cdn.frankerfacez.com/script/momiglee_badge.png", title: "WAN"}}};
 
 	this._legacy_load_bots();
 	this._legacy_load_donors();
@@ -300,7 +304,7 @@ FFZ.prototype._legacy_load_donors = function(tries) {
 FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 	var title = this.badges[badge_id].title,
 		count = 0;
-		ds = badge_id == 1 ? ".donor" : "";
+		ds = null;
 
 	if ( data != null ) {
 		var lines = data.trim().split(/\W+/);
@@ -310,7 +314,7 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 				badges = user.badges = user.badges || {},
 				sets = user.sets = user.sets || [];
 
-			if ( sets.indexOf(ds) === -1 )
+			if ( ds !== null && sets.indexOf(ds) === -1 )
 				sets.push(ds);
 
 			if ( badges[slot] )

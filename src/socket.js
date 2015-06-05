@@ -32,6 +32,18 @@ FFZ.prototype.ws_create = function() {
 		f._ws_delay = 0;
 		f.log("Socket connected.");
 
+		// Check for incognito. We don't want to do a hello in incognito mode.
+		var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+		if (!fs)
+			// Assume not.
+			f.ws_send("hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f));
+
+		else
+			fs(window.TEMPORARY, 100,
+				f.ws_send.bind(f, "hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f)),
+				f.log.bind(f, "Operating in Incognito Mode."));
+
+
 		var user = f.get_user();
 		if ( user )
 			f.ws_send("setuser", user.login);
@@ -138,6 +150,43 @@ FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
 	this._ws_sock.send(request + " " + func + data);
 	return request;
 }
+
+
+// ----------------
+// HELLO Response
+// ----------------
+
+FFZ.prototype._ws_on_hello = function(success, data) {
+	if ( ! success )
+		return this.log("Error Saying Hello: " + data);
+
+	localStorage.ffzClientId = data;
+	this.log("Client ID: " + data);
+
+	var survey = {},
+		set = survey['settings'] = {};
+
+	for(var key in FFZ.settings_info)
+		set[key] = this.settings[key];
+
+	set["keywords"] = this.settings.keywords.length;
+	set["banned_words"] = this.settings.banned_words.length;
+
+
+	// Detect BTTV.
+	survey['bttv'] = this.has_bttv || !!document.head.querySelector('script[src*="betterttv"]');
+
+
+	// Client Info
+	survey['user-agent'] = navigator.userAgent;
+	survey['screen'] = [screen.width, screen.height];
+	survey['language'] = navigator.language;
+	survey['platform'] = navigator.platform;
+
+	this.ws_send("survey", [survey]);
+}
+
+
 
 // ----------------
 // Authorization

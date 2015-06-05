@@ -23,8 +23,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
-	this.log("WOO");
-
 	// this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
 
 	// Disable Dark if it's enabled.
@@ -34,9 +32,18 @@ FFZ.prototype.setup_bttv = function(delay) {
 		delete this._dark_style;
 	}
 
+	// Disable Chat Tabs
+	if ( this.settings.group_tabs && this._chatv ) {
+		this._chatv.ffzDisableTabs();
+	}
+
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
 	document.body.classList.remove("ffz-chat-background");
+
+	// Remove Sub Count
+	if ( this.is_dashboard )
+		this._update_subscribers();
 
 
 	// Send Message Behavior
@@ -71,7 +78,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.
-			return '<div class="chat-line'+(highlight?' highlight':'')+(action?' action':'')+(server?' admin':'')+'" data-sender="'+data.sender+'" data-room="'+received_room+'">'+
+			return '<div class="chat-line'+(highlight?' highlight':'')+(action?' action':'')+(server?' admin':'')+'" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
 				BetterTTV.chat.templates.timestamp(data.time)+' '+
 				(isMod?BetterTTV.chat.templates.modicons():'')+' '+
 				BetterTTV.chat.templates.badges(data.badges)+
@@ -94,6 +101,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			var rawMessage = encodeURIComponent(message);
 
 			if(sender !== 'jtv') {
+				// Hackilly send our state across.
 				received_sender = sender;
 				var tokenizedMessage = BetterTTV.chat.templates.emoticonize(message, emotes);
 				received_sender = null;
@@ -109,7 +117,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 				message = tokenizedMessage.join(' ');
 			}
 
-			return '<span class="message" '+(colored?'style="color: '+colored+'" ':'')+'data-raw="'+rawMessage+'">'+message+'</span>';
+			return '<span class="message" '+(colored?'style="color: '+colored+'" ':'')+'data-raw="'+rawMessage+'" data-emotes="'+(emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false')+'">'+message+'</span>';
 		} catch(err) {
 			f.log("Error: ", err);
 			return original_message(sender, message, emotes, colored);
@@ -121,8 +129,13 @@ FFZ.prototype.setup_bttv = function(delay) {
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
-			sets = f.getEmotes(received_sender, received_room),
-			emotes = [];
+			room = (received_room || BetterTTV.getChannel()),
+			l_room = room && room.toLowerCase(),
+			l_sender = received_sender && received_sender.toLowerCase(),
+			sets = f.getEmotes(l_sender, l_room),
+			emotes = [],
+			user = f.get_user(),
+			mine = user && user.login === l_sender;
 
 		// Build a list of emotes that match.
 		_.each(sets, function(set_id) {
@@ -130,7 +143,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			if ( ! set )
 				return;
 
-			_.each(set.emotes, function(emote) {
+			_.each(set.emoticons, function(emote) {
 				_.any(tokens, function(token) {
 					return _.isString(token) && token.match(emote.regex);
 				}) && emotes.push(emote);
@@ -143,7 +156,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 		// Why is emote parsing so bad? ;_;
 		_.each(emotes, function(emote) {
-			var eo = ['<img class="emoticon" src="' + emote.url + (emote.hidden ? "" : '" alt="' + emote.name + '" title="' + emote.name) + '" />'],
+			var tooltip = f._emote_tooltip(emote),
+				eo = ['<img class="emoticon" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" alt="' + tooltip + '" title="' + tooltip + '" />'],
 				old_tokens = tokens;
 
 			tokens = [];
@@ -159,13 +173,22 @@ FFZ.prototype.setup_bttv = function(delay) {
 				}
 
 				var tbits = token.split(emote.regex);
-				tbits.forEach(function(val, ind) {
-					if ( val && val.length )
-						tokens.push(val);
+				while(tbits.length) {
+					var bit = tbits.shift();
+					if ( tbits.length ) {
+						bit += tbits.shift();
+						if ( bit )
+							tokens.push(bit);
 
-					if ( ind !== tbits.length - 1 )
+						tbits.shift();
 						tokens.push(eo);
-				});
+
+						if ( mine && l_room )
+							f.add_usage(l_room, emote.id);
+
+					} else
+						tokens.push(bit);
+				}
 			}
 		});
 

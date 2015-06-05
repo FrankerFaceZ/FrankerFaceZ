@@ -50,11 +50,11 @@ FFZ.prototype.setup_dark = function() {
 		return;
 
 	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
-	if ( this.settings.dark_twitch )
-		window.App && App.__container__.lookup('controller:settings').set('model.darkMode', true);
+	if ( ! this.settings.dark_twitch )
+		return;
 
-	if ( this.settings.dark_twitch )
-		this._load_dark_css();
+	window.App && App.__container__.lookup('controller:settings').set('model.darkMode', true);
+	this._load_dark_css();
 }
 
 

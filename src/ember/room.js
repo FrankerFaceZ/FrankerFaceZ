@@ -51,6 +51,7 @@ FFZ.prototype.setup_room = function() {
 		var inst = instances[key];
 		this.add_room(inst.id, inst);
 		this._modify_room(inst);
+		inst.ffzPatchTMI();
 	}
 }
 
@@ -199,7 +200,7 @@ FFZ.prototype.add_room = function(id, room) {
 	this.ws_send("sub", id);
 
 	// For now, we use the legacy function to grab the .css file.
-	this._legacy_add_room(id);
+	this.load_room(id);
 }
 
 
@@ -219,14 +220,14 @@ FFZ.prototype.remove_room = function(id) {
 	delete this.rooms[id];
 
 	// Clean up sets we aren't using any longer.
-	for(var i=0; i < room.sets.length; i++) {
-		var set_id = room.sets[i], set = this.emote_sets[set_id];
-		if ( ! set )
-			continue;
+	if ( id.charAt(0) === "_" )
+		return;
 
+	var set = this.emote_sets[room.set];
+	if ( set ) {
 		set.users.removeObject(id);
-		if ( !set.global && !set.users.length )
-			this.unload_set(set_id);
+		if ( ! this.global_sets.contains(room.set) && ! set.users.length )
+			this.unload_set(room.set);
 	}
 }
 
@@ -235,12 +236,36 @@ FFZ.prototype.remove_room = function(id) {
 // Receiving Set Info
 // --------------------
 
-FFZ.prototype.load_room = function(room_id, callback) {
-	return this._legacy_load_room(room_id, callback);
+FFZ.prototype.load_room = function(room_id, callback, tries) {
+	var f = this;
+	jQuery.getJSON(constants.API_SERVER + "v1/room/" + room_id)
+		.done(function(data) {
+			if ( data.sets ) {
+				for(var key in data.sets)
+					data.sets.hasOwnProperty(key) && f._load_set_json(key, undefined, data.sets[key]);
+			}
+
+			f._load_room_json(room_id, callback, data);
+
+		}).fail(function(data) {
+			if ( data.status == 404 )
+				return typeof callback == "function" && callback(false);
+
+			tries = (tries || 0) + 1;
+			if ( tries < 10 )
+				return f.load_room(room_id, callback, tries);
+
+			return typeof callback == "function" && callback(false);
+		});
 }
 
 
 FFZ.prototype._load_room_json = function(room_id, callback, data) {
+	if ( ! data || ! data.room )
+		return typeof callback == "function" && callback(false);
+
+	data = data.room;
+
 	// Preserve the pointer to the Room instance.
 	if ( this.rooms[room_id] )
 		data.room = this.rooms[room_id].room;
@@ -250,11 +275,8 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	if ( data.css || data.moderator_badge )
 		utils.update_css(this._room_style, room_id, moderator_css(data) + (data.css||""));
 
-	for(var i=0; i < data.sets.length; i++) {
-		var set_id = data.sets[i];
-		if ( ! this.emote_sets.hasOwnProperty(set_id) )
-			this.load_set(set_id);
-	}
+	if ( ! this.emote_sets.hasOwnProperty(data.set) )
+		this.load_set(data.set);
 
 	this.update_ui_link();
 
@@ -275,6 +297,7 @@ FFZ.prototype._modify_room = function(room) {
 			this._super();
 			try {
 				f.add_room(this.id, this);
+				this.set("ffz_chatters", {});
 			} catch(err) {
 				f.error("add_room: " + err);
 			}
@@ -289,20 +312,25 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
-		getSuggestions: function() {
-			// This returns auto-complete suggestions for use in chat. We want
-			// to apply our capitalizations here. Overriding the
-			// filteredSuggestions property of the chat-input component would
-			// be even better, but I was already hooking the room model.
-			var suggestions = this._super();
-
+		addMessage: function(msg) {
 			try {
-				suggestions = _.map(suggestions, FFZ.get_capitalization);
+				if ( msg ) {
+					msg.room = this.get('id');
+					f.tokenize_chat_line(msg);
+				}
 			} catch(err) {
-				f.error("get_suggestions: " + err);
+				f.error("Room addMessage: " + err);
 			}
 
-			return suggestions;
+			return this._super(msg);
+		},
+
+		setHostMode: function(e) {
+			var Chat = App.__container__.lookup('controller:chat');
+			if ( ! Chat || Chat.get('currentChannelRoom') !== this )
+				return;
+
+			return this._super(e);
 		},
 
 		send: function(text) {
@@ -323,54 +351,168 @@ FFZ.prototype._modify_room = function(room) {
 			}
 
 			return this._super(text);
-		}
+		},
+
+		ffzUpdateUnread: function() {
+			if ( f.settings.group_tabs ) {
+				var Chat = App.__container__.lookup('controller:chat');
+				if ( Chat && Chat.get('currentRoom') === this )
+					this.resetUnreadCount();
+				else if ( f._chatv )
+					f._chatv.ffzTabUnread(this.get('id'));
+			}
+		}.observes('unreadCount'),
+
+
+		ffzInitChatterCount: function() {
+			if ( ! this.tmiRoom )
+				return;
+
+			var room = this;
+			this.tmiRoom.list().done(function(data) {
+				var chatters = {};
+				data = data.data.chatters;
+				for(var i=0; i < data.admins.length; i++)
+					chatters[data.admins[i]] = true;
+				for(var i=0; i < data.global_mods.length; i++)
+					chatters[data.global_mods[i]] = true;
+				for(var i=0; i < data.moderators.length; i++)
+					chatters[data.moderators[i]] = true;
+				for(var i=0; i < data.staff.length; i++)
+					chatters[data.staff[i]] = true;
+				for(var i=0; i < data.viewers.length; i++)
+					chatters[data.viewers[i]] = true;
+
+				room.set("ffz_chatters", chatters);
+				room.ffzUpdateChatters();
+			});
+		},
+
+		ffzUpdateChatters: function(add, remove) {
+			var chatters = this.get("ffz_chatters") || {};
+			if ( add )
+				chatters[add] = true;
+			if ( remove && chatters[remove] )
+				delete chatters[remove];
+
+			if ( ! f.settings.chatter_count )
+				return;
+
+			if ( f._cindex )
+				f._cindex.ffzUpdateChatters();
+
+			if ( window.parent && window.parent.postMessage )
+				window.parent.postMessage({from_ffz: true, command: 'chatter_count', message: Object.keys(this.get('ffz_chatters') || {}).length}, "http://www.twitch.tv/");
+		},
+
+
+		ffzPatchTMI: function() {
+			if ( this.get('ffz_is_patched') || ! this.get('tmiRoom') )
+				return;
+
+			if ( f.settings.chatter_count )
+				this.ffzInitChatterCount();
+
+			var tmi = this.get('tmiRoom'),
+				room = this;
+
+			// This method is stupid and bad and it leaks between rooms.
+			if ( ! tmi.ffz_notice_patched ) {
+				tmi.ffz_notice_patched = true;
+
+				tmi._roomConn.off("notice", tmi._onNotice, tmi);
+				tmi._roomConn.on("notice", function(ircMsg) {
+					var target = ircMsg.target || (ircMsg.params && ircMsg.params[0]) || this.ircChannel;
+					if( target != this.ircChannel )
+						return;
+
+					this._trigger("notice", {
+						msgId: ircMsg.tags['msg-id'],
+						message: ircMsg.message
+					});
+				}, tmi);
+			}
+
+			// Let's get chatter information!
+			var connection = tmi._roomConn._connection;
+			if ( ! connection.ffz_cap_patched ) {
+				connection.ffz_cap_patched = true;
+				connection._send("CAP REQ :twitch.tv/membership");
+
+				connection.on("opened", function() {
+						this._send("CAP REQ :twitch.tv/membership");
+					}, connection);
+
+				// Since TMI starts sending SPECIALUSER with this, we need to
+				// ignore that. \ CatBag /
+				var orig_handle = connection._handleTmiPrivmsg.bind(connection);
+				connection._handleTmiPrivmsg = function(msg) {
+					if ( msg.message && msg.message.split(" ",1)[0] === "SPECIALUSER" )
+						return;
+					return orig_handle(msg);
+				}
+			}
+
+
+			// Check this shit.
+			tmi._roomConn._connection.off("message", tmi._roomConn._onIrcMessage, tmi._roomConn);
+
+			tmi._roomConn._onIrcMessage = function(ircMsg) {
+				if ( ircMsg.target != this.ircChannel )
+					return;
+
+				switch ( ircMsg.command ) {
+					case "JOIN":
+						if ( this._session && this._session.nickname === ircMsg.sender ) {
+							this._onIrcJoin(ircMsg);
+						} else
+							f.settings.chatter_count && room.ffzUpdateChatters(ircMsg.sender);
+						break;
+
+					case "PART":
+						if ( this._session && this._session.nickname === ircMsg.sender ) {
+							this._resetActiveState();
+							this._connection._exitedRoomConn();
+							this._trigger("exited");
+						} else
+							f.settings.chatter_count && room.ffzUpdateChatters(null, ircMsg.sender);
+						break;
+
+					default:
+						break;
+				}
+			}
+
+			tmi._roomConn._connection.on("message", tmi._roomConn._onIrcMessage, tmi._roomConn);
+
+
+			// Okay, we need to patch the *session's* updateUserState
+			if ( ! tmi.session.ffz_patched ) {
+				tmi.session.ffz_patched = true;
+				var uus = tmi.session._updateUserState.bind(tmi.session);
+
+				tmi.session._updateUserState = function(user, tags) {
+					try {
+						if ( tags.color )
+							this._onUserColorChanged(user, tags.color);
+
+						if ( tags['display-name'] )
+							this._onUserDisplayNameChanged(user, tags['display-name']);
+
+						if ( tags.turbo )
+							this._onUserSpecialAdded(user, 'turbo');
+
+						if ( tags['user_type'] === 'staff' || tags['user_type'] === 'admin' || tags['user_type'] === 'global_mod' )
+							this._onUserSpecialAdded(user, tags['user-type']);
+
+					} catch(err) {
+						f.error("SessionManager _updateUserState: " + err);
+					}
+				}
+			}
+
+			this.set('ffz_is_patched', true);
+
+		}.observes('tmiRoom')
 	});
-}
-
-
-// --------------------
-// Legacy Data Support
-// --------------------
-
-FFZ.prototype._legacy_add_room = function(room_id, callback, tries) {
-	jQuery.ajax(constants.SERVER + "channel/" + room_id + ".css", {cache: false, context:this})
-		.done(function(data) {
-			this._legacy_load_room_css(room_id, callback, data);
-
-		}).fail(function(data) {
-			if ( data.status == 404 )
-				return this._legacy_load_room_css(room_id, callback, null);
-
-			tries = tries || 0;
-			tries++;
-			if ( tries < 10 )
-				return this._legacy_add_room(room_id, callback, tries);
-		});
-}
-
-
-FFZ.prototype._legacy_load_room_css = function(room_id, callback, data) {
-	var set_id = room_id,
-		match = set_id.match(GROUP_CHAT);
-
-	if ( match && match[1] )
-		set_id = match[1];
-
-	var output = {id: room_id, menu_sets: [set_id], sets: [set_id], moderator_badge: null, css: null};
-
-	if ( data )
-		data = data.replace(CSS, "").trim();
-
-	if ( data ) {
-		data = data.replace(MOD_CSS, function(match, url) {
-			if ( output.moderator_badge || url.substr(-11) !== 'modicon.png' )
-				return match;
-
-			output.moderator_badge = url;
-			return "";
-		});
-	}
-
-	output.css = data || null;
-	return this._load_room_json(room_id, callback, output);
 }

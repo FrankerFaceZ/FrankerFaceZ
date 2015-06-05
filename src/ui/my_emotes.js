@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
+	utils = require("../utils"),
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	BANNED_SETS = {"00000turbo":true},
@@ -43,7 +44,7 @@ var FFZ = window.FrankerFaceZ,
 
 		if ( ffz.settings.global_emotes_in_menu ) {
 			set_ids.push("0");
-			user_sets = _.union(user_sets, ffz.global_sets);
+			user_sets = _.union(user_sets, ffz.default_sets);
 		}
 
 		return [set_ids, user_sets];
@@ -64,18 +65,22 @@ FFZ.settings_info.global_emotes_in_menu = {
 
 
 FFZ.prototype.setup_my_emotes = function() {
-	this._twitch_emote_sets = {};
 	this._twitch_set_to_channel = {};
+	this._twitch_badges = {};
 
 	if ( localStorage.ffzTwitchSets ) {
 		try {
 			this._twitch_set_to_channel = JSON.parse(localStorage.ffzTwitchSets);
+			this._twitch_badges = JSON.parse(localStorage.ffzTwitchBadges);
 		} catch(err) { }
 	}
 
-	this._twitch_set_to_channel[0] = "twitch_global";
-	this._twitch_set_to_channel[33] = "twitch_tfaces";
-	this._twitch_set_to_channel[42] = "twitch_tfaces";
+	this._twitch_set_to_channel[0] = "global";
+	this._twitch_set_to_channel[33] = "tfaces";
+	this._twitch_set_to_channel[42] = "tfaces";
+
+	this._twitch_badges["global"] = "//cdn.frankerfacez.com/script/twitch_logo.png";
+	this._twitch_badges["tfaces"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
 }
 
 
@@ -93,324 +98,212 @@ FFZ.menu_pages.my_emotes = {
 	},
 
 	render: function(view, container) {
-			var emotes = get_emotes(this), f = this;
+		var tmi = view.get('controller.currentRoom.tmiSession'),
+			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
+			needed_sets = [];
 
-			new RSVP.Promise(function(done) {
-				var needed_sets = [];
-				for(var i=0; i < emotes[0].length; i++) {
-					var set_id = emotes[0][i];
-					if ( ! f._twitch_emote_sets[set_id] )
-						needed_sets.push(set_id);
-				}
+		for(var set_id in twitch_sets)
+			if ( twitch_sets.hasOwnProperty(set_id) && ! this._twitch_set_to_channel.hasOwnProperty(set_id) )
+				needed_sets.push(set_id);
 
-				RSVP.all([
-					new RSVP.Promise(function(d) {
-						if ( ! needed_sets.length )
-							return d();
+		if ( ! needed_sets.length )
+			return FFZ.menu_pages.my_emotes.draw_menu.bind(this)(view, container, twitch_sets);
 
-						Twitch.api.get("chat/emoticon_images", {emotesets: needed_sets.join(",")}, {version: 3})
-							.done(function(data) {
-								if ( data.emoticon_sets ) {
-									for(var set_id in data.emoticon_sets) {
-										if ( ! data.emoticon_sets.hasOwnProperty(set_id) )
-											continue;
+		container.innerHTML = JSON.stringify(needed_sets);
+	},
 
-										var set = f._twitch_emote_sets[set_id] = f._twitch_emote_sets[set_id] || {},
-											emotes = data.emoticon_sets[set_id];
+	draw_twitch_set: function(view, set_id, set) {
+		var heading = document.createElement('div'),
+			menu = document.createElement('div'),
 
-										// Sort Emoticons
-										emotes.sort(function(a,b) {
-											var a = (KNOWN_CODES[a.code] ? "000" + KNOWN_CODES[a.code] : a.code).toLowerCase(),
-												b = (KNOWN_CODES[b.code] ? "000" + KNOWN_CODES[b.code] : b.code).toLowerCase();
+			channel_id = this._twitch_set_to_channel[set_id], title;
 
-											if ( a == "000grayface" ) a = "grayface";
-											if ( b == "000grayface" ) b = "grayface";
-
-											if ( a < b ) return -1;
-											else if ( a > b ) return 1;
-											return 0;
-										});
-
-										set.emotes = emotes;
-										set.source = "Twitch";
-									}
-								}
-								d();
-							}).fail(function() {
-								d();
-							});
-					}),
-					new RSVP.Promise(function(d) {
-						if ( ! needed_sets.length )
-							return d();
-
-						var promises = [],
-							old_needed = needed_sets,
-							handle_set = function(id, name) {
-								var set = f._twitch_emote_sets[id] = f._twitch_emote_sets[id] || {};
-
-								if ( !name || BANNED_SETS[name] )
-									return;
-
-								if ( name == "twitch_global" ) {
-									FFZ.capitalization["global emoticons"] = ["Global Emoticons", Date.now()];
-									set.channel = "Global Emoticons";
-									set.badge = "//cdn.frankerfacez.com/channel/global/twitch_logo.png";
-									return;
-								}
-
-								if ( name == "turbo" || name == "twitch_tfaces" ) {
-									set.channel = "Twitch Turbo";
-									set.badge = "//cdn.frankerfacez.com/script/turbo_badge.png";
-									return;
-								}
-
-								// Badge Lookup
-								promises.push(new RSVP.Promise(function(set, name, dn) {
-									Twitch.api.get("chat/" + name + "/badges", null, {version: 3})
-										.done(function(data) {
-											if ( data.subscriber && data.subscriber.image )
-												set.badge = data.subscriber.image;
-											dn();
-										}).fail(dn)}.bind(this,set,name)));
-
-								// Mess Up Capitalization
-								var lname = name.toLowerCase(),
-									old_data = FFZ.capitalization[lname];
-								if ( old_data && Date.now() - old_data[1] < 3600000 ) {
-									set.channel = old_data[0];
-									return;
-								}
-
-								promises.push(new RSVP.Promise(function(set, lname, name, dn) {
-									if ( ! f.ws_send("get_display_name", lname, function(success, data) {
-										var cap_name = success ? data : name;
-										FFZ.capitalization[lname] = [cap_name, Date.now()];
-										set.channel = cap_name;
-										dn();
-									}) ) {
-										// Can't use socket.
-										set.channel = name;
-										dn();
-									}
-
-									// Timeout
-									setTimeout(function(set,name,dn) {
-										if ( ! set.channel )
-											set.channel = name;
-										dn();
-									}.bind(this,set,name,dn), 500);
-								}.bind(this, set, lname, name)));
-							},
-							handle_promises = function() {
-								if ( promises.length )
-									RSVP.all(promises).then(d,d);
-								else
-									d();
-							};
-
-						// Process all the sets we already have.
-						needed_sets = [];
-						for(var i=0;i<old_needed.length;i++) {
-							var set_id = old_needed[i];
-							if ( f._twitch_set_to_channel[set_id] )
-								handle_set(set_id, f._twitch_set_to_channel[set_id]);
-							else
-								needed_sets.push(set_id);
-						}
-
-						if ( needed_sets.length > 0 ) {
-							f.ws_send("twitch_sets", needed_sets, function(success, data) {
-								needed_sets = [];
-								if ( success ) {
-									for(var set_id in data) {
-										if ( ! data.hasOwnProperty(set_id) )
-											continue;
-
-										f._twitch_set_to_channel[set_id] = data[set_id];
-										handle_set(set_id, data[set_id]);
-									}
-
-									localStorage.ffzTwitchSets = JSON.stringify(f._twitch_set_to_channel);
-								}
-
-								handle_promises();
-							});
-
-							// Timeout!
-							setTimeout(function() {
-								if ( needed_sets.length )
-									handle_promises();
-								}, 2000);
-
-						} else
-							handle_promises();
-					})
-				]).then(function() {
-					var sets = {};
-					for(var i=0; i < emotes[0].length; i++) {
-						var set_id = emotes[0][i];
-						if ( f._twitch_emote_sets[set_id] )
-							sets[set_id] = f._twitch_emote_sets[set_id];
-					}
-					done(sets);
-				}, function() { done({}); })
-			}).then(function(twitch_sets) {
-				try {
-
-				// Don't override a different page. We can wait.
-				if ( container.getAttribute('data-page') != "my_emotes" )
-					return;
-
-				container.innerHTML = "";
-
-				var ffz_sets = emotes[1],
-					sets = [];
-
-				for(var set_id in twitch_sets) {
-					if ( ! twitch_sets.hasOwnProperty(set_id) )
-						continue;
-
-					var set = twitch_sets[set_id];
-					if ( set.channel && set.emotes && set.emotes.length )
-						sets.push([1, set.channel, set]);
-				}
-
-				for(var i=0; i < ffz_sets.length; i++) {
-					var set_id = ffz_sets[i],
-						set = f.emote_sets[set_id];
-
-					if ( f.feature_friday && set_id == f.feature_friday.set )
-						continue;
-
-					if ( set.count > 0 )
-						sets.push([2, set.id, set]);
-				}
-
-				sets.sort(function(a,b) {
-					if ( a[0] < b[0] ) return -1;
-					else if ( a[0] > b[0] ) return 1;
-
-					var an = a[1].toLowerCase(),
-						bn = b[1].toLowerCase();
-
-					if ( an === "twitch turbo" || an === "twitch_tfaces" )
-						an = "zza|" + an;
-						
-					else if ( an === "global emoticons" )
-						an = "zzz|" + an;
-
-					if ( bn === "twitch turbo" || bn === "twitch_tfaces" )
-						bn = "zza|" + bn;
-					else if ( bn === "global emoticons" )
-						bn = "zzz|" + bn;
-
-					if ( an < bn ) return -1;
-					else if ( an > bn ) return 1;
-					return 0;
-				});
-
-				for(var i=0; i < sets.length; i++) {
-					var ffz_set = sets[i][0] === 2,
-						set = sets[i][2],
-						heading = document.createElement('div'),
-						menu = document.createElement('div'),
-
-						source = ffz_set ? "FrankerFaceZ" : set.source,
-						badge, title, ems;
-
-					if ( ffz_set ) {
-						ems = [];
-						for(var emote_id in set.emotes) {
-							var emote = set.emotes[emote_id];
-							if ( emote.hidden )
-								continue;
-
-							ems.push({code: emote.name, url: emote.url, width: emote.width, height: emote.height});
-						}
-
-						if ( set.id === "global" )
-							title = "Global Emoticons";
-						else
-							title = set.title || set.id;
-
-						badge = set.icon || "http://cdn.frankerfacez.com/channel/global/devicon.png";
-
-					} else {
-						ems = set.emotes;
-						title = set.channel == "Twitch Turbo" ? set.channel : FFZ.get_capitalization(set.channel);
-						badge = set.badge;
-					}
-
-					if ( ! ems.length )
-						continue;
-
-					heading.className = 'heading';
-					heading.innerHTML = '<span class="right">' + source + '</span>' + title;
-					if ( badge )
-						heading.style.backgroundImage = 'url("' + badge + '")';
-
-					menu.className = 'emoticon-grid';
-					menu.appendChild(heading);
-
-					for(var x=0; x < ems.length; x++) {
-						var emote = ems[x],
-							code = KNOWN_CODES[emote.code] || emote.code;
-
-						var s = document.createElement('span');
-						s.className = 'emoticon tooltip';
-						s.style.backgroundImage = 'url("' + (emote.url ? emote.url : (TWITCH_BASE + emote.id + '/1.0')) + '")';
-
-						if ( emote.height )
-							s.style.height = emote.height + "px";
-
-						if ( emote.width )
-							s.style.width = emote.width + "px";
-
-						if ( ! emote.url ) {
-							var img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
-							s.style.backgroundImage = '-webkit-' + img_set;
-							s.style.backgroundImage = '-moz-' + img_set;
-							s.style.backgroundImage = '-ms-' + img_set;
-							s.style.backgroundImage = img_set;
-						}
-
-						s.title = code;
-						s.addEventListener('click', f._add_emote.bind(f, view, code));
-						menu.appendChild(s);
-					}
-
-					container.appendChild(menu);
-				}
-
-				if ( ! sets.length ) {
-					var menu = document.createElement('div');
-
-					menu.className = 'chat-menu-content center';
-					menu.innerHTML = "Error Loading Subscriptions";
-
-					container.appendChild(menu);
-				}
-
-				} catch(err) {
-					f.log("My Emotes Menu Error", err);
-					container.innerHTML = "";
-
-					var menu = document.createElement('div'),
-						heading = document.createElement('div'),
-						p = document.createElement('p');
-
-					heading.className = 'heading';
-					heading.innerHTML = 'Error Loading Menu';
-					menu.appendChild(heading);
-
-					p.className = 'clearfix';
-					p.textContent = err;
-					menu.appendChild(p);
-
-					menu.className = 'chat-menu-content';
-					container.appendChild(menu);
-				}
+		if ( channel_id === "global" )
+			title = "Global Emoticons";
+		else if ( channel_id === "turbo" )
+			title = "Twitch Turbo";
+		else
+			title = FFZ.get_capitalization(channel_id, function(name) {
+				heading.innerHTML = '<span class="right">Twitch</span>' + utils.sanitize(name);
 			});
+
+		heading.className = 'heading';
+		heading.innerHTML = '<span class="right">Twitch</span>' + utils.sanitize(title);
+
+		if ( this._twitch_badges[channel_id] )
+			heading.style.backgroundImage = 'url("' + this._twitch_badges[channel_id] + '")';
+		else {
+			var f = this;
+			Twitch.api.get("chat/" + channel_id + "/badges", null, {version: 3})
+				.done(function(data) {
+					if ( data.subscriber && data.subscriber.image ) {
+						f._twitch_badges[channel_id] = data.subscriber.image;
+						heading.style.backgroundImage = 'url("' + data.subscriber.image + '")';
+					}
+				});
 		}
-	};
+
+		menu.className = 'emoticon-grid';
+		menu.appendChild(heading);
+
+		for(var i=0; i < set.length; i++) {
+			var emote = set[i],
+				code = KNOWN_CODES[emote.code] || emote.code,
+
+				em = document.createElement('span'),
+				img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+
+			em.className = 'emoticon tooltip';
+			em.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+			em.style.backgroundImage = '-webkit-' + img_set;
+			em.style.backgroundImage = '-moz-' + img_set;
+			em.style.backgroundImage = '-ms-' + img_set;
+			em.style.backgroudnImage = img_set;
+
+			em.title = code;
+			em.addEventListener("click", this._add_emote.bind(this, view, code));
+			menu.appendChild(em);
+		}
+
+		return menu;
+	},
+
+	draw_ffz_set: function(view, set) {
+		var heading = document.createElement('div'),
+			menu = document.createElement('div'),
+			emotes = [];
+
+		heading.className = 'heading';
+		heading.innerHTML = '<span class="right">FrankerFaceZ</span>' + set.title;
+		heading.style.backgroundImage = 'url("' + (set.icon || '//cdn.frankerfacez.com/script/devicon.png') + '")';
+
+		menu.className = 'emoticon-grid';
+		menu.appendChild(heading);
+
+		for(var emote_id in set.emoticons)
+			set.emoticons.hasOwnProperty(emote_id) && ! set.emoticons[emote_id].hidden && emotes.push(set.emoticons[emote_id]);
+
+		emotes.sort(function(a,b) {
+			var an = a.name.toLowerCase(),
+				bn = b.name.toLowerCase();
+
+			if ( an < bn ) return -1;
+			else if ( an > bn ) return 1;
+			if ( a.id < b.id ) return -1;
+			if ( a.id > b.id ) return 1;
+			return 0;
+		});
+
+		for(var i=0; i < emotes.length; i++) {
+			var emote = emotes[i],
+
+				em = document.createElement('span'),
+				img_set = 'image-set(url("' + emote.urls[1] + '") 1x';
+
+			if ( emote.urls[2] )
+				img_set += ', url("' + emote.urls[2] + '") 2x';
+
+			if ( emote.urls[4] )
+				img_set += ', url("' + emote.urls[4] + '") 4x';
+
+			img_set += ')';
+
+			em.className = 'emoticon tooltip';
+			em.style.backgroundImage = 'url("' + emote.urls[1] + '")';
+			em.style.backgroundImage = '-webkit-' + img_set;
+			em.style.backgroundImage = '-moz-' + img_set;
+			em.style.backgroundImage = '-ms-' + img_set;
+			em.style.backgroudnImage = img_set;
+
+			if ( emote.height )
+				em.style.height = emote.height + "px";
+			if ( emote.width )
+				em.style.width = emote.width + "px";
+
+			em.title = emote.tooltip || emote.name;
+			em.addEventListener("click", this._add_emote.bind(this, view, emote.name));
+			menu.appendChild(em);
+		}
+
+		return menu;
+	},
+
+	draw_menu: function(view, container, twitch_sets) {
+		// Make sure we're still on the My Emoticons page. Since this is
+		// asynchronous, the user could've tabbed away.
+		if ( container.getAttribute('data-page') !== 'my_emotes' )
+			return;
+
+		container.innerHTML = "";
+		try {
+			var user = this.get_user(),
+				ffz_sets = this.getEmotes(user && user.login, null),
+				sets = [];
+
+			// Start with Twitch Sets
+			for(var set_id in twitch_sets) {
+				if ( ! twitch_sets.hasOwnProperty(set_id) || ( ! this.settings.global_emotes_in_menu && set_id === '0' ) )
+					continue;
+
+				var set = twitch_sets[set_id];
+				if ( ! set.length )
+					continue;
+
+				sets.push([this._twitch_set_to_channel[set_id], FFZ.menu_pages.my_emotes.draw_twitch_set.bind(this)(view, set_id, set)]);
+			}
+
+
+			// Now, FFZ!
+			for(var i=0; i < ffz_sets.length; i++) {
+				var set_id = ffz_sets[i],
+					set = this.emote_sets[set_id];
+
+				if ( ! set || ! set.count || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
+					continue;
+
+				sets.push([set.title.toLowerCase(), FFZ.menu_pages.my_emotes.draw_ffz_set.bind(this)(view, set)]);
+			}
+
+
+			// Finally, sort and add them all.
+			sets.sort(function(a,b) {
+				var an = a[0], bn = b[0];
+				if ( an === "turbo" || an === "tfaces" )
+					an = "zza|" + an;
+				else if ( an === "global" || an === "global emoticons" )
+					an = "zzz|" + an;
+
+				if ( bn === "turbo" || bn === "tfaces" )
+					bn = "zza|" + bn;
+				else if ( bn === "global" || bn === "global emoticons" )
+					bn = "zzz|" + bn;
+
+				if ( an < bn ) return -1;
+				if ( an > bn ) return 1;
+				return 0;
+			});
+
+			for(var i=0; i < sets.length; i++)
+				container.appendChild(sets[i][1]);
+
+		} catch(err) {
+			this.error("my_emotes draw_menu: " + err);
+			container.innerHTML = "";
+
+			var menu = document.createElement('div'),
+				heading = document.createElement('div'),
+				p = document.createElement('p');
+
+			heading.className = 'heading';
+			heading.innerHTML = 'Error Loading Menu';
+			menu.appendChild(heading);
+
+			p.className = 'clearfix';
+			p.textContent = err;
+			menu.appendChild(p);
+
+			menu.className = 'chat-menu-content';
+			container.appendChild(menu);
+		}
+	}
+};

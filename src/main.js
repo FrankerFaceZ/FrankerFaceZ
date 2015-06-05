@@ -1,6 +1,5 @@
 // Modify Array and others.
-require('./shims');
-
+// require('./shims');
 
 // ----------------
 // The Constructor
@@ -22,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 3, revision: 1,
+	major: 3, minor: 4, revision: 2,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -113,6 +112,8 @@ require('./socket');
 
 require('./emoticons');
 require('./badges');
+require('./tokenize');
+
 
 // Analytics: require('./ember/router');
 require('./ember/channel');
@@ -136,13 +137,12 @@ require('./ui/styles');
 require('./ui/dark');
 require('./ui/notifications');
 require('./ui/viewer_count');
+require('./ui/sub_count');
 
 require('./ui/menu_button');
 require('./ui/races');
 require('./ui/my_emotes');
 require('./ui/about_page');
-
-//require('./ui/group_chat');
 
 require('./commands');
 
@@ -156,7 +156,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Twitch ember application is ready.
 
 	// Check for special non-ember pages.
-	if ( /\/(?:settings|messages?\/)/.test(location.pathname) ) {
+	if ( /^\/(?:settings|m\/|messages?\/)/.test(location.pathname) ) {
 		this.setup_normal(delay);
 		return;
 	}
@@ -203,6 +203,7 @@ FFZ.prototype.setup_normal = function(delay) {
 
 	this.setup_notifications();
 	this.setup_css();
+	this.setup_menu();
 
 	this.find_bttv(10);
 
@@ -234,6 +235,11 @@ FFZ.prototype.setup_dashboard = function(delay) {
 
 	this.setup_notifications();
 	this.setup_css();
+
+	this._update_subscribers();
+
+	// Set up the FFZ message passer.
+	this.setup_message_event();
 
 	this.find_bttv(10);
 
@@ -277,7 +283,8 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_menu();
 	this.setup_my_emotes();
 	this.setup_races();
-	//this.setup_group_chat();
+
+	this.connect_extra_chat();
 
 	this.find_bttv(10);
 	this.find_emote_menu(10);
@@ -288,4 +295,23 @@ FFZ.prototype.setup_ember = function(delay) {
 		duration = end - start;
 
 	this.log("Initialization complete in " + duration + "ms");
+}
+
+
+// ------------------------
+// Dashboard Message Event
+// ------------------------
+
+FFZ.prototype.setup_message_event = function() {
+	this.log("Listening for Window Messages.");
+	window.addEventListener("message", this._on_window_message.bind(this), false);
+}
+
+
+FFZ.prototype._on_window_message = function(e) {
+	if ( ! e.data || ! e.data.from_ffz )
+		return;
+
+	var msg = e.data;
+	this.log("Window Message", msg);
 }

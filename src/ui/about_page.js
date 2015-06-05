@@ -16,14 +16,10 @@ FFZ.menu_pages.about = {
 			has_emotes = false, f = this;
 
 		// Check for emoticons.
-		if ( room && room.sets.length ) {
-			for(var i=0; i < room.sets.length; i++) {
-				var set = this.emote_sets[room.sets[i]];
-				if ( set && set.count > 0 ) {
-					has_emotes = true;
-					break;
-				}
-			}
+		if ( room && room.set ) {
+			var set = this.emote_sets[room.set];
+			if ( set && set.count > 0 )
+				has_emotes = true;
 		}
 
 		// Heading
@@ -65,7 +61,7 @@ FFZ.menu_pages.about = {
 		var donate_button = document.createElement('a');
 
 		donate_button.className = 'button ffz-donate';
-		donate_button.href = "http://www.frankerfacez.com/donate.html";
+		donate_button.href = "https://www.frankerfacez.com/donate";
 		donate_button.target = "_new";
 		donate_button.innerHTML = "Donate";
 

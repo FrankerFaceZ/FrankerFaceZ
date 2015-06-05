@@ -169,7 +169,8 @@ FFZ.menu_pages.channel = {
 				if ( product && !product.get("error") ) {
 					// We have a product, and no error~!
 					has_product = true;
-					var is_subscribed = room.room.get("channel.isSubscribed.content"),
+					var tickets = App.__container__.resolve('model:ticket').find('user', {channel: room_id}),
+						is_subscribed = tickets ? tickets.get('content') : false,
 						icon = room.room.get("badgeSet.subscriber.image"),
 
 						grid = document.createElement("div"),
@@ -237,7 +238,7 @@ FFZ.menu_pages.channel = {
 
 						inner.appendChild(sub_message);
 					} else {
-						var last_content = room.room.get("channel.isSubscribed.content");
+						var last_content = tickets.get("content");
 						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
 						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
 							var ends_at = utils.parse_date(last_content.access_end || "");
@@ -260,7 +261,7 @@ FFZ.menu_pages.channel = {
 			}
 
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.menu_sets || [], (this.feature_friday || has_product) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/channel/global/devicon.png", "FrankerFaceZ");
+			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
 
 			// Feature Friday!
 			this._feature_friday_ui(room_id, inner, view);
@@ -298,29 +299,60 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 		grid.appendChild(el_header);
 	}
 
+	var emotes = [];
 	for(var i=0; i < sets.length; i++) {
 		var set = this.emote_sets[sets[i]];
-		if ( ! set || ! set.emotes )
+		if ( ! set || ! set.emoticons )
 			continue;
 
-		for(var eid in set.emotes) {
-			if ( ! set.emotes.hasOwnProperty(eid) )
+		for(var eid in set.emoticons) {
+			if ( ! set.emoticons.hasOwnProperty(eid) || set.emoticons[eid].hidden )
 				continue;
 
-			var emote = set.emotes[eid];
-			if ( !set.emotes.hasOwnProperty(eid) || emote.hidden )
-				continue;
-
-			c++;
-			var s = document.createElement('span');
-			s.className = 'emoticon tooltip';
-			s.style.backgroundImage = 'url("' + emote.url + '")';
-			s.style.width = emote.width + "px";
-			s.style.height = emote.height + "px";
-			s.title = emote.name;
-			s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
-			grid.appendChild(s);
+			emotes.push(set.emoticons[eid]);
 		}
+	}
+
+	// Sort the emotes!
+	emotes.sort(function(a,b) {
+		var an = a.name.toLowerCase(),
+			bn = b.name.toLowerCase();
+
+		if ( an < bn ) return -1;
+		else if ( an > bn ) return 1;
+		return 0;
+	});
+
+	for(var i=0; i < emotes.length; i++) {
+		var emote = emotes[i], srcset = null;
+
+		if ( emote.urls[2] || emote.urls[4] ) {
+			srcset = 'url("' + emote.urls[1] + '") 1x';
+			if ( emote.urls[2] )
+				srcset += ', url("' + emote.urls[2] + '") 2x';
+			if ( emote.urls[4] )
+				srcset += ', url("' + emote.urls[4] + '") 4x';
+		}
+
+		c++;
+		var s = document.createElement('span');
+		s.className = 'emoticon tooltip';
+		s.style.backgroundImage = 'url("' + emote.urls[1] + '")';
+
+		if ( srcset ) {
+			var img_set = 'image-set(' + srcset + ')';
+			s.style.backgroundImage = '-webkit-' + img_set;
+			s.style.backgroundImage = '-moz-' + img_set;
+			s.style.backgroundImage = '-ms-' + img_set;
+			s.style.backgroundImage = img_set;
+		}
+
+		s.style.width = emote.width + "px";
+		s.style.height = emote.height + "px";
+		s.title = this._emote_tooltip(emote);
+
+		s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
+		grid.appendChild(s);
 	}
 
 	if ( !c ) {

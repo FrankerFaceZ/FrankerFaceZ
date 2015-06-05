@@ -1,10 +1,6 @@
 ﻿var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
-	reg_escape = function(str) {
-		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-	},
-
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
 	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
 
@@ -26,7 +22,8 @@
 
 	data_to_tooltip = function(data) {
 		var set = data.set,
-			set_type = data.set_type;
+			set_type = data.set_type,
+			owner = data.owner;
 
 		if ( set_type === undefined )
 			set_type = "Channel";
@@ -39,7 +36,7 @@
 			set_type = null;
 		}
 
-		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set;
+		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set + (owner ? "\nBy: " + owner.display_name : "");
 	},
 
 	build_tooltip = function(id) {
@@ -110,6 +107,12 @@
 			if ( since )
 				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
 			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
+
+
+		} else if ( link_data.type == "twitch_vod" ) {
+			tooltip = "<b>Twitch " + (link_data.broadcast_type == "highlight" ? "Highlight" : "Broadcast") + ": " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "By: " + utils.sanitize(link_data.display_name) + (link_data.game ? " | Playing: " + utils.sanitize(link_data.game) : " | Not Playing") + "<br>";
+			tooltip += "Views: " + utils.number_commas(link_data.views) + " | " + utils.time_to_string(link_data.length);
 
 
 		} else if ( link_data.type == "twitter" ) {
@@ -321,27 +324,41 @@ FFZ.prototype.setup_line = function() {
 
 	this.log("Hooking the Ember Line controller.");
 
-	var Line = App.__container__.resolve('controller:line'),
+	var Line = App.__container__.resolve('component:message-line'),
 		f = this;
 
 	Line.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
-			var tokens = this._super();
+			var tokens = this.get("msgObject.cachedTokens");
+			if ( tokens )
+				return tokens;
+
+			tokens = this._super();
 
 			try {
-				var start = performance.now();
+				var start = performance.now(),
+					user = f.get_user(),
+					from_me = user && this.get("msgObject.from") === user.login;
+
 				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
-				var user = f.get_user();
-
-				if ( ! user || this.get("model.from") != user.login )
-					tokens = f._mentionize(this, tokens);
 
 				// Store the capitalization.
-				var display = this.get("model.tags.display-name");
+				var display = this.get("msgObject.tags.display-name");
 				if ( display && display.length )
-					FFZ.capitalization[this.get("model.from")] = [display.trim(), Date.now()];
+					FFZ.capitalization[this.get("msgObject.from")] = [display.trim(), Date.now()];
+
+				if ( ! from_me )
+					tokens = f.tokenize_mentions(tokens);
+
+				for(var i = 0; i < tokens.length; i++) {
+					var token = tokens[i];
+					if ( ! _.isString(token) && token.mentionedUser && ! token.own ) {
+						this.set('msgObject.ffz_has_mention', true);
+						break;
+					}
+				}
 
 				var end = performance.now();
 				if ( end - start > 5 )
@@ -353,38 +370,30 @@ FFZ.prototype.setup_line = function() {
 				} catch(err) { }
 			}
 
+			this.set("msgObject.cachedTokens", tokens);
 			return tokens;
 
-		}.property("model.message", "isModeratorOrHigher")
-	});
+		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
-
-	this.log("Hooking the Ember Line view.");
-	var Line = App.__container__.resolve('view:line');
-
-	Line.reopen({
 		didInsertElement: function() {
 			this._super();
 			try {
 				var start = performance.now();
 
 				var el = this.get('element'),
-					controller = this.get('context'),
-					user = controller.get('model.from'),
-					room = controller.get('parentController.content.id'),
-					color = controller.get('model.color'),
-
-					row_type = controller.get('model.ffz_alternate');
+					user = this.get('msgObject.from'),
+					room = this.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id'),
+					color = this.get('msgObject.color'),
+					row_type = this.get('msgObject.ffz_alternate');
 
 				// Color Processing
 				if ( color )
 					f._handle_color(color);
 
-
 				// Row Alternation
 				if ( row_type === undefined ) {
 					row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
-					this.set("context.model.ffz_alternate", row_type);
+					this.set("msgObject.ffz_alternate", row_type);
 				}
 
 				el.classList.toggle('ffz-alternate', row_type);
@@ -393,7 +402,7 @@ FFZ.prototype.setup_line = function() {
 				// Basic Data
 				el.setAttribute('data-room', room);
 				el.setAttribute('data-sender', user);
-				el.setAttribute('data-deleted', controller.get('model.deleted'));
+				el.setAttribute('data-deleted', this.get('deleted')||false);
 
 
 				// Badge
@@ -401,36 +410,9 @@ FFZ.prototype.setup_line = function() {
 
 
 				// Mention Highlighting
-				var mentioned = el.querySelector('span.mentioned');
-				if ( mentioned ) {
+				if ( this.get("msgObject.ffz_has_mention") )
 					el.classList.add("ffz-mentioned");
 
-					if ( f.settings.highlight_notifications && !document.hasFocus() && !this.get('context.model.ffz_notified') ) {
-						var cap_room = FFZ.get_capitalization(room),
-							cap_user = FFZ.get_capitalization(user),
-							room_name = cap_room,
-							msg = this.get("context.model.message");
-
-						if ( this.get("context.parentController.content.isGroupRoom") )
-							room_name = this.get("context.parentController.content.tmiRoom.displayName");
-
-						if ( this.get("context.model.style") == "action" )
-							msg = "* " + cap_user + " " + msg;
-						else
-							msg = cap_user + ": " + msg;
-
-						f.show_notification(
-							msg,
-							"Twitch Chat Mention in " + room_name,
-							cap_room,
-							60000,
-							window.focus.bind(window)
-							);
-					}
-				}
-
-				// Mark that we've checked this message for mentions.
-				this.set('context.model.ffz_notified', true);
 
 				// Banned Links
 				var bad_links = el.querySelectorAll('a.deleted-link');
@@ -541,19 +523,16 @@ FFZ.prototype.setup_line = function() {
 							set_id = data && data[1] || null,
 
 							set = f.emote_sets[set_id],
-							emote = set ? set.emotes[id] : null,
+							emote = set ? set.emoticons[id] : null;
 
-							set_name = set ? (set.title || set.id) : "Unknown FFZ Set",
-							set_type = (set && set.title) ? "FrankerFaceZ" : "FFZ Channel";
+						// High-DPI!
+						if ( emote && emote.srcSet )
+							img.setAttribute('srcset', emote.srcSet);
 
 						if ( set && f.feature_friday && set.id == f.feature_friday.set )
 							set_name = f.feature_friday.title + " - " + f.feature_friday.display_name;
 
-						img.title = data_to_tooltip({
-							code: emote ? (emote.hidden ? "???" : emote.name) : name,
-							set: set_name,
-							set_type: set_type
-							});
+						img.title = f._emote_tooltip(emote);
 					}
 				}
 
@@ -682,75 +661,6 @@ FFZ.get_capitalization = function(name, callback) {
 
 
 // ---------------------
-// Extra Mentions
-// ---------------------
-
-FFZ._regex_cache = {};
-
-FFZ._get_regex = function(word) {
-	return FFZ._regex_cache[word] = FFZ._regex_cache[word] || RegExp("\\b" + reg_escape(word) + "\\b", "ig");
-}
-
-FFZ._words_to_regex = function(list) {
-	var regex = FFZ._regex_cache[list];
-	if ( ! regex ) {
-		var reg = "";
-		for(var i=0; i < list.length; i++) {
-			if ( ! list[i] )
-				continue;
-
-			reg += (reg ? "|" : "") + reg_escape(list[i]);
-		}
-
-		regex = FFZ._regex_cache[list] = new RegExp("(^|.*?" + SEPARATORS + ")(" + reg + ")(?=$|" + SEPARATORS + ")", "ig");
-	}
-
-	return regex;
-}
-
-
-FFZ.prototype._mentionize = function(controller, tokens) {
-	var mention_words = this.settings.keywords;
-	if ( ! mention_words || ! mention_words.length )
-		return tokens;
-
-	if ( typeof tokens == "string" )
-		tokens = [tokens];
-
-	var regex = FFZ._words_to_regex(mention_words),
-		new_tokens = [];
-
-	for(var i=0; i < tokens.length; i++) {
-		var token = tokens[i];
-		if ( ! _.isString(token) ) {
-			new_tokens.push(token);
-			continue;
-		}
-
-		if ( ! token.match(regex) ) {
-			new_tokens.push(token);
-			continue;
-		}
-
-		token = token.replace(regex, function(all, prefix, match) {
-			new_tokens.push(prefix);
-			new_tokens.push({
-				mentionedUser: match,
-				own: false
-				});
-
-			return "";
-		});
-
-		if ( token )
-			new_tokens.push(token);
-	}
-
-	return new_tokens;
-}
-
-
-// ---------------------
 // Banned Words
 // ---------------------
 
@@ -790,58 +700,9 @@ FFZ.prototype._remove_banned = function(tokens) {
 // Emoticon Replacement
 // ---------------------
 
-FFZ.prototype._emoticonize = function(controller, tokens) {
-	var room_id = controller.get("parentController.model.id"),
-		user_id = controller.get("model.from"),
-		f = this;
+FFZ.prototype._emoticonize = function(component, tokens) {
+	var room_id = component.get("msgObject.room") || App.__container__.lookup('controller:chat').get('currentRoom.id'),
+		user_id = component.get("msgObject.from");
 
-	// Get our sets.
-	var sets = this.getEmotes(user_id, room_id),
-		emotes = [];
-
-	// Build a list of emotes that match.
-	_.each(sets, function(set_id) {
-		var set = f.emote_sets[set_id];
-		if ( ! set )
-			return;
-
-		_.each(set.emotes, function(emote) {
-			_.any(tokens, function(token) {
-				return _.isString(token) && token.match(emote.regex);
-			}) && emotes.push(emote);
-		});
-	});
-
-	// Don't bother proceeding if we have no emotes.
-	if ( ! emotes.length )
-		return tokens;
-
-	// Now that we have all the matching tokens, do crazy stuff.
-	if ( typeof tokens == "string" )
-		tokens = [tokens];
-
-	// This is weird stuff I basically copied from the old Twitch code.
-	// Here, for each emote, we split apart every text token and we
-	// put it back together with the matching bits of text replaced
-	// with an object telling Twitch's line template how to render the
-	// emoticon.
-	_.each(emotes, function(emote) {
-		//var eo = {isEmoticon:true, cls: emote.klass};
-		var eo = {isEmoticon:true, cls: emote.klass,srcSet: emote.url + ' 1x', emoticonSrc: emote.url + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])), altText: (emote.hidden ? "???" : emote.name)};
-
-		tokens = _.compact(_.flatten(_.map(tokens, function(token) {
-			if ( _.isObject(token) )
-				return token;
-
-			var tbits = token.split(emote.regex), bits = [];
-			tbits.forEach(function(val, ind) {
-				bits.push(val);
-				if ( ind !== tbits.length - 1 )
-					bits.push(eo);
-			});
-			return bits;
-		})));
-	});
-
-	return tokens;
+	return this.tokenize_emotes(user_id, room_id, tokens);
 }

@@ -33,14 +33,10 @@ FFZ.prototype.update_ui_link = function(link) {
 
 
 	// Check for emoticons.
-	if ( room && room.sets.length ) {
-		for(var i=0; i < room.sets.length; i++) {
-			var set = this.emote_sets[room.sets[i]];
-			if ( set && set.count > 0 ) {
-				has_emotes = true;
-				break;
-			}
-		}
+	if ( room && room.set ) {
+		var set = this.emote_sets[room.set];
+		if ( set && set.count > 0 )
+			has_emotes = true;
 	}
 
 	link.classList.toggle('no-emotes', ! has_emotes);

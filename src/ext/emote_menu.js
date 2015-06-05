@@ -38,14 +38,14 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 	for(var x = 0; x < sets.length; x++) {
 		var set = this.emote_sets[sets[x]];
-		if ( ! set || ! set.emotes )
+		if ( ! set || ! set.emoticons )
 			continue;
 
-		for(var emote_id in set.emotes) {
-			if ( ! set.emotes.hasOwnProperty(emote_id) )
+		for(var emote_id in set.emoticons) {
+			if ( ! set.emoticons.hasOwnProperty(emote_id) )
 				continue;
 
-			var emote = set.emotes[emote_id];
+			var emote = set.emoticons[emote_id];
 			if ( emote.hidden )
 				continue;
 
@@ -66,7 +66,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 			} else
 				title = "FrankerFaceZ: " + title;
 
-			emotes.push({text: emote.name, url: emote.url,
+			emotes.push({text: emote.name, url: emote.urls[1],
 				hidden: false, channel: title, badge: badge});
 		}
 	}

@@ -87,6 +87,11 @@
 
 
 /* stats */
+.ffz-dark .stats-and-actions,
+.ffz-dark #main_col .content #stats_and_actions {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
 .ffz-dark #channel .player-column .stats-and-actions .channel-stats .stat svg:not(.svg-glyph_live) path{
 	fill:rgba(255,255,255,0.35)!important;
 }
@@ -100,7 +105,7 @@
 
 /* main column */
 .ffz-dark div#main_col {
-	background:rgb(16,16,16)!important;
+	background:rgb(16,16,16);
 	color:rgb(195,195,195)!important;
 	border-right:1px solid rgb(0,0,0)!important;
 }
@@ -119,7 +124,7 @@
 .ffz-dark div.title > span.real,
 .ffz-dark div.title > span.over{
 	color:rgb(222,222,222)!important;
-	background-color:rgb(16,16,16)!important;
+	background-color:rgba(16,16,16,0.3)!important;
 }
 
 .ffz-dark div.title > span.over:hover,
@@ -165,6 +170,18 @@
 	border-right-color: #32323e;
 }
 
+.ffz-dark .notification-controls .toggle-notification-menu {
+	background-color: #19191f;
+}
+
+.ffz-dark .notification-controls .toggle-notification-menu:before {
+	border-top-color: #8c8c9c;
+}
+
+.ffz-dark .notification-controls .toggle-notification-menu:hover {
+	background-color: #101014;
+}
+
 .ffz-dark .change-banner .banner-preview,
 .ffz-dark form.js-new_panel_form input,
 .ffz-dark form.js-new_panel_form textarea,
@@ -206,6 +223,7 @@
 	color: #a68ed2;
 }
 
+.ffz-dark .follow-button a,
 .ffz-dark a.dropmenu_action:hover {
 	color: #fff !important;
 }
@@ -248,16 +266,67 @@
 }
 
 /* Upsell banner */
+.ffz-dark .bookmark-meta,
 .ffz-dark .upsell-banner {
-	background-color: rgb(25,25,31);
+	background-color: rgba(25,25,31, 0.7);
 }
 
+.ffz-dark .bookmark-meta .bookmark-title,
 .ffz-dark .upsell-banner .message .title {
 	color: #ccc;
 }
 
+.ffz-dark .bookmark-meta {
+	box-shadow: none;
+}
+
+/* VoD Description */
+
+.ffz-dark .archives-contain .videos {
+	padding: 0 0;
+}
+
+.ffz-dark #right_col a.bottom,
+.ffz-dark .archives-contain .list-video {
+	padding: 10px 20px;
+	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark #right_col a.bottom {
+	padding: 0 20px;
+	margin: 0 !important;
+}
+
+.ffz-dark .archives-contain .list-video .meta .title {
+	color: rgb(195,195,195);
+}
+
+.ffz-dark #right_col #archives { background-color: transparent; }
+
+.ffz-dark .archives-contain .list-video .meta .info p.broadcaster,
+.ffz-dark #right_col #archives .more_archives {
+	color: #a68ed2;
+	box-shadow: none;
+}
+
+.ffz-dark #right_col a.bottom:hover,
+.ffz-dark .archives-contain .list-video:hover,
+.ffz-dark #right_col #archives .more_archives:hover {
+	background-color: rgba(255,255,255,0.1);
+}
+
+.ffz-dark #main_col .content .archive_info p,
+.ffz-dark #main_col .content .archive_info time {
+	color: #888;
+}
+
+
 /* Video Manager */
 
+.ffz-dark ul.tabs:before,
+.ffz-dark .directory_header .nav:before,
+.ffz-dark ul.tabs_fake:before,
+.ffz-dark #right_col #archives .more_archives,
 .ffz-dark .manager .videos-grid .video .meta .actions {
 	border-top-color: rgba(255,255,255,0.25);
 }
@@ -705,3 +774,15 @@
 .ffz-dark .dash-chat-column {
 	border-color: rgba(255,255,255,0.2);
 }
+
+
+/* TEST
+.ffz-dark div#main_col .tse-scroll-content {
+	background-image:
+		linear-gradient(rgba(16,16,16,0.75), rgba(16,16,16,1)),
+		url("http://i.imgur.com/DzCLo3d.jpg");
+
+	background-attachment: fixed;
+	background-size: 100% auto;
+	background-repeat: no-repeat;
+}*/

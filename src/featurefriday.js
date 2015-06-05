@@ -91,10 +91,7 @@ FFZ.prototype._load_ff = function(data) {
 	if ( this.feature_friday ) {
 		// Remove the global set, delete the data, and reset the UI link.
 		this.global_sets.removeObject(this.feature_friday.set);
-
-		var set = this.emote_sets[this.feature_friday.set];
-		if ( set )
-			set.global = false;
+		this.default_sets.removeObject(this.feature_friday.set);
 
 		this.feature_friday = null;
 		this.update_ui_link();
@@ -111,7 +108,8 @@ FFZ.prototype._load_ff = function(data) {
 
 	// Add the set.
 	this.global_sets.push(data.set);
-	this.load_set(data.set, this._update_ff_set.bind(this));
+	this.default_sets.push(data.set);
+	this.load_set(data.set);
 
 	// Check to see if the channel is live.
 	this._update_ff_live();
@@ -131,13 +129,6 @@ FFZ.prototype._update_ff_live = function() {
 		.always(function() {
 			f.feature_friday.timer = setTimeout(f._update_ff_live.bind(f), 120000);
 		});
-}
-
-
-FFZ.prototype._update_ff_set = function(success, set) {
-	// Prevent the set from being unloaded.
-	if ( set )
-		set.global = true;
 }
 
 
