@@ -104,6 +104,7 @@
 
 
 /* main column */
+.ffz-dark div#mantle_skin,
 .ffz-dark div#main_col {
 	background:rgb(16,16,16);
 	color:rgb(195,195,195)!important;
@@ -422,6 +423,7 @@
 	border-color: #32323e;
 }
 
+.ffz-dark ul.mininav li.active,
 .ffz-dark ul.tabs li.selected a,
 .ffz-dark .directory_header .nav li.selected a,
 .ffz-dark ul.tabs_fake li.selected a,
@@ -773,6 +775,38 @@
 
 .ffz-dark .dash-chat-column {
 	border-color: rgba(255,255,255,0.2);
+}
+
+
+/* /p/ Pages */
+
+.ffz-dark #mantle_skin .wrapper {
+	background-color: transparent;
+}
+
+.ffz-dark #mantle_skin ul.vtabs li .not_linked,
+.ffz-dark #mantle_skin ul.vtabs li.selected a,
+.ffz-dark #mantle_skin ul.submenu li a:hover,
+.ffz-dark #mantle_skin ul.submenu .active a {
+	color: #fff !important;
+}
+
+.ffz-dark #mantle_skin ul.vtabs li a:hover {
+	color: rgb(222,222,222);
+	background-color: transparent;
+}
+
+.ffz-dark #mantle_skin .press_list .callout {
+	color: #acacbf;
+	border-left-color: #575757;
+}
+
+.ffz-dark .legal_page ol.legal li {
+	color: rgb(222,222,222);
+}
+
+.ffz-dark .legal_page ol.legal li p {
+	color: #ccc;
 }
 
 

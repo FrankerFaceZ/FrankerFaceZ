@@ -156,13 +156,13 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Twitch ember application is ready.
 
 	// Check for special non-ember pages.
-	if ( /^\/(?:settings|m\/|messages?\/)/.test(location.pathname) ) {
+	if ( /^\/(?:$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
 		this.setup_normal(delay);
 		return;
 	}
 
 	// Check for the dashboard.
-	if ( /\/[A-Za-z_-]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
+	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
 		this.setup_dashboard(delay);
 		return;
 	}

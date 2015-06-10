@@ -56,8 +56,18 @@ FFZ.prototype.ws_create = function() {
 		}
 
 		// Send the current rooms.
-		for(var room_id in f.rooms)
-			f.rooms.hasOwnProperty(room_id) && f.ws_send("sub", room_id);
+		for(var room_id in f.rooms) {
+			if ( ! f.rooms.hasOwnProperty(room_id) || ! f.rooms[room_id] )
+				continue;
+
+			f.ws_send("sub", room_id);
+
+			if ( f.rooms[room_id].needs_history ) {
+				f.rooms[room_id].needs_history = false;
+				if ( ! f.has_bttv && f.settings.chat_history )
+					f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
+			}
+		}
 
 		// Send any pending commands.
 		var pending = f._ws_pending;
@@ -84,7 +94,7 @@ FFZ.prototype.ws_create = function() {
 
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 60000 )
-			f._ws_delay += 5000;
+			f._ws_delay += (Math.floor(Math.random()*10) + 5) * 1000;
 		else
 			// Randomize delay.
 			f._ws_delay = (Math.floor(Math.random()*60)+30)*1000;
@@ -117,14 +127,17 @@ FFZ.prototype.ws_create = function() {
 
 		} else {
 			var success = cmd === 'True',
-				callback = f._ws_callbacks[request];
+				has_callback = f._ws_callbacks.hasOwnProperty(request);
 
-			if ( ! success || ! callback )
+			if ( ! has_callback )
 				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);
 
-			if ( callback ) {
-				delete f._ws_callbacks[request];
-				callback(success, data);
+			else {
+				try {
+					f._ws_callbacks[request](success, data);
+				} catch(err) {
+					f.error("Callback for " + request + ": " + err);
+				}
 			}
 		}
 	}

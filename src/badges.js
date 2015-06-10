@@ -169,6 +169,20 @@ FFZ.prototype.render_badge = function(component) {
 	if ( ! data || ! data.badges )
 		return;
 
+	// If we don't have badges, add them.
+	if ( ! badges.length ) {
+		var b_cont = document.createElement('span'),
+			from = component.$('.from');
+
+		b_cont.className = 'badges float-left';
+
+		if ( ! from )
+			return;
+
+		from.before(b_cont);
+		badges = $(b_cont);
+	}
+
 	// Figure out where to place our badge(s).
 	var before = badges.find('.badge').filter(function(i) {
 		var t = this.title.toLowerCase();
@@ -222,7 +236,7 @@ FFZ.prototype.render_badge = function(component) {
 
 	if ( reverse ) {
 		while(badges_out.length)
-			before.before(badges_out.shift()[1]);
+			badges.before(badges_out.shift()[1]);
 	} else {
 		while(badges_out.length)
 			badges.append(badges_out.shift()[1]);

@@ -321,13 +321,29 @@ FFZ.prototype.setup_line = function() {
 	this._twitch_emotes = {};
 	this._link_data = {};
 
+	this.log("Hooking the Ember Whisper controller.");
+	var Whisper = App.__container__.resolve('component:whisper-line');
+
+	if ( Whisper )
+		this._modify_line(Whisper);
 
 	this.log("Hooking the Ember Line controller.");
 
-	var Line = App.__container__.resolve('component:message-line'),
-		f = this;
+	var Line = App.__container__.resolve('component:message-line');
 
-	Line.reopen({
+	if ( Line )
+		this._modify_line(Line);
+
+	// Store the capitalization of our own name.
+	var user = this.get_user();
+	if ( user && user.name )
+		FFZ.capitalization[user.login] = [user.name, Date.now()];
+}
+
+FFZ.prototype._modify_line = function(component) {
+	var f = this;
+
+	component.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
 			var tokens = this.get("msgObject.cachedTokens");
@@ -375,6 +391,10 @@ FFZ.prototype.setup_line = function() {
 
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
+		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
+			this.rerender();
+		}),
+
 		didInsertElement: function() {
 			this._super();
 			try {
@@ -397,12 +417,29 @@ FFZ.prototype.setup_line = function() {
 				}
 
 				el.classList.toggle('ffz-alternate', row_type);
+				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted'));
 
 
 				// Basic Data
 				el.setAttribute('data-room', room);
 				el.setAttribute('data-sender', user);
-				el.setAttribute('data-deleted', this.get('deleted')||false);
+				el.setAttribute('data-deleted', this.get('msgObject.deleted')||false);
+
+
+				// Old Messages (for Chat Clear)
+				var old_messages = this.get("msgObject.ffz_old_messages");
+				if ( old_messages && old_messages.length ) {
+					var btn = document.createElement('div');
+					btn.className = 'button primary float-right';
+					btn.innerHTML = 'Show ' + utils.number_commas(old_messages.length) + ' Old';
+
+					btn.addEventListener("click", f._show_deleted.bind(f, room));
+
+					el.classList.add('clearfix');
+					el.classList.add('ffz-has-deleted');
+
+					this.$('.message').append(btn);
+				}
 
 
 				// Badge
@@ -550,12 +587,6 @@ FFZ.prototype.setup_line = function() {
 			}
 		}
 	});
-
-
-	// Store the capitalization of our own name.
-	var user = this.get_user();
-	if ( user && user.name )
-		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
 
 
@@ -701,7 +732,7 @@ FFZ.prototype._remove_banned = function(tokens) {
 // ---------------------
 
 FFZ.prototype._emoticonize = function(component, tokens) {
-	var room_id = component.get("msgObject.room") || App.__container__.lookup('controller:chat').get('currentRoom.id'),
+	var room_id = component.get("msgObject.room"),
 		user_id = component.get("msgObject.from");
 
 	return this.tokenize_emotes(user_id, room_id, tokens);

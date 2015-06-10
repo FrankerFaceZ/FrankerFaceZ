@@ -170,6 +170,20 @@ FFZ.prototype.render_badge = function(component) {
 	if ( ! data || ! data.badges )
 		return;
 
+	// If we don't have badges, add them.
+	if ( ! badges.length ) {
+		var b_cont = document.createElement('span'),
+			from = component.$('.from');
+
+		b_cont.className = 'badges float-left';
+
+		if ( ! from )
+			return;
+
+		from.before(b_cont);
+		badges = $(b_cont);
+	}
+
 	// Figure out where to place our badge(s).
 	var before = badges.find('.badge').filter(function(i) {
 		var t = this.title.toLowerCase();
@@ -223,7 +237,7 @@ FFZ.prototype.render_badge = function(component) {
 
 	if ( reverse ) {
 		while(badges_out.length)
-			before.before(badges_out.shift()[1]);
+			badges.before(badges_out.shift()[1]);
 	} else {
 		while(badges_out.length)
 			badges.append(badges_out.shift()[1]);
@@ -536,9 +550,9 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( f._cindex )
 				f._cindex.ffzFixTitle();
-		}.observes("content.status", "content.id")
+		}.observes("content.status", "content.id"),
 
-		/*ffzHostTarget: function() {
+		ffzHostTarget: function() {
 			var target = this.get('content.hostModeTarget'),
 				name = target && target.get('name'),
 				display_name = target && target.get('display_name');
@@ -548,7 +562,7 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( f.settings.group_tabs && f._chatv )
 				f._chatv.ffzRebuildTabs();
-		}.observes("content.hostModeTarget")*/
+		}.observes("content.hostModeTarget")
 	});
 }
 
@@ -837,6 +851,47 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 // Settings
 // --------------------
+
+FFZ.settings_info.prevent_clear = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+
+	category: "Chat",
+	name: "Show Deleted Messages",
+	help: "Fade deleted messages instead of replacing them, and prevent chat from being cleared.",
+
+	on_update: function(val) {
+			if ( this.has_bttv || ! this.rooms )
+				return;
+
+			for(var room_id in this.rooms) {
+				var ffz_room = this.rooms[room_id],
+					room = ffz_room && ffz_room.room;
+				if ( ! room )
+					continue;
+
+				room.get("messages").forEach(function(s, n) {
+					if ( val && ! s.ffz_deleted && s.deleted )
+						room.set("messages." + n + ".deleted", false);
+
+					else if ( s.ffz_deleted && ! val && ! s.deleted )
+						room.set("messages." + n + ".deleted", true);
+				});
+			}
+		}
+	};
+
+FFZ.settings_info.chat_history = {
+	type: "boolean",
+	value: true,
+
+	visible: false,
+	category: "Chat",
+	name: "Chat History <span>Alpha</span>",
+	help: "Load previous chat messages when loading a chat room so you can see what people have been talking about. <b>This currently only works in a handful of channels due to server capacity.</b>",
+	};
 
 FFZ.settings_info.group_tabs = {
 	type: "boolean",
@@ -1677,13 +1732,29 @@ FFZ.prototype.setup_line = function() {
 	this._twitch_emotes = {};
 	this._link_data = {};
 
+	this.log("Hooking the Ember Whisper controller.");
+	var Whisper = App.__container__.resolve('component:whisper-line');
+
+	if ( Whisper )
+		this._modify_line(Whisper);
 
 	this.log("Hooking the Ember Line controller.");
 
-	var Line = App.__container__.resolve('component:message-line'),
-		f = this;
+	var Line = App.__container__.resolve('component:message-line');
 
-	Line.reopen({
+	if ( Line )
+		this._modify_line(Line);
+
+	// Store the capitalization of our own name.
+	var user = this.get_user();
+	if ( user && user.name )
+		FFZ.capitalization[user.login] = [user.name, Date.now()];
+}
+
+FFZ.prototype._modify_line = function(component) {
+	var f = this;
+
+	component.reopen({
 		tokenizedMessage: function() {
 			// Add our own step to the tokenization procedure.
 			var tokens = this.get("msgObject.cachedTokens");
@@ -1731,6 +1802,10 @@ FFZ.prototype.setup_line = function() {
 
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
+		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
+			this.rerender();
+		}),
+
 		didInsertElement: function() {
 			this._super();
 			try {
@@ -1753,12 +1828,29 @@ FFZ.prototype.setup_line = function() {
 				}
 
 				el.classList.toggle('ffz-alternate', row_type);
+				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted'));
 
 
 				// Basic Data
 				el.setAttribute('data-room', room);
 				el.setAttribute('data-sender', user);
-				el.setAttribute('data-deleted', this.get('deleted')||false);
+				el.setAttribute('data-deleted', this.get('msgObject.deleted')||false);
+
+
+				// Old Messages (for Chat Clear)
+				var old_messages = this.get("msgObject.ffz_old_messages");
+				if ( old_messages && old_messages.length ) {
+					var btn = document.createElement('div');
+					btn.className = 'button primary float-right';
+					btn.innerHTML = 'Show ' + utils.number_commas(old_messages.length) + ' Old';
+
+					btn.addEventListener("click", f._show_deleted.bind(f, room));
+
+					el.classList.add('clearfix');
+					el.classList.add('ffz-has-deleted');
+
+					this.$('.message').append(btn);
+				}
 
 
 				// Badge
@@ -1906,12 +1998,6 @@ FFZ.prototype.setup_line = function() {
 			}
 		}
 	});
-
-
-	// Store the capitalization of our own name.
-	var user = this.get_user();
-	if ( user && user.name )
-		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
 
 
@@ -2057,7 +2143,7 @@ FFZ.prototype._remove_banned = function(tokens) {
 // ---------------------
 
 FFZ.prototype._emoticonize = function(component, tokens) {
-	var room_id = component.get("msgObject.room") || App.__container__.lookup('controller:chat').get('currentRoom.id'),
+	var room_id = component.get("msgObject.room"),
 		user_id = component.get("msgObject.from");
 
 	return this.tokenize_emotes(user_id, room_id, tokens);
@@ -2518,10 +2604,16 @@ FFZ.prototype.add_room = function(id, room) {
 	this.log("Adding Room: " + id);
 
 	// Create a basic data table for this room.
-	this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null};
+	var data = this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null, needs_history: false};
 
 	// Let the server know where we are.
 	this.ws_send("sub", id);
+
+	// See if we need history?
+	if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
+		if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
+			data.needs_history = true;
+	}
 
 	// For now, we use the legacy function to grab the .css file.
 	this.load_room(id);
@@ -2552,6 +2644,142 @@ FFZ.prototype.remove_room = function(id) {
 		set.users.removeObject(id);
 		if ( ! this.global_sets.contains(room.set) && ! set.users.length )
 			this.unload_set(room.set);
+	}
+}
+
+
+// --------------------
+// Chat History
+// --------------------
+
+FFZ.prototype._load_history = function(room_id, success, data) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return;
+
+		if ( success )
+		this.log("Received " + data.length + " old messages for: " + room_id);
+	else
+		return this.log("Error retrieving chat history for: " + room_id);
+
+	if ( ! data.length )
+		return;
+
+	return this._insert_history(room_id, data);
+}
+
+
+FFZ.prototype._show_deleted = function(room_id) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return;
+
+	var old_messages = room.room.get('messages.0.ffz_old_messages');
+	if ( ! old_messages || ! old_messages.length )
+		return;
+
+	room.room.set('messages.0.ffz_old_messages', undefined);
+	this._insert_history(room_id, old_messages);
+}
+
+FFZ.prototype._insert_history = function(room_id, data) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return;
+
+	var r = room.room,
+		messages = r.get('messages'),
+		tmiSession = r.tmiSession || (TMI._sessions && TMI._sessions[0]),
+		tmiRoom = r.tmiRoom,
+
+		inserted = 0,
+
+		last_msg = data[data.length - 1],
+		now = new Date(),
+		last_date = typeof last_msg.date === "string" ? utils.parse_date(last_msg.date) : last_msg.date,
+		age = (now - last_date) / 1000,
+		is_old = age > 300,
+
+		i = data.length,
+		alternation = r.get('messages.0.ffz_alternate') || false;
+
+	if ( is_old )
+		alternation = ! alternation;
+
+	var i = data.length;
+	while(i--) {
+		var msg = data[i];
+
+		if ( typeof msg.date === "string" )
+			msg.date = utils.parse_date(msg.date);
+
+		msg.ffz_alternate = alternation = ! alternation;
+		if ( ! msg.room )
+			msg.room = room_id;
+
+		if ( ! msg.color )
+			msg.color = msg.tags && msg.tags.color ? msg.tags.color : tmiSession && msg.from ? tmiSession.getColor(msg.from.toLowerCase()) : "#755000";
+
+		if ( ! msg.labels || ! msg.labels.length ) {
+			var labels = msg.labels = [];
+			if ( msg.tags ) {
+				if ( msg.tags.turbo )
+					labels.push("turbo");
+				if ( msg.tags.subscriber )
+					labels.push("subscriber");
+				if ( msg.from === room_id )
+					labels.push("owner")
+				else {
+					var ut = msg.tags['user-type'];
+					if ( ut === 'mod' || ut === 'staff' || ut === 'admin' || ut === 'global_mod' )
+						labels.push(ut);
+				}
+			}
+		}
+
+		if ( ! msg.style ) {
+			if ( msg.from === "jtv" )
+				msg.style = "admin";
+			else if ( msg.from === "twitchnotify" )
+				msg.style = "notification";
+		}
+
+		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
+			this.tokenize_chat_line(msg, true);
+
+		if ( r.shouldShowMessage(msg) ) {
+			if ( messages.length < r.get("messageBufferSize") ) {
+				// One last thing! Make sure we don't have too many messages.
+				if ( msg.ffz_old_messages ) {
+					var max_msgs = r.get("messageBufferSize") - (messages.length + 1);
+					if ( msg.ffz_old_messages.length > max_msgs )
+						msg.ffz_old_messages = msg.ffz_old_messages.slice(msg.ffz_old_messages.length - max_msgs);
+				}
+
+				messages.unshiftObject(msg);
+				inserted += 1;
+			} else
+				break;
+		}
+	}
+
+	if ( is_old ) {
+		var msg = {
+			ffz_alternate: ! alternation,
+			color: "#755000",
+			date: new Date(),
+			from: "frankerfacez_admin",
+			style: "admin",
+			message: "(Last message is " + utils.human_time(age) + " old.)",
+			room: room_id
+		};
+
+		this.tokenize_chat_line(msg);
+		if ( r.shouldShowMessage(msg) ) {
+			messages.insertAt(inserted, msg);
+			while( messages.length > r.get('messageBufferSize') )
+				messages.removeAt(0);
+		}
 	}
 }
 
@@ -2593,6 +2821,8 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	// Preserve the pointer to the Room instance.
 	if ( this.rooms[room_id] )
 		data.room = this.rooms[room_id].room;
+
+	data.needs_history = this.rooms[room_id] && this.rooms[room_id].needs_history || false;
 
 	this.rooms[room_id] = data;
 
@@ -2636,10 +2866,53 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
+		clearMessages: function(user) {
+			var t = this;
+			if ( user ) {
+				this.get("messages").forEach(function(s, n) {
+					if ( s.from === user ) {
+						t.set("messages." + n + ".ffz_deleted", true);
+						if ( ! f.settings.prevent_clear )
+							t.set("messages." + n + ".deleted", true);
+					}
+				});
+			} else {
+				if ( f.settings.prevent_clear )
+					this.addTmiMessage("A moderator's attempt to clear chat was ignored.");
+				else {
+					var msgs = t.get("messages");
+					t.set("messages", []);
+					t.addMessage({
+						style: 'admin',
+						message: i18n("Chat was cleared by a moderator"),
+						ffz_old_messages: msgs
+					});
+				}
+			}
+		},
+
+		pushMessage: function(msg) {
+			if ( this.shouldShowMessage(msg) ) {
+				var t, s, n, a = this.get("messageBufferSize");
+				for (this.get("messages").pushObject(msg), t = this.get("messages.length"), s = t - a, n = 0; s > n; n++)
+					this.get("messages").removeAt(0);
+
+				"admin" === msg.style || ("whisper" === msg.style && ! this.ffz_whisper_room ) || this.incrementProperty("unreadCount", 1);
+			}
+		},
+
 		addMessage: function(msg) {
 			try {
 				if ( msg ) {
-					msg.room = this.get('id');
+					var is_whisper = msg.style === 'whisper';
+					if ( f.settings.group_tabs && f.settings.whisper_room ) {
+						if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
+							return;
+					}
+
+					if ( ! is_whisper )
+						msg.room = this.get('id');
+
 					f.tokenize_chat_line(msg);
 				}
 			} catch(err) {
@@ -2658,6 +2931,9 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		send: function(text) {
+			if ( f.settings.group_tabs && f.settings.whisper_room && this.ffz_whisper_room )
+				return;
+
 			try {
 				var cmd = text.split(' ', 1)[0].toLowerCase();
 				if ( cmd === "/ffz" ) {
@@ -3685,13 +3961,13 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Twitch ember application is ready.
 
 	// Check for special non-ember pages.
-	if ( /^\/(?:settings|m\/|messages?\/)/.test(location.pathname) ) {
+	if ( /^\/(?:$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
 		this.setup_normal(delay);
 		return;
 	}
 
 	// Check for the dashboard.
-	if ( /\/[A-Za-z_-]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
+	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
 		this.setup_dashboard(delay);
 		return;
 	}
@@ -4362,8 +4638,18 @@ FFZ.prototype.ws_create = function() {
 		}
 
 		// Send the current rooms.
-		for(var room_id in f.rooms)
-			f.rooms.hasOwnProperty(room_id) && f.ws_send("sub", room_id);
+		for(var room_id in f.rooms) {
+			if ( ! f.rooms.hasOwnProperty(room_id) || ! f.rooms[room_id] )
+				continue;
+
+			f.ws_send("sub", room_id);
+
+			if ( f.rooms[room_id].needs_history ) {
+				f.rooms[room_id].needs_history = false;
+				if ( ! f.has_bttv && f.settings.chat_history )
+					f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
+			}
+		}
 
 		// Send any pending commands.
 		var pending = f._ws_pending;
@@ -4390,7 +4676,7 @@ FFZ.prototype.ws_create = function() {
 
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 60000 )
-			f._ws_delay += 5000;
+			f._ws_delay += (Math.floor(Math.random()*10) + 5) * 1000;
 		else
 			// Randomize delay.
 			f._ws_delay = (Math.floor(Math.random()*60)+30)*1000;
@@ -4423,14 +4709,17 @@ FFZ.prototype.ws_create = function() {
 
 		} else {
 			var success = cmd === 'True',
-				callback = f._ws_callbacks[request];
+				has_callback = f._ws_callbacks.hasOwnProperty(request);
 
-			if ( ! success || ! callback )
+			if ( ! has_callback )
 				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);
 
-			if ( callback ) {
-				delete f._ws_callbacks[request];
-				callback(success, data);
+			else {
+				try {
+					f._ws_callbacks[request](success, data);
+				} catch(err) {
+					f.error("Callback for " + request + ": " + err);
+				}
 			}
 		}
 	}
@@ -4543,7 +4832,7 @@ try {
 // Tokenization
 // ---------------------
 
-FFZ.prototype.tokenize_chat_line = function(msgObject) {
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
@@ -4577,14 +4866,14 @@ FFZ.prototype.tokenize_chat_line = function(msgObject) {
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i];
-			if ( _.isString(token) || ! token.mentionedUser || token.own )
+			if ( _.isString(token) || ! token.mentionedUser || token.own || msgObject.style === 'whisper' )
 				continue;
 
 			// We have a mention!
 			msgObject.ffz_has_mention = true;
 
 			// If we have chat tabs, update the status.
-			if ( ! this.has_bttv && this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
+			if ( room_id && ! this.has_bttv && this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
 				var el = this._chatv._ffz_tabs.querySelector('.ffz-chat-tab[data-room="' + room_id + '"]');
 				if ( el && ! el.classList.contains('active') )
 					el.classList.add('tab-mentioned');
@@ -4593,7 +4882,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject) {
 			// Display notifications if that setting is enabled. Also make sure
 			// that we have a chat view because showing a notification when we
 			// can't actually go to it is a bad thing.
-			if ( this._chatv && this.settings.highlight_notifications && ! document.hasFocus() ) {
+			if ( this._chatv && this.settings.highlight_notifications && ! document.hasFocus() && ! prevent_notification ) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room,
 					room_name;
 
@@ -5155,8 +5444,13 @@ FFZ.prototype.build_ui_popup = function(view) {
 			continue;
 
 		var page = FFZ.menu_pages[key];
-		if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)()))) )
+		try {
+			if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)(view)))) )
+				continue;
+		} catch(err) {
+			this.error("menu_pages " + key + " visible: " + err);
 			continue;
+		}
 
 		menu_pages.push([page.sort_order || 0, key, page]);
 	}
@@ -5533,28 +5827,7 @@ var FFZ = window.FrankerFaceZ,
 		"\\:-?(o|O)": ":-O",
 		"\\&gt\\;\\(": ">(",
 		"Gr(a|e)yFace": "GrayFace"
-		},
-
-	get_emotes = function(ffz) {
-		var Chat = App.__container__.lookup('controller:chat'),
-			room_id = Chat.get('currentRoom.id'),
-			room = ffz.rooms[room_id],
-			tmiSession = room ? room.room.tmiSession : null,
-
-			set_ids = tmiSession && tmiSession._emotesParser && tmiSession._emotesParser.emoticonSetIds || "0",
-			user = ffz.get_user(),
-			user_sets = user && ffz.users[user.login] && ffz.users[user.login].sets || [];
-
-		// Remove the 'default' set.
-		set_ids = set_ids.split(",").removeObject("0");
-
-		if ( ffz.settings.global_emotes_in_menu ) {
-			set_ids.push("0");
-			user_sets = _.union(user_sets, ffz.default_sets);
-		}
-
-		return [set_ids, user_sets];
-	};
+		};
 
 
 // -------------------
@@ -5598,9 +5871,13 @@ FFZ.menu_pages.my_emotes = {
 	name: "My Emoticons",
 	icon: constants.EMOTE,
 
-	visible: function() {
-		var emotes = get_emotes(this);
-		return emotes[0].length > 0 || emotes[1].length > 0;
+	visible: function(view) {
+		var user = this.get_user(),
+			tmi = view.get('controller.currentRoom.tmiSession'),
+			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
+			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
+
+		return ffz_sets.length || (twitch_sets && Object.keys(twitch_sets).length);
 	},
 
 	render: function(view, container) {
@@ -5615,7 +5892,40 @@ FFZ.menu_pages.my_emotes = {
 		if ( ! needed_sets.length )
 			return FFZ.menu_pages.my_emotes.draw_menu.bind(this)(view, container, twitch_sets);
 
-		container.innerHTML = JSON.stringify(needed_sets);
+		var f = this,
+			fail = function() {
+				if ( ! needed_sets.length )
+					return;
+
+				needed_sets = [];
+				var ts = {};
+				for(var set_id in twitch_sets)
+				if ( f._twitch_set_to_channel[set_id] )
+					ts[set_id] = twitch_sets[set_id];
+
+				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, ts);
+			};
+
+		this.ws_send("twitch_sets", needed_sets, function(success, data) {
+			if ( ! needed_sets.length )
+				return;
+
+			needed_sets = [];
+			if ( success ) {
+				for(var set_id in data) {
+					if ( ! data.hasOwnProperty(set_id) )
+						continue;
+
+					f._twitch_set_to_channel[set_id] = data[set_id];
+				}
+
+				localStorage.ffzTwitchSets = JSON.stringify(f._twitch_set_to_channel);
+				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, twitch_sets);
+			} else
+				fail();
+		});
+
+		setTimeout(fail, 2000);
 	},
 
 	draw_twitch_set: function(view, set_id, set) {
@@ -5644,6 +5954,7 @@ FFZ.menu_pages.my_emotes = {
 				.done(function(data) {
 					if ( data.subscriber && data.subscriber.image ) {
 						f._twitch_badges[channel_id] = data.subscriber.image;
+						localStorage.ffzTwitchBadges = JSON.stringify(f._twitch_badges);
 						heading.style.backgroundImage = 'url("' + data.subscriber.image + '")';
 					}
 				});
@@ -5726,7 +6037,7 @@ FFZ.menu_pages.my_emotes = {
 			if ( emote.width )
 				em.style.width = emote.width + "px";
 
-			em.title = emote.tooltip || emote.name;
+			em.title = this._emote_tooltip(emote);
 			em.addEventListener("click", this._add_emote.bind(this, view, emote.name));
 			menu.appendChild(em);
 		}
@@ -6458,6 +6769,12 @@ var FFZ = window.FrankerFaceZ,
 var sanitize_cache = {},
 	sanitize_el = document.createElement('span'),
 
+	pluralize = function(value, singular, plural) {
+		plural = plural || 's';
+		singular = singular || '';
+		return value === 1 ? singular : plural;
+	},
+
 	place_string = function(num) {
 		if ( num == 1 ) return '1st';
 		else if ( num == 2 ) return '2nd';
@@ -6505,7 +6822,9 @@ var sanitize_cache = {},
 		if ( ! parts )
 			return null;
 
-		var unix = Date.UTC(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6], parts[7] || 0);
+		parts[7] = (parts[7] && parts[7].length) ? parts[7].substr(0, 3) : 0;
+
+		var unix = Date.UTC(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6], parts[7]);
 
 		// Check Offset
 		if ( parts[9] ) {
@@ -6572,6 +6891,34 @@ module.exports = {
 
 	date_string: function(date) {
 		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();
+	},
+
+	pluralize: pluralize,
+
+	human_time: function(elapsed) {
+		elapsed = Math.floor(elapsed);
+
+		var years = Math.floor(elapsed / 31536000);
+		if ( years )
+			return years + ' year' + pluralize(years);
+
+		var days = Math.floor((elapsed %= 31536000) / 86400);
+		if ( days )
+			return days + ' day' + pluralize(days);
+
+		var hours = Math.floor((elapsed %= 86400) / 3600);
+		if ( hours )
+			return hours + ' hour' + pluralize(hours);
+
+		var minutes = Math.floor((elapsed %= 3600) / 60);
+		if ( minutes )
+			return minutes + ' minute' + pluralize(minutes);
+
+		var seconds = elapsed % 60;
+		if ( seconds )
+			return seconds + ' second' + pluralize(seconds);
+
+		return 'less than a second';
 	},
 
 	time_to_string: function(elapsed, separate_days, days_only) {

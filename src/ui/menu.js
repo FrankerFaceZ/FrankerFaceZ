@@ -82,8 +82,13 @@ FFZ.prototype.build_ui_popup = function(view) {
 			continue;
 
 		var page = FFZ.menu_pages[key];
-		if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)()))) )
+		try {
+			if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)(view)))) )
+				continue;
+		} catch(err) {
+			this.error("menu_pages " + key + " visible: " + err);
 			continue;
+		}
 
 		menu_pages.push([page.sort_order || 0, key, page]);
 	}

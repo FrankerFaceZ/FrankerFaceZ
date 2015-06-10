@@ -67,9 +67,9 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( f._cindex )
 				f._cindex.ffzFixTitle();
-		}.observes("content.status", "content.id")
+		}.observes("content.status", "content.id"),
 
-		/*ffzHostTarget: function() {
+		ffzHostTarget: function() {
 			var target = this.get('content.hostModeTarget'),
 				name = target && target.get('name'),
 				display_name = target && target.get('display_name');
@@ -79,7 +79,7 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( f.settings.group_tabs && f._chatv )
 				f._chatv.ffzRebuildTabs();
-		}.observes("content.hostModeTarget")*/
+		}.observes("content.hostModeTarget")
 	});
 }
 

@@ -194,10 +194,16 @@ FFZ.prototype.add_room = function(id, room) {
 	this.log("Adding Room: " + id);
 
 	// Create a basic data table for this room.
-	this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null};
+	var data = this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null, needs_history: false};
 
 	// Let the server know where we are.
 	this.ws_send("sub", id);
+
+	// See if we need history?
+	if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
+		if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
+			data.needs_history = true;
+	}
 
 	// For now, we use the legacy function to grab the .css file.
 	this.load_room(id);
@@ -228,6 +234,142 @@ FFZ.prototype.remove_room = function(id) {
 		set.users.removeObject(id);
 		if ( ! this.global_sets.contains(room.set) && ! set.users.length )
 			this.unload_set(room.set);
+	}
+}
+
+
+// --------------------
+// Chat History
+// --------------------
+
+FFZ.prototype._load_history = function(room_id, success, data) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return;
+
+		if ( success )
+		this.log("Received " + data.length + " old messages for: " + room_id);
+	else
+		return this.log("Error retrieving chat history for: " + room_id);
+
+	if ( ! data.length )
+		return;
+
+	return this._insert_history(room_id, data);
+}
+
+
+FFZ.prototype._show_deleted = function(room_id) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return;
+
+	var old_messages = room.room.get('messages.0.ffz_old_messages');
+	if ( ! old_messages || ! old_messages.length )
+		return;
+
+	room.room.set('messages.0.ffz_old_messages', undefined);
+	this._insert_history(room_id, old_messages);
+}
+
+FFZ.prototype._insert_history = function(room_id, data) {
+	var room = this.rooms[room_id];
+	if ( ! room || ! room.room )
+		return;
+
+	var r = room.room,
+		messages = r.get('messages'),
+		tmiSession = r.tmiSession || (TMI._sessions && TMI._sessions[0]),
+		tmiRoom = r.tmiRoom,
+
+		inserted = 0,
+
+		last_msg = data[data.length - 1],
+		now = new Date(),
+		last_date = typeof last_msg.date === "string" ? utils.parse_date(last_msg.date) : last_msg.date,
+		age = (now - last_date) / 1000,
+		is_old = age > 300,
+
+		i = data.length,
+		alternation = r.get('messages.0.ffz_alternate') || false;
+
+	if ( is_old )
+		alternation = ! alternation;
+
+	var i = data.length;
+	while(i--) {
+		var msg = data[i];
+
+		if ( typeof msg.date === "string" )
+			msg.date = utils.parse_date(msg.date);
+
+		msg.ffz_alternate = alternation = ! alternation;
+		if ( ! msg.room )
+			msg.room = room_id;
+
+		if ( ! msg.color )
+			msg.color = msg.tags && msg.tags.color ? msg.tags.color : tmiSession && msg.from ? tmiSession.getColor(msg.from.toLowerCase()) : "#755000";
+
+		if ( ! msg.labels || ! msg.labels.length ) {
+			var labels = msg.labels = [];
+			if ( msg.tags ) {
+				if ( msg.tags.turbo )
+					labels.push("turbo");
+				if ( msg.tags.subscriber )
+					labels.push("subscriber");
+				if ( msg.from === room_id )
+					labels.push("owner")
+				else {
+					var ut = msg.tags['user-type'];
+					if ( ut === 'mod' || ut === 'staff' || ut === 'admin' || ut === 'global_mod' )
+						labels.push(ut);
+				}
+			}
+		}
+
+		if ( ! msg.style ) {
+			if ( msg.from === "jtv" )
+				msg.style = "admin";
+			else if ( msg.from === "twitchnotify" )
+				msg.style = "notification";
+		}
+
+		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
+			this.tokenize_chat_line(msg, true);
+
+		if ( r.shouldShowMessage(msg) ) {
+			if ( messages.length < r.get("messageBufferSize") ) {
+				// One last thing! Make sure we don't have too many messages.
+				if ( msg.ffz_old_messages ) {
+					var max_msgs = r.get("messageBufferSize") - (messages.length + 1);
+					if ( msg.ffz_old_messages.length > max_msgs )
+						msg.ffz_old_messages = msg.ffz_old_messages.slice(msg.ffz_old_messages.length - max_msgs);
+				}
+
+				messages.unshiftObject(msg);
+				inserted += 1;
+			} else
+				break;
+		}
+	}
+
+	if ( is_old ) {
+		var msg = {
+			ffz_alternate: ! alternation,
+			color: "#755000",
+			date: new Date(),
+			from: "frankerfacez_admin",
+			style: "admin",
+			message: "(Last message is " + utils.human_time(age) + " old.)",
+			room: room_id
+		};
+
+		this.tokenize_chat_line(msg);
+		if ( r.shouldShowMessage(msg) ) {
+			messages.insertAt(inserted, msg);
+			while( messages.length > r.get('messageBufferSize') )
+				messages.removeAt(0);
+		}
 	}
 }
 
@@ -269,6 +411,8 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	// Preserve the pointer to the Room instance.
 	if ( this.rooms[room_id] )
 		data.room = this.rooms[room_id].room;
+
+	data.needs_history = this.rooms[room_id] && this.rooms[room_id].needs_history || false;
 
 	this.rooms[room_id] = data;
 
@@ -312,10 +456,53 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
+		clearMessages: function(user) {
+			var t = this;
+			if ( user ) {
+				this.get("messages").forEach(function(s, n) {
+					if ( s.from === user ) {
+						t.set("messages." + n + ".ffz_deleted", true);
+						if ( ! f.settings.prevent_clear )
+							t.set("messages." + n + ".deleted", true);
+					}
+				});
+			} else {
+				if ( f.settings.prevent_clear )
+					this.addTmiMessage("A moderator's attempt to clear chat was ignored.");
+				else {
+					var msgs = t.get("messages");
+					t.set("messages", []);
+					t.addMessage({
+						style: 'admin',
+						message: i18n("Chat was cleared by a moderator"),
+						ffz_old_messages: msgs
+					});
+				}
+			}
+		},
+
+		pushMessage: function(msg) {
+			if ( this.shouldShowMessage(msg) ) {
+				var t, s, n, a = this.get("messageBufferSize");
+				for (this.get("messages").pushObject(msg), t = this.get("messages.length"), s = t - a, n = 0; s > n; n++)
+					this.get("messages").removeAt(0);
+
+				"admin" === msg.style || ("whisper" === msg.style && ! this.ffz_whisper_room ) || this.incrementProperty("unreadCount", 1);
+			}
+		},
+
 		addMessage: function(msg) {
 			try {
 				if ( msg ) {
-					msg.room = this.get('id');
+					var is_whisper = msg.style === 'whisper';
+					if ( f.settings.group_tabs && f.settings.whisper_room ) {
+						if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
+							return;
+					}
+
+					if ( ! is_whisper )
+						msg.room = this.get('id');
+
 					f.tokenize_chat_line(msg);
 				}
 			} catch(err) {
@@ -334,6 +521,9 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		send: function(text) {
+			if ( f.settings.group_tabs && f.settings.whisper_room && this.ffz_whisper_room )
+				return;
+
 			try {
 				var cmd = text.split(' ', 1)[0].toLowerCase();
 				if ( cmd === "/ffz" ) {

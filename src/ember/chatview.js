@@ -17,6 +17,47 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
+FFZ.settings_info.prevent_clear = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+
+	category: "Chat",
+	name: "Show Deleted Messages",
+	help: "Fade deleted messages instead of replacing them, and prevent chat from being cleared.",
+
+	on_update: function(val) {
+			if ( this.has_bttv || ! this.rooms )
+				return;
+
+			for(var room_id in this.rooms) {
+				var ffz_room = this.rooms[room_id],
+					room = ffz_room && ffz_room.room;
+				if ( ! room )
+					continue;
+
+				room.get("messages").forEach(function(s, n) {
+					if ( val && ! s.ffz_deleted && s.deleted )
+						room.set("messages." + n + ".deleted", false);
+
+					else if ( s.ffz_deleted && ! val && ! s.deleted )
+						room.set("messages." + n + ".deleted", true);
+				});
+			}
+		}
+	};
+
+FFZ.settings_info.chat_history = {
+	type: "boolean",
+	value: true,
+
+	visible: false,
+	category: "Chat",
+	name: "Chat History <span>Alpha</span>",
+	help: "Load previous chat messages when loading a chat room so you can see what people have been talking about. <b>This currently only works in a handful of channels due to server capacity.</b>",
+	};
+
 FFZ.settings_info.group_tabs = {
 	type: "boolean",
 	value: false,

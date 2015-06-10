@@ -19,7 +19,7 @@ try {
 // Tokenization
 // ---------------------
 
-FFZ.prototype.tokenize_chat_line = function(msgObject) {
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
@@ -53,14 +53,14 @@ FFZ.prototype.tokenize_chat_line = function(msgObject) {
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i];
-			if ( _.isString(token) || ! token.mentionedUser || token.own )
+			if ( _.isString(token) || ! token.mentionedUser || token.own || msgObject.style === 'whisper' )
 				continue;
 
 			// We have a mention!
 			msgObject.ffz_has_mention = true;
 
 			// If we have chat tabs, update the status.
-			if ( ! this.has_bttv && this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
+			if ( room_id && ! this.has_bttv && this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
 				var el = this._chatv._ffz_tabs.querySelector('.ffz-chat-tab[data-room="' + room_id + '"]');
 				if ( el && ! el.classList.contains('active') )
 					el.classList.add('tab-mentioned');
@@ -69,7 +69,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject) {
 			// Display notifications if that setting is enabled. Also make sure
 			// that we have a chat view because showing a notification when we
 			// can't actually go to it is a bad thing.
-			if ( this._chatv && this.settings.highlight_notifications && ! document.hasFocus() ) {
+			if ( this._chatv && this.settings.highlight_notifications && ! document.hasFocus() && ! prevent_notification ) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room,
 					room_name;
 

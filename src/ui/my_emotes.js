@@ -27,28 +27,7 @@ var FFZ = window.FrankerFaceZ,
 		"\\:-?(o|O)": ":-O",
 		"\\&gt\\;\\(": ">(",
 		"Gr(a|e)yFace": "GrayFace"
-		},
-
-	get_emotes = function(ffz) {
-		var Chat = App.__container__.lookup('controller:chat'),
-			room_id = Chat.get('currentRoom.id'),
-			room = ffz.rooms[room_id],
-			tmiSession = room ? room.room.tmiSession : null,
-
-			set_ids = tmiSession && tmiSession._emotesParser && tmiSession._emotesParser.emoticonSetIds || "0",
-			user = ffz.get_user(),
-			user_sets = user && ffz.users[user.login] && ffz.users[user.login].sets || [];
-
-		// Remove the 'default' set.
-		set_ids = set_ids.split(",").removeObject("0");
-
-		if ( ffz.settings.global_emotes_in_menu ) {
-			set_ids.push("0");
-			user_sets = _.union(user_sets, ffz.default_sets);
-		}
-
-		return [set_ids, user_sets];
-	};
+		};
 
 
 // -------------------
@@ -92,9 +71,13 @@ FFZ.menu_pages.my_emotes = {
 	name: "My Emoticons",
 	icon: constants.EMOTE,
 
-	visible: function() {
-		var emotes = get_emotes(this);
-		return emotes[0].length > 0 || emotes[1].length > 0;
+	visible: function(view) {
+		var user = this.get_user(),
+			tmi = view.get('controller.currentRoom.tmiSession'),
+			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
+			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
+
+		return ffz_sets.length || (twitch_sets && Object.keys(twitch_sets).length);
 	},
 
 	render: function(view, container) {
@@ -109,7 +92,40 @@ FFZ.menu_pages.my_emotes = {
 		if ( ! needed_sets.length )
 			return FFZ.menu_pages.my_emotes.draw_menu.bind(this)(view, container, twitch_sets);
 
-		container.innerHTML = JSON.stringify(needed_sets);
+		var f = this,
+			fail = function() {
+				if ( ! needed_sets.length )
+					return;
+
+				needed_sets = [];
+				var ts = {};
+				for(var set_id in twitch_sets)
+				if ( f._twitch_set_to_channel[set_id] )
+					ts[set_id] = twitch_sets[set_id];
+
+				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, ts);
+			};
+
+		this.ws_send("twitch_sets", needed_sets, function(success, data) {
+			if ( ! needed_sets.length )
+				return;
+
+			needed_sets = [];
+			if ( success ) {
+				for(var set_id in data) {
+					if ( ! data.hasOwnProperty(set_id) )
+						continue;
+
+					f._twitch_set_to_channel[set_id] = data[set_id];
+				}
+
+				localStorage.ffzTwitchSets = JSON.stringify(f._twitch_set_to_channel);
+				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, twitch_sets);
+			} else
+				fail();
+		});
+
+		setTimeout(fail, 2000);
 	},
 
 	draw_twitch_set: function(view, set_id, set) {
@@ -138,6 +154,7 @@ FFZ.menu_pages.my_emotes = {
 				.done(function(data) {
 					if ( data.subscriber && data.subscriber.image ) {
 						f._twitch_badges[channel_id] = data.subscriber.image;
+						localStorage.ffzTwitchBadges = JSON.stringify(f._twitch_badges);
 						heading.style.backgroundImage = 'url("' + data.subscriber.image + '")';
 					}
 				});
@@ -220,7 +237,7 @@ FFZ.menu_pages.my_emotes = {
 			if ( emote.width )
 				em.style.width = emote.width + "px";
 
-			em.title = emote.tooltip || emote.name;
+			em.title = this._emote_tooltip(emote);
 			em.addEventListener("click", this._add_emote.bind(this, view, emote.name));
 			menu.appendChild(em);
 		}

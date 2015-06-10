@@ -5,6 +5,12 @@ var FFZ = window.FrankerFaceZ,
 var sanitize_cache = {},
 	sanitize_el = document.createElement('span'),
 
+	pluralize = function(value, singular, plural) {
+		plural = plural || 's';
+		singular = singular || '';
+		return value === 1 ? singular : plural;
+	},
+
 	place_string = function(num) {
 		if ( num == 1 ) return '1st';
 		else if ( num == 2 ) return '2nd';
@@ -52,7 +58,9 @@ var sanitize_cache = {},
 		if ( ! parts )
 			return null;
 
-		var unix = Date.UTC(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6], parts[7] || 0);
+		parts[7] = (parts[7] && parts[7].length) ? parts[7].substr(0, 3) : 0;
+
+		var unix = Date.UTC(parts[1], parts[2] - 1, parts[3], parts[4], parts[5], parts[6], parts[7]);
 
 		// Check Offset
 		if ( parts[9] ) {
@@ -119,6 +127,34 @@ module.exports = {
 
 	date_string: function(date) {
 		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();
+	},
+
+	pluralize: pluralize,
+
+	human_time: function(elapsed) {
+		elapsed = Math.floor(elapsed);
+
+		var years = Math.floor(elapsed / 31536000);
+		if ( years )
+			return years + ' year' + pluralize(years);
+
+		var days = Math.floor((elapsed %= 31536000) / 86400);
+		if ( days )
+			return days + ' day' + pluralize(days);
+
+		var hours = Math.floor((elapsed %= 86400) / 3600);
+		if ( hours )
+			return hours + ' hour' + pluralize(hours);
+
+		var minutes = Math.floor((elapsed %= 3600) / 60);
+		if ( minutes )
+			return minutes + ' minute' + pluralize(minutes);
+
+		var seconds = elapsed % 60;
+		if ( seconds )
+			return seconds + ' second' + pluralize(seconds);
+
+		return 'less than a second';
 	},
 
 	time_to_string: function(elapsed, separate_days, days_only) {
