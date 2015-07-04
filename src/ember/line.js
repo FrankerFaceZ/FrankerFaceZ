@@ -15,8 +15,12 @@
 
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	SRCSETS = {};
 	build_srcset = function(id) {
-		return TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+		if ( SRCSETS[id] )
+			return SRCSETS[id];
+		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+		return out;
 	},
 
 
@@ -31,7 +35,7 @@
 		if ( ! set )
 			return data.code;
 
-		else if ( set == "00000turbo" || set == "turbo" ) {
+		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
 			set = "Twitch Turbo";
 			set_type = null;
 		}
@@ -180,6 +184,69 @@
 // ---------------------
 // Settings
 // ---------------------
+
+FFZ.settings_info.parse_emoji = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+
+	name: "Replace Emoji with Images",
+	help: "Replace emoji in chat messages with nicer looking images from the open-source Twitter Emoji project."
+	};
+
+
+FFZ.settings_info.room_status = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Room Status Indicators",
+	help: "Display the current room state (slow mode, sub mode, and r9k mode) next to the Chat button.",
+
+	on_update: function() {
+			if ( this._roomv )
+				this._roomv.ffzUpdateStatus();
+		}
+	};
+
+
+FFZ.settings_info.scrollback_length = {
+	type: "button",
+	value: 150,
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Scrollback Length",
+	help: "Set the maximum number of lines to keep in chat.",
+
+	method: function() {
+			var new_val = prompt("Scrollback Length\n\nPlease enter a new maximum length for the chat scrollback. Default: 150\n\nNote: Making this too large will cause your browser to lag.", this.settings.scrollback_length);
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			new_val = parseInt(new_val);
+			if ( new_val === NaN )
+				return;
+
+			if ( new_val < 10 )
+				new_val = 10;
+
+			this.settings.set("scrollback_length", new_val);
+
+			// Update our everything.
+			var Chat = App.__container__.lookup('controller:chat'),
+				current_id = Chat && Chat.get('currentRoom.id');
+
+			for(var room_id in this.rooms) {
+				var room = this.rooms[room_id];
+				room.room.set('messageBufferSize', new_val + ((this._roomv && !this._roomv.get('stuckToBottom') && current_id === room_id) ? 150 : 0));
+			}
+		}
+	};
 
 FFZ.settings_info.banned_words = {
 	type: "button",
@@ -360,6 +427,9 @@ FFZ.prototype._modify_line = function(component) {
 				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
 
+				if ( f.settings.parse_emoji )
+					tokens = f.tokenize_emoji(tokens);
+
 				// Store the capitalization.
 				var display = this.get("msgObject.tags.display-name");
 				if ( display && display.length )
@@ -395,6 +465,18 @@ FFZ.prototype._modify_line = function(component) {
 			this.rerender();
 		}),
 
+		willClearRender: function() {
+			// This is here to prevent tipsy tooltips from hanging around.
+			try {
+				this.$('a.mod-icon').tipsy('disable');
+				jQuery('body > .tipsy:last').remove();
+
+			} catch(err) {
+				f.error("LineView willClearRender: " + err);
+			}
+			this._super();
+		},
+
 		didInsertElement: function() {
 			this._super();
 			try {
@@ -416,8 +498,8 @@ FFZ.prototype._modify_line = function(component) {
 					this.set("msgObject.ffz_alternate", row_type);
 				}
 
-				el.classList.toggle('ffz-alternate', row_type);
-				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted'));
+				el.classList.toggle('ffz-alternate', row_type || false);
+				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted') || false);
 
 
 				// Basic Data
@@ -452,50 +534,9 @@ FFZ.prototype._modify_line = function(component) {
 
 
 				// Banned Links
-				var bad_links = el.querySelectorAll('a.deleted-link');
-				for(var i=0; i < bad_links.length; i++) {
-					var link = bad_links[i];
-
-					link.addEventListener("click", function(e) {
-						if ( ! this.classList.contains("deleted-link") )
-							return true;
-
-						// Get the URL
-						var href = this.getAttribute('data-url'),
-							link = href;
-
-						// Delete Old Stuff
-						this.classList.remove('deleted-link');
-						this.removeAttribute("data-url");
-						this.removeAttribute("title");
-						this.removeAttribute("original-title");
-
-						// Process URL
-						if ( href.indexOf("@") > -1 && (-1 === href.indexOf("/") || href.indexOf("@") < href.indexOf("/")) )
-							href = "mailto:" + href;
-						else if ( ! href.match(/^https?:\/\//) )
-							href = "http://" + href;
-
-						// Set up the Link
-						this.href = href;
-						this.target = "_new";
-						this.textContent = link;
-
-						// Now, check for a tooltip.
-						var link_data = f._link_data[link];
-						if ( link_data && typeof link_data != "boolean" ) {
-							this.title = link_data.tooltip;
-							if ( link_data.unsafe )
-								this.classList.add('unsafe-link');
-						}
-
-						// Stop from Navigating
-						e.preventDefault();
-					});
-
-					// Also add a nice tooltip.
-					jQuery(link).tipsy({html:true});
-				}
+				var bad_links = el.querySelectorAll('span.message a.deleted-link');
+				for(var i=0; i < bad_links.length; i++)
+					bad_links[i].addEventListener("click", f._deleted_link_click);
 
 
 				// Link Tooltips
@@ -531,12 +572,11 @@ FFZ.prototype._modify_line = function(component) {
 
 
 				// Enhanced Emotes
-				var images = el.querySelectorAll('img.emoticon');
+				var images = el.querySelectorAll('span.message img.emoticon');
 				for(var i=0; i < images.length; i++) {
 					var img = images[i],
 						name = img.alt,
-						match = /\/emoticons\/v1\/(\d+)\/1\.0/.exec(img.src),
-						id = match ? parseInt(match[1]) : null;
+						id = FFZ.src_to_id(img.src);
 
 					if ( id !== null ) {
 						// High-DPI Images
@@ -552,6 +592,15 @@ FFZ.prototype._modify_line = function(component) {
 						} else {
 							f._twitch_emotes[id] = img.alt;
 							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
+						}
+
+					} else if ( img.getAttribute('data-ffz-emoji') ) {
+						var eid = img.getAttribute('data-ffz-emoji'),
+							data = f.emoji_data && f.emoji_data[eid];
+
+						if ( data ) {
+							img.setAttribute('srcset', data.srcSet);
+							img.title = "Emoji: " + img.alt + "\nName: " + data.short_name;
 						}
 
 					} else if ( img.getAttribute('data-ffz-emote') ) {
@@ -660,10 +709,6 @@ FFZ.capitalization = {};
 FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
-	// Use the BTTV code if it's present.
-	if ( window.BetterTTV && BetterTTV.chat && BetterTTV.chat.helpers.lookupDisplayName )
-		return BetterTTV.chat.helpers.lookupDisplayName(name);
-
 	if ( ! name )
 		return name;
 

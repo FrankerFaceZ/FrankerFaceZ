@@ -57,6 +57,7 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
 
+	this.emoji_data = {};
 	this.emote_sets = {};
 	this.global_sets = [];
 	this.default_sets = [];
@@ -73,6 +74,9 @@ FFZ.prototype.setup_emoticons = function() {
 
 	this.log("Loading global emote sets.");
 	this.load_global_sets();
+
+	this.log("Loading emoji data.");
+	this.load_emoji_data();
 
 	this.log("Watching Twitch emoticon parser to ensure it loads.");
 	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
@@ -155,7 +159,7 @@ FFZ.prototype.getEmotes = function(user_id, room_id) {
 	var user = this.users && this.users[user_id],
 		room = this.rooms && this.rooms[room_id];
 
-	return _.union(user && user.sets || [], room && room.set && [room.set] || [], this.default_sets);
+	return _.union(user && user.sets || [], room && room.set && [room.set] || [], room && room.extra_sets || [], this.default_sets);
 }
 
 
@@ -191,6 +195,49 @@ FFZ.prototype._emote_tooltip = function(emote) {
 
 	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "\nFFZ " + title + (owner ? "\nBy: " + owner.display_name : "");
 	return emote._tooltip;
+}
+
+
+// ---------------------
+// Emoji Loading
+// ---------------------
+
+FFZ.prototype.load_emoji_data = function(callback, tries) {
+	var f = this;
+	jQuery.getJSON(constants.SERVER + "emoji/emoji.json")
+		.done(function(data) {
+			var new_data = {};
+			for(var eid in data) {
+				var emoji = data[eid];
+				eid = eid.toLowerCase();
+				new_data[eid] = emoji;
+
+				emoji.src = constants.SERVER + 'emoji/' + eid + '-1x.png';
+				emoji.srcSet = emoji.src + ' 1x, ' + constants.SERVER + 'emoji/' + eid + '-2x.png 2x, ' + constants.SERVER + 'emoji/' + eid + '-4x.png 4x';
+
+				emoji.token = {
+					srcSet: emoji.srcSet,
+					emoticonSrc: emoji.src + '" data-ffz-emoji="' + eid + '" height="18px',
+					ffzEmoji: eid,
+					};
+				
+			}
+
+			f.emoji_data = new_data;
+			f.log("Loaded data on " + Object.keys(new_data).length + " emoji.");
+			if ( typeof callback === "function" )
+				callback(true, data);
+
+		}).fail(function(data) {
+			if ( data.status === 404 )
+				return typeof callback === "function" && callback(false);
+
+			tries = (tries || 0) + 1;
+			if ( tries < 50 )
+				return f.load_emoji(callback, tries);
+
+			return typeof callback === "function" && callback(false);
+		});
 }
 
 
@@ -264,9 +311,12 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	if ( ! data )
 		return typeof callback == "function" && callback(false);
 
+	// Do we have existing users?
+	var users = this.emote_sets[set_id] && this.emote_sets[set_id].users || [];
+
 	// Store our set.
 	this.emote_sets[set_id] = data;
-	data.users = [];
+	data.users = users;
 	data.count = 0;
 
 

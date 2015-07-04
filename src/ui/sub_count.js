@@ -13,6 +13,9 @@ FFZ.prototype._update_subscribers = function() {
 		delete this._update_subscribers_timer;
 	}
 
+	// Schedule an update.
+	this._update_subscribers_timer = setTimeout(this._update_subscribers.bind(this), 60000);
+
 	var user = this.get_user(), f = this,
 		match = this.is_dashboard ? location.pathname.match(/\/([^\/]+)/) : undefined,
 		id = this.is_dashboard && match && match[1];
@@ -23,9 +26,6 @@ FFZ.prototype._update_subscribers = function() {
 			el.parentElement.removeChild(el);
 		return;
 	}
-
-	// Schedule an update.
-	this._update_subscribers_timer = setTimeout(this._update_subscribers.bind(this), 60000);
 
 	// Spend a moment wishing we could just hit the subscribers API from the
 	// context of the web user.
@@ -87,7 +87,7 @@ FFZ.prototype._update_subscribers = function() {
 				jQuery(stat).tipsy(f.is_dashboard ? {"gravity":"s"} : undefined);
 			}
 
-			el.innerHTML = utils.number_commas(parseInt(sub_count));
+			el.innerHTML = sub_count;
 
 		} catch(err) {
 			f.error("_update_subscribers: " + err);

@@ -36,6 +36,7 @@ FFZ.settings_info.srl_races = {
 FFZ.ws_on_close.push(function() {
 	var controller = window.App && App.__container__.lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
 
 	if ( ! controller )
@@ -43,7 +44,7 @@ FFZ.ws_on_close.push(function() {
 
 	for(var chan in this.srl_races) {
 		delete this.srl_races[chan];
-		if ( chan == current_id )
+		if ( chan === current_id || chan === current_host )
 			need_update = true;
 	}
 
@@ -51,18 +52,22 @@ FFZ.ws_on_close.push(function() {
 		this.rebuild_race_ui();
 });
 
+
 FFZ.ws_commands.srl_race = function(data) {
 	var controller = App.__container__.lookup('controller:channel'),
-		current_id = controller.get('id'),
+		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
+
+	this.srl_races = this.srl_races || {};
 
 	for(var i=0; i < data[0].length; i++) {
 		var channel_id = data[0][i];
 		this.srl_races[channel_id] = data[1];
-		if ( channel_id == current_id )
+		if ( channel_id === current_id || channel_id === current_host )
 			need_update = true;
 	}
-	
+
 	if ( data[1] ) {
 		var race = data[1],
 			tte = race.twitch_entrants = {};
@@ -86,41 +91,75 @@ FFZ.ws_commands.srl_race = function(data) {
 
 FFZ.prototype.rebuild_race_ui = function() {
 	var controller = App.__container__.lookup('controller:channel'),
-		channel_id = controller.get('id'),
-		race = this.srl_races[channel_id],
-		enable_ui = this.settings.srl_races,
+		channel_id = controller && controller.get('id'),
+		hosted_id = controller && controller.get('hostModeTarget.id');
 
-		actions = document.querySelector('.stats-and-actions .channel-actions'),
-		race_container = actions.querySelector('#ffz-ui-race');
-
-	if ( ! race || ! enable_ui ) {
-		if ( race_container )
-			race_container.parentElement.removeChild(race_container);
-		if ( this._popup && this._popup.id == "ffz-race-popup" ) {
-			delete this._popup;
-			this._popup_kill && this._popup_kill();
-			delete this._popup_kill;
-		}
+	if ( ! this._cindex )
 		return;
+
+	if ( channel_id ) {
+		var race = this.srl_races && this.srl_races[channel_id],
+
+			el = this._cindex.get('element'),
+			container = el && el.querySelector('.stats-and-actions .channel-actions'),
+			race_container = container && container.querySelector('#ffz-ui-race');
+
+		if ( ! container || ! this.settings.srl_races || ! race ) {
+			if ( race_container )
+				race_container.parentElement.removeChild(race_container);
+
+		} else {
+			if ( ! race_container ) {
+				race_container = document.createElement('span');
+				race_container.id = 'ffz-ui-race';
+				race_container.setAttribute('data-channel', channel_id);
+
+				var btn = document.createElement('span');
+				btn.className = 'button drop action';
+				btn.title = "SpeedRunsLive Race";
+				btn.innerHTML = '<span class="logo"></span>';
+
+				btn.addEventListener('click', this._build_race_popup.bind(this, race_container, channel_id));
+
+				race_container.appendChild(btn);
+				container.appendChild(race_container);
+			}
+
+			this._update_race(race_container, true);
+		}
 	}
 
-	if ( race_container )
-		return this._update_race(true);
+	if ( hosted_id ) {
+		var race = this.srl_races && this.srl_races[hosted_id],
 
-	race_container = document.createElement('span');
-	race_container.setAttribute('data-channel', channel_id);
-	race_container.id = 'ffz-ui-race';
+			el = this._cindex.get('element'),
+			container = el && el.querySelector('#hostmode .channel-actions'),
+			race_container = container && container.querySelector('#ffz-ui-race');
 
-	var btn = document.createElement('span');
-	btn.className = 'button drop action';
-	btn.title = "SpeedRunsLive Race";
-	btn.innerHTML = '<span class="logo"><span>';
+		if ( ! container || ! this.settings.srl_races || ! race ) {
+			if ( race_container )
+				race_container.parentElement.removeChild(race_container);
 
-	btn.addEventListener('click', this.build_race_popup.bind(this));
+		} else {
+			if ( ! race_container ) {
+				race_container = document.createElement('span');
+				race_container.id = 'ffz-ui-race';
+				race_container.setAttribute('data-channel', hosted_id);
 
-	race_container.appendChild(btn);
-	actions.appendChild(race_container);
-	this._update_race(true);
+				var btn = document.createElement('span');
+				btn.className = 'button drop action';
+				btn.title = "SpeedRunsLive Race";
+				btn.innerHTML = '<span class="logo"></span>';
+
+				btn.addEventListener('click', this._build_race_popup.bind(this, race_container, hosted_id));
+
+				race_container.appendChild(btn);
+				container.appendChild(race_container);
+			}
+
+			this._update_race(race_container, true);
+		}
+	}
 }
 
 
@@ -139,7 +178,7 @@ FFZ.prototype._race_kill = function() {
 }
 
 
-FFZ.prototype.build_race_popup = function() {
+FFZ.prototype._build_race_popup = function(container, channel_id) {
 	var popup = this._popup;
 	if ( popup ) {
 		popup.parentElement.removeChild(popup);
@@ -147,27 +186,25 @@ FFZ.prototype.build_race_popup = function() {
 		this._popup_kill && this._popup_kill();
 		delete this._popup_kill;
 
-		if ( popup.id == "ffz-race-popup" )
+		if ( popup.id === "ffz-race-popup" && popup.getAttribute('data-channel') === channel_id )
 			return;
 	}
 
-	var container = document.querySelector('#ffz-ui-race');
 	if ( ! container )
 		return;
 
 	var el = container.querySelector('.button'),
 		pos = el.offsetLeft + el.offsetWidth,
-
-		channel_id = container.getAttribute('data-channel'),
 		race = this.srl_races[channel_id];
 
 	var popup = document.createElement('div'), out = '';
 	popup.id = 'ffz-race-popup';
+	popup.setAttribute('data-channel', channel_id);
 	popup.className = (pos >= 300 ? 'right' : 'left') + ' share dropmenu';
-	
+
 	this._popup_kill = this._race_kill.bind(this);
 	this._popup = popup;
-	
+
 	var link = 'http://kadgar.net/live',
 		has_entrant = false;
 	for(var ent in race.entrants) {
@@ -199,17 +236,16 @@ FFZ.prototype.build_race_popup = function() {
 	popup.innerHTML = out;
 	container.appendChild(popup);
 
-	this._update_race(true);
+	this._update_race(container, true);
 }
 
 
-FFZ.prototype._update_race = function(not_timer) {
+FFZ.prototype._update_race = function(container, not_timer) {
 	if ( this._race_timer && not_timer ) {
 		clearTimeout(this._race_timer);
 		delete this._race_timer;
 	}
 
-	var container = document.querySelector('#ffz-ui-race');
 	if ( ! container )
 		return;
 
@@ -219,10 +255,12 @@ FFZ.prototype._update_race = function(not_timer) {
 	if ( ! race ) {
 		// No race. Abort.
 		container.parentElement.removeChild(container);
-		this._popup_kill && this._popup_kill();
-		if ( this._popup ) {
-			delete this._popup;
-			delete this._popup_kill;
+		if ( this._popup && this._popup.id === 'ffz-race-popup' && this._popup.getAttribute('data-channel') === channel_id ) {
+			this._popup_kill && this._popup_kill();
+			if ( this._popup ) {
+				delete this._popup;
+				delete this._popup_kill;
+			}
 		}
 		return;
 	}
@@ -301,7 +339,7 @@ FFZ.prototype._update_race = function(not_timer) {
 			timer.innerHTML = "Done";
 		else {
 			timer.innerHTML = utils.time_to_string(elapsed);
-			this._race_timer = setTimeout(this._update_race.bind(this), 1000);
+			this._race_timer = setTimeout(this._update_race.bind(this, container), 1000);
 		}
 	}
 }

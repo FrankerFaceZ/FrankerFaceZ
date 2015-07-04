@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 2,
+	major: 3, minor: 4, revision: 10,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -102,8 +102,6 @@ FFZ.prototype.get_user = function() {
 // Import Everything!
 // -------------------
 
-//require('./templates');
-
 // Import these first to set up data structures
 require('./ui/menu');
 require('./settings');
@@ -140,6 +138,7 @@ require('./ui/viewer_count');
 require('./ui/sub_count');
 
 require('./ui/menu_button');
+require('./ui/following');
 require('./ui/races');
 require('./ui/my_emotes');
 require('./ui/about_page');
@@ -190,6 +189,10 @@ FFZ.prototype.setup_normal = function(delay) {
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
+	this.is_dashboard = false;
+	try {
+		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
+	} catch(err) { this.embed_in_dash = false; }
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -222,6 +225,7 @@ FFZ.prototype.setup_dashboard = function(delay) {
 
 	this.users = {};
 	this.is_dashboard = true;
+	this.embed_in_dash = false;
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -255,6 +259,10 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
+	this.is_dashboard = false;
+	try {
+		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
+	} catch(err) { this.embed_in_dash = false; }
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -282,6 +290,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_css();
 	this.setup_menu();
 	this.setup_my_emotes();
+	this.setup_following();
 	this.setup_races();
 
 	this.connect_extra_chat();
@@ -313,5 +322,4 @@ FFZ.prototype._on_window_message = function(e) {
 		return;
 
 	var msg = e.data;
-	this.log("Window Message", msg);
 }

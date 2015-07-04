@@ -28,6 +28,135 @@ FFZ.prototype.setup_menu = function() {
 	});
 
 	document.body.classList.toggle("ffz-menu-replace", this.settings.replace_twitch_menu);
+
+	// Add FFZ to the chat settings menu.
+
+	this.log("Hooking the Ember Chat Settings view.");
+
+	var Settings = App.__container__.resolve('view:settings');
+
+	if ( ! Settings )
+		return;
+
+	Settings.reopen({
+		didInsertElement: function() {
+			this._super();
+
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("ChatSettings didInsertElement: " + err);
+			}
+		},
+
+		willClearRender: function() {
+			try {
+				this.ffzTeardown();
+			} catch(err) {
+				f.error("ChatSettings willClearRender: " + err);
+			}
+			this._super();
+		},
+
+		ffzInit: function() {
+			var view = this,
+				el = this.get('element'),
+				menu = el && el.querySelector('.dropmenu');
+
+			if ( ! menu )
+				return;
+
+			var header = document.createElement('div'),
+				content = document.createElement('div'),
+				p, cb, a;
+
+			header.className = 'list-header';
+			header.innerHTML = 'FrankerFaceZ';
+
+			content.className = 'chat-menu-content';
+
+			// Dark Twitch
+			p = document.createElement('p');
+			p.className = 'no-bttv';
+			cb = document.createElement('input');
+			cb.type = "checkbox";
+			cb.className = "ember-checkbox ffz-setting-dark-twitch";
+			cb.checked = f.settings.dark_twitch;
+			p.appendChild(cb);
+			p.appendChild(document.createTextNode("Dark Twitch"));
+			content.appendChild(p);
+
+			cb.addEventListener("change", function(e) {
+				f.settings.set("dark_twitch", this.checked);
+			});
+
+
+			// Minimal Chat
+			/*
+			p = document.createElement('p');
+			//p.className = 'no-bttv';
+			cb = document.createElement('input');
+			cb.type = "checkbox";
+			cb.className = "ember-checkbox ffz-setting-minimal-twitch";
+			cb.checked = f.settings.minimal_chat;
+			p.appendChild(cb);
+			p.appendChild(document.createTextNode("Minimalistic Chat"));
+			content.appendChild(p);
+
+			cb.addEventListener("change", function(e) {
+				f.settings.set("minimal_chat", this.checked);
+				if ( this.checked )
+					view.set('controller.model.hidden', true);
+			});*/
+
+
+			// More Settings
+			p = document.createElement('p');
+			a = document.createElement('a');
+			a.href = '#';
+			a.innerHTML = 'More Settings';
+			p.appendChild(a);
+			content.appendChild(p);
+
+			a.addEventListener('click', function(e) {
+				view.set('controller.model.hidden', true);
+				f._last_page = 'settings';
+				f.build_ui_popup(f._chatv);
+				e.stopPropagation();
+				return false;
+			});
+
+			menu.appendChild(header);
+			menu.appendChild(content);
+		},
+
+		ffzTeardown: function() {
+			// Nothing~!
+		}
+	});
+
+	// For some reason, this doesn't work unless we create an instance of the
+	// chat settings view and then destroy it immediately.
+	try {
+		Settings.create().destroy();
+	} catch(err) { }
+
+	// Modify all existing Chat Settings views.
+	for(var key in Ember.View.views) {
+		if ( ! Ember.View.views.hasOwnProperty(key) )
+			continue;
+
+		var view = Ember.View.views[key];
+		if ( !(view instanceof Settings) )
+			continue;
+
+		this.log("Manually updating existing Chat Settings view.", view);
+		try {
+			view.ffzInit();
+		} catch(err) {
+			this.error("setup: ChatSettings ffzInit: " + err);
+		}
+	}
 }
 
 
@@ -176,6 +305,7 @@ FFZ.menu_pages.channel = {
 					has_product = true;
 					var tickets = App.__container__.resolve('model:ticket').find('user', {channel: room_id}),
 						is_subscribed = tickets ? tickets.get('content') : false,
+						is_loaded = tickets ? tickets.get('isLoaded') : false,
 						icon = room.room.get("badgeSet.subscriber.image"),
 
 						grid = document.createElement("div"),
@@ -185,6 +315,25 @@ FFZ.menu_pages.channel = {
 					// Weird is_subscribed check. Might be more accurate?
 					is_subscribed = is_subscribed && is_subscribed.length > 0;
 
+					// See if we've loaded. If we haven't loaded the ticket yet
+					// then try loading it, and then re-render the menu.
+					if ( tickets && ! is_subscribed && ! is_loaded ) {
+						var f = this;
+						tickets.addObserver('isLoaded', function() {
+							setTimeout(function(){
+								if ( inner.getAttribute('data-page') !== 'channel' )
+									return;
+
+								inner.innerHTML = '';
+								FFZ.menu_pages.channel.render.bind(f)(view, inner);
+							},0);
+							
+						});
+
+						tickets.load();
+					}
+
+
 					grid.className = "emoticon-grid";
 					header.className = "heading";
 					if ( icon )
@@ -193,7 +342,7 @@ FFZ.menu_pages.channel = {
 					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
 					grid.appendChild(header);
 
-					for(var emotes=product.get("emoticons"), i=0; i < emotes.length; i++) {
+					for(var emotes=product.get("emoticons") || [], i=0; i < emotes.length; i++) {
 						var emote = emotes[i];
 						if ( emote.state !== "active" )
 							continue;
@@ -222,7 +371,7 @@ FFZ.menu_pages.channel = {
 					if ( c > 0 )
 						inner.appendChild(grid);
 
-					if ( ! is_subscribed ) {
+					if ( c > 0 && ! is_subscribed ) {
 						var sub_message = document.createElement("div"),
 							nonsub_message = document.createElement("div"),
 							unlock_text = document.createElement("span"),
@@ -242,7 +391,7 @@ FFZ.menu_pages.channel = {
 						nonsub_message.appendChild(sub_link);
 
 						inner.appendChild(sub_message);
-					} else {
+					} else if ( c > 0 ) {
 						var last_content = tickets.get("content");
 						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
 						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
@@ -265,8 +414,19 @@ FFZ.menu_pages.channel = {
 				}
 			}
 
+			// Do we have extra sets?
+			var extra_sets = room && room.extra_sets || [];
+
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+
+			for(var i=0; i < extra_sets.length; i++) {
+				// Look up the set name.
+				var set = this.emote_sets[extra_sets[i]],
+					name = set ? "Featured " + set.title : "Featured Channel";
+
+				this._emotes_for_sets(inner, view, [extra_sets[i]], name, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+			}
 
 			// Feature Friday!
 			this._feature_friday_ui(room_id, inner, view);

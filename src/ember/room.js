@@ -26,17 +26,32 @@ FFZ.prototype.setup_room = function() {
 	s.id = "ffz-room-css";
 	document.head.appendChild(s);
 
-	this.log("Hooking the Ember Room model.");
+	this.log("Hooking the Ember Room controller.");
 
 	// Responsive ban button.
-	var RC = App.__container__.lookup('controller:room');
+	var f = this,
+		RC = App.__container__.lookup('controller:room');
 	if ( RC ) {
-		var orig_action = RC._actions.banUser;
+		var orig_ban = RC._actions.banUser,
+			orig_to = RC._actions.timeoutUser;
+
 		RC._actions.banUser = function(e) {
-			orig_action.bind(this)(e);
+			orig_ban.bind(this)(e);
+			this.get("model").clearMessages(e.user);
+		}
+
+		RC._actions.timeoutUser = function(e) {
+			orig_to.bind(this)(e);
+			this.get("model").clearMessages(e.user);
+		}
+
+		RC._actions.purgeUser = function(e) {
+			this.get("model.tmiRoom").sendMessage("/timeout " + e.user + " 1");
 			this.get("model").clearMessages(e.user);
 		}
 	}
+
+	this.log("Hooking the Ember Room model.");
 
 	var Room = App.__container__.resolve('model:room');
 	this._modify_room(Room);
@@ -53,6 +68,323 @@ FFZ.prototype.setup_room = function() {
 		this._modify_room(inst);
 		inst.ffzPatchTMI();
 	}
+
+	this.log("Hooking the Ember Room view.");
+
+	var RoomView = App.__container__.resolve('view:room');
+	this._modify_rview(RoomView);
+
+	// For some reason, this doesn't work unless we create an instance of the
+	// room view and then destroy it immediately.
+	try {
+		RoomView.create().destroy();
+	} catch(err) { }
+
+	// Modify all existing Room views.
+	for(var key in Ember.View.views) {
+		if ( ! Ember.View.views.hasOwnProperty(key) )
+			continue;
+
+		var view = Ember.View.views[key];
+		if ( !(view instanceof RoomView) )
+			continue;
+
+		this.log("Manually updating existing Room view.", view);
+		try {
+			view.ffzInit();
+		} catch(err) {
+			this.error("RoomView setup ffzInit: " + err);
+		}
+	}
+}
+
+
+// --------------------
+// View Customization
+// --------------------
+
+FFZ.prototype._modify_rview = function(view) {
+	var f = this;
+	view.reopen({
+		didInsertElement: function() {
+			this._super();
+
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("RoomView didInsertElement: " + err);
+			}
+		},
+
+		willClearRender: function() {
+			try {
+				this.ffzTeardown();
+			} catch(err) {
+				f.error("RoomView willClearRender: " + err);
+			}
+			this._super();
+		},
+
+		ffzInit: function() {
+			f._roomv = this;
+
+			this.ffz_frozen = false;
+
+			if ( f.settings.chat_hover_pause )
+				this.ffzEnableFreeze();
+
+			if ( f.settings.room_status )
+				this.ffzUpdateStatus();
+
+			var controller = this.get('controller');
+			if ( controller ) {
+				controller.reopen({
+					submitButtonText: function() {
+						if ( this.get("model.isWhisperMessage") && this.get("model.isWhispersEnabled") )
+							return i18n("Whisper");
+
+						var wait = this.get("model.slowWait"),
+							msg = this.get("model.messageToSend") || "";
+
+						if ( (msg.charAt(0) === "/" && msg.substr(0, 4) !== "/me ") || !wait || !f.settings.room_status )
+							return i18n("Chat");
+
+						return utils.time_to_string(wait, false, false, true);
+					}.property("model.isWhisperMessage", "model.isWhispersEnabled", "model.slowWait")
+				});
+
+				Ember.propertyDidChange(controller, 'submitButtonText');
+			}
+		},
+
+		ffzTeardown: function() {
+			if ( f._roomv === this )
+				f._roomv = undefined;
+
+			this.ffzDisableFreeze();
+		},
+
+		ffzUpdateStatus: function() {
+			var room = this.get('controller.model'),
+
+				el = this.get('element'),
+				cont = el && el.querySelector('.chat-buttons-container');
+
+			if ( ! cont )
+				return f.log("no container");
+
+			var r9k_badge = cont.querySelector('#ffz-stat-r9k'),
+				sub_badge = cont.querySelector('#ffz-stat-sub'),
+				slow_badge = cont.querySelector('#ffz-stat-slow'),
+				banned_badge = cont.querySelector('#ffz-stat-banned'),
+				btn = cont.querySelector('button');
+
+			if ( f.has_bttv || ! f.settings.room_status ) {
+				if ( r9k_badge )
+					r9k_badge.parentElement.removeChild(r9k_badge);
+				if ( sub_badge )
+					sub_badge.parentElement.removeChild(sub_badge);
+				if ( slow_badge )
+					slow_badge.parentElement.removeChild(slow_badge);
+
+				if ( btn )
+					btn.classList.remove('ffz-waiting');
+				return;
+			}
+
+			if ( ! r9k_badge ) {
+				r9k_badge = document.createElement('span');
+				r9k_badge.className = 'ffz room-state stat float-right';
+				r9k_badge.id = 'ffz-stat-r9k';
+				r9k_badge.innerHTML = 'R9K';
+				r9k_badge.title = "This room is in R9K-mode.";
+				cont.appendChild(r9k_badge);
+				jQuery(r9k_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			if ( ! sub_badge ) {
+				sub_badge = document.createElement('span');
+				sub_badge.className = 'ffz room-state stat float-right';
+				sub_badge.id = 'ffz-stat-sub';
+				sub_badge.innerHTML = 'SUB';
+				sub_badge.title = "This room is in subscribers-only mode.";
+				cont.appendChild(sub_badge);
+				jQuery(sub_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			if ( ! slow_badge ) {
+				slow_badge = document.createElement('span');
+				slow_badge.className = 'ffz room-state stat float-right';
+				slow_badge.id = 'ffz-stat-slow';
+				slow_badge.innerHTML = 'SLOW';
+				slow_badge.title = "This room is in slow mode. You may send messages every 120 seconds.";
+				cont.appendChild(slow_badge);
+				jQuery(slow_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			if ( ! banned_badge ) {
+				banned_badge = document.createElement('span');
+				banned_badge.className = 'ffz room-state stat float-right';
+				banned_badge.id = 'ffz-stat-banned';
+				banned_badge.innerHTML = 'BAN';
+				banned_badge.title = "You have been banned from talking in this room.";
+				cont.appendChild(banned_badge);
+				jQuery(banned_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			r9k_badge.classList.toggle('hidden', !(room && room.get('r9kMode')));
+			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnlyMode')));
+			slow_badge.classList.toggle('hidden', !(room && room.get('slowMode')));
+			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slowValue')||120) + " seconds.";
+			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
+
+			if ( btn ) {
+				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
+				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned')));
+			}
+
+		}.observes('controller.model'),
+
+		ffzEnableFreeze: function() {
+			var el = this.get('element'),
+				messages = el.querySelector('.chat-messages');
+
+			if ( ! messages )
+				return;
+
+			this._ffz_interval = setInterval(this.ffzPulse.bind(this), 200);
+			this._ffz_messages = messages;
+			this._ffz_mouse_move = this.ffzMouseMove.bind(this);
+			this._ffz_mouse_out = this.ffzMouseOut.bind(this);
+
+			messages.addEventListener('mousemove', this._ffz_mouse_move);
+			messages.addEventListener('mouseout', this._ffz_mouse_out);
+			document.addEventListener('mouseout', this._ffz_mouse_out);
+		},
+
+		ffzDisableFreeze: function() {
+			if ( this._ffz_interval ) {
+				clearInterval(this._ffz_interval);
+				this._ffz_interval = undefined;
+			}
+
+			this.ffzUnfreeze();
+
+			var messages = this._ffz_messages;
+			if ( ! messages )
+				return;
+
+			this._ffz_messages = undefined;
+
+			if ( this._ffz_mouse_move ) {
+				messages.removeEventListener('mousemove', this._ffz_mouse_move);
+				this._ffz_mouse_move = undefined;
+			}
+
+			if ( this._ffz_mouse_out ) {
+				messages.removeEventListener('mouseout', this._ffz_mouse_out);
+				this._ffz_mouse_out = undefined;
+			}
+		},
+
+		ffzPulse: function() {
+			if ( this.ffz_frozen ) {
+				var elapsed = Date.now() - this._ffz_last_move;
+				if ( elapsed > 750 )
+					this.ffzUnfreeze();
+			}
+		},
+
+		ffzUnfreeze: function() {
+			this.ffz_frozen = false;
+			this._ffz_last_move = 0;
+			this.ffzUnwarnPaused();
+
+			if ( this.get('stuckToBottom') )
+				this._scrollToBottom();
+		},
+
+		ffzMouseOut: function(event) {
+			this._ffz_outside = true;
+			var e = this;
+			Ember.run.next(function() {
+				if ( e._ffz_outside )
+					e.ffzUnfreeze();
+			});
+		},
+
+		ffzMouseMove: function(event) {
+			this._ffz_last_move = Date.now();
+			this._ffz_outside = false;
+
+			if ( event.screenX === this._ffz_last_screenx && event.screenY === this._ffz_last_screeny )
+				return;
+
+			this._ffz_last_screenx = event.screenX;
+			this._ffz_last_screeny = event.screenY;
+
+			if ( this.ffz_frozen )
+				return;
+
+			// Don't do it if we're over the bar itself.
+			if ( event.clientY >= (this._ffz_messages.getBoundingClientRect().bottom - 21) )
+				return;
+
+			this.ffz_frozen = true;
+			if ( this.get('stuckToBottom') ) {
+				this.set('controller.model.messageBufferSize', f.settings.scrollback_length + 150);
+				this.ffzWarnPaused();
+			}
+		},
+
+		_scrollToBottom: _.throttle(function() {
+			var e = this,
+				s = this._$chatMessagesScroller;
+
+			Ember.run.next(function() {
+				setTimeout(function() {
+					!e.ffz_frozen && s && s.length && (s.scrollTop(s[0].scrollHeight), e._setStuckToBottom(!0));
+				})
+			})
+		}, 200),
+
+		_setStuckToBottom: function(val) {
+			this.set("stuckToBottom", val);
+			this.get("controller.model") && this.set("controller.model.messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
+		},
+
+		// Warnings~!
+		ffzWarnPaused: function() {
+			var el = this.get('element'),
+				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+
+			if ( ! el )
+				return;
+
+			if ( ! warning ) {
+				warning = document.createElement('div');
+				warning.className = 'more-messages-indicator ffz-freeze-indicator';
+				warning.innerHTML = '(Chat Paused Due to Mouse Movement)';
+
+				var cont = el.querySelector('.chat-interface');
+				if ( ! cont )
+					return;
+				cont.insertBefore(warning, cont.childNodes[0])
+			}
+
+			warning.classList.remove('hidden');
+		},
+
+
+		ffzUnwarnPaused: function() {
+			var el = this.get('element'),
+				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+
+			if ( warning )
+				warning.classList.add('hidden');
+		}
+
+	});
 }
 
 
@@ -196,6 +528,27 @@ FFZ.prototype.add_room = function(id, room) {
 	// Create a basic data table for this room.
 	var data = this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null, needs_history: false};
 
+	if ( this.follow_sets && this.follow_sets[id] ) {
+		data.extra_sets = this.follow_sets[id];
+		delete this.follow_sets[id];
+
+		for(var i=0; i < data.extra_sets.length; i++) {
+			var sid = data.extra_sets[i],
+				set = this.emote_sets && this.emote_sets[sid];
+
+			if ( set ) {
+				if ( set.users.indexOf(id) === -1 )
+					set.users.push(id);
+				continue;
+			}
+
+			this.load_set(sid, function(success, data) {
+				if ( success )
+					data.users.push(id);
+			});
+		}
+	}
+
 	// Let the server know where we are.
 	this.ws_send("sub", id);
 
@@ -204,6 +557,9 @@ FFZ.prototype.add_room = function(id, room) {
 		if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
 			data.needs_history = true;
 	}
+
+	// Why don't we set the scrollback length, too?
+	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === id) ? 150 : 0));
 
 	// For now, we use the legacy function to grab the .css file.
 	this.load_room(id);
@@ -412,6 +768,12 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	if ( this.rooms[room_id] )
 		data.room = this.rooms[room_id].room;
 
+	// Preserve everything else.
+	for(var key in this.rooms[room_id]) {
+		if ( key !== 'room' && this.rooms[room_id].hasOwnProperty(key) && ! data.hasOwnProperty(key) )
+			data[key] = this.rooms[room_id][key];
+	}
+
 	data.needs_history = this.rooms[room_id] && this.rooms[room_id].needs_history || false;
 
 	this.rooms[room_id] = data;
@@ -420,7 +782,12 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 		utils.update_css(this._room_style, room_id, moderator_css(data) + (data.css||""));
 
 	if ( ! this.emote_sets.hasOwnProperty(data.set) )
-		this.load_set(data.set);
+		this.load_set(data.set, function(success, set) {
+			if ( set.users.indexOf(room_id) === -1 )
+				set.users.push(room_id);
+		});
+	else if ( this.emote_sets[data.set].users.indexOf(room_id) === -1 )
+		this.emote_sets[data.set].users.push(room_id);
 
 	this.update_ui_link();
 
@@ -436,6 +803,42 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 FFZ.prototype._modify_room = function(room) {
 	var f = this;
 	room.reopen({
+		subsOnlyMode: false,
+		r9kMode: false,
+		slowWaiting: false,
+		slowValue: 0,
+
+		updateWait: function(value, was_banned) {
+			var wait = this.get('slowWait') || 0;
+			this.set('slowWait', value);
+			if ( wait < 1 && value > 0 ) {
+				setTimeout(this.ffzUpdateWait.bind(this), 1000);
+				f._roomv && f._roomv.ffzUpdateStatus();
+			} else if ( (wait > 0 && value < 1) || was_banned ) {
+				this.set('ffz_banned', false);
+				f._roomv && f._roomv.ffzUpdateStatus();
+			}
+		},
+
+		ffzUpdateWait: function() {
+			var wait = this.get('slowWait') || 0;
+			if ( wait < 1 )
+				return;
+
+			this.set('slowWait', --wait);
+			if ( wait > 0 )
+				setTimeout(this.ffzUpdateWait.bind(this), 1000);
+			else {
+				this.set('ffz_banned', false);
+				f._roomv && f._roomv.ffzUpdateStatus();
+			}
+		},
+
+		ffzUpdateStatus: function() {
+			if ( f._roomv )
+				f._roomv.ffzUpdateStatus();
+		}.observes('r9kMode', 'subsOnlyMode', 'slowMode', 'slowValue', 'ffz_banned'),
+
 		// Track which rooms the user is currently in.
 		init: function() {
 			this._super();
@@ -466,6 +869,23 @@ FFZ.prototype._modify_room = function(room) {
 							t.set("messages." + n + ".deleted", true);
 					}
 				});
+
+				if ( f.settings.mod_card_history ) {
+					var room = f.rooms && f.rooms[t.get('id')],
+						user_history = room && room.user_history && room.user_history[user]
+
+					if ( user_history !== null && user_history !== undefined ) {
+						var has_delete = false,
+							last = user_history.length > 0 ? user_history[user_history.length-1] : null;
+
+						has_delete = last !== null && last.is_delete;
+						if ( ! has_delete ) {
+							user_history.push({from: 'jtv', is_delete: true, style: 'admin', cachedTokens: ['User has been timed out.'], date: new Date()});
+							while ( user_history.length > 20 )
+								user_history.shift();
+						}
+					}
+				}
 			} else {
 				if ( f.settings.prevent_clear )
 					this.addTmiMessage("A moderator's attempt to clear chat was ignored.");
@@ -504,6 +924,39 @@ FFZ.prototype._modify_room = function(room) {
 						msg.room = this.get('id');
 
 					f.tokenize_chat_line(msg);
+
+					// Keep the history.
+					if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
+						var room = f.rooms && f.rooms[msg.room];
+						if ( room ) {
+							var chat_history = room.user_history = room.user_history || {},
+								user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
+
+							user_history.push({
+								from: msg.tags && msg.tags['display-name'] || msg.from,
+								cachedTokens: msg.cachedTokens,
+								style: msg.style,
+								date: msg.date
+							});
+							while ( user_history.length > 20 )
+								user_history.shift();
+						}
+					}
+
+					// Check for message from us.
+					if ( ! is_whisper ) {
+						var user = f.get_user();
+						if ( user && user.login === msg.from ) {
+							var was_banned = this.get('ffz_banned');
+							this.set('ffz_banned', false);
+
+							// Update the wait time.
+							if ( this.get('isModeratorOrHigher') || ! this.get('slowMode') )
+								this.updateWait(0, was_banned)
+							else if ( this.get('slowMode') )
+								this.updateWait(this.get('slowValue'));
+						}
+					}
 				}
 			} catch(err) {
 				f.error("Room addMessage: " + err);
@@ -578,6 +1031,7 @@ FFZ.prototype._modify_room = function(room) {
 			});
 		},
 
+
 		ffzUpdateChatters: function(add, remove) {
 			var chatters = this.get("ffz_chatters") || {};
 			if ( add )
@@ -591,8 +1045,10 @@ FFZ.prototype._modify_room = function(room) {
 			if ( f._cindex )
 				f._cindex.ffzUpdateChatters();
 
-			if ( window.parent && window.parent.postMessage )
-				window.parent.postMessage({from_ffz: true, command: 'chatter_count', message: Object.keys(this.get('ffz_chatters') || {}).length}, "http://www.twitch.tv/");
+			try {
+				if ( window.parent && window.parent.postMessage )
+					window.parent.postMessage({from_ffz: true, command: 'chatter_count', message: Object.keys(this.get('ffz_chatters') || {}).length}, "http://www.twitch.tv/");
+			} catch(err) { /* Ignore errors because of security */ }
 		},
 
 
@@ -606,24 +1062,8 @@ FFZ.prototype._modify_room = function(room) {
 			var tmi = this.get('tmiRoom'),
 				room = this;
 
-			// This method is stupid and bad and it leaks between rooms.
-			if ( ! tmi.ffz_notice_patched ) {
-				tmi.ffz_notice_patched = true;
-
-				tmi._roomConn.off("notice", tmi._onNotice, tmi);
-				tmi._roomConn.on("notice", function(ircMsg) {
-					var target = ircMsg.target || (ircMsg.params && ircMsg.params[0]) || this.ircChannel;
-					if( target != this.ircChannel )
-						return;
-
-					this._trigger("notice", {
-						msgId: ircMsg.tags['msg-id'],
-						message: ircMsg.message
-					});
-				}, tmi);
-			}
-
 			// Let's get chatter information!
+			// TODO: Remove this cause it's terrible.
 			var connection = tmi._roomConn._connection;
 			if ( ! connection.ffz_cap_patched ) {
 				connection.ffz_cap_patched = true;
@@ -632,16 +1072,81 @@ FFZ.prototype._modify_room = function(room) {
 				connection.on("opened", function() {
 						this._send("CAP REQ :twitch.tv/membership");
 					}, connection);
-
-				// Since TMI starts sending SPECIALUSER with this, we need to
-				// ignore that. \ CatBag /
-				var orig_handle = connection._handleTmiPrivmsg.bind(connection);
-				connection._handleTmiPrivmsg = function(msg) {
-					if ( msg.message && msg.message.split(" ",1)[0] === "SPECIALUSER" )
-						return;
-					return orig_handle(msg);
-				}
 			}
+
+
+			// NOTICE for catching slow-mode updates
+			tmi.on('notice', function(msg) {
+				if ( msg.msgId === 'msg_slowmode' ) {
+					var match = /in (\d+) seconds/.exec(msg.message);
+					if ( match ) {
+						room.updateWait(parseInt(match[1]));
+					}
+				}
+
+				if ( msg.msgId === 'msg_timedout' ) {
+					var match = /for (\d+) more seconds/.exec(msg.message);
+					if ( match ) {
+						room.set('ffz_banned', true);
+						room.updateWait(parseInt(match[1]));
+					}
+				}
+
+				if ( msg.msgId === 'msg_banned' ) {
+					room.set('ffz_banned', true);
+					f._roomv && f._roomv.ffzUpdateStatus();
+				}
+			});
+
+
+			// ROOMSTATE~!
+			if ( ! connection.ffz_roomstate_patched ) {
+				connection.ffz_roomstate_patched = true;
+				connection._socket.off('data', connection._onSocketDataReceived, connection);
+				connection._socket.on('data', function(data) {
+					try {
+						var msg = utils.splitIRCMessage(data.data);
+						if ( msg.command === 'ROOMSTATE' ) {
+							// We have ROOMSTATE! Now, let's parse it a bit
+							// more and send it on.
+							msg.tags = utils.parseIRCTags(msg.tags);
+							msg.target = msg.params && msg.params[0];
+
+							this._trigger('roomstate', msg);
+							return;
+						}
+					} catch(err) { f.error("Connection onData: " + err); }
+
+					return this._onSocketDataReceived(data);
+				}, connection);
+			}
+
+			// Glorious ROOMSTATE.
+			if ( ! tmi.ffz_roomstate_patched ) {
+				tmi.ffz_roomstate_patched = true;
+				tmi._roomConn.on("roomstate", function(ircMsg) {
+					if ( ircMsg.target !== this.ircChannel )
+						return;
+
+					this._trigger("roomstate", ircMsg.tags);
+				}, tmi);
+			}
+
+			// IT IS GLORIOUS!
+			tmi.on('roomstate', function(state) {
+				if ( state.hasOwnProperty('slow') ) {
+					room.set('slowMode', state.slow > 0);
+					room.set('slowValue', state.slow);
+					if ( ! room.get('slowMode') )
+						room.updateWait(0);
+				}
+
+				if ( state.hasOwnProperty('r9k') )
+					room.set('r9kMode', state.r9k);
+
+				if ( state.hasOwnProperty('subs-only') )
+					room.set('subsOnlyMode', state['subs-only']);
+			});
 
 
 			// Check this shit.
@@ -674,32 +1179,6 @@ FFZ.prototype._modify_room = function(room) {
 			}
 
 			tmi._roomConn._connection.on("message", tmi._roomConn._onIrcMessage, tmi._roomConn);
-
-
-			// Okay, we need to patch the *session's* updateUserState
-			if ( ! tmi.session.ffz_patched ) {
-				tmi.session.ffz_patched = true;
-				var uus = tmi.session._updateUserState.bind(tmi.session);
-
-				tmi.session._updateUserState = function(user, tags) {
-					try {
-						if ( tags.color )
-							this._onUserColorChanged(user, tags.color);
-
-						if ( tags['display-name'] )
-							this._onUserDisplayNameChanged(user, tags['display-name']);
-
-						if ( tags.turbo )
-							this._onUserSpecialAdded(user, 'turbo');
-
-						if ( tags['user_type'] === 'staff' || tags['user_type'] === 'admin' || tags['user_type'] === 'global_mod' )
-							this._onUserSpecialAdded(user, tags['user-type']);
-
-					} catch(err) {
-						f.error("SessionManager _updateUserState: " + err);
-					}
-				}
-			}
 
 			this.set('ffz_is_patched', true);
 

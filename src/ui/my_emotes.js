@@ -55,11 +55,11 @@ FFZ.prototype.setup_my_emotes = function() {
 	}
 
 	this._twitch_set_to_channel[0] = "global";
-	this._twitch_set_to_channel[33] = "tfaces";
-	this._twitch_set_to_channel[42] = "tfaces";
+	this._twitch_set_to_channel[33] = "turbo_faces";
+	this._twitch_set_to_channel[42] = "turbo_faces";
 
 	this._twitch_badges["global"] = "//cdn.frankerfacez.com/script/twitch_logo.png";
-	this._twitch_badges["tfaces"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
+	this._twitch_badges["turbo_faces"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
 }
 
 
@@ -106,7 +106,7 @@ FFZ.menu_pages.my_emotes = {
 				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, ts);
 			};
 
-		this.ws_send("twitch_sets", needed_sets, function(success, data) {
+		if ( ! this.ws_send("twitch_sets", needed_sets, function(success, data) {
 			if ( ! needed_sets.length )
 				return;
 
@@ -123,9 +123,10 @@ FFZ.menu_pages.my_emotes = {
 				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, twitch_sets);
 			} else
 				fail();
-		});
-
-		setTimeout(fail, 2000);
+		}) )
+			fail()
+		else
+			setTimeout(fail, 2000);
 	},
 
 	draw_twitch_set: function(view, set_id, set) {
@@ -136,7 +137,7 @@ FFZ.menu_pages.my_emotes = {
 
 		if ( channel_id === "global" )
 			title = "Global Emoticons";
-		else if ( channel_id === "turbo" )
+		else if ( channel_id === "turbo" || channel_id === "turbo_faces" )
 			title = "Twitch Turbo";
 		else
 			title = FFZ.get_capitalization(channel_id, function(name) {
@@ -285,12 +286,12 @@ FFZ.menu_pages.my_emotes = {
 			// Finally, sort and add them all.
 			sets.sort(function(a,b) {
 				var an = a[0], bn = b[0];
-				if ( an === "turbo" || an === "tfaces" )
+				if ( an === "turbo" || an === "turbo_faces" )
 					an = "zza|" + an;
 				else if ( an === "global" || an === "global emoticons" )
 					an = "zzz|" + an;
 
-				if ( bn === "turbo" || bn === "tfaces" )
+				if ( bn === "turbo" || bn === "turbo_faces" )
 					bn = "zza|" + bn;
 				else if ( bn === "global" || bn === "global emoticons" )
 					bn = "zzz|" + bn;

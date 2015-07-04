@@ -24,7 +24,7 @@ FFZ.settings_info.highlight_notifications = {
 	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
-	help: "Display notifications when a highlighted word appears in chat in an unfocused tab.",
+	help: "Display notifications when a highlighted word appears in chat in an unfocused tab. This is automatically disabled on the dashboard.",
 
 	on_update: function(val, direct) {
 			// Check to see if we have notification permission. If this is

@@ -17,13 +17,36 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
+
+FFZ.settings_info.minimal_chat = {
+	type: "boolean",
+	value: false,
+
+	//no_bttv: true,
+
+	category: "Chat",
+	name: "Minimalistic Chat",
+	help: "Hide all of the chat user interface, only showing messages and an input box.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-minimal-chat", val);
+			if ( this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
+				var f = this;
+				setTimeout(function() {
+					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
+				},0);
+			}
+		}
+	};
+
+
 FFZ.settings_info.prevent_clear = {
 	type: "boolean",
 	value: false,
 
 	no_bttv: true,
 
-	category: "Chat",
+	category: "Chat Moderation",
 	name: "Show Deleted Messages",
 	help: "Fade deleted messages instead of replacing them, and prevent chat from being cleared.",
 
@@ -98,6 +121,9 @@ FFZ.settings_info.pinned_rooms = {
 // --------------------
 
 FFZ.prototype.setup_chatview = function() {
+	//if ( ! this.has_bttv )
+	document.body.classList.toggle("ffz-minimal-chat", this.settings.minimal_chat);
+
 	this.log("Hooking the Ember Chat controller.");
 
 	var Chat = App.__container__.lookup('controller:chat'),
@@ -108,7 +134,26 @@ FFZ.prototype.setup_chatview = function() {
 			ffzUpdateChannels: function() {
 				if ( f.settings.group_tabs && f._chatv )
 					f._chatv.ffzRebuildTabs();
-			}.observes("currentChannelRoom", "connectedPrivateGroupRooms")
+			}.observes("currentChannelRoom", "connectedPrivateGroupRooms"),
+
+			removeCurrentChannelRoom: function() {
+				if ( ! f.settings.group_tabs || f.has_bttv )
+					return this._super();
+
+				var room = this.get("currentChannelRoom"),
+					room_id = room && room.get('id');
+
+				if ( ! f.settings.pinned_rooms || f.settings.pinned_rooms.indexOf(room_id) === -1 ) {
+					// We can actually destroy it.
+					if ( room === this.get("currentRoom") )
+						this.blurRoom();
+
+					if ( room )
+						room.destroy();
+				}
+
+				this.set("currentChannelRoom", void 0);
+			}
 		});
 	}
 
@@ -326,7 +371,7 @@ FFZ.prototype._modify_cview = function(view) {
 			if ( target && Room ) {
 				var target_id = target.get('id');
 				if ( this._ffz_host !== target_id ) {
-					if ( this._ffz_host_room ) {
+					if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
 						if ( this.get('controller.currentRoom') === this._ffz_host_room )
 							this.get('controller').blurRoom();
 						this._ffz_host_room.destroy();
@@ -336,7 +381,7 @@ FFZ.prototype._modify_cview = function(view) {
 					this._ffz_host_room = Room.findOne(target_id);
 				}
 			} else if ( this._ffz_host ) {
-				if ( this._ffz_host_room ) {
+				if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
 					if ( this.get('controller.currentRoom') === this._ffz_host_room )
 						this.get('controller').blurRoom();
 					this._ffz_host_room.destroy();
@@ -409,7 +454,7 @@ FFZ.prototype._modify_cview = function(view) {
 		},
 
 		ffzBuildTab: function(view, room, current_channel, host_channel) {
-			var tab = document.createElement('span'), name, unread,
+			var tab = document.createElement('span'), name, unread, icon = '',
 				group = room.get('isGroupRoom'),
 				current = room === view.get('controller.currentRoom');
 
@@ -421,21 +466,25 @@ FFZ.prototype._modify_cview = function(view) {
 			tab.classList.toggle('group-chat', group);
 			tab.classList.toggle('active', current);
 
-			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('id')));
 			unread = format_unread(current ? 0 : room.get('unreadCount'));
 
+			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('id'), function(name) {
+				unread = format_unread(current ? 0 : room.get('unreadCount'));
+				tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
+			}));
+
 			if ( current_channel ) {
-				tab.innerHTML = constants.CAMERA;
+				icon = constants.CAMERA;
 				tab.title = "Current Channel";
 			} else if ( host_channel ) {
-				tab.innerHTML = constants.EYE;
+				icon = constants.EYE;
 				tab.title = "Hosted Channel";
 			} else if ( group )
 				tab.title = "Group Chat";
 			else
 				tab.title = "Pinned Channel";
 
-			tab.innerHTML += utils.sanitize(name) + '<span>' + unread + '</span>';
+			tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
 
 			tab.addEventListener('click', function() {
 				view.get('controller').focusRoom(room);
@@ -452,7 +501,7 @@ FFZ.prototype._modify_cview = function(view) {
 			}
 
 			if ( this._ffz_host ) {
-				if ( this._ffz_host_room ) {
+				if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
 					if ( this.get('controller.currentRoom') === this._ffz_host_room )
 						this.get('controller').blurRoom();
 					this._ffz_host_room.destroy();

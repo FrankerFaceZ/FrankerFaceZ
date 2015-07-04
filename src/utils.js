@@ -69,6 +69,128 @@ var sanitize_cache = {},
 		}
 
 		return new Date(unix);
+	},
+
+
+	// IRC Messages
+	splitIRCMessage = function(msgString) {
+		msgString = $.trim(msgString);
+		var split = {raw: msgString};
+
+		var tagsEnd = -1;
+		if ( msgString.charAt(0) === '@' ) {
+			tagsEnd = msgString.indexOf(' ');
+			split.tags = msgString.substr(1, tagsEnd - 1);
+		}
+
+		var prefixStart = tagsEnd + 1,
+			prefixEnd = -1;
+
+		if ( msgString.charAt(prefixStart) === ':' ) {
+			prefixEnd = msgString.indexOf(' ', prefixStart);
+			split.prefix = msgString.substr(prefixStart + 1, prefixEnd - (prefixStart + 1));
+		}
+
+		var trailingStart = msgString.indexOf(' :', prefixStart);
+		if ( trailingStart >= 0 ) {
+			split.trailing = msgString.substr(trailingStart + 2);
+		} else {
+			trailingStart = msgString.length;
+		}
+
+		var commandAndParams = msgString.substr(prefixEnd + 1, trailingStart - prefixEnd - 1).split(' ');
+		split.command = commandAndParams[0];
+		if ( commandAndParams.length > 1 )
+			split.params = commandAndParams.slice(1);
+
+		return split;
+	},
+
+
+	ESCAPE_CHARS = {
+		':': ';',
+		s: ' ',
+		r: '\r',
+		n: '\n',
+		'\\': '\\'
+	},
+
+	unescapeTag = function(tag) {
+		var result = '';
+		for(var i=0; i < tag.length; i++) {
+			var c = tag.charAt(i);
+			if ( c === '\\' ) {
+				if ( i === tag.length - 1 )
+					throw 'Improperly escaped tag';
+
+				c = ESCAPE_CHARS[tag.charAt(i+1)];
+				if ( c === undefined )
+					throw 'Improperly escaped tag';
+
+				i++;
+			}
+			result += c;
+		}
+
+		return result;
+	},
+
+	parseTag = function(tag, value) {
+		switch(tag) {
+			case 'slow':
+				try {
+					return parseInt(value);
+				} catch(err) { return 0; }
+			case 'subs-only':
+			case 'r9k':
+			case 'subscriber':
+			case 'turbo':
+				return value === '1';
+			default:
+				try {
+					return unescapeTag(value);
+				} catch(err) { return ''; }
+		}
+	},
+
+	parseIRCTags = function(tagsString) {
+		var tags = {},
+			keyValues = tagsString.split(';');
+
+		for(var i=0; i < keyValues.length; ++i) {
+			var kv = keyValues[i].split('=');
+			if ( kv.length === 2 )
+				tags[kv[0]] = parseTag(kv[0], kv[1]);
+		}
+
+		return tags;
+	},
+
+
+	EMOJI_CODEPOINTS = {},
+	emoji_to_codepoint = function(icon, variant) {
+		if ( EMOJI_CODEPOINTS[icon] && EMOJI_CODEPOINTS[icon][variant] )
+			return EMOJI_CODEPOINTS[icon][variant];
+
+		var ico = variant === '\uFE0F' ? icon.slice(0, -1) : (icon.length === 3 && icon.charAt(1) === '\uFE0F' ? icon.charAt(0) + icon.charAt(2) : icon),
+			r = [], c = 0, p = 0, i = 0;
+
+		while ( i < ico.length ) {
+			c = ico.charCodeAt(i++);
+			if ( p ) {
+				r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
+				p = 0;
+			} else if ( 0xD800 <= c && c <= 0xDBFF) {
+				p = c;
+			} else {
+				r.push(c.toString(16));
+			}
+		}
+
+		var es = EMOJI_CODEPOINTS[icon] = EMOJI_CODEPOINTS[icon] || {},
+			out = es[variant] = r.join("-");
+
+		return out;
 	};
 
 
@@ -92,6 +214,12 @@ module.exports = {
 
 		element.innerHTML = all;
 	},
+
+
+	splitIRCMessage: splitIRCMessage,
+	parseIRCTags: parseIRCTags,
+
+	emoji_to_codepoint: emoji_to_codepoint,
 
 	get_luminance: get_luminance,
 	brighten: brighten,
@@ -157,7 +285,7 @@ module.exports = {
 		return 'less than a second';
 	},
 
-	time_to_string: function(elapsed, separate_days, days_only) {
+	time_to_string: function(elapsed, separate_days, days_only, no_hours) {
 		var seconds = elapsed % 60,
 			minutes = Math.floor(elapsed / 60),
 			hours = Math.floor(minutes / 60),
@@ -174,6 +302,6 @@ module.exports = {
 			days = ( days > 0 ) ? days + " days, " : "";
 		}
 
-		return days + (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+		return days + ((!no_hours || days || hours) ? ((hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 	}
 }

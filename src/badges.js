@@ -53,7 +53,7 @@ FFZ.ws_commands.set_badge = function(data) {
 		user = this.users[user_id] = this.users[user_id] || {},
 		badges = user.badges = user.badges || {};
 
-	if ( badge === undefined )
+	if ( badge === undefined || badge === null )
 		delete badges[slot];
 	else
 		badges[slot] = badge;
@@ -85,6 +85,9 @@ FFZ.prototype.bttv_badges = function(data) {
 
 	if ( ! user || ! user.badges )
 		return;
+
+	if ( ! data.badges )
+		data.badges = [];
 
 	// Determine where in the list to insert these badges.
 	for(var i=0; i < data.badges.length; i++) {
@@ -236,7 +239,7 @@ FFZ.prototype.render_badge = function(component) {
 
 	if ( reverse ) {
 		while(badges_out.length)
-			badges.before(badges_out.shift()[1]);
+			before.before(badges_out.shift()[1]);
 	} else {
 		while(badges_out.length)
 			badges.append(badges_out.shift()[1]);

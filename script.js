@@ -54,7 +54,7 @@ FFZ.ws_commands.set_badge = function(data) {
 		user = this.users[user_id] = this.users[user_id] || {},
 		badges = user.badges = user.badges || {};
 
-	if ( badge === undefined )
+	if ( badge === undefined || badge === null )
 		delete badges[slot];
 	else
 		badges[slot] = badge;
@@ -86,6 +86,9 @@ FFZ.prototype.bttv_badges = function(data) {
 
 	if ( ! user || ! user.badges )
 		return;
+
+	if ( ! data.badges )
+		data.badges = [];
 
 	// Determine where in the list to insert these badges.
 	for(var i=0; i < data.badges.length; i++) {
@@ -237,7 +240,7 @@ FFZ.prototype.render_badge = function(component) {
 
 	if ( reverse ) {
 		while(badges_out.length)
-			badges.before(badges_out.shift()[1]);
+			before.before(badges_out.shift()[1]);
 	} else {
 		while(badges_out.length)
 			badges.append(badges_out.shift()[1]);
@@ -342,7 +345,7 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":29}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":30}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -425,6 +428,8 @@ module.exports = {
 	SERVER: DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/",
 	API_SERVER: "//api.frankerfacez.com/",
 
+	EMOJI_REGEX: /((?:\ud83c\udde8\ud83c\uddf3|\ud83c\uddfa\ud83c\uddf8|\ud83c\uddf7\ud83c\uddfa|\ud83c\uddf0\ud83c\uddf7|\ud83c\uddef\ud83c\uddf5|\ud83c\uddee\ud83c\uddf9|\ud83c\uddec\ud83c\udde7|\ud83c\uddeb\ud83c\uddf7|\ud83c\uddea\ud83c\uddf8|\ud83c\udde9\ud83c\uddea|\u0039\ufe0f?\u20e3|\u0038\ufe0f?\u20e3|\u0037\ufe0f?\u20e3|\u0036\ufe0f?\u20e3|\u0035\ufe0f?\u20e3|\u0034\ufe0f?\u20e3|\u0033\ufe0f?\u20e3|\u0032\ufe0f?\u20e3|\u0031\ufe0f?\u20e3|\u0030\ufe0f?\u20e3|\u0023\ufe0f?\u20e3|\ud83d\udeb3|\ud83d\udeb1|\ud83d\udeb0|\ud83d\udeaf|\ud83d\udeae|\ud83d\udea6|\ud83d\udea3|\ud83d\udea1|\ud83d\udea0|\ud83d\ude9f|\ud83d\ude9e|\ud83d\ude9d|\ud83d\ude9c|\ud83d\ude9b|\ud83d\ude98|\ud83d\ude96|\ud83d\ude94|\ud83d\ude90|\ud83d\ude8e|\ud83d\ude8d|\ud83d\ude8b|\ud83d\ude8a|\ud83d\ude88|\ud83d\ude86|\ud83d\ude82|\ud83d\ude81|\ud83d\ude36|\ud83d\ude34|\ud83d\ude2f|\ud83d\ude2e|\ud83d\ude2c|\ud83d\ude27|\ud83d\ude26|\ud83d\ude1f|\ud83d\ude1b|\ud83d\ude19|\ud83d\ude17|\ud83d\ude15|\ud83d\ude11|\ud83d\ude10|\ud83d\ude0e|\ud83d\ude08|\ud83d\ude07|\ud83d\ude00|\ud83d\udd67|\ud83d\udd66|\ud83d\udd65|\ud83d\udd64|\ud83d\udd63|\ud83d\udd62|\ud83d\udd61|\ud83d\udd60|\ud83d\udd5f|\ud83d\udd5e|\ud83d\udd5d|\ud83d\udd5c|\ud83d\udd2d|\ud83d\udd2c|\ud83d\udd15|\ud83d\udd09|\ud83d\udd08|\ud83d\udd07|\ud83d\udd06|\ud83d\udd05|\ud83d\udd04|\ud83d\udd02|\ud83d\udd01|\ud83d\udd00|\ud83d\udcf5|\ud83d\udcef|\ud83d\udced|\ud83d\udcec|\ud83d\udcb7|\ud83d\udcb6|\ud83d\udcad|\ud83d\udc6d|\ud83d\udc6c|\ud83d\udc65|\ud83d\udc2a|\ud83d\udc16|\ud83d\udc15|\ud83d\udc13|\ud83d\udc10|\ud83d\udc0f|\ud83d\udc0b|\ud83d\udc0a|\ud83d\udc09|\ud83d\udc08|\ud83d\udc07|\ud83d\udc06|\ud83d\udc05|\ud83d\udc04|\ud83d\udc03|\ud83d\udc02|\ud83d\udc01|\ud83d\udc00|\ud83c\udfe4|\ud83c\udfc9|\ud83c\udfc7|\ud83c\udf7c|\ud83c\udf50|\ud83c\udf4b|\ud83c\udf33|\ud83c\udf32|\ud83c\udf1e|\ud83c\udf1d|\ud83c\udf1c|\ud83c\udf1a|\ud83c\udf18|\ud83c\udccf|\ud83c\udd70|\ud83c\udd71|\ud83c\udd7e|\ud83c\udd8e|\ud83c\udd91|\ud83c\udd92|\ud83c\udd93|\ud83c\udd94|\ud83c\udd95|\ud83c\udd96|\ud83c\udd97|\ud83c\udd98|\ud83c\udd99|\ud83c\udd9a|\ud83d\udc77|\ud83d\udec5|\ud83d\udec4|\ud83d\udec3|\ud83d\udec2|\ud83d\udec1|\ud83d\udebf|\ud83d\udeb8|\ud83d\udeb7|\ud83d\udeb5|\ud83c\ude01|\ud83c\ude02|\ud83c\ude32|\ud83c\ude33|\ud83c\ude34|\ud83c\ude35|\ud83c\ude36|\ud83c\ude37|\ud83c\ude38|\ud83c\ude39|\ud83c\ude3a|\ud83c\ude50|\ud83c\ude51|\ud83c\udf00|\ud83c\udf01|\ud83c\udf02|\ud83c\udf03|\ud83c\udf04|\ud83c\udf05|\ud83c\udf06|\ud83c\udf07|\ud83c\udf08|\ud83c\udf09|\ud83c\udf0a|\ud83c\udf0b|\ud83c\udf0c|\ud83c\udf0f|\ud83c\udf11|\ud83c\udf13|\ud83c\udf14|\ud83c\udf15|\ud83c\udf19|\ud83c\udf1b|\ud83c\udf1f|\ud83c\udf20|\ud83c\udf30|\ud83c\udf31|\ud83c\udf34|\ud83c\udf35|\ud83c\udf37|\ud83c\udf38|\ud83c\udf39|\ud83c\udf3a|\ud83c\udf3b|\ud83c\udf3c|\ud83c\udf3d|\ud83c\udf3e|\ud83c\udf3f|\ud83c\udf40|\ud83c\udf41|\ud83c\udf42|\ud83c\udf43|\ud83c\udf44|\ud83c\udf45|\ud83c\udf46|\ud83c\udf47|\ud83c\udf48|\ud83c\udf49|\ud83c\udf4a|\ud83c\udf4c|\ud83c\udf4d|\ud83c\udf4e|\ud83c\udf4f|\ud83c\udf51|\ud83c\udf52|\ud83c\udf53|\ud83c\udf54|\ud83c\udf55|\ud83c\udf56|\ud83c\udf57|\ud83c\udf58|\ud83c\udf59|\ud83c\udf5a|\ud83c\udf5b|\ud83c\udf5c|\ud83c\udf5d|\ud83c\udf5e|\ud83c\udf5f|\ud83c\udf60|\ud83c\udf61|\ud83c\udf62|\ud83c\udf63|\ud83c\udf64|\ud83c\udf65|\ud83c\udf66|\ud83c\udf67|\ud83c\udf68|\ud83c\udf69|\ud83c\udf6a|\ud83c\udf6b|\ud83c\udf6c|\ud83c\udf6d|\ud83c\udf6e|\ud83c\udf6f|\ud83c\udf70|\ud83c\udf71|\ud83c\udf72|\ud83c\udf73|\ud83c\udf74|\ud83c\udf75|\ud83c\udf76|\ud83c\udf77|\ud83c\udf78|\ud83c\udf79|\ud83c\udf7a|\ud83c\udf7b|\ud83c\udf80|\ud83c\udf81|\ud83c\udf82|\ud83c\udf83|\ud83c\udf84|\ud83c\udf85|\ud83c\udf86|\ud83c\udf87|\ud83c\udf88|\ud83c\udf89|\ud83c\udf8a|\ud83c\udf8b|\ud83c\udf8c|\ud83c\udf8d|\ud83c\udf8e|\ud83c\udf8f|\ud83c\udf90|\ud83c\udf91|\ud83c\udf92|\ud83c\udf93|\ud83c\udfa0|\ud83c\udfa1|\ud83c\udfa2|\ud83c\udfa3|\ud83c\udfa4|\ud83c\udfa5|\ud83c\udfa6|\ud83c\udfa7|\ud83c\udfa8|\ud83c\udfa9|\ud83c\udfaa|\ud83c\udfab|\ud83c\udfac|\ud83c\udfad|\ud83c\udfae|\ud83c\udfaf|\ud83c\udfb0|\ud83c\udfb1|\ud83c\udfb2|\ud83c\udfb3|\ud83c\udfb4|\ud83c\udfb5|\ud83c\udfb6|\ud83c\udfb7|\ud83c\udfb8|\ud83c\udfb9|\ud83c\udfba|\ud83c\udfbb|\ud83c\udfbc|\ud83c\udfbd|\ud83c\udfbe|\ud83c\udfbf|\ud83c\udfc0|\ud83c\udfc1|\ud83c\udfc2|\ud83c\udfc3|\ud83c\udfc4|\ud83c\udfc6|\ud83c\udfc8|\ud83c\udfca|\ud83c\udfe0|\ud83c\udfe1|\ud83c\udfe2|\ud83c\udfe3|\ud83c\udfe5|\ud83c\udfe6|\ud83c\udfe7|\ud83c\udfe8|\ud83c\udfe9|\ud83c\udfea|\ud83c\udfeb|\ud83c\udfec|\ud83c\udfed|\ud83c\udfee|\ud83c\udfef|\ud83c\udff0|\ud83d\udc0c|\ud83d\udc0d|\ud83d\udc0e|\ud83d\udc11|\ud83d\udc12|\ud83d\udc14|\ud83d\udc17|\ud83d\udc18|\ud83d\udc19|\ud83d\udc1a|\ud83d\udc1b|\ud83d\udc1c|\ud83d\udc1d|\ud83d\udc1e|\ud83d\udc1f|\ud83d\udc20|\ud83d\udc21|\ud83d\udc22|\ud83d\udc23|\ud83d\udc24|\ud83d\udc25|\ud83d\udc26|\ud83d\udc27|\ud83d\udc28|\ud83d\udc29|\ud83d\udc2b|\ud83d\udc2c|\ud83d\udc2d|\ud83d\udc2e|\ud83d\udc2f|\ud83d\udc30|\ud83d\udc31|\ud83d\udc32|\ud83d\udc33|\ud83d\udc34|\ud83d\udc35|\ud83d\udc36|\ud83d\udc37|\ud83d\udc38|\ud83d\udc39|\ud83d\udc3a|\ud83d\udc3b|\ud83d\udc3c|\ud83d\udc3d|\ud83d\udc3e|\ud83d\udc40|\ud83d\udc42|\ud83d\udc43|\ud83d\udc44|\ud83d\udc45|\ud83d\udc46|\ud83d\udc47|\ud83d\udc48|\ud83d\udc49|\ud83d\udc4a|\ud83d\udc4b|\ud83d\udc4c|\ud83d\udc4d|\ud83d\udc4e|\ud83d\udc4f|\ud83d\udc50|\ud83d\udc51|\ud83d\udc52|\ud83d\udc53|\ud83d\udc54|\ud83d\udc55|\ud83d\udc56|\ud83d\udc57|\ud83d\udc58|\ud83d\udc59|\ud83d\udc5a|\ud83d\udc5b|\ud83d\udc5c|\ud83d\udc5d|\ud83d\udc5e|\ud83d\udc5f|\ud83d\udc60|\ud83d\udc61|\ud83d\udc62|\ud83d\udc63|\ud83d\udc64|\ud83d\udc66|\ud83d\udc67|\ud83d\udc68|\ud83d\udc69|\ud83d\udc6a|\ud83d\udc6b|\ud83d\udc6e|\ud83d\udc6f|\ud83d\udc70|\ud83d\udc71|\ud83d\udc72|\ud83d\udc73|\ud83d\udc74|\ud83d\udc75|\ud83d\udc76|\ud83d\udeb4|\ud83d\udc78|\ud83d\udc79|\ud83d\udc7a|\ud83d\udc7b|\ud83d\udc7c|\ud83d\udc7d|\ud83d\udc7e|\ud83d\udc7f|\ud83d\udc80|\ud83d\udc81|\ud83d\udc82|\ud83d\udc83|\ud83d\udc84|\ud83d\udc85|\ud83d\udc86|\ud83d\udc87|\ud83d\udc88|\ud83d\udc89|\ud83d\udc8a|\ud83d\udc8b|\ud83d\udc8c|\ud83d\udc8d|\ud83d\udc8e|\ud83d\udc8f|\ud83d\udc90|\ud83d\udc91|\ud83d\udc92|\ud83d\udc93|\ud83d\udc94|\ud83d\udc95|\ud83d\udc96|\ud83d\udc97|\ud83d\udc98|\ud83d\udc99|\ud83d\udc9a|\ud83d\udc9b|\ud83d\udc9c|\ud83d\udc9d|\ud83d\udc9e|\ud83d\udc9f|\ud83d\udca0|\ud83d\udca1|\ud83d\udca2|\ud83d\udca3|\ud83d\udca4|\ud83d\udca5|\ud83d\udca6|\ud83d\udca7|\ud83d\udca8|\ud83d\udca9|\ud83d\udcaa|\ud83d\udcab|\ud83d\udcac|\ud83d\udcae|\ud83d\udcaf|\ud83d\udcb0|\ud83d\udcb1|\ud83d\udcb2|\ud83d\udcb3|\ud83d\udcb4|\ud83d\udcb5|\ud83d\udcb8|\ud83d\udcb9|\ud83d\udcba|\ud83d\udcbb|\ud83d\udcbc|\ud83d\udcbd|\ud83d\udcbe|\ud83d\udcbf|\ud83d\udcc0|\ud83d\udcc1|\ud83d\udcc2|\ud83d\udcc3|\ud83d\udcc4|\ud83d\udcc5|\ud83d\udcc6|\ud83d\udcc7|\ud83d\udcc8|\ud83d\udcc9|\ud83d\udcca|\ud83d\udccb|\ud83d\udccc|\ud83d\udccd|\ud83d\udcce|\ud83d\udccf|\ud83d\udcd0|\ud83d\udcd1|\ud83d\udcd2|\ud83d\udcd3|\ud83d\udcd4|\ud83d\udcd5|\ud83d\udcd6|\ud83d\udcd7|\ud83d\udcd8|\ud83d\udcd9|\ud83d\udcda|\ud83d\udcdb|\ud83d\udcdc|\ud83d\udcdd|\ud83d\udcde|\ud83d\udcdf|\ud83d\udce0|\ud83d\udce1|\ud83d\udce2|\ud83d\udce3|\ud83d\udce4|\ud83d\udce5|\ud83d\udce6|\ud83d\udce7|\ud83d\udce8|\ud83d\udce9|\ud83d\udcea|\ud83d\udceb|\ud83d\udcee|\ud83d\udcf0|\ud83d\udcf1|\ud83d\udcf2|\ud83d\udcf3|\ud83d\udcf4|\ud83d\udcf6|\ud83d\udcf7|\ud83d\udcf9|\ud83d\udcfa|\ud83d\udcfb|\ud83d\udcfc|\ud83d\udd03|\ud83d\udd0a|\ud83d\udd0b|\ud83d\udd0c|\ud83d\udd0d|\ud83d\udd0e|\ud83d\udd0f|\ud83d\udd10|\ud83d\udd11|\ud83d\udd12|\ud83d\udd13|\ud83d\udd14|\ud83d\udd16|\ud83d\udd17|\ud83d\udd18|\ud83d\udd19|\ud83d\udd1a|\ud83d\udd1b|\ud83d\udd1c|\ud83d\udd1d|\ud83d\udd1e|\ud83d\udd1f|\ud83d\udd20|\ud83d\udd21|\ud83d\udd22|\ud83d\udd23|\ud83d\udd24|\ud83d\udd25|\ud83d\udd26|\ud83d\udd27|\ud83d\udd28|\ud83d\udd29|\ud83d\udd2a|\ud83d\udd2b|\ud83d\udd2e|\ud83d\udd2f|\ud83d\udd30|\ud83d\udd31|\ud83d\udd32|\ud83d\udd33|\ud83d\udd34|\ud83d\udd35|\ud83d\udd36|\ud83d\udd37|\ud83d\udd38|\ud83d\udd39|\ud83d\udd3a|\ud83d\udd3b|\ud83d\udd3c|\ud83d\udd3d|\ud83d\udd50|\ud83d\udd51|\ud83d\udd52|\ud83d\udd53|\ud83d\udd54|\ud83d\udd55|\ud83d\udd56|\ud83d\udd57|\ud83d\udd58|\ud83d\udd59|\ud83d\udd5a|\ud83d\udd5b|\ud83d\uddfb|\ud83d\uddfc|\ud83d\uddfd|\ud83d\uddfe|\ud83d\uddff|\ud83d\ude01|\ud83d\ude02|\ud83d\ude03|\ud83d\ude04|\ud83d\ude05|\ud83d\ude06|\ud83d\ude09|\ud83d\ude0a|\ud83d\ude0b|\ud83d\ude0c|\ud83d\ude0d|\ud83d\ude0f|\ud83d\ude12|\ud83d\ude13|\ud83d\ude14|\ud83d\ude16|\ud83d\ude18|\ud83d\ude1a|\ud83d\ude1c|\ud83d\ude1d|\ud83d\ude1e|\ud83d\ude20|\ud83d\ude21|\ud83d\ude22|\ud83d\ude23|\ud83d\ude24|\ud83d\ude25|\ud83d\ude28|\ud83d\ude29|\ud83d\ude2a|\ud83d\ude2b|\ud83d\ude2d|\ud83d\ude30|\ud83d\ude31|\ud83d\ude32|\ud83d\ude33|\ud83d\ude35|\ud83d\ude37|\ud83d\ude38|\ud83d\ude39|\ud83d\ude3a|\ud83d\ude3b|\ud83d\ude3c|\ud83d\ude3d|\ud83d\ude3e|\ud83d\ude3f|\ud83d\ude40|\ud83d\ude45|\ud83d\ude46|\ud83d\ude47|\ud83d\ude48|\ud83d\ude49|\ud83d\ude4a|\ud83d\ude4b|\ud83d\ude4c|\ud83d\ude4d|\ud83d\ude4e|\ud83d\ude4f|\ud83d\ude80|\ud83d\ude83|\ud83d\ude84|\ud83d\ude85|\ud83d\ude87|\ud83d\ude89|\ud83d\ude8c|\ud83d\ude8f|\ud83d\ude91|\ud83d\ude92|\ud83d\ude93|\ud83d\ude95|\ud83d\ude97|\ud83d\ude99|\ud83d\ude9a|\ud83d\udea2|\ud83d\udea4|\ud83d\udea5|\ud83d\udea7|\ud83d\udea8|\ud83d\udea9|\ud83d\udeaa|\ud83d\udeab|\ud83d\udeac|\ud83d\udead|\ud83d\udeb2|\ud83d\udeb6|\ud83d\udeb9|\ud83d\udeba|\ud83d\udebb|\ud83d\udebc|\ud83d\udebd|\ud83d\udebe|\ud83d\udec0|\ud83c\udde6|\ud83c\udde7|\ud83c\udde8|\ud83c\udde9|\ud83c\uddea|\ud83c\uddeb|\ud83c\uddec|\ud83c\udded|\ud83c\uddee|\ud83c\uddef|\ud83c\uddf0|\ud83c\uddf1|\ud83c\uddf2|\ud83c\uddf3|\ud83c\uddf4|\ud83c\uddf5|\ud83c\uddf6|\ud83c\uddf7|\ud83c\uddf8|\ud83c\uddf9|\ud83c\uddfa|\ud83c\uddfb|\ud83c\uddfc|\ud83c\uddfd|\ud83c\uddfe|\ud83c\uddff|\ud83c\udf0d|\ud83c\udf0e|\ud83c\udf10|\ud83c\udf12|\ud83c\udf16|\ud83c\udf17|\ue50a|\u3030|\u27b0|\u2797|\u2796|\u2795|\u2755|\u2754|\u2753|\u274e|\u274c|\u2728|\u270b|\u270a|\u2705|\u26ce|\u23f3|\u23f0|\u23ec|\u23eb|\u23ea|\u23e9|\u2122|\u27bf|\u00a9|\u00ae)|(?:(?:\ud83c\udc04|\ud83c\udd7f|\ud83c\ude1a|\ud83c\ude2f|\u3299|\u303d|\u2b55|\u2b50|\u2b1c|\u2b1b|\u2b07|\u2b06|\u2b05|\u2935|\u2934|\u27a1|\u2764|\u2757|\u2747|\u2744|\u2734|\u2733|\u2716|\u2714|\u2712|\u270f|\u270c|\u2709|\u2708|\u2702|\u26fd|\u26fa|\u26f5|\u26f3|\u26f2|\u26ea|\u26d4|\u26c5|\u26c4|\u26be|\u26bd|\u26ab|\u26aa|\u26a1|\u26a0|\u2693|\u267f|\u267b|\u3297|\u2666|\u2665|\u2663|\u2660|\u2653|\u2652|\u2651|\u2650|\u264f|\u264e|\u264d|\u264c|\u264b|\u264a|\u2649|\u2648|\u263a|\u261d|\u2615|\u2614|\u2611|\u260e|\u2601|\u2600|\u25fe|\u25fd|\u25fc|\u25fb|\u25c0|\u25b6|\u25ab|\u25aa|\u24c2|\u231b|\u231a|\u21aa|\u21a9|\u2199|\u2198|\u2197|\u2196|\u2195|\u2194|\u2139|\u2049|\u203c|\u2668)([\uFE0E\uFE0F]?)))/g,
+
 	SVGPATH: SVGPATH,
 	ZREKNARF: '<svg style="padding:1.75px 0" class="svg-glyph_views ffz-svg svg-zreknarf" width="16px" viewBox="0 0 249 195" version="1.1" height="12.5px">' + SVGPATH + '</svg>',
 	CHAT_BUTTON: '<svg class="svg-emoticons ffz-svg" height="18px" width="24px" viewBox="0 0 249 195" version="1.1">' + SVGPATH + '</svg>',
@@ -491,6 +496,12 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 
 FFZ.prototype.setup_channel = function() {
+	// Style Stuff!
+	this.log("Creating channel style element.");
+	var s = this._channel_style = document.createElement("style");
+	s.id = "ffz-channel-css";
+	document.head.appendChild(s);
+
 	// Settings stuff!
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
 
@@ -555,13 +566,32 @@ FFZ.prototype.setup_channel = function() {
 		ffzHostTarget: function() {
 			var target = this.get('content.hostModeTarget'),
 				name = target && target.get('name'),
+				id = target && target.get('id'),
 				display_name = target && target.get('display_name');
+
+			if ( id !== f.__old_host_target ) {
+				if ( f.__old_host_target )
+					f.ws_send("unsub_channel", f.__old_host_target);
+
+				if ( id ) {
+					f.ws_send("sub_channel", id);
+					f.__old_host_target = id;
+				} else
+					delete f.__old_host_target;
+			}
 
 			if ( display_name )
 				FFZ.capitalization[name] = [display_name, Date.now()];
 
 			if ( f.settings.group_tabs && f._chatv )
 				f._chatv.ffzRebuildTabs();
+
+			if ( f.settings.follow_buttons )
+				f.rebuild_following_ui();
+
+			if ( f.settings.srl_races )
+				f.rebuild_race_ui();
+
 		}.observes("content.hostModeTarget")
 	});
 }
@@ -590,15 +620,28 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzInit: function() {
+			var id = this.get('controller.id'),
+				el = this.get('element');
+
 			f._cindex = this;
-			this.get('element').setAttribute('data-channel', this.get('controller.id'));
+			f.ws_send("sub_channel", id);
+
+			el.setAttribute('data-channel', id);
+			el.classList.add('ffz-channel');
+
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();
 
-			var el = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
-			if ( el )
-				el.parentNode.classList.add('twitch-channel-views');
+			var views = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
+			if ( views )
+				views.parentNode.classList.add('twitch-channel-views');
+
+			if ( f.settings.follow_buttons )
+				f.rebuild_following_ui();
+
+			if ( f.settings.srl_races )
+				f.rebuild_race_ui();
 		},
 
 		ffzFixTitle: function() {
@@ -612,7 +655,10 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			this.$(".title span").each(function(i, el) {
 				var scripts = el.querySelectorAll("script");
-				el.innerHTML = scripts[0].outerHTML + status + scripts[1].outerHTML;
+				if ( ! scripts.length )
+					el.innerHTML = status;
+				else
+					el.innerHTML = scripts[0].outerHTML + status + scripts[1].outerHTML;
 			});
 		},
 
@@ -631,7 +677,8 @@ FFZ.prototype._modify_cindex = function(view) {
 			}
 
 			var chatter_count = Object.keys(room.room.get('ffz_chatters') || {}).length,
-				ffz_chatters = room.ffz_chatters || 0;
+				ffz_chatters = room.ffz_chatters || 0,
+				ffz_viewers = room.ffz_viewers || 0;
 
 			var el = this.get('element').querySelector('#ffz-chatter-display span');
 			if ( ! el ) {
@@ -642,7 +689,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				var stat = document.createElement('span');
 				stat.className = 'ffz stat';
 				stat.id = 'ffz-chatter-display';
-				stat.title = "Current Chatters";
+				stat.title = "Currently in Chat";
 
 				stat.innerHTML = constants.ROOMS + " ";
 				el = document.createElement("span");
@@ -659,7 +706,7 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			el.innerHTML = utils.number_commas(chatter_count);
 
-			if ( ! ffz_chatters ) {
+			if ( ! ffz_chatters && ! ffz_viewers ) {
 				el = this.get('element').querySelector('#ffz-ffzchatter-display');
 				el && el.parentNode.removeChild(el);
 				return;
@@ -674,7 +721,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				var stat = document.createElement('span');
 				stat.className = 'ffz stat';
 				stat.id = 'ffz-ffzchatter-display';
-				stat.title = "Chatters with FrankerFaceZ";
+				stat.title = "Viewers (In Chat) with FrankerFaceZ";
 
 				stat.innerHTML = constants.ZREKNARF + " ";
 				el = document.createElement("span");
@@ -689,7 +736,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				jQuery(stat).tipsy();
 			}
 
-			el.innerHTML = utils.number_commas(ffz_chatters);
+			el.innerHTML = utils.number_commas(ffz_viewers) + " (" + utils.number_commas(ffz_chatters) + ")";
 		},
 
 
@@ -756,10 +803,16 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzTeardown: function() {
+			var id = this.get('controller.id');
+			if ( id )
+				f.ws_send("unsub_channel", id);
+
 			this.get('element').setAttribute('data-channel', '');
 			f._cindex = undefined;
 			if ( this._ffz_update_uptime )
 				clearTimeout(this._ffz_update_uptime);
+
+			utils.update_css(f._channel_style, id, null);
 		}
 	});
 }
@@ -832,7 +885,7 @@ FFZ.settings_info.stream_title = {
 				this._cindex.ffzFixTitle();
 		}
 	};
-},{"../constants":3,"../utils":29}],6:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants'),
@@ -852,13 +905,36 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
+
+FFZ.settings_info.minimal_chat = {
+	type: "boolean",
+	value: false,
+
+	//no_bttv: true,
+
+	category: "Chat",
+	name: "Minimalistic Chat",
+	help: "Hide all of the chat user interface, only showing messages and an input box.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-minimal-chat", val);
+			if ( this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
+				var f = this;
+				setTimeout(function() {
+					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
+				},0);
+			}
+		}
+	};
+
+
 FFZ.settings_info.prevent_clear = {
 	type: "boolean",
 	value: false,
 
 	no_bttv: true,
 
-	category: "Chat",
+	category: "Chat Moderation",
 	name: "Show Deleted Messages",
 	help: "Fade deleted messages instead of replacing them, and prevent chat from being cleared.",
 
@@ -933,6 +1009,9 @@ FFZ.settings_info.pinned_rooms = {
 // --------------------
 
 FFZ.prototype.setup_chatview = function() {
+	//if ( ! this.has_bttv )
+	document.body.classList.toggle("ffz-minimal-chat", this.settings.minimal_chat);
+
 	this.log("Hooking the Ember Chat controller.");
 
 	var Chat = App.__container__.lookup('controller:chat'),
@@ -943,7 +1022,26 @@ FFZ.prototype.setup_chatview = function() {
 			ffzUpdateChannels: function() {
 				if ( f.settings.group_tabs && f._chatv )
 					f._chatv.ffzRebuildTabs();
-			}.observes("currentChannelRoom", "connectedPrivateGroupRooms")
+			}.observes("currentChannelRoom", "connectedPrivateGroupRooms"),
+
+			removeCurrentChannelRoom: function() {
+				if ( ! f.settings.group_tabs || f.has_bttv )
+					return this._super();
+
+				var room = this.get("currentChannelRoom"),
+					room_id = room && room.get('id');
+
+				if ( ! f.settings.pinned_rooms || f.settings.pinned_rooms.indexOf(room_id) === -1 ) {
+					// We can actually destroy it.
+					if ( room === this.get("currentRoom") )
+						this.blurRoom();
+
+					if ( room )
+						room.destroy();
+				}
+
+				this.set("currentChannelRoom", void 0);
+			}
 		});
 	}
 
@@ -1161,7 +1259,7 @@ FFZ.prototype._modify_cview = function(view) {
 			if ( target && Room ) {
 				var target_id = target.get('id');
 				if ( this._ffz_host !== target_id ) {
-					if ( this._ffz_host_room ) {
+					if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
 						if ( this.get('controller.currentRoom') === this._ffz_host_room )
 							this.get('controller').blurRoom();
 						this._ffz_host_room.destroy();
@@ -1171,7 +1269,7 @@ FFZ.prototype._modify_cview = function(view) {
 					this._ffz_host_room = Room.findOne(target_id);
 				}
 			} else if ( this._ffz_host ) {
-				if ( this._ffz_host_room ) {
+				if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
 					if ( this.get('controller.currentRoom') === this._ffz_host_room )
 						this.get('controller').blurRoom();
 					this._ffz_host_room.destroy();
@@ -1244,7 +1342,7 @@ FFZ.prototype._modify_cview = function(view) {
 		},
 
 		ffzBuildTab: function(view, room, current_channel, host_channel) {
-			var tab = document.createElement('span'), name, unread,
+			var tab = document.createElement('span'), name, unread, icon = '',
 				group = room.get('isGroupRoom'),
 				current = room === view.get('controller.currentRoom');
 
@@ -1256,21 +1354,25 @@ FFZ.prototype._modify_cview = function(view) {
 			tab.classList.toggle('group-chat', group);
 			tab.classList.toggle('active', current);
 
-			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('id')));
 			unread = format_unread(current ? 0 : room.get('unreadCount'));
 
+			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('id'), function(name) {
+				unread = format_unread(current ? 0 : room.get('unreadCount'));
+				tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
+			}));
+
 			if ( current_channel ) {
-				tab.innerHTML = constants.CAMERA;
+				icon = constants.CAMERA;
 				tab.title = "Current Channel";
 			} else if ( host_channel ) {
-				tab.innerHTML = constants.EYE;
+				icon = constants.EYE;
 				tab.title = "Hosted Channel";
 			} else if ( group )
 				tab.title = "Group Chat";
 			else
 				tab.title = "Pinned Channel";
 
-			tab.innerHTML += utils.sanitize(name) + '<span>' + unread + '</span>';
+			tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
 
 			tab.addEventListener('click', function() {
 				view.get('controller').focusRoom(room);
@@ -1287,7 +1389,7 @@ FFZ.prototype._modify_cview = function(view) {
 			}
 
 			if ( this._ffz_host ) {
-				if ( this._ffz_host_room ) {
+				if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
 					if ( this.get('controller.currentRoom') === this._ffz_host_room )
 						this.get('controller').blurRoom();
 					this._ffz_host_room.destroy();
@@ -1408,7 +1510,7 @@ FFZ.chat_commands.part = function(room, args) {
 	else
 		return "You are not in " + room_id + ".";
 }
-},{"../constants":3,"../utils":29}],7:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
@@ -1426,8 +1528,12 @@ var FFZ = window.FrankerFaceZ,
 
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	SRCSETS = {};
 	build_srcset = function(id) {
-		return TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+		if ( SRCSETS[id] )
+			return SRCSETS[id];
+		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+		return out;
 	},
 
 
@@ -1442,7 +1548,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! set )
 			return data.code;
 
-		else if ( set == "00000turbo" || set == "turbo" ) {
+		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
 			set = "Twitch Turbo";
 			set_type = null;
 		}
@@ -1591,6 +1697,69 @@ var FFZ = window.FrankerFaceZ,
 // ---------------------
 // Settings
 // ---------------------
+
+FFZ.settings_info.parse_emoji = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+
+	name: "Replace Emoji with Images",
+	help: "Replace emoji in chat messages with nicer looking images from the open-source Twitter Emoji project."
+	};
+
+
+FFZ.settings_info.room_status = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Room Status Indicators",
+	help: "Display the current room state (slow mode, sub mode, and r9k mode) next to the Chat button.",
+
+	on_update: function() {
+			if ( this._roomv )
+				this._roomv.ffzUpdateStatus();
+		}
+	};
+
+
+FFZ.settings_info.scrollback_length = {
+	type: "button",
+	value: 150,
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Scrollback Length",
+	help: "Set the maximum number of lines to keep in chat.",
+
+	method: function() {
+			var new_val = prompt("Scrollback Length\n\nPlease enter a new maximum length for the chat scrollback. Default: 150\n\nNote: Making this too large will cause your browser to lag.", this.settings.scrollback_length);
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			new_val = parseInt(new_val);
+			if ( new_val === NaN )
+				return;
+
+			if ( new_val < 10 )
+				new_val = 10;
+
+			this.settings.set("scrollback_length", new_val);
+
+			// Update our everything.
+			var Chat = App.__container__.lookup('controller:chat'),
+				current_id = Chat && Chat.get('currentRoom.id');
+
+			for(var room_id in this.rooms) {
+				var room = this.rooms[room_id];
+				room.room.set('messageBufferSize', new_val + ((this._roomv && !this._roomv.get('stuckToBottom') && current_id === room_id) ? 150 : 0));
+			}
+		}
+	};
 
 FFZ.settings_info.banned_words = {
 	type: "button",
@@ -1771,6 +1940,9 @@ FFZ.prototype._modify_line = function(component) {
 				tokens = f._remove_banned(tokens);
 				tokens = f._emoticonize(this, tokens);
 
+				if ( f.settings.parse_emoji )
+					tokens = f.tokenize_emoji(tokens);
+
 				// Store the capitalization.
 				var display = this.get("msgObject.tags.display-name");
 				if ( display && display.length )
@@ -1806,6 +1978,18 @@ FFZ.prototype._modify_line = function(component) {
 			this.rerender();
 		}),
 
+		willClearRender: function() {
+			// This is here to prevent tipsy tooltips from hanging around.
+			try {
+				this.$('a.mod-icon').tipsy('disable');
+				jQuery('body > .tipsy:last').remove();
+
+			} catch(err) {
+				f.error("LineView willClearRender: " + err);
+			}
+			this._super();
+		},
+
 		didInsertElement: function() {
 			this._super();
 			try {
@@ -1827,8 +2011,8 @@ FFZ.prototype._modify_line = function(component) {
 					this.set("msgObject.ffz_alternate", row_type);
 				}
 
-				el.classList.toggle('ffz-alternate', row_type);
-				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted'));
+				el.classList.toggle('ffz-alternate', row_type || false);
+				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted') || false);
 
 
 				// Basic Data
@@ -1863,50 +2047,9 @@ FFZ.prototype._modify_line = function(component) {
 
 
 				// Banned Links
-				var bad_links = el.querySelectorAll('a.deleted-link');
-				for(var i=0; i < bad_links.length; i++) {
-					var link = bad_links[i];
-
-					link.addEventListener("click", function(e) {
-						if ( ! this.classList.contains("deleted-link") )
-							return true;
-
-						// Get the URL
-						var href = this.getAttribute('data-url'),
-							link = href;
-
-						// Delete Old Stuff
-						this.classList.remove('deleted-link');
-						this.removeAttribute("data-url");
-						this.removeAttribute("title");
-						this.removeAttribute("original-title");
-
-						// Process URL
-						if ( href.indexOf("@") > -1 && (-1 === href.indexOf("/") || href.indexOf("@") < href.indexOf("/")) )
-							href = "mailto:" + href;
-						else if ( ! href.match(/^https?:\/\//) )
-							href = "http://" + href;
-
-						// Set up the Link
-						this.href = href;
-						this.target = "_new";
-						this.textContent = link;
-
-						// Now, check for a tooltip.
-						var link_data = f._link_data[link];
-						if ( link_data && typeof link_data != "boolean" ) {
-							this.title = link_data.tooltip;
-							if ( link_data.unsafe )
-								this.classList.add('unsafe-link');
-						}
-
-						// Stop from Navigating
-						e.preventDefault();
-					});
-
-					// Also add a nice tooltip.
-					jQuery(link).tipsy({html:true});
-				}
+				var bad_links = el.querySelectorAll('span.message a.deleted-link');
+				for(var i=0; i < bad_links.length; i++)
+					bad_links[i].addEventListener("click", f._deleted_link_click);
 
 
 				// Link Tooltips
@@ -1942,12 +2085,11 @@ FFZ.prototype._modify_line = function(component) {
 
 
 				// Enhanced Emotes
-				var images = el.querySelectorAll('img.emoticon');
+				var images = el.querySelectorAll('span.message img.emoticon');
 				for(var i=0; i < images.length; i++) {
 					var img = images[i],
 						name = img.alt,
-						match = /\/emoticons\/v1\/(\d+)\/1\.0/.exec(img.src),
-						id = match ? parseInt(match[1]) : null;
+						id = FFZ.src_to_id(img.src);
 
 					if ( id !== null ) {
 						// High-DPI Images
@@ -1963,6 +2105,15 @@ FFZ.prototype._modify_line = function(component) {
 						} else {
 							f._twitch_emotes[id] = img.alt;
 							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
+						}
+
+					} else if ( img.getAttribute('data-ffz-emoji') ) {
+						var eid = img.getAttribute('data-ffz-emoji'),
+							data = f.emoji_data && f.emoji_data[eid];
+
+						if ( data ) {
+							img.setAttribute('srcset', data.srcSet);
+							img.title = "Emoji: " + img.alt + "\nName: " + data.short_name;
 						}
 
 					} else if ( img.getAttribute('data-ffz-emote') ) {
@@ -2071,10 +2222,6 @@ FFZ.capitalization = {};
 FFZ._cap_fetching = 0;
 
 FFZ.get_capitalization = function(name, callback) {
-	// Use the BTTV code if it's present.
-	if ( window.BetterTTV && BetterTTV.chat && BetterTTV.chat.helpers.lookupDisplayName )
-		return BetterTTV.chat.helpers.lookupDisplayName(name);
-
 	if ( ! name )
 		return name;
 
@@ -2148,9 +2295,10 @@ FFZ.prototype._emoticonize = function(component, tokens) {
 
 	return this.tokenize_emotes(user_id, room_id, tokens);
 }
-},{"../utils":29}],8:[function(require,module,exports){
+},{"../utils":30}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
+	helpers,
 
 	keycodes = {
 		ESC: 27,
@@ -2160,31 +2308,150 @@ var FFZ = window.FrankerFaceZ,
 		U: 85
 		},
 
-	btns = [
-		['5m', 300],
-		['10m', 600],
-		['1hr', 3600],
-		['12hr', 43200],
-		['24hr', 86400]],
-
 	MESSAGE = '<svg class="svg-messages" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,15V3h16v12H1z M15.354,5.354l-0.707-0.707L9,10.293L3.354,4.646L2.646,5.354L6.293,9l-3.646,3.646l0.707,0.707L7,9.707l1.646,1.646h0.707L11,9.707l3.646,3.646l0.707-0.707L11.707,9L15.354,5.354z" fill-rule="evenodd"></path></svg>',
-	CHECK = '<svg class="svg-unban" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M6.5,12.75L2,8.25l2-2l2.5,2.5l5.5-5.5l2,2L6.5,12.75z"/></svg>';
+	CHECK = '<svg class="svg-unban" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M6.5,12.75L2,8.25l2-2l2.5,2.5l5.5-5.5l2,2L6.5,12.75z"/></svg>',
+
+	DURATIONS = {},
+	duration_string = function(val) {
+		if ( val === 1 )
+			return 'Purge';
+
+		if ( DURATIONS[val] )
+			return DURATIONS[val];
+
+		var weeks, days, hours, minutes, seconds;
+
+		weeks = Math.floor(val / 604800);
+		seconds = val % 604800;
+
+		days = Math.floor(seconds / 86400);
+		seconds %= 86400;
+
+		hours = Math.floor(seconds / 3600);
+		seconds %= 3600;
+
+		minutes = Math.floor(seconds / 60);
+		seconds %= 60;
+
+		var out = DURATIONS[val] = (weeks ? weeks + 'w' : '') + ((days || (weeks && (hours || minutes || seconds))) ? days + 'd' : '') + ((hours || ((weeks || days) && (minutes || seconds))) ? hours + 'h' : '') + ((minutes || ((weeks || days || hours) && seconds)) ? minutes + 'm' : '') + (seconds ? seconds + 's' : '');
+		return out;
+	};
+
+
+try {
+	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+} catch(err) { }
 
 
 // ----------------
 // Settings
 // ----------------
 
-FFZ.settings_info.enhanced_moderation = {
+FFZ.settings_info.chat_hover_pause = {
 	type: "boolean",
 	value: false,
 
 	no_bttv: true,
-	//visible: function() { return ! this.has_bttv },
-	category: "Chat",
 
-	name: "Enhanced Moderation",
-	help: "Use /p, /t, /u and /b in chat to moderate chat, or use hotkeys with moderation cards."
+	category: "Chat Moderation",
+	name: "Pause Chat Scrolling on Mouse Hover",
+	help: "Automatically prevent the chat from scrolling when moving the mouse over it to prevent moderation mistakes and link mis-clicks.",
+
+	on_update: function(val) {
+			if ( ! this._roomv )
+				return;
+
+			if ( val )
+				this._roomv.ffzEnableFreeze();
+			else
+				this._roomv.ffzDisableFreeze();
+		}
+	};
+
+
+FFZ.settings_info.short_commands = {
+	type: "boolean",
+	value: true,
+
+	no_bttv: true,
+	category: "Chat Moderation",
+
+	name: "Short Moderation Commands",
+	help: "Use /t, /b, and /u in chat in place of /timeout, /ban, /unban for quicker moderation, and use /p for 1 second timeouts."
+	};
+
+
+FFZ.settings_info.mod_card_hotkeys = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+	category: "Chat Moderation",
+
+	name: "Moderation Card Hotkeys",
+	help: "With a moderation card selected, press B to ban the user, T to time them out for 10 minutes, P to time them out for 1 second, or U to unban them. ESC closes the card."
+	};
+
+
+FFZ.settings_info.mod_card_history = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+	category: "Chat Moderation",
+
+	name: "Moderation Card History",
+	help: "Display a few of the user's previously sent messages on moderation cards.",
+
+	on_update: function(val) {
+			if ( val || ! this.rooms )
+				return;
+
+			// Delete all history~!
+			for(var room_id in this.rooms) {
+				var room = this.rooms[room_id];
+				if ( room )
+					room.user_history = undefined;
+			}
+		}
+	};
+
+
+FFZ.settings_info.mod_card_durations = {
+	type: "button",
+	value: [300, 600, 3600, 43200, 86400, 604800],
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Moderation Card Timeout Buttons",
+	help: "Add additional timeout buttons to moderation cards with specific durations.",
+
+	method: function() {
+			var old_val = this.settings.mod_card_durations.join(", "),
+				new_val = prompt("Moderation Card Timeout Buttons\n\nPlease enter a comma-separated list of durations that you would like to have timeout buttons for. Durations must be expressed in seconds.\n\nEnter \"reset\" without quotes to return to the default value.", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			if ( new_val === "reset" )
+				new_val = FFZ.settings_info.mod_card_durations.value.join(", ");
+
+			// Split them up.
+			new_val = new_val.trim().split(/[ ,]+/);
+			var vals = [];
+
+			for(var i=0; i < new_val.length; i++) {
+				var val = parseInt(new_val[i]);
+				if ( val === 0 )
+					val = 1;
+
+				if ( val !== NaN && val > 0 )
+					vals.push(val);
+			}
+
+			this.settings.set("mod_card_durations", vals);
+		}
 	};
 
 
@@ -2193,23 +2460,43 @@ FFZ.settings_info.enhanced_moderation = {
 // ----------------
 
 FFZ.prototype.setup_mod_card = function() {
+	this.log("Modifying Mousetrap stopCallback so we can catch ESC.");
+	var orig_stop = Mousetrap.stopCallback;
+	Mousetrap.stopCallback = function(e, element, combo) {
+		if ( element.classList.contains('no-mousetrap') )
+			return true;
+
+		return orig_stop(e, element, combo);
+	}
+
+	Mousetrap.bind("up up down down left right left right b a enter", function() {
+		var el = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+		el && el.classList.toggle('ffz-flip');
+	});
+
+
 	this.log("Hooking the Ember Moderation Card view.");
 	var Card = App.__container__.resolve('component:moderation-card'),
 		f = this;
 
 	Card.reopen({
+		ffzForceRedraw: function() {
+			this.rerender();
+		}.observes("cardInfo.isModeratorOrHigher", "cardInfo.user"),
+
 		didInsertElement: function() {
 			this._super();
 			window._card = this;
 			try {
-				if ( f.has_bttv || ! f.settings.enhanced_moderation )
+				if ( f.has_bttv )
 					return;
 
 				var el = this.get('element'),
 					controller = this.get('controller');
 
 				// Style it!
-				el.classList.add('ffz-moderation-card');
+				if ( f.settings.mod_card_hotkeys || (f.settings.mod_card_durations && f.settings.mod_card_durations.length) )
+					el.classList.add('ffz-moderation-card');
 
 				// Only do the big stuff if we're mod.
 				if ( controller.get('cardInfo.isModeratorOrHigher') ) {
@@ -2217,91 +2504,94 @@ FFZ.prototype.setup_mod_card = function() {
 					el.setAttribute('tabindex', 1);
 
 					// Key Handling
-					el.addEventListener('keyup', function(e) {
-						var key = e.keyCode || e.which,
-							user_id = controller.get('cardInfo.user.id'),
-							room = App.__container__.lookup('controller:chat').get('currentRoom');
+					if ( f.settings.mod_card_hotkeys ) {
+						el.classList.add('no-mousetrap');
 
-						if ( key == keycodes.P )
-							room.send("/timeout " + user_id + " 1");
-
-						else if ( key == keycodes.B )
-							room.send("/ban " + user_id);
-
-						else if ( key == keycodes.T )
-							room.send("/timeout " + user_id + " 600");
-
-						else if ( key == keycodes.U )
-							room.send("/unban " + user_id);
-
-						else if ( key != keycodes.ESC )
-							return;
-
-						controller.send('hideModOverlay');
-					});
-
-
-					// Extra Moderation
-					var line = document.createElement('div');
-					line.className = 'interface clearfix';
-
-					var btn_click = function(timeout) {
-							var user_id = controller.get('cardInfo.user.id'),
+						el.addEventListener('keyup', function(e) {
+							var key = e.keyCode || e.which,
+								user_id = controller.get('cardInfo.user.id'),
 								room = App.__container__.lookup('controller:chat').get('currentRoom');
 
-								if ( timeout === -1 )
-									room.send("/unban " + user_id);
-								else
-									room.send("/timeout " + user_id + " " + timeout);
-							},
+							if ( key == keycodes.P )
+								room.send("/timeout " + user_id + " 1");
 
-						btn_make = function(text, timeout) {
-								var btn = document.createElement('button');
-								btn.className = 'button';
-								btn.innerHTML = text;
-								btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
+							else if ( key == keycodes.B )
+								room.send("/ban " + user_id);
 
-								if ( timeout === 600 )
-									btn.title = "(T)" + btn.title.substr(1);
-								else if ( timeout === 1 )
-									btn.title = "(P)urge - " + btn.title;
+							else if ( key == keycodes.T )
+								room.send("/timeout " + user_id + " 600");
 
-								jQuery(btn).tipsy();
+							else if ( key == keycodes.U )
+								room.send("/unban " + user_id);
 
-								btn.addEventListener('click', btn_click.bind(this, timeout));
-								return btn;
-							};
+							else if ( key != keycodes.ESC )
+								return;
 
-					line.appendChild(btn_make('Purge', 1));
+							controller.send('close');
+						});
+					}
 
-					var s = document.createElement('span');
-					s.className = 'right';
-					line.appendChild(s);
+					var btn_click = function(timeout) {
+						var user_id = controller.get('cardInfo.user.id'),
+							room = App.__container__.lookup('controller:chat').get('currentRoom');
 
-					for(var i=0; i < btns.length; i++)
-						s.appendChild(btn_make(btns[i][0], btns[i][1]));
+							if ( timeout === -1 )
+								room.send("/unban " + user_id);
+							else
+								room.send("/timeout " + user_id + " " + timeout);
+						},
 
-					el.appendChild(line);
+					btn_make = function(timeout) {
+							var btn = document.createElement('button')
+							btn.className = 'button';
+							btn.innerHTML = duration_string(timeout);
+							btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
 
+							if ( f.settings.mod_card_hotkeys && timeout === 600 )
+								btn.title = "(T)" + btn.title.substr(1);
+							else if ( f.settings.mod_card_hotkeys &&  timeout === 1 )
+								btn.title = "(P)urge - " + btn.title;
+
+							jQuery(btn).tipsy();
+
+							btn.addEventListener('click', btn_click.bind(this, timeout));
+							return btn;
+						};
+
+					if ( f.settings.mod_card_durations && f.settings.mod_card_durations.length ) {
+						// Extra Moderation
+						var line = document.createElement('div');
+						line.className = 'interface clearfix';
+
+						line.appendChild(btn_make(1));
+
+						var s = document.createElement('span');
+						s.className = 'right';
+						line.appendChild(s);
+
+						for(var i=0; i < f.settings.mod_card_durations.length; i++)
+							s.appendChild(btn_make(f.settings.mod_card_durations[i]));
+
+						el.appendChild(line);
+
+						// Fix Other Buttons
+						this.$("button.timeout").remove();
+					}
+
+					var ban_btn = el.querySelector('button.ban');
+					if ( f.settings.mod_card_hotkeys )
+						ban_btn.setAttribute('title', '(B)an User');
 
 					// Unban Button
-
 					var unban_btn = document.createElement('button');
 					unban_btn.className = 'unban button glyph-only light';
 					unban_btn.innerHTML = CHECK;
-					unban_btn.title = "(U)nban User";
+					unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
 
 					jQuery(unban_btn).tipsy();
 					unban_btn.addEventListener("click", btn_click.bind(this, -1));
 
-					var ban_btn = el.querySelector('button.ban');
-					ban_btn.setAttribute('title', '(B)an User');
-
 					jQuery(ban_btn).after(unban_btn);
-
-
-					// Fix Other Buttons
-					this.$("button.timeout").remove();
 				}
 
 
@@ -2323,10 +2613,51 @@ FFZ.prototype.setup_mod_card = function() {
 					msg_btn.classList.add('glyph-only');
 					msg_btn.classList.add('message');
 
-					msg_btn.title = "Message User";
+					msg_btn.title = "Whisper User";
 					jQuery(msg_btn).tipsy();
 				}
 
+
+				// Message History
+				if ( f.settings.mod_card_history ) {
+					var Chat = App.__container__.lookup('controller:chat'),
+						room = Chat && Chat.get('currentRoom'),
+						ffz_room = room && f.rooms && f.rooms[room.get('id')],
+						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[controller.get('cardInfo.user.id')];
+
+					if ( user_history && user_history.length ) {
+						var history = document.createElement('ul'),
+							alternate = false;
+						history.className = 'interface clearfix chat-history';
+
+						for(var i=0; i < user_history.length; i++) {
+							var line = user_history[i],
+								l_el = document.createElement('li');
+
+							l_el.className = 'message-line chat-line';
+							l_el.classList.toggle('ffz-alternate', alternate);
+							alternate = !alternate;
+
+							if ( line.style )
+								l_el.classList.add(line.style);
+
+							l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(line.date) + '</span> ' : '') + '<span class="message">' + (line.style === 'action' ? '*' + line.from + ' ' : '') + f.render_tokens(line.cachedTokens) + '</span>';
+
+							// Banned Links
+							var bad_links = l_el.querySelectorAll('a.deleted-link');
+							for(var x=0; x < bad_links.length; x++)
+								bad_links[x].addEventListener("click", f._deleted_link_click);
+
+							jQuery('a', l_el).tipsy({html:true});
+							history.appendChild(l_el);
+						}
+
+						el.appendChild(history);
+
+						// Lazy scroll-to-bottom
+						history.scrollTop = history.scrollHeight;
+					}
+				}
 
 				// Focus the Element
 				this.$().draggable({
@@ -2349,7 +2680,7 @@ FFZ.prototype.setup_mod_card = function() {
 // Chat Commands
 // ----------------
 
-FFZ.chat_commands.purge = FFZ.chat_commands.p = function(room, args) {
+FFZ.chat_commands.purge = function(room, args) {
 	if ( ! args || ! args.length )
 		return "Purge Usage: /p username [more usernames separated by spaces]";
 
@@ -2363,7 +2694,11 @@ FFZ.chat_commands.purge = FFZ.chat_commands.p = function(room, args) {
 	}
 }
 
-FFZ.chat_commands.p.enabled = function() { return this.settings.enhanced_moderation; }
+FFZ.chat_commands.p = function(room, args) {
+	return FFZ.chat_commands.purge.bind(this)(room, args);
+}
+
+FFZ.chat_commands.p.enabled = function() { return this.settings.short_commands; }
 
 
 FFZ.chat_commands.t = function(room, args) {
@@ -2372,7 +2707,7 @@ FFZ.chat_commands.t = function(room, args) {
 	room.room.send("/timeout " + args.join(" "));
 }
 
-FFZ.chat_commands.t.enabled = function() { return this.settings.enhanced_moderation; }
+FFZ.chat_commands.t.enabled = function() { return this.settings.short_commands; }
 
 
 FFZ.chat_commands.b = function(room, args) {
@@ -2389,7 +2724,7 @@ FFZ.chat_commands.b = function(room, args) {
 	}
 }
 
-FFZ.chat_commands.b.enabled = function() { return this.settings.enhanced_moderation; }
+FFZ.chat_commands.b.enabled = function() { return this.settings.short_commands; }
 
 
 FFZ.chat_commands.u = function(room, args) {
@@ -2406,8 +2741,8 @@ FFZ.chat_commands.u = function(room, args) {
 	}
 }
 
-FFZ.chat_commands.u.enabled = function() { return this.settings.enhanced_moderation; }
-},{"../utils":29}],9:[function(require,module,exports){
+FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
+},{"../utils":30}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -2436,17 +2771,32 @@ FFZ.prototype.setup_room = function() {
 	s.id = "ffz-room-css";
 	document.head.appendChild(s);
 
-	this.log("Hooking the Ember Room model.");
+	this.log("Hooking the Ember Room controller.");
 
 	// Responsive ban button.
-	var RC = App.__container__.lookup('controller:room');
+	var f = this,
+		RC = App.__container__.lookup('controller:room');
 	if ( RC ) {
-		var orig_action = RC._actions.banUser;
+		var orig_ban = RC._actions.banUser,
+			orig_to = RC._actions.timeoutUser;
+
 		RC._actions.banUser = function(e) {
-			orig_action.bind(this)(e);
+			orig_ban.bind(this)(e);
+			this.get("model").clearMessages(e.user);
+		}
+
+		RC._actions.timeoutUser = function(e) {
+			orig_to.bind(this)(e);
+			this.get("model").clearMessages(e.user);
+		}
+
+		RC._actions.purgeUser = function(e) {
+			this.get("model.tmiRoom").sendMessage("/timeout " + e.user + " 1");
 			this.get("model").clearMessages(e.user);
 		}
 	}
+
+	this.log("Hooking the Ember Room model.");
 
 	var Room = App.__container__.resolve('model:room');
 	this._modify_room(Room);
@@ -2463,6 +2813,323 @@ FFZ.prototype.setup_room = function() {
 		this._modify_room(inst);
 		inst.ffzPatchTMI();
 	}
+
+	this.log("Hooking the Ember Room view.");
+
+	var RoomView = App.__container__.resolve('view:room');
+	this._modify_rview(RoomView);
+
+	// For some reason, this doesn't work unless we create an instance of the
+	// room view and then destroy it immediately.
+	try {
+		RoomView.create().destroy();
+	} catch(err) { }
+
+	// Modify all existing Room views.
+	for(var key in Ember.View.views) {
+		if ( ! Ember.View.views.hasOwnProperty(key) )
+			continue;
+
+		var view = Ember.View.views[key];
+		if ( !(view instanceof RoomView) )
+			continue;
+
+		this.log("Manually updating existing Room view.", view);
+		try {
+			view.ffzInit();
+		} catch(err) {
+			this.error("RoomView setup ffzInit: " + err);
+		}
+	}
+}
+
+
+// --------------------
+// View Customization
+// --------------------
+
+FFZ.prototype._modify_rview = function(view) {
+	var f = this;
+	view.reopen({
+		didInsertElement: function() {
+			this._super();
+
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("RoomView didInsertElement: " + err);
+			}
+		},
+
+		willClearRender: function() {
+			try {
+				this.ffzTeardown();
+			} catch(err) {
+				f.error("RoomView willClearRender: " + err);
+			}
+			this._super();
+		},
+
+		ffzInit: function() {
+			f._roomv = this;
+
+			this.ffz_frozen = false;
+
+			if ( f.settings.chat_hover_pause )
+				this.ffzEnableFreeze();
+
+			if ( f.settings.room_status )
+				this.ffzUpdateStatus();
+
+			var controller = this.get('controller');
+			if ( controller ) {
+				controller.reopen({
+					submitButtonText: function() {
+						if ( this.get("model.isWhisperMessage") && this.get("model.isWhispersEnabled") )
+							return i18n("Whisper");
+
+						var wait = this.get("model.slowWait"),
+							msg = this.get("model.messageToSend") || "";
+
+						if ( (msg.charAt(0) === "/" && msg.substr(0, 4) !== "/me ") || !wait || !f.settings.room_status )
+							return i18n("Chat");
+
+						return utils.time_to_string(wait, false, false, true);
+					}.property("model.isWhisperMessage", "model.isWhispersEnabled", "model.slowWait")
+				});
+
+				Ember.propertyDidChange(controller, 'submitButtonText');
+			}
+		},
+
+		ffzTeardown: function() {
+			if ( f._roomv === this )
+				f._roomv = undefined;
+
+			this.ffzDisableFreeze();
+		},
+
+		ffzUpdateStatus: function() {
+			var room = this.get('controller.model'),
+
+				el = this.get('element'),
+				cont = el && el.querySelector('.chat-buttons-container');
+
+			if ( ! cont )
+				return f.log("no container");
+
+			var r9k_badge = cont.querySelector('#ffz-stat-r9k'),
+				sub_badge = cont.querySelector('#ffz-stat-sub'),
+				slow_badge = cont.querySelector('#ffz-stat-slow'),
+				banned_badge = cont.querySelector('#ffz-stat-banned'),
+				btn = cont.querySelector('button');
+
+			if ( f.has_bttv || ! f.settings.room_status ) {
+				if ( r9k_badge )
+					r9k_badge.parentElement.removeChild(r9k_badge);
+				if ( sub_badge )
+					sub_badge.parentElement.removeChild(sub_badge);
+				if ( slow_badge )
+					slow_badge.parentElement.removeChild(slow_badge);
+
+				if ( btn )
+					btn.classList.remove('ffz-waiting');
+				return;
+			}
+
+			if ( ! r9k_badge ) {
+				r9k_badge = document.createElement('span');
+				r9k_badge.className = 'ffz room-state stat float-right';
+				r9k_badge.id = 'ffz-stat-r9k';
+				r9k_badge.innerHTML = 'R9K';
+				r9k_badge.title = "This room is in R9K-mode.";
+				cont.appendChild(r9k_badge);
+				jQuery(r9k_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			if ( ! sub_badge ) {
+				sub_badge = document.createElement('span');
+				sub_badge.className = 'ffz room-state stat float-right';
+				sub_badge.id = 'ffz-stat-sub';
+				sub_badge.innerHTML = 'SUB';
+				sub_badge.title = "This room is in subscribers-only mode.";
+				cont.appendChild(sub_badge);
+				jQuery(sub_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			if ( ! slow_badge ) {
+				slow_badge = document.createElement('span');
+				slow_badge.className = 'ffz room-state stat float-right';
+				slow_badge.id = 'ffz-stat-slow';
+				slow_badge.innerHTML = 'SLOW';
+				slow_badge.title = "This room is in slow mode. You may send messages every 120 seconds.";
+				cont.appendChild(slow_badge);
+				jQuery(slow_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			if ( ! banned_badge ) {
+				banned_badge = document.createElement('span');
+				banned_badge.className = 'ffz room-state stat float-right';
+				banned_badge.id = 'ffz-stat-banned';
+				banned_badge.innerHTML = 'BAN';
+				banned_badge.title = "You have been banned from talking in this room.";
+				cont.appendChild(banned_badge);
+				jQuery(banned_badge).tipsy({gravity:"s", offset:15});
+			}
+
+			r9k_badge.classList.toggle('hidden', !(room && room.get('r9kMode')));
+			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnlyMode')));
+			slow_badge.classList.toggle('hidden', !(room && room.get('slowMode')));
+			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slowValue')||120) + " seconds.";
+			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
+
+			if ( btn ) {
+				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
+				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned')));
+			}
+
+		}.observes('controller.model'),
+
+		ffzEnableFreeze: function() {
+			var el = this.get('element'),
+				messages = el.querySelector('.chat-messages');
+
+			if ( ! messages )
+				return;
+
+			this._ffz_interval = setInterval(this.ffzPulse.bind(this), 200);
+			this._ffz_messages = messages;
+			this._ffz_mouse_move = this.ffzMouseMove.bind(this);
+			this._ffz_mouse_out = this.ffzMouseOut.bind(this);
+
+			messages.addEventListener('mousemove', this._ffz_mouse_move);
+			messages.addEventListener('mouseout', this._ffz_mouse_out);
+			document.addEventListener('mouseout', this._ffz_mouse_out);
+		},
+
+		ffzDisableFreeze: function() {
+			if ( this._ffz_interval ) {
+				clearInterval(this._ffz_interval);
+				this._ffz_interval = undefined;
+			}
+
+			this.ffzUnfreeze();
+
+			var messages = this._ffz_messages;
+			if ( ! messages )
+				return;
+
+			this._ffz_messages = undefined;
+
+			if ( this._ffz_mouse_move ) {
+				messages.removeEventListener('mousemove', this._ffz_mouse_move);
+				this._ffz_mouse_move = undefined;
+			}
+
+			if ( this._ffz_mouse_out ) {
+				messages.removeEventListener('mouseout', this._ffz_mouse_out);
+				this._ffz_mouse_out = undefined;
+			}
+		},
+
+		ffzPulse: function() {
+			if ( this.ffz_frozen ) {
+				var elapsed = Date.now() - this._ffz_last_move;
+				if ( elapsed > 750 )
+					this.ffzUnfreeze();
+			}
+		},
+
+		ffzUnfreeze: function() {
+			this.ffz_frozen = false;
+			this._ffz_last_move = 0;
+			this.ffzUnwarnPaused();
+
+			if ( this.get('stuckToBottom') )
+				this._scrollToBottom();
+		},
+
+		ffzMouseOut: function(event) {
+			this._ffz_outside = true;
+			var e = this;
+			Ember.run.next(function() {
+				if ( e._ffz_outside )
+					e.ffzUnfreeze();
+			});
+		},
+
+		ffzMouseMove: function(event) {
+			this._ffz_last_move = Date.now();
+			this._ffz_outside = false;
+
+			if ( event.screenX === this._ffz_last_screenx && event.screenY === this._ffz_last_screeny )
+				return;
+
+			this._ffz_last_screenx = event.screenX;
+			this._ffz_last_screeny = event.screenY;
+
+			if ( this.ffz_frozen )
+				return;
+
+			// Don't do it if we're over the bar itself.
+			if ( event.clientY >= (this._ffz_messages.getBoundingClientRect().bottom - 21) )
+				return;
+
+			this.ffz_frozen = true;
+			if ( this.get('stuckToBottom') ) {
+				this.set('controller.model.messageBufferSize', f.settings.scrollback_length + 150);
+				this.ffzWarnPaused();
+			}
+		},
+
+		_scrollToBottom: _.throttle(function() {
+			var e = this,
+				s = this._$chatMessagesScroller;
+
+			Ember.run.next(function() {
+				setTimeout(function() {
+					!e.ffz_frozen && s && s.length && (s.scrollTop(s[0].scrollHeight), e._setStuckToBottom(!0));
+				})
+			})
+		}, 200),
+
+		_setStuckToBottom: function(val) {
+			this.set("stuckToBottom", val);
+			this.get("controller.model") && this.set("controller.model.messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
+		},
+
+		// Warnings~!
+		ffzWarnPaused: function() {
+			var el = this.get('element'),
+				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+
+			if ( ! el )
+				return;
+
+			if ( ! warning ) {
+				warning = document.createElement('div');
+				warning.className = 'more-messages-indicator ffz-freeze-indicator';
+				warning.innerHTML = '(Chat Paused Due to Mouse Movement)';
+
+				var cont = el.querySelector('.chat-interface');
+				if ( ! cont )
+					return;
+				cont.insertBefore(warning, cont.childNodes[0])
+			}
+
+			warning.classList.remove('hidden');
+		},
+
+
+		ffzUnwarnPaused: function() {
+			var el = this.get('element'),
+				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+
+			if ( warning )
+				warning.classList.add('hidden');
+		}
+
+	});
 }
 
 
@@ -2606,6 +3273,27 @@ FFZ.prototype.add_room = function(id, room) {
 	// Create a basic data table for this room.
 	var data = this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null, needs_history: false};
 
+	if ( this.follow_sets && this.follow_sets[id] ) {
+		data.extra_sets = this.follow_sets[id];
+		delete this.follow_sets[id];
+
+		for(var i=0; i < data.extra_sets.length; i++) {
+			var sid = data.extra_sets[i],
+				set = this.emote_sets && this.emote_sets[sid];
+
+			if ( set ) {
+				if ( set.users.indexOf(id) === -1 )
+					set.users.push(id);
+				continue;
+			}
+
+			this.load_set(sid, function(success, data) {
+				if ( success )
+					data.users.push(id);
+			});
+		}
+	}
+
 	// Let the server know where we are.
 	this.ws_send("sub", id);
 
@@ -2614,6 +3302,9 @@ FFZ.prototype.add_room = function(id, room) {
 		if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
 			data.needs_history = true;
 	}
+
+	// Why don't we set the scrollback length, too?
+	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === id) ? 150 : 0));
 
 	// For now, we use the legacy function to grab the .css file.
 	this.load_room(id);
@@ -2822,6 +3513,12 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	if ( this.rooms[room_id] )
 		data.room = this.rooms[room_id].room;
 
+	// Preserve everything else.
+	for(var key in this.rooms[room_id]) {
+		if ( key !== 'room' && this.rooms[room_id].hasOwnProperty(key) && ! data.hasOwnProperty(key) )
+			data[key] = this.rooms[room_id][key];
+	}
+
 	data.needs_history = this.rooms[room_id] && this.rooms[room_id].needs_history || false;
 
 	this.rooms[room_id] = data;
@@ -2830,7 +3527,12 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 		utils.update_css(this._room_style, room_id, moderator_css(data) + (data.css||""));
 
 	if ( ! this.emote_sets.hasOwnProperty(data.set) )
-		this.load_set(data.set);
+		this.load_set(data.set, function(success, set) {
+			if ( set.users.indexOf(room_id) === -1 )
+				set.users.push(room_id);
+		});
+	else if ( this.emote_sets[data.set].users.indexOf(room_id) === -1 )
+		this.emote_sets[data.set].users.push(room_id);
 
 	this.update_ui_link();
 
@@ -2846,6 +3548,42 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 FFZ.prototype._modify_room = function(room) {
 	var f = this;
 	room.reopen({
+		subsOnlyMode: false,
+		r9kMode: false,
+		slowWaiting: false,
+		slowValue: 0,
+
+		updateWait: function(value, was_banned) {
+			var wait = this.get('slowWait') || 0;
+			this.set('slowWait', value);
+			if ( wait < 1 && value > 0 ) {
+				setTimeout(this.ffzUpdateWait.bind(this), 1000);
+				f._roomv && f._roomv.ffzUpdateStatus();
+			} else if ( (wait > 0 && value < 1) || was_banned ) {
+				this.set('ffz_banned', false);
+				f._roomv && f._roomv.ffzUpdateStatus();
+			}
+		},
+
+		ffzUpdateWait: function() {
+			var wait = this.get('slowWait') || 0;
+			if ( wait < 1 )
+				return;
+
+			this.set('slowWait', --wait);
+			if ( wait > 0 )
+				setTimeout(this.ffzUpdateWait.bind(this), 1000);
+			else {
+				this.set('ffz_banned', false);
+				f._roomv && f._roomv.ffzUpdateStatus();
+			}
+		},
+
+		ffzUpdateStatus: function() {
+			if ( f._roomv )
+				f._roomv.ffzUpdateStatus();
+		}.observes('r9kMode', 'subsOnlyMode', 'slowMode', 'slowValue', 'ffz_banned'),
+
 		// Track which rooms the user is currently in.
 		init: function() {
 			this._super();
@@ -2876,6 +3614,23 @@ FFZ.prototype._modify_room = function(room) {
 							t.set("messages." + n + ".deleted", true);
 					}
 				});
+
+				if ( f.settings.mod_card_history ) {
+					var room = f.rooms && f.rooms[t.get('id')],
+						user_history = room && room.user_history && room.user_history[user]
+
+					if ( user_history !== null && user_history !== undefined ) {
+						var has_delete = false,
+							last = user_history.length > 0 ? user_history[user_history.length-1] : null;
+
+						has_delete = last !== null && last.is_delete;
+						if ( ! has_delete ) {
+							user_history.push({from: 'jtv', is_delete: true, style: 'admin', cachedTokens: ['User has been timed out.'], date: new Date()});
+							while ( user_history.length > 20 )
+								user_history.shift();
+						}
+					}
+				}
 			} else {
 				if ( f.settings.prevent_clear )
 					this.addTmiMessage("A moderator's attempt to clear chat was ignored.");
@@ -2914,6 +3669,39 @@ FFZ.prototype._modify_room = function(room) {
 						msg.room = this.get('id');
 
 					f.tokenize_chat_line(msg);
+
+					// Keep the history.
+					if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
+						var room = f.rooms && f.rooms[msg.room];
+						if ( room ) {
+							var chat_history = room.user_history = room.user_history || {},
+								user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
+
+							user_history.push({
+								from: msg.tags && msg.tags['display-name'] || msg.from,
+								cachedTokens: msg.cachedTokens,
+								style: msg.style,
+								date: msg.date
+							});
+							while ( user_history.length > 20 )
+								user_history.shift();
+						}
+					}
+
+					// Check for message from us.
+					if ( ! is_whisper ) {
+						var user = f.get_user();
+						if ( user && user.login === msg.from ) {
+							var was_banned = this.get('ffz_banned');
+							this.set('ffz_banned', false);
+
+							// Update the wait time.
+							if ( this.get('isModeratorOrHigher') || ! this.get('slowMode') )
+								this.updateWait(0, was_banned)
+							else if ( this.get('slowMode') )
+								this.updateWait(this.get('slowValue'));
+						}
+					}
 				}
 			} catch(err) {
 				f.error("Room addMessage: " + err);
@@ -2988,6 +3776,7 @@ FFZ.prototype._modify_room = function(room) {
 			});
 		},
 
+
 		ffzUpdateChatters: function(add, remove) {
 			var chatters = this.get("ffz_chatters") || {};
 			if ( add )
@@ -3001,8 +3790,10 @@ FFZ.prototype._modify_room = function(room) {
 			if ( f._cindex )
 				f._cindex.ffzUpdateChatters();
 
-			if ( window.parent && window.parent.postMessage )
-				window.parent.postMessage({from_ffz: true, command: 'chatter_count', message: Object.keys(this.get('ffz_chatters') || {}).length}, "http://www.twitch.tv/");
+			try {
+				if ( window.parent && window.parent.postMessage )
+					window.parent.postMessage({from_ffz: true, command: 'chatter_count', message: Object.keys(this.get('ffz_chatters') || {}).length}, "http://www.twitch.tv/");
+			} catch(err) { /* Ignore errors because of security */ }
 		},
 
 
@@ -3016,24 +3807,8 @@ FFZ.prototype._modify_room = function(room) {
 			var tmi = this.get('tmiRoom'),
 				room = this;
 
-			// This method is stupid and bad and it leaks between rooms.
-			if ( ! tmi.ffz_notice_patched ) {
-				tmi.ffz_notice_patched = true;
-
-				tmi._roomConn.off("notice", tmi._onNotice, tmi);
-				tmi._roomConn.on("notice", function(ircMsg) {
-					var target = ircMsg.target || (ircMsg.params && ircMsg.params[0]) || this.ircChannel;
-					if( target != this.ircChannel )
-						return;
-
-					this._trigger("notice", {
-						msgId: ircMsg.tags['msg-id'],
-						message: ircMsg.message
-					});
-				}, tmi);
-			}
-
 			// Let's get chatter information!
+			// TODO: Remove this cause it's terrible.
 			var connection = tmi._roomConn._connection;
 			if ( ! connection.ffz_cap_patched ) {
 				connection.ffz_cap_patched = true;
@@ -3042,16 +3817,81 @@ FFZ.prototype._modify_room = function(room) {
 				connection.on("opened", function() {
 						this._send("CAP REQ :twitch.tv/membership");
 					}, connection);
-
-				// Since TMI starts sending SPECIALUSER with this, we need to
-				// ignore that. \ CatBag /
-				var orig_handle = connection._handleTmiPrivmsg.bind(connection);
-				connection._handleTmiPrivmsg = function(msg) {
-					if ( msg.message && msg.message.split(" ",1)[0] === "SPECIALUSER" )
-						return;
-					return orig_handle(msg);
-				}
 			}
+
+
+			// NOTICE for catching slow-mode updates
+			tmi.on('notice', function(msg) {
+				if ( msg.msgId === 'msg_slowmode' ) {
+					var match = /in (\d+) seconds/.exec(msg.message);
+					if ( match ) {
+						room.updateWait(parseInt(match[1]));
+					}
+				}
+
+				if ( msg.msgId === 'msg_timedout' ) {
+					var match = /for (\d+) more seconds/.exec(msg.message);
+					if ( match ) {
+						room.set('ffz_banned', true);
+						room.updateWait(parseInt(match[1]));
+					}
+				}
+
+				if ( msg.msgId === 'msg_banned' ) {
+					room.set('ffz_banned', true);
+					f._roomv && f._roomv.ffzUpdateStatus();
+				}
+			});
+
+
+			// ROOMSTATE~!
+			if ( ! connection.ffz_roomstate_patched ) {
+				connection.ffz_roomstate_patched = true;
+				connection._socket.off('data', connection._onSocketDataReceived, connection);
+				connection._socket.on('data', function(data) {
+					try {
+						var msg = utils.splitIRCMessage(data.data);
+						if ( msg.command === 'ROOMSTATE' ) {
+							// We have ROOMSTATE! Now, let's parse it a bit
+							// more and send it on.
+							msg.tags = utils.parseIRCTags(msg.tags);
+							msg.target = msg.params && msg.params[0];
+
+							this._trigger('roomstate', msg);
+							return;
+						}
+					} catch(err) { f.error("Connection onData: " + err); }
+
+					return this._onSocketDataReceived(data);
+				}, connection);
+			}
+
+			// Glorious ROOMSTATE.
+			if ( ! tmi.ffz_roomstate_patched ) {
+				tmi.ffz_roomstate_patched = true;
+				tmi._roomConn.on("roomstate", function(ircMsg) {
+					if ( ircMsg.target !== this.ircChannel )
+						return;
+
+					this._trigger("roomstate", ircMsg.tags);
+				}, tmi);
+			}
+
+			// IT IS GLORIOUS!
+			tmi.on('roomstate', function(state) {
+				if ( state.hasOwnProperty('slow') ) {
+					room.set('slowMode', state.slow > 0);
+					room.set('slowValue', state.slow);
+					if ( ! room.get('slowMode') )
+						room.updateWait(0);
+				}
+
+				if ( state.hasOwnProperty('r9k') )
+					room.set('r9kMode', state.r9k);
+
+				if ( state.hasOwnProperty('subs-only') )
+					room.set('subsOnlyMode', state['subs-only']);
+			});
 
 
 			// Check this shit.
@@ -3085,38 +3925,12 @@ FFZ.prototype._modify_room = function(room) {
 
 			tmi._roomConn._connection.on("message", tmi._roomConn._onIrcMessage, tmi._roomConn);
 
-
-			// Okay, we need to patch the *session's* updateUserState
-			if ( ! tmi.session.ffz_patched ) {
-				tmi.session.ffz_patched = true;
-				var uus = tmi.session._updateUserState.bind(tmi.session);
-
-				tmi.session._updateUserState = function(user, tags) {
-					try {
-						if ( tags.color )
-							this._onUserColorChanged(user, tags.color);
-
-						if ( tags['display-name'] )
-							this._onUserDisplayNameChanged(user, tags['display-name']);
-
-						if ( tags.turbo )
-							this._onUserSpecialAdded(user, 'turbo');
-
-						if ( tags['user_type'] === 'staff' || tags['user_type'] === 'admin' || tags['user_type'] === 'global_mod' )
-							this._onUserSpecialAdded(user, tags['user-type']);
-
-					} catch(err) {
-						f.error("SessionManager _updateUserState: " + err);
-					}
-				}
-			}
-
 			this.set('ffz_is_patched', true);
 
 		}.observes('tmiRoom')
 	});
 }
-},{"../constants":3,"../utils":29}],10:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -3274,6 +4088,7 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
 
+	this.emoji_data = {};
 	this.emote_sets = {};
 	this.global_sets = [];
 	this.default_sets = [];
@@ -3290,6 +4105,9 @@ FFZ.prototype.setup_emoticons = function() {
 
 	this.log("Loading global emote sets.");
 	this.load_global_sets();
+
+	this.log("Loading emoji data.");
+	this.load_emoji_data();
 
 	this.log("Watching Twitch emoticon parser to ensure it loads.");
 	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
@@ -3372,7 +4190,7 @@ FFZ.prototype.getEmotes = function(user_id, room_id) {
 	var user = this.users && this.users[user_id],
 		room = this.rooms && this.rooms[room_id];
 
-	return _.union(user && user.sets || [], room && room.set && [room.set] || [], this.default_sets);
+	return _.union(user && user.sets || [], room && room.set && [room.set] || [], room && room.extra_sets || [], this.default_sets);
 }
 
 
@@ -3408,6 +4226,49 @@ FFZ.prototype._emote_tooltip = function(emote) {
 
 	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "\nFFZ " + title + (owner ? "\nBy: " + owner.display_name : "");
 	return emote._tooltip;
+}
+
+
+// ---------------------
+// Emoji Loading
+// ---------------------
+
+FFZ.prototype.load_emoji_data = function(callback, tries) {
+	var f = this;
+	jQuery.getJSON(constants.SERVER + "emoji/emoji.json")
+		.done(function(data) {
+			var new_data = {};
+			for(var eid in data) {
+				var emoji = data[eid];
+				eid = eid.toLowerCase();
+				new_data[eid] = emoji;
+
+				emoji.src = constants.SERVER + 'emoji/' + eid + '-1x.png';
+				emoji.srcSet = emoji.src + ' 1x, ' + constants.SERVER + 'emoji/' + eid + '-2x.png 2x, ' + constants.SERVER + 'emoji/' + eid + '-4x.png 4x';
+
+				emoji.token = {
+					srcSet: emoji.srcSet,
+					emoticonSrc: emoji.src + '" data-ffz-emoji="' + eid + '" height="18px',
+					ffzEmoji: eid,
+					};
+				
+			}
+
+			f.emoji_data = new_data;
+			f.log("Loaded data on " + Object.keys(new_data).length + " emoji.");
+			if ( typeof callback === "function" )
+				callback(true, data);
+
+		}).fail(function(data) {
+			if ( data.status === 404 )
+				return typeof callback === "function" && callback(false);
+
+			tries = (tries || 0) + 1;
+			if ( tries < 50 )
+				return f.load_emoji(callback, tries);
+
+			return typeof callback === "function" && callback(false);
+		});
 }
 
 
@@ -3481,9 +4342,12 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	if ( ! data )
 		return typeof callback == "function" && callback(false);
 
+	// Do we have existing users?
+	var users = this.emote_sets[set_id] && this.emote_sets[set_id].users || [];
+
 	// Store our set.
 	this.emote_sets[set_id] = data;
-	data.users = [];
+	data.users = users;
 	data.count = 0;
 
 
@@ -3526,8 +4390,10 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	if ( callback )
 		callback(true, data);
 }
-},{"./constants":3,"./utils":29}],12:[function(require,module,exports){
+},{"./constants":3,"./utils":30}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
+	constants = require('../constants'),
+	utils = require('../utils'),
 	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
 
 
@@ -3566,6 +4432,16 @@ FFZ.prototype.setup_bttv = function(delay) {
 		this._chatv.ffzDisableTabs();
 	}
 
+	if ( this._roomv ) {
+		// Disable Chat Pause
+		if ( this.settings.chat_hover_pause )
+			this._roomv.ffzDisableFreeze();
+
+		// And hide the status
+		if ( this.settings.room_status )
+			this._roomv.ffzUpdateStatus();
+	}
+
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
 	document.body.classList.remove("ffz-chat-background");
@@ -3574,6 +4450,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	if ( this.is_dashboard )
 		this._update_subscribers();
 
+	document.body.classList.add('ffz-bttv');
 
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
@@ -3617,6 +4494,26 @@ FFZ.prototype.setup_bttv = function(delay) {
 		} catch(err) {
 			f.log("Error: ", err);
 			return original_privmsg(highlight, action, server, isMod, data);
+		}
+	}
+
+	// Whispers too!
+	var original_whisper = BetterTTV.chat.templates.whisper;
+	BetterTTV.chat.templates.whisper = function(data) {
+		try {
+			// Handle badges.
+			f.bttv_badges(data);
+
+			// Now, do everything else manually because things are hard-coded.
+			return '<div class="chat-line whisper" data-sender="' + data.sender + '">' +
+				BetterTTV.chat.templates.timestamp(data.time) + ' ' +
+				(data.badges && data.badges.length ? BetterTTV.chat.templates.badges(data.badges) : '') +
+				BetterTTV.chat.templates.whisperName(data.sender, data.receiver, data.from, data.to, data.fromColor, data.toColor) +
+				BetterTTV.chat.templates.message(data.sender, data.message, data.emotes, false) +
+				'</div>';
+		} catch(err) {
+			f.log("Error: ", err);
+			return original_whisper(data);
 		}
 	}
 
@@ -3680,53 +4577,87 @@ FFZ.prototype.setup_bttv = function(delay) {
 		});
 
 		// Don't bother proceeding if we have no emotes.
-		if ( ! emotes.length )
-			return tokens;
+		if ( emotes.length ) {
+			// Why is emote parsing so bad? ;_;
+			_.each(emotes, function(emote) {
+				var tooltip = f._emote_tooltip(emote),
+					eo = ['<img class="emoticon" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" alt="' + tooltip + '" title="' + tooltip + '" />'],
+					old_tokens = tokens;
 
-		// Why is emote parsing so bad? ;_;
-		_.each(emotes, function(emote) {
-			var tooltip = f._emote_tooltip(emote),
-				eo = ['<img class="emoticon" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" alt="' + tooltip + '" title="' + tooltip + '" />'],
-				old_tokens = tokens;
+				tokens = [];
 
+				for(var i=0; i < old_tokens.length; i++) {
+					var token = old_tokens[i];
+					if ( typeof token != "string" ) {
+						tokens.push(token);
+						continue;
+					}
+
+					var tbits = token.split(emote.regex);
+					while(tbits.length) {
+						var bit = tbits.shift();
+						if ( tbits.length ) {
+							bit += tbits.shift();
+							if ( bit )
+								tokens.push(bit);
+
+							tbits.shift();
+							tokens.push(eo);
+
+							if ( mine && l_room )
+								f.add_usage(l_room, emote.id);
+
+						} else
+							tokens.push(bit);
+					}
+				}
+			});
+		}
+
+		// Sneak in Emojicon Processing
+		if ( f.settings.parse_emoji && f.emoji_data ) {
+			var old_tokens = tokens;
 			tokens = [];
-
-			if ( ! old_tokens || ! old_tokens.length )
-				return tokens;
 
 			for(var i=0; i < old_tokens.length; i++) {
 				var token = old_tokens[i];
-				if ( typeof token != "string" ) {
+				if ( typeof token !== "string" ) {
 					tokens.push(token);
 					continue;
 				}
 
-				var tbits = token.split(emote.regex);
+				var tbits = token.split(constants.EMOJI_REGEX);
 				while(tbits.length) {
 					var bit = tbits.shift();
+					bit && tokens.push(bit);
+
 					if ( tbits.length ) {
-						bit += tbits.shift();
-						if ( bit )
-							tokens.push(bit);
+						var match = tbits.shift(),
+							variant = tbits.shift();
 
-						tbits.shift();
-						tokens.push(eo);
+						if ( variant === '\uFE0E' )
+							bits.push(match);
+						else {
+							var eid = utils.emoji_to_codepoint(match, variant),
+								data = f.emoji_data[eid],
+								alt = match + (variant || "");
 
-						if ( mine && l_room )
-							f.add_usage(l_room, emote.id);
-
-					} else
-						tokens.push(bit);
+							if ( data ) {
+								tokens.push(['<img class="emoticon" height="18px" srcset="' + (data.srcSet || "") + '" src="' + data.src + '" alt="' + alt + '" title="Emoji: ' + alt + '\nName: ' + data.short_name + '">']);
+							} else
+								tokens.push(match + (variant || ""));
+						}
+					}
 				}
 			}
-		});
+		}
 
 		return tokens;
 	}
 
 	this.update_ui_link();
 }
-},{}],13:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -3826,7 +4757,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 2,
+	major: 3, minor: 4, revision: 10,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -3907,8 +4838,6 @@ FFZ.prototype.get_user = function() {
 // Import Everything!
 // -------------------
 
-//require('./templates');
-
 // Import these first to set up data structures
 require('./ui/menu');
 require('./settings');
@@ -3945,6 +4874,7 @@ require('./ui/viewer_count');
 require('./ui/sub_count');
 
 require('./ui/menu_button');
+require('./ui/following');
 require('./ui/races');
 require('./ui/my_emotes');
 require('./ui/about_page');
@@ -3995,6 +4925,10 @@ FFZ.prototype.setup_normal = function(delay) {
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
+	this.is_dashboard = false;
+	try {
+		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
+	} catch(err) { this.embed_in_dash = false; }
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -4027,6 +4961,7 @@ FFZ.prototype.setup_dashboard = function(delay) {
 
 	this.users = {};
 	this.is_dashboard = true;
+	this.embed_in_dash = false;
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -4060,6 +4995,10 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
+	this.is_dashboard = false;
+	try {
+		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
+	} catch(err) { this.embed_in_dash = false; }
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -4087,6 +5026,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_css();
 	this.setup_menu();
 	this.setup_my_emotes();
+	this.setup_following();
 	this.setup_races();
 
 	this.connect_extra_chat();
@@ -4118,9 +5058,8 @@ FFZ.prototype._on_window_message = function(e) {
 		return;
 
 	var msg = e.data;
-	this.log("Window Message", msg);
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/channel":5,"./ember/chatview":6,"./ember/line":7,"./ember/moderation-card":8,"./ember/room":9,"./ember/viewers":10,"./emoticons":11,"./ext/betterttv":12,"./ext/emote_menu":13,"./featurefriday":15,"./settings":16,"./socket":17,"./tokenize":18,"./ui/about_page":19,"./ui/dark":20,"./ui/menu":21,"./ui/menu_button":22,"./ui/my_emotes":23,"./ui/notifications":24,"./ui/races":25,"./ui/styles":26,"./ui/sub_count":27,"./ui/viewer_count":28}],15:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/channel":5,"./ember/chatview":6,"./ember/line":7,"./ember/moderation-card":8,"./ember/room":9,"./ember/viewers":10,"./emoticons":11,"./ext/betterttv":12,"./ext/emote_menu":13,"./featurefriday":15,"./settings":16,"./socket":17,"./tokenize":18,"./ui/about_page":19,"./ui/dark":20,"./ui/following":21,"./ui/menu":22,"./ui/menu_button":23,"./ui/my_emotes":24,"./ui/notifications":25,"./ui/races":26,"./ui/styles":27,"./ui/sub_count":28,"./ui/viewer_count":29}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -4633,8 +5572,10 @@ FFZ.prototype.ws_create = function() {
 		// Join the right channel if we're in the dashboard.
 		if ( f.is_dashboard ) {
 			var match = location.pathname.match(/\/([^\/]+)/);
-			if ( match )
+			if ( match ) {
 				f.ws_send("sub", match[1]);
+				f.ws_send("sub_channel", match[1]);
+			}
 		}
 
 		// Send the current rooms.
@@ -4649,6 +5590,18 @@ FFZ.prototype.ws_create = function() {
 				if ( ! f.has_bttv && f.settings.chat_history )
 					f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
 			}
+		}
+
+		// Send the channel(s).
+		if ( f._cindex ) {
+			var channel_id = f._cindex.get('controller.id'),
+				hosted_id = f._cindex.get('controller.hostModeTarget.id');
+
+			if ( channel_id )
+				f.ws_send("sub_channel", channel_id);
+
+			if ( hosted_id )
+				f.ws_send("sub_channel", hosted_id);
 		}
 
 		// Send any pending commands.
@@ -4813,6 +5766,7 @@ FFZ.ws_commands.do_authorize = function(data) {
 },{}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("./utils"),
+	constants = require("./constants"),
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	helpers,
 
@@ -4823,9 +5777,26 @@ var FFZ = window.FrankerFaceZ,
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
 	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
 
+
 try {
 	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
 } catch(err) { }
+
+
+FFZ.SRC_IDS = {},
+FFZ.src_to_id = function(src) {
+	if ( FFZ.SRC_IDS.hasOwnProperty(src) )
+		return FFZ.SRC_IDS[src];
+
+	var match = /\/emoticons\/v1\/(\d+)\/1\.0/.exec(src),
+		id = match ? parseInt(match[1]) : null;
+
+	if ( id === NaN )
+		id = null;
+
+	FFZ.SRC_IDS[src] = id;
+	return id;
+};
 
 
 // ---------------------
@@ -4854,6 +5825,9 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	tokens = this._remove_banned(tokens);
 	tokens = this.tokenize_emotes(msgObject.from, room_id, tokens, from_me);
 
+	if ( this.settings.parse_emoji )
+		tokens = this.tokenize_emoji(tokens);
+
 	// Capitalization
 	var display = msgObject.tags && msgObject.tags['display-name'];
 	if ( display && display.length )
@@ -4866,7 +5840,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i];
-			if ( _.isString(token) || ! token.mentionedUser || token.own || msgObject.style === 'whisper' )
+			if ( msgObject.style !== 'whisper' && (_.isString(token) || ! token.mentionedUser || token.own) )
 				continue;
 
 			// We have a mention!
@@ -4882,7 +5856,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 			// Display notifications if that setting is enabled. Also make sure
 			// that we have a chat view because showing a notification when we
 			// can't actually go to it is a bad thing.
-			if ( this._chatv && this.settings.highlight_notifications && ! document.hasFocus() && ! prevent_notification ) {
+			if ( this._chatv && this.settings.highlight_notifications && ! this.embed_in_dash && ! document.hasFocus() && ! prevent_notification ) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room,
 					room_name;
 
@@ -4899,17 +5873,28 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 					msg = display + ': ' + msg;
 
 				var f = this;
-				this.show_notification(
-					msg,
-					"Twitch Chat Mention in " + room_name,
-					room_id,
-					60000,
-					function() {
-						window.focus();
-						var cont = App.__container__.lookup('controller:chat');
-						room && cont && cont.focusRoom(room);
-					}
-					);
+				if ( msgObject.style === 'whisper' )
+					this.show_notification(
+						msg,
+						"Twitch Chat Whisper",
+						"ffz_whisper_notice",
+						60000,
+						function() {
+							window.focus();
+						}
+						);
+				else
+					this.show_notification(
+						msg,
+						"Twitch Chat Mention in " + room_name,
+						room_id,
+						60000,
+						function() {
+							window.focus();
+							var cont = App.__container__.lookup('controller:chat');
+							room && cont && cont.focusRoom(room);
+						}
+						);
 			}
 
 			break;
@@ -4942,9 +5927,31 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes) {
 
 
 FFZ.prototype.render_tokens = function(tokens, render_links) {
+	var f = this;
 	return _.map(tokens, function(token) {
-		if ( token.emoticonSrc )
-			return '<img class="emoticon tooltip" src="' + token.emoticonSrc + '" alt="' + token.altText + '" title="' + token.altText + '">';
+		if ( token.emoticonSrc ) {
+			var tooltip;
+			if ( token.ffzEmote ) {
+				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
+					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
+
+				tooltip = emote ? utils.sanitize(f._emote_tooltip(emote)) : token.altText;
+
+			} else if ( token.ffzEmoji ) {
+				var eid = token.ffzEmoji,
+					emoji = f.emoji_data && f.emoji_data[eid];
+
+				tooltip = emoji ? "Emoji: " + token.altText + "\nName: " + emoji.short_name : token.altText;
+
+			} else {
+				var id = FFZ.src_to_id(token.emoticonSrc),
+					data = id && f._twitch_emotes && f._twitch_emotes[id];
+
+				tooltip = data && data.tooltip ? data.tooltip : token.altText;
+			}
+
+			return '<img class="emoticon tooltip" src="' + token.emoticonSrc + '" ' + (token.srcSet ? 'srcset="' + token.srcSet + '" ' : '') + 'alt="' + token.altText + '" title="' + tooltip + '">';
+		}
 
 		if ( token.isLink ) {
 			if ( ! render_links && render_links !== undefined )
@@ -4955,7 +5962,11 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 				return '<a href="mailto:' + s + '">' + s + '</a>';
 
 			var n = (s.match(/^https?:\/\//) ? "" : "http://") + s;
-			return '<a href="' + n + '" target="_blank">' + s + '</a>';
+
+			// Check for link data.
+			var data = f._link_data && f._link_data[n] || {};
+
+			return '<a href="' + n + '" class="' + (data.unsafe ? 'unsafe-link' : '') + '" title="' + utils.sanitize(data.tooltip || '') + '" target="_blank">' + s + '</a>';
 		}
 
 		if ( token.mentionedUser )
@@ -5070,7 +6081,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 		return tokens;
 
 	// Now that we have all the matching tokens, do crazy stuff.
-	if ( typeof tokens == "string" )
+	if ( typeof tokens === "string" )
 		tokens = [tokens];
 
 	// This is weird stuff I basically copied from the old Twitch code.
@@ -5082,6 +6093,8 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 		var eo = {
 			srcSet: emote.srcSet,
 			emoticonSrc: emote.urls[1] + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])),
+			ffzEmote: emote.id,
+			ffzEmoteSet: emote.set_id,
 			altText: (emote.hidden ? "???" : emote.name)
 			};
 
@@ -5111,6 +6124,58 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 	});
 
 	return tokens;
+}
+
+
+// ---------------------
+// Emoji Processing
+// ---------------------
+
+FFZ.prototype.tokenize_emoji = function(tokens) {
+	if ( typeof tokens === "string" )
+		tokens = [tokens];
+
+	if ( ! this.emoji_data )
+		return tokens;
+
+	var f = this;
+
+	return _.compact(_.flatten(_.map(tokens, function(token) {
+		if ( _.isObject(token) )
+			return token;
+
+		var tbits = token.split(constants.EMOJI_REGEX), bits = [];
+		while(tbits.length) {
+			// Deal with the unmatched string first.
+			var bit = tbits.shift();
+			bit && bits.push(bit);
+
+			if ( tbits.length ) {
+				// We have an emoji too, so let's handle that.
+				var match = tbits.shift(),
+					variant = tbits.shift();
+
+				if ( variant === '\uFE0E' ) {
+					// Text Variant
+					bits.push(match);
+
+				} else {
+					// Find the right image~!
+					var eid = utils.emoji_to_codepoint(match, variant),
+						data = f.emoji_data[eid],
+						alt = match + (variant || "");
+
+					if ( data ) {
+						data.token.altText = alt;
+						bits.push(data.token);
+					} else
+						bits.push(alt);
+				}
+			}
+		}
+
+		return bits;
+	})));
 }
 
 
@@ -5181,7 +6246,50 @@ FFZ.prototype.tokenize_mentions = function(tokens) {
 
 	return new_tokens;
 }
-},{"./utils":29}],19:[function(require,module,exports){
+
+
+// ---------------------
+// Handling Bad Stuff
+// ---------------------
+
+FFZ.prototype._deleted_link_click = function(e) {
+	if ( ! this.classList.contains("deleted-link") )
+		return true;
+
+	// Get the URL
+	var href = this.getAttribute('data-url'),
+		link = href,
+		f = FrankerFaceZ.get();
+
+	// Delete Old Stuff
+	this.classList.remove('deleted-link');
+	this.removeAttribute("data-url");
+	this.removeAttribute("title");
+	this.removeAttribute("original-title");
+
+	// Process URL
+	if ( href.indexOf("@") > -1 && (-1 === href.indexOf("/") || href.indexOf("@") < href.indexOf("/")) )
+		href = "mailto:" + href;
+	else if ( ! href.match(/^https?:\/\//) )
+		href = "http://" + href;
+
+	// Set up the Link
+	this.href = href;
+	this.target = "_new";
+	this.textContent = link;
+
+	// Now, check for a tooltip.
+	var link_data = f._link_data[link];
+	if ( link_data && typeof link_data != "boolean" ) {
+		this.title = link_data.tooltip;
+		if ( link_data.unsafe )
+			this.classList.add('unsafe-link');
+	}
+
+	// Stop from Navigating
+	e.preventDefault();
+}
+},{"./constants":3,"./utils":30}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -5356,10 +6464,415 @@ FFZ.prototype._load_dark_css = function() {
 
 	s.id = "ffz-dark-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + Date.now());
+	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 }
 },{"../constants":3}],21:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	utils = require('../utils'),
+
+	EMOTE_CHANNELS = {
+		sirstendec: true,
+		europeanspeedsterassembly: true,
+		esamarathon2: true
+	};
+
+
+// ---------------
+// Initialization
+// ---------------
+
+FFZ.prototype.setup_following = function() {
+	this.log("Initializing following support.");
+	this.follow_data = {};
+	this.follow_sets = {};
+}
+
+
+// ---------------
+// Settings
+// ---------------
+
+FFZ.settings_info.follow_buttons = {
+	type: "boolean",
+	value: true,
+
+	category: "Channel Metadata",
+	name: "Relevant Follow Buttons",
+	help: 'Display additional Follow buttons for channels relevant to the stream, such as people participating in co-operative gameplay.',
+	on_update: function(val) {
+			this.rebuild_following_ui();
+		}
+	};
+
+
+// ---------------
+// Command
+// ---------------
+
+FFZ.ffz_commands.following = function(room, args) {
+	args = args.join(" ").trim().split(/\s*,+\s*/);
+
+	if ( args.length && args[0] === '' )
+		args.shift();
+
+	if ( args.length && args[args.length-1] === '' )
+		args.pop();
+
+	var user = this.get_user(), f = this;
+	if ( ! user || (user.login !== room.id && user.login !== "sirstendec" && user.login !== "dansalvato")  )
+		return "You must be logged in as the broadcaster to use this command.";
+
+	if ( ! this.ws_send("update_follow_buttons", [room.id, args], function(success, data) {
+		if ( ! success ) {
+			f.room_message(room, "There was an error updating the following buttons.");
+			return;
+		}
+
+		if ( data )
+			f.room_message(room, "The following buttons have been updated.");
+		else
+			f.room_message(room, "The following buttons have been disabled.");
+	}) )
+		return "There was an error communicating with the server.";
+}
+
+
+// ---------------
+// Socket Handler
+// ---------------
+
+FFZ.ws_on_close.push(function() {
+	var controller = window.App && App.__container__.lookup('controller:channel'),
+		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
+		need_update = false;
+
+	this.follow_sets = {};
+
+	if ( ! controller )
+		return;
+
+	for(var channel_id in this.follow_data) {
+		delete this.follow_data[channel_id];
+		if ( channel_id === current_id || channel_id === current_host )
+			need_update = true;
+
+		if ( this.rooms && this.rooms[channel_id] && this.rooms[channel_id].extra_sets ) {
+			var sets = this.rooms[channel_id].extra_sets;
+			delete this.rooms[channel_id].extra_sets;
+
+			for(var i=0; i < sets.length; i++) {
+				var set = this.emote_sets[sets[i]];
+				if ( set ) {
+					set.users.removeObject(channel_id);
+					if ( ! this.global_sets.contains(sets[i]) && ! set.users.length )
+						this.unload_set(sets[i]);
+				}
+			}
+		}
+	}
+
+	if ( need_update )
+		this.rebuild_following_ui();
+});
+
+
+FFZ.ws_commands.follow_buttons = function(data) {
+	var controller = window.App && App.__container__.lookup('controller:channel'),
+		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
+		need_update = false;
+
+	this.follow_data = this.follow_data || {};
+
+	for(var channel_id in data) {
+		this.follow_data[channel_id] = data[channel_id];
+		if ( channel_id === current_id || channel_id === current_host )
+			need_update = true;
+	}
+
+	if ( need_update )
+		this.rebuild_following_ui();
+}
+
+
+FFZ.ws_commands.follow_sets = function(data) {
+	var controller = App.__container__.lookup('controller:channel'),
+		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
+		need_update = false;
+
+	this.follow_sets = this.follow_sets || {};
+
+	for(var room_id in data) {
+		if ( ! this.rooms || ! this.rooms.hasOwnProperty(room_id) ) {
+			this.follow_sets[room_id] = data[room_id];
+			continue;
+		}
+
+		var old_sets = this.rooms[room_id].extra_sets || [],
+			new_sets = this.rooms[room_id].extra_sets = data[room_id];
+
+		// Unload sets we aren't using anymore.
+		for(var i=0; i < old_sets.length; i++) {
+			var sid = old_sets[i];
+			if ( new_sets.indexOf(sid) !== -1 )
+				continue;
+
+			var set = this.emote_sets && this.emote_sets[sid];
+			if ( set ) {
+				set.users.removeObject(room_id);
+				if ( ! this.global_sets.contains(sid) && ! set.users.length )
+					this.unload_set(sid);
+			}
+		}
+
+		// And load the new sets.
+		for(var i=0; i < new_sets.length; i++) {
+			var sid = new_sets[i],
+				set = this.emote_sets && this.emote_sets[sid];
+
+			if ( set ) {
+				if ( set.users.indexOf(room_id) === -1 )
+					set.users.push(room_id);
+				continue;
+			}
+
+			this.load_set(sid, function(success, data) {
+				if ( success )
+					data.users.push(room_id);
+			});
+		}
+	}
+}
+
+
+// ---------------
+// Following UI
+// ---------------
+
+FFZ.prototype.rebuild_following_ui = function() {
+	var controller = App.__container__.lookup('controller:channel'),
+		channel_id = controller && controller.get('id'),
+		hosted_id = controller && controller.get('hostModeTarget.id');
+
+	if ( ! this._cindex )
+		return;
+
+	if ( channel_id ) {
+		var data = this.follow_data && this.follow_data[channel_id],
+
+			el = this._cindex.get('element'),
+			container = el && el.querySelector('.stats-and-actions .channel-actions'),
+			cont = container && container.querySelector('#ffz-ui-following');
+
+		if ( ! container || ! this.settings.follow_buttons || ! data || ! data.length ) {
+			if ( cont )
+				cont.parentElement.removeChild(cont);
+
+		} else {
+			if ( ! cont ) {
+				cont = document.createElement('span');
+				cont.id = 'ffz-ui-following';
+
+				var before = container.querySelector(':scope > span');
+				if ( before )
+					container.insertBefore(cont, before);
+				else
+					container.appendChild(cont);
+			} else
+				cont.innerHTML = '';
+
+			for(var i=0; i < data.length; i++) {
+				this._build_following_button(cont, data[i]);
+			}
+		}
+	}
+
+
+	if ( hosted_id ) {
+		var data = this.follow_data && this.follow_data[hosted_id],
+
+			el = this._cindex.get('element'),
+			container = el && el.querySelector('#hostmode .channel-actions'),
+			cont = container && container.querySelector('#ffz-ui-following');
+
+		if ( ! container || ! this.settings.follow_buttons || ! data || ! data.length ) {
+			if ( cont )
+				cont.parentElement.removeChild(cont);
+
+		} else {
+			if ( ! cont ) {
+				cont = document.createElement('span');
+				cont.id = 'ffz-ui-following';
+
+				var before = container.querySelector(':scope > span');
+				if ( before )
+					container.insertBefore(cont, before);
+				else
+					container.appendChild(cont);
+			} else
+				cont.innerHTML = '';
+
+			for(var i=0; i < data.length; i++) {
+				this._build_following_button(cont, data[i]);
+			}
+		}
+	}
+}
+
+
+// ---------------
+// UI Construction
+// ---------------
+
+FFZ.prototype._build_following_button = function(container, channel_id) {
+	var btn = document.createElement('a'), f = this,
+		btn_c = document.createElement('div'),
+		noti = document.createElement('a'),
+		noti_c = document.createElement('div'),
+
+		display_name,
+		following = false,
+		notifications = false,
+
+		update = function() {
+			btn_c.classList.toggle('is-following', following);
+			btn.title = (following ? "Unf" : "F") + "ollow " + display_name;
+			btn.innerHTML = (following ? "" : "Follow ") + display_name;
+			noti_c.classList.toggle('hidden', !following);
+		},
+
+		check_following = function() {
+			var user = f.get_user();
+			if ( ! user || ! user.login ) {
+				following = false;
+				notification = false;
+				btn_c.classList.add('is-initialized');
+				return update();
+			}
+
+			Twitch.api.get("users/" + user.login + "/follows/channels/" + channel_id)
+				.done(function(data) {
+					following = true;
+					notifications = data.notifications;
+					btn_c.classList.add('is-initialized');
+					update();
+				}).fail(function(data) {
+					following = false;
+					notifications = false;
+					btn_c.classList.add('is-initialized');
+					update();
+				});
+		},
+
+		do_follow = function(notice) {
+			if ( notice !== false )
+				notice = true;
+
+			var user = f.get_user();
+			if ( ! user || ! user.login )
+				return null;
+
+			notifications = notice;
+			return Twitch.api.put("users/:login/follows/channels/" + channel_id, {notifications: notifications})
+				.fail(check_following);
+		},
+
+		on_name = function(cap_name) {
+			display_name = cap_name || channel_id;
+			update();
+		};
+
+	btn_c.className = 'ember-follow follow-button';
+	btn_c.appendChild(btn);
+
+	// The drop-down button!
+	noti.className = 'toggle-notification-menu js-toggle-notification-menu';
+	noti.href = '#';
+
+	noti_c.className = 'notification-controls v2 hidden';
+	noti_c.appendChild(noti);
+
+	// Event Listeners!
+	btn.addEventListener('click', function() {
+		var user = f.get_user();
+		if ( ! user || ! user.login )
+			// Show the login dialog~!
+			return Ember.$.login({mpSourceAction: "follow-button", follow: channel_id});
+
+		// Immediate update for nice UI.
+		following = ! following;
+		update();
+
+		// Report it!
+		f.ws_send("track_follow", [channel_id, following]);
+
+		// Do it, and make sure it happened.
+		if ( following )
+			do_follow()
+		else
+			Twitch.api.del("users/:login/follows/channels/" + channel_id)
+				.done(check_following);
+
+		return false;
+	});
+
+	noti.addEventListener('click', function() {
+		var sw = f._build_following_popup(noti_c, channel_id, notifications);
+		if ( sw )
+			sw.addEventListener('click', function() {
+				var notice = ! notifications;
+				sw.classList.toggle('active', notice);
+				do_follow(notice);
+				return false;
+			});
+		return false;
+	});
+
+
+	display_name = FFZ.get_capitalization(channel_id, on_name);
+	update();
+	check_following();
+
+	container.appendChild(btn_c);
+	container.appendChild(noti_c);
+}
+
+
+FFZ.prototype._build_following_popup = function(container, channel_id, notifications) {
+	var popup = this._popup, out = '',
+		pos = container.offsetLeft + container.offsetWidth;
+
+
+	if ( popup ) {
+		popup.parentElement.removeChild(popup);
+		delete this._popup;
+		this._popup_kill && this._popup_kill();
+		delete this._popup_kill;
+
+		if ( popup.id == "ffz-following-popup" && popup.getAttribute('data-channel') === channel_id )
+			return null;
+	}
+
+	popup = this._popup = document.createElement('div');
+	popup.id = 'ffz-following-popup';
+	popup.setAttribute('data-channel', channel_id);
+
+	popup.className = (pos >= 300 ? 'right' : 'left') + ' dropmenu notify-menu js-notify';
+
+	out  = '<div class="header">You are following ' + FFZ.get_capitalization(channel_id) + '</div>';
+	out += '<p class="clearfix">';
+	out += '<a class="switch' + (notifications ? ' active' : '') + '"><span></span></a>';
+	out += '<span class="switch-label">Notify me when the broadcaster goes live</span>';
+	out += '</p>';
+
+	popup.innerHTML = out;
+	container.appendChild(popup);
+	return popup.querySelector('a.switch');
+}
+},{"../utils":30}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -5390,6 +6903,135 @@ FFZ.prototype.setup_menu = function() {
 	});
 
 	document.body.classList.toggle("ffz-menu-replace", this.settings.replace_twitch_menu);
+
+	// Add FFZ to the chat settings menu.
+
+	this.log("Hooking the Ember Chat Settings view.");
+
+	var Settings = App.__container__.resolve('view:settings');
+
+	if ( ! Settings )
+		return;
+
+	Settings.reopen({
+		didInsertElement: function() {
+			this._super();
+
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("ChatSettings didInsertElement: " + err);
+			}
+		},
+
+		willClearRender: function() {
+			try {
+				this.ffzTeardown();
+			} catch(err) {
+				f.error("ChatSettings willClearRender: " + err);
+			}
+			this._super();
+		},
+
+		ffzInit: function() {
+			var view = this,
+				el = this.get('element'),
+				menu = el && el.querySelector('.dropmenu');
+
+			if ( ! menu )
+				return;
+
+			var header = document.createElement('div'),
+				content = document.createElement('div'),
+				p, cb, a;
+
+			header.className = 'list-header';
+			header.innerHTML = 'FrankerFaceZ';
+
+			content.className = 'chat-menu-content';
+
+			// Dark Twitch
+			p = document.createElement('p');
+			p.className = 'no-bttv';
+			cb = document.createElement('input');
+			cb.type = "checkbox";
+			cb.className = "ember-checkbox ffz-setting-dark-twitch";
+			cb.checked = f.settings.dark_twitch;
+			p.appendChild(cb);
+			p.appendChild(document.createTextNode("Dark Twitch"));
+			content.appendChild(p);
+
+			cb.addEventListener("change", function(e) {
+				f.settings.set("dark_twitch", this.checked);
+			});
+
+
+			// Minimal Chat
+			/*
+			p = document.createElement('p');
+			//p.className = 'no-bttv';
+			cb = document.createElement('input');
+			cb.type = "checkbox";
+			cb.className = "ember-checkbox ffz-setting-minimal-twitch";
+			cb.checked = f.settings.minimal_chat;
+			p.appendChild(cb);
+			p.appendChild(document.createTextNode("Minimalistic Chat"));
+			content.appendChild(p);
+
+			cb.addEventListener("change", function(e) {
+				f.settings.set("minimal_chat", this.checked);
+				if ( this.checked )
+					view.set('controller.model.hidden', true);
+			});*/
+
+
+			// More Settings
+			p = document.createElement('p');
+			a = document.createElement('a');
+			a.href = '#';
+			a.innerHTML = 'More Settings';
+			p.appendChild(a);
+			content.appendChild(p);
+
+			a.addEventListener('click', function(e) {
+				view.set('controller.model.hidden', true);
+				f._last_page = 'settings';
+				f.build_ui_popup(f._chatv);
+				e.stopPropagation();
+				return false;
+			});
+
+			menu.appendChild(header);
+			menu.appendChild(content);
+		},
+
+		ffzTeardown: function() {
+			// Nothing~!
+		}
+	});
+
+	// For some reason, this doesn't work unless we create an instance of the
+	// chat settings view and then destroy it immediately.
+	try {
+		Settings.create().destroy();
+	} catch(err) { }
+
+	// Modify all existing Chat Settings views.
+	for(var key in Ember.View.views) {
+		if ( ! Ember.View.views.hasOwnProperty(key) )
+			continue;
+
+		var view = Ember.View.views[key];
+		if ( !(view instanceof Settings) )
+			continue;
+
+		this.log("Manually updating existing Chat Settings view.", view);
+		try {
+			view.ffzInit();
+		} catch(err) {
+			this.error("setup: ChatSettings ffzInit: " + err);
+		}
+	}
 }
 
 
@@ -5538,6 +7180,7 @@ FFZ.menu_pages.channel = {
 					has_product = true;
 					var tickets = App.__container__.resolve('model:ticket').find('user', {channel: room_id}),
 						is_subscribed = tickets ? tickets.get('content') : false,
+						is_loaded = tickets ? tickets.get('isLoaded') : false,
 						icon = room.room.get("badgeSet.subscriber.image"),
 
 						grid = document.createElement("div"),
@@ -5547,6 +7190,25 @@ FFZ.menu_pages.channel = {
 					// Weird is_subscribed check. Might be more accurate?
 					is_subscribed = is_subscribed && is_subscribed.length > 0;
 
+					// See if we've loaded. If we haven't loaded the ticket yet
+					// then try loading it, and then re-render the menu.
+					if ( tickets && ! is_subscribed && ! is_loaded ) {
+						var f = this;
+						tickets.addObserver('isLoaded', function() {
+							setTimeout(function(){
+								if ( inner.getAttribute('data-page') !== 'channel' )
+									return;
+
+								inner.innerHTML = '';
+								FFZ.menu_pages.channel.render.bind(f)(view, inner);
+							},0);
+							
+						});
+
+						tickets.load();
+					}
+
+
 					grid.className = "emoticon-grid";
 					header.className = "heading";
 					if ( icon )
@@ -5555,7 +7217,7 @@ FFZ.menu_pages.channel = {
 					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
 					grid.appendChild(header);
 
-					for(var emotes=product.get("emoticons"), i=0; i < emotes.length; i++) {
+					for(var emotes=product.get("emoticons") || [], i=0; i < emotes.length; i++) {
 						var emote = emotes[i];
 						if ( emote.state !== "active" )
 							continue;
@@ -5584,7 +7246,7 @@ FFZ.menu_pages.channel = {
 					if ( c > 0 )
 						inner.appendChild(grid);
 
-					if ( ! is_subscribed ) {
+					if ( c > 0 && ! is_subscribed ) {
 						var sub_message = document.createElement("div"),
 							nonsub_message = document.createElement("div"),
 							unlock_text = document.createElement("span"),
@@ -5604,7 +7266,7 @@ FFZ.menu_pages.channel = {
 						nonsub_message.appendChild(sub_link);
 
 						inner.appendChild(sub_message);
-					} else {
+					} else if ( c > 0 ) {
 						var last_content = tickets.get("content");
 						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
 						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
@@ -5627,8 +7289,19 @@ FFZ.menu_pages.channel = {
 				}
 			}
 
+			// Do we have extra sets?
+			var extra_sets = room && room.extra_sets || [];
+
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+
+			for(var i=0; i < extra_sets.length; i++) {
+				// Look up the set name.
+				var set = this.emote_sets[extra_sets[i]],
+					name = set ? "Featured " + set.title : "Featured Channel";
+
+				this._emotes_for_sets(inner, view, [extra_sets[i]], name, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+			}
 
 			// Feature Friday!
 			this._feature_friday_ui(room_id, inner, view);
@@ -5750,7 +7423,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 	else
 		room.set('messageToSend', text);
 }
-},{"../constants":3,"../utils":29}],22:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -5797,7 +7470,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],23:[function(require,module,exports){
+},{"../constants":3}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	utils = require("../utils"),
@@ -5855,11 +7528,11 @@ FFZ.prototype.setup_my_emotes = function() {
 	}
 
 	this._twitch_set_to_channel[0] = "global";
-	this._twitch_set_to_channel[33] = "tfaces";
-	this._twitch_set_to_channel[42] = "tfaces";
+	this._twitch_set_to_channel[33] = "turbo_faces";
+	this._twitch_set_to_channel[42] = "turbo_faces";
 
 	this._twitch_badges["global"] = "//cdn.frankerfacez.com/script/twitch_logo.png";
-	this._twitch_badges["tfaces"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
+	this._twitch_badges["turbo_faces"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
 }
 
 
@@ -5906,7 +7579,7 @@ FFZ.menu_pages.my_emotes = {
 				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, ts);
 			};
 
-		this.ws_send("twitch_sets", needed_sets, function(success, data) {
+		if ( ! this.ws_send("twitch_sets", needed_sets, function(success, data) {
 			if ( ! needed_sets.length )
 				return;
 
@@ -5923,9 +7596,10 @@ FFZ.menu_pages.my_emotes = {
 				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, twitch_sets);
 			} else
 				fail();
-		});
-
-		setTimeout(fail, 2000);
+		}) )
+			fail()
+		else
+			setTimeout(fail, 2000);
 	},
 
 	draw_twitch_set: function(view, set_id, set) {
@@ -5936,7 +7610,7 @@ FFZ.menu_pages.my_emotes = {
 
 		if ( channel_id === "global" )
 			title = "Global Emoticons";
-		else if ( channel_id === "turbo" )
+		else if ( channel_id === "turbo" || channel_id === "turbo_faces" )
 			title = "Twitch Turbo";
 		else
 			title = FFZ.get_capitalization(channel_id, function(name) {
@@ -6085,12 +7759,12 @@ FFZ.menu_pages.my_emotes = {
 			// Finally, sort and add them all.
 			sets.sort(function(a,b) {
 				var an = a[0], bn = b[0];
-				if ( an === "turbo" || an === "tfaces" )
+				if ( an === "turbo" || an === "turbo_faces" )
 					an = "zza|" + an;
 				else if ( an === "global" || an === "global emoticons" )
 					an = "zzz|" + an;
 
-				if ( bn === "turbo" || bn === "tfaces" )
+				if ( bn === "turbo" || bn === "turbo_faces" )
 					bn = "zza|" + bn;
 				else if ( bn === "global" || bn === "global emoticons" )
 					bn = "zzz|" + bn;
@@ -6124,7 +7798,7 @@ FFZ.menu_pages.my_emotes = {
 		}
 	}
 };
-},{"../constants":3,"../utils":29}],24:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -6151,7 +7825,7 @@ FFZ.settings_info.highlight_notifications = {
 	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
-	help: "Display notifications when a highlighted word appears in chat in an unfocused tab.",
+	help: "Display notifications when a highlighted word appears in chat in an unfocused tab. This is automatically disabled on the dashboard.",
 
 	on_update: function(val, direct) {
 			// Check to see if we have notification permission. If this is
@@ -6274,7 +7948,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -6313,6 +7987,7 @@ FFZ.settings_info.srl_races = {
 FFZ.ws_on_close.push(function() {
 	var controller = window.App && App.__container__.lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
 
 	if ( ! controller )
@@ -6320,7 +7995,7 @@ FFZ.ws_on_close.push(function() {
 
 	for(var chan in this.srl_races) {
 		delete this.srl_races[chan];
-		if ( chan == current_id )
+		if ( chan === current_id || chan === current_host )
 			need_update = true;
 	}
 
@@ -6328,18 +8003,22 @@ FFZ.ws_on_close.push(function() {
 		this.rebuild_race_ui();
 });
 
+
 FFZ.ws_commands.srl_race = function(data) {
 	var controller = App.__container__.lookup('controller:channel'),
-		current_id = controller.get('id'),
+		current_id = controller && controller.get('id'),
+		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
+
+	this.srl_races = this.srl_races || {};
 
 	for(var i=0; i < data[0].length; i++) {
 		var channel_id = data[0][i];
 		this.srl_races[channel_id] = data[1];
-		if ( channel_id == current_id )
+		if ( channel_id === current_id || channel_id === current_host )
 			need_update = true;
 	}
-	
+
 	if ( data[1] ) {
 		var race = data[1],
 			tte = race.twitch_entrants = {};
@@ -6363,41 +8042,75 @@ FFZ.ws_commands.srl_race = function(data) {
 
 FFZ.prototype.rebuild_race_ui = function() {
 	var controller = App.__container__.lookup('controller:channel'),
-		channel_id = controller.get('id'),
-		race = this.srl_races[channel_id],
-		enable_ui = this.settings.srl_races,
+		channel_id = controller && controller.get('id'),
+		hosted_id = controller && controller.get('hostModeTarget.id');
 
-		actions = document.querySelector('.stats-and-actions .channel-actions'),
-		race_container = actions.querySelector('#ffz-ui-race');
-
-	if ( ! race || ! enable_ui ) {
-		if ( race_container )
-			race_container.parentElement.removeChild(race_container);
-		if ( this._popup && this._popup.id == "ffz-race-popup" ) {
-			delete this._popup;
-			this._popup_kill && this._popup_kill();
-			delete this._popup_kill;
-		}
+	if ( ! this._cindex )
 		return;
+
+	if ( channel_id ) {
+		var race = this.srl_races && this.srl_races[channel_id],
+
+			el = this._cindex.get('element'),
+			container = el && el.querySelector('.stats-and-actions .channel-actions'),
+			race_container = container && container.querySelector('#ffz-ui-race');
+
+		if ( ! container || ! this.settings.srl_races || ! race ) {
+			if ( race_container )
+				race_container.parentElement.removeChild(race_container);
+
+		} else {
+			if ( ! race_container ) {
+				race_container = document.createElement('span');
+				race_container.id = 'ffz-ui-race';
+				race_container.setAttribute('data-channel', channel_id);
+
+				var btn = document.createElement('span');
+				btn.className = 'button drop action';
+				btn.title = "SpeedRunsLive Race";
+				btn.innerHTML = '<span class="logo"></span>';
+
+				btn.addEventListener('click', this._build_race_popup.bind(this, race_container, channel_id));
+
+				race_container.appendChild(btn);
+				container.appendChild(race_container);
+			}
+
+			this._update_race(race_container, true);
+		}
 	}
 
-	if ( race_container )
-		return this._update_race(true);
+	if ( hosted_id ) {
+		var race = this.srl_races && this.srl_races[hosted_id],
 
-	race_container = document.createElement('span');
-	race_container.setAttribute('data-channel', channel_id);
-	race_container.id = 'ffz-ui-race';
+			el = this._cindex.get('element'),
+			container = el && el.querySelector('#hostmode .channel-actions'),
+			race_container = container && container.querySelector('#ffz-ui-race');
 
-	var btn = document.createElement('span');
-	btn.className = 'button drop action';
-	btn.title = "SpeedRunsLive Race";
-	btn.innerHTML = '<span class="logo"><span>';
+		if ( ! container || ! this.settings.srl_races || ! race ) {
+			if ( race_container )
+				race_container.parentElement.removeChild(race_container);
 
-	btn.addEventListener('click', this.build_race_popup.bind(this));
+		} else {
+			if ( ! race_container ) {
+				race_container = document.createElement('span');
+				race_container.id = 'ffz-ui-race';
+				race_container.setAttribute('data-channel', hosted_id);
 
-	race_container.appendChild(btn);
-	actions.appendChild(race_container);
-	this._update_race(true);
+				var btn = document.createElement('span');
+				btn.className = 'button drop action';
+				btn.title = "SpeedRunsLive Race";
+				btn.innerHTML = '<span class="logo"></span>';
+
+				btn.addEventListener('click', this._build_race_popup.bind(this, race_container, hosted_id));
+
+				race_container.appendChild(btn);
+				container.appendChild(race_container);
+			}
+
+			this._update_race(race_container, true);
+		}
+	}
 }
 
 
@@ -6416,7 +8129,7 @@ FFZ.prototype._race_kill = function() {
 }
 
 
-FFZ.prototype.build_race_popup = function() {
+FFZ.prototype._build_race_popup = function(container, channel_id) {
 	var popup = this._popup;
 	if ( popup ) {
 		popup.parentElement.removeChild(popup);
@@ -6424,27 +8137,25 @@ FFZ.prototype.build_race_popup = function() {
 		this._popup_kill && this._popup_kill();
 		delete this._popup_kill;
 
-		if ( popup.id == "ffz-race-popup" )
+		if ( popup.id === "ffz-race-popup" && popup.getAttribute('data-channel') === channel_id )
 			return;
 	}
 
-	var container = document.querySelector('#ffz-ui-race');
 	if ( ! container )
 		return;
 
 	var el = container.querySelector('.button'),
 		pos = el.offsetLeft + el.offsetWidth,
-
-		channel_id = container.getAttribute('data-channel'),
 		race = this.srl_races[channel_id];
 
 	var popup = document.createElement('div'), out = '';
 	popup.id = 'ffz-race-popup';
+	popup.setAttribute('data-channel', channel_id);
 	popup.className = (pos >= 300 ? 'right' : 'left') + ' share dropmenu';
-	
+
 	this._popup_kill = this._race_kill.bind(this);
 	this._popup = popup;
-	
+
 	var link = 'http://kadgar.net/live',
 		has_entrant = false;
 	for(var ent in race.entrants) {
@@ -6476,17 +8187,16 @@ FFZ.prototype.build_race_popup = function() {
 	popup.innerHTML = out;
 	container.appendChild(popup);
 
-	this._update_race(true);
+	this._update_race(container, true);
 }
 
 
-FFZ.prototype._update_race = function(not_timer) {
+FFZ.prototype._update_race = function(container, not_timer) {
 	if ( this._race_timer && not_timer ) {
 		clearTimeout(this._race_timer);
 		delete this._race_timer;
 	}
 
-	var container = document.querySelector('#ffz-ui-race');
 	if ( ! container )
 		return;
 
@@ -6496,10 +8206,12 @@ FFZ.prototype._update_race = function(not_timer) {
 	if ( ! race ) {
 		// No race. Abort.
 		container.parentElement.removeChild(container);
-		this._popup_kill && this._popup_kill();
-		if ( this._popup ) {
-			delete this._popup;
-			delete this._popup_kill;
+		if ( this._popup && this._popup.id === 'ffz-race-popup' && this._popup.getAttribute('data-channel') === channel_id ) {
+			this._popup_kill && this._popup_kill();
+			if ( this._popup ) {
+				delete this._popup;
+				delete this._popup_kill;
+			}
 		}
 		return;
 	}
@@ -6578,11 +8290,11 @@ FFZ.prototype._update_race = function(not_timer) {
 			timer.innerHTML = "Done";
 		else {
 			timer.innerHTML = utils.time_to_string(elapsed);
-			this._race_timer = setTimeout(this._update_race.bind(this), 1000);
+			this._race_timer = setTimeout(this._update_race.bind(this, container), 1000);
 		}
 	}
 }
-},{"../utils":29}],26:[function(require,module,exports){
+},{"../utils":30}],27:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -6593,7 +8305,7 @@ FFZ.prototype.setup_css = function() {
 
 	s.id = "ffz-ui-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + Date.now());
+	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 
 	jQuery.noty.themes.ffzTheme = {
@@ -6607,7 +8319,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],27:[function(require,module,exports){
+},{"../constants":3}],28:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -6623,6 +8335,9 @@ FFZ.prototype._update_subscribers = function() {
 		delete this._update_subscribers_timer;
 	}
 
+	// Schedule an update.
+	this._update_subscribers_timer = setTimeout(this._update_subscribers.bind(this), 60000);
+
 	var user = this.get_user(), f = this,
 		match = this.is_dashboard ? location.pathname.match(/\/([^\/]+)/) : undefined,
 		id = this.is_dashboard && match && match[1];
@@ -6633,9 +8348,6 @@ FFZ.prototype._update_subscribers = function() {
 			el.parentElement.removeChild(el);
 		return;
 	}
-
-	// Schedule an update.
-	this._update_subscribers_timer = setTimeout(this._update_subscribers.bind(this), 60000);
 
 	// Spend a moment wishing we could just hit the subscribers API from the
 	// context of the web user.
@@ -6697,7 +8409,7 @@ FFZ.prototype._update_subscribers = function() {
 				jQuery(stat).tipsy(f.is_dashboard ? {"gravity":"s"} : undefined);
 			}
 
-			el.innerHTML = utils.number_commas(parseInt(sub_count));
+			el.innerHTML = sub_count;
 
 		} catch(err) {
 			f.error("_update_subscribers: " + err);
@@ -6710,7 +8422,7 @@ FFZ.prototype._update_subscribers = function() {
 	});;
 }
 
-},{"../constants":3,"../utils":29}],28:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],29:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -6720,7 +8432,7 @@ var FFZ = window.FrankerFaceZ,
 // FFZ Viewers
 // ------------
 
-FFZ.ws_commands.viewers = function(data) {
+FFZ.ws_commands.chatters = function(data) {
 	var channel = data[0], count = data[1];
 
 	var controller = window.App && App.__container__.lookup('controller:channel'),
@@ -6737,12 +8449,33 @@ FFZ.ws_commands.viewers = function(data) {
 		return;
 	}
 
+	this._dash_chatters = count;
+}
+
+FFZ.ws_commands.viewers = function(data) {
+	var channel = data[0], count = data[1];
+
+	var controller = window.App && App.__container__.lookup('controller:channel'),
+		match = this.is_dashboard ? location.pathname.match(/\/([^\/]+)/) : undefined,
+		id = this.is_dashboard ? match && match[1] : controller && controller.get && controller.get('id');
+
+	if ( ! this.is_dashboard ) {
+		var room = this.rooms && this.rooms[channel];
+		if ( room ) {
+			room.ffz_viewers = count;
+			if ( this._cindex )
+				this._cindex.ffzUpdateChatters();
+		}
+		return;
+	}
+
+	this._dash_viewers = count;
 
 	if ( ! this.settings.chatter_count || id !== channel )
 		return;
 
 	var view_count = document.querySelector('#ffz-ffzchatter-display'),
-		content = constants.ZREKNARF + ' ' + utils.number_commas(count);
+		content = constants.ZREKNARF + ' ' + utils.number_commas(count) + (typeof this._dash_chatters === "number" ? ' (' + utils.number_commas(this._dash_chatters) + ')' : "");
 
 	if ( view_count )
 		view_count.innerHTML = content;
@@ -6754,14 +8487,14 @@ FFZ.ws_commands.viewers = function(data) {
 		view_count = document.createElement('span');
 		view_count.id = "ffz-ffzchatter-display";
 		view_count.className = 'ffz stat';
-		view_count.title = 'Chatters with FrankerFaceZ';
+		view_count.title = 'Viewers (In Chat) with FrankerFaceZ';
 		view_count.innerHTML = content;
 
 		parent.appendChild(view_count);
 		jQuery(view_count).tipsy(this.is_dashboard ? {"gravity":"s"} : undefined);
 	}
 }
-},{"../constants":3,"../utils":29}],29:[function(require,module,exports){
+},{"../constants":3,"../utils":30}],30:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -6833,6 +8566,128 @@ var sanitize_cache = {},
 		}
 
 		return new Date(unix);
+	},
+
+
+	// IRC Messages
+	splitIRCMessage = function(msgString) {
+		msgString = $.trim(msgString);
+		var split = {raw: msgString};
+
+		var tagsEnd = -1;
+		if ( msgString.charAt(0) === '@' ) {
+			tagsEnd = msgString.indexOf(' ');
+			split.tags = msgString.substr(1, tagsEnd - 1);
+		}
+
+		var prefixStart = tagsEnd + 1,
+			prefixEnd = -1;
+
+		if ( msgString.charAt(prefixStart) === ':' ) {
+			prefixEnd = msgString.indexOf(' ', prefixStart);
+			split.prefix = msgString.substr(prefixStart + 1, prefixEnd - (prefixStart + 1));
+		}
+
+		var trailingStart = msgString.indexOf(' :', prefixStart);
+		if ( trailingStart >= 0 ) {
+			split.trailing = msgString.substr(trailingStart + 2);
+		} else {
+			trailingStart = msgString.length;
+		}
+
+		var commandAndParams = msgString.substr(prefixEnd + 1, trailingStart - prefixEnd - 1).split(' ');
+		split.command = commandAndParams[0];
+		if ( commandAndParams.length > 1 )
+			split.params = commandAndParams.slice(1);
+
+		return split;
+	},
+
+
+	ESCAPE_CHARS = {
+		':': ';',
+		s: ' ',
+		r: '\r',
+		n: '\n',
+		'\\': '\\'
+	},
+
+	unescapeTag = function(tag) {
+		var result = '';
+		for(var i=0; i < tag.length; i++) {
+			var c = tag.charAt(i);
+			if ( c === '\\' ) {
+				if ( i === tag.length - 1 )
+					throw 'Improperly escaped tag';
+
+				c = ESCAPE_CHARS[tag.charAt(i+1)];
+				if ( c === undefined )
+					throw 'Improperly escaped tag';
+
+				i++;
+			}
+			result += c;
+		}
+
+		return result;
+	},
+
+	parseTag = function(tag, value) {
+		switch(tag) {
+			case 'slow':
+				try {
+					return parseInt(value);
+				} catch(err) { return 0; }
+			case 'subs-only':
+			case 'r9k':
+			case 'subscriber':
+			case 'turbo':
+				return value === '1';
+			default:
+				try {
+					return unescapeTag(value);
+				} catch(err) { return ''; }
+		}
+	},
+
+	parseIRCTags = function(tagsString) {
+		var tags = {},
+			keyValues = tagsString.split(';');
+
+		for(var i=0; i < keyValues.length; ++i) {
+			var kv = keyValues[i].split('=');
+			if ( kv.length === 2 )
+				tags[kv[0]] = parseTag(kv[0], kv[1]);
+		}
+
+		return tags;
+	},
+
+
+	EMOJI_CODEPOINTS = {},
+	emoji_to_codepoint = function(icon, variant) {
+		if ( EMOJI_CODEPOINTS[icon] && EMOJI_CODEPOINTS[icon][variant] )
+			return EMOJI_CODEPOINTS[icon][variant];
+
+		var ico = variant === '\uFE0F' ? icon.slice(0, -1) : (icon.length === 3 && icon.charAt(1) === '\uFE0F' ? icon.charAt(0) + icon.charAt(2) : icon),
+			r = [], c = 0, p = 0, i = 0;
+
+		while ( i < ico.length ) {
+			c = ico.charCodeAt(i++);
+			if ( p ) {
+				r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
+				p = 0;
+			} else if ( 0xD800 <= c && c <= 0xDBFF) {
+				p = c;
+			} else {
+				r.push(c.toString(16));
+			}
+		}
+
+		var es = EMOJI_CODEPOINTS[icon] = EMOJI_CODEPOINTS[icon] || {},
+			out = es[variant] = r.join("-");
+
+		return out;
 	};
 
 
@@ -6856,6 +8711,12 @@ module.exports = {
 
 		element.innerHTML = all;
 	},
+
+
+	splitIRCMessage: splitIRCMessage,
+	parseIRCTags: parseIRCTags,
+
+	emoji_to_codepoint: emoji_to_codepoint,
 
 	get_luminance: get_luminance,
 	brighten: brighten,
@@ -6921,7 +8782,7 @@ module.exports = {
 		return 'less than a second';
 	},
 
-	time_to_string: function(elapsed, separate_days, days_only) {
+	time_to_string: function(elapsed, separate_days, days_only, no_hours) {
 		var seconds = elapsed % 60,
 			minutes = Math.floor(elapsed / 60),
 			hours = Math.floor(minutes / 60),
@@ -6938,7 +8799,7 @@ module.exports = {
 			days = ( days > 0 ) ? days + " days, " : "";
 		}
 
-		return days + (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+		return days + ((!no_hours || days || hours) ? ((hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 	}
 }
 },{"./constants":3}]},{},[14]);window.ffz = new FrankerFaceZ()}(window));

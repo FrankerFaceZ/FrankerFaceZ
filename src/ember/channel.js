@@ -8,6 +8,12 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 
 FFZ.prototype.setup_channel = function() {
+	// Style Stuff!
+	this.log("Creating channel style element.");
+	var s = this._channel_style = document.createElement("style");
+	s.id = "ffz-channel-css";
+	document.head.appendChild(s);
+
 	// Settings stuff!
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
 
@@ -72,13 +78,32 @@ FFZ.prototype.setup_channel = function() {
 		ffzHostTarget: function() {
 			var target = this.get('content.hostModeTarget'),
 				name = target && target.get('name'),
+				id = target && target.get('id'),
 				display_name = target && target.get('display_name');
+
+			if ( id !== f.__old_host_target ) {
+				if ( f.__old_host_target )
+					f.ws_send("unsub_channel", f.__old_host_target);
+
+				if ( id ) {
+					f.ws_send("sub_channel", id);
+					f.__old_host_target = id;
+				} else
+					delete f.__old_host_target;
+			}
 
 			if ( display_name )
 				FFZ.capitalization[name] = [display_name, Date.now()];
 
 			if ( f.settings.group_tabs && f._chatv )
 				f._chatv.ffzRebuildTabs();
+
+			if ( f.settings.follow_buttons )
+				f.rebuild_following_ui();
+
+			if ( f.settings.srl_races )
+				f.rebuild_race_ui();
+
 		}.observes("content.hostModeTarget")
 	});
 }
@@ -107,15 +132,28 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzInit: function() {
+			var id = this.get('controller.id'),
+				el = this.get('element');
+
 			f._cindex = this;
-			this.get('element').setAttribute('data-channel', this.get('controller.id'));
+			f.ws_send("sub_channel", id);
+
+			el.setAttribute('data-channel', id);
+			el.classList.add('ffz-channel');
+
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();
 
-			var el = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
-			if ( el )
-				el.parentNode.classList.add('twitch-channel-views');
+			var views = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
+			if ( views )
+				views.parentNode.classList.add('twitch-channel-views');
+
+			if ( f.settings.follow_buttons )
+				f.rebuild_following_ui();
+
+			if ( f.settings.srl_races )
+				f.rebuild_race_ui();
 		},
 
 		ffzFixTitle: function() {
@@ -129,7 +167,10 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			this.$(".title span").each(function(i, el) {
 				var scripts = el.querySelectorAll("script");
-				el.innerHTML = scripts[0].outerHTML + status + scripts[1].outerHTML;
+				if ( ! scripts.length )
+					el.innerHTML = status;
+				else
+					el.innerHTML = scripts[0].outerHTML + status + scripts[1].outerHTML;
 			});
 		},
 
@@ -148,7 +189,8 @@ FFZ.prototype._modify_cindex = function(view) {
 			}
 
 			var chatter_count = Object.keys(room.room.get('ffz_chatters') || {}).length,
-				ffz_chatters = room.ffz_chatters || 0;
+				ffz_chatters = room.ffz_chatters || 0,
+				ffz_viewers = room.ffz_viewers || 0;
 
 			var el = this.get('element').querySelector('#ffz-chatter-display span');
 			if ( ! el ) {
@@ -159,7 +201,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				var stat = document.createElement('span');
 				stat.className = 'ffz stat';
 				stat.id = 'ffz-chatter-display';
-				stat.title = "Current Chatters";
+				stat.title = "Currently in Chat";
 
 				stat.innerHTML = constants.ROOMS + " ";
 				el = document.createElement("span");
@@ -176,7 +218,7 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			el.innerHTML = utils.number_commas(chatter_count);
 
-			if ( ! ffz_chatters ) {
+			if ( ! ffz_chatters && ! ffz_viewers ) {
 				el = this.get('element').querySelector('#ffz-ffzchatter-display');
 				el && el.parentNode.removeChild(el);
 				return;
@@ -191,7 +233,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				var stat = document.createElement('span');
 				stat.className = 'ffz stat';
 				stat.id = 'ffz-ffzchatter-display';
-				stat.title = "Chatters with FrankerFaceZ";
+				stat.title = "Viewers (In Chat) with FrankerFaceZ";
 
 				stat.innerHTML = constants.ZREKNARF + " ";
 				el = document.createElement("span");
@@ -206,7 +248,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				jQuery(stat).tipsy();
 			}
 
-			el.innerHTML = utils.number_commas(ffz_chatters);
+			el.innerHTML = utils.number_commas(ffz_viewers) + " (" + utils.number_commas(ffz_chatters) + ")";
 		},
 
 
@@ -273,10 +315,16 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzTeardown: function() {
+			var id = this.get('controller.id');
+			if ( id )
+				f.ws_send("unsub_channel", id);
+
 			this.get('element').setAttribute('data-channel', '');
 			f._cindex = undefined;
 			if ( this._ffz_update_uptime )
 				clearTimeout(this._ffz_update_uptime);
+
+			utils.update_css(f._channel_style, id, null);
 		}
 	});
 }

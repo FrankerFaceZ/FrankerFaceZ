@@ -51,8 +51,10 @@ FFZ.prototype.ws_create = function() {
 		// Join the right channel if we're in the dashboard.
 		if ( f.is_dashboard ) {
 			var match = location.pathname.match(/\/([^\/]+)/);
-			if ( match )
+			if ( match ) {
 				f.ws_send("sub", match[1]);
+				f.ws_send("sub_channel", match[1]);
+			}
 		}
 
 		// Send the current rooms.
@@ -67,6 +69,18 @@ FFZ.prototype.ws_create = function() {
 				if ( ! f.has_bttv && f.settings.chat_history )
 					f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
 			}
+		}
+
+		// Send the channel(s).
+		if ( f._cindex ) {
+			var channel_id = f._cindex.get('controller.id'),
+				hosted_id = f._cindex.get('controller.hostModeTarget.id');
+
+			if ( channel_id )
+				f.ws_send("sub_channel", channel_id);
+
+			if ( hosted_id )
+				f.ws_send("sub_channel", hosted_id);
 		}
 
 		// Send any pending commands.

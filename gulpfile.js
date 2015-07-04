@@ -10,6 +10,12 @@ var fs = require('fs'),
 	rename = require('gulp-rename'),
 	uglify = require('gulp-uglify');
 
+// Templates
+var jsEscape = require('gulp-js-escape'),
+	wrap = require('gulp-wrap'),
+	declare = require('gulp-declare');
+
+
 // Server Dependencies
 var http = require("http"),
 	path = require("path"),
@@ -31,7 +37,26 @@ gulp.task('prepare', ['clean'], function() {
 		.pipe(gulp.dest('build/'));
 });
 
-gulp.task('scripts', ['prepare'], function() {
+
+gulp.task('templates', ['prepare'], function() {
+	gulp.src(['build/templates/**/*.hbs'])
+		.pipe(jsEscape())
+		.pipe(wrap('Handlebars.compile(<%= contents %>)'))
+		.pipe(declare({
+			root: 'exports',
+			noRedeclare: true,
+			processName: function(filePath) {
+				var match = filePath.match(/build[\\\/]templates[\\\/](.*)\.hbs$/);
+				return declare.processNameByPath((match && match.length > 1) ? match[1] : filePath);
+			}
+		}))
+		.pipe(concat('templates.js'))
+		.pipe(gulp.dest('build/'))
+		.on('error', util.log);
+});
+
+
+gulp.task('scripts', ['prepare', 'templates'], function() {
 	gulp.src(['build/main.js'])
 		.pipe(browserify())
 		.pipe(concat('script.js'))

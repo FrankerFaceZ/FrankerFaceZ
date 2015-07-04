@@ -8,7 +8,7 @@ FFZ.prototype.setup_css = function() {
 
 	s.id = "ffz-ui-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + Date.now());
+	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 
 	jQuery.noty.themes.ffzTheme = {
