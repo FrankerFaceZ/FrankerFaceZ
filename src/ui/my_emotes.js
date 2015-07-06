@@ -3,31 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-	BANNED_SETS = {"00000turbo":true},
-
-	KNOWN_CODES = {
-		"#-?[\\\\/]": "#-/",
-		":-?(?:7|L)": ":-7",
-		"\\&lt\\;\\]": "<]",
-		"\\:-?(S|s)": ":-S",
-		"\\:-?\\\\": ":-\\",
-		"\\:\\&gt\\;": ":>",
-		"B-?\\)": "B-)",
-		"\\:-?[z|Z|\\|]": ":-Z",
-		"\\:-?\\)": ":-)",
-		"\\:-?\\(": ":-(",
-		"\\:-?(p|P)": ":-P",
-		"\\;-?(p|P)": ";-P",
-		"\\&lt\\;3": "<3",
-		"\\:-?[\\\\/]": ":-/",
-		"\\;-?\\)": ";-)",
-		"R-?\\)": "R-)",
-		"[o|O](_|\\.)[o|O]": "O.o",
-		"\\:-?D": ":-D",
-		"\\:-?(o|O)": ":-O",
-		"\\&gt\\;\\(": ">(",
-		"Gr(a|e)yFace": "GrayFace"
-		};
+	BANNED_SETS = {"00000turbo":true};
 
 
 // -------------------
@@ -40,6 +16,15 @@ FFZ.settings_info.global_emotes_in_menu = {
 
 	name: "Display Global Emotes in My Emotes",
 	help: "Display the global Twitch emotes in the My Emoticons menu."
+	};
+
+
+FFZ.settings_info.emoji_in_menu = {
+	type: "boolean",
+	value: false,
+
+	name: "Display Emoji in My Emotes",
+	help: "Display the supported emoji images in the My Emoticons menu."
 	};
 
 
@@ -129,6 +114,52 @@ FFZ.menu_pages.my_emotes = {
 			setTimeout(fail, 2000);
 	},
 
+	draw_emoji: function(view) {
+		var heading = document.createElement('div'),
+			menu = document.createElement('div');
+
+		heading.className = 'heading';
+		heading.innerHTML = '<span class="right">FrankerFaceZ</span>Emoji';
+
+		menu.className = 'emoticon-grid';
+		menu.appendChild(heading);
+		
+		var set = [];
+		for(var eid in this.emoji_data)
+			set.push(this.emoji_data[eid]);
+		
+		set.sort(function(a,b) {
+			var an = a.short_name.toLowerCase(),
+				bn = b.short_name.toLowerCase();
+
+			if ( an < bn ) return -1;
+			else if ( an > bn ) return 1;
+			if ( a.raw < b.raw ) return -1;
+			if ( a.raw > b.raw ) return 1;
+			return 0;
+		});
+		
+		for(var i=0; i < set.length; i++) {
+			var emoji = set[i],
+				em = document.createElement('span'),
+				img_set = 'image-set(url("' + emoji.src + '") 1x, url("' + constants.SERVER + 'emoji/' + emoji.code + '-2x.png") 2x, url("' + constants.SERVER + 'emoji/' + emoji.code + '-4x.png") 4x)';
+
+			em.className = 'emoticon tooltip';
+			em.title = 'Emoji: ' + emoji.raw + '\nName: :' + emoji.short_name + ':';
+			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
+			
+			em.style.backgroundImage = 'url("' + emoji.src + '")';
+			em.style.backgroundImage = '-webkit-' + img_set;
+			em.style.backgroundImage = '-moz-' + img_set;
+			em.style.backgroundImage = '-ms-' + img_set;
+			em.style.backgroudnImage = img_set;
+			
+			menu.appendChild(em);
+		}
+
+		return menu;
+	},
+
 	draw_twitch_set: function(view, set_id, set) {
 		var heading = document.createElement('div'),
 			menu = document.createElement('div'),
@@ -164,19 +195,35 @@ FFZ.menu_pages.my_emotes = {
 		menu.className = 'emoticon-grid';
 		menu.appendChild(heading);
 
+		set.sort(function(a,b) {
+			var an = a.code.toLowerCase(),
+				bn = b.code.toLowerCase();
+
+			if ( an < bn ) return -1;
+			else if ( an > bn ) return 1;
+			if ( a.id < b.id ) return -1;
+			if ( a.id > b.id ) return 1;
+			return 0;
+		});
+
 		for(var i=0; i < set.length; i++) {
 			var emote = set[i],
-				code = KNOWN_CODES[emote.code] || emote.code,
+				code = constants.KNOWN_CODES[emote.code] || emote.code,
 
 				em = document.createElement('span'),
 				img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
 
 			em.className = 'emoticon tooltip';
-			em.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
-			em.style.backgroundImage = '-webkit-' + img_set;
-			em.style.backgroundImage = '-moz-' + img_set;
-			em.style.backgroundImage = '-ms-' + img_set;
-			em.style.backgroudnImage = img_set;
+
+			if ( this.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[emote.id] ) {
+				em.style.backgroundImage = 'url("' + constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote.id] + '")';
+			} else {
+				em.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+				em.style.backgroundImage = '-webkit-' + img_set;
+				em.style.backgroundImage = '-moz-' + img_set;
+				em.style.backgroundImage = '-ms-' + img_set;
+				em.style.backgroudnImage = img_set;
+			}
 
 			em.title = code;
 			em.addEventListener("click", this._add_emote.bind(this, view, code));
@@ -270,6 +317,9 @@ FFZ.menu_pages.my_emotes = {
 				sets.push([this._twitch_set_to_channel[set_id], FFZ.menu_pages.my_emotes.draw_twitch_set.bind(this)(view, set_id, set)]);
 			}
 
+			// Emoji~!
+			if ( this.settings.emoji_in_menu )
+				sets.push(["emoji", FFZ.menu_pages.my_emotes.draw_emoji.bind(this)(view)]);
 
 			// Now, FFZ!
 			for(var i=0; i < ffz_sets.length; i++) {

@@ -18,11 +18,31 @@ FFZ.settings_info.show_badges = {
 	};
 
 
+FFZ.settings_info.transparent_badges = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat",
+	no_bttv: true,
+	
+	name: "Transparent Badges",
+	help: "Make chat badges transparent for a nice, clean look. On light chat, non-subscriber badges are inverted to remain visible.",
+	
+	on_update: function(val) {
+			if ( ! this.has_bttv )
+				document.body.classList.toggle("ffz-transparent-badges", val);
+		}
+	};
+
+
 // --------------------
 // Initialization
 // --------------------
 
 FFZ.prototype.setup_badges = function() {
+	if ( ! this.has_bttv )
+		document.body.classList.toggle("ffz-transparent-badges", this.settings.transparent_badges);
+	
 	this.log("Preparing badge system.");
 	this.badges = {};
 
@@ -66,7 +86,10 @@ FFZ.ws_commands.set_badge = function(data) {
 // --------------------
 
 var badge_css = function(badge) {
-	return ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.extra_css || "") + '}';
+	var out = ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.extra_css || "") + '}';
+	if ( badge.transparent_image )
+		out += ".ffz-transparent-badges .badges .ffz-badge-" + badge.id + ' { background-image: url("' + badge.transparent_image + '"); }';
+	return out;
 }
 
 
@@ -257,11 +280,11 @@ FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot"
 
 FFZ.prototype._legacy_add_donors = function() {
 	// Developer Badge
-	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png"};
+	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png", transparent_image: "//cdn.frankerfacez.com/script/devtransicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
 
 	// Donor Badge
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/script/donoricon.png"};
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/script/devicon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Bot Badge
@@ -345,7 +368,7 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":30}],2:[function(require,module,exports){
+},{"./constants":3,"./utils":31}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -421,12 +444,54 @@ FFZ.ffz_commands.massmod = function(room, args) {
 FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
 },{}],3:[function(require,module,exports){
 var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
-	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev');
+	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev'),
+	SERVER = DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/";
 
 module.exports = {
 	DEBUG: DEBUG,
-	SERVER: DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/",
+	SERVER: SERVER,
 	API_SERVER: "//api.frankerfacez.com/",
+
+	KNOWN_CODES: {
+		"#-?[\\\\/]": "#-/",
+		":-?(?:7|L)": ":-7",
+		"\\&lt\\;\\]": "<]",
+		"\\:-?(S|s)": ":-S",
+		"\\:-?\\\\": ":-\\",
+		"\\:\\&gt\\;": ":>",
+		"B-?\\)": "B-)",
+		"\\:-?[z|Z|\\|]": ":-Z",
+		"\\:-?\\)": ":-)",
+		"\\:-?\\(": ":-(",
+		"\\:-?(p|P)": ":-P",
+		"\\;-?(p|P)": ";-P",
+		"\\&lt\\;3": "<3",
+		"\\:-?[\\\\/]": ":-/",
+		"\\;-?\\)": ";-)",
+		"R-?\\)": "R-)",
+		"[o|O](_|\\.)[o|O]": "O.o",
+		"\\:-?D": ":-D",
+		"\\:-?(o|O)": ":-O",
+		"\\&gt\\;\\(": ">(",
+		"Gr(a|e)yFace": "GrayFace"
+		},
+
+	EMOTE_REPLACEMENT_BASE: SERVER + "script/replacements/",
+	EMOTE_REPLACEMENTS: {
+		15: "15-JKanStyle.png",
+		16: "16-OptimizePrime.png",
+		17: "17-StoneLightning.png",
+		18: "18-TheRinger.png",
+		19: "19-PazPazowitz.png",
+		20: "20-EagleEye.png",
+		21: "21-CougarHunt.png",
+		22: "22-RedCoat.png",
+		26: "26-JonCarnage.png",
+		27: "27-PicoMause.png",
+		30: "30-BCWarrior.png",
+		33: "33-DansGame.png",
+		36: "36-PJSalt.png"
+	},
 
 	EMOJI_REGEX: /((?:\ud83c\udde8\ud83c\uddf3|\ud83c\uddfa\ud83c\uddf8|\ud83c\uddf7\ud83c\uddfa|\ud83c\uddf0\ud83c\uddf7|\ud83c\uddef\ud83c\uddf5|\ud83c\uddee\ud83c\uddf9|\ud83c\uddec\ud83c\udde7|\ud83c\uddeb\ud83c\uddf7|\ud83c\uddea\ud83c\uddf8|\ud83c\udde9\ud83c\uddea|\u0039\ufe0f?\u20e3|\u0038\ufe0f?\u20e3|\u0037\ufe0f?\u20e3|\u0036\ufe0f?\u20e3|\u0035\ufe0f?\u20e3|\u0034\ufe0f?\u20e3|\u0033\ufe0f?\u20e3|\u0032\ufe0f?\u20e3|\u0031\ufe0f?\u20e3|\u0030\ufe0f?\u20e3|\u0023\ufe0f?\u20e3|\ud83d\udeb3|\ud83d\udeb1|\ud83d\udeb0|\ud83d\udeaf|\ud83d\udeae|\ud83d\udea6|\ud83d\udea3|\ud83d\udea1|\ud83d\udea0|\ud83d\ude9f|\ud83d\ude9e|\ud83d\ude9d|\ud83d\ude9c|\ud83d\ude9b|\ud83d\ude98|\ud83d\ude96|\ud83d\ude94|\ud83d\ude90|\ud83d\ude8e|\ud83d\ude8d|\ud83d\ude8b|\ud83d\ude8a|\ud83d\ude88|\ud83d\ude86|\ud83d\ude82|\ud83d\ude81|\ud83d\ude36|\ud83d\ude34|\ud83d\ude2f|\ud83d\ude2e|\ud83d\ude2c|\ud83d\ude27|\ud83d\ude26|\ud83d\ude1f|\ud83d\ude1b|\ud83d\ude19|\ud83d\ude17|\ud83d\ude15|\ud83d\ude11|\ud83d\ude10|\ud83d\ude0e|\ud83d\ude08|\ud83d\ude07|\ud83d\ude00|\ud83d\udd67|\ud83d\udd66|\ud83d\udd65|\ud83d\udd64|\ud83d\udd63|\ud83d\udd62|\ud83d\udd61|\ud83d\udd60|\ud83d\udd5f|\ud83d\udd5e|\ud83d\udd5d|\ud83d\udd5c|\ud83d\udd2d|\ud83d\udd2c|\ud83d\udd15|\ud83d\udd09|\ud83d\udd08|\ud83d\udd07|\ud83d\udd06|\ud83d\udd05|\ud83d\udd04|\ud83d\udd02|\ud83d\udd01|\ud83d\udd00|\ud83d\udcf5|\ud83d\udcef|\ud83d\udced|\ud83d\udcec|\ud83d\udcb7|\ud83d\udcb6|\ud83d\udcad|\ud83d\udc6d|\ud83d\udc6c|\ud83d\udc65|\ud83d\udc2a|\ud83d\udc16|\ud83d\udc15|\ud83d\udc13|\ud83d\udc10|\ud83d\udc0f|\ud83d\udc0b|\ud83d\udc0a|\ud83d\udc09|\ud83d\udc08|\ud83d\udc07|\ud83d\udc06|\ud83d\udc05|\ud83d\udc04|\ud83d\udc03|\ud83d\udc02|\ud83d\udc01|\ud83d\udc00|\ud83c\udfe4|\ud83c\udfc9|\ud83c\udfc7|\ud83c\udf7c|\ud83c\udf50|\ud83c\udf4b|\ud83c\udf33|\ud83c\udf32|\ud83c\udf1e|\ud83c\udf1d|\ud83c\udf1c|\ud83c\udf1a|\ud83c\udf18|\ud83c\udccf|\ud83c\udd70|\ud83c\udd71|\ud83c\udd7e|\ud83c\udd8e|\ud83c\udd91|\ud83c\udd92|\ud83c\udd93|\ud83c\udd94|\ud83c\udd95|\ud83c\udd96|\ud83c\udd97|\ud83c\udd98|\ud83c\udd99|\ud83c\udd9a|\ud83d\udc77|\ud83d\udec5|\ud83d\udec4|\ud83d\udec3|\ud83d\udec2|\ud83d\udec1|\ud83d\udebf|\ud83d\udeb8|\ud83d\udeb7|\ud83d\udeb5|\ud83c\ude01|\ud83c\ude02|\ud83c\ude32|\ud83c\ude33|\ud83c\ude34|\ud83c\ude35|\ud83c\ude36|\ud83c\ude37|\ud83c\ude38|\ud83c\ude39|\ud83c\ude3a|\ud83c\ude50|\ud83c\ude51|\ud83c\udf00|\ud83c\udf01|\ud83c\udf02|\ud83c\udf03|\ud83c\udf04|\ud83c\udf05|\ud83c\udf06|\ud83c\udf07|\ud83c\udf08|\ud83c\udf09|\ud83c\udf0a|\ud83c\udf0b|\ud83c\udf0c|\ud83c\udf0f|\ud83c\udf11|\ud83c\udf13|\ud83c\udf14|\ud83c\udf15|\ud83c\udf19|\ud83c\udf1b|\ud83c\udf1f|\ud83c\udf20|\ud83c\udf30|\ud83c\udf31|\ud83c\udf34|\ud83c\udf35|\ud83c\udf37|\ud83c\udf38|\ud83c\udf39|\ud83c\udf3a|\ud83c\udf3b|\ud83c\udf3c|\ud83c\udf3d|\ud83c\udf3e|\ud83c\udf3f|\ud83c\udf40|\ud83c\udf41|\ud83c\udf42|\ud83c\udf43|\ud83c\udf44|\ud83c\udf45|\ud83c\udf46|\ud83c\udf47|\ud83c\udf48|\ud83c\udf49|\ud83c\udf4a|\ud83c\udf4c|\ud83c\udf4d|\ud83c\udf4e|\ud83c\udf4f|\ud83c\udf51|\ud83c\udf52|\ud83c\udf53|\ud83c\udf54|\ud83c\udf55|\ud83c\udf56|\ud83c\udf57|\ud83c\udf58|\ud83c\udf59|\ud83c\udf5a|\ud83c\udf5b|\ud83c\udf5c|\ud83c\udf5d|\ud83c\udf5e|\ud83c\udf5f|\ud83c\udf60|\ud83c\udf61|\ud83c\udf62|\ud83c\udf63|\ud83c\udf64|\ud83c\udf65|\ud83c\udf66|\ud83c\udf67|\ud83c\udf68|\ud83c\udf69|\ud83c\udf6a|\ud83c\udf6b|\ud83c\udf6c|\ud83c\udf6d|\ud83c\udf6e|\ud83c\udf6f|\ud83c\udf70|\ud83c\udf71|\ud83c\udf72|\ud83c\udf73|\ud83c\udf74|\ud83c\udf75|\ud83c\udf76|\ud83c\udf77|\ud83c\udf78|\ud83c\udf79|\ud83c\udf7a|\ud83c\udf7b|\ud83c\udf80|\ud83c\udf81|\ud83c\udf82|\ud83c\udf83|\ud83c\udf84|\ud83c\udf85|\ud83c\udf86|\ud83c\udf87|\ud83c\udf88|\ud83c\udf89|\ud83c\udf8a|\ud83c\udf8b|\ud83c\udf8c|\ud83c\udf8d|\ud83c\udf8e|\ud83c\udf8f|\ud83c\udf90|\ud83c\udf91|\ud83c\udf92|\ud83c\udf93|\ud83c\udfa0|\ud83c\udfa1|\ud83c\udfa2|\ud83c\udfa3|\ud83c\udfa4|\ud83c\udfa5|\ud83c\udfa6|\ud83c\udfa7|\ud83c\udfa8|\ud83c\udfa9|\ud83c\udfaa|\ud83c\udfab|\ud83c\udfac|\ud83c\udfad|\ud83c\udfae|\ud83c\udfaf|\ud83c\udfb0|\ud83c\udfb1|\ud83c\udfb2|\ud83c\udfb3|\ud83c\udfb4|\ud83c\udfb5|\ud83c\udfb6|\ud83c\udfb7|\ud83c\udfb8|\ud83c\udfb9|\ud83c\udfba|\ud83c\udfbb|\ud83c\udfbc|\ud83c\udfbd|\ud83c\udfbe|\ud83c\udfbf|\ud83c\udfc0|\ud83c\udfc1|\ud83c\udfc2|\ud83c\udfc3|\ud83c\udfc4|\ud83c\udfc6|\ud83c\udfc8|\ud83c\udfca|\ud83c\udfe0|\ud83c\udfe1|\ud83c\udfe2|\ud83c\udfe3|\ud83c\udfe5|\ud83c\udfe6|\ud83c\udfe7|\ud83c\udfe8|\ud83c\udfe9|\ud83c\udfea|\ud83c\udfeb|\ud83c\udfec|\ud83c\udfed|\ud83c\udfee|\ud83c\udfef|\ud83c\udff0|\ud83d\udc0c|\ud83d\udc0d|\ud83d\udc0e|\ud83d\udc11|\ud83d\udc12|\ud83d\udc14|\ud83d\udc17|\ud83d\udc18|\ud83d\udc19|\ud83d\udc1a|\ud83d\udc1b|\ud83d\udc1c|\ud83d\udc1d|\ud83d\udc1e|\ud83d\udc1f|\ud83d\udc20|\ud83d\udc21|\ud83d\udc22|\ud83d\udc23|\ud83d\udc24|\ud83d\udc25|\ud83d\udc26|\ud83d\udc27|\ud83d\udc28|\ud83d\udc29|\ud83d\udc2b|\ud83d\udc2c|\ud83d\udc2d|\ud83d\udc2e|\ud83d\udc2f|\ud83d\udc30|\ud83d\udc31|\ud83d\udc32|\ud83d\udc33|\ud83d\udc34|\ud83d\udc35|\ud83d\udc36|\ud83d\udc37|\ud83d\udc38|\ud83d\udc39|\ud83d\udc3a|\ud83d\udc3b|\ud83d\udc3c|\ud83d\udc3d|\ud83d\udc3e|\ud83d\udc40|\ud83d\udc42|\ud83d\udc43|\ud83d\udc44|\ud83d\udc45|\ud83d\udc46|\ud83d\udc47|\ud83d\udc48|\ud83d\udc49|\ud83d\udc4a|\ud83d\udc4b|\ud83d\udc4c|\ud83d\udc4d|\ud83d\udc4e|\ud83d\udc4f|\ud83d\udc50|\ud83d\udc51|\ud83d\udc52|\ud83d\udc53|\ud83d\udc54|\ud83d\udc55|\ud83d\udc56|\ud83d\udc57|\ud83d\udc58|\ud83d\udc59|\ud83d\udc5a|\ud83d\udc5b|\ud83d\udc5c|\ud83d\udc5d|\ud83d\udc5e|\ud83d\udc5f|\ud83d\udc60|\ud83d\udc61|\ud83d\udc62|\ud83d\udc63|\ud83d\udc64|\ud83d\udc66|\ud83d\udc67|\ud83d\udc68|\ud83d\udc69|\ud83d\udc6a|\ud83d\udc6b|\ud83d\udc6e|\ud83d\udc6f|\ud83d\udc70|\ud83d\udc71|\ud83d\udc72|\ud83d\udc73|\ud83d\udc74|\ud83d\udc75|\ud83d\udc76|\ud83d\udeb4|\ud83d\udc78|\ud83d\udc79|\ud83d\udc7a|\ud83d\udc7b|\ud83d\udc7c|\ud83d\udc7d|\ud83d\udc7e|\ud83d\udc7f|\ud83d\udc80|\ud83d\udc81|\ud83d\udc82|\ud83d\udc83|\ud83d\udc84|\ud83d\udc85|\ud83d\udc86|\ud83d\udc87|\ud83d\udc88|\ud83d\udc89|\ud83d\udc8a|\ud83d\udc8b|\ud83d\udc8c|\ud83d\udc8d|\ud83d\udc8e|\ud83d\udc8f|\ud83d\udc90|\ud83d\udc91|\ud83d\udc92|\ud83d\udc93|\ud83d\udc94|\ud83d\udc95|\ud83d\udc96|\ud83d\udc97|\ud83d\udc98|\ud83d\udc99|\ud83d\udc9a|\ud83d\udc9b|\ud83d\udc9c|\ud83d\udc9d|\ud83d\udc9e|\ud83d\udc9f|\ud83d\udca0|\ud83d\udca1|\ud83d\udca2|\ud83d\udca3|\ud83d\udca4|\ud83d\udca5|\ud83d\udca6|\ud83d\udca7|\ud83d\udca8|\ud83d\udca9|\ud83d\udcaa|\ud83d\udcab|\ud83d\udcac|\ud83d\udcae|\ud83d\udcaf|\ud83d\udcb0|\ud83d\udcb1|\ud83d\udcb2|\ud83d\udcb3|\ud83d\udcb4|\ud83d\udcb5|\ud83d\udcb8|\ud83d\udcb9|\ud83d\udcba|\ud83d\udcbb|\ud83d\udcbc|\ud83d\udcbd|\ud83d\udcbe|\ud83d\udcbf|\ud83d\udcc0|\ud83d\udcc1|\ud83d\udcc2|\ud83d\udcc3|\ud83d\udcc4|\ud83d\udcc5|\ud83d\udcc6|\ud83d\udcc7|\ud83d\udcc8|\ud83d\udcc9|\ud83d\udcca|\ud83d\udccb|\ud83d\udccc|\ud83d\udccd|\ud83d\udcce|\ud83d\udccf|\ud83d\udcd0|\ud83d\udcd1|\ud83d\udcd2|\ud83d\udcd3|\ud83d\udcd4|\ud83d\udcd5|\ud83d\udcd6|\ud83d\udcd7|\ud83d\udcd8|\ud83d\udcd9|\ud83d\udcda|\ud83d\udcdb|\ud83d\udcdc|\ud83d\udcdd|\ud83d\udcde|\ud83d\udcdf|\ud83d\udce0|\ud83d\udce1|\ud83d\udce2|\ud83d\udce3|\ud83d\udce4|\ud83d\udce5|\ud83d\udce6|\ud83d\udce7|\ud83d\udce8|\ud83d\udce9|\ud83d\udcea|\ud83d\udceb|\ud83d\udcee|\ud83d\udcf0|\ud83d\udcf1|\ud83d\udcf2|\ud83d\udcf3|\ud83d\udcf4|\ud83d\udcf6|\ud83d\udcf7|\ud83d\udcf9|\ud83d\udcfa|\ud83d\udcfb|\ud83d\udcfc|\ud83d\udd03|\ud83d\udd0a|\ud83d\udd0b|\ud83d\udd0c|\ud83d\udd0d|\ud83d\udd0e|\ud83d\udd0f|\ud83d\udd10|\ud83d\udd11|\ud83d\udd12|\ud83d\udd13|\ud83d\udd14|\ud83d\udd16|\ud83d\udd17|\ud83d\udd18|\ud83d\udd19|\ud83d\udd1a|\ud83d\udd1b|\ud83d\udd1c|\ud83d\udd1d|\ud83d\udd1e|\ud83d\udd1f|\ud83d\udd20|\ud83d\udd21|\ud83d\udd22|\ud83d\udd23|\ud83d\udd24|\ud83d\udd25|\ud83d\udd26|\ud83d\udd27|\ud83d\udd28|\ud83d\udd29|\ud83d\udd2a|\ud83d\udd2b|\ud83d\udd2e|\ud83d\udd2f|\ud83d\udd30|\ud83d\udd31|\ud83d\udd32|\ud83d\udd33|\ud83d\udd34|\ud83d\udd35|\ud83d\udd36|\ud83d\udd37|\ud83d\udd38|\ud83d\udd39|\ud83d\udd3a|\ud83d\udd3b|\ud83d\udd3c|\ud83d\udd3d|\ud83d\udd50|\ud83d\udd51|\ud83d\udd52|\ud83d\udd53|\ud83d\udd54|\ud83d\udd55|\ud83d\udd56|\ud83d\udd57|\ud83d\udd58|\ud83d\udd59|\ud83d\udd5a|\ud83d\udd5b|\ud83d\uddfb|\ud83d\uddfc|\ud83d\uddfd|\ud83d\uddfe|\ud83d\uddff|\ud83d\ude01|\ud83d\ude02|\ud83d\ude03|\ud83d\ude04|\ud83d\ude05|\ud83d\ude06|\ud83d\ude09|\ud83d\ude0a|\ud83d\ude0b|\ud83d\ude0c|\ud83d\ude0d|\ud83d\ude0f|\ud83d\ude12|\ud83d\ude13|\ud83d\ude14|\ud83d\ude16|\ud83d\ude18|\ud83d\ude1a|\ud83d\ude1c|\ud83d\ude1d|\ud83d\ude1e|\ud83d\ude20|\ud83d\ude21|\ud83d\ude22|\ud83d\ude23|\ud83d\ude24|\ud83d\ude25|\ud83d\ude28|\ud83d\ude29|\ud83d\ude2a|\ud83d\ude2b|\ud83d\ude2d|\ud83d\ude30|\ud83d\ude31|\ud83d\ude32|\ud83d\ude33|\ud83d\ude35|\ud83d\ude37|\ud83d\ude38|\ud83d\ude39|\ud83d\ude3a|\ud83d\ude3b|\ud83d\ude3c|\ud83d\ude3d|\ud83d\ude3e|\ud83d\ude3f|\ud83d\ude40|\ud83d\ude45|\ud83d\ude46|\ud83d\ude47|\ud83d\ude48|\ud83d\ude49|\ud83d\ude4a|\ud83d\ude4b|\ud83d\ude4c|\ud83d\ude4d|\ud83d\ude4e|\ud83d\ude4f|\ud83d\ude80|\ud83d\ude83|\ud83d\ude84|\ud83d\ude85|\ud83d\ude87|\ud83d\ude89|\ud83d\ude8c|\ud83d\ude8f|\ud83d\ude91|\ud83d\ude92|\ud83d\ude93|\ud83d\ude95|\ud83d\ude97|\ud83d\ude99|\ud83d\ude9a|\ud83d\udea2|\ud83d\udea4|\ud83d\udea5|\ud83d\udea7|\ud83d\udea8|\ud83d\udea9|\ud83d\udeaa|\ud83d\udeab|\ud83d\udeac|\ud83d\udead|\ud83d\udeb2|\ud83d\udeb6|\ud83d\udeb9|\ud83d\udeba|\ud83d\udebb|\ud83d\udebc|\ud83d\udebd|\ud83d\udebe|\ud83d\udec0|\ud83c\udde6|\ud83c\udde7|\ud83c\udde8|\ud83c\udde9|\ud83c\uddea|\ud83c\uddeb|\ud83c\uddec|\ud83c\udded|\ud83c\uddee|\ud83c\uddef|\ud83c\uddf0|\ud83c\uddf1|\ud83c\uddf2|\ud83c\uddf3|\ud83c\uddf4|\ud83c\uddf5|\ud83c\uddf6|\ud83c\uddf7|\ud83c\uddf8|\ud83c\uddf9|\ud83c\uddfa|\ud83c\uddfb|\ud83c\uddfc|\ud83c\uddfd|\ud83c\uddfe|\ud83c\uddff|\ud83c\udf0d|\ud83c\udf0e|\ud83c\udf10|\ud83c\udf12|\ud83c\udf16|\ud83c\udf17|\ue50a|\u3030|\u27b0|\u2797|\u2796|\u2795|\u2755|\u2754|\u2753|\u274e|\u274c|\u2728|\u270b|\u270a|\u2705|\u26ce|\u23f3|\u23f0|\u23ec|\u23eb|\u23ea|\u23e9|\u2122|\u27bf|\u00a9|\u00ae)|(?:(?:\ud83c\udc04|\ud83c\udd7f|\ud83c\ude1a|\ud83c\ude2f|\u3299|\u303d|\u2b55|\u2b50|\u2b1c|\u2b1b|\u2b07|\u2b06|\u2b05|\u2935|\u2934|\u27a1|\u2764|\u2757|\u2747|\u2744|\u2734|\u2733|\u2716|\u2714|\u2712|\u270f|\u270c|\u2709|\u2708|\u2702|\u26fd|\u26fa|\u26f5|\u26f3|\u26f2|\u26ea|\u26d4|\u26c5|\u26c4|\u26be|\u26bd|\u26ab|\u26aa|\u26a1|\u26a0|\u2693|\u267f|\u267b|\u3297|\u2666|\u2665|\u2663|\u2660|\u2653|\u2652|\u2651|\u2650|\u264f|\u264e|\u264d|\u264c|\u264b|\u264a|\u2649|\u2648|\u263a|\u261d|\u2615|\u2614|\u2611|\u260e|\u2601|\u2600|\u25fe|\u25fd|\u25fc|\u25fb|\u25c0|\u25b6|\u25ab|\u25aa|\u24c2|\u231b|\u231a|\u21aa|\u21a9|\u2199|\u2198|\u2197|\u2196|\u2195|\u2194|\u2139|\u2049|\u203c|\u2668)([\uFE0E\uFE0F]?)))/g,
 
@@ -628,6 +693,9 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			el.setAttribute('data-channel', id);
 			el.classList.add('ffz-channel');
+
+			// Try changing the theater mode tooltip.
+			this.$('.theatre-button a').attr('title', 'Theater Mode (Alt+T)');
 
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
@@ -885,7 +953,341 @@ FFZ.settings_info.stream_title = {
 				this._cindex.ffzFixTitle();
 		}
 	};
-},{"../constants":3,"../utils":30}],6:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],6:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+	utils = require("../utils"),
+	constants = require("../constants"),
+
+	KEYCODES = {
+		BACKSPACE: 8,
+		TAB: 9,
+		ENTER: 13,
+		ESC: 27,
+		SPACE: 32,
+		LEFT: 37,
+		UP: 38,
+		RIGHT: 39,
+		DOWN: 40,
+		TWO: 50,
+		COLON: 186
+	},
+
+	selection_start = function(e) {
+		if ( typeof e.selectionStart === "number" )
+			return e.selectionStart;
+
+		if ( ! e.createTextRange )
+			return -1;
+
+		var n = document.selection.createRange(),
+			r = e.createTextRange();
+
+		r.moveToBookmark(n.getBookmark());
+		r.moveStart("character", -e.value.length);
+		return r.text.length;
+	},
+
+	move_selection = function(e, pos) {
+		if ( e.setSelectionRange )
+			e.setSelectionRange(pos, pos);
+		else if ( e.createTextRange ) {
+			var r = e.createTextRange();
+			r.move("character", -e.value.length);
+			r.move("character", pos);
+			r.select();
+		}
+	};
+
+
+// ---------------------
+// Settings
+// ---------------------
+
+FFZ.settings_info.input_quick_reply = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Input",
+	no_bttv: true,
+
+	name: "Reply to Whispers with /r",
+	help: "Automatically replace /r at the start of the line with the command to whisper to the person you've whispered with most recently."
+};
+
+FFZ.settings_info.input_mru = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Input",
+	no_bttv: true,
+	
+	name: "Chat Input History",
+	help: "Use the Up and Down arrows in chat to select previously sent chat messages."
+};
+
+FFZ.settings_info.input_emoji = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Input",
+	visible: false,
+	no_bttv: true,
+	
+	name: "Enter Emoji By Name",
+	help: "Replace emoji that you type by name with the character. :+1: becomes 👍."
+};
+
+
+// ---------------------
+// Initialization
+// ---------------------
+
+FFZ.prototype.setup_chat_input = function() {
+	this.log("Hooking the Ember Chat Input controller.");
+	var Input = App.__container__.resolve('component:twitch-chat-input'),
+		f = this;
+
+	if ( ! Input )
+		return;
+
+	this._modify_chat_input(Input);
+
+	if ( this._roomv ) {
+		for(var i=0; i < this._roomv._childViews.length; i++) {
+			var v = this._roomv._childViews[i];
+			if ( v instanceof Input ) {
+				this._modify_chat_input(v);
+				v.ffzInit();
+			}
+		}
+	}
+}
+
+
+FFZ.prototype._modify_chat_input = function(component) {
+	var f = this;
+	
+	component.reopen({
+		ffz_mru_index: -1,
+		
+		didInsertElement: function() {
+			this._super();
+
+			try {
+				this.ffzInit();
+			} catch(err) { f.error("ChatInput didInsertElement: " + err); }
+		},
+		
+		willClearRender: function() {
+			try {
+				this.ffzTeardown();
+			} catch(err) { f.error("ChatInput willClearRender: " + err); }
+			return this._super();
+		},
+
+		ffzInit: function() {
+			f._inputv = this;
+
+			// Redo our key bindings.
+			var t = this.$("textarea");
+			t.off("keydown");
+			//t.off("keyup");
+
+			t.on("keydown", this._ffzKeyDown.bind(this));
+			//t.on("keyup", this._ffzKeyUp.bind(this));
+
+			/*var suggestions = this._parentView.get('context.model.chatSuggestions');
+			this.set('ffz_chatters', suggestions);*/
+		},
+		
+		ffzTeardown: function() {
+			if ( f._inputv === this )
+				f._inputv = undefined; 
+
+			// Reset normal key bindings.
+			var t = this.$("textarea");
+			t.off("keydown");
+			t.on("keydown", this._onKeyDown.bind(this));
+			//t.on("keyup", this._onKeyUp.bind(this));
+		},
+
+
+		// Input Control
+		
+		_ffzKeyDown: function(event) {
+			var e = event || window.event,
+				key = e.charCode || e.keyCode;
+
+			switch(key) {
+				case KEYCODES.UP:
+				case KEYCODES.DOWN:
+					if ( this.get("isShowingSuggestions") )
+						e.preventDefault();
+					else if ( f.settings.input_mru )
+						Ember.run.next(this.ffzCycleMRU.bind(this, key));
+					else
+						return this._onKeyDown(event);
+					break;
+					
+				case KEYCODES.SPACE:
+					if ( f.settings.input_quick_reply && selection_start(this.get("chatTextArea")) === 2 && this.get("textareaValue").substring(0,2) === "/r" ) {
+						var t = this;
+						Ember.run.next(function() {
+							var wt = t.get("uniqueWhisperSuggestions.0");
+							if ( wt ) {
+								var text = "/w " + wt + t.get("textareaValue").substr(2);
+								t.set("_currentWhisperTarget", 0);
+								t.set("textareaValue", text);
+								
+								Ember.run.next(function() {
+									move_selection(t.get('chatTextArea'), 4 + wt.length);
+								});
+							}
+						});
+					} else
+						return this._onKeyDown(event);
+					break;
+				
+				case KEYCODES.COLON:
+					if ( false && f.settings.input_emoji && (e.shiftKey || e.shiftLeft) ) {
+						var t = this,
+							ind = selection_start(this.get("chatTextArea"));
+
+						ind > 0 && Ember.run.next(function() {
+							var text = t.get("textareaValue"),
+								emoji_start = text.lastIndexOf(":", ind - 1);
+	
+							if ( emoji_start !== -1 && ind !== -1 && text.charAt(ind) === ":" ) {
+								var match = text.substr(emoji_start + 1, ind-emoji_start - 1),
+									emoji_id = f.emoji_names[match],
+									emoji = f.emoji_data[emoji_id];
+
+								if ( emoji ) {
+									var prefix = text.substr(0, emoji_start) + emoji.raw;
+									t.set('textareaValue', prefix + text.substr(ind + 1));
+									Ember.run.next(function() {
+										move_selection(t.get('chatTextArea'), prefix.length);
+									});
+								}
+							}
+						});
+						return;
+					}
+					return this._onKeyDown(event);
+					
+				case KEYCODES.ENTER:
+					if ( ! e.shiftKey && ! e.shiftLeft )
+						this.set('ffz_mru_index', -1);
+					
+				default:
+					return this._onKeyDown(event);
+			}
+		},
+		
+		ffzCycleMRU: function(key) {
+			var ind = this.get('ffz_mru_index'),
+				mru = this._parentView.get('context.model.mru_list') || [];
+
+			if ( key === KEYCODES.UP )
+				ind = (ind + 1) % (mru.length + 1);
+			else
+				ind = (ind + mru.length) % (mru.length + 1);
+
+			var old_val = this.get('ffz_old_mru');
+			if ( old_val === undefined )
+				this.set('ffz_old_mru', this.get('textareaValue'));
+
+			var new_val = mru[ind];
+			if ( new_val === undefined ) {
+				this.set('ffz_old_mru', undefined);
+				new_val = old_val;
+			}
+
+			this.set('ffz_mru_index', ind);
+			this.set('textareaValue', new_val);
+		},
+
+		completeSuggestion: function(e) {
+			var r, n, i = this,
+				o = this.get("textareaValue"),
+				a = this.get("partialNameStartIndex");
+
+			r = o.substring(0, a) + (o.charAt(0) === "/" ? e : FFZ.get_capitalization(e));
+			n = o.substring(a + this.get("partialName").length);
+			if ( ! n )
+				r += " ";
+
+			this.set("textareaValue", r + n);
+			this.set("isShowingSuggestions", false);
+			this.set("partialName", "");
+			this.trackSuggestionsCompleted();
+			Ember.run.next(function() {
+				move_selection(i.get('chatTextArea'), r.length);
+			});
+		}
+
+		/*ffz_emoticons: function() {
+			var output = [],
+
+				room = this._parentView.get('context.model'),
+				room_id = room && room.get('id'),
+				tmi = room && room.tmiSession,
+
+				user = f.get_user(),
+				ffz_sets = f.getEmotes(user && user.login, room_id);
+
+			if ( tmi ) {
+				var es = tmi.getEmotes();
+				if ( es && es.emoticon_sets ) {
+					for(var set_id in es.emoticon_sets) {
+						var emote_set = es.emoticon_sets[set_id];
+						for(var emote_id in emote_set) {
+							if ( emote_set[emote_id] ) {
+								var code = emote_set[emote_id].code;
+								output.push({id: constants.KNOWN_CODES[code] || code});
+							}
+						}
+					}
+				}
+			}
+
+			for(var i=0; i < ffz_sets.length; i++) {
+				var emote_set = f.emote_sets[ffz_sets[i]];
+				if ( ! emote_set )
+					continue;
+
+				for(var emote_id in emote_set.emoticons) {
+					var emote = emote_set.emoticons[emote_id];
+					if ( ! emote.hidden )
+						output.push({id:emote.name});
+				}
+			}
+			
+			return output; 	
+		}.property(),
+
+		ffz_chatters: [],
+
+		suggestions: function(key, value, previousValue) {
+			if ( arguments.length > 1 ) {
+				this.set('ffz_chatters', value);
+			}
+			
+			var output = [];
+			
+			// Chatters
+			output = output.concat(this.get('ffz_chatters'));
+			
+			// Emoticons
+			if ( this.get('isSuggestionsTriggeredWithTab') ) {
+				output = output.concat(this.get('ffz_emoticons'));
+			}
+			
+			return output;
+		}.property("ffz_emoticons", "ffz_chatters", "isSuggestionsTriggeredWithTab")*/
+	});
+}
+},{"../constants":3,"../utils":31}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants'),
@@ -906,11 +1308,26 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 
 
-FFZ.settings_info.minimal_chat = {
+FFZ.settings_info.swap_sidebars = {
 	type: "boolean",
 	value: false,
 
-	//no_bttv: true,
+	category: "Miscellaneous",
+	no_bttv: true,
+	
+	name: "Swap Sidebar Positions",
+	help: "Swap the positions of the left and right sidebars, placing chat on the left.",
+
+	on_update: function(val) {
+			if ( ! this.has_bttv )
+				document.body.classList.toggle("ffz-sidebar-swap", val);
+		}
+	};
+
+
+FFZ.settings_info.minimal_chat = {
+	type: "boolean",
+	value: false,
 
 	category: "Chat",
 	name: "Minimalistic Chat",
@@ -922,6 +1339,7 @@ FFZ.settings_info.minimal_chat = {
 				var f = this;
 				setTimeout(function() {
 					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
+					f._roomv && f._roomv.get('stuckToBottom') && f._roomv._scrollToBottom();
 				},0);
 			}
 		}
@@ -1009,8 +1427,11 @@ FFZ.settings_info.pinned_rooms = {
 // --------------------
 
 FFZ.prototype.setup_chatview = function() {
-	//if ( ! this.has_bttv )
 	document.body.classList.toggle("ffz-minimal-chat", this.settings.minimal_chat);
+	
+	if ( ! this.has_bttv )
+		document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
+
 
 	this.log("Hooking the Ember Chat controller.");
 
@@ -1073,7 +1494,6 @@ FFZ.prototype.setup_chatview = function() {
 			this.error("setup: build_ui_link: " + err);
 		}
 	}
-
 
 	this.log("Hooking the Ember Layout controller.");
 	var Layout = App.__container__.lookup('controller:layout');
@@ -1510,7 +1930,7 @@ FFZ.chat_commands.part = function(room, args) {
 	else
 		return "You are not in " + room_id + ".";
 }
-},{"../constants":3,"../utils":30}],7:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 
@@ -1697,6 +2117,32 @@ var FFZ = window.FrankerFaceZ,
 // ---------------------
 // Settings
 // ---------------------
+
+FFZ.settings_info.room_status = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Room Status Indicators",
+	help: "Display the current room state (slow mode, sub mode, and r9k mode) next to the Chat button.",
+
+	on_update: function() {
+			if ( this._roomv )
+				this._roomv.ffzUpdateStatus();
+		}
+	};
+
+
+FFZ.settings_info.replace_bad_emotes = {
+	type: "boolean",
+	value: true,
+	
+	category: "Chat",
+	name: "Fix Low Quality Twitch Global Emoticons",
+	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
+}
 
 FFZ.settings_info.parse_emoji = {
 	type: "boolean",
@@ -2113,7 +2559,7 @@ FFZ.prototype._modify_line = function(component) {
 
 						if ( data ) {
 							img.setAttribute('srcset', data.srcSet);
-							img.title = "Emoji: " + img.alt + "\nName: " + data.short_name;
+							img.title = "Emoji: " + img.alt + "\nName: :" + data.short_name + ":";
 						}
 
 					} else if ( img.getAttribute('data-ffz-emote') ) {
@@ -2295,7 +2741,7 @@ FFZ.prototype._emoticonize = function(component, tokens) {
 
 	return this.tokenize_emotes(user_id, room_id, tokens);
 }
-},{"../utils":30}],8:[function(require,module,exports){
+},{"../utils":31}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	helpers,
@@ -2659,6 +3105,16 @@ FFZ.prototype.setup_mod_card = function() {
 					}
 				}
 
+				// Reposition the menu if it's off-screen.
+				var el_bound = el.getBoundingClientRect(),
+					body_bound = document.body.getBoundingClientRect();
+
+				if ( el_bound.bottom > body_bound.bottom ) {
+					var offset = el_bound.bottom - body_bound.bottom;
+					if ( el_bound.top - offset > body_bound.top )
+						el.style.top = (el_bound.top - offset) + "px";
+				}
+
 				// Focus the Element
 				this.$().draggable({
 					start: function() {
@@ -2742,7 +3198,7 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
-},{"../utils":30}],9:[function(require,module,exports){
+},{"../utils":31}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -3052,10 +3508,10 @@ FFZ.prototype._modify_rview = function(view) {
 		ffzMouseOut: function(event) {
 			this._ffz_outside = true;
 			var e = this;
-			Ember.run.next(function() {
+			setTimeout(function() {
 				if ( e._ffz_outside )
 					e.ffzUnfreeze();
-			});
+			}, 25);
 		},
 
 		ffzMouseMove: function(event) {
@@ -3553,6 +4009,8 @@ FFZ.prototype._modify_room = function(room) {
 		slowWaiting: false,
 		slowValue: 0,
 
+		mru_list: [],
+
 		updateWait: function(value, was_banned) {
 			var wait = this.get('slowWait') || 0;
 			this.set('slowWait', value);
@@ -3723,6 +4181,19 @@ FFZ.prototype._modify_room = function(room) {
 				return;
 
 			try {
+				if ( text ) {
+					// Command History
+					var mru = this.get('mru_list'),
+						ind = mru.indexOf(text);
+	
+					if ( ind !== -1 )
+						mru.splice(ind, 1)
+					else if ( mru.length > 20 )
+						mru.pop();
+	
+					mru.unshift(text);
+				}
+				
 				var cmd = text.split(' ', 1)[0].toLowerCase();
 				if ( cmd === "/ffz" ) {
 					this.set("messageToSend", "");
@@ -3930,7 +4401,7 @@ FFZ.prototype._modify_room = function(room) {
 		}.observes('tmiRoom')
 	});
 }
-},{"../constants":3,"../utils":30}],10:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -4028,7 +4499,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 		}.property("content.chatters")
 	});
 }
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -4078,7 +4549,19 @@ var FFZ = window.FrankerFaceZ,
 	},
 
 
-	build_css = build_new_css;
+	build_css = build_new_css,
+
+	from_code_point = function(cp) {
+		var code = typeof cp === "string" ? parseInt(cp, 16) : cp;
+		if ( code < 0x10000)
+			return String.fromCharCode(code);
+
+		code -= 0x10000;
+		return String.fromCharCode(
+			0xD800 + (code >> 10),
+			0xDC00 + (code & 0x3FF)
+		);
+	};
 
 
 // ---------------------
@@ -4089,6 +4572,8 @@ FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
 
 	this.emoji_data = {};
+	this.emoji_names = {};
+
 	this.emote_sets = {};
 	this.global_sets = [];
 	this.default_sets = [];
@@ -4237,11 +4722,17 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 	var f = this;
 	jQuery.getJSON(constants.SERVER + "emoji/emoji.json")
 		.done(function(data) {
-			var new_data = {};
+			var new_data = {},
+				by_name = {};
 			for(var eid in data) {
 				var emoji = data[eid];
 				eid = eid.toLowerCase();
+				emoji.code = eid;
+				
 				new_data[eid] = emoji;
+				by_name[emoji.short_name] = eid;
+
+				emoji.raw = _.map(emoji.code.split("-"), from_code_point).join("");
 
 				emoji.src = constants.SERVER + 'emoji/' + eid + '-1x.png';
 				emoji.srcSet = emoji.src + ' 1x, ' + constants.SERVER + 'emoji/' + eid + '-2x.png 2x, ' + constants.SERVER + 'emoji/' + eid + '-4x.png 4x';
@@ -4250,11 +4741,14 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 					srcSet: emoji.srcSet,
 					emoticonSrc: emoji.src + '" data-ffz-emoji="' + eid + '" height="18px',
 					ffzEmoji: eid,
+					altText: emoji.raw
 					};
 				
 			}
 
 			f.emoji_data = new_data;
+			f.emoji_names = by_name;
+			
 			f.log("Loaded data on " + Object.keys(new_data).length + " emoji.");
 			if ( typeof callback === "function" )
 				callback(true, data);
@@ -4390,7 +4884,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	if ( callback )
 		callback(true, data);
 }
-},{"./constants":3,"./utils":30}],12:[function(require,module,exports){
+},{"./constants":3,"./utils":31}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -4445,6 +4939,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
 	document.body.classList.remove("ffz-chat-background");
+	document.body.classList.remove("ffz-sidebar-swap");
+	document.body.classList.remove("ffz-transparent-badges");
 
 	// Remove Sub Count
 	if ( this.is_dashboard )
@@ -4639,11 +5135,10 @@ FFZ.prototype.setup_bttv = function(delay) {
 							bits.push(match);
 						else {
 							var eid = utils.emoji_to_codepoint(match, variant),
-								data = f.emoji_data[eid],
-								alt = match + (variant || "");
+								data = f.emoji_data[eid];
 
 							if ( data ) {
-								tokens.push(['<img class="emoticon" height="18px" srcset="' + (data.srcSet || "") + '" src="' + data.src + '" alt="' + alt + '" title="Emoji: ' + alt + '\nName: ' + data.short_name + '">']);
+								tokens.push(['<img class="emoticon" height="18px" srcset="' + (data.srcSet || "") + '" src="' + data.src + '" alt="' + alt + '" title="Emoji: ' + data.raw + '\nName: :' + data.short_name + ':">']);
 							} else
 								tokens.push(match + (variant || ""));
 						}
@@ -4657,7 +5152,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	this.update_ui_link();
 }
-},{"../constants":3,"../utils":30}],13:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -4733,7 +5228,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 	return emotes;
 }
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // Modify Array and others.
 // require('./shims');
 
@@ -4757,7 +5252,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 10,
+	major: 3, minor: 4, revision: 11,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -4856,6 +5351,7 @@ require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
 require('./ember/moderation-card');
+require('./ember/chat-input');
 //require('./ember/teams');
 
 // Analytics: require('./tracking');
@@ -5019,6 +5515,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_chatview();
 	this.setup_viewers();
 	this.setup_mod_card();
+	this.setup_chat_input();
 
 	//this.setup_teams();
 
@@ -5059,7 +5556,7 @@ FFZ.prototype._on_window_message = function(e) {
 
 	var msg = e.data;
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/channel":5,"./ember/chatview":6,"./ember/line":7,"./ember/moderation-card":8,"./ember/room":9,"./ember/viewers":10,"./emoticons":11,"./ext/betterttv":12,"./ext/emote_menu":13,"./featurefriday":15,"./settings":16,"./socket":17,"./tokenize":18,"./ui/about_page":19,"./ui/dark":20,"./ui/following":21,"./ui/menu":22,"./ui/menu_button":23,"./ui/my_emotes":24,"./ui/notifications":25,"./ui/races":26,"./ui/styles":27,"./ui/sub_count":28,"./ui/viewer_count":29}],15:[function(require,module,exports){
+},{"./badges":1,"./commands":2,"./debug":4,"./ember/channel":5,"./ember/chat-input":6,"./ember/chatview":7,"./ember/line":8,"./ember/moderation-card":9,"./ember/room":10,"./ember/viewers":11,"./emoticons":12,"./ext/betterttv":13,"./ext/emote_menu":14,"./featurefriday":16,"./settings":17,"./socket":18,"./tokenize":19,"./ui/about_page":20,"./ui/dark":21,"./ui/following":22,"./ui/menu":23,"./ui/menu_button":24,"./ui/my_emotes":25,"./ui/notifications":26,"./ui/races":27,"./ui/styles":28,"./ui/sub_count":29,"./ui/viewer_count":30}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -5198,7 +5695,7 @@ FFZ.prototype._update_ff_name = function(name) {
 	if ( this.feature_friday )
 		this.feature_friday.display_name = name;
 }
-},{"./constants":3}],16:[function(require,module,exports){
+},{"./constants":3}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("./constants");
 
@@ -5263,7 +5760,7 @@ FFZ.settings_info.replace_twitch_menu = {
 	type: "boolean",
 	value: false,
 
-	name: "Replace Twitch Emoticon Menu <span>Beta</span>",
+	name: "Replace Twitch Emoticon Menu",
 	help: "Completely replace the default Twitch emoticon menu.",
 
 	on_update: function(val) {
@@ -5518,7 +6015,7 @@ FFZ.prototype._setting_del = function(key) {
 			this.log('Error running updater for setting "' + key + '": ' + err);
 		}
 }
-},{"./constants":3}],17:[function(require,module,exports){
+},{"./constants":3}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -5763,7 +6260,7 @@ FFZ.ws_commands.do_authorize = function(data) {
 		// Try again shortly.
 		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
 }
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("./utils"),
 	constants = require("./constants"),
@@ -5819,7 +6316,10 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	tokens = helpers.linkifyMessage(tokens);
 	if ( user && user.login )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
 	tokens = helpers.emoticonizeMessage(tokens, emotes);
+	if ( this.settings.replace_bad_emotes )
+		tokens = this.tokenize_replace_emotes(tokens);
 
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
@@ -5906,7 +6406,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 }
 
 
-FFZ.prototype.tokenize_line = function(user, room, message, no_emotes) {
+FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji) {
 	if ( typeof message === "string" )
 		message = [message];
 
@@ -5919,8 +6419,14 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes) {
 			message = helpers.mentionizeMessage(message, u.login, user === u.login);
 	}
 
-	if ( ! no_emotes )
+	if ( ! no_emotes ) {
 		message = this.tokenize_emotes(user, room, message);
+		if ( this.settings.replace_bad_emotes )
+			message = this.tokenize_replace_emotes(message);
+	}
+
+	if ( this.settings.parse_emoji && ! no_emoji )
+		message = this.tokenize_emoji(message);
 
 	return message;
 }
@@ -5941,7 +6447,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 				var eid = token.ffzEmoji,
 					emoji = f.emoji_data && f.emoji_data[eid];
 
-				tooltip = emoji ? "Emoji: " + token.altText + "\nName: " + emoji.short_name : token.altText;
+				tooltip = emoji ? "Emoji: " + token.altText + "\nName: :" + emoji.short_name + ":" : token.altText;
 
 			} else {
 				var id = FFZ.src_to_id(token.emoticonSrc),
@@ -5983,6 +6489,29 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 // ---------------------
 // Emoticon Processing
 // ---------------------
+
+FFZ.prototype.tokenize_replace_emotes = function(tokens) {
+	// Replace bad Twitch emoticons with custom emoticons.
+	var f = this;
+
+	if ( _.isString(tokens) )
+		tokens = [tokens];
+
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( ! token || ! token.emoticonSrc || token.ffzEmote )
+			continue;
+
+		// Check for a few specific emoticon IDs.
+		var emote_id = FFZ.src_to_id(token.emoticonSrc);
+		if ( constants.EMOTE_REPLACEMENTS.hasOwnProperty(emote_id) ) {
+			token.emoticonSrc = constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote_id] + '" data-twitch-emote="' + emote_id;
+		}
+	}
+	
+	return tokens;
+}
+
 
 FFZ.prototype.tokenize_title_emotes = function(tokens) {
 	var f = this,
@@ -6162,14 +6691,12 @@ FFZ.prototype.tokenize_emoji = function(tokens) {
 				} else {
 					// Find the right image~!
 					var eid = utils.emoji_to_codepoint(match, variant),
-						data = f.emoji_data[eid],
-						alt = match + (variant || "");
+						data = f.emoji_data[eid];
 
-					if ( data ) {
-						data.token.altText = alt;
+					if ( data )
 						bits.push(data.token);
-					} else
-						bits.push(alt);
+					else
+						bits.push(match + (variant || ""));
 				}
 			}
 		}
@@ -6289,7 +6816,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 	// Stop from Navigating
 	e.preventDefault();
 }
-},{"./constants":3,"./utils":30}],19:[function(require,module,exports){
+},{"./constants":3,"./utils":31}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -6393,7 +6920,7 @@ FFZ.menu_pages.about = {
 		container.appendChild(credits);
 	}
 }
-},{"../constants":3}],20:[function(require,module,exports){
+},{"../constants":3}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -6467,7 +6994,7 @@ FFZ.prototype._load_dark_css = function() {
 	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 }
-},{"../constants":3}],21:[function(require,module,exports){
+},{"../constants":3}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 
@@ -6872,7 +7399,7 @@ FFZ.prototype._build_following_popup = function(container, channel_id, notificat
 	container.appendChild(popup);
 	return popup.querySelector('a.switch');
 }
-},{"../utils":30}],22:[function(require,module,exports){
+},{"../utils":31}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -7423,7 +7950,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 	else
 		room.set('messageToSend', text);
 }
-},{"../constants":3,"../utils":30}],23:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -7470,37 +7997,13 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],24:[function(require,module,exports){
+},{"../constants":3}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	utils = require("../utils"),
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-	BANNED_SETS = {"00000turbo":true},
-
-	KNOWN_CODES = {
-		"#-?[\\\\/]": "#-/",
-		":-?(?:7|L)": ":-7",
-		"\\&lt\\;\\]": "<]",
-		"\\:-?(S|s)": ":-S",
-		"\\:-?\\\\": ":-\\",
-		"\\:\\&gt\\;": ":>",
-		"B-?\\)": "B-)",
-		"\\:-?[z|Z|\\|]": ":-Z",
-		"\\:-?\\)": ":-)",
-		"\\:-?\\(": ":-(",
-		"\\:-?(p|P)": ":-P",
-		"\\;-?(p|P)": ";-P",
-		"\\&lt\\;3": "<3",
-		"\\:-?[\\\\/]": ":-/",
-		"\\;-?\\)": ";-)",
-		"R-?\\)": "R-)",
-		"[o|O](_|\\.)[o|O]": "O.o",
-		"\\:-?D": ":-D",
-		"\\:-?(o|O)": ":-O",
-		"\\&gt\\;\\(": ">(",
-		"Gr(a|e)yFace": "GrayFace"
-		};
+	BANNED_SETS = {"00000turbo":true};
 
 
 // -------------------
@@ -7513,6 +8016,15 @@ FFZ.settings_info.global_emotes_in_menu = {
 
 	name: "Display Global Emotes in My Emotes",
 	help: "Display the global Twitch emotes in the My Emoticons menu."
+	};
+
+
+FFZ.settings_info.emoji_in_menu = {
+	type: "boolean",
+	value: false,
+
+	name: "Display Emoji in My Emotes",
+	help: "Display the supported emoji images in the My Emoticons menu."
 	};
 
 
@@ -7602,6 +8114,52 @@ FFZ.menu_pages.my_emotes = {
 			setTimeout(fail, 2000);
 	},
 
+	draw_emoji: function(view) {
+		var heading = document.createElement('div'),
+			menu = document.createElement('div');
+
+		heading.className = 'heading';
+		heading.innerHTML = '<span class="right">FrankerFaceZ</span>Emoji';
+
+		menu.className = 'emoticon-grid';
+		menu.appendChild(heading);
+		
+		var set = [];
+		for(var eid in this.emoji_data)
+			set.push(this.emoji_data[eid]);
+		
+		set.sort(function(a,b) {
+			var an = a.short_name.toLowerCase(),
+				bn = b.short_name.toLowerCase();
+
+			if ( an < bn ) return -1;
+			else if ( an > bn ) return 1;
+			if ( a.raw < b.raw ) return -1;
+			if ( a.raw > b.raw ) return 1;
+			return 0;
+		});
+		
+		for(var i=0; i < set.length; i++) {
+			var emoji = set[i],
+				em = document.createElement('span'),
+				img_set = 'image-set(url("' + emoji.src + '") 1x, url("' + constants.SERVER + 'emoji/' + emoji.code + '-2x.png") 2x, url("' + constants.SERVER + 'emoji/' + emoji.code + '-4x.png") 4x)';
+
+			em.className = 'emoticon tooltip';
+			em.title = 'Emoji: ' + emoji.raw + '\nName: :' + emoji.short_name + ':';
+			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
+			
+			em.style.backgroundImage = 'url("' + emoji.src + '")';
+			em.style.backgroundImage = '-webkit-' + img_set;
+			em.style.backgroundImage = '-moz-' + img_set;
+			em.style.backgroundImage = '-ms-' + img_set;
+			em.style.backgroudnImage = img_set;
+			
+			menu.appendChild(em);
+		}
+
+		return menu;
+	},
+
 	draw_twitch_set: function(view, set_id, set) {
 		var heading = document.createElement('div'),
 			menu = document.createElement('div'),
@@ -7637,19 +8195,35 @@ FFZ.menu_pages.my_emotes = {
 		menu.className = 'emoticon-grid';
 		menu.appendChild(heading);
 
+		set.sort(function(a,b) {
+			var an = a.code.toLowerCase(),
+				bn = b.code.toLowerCase();
+
+			if ( an < bn ) return -1;
+			else if ( an > bn ) return 1;
+			if ( a.id < b.id ) return -1;
+			if ( a.id > b.id ) return 1;
+			return 0;
+		});
+
 		for(var i=0; i < set.length; i++) {
 			var emote = set[i],
-				code = KNOWN_CODES[emote.code] || emote.code,
+				code = constants.KNOWN_CODES[emote.code] || emote.code,
 
 				em = document.createElement('span'),
 				img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
 
 			em.className = 'emoticon tooltip';
-			em.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
-			em.style.backgroundImage = '-webkit-' + img_set;
-			em.style.backgroundImage = '-moz-' + img_set;
-			em.style.backgroundImage = '-ms-' + img_set;
-			em.style.backgroudnImage = img_set;
+
+			if ( this.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[emote.id] ) {
+				em.style.backgroundImage = 'url("' + constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote.id] + '")';
+			} else {
+				em.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+				em.style.backgroundImage = '-webkit-' + img_set;
+				em.style.backgroundImage = '-moz-' + img_set;
+				em.style.backgroundImage = '-ms-' + img_set;
+				em.style.backgroudnImage = img_set;
+			}
 
 			em.title = code;
 			em.addEventListener("click", this._add_emote.bind(this, view, code));
@@ -7743,6 +8317,9 @@ FFZ.menu_pages.my_emotes = {
 				sets.push([this._twitch_set_to_channel[set_id], FFZ.menu_pages.my_emotes.draw_twitch_set.bind(this)(view, set_id, set)]);
 			}
 
+			// Emoji~!
+			if ( this.settings.emoji_in_menu )
+				sets.push(["emoji", FFZ.menu_pages.my_emotes.draw_emoji.bind(this)(view)]);
 
 			// Now, FFZ!
 			for(var i=0; i < ffz_sets.length; i++) {
@@ -7798,7 +8375,7 @@ FFZ.menu_pages.my_emotes = {
 		}
 	}
 };
-},{"../constants":3,"../utils":30}],25:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -7948,7 +8525,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -8294,7 +8871,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		}
 	}
 }
-},{"../utils":30}],27:[function(require,module,exports){
+},{"../utils":31}],28:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -8319,7 +8896,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],28:[function(require,module,exports){
+},{"../constants":3}],29:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -8422,7 +8999,7 @@ FFZ.prototype._update_subscribers = function() {
 	});;
 }
 
-},{"../constants":3,"../utils":30}],29:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],30:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -8494,7 +9071,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy(this.is_dashboard ? {"gravity":"s"} : undefined);
 	}
 }
-},{"../constants":3,"../utils":30}],30:[function(require,module,exports){
+},{"../constants":3,"../utils":31}],31:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -8802,4 +9379,4 @@ module.exports = {
 		return days + ((!no_hours || days || hours) ? ((hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 	}
 }
-},{"./constants":3}]},{},[14]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":3}]},{},[15]);window.ffz = new FrankerFaceZ()}(window));

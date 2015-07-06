@@ -307,10 +307,10 @@ FFZ.prototype._modify_rview = function(view) {
 		ffzMouseOut: function(event) {
 			this._ffz_outside = true;
 			var e = this;
-			Ember.run.next(function() {
+			setTimeout(function() {
 				if ( e._ffz_outside )
 					e.ffzUnfreeze();
-			});
+			}, 25);
 		},
 
 		ffzMouseMove: function(event) {
@@ -808,6 +808,8 @@ FFZ.prototype._modify_room = function(room) {
 		slowWaiting: false,
 		slowValue: 0,
 
+		mru_list: [],
+
 		updateWait: function(value, was_banned) {
 			var wait = this.get('slowWait') || 0;
 			this.set('slowWait', value);
@@ -978,6 +980,19 @@ FFZ.prototype._modify_room = function(room) {
 				return;
 
 			try {
+				if ( text ) {
+					// Command History
+					var mru = this.get('mru_list'),
+						ind = mru.indexOf(text);
+	
+					if ( ind !== -1 )
+						mru.splice(ind, 1)
+					else if ( mru.length > 20 )
+						mru.pop();
+	
+					mru.unshift(text);
+				}
+				
 				var cmd = text.split(' ', 1)[0].toLowerCase();
 				if ( cmd === "/ffz" ) {
 					this.set("messageToSend", "");

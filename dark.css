@@ -470,7 +470,8 @@
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
 .ffz-dark .ffz-ui-popup ul.menu,
-.ffz-dark .ffz-ui-popup ul.menu a {
+.ffz-dark .ffz-ui-popup ul.menu a,
+.ffz-sidebar-swap.ffz-dark .ffz-ui-popup ul.menu a {
 	border-color: #32323e;
 }
 
@@ -666,6 +667,10 @@
 
 /* Dashboard */
 
+.ffz-dark .js-stream-key-button-container .button {
+	margin: 15px auto;
+}
+
 .ffz-dark .js-show-stream-key,
 .ffz-dark .js-reset-stream-key {
 	display: block;
@@ -685,6 +690,11 @@
 .ffz-dark .js-reset-stream-key:focus {
 	padding: 5px;
 	margin: 10px auto;
+}
+
+.ffz-dark .stream-key {
+	background: #000;
+	color: #f2f2f2;
 }
 
 .ffz-dark .js-show-stream-key:hover,
@@ -808,15 +818,3 @@
 .ffz-dark .legal_page ol.legal li p {
 	color: #ccc;
 }
-
-
-/* TEST
-.ffz-dark div#main_col .tse-scroll-content {
-	background-image:
-		linear-gradient(rgba(16,16,16,0.75), rgba(16,16,16,1)),
-		url("http://i.imgur.com/DzCLo3d.jpg");
-
-	background-attachment: fixed;
-	background-size: 100% auto;
-	background-repeat: no-repeat;
-}*/

@@ -185,6 +185,32 @@
 // Settings
 // ---------------------
 
+FFZ.settings_info.room_status = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Room Status Indicators",
+	help: "Display the current room state (slow mode, sub mode, and r9k mode) next to the Chat button.",
+
+	on_update: function() {
+			if ( this._roomv )
+				this._roomv.ffzUpdateStatus();
+		}
+	};
+
+
+FFZ.settings_info.replace_bad_emotes = {
+	type: "boolean",
+	value: true,
+	
+	category: "Chat",
+	name: "Fix Low Quality Twitch Global Emoticons",
+	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
+}
+
 FFZ.settings_info.parse_emoji = {
 	type: "boolean",
 	value: true,
@@ -600,7 +626,7 @@ FFZ.prototype._modify_line = function(component) {
 
 						if ( data ) {
 							img.setAttribute('srcset', data.srcSet);
-							img.title = "Emoji: " + img.alt + "\nName: " + data.short_name;
+							img.title = "Emoji: " + img.alt + "\nName: :" + data.short_name + ":";
 						}
 
 					} else if ( img.getAttribute('data-ffz-emote') ) {

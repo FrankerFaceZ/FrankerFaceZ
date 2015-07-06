@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 10,
+	major: 3, minor: 4, revision: 11,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -120,6 +120,7 @@ require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
 require('./ember/moderation-card');
+require('./ember/chat-input');
 //require('./ember/teams');
 
 // Analytics: require('./tracking');
@@ -283,6 +284,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_chatview();
 	this.setup_viewers();
 	this.setup_mod_card();
+	this.setup_chat_input();
 
 	//this.setup_teams();
 

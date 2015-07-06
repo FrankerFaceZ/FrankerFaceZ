@@ -141,6 +141,9 @@ FFZ.prototype._modify_cindex = function(view) {
 			el.setAttribute('data-channel', id);
 			el.classList.add('ffz-channel');
 
+			// Try changing the theater mode tooltip.
+			this.$('.theatre-button a').attr('title', 'Theater Mode (Alt+T)');
+
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();

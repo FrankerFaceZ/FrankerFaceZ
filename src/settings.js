@@ -62,7 +62,7 @@ FFZ.settings_info.replace_twitch_menu = {
 	type: "boolean",
 	value: false,
 
-	name: "Replace Twitch Emoticon Menu <span>Beta</span>",
+	name: "Replace Twitch Emoticon Menu",
 	help: "Completely replace the default Twitch emoticon menu.",
 
 	on_update: function(val) {

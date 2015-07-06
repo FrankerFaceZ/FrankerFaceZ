@@ -47,7 +47,19 @@ var FFZ = window.FrankerFaceZ,
 	},
 
 
-	build_css = build_new_css;
+	build_css = build_new_css,
+
+	from_code_point = function(cp) {
+		var code = typeof cp === "string" ? parseInt(cp, 16) : cp;
+		if ( code < 0x10000)
+			return String.fromCharCode(code);
+
+		code -= 0x10000;
+		return String.fromCharCode(
+			0xD800 + (code >> 10),
+			0xDC00 + (code & 0x3FF)
+		);
+	};
 
 
 // ---------------------
@@ -58,6 +70,8 @@ FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
 
 	this.emoji_data = {};
+	this.emoji_names = {};
+
 	this.emote_sets = {};
 	this.global_sets = [];
 	this.default_sets = [];
@@ -206,11 +220,17 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 	var f = this;
 	jQuery.getJSON(constants.SERVER + "emoji/emoji.json")
 		.done(function(data) {
-			var new_data = {};
+			var new_data = {},
+				by_name = {};
 			for(var eid in data) {
 				var emoji = data[eid];
 				eid = eid.toLowerCase();
+				emoji.code = eid;
+				
 				new_data[eid] = emoji;
+				by_name[emoji.short_name] = eid;
+
+				emoji.raw = _.map(emoji.code.split("-"), from_code_point).join("");
 
 				emoji.src = constants.SERVER + 'emoji/' + eid + '-1x.png';
 				emoji.srcSet = emoji.src + ' 1x, ' + constants.SERVER + 'emoji/' + eid + '-2x.png 2x, ' + constants.SERVER + 'emoji/' + eid + '-4x.png 4x';
@@ -219,11 +239,14 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 					srcSet: emoji.srcSet,
 					emoticonSrc: emoji.src + '" data-ffz-emoji="' + eid + '" height="18px',
 					ffzEmoji: eid,
+					altText: emoji.raw
 					};
 				
 			}
 
 			f.emoji_data = new_data;
+			f.emoji_names = by_name;
+			
 			f.log("Loaded data on " + Object.keys(new_data).length + " emoji.");
 			if ( typeof callback === "function" )
 				callback(true, data);

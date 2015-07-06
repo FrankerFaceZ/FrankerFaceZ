@@ -17,11 +17,31 @@ FFZ.settings_info.show_badges = {
 	};
 
 
+FFZ.settings_info.transparent_badges = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat",
+	no_bttv: true,
+	
+	name: "Transparent Badges",
+	help: "Make chat badges transparent for a nice, clean look. On light chat, non-subscriber badges are inverted to remain visible.",
+	
+	on_update: function(val) {
+			if ( ! this.has_bttv )
+				document.body.classList.toggle("ffz-transparent-badges", val);
+		}
+	};
+
+
 // --------------------
 // Initialization
 // --------------------
 
 FFZ.prototype.setup_badges = function() {
+	if ( ! this.has_bttv )
+		document.body.classList.toggle("ffz-transparent-badges", this.settings.transparent_badges);
+	
 	this.log("Preparing badge system.");
 	this.badges = {};
 
@@ -65,7 +85,10 @@ FFZ.ws_commands.set_badge = function(data) {
 // --------------------
 
 var badge_css = function(badge) {
-	return ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.extra_css || "") + '}';
+	var out = ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.extra_css || "") + '}';
+	if ( badge.transparent_image )
+		out += ".ffz-transparent-badges .badges .ffz-badge-" + badge.id + ' { background-image: url("' + badge.transparent_image + '"); }';
+	return out;
 }
 
 
@@ -256,11 +279,11 @@ FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot"
 
 FFZ.prototype._legacy_add_donors = function() {
 	// Developer Badge
-	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png"};
+	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png", transparent_image: "//cdn.frankerfacez.com/script/devtransicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
 
 	// Donor Badge
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/script/donoricon.png"};
+	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/script/devicon.png"};
 	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
 
 	// Bot Badge

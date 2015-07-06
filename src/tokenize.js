@@ -53,7 +53,10 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	tokens = helpers.linkifyMessage(tokens);
 	if ( user && user.login )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
 	tokens = helpers.emoticonizeMessage(tokens, emotes);
+	if ( this.settings.replace_bad_emotes )
+		tokens = this.tokenize_replace_emotes(tokens);
 
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
@@ -140,7 +143,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 }
 
 
-FFZ.prototype.tokenize_line = function(user, room, message, no_emotes) {
+FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji) {
 	if ( typeof message === "string" )
 		message = [message];
 
@@ -153,8 +156,14 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes) {
 			message = helpers.mentionizeMessage(message, u.login, user === u.login);
 	}
 
-	if ( ! no_emotes )
+	if ( ! no_emotes ) {
 		message = this.tokenize_emotes(user, room, message);
+		if ( this.settings.replace_bad_emotes )
+			message = this.tokenize_replace_emotes(message);
+	}
+
+	if ( this.settings.parse_emoji && ! no_emoji )
+		message = this.tokenize_emoji(message);
 
 	return message;
 }
@@ -175,7 +184,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 				var eid = token.ffzEmoji,
 					emoji = f.emoji_data && f.emoji_data[eid];
 
-				tooltip = emoji ? "Emoji: " + token.altText + "\nName: " + emoji.short_name : token.altText;
+				tooltip = emoji ? "Emoji: " + token.altText + "\nName: :" + emoji.short_name + ":" : token.altText;
 
 			} else {
 				var id = FFZ.src_to_id(token.emoticonSrc),
@@ -217,6 +226,29 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 // ---------------------
 // Emoticon Processing
 // ---------------------
+
+FFZ.prototype.tokenize_replace_emotes = function(tokens) {
+	// Replace bad Twitch emoticons with custom emoticons.
+	var f = this;
+
+	if ( _.isString(tokens) )
+		tokens = [tokens];
+
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( ! token || ! token.emoticonSrc || token.ffzEmote )
+			continue;
+
+		// Check for a few specific emoticon IDs.
+		var emote_id = FFZ.src_to_id(token.emoticonSrc);
+		if ( constants.EMOTE_REPLACEMENTS.hasOwnProperty(emote_id) ) {
+			token.emoticonSrc = constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote_id] + '" data-twitch-emote="' + emote_id;
+		}
+	}
+	
+	return tokens;
+}
+
 
 FFZ.prototype.tokenize_title_emotes = function(tokens) {
 	var f = this,
@@ -396,14 +428,12 @@ FFZ.prototype.tokenize_emoji = function(tokens) {
 				} else {
 					// Find the right image~!
 					var eid = utils.emoji_to_codepoint(match, variant),
-						data = f.emoji_data[eid],
-						alt = match + (variant || "");
+						data = f.emoji_data[eid];
 
-					if ( data ) {
-						data.token.altText = alt;
+					if ( data )
 						bits.push(data.token);
-					} else
-						bits.push(alt);
+					else
+						bits.push(match + (variant || ""));
 				}
 			}
 		}

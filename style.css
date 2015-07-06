@@ -1087,6 +1087,11 @@ body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea {
 	list-style-position: unset;
 }
 
+.ember-chat .moderation-card .interface.chat-history .chat-line.action {
+	float: none;
+	margin-right: 0px;
+}
+
 .chat-history .chat-line.admin .message { color: #666; }
 
 .chat-history .timestamp {
@@ -1128,4 +1133,99 @@ body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea {
 .ember-chat-container.force-dark .button-primary.ffz-waiting.ffz-banned:not(:hover) {
 	background-color: rgba(255,128,128,0.1);
 	color: #f66;
+}
+
+/* Swap Sidebars */
+
+.ffz-sidebar-swap .ember-chat .chat-interface .emoticon-selector {
+	right: auto;
+	left: 20px;
+}
+
+.ffz-sidebar-swap #left_col {
+	left: auto;
+	right: 0;
+}
+
+.ffz-sidebar-swap #right_col {
+	right: auto;
+	left: 0;
+}
+
+.ffz-sidebar-swap #right_close,
+.ffz-sidebar-swap #left_close {
+	transform: scaleX(-1);
+}
+
+.ffz-sidebar-swap #right_close {
+	right: auto;
+	left: 5px;
+}
+
+.ffz-sidebar-swap #left_close {
+	right: auto;
+	left: -25px;
+}
+
+.ffz-sidebar-swap #main_col {
+	margin-left: 340px;
+	margin-right: 240px;
+}
+
+.ffz-sidebar-swap #main_col.expandLeft {
+	margin-right: 50px;
+}
+
+.ffz-sidebar-swap #main_col.expandRight {
+	margin-left: 0px;
+}
+
+.ffz-sidebar-swap #flyout {
+	left: auto !important;
+	right: 50px;
+}
+
+.ffz-sidebar-swap #flyout .content {
+	right: 10px;
+}
+
+.ffz-sidebar-swap #flyout .point {
+	left: auto;
+	right: -1px;
+}
+
+.ffz-sidebar-swap #flyout .point:before {
+	border-left-color: #fff;
+	border-right-color: transparent;
+	right: auto;
+	left: 0px;
+}
+
+.ffz-sidebar-swap #flyout .point:after {
+	border-right-color: transparent;
+	border-left-color: rgba(0,0,0,0.25);
+	right: auto;
+	left: 1px;
+}
+
+.ffz-dark.ffz-sidebar-swap #flyout .point:after {
+	border-left-color: #32323e;
+	border-right-color: transparent;
+}
+
+.ffz-dark.ffz-sidebar-swap #flyout .point:before {
+	border-left-color: #101010;
+	border-right-color: transparent;
+}
+
+/* Hidden Badges */
+
+.ffz-transparent-badges .ember-chat .badges .badge {
+	background-color: transparent !important;
+}
+
+.ffz-transparent-badges .app-main:not(.theatre) .chat-container:not(.dark):not(.force-dark) .ember-chat .badges .badge:not(.ffz-badge-0):not(.subscriber),
+.ffz-transparent-badges .app-main:not(.theatre) .ember-chat-container:not(.dark):not(.force-dark) .ember-chat .badges .badge:not(.ffz-badge-0):not(.subscriber) {
+	filter: invert(100%);
+	-webkit-filter: invert(100%);
 }

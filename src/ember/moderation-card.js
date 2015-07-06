@@ -361,6 +361,16 @@ FFZ.prototype.setup_mod_card = function() {
 					}
 				}
 
+				// Reposition the menu if it's off-screen.
+				var el_bound = el.getBoundingClientRect(),
+					body_bound = document.body.getBoundingClientRect();
+
+				if ( el_bound.bottom > body_bound.bottom ) {
+					var offset = el_bound.bottom - body_bound.bottom;
+					if ( el_bound.top - offset > body_bound.top )
+						el.style.top = (el_bound.top - offset) + "px";
+				}
+
 				// Focus the Element
 				this.$().draggable({
 					start: function() {

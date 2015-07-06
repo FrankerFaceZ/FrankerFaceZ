@@ -52,6 +52,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
 	document.body.classList.remove("ffz-chat-background");
+	document.body.classList.remove("ffz-sidebar-swap");
+	document.body.classList.remove("ffz-transparent-badges");
 
 	// Remove Sub Count
 	if ( this.is_dashboard )
@@ -246,11 +248,10 @@ FFZ.prototype.setup_bttv = function(delay) {
 							bits.push(match);
 						else {
 							var eid = utils.emoji_to_codepoint(match, variant),
-								data = f.emoji_data[eid],
-								alt = match + (variant || "");
+								data = f.emoji_data[eid];
 
 							if ( data ) {
-								tokens.push(['<img class="emoticon" height="18px" srcset="' + (data.srcSet || "") + '" src="' + data.src + '" alt="' + alt + '" title="Emoji: ' + alt + '\nName: ' + data.short_name + '">']);
+								tokens.push(['<img class="emoticon" height="18px" srcset="' + (data.srcSet || "") + '" src="' + data.src + '" alt="' + alt + '" title="Emoji: ' + data.raw + '\nName: :' + data.short_name + ':">']);
 							} else
 								tokens.push(match + (variant || ""));
 						}
