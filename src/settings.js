@@ -58,19 +58,6 @@ FFZ.prototype.load_settings = function() {
 // Menu Page
 // --------------------
 
-FFZ.settings_info.replace_twitch_menu = {
-	type: "boolean",
-	value: false,
-
-	name: "Replace Twitch Emoticon Menu",
-	help: "Completely replace the default Twitch emoticon menu.",
-
-	on_update: function(val) {
-			document.body.classList.toggle("ffz-menu-replace", val);
-		}
-	};
-
-
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
 			var settings = {},
@@ -115,6 +102,9 @@ FFZ.menu_pages.settings = {
 				return 0;
 			});
 
+			var f = this,
+				current_page = this._ffz_settings_page || categories[0]; 
+
 			for(var ci=0; ci < categories.length; ci++) {
 				var category = categories[ci],
 					cset = settings[category],
@@ -123,9 +113,27 @@ FFZ.menu_pages.settings = {
 					heading = document.createElement('div');
 
 				heading.className = 'heading';
-				menu.className = 'chat-menu-content';
+				menu.className = 'chat-menu-content collapsable';
+				
+				menu.setAttribute('data-category', category);
+				menu.classList.toggle('collapsed', current_page !== category);
+
 				heading.innerHTML = category;
 				menu.appendChild(heading);
+
+				menu.addEventListener('click', function() {
+					if ( ! this.classList.contains('collapsed') )
+						return;
+
+					var t = this,
+						old_selection = container.querySelectorAll('.chat-menu-content:not(.collapsed)');
+					for(var i=0; i < old_selection.length; i++)
+						old_selection[i].classList.add('collapsed');
+					
+					f._ffz_settings_page = t.getAttribute('data-category');
+					t.classList.remove('collapsed');
+					setTimeout(function(){t.scrollIntoViewIfNeeded()});
+				});
 
 				cset.sort(function(a,b) {
 					var a = a[1],

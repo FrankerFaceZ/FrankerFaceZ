@@ -19,7 +19,7 @@ FFZ.settings_info.highlight_notifications = {
 	type: "boolean",
 	value: false,
 
-	category: "Chat",
+	category: "Chat Filtering",
 	no_bttv: true,
 	//visible: function() { return ! this.has_bttv },
 

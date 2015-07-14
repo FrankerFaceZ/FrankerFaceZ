@@ -1,5 +1,6 @@
 ﻿var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
+	constants = require("../constants"),
 
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
 	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
@@ -189,7 +190,7 @@ FFZ.settings_info.room_status = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
 
 	name: "Room Status Indicators",
@@ -202,11 +203,32 @@ FFZ.settings_info.room_status = {
 	};
 
 
+FFZ.settings_info.line_purge_icon = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+	category: "Chat Moderation",
+
+	name: "Purge Icon in Mod Icons",
+	help: "Display a Purge Icon in chat line Mod Icons for quickly purging users.",
+	
+	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-chat-purge-icon", val);
+		}
+	};
+
+
 FFZ.settings_info.replace_bad_emotes = {
 	type: "boolean",
 	value: true,
 	
-	category: "Chat",
+	category: "Chat Appearance",
+	no_bttv: true,
+	
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
 }
@@ -215,7 +237,7 @@ FFZ.settings_info.parse_emoji = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat",
+	category: "Chat Appearance",
 
 	name: "Replace Emoji with Images",
 	help: "Replace emoji in chat messages with nicer looking images from the open-source Twitter Emoji project."
@@ -226,7 +248,7 @@ FFZ.settings_info.room_status = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
 
 	name: "Room Status Indicators",
@@ -243,7 +265,7 @@ FFZ.settings_info.scrollback_length = {
 	type: "button",
 	value: 150,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
 
 	name: "Scrollback Length",
@@ -278,7 +300,7 @@ FFZ.settings_info.banned_words = {
 	type: "button",
 	value: [],
 
-	category: "Chat",
+	category: "Chat Filtering",
 	no_bttv: true,
 	//visible: function() { return ! this.has_bttv },
 
@@ -310,7 +332,7 @@ FFZ.settings_info.keywords = {
 	type: "button",
 	value: [],
 
-	category: "Chat",
+	category: "Chat Filtering",
 	no_bttv: true,
 	//visible: function() { return ! this.has_bttv },
 
@@ -343,19 +365,13 @@ FFZ.settings_info.fix_color = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
-	//visible: function() { return ! this.has_bttv },
 
 	name: "Adjust Username Colors",
 	help: "Ensure that username colors contrast with the background enough to be readable.",
 
-	on_update: function(val) {
-			if ( this.has_bttv )
-				return;
-
-			document.body.classList.toggle("ffz-chat-colors", val);
-		}
+	on_update: function(val) { document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && val); }
 	};
 
 
@@ -363,12 +379,24 @@ FFZ.settings_info.link_info = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
-	//visible: function() { return ! this.has_bttv },
 
 	name: "Link Tooltips <span>Beta</span>",
 	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
+	};
+
+
+FFZ.settings_info.legacy_badges = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+
+	name: "Legacy Badges",
+	help: "Display the old, pre-vector chat badges from Twitch.",
+
+	on_update: function(val) { document.body.classList.toggle("ffz-legacy-badges", val); }
 	};
 
 
@@ -376,18 +404,97 @@ FFZ.settings_info.chat_rows = {
 	type: "boolean",
 	value: false,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
-	//visible: function() { return ! this.has_bttv },
 
 	name: "Chat Line Backgrounds",
 	help: "Display alternating background colors for lines in chat.",
 
-	on_update: function(val) {
-			if ( this.has_bttv )
+	on_update: function(val) { document.body.classList.toggle("ffz-chat-background", !this.has_bttv && val); }
+	};
+
+
+FFZ.settings_info.chat_separators = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Chat Line Separators",
+	help: "Display thin lines between chat messages for further visual separation.",
+
+	on_update: function(val) { document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val); }
+	};
+	
+FFZ.settings_info.chat_padding = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Reduced Chat Line Padding",
+	help: "Reduce the amount of padding around chat messages to fit more on-screen at once.",
+
+	on_update: function(val) { document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && val); }
+	};
+
+
+FFZ.settings_info.high_contrast_chat = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "High Contrast",
+	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
+
+	on_update: function(val) { document.body.classList.toggle("ffz-high-contrast-chat", !this.has_bttv && val); }
+	};
+
+
+FFZ.settings_info.chat_font_size = {
+	type: "button",
+	value: 12,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Font Size",
+	help: "Make the chat font bigger or smaller.",
+
+	method: function() {
+			var old_val = this.settings.chat_font_size,
+				new_val = prompt("Chat Font Size\n\nPlease enter a new size for the chat font. The default is 12.", old_val);
+
+			if ( new_val === null || new_val === undefined )
 				return;
 
-			document.body.classList.toggle("ffz-chat-background", val);
+			var parsed = parseInt(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = 12;
+			
+			this.settings.set("chat_font_size", parsed);
+		},
+
+	on_update: function(val) {
+		if ( this.has_bttv || ! this._chat_style )
+			return;
+
+		var css;
+		if ( val === 12 )
+			css = "";
+		else {
+			var lh = Math.max(20, Math.round((20/12)*val)),
+				pd = Math.floor((lh - 20) / 2);
+			css = ".ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			if ( pd )
+				css += ".ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
+		}
+
+		utils.update_css(this._chat_style, "chat_font_size", css);
 		}
 	};
 
@@ -397,14 +504,35 @@ FFZ.settings_info.chat_rows = {
 // ---------------------
 
 FFZ.prototype.setup_line = function() {
+	// Tipsy Handler
+	jQuery(document.body).on("mouseleave", ".tipsy", function() {
+		this.parentElement.removeChild(this);
+	});
+	
+	
+	// Chat Style
+	var s = this._chat_style = document.createElement('style');
+	s.id = "ffz-style-chat";
+	s.type = 'text/css';
+	document.head.appendChild(s); 
+	
+	// Initial calculation.
+	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
+	
+	
 	// Chat Enhancements
 	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color);
+	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges);
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
+	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators);
+	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
+	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
+	document.body.classList.toggle("ffz-high-contrast-chat", !this.has_bttv && this.settings.high_contrast_chat);
 
 	this._colors = {};
 	this._last_row = {};
 
-	var s = this._fix_color_style = document.createElement('style');
+	s = this._fix_color_style = document.createElement('style');
 	s.id = "ffz-style-username-colors";
 	s.type = 'text/css';
 	document.head.appendChild(s);
@@ -414,13 +542,13 @@ FFZ.prototype.setup_line = function() {
 	this._twitch_emotes = {};
 	this._link_data = {};
 
-	this.log("Hooking the Ember Whisper controller.");
+	this.log("Hooking the Ember Whisper Line component.");
 	var Whisper = App.__container__.resolve('component:whisper-line');
 
 	if ( Whisper )
 		this._modify_line(Whisper);
 
-	this.log("Hooking the Ember Line controller.");
+	this.log("Hooking the Ember Message Line component.");
 
 	var Line = App.__container__.resolve('component:message-line');
 
@@ -435,6 +563,7 @@ FFZ.prototype.setup_line = function() {
 
 FFZ.prototype._modify_line = function(component) {
 	var f = this;
+
 
 	component.reopen({
 		tokenizedMessage: function() {
@@ -492,15 +621,32 @@ FFZ.prototype._modify_line = function(component) {
 		}),
 
 		willClearRender: function() {
-			// This is here to prevent tipsy tooltips from hanging around.
 			try {
-				this.$('a.mod-icon').tipsy('disable');
-				jQuery('body > .tipsy:last').remove();
 
 			} catch(err) {
 				f.error("LineView willClearRender: " + err);
 			}
 			this._super();
+		},
+		
+		click: function(e) {
+			if ( e.target && e.target.classList.contains('mod-icon') ) {
+				jQuery(e.target).trigger('mouseout');
+				
+				if ( e.target.classList.contains('purge') ) {
+					var i = this.get('msgObject.from'),
+						room_id = this.get('msgObject.room'),
+						room = room_id && f.rooms[room_id] && f.rooms[room_id].room;
+	
+					if ( room ) {
+						room.send("/timeout " + i + " 1");
+						room.clearMessages(i);
+					}
+					return;
+				}
+			}
+			
+			return this._super(e);
 		},
 
 		didInsertElement: function() {
@@ -547,6 +693,27 @@ FFZ.prototype._modify_line = function(component) {
 					el.classList.add('ffz-has-deleted');
 
 					this.$('.message').append(btn);
+				}
+				
+				
+				// Hide Mod Buttons
+				if ( (this.get('isBroadcaster') && !(this.get('controller.parentController.model.isStaff') || this.get('controller.parentController.model.isAdmin'))) || (this.get('isModeratorOrHigher') && !(this.get('controller.parentController.model.isBroadcaster') || this.get('controller.parentController.model.isStaff') || this.get('controller.parentController.model.isAdmin'))) ) {
+					var mod_icons = el.querySelector('span.mod-icons');
+					mod_icons && mod_icons.classList.add('hidden');
+				}
+				
+				
+				// Purge Button
+				var timeout_btn = el.querySelector('span.mod-icons a.mod-icon.timeout');
+				if ( timeout_btn ) {
+					var purge_btn = document.createElement('a');
+					purge_btn.className = 'mod-icon float-left tooltip purge';
+					purge_btn.innerHTML = 'Purge';
+					purge_btn.title = 'Purge User (Timeout 1s)';
+					purge_btn.href = '#';
+					
+					timeout_btn.title = 'Timeout User (10m)';
+					timeout_btn.parentElement.insertBefore(purge_btn, timeout_btn.nextSibling);
 				}
 
 
@@ -606,7 +773,9 @@ FFZ.prototype._modify_line = function(component) {
 
 					if ( id !== null ) {
 						// High-DPI Images
-						img.setAttribute('srcset', build_srcset(id));
+						if ( ! constants.EMOTE_REPLACEMENTS[id] )
+							img.setAttribute('srcset', build_srcset(id));
+
 						img.setAttribute('emote-id', id);
 
 						// Source Lookup

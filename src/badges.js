@@ -11,7 +11,7 @@ FFZ.settings_info.show_badges = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	name: "Additional Badges",
 	help: "Show additional badges for bots, FrankerFaceZ donors, and other special users."
 	};
@@ -21,7 +21,7 @@ FFZ.settings_info.transparent_badges = {
 	type: "boolean",
 	value: false,
 
-	category: "Chat",
+	category: "Chat Appearance",
 	no_bttv: true,
 	
 	name: "Transparent Badges",

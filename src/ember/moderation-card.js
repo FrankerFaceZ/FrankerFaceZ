@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
+	constants = require("../constants"),
 	helpers,
 
 	keycodes = {
@@ -95,6 +96,18 @@ FFZ.settings_info.mod_card_hotkeys = {
 	};
 
 
+FFZ.settings_info.mod_card_info = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+	category: "Chat Moderation",
+
+	name: "Moderation Card Additional Information",
+	help: "Display a channel's follower count, view count, and account age on moderation cards."
+	};
+
+
 FFZ.settings_info.mod_card_history = {
 	type: "boolean",
 	value: false,
@@ -115,6 +128,69 @@ FFZ.settings_info.mod_card_history = {
 				if ( room )
 					room.user_history = undefined;
 			}
+		}
+	};
+
+
+FFZ.settings_info.mod_card_buttons = {
+	type: "button",
+	value: [],
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Moderation Card Additional Buttons",
+	help: "Add additional buttons to moderation cards for running chat commands on those users.",
+
+	method: function() {
+			var old_val = "";
+			for(var i=0; i < this.settings.mod_card_buttons.length; i++) {
+				var cmd = this.settings.mod_card_buttons[i];
+				if ( cmd.indexOf(' ') !== -1 )
+					old_val += ' "' + cmd + '"';
+				else
+					old_val += ' ' + cmd;
+			}
+			
+			var new_val = prompt("Moderation Card Additional Buttons\n\nPlease enter a list of additional commands to display buttons for on moderation cards. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var vals = [];
+			new_val = new_val.trim();
+			
+			while(new_val) {
+				if ( new_val.charAt(0) === '"' ) {
+					var end = new_val.indexOf('"', 1);
+					if ( end === -1 )
+						end = new_val.length;
+
+					var segment = new_val.substr(1, end - 1);
+					if ( segment )
+						vals.push(segment);
+
+					new_val = new_val.substr(end + 1); 
+					
+				} else {
+					var ind = new_val.indexOf(' ');
+					if ( ind === -1 ) {
+						if ( new_val )
+							vals.push(new_val);
+
+						new_val = '';
+
+					} else {
+						var segment = new_val.substr(0, ind);
+						if ( segment )
+							vals.push(segment);
+
+						new_val = new_val.substr(ind + 1);
+					}
+				}
+			}
+
+			this.settings.set("mod_card_buttons", vals);
 		}
 	};
 
@@ -186,6 +262,40 @@ FFZ.prototype.setup_mod_card = function() {
 			this.rerender();
 		}.observes("cardInfo.isModeratorOrHigher", "cardInfo.user"),
 
+		ffzRebuildInfo: function() {
+			var el = this.get('element'),
+				info = el && el.querySelector('.info');
+			if ( ! info )
+				return;
+
+			var out = '<span class="stat tooltip" title="Total Views">' + constants.EYE + ' ' + utils.number_commas(this.get('cardInfo.user.views') || 0) + '</span>',
+				since = utils.parse_date(this.get('cardInfo.user.created_at') || ''),
+				followers = this.get('cardInfo.user.ffz_followers');
+
+			if ( typeof followers === "number" ) {
+				out += '<span class="stat tooltip" title="Followers">' + constants.HEART + ' ' + utils.number_commas(followers || 0) + '</span>';
+				
+			} else if ( followers === undefined ) {
+				var t = this;
+				this.set('cardInfo.user.ffz_followers', false);
+				Twitch.api.get("channels/" + this.get('cardInfo.user.id') + '/follows', {limit:1}).done(function(data) {
+					t.set('cardInfo.user.ffz_followers', data._total);
+					t.ffzRebuildInfo();
+				}).fail(function(data) {
+					t.set('cardInfo.user.ffz_followers', undefined);
+				});
+			}
+
+			if ( since ) {
+				var age = Math.floor((Date.now() - since.getTime()) / 1000);
+				if ( age > 0 ) {
+					out += '<span class="stat tooltip" title="Member Since: ' + (age > 86400 ? since.toLocaleDateString() : since.toLocaleString()) + '">' + constants.CLOCK + ' ' + utils.human_time(age, 10) + '</span>';
+				}
+			}
+
+			info.innerHTML = out;
+		}.observes("cardInfo.user.views"),
+
 		didInsertElement: function() {
 			this._super();
 			window._card = this;
@@ -194,17 +304,110 @@ FFZ.prototype.setup_mod_card = function() {
 					return;
 
 				var el = this.get('element'),
-					controller = this.get('controller');
+					controller = this.get('controller'),
+					line;
 
 				// Style it!
-				if ( f.settings.mod_card_hotkeys || (f.settings.mod_card_durations && f.settings.mod_card_durations.length) )
-					el.classList.add('ffz-moderation-card');
+				el.classList.add('ffz-moderation-card');
+
+				// Info-tize it!
+				if ( f.settings.mod_card_info ) {
+					var info = document.createElement('div'),
+						after = el.querySelector('h3.name');
+					if ( after ) {
+						el.classList.add('ffz-has-info');
+						info.className = 'info channel-stats';	
+						after.parentElement.insertBefore(info, after.nextSibling);
+						this.ffzRebuildInfo();
+					}
+				}
+
+				// Additional Buttons
+				if ( f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
+					line = document.createElement('div');
+					line.className = 'extra-interface interface clearfix';
+					
+					var cmds = {},
+						add_btn_click = function(cmd) {
+							var user_id = controller.get('cardInfo.user.id'),
+								cont = App.__container__.lookup('controller:chat'),
+								room = cont && cont.get('currentRoom');
+	
+							room && room.send(cmd.replace(/{user}/g, user_id));
+						},
+	
+						add_btn_make = function(cmd) {
+							var btn = document.createElement('button'),
+								segment = cmd.split(' ', 1)[0],
+								title = cmds[segment] > 1 ? cmd.split(' ', cmds[segment]) : [segment];
+
+							if ( /^[!~./]/.test(title[0]) )
+								title[0] = title[0].substr(1);
+
+							title = _.map(title, function(s){ return s.capitalize() }).join(' ');
+
+							btn.className = 'button';
+							btn.innerHTML = utils.sanitize(title);
+							btn.title = utils.sanitize(cmd.replace(/{user}/g, controller.get('cardInfo.user.id') || '{user}'));
+							
+							jQuery(btn).tipsy();
+							btn.addEventListener('click', add_btn_click.bind(this, cmd));
+							return btn;
+						};
+					
+					var cmds = {};
+					for(var i=0; i < f.settings.mod_card_buttons.length; i++)
+						cmds[f.settings.mod_card_buttons[i].split(' ',1)[0]] = (cmds[f.settings.mod_card_buttons[i].split(' ',1)[0]] || 0) + 1;
+
+					for(var i=0; i < f.settings.mod_card_buttons.length; i++) {
+						var cmd = f.settings.mod_card_buttons[i],
+							ind = cmd.indexOf('{user}');
+
+						if ( ind === -1 )
+							cmd += ' {user}';
+
+						line.appendChild(add_btn_make(cmd))
+					}
+					
+					el.appendChild(line);
+				}
+
+
+				// Key Handling
+				el.setAttribute('tabindex', 1);
+				if ( f.settings.mod_card_hotkeys ) {
+					el.classList.add('no-mousetrap');
+
+					el.addEventListener('keyup', function(e) {
+						var key = e.keyCode || e.which,
+							user_id = controller.get('cardInfo.user.id'),
+							is_mod = controller.get('cardInfo.isModeratorOrHigher'),
+							room = App.__container__.lookup('controller:chat').get('currentRoom');
+
+						if ( is_mod && key == keycodes.P )
+							room.send("/timeout " + user_id + " 1");
+
+						else if ( is_mod && key == keycodes.B )
+							room.send("/ban " + user_id);
+
+						else if ( is_mod && key == keycodes.T )
+							room.send("/timeout " + user_id + " 600");
+
+						else if ( is_mod && key == keycodes.U )
+							room.send("/unban " + user_id);
+
+						else if ( key != keycodes.ESC )
+							return;
+
+						controller.send('close');
+					});
+				}
+
 
 				// Only do the big stuff if we're mod.
 				if ( controller.get('cardInfo.isModeratorOrHigher') ) {
 					el.classList.add('ffz-is-mod');
-					el.setAttribute('tabindex', 1);
-
+					
 					// Key Handling
 					if ( f.settings.mod_card_hotkeys ) {
 						el.classList.add('no-mousetrap');
@@ -262,8 +465,8 @@ FFZ.prototype.setup_mod_card = function() {
 
 					if ( f.settings.mod_card_durations && f.settings.mod_card_durations.length ) {
 						// Extra Moderation
-						var line = document.createElement('div');
-						line.className = 'interface clearfix';
+						line = document.createElement('div');
+						line.className = 'extra-interface interface clearfix';
 
 						line.appendChild(btn_make(1));
 
@@ -309,14 +512,27 @@ FFZ.prototype.setup_mod_card = function() {
 				}
 
 
-				var msg_btn = el.querySelector(".interface > button");
-				if ( msg_btn && msg_btn.classList.contains("message-button") ) {
-					msg_btn.innerHTML = MESSAGE;
+				var msg_btn = el.querySelector(".interface > button.message-button");
+				if ( msg_btn ) {
+					msg_btn.innerHTML = 'W';
 					msg_btn.classList.add('glyph-only');
 					msg_btn.classList.add('message');
 
 					msg_btn.title = "Whisper User";
 					jQuery(msg_btn).tipsy();
+					
+					
+					var real_msg = document.createElement('button');
+					real_msg.className = 'message-button button glyph-only message';
+					real_msg.innerHTML = MESSAGE;
+					real_msg.title = "Message User";
+					jQuery(real_msg).tipsy();
+					
+					real_msg.addEventListener('click', function() {
+						window.open('http://www.twitch.tv/message/compose?to=' + controller.get('cardInfo.user.id'));
+					})
+
+					msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
 				}
 
 

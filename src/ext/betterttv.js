@@ -31,7 +31,12 @@ FFZ.prototype.setup_bttv = function(delay) {
 	document.body.classList.remove("ffz-dark");
 	if ( this._dark_style ) {
 		this._dark_style.parentElement.removeChild(this._dark_style);
-		delete this._dark_style;
+		this._dark_style = undefined;
+	}
+	
+	if ( this._chat_style ) {
+		this._chat_style.parentElement.removeChild(this._chat_style);
+		this._chat_style = undefined;
 	}
 
 	// Disable Chat Tabs
@@ -52,8 +57,17 @@ FFZ.prototype.setup_bttv = function(delay) {
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
 	document.body.classList.remove("ffz-chat-background");
+	document.body.classList.remove("ffz-chat-padding");
+	document.body.classList.remove("ffz-chat-separator");
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-transparent-badges");
+	document.body.classList.remove("ffz-high-contrast-chat");
+
+	// Remove Following Count
+	if ( this.settings.following_count ) {
+		this._schedule_following_count();
+		this._draw_following_count();
+	}
 
 	// Remove Sub Count
 	if ( this.is_dashboard )

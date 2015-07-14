@@ -1,11 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils'),
-
-	EMOTE_CHANNELS = {
-		sirstendec: true,
-		europeanspeedsterassembly: true,
-		esamarathon2: true
-	};
+	utils = require('../utils');
 
 
 // ---------------

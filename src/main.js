@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 11,
+	major: 3, minor: 4, revision: 19,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -140,6 +140,7 @@ require('./ui/sub_count');
 
 require('./ui/menu_button');
 require('./ui/following');
+require('./ui/following-count');
 require('./ui/races');
 require('./ui/my_emotes');
 require('./ui/about_page');
@@ -158,6 +159,12 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Check for special non-ember pages.
 	if ( /^\/(?:$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
 		this.setup_normal(delay);
+		return;
+	}
+	
+	if ( location.hostname === 'passport' && /^\/(?:authorize)/.test(location.pathname) ) {
+		this.log("Running on passport!");
+		this.setup_normal(delay, true);
 		return;
 	}
 
@@ -185,7 +192,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 }
 
 
-FFZ.prototype.setup_normal = function(delay) {
+FFZ.prototype.setup_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -201,11 +208,14 @@ FFZ.prototype.setup_normal = function(delay) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 
-	this.ws_create();
+	if ( ! no_socket )
+		this.ws_create();
+
 	this.setup_emoticons();
 	this.setup_badges();
 
 	this.setup_notifications();
+	this.setup_following_count(false);
 	this.setup_css();
 	this.setup_menu();
 
@@ -293,6 +303,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	this.setup_menu();
 	this.setup_my_emotes();
 	this.setup_following();
+	this.setup_following_count(true);
 	this.setup_races();
 
 	this.connect_extra_chat();

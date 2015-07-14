@@ -259,27 +259,28 @@ module.exports = {
 
 	pluralize: pluralize,
 
-	human_time: function(elapsed) {
+	human_time: function(elapsed, factor) {
+		factor = factor || 1;
 		elapsed = Math.floor(elapsed);
 
-		var years = Math.floor(elapsed / 31536000);
-		if ( years )
+		var years = Math.floor((elapsed*factor) / 31536000) / factor;
+		if ( years >= 1 )
 			return years + ' year' + pluralize(years);
 
 		var days = Math.floor((elapsed %= 31536000) / 86400);
-		if ( days )
+		if ( days >= 1 )
 			return days + ' day' + pluralize(days);
 
 		var hours = Math.floor((elapsed %= 86400) / 3600);
-		if ( hours )
+		if ( hours >= 1 )
 			return hours + ' hour' + pluralize(hours);
 
 		var minutes = Math.floor((elapsed %= 3600) / 60);
-		if ( minutes )
+		if ( minutes >= 1 )
 			return minutes + ' minute' + pluralize(minutes);
 
 		var seconds = elapsed % 60;
-		if ( seconds )
+		if ( seconds >= 1 )
 			return seconds + ' second' + pluralize(seconds);
 
 		return 'less than a second';
@@ -303,5 +304,15 @@ module.exports = {
 		}
 
 		return days + ((!no_hours || days || hours) ? ((hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+	},
+
+	format_unread: function(count) {
+		if ( count < 1 )
+			return "";
+
+		else if ( count >= 99 )
+			return "99+";
+
+		return "" + count;
 	}
 }

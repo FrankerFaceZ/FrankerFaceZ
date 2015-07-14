@@ -13,7 +13,8 @@ var FFZ = window.FrankerFaceZ,
 		RIGHT: 39,
 		DOWN: 40,
 		TWO: 50,
-		COLON: 186
+		COLON: 59,
+		FAKE_COLON: 186
 	},
 
 	selection_start = function(e) {
@@ -74,7 +75,7 @@ FFZ.settings_info.input_emoji = {
 	value: false,
 
 	category: "Chat Input",
-	visible: false,
+	//visible: false,
 	no_bttv: true,
 	
 	name: "Enter Emoji By Name",
@@ -165,10 +166,12 @@ FFZ.prototype._modify_chat_input = function(component) {
 			switch(key) {
 				case KEYCODES.UP:
 				case KEYCODES.DOWN:
-					if ( this.get("isShowingSuggestions") )
+					if ( e.shiftKey || e.shiftLeft || e.ctrlKey || e.metaKey )
+						return;
+					else if ( this.get("isShowingSuggestions") )
 						e.preventDefault();
 					else if ( f.settings.input_mru )
-						Ember.run.next(this.ffzCycleMRU.bind(this, key));
+						Ember.run.next(this.ffzCycleMRU.bind(this, key, selection_start(this.get("chatTextArea"))));
 					else
 						return this._onKeyDown(event);
 					break;
@@ -193,14 +196,15 @@ FFZ.prototype._modify_chat_input = function(component) {
 					break;
 				
 				case KEYCODES.COLON:
-					if ( false && f.settings.input_emoji && (e.shiftKey || e.shiftLeft) ) {
+				case KEYCODES.FAKE_COLON:
+					if ( f.settings.input_emoji && (e.shiftKey || e.shiftLeft) ) {
 						var t = this,
 							ind = selection_start(this.get("chatTextArea"));
 
 						ind > 0 && Ember.run.next(function() {
 							var text = t.get("textareaValue"),
 								emoji_start = text.lastIndexOf(":", ind - 1);
-	
+
 							if ( emoji_start !== -1 && ind !== -1 && text.charAt(ind) === ":" ) {
 								var match = text.substr(emoji_start + 1, ind-emoji_start - 1),
 									emoji_id = f.emoji_names[match],
@@ -228,7 +232,12 @@ FFZ.prototype._modify_chat_input = function(component) {
 			}
 		},
 		
-		ffzCycleMRU: function(key) {
+		ffzCycleMRU: function(key, start_ind) {
+			// We don't want to do this if the keys were just moving the cursor around.
+			var cur_pos = selection_start(this.get("chatTextArea"));
+			if ( start_ind !== cur_pos )
+				return;
+			
 			var ind = this.get('ffz_mru_index'),
 				mru = this._parentView.get('context.model.mru_list') || [];
 
@@ -238,8 +247,10 @@ FFZ.prototype._modify_chat_input = function(component) {
 				ind = (ind + mru.length) % (mru.length + 1);
 
 			var old_val = this.get('ffz_old_mru');
-			if ( old_val === undefined )
-				this.set('ffz_old_mru', this.get('textareaValue'));
+			if ( old_val === undefined || old_val === null ) {
+				old_val = this.get('textareaValue');
+				this.set('ffz_old_mru', old_val);
+			}
 
 			var new_val = mru[ind];
 			if ( new_val === undefined ) {

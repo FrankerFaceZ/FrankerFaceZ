@@ -20,10 +20,15 @@ FFZ.settings_info.dark_twitch = {
 	no_bttv: true,
 	//visible: function() { return ! this.has_bttv },
 
+	category: "Appearance",
 	name: "Dark Twitch",
 	help: "Apply a dark background to channels and other related pages for easier viewing.",
 
 	on_update: function(val) {
+			var cb = document.querySelector('input.ffz-setting-dark-twitch');
+			if ( cb )
+				cb.checked = val;
+		
 			if ( this.has_bttv )
 				return;
 
@@ -41,11 +46,46 @@ FFZ.settings_info.dark_twitch = {
 	};
 
 
+FFZ.settings_info.dark_no_blue = {
+	type: "boolean",
+	value: false,
+
+	//no_bttv: true,
+
+	category: "Appearance",
+	name: "Gray Chat (no blue)",
+	help: "Make the dark theme for chat and a few other places on Twitch a bit darker and not at all blue.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-no-blue", val);
+		}
+	};
+
+
+FFZ.settings_info.hide_recent_past_broadcast = {
+	type: "boolean",
+	value: false,
+
+	//no_bttv: true,
+
+	category: "Channel Metadata",
+	name: "Hide \"Watch Last Broadcast\"",
+	help: "Hide the \"Watch Last Broadcast\" banner at the top of offline Twitch channels.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-hide-recent-past-broadcast", val);
+		}
+	};
+
+
 // ---------------------
 // Initialization
 // ---------------------
 
 FFZ.prototype.setup_dark = function() {
+	document.body.classList.toggle("ffz-hide-recent-past-broadcast", this.settings.hide_recent_past_broadcast);
+	document.body.classList.toggle("ffz-no-blue", this.settings.dark_no_blue);
+
 	if ( this.has_bttv )
 		return;
 

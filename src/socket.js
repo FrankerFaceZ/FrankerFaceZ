@@ -174,7 +174,13 @@ FFZ.prototype.ws_send = function(func, data, callback, can_wait) {
 	if ( callback )
 		this._ws_callbacks[request] = callback;
 
-	this._ws_sock.send(request + " " + func + data);
+	try {
+		this._ws_sock.send(request + " " + func + data);
+	} catch(err) {
+		this.log("Socket Send Error: " + err);
+		return false;
+	}
+
 	return request;
 }
 

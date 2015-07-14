@@ -83,6 +83,12 @@
 	background-color: #232329;
 }
 
+.ffz-no-blue .ember-chat-container.dark .ember-chat .moderation-card .interface,
+.ffz-no-blue .chat-container.dark .ember-chat .moderation-card .interface,
+.ffz-no-blue .app-main.theatre .ember-chat .moderation-card .interface {
+	background-color: #232323;
+}
+
 .moderation-card h3.name a { color: #fff !important; }
 
 
@@ -139,6 +145,14 @@
 .ffz-dark #right_col {
 	background-color: rgb(25,25,31);
 	color: #fff;
+}
+
+.ffz-dark.ffz-no-blue #right_col,
+.ffz-dark.ffz-no-blue .no-login-contain li,
+.ffz-dark.ffz-no-blue .following-col .following-list .load-more span,
+.ffz-dark.ffz-no-blue .viewall a,
+.ffz-dark.ffz-no-blue #new-user-prompt {
+	background-color: rgb(25,25,25);
 }
 
 
@@ -224,6 +238,8 @@
 	color: #a68ed2;
 }
 
+.ffz-dark .exit-theatre > a { color: #000 !important; }
+
 .ffz-dark .follow-button a,
 .ffz-dark a.dropmenu_action:hover {
 	color: #fff !important;
@@ -270,6 +286,11 @@
 .ffz-dark .bookmark-meta,
 .ffz-dark .upsell-banner {
 	background-color: rgba(25,25,31, 0.7);
+}
+
+.ffz-dark.ffz-no-blue .bookmark-meta,
+.ffz-dark.ffz-no-blue .upsell-banner {
+	background-color: rgba(25,25,25, 0.7);
 }
 
 .ffz-dark .bookmark-meta .bookmark-title,
@@ -373,6 +394,11 @@
 .ffz-dark .following-col .following-list .load-more:hover span,
 .ffz-dark .viewall a:hover {
 	background-color: rgb(35,35,41);
+}
+
+.ffz-dark.ffz-no-blue .following-col .following-list .load-more:hover span,
+.ffz-dark.ffz-no-blue .viewall a:hover {
+	background-color: rgb(35,35,35);
 }
 
 .ffz-dark .viewall a .text span:first-child {

@@ -10,9 +10,26 @@ var FFZ = window.FrankerFaceZ,
 // Initialization
 // -------------------
 
+FFZ.settings_info.replace_twitch_menu = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Input",
+
+	name: "Replace Twitch Emoticon Menu",
+	help: "Completely replace the default Twitch emoticon menu.",
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-menu-replace", val);
+		}
+	};
+
+
 FFZ.settings_info.global_emotes_in_menu = {
 	type: "boolean",
 	value: false,
+
+	category: "Chat Input",
 
 	name: "Display Global Emotes in My Emotes",
 	help: "Display the global Twitch emotes in the My Emoticons menu."
@@ -23,9 +40,17 @@ FFZ.settings_info.emoji_in_menu = {
 	type: "boolean",
 	value: false,
 
+	category: "Chat Input",
+
 	name: "Display Emoji in My Emotes",
 	help: "Display the supported emoji images in the My Emoticons menu."
 	};
+
+
+FFZ.settings_info.emote_menu_collapsed = {
+	value: [],
+	visible: false
+}
 
 
 FFZ.prototype.setup_my_emotes = function() {
@@ -114,15 +139,35 @@ FFZ.menu_pages.my_emotes = {
 			setTimeout(fail, 2000);
 	},
 
+	toggle_section: function(heading) {
+		var menu = heading.parentElement,
+			set_id = menu.getAttribute('data-set'),
+			collapsed_list = this.settings.emote_menu_collapsed,
+			is_collapsed = collapsed_list.indexOf(set_id) !== -1;
+
+		if ( is_collapsed )
+			collapsed_list.removeObject(set_id);
+		else
+			collapsed_list.push(set_id);
+
+		this.settings.set('emote_menu_collapsed', collapsed_list);
+		menu.classList.toggle('collapsed', !is_collapsed);
+	},
+
 	draw_emoji: function(view) {
 		var heading = document.createElement('div'),
-			menu = document.createElement('div');
+			menu = document.createElement('div'),
+			f = this;
 
 		heading.className = 'heading';
 		heading.innerHTML = '<span class="right">FrankerFaceZ</span>Emoji';
 
-		menu.className = 'emoticon-grid';
+		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
+		
+		menu.setAttribute('data-set', 'emoji');
+		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('emoji') !== -1);
+		heading.addEventListener('click', function() { FFZ.menu_pages.my_emotes.toggle_section.bind(f)(this); });
 		
 		var set = [];
 		for(var eid in this.emoji_data)
@@ -163,6 +208,7 @@ FFZ.menu_pages.my_emotes = {
 	draw_twitch_set: function(view, set_id, set) {
 		var heading = document.createElement('div'),
 			menu = document.createElement('div'),
+			f = this,
 
 			channel_id = this._twitch_set_to_channel[set_id], title;
 
@@ -192,8 +238,12 @@ FFZ.menu_pages.my_emotes = {
 				});
 		}
 
-		menu.className = 'emoticon-grid';
+		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
+		
+		menu.setAttribute('data-set', 'twitch-' + set_id);
+		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('twitch-' + set_id) !== -1);
+		heading.addEventListener('click', function() { FFZ.menu_pages.my_emotes.toggle_section.bind(f)(this); });
 
 		set.sort(function(a,b) {
 			var an = a.code.toLowerCase(),
@@ -236,14 +286,19 @@ FFZ.menu_pages.my_emotes = {
 	draw_ffz_set: function(view, set) {
 		var heading = document.createElement('div'),
 			menu = document.createElement('div'),
+			f = this,
 			emotes = [];
 
 		heading.className = 'heading';
 		heading.innerHTML = '<span class="right">FrankerFaceZ</span>' + set.title;
 		heading.style.backgroundImage = 'url("' + (set.icon || '//cdn.frankerfacez.com/script/devicon.png') + '")';
 
-		menu.className = 'emoticon-grid';
+		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
+		
+		menu.setAttribute('data-set', 'ffz-' + set.id);
+		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('ffz-' + set.id) !== -1);
+		heading.addEventListener('click', function() { FFZ.menu_pages.my_emotes.toggle_section.bind(f)(this); });
 
 		for(var emote_id in set.emoticons)
 			set.emoticons.hasOwnProperty(emote_id) && ! set.emoticons[emote_id].hidden && emotes.push(set.emoticons[emote_id]);
@@ -339,11 +394,15 @@ FFZ.menu_pages.my_emotes = {
 				if ( an === "turbo" || an === "turbo_faces" )
 					an = "zza|" + an;
 				else if ( an === "global" || an === "global emoticons" )
+					an = "zzy|" + an;
+				else if ( an === "emoji" )
 					an = "zzz|" + an;
 
 				if ( bn === "turbo" || bn === "turbo_faces" )
 					bn = "zza|" + bn;
 				else if ( bn === "global" || bn === "global emoticons" )
+					bn = "zzy|" + bn;
+				else if ( bn === "emoji" )
 					bn = "zzz|" + bn;
 
 				if ( an < bn ) return -1;

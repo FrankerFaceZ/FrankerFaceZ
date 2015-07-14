@@ -34,6 +34,38 @@ FFZ.src_to_id = function(src) {
 
 
 // ---------------------
+// Time Format
+// ---------------------
+
+var ts = new Date(0).toLocaleTimeString().toUpperCase();
+
+FFZ.settings_info.twenty_four_timestamps = {
+	type: "boolean",
+	value: ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "24hr Timestamps",
+	help: "Display timestamps in chat in the 24 hour format rather than 12 hour."
+	};
+
+
+if ( helpers )
+	helpers.getTime = function(e) {
+		var hours = e.getHours(),
+			minutes = e.getMinutes();
+
+		if ( hours > 12 && ! FFZ.get().settings.twenty_four_timestamps )
+			hours -= 12;
+		else if ( hours === 0 && ! FFZ.get().settings.twenty_four_timestamps )
+			hours = 12;
+
+		return hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+	};
+
+
+// ---------------------
 // Tokenization
 // ---------------------
 
@@ -97,41 +129,44 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room,
 					room_name;
 
-				if ( room && room.get('isGroupRoom') )
-					room_name = room.get('tmiRoom.displayName');
-				else
-					room_name = FFZ.get_capitalization(room_id);
-
-				display = display || Twitch.display.capitalize(msgObject.from);
-
-				if ( msgObject.style === 'action' )
-					msg = '* ' + display + ' ' + msg;
-				else
-					msg = display + ': ' + msg;
-
-				var f = this;
-				if ( msgObject.style === 'whisper' )
-					this.show_notification(
-						msg,
-						"Twitch Chat Whisper",
-						"ffz_whisper_notice",
-						60000,
-						function() {
-							window.focus();
-						}
+				// Make sure we have UI for this channel.
+				if ( (this.settings.group_tabs && (this.settings.pinned_rooms.indexOf(room_id) !== -1 || this._chatv._ffz_host )) || room.get('isGroupRoom') || room === this._chatv.get('controller.currentChannelRoom') ) {
+					if ( room && room.get('isGroupRoom') )
+						room_name = room.get('tmiRoom.displayName');
+					else
+						room_name = FFZ.get_capitalization(room_id);
+	
+					display = display || Twitch.display.capitalize(msgObject.from);
+	
+					if ( msgObject.style === 'action' )
+						msg = '* ' + display + ' ' + msg;
+					else
+						msg = display + ': ' + msg;
+	
+					var f = this;
+					if ( msgObject.style === 'whisper' )
+						this.show_notification(
+							msg,
+							"Twitch Chat Whisper",
+							"ffz_whisper_notice",
+							60000,
+							function() {
+								window.focus();
+							}
 						);
-				else
-					this.show_notification(
-						msg,
-						"Twitch Chat Mention in " + room_name,
-						room_id,
-						60000,
-						function() {
-							window.focus();
-							var cont = App.__container__.lookup('controller:chat');
-							room && cont && cont.focusRoom(room);
-						}
+					else
+						this.show_notification(
+							msg,
+							"Twitch Chat Mention in " + room_name,
+							room_id,
+							60000,
+							function() {
+								window.focus();
+								var cont = App.__container__.lookup('controller:chat');
+								room && cont && cont.focusRoom(room);
+							}
 						);
+				}
 			}
 
 			break;

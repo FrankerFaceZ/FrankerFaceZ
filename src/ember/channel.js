@@ -50,6 +50,26 @@ FFZ.prototype.setup_channel = function() {
 		view.ffzInit();
 	};
 
+	
+	this.log("Hooking the Ember Channel model.");
+	Channel = App.__container__.resolve('model:channel');
+	if ( ! Channel )
+		return;
+
+	Channel.reopen({
+		ffz_host_target: undefined,
+		
+		setHostMode: function(e) {
+			if ( f.settings.hosted_channels ) {
+				this.set('ffz_host_target', e.target);
+				return this._super(e);
+			} else {
+				this.set('ffz_host_target', undefined);
+				return this._super({target: void 0, delay: 0});
+			}
+		}
+	});
+
 
 	this.log("Hooking the Ember Channel controller.");
 
@@ -147,6 +167,7 @@ FFZ.prototype._modify_cindex = function(view) {
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();
+			this.ffzUpdateHostButton();
 
 			var views = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
 			if ( views )
@@ -175,6 +196,109 @@ FFZ.prototype._modify_cindex = function(view) {
 				else
 					el.innerHTML = scripts[0].outerHTML + status + scripts[1].outerHTML;
 			});
+		},
+
+
+		ffzUpdateHostButton: function() {
+			var channel_id = this.get('controller.id'),
+				hosted_id = this.get('controller.hostModeTarget.id'),
+
+				user = f.get_user(),
+				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
+				now_hosting = room && room.ffz_host_target,
+				hosts_left = room && room.ffz_hosts_left, 
+				
+				el = this.get('element');
+
+			this.set('ffz_host_updating', false);
+
+			if ( channel_id ) {
+				var container = el && el.querySelector('.stats-and-actions .channel-actions'),
+					btn = container && container.querySelector('#ffz-ui-host-button');
+
+				if ( ! container || ! f.settings.stream_host_button || ! user || user.login === channel_id ) {
+					if ( btn )
+						btn.parentElement.removeChild(btn);
+				} else {
+					if ( ! btn ) {
+						btn = document.createElement('span');
+						btn.id = 'ffz-ui-host-button';
+						btn.className = 'button action tooltip';
+						
+						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, false));
+						
+						var before = container.querySelector(':scope > .theatre-button');
+						if ( before )
+							container.insertBefore(btn, before);
+						else
+							container.appendChild(btn);
+					}
+
+					btn.classList.remove('disabled');
+					btn.innerHTML = channel_id === now_hosting ? 'Unhost' : 'Host';
+					if ( now_hosting )
+						btn.title = 'You are now hosting ' + utils.sanitize(FFZ.get_capitalization(now_hosting)) + '.';
+					else
+						btn.title = 'You are not hosting any channel.';
+
+					if ( typeof hosts_left === "number" )
+						btn.title += ' You have ' + hosts_left + ' host command' + utils.pluralize(hosts_left) + ' remaining this half hour.';
+				}
+			}
+			
+			
+			if ( hosted_id ) {
+				var container = el && el.querySelector('#hostmode .channel-actions'),
+					btn = container && container.querySelector('#ffz-ui-host-button');
+
+				if ( ! container || ! f.settings.stream_host_button || ! user || user.login === hosted_id ) {
+					if ( btn )
+						btn.parentElement.removeChild(btn);
+				} else {
+					if ( ! btn ) {
+						btn = document.createElement('span');
+						btn.id = 'ffz-ui-host-button';
+						btn.className = 'button action tooltip';
+						
+						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, true));
+						
+						var before = container.querySelector(':scope > .theatre-button');
+						if ( before )
+							container.insertBefore(btn, before);
+						else
+							container.appendChild(btn);
+					}
+
+					btn.classList.remove('disabled');
+					btn.innerHTML = hosted_id === now_hosting ? 'Unhost' : 'Host';
+					if ( now_hosting )
+						btn.title = 'You are currently hosting ' + utils.sanitize(FFZ.get_capitalization(now_hosting)) + '. Click to ' + (hosted_id === now_hosting ? 'unhost' : 'host') + ' this channel.';
+					else
+						btn.title = 'You are not currently hosting any channel. Click to host this channel.';
+
+					if ( typeof hosts_left === "number" )
+						btn.title += ' You have ' + hosts_left + ' host command' + utils.pluralize(hosts_left) + ' remaining this half hour.';
+				}
+			}	
+		},
+		
+		ffzClickHost: function(controller, is_host) {
+			var target = controller.get(is_host ? 'controller.hostModeTarget.id' : 'controller.id'),
+				user = f.get_user(),
+				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
+				now_hosting = room && room.ffz_host_target;
+
+			if ( ! room || controller.get('ffz_host_updating') )
+				return;
+
+			this.classList.add('disabled');
+			this.title = 'Updating...';
+
+			controller.set('ffz_host_updating', true);
+			if ( now_hosting === target )
+				room.send("/unhost");
+			else
+				room.send("/host " + target);
 		},
 
 
@@ -369,6 +493,46 @@ FFZ.settings_info.channel_views = {
 	help: 'Display the number of times the channel has been viewed beneath the stream.',
 	on_update: function(val) {
 			document.body.classList.toggle("ffz-hide-view-count", !val);
+		}
+	};
+
+
+FFZ.settings_info.hosted_channels = {
+	type: "boolean",
+	value: true,
+
+	category: "Channel Metadata",
+	name: "Channel Hosting",
+	help: "Display other channels that have been featured by the current channel.",
+	on_update: function(val) {
+			var cb = document.querySelector('input.ffz-setting-hosted-channels');
+			if ( cb )
+				cb.checked = val;
+		
+			if ( ! this._cindex )
+				return;
+			
+			var chan = this._cindex.get('controller.model'),
+				room = chan && this.rooms && this.rooms[chan.get('id')],
+				target = room && room.room && room.room.get('ffz_host_target');
+			if ( ! chan || ! room )
+				return;
+
+			chan.setHostMode({target: target, delay: 0});
+		}
+	};
+
+
+FFZ.settings_info.stream_host_button = {
+	type: "boolean",
+	value: true,
+
+	category: "Channel Metadata",
+	name: "Host This Channel Button",
+	help: "Display a button underneath streams that make it easy to host them with your own channel.",
+	on_update: function(val) {
+			if ( this._cindex )
+				this._cindex.ffzUpdateHostButton();
 		}
 	};
 

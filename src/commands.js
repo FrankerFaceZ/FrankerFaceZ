@@ -71,3 +71,11 @@ FFZ.ffz_commands.massmod = function(room, args) {
 }
 
 FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
+
+
+/*FFZ.ffz_commands.massunban = function(room, args) {
+	args = args.join(" ").trim();
+	
+	
+	
+}*/

@@ -270,11 +270,18 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 
 FFZ.prototype.load_global_sets = function(callback, tries) {
 	var f = this;
-	jQuery.getJSON(constants.API_SERVER + "v1/set/global")
+	jQuery.getJSON(((tries||0)%2 === 0 ? constants.API_SERVER : constants.API_SERVER_2) + "v1/set/global")
 		.done(function(data) {
 			f.default_sets = data.default_sets;
 			var gs = f.global_sets = [],
 				sets = data.sets || {};
+
+			if ( f.feature_friday && f.feature_friday.set ) {
+				if ( f.global_sets.indexOf(f.feature_friday.set) === -1 )
+					f.global_sets.push(f.feature_friday.set);
+				if ( f.default_sets.indexOf(f.feature_friday.set) === -1 )
+					f.default_sets.push(f.feature_friday.set);
+			}
 
 			for(var key in sets) {
 				if ( ! sets.hasOwnProperty(key) )
@@ -300,7 +307,7 @@ FFZ.prototype.load_global_sets = function(callback, tries) {
 
 FFZ.prototype.load_set = function(set_id, callback, tries) {
 	var f = this;
-	jQuery.getJSON(constants.API_SERVER + "v1/set/" + set_id)
+	jQuery.getJSON(((tries||0)%2 === 0 ? constants.API_SERVER : constants.API_SERVER_2)  + "v1/set/" + set_id)
 		.done(function(data) {
 			f._load_set_json(set_id, callback, data && data.set);
 

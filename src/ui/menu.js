@@ -33,7 +33,7 @@ FFZ.prototype.setup_menu = function() {
 
 	this.log("Hooking the Ember Chat Settings view.");
 
-	var Settings = App.__container__.resolve('view:settings');
+	var Settings = window.App && App.__container__.resolve('view:settings');
 
 	if ( ! Settings )
 		return;
@@ -91,23 +91,20 @@ FFZ.prototype.setup_menu = function() {
 			});
 
 
-			// Minimal Chat
-			/*
+			// Channel Hosting
 			p = document.createElement('p');
 			//p.className = 'no-bttv';
 			cb = document.createElement('input');
 			cb.type = "checkbox";
-			cb.className = "ember-checkbox ffz-setting-minimal-twitch";
-			cb.checked = f.settings.minimal_chat;
+			cb.className = "ember-checkbox ffz-setting-hosted-channels";
+			cb.checked = f.settings.hosted_channels;
 			p.appendChild(cb);
-			p.appendChild(document.createTextNode("Minimalistic Chat"));
+			p.appendChild(document.createTextNode("Channel Hosting"));
 			content.appendChild(p);
 
 			cb.addEventListener("change", function(e) {
-				f.settings.set("minimal_chat", this.checked);
-				if ( this.checked )
-					view.set('controller.model.hidden', true);
-			});*/
+				f.settings.set("hosted_channels", this.checked);
+			});
 
 
 			// More Settings

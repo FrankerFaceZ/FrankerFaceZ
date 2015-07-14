@@ -171,7 +171,7 @@ FFZ.prototype._modify_rview = function(view) {
 				cont = el && el.querySelector('.chat-buttons-container');
 
 			if ( ! cont )
-				return f.log("no container");
+				return;
 
 			var r9k_badge = cont.querySelector('#ffz-stat-r9k'),
 				sub_badge = cont.querySelector('#ffz-stat-sub'),
@@ -254,8 +254,13 @@ FFZ.prototype._modify_rview = function(view) {
 
 			this._ffz_interval = setInterval(this.ffzPulse.bind(this), 200);
 			this._ffz_messages = messages;
+			
 			this._ffz_mouse_move = this.ffzMouseMove.bind(this);
 			this._ffz_mouse_out = this.ffzMouseOut.bind(this);
+			this._ffz_mouse_down = this.ffzMouseDown.bind(this);
+
+			this._$chatMessagesScroller.unbind('mousedown');
+			this._$chatMessagesScroller.bind('mousedown', this._ffz_mouse_down);
 
 			messages.addEventListener('mousemove', this._ffz_mouse_move);
 			messages.addEventListener('mouseout', this._ffz_mouse_out);
@@ -304,6 +309,14 @@ FFZ.prototype._modify_rview = function(view) {
 				this._scrollToBottom();
 		},
 
+		ffzMouseDown: function(event) {
+			var t = this._$chatMessagesScroller;
+			if ( ! this.ffz_frozen && t && t[0] && (event.which > 0 || "mousedown" === event.type || "mousewheel" === event.type) ) {
+				var r = t[0].scrollHeight - t[0].scrollTop - t[0].offsetHeight;
+				this._setStuckToBottom(10 >= r);
+			}
+		},
+
 		ffzMouseOut: function(event) {
 			this._ffz_outside = true;
 			var e = this;
@@ -324,10 +337,6 @@ FFZ.prototype._modify_rview = function(view) {
 			this._ffz_last_screeny = event.screenY;
 
 			if ( this.ffz_frozen )
-				return;
-
-			// Don't do it if we're over the bar itself.
-			if ( event.clientY >= (this._ffz_messages.getBoundingClientRect().bottom - 21) )
 				return;
 
 			this.ffz_frozen = true;
@@ -351,6 +360,8 @@ FFZ.prototype._modify_rview = function(view) {
 		_setStuckToBottom: function(val) {
 			this.set("stuckToBottom", val);
 			this.get("controller.model") && this.set("controller.model.messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
+			if ( ! val )
+				this.ffzUnfreeze();
 		},
 
 		// Warnings~!
@@ -736,7 +747,7 @@ FFZ.prototype._insert_history = function(room_id, data) {
 
 FFZ.prototype.load_room = function(room_id, callback, tries) {
 	var f = this;
-	jQuery.getJSON(constants.API_SERVER + "v1/room/" + room_id)
+	jQuery.getJSON(((tries||0)%2 === 0 ? constants.API_SERVER : constants.API_SERVER_2) + "v1/room/" + room_id)
 		.done(function(data) {
 			if ( data.sets ) {
 				for(var key in data.sets)
@@ -814,7 +825,9 @@ FFZ.prototype._modify_room = function(room) {
 			var wait = this.get('slowWait') || 0;
 			this.set('slowWait', value);
 			if ( wait < 1 && value > 0 ) {
-				setTimeout(this.ffzUpdateWait.bind(this), 1000);
+				if ( this._ffz_wait_timer )
+					clearTimeout(this._ffz_wait_timer);
+				this._ffz_wait_timer = setTimeout(this.ffzUpdateWait.bind(this), 1000);
 				f._roomv && f._roomv.ffzUpdateStatus();
 			} else if ( (wait > 0 && value < 1) || was_banned ) {
 				this.set('ffz_banned', false);
@@ -823,13 +836,14 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzUpdateWait: function() {
+			this._ffz_wait_timer = undefined;
 			var wait = this.get('slowWait') || 0;
 			if ( wait < 1 )
 				return;
 
 			this.set('slowWait', --wait);
 			if ( wait > 0 )
-				setTimeout(this.ffzUpdateWait.bind(this), 1000);
+				this._ffz_wait_timer = setTimeout(this.ffzUpdateWait.bind(this), 1000);
 			else {
 				this.set('ffz_banned', false);
 				f._roomv && f._roomv.ffzUpdateStatus();
@@ -968,6 +982,11 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		setHostMode: function(e) {
+			this.set('ffz_host_target', e && e.hostTarget || null);
+			var user = f.get_user();
+			if ( user && f._cindex && this.get('id') === user.login )
+				f._cindex.ffzUpdateHostButton();
+			
 			var Chat = App.__container__.lookup('controller:chat');
 			if ( ! Chat || Chat.get('currentChannelRoom') !== this )
 				return;
@@ -1111,6 +1130,14 @@ FFZ.prototype._modify_room = function(room) {
 					room.set('ffz_banned', true);
 					f._roomv && f._roomv.ffzUpdateStatus();
 				}
+
+				if ( msg.msgId === 'hosts_remaining' ) {
+					var match = /(\d+) host command/.exec(msg.message);
+					if ( match ) {
+						room.set('ffz_hosts_left', parseInt(match[1] || 0));
+						f._cindex && f._cindex.ffzUpdateHostButton();
+					}
+				}
 			});
 
 
@@ -1149,6 +1176,9 @@ FFZ.prototype._modify_room = function(room) {
 
 			// IT IS GLORIOUS!
 			tmi.on('roomstate', function(state) {
+				if ( ! room )
+					return;
+				
 				if ( state.hasOwnProperty('slow') ) {
 					room.set('slowMode', state.slow > 0);
 					room.set('slowValue', state.slow);
