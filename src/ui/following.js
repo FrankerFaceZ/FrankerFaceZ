@@ -20,6 +20,7 @@ FFZ.prototype.setup_following = function() {
 FFZ.settings_info.follow_buttons = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Relevant Follow Buttons",

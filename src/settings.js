@@ -10,6 +10,10 @@ var FFZ = window.FrankerFaceZ,
 		var val = ! this.settings.get(key);
 		this.settings.set(key, val);
 		swit.classList.toggle('active', val);
+	},
+	
+	option_setting = function(select, key) {
+		this.settings.set(key, JSON.parse(select.options[select.selectedIndex].value));
 	};
 
 
@@ -41,6 +45,9 @@ FFZ.prototype.load_settings = function() {
 			}
 		}
 
+		if ( info.process_value )
+			val = info.process_value.bind(this)(val);
+
 		this.settings[key] = val;
 	}
 
@@ -61,7 +68,9 @@ FFZ.prototype.load_settings = function() {
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
 			var settings = {},
-				categories = [];
+				categories = [],
+				is_android = navigator.userAgent.indexOf('Android') !== -1;
+
 			for(var key in FFZ.settings_info) {
 				if ( ! FFZ.settings_info.hasOwnProperty(key) )
 					continue;
@@ -78,6 +87,9 @@ FFZ.menu_pages.settings = {
 					if ( ! visible )
 						continue;
 				}
+				
+				if ( is_android && info.no_mobile )
+					continue;
 
 				if ( ! cs ) {
 					categories.push(cat);
@@ -139,8 +151,8 @@ FFZ.menu_pages.settings = {
 					var a = a[1],
 						b = b[1],
 
-						at = a.type,
-						bt = b.type,
+						at = a.type === "button" ? 2 : 1,
+						bt = b.type === "button" ? 2 : 1,
 
 						an = a.name.toLowerCase(),
 						bn = b.name.toLowerCase();
@@ -192,6 +204,27 @@ FFZ.menu_pages.settings = {
 							el.appendChild(label);
 
 							swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+
+						} else if ( info.type === "select" ) {
+							var select = document.createElement('select'),
+								label = document.createElement('span');
+							
+							label.className = 'option-label';
+							label.innerHTML = info.name;
+							
+							for(var ok in info.options) {
+								var op = document.createElement('option');
+								op.value = JSON.stringify(ok);
+								if ( val === ok )
+									op.setAttribute('selected', true);
+								op.innerHTML = info.options[ok];
+								select.appendChild(op);
+							}
+							
+							select.addEventListener('change', option_setting.bind(this, select, key));
+							
+							el.appendChild(label);
+							el.appendChild(select);
 
 						} else {
 							el.classList.add("option");

@@ -368,7 +368,642 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
-},{"./constants":3,"./utils":32}],2:[function(require,module,exports){
+},{"./constants":4,"./utils":33}],2:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ,
+
+	hue2rgb = function(p, q, t) {
+		if ( t < 0 ) t += 1;
+		if ( t > 1 ) t -= 1;
+		if ( t < 1/6 )
+			return p + (q-p) * 6 * t;
+		if ( t < 1/2 )
+			return q;
+		if ( t < 2/3 )
+			return p + (q-p) * (2/3 - t) * 6;
+		return p;
+	};
+
+
+// ---------------------
+// Settings
+// ---------------------
+
+FFZ.settings_info.fix_color = {
+	type: "select",
+	options: {
+		'-1': "Disabled",
+		0: "Default Colors",
+		1: "Luv Adjustment",
+		2: "HSL Adjustment (Depreciated)",
+		3: "HSV Adjustment (Depreciated)",
+		4: "RGB Adjustment (Depreciated)"
+	},
+	value: '1',
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Username Colors - Brightness",
+	help: "Ensure that username colors contrast with the background enough to be readable.",
+
+	process_value: function(val) {
+		// Load legacy setting.
+		if ( val === false )
+			return '0';
+		else if ( val === true )
+			return '1';
+		return val;
+	},
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && val !== '-1');
+			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
+			
+			if ( ! this.has_bttv && val !== '-1' )
+				this._rebuild_colors();
+		}
+	};
+	
+
+FFZ.settings_info.color_blind = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		protanope: "Protanope",
+		deuteranope: "Deuteranope",
+		tritanope: "Tritanope"
+	},
+	value: '0',
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Username Colors - Color Blindness",
+	help: "Adjust username colors in an attempt to make them more distinct for people with color blindness.",
+
+	on_update: function(val) {
+			if ( ! this.has_bttv && this.settings.fix_color !== '-1' )
+			this._rebuild_colors();
+		}
+	};
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_colors = function() {
+	this.log("Preparing color-alteration style element.");
+	
+	this._colors = {};
+
+	var s = this._color_style = document.createElement('style');
+	s.id = 'ffz-style-username-colors';
+	s.type = 'text/css';
+	document.head.appendChild(s);
+}
+
+
+// -----------------------
+// Color Handling Classes
+// -----------------------
+
+FFZ.Color = {};
+
+FFZ.Color.CVDMatrix = {
+	protanope: [ // reds are greatly reduced (1% men)
+		0.0, 2.02344, -2.52581,
+		0.0, 1.0,      0.0,
+		0.0, 0.0,      1.0
+	],
+	deuteranope: [ // greens are greatly reduced (1% men)
+		1.0,      0.0, 0.0,
+		0.494207, 0.0, 1.24827,
+		0.0,      0.0, 1.0
+	],
+	tritanope: [ // blues are greatly reduced (0.003% population)
+		1.0,       0.0,      0.0,
+		0.0,       1.0,      0.0,
+		-0.395913, 0.801109, 0.0
+	]
+}
+
+
+var RGBColor = FFZ.Color.RGB = function(r, g, b) {
+	this.r = r||0; this.g = g||0; this.b = b||0;
+};
+
+var HSVColor = FFZ.Color.HSV = function(h, s, v) {
+	this.h = h||0; this.s = s||0; this.v = v||0;
+};
+
+var HSLColor = FFZ.Color.HSL = function(h, s, l) {
+	this.h = h||0; this.s = s||0; this.l = l||0;
+};
+
+var XYZColor = FFZ.Color.XYZ = function(x, y, z) {
+	this.x = x||0; this.y = y||0; this.z = z||0;
+};
+
+var LUVColor = FFZ.Color.LUV = function(l, u, v) {
+	this.l = l||0; this.u = u||0; this.v = v||0;
+};
+
+
+// RGB Colors
+
+RGBColor.prototype.eq = function(rgb) {
+	return rgb.r === this.r && rgb.g === this.g && rgb.b === this.b;
+}
+
+RGBColor.fromHex = function(code) {
+	var raw = parseInt(code.charAt(0) === '#' ? code.substr(1) : code, 16);
+	return new RGBColor(
+		(raw >> 16),		 // Red
+		(raw >> 8 & 0x00FF), // Green
+		(raw & 0x0000FF)	 // Blue
+		)
+}
+
+RGBColor.fromHSV = function(h, s, v) {
+	var r, g, b,
+		
+		i = Math.floor(h * 6),
+		f = h * 6 - i,
+		p = v * (1 - s),
+		q = v * (1 - f * s),
+		t = v * (1 - (1 - f) * s);
+	
+	switch(i % 6) {
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q;
+	}
+	
+	return new RGBColor(
+		Math.round(Math.min(Math.max(0, r*255), 255)),
+		Math.round(Math.min(Math.max(0, g*255), 255)),
+		Math.round(Math.min(Math.max(0, b*255), 255))
+	);
+}
+
+RGBColor.fromXYZ = function(x, y, z) {
+	var R =  3.240479 * x - 1.537150 * y - 0.498535 * z,
+		G = -0.969256 * x + 1.875992 * y + 0.041556 * z,
+		B =  0.055648 * x - 0.204043 * y + 1.057311 * z;
+
+	// Make sure we end up in a real color space
+	return new RGBColor(
+		Math.max(0, Math.min(255, 255 * XYZColor.channelConverter(R))),
+		Math.max(0, Math.min(255, 255 * XYZColor.channelConverter(G))),
+		Math.max(0, Math.min(255, 255 * XYZColor.channelConverter(B)))
+	);
+}
+
+RGBColor.fromHSL = function(h, s, l) {
+	if ( s === 0 ) {
+		var v = Math.round(Math.min(Math.max(0, 255*l), 255));
+		return new RGBColor(v, v, v);
+	}
+
+	var q = l < 0.5 ? l * (1 + s) : l + s - l * s,
+		p = 2 * l - q;
+		
+	return new RGBColor(
+		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h + 1/3)), 255)),
+		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h)), 255)),
+		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h - 1/3)), 255))
+	);	
+}
+
+RGBColor.prototype.toHSV = function() { return HSVColor.fromRGB(this.r, this.g, this.b); }
+RGBColor.prototype.toHSL = function() { return HSLColor.fromRGB(this.r, this.g, this.b); }
+RGBColor.prototype.toCSS = function() { return "rgb(" + Math.round(this.r) + "," + Math.round(this.g) + "," + Math.round(this.b) + ")"; }
+RGBColor.prototype.toXYZ = function() { return XYZColor.fromRGB(this.r, this.g, this.b); }
+RGBColor.prototype.toLUV = function() { return this.toXYZ().toLUV(); }
+
+
+RGBColor.prototype.luminance = function() {
+	var rgb = [this.r / 255, this.g / 255, this.b / 255];
+	for (var i =0, l = rgb.length; i < l; i++) {
+		if (rgb[i] <= 0.03928) {
+			rgb[i] = rgb[i] / 12.92;
+		} else {
+			rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
+		}
+	}
+	return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
+}
+
+
+RGBColor.prototype.brighten = function(amount) {
+	amount = typeof amount === "number" ? amount : 1;
+	amount = Math.round(255 * (amount / 100));
+	
+	return new RGBColor(
+		Math.max(0, Math.min(255, this.r + amount)),
+		Math.max(0, Math.min(255, this.g + amount)),
+		Math.max(0, Math.min(255, this.b + amount))
+	);
+}
+
+
+RGBColor.prototype.daltonize = function(type, amount) {
+	amount = typeof amount === "number" ? amount : 1.0;
+	var cvd;
+	if ( typeof type === "string" ) {
+		if ( FFZ.Color.CVDMatrix.hasOwnProperty(type) )
+			cvd = FFZ.Color.CVDMatrix[type];
+		else
+			throw "Invalid CVD matrix."; 
+	} else
+		cvd = type;
+	
+	var cvd_a = cvd[0], cvd_b = cvd[1], cvd_c = cvd[2],
+		cvd_d = cvd[3], cvd_e = cvd[4], cvd_f = cvd[5],
+		cvd_g = cvd[6], cvd_h = cvd[7], cvd_i = cvd[8],
+
+		L, M, S, l, m, s, R, G, B, RR, GG, BB;
+
+	// RGB to LMS matrix conversion
+	L = (17.8824 * this.r) + (43.5161 * this.g) + (4.11935 * this.b);
+	M = (3.45565 * this.r) + (27.1554 * this.g) + (3.86714 * this.b);
+	S = (0.0299566 * this.r) + (0.184309 * this.g) + (1.46709 * this.b);
+	// Simulate color blindness
+	l = (cvd_a * L) + (cvd_b * M) + (cvd_c * S);
+	m = (cvd_d * L) + (cvd_e * M) + (cvd_f * S);
+	s = (cvd_g * L) + (cvd_h * M) + (cvd_i * S);
+	// LMS to RGB matrix conversion
+	R = (0.0809444479 * l) + (-0.130504409 * m) + (0.116721066 * s);
+	G = (-0.0102485335 * l) + (0.0540193266 * m) + (-0.113614708 * s);
+	B = (-0.000365296938 * l) + (-0.00412161469 * m) + (0.693511405 * s);
+	// Isolate invisible colors to color vision deficiency (calculate error matrix)
+	R = this.r - R;
+	G = this.g - G;
+	B = this.b - B;
+	// Shift colors towards visible spectrum (apply error modifications)
+	RR = (0.0 * R) + (0.0 * G) + (0.0 * B);
+	GG = (0.7 * R) + (1.0 * G) + (0.0 * B);
+	BB = (0.7 * R) + (0.0 * G) + (1.0 * B);
+	// Add compensation to original values
+	R = Math.min(Math.max(0, RR + this.r), 255);
+	G = Math.min(Math.max(0, GG + this.g), 255);
+	B = Math.min(Math.max(0, BB + this.b), 255);
+
+	return new RGBColor(R, G, B);
+}
+
+RGBColor.prototype._r = function(r) { return new RGBColor(r, this.g, this.b); }
+RGBColor.prototype._g = function(g) { return new RGBColor(this.r, g, this.b); }
+RGBColor.prototype._b = function(b) { return new RGBColor(this.r, this.g, b); }
+
+
+// HSL Colors
+
+HSLColor.prototype.eq = function(hsl) {
+	return hsl.h === this.h && hsl.s === this.s && hsl.l === this.l;
+}
+
+HSLColor.fromRGB = function(r, g, b) {
+	r /= 255; g /= 255; b /= 255;
+	
+	var max = Math.max(r,g,b),
+		min = Math.min(r,g,b),
+
+		h, s, l = Math.min(Math.max(0, (max+min) / 2), 1),
+		d = Math.min(Math.max(0, max - min), 1);
+
+	if ( d === 0 )
+		h = s = 0;
+	else {
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		switch(max) {
+			case r:
+				h = (g - b) / d + (g < b ? 6 : 0);
+				break;
+			case g:
+				h = (b - r) / d + 2;
+				break;
+			case b:
+				h = (r - g) / d + 4;
+		}
+		h /= 6;
+	}
+
+	return new HSLColor(h, s, l);
+}
+
+HSLColor.prototype.toRGB = function() { return RGBColor.fromHSL(this.h, this.s, this.l); }
+HSLColor.prototype.toCSS = function() { return "hsl(" + Math.round(this.h*360) + "," + Math.round(this.s*100) + "%," + Math.round(this.l*100) + "%)"; }
+HSLColor.prototype.toHSV = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toHSV(); }
+HSLColor.prototype.toXYZ = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toXYZ(); }
+HSLColor.prototype.toLUV = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toLUV(); }
+
+
+HSLColor.prototype._h = function(h) { return new HSLColor(h, this.s, this.l); }
+HSLColor.prototype._s = function(s) { return new HSLColor(this.h, s, this.l); }
+HSLColor.prototype._l = function(l) { return new HSLColor(this.h, this.s, l); }
+
+
+// HSV Colors
+
+HSVColor.prototype.eq = function(hsv) { return hsv.h === this.h && hsv.s === this.s && hsv.v === this.v; }
+
+HSVColor.fromRGB = function(r, g, b) {
+	r /= 255; g /= 255; b /= 255;
+	
+	var max = Math.max(r, g, b),
+		min = Math.min(r, g, b),
+		d = Math.min(Math.max(0, max - min), 1),
+		
+		h,
+		s = max === 0 ? 0 : d / max,
+		v = max;
+		
+	if ( d === 0 )
+		h = 0;
+	else {
+		switch(max) {
+			case r:
+				h = (g - b) / d + (g < b ? 6 : 0);
+				break;
+			case g:
+				h = (b - r) / d + 2;
+				break;
+			case b:
+				h = (r - g) / d + 4;
+		}
+		h /= 6;
+	}
+	
+	return new HSVColor(h, s, v);
+}
+
+
+HSVColor.prototype.toRGB = function() { return RGBColor.fromHSV(this.h, this.s, this.v); }
+HSVColor.prototype.toHSL = function() { return RGBColor.fromHSV(this.h, this.s, this.v).toHSL(); }
+HSVColor.prototype.toXYZ = function() { return RGBColor.fromHSV(this.h, this.s, this.v).toXYZ(); }
+HSVColor.prototype.toLUV = function() { return RGBColor.fromHSV(this.h, this.s, this.v).toLUV(); }
+
+
+HSVColor.prototype._h = function(h) { return new HSVColor(h, this.s, this.v); }
+HSVColor.prototype._s = function(s) { return new HSVColor(this.h, s, this.v); }
+HSVColor.prototype._v = function(v) { return new HSVColor(this.h, this.s, v); }
+
+
+// XYZ Colors
+
+RGBColor.channelConverter = function (channel) {
+	// http://www.brucelindbloom.com/Eqn_RGB_to_XYZ.html
+	// This converts rgb 8bit to rgb linear, lazy because the other algorithm is really really dumb
+	return Math.pow(channel, 2.2);
+
+	// CSS Colors Level 4 says 0.03928, Bruce Lindbloom who cared to write all algos says 0.04045, used bruce because whynawt
+	return (channel <= 0.04045) ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+};
+
+XYZColor.channelConverter = function (channel) {
+	// Using lazy conversion in the other direction as well
+	return Math.pow(channel, 1/2.2);
+
+	// I'm honestly not sure about 0.0031308, I've only seen it referenced on Bruce Lindbloom's site
+	return (channel <= 0.0031308) ? channel * 12.92 : Math.pow(1.055 * channel, 1/2.4) - 0.055;
+};
+
+
+XYZColor.prototype.eq = function(xyz) {  return xyz.x === this.x && xyz.y === this.y && xyz.z === this.z; }
+
+XYZColor.fromRGB = function(r, g, b) {
+	var R = RGBColor.channelConverter(r / 255),
+		G = RGBColor.channelConverter(g / 255),
+		B = RGBColor.channelConverter(b / 255);
+
+	return new XYZColor(
+		0.412453 * R + 0.357580 * G + 0.180423 * B,
+		0.212671 * R + 0.715160 * G + 0.072169 * B,
+		0.019334 * R + 0.119193 * G + 0.950227 * B
+	);
+}
+
+XYZColor.fromLUV = function(l, u, v) {
+	var deltaGammaFactor = 1 / (XYZColor.WHITE.x + 15 * XYZColor.WHITE.y + 3 * XYZColor.WHITE.z);
+	var uDeltaGamma = 4 * XYZColor.WHITE.x * deltaGammaFactor;
+	var vDeltagamma = 9 * XYZColor.WHITE.y * deltaGammaFactor;
+
+	// XYZColor.EPSILON * XYZColor.KAPPA = 8
+	var Y = (l > 8) ? Math.pow((l + 16) / 116, 3) : l / XYZColor.KAPPA;
+
+	var a = 1/3 * (((52 * l) / (u + 13 * l * uDeltaGamma)) - 1);
+	var b = -5 * Y;
+	var c = -1/3;
+	var d = Y * (((39 * l) / (v + 13 * l * vDeltagamma)) - 5);
+
+	var X = (d - b) / (a - c);
+	var Z = X * a + b;
+
+	return new XYZColor(X, Y, Z);
+}
+
+
+XYZColor.prototype.toRGB = function() { return RGBColor.fromXYZ(this.x, this.y, this.z); }
+XYZColor.prototype.toLUV = function() { return LUVColor.fromXYZ(this.x, this.y, this.z); }
+XYZColor.prototype.toHSL = function() { return RGBColor.fromXYZ(this.x, this.y, this.z).toHSL(); }
+XYZColor.prototype.toHSV = function() { return RGBColor.fromXYZ(this.x, this.y, this.z).toHSV(); }
+
+
+XYZColor.prototype._x = function(x) { return new XYZColor(x, this.y, this.z); }
+XYZColor.prototype._y = function(y) { return new XYZColor(this.x, y, this.z); }
+XYZColor.prototype._z = function(z) { return new XYZColor(this.x, this.y, z); }
+
+
+// LUV Colors
+
+XYZColor.EPSILON = Math.pow(6 / 29, 3);
+XYZColor.KAPPA = Math.pow(29 / 3, 3);
+XYZColor.WHITE = (new RGBColor(255, 255, 255)).toXYZ();
+
+
+LUVColor.prototype.eq = function(luv) { return luv.l === this.l && luv.u === this.u && luv.v === this.v; }
+
+LUVColor.fromXYZ = function(X, Y, Z) {
+	var deltaGammaFactor = 1 / (XYZColor.WHITE.x + 15 * XYZColor.WHITE.y + 3 * XYZColor.WHITE.z);
+	var uDeltaGamma = 4 * XYZColor.WHITE.x * deltaGammaFactor;
+	var vDeltagamma = 9 * XYZColor.WHITE.y * deltaGammaFactor;
+
+	var yGamma = Y / XYZColor.WHITE.y;
+	var deltaDivider = (X + 15 * Y + 3 * Z);
+
+	if (deltaDivider === 0) {
+		deltaDivider = 1;
+	}
+
+	var deltaFactor = 1 / deltaDivider;
+
+	var uDelta = 4 * X * deltaFactor;
+	var vDelta = 9 * Y * deltaFactor;
+
+	var L = (yGamma > XYZColor.EPSILON) ? 116 * Math.pow(yGamma, 1/3) - 16 : XYZColor.KAPPA * yGamma;
+	var u = 13 * L * (uDelta - uDeltaGamma);
+	var v = 13 * L * (vDelta - vDeltagamma);
+
+	return new LUVColor(L, u, v);
+}
+
+
+LUVColor.prototype.toXYZ = function() { return XYZColor.fromLUV(this.l, this.u, this.v); }
+LUVColor.prototype.toRGB = function() { return XYZColor.fromLUV(this.l, this.u, this.v).toRGB(); }
+LUVColor.prototype.toHSL = function() { return XYZColor.fromLUV(this.l, this.u, this.v).toHSL(); }
+LUVColor.prototype.toHSV = function() { return XYZColor.fromLUV(this.l, this.u, this.v).toHSV(); }
+
+
+LUVColor.prototype._l = function(l) { return new LUVColor(l, this.u, this.v); }
+LUVColor.prototype._u = function(u) { return new LUVColor(this.l, u, this.v); }
+LUVColor.prototype._v = function(v) { return new LUVColor(this.l, this.u, v); }
+
+
+// Required Colors
+
+var REQUIRED_CONTRAST = 4.5,
+
+	REQUIRED_BRIGHT = new XYZColor(0, (REQUIRED_CONTRAST * (new RGBColor(35,35,35).toXYZ().y + 0.05) - 0.05), 0).toLUV().l,
+	REQUIRED_DARK = new XYZColor(0, ((new RGBColor(217,217,217).toXYZ().y + 0.05) / REQUIRED_CONTRAST - 0.05), 0).toLUV().l;
+
+
+// --------------------
+// Rebuild Colors
+// --------------------
+
+FFZ.prototype._rebuild_colors = function() {
+	if ( ! this._color_style || this.has_bttv )
+		return;
+
+	this._color_style.innerHTML = '';
+	var colors = Object.keys(this._colors);
+	this._colors = {};
+	for(var i=0, l=colors.length; i<l; i++)
+		this._handle_color(colors[i]);
+}
+
+
+FFZ.prototype._handle_color = function(color) {
+	if ( ! color || this._colors.hasOwnProperty(color) )
+		return;
+
+	this._colors[color] = true;
+	var rgb = RGBColor.fromHex(color),
+	
+		clr = color,
+		light_color = color,
+		dark_color = color,
+		matched = false,
+		rule = 'span[style="color:' + color + '"]';
+
+
+	// Color Blindness Handling
+	if ( this.settings.color_blind !== '0' ) {
+		var new_color = rgb.daltonize(this.settings.color_blind);
+		if ( ! rgb.eq(new_color) ) {
+			rgb = new_color;
+			clr = light_color = dark_color = rgb.toCSS();
+			matched = true;
+		}
+	}
+	
+	
+	// Color Processing - RGB
+	if ( this.settings.fix_color === '4' ) {
+		var lum = rgb.luminance();
+		
+		if ( lum > 0.3 ) {
+			var s = 127, nc = rgb;
+			while(s--) {
+				nc = nc.brighten(-1);
+				if ( nc.luminance() <= 0.3 )
+					break; 
+			}
+			
+			matched = true;
+			light_color = nc.toCSS();
+		}
+
+		if ( lum < 0.15 ) {
+			var s = 127, nc = rgb;
+			while(s--) {
+				nc = nc.brighten();
+				if ( nc.luminance() >= 0.15 )
+					break;
+			}
+			
+			matched = true;
+			dark_color = nc.toCSS();
+		}
+	}
+
+	
+	// Color Processing - HSL
+	if ( this.settings.fix_color === '2' ) {
+		var hsl = rgb.toHSL();
+		
+		matched = true;
+		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toCSS();
+		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toCSS();
+	}
+	
+
+	// Color Processing - HSV
+	if ( this.settings.fix_color === '3' ) {
+		var hsv = rgb.toHSV();
+		matched = true;
+	
+		if ( hsv.s === 0 ) {
+			// Black and White
+			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toCSS();
+			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGB().toCSS();
+
+		} else {
+			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toCSS();
+			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toCSS(); 
+		}
+	}
+	
+	// Color Processing - LUV
+	if ( this.settings.fix_color === '1' ) {
+		var luv = rgb.toLUV();
+		
+		if ( luv.l > REQUIRED_DARK ) {
+			matched = true;
+			light_color = luv._l(REQUIRED_DARK).toRGB().toCSS();
+		}
+		
+		if ( luv.l < REQUIRED_BRIGHT ) {
+			matched = true;
+			dark_color = luv._l(REQUIRED_BRIGHT).toRGB().toCSS();
+		}
+	}
+	
+	// Output
+	if ( ! matched )
+		return;
+
+	var output = '';
+	
+	if ( light_color !== clr )
+		output += 'body.ffz-chat-colors .chat-line ' + rule + ' { color: ' + light_color + ' !important; }';
+
+	if ( dark_color !== light_color ) {
+		output += 'body.ffz-chat-colors .theatre .chat-container .chat-line ' + rule +
+			', body.ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule +
+			', body.ffz-chat-colors .ember-chat-container.force-dark .chat-line ' + rule +
+			', body.ffz-chat-colors .chat-container.dark .chat-line ' + rule +
+			', body.ffz-chat-colors .chat-container.force-dark .chat-line ' + rule + ' { color: ' + dark_color + ' !important; }';
+	}
+
+	this._color_style.innerHTML += output;
+}
+},{}],3:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -450,7 +1085,7 @@ FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcas
 	
 	
 }*/
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4.16 11.01 5.05 2.08 3.61 6.12 5.46 8.19 9.07 3.6 5.67 7.09 11.66 8.28 18.36 1.61 9.51 7.07 17.72 12.69 25.35 3.43 7.74 1.97 16.49 3.6 24.62 2.23 5.11 4.09 10.39 6.76 15.31 1.16 2 4.38 0.63 4.77-1.32 1.2-7.1-2.39-13.94-1.97-21.03 0.38-3.64-0.91-7.48 0.25-10.99 2.74-3.74 4.57-8.05 7.47-11.67 3.55-5.47 10.31-8.34 16.73-7.64 2.26 2.89 5.13 5.21 7.58 7.92 2.88 4.3 6.52 8.01 9.83 11.97 1.89 2.61 3.06 5.64 4.48 8.52 2.81 4.9 4 10.5 6.63 15.49 2.16 6.04 5.56 11.92 5.37 18.5 0.65 1.95 0.78 4 0.98 6.03 1.01 3.95 2.84 8.55 0.63 12.42-2.4 5.23-7.03 8.97-11.55 12.33-6.06 4.66-11.62 10.05-18.37 13.75-4.06 2.65-8.24 5.17-12.71 7.08-3.59 1.57-6.06 4.94-9.85 6.09-2.29 1.71-3.98 4.51-6.97 5.02-4.56 1.35-8.98-3.72-13.5-1.25-2.99 1.83-6.19 3.21-9.39 4.6-8.5 5.61-18.13 9.48-28.06 11.62-8.36-0.2-16.69 0.62-25.05 0.47-3.5-1.87-7.67-1.08-11.22-2.83-6.19-1.52-10.93-6.01-16.62-8.61-2.87-1.39-5.53-3.16-8.11-4.99-2.58-1.88-4.17-4.85-6.98-6.44-3.83-0.11-6.54 3.42-10.24 3.92-2.31 0.28-4.64 0.32-6.96 0.31-3.5-3.65-5.69-8.74-10.59-10.77-5.01-3.68-10.57-6.67-14.84-11.25-2.52-2.55-5.22-4.87-8.24-6.8-4.73-4.07-7.93-9.51-11.41-14.62-3.08-4.41-5.22-9.73-4.6-15.19 0.65-8.01 0.62-16.18 2.55-24.02 4.06-10.46 11.15-19.34 18.05-28.06 3.71-5.31 9.91-10.21 16.8-8.39 3.25 1.61 5.74 4.56 7.14 7.89 1.19 2.7 3.49 4.93 3.87 7.96 0.97 5.85 1.6 11.86 0.74 17.77-1.7 6.12-2.98 12.53-2.32 18.9 0.01 2.92 2.9 5.36 5.78 4.57 3.06-0.68 3.99-4.07 5.32-6.48 1.67-4.06 4.18-7.66 6.69-11.23 3.61-5.28 5.09-11.57 7.63-17.37 2.07-4.56 1.7-9.64 2.56-14.46 0.78-7.65-0.62-15.44 0.7-23.04 1.32-3.78 1.79-7.89 3.8-11.4 3.01-3.66 6.78-6.63 9.85-10.26 1.72-2.12 4.21-3.32 6.55-4.6 7.89-2.71 15.56-6.75 24.06-7z"/>',
 	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev'),
 	SERVER = DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/";
@@ -520,7 +1155,7 @@ module.exports = {
 	STAR: '<svg class="svg-star" height="16px" version="1.1" viewbox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M15,6l-4.041,2.694L13,14l-5-3.333L3,14l2.041-5.306L1,6h5.077L8,1l1.924,5H15z" fill-rule="evenodd"></path></svg>',
 	CLOSE: '<svg class="svg-close_small" height="16px" version="1.1" viewbox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M12.657,4.757L9.414,8l3.243,3.242l-1.415,1.415L8,9.414l-3.243,3.243l-1.414-1.415L6.586,8L3.343,4.757l1.414-1.414L8,6.586l3.242-3.243L12.657,4.757z" fill-rule="evenodd"></path></svg>'
 }
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -560,7 +1195,7 @@ FFZ.ffz_commands.developer_mode = function(room, args) {
 
 FFZ.ffz_commands.developer_mode.help = "Usage: /ffz developer_mode <on|off>\nEnable or disable Developer Mode. When Developer Mode is enabled, the script will be reloaded from //localhost:8000/script.js instead of from the CDN.";
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants');
@@ -1027,6 +1662,7 @@ FFZ.prototype._modify_cindex = function(view) {
 FFZ.settings_info.chatter_count = {
 	type: "boolean",
 	value: false,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 
@@ -1050,6 +1686,7 @@ FFZ.settings_info.chatter_count = {
 FFZ.settings_info.channel_views = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Channel Views",
@@ -1063,6 +1700,7 @@ FFZ.settings_info.channel_views = {
 FFZ.settings_info.hosted_channels = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Channel Hosting",
@@ -1089,6 +1727,7 @@ FFZ.settings_info.hosted_channels = {
 FFZ.settings_info.stream_host_button = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Host This Channel Button",
@@ -1103,6 +1742,7 @@ FFZ.settings_info.stream_host_button = {
 FFZ.settings_info.stream_uptime = {
 	type: "boolean",
 	value: false,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Stream Uptime",
@@ -1118,6 +1758,7 @@ FFZ.settings_info.stream_title = {
 	type: "boolean",
 	value: true,
 	no_bttv: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Title Links",
@@ -1127,7 +1768,7 @@ FFZ.settings_info.stream_title = {
 				this._cindex.ffzFixTitle();
 		}
 	};
-},{"../constants":3,"../utils":32}],6:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
@@ -1472,7 +2113,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 		}.property("ffz_emoticons", "ffz_chatters", "isSuggestionsTriggeredWithTab")*/
 	});
 }
-},{"../constants":3,"../utils":32}],7:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants');
@@ -1488,6 +2129,7 @@ FFZ.settings_info.swap_sidebars = {
 	value: false,
 
 	category: "Appearance",
+	no_mobile: true,
 	no_bttv: true,
 	
 	name: "Swap Sidebar Positions",
@@ -1505,6 +2147,7 @@ FFZ.settings_info.minimal_chat = {
 	value: false,
 
 	category: "Chat Appearance",
+	
 	name: "Minimalistic Chat",
 	help: "Hide all of the chat user interface, only showing messages and an input box.",
 
@@ -2370,22 +3013,13 @@ FFZ.chat_commands.part = function(room, args) {
 	else
 		return "You are not in " + room_id + ".";
 }
-},{"../constants":3,"../utils":32}],8:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
 
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
 	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
-
-	quote_attr = function(attr) {
-		return (attr + '')
-			.replace(/&/g, "&amp;")
-			.replace(/'/g, "&apos;")
-			.replace(/"/g, "&quot;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-	},
 
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
@@ -2395,6 +3029,36 @@ var FFZ = window.FrankerFaceZ,
 			return SRCSETS[id];
 		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
 		return out;
+	},
+	
+	
+	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
+	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
+	IMGUR_PATH = /^\/(?:gallery\/)?[A-Za-z0-9]+(?:\.(?:png|jpg|jpeg|gif|gifv|bmp))?$/,
+	IMAGE_EXT = /\.(?:png|jpg|jpeg|gif|bmp)$/i,
+	IMAGE_DOMAINS = [],
+	
+	is_image = function(href, any_domain) {
+		var match = href.match(LINK_SPLIT);
+		if ( ! match )
+			return;
+
+		var domain = match[3].toLowerCase(), port = match[4],
+			path = match[5];
+
+		// Don't allow non-standard ports.
+		if ( port && port !== '80' && port !== '443' )
+			return false;
+
+		// imgur-specific checks.
+		if ( domain === 'i.imgur.com' || domain === 'imgur.com' || domain === 'www.imgur.com' || domain === 'm.imgur.com' )
+			return IMGUR_PATH.test(path);
+
+		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1; 
+	}
+	
+	image_iframe = function(href, extra_class) {
+		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
 	},
 
 
@@ -2459,7 +3123,8 @@ var FFZ = window.FrankerFaceZ,
 			return link_data.tooltip;
 
 		if ( link_data.type == "youtube" ) {
-			tooltip = "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip = this.settings.link_image_hover ? image_iframe(link_data.full || href, 'ffz-yt-thumb') : '';
+			tooltip += "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
 			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
 			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
 
@@ -2499,7 +3164,8 @@ var FFZ = window.FrankerFaceZ,
 
 
 		} else if ( link_data.type == "reputation" ) {
-			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
 			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
 				tooltip += "<hr>";
 				var had_extra = false;
@@ -2517,8 +3183,10 @@ var FFZ = window.FrankerFaceZ,
 			}
 
 
-		} else if ( link_data.full )
-			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+		} else if ( link_data.full ) {
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+		}
 
 		if ( ! tooltip )
 			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
@@ -2734,29 +3402,41 @@ FFZ.settings_info.keywords = {
 	};
 
 
-FFZ.settings_info.fix_color = {
-	type: "boolean",
-	value: true,
-
-	category: "Chat Appearance",
-	no_bttv: true,
-
-	name: "Adjust Username Colors",
-	help: "Ensure that username colors contrast with the background enough to be readable.",
-
-	on_update: function(val) { document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && val); }
-	};
-
-
 FFZ.settings_info.link_info = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat Appearance",
+	category: "Chat Tooltips",
 	no_bttv: true,
 
-	name: "Link Tooltips <span>Beta</span>",
+	name: "Link Information <span>Beta</span>",
 	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
+	};
+
+
+FFZ.settings_info.link_image_hover = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Tooltips",
+	no_bttv: true,
+	no_mobile: true,
+
+	name: "Image Preview",
+	help: "Display image thumbnails for links to Imgur and YouTube."
+	};
+
+
+FFZ.settings_info.image_hover_all_domains = {
+	type: "boolean",
+	value: false,
+	
+	category: "Chat Tooltips",
+	no_bttv: true,
+	no_mobile: true,
+	
+	name: "Image Preview - All Domains",
+	help: "<i>Requires Image Preview.</i> Attempt to show an image preview for any URL ending in the appropriate extension. <b>Warning: This may be used to leak your IP address to malicious users.</b>"
 	};
 
 
@@ -2788,17 +3468,34 @@ FFZ.settings_info.chat_rows = {
 
 
 FFZ.settings_info.chat_separators = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Basic Line (1px solid)",
+		2: "3D Line (2px groove)"
+	},
+	value: '0',
 
 	category: "Chat Appearance",
 	no_bttv: true,
+	
+	process_value: function(val) {
+		if ( val === false )
+			return '0';
+		else if ( val === true )
+			return '1';
+		return val;
+	},
 
 	name: "Chat Line Separators",
 	help: "Display thin lines between chat messages for further visual separation.",
 
-	on_update: function(val) { document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val); }
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val !== '0');
+			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === '2');
+		}
 	};
+	
 	
 FFZ.settings_info.chat_padding = {
 	type: "boolean",
@@ -2868,6 +3565,52 @@ FFZ.settings_info.chat_font_size = {
 		}
 
 		utils.update_css(this._chat_style, "chat_font_size", css);
+		FFZ.settings_info.chat_ts_size.on_update.bind(this)(this.settings.chat_ts_size);
+		}
+	};
+
+
+FFZ.settings_info.chat_ts_size = {
+	type: "button",
+	value: null,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Timestamp Font Size",
+	help: "Make the chat timestamp font bigger or smaller.",
+
+	method: function() {
+			var old_val = this.settings.chat_ts_size;
+			
+			if ( old_val === null )
+				old_val = this.settings.chat_font_size;
+			
+			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var parsed = parseInt(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = null;
+			
+			this.settings.set("chat_ts_size", parsed);
+		},
+
+	on_update: function(val) {
+		if ( this.has_bttv || ! this._chat_style )
+			return;
+
+		var css;
+		if ( val === null )
+			css = "";
+		else {
+			var lh = Math.max(20, Math.round((20/12)*val), Math.round((20/12)*this.settings.chat_font_size));
+			css = ".ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+		}
+
+		utils.update_css(this._chat_style, "chat_ts_font_size", css);
 		}
 	};
 
@@ -2891,25 +3634,21 @@ FFZ.prototype.setup_line = function() {
 	
 	// Initial calculation.
 	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
-	
+
 	
 	// Chat Enhancements
-	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color);
+	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color !== '-1');
+	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
+	
 	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges);
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
-	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators);
+	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== '0');
+	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
 	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
 	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
 	document.body.classList.toggle("ffz-high-contrast-chat", !this.has_bttv && this.settings.high_contrast_chat);
 
-	this._colors = {};
 	this._last_row = {};
-
-	s = this._fix_color_style = document.createElement('style');
-	s.id = "ffz-style-username-colors";
-	s.type = 'text/css';
-	document.head.appendChild(s);
-
 
 	// Emoticon Data
 	this._twitch_emotes = {};
@@ -3030,12 +3769,7 @@ FFZ.prototype._modify_line = function(component) {
 				var el = this.get('element'),
 					user = this.get('msgObject.from'),
 					room = this.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id'),
-					color = this.get('msgObject.color'),
 					row_type = this.get('msgObject.ffz_alternate');
-
-				// Color Processing
-				if ( color )
-					f._handle_color(color);
 
 				// Row Alternation
 				if ( row_type === undefined ) {
@@ -3106,7 +3840,7 @@ FFZ.prototype._modify_line = function(component) {
 
 
 				// Link Tooltips
-				if ( f.settings.link_info ) {
+				if ( f.settings.link_info || f.settings.link_image_hover ) {
 					var links = el.querySelectorAll("span.message a");
 					for(var i=0; i < links.length; i++) {
 						var link = links[i],
@@ -3119,18 +3853,26 @@ FFZ.prototype._modify_line = function(component) {
 						}
 
 						// Check the cache.
-						var link_data = f._link_data[href];
-						if ( link_data ) {
-							if ( !deleted && typeof link_data != "boolean" )
-								link.title = link_data.tooltip;
-
-							if ( link_data.unsafe )
-								link.classList.add('unsafe-link');
-
-						} else if ( ! /^mailto:/.test(href) ) {
-							f._link_data[href] = true;
-							f.ws_send("get_link", href, load_link_data.bind(f, href));
+						if ( f.settings.link_info ) {
+							var link_data = f._link_data[href];
+							if ( link_data ) {
+								if ( !deleted && typeof link_data != "boolean" )
+									link.title = link_data.tooltip;
+	
+								if ( link_data.unsafe )
+									link.classList.add('unsafe-link');
+	
+							} else if ( ! /^mailto:/.test(href) ) {
+								f._link_data[href] = true;
+								f.ws_send("get_link", href, load_link_data.bind(f, href));
+								if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
+									link.title = image_iframe(href); 
+							}
 						}
+						
+						// Now, Images
+						else if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
+							link.title = image_iframe(href); 
 					}
 
 					jQuery(links).tipsy({html:true});
@@ -3208,68 +3950,6 @@ FFZ.prototype._modify_line = function(component) {
 
 
 // ---------------------
-// Fix Name Colors
-// ---------------------
-
-FFZ.prototype._handle_color = function(color) {
-	if ( ! color || this._colors[color] )
-		return;
-
-	this._colors[color] = true;
-
-	// Parse the color.
-	var raw = parseInt(color.substr(1), 16),
-		rgb = [
-			(raw >> 16),
-			(raw >> 8 & 0x00FF),
-			(raw & 0x0000FF)
-			],
-
-		lum = utils.get_luminance(rgb),
-
-		output = "",
-		rule = 'span[style="color:' + color + '"]',
-		matched = false;
-
-	if ( lum > 0.3 ) {
-		// Color Too Bright. We need a lum of 0.3 or less.
-		matched = true;
-
-		var s = 127,
-			nc = rgb;
-		while(s--) {
-			nc = utils.darken(nc);
-			if ( utils.get_luminance(nc) <= 0.3 )
-				break;
-		}
-
-		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
-	} else
-		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
-
-	if ( lum < 0.15 ) {
-		// Color Too Dark. We need a lum of 0.1 or more.
-		matched = true;
-
-		var s = 127,
-			nc = rgb;
-		while(s--) {
-			nc = utils.brighten(nc);
-			if ( utils.get_luminance(nc) >= 0.15 )
-				break;
-		}
-
-		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
-	} else
-		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
-
-
-	if ( matched )
-		this._fix_color_style.innerHTML += output;
-}
-
-
-// ---------------------
 // Capitalization
 // ---------------------
 
@@ -3326,7 +4006,7 @@ FFZ.prototype._remove_banned = function(tokens) {
 				new_tokens.push(token.altText.replace(regex, "$1***"));
 			else if ( token.isLink && regex.test(token.href) )
 				new_tokens.push({
-					mentionedUser: '</span><a class="deleted-link" title="' + quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
+					mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + utils.quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
 					own: true
 					});
 			else
@@ -3350,7 +4030,7 @@ FFZ.prototype._emoticonize = function(component, tokens) {
 
 	return this.tokenize_emotes(user_id, room_id, tokens);
 }
-},{"../constants":3,"../utils":32}],9:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
@@ -3451,7 +4131,7 @@ FFZ.settings_info.mod_card_hotkeys = {
 
 FFZ.settings_info.mod_card_info = {
 	type: "boolean",
-	value: false,
+	value: true,
 
 	no_bttv: true,
 	category: "Chat Moderation",
@@ -4023,13 +4703,16 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
-},{"../constants":3,"../utils":32}],10:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
 	GROUP_CHAT = /^_([^_]+)_\d+$/,
 	constants = require('../constants'),
 	utils = require('../utils'),
+
+	// StrimBagZ Support
+	is_android = navigator.userAgent.indexOf('Android') !== -1,
 
 
 	moderator_css = function(room) {
@@ -4155,6 +4838,15 @@ FFZ.prototype._modify_rview = function(view) {
 			f._roomv = this;
 
 			this.ffz_frozen = false;
+
+			// Fix scrolling.
+			this._ffz_mouse_down = this.ffzMouseDown.bind(this);
+			if ( is_android )
+				// We don't unbind scroll because that messes with the scrollbar. ;_;
+				this._$chatMessagesScroller.bind('scroll', this._ffz_mouse_down);
+
+			this._$chatMessagesScroller.unbind('mousedown');
+			this._$chatMessagesScroller.bind('mousedown', this._ffz_mouse_down);
 
 			if ( f.settings.chat_hover_pause )
 				this.ffzEnableFreeze();
@@ -4283,12 +4975,9 @@ FFZ.prototype._modify_rview = function(view) {
 			
 			this._ffz_mouse_move = this.ffzMouseMove.bind(this);
 			this._ffz_mouse_out = this.ffzMouseOut.bind(this);
-			this._ffz_mouse_down = this.ffzMouseDown.bind(this);
-
-			this._$chatMessagesScroller.unbind('mousedown');
-			this._$chatMessagesScroller.bind('mousedown', this._ffz_mouse_down);
 
 			messages.addEventListener('mousemove', this._ffz_mouse_move);
+			messages.addEventListener('touchmove', this._ffz_mouse_move);
 			messages.addEventListener('mouseout', this._ffz_mouse_out);
 			document.addEventListener('mouseout', this._ffz_mouse_out);
 		},
@@ -4337,7 +5026,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 		ffzMouseDown: function(event) {
 			var t = this._$chatMessagesScroller;
-			if ( ! this.ffz_frozen && t && t[0] && (event.which > 0 || "mousedown" === event.type || "mousewheel" === event.type) ) {
+			if ( t && t[0] && (event.which > 0 || (!this.ffz_frozne && "mousedown" === event.type) || "mousewheel" === event.type || (is_android && "scroll" === event.type) ) ) {
 				var r = t[0].scrollHeight - t[0].scrollTop - t[0].offsetHeight;
 				this._setStuckToBottom(10 >= r);
 			}
@@ -4965,6 +5654,7 @@ FFZ.prototype._modify_room = function(room) {
 					if ( ! is_whisper )
 						msg.room = this.get('id');
 
+					// Tokenization
 					f.tokenize_chat_line(msg);
 
 					// Keep the history.
@@ -5000,11 +5690,17 @@ FFZ.prototype._modify_room = function(room) {
 						}
 					}
 				}
-			} catch(err) {
-				f.error("Room addMessage: " + err);
-			}
+			} catch(err) { f.error("Room addMessage: " + err); }
 
-			return this._super(msg);
+			var out = this._super(msg);
+
+			try {
+				// Color processing.
+				var color = msg.color;
+				if ( color )
+					f._handle_color(color);
+			} catch(err) { f.error("Room addMessage2: " + err); }
+			return out;
 		},
 
 		setHostMode: function(e) {
@@ -5256,7 +5952,7 @@ FFZ.prototype._modify_room = function(room) {
 		}.observes('tmiRoom')
 	});
 }
-},{"../constants":3,"../utils":32}],11:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -5354,7 +6050,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 		}.property("content.chatters")
 	});
 }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -5746,7 +6442,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	if ( callback )
 		callback(true, data);
 }
-},{"./constants":3,"./utils":32}],13:[function(require,module,exports){
+},{"./constants":4,"./utils":33}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -5805,9 +6501,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
+	document.body.classList.remove("ffz-chat-colors-gray");
 	document.body.classList.remove("ffz-chat-background");
 	document.body.classList.remove("ffz-chat-padding");
 	document.body.classList.remove("ffz-chat-separator");
+	document.body.classList.remove("ffz-chat-separator-3d");
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-transparent-badges");
 	document.body.classList.remove("ffz-high-contrast-chat");
@@ -6028,7 +6726,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	this.update_ui_link();
 }
-},{"../constants":3,"../utils":32}],14:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -6104,7 +6802,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 	return emotes;
 }
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // Modify Array and others.
 // require('./shims');
 
@@ -6128,7 +6826,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 19,
+	major: 3, minor: 4, revision: 25,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -6214,7 +6912,7 @@ require('./ui/menu');
 require('./settings');
 require('./socket');
 
-
+require('./colors');
 require('./emoticons');
 require('./badges');
 require('./tokenize');
@@ -6318,6 +7016,7 @@ FFZ.prototype.setup_normal = function(delay, no_socket) {
 	if ( ! no_socket )
 		this.ws_create();
 
+	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
 
@@ -6352,9 +7051,11 @@ FFZ.prototype.setup_dashboard = function(delay) {
 	this.setup_dark();
 
 	this.ws_create();
+	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
 
+	this.setup_tokenization();
 	this.setup_notifications();
 	this.setup_css();
 
@@ -6395,6 +7096,8 @@ FFZ.prototype.setup_ember = function(delay) {
 	//this.setup_piwik();
 
 	//this.setup_router();
+	this.setup_colors();
+	this.setup_tokenization();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
@@ -6443,7 +7146,7 @@ FFZ.prototype._on_window_message = function(e) {
 
 	var msg = e.data;
 }
-},{"./badges":1,"./commands":2,"./debug":4,"./ember/channel":5,"./ember/chat-input":6,"./ember/chatview":7,"./ember/line":8,"./ember/moderation-card":9,"./ember/room":10,"./ember/viewers":11,"./emoticons":12,"./ext/betterttv":13,"./ext/emote_menu":14,"./featurefriday":16,"./settings":17,"./socket":18,"./tokenize":19,"./ui/about_page":20,"./ui/dark":21,"./ui/following":23,"./ui/following-count":22,"./ui/menu":24,"./ui/menu_button":25,"./ui/my_emotes":26,"./ui/notifications":27,"./ui/races":28,"./ui/styles":29,"./ui/sub_count":30,"./ui/viewer_count":31}],16:[function(require,module,exports){
+},{"./badges":1,"./colors":2,"./commands":3,"./debug":5,"./ember/channel":6,"./ember/chat-input":7,"./ember/chatview":8,"./ember/line":9,"./ember/moderation-card":10,"./ember/room":11,"./ember/viewers":12,"./emoticons":13,"./ext/betterttv":14,"./ext/emote_menu":15,"./featurefriday":17,"./settings":18,"./socket":19,"./tokenize":20,"./ui/about_page":21,"./ui/dark":22,"./ui/following":24,"./ui/following-count":23,"./ui/menu":25,"./ui/menu_button":26,"./ui/my_emotes":27,"./ui/notifications":28,"./ui/races":29,"./ui/styles":30,"./ui/sub_count":31,"./ui/viewer_count":32}],17:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -6582,7 +7285,7 @@ FFZ.prototype._update_ff_name = function(name) {
 	if ( this.feature_friday )
 		this.feature_friday.display_name = name;
 }
-},{"./constants":3}],17:[function(require,module,exports){
+},{"./constants":4}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("./constants");
 
@@ -6595,6 +7298,10 @@ var FFZ = window.FrankerFaceZ,
 		var val = ! this.settings.get(key);
 		this.settings.set(key, val);
 		swit.classList.toggle('active', val);
+	},
+	
+	option_setting = function(select, key) {
+		this.settings.set(key, JSON.parse(select.options[select.selectedIndex].value));
 	};
 
 
@@ -6626,6 +7333,9 @@ FFZ.prototype.load_settings = function() {
 			}
 		}
 
+		if ( info.process_value )
+			val = info.process_value.bind(this)(val);
+
 		this.settings[key] = val;
 	}
 
@@ -6646,7 +7356,9 @@ FFZ.prototype.load_settings = function() {
 FFZ.menu_pages.settings = {
 	render: function(view, container) {
 			var settings = {},
-				categories = [];
+				categories = [],
+				is_android = navigator.userAgent.indexOf('Android') !== -1;
+
 			for(var key in FFZ.settings_info) {
 				if ( ! FFZ.settings_info.hasOwnProperty(key) )
 					continue;
@@ -6663,6 +7375,9 @@ FFZ.menu_pages.settings = {
 					if ( ! visible )
 						continue;
 				}
+				
+				if ( is_android && info.no_mobile )
+					continue;
 
 				if ( ! cs ) {
 					categories.push(cat);
@@ -6724,8 +7439,8 @@ FFZ.menu_pages.settings = {
 					var a = a[1],
 						b = b[1],
 
-						at = a.type,
-						bt = b.type,
+						at = a.type === "button" ? 2 : 1,
+						bt = b.type === "button" ? 2 : 1,
 
 						an = a.name.toLowerCase(),
 						bn = b.name.toLowerCase();
@@ -6777,6 +7492,27 @@ FFZ.menu_pages.settings = {
 							el.appendChild(label);
 
 							swit.addEventListener("click", toggle_setting.bind(this, swit, key));
+
+						} else if ( info.type === "select" ) {
+							var select = document.createElement('select'),
+								label = document.createElement('span');
+							
+							label.className = 'option-label';
+							label.innerHTML = info.name;
+							
+							for(var ok in info.options) {
+								var op = document.createElement('option');
+								op.value = JSON.stringify(ok);
+								if ( val === ok )
+									op.setAttribute('selected', true);
+								op.innerHTML = info.options[ok];
+								select.appendChild(op);
+							}
+							
+							select.addEventListener('change', option_setting.bind(this, select, key));
+							
+							el.appendChild(label);
+							el.appendChild(select);
 
 						} else {
 							el.classList.add("option");
@@ -6910,7 +7646,7 @@ FFZ.prototype._setting_del = function(key) {
 			this.log('Error running updater for setting "' + key + '": ' + err);
 		}
 }
-},{"./constants":3}],18:[function(require,module,exports){
+},{"./constants":4}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -7161,7 +7897,7 @@ FFZ.ws_commands.do_authorize = function(data) {
 		// Try again shortly.
 		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
 }
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("./utils"),
 	constants = require("./constants"),
@@ -7172,13 +7908,10 @@ var FFZ = window.FrankerFaceZ,
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 	},
 
+	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#!?&//=]*)/g,
+
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
 	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
-
-
-try {
-	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
-} catch(err) { }
 
 
 FFZ.SRC_IDS = {},
@@ -7198,7 +7931,7 @@ FFZ.src_to_id = function(src) {
 
 
 // ---------------------
-// Time Format
+// Settings
 // ---------------------
 
 var ts = new Date(0).toLocaleTimeString().toUpperCase();
@@ -7215,18 +7948,71 @@ FFZ.settings_info.twenty_four_timestamps = {
 	};
 
 
-if ( helpers )
+FFZ.settings_info.show_deleted_links = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Show Deleted Links",
+	help: "Do not delete links based on room settings or link length."
+	};
+
+
+// ---------------------
+// Setup
+// ---------------------
+
+FFZ.prototype.setup_tokenization = function() {
+	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+	if ( ! helpers )
+		return this.log("Unable to get chat helper functions.");
+	
+	this.log("Hooking Ember chat line helpers.");
+
+	var f = this;
+	
+	// Timestamp Display
 	helpers.getTime = function(e) {
+		if ( e === undefined || e === null )
+			return '?:??';
+
 		var hours = e.getHours(),
 			minutes = e.getMinutes();
-
-		if ( hours > 12 && ! FFZ.get().settings.twenty_four_timestamps )
+	
+		if ( hours > 12 && ! f.settings.twenty_four_timestamps )
 			hours -= 12;
-		else if ( hours === 0 && ! FFZ.get().settings.twenty_four_timestamps )
+		else if ( hours === 0 && ! f.settings.twenty_four_timestamps )
 			hours = 12;
-
+	
 		return hours + ':' + (minutes < 10 ? '0' : '') + minutes;
 	};
+
+
+	// Linkify Messages
+	helpers.linkifyMessage = function(tokens, delete_links) {
+		var show_deleted = f.settings.show_deleted_links;
+		
+		return _.chain(tokens).map(function(token) {
+			if ( ! _.isString(token) )
+				return token;
+			
+			var matches = token.match(LINK);
+			if ( ! matches || ! matches.length )
+				return [token];
+	
+			return _.zip(
+				token.split(LINK),
+				_.map(matches, function(e) {
+					if ( ! show_deleted && (delete_links || e.length > 255) )
+						return {mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(e) + '" data-url="' + utils.quote_attr(e) + '" href="#">&lt;' + (e.length > 255 ? 'long link' : 'deleted link') + '&gt;</a><span class="mentioning">', own: true}
+					return {isLink: true, href: e};
+				})
+			);
+		}).flatten().compact().value();
+	};
+}
 
 
 // ---------------------
@@ -7237,6 +8023,8 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
+	try {
+
 	var msg = msgObject.message,
 		user = this.get_user(),
 		room_id = msgObject.room,
@@ -7246,11 +8034,15 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 		tokens = [msg];
 
 	// Standard tokenization
-	tokens = helpers.linkifyMessage(tokens);
-	if ( user && user.login )
+	if ( helpers && helpers.linkifyMessage )
+		tokens = helpers.linkifyMessage(tokens);
+
+	if ( user && user.login && helpers && helpers.mentionizeMessage )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
 
-	tokens = helpers.emoticonizeMessage(tokens, emotes);
+	if ( helpers && helpers.emoticonizeMessage )
+		tokens = helpers.emoticonizeMessage(tokens, emotes);
+
 	if ( this.settings.replace_bad_emotes )
 		tokens = this.tokenize_replace_emotes(tokens);
 
@@ -7313,7 +8105,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 							msg,
 							"Twitch Chat Whisper",
 							"ffz_whisper_notice",
-							60000,
+							(this.settings.notification_timeout*1000),
 							function() {
 								window.focus();
 							}
@@ -7323,7 +8115,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 							msg,
 							"Twitch Chat Mention in " + room_name,
 							room_id,
-							60000,
+							(this.settings.notification_timeout*1000),
 							function() {
 								window.focus();
 								var cont = App.__container__.lookup('controller:chat');
@@ -7338,6 +8130,10 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	}
 
 	msgObject.cachedTokens = tokens;
+	} catch(err) {
+		this.error("Tokenization Error: " + err);
+	}
+	
 	return tokens;
 }
 
@@ -7752,7 +8548,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 	// Stop from Navigating
 	e.preventDefault();
 }
-},{"./constants":3,"./utils":32}],20:[function(require,module,exports){
+},{"./constants":4,"./utils":33}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -7856,7 +8652,7 @@ FFZ.menu_pages.about = {
 		container.appendChild(credits);
 	}
 }
-},{"../constants":3}],21:[function(require,module,exports){
+},{"../constants":4}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -7926,6 +8722,7 @@ FFZ.settings_info.hide_recent_past_broadcast = {
 	value: false,
 
 	//no_bttv: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Hide \"Watch Last Broadcast\"",
@@ -7970,7 +8767,7 @@ FFZ.prototype._load_dark_css = function() {
 	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 }
-},{"../constants":3}],22:[function(require,module,exports){
+},{"../constants":4}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -7981,6 +8778,7 @@ FFZ.settings_info.following_count = {
 	value: true,
 
 	no_bttv: true,
+	no_mobile: true,
 
 	category: "Appearance",
 	name: "Sidebar Following Count",
@@ -8126,7 +8924,7 @@ FFZ.prototype._draw_following_count = function(count) {
 		}
 	}
 }
-},{"../utils":32}],23:[function(require,module,exports){
+},{"../utils":33}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -8149,6 +8947,7 @@ FFZ.prototype.setup_following = function() {
 FFZ.settings_info.follow_buttons = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Relevant Follow Buttons",
@@ -8525,7 +9324,7 @@ FFZ.prototype._build_following_popup = function(container, channel_id, notificat
 	container.appendChild(popup);
 	return popup.querySelector('a.switch');
 }
-},{"../utils":32}],24:[function(require,module,exports){
+},{"../utils":33}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -8783,7 +9582,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
+	sub_container.style.maxHeight = Math.max(200, view.$().height() - 472) + "px";
 	view.$('.chat-interface').append(container);
 }
 
@@ -9073,7 +9872,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 	else
 		room.set('messageToSend', text);
 }
-},{"../constants":3,"../utils":32}],25:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -9120,7 +9919,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":3}],26:[function(require,module,exports){
+},{"../constants":4}],27:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	utils = require("../utils"),
@@ -9557,7 +10356,7 @@ FFZ.menu_pages.my_emotes = {
 		}
 	}
 };
-},{"../constants":3,"../utils":32}],27:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],28:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -9581,6 +10380,7 @@ FFZ.settings_info.highlight_notifications = {
 
 	category: "Chat Filtering",
 	no_bttv: true,
+	no_mobile: true,
 	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
@@ -9607,6 +10407,33 @@ FFZ.settings_info.highlight_notifications = {
 					f.settings.set("highlight_notifications", false);
 				}
 			});
+		}
+	};
+
+
+FFZ.settings_info.notification_timeout = {
+	type: "button",
+	value: 60,
+
+	category: "Chat Filtering",
+	no_bttv: true,
+	no_mobile: true,
+
+	name: "Notification Timeout",
+	help: "Specify how long notifications should be displayed before automatically closing.",
+
+	method: function() {
+			var old_val = this.settings.notification_timeout,
+				new_val = prompt("Notification Timeout\n\nPlease enter the time you'd like notifications to be displayed before automatically closing, in seconds.\n\nDefault is: 60", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var parsed = parseInt(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = 60;
+			
+			this.settings.set("notification_timeout", parsed);
 		}
 	};
 
@@ -9648,7 +10475,7 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 
 	if ( perm === "granted" ) {
 		title = title || "FrankerFaceZ";
-		timeout = timeout || 10000;
+		timeout = timeout || (this.settings.notification_timeout*1000);
 
 		var options = {
 			lang: "en-US",
@@ -9707,7 +10534,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -9729,6 +10556,7 @@ FFZ.prototype.setup_races = function() {
 FFZ.settings_info.srl_races = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "SRL Race Information",
@@ -10053,7 +10881,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		}
 	}
 }
-},{"../utils":32}],29:[function(require,module,exports){
+},{"../utils":33}],30:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -10078,7 +10906,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":3}],30:[function(require,module,exports){
+},{"../constants":4}],31:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -10181,7 +11009,7 @@ FFZ.prototype._update_subscribers = function() {
 	});;
 }
 
-},{"../constants":3,"../utils":32}],31:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],32:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -10253,7 +11081,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy(this.is_dashboard ? {"gravity":"s"} : undefined);
 	}
 }
-},{"../constants":3,"../utils":32}],32:[function(require,module,exports){
+},{"../constants":4,"../utils":33}],33:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -10273,38 +11101,6 @@ var sanitize_cache = {},
 		else if ( num == 3 ) return '3rd';
 		else if ( num == null ) return '---';
 		return num + "th";
-	},
-
-	brighten = function(rgb, amount) {
-		amount = (amount === 0) ? 0 : (amount || 1);
-		amount = Math.round(255 * -(amount / 100));
-
-		var r = Math.max(0, Math.min(255, rgb[0] - amount)),
-			g = Math.max(0, Math.min(255, rgb[1] - amount)),
-			b = Math.max(0, Math.min(255, rgb[2] - amount));
-
-		return [r,g,b];
-	},
-
-	rgb_to_css = function(rgb) {
-		return "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
-	},
-
-	darken = function(rgb, amount) {
-		amount = (amount === 0) ? 0 : (amount || 1);
-		return brighten(rgb, -amount);
-	},
-
-	get_luminance = function(rgb) {
-		rgb = [rgb[0]/255, rgb[1]/255, rgb[2]/255];
-		for (var i =0; i<rgb.length; i++) {
-			if (rgb[i] <= 0.03928) {
-				rgb[i] = rgb[i] / 12.92;
-			} else {
-				rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
-			}
-		}
-		return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
 	},
 
 	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
@@ -10477,11 +11273,6 @@ module.exports = {
 
 	emoji_to_codepoint: emoji_to_codepoint,
 
-	get_luminance: get_luminance,
-	brighten: brighten,
-	darken: darken,
-	rgb_to_css: rgb_to_css,
-
 	parse_date: parse_date,
 
 	number_commas: function(x) {
@@ -10507,6 +11298,15 @@ module.exports = {
 			sanitize_el.innerHTML = "";
 		}
 		return m;
+	},
+	
+	quote_attr: function(attr) {
+		return (attr + '')
+			.replace(/&/g, "&amp;")
+			.replace(/'/g, "&apos;")
+			.replace(/"/g, "&quot;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
 	},
 
 	date_string: function(date) {
@@ -10572,4 +11372,4 @@ module.exports = {
 		return "" + count;
 	}
 }
-},{"./constants":3}]},{},[15]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":4}]},{},[16]);window.ffz = new FrankerFaceZ()}(window));

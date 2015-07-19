@@ -13,6 +13,7 @@ FFZ.settings_info.swap_sidebars = {
 	value: false,
 
 	category: "Appearance",
+	no_mobile: true,
 	no_bttv: true,
 	
 	name: "Swap Sidebar Positions",
@@ -30,6 +31,7 @@ FFZ.settings_info.minimal_chat = {
 	value: false,
 
 	category: "Chat Appearance",
+	
 	name: "Minimalistic Chat",
 	help: "Hide all of the chat user interface, only showing messages and an input box.",
 

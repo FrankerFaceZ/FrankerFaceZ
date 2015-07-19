@@ -255,7 +255,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
+	sub_container.style.maxHeight = Math.max(200, view.$().height() - 472) + "px";
 	view.$('.chat-interface').append(container);
 }
 

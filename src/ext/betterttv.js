@@ -56,9 +56,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	// Disable other features too.
 	document.body.classList.remove("ffz-chat-colors");
+	document.body.classList.remove("ffz-chat-colors-gray");
 	document.body.classList.remove("ffz-chat-background");
 	document.body.classList.remove("ffz-chat-padding");
 	document.body.classList.remove("ffz-chat-separator");
+	document.body.classList.remove("ffz-chat-separator-3d");
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-transparent-badges");
 	document.body.classList.remove("ffz-high-contrast-chat");

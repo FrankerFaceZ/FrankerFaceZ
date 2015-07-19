@@ -19,6 +19,7 @@ FFZ.prototype.setup_races = function() {
 FFZ.settings_info.srl_races = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "SRL Race Information",

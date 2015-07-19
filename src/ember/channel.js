@@ -464,6 +464,7 @@ FFZ.prototype._modify_cindex = function(view) {
 FFZ.settings_info.chatter_count = {
 	type: "boolean",
 	value: false,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 
@@ -487,6 +488,7 @@ FFZ.settings_info.chatter_count = {
 FFZ.settings_info.channel_views = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Channel Views",
@@ -500,6 +502,7 @@ FFZ.settings_info.channel_views = {
 FFZ.settings_info.hosted_channels = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Channel Hosting",
@@ -526,6 +529,7 @@ FFZ.settings_info.hosted_channels = {
 FFZ.settings_info.stream_host_button = {
 	type: "boolean",
 	value: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Host This Channel Button",
@@ -540,6 +544,7 @@ FFZ.settings_info.stream_host_button = {
 FFZ.settings_info.stream_uptime = {
 	type: "boolean",
 	value: false,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Stream Uptime",
@@ -555,6 +560,7 @@ FFZ.settings_info.stream_title = {
 	type: "boolean",
 	value: true,
 	no_bttv: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Title Links",

@@ -98,7 +98,7 @@ FFZ.settings_info.mod_card_hotkeys = {
 
 FFZ.settings_info.mod_card_info = {
 	type: "boolean",
-	value: false,
+	value: true,
 
 	no_bttv: true,
 	category: "Chat Moderation",

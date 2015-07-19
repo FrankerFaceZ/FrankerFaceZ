@@ -5,6 +5,9 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
+	// StrimBagZ Support
+	is_android = navigator.userAgent.indexOf('Android') !== -1,
+
 
 	moderator_css = function(room) {
 		if ( ! room.moderator_badge )
@@ -129,6 +132,15 @@ FFZ.prototype._modify_rview = function(view) {
 			f._roomv = this;
 
 			this.ffz_frozen = false;
+
+			// Fix scrolling.
+			this._ffz_mouse_down = this.ffzMouseDown.bind(this);
+			if ( is_android )
+				// We don't unbind scroll because that messes with the scrollbar. ;_;
+				this._$chatMessagesScroller.bind('scroll', this._ffz_mouse_down);
+
+			this._$chatMessagesScroller.unbind('mousedown');
+			this._$chatMessagesScroller.bind('mousedown', this._ffz_mouse_down);
 
 			if ( f.settings.chat_hover_pause )
 				this.ffzEnableFreeze();
@@ -257,12 +269,9 @@ FFZ.prototype._modify_rview = function(view) {
 			
 			this._ffz_mouse_move = this.ffzMouseMove.bind(this);
 			this._ffz_mouse_out = this.ffzMouseOut.bind(this);
-			this._ffz_mouse_down = this.ffzMouseDown.bind(this);
-
-			this._$chatMessagesScroller.unbind('mousedown');
-			this._$chatMessagesScroller.bind('mousedown', this._ffz_mouse_down);
 
 			messages.addEventListener('mousemove', this._ffz_mouse_move);
+			messages.addEventListener('touchmove', this._ffz_mouse_move);
 			messages.addEventListener('mouseout', this._ffz_mouse_out);
 			document.addEventListener('mouseout', this._ffz_mouse_out);
 		},
@@ -311,7 +320,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 		ffzMouseDown: function(event) {
 			var t = this._$chatMessagesScroller;
-			if ( ! this.ffz_frozen && t && t[0] && (event.which > 0 || "mousedown" === event.type || "mousewheel" === event.type) ) {
+			if ( t && t[0] && (event.which > 0 || (!this.ffz_frozne && "mousedown" === event.type) || "mousewheel" === event.type || (is_android && "scroll" === event.type) ) ) {
 				var r = t[0].scrollHeight - t[0].scrollTop - t[0].offsetHeight;
 				this._setStuckToBottom(10 >= r);
 			}
@@ -939,6 +948,7 @@ FFZ.prototype._modify_room = function(room) {
 					if ( ! is_whisper )
 						msg.room = this.get('id');
 
+					// Tokenization
 					f.tokenize_chat_line(msg);
 
 					// Keep the history.
@@ -974,11 +984,17 @@ FFZ.prototype._modify_room = function(room) {
 						}
 					}
 				}
-			} catch(err) {
-				f.error("Room addMessage: " + err);
-			}
+			} catch(err) { f.error("Room addMessage: " + err); }
 
-			return this._super(msg);
+			var out = this._super(msg);
+
+			try {
+				// Color processing.
+				var color = msg.color;
+				if ( color )
+					f._handle_color(color);
+			} catch(err) { f.error("Room addMessage2: " + err); }
+			return out;
 		},
 
 		setHostMode: function(e) {

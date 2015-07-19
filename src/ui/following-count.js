@@ -8,6 +8,7 @@ FFZ.settings_info.following_count = {
 	value: true,
 
 	no_bttv: true,
+	no_mobile: true,
 
 	category: "Appearance",
 	name: "Sidebar Following Count",

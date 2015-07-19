@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<style>
+html,body{overflow:hidden; margin:0; padding:0; background:transparent; height: 100%; position: relative }
+img {
+	max-width: 186px; max-height: 186px;
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translateX(-50%) translateY(-50%);
+}
+</style>
+<script type="text/javascript">window.onload=function(){
+var IMGUR_REGEX = /(?:https?:\/\/)?(?:i\.)?imgur\.com\/(?:gallery\/)?([A-Za-z0-9]+)(?:\.(.*))?/,
+	GYAZO_REGEX = /(?:https?:\/\/)?(?:i\.)?gyazo\.com\/([a-z0-9]+)/,
+	YOUTUBE_REGEX = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/;
+
+var url = location.search.substr(1),
+	image_url = url;
+	imgur = url.match(IMGUR_REGEX);
+
+if ( imgur )
+	image_url = 'http://i.imgur.com/' + imgur[1] + 't.' + (imgur[2] || "png");
+
+else {
+	var yt = url.match(YOUTUBE_REGEX);
+	if ( yt ) {
+		image_url = 'http://img.youtube.com/vi/' + yt[1] + '/1.jpg'
+	} else {
+		var gyazo = url.match(GYAZO_REGEX);
+		if ( gyazo )
+			image_url = 'http://i.gyazo.com/' + gyazo[1] + '.png';
+	}
+}
+
+
+var el = document.createElement('img');
+el.src = image_url;
+document.body.appendChild(el);
+}</script>

@@ -19,38 +19,6 @@ var sanitize_cache = {},
 		return num + "th";
 	},
 
-	brighten = function(rgb, amount) {
-		amount = (amount === 0) ? 0 : (amount || 1);
-		amount = Math.round(255 * -(amount / 100));
-
-		var r = Math.max(0, Math.min(255, rgb[0] - amount)),
-			g = Math.max(0, Math.min(255, rgb[1] - amount)),
-			b = Math.max(0, Math.min(255, rgb[2] - amount));
-
-		return [r,g,b];
-	},
-
-	rgb_to_css = function(rgb) {
-		return "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
-	},
-
-	darken = function(rgb, amount) {
-		amount = (amount === 0) ? 0 : (amount || 1);
-		return brighten(rgb, -amount);
-	},
-
-	get_luminance = function(rgb) {
-		rgb = [rgb[0]/255, rgb[1]/255, rgb[2]/255];
-		for (var i =0; i<rgb.length; i++) {
-			if (rgb[i] <= 0.03928) {
-				rgb[i] = rgb[i] / 12.92;
-			} else {
-				rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
-			}
-		}
-		return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
-	},
-
 	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
 
 	parse_date = function(str) {
@@ -221,11 +189,6 @@ module.exports = {
 
 	emoji_to_codepoint: emoji_to_codepoint,
 
-	get_luminance: get_luminance,
-	brighten: brighten,
-	darken: darken,
-	rgb_to_css: rgb_to_css,
-
 	parse_date: parse_date,
 
 	number_commas: function(x) {
@@ -251,6 +214,15 @@ module.exports = {
 			sanitize_el.innerHTML = "";
 		}
 		return m;
+	},
+	
+	quote_attr: function(attr) {
+		return (attr + '')
+			.replace(/&/g, "&amp;")
+			.replace(/'/g, "&apos;")
+			.replace(/"/g, "&quot;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
 	},
 
 	date_string: function(date) {

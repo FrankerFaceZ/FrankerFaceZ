@@ -21,6 +21,7 @@ FFZ.settings_info.highlight_notifications = {
 
 	category: "Chat Filtering",
 	no_bttv: true,
+	no_mobile: true,
 	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Notifications",
@@ -47,6 +48,33 @@ FFZ.settings_info.highlight_notifications = {
 					f.settings.set("highlight_notifications", false);
 				}
 			});
+		}
+	};
+
+
+FFZ.settings_info.notification_timeout = {
+	type: "button",
+	value: 60,
+
+	category: "Chat Filtering",
+	no_bttv: true,
+	no_mobile: true,
+
+	name: "Notification Timeout",
+	help: "Specify how long notifications should be displayed before automatically closing.",
+
+	method: function() {
+			var old_val = this.settings.notification_timeout,
+				new_val = prompt("Notification Timeout\n\nPlease enter the time you'd like notifications to be displayed before automatically closing, in seconds.\n\nDefault is: 60", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var parsed = parseInt(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = 60;
+			
+			this.settings.set("notification_timeout", parsed);
 		}
 	};
 
@@ -88,7 +116,7 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 
 	if ( perm === "granted" ) {
 		title = title || "FrankerFaceZ";
-		timeout = timeout || 10000;
+		timeout = timeout || (this.settings.notification_timeout*1000);
 
 		var options = {
 			lang: "en-US",

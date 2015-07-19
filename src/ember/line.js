@@ -5,15 +5,6 @@
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
 	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
 
-	quote_attr = function(attr) {
-		return (attr + '')
-			.replace(/&/g, "&amp;")
-			.replace(/'/g, "&apos;")
-			.replace(/"/g, "&quot;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-	},
-
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	SRCSETS = {};
@@ -22,6 +13,36 @@
 			return SRCSETS[id];
 		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
 		return out;
+	},
+	
+	
+	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
+	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
+	IMGUR_PATH = /^\/(?:gallery\/)?[A-Za-z0-9]+(?:\.(?:png|jpg|jpeg|gif|gifv|bmp))?$/,
+	IMAGE_EXT = /\.(?:png|jpg|jpeg|gif|bmp)$/i,
+	IMAGE_DOMAINS = [],
+	
+	is_image = function(href, any_domain) {
+		var match = href.match(LINK_SPLIT);
+		if ( ! match )
+			return;
+
+		var domain = match[3].toLowerCase(), port = match[4],
+			path = match[5];
+
+		// Don't allow non-standard ports.
+		if ( port && port !== '80' && port !== '443' )
+			return false;
+
+		// imgur-specific checks.
+		if ( domain === 'i.imgur.com' || domain === 'imgur.com' || domain === 'www.imgur.com' || domain === 'm.imgur.com' )
+			return IMGUR_PATH.test(path);
+
+		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1; 
+	}
+	
+	image_iframe = function(href, extra_class) {
+		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
 	},
 
 
@@ -86,7 +107,8 @@
 			return link_data.tooltip;
 
 		if ( link_data.type == "youtube" ) {
-			tooltip = "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip = this.settings.link_image_hover ? image_iframe(link_data.full || href, 'ffz-yt-thumb') : '';
+			tooltip += "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
 			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
 			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
 
@@ -126,7 +148,8 @@
 
 
 		} else if ( link_data.type == "reputation" ) {
-			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
 			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
 				tooltip += "<hr>";
 				var had_extra = false;
@@ -144,8 +167,10 @@
 			}
 
 
-		} else if ( link_data.full )
-			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+		} else if ( link_data.full ) {
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+		}
 
 		if ( ! tooltip )
 			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
@@ -361,29 +386,41 @@ FFZ.settings_info.keywords = {
 	};
 
 
-FFZ.settings_info.fix_color = {
-	type: "boolean",
-	value: true,
-
-	category: "Chat Appearance",
-	no_bttv: true,
-
-	name: "Adjust Username Colors",
-	help: "Ensure that username colors contrast with the background enough to be readable.",
-
-	on_update: function(val) { document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && val); }
-	};
-
-
 FFZ.settings_info.link_info = {
 	type: "boolean",
 	value: true,
 
-	category: "Chat Appearance",
+	category: "Chat Tooltips",
 	no_bttv: true,
 
-	name: "Link Tooltips <span>Beta</span>",
+	name: "Link Information <span>Beta</span>",
 	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
+	};
+
+
+FFZ.settings_info.link_image_hover = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Tooltips",
+	no_bttv: true,
+	no_mobile: true,
+
+	name: "Image Preview",
+	help: "Display image thumbnails for links to Imgur and YouTube."
+	};
+
+
+FFZ.settings_info.image_hover_all_domains = {
+	type: "boolean",
+	value: false,
+	
+	category: "Chat Tooltips",
+	no_bttv: true,
+	no_mobile: true,
+	
+	name: "Image Preview - All Domains",
+	help: "<i>Requires Image Preview.</i> Attempt to show an image preview for any URL ending in the appropriate extension. <b>Warning: This may be used to leak your IP address to malicious users.</b>"
 	};
 
 
@@ -415,17 +452,34 @@ FFZ.settings_info.chat_rows = {
 
 
 FFZ.settings_info.chat_separators = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Basic Line (1px solid)",
+		2: "3D Line (2px groove)"
+	},
+	value: '0',
 
 	category: "Chat Appearance",
 	no_bttv: true,
+	
+	process_value: function(val) {
+		if ( val === false )
+			return '0';
+		else if ( val === true )
+			return '1';
+		return val;
+	},
 
 	name: "Chat Line Separators",
 	help: "Display thin lines between chat messages for further visual separation.",
 
-	on_update: function(val) { document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val); }
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val !== '0');
+			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === '2');
+		}
 	};
+	
 	
 FFZ.settings_info.chat_padding = {
 	type: "boolean",
@@ -495,6 +549,52 @@ FFZ.settings_info.chat_font_size = {
 		}
 
 		utils.update_css(this._chat_style, "chat_font_size", css);
+		FFZ.settings_info.chat_ts_size.on_update.bind(this)(this.settings.chat_ts_size);
+		}
+	};
+
+
+FFZ.settings_info.chat_ts_size = {
+	type: "button",
+	value: null,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Timestamp Font Size",
+	help: "Make the chat timestamp font bigger or smaller.",
+
+	method: function() {
+			var old_val = this.settings.chat_ts_size;
+			
+			if ( old_val === null )
+				old_val = this.settings.chat_font_size;
+			
+			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var parsed = parseInt(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = null;
+			
+			this.settings.set("chat_ts_size", parsed);
+		},
+
+	on_update: function(val) {
+		if ( this.has_bttv || ! this._chat_style )
+			return;
+
+		var css;
+		if ( val === null )
+			css = "";
+		else {
+			var lh = Math.max(20, Math.round((20/12)*val), Math.round((20/12)*this.settings.chat_font_size));
+			css = ".ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+		}
+
+		utils.update_css(this._chat_style, "chat_ts_font_size", css);
 		}
 	};
 
@@ -518,25 +618,21 @@ FFZ.prototype.setup_line = function() {
 	
 	// Initial calculation.
 	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
-	
+
 	
 	// Chat Enhancements
-	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color);
+	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color !== '-1');
+	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
+	
 	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges);
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
-	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators);
+	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== '0');
+	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
 	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
 	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
 	document.body.classList.toggle("ffz-high-contrast-chat", !this.has_bttv && this.settings.high_contrast_chat);
 
-	this._colors = {};
 	this._last_row = {};
-
-	s = this._fix_color_style = document.createElement('style');
-	s.id = "ffz-style-username-colors";
-	s.type = 'text/css';
-	document.head.appendChild(s);
-
 
 	// Emoticon Data
 	this._twitch_emotes = {};
@@ -657,12 +753,7 @@ FFZ.prototype._modify_line = function(component) {
 				var el = this.get('element'),
 					user = this.get('msgObject.from'),
 					room = this.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id'),
-					color = this.get('msgObject.color'),
 					row_type = this.get('msgObject.ffz_alternate');
-
-				// Color Processing
-				if ( color )
-					f._handle_color(color);
 
 				// Row Alternation
 				if ( row_type === undefined ) {
@@ -733,7 +824,7 @@ FFZ.prototype._modify_line = function(component) {
 
 
 				// Link Tooltips
-				if ( f.settings.link_info ) {
+				if ( f.settings.link_info || f.settings.link_image_hover ) {
 					var links = el.querySelectorAll("span.message a");
 					for(var i=0; i < links.length; i++) {
 						var link = links[i],
@@ -746,18 +837,26 @@ FFZ.prototype._modify_line = function(component) {
 						}
 
 						// Check the cache.
-						var link_data = f._link_data[href];
-						if ( link_data ) {
-							if ( !deleted && typeof link_data != "boolean" )
-								link.title = link_data.tooltip;
-
-							if ( link_data.unsafe )
-								link.classList.add('unsafe-link');
-
-						} else if ( ! /^mailto:/.test(href) ) {
-							f._link_data[href] = true;
-							f.ws_send("get_link", href, load_link_data.bind(f, href));
+						if ( f.settings.link_info ) {
+							var link_data = f._link_data[href];
+							if ( link_data ) {
+								if ( !deleted && typeof link_data != "boolean" )
+									link.title = link_data.tooltip;
+	
+								if ( link_data.unsafe )
+									link.classList.add('unsafe-link');
+	
+							} else if ( ! /^mailto:/.test(href) ) {
+								f._link_data[href] = true;
+								f.ws_send("get_link", href, load_link_data.bind(f, href));
+								if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
+									link.title = image_iframe(href); 
+							}
 						}
+						
+						// Now, Images
+						else if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
+							link.title = image_iframe(href); 
 					}
 
 					jQuery(links).tipsy({html:true});
@@ -835,68 +934,6 @@ FFZ.prototype._modify_line = function(component) {
 
 
 // ---------------------
-// Fix Name Colors
-// ---------------------
-
-FFZ.prototype._handle_color = function(color) {
-	if ( ! color || this._colors[color] )
-		return;
-
-	this._colors[color] = true;
-
-	// Parse the color.
-	var raw = parseInt(color.substr(1), 16),
-		rgb = [
-			(raw >> 16),
-			(raw >> 8 & 0x00FF),
-			(raw & 0x0000FF)
-			],
-
-		lum = utils.get_luminance(rgb),
-
-		output = "",
-		rule = 'span[style="color:' + color + '"]',
-		matched = false;
-
-	if ( lum > 0.3 ) {
-		// Color Too Bright. We need a lum of 0.3 or less.
-		matched = true;
-
-		var s = 127,
-			nc = rgb;
-		while(s--) {
-			nc = utils.darken(nc);
-			if ( utils.get_luminance(nc) <= 0.3 )
-				break;
-		}
-
-		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
-	} else
-		output += '.ffz-chat-colors .ember-chat-container:not(.dark) .chat-line ' + rule + ', .ffz-chat-colors .chat-container:not(.dark) .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
-
-	if ( lum < 0.15 ) {
-		// Color Too Dark. We need a lum of 0.1 or more.
-		matched = true;
-
-		var s = 127,
-			nc = rgb;
-		while(s--) {
-			nc = utils.brighten(nc);
-			if ( utils.get_luminance(nc) >= 0.15 )
-				break;
-		}
-
-		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + utils.rgb_to_css(nc) + ' !important; }\n';
-	} else
-		output += '.ffz-chat-colors .theatre .chat-container .chat-line ' + rule + ', .ffz-chat-colors .chat-container.dark .chat-line ' + rule + ', .ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule + ' { color: ' + color + ' !important; }\n';
-
-
-	if ( matched )
-		this._fix_color_style.innerHTML += output;
-}
-
-
-// ---------------------
 // Capitalization
 // ---------------------
 
@@ -953,7 +990,7 @@ FFZ.prototype._remove_banned = function(tokens) {
 				new_tokens.push(token.altText.replace(regex, "$1***"));
 			else if ( token.isLink && regex.test(token.href) )
 				new_tokens.push({
-					mentionedUser: '</span><a class="deleted-link" title="' + quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
+					mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + utils.quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
 					own: true
 					});
 			else

@@ -67,6 +67,7 @@ FFZ.settings_info.hide_recent_past_broadcast = {
 	value: false,
 
 	//no_bttv: true,
+	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Hide \"Watch Last Broadcast\"",

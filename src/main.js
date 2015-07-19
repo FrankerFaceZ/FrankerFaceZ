@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 19,
+	major: 3, minor: 4, revision: 25,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -107,7 +107,7 @@ require('./ui/menu');
 require('./settings');
 require('./socket');
 
-
+require('./colors');
 require('./emoticons');
 require('./badges');
 require('./tokenize');
@@ -211,6 +211,7 @@ FFZ.prototype.setup_normal = function(delay, no_socket) {
 	if ( ! no_socket )
 		this.ws_create();
 
+	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
 
@@ -245,9 +246,11 @@ FFZ.prototype.setup_dashboard = function(delay) {
 	this.setup_dark();
 
 	this.ws_create();
+	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
 
+	this.setup_tokenization();
 	this.setup_notifications();
 	this.setup_css();
 
@@ -288,6 +291,8 @@ FFZ.prototype.setup_ember = function(delay) {
 	//this.setup_piwik();
 
 	//this.setup_router();
+	this.setup_colors();
+	this.setup_tokenization();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
