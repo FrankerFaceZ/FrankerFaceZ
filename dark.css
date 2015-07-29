@@ -167,21 +167,40 @@
 .ffz-dark form.js-new_panel_form,
 .ffz-dark .js-new_panel_btn,
 .ffz-dark .manager .videos-grid .video .meta,
-.ffz-dark .ember-chat .chat-room-list {
+.ffz-dark .ember-chat .chat-room-list,
+.ffz-dark .st-autocomplete-sidebar,
+.ffz-dark .st-autocomplete-small,
+.ffz-dark .st-autocomplete,
+.ffz-dark .st-autocomplete-small,
+.ffz-dark .player-menu__menu {
 	background-color: rgb(16,16,16);
 	color: rgb(195,195,195); /*#acacbf;*/
 	border-color: #32323e;
+}
+
+.ffz-dark .st-autocomplete-sidebar .label,
+.ffz-dark .st-autocomplete-small .label,
+.ffz-dark .st-autocomplete .label,
+.ffz-dark .st-autocomplete-small .label {
+	background-color: rgb(24,24,24);
 }
 
 .ffz-dark .js-new_panel_btn:hover {
 	background-color: rgb(24,24,24);
 }
 
-.ffz-dark #flyout .point::before {
+.ffz-dark .player-menu__menu:before,
+.ffz-dark .player-menu__menu:after {
+	border-top-color: rgb(16,16,16);
+}
+
+.ffz-dark .st-autocomplete-sidebar:before,
+.ffz-dark #flyout .point:before {
 	border-right-color: rgb(16,16,16); /*rgb(25,25,31);*/
 }
 
-.ffz-dark #flyout .point::after {
+.ffz-dark .st-autocomplete-sidebar:after,
+.ffz-dark #flyout .point:after {
 	border-right-color: #32323e;
 }
 
@@ -205,6 +224,7 @@
 .ffz-dark .dropmenu input,
 .ffz-dark input.text,
 .ffz-dark input.string,
+.ffz-dark #sidebar_query_small,
 .ffz-dark textarea,
 .ffz-dark select,
 .ffz-dark option,
@@ -237,10 +257,18 @@
 	color: #8c8c9c;
 }
 
+.ffz-dark .st-autocomplete-sidebar .all p:not(.active),
+.ffz-dark .st-autocomplete-small .all p:not(.active),
+.ffz-dark .st-autocomplete .all p:not(.active),
+.ffz-dark .st-autocomplete-small .all p:not(.active),
+.ffz-dark .st-autocomplete-sidebar .list ul .result:not(.active) p,
+.ffz-dark .st-autocomplete-small .list ul .result:not(.active) p,
+.ffz-dark .st-autocomplete .list ul .result:not(.active) p,
+.ffz-dark .st-autocomplete-small .list ul .result:not(.active) p,
 .ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
 .ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
 .ffz-dark .dropmenu_action:not(:hover) span,
-.ffz-dark a:not(.button):not(.switch):not(.follow):not(.fb_button) {
+.ffz-dark a:not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button) {
 	color: #a68ed2;
 }
 
@@ -667,7 +695,7 @@
 	background-color: rgba(255,255,255,0.05);
 }
 
-.ffz-dark .ui-slider-horizontal {
+.ffz-dark .ui-slider-horizontal:not(.player-slider) {
 	background-color: rgba(255,255,255,0.2);
 }
 
@@ -849,4 +877,21 @@
 
 .ffz-dark .legal_page ol.legal li p {
 	color: #ccc;
+}
+
+/* Search */
+
+.ffz-dark ul.subtabs,
+.ffz-dark .user_list .user,
+.ffz-dark .mixed_list .user,
+.ffz-dark .video_list .video,
+.ffz-dark .mixed_list .video {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .user_list .user .user_stats .followers_count,
+.ffz-dark .mixed_list .user .user_stats .followers_count,
+.ffz-dark li.video.vods img.video_type {
+	filter: invert(100%);
+	-webkit-filter: invert(100%);
 }

@@ -112,6 +112,8 @@ FFZ.menu_pages.my_emotes = {
 				for(var set_id in twitch_sets)
 				if ( f._twitch_set_to_channel[set_id] )
 					ts[set_id] = twitch_sets[set_id];
+				else
+					ts[set_id] = "twitch_unknown";
 
 				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, ts);
 			};
@@ -161,6 +163,7 @@ FFZ.menu_pages.my_emotes = {
 
 		heading.className = 'heading';
 		heading.innerHTML = '<span class="right">FrankerFaceZ</span>Emoji';
+		heading.style.backgroundImage = 'url("' + constants.SERVER + '/emoji/1f4af-1x.png")';
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
@@ -212,7 +215,9 @@ FFZ.menu_pages.my_emotes = {
 
 			channel_id = this._twitch_set_to_channel[set_id], title;
 
-		if ( channel_id === "global" )
+		if ( channel_id === "twitch_unknown" )
+			title = "Unknown Channel";
+		else if ( channel_id === "global" )
 			title = "Global Emoticons";
 		else if ( channel_id === "turbo" || channel_id === "turbo_faces" )
 			title = "Twitch Turbo";

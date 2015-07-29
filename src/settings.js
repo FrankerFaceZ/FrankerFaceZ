@@ -151,8 +151,8 @@ FFZ.menu_pages.settings = {
 					var a = a[1],
 						b = b[1],
 
-						at = a.type === "button" ? 2 : 1,
-						bt = b.type === "button" ? 2 : 1,
+						at = a.type === "boolean" ? 1 : 2,
+						bt = b.type === "boolean" ? 1 : 2,
 
 						an = a.name.toLowerCase(),
 						bn = b.name.toLowerCase();

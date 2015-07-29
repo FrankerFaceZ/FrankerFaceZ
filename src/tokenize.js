@@ -4,6 +4,66 @@ var FFZ = window.FrankerFaceZ,
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	helpers,
 
+	SRCSETS = {};
+	build_srcset = function(id) {
+		if ( SRCSETS[id] )
+			return SRCSETS[id];
+		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+		return out;
+	},
+
+
+	data_to_tooltip = function(data) {
+		var set = data.set,
+			set_type = data.set_type,
+			owner = data.owner;
+
+		if ( set_type === undefined )
+			set_type = "Channel";
+
+		if ( ! set )
+			return data.code;
+
+		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
+			set = "Twitch Turbo";
+			set_type = null;
+		}
+
+		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set + (owner ? "\nBy: " + owner.display_name : "");
+	},
+
+	build_tooltip = function(id) {
+		var emote_data = this._twitch_emotes[id],
+			set = emote_data ? emote_data.set : null;
+
+		if ( ! emote_data )
+			return "???";
+
+		if ( typeof emote_data == "string" )
+			return emote_data;
+
+		if ( emote_data.tooltip )
+			return emote_data.tooltip;
+
+		return emote_data.tooltip = data_to_tooltip(emote_data);
+	},
+
+	load_emote_data = function(id, code, success, data) {
+		if ( ! success )
+			return;
+
+		if ( code )
+			data.code = code;
+
+		this._twitch_emotes[id] = data;
+		var tooltip = build_tooltip.bind(this)(id);
+
+		var images = document.querySelectorAll('img[data-emote="' + id + '"]');
+		for(var x=0; x < images.length; x++)
+			images[x].title = tooltip;
+	},
+
+
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 	},
@@ -11,7 +71,148 @@ var FFZ = window.FrankerFaceZ,
 	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#!?&//=]*)/g,
 
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
-	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
+	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
+
+	
+	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
+	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
+	IMGUR_PATH = /^\/(?:gallery\/)?[A-Za-z0-9]+(?:\.(?:png|jpg|jpeg|gif|gifv|bmp))?$/,
+	IMAGE_EXT = /\.(?:png|jpg|jpeg|gif|bmp)$/i,
+	IMAGE_DOMAINS = [],
+	
+	is_image = function(href, any_domain) {
+		var match = href.match(LINK_SPLIT);
+		if ( ! match )
+			return;
+
+		var domain = match[3].toLowerCase(), port = match[4],
+			path = match[5];
+
+		// Don't allow non-standard ports.
+		if ( port && port !== '80' && port !== '443' )
+			return false;
+
+		// imgur-specific checks.
+		if ( domain === 'i.imgur.com' || domain === 'imgur.com' || domain === 'www.imgur.com' || domain === 'm.imgur.com' )
+			return IMGUR_PATH.test(path);
+
+		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1; 
+	}
+	
+	image_iframe = function(href, extra_class) {
+		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
+	},
+
+
+	build_link_tooltip = function(href) {
+		var link_data = this._link_data[href],
+			tooltip;
+
+		if ( ! link_data )
+			return "";
+
+		if ( link_data.tooltip )
+			return link_data.tooltip;
+
+		if ( link_data.type == "youtube" ) {
+			tooltip = this.settings.link_image_hover ? image_iframe(link_data.full || href, 'ffz-yt-thumb') : '';
+			tooltip += "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
+			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
+
+		} else if ( link_data.type == "strawpoll" ) {
+			tooltip = "<b>Strawpoll: " + utils.sanitize(link_data.title) + "</b><hr><table><tbody>";
+			for(var key in link_data.items) {
+				var votes = link_data.items[key],
+					percentage = Math.floor((votes / link_data.total) * 100);
+				tooltip += '<tr><td style="text-align:left">' + utils.sanitize(key) + '</td><td style="text-align:right">' + utils.number_commas(votes) + "</td></tr>";
+			}
+			tooltip += "</tbody></table><hr>Total: " + utils.number_commas(link_data.total);
+			var fetched = utils.parse_date(link_data.fetched);
+			if ( fetched ) {
+				var age = Math.floor((fetched.getTime() - Date.now()) / 1000);
+				if ( age > 60 )
+					tooltip += "<br><small>Data was cached " + utils.time_to_string(age) + " ago.</small>";
+			}
+
+
+		} else if ( link_data.type == "twitch" ) {
+			tooltip = "<b>Twitch: " + utils.sanitize(link_data.display_name) + "</b><hr>";
+			var since = utils.parse_date(link_data.since);
+			if ( since )
+				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
+			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
+
+
+		} else if ( link_data.type == "twitch_vod" ) {
+			tooltip = "<b>Twitch " + (link_data.broadcast_type == "highlight" ? "Highlight" : "Broadcast") + ": " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "By: " + utils.sanitize(link_data.display_name) + (link_data.game ? " | Playing: " + utils.sanitize(link_data.game) : " | Not Playing") + "<br>";
+			tooltip += "Views: " + utils.number_commas(link_data.views) + " | " + utils.time_to_string(link_data.length);
+
+
+		} else if ( link_data.type == "twitter" ) {
+			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
+			tooltip += utils.sanitize(link_data.tweet);
+
+
+		} else if ( link_data.type == "reputation" ) {
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
+				tooltip += "<hr>";
+				var had_extra = false;
+				if ( link_data.trust < 50 || link_data.safety < 50 ) {
+					link_data.unsafe = true;
+					tooltip += "<b>Potentially Unsafe Link</b><br>";
+					tooltip += "Trust: " + link_data.trust + "% | Child Safety: " + link_data.safety + "%";
+					had_extra = true;
+				}
+
+				if ( link_data.tags && link_data.tags.length > 0 )
+					tooltip += (had_extra ? "<br>" : "") + "Tags: " + link_data.tags.join(", ");
+
+				tooltip += "<br>Data Source: WOT";
+			}
+
+
+		} else if ( link_data.full ) {
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+		}
+
+		if ( ! tooltip )
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
+
+		link_data.tooltip = tooltip;
+		return tooltip;
+	},
+
+	load_link_data = function(href, success, data) {
+		if ( ! success )
+			return;
+
+		this._link_data[href] = data;
+		data.unsafe = false;
+
+		var tooltip = build_link_tooltip.bind(this)(href), links,
+			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
+
+		if ( no_trail )
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[href="' + no_trail + '"], span.message a[data-url="' + href + '"], span.message a[data-url="' + no_trail + '"]');
+		else
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[data-url="' + href + '"]');
+
+		if ( ! this.settings.link_info )
+			return;
+
+		for(var x=0; x < links.length; x++) {
+			if ( data.unsafe )
+				links[x].classList.add('unsafe-link');
+
+			if ( ! links[x].classList.contains('deleted-link') )
+				links[x].title = tooltip;
+		}
+	};
 
 
 FFZ.SRC_IDS = {},
@@ -105,8 +306,10 @@ FFZ.prototype.setup_tokenization = function() {
 			return _.zip(
 				token.split(LINK),
 				_.map(matches, function(e) {
-					if ( ! show_deleted && (delete_links || e.length > 255) )
-						return {mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(e) + '" data-url="' + utils.quote_attr(e) + '" href="#">&lt;' + (e.length > 255 ? 'long link' : 'deleted link') + '&gt;</a><span class="mentioning">', own: true}
+					var long = e.length > 255;
+					if ( ! show_deleted && (delete_links || long) )
+						return {isLink: true, isDeleted: true, isLong: long, href: e};
+						//return {mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(e) + '" data-url="' + utils.quote_attr(e) + '" href="#">&lt;' + (e.length > 255 ? 'long link' : 'deleted link') + '&gt;</a><span class="mentioning">', own: true}
 					return {isLink: true, href: e};
 				})
 			);
@@ -119,11 +322,9 @@ FFZ.prototype.setup_tokenization = function() {
 // Tokenization
 // ---------------------
 
-FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
-
-	try {
 
 	var msg = msgObject.message,
 		user = this.get_user(),
@@ -134,8 +335,18 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 		tokens = [msg];
 
 	// Standard tokenization
-	if ( helpers && helpers.linkifyMessage )
-		tokens = helpers.linkifyMessage(tokens);
+	if ( helpers && helpers.linkifyMessage ) {
+		var labels = msg.labels || [], 
+			mod_or_higher = labels.indexOf("owner") !== -1 ||
+							labels.indexOf("staff") !== -1 ||
+							labels.indexOf("admin") !== -1 ||
+							labels.indexOf("global_mod") !== -1 ||
+							labels.indexOf("mod") !== -1 ||
+							msg.style === 'admin';
+
+		tokens = helpers.linkifyMessage(tokens, delete_links && !mod_or_higher);
+	}
+		
 
 	if ( user && user.login && helpers && helpers.mentionizeMessage )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
@@ -230,10 +441,6 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	}
 
 	msgObject.cachedTokens = tokens;
-	} catch(err) {
-		this.error("Tokenization Error: " + err);
-	}
-	
 	return tokens;
 }
 
@@ -268,47 +475,109 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 	var f = this;
 	return _.map(tokens, function(token) {
 		if ( token.emoticonSrc ) {
-			var tooltip;
+			var tooltip, srcset, extra;
 			if ( token.ffzEmote ) {
 				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
 					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
 
 				tooltip = emote ? utils.sanitize(f._emote_tooltip(emote)) : token.altText;
+				srcset = emote ? emote.srcSet : token.srcSet;
+				extra = ' data-ffz-emote="' + emote.id + '"';
 
 			} else if ( token.ffzEmoji ) {
 				var eid = token.ffzEmoji,
 					emoji = f.emoji_data && f.emoji_data[eid];
 
 				tooltip = emoji ? "Emoji: " + token.altText + "\nName: :" + emoji.short_name + ":" : token.altText;
+				srcset = emoji ? emoji.srcSet : token.srcSet;
+				extra = ' data-ffz-emoji="' + eid + '"';
 
 			} else {
-				var id = FFZ.src_to_id(token.emoticonSrc),
+				var id = token.replacedId || FFZ.src_to_id(token.emoticonSrc),
 					data = id && f._twitch_emotes && f._twitch_emotes[id];
 
-				tooltip = data && data.tooltip ? data.tooltip : token.altText;
+				if ( data )
+					tooltip = data.tooltip ? data.tooltip : token.altText;
+				else {
+					tooltip = f._twitch_emotes[id] = token.altText;
+					f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, token.altText));
+				}
+
+				extra = ' data-emote="' + id + '"';
+
+				if ( ! constants.EMOTE_REPLACEMENTS[id] )
+					srcset = build_srcset(id);
 			}
 
-			return '<img class="emoticon tooltip" src="' + token.emoticonSrc + '" ' + (token.srcSet ? 'srcset="' + token.srcSet + '" ' : '') + 'alt="' + token.altText + '" title="' + tooltip + '">';
+			return '<img class="emoticon tooltip"' + (extra||"") + ' src="' + utils.quote_attr(token.emoticonSrc) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
 		}
 
 		if ( token.isLink ) {
+			var text = token.title || (token.isLong && '<long link>') || (token.isDeleted && '<deleted link>') || token.href;
+			
 			if ( ! render_links && render_links !== undefined )
-				return token.href;
+				return utils.sanitize(text);
 
-			var s = token.href;
-			if ( s.indexOf("@") > -1 && (-1 === s.indexOf("/") || s.indexOf("@") < s.indexOf("/")) )
-				return '<a href="mailto:' + s + '">' + s + '</a>';
+			var href = token.href,
+				tooltip, cls = '',
+			
+				ind_at = href.indexOf("@"),
+				ind_sl = href.indexOf("/");
+			
+			if ( ind_at !== -1 && (ind_sl === -1 || ind_at < ind_sl) ) {
+				// E-Mail Link
+				cls = 'email-link';
+				
+				if ( f.settings.link_info ) {
+					cls += ' tooltip';
+					tooltip = 'E-Mail ' + href;
+				}
+				
+				href = 'mailto:' + href;
+				
+			} else {
+				// Web Link
+				if ( ! href.match(/^https?:\/\//) )
+					href = 'http://' + href; 
+				
+				if ( f.settings.link_info ) {
+					cls = 'html-tooltip';
+					
+					var data = f._link_data && f._link_data[href];
+					if ( data ) {
+						tooltip = data.tooltip;
+						if ( data.unsafe )
+							cls += ' unsafe-link';
+						
+					} else {
+						f._link_data = f._link_data || {};
+						f._link_data[href] = true;
+						f.ws_send("get_link", href, load_link_data.bind(f, href));
+						if ( f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
+							tooltip = image_iframe(href);
+					}
+					
+				} else if ( f.settings.link_image_hover ) {
+					cls = 'html-tooltip';
+					if ( is_image(href, f.settings.image_hover_all_domains) )
+						tooltip = image_iframe(href);
+				}
+			}
+			
 
-			var n = (s.match(/^https?:\/\//) ? "" : "http://") + s;
-
-			// Check for link data.
-			var data = f._link_data && f._link_data[n] || {};
-
-			return '<a href="' + n + '" class="' + (data.unsafe ? 'unsafe-link' : '') + '" title="' + utils.sanitize(data.tooltip || '') + '" target="_blank">' + s + '</a>';
+			// Deleted Links
+			var actual_href = href;
+			if ( token.isDeleted ) {
+				cls = 'deleted-link ' + cls;
+				tooltip = utils.sanitize(token.censoredHref || token.href);
+				href = '#';
+			}
+			
+			return '<a class="' + cls + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href || '#') + '" title="' + utils.quote_attr(tooltip || '') + '" target="_blank">' + utils.sanitize(text) + '</a>';
 		}
 
 		if ( token.mentionedUser )
-			return '<span class="' + (token.own ? "mentioning" : "mentioned") + '">' + token.mentionedUser + "</span>";
+			return '<span class="' + (token.own ? "mentioning" : "mentioned") + '">' + utils.sanitize(token.mentionedUser) + "</span>";
 
 		if ( token.deletedLink )
 			return utils.sanitize(token.text);
@@ -337,7 +606,8 @@ FFZ.prototype.tokenize_replace_emotes = function(tokens) {
 		// Check for a few specific emoticon IDs.
 		var emote_id = FFZ.src_to_id(token.emoticonSrc);
 		if ( constants.EMOTE_REPLACEMENTS.hasOwnProperty(emote_id) ) {
-			token.emoticonSrc = constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote_id] + '" data-twitch-emote="' + emote_id;
+			token.replacedId = emote_id;
+			token.emoticonSrc = constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote_id];
 		}
 	}
 	

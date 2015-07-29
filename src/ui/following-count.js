@@ -70,7 +70,7 @@ FFZ.prototype._schedule_following_count = function() {
 	}
 
 	if ( ! this._following_count_timer )
-		this._following_count_timer = setTimeout(this._update_following_count.bind(this), 60000);
+		this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
 }
 
 
@@ -83,7 +83,7 @@ FFZ.prototype._update_following_count = function() {
 		return;
 	}
 
-	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 60000);
+	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
 	
 	var Stream = window.App && App.__container__.resolve('model:stream'),
 		Live = Stream && Stream.find("live"),
@@ -92,7 +92,7 @@ FFZ.prototype._update_following_count = function() {
 	if ( Live )
 		Live.load();
 	else
-		Twitch.api.get("streams/followed", {limit:1, offset:0}, {version:3})
+		Twitch.api && Twitch.api.get("streams/followed", {limit:1, offset:0}, {version:3})
 			.done(function(data) {
 				f._draw_following_count(data._total);
 			}).fail(function() {

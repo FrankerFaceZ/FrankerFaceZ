@@ -143,7 +143,7 @@ FFZ.prototype.bttv_badges = function(data) {
 			var replaced = false;
 			for(var i=0; i < data.badges.length; i++) {
 				var b = data.badges[i];
-				if ( b.type == full_badge.replaces ) {
+				if ( b.type === full_badge.replaces_type ) {
 					b.type = "ffz-badge-replacement " + b.type;
 					b.description += ", " + (badge.title || full_badge.title) +
 						'" style="background-image: url(&quot;' + (badge.image || full_badge.image) + "&quot;)";
@@ -180,6 +180,58 @@ FFZ.prototype.bttv_badges = function(data) {
 		while(badges_out.length)
 			data.badges.insertAt(insert_at, badges_out.shift()[1]);
 	}
+}
+
+
+FFZ.prototype.render_badges = function(component, badges) {
+	if ( ! this.settings.show_badges )
+		return badges;
+
+	var user = component.get('msgObject.from'),
+		room_id = component.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id');
+
+	var data = this.users[user];
+	if ( ! data || ! data.badges )
+		return badges;
+
+	for(var slot in data.badges) {
+		if ( ! data.badges.hasOwnProperty(slot) )
+			continue;
+
+		var badge = data.badges[slot],
+			full_badge = this.badges[badge.id] || {},
+			old_badge = badges[slot];
+
+		if ( full_badge.visible !== undefined ) {
+			var visible = full_badge.visible;
+			if ( typeof visible === "function" )
+				visible = visible.bind(this)(room_id, user, component, badges);
+			
+			if ( ! visible )
+				continue;
+		}
+
+		if ( old_badge ) {
+			var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces;
+			if ( ! replaces )
+				continue;
+			
+			old_badge.image = badge.image || full_badge.image;
+			old_badge.klass += ' ffz-badge-replacement';
+			old_badge.title += ', ' + (badge.title || full_badge.title);
+			continue;
+		}
+
+		badges[slot] = {
+			klass: 'ffz-badge-' + badge.id,
+			title: badge.title || full_badge.title,
+			image: badge.image,
+			color: badge.color,
+			extra_css: badge.extra_css
+		};
+	}
+	
+	return badges;
 }
 
 
@@ -288,8 +340,9 @@ FFZ.prototype._legacy_add_donors = function() {
 
 	// Bot Badge
 	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/script/boticon.png",
-		replaces: 'moderator',
+		replaces: true, replaces_type: "moderator",
 		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
+
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
 	// Load BTTV Bots

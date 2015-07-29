@@ -296,6 +296,13 @@ FFZ.prototype.setup_mod_card = function() {
 			info.innerHTML = out;
 		}.observes("cardInfo.user.views"),
 
+		userName: Ember.computed("cardInfo.user.id", "cardInfo.user.display_name", function() {
+			var user_id = this.get("cardInfo.user.id"),
+				alias = f.aliases[user_id];
+			
+			return alias || this.get("cardInfo.user.display_name") || user_id.capitalize();
+		}),
+
 		didInsertElement: function() {
 			this._super();
 			window._card = this;
@@ -305,7 +312,24 @@ FFZ.prototype.setup_mod_card = function() {
 
 				var el = this.get('element'),
 					controller = this.get('controller'),
-					line;
+					line,
+					
+					user_id = controller.get('cardInfo.user.id'),
+					alias = f.aliases[user_id];
+
+				// Alias Display
+				if ( alias ) {
+					var name = el.querySelector('h3.name'),
+						link = name && name.querySelector('a');
+
+					if ( link )
+						name = link;
+					if ( name ) {
+						name.classList.add('ffz-alias');
+						name.title = utils.sanitize(controller.get('cardInfo.user.display_name') || user_id.capitalize());
+						jQuery(name).tipsy();
+					}
+				}
 
 				// Style it!
 				el.classList.add('ffz-moderation-card');
@@ -523,16 +547,56 @@ FFZ.prototype.setup_mod_card = function() {
 					
 					
 					var real_msg = document.createElement('button');
-					real_msg.className = 'message-button button glyph-only message';
+					real_msg.className = 'message-button button glyph-only message tooltip';
 					real_msg.innerHTML = MESSAGE;
 					real_msg.title = "Message User";
-					jQuery(real_msg).tipsy();
 					
 					real_msg.addEventListener('click', function() {
 						window.open('http://www.twitch.tv/message/compose?to=' + controller.get('cardInfo.user.id'));
 					})
 
 					msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
+				}
+				
+				
+				// Alias Button
+				var alias_btn = document.createElement('button');
+				alias_btn.className = 'alias button glyph-only tooltip';
+				alias_btn.innerHTML = constants.EDIT;
+				alias_btn.title = "Set Alias";
+				
+				alias_btn.addEventListener('click', function() {
+					var user = controller.get('cardInfo.user.id'),
+						alias = f.aliases[user];
+					
+					var new_val = prompt("Alias for User: " + user + "\n\nPlease enter an alias for the user. Leave it blank to remove the alias.", alias);
+					if ( new_val === null || new_val === undefined )
+						return;
+
+					new_val = new_val.trim();
+					if ( ! new_val )
+						new_val = undefined;
+
+					f.aliases[user] = new_val;
+					f.save_aliases();
+					
+					// Update UI
+					Ember.propertyDidChange(controller, 'userName');
+					var name = el.querySelector('h3.name'),
+						link = name && name.querySelector('a');
+					
+					if ( link )
+						name = link;
+					if ( name )
+						name.classList.toggle('ffz-alias', new_val); 
+				});
+				
+				if ( msg_btn )
+					msg_btn.parentElement.insertBefore(alias_btn, msg_btn);
+				else {
+					var follow_btn = el.querySelector(".interface > .follow-button");
+					if ( follow_btn )
+						follow_btn.parentElement.insertBefore(alias_btn, follow_btn.nextSibling);
 				}
 
 
@@ -552,7 +616,7 @@ FFZ.prototype.setup_mod_card = function() {
 							var line = user_history[i],
 								l_el = document.createElement('li');
 
-							l_el.className = 'message-line chat-line';
+							l_el.className = 'message-line chat-line clearfix';
 							l_el.classList.toggle('ffz-alternate', alternate);
 							alternate = !alternate;
 
@@ -566,7 +630,7 @@ FFZ.prototype.setup_mod_card = function() {
 							for(var x=0; x < bad_links.length; x++)
 								bad_links[x].addEventListener("click", f._deleted_link_click);
 
-							jQuery('a', l_el).tipsy({html:true});
+							jQuery('.html-tooltip', l_el).tipsy({html:true});
 							history.appendChild(l_el);
 						}
 

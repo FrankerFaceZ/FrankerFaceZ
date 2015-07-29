@@ -1,5 +1,8 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils');
+	utils = require('../utils'),
+
+	VALID_CHANNEL = /^[A-Za-z0-9_]+$/,
+	TWITCH_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([A-Za-z0-9_]+)/i;
 
 
 // ---------------
@@ -36,19 +39,24 @@ FFZ.settings_info.follow_buttons = {
 // ---------------
 
 FFZ.ffz_commands.following = function(room, args) {
-	args = args.join(" ").trim().split(/\s*,+\s*/);
+	args = args.join(" ").trim().toLowerCase().split(/[ ,]+/);
 
-	if ( args.length && args[0] === '' )
-		args.shift();
+	var out = [];
+	for(var i=0,l=args.length; i<l; i++) {
+		var arg = args[i],
+			match = arg.match(TWITCH_URL);
+		if ( match )
+			arg = match[1];
 
-	if ( args.length && args[args.length-1] === '' )
-		args.pop();
+		if ( arg !== '' && out.indexOf(arg) === -1 )
+			out.push(arg);
+	}
 
 	var user = this.get_user(), f = this;
 	if ( ! user || (user.login !== room.id && user.login !== "sirstendec" && user.login !== "dansalvato")  )
 		return "You must be logged in as the broadcaster to use this command.";
 
-	if ( ! this.ws_send("update_follow_buttons", [room.id, args], function(success, data) {
+	if ( ! this.ws_send("update_follow_buttons", [room.id, out], function(success, data) {
 		if ( ! success ) {
 			f.room_message(room, "There was an error updating the following buttons.");
 			return;
@@ -126,7 +134,8 @@ FFZ.ws_commands.follow_sets = function(data) {
 	var controller = App.__container__.lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
-		need_update = false;
+		need_update = false,
+		f = this;
 
 	this.follow_sets = this.follow_sets || {};
 
@@ -164,10 +173,11 @@ FFZ.ws_commands.follow_sets = function(data) {
 				continue;
 			}
 
-			this.load_set(sid, function(success, data) {
-				if ( success )
-					data.users.push(room_id);
-			});
+			setTimeout(
+				this.load_set.bind(this, sid, function(success, data) {
+					if ( success )
+						data.users.push(room_id);
+				}), Math.random()*2500);
 		}
 	}
 }
@@ -209,8 +219,13 @@ FFZ.prototype.rebuild_following_ui = function() {
 			} else
 				cont.innerHTML = '';
 
-			for(var i=0; i < data.length; i++) {
-				this._build_following_button(cont, data[i]);
+			var processed = [channel_id];
+			for(var i=0; i < data.length && i < 10; i++) {
+				var cid = data[i];
+				if ( processed.indexOf(cid) !== -1 )
+					continue;
+				this._build_following_button(cont, cid);
+				processed.push(cid);
 			}
 		}
 	}
@@ -240,8 +255,13 @@ FFZ.prototype.rebuild_following_ui = function() {
 			} else
 				cont.innerHTML = '';
 
-			for(var i=0; i < data.length; i++) {
-				this._build_following_button(cont, data[i]);
+			var processed = [hosted_id];
+			for(var i=0; i < data.length && i < 10; i++) {
+				var cid = data[i];
+				if ( processed.indexOf(cid) !== -1 )
+					continue;
+				this._build_following_button(cont, cid);
+				processed.push(cid);
 			}
 		}
 	}
@@ -253,6 +273,9 @@ FFZ.prototype.rebuild_following_ui = function() {
 // ---------------
 
 FFZ.prototype._build_following_button = function(container, channel_id) {
+	if ( ! VALID_CHANNEL.test(channel_id) )
+		return this.log("Ignoring Invalid Channel: " + utils.sanitize(channel_id));
+	
 	var btn = document.createElement('a'), f = this,
 		btn_c = document.createElement('div'),
 		noti = document.createElement('a'),
@@ -264,8 +287,8 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 		update = function() {
 			btn_c.classList.toggle('is-following', following);
-			btn.title = (following ? "Unf" : "F") + "ollow " + display_name;
-			btn.innerHTML = (following ? "" : "Follow ") + display_name;
+			btn.title = (following ? "Unf" : "F") + "ollow " + utils.sanitize(display_name);
+			btn.innerHTML = (following ? "" : "Follow ") + utils.sanitize(display_name);
 			noti_c.classList.toggle('hidden', !following);
 		},
 
@@ -359,7 +382,8 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 	display_name = FFZ.get_capitalization(channel_id, on_name);
 	update();
-	check_following();
+	
+	setTimeout(check_following, Math.random()*5000);
 
 	container.appendChild(btn_c);
 	container.appendChild(noti_c);

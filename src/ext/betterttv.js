@@ -35,8 +35,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 	
 	if ( this._chat_style ) {
-		this._chat_style.parentElement.removeChild(this._chat_style);
-		this._chat_style = undefined;
+		utils.update_css(this._chat_style, 'chat_font_size', '');
+		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
 	}
 
 	// Disable Chat Tabs
@@ -175,11 +175,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 	};
 
-
 	// Emoticonize
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
+			
 			room = (received_room || BetterTTV.getChannel()),
 			l_room = room && room.toLowerCase(),
 			l_sender = received_sender && received_sender.toLowerCase(),
@@ -206,7 +206,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			// Why is emote parsing so bad? ;_;
 			_.each(emotes, function(emote) {
 				var tooltip = f._emote_tooltip(emote),
-					eo = ['<img class="emoticon" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" alt="' + tooltip + '" title="' + tooltip + '" />'],
+					eo = ['<img class="emoticon" data-ffz-emote="' + emote.id + '" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" data-regex="' + emote.name + '" title="' + tooltip + '" />'],
 					old_tokens = tokens;
 
 				tokens = [];
@@ -240,6 +240,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 
 		// Sneak in Emojicon Processing
+		/*
 		if ( f.settings.parse_emoji && f.emoji_data ) {
 			var old_tokens = tokens;
 			tokens = [];
@@ -274,7 +275,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 					}
 				}
 			}
-		}
+		}*/
 
 		return tokens;
 	}

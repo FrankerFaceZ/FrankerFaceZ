@@ -3,208 +3,7 @@
 	constants = require("../constants"),
 
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
-	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
-
-
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-	SRCSETS = {};
-	build_srcset = function(id) {
-		if ( SRCSETS[id] )
-			return SRCSETS[id];
-		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
-		return out;
-	},
-	
-	
-	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
-	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
-	IMGUR_PATH = /^\/(?:gallery\/)?[A-Za-z0-9]+(?:\.(?:png|jpg|jpeg|gif|gifv|bmp))?$/,
-	IMAGE_EXT = /\.(?:png|jpg|jpeg|gif|bmp)$/i,
-	IMAGE_DOMAINS = [],
-	
-	is_image = function(href, any_domain) {
-		var match = href.match(LINK_SPLIT);
-		if ( ! match )
-			return;
-
-		var domain = match[3].toLowerCase(), port = match[4],
-			path = match[5];
-
-		// Don't allow non-standard ports.
-		if ( port && port !== '80' && port !== '443' )
-			return false;
-
-		// imgur-specific checks.
-		if ( domain === 'i.imgur.com' || domain === 'imgur.com' || domain === 'www.imgur.com' || domain === 'm.imgur.com' )
-			return IMGUR_PATH.test(path);
-
-		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1; 
-	}
-	
-	image_iframe = function(href, extra_class) {
-		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
-	},
-
-
-	data_to_tooltip = function(data) {
-		var set = data.set,
-			set_type = data.set_type,
-			owner = data.owner;
-
-		if ( set_type === undefined )
-			set_type = "Channel";
-
-		if ( ! set )
-			return data.code;
-
-		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
-			set = "Twitch Turbo";
-			set_type = null;
-		}
-
-		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set + (owner ? "\nBy: " + owner.display_name : "");
-	},
-
-	build_tooltip = function(id) {
-		var emote_data = this._twitch_emotes[id],
-			set = emote_data ? emote_data.set : null;
-
-		if ( ! emote_data )
-			return "???";
-
-		if ( typeof emote_data == "string" )
-			return emote_data;
-
-		if ( emote_data.tooltip )
-			return emote_data.tooltip;
-
-		return emote_data.tooltip = data_to_tooltip(emote_data);
-	},
-
-	load_emote_data = function(id, code, success, data) {
-		if ( ! success )
-			return;
-
-		if ( code )
-			data.code = code;
-
-		this._twitch_emotes[id] = data;
-		var tooltip = build_tooltip.bind(this)(id);
-
-		var images = document.querySelectorAll('img[emote-id="' + id + '"]');
-		for(var x=0; x < images.length; x++)
-			images[x].title = tooltip;
-	},
-
-	build_link_tooltip = function(href) {
-		var link_data = this._link_data[href],
-			tooltip;
-
-		if ( ! link_data )
-			return "";
-
-		if ( link_data.tooltip )
-			return link_data.tooltip;
-
-		if ( link_data.type == "youtube" ) {
-			tooltip = this.settings.link_image_hover ? image_iframe(link_data.full || href, 'ffz-yt-thumb') : '';
-			tooltip += "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
-			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
-			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
-
-		} else if ( link_data.type == "strawpoll" ) {
-			tooltip = "<b>Strawpoll: " + utils.sanitize(link_data.title) + "</b><hr><table><tbody>";
-			for(var key in link_data.items) {
-				var votes = link_data.items[key],
-					percentage = Math.floor((votes / link_data.total) * 100);
-				tooltip += '<tr><td style="text-align:left">' + utils.sanitize(key) + '</td><td style="text-align:right">' + utils.number_commas(votes) + "</td></tr>";
-			}
-			tooltip += "</tbody></table><hr>Total: " + utils.number_commas(link_data.total);
-			var fetched = utils.parse_date(link_data.fetched);
-			if ( fetched ) {
-				var age = Math.floor((fetched.getTime() - Date.now()) / 1000);
-				if ( age > 60 )
-					tooltip += "<br><small>Data was cached " + utils.time_to_string(age) + " ago.</small>";
-			}
-
-
-		} else if ( link_data.type == "twitch" ) {
-			tooltip = "<b>Twitch: " + utils.sanitize(link_data.display_name) + "</b><hr>";
-			var since = utils.parse_date(link_data.since);
-			if ( since )
-				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
-			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
-
-
-		} else if ( link_data.type == "twitch_vod" ) {
-			tooltip = "<b>Twitch " + (link_data.broadcast_type == "highlight" ? "Highlight" : "Broadcast") + ": " + utils.sanitize(link_data.title) + "</b><hr>";
-			tooltip += "By: " + utils.sanitize(link_data.display_name) + (link_data.game ? " | Playing: " + utils.sanitize(link_data.game) : " | Not Playing") + "<br>";
-			tooltip += "Views: " + utils.number_commas(link_data.views) + " | " + utils.time_to_string(link_data.length);
-
-
-		} else if ( link_data.type == "twitter" ) {
-			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
-			tooltip += utils.sanitize(link_data.tweet);
-
-
-		} else if ( link_data.type == "reputation" ) {
-			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
-			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
-			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
-				tooltip += "<hr>";
-				var had_extra = false;
-				if ( link_data.trust < 50 || link_data.safety < 50 ) {
-					link_data.unsafe = true;
-					tooltip += "<b>Potentially Unsafe Link</b><br>";
-					tooltip += "Trust: " + link_data.trust + "% | Child Safety: " + link_data.safety + "%";
-					had_extra = true;
-				}
-
-				if ( link_data.tags && link_data.tags.length > 0 )
-					tooltip += (had_extra ? "<br>" : "") + "Tags: " + link_data.tags.join(", ");
-
-				tooltip += "<br>Data Source: WOT";
-			}
-
-
-		} else if ( link_data.full ) {
-			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
-			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
-		}
-
-		if ( ! tooltip )
-			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
-
-		link_data.tooltip = tooltip;
-		return tooltip;
-	},
-
-	load_link_data = function(href, success, data) {
-		if ( ! success )
-			return;
-
-		this._link_data[href] = data;
-		data.unsafe = false;
-
-		var tooltip = build_link_tooltip.bind(this)(href), links,
-			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
-
-		if ( no_trail )
-			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[href="' + no_trail + '"], span.message a[data-url="' + href + '"], span.message a[data-url="' + no_trail + '"]');
-		else
-			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[data-url="' + href + '"]');
-
-		if ( ! this.settings.link_info )
-			return;
-
-		for(var x=0; x < links.length; x++) {
-			if ( data.unsafe )
-				links[x].classList.add('unsafe-link');
-
-			if ( ! links[x].classList.contains('deleted-link') )
-				links[x].title = tooltip;
-		}
-	};
+	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
 
 
 // ---------------------
@@ -320,6 +119,19 @@ FFZ.settings_info.scrollback_length = {
 			}
 		}
 	};
+
+
+FFZ.settings_info.hosted_sub_notices = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Filtering",
+	no_bttv: true,
+
+	name: "Show Hosted Channel Subscriber Notices",
+	help: "Display notices in chat when someone subscribes to the hosted channel."
+	};
+
 
 FFZ.settings_info.banned_words = {
 	type: "button",
@@ -538,7 +350,7 @@ FFZ.settings_info.chat_font_size = {
 			return;
 
 		var css;
-		if ( val === 12 )
+		if ( val === 12 || ! val )
 			css = "";
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val)),
@@ -567,7 +379,7 @@ FFZ.settings_info.chat_ts_size = {
 	method: function() {
 			var old_val = this.settings.chat_ts_size;
 			
-			if ( old_val === null )
+			if ( ! old_val )
 				old_val = this.settings.chat_font_size;
 			
 			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
@@ -608,6 +420,14 @@ FFZ.prototype.setup_line = function() {
 	jQuery(document.body).on("mouseleave", ".tipsy", function() {
 		this.parentElement.removeChild(this);
 	});
+	
+	// Aliases
+	try {
+		this.aliases = JSON.parse(localStorage.ffz_aliases || '{}');
+	} catch(err) {
+		this.log("Error Loading Aliases: " + err);
+		this.aliases = {};
+	}
 	
 	
 	// Chat Style
@@ -657,6 +477,13 @@ FFZ.prototype.setup_line = function() {
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
 
+
+FFZ.prototype.save_aliases = function() {
+	this.log("Saving " + Object.keys(this.aliases).length + " aliases to local storage.");
+	localStorage.ffz_aliases = JSON.stringify(this.aliases);
+}
+
+
 FFZ.prototype._modify_line = function(component) {
 	var f = this;
 
@@ -670,42 +497,35 @@ FFZ.prototype._modify_line = function(component) {
 
 			tokens = this._super();
 
-			try {
-				var start = performance.now(),
-					user = f.get_user(),
-					from_me = user && this.get("msgObject.from") === user.login;
+			var start = performance.now(),
+				user = f.get_user(),
+				from_me = user && this.get("msgObject.from") === user.login;
 
-				tokens = f._remove_banned(tokens);
-				tokens = f._emoticonize(this, tokens);
+			tokens = f._remove_banned(tokens);
+			tokens = f._emoticonize(this, tokens);
 
-				if ( f.settings.parse_emoji )
-					tokens = f.tokenize_emoji(tokens);
+			if ( f.settings.parse_emoji )
+				tokens = f.tokenize_emoji(tokens);
 
-				// Store the capitalization.
-				var display = this.get("msgObject.tags.display-name");
-				if ( display && display.length )
-					FFZ.capitalization[this.get("msgObject.from")] = [display.trim(), Date.now()];
+			// Store the capitalization.
+			var display = this.get("msgObject.tags.display-name");
+			if ( display && display.length )
+				FFZ.capitalization[this.get("msgObject.from")] = [display.trim(), Date.now()];
 
-				if ( ! from_me )
-					tokens = f.tokenize_mentions(tokens);
+			if ( ! from_me )
+				tokens = f.tokenize_mentions(tokens);
 
-				for(var i = 0; i < tokens.length; i++) {
-					var token = tokens[i];
-					if ( ! _.isString(token) && token.mentionedUser && ! token.own ) {
-						this.set('msgObject.ffz_has_mention', true);
-						break;
-					}
+			for(var i = 0; i < tokens.length; i++) {
+				var token = tokens[i];
+				if ( ! _.isString(token) && token.mentionedUser && ! token.own ) {
+					this.set('msgObject.ffz_has_mention', true);
+					break;
 				}
-
-				var end = performance.now();
-				if ( end - start > 5 )
-					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
-
-			} catch(err) {
-				try {
-					f.error("LineController tokenizedMessage: " + err);
-				} catch(err) { }
 			}
+
+			var end = performance.now();
+			if ( end - start > 5 )
+				f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
 
 			this.set("msgObject.cachedTokens", tokens);
 			return tokens;
@@ -715,17 +535,14 @@ FFZ.prototype._modify_line = function(component) {
 		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
 			this.rerender();
 		}),
-
-		willClearRender: function() {
-			try {
-
-			} catch(err) {
-				f.error("LineView willClearRender: " + err);
-			}
-			this._super();
-		},
 		
 		click: function(e) {
+			if ( e.target && e.target.classList.contains('ffz-old-messages') )
+				return f._show_deleted(this.get('msgObject.room'));
+			
+			if ( e.target && e.target.classList.contains('deleted-link') )
+				return f._deleted_link_click.bind(e.target)(e);
+			
 			if ( e.target && e.target.classList.contains('mod-icon') ) {
 				jQuery(e.target).trigger('mouseout');
 				
@@ -744,190 +561,160 @@ FFZ.prototype._modify_line = function(component) {
 			
 			return this._super(e);
 		},
+		
+		ffzUserLevel: function() {
+			if ( this.get('isStaff') )
+				return 5;
+			else if ( this.get('isAdmin') )
+				return 4;
+			else if ( this.get('isBroadcaster') )
+				return 3;
+			else if ( this.get('isGlobalModerator') )
+				return 2;
+			else if ( this.get('isModerator') )
+				return 1;
+			return 0;
+		}.property('msgObject.labels.[]'),
+		
+		render: function(e) {
+			var deleted = this.get('msgObject.deleted'),
+				r = this,
+				
+				badges = {},
+				
+				user = this.get('msgObject.from'),
+				room_id = this.get('msgObject.room'),
+				room = f.rooms && f.rooms[room_id],
+				
+				recipient = this.get('msgObject.to'),
+				is_whisper = recipient && recipient.length,
+				
+				this_ul = this.get('ffzUserLevel'),
+				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
+
+				row_type = this.get('msgObject.ffz_alternate');
+			
+			if ( row_type === undefined ) {
+				row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
+				this.set("msgObject.ffz_alternate", row_type);
+			}
+
+			e.push('<div class="indicator"></div>');
+			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');
+			
+			if ( ! is_whisper && this_ul < other_ul ) {
+				e.push('<span class="mod-icons float-left">');
+				if ( deleted )
+					e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
+				else
+					e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
+				
+				e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
+				e.push('<a class="mod-icon float-left tooltip purge" title="Purge User (Timeout 1s)" href="#">Purge</a>');
+				e.push('</span>');
+			}
+			
+			// Stock Badges
+			if ( ! is_whisper && this.get('isBroadcaster') )
+				badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
+			else if ( this.get('isStaff') )
+				badges[0] = {klass: 'staff', title: 'Staff'};
+			else if ( this.get('isAdmin') )
+				badges[0] = {klass: 'admin', title: 'Admin'};
+			else if ( this.get('isGlobalMod') )
+				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
+			else if ( ! is_whisper && this.get('isModerator') )
+				badges[0] = {klass: 'moderator', title: 'Moderator'};
+			
+			if ( ! is_whisper && this.get('isSubscriber') )
+				badges[10] = {klass: 'subscriber', title: 'Subscriber'};
+			if ( this.get('hasTurbo') )
+				badges[15] = {klass: 'turbo', title: 'Turbo'};
+
+			// FFZ Badges
+			badges = f.render_badges(this, badges);
+
+			// Rendering!
+			e.push('<span class="badges float-left">');
+
+			for(var key in badges) {
+				var badge = badges[key],
+					css = badge.image ? 'background-image:url(&quot;' + badge.image + '&quot;);' : '';
+				
+				if ( badge.color )
+					css += 'background-color:' + badge.color + ';';
+				
+				if ( badge.extra_css )
+					css += badge.extra_css;
+
+				e.push('<div class="badge float-left tooltip ' + badge.klass + '"' + (css ? ' style="' + css + '"' : '') + ' title="' + badge.title + '"></div>');
+			}
+
+			e.push('</span>');
+			
+			var alias = f.aliases[user],
+				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user";
+
+			if ( alias )
+				e.push('<span class="from ffz-alias tooltip" style="' + this.get('fromStyle') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
+			else
+				e.push('<span class="from" style="' + this.get('fromStyle') + '">' + utils.sanitize(name) + '</span>');
+
+			if ( is_whisper ) {
+				var to_alias = f.aliases[recipient],
+					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user";
+				
+				this._renderWhisperArrow(e);
+				
+				if ( to_alias )
+					e.push('<span class="to ffz-alias tooltip" style="' + this.get('toStyle') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
+				else
+					e.push('<span class="to" style="' + this.get('toStyle') + '">' + utils.sanitize(to_name) + '</span>');
+			}
+
+			e.push('<span class="colon">:</span> ');
+			
+			if ( deleted )
+				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
+			else {
+				e.push('<span class="message" style="' + this.get('messageStyle') + '">');
+				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
+				
+				var old_messages = this.get('msgObject.ffz_old_messages');
+				if ( old_messages && old_messages.length )
+					e.push('<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>');
+				
+				e.push('</span>');
+			}
+		},
+		
+		classNameBindings: [
+			'msgObject.ffz_alternate:ffz-alternate',
+			'msgObject.ffz_has_mention:ffz-mentioned',
+			'ffzWasDeleted:ffz-deleted',
+			'ffzHasOldMessages:clearfix',
+			'ffzHasOldMessages:ffz-has-deleted'
+			],
+		
+
+		ffzWasDeleted: function() {
+			return f.settings.prevent_clear && this.get('msgObject.ffz_deleted');
+		}.property('msgObject.ffz_deleted'),
+		
+		ffzHasOldMessages: function() {
+			var old_messages = this.get('msgObject.ffz_old_messages');
+			return old_messages && old_messages.length;
+		}.property('msgObject.ffz_old_messages'),
+
 
 		didInsertElement: function() {
 			this._super();
-			try {
-				var start = performance.now();
-
-				var el = this.get('element'),
-					user = this.get('msgObject.from'),
-					room = this.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id'),
-					row_type = this.get('msgObject.ffz_alternate');
-
-				// Row Alternation
-				if ( row_type === undefined ) {
-					row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
-					this.set("msgObject.ffz_alternate", row_type);
-				}
-
-				el.classList.toggle('ffz-alternate', row_type || false);
-				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted') || false);
-
-
-				// Basic Data
-				el.setAttribute('data-room', room);
-				el.setAttribute('data-sender', user);
-				el.setAttribute('data-deleted', this.get('msgObject.deleted')||false);
-
-
-				// Old Messages (for Chat Clear)
-				var old_messages = this.get("msgObject.ffz_old_messages");
-				if ( old_messages && old_messages.length ) {
-					var btn = document.createElement('div');
-					btn.className = 'button primary float-right';
-					btn.innerHTML = 'Show ' + utils.number_commas(old_messages.length) + ' Old';
-
-					btn.addEventListener("click", f._show_deleted.bind(f, room));
-
-					el.classList.add('clearfix');
-					el.classList.add('ffz-has-deleted');
-
-					this.$('.message').append(btn);
-				}
-				
-				
-				// Hide Mod Buttons
-				if ( (this.get('isBroadcaster') && !(this.get('controller.parentController.model.isStaff') || this.get('controller.parentController.model.isAdmin'))) || (this.get('isModeratorOrHigher') && !(this.get('controller.parentController.model.isBroadcaster') || this.get('controller.parentController.model.isStaff') || this.get('controller.parentController.model.isAdmin'))) ) {
-					var mod_icons = el.querySelector('span.mod-icons');
-					mod_icons && mod_icons.classList.add('hidden');
-				}
-				
-				
-				// Purge Button
-				var timeout_btn = el.querySelector('span.mod-icons a.mod-icon.timeout');
-				if ( timeout_btn ) {
-					var purge_btn = document.createElement('a');
-					purge_btn.className = 'mod-icon float-left tooltip purge';
-					purge_btn.innerHTML = 'Purge';
-					purge_btn.title = 'Purge User (Timeout 1s)';
-					purge_btn.href = '#';
-					
-					timeout_btn.title = 'Timeout User (10m)';
-					timeout_btn.parentElement.insertBefore(purge_btn, timeout_btn.nextSibling);
-				}
-
-
-				// Badge
-				f.render_badge(this);
-
-
-				// Mention Highlighting
-				if ( this.get("msgObject.ffz_has_mention") )
-					el.classList.add("ffz-mentioned");
-
-
-				// Banned Links
-				var bad_links = el.querySelectorAll('span.message a.deleted-link');
-				for(var i=0; i < bad_links.length; i++)
-					bad_links[i].addEventListener("click", f._deleted_link_click);
-
-
-				// Link Tooltips
-				if ( f.settings.link_info || f.settings.link_image_hover ) {
-					var links = el.querySelectorAll("span.message a");
-					for(var i=0; i < links.length; i++) {
-						var link = links[i],
-							href = link.href,
-							deleted = false;
-
-						if ( link.classList.contains("deleted-link") ) {
-							href = link.getAttribute("data-url");
-							deleted = true;
-						}
-
-						// Check the cache.
-						if ( f.settings.link_info ) {
-							var link_data = f._link_data[href];
-							if ( link_data ) {
-								if ( !deleted && typeof link_data != "boolean" )
-									link.title = link_data.tooltip;
-	
-								if ( link_data.unsafe )
-									link.classList.add('unsafe-link');
-	
-							} else if ( ! /^mailto:/.test(href) ) {
-								f._link_data[href] = true;
-								f.ws_send("get_link", href, load_link_data.bind(f, href));
-								if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
-									link.title = image_iframe(href); 
-							}
-						}
-						
-						// Now, Images
-						else if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
-							link.title = image_iframe(href); 
-					}
-
-					jQuery(links).tipsy({html:true});
-				}
-
-
-				// Enhanced Emotes
-				var images = el.querySelectorAll('span.message img.emoticon');
-				for(var i=0; i < images.length; i++) {
-					var img = images[i],
-						name = img.alt,
-						id = FFZ.src_to_id(img.src);
-
-					if ( id !== null ) {
-						// High-DPI Images
-						if ( ! constants.EMOTE_REPLACEMENTS[id] )
-							img.setAttribute('srcset', build_srcset(id));
-
-						img.setAttribute('emote-id', id);
-
-						// Source Lookup
-						var emote_data = f._twitch_emotes[id];
-						if ( emote_data ) {
-							if ( typeof emote_data != "string" )
-								img.title = emote_data.tooltip;
-
-						} else {
-							f._twitch_emotes[id] = img.alt;
-							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
-						}
-
-					} else if ( img.getAttribute('data-ffz-emoji') ) {
-						var eid = img.getAttribute('data-ffz-emoji'),
-							data = f.emoji_data && f.emoji_data[eid];
-
-						if ( data ) {
-							img.setAttribute('srcset', data.srcSet);
-							img.title = "Emoji: " + img.alt + "\nName: :" + data.short_name + ":";
-						}
-
-					} else if ( img.getAttribute('data-ffz-emote') ) {
-						var data = JSON.parse(decodeURIComponent(img.getAttribute('data-ffz-emote'))),
-							id = data && data[0] || null,
-							set_id = data && data[1] || null,
-
-							set = f.emote_sets[set_id],
-							emote = set ? set.emoticons[id] : null;
-
-						// High-DPI!
-						if ( emote && emote.srcSet )
-							img.setAttribute('srcset', emote.srcSet);
-
-						if ( set && f.feature_friday && set.id == f.feature_friday.set )
-							set_name = f.feature_friday.title + " - " + f.feature_friday.display_name;
-
-						img.title = f._emote_tooltip(emote);
-					}
-				}
-
-				jQuery(images).tipsy();
-
-
-				var duration = performance.now() - start;
-				if ( duration > 5 )
-					f.log("Line Took Too Long - " + duration + "ms", el.innerHTML, false, true);
-
-			} catch(err) {
-				try {
-					f.error("LineView didInsertElement: " + err);
-				} catch(err) { }
-			}
+			
+			var el = this.get('element');
+			
+			el.setAttribute('data-room', this.get('msgObject.room'));
+			el.setAttribute('data-sender', this.get('msgObject.from'));
+			el.setAttribute('data-deleted', this.get('msgObject.deleted') || false);
 		}
 	});
 }
@@ -990,9 +777,16 @@ FFZ.prototype._remove_banned = function(tokens) {
 				new_tokens.push(token.altText.replace(regex, "$1***"));
 			else if ( token.isLink && regex.test(token.href) )
 				new_tokens.push({
+					isLink: true,
+					href: token.href,
+					isDeleted: true,
+					isLong: false,
+					censoredHref: token.href.replace(regex, "$1***")
+				});
+					/*{
 					mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + utils.quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
 					own: true
-					});
+					});*/
 			else
 				new_tokens.push(token);
 

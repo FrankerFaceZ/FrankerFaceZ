@@ -52,7 +52,40 @@ FFZ.settings_info.fix_color = {
 				this._rebuild_colors();
 		}
 	};
+
+
+FFZ.settings_info.luv_contrast = {
+	type: "button",
+	value: 4.5,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Username Colors - Luv Minimum Contrast",
+	help: "Set the minimum contrast ratio used by Luv Adjustment to ensure colors are readable.",
 	
+	method: function() {
+			var old_val = this.settings.luv_contrast,
+				new_val = prompt("Luv Adjustment Minimum Contrast Ratio\n\nPlease enter a new value for the minimum contrast ratio required between username colors and the background. The default is: 4.5", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var parsed = parseFloat(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = 4.5;
+			
+			this.settings.set("luv_contrast", parsed);
+		},
+	
+	on_update: function(val) {
+			this._rebuild_contrast();
+
+			if ( ! this.has_bttv && this.settings.fix_color == '1' )
+			this._rebuild_colors();
+		}
+	};
+
 
 FFZ.settings_info.color_blind = {
 	type: "select",
@@ -85,6 +118,7 @@ FFZ.prototype.setup_colors = function() {
 	this.log("Preparing color-alteration style element.");
 	
 	this._colors = {};
+	this._rebuild_contrast();
 
 	var s = this._color_style = document.createElement('style');
 	s.id = 'ffz-style-username-colors';
@@ -493,17 +527,14 @@ LUVColor.prototype._u = function(u) { return new LUVColor(this.l, u, this.v); }
 LUVColor.prototype._v = function(v) { return new LUVColor(this.l, this.u, v); }
 
 
-// Required Colors
-
-var REQUIRED_CONTRAST = 4.5,
-
-	REQUIRED_BRIGHT = new XYZColor(0, (REQUIRED_CONTRAST * (new RGBColor(35,35,35).toXYZ().y + 0.05) - 0.05), 0).toLUV().l,
-	REQUIRED_DARK = new XYZColor(0, ((new RGBColor(217,217,217).toXYZ().y + 0.05) / REQUIRED_CONTRAST - 0.05), 0).toLUV().l;
-
-
 // --------------------
 // Rebuild Colors
 // --------------------
+
+FFZ.prototype._rebuild_contrast = function() {
+	this._luv_required_bright = new XYZColor(0, (this.settings.luv_contrast * (new RGBColor(35,35,35).toXYZ().y + 0.05) - 0.05), 0).toLUV().l;
+	this._luv_required_dark = new XYZColor(0, ((new RGBColor(217,217,217).toXYZ().y + 0.05) / this.settings.luv_contrast - 0.05), 0).toLUV().l;
+}
 
 FFZ.prototype._rebuild_colors = function() {
 	if ( ! this._color_style || this.has_bttv )
@@ -602,14 +633,14 @@ FFZ.prototype._handle_color = function(color) {
 	if ( this.settings.fix_color === '1' ) {
 		var luv = rgb.toLUV();
 		
-		if ( luv.l > REQUIRED_DARK ) {
+		if ( luv.l > this._luv_required_dark ) {
 			matched = true;
-			light_color = luv._l(REQUIRED_DARK).toRGB().toCSS();
+			light_color = luv._l(this._luv_required_dark).toRGB().toCSS();
 		}
 		
-		if ( luv.l < REQUIRED_BRIGHT ) {
+		if ( luv.l < this._luv_required_bright ) {
 			matched = true;
-			dark_color = luv._l(REQUIRED_BRIGHT).toRGB().toCSS();
+			dark_color = luv._l(this._luv_required_bright).toRGB().toCSS();
 		}
 	}
 	

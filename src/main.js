@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 25,
+	major: 3, minor: 5, revision: 2,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -115,6 +115,7 @@ require('./tokenize');
 
 // Analytics: require('./ember/router');
 require('./ember/channel');
+require('./ember/player');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
@@ -156,21 +157,27 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Make sure that FrankerFaceZ doesn't start setting itself up until the
 	// Twitch ember application is ready.
 
+	// Check for the player
+	if ( location.hostname === 'player.twitch.tv' ) {
+		this.init_player(delay);
+		return;
+	}
+
 	// Check for special non-ember pages.
-	if ( /^\/(?:$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
-		this.setup_normal(delay);
+	if ( /^\/(?:$|search$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
+		this.init_normal(delay);
 		return;
 	}
 	
 	if ( location.hostname === 'passport' && /^\/(?:authorize)/.test(location.pathname) ) {
 		this.log("Running on passport!");
-		this.setup_normal(delay, true);
+		this.init_normal(delay, true);
 		return;
 	}
 
 	// Check for the dashboard.
 	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
-		this.setup_dashboard(delay);
+		this.init_dashboard(delay);
 		return;
 	}
 
@@ -188,11 +195,32 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return;
 	}
 
-	this.setup_ember(delay);
+	this.init_ember(delay);
 }
 
 
-FFZ.prototype.setup_normal = function(delay, no_socket) {
+FFZ.prototype.init_player = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found Twitch Player after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+	this.is_dashboard = false;
+	try {
+		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
+	} catch(err) { this.embed_in_dash = false; }
+
+	// Literally only make it dark.
+	this.load_settings();
+	this.setup_dark();
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
+}
+
+
+FFZ.prototype.init_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -231,7 +259,7 @@ FFZ.prototype.setup_normal = function(delay, no_socket) {
 
 FFZ.prototype.is_dashboard = false;
 
-FFZ.prototype.setup_dashboard = function(delay) {
+FFZ.prototype.init_dashboard = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Dashboard after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -268,7 +296,7 @@ FFZ.prototype.setup_dashboard = function(delay) {
 }
 
 
-FFZ.prototype.setup_ember = function(delay) {
+FFZ.prototype.init_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -293,6 +321,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	//this.setup_router();
 	this.setup_colors();
 	this.setup_tokenization();
+	this.setup_player();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();

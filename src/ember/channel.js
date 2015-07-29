@@ -84,6 +84,56 @@ FFZ.prototype.setup_channel = function() {
 
 		}.observes("isLive", "content.id"),
 
+		ffzUpdateInfo: function() {
+			if ( this._ffz_update_timer )
+				clearTimeout(this._ffz_update_timer);
+			
+			if ( ! this.get('content.id') )
+				return;
+			
+			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 60000);
+		}.observes("content.id"),
+				
+		ffzCheckUpdate: function() {
+			var t = this,
+				id = t.get('content.id');
+
+			id && Twitch.api && Twitch.api.get("streams/" + id, {}, {version:3})
+				.done(function(data) {
+					if ( ! data || ! data.stream ) {
+						// If the stream is offline, clear its created_at time and set it to zero viewers.
+						t.set('stream.created_at', null);
+						t.set('stream.viewers', 0);
+						return;
+					}
+
+					t.set('stream.created_at', data.stream.created_at || null);
+					t.set('stream.viewers', data.stream.viewers || 0);
+
+					var game = data.stream.game || (data.stream.channel && data.stream.channel.game);
+					if ( game ) {
+						t.set('game', game);
+						t.set('rollbackData.game', game);
+					}
+					
+					if ( data.stream.channel ) {
+						if ( data.stream.channel.status )
+							t.set('status', data.stream.channel.status);
+						
+						if ( data.stream.channel.views )
+							t.set('views', data.stream.channel.views);
+
+						if ( data.stream.channel.followers && t.get('content.followers.isLoaded') )
+							t.set('content.followers.total', data.stream.channel.followers);
+					}
+
+				})
+				.always(function(data) {
+					t.ffzUpdateInfo();
+				});
+		},
+
+
 		ffzUpdateTitle: function() {
 			var name = this.get('content.name'),
 				display_name = this.get('content.display_name');
@@ -126,6 +176,8 @@ FFZ.prototype.setup_channel = function() {
 
 		}.observes("content.hostModeTarget")
 	});
+	
+	Channel.ffzUpdateInfo();
 }
 
 
@@ -168,6 +220,7 @@ FFZ.prototype._modify_cindex = function(view) {
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();
 			this.ffzUpdateHostButton();
+			this.ffzUpdatePlayerStats();
 
 			var views = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
 			if ( views )
@@ -379,6 +432,85 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 
+		ffzUpdatePlayerStats: function() {
+			var channel_id = this.get('controller.id'),
+				hosted_id = this.get('controller.hostModeTarget.id'),
+
+				el = this.get('element');
+
+			if ( channel_id ) {
+				var container = el && el.querySelector('.stats-and-actions .channel-stats'),
+					stat_el = container && container.querySelector('#ffz-ui-player-stats'),
+					el = stat_el && stat_el.querySelector('span'),
+					
+					player_cont = f.players && f.players[channel_id],
+					player = player_cont && player_cont.player,
+					stats = player && player.stats;
+
+
+				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
+					if ( stat_el )
+						stat_el.parentElement.removeChild(stat_el);
+				} else {
+					if ( ! stat_el ) {
+						stat_el = document.createElement('span');
+						stat_el.id = 'ffz-ui-player-stats';
+						stat_el.className = 'ffz stat tooltip';
+						
+						stat_el.innerHTML = constants.GRAPH + " ";
+						el = document.createElement('span');
+						stat_el.appendChild(el);
+						
+						var other = container.querySelector('#ffz-uptime-display');
+						if ( other )
+							container.insertBefore(stat_el, other.nextSibling);
+						else
+							container.appendChild(stat_el);
+					}
+					
+					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
+					el.textContent = stats.hlsLatencyBroadcaster + 's';
+				}
+			}
+			
+			
+			if ( hosted_id ) {
+				var container = el && el.querySelector('#hostmode .channel-stats'),
+					stat_el = container && container.querySelector('#ffz-ui-player-stats'),
+					el = stat_el && stat_el.querySelector('span'),
+					
+					player_cont = f.players && f.players[hosted_id],
+					player = player_cont && player_cont.player,
+					stats = player && player.stats;
+
+
+				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
+					if ( stat_el )
+						stat_el.parentElement.removeChild(stat_el);
+				} else {
+					if ( ! stat_el ) {
+						stat_el = document.createElement('span');
+						stat_el.id = 'ffz-ui-player-stats';
+						stat_el.className = 'ffz stat tooltip';
+						
+						stat_el.innerHTML = constants.GRAPH + " ";
+						el = document.createElement('span');
+						stat_el.appendChild(el);
+						
+						var other = container.querySelector('#ffz-uptime-display');
+						if ( other )
+							container.insertBefore(stat_el, other.nextSibling);
+						else
+							container.appendChild(stat_el);
+					}
+					
+					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
+					el.textContent = stats.hlsLatencyBroadcaster + 's';
+				}
+			}	
+		},
+
+
 		ffzUpdateUptime: function() {
 			if ( this._ffz_update_uptime ) {
 				clearTimeout(this._ffz_update_uptime);
@@ -397,16 +529,15 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			// Determine when the channel last went live.
 			var online = this.get("controller.content.stream.created_at");
-			if ( ! online )
-				return;
+			online = online && utils.parse_date(online);
 
-			online = utils.parse_date(online);
-			if ( ! online )
+			var uptime = online && Math.floor((Date.now() - online.getTime()) / 1000) || -1;
+			if ( uptime < 0 ) {
+				var el = this.get('element').querySelector('#ffz-uptime-display');
+				if ( el )
+					el.parentElement.removeChild(el);
 				return;
-
-			var uptime = Math.floor((Date.now() - online.getTime()) / 1000);
-			if ( uptime < 0 )
-				return;
+			}
 
 			var el = this.get('element').querySelector('#ffz-uptime-display span');
 			if ( ! el ) {

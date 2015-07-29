@@ -144,7 +144,7 @@ FFZ.prototype.bttv_badges = function(data) {
 			var replaced = false;
 			for(var i=0; i < data.badges.length; i++) {
 				var b = data.badges[i];
-				if ( b.type == full_badge.replaces ) {
+				if ( b.type === full_badge.replaces_type ) {
 					b.type = "ffz-badge-replacement " + b.type;
 					b.description += ", " + (badge.title || full_badge.title) +
 						'" style="background-image: url(&quot;' + (badge.image || full_badge.image) + "&quot;)";
@@ -181,6 +181,58 @@ FFZ.prototype.bttv_badges = function(data) {
 		while(badges_out.length)
 			data.badges.insertAt(insert_at, badges_out.shift()[1]);
 	}
+}
+
+
+FFZ.prototype.render_badges = function(component, badges) {
+	if ( ! this.settings.show_badges )
+		return badges;
+
+	var user = component.get('msgObject.from'),
+		room_id = component.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id');
+
+	var data = this.users[user];
+	if ( ! data || ! data.badges )
+		return badges;
+
+	for(var slot in data.badges) {
+		if ( ! data.badges.hasOwnProperty(slot) )
+			continue;
+
+		var badge = data.badges[slot],
+			full_badge = this.badges[badge.id] || {},
+			old_badge = badges[slot];
+
+		if ( full_badge.visible !== undefined ) {
+			var visible = full_badge.visible;
+			if ( typeof visible === "function" )
+				visible = visible.bind(this)(room_id, user, component, badges);
+			
+			if ( ! visible )
+				continue;
+		}
+
+		if ( old_badge ) {
+			var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces;
+			if ( ! replaces )
+				continue;
+			
+			old_badge.image = badge.image || full_badge.image;
+			old_badge.klass += ' ffz-badge-replacement';
+			old_badge.title += ', ' + (badge.title || full_badge.title);
+			continue;
+		}
+
+		badges[slot] = {
+			klass: 'ffz-badge-' + badge.id,
+			title: badge.title || full_badge.title,
+			image: badge.image,
+			color: badge.color,
+			extra_css: badge.extra_css
+		};
+	}
+	
+	return badges;
 }
 
 
@@ -289,8 +341,9 @@ FFZ.prototype._legacy_add_donors = function() {
 
 	// Bot Badge
 	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/script/boticon.png",
-		replaces: 'moderator',
+		replaces: true, replaces_type: "moderator",
 		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
+
 	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
 
 	// Load BTTV Bots
@@ -368,7 +421,7 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
 }
-},{"./constants":4,"./utils":33}],2:[function(require,module,exports){
+},{"./constants":4,"./utils":34}],2:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 
 	hue2rgb = function(p, q, t) {
@@ -423,7 +476,40 @@ FFZ.settings_info.fix_color = {
 				this._rebuild_colors();
 		}
 	};
+
+
+FFZ.settings_info.luv_contrast = {
+	type: "button",
+	value: 4.5,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Username Colors - Luv Minimum Contrast",
+	help: "Set the minimum contrast ratio used by Luv Adjustment to ensure colors are readable.",
 	
+	method: function() {
+			var old_val = this.settings.luv_contrast,
+				new_val = prompt("Luv Adjustment Minimum Contrast Ratio\n\nPlease enter a new value for the minimum contrast ratio required between username colors and the background. The default is: 4.5", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var parsed = parseFloat(new_val);
+			if ( parsed === NaN || parsed < 1 )
+				parsed = 4.5;
+			
+			this.settings.set("luv_contrast", parsed);
+		},
+	
+	on_update: function(val) {
+			this._rebuild_contrast();
+
+			if ( ! this.has_bttv && this.settings.fix_color == '1' )
+			this._rebuild_colors();
+		}
+	};
+
 
 FFZ.settings_info.color_blind = {
 	type: "select",
@@ -456,6 +542,7 @@ FFZ.prototype.setup_colors = function() {
 	this.log("Preparing color-alteration style element.");
 	
 	this._colors = {};
+	this._rebuild_contrast();
 
 	var s = this._color_style = document.createElement('style');
 	s.id = 'ffz-style-username-colors';
@@ -864,17 +951,14 @@ LUVColor.prototype._u = function(u) { return new LUVColor(this.l, u, this.v); }
 LUVColor.prototype._v = function(v) { return new LUVColor(this.l, this.u, v); }
 
 
-// Required Colors
-
-var REQUIRED_CONTRAST = 4.5,
-
-	REQUIRED_BRIGHT = new XYZColor(0, (REQUIRED_CONTRAST * (new RGBColor(35,35,35).toXYZ().y + 0.05) - 0.05), 0).toLUV().l,
-	REQUIRED_DARK = new XYZColor(0, ((new RGBColor(217,217,217).toXYZ().y + 0.05) / REQUIRED_CONTRAST - 0.05), 0).toLUV().l;
-
-
 // --------------------
 // Rebuild Colors
 // --------------------
+
+FFZ.prototype._rebuild_contrast = function() {
+	this._luv_required_bright = new XYZColor(0, (this.settings.luv_contrast * (new RGBColor(35,35,35).toXYZ().y + 0.05) - 0.05), 0).toLUV().l;
+	this._luv_required_dark = new XYZColor(0, ((new RGBColor(217,217,217).toXYZ().y + 0.05) / this.settings.luv_contrast - 0.05), 0).toLUV().l;
+}
 
 FFZ.prototype._rebuild_colors = function() {
 	if ( ! this._color_style || this.has_bttv )
@@ -973,14 +1057,14 @@ FFZ.prototype._handle_color = function(color) {
 	if ( this.settings.fix_color === '1' ) {
 		var luv = rgb.toLUV();
 		
-		if ( luv.l > REQUIRED_DARK ) {
+		if ( luv.l > this._luv_required_dark ) {
 			matched = true;
-			light_color = luv._l(REQUIRED_DARK).toRGB().toCSS();
+			light_color = luv._l(this._luv_required_dark).toRGB().toCSS();
 		}
 		
-		if ( luv.l < REQUIRED_BRIGHT ) {
+		if ( luv.l < this._luv_required_bright ) {
 			matched = true;
-			dark_color = luv._l(REQUIRED_BRIGHT).toRGB().toCSS();
+			dark_color = luv._l(this._luv_required_bright).toRGB().toCSS();
 		}
 	}
 	
@@ -1153,7 +1237,11 @@ module.exports = {
 	HEART: '<svg class="svg-heart" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M8,13.5L1.5,7V4l2-2h3L8,3.5L9.5,2h3l2,2v3L8,13.5z" fill-rule="evenodd"></path></svg>',
 	EMOTE: '<svg class="svg-emote" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M9,18c-4.971,0-9-4.029-9-9s4.029-9,9-9s9,4.029,9,9S13.971,18,9,18z M14,4.111V4h-0.111C12.627,2.766,10.904,2,9,2C7.095,2,5.373,2.766,4.111,4H4v0.111C2.766,5.373,2,7.096,2,9s0.766,3.627,2,4.889V14l0.05-0.051C5.317,15.217,7.067,16,9,16c1.934,0,3.684-0.783,4.949-2.051L14,14v-0.111c1.234-1.262,2-2.984,2-4.889S15.234,5.373,14,4.111zM11,6h2v4h-2V6z M12.535,12.535C11.631,13.44,10.381,14,9,14s-2.631-0.56-3.536-1.465l0.707-0.707C6.896,12.553,7.896,13,9,13s2.104-0.447,2.828-1.172L12.535,12.535z M5,6h2v4H5V6z" fill-rule="evenodd"></path></svg>',
 	STAR: '<svg class="svg-star" height="16px" version="1.1" viewbox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M15,6l-4.041,2.694L13,14l-5-3.333L3,14l2.041-5.306L1,6h5.077L8,1l1.924,5H15z" fill-rule="evenodd"></path></svg>',
-	CLOSE: '<svg class="svg-close_small" height="16px" version="1.1" viewbox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M12.657,4.757L9.414,8l3.243,3.242l-1.415,1.415L8,9.414l-3.243,3.243l-1.414-1.415L6.586,8L3.343,4.757l1.414-1.414L8,6.586l3.242-3.243L12.657,4.757z" fill-rule="evenodd"></path></svg>'
+	CLOSE: '<svg class="svg-close_small" height="16px" version="1.1" viewbox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M12.657,4.757L9.414,8l3.243,3.242l-1.415,1.415L8,9.414l-3.243,3.243l-1.414-1.415L6.586,8L3.343,4.757l1.414-1.414L8,6.586l3.242-3.243L12.657,4.757z" fill-rule="evenodd"></path></svg>',
+
+	EDIT: '<svg class="svg-edit" height="16px" version="1.1" viewbox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M6.414,12.414L3.586,9.586l8-8l2.828,2.828L6.414,12.414z M4.829,14H2l0,0v-2.828l0.586-0.586l2.828,2.828L4.829,14z" fill-rule="evenodd"></path></svg>',
+
+	GRAPH: '<svg class="svg-graph" height="16px" version="1.1" viewbox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,16V2h16v14H1z M5,4H3v1h2V4z M5,7H3v1h2V7z M5,10H3v1h2V10zM5,13H3v1h2V13z M9,7H7v7h2V7z M12,10h-2v4h2V10z M15,4h-2v10h2V4z" fill-rule="evenodd"></path></svg>'
 }
 },{}],5:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
@@ -1282,6 +1370,56 @@ FFZ.prototype.setup_channel = function() {
 
 		}.observes("isLive", "content.id"),
 
+		ffzUpdateInfo: function() {
+			if ( this._ffz_update_timer )
+				clearTimeout(this._ffz_update_timer);
+			
+			if ( ! this.get('content.id') )
+				return;
+			
+			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 60000);
+		}.observes("content.id"),
+				
+		ffzCheckUpdate: function() {
+			var t = this,
+				id = t.get('content.id');
+
+			id && Twitch.api && Twitch.api.get("streams/" + id, {}, {version:3})
+				.done(function(data) {
+					if ( ! data || ! data.stream ) {
+						// If the stream is offline, clear its created_at time and set it to zero viewers.
+						t.set('stream.created_at', null);
+						t.set('stream.viewers', 0);
+						return;
+					}
+
+					t.set('stream.created_at', data.stream.created_at || null);
+					t.set('stream.viewers', data.stream.viewers || 0);
+
+					var game = data.stream.game || (data.stream.channel && data.stream.channel.game);
+					if ( game ) {
+						t.set('game', game);
+						t.set('rollbackData.game', game);
+					}
+					
+					if ( data.stream.channel ) {
+						if ( data.stream.channel.status )
+							t.set('status', data.stream.channel.status);
+						
+						if ( data.stream.channel.views )
+							t.set('views', data.stream.channel.views);
+
+						if ( data.stream.channel.followers && t.get('content.followers.isLoaded') )
+							t.set('content.followers.total', data.stream.channel.followers);
+					}
+
+				})
+				.always(function(data) {
+					t.ffzUpdateInfo();
+				});
+		},
+
+
 		ffzUpdateTitle: function() {
 			var name = this.get('content.name'),
 				display_name = this.get('content.display_name');
@@ -1324,6 +1462,8 @@ FFZ.prototype.setup_channel = function() {
 
 		}.observes("content.hostModeTarget")
 	});
+	
+	Channel.ffzUpdateInfo();
 }
 
 
@@ -1366,6 +1506,7 @@ FFZ.prototype._modify_cindex = function(view) {
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();
 			this.ffzUpdateHostButton();
+			this.ffzUpdatePlayerStats();
 
 			var views = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
 			if ( views )
@@ -1577,6 +1718,85 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 
+		ffzUpdatePlayerStats: function() {
+			var channel_id = this.get('controller.id'),
+				hosted_id = this.get('controller.hostModeTarget.id'),
+
+				el = this.get('element');
+
+			if ( channel_id ) {
+				var container = el && el.querySelector('.stats-and-actions .channel-stats'),
+					stat_el = container && container.querySelector('#ffz-ui-player-stats'),
+					el = stat_el && stat_el.querySelector('span'),
+					
+					player_cont = f.players && f.players[channel_id],
+					player = player_cont && player_cont.player,
+					stats = player && player.stats;
+
+
+				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
+					if ( stat_el )
+						stat_el.parentElement.removeChild(stat_el);
+				} else {
+					if ( ! stat_el ) {
+						stat_el = document.createElement('span');
+						stat_el.id = 'ffz-ui-player-stats';
+						stat_el.className = 'ffz stat tooltip';
+						
+						stat_el.innerHTML = constants.GRAPH + " ";
+						el = document.createElement('span');
+						stat_el.appendChild(el);
+						
+						var other = container.querySelector('#ffz-uptime-display');
+						if ( other )
+							container.insertBefore(stat_el, other.nextSibling);
+						else
+							container.appendChild(stat_el);
+					}
+					
+					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
+					el.textContent = stats.hlsLatencyBroadcaster + 's';
+				}
+			}
+			
+			
+			if ( hosted_id ) {
+				var container = el && el.querySelector('#hostmode .channel-stats'),
+					stat_el = container && container.querySelector('#ffz-ui-player-stats'),
+					el = stat_el && stat_el.querySelector('span'),
+					
+					player_cont = f.players && f.players[hosted_id],
+					player = player_cont && player_cont.player,
+					stats = player && player.stats;
+
+
+				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
+					if ( stat_el )
+						stat_el.parentElement.removeChild(stat_el);
+				} else {
+					if ( ! stat_el ) {
+						stat_el = document.createElement('span');
+						stat_el.id = 'ffz-ui-player-stats';
+						stat_el.className = 'ffz stat tooltip';
+						
+						stat_el.innerHTML = constants.GRAPH + " ";
+						el = document.createElement('span');
+						stat_el.appendChild(el);
+						
+						var other = container.querySelector('#ffz-uptime-display');
+						if ( other )
+							container.insertBefore(stat_el, other.nextSibling);
+						else
+							container.appendChild(stat_el);
+					}
+					
+					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
+					el.textContent = stats.hlsLatencyBroadcaster + 's';
+				}
+			}	
+		},
+
+
 		ffzUpdateUptime: function() {
 			if ( this._ffz_update_uptime ) {
 				clearTimeout(this._ffz_update_uptime);
@@ -1595,16 +1815,15 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			// Determine when the channel last went live.
 			var online = this.get("controller.content.stream.created_at");
-			if ( ! online )
-				return;
+			online = online && utils.parse_date(online);
 
-			online = utils.parse_date(online);
-			if ( ! online )
+			var uptime = online && Math.floor((Date.now() - online.getTime()) / 1000) || -1;
+			if ( uptime < 0 ) {
+				var el = this.get('element').querySelector('#ffz-uptime-display');
+				if ( el )
+					el.parentElement.removeChild(el);
 				return;
-
-			var uptime = Math.floor((Date.now() - online.getTime()) / 1000);
-			if ( uptime < 0 )
-				return;
+			}
 
 			var el = this.get('element').querySelector('#ffz-uptime-display span');
 			if ( ! el ) {
@@ -1768,10 +1987,12 @@ FFZ.settings_info.stream_title = {
 				this._cindex.ffzFixTitle();
 		}
 	};
-},{"../constants":4,"../utils":33}],7:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],7:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
+
+	is_android = navigator.userAgent.indexOf('Android') !== -1,
 
 	KEYCODES = {
 		BACKSPACE: 8,
@@ -1904,13 +2125,20 @@ FFZ.prototype._modify_chat_input = function(component) {
 		ffzInit: function() {
 			f._inputv = this;
 
+			var s = this._ffz_minimal_style = document.createElement('style');
+			s.id = 'ffz-minimal-chat-textarea-height';
+			document.head.appendChild(s);
+
 			// Redo our key bindings.
 			var t = this.$("textarea");
+			
 			t.off("keydown");
-			//t.off("keyup");
-
 			t.on("keydown", this._ffzKeyDown.bind(this));
-			//t.on("keyup", this._ffzKeyUp.bind(this));
+
+			t.attr('rows', 1);
+
+			this.ffzResizeInput();
+			setTimeout(this.ffzResizeInput.bind(this), 500);
 
 			/*var suggestions = this._parentView.get('context.model.chatSuggestions');
 			this.set('ffz_chatters', suggestions);*/
@@ -1920,15 +2148,58 @@ FFZ.prototype._modify_chat_input = function(component) {
 			if ( f._inputv === this )
 				f._inputv = undefined; 
 
+			this.ffzResizeInput();
+
+			if ( this._ffz_minimal_style ) {
+				this._ffz_minimal_style.parentElement.removeChild(this._ffz_minimal_style);
+				this._ffz_minimal_style = undefined;
+			}
+
 			// Reset normal key bindings.
 			var t = this.$("textarea");
+			
+			t.attr('rows', undefined);
+
 			t.off("keydown");
 			t.on("keydown", this._onKeyDown.bind(this));
-			//t.on("keyup", this._onKeyUp.bind(this));
 		},
 
-
 		// Input Control
+		
+		ffzOnInput: function() {
+			if ( ! f._chat_style || ! f.settings.minimal_chat || is_android )
+				return;
+			
+			var now = Date.now(),
+				since = now - (this._ffz_last_resize || 0);
+			
+			if ( since > 500 )
+				this.ffzResizeInput();
+
+		}.observes('textareaValue'),
+		
+		ffzResizeInput: function() {
+			this._ffz_last_resize = Date.now();
+			
+			var el = this.get('element'),
+				t = el && el.querySelector('textarea');
+			
+			if ( ! t || ! f._chat_style || ! f.settings.minimal_chat )
+				return;
+			
+			// Unfortunately, we need to change this with CSS.
+			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea { height: auto !important; }';
+			var height = Math.max(32, Math.min(128, t.scrollHeight));				
+			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea { height: ' + height + 'px !important; }';
+			
+			if ( height !== this._ffz_last_height ) {
+				utils.update_css(f._chat_style, "input_height", 'body.ffz-minimal-chat .ember-chat .chat-interface { height: ' + height + 'px !important; }' +
+					'body.ffz-minimal-chat .ember-chat .chat-messages, body.ffz-minimal-chat .ember-chat .chat-interface .emoticon-selector { bottom: ' + height + 'px !important; }');
+				f._roomv && f._roomv.get('stuckToBottom') && f._roomv._scrollToBottom();
+			}
+
+			this._ffz_last_height = height;
+		},
 		
 		_ffzKeyDown: function(event) {
 			var e = event || window.event,
@@ -2113,7 +2384,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 		}.property("ffz_emoticons", "ffz_chatters", "isSuggestionsTriggeredWithTab")*/
 	});
 }
-},{"../constants":4,"../utils":33}],8:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],8:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants');
@@ -2163,6 +2434,68 @@ FFZ.settings_info.minimal_chat = {
 			
 			if ( this._chatv && this._chatv.get('controller.showList') )
 				this._chatv.set('controller.showList', false);
+			
+			// Remove the style if we have it.
+			if ( ! val && this._chat_style ) {
+				if ( this._inputv ) {
+					if ( this._inputv._ffz_minimal_style )
+						this._inputv._ffz_minimal_style.innerHTML = '';
+					
+					this._inputv._ffz_last_height = undefined;
+				}
+				
+				utils.update_css(this._chat_style, "input_height", '');
+				this._roomv && this._roomv.get('stuckToBottom') && this._roomv._scrollToBottom();
+			
+			} else if ( this._inputv )
+				this._inputv.ffzResizeInput();
+		}
+	};
+
+
+FFZ.settings_info.remove_deleted = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+
+	category: "Chat Filtering",
+	name: "Remove Deleted Messages",
+	help: "Remove deleted messages from chat entirely rather than leaving behind a clickable &lt;deleted message&gt;.",
+
+	on_update: function(val) {
+			if ( this.has_bttv || ! this.rooms || ! val )
+				return;
+
+			for(var room_id in this.rooms) {
+				var ffz_room = this.rooms[room_id],
+					room = ffz_room && ffz_room.room;
+				if ( ! room )
+					continue;
+
+				var msgs = room.get('messages'),
+					total = msgs.get('length'),
+					i = total,
+					alternate;
+				
+				while(i--) {
+					var msg = msgs.get(i);
+
+					if ( msg.ffz_deleted || msg.deleted ) {
+						if ( alternate === undefined )
+							alternate = msg.ffz_alternate;
+						msgs.removeAt(i--);
+						continue;
+					}
+					
+					if ( alternate === undefined )
+						alternate = msg.ffz_alternate;
+					else {
+						alternate = ! alternate;
+						room.set('messages.' + i + '.ffz_alternate', alternate);
+					}
+				}
+			}
 		}
 	};
 
@@ -2384,6 +2717,7 @@ FFZ.prototype._modify_cview = function(view) {
 		ffzInit: function() {
 			f._chatv = this;
 			this.$('.textarea-contain').append(f.build_ui_link(this));
+			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true});
 
 			if ( !f.has_bttv && f.settings.group_tabs )
 				this.ffzEnableTabs();
@@ -2410,43 +2744,44 @@ FFZ.prototype._modify_cview = function(view) {
 		},
 
 		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
-			try {
-				f.update_ui_link();
+			f.update_ui_link();
 
-				var room = this.get('controller.currentRoom'), rows;
-				room && room.resetUnreadCount();
+			var room = this.get('controller.currentRoom'), rows;
+			room && room.resetUnreadCount();
 
-				if ( this._ffz_chan_table ) {
-					rows = jQuery(this._ffz_chan_table);
-					rows.children('.ffz-room-row').removeClass('active');
-					if ( room )
-						rows.children('.ffz-room-row[data-room="' + room.get('id') + '"]').addClass('active').children('span').text('');
-				}
-				
-				if ( this._ffz_group_table ) {
-					rows = jQuery(this._ffz_group_table);
-					rows.children('.ffz-room-row').removeClass('active');
-					if ( room )
-						rows.children('.ffz-room-row[data-room="' + room.get('id') + '"]').addClass('active').children('span').text('');
-				}
+			if ( this._ffz_chan_table ) {
+				rows = jQuery(this._ffz_chan_table);
+				rows.children('.ffz-room-row').removeClass('active');
+				if ( room )
+					rows.children('.ffz-room-row[data-room="' + room.get('id') + '"]').addClass('active').children('span').text('');
+			}
+			
+			if ( this._ffz_group_table ) {
+				rows = jQuery(this._ffz_group_table);
+				rows.children('.ffz-room-row').removeClass('active');
+				if ( room )
+					rows.children('.ffz-room-row[data-room="' + room.get('id') + '"]').addClass('active').children('span').text('');
+			}
 
-				if ( !f.has_bttv && f.settings.group_tabs && this._ffz_tabs ) {
-					var tabs = jQuery(this._ffz_tabs);
-					tabs.children('.ffz-chat-tab').removeClass('active');
-					if ( room )
-						tabs.children('.ffz-chat-tab[data-room="' + room.get('id') + '"]').removeClass('tab-mentioned').removeClass('hidden').addClass('active').children('span').text('');
-
-					// Invite Link
-					var can_invite = room && room.get('canInvite');
-					this._ffz_invite && this._ffz_invite.classList.toggle('hidden', !can_invite);
-					this.set('controller.showInviteUser', can_invite && this.get('controller.showInviteUser'))
-
-					// Now, adjust the chat-room.
-					this.$('.chat-room').css('top', this._ffz_tabs.offsetHeight + "px");
+			if ( !f.has_bttv && f.settings.group_tabs && this._ffz_tabs ) {
+				var tabs = jQuery(this._ffz_tabs);
+				tabs.children('.ffz-chat-tab').removeClass('active');
+				if ( room && room._ffz_tab ) {
+					room._ffz_tab.classList.remove('tab-mentioned');
+					room._ffz_tab.classList.remove('hidden');
+					room._ffz_tab.classList.add('active');
+					var sp = room._ffz_tab.querySelector('span');
+					if ( sp )
+						sp.innerHTML = '';
 				}
 
-			} catch(err) {
-				f.error("ChatView ffzUpdateLink: " + err);
+				// Invite Link
+				var can_invite = room && room.get('canInvite');
+				this._ffz_invite && this._ffz_invite.classList.toggle('hidden', !can_invite);
+				this.set('controller.showInviteUser', can_invite && this.get('controller.showInviteUser'))
+
+				// Now, adjust the chat-room.
+				this.$('.chat-room').css('top', this._ffz_tabs.offsetHeight + "px");
 			}
 		}),
 
@@ -2780,27 +3115,25 @@ FFZ.prototype._modify_cview = function(view) {
 
 			var tabs = this._ffz_tabs || this.get('element').querySelector('#ffz-group-tabs'),
 				current_id = this.get('controller.currentRoom.id');
+
 			if ( ! tabs )
 				return;
 
 			if ( room_id ) {
-				var tab = tabs.querySelector('.ffz-chat-tab[data-room="' + room_id + '"]'),
-					room = f.rooms && f.rooms[room_id];
+				var room = f.rooms && f.rooms[room_id] && f.rooms[room_id].room,
+					tab = room && room._ffz_tab;
 
-				if ( tab && room ) {
-					var unread = utils.format_unread(room_id === current_id ? 0 : room.room.get('unreadCount'));
+				if ( tab ) {
+					var unread = utils.format_unread(room_id === current_id ? 0 : room.get('unreadCount'));
 					tab.querySelector('span').innerHTML = unread;
 				}
-
-				// Now, adjust the chat-room.
-				return this.$('.chat-room').css('top', tabs.offsetHeight + "px");
 			}
 
 			var children = tabs.querySelectorAll('.ffz-chat-tab');
 			for(var i=0; i < children.length; i++) {
 				var tab = children[i],
 					room_id = tab.getAttribute('data-room'),
-					room = f.rooms && f.rooms[room_id];
+					room = f.rooms && f.rooms[room_id] && f.rooms[room_id];
 
 				if ( ! room )
 					continue;
@@ -2808,9 +3141,6 @@ FFZ.prototype._modify_cview = function(view) {
 				var unread = utils.format_unread(room_id === current_id ? 0 : room.room.get('unreadCount'));
 				tab.querySelector('span').innerHTML = unread;
 			}
-
-			// Now, adjust the chat-room.
-			this.$('.chat-room').css('top', tabs.offsetHeight + "px");
 		},
 
 		ffzBuildTab: function(view, room, current_channel, host_channel) {
@@ -2855,6 +3185,7 @@ FFZ.prototype._modify_cview = function(view) {
 				controller.set('showList', false);
 				});
 
+			room._ffz_tab = tab;
 			return tab;
 		},
 
@@ -3013,214 +3344,13 @@ FFZ.chat_commands.part = function(room, args) {
 	else
 		return "You are not in " + room_id + ".";
 }
-},{"../constants":4,"../utils":33}],9:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],9:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
 
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
-	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
-
-
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-	SRCSETS = {};
-	build_srcset = function(id) {
-		if ( SRCSETS[id] )
-			return SRCSETS[id];
-		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
-		return out;
-	},
-	
-	
-	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
-	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
-	IMGUR_PATH = /^\/(?:gallery\/)?[A-Za-z0-9]+(?:\.(?:png|jpg|jpeg|gif|gifv|bmp))?$/,
-	IMAGE_EXT = /\.(?:png|jpg|jpeg|gif|bmp)$/i,
-	IMAGE_DOMAINS = [],
-	
-	is_image = function(href, any_domain) {
-		var match = href.match(LINK_SPLIT);
-		if ( ! match )
-			return;
-
-		var domain = match[3].toLowerCase(), port = match[4],
-			path = match[5];
-
-		// Don't allow non-standard ports.
-		if ( port && port !== '80' && port !== '443' )
-			return false;
-
-		// imgur-specific checks.
-		if ( domain === 'i.imgur.com' || domain === 'imgur.com' || domain === 'www.imgur.com' || domain === 'm.imgur.com' )
-			return IMGUR_PATH.test(path);
-
-		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1; 
-	}
-	
-	image_iframe = function(href, extra_class) {
-		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
-	},
-
-
-	data_to_tooltip = function(data) {
-		var set = data.set,
-			set_type = data.set_type,
-			owner = data.owner;
-
-		if ( set_type === undefined )
-			set_type = "Channel";
-
-		if ( ! set )
-			return data.code;
-
-		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
-			set = "Twitch Turbo";
-			set_type = null;
-		}
-
-		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set + (owner ? "\nBy: " + owner.display_name : "");
-	},
-
-	build_tooltip = function(id) {
-		var emote_data = this._twitch_emotes[id],
-			set = emote_data ? emote_data.set : null;
-
-		if ( ! emote_data )
-			return "???";
-
-		if ( typeof emote_data == "string" )
-			return emote_data;
-
-		if ( emote_data.tooltip )
-			return emote_data.tooltip;
-
-		return emote_data.tooltip = data_to_tooltip(emote_data);
-	},
-
-	load_emote_data = function(id, code, success, data) {
-		if ( ! success )
-			return;
-
-		if ( code )
-			data.code = code;
-
-		this._twitch_emotes[id] = data;
-		var tooltip = build_tooltip.bind(this)(id);
-
-		var images = document.querySelectorAll('img[emote-id="' + id + '"]');
-		for(var x=0; x < images.length; x++)
-			images[x].title = tooltip;
-	},
-
-	build_link_tooltip = function(href) {
-		var link_data = this._link_data[href],
-			tooltip;
-
-		if ( ! link_data )
-			return "";
-
-		if ( link_data.tooltip )
-			return link_data.tooltip;
-
-		if ( link_data.type == "youtube" ) {
-			tooltip = this.settings.link_image_hover ? image_iframe(link_data.full || href, 'ffz-yt-thumb') : '';
-			tooltip += "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
-			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
-			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
-
-		} else if ( link_data.type == "strawpoll" ) {
-			tooltip = "<b>Strawpoll: " + utils.sanitize(link_data.title) + "</b><hr><table><tbody>";
-			for(var key in link_data.items) {
-				var votes = link_data.items[key],
-					percentage = Math.floor((votes / link_data.total) * 100);
-				tooltip += '<tr><td style="text-align:left">' + utils.sanitize(key) + '</td><td style="text-align:right">' + utils.number_commas(votes) + "</td></tr>";
-			}
-			tooltip += "</tbody></table><hr>Total: " + utils.number_commas(link_data.total);
-			var fetched = utils.parse_date(link_data.fetched);
-			if ( fetched ) {
-				var age = Math.floor((fetched.getTime() - Date.now()) / 1000);
-				if ( age > 60 )
-					tooltip += "<br><small>Data was cached " + utils.time_to_string(age) + " ago.</small>";
-			}
-
-
-		} else if ( link_data.type == "twitch" ) {
-			tooltip = "<b>Twitch: " + utils.sanitize(link_data.display_name) + "</b><hr>";
-			var since = utils.parse_date(link_data.since);
-			if ( since )
-				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
-			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
-
-
-		} else if ( link_data.type == "twitch_vod" ) {
-			tooltip = "<b>Twitch " + (link_data.broadcast_type == "highlight" ? "Highlight" : "Broadcast") + ": " + utils.sanitize(link_data.title) + "</b><hr>";
-			tooltip += "By: " + utils.sanitize(link_data.display_name) + (link_data.game ? " | Playing: " + utils.sanitize(link_data.game) : " | Not Playing") + "<br>";
-			tooltip += "Views: " + utils.number_commas(link_data.views) + " | " + utils.time_to_string(link_data.length);
-
-
-		} else if ( link_data.type == "twitter" ) {
-			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
-			tooltip += utils.sanitize(link_data.tweet);
-
-
-		} else if ( link_data.type == "reputation" ) {
-			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
-			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
-			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
-				tooltip += "<hr>";
-				var had_extra = false;
-				if ( link_data.trust < 50 || link_data.safety < 50 ) {
-					link_data.unsafe = true;
-					tooltip += "<b>Potentially Unsafe Link</b><br>";
-					tooltip += "Trust: " + link_data.trust + "% | Child Safety: " + link_data.safety + "%";
-					had_extra = true;
-				}
-
-				if ( link_data.tags && link_data.tags.length > 0 )
-					tooltip += (had_extra ? "<br>" : "") + "Tags: " + link_data.tags.join(", ");
-
-				tooltip += "<br>Data Source: WOT";
-			}
-
-
-		} else if ( link_data.full ) {
-			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
-			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
-		}
-
-		if ( ! tooltip )
-			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
-
-		link_data.tooltip = tooltip;
-		return tooltip;
-	},
-
-	load_link_data = function(href, success, data) {
-		if ( ! success )
-			return;
-
-		this._link_data[href] = data;
-		data.unsafe = false;
-
-		var tooltip = build_link_tooltip.bind(this)(href), links,
-			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
-
-		if ( no_trail )
-			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[href="' + no_trail + '"], span.message a[data-url="' + href + '"], span.message a[data-url="' + no_trail + '"]');
-		else
-			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[data-url="' + href + '"]');
-
-		if ( ! this.settings.link_info )
-			return;
-
-		for(var x=0; x < links.length; x++) {
-			if ( data.unsafe )
-				links[x].classList.add('unsafe-link');
-
-			if ( ! links[x].classList.contains('deleted-link') )
-				links[x].title = tooltip;
-		}
-	};
+	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
 
 
 // ---------------------
@@ -3336,6 +3466,19 @@ FFZ.settings_info.scrollback_length = {
 			}
 		}
 	};
+
+
+FFZ.settings_info.hosted_sub_notices = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Filtering",
+	no_bttv: true,
+
+	name: "Show Hosted Channel Subscriber Notices",
+	help: "Display notices in chat when someone subscribes to the hosted channel."
+	};
+
 
 FFZ.settings_info.banned_words = {
 	type: "button",
@@ -3554,7 +3697,7 @@ FFZ.settings_info.chat_font_size = {
 			return;
 
 		var css;
-		if ( val === 12 )
+		if ( val === 12 || ! val )
 			css = "";
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val)),
@@ -3583,7 +3726,7 @@ FFZ.settings_info.chat_ts_size = {
 	method: function() {
 			var old_val = this.settings.chat_ts_size;
 			
-			if ( old_val === null )
+			if ( ! old_val )
 				old_val = this.settings.chat_font_size;
 			
 			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
@@ -3624,6 +3767,14 @@ FFZ.prototype.setup_line = function() {
 	jQuery(document.body).on("mouseleave", ".tipsy", function() {
 		this.parentElement.removeChild(this);
 	});
+	
+	// Aliases
+	try {
+		this.aliases = JSON.parse(localStorage.ffz_aliases || '{}');
+	} catch(err) {
+		this.log("Error Loading Aliases: " + err);
+		this.aliases = {};
+	}
 	
 	
 	// Chat Style
@@ -3673,6 +3824,13 @@ FFZ.prototype.setup_line = function() {
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
 }
 
+
+FFZ.prototype.save_aliases = function() {
+	this.log("Saving " + Object.keys(this.aliases).length + " aliases to local storage.");
+	localStorage.ffz_aliases = JSON.stringify(this.aliases);
+}
+
+
 FFZ.prototype._modify_line = function(component) {
 	var f = this;
 
@@ -3686,42 +3844,35 @@ FFZ.prototype._modify_line = function(component) {
 
 			tokens = this._super();
 
-			try {
-				var start = performance.now(),
-					user = f.get_user(),
-					from_me = user && this.get("msgObject.from") === user.login;
+			var start = performance.now(),
+				user = f.get_user(),
+				from_me = user && this.get("msgObject.from") === user.login;
 
-				tokens = f._remove_banned(tokens);
-				tokens = f._emoticonize(this, tokens);
+			tokens = f._remove_banned(tokens);
+			tokens = f._emoticonize(this, tokens);
 
-				if ( f.settings.parse_emoji )
-					tokens = f.tokenize_emoji(tokens);
+			if ( f.settings.parse_emoji )
+				tokens = f.tokenize_emoji(tokens);
 
-				// Store the capitalization.
-				var display = this.get("msgObject.tags.display-name");
-				if ( display && display.length )
-					FFZ.capitalization[this.get("msgObject.from")] = [display.trim(), Date.now()];
+			// Store the capitalization.
+			var display = this.get("msgObject.tags.display-name");
+			if ( display && display.length )
+				FFZ.capitalization[this.get("msgObject.from")] = [display.trim(), Date.now()];
 
-				if ( ! from_me )
-					tokens = f.tokenize_mentions(tokens);
+			if ( ! from_me )
+				tokens = f.tokenize_mentions(tokens);
 
-				for(var i = 0; i < tokens.length; i++) {
-					var token = tokens[i];
-					if ( ! _.isString(token) && token.mentionedUser && ! token.own ) {
-						this.set('msgObject.ffz_has_mention', true);
-						break;
-					}
+			for(var i = 0; i < tokens.length; i++) {
+				var token = tokens[i];
+				if ( ! _.isString(token) && token.mentionedUser && ! token.own ) {
+					this.set('msgObject.ffz_has_mention', true);
+					break;
 				}
-
-				var end = performance.now();
-				if ( end - start > 5 )
-					f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
-
-			} catch(err) {
-				try {
-					f.error("LineController tokenizedMessage: " + err);
-				} catch(err) { }
 			}
+
+			var end = performance.now();
+			if ( end - start > 5 )
+				f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
 
 			this.set("msgObject.cachedTokens", tokens);
 			return tokens;
@@ -3731,17 +3882,14 @@ FFZ.prototype._modify_line = function(component) {
 		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
 			this.rerender();
 		}),
-
-		willClearRender: function() {
-			try {
-
-			} catch(err) {
-				f.error("LineView willClearRender: " + err);
-			}
-			this._super();
-		},
 		
 		click: function(e) {
+			if ( e.target && e.target.classList.contains('ffz-old-messages') )
+				return f._show_deleted(this.get('msgObject.room'));
+			
+			if ( e.target && e.target.classList.contains('deleted-link') )
+				return f._deleted_link_click.bind(e.target)(e);
+			
 			if ( e.target && e.target.classList.contains('mod-icon') ) {
 				jQuery(e.target).trigger('mouseout');
 				
@@ -3760,190 +3908,160 @@ FFZ.prototype._modify_line = function(component) {
 			
 			return this._super(e);
 		},
+		
+		ffzUserLevel: function() {
+			if ( this.get('isStaff') )
+				return 5;
+			else if ( this.get('isAdmin') )
+				return 4;
+			else if ( this.get('isBroadcaster') )
+				return 3;
+			else if ( this.get('isGlobalModerator') )
+				return 2;
+			else if ( this.get('isModerator') )
+				return 1;
+			return 0;
+		}.property('msgObject.labels.[]'),
+		
+		render: function(e) {
+			var deleted = this.get('msgObject.deleted'),
+				r = this,
+				
+				badges = {},
+				
+				user = this.get('msgObject.from'),
+				room_id = this.get('msgObject.room'),
+				room = f.rooms && f.rooms[room_id],
+				
+				recipient = this.get('msgObject.to'),
+				is_whisper = recipient && recipient.length,
+				
+				this_ul = this.get('ffzUserLevel'),
+				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
+
+				row_type = this.get('msgObject.ffz_alternate');
+			
+			if ( row_type === undefined ) {
+				row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
+				this.set("msgObject.ffz_alternate", row_type);
+			}
+
+			e.push('<div class="indicator"></div>');
+			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');
+			
+			if ( ! is_whisper && this_ul < other_ul ) {
+				e.push('<span class="mod-icons float-left">');
+				if ( deleted )
+					e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
+				else
+					e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
+				
+				e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
+				e.push('<a class="mod-icon float-left tooltip purge" title="Purge User (Timeout 1s)" href="#">Purge</a>');
+				e.push('</span>');
+			}
+			
+			// Stock Badges
+			if ( ! is_whisper && this.get('isBroadcaster') )
+				badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
+			else if ( this.get('isStaff') )
+				badges[0] = {klass: 'staff', title: 'Staff'};
+			else if ( this.get('isAdmin') )
+				badges[0] = {klass: 'admin', title: 'Admin'};
+			else if ( this.get('isGlobalMod') )
+				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
+			else if ( ! is_whisper && this.get('isModerator') )
+				badges[0] = {klass: 'moderator', title: 'Moderator'};
+			
+			if ( ! is_whisper && this.get('isSubscriber') )
+				badges[10] = {klass: 'subscriber', title: 'Subscriber'};
+			if ( this.get('hasTurbo') )
+				badges[15] = {klass: 'turbo', title: 'Turbo'};
+
+			// FFZ Badges
+			badges = f.render_badges(this, badges);
+
+			// Rendering!
+			e.push('<span class="badges float-left">');
+
+			for(var key in badges) {
+				var badge = badges[key],
+					css = badge.image ? 'background-image:url(&quot;' + badge.image + '&quot;);' : '';
+				
+				if ( badge.color )
+					css += 'background-color:' + badge.color + ';';
+				
+				if ( badge.extra_css )
+					css += badge.extra_css;
+
+				e.push('<div class="badge float-left tooltip ' + badge.klass + '"' + (css ? ' style="' + css + '"' : '') + ' title="' + badge.title + '"></div>');
+			}
+
+			e.push('</span>');
+			
+			var alias = f.aliases[user],
+				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user";
+
+			if ( alias )
+				e.push('<span class="from ffz-alias tooltip" style="' + this.get('fromStyle') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
+			else
+				e.push('<span class="from" style="' + this.get('fromStyle') + '">' + utils.sanitize(name) + '</span>');
+
+			if ( is_whisper ) {
+				var to_alias = f.aliases[recipient],
+					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user";
+				
+				this._renderWhisperArrow(e);
+				
+				if ( to_alias )
+					e.push('<span class="to ffz-alias tooltip" style="' + this.get('toStyle') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
+				else
+					e.push('<span class="to" style="' + this.get('toStyle') + '">' + utils.sanitize(to_name) + '</span>');
+			}
+
+			e.push('<span class="colon">:</span> ');
+			
+			if ( deleted )
+				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
+			else {
+				e.push('<span class="message" style="' + this.get('messageStyle') + '">');
+				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
+				
+				var old_messages = this.get('msgObject.ffz_old_messages');
+				if ( old_messages && old_messages.length )
+					e.push('<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>');
+				
+				e.push('</span>');
+			}
+		},
+		
+		classNameBindings: [
+			'msgObject.ffz_alternate:ffz-alternate',
+			'msgObject.ffz_has_mention:ffz-mentioned',
+			'ffzWasDeleted:ffz-deleted',
+			'ffzHasOldMessages:clearfix',
+			'ffzHasOldMessages:ffz-has-deleted'
+			],
+		
+
+		ffzWasDeleted: function() {
+			return f.settings.prevent_clear && this.get('msgObject.ffz_deleted');
+		}.property('msgObject.ffz_deleted'),
+		
+		ffzHasOldMessages: function() {
+			var old_messages = this.get('msgObject.ffz_old_messages');
+			return old_messages && old_messages.length;
+		}.property('msgObject.ffz_old_messages'),
+
 
 		didInsertElement: function() {
 			this._super();
-			try {
-				var start = performance.now();
-
-				var el = this.get('element'),
-					user = this.get('msgObject.from'),
-					room = this.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id'),
-					row_type = this.get('msgObject.ffz_alternate');
-
-				// Row Alternation
-				if ( row_type === undefined ) {
-					row_type = f._last_row[room] = f._last_row.hasOwnProperty(room) ? !f._last_row[room] : false;
-					this.set("msgObject.ffz_alternate", row_type);
-				}
-
-				el.classList.toggle('ffz-alternate', row_type || false);
-				el.classList.toggle('ffz-deleted', f.settings.prevent_clear && this.get('msgObject.ffz_deleted') || false);
-
-
-				// Basic Data
-				el.setAttribute('data-room', room);
-				el.setAttribute('data-sender', user);
-				el.setAttribute('data-deleted', this.get('msgObject.deleted')||false);
-
-
-				// Old Messages (for Chat Clear)
-				var old_messages = this.get("msgObject.ffz_old_messages");
-				if ( old_messages && old_messages.length ) {
-					var btn = document.createElement('div');
-					btn.className = 'button primary float-right';
-					btn.innerHTML = 'Show ' + utils.number_commas(old_messages.length) + ' Old';
-
-					btn.addEventListener("click", f._show_deleted.bind(f, room));
-
-					el.classList.add('clearfix');
-					el.classList.add('ffz-has-deleted');
-
-					this.$('.message').append(btn);
-				}
-				
-				
-				// Hide Mod Buttons
-				if ( (this.get('isBroadcaster') && !(this.get('controller.parentController.model.isStaff') || this.get('controller.parentController.model.isAdmin'))) || (this.get('isModeratorOrHigher') && !(this.get('controller.parentController.model.isBroadcaster') || this.get('controller.parentController.model.isStaff') || this.get('controller.parentController.model.isAdmin'))) ) {
-					var mod_icons = el.querySelector('span.mod-icons');
-					mod_icons && mod_icons.classList.add('hidden');
-				}
-				
-				
-				// Purge Button
-				var timeout_btn = el.querySelector('span.mod-icons a.mod-icon.timeout');
-				if ( timeout_btn ) {
-					var purge_btn = document.createElement('a');
-					purge_btn.className = 'mod-icon float-left tooltip purge';
-					purge_btn.innerHTML = 'Purge';
-					purge_btn.title = 'Purge User (Timeout 1s)';
-					purge_btn.href = '#';
-					
-					timeout_btn.title = 'Timeout User (10m)';
-					timeout_btn.parentElement.insertBefore(purge_btn, timeout_btn.nextSibling);
-				}
-
-
-				// Badge
-				f.render_badge(this);
-
-
-				// Mention Highlighting
-				if ( this.get("msgObject.ffz_has_mention") )
-					el.classList.add("ffz-mentioned");
-
-
-				// Banned Links
-				var bad_links = el.querySelectorAll('span.message a.deleted-link');
-				for(var i=0; i < bad_links.length; i++)
-					bad_links[i].addEventListener("click", f._deleted_link_click);
-
-
-				// Link Tooltips
-				if ( f.settings.link_info || f.settings.link_image_hover ) {
-					var links = el.querySelectorAll("span.message a");
-					for(var i=0; i < links.length; i++) {
-						var link = links[i],
-							href = link.href,
-							deleted = false;
-
-						if ( link.classList.contains("deleted-link") ) {
-							href = link.getAttribute("data-url");
-							deleted = true;
-						}
-
-						// Check the cache.
-						if ( f.settings.link_info ) {
-							var link_data = f._link_data[href];
-							if ( link_data ) {
-								if ( !deleted && typeof link_data != "boolean" )
-									link.title = link_data.tooltip;
-	
-								if ( link_data.unsafe )
-									link.classList.add('unsafe-link');
-	
-							} else if ( ! /^mailto:/.test(href) ) {
-								f._link_data[href] = true;
-								f.ws_send("get_link", href, load_link_data.bind(f, href));
-								if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
-									link.title = image_iframe(href); 
-							}
-						}
-						
-						// Now, Images
-						else if ( ! deleted && f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
-							link.title = image_iframe(href); 
-					}
-
-					jQuery(links).tipsy({html:true});
-				}
-
-
-				// Enhanced Emotes
-				var images = el.querySelectorAll('span.message img.emoticon');
-				for(var i=0; i < images.length; i++) {
-					var img = images[i],
-						name = img.alt,
-						id = FFZ.src_to_id(img.src);
-
-					if ( id !== null ) {
-						// High-DPI Images
-						if ( ! constants.EMOTE_REPLACEMENTS[id] )
-							img.setAttribute('srcset', build_srcset(id));
-
-						img.setAttribute('emote-id', id);
-
-						// Source Lookup
-						var emote_data = f._twitch_emotes[id];
-						if ( emote_data ) {
-							if ( typeof emote_data != "string" )
-								img.title = emote_data.tooltip;
-
-						} else {
-							f._twitch_emotes[id] = img.alt;
-							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, img.alt));
-						}
-
-					} else if ( img.getAttribute('data-ffz-emoji') ) {
-						var eid = img.getAttribute('data-ffz-emoji'),
-							data = f.emoji_data && f.emoji_data[eid];
-
-						if ( data ) {
-							img.setAttribute('srcset', data.srcSet);
-							img.title = "Emoji: " + img.alt + "\nName: :" + data.short_name + ":";
-						}
-
-					} else if ( img.getAttribute('data-ffz-emote') ) {
-						var data = JSON.parse(decodeURIComponent(img.getAttribute('data-ffz-emote'))),
-							id = data && data[0] || null,
-							set_id = data && data[1] || null,
-
-							set = f.emote_sets[set_id],
-							emote = set ? set.emoticons[id] : null;
-
-						// High-DPI!
-						if ( emote && emote.srcSet )
-							img.setAttribute('srcset', emote.srcSet);
-
-						if ( set && f.feature_friday && set.id == f.feature_friday.set )
-							set_name = f.feature_friday.title + " - " + f.feature_friday.display_name;
-
-						img.title = f._emote_tooltip(emote);
-					}
-				}
-
-				jQuery(images).tipsy();
-
-
-				var duration = performance.now() - start;
-				if ( duration > 5 )
-					f.log("Line Took Too Long - " + duration + "ms", el.innerHTML, false, true);
-
-			} catch(err) {
-				try {
-					f.error("LineView didInsertElement: " + err);
-				} catch(err) { }
-			}
+			
+			var el = this.get('element');
+			
+			el.setAttribute('data-room', this.get('msgObject.room'));
+			el.setAttribute('data-sender', this.get('msgObject.from'));
+			el.setAttribute('data-deleted', this.get('msgObject.deleted') || false);
 		}
 	});
 }
@@ -4006,9 +4124,16 @@ FFZ.prototype._remove_banned = function(tokens) {
 				new_tokens.push(token.altText.replace(regex, "$1***"));
 			else if ( token.isLink && regex.test(token.href) )
 				new_tokens.push({
+					isLink: true,
+					href: token.href,
+					isDeleted: true,
+					isLong: false,
+					censoredHref: token.href.replace(regex, "$1***")
+				});
+					/*{
 					mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + utils.quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
 					own: true
-					});
+					});*/
 			else
 				new_tokens.push(token);
 
@@ -4030,7 +4155,7 @@ FFZ.prototype._emoticonize = function(component, tokens) {
 
 	return this.tokenize_emotes(user_id, room_id, tokens);
 }
-},{"../constants":4,"../utils":33}],10:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
@@ -4329,6 +4454,13 @@ FFZ.prototype.setup_mod_card = function() {
 			info.innerHTML = out;
 		}.observes("cardInfo.user.views"),
 
+		userName: Ember.computed("cardInfo.user.id", "cardInfo.user.display_name", function() {
+			var user_id = this.get("cardInfo.user.id"),
+				alias = f.aliases[user_id];
+			
+			return alias || this.get("cardInfo.user.display_name") || user_id.capitalize();
+		}),
+
 		didInsertElement: function() {
 			this._super();
 			window._card = this;
@@ -4338,7 +4470,24 @@ FFZ.prototype.setup_mod_card = function() {
 
 				var el = this.get('element'),
 					controller = this.get('controller'),
-					line;
+					line,
+					
+					user_id = controller.get('cardInfo.user.id'),
+					alias = f.aliases[user_id];
+
+				// Alias Display
+				if ( alias ) {
+					var name = el.querySelector('h3.name'),
+						link = name && name.querySelector('a');
+
+					if ( link )
+						name = link;
+					if ( name ) {
+						name.classList.add('ffz-alias');
+						name.title = utils.sanitize(controller.get('cardInfo.user.display_name') || user_id.capitalize());
+						jQuery(name).tipsy();
+					}
+				}
 
 				// Style it!
 				el.classList.add('ffz-moderation-card');
@@ -4556,16 +4705,56 @@ FFZ.prototype.setup_mod_card = function() {
 					
 					
 					var real_msg = document.createElement('button');
-					real_msg.className = 'message-button button glyph-only message';
+					real_msg.className = 'message-button button glyph-only message tooltip';
 					real_msg.innerHTML = MESSAGE;
 					real_msg.title = "Message User";
-					jQuery(real_msg).tipsy();
 					
 					real_msg.addEventListener('click', function() {
 						window.open('http://www.twitch.tv/message/compose?to=' + controller.get('cardInfo.user.id'));
 					})
 
 					msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
+				}
+				
+				
+				// Alias Button
+				var alias_btn = document.createElement('button');
+				alias_btn.className = 'alias button glyph-only tooltip';
+				alias_btn.innerHTML = constants.EDIT;
+				alias_btn.title = "Set Alias";
+				
+				alias_btn.addEventListener('click', function() {
+					var user = controller.get('cardInfo.user.id'),
+						alias = f.aliases[user];
+					
+					var new_val = prompt("Alias for User: " + user + "\n\nPlease enter an alias for the user. Leave it blank to remove the alias.", alias);
+					if ( new_val === null || new_val === undefined )
+						return;
+
+					new_val = new_val.trim();
+					if ( ! new_val )
+						new_val = undefined;
+
+					f.aliases[user] = new_val;
+					f.save_aliases();
+					
+					// Update UI
+					Ember.propertyDidChange(controller, 'userName');
+					var name = el.querySelector('h3.name'),
+						link = name && name.querySelector('a');
+					
+					if ( link )
+						name = link;
+					if ( name )
+						name.classList.toggle('ffz-alias', new_val); 
+				});
+				
+				if ( msg_btn )
+					msg_btn.parentElement.insertBefore(alias_btn, msg_btn);
+				else {
+					var follow_btn = el.querySelector(".interface > .follow-button");
+					if ( follow_btn )
+						follow_btn.parentElement.insertBefore(alias_btn, follow_btn.nextSibling);
 				}
 
 
@@ -4585,7 +4774,7 @@ FFZ.prototype.setup_mod_card = function() {
 							var line = user_history[i],
 								l_el = document.createElement('li');
 
-							l_el.className = 'message-line chat-line';
+							l_el.className = 'message-line chat-line clearfix';
 							l_el.classList.toggle('ffz-alternate', alternate);
 							alternate = !alternate;
 
@@ -4599,7 +4788,7 @@ FFZ.prototype.setup_mod_card = function() {
 							for(var x=0; x < bad_links.length; x++)
 								bad_links[x].addEventListener("click", f._deleted_link_click);
 
-							jQuery('a', l_el).tipsy({html:true});
+							jQuery('.html-tooltip', l_el).tipsy({html:true});
 							history.appendChild(l_el);
 						}
 
@@ -4703,17 +4892,165 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
-},{"../constants":4,"../utils":33}],11:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],11:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// ---------------
+// Settings
+// ---------------
+
+FFZ.settings_info.player_stats = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Channel Metadata",
+
+	name: "Stream Latency",
+	help: "<i>New HTML5 Player Only.</i> Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
+
+	on_update: function(val) {
+			if ( ! this._cindex )
+				return;
+			
+			this._cindex.ffzUpdatePlayerStats();
+		}
+	};
+
+
+// ---------------
+// Initialization
+// ---------------
+
+FFZ.prototype.setup_player = function() {
+	this.players = {};
+	
+	var Player2 = App && App.__container__.resolve('component:twitch-player2');
+	if ( ! Player2 )
+		return this.log("Unable to find twitch-player2 component.");
+		
+	this.log("Hooking HTML5 Player UI.");
+	this._modify_player(Player2)
+	
+	// Modify all existing players.
+	for(var key in Ember.View.views) {
+		if ( ! Ember.View.views.hasOwnProperty(key) )
+			continue;
+		
+		var view = Ember.View.views[key];
+		if ( !(view instanceof Player2) )
+			continue;
+
+		this.log("Manually updating existing Player instance.", view);
+		try {
+			view.ffzInit();
+			if ( view.get('player') )
+				view.ffzPostPlayer();
+
+		} catch(err) {
+			this.error("Player2 setup ffzInit: " + err);
+		}
+	}
+}
+
+
+// ---------------
+// Component
+// ---------------
+
+FFZ.prototype._modify_player = function(player) {
+	var f = this;
+	player.reopen({
+		didInsertElement: function() {
+			this._super();
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("Player2 didInsertElement: " + err);
+			}
+		},
+		
+		willClearRender: function() {
+			try {
+				this.ffzTeardown();
+			} catch(err) {
+				f.error("Player2 willClearRender: " + err);
+			}
+			this._super();
+		},
+		
+		postPlayerSetup: function() {
+			this._super();
+			try {
+				this.ffzPostPlayer();
+			} catch(err) {
+				f.error("Player2 postPlayerSetup: " + err);
+			}
+		},
+		
+		ffzInit: function() {
+			var id = this.get('channel.id');
+			f.players[id] = this;
+			
+			this._ffz_stat_update = this.ffzStatUpdate.bind(this);
+		},
+		
+		ffzTeardown: function() {
+			var id = this.get('channel.id');
+			if ( f.players[id] === this )
+				f.players[id] = undefined;
+		},
+		
+		ffzStatUpdate: function() {
+			f._cindex && f._cindex.ffzUpdatePlayerStats();
+		},
+		
+		ffzPostPlayer: function() {
+			var player = this.get('player');
+			if ( ! player )
+				return;
+
+			// Make it so stats can no longer be disabled.
+			player.ffzSetStatsEnabled = player.setStatsEnabled;
+			player.setStatsEnabled = function() {}
+			
+			// We can't just request stats straight away...
+			this.ffzWaitForStats();
+		},
+		
+		ffzWaitForStats: function() {
+			var player = this.get('player');
+			if ( ! player )
+				return;
+
+			if ( player.stats ) {
+				// Add the event listener.
+				player.addEventListener('statschange', this._ffz_stat_update);
+
+			} else {
+				// Keep going until we've got it.
+				player.ffzSetStatsEnabled(false);
+				var t = this;
+				setTimeout(function() {
+					player.ffzSetStatsEnabled(true);
+					setTimeout(t.ffzWaitForStats.bind(t), 1250);
+				}, 250);
+			}
+		}
+	});
+}
+},{}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
 	GROUP_CHAT = /^_([^_]+)_\d+$/,
+	HOSTED_SUB = / subscribed to /,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
 	// StrimBagZ Support
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
-
 
 	moderator_css = function(room) {
 		if ( ! room.moderator_badge )
@@ -4950,10 +5287,10 @@ FFZ.prototype._modify_rview = function(view) {
 				jQuery(banned_badge).tipsy({gravity:"s", offset:15});
 			}
 
-			r9k_badge.classList.toggle('hidden', !(room && room.get('r9kMode')));
-			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnlyMode')));
+			r9k_badge.classList.toggle('hidden', !(room && room.get('r9k')));
+			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnly')));
 			slow_badge.classList.toggle('hidden', !(room && room.get('slowMode')));
-			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slowValue')||120) + " seconds.";
+			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow')||120) + " seconds.";
 			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
 
 			if ( btn ) {
@@ -5026,7 +5363,9 @@ FFZ.prototype._modify_rview = function(view) {
 
 		ffzMouseDown: function(event) {
 			var t = this._$chatMessagesScroller;
-			if ( t && t[0] && (event.which > 0 || (!this.ffz_frozne && "mousedown" === event.type) || "mousewheel" === event.type || (is_android && "scroll" === event.type) ) ) {
+			if ( t && t[0] && ((!this.ffz_frozen && "mousedown" === event.type) || "mousewheel" === event.type || (is_android && "scroll" === event.type) ) ) {
+				if ( event.type === "mousedown" )
+					f.log("Freezing from mouse down!", event);
 				var r = t[0].scrollHeight - t[0].scrollTop - t[0].offsetHeight;
 				this._setStuckToBottom(10 >= r);
 			}
@@ -5066,8 +5405,12 @@ FFZ.prototype._modify_rview = function(view) {
 				s = this._$chatMessagesScroller;
 
 			Ember.run.next(function() {
-				setTimeout(function() {
-					!e.ffz_frozen && s && s.length && (s.scrollTop(s[0].scrollHeight), e._setStuckToBottom(!0));
+				setTimeout(function(){
+					if ( e.ffz_frozen || ! s || ! s.length )
+						return;
+					
+					s[0].scrollTop = s[0].scrollHeight;
+					e._setStuckToBottom(true);
 				})
 			})
 		}, 200),
@@ -5417,7 +5760,7 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		}
 
 		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
-			this.tokenize_chat_line(msg, true);
+			this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
 
 		if ( r.shouldShowMessage(msg) ) {
 			if ( messages.length < r.get("messageBufferSize") ) {
@@ -5446,7 +5789,7 @@ FFZ.prototype._insert_history = function(room_id, data) {
 			room: room_id
 		};
 
-		this.tokenize_chat_line(msg);
+		this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
 		if ( r.shouldShowMessage(msg) ) {
 			messages.insertAt(inserted, msg);
 			while( messages.length > r.get('messageBufferSize') )
@@ -5529,10 +5872,8 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 FFZ.prototype._modify_room = function(room) {
 	var f = this;
 	room.reopen({
-		subsOnlyMode: false,
-		r9kMode: false,
 		slowWaiting: false,
-		slowValue: 0,
+		slow: 0,
 
 		mru_list: [],
 
@@ -5568,7 +5909,22 @@ FFZ.prototype._modify_room = function(room) {
 		ffzUpdateStatus: function() {
 			if ( f._roomv )
 				f._roomv.ffzUpdateStatus();
-		}.observes('r9kMode', 'subsOnlyMode', 'slowMode', 'slowValue', 'ffz_banned'),
+		}.observes('r9k', 'subsOnly', 'slow', 'ffz_banned'),
+
+		// User Level
+		ffzUserLevel: function() {
+			if ( this.get('isStaff') )
+				return 5;
+			else if ( this.get('isAdmin') )
+				return 4;
+			else if ( this.get('isBroadcaster') )
+				return 3;
+			else if ( this.get('isGlobalModerator') )
+				return 2;
+			else if ( this.get('isModerator') )
+				return 1;
+			return 0;
+		}.property('id', 'chatLabels.[]'),
 
 		// Track which rooms the user is currently in.
 		init: function() {
@@ -5593,13 +5949,34 @@ FFZ.prototype._modify_room = function(room) {
 		clearMessages: function(user) {
 			var t = this;
 			if ( user ) {
-				this.get("messages").forEach(function(s, n) {
-					if ( s.from === user ) {
-						t.set("messages." + n + ".ffz_deleted", true);
+				var msgs = t.get('messages'),
+					total = msgs.get('length'),
+					i = total,
+					alternate;
+				
+				while(i--) {
+					var msg = msgs.get(i);
+					
+					if ( msg.from === user ) {
+						if ( f.settings.remove_deleted ) {
+							if ( alternate === undefined )
+								alternate = msg.ffz_alternate;
+							msgs.removeAt(i);
+							continue;
+						}
+						
+						t.set('messages.' + i + '.ffz_deleted', true);
 						if ( ! f.settings.prevent_clear )
-							t.set("messages." + n + ".deleted", true);
+							t.set('messages.' + i + '.deleted', true);
 					}
-				});
+					
+					if ( alternate === undefined )
+						alternate = msg.ffz_alternate;
+					else {
+						alternate = ! alternate;
+						t.set('messages.' + i + '.ffz_alternate', alternate);
+					}
+				}
 
 				if ( f.settings.mod_card_history ) {
 					var room = f.rooms && f.rooms[t.get('id')],
@@ -5610,8 +5987,10 @@ FFZ.prototype._modify_room = function(room) {
 							last = user_history.length > 0 ? user_history[user_history.length-1] : null;
 
 						has_delete = last !== null && last.is_delete;
-						if ( ! has_delete ) {
-							user_history.push({from: 'jtv', is_delete: true, style: 'admin', cachedTokens: ['User has been timed out.'], date: new Date()});
+						if ( has_delete ) {
+							last.cachedTokens = ['User has been timed out ' + utils.number_commas(++last.deleted_times) + ' times.'];
+						} else {
+							user_history.push({from: 'jtv', is_delete: true, style: 'admin', cachedTokens: ['User has been timed out.'], deleted_times: 1, date: new Date()});
 							while ( user_history.length > 20 )
 								user_history.shift();
 						}
@@ -5632,74 +6011,86 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
+		trimMessages: function() {
+			var messages = this.get("messages"),
+				len = messages.get("length"),
+				limit = this.get("messageBufferSize");
+			
+			if ( len > limit )
+				messages.removeAt(0, len - limit);
+		},
+
 		pushMessage: function(msg) {
 			if ( this.shouldShowMessage(msg) ) {
-				var t, s, n, a = this.get("messageBufferSize");
-				for (this.get("messages").pushObject(msg), t = this.get("messages.length"), s = t - a, n = 0; s > n; n++)
-					this.get("messages").removeAt(0);
+				this.get("messages").pushObject(msg);
+				this.trimMessages();
 
 				"admin" === msg.style || ("whisper" === msg.style && ! this.ffz_whisper_room ) || this.incrementProperty("unreadCount", 1);
 			}
 		},
 
 		addMessage: function(msg) {
-			try {
-				if ( msg ) {
-					var is_whisper = msg.style === 'whisper';
-					if ( f.settings.group_tabs && f.settings.whisper_room ) {
-						if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
-							return;
-					}
+			if ( msg ) {
+				if ( ! f.settings.hosted_sub_notices && msg.style === 'notification' && HOSTED_SUB.test(msg.message) )
+					return;
+				
+				var is_whisper = msg.style === 'whisper';
+				if ( f.settings.group_tabs && f.settings.whisper_room ) {
+					if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
+						return;
+				}
 
-					if ( ! is_whisper )
-						msg.room = this.get('id');
+				if ( ! is_whisper )
+					msg.room = this.get('id');
 
-					// Tokenization
-					f.tokenize_chat_line(msg);
+				// Tokenization
+				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
-					// Keep the history.
-					if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
-						var room = f.rooms && f.rooms[msg.room];
-						if ( room ) {
-							var chat_history = room.user_history = room.user_history || {},
-								user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
-
-							user_history.push({
-								from: msg.tags && msg.tags['display-name'] || msg.from,
-								cachedTokens: msg.cachedTokens,
-								style: msg.style,
-								date: msg.date
-							});
-							while ( user_history.length > 20 )
-								user_history.shift();
-						}
-					}
-
-					// Check for message from us.
-					if ( ! is_whisper ) {
-						var user = f.get_user();
-						if ( user && user.login === msg.from ) {
-							var was_banned = this.get('ffz_banned');
-							this.set('ffz_banned', false);
-
-							// Update the wait time.
-							if ( this.get('isModeratorOrHigher') || ! this.get('slowMode') )
-								this.updateWait(0, was_banned)
-							else if ( this.get('slowMode') )
-								this.updateWait(this.get('slowValue'));
-						}
+				// Keep the history.
+				if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
+					var room = f.rooms && f.rooms[msg.room];
+					if ( room ) {
+						var chat_history = room.user_history = room.user_history || {},
+							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
+	
+						user_history.push({
+							from: msg.tags && msg.tags['display-name'] || msg.from,
+							cachedTokens: msg.cachedTokens,
+							style: msg.style,
+							date: msg.date
+						});
+	
+						if ( user_history.length > 20 )
+							user_history.shift();
 					}
 				}
-			} catch(err) { f.error("Room addMessage: " + err); }
+
+				// Check for message from us.
+				if ( ! is_whisper ) {
+					var user = f.get_user();
+					if ( user && user.login === msg.from ) {
+						var was_banned = this.get('ffz_banned');
+						this.set('ffz_banned', false);
+
+						// Update the wait time.
+						if ( this.get('isModeratorOrHigher') || ! this.get('slowMode') )
+							this.updateWait(0, was_banned)
+						else if ( this.get('slowMode') )
+							this.updateWait(this.get('slow'));
+					}
+				}
+				
+				// Also update chatters.
+				if ( ! is_whisper && this.chatters && ! this.chatters[msg.from] && msg.from !== 'twitchnotify' && msg.from !== 'jtv' )
+					this.ffzUpdateChatters(msg.from);
+			}
 
 			var out = this._super(msg);
 
-			try {
-				// Color processing.
-				var color = msg.color;
-				if ( color )
-					f._handle_color(color);
-			} catch(err) { f.error("Room addMessage2: " + err); }
+			// Color processing.
+			if ( msg.color )
+				f._handle_color(msg.color);
+
 			return out;
 		},
 
@@ -5767,6 +6158,11 @@ FFZ.prototype._modify_room = function(room) {
 			if ( ! this.tmiRoom )
 				return;
 
+			if ( this._ffz_chatter_timer ) {
+				clearTimeout(this._ffz_chatter_timer);
+				this._ffz_chatter_timer = undefined;
+			}
+
 			var room = this;
 			this.tmiRoom.list().done(function(data) {
 				var chatters = {};
@@ -5784,6 +6180,8 @@ FFZ.prototype._modify_room = function(room) {
 
 				room.set("ffz_chatters", chatters);
 				room.ffzUpdateChatters();
+			}).always(function() {
+				room._ffz_chatter_timer = setTimeout(room.ffzInitChatterCount.bind(room), 300000);
 			});
 		},
 
@@ -5862,60 +6260,6 @@ FFZ.prototype._modify_room = function(room) {
 				}
 			});
 
-
-			// ROOMSTATE~!
-			if ( ! connection.ffz_roomstate_patched ) {
-				connection.ffz_roomstate_patched = true;
-				connection._socket.off('data', connection._onSocketDataReceived, connection);
-				connection._socket.on('data', function(data) {
-					try {
-						var msg = utils.splitIRCMessage(data.data);
-						if ( msg.command === 'ROOMSTATE' ) {
-							// We have ROOMSTATE! Now, let's parse it a bit
-							// more and send it on.
-							msg.tags = utils.parseIRCTags(msg.tags);
-							msg.target = msg.params && msg.params[0];
-
-							this._trigger('roomstate', msg);
-							return;
-						}
-					} catch(err) { f.error("Connection onData: " + err); }
-
-					return this._onSocketDataReceived(data);
-				}, connection);
-			}
-
-			// Glorious ROOMSTATE.
-			if ( ! tmi.ffz_roomstate_patched ) {
-				tmi.ffz_roomstate_patched = true;
-				tmi._roomConn.on("roomstate", function(ircMsg) {
-					if ( ircMsg.target !== this.ircChannel )
-						return;
-
-					this._trigger("roomstate", ircMsg.tags);
-				}, tmi);
-			}
-
-			// IT IS GLORIOUS!
-			tmi.on('roomstate', function(state) {
-				if ( ! room )
-					return;
-				
-				if ( state.hasOwnProperty('slow') ) {
-					room.set('slowMode', state.slow > 0);
-					room.set('slowValue', state.slow);
-					if ( ! room.get('slowMode') )
-						room.updateWait(0);
-				}
-
-				if ( state.hasOwnProperty('r9k') )
-					room.set('r9kMode', state.r9k);
-
-				if ( state.hasOwnProperty('subs-only') )
-					room.set('subsOnlyMode', state['subs-only']);
-			});
-
-
 			// Check this shit.
 			tmi._roomConn._connection.off("message", tmi._roomConn._onIrcMessage, tmi._roomConn);
 
@@ -5949,10 +6293,21 @@ FFZ.prototype._modify_room = function(room) {
 
 			this.set('ffz_is_patched', true);
 
-		}.observes('tmiRoom')
+		}.observes('tmiRoom'),
+
+		// Room State Stuff
+		
+		slowMode: function() {
+			return this.get('slow') > 0;
+		}.property('slow'),
+		
+		onSlowOff: function() {
+			if ( ! this.get('slowMode') )
+				this.updateWait(0);
+		}.observes('slowMode')
 	});
 }
-},{"../constants":4,"../utils":33}],12:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],13:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -6050,7 +6405,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 		}.property("content.chatters")
 	});
 }
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -6442,7 +6797,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	if ( callback )
 		callback(true, data);
 }
-},{"./constants":4,"./utils":33}],14:[function(require,module,exports){
+},{"./constants":4,"./utils":34}],15:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -6480,8 +6835,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 	
 	if ( this._chat_style ) {
-		this._chat_style.parentElement.removeChild(this._chat_style);
-		this._chat_style = undefined;
+		utils.update_css(this._chat_style, 'chat_font_size', '');
+		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
 	}
 
 	// Disable Chat Tabs
@@ -6620,11 +6975,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 	};
 
-
 	// Emoticonize
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
+			
 			room = (received_room || BetterTTV.getChannel()),
 			l_room = room && room.toLowerCase(),
 			l_sender = received_sender && received_sender.toLowerCase(),
@@ -6651,7 +7006,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			// Why is emote parsing so bad? ;_;
 			_.each(emotes, function(emote) {
 				var tooltip = f._emote_tooltip(emote),
-					eo = ['<img class="emoticon" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" alt="' + tooltip + '" title="' + tooltip + '" />'],
+					eo = ['<img class="emoticon" data-ffz-emote="' + emote.id + '" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" data-regex="' + emote.name + '" title="' + tooltip + '" />'],
 					old_tokens = tokens;
 
 				tokens = [];
@@ -6685,6 +7040,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 
 		// Sneak in Emojicon Processing
+		/*
 		if ( f.settings.parse_emoji && f.emoji_data ) {
 			var old_tokens = tokens;
 			tokens = [];
@@ -6719,14 +7075,14 @@ FFZ.prototype.setup_bttv = function(delay) {
 					}
 				}
 			}
-		}
+		}*/
 
 		return tokens;
 	}
 
 	this.update_ui_link();
 }
-},{"../constants":4,"../utils":33}],15:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],16:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -6802,7 +7158,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 
 	return emotes;
 }
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Modify Array and others.
 // require('./shims');
 
@@ -6826,7 +7182,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 4, revision: 25,
+	major: 3, minor: 5, revision: 2,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -6920,6 +7276,7 @@ require('./tokenize');
 
 // Analytics: require('./ember/router');
 require('./ember/channel');
+require('./ember/player');
 require('./ember/room');
 require('./ember/line');
 require('./ember/chatview');
@@ -6961,21 +7318,27 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Make sure that FrankerFaceZ doesn't start setting itself up until the
 	// Twitch ember application is ready.
 
+	// Check for the player
+	if ( location.hostname === 'player.twitch.tv' ) {
+		this.init_player(delay);
+		return;
+	}
+
 	// Check for special non-ember pages.
-	if ( /^\/(?:$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
-		this.setup_normal(delay);
+	if ( /^\/(?:$|search$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
+		this.init_normal(delay);
 		return;
 	}
 	
 	if ( location.hostname === 'passport' && /^\/(?:authorize)/.test(location.pathname) ) {
 		this.log("Running on passport!");
-		this.setup_normal(delay, true);
+		this.init_normal(delay, true);
 		return;
 	}
 
 	// Check for the dashboard.
 	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
-		this.setup_dashboard(delay);
+		this.init_dashboard(delay);
 		return;
 	}
 
@@ -6993,11 +7356,32 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return;
 	}
 
-	this.setup_ember(delay);
+	this.init_ember(delay);
 }
 
 
-FFZ.prototype.setup_normal = function(delay, no_socket) {
+FFZ.prototype.init_player = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found Twitch Player after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+	this.is_dashboard = false;
+	try {
+		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
+	} catch(err) { this.embed_in_dash = false; }
+
+	// Literally only make it dark.
+	this.load_settings();
+	this.setup_dark();
+
+	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
+}
+
+
+FFZ.prototype.init_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -7036,7 +7420,7 @@ FFZ.prototype.setup_normal = function(delay, no_socket) {
 
 FFZ.prototype.is_dashboard = false;
 
-FFZ.prototype.setup_dashboard = function(delay) {
+FFZ.prototype.init_dashboard = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Dashboard after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -7073,7 +7457,7 @@ FFZ.prototype.setup_dashboard = function(delay) {
 }
 
 
-FFZ.prototype.setup_ember = function(delay) {
+FFZ.prototype.init_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
 
@@ -7098,6 +7482,7 @@ FFZ.prototype.setup_ember = function(delay) {
 	//this.setup_router();
 	this.setup_colors();
 	this.setup_tokenization();
+	this.setup_player();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
@@ -7146,7 +7531,7 @@ FFZ.prototype._on_window_message = function(e) {
 
 	var msg = e.data;
 }
-},{"./badges":1,"./colors":2,"./commands":3,"./debug":5,"./ember/channel":6,"./ember/chat-input":7,"./ember/chatview":8,"./ember/line":9,"./ember/moderation-card":10,"./ember/room":11,"./ember/viewers":12,"./emoticons":13,"./ext/betterttv":14,"./ext/emote_menu":15,"./featurefriday":17,"./settings":18,"./socket":19,"./tokenize":20,"./ui/about_page":21,"./ui/dark":22,"./ui/following":24,"./ui/following-count":23,"./ui/menu":25,"./ui/menu_button":26,"./ui/my_emotes":27,"./ui/notifications":28,"./ui/races":29,"./ui/styles":30,"./ui/sub_count":31,"./ui/viewer_count":32}],17:[function(require,module,exports){
+},{"./badges":1,"./colors":2,"./commands":3,"./debug":5,"./ember/channel":6,"./ember/chat-input":7,"./ember/chatview":8,"./ember/line":9,"./ember/moderation-card":10,"./ember/player":11,"./ember/room":12,"./ember/viewers":13,"./emoticons":14,"./ext/betterttv":15,"./ext/emote_menu":16,"./featurefriday":18,"./settings":19,"./socket":20,"./tokenize":21,"./ui/about_page":22,"./ui/dark":23,"./ui/following":25,"./ui/following-count":24,"./ui/menu":26,"./ui/menu_button":27,"./ui/my_emotes":28,"./ui/notifications":29,"./ui/races":30,"./ui/styles":31,"./ui/sub_count":32,"./ui/viewer_count":33}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -7285,7 +7670,7 @@ FFZ.prototype._update_ff_name = function(name) {
 	if ( this.feature_friday )
 		this.feature_friday.display_name = name;
 }
-},{"./constants":4}],18:[function(require,module,exports){
+},{"./constants":4}],19:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("./constants");
 
@@ -7439,8 +7824,8 @@ FFZ.menu_pages.settings = {
 					var a = a[1],
 						b = b[1],
 
-						at = a.type === "button" ? 2 : 1,
-						bt = b.type === "button" ? 2 : 1,
+						at = a.type === "boolean" ? 1 : 2,
+						bt = b.type === "boolean" ? 1 : 2,
 
 						an = a.name.toLowerCase(),
 						bn = b.name.toLowerCase();
@@ -7646,7 +8031,7 @@ FFZ.prototype._setting_del = function(key) {
 			this.log('Error running updater for setting "' + key + '": ' + err);
 		}
 }
-},{"./constants":4}],19:[function(require,module,exports){
+},{"./constants":4}],20:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
@@ -7801,6 +8186,8 @@ FFZ.prototype.ws_create = function() {
 				} catch(err) {
 					f.error("Callback for " + request + ": " + err);
 				}
+				
+				f._ws_callbacks[request] = undefined;
 			}
 		}
 	}
@@ -7897,12 +8284,72 @@ FFZ.ws_commands.do_authorize = function(data) {
 		// Try again shortly.
 		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
 }
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("./utils"),
 	constants = require("./constants"),
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	helpers,
+
+	SRCSETS = {};
+	build_srcset = function(id) {
+		if ( SRCSETS[id] )
+			return SRCSETS[id];
+		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
+		return out;
+	},
+
+
+	data_to_tooltip = function(data) {
+		var set = data.set,
+			set_type = data.set_type,
+			owner = data.owner;
+
+		if ( set_type === undefined )
+			set_type = "Channel";
+
+		if ( ! set )
+			return data.code;
+
+		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
+			set = "Twitch Turbo";
+			set_type = null;
+		}
+
+		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set + (owner ? "\nBy: " + owner.display_name : "");
+	},
+
+	build_tooltip = function(id) {
+		var emote_data = this._twitch_emotes[id],
+			set = emote_data ? emote_data.set : null;
+
+		if ( ! emote_data )
+			return "???";
+
+		if ( typeof emote_data == "string" )
+			return emote_data;
+
+		if ( emote_data.tooltip )
+			return emote_data.tooltip;
+
+		return emote_data.tooltip = data_to_tooltip(emote_data);
+	},
+
+	load_emote_data = function(id, code, success, data) {
+		if ( ! success )
+			return;
+
+		if ( code )
+			data.code = code;
+
+		this._twitch_emotes[id] = data;
+		var tooltip = build_tooltip.bind(this)(id);
+
+		var images = document.querySelectorAll('img[data-emote="' + id + '"]');
+		for(var x=0; x < images.length; x++)
+			images[x].title = tooltip;
+	},
+
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
@@ -7911,7 +8358,148 @@ var FFZ = window.FrankerFaceZ,
 	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#!?&//=]*)/g,
 
 	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
-	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
+	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*"),
+
+	
+	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
+	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
+	IMGUR_PATH = /^\/(?:gallery\/)?[A-Za-z0-9]+(?:\.(?:png|jpg|jpeg|gif|gifv|bmp))?$/,
+	IMAGE_EXT = /\.(?:png|jpg|jpeg|gif|bmp)$/i,
+	IMAGE_DOMAINS = [],
+	
+	is_image = function(href, any_domain) {
+		var match = href.match(LINK_SPLIT);
+		if ( ! match )
+			return;
+
+		var domain = match[3].toLowerCase(), port = match[4],
+			path = match[5];
+
+		// Don't allow non-standard ports.
+		if ( port && port !== '80' && port !== '443' )
+			return false;
+
+		// imgur-specific checks.
+		if ( domain === 'i.imgur.com' || domain === 'imgur.com' || domain === 'www.imgur.com' || domain === 'm.imgur.com' )
+			return IMGUR_PATH.test(path);
+
+		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1; 
+	}
+	
+	image_iframe = function(href, extra_class) {
+		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
+	},
+
+
+	build_link_tooltip = function(href) {
+		var link_data = this._link_data[href],
+			tooltip;
+
+		if ( ! link_data )
+			return "";
+
+		if ( link_data.tooltip )
+			return link_data.tooltip;
+
+		if ( link_data.type == "youtube" ) {
+			tooltip = this.settings.link_image_hover ? image_iframe(link_data.full || href, 'ffz-yt-thumb') : '';
+			tooltip += "<b>YouTube: " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "Channel: " + utils.sanitize(link_data.channel) + " | " + utils.time_to_string(link_data.duration) + "<br>";
+			tooltip += utils.number_commas(link_data.views||0) + " Views | &#128077; " + utils.number_commas(link_data.likes||0) + " &#128078; " + utils.number_commas(link_data.dislikes||0);
+
+		} else if ( link_data.type == "strawpoll" ) {
+			tooltip = "<b>Strawpoll: " + utils.sanitize(link_data.title) + "</b><hr><table><tbody>";
+			for(var key in link_data.items) {
+				var votes = link_data.items[key],
+					percentage = Math.floor((votes / link_data.total) * 100);
+				tooltip += '<tr><td style="text-align:left">' + utils.sanitize(key) + '</td><td style="text-align:right">' + utils.number_commas(votes) + "</td></tr>";
+			}
+			tooltip += "</tbody></table><hr>Total: " + utils.number_commas(link_data.total);
+			var fetched = utils.parse_date(link_data.fetched);
+			if ( fetched ) {
+				var age = Math.floor((fetched.getTime() - Date.now()) / 1000);
+				if ( age > 60 )
+					tooltip += "<br><small>Data was cached " + utils.time_to_string(age) + " ago.</small>";
+			}
+
+
+		} else if ( link_data.type == "twitch" ) {
+			tooltip = "<b>Twitch: " + utils.sanitize(link_data.display_name) + "</b><hr>";
+			var since = utils.parse_date(link_data.since);
+			if ( since )
+				tooltip += "Member Since: " + utils.date_string(since) + "<br>";
+			tooltip += "<nobr>Views: " + utils.number_commas(link_data.views) + "</nobr> | <nobr>Followers: " + utils.number_commas(link_data.followers) + "</nobr>";
+
+
+		} else if ( link_data.type == "twitch_vod" ) {
+			tooltip = "<b>Twitch " + (link_data.broadcast_type == "highlight" ? "Highlight" : "Broadcast") + ": " + utils.sanitize(link_data.title) + "</b><hr>";
+			tooltip += "By: " + utils.sanitize(link_data.display_name) + (link_data.game ? " | Playing: " + utils.sanitize(link_data.game) : " | Not Playing") + "<br>";
+			tooltip += "Views: " + utils.number_commas(link_data.views) + " | " + utils.time_to_string(link_data.length);
+
+
+		} else if ( link_data.type == "twitter" ) {
+			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
+			tooltip += utils.sanitize(link_data.tweet);
+
+
+		} else if ( link_data.type == "reputation" ) {
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+			if ( link_data.trust < 50 || link_data.safety < 50 || (link_data.tags && link_data.tags.length > 0) ) {
+				tooltip += "<hr>";
+				var had_extra = false;
+				if ( link_data.trust < 50 || link_data.safety < 50 ) {
+					link_data.unsafe = true;
+					tooltip += "<b>Potentially Unsafe Link</b><br>";
+					tooltip += "Trust: " + link_data.trust + "% | Child Safety: " + link_data.safety + "%";
+					had_extra = true;
+				}
+
+				if ( link_data.tags && link_data.tags.length > 0 )
+					tooltip += (had_extra ? "<br>" : "") + "Tags: " + link_data.tags.join(", ");
+
+				tooltip += "<br>Data Source: WOT";
+			}
+
+
+		} else if ( link_data.full ) {
+			tooltip = (this.settings.link_image_hover && is_image(link_data.full || href, this.settings.image_hover_all_domains)) ? image_iframe(link_data.full || href) : '';
+			tooltip += '<span style="word-wrap: break-word">' + utils.sanitize(link_data.full.toLowerCase()) + '</span>';
+		}
+
+		if ( ! tooltip )
+			tooltip = '<span style="word-wrap: break-word">' + utils.sanitize(href.toLowerCase()) + '</span>';
+
+		link_data.tooltip = tooltip;
+		return tooltip;
+	},
+
+	load_link_data = function(href, success, data) {
+		if ( ! success )
+			return;
+
+		this._link_data[href] = data;
+		data.unsafe = false;
+
+		var tooltip = build_link_tooltip.bind(this)(href), links,
+			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
+
+		if ( no_trail )
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[href="' + no_trail + '"], span.message a[data-url="' + href + '"], span.message a[data-url="' + no_trail + '"]');
+		else
+			links = document.querySelectorAll('span.message a[href="' + href + '"], span.message a[data-url="' + href + '"]');
+
+		if ( ! this.settings.link_info )
+			return;
+
+		for(var x=0; x < links.length; x++) {
+			if ( data.unsafe )
+				links[x].classList.add('unsafe-link');
+
+			if ( ! links[x].classList.contains('deleted-link') )
+				links[x].title = tooltip;
+		}
+	};
 
 
 FFZ.SRC_IDS = {},
@@ -8005,8 +8593,10 @@ FFZ.prototype.setup_tokenization = function() {
 			return _.zip(
 				token.split(LINK),
 				_.map(matches, function(e) {
-					if ( ! show_deleted && (delete_links || e.length > 255) )
-						return {mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(e) + '" data-url="' + utils.quote_attr(e) + '" href="#">&lt;' + (e.length > 255 ? 'long link' : 'deleted link') + '&gt;</a><span class="mentioning">', own: true}
+					var long = e.length > 255;
+					if ( ! show_deleted && (delete_links || long) )
+						return {isLink: true, isDeleted: true, isLong: long, href: e};
+						//return {mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(e) + '" data-url="' + utils.quote_attr(e) + '" href="#">&lt;' + (e.length > 255 ? 'long link' : 'deleted link') + '&gt;</a><span class="mentioning">', own: true}
 					return {isLink: true, href: e};
 				})
 			);
@@ -8019,11 +8609,9 @@ FFZ.prototype.setup_tokenization = function() {
 // Tokenization
 // ---------------------
 
-FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
-
-	try {
 
 	var msg = msgObject.message,
 		user = this.get_user(),
@@ -8034,8 +8622,18 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 		tokens = [msg];
 
 	// Standard tokenization
-	if ( helpers && helpers.linkifyMessage )
-		tokens = helpers.linkifyMessage(tokens);
+	if ( helpers && helpers.linkifyMessage ) {
+		var labels = msg.labels || [], 
+			mod_or_higher = labels.indexOf("owner") !== -1 ||
+							labels.indexOf("staff") !== -1 ||
+							labels.indexOf("admin") !== -1 ||
+							labels.indexOf("global_mod") !== -1 ||
+							labels.indexOf("mod") !== -1 ||
+							msg.style === 'admin';
+
+		tokens = helpers.linkifyMessage(tokens, delete_links && !mod_or_higher);
+	}
+		
 
 	if ( user && user.login && helpers && helpers.mentionizeMessage )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
@@ -8130,10 +8728,6 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification) {
 	}
 
 	msgObject.cachedTokens = tokens;
-	} catch(err) {
-		this.error("Tokenization Error: " + err);
-	}
-	
 	return tokens;
 }
 
@@ -8168,47 +8762,109 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 	var f = this;
 	return _.map(tokens, function(token) {
 		if ( token.emoticonSrc ) {
-			var tooltip;
+			var tooltip, srcset, extra;
 			if ( token.ffzEmote ) {
 				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
 					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
 
 				tooltip = emote ? utils.sanitize(f._emote_tooltip(emote)) : token.altText;
+				srcset = emote ? emote.srcSet : token.srcSet;
+				extra = ' data-ffz-emote="' + emote.id + '"';
 
 			} else if ( token.ffzEmoji ) {
 				var eid = token.ffzEmoji,
 					emoji = f.emoji_data && f.emoji_data[eid];
 
 				tooltip = emoji ? "Emoji: " + token.altText + "\nName: :" + emoji.short_name + ":" : token.altText;
+				srcset = emoji ? emoji.srcSet : token.srcSet;
+				extra = ' data-ffz-emoji="' + eid + '"';
 
 			} else {
-				var id = FFZ.src_to_id(token.emoticonSrc),
+				var id = token.replacedId || FFZ.src_to_id(token.emoticonSrc),
 					data = id && f._twitch_emotes && f._twitch_emotes[id];
 
-				tooltip = data && data.tooltip ? data.tooltip : token.altText;
+				if ( data )
+					tooltip = data.tooltip ? data.tooltip : token.altText;
+				else {
+					tooltip = f._twitch_emotes[id] = token.altText;
+					f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, token.altText));
+				}
+
+				extra = ' data-emote="' + id + '"';
+
+				if ( ! constants.EMOTE_REPLACEMENTS[id] )
+					srcset = build_srcset(id);
 			}
 
-			return '<img class="emoticon tooltip" src="' + token.emoticonSrc + '" ' + (token.srcSet ? 'srcset="' + token.srcSet + '" ' : '') + 'alt="' + token.altText + '" title="' + tooltip + '">';
+			return '<img class="emoticon tooltip"' + (extra||"") + ' src="' + utils.quote_attr(token.emoticonSrc) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
 		}
 
 		if ( token.isLink ) {
+			var text = token.title || (token.isLong && '<long link>') || (token.isDeleted && '<deleted link>') || token.href;
+			
 			if ( ! render_links && render_links !== undefined )
-				return token.href;
+				return utils.sanitize(text);
 
-			var s = token.href;
-			if ( s.indexOf("@") > -1 && (-1 === s.indexOf("/") || s.indexOf("@") < s.indexOf("/")) )
-				return '<a href="mailto:' + s + '">' + s + '</a>';
+			var href = token.href,
+				tooltip, cls = '',
+			
+				ind_at = href.indexOf("@"),
+				ind_sl = href.indexOf("/");
+			
+			if ( ind_at !== -1 && (ind_sl === -1 || ind_at < ind_sl) ) {
+				// E-Mail Link
+				cls = 'email-link';
+				
+				if ( f.settings.link_info ) {
+					cls += ' tooltip';
+					tooltip = 'E-Mail ' + href;
+				}
+				
+				href = 'mailto:' + href;
+				
+			} else {
+				// Web Link
+				if ( ! href.match(/^https?:\/\//) )
+					href = 'http://' + href; 
+				
+				if ( f.settings.link_info ) {
+					cls = 'html-tooltip';
+					
+					var data = f._link_data && f._link_data[href];
+					if ( data ) {
+						tooltip = data.tooltip;
+						if ( data.unsafe )
+							cls += ' unsafe-link';
+						
+					} else {
+						f._link_data = f._link_data || {};
+						f._link_data[href] = true;
+						f.ws_send("get_link", href, load_link_data.bind(f, href));
+						if ( f.settings.link_image_hover && is_image(href, f.settings.image_hover_all_domains) )
+							tooltip = image_iframe(href);
+					}
+					
+				} else if ( f.settings.link_image_hover ) {
+					cls = 'html-tooltip';
+					if ( is_image(href, f.settings.image_hover_all_domains) )
+						tooltip = image_iframe(href);
+				}
+			}
+			
 
-			var n = (s.match(/^https?:\/\//) ? "" : "http://") + s;
-
-			// Check for link data.
-			var data = f._link_data && f._link_data[n] || {};
-
-			return '<a href="' + n + '" class="' + (data.unsafe ? 'unsafe-link' : '') + '" title="' + utils.sanitize(data.tooltip || '') + '" target="_blank">' + s + '</a>';
+			// Deleted Links
+			var actual_href = href;
+			if ( token.isDeleted ) {
+				cls = 'deleted-link ' + cls;
+				tooltip = utils.sanitize(token.censoredHref || token.href);
+				href = '#';
+			}
+			
+			return '<a class="' + cls + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href || '#') + '" title="' + utils.quote_attr(tooltip || '') + '" target="_blank">' + utils.sanitize(text) + '</a>';
 		}
 
 		if ( token.mentionedUser )
-			return '<span class="' + (token.own ? "mentioning" : "mentioned") + '">' + token.mentionedUser + "</span>";
+			return '<span class="' + (token.own ? "mentioning" : "mentioned") + '">' + utils.sanitize(token.mentionedUser) + "</span>";
 
 		if ( token.deletedLink )
 			return utils.sanitize(token.text);
@@ -8237,7 +8893,8 @@ FFZ.prototype.tokenize_replace_emotes = function(tokens) {
 		// Check for a few specific emoticon IDs.
 		var emote_id = FFZ.src_to_id(token.emoticonSrc);
 		if ( constants.EMOTE_REPLACEMENTS.hasOwnProperty(emote_id) ) {
-			token.emoticonSrc = constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote_id] + '" data-twitch-emote="' + emote_id;
+			token.replacedId = emote_id;
+			token.emoticonSrc = constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote_id];
 		}
 	}
 	
@@ -8548,7 +9205,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 	// Stop from Navigating
 	e.preventDefault();
 }
-},{"./constants":4,"./utils":33}],21:[function(require,module,exports){
+},{"./constants":4,"./utils":34}],22:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -8652,7 +9309,7 @@ FFZ.menu_pages.about = {
 		container.appendChild(credits);
 	}
 }
-},{"../constants":4}],22:[function(require,module,exports){
+},{"../constants":4}],23:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants");
 
@@ -8767,7 +9424,7 @@ FFZ.prototype._load_dark_css = function() {
 	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 }
-},{"../constants":4}],23:[function(require,module,exports){
+},{"../constants":4}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -8840,7 +9497,7 @@ FFZ.prototype._schedule_following_count = function() {
 	}
 
 	if ( ! this._following_count_timer )
-		this._following_count_timer = setTimeout(this._update_following_count.bind(this), 60000);
+		this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
 }
 
 
@@ -8853,7 +9510,7 @@ FFZ.prototype._update_following_count = function() {
 		return;
 	}
 
-	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 60000);
+	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
 	
 	var Stream = window.App && App.__container__.resolve('model:stream'),
 		Live = Stream && Stream.find("live"),
@@ -8862,7 +9519,7 @@ FFZ.prototype._update_following_count = function() {
 	if ( Live )
 		Live.load();
 	else
-		Twitch.api.get("streams/followed", {limit:1, offset:0}, {version:3})
+		Twitch.api && Twitch.api.get("streams/followed", {limit:1, offset:0}, {version:3})
 			.done(function(data) {
 				f._draw_following_count(data._total);
 			}).fail(function() {
@@ -8924,9 +9581,12 @@ FFZ.prototype._draw_following_count = function(count) {
 		}
 	}
 }
-},{"../utils":33}],24:[function(require,module,exports){
+},{"../utils":34}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils');
+	utils = require('../utils'),
+
+	VALID_CHANNEL = /^[A-Za-z0-9_]+$/,
+	TWITCH_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([A-Za-z0-9_]+)/i;
 
 
 // ---------------
@@ -8963,19 +9623,24 @@ FFZ.settings_info.follow_buttons = {
 // ---------------
 
 FFZ.ffz_commands.following = function(room, args) {
-	args = args.join(" ").trim().split(/\s*,+\s*/);
+	args = args.join(" ").trim().toLowerCase().split(/[ ,]+/);
 
-	if ( args.length && args[0] === '' )
-		args.shift();
+	var out = [];
+	for(var i=0,l=args.length; i<l; i++) {
+		var arg = args[i],
+			match = arg.match(TWITCH_URL);
+		if ( match )
+			arg = match[1];
 
-	if ( args.length && args[args.length-1] === '' )
-		args.pop();
+		if ( arg !== '' && out.indexOf(arg) === -1 )
+			out.push(arg);
+	}
 
 	var user = this.get_user(), f = this;
 	if ( ! user || (user.login !== room.id && user.login !== "sirstendec" && user.login !== "dansalvato")  )
 		return "You must be logged in as the broadcaster to use this command.";
 
-	if ( ! this.ws_send("update_follow_buttons", [room.id, args], function(success, data) {
+	if ( ! this.ws_send("update_follow_buttons", [room.id, out], function(success, data) {
 		if ( ! success ) {
 			f.room_message(room, "There was an error updating the following buttons.");
 			return;
@@ -9053,7 +9718,8 @@ FFZ.ws_commands.follow_sets = function(data) {
 	var controller = App.__container__.lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
-		need_update = false;
+		need_update = false,
+		f = this;
 
 	this.follow_sets = this.follow_sets || {};
 
@@ -9091,10 +9757,11 @@ FFZ.ws_commands.follow_sets = function(data) {
 				continue;
 			}
 
-			this.load_set(sid, function(success, data) {
-				if ( success )
-					data.users.push(room_id);
-			});
+			setTimeout(
+				this.load_set.bind(this, sid, function(success, data) {
+					if ( success )
+						data.users.push(room_id);
+				}), Math.random()*2500);
 		}
 	}
 }
@@ -9136,8 +9803,13 @@ FFZ.prototype.rebuild_following_ui = function() {
 			} else
 				cont.innerHTML = '';
 
-			for(var i=0; i < data.length; i++) {
-				this._build_following_button(cont, data[i]);
+			var processed = [channel_id];
+			for(var i=0; i < data.length && i < 10; i++) {
+				var cid = data[i];
+				if ( processed.indexOf(cid) !== -1 )
+					continue;
+				this._build_following_button(cont, cid);
+				processed.push(cid);
 			}
 		}
 	}
@@ -9167,8 +9839,13 @@ FFZ.prototype.rebuild_following_ui = function() {
 			} else
 				cont.innerHTML = '';
 
-			for(var i=0; i < data.length; i++) {
-				this._build_following_button(cont, data[i]);
+			var processed = [hosted_id];
+			for(var i=0; i < data.length && i < 10; i++) {
+				var cid = data[i];
+				if ( processed.indexOf(cid) !== -1 )
+					continue;
+				this._build_following_button(cont, cid);
+				processed.push(cid);
 			}
 		}
 	}
@@ -9180,6 +9857,9 @@ FFZ.prototype.rebuild_following_ui = function() {
 // ---------------
 
 FFZ.prototype._build_following_button = function(container, channel_id) {
+	if ( ! VALID_CHANNEL.test(channel_id) )
+		return this.log("Ignoring Invalid Channel: " + utils.sanitize(channel_id));
+	
 	var btn = document.createElement('a'), f = this,
 		btn_c = document.createElement('div'),
 		noti = document.createElement('a'),
@@ -9191,8 +9871,8 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 		update = function() {
 			btn_c.classList.toggle('is-following', following);
-			btn.title = (following ? "Unf" : "F") + "ollow " + display_name;
-			btn.innerHTML = (following ? "" : "Follow ") + display_name;
+			btn.title = (following ? "Unf" : "F") + "ollow " + utils.sanitize(display_name);
+			btn.innerHTML = (following ? "" : "Follow ") + utils.sanitize(display_name);
 			noti_c.classList.toggle('hidden', !following);
 		},
 
@@ -9286,7 +9966,8 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 	display_name = FFZ.get_capitalization(channel_id, on_name);
 	update();
-	check_following();
+	
+	setTimeout(check_following, Math.random()*5000);
 
 	container.appendChild(btn_c);
 	container.appendChild(noti_c);
@@ -9324,7 +10005,7 @@ FFZ.prototype._build_following_popup = function(container, channel_id, notificat
 	container.appendChild(popup);
 	return popup.querySelector('a.switch');
 }
-},{"../utils":33}],25:[function(require,module,exports){
+},{"../utils":34}],26:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -9872,7 +10553,7 @@ FFZ.prototype._add_emote = function(view, emote) {
 	else
 		room.set('messageToSend', text);
 }
-},{"../constants":4,"../utils":33}],26:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],27:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -9919,7 +10600,7 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
 }
-},{"../constants":4}],27:[function(require,module,exports){
+},{"../constants":4}],28:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	utils = require("../utils"),
@@ -10034,6 +10715,8 @@ FFZ.menu_pages.my_emotes = {
 				for(var set_id in twitch_sets)
 				if ( f._twitch_set_to_channel[set_id] )
 					ts[set_id] = twitch_sets[set_id];
+				else
+					ts[set_id] = "twitch_unknown";
 
 				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, ts);
 			};
@@ -10083,6 +10766,7 @@ FFZ.menu_pages.my_emotes = {
 
 		heading.className = 'heading';
 		heading.innerHTML = '<span class="right">FrankerFaceZ</span>Emoji';
+		heading.style.backgroundImage = 'url("' + constants.SERVER + '/emoji/1f4af-1x.png")';
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
@@ -10134,7 +10818,9 @@ FFZ.menu_pages.my_emotes = {
 
 			channel_id = this._twitch_set_to_channel[set_id], title;
 
-		if ( channel_id === "global" )
+		if ( channel_id === "twitch_unknown" )
+			title = "Unknown Channel";
+		else if ( channel_id === "global" )
 			title = "Global Emoticons";
 		else if ( channel_id === "turbo" || channel_id === "turbo_faces" )
 			title = "Twitch Turbo";
@@ -10356,7 +11042,7 @@ FFZ.menu_pages.my_emotes = {
 		}
 	}
 };
-},{"../constants":4,"../utils":33}],28:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],29:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
 
 
@@ -10534,7 +11220,7 @@ FFZ.prototype.show_message = function(message) {
 		closeWith: ["button"]
 		}).show();
 }
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils');
 
@@ -10881,7 +11567,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		}
 	}
 }
-},{"../utils":33}],30:[function(require,module,exports){
+},{"../utils":34}],31:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants');
 
@@ -10906,7 +11592,7 @@ FFZ.prototype.setup_css = function() {
 		}
 	};
 }
-},{"../constants":4}],31:[function(require,module,exports){
+},{"../constants":4}],32:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -11009,7 +11695,7 @@ FFZ.prototype._update_subscribers = function() {
 	});;
 }
 
-},{"../constants":4,"../utils":33}],32:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],33:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils');
@@ -11081,7 +11767,7 @@ FFZ.ws_commands.viewers = function(data) {
 		jQuery(view_count).tipsy(this.is_dashboard ? {"gravity":"s"} : undefined);
 	}
 }
-},{"../constants":4,"../utils":33}],33:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],34:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -11372,4 +12058,4 @@ module.exports = {
 		return "" + count;
 	}
 }
-},{"./constants":4}]},{},[16]);window.ffz = new FrankerFaceZ()}(window));
+},{"./constants":4}]},{},[17]);window.ffz = new FrankerFaceZ()}(window));

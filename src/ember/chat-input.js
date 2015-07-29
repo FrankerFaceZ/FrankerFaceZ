@@ -2,6 +2,8 @@ var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
 
+	is_android = navigator.userAgent.indexOf('Android') !== -1,
+
 	KEYCODES = {
 		BACKSPACE: 8,
 		TAB: 9,
@@ -133,13 +135,20 @@ FFZ.prototype._modify_chat_input = function(component) {
 		ffzInit: function() {
 			f._inputv = this;
 
+			var s = this._ffz_minimal_style = document.createElement('style');
+			s.id = 'ffz-minimal-chat-textarea-height';
+			document.head.appendChild(s);
+
 			// Redo our key bindings.
 			var t = this.$("textarea");
+			
 			t.off("keydown");
-			//t.off("keyup");
-
 			t.on("keydown", this._ffzKeyDown.bind(this));
-			//t.on("keyup", this._ffzKeyUp.bind(this));
+
+			t.attr('rows', 1);
+
+			this.ffzResizeInput();
+			setTimeout(this.ffzResizeInput.bind(this), 500);
 
 			/*var suggestions = this._parentView.get('context.model.chatSuggestions');
 			this.set('ffz_chatters', suggestions);*/
@@ -149,15 +158,58 @@ FFZ.prototype._modify_chat_input = function(component) {
 			if ( f._inputv === this )
 				f._inputv = undefined; 
 
+			this.ffzResizeInput();
+
+			if ( this._ffz_minimal_style ) {
+				this._ffz_minimal_style.parentElement.removeChild(this._ffz_minimal_style);
+				this._ffz_minimal_style = undefined;
+			}
+
 			// Reset normal key bindings.
 			var t = this.$("textarea");
+			
+			t.attr('rows', undefined);
+
 			t.off("keydown");
 			t.on("keydown", this._onKeyDown.bind(this));
-			//t.on("keyup", this._onKeyUp.bind(this));
 		},
 
-
 		// Input Control
+		
+		ffzOnInput: function() {
+			if ( ! f._chat_style || ! f.settings.minimal_chat || is_android )
+				return;
+			
+			var now = Date.now(),
+				since = now - (this._ffz_last_resize || 0);
+			
+			if ( since > 500 )
+				this.ffzResizeInput();
+
+		}.observes('textareaValue'),
+		
+		ffzResizeInput: function() {
+			this._ffz_last_resize = Date.now();
+			
+			var el = this.get('element'),
+				t = el && el.querySelector('textarea');
+			
+			if ( ! t || ! f._chat_style || ! f.settings.minimal_chat )
+				return;
+			
+			// Unfortunately, we need to change this with CSS.
+			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea { height: auto !important; }';
+			var height = Math.max(32, Math.min(128, t.scrollHeight));				
+			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea { height: ' + height + 'px !important; }';
+			
+			if ( height !== this._ffz_last_height ) {
+				utils.update_css(f._chat_style, "input_height", 'body.ffz-minimal-chat .ember-chat .chat-interface { height: ' + height + 'px !important; }' +
+					'body.ffz-minimal-chat .ember-chat .chat-messages, body.ffz-minimal-chat .ember-chat .chat-interface .emoticon-selector { bottom: ' + height + 'px !important; }');
+				f._roomv && f._roomv.get('stuckToBottom') && f._roomv._scrollToBottom();
+			}
+
+			this._ffz_last_height = height;
+		},
 		
 		_ffzKeyDown: function(event) {
 			var e = event || window.event,

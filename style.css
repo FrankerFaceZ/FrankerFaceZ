@@ -188,6 +188,8 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 
 /* Theater Mode hover bar */
 
+.app-main.theatre .player-column:focus #hostmode > div.target-meta,
+.app-main.theatre .player-column:hover #hostmode > div.target-meta,
 .app-main.theatre #channel .player-column:focus #broadcast-meta,
 .app-main.theatre #channel .player-column:hover #broadcast-meta {
 	background-color: #19191f;
@@ -202,29 +204,45 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	height: 20px;
 }
 
+.ffz-sidebar-swap .app-main.theatre .player-column:focus #hostmode > div.target-meta,
+.ffz-sidebar-swap .app-main.theatre .player-column:hover #hostmode > div.target-meta,
 .ffz-sidebar-swap .app-main.theatre #channel .player-column:focus #broadcast-meta,
 .ffz-sidebar-swap .app-main.theatre #channel .player-column:hover #broadcast-meta {
 	left: 145px;
 }
 
+.app-main.theatre #hostmode > div.target-meta div.target-title {
+	padding: 5px 0 2px 5px;
+}
+
+.app-main.theatre #hostmode > div.target-meta div.target-title,
 .app-main.theatre #channel .player-column #broadcast-meta .info { padding-left: 5px; }
+
+.app-main.theatre #hostmode > div.target-meta div.target-title,
 .app-main.theatre #channel .player-column #broadcast-meta .info .title {
 	font-size: 12px;
 	line-height: 20px;
 	color: #dedede;
 }
 
+.app-main.theatre #hostmode > div.target-meta div.target-title,
 .app-main.theatre #channel .player-column #broadcast-meta .info .title,
 .app-main.theatre #channel .player-column #broadcast-meta .info .title .over {
 	background-color: rgba(16,16,16,0.3);
 }
 
+.app-main.theatre #hostmode > div.target-meta .target-user-and-game,
 .app-main.theatre #channel .player-column #broadcast-meta .info .channel,
 .app-main.theatre #channel .player-column #broadcast-meta .info .edit-link,
 .app-main.theatre #broadcast-meta .profile-link {
 	display: none;
 }
 
+.app-main.theatre .player-column:focus #hostmode > div.clearfix, .app-main.theatre .player-column:hover #hostmode > div.clearfix {
+	margin-bottom: 30px;
+}
+
+.app-main.theatre .player-column:focus #hostmode > div.clearfix, .app-main.theatre .player-column:hover #hostmode > div.clearfix,
 .app-main.theatre .player-column:focus .stats-and-actions, .app-main.theatre .player-column:hover .stats-and-actions {
 	background-color: #19191f;
 
@@ -690,6 +708,8 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 
 /* Fix Moderation Cards */
 
+img.channel_background[src="null"] { display: none; }
+
 .ember-chat .ffz-moderation-card {
 	border: 2px solid #cbcbcb;
 	max-width: 340px;
@@ -783,6 +803,8 @@ body:not(.ffz-chat-purge-icon) .ember-chat .mod-icons .purge { display: none; }
 }
 
 /* Chat Rows */
+
+.ffz-alias { font-style: italic; }
 
 .ember-chat .chat-messages .chat-line.ffz-has-deleted {
 	line-height: 30px;
@@ -1290,10 +1312,10 @@ body.ffz-minimal-chat .ember-chat .chat-buttons-container {
 	display: none !important;
 }
 
-body.ffz-minimal-chat .ember-chat .chat-messages,
+/*body.ffz-minimal-chat .ember-chat .chat-messages,
 body.ffz-minimal-chat .ember-chat .chat-interface .emoticon-selector {
 	bottom: 33px;
-}
+}*/
 
 body.ffz-minimal-chat .ember-chat .chat-interface .emoticon-selector {
 	right: 10px;
@@ -1308,17 +1330,19 @@ body.ffz-minimal-chat .ember-chat .chat-room {
 }
 
 body.ffz-minimal-chat .ember-chat .chat-interface {
-	height: 33px !important;
+	/*height: 33px !important;*/
 	padding: 0;
 }
 
 body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain {
 	top: 0 !important;
 	margin: 0 !important;
+	height: auto;
 }
 
 body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea {
-	height: 33px !important;
+	/*height: 33px !important;*/
+	overflow: hidden;
 	border-bottom: 0 !important;
 	border-left: 0;
 	border-right: 0;
@@ -1580,6 +1604,8 @@ body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea {
 li[data-name="following"] a {
 	position: relative;
 }
+
+.ffz-follow-count:empty { display: none; }
 
 .ffz-follow-count {
 	display: inline-block;
