@@ -6,12 +6,39 @@ var FFZ = window.FrankerFaceZ,
 // About Page
 // -------------------
 
+FFZ.menu_pages.changelog = {
+	name: "Changelog",
+	visible: false,
+	
+	render: function(view, container) {
+		var heading = document.createElement('div');
+
+		heading.className = 'chat-menu-content center';
+		heading.innerHTML = '<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">change log</div>';
+		
+		jQuery.ajax(constants.SERVER + "script/changelog.html", {cache: false, context: this})
+			.done(function(data) {
+				container.appendChild(heading);
+				container.innerHTML += data;
+				
+			}).fail(function(data) {
+				var content = document.createElement('div');
+				content.className = 'chat-menu-content menu-side-padding';
+				content.textContent = 'There was an error loading the change log from the server.';
+
+				container.appendChild(heading);
+				container.appendChild(content);
+			});
+	}
+};
+
+
 FFZ.menu_pages.about = {
 	name: "About",
 	icon: constants.HEART,
 	sort_order: 100000,
 
-	render: function(view, container) {
+	render: function(view, container, inner, menu) {
 		var room = this.rooms[view.get("context.currentRoom.id")],
 			has_emotes = false, f = this;
 
@@ -77,10 +104,15 @@ FFZ.menu_pages.about = {
 		content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="http://www.twitch.tv/dansalvato" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato1" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_new">&nbsp;</a></td></tr>';
 		content += '<tr><td>Stendec</td><td><a class="twitch" href="http://www.twitch.tv/sirstendec" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/SirStendec" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/channel/UCnxuvmK1DCPCXSJ-mXIh4KQ" title="YouTube" target="_new">&nbsp;</a></td></tr>';
 
-		content += '<tr class="debug"><td>Version ' + FFZ.version_info + '</td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';
+		content += '<tr class="debug"><td><a href="#" id="ffz-changelog">Version ' + FFZ.version_info + '</a></td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';
 
 		credits.className = 'chat-menu-content center';
 		credits.innerHTML = content;
+
+		// Functional Changelog
+		credits.querySelector('#ffz-changelog').addEventListener('click', function() {
+			f._ui_change_page(view, inner, menu, container, 'changelog');
+		});
 
 		// Make the Logs button functional.
 		var getting_logs = false;

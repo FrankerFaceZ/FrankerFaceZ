@@ -231,6 +231,12 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			if ( f.settings.srl_races )
 				f.rebuild_race_ui();
+
+			if ( f.settings.auto_theater ) {
+				var Layout = App.__container__.lookup('controller:layout');
+				if ( Layout )
+					Layout.set('isTheatreMode', true);
+			}
 		},
 
 		ffzFixTitle: function() {
@@ -280,7 +286,10 @@ FFZ.prototype._modify_cindex = function(view) {
 						
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, false));
 						
-						var before = container.querySelector(':scope > .theatre-button');
+						var before;
+						try { before = container.querySelector(':scope > .theatre-button'); }
+						catch(err) { before = undefined; }
+						
 						if ( before )
 							container.insertBefore(btn, before);
 						else
@@ -315,7 +324,10 @@ FFZ.prototype._modify_cindex = function(view) {
 						
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, true));
 						
-						var before = container.querySelector(':scope > .theatre-button');
+						var before;
+						try { before = container.querySelector(':scope > .theatre-button'); }
+						catch(err) { before = undefined; }
+
 						if ( before )
 							container.insertBefore(btn, before);
 						else
@@ -591,6 +603,19 @@ FFZ.prototype._modify_cindex = function(view) {
 // ---------------
 // Settings
 // ---------------
+
+FFZ.settings_info.auto_theater = {
+	type: "boolean",
+	value: false,
+
+	category: "Appearance",
+	no_mobile: true,
+	no_bttv: true,
+
+	name: "Automatic Theater Mode",
+	help: "Automatically enter theater mode when opening a channel."
+	};
+
 
 FFZ.settings_info.chatter_count = {
 	type: "boolean",

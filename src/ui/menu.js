@@ -2,7 +2,18 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/";
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	
+	fix_menu_position = function(container) {
+		var bounds = container.getBoundingClientRect(),
+			left = parseInt(container.style.left || '0'),
+			right = bounds.left + container.scrollWidth;
+		
+		if ( bounds.left < 0 )
+			container.style.left = (left - bounds.left) + 'px';
+		else if ( right > document.body.clientWidth )
+			container.style.left = (left - (right - document.body.clientWidth)) + 'px';
+	};
 
 
 // --------------------
@@ -16,6 +27,9 @@ FFZ.prototype.setup_menu = function() {
 	jQuery(document).mouseup(function(e) {
 		var popup = f._popup, parent;
 		if ( ! popup ) return;
+		if ( popup.id === 'ffz-chat-menu' && popup.style && popup.style.left )
+			return;
+		
 		popup = jQuery(popup);
 		parent = popup.parent();
 
@@ -164,6 +178,12 @@ FFZ.menu_pages = {};
 // Create Menu
 // --------------------
 
+FFZ.prototype._fix_menu_position = function() {
+	var container = document.querySelector('#ffz-chat-menu');
+	if ( container )
+		fix_menu_position(container);
+}
+
 FFZ.prototype.build_ui_popup = function(view) {
 	var popup = this._popup;
 	if ( popup ) {
@@ -182,10 +202,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false);
 
 	container.className = 'emoticon-selector chat-menu ffz-ui-popup';
+	container.id = 'ffz-chat-menu';
 	inner.className = 'emoticon-selector-box dropmenu';
 	container.appendChild(inner);
 
 	container.classList.toggle('dark', dark);
+
 
 	// Menu Container
 	var sub_container = document.createElement('div');
@@ -201,6 +223,15 @@ FFZ.prototype.build_ui_popup = function(view) {
 	heading.className = 'title';
 	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
 	menu.appendChild(heading);
+
+	// Draggable
+	jQuery(container).draggable({
+		handle: menu, cancel: 'li.item', axis:"x",
+		stop: function(e) { fix_menu_position(this); }
+		});
+
+	// Get rid of the position: relative that draggable adds.
+	container.style.position = '';
 
 	var menu_pages = [];
 	for(var key in FFZ.menu_pages) {
@@ -255,7 +286,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(200, view.$().height() - 472) + "px";
+	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
 	view.$('.chat-interface').append(container);
 }
 
@@ -279,7 +310,11 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 	else
 		this.log("No matching page: " + page);
 
-	FFZ.menu_pages[page].render.bind(this)(view, container);
+	FFZ.menu_pages[page].render.bind(this)(view, container, inner, menu);
+	
+	// Re-position if necessary.
+	var f = this;
+	setTimeout(function(){f._fix_menu_position();});
 }
 
 

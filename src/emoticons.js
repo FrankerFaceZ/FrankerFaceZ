@@ -237,7 +237,7 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 
 				emoji.token = {
 					srcSet: emoji.srcSet,
-					emoticonSrc: emoji.src + '" data-ffz-emoji="' + eid + '" height="18px',
+					emoticonSrc: emoji.src,
 					ffzEmoji: eid,
 					altText: emoji.raw
 					};

@@ -7,25 +7,6 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
-
-FFZ.settings_info.swap_sidebars = {
-	type: "boolean",
-	value: false,
-
-	category: "Appearance",
-	no_mobile: true,
-	no_bttv: true,
-	
-	name: "Swap Sidebar Positions",
-	help: "Swap the positions of the left and right sidebars, placing chat on the left.",
-
-	on_update: function(val) {
-			if ( ! this.has_bttv )
-				document.body.classList.toggle("ffz-sidebar-swap", val);
-		}
-	};
-
-
 FFZ.settings_info.minimal_chat = {
 	type: "boolean",
 	value: false,
@@ -97,7 +78,7 @@ FFZ.settings_info.remove_deleted = {
 					if ( msg.ffz_deleted || msg.deleted ) {
 						if ( alternate === undefined )
 							alternate = msg.ffz_alternate;
-						msgs.removeAt(i--);
+						msgs.removeAt(i);
 						continue;
 					}
 					
@@ -194,10 +175,6 @@ FFZ.settings_info.visible_rooms = {
 
 FFZ.prototype.setup_chatview = function() {
 	document.body.classList.toggle("ffz-minimal-chat", this.settings.minimal_chat);
-	
-	if ( ! this.has_bttv )
-		document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
-
 
 	this.log("Hooking the Ember Chat controller.");
 
@@ -266,21 +243,6 @@ FFZ.prototype.setup_chatview = function() {
 			this.error("setup: build_ui_link: " + err);
 		}
 	}
-
-	this.log("Hooking the Ember Layout controller.");
-	var Layout = App.__container__.lookup('controller:layout');
-	if ( ! Layout )
-		return;
-
-	Layout.reopen({
-		ffzFixTabs: function() {
-			if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs ) {
-				setTimeout(function() {
-					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
-				},0);
-			}
-		}.observes("isRightColumnClosed")
-	});
 
 
 	this.log("Hooking the Ember 'Right Column' controller. Seriously...");

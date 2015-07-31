@@ -1030,7 +1030,7 @@ FFZ.prototype._modify_room = function(room) {
 						this.set('ffz_banned', false);
 
 						// Update the wait time.
-						if ( this.get('isModeratorOrHigher') || ! this.get('slowMode') )
+						if ( this.get('isSubscriber') || this.get('isModeratorOrHigher') || ! this.get('slowMode') )
 							this.updateWait(0, was_banned)
 						else if ( this.get('slowMode') )
 							this.updateWait(this.get('slow'));

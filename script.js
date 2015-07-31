@@ -367,7 +367,7 @@ FFZ.prototype._legacy_add_donors = function() {
 FFZ.prototype._legacy_load_bots = function(tries) {
 	jQuery.ajax(constants.SERVER + "script/bots.txt", {cache: false, context: this})
 		.done(function(data) {
-			this._legacy_parse_badges(data, 0, 2);
+			this._legacy_parse_badges(data, 0, 2, "Bot (By: {})");
 
 		}).fail(function(data) {
 			if ( data.status == 404 )
@@ -395,15 +395,18 @@ FFZ.prototype._legacy_load_donors = function(tries) {
 }
 
 
-FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
+FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id, title_template) {
 	var title = this.badges[badge_id].title,
 		count = 0;
 		ds = null;
 
+	title_template = title_template || '{}';
+
 	if ( data != null ) {
 		var lines = data.trim().split(/\W+/);
 		for(var i=0; i < lines.length; i++) {
-			var user_id = lines[i],
+			var line_data = lines[i].split(";"),
+				user_id = line_data[0],
 				user = this.users[user_id] = this.users[user_id] || {},
 				badges = user.badges = user.badges || {},
 				sets = user.sets = user.sets || [];
@@ -415,6 +418,8 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 				continue;
 
 			badges[slot] = {id:badge_id};
+			if ( line_data.length > 1 )
+				badges[slot].title = title_template.replace('{}', line_data[1]);
 			count += 1;
 		}
 	}
@@ -469,7 +474,6 @@ FFZ.settings_info.fix_color = {
 	},
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && val !== '-1');
 			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
 			
 			if ( ! this.has_bttv && val !== '-1' )
@@ -539,15 +543,22 @@ FFZ.settings_info.color_blind = {
 // --------------------
 
 FFZ.prototype.setup_colors = function() {
-	this.log("Preparing color-alteration style element.");
-	
 	this._colors = {};
 	this._rebuild_contrast();
+	
+	this._update_colors();
+	
+	// Events for rebuilding colors.
+	var Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings');
 
-	var s = this._color_style = document.createElement('style');
-	s.id = 'ffz-style-username-colors';
-	s.type = 'text/css';
-	document.head.appendChild(s);
+	if ( Layout )
+		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
+	
+	if ( Settings )
+		Settings.addObserver("model.darkMode", this._update_colors.bind(this, true))
+	
+	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 }
 
 
@@ -672,6 +683,11 @@ RGBColor.prototype.toCSS = function() { return "rgb(" + Math.round(this.r) + ","
 RGBColor.prototype.toXYZ = function() { return XYZColor.fromRGB(this.r, this.g, this.b); }
 RGBColor.prototype.toLUV = function() { return this.toXYZ().toLUV(); }
 
+RGBColor.prototype.toHex = function() { 
+	var rgb = this.b | (this.g << 8) | (this.r << 16);
+	return '#' + (0x1000000 + rgb).toString(16).slice(1);
+}
+
 
 RGBColor.prototype.luminance = function() {
 	var rgb = [this.r / 255, this.g / 255, this.b / 255];
@@ -785,6 +801,7 @@ HSLColor.fromRGB = function(r, g, b) {
 
 HSLColor.prototype.toRGB = function() { return RGBColor.fromHSL(this.h, this.s, this.l); }
 HSLColor.prototype.toCSS = function() { return "hsl(" + Math.round(this.h*360) + "," + Math.round(this.s*100) + "%," + Math.round(this.l*100) + "%)"; }
+HSLColor.prototype.toHex = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toHex(); }
 HSLColor.prototype.toHSV = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toHSV(); }
 HSLColor.prototype.toXYZ = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toXYZ(); }
 HSLColor.prototype.toLUV = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toLUV(); }
@@ -961,38 +978,56 @@ FFZ.prototype._rebuild_contrast = function() {
 }
 
 FFZ.prototype._rebuild_colors = function() {
-	if ( ! this._color_style || this.has_bttv )
+	if ( this.has_bttv )
 		return;
 
-	this._color_style.innerHTML = '';
-	var colors = Object.keys(this._colors);
+	// With update colors, we'll automatically process the colors we care about.
 	this._colors = {};
-	for(var i=0, l=colors.length; i<l; i++)
-		this._handle_color(colors[i]);
+	this._update_colors();
+}
+
+
+FFZ.prototype._update_colors = function(darkness_only) {
+	// Update the lines. ALL of them.
+	var Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings'),
+
+		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+	
+	if ( darkness_only && this._color_old_darkness === is_dark )
+		return;
+	
+	this._color_old_darkness = is_dark;
+	
+	var colored_bits = document.querySelectorAll('.chat-line .has-color');
+	for(var i=0, l=colored_bits.length; i < l; i++) {
+		var bit = colored_bits[i],
+			color = bit.getAttribute('data-color'),
+			colors = color && this._handle_color(color);
+		
+		if ( ! colors )
+			continue;
+		
+		bit.style.color = is_dark ? colors[1] : colors[0];
+	}
 }
 
 
 FFZ.prototype._handle_color = function(color) {
 	if ( ! color || this._colors.hasOwnProperty(color) )
-		return;
+		return this._colors[color];
 
-	this._colors[color] = true;
 	var rgb = RGBColor.fromHex(color),
 	
-		clr = color,
 		light_color = color,
-		dark_color = color,
-		matched = false,
-		rule = 'span[style="color:' + color + '"]';
-
+		dark_color = color;
 
 	// Color Blindness Handling
 	if ( this.settings.color_blind !== '0' ) {
 		var new_color = rgb.daltonize(this.settings.color_blind);
 		if ( ! rgb.eq(new_color) ) {
 			rgb = new_color;
-			clr = light_color = dark_color = rgb.toCSS();
-			matched = true;
+			light_color = dark_color = rgb.toHex();
 		}
 	}
 	
@@ -1009,8 +1044,7 @@ FFZ.prototype._handle_color = function(color) {
 					break; 
 			}
 			
-			matched = true;
-			light_color = nc.toCSS();
+			light_color = nc.toHex();
 		}
 
 		if ( lum < 0.15 ) {
@@ -1021,8 +1055,7 @@ FFZ.prototype._handle_color = function(color) {
 					break;
 			}
 			
-			matched = true;
-			dark_color = nc.toCSS();
+			dark_color = nc.toHex();
 		}
 	}
 
@@ -1031,25 +1064,23 @@ FFZ.prototype._handle_color = function(color) {
 	if ( this.settings.fix_color === '2' ) {
 		var hsl = rgb.toHSL();
 		
-		matched = true;
-		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toCSS();
-		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toCSS();
+		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toHex();
+		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toHex();
 	}
 	
 
 	// Color Processing - HSV
 	if ( this.settings.fix_color === '3' ) {
 		var hsv = rgb.toHSV();
-		matched = true;
 	
 		if ( hsv.s === 0 ) {
 			// Black and White
-			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toCSS();
-			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGB().toCSS();
+			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toHex();
+			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGB().toHex();
 
 		} else {
-			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toCSS();
-			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toCSS(); 
+			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toHex();
+			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toHex(); 
 		}
 	}
 	
@@ -1057,35 +1088,15 @@ FFZ.prototype._handle_color = function(color) {
 	if ( this.settings.fix_color === '1' ) {
 		var luv = rgb.toLUV();
 		
-		if ( luv.l > this._luv_required_dark ) {
-			matched = true;
-			light_color = luv._l(this._luv_required_dark).toRGB().toCSS();
-		}
+		if ( luv.l > this._luv_required_dark )
+			light_color = luv._l(this._luv_required_dark).toRGB().toHex();
 		
-		if ( luv.l < this._luv_required_bright ) {
-			matched = true;
-			dark_color = luv._l(this._luv_required_bright).toRGB().toCSS();
-		}
+		if ( luv.l < this._luv_required_bright )
+			dark_color = luv._l(this._luv_required_bright).toRGB().toHex();
 	}
 	
-	// Output
-	if ( ! matched )
-		return;
-
-	var output = '';
-	
-	if ( light_color !== clr )
-		output += 'body.ffz-chat-colors .chat-line ' + rule + ' { color: ' + light_color + ' !important; }';
-
-	if ( dark_color !== light_color ) {
-		output += 'body.ffz-chat-colors .theatre .chat-container .chat-line ' + rule +
-			', body.ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule +
-			', body.ffz-chat-colors .ember-chat-container.force-dark .chat-line ' + rule +
-			', body.ffz-chat-colors .chat-container.dark .chat-line ' + rule +
-			', body.ffz-chat-colors .chat-container.force-dark .chat-line ' + rule + ' { color: ' + dark_color + ' !important; }';
-	}
-
-	this._color_style.innerHTML += output;
+	var out = this._colors[color] = [light_color, dark_color];
+	return out;
 }
 },{}],3:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ;
@@ -1517,6 +1528,12 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			if ( f.settings.srl_races )
 				f.rebuild_race_ui();
+
+			if ( f.settings.auto_theater ) {
+				var Layout = App.__container__.lookup('controller:layout');
+				if ( Layout )
+					Layout.set('isTheatreMode', true);
+			}
 		},
 
 		ffzFixTitle: function() {
@@ -1566,7 +1583,10 @@ FFZ.prototype._modify_cindex = function(view) {
 						
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, false));
 						
-						var before = container.querySelector(':scope > .theatre-button');
+						var before;
+						try { before = container.querySelector(':scope > .theatre-button'); }
+						catch(err) { before = undefined; }
+						
 						if ( before )
 							container.insertBefore(btn, before);
 						else
@@ -1601,7 +1621,10 @@ FFZ.prototype._modify_cindex = function(view) {
 						
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, true));
 						
-						var before = container.querySelector(':scope > .theatre-button');
+						var before;
+						try { before = container.querySelector(':scope > .theatre-button'); }
+						catch(err) { before = undefined; }
+
 						if ( before )
 							container.insertBefore(btn, before);
 						else
@@ -1877,6 +1900,19 @@ FFZ.prototype._modify_cindex = function(view) {
 // ---------------
 // Settings
 // ---------------
+
+FFZ.settings_info.auto_theater = {
+	type: "boolean",
+	value: false,
+
+	category: "Appearance",
+	no_mobile: true,
+	no_bttv: true,
+
+	name: "Automatic Theater Mode",
+	help: "Automatically enter theater mode when opening a channel."
+	};
+
 
 FFZ.settings_info.chatter_count = {
 	type: "boolean",
@@ -2394,25 +2430,6 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
-
-FFZ.settings_info.swap_sidebars = {
-	type: "boolean",
-	value: false,
-
-	category: "Appearance",
-	no_mobile: true,
-	no_bttv: true,
-	
-	name: "Swap Sidebar Positions",
-	help: "Swap the positions of the left and right sidebars, placing chat on the left.",
-
-	on_update: function(val) {
-			if ( ! this.has_bttv )
-				document.body.classList.toggle("ffz-sidebar-swap", val);
-		}
-	};
-
-
 FFZ.settings_info.minimal_chat = {
 	type: "boolean",
 	value: false,
@@ -2484,7 +2501,7 @@ FFZ.settings_info.remove_deleted = {
 					if ( msg.ffz_deleted || msg.deleted ) {
 						if ( alternate === undefined )
 							alternate = msg.ffz_alternate;
-						msgs.removeAt(i--);
+						msgs.removeAt(i);
 						continue;
 					}
 					
@@ -2581,10 +2598,6 @@ FFZ.settings_info.visible_rooms = {
 
 FFZ.prototype.setup_chatview = function() {
 	document.body.classList.toggle("ffz-minimal-chat", this.settings.minimal_chat);
-	
-	if ( ! this.has_bttv )
-		document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
-
 
 	this.log("Hooking the Ember Chat controller.");
 
@@ -2653,21 +2666,6 @@ FFZ.prototype.setup_chatview = function() {
 			this.error("setup: build_ui_link: " + err);
 		}
 	}
-
-	this.log("Hooking the Ember Layout controller.");
-	var Layout = App.__container__.lookup('controller:layout');
-	if ( ! Layout )
-		return;
-
-	Layout.reopen({
-		ffzFixTabs: function() {
-			if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs ) {
-				setTimeout(function() {
-					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
-				},0);
-			}
-		}.observes("isRightColumnClosed")
-	});
 
 
 	this.log("Hooking the Ember 'Right Column' controller. Seriously...");
@@ -3345,6 +3343,166 @@ FFZ.chat_commands.part = function(room, args) {
 		return "You are not in " + room_id + ".";
 }
 },{"../constants":4,"../utils":34}],9:[function(require,module,exports){
+var FFZ = window.FrankerFaceZ;
+
+
+// --------------------
+// Settings
+// --------------------
+
+FFZ.settings_info.swap_sidebars = {
+	type: "boolean",
+	value: false,
+
+	category: "Appearance",
+	no_mobile: true,
+	no_bttv: true,
+	
+	name: "Swap Sidebar Positions",
+	help: "Swap the positions of the left and right sidebars, placing chat on the left.",
+
+	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-sidebar-swap", val);
+			this._fix_menu_position();
+		}
+	};
+
+
+FFZ.settings_info.right_column_width = {
+	type: "button",
+	value: 340,
+
+	category: "Appearance",
+	no_mobile: true,
+	no_bttv: true,
+	
+	name: "Right Sidebar Width",
+	help: "Set the width of the right sidebar for chat.",
+	
+	method: function() {
+			var old_val = this.settings.right_column_width || 340,
+				new_val = prompt("Right Sidebar Width\n\nPlease enter a new width for the right sidebar, in pixels. Minimum: 250, Default: 340", old_val);
+			
+			if ( new_val === null || new_val === undefined )
+				return;
+			
+			var width = parseInt(new_val);
+			if ( ! width || width === NaN )
+				width = 340;
+
+			this.settings.set('right_column_width', Math.max(250, width));
+		},
+
+	on_update: function(val) {
+			if ( this.has_bttv )
+				return;
+			
+			var Layout = App.__container__.lookup('controller:layout');
+			if ( ! Layout )
+				return;
+			
+			Layout.set('rightColumnWidth', val);
+			Ember.propertyDidChange(Layout, 'contentWidth');
+		}
+	};
+
+
+// --------------------
+// Initialization
+// --------------------
+
+FFZ.prototype.setup_layout = function() {
+	if ( this.has_bttv )
+		return;
+
+	document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
+
+	this.log("Creating layout style element.");
+	var s = this._layout_style = document.createElement('style');
+	s.id = 'ffz-layout-css';
+	document.head.appendChild(s);
+
+	this.log("Hooking the Ember Layout controller.");
+	var Layout = App.__container__.lookup('controller:layout'),
+		f = this;
+
+	if ( ! Layout )
+		return;
+
+	Layout.reopen({
+		rightColumnWidth: 340,
+		
+		isTooSmallForRightColumn: function() {
+			return this.get("windowWidth") < (1090 - this.get('rightColumnWidth'))
+		}.property("windowWidth", "rightColumnWidth"),
+		
+		contentWidth: function() {
+			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
+				right_width = this.get("isRightColumnClosed") ? 0 : this.get("rightColumnWidth");
+
+			return this.get("windowWidth") - left_width - right_width - 60;
+			
+		}.property("windowWidth", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth"),
+		
+		/*ffzUpdateWidth: _.throttle(function() {
+			var rc = document.querySelector('#right_close');
+			if ( ! rc )
+				return;
+			
+			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
+				right_width;
+			
+			if ( f.settings.swap_sidebars )
+				right_width = rc.offsetLeft; // + this.get('rightColumnWidth') - 5;
+			else
+				right_width = document.body.offsetWidth - rc.offsetLeft - left_width - 25;
+			
+			if ( right_width < 250 ) {
+				// Close it!
+				
+			}
+
+			this.set('rightColumnWidth', right_width);
+			Ember.propertyDidChange(Layout, 'contentWidth');
+		}, 200),*/
+		
+		ffzUpdateCss: function() {
+			var width = this.get('rightColumnWidth');
+			
+			f._layout_style.innerHTML = '#main_col.expandRight #right_close { left: none !important; } #right_col { width: ' + width + 'px; } body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: ' + width + 'px; } body.ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: ' + width + 'px; }';
+
+		}.observes("rightColumnWidth"),
+		
+		ffzFixTabs: function() {
+			if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs ) {
+				setTimeout(function() {
+					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
+				},0);
+			}
+		}.observes("isRightColumnClosed", "rightColumnWidth")
+	});
+
+	/*
+	// Try modifying the closer.
+	var rc = jQuery("#right_close");
+	if ( ! rc || ! rc.length )
+		return;
+
+	rc.draggable({
+		axis: "x",
+		drag: Layout.ffzUpdateWidth.bind(Layout),
+		stop: Layout.ffzUpdateWidth.bind(Layout)
+		});*/
+
+
+	// Force the layout to update.
+	Layout.set('rightColumnWidth', this.settings.right_column_width);
+	Ember.propertyDidChange(Layout, 'contentWidth');
+}
+},{}],10:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
@@ -3545,6 +3703,20 @@ FFZ.settings_info.keywords = {
 	};
 
 
+FFZ.settings_info.clickable_emoticons = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Tooltips",
+	no_bttv: true,
+	no_mobile: true,
+
+	name: "Emoticon Information Pages",
+	help: "When enabled, holding shift and clicking on an emoticon will open it on the FrankerFaceZ website or Twitch Emotes."
+	};
+
+
+
 FFZ.settings_info.link_info = {
 	type: "boolean",
 	value: true,
@@ -3655,8 +3827,18 @@ FFZ.settings_info.chat_padding = {
 
 
 FFZ.settings_info.high_contrast_chat = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		'222': "Disabled",
+		'212': "Bold",
+		'221': "Text",
+		'211': "Text + Bold",
+		'122': "Background",
+		'121': "Background + Text",
+		'112': "Background + Bold",
+		'111': 'All'
+	},
+	value: '000',
 
 	category: "Chat Appearance",
 	no_bttv: true,
@@ -3664,7 +3846,19 @@ FFZ.settings_info.high_contrast_chat = {
 	name: "High Contrast",
 	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
 
-	on_update: function(val) { document.body.classList.toggle("ffz-high-contrast-chat", !this.has_bttv && val); }
+	process_value: function(val) {
+		if ( val === false )
+			return '000';
+		else if ( val === true )
+			return '111';
+		return val;
+	},
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && val[2] === '1');
+			document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && val[1] === '1');
+			document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && val[0] === '1');
+		}
 	};
 
 
@@ -3686,7 +3880,7 @@ FFZ.settings_info.chat_font_size = {
 				return;
 
 			var parsed = parseInt(new_val);
-			if ( parsed === NaN || parsed < 1 )
+			if ( ! parsed || parsed === NaN || parsed < 1 )
 				parsed = 12;
 			
 			this.settings.set("chat_font_size", parsed);
@@ -3735,7 +3929,7 @@ FFZ.settings_info.chat_ts_size = {
 				return;
 
 			var parsed = parseInt(new_val);
-			if ( parsed === NaN || parsed < 1 )
+			if ( ! parsed || parsed === NaN || parsed < 1 )
 				parsed = null;
 			
 			this.settings.set("chat_ts_size", parsed);
@@ -3797,7 +3991,10 @@ FFZ.prototype.setup_line = function() {
 	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
 	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
 	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
-	document.body.classList.toggle("ffz-high-contrast-chat", !this.has_bttv && this.settings.high_contrast_chat);
+	
+	document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
+	document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
+	document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && this.settings.high_contrast_chat[0] === '1');
 
 	this._last_row = {};
 
@@ -3832,7 +4029,10 @@ FFZ.prototype.save_aliases = function() {
 
 
 FFZ.prototype._modify_line = function(component) {
-	var f = this;
+	var f = this,
+	
+		Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings');
 
 
 	component.reopen({
@@ -3906,6 +4106,16 @@ FFZ.prototype._modify_line = function(component) {
 				}
 			}
 			
+			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && e.target && e.target.classList.contains('emoticon') ) {
+				var eid = e.target.getAttribute('data-emote');
+				if ( eid )
+					window.open("https://twitchemotes.com/emote/" + eid);
+				else {
+					eid = e.target.getAttribute("data-ffz-emote");
+					window.open("https://www.frankerfacez.com/emoticons/" + eid);
+				}
+			}
+			
 			return this._super(e);
 		},
 		
@@ -3939,8 +4149,12 @@ FFZ.prototype._modify_line = function(component) {
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
-				row_type = this.get('msgObject.ffz_alternate');
+				row_type = this.get('msgObject.ffz_alternate'),
+				raw_color = this.get('msgObject.color'),
+				colors = raw_color && f._handle_color(raw_color),
 			
+				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+
 			if ( row_type === undefined ) {
 				row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
 				this.set("msgObject.ffz_alternate", row_type);
@@ -4000,31 +4214,43 @@ FFZ.prototype._modify_line = function(component) {
 			e.push('</span>');
 			
 			var alias = f.aliases[user],
-				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user";
+				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
+				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
+				colored = style ? ' has-color' : ''; 
 
 			if ( alias )
-				e.push('<span class="from ffz-alias tooltip" style="' + this.get('fromStyle') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
+				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
 			else
-				e.push('<span class="from" style="' + this.get('fromStyle') + '">' + utils.sanitize(name) + '</span>');
+				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
 
 			if ( is_whisper ) {
 				var to_alias = f.aliases[recipient],
-					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user";
+					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
+					
+					to_color = this.get('msgObject.toColor'),
+					to_colors = to_color && f._handle_color(to_color),
+					to_style = to_color && 'color:' + (is_dark ? colors[1] : colors[0]),
+					to_colored = to_style ? ' has-color' : '';
 				
 				this._renderWhisperArrow(e);
 				
 				if ( to_alias )
-					e.push('<span class="to ffz-alias tooltip" style="' + this.get('toStyle') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
+					e.push('<span class="to ffz-alias tooltip' + to_colored + '" style="' + to_style + (to_color ? '" data-color="' + to_color : '') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
 				else
-					e.push('<span class="to" style="' + this.get('toStyle') + '">' + utils.sanitize(to_name) + '</span>');
+					e.push('<span class="to' + to_colored + '" style="' + to_style + (to_colors ? '" data-color="' + to_color : '') + '">' + utils.sanitize(to_name) + '</span>');
 			}
 
 			e.push('<span class="colon">:</span> ');
 			
+			if ( this.get('msgObject.style') !== 'action' ) {
+				style = '';
+				colored = '';
+			}
+			
 			if ( deleted )
 				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
 			else {
-				e.push('<span class="message" style="' + this.get('messageStyle') + '">');
+				e.push('<span class="message' + colored + '" style="' + style + '">');
 				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
 				
 				var old_messages = this.get('msgObject.ffz_old_messages');
@@ -4058,7 +4284,7 @@ FFZ.prototype._modify_line = function(component) {
 			this._super();
 			
 			var el = this.get('element');
-			
+
 			el.setAttribute('data-room', this.get('msgObject.room'));
 			el.setAttribute('data-sender', this.get('msgObject.from'));
 			el.setAttribute('data-deleted', this.get('msgObject.deleted') || false);
@@ -4155,7 +4381,7 @@ FFZ.prototype._emoticonize = function(component, tokens) {
 
 	return this.tokenize_emotes(user_id, room_id, tokens);
 }
-},{"../constants":4,"../utils":34}],10:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],11:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
@@ -4739,6 +4965,8 @@ FFZ.prototype.setup_mod_card = function() {
 					f.save_aliases();
 					
 					// Update UI
+					f._update_alias(user);
+					
 					Ember.propertyDidChange(controller, 'userName');
 					var name = el.querySelector('h3.name'),
 						link = name && name.querySelector('a');
@@ -4827,6 +5055,32 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 // ----------------
+// Aliases
+// ----------------
+
+FFZ.prototype._update_alias = function(user) {
+	var alias = this.aliases && this.aliases[user],
+		display_name = alias,
+		el = this._roomv && this._roomv.get('element'),
+		lines = el && el.querySelectorAll('.chat-line[data-sender="' + user + '"]');
+	
+	if ( ! lines )
+		return;
+
+	if ( ! display_name )
+		display_name = FFZ.get_capitalization(user);
+
+	for(var i=0, l = lines.length; i < l; i++) {
+		var line = lines[i],
+			el_from = line.querySelector('.from');
+		
+		el_from.classList.toggle('ffz-alias', alias);
+		el_from.textContent = display_name;
+	}
+}
+
+
+// ----------------
 // Chat Commands
 // ----------------
 
@@ -4892,155 +5146,7 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
-},{"../constants":4,"../utils":34}],11:[function(require,module,exports){
-var FFZ = window.FrankerFaceZ;
-
-
-// ---------------
-// Settings
-// ---------------
-
-FFZ.settings_info.player_stats = {
-	type: "boolean",
-	value: false,
-	no_mobile: true,
-
-	category: "Channel Metadata",
-
-	name: "Stream Latency",
-	help: "<i>New HTML5 Player Only.</i> Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
-
-	on_update: function(val) {
-			if ( ! this._cindex )
-				return;
-			
-			this._cindex.ffzUpdatePlayerStats();
-		}
-	};
-
-
-// ---------------
-// Initialization
-// ---------------
-
-FFZ.prototype.setup_player = function() {
-	this.players = {};
-	
-	var Player2 = App && App.__container__.resolve('component:twitch-player2');
-	if ( ! Player2 )
-		return this.log("Unable to find twitch-player2 component.");
-		
-	this.log("Hooking HTML5 Player UI.");
-	this._modify_player(Player2)
-	
-	// Modify all existing players.
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
-			continue;
-		
-		var view = Ember.View.views[key];
-		if ( !(view instanceof Player2) )
-			continue;
-
-		this.log("Manually updating existing Player instance.", view);
-		try {
-			view.ffzInit();
-			if ( view.get('player') )
-				view.ffzPostPlayer();
-
-		} catch(err) {
-			this.error("Player2 setup ffzInit: " + err);
-		}
-	}
-}
-
-
-// ---------------
-// Component
-// ---------------
-
-FFZ.prototype._modify_player = function(player) {
-	var f = this;
-	player.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("Player2 didInsertElement: " + err);
-			}
-		},
-		
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("Player2 willClearRender: " + err);
-			}
-			this._super();
-		},
-		
-		postPlayerSetup: function() {
-			this._super();
-			try {
-				this.ffzPostPlayer();
-			} catch(err) {
-				f.error("Player2 postPlayerSetup: " + err);
-			}
-		},
-		
-		ffzInit: function() {
-			var id = this.get('channel.id');
-			f.players[id] = this;
-			
-			this._ffz_stat_update = this.ffzStatUpdate.bind(this);
-		},
-		
-		ffzTeardown: function() {
-			var id = this.get('channel.id');
-			if ( f.players[id] === this )
-				f.players[id] = undefined;
-		},
-		
-		ffzStatUpdate: function() {
-			f._cindex && f._cindex.ffzUpdatePlayerStats();
-		},
-		
-		ffzPostPlayer: function() {
-			var player = this.get('player');
-			if ( ! player )
-				return;
-
-			// Make it so stats can no longer be disabled.
-			player.ffzSetStatsEnabled = player.setStatsEnabled;
-			player.setStatsEnabled = function() {}
-			
-			// We can't just request stats straight away...
-			this.ffzWaitForStats();
-		},
-		
-		ffzWaitForStats: function() {
-			var player = this.get('player');
-			if ( ! player )
-				return;
-
-			if ( player.stats ) {
-				// Add the event listener.
-				player.addEventListener('statschange', this._ffz_stat_update);
-
-			} else {
-				// Keep going until we've got it.
-				player.ffzSetStatsEnabled(false);
-				var t = this;
-				setTimeout(function() {
-					player.ffzSetStatsEnabled(true);
-					setTimeout(t.ffzWaitForStats.bind(t), 1250);
-				}, 250);
-			}
-		}
-	});
-}
-},{}],12:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],12:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
 	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
@@ -6073,7 +6179,7 @@ FFZ.prototype._modify_room = function(room) {
 						this.set('ffz_banned', false);
 
 						// Update the wait time.
-						if ( this.get('isModeratorOrHigher') || ! this.get('slowMode') )
+						if ( this.get('isSubscriber') || this.get('isModeratorOrHigher') || ! this.get('slowMode') )
 							this.updateWait(0, was_banned)
 						else if ( this.get('slowMode') )
 							this.updateWait(this.get('slow'));
@@ -6645,7 +6751,7 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 
 				emoji.token = {
 					srcSet: emoji.srcSet,
-					emoticonSrc: emoji.src + '" data-ffz-emoji="' + eid + '" height="18px',
+					emoticonSrc: emoji.src,
 					ffzEmoji: eid,
 					altText: emoji.raw
 					};
@@ -6834,6 +6940,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 		this._dark_style = undefined;
 	}
 	
+	if ( this._layout_style ) {
+		this._layout_style.parentElement.removeChild(this._layout_style);
+		this._layout_style = undefined;
+	}
+	
 	if ( this._chat_style ) {
 		utils.update_css(this._chat_style, 'chat_font_size', '');
 		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
@@ -6863,7 +6974,9 @@ FFZ.prototype.setup_bttv = function(delay) {
 	document.body.classList.remove("ffz-chat-separator-3d");
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-transparent-badges");
-	document.body.classList.remove("ffz-high-contrast-chat");
+	document.body.classList.remove("ffz-high-contrast-chat-text");
+	document.body.classList.remove("ffz-high-contrast-chat-bg");
+	document.body.classList.remove("ffz-high-contrast-chat-bold");
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {
@@ -7182,7 +7295,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 2,
+	major: 3, minor: 5, revision: 7,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -7276,8 +7389,9 @@ require('./tokenize');
 
 // Analytics: require('./ember/router');
 require('./ember/channel');
-require('./ember/player');
+//require('./ember/player');
 require('./ember/room');
+require('./ember/layout');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
@@ -7320,7 +7434,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 
 	// Check for the player
 	if ( location.hostname === 'player.twitch.tv' ) {
-		this.init_player(delay);
+		//this.init_player(delay);
 		return;
 	}
 
@@ -7482,10 +7596,11 @@ FFZ.prototype.init_ember = function(delay) {
 	//this.setup_router();
 	this.setup_colors();
 	this.setup_tokenization();
-	this.setup_player();
+	//this.setup_player();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
+	this.setup_layout();
 	this.setup_chatview();
 	this.setup_viewers();
 	this.setup_mod_card();
@@ -7531,7 +7646,7 @@ FFZ.prototype._on_window_message = function(e) {
 
 	var msg = e.data;
 }
-},{"./badges":1,"./colors":2,"./commands":3,"./debug":5,"./ember/channel":6,"./ember/chat-input":7,"./ember/chatview":8,"./ember/line":9,"./ember/moderation-card":10,"./ember/player":11,"./ember/room":12,"./ember/viewers":13,"./emoticons":14,"./ext/betterttv":15,"./ext/emote_menu":16,"./featurefriday":18,"./settings":19,"./socket":20,"./tokenize":21,"./ui/about_page":22,"./ui/dark":23,"./ui/following":25,"./ui/following-count":24,"./ui/menu":26,"./ui/menu_button":27,"./ui/my_emotes":28,"./ui/notifications":29,"./ui/races":30,"./ui/styles":31,"./ui/sub_count":32,"./ui/viewer_count":33}],18:[function(require,module,exports){
+},{"./badges":1,"./colors":2,"./commands":3,"./debug":5,"./ember/channel":6,"./ember/chat-input":7,"./ember/chatview":8,"./ember/layout":9,"./ember/line":10,"./ember/moderation-card":11,"./ember/room":12,"./ember/viewers":13,"./emoticons":14,"./ext/betterttv":15,"./ext/emote_menu":16,"./featurefriday":18,"./settings":19,"./socket":20,"./tokenize":21,"./ui/about_page":22,"./ui/dark":23,"./ui/following":25,"./ui/following-count":24,"./ui/menu":26,"./ui/menu_button":27,"./ui/my_emotes":28,"./ui/notifications":29,"./ui/races":30,"./ui/styles":31,"./ui/sub_count":32,"./ui/viewer_count":33}],18:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
@@ -9010,7 +9125,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 	_.each(emotes, function(emote) {
 		var eo = {
 			srcSet: emote.srcSet,
-			emoticonSrc: emote.urls[1] + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])),
+			emoticonSrc: emote.urls[1],
 			ffzEmote: emote.id,
 			ffzEmoteSet: emote.set_id,
 			altText: (emote.hidden ? "???" : emote.name)
@@ -9214,12 +9329,39 @@ var FFZ = window.FrankerFaceZ,
 // About Page
 // -------------------
 
+FFZ.menu_pages.changelog = {
+	name: "Changelog",
+	visible: false,
+	
+	render: function(view, container) {
+		var heading = document.createElement('div');
+
+		heading.className = 'chat-menu-content center';
+		heading.innerHTML = '<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">change log</div>';
+		
+		jQuery.ajax(constants.SERVER + "script/changelog.html", {cache: false, context: this})
+			.done(function(data) {
+				container.appendChild(heading);
+				container.innerHTML += data;
+				
+			}).fail(function(data) {
+				var content = document.createElement('div');
+				content.className = 'chat-menu-content menu-side-padding';
+				content.textContent = 'There was an error loading the change log from the server.';
+
+				container.appendChild(heading);
+				container.appendChild(content);
+			});
+	}
+};
+
+
 FFZ.menu_pages.about = {
 	name: "About",
 	icon: constants.HEART,
 	sort_order: 100000,
 
-	render: function(view, container) {
+	render: function(view, container, inner, menu) {
 		var room = this.rooms[view.get("context.currentRoom.id")],
 			has_emotes = false, f = this;
 
@@ -9285,10 +9427,15 @@ FFZ.menu_pages.about = {
 		content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="http://www.twitch.tv/dansalvato" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato1" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_new">&nbsp;</a></td></tr>';
 		content += '<tr><td>Stendec</td><td><a class="twitch" href="http://www.twitch.tv/sirstendec" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/SirStendec" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/channel/UCnxuvmK1DCPCXSJ-mXIh4KQ" title="YouTube" target="_new">&nbsp;</a></td></tr>';
 
-		content += '<tr class="debug"><td>Version ' + FFZ.version_info + '</td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';
+		content += '<tr class="debug"><td><a href="#" id="ffz-changelog">Version ' + FFZ.version_info + '</a></td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';
 
 		credits.className = 'chat-menu-content center';
 		credits.innerHTML = content;
+
+		// Functional Changelog
+		credits.querySelector('#ffz-changelog').addEventListener('click', function() {
+			f._ui_change_page(view, inner, menu, container, 'changelog');
+		});
 
 		// Make the Logs button functional.
 		var getting_logs = false;
@@ -9795,7 +9942,10 @@ FFZ.prototype.rebuild_following_ui = function() {
 				cont = document.createElement('span');
 				cont.id = 'ffz-ui-following';
 
-				var before = container.querySelector(':scope > span');
+				var before;
+				try { before = container.querySelector(':scope > span'); }
+				catch(err) { before = undefined; }
+
 				if ( before )
 					container.insertBefore(cont, before);
 				else
@@ -9831,7 +9981,10 @@ FFZ.prototype.rebuild_following_ui = function() {
 				cont = document.createElement('span');
 				cont.id = 'ffz-ui-following';
 
-				var before = container.querySelector(':scope > span');
+				var before;
+				try { before = container.querySelector(':scope > span'); }
+				catch(err) { before = undefined; }
+
 				if ( before )
 					container.insertBefore(cont, before);
 				else
@@ -9928,7 +10081,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 	noti_c.appendChild(noti);
 
 	// Event Listeners!
-	btn.addEventListener('click', function() {
+	btn.addEventListener('click', function(e) {
 		var user = f.get_user();
 		if ( ! user || ! user.login )
 			// Show the login dialog~!
@@ -9949,6 +10102,14 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 				.done(check_following);
 
 		return false;
+	});
+
+	btn.addEventListener('mousedown', function(e) {
+		if ( e.button !== 1 )
+			return;
+		
+		e.preventDefault();
+		window.open(Twitch.uri.profile(channel_id));
 	});
 
 	noti.addEventListener('click', function() {
@@ -10010,7 +10171,18 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/";
+	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
+	
+	fix_menu_position = function(container) {
+		var bounds = container.getBoundingClientRect(),
+			left = parseInt(container.style.left || '0'),
+			right = bounds.left + container.scrollWidth;
+		
+		if ( bounds.left < 0 )
+			container.style.left = (left - bounds.left) + 'px';
+		else if ( right > document.body.clientWidth )
+			container.style.left = (left - (right - document.body.clientWidth)) + 'px';
+	};
 
 
 // --------------------
@@ -10024,6 +10196,9 @@ FFZ.prototype.setup_menu = function() {
 	jQuery(document).mouseup(function(e) {
 		var popup = f._popup, parent;
 		if ( ! popup ) return;
+		if ( popup.id === 'ffz-chat-menu' && popup.style && popup.style.left )
+			return;
+		
 		popup = jQuery(popup);
 		parent = popup.parent();
 
@@ -10172,6 +10347,12 @@ FFZ.menu_pages = {};
 // Create Menu
 // --------------------
 
+FFZ.prototype._fix_menu_position = function() {
+	var container = document.querySelector('#ffz-chat-menu');
+	if ( container )
+		fix_menu_position(container);
+}
+
 FFZ.prototype.build_ui_popup = function(view) {
 	var popup = this._popup;
 	if ( popup ) {
@@ -10190,10 +10371,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false);
 
 	container.className = 'emoticon-selector chat-menu ffz-ui-popup';
+	container.id = 'ffz-chat-menu';
 	inner.className = 'emoticon-selector-box dropmenu';
 	container.appendChild(inner);
 
 	container.classList.toggle('dark', dark);
+
 
 	// Menu Container
 	var sub_container = document.createElement('div');
@@ -10209,6 +10392,15 @@ FFZ.prototype.build_ui_popup = function(view) {
 	heading.className = 'title';
 	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
 	menu.appendChild(heading);
+
+	// Draggable
+	jQuery(container).draggable({
+		handle: menu, cancel: 'li.item', axis:"x",
+		stop: function(e) { fix_menu_position(this); }
+		});
+
+	// Get rid of the position: relative that draggable adds.
+	container.style.position = '';
 
 	var menu_pages = [];
 	for(var key in FFZ.menu_pages) {
@@ -10263,7 +10455,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Add the menu to the DOM.
 	this._popup = container;
-	sub_container.style.maxHeight = Math.max(200, view.$().height() - 472) + "px";
+	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
 	view.$('.chat-interface').append(container);
 }
 
@@ -10287,7 +10479,11 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 	else
 		this.log("No matching page: " + page);
 
-	FFZ.menu_pages[page].render.bind(this)(view, container);
+	FFZ.menu_pages[page].render.bind(this)(view, container, inner, menu);
+	
+	// Re-position if necessary.
+	var f = this;
+	setTimeout(function(){f._fix_menu_position();});
 }
 
 
@@ -11772,8 +11968,22 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
 
-var sanitize_cache = {},
-	sanitize_el = document.createElement('span'),
+var sanitize_el = document.createElement('span'),
+
+	sanitize = function(msg) {
+		sanitize_el.textContent = msg;
+		return sanitize_el.innerHTML;
+	},
+	
+	R_QUOTE = /"/g,
+	R_SQUOTE = /'/g,
+	R_AMP = /&/g,
+	R_LT = /</g,
+	R_GT = />/g,
+	
+	quote_attr = function(msg) {
+		return msg.replace(R_AMP, "&amp;").replace(R_QUOTE, "&quot;").replace(R_SQUOTE, "&apos;").replace(R_LT, "&lt;").replace(R_GT, "&gt;");
+	},
 
 	pluralize = function(value, singular, plural) {
 		plural = plural || 's';
@@ -11976,24 +12186,8 @@ module.exports = {
 		return "";
 	},
 
-	sanitize: function(msg) {
-		var m = sanitize_cache[msg];
-		if ( ! m ) {
-			sanitize_el.textContent = msg;
-			m = sanitize_cache[msg] = sanitize_el.innerHTML;
-			sanitize_el.innerHTML = "";
-		}
-		return m;
-	},
-	
-	quote_attr: function(attr) {
-		return (attr + '')
-			.replace(/&/g, "&amp;")
-			.replace(/'/g, "&apos;")
-			.replace(/"/g, "&quot;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-	},
+	sanitize: sanitize,
+	quote_attr: quote_attr,
 
 	date_string: function(date) {
 		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();

@@ -366,7 +366,7 @@ FFZ.prototype._legacy_add_donors = function() {
 FFZ.prototype._legacy_load_bots = function(tries) {
 	jQuery.ajax(constants.SERVER + "script/bots.txt", {cache: false, context: this})
 		.done(function(data) {
-			this._legacy_parse_badges(data, 0, 2);
+			this._legacy_parse_badges(data, 0, 2, "Bot (By: {})");
 
 		}).fail(function(data) {
 			if ( data.status == 404 )
@@ -394,15 +394,18 @@ FFZ.prototype._legacy_load_donors = function(tries) {
 }
 
 
-FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
+FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id, title_template) {
 	var title = this.badges[badge_id].title,
 		count = 0;
 		ds = null;
 
+	title_template = title_template || '{}';
+
 	if ( data != null ) {
 		var lines = data.trim().split(/\W+/);
 		for(var i=0; i < lines.length; i++) {
-			var user_id = lines[i],
+			var line_data = lines[i].split(";"),
+				user_id = line_data[0],
 				user = this.users[user_id] = this.users[user_id] || {},
 				badges = user.badges = user.badges || {},
 				sets = user.sets = user.sets || [];
@@ -414,6 +417,8 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id) {
 				continue;
 
 			badges[slot] = {id:badge_id};
+			if ( line_data.length > 1 )
+				badges[slot].title = title_template.replace('{}', line_data[1]);
 			count += 1;
 		}
 	}

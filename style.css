@@ -1,3 +1,10 @@
+/* Fix Tooltip Opacity */
+
+body > div.tipsy { opacity: 1 !important; }
+body > div.tipsy .tipsy-inner { background-color: rgba(0,0,0,0.8); }
+body > div.tipsy .tipsy-arrow { opacity: 0.8; }
+
+
 .ffz-flip {
 	-ms-transform: rotate(180deg);
 	-webkit-transform: rotate(180deg);
@@ -415,6 +422,8 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 
 /* Menu Options */
 
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.menu-side-padding { padding-left: 20px; padding-right: 20px; }
+
 .emoticon-grid.collapsed span,
 .chat-menu-content.collapsed p { display: none; }
 
@@ -535,15 +544,19 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	margin: 0 10px 5px;
 }
 
+#ffz-chat-menu { pointer-events: none; }
+
 .ffz-ui-popup ul.menu {
 	list-style-type: none;
 	border-top: 1px solid rgba(0,0,0,0.2);
 	background-color: #eee;
+	cursor: ew-resize;
 }
 
 .ffz-ui-popup .emoticon-selector-box {
 	width: 10000px !important; /* Max-width has our back */
 	max-width: 300px;
+	pointer-events: auto;
 }
 
 .ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon-grid { background-color: transparent; }
@@ -1683,35 +1696,49 @@ li[data-name="following"] a {
 
 /* High Contrast Chat */
 
-.ffz-high-contrast-chat .chat-container, 
-.ffz-high-contrast-chat .ember-chat-container {
-	background-color: #fff;
-	color: #000;
+.ffz-high-contrast-chat-text .chat-container, 
+.ffz-high-contrast-chat-text .ember-chat-container {
+	color: "#000";
 }
 
-.ffz-high-contrast-chat .ember-chat .chat-messages .chat-line .from,
-.ffz-high-contrast-chat .ember-chat .chat-messages .chat-line .colon,
-.ffz-high-contrast-chat .ember-chat .chat-messages .chat-line .message {
+.ffz-high-contrast-chat-bg .chat-container, 
+.ffz-high-contrast-chat-bg .ember-chat-container {
+	background-color: #fff;
+}
+
+.ffz-high-contrast-chat-bold .ember-chat .chat-messages .chat-line .from,
+.ffz-high-contrast-chat-bold .ember-chat .chat-messages .chat-line .colon,
+.ffz-high-contrast-chat-bold .ember-chat .chat-messages .chat-line .message {
 	font-weight: bold;
 }
 
-.ffz-high-contrast-chat .chat-line:before {
+/*.ffz-high-contrast-chat .chat-line:before {
 	background-color: transparent !important;
 	border: none !important;
-}
+}*/
 
-.ffz-high-contrast-chat .chat-container.dark,
-.ffz-high-contrast-chat .chat-container.force-dark,
-.ffz-high-contrast-chat .ember-chat-container.dark,
-.ffz-high-contrast-chat .ember-chat-container.force-dark,
-.ffz-high-contrast-chat .app-main.theatre .chat-container,
-.ffz-high-contrast-chat.ffz-dark .ember-chat-container.dark .chat-line,
-.ffz-high-contrast-chat.ffz-dark .chat-container.dark .chat-line {
-	background-color: #000;
+.ffz-high-contrast-chat-text .chat-container.dark,
+.ffz-high-contrast-chat-text .chat-container.force-dark,
+.ffz-high-contrast-chat-text .ember-chat-container.dark,
+.ffz-high-contrast-chat-text .ember-chat-container.force-dark,
+.ffz-high-contrast-chat-text .app-main.theatre .chat-container,
+.ffz-high-contrast-chat-text.ffz-dark .ember-chat-container.dark .chat-line,
+.ffz-high-contrast-chat-text.ffz-dark .chat-container.dark .chat-line {
 	color: #fff;
 }
 
-.ffz-high-contrast-chat .chat-line .mentioned {
+.ffz-high-contrast-chat-bg .chat-container.dark,
+.ffz-high-contrast-chat-bg .chat-container.force-dark,
+.ffz-high-contrast-chat-bg .ember-chat-container.dark,
+.ffz-high-contrast-chat-bg .ember-chat-container.force-dark,
+.ffz-high-contrast-chat-bg .app-main.theatre .chat-container,
+.ffz-high-contrast-chat-bg.ffz-dark .ember-chat-container.dark .chat-line,
+.ffz-high-contrast-chat-bg.ffz-dark .chat-container.dark .chat-line {
+	background-color: #000;
+}
+
+
+/*.ffz-high-contrast-chat .chat-line .mentioned {
 	color: #fff !important;
 	background-color: #000 !important;
 }
@@ -1725,7 +1752,7 @@ li[data-name="following"] a {
 .ffz-high-contrast-chat.ffz-dark .chat-container.dark .chat-line .chat-line .mentioned {
 	color: #000 !important;
 	background-color: #fff !important;
-}
+}*/
 
 .ffz-image-hover {
 	border:none;

@@ -211,7 +211,10 @@ FFZ.prototype.rebuild_following_ui = function() {
 				cont = document.createElement('span');
 				cont.id = 'ffz-ui-following';
 
-				var before = container.querySelector(':scope > span');
+				var before;
+				try { before = container.querySelector(':scope > span'); }
+				catch(err) { before = undefined; }
+
 				if ( before )
 					container.insertBefore(cont, before);
 				else
@@ -247,7 +250,10 @@ FFZ.prototype.rebuild_following_ui = function() {
 				cont = document.createElement('span');
 				cont.id = 'ffz-ui-following';
 
-				var before = container.querySelector(':scope > span');
+				var before;
+				try { before = container.querySelector(':scope > span'); }
+				catch(err) { before = undefined; }
+
 				if ( before )
 					container.insertBefore(cont, before);
 				else
@@ -344,7 +350,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 	noti_c.appendChild(noti);
 
 	// Event Listeners!
-	btn.addEventListener('click', function() {
+	btn.addEventListener('click', function(e) {
 		var user = f.get_user();
 		if ( ! user || ! user.login )
 			// Show the login dialog~!
@@ -365,6 +371,14 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 				.done(check_following);
 
 		return false;
+	});
+
+	btn.addEventListener('mousedown', function(e) {
+		if ( e.button !== 1 )
+			return;
+		
+		e.preventDefault();
+		window.open(Twitch.uri.profile(channel_id));
 	});
 
 	noti.addEventListener('click', function() {

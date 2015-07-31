@@ -2,8 +2,22 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
 
-var sanitize_cache = {},
-	sanitize_el = document.createElement('span'),
+var sanitize_el = document.createElement('span'),
+
+	sanitize = function(msg) {
+		sanitize_el.textContent = msg;
+		return sanitize_el.innerHTML;
+	},
+	
+	R_QUOTE = /"/g,
+	R_SQUOTE = /'/g,
+	R_AMP = /&/g,
+	R_LT = /</g,
+	R_GT = />/g,
+	
+	quote_attr = function(msg) {
+		return msg.replace(R_AMP, "&amp;").replace(R_QUOTE, "&quot;").replace(R_SQUOTE, "&apos;").replace(R_LT, "&lt;").replace(R_GT, "&gt;");
+	},
 
 	pluralize = function(value, singular, plural) {
 		plural = plural || 's';
@@ -206,24 +220,8 @@ module.exports = {
 		return "";
 	},
 
-	sanitize: function(msg) {
-		var m = sanitize_cache[msg];
-		if ( ! m ) {
-			sanitize_el.textContent = msg;
-			m = sanitize_cache[msg] = sanitize_el.innerHTML;
-			sanitize_el.innerHTML = "";
-		}
-		return m;
-	},
-	
-	quote_attr: function(attr) {
-		return (attr + '')
-			.replace(/&/g, "&amp;")
-			.replace(/'/g, "&apos;")
-			.replace(/"/g, "&quot;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-	},
+	sanitize: sanitize,
+	quote_attr: quote_attr,
 
 	date_string: function(date) {
 		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();

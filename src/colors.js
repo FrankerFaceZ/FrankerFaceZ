@@ -45,7 +45,6 @@ FFZ.settings_info.fix_color = {
 	},
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && val !== '-1');
 			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
 			
 			if ( ! this.has_bttv && val !== '-1' )
@@ -115,15 +114,22 @@ FFZ.settings_info.color_blind = {
 // --------------------
 
 FFZ.prototype.setup_colors = function() {
-	this.log("Preparing color-alteration style element.");
-	
 	this._colors = {};
 	this._rebuild_contrast();
+	
+	this._update_colors();
+	
+	// Events for rebuilding colors.
+	var Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings');
 
-	var s = this._color_style = document.createElement('style');
-	s.id = 'ffz-style-username-colors';
-	s.type = 'text/css';
-	document.head.appendChild(s);
+	if ( Layout )
+		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
+	
+	if ( Settings )
+		Settings.addObserver("model.darkMode", this._update_colors.bind(this, true))
+	
+	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 }
 
 
@@ -248,6 +254,11 @@ RGBColor.prototype.toCSS = function() { return "rgb(" + Math.round(this.r) + ","
 RGBColor.prototype.toXYZ = function() { return XYZColor.fromRGB(this.r, this.g, this.b); }
 RGBColor.prototype.toLUV = function() { return this.toXYZ().toLUV(); }
 
+RGBColor.prototype.toHex = function() { 
+	var rgb = this.b | (this.g << 8) | (this.r << 16);
+	return '#' + (0x1000000 + rgb).toString(16).slice(1);
+}
+
 
 RGBColor.prototype.luminance = function() {
 	var rgb = [this.r / 255, this.g / 255, this.b / 255];
@@ -361,6 +372,7 @@ HSLColor.fromRGB = function(r, g, b) {
 
 HSLColor.prototype.toRGB = function() { return RGBColor.fromHSL(this.h, this.s, this.l); }
 HSLColor.prototype.toCSS = function() { return "hsl(" + Math.round(this.h*360) + "," + Math.round(this.s*100) + "%," + Math.round(this.l*100) + "%)"; }
+HSLColor.prototype.toHex = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toHex(); }
 HSLColor.prototype.toHSV = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toHSV(); }
 HSLColor.prototype.toXYZ = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toXYZ(); }
 HSLColor.prototype.toLUV = function() { return RGBColor.fromHSL(this.h, this.s, this.l).toLUV(); }
@@ -537,38 +549,56 @@ FFZ.prototype._rebuild_contrast = function() {
 }
 
 FFZ.prototype._rebuild_colors = function() {
-	if ( ! this._color_style || this.has_bttv )
+	if ( this.has_bttv )
 		return;
 
-	this._color_style.innerHTML = '';
-	var colors = Object.keys(this._colors);
+	// With update colors, we'll automatically process the colors we care about.
 	this._colors = {};
-	for(var i=0, l=colors.length; i<l; i++)
-		this._handle_color(colors[i]);
+	this._update_colors();
+}
+
+
+FFZ.prototype._update_colors = function(darkness_only) {
+	// Update the lines. ALL of them.
+	var Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings'),
+
+		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+	
+	if ( darkness_only && this._color_old_darkness === is_dark )
+		return;
+	
+	this._color_old_darkness = is_dark;
+	
+	var colored_bits = document.querySelectorAll('.chat-line .has-color');
+	for(var i=0, l=colored_bits.length; i < l; i++) {
+		var bit = colored_bits[i],
+			color = bit.getAttribute('data-color'),
+			colors = color && this._handle_color(color);
+		
+		if ( ! colors )
+			continue;
+		
+		bit.style.color = is_dark ? colors[1] : colors[0];
+	}
 }
 
 
 FFZ.prototype._handle_color = function(color) {
 	if ( ! color || this._colors.hasOwnProperty(color) )
-		return;
+		return this._colors[color];
 
-	this._colors[color] = true;
 	var rgb = RGBColor.fromHex(color),
 	
-		clr = color,
 		light_color = color,
-		dark_color = color,
-		matched = false,
-		rule = 'span[style="color:' + color + '"]';
-
+		dark_color = color;
 
 	// Color Blindness Handling
 	if ( this.settings.color_blind !== '0' ) {
 		var new_color = rgb.daltonize(this.settings.color_blind);
 		if ( ! rgb.eq(new_color) ) {
 			rgb = new_color;
-			clr = light_color = dark_color = rgb.toCSS();
-			matched = true;
+			light_color = dark_color = rgb.toHex();
 		}
 	}
 	
@@ -585,8 +615,7 @@ FFZ.prototype._handle_color = function(color) {
 					break; 
 			}
 			
-			matched = true;
-			light_color = nc.toCSS();
+			light_color = nc.toHex();
 		}
 
 		if ( lum < 0.15 ) {
@@ -597,8 +626,7 @@ FFZ.prototype._handle_color = function(color) {
 					break;
 			}
 			
-			matched = true;
-			dark_color = nc.toCSS();
+			dark_color = nc.toHex();
 		}
 	}
 
@@ -607,25 +635,23 @@ FFZ.prototype._handle_color = function(color) {
 	if ( this.settings.fix_color === '2' ) {
 		var hsl = rgb.toHSL();
 		
-		matched = true;
-		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toCSS();
-		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toCSS();
+		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toHex();
+		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toHex();
 	}
 	
 
 	// Color Processing - HSV
 	if ( this.settings.fix_color === '3' ) {
 		var hsv = rgb.toHSV();
-		matched = true;
 	
 		if ( hsv.s === 0 ) {
 			// Black and White
-			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toCSS();
-			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGB().toCSS();
+			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toHex();
+			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGB().toHex();
 
 		} else {
-			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toCSS();
-			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toCSS(); 
+			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toHex();
+			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toHex(); 
 		}
 	}
 	
@@ -633,33 +659,13 @@ FFZ.prototype._handle_color = function(color) {
 	if ( this.settings.fix_color === '1' ) {
 		var luv = rgb.toLUV();
 		
-		if ( luv.l > this._luv_required_dark ) {
-			matched = true;
-			light_color = luv._l(this._luv_required_dark).toRGB().toCSS();
-		}
+		if ( luv.l > this._luv_required_dark )
+			light_color = luv._l(this._luv_required_dark).toRGB().toHex();
 		
-		if ( luv.l < this._luv_required_bright ) {
-			matched = true;
-			dark_color = luv._l(this._luv_required_bright).toRGB().toCSS();
-		}
+		if ( luv.l < this._luv_required_bright )
+			dark_color = luv._l(this._luv_required_bright).toRGB().toHex();
 	}
 	
-	// Output
-	if ( ! matched )
-		return;
-
-	var output = '';
-	
-	if ( light_color !== clr )
-		output += 'body.ffz-chat-colors .chat-line ' + rule + ' { color: ' + light_color + ' !important; }';
-
-	if ( dark_color !== light_color ) {
-		output += 'body.ffz-chat-colors .theatre .chat-container .chat-line ' + rule +
-			', body.ffz-chat-colors .ember-chat-container.dark .chat-line ' + rule +
-			', body.ffz-chat-colors .ember-chat-container.force-dark .chat-line ' + rule +
-			', body.ffz-chat-colors .chat-container.dark .chat-line ' + rule +
-			', body.ffz-chat-colors .chat-container.force-dark .chat-line ' + rule + ' { color: ' + dark_color + ' !important; }';
-	}
-
-	this._color_style.innerHTML += output;
+	var out = this._colors[color] = [light_color, dark_color];
+	return out;
 }

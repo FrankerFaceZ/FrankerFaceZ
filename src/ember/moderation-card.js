@@ -581,6 +581,8 @@ FFZ.prototype.setup_mod_card = function() {
 					f.save_aliases();
 					
 					// Update UI
+					f._update_alias(user);
+					
 					Ember.propertyDidChange(controller, 'userName');
 					var name = el.querySelector('h3.name'),
 						link = name && name.querySelector('a');
@@ -665,6 +667,32 @@ FFZ.prototype.setup_mod_card = function() {
 				} catch(err) { }
 			}
 		}});
+}
+
+
+// ----------------
+// Aliases
+// ----------------
+
+FFZ.prototype._update_alias = function(user) {
+	var alias = this.aliases && this.aliases[user],
+		display_name = alias,
+		el = this._roomv && this._roomv.get('element'),
+		lines = el && el.querySelectorAll('.chat-line[data-sender="' + user + '"]');
+	
+	if ( ! lines )
+		return;
+
+	if ( ! display_name )
+		display_name = FFZ.get_capitalization(user);
+
+	for(var i=0, l = lines.length; i < l; i++) {
+		var line = lines[i],
+			el_from = line.querySelector('.from');
+		
+		el_from.classList.toggle('ffz-alias', alias);
+		el_from.textContent = display_name;
+	}
 }
 
 

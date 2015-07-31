@@ -34,6 +34,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 		this._dark_style = undefined;
 	}
 	
+	if ( this._layout_style ) {
+		this._layout_style.parentElement.removeChild(this._layout_style);
+		this._layout_style = undefined;
+	}
+	
 	if ( this._chat_style ) {
 		utils.update_css(this._chat_style, 'chat_font_size', '');
 		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
@@ -63,7 +68,9 @@ FFZ.prototype.setup_bttv = function(delay) {
 	document.body.classList.remove("ffz-chat-separator-3d");
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-transparent-badges");
-	document.body.classList.remove("ffz-high-contrast-chat");
+	document.body.classList.remove("ffz-high-contrast-chat-text");
+	document.body.classList.remove("ffz-high-contrast-chat-bg");
+	document.body.classList.remove("ffz-high-contrast-chat-bold");
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {

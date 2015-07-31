@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 2,
+	major: 3, minor: 5, revision: 7,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -115,8 +115,9 @@ require('./tokenize');
 
 // Analytics: require('./ember/router');
 require('./ember/channel');
-require('./ember/player');
+//require('./ember/player');
 require('./ember/room');
+require('./ember/layout');
 require('./ember/line');
 require('./ember/chatview');
 require('./ember/viewers');
@@ -159,7 +160,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 
 	// Check for the player
 	if ( location.hostname === 'player.twitch.tv' ) {
-		this.init_player(delay);
+		//this.init_player(delay);
 		return;
 	}
 
@@ -321,10 +322,11 @@ FFZ.prototype.init_ember = function(delay) {
 	//this.setup_router();
 	this.setup_colors();
 	this.setup_tokenization();
-	this.setup_player();
+	//this.setup_player();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
+	this.setup_layout();
 	this.setup_chatview();
 	this.setup_viewers();
 	this.setup_mod_card();

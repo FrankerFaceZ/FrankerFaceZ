@@ -723,7 +723,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 	_.each(emotes, function(emote) {
 		var eo = {
 			srcSet: emote.srcSet,
-			emoticonSrc: emote.urls[1] + '" data-ffz-emote="' + encodeURIComponent(JSON.stringify([emote.id, emote.set_id])),
+			emoticonSrc: emote.urls[1],
 			ffzEmote: emote.id,
 			ffzEmoteSet: emote.set_id,
 			altText: (emote.hidden ? "???" : emote.name)
