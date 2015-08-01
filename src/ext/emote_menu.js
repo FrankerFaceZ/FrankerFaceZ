@@ -52,7 +52,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 			// TODO: Stop having to calculate this here.
 			var title = set.title, badge = set.icon || null;
 			if ( ! title ) {
-				if ( set.id == "global" )
+				if ( set.id === "global" )
 					title = "FrankerFaceZ Global Emotes";
 
 				else if ( set.id == "globalevent" )

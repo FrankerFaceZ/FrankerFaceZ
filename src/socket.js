@@ -141,7 +141,7 @@ FFZ.prototype.ws_create = function() {
 
 		} else {
 			var success = cmd === 'True',
-				has_callback = f._ws_callbacks.hasOwnProperty(request);
+				has_callback = typeof f._ws_callbacks[request] === "function";
 
 			if ( ! has_callback )
 				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);

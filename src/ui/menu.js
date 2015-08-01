@@ -282,7 +282,8 @@ FFZ.prototype.build_ui_popup = function(view) {
 	}
 
 	// Render Current Page
-	this._ui_change_page(view, inner, menu, sub_container, this._last_page || "channel");
+	var page = (this._last_page || "channel").split("_", 1)[0];
+	this._ui_change_page(view, inner, menu, sub_container, page);
 
 	// Add the menu to the DOM.
 	this._popup = container;

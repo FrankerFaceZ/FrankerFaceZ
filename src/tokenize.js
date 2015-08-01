@@ -24,7 +24,11 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! set )
 			return data.code;
 
-		else if ( set == "--twitch-turbo--" || set == "turbo" ) {
+		else if ( set === "--global--" ) {
+			set = "Twitch Global";
+			set_type = null;
+
+		} else if ( set == "--twitch-turbo--" || set == "turbo" || set == "--turbo-faces--" ) {
 			set = "Twitch Turbo";
 			set_type = null;
 		}
@@ -50,7 +54,7 @@ var FFZ = window.FrankerFaceZ,
 
 	load_emote_data = function(id, code, success, data) {
 		if ( ! success )
-			return;
+			return code;
 
 		if ( code )
 			data.code = code;
@@ -61,6 +65,8 @@ var FFZ = window.FrankerFaceZ,
 		var images = document.querySelectorAll('img[data-emote="' + id + '"]');
 		for(var x=0; x < images.length; x++)
 			images[x].title = tooltip;
+		
+		return tooltip;
 	},
 
 
@@ -266,6 +272,14 @@ FFZ.settings_info.show_deleted_links = {
 // ---------------------
 
 FFZ.prototype.setup_tokenization = function() {
+	// Tooltip Data
+	this._twitch_emotes = {};
+	this._twitch_emote_to_set = {};
+	this._twitch_set_to_channel = {};
+	this._link_data = {};
+	
+	this.load_twitch_emote_data();
+	
 	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
 	if ( ! helpers )
 		return this.log("Unable to get chat helper functions.");
@@ -315,6 +329,38 @@ FFZ.prototype.setup_tokenization = function() {
 			);
 		}).flatten().compact().value();
 	};
+}
+
+
+// ---------------------
+// Twitch Emote Data
+// ---------------------
+
+FFZ.prototype.load_twitch_emote_data = function(tries) {
+	jQuery.ajax(constants.SERVER + "script/twitch_emotes.json", {cache: false, context: this})
+		.done(function(data) {
+			for(var set_id in data) {
+				var set = data[set_id];
+				if ( ! set )
+					continue;
+
+				this._twitch_set_to_channel[set_id] = set.name;
+				for(var i=0, l = set.emotes.length; i < l; i++)
+					this._twitch_emote_to_set[set.emotes[i]] = set_id;
+			}
+			
+			this._twitch_set_to_channel[0] = "--global--";
+			this._twitch_set_to_channel[33] = "--turbo-faces--";
+			this._twitch_set_to_channel[42] = "--turbo-faces--";
+
+		}).fail(function(data) {
+			if ( data.status === 404 )
+				return;
+			
+			tries = (tries || 0) + 1;
+			if ( tries < 10 )
+				setTimeout(this.load_twitch_emote_data.bind(this, tries), 1000);
+		});
 }
 
 
@@ -499,8 +545,22 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 				if ( data )
 					tooltip = data.tooltip ? data.tooltip : token.altText;
 				else {
-					tooltip = f._twitch_emotes[id] = token.altText;
-					f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, token.altText));
+					try {
+						var set_id = f._twitch_emote_to_set[id];
+						if ( set_id ) {
+							tooltip = load_emote_data.bind(f)(id, token.altText, true, {
+								code: token.altText,
+								id: id,
+								set: f._twitch_set_to_channel[set_id],
+								set_id: set_id
+							});
+						} else {
+							tooltip = f._twitch_emotes[id] = token.altText;
+							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, token.altText));
+						}
+					} catch(err) {
+						f.error("Error Generating Emote Tooltip: " + err);
+					}
 				}
 
 				extra = ' data-emote="' + id + '"';

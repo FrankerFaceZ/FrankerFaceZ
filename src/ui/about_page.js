@@ -6,9 +6,10 @@ var FFZ = window.FrankerFaceZ,
 // About Page
 // -------------------
 
-FFZ.menu_pages.changelog = {
+FFZ.menu_pages.about_changelog = {
 	name: "Changelog",
 	visible: false,
+	wide: true,
 	
 	render: function(view, container) {
 		var heading = document.createElement('div');
@@ -111,7 +112,7 @@ FFZ.menu_pages.about = {
 
 		// Functional Changelog
 		credits.querySelector('#ffz-changelog').addEventListener('click', function() {
-			f._ui_change_page(view, inner, menu, container, 'changelog');
+			f._ui_change_page(view, inner, menu, container, 'about_changelog');
 		});
 
 		// Make the Logs button functional.

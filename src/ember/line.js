@@ -493,10 +493,6 @@ FFZ.prototype.setup_line = function() {
 
 	this._last_row = {};
 
-	// Emoticon Data
-	this._twitch_emotes = {};
-	this._link_data = {};
-
 	this.log("Hooking the Ember Whisper Line component.");
 	var Whisper = App.__container__.resolve('component:whisper-line');
 
@@ -724,7 +720,7 @@ FFZ.prototype._modify_line = function(component) {
 					
 					to_color = this.get('msgObject.toColor'),
 					to_colors = to_color && f._handle_color(to_color),
-					to_style = to_color && 'color:' + (is_dark ? colors[1] : colors[0]),
+					to_style = to_color && 'color:' + (is_dark ? to_colors[1] : to_colors[0]),
 					to_colored = to_style ? ' has-color' : '';
 				
 				this._renderWhisperArrow(e);
