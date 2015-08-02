@@ -579,11 +579,84 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	float: left;
 }
 
-.ffz-ui-popup ul.menu li.title > span {
-	display: block;
-	padding: 10px 20px;
-	line-height: 16px;
+span.ffz-handle {
+	display: inline-block;
+	position: relative;
+	height: 26px;
+	width: 14px;
+	transition: width 500ms;
 }
+
+span.ffz-handle:before,
+span.ffz-handle:after {
+	position: absolute;
+	left: 4px;
+	top: 5px;
+	content: "";
+	height: 14px;
+	border: 1px solid #bbb;
+	border-radius: 4px;
+	transition: transform 500ms, left 500ms, border-color 500ms, border-width 500ms, height 500ms;
+}
+
+span.ffz-handle:after { left: 8px }
+
+.ffz-ui-popup.ui-moved span.ffz-handle { width: 24px; cursor: pointer; }
+
+.ffz-ui-popup.ui-moved span.ffz-handle:before,
+.ffz-ui-popup.ui-moved span.ffz-handle:after {
+	left: 11px;
+	border-color: #333;
+}
+
+.ffz-ui-popup.ui-moved span.ffz-handle:before { transform: rotate(45deg); }
+.ffz-ui-popup.ui-moved span.ffz-handle:after { transform: rotate(-45deg); }
+
+.app-main.theatre span.ffz-handle:before,
+.chat-container.dark span.ffz-handle:before,
+.chat-container.force-dark span.ffz-handle:before,
+.ember-chat-container.dark span.ffz-handle:before,
+.ember-chat-container.force-dark span.ffz-handle:before,
+.ffz-ui-popup.dark span.ffz-handle:before,
+.app-main.theatre span.ffz-handle:after,
+.chat-container.dark span.ffz-handle:after,
+.chat-container.force-dark span.ffz-handle:after,
+.ember-chat-container.dark span.ffz-handle:after,
+.ember-chat-container.force-dark span.ffz-handle:after,
+.ffz-ui-popup.dark span.ffz-handle:after {
+	border-color: #666;
+}
+
+.app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:before,
+.chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
+.chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
+.ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
+.ember-chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
+.ffz-ui-popup.ui-moved.dark span.ffz-handle:before,
+.app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:after,
+.chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
+.chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
+.ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
+.ember-chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
+.ffz-ui-popup.ui-moved.dark span.ffz-handle:after {
+	border-color: #d3d3d3;
+}
+
+
+.ffz-ui-popup ul.menu li.title > span.ffz-handle {
+	float: left;
+	margin: 5px;
+}
+
+.ffz-ui-popup ul.menu li.title > span.title {
+	display: block;
+	margin-left: 24px;
+	padding: 10px 20px 10px 0;
+	line-height: 16px;
+	transition: margin-left 500ms;
+}
+
+.ffz-ui-popup.ui-moved ul.menu li.title > span.title { margin-left: 34px; }
 
 .ffz-ui-popup ul.menu a {
 	display: block;
@@ -1006,6 +1079,23 @@ body:not(.ffz-chat-purge-icon) .ember-chat .mod-icons .purge { display: none; }
 
 /* Emoticon Tooltips */
 
+.ffz-wide-tip .tipsy-inner {
+	max-width: 600px;
+	text-align: left;
+}
+
+.ffz-wide-tip span.viewers {
+	float: right;
+}
+
+.ffz-wide-tip span.viewers svg {
+	float: left;
+	margin: 1px;
+}
+
+.ffz-wide-tip svg path { fill: #fff; }
+.ffz-wide-tip span.playing { opacity: 0.7; }
+
 .tipsy .tipsy-inner {
 	white-space: pre-wrap;
 }
@@ -1165,7 +1255,7 @@ a.unsafe-link {
 
 .ffz-room-row:hover svg path,
 .ffz-room-row:focus svg path,
-.ffz-room-row.active svg path { fill: #fff; } 
+.ffz-room-row.active svg path { fill: #fff; }
 
 .ffz-room-row:hover td,
 .ffz-room-row:focus td,
@@ -1643,7 +1733,7 @@ li[data-name="following"] a {
 	position: absolute;
 	right: 10px;
 	top: 8px;
-	
+
 	line-height: 14px;
 	padding: 2px 5px;
 }
@@ -1696,12 +1786,12 @@ li[data-name="following"] a {
 
 /* High Contrast Chat */
 
-.ffz-high-contrast-chat-text .chat-container, 
+.ffz-high-contrast-chat-text .chat-container,
 .ffz-high-contrast-chat-text .ember-chat-container {
 	color: "#000";
 }
 
-.ffz-high-contrast-chat-bg .chat-container, 
+.ffz-high-contrast-chat-bg .chat-container,
 .ffz-high-contrast-chat-bg .ember-chat-container {
 	background-color: #fff;
 }

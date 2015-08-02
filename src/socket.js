@@ -2,6 +2,7 @@ var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
+FFZ.prototype._ws_last_iframe = 0;
 
 FFZ.ws_commands = {};
 FFZ.ws_on_close = [];
@@ -10,6 +11,22 @@ FFZ.ws_on_close = [];
 // ----------------
 // Socket Creation
 // ----------------
+
+FFZ.prototype.ws_iframe = function() {
+	this._ws_last_iframe = Date.now();
+	var ifr = document.createElement('iframe'),
+		f = this;
+
+	ifr.src = 'http://catbag.frankerfacez.com';
+	ifr.style.visibility = 'hidden';
+	document.body.appendChild(ifr);
+	setTimeout(function() {
+		document.body.removeChild(ifr);
+		if ( ! f._ws_open )
+			f.ws_create();
+	}, 2000);
+}
+
 
 FFZ.prototype.ws_create = function() {
 	var f = this, ws;
@@ -30,6 +47,7 @@ FFZ.prototype.ws_create = function() {
 	ws.onopen = function(e) {
 		f._ws_open = true;
 		f._ws_delay = 0;
+		f._ws_last_iframe = Date.now();
 		f.log("Socket connected.");
 
 		// Check for incognito. We don't want to do a hello in incognito mode.
@@ -104,6 +122,12 @@ FFZ.prototype.ws_create = function() {
 			} catch(err) {
 				f.log("Error on Socket Close Callback: " + err);
 			}
+		}
+
+		if ( f._ws_delay > 10000 ) {
+			var ua = navigator.userAgent.toLowerCase();
+			if ( Date.now() - f._ws_last_iframe > 1800000 && !(ua.indexOf('chrome') === -1 && ua.indexOf('safari') !== -1) )
+				return f.ws_iframe();
 		}
 
 		// We never ever want to not have a socket.

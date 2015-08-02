@@ -36,7 +36,7 @@ FFZ.settings_info.line_purge_icon = {
 
 	name: "Purge Icon in Mod Icons",
 	help: "Display a Purge Icon in chat line Mod Icons for quickly purging users.",
-	
+
 	on_update: function(val) {
 			if ( this.has_bttv )
 				return;
@@ -49,10 +49,10 @@ FFZ.settings_info.line_purge_icon = {
 FFZ.settings_info.replace_bad_emotes = {
 	type: "boolean",
 	value: true,
-	
+
 	category: "Chat Appearance",
 	no_bttv: true,
-	
+
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
 }
@@ -240,11 +240,11 @@ FFZ.settings_info.link_image_hover = {
 FFZ.settings_info.image_hover_all_domains = {
 	type: "boolean",
 	value: false,
-	
+
 	category: "Chat Tooltips",
 	no_bttv: true,
 	no_mobile: true,
-	
+
 	name: "Image Preview - All Domains",
 	help: "<i>Requires Image Preview.</i> Attempt to show an image preview for any URL ending in the appropriate extension. <b>Warning: This may be used to leak your IP address to malicious users.</b>"
 	};
@@ -288,7 +288,7 @@ FFZ.settings_info.chat_separators = {
 
 	category: "Chat Appearance",
 	no_bttv: true,
-	
+
 	process_value: function(val) {
 		if ( val === false )
 			return '0';
@@ -305,8 +305,8 @@ FFZ.settings_info.chat_separators = {
 			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === '2');
 		}
 	};
-	
-	
+
+
 FFZ.settings_info.chat_padding = {
 	type: "boolean",
 	value: false,
@@ -377,7 +377,7 @@ FFZ.settings_info.chat_font_size = {
 			var parsed = parseInt(new_val);
 			if ( ! parsed || parsed === NaN || parsed < 1 )
 				parsed = 12;
-			
+
 			this.settings.set("chat_font_size", parsed);
 		},
 
@@ -414,10 +414,10 @@ FFZ.settings_info.chat_ts_size = {
 
 	method: function() {
 			var old_val = this.settings.chat_ts_size;
-			
+
 			if ( ! old_val )
 				old_val = this.settings.chat_font_size;
-			
+
 			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
 
 			if ( new_val === null || new_val === undefined )
@@ -426,7 +426,7 @@ FFZ.settings_info.chat_ts_size = {
 			var parsed = parseInt(new_val);
 			if ( ! parsed || parsed === NaN || parsed < 1 )
 				parsed = null;
-			
+
 			this.settings.set("chat_ts_size", parsed);
 		},
 
@@ -456,7 +456,7 @@ FFZ.prototype.setup_line = function() {
 	jQuery(document.body).on("mouseleave", ".tipsy", function() {
 		this.parentElement.removeChild(this);
 	});
-	
+
 	// Aliases
 	try {
 		this.aliases = JSON.parse(localStorage.ffz_aliases || '{}');
@@ -464,29 +464,29 @@ FFZ.prototype.setup_line = function() {
 		this.log("Error Loading Aliases: " + err);
 		this.aliases = {};
 	}
-	
-	
+
+
 	// Chat Style
 	var s = this._chat_style = document.createElement('style');
 	s.id = "ffz-style-chat";
 	s.type = 'text/css';
-	document.head.appendChild(s); 
-	
+	document.head.appendChild(s);
+
 	// Initial calculation.
 	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
 
-	
+
 	// Chat Enhancements
 	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color !== '-1');
 	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
-	
+
 	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges);
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
 	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== '0');
 	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
 	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
 	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
-	
+
 	document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
 	document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
 	document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && this.settings.high_contrast_chat[0] === '1');
@@ -521,7 +521,7 @@ FFZ.prototype.save_aliases = function() {
 
 FFZ.prototype._modify_line = function(component) {
 	var f = this,
-	
+
 		Layout = App.__container__.lookup('controller:layout'),
 		Settings = App.__container__.lookup('controller:settings');
 
@@ -573,22 +573,22 @@ FFZ.prototype._modify_line = function(component) {
 		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
 			this.rerender();
 		}),
-		
+
 		click: function(e) {
 			if ( e.target && e.target.classList.contains('ffz-old-messages') )
 				return f._show_deleted(this.get('msgObject.room'));
-			
+
 			if ( e.target && e.target.classList.contains('deleted-link') )
 				return f._deleted_link_click.bind(e.target)(e);
-			
+
 			if ( e.target && e.target.classList.contains('mod-icon') ) {
 				jQuery(e.target).trigger('mouseout');
-				
+
 				if ( e.target.classList.contains('purge') ) {
 					var i = this.get('msgObject.from'),
 						room_id = this.get('msgObject.room'),
 						room = room_id && f.rooms[room_id] && f.rooms[room_id].room;
-	
+
 					if ( room ) {
 						room.send("/timeout " + i + " 1");
 						room.clearMessages(i);
@@ -596,7 +596,7 @@ FFZ.prototype._modify_line = function(component) {
 					return;
 				}
 			}
-			
+
 			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && e.target && e.target.classList.contains('emoticon') ) {
 				var eid = e.target.getAttribute('data-emote');
 				if ( eid )
@@ -606,10 +606,10 @@ FFZ.prototype._modify_line = function(component) {
 					window.open("https://www.frankerfacez.com/emoticons/" + eid);
 				}
 			}
-			
+
 			return this._super(e);
 		},
-		
+
 		ffzUserLevel: function() {
 			if ( this.get('isStaff') )
 				return 5;
@@ -623,27 +623,27 @@ FFZ.prototype._modify_line = function(component) {
 				return 1;
 			return 0;
 		}.property('msgObject.labels.[]'),
-		
+
 		render: function(e) {
 			var deleted = this.get('msgObject.deleted'),
 				r = this,
-				
+
 				badges = {},
-				
+
 				user = this.get('msgObject.from'),
 				room_id = this.get('msgObject.room'),
 				room = f.rooms && f.rooms[room_id],
-				
+
 				recipient = this.get('msgObject.to'),
 				is_whisper = recipient && recipient.length,
-				
+
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
 				row_type = this.get('msgObject.ffz_alternate'),
 				raw_color = this.get('msgObject.color'),
 				colors = raw_color && f._handle_color(raw_color),
-			
+
 				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 
 			if ( row_type === undefined ) {
@@ -653,19 +653,19 @@ FFZ.prototype._modify_line = function(component) {
 
 			e.push('<div class="indicator"></div>');
 			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');
-			
+
 			if ( ! is_whisper && this_ul < other_ul ) {
 				e.push('<span class="mod-icons float-left">');
 				if ( deleted )
 					e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
 				else
 					e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
-				
+
 				e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
 				e.push('<a class="mod-icon float-left tooltip purge" title="Purge User (Timeout 1s)" href="#">Purge</a>');
 				e.push('</span>');
 			}
-			
+
 			// Stock Badges
 			if ( ! is_whisper && this.get('isBroadcaster') )
 				badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
@@ -677,7 +677,7 @@ FFZ.prototype._modify_line = function(component) {
 				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
 			else if ( ! is_whisper && this.get('isModerator') )
 				badges[0] = {klass: 'moderator', title: 'Moderator'};
-			
+
 			if ( ! is_whisper && this.get('isSubscriber') )
 				badges[10] = {klass: 'subscriber', title: 'Subscriber'};
 			if ( this.get('hasTurbo') )
@@ -692,10 +692,10 @@ FFZ.prototype._modify_line = function(component) {
 			for(var key in badges) {
 				var badge = badges[key],
 					css = badge.image ? 'background-image:url(&quot;' + badge.image + '&quot;);' : '';
-				
+
 				if ( badge.color )
 					css += 'background-color:' + badge.color + ';';
-				
+
 				if ( badge.extra_css )
 					css += badge.extra_css;
 
@@ -703,11 +703,11 @@ FFZ.prototype._modify_line = function(component) {
 			}
 
 			e.push('</span>');
-			
+
 			var alias = f.aliases[user],
 				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
 				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
-				colored = style ? ' has-color' : ''; 
+				colored = style ? ' has-color' : '';
 
 			if ( alias )
 				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
@@ -717,14 +717,14 @@ FFZ.prototype._modify_line = function(component) {
 			if ( is_whisper ) {
 				var to_alias = f.aliases[recipient],
 					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
-					
+
 					to_color = this.get('msgObject.toColor'),
 					to_colors = to_color && f._handle_color(to_color),
 					to_style = to_color && 'color:' + (is_dark ? to_colors[1] : to_colors[0]),
 					to_colored = to_style ? ' has-color' : '';
-				
+
 				this._renderWhisperArrow(e);
-				
+
 				if ( to_alias )
 					e.push('<span class="to ffz-alias tooltip' + to_colored + '" style="' + to_style + (to_color ? '" data-color="' + to_color : '') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
 				else
@@ -732,26 +732,26 @@ FFZ.prototype._modify_line = function(component) {
 			}
 
 			e.push('<span class="colon">:</span> ');
-			
+
 			if ( this.get('msgObject.style') !== 'action' ) {
 				style = '';
 				colored = '';
 			}
-			
+
 			if ( deleted )
 				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
 			else {
 				e.push('<span class="message' + colored + '" style="' + style + '">');
 				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
-				
+
 				var old_messages = this.get('msgObject.ffz_old_messages');
 				if ( old_messages && old_messages.length )
 					e.push('<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>');
-				
+
 				e.push('</span>');
 			}
 		},
-		
+
 		classNameBindings: [
 			'msgObject.ffz_alternate:ffz-alternate',
 			'msgObject.ffz_has_mention:ffz-mentioned',
@@ -759,12 +759,12 @@ FFZ.prototype._modify_line = function(component) {
 			'ffzHasOldMessages:clearfix',
 			'ffzHasOldMessages:ffz-has-deleted'
 			],
-		
+
 
 		ffzWasDeleted: function() {
 			return f.settings.prevent_clear && this.get('msgObject.ffz_deleted');
 		}.property('msgObject.ffz_deleted'),
-		
+
 		ffzHasOldMessages: function() {
 			var old_messages = this.get('msgObject.ffz_old_messages');
 			return old_messages && old_messages.length;
@@ -773,7 +773,7 @@ FFZ.prototype._modify_line = function(component) {
 
 		didInsertElement: function() {
 			this._super();
-			
+
 			var el = this.get('element');
 
 			el.setAttribute('data-room', this.get('msgObject.room'));

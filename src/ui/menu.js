@@ -3,16 +3,32 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-	
+
 	fix_menu_position = function(container) {
+		var swapped = document.body.classList.contains('ffz-sidebar-swap');
+
 		var bounds = container.getBoundingClientRect(),
 			left = parseInt(container.style.left || '0'),
-			right = bounds.left + container.scrollWidth;
-		
-		if ( bounds.left < 0 )
-			container.style.left = (left - bounds.left) + 'px';
-		else if ( right > document.body.clientWidth )
-			container.style.left = (left - (right - document.body.clientWidth)) + 'px';
+			right = bounds.left + container.scrollWidth,
+			moved = !!container.style.left;
+
+		if ( swapped ) {
+			if ( bounds.left < 20 ) {
+				container.style.left = '';
+				moved = false;
+			} else if ( right > document.body.clientWidth )
+				container.style.left = (left - (right - document.body.clientWidth)) + 'px';
+
+		} else {
+			if ( bounds.left < 0 )
+				container.style.left = (left - bounds.left) + 'px';
+			else if ( right > (document.body.clientWidth - 20) ) {
+				container.style.left = '';
+				moved = false;
+			}
+		}
+
+		container.classList.toggle('ui-moved', moved);
 	};
 
 
@@ -29,7 +45,7 @@ FFZ.prototype.setup_menu = function() {
 		if ( ! popup ) return;
 		if ( popup.id === 'ffz-chat-menu' && popup.style && popup.style.left )
 			return;
-		
+
 		popup = jQuery(popup);
 		parent = popup.parent();
 
@@ -221,7 +237,31 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	var heading = document.createElement('li');
 	heading.className = 'title';
-	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
+	heading.innerHTML = '<span class="title">Franker' + (constants.DEBUG ? 'Dev' : 'Face') + 'Z</span>';
+
+	// Close Button
+	var close_btn = document.createElement('span'),
+		f = this;
+
+	close_btn.className = 'ffz-handle ffz-close-button';
+	heading.insertBefore(close_btn, heading.firstChild);
+
+	var can_close = false;
+	close_btn.addEventListener('mousedown', function() {
+		var popup = f._popup;
+		can_close = popup && popup.id === "ffz-chat-menu" && popup.style.left;
+	});
+
+	close_btn.addEventListener('click', function() {
+		var popup = f._popup;
+		if ( can_close && popup ) {
+			popup.parentElement.removeChild(popup);
+			delete f._popup;
+			f._popup_kill && f._popup_kill();
+			delete f._popup_kill;
+		}
+	});
+
 	menu.appendChild(heading);
 
 	// Draggable
@@ -312,7 +352,7 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 		this.log("No matching page: " + page);
 
 	FFZ.menu_pages[page].render.bind(this)(view, container, inner, menu);
-	
+
 	// Re-position if necessary.
 	var f = this;
 	setTimeout(function(){f._fix_menu_position();});
@@ -328,7 +368,8 @@ FFZ.menu_pages.channel = {
 			// Get the current room.
 			var room_id = view.get('controller.currentRoom.id'),
 				room = this.rooms[room_id],
-				has_product = false;
+				has_product = false,
+				f = this;
 
 			// Check for a product.
 			if ( this.settings.replace_twitch_menu ) {
@@ -351,7 +392,6 @@ FFZ.menu_pages.channel = {
 					// See if we've loaded. If we haven't loaded the ticket yet
 					// then try loading it, and then re-render the menu.
 					if ( tickets && ! is_subscribed && ! is_loaded ) {
-						var f = this;
 						tickets.addObserver('isLoaded', function() {
 							setTimeout(function(){
 								if ( inner.getAttribute('data-page') !== 'channel' )
@@ -360,7 +400,7 @@ FFZ.menu_pages.channel = {
 								inner.innerHTML = '';
 								FFZ.menu_pages.channel.render.bind(f)(view, inner);
 							},0);
-							
+
 						});
 
 						tickets.load();
@@ -395,8 +435,17 @@ FFZ.menu_pages.channel = {
 						s.style.width = emote.width + "px";
 						s.style.height = emote.height + "px";
 						s.title = emote.regex;
-						if ( can_use )
-							s.addEventListener('click', this._add_emote.bind(this, view, emote.regex));
+
+						s.addEventListener('click', function(can_use, id, code, e) {
+							if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+								window.open("https://twitchemotes.com/emote/" + id);
+							else if ( can_use )
+								this._add_emote(view, code);
+							else
+								return;
+							e.preventDefault();
+						}.bind(this, can_use, emote.id, emote.regex));
+
 						grid.appendChild(s);
 						c++;
 					}
@@ -475,7 +524,7 @@ FFZ.menu_pages.channel = {
 // --------------------
 
 FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text) {
-	var grid = document.createElement('div'), c = 0;
+	var grid = document.createElement('div'), c = 0, f = this;
 	grid.className = 'emoticon-grid';
 
 	if ( header != null ) {
@@ -549,7 +598,14 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 		s.style.height = emote.height + "px";
 		s.title = this._emote_tooltip(emote);
 
-		s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
+		s.addEventListener('click', function(id, code, e) {
+			e.preventDefault();
+			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+				window.open("https://www.frankerfacez.com/emoticons/" + id);
+			else
+				this._add_emote(view, code);
+		}.bind(this, emote.id, emote.name));
+
 		grid.appendChild(s);
 	}
 

@@ -46,7 +46,7 @@ FFZ.settings_info.fix_color = {
 
 	on_update: function(val) {
 			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
-			
+
 			if ( ! this.has_bttv && val !== '-1' )
 				this._rebuild_colors();
 		}
@@ -62,7 +62,7 @@ FFZ.settings_info.luv_contrast = {
 
 	name: "Username Colors - Luv Minimum Contrast",
 	help: "Set the minimum contrast ratio used by Luv Adjustment to ensure colors are readable.",
-	
+
 	method: function() {
 			var old_val = this.settings.luv_contrast,
 				new_val = prompt("Luv Adjustment Minimum Contrast Ratio\n\nPlease enter a new value for the minimum contrast ratio required between username colors and the background. The default is: 4.5", old_val);
@@ -73,10 +73,10 @@ FFZ.settings_info.luv_contrast = {
 			var parsed = parseFloat(new_val);
 			if ( parsed === NaN || parsed < 1 )
 				parsed = 4.5;
-			
+
 			this.settings.set("luv_contrast", parsed);
 		},
-	
+
 	on_update: function(val) {
 			this._rebuild_contrast();
 
@@ -116,19 +116,19 @@ FFZ.settings_info.color_blind = {
 FFZ.prototype.setup_colors = function() {
 	this._colors = {};
 	this._rebuild_contrast();
-	
+
 	this._update_colors();
-	
+
 	// Events for rebuilding colors.
-	var Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
+	var Layout = window.App && App.__container__.lookup('controller:layout'),
+		Settings = window.App && App.__container__.lookup('controller:settings');
 
 	if ( Layout )
 		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
-	
+
 	if ( Settings )
 		Settings.addObserver("model.darkMode", this._update_colors.bind(this, true))
-	
+
 	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 }
 
@@ -196,13 +196,13 @@ RGBColor.fromHex = function(code) {
 
 RGBColor.fromHSV = function(h, s, v) {
 	var r, g, b,
-		
+
 		i = Math.floor(h * 6),
 		f = h * 6 - i,
 		p = v * (1 - s),
 		q = v * (1 - f * s),
 		t = v * (1 - (1 - f) * s);
-	
+
 	switch(i % 6) {
 		case 0: r = v, g = t, b = p; break;
 		case 1: r = q, g = v, b = p; break;
@@ -211,7 +211,7 @@ RGBColor.fromHSV = function(h, s, v) {
 		case 4: r = t, g = p, b = v; break;
 		case 5: r = v, g = p, b = q;
 	}
-	
+
 	return new RGBColor(
 		Math.round(Math.min(Math.max(0, r*255), 255)),
 		Math.round(Math.min(Math.max(0, g*255), 255)),
@@ -240,12 +240,12 @@ RGBColor.fromHSL = function(h, s, l) {
 
 	var q = l < 0.5 ? l * (1 + s) : l + s - l * s,
 		p = 2 * l - q;
-		
+
 	return new RGBColor(
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h + 1/3)), 255)),
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h)), 255)),
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h - 1/3)), 255))
-	);	
+	);
 }
 
 RGBColor.prototype.toHSV = function() { return HSVColor.fromRGB(this.r, this.g, this.b); }
@@ -254,7 +254,7 @@ RGBColor.prototype.toCSS = function() { return "rgb(" + Math.round(this.r) + ","
 RGBColor.prototype.toXYZ = function() { return XYZColor.fromRGB(this.r, this.g, this.b); }
 RGBColor.prototype.toLUV = function() { return this.toXYZ().toLUV(); }
 
-RGBColor.prototype.toHex = function() { 
+RGBColor.prototype.toHex = function() {
 	var rgb = this.b | (this.g << 8) | (this.r << 16);
 	return '#' + (0x1000000 + rgb).toString(16).slice(1);
 }
@@ -276,7 +276,7 @@ RGBColor.prototype.luminance = function() {
 RGBColor.prototype.brighten = function(amount) {
 	amount = typeof amount === "number" ? amount : 1;
 	amount = Math.round(255 * (amount / 100));
-	
+
 	return new RGBColor(
 		Math.max(0, Math.min(255, this.r + amount)),
 		Math.max(0, Math.min(255, this.g + amount)),
@@ -292,10 +292,10 @@ RGBColor.prototype.daltonize = function(type, amount) {
 		if ( FFZ.Color.CVDMatrix.hasOwnProperty(type) )
 			cvd = FFZ.Color.CVDMatrix[type];
 		else
-			throw "Invalid CVD matrix."; 
+			throw "Invalid CVD matrix.";
 	} else
 		cvd = type;
-	
+
 	var cvd_a = cvd[0], cvd_b = cvd[1], cvd_c = cvd[2],
 		cvd_d = cvd[3], cvd_e = cvd[4], cvd_f = cvd[5],
 		cvd_g = cvd[6], cvd_h = cvd[7], cvd_i = cvd[8],
@@ -343,7 +343,7 @@ HSLColor.prototype.eq = function(hsl) {
 
 HSLColor.fromRGB = function(r, g, b) {
 	r /= 255; g /= 255; b /= 255;
-	
+
 	var max = Math.max(r,g,b),
 		min = Math.min(r,g,b),
 
@@ -389,15 +389,15 @@ HSVColor.prototype.eq = function(hsv) { return hsv.h === this.h && hsv.s === thi
 
 HSVColor.fromRGB = function(r, g, b) {
 	r /= 255; g /= 255; b /= 255;
-	
+
 	var max = Math.max(r, g, b),
 		min = Math.min(r, g, b),
 		d = Math.min(Math.max(0, max - min), 1),
-		
+
 		h,
 		s = max === 0 ? 0 : d / max,
 		v = max;
-		
+
 	if ( d === 0 )
 		h = 0;
 	else {
@@ -413,7 +413,7 @@ HSVColor.fromRGB = function(r, g, b) {
 		}
 		h /= 6;
 	}
-	
+
 	return new HSVColor(h, s, v);
 }
 
@@ -560,25 +560,25 @@ FFZ.prototype._rebuild_colors = function() {
 
 FFZ.prototype._update_colors = function(darkness_only) {
 	// Update the lines. ALL of them.
-	var Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings'),
+	var Layout = window.App && App.__container__.lookup('controller:layout'),
+		Settings = window.App && App.__container__.lookup('controller:settings'),
 
 		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
-	
+
 	if ( darkness_only && this._color_old_darkness === is_dark )
 		return;
-	
+
 	this._color_old_darkness = is_dark;
-	
+
 	var colored_bits = document.querySelectorAll('.chat-line .has-color');
 	for(var i=0, l=colored_bits.length; i < l; i++) {
 		var bit = colored_bits[i],
 			color = bit.getAttribute('data-color'),
 			colors = color && this._handle_color(color);
-		
+
 		if ( ! colors )
 			continue;
-		
+
 		bit.style.color = is_dark ? colors[1] : colors[0];
 	}
 }
@@ -589,7 +589,7 @@ FFZ.prototype._handle_color = function(color) {
 		return this._colors[color];
 
 	var rgb = RGBColor.fromHex(color),
-	
+
 		light_color = color,
 		dark_color = color;
 
@@ -601,20 +601,20 @@ FFZ.prototype._handle_color = function(color) {
 			light_color = dark_color = rgb.toHex();
 		}
 	}
-	
-	
+
+
 	// Color Processing - RGB
 	if ( this.settings.fix_color === '4' ) {
 		var lum = rgb.luminance();
-		
+
 		if ( lum > 0.3 ) {
 			var s = 127, nc = rgb;
 			while(s--) {
 				nc = nc.brighten(-1);
 				if ( nc.luminance() <= 0.3 )
-					break; 
+					break;
 			}
-			
+
 			light_color = nc.toHex();
 		}
 
@@ -625,25 +625,25 @@ FFZ.prototype._handle_color = function(color) {
 				if ( nc.luminance() >= 0.15 )
 					break;
 			}
-			
+
 			dark_color = nc.toHex();
 		}
 	}
 
-	
+
 	// Color Processing - HSL
 	if ( this.settings.fix_color === '2' ) {
 		var hsl = rgb.toHSL();
-		
+
 		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toHex();
 		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toHex();
 	}
-	
+
 
 	// Color Processing - HSV
 	if ( this.settings.fix_color === '3' ) {
 		var hsv = rgb.toHSV();
-	
+
 		if ( hsv.s === 0 ) {
 			// Black and White
 			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toHex();
@@ -651,21 +651,21 @@ FFZ.prototype._handle_color = function(color) {
 
 		} else {
 			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toHex();
-			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toHex(); 
+			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toHex();
 		}
 	}
-	
+
 	// Color Processing - LUV
 	if ( this.settings.fix_color === '1' ) {
 		var luv = rgb.toLUV();
-		
+
 		if ( luv.l > this._luv_required_dark )
 			light_color = luv._l(this._luv_required_dark).toRGB().toHex();
-		
+
 		if ( luv.l < this._luv_required_bright )
 			dark_color = luv._l(this._luv_required_bright).toRGB().toHex();
 	}
-	
+
 	var out = this._colors[color] = [light_color, dark_color];
 	return out;
 }

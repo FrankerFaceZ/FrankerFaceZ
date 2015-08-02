@@ -475,7 +475,7 @@ FFZ.settings_info.fix_color = {
 
 	on_update: function(val) {
 			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
-			
+
 			if ( ! this.has_bttv && val !== '-1' )
 				this._rebuild_colors();
 		}
@@ -491,7 +491,7 @@ FFZ.settings_info.luv_contrast = {
 
 	name: "Username Colors - Luv Minimum Contrast",
 	help: "Set the minimum contrast ratio used by Luv Adjustment to ensure colors are readable.",
-	
+
 	method: function() {
 			var old_val = this.settings.luv_contrast,
 				new_val = prompt("Luv Adjustment Minimum Contrast Ratio\n\nPlease enter a new value for the minimum contrast ratio required between username colors and the background. The default is: 4.5", old_val);
@@ -502,10 +502,10 @@ FFZ.settings_info.luv_contrast = {
 			var parsed = parseFloat(new_val);
 			if ( parsed === NaN || parsed < 1 )
 				parsed = 4.5;
-			
+
 			this.settings.set("luv_contrast", parsed);
 		},
-	
+
 	on_update: function(val) {
 			this._rebuild_contrast();
 
@@ -545,19 +545,19 @@ FFZ.settings_info.color_blind = {
 FFZ.prototype.setup_colors = function() {
 	this._colors = {};
 	this._rebuild_contrast();
-	
+
 	this._update_colors();
-	
+
 	// Events for rebuilding colors.
-	var Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
+	var Layout = window.App && App.__container__.lookup('controller:layout'),
+		Settings = window.App && App.__container__.lookup('controller:settings');
 
 	if ( Layout )
 		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
-	
+
 	if ( Settings )
 		Settings.addObserver("model.darkMode", this._update_colors.bind(this, true))
-	
+
 	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 }
 
@@ -625,13 +625,13 @@ RGBColor.fromHex = function(code) {
 
 RGBColor.fromHSV = function(h, s, v) {
 	var r, g, b,
-		
+
 		i = Math.floor(h * 6),
 		f = h * 6 - i,
 		p = v * (1 - s),
 		q = v * (1 - f * s),
 		t = v * (1 - (1 - f) * s);
-	
+
 	switch(i % 6) {
 		case 0: r = v, g = t, b = p; break;
 		case 1: r = q, g = v, b = p; break;
@@ -640,7 +640,7 @@ RGBColor.fromHSV = function(h, s, v) {
 		case 4: r = t, g = p, b = v; break;
 		case 5: r = v, g = p, b = q;
 	}
-	
+
 	return new RGBColor(
 		Math.round(Math.min(Math.max(0, r*255), 255)),
 		Math.round(Math.min(Math.max(0, g*255), 255)),
@@ -669,12 +669,12 @@ RGBColor.fromHSL = function(h, s, l) {
 
 	var q = l < 0.5 ? l * (1 + s) : l + s - l * s,
 		p = 2 * l - q;
-		
+
 	return new RGBColor(
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h + 1/3)), 255)),
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h)), 255)),
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h - 1/3)), 255))
-	);	
+	);
 }
 
 RGBColor.prototype.toHSV = function() { return HSVColor.fromRGB(this.r, this.g, this.b); }
@@ -683,7 +683,7 @@ RGBColor.prototype.toCSS = function() { return "rgb(" + Math.round(this.r) + ","
 RGBColor.prototype.toXYZ = function() { return XYZColor.fromRGB(this.r, this.g, this.b); }
 RGBColor.prototype.toLUV = function() { return this.toXYZ().toLUV(); }
 
-RGBColor.prototype.toHex = function() { 
+RGBColor.prototype.toHex = function() {
 	var rgb = this.b | (this.g << 8) | (this.r << 16);
 	return '#' + (0x1000000 + rgb).toString(16).slice(1);
 }
@@ -705,7 +705,7 @@ RGBColor.prototype.luminance = function() {
 RGBColor.prototype.brighten = function(amount) {
 	amount = typeof amount === "number" ? amount : 1;
 	amount = Math.round(255 * (amount / 100));
-	
+
 	return new RGBColor(
 		Math.max(0, Math.min(255, this.r + amount)),
 		Math.max(0, Math.min(255, this.g + amount)),
@@ -721,10 +721,10 @@ RGBColor.prototype.daltonize = function(type, amount) {
 		if ( FFZ.Color.CVDMatrix.hasOwnProperty(type) )
 			cvd = FFZ.Color.CVDMatrix[type];
 		else
-			throw "Invalid CVD matrix."; 
+			throw "Invalid CVD matrix.";
 	} else
 		cvd = type;
-	
+
 	var cvd_a = cvd[0], cvd_b = cvd[1], cvd_c = cvd[2],
 		cvd_d = cvd[3], cvd_e = cvd[4], cvd_f = cvd[5],
 		cvd_g = cvd[6], cvd_h = cvd[7], cvd_i = cvd[8],
@@ -772,7 +772,7 @@ HSLColor.prototype.eq = function(hsl) {
 
 HSLColor.fromRGB = function(r, g, b) {
 	r /= 255; g /= 255; b /= 255;
-	
+
 	var max = Math.max(r,g,b),
 		min = Math.min(r,g,b),
 
@@ -818,15 +818,15 @@ HSVColor.prototype.eq = function(hsv) { return hsv.h === this.h && hsv.s === thi
 
 HSVColor.fromRGB = function(r, g, b) {
 	r /= 255; g /= 255; b /= 255;
-	
+
 	var max = Math.max(r, g, b),
 		min = Math.min(r, g, b),
 		d = Math.min(Math.max(0, max - min), 1),
-		
+
 		h,
 		s = max === 0 ? 0 : d / max,
 		v = max;
-		
+
 	if ( d === 0 )
 		h = 0;
 	else {
@@ -842,7 +842,7 @@ HSVColor.fromRGB = function(r, g, b) {
 		}
 		h /= 6;
 	}
-	
+
 	return new HSVColor(h, s, v);
 }
 
@@ -989,25 +989,25 @@ FFZ.prototype._rebuild_colors = function() {
 
 FFZ.prototype._update_colors = function(darkness_only) {
 	// Update the lines. ALL of them.
-	var Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings'),
+	var Layout = window.App && App.__container__.lookup('controller:layout'),
+		Settings = window.App && App.__container__.lookup('controller:settings'),
 
 		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
-	
+
 	if ( darkness_only && this._color_old_darkness === is_dark )
 		return;
-	
+
 	this._color_old_darkness = is_dark;
-	
+
 	var colored_bits = document.querySelectorAll('.chat-line .has-color');
 	for(var i=0, l=colored_bits.length; i < l; i++) {
 		var bit = colored_bits[i],
 			color = bit.getAttribute('data-color'),
 			colors = color && this._handle_color(color);
-		
+
 		if ( ! colors )
 			continue;
-		
+
 		bit.style.color = is_dark ? colors[1] : colors[0];
 	}
 }
@@ -1018,7 +1018,7 @@ FFZ.prototype._handle_color = function(color) {
 		return this._colors[color];
 
 	var rgb = RGBColor.fromHex(color),
-	
+
 		light_color = color,
 		dark_color = color;
 
@@ -1030,20 +1030,20 @@ FFZ.prototype._handle_color = function(color) {
 			light_color = dark_color = rgb.toHex();
 		}
 	}
-	
-	
+
+
 	// Color Processing - RGB
 	if ( this.settings.fix_color === '4' ) {
 		var lum = rgb.luminance();
-		
+
 		if ( lum > 0.3 ) {
 			var s = 127, nc = rgb;
 			while(s--) {
 				nc = nc.brighten(-1);
 				if ( nc.luminance() <= 0.3 )
-					break; 
+					break;
 			}
-			
+
 			light_color = nc.toHex();
 		}
 
@@ -1054,25 +1054,25 @@ FFZ.prototype._handle_color = function(color) {
 				if ( nc.luminance() >= 0.15 )
 					break;
 			}
-			
+
 			dark_color = nc.toHex();
 		}
 	}
 
-	
+
 	// Color Processing - HSL
 	if ( this.settings.fix_color === '2' ) {
 		var hsl = rgb.toHSL();
-		
+
 		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toHex();
 		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toHex();
 	}
-	
+
 
 	// Color Processing - HSV
 	if ( this.settings.fix_color === '3' ) {
 		var hsv = rgb.toHSV();
-	
+
 		if ( hsv.s === 0 ) {
 			// Black and White
 			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGB().toHex();
@@ -1080,21 +1080,21 @@ FFZ.prototype._handle_color = function(color) {
 
 		} else {
 			light_color = RGBColor.fromHSV(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v)).toHex();
-			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toHex(); 
+			dark_color = RGBColor.fromHSV(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1)).toHex();
 		}
 	}
-	
+
 	// Color Processing - LUV
 	if ( this.settings.fix_color === '1' ) {
 		var luv = rgb.toLUV();
-		
+
 		if ( luv.l > this._luv_required_dark )
 			light_color = luv._l(this._luv_required_dark).toRGB().toHex();
-		
+
 		if ( luv.l < this._luv_required_bright )
 			dark_color = luv._l(this._luv_required_bright).toRGB().toHex();
 	}
-	
+
 	var out = this._colors[color] = [light_color, dark_color];
 	return out;
 }
@@ -1241,6 +1241,8 @@ module.exports = {
 	ROOMS: '<svg class="svg-glyph_views svg-roomlist" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,13v-2h14v2H1z M1,5h13v2H1V5z M1,2h10v2H1V2z M12,10H1V8h11V10z" fill-rule="evenodd"></path></svg>',
 	CAMERA: '<svg class="svg-camera" height="16px" version="1.1" viewBox="0 0 36 36" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" d="M24,20v6H4V10h20v6l8-6v16L24,20z"/></svg>',
 	INVITE: '<svg class="svg-plus" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M15,9h-3v3h-2V9H7V7h3V4h2v3h3V9z M9,6H6v4h2h1v3h4l0,0l0,0v1h-3H4H1v-1l3-3h2L4,8V2h6v1H9V6z" fill-rule="evenodd"></path></svg>',
+
+	LIVE: '<svg class="svg-glyph_live_small" height="16px" version="1.1" viewbox="0 0 16 16" width="13px" x="0px" y="0px"><path clip-rule="evenodd" d="M11,14H5H2v-1l3-3h2L5,8V2h6v6l-2,2h2l3,3v1H11z" fill-rule="evenodd"></path></svg>',
 
 	EYE: '<svg class="svg-glyph_views ffz-svg svg-eye" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M11,13H5L1,9V8V7l4-4h6l4,4v1v1L11,13z M8,5C6.344,5,5,6.343,5,8c0,1.656,1.344,3,3,3c1.657,0,3-1.344,3-3C11,6.343,9.657,5,8,5z M8,9C7.447,9,7,8.552,7,8s0.447-1,1-1s1,0.448,1,1S8.553,9,8,9z" fill-rule="evenodd"></path></svg>',
 	CLOCK: '<svg class="svg-glyph_views ffz-svg svg-clock" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M8,15c-3.866,0-7-3.134-7-7s3.134-7,7-7s7,3.134,7,7 S11.866,15,8,15z M8,3C5.238,3,3,5.238,3,8s2.238,5,5,5s5-2.238,5-5S10.762,3,8,3z M7.293,8.707L7,8l1-4l0.902,3.607L11,11 L7.293,8.707z"/></svg>',
@@ -3541,7 +3543,7 @@ FFZ.settings_info.line_purge_icon = {
 
 	name: "Purge Icon in Mod Icons",
 	help: "Display a Purge Icon in chat line Mod Icons for quickly purging users.",
-	
+
 	on_update: function(val) {
 			if ( this.has_bttv )
 				return;
@@ -3554,10 +3556,10 @@ FFZ.settings_info.line_purge_icon = {
 FFZ.settings_info.replace_bad_emotes = {
 	type: "boolean",
 	value: true,
-	
+
 	category: "Chat Appearance",
 	no_bttv: true,
-	
+
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
 }
@@ -3745,11 +3747,11 @@ FFZ.settings_info.link_image_hover = {
 FFZ.settings_info.image_hover_all_domains = {
 	type: "boolean",
 	value: false,
-	
+
 	category: "Chat Tooltips",
 	no_bttv: true,
 	no_mobile: true,
-	
+
 	name: "Image Preview - All Domains",
 	help: "<i>Requires Image Preview.</i> Attempt to show an image preview for any URL ending in the appropriate extension. <b>Warning: This may be used to leak your IP address to malicious users.</b>"
 	};
@@ -3793,7 +3795,7 @@ FFZ.settings_info.chat_separators = {
 
 	category: "Chat Appearance",
 	no_bttv: true,
-	
+
 	process_value: function(val) {
 		if ( val === false )
 			return '0';
@@ -3810,8 +3812,8 @@ FFZ.settings_info.chat_separators = {
 			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === '2');
 		}
 	};
-	
-	
+
+
 FFZ.settings_info.chat_padding = {
 	type: "boolean",
 	value: false,
@@ -3882,7 +3884,7 @@ FFZ.settings_info.chat_font_size = {
 			var parsed = parseInt(new_val);
 			if ( ! parsed || parsed === NaN || parsed < 1 )
 				parsed = 12;
-			
+
 			this.settings.set("chat_font_size", parsed);
 		},
 
@@ -3919,10 +3921,10 @@ FFZ.settings_info.chat_ts_size = {
 
 	method: function() {
 			var old_val = this.settings.chat_ts_size;
-			
+
 			if ( ! old_val )
 				old_val = this.settings.chat_font_size;
-			
+
 			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
 
 			if ( new_val === null || new_val === undefined )
@@ -3931,7 +3933,7 @@ FFZ.settings_info.chat_ts_size = {
 			var parsed = parseInt(new_val);
 			if ( ! parsed || parsed === NaN || parsed < 1 )
 				parsed = null;
-			
+
 			this.settings.set("chat_ts_size", parsed);
 		},
 
@@ -3961,7 +3963,7 @@ FFZ.prototype.setup_line = function() {
 	jQuery(document.body).on("mouseleave", ".tipsy", function() {
 		this.parentElement.removeChild(this);
 	});
-	
+
 	// Aliases
 	try {
 		this.aliases = JSON.parse(localStorage.ffz_aliases || '{}');
@@ -3969,29 +3971,29 @@ FFZ.prototype.setup_line = function() {
 		this.log("Error Loading Aliases: " + err);
 		this.aliases = {};
 	}
-	
-	
+
+
 	// Chat Style
 	var s = this._chat_style = document.createElement('style');
 	s.id = "ffz-style-chat";
 	s.type = 'text/css';
-	document.head.appendChild(s); 
-	
+	document.head.appendChild(s);
+
 	// Initial calculation.
 	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
 
-	
+
 	// Chat Enhancements
 	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color !== '-1');
 	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
-	
+
 	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges);
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
 	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== '0');
 	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
 	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
 	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
-	
+
 	document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
 	document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
 	document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && this.settings.high_contrast_chat[0] === '1');
@@ -4026,7 +4028,7 @@ FFZ.prototype.save_aliases = function() {
 
 FFZ.prototype._modify_line = function(component) {
 	var f = this,
-	
+
 		Layout = App.__container__.lookup('controller:layout'),
 		Settings = App.__container__.lookup('controller:settings');
 
@@ -4078,22 +4080,22 @@ FFZ.prototype._modify_line = function(component) {
 		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
 			this.rerender();
 		}),
-		
+
 		click: function(e) {
 			if ( e.target && e.target.classList.contains('ffz-old-messages') )
 				return f._show_deleted(this.get('msgObject.room'));
-			
+
 			if ( e.target && e.target.classList.contains('deleted-link') )
 				return f._deleted_link_click.bind(e.target)(e);
-			
+
 			if ( e.target && e.target.classList.contains('mod-icon') ) {
 				jQuery(e.target).trigger('mouseout');
-				
+
 				if ( e.target.classList.contains('purge') ) {
 					var i = this.get('msgObject.from'),
 						room_id = this.get('msgObject.room'),
 						room = room_id && f.rooms[room_id] && f.rooms[room_id].room;
-	
+
 					if ( room ) {
 						room.send("/timeout " + i + " 1");
 						room.clearMessages(i);
@@ -4101,7 +4103,7 @@ FFZ.prototype._modify_line = function(component) {
 					return;
 				}
 			}
-			
+
 			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && e.target && e.target.classList.contains('emoticon') ) {
 				var eid = e.target.getAttribute('data-emote');
 				if ( eid )
@@ -4111,10 +4113,10 @@ FFZ.prototype._modify_line = function(component) {
 					window.open("https://www.frankerfacez.com/emoticons/" + eid);
 				}
 			}
-			
+
 			return this._super(e);
 		},
-		
+
 		ffzUserLevel: function() {
 			if ( this.get('isStaff') )
 				return 5;
@@ -4128,27 +4130,27 @@ FFZ.prototype._modify_line = function(component) {
 				return 1;
 			return 0;
 		}.property('msgObject.labels.[]'),
-		
+
 		render: function(e) {
 			var deleted = this.get('msgObject.deleted'),
 				r = this,
-				
+
 				badges = {},
-				
+
 				user = this.get('msgObject.from'),
 				room_id = this.get('msgObject.room'),
 				room = f.rooms && f.rooms[room_id],
-				
+
 				recipient = this.get('msgObject.to'),
 				is_whisper = recipient && recipient.length,
-				
+
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
 				row_type = this.get('msgObject.ffz_alternate'),
 				raw_color = this.get('msgObject.color'),
 				colors = raw_color && f._handle_color(raw_color),
-			
+
 				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 
 			if ( row_type === undefined ) {
@@ -4158,19 +4160,19 @@ FFZ.prototype._modify_line = function(component) {
 
 			e.push('<div class="indicator"></div>');
 			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');
-			
+
 			if ( ! is_whisper && this_ul < other_ul ) {
 				e.push('<span class="mod-icons float-left">');
 				if ( deleted )
 					e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
 				else
 					e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
-				
+
 				e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
 				e.push('<a class="mod-icon float-left tooltip purge" title="Purge User (Timeout 1s)" href="#">Purge</a>');
 				e.push('</span>');
 			}
-			
+
 			// Stock Badges
 			if ( ! is_whisper && this.get('isBroadcaster') )
 				badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
@@ -4182,7 +4184,7 @@ FFZ.prototype._modify_line = function(component) {
 				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
 			else if ( ! is_whisper && this.get('isModerator') )
 				badges[0] = {klass: 'moderator', title: 'Moderator'};
-			
+
 			if ( ! is_whisper && this.get('isSubscriber') )
 				badges[10] = {klass: 'subscriber', title: 'Subscriber'};
 			if ( this.get('hasTurbo') )
@@ -4197,10 +4199,10 @@ FFZ.prototype._modify_line = function(component) {
 			for(var key in badges) {
 				var badge = badges[key],
 					css = badge.image ? 'background-image:url(&quot;' + badge.image + '&quot;);' : '';
-				
+
 				if ( badge.color )
 					css += 'background-color:' + badge.color + ';';
-				
+
 				if ( badge.extra_css )
 					css += badge.extra_css;
 
@@ -4208,11 +4210,11 @@ FFZ.prototype._modify_line = function(component) {
 			}
 
 			e.push('</span>');
-			
+
 			var alias = f.aliases[user],
 				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
 				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
-				colored = style ? ' has-color' : ''; 
+				colored = style ? ' has-color' : '';
 
 			if ( alias )
 				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
@@ -4222,14 +4224,14 @@ FFZ.prototype._modify_line = function(component) {
 			if ( is_whisper ) {
 				var to_alias = f.aliases[recipient],
 					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
-					
+
 					to_color = this.get('msgObject.toColor'),
 					to_colors = to_color && f._handle_color(to_color),
 					to_style = to_color && 'color:' + (is_dark ? to_colors[1] : to_colors[0]),
 					to_colored = to_style ? ' has-color' : '';
-				
+
 				this._renderWhisperArrow(e);
-				
+
 				if ( to_alias )
 					e.push('<span class="to ffz-alias tooltip' + to_colored + '" style="' + to_style + (to_color ? '" data-color="' + to_color : '') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
 				else
@@ -4237,26 +4239,26 @@ FFZ.prototype._modify_line = function(component) {
 			}
 
 			e.push('<span class="colon">:</span> ');
-			
+
 			if ( this.get('msgObject.style') !== 'action' ) {
 				style = '';
 				colored = '';
 			}
-			
+
 			if ( deleted )
 				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
 			else {
 				e.push('<span class="message' + colored + '" style="' + style + '">');
 				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
-				
+
 				var old_messages = this.get('msgObject.ffz_old_messages');
 				if ( old_messages && old_messages.length )
 					e.push('<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>');
-				
+
 				e.push('</span>');
 			}
 		},
-		
+
 		classNameBindings: [
 			'msgObject.ffz_alternate:ffz-alternate',
 			'msgObject.ffz_has_mention:ffz-mentioned',
@@ -4264,12 +4266,12 @@ FFZ.prototype._modify_line = function(component) {
 			'ffzHasOldMessages:clearfix',
 			'ffzHasOldMessages:ffz-has-deleted'
 			],
-		
+
 
 		ffzWasDeleted: function() {
 			return f.settings.prevent_clear && this.get('msgObject.ffz_deleted');
 		}.property('msgObject.ffz_deleted'),
-		
+
 		ffzHasOldMessages: function() {
 			var old_messages = this.get('msgObject.ffz_old_messages');
 			return old_messages && old_messages.length;
@@ -4278,7 +4280,7 @@ FFZ.prototype._modify_line = function(component) {
 
 		didInsertElement: function() {
 			this._super();
-			
+
 			var el = this.get('element');
 
 			el.setAttribute('data-room', this.get('msgObject.room'));
@@ -7243,22 +7245,8 @@ FFZ.prototype._emote_menu_enumerator = function() {
 			if ( emote.hidden )
 				continue;
 
-			// TODO: Stop having to calculate this here.
-			var title = set.title, badge = set.icon || null;
-			if ( ! title ) {
-				if ( set.id === "global" )
-					title = "FrankerFaceZ Global Emotes";
-
-				else if ( set.id == "globalevent" )
-					title = "FrankerFaceZ Event Emotes";
-
-				else if ( this.feature_friday && set.id == this.feature_friday.set )
-					title = "FrankerFaceZ " + this.feature_friday.title + ": " + this.feature_friday.display_name;
-
-				else
-					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);
-			} else
-				title = "FrankerFaceZ: " + title;
+			var title = "FrankerFaceZ " + set.title,
+				badge = set.icon || '//cdn.frankerfacez.com/script/devicon.png';
 
 			emotes.push({text: emote.name, url: emote.urls[1],
 				hidden: false, channel: title, badge: badge});
@@ -7291,7 +7279,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 8,
+	major: 3, minor: 5, revision: 10,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -7439,7 +7427,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 		this.init_normal(delay);
 		return;
 	}
-	
+
 	if ( location.hostname === 'passport' && /^\/(?:authorize)/.test(location.pathname) ) {
 		this.log("Running on passport!");
 		this.init_normal(delay, true);
@@ -8147,6 +8135,7 @@ var FFZ = window.FrankerFaceZ;
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
+FFZ.prototype._ws_last_iframe = 0;
 
 FFZ.ws_commands = {};
 FFZ.ws_on_close = [];
@@ -8155,6 +8144,22 @@ FFZ.ws_on_close = [];
 // ----------------
 // Socket Creation
 // ----------------
+
+FFZ.prototype.ws_iframe = function() {
+	this._ws_last_iframe = Date.now();
+	var ifr = document.createElement('iframe'),
+		f = this;
+
+	ifr.src = 'http://catbag.frankerfacez.com';
+	ifr.style.visibility = 'hidden';
+	document.body.appendChild(ifr);
+	setTimeout(function() {
+		document.body.removeChild(ifr);
+		if ( ! f._ws_open )
+			f.ws_create();
+	}, 2000);
+}
+
 
 FFZ.prototype.ws_create = function() {
 	var f = this, ws;
@@ -8175,6 +8180,7 @@ FFZ.prototype.ws_create = function() {
 	ws.onopen = function(e) {
 		f._ws_open = true;
 		f._ws_delay = 0;
+		f._ws_last_iframe = Date.now();
 		f.log("Socket connected.");
 
 		// Check for incognito. We don't want to do a hello in incognito mode.
@@ -8249,6 +8255,12 @@ FFZ.prototype.ws_create = function() {
 			} catch(err) {
 				f.log("Error on Socket Close Callback: " + err);
 			}
+		}
+
+		if ( f._ws_delay > 10000 ) {
+			var ua = navigator.userAgent.toLowerCase();
+			if ( Date.now() - f._ws_last_iframe > 1800000 && !(ua.indexOf('chrome') === -1 && ua.indexOf('safari') !== -1) )
+				return f.ws_iframe();
 		}
 
 		// We never ever want to not have a socket.
@@ -9630,7 +9642,8 @@ FFZ.prototype._load_dark_css = function() {
 }
 },{"../constants":4}],24:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils');
+	utils = require('../utils'),
+	constants = require('../constants');
 
 
 
@@ -9647,7 +9660,7 @@ FFZ.settings_info.following_count = {
 
 	on_update: function(val) {
 			this._schedule_following_count();
-			
+
 			var Stream = window.App && App.__container__.resolve('model:stream'),
 				Live = Stream && Stream.find("live");
 
@@ -9666,7 +9679,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 	// Start it updating.
 	if ( this.settings.following_count )
 		this._schedule_following_count();
-	
+
 	// If we don't have Ember, no point in trying this stuff.
 	if ( ! has_ember )
 		return this._update_following_count();
@@ -9683,11 +9696,17 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 		return this.log("Unable to find Live Streams collection.");
 
 	Live.addObserver('total', function() { f._draw_following_count(this.get('total')); });
+	Live.addObserver('content.length', function() { f._draw_following_channels(this.get('content'), this.get('total')); })
+
 	Live.load();
-	
-	var total = Live.get('total');
-	if ( typeof total === "number" )
+
+	var total = Live.get('total'),
+		streams = Live.get('content');
+	if ( typeof total === "number" ) {
 		this._draw_following_count(total);
+		if ( streams && streams.length )
+			this._draw_following_channels(streams, total);
+	}
 }
 
 
@@ -9715,7 +9734,7 @@ FFZ.prototype._update_following_count = function() {
 	}
 
 	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
-	
+
 	var Stream = window.App && App.__container__.resolve('model:stream'),
 		Live = Stream && Stream.find("live"),
 		f = this;
@@ -9723,12 +9742,81 @@ FFZ.prototype._update_following_count = function() {
 	if ( Live )
 		Live.load();
 	else
-		Twitch.api && Twitch.api.get("streams/followed", {limit:1, offset:0}, {version:3})
+		Twitch.api && Twitch.api.get("streams/followed", {limit:5, offset:0}, {version:3})
 			.done(function(data) {
 				f._draw_following_count(data._total);
+				f._draw_following_channels(data.streams, data._total);
 			}).fail(function() {
 				f._draw_following_count();
+				f._draw_following_channels();
 			})
+}
+
+
+FFZ.prototype._draw_following_channels = function(streams, total) {
+	// First, build the data.
+	var tooltip = 'Following';
+
+	if ( streams && streams.length ) {
+		var c = 0;
+		for(var i=0, l = streams.length; i < l; i++) {
+			var stream = streams[i];
+			if ( ! stream || ! stream.channel )
+				continue;
+
+			c += 1;
+			if ( c > 5 ) {
+				var ttl = total || streams.length;
+				tooltip += '<hr><span>And ' + utils.number_commas(ttl - 5) + ' more...</span>';
+				break;
+			}
+
+			tooltip += (i > 0 ? '<br>' : '<hr>') + '<span class="viewers">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span><b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br><span class="playing">' + (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing') + '</span>';
+		}
+	}
+
+
+	// Small
+	var small_following = jQuery('#small_nav ul.game_filters li[data-name="following"] a');
+	if ( small_following && small_following.length ) {
+		var data = small_following.data('tipsy');
+		if ( data && data.options ) {
+			data.options.gravity = function() { return this.parentElement.getAttribute('data-name') === 'following' ? 'nw': 'w'; };
+			data.options.html = true;
+			data.options.className = 'ffz-wide-tip';
+		} else
+			small_following.tipsy({html: true, className: 'ffz-wide-tip', gravity: 'nw'});
+
+		small_following.attr('title', tooltip);
+	}
+
+
+	// Large
+	var large_following = jQuery('#large_nav #nav_personal li[data-name="following"] a');
+	if ( large_following && large_following.length ) {
+		var data = large_following.data('tipsy');
+		if ( data && data.options ) {
+			data.options.html = true;
+			data.options.className = 'ffz-wide-tip';
+		} else
+			large_following.tipsy({html:true, className: 'ffz-wide-tip'});
+
+		large_following.attr('title', tooltip);
+	}
+
+
+	// Heading
+	var head_following = jQuery('#header_actions #header_following');
+	if ( head_following && head_following.length ) {
+		var data = head_following.data('tipsy');
+		if ( data && data.options ) {
+			data.options.html = true;
+			data.options.className = 'ffz-wide-tip';
+		} else
+			head_following.tipsy({html: true, className: 'ffz-wide-tip'});
+
+		head_following.attr('title', tooltip);
+	}
 }
 
 
@@ -9749,8 +9837,8 @@ FFZ.prototype._draw_following_count = function(count) {
 			badge.innerHTML = count ? utils.format_unread(count) : '';
 		}
 	}
-	
-	
+
+
 	// Large
 	var large_following = document.querySelector('#large_nav #nav_personal li[data-name="following"] a');
 	if ( large_following ) {
@@ -9767,7 +9855,7 @@ FFZ.prototype._draw_following_count = function(count) {
 			badge.innerHTML = count ? utils.format_unread(count) : '';
 		}
 	}
-	
+
 	// Heading
 	var head_following = document.querySelector('#header_actions #header_following');
 	if ( head_following ) {
@@ -9785,7 +9873,7 @@ FFZ.prototype._draw_following_count = function(count) {
 		}
 	}
 }
-},{"../utils":34}],25:[function(require,module,exports){
+},{"../constants":4,"../utils":34}],25:[function(require,module,exports){
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 
@@ -10229,16 +10317,32 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-	
+
 	fix_menu_position = function(container) {
+		var swapped = document.body.classList.contains('ffz-sidebar-swap');
+
 		var bounds = container.getBoundingClientRect(),
 			left = parseInt(container.style.left || '0'),
-			right = bounds.left + container.scrollWidth;
-		
-		if ( bounds.left < 0 )
-			container.style.left = (left - bounds.left) + 'px';
-		else if ( right > document.body.clientWidth )
-			container.style.left = (left - (right - document.body.clientWidth)) + 'px';
+			right = bounds.left + container.scrollWidth,
+			moved = !!container.style.left;
+
+		if ( swapped ) {
+			if ( bounds.left < 20 ) {
+				container.style.left = '';
+				moved = false;
+			} else if ( right > document.body.clientWidth )
+				container.style.left = (left - (right - document.body.clientWidth)) + 'px';
+
+		} else {
+			if ( bounds.left < 0 )
+				container.style.left = (left - bounds.left) + 'px';
+			else if ( right > (document.body.clientWidth - 20) ) {
+				container.style.left = '';
+				moved = false;
+			}
+		}
+
+		container.classList.toggle('ui-moved', moved);
 	};
 
 
@@ -10255,7 +10359,7 @@ FFZ.prototype.setup_menu = function() {
 		if ( ! popup ) return;
 		if ( popup.id === 'ffz-chat-menu' && popup.style && popup.style.left )
 			return;
-		
+
 		popup = jQuery(popup);
 		parent = popup.parent();
 
@@ -10447,7 +10551,31 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	var heading = document.createElement('li');
 	heading.className = 'title';
-	heading.innerHTML = "<span>" + (constants.DEBUG ? "[DEV] " : "") + "FrankerFaceZ</span>";
+	heading.innerHTML = '<span class="title">Franker' + (constants.DEBUG ? 'Dev' : 'Face') + 'Z</span>';
+
+	// Close Button
+	var close_btn = document.createElement('span'),
+		f = this;
+
+	close_btn.className = 'ffz-handle ffz-close-button';
+	heading.insertBefore(close_btn, heading.firstChild);
+
+	var can_close = false;
+	close_btn.addEventListener('mousedown', function() {
+		var popup = f._popup;
+		can_close = popup && popup.id === "ffz-chat-menu" && popup.style.left;
+	});
+
+	close_btn.addEventListener('click', function() {
+		var popup = f._popup;
+		if ( can_close && popup ) {
+			popup.parentElement.removeChild(popup);
+			delete f._popup;
+			f._popup_kill && f._popup_kill();
+			delete f._popup_kill;
+		}
+	});
+
 	menu.appendChild(heading);
 
 	// Draggable
@@ -10538,7 +10666,7 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 		this.log("No matching page: " + page);
 
 	FFZ.menu_pages[page].render.bind(this)(view, container, inner, menu);
-	
+
 	// Re-position if necessary.
 	var f = this;
 	setTimeout(function(){f._fix_menu_position();});
@@ -10554,7 +10682,8 @@ FFZ.menu_pages.channel = {
 			// Get the current room.
 			var room_id = view.get('controller.currentRoom.id'),
 				room = this.rooms[room_id],
-				has_product = false;
+				has_product = false,
+				f = this;
 
 			// Check for a product.
 			if ( this.settings.replace_twitch_menu ) {
@@ -10577,7 +10706,6 @@ FFZ.menu_pages.channel = {
 					// See if we've loaded. If we haven't loaded the ticket yet
 					// then try loading it, and then re-render the menu.
 					if ( tickets && ! is_subscribed && ! is_loaded ) {
-						var f = this;
 						tickets.addObserver('isLoaded', function() {
 							setTimeout(function(){
 								if ( inner.getAttribute('data-page') !== 'channel' )
@@ -10586,7 +10714,7 @@ FFZ.menu_pages.channel = {
 								inner.innerHTML = '';
 								FFZ.menu_pages.channel.render.bind(f)(view, inner);
 							},0);
-							
+
 						});
 
 						tickets.load();
@@ -10621,8 +10749,17 @@ FFZ.menu_pages.channel = {
 						s.style.width = emote.width + "px";
 						s.style.height = emote.height + "px";
 						s.title = emote.regex;
-						if ( can_use )
-							s.addEventListener('click', this._add_emote.bind(this, view, emote.regex));
+
+						s.addEventListener('click', function(can_use, id, code, e) {
+							if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+								window.open("https://twitchemotes.com/emote/" + id);
+							else if ( can_use )
+								this._add_emote(view, code);
+							else
+								return;
+							e.preventDefault();
+						}.bind(this, can_use, emote.id, emote.regex));
+
 						grid.appendChild(s);
 						c++;
 					}
@@ -10701,7 +10838,7 @@ FFZ.menu_pages.channel = {
 // --------------------
 
 FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text) {
-	var grid = document.createElement('div'), c = 0;
+	var grid = document.createElement('div'), c = 0, f = this;
 	grid.className = 'emoticon-grid';
 
 	if ( header != null ) {
@@ -10775,7 +10912,14 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 		s.style.height = emote.height + "px";
 		s.title = this._emote_tooltip(emote);
 
-		s.addEventListener('click', this._add_emote.bind(this, view, emote.name));
+		s.addEventListener('click', function(id, code, e) {
+			e.preventDefault();
+			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+				window.open("https://www.frankerfacez.com/emoticons/" + id);
+			else
+				this._add_emote(view, code);
+		}.bind(this, emote.id, emote.name));
+
 		grid.appendChild(s);
 	}
 
@@ -10936,53 +11080,10 @@ FFZ.menu_pages.myemotes = {
 
 	render: function(view, container) {
 		var tmi = view.get('controller.currentRoom.tmiSession'),
-			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
-			needed_sets = [];
+			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
 
-		for(var set_id in twitch_sets)
-			if ( twitch_sets.hasOwnProperty(set_id) && ! this._twitch_set_to_channel.hasOwnProperty(set_id) )
-				needed_sets.push(set_id);
-
-		if ( ! needed_sets.length )
-			return FFZ.menu_pages.myemotes.draw_menu.bind(this)(view, container, twitch_sets);
-
-		var f = this,
-			fail = function() {
-				if ( ! needed_sets.length )
-					return;
-
-				needed_sets = [];
-				var ts = {};
-				for(var set_id in twitch_sets)
-				if ( f._twitch_set_to_channel[set_id] )
-					ts[set_id] = twitch_sets[set_id];
-				else
-					ts[set_id] = []; //"twitch_unknown";
-
-				return FFZ.menu_pages.myemotes.draw_menu.bind(f)(view, container, ts);
-			};
-
-		if ( ! this.ws_send("twitch_sets", needed_sets, function(success, data) {
-			if ( ! needed_sets.length )
-				return;
-
-			needed_sets = [];
-			if ( success ) {
-				for(var set_id in data) {
-					if ( ! data.hasOwnProperty(set_id) )
-						continue;
-
-					f._twitch_set_to_channel[set_id] = data[set_id];
-				}
-
-				localStorage.ffzTwitchSets = JSON.stringify(f._twitch_set_to_channel);
-				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, twitch_sets);
-			} else
-				fail();
-		}) )
-			fail()
-		else
-			setTimeout(fail, 2000);
+		// We don't have to do async stuff anymore cause we pre-load data~!
+		return FFZ.menu_pages.myemotes.draw_menu.bind(this)(view, container, twitch_sets);
 	},
 
 	toggle_section: function(heading) {
@@ -11011,15 +11112,15 @@ FFZ.menu_pages.myemotes = {
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
-		
+
 		menu.setAttribute('data-set', 'emoji');
 		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('emoji') !== -1);
 		heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this); });
-		
+
 		var set = [];
 		for(var eid in this.emoji_data)
 			set.push(this.emoji_data[eid]);
-		
+
 		set.sort(function(a,b) {
 			var an = a.short_name.toLowerCase(),
 				bn = b.short_name.toLowerCase();
@@ -11030,7 +11131,7 @@ FFZ.menu_pages.myemotes = {
 			if ( a.raw > b.raw ) return 1;
 			return 0;
 		});
-		
+
 		for(var i=0; i < set.length; i++) {
 			var emoji = set[i],
 				em = document.createElement('span'),
@@ -11039,13 +11140,13 @@ FFZ.menu_pages.myemotes = {
 			em.className = 'emoticon tooltip';
 			em.title = 'Emoji: ' + emoji.raw + '\nName: :' + emoji.short_name + ':';
 			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
-			
+
 			em.style.backgroundImage = 'url("' + emoji.src + '")';
 			em.style.backgroundImage = '-webkit-' + img_set;
 			em.style.backgroundImage = '-moz-' + img_set;
 			em.style.backgroundImage = '-ms-' + img_set;
 			em.style.backgroudnImage = img_set;
-			
+
 			menu.appendChild(em);
 		}
 
@@ -11125,7 +11226,13 @@ FFZ.menu_pages.myemotes = {
 			}
 
 			em.title = code;
-			em.addEventListener("click", this._add_emote.bind(this, view, code));
+			em.addEventListener("click", function(id, code, e) {
+				e.preventDefault();
+				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+					window.open("https://twitchemotes.com/emote/" + id);
+				else
+					this._add_emote(view, code);
+			}.bind(this, emote.id, emote.code));
 			menu.appendChild(em);
 		}
 
@@ -11144,7 +11251,7 @@ FFZ.menu_pages.myemotes = {
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
-		
+
 		menu.setAttribute('data-set', 'ffz-' + set.id);
 		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('ffz-' + set.id) !== -1);
 		heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this); });
@@ -11190,7 +11297,13 @@ FFZ.menu_pages.myemotes = {
 				em.style.width = emote.width + "px";
 
 			em.title = this._emote_tooltip(emote);
-			em.addEventListener("click", this._add_emote.bind(this, view, emote.name));
+			em.addEventListener("click", function(id, code, e) {
+				e.preventDefault();
+				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+					window.open("https://www.frankerfacez.com/emoticons/" + id);
+				else
+					this._add_emote(view, code);
+			}.bind(this, emote.id, emote.name));
 			menu.appendChild(em);
 		}
 

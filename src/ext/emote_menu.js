@@ -49,22 +49,8 @@ FFZ.prototype._emote_menu_enumerator = function() {
 			if ( emote.hidden )
 				continue;
 
-			// TODO: Stop having to calculate this here.
-			var title = set.title, badge = set.icon || null;
-			if ( ! title ) {
-				if ( set.id === "global" )
-					title = "FrankerFaceZ Global Emotes";
-
-				else if ( set.id == "globalevent" )
-					title = "FrankerFaceZ Event Emotes";
-
-				else if ( this.feature_friday && set.id == this.feature_friday.set )
-					title = "FrankerFaceZ " + this.feature_friday.title + ": " + this.feature_friday.display_name;
-
-				else
-					title = "FrankerFaceZ Set: " + FFZ.get_capitalization(set.id);
-			} else
-				title = "FrankerFaceZ: " + title;
+			var title = "FrankerFaceZ " + set.title,
+				badge = set.icon || '//cdn.frankerfacez.com/script/devicon.png';
 
 			emotes.push({text: emote.name, url: emote.urls[1],
 				hidden: false, channel: title, badge: badge});

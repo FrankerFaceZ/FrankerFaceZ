@@ -79,53 +79,10 @@ FFZ.menu_pages.myemotes = {
 
 	render: function(view, container) {
 		var tmi = view.get('controller.currentRoom.tmiSession'),
-			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
-			needed_sets = [];
+			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
 
-		for(var set_id in twitch_sets)
-			if ( twitch_sets.hasOwnProperty(set_id) && ! this._twitch_set_to_channel.hasOwnProperty(set_id) )
-				needed_sets.push(set_id);
-
-		if ( ! needed_sets.length )
-			return FFZ.menu_pages.myemotes.draw_menu.bind(this)(view, container, twitch_sets);
-
-		var f = this,
-			fail = function() {
-				if ( ! needed_sets.length )
-					return;
-
-				needed_sets = [];
-				var ts = {};
-				for(var set_id in twitch_sets)
-				if ( f._twitch_set_to_channel[set_id] )
-					ts[set_id] = twitch_sets[set_id];
-				else
-					ts[set_id] = []; //"twitch_unknown";
-
-				return FFZ.menu_pages.myemotes.draw_menu.bind(f)(view, container, ts);
-			};
-
-		if ( ! this.ws_send("twitch_sets", needed_sets, function(success, data) {
-			if ( ! needed_sets.length )
-				return;
-
-			needed_sets = [];
-			if ( success ) {
-				for(var set_id in data) {
-					if ( ! data.hasOwnProperty(set_id) )
-						continue;
-
-					f._twitch_set_to_channel[set_id] = data[set_id];
-				}
-
-				localStorage.ffzTwitchSets = JSON.stringify(f._twitch_set_to_channel);
-				return FFZ.menu_pages.my_emotes.draw_menu.bind(f)(view, container, twitch_sets);
-			} else
-				fail();
-		}) )
-			fail()
-		else
-			setTimeout(fail, 2000);
+		// We don't have to do async stuff anymore cause we pre-load data~!
+		return FFZ.menu_pages.myemotes.draw_menu.bind(this)(view, container, twitch_sets);
 	},
 
 	toggle_section: function(heading) {
@@ -154,15 +111,15 @@ FFZ.menu_pages.myemotes = {
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
-		
+
 		menu.setAttribute('data-set', 'emoji');
 		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('emoji') !== -1);
 		heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this); });
-		
+
 		var set = [];
 		for(var eid in this.emoji_data)
 			set.push(this.emoji_data[eid]);
-		
+
 		set.sort(function(a,b) {
 			var an = a.short_name.toLowerCase(),
 				bn = b.short_name.toLowerCase();
@@ -173,7 +130,7 @@ FFZ.menu_pages.myemotes = {
 			if ( a.raw > b.raw ) return 1;
 			return 0;
 		});
-		
+
 		for(var i=0; i < set.length; i++) {
 			var emoji = set[i],
 				em = document.createElement('span'),
@@ -182,13 +139,13 @@ FFZ.menu_pages.myemotes = {
 			em.className = 'emoticon tooltip';
 			em.title = 'Emoji: ' + emoji.raw + '\nName: :' + emoji.short_name + ':';
 			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
-			
+
 			em.style.backgroundImage = 'url("' + emoji.src + '")';
 			em.style.backgroundImage = '-webkit-' + img_set;
 			em.style.backgroundImage = '-moz-' + img_set;
 			em.style.backgroundImage = '-ms-' + img_set;
 			em.style.backgroudnImage = img_set;
-			
+
 			menu.appendChild(em);
 		}
 
@@ -268,7 +225,13 @@ FFZ.menu_pages.myemotes = {
 			}
 
 			em.title = code;
-			em.addEventListener("click", this._add_emote.bind(this, view, code));
+			em.addEventListener("click", function(id, code, e) {
+				e.preventDefault();
+				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+					window.open("https://twitchemotes.com/emote/" + id);
+				else
+					this._add_emote(view, code);
+			}.bind(this, emote.id, emote.code));
 			menu.appendChild(em);
 		}
 
@@ -287,7 +250,7 @@ FFZ.menu_pages.myemotes = {
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
-		
+
 		menu.setAttribute('data-set', 'ffz-' + set.id);
 		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('ffz-' + set.id) !== -1);
 		heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this); });
@@ -333,7 +296,13 @@ FFZ.menu_pages.myemotes = {
 				em.style.width = emote.width + "px";
 
 			em.title = this._emote_tooltip(emote);
-			em.addEventListener("click", this._add_emote.bind(this, view, emote.name));
+			em.addEventListener("click", function(id, code, e) {
+				e.preventDefault();
+				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+					window.open("https://www.frankerfacez.com/emoticons/" + id);
+				else
+					this._add_emote(view, code);
+			}.bind(this, emote.id, emote.name));
 			menu.appendChild(em);
 		}
 

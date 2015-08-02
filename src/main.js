@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 8,
+	major: 3, minor: 5, revision: 10,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -169,7 +169,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 		this.init_normal(delay);
 		return;
 	}
-	
+
 	if ( location.hostname === 'passport' && /^\/(?:authorize)/.test(location.pathname) ) {
 		this.log("Running on passport!");
 		this.init_normal(delay, true);
