@@ -6,6 +6,107 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // ---------------------
 
+FFZ.basic_settings.dark_twitch = {
+	type: "boolean",
+	no_bttv: true,
+
+	category: "General",
+	name: "Dark Twitch",
+	help: "Apply a dark background to channels and other related pages for easier viewing.",
+
+	get: function() {
+		return this.settings.dark_twitch;
+	},
+
+	set: function(val) {
+		this.settings.set('dark_twitch', val);
+		this.settings.set('dark_no_blue', val);
+	}
+};
+
+FFZ.basic_settings.separated_chat = {
+	type: "boolean",
+	no_bttv: true,
+
+	category: "Chat",
+	name: "Separated Lines",
+	help: "Use alternating rows and thin lines to visually separate chat messages for easier reading.",
+
+	get: function() {
+		return this.settings.chat_rows && this.settings.chat_separators !== '0';
+	},
+
+	set: function(val) {
+		this.settings.set('chat_rows', val);
+		this.settings.set('chat_separators', val ? '2' : '0');
+	}
+};
+
+FFZ.basic_settings.minimalistic_chat = {
+	type: "boolean",
+
+	category: "Chat",
+	name: "Minimalistic UI",
+	help: "Hide all of chat except messages and the input box and reduce chat margins.",
+
+	get: function() {
+		return this.settings.minimal_chat && this.settings.chat_padding;
+	},
+
+	set: function(val) {
+		this.settings.set('minimal_chat', val);
+		this.settings.set('chat_padding', val);
+	}
+};
+
+FFZ.basic_settings.high_contrast = {
+	type: "boolean",
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "High Contrast",
+	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
+
+	get: function() {
+		return this.settings.high_contrast_chat !== '222';
+	},
+
+	set: function(val) {
+		this.settings.set('high_contrast_chat', val ? '111': '222');
+	}
+};
+
+FFZ.basic_settings.keywords = {
+	type: "button",
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Highlight Keywords",
+	help: "Set additional keywords that will be highlighted in chat.",
+
+	method: function() {
+		FFZ.settings_info.keywords.method.bind(this)();
+	}
+};
+
+FFZ.basic_settings.banned_words = {
+	type: "button",
+
+	category: "Chat",
+	no_bttv: true,
+
+	name: "Banned Keywords",
+	help: "Set a list of words that will be removed from chat messages, locally.",
+
+	method: function() {
+		FFZ.settings_info.banned_words.method.bind(this)();
+	}
+};
+
+
+
 FFZ.settings_info.twitch_chat_dark = {
 	type: "boolean",
 	value: false,
@@ -28,7 +129,7 @@ FFZ.settings_info.dark_twitch = {
 			var cb = document.querySelector('input.ffz-setting-dark-twitch');
 			if ( cb )
 				cb.checked = val;
-		
+
 			if ( this.has_bttv )
 				return;
 

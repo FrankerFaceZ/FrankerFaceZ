@@ -33,12 +33,12 @@ FFZ.prototype.setup_bttv = function(delay) {
 		this._dark_style.parentElement.removeChild(this._dark_style);
 		this._dark_style = undefined;
 	}
-	
+
 	if ( this._layout_style ) {
 		this._layout_style.parentElement.removeChild(this._layout_style);
 		this._layout_style = undefined;
 	}
-	
+
 	if ( this._chat_style ) {
 		utils.update_css(this._chat_style, 'chat_font_size', '');
 		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
@@ -76,6 +76,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	if ( this.settings.following_count ) {
 		this._schedule_following_count();
 		this._draw_following_count();
+		this._draw_following_channels();
 	}
 
 	// Remove Sub Count
@@ -186,7 +187,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
-			
+
 			room = (received_room || BetterTTV.getChannel()),
 			l_room = room && room.toLowerCase(),
 			l_sender = received_sender && received_sender.toLowerCase(),

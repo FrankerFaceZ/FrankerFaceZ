@@ -55,7 +55,8 @@ FFZ.settings_info.replace_bad_emotes = {
 
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
-}
+	};
+
 
 FFZ.settings_info.parse_emoji = {
 	type: "boolean",
@@ -211,7 +212,6 @@ FFZ.settings_info.clickable_emoticons = {
 	};
 
 
-
 FFZ.settings_info.link_info = {
 	type: "boolean",
 	value: true,
@@ -333,7 +333,7 @@ FFZ.settings_info.high_contrast_chat = {
 		'112': "Background + Bold",
 		'111': 'All'
 	},
-	value: '000',
+	value: '222',
 
 	category: "Chat Appearance",
 	no_bttv: true,
@@ -343,7 +343,7 @@ FFZ.settings_info.high_contrast_chat = {
 
 	process_value: function(val) {
 		if ( val === false )
-			return '000';
+			return '222';
 		else if ( val === true )
 			return '111';
 		return val;

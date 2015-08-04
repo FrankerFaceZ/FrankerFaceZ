@@ -50,6 +50,43 @@ try {
 // Settings
 // ----------------
 
+FFZ.basic_settings.enhanced_moderation_cards = {
+	type: "boolean",
+
+	no_bttv: true,
+
+	category: "Chat",
+	name: "Enhanced Moderation Cards",
+	help: "Improve moderation cards with hotkeys, additional buttons, chat history, and other information to make moderating easier.",
+
+	get: function() {
+		return this.settings.mod_card_hotkeys &&
+				this.settings.mod_card_info &&
+				this.settings.mod_card_history;
+	},
+
+	set: function(val) {
+		this.settings.set('mod_card_hotkeys', val);
+		this.settings.set('mod_card_info', val);
+		this.settings.set('mod_card_history', val);
+	}
+};
+
+
+FFZ.basic_settings.chat_hover_pause = {
+	type: "boolean",
+
+	no_bttv: true,
+
+	category: "Chat",
+	name: "Pause Chat Scrolling on Mouse Hover",
+	help: "Automatically prevent the chat from scrolling when moving the mouse over it to prevent moderation mistakes and link misclicks.",
+
+	get: 'chat_hover_pause',
+	set: 'chat_hover_pause'
+};
+
+
 FFZ.settings_info.chat_hover_pause = {
 	type: "boolean",
 	value: false,
@@ -58,7 +95,7 @@ FFZ.settings_info.chat_hover_pause = {
 
 	category: "Chat Moderation",
 	name: "Pause Chat Scrolling on Mouse Hover",
-	help: "Automatically prevent the chat from scrolling when moving the mouse over it to prevent moderation mistakes and link mis-clicks.",
+	help: "Automatically prevent the chat from scrolling when moving the mouse over it to prevent moderation mistakes and link misclicks.",
 
 	on_update: function(val) {
 			if ( ! this._roomv )
@@ -151,7 +188,7 @@ FFZ.settings_info.mod_card_buttons = {
 				else
 					old_val += ' ' + cmd;
 			}
-			
+
 			var new_val = prompt("Moderation Card Additional Buttons\n\nPlease enter a list of additional commands to display buttons for on moderation cards. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"", old_val);
 
 			if ( new_val === null || new_val === undefined )
@@ -159,7 +196,7 @@ FFZ.settings_info.mod_card_buttons = {
 
 			var vals = [];
 			new_val = new_val.trim();
-			
+
 			while(new_val) {
 				if ( new_val.charAt(0) === '"' ) {
 					var end = new_val.indexOf('"', 1);
@@ -170,8 +207,8 @@ FFZ.settings_info.mod_card_buttons = {
 					if ( segment )
 						vals.push(segment);
 
-					new_val = new_val.substr(end + 1); 
-					
+					new_val = new_val.substr(end + 1);
+
 				} else {
 					var ind = new_val.indexOf(' ');
 					if ( ind === -1 ) {
@@ -274,7 +311,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 			if ( typeof followers === "number" ) {
 				out += '<span class="stat tooltip" title="Followers">' + constants.HEART + ' ' + utils.number_commas(followers || 0) + '</span>';
-				
+
 			} else if ( followers === undefined ) {
 				var t = this;
 				this.set('cardInfo.user.ffz_followers', false);
@@ -299,7 +336,7 @@ FFZ.prototype.setup_mod_card = function() {
 		userName: Ember.computed("cardInfo.user.id", "cardInfo.user.display_name", function() {
 			var user_id = this.get("cardInfo.user.id"),
 				alias = f.aliases[user_id];
-			
+
 			return alias || this.get("cardInfo.user.display_name") || user_id.capitalize();
 		}),
 
@@ -313,7 +350,7 @@ FFZ.prototype.setup_mod_card = function() {
 				var el = this.get('element'),
 					controller = this.get('controller'),
 					line,
-					
+
 					user_id = controller.get('cardInfo.user.id'),
 					alias = f.aliases[user_id];
 
@@ -340,7 +377,7 @@ FFZ.prototype.setup_mod_card = function() {
 						after = el.querySelector('h3.name');
 					if ( after ) {
 						el.classList.add('ffz-has-info');
-						info.className = 'info channel-stats';	
+						info.className = 'info channel-stats';
 						after.parentElement.insertBefore(info, after.nextSibling);
 						this.ffzRebuildInfo();
 					}
@@ -350,16 +387,16 @@ FFZ.prototype.setup_mod_card = function() {
 				if ( f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
 					line = document.createElement('div');
 					line.className = 'extra-interface interface clearfix';
-					
+
 					var cmds = {},
 						add_btn_click = function(cmd) {
 							var user_id = controller.get('cardInfo.user.id'),
 								cont = App.__container__.lookup('controller:chat'),
 								room = cont && cont.get('currentRoom');
-	
+
 							room && room.send(cmd.replace(/{user}/g, user_id));
 						},
-	
+
 						add_btn_make = function(cmd) {
 							var btn = document.createElement('button'),
 								segment = cmd.split(' ', 1)[0],
@@ -373,12 +410,12 @@ FFZ.prototype.setup_mod_card = function() {
 							btn.className = 'button';
 							btn.innerHTML = utils.sanitize(title);
 							btn.title = utils.sanitize(cmd.replace(/{user}/g, controller.get('cardInfo.user.id') || '{user}'));
-							
+
 							jQuery(btn).tipsy();
 							btn.addEventListener('click', add_btn_click.bind(this, cmd));
 							return btn;
 						};
-					
+
 					var cmds = {};
 					for(var i=0; i < f.settings.mod_card_buttons.length; i++)
 						cmds[f.settings.mod_card_buttons[i].split(' ',1)[0]] = (cmds[f.settings.mod_card_buttons[i].split(' ',1)[0]] || 0) + 1;
@@ -392,7 +429,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 						line.appendChild(add_btn_make(cmd))
 					}
-					
+
 					el.appendChild(line);
 				}
 
@@ -431,7 +468,7 @@ FFZ.prototype.setup_mod_card = function() {
 				// Only do the big stuff if we're mod.
 				if ( controller.get('cardInfo.isModeratorOrHigher') ) {
 					el.classList.add('ffz-is-mod');
-					
+
 					// Key Handling
 					if ( f.settings.mod_card_hotkeys ) {
 						el.classList.add('no-mousetrap');
@@ -544,31 +581,31 @@ FFZ.prototype.setup_mod_card = function() {
 
 					msg_btn.title = "Whisper User";
 					jQuery(msg_btn).tipsy();
-					
-					
+
+
 					var real_msg = document.createElement('button');
 					real_msg.className = 'message-button button glyph-only message tooltip';
 					real_msg.innerHTML = MESSAGE;
 					real_msg.title = "Message User";
-					
+
 					real_msg.addEventListener('click', function() {
 						window.open('http://www.twitch.tv/message/compose?to=' + controller.get('cardInfo.user.id'));
 					})
 
 					msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
 				}
-				
-				
+
+
 				// Alias Button
 				var alias_btn = document.createElement('button');
 				alias_btn.className = 'alias button glyph-only tooltip';
 				alias_btn.innerHTML = constants.EDIT;
 				alias_btn.title = "Set Alias";
-				
+
 				alias_btn.addEventListener('click', function() {
 					var user = controller.get('cardInfo.user.id'),
 						alias = f.aliases[user];
-					
+
 					var new_val = prompt("Alias for User: " + user + "\n\nPlease enter an alias for the user. Leave it blank to remove the alias.", alias);
 					if ( new_val === null || new_val === undefined )
 						return;
@@ -579,20 +616,20 @@ FFZ.prototype.setup_mod_card = function() {
 
 					f.aliases[user] = new_val;
 					f.save_aliases();
-					
+
 					// Update UI
 					f._update_alias(user);
-					
+
 					Ember.propertyDidChange(controller, 'userName');
 					var name = el.querySelector('h3.name'),
 						link = name && name.querySelector('a');
-					
+
 					if ( link )
 						name = link;
 					if ( name )
-						name.classList.toggle('ffz-alias', new_val); 
+						name.classList.toggle('ffz-alias', new_val);
 				});
-				
+
 				if ( msg_btn )
 					msg_btn.parentElement.insertBefore(alias_btn, msg_btn);
 				else {
@@ -676,22 +713,21 @@ FFZ.prototype.setup_mod_card = function() {
 
 FFZ.prototype._update_alias = function(user) {
 	var alias = this.aliases && this.aliases[user],
-		display_name = alias,
+		cap_name = FFZ.get_capitalization(user),
+		display_name = alias || cap_name,
 		el = this._roomv && this._roomv.get('element'),
 		lines = el && el.querySelectorAll('.chat-line[data-sender="' + user + '"]');
-	
+
 	if ( ! lines )
 		return;
-
-	if ( ! display_name )
-		display_name = FFZ.get_capitalization(user);
 
 	for(var i=0, l = lines.length; i < l; i++) {
 		var line = lines[i],
 			el_from = line.querySelector('.from');
-		
+
 		el_from.classList.toggle('ffz-alias', alias);
 		el_from.textContent = display_name;
+		el_from.title = alias ? cap_name : '';
 	}
 }
 

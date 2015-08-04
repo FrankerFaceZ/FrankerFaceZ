@@ -10,6 +10,25 @@ var FFZ = window.FrankerFaceZ,
 // Initialization
 // -------------------
 
+FFZ.basic_settings.replace_twitch_menu = {
+	type: "boolean",
+
+	category: "Chat",
+
+	name: "Unified Emoticons Menu",
+	help: "Completely replace the default Twitch emoticon menu and display global emoticons in the My Emoticons menu.",
+
+	get: function() {
+		return this.settings.replace_twitch_menu && this.settings.global_emotes_in_menu && this.settings.emoji_in_menu;
+	},
+
+	set: function(val) {
+		this.settings.set('replace_twitch_menu', val);
+		this.settings.set('global_emotes_in_menu', val);
+		this.settings.set('emoji_in_menu', val);
+	}
+};
+
 FFZ.settings_info.replace_twitch_menu = {
 	type: "boolean",
 	value: false,

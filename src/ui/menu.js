@@ -308,7 +308,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 			el = document.createElement('li'),
 			link = document.createElement('a');
 
-		el.className = 'item';
+		el.className = 'item' + (page.sub_menu ? ' has-sub-menu' : '');
 		el.id = "ffz-menu-page-" + key;
 		link.title = page.name;
 		link.innerHTML = page.icon;

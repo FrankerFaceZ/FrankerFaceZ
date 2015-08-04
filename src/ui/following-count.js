@@ -1,19 +1,25 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
-	constants = require('../constants');
+	constants = require('../constants'),
 
+	FOLLOW_GRAVITY = function(f, el) {
+		return (f.settings.following_count && el.parentElement.getAttribute('data-name') === 'following' ? 'n' : '') + (f.settings.swap_sidebars ? 'e' : 'w');
+	},
+
+	WIDE_TIP = function(f, el) {
+		return ( ! f.settings.following_count || (el.id !== 'header_following' && el.parentElement.getAttribute('data-name') !== 'following') ) ? '' : 'ffz-wide-tip';
+	};
 
 
 FFZ.settings_info.following_count = {
 	type: "boolean",
 	value: true,
 
-	no_bttv: true,
 	no_mobile: true,
 
 	category: "Appearance",
-	name: "Sidebar Following Count",
-	help: "Display the number of live channels you're following on the sidebar.",
+	name: "Sidebar Following Data",
+	help: "Display the number of live channels you're following on the sidebar, and list the channels in a tooltip.",
 
 	on_update: function(val) {
 			this._schedule_following_count();
@@ -21,10 +27,14 @@ FFZ.settings_info.following_count = {
 			var Stream = window.App && App.__container__.resolve('model:stream'),
 				Live = Stream && Stream.find("live");
 
-			if ( Live )
-				this._draw_following_count(Live.get('total') || 0);
-			else
+			if ( Live ) {
+				var total = Live.get('total') || 0;
+				this._draw_following_count(total);
+				this._draw_following_channels(Live.get('content'), total);;
+			} else {
 				this._update_following_count();
+				this._draw_following_channels();
+			}
 		}
 	};
 
@@ -36,6 +46,9 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 	// Start it updating.
 	if ( this.settings.following_count )
 		this._schedule_following_count();
+
+	// Tooltips~!
+	this._install_following_tooltips();
 
 	// If we don't have Ember, no point in trying this stuff.
 	if ( ! has_ember )
@@ -68,7 +81,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 
 
 FFZ.prototype._schedule_following_count = function() {
-	if ( this.has_bttv || ! this.settings.following_count ) {
+	if ( ! this.settings.following_count ) {
 		if ( this._following_count_timer ) {
 			clearTimeout(this._following_count_timer);
 			this._following_count_timer = undefined;
@@ -110,9 +123,21 @@ FFZ.prototype._update_following_count = function() {
 }
 
 
-FFZ.prototype._draw_following_channels = function(streams, total) {
-	// First, build the data.
-	var tooltip = 'Following';
+FFZ.prototype._build_following_tooltip = function(el) {
+	if ( el.id !== 'header_following' && el.parentElement.getAttribute('data-name') !== 'following' )
+		return el.getAttribute('original-title');
+
+	if ( ! this.settings.following_count )
+		return 'Following';
+
+	var tooltip = (this.has_bttv ? '<span class="stat playing">FrankerFaceZ</span>' : '') + 'Following',
+		bb = el.getBoundingClientRect(),
+		height = document.body.clientHeight - (bb.bottom + 54),
+		max_lines = Math.max(Math.floor(height / 36) - 1, 2),
+
+		streams = this._tooltip_streams,
+		total = this._tooltip_total || (streams && streams.length) || 0;
+
 
 	if ( streams && streams.length ) {
 		var c = 0;
@@ -122,58 +147,90 @@ FFZ.prototype._draw_following_channels = function(streams, total) {
 				continue;
 
 			c += 1;
-			if ( c > 5 ) {
-				var ttl = total || streams.length;
-				tooltip += '<hr><span>And ' + utils.number_commas(ttl - 5) + ' more...</span>';
+			if ( c > max_lines ) {
+				tooltip += '<hr><span>And ' + utils.number_commas(total - max_lines) + ' more...</span>';
 				break;
 			}
 
-			tooltip += (i > 0 ? '<br>' : '<hr>') + '<span class="viewers">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span><b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br><span class="playing">' + (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing') + '</span>';
-		}
-	}
+			var up_since = this.settings.stream_uptime && stream.created_at && utils.parse_date(stream.created_at),
+				uptime = up_since && Math.floor((Date.now() - up_since.getTime()) / 1000) || 0,
+				minutes = Math.floor(uptime / 60) % 60,
+				hours = Math.floor(uptime / 3600);
 
+			tooltip += (i === 0 ? '<hr>' : '') +
+				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + (hours > 0 ? hours + 'h' : '') + minutes + 'm</span>' : '') +
+				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
+				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
+				'<span class="playing">' + (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing') + '</span>';
+		}
+	} else
+		tooltip += "<hr>No one you're following is online.";
+
+
+	// Reposition the tooltip.
+	setTimeout(function() {
+		var tip = document.querySelector('.tipsy'),
+			bb = tip.getBoundingClientRect(),
+
+			left = parseInt(tip.style.left || '0'),
+			right = bb.left + tip.scrollWidth;
+
+		if ( bb.left < 5 )
+			tip.style.left = (left - bb.left) + 5 + 'px';
+		else if ( right > document.body.clientWidth - 5 )
+			tip.style.left = (left - (5 + right - document.body.clientWidth)) + 'px';
+	});
+
+	return tooltip;
+}
+
+
+FFZ.prototype._install_following_tooltips = function() {
+	var f = this,
+		data = {
+			html: true,
+			className: function() { return WIDE_TIP(f, this); },
+			title: function() { return f._build_following_tooltip(this); }
+		};
 
 	// Small
 	var small_following = jQuery('#small_nav ul.game_filters li[data-name="following"] a');
 	if ( small_following && small_following.length ) {
-		var data = small_following.data('tipsy');
-		if ( data && data.options ) {
-			data.options.gravity = function() { return this.parentElement.getAttribute('data-name') === 'following' ? 'nw': 'w'; };
-			data.options.html = true;
-			data.options.className = 'ffz-wide-tip';
+		var td = small_following.data('tipsy');
+		if ( td && td.options ) {
+			td.options = _.extend(td.options, data);
+			td.options.gravity = function() { return FOLLOW_GRAVITY(f, this); };
 		} else
-			small_following.tipsy({html: true, className: 'ffz-wide-tip', gravity: 'nw'});
-
-		small_following.attr('title', tooltip);
+			small_following.tipsy(_.extend({gravity: function() { return FOLLOW_GRAVITY(f, this); }}, data));
 	}
 
 
 	// Large
 	var large_following = jQuery('#large_nav #nav_personal li[data-name="following"] a');
 	if ( large_following && large_following.length ) {
-		var data = large_following.data('tipsy');
-		if ( data && data.options ) {
-			data.options.html = true;
-			data.options.className = 'ffz-wide-tip';
-		} else
-			large_following.tipsy({html:true, className: 'ffz-wide-tip'});
-
-		large_following.attr('title', tooltip);
+		var td = large_following.data('tipsy');
+		if ( td && td.options )
+			td.options = _.extend(td.options, data);
+		else
+			large_following.tipsy(data);
 	}
 
 
 	// Heading
 	var head_following = jQuery('#header_actions #header_following');
 	if ( head_following && head_following.length ) {
-		var data = head_following.data('tipsy');
-		if ( data && data.options ) {
-			data.options.html = true;
-			data.options.className = 'ffz-wide-tip';
-		} else
-			head_following.tipsy({html: true, className: 'ffz-wide-tip'});
-
-		head_following.attr('title', tooltip);
+		var td = head_following.data('tipsy');
+		if ( td && td.options )
+			td.options = _.extend(td.options, data);
+		else
+			head_following.tipsy(data);
 	}
+}
+
+
+FFZ.prototype._draw_following_channels = function(streams, total) {
+	this._tooltip_streams = streams;
+	this._tooltip_total = total;
 }
 
 

@@ -476,6 +476,7 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	margin: 11px 13px;
 }
 
+.ffz-ui-sub-menu-page,
 .ffz-ui-menu-page { overflow-y: auto; }
 
 .ffz-ui-menu-page[data-page="about"],
@@ -540,8 +541,13 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	line-height: 25px;
 }
 
+.ffz-ui-menu-page input,
 .ffz-ui-menu-page select {
 	margin: 0 10px 5px;
+}
+
+.ffz-ui-menu-page input[type="file"] {
+	width: auto;
 }
 
 #ffz-chat-menu { pointer-events: none; }
@@ -570,13 +576,40 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	background-color: #282828;
 }
 
+.ffz-ui-popup ul.sub-menu li.title,
 .ffz-ui-menu-page .heading .right,
 .ffz-ui-popup ul.menu li.item {
 	float: right;
 }
 
+.ffz-ui-popup ul.sub-menu li.item,
 .ffz-ui-popup ul.menu li.title {
 	float: left;
+}
+
+.ffz-ui-popup ul.sub-menu { background-color: #dfdfdf; }
+
+.app-main.theatre .ffz-ui-popup ul.sub-menu,
+.chat-container.dark .ffz-ui-popup ul.sub-menu,
+.chat-container.force-dark .ffz-ui-popup ul.sub-menu,
+.ember-chat-container.dark .ffz-ui-popup ul.sub-menu,
+.ember-chat-container.force-dark .ffz-ui-popup ul.sub-menu,
+.ffz-ui-popup.dark ul.sub-menu {
+	background-color: #181818;
+}
+
+.ffz-ui-popup ul.sub-menu a {
+	text-decoration: none;
+	color: #333;
+}
+
+.app-main.theatre .ffz-ui-popup ul.sub-menu a,
+.chat-container.dark .ffz-ui-popup ul.sub-menu a,
+.chat-container.force-dark .ffz-ui-popup ul.sub-menu a,
+.ember-chat-container.dark .ffz-ui-popup ul.sub-menu a,
+.ember-chat-container.force-dark .ffz-ui-popup ul.sub-menu a,
+.ffz-ui-popup.dark ul.sub-menu a {
+	color: #d3d3d3 !important;
 }
 
 span.ffz-handle {
@@ -668,6 +701,11 @@ span.ffz-handle:after { left: 8px }
 	border-top: 1px solid transparent;
 }
 
+.ffz-ui-popup ul.sub-menu a {
+	border-left: none;
+	border-right: 1px solid rgba(0,0,0,0.2);
+}
+
 .ffz-ui-popup ul.menu li.active {
 	background-color: #fff;
 }
@@ -675,6 +713,15 @@ span.ffz-handle:after { left: 8px }
 .ffz-ui-popup ul.menu li.active a {
 	border-top-color: #fff;
 }
+
+.ffz-ui-popup ul.menu li.active.has-sub-menu {
+	background-color: #dfdfdf;
+}
+
+.ffz-ui-popup ul.menu li.active.has-sub-menu a {
+	border-top-color: #dfdfdf;
+}
+
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active,
 .chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active,
@@ -692,6 +739,24 @@ span.ffz-handle:after { left: 8px }
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active a,
 .ffz-ui-popup.dark ul.menu li.active a {
 	border-top-color: rgb(16,16,16);
+}
+
+.chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
+.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
+.ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
+.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
+.app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
+.ffz-ui-popup.dark ul.menu li.active.has-sub-menu {
+	background-color: #181818;
+}
+
+.chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
+.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
+.ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
+.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
+.app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
+.ffz-ui-popup.dark ul.menu li.active.has-sub-menu a {
+	border-top-color: #181818;
 }
 
 .chat-container.dark .chat-interface .ffz-ui-popup a,
@@ -735,6 +800,7 @@ span.ffz-handle:after { left: 8px }
 .chat-history::-webkit-scrollbar,
 #ffz-race-popup .table::-webkit-scrollbar,
 .emoticon-selector-box .all-emotes::-webkit-scrollbar,
+.ffz-ui-sub-menu-page::-webkit-scrollbar,
 .ffz-ui-menu-page::-webkit-scrollbar {
 	width: 6px;
 }
@@ -742,6 +808,7 @@ span.ffz-handle:after { left: 8px }
 .chat-history::-webkit-scrollbar-thumb,
 #ffz-race-popup .table::-webkit-scrollbar-thumb,
 .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
+.ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
 .ffz-ui-menu-page::-webkit-scrollbar-thumb {
 	border-radius: 7px;
 	background: rgba(0,0,0,0.7);
@@ -755,7 +822,10 @@ span.ffz-handle:after { left: 8px }
 .app-main.theatre .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 .ember-chat-container.dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
 .chat-container.dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
-.app-main.theatre .ffz-ui-menu-page::-webkit-scrollbar-thumb {
+.app-main.theatre .ffz-ui-menu-page::-webkit-scrollbar-thumb,
+.ember-chat-container.dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
+.chat-container.dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
+.app-main.theatre .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb {
 	background: rgba(255,255,255,0.6);
 	box-shadow: 0 0 1px 1px rgba(0,0,0,0.25);
 }
@@ -1080,21 +1150,35 @@ body:not(.ffz-chat-purge-icon) .ember-chat .mod-icons .purge { display: none; }
 /* Emoticon Tooltips */
 
 .ffz-wide-tip .tipsy-inner {
+	min-width: 300px;
 	max-width: 600px;
 	text-align: left;
+	position: relative;
 }
 
-.ffz-wide-tip span.viewers {
+.ffz-wide-tip span.stat {
 	float: right;
+	margin-left: 5px;
 }
 
-.ffz-wide-tip span.viewers svg {
+.ffz-wide-tip b { margin-right: 20px; }
+
+.ffz-wide-tip span.stat svg {
 	float: left;
 	margin: 1px;
 }
 
 .ffz-wide-tip svg path { fill: #fff; }
-.ffz-wide-tip span.playing { opacity: 0.7; }
+.ffz-wide-tip span.playing {
+	opacity: 0.7;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	display: block;
+	position: relative;
+	left: 0;
+	right: 0;
+}
 
 .tipsy .tipsy-inner {
 	white-space: pre-wrap;
@@ -1102,10 +1186,12 @@ body:not(.ffz-chat-purge-icon) .ember-chat .mod-icons .purge { display: none; }
 
 /* Menu Page Loader */
 
+.ffz-ui-sub-menu-page:empty,
 .ffz-ui-menu-page:empty {
 	overflow: hidden;
 }
 
+.ffz-ui-sub-menu-page:empty::after,
 .ffz-ui-menu-page:empty::after {
 	content: " ";
 	display: block;

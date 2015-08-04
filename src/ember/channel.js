@@ -50,7 +50,7 @@ FFZ.prototype.setup_channel = function() {
 		view.ffzInit();
 	};
 
-	
+
 	this.log("Hooking the Ember Channel model.");
 	Channel = App.__container__.resolve('model:channel');
 	if ( ! Channel )
@@ -58,7 +58,7 @@ FFZ.prototype.setup_channel = function() {
 
 	Channel.reopen({
 		ffz_host_target: undefined,
-		
+
 		setHostMode: function(e) {
 			if ( f.settings.hosted_channels ) {
 				this.set('ffz_host_target', e.target);
@@ -87,13 +87,13 @@ FFZ.prototype.setup_channel = function() {
 		ffzUpdateInfo: function() {
 			if ( this._ffz_update_timer )
 				clearTimeout(this._ffz_update_timer);
-			
+
 			if ( ! this.get('content.id') )
 				return;
-			
+
 			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 60000);
 		}.observes("content.id"),
-				
+
 		ffzCheckUpdate: function() {
 			var t = this,
 				id = t.get('content.id');
@@ -115,11 +115,11 @@ FFZ.prototype.setup_channel = function() {
 						t.set('game', game);
 						t.set('rollbackData.game', game);
 					}
-					
+
 					if ( data.stream.channel ) {
 						if ( data.stream.channel.status )
 							t.set('status', data.stream.channel.status);
-						
+
 						if ( data.stream.channel.views )
 							t.set('views', data.stream.channel.views);
 
@@ -176,7 +176,7 @@ FFZ.prototype.setup_channel = function() {
 
 		}.observes("content.hostModeTarget")
 	});
-	
+
 	Channel.ffzUpdateInfo();
 }
 
@@ -265,8 +265,8 @@ FFZ.prototype._modify_cindex = function(view) {
 				user = f.get_user(),
 				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
 				now_hosting = room && room.ffz_host_target,
-				hosts_left = room && room.ffz_hosts_left, 
-				
+				hosts_left = room && room.ffz_hosts_left,
+
 				el = this.get('element');
 
 			this.set('ffz_host_updating', false);
@@ -283,13 +283,13 @@ FFZ.prototype._modify_cindex = function(view) {
 						btn = document.createElement('span');
 						btn.id = 'ffz-ui-host-button';
 						btn.className = 'button action tooltip';
-						
+
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, false));
-						
+
 						var before;
 						try { before = container.querySelector(':scope > .theatre-button'); }
 						catch(err) { before = undefined; }
-						
+
 						if ( before )
 							container.insertBefore(btn, before);
 						else
@@ -307,8 +307,8 @@ FFZ.prototype._modify_cindex = function(view) {
 						btn.title += ' You have ' + hosts_left + ' host command' + utils.pluralize(hosts_left) + ' remaining this half hour.';
 				}
 			}
-			
-			
+
+
 			if ( hosted_id ) {
 				var container = el && el.querySelector('#hostmode .channel-actions'),
 					btn = container && container.querySelector('#ffz-ui-host-button');
@@ -321,9 +321,9 @@ FFZ.prototype._modify_cindex = function(view) {
 						btn = document.createElement('span');
 						btn.id = 'ffz-ui-host-button';
 						btn.className = 'button action tooltip';
-						
+
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, true));
-						
+
 						var before;
 						try { before = container.querySelector(':scope > .theatre-button'); }
 						catch(err) { before = undefined; }
@@ -344,9 +344,9 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( typeof hosts_left === "number" )
 						btn.title += ' You have ' + hosts_left + ' host command' + utils.pluralize(hosts_left) + ' remaining this half hour.';
 				}
-			}	
+			}
 		},
-		
+
 		ffzClickHost: function(controller, is_host) {
 			var target = controller.get(is_host ? 'controller.hostModeTarget.id' : 'controller.id'),
 				user = f.get_user(),
@@ -454,7 +454,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				var container = el && el.querySelector('.stats-and-actions .channel-stats'),
 					stat_el = container && container.querySelector('#ffz-ui-player-stats'),
 					el = stat_el && stat_el.querySelector('span'),
-					
+
 					player_cont = f.players && f.players[channel_id],
 					player = player_cont && player_cont.player,
 					stats = player && player.stats;
@@ -468,29 +468,29 @@ FFZ.prototype._modify_cindex = function(view) {
 						stat_el = document.createElement('span');
 						stat_el.id = 'ffz-ui-player-stats';
 						stat_el.className = 'ffz stat tooltip';
-						
+
 						stat_el.innerHTML = constants.GRAPH + " ";
 						el = document.createElement('span');
 						stat_el.appendChild(el);
-						
+
 						var other = container.querySelector('#ffz-uptime-display');
 						if ( other )
 							container.insertBefore(stat_el, other.nextSibling);
 						else
 							container.appendChild(stat_el);
 					}
-					
+
 					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
 					el.textContent = stats.hlsLatencyBroadcaster + 's';
 				}
 			}
-			
-			
+
+
 			if ( hosted_id ) {
 				var container = el && el.querySelector('#hostmode .channel-stats'),
 					stat_el = container && container.querySelector('#ffz-ui-player-stats'),
 					el = stat_el && stat_el.querySelector('span'),
-					
+
 					player_cont = f.players && f.players[hosted_id],
 					player = player_cont && player_cont.player,
 					stats = player && player.stats;
@@ -504,22 +504,22 @@ FFZ.prototype._modify_cindex = function(view) {
 						stat_el = document.createElement('span');
 						stat_el.id = 'ffz-ui-player-stats';
 						stat_el.className = 'ffz stat tooltip';
-						
+
 						stat_el.innerHTML = constants.GRAPH + " ";
 						el = document.createElement('span');
 						stat_el.appendChild(el);
-						
+
 						var other = container.querySelector('#ffz-uptime-display');
 						if ( other )
 							container.insertBefore(stat_el, other.nextSibling);
 						else
 							container.appendChild(stat_el);
 					}
-					
+
 					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
 					el.textContent = stats.hlsLatencyBroadcaster + 's';
 				}
-			}	
+			}
 		},
 
 
@@ -667,10 +667,10 @@ FFZ.settings_info.hosted_channels = {
 			var cb = document.querySelector('input.ffz-setting-hosted-channels');
 			if ( cb )
 				cb.checked = val;
-		
+
 			if ( ! this._cindex )
 				return;
-			
+
 			var chan = this._cindex.get('controller.model'),
 				room = chan && this.rooms && this.rooms[chan.get('id')],
 				target = room && room.room && room.room.get('ffz_host_target');
