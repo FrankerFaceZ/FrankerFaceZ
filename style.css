@@ -556,6 +556,9 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 	list-style-type: none;
 	border-top: 1px solid rgba(0,0,0,0.2);
 	background-color: #eee;
+}
+
+.ffz-ui-popup ul.menu:not(.sub-menu) {
 	cursor: ew-resize;
 }
 

@@ -824,7 +824,7 @@ FFZ.get_capitalization = function(name, callback) {
 // ---------------------
 
 FFZ.prototype._remove_banned = function(tokens) {
-	var banned_words = this.settings.banned_words;
+	var banned_words = _.union(['j.mp', 'bit.ly'], this.settings.banned_words);
 	if ( ! banned_words || ! banned_words.length )
 		return tokens;
 
@@ -847,10 +847,6 @@ FFZ.prototype._remove_banned = function(tokens) {
 					isLong: false,
 					censoredHref: token.href.replace(regex, "$1***")
 				});
-					/*{
-					mentionedUser: '</span><a class="deleted-link" title="' + utils.quote_attr(token.href.replace(regex, "$1***")) + '" data-url="' + utils.quote_attr(token.href) + '" href="#">&lt;banned link&gt;</a><span class="mentioning">',
-					own: true
-					});*/
 			else
 				new_tokens.push(token);
 
