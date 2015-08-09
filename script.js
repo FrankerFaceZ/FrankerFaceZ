@@ -4589,22 +4589,27 @@ FFZ.get_capitalization = function(name, callback) {
 // ---------------------
 
 FFZ.prototype._remove_banned = function(tokens) {
-	var banned_words = _.union(['j.mp', 'bit.ly'], this.settings.banned_words);
-	if ( ! banned_words || ! banned_words.length )
+	var banned_words = this.settings.banned_words,
+		banned_links = ['j.mp', 'bit.ly'],
+
+		has_banned_words = banned_words && banned_words.length;
+
+	if ( !has_banned_words && (! banned_links || ! banned_links.length) )
 		return tokens;
 
 	if ( typeof tokens == "string" )
 		tokens = [tokens];
 
 	var regex = FFZ._words_to_regex(banned_words),
+		link_regex = FFZ._words_to_regex(banned_links),
 		new_tokens = [];
 
 	for(var i=0; i < tokens.length; i++) {
 		var token = tokens[i];
 		if ( ! _.isString(token ) ) {
-			if ( token.emoticonSrc && regex.test(token.altText) )
+			if ( token.emoticonSrc && has_banned_words && regex.test(token.altText) )
 				new_tokens.push(token.altText.replace(regex, "$1***"));
-			else if ( token.isLink && regex.test(token.href) )
+			else if ( token.isLink && has_banned_words && regex.test(token.href) )
 				new_tokens.push({
 					isLink: true,
 					href: token.href,
@@ -4612,10 +4617,18 @@ FFZ.prototype._remove_banned = function(tokens) {
 					isLong: false,
 					censoredHref: token.href.replace(regex, "$1***")
 				});
+			else if ( token.isLink && link_regex.test(token.href) )
+				new_tokens.push({
+					isLink: true,
+					href: token.href,
+					isDeleted: true,
+					isLong: false,
+					censoredHref: token.href.replace(link_regex, "$1***")
+				});
 			else
 				new_tokens.push(token);
 
-		} else
+		} else if ( has_banned_words )
 			new_tokens.push(token.replace(regex, "$1***"));
 	}
 
@@ -7674,8 +7687,6 @@ require('./ember/moderation-card');
 require('./ember/chat-input');
 //require('./ember/teams');
 
-// Analytics: require('./tracking');
-
 require('./debug');
 
 require('./ext/betterttv');
@@ -7865,8 +7876,6 @@ FFZ.prototype.init_ember = function(delay) {
 	this.ws_create();
 	this.setup_emoticons();
 	this.setup_badges();
-
-	//this.setup_piwik();
 
 	//this.setup_router();
 	this.setup_colors();

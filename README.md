@@ -15,6 +15,8 @@ server for development. To get everything you need:
 
 1. Install node.js
 2. Run ```npm install``` within the FrankerFaceZ directory.
+3. Run ```npm install --global gulp``` to install gulp globally, making it
+   possible to use the ```gulp``` command.
 
 
 From there, you can use gulp to build the extension from source simply by
