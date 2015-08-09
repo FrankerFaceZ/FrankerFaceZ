@@ -14,9 +14,8 @@ FrankerFaceZ uses node.js to manage development dependencies and to run an HTTP
 server for development. To get everything you need:
 
 1. Install node.js
-2. Run ```npm install``` within the FrankerFaceZ directory.
-3. Run ```npm install --global gulp``` to install gulp globally, making it
-   possible to use the ```gulp``` command.
+2. Run ```npm install -g gulp``` to install the ```gulp``` command line utility.
+3. Run ```npm install``` within the FrankerFaceZ directory.
 
 
 From there, you can use gulp to build the extension from source simply by

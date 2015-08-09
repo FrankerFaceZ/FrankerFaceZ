@@ -10,12 +10,15 @@
     "gulp-changed": "^1.1.0",
     "gulp-clean": "^0.3.1",
     "gulp-concat": "^2.4.3",
+    "gulp-declare": "^0.3.0",
     "gulp-filesize": "0.0.6",
     "gulp-footer": "^1.0.5",
     "gulp-header": "^1.2.2",
+    "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^1.2.0",
     "gulp-uglify": "^1.0.2",
     "gulp-util": "^3.0.2",
+    "gulp-wrap": "^0.11.0",
     "request": "^2.51.0"
   },
   "repository": {
