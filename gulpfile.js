@@ -117,6 +117,6 @@ gulp.task('server', function() {
 			fs.createReadStream(file).pipe(res);
 		});
 
-	}).listen(8000);
+	}).listen(8000, "localhost");
 	util.log("[" + util.colors.cyan("HTTP") + "] Listening on Port: " + util.colors.magenta("8000"));
 });
