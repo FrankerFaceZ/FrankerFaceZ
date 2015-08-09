@@ -4630,6 +4630,8 @@ FFZ.prototype._remove_banned = function(tokens) {
 
 		} else if ( has_banned_words )
 			new_tokens.push(token.replace(regex, "$1***"));
+		else
+			new_tokens.push(token);
 	}
 
 	return new_tokens;
