@@ -125,8 +125,6 @@ require('./ember/moderation-card');
 require('./ember/chat-input');
 //require('./ember/teams');
 
-// Analytics: require('./tracking');
-
 require('./debug');
 
 require('./ext/betterttv');
@@ -316,8 +314,6 @@ FFZ.prototype.init_ember = function(delay) {
 	this.ws_create();
 	this.setup_emoticons();
 	this.setup_badges();
-
-	//this.setup_piwik();
 
 	//this.setup_router();
 	this.setup_colors();
