@@ -189,6 +189,7 @@ FFZ.prototype._modify_rview = function(view) {
 				sub_badge = cont.querySelector('#ffz-stat-sub'),
 				slow_badge = cont.querySelector('#ffz-stat-slow'),
 				banned_badge = cont.querySelector('#ffz-stat-banned'),
+				delay_badge = cont.querySelector('#ffz-stat-delay'),
 				btn = cont.querySelector('button');
 
 			if ( f.has_bttv || ! f.settings.room_status ) {
@@ -244,11 +245,23 @@ FFZ.prototype._modify_rview = function(view) {
 				jQuery(banned_badge).tipsy({gravity:"s", offset:15});
 			}
 
+			if ( ! delay_badge ) {
+				delay_badge = document.createElement('span');
+				delay_badge.className = 'ffz room-state stat float-right';
+				delay_badge.id = 'ffz-stat-delay';
+				delay_badge.innerHTML = 'DELAY';
+				delay_badge.title = "300ms of artifical chat delay added.";
+				cont.appendChild(delay_badge);
+				jQuery(delay_badge).tipsy({gravity:"s", offset:15});
+			}
+
 			r9k_badge.classList.toggle('hidden', !(room && room.get('r9k')));
 			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnly')));
 			slow_badge.classList.toggle('hidden', !(room && room.get('slowMode')));
 			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow')||120) + " seconds.";
 			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
+			delay_badge.title = utils.number_commas(+f.settings.chat_delay||300) + "ms of artifical chat delay added.";
+			delay_badge.classList.toggle('hidden', !+f.settings.chat_delay);
 
 			if ( btn ) {
 				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
@@ -886,6 +899,7 @@ FFZ.prototype._modify_room = function(room) {
 		// Track which rooms the user is currently in.
 		init: function() {
 			this._super();
+
 			try {
 				f.add_room(this.id, this);
 				this.set("ffz_chatters", {});
@@ -896,6 +910,7 @@ FFZ.prototype._modify_room = function(room) {
 
 		willDestroy: function() {
 			this._super();
+
 			try {
 				f.remove_room(this.id);
 			} catch(err) {
@@ -906,11 +921,18 @@ FFZ.prototype._modify_room = function(room) {
 		clearMessages: function(user) {
 			var t = this;
 			if ( user ) {
+				if (!this.ffzRecentlyBanned)
+					this.ffzRecentlyBanned = [];
+				this.ffzRecentlyBanned.push(user);
+				while (this.ffzRecentlyBanned.length > 100)
+					this.ffzRecentlyBanned.shift();
+
 				var msgs = t.get('messages'),
 					total = msgs.get('length'),
 					i = total,
 					alternate;
 				
+				// Delete visible messages
 				while(i--) {
 					var msg = msgs.get(i);
 					
@@ -932,6 +954,19 @@ FFZ.prototype._modify_room = function(room) {
 					else {
 						alternate = ! alternate;
 						t.set('messages.' + i + '.ffz_alternate', alternate);
+					}
+				}
+
+				// Delete pending messages
+				if (t.ffzPending) {
+					msgs = t.ffzPending;
+					i = msgs.length;
+					while(i--) {
+						var msg = msgs.get(i);
+						if ( msg.from !== user ) continue;
+						msg.ffz_deleted = true;
+						msg.deleted = !f.settings.prevent_clear;
+						msg.removed = f.settings.remove_deleted;
 					}
 				}
 
@@ -977,13 +1012,62 @@ FFZ.prototype._modify_room = function(room) {
 				messages.removeAt(0, len - limit);
 		},
 
+		// Artificial chat delay
 		pushMessage: function(msg) {
-			if ( this.shouldShowMessage(msg) ) {
+			if (+f.settings.chat_delay) {
+				if (!this.ffzPending)
+					this.ffzPending = [];
+
+				// uses black magic to ensure messages get flushed, but without a setInterval
+				if (!this.ffzPending.length)
+					setTimeout(this.ffzPendingFlush.bind(this), 100);
+
+				msg.time = Date.now();
+				this.ffzPending.push(msg);
+			} else {
+				this.ffzActualPushMessage(msg);
+			}
+		},
+
+		ffzActualPushMessage: function (msg) {
+			if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
 
 				"admin" === msg.style || ("whisper" === msg.style && ! this.ffz_whisper_room ) || this.incrementProperty("unreadCount", 1);
 			}
+		},
+
+		ffzPendingFlush: function() {
+			var now = Date.now();
+			for (var i = 0, l = this.ffzPending.length; i < l; i++) {
+				var msg = this.ffzPending[i];
+				if (msg.removed) continue;
+				if (+f.settings.chat_delay + msg.time > now) break;
+				this.ffzActualPushMessage(msg);
+			}
+			this.ffzPending = this.ffzPending.slice(i);
+
+			// uses black magic to ensure messages get flushed, but without a setInterval
+			if (this.ffzPending.length)
+				setTimeout(this.ffzPendingFlush.bind(this), 100);
+		},
+
+		ffzShouldShowMessage: function (msg) {
+			if (f.settings.remove_bot_ban_notices && this.ffzRecentlyBanned) {
+				var banned = '(' + this.ffzRecentlyBanned.join('|') + ')';
+				var bots = {
+					'nightbot': '^' + banned,
+					'moobot': '\\(' + banned + '\\)',
+					'xanbot': '^' + banned,
+				};
+
+				if (msg.from in bots && (new RegExp(bots[msg.from])).test(msg.message)) {
+					return false;
+				}
+			}
+
+			return true;
 		},
 
 		addMessage: function(msg) {
