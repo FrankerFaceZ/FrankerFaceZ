@@ -7,6 +7,28 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
+FFZ.basic_settings.cure_cancer = {
+	type: "boolean",
+
+	category: "Chat",
+
+	name: "Cure Cancer",
+	help: "Destroys all cancerous chat messages before they can even be seen.",
+
+	get: function() {
+		return this.settings.remove_deleted &&
+			this.settings.remove_bot_ban_notices &&
+			+this.settings.chat_delay;
+	},
+
+	set: function(val) {
+		this.settings.set('remove_deleted', val);
+		this.settings.set('remove_bot_ban_notices', val);
+		this.settings.set('chat_delay', val ? ''+(+this.settings.chat_delay || 300) : '0');
+	}
+};
+
+
 FFZ.settings_info.minimal_chat = {
 	type: "boolean",
 	value: false,
@@ -45,6 +67,28 @@ FFZ.settings_info.minimal_chat = {
 				this._inputv.ffzResizeInput();
 		}
 	};
+
+
+FFZ.settings_info.chat_delay = {
+	type: "select",
+	options: {
+		0: "No Delay",
+		300: "Wait for bot auto-bans (300ms)",
+		1200: "Wait for human mods (1200ms)",
+		5000: "ＥＳＰＯＲＴＳ (5000ms)"
+	},
+	value: 0,
+
+	category: "Chat Appearance",
+	name: "Artificial Chat Delay",
+	help: "Delay messages allowing moderators to ban them before you see them.",
+
+	on_update: function (val) {
+		var delay_badge = document.querySelector('#ffz-stat-delay');
+		delay_badge.title = utils.number_commas(+val||300) + "ms of artifical chat delay added.";
+		delay_badge.classList.toggle('hidden', !+val);
+	}
+};
 
 
 FFZ.settings_info.remove_deleted = {
@@ -92,6 +136,16 @@ FFZ.settings_info.remove_deleted = {
 			}
 		}
 	};
+
+
+FFZ.settings_info.remove_bot_ban_notices = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Filtering",
+	name: "Remove Bot Ban Notices",
+	help: "Remove messages from bots announcing who was banned for what reason and for how long.",
+};
 
 
 FFZ.settings_info.prevent_clear = {
