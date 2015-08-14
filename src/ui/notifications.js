@@ -8,6 +8,18 @@ var FFZ = window.FrankerFaceZ;
 FFZ.prototype.setup_notifications = function() {
 	this.log("Adding event handler for window focus.");
 	window.addEventListener("focus", this.clear_notifications.bind(this));
+
+	// Firefox update warning.
+	if ( navigator.userAgent.toLowerCase().indexOf('firefox/') !== -1 ) {
+		if ( localStorage.hasOwnProperty('ffz_mozilla_sign_warning') )
+			return;
+
+		localStorage.ffz_mozilla_sign_warning = true;
+		var f = this;
+		setTimeout(function() {
+			f.show_message('Firefox users please re-download the add-on from <a href="https://www.frankerfacez.com/" target="_new">https://www.frankerfacez.com/</a> to ensure that it continues to function after the upgrade to Firefox 41. You should see version 1.56 in your add-ons listing.');
+		}, 1000);
+	}
 }
 
 
@@ -73,7 +85,7 @@ FFZ.settings_info.notification_timeout = {
 			var parsed = parseInt(new_val);
 			if ( parsed === NaN || parsed < 1 )
 				parsed = 60;
-			
+
 			this.settings.set("notification_timeout", parsed);
 		}
 	};

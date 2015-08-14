@@ -1016,7 +1016,7 @@ FFZ.prototype._modify_room = function(room) {
 
 		// Artificial chat delay
 		pushMessage: function(msg) {
-			if ( f.settings.chat_delay !== 0 ) {
+			if ( f.settings.chat_delay !== 0 || (this.ffzPending && this.ffzPending.length) ) {
 				if ( ! this.ffzPending )
 					this.ffzPending = [];
 
