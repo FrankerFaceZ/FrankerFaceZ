@@ -7,24 +7,33 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
-FFZ.basic_settings.cure_cancer = {
-	type: "boolean",
+FFZ.basic_settings.delayed_chat = {
+	type: "select",
+	options: {
+		0: "No Delay",
+		300: "Minor (Bot Moderation; 0.3s)",
+		1200: "Normal (Human Moderation; 1.2s)",
+		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)"
+	},
 
 	category: "Chat",
 
-	name: "Cure Cancer",
-	help: "Destroys all cancerous chat messages before they can even be seen.",
+	name: "Delayed Chat",
+	help: "Delay the appearance of chat messages to allow time for moderation and completely hide removed messages.",
 
 	get: function() {
-		return this.settings.remove_deleted &&
-			this.settings.remove_bot_ban_notices &&
-			+this.settings.chat_delay;
+		if ( ! this.settings.remove_deleted || ! this.settings.remove_bot_ban_notices )
+			return 0;
+
+		return this.settings.chat_delay;
 	},
 
 	set: function(val) {
-		this.settings.set('remove_deleted', val);
-		this.settings.set('remove_bot_ban_notices', val);
-		this.settings.set('chat_delay', val ? ''+(+this.settings.chat_delay || 300) : '0');
+		val = +val;
+
+		this.settings.set('remove_deleted', val !== 0);
+		this.settings.set('remove_bot_ban_notices', val !== 0);
+		this.settings.set('chat_delay', val);
 	}
 };
 
@@ -73,20 +82,25 @@ FFZ.settings_info.chat_delay = {
 	type: "select",
 	options: {
 		0: "No Delay",
-		300: "Wait for bot auto-bans (300ms)",
-		1200: "Wait for human mods (1200ms)",
-		5000: "ＥＳＰＯＲＴＳ (5000ms)"
+		300: "Minor (Bot Moderation; 0.3s)",
+		1200: "Normal (Human Moderation; 1.2s)",
+		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)"
 	},
 	value: 0,
 
 	category: "Chat Appearance",
 	name: "Artificial Chat Delay",
-	help: "Delay messages allowing moderators to ban them before you see them.",
+	help: "Delay the appearance of chat messages to allow for moderation before you see them.",
+
+	process_value: function(val) {
+		if ( typeof val === "string" )
+			return parseInt(val || "0");
+		return val;
+	},
 
 	on_update: function (val) {
-		var delay_badge = document.querySelector('#ffz-stat-delay');
-		delay_badge.title = utils.number_commas(+val||300) + "ms of artifical chat delay added.";
-		delay_badge.classList.toggle('hidden', !+val);
+		if ( this._roomv )
+			this._roomv.ffzUpdateStatus();
 	}
 };
 

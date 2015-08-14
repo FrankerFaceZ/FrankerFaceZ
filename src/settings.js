@@ -463,7 +463,7 @@ FFZ.menu_pages.settings = {
 						for(var ok in info.options) {
 							var op = document.createElement('option');
 							op.value = JSON.stringify(ok);
-							if ( val === ok )
+							if ( val == ok )
 								op.setAttribute('selected', true);
 							op.innerHTML = info.options[ok];
 							select.appendChild(op);
@@ -648,7 +648,7 @@ FFZ.menu_pages.settings = {
 						for(var ok in info.options) {
 							var op = document.createElement('option');
 							op.value = JSON.stringify(ok);
-							if ( val === ok )
+							if ( val == ok )
 								op.setAttribute('selected', true);
 							op.innerHTML = info.options[ok];
 							select.appendChild(op);
@@ -733,6 +733,14 @@ FFZ.prototype._setting_update = function(e) {
 		val = info.value || undefined;
 	}
 
+	if ( info.process_value )
+		try {
+			val = info.process_value.bind(this)(val);
+		} catch(err) {
+			this.log('Error processing value for setting "' + key + '": ' + err);
+			return;
+		}
+
 	this.settings[key] = val;
 	if ( info.on_update )
 		try {
@@ -755,10 +763,19 @@ FFZ.prototype._setting_get = function(key) {
 
 FFZ.prototype._setting_set = function(key, val) {
 	var info = FFZ.settings_info[key],
-		ls_key = info.storage_key || make_ls(key),
-		jval = JSON.stringify(val);
+		ls_key = info.storage_key || make_ls(key);
+
+	if ( info.process_value )
+		try {
+			val = info.process_value.bind(this)(val)
+		} catch(err) {
+			this.log('Error processing value for setting "' + key + '": ' + err);
+			return false;
+		}
 
 	this.settings[key] = val;
+
+	var jval = JSON.stringify(val);
 	localStorage.setItem(ls_key, jval);
 
 	this.log('Changed Setting "' + key + '" to: ' + jval);

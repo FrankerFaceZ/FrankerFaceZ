@@ -250,18 +250,20 @@ FFZ.prototype._modify_rview = function(view) {
 				delay_badge.className = 'ffz room-state stat float-right';
 				delay_badge.id = 'ffz-stat-delay';
 				delay_badge.innerHTML = 'DELAY';
-				delay_badge.title = "300ms of artifical chat delay added.";
+				delay_badge.title = "You have enabled artificial chat delay. Messages are displayed after 0.3 seconds.";
 				cont.appendChild(delay_badge);
 				jQuery(delay_badge).tipsy({gravity:"s", offset:15});
 			}
 
 			r9k_badge.classList.toggle('hidden', !(room && room.get('r9k')));
 			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnly')));
+			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
+
 			slow_badge.classList.toggle('hidden', !(room && room.get('slowMode')));
 			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow')||120) + " seconds.";
-			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
-			delay_badge.title = utils.number_commas(+f.settings.chat_delay||300) + "ms of artifical chat delay added.";
-			delay_badge.classList.toggle('hidden', !+f.settings.chat_delay);
+
+			delay_badge.title = "You have enabled artificial chat delay. Messages are displayed after " + (f.settings.chat_delay/1000) + " seconds.";
+			delay_badge.classList.toggle('hidden', f.settings.chat_delay === 0);
 
 			if ( btn ) {
 				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
@@ -279,7 +281,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 			this._ffz_interval = setInterval(this.ffzPulse.bind(this), 200);
 			this._ffz_messages = messages;
-			
+
 			this._ffz_mouse_move = this.ffzMouseMove.bind(this);
 			this._ffz_mouse_out = this.ffzMouseOut.bind(this);
 
@@ -378,7 +380,7 @@ FFZ.prototype._modify_rview = function(view) {
 				setTimeout(function(){
 					if ( e.ffz_frozen || ! s || ! s.length )
 						return;
-					
+
 					s[0].scrollTop = s[0].scrollHeight;
 					e._setStuckToBottom(true);
 				})
@@ -931,11 +933,11 @@ FFZ.prototype._modify_room = function(room) {
 					total = msgs.get('length'),
 					i = total,
 					alternate;
-				
+
 				// Delete visible messages
 				while(i--) {
 					var msg = msgs.get(i);
-					
+
 					if ( msg.from === user ) {
 						if ( f.settings.remove_deleted ) {
 							if ( alternate === undefined )
@@ -943,12 +945,12 @@ FFZ.prototype._modify_room = function(room) {
 							msgs.removeAt(i);
 							continue;
 						}
-						
+
 						t.set('messages.' + i + '.ffz_deleted', true);
 						if ( ! f.settings.prevent_clear )
 							t.set('messages.' + i + '.deleted', true);
 					}
-					
+
 					if ( alternate === undefined )
 						alternate = msg.ffz_alternate;
 					else {
@@ -1007,23 +1009,22 @@ FFZ.prototype._modify_room = function(room) {
 			var messages = this.get("messages"),
 				len = messages.get("length"),
 				limit = this.get("messageBufferSize");
-			
+
 			if ( len > limit )
 				messages.removeAt(0, len - limit);
 		},
 
 		// Artificial chat delay
 		pushMessage: function(msg) {
-			if (+f.settings.chat_delay) {
-				if (!this.ffzPending)
+			if ( f.settings.chat_delay !== 0 ) {
+				if ( ! this.ffzPending )
 					this.ffzPending = [];
 
-				// uses black magic to ensure messages get flushed, but without a setInterval
-				if (!this.ffzPending.length)
-					setTimeout(this.ffzPendingFlush.bind(this), 100);
-
-				msg.time = Date.now();
+				var now = Date.now();
+				msg.time = now;
 				this.ffzPending.push(msg);
+				this.ffzSchedulePendingFlush(now);
+
 			} else {
 				this.ffzActualPushMessage(msg);
 			}
@@ -1038,19 +1039,36 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
+		ffzSchedulePendingFlush: function(now) {
+			// Instead of just blindly looping every x seconds, we want to calculate the time until
+			// the next message should be displayed, and then set the timeout for that. We'll
+			// end up looping a bit more frequently, but it'll make chat feel more responsive.
+			if ( this._ffz_pending_flush )
+				clearTimeout(this._ffz_pending_flush);
+
+			if ( this.ffzPending && this.ffzPending.length ) {
+				var delay = 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - (now || Date.now()));
+				this._ffz_pending_flush = setTimeout(this.ffzPendingFlush.bind(this), delay);
+			}
+		},
+
 		ffzPendingFlush: function() {
+			this._ffz_pending_flush = null;
+
 			var now = Date.now();
 			for (var i = 0, l = this.ffzPending.length; i < l; i++) {
 				var msg = this.ffzPending[i];
-				if (msg.removed) continue;
-				if (+f.settings.chat_delay + msg.time > now) break;
+				if ( msg.removed )
+					continue;
+
+				if ( f.settings.chat_delay + msg.time > now )
+					break;
+
 				this.ffzActualPushMessage(msg);
 			}
-			this.ffzPending = this.ffzPending.slice(i);
 
-			// uses black magic to ensure messages get flushed, but without a setInterval
-			if (this.ffzPending.length)
-				setTimeout(this.ffzPendingFlush.bind(this), 100);
+			this.ffzPending = this.ffzPending.slice(i);
+			this.ffzSchedulePendingFlush(now);
 		},
 
 		ffzShouldShowMessage: function (msg) {
@@ -1074,7 +1092,7 @@ FFZ.prototype._modify_room = function(room) {
 			if ( msg ) {
 				if ( ! f.settings.hosted_sub_notices && msg.style === 'notification' && HOSTED_SUB.test(msg.message) )
 					return;
-				
+
 				var is_whisper = msg.style === 'whisper';
 				if ( f.settings.group_tabs && f.settings.whisper_room ) {
 					if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
@@ -1093,14 +1111,14 @@ FFZ.prototype._modify_room = function(room) {
 					if ( room ) {
 						var chat_history = room.user_history = room.user_history || {},
 							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
-	
+
 						user_history.push({
 							from: msg.tags && msg.tags['display-name'] || msg.from,
 							cachedTokens: msg.cachedTokens,
 							style: msg.style,
 							date: msg.date
 						});
-	
+
 						if ( user_history.length > 20 )
 							user_history.shift();
 					}
@@ -1120,7 +1138,7 @@ FFZ.prototype._modify_room = function(room) {
 							this.updateWait(this.get('slow'));
 					}
 				}
-				
+
 				// Also update chatters.
 				if ( ! is_whisper && this.chatters && ! this.chatters[msg.from] && msg.from !== 'twitchnotify' && msg.from !== 'jtv' )
 					this.ffzUpdateChatters(msg.from);
@@ -1140,7 +1158,7 @@ FFZ.prototype._modify_room = function(room) {
 			var user = f.get_user();
 			if ( user && f._cindex && this.get('id') === user.login )
 				f._cindex.ffzUpdateHostButton();
-			
+
 			var Chat = App.__container__.lookup('controller:chat');
 			if ( ! Chat || Chat.get('currentChannelRoom') !== this )
 				return;
@@ -1157,15 +1175,15 @@ FFZ.prototype._modify_room = function(room) {
 					// Command History
 					var mru = this.get('mru_list'),
 						ind = mru.indexOf(text);
-	
+
 					if ( ind !== -1 )
 						mru.splice(ind, 1)
 					else if ( mru.length > 20 )
 						mru.pop();
-	
+
 					mru.unshift(text);
 				}
-				
+
 				var cmd = text.split(' ', 1)[0].toLowerCase();
 				if ( cmd === "/ffz" ) {
 					this.set("messageToSend", "");
@@ -1337,11 +1355,11 @@ FFZ.prototype._modify_room = function(room) {
 		}.observes('tmiRoom'),
 
 		// Room State Stuff
-		
+
 		slowMode: function() {
 			return this.get('slow') > 0;
 		}.property('slow'),
-		
+
 		onSlowOff: function() {
 			if ( ! this.get('slowMode') )
 				this.updateWait(0);
