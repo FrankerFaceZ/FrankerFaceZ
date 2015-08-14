@@ -3,3 +3,5 @@ npm-debug.log
 build
 Extension Building
 .idea
+script.js
+script.min.js
