@@ -27,6 +27,16 @@ FFZ.prototype.setup_notifications = function() {
 // Settings
 // ---------------------
 
+FFZ.settings_info.server_messages = {
+	type: "boolean",
+	value: true,
+
+	category: "Appearance",
+	name: "Server Notifications",
+	help: "Display global FrankerFaceZ notifications."
+	};
+
+
 FFZ.settings_info.highlight_notifications = {
 	type: "boolean",
 	value: false,
@@ -96,6 +106,9 @@ FFZ.settings_info.notification_timeout = {
 // ---------------------
 
 FFZ.ws_commands.message = function(message) {
+	if ( ! this.settings.server_messages )
+		return;
+
 	this.show_message(message);
 }
 

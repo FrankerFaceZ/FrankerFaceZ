@@ -43,4 +43,5 @@ FFZ.prototype.update_ui_link = function(link) {
 	link.classList.toggle('live', live);
 	link.classList.toggle('dark', dark);
 	link.classList.toggle('blue', blue);
+	link.classList.toggle('news', this._has_news);
 }

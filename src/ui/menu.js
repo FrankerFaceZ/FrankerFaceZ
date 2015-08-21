@@ -321,9 +321,19 @@ FFZ.prototype.build_ui_popup = function(view) {
 		menu.appendChild(el);
 	}
 
-	// Render Current Page
+
 	var page = (this._last_page || "channel").split("_", 1)[0];
-	this._ui_change_page(view, inner, menu, sub_container, page);
+
+	// Do we have news?
+	if ( this._has_news ) {
+		// Render news, then set the page back so our default doesn't change.
+		this._ui_change_page(view, inner, menu, sub_container, 'about_news');
+		this._last_page = page;
+
+	} else
+		// Render Current Page
+		this._ui_change_page(view, inner, menu, sub_container, page);
+
 
 	// Add the menu to the DOM.
 	this._popup = container;

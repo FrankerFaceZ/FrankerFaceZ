@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 14,
+	major: 3, minor: 5, revision: 16,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -343,6 +343,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.find_bttv(10);
 	this.find_emote_menu(10);
 
+	//this.check_news();
 	this.check_ff();
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),

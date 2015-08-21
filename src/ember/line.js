@@ -134,6 +134,18 @@ FFZ.settings_info.hosted_sub_notices = {
 	};
 
 
+FFZ.settings_info.filter_bad_shorteners = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Filtering",
+	no_bttv: true,
+
+	name: "Auto-Hide Potentially Dangerous Shortened Links",
+	help: "Replace potentially dangerous shortened links. Links are still accessible, but require an extra click to access."
+};
+
+
 FFZ.settings_info.banned_words = {
 	type: "button",
 	value: [],
@@ -825,7 +837,7 @@ FFZ.get_capitalization = function(name, callback) {
 
 FFZ.prototype._remove_banned = function(tokens) {
 	var banned_words = this.settings.banned_words,
-		banned_links = ['j.mp', 'bit.ly'],
+		banned_links = this.settings.filter_bad_shorteners ? ['goo.gl', 'j.mp', 'bit.ly'] : null,
 
 		has_banned_words = banned_words && banned_words.length;
 
@@ -836,10 +848,10 @@ FFZ.prototype._remove_banned = function(tokens) {
 		tokens = [tokens];
 
 	var regex = FFZ._words_to_regex(banned_words),
-		link_regex = FFZ._words_to_regex(banned_links),
+		link_regex = this.settings.filter_bad_shorteners && FFZ._words_to_regex(banned_links),
 		new_tokens = [];
 
-	for(var i=0; i < tokens.length; i++) {
+	for(var i=0, l = tokens.length; i < l; i++) {
 		var token = tokens[i];
 		if ( ! _.isString(token ) ) {
 			if ( token.emoticonSrc && has_banned_words && regex.test(token.altText) )
@@ -852,13 +864,13 @@ FFZ.prototype._remove_banned = function(tokens) {
 					isLong: false,
 					censoredHref: token.href.replace(regex, "$1***")
 				});
-			else if ( token.isLink && link_regex.test(token.href) )
+			else if ( token.isLink && this.settings.filter_bad_shorteners && link_regex.test(token.href) )
 				new_tokens.push({
 					isLink: true,
 					href: token.href,
 					isDeleted: true,
 					isLong: false,
-					censoredHref: token.href.replace(link_regex, "$1***")
+					isShortened: true
 				});
 			else
 				new_tokens.push(token);

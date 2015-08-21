@@ -17,8 +17,9 @@ FFZ.basic_settings.delayed_chat = {
 	},
 
 	category: "Chat",
+	no_bttv: true,
 
-	name: "Delayed Chat",
+	name: "Delay and Filter Chat",
 	help: "Delay the appearance of chat messages to allow time for moderation and completely hide removed messages.",
 
 	get: function() {
@@ -89,6 +90,8 @@ FFZ.settings_info.chat_delay = {
 	value: 0,
 
 	category: "Chat Appearance",
+	no_bttv: true,
+
 	name: "Artificial Chat Delay",
 	help: "Delay the appearance of chat messages to allow for moderation before you see them.",
 
@@ -155,6 +158,8 @@ FFZ.settings_info.remove_deleted = {
 FFZ.settings_info.remove_bot_ban_notices = {
 	type: "boolean",
 	value: false,
+
+	no_bttv: true,
 
 	category: "Chat Filtering",
 	name: "Remove Bot Ban Notices",

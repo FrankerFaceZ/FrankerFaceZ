@@ -1102,6 +1102,14 @@ FFZ.prototype._modify_room = function(room) {
 				if ( ! is_whisper )
 					msg.room = this.get('id');
 
+				// Look up color and labels.
+				if ( this.tmiRoom && msg.from ) {
+					if ( ! msg.color )
+						msg.color = msg.tags && msg.tags.color ? msg.tags.color : this.tmiSession.getColor(msg.from.toLowerCase());
+					if ( ! msg.labels )
+						msg.labels = this.tmiRoom.getLabels(msg.from);
+				}
+
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
@@ -1144,13 +1152,12 @@ FFZ.prototype._modify_room = function(room) {
 					this.ffzUpdateChatters(msg.from);
 			}
 
-			var out = this._super(msg);
-
 			// Color processing.
 			if ( msg.color )
 				f._handle_color(msg.color);
 
-			return out;
+			// Add the message.
+			return this._super(msg);
 		},
 
 		setHostMode: function(e) {

@@ -64,6 +64,17 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 .ffz-ui-toggle.blue.live svg.svg-emoticons path { fill: rgba(47,88,185,0.5); }
 .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill: rgba(47,88,185,1); }
 
+.ember-chat-container.dark .ffz-ui-toggle.news svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.news svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.news svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.news svg.svg-emoticons path,
+.ffz-ui-toggle.news svg.svg-emoticons path { fill: rgba(117, 80, 0, 0.5); }
+
+.ember-chat-container.dark .ffz-ui-toggle.news:hover svg.svg-emoticons path,
+.app-main.theatre .ffz-ui-toggle.news:hover svg.svg-emoticons path,
+.chat-container.dark .ffz-ui-toggle.news:hover svg.svg-emoticons path,
+.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.news:hover svg.svg-emoticons path,
+.ffz-ui-toggle.news:hover svg.svg-emoticons path { fill: rgba(117, 80, 0, 0.8); }
 
 .ember-chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
@@ -442,6 +453,8 @@ body:not(.ffz-minimal-chat):not(.ffz-menu-replace) .emoticon-selector-toggle + s
 .chat-menu-content.collapsable .heading {
 	position: relative;
 }
+
+.list-header span.right { float: right; }
 
 .chat-menu-content.collapsable .heading span.right {
 	padding-right: 15px;
@@ -1244,17 +1257,20 @@ body:not(.ffz-chat-purge-icon) .ember-chat .mod-icons .purge { display: none; }
 	margin: -5px 0 5px;
 }
 
+.button.ffz-news,
 .button.ffz-donate {
 	margin-left: 10px;
-	background: #00b132;
 	color: #fff !important;
 	padding: 0 10px;
 	font-size: 12px;
 }
 
-.button.ffz-donate:not(.disabled):hover {
-	background: #08c43d;
-}
+.button.ffz-donate { background: #00b132; }
+.button.ffz-donate:not(.disabled):hover { background: #08c43d; }
+
+.button.ffz-news { background: #755000; }
+.button.ffz-news:not(.disabled):hover { background: #8a5f03; }
+
 
 /* Dumb Fixes */
 
