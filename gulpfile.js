@@ -105,15 +105,20 @@ gulp.task('server', function() {
 				return request.get("http://cdn.frankerfacez.com/" + uri).pipe(res);
 			}
 
+			var headers = {"Access-Control-Allow-Origin": "*"};
+
 			if ( fs.lstatSync(file).isDirectory() ) {
 				util.log("[" + util.colors.cyan("HTTP") + "] " + util.colors.red("403") + " GET " + util.colors.magenta(uri));
-				res.writeHead(403, {"Access-Control-Allow-Origin": "*"});
+				res.writeHead(403, headers);
 				res.write('403 Forbidden');
 				return res.end();
 			}
 
+			if ( file.substr(file.length-4) === ".svg" )
+				headers['Content-Type'] = 'image/svg+xml';
+
 			util.log("[" + util.colors.cyan("HTTP") + "] " + util.colors.green("200") + " GET " + util.colors.magenta(uri));
-			res.writeHead(200, {"Access-Control-Allow-Origin": "*"});
+			res.writeHead(200, headers);
 			fs.createReadStream(file).pipe(res);
 		});
 

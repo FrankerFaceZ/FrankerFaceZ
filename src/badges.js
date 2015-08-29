@@ -17,19 +17,77 @@ FFZ.settings_info.show_badges = {
 	};
 
 
+FFZ.settings_info.legacy_badges = {
+	type: "select",
+	options: {
+		0: "Default",
+		1: "Moderator Only",
+		2: "Mod + Turbo",
+		3: "All Legacy Badges"
+	},
+	value: 0,
+
+	category: "Chat Appearance",
+
+	name: "Legacy Badges",
+	help: "Use the old, pre-vector chat badges from Twitch in place of the new.",
+
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		else if ( val === true )
+			return 3;
+		else if ( typeof val === "string" )
+			return parseInt(val || "0");
+		return val;
+	},
+
+	on_update: function(val) {
+			document.body.classList.toggle("ffz-legacy-mod-badges", val !== 0);
+			document.body.classList.toggle("ffz-legacy-turbo-badges", val > 1);
+			document.body.classList.toggle("ffz-legacy-badges", val === 3);
+		}
+	};
+
+
 FFZ.settings_info.transparent_badges = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Default",
+		1: "Rounded",
+		2: "Circular",
+		3: "Circular (Color Only)",
+		4: "Circular (Color Only, Small)",
+		5: "Transparent"
+	},
+
+	value: 0,
 
 	category: "Chat Appearance",
 	no_bttv: true,
-	
-	name: "Transparent Badges",
-	help: "Make chat badges transparent for a nice, clean look. On light chat, non-subscriber badges are inverted to remain visible.",
-	
+
+	name: "Badge Style",
+	help: "Make badges appear rounded, completely circular, or transparent with no background at all.",
+
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		else if ( val === true )
+			return 5;
+		else if ( typeof val === "string" )
+			return parseInt(val || "0");
+		return val;
+	},
+
 	on_update: function(val) {
-			if ( ! this.has_bttv )
-				document.body.classList.toggle("ffz-transparent-badges", val);
+			if ( this.has_bttv )
+				return;
+
+			document.body.classList.toggle("ffz-rounded-badges", val === 1);
+			document.body.classList.toggle("ffz-circular-badges", val === 2);
+			document.body.classList.toggle("ffz-circular-blank-badges", val === 3);
+			document.body.classList.toggle("ffz-circular-small-badges", val === 4);
+			document.body.classList.toggle("ffz-transparent-badges", val === 5);
 		}
 	};
 
@@ -39,9 +97,18 @@ FFZ.settings_info.transparent_badges = {
 // --------------------
 
 FFZ.prototype.setup_badges = function() {
-	if ( ! this.has_bttv )
-		document.body.classList.toggle("ffz-transparent-badges", this.settings.transparent_badges);
-	
+	if ( ! this.has_bttv ) {
+		document.body.classList.toggle("ffz-rounded-badges", this.settings.transparent_badges === 1);
+		document.body.classList.toggle("ffz-circular-badges", this.settings.transparent_badges === 2);
+		document.body.classList.toggle("ffz-circular-blank-badges", this.settings.transparent_badges === 3);
+		document.body.classList.toggle("ffz-circular-small-badges", this.settings.transparent_badges === 4);
+		document.body.classList.toggle("ffz-transparent-badges", this.settings.transparent_badges === 5);
+	}
+
+	document.body.classList.toggle("ffz-legacy-mod-badges", this.settings.legacy_badges !== 0);
+	document.body.classList.toggle("ffz-legacy-turbo-badges", this.settings.legacy_badges > 1);
+	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges === 3);
+
 	this.log("Preparing badge system.");
 	this.badges = {};
 
@@ -206,7 +273,7 @@ FFZ.prototype.render_badges = function(component, badges) {
 			var visible = full_badge.visible;
 			if ( typeof visible === "function" )
 				visible = visible.bind(this)(room_id, user, component, badges);
-			
+
 			if ( ! visible )
 				continue;
 		}
@@ -215,7 +282,7 @@ FFZ.prototype.render_badges = function(component, badges) {
 			var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces;
 			if ( ! replaces )
 				continue;
-			
+
 			old_badge.image = badge.image || full_badge.image;
 			old_badge.klass += ' ffz-badge-replacement';
 			old_badge.title += ', ' + (badge.title || full_badge.title);
@@ -230,7 +297,7 @@ FFZ.prototype.render_badges = function(component, badges) {
 			extra_css: badge.extra_css
 		};
 	}
-	
+
 	return badges;
 }
 

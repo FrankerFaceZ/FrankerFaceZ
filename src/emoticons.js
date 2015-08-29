@@ -218,7 +218,7 @@ FFZ.prototype._emote_tooltip = function(emote) {
 
 FFZ.prototype.load_emoji_data = function(callback, tries) {
 	var f = this;
-	jQuery.getJSON(constants.SERVER + "emoji/emoji.json")
+	jQuery.getJSON(constants.SERVER + "emoji/emoji-data.json")
 		.done(function(data) {
 			var new_data = {},
 				by_name = {};
@@ -226,27 +226,32 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 				var emoji = data[eid];
 				eid = eid.toLowerCase();
 				emoji.code = eid;
-				
+
 				new_data[eid] = emoji;
 				by_name[emoji.short_name] = eid;
 
 				emoji.raw = _.map(emoji.code.split("-"), from_code_point).join("");
 
-				emoji.src = constants.SERVER + 'emoji/' + eid + '-1x.png';
-				emoji.srcSet = emoji.src + ' 1x, ' + constants.SERVER + 'emoji/' + eid + '-2x.png 2x, ' + constants.SERVER + 'emoji/' + eid + '-4x.png 4x';
+				emoji.tw_src = constants.SERVER + 'emoji/tw-' + eid + '.svg';
+				emoji.noto_src = constants.SERVER + 'emoji/noto-' + eid + '.svg';
 
 				emoji.token = {
-					srcSet: emoji.srcSet,
-					emoticonSrc: emoji.src,
+					emoticonSrc: true,
+
+					tw_src: emoji.tw_src,
+					noto_src: emoji.noto_src,
+
+					tw: emoji.tw,
+					noto: emoji.noto,
+
 					ffzEmoji: eid,
 					altText: emoji.raw
-					};
-				
+				};
 			}
 
 			f.emoji_data = new_data;
 			f.emoji_names = by_name;
-			
+
 			f.log("Loaded data on " + Object.keys(new_data).length + " emoji.");
 			if ( typeof callback === "function" )
 				callback(true, data);

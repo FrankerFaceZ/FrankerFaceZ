@@ -59,13 +59,29 @@ FFZ.settings_info.replace_bad_emotes = {
 
 
 FFZ.settings_info.parse_emoji = {
-	type: "boolean",
-	value: true,
+	type: "select",
+	options: {
+		0: "No Images / Font Only",
+		1: "Twitter Emoji Images",
+		2: "Google Noto Images"
+	},
+
+	value: 1,
+
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		if ( val === true )
+			return 1;
+		if ( typeof val === "string" )
+			return parseInt(val || "0");
+		return val;
+	},
 
 	category: "Chat Appearance",
 
-	name: "Replace Emoji with Images",
-	help: "Replace emoji in chat messages with nicer looking images from the open-source Twitter Emoji project."
+	name: "Emoji Display",
+	help: "Replace emoji in chat messages with nicer looking images from either Twitter or Google."
 	};
 
 
@@ -262,19 +278,6 @@ FFZ.settings_info.image_hover_all_domains = {
 	};
 
 
-FFZ.settings_info.legacy_badges = {
-	type: "boolean",
-	value: false,
-
-	category: "Chat Appearance",
-
-	name: "Legacy Badges",
-	help: "Display the old, pre-vector chat badges from Twitch.",
-
-	on_update: function(val) { document.body.classList.toggle("ffz-legacy-badges", val); }
-	};
-
-
 FFZ.settings_info.chat_rows = {
 	type: "boolean",
 	value: false,
@@ -365,6 +368,52 @@ FFZ.settings_info.high_contrast_chat = {
 			document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && val[2] === '1');
 			document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && val[1] === '1');
 			document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && val[0] === '1');
+		}
+	};
+
+
+FFZ.settings_info.chat_font_family = {
+	type: "button",
+	value: null,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Font Family",
+	help: "Change the font used for rendering chat messages.",
+
+	method: function() {
+			var old_val = this.settings.chat_font_family || "",
+				new_val = prompt("Chat Font Family\n\nPlease enter a font family to use rendering chat. Leave this blank to use the default.", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			// Should we wrap this with quotes?
+			if ( ! new_val )
+				new_val = null;
+
+			this.settings.set("chat_font_family", new_val);
+		},
+
+	on_update: function(val) {
+		if ( this.has_bttv || ! this._chat_style )
+			return;
+
+		var css;
+		if ( ! val )
+			css = "";
+		else {
+			// Let's escape this to avoid goofing anything up if there's bad user input.
+			if ( val.indexOf(' ') !== -1 && val.indexOf(',') === -1 && val.indexOf('"') === -1 && val.indexOf("'") === -1)
+				val = '"' + val + '"';
+
+			var span = document.createElement('span');
+			span.style.fontFamily = val;
+			css = ".ember-chat .chat-messages {" + span.style.cssText + "}";
+		}
+
+		utils.update_css(this._chat_style, "chat_font_family", css);
 		}
 	};
 
@@ -486,13 +535,13 @@ FFZ.prototype.setup_line = function() {
 
 	// Initial calculation.
 	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
+	FFZ.settings_info.chat_font_family.on_update.bind(this)(this.settings.chat_font_family);
 
 
 	// Chat Enhancements
 	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color !== '-1');
 	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
 
-	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges);
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
 	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== '0');
 	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
@@ -652,16 +701,11 @@ FFZ.prototype._modify_line = function(component) {
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
-				row_type = this.get('msgObject.ffz_alternate'),
 				raw_color = this.get('msgObject.color'),
 				colors = raw_color && f._handle_color(raw_color),
 
 				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
 
-			if ( row_type === undefined ) {
-				row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
-				this.set("msgObject.ffz_alternate", row_type);
-			}
 
 			e.push('<div class="indicator"></div>');
 			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');

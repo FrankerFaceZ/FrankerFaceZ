@@ -258,6 +258,18 @@ FFZ.settings_info.twenty_four_timestamps = {
 	};
 
 
+FFZ.settings_info.timestamp_seconds = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Timestamp Seconds",
+	help: "Display seconds in chat timestamps."
+	};
+
+
 FFZ.settings_info.show_deleted_links = {
 	type: "boolean",
 	value: false,
@@ -297,14 +309,15 @@ FFZ.prototype.setup_tokenization = function() {
 			return '?:??';
 
 		var hours = e.getHours(),
-			minutes = e.getMinutes();
+			minutes = e.getMinutes(),
+			seconds = e.getSeconds();
 
 		if ( hours > 12 && ! f.settings.twenty_four_timestamps )
 			hours -= 12;
 		else if ( hours === 0 && ! f.settings.twenty_four_timestamps )
 			hours = 12;
 
-		return hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+		return hours + ':' + (minutes < 10 ? '0' : '') + minutes + (f.settings.timestamp_seconds ? ':' + (seconds < 10 ? '0' : '') + seconds : '');
 	};
 
 
@@ -523,7 +536,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 	var f = this;
 	return _.map(tokens, function(token) {
 		if ( token.emoticonSrc ) {
-			var tooltip, srcset, extra;
+			var tooltip, src = token.emoticonSrc, srcset, extra;
 			if ( token.ffzEmote ) {
 				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
 					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
@@ -534,11 +547,15 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 
 			} else if ( token.ffzEmoji ) {
 				var eid = token.ffzEmoji,
-					emoji = f.emoji_data && f.emoji_data[eid];
+					emoji = f.emoji_data && f.emoji_data[eid],
+					setting = f.settings.parse_emoji;
 
-				tooltip = emoji ? "Emoji: " + token.altText + "\nName: :" + emoji.short_name + ":" : token.altText;
-				srcset = emoji ? emoji.srcSet : token.srcSet;
-				extra = ' data-ffz-emoji="' + eid + '"';
+				if ( setting === 0 || (setting === 1 && ! emoji.tw) || (setting === 2 && ! emoji.noto) )
+					return token.altText;
+
+				tooltip = emoji ? "Emoji: " + token.altText + "\nName: " + emoji.name + (emoji.short_name ? "\nShort Name: :" + emoji.short_name + ":" : "") : token.altText;
+				extra = ' data-ffz-emoji="' + eid + '" height="18px"';
+				src = setting === 2 ? token.noto_src : token.tw_src;
 
 			} else {
 				var id = token.replacedId || FFZ.src_to_id(token.emoticonSrc),
@@ -571,7 +588,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 					srcset = build_srcset(id);
 			}
 
-			return '<img class="emoticon tooltip"' + (extra||"") + ' src="' + utils.quote_attr(token.emoticonSrc) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
+			return '<img class="emoticon tooltip' + (cls||"") + '"' + (extra||"") + ' src="' + utils.quote_attr(src) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
 		}
 
 		if ( token.isLink ) {

@@ -176,7 +176,7 @@ FFZ.prototype.ws_create = function() {
 				} catch(err) {
 					f.error("Callback for " + request + ": " + err);
 				}
-				
+
 				f._ws_callbacks[request] = undefined;
 			}
 		}

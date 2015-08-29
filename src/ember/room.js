@@ -941,7 +941,7 @@ FFZ.prototype._modify_room = function(room) {
 					if ( msg.from === user ) {
 						if ( f.settings.remove_deleted ) {
 							if ( alternate === undefined )
-								alternate = msg.ffz_alternate;
+								alternate = ! msg.ffz_alternate;
 							msgs.removeAt(i);
 							continue;
 						}
@@ -1032,6 +1032,13 @@ FFZ.prototype._modify_room = function(room) {
 
 		ffzActualPushMessage: function (msg) {
 			if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
+				var row_type = msg.ffz_alternate;
+				if ( row_type === undefined ) {
+					var room_id = this.get('id');
+					row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
+					msg.ffz_alternate = row_type;
+				}
+
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
 
@@ -1233,16 +1240,21 @@ FFZ.prototype._modify_room = function(room) {
 			this.tmiRoom.list().done(function(data) {
 				var chatters = {};
 				data = data.data.chatters;
-				for(var i=0; i < data.admins.length; i++)
-					chatters[data.admins[i]] = true;
-				for(var i=0; i < data.global_mods.length; i++)
-					chatters[data.global_mods[i]] = true;
-				for(var i=0; i < data.moderators.length; i++)
-					chatters[data.moderators[i]] = true;
-				for(var i=0; i < data.staff.length; i++)
-					chatters[data.staff[i]] = true;
-				for(var i=0; i < data.viewers.length; i++)
-					chatters[data.viewers[i]] = true;
+				if ( data && data.admins )
+					for(var i=0; i < data.admins.length; i++)
+						chatters[data.admins[i]] = true;
+				if ( data && data.global_mods )
+					for(var i=0; i < data.global_mods.length; i++)
+						chatters[data.global_mods[i]] = true;
+				if ( data && data.moderators )
+					for(var i=0; i < data.moderators.length; i++)
+						chatters[data.moderators[i]] = true;
+				if ( data && data.staff )
+					for(var i=0; i < data.staff.length; i++)
+						chatters[data.staff[i]] = true;
+				if ( data && data.viewers )
+					for(var i=0; i < data.viewers.length; i++)
+						chatters[data.viewers[i]] = true;
 
 				room.set("ffz_chatters", chatters);
 				room.ffzUpdateChatters();

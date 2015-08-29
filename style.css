@@ -1729,7 +1729,29 @@ body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea {
 	border-right-color: transparent;
 }
 
-/* Hidden Badges */
+/* Badge Styles */
+
+.ffz-rounded-badges .ember-chat .badges .badge:not(.subscriber) { border-radius: 2px; }
+
+.ffz-circular-blank-badges .ember-chat .badges .badge:not(.subscriber),
+.ffz-circular-small-badges .ember-chat .badges .badge:not(.subscriber),
+.ffz-circular-badges .ember-chat .badges .badge:not(.subscriber) {
+	border-radius: 9px;
+	background-size: 16px;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.ffz-circular-small-badges .ember-chat .badges .badge:not(.subscriber),
+.ffz-circular-blank-badges .ember-chat .badges .badge:not(.subscriber) {
+	background-size: 0px;
+}
+
+.ffz-circular-small-badges .ember-chat .badges .badge:not(.subscriber) {
+	height: 10px;
+	min-width: 10px;
+	margin: 5px 3px 5px 0;
+}
 
 .ffz-transparent-badges .ember-chat .badges .badge {
 	background-color: transparent !important;
@@ -1864,6 +1886,7 @@ li[data-name="following"] a {
 
 /* Legacy Badges */
 
+.ffz-legacy-mod-badges .ember-chat .badges .moderator,
 .ffz-legacy-badges .ember-chat .badges .moderator {
 	background-color: #068c10;
 	background-image: url('legacy-mod.png');
@@ -1884,6 +1907,7 @@ li[data-name="following"] a {
 	background-image: url('legacy-admin.png');
 }
 
+.ffz-legacy-turbo-badges .ember-chat .badges .turbo,
 .ffz-legacy-badges .ember-chat .badges .turbo {
 	background-color: #6441a3;
 	background-image: url('legacy-turbo.png');

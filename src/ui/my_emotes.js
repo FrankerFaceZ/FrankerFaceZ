@@ -91,9 +91,14 @@ FFZ.menu_pages.myemotes = {
 		var user = this.get_user(),
 			tmi = view.get('controller.currentRoom.tmiSession'),
 			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
-			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
+			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
 
-		return ffz_sets.length || (twitch_sets && Object.keys(twitch_sets).length);
+			sk = twitch_sets && Object.keys(twitch_sets);
+
+		if ( sk && ! this.settings.global_emotes_in_menu && sk.indexOf('0') !== -1 )
+			sk.removeObject('0');
+
+		return ffz_sets.length || (sk && sk.length) || this.settings.emoji_in_menu;
 	},
 
 	render: function(view, container) {
@@ -122,11 +127,14 @@ FFZ.menu_pages.myemotes = {
 	draw_emoji: function(view) {
 		var heading = document.createElement('div'),
 			menu = document.createElement('div'),
-			f = this;
+			f = this,
+			settings = this.settings.parse_emoji || 1;
+
 
 		heading.className = 'heading';
-		heading.innerHTML = '<span class="right">FrankerFaceZ</span>Emoji';
-		heading.style.backgroundImage = 'url("' + constants.SERVER + '/emoji/1f4af-1x.png")';
+		heading.innerHTML = '<span class="right">Unicode</span>Emoji';
+		heading.style.backgroundImage = 'url("' + constants.SERVER + 'emoji/' + (settings === 2 ? 'noto-' : 'tw-') + '1f4af.svg")';
+		heading.style.backgroundSize = "18px";
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
@@ -136,12 +144,13 @@ FFZ.menu_pages.myemotes = {
 		heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this); });
 
 		var set = [];
+
 		for(var eid in this.emoji_data)
 			set.push(this.emoji_data[eid]);
 
 		set.sort(function(a,b) {
-			var an = a.short_name.toLowerCase(),
-				bn = b.short_name.toLowerCase();
+			var an = (a.name || "").toLowerCase(),
+				bn = (b.name || "").toLowerCase();
 
 			if ( an < bn ) return -1;
 			else if ( an > bn ) return 1;
@@ -152,18 +161,17 @@ FFZ.menu_pages.myemotes = {
 
 		for(var i=0; i < set.length; i++) {
 			var emoji = set[i],
-				em = document.createElement('span'),
-				img_set = 'image-set(url("' + emoji.src + '") 1x, url("' + constants.SERVER + 'emoji/' + emoji.code + '-2x.png") 2x, url("' + constants.SERVER + 'emoji/' + emoji.code + '-4x.png") 4x)';
+				em = document.createElement('span');
+
+			if ( (settings === 1 && ! emoji.tw) || (settings === 2 && ! emoji.noto) )
+				continue;
 
 			em.className = 'emoticon tooltip';
-			em.title = 'Emoji: ' + emoji.raw + '\nName: :' + emoji.short_name + ':';
+			em.title = 'Emoji: ' + emoji.raw + '\nName: ' + emoji.name + (emoji.short_name ? '\nShort Name: :' + emoji.short_name + ':' : '');
 			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
 
-			em.style.backgroundImage = 'url("' + emoji.src + '")';
-			em.style.backgroundImage = '-webkit-' + img_set;
-			em.style.backgroundImage = '-moz-' + img_set;
-			em.style.backgroundImage = '-ms-' + img_set;
-			em.style.backgroudnImage = img_set;
+			em.style.backgroundImage = 'url("' + (settings === 2 ? emoji.noto_src : emoji.tw_src) + '")';
+			em.style.backgroundSize = "18px";
 
 			menu.appendChild(em);
 		}
@@ -244,13 +252,13 @@ FFZ.menu_pages.myemotes = {
 			}
 
 			em.title = code;
-			em.addEventListener("click", function(id, code, e) {
+			em.addEventListener("click", function(id, c, e) {
 				e.preventDefault();
 				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
 					window.open("https://twitchemotes.com/emote/" + id);
 				else
-					this._add_emote(view, code);
-			}.bind(this, emote.id, emote.code));
+					this._add_emote(view, c);
+			}.bind(this, emote.id, code));
 			menu.appendChild(em);
 		}
 
