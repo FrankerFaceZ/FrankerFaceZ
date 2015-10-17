@@ -431,7 +431,7 @@ FFZ.prototype._legacy_add_donors = function() {
 }
 
 FFZ.prototype._legacy_load_bots = function(tries) {
-	jQuery.ajax(constants.SERVER + "script/bots.txt", {cache: false, context: this})
+	jQuery.ajax(constants.SERVER + "script/bots.txt", {context: this})
 		.done(function(data) {
 			this._legacy_parse_badges(data, 0, 2, "Bot (By: {})");
 
@@ -446,7 +446,7 @@ FFZ.prototype._legacy_load_bots = function(tries) {
 }
 
 FFZ.prototype._legacy_load_donors = function(tries) {
-	jQuery.ajax(constants.SERVER + "script/donors.txt", {cache: false, context: this})
+	jQuery.ajax(constants.SERVER + "script/donors.txt", {context: this})
 		.done(function(data) {
 			this._legacy_parse_badges(data, 1, 1);
 

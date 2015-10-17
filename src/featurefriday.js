@@ -17,7 +17,7 @@ FFZ.prototype.check_ff = function(tries) {
 	if ( ! tries )
 		this.log("Checking for Feature Friday data...");
 
-	jQuery.ajax(constants.SERVER + "script/event.json", {cache: false, dataType: "json", context: this})
+	jQuery.ajax(constants.SERVER + "script/event.json", {dataType: "json", context: this})
 		.done(function(data) {
 			return this._load_ff(data);
 		}).fail(function(data) {

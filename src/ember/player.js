@@ -13,13 +13,38 @@ FFZ.settings_info.player_stats = {
 	category: "Channel Metadata",
 
 	name: "Stream Latency",
-	help: "<i>New HTML5 Player Only.</i> Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
+	help: "Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
 
 	on_update: function(val) {
+			for(var key in this.players) {
+				var player = this.players[key];
+				if ( player && player.player && player.player.ffzSetStatsEnabled )
+					player.player.ffzSetStatsEnabled(val || player.player.ffz_stats);
+			}
+
 			if ( ! this._cindex )
 				return;
-			
+
 			this._cindex.ffzUpdatePlayerStats();
+		}
+	};
+
+
+FFZ.settings_info.classic_player = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Appearance",
+
+	name: "Classic Player",
+	help: "Alter the appearance of the player to resemble the older Twitch player with always visible controls.",
+
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-classic-player', val);
+			var Layout = window.App && App.__container__.lookup('controller:layout');
+			if ( Layout )
+				Layout.set('PLAYER_CONTROLS_HEIGHT', val ? 32 : 0);
 		}
 	};
 
@@ -29,26 +54,35 @@ FFZ.settings_info.player_stats = {
 // ---------------
 
 FFZ.prototype.setup_player = function() {
+	document.body.classList.toggle('ffz-classic-player', this.settings.classic_player);
+	var Layout = window.App && App.__container__.lookup('controller:layout');
+	if ( Layout )
+		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
+
 	this.players = {};
-	
+
 	var Player2 = App && App.__container__.resolve('component:twitch-player2');
 	if ( ! Player2 )
 		return this.log("Unable to find twitch-player2 component.");
-		
+
 	this.log("Hooking HTML5 Player UI.");
 	this._modify_player(Player2)
-	
+
 	// Modify all existing players.
+	if ( ! window.Ember )
+		return;
+
 	for(var key in Ember.View.views) {
 		if ( ! Ember.View.views.hasOwnProperty(key) )
 			continue;
-		
+
 		var view = Ember.View.views[key];
 		if ( !(view instanceof Player2) )
 			continue;
 
 		this.log("Manually updating existing Player instance.", view);
 		try {
+			this._modify_player(view);
 			view.ffzInit();
 			if ( view.get('player') )
 				view.ffzPostPlayer();
@@ -65,7 +99,12 @@ FFZ.prototype.setup_player = function() {
 // ---------------
 
 FFZ.prototype._modify_player = function(player) {
-	var f = this;
+	var f = this,
+		update_stats = function() {
+			f._cindex && f._cindex.ffzUpdatePlayerStats();
+		};
+
+
 	player.reopen({
 		didInsertElement: function() {
 			this._super();
@@ -75,7 +114,7 @@ FFZ.prototype._modify_player = function(player) {
 				f.error("Player2 didInsertElement: " + err);
 			}
 		},
-		
+
 		willClearRender: function() {
 			try {
 				this.ffzTeardown();
@@ -84,7 +123,7 @@ FFZ.prototype._modify_player = function(player) {
 			}
 			this._super();
 		},
-		
+
 		postPlayerSetup: function() {
 			this._super();
 			try {
@@ -93,55 +132,101 @@ FFZ.prototype._modify_player = function(player) {
 				f.error("Player2 postPlayerSetup: " + err);
 			}
 		},
-		
+
 		ffzInit: function() {
 			var id = this.get('channel.id');
 			f.players[id] = this;
-			
-			this._ffz_stat_update = this.ffzStatUpdate.bind(this);
 		},
-		
+
 		ffzTeardown: function() {
 			var id = this.get('channel.id');
 			if ( f.players[id] === this )
 				f.players[id] = undefined;
+
+			if ( this._ffz_stat_interval ) {
+				clearInterval(this._ffz_stat_interval);
+				this._ffz_stat_interval = null;
+			}
 		},
-		
-		ffzStatUpdate: function() {
-			f._cindex && f._cindex.ffzUpdatePlayerStats();
-		},
-		
+
 		ffzPostPlayer: function() {
 			var player = this.get('player');
 			if ( ! player )
 				return;
 
-			// Make it so stats can no longer be disabled.
-			player.ffzSetStatsEnabled = player.setStatsEnabled;
-			player.setStatsEnabled = function() {}
-			
-			// We can't just request stats straight away...
-			this.ffzWaitForStats();
+			// Subscribe to the qualities event.
+			//player.addEventListener('qualitieschange', this.ffzQualitiesUpdated.bind(this));
+			//this.ffzQualitiesUpdated();
+
+			// Only set up the stats hooks if we need stats.
+			if ( ! player.getVideo() )
+				this.ffzInitStats();
 		},
-		
-		ffzWaitForStats: function() {
+
+		ffzInitStats: function() {
+			if ( this.get('ffzStatsInitialized') )
+				return;
+
 			var player = this.get('player');
 			if ( ! player )
 				return;
 
-			if ( player.stats ) {
-				// Add the event listener.
-				player.addEventListener('statschange', this._ffz_stat_update);
+			this.set('ffzStatsInitialized', true);
 
-			} else {
-				// Keep going until we've got it.
-				player.ffzSetStatsEnabled(false);
-				var t = this;
-				setTimeout(function() {
-					player.ffzSetStatsEnabled(true);
-					setTimeout(t.ffzWaitForStats.bind(t), 1250);
-				}, 250);
+			// Make it so stats can no longer be disabled if we want them.
+			player.ffzSetStatsEnabled = player.setStatsEnabled;
+			player.ffz_stats = player.getStatsEnabled();
+
+			var t = this;
+
+			player.setStatsEnabled = function(e, s) {
+				if ( s !== false )
+					player.ffz_stats = e;
+
+				var out = player.ffzSetStatsEnabled(e || f.settings.player_stats);
+
+				if ( ! t._ffz_player_stats_initialized ) {
+					t._ffz_player_stats_initialized = true;
+					player.addEventListener('statschange', update_stats);
+				}
+
+				return out;
 			}
-		}
+
+			this._ffz_stat_interval = setInterval(function() {
+				if ( f.settings.player_stats || player.ffz_stats ) {
+					player.ffzSetStatsEnabled(false);
+					player.ffzSetStatsEnabled(true);
+				}
+			}, 5000);
+
+			if ( f.settings.player_stats && ! player.ffz_stats ) {
+				this._ffz_player_stats_initialized = true;
+				player.addEventListener('statschange', update_stats);
+				player.ffzSetStatsEnabled(true);
+			}
+		},
+
+		ffzSetQuality: function(q) {
+			var player = this.get('player');
+			if ( ! player )
+				return;
+
+			this.$(".js-quality-display-contain").attr("data-q", "loading");
+
+			player.setQuality(q);
+
+			var t = this.$(".js-player-alert");
+			t.find(".js-player-alert__message").text();
+			t.attr("data-active", !0);
+		},
+
+		ffzGetQualities: function() {
+			var player = this.get('player');
+			if ( ! player )
+				return [];
+			return player.getQualities();
+		},
+
 	});
 }

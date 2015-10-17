@@ -12,33 +12,7 @@ var FFZ = window.FrankerFaceZ,
 		},
 
 	MESSAGE = '<svg class="svg-messages" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,15V3h16v12H1z M15.354,5.354l-0.707-0.707L9,10.293L3.354,4.646L2.646,5.354L6.293,9l-3.646,3.646l0.707,0.707L7,9.707l1.646,1.646h0.707L11,9.707l3.646,3.646l0.707-0.707L11.707,9L15.354,5.354z" fill-rule="evenodd"></path></svg>',
-	CHECK = '<svg class="svg-unban" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M6.5,12.75L2,8.25l2-2l2.5,2.5l5.5-5.5l2,2L6.5,12.75z"/></svg>',
-
-	DURATIONS = {},
-	duration_string = function(val) {
-		if ( val === 1 )
-			return 'Purge';
-
-		if ( DURATIONS[val] )
-			return DURATIONS[val];
-
-		var weeks, days, hours, minutes, seconds;
-
-		weeks = Math.floor(val / 604800);
-		seconds = val % 604800;
-
-		days = Math.floor(seconds / 86400);
-		seconds %= 86400;
-
-		hours = Math.floor(seconds / 3600);
-		seconds %= 3600;
-
-		minutes = Math.floor(seconds / 60);
-		seconds %= 60;
-
-		var out = DURATIONS[val] = (weeks ? weeks + 'w' : '') + ((days || (weeks && (hours || minutes || seconds))) ? days + 'd' : '') + ((hours || ((weeks || days) && (minutes || seconds))) ? hours + 'h' : '') + ((minutes || ((weeks || days || hours) && seconds)) ? minutes + 'm' : '') + (seconds ? seconds + 's' : '');
-		return out;
-	};
+	CHECK = '<svg class="svg-unban" height="16px" version="1.1" viewBox="0 0 16 16" width="16px" x="0px" y="0px"><path fill-rule="evenodd" clip-rule="evenodd" fill="#888888" d="M6.5,12.75L2,8.25l2-2l2.5,2.5l5.5-5.5l2,2L6.5,12.75z"/></svg>';
 
 
 try {
@@ -165,6 +139,127 @@ FFZ.settings_info.mod_card_history = {
 				if ( room )
 					room.user_history = undefined;
 			}
+		}
+	};
+
+
+FFZ.settings_info.mod_buttons = {
+	type: "button",
+
+	// Special Values
+	//    false = Ban/Unban
+	//  integer = Timeout (that amount of time)
+	value: [['', false, false], ['',600, false]], //, ['', 1, false]],
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Custom In-Line Moderation Icons",
+	help: "Change out the different in-line moderation icons to use any command quickly.",
+
+	method: function() {
+			var old_val = "";
+			for(var i=0; i < this.settings.mod_buttons.length; i++) {
+				var pair = this.settings.mod_buttons[i],
+					prefix = pair[0], cmd = pair[1], had_prefix = pair[2];
+
+				if ( cmd === false )
+					cmd = "<BAN>";
+				else if ( typeof cmd !== "string" )
+					cmd = '' + cmd;
+
+				if ( ! had_prefix )
+					prefix = '';
+				else
+					prefix += '=';
+
+				if ( cmd.substr(cmd.length - 7) === ' {user}' )
+					cmd = cmd.substr(0, cmd.length - 7);
+
+				if ( cmd.indexOf(' ') !== -1 )
+					old_val += ' ' + prefix + '"' + cmd + '"';
+				else
+					old_val += ' ' + prefix + cmd;
+			}
+
+			var new_val = prompt("Custom In-Line Moderation Icons\n\nPlease enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"\n\nNumeric values will become timeout buttons for that number of seconds. The text \"<BAN>\" is a special value that will act like the normal Ban button in chat.\n\nTo assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.\n\nExample: A=\"!reg add\"\n\nDefault: <BAN> 600", old_val);
+
+			if ( new_val === null || new_val === undefined )
+				return;
+
+			var vals = [], prefix = '';
+			new_val = new_val.trim();
+
+			while(new_val) {
+				if ( new_val.charAt(1) === '=' ) {
+					prefix = new_val.charAt(0);
+					new_val = new_val.substr(2);
+					continue;
+				}
+
+				if ( new_val.charAt(0) === '"' ) {
+					var end = new_val.indexOf('"', 1);
+					if ( end === -1 )
+						end = new_val.length;
+
+					var segment = new_val.substr(1, end - 1);
+					if ( segment ) {
+						vals.push([prefix, segment]);
+						prefix = '';
+					}
+
+					new_val = new_val.substr(end + 1);
+
+				} else {
+					var ind = new_val.indexOf(' ');
+					if ( ind === -1 ) {
+						if ( new_val ) {
+							vals.push([prefix, new_val]);
+							prefix = '';
+						}
+
+						new_val = '';
+
+					} else {
+						var segment = new_val.substr(0, ind);
+						if ( segment ) {
+							vals.push([prefix, segment]);
+							prefix = '';
+						}
+
+						new_val = new_val.substr(ind + 1);
+					}
+				}
+			}
+
+			var final = [];
+			for(var i=0; i < vals.length; i++) {
+				var had_prefix = false, prefix = vals[i][0], val = vals[i][1];
+				if ( val === "<BAN>" )
+					val = false;
+
+				var num = parseInt(val);
+				if ( num > 0 && num !== NaN )
+					val = num;
+
+				if ( ! prefix ) {
+					var tmp;
+					if ( typeof val === "string" )
+						tmp = /\w/.exec(val);
+					else
+						tmp = utils.duration_string(val);
+
+					prefix = tmp && tmp.length ? tmp[0].toUpperCase() : "C";
+				} else
+					had_prefix = true;
+
+				if ( typeof val === "string" && val.indexOf('{user}') === -1 )
+					val += ' {user}';
+
+				final.push([prefix, val, had_prefix]);
+			}
+
+			this.settings.set('mod_buttons', final);
 		}
 	};
 
@@ -351,6 +446,8 @@ FFZ.prototype.setup_mod_card = function() {
 					controller = this.get('controller'),
 					line,
 
+					is_mod = controller.get('cardInfo.isModeratorOrHigher'),
+
 					user_id = controller.get('cardInfo.user.id'),
 					alias = f.aliases[user_id];
 
@@ -384,7 +481,7 @@ FFZ.prototype.setup_mod_card = function() {
 				}
 
 				// Additional Buttons
-				if ( f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
+				if ( is_mod && f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
 					line = document.createElement('div');
 					line.className = 'extra-interface interface clearfix';
 
@@ -394,7 +491,7 @@ FFZ.prototype.setup_mod_card = function() {
 								cont = App.__container__.lookup('controller:chat'),
 								room = cont && cont.get('currentRoom');
 
-							room && room.send(cmd.replace(/{user}/g, user_id));
+							room && room.send(cmd.replace(/{user}/g, user_id), true);
 						},
 
 						add_btn_make = function(cmd) {
@@ -446,16 +543,16 @@ FFZ.prototype.setup_mod_card = function() {
 							room = App.__container__.lookup('controller:chat').get('currentRoom');
 
 						if ( is_mod && key == keycodes.P )
-							room.send("/timeout " + user_id + " 1");
+							room.send("/timeout " + user_id + " 1", true);
 
 						else if ( is_mod && key == keycodes.B )
-							room.send("/ban " + user_id);
+							room.send("/ban " + user_id, true);
 
 						else if ( is_mod && key == keycodes.T )
-							room.send("/timeout " + user_id + " 600");
+							room.send("/timeout " + user_id + " 600", true);
 
 						else if ( is_mod && key == keycodes.U )
-							room.send("/unban " + user_id);
+							room.send("/unban " + user_id, true);
 
 						else if ( key != keycodes.ESC )
 							return;
@@ -466,51 +563,23 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 				// Only do the big stuff if we're mod.
-				if ( controller.get('cardInfo.isModeratorOrHigher') ) {
+				if ( is_mod ) {
 					el.classList.add('ffz-is-mod');
-
-					// Key Handling
-					if ( f.settings.mod_card_hotkeys ) {
-						el.classList.add('no-mousetrap');
-
-						el.addEventListener('keyup', function(e) {
-							var key = e.keyCode || e.which,
-								user_id = controller.get('cardInfo.user.id'),
-								room = App.__container__.lookup('controller:chat').get('currentRoom');
-
-							if ( key == keycodes.P )
-								room.send("/timeout " + user_id + " 1");
-
-							else if ( key == keycodes.B )
-								room.send("/ban " + user_id);
-
-							else if ( key == keycodes.T )
-								room.send("/timeout " + user_id + " 600");
-
-							else if ( key == keycodes.U )
-								room.send("/unban " + user_id);
-
-							else if ( key != keycodes.ESC )
-								return;
-
-							controller.send('close');
-						});
-					}
 
 					var btn_click = function(timeout) {
 						var user_id = controller.get('cardInfo.user.id'),
 							room = App.__container__.lookup('controller:chat').get('currentRoom');
 
 							if ( timeout === -1 )
-								room.send("/unban " + user_id);
+								room.send("/unban " + user_id, true);
 							else
-								room.send("/timeout " + user_id + " " + timeout);
+								room.send("/timeout " + user_id + " " + timeout, true);
 						},
 
 					btn_make = function(timeout) {
 							var btn = document.createElement('button')
 							btn.className = 'button';
-							btn.innerHTML = duration_string(timeout);
+							btn.innerHTML = utils.duration_string(timeout);
 							btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
 
 							if ( f.settings.mod_card_hotkeys && timeout === 600 )
@@ -746,7 +815,7 @@ FFZ.chat_commands.purge = function(room, args) {
 	for(var i=0; i < args.length; i++) {
 		var name = args[i];
 		if ( name )
-			room.room.send("/timeout " + name + " 1");
+			room.room.send("/timeout " + name + " 1", true);
 	}
 }
 
@@ -760,7 +829,7 @@ FFZ.chat_commands.p.enabled = function() { return this.settings.short_commands; 
 FFZ.chat_commands.t = function(room, args) {
 	if ( ! args || ! args.length )
 		return "Timeout Usage: /t username [duration]";
-	room.room.send("/timeout " + args.join(" "));
+	room.room.send("/timeout " + args.join(" "), true);
 }
 
 FFZ.chat_commands.t.enabled = function() { return this.settings.short_commands; }
@@ -776,7 +845,7 @@ FFZ.chat_commands.b = function(room, args) {
 	for(var i=0; i < args.length; i++) {
 		var name = args[i];
 		if ( name )
-			room.room.send("/ban " + name);
+			room.room.send("/ban " + name, true);
 	}
 }
 
@@ -793,7 +862,7 @@ FFZ.chat_commands.u = function(room, args) {
 	for(var i=0; i < args.length; i++) {
 		var name = args[i];
 		if ( name )
-			room.room.send("/unban " + name);
+			room.room.send("/unban " + name, true);
 	}
 }
 

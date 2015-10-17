@@ -89,11 +89,37 @@ FFZ.prototype.load_settings = function() {
 // Backup and Restore
 // --------------------
 
+FFZ.prototype.reset_settings = function() {
+	if ( ! confirm(this.tr('Are you sure you wish to reset FrankerFaceZ?\n\nThis will force the tab to refresh.')) )
+		return;
+
+
+	// Clear Settings
+	for(var key in FFZ.settings_info) {
+		if ( ! FFZ.settings_info.hasOwnProperty(key) )
+			continue;
+
+		this.settings.del(key);
+	}
+
+	// Clear Aliases
+	this.aliases = {};
+	localStorage.ffz_aliases = '{}';
+
+	// TODO: Filters
+
+
+	// Refresh
+	window.location.reload();
+}
+
+
 FFZ.prototype.save_settings_file = function() {
 	var data = {
 		version: 1,
 		script_version: FFZ.version_info + '',
 		aliases: this.aliases,
+		filters: this.filters,
 		settings: {}
 		};
 
@@ -135,8 +161,8 @@ FFZ.prototype._load_settings_file = function(data) {
 
 	this.log("Loading Settings Data", data);
 
-	var skipped = [],
-		applied = [];
+	var skipped = [], applied = [],
+		aliases = 0;
 
 	if ( data.settings ) {
 		for(var key in data.settings) {
@@ -158,9 +184,26 @@ FFZ.prototype._load_settings_file = function(data) {
 		}
 	}
 
+	if ( data.aliases ) {
+		for(var key in data.aliases) {
+			if ( this.aliases[key] === data.aliases[key] )
+				continue;
+
+			this.aliases[key] = data.aliases[key];
+			aliases++;
+		}
+
+		if ( aliases )
+			localStorage.ffz_aliases = JSON.stringify(this.aliases);
+	}
+
+	if ( data.filters ) {
+		// TODO: Load filters!
+	}
+
 	// Do this in a timeout so that any styles have a moment to update.
 	setTimeout(function(){
-		alert('Successfully loaded ' + applied.length + ' settings and skipped ' + skipped.length + ' settings.');
+		alert('Successfully loaded ' + applied.length + ' settings and skipped ' + skipped.length + ' settings. Added ' + aliases + ' user nicknames.');
 	});
 }
 
@@ -257,8 +300,11 @@ FFZ.menu_pages.settings = {
 	render_save: function(view, container) {
 		var backup_head = document.createElement('div'),
 			restore_head = document.createElement('div'),
+			reset_head = document.createElement('div'),
+
 			backup_cont = document.createElement('div'),
 			restore_cont = document.createElement('div'),
+			reset_cont = document.createElement('div'),
 
 			backup_para = document.createElement('p'),
 			backup_link = document.createElement('a'),
@@ -268,6 +314,10 @@ FFZ.menu_pages.settings = {
 			restore_input = document.createElement('input'),
 			restore_link = document.createElement('a'),
 			restore_help = document.createElement('span'),
+
+			reset_para = document.createElement('p'),
+			reset_link = document.createElement('a'),
+			reset_help = document.createElement('span'),
 			f = this;
 
 
@@ -310,8 +360,27 @@ FFZ.menu_pages.settings = {
 		restore_para.appendChild(restore_help);
 		restore_cont.appendChild(restore_para);
 
+		reset_cont.className = 'chat-menu-content';
+		reset_head.className = 'heading';
+		reset_head.innerHTML = this.tr('Reset Settings');
+		reset_cont.appendChild(reset_head);
+
+		reset_para.className = 'clearfix option';
+
+		reset_link.href = '#';
+		reset_link.innerHTML = this.tr('Reset FrankerFaceZ');
+		reset_link.addEventListener('click', this.reset_settings.bind(this));
+
+		reset_help.className = 'help';
+		reset_help.innerHTML = this.tr('This resets all of your FFZ data. That includes chat filters, nicknames for users, and settings.');
+
+		reset_para.appendChild(reset_link);
+		reset_para.appendChild(reset_help);
+		reset_cont.appendChild(reset_para);
+
 		container.appendChild(backup_cont);
 		container.appendChild(restore_cont);
+		container.appendChild(reset_cont);
 	},
 
 	render_basic: function(view, container) {
@@ -797,10 +866,10 @@ FFZ.prototype._setting_del = function(key) {
 	if ( localStorage.hasOwnProperty(ls_key) )
 		localStorage.removeItem(ls_key);
 
-	delete this.settings[key];
-
 	if ( info )
 		val = this.settings[key] = info.hasOwnProperty("value") ? info.value : undefined;
+
+	this.settings[key] = val;
 
 	if ( info.on_update )
 		try {

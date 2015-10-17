@@ -108,7 +108,7 @@ var FFZ = window.FrankerFaceZ,
 	}
 
 	image_iframe = function(href, extra_class) {
-		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/image-proxy.html?' + utils.quote_attr(href) + '"></iframe>';
+		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/img-proxy.html#' + utils.quote_attr(href) + '"></iframe>';
 	},
 
 
@@ -352,7 +352,7 @@ FFZ.prototype.setup_tokenization = function() {
 // ---------------------
 
 FFZ.prototype.load_twitch_emote_data = function(tries) {
-	jQuery.ajax(constants.SERVER + "script/twitch_emotes.json", {cache: false, context: this})
+	jQuery.ajax(constants.SERVER + "script/twitch_emotes.json", {context: this})
 		.done(function(data) {
 			for(var set_id in data) {
 				var set = data[set_id];

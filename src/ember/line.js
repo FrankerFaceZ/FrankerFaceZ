@@ -27,25 +27,6 @@ FFZ.settings_info.room_status = {
 	};
 
 
-FFZ.settings_info.line_purge_icon = {
-	type: "boolean",
-	value: false,
-
-	no_bttv: true,
-	category: "Chat Moderation",
-
-	name: "Purge Icon in Mod Icons",
-	help: "Display a Purge Icon in chat line Mod Icons for quickly purging users.",
-
-	on_update: function(val) {
-			if ( this.has_bttv )
-				return;
-
-			document.body.classList.toggle("ffz-chat-purge-icon", val);
-		}
-	};
-
-
 FFZ.settings_info.replace_bad_emotes = {
 	type: "boolean",
 	value: true,
@@ -297,18 +278,22 @@ FFZ.settings_info.chat_separators = {
 	options: {
 		0: "Disabled",
 		1: "Basic Line (1px solid)",
-		2: "3D Line (2px groove)"
+		2: "3D Line (2px groove)",
+		3: "3D Line (2px groove inset)",
+		4: "Wide Line (2px solid)"
 	},
-	value: '0',
+	value: 0,
 
 	category: "Chat Appearance",
 	no_bttv: true,
 
 	process_value: function(val) {
 		if ( val === false )
-			return '0';
+			return 0;
 		else if ( val === true )
-			return '1';
+			return 1;
+		else if ( typeof val === "string" )
+			return parseInt(val) || 0;
 		return val;
 	},
 
@@ -316,8 +301,10 @@ FFZ.settings_info.chat_separators = {
 	help: "Display thin lines between chat messages for further visual separation.",
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val !== '0');
-			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === '2');
+			document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val !== 0);
+			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === 2);
+			document.body.classList.toggle("ffz-chat-separator-3d-inset", !this.has_bttv && val === 3);
+			document.body.classList.toggle("ffz-chat-separator-wide", !this.has_bttv && val === 4);
 		}
 	};
 
@@ -543,10 +530,11 @@ FFZ.prototype.setup_line = function() {
 	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
 
 	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
-	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== '0');
-	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === '2');
+	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== 0);
+	document.body.classList.toggle("ffz-chat-separator-wide", !this.has_bttv && this.settings.chat_separators === 4);
+	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === 2);
+	document.body.classList.toggle("ffz-chat-separator-3d-inset", !this.has_bttv && this.settings.chat_separators === 3);
 	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
-	document.body.classList.toggle("ffz-chat-purge-icon", !this.has_bttv && this.settings.line_purge_icon);
 
 	document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
 	document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
@@ -645,14 +633,28 @@ FFZ.prototype._modify_line = function(component) {
 			if ( e.target && e.target.classList.contains('mod-icon') ) {
 				jQuery(e.target).trigger('mouseout');
 
-				if ( e.target.classList.contains('purge') ) {
+				/*if ( e.target.classList.contains('purge') ) {
 					var i = this.get('msgObject.from'),
 						room_id = this.get('msgObject.room'),
 						room = room_id && f.rooms[room_id] && f.rooms[room_id].room;
 
 					if ( room ) {
-						room.send("/timeout " + i + " 1");
+						room.send("/timeout " + i + " 1", true);
 						room.clearMessages(i);
+					}
+					return;
+				}*/
+
+				if ( e.target.classList.contains('custom') ) {
+					var room_id = this.get('msgObject.room'),
+						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
+
+						cmd = e.target.getAttribute('data-cmd');
+
+					if ( room ) {
+						room.send(cmd, true);
+						if ( e.target.classList.contains('is-timeout') )
+							room.clearMessages(this.get('msgObject.from'));
 					}
 					return;
 				}
@@ -678,7 +680,7 @@ FFZ.prototype._modify_line = function(component) {
 				return 4;
 			else if ( this.get('isBroadcaster') )
 				return 3;
-			else if ( this.get('isGlobalModerator') )
+			else if ( this.get('isGlobalMod') )
 				return 2;
 			else if ( this.get('isModerator') )
 				return 1;
@@ -712,13 +714,34 @@ FFZ.prototype._modify_line = function(component) {
 
 			if ( ! is_whisper && this_ul < other_ul ) {
 				e.push('<span class="mod-icons float-left">');
-				if ( deleted )
-					e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
-				else
-					e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
+				for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
+					var pair = f.settings.mod_buttons[i],
+						prefix = pair[0], btn = pair[1],
 
-				e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
-				e.push('<a class="mod-icon float-left tooltip purge" title="Purge User (Timeout 1s)" href="#">Purge</a>');
+						cmd, tip;
+
+					if ( btn === false ) {
+						if ( deleted )
+							e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
+						else
+							e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
+
+					} else if ( btn === 600 )
+						e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
+
+					else {
+						if ( typeof btn === "string" ) {
+							cmd = btn.replace(/{user}/g, user);
+							tip = 'Custom Command\n' + cmd;
+						} else {
+							cmd = "/timeout " + user + " " + btn;
+							tip = "Timeout User (" + utils.duration_string(btn) + ")";
+						}
+
+						e.push('<a class="mod-icon float-left tooltip' + (cmd.substr(0, 9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + utils.quote_attr(tip) + '" href="#">' + prefix + '</a>');
+					}
+				}
+
 				e.push('</span>');
 			}
 
@@ -730,7 +753,7 @@ FFZ.prototype._modify_line = function(component) {
 			else if ( this.get('isAdmin') )
 				badges[0] = {klass: 'admin', title: 'Admin'};
 			else if ( this.get('isGlobalMod') )
-				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
+				badges[0] = {klass: 'global-mod', title: 'Global Moderator'};
 			else if ( ! is_whisper && this.get('isModerator') )
 				badges[0] = {klass: 'moderator', title: 'Moderator'};
 
@@ -881,7 +904,7 @@ FFZ.get_capitalization = function(name, callback) {
 
 FFZ.prototype._remove_banned = function(tokens) {
 	var banned_words = this.settings.banned_words,
-		banned_links = this.settings.filter_bad_shorteners ? ['goo.gl', 'j.mp', 'bit.ly'] : null,
+		banned_links = this.settings.filter_bad_shorteners ? ['apo.af', 'goo.gl', 'j.mp', 'bit.ly'] : null,
 
 		has_banned_words = banned_words && banned_words.length;
 

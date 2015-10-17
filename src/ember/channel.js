@@ -361,9 +361,9 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			controller.set('ffz_host_updating', true);
 			if ( now_hosting === target )
-				room.send("/unhost");
+				room.send("/unhost", true);
 			else
-				room.send("/host " + target);
+				room.send("/host " + target, true);
 		},
 
 
@@ -480,8 +480,25 @@ FFZ.prototype._modify_cindex = function(view) {
 							container.appendChild(stat_el);
 					}
 
-					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
-					el.textContent = stats.hlsLatencyBroadcaster + 's';
+					var delay = parseFloat(stats.hlsLatencyBroadcaster);
+
+					if ( delay > 180 ) {
+						delay = Math.floor(delay);
+						stat_el.setAttribute('original-title', 'Video Information\nBroadcast ' + utils.time_to_string(delay, true) + ' Ago\n\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps')
+						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
+					} else {
+						stat_el.setAttribute('original-title', 'Stream Latency\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps');
+
+						delay = stats.hlsLatencyBroadcaster;
+						var pos = delay.lastIndexOf('.');
+
+						if ( pos === -1 )
+							delay = delay + '.00';
+						else if ( delay.length - pos < 3 )
+							delay = delay + '0';
+
+						el.textContent = delay + 's';
+					}
 				}
 			}
 
@@ -516,8 +533,25 @@ FFZ.prototype._modify_cindex = function(view) {
 							container.appendChild(stat_el);
 					}
 
-					stat_el.title = 'Stream Latency\nFPS: ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps';
-					el.textContent = stats.hlsLatencyBroadcaster + 's';
+					var delay = parseFloat(stats.hlsLatencyBroadcaster);
+
+					if ( delay > 180 ) {
+						delay = Math.floor(delay);
+						stat_el.setAttribute('original-title', 'Video Information\nBroadcast ' + utils.time_to_string(delay, true) + ' Ago\n\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps')
+						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
+					} else {
+						stat_el.setAttribute('original-title', 'Stream Latency\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps');
+
+						delay = stats.hlsLatencyBroadcaster;
+						var pos = delay.lastIndexOf('.');
+
+						if ( pos === -1 )
+							delay = delay + '.00';
+						else if ( delay.length - pos < 3 )
+							delay = delay + '0';
+
+						el.textContent = delay + 's';
+					}
 				}
 			}
 		},
@@ -581,7 +615,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				jQuery(stat).tipsy({html: true});
 			}
 
-			el.innerHTML = utils.time_to_string(uptime);
+			el.innerHTML = utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1 || f.settings.stream_uptime === 3);
 		},
 
 		ffzTeardown: function() {
@@ -698,10 +732,27 @@ FFZ.settings_info.stream_host_button = {
 
 
 FFZ.settings_info.stream_uptime = {
-	type: "boolean",
-	value: false,
-	no_mobile: true,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Enabled",
+		2: "Enabled (with Seconds)",
+		3: "Enabled (Channel Only)",
+		4: "Enabled (Channel Only with Seconds)"
+	},
 
+	value: 1,
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		if ( val === true )
+			return 2;
+		if ( typeof val === "string" )
+			return parseInt(val || "0") || 0;
+		return val;
+	},
+
+	no_mobile: true,
 	category: "Channel Metadata",
 	name: "Stream Uptime",
 	help: 'Display the stream uptime under a channel by the viewer count.',
@@ -726,3 +777,30 @@ FFZ.settings_info.stream_title = {
 				this._cindex.ffzFixTitle();
 		}
 	};
+
+
+FFZ.basic_settings.channel_info = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Enabled",
+		2: "Enabled (with Seconds)",
+		3: "Enabled (Channel Only)",
+		4: "Enabled (Channel Only with Seconds)"
+	},
+
+	category: "General",
+	name: "Stream Uptime",
+	help: "Display the current stream's uptime under the player.",
+
+	get: function() {
+		return this.settings.stream_uptime;
+	},
+
+	set: function(val) {
+		if ( typeof val === 'string' )
+			val = parseInt(val || "0");
+
+		this.settings.set('stream_uptime', val);
+	}
+}

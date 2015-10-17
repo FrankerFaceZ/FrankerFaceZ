@@ -8,13 +8,15 @@ var sanitize_el = document.createElement('span'),
 		sanitize_el.textContent = msg;
 		return sanitize_el.innerHTML;
 	},
-	
+
 	R_QUOTE = /"/g,
 	R_SQUOTE = /'/g,
 	R_AMP = /&/g,
 	R_LT = /</g,
 	R_GT = />/g,
-	
+
+	DURATIONS = {},
+
 	quote_attr = function(msg) {
 		return msg.replace(R_AMP, "&amp;").replace(R_QUOTE, "&quot;").replace(R_SQUOTE, "&apos;").replace(R_LT, "&lt;").replace(R_GT, "&gt;");
 	},
@@ -256,7 +258,7 @@ module.exports = {
 		return 'less than a second';
 	},
 
-	time_to_string: function(elapsed, separate_days, days_only, no_hours) {
+	time_to_string: function(elapsed, separate_days, days_only, no_hours, no_seconds) {
 		var seconds = elapsed % 60,
 			minutes = Math.floor(elapsed / 60),
 			hours = Math.floor(minutes / 60),
@@ -273,7 +275,32 @@ module.exports = {
 			days = ( days > 0 ) ? days + " days, " : "";
 		}
 
-		return days + ((!no_hours || days || hours) ? ((hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+		return days + ((!no_hours || days || hours) ? ((days && hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + (no_seconds ? "" : (":" + (seconds < 10 ? "0" : "") + seconds));
+	},
+
+	duration_string: function(val) {
+		if ( val === 1 )
+			return 'Purge';
+
+		if ( DURATIONS[val] )
+			return DURATIONS[val];
+
+		var weeks, days, hours, minutes, seconds;
+
+		weeks = Math.floor(val / 604800);
+		seconds = val % 604800;
+
+		days = Math.floor(seconds / 86400);
+		seconds %= 86400;
+
+		hours = Math.floor(seconds / 3600);
+		seconds %= 3600;
+
+		minutes = Math.floor(seconds / 60);
+		seconds %= 60;
+
+		var out = DURATIONS[val] = (weeks ? weeks + 'w' : '') + ((days || (weeks && (hours || minutes || seconds))) ? days + 'd' : '') + ((hours || ((weeks || days) && (minutes || seconds))) ? hours + 'h' : '') + ((minutes || ((weeks || days || hours) && seconds)) ? minutes + 'm' : '') + (seconds ? seconds + 's' : '');
+		return out;
 	},
 
 	format_unread: function(count) {

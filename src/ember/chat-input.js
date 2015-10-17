@@ -67,7 +67,7 @@ FFZ.settings_info.input_mru = {
 
 	category: "Chat Input",
 	no_bttv: true,
-	
+
 	name: "Chat Input History",
 	help: "Use the Up and Down arrows in chat to select previously sent chat messages."
 };
@@ -79,7 +79,7 @@ FFZ.settings_info.input_emoji = {
 	category: "Chat Input",
 	//visible: false,
 	no_bttv: true,
-	
+
 	name: "Enter Emoji By Name",
 	help: "Replace emoji that you type by name with the character. :+1: becomes 👍."
 };
@@ -113,10 +113,10 @@ FFZ.prototype.setup_chat_input = function() {
 
 FFZ.prototype._modify_chat_input = function(component) {
 	var f = this;
-	
+
 	component.reopen({
 		ffz_mru_index: -1,
-		
+
 		didInsertElement: function() {
 			this._super();
 
@@ -124,7 +124,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 				this.ffzInit();
 			} catch(err) { f.error("ChatInput didInsertElement: " + err); }
 		},
-		
+
 		willClearRender: function() {
 			try {
 				this.ffzTeardown();
@@ -141,7 +141,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 			// Redo our key bindings.
 			var t = this.$("textarea");
-			
+
 			t.off("keydown");
 			t.on("keydown", this._ffzKeyDown.bind(this));
 
@@ -153,10 +153,10 @@ FFZ.prototype._modify_chat_input = function(component) {
 			/*var suggestions = this._parentView.get('context.model.chatSuggestions');
 			this.set('ffz_chatters', suggestions);*/
 		},
-		
+
 		ffzTeardown: function() {
 			if ( f._inputv === this )
-				f._inputv = undefined; 
+				f._inputv = undefined;
 
 			this.ffzResizeInput();
 
@@ -167,7 +167,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 			// Reset normal key bindings.
 			var t = this.$("textarea");
-			
+
 			t.attr('rows', undefined);
 
 			t.off("keydown");
@@ -175,42 +175,42 @@ FFZ.prototype._modify_chat_input = function(component) {
 		},
 
 		// Input Control
-		
+
 		ffzOnInput: function() {
-			if ( ! f._chat_style || ! f.settings.minimal_chat || is_android )
+			if ( ! f._chat_style || f.settings.minimal_chat < 2 || is_android )
 				return;
-			
+
 			var now = Date.now(),
 				since = now - (this._ffz_last_resize || 0);
-			
+
 			if ( since > 500 )
 				this.ffzResizeInput();
 
 		}.observes('textareaValue'),
-		
+
 		ffzResizeInput: function() {
 			this._ffz_last_resize = Date.now();
-			
+
 			var el = this.get('element'),
 				t = el && el.querySelector('textarea');
-			
-			if ( ! t || ! f._chat_style || ! f.settings.minimal_chat )
+
+			if ( ! t || ! f._chat_style || f.settings.minimal_chat < 2 )
 				return;
-			
+
 			// Unfortunately, we need to change this with CSS.
-			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea { height: auto !important; }';
-			var height = Math.max(32, Math.min(128, t.scrollHeight));				
-			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat .ember-chat .chat-interface .textarea-contain textarea { height: ' + height + 'px !important; }';
-			
+			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textarea { height: auto !important; }';
+			var height = Math.max(32, Math.min(128, t.scrollHeight));
+			this._ffz_minimal_style.innerHTML = 'body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textarea { height: ' + height + 'px !important; }';
+
 			if ( height !== this._ffz_last_height ) {
-				utils.update_css(f._chat_style, "input_height", 'body.ffz-minimal-chat .ember-chat .chat-interface { height: ' + height + 'px !important; }' +
-					'body.ffz-minimal-chat .ember-chat .chat-messages, body.ffz-minimal-chat .ember-chat .chat-interface .emoticon-selector { bottom: ' + height + 'px !important; }');
+				utils.update_css(f._chat_style, "input_height", 'body.ffz-minimal-chat-input .ember-chat .chat-interface { height: ' + height + 'px !important; }' +
+					'body.ffz-minimal-chat-input .ember-chat .chat-messages, body.ffz-minimal-chat-input .ember-chat .chat-interface .emoticon-selector { bottom: ' + height + 'px !important; }');
 				f._roomv && f._roomv.get('stuckToBottom') && f._roomv._scrollToBottom();
 			}
 
 			this._ffz_last_height = height;
 		},
-		
+
 		_ffzKeyDown: function(event) {
 			var e = event || window.event,
 				key = e.charCode || e.keyCode;
@@ -227,7 +227,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 					else
 						return this._onKeyDown(event);
 					break;
-					
+
 				case KEYCODES.SPACE:
 					if ( f.settings.input_quick_reply && selection_start(this.get("chatTextArea")) === 2 && this.get("textareaValue").substring(0,2) === "/r" ) {
 						var t = this;
@@ -237,7 +237,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 								var text = "/w " + wt + t.get("textareaValue").substr(2);
 								t.set("_currentWhisperTarget", 0);
 								t.set("textareaValue", text);
-								
+
 								Ember.run.next(function() {
 									move_selection(t.get('chatTextArea'), 4 + wt.length);
 								});
@@ -246,7 +246,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 					} else
 						return this._onKeyDown(event);
 					break;
-				
+
 				case KEYCODES.COLON:
 				case KEYCODES.FAKE_COLON:
 					if ( f.settings.input_emoji && (e.shiftKey || e.shiftLeft) ) {
@@ -274,22 +274,22 @@ FFZ.prototype._modify_chat_input = function(component) {
 						return;
 					}
 					return this._onKeyDown(event);
-					
+
 				case KEYCODES.ENTER:
 					if ( ! e.shiftKey && ! e.shiftLeft )
 						this.set('ffz_mru_index', -1);
-					
+
 				default:
 					return this._onKeyDown(event);
 			}
 		},
-		
+
 		ffzCycleMRU: function(key, start_ind) {
 			// We don't want to do this if the keys were just moving the cursor around.
 			var cur_pos = selection_start(this.get("chatTextArea"));
 			if ( start_ind !== cur_pos )
 				return;
-			
+
 			var ind = this.get('ffz_mru_index'),
 				mru = this._parentView.get('context.model.mru_list') || [];
 
@@ -369,8 +369,8 @@ FFZ.prototype._modify_chat_input = function(component) {
 						output.push({id:emote.name});
 				}
 			}
-			
-			return output; 	
+
+			return output;
 		}.property(),
 
 		ffz_chatters: [],
@@ -379,17 +379,17 @@ FFZ.prototype._modify_chat_input = function(component) {
 			if ( arguments.length > 1 ) {
 				this.set('ffz_chatters', value);
 			}
-			
+
 			var output = [];
-			
+
 			// Chatters
 			output = output.concat(this.get('ffz_chatters'));
-			
+
 			// Emoticons
 			if ( this.get('isSuggestionsTriggeredWithTab') ) {
 				output = output.concat(this.get('ffz_emoticons'));
 			}
-			
+
 			return output;
 		}.property("ffz_emoticons", "ffz_chatters", "isSuggestionsTriggeredWithTab")*/
 	});

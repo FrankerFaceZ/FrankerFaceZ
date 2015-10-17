@@ -50,11 +50,11 @@ FFZ.basic_settings.minimalistic_chat = {
 	help: "Hide all of chat except messages and the input box and reduce chat margins.",
 
 	get: function() {
-		return this.settings.minimal_chat && this.settings.chat_padding;
+		return this.settings.minimal_chat === 3 && this.settings.chat_padding;
 	},
 
 	set: function(val) {
-		this.settings.set('minimal_chat', val);
+		this.settings.set('minimal_chat', val ? 3 : 0);
 		this.settings.set('chat_padding', val);
 	}
 };

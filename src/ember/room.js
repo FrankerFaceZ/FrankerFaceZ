@@ -1180,12 +1180,12 @@ FFZ.prototype._modify_room = function(room) {
 			return this._super(e);
 		},
 
-		send: function(text) {
+		send: function(text, ignore_history) {
 			if ( f.settings.group_tabs && f.settings.whisper_room && this.ffz_whisper_room )
 				return;
 
 			try {
-				if ( text ) {
+				if ( text && ! ignore_history ) {
 					// Command History
 					var mru = this.get('mru_list'),
 						ind = mru.indexOf(text);

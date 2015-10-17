@@ -21,7 +21,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 21,
+	major: 3, minor: 5, revision: 30,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -103,6 +103,7 @@ FFZ.prototype.get_user = function() {
 // -------------------
 
 // Import these first to set up data structures
+require('./localization');
 require('./ui/menu');
 require('./settings');
 require('./socket');
@@ -111,11 +112,12 @@ require('./colors');
 require('./emoticons');
 require('./badges');
 require('./tokenize');
+//require('./filtering');
 
 
 // Analytics: require('./ember/router');
 require('./ember/channel');
-//require('./ember/player');
+require('./ember/player');
 require('./ember/room');
 require('./ember/layout');
 require('./ember/line');
@@ -124,6 +126,7 @@ require('./ember/viewers');
 require('./ember/moderation-card');
 require('./ember/chat-input');
 //require('./ember/teams');
+require('./ember/directory');
 
 require('./debug');
 
@@ -158,7 +161,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 
 	// Check for the player
 	if ( location.hostname === 'player.twitch.tv' ) {
-		//this.init_player(delay);
+		this.init_player(delay);
 		return;
 	}
 
@@ -211,6 +214,8 @@ FFZ.prototype.init_player = function(delay) {
 	// Literally only make it dark.
 	this.load_settings();
 	this.setup_dark();
+	this.setup_css();
+	this.setup_player();
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
@@ -279,7 +284,9 @@ FFZ.prototype.init_dashboard = function(delay) {
 
 	this.setup_tokenization();
 	this.setup_notifications();
+	this.setup_following_count(false);
 	this.setup_css();
+	this.setup_menu();
 
 	this._update_subscribers();
 
@@ -318,7 +325,9 @@ FFZ.prototype.init_ember = function(delay) {
 	//this.setup_router();
 	this.setup_colors();
 	this.setup_tokenization();
-	//this.setup_player();
+	//this.setup_filtering();
+
+	this.setup_player();
 	this.setup_channel();
 	this.setup_room();
 	this.setup_line();
@@ -327,6 +336,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_viewers();
 	this.setup_mod_card();
 	this.setup_chat_input();
+	this.setup_directory();
 
 	//this.setup_teams();
 

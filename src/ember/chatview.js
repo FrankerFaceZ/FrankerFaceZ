@@ -40,16 +40,35 @@ FFZ.basic_settings.delayed_chat = {
 
 
 FFZ.settings_info.minimal_chat = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "No Heading",
+		2: "Minimalistic Input",
+		3: "All"
+	},
+
+	value: 0,
 
 	category: "Chat Appearance",
 
 	name: "Minimalistic Chat",
 	help: "Hide all of the chat user interface, only showing messages and an input box.",
 
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		else if ( val === true )
+			return 3;
+		else if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-minimal-chat", val);
+			document.body.classList.toggle("ffz-minimal-chat-head", val === 1 || val === 3);
+			document.body.classList.toggle("ffz-minimal-chat-input", val > 1);
+
 			if ( this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
 				var f = this;
 				setTimeout(function() {
@@ -58,11 +77,11 @@ FFZ.settings_info.minimal_chat = {
 				},0);
 			}
 
-			if ( this._chatv && this._chatv.get('controller.showList') )
+			if ( (val === 1 || val === 3) && this._chatv && this._chatv.get('controller.showList') )
 				this._chatv.set('controller.showList', false);
 
 			// Remove the style if we have it.
-			if ( ! val && this._chat_style ) {
+			if ( ! (val > 1) && this._chat_style ) {
 				if ( this._inputv ) {
 					if ( this._inputv._ffz_minimal_style )
 						this._inputv._ffz_minimal_style.innerHTML = '';
@@ -73,7 +92,7 @@ FFZ.settings_info.minimal_chat = {
 				utils.update_css(this._chat_style, "input_height", '');
 				this._roomv && this._roomv.get('stuckToBottom') && this._roomv._scrollToBottom();
 
-			} else if ( this._inputv )
+			} else if ( val > 1 && this._inputv )
 				this._inputv.ffzResizeInput();
 		}
 	};
@@ -247,7 +266,8 @@ FFZ.settings_info.visible_rooms = {
 // --------------------
 
 FFZ.prototype.setup_chatview = function() {
-	document.body.classList.toggle("ffz-minimal-chat", this.settings.minimal_chat);
+	document.body.classList.toggle("ffz-minimal-chat-head", this.settings.minimal_chat === 1 || this.settings.minimal_chat === 3);
+	document.body.classList.toggle("ffz-minimal-chat-input", this.settings.minimal_chat === 2 || this.settings.minimal_chat === 3);
 
 	this.log("Hooking the Ember Chat controller.");
 
