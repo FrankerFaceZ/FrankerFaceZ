@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+	constants = require('./constants');
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
@@ -12,6 +13,8 @@ FFZ.ws_on_close = [];
 // Socket Creation
 // ----------------
 
+// Attempt to authenticate to the socket server as a real browser by loading the root page.
+// e.g. cloudflare ddos check
 FFZ.prototype.ws_iframe = function() {
 	this._ws_last_iframe = Date.now();
 	var ifr = document.createElement('iframe'),
@@ -36,7 +39,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_pending = this._ws_pending || [];
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://catbag.frankerfacez.com/");
+		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVER + "/");
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
