@@ -4,6 +4,7 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 FFZ.prototype._ws_last_iframe = 0;
+FFZ.prototype._ws_host_idx = 0;
 
 FFZ.ws_commands = {};
 FFZ.ws_on_close = [];
@@ -39,7 +40,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_pending = this._ws_pending || [];
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVER + "/");
+		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVERs[this._ws_host_idx] + "/");
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
@@ -119,13 +120,16 @@ FFZ.prototype.ws_create = function() {
 		f._ws_open = false;
 
 		// When the connection closes, run our callbacks.
-		for(var i=0; i < FFZ.ws_on_close.length; i++) {
+		for (var i=0; i < FFZ.ws_on_close.length; i++) {
 			try {
 				FFZ.ws_on_close[i].bind(f)();
 			} catch(err) {
 				f.log("Error on Socket Close Callback: " + err);
 			}
 		}
+
+		// Attempt to cycle to backup server
+		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
 
 		if ( f._ws_delay > 10000 ) {
 			var ua = navigator.userAgent.toLowerCase();
