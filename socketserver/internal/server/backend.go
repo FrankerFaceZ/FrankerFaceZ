@@ -8,16 +8,41 @@ import (
 	"github.com/pmylund/go-cache"
 	"strconv"
 	"io/ioutil"
+	"encoding/json"
+	"crypto/tls"
+	"crypto/x509"
+	"log"
 )
 
-var httpClient http.Client
+var backendHttpClient http.Client
 var backendUrl string
 var responseCache *cache.Cache
 
-func SetupBackend(url string) {
-	httpClient.Timeout = 60 * time.Second
-	backendUrl = url
+var getBacklogUrl string
+
+func SetupBackend(config *Config) {
+	backendHttpClient.Timeout = 60 * time.Second
+	backendUrl = config.BackendUrl
+	if responseCache != nil {
+		responseCache.Flush()
+	}
 	responseCache = cache.New(60 * time.Second, 120 * time.Second)
+
+	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
+}
+
+func SetupBackendCertificates(config *Config, certPool x509.CertPool) {
+	myCert, err := tls.LoadX509KeyPair(config.BackendClientCertFile, config.BackendClientKeyFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tlsConfig := tls.Config{
+		Certificates: []tls.Certificate{myCert},
+		RootCAs: certPool,
+	}
+	tlsConfig.BuildNameToCertificate()
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	backendHttpClient.Transport = transport
 }
 
 func getCacheKey(remoteCommand, data string) string {
@@ -33,7 +58,7 @@ func RequestRemoteDataCached(remoteCommand, data string, auth AuthInfo) (string,
 }
 
 func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (string, error) {
-	destUrl := fmt.Sprintf("%s/%s", backendUrl, remoteCommand)
+	destUrl := fmt.Sprintf("%s/cmd/%s", backendUrl, remoteCommand)
 	var authKey string
 	if auth.UsernameValidated {
 		authKey = "usernameClaimed"
@@ -45,8 +70,11 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (string, error
 		"clientData": []string{data},
 		authKey: []string{auth.TwitchUsername},
 	}
+	if gconfig.BasicAuthPassword != "" {
+		formData["password"] = gconfig.BasicAuthPassword
+	}
 
-	resp, err := httpClient.PostForm(destUrl, 	formData)
+	resp, err := backendHttpClient.PostForm(destUrl, formData)
 	if err != nil {
 		return "", err
 	}
@@ -69,4 +97,24 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (string, error
 	}
 
 	return responseJson, nil
+}
+
+func FetchBacklogData(chatSubs, channelSubs []string) ([]ClientMessage, error) {
+	formData := url.Values{
+		"chatSubs": chatSubs,
+		"channelSubs": channelSubs,
+	}
+
+	resp, err := backendHttpClient.PostForm(getBacklogUrl, formData)
+	if err != nil {
+		return nil, err
+	}
+	dec := json.NewDecoder(resp.Body)
+	var messages []ClientMessage
+	err = dec.Decode(messages)
+	if err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 }

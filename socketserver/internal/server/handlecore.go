@@ -4,23 +4,34 @@ import (
 	"net/http"
 	"golang.org/x/net/websocket"
 	"crypto/tls"
-	"log"
 	"strings"
 	"strconv"
 	"errors"
 	"encoding/json"
 	"fmt"
 	"sync"
+	"crypto/x509"
+	"io/ioutil"
 )
 
 const MAX_PACKET_SIZE = 1024
 
 type Config struct {
+	// SSL
 	SSLCertificateFile string
 	SSLKeyFile         string
 	UseSSL             bool
 
+	// CA for client validation (pub/sub commands only)
+	BackendRootCertFile string
+	BackendClientCertFile string
+	BackendClientKeyFile string
+	// Password for client validation (pub/sub commands only)
+	BasicAuthPassword  string
+
+	// Hostname of the socket server
 	SocketOrigin       string
+	// URL to the backend server
 	BackendUrl         string
 }
 
@@ -75,39 +86,58 @@ var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as a
 var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
 var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
+var gconfig *Config
+
 // Create a websocket.Server with the options from the provided Config.
-func SetupServer(config *Config) *websocket.Server {
+func setupServer(config *Config, tlsConfig *tls.Config) *websocket.Server {
+	gconfig = config
 	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
 	if err != nil {
 		panic(err)
 	}
+
+	SetupBackend(config)
+
 	if config.UseSSL {
 		cert, err := tls.LoadX509KeyPair(config.SSLCertificateFile, config.SSLKeyFile)
 		if err != nil {
 			panic(err)
 		}
-		tlsConf := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			ServerName: config.SocketOrigin,
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.ServerName = config.SocketOrigin
+		tlsConfig.BuildNameToCertificate()
+		sockConf.TlsConfig = tlsConfig
+
+		certBytes, err := ioutil.ReadFile(config.BackendRootCertFile)
+		if err != nil {
+			panic(err)
 		}
-		tlsConf.BuildNameToCertificate()
-		sockConf.TlsConfig = tlsConf
+		clientCA, err := x509.ParseCertificate(certBytes)
+		if err != nil {
+			panic(err)
+		}
+		certPool := x509.NewCertPool()
+		certPool.AddCert(clientCA)
+		tlsConfig.ClientCAs = certPool
+		SetupBackendCertificates(config, certPool)
 	}
 
 	sockServer := &websocket.Server{}
 	sockServer.Config = *sockConf
 	sockServer.Handler = HandleSocketConnection
 
-	SetupBackend(config.BackendUrl)
+	go deadChannelReaper()
+
 	return sockServer
 }
 
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
-func SetupServerAndHandle(config *Config) {
-	sockServer := SetupServer(config)
+func SetupServerAndHandle(config *Config, tlsConfig *tls.Config) {
+	sockServer := setupServer(config, tlsConfig)
 
 	http.HandleFunc("/", sockServer.ServeHTTP)
+	http.HandleFunc("/pub", HandlePublishRequest)
 }
 
 // Handle a new websocket connection from a FFZ client.
@@ -122,17 +152,14 @@ func HandleSocketConnection(conn *websocket.Conn) {
 		})
 	}
 
-	defer func() {
-		closer()
-	}()
-
-	log.Print("! Got a connection from ", conn.RemoteAddr())
+	// Close the connection when we're done.
+	defer closer()
 
 	_clientChan := make(chan ClientMessage)
 	_serverMessageChan := make(chan ClientMessage)
 	_errorChan := make(chan error)
 
-	// Receive goroutine
+	// Launch receiver goroutine
 	go func(errorChan chan <- error, clientChan chan <- ClientMessage) {
 		var msg ClientMessage
 		var err error
@@ -148,12 +175,14 @@ func HandleSocketConnection(conn *websocket.Conn) {
 		// exit
 	}(_errorChan, _clientChan)
 
-	var client ClientInfo
-	client.MessageChannel = _serverMessageChan
-
 	var errorChan <-chan error = _errorChan
 	var clientChan <-chan ClientMessage = _clientChan
 	var serverMessageChan <-chan ClientMessage = _serverMessageChan
+
+	var client ClientInfo
+	client.MessageChannel = _serverMessageChan
+
+	// All set up, now enter the work loop
 
 	RunLoop:
 	for {
@@ -180,7 +209,20 @@ func HandleSocketConnection(conn *websocket.Conn) {
 			FFZCodec.Send(conn, smsg)
 		}
 	}
-	// exit
+
+	// Exit
+
+	// Launch message draining goroutine - we aren't out of the pub/sub records
+	go func() {
+		for _ := range _serverMessageChan {}
+	}()
+
+	// Stop getting messages...
+	UnsubscribeAll(&client)
+
+	// And finished.
+	// Close the channel so the draining goroutine can finish, too.
+	close(_serverMessageChan)
 }
 
 func CallHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (rmsg ClientMessage, err error) {

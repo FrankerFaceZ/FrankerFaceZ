@@ -6,10 +6,13 @@ import (
 	"log"
 	"sync"
 	"strconv"
+	"time"
 )
 
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
 var ResponseFailure = ClientMessage{Command: "False"}
+
+const ChannelInfoDelay = 2 * time.Second
 
 func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) {
 	handler, ok := CommandHandlers[msg.Command]
@@ -22,9 +25,7 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 
 	log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
 
-	client.Mutex.Lock()
 	response, err := CallHandler(handler, conn, client, msg)
-	client.Mutex.Unlock()
 
 	if err == nil {
 		response.MessageID = msg.MessageID
@@ -64,8 +65,10 @@ func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 		return
 	}
 
+	client.Mutex.Lock()
 	client.TwitchUsername = username
 	client.UsernameValidated = false
+	client.Mutex.Unlock()
 
 	return ResponseSuccess, nil
 }
@@ -73,9 +76,22 @@ func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
-	AddToSliceS(&client.CurrentChannels, channel)
+	client.Mutex.Lock()
 
-	// TODO - get backlog
+	AddToSliceS(&client.CurrentChannels, channel)
+	client.PendingChatBacklogs = append(client.PendingChatBacklogs, channel)
+
+	if client.MakePendingRequests == nil {
+		client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
+	} else {
+		if !client.MakePendingRequests.Reset(ChannelInfoDelay) {
+			client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
+		}
+	}
+
+	client.Mutex.Unlock()
+
+	// note - pub/sub updating happens in GetSubscriptionBacklog
 
 	return ResponseSuccess, nil
 }
@@ -83,7 +99,11 @@ func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rms
 func HandleUnsub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
+	client.Mutex.Lock()
 	RemoveFromSliceS(&client.CurrentChannels, channel)
+	client.Mutex.Unlock()
+
+	UnsubscribeSingleChat(client, channel)
 
 	return ResponseSuccess, nil
 }
@@ -91,9 +111,22 @@ func HandleUnsub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 func HandleSubChannel(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
-	AddToSliceS(&client.WatchingChannels, channel)
+	client.Mutex.Lock()
 
-	// TODO - get backlog
+	AddToSliceS(&client.WatchingChannels, channel)
+	client.PendingStreamBacklogs = append(client.PendingStreamBacklogs, channel)
+
+	if client.MakePendingRequests == nil {
+		client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
+	} else {
+		if !client.MakePendingRequests.Reset(ChannelInfoDelay) {
+			client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
+		}
+	}
+
+	client.Mutex.Unlock()
+
+	// note - pub/sub updating happens in GetSubscriptionBacklog
 
 	return ResponseSuccess, nil
 }
@@ -101,17 +134,88 @@ func HandleSubChannel(conn *websocket.Conn, client *ClientInfo, msg ClientMessag
 func HandleUnsubChannel(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
+	client.Mutex.Lock()
 	RemoveFromSliceS(&client.WatchingChannels, channel)
+	client.Mutex.Unlock()
+
+	UnsubscribeSingleChannel(client, channel)
 
 	return ResponseSuccess, nil
 }
+
+func GetSubscriptionBacklogFor(conn *websocket.Conn, client *ClientInfo) func() {
+	return func() {
+		GetSubscriptionBacklog(conn, client)
+	}
+}
+
+// On goroutine
+func GetSubscriptionBacklog(conn *websocket.Conn, client *ClientInfo) {
+	var chatSubs, channelSubs []string
+
+	// Lock, grab the data, and reset it
+	client.Mutex.Lock()
+	chatSubs = client.PendingChatBacklogs
+	channelSubs = client.PendingStreamBacklogs
+	client.PendingChatBacklogs = nil
+	client.PendingStreamBacklogs = nil
+	client.MakePendingRequests = nil
+	client.Mutex.Unlock()
+
+	if len(chatSubs) == 0 && len(channelSubs) == 0 {
+		return
+	}
+
+	SubscribeBatch(client, chatSubs, channelSubs)
+
+	messages, err := FetchBacklogData(chatSubs, channelSubs)
+
+	if err != nil {
+		// Oh well.
+		log.Print("error in GetSubscriptionBacklog:", err)
+		return
+	}
+
+	// Deliver to client
+	for _, msg := range messages {
+		client.MessageChannel <- msg
+	}
+}
+
+type SurveySubmission struct {
+	User string
+	Json string
+}
+var SurveySubmissions []SurveySubmission
+var SurveySubmissionLock sync.Mutex
 
 func HandleSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	log.Println("Ignoring survey response from", client.ClientID)
+	SurveySubmissionLock.Lock()
+	SurveySubmissions = append(SurveySubmissions, SurveySubmission{client.TwitchUsername, msg.origArguments})
+	SurveySubmissionLock.Unlock()
+
 	return ResponseSuccess, nil
 }
 
+type FollowEvent struct {
+	User string
+	Channel string
+	NowFollowing bool
+	Timestamp time.Time
+}
+var FollowEvents []FollowEvent
+var FollowEventsLock sync.Mutex
+
 func HandleTrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	channel, following, err := msg.ArgumentsAsStringAndBool()
+	if err != nil {
+		return
+	}
+	now := time.Now()
+
+	FollowEventsLock.Lock()
+	FollowEvents = append(FollowEvents, FollowEvent{client.TwitchUsername, channel, following, now})
+	FollowEventsLock.Unlock()
 
 	return ResponseSuccess, nil
 }
