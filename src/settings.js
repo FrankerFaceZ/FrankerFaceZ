@@ -53,32 +53,18 @@ FFZ.prototype.load_settings = function() {
 	// Build a settings object.
 	this.settings = {};
 
-	for(var key in FFZ.settings_info) {
-		if ( ! FFZ.settings_info.hasOwnProperty(key) )
-			continue;
-
-		var info = FFZ.settings_info[key],
-			ls_key = info.storage_key || make_ls(key),
-			val = info.hasOwnProperty("value") ? info.value : undefined;
-
-		if ( localStorage.hasOwnProperty(ls_key) ) {
-			try {
-				val = JSON.parse(localStorage.getItem(ls_key));
-			} catch(err) {
-				this.log('Error loading value for "' + key + '": ' + err);
-			}
-		}
-
-		if ( info.process_value )
-			val = info.process_value.bind(this)(val);
-
-		this.settings[key] = val;
-	}
-
 	// Helpers
 	this.settings.get = this._setting_get.bind(this);
 	this.settings.set = this._setting_set.bind(this);
 	this.settings.del = this._setting_del.bind(this);
+	this.settings.load = this._setting_load.bind(this);
+
+	for(var key in FFZ.settings_info) {
+		if ( ! FFZ.settings_info.hasOwnProperty(key) )
+			continue;
+
+		this._setting_load(key);
+	}
 
 	// Listen for Changes
 	window.addEventListener("storage", this._setting_update.bind(this), false);
@@ -824,6 +810,26 @@ FFZ.prototype._setting_update = function(e) {
 // --------------------
 // Settings Access
 // --------------------
+
+FFZ.prototype._setting_load = function(key, default_value) {
+	var info = FFZ.settings_info[key],
+		ls_key = info && info.storage_key || make_ls(key),
+		val = default_value || (info && info.hasOwnProperty("value") ? info.value : undefined);
+
+	if ( localStorage.hasOwnProperty(ls_key) ) {
+		try {
+			val = JSON.parse(localStorage.getItem(ls_key));
+		} catch(err) {
+			this.log('Error loading value for "' + key + '": ' + err);
+		}
+	}
+
+	if ( info && info.process_value )
+		val = info.process_value.bind(this)(val);
+
+	this.settings[key] = val;
+}
+
 
 FFZ.prototype._setting_get = function(key) {
 	return this.settings[key];

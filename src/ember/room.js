@@ -567,7 +567,7 @@ FFZ.prototype.add_room = function(id, room) {
 	this.log("Adding Room: " + id);
 
 	// Create a basic data table for this room.
-	var data = this.rooms[id] = {id: id, room: room, menu_sets: [], sets: [], css: null, needs_history: false};
+	var data = this.rooms[id] = {id: id, room: room, sets: [], ext_sets: [], css: null, needs_history: false};
 
 	if ( this.follow_sets && this.follow_sets[id] ) {
 		data.extra_sets = this.follow_sets[id];
@@ -602,8 +602,14 @@ FFZ.prototype.add_room = function(id, room) {
 	// Why don't we set the scrollback length, too?
 	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === id) ? 150 : 0));
 
-	// For now, we use the legacy function to grab the .css file.
+	// Load the room's data from the API.
 	this.load_room(id);
+
+	// Announce this room to any extension callback functions.
+	for(var api_id in this._apis) {
+		var api = this._apis[api_id];
+		api._room_callbacks(id, data);
+	}
 }
 
 

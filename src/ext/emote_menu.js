@@ -49,7 +49,7 @@ FFZ.prototype._emote_menu_enumerator = function() {
 			if ( emote.hidden )
 				continue;
 
-			var title = "FrankerFaceZ " + set.title,
+			var title = (set.source || "FrankerFaceZ") + " " + set.title,
 				badge = set.icon || '//cdn.frankerfacez.com/script/devicon.png';
 
 			emotes.push({text: emote.name, url: emote.urls[1],

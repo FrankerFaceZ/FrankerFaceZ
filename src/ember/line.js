@@ -666,7 +666,11 @@ FFZ.prototype._modify_line = function(component) {
 					window.open("https://twitchemotes.com/emote/" + eid);
 				else {
 					eid = e.target.getAttribute("data-ffz-emote");
-					window.open("https://www.frankerfacez.com/emoticons/" + eid);
+					var es = e.target.getAttribute("data-ffz-set"),
+						set = es && f.emote_sets[es];
+
+					if ( ! set || ! set.hasOwnProperty('source_ext') )
+						window.open("https://www.frankerfacez.com/emoticons/" + eid);
 				}
 			}
 

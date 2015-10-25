@@ -269,17 +269,23 @@ FFZ.menu_pages.myemotes = {
 		var heading = document.createElement('div'),
 			menu = document.createElement('div'),
 			f = this,
-			emotes = [];
+			emotes = [],
+
+			menu_id = set.hasOwnProperty('source_ext') ? 'ffz-ext-' + set.source_ext + '-' + set.source_id : 'ffz-' + set.id,
+			icon = set.icon || (set.hasOwnProperty('source_ext') && '//cdn.frankerfacez.com/emoji/tw-1f4ac.svg') || '//cdn.frankerfacez.com/script/devicon.png';
 
 		heading.className = 'heading';
-		heading.innerHTML = '<span class="right">FrankerFaceZ</span>' + set.title;
-		heading.style.backgroundImage = 'url("' + (set.icon || '//cdn.frankerfacez.com/script/devicon.png') + '")';
+		heading.innerHTML = '<span class="right">' + (utils.sanitize(set.source) || 'FrankerFaceZ') + '</span>' + set.title;
+
+		heading.style.backgroundImage = 'url("' + icon + '")';
+		if ( icon.indexOf('.svg') !== -1 )
+			heading.style.backgroundSize = "18px";
 
 		menu.className = 'emoticon-grid collapsable';
 		menu.appendChild(heading);
 
-		menu.setAttribute('data-set', 'ffz-' + set.id);
-		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf('ffz-' + set.id) !== -1);
+		menu.setAttribute('data-set', menu_id);
+		menu.classList.toggle('collapsed', this.settings.emote_menu_collapsed.indexOf(menu_id) !== -1);
 		heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this); });
 
 		for(var emote_id in set.emoticons)
@@ -325,7 +331,7 @@ FFZ.menu_pages.myemotes = {
 			em.title = this._emote_tooltip(emote);
 			em.addEventListener("click", function(id, code, e) {
 				e.preventDefault();
-				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
+				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && ! set.hasOwnProperty('source_ext') )
 					window.open("https://www.frankerfacez.com/emoticons/" + id);
 				else
 					this._add_emote(view, code);

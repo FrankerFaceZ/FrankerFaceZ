@@ -69,6 +69,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	document.body.classList.remove("ffz-chat-separator-wide");
 	document.body.classList.remove("ffz-chat-separator-3d-inset");
 	document.body.classList.remove("ffz-sidebar-swap");
+	document.body.classList.remove("ffz-portrait");
 	document.body.classList.remove("ffz-flip-dashboard");
 	document.body.classList.remove("ffz-transparent-badges");
 	document.body.classList.remove("ffz-high-contrast-chat-text");

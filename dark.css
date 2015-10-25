@@ -117,6 +117,12 @@
 	border-right:1px solid rgb(0,0,0)!important;
 }
 
+.ffz-dark.ffz-portrait div#left_col .column,
+.ffz-dark.ffz-portrait div#main_col {
+	border-right: none !important;
+	border-bottom: 1px solid rgb(0,0,0) !important;
+}
+
 
 /* stream title */
 .ffz-dark span.real_title{

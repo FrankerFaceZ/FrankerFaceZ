@@ -154,10 +154,6 @@ FFZ.prototype._modify_player = function(player) {
 			if ( ! player )
 				return;
 
-			// Subscribe to the qualities event.
-			//player.addEventListener('qualitieschange', this.ffzQualitiesUpdated.bind(this));
-			//this.ffzQualitiesUpdated();
-
 			// Only set up the stats hooks if we need stats.
 			if ( ! player.getVideo() )
 				this.ffzInitStats();
@@ -175,7 +171,13 @@ FFZ.prototype._modify_player = function(player) {
 
 			// Make it so stats can no longer be disabled if we want them.
 			player.ffzSetStatsEnabled = player.setStatsEnabled;
-			player.ffz_stats = player.getStatsEnabled();
+			try {
+				player.ffz_stats = player.getStatsEnabled();
+			} catch(err) {
+				// Assume stats are off.
+				f.log("player ffzInitStats: getStatsEnabled still doesn't work: " + err);
+				player.ffz_stats = false;
+			}
 
 			var t = this;
 
