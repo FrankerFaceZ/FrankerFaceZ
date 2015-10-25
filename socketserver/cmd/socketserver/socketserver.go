@@ -2,7 +2,7 @@ package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/sock
 
 import (
 	"flag"
-	"../../lib"
+	"../../listener"
 	"log"
 	"net/http"
 )
@@ -25,7 +25,7 @@ func main() {
 		log.Fatalln("Either both --crt and --key can be provided, or neither.")
 	}
 
-	conf := &lib.Config {
+	conf := &listener.Config {
 		SSLKeyFile: *privateKeyFile,
 		SSLCertificateFile: *certificateFile,
 		UseSSL: *certificateFile != "",
@@ -33,7 +33,7 @@ func main() {
 		Origin: *origin,
 	}
 
-	lib.SetupServerAndHandle(conf)
+	listener.SetupServerAndHandle(conf)
 
 	var err error
 	if conf.UseSSL {

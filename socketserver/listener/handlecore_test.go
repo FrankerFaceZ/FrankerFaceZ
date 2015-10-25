@@ -1,4 +1,4 @@
-package lib
+package listener
 
 import (
 	"golang.org/x/net/websocket"

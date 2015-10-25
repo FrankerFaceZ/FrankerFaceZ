@@ -1,4 +1,4 @@
-package lib // import "bitbucket.org/stendec/frankerfacez/socketserver/lib"
+package listener // import "bitbucket.org/stendec/frankerfacez/socketserver/listener"
 
 import (
 	"net/http"
@@ -63,6 +63,10 @@ type ClientInfo struct {
 	// Protected by Mutex
 	CurrentChannels   []string
 
+	// This list of channels this client needs UI updates for.
+	// Protected by Mutex
+	WatchingChannels  []string
+
 	// Server-initiated messages should be sent here
 	MessageChannel    chan <- ClientMessage
 }
@@ -89,7 +93,11 @@ var CommandHandlers = map[Command]CommandHandler{
 
 // Sent by the server in ClientMessage.Command to indicate success.
 const SuccessCommand Command = "True"
+// This must be the first command sent by the client once the connection is established.
 const HelloCommand Command = "hello"
+// A handler returning a ClientMessage with this Command will prevent replying to the client.
+// It signals that the work has been handed off to a background goroutine.
+const AsyncResponseCommand Command = "_async"
 
 // A websocket.Codec that translates the protocol into ClientMessage objects.
 var FFZCodec websocket.Codec = websocket.Codec{
@@ -219,6 +227,9 @@ func HandleSocketConnection(conn *websocket.Conn) {
 			if err == nil {
 				response.MessageID = msg.MessageID
 				FFZCodec.Send(conn, response)
+			} else if response.Command == AsyncResponseCommand {
+				// Don't send anything
+				// The response will be delivered over client.MessageChannel / serverMessageChan
 			} else {
 				FFZCodec.Send(conn, ClientMessage{
 					MessageID: msg.MessageID,
@@ -330,7 +341,6 @@ func NewClientMessage(arguments interface{}) ClientMessage {
 		Arguments: arguments,
 	}
 }
-
 
 // Convenience method: Parse the arguments of the ClientMessage as a single string.
 func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {

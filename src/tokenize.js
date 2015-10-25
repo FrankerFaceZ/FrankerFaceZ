@@ -201,7 +201,7 @@ var FFZ = window.FrankerFaceZ,
 			return;
 
 		this._link_data[href] = data;
-		data.unsafe = false;
+		//data.unsafe = false;
 
 		var tooltip = build_link_tooltip.bind(this)(href), links,
 			no_trail = href.charAt(href.length-1) == "/" ? href.substr(0, href.length-1) : null;
