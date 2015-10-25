@@ -160,6 +160,11 @@ FFZ.prototype.ws_create = function() {
 			else
 				f.log("Invalid command: " + cmd, data, false, true);
 
+		} else if ( cmd === "error" ) {
+			f.log("Socket server reported error: " + data);
+			if (f._ws_callbacks[request] )
+				delete f._ws_callbacks[request];
+
 		} else {
 			var success = cmd === 'True',
 				has_callback = typeof f._ws_callbacks[request] === "function";
@@ -174,7 +179,7 @@ FFZ.prototype.ws_create = function() {
 					f.error("Callback for " + request + ": " + err);
 				}
 
-				f._ws_callbacks[request] = undefined;
+				delete f._ws_callbacks[request];
 			}
 		}
 	}
