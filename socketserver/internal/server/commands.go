@@ -4,6 +4,8 @@ import (
 	"golang.org/x/net/websocket"
 	"github.com/satori/go.uuid"
 	"log"
+	"sync"
+	"strconv"
 )
 
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
@@ -114,7 +116,37 @@ func HandleTrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessa
 	return ResponseSuccess, nil
 }
 
+var AggregateEmoteUsage map[int]map[string]int = make(map[int]map[string]int)
+var AggregateEmoteUsageLock sync.Mutex
+
 func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	// arguments is [1]map[EmoteId]map[RoomName]float64
+
+	mapRoot := msg.Arguments.([]interface{})[0].(map[string]interface{})
+
+	AggregateEmoteUsageLock.Lock()
+	defer AggregateEmoteUsageLock.Unlock()
+
+	for strEmote, val1 := range mapRoot {
+		var emoteId int
+		emoteId, err = strconv.Atoi(strEmote)
+		if err != nil {
+			return
+		}
+
+		destMapInner, ok := AggregateEmoteUsage[emoteId]
+		if !ok {
+			destMapInner = make(map[string]int)
+			AggregateEmoteUsage[emoteId] = destMapInner
+		}
+
+		mapInner := val1.(map[string]interface{})
+		for roomName, val2 := range mapInner {
+			var count int = int(val2.(float64))
+			destMapInner[roomName] += count
+		}
+	}
+
 
 	return ResponseSuccess, nil
 }

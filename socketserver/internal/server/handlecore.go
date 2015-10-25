@@ -21,6 +21,7 @@ type Config struct {
 	UseSSL             bool
 
 	SocketOrigin       string
+	BackendUrl         string
 }
 
 // A command is how the client refers to a function on the server. It's just a string.
@@ -96,6 +97,8 @@ func SetupServer(config *Config) *websocket.Server {
 	sockServer := &websocket.Server{}
 	sockServer.Config = *sockConf
 	sockServer.Handler = HandleSocketConnection
+
+	SetupBackend(config.BackendUrl)
 	return sockServer
 }
 
