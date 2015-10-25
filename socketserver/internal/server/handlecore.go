@@ -1,4 +1,4 @@
-package listener // import "bitbucket.org/stendec/frankerfacez/socketserver/listener"
+package server // import "bitbucket.org/stendec/frankerfacez/socketserver/server"
 
 import (
 	"net/http"
@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"errors"
 	"encoding/json"
-	"github.com/satori/go.uuid"
 	"fmt"
 	"sync"
 )
@@ -21,78 +20,39 @@ type Config struct {
 	SSLKeyFile         string
 	UseSSL             bool
 
-	Origin             string
+	SocketOrigin       string
 }
 
 // A command is how the client refers to a function on the server. It's just a string.
 type Command string
-
-type ClientMessage struct {
-	// Message ID. Increments by 1 for each message sent from the client.
-	// When replying to a command, the message ID must be echoed.
-	// When sending a server-initiated message, this is -1.
-	MessageID int
-	// The command that the client wants from the server.
-	// When sent from the server, the literal string 'True' indicates success.
-	// Before sending, a blank Command will be converted into SuccessCommand.
-	Command   Command
-	//
-	Arguments interface{}
-}
-
-type ClientInfo struct {
-	// The client ID.
-	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	ClientID          uuid.UUID
-
-	// The client's version.
-	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	Version           string
-
-	// This mutex protects writable data in this struct.
-	// If it seems to be a performance problem, we can split this.
-	Mutex             sync.Mutex
-
-	// The client's claimed username on Twitch.
-	TwitchUsername    string
-
-	// Whether or not the server has validated the client's claimed username.
-	UsernameValidated bool
-
-	// The list of chats this client is currently in.
-	// Protected by Mutex
-	CurrentChannels   []string
-
-	// This list of channels this client needs UI updates for.
-	// Protected by Mutex
-	WatchingChannels  []string
-
-	// Server-initiated messages should be sent here
-	MessageChannel    chan <- ClientMessage
-}
 
 // A function that is called to respond to a Command.
 type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
 var CommandHandlers = map[Command]CommandHandler{
 	HelloCommand: HandleHello,
-	"get_display_name": HandleGetDisplayName,
+	"setuser": HandleSetUser,
+
 	"sub": HandleSub,
 	"unsub": HandleUnsub,
-	"chat_history": HandleChatHistory,
 	"sub_channel": HandleSubChannel,
 	"unsub_channel": HandleUnsubChannel,
-	"setuser": HandleSetUser,
-	"update_follow_buttons": HandleUpdateFollowButtons,
+
 	"track_follow": HandleTrackFollow,
 	"emoticon_uses": HandleEmoticonUses,
-	"twitch_emote": HandleTwitchEmote,
-	"get_link": HandleGetLink,
 	"survey": HandleSurvey,
+
+	"twitch_emote": HandleRemoteCommand,
+	"get_link": HandleRemoteCommand,
+	"get_display_name": HandleRemoteCommand,
+	"update_follow_buttons": HandleRemoteCommand,
+	"chat_history": HandleRemoteCommand,
 }
 
 // Sent by the server in ClientMessage.Command to indicate success.
 const SuccessCommand Command = "True"
+// Sent by the server in ClientMessage.Command to indicate failure.
+const ErrorCommand Command = "error"
 // This must be the first command sent by the client once the connection is established.
 const HelloCommand Command = "hello"
 // A handler returning a ClientMessage with this Command will prevent replying to the client.
@@ -108,13 +68,15 @@ var FFZCodec websocket.Codec = websocket.Codec{
 // Errors that get returned to the client.
 var ProtocolError error = errors.New("FFZ Socket protocol error.")
 var ExpectedSingleString = errors.New("Error: Expected single string as arguments.")
+var ExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
 var ExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
 var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
+var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
 var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
 // Create a websocket.Server with the options from the provided Config.
 func SetupServer(config *Config) *websocket.Server {
-	sockConf, err := websocket.NewConfig("/", config.Origin)
+	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
 	if err != nil {
 		panic(err)
 	}
@@ -125,7 +87,7 @@ func SetupServer(config *Config) *websocket.Server {
 		}
 		tlsConf := &tls.Config{
 			Certificates: []tls.Certificate{cert},
-			ServerName: config.Origin,
+			ServerName: config.SocketOrigin,
 		}
 		tlsConf.BuildNameToCertificate()
 		sockConf.TlsConfig = tlsConf
@@ -210,33 +172,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 				break RunLoop
 			}
 
-			handler, ok := CommandHandlers[msg.Command]
-			if !ok {
-				log.Print("[!] Unknown command", msg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
-				// uncomment after commands are implemented
-				// closer()
-				continue
-			}
-
-			log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
-
-			client.Mutex.Lock()
-			response, err := CallHandler(handler, conn, &client, msg)
-			client.Mutex.Unlock()
-
-			if err == nil {
-				response.MessageID = msg.MessageID
-				FFZCodec.Send(conn, response)
-			} else if response.Command == AsyncResponseCommand {
-				// Don't send anything
-				// The response will be delivered over client.MessageChannel / serverMessageChan
-			} else {
-				FFZCodec.Send(conn, ClientMessage{
-					MessageID: msg.MessageID,
-					Command: "error",
-					Arguments: err.Error(),
-				})
-			}
+			HandleCommand(conn, &client, msg)
 		case smsg := <-serverMessageChan:
 			FFZCodec.Send(conn, smsg)
 		}
@@ -288,6 +224,7 @@ func UnmarshalClientMessage(data []byte, payloadType byte, v interface{}) (err e
 	}
 	dataStr = dataStr[spaceIdx + 1:]
 	argumentsJson := dataStr
+	out.origArguments = argumentsJson
 	err = json.Unmarshal([]byte(argumentsJson), &out.Arguments)
 	if err != nil {
 		return
@@ -353,6 +290,19 @@ func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {
 	}
 }
 
+// Convenience method: Parse the arguments of the ClientMessage as a single int.
+func (cm *ClientMessage) ArgumentsAsInt() (int1 int, err error) {
+	var ok bool
+	var num float64
+	num, ok = cm.Arguments.(float64)
+	if !ok {
+		err = ExpectedSingleInt; return
+	} else {
+		int1 = int(num)
+		return int1, nil
+	}
+}
+
 // Convenience method: Parse the arguments of the ClientMessage as an array of two strings.
 func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err error) {
 	var ok bool
@@ -401,5 +351,28 @@ func (cm *ClientMessage) ArgumentsAsStringAndInt() (string1 string, int int64, e
 			err = ExpectedStringAndIntGotFloat; return
 		}
 		return string1, int, nil
+	}
+}
+
+// Convenience method: Parse the arguments of the ClientMessage as an array of a string and an int.
+func (cm *ClientMessage) ArgumentsAsStringAndBool() (str string, flag bool, err error) {
+	var ok bool
+	var ary []interface{}
+	ary, ok = cm.Arguments.([]interface{})
+	if !ok {
+		err = ExpectedStringAndBool; return
+	} else {
+		if len(ary) != 2 {
+			err = ExpectedStringAndBool; return
+		}
+		str, ok = ary[0].(string)
+		if !ok {
+			err = ExpectedStringAndBool; return
+		}
+		flag, ok = ary[1].(bool)
+		if !ok {
+			err = ExpectedStringAndBool; return
+		}
+		return str, flag, nil
 	}
 }

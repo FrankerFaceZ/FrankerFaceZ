@@ -1,8 +1,9 @@
-package listener
+package server
 
 import (
 	"golang.org/x/net/websocket"
 	"fmt"
+	"testing"
 )
 
 func ExampleUnmarshalClientMessage() {
@@ -34,4 +35,23 @@ func ExampleMarshalClientMessage() {
 	// <nil>
 	// true
 	// -1 do_authorize "1234567890"
+}
+
+func TestArgumentsAsStringAndBool(t *testing.T) {
+	sourceData := []byte("1 foo [\"string\", false]")
+	var cm ClientMessage
+	err := UnmarshalClientMessage(sourceData, websocket.TextFrame, &cm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	str, boolean, err := cm.ArgumentsAsStringAndBool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if str != "string" {
+		t.Error("Expected first array item to be 'string', got", str)
+	}
+	if boolean != false {
+		t.Error("Expected second array item to be false, got", boolean)
+	}
 }
