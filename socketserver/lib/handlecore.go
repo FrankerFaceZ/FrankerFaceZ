@@ -32,8 +32,8 @@ type ClientMessage struct {
 	// When replying to a command, the message ID must be echoed.
 	// When sending a server-initiated message, this is -1.
 	MessageID int
-    // The command that the client wants from the server.
-    // When sent from the server, the literal string 'True' indicates success.
+	// The command that the client wants from the server.
+	// When sent from the server, the literal string 'True' indicates success.
 	// Before sending, a blank Command will be converted into SuccessCommand.
 	Command   Command
 	//
@@ -43,28 +43,34 @@ type ClientMessage struct {
 type ClientInfo struct {
 	// The client ID.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	ClientID uuid.UUID
+	ClientID          uuid.UUID
 
 	// The client's version.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	Version string
+	Version           string
 
 	// This mutex protects writable data in this struct.
 	// If it seems to be a performance problem, we can split this.
-	Mutex sync.Mutex
+	Mutex             sync.Mutex
+
+	// The client's claimed username on Twitch.
+	TwitchUsername    string
+
+	// Whether or not the server has validated the client's claimed username.
+	UsernameValidated bool
 
 	// The list of chats this client is currently in.
 	// Protected by Mutex
-	CurrentChannels []string
+	CurrentChannels   []string
 
 	// Server-initiated messages should be sent here
-	MessageChannel chan<- ClientMessage
+	MessageChannel    chan <- ClientMessage
 }
 
 // A function that is called to respond to a Command.
 type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
-var CommandHandlers = map[Command]CommandHandler {
+var CommandHandlers = map[Command]CommandHandler{
 	HelloCommand: HandleHello,
 	"get_display_name": HandleGetDisplayName,
 	"sub": HandleSub,
@@ -154,7 +160,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	_errorChan := make(chan error)
 
 	// Receive goroutine
-	go func(errorChan chan<- error, clientChan chan<- ClientMessage) {
+	go func(errorChan chan <- error, clientChan chan <- ClientMessage) {
 		var msg ClientMessage
 		var err error
 		for ; err == nil; err = FFZCodec.Receive(conn, &msg) {
@@ -180,13 +186,11 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	for {
 		select {
 		case err := <-errorChan:
-			// note - socket might not be open at this point
-			// don't care
 			FFZCodec.Send(conn, ClientMessage{
 				MessageID: -1,
 				Command: "error",
 				Arguments: err.Error(),
-			})
+			}) // note - socket might be closed, but don't care
 			break RunLoop
 		case msg := <-clientChan:
 			if client.Version == "" && msg.Command != HelloCommand {
@@ -205,6 +209,8 @@ func HandleSocketConnection(conn *websocket.Conn) {
 				// closer()
 				continue
 			}
+
+			log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
 
 			client.Mutex.Lock()
 			response, err := CallHandler(handler, conn, &client, msg)

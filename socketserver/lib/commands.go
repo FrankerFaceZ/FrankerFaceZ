@@ -5,8 +5,13 @@ import (
 	"log"
 )
 
+var EmptyClientMessage ClientMessage = ClientMessage{}
+
 func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	version, clientId, err := msg.ArgumentsAsTwoStrings()
+	if err != nil {
+		return EmptyClientMessage, nil
+	}
 
 	client.Version = version
 	client.ClientID = uuid.FromStringOrNil(clientId)
@@ -20,6 +25,7 @@ func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 }
 
 func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	username, err := msg.ArgumentsAsString()
 
 	return ClientMessage{}, nil
 }
