@@ -25,6 +25,7 @@ var responseCache *cache.Cache
 var getBacklogUrl string
 
 var backendSharedKey [32]byte
+var serverId int
 
 var messageBufferPool sync.Pool
 
@@ -38,7 +39,7 @@ func SetupBackend(config *Config) {
 
 	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
 
-	messageBufferPool.New = NewByteBuffer
+	messageBufferPool.New = New4KByteBuffer
 
 	var keys CryptoKeysBuf
 	file, err := os.Open(config.NaclKeysFile)
@@ -51,29 +52,16 @@ func SetupBackend(config *Config) {
 		log.Fatal(err)
 	}
 
-	box.Precompute(&backendSharedKey, &keys.TheirPublicKey, &keys.OurPrivateKey)
+	var theirPublic, ourPrivate [32]byte
+	copy(theirPublic[:], keys.TheirPublicKey)
+	copy(ourPrivate[:], keys.OurPrivateKey)
+	serverId = keys.ServerId
+
+	box.Precompute(&backendSharedKey, &theirPublic, &ourPrivate)
 }
 
 func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
-}
-
-func SealRequest(form url.Values) ([]byte, error) {
-	asString := form.Encode()
-	var nonce [24]byte
-	var err error
-
-	err = FillCryptoRandom(nonce[:])
-	if err != nil {
-		return nil, err
-	}
-
-	message := []byte(asString)
-	out := make([]byte, len(message) + box.Overhead)
-	box.SealAfterPrecomputation(out, message, &nonce, &backendSharedKey)
-
-	// TODO
-	return nil, nil
 }
 
 func RequestRemoteDataCached(remoteCommand, data string, auth AuthInfo) (string, error) {
@@ -156,15 +144,16 @@ func GenerateKeys(outputFile, serverId, theirPublicStr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	output.OurPublicKey, output.OurPrivateKey = *ourPublic, *ourPrivate
+	output.OurPublicKey, output.OurPrivateKey = ourPublic[:], ourPrivate[:]
 
 	if theirPublicStr != "" {
-		reader := base64.NewDecoder(base64.RawURLEncoding, strings.NewReader(theirPublicStr))
+		reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(theirPublicStr))
 		theirPublic, err := ioutil.ReadAll(reader)
 		if err != nil {
 			log.Fatal(err)
 		}
-		copy(output.TheirPublicKey[:], theirPublic)
+		log.Print(theirPublic)
+		output.TheirPublicKey = theirPublic
 	}
 
 	file, err := os.Create(outputFile)

@@ -2,6 +2,14 @@ package server
 
 import (
 	"crypto/rand"
+	"net/url"
+	"golang.org/x/crypto/nacl/box"
+	"bytes"
+	"encoding/base64"
+	"strconv"
+	"strings"
+	"errors"
+	"log"
 )
 
 func FillCryptoRandom(buf []byte) error {
@@ -16,8 +24,76 @@ func FillCryptoRandom(buf []byte) error {
 	return nil
 }
 
-func NewByteBuffer() interface{} {
-	return make([]byte, 1024)
+func New4KByteBuffer() interface{} {
+	return make([]byte, 0, 4096)
+}
+
+func SealRequest(form url.Values) (url.Values, error) {
+	var nonce [24]byte
+	var err error
+
+	err = FillCryptoRandom(nonce[:])
+	if err != nil {
+		return nil, err
+	}
+
+	cipherMsg := box.SealAfterPrecomputation(nil, []byte(form.Encode()), &nonce, &backendSharedKey)
+
+	bufMessage := new(bytes.Buffer)
+	enc := base64.NewEncoder(base64.URLEncoding, bufMessage)
+	enc.Write(cipherMsg)
+	enc.Close()
+	cipherString := bufMessage.String()
+
+	bufNonce := new(bytes.Buffer)
+	enc = base64.NewEncoder(base64.URLEncoding, bufNonce)
+	enc.Write(nonce[:])
+	enc.Close()
+	nonceString := bufNonce.String()
+
+	retval := url.Values{
+		"nonce": []string{nonceString},
+		"msg": []string{cipherString},
+		"id": []string{strconv.Itoa(serverId)},
+	}
+
+	return retval, nil
+}
+
+var ErrorShortNonce = errors.New("Nonce too short.")
+var ErrorInvalidSignature = errors.New("Invalid signature or contents")
+
+func UnsealRequest(form url.Values) (url.Values, error) {
+	var nonce [24]byte
+
+	nonceString := form.Get("nonce")
+	dec := base64.NewDecoder(base64.URLEncoding, strings.NewReader(nonceString))
+	count, err := dec.Read(nonce[:])
+	if err != nil {
+		return nil, err
+	}
+	if count != 24 {
+		return nil, ErrorShortNonce
+	}
+
+	cipherString := form.Get("msg")
+	dec = base64.NewDecoder(base64.URLEncoding, strings.NewReader(cipherString))
+	cipherBuffer := new(bytes.Buffer)
+	cipherBuffer.ReadFrom(dec)
+
+	message, ok := box.OpenAfterPrecomputation(nil, cipherBuffer.Bytes(), &nonce, &backendSharedKey)
+	if !ok {
+		return nil, ErrorInvalidSignature
+	}
+
+	retValues, err := url.ParseQuery(string(message))
+	if err != nil {
+		// Assume that the signature was accidentally correct but the contents were garbage
+		log.Print(err)
+		return nil, ErrorInvalidSignature
+	}
+
+	return retValues, nil
 }
 
 func AddToSliceS(ary *[]string, val string) bool {

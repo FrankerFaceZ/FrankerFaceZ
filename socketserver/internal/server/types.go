@@ -9,9 +9,9 @@ import (
 const CryptoBoxKeyLength = 32
 
 type CryptoKeysBuf struct {
-	OurPrivateKey [CryptoBoxKeyLength]byte
-	OurPublicKey [CryptoBoxKeyLength]byte
-	TheirPublicKey [CryptoBoxKeyLength]byte
+	OurPrivateKey []byte
+	OurPublicKey []byte
+	TheirPublicKey []byte
 	ServerId int
 }
 
