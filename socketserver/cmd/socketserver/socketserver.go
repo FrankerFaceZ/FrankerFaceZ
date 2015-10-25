@@ -2,9 +2,9 @@ package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/sock
 
 import (
 	"flag"
-	"../../internal/server"
 	"log"
 	"net/http"
+	"../../internal/server"
 )
 
 var origin *string = flag.String("origin", "localhost:8001", "Client-visible origin of the socket server")
@@ -12,13 +12,17 @@ var bindAddress *string = flag.String("listen", "", "Address to bind to, if diff
 var usessl *bool = flag.Bool("ssl", false, "Enable the use of SSL for connecting clients and backend connections")
 var certificateFile *string = flag.String("crt", "ssl.crt", "CA-signed SSL certificate file")
 var privateKeyFile *string = flag.String("key", "ssl.key", "SSL private key file")
-var backendRootFile *string = flag.String("peerroot", "backend_issuer.pem", "Root certificate that issued client certificates for backend servers")
-var backendCertFile *string = flag.String("peercrt", "backend_cert.crt", "Backend-trusted certificate, for use as a client certificate")
-var backendKeyFile *string = flag.String("peerkey", "backend_cert.key", "Private key for backend-trusted certificate, for use as a client certificate")
-var basicAuthPwd *string = flag.String("password", "", "Password for HTTP Basic Auth") // TODO
+
+var naclKeysFile *string = flag.String("naclkey", "naclkeys.json", "Keypairs for the NaCl crypto library, for communicating with the backend.")
+var generateKeys *bool = flag.Bool("genkeys", false, "Generate NaCl keys instead of serving requests.\nArguments: [int serverId] [base64 backendPublic]\nThe backend public key can either be specified in base64 on the command line, or put in the json file later.")
 
 func main() {
 	flag.Parse()
+
+	if *generateKeys {
+		GenerateKeys(*naclKeysFile)
+		return
+	}
 
 	if *origin == "" {
 		log.Fatalln("--origin argument required")
@@ -33,28 +37,38 @@ func main() {
 	conf := &server.Config {
 		SSLKeyFile: *privateKeyFile,
 		SSLCertificateFile: *certificateFile,
-		UseSSL: *certificateFile != "",
-		BackendRootCertFile: *backendRootFile,
-		BackendClientCertFile: *backendCertFile,
-		BackendClientKeyFile: *backendKeyFile,
+		UseSSL: *usessl,
+		NaclKeysFile: *naclKeysFile,
 
 		SocketOrigin: *origin,
 	}
 
 	httpServer := &http.Server{
-		Addr: *bindAddress
+		Addr: *bindAddress,
 	}
 
 	server.SetupServerAndHandle(conf, httpServer.TLSConfig)
 
 	var err error
 	if conf.UseSSL {
-		err = httpServer.ListenAndServeTLS(nil, nil)
+		err = httpServer.ListenAndServeTLS(*certificateFile, *privateKeyFile)
 	} else {
 		err = httpServer.ListenAndServe()
 	}
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
+	}
+}
+
+
+func GenerateKeys(outputFile string) {
+	if flag.NArg() < 1 {
+		log.Fatal("The server ID must be specified")
+	}
+	if flag.NArg() >= 2 {
+		server.GenerateKeys(outputFile, flag.Arg(0), flag.Arg(1))
+	} else {
+		server.GenerateKeys(outputFile, flag.Arg(0), "")
 	}
 }

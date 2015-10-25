@@ -10,24 +10,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"crypto/x509"
-	"io/ioutil"
+	"log"
 )
 
 const MAX_PACKET_SIZE = 1024
 
 type Config struct {
-	// SSL
+	// SSL/TLS
 	SSLCertificateFile string
 	SSLKeyFile         string
 	UseSSL             bool
 
-	// CA for client validation (pub/sub commands only)
-	BackendRootCertFile string
-	BackendClientCertFile string
-	BackendClientKeyFile string
-	// Password for client validation (pub/sub commands only)
-	BasicAuthPassword  string
+	// NaCl keys for backend messages
+	NaclKeysFile       string
 
 	// Hostname of the socket server
 	SocketOrigin       string
@@ -93,7 +88,7 @@ func setupServer(config *Config, tlsConfig *tls.Config) *websocket.Server {
 	gconfig = config
 	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	SetupBackend(config)
@@ -101,25 +96,13 @@ func setupServer(config *Config, tlsConfig *tls.Config) *websocket.Server {
 	if config.UseSSL {
 		cert, err := tls.LoadX509KeyPair(config.SSLCertificateFile, config.SSLKeyFile)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		tlsConfig.Certificates = []tls.Certificate{cert}
 		tlsConfig.ServerName = config.SocketOrigin
 		tlsConfig.BuildNameToCertificate()
 		sockConf.TlsConfig = tlsConfig
 
-		certBytes, err := ioutil.ReadFile(config.BackendRootCertFile)
-		if err != nil {
-			panic(err)
-		}
-		clientCA, err := x509.ParseCertificate(certBytes)
-		if err != nil {
-			panic(err)
-		}
-		certPool := x509.NewCertPool()
-		certPool.AddCert(clientCA)
-		tlsConfig.ClientCAs = certPool
-		SetupBackendCertificates(config, certPool)
 	}
 
 	sockServer := &websocket.Server{}
@@ -214,7 +197,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 
 	// Launch message draining goroutine - we aren't out of the pub/sub records
 	go func() {
-		for _ := range _serverMessageChan {}
+		for _ = range _serverMessageChan {}
 	}()
 
 	// Stop getting messages...

@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+const CryptoBoxKeyLength = 32
+
+type CryptoKeysBuf struct {
+	OurPrivateKey [CryptoBoxKeyLength]byte
+	OurPublicKey [CryptoBoxKeyLength]byte
+	TheirPublicKey [CryptoBoxKeyLength]byte
+	ServerId int
+}
+
 type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
 	// When replying to a command, the message ID must be echoed.

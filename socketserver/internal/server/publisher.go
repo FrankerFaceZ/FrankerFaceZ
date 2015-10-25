@@ -46,9 +46,7 @@ func PublishToWatchers(channel string, msg ClientMessage) {
 }
 
 func HandlePublishRequest(w http.ResponseWriter, r *http.Request) {
-	if r.TLS {
-		PeerCertificates
-	}
+	// TODO - box.Open()
 }
 
 // Add a channel to the subscriptions while holding a read-lock to the map.
@@ -63,7 +61,7 @@ func _subscribeWhileRlocked(which map[string]*SubscriberList, channelName string
 		rlocker.Unlock()
 		wlocker.Lock()
 		list = &SubscriberList{}
-		list.Members = &[]chan <- ClientMessage{value} // Create it populated, to avoid reaper
+		list.Members = []chan <- ClientMessage{value} // Create it populated, to avoid reaper
 		which[channelName] = list
 		wlocker.Unlock()
 		rlocker.Lock()
@@ -84,7 +82,7 @@ func SubscribeBatch(client *ClientInfo, chatSubs, channelSubs []string) {
 		rlocker := ChatSubscriptionLock.RLocker()
 		rlocker.Lock()
 		for _, v := range chatSubs {
-			_subscribeWhileRlocked(ChatSubscriptionInfo, v, mchan, rlocker, ChatSubscriptionLock)
+			_subscribeWhileRlocked(ChatSubscriptionInfo, v, mchan, rlocker, &ChatSubscriptionLock)
 		}
 		rlocker.Unlock()
 	}
@@ -92,7 +90,7 @@ func SubscribeBatch(client *ClientInfo, chatSubs, channelSubs []string) {
 		rlocker := WatchingSubscriptionLock.RLocker()
 		rlocker.Lock()
 		for _, v := range channelSubs {
-			_subscribeWhileRlocked(WatchingSubscriptionInfo, v, mchan, rlocker, WatchingSubscriptionLock)
+			_subscribeWhileRlocked(WatchingSubscriptionInfo, v, mchan, rlocker, &WatchingSubscriptionLock)
 		}
 		rlocker.Unlock()
 	}
