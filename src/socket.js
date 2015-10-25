@@ -40,7 +40,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_pending = this._ws_pending || [];
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVERs[this._ws_host_idx] + "/");
+		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVERS[this._ws_host_idx] + "/");
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
