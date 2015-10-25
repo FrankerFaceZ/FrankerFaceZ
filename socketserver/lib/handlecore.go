@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"errors"
 	"encoding/json"
+	"github.com/satori/go.uuid"
 	"fmt"
+	"sync"
 )
 
 const MAX_PACKET_SIZE = 1024
@@ -26,17 +28,48 @@ type Config struct {
 type Command string
 
 type ClientMessage struct {
+	// Message ID. Increments by 1 for each message sent from the client.
+	// When replying to a command, the message ID must be echoed.
+	// When sending a server-initiated message, this is -1.
 	MessageID int
     // The command that the client wants from the server.
     // When sent from the server, the literal string 'True' indicates success.
 	// Before sending, a blank Command will be converted into SuccessCommand.
 	Command   Command
+	//
 	Arguments interface{}
 }
+
+type ClientInfo struct {
+	// The client ID.
+	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
+	ClientID uuid.UUID
+
+	// The client's version.
+	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
+	Version string
+
+	// This mutex protects writable data in this struct.
+	// If it seems to be a performance problem, we can split this.
+	Mutex sync.Mutex
+
+	// The list of chats this client is currently in.
+	// Protected by Mutex
+	CurrentChannels []string
+
+	// Server-initiated messages should be sent here
+	MessageChannel chan<- ClientMessage
+}
+
+// A function that is called to respond to a Command.
+type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) *ClientMessage
+
+var CommandHandlers = make(map[Command]CommandHandler)
 
 // Sent by the server in ClientMessage.Command to indicate success.
 const SuccessCommand Command = "True"
 
+// A websocket.Codec that translates the protocol into ClientMessage objects.
 var FFZCodec websocket.Codec = websocket.Codec{
 	Marshal: MarshalClientMessage,
 	Unmarshal: UnmarshalClientMessage,
@@ -49,6 +82,7 @@ var ExpectedTwoStrings = errors.New("Error: Expected array of string, string as 
 var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
 var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
+// Create a websocket.Server with the options from the provided Config.
 func SetupServer(config *Config) *websocket.Server {
 	sockConf, err := websocket.NewConfig("/", config.Origin)
 	if err != nil {
@@ -85,24 +119,71 @@ func SetupServerAndHandle(config *Config) {
 // This runs in a goroutine started by net/http.
 func HandleSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
-	var msg ClientMessage
-	var err error = nil
-	var abort bool
 
-	log.Print("Got a connection from ", conn.RemoteAddr())
+	closer := sync.Once(func() {
+		conn.Close()
+	})
 
-	for ; err == nil || abort; err = FFZCodec.Receive(conn, &msg) {
-		log.Print(msg)
+	defer func() {
+		closer()
+	}()
+
+	log.Print("! Got a connection from ", conn.RemoteAddr())
+
+	_clientChan := make(chan ClientMessage)
+	_serverMessageChan := make(chan ClientMessage)
+	_errorChan := make(chan error)
+
+	// Receive goroutine
+	go func(errorChan chan<- error, clientChan chan<- ClientMessage) {
+		var msg ClientMessage
+		var err error
+		for ; err == nil; err = FFZCodec.Receive(conn, &msg) {
+			if msg.MessageID == 0 {
+				continue
+			}
+			clientChan <- msg
+		}
+		errorChan <- err
+		close(errorChan)
+		close(clientChan)
+		// exit
+	}(_errorChan, _clientChan)
+
+	var client ClientInfo
+	client.MessageChannel = _serverMessageChan
+
+	var errorChan <-chan error = _errorChan
+	var clientChan <-chan ClientMessage = _clientChan
+	var serverMessageChan <-chan ClientMessage = _serverMessageChan
+
+	RunLoop:
+	for {
+		select {
+		case err := <-errorChan:
+			FFZCodec.Send(conn, ClientMessage{ Command: "error", Arguments: err.Error() })
+			break RunLoop
+		case cmsg := <-clientChan:
+			handler, ok := CommandHandlers[cmsg.Command]
+			if !ok {
+				log.Print("[!] Unknown command", cmsg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
+				// TODO - after commands are implemented
+				// closer()
+				continue
+			}
+
+			client.Mutex.Lock()
+			response := handler(conn, &client, cmsg)
+			if response != nil {
+				response.MessageID = cmsg.MessageID
+				FFZCodec.Send(conn, response)
+			}
+			client.Mutex.Unlock()
+		case smsg := <-serverMessageChan:
+			FFZCodec.Send(conn, smsg)
+		}
 	}
-
-	if err != nil {
-		FFZCodec.Send(conn, ClientMessage{
-			MessageID: -1,
-			Command: "error",
-			Arguments: err.Error(),
-		})
-	}
-	conn.Close()
+	// exit
 }
 
 // Unpack a message sent from the client into a ClientMessage.
@@ -155,8 +236,15 @@ func MarshalClientMessage(clientMessage interface{}) (data []byte, payloadType b
 	}
 	var dataStr string
 
+	if msg.Command == "" && msg.MessageID == 0 {
+		panic("MarshalClientMessage: attempt to send an empty ClientMessage")
+	}
+
 	if msg.Command == "" {
 		msg.Command = SuccessCommand
+	}
+	if msg.MessageID == 0 {
+		msg.MessageID = -1
 	}
 
 	if msg.Arguments != nil {
@@ -171,6 +259,15 @@ func MarshalClientMessage(clientMessage interface{}) (data []byte, payloadType b
 	}
 
 	return []byte(dataStr), websocket.TextFrame, nil
+}
+
+// Command handlers should use this to construct responses.
+func NewClientMessage(arguments interface{}) ClientMessage {
+	return ClientMessage{
+		MessageID: 0, // filled by the select loop
+		Command: SuccessCommand,
+		Arguments: arguments,
+	}
 }
 
 

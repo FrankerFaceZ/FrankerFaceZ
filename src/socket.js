@@ -54,17 +54,7 @@ FFZ.prototype.ws_create = function() {
 		f._ws_last_iframe = Date.now();
 		f.log("Socket connected.");
 
-		// Check for incognito. We don't want to do a hello in incognito mode.
-		var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-		if (!fs)
-			// Assume not.
-			f.ws_send("hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f));
-
-		else
-			fs(window.TEMPORARY, 100,
-				f.ws_send.bind(f, "hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f)),
-				f.log.bind(f, "Operating in Incognito Mode."));
-
+		f.ws_send("hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f));
 
 		var user = f.get_user();
 		if ( user )
