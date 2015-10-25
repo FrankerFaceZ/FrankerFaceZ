@@ -62,12 +62,28 @@ type ClientInfo struct {
 }
 
 // A function that is called to respond to a Command.
-type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) *ClientMessage
+type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
-var CommandHandlers = make(map[Command]CommandHandler)
+var CommandHandlers = map[Command]CommandHandler {
+	HelloCommand: HandleHello,
+	"get_display_name": HandleGetDisplayName,
+	"sub": HandleSub,
+	"unsub": HandleUnsub,
+	"chat_history": HandleChatHistory,
+	"sub_channel": HandleSubChannel,
+	"unsub_channel": HandleUnsubChannel,
+	"setuser": HandleSetUser,
+	"update_follow_buttons": HandleUpdateFollowButtons,
+	"track_follow": HandleTrackFollow,
+	"emoticon_uses": HandleEmoticonUses,
+	"twitch_emote": HandleTwitchEmote,
+	"get_link": HandleGetLink,
+	"survey": HandleSurvey,
+}
 
 // Sent by the server in ClientMessage.Command to indicate success.
 const SuccessCommand Command = "True"
+const HelloCommand Command = "hello"
 
 // A websocket.Codec that translates the protocol into ClientMessage objects.
 var FFZCodec websocket.Codec = websocket.Codec{
@@ -120,9 +136,12 @@ func SetupServerAndHandle(config *Config) {
 func HandleSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
 
-	closer := sync.Once(func() {
-		conn.Close()
-	})
+	var _closer sync.Once
+	closer := func() {
+		_closer.Do(func() {
+			conn.Close()
+		})
+	}
 
 	defer func() {
 		closer()
@@ -161,29 +180,65 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	for {
 		select {
 		case err := <-errorChan:
-			FFZCodec.Send(conn, ClientMessage{ Command: "error", Arguments: err.Error() })
+			// note - socket might not be open at this point
+			// don't care
+			FFZCodec.Send(conn, ClientMessage{
+				MessageID: -1,
+				Command: "error",
+				Arguments: err.Error(),
+			})
 			break RunLoop
-		case cmsg := <-clientChan:
-			handler, ok := CommandHandlers[cmsg.Command]
+		case msg := <-clientChan:
+			if client.Version == "" && msg.Command != HelloCommand {
+				FFZCodec.Send(conn, ClientMessage{
+					MessageID: msg.MessageID,
+					Command: "error",
+					Arguments: "Error - the first message sent must be a 'hello'",
+				})
+				break RunLoop
+			}
+
+			handler, ok := CommandHandlers[msg.Command]
 			if !ok {
-				log.Print("[!] Unknown command", cmsg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
-				// TODO - after commands are implemented
+				log.Print("[!] Unknown command", msg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
+				// uncomment after commands are implemented
 				// closer()
 				continue
 			}
 
 			client.Mutex.Lock()
-			response := handler(conn, &client, cmsg)
-			if response != nil {
-				response.MessageID = cmsg.MessageID
-				FFZCodec.Send(conn, response)
-			}
+			response, err := CallHandler(handler, conn, &client, msg)
 			client.Mutex.Unlock()
+
+			if err == nil {
+				response.MessageID = msg.MessageID
+				FFZCodec.Send(conn, response)
+			} else {
+				FFZCodec.Send(conn, ClientMessage{
+					MessageID: msg.MessageID,
+					Command: "error",
+					Arguments: err.Error(),
+				})
+			}
 		case smsg := <-serverMessageChan:
 			FFZCodec.Send(conn, smsg)
 		}
 	}
 	// exit
+}
+
+func CallHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (rmsg ClientMessage, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			fmt.Print("[!] Error executing command", cmsg.Command, "--", r)
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("command handler: %v", r)
+			}
+		}
+	}()
+	return handler(conn, client, cmsg)
 }
 
 // Unpack a message sent from the client into a ClientMessage.
