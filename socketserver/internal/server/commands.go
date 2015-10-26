@@ -54,6 +54,8 @@ func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 		client.ClientID = uuid.NewV4()
 	}
 
+	SubscribeGlobal(client)
+
 	return ClientMessage{
 		Arguments: client.ClientID.String(),
 	}, nil

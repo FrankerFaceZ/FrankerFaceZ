@@ -84,5 +84,120 @@ type ClientInfo struct {
 
 	// Server-initiated messages should be sent here
 	// Never nil.
-	MessageChannel   chan <- ClientMessage
+	MessageChannel chan<- ClientMessage
+}
+
+func (bct BacklogCacheType) Name() string {
+	switch bct {
+	case CacheTypeInvalid:
+		return ""
+	case CacheTypeNever:
+		return "never"
+	case CacheTypeTimestamps:
+		return "timed"
+	case CacheTypeLastOnly:
+		return "last"
+	case CacheTypePersistent:
+		return "persist"
+	}
+	panic("Invalid BacklogCacheType value")
+}
+
+var CacheTypesByName = map[string]BacklogCacheType{
+	"never":   CacheTypeNever,
+	"timed":   CacheTypeTimestamps,
+	"last":    CacheTypeLastOnly,
+	"persist": CacheTypePersistent,
+}
+
+func BacklogCacheTypeByName(name string) (bct BacklogCacheType) {
+	// CacheTypeInvalid is the zero value so it doesn't matter
+	bct, _ = CacheTypesByName[name]
+	return
+}
+
+// Implements Stringer
+func (bct BacklogCacheType) String() string { return bct.Name() }
+
+// Implements json.Marshaler
+func (bct BacklogCacheType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(bct.Name())
+}
+
+// Implements json.Unmarshaler
+func (pbct *BacklogCacheType) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	if str == "" {
+		*pbct = CacheTypeInvalid
+		return nil
+	}
+	val := BacklogCacheTypeByName(str)
+	if val != CacheTypeInvalid {
+		*pbct = val
+		return nil
+	}
+	return ErrorUnrecognizedCacheType
+}
+
+func (mtt MessageTargetType) Name() string {
+	switch mtt {
+	case MsgTargetTypeInvalid:
+		return ""
+	case MsgTargetTypeSingle:
+		return "single"
+	case MsgTargetTypeChat:
+		return "chat"
+	case MsgTargetTypeMultichat:
+		return "multichat"
+	case MsgTargetTypeWatching:
+		return "channel"
+	case MsgTargetTypeGlobal:
+		return "global"
+	}
+	panic("Invalid MessageTargetType value")
+}
+
+var TargetTypesByName = map[string]MessageTargetType{
+	"single":    MsgTargetTypeSingle,
+	"chat":      MsgTargetTypeChat,
+	"multichat": MsgTargetTypeMultichat,
+	"channel":   MsgTargetTypeWatching,
+	"global":    MsgTargetTypeGlobal,
+}
+
+func MessageTargetTypeByName(name string) (mtt MessageTargetType) {
+	// MsgTargetTypeInvalid is the zero value so it doesn't matter
+	mtt, _ = TargetTypesByName[name]
+	return
+}
+
+// Implements Stringer
+func (mtt MessageTargetType) String() string { return mtt.Name() }
+
+// Implements json.Marshaler
+func (mtt MessageTargetType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(mtt.Name())
+}
+
+// Implements json.Unmarshaler
+func (pmtt *MessageTargetType) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	if str == "" {
+		*pmtt = MsgTargetTypeInvalid
+		return nil
+	}
+	mtt := MessageTargetTypeByName(str)
+	if mtt != MsgTargetTypeInvalid {
+		*pmtt = mtt
+		return nil
+	}
+	return ErrorUnrecognizedTargetType
 }

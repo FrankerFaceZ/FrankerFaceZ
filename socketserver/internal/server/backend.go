@@ -74,14 +74,16 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 
 	cmd := formData.Get("cmd")
 	json := formData.Get("args")
-	chat := formData.Get("chat")
-	watchChannel := formData.Get("channel")
+	channel := formData.Get("channel")
+	scope := formData.Get("scope")
 	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
 	var count int
-	if chat != "" {
-		count = PublishToChat(chat, cm)
-	} else if watchChannel != "" {
-		count = PublishToWatchers(watchChannel, cm)
+	if scope == "chat" {
+		count = PublishToChat(channel, cm)
+	} else if scope == "channel" {
+		count = PublishToWatchers(channel, cm)
+	} else if scope == "global" {
+		count = PublishToAll(cm)
 	} else {
 		w.WriteHeader(400)
 		fmt.Fprint(w, "Need to specify either chat or channel")
