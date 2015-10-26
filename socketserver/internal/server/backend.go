@@ -64,6 +64,32 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
+func HandlePublishRequest(w http.ResponseWriter, r *http.Request) {
+	formData, err := UnsealRequest(r.Form)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "Error: %v", err)
+		return
+	}
+
+	cmd := formData.Get("cmd")
+	json := formData.Get("args")
+	chat := formData.Get("chat")
+	watchChannel := formData.Get("channel")
+	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
+	var count int
+	if chat != "" {
+		count = PublishToChat(chat, cm)
+	} else if watchChannel != "" {
+		count = PublishToWatchers(watchChannel, cm)
+	} else {
+		w.WriteHeader(400)
+		fmt.Fprint(w, "Need to specify either chat or channel")
+		return
+	}
+	fmt.Fprint(w, count)
+}
+
 func RequestRemoteDataCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cached, ok := responseCache.Get(getCacheKey(remoteCommand, data))
 	if ok {

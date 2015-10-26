@@ -50,32 +50,6 @@ func PublishToWatchers(channel string, msg ClientMessage) (count int) {
 	return
 }
 
-func HandlePublishRequest(w http.ResponseWriter, r *http.Request) {
-	formData, err := UnsealRequest(r.Form)
-	if err != nil {
-		w.WriteHeader(403)
-		fmt.Fprintf(w, "Error: %v", err)
-		return
-	}
-
-	cmd := formData.Get("cmd")
-	json := formData.Get("args")
-	chat := formData.Get("chat")
-	watchChannel := formData.Get("channel")
-	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
-	var count int
-	if chat != "" {
-		count = PublishToChat(chat, cm)
-	} else if watchChannel != "" {
-		count = PublishToWatchers(watchChannel, cm)
-	} else {
-		w.WriteHeader(400)
-		fmt.Fprint(w, "Need to specify either chat or channel")
-		return
-	}
-	fmt.Fprint(w, count)
-}
-
 // Add a channel to the subscriptions while holding a read-lock to the map.
 // Locks:
 //   - ALREADY HOLDING a read-lock to the 'which' top-level map via the rlocker object
