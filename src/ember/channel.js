@@ -153,10 +153,10 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( id !== f.__old_host_target ) {
 				if ( f.__old_host_target )
-					f.ws_send("unsub_channel", f.__old_host_target);
+					f.ws_send("unsub", "channel." + f.__old_host_target);
 
 				if ( id ) {
-					f.ws_send("sub_channel", id);
+					f.ws_send("sub", "channel." + id);
 					f.__old_host_target = id;
 				} else
 					delete f.__old_host_target;
@@ -208,7 +208,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				el = this.get('element');
 
 			f._cindex = this;
-			f.ws_send("sub_channel", id);
+			f.ws_send("sub", "channel." + id);
 
 			el.setAttribute('data-channel', id);
 			el.classList.add('ffz-channel');
@@ -621,7 +621,7 @@ FFZ.prototype._modify_cindex = function(view) {
 		ffzTeardown: function() {
 			var id = this.get('controller.id');
 			if ( id )
-				f.ws_send("unsub_channel", id);
+				f.ws_send("unsub", "channel." + id);
 
 			this.get('element').setAttribute('data-channel', '');
 			f._cindex = undefined;

@@ -22,7 +22,7 @@ var ServerInitiatedCommands = map[string]PushCommandCacheInfo{
 	/// Emote updates
 	"reload_badges": {CacheTypeTimestamps, MsgTargetTypeGlobal},    // timecache:global
 	"set_badge":     {CacheTypeTimestamps, MsgTargetTypeMultichat}, // timecache:multichat
-	"reload_set":    {CacheTypeTimestamps, MsgTargetTypeMultichat}, // timecache:multichat
+	"reload_set":    {}, // timecache:multichat
 	"load_set":      {},                                            // TODO what are the semantics of this?
 
 	/// User auth
@@ -32,12 +32,12 @@ var ServerInitiatedCommands = map[string]PushCommandCacheInfo{
 	// follow_sets: extra emote sets included in the chat
 	// follow_buttons: extra follow buttons below the stream
 	"follow_sets":    {CacheTypePersistent, MsgTargetTypeChat},     // mustcache:chat
-	"follow_buttons": {CacheTypePersistent, MsgTargetTypeWatching}, // mustcache:watching
-	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeWatching},   // cachelast:watching
+	"follow_buttons": {CacheTypePersistent, MsgTargetTypeChat}, // mustcache:watching
+	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeChat},   // cachelast:watching
 
 	/// Chatter/viewer counts
-	"chatters": {CacheTypeLastOnly, MsgTargetTypeWatching}, // cachelast:watching
-	"viewers":  {CacheTypeLastOnly, MsgTargetTypeWatching}, // cachelast:watching
+	"chatters": {CacheTypeLastOnly, MsgTargetTypeChat}, // cachelast:watching
+	"viewers":  {CacheTypeLastOnly, MsgTargetTypeChat}, // cachelast:watching
 }
 
 type BacklogCacheType int
@@ -69,8 +69,6 @@ const (
 	MsgTargetTypeChat
 	// This message is targeted to all users in multiple chats
 	MsgTargetTypeMultichat
-	// This message is targeted to all users watching a stream
-	MsgTargetTypeWatching
 	// This message is sent to all FFZ users.
 	MsgTargetTypeGlobal
 )

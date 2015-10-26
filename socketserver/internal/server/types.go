@@ -62,19 +62,10 @@ type ClientInfo struct {
 	// Protected by Mutex.
 	CurrentChannels []string
 
-	// This list of channels this client needs UI updates for.
-	// Protected by Mutex.
-	WatchingChannels []string
-
 	// List of channels that we have not yet checked current chat-related channel info for.
 	// This lets us batch the backlog requests.
 	// Protected by Mutex.
-	PendingChatBacklogs []string
-
-	// List of channels that we have not yet checked current stream-related channel info for.
-	// This lets us batch the backlog requests.
-	// Protected by Mutex.
-	PendingStreamBacklogs []string
+	PendingSubscriptionsBacklog []string
 
 	// A timer that, when fired, will make the pending backlog requests.
 	// Usually nil. Protected by Mutex.
@@ -151,8 +142,6 @@ func (mtt MessageTargetType) Name() string {
 		return "chat"
 	case MsgTargetTypeMultichat:
 		return "multichat"
-	case MsgTargetTypeWatching:
-		return "channel"
 	case MsgTargetTypeGlobal:
 		return "global"
 	}
@@ -163,7 +152,6 @@ var TargetTypesByName = map[string]MessageTargetType{
 	"single":    MsgTargetTypeSingle,
 	"chat":      MsgTargetTypeChat,
 	"multichat": MsgTargetTypeMultichat,
-	"channel":   MsgTargetTypeWatching,
 	"global":    MsgTargetTypeGlobal,
 }
 

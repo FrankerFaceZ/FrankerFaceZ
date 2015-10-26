@@ -87,7 +87,7 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Error: cmd cannot be blank")
 		return
 	}
-	if channel == "" && (target == MsgTargetTypeChat || target == MsgTargetTypeMultichat || target == MsgTargetTypeWatching) {
+	if channel == "" && (target == MsgTargetTypeChat || target == MsgTargetTypeMultichat) {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "Error: channel must be specified")
 		return
@@ -104,8 +104,6 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 		count = PublishToChat(channel, cm)
 	case MsgTargetTypeMultichat:
 		// TODO
-	case MsgTargetTypeWatching:
-		count = PublishToWatchers(channel, cm)
 	case MsgTargetTypeGlobal:
 		count = PublishToAll(cm)
 	case MsgTargetTypeInvalid:
@@ -169,10 +167,9 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 	return
 }
 
-func FetchBacklogData(chatSubs, channelSubs []string) ([]ClientMessage, error) {
+func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 	formData := url.Values{
-		"chatSubs":    chatSubs,
-		"channelSubs": channelSubs,
+		"subs":    chatSubs,
 	}
 
 	sealedForm, err := SealRequest(formData)

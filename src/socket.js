@@ -64,8 +64,8 @@ FFZ.prototype.ws_create = function() {
 		if ( f.is_dashboard ) {
 			var match = location.pathname.match(/\/([^\/]+)/);
 			if ( match ) {
-				f.ws_send("sub", match[1]);
-				f.ws_send("sub_channel", match[1]);
+				f.ws_send("sub", "room." + match[1]);
+				f.ws_send("sub", "channel." + match[1]);
 			}
 		}
 
@@ -74,7 +74,7 @@ FFZ.prototype.ws_create = function() {
 			if ( ! f.rooms.hasOwnProperty(room_id) || ! f.rooms[room_id] )
 				continue;
 
-			f.ws_send("sub", room_id);
+			f.ws_send("sub", "room." + room_id);
 
 			if ( f.rooms[room_id].needs_history ) {
 				f.rooms[room_id].needs_history = false;
@@ -89,10 +89,10 @@ FFZ.prototype.ws_create = function() {
 				hosted_id = f._cindex.get('controller.hostModeTarget.id');
 
 			if ( channel_id )
-				f.ws_send("sub_channel", channel_id);
+				f.ws_send("sub", "channel." + channel_id);
 
 			if ( hosted_id )
-				f.ws_send("sub_channel", hosted_id);
+				f.ws_send("sub", "channel." + hosted_id);
 		}
 
 		// Send any pending commands.
@@ -103,11 +103,32 @@ FFZ.prototype.ws_create = function() {
 			var d = pending[i];
 			f.ws_send(d[0], d[1], d[2]);
 		}
+
+		// If reconnecting, get the backlog that we missed.
+		if ( f._ws_offline_time ) {
+			var timestamp = f._ws_offline_time;
+			delete f._ws_offline_time;
+			f.ws_send("ready", timestamp);
+		} else {
+			f.ws_send("ready", 0);
+		}
+	}
+
+	ws.onerror = function() {
+		if ( ! f._ws_offline_time ) {
+			f._ws_offline_time = new Date().getTime();
+		}
+
+		// Cycle selected server
+		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
 	}
 
 	ws.onclose = function(e) {
 		f.log("Socket closed. (Code: " + e.code + ", Reason: " + e.reason + ")");
 		f._ws_open = false;
+		if ( ! f._ws_offline_time ) {
+			f._ws_offline_time = new Date().getTime();
+		}
 
 		// When the connection closes, run our callbacks.
 		for (var i=0; i < FFZ.ws_on_close.length; i++) {
@@ -118,7 +139,7 @@ FFZ.prototype.ws_create = function() {
 			}
 		}
 
-		// Attempt to cycle to backup server
+		// Cycle selected server
 		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
 
 		if ( f._ws_delay > 10000 ) {

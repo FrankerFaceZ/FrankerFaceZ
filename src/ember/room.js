@@ -591,7 +591,7 @@ FFZ.prototype.add_room = function(id, room) {
 	}
 
 	// Let the server know where we are.
-	this.ws_send("sub", id);
+	this.ws_send("sub", "room." + id);
 
 	// See if we need history?
 	if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
@@ -619,7 +619,7 @@ FFZ.prototype.remove_room = function(id) {
 		utils.update_css(this._room_style, id, null);
 
 	// Let the server know we're gone and delete our data for this room.
-	this.ws_send("unsub", id);
+	this.ws_send("unsub", "room." + id);
 	delete this.rooms[id];
 
 	// Clean up sets we aren't using any longer.

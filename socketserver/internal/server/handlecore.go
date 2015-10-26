@@ -42,8 +42,6 @@ var CommandHandlers = map[Command]CommandHandler{
 
 	"sub":           HandleSub,
 	"unsub":         HandleUnsub,
-	"sub_channel":   HandleSubChannel,
-	"unsub_channel": HandleUnsubChannel,
 
 	"track_follow":  HandleTrackFollow,
 	"emoticon_uses": HandleEmoticonUses,

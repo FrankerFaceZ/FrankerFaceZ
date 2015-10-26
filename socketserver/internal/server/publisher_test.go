@@ -98,7 +98,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	var doneWg sync.WaitGroup
 	var readyWg sync.WaitGroup
 
-	const TestChannelName = "testchannel"
+	const TestChannelName = "room.testchannel"
 	const TestCommand = "testdata"
 	const TestData = "123456789"
 
@@ -170,7 +170,7 @@ func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 	var doneWg sync.WaitGroup
 	var readyWg sync.WaitGroup
 
-	const TestChannelName = "testchannel"
+	const TestChannelName = "room.testchannel"
 	const TestCommand = "testdata"
 	const TestData = "123456789"
 
