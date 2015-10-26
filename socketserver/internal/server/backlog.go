@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type PushCommandCacheInfo struct {
@@ -82,7 +83,22 @@ var ErrorUnrecognizedCacheType = errors.New("Invalid value for cachetype")
 // Returned by MessageTargetType.UnmarshalJSON()
 var ErrorUnrecognizedTargetType = errors.New("Invalid value for message target")
 
-func HBackendUpdateAndPublish(w http.ResponseWriter, r *http.Request) {
+type PersistentCachedData struct {
+	Timestamp time.Time
+	Channel   string
+	Watching  bool
+	Data      string
+}
+
+// map command -> channel -> data
+var CachedDataLast map[Command]map[string]string
+
+func DumpCache() {
+	CachedDataLast = make(map[Command]map[string]string)
+}
+
+func HBackendDumpCache(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
@@ -90,9 +106,36 @@ func HBackendUpdateAndPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := formData.Get("command")
+	confirm := formData.Get("confirm")
+	if confirm == "1" {
+		DumpCache()
+	}
+}
+
+// Publish a message to clients, and update the in-server cache for the message.
+// notes:
+// `scope` is implicit in the command
+func HBackendUpdateAndPublish(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	formData, err := UnsealRequest(r.Form)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "Error: %v", err)
+		return
+	}
+
+	cmd := formData.Get("cmd")
+	json := formData.Get("args")
+	channel := formData.Get("channel")
+
 	cacheinfo, ok := ServerInitiatedCommands[cmd]
 	if !ok {
 		w.WriteHeader(422)
+		fmt.Fprintf(w, "Caching semantics unknown for command '%s'. Post to /addcachedcommand first.")
+		return
 	}
+
+	_ = cacheinfo
+	_ = json
+	_ = channel
 }

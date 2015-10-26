@@ -2,8 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/satori/go.uuid"
 	"sync"
 	"time"

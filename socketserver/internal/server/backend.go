@@ -64,7 +64,10 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
+// Publish a message to clients with no caching.
+// The scope must be specified because no attempt is made to recognize the command.
 func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
@@ -91,6 +94,7 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
+	cm.parseOrigArguments()
 	var count int
 
 	switch target {

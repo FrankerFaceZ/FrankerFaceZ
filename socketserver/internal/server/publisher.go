@@ -4,8 +4,6 @@ package server
 // If I screwed up the locking, I won't know until it's too late.
 
 import (
-	"fmt"
-	"net/http"
 	"sync"
 	"time"
 )
@@ -58,6 +56,7 @@ func PublishToAll(msg ClientMessage) (count int) {
 		count++
 	}
 	GlobalSubscriptionInfo.RUnlock()
+	return
 }
 
 // Add a channel to the subscriptions while holding a read-lock to the map.

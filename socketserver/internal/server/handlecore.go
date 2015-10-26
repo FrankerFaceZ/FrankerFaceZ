@@ -1,4 +1,4 @@
-package server // import "bitbucket.org/stendec/frankerfacez/socketserver/server"
+package server // import "bitbucket.org/stendec/frankerfacez/socketserver/internal/server"
 
 import (
 	"crypto/tls"
@@ -262,9 +262,17 @@ func UnmarshalClientMessage(data []byte, payloadType byte, v interface{}) (err e
 	dataStr = dataStr[spaceIdx+1:]
 	argumentsJson := dataStr
 	out.origArguments = argumentsJson
-	err = json.Unmarshal([]byte(argumentsJson), &out.Arguments)
+	err = out.parseOrigArguments()
 	if err != nil {
 		return
+	}
+	return nil
+}
+
+func (cm *ClientMessage) parseOrigArguments() error {
+	err := json.Unmarshal([]byte(cm.origArguments), &cm.Arguments)
+	if err != nil {
+		return err
 	}
 	return nil
 }
