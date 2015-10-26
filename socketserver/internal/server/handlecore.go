@@ -74,6 +74,7 @@ var FFZCodec websocket.Codec = websocket.Codec{
 
 // Errors that get returned to the client.
 var ProtocolError error = errors.New("FFZ Socket protocol error.")
+var ProtocolErrorNegativeID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
 var ExpectedSingleString = errors.New("Error: Expected single string as arguments.")
 var ExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
 var ExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
@@ -116,11 +117,14 @@ func setupServer(config *Config, tlsConfig *tls.Config) *websocket.Server {
 
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
-func SetupServerAndHandle(config *Config, tlsConfig *tls.Config) {
+func SetupServerAndHandle(config *Config, tlsConfig *tls.Config, serveMux *http.ServeMux) {
 	sockServer := setupServer(config, tlsConfig)
 
-	http.HandleFunc("/", sockServer.ServeHTTP)
-	http.HandleFunc("/pub", HandlePublishRequest)
+	if serveMux == nil {
+		serveMux = http.DefaultServeMux
+	}
+	serveMux.HandleFunc("/", sockServer.ServeHTTP)
+	serveMux.HandleFunc("/pub", HandlePublishRequest)
 }
 
 // Handle a new websocket connection from a FFZ client.
@@ -235,8 +239,8 @@ func UnmarshalClientMessage(data []byte, payloadType byte, v interface{}) (err e
 		return ProtocolError
 	}
 	messageId, err := strconv.Atoi(dataStr[:spaceIdx])
-	if messageId <= 0 {
-		return ProtocolError
+	if messageId < -1 || messageId == 0 {
+		return ProtocolErrorNegativeID
 	}
 
 	out.MessageID = messageId

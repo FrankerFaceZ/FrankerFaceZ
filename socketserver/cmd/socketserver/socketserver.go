@@ -47,7 +47,7 @@ func main() {
 		Addr: *bindAddress,
 	}
 
-	server.SetupServerAndHandle(conf, httpServer.TLSConfig)
+	server.SetupServerAndHandle(conf, httpServer.TLSConfig, nil)
 
 	var err error
 	if conf.UseSSL {

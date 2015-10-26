@@ -86,7 +86,12 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 		authKey: []string{auth.TwitchUsername},
 	}
 
-	resp, err := backendHttpClient.PostForm(destUrl, formData)
+	sealedForm, err := SealRequest(formData)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := backendHttpClient.PostForm(destUrl, sealedForm)
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +122,12 @@ func FetchBacklogData(chatSubs, channelSubs []string) ([]ClientMessage, error) {
 		"channelSubs": channelSubs,
 	}
 
-	resp, err := backendHttpClient.PostForm(getBacklogUrl, formData)
+	sealedForm, err := SealRequest(formData)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := backendHttpClient.PostForm(getBacklogUrl, sealedForm)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +162,6 @@ func GenerateKeys(outputFile, serverId, theirPublicStr string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Print(theirPublic)
 		output.TheirPublicKey = theirPublic
 	}
 

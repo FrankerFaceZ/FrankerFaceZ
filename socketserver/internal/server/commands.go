@@ -23,7 +23,7 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 		return
 	}
 
-	log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
+//	log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
 
 	response, err := CallHandler(handler, conn, client, msg)
 
@@ -76,6 +76,10 @@ func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
+	if err != nil {
+		return
+	}
+
 	client.Mutex.Lock()
 
 	AddToSliceS(&client.CurrentChannels, channel)
@@ -91,13 +95,17 @@ func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rms
 
 	client.Mutex.Unlock()
 
-	// note - pub/sub updating happens in GetSubscriptionBacklog
+	SubscribeChat(client, channel)
 
 	return ResponseSuccess, nil
 }
 
 func HandleUnsub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
+
+	if err != nil {
+		return
+	}
 
 	client.Mutex.Lock()
 	RemoveFromSliceS(&client.CurrentChannels, channel)
@@ -110,6 +118,10 @@ func HandleUnsub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 
 func HandleSubChannel(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
+
+	if err != nil {
+		return
+	}
 
 	client.Mutex.Lock()
 
@@ -126,13 +138,17 @@ func HandleSubChannel(conn *websocket.Conn, client *ClientInfo, msg ClientMessag
 
 	client.Mutex.Unlock()
 
-	// note - pub/sub updating happens in GetSubscriptionBacklog
+	SubscribeWatching(client, channel)
 
 	return ResponseSuccess, nil
 }
 
 func HandleUnsubChannel(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
+
+	if err != nil {
+		return
+	}
 
 	client.Mutex.Lock()
 	RemoveFromSliceS(&client.WatchingChannels, channel)
@@ -166,8 +182,9 @@ func GetSubscriptionBacklog(conn *websocket.Conn, client *ClientInfo) {
 		return
 	}
 
-	SubscribeBatch(client, chatSubs, channelSubs)
-
+	if backendUrl == "" {
+		return // for testing runs
+	}
 	messages, err := FetchBacklogData(chatSubs, channelSubs)
 
 	if err != nil {

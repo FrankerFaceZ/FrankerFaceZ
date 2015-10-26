@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 	"net/http"
+	"fmt"
 )
 
 type SubscriberList struct {
@@ -14,39 +15,65 @@ type SubscriberList struct {
 	Members []chan <- ClientMessage
 }
 
-var ChatSubscriptionInfo map[string]*SubscriberList
+var ChatSubscriptionInfo map[string]*SubscriberList = make(map[string]*SubscriberList)
 var ChatSubscriptionLock sync.RWMutex
-var WatchingSubscriptionInfo map[string]*SubscriberList
+var WatchingSubscriptionInfo map[string]*SubscriberList = make(map[string]*SubscriberList)
 var WatchingSubscriptionLock sync.RWMutex
 
-func PublishToChat(channel string, msg ClientMessage) {
+func PublishToChat(channel string, msg ClientMessage) (count int) {
 	ChatSubscriptionLock.RLock()
 	list := ChatSubscriptionInfo[channel]
 	if list != nil {
 		list.RLock()
 		for _, ch := range list.Members {
 			ch <- msg
+			count++
 		}
 		list.RUnlock()
 	}
 	ChatSubscriptionLock.RUnlock()
+	return
 }
 
-func PublishToWatchers(channel string, msg ClientMessage) {
+func PublishToWatchers(channel string, msg ClientMessage) (count int) {
 	WatchingSubscriptionLock.RLock()
 	list := WatchingSubscriptionInfo[channel]
 	if list != nil {
 		list.RLock()
 		for _, ch := range list.Members {
 			ch <- msg
+			count++
 		}
 		list.RUnlock()
 	}
 	WatchingSubscriptionLock.RUnlock()
+	return
 }
 
 func HandlePublishRequest(w http.ResponseWriter, r *http.Request) {
-	// TODO - box.Open()
+	formData, err := UnsealRequest(r.Form)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "Error: %v", err)
+		return
+	}
+
+	cmd := formData.Get("cmd")
+	json := formData.Get("args")
+	chat := formData.Get("chat")
+	watchChannel := formData.Get("channel")
+	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
+	var count int
+	if chat != "" {
+		count = PublishToChat(chat, cm)
+	} else if watchChannel != "" {
+		count = PublishToWatchers(watchChannel, cm)
+	} else {
+		w.WriteHeader(400)
+		fmt.Fprint(w, "Need to specify either chat or channel")
+		return
+	}
+	fmt.Fprint(w, count)
 }
 
 // Add a channel to the subscriptions while holding a read-lock to the map.
@@ -70,6 +97,18 @@ func _subscribeWhileRlocked(which map[string]*SubscriberList, channelName string
 		AddToSliceC(&list.Members, value)
 		list.Unlock()
 	}
+}
+
+func SubscribeChat(client *ClientInfo, channelName string) {
+	ChatSubscriptionLock.RLock()
+	_subscribeWhileRlocked(ChatSubscriptionInfo, channelName, client.MessageChannel, ChatSubscriptionLock.RLocker(), &ChatSubscriptionLock)
+	ChatSubscriptionLock.RUnlock()
+}
+
+func SubscribeWatching(client *ClientInfo, channelName string) {
+	WatchingSubscriptionLock.RLock()
+	_subscribeWhileRlocked(WatchingSubscriptionInfo, channelName, client.MessageChannel, WatchingSubscriptionLock.RLocker(), &WatchingSubscriptionLock)
+	WatchingSubscriptionLock.RUnlock()
 }
 
 // Locks:
@@ -102,13 +141,20 @@ func SubscribeBatch(client *ClientInfo, chatSubs, channelSubs []string) {
 //   - write lock to SubscriptionInfos
 //   - write lock to ClientInfo
 func UnsubscribeAll(client *ClientInfo) {
+	client.Mutex.Lock()
+	client.PendingChatBacklogs = nil
+	client.PendingStreamBacklogs = nil
+	client.Mutex.Unlock()
+
 	ChatSubscriptionLock.RLock()
 	client.Mutex.Lock()
 	for _, v := range client.CurrentChannels {
 		list := ChatSubscriptionInfo[v]
-		list.Lock()
-		RemoveFromSliceC(&list.Members, client.MessageChannel)
-		list.Unlock()
+		if list != nil {
+			list.Lock()
+			RemoveFromSliceC(&list.Members, client.MessageChannel)
+			list.Unlock()
+		}
 	}
 	client.CurrentChannels = nil
 	client.Mutex.Unlock()
@@ -118,13 +164,24 @@ func UnsubscribeAll(client *ClientInfo) {
 	client.Mutex.Lock()
 	for _, v := range client.WatchingChannels {
 		list := WatchingSubscriptionInfo[v]
-		list.Lock()
-		RemoveFromSliceC(&list.Members, client.MessageChannel)
-		list.Unlock()
+		if list != nil {
+			list.Lock()
+			RemoveFromSliceC(&list.Members, client.MessageChannel)
+			list.Unlock()
+		}
 	}
 	client.WatchingChannels = nil
 	client.Mutex.Unlock()
 	WatchingSubscriptionLock.RUnlock()
+}
+
+func unsubscribeAllClients() {
+	ChatSubscriptionLock.Lock()
+	ChatSubscriptionInfo = make(map[string]*SubscriberList)
+	ChatSubscriptionLock.Unlock()
+	WatchingSubscriptionLock.Lock()
+	WatchingSubscriptionInfo = make(map[string]*SubscriberList)
+	WatchingSubscriptionLock.Unlock()
 }
 
 func UnsubscribeSingleChat(client *ClientInfo, channelName string) {

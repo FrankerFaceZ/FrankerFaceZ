@@ -6,29 +6,32 @@ import (
 	"crypto/rand"
 )
 
-func TestSealRequest(t *testing.T) {
-	senderPublic, senderPrivate, err := box.GenerateKey(rand.Reader)
+func SetupRandomKeys(t testing.TB) {
+	_, senderPrivate, err := box.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	receiverPublic, receiverPrivate, err := box.GenerateKey(rand.Reader)
+	receiverPublic, _, err := box.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	box.Precompute(&backendSharedKey, receiverPublic, senderPrivate)
 	messageBufferPool.New = New4KByteBuffer
+}
+
+func TestSealRequest(t *testing.T) {
+	SetupRandomKeys(t)
 
 	values := url.Values{
 		"QuickBrownFox": []string{"LazyDog"},
 	}
 
-	box.Precompute(&backendSharedKey, receiverPublic, senderPrivate)
 	sealedValues, err := SealRequest(values)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	box.Precompute(&backendSharedKey, senderPublic, receiverPrivate)
 	unsealedValues, err := UnsealRequest(sealedValues)
 	if err != nil {
 		t.Fatal(err)
