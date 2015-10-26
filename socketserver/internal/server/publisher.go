@@ -32,6 +32,31 @@ func PublishToChat(channel string, msg ClientMessage) (count int) {
 	return
 }
 
+func PublishToMultiple(channels []string, msg ClientMessage) (count int) {
+	found := make(map[chan<- ClientMessage]struct{})
+
+	ChatSubscriptionLock.RLock()
+
+	for _, channel := range channels {
+		list := ChatSubscriptionInfo[channel]
+		if list != nil {
+			list.RLock()
+			for _, msgChan := range list.Members {
+				found[msgChan] = struct{}{}
+			}
+			list.RUnlock()
+		}
+	}
+
+	ChatSubscriptionLock.RUnlock()
+
+	for msgChan, _ := range found {
+		msgChan <- msg
+		count++
+	}
+	return
+}
+
 func PublishToAll(msg ClientMessage) (count int) {
 	GlobalSubscriptionInfo.RLock()
 	for _, msgChan := range GlobalSubscriptionInfo.Members {

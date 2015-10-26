@@ -39,9 +39,10 @@ type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMes
 var CommandHandlers = map[Command]CommandHandler{
 	HelloCommand: HandleHello,
 	"setuser":    HandleSetUser,
+	"ready":      HandleReady,
 
-	"sub":           HandleSub,
-	"unsub":         HandleUnsub,
+	"sub":   HandleSub,
+	"unsub": HandleUnsub,
 
 	"track_follow":  HandleTrackFollow,
 	"emoticon_uses": HandleEmoticonUses,
@@ -335,7 +336,7 @@ func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {
 }
 
 // Convenience method: Parse the arguments of the ClientMessage as a single int.
-func (cm *ClientMessage) ArgumentsAsInt() (int1 int, err error) {
+func (cm *ClientMessage) ArgumentsAsInt() (int1 int64, err error) {
 	var ok bool
 	var num float64
 	num, ok = cm.Arguments.(float64)
@@ -343,7 +344,7 @@ func (cm *ClientMessage) ArgumentsAsInt() (int1 int, err error) {
 		err = ExpectedSingleInt
 		return
 	} else {
-		int1 = int(num)
+		int1 = int64(num)
 		return int1, nil
 	}
 }

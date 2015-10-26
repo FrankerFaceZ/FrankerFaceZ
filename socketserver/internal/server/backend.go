@@ -169,7 +169,7 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 
 func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 	formData := url.Values{
-		"subs":    chatSubs,
+		"subs": chatSubs,
 	}
 
 	sealedForm, err := SealRequest(formData)

@@ -76,6 +76,34 @@ type ClientInfo struct {
 	MessageChannel chan<- ClientMessage
 }
 
+type tgmarray []TimestampedGlobalMessage
+type tmmarray []TimestampedMultichatMessage
+
+func (ta tgmarray) Len() int {
+	return len(ta)
+}
+func (ta tgmarray) Less(i, j int) bool {
+	return ta[i].Timestamp.Before(ta[j].Timestamp)
+}
+func (ta tgmarray) Swap(i, j int) {
+	ta[i], ta[j] = ta[j], ta[i]
+}
+func (ta tgmarray) GetTime(i int) time.Time {
+	return ta[i].Timestamp
+}
+func (ta tmmarray) Len() int {
+	return len(ta)
+}
+func (ta tmmarray) Less(i, j int) bool {
+	return ta[i].Timestamp.Before(ta[j].Timestamp)
+}
+func (ta tmmarray) Swap(i, j int) {
+	ta[i], ta[j] = ta[j], ta[i]
+}
+func (ta tmmarray) GetTime(i int) time.Time {
+	return ta[i].Timestamp
+}
+
 func (bct BacklogCacheType) Name() string {
 	switch bct {
 	case CacheTypeInvalid:

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/satori/go.uuid"
 	"golang.org/x/net/websocket"
 	"log"
@@ -17,22 +18,25 @@ const ChannelInfoDelay = 2 * time.Second
 func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) {
 	handler, ok := CommandHandlers[msg.Command]
 	if !ok {
-		log.Print("[!] Unknown command", msg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
-		// uncomment after commands are implemented
-		// closer()
+		log.Println("[!] Unknown command", msg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
+		FFZCodec.Send(conn, ClientMessage{
+			MessageID: msg.MessageID,
+			Command:   "error",
+			Arguments: fmt.Sprintf("Unknown command %s", msg.Command),
+		})
 		return
 	}
-
-	//	log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
 
 	response, err := CallHandler(handler, conn, client, msg)
 
 	if err == nil {
-		response.MessageID = msg.MessageID
-		FFZCodec.Send(conn, response)
-	} else if response.Command == AsyncResponseCommand {
-		// Don't send anything
-		// The response will be delivered over client.MessageChannel / serverMessageChan
+		if response.Command == AsyncResponseCommand {
+			// Don't send anything
+			// The response will be delivered over client.MessageChannel / serverMessageChan
+		} else {
+			response.MessageID = msg.MessageID
+			FFZCodec.Send(conn, response)
+		}
 	} else {
 		FFZCodec.Send(conn, ClientMessage{
 			MessageID: msg.MessageID,
@@ -59,6 +63,42 @@ func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 	return ClientMessage{
 		Arguments: client.ClientID.String(),
 	}, nil
+}
+
+func HandleReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	disconnectAt, err := msg.ArgumentsAsInt()
+	if err != nil {
+		return
+	}
+
+	client.Mutex.Lock()
+	if client.MakePendingRequests != nil {
+		if !client.MakePendingRequests.Stop() {
+			// Timer already fired, GetSubscriptionBacklog() has started
+			rmsg.Command = SuccessCommand
+			return
+		}
+	}
+	client.PendingSubscriptionsBacklog = nil
+	client.MakePendingRequests = nil
+	client.Mutex.Unlock()
+
+	if disconnectAt == 0 {
+		// backlog only
+		go func() {
+			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
+			SendBacklogForNewClient(client)
+		}()
+		return ClientMessage{Command: AsyncResponseCommand}, nil
+	} else {
+		// backlog and timed
+		go func() {
+			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
+			SendBacklogForNewClient(client)
+			SendTimedBacklogMessages(client, time.Unix(disconnectAt, 0))
+		}()
+		return ClientMessage{Command: AsyncResponseCommand}, nil
+	}
 }
 
 func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
