@@ -53,6 +53,21 @@ func TSendMessage(tb testing.TB, conn *websocket.Conn, messageId int, command Co
 	return err == nil
 }
 
+type TURLs struct {
+	Websocket string
+	Origin string
+	PubMsg string
+}
+
+func TGetUrls(testserver httptest.Server) TURLs {
+	addr := testserver.Listener.Addr().String()
+	return TURLs{
+		Websocket: fmt.Sprintf("ws://%s/", addr),
+		Origin: fmt.Sprintf("http://%s"),
+		PubMsg: fmt.Sprintf("http://%s/pub_msg"),
+	}
+}
+
 func TestSubscriptionAndPublish(t *testing.T) {
 	var doneWg sync.WaitGroup
 	var readyWg sync.WaitGroup
@@ -74,11 +89,9 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	server := httptest.NewUnstartedServer(serveMux)
 	server.Start()
 
-	wsUrl := fmt.Sprintf("ws://%s/", server.Listener.Addr().String())
-	originUrl := fmt.Sprintf("http://%s", server.Listener.Addr().String())
-	publishUrl := fmt.Sprintf("http://%s/pub_msg", server.Listener.Addr().String())
+	urls := TGetUrls(server)
 
-	conn, err := websocket.Dial(wsUrl, "", originUrl)
+	conn, err := websocket.Dial(urls.Websocket, "", urls.Origin)
 	if err != nil {
 		t.Error(err)
 		return
@@ -116,7 +129,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 		panic("halting test")
 	}
 
-	resp, err := http.PostForm(publishUrl, sealedForm)
+	resp, err := http.PostForm(urls.PubMsg, sealedForm)
 	if err != nil {
 		t.Error(err)
 		server.CloseClientConnections()
@@ -158,8 +171,7 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 	server := httptest.NewUnstartedServer(serveMux)
 	server.Start()
 
-	wsUrl := fmt.Sprintf("ws://%s/", server.Listener.Addr().String())
-	originUrl := fmt.Sprintf("http://%s", server.Listener.Addr().String())
+	urls := TGetUrls(server)
 
 	message := ClientMessage{MessageID: -1, Command: "testdata", Arguments: TestData}
 
@@ -180,7 +192,7 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		conn, err := websocket.Dial(wsUrl, "", originUrl)
+		conn, err := websocket.Dial(urls.Websocket, "", urls.Origin)
 		if err != nil {
 			b.Error(err)
 			break
