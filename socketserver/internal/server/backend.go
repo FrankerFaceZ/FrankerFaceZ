@@ -1,21 +1,21 @@
 package server
 
 import (
-	"golang.org/x/crypto/nacl/box"
-	"net/http"
-	"time"
-	"fmt"
-	"net/url"
-	"github.com/pmylund/go-cache"
-	"strconv"
-	"io/ioutil"
-	"encoding/json"
-	"sync"
-	"log"
-	"os"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"github.com/pmylund/go-cache"
+	"golang.org/x/crypto/nacl/box"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 var backendHttpClient http.Client
@@ -35,7 +35,7 @@ func SetupBackend(config *Config) {
 	if responseCache != nil {
 		responseCache.Flush()
 	}
-	responseCache = cache.New(60 * time.Second, 120 * time.Second)
+	responseCache = cache.New(60*time.Second, 120*time.Second)
 
 	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
 
@@ -64,7 +64,7 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
-func HandlePublishRequest(w http.ResponseWriter, r *http.Request) {
+func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
@@ -109,7 +109,7 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 
 	formData := url.Values{
 		"clientData": []string{data},
-		authKey: []string{auth.TwitchUsername},
+		authKey:      []string{auth.TwitchUsername},
 	}
 
 	sealedForm, err := SealRequest(formData)
@@ -144,7 +144,7 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 
 func FetchBacklogData(chatSubs, channelSubs []string) ([]ClientMessage, error) {
 	formData := url.Values{
-		"chatSubs": chatSubs,
+		"chatSubs":    chatSubs,
 		"channelSubs": channelSubs,
 	}
 

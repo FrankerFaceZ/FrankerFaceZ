@@ -1,15 +1,15 @@
 package server
 
 import (
-	"crypto/rand"
-	"net/url"
-	"golang.org/x/crypto/nacl/box"
 	"bytes"
+	"crypto/rand"
 	"encoding/base64"
+	"errors"
+	"golang.org/x/crypto/nacl/box"
+	"log"
+	"net/url"
 	"strconv"
 	"strings"
-	"errors"
-	"log"
 )
 
 func FillCryptoRandom(buf []byte) error {
@@ -53,8 +53,8 @@ func SealRequest(form url.Values) (url.Values, error) {
 
 	retval := url.Values{
 		"nonce": []string{nonceString},
-		"msg": []string{cipherString},
-		"id": []string{strconv.Itoa(serverId)},
+		"msg":   []string{cipherString},
+		"id":    []string{strconv.Itoa(serverId)},
 	}
 
 	return retval, nil
@@ -122,13 +122,13 @@ func RemoveFromSliceS(ary *[]string, val string) bool {
 		return false
 	}
 
-	slice[idx] = slice[len(slice) - 1]
-	slice = slice[:len(slice) - 1]
+	slice[idx] = slice[len(slice)-1]
+	slice = slice[:len(slice)-1]
 	*ary = slice
 	return true
 }
 
-func AddToSliceC(ary *[]chan <- ClientMessage, val chan <- ClientMessage) bool {
+func AddToSliceC(ary *[]chan<- ClientMessage, val chan<- ClientMessage) bool {
 	slice := *ary
 	for _, v := range slice {
 		if v == val {
@@ -141,7 +141,7 @@ func AddToSliceC(ary *[]chan <- ClientMessage, val chan <- ClientMessage) bool {
 	return true
 }
 
-func RemoveFromSliceC(ary *[]chan <- ClientMessage, val chan <- ClientMessage) bool {
+func RemoveFromSliceC(ary *[]chan<- ClientMessage, val chan<- ClientMessage) bool {
 	slice := *ary
 	var idx int = -1
 	for i, v := range slice {
@@ -154,8 +154,8 @@ func RemoveFromSliceC(ary *[]chan <- ClientMessage, val chan <- ClientMessage) b
 		return false
 	}
 
-	slice[idx] = slice[len(slice) - 1]
-	slice = slice[:len(slice) - 1]
+	slice[idx] = slice[len(slice)-1]
+	slice = slice[:len(slice)-1]
 	*ary = slice
 	return true
 }

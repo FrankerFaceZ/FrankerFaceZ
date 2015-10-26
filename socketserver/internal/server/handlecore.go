@@ -1,16 +1,16 @@
 package server // import "bitbucket.org/stendec/frankerfacez/socketserver/server"
 
 import (
-	"net/http"
-	"golang.org/x/net/websocket"
 	"crypto/tls"
-	"strings"
-	"strconv"
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"sync"
+	"golang.org/x/net/websocket"
 	"log"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 const MAX_PACKET_SIZE = 1024
@@ -22,12 +22,12 @@ type Config struct {
 	UseSSL             bool
 
 	// NaCl keys for backend messages
-	NaclKeysFile       string
+	NaclKeysFile string
 
 	// Hostname of the socket server
-	SocketOrigin       string
+	SocketOrigin string
 	// URL to the backend server
-	BackendUrl         string
+	BackendUrl string
 }
 
 // A command is how the client refers to a function on the server. It's just a string.
@@ -38,37 +38,40 @@ type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMes
 
 var CommandHandlers = map[Command]CommandHandler{
 	HelloCommand: HandleHello,
-	"setuser": HandleSetUser,
+	"setuser":    HandleSetUser,
 
-	"sub": HandleSub,
-	"unsub": HandleUnsub,
-	"sub_channel": HandleSubChannel,
+	"sub":           HandleSub,
+	"unsub":         HandleUnsub,
+	"sub_channel":   HandleSubChannel,
 	"unsub_channel": HandleUnsubChannel,
 
-	"track_follow": HandleTrackFollow,
+	"track_follow":  HandleTrackFollow,
 	"emoticon_uses": HandleEmoticonUses,
-	"survey": HandleSurvey,
+	"survey":        HandleSurvey,
 
-	"twitch_emote": HandleRemoteCommand,
-	"get_link": HandleRemoteCommand,
-	"get_display_name": HandleRemoteCommand,
+	"twitch_emote":          HandleRemoteCommand,
+	"get_link":              HandleRemoteCommand,
+	"get_display_name":      HandleRemoteCommand,
 	"update_follow_buttons": HandleRemoteCommand,
-	"chat_history": HandleRemoteCommand,
+	"chat_history":          HandleRemoteCommand,
 }
 
 // Sent by the server in ClientMessage.Command to indicate success.
 const SuccessCommand Command = "True"
+
 // Sent by the server in ClientMessage.Command to indicate failure.
 const ErrorCommand Command = "error"
+
 // This must be the first command sent by the client once the connection is established.
 const HelloCommand Command = "hello"
+
 // A handler returning a ClientMessage with this Command will prevent replying to the client.
 // It signals that the work has been handed off to a background goroutine.
 const AsyncResponseCommand Command = "_async"
 
 // A websocket.Codec that translates the protocol into ClientMessage objects.
 var FFZCodec websocket.Codec = websocket.Codec{
-	Marshal: MarshalClientMessage,
+	Marshal:   MarshalClientMessage,
 	Unmarshal: UnmarshalClientMessage,
 }
 
@@ -124,7 +127,7 @@ func SetupServerAndHandle(config *Config, tlsConfig *tls.Config, serveMux *http.
 		serveMux = http.DefaultServeMux
 	}
 	serveMux.HandleFunc("/", sockServer.ServeHTTP)
-	serveMux.HandleFunc("/pub", HandlePublishRequest)
+	serveMux.HandleFunc("/pub", HBackendPublishRequest)
 }
 
 // Handle a new websocket connection from a FFZ client.
@@ -147,7 +150,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	_errorChan := make(chan error)
 
 	// Launch receiver goroutine
-	go func(errorChan chan <- error, clientChan chan <- ClientMessage) {
+	go func(errorChan chan<- error, clientChan chan<- ClientMessage) {
 		var msg ClientMessage
 		var err error
 		for ; err == nil; err = FFZCodec.Receive(conn, &msg) {
@@ -171,13 +174,13 @@ func HandleSocketConnection(conn *websocket.Conn) {
 
 	// All set up, now enter the work loop
 
-	RunLoop:
+RunLoop:
 	for {
 		select {
 		case err := <-errorChan:
 			FFZCodec.Send(conn, ClientMessage{
 				MessageID: -1,
-				Command: "error",
+				Command:   "error",
 				Arguments: err.Error(),
 			}) // note - socket might be closed, but don't care
 			break RunLoop
@@ -185,7 +188,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 			if client.Version == "" && msg.Command != HelloCommand {
 				FFZCodec.Send(conn, ClientMessage{
 					MessageID: msg.MessageID,
-					Command: "error",
+					Command:   "error",
 					Arguments: "Error - the first message sent must be a 'hello'",
 				})
 				break RunLoop
@@ -201,7 +204,8 @@ func HandleSocketConnection(conn *websocket.Conn) {
 
 	// Launch message draining goroutine - we aren't out of the pub/sub records
 	go func() {
-		for _ = range _serverMessageChan {}
+		for _ = range _serverMessageChan {
+		}
 	}()
 
 	// Stop getting messages...
@@ -244,7 +248,7 @@ func UnmarshalClientMessage(data []byte, payloadType byte, v interface{}) (err e
 	}
 
 	out.MessageID = messageId
-	dataStr = dataStr[spaceIdx + 1:]
+	dataStr = dataStr[spaceIdx+1:]
 
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
@@ -254,7 +258,7 @@ func UnmarshalClientMessage(data []byte, payloadType byte, v interface{}) (err e
 	} else {
 		out.Command = Command(dataStr[:spaceIdx])
 	}
-	dataStr = dataStr[spaceIdx + 1:]
+	dataStr = dataStr[spaceIdx+1:]
 	argumentsJson := dataStr
 	out.origArguments = argumentsJson
 	err = json.Unmarshal([]byte(argumentsJson), &out.Arguments)
@@ -306,7 +310,7 @@ func MarshalClientMessage(clientMessage interface{}) (data []byte, payloadType b
 func NewClientMessage(arguments interface{}) ClientMessage {
 	return ClientMessage{
 		MessageID: 0, // filled by the select loop
-		Command: SuccessCommand,
+		Command:   SuccessCommand,
 		Arguments: arguments,
 	}
 }
@@ -316,7 +320,8 @@ func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {
 	var ok bool
 	string1, ok = cm.Arguments.(string)
 	if !ok {
-		err = ExpectedSingleString; return
+		err = ExpectedSingleString
+		return
 	} else {
 		return string1, nil
 	}
@@ -328,7 +333,8 @@ func (cm *ClientMessage) ArgumentsAsInt() (int1 int, err error) {
 	var num float64
 	num, ok = cm.Arguments.(float64)
 	if !ok {
-		err = ExpectedSingleInt; return
+		err = ExpectedSingleInt
+		return
 	} else {
 		int1 = int(num)
 		return int1, nil
@@ -341,18 +347,22 @@ func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err e
 	var ary []interface{}
 	ary, ok = cm.Arguments.([]interface{})
 	if !ok {
-		err = ExpectedTwoStrings; return
+		err = ExpectedTwoStrings
+		return
 	} else {
 		if len(ary) != 2 {
-			err = ExpectedTwoStrings; return
+			err = ExpectedTwoStrings
+			return
 		}
 		string1, ok = ary[0].(string)
 		if !ok {
-			err = ExpectedTwoStrings; return
+			err = ExpectedTwoStrings
+			return
 		}
 		string2, ok = ary[1].(string)
 		if !ok {
-			err = ExpectedTwoStrings; return
+			err = ExpectedTwoStrings
+			return
 		}
 		return string1, string2, nil
 	}
@@ -364,23 +374,28 @@ func (cm *ClientMessage) ArgumentsAsStringAndInt() (string1 string, int int64, e
 	var ary []interface{}
 	ary, ok = cm.Arguments.([]interface{})
 	if !ok {
-		err = ExpectedStringAndInt; return
+		err = ExpectedStringAndInt
+		return
 	} else {
 		if len(ary) != 2 {
-			err = ExpectedStringAndInt; return
+			err = ExpectedStringAndInt
+			return
 		}
 		string1, ok = ary[0].(string)
 		if !ok {
-			err = ExpectedStringAndInt; return
+			err = ExpectedStringAndInt
+			return
 		}
 		var num float64
 		num, ok = ary[1].(float64)
 		if !ok {
-			err = ExpectedStringAndInt; return
+			err = ExpectedStringAndInt
+			return
 		}
 		int = int64(num)
 		if float64(int) != num {
-			err = ExpectedStringAndIntGotFloat; return
+			err = ExpectedStringAndIntGotFloat
+			return
 		}
 		return string1, int, nil
 	}
@@ -392,18 +407,22 @@ func (cm *ClientMessage) ArgumentsAsStringAndBool() (str string, flag bool, err 
 	var ary []interface{}
 	ary, ok = cm.Arguments.([]interface{})
 	if !ok {
-		err = ExpectedStringAndBool; return
+		err = ExpectedStringAndBool
+		return
 	} else {
 		if len(ary) != 2 {
-			err = ExpectedStringAndBool; return
+			err = ExpectedStringAndBool
+			return
 		}
 		str, ok = ary[0].(string)
 		if !ok {
-			err = ExpectedStringAndBool; return
+			err = ExpectedStringAndBool
+			return
 		}
 		flag, ok = ary[1].(bool)
 		if !ok {
-			err = ExpectedStringAndBool; return
+			err = ExpectedStringAndBool
+			return
 		}
 		return str, flag, nil
 	}

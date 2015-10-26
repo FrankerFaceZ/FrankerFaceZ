@@ -1,10 +1,10 @@
 package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/socketserver"
 
 import (
+	"../../internal/server"
 	"flag"
 	"log"
 	"net/http"
-	"../../internal/server"
 )
 
 var origin *string = flag.String("origin", "localhost:8001", "Client-visible origin of the socket server")
@@ -34,11 +34,11 @@ func main() {
 		log.Fatalln("Either both --crt and --key can be provided, or neither.")
 	}
 
-	conf := &server.Config {
-		SSLKeyFile: *privateKeyFile,
+	conf := &server.Config{
+		SSLKeyFile:         *privateKeyFile,
 		SSLCertificateFile: *certificateFile,
-		UseSSL: *usessl,
-		NaclKeysFile: *naclKeysFile,
+		UseSSL:             *usessl,
+		NaclKeysFile:       *naclKeysFile,
 
 		SocketOrigin: *origin,
 	}
@@ -60,7 +60,6 @@ func main() {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
-
 
 func GenerateKeys(outputFile string) {
 	if flag.NArg() < 1 {

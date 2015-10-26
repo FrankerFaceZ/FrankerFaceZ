@@ -1,15 +1,16 @@
 package server
+
 import (
-	"testing"
-	"net/http/httptest"
-	"net/http"
-	"sync"
-	"golang.org/x/net/websocket"
-	"github.com/satori/go.uuid"
 	"fmt"
-	"syscall"
-	"os"
+	"github.com/satori/go.uuid"
+	"golang.org/x/net/websocket"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"sync"
+	"syscall"
+	"testing"
 )
 
 func CountOpenFDs() uint64 {
@@ -26,7 +27,7 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 
 	GenerateKeys("/tmp/test_naclkeys.json", "2", "+ZMqOmxhaVrCV5c0OMZ09QoSGcJHuqQtJrwzRD+JOjE=")
 	conf := &Config{
-		UseSSL: false,
+		UseSSL:       false,
 		NaclKeysFile: "/tmp/test_naclkeys.json",
 		SocketOrigin: "localhost:2002",
 	}
@@ -47,7 +48,7 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 	var limit syscall.Rlimit
 	syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit)
 
-	limit.Cur = CountOpenFDs() + uint64(b.N) * 2 + 100
+	limit.Cur = CountOpenFDs() + uint64(b.N)*2 + 100
 
 	if limit.Cur > limit.Max {
 		b.Skip("Open file limit too low")

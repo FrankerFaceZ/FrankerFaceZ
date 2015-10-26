@@ -1,11 +1,11 @@
 package server
 
 import (
-	"golang.org/x/net/websocket"
 	"github.com/satori/go.uuid"
+	"golang.org/x/net/websocket"
 	"log"
-	"sync"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -23,7 +23,7 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 		return
 	}
 
-//	log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
+	//	log.Println(conn.RemoteAddr(), msg.MessageID, msg.Command, msg.Arguments)
 
 	response, err := CallHandler(handler, conn, client, msg)
 
@@ -36,7 +36,7 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 	} else {
 		FFZCodec.Send(conn, ClientMessage{
 			MessageID: msg.MessageID,
-			Command: "error",
+			Command:   "error",
 			Arguments: err.Error(),
 		})
 	}
@@ -203,6 +203,7 @@ type SurveySubmission struct {
 	User string
 	Json string
 }
+
 var SurveySubmissions []SurveySubmission
 var SurveySubmissionLock sync.Mutex
 
@@ -215,11 +216,12 @@ func HandleSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (
 }
 
 type FollowEvent struct {
-	User string
-	Channel string
+	User         string
+	Channel      string
 	NowFollowing bool
-	Timestamp time.Time
+	Timestamp    time.Time
 }
+
 var FollowEvents []FollowEvent
 var FollowEventsLock sync.Mutex
 
@@ -267,7 +269,6 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 			destMapInner[roomName] += count
 		}
 	}
-
 
 	return ResponseSuccess, nil
 }

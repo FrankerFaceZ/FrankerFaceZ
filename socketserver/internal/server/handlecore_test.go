@@ -1,8 +1,8 @@
 package server
 
 import (
-	"golang.org/x/net/websocket"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"testing"
 )
 
@@ -24,7 +24,7 @@ func ExampleUnmarshalClientMessage() {
 func ExampleMarshalClientMessage() {
 	var cm ClientMessage = ClientMessage{
 		MessageID: -1,
-		Command: "do_authorize",
+		Command:   "do_authorize",
 		Arguments: "1234567890",
 	}
 	data, payloadType, err := MarshalClientMessage(&cm)

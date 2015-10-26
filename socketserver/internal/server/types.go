@@ -1,6 +1,9 @@
 package server
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/satori/go.uuid"
 	"sync"
 	"time"
@@ -9,30 +12,30 @@ import (
 const CryptoBoxKeyLength = 32
 
 type CryptoKeysBuf struct {
-	OurPrivateKey []byte
-	OurPublicKey []byte
+	OurPrivateKey  []byte
+	OurPublicKey   []byte
 	TheirPublicKey []byte
-	ServerId int
+	ServerId       int
 }
 
 type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
 	// When replying to a command, the message ID must be echoed.
 	// When sending a server-initiated message, this is -1.
-	MessageID     int `json:_`
+	MessageID int `json:_`
 	// The command that the client wants from the server.
 	// When sent from the server, the literal string 'True' indicates success.
 	// Before sending, a blank Command will be converted into SuccessCommand.
-	Command       Command `json:cmd`
+	Command Command `json:cmd`
 	// Result of json.Unmarshal on the third field send from the client
-	Arguments     interface{} `json:data`
+	Arguments interface{} `json:data`
 
 	origArguments string
 }
 
 type AuthInfo struct {
 	// The client's claimed username on Twitch.
-	TwitchUsername    string
+	TwitchUsername string
 
 	// Whether or not the server has validated the client's claimed username.
 	UsernameValidated bool
@@ -41,25 +44,25 @@ type AuthInfo struct {
 type ClientInfo struct {
 	// The client ID.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	ClientID         uuid.UUID
+	ClientID uuid.UUID
 
 	// The client's version.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	Version          string
+	Version string
 
 	// This mutex protects writable data in this struct.
 	// If it seems to be a performance problem, we can split this.
-	Mutex            sync.Mutex
+	Mutex sync.Mutex
 
 	// TODO(riking) - does this need to be protected cross-thread?
 	AuthInfo
 
 	// Username validation nonce.
-	ValidationNonce  string
+	ValidationNonce string
 
 	// The list of chats this client is currently in.
 	// Protected by Mutex.
-	CurrentChannels  []string
+	CurrentChannels []string
 
 	// This list of channels this client needs UI updates for.
 	// Protected by Mutex.

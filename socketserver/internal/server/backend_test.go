@@ -1,9 +1,10 @@
 package server
+
 import (
-	"testing"
-	"net/url"
-	"golang.org/x/crypto/nacl/box"
 	"crypto/rand"
+	"golang.org/x/crypto/nacl/box"
+	"net/url"
+	"testing"
 )
 
 func SetupRandomKeys(t testing.TB) {
