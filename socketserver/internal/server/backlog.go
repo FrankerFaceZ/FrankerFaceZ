@@ -6,33 +6,37 @@ import (
 	"net/http"
 )
 
+type PushCommandCacheInfo struct {
+	Caching BacklogCacheType
+	Target  MessageTargetType
+}
+
 // this value is just docs right now
-var ServerInitiatedCommands = []string{
+var ServerInitiatedCommands = map[string]PushCommandCacheInfo{
 	/// Global updates & notices
-	"update_news", // timecache:global
-	"message",     // timecache:global
-	"reload_ff",   // timecache:global
+	"update_news": {CacheTypeTimestamps, MsgTargetTypeGlobal}, // timecache:global
+	"message":     {CacheTypeTimestamps, MsgTargetTypeGlobal}, // timecache:global
+	"reload_ff":   {CacheTypeTimestamps, MsgTargetTypeGlobal}, // timecache:global
 
 	/// Emote updates
-	"reload_badges", // timecache:global
-	"set_badge",     // timecache:multichat
-	"reload_set",    // timecache:multichat
-	"load_set",      // TODO what are the semantics of this?
+	"reload_badges": {CacheTypeTimestamps, MsgTargetTypeGlobal},    // timecache:global
+	"set_badge":     {CacheTypeTimestamps, MsgTargetTypeMultichat}, // timecache:multichat
+	"reload_set":    {CacheTypeTimestamps, MsgTargetTypeMultichat}, // timecache:multichat
+	"load_set":      {},                                            // TODO what are the semantics of this?
 
 	/// User auth
-	"do_authorize", // nocache:single
+	"do_authorize": {CacheTypeNever, MsgTargetTypeSingle}, // nocache:single
 
 	/// Channel data
-	// extra emote sets included in the chat
-	"follow_sets", // mustcache:chat
-	// extra follow buttons below the stream
-	"follow_buttons", // mustcache:watching
-	// SRL race data
-	"srl_race", // cachelast:watching
+	// follow_sets: extra emote sets included in the chat
+	// follow_buttons: extra follow buttons below the stream
+	"follow_sets":    {CacheTypePersistent, MsgTargetTypeChat},     // mustcache:chat
+	"follow_buttons": {CacheTypePersistent, MsgTargetTypeWatching}, // mustcache:watching
+	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeWatching},   // cachelast:watching
 
 	/// Chatter/viewer counts
-	"chatters", // cachelast:watching
-	"viewers",  // cachelast:watching
+	"chatters": {CacheTypeLastOnly, MsgTargetTypeWatching}, // cachelast:watching
+	"viewers":  {CacheTypeLastOnly, MsgTargetTypeWatching}, // cachelast:watching
 }
 var _ = ServerInitiatedCommands
 
@@ -70,15 +74,15 @@ const (
 	MsgTargetTypeGlobal
 )
 
+// note: see types.go for methods on these
+
 // Returned by BacklogCacheType.UnmarshalJSON()
 var ErrorUnrecognizedCacheType = errors.New("Invalid value for cachetype")
 
 // Returned by MessageTargetType.UnmarshalJSON()
 var ErrorUnrecognizedTargetType = errors.New("Invalid value for message target")
 
-// note: see types.go for methods on these
-
-func HBackendSaveBacklog(w http.ResponseWriter, r *http.Request) {
+func HBackendUpdateAndPublish(w http.ResponseWriter, r *http.Request) {
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
@@ -86,4 +90,9 @@ func HBackendSaveBacklog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cmd := formData.Get("command")
+	cacheinfo, ok := ServerInitiatedCommands[cmd]
+	if !ok {
+		w.WriteHeader(422)
+	}
 }

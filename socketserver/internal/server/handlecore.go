@@ -127,7 +127,8 @@ func SetupServerAndHandle(config *Config, tlsConfig *tls.Config, serveMux *http.
 		serveMux = http.DefaultServeMux
 	}
 	serveMux.HandleFunc("/", sockServer.ServeHTTP)
-	serveMux.HandleFunc("/pub", HBackendPublishRequest)
+	serveMux.HandleFunc("/pubmsg", HBackendPublishRequest)
+	serveMux.HandleFunc("/updatepub", HBackendUpdateAndPublish)
 }
 
 // Handle a new websocket connection from a FFZ client.

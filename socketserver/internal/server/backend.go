@@ -76,17 +76,38 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	json := formData.Get("args")
 	channel := formData.Get("channel")
 	scope := formData.Get("scope")
+
+	target := MessageTargetTypeByName(scope)
+
+	if cmd == "" {
+		w.WriteHeader(422)
+		fmt.Fprintf(w, "Error: cmd cannot be blank")
+		return
+	}
+	if channel == "" && (target == MsgTargetTypeChat || target == MsgTargetTypeMultichat || target == MsgTargetTypeWatching) {
+		w.WriteHeader(422)
+		fmt.Fprintf(w, "Error: channel must be specified")
+		return
+	}
+
 	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
 	var count int
-	if scope == "chat" {
+
+	switch target {
+	case MsgTargetTypeSingle:
+		// TODO
+	case MsgTargetTypeChat:
 		count = PublishToChat(channel, cm)
-	} else if scope == "channel" {
+	case MsgTargetTypeMultichat:
+		// TODO
+	case MsgTargetTypeWatching:
 		count = PublishToWatchers(channel, cm)
-	} else if scope == "global" {
+	case MsgTargetTypeGlobal:
 		count = PublishToAll(cm)
-	} else {
-		w.WriteHeader(400)
-		fmt.Fprint(w, "Need to specify either chat or channel")
+	case MsgTargetTypeInvalid:
+	default:
+		w.WriteHeader(422)
+		fmt.Fprint(w, "Invalid 'scope'. must be single, chat, multichat, channel, or global")
 		return
 	}
 	fmt.Fprint(w, count)
