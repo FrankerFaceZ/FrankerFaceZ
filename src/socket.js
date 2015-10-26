@@ -4,7 +4,10 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 FFZ.prototype._ws_last_iframe = 0;
-FFZ.prototype._ws_host_idx = 0;
+FFZ.prototype._ws_host_idx = Math.floor(Math.random() * constants.WS_SERVERS.length) + 1;
+if (constants.DEBUG) {
+	FFZ.prototype._ws_host_idx = 0;
+}
 
 FFZ.ws_commands = {};
 FFZ.ws_on_close = [];
