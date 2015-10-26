@@ -39,7 +39,6 @@ var ServerInitiatedCommands = map[string]PushCommandCacheInfo{
 	"chatters": {CacheTypeLastOnly, MsgTargetTypeWatching}, // cachelast:watching
 	"viewers":  {CacheTypeLastOnly, MsgTargetTypeWatching}, // cachelast:watching
 }
-var _ = ServerInitiatedCommands
 
 type BacklogCacheType int
 
@@ -50,6 +49,7 @@ const (
 	CacheTypeNever
 	// Save the last 24 hours of this message.
 	// If a client indicates that it has reconnected, replay the messages sent after the disconnect.
+	// Do not replay if the client indicates that this is a firstload.
 	CacheTypeTimestamps
 	// Save only the last copy of this message, and always send it when the backlog is requested.
 	CacheTypeLastOnly
@@ -83,11 +83,27 @@ var ErrorUnrecognizedCacheType = errors.New("Invalid value for cachetype")
 // Returned by MessageTargetType.UnmarshalJSON()
 var ErrorUnrecognizedTargetType = errors.New("Invalid value for message target")
 
-type PersistentCachedData struct {
+type PersistentCachedMessage struct {
 	Timestamp time.Time
 	Channel   string
 	Watching  bool
 	Data      string
+}
+
+type TimestampedGlobalMessage struct {
+	Timestamp time.Time
+	Data string
+}
+
+type TimestampedMultichatMessage struct {
+	Timestamp time.Time
+	Channels string
+	Data string
+}
+
+type LastSavedMessage struct {
+	Timestamp time.Time
+	Data string
 }
 
 // map command -> channel -> data

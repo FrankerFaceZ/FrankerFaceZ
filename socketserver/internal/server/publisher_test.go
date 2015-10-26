@@ -59,12 +59,38 @@ type TURLs struct {
 	PubMsg string
 }
 
-func TGetUrls(testserver httptest.Server) TURLs {
+func TGetUrls(testserver *httptest.Server) TURLs {
 	addr := testserver.Listener.Addr().String()
 	return TURLs{
 		Websocket: fmt.Sprintf("ws://%s/", addr),
-		Origin: fmt.Sprintf("http://%s"),
-		PubMsg: fmt.Sprintf("http://%s/pub_msg"),
+		Origin: fmt.Sprintf("http://%s", addr),
+		PubMsg: fmt.Sprintf("http://%s/pub_msg", addr),
+	}
+}
+
+const TNaclKeysLocation = "/tmp/test_naclkeys.json"
+
+func TSetup(testserver **httptest.Server, urls *TURLs) {
+	if backendSharedKey[0] == 0 {
+		GenerateKeys(TNaclKeysLocation, "2", "+ZMqOmxhaVrCV5c0OMZ09QoSGcJHuqQtJrwzRD+JOjE=")
+	}
+	DumpCache()
+
+	if testserver != nil {
+		conf := &Config{
+			UseSSL:       false,
+			NaclKeysFile: TNaclKeysLocation,
+			SocketOrigin: "localhost:2002",
+		}
+		serveMux := http.NewServeMux()
+		SetupServerAndHandle(conf, nil, serveMux)
+
+		tserv := httptest.NewUnstartedServer(serveMux)
+		*testserver = tserv
+		tserv.Start()
+		if urls != nil {
+			*urls = TGetUrls(tserv)
+		}
 	}
 }
 
@@ -76,20 +102,10 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	const TestCommand = "testdata"
 	const TestData = "123456789"
 
-	GenerateKeys("/tmp/test_naclkeys.json", "2", "+ZMqOmxhaVrCV5c0OMZ09QoSGcJHuqQtJrwzRD+JOjE=")
-	DumpCache()
-	conf := &Config{
-		UseSSL:       false,
-		NaclKeysFile: "/tmp/test_naclkeys.json",
-		SocketOrigin: "localhost:2002",
-	}
-	serveMux := http.NewServeMux()
-	SetupServerAndHandle(conf, nil, serveMux)
-
-	server := httptest.NewUnstartedServer(serveMux)
-	server.Start()
-
-	urls := TGetUrls(server)
+	var server *httptest.Server
+	var urls TURLs
+	TSetup(&server, &urls)
+	defer unsubscribeAllClients()
 
 	conn, err := websocket.Dial(urls.Websocket, "", urls.Origin)
 	if err != nil {
@@ -150,28 +166,13 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	server.Close()
 }
 
-func BenchmarkThousandUserSubscription(b *testing.B) {
+func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 	var doneWg sync.WaitGroup
 	var readyWg sync.WaitGroup
 
 	const TestChannelName = "testchannel"
 	const TestCommand = "testdata"
 	const TestData = "123456789"
-
-	GenerateKeys("/tmp/test_naclkeys.json", "2", "+ZMqOmxhaVrCV5c0OMZ09QoSGcJHuqQtJrwzRD+JOjE=")
-	DumpCache()
-	conf := &Config{
-		UseSSL:       false,
-		NaclKeysFile: "/tmp/test_naclkeys.json",
-		SocketOrigin: "localhost:2002",
-	}
-	serveMux := http.NewServeMux()
-	SetupServerAndHandle(conf, nil, serveMux)
-
-	server := httptest.NewUnstartedServer(serveMux)
-	server.Start()
-
-	urls := TGetUrls(server)
 
 	message := ClientMessage{MessageID: -1, Command: "testdata", Arguments: TestData}
 
@@ -190,6 +191,11 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 
 	syscall.Setrlimit(syscall.RLIMIT_NOFILE, &limit)
 
+	var server *httptest.Server
+	var urls TURLs
+	TSetup(&server, &urls)
+	defer unsubscribeAllClients()
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		conn, err := websocket.Dial(urls.Websocket, "", urls.Origin)
@@ -206,7 +212,6 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 			TReceiveExpectedMessage(b, conn, 1, SuccessCommand, IgnoreReceivedArguments)
 			TReceiveExpectedMessage(b, conn, 2, SuccessCommand, nil)
 
-			fmt.Println(i, " ready")
 			readyWg.Done()
 
 			TReceiveExpectedMessage(b, conn, -1, TestCommand, TestData)
@@ -225,9 +230,9 @@ func BenchmarkThousandUserSubscription(b *testing.B) {
 		panic("halting test instead of waiting")
 	}
 	doneWg.Wait()
+	fmt.Println("...done.")
 
 	b.StopTimer()
 	server.Close()
-	unsubscribeAllClients()
 	server.CloseClientConnections()
 }
