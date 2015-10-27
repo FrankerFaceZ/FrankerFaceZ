@@ -6,30 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/net/websocket"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
-	"html/template"
 )
 
 const MAX_PACKET_SIZE = 1024
-
-type Config struct {
-	// SSL/TLS
-	SSLCertificateFile string
-	SSLKeyFile         string
-	UseSSL             bool
-
-	// NaCl keys for backend messages
-	NaclKeysFile string
-
-	// Hostname of the socket server
-	SocketOrigin string
-	// URL to the backend server
-	BackendUrl string
-}
 
 // A command is how the client refers to a function on the server. It's just a string.
 type Command string
@@ -85,10 +70,10 @@ var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as a
 var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
 var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
-var gconfig *Config
+var gconfig *ConfigFile
 
 // Create a websocket.Server with the options from the provided Config.
-func setupServer(config *Config, tlsConfig *tls.Config) *websocket.Server {
+func setupServer(config *ConfigFile, tlsConfig *tls.Config) *websocket.Server {
 	gconfig = config
 	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
 	if err != nil {
@@ -120,28 +105,36 @@ func setupServer(config *Config, tlsConfig *tls.Config) *websocket.Server {
 
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
-func SetupServerAndHandle(config *Config, tlsConfig *tls.Config, serveMux *http.ServeMux) {
+func SetupServerAndHandle(config *ConfigFile, tlsConfig *tls.Config, serveMux *http.ServeMux) {
 	sockServer := setupServer(config, tlsConfig)
 
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
 	}
 	serveMux.HandleFunc("/", ServeWebsocketOrCatbag(sockServer.ServeHTTP))
+	serveMux.Handle("/assets", http.FileServer(nil)) // TODO
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
 	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
 }
 
-var Catbag = template.Must(template.New(`
+var Memes = template.Must(template.New("catbag").Parse(`
 <!DOCTYPE html>
-<html>
-<head>
 <title>CatBag</title>
-</head>
-<body>
-</body>
-</html>
-`).Parse("html"))
+<link rel="stylesheet" href="//cdn.frankerfacez.com/script/catbag.css">
+<div id="container">
+<div id="zf0"></div><div id="zf1"></div><div id="zf2"></div>
+<div id="zf3"></div><div id="zf4"></div><div id="zf5"></div>
+<div id="zf6"></div><div id="zf7"></div><div id="zf8"></div>
+<div id="zf9"></div><div id="catbag"></div>
+<div id="bottom">
+	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
+	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
+	<br>
+	This socket server hosted by {{.}}
+</div>
+</div>
+`))
 
 func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -149,8 +142,7 @@ func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) h
 			sockfunc(w, r)
 			return
 		} else {
-
-			Catbag.Execute(w, nil)
+			Memes.Execute(w, "Todo Add Feature")
 		}
 	}
 }

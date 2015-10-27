@@ -9,24 +9,39 @@ import (
 
 const CryptoBoxKeyLength = 32
 
-type CryptoKeysBuf struct {
-	OurPrivateKey  []byte
-	OurPublicKey   []byte
-	TheirPublicKey []byte
-	ServerId       int
+type ConfigFile struct {
+	// Numeric server id known to the backend
+	ServerId   int
+	ListenAddr string
+	// Hostname of the socket server
+	SocketOrigin string
+	// URL to the backend server
+	BackendUrl string
+	// Memes go here
+	BannerHTML string
+
+	// SSL/TLS
+	UseSSL             bool
+	SSLCertificateFile string
+	SSLKeyFile         string
+
+	// Nacl keys
+	OurPrivateKey    []byte
+	OurPublicKey     []byte
+	BackendPublicKey []byte
 }
 
 type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
 	// When replying to a command, the message ID must be echoed.
 	// When sending a server-initiated message, this is -1.
-	MessageID int `json:_`
+	MessageID int
 	// The command that the client wants from the server.
 	// When sent from the server, the literal string 'True' indicates success.
 	// Before sending, a blank Command will be converted into SuccessCommand.
-	Command Command `json:cmd`
+	Command Command
 	// Result of json.Unmarshal on the third field send from the client
-	Arguments interface{} `json:data`
+	Arguments interface{}
 
 	origArguments string
 }

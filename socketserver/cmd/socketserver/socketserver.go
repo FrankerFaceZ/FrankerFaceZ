@@ -2,56 +2,52 @@ package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/sock
 
 import (
 	"../../internal/server"
+	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
-var origin *string = flag.String("origin", "localhost:8001", "Client-visible origin of the socket server")
-var bindAddress *string = flag.String("listen", "", "Address to bind to, if different from origin")
-var usessl *bool = flag.Bool("ssl", false, "Enable the use of SSL for connecting clients and backend connections")
-var certificateFile *string = flag.String("crt", "ssl.crt", "CA-signed SSL certificate file")
-var privateKeyFile *string = flag.String("key", "ssl.key", "SSL private key file")
-
-var naclKeysFile *string = flag.String("naclkey", "naclkeys.json", "Keypairs for the NaCl crypto library, for communicating with the backend.")
+var configFilename *string = flag.String("config", "config.json", "Configuration file, including the keypairs for the NaCl crypto library, for communicating with the backend.")
 var generateKeys *bool = flag.Bool("genkeys", false, "Generate NaCl keys instead of serving requests.\nArguments: [int serverId] [base64 backendPublic]\nThe backend public key can either be specified in base64 on the command line, or put in the json file later.")
 
 func main() {
 	flag.Parse()
 
 	if *generateKeys {
-		GenerateKeys(*naclKeysFile)
+		GenerateKeys(*configFilename)
 		return
 	}
 
-	if *origin == "" {
-		log.Fatalln("--origin argument required")
+	confFile, err := os.Open(*configFilename)
+	if os.IsNotExist(err) {
+		fmt.Println("Error: No config file. Run with -genkeys and edit config.json")
+		os.Exit(3)
 	}
-	if *bindAddress == "" {
-		bindAddress = origin
+	if err != nil {
+		log.Fatal(err)
 	}
-	if (*certificateFile == "") != (*privateKeyFile == "") {
-		log.Fatalln("Either both --crt and --key can be provided, or neither.")
+	conf := &server.ConfigFile{}
+	confBytes, err := ioutil.ReadAll(confFile)
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	conf := &server.Config{
-		SSLKeyFile:         *privateKeyFile,
-		SSLCertificateFile: *certificateFile,
-		UseSSL:             *usessl,
-		NaclKeysFile:       *naclKeysFile,
-
-		SocketOrigin: *origin,
+	err = json.Unmarshal(confBytes, &conf)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	httpServer := &http.Server{
-		Addr: *bindAddress,
+		Addr: conf.ListenAddr,
 	}
 
 	server.SetupServerAndHandle(conf, httpServer.TLSConfig, nil)
 
-	var err error
 	if conf.UseSSL {
-		err = httpServer.ListenAndServeTLS(*certificateFile, *privateKeyFile)
+		err = httpServer.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile)
 	} else {
 		err = httpServer.ListenAndServe()
 	}
@@ -63,11 +59,13 @@ func main() {
 
 func GenerateKeys(outputFile string) {
 	if flag.NArg() < 1 {
-		log.Fatal("The server ID must be specified")
+		fmt.Println("Specify a numeric server ID after -genkeys")
+		os.Exit(2)
 	}
 	if flag.NArg() >= 2 {
 		server.GenerateKeys(outputFile, flag.Arg(0), flag.Arg(1))
 	} else {
 		server.GenerateKeys(outputFile, flag.Arg(0), "")
 	}
+	fmt.Println("Keys generated. Now edit config.json")
 }

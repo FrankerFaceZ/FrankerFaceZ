@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,7 +28,7 @@ var serverId int
 
 var messageBufferPool sync.Pool
 
-func SetupBackend(config *Config) {
+func SetupBackend(config *ConfigFile) {
 	backendHttpClient.Timeout = 60 * time.Second
 	backendUrl = config.BackendUrl
 	if responseCache != nil {
@@ -41,21 +40,10 @@ func SetupBackend(config *Config) {
 
 	messageBufferPool.New = New4KByteBuffer
 
-	var keys CryptoKeysBuf
-	file, err := os.Open(config.NaclKeysFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	dec := json.NewDecoder(file)
-	err = dec.Decode(&keys)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var theirPublic, ourPrivate [32]byte
-	copy(theirPublic[:], keys.TheirPublicKey)
-	copy(ourPrivate[:], keys.OurPrivateKey)
-	serverId = keys.ServerId
+	copy(theirPublic[:], config.BackendPublicKey)
+	copy(ourPrivate[:], config.OurPrivateKey)
+	serverId = config.ServerId
 
 	box.Precompute(&backendSharedKey, &theirPublic, &ourPrivate)
 }
@@ -193,7 +181,7 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 
 func GenerateKeys(outputFile, serverId, theirPublicStr string) {
 	var err error
-	output := CryptoKeysBuf{}
+	output := ConfigFile{}
 
 	output.ServerId, err = strconv.Atoi(serverId)
 	if err != nil {
@@ -212,19 +200,16 @@ func GenerateKeys(outputFile, serverId, theirPublicStr string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		output.TheirPublicKey = theirPublic
+		output.BackendPublicKey = theirPublic
 	}
 
-	file, err := os.Create(outputFile)
+	fmt.Println(ourPublic, ourPrivate)
+	bytes, err := json.MarshalIndent(output, "", "\t")
 	if err != nil {
 		log.Fatal(err)
 	}
-	enc := json.NewEncoder(file)
-	err = enc.Encode(output)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = file.Close()
+	fmt.Println(string(bytes))
+	err = ioutil.WriteFile(outputFile, bytes, 0600)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -126,20 +126,36 @@ func TGetUrls(testserver *httptest.Server) TURLs {
 	}
 }
 
-const TNaclKeysLocation = "/tmp/test_naclkeys.json"
-
 func TSetup(testserver **httptest.Server, urls *TURLs) {
-	if backendSharedKey[0] == 0 {
-		GenerateKeys(TNaclKeysLocation, "2", "+ZMqOmxhaVrCV5c0OMZ09QoSGcJHuqQtJrwzRD+JOjE=")
-	}
 	DumpCache()
 
+	conf := &ConfigFile{
+		ServerId:     20,
+		UseSSL:       false,
+		SocketOrigin: "localhost:2002",
+		BannerHTML: `
+<!DOCTYPE html>
+<title>CatBag</title>
+<link rel="stylesheet" href="//cdn.frankerfacez.com/script/catbag.css">
+<div id="container">
+<div id="zf0"></div><div id="zf1"></div><div id="zf2"></div>
+<div id="zf3"></div><div id="zf4"></div><div id="zf5"></div>
+<div id="zf6"></div><div id="zf7"></div><div id="zf8"></div>
+<div id="zf9"></div><div id="catbag"></div>
+<div id="bottom">
+	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
+	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
+</div>
+</div>
+`,
+		OurPublicKey:     []byte{176, 149, 72, 209, 35, 42, 110, 220, 22, 236, 212, 129, 213, 199, 1, 227, 185, 167, 150, 159, 117, 202, 164, 100, 9, 107, 45, 141, 122, 221, 155, 73},
+		OurPrivateKey:    []byte{247, 133, 147, 194, 70, 240, 211, 216, 223, 16, 241, 253, 120, 14, 198, 74, 237, 180, 89, 33, 146, 146, 140, 58, 88, 160, 2, 246, 112, 35, 239, 87},
+		BackendPublicKey: []byte{19, 163, 37, 157, 50, 139, 193, 85, 229, 47, 166, 21, 153, 231, 31, 133, 41, 158, 8, 53, 73, 0, 113, 91, 13, 181, 131, 248, 176, 18, 1, 107},
+	}
+	gconfig = conf
+	SetupBackend(conf)
+
 	if testserver != nil {
-		conf := &Config{
-			UseSSL:       false,
-			NaclKeysFile: TNaclKeysLocation,
-			SocketOrigin: "localhost:2002",
-		}
 		serveMux := http.NewServeMux()
 		SetupServerAndHandle(conf, nil, serveMux)
 
