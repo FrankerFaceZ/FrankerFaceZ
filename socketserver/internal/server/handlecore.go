@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"html/template"
 )
 
 const MAX_PACKET_SIZE = 1024
@@ -125,9 +126,33 @@ func SetupServerAndHandle(config *Config, tlsConfig *tls.Config, serveMux *http.
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
 	}
-	serveMux.HandleFunc("/", sockServer.ServeHTTP)
+	serveMux.HandleFunc("/", ServeWebsocketOrCatbag(sockServer.ServeHTTP))
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
+	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
+}
+
+var Catbag = template.Must(template.New(`
+<!DOCTYPE html>
+<html>
+<head>
+<title>CatBag</title>
+</head>
+<body>
+</body>
+</html>
+`).Parse("html"))
+
+func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Connection") == "Upgrade" {
+			sockfunc(w, r)
+			return
+		} else {
+
+			Catbag.Execute(w, nil)
+		}
+	}
 }
 
 // Handle a new websocket connection from a FFZ client.

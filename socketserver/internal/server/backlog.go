@@ -297,7 +297,7 @@ func GetCommandsOfType(match PushCommandCacheInfo) []Command {
 	return ret
 }
 
-func HBackendDumpCache(w http.ResponseWriter, r *http.Request) {
+func HBackendDumpBacklog(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
