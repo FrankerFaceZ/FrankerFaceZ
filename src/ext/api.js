@@ -159,7 +159,7 @@ API.prototype._load_set = function(real_id, set_id, data) {
 		else if ( typeof emote.name !== "string" )
 			new_emote.regex = emote.name;
 		else
-			new_emote.regex = new RegExp("(^|\\W|\\b)(" + RegExp.escape(emote.name) + ")(?=\\W|$)", "g");
+			new_emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
 
 		output_css += build_css(new_emote);
 		set.count++;
@@ -179,19 +179,87 @@ API.prototype._load_set = function(real_id, set_id, data) {
 }
 
 
+// -------------------------
+// Loading / Unloading Sets
+// -------------------------
+
+API.prototype.load_set = function(id, emote_set) {
+	var exact_id = this.id + '-' + id;
+
+	emote_set.title = emote_set.title || "Global Emoticons";
+	emote_set._type = emote_set._type || 0;
+
+	emote_set = this._load_set(exact_id, id, emote_set);
+	this.log("Loaded Emoticon Set #" + id + ": " + emote_set.title + " (" + emote_set.count + " emotes)", emote_set);
+	return emote_set;
+}
+
+
+API.prototype.unload_set = function(id) {
+	var exact_id = this.id + '-' + id,
+		emote_set = this.emote_sets[exact_id];
+
+	if ( ! emote_set )
+		return;
+
+	// First, let's unregister it as a global.
+	this.unregister_global_set(id);
+
+
+	// Now, remove the set data.
+	utils.update_css(this.ffz._emote_style, exact_id, null);
+
+	this.emote_sets[exact_id] = undefined;
+	if ( this.ffz.emote_sets )
+		this.ffz.emote_sets[exact_id] = undefined;
+
+
+	// Remove from all its Rooms
+	if ( emote_set.users ) {
+		for(var i=0; i < emote_set.users.length; i++) {
+			var room_id = emote_set.users[i],
+				room = this.ffz.rooms && this.ffz.rooms[room_id];
+
+			if ( ! room )
+				continue;
+
+			ind = room.ext_sets.indexOf(exact_id);
+			if ( ind !== -1 )
+				room.ext_sets.splice(ind,1);
+		}
+
+		emote_set.users = [];
+	}
+
+
+	return set;
+}
+
+
+API.prototype.get_set = function(id) {
+	var exact_id = this.id + '-' + id;
+	return this.emote_sets[exact_id];
+}
+
+
 // ---------------------
 // Global Emote Sets
 // ---------------------
 
-API.prototype.register_global_set = function(id, set) {
+API.prototype.register_global_set = function(id, emote_set) {
 	var exact_id = this.id + '-' + id;
 
-	set.title = set.title || "Global Emoticons";
-	set._type = 0;
-	set = this._load_set(exact_id, id, set);
+	if ( emote_set ) {
+		// If a set was provided, load it.
+		emote_set = this.load_set(id, emote_set);
+	} else
+		emote_set = this.emote_sets[exact_id];
 
-	this.log("Loaded Emoticon Set #" + id + ": " + set.title + " (" + set.count + " emotes)", set);
+	if ( ! emote_set )
+		throw new Error("Invalid set ID");
 
+
+	// It's a valid set if we get here, so make it global.
 	if ( this.global_sets.indexOf(exact_id) === -1 )
 		this.global_sets.push(exact_id);
 
@@ -208,18 +276,12 @@ API.prototype.register_global_set = function(id, set) {
 
 API.prototype.unregister_global_set = function(id) {
 	var exact_id = this.id + '-' + id,
-		set = this.emote_sets[exact_id];
+		emote_set = this.emote_sets[exact_id];
 
-	if ( ! set )
+	if ( ! emote_set )
 		return;
 
-	utils.update_css(this.ffz._emote_style, exact_id, null);
-
-	this.emote_sets[exact_id] = undefined;
-
-	if ( this.ffz.emote_sets )
-		this.ffz.emote_sets[exact_id] = undefined;
-
+	// Remove the set from global sets.
 	var ind = this.global_sets.indexOf(exact_id);
 	if ( ind !== -1 )
 		this.global_sets.splice(ind,1);
@@ -235,8 +297,6 @@ API.prototype.unregister_global_set = function(id) {
 	ind = this.ffz.default_sets ? this.ffz.default_sets.indexOf(exact_id) : -1;
 	if ( ind !== -1 )
 		this.ffz.default_sets.splice(ind,1);
-
-	this.log("Unloaded Emoticon Set #" + id + ": " + set.title, set);;
 };
 
 
@@ -244,21 +304,55 @@ API.prototype.unregister_global_set = function(id) {
 // Per-Channel Emote Sets
 // -----------------------
 
+API.prototype.register_room_set = function(room_id, id, emote_set) {
+	var exact_id = this.id + '-' + id,
+		room = this.ffz.rooms && this.ffz.rooms[room_id];
+
+	if ( ! room )
+		throw new Error("Room not loaded");
+
+	if ( emote_set ) {
+		// If a set was provided, load it.
+		emote_set.title = emote_set.title || "Channel: " + (room.display_name || room_id);
+		emote_set._type = emote_set._type || 1;
+
+		emote_set = this.load_set(id, emote_set);
+	} else
+		emote_set = this.emote_sets[exact_id];
+
+	if ( ! emote_set )
+		throw new Error("Invalid set ID");
+
+	// Register it on the room.
+	room.ext_sets.push(exact_id);
+	emote_set.users.push(room_id);
+}
+
+
+API.prototype.unregister_room_set = function(room_id, id) {
+	var exact_id = this.id + '-' + id,
+		emote_set = this.emote_sets[exact_id],
+		room = this.ffz.rooms && this.ffz.rooms[room_id];
+
+	if ( ! emote_set || ! room )
+		return;
+
+	var ind = room.ext_sets.indexOf(exact_id);
+	if ( ind !== -1 )
+		room.ext_sets.splice(ind,1);
+
+	ind = emote_set.users.indexOf(room_id);
+	if ( ind !== -1 )
+		emote_set.users.splice(ind,1);
+}
+
+
+// -----------------------
+// Channel Callbacks
+// -----------------------
+
 API.prototype._room_callbacks = function(room_id, room, specific_func) {
-	var api = this;
-
-	var callback = function(id, set) {
-		var exact_id = api.id + '-' + id;
-
-		set.title = set.title || "Channel: " + room_id;
-		set._type = 1;
-
-		set = api._load_set(exact_id, id, set);
-		api.log("Loaded Emoticon Set #" + id + ": " + set.title + " (" + set.count + " emotes)", set);
-
-		room.ext_sets.push(exact_id);
-		set.users.push(room_id);
-	};
+	var callback = this.register_room_set.bind(this, room_id);
 
 	if ( specific_func ) {
 		try {
@@ -280,11 +374,11 @@ API.prototype._room_callbacks = function(room_id, room, specific_func) {
 }
 
 
-API.prototype.register_on_room_callback = function(callback) {
+API.prototype.register_on_room_callback = function(callback, dont_iterate) {
 	this.on_room_callbacks.push(callback);
 
 	// Call this for all current rooms.
-	if ( this.ffz.rooms ) {
+	if ( ! dont_iterate && this.ffz.rooms ) {
 		for(var room_id in this.ffz.rooms)
 			this._room_callbacks(room_id, this.ffz.rooms[room_id], callback);
 	}

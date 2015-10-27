@@ -400,9 +400,9 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 			emote.srcSet += ", " + emote.urls[4] + " 4x";
 
 		if ( emote.name[emote.name.length-1] === "!" )
-			emote.regex = new RegExp("(^|\\W|\\b)(" + RegExp.escape(emote.name) + ")(?=\\W|$)", "g");
+			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
 		else
-			emote.regex = new RegExp("(^|\\W|\\b)(" + RegExp.escape(emote.name) + ")\\b", "g");
+			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")\\b", "g");
 
 		output_css += build_css(emote);
 		data.count++;

@@ -84,7 +84,9 @@ FFZ.prototype.setup_player = function() {
 		try {
 			this._modify_player(view);
 			view.ffzInit();
-			if ( view.get('player') )
+
+			var tp2 = window.require("web-client/components/twitch-player2");
+			if ( tp2 && tp2.getPlayer && tp2.getPlayer() )
 				view.ffzPostPlayer();
 
 		} catch(err) {
@@ -150,9 +152,18 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzPostPlayer: function() {
-			var player = this.get('player');
-			if ( ! player )
-				return;
+			var player = this.get('ffz_player') || this.get('player');
+			if ( ! player ) {
+				var tp2 = window.require("web-client/components/twitch-player2");
+				if ( ! tp2 || ! tp2.getPlayer )
+					return;
+
+				player = tp2.getPlayer();
+				if ( ! player )
+					return;
+			}
+
+			this.set('ffz_player', player);
 
 			// Only set up the stats hooks if we need stats.
 			if ( ! player.getVideo() )
@@ -163,7 +174,7 @@ FFZ.prototype._modify_player = function(player) {
 			if ( this.get('ffzStatsInitialized') )
 				return;
 
-			var player = this.get('player');
+			var player = this.get('ffz_player');
 			if ( ! player )
 				return;
 
@@ -210,7 +221,7 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzSetQuality: function(q) {
-			var player = this.get('player');
+			var player = this.get('ffz_player');
 			if ( ! player )
 				return;
 
@@ -224,7 +235,7 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzGetQualities: function() {
-			var player = this.get('player');
+			var player = this.get('ffz_player');
 			if ( ! player )
 				return [];
 			return player.getQualities();

@@ -331,9 +331,18 @@ FFZ.menu_pages.myemotes = {
 			em.title = this._emote_tooltip(emote);
 			em.addEventListener("click", function(id, code, e) {
 				e.preventDefault();
-				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && ! set.hasOwnProperty('source_ext') )
-					window.open("https://www.frankerfacez.com/emoticons/" + id);
-				else
+				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons ) {
+					var url;
+					if ( set.hasOwnProperty('source_ext') ) {
+						var api = f._apis[set.source_ext];
+						if ( api && api.emote_url_generator )
+							url = api.emote_url_generator(set.source_id, id);
+					} else
+						url = "https://www.frankerfacez.com/emoticons/" + id;
+
+					if ( url )
+						window.open(url);
+				} else
 					this._add_emote(view, code);
 			}.bind(this, emote.id, emote.name));
 			menu.appendChild(em);
@@ -387,14 +396,14 @@ FFZ.menu_pages.myemotes = {
 				var an = a[0], bn = b[0];
 				if ( an === "turbo" || an === "--turbo-faces--" )
 					an = "zza|" + an;
-				else if ( an === "global" || an === "global emoticons" || an === "--global--" )
+				else if ( an === "global" || (an && an.substr(0,16) === "global emoticons") || an === "--global--" )
 					an = "zzy|" + an;
 				else if ( an === "emoji" )
 					an = "zzz|" + an;
 
 				if ( bn === "turbo" || bn === "--turbo-faces--" )
 					bn = "zza|" + bn;
-				else if ( bn === "global" || bn === "global emoticons" || bn === "--global--" )
+				else if ( bn === "global" || (bn && bn.substr(0,16) === "global emoticons") || bn === "--global--" )
 					bn = "zzy|" + bn;
 				else if ( bn === "emoji" )
 					bn = "zzz|" + bn;

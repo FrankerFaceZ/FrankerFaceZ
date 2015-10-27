@@ -9,6 +9,10 @@ var sanitize_el = document.createElement('span'),
 		return sanitize_el.innerHTML;
 	},
 
+	escape_regex = RegExp.escape || function(str) {
+		return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	},
+
 	R_QUOTE = /"/g,
 	R_SQUOTE = /'/g,
 	R_AMP = /&/g,
@@ -311,5 +315,7 @@ module.exports = {
 			return "99+";
 
 		return "" + count;
-	}
+	},
+
+	escape_regex: escape_regex
 }

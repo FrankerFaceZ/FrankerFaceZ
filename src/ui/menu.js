@@ -616,9 +616,17 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 		s.addEventListener('click', function(id, code, e) {
 			e.preventDefault();
-			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && ! set.hasOwnProperty('source_ext') )
-				window.open("https://www.frankerfacez.com/emoticons/" + id);
-			else
+			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons ) {
+				var url;
+				if ( set.hasOwnProperty('source_ext') ) {
+					var api = f._apis[set.source_ext];
+					if ( api && api.emote_url_generator )
+						url = api.emote_url_generator(set.source_id, id);
+				} else
+					url = "https://www.frankerfacez.com/emoticons/" + id;
+				if ( url )
+					window.open(url);
+			} else
 				this._add_emote(view, code);
 		}.bind(this, emote.id, emote.name));
 

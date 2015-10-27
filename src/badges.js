@@ -430,38 +430,38 @@ FFZ.prototype._legacy_add_donors = function() {
 	this._legacy_load_donors();
 }
 
-FFZ.prototype._legacy_load_bots = function(tries) {
+FFZ.prototype._legacy_load_bots = function(callback, tries) {
 	jQuery.ajax(constants.SERVER + "script/bots.txt", {context: this})
 		.done(function(data) {
-			this._legacy_parse_badges(data, 0, 2, "Bot (By: {})");
+			this._legacy_parse_badges(callback, data, 0, 2, "Bot (By: {})");
 
 		}).fail(function(data) {
 			if ( data.status == 404 )
-				return;
+				return typeof callback === "function" && callback(false, 0);
 
 			tries = (tries || 0) + 1;
 			if ( tries < 10 )
-				this._legacy_load_bots(tries);
+				this._legacy_load_bots(callback, tries);
 		});
 }
 
-FFZ.prototype._legacy_load_donors = function(tries) {
+FFZ.prototype._legacy_load_donors = function(callback, tries) {
 	jQuery.ajax(constants.SERVER + "script/donors.txt", {context: this})
 		.done(function(data) {
-			this._legacy_parse_badges(data, 1, 1);
+			this._legacy_parse_badges(callback, data, 1, 1);
 
 		}).fail(function(data) {
 			if ( data.status == 404 )
-				return;
+				return typeof callback === "function" && callback(false, 0);
 
 			tries = (tries || 0) + 1;
 			if ( tries < 10 )
-				return this._legacy_load_donors(tries);
+				return this._legacy_load_donors(callback, tries);
 		});
 }
 
 
-FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id, title_template) {
+FFZ.prototype._legacy_parse_badges = function(callback, data, slot, badge_id, title_template) {
 	var title = this.badges[badge_id].title,
 		count = 0;
 		ds = null;
@@ -491,4 +491,8 @@ FFZ.prototype._legacy_parse_badges = function(data, slot, badge_id, title_templa
 	}
 
 	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
+	if ( callback )
+		callback(true, count);
+
+	return count;
 }

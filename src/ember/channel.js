@@ -456,9 +456,8 @@ FFZ.prototype._modify_cindex = function(view) {
 					el = stat_el && stat_el.querySelector('span'),
 
 					player_cont = f.players && f.players[channel_id],
-					player = player_cont && player_cont.player,
+					player = player_cont && player_cont.ffz_player,
 					stats = player && player.stats;
-
 
 				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
 					if ( stat_el )
@@ -509,7 +508,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					el = stat_el && stat_el.querySelector('span'),
 
 					player_cont = f.players && f.players[hosted_id],
-					player = player_cont && player_cont.player,
+					player = player_cont && player_cont.ffz_player,
 					stats = player && player.stats;
 
 

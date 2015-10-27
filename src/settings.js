@@ -828,10 +828,14 @@ FFZ.prototype._setting_load = function(key, default_value) {
 		val = info.process_value.bind(this)(val);
 
 	this.settings[key] = val;
+	return val;
 }
 
 
 FFZ.prototype._setting_get = function(key) {
+	if ( ! this.settings.hasOwnProperty(key) && FFZ.settings_info[key] )
+		this._setting_load(key);
+
 	return this.settings[key];
 }
 

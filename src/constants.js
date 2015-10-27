@@ -33,6 +33,8 @@ module.exports = {
 		"Gr(a|e)yFace": "GrayFace"
 		},
 
+	EMOTE_MIRROR_BASE: SERVER + "twitch-emote-mirror/",
+
 	EMOTE_REPLACEMENT_BASE: SERVER + "script/replacements/",
 	EMOTE_REPLACEMENTS: {
 		15: "15-JKanStyle.png",

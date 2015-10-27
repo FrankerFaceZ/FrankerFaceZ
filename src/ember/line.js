@@ -667,10 +667,21 @@ FFZ.prototype._modify_line = function(component) {
 				else {
 					eid = e.target.getAttribute("data-ffz-emote");
 					var es = e.target.getAttribute("data-ffz-set"),
-						set = es && f.emote_sets[es];
+						set = es && f.emote_sets[es],
+						url;
 
-					if ( ! set || ! set.hasOwnProperty('source_ext') )
-						window.open("https://www.frankerfacez.com/emoticons/" + eid);
+					if ( ! set )
+						return;
+
+					if ( set.hasOwnProperty('source_ext') ) {
+						var api = f._apis[set.source_ext];
+						if ( api && api.emote_url_generator )
+							url = api.emote_url_generator(set.source_id, eid);
+					} else
+						url = "https://www.frankerfacez.com/emoticons/" + eid;
+
+					if ( url )
+						window.open(url);
 				}
 			}
 
