@@ -1,4 +1,4 @@
-package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/socketserver"
+package main
 
 import (
 	"../../internal/server"
