@@ -211,5 +211,6 @@ FFZ.prototype._load_dark_css = function() {
 	s.id = "ffz-dark-css";
 	s.setAttribute('rel', 'stylesheet');
 	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	s.onerror = "this.href = this.href + '_';"
 	document.head.appendChild(s);
 }

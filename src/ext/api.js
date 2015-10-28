@@ -259,6 +259,11 @@ API.prototype.register_global_set = function(id, emote_set) {
 		throw new Error("Invalid set ID");
 
 
+	// Make sure the set is still available with FFZ.
+	if ( ! this.ffz.emote_sets[exact_id] )
+		this.ffz.emote_sets[exact_id] = emote_set;
+
+
 	// It's a valid set if we get here, so make it global.
 	if ( this.global_sets.indexOf(exact_id) === -1 )
 		this.global_sets.push(exact_id);
@@ -322,6 +327,10 @@ API.prototype.register_room_set = function(room_id, id, emote_set) {
 
 	if ( ! emote_set )
 		throw new Error("Invalid set ID");
+
+	// Make sure the set is still available with FFZ.
+	if ( ! this.ffz.emote_sets[exact_id] )
+		this.ffz.emote_sets[exact_id] = emote_set;
 
 	// Register it on the room.
 	room.ext_sets.push(exact_id);

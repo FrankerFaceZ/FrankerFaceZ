@@ -2,6 +2,20 @@ var FFZ = window.FrankerFaceZ;
 
 
 // --------------------
+// Settings
+// --------------------
+
+FFZ.settings_info.sort_viewers = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+	name: "Sort Viewer List",
+	help: "Make sure the viewer list is alphabetically sorted and place the Broadcaster in their own category."
+};
+
+
+// --------------------
 // Initialization
 // --------------------
 
@@ -19,6 +33,9 @@ FFZ.prototype._modify_viewers = function(controller) {
 	controller.reopen({
 		lines: function() {
 			var viewers = this._super();
+			if ( ! f.settings.sort_viewers )
+				return viewers;
+
 			try {
 				var categories = [],
 					data = {},
