@@ -214,6 +214,31 @@ func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
 	client.Mutex.Unlock()
 }
 
+func TimedBacklogJanitor() {
+	for {
+		time.Sleep(1 * time.Hour)
+		CleanupTimedBacklogMessages()
+	}
+}
+
+func CleanupTimedBacklogMessages() {
+	CacheListsLock.Lock()
+	oneHourAgo := time.Now().Add(-24 * time.Hour)
+	globIdx := FindFirstNewMessage(tgmarray(CachedGlobalMessages), oneHourAgo)
+	if globIdx != -1 {
+		newGlobMsgs := make([]TimestampedGlobalMessage, len(CachedGlobalMessages)-globIdx)
+		copy(newGlobMsgs, CachedGlobalMessages[globIdx:])
+		CachedGlobalMessages = newGlobMsgs
+	}
+	chanIdx := FindFirstNewMessage(tmmarray(CachedChannelMessages), oneHourAgo)
+	if chanIdx != -1 {
+		newChanMsgs := make([]TimestampedMultichatMessage, len(CachedChannelMessages)-chanIdx)
+		copy(newChanMsgs, CachedChannelMessages[chanIdx:])
+		CachedChannelMessages = newChanMsgs
+	}
+	CacheListsLock.Unlock()
+}
+
 func InsertionSort(ary sort.Interface) {
 	for i := 1; i < ary.Len(); i++ {
 		for j := i; j > 0 && ary.Less(j, j-1); j-- {

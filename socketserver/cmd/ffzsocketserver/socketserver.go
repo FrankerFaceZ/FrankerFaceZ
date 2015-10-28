@@ -46,6 +46,8 @@ func main() {
 
 	server.SetupServerAndHandle(conf, httpServer.TLSConfig, nil)
 
+	go commandLineConsole()
+
 	if conf.UseSSL {
 		err = httpServer.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile)
 	} else {

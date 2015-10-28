@@ -182,9 +182,9 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 func GenerateKeys(outputFile, serverId, theirPublicStr string) {
 	var err error
 	output := ConfigFile{
-		ListenAddr: "0.0.0.0:8001",
+		ListenAddr:   "0.0.0.0:8001",
 		SocketOrigin: "localhost:8001",
-		BackendUrl: "http://localhost:8002/ffz",
+		BackendUrl:   "http://localhost:8002/ffz",
 		BannerHTML: `
 <!DOCTYPE html>
 <title>CatBag</title>

@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+func TestCleanupBacklogMessages(t *testing.T) {
+
+}
+
 func TestFindFirstNewMessageEmpty(t *testing.T) {
 	CachedGlobalMessages = []TimestampedGlobalMessage{}
 	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))

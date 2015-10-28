@@ -127,13 +127,13 @@ func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rms
 	AddToSliceS(&client.CurrentChannels, channel)
 	client.PendingSubscriptionsBacklog = append(client.PendingSubscriptionsBacklog, channel)
 
-	if client.MakePendingRequests == nil {
-		client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
-	} else {
-		if !client.MakePendingRequests.Reset(ChannelInfoDelay) {
-			client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
-		}
-	}
+	//	if client.MakePendingRequests == nil {
+	//		client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
+	//	} else {
+	//		if !client.MakePendingRequests.Reset(ChannelInfoDelay) {
+	//			client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
+	//		}
+	//	}
 
 	client.Mutex.Unlock()
 

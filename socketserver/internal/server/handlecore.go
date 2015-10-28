@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/net/websocket"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -74,43 +75,44 @@ var gconfig *ConfigFile
 // Create a websocket.Server with the options from the provided Config.
 func setupServer(config *ConfigFile, tlsConfig *tls.Config) *websocket.Server {
 	gconfig = config
-	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
 
 	SetupBackend(config)
 
-	if config.UseSSL {
-		cert, err := tls.LoadX509KeyPair(config.SSLCertificateFile, config.SSLKeyFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.ServerName = config.SocketOrigin
-		tlsConfig.BuildNameToCertificate()
-		sockConf.TlsConfig = tlsConfig
+	//	if config.UseSSL {
+	//		cert, err := tls.LoadX509KeyPair(config.SSLCertificateFile, config.SSLKeyFile)
+	//		if err != nil {
+	//			log.Fatal(err)
+	//		}
+	//		tlsConfig.Certificates = []tls.Certificate{cert}
+	//		tlsConfig.ServerName = config.SocketOrigin
+	//		tlsConfig.BuildNameToCertificate()
+	//		sockConf.TlsConfig = tlsConfig
+	//	}
 
-	}
-
-	sockServer := &websocket.Server{}
-	sockServer.Config = *sockConf
-	sockServer.Handler = HandleSocketConnection
+	//	sockServer := &websocket.Server{}
+	//	sockServer.Config = *sockConf
+	//	sockServer.Handler = HandleSocketConnection
 
 	go deadChannelReaper()
 
-	return sockServer
+	return nil
 }
 
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
 func SetupServerAndHandle(config *ConfigFile, tlsConfig *tls.Config, serveMux *http.ServeMux) {
-	sockServer := setupServer(config, tlsConfig)
+	_ = setupServer(config, tlsConfig)
+	log.Print("hi")
 
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
 	}
-	serveMux.HandleFunc("/", ServeWebsocketOrCatbag(sockServer.ServeHTTP))
+	handler := websocket.Handler(HandleSocketConnection)
+	serveMux.HandleFunc("/", ServeWebsocketOrCatbag(handler.ServeHTTP))
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
 	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
@@ -131,6 +133,8 @@ func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) h
 // This runs in a goroutine started by net/http.
 func HandleSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
+
+	fmt.Println("Got socket connection from", conn.Request().RemoteAddr)
 
 	var _closer sync.Once
 	closer := func() {
@@ -155,6 +159,10 @@ func HandleSocketConnection(conn *websocket.Conn) {
 				continue
 			}
 			clientChan <- msg
+		}
+
+		if err != io.EOF {
+			fmt.Println("Error while reading from client:", err)
 		}
 		errorChan <- err
 		close(errorChan)
@@ -198,6 +206,7 @@ RunLoop:
 	}
 
 	// Exit
+	fmt.Println("End socket connection from", conn.Request().RemoteAddr)
 
 	// Launch message draining goroutine - we aren't out of the pub/sub records
 	go func() {
