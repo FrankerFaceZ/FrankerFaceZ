@@ -199,6 +199,7 @@ RunLoop:
 
 		case msg := <-clientChan:
 			if client.Version == "" && msg.Command != HelloCommand {
+				log.Println("error - first message wasn't hello from", conn.RemoteAddr(), "-", msg)
 				CloseConnection(conn, &websocket.CloseError{
 					Text: "Error - the first message sent must be a 'hello'",
 					Code: websocket.ClosePolicyViolation,

@@ -287,7 +287,12 @@ func DoSendAggregateData() {
 		reportForm.Set("follows", string(followJson))
 	}
 
-	emoteJson, err := json.Marshal(emoteUsage)
+	strEmoteUsage := make(map[string]map[string]int)
+	for emoteId, usageByChannel := range emoteUsage {
+		strEmoteId := strconv.Itoa(emoteId)
+		strEmoteUsage[strEmoteId] = usageByChannel
+	}
+	emoteJson, err := json.Marshal(strEmoteUsage)
 	if err != nil {
 		log.Print(err)
 	} else {
