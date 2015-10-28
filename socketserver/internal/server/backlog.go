@@ -124,7 +124,6 @@ func DumpCache() {
 
 	PersistentLSMLock.Lock()
 	PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
-	// TODO delete file?
 	PersistentLSMLock.Unlock()
 
 	CacheListsLock.Lock()
@@ -177,33 +176,37 @@ func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
 
 	globIdx := FindFirstNewMessage(tgmarray(CachedGlobalMessages), disconnectTime)
 
-	for i := globIdx; i < len(CachedGlobalMessages); i++ {
-		item := CachedGlobalMessages[i]
-		msg := ClientMessage{MessageID: -1, Command: item.Command, origArguments: item.Data}
-		msg.parseOrigArguments()
-		client.MessageChannel <- msg
+	if globIdx != -1 {
+		for i := globIdx; i < len(CachedGlobalMessages); i++ {
+			item := CachedGlobalMessages[i]
+			msg := ClientMessage{MessageID: -1, Command: item.Command, origArguments: item.Data}
+			msg.parseOrigArguments()
+			client.MessageChannel <- msg
+		}
 	}
 
 	chanIdx := FindFirstNewMessage(tmmarray(CachedChannelMessages), disconnectTime)
 
-	for i := chanIdx; i < len(CachedChannelMessages); i++ {
-		item := CachedChannelMessages[i]
-		var send bool
-		for _, channel := range item.Channels {
-			for _, matchChannel := range client.CurrentChannels {
-				if channel == matchChannel {
-					send = true
+	if chanIdx != -1 {
+		for i := chanIdx; i < len(CachedChannelMessages); i++ {
+			item := CachedChannelMessages[i]
+			var send bool
+			for _, channel := range item.Channels {
+				for _, matchChannel := range client.CurrentChannels {
+					if channel == matchChannel {
+						send = true
+						break
+					}
+				}
+				if send {
 					break
 				}
 			}
 			if send {
-				break
+				msg := ClientMessage{MessageID: -1, Command: item.Command, origArguments: item.Data}
+				msg.parseOrigArguments()
+				client.MessageChannel <- msg
 			}
-		}
-		if send {
-			msg := ClientMessage{MessageID: -1, Command: item.Command, origArguments: item.Data}
-			msg.parseOrigArguments()
-			client.MessageChannel <- msg
 		}
 	}
 
