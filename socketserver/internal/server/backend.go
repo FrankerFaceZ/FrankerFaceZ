@@ -22,6 +22,7 @@ var backendUrl string
 var responseCache *cache.Cache
 
 var getBacklogUrl string
+var postStatisticsUrl string
 
 var backendSharedKey [32]byte
 var serverId int
@@ -37,6 +38,7 @@ func SetupBackend(config *ConfigFile) {
 	responseCache = cache.New(60*time.Second, 120*time.Second)
 
 	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
+	postStatisticsUrl = fmt.Sprintf("%s/stats", backendUrl)
 
 	messageBufferPool.New = New4KByteBuffer
 
@@ -153,6 +155,15 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 	}
 
 	return
+}
+
+func SendAggregatedData(sealedForm url.Values) (error) {
+	resp, err := backendHttpClient.PostForm(postStatisticsUrl, sealedForm)
+	if err != nil {
+		return err
+	}
+
+	return resp.Body.Close()
 }
 
 func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {

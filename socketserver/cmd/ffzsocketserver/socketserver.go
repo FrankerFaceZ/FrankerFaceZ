@@ -44,7 +44,7 @@ func main() {
 		Addr: conf.ListenAddr,
 	}
 
-	server.SetupServerAndHandle(conf, httpServer.TLSConfig, nil)
+	server.SetupServerAndHandle(conf, nil)
 
 	go commandLineConsole()
 

@@ -1,17 +1,17 @@
 package server // import "bitbucket.org/stendec/frankerfacez/socketserver/internal/server"
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 const MAX_PACKET_SIZE = 1024
@@ -54,10 +54,12 @@ const HelloCommand Command = "hello"
 // It signals that the work has been handed off to a background goroutine.
 const AsyncResponseCommand Command = "_async"
 
-// A websocket.Codec that translates the protocol into ClientMessage objects.
-var FFZCodec websocket.Codec = websocket.Codec{
-	Marshal:   MarshalClientMessage,
-	Unmarshal: UnmarshalClientMessage,
+var SocketUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return r.Header.Get("Origin") == "http://www.twitch.tv"
+	},
 }
 
 // Errors that get returned to the client.
@@ -72,69 +74,54 @@ var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a floa
 
 var gconfig *ConfigFile
 
-// Create a websocket.Server with the options from the provided Config.
-func setupServer(config *ConfigFile, tlsConfig *tls.Config) *websocket.Server {
-	gconfig = config
-	//	sockConf, err := websocket.NewConfig("/", config.SocketOrigin)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-
-	SetupBackend(config)
-
-	//	if config.UseSSL {
-	//		cert, err := tls.LoadX509KeyPair(config.SSLCertificateFile, config.SSLKeyFile)
-	//		if err != nil {
-	//			log.Fatal(err)
-	//		}
-	//		tlsConfig.Certificates = []tls.Certificate{cert}
-	//		tlsConfig.ServerName = config.SocketOrigin
-	//		tlsConfig.BuildNameToCertificate()
-	//		sockConf.TlsConfig = tlsConfig
-	//	}
-
-	//	sockServer := &websocket.Server{}
-	//	sockServer.Config = *sockConf
-	//	sockServer.Handler = HandleSocketConnection
-
-	go deadChannelReaper()
-
-	return nil
-}
-
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
-func SetupServerAndHandle(config *ConfigFile, tlsConfig *tls.Config, serveMux *http.ServeMux) {
-	_ = setupServer(config, tlsConfig)
-	log.Print("hi")
+func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
+	gconfig = config
+
+	SetupBackend(config)
 
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
 	}
-	handler := websocket.Handler(HandleSocketConnection)
-	serveMux.HandleFunc("/", ServeWebsocketOrCatbag(handler.ServeHTTP))
+
+	serveMux.HandleFunc("/", ServeWebsocketOrCatbag)
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
 	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
+
+	go deadChannelReaper()
+	go backlogJanitor()
+	go sendAggregateData()
 }
 
-func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Connection") == "Upgrade" {
-			sockfunc(w, r)
+func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("hi")
+	fmt.Println(r.Header)
+	if r.Header.Get("Connection") == "Upgrade" {
+		conn, err := SocketUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Fprintf(w, "error: %v", err)
 			return
-		} else {
-			w.Write([]byte(gconfig.BannerHTML))
 		}
+		fmt.Println("upgraded!")
+		HandleSocketConnection(conn)
+
+		return
+	} else {
+		w.Write([]byte(gconfig.BannerHTML))
 	}
 }
+
+var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
+var CloseGotMessageId0 = websocket.CloseError{Code: websocket.ClosePolicyViolation, Text: "got messageid 0"}
 
 // Handle a new websocket connection from a FFZ client.
 // This runs in a goroutine started by net/http.
 func HandleSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
 
-	fmt.Println("Got socket connection from", conn.Request().RemoteAddr)
+	log.Println("Got socket connection from", conn.RemoteAddr())
 
 	var _closer sync.Once
 	closer := func() {
@@ -150,19 +137,35 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	_serverMessageChan := make(chan ClientMessage)
 	_errorChan := make(chan error)
 
+	var client ClientInfo
+	client.MessageChannel = _serverMessageChan
+
 	// Launch receiver goroutine
 	go func(errorChan chan<- error, clientChan chan<- ClientMessage) {
 		var msg ClientMessage
+		var messageType int
+		var packet []byte
 		var err error
-		for ; err == nil; err = FFZCodec.Receive(conn, &msg) {
+		for ; err == nil; messageType, packet, err = conn.ReadMessage() {
+			if messageType == websocket.BinaryMessage {
+				err = &CloseGotBinaryMessage
+				break
+			}
+			if messageType == websocket.CloseMessage {
+				err = io.EOF
+				break
+			}
+
+			UnmarshalClientMessage(packet, messageType, &msg)
 			if msg.MessageID == 0 {
 				continue
 			}
 			clientChan <- msg
 		}
 
-		if err != io.EOF {
-			fmt.Println("Error while reading from client:", err)
+		_, isClose := err.(*websocket.CloseError)
+		if err != io.EOF && !isClose {
+			log.Println("Error while reading from client:", err)
 		}
 		errorChan <- err
 		close(errorChan)
@@ -174,39 +177,42 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	var clientChan <-chan ClientMessage = _clientChan
 	var serverMessageChan <-chan ClientMessage = _serverMessageChan
 
-	var client ClientInfo
-	client.MessageChannel = _serverMessageChan
-
 	// All set up, now enter the work loop
 
 RunLoop:
 	for {
 		select {
 		case err := <-errorChan:
-			FFZCodec.Send(conn, ClientMessage{
-				MessageID: -1,
-				Command:   "error",
-				Arguments: err.Error(),
-			}) // note - socket might be closed, but don't care
+			if err == io.EOF {
+				conn.Close() // no need to send a close frame :)
+				break RunLoop
+			} else if closeMsg, isClose := err.(*websocket.CloseError); isClose {
+				CloseConnection(conn, closeMsg)
+			} else {
+				CloseConnection(conn, &websocket.CloseError{
+					Code: websocket.CloseInternalServerErr,
+					Text: err.Error(),
+				})
+			}
+
 			break RunLoop
+
 		case msg := <-clientChan:
 			if client.Version == "" && msg.Command != HelloCommand {
-				FFZCodec.Send(conn, ClientMessage{
-					MessageID: msg.MessageID,
-					Command:   "error",
-					Arguments: "Error - the first message sent must be a 'hello'",
+				CloseConnection(conn, &websocket.CloseError{
+					Text: "Error - the first message sent must be a 'hello'",
+					Code: websocket.ClosePolicyViolation,
 				})
 				break RunLoop
 			}
 
 			HandleCommand(conn, &client, msg)
 		case smsg := <-serverMessageChan:
-			FFZCodec.Send(conn, smsg)
+			SendMessage(conn, smsg)
 		}
 	}
 
 	// Exit
-	fmt.Println("End socket connection from", conn.Request().RemoteAddr)
 
 	// Launch message draining goroutine - we aren't out of the pub/sub records
 	go func() {
@@ -220,6 +226,8 @@ RunLoop:
 	// And finished.
 	// Close the channel so the draining goroutine can finish, too.
 	close(_serverMessageChan)
+
+	log.Println("End socket connection from", conn.RemoteAddr())
 }
 
 func CallHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (rmsg ClientMessage, err error) {
@@ -236,8 +244,23 @@ func CallHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 	return handler(conn, client, cmsg)
 }
 
+func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
+	fmt.Println("Terminating connection with", conn.RemoteAddr(), "-", closeMsg.Text)
+	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), time.Now().Add(2*time.Minute))
+	conn.Close()
+}
+
+func SendMessage(conn *websocket.Conn, msg ClientMessage) {
+	messageType, packet, err := MarshalClientMessage(msg)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal: %v %v", err, msg))
+	}
+	fmt.Println(string(packet))
+	conn.WriteMessage(messageType, packet)
+}
+
 // Unpack a message sent from the client into a ClientMessage.
-func UnmarshalClientMessage(data []byte, payloadType byte, v interface{}) (err error) {
+func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err error) {
 	var spaceIdx int
 
 	out := v.(*ClientMessage)
@@ -282,7 +305,7 @@ func (cm *ClientMessage) parseOrigArguments() error {
 	return nil
 }
 
-func MarshalClientMessage(clientMessage interface{}) (data []byte, payloadType byte, err error) {
+func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []byte, err error) {
 	var msg ClientMessage
 	var ok bool
 	msg, ok = clientMessage.(ClientMessage)
@@ -309,7 +332,7 @@ func MarshalClientMessage(clientMessage interface{}) (data []byte, payloadType b
 	if msg.Arguments != nil {
 		argBytes, err := json.Marshal(msg.Arguments)
 		if err != nil {
-			return nil, 0, err
+			return 0, nil, err
 		}
 
 		dataStr = fmt.Sprintf("%d %s %s", msg.MessageID, msg.Command, string(argBytes))
@@ -317,7 +340,7 @@ func MarshalClientMessage(clientMessage interface{}) (data []byte, payloadType b
 		dataStr = fmt.Sprintf("%d %s", msg.MessageID, msg.Command)
 	}
 
-	return []byte(dataStr), websocket.TextFrame, nil
+	return websocket.TextMessage, []byte(dataStr), nil
 }
 
 // Command handlers should use this to construct responses.

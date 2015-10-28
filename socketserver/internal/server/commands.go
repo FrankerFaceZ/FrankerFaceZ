@@ -1,13 +1,15 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
-	"golang.org/x/net/websocket"
 	"log"
 	"strconv"
 	"sync"
 	"time"
+	"net/url"
 )
 
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
@@ -19,7 +21,7 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 	handler, ok := CommandHandlers[msg.Command]
 	if !ok {
 		log.Println("[!] Unknown command", msg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
-		FFZCodec.Send(conn, ClientMessage{
+		SendMessage(conn, ClientMessage{
 			MessageID: msg.MessageID,
 			Command:   "error",
 			Arguments: fmt.Sprintf("Unknown command %s", msg.Command),
@@ -35,10 +37,10 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 			// The response will be delivered over client.MessageChannel / serverMessageChan
 		} else {
 			response.MessageID = msg.MessageID
-			FFZCodec.Send(conn, response)
+			SendMessage(conn, response)
 		}
 	} else {
-		FFZCodec.Send(conn, ClientMessage{
+		SendMessage(conn, ClientMessage{
 			MessageID: msg.MessageID,
 			Command:   "error",
 			Arguments: err.Error(),
@@ -196,27 +198,16 @@ func GetSubscriptionBacklog(conn *websocket.Conn, client *ClientInfo) {
 	}
 }
 
-type SurveySubmission struct {
-	User string
-	Json string
-}
-
-var SurveySubmissions []SurveySubmission
-var SurveySubmissionLock sync.Mutex
-
 func HandleSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	SurveySubmissionLock.Lock()
-	SurveySubmissions = append(SurveySubmissions, SurveySubmission{client.TwitchUsername, msg.origArguments})
-	SurveySubmissionLock.Unlock()
-
+	// Discard
 	return ResponseSuccess, nil
 }
 
 type FollowEvent struct {
-	User         string
-	Channel      string
-	NowFollowing bool
-	Timestamp    time.Time
+	User         string    `json:u`
+	Channel      string    `json:c`
+	NowFollowing bool      `json:f`
+	Timestamp    time.Time `json:t`
 }
 
 var FollowEvents []FollowEvent
@@ -270,14 +261,62 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 	return ResponseSuccess, nil
 }
 
+func sendAggregateData() {
+	for {
+		time.Sleep(15 * time.Minute)
+		DoSendAggregateData()
+	}
+}
+
+func DoSendAggregateData() {
+	FollowEventsLock.Lock()
+	follows := FollowEvents
+	FollowEvents = nil
+	FollowEventsLock.Unlock()
+	AggregateEmoteUsageLock.Lock()
+	emoteUsage := AggregateEmoteUsage
+	AggregateEmoteUsage = make(map[int]map[string]int)
+	AggregateEmoteUsageLock.Unlock()
+
+	reportForm := url.Values{}
+
+	followJson, err := json.Marshal(follows)
+	if err != nil {
+		log.Print(err)
+	} else {
+		reportForm.Set("follows", string(followJson))
+	}
+
+	emoteJson, err := json.Marshal(emoteUsage)
+	if err != nil {
+		log.Print(err)
+	} else {
+		reportForm.Set("emotes", string(emoteJson))
+	}
+
+	form, err := SealRequest(reportForm)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	err = SendAggregatedData(form)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	// done
+}
+
 func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	go func(conn *websocket.Conn, msg ClientMessage, authInfo AuthInfo) {
 		resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, authInfo)
 
 		if err != nil {
-			FFZCodec.Send(conn, ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()})
+			SendMessage(conn, ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()})
 		} else {
-			FFZCodec.Send(conn, ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp})
+			SendMessage(conn, ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp})
 		}
 	}(conn, msg, client.AuthInfo)
 

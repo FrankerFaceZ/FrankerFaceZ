@@ -214,7 +214,7 @@ func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
 	client.Mutex.Unlock()
 }
 
-func TimedBacklogJanitor() {
+func backlogJanitor() {
 	for {
 		time.Sleep(1 * time.Hour)
 		CleanupTimedBacklogMessages()

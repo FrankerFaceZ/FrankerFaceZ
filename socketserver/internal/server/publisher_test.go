@@ -3,8 +3,8 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
-	"golang.org/x/net/websocket"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -27,7 +27,17 @@ const IgnoreReceivedArguments = 1 + 2i
 func TReceiveExpectedMessage(tb testing.TB, conn *websocket.Conn, messageId int, command Command, arguments interface{}) (ClientMessage, bool) {
 	var msg ClientMessage
 	var fail bool
-	err := FFZCodec.Receive(conn, &msg)
+	messageType, packet, err := conn.ReadMessage()
+	if err != nil {
+		tb.Error(err)
+		return msg, false
+	}
+	if messageType != websocket.TextMessage {
+		tb.Error("got non-text message", packet)
+		return msg, false
+	}
+
+	err = UnmarshalClientMessage(packet, messageType, &msg)
 	if err != nil {
 		tb.Error(err)
 		return msg, false
@@ -56,11 +66,8 @@ func TReceiveExpectedMessage(tb testing.TB, conn *websocket.Conn, messageId int,
 }
 
 func TSendMessage(tb testing.TB, conn *websocket.Conn, messageId int, command Command, arguments interface{}) bool {
-	err := FFZCodec.Send(conn, ClientMessage{MessageID: messageId, Command: command, Arguments: arguments})
-	if err != nil {
-		tb.Error(err)
-	}
-	return err == nil
+	SendMessage(conn, ClientMessage{MessageID: messageId, Command: command, Arguments: arguments})
+	return true
 }
 
 func TSealForSavePubMsg(tb testing.TB, cmd Command, channel string, arguments interface{}, deleteMode bool) (url.Values, error) {
@@ -157,7 +164,7 @@ func TSetup(testserver **httptest.Server, urls *TURLs) {
 
 	if testserver != nil {
 		serveMux := http.NewServeMux()
-		SetupServerAndHandle(conf, nil, serveMux)
+		SetupServerAndHandle(conf, serveMux)
 
 		tserv := httptest.NewUnstartedServer(serveMux)
 		*testserver = tserv
@@ -195,6 +202,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	defer unsubscribeAllClients()
 
 	var conn *websocket.Conn
+	var resp *http.Response
 	var err error
 
 	// client 1: sub ch1, ch2
@@ -207,7 +215,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	// msg 4: global
 
 	// Client 1
-	conn, err = websocket.Dial(urls.Websocket, "", urls.Origin)
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -236,7 +244,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}(conn)
 
 	// Client 2
-	conn, err = websocket.Dial(urls.Websocket, "", urls.Origin)
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -265,7 +273,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}(conn)
 
 	// Client 3
-	conn, err = websocket.Dial(urls.Websocket, "", urls.Origin)
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -291,7 +299,6 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	readyWg.Wait()
 
 	var form url.Values
-	var resp *http.Response
 
 	// Publish message 1 - should go to clients 1, 2
 
@@ -338,7 +345,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}
 
 	// Start client 4
-	conn, err = websocket.Dial(urls.Websocket, "", urls.Origin)
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -401,7 +408,7 @@ func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		conn, err := websocket.Dial(urls.Websocket, "", urls.Origin)
+		conn, _, err := websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
 		if err != nil {
 			b.Error(err)
 			break
