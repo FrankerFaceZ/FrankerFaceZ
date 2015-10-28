@@ -1,8 +1,13 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+	constants = require('./constants');
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 FFZ.prototype._ws_last_iframe = 0;
+FFZ.prototype._ws_host_idx = Math.floor(Math.random() * constants.WS_SERVERS.length) + 1;
+if (constants.DEBUG) {
+	FFZ.prototype._ws_host_idx = 0;
+}
 
 FFZ.ws_commands = {};
 FFZ.ws_on_close = [];
@@ -12,6 +17,8 @@ FFZ.ws_on_close = [];
 // Socket Creation
 // ----------------
 
+// Attempt to authenticate to the socket server as a real browser by loading the root page.
+// e.g. cloudflare ddos check
 FFZ.prototype.ws_iframe = function() {
 	this._ws_last_iframe = Date.now();
 	var ifr = document.createElement('iframe'),
@@ -39,7 +46,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_pending = this._ws_pending || [];
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://catbag.frankerfacez.com/");
+		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVERS[this._ws_host_idx] + "/");
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
@@ -53,17 +60,7 @@ FFZ.prototype.ws_create = function() {
 		f._ws_last_iframe = Date.now();
 		f.log("Socket connected.");
 
-		// Check for incognito. We don't want to do a hello in incognito mode.
-		var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-		if (!fs)
-			// Assume not.
-			f.ws_send("hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f));
-
-		else
-			fs(window.TEMPORARY, 100,
-				f.ws_send.bind(f, "hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f)),
-				f.log.bind(f, "Operating in Incognito Mode."));
-
+		f.ws_send("hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f));
 
 		var user = f.get_user();
 		if ( user )
@@ -73,8 +70,8 @@ FFZ.prototype.ws_create = function() {
 		if ( f.is_dashboard ) {
 			var match = location.pathname.match(/\/([^\/]+)/);
 			if ( match ) {
-				f.ws_send("sub", match[1]);
-				f.ws_send("sub_channel", match[1]);
+				f.ws_send("sub", "room." + match[1]);
+				f.ws_send("sub", "channel." + match[1]);
 			}
 		}
 
@@ -83,7 +80,7 @@ FFZ.prototype.ws_create = function() {
 			if ( ! f.rooms.hasOwnProperty(room_id) || ! f.rooms[room_id] )
 				continue;
 
-			f.ws_send("sub", room_id);
+			f.ws_send("sub", "room." + room_id);
 
 			if ( f.rooms[room_id].needs_history ) {
 				f.rooms[room_id].needs_history = false;
@@ -98,10 +95,10 @@ FFZ.prototype.ws_create = function() {
 				hosted_id = f._cindex.get('controller.hostModeTarget.id');
 
 			if ( channel_id )
-				f.ws_send("sub_channel", channel_id);
+				f.ws_send("sub", "channel." + channel_id);
 
 			if ( hosted_id )
-				f.ws_send("sub_channel", hosted_id);
+				f.ws_send("sub", "channel." + hosted_id);
 		}
 
 		// Send any pending commands.
@@ -112,20 +109,44 @@ FFZ.prototype.ws_create = function() {
 			var d = pending[i];
 			f.ws_send(d[0], d[1], d[2]);
 		}
+
+		// If reconnecting, get the backlog that we missed.
+		if ( f._ws_offline_time ) {
+			var timestamp = f._ws_offline_time;
+			delete f._ws_offline_time;
+			f.ws_send("ready", timestamp);
+		} else {
+			f.ws_send("ready", 0);
+		}
+	}
+
+	ws.onerror = function() {
+		if ( ! f._ws_offline_time ) {
+			f._ws_offline_time = new Date().getTime();
+		}
+
+		// Cycle selected server
+		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
 	}
 
 	ws.onclose = function(e) {
 		f.log("Socket closed. (Code: " + e.code + ", Reason: " + e.reason + ")");
 		f._ws_open = false;
+		if ( ! f._ws_offline_time ) {
+			f._ws_offline_time = new Date().getTime();
+		}
 
 		// When the connection closes, run our callbacks.
-		for(var i=0; i < FFZ.ws_on_close.length; i++) {
+		for (var i=0; i < FFZ.ws_on_close.length; i++) {
 			try {
 				FFZ.ws_on_close[i].bind(f)();
 			} catch(err) {
 				f.log("Error on Socket Close Callback: " + err);
 			}
 		}
+
+		// Cycle selected server
+		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
 
 		if ( f._ws_delay > 10000 ) {
 			var ua = navigator.userAgent.toLowerCase();
@@ -166,6 +187,11 @@ FFZ.prototype.ws_create = function() {
 			else
 				f.log("Invalid command: " + cmd, data, false, true);
 
+		} else if ( cmd === "error" ) {
+			f.log("Socket server reported error: " + data);
+			if (f._ws_callbacks[request] )
+				delete f._ws_callbacks[request];
+
 		} else {
 			var success = cmd === 'True',
 				has_callback = typeof f._ws_callbacks[request] === "function";
@@ -180,7 +206,7 @@ FFZ.prototype.ws_create = function() {
 					f.error("Callback for " + request + ": " + err);
 				}
 
-				f._ws_callbacks[request] = undefined;
+				delete f._ws_callbacks[request];
 			}
 		}
 	}

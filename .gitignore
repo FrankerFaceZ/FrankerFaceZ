@@ -3,5 +3,8 @@ npm-debug.log
 build
 Extension Building
 .idea
+*.iml
 script.js
 script.min.js
+
+/socketserver/cmd/socketserver/socketserver
