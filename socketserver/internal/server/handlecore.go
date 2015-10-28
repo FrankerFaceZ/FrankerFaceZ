@@ -96,8 +96,6 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 }
 
 func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("hi")
-	fmt.Println(r.Header)
 	if r.Header.Get("Connection") == "Upgrade" {
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -396,6 +394,10 @@ func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err e
 		if !ok {
 			err = ExpectedTwoStrings
 			return
+		}
+		// clientID can be null
+		if ary[1] == nil {
+			return string1, "", nil
 		}
 		string2, ok = ary[1].(string)
 		if !ok {
