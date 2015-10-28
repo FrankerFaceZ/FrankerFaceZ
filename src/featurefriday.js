@@ -17,7 +17,7 @@ FFZ.prototype.check_ff = function(tries) {
 	if ( ! tries )
 		this.log("Checking for Feature Friday data...");
 
-	jQuery.ajax(constants.SERVER + "script/event.json", {dataType: "json", context: this})
+	jQuery.ajax(constants.SERVER + "script/event.json?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info), {dataType: "json", context: this})
 		.done(function(data) {
 			return this._load_ff(data);
 		}).fail(function(data) {
@@ -44,7 +44,7 @@ FFZ.ws_commands.reload_ff = function() {
 // --------------------
 
 FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
-	if ( ! this.feature_friday || this.feature_friday.channel == room_id )
+	if ( ! this.feature_friday || this.feature_friday.channel === room_id )
 		return;
 
 	this._emotes_for_sets(parent, view, [this.feature_friday.set], this.feature_friday.title, this.feature_friday.icon, "FrankerFaceZ");
@@ -52,7 +52,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	// Before we add the button, make sure the channel isn't the
 	// current channel.
 	var Channel = App.__container__.lookup('controller:channel');
-	if ( Channel && Channel.get('id') == this.feature_friday.channel )
+	if ( ! this.feature_friday.channel || (Channel && Channel.get('id') === this.feature_friday.channel) )
 		return;
 
 
@@ -98,13 +98,14 @@ FFZ.prototype._load_ff = function(data) {
 	}
 
 	// If there's no data, just leave.
-	if ( ! data || ! data.set || ! data.channel )
+	if ( ! data || ! data.set )
 		return;
 
 	// We have our data! Set it up.
 	this.feature_friday = {set: data.set, channel: data.channel, live: false,
 			title: data.title || "Feature Friday",
-			display_name: FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this))};
+			icon: data.icon,
+			display_name: data.channel ? FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this)) : data.title || "Feature Friday"};
 
 	// Add the set.
 	this.global_sets.push(data.set);
@@ -117,7 +118,7 @@ FFZ.prototype._load_ff = function(data) {
 
 
 FFZ.prototype._update_ff_live = function() {
-	if ( ! this.feature_friday )
+	if ( ! this.feature_friday || ! this.feature_friday.channel )
 		return;
 
 	var f = this;

@@ -27,12 +27,15 @@ module.exports = {
 		"\\:-?[\\\\/]": ":-/",
 		"\\;-?\\)": ";-)",
 		"R-?\\)": "R-)",
+		"[oO](_|\\.)[oO]": "O.o",
 		"[o|O](_|\\.)[o|O]": "O.o",
 		"\\:-?D": ":-D",
 		"\\:-?(o|O)": ":-O",
 		"\\&gt\\;\\(": ">(",
 		"Gr(a|e)yFace": "GrayFace"
 		},
+
+	EMOTE_MIRROR_BASE: SERVER + "twitch-emote-mirror/",
 
 	EMOTE_REPLACEMENT_BASE: SERVER + "script/replacements/",
 	EMOTE_REPLACEMENTS: {

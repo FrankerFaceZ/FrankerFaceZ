@@ -240,6 +240,24 @@ FFZ.src_to_id = function(src) {
 };
 
 
+FFZ._emote_mirror_swap = function(img) {
+	var src, attempts = parseInt(img.getAttribute('data-alt-attempts')) || 0;
+	if ( attempts > 3 )
+		return;
+
+	img.setAttribute('data-alt-attempts', attempts + 1);
+	var id = img.getAttribute('data-emote');
+
+	if ( img.src.substr(0, TWITCH_BASE.length) === TWITCH_BASE ) {
+		img.src = constants.EMOTE_MIRROR_BASE + id + ".png";
+		img.srcset = "";
+	} else {
+		img.src = TWITCH_BASE + id + "/1.0";
+		img.srcset = build_srcset(id);
+	}
+}
+
+
 // ---------------------
 // Settings
 // ---------------------
@@ -543,7 +561,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 
 				tooltip = emote ? utils.sanitize(f._emote_tooltip(emote)) : token.altText;
 				srcset = emote ? emote.srcSet : token.srcSet;
-				extra = ' data-ffz-emote="' + emote.id + '"';
+				extra = (emote ? ' data-ffz-emote="' + emote.id + '"' : '') + (emote_set ? ' data-ffz-set="' + emote_set.id + '"' : '');
 
 			} else if ( token.ffzEmoji ) {
 				var eid = token.ffzEmoji,
@@ -582,7 +600,9 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 					}
 				}
 
-				extra = ' data-emote="' + id + '"';
+				var mirror_url = utils.quote_attr(constants.EMOTE_MIRROR_BASE + id + '.png');
+
+				extra = ' data-emote="' + id + '" onerror="FrankerFaceZ._emote_mirror_swap(this)"';
 
 				if ( ! constants.EMOTE_REPLACEMENTS[id] )
 					srcset = build_srcset(id);

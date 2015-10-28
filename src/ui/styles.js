@@ -11,6 +11,8 @@ FFZ.prototype.setup_css = function() {
 	s.id = "ffz-ui-css";
 	s.setAttribute('rel', 'stylesheet');
 	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	s.onerror = "this.href = this.href + '_';"
+
 	document.head.appendChild(s);
 
 	if ( window.jQuery && jQuery.noty )

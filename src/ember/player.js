@@ -84,7 +84,9 @@ FFZ.prototype.setup_player = function() {
 		try {
 			this._modify_player(view);
 			view.ffzInit();
-			if ( view.get('player') )
+
+			var tp2 = window.require("web-client/components/twitch-player2");
+			if ( tp2 && tp2.getPlayer && tp2.getPlayer() )
 				view.ffzPostPlayer();
 
 		} catch(err) {
@@ -150,13 +152,18 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzPostPlayer: function() {
-			var player = this.get('player');
-			if ( ! player )
-				return;
+			var player = this.get('ffz_player') || this.get('player');
+			if ( ! player ) {
+				var tp2 = window.require("web-client/components/twitch-player2");
+				if ( ! tp2 || ! tp2.getPlayer )
+					return;
 
-			// Subscribe to the qualities event.
-			//player.addEventListener('qualitieschange', this.ffzQualitiesUpdated.bind(this));
-			//this.ffzQualitiesUpdated();
+				player = tp2.getPlayer();
+				if ( ! player )
+					return;
+			}
+
+			this.set('ffz_player', player);
 
 			// Only set up the stats hooks if we need stats.
 			if ( ! player.getVideo() )
@@ -167,7 +174,7 @@ FFZ.prototype._modify_player = function(player) {
 			if ( this.get('ffzStatsInitialized') )
 				return;
 
-			var player = this.get('player');
+			var player = this.get('ffz_player');
 			if ( ! player )
 				return;
 
@@ -175,7 +182,13 @@ FFZ.prototype._modify_player = function(player) {
 
 			// Make it so stats can no longer be disabled if we want them.
 			player.ffzSetStatsEnabled = player.setStatsEnabled;
-			player.ffz_stats = player.getStatsEnabled();
+			try {
+				player.ffz_stats = player.getStatsEnabled();
+			} catch(err) {
+				// Assume stats are off.
+				f.log("player ffzInitStats: getStatsEnabled still doesn't work: " + err);
+				player.ffz_stats = false;
+			}
 
 			var t = this;
 
@@ -208,7 +221,7 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzSetQuality: function(q) {
-			var player = this.get('player');
+			var player = this.get('ffz_player');
 			if ( ! player )
 				return;
 
@@ -222,7 +235,7 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzGetQualities: function() {
-			var player = this.get('player');
+			var player = this.get('ffz_player');
 			if ( ! player )
 				return [];
 			return player.getQualities();

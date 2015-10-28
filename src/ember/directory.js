@@ -47,9 +47,6 @@ FFZ.prototype._modify_directory_video = function(dir) {
 	dir.reopen({
 		didInsertElement: function() {
 			this._super();
-
-			f.log("New Video View", this);
-			window.v = this;
 		}
 	});
 

@@ -10,6 +10,7 @@ var FFZ = window.FrankerFaceZ = function() {
 
 	// Logging
 	this._log_data = [];
+	this._apis = {};
 
 	// Get things started.
 	this.initialize();
@@ -21,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 30,
+	major: 3, minor: 5, revision: 42,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -115,7 +116,7 @@ require('./tokenize');
 //require('./filtering');
 
 
-// Analytics: require('./ember/router');
+require('./ember/router');
 require('./ember/channel');
 require('./ember/player');
 require('./ember/room');
@@ -149,6 +150,7 @@ require('./ui/my_emotes');
 require('./ui/about_page');
 
 require('./commands');
+require('./ext/api');
 
 
 // ---------------
@@ -322,7 +324,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_emoticons();
 	this.setup_badges();
 
-	//this.setup_router();
+	this.setup_router();
 	this.setup_colors();
 	this.setup_tokenization();
 	//this.setup_filtering();

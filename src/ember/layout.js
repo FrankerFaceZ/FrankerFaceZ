@@ -5,6 +5,48 @@ var FFZ = window.FrankerFaceZ;
 // Settings
 // --------------------
 
+FFZ.settings_info.portrait_mode = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Automatic (Use Window Aspect Ratio)",
+		2: "Always On",
+		3: "Automatic (Video Below)",
+		4: "Always On (Video Below)"
+	},
+
+	value: 0,
+
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		if ( val === true )
+			return 1;
+		if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	category: "Appearance",
+	no_mobile: true,
+	no_bttv: true,
+
+	name: "Portrait Mode (Chat Below Video)",
+	help: "Display the right sidebar beneath (or above) the video player for viewing in portrait orientations.",
+
+	on_update: function(val) {
+		if ( this.has_bttv )
+			return;
+
+		var Layout = window.App && App.__container__.lookup('controller:layout');
+		if ( ! Layout )
+			return;
+
+		Layout.set('rawPortraitMode', val);
+		this._fix_menu_position();
+	}
+}
+
 FFZ.settings_info.swap_sidebars = {
 	type: "boolean",
 	value: false,
@@ -94,6 +136,7 @@ FFZ.prototype.setup_layout = function() {
 		return;
 
 	document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
+	document.body.classList.toggle("ffz-portrait", this.settings.portrait_mode);
 
 	this.log("Creating layout style element.");
 	var s = this._layout_style = document.createElement('style');
@@ -109,20 +152,47 @@ FFZ.prototype.setup_layout = function() {
 
 	Layout.reopen({
 		rightColumnWidth: 340,
+		rawPortraitMode: 0,
+
+		portraitVideoBelow: false,
+
+		portraitMode: function() {
+			var raw = this.get("rawPortraitMode");
+			this.set('portraitVideoBelow', raw === 3 || raw === 4);
+
+			if ( raw === 0 )
+				return false;
+			if ( raw === 2 || raw === 4 )
+				return true;
+
+			// Not sure if I should be adding some other value to offset the ratio. What feels best?
+			var ratio = this.get("windowWidth") / (this.get("windowHeight") + 120 + 60);
+			return ratio < 1;
+
+		}.property("rawPortraitMode", "windowHeight", "windowWidth"),
 
 		isTooSmallForRightColumn: function() {
-			return this.get("windowWidth") < (1090 - this.get('rightColumnWidth'))
-		}.property("windowWidth", "rightColumnWidth"),
+			if ( ! f.has_bttv && this.get('portraitMode') ) {
+				var size = this.get('playerSize'),
+					height = size[1];
+
+				// Make sure we have at least a bit of room for the chat.
+				return this.get("windowHeight") < (height + 120 + 60 + 100);
+
+			} else
+				return this.get("windowWidth") < (1090 - this.get('rightColumnWidth'))
+
+		}.property("windowWidth", "rightColumnWidth", "playerSize", "windowHeight"),
 
 		contentWidth: function() {
 			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
-				right_width = this.get("isRightColumnClosed") ? 0 : this.get("rightColumnWidth");
+				right_width = ! f.has_bttv && this.get('portraitMode') ? 0 : this.get("isRightColumnClosed") ? 0 : this.get("rightColumnWidth");
 
 			return this.get("windowWidth") - left_width - right_width - 60;
 
-		}.property("windowWidth", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth"),
+		}.property("windowWidth", "portraitMode", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth"),
 
-		playerStyle: function() {
+		playerSize: function() {
 			var h = this.get('windowHeight'),
 				c = this.get('PLAYER_CONTROLS_HEIGHT'),
 				r = this.get('contentWidth'),
@@ -135,8 +205,17 @@ FFZ.prototype.setup_layout = function() {
 				o = Math.floor(Math.min(i, d)),
 				s = Math.floor(Math.min(i, c));
 
-			return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + l + "px !important;height:" + o + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + l + "px !important;height:" + s + "px !important}</style><style>.dynamic-player .player object{width:100% !important; height:100% !important}</style>";
-		}.property("contentWidth", "windowHeight", "PLAYER_CONTROLS_HEIGHT"),
+			return [l, o, s];
+		}.property("contentWidth", "windowHeight", "portraitMode", "PLAYER_CONTROLS_HEIGHT"),
+
+		playerStyle: function() {
+			var size = this.get('playerSize'),
+				width = size[0],
+				height = size[1],
+				host_height = size[2];
+
+			return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object{width:100% !important; height:100% !important}</style>";
+		}.property("playerSize"),
 
 		/*ffzUpdateWidth: _.throttle(function() {
 			var rc = document.querySelector('#right_close');
@@ -161,11 +240,70 @@ FFZ.prototype.setup_layout = function() {
 		}, 200),*/
 
 		ffzUpdateCss: function() {
-			var width = this.get('rightColumnWidth');
+			// TODO: Fix this mess of duplicate code.
+			var out = '';
 
-			f._layout_style.innerHTML = '#main_col.expandRight #right_close { left: none !important; } #right_col { width: ' + width + 'px; } body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: ' + width + 'px; } body.ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: ' + width + 'px; }';
+			if ( ! f.has_bttv ) {
+				if ( this.get('portraitMode') ) {
+					var size = this.get('playerSize'),
+						height = size[1],
+						top = height + 120 + 60;
 
-		}.observes("rightColumnWidth"),
+					if ( this.get('portraitVideoBelow') ) {
+						var wh = this.get("windowHeight"),
+							mch = wh - top;
+
+						out = (this.get('isRightColumnClosed') ? '' : 'body[data-current-path^="user."] #left_col, ') +
+						'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: 0 !important; top: ' + mch + 'px; height: ' + top + 'px; }' +
+						'body[data-current-path^="user."].ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: 0 !important; top: ' + mch + 'px; height: ' + top + 'px; }' +
+						'body[data-current-path^="user."] #right_col { width: 100%; height: ' + mch + 'px; left: 0; }';
+					} else
+						out = (this.get('isRightColumnClosed') ? '' : 'body[data-current-path^="user."] #left_col, ') +
+						'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: 0 !important; height: ' + top + 'px; }' +
+						'body[data-current-path^="user."].ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: 0 !important; height: ' + top + 'px; }' +
+						'body[data-current-path^="user."] #right_col { width: 100%; top: ' + top + 'px; left: 0; }';
+
+					// Theatre Mode Portrait
+					if ( true ) { //this.get('theaterPortraitMode') ) {
+						// Recalculate the player height, not including the title or anything special.
+						var width = this.get("windowWidth"),
+							wh = this.get("windowHeight"),
+							height = (9 * width / 16);
+
+						height = Math.floor(Math.max(wh * 0.1, Math.min(wh - 300, height)));
+
+						if ( this.get('portraitVideoBelow') ) {
+							var mch = this.get("windowHeight") - height;
+
+							out += (this.get('isRightColumnClosed') ? '' : 'body[data-current-path^="user."] .app-main.theatre #left_col, ') +
+							'body[data-current-path^="user."]:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) { margin-right: 0 !important; top: ' + mch + 'px; height: ' + height + 'px; }' +
+							'body[data-current-path^="user."].ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) { margin-left: 0 !important; top: ' + mch + 'px; height: ' + height + 'px; }' +
+							'body[data-current-path^="user."] .app-main.theatre #right_col { width: 100%; height: ' + mch + 'px; left: 0; }';
+						} else
+							out += 'body[data-current-path^="user."]:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) { margin-right: 0 !important; height: ' + height + 'px; }' +
+							'body[data-current-path^="user."].ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) { margin-left: 0 !important; height: ' + height + 'px; }' +
+							'body[data-current-path^="user."] .app-main.theatre #right_col { width: 100%; top: ' + height + 'px; left: 0; }';
+					}
+
+				} else {
+					var width = this.get('rightColumnWidth');
+
+					out = '#main_col.expandRight #right_close { left: none !important; }' +
+						'#right_col { width: ' + width + 'px; }' +
+						'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: ' + width + 'px; }' +
+						'body.ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: ' + width + 'px; }';
+				}
+
+				f._layout_style.innerHTML = out;
+			}
+
+		}.observes("isRightColumnClosed", "playerSize", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
+
+		ffzUpdatePortraitCSS: function() {
+			var portrait = this.get("portraitMode");
+			document.body.classList.toggle("ffz-portrait", ! f.has_bttv && portrait);
+
+		}.observes("portraitMode"),
 
 		ffzFixTabs: function() {
 			if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs ) {
@@ -173,7 +311,7 @@ FFZ.prototype.setup_layout = function() {
 					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
 				},0);
 			}
-		}.observes("isRightColumnClosed", "rightColumnWidth")
+		}.observes("isRightColumnClosed", "rightColumnWidth", "portraitMode", "playerSize")
 	});
 
 	/*
@@ -191,5 +329,9 @@ FFZ.prototype.setup_layout = function() {
 
 	// Force the layout to update.
 	Layout.set('rightColumnWidth', this.settings.right_column_width);
+	Layout.set('rawPortraitMode', this.settings.portrait_mode);
+
+	// Force re-calculation of everything.
 	Ember.propertyDidChange(Layout, 'contentWidth');
+	Ember.propertyDidChange(Layout, 'windowHeight');
 }

@@ -448,6 +448,10 @@ FFZ.prototype.setup_mod_card = function() {
 
 					is_mod = controller.get('cardInfo.isModeratorOrHigher'),
 
+					chat = window.App && App.__container__.lookup('controller:chat'),
+					user = f.get_user(),
+					is_broadcaster = user && chat && chat.get('currentRoom.id') === user.login,
+
 					user_id = controller.get('cardInfo.user.id'),
 					alias = f.aliases[user_id];
 
@@ -633,9 +637,7 @@ FFZ.prototype.setup_mod_card = function() {
 				// More Fixing Other Buttons
 				var op_btn = el.querySelector('button.mod');
 				if ( op_btn ) {
-					var is_owner = controller.get('cardInfo.isChannelOwner'),
-						user = ffz.get_user();
-						can_op = is_owner || (user && user.is_admin) || (user && user.is_staff);
+					var can_op = is_broadcaster || (user && user.is_admin) || (user && user.is_staff);
 
 					if ( ! can_op )
 						op_btn.parentElement.removeChild(op_btn);

@@ -299,7 +299,7 @@ FFZ.prototype.setup_chatview = function() {
 						this.blurRoom();
 
 					// Don't destroy it if it's the user's room.
-					if ( room && user && user.login === room_id )
+					if ( room && user && user.login !== room_id )
 						room.destroy();
 				}
 

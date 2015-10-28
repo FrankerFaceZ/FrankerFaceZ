@@ -5,7 +5,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 
-	check_margins = function(margins, height) {
+	/*check_margins = function(margins, height) {
 		var mlist = margins.split(/ +/);
 		if ( mlist.length != 2 )
 			return margins;
@@ -36,18 +36,16 @@ var FFZ = window.FrankerFaceZ,
 		}
 
 		return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.urls[1] + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (srcset ? '; ' + srcset : '') + (emote.css ? "; " + emote.css : "") + "}\n";
-	},
+	},*/
 
 
-	build_new_css = function(emote) {
+	build_css = function(emote) {
 		if ( ! emote.margins && ! emote.css )
-			return build_legacy_css(emote);
+			return ""; //build_legacy_css(emote);
 
-		return build_legacy_css(emote) + 'img[src="' + emote.urls[1] + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
+		return /*build_legacy_css(emote) +*/ 'img[src="' + emote.urls[1] + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
 	},
 
-
-	build_css = build_new_css,
 
 	from_code_point = function(cp) {
 		var code = typeof cp === "string" ? parseInt(cp, 16) : cp;
@@ -94,6 +92,27 @@ FFZ.prototype.setup_emoticons = function() {
 
 	this.log("Watching Twitch emoticon parser to ensure it loads.");
 	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
+
+
+	if ( this._apis ) {
+		for(var api_id in this._apis) {
+			var api = this._apis[api_id];
+			for(var es_id in api.emote_sets)
+				this.emote_sets[es_id] = api.emote_sets[es_id];
+
+			for(var i=0; i < api.global_sets.length; i++) {
+				var es_id = api.global_sets[i];
+				if ( this.global_sets.indexOf(es_id) === -1 )
+					this.global_sets.push(es_id);
+			}
+
+			for(var i=0; i < api.default_sets.length; i++) {
+				var es_id = api.default_sets[i];
+				if ( this.default_sets.indexOf(es_id) === -1 )
+					this.default_sets.push(es_id);
+			}
+		}
+	}
 }
 
 
@@ -173,7 +192,7 @@ FFZ.prototype.getEmotes = function(user_id, room_id) {
 	var user = this.users && this.users[user_id],
 		room = this.rooms && this.rooms[room_id];
 
-	return _.union(user && user.sets || [], room && room.set && [room.set] || [], room && room.extra_sets || [], this.default_sets);
+	return _.union(user && user.sets || [], room && room.set && [room.set] || [], room && room.extra_sets || [], room && room.ext_sets || [], this.default_sets);
 }
 
 
@@ -205,9 +224,10 @@ FFZ.prototype._emote_tooltip = function(emote) {
 
 	var set = this.emote_sets[emote.set_id],
 		owner = emote.owner,
-		title = set && set.title || "Global";
+		title = set && set.title || "Global",
+		source = set && set.source || "FFZ";
 
-	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "\nFFZ " + title + (owner ? "\nBy: " + owner.display_name : "");
+	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "\n" + source + " " + title + (owner ? "\nBy: " + owner.display_name : "");
 	return emote._tooltip;
 }
 
@@ -339,6 +359,12 @@ FFZ.prototype.unload_set = function(set_id) {
 
 	utils.update_css(this._emote_style, set_id, null);
 	delete this.emote_sets[set_id];
+
+	if ( set.hasOwnProperty('source_ext') ) {
+		var api = this._apis[set.source_ext];
+		if ( api && api.emote_sets && api.emote_sets[set_id] )
+			api.emote_sets[set_id] = undefined;
+	}
 }
 
 
@@ -364,7 +390,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 	for(var i=0; i < ems.length; i++) {
 		var emote = ems[i];
 
-		emote.klass = "ffz-emote-" + emote.id;
+		//emote.klass = "ffz-emote-" + emote.id;
 		emote.set_id = set_id;
 
 		emote.srcSet = emote.urls[1] + " 1x";
@@ -374,9 +400,9 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 			emote.srcSet += ", " + emote.urls[4] + " 4x";
 
 		if ( emote.name[emote.name.length-1] === "!" )
-			emote.regex = new RegExp("(^|\\W|\\b)(" + emote.name + ")(?=\\W|$)", "g");
+			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
 		else
-			emote.regex = new RegExp("(^|\\W|\\b)(" + emote.name + ")\\b", "g");
+			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")\\b", "g");
 
 		output_css += build_css(emote);
 		data.count++;

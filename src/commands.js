@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+	utils = require('./utils');
 
 
 // -----------------
@@ -13,6 +14,59 @@ FFZ.ffz_commands.log = function(room, args) {
 		this.room_message(room, "Your FrankerFaceZ log has been pasted to: " + url);
 	});
 };
+
+
+// -----------------
+// Data Reload
+// -----------------
+
+FFZ.ffz_commands.reload = function(room, args) {
+	var f = this,
+		promises = [];
+
+	// Badge Information
+	promises.push(new Promise(function(done, fail) {
+		f._legacy_load_bots(function(success, count) {
+			done(count || 0);
+		});
+	}));
+
+	promises.push(new Promise(function(done, fail) {
+		f._legacy_load_donors(function(success, count) {
+			done(count || 0);
+		});
+	}));
+
+
+	// Emote Sets
+	for(var set_id in this.emote_sets) {
+		var es = this.emote_sets[set_id];
+		if ( es.hasOwnProperty('source_ext') )
+			continue;
+
+		promises.push(new Promise(function(done, fail) {
+			f.load_set(set_id, done);
+		}));
+	}
+
+
+	// Do it!
+	Promise.all(promises).then(function(results) {
+		var success = 0,
+			bots = results[0],
+			donors = results[1],
+			total = results.length - 2;
+
+		if ( results.length > 2 ) {
+			for(var i=2; i < results.length; i++) {
+				if ( results[i] )
+					success++;
+			}
+		}
+
+		f.room_message(room, "Loaded " + utils.number_commas(bots) + " new bot badge" + utils.pluralize(bots) + " and " + utils.number_commas(donors) + " new donor badge" + utils.pluralize(donors) + ". Successfully reloaded " + utils.number_commas(success) + " of " + utils.number_commas(total) + " emoticon set" + utils.pluralize(total) + ".");
+	})
+}
 
 
 // -----------------
@@ -75,7 +129,7 @@ FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcas
 
 /*FFZ.ffz_commands.massunban = function(room, args) {
 	args = args.join(" ").trim();
-	
-	
-	
+
+
+
 }*/

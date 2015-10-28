@@ -5,7 +5,7 @@ var FFZ = window.FrankerFaceZ,
 	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 
 	fix_menu_position = function(container) {
-		var swapped = document.body.classList.contains('ffz-sidebar-swap');
+		var swapped = document.body.classList.contains('ffz-sidebar-swap') && ! document.body.classList.contains('ffz-portrait');
 
 		var bounds = container.getBoundingClientRect(),
 			left = parseInt(container.style.left || '0'),
@@ -419,8 +419,11 @@ FFZ.menu_pages.channel = {
 
 					grid.className = "emoticon-grid";
 					header.className = "heading";
-					if ( icon )
+					if ( icon ) {
 						header.style.backgroundImage = 'url("' + icon + '")';
+						if ( icon.indexOf('.svg') !== -1 )
+							header.style.backgroundSize = '18px';
+					}
 
 					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
 					grid.appendChild(header);
@@ -507,7 +510,7 @@ FFZ.menu_pages.channel = {
 			}
 
 			// Do we have extra sets?
-			var extra_sets = room && room.extra_sets || [];
+			var extra_sets = _.union(room && room.extra_sets || [], room && room.ext_sets || [], []);
 
 			// Basic Emote Sets
 			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
@@ -515,9 +518,9 @@ FFZ.menu_pages.channel = {
 			for(var i=0; i < extra_sets.length; i++) {
 				// Look up the set name.
 				var set = this.emote_sets[extra_sets[i]],
-					name = set ? "Featured " + set.title : "Featured Channel";
+					name = set ? (set.hasOwnProperty('source_ext') ? "" : "Featured ") + set.title : "Featured Channel";
 
-				this._emotes_for_sets(inner, view, [extra_sets[i]], name, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+				this._emotes_for_sets(inner, view, [extra_sets[i]], name, set.icon || "//cdn.frankerfacez.com/script/devicon.png", set.source || "FrankerFaceZ");
 			}
 
 			// Feature Friday!
@@ -550,8 +553,11 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 		el_header.appendChild(document.createTextNode(header));
 
-		if ( image )
+		if ( image ) {
 			el_header.style.backgroundImage = 'url("' + image + '")';
+			if ( image.indexOf('.svg') !== -1 )
+				el_header.style.backgroundSize = '18px';
+		}
 
 		grid.appendChild(el_header);
 	}
@@ -610,9 +616,17 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 		s.addEventListener('click', function(id, code, e) {
 			e.preventDefault();
-			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
-				window.open("https://www.frankerfacez.com/emoticons/" + id);
-			else
+			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons ) {
+				var url;
+				if ( set.hasOwnProperty('source_ext') ) {
+					var api = f._apis[set.source_ext];
+					if ( api && api.emote_url_generator )
+						url = api.emote_url_generator(set.source_id, id);
+				} else
+					url = "https://www.frankerfacez.com/emoticons/" + id;
+				if ( url )
+					window.open(url);
+			} else
 				this._add_emote(view, code);
 		}.bind(this, emote.id, emote.name));
 
