@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/net/websocket"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -112,29 +111,10 @@ func SetupServerAndHandle(config *ConfigFile, tlsConfig *tls.Config, serveMux *h
 		serveMux = http.DefaultServeMux
 	}
 	serveMux.HandleFunc("/", ServeWebsocketOrCatbag(sockServer.ServeHTTP))
-	serveMux.Handle("/assets", http.FileServer(nil)) // TODO
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
 	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
 }
-
-var Memes = template.Must(template.New("catbag").Parse(`
-<!DOCTYPE html>
-<title>CatBag</title>
-<link rel="stylesheet" href="//cdn.frankerfacez.com/script/catbag.css">
-<div id="container">
-<div id="zf0"></div><div id="zf1"></div><div id="zf2"></div>
-<div id="zf3"></div><div id="zf4"></div><div id="zf5"></div>
-<div id="zf6"></div><div id="zf7"></div><div id="zf8"></div>
-<div id="zf9"></div><div id="catbag"></div>
-<div id="bottom">
-	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
-	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
-	<br>
-	This socket server hosted by {{.}}
-</div>
-</div>
-`))
 
 func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +122,7 @@ func ServeWebsocketOrCatbag(sockfunc func(http.ResponseWriter, *http.Request)) h
 			sockfunc(w, r)
 			return
 		} else {
-			Memes.Execute(w, "Todo Add Feature")
+			w.Write([]byte(gconfig.BannerHTML))
 		}
 	}
 }
