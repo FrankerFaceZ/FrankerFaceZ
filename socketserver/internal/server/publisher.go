@@ -144,9 +144,11 @@ func UnsubscribeAll(client *ClientInfo) {
 func UnsubscribeSingleChat(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
 	list := ChatSubscriptionInfo[channelName]
-	list.Lock()
-	RemoveFromSliceC(&list.Members, client.MessageChannel)
-	list.Unlock()
+	if list != nil {
+		list.Lock()
+		RemoveFromSliceC(&list.Members, client.MessageChannel)
+		list.Unlock()
+	}
 	ChatSubscriptionLock.RUnlock()
 }
 
