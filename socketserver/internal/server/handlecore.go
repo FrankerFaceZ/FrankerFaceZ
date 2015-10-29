@@ -185,7 +185,6 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	}(_errorChan, _clientChan)
 
 	conn.SetPongHandler(func(pongBody string) error {
-		fmt.Println("got pong")
 		client.pingCount = 0
 		return nil
 	})
