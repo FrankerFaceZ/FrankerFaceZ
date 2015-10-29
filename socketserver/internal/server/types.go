@@ -85,8 +85,11 @@ type ClientInfo struct {
 	MakePendingRequests *time.Timer
 
 	// Server-initiated messages should be sent here
-	// Never nil.
+	// This field will be nil before it is closed.
 	MessageChannel chan<- ClientMessage
+
+	// Take a read-lock on this before checking whether MessageChannel is nil.
+	MsgChannelKeepalive sync.RWMutex
 
 	// The number of pings sent without a response
 	pingCount int

@@ -247,6 +247,10 @@ RunLoop:
 	// Stop getting messages...
 	UnsubscribeAll(&client)
 
+	client.MsgChannelKeepalive.Lock()
+	client.MessageChannel = nil
+	client.MsgChannelKeepalive.Unlock()
+
 	// And finished.
 	// Close the channel so the draining goroutine can finish, too.
 	close(_serverMessageChan)

@@ -85,22 +85,20 @@ func HandleReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 	client.MakePendingRequests = nil
 	client.Mutex.Unlock()
 
-	if disconnectAt == 0 {
-		// backlog only
-		go func() {
-			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
-			SendBacklogForNewClient(client)
-		}()
-		return ClientMessage{Command: AsyncResponseCommand}, nil
-	} else {
-		// backlog and timed
-		go func() {
-			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
-			SendBacklogForNewClient(client)
+	go func() {
+		client.MsgChannelKeepalive.RLock()
+		if client.MessageChannel == nil {
+			return
+		}
+
+		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
+		SendBacklogForNewClient(client)
+		if disconnectAt != 0 {
 			SendTimedBacklogMessages(client, time.Unix(disconnectAt, 0))
-		}()
-		return ClientMessage{Command: AsyncResponseCommand}, nil
-	}
+		}
+		client.MsgChannelKeepalive.RUnlock()
+	}()
+	return ClientMessage{Command: AsyncResponseCommand}, nil
 }
 
 func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
@@ -193,9 +191,13 @@ func GetSubscriptionBacklog(conn *websocket.Conn, client *ClientInfo) {
 	}
 
 	// Deliver to client
-	for _, msg := range messages {
-		client.MessageChannel <- msg
+	client.MsgChannelKeepalive.RLock()
+	if client.MessageChannel != nil {
+		for _, msg := range messages {
+			client.MessageChannel <- msg
+		}
 	}
+	client.MsgChannelKeepalive.RUnlock()
 }
 
 func HandleSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
@@ -318,11 +320,15 @@ func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMes
 	go func(conn *websocket.Conn, msg ClientMessage, authInfo AuthInfo) {
 		resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, authInfo)
 
-		if err != nil {
-			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
-		} else {
-			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
+		client.MsgChannelKeepalive.RLock()
+		if client.MessageChannel != nil {
+			if err != nil {
+				client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
+			} else {
+				client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
+			}
 		}
+		client.MsgChannelKeepalive.RUnlock()
 	}(conn, msg, client.AuthInfo)
 
 	return ClientMessage{Command: AsyncResponseCommand}, nil
