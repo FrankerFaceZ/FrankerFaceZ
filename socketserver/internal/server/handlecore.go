@@ -147,12 +147,13 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	_clientChan := make(chan ClientMessage)
 	_serverMessageChan := make(chan ClientMessage)
 	_errorChan := make(chan error)
+	stoppedChan := make(chan struct{})
 
 	var client ClientInfo
 	client.MessageChannel = _serverMessageChan
 
 	// Launch receiver goroutine
-	go func(errorChan chan<- error, clientChan chan<- ClientMessage) {
+	go func(errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
 		var msg ClientMessage
 		var messageType int
 		var packet []byte
@@ -171,7 +172,13 @@ func HandleSocketConnection(conn *websocket.Conn) {
 			if msg.MessageID == 0 {
 				continue
 			}
-			clientChan <- msg
+			select {
+			case clientChan <- msg:
+			case <-stoppedChan:
+				close(errorChan)
+				close(clientChan)
+				return
+			}
 		}
 
 		_, isClose := err.(*websocket.CloseError)
@@ -182,7 +189,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 		close(errorChan)
 		close(clientChan)
 		// exit
-	}(_errorChan, _clientChan)
+	}(_errorChan, _clientChan, stoppedChan)
 
 	conn.SetPongHandler(func(pongBody string) error {
 		client.pingCount = 0
@@ -243,6 +250,8 @@ RunLoop:
 		for _ = range _serverMessageChan {
 		}
 	}()
+
+	close(stoppedChan)
 
 	// Stop getting messages...
 	UnsubscribeAll(&client)
