@@ -102,7 +102,6 @@ func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "error: %v", err)
 			return
 		}
-		fmt.Println("upgraded!")
 		HandleSocketConnection(conn)
 
 		return
@@ -113,6 +112,10 @@ func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
 
 var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
 var CloseGotMessageId0 = websocket.CloseError{Code: websocket.ClosePolicyViolation, Text: "got messageid 0"}
+var CloseFirstMessageNotHello = websocket.CloseError{
+	Text: "Error - the first message sent must be a 'hello'",
+	Code: websocket.ClosePolicyViolation,
+}
 
 // Handle a new websocket connection from a FFZ client.
 // This runs in a goroutine started by net/http.
@@ -198,10 +201,7 @@ RunLoop:
 		case msg := <-clientChan:
 			if client.Version == "" && msg.Command != HelloCommand {
 				log.Println("error - first message wasn't hello from", conn.RemoteAddr(), "-", msg)
-				CloseConnection(conn, &websocket.CloseError{
-					Text: "Error - the first message sent must be a 'hello'",
-					Code: websocket.ClosePolicyViolation,
-				})
+				CloseConnection(conn, &CloseFirstMessageNotHello)
 				break RunLoop
 			}
 
@@ -244,7 +244,9 @@ func CallHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 }
 
 func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
-	fmt.Println("Terminating connection with", conn.RemoteAddr(), "-", closeMsg.Text)
+	if closeMsg != &CloseFirstMessageNotHello {
+		log.Println("Terminating connection with", conn.RemoteAddr(), "-", closeMsg.Text)
+	}
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), time.Now().Add(2*time.Minute))
 	conn.Close()
 }
@@ -254,7 +256,6 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal: %v %v", err, msg))
 	}
-	fmt.Println(string(packet))
 	conn.WriteMessage(messageType, packet)
 }
 
