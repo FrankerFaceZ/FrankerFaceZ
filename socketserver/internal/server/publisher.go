@@ -163,7 +163,7 @@ func deadChannelReaper() {
 		for key, val := range ChatSubscriptionInfo {
 			if val != nil {
 				if len(val.Members) == 0 {
-					ChatSubscriptionInfo[key] = nil
+					delete(ChatSubscriptionInfo, key)
 				}
 			}
 		}
