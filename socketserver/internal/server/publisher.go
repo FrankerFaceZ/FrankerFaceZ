@@ -161,8 +161,10 @@ func deadChannelReaper() {
 		time.Sleep(ReapingDelay)
 		ChatSubscriptionLock.Lock()
 		for key, val := range ChatSubscriptionInfo {
-			if len(val.Members) == 0 {
-				ChatSubscriptionInfo[key] = nil
+			if val != nil {
+				if len(val.Members) == 0 {
+					ChatSubscriptionInfo[key] = nil
+				}
 			}
 		}
 		ChatSubscriptionLock.Unlock()
