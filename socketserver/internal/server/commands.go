@@ -319,9 +319,9 @@ func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMes
 		resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, authInfo)
 
 		if err != nil {
-			SendMessage(conn, ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()})
+			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
 		} else {
-			SendMessage(conn, ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp})
+			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
 		}
 	}(conn, msg, client.AuthInfo)
 
