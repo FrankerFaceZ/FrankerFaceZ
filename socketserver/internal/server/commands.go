@@ -263,7 +263,7 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 
 func sendAggregateData() {
 	for {
-		time.Sleep(15 * time.Minute)
+		time.Sleep(5 * time.Minute)
 		DoSendAggregateData()
 	}
 }
