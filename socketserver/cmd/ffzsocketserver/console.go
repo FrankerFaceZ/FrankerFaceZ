@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/abiosoft/ishell"
 	"runtime"
+	"strings"
+	"github.com/gorilla/websocket"
 )
 
 func commandLineConsole() {
@@ -28,6 +30,28 @@ func commandLineConsole() {
 		return "Message sent.", nil
 	})
 
+	shell.Register("publish", func(args ...string) (string, error) {
+		if len(args) < 4 {
+			return "Usage: publish [room.sirstendec | _ALL] -1 reload_ff 23", nil
+		}
+
+		target := args[0]
+		line := strings.Join(args[1:], " ")
+		msg := server.ClientMessage{}
+		err := server.UnmarshalClientMessage([]byte(line), websocket.TextMessage, &msg)
+		if err != nil {
+			return "", err
+		}
+
+		var count int
+		if target == "_ALL" {
+			count = server.PublishToAll(msg)
+		} else {
+			count = server.PublishToChat(target, msg)
+		}
+		return fmt.Sprintf("Published to %d clients", count), nil
+	})
+
 	shell.Register("memstatsbysize", func(args ...string) (string, error) {
 		runtime.GC()
 
@@ -45,3 +69,4 @@ func commandLineConsole() {
 
 	shell.Start()
 }
+
