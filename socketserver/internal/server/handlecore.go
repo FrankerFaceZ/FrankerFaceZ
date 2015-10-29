@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -74,6 +75,8 @@ var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a floa
 
 var gconfig *ConfigFile
 
+var BannerHTML []byte
+
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
 func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
@@ -84,6 +87,12 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
 	}
+
+	bannerBytes, err := ioutil.ReadFile("index.html")
+	if err != nil {
+		log.Fatal("Could not open index.html", err)
+	}
+	BannerHTML = bannerBytes
 
 	serveMux.HandleFunc("/", ServeWebsocketOrCatbag)
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
@@ -106,7 +115,7 @@ func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
 
 		return
 	} else {
-		w.Write([]byte(gconfig.BannerHTML))
+		w.Write(BannerHTML)
 	}
 }
 

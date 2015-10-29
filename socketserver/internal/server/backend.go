@@ -157,7 +157,7 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 	return
 }
 
-func SendAggregatedData(sealedForm url.Values) (error) {
+func SendAggregatedData(sealedForm url.Values) error {
 	resp, err := backendHttpClient.PostForm(postStatisticsUrl, sealedForm)
 	if err != nil {
 		return err
@@ -196,21 +196,6 @@ func GenerateKeys(outputFile, serverId, theirPublicStr string) {
 		ListenAddr:   "0.0.0.0:8001",
 		SocketOrigin: "localhost:8001",
 		BackendUrl:   "http://localhost:8002/ffz",
-		BannerHTML: `
-<!DOCTYPE html>
-<title>CatBag</title>
-<link rel="stylesheet" href="//cdn.frankerfacez.com/script/catbag.css">
-<div id="container">
-<div id="zf0"></div><div id="zf1"></div><div id="zf2"></div>
-<div id="zf3"></div><div id="zf4"></div><div id="zf5"></div>
-<div id="zf6"></div><div id="zf7"></div><div id="zf8"></div>
-<div id="zf9"></div><div id="catbag"></div>
-<div id="bottom">
-	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
-	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
-</div>
-</div>
-`,
 	}
 
 	output.ServerId, err = strconv.Atoi(serverId)

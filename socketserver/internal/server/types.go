@@ -17,8 +17,6 @@ type ConfigFile struct {
 	SocketOrigin string
 	// URL to the backend server
 	BackendUrl string
-	// Memes go here
-	BannerHTML string
 
 	// SSL/TLS
 	UseSSL             bool

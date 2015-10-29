@@ -4,9 +4,9 @@ import (
 	"../../internal/server"
 	"fmt"
 	"github.com/abiosoft/ishell"
+	"github.com/gorilla/websocket"
 	"runtime"
 	"strings"
-	"github.com/gorilla/websocket"
 )
 
 func commandLineConsole() {
@@ -69,4 +69,3 @@ func commandLineConsole() {
 
 	shell.Start()
 }
-

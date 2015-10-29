@@ -6,10 +6,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 	"log"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
-	"net/url"
 )
 
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}

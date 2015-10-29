@@ -44,7 +44,7 @@ func main() {
 		Addr: conf.ListenAddr,
 	}
 
-	logFile, err := os.OpenFile("output.log", os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0644)
+	logFile, err := os.OpenFile("output.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal("Could not create logfile: ", err)
 	}
