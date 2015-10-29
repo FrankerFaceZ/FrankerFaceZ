@@ -87,6 +87,9 @@ type ClientInfo struct {
 	// Server-initiated messages should be sent here
 	// Never nil.
 	MessageChannel chan<- ClientMessage
+
+	// The number of pings sent without a response
+	pingCount int
 }
 
 type tgmarray []TimestampedGlobalMessage
