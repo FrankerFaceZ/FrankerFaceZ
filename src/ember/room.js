@@ -190,6 +190,7 @@ FFZ.prototype._modify_rview = function(view) {
 				slow_badge = cont.querySelector('#ffz-stat-slow'),
 				banned_badge = cont.querySelector('#ffz-stat-banned'),
 				delay_badge = cont.querySelector('#ffz-stat-delay'),
+				batch_badge = cont.querySelector('#ffz-stat-batch'),
 				btn = cont.querySelector('button');
 
 			if ( f.has_bttv || ! f.settings.room_status ) {
@@ -199,6 +200,10 @@ FFZ.prototype._modify_rview = function(view) {
 					sub_badge.parentElement.removeChild(sub_badge);
 				if ( slow_badge )
 					slow_badge.parentElement.removeChild(slow_badge);
+				if ( delay_badge )
+					delay_badge.parentElement.removeChild(delay_badge);
+				if ( batch_badge )
+					batch_badge.parentElement.removeChild(batch_badge);
 
 				if ( btn )
 					btn.classList.remove('ffz-waiting');
@@ -209,7 +214,7 @@ FFZ.prototype._modify_rview = function(view) {
 				r9k_badge = document.createElement('span');
 				r9k_badge.className = 'ffz room-state stat float-right';
 				r9k_badge.id = 'ffz-stat-r9k';
-				r9k_badge.innerHTML = 'R9K';
+				r9k_badge.innerHTML = 'R<span>9K</span>';
 				r9k_badge.title = "This room is in R9K-mode.";
 				cont.appendChild(r9k_badge);
 				jQuery(r9k_badge).tipsy({gravity:"s", offset:15});
@@ -219,7 +224,7 @@ FFZ.prototype._modify_rview = function(view) {
 				sub_badge = document.createElement('span');
 				sub_badge.className = 'ffz room-state stat float-right';
 				sub_badge.id = 'ffz-stat-sub';
-				sub_badge.innerHTML = 'SUB';
+				sub_badge.innerHTML = 'S<span>UB</span>';
 				sub_badge.title = "This room is in subscribers-only mode.";
 				cont.appendChild(sub_badge);
 				jQuery(sub_badge).tipsy({gravity:"s", offset:15});
@@ -229,8 +234,7 @@ FFZ.prototype._modify_rview = function(view) {
 				slow_badge = document.createElement('span');
 				slow_badge.className = 'ffz room-state stat float-right';
 				slow_badge.id = 'ffz-stat-slow';
-				slow_badge.innerHTML = 'SLOW';
-				slow_badge.title = "This room is in slow mode. You may send messages every 120 seconds.";
+				slow_badge.innerHTML = 'S<span>LOW</span>';
 				cont.appendChild(slow_badge);
 				jQuery(slow_badge).tipsy({gravity:"s", offset:15});
 			}
@@ -239,7 +243,7 @@ FFZ.prototype._modify_rview = function(view) {
 				banned_badge = document.createElement('span');
 				banned_badge.className = 'ffz room-state stat float-right';
 				banned_badge.id = 'ffz-stat-banned';
-				banned_badge.innerHTML = 'BAN';
+				banned_badge.innerHTML = 'B<span>AN</span>';
 				banned_badge.title = "You have been banned from talking in this room.";
 				cont.appendChild(banned_badge);
 				jQuery(banned_badge).tipsy({gravity:"s", offset:15});
@@ -249,21 +253,54 @@ FFZ.prototype._modify_rview = function(view) {
 				delay_badge = document.createElement('span');
 				delay_badge.className = 'ffz room-state stat float-right';
 				delay_badge.id = 'ffz-stat-delay';
-				delay_badge.innerHTML = 'DELAY';
-				delay_badge.title = "You have enabled artificial chat delay. Messages are displayed after 0.3 seconds.";
+				delay_badge.innerHTML = 'D<span>ELAY</span>';
 				cont.appendChild(delay_badge);
 				jQuery(delay_badge).tipsy({gravity:"s", offset:15});
 			}
 
-			r9k_badge.classList.toggle('hidden', !(room && room.get('r9k')));
-			sub_badge.classList.toggle('hidden', !(room && room.get('subsOnly')));
-			banned_badge.classList.toggle('hidden', !(room && room.get('ffz_banned')));
+			if ( ! batch_badge ) {
+				batch_badge = document.createElement('span');
+				batch_badge.className = 'ffz room-state stat float-right';
+				batch_badge.id = 'ffz-stat-batch';
+				batch_badge.innerHTML = 'B<span>ATCH</span>';
+				cont.appendChild(batch_badge);
+				jQuery(batch_badge).tipsy({gravity:"s", offset:15});
+			}
 
-			slow_badge.classList.toggle('hidden', !(room && room.get('slowMode')));
+			var vis_count = 0,
+				r9k_vis = room && room.get('r9k'),
+				sub_vis = room && room.get('subsOnly'),
+				ban_vis = room && room.get('ffz_banned'),
+				slow_vis = room && room.get('slowMode'),
+				delay_vis = f.settings.chat_delay !== 0,
+				batch_vis = f.settings.chat_batching !== 0;
+
+			if ( r9k_vis ) vis_count += 1;
+			if ( sub_vis ) vis_count += 1;
+			if ( ban_vis ) vis_count += 1;
+			if ( slow_vis ) vis_count += 1;
+			if ( delay_vis ) vis_count += 1;
+			if ( batch_vis ) vis_count += 1;
+
+			r9k_badge.classList.toggle('truncated', vis_count > 3);
+			sub_badge.classList.toggle('truncated', vis_count > 3);
+			banned_badge.classList.toggle('truncated', vis_count > 3);
+			slow_badge.classList.toggle('truncated', vis_count > 3);
+			delay_badge.classList.toggle('truncated', vis_count > 3);
+			batch_badge.classList.toggle('truncated', vis_count > 3);
+
+			r9k_badge.classList.toggle('hidden', ! r9k_vis);
+			sub_badge.classList.toggle('hidden', ! sub_vis);
+			banned_badge.classList.toggle('hidden', ! ban_vis);
+
+			slow_badge.classList.toggle('hidden', ! slow_vis);
 			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow')||120) + " seconds.";
 
 			delay_badge.title = "You have enabled artificial chat delay. Messages are displayed after " + (f.settings.chat_delay/1000) + " seconds.";
-			delay_badge.classList.toggle('hidden', f.settings.chat_delay === 0);
+			delay_badge.classList.toggle('hidden', ! delay_vis);
+
+			batch_badge.title = "You have enabled chat message batching. Messages are displayed in " + (f.settings.chat_batching/1000) + " second increments.";
+			batch_badge.classList.toggle('hidden', ! batch_vis);
 
 			if ( btn ) {
 				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
@@ -1022,7 +1059,7 @@ FFZ.prototype._modify_room = function(room) {
 
 		// Artificial chat delay
 		pushMessage: function(msg) {
-			if ( f.settings.chat_delay !== 0 || (this.ffzPending && this.ffzPending.length) ) {
+			if ( f.settings.chat_batching !== 0 || f.settings.chat_delay !== 0 || (this.ffzPending && this.ffzPending.length) ) {
 				if ( ! this.ffzPending )
 					this.ffzPending = [];
 
@@ -1056,11 +1093,21 @@ FFZ.prototype._modify_room = function(room) {
 			// Instead of just blindly looping every x seconds, we want to calculate the time until
 			// the next message should be displayed, and then set the timeout for that. We'll
 			// end up looping a bit more frequently, but it'll make chat feel more responsive.
+
+			// If we have a pending flush, don't reschedule. It wouldn't change.
 			if ( this._ffz_pending_flush )
-				clearTimeout(this._ffz_pending_flush);
+				return;
+
+			/*if ( this._ffz_pending_flush )
+				clearTimeout(this._ffz_pending_flush);*/
 
 			if ( this.ffzPending && this.ffzPending.length ) {
-				var delay = 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - (now || Date.now()));
+				// We need either the amount of chat delay past the first message, if chat_delay is on, or the
+				// amount of time from the last batch.
+				var delay = Math.max(
+					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - (now || Date.now())) : 0),
+					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - ((now || Date.now()) - (this._ffz_last_batch||0))) : 0));
+
 				this._ffz_pending_flush = setTimeout(this.ffzPendingFlush.bind(this), delay);
 			}
 		},
@@ -1068,13 +1115,14 @@ FFZ.prototype._modify_room = function(room) {
 		ffzPendingFlush: function() {
 			this._ffz_pending_flush = null;
 
-			var now = Date.now();
+			var now = this._ffz_last_batch = Date.now();
+
 			for (var i = 0, l = this.ffzPending.length; i < l; i++) {
 				var msg = this.ffzPending[i];
 				if ( msg.removed )
 					continue;
 
-				if ( f.settings.chat_delay + msg.time > now )
+				if ( f.settings.chat_delay !== 0 && (f.settings.chat_delay + msg.time > now) )
 					break;
 
 				this.ffzActualPushMessage(msg);

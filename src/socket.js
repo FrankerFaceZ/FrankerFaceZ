@@ -3,50 +3,106 @@ var FFZ = window.FrankerFaceZ,
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
-FFZ.prototype._ws_last_iframe = 0;
-FFZ.prototype._ws_host_idx = Math.floor(Math.random() * constants.WS_SERVERS.length) + 1;
-if (constants.DEBUG) {
-	FFZ.prototype._ws_host_idx = 0;
-}
+FFZ.prototype._ws_host_idx = -1;
+FFZ.prototype._ws_current_pool = -1;
+
 
 FFZ.ws_commands = {};
 FFZ.ws_on_close = [];
 
 
 // ----------------
-// Socket Creation
+// Settings
 // ----------------
 
-// Attempt to authenticate to the socket server as a real browser by loading the root page.
-// e.g. cloudflare ddos check
-FFZ.prototype.ws_iframe = function() {
-	this._ws_last_iframe = Date.now();
-	var ifr = document.createElement('iframe'),
-		f = this;
+var ffz_socket_seed;
 
-	ifr.src = 'http://catbag.frankerfacez.com';
-	ifr.style.visibility = 'hidden';
-	document.body.appendChild(ifr);
-	setTimeout(function() {
-		document.body.removeChild(ifr);
-		if ( ! f._ws_open )
-			f.ws_create();
-	}, 2000);
+try {
+	ffz_socket_seed = JSON.parse(localStorage.ffz_socket_seed);
+} catch(err) { }
+
+if ( ! ffz_socket_seed ) {
+	ffz_socket_seed = Math.random();
+	localStorage.ffz_socket_seed = JSON.stringify(ffz_socket_seed);
 }
 
 
-FFZ.prototype.ws_create = function() {
-	// Disable sockets for now.
-	return;
+FFZ.settings_info.socket_server_pool = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Production",
+		2: "Development"
+	},
 
+	value: ffz_socket_seed > 0.65 ? 1 : 0,
+
+	process_value: function(val) {
+		if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	visible: function() { return (localStorage.hasOwnProperty('ffz_socket_server_pool') && this.settings.socket_server_pool !== 1) || this.settings.developer_mode || (Date.now() - parseInt(localStorage.ffzLastDevMode || "0")) < 604800000; },
+
+	category: "Debugging",
+	name: "Socket Server Cluster",
+	help: "Select which cluster of socket servers to connect to.",
+
+	on_update: function(val) {
+		if ( val === this._ws_current_pool )
+			return;
+
+		try {
+			this._ws_sock.close();
+		} catch(err) { }
+
+		this._ws_open = false;
+		this._ws_delay = 0;
+		this._ws_host_idx = -1;
+
+		if ( this._ws_recreate_timer ) {
+			clearTimeout(this._ws_recreate_timer);
+			this._ws_recreate_timer = null;
+		}
+
+		if ( val === 0 )
+			return;
+
+		this.ws_create();
+	}
+};
+
+
+// ----------------
+// Socket Creation
+// ----------------
+
+FFZ.prototype.ws_create = function() {
 	var f = this, ws;
 
-	this._ws_last_req = 0;
-	this._ws_callbacks = {};
+	this._ws_last_req = 1;
+	this._ws_callbacks = {1: f._ws_on_hello.bind(f)};
 	this._ws_pending = this._ws_pending || [];
+	this._ws_recreate_timer = null;
+
+	var pool_id = this.settings.socket_server_pool,
+		pool = constants.WS_SERVER_POOLS[pool_id];
+
+	this._ws_current_pool = pool_id;
+
+	if ( ! pool )
+		return;
+
+	if ( this._ws_host_idx < 0 )
+		this._ws_host_idx = Math.floor(Math.random() * pool.length);
+
+	var server = pool[this._ws_host_idx];
+
+	this.log("Using Socket Server: " + server + " [" + pool_id + ":" + this._ws_host_idx + "]");
 
 	try {
-		ws = this._ws_sock = new WebSocket("ws://" + constants.WS_SERVERS[this._ws_host_idx] + "/");
+		ws = this._ws_sock = new WebSocket(pool[this._ws_host_idx]);
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
@@ -57,10 +113,10 @@ FFZ.prototype.ws_create = function() {
 	ws.onopen = function(e) {
 		f._ws_open = true;
 		f._ws_delay = 0;
-		f._ws_last_iframe = Date.now();
-		f.log("Socket connected.");
+		f.log("Socket Connected.");
 
-		f.ws_send("hello", ["ffz_" + FFZ.version_info, localStorage.ffzClientId], f._ws_on_hello.bind(f));
+		// Hard-code the first command.
+		ws.send("1 hello " + JSON.stringify(["ffz_" + FFZ.version_info, localStorage.ffzClientId]));
 
 		var user = f.get_user();
 		if ( user )
@@ -70,7 +126,6 @@ FFZ.prototype.ws_create = function() {
 		if ( f.is_dashboard ) {
 			var match = location.pathname.match(/\/([^\/]+)/);
 			if ( match ) {
-				f.ws_send("sub", "room." + match[1]);
 				f.ws_send("sub", "channel." + match[1]);
 			}
 		}
@@ -124,13 +179,16 @@ FFZ.prototype.ws_create = function() {
 		if ( ! f._ws_offline_time ) {
 			f._ws_offline_time = new Date().getTime();
 		}
-
-		// Cycle selected server
-		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
 	}
 
 	ws.onclose = function(e) {
+		var was_open = f._ws_open;
 		f.log("Socket closed. (Code: " + e.code + ", Reason: " + e.reason + ")");
+
+		// If a recreate is already scheduled, this is expected.
+		if ( f._ws_recreate_timer )
+			return;
+
 		f._ws_open = false;
 		if ( ! f._ws_offline_time ) {
 			f._ws_offline_time = new Date().getTime();
@@ -145,14 +203,11 @@ FFZ.prototype.ws_create = function() {
 			}
 		}
 
-		// Cycle selected server
-		f._ws_host_idx = (f._ws_host_idx + 1) % constants.WS_SERVERS.length;
-
-		if ( f._ws_delay > 10000 ) {
-			var ua = navigator.userAgent.toLowerCase();
-			if ( Date.now() - f._ws_last_iframe > 1800000 && !(ua.indexOf('chrome') === -1 && ua.indexOf('safari') !== -1) )
-				return f.ws_iframe();
-		}
+		// Cycle selected server if our last attempt to connect didn't
+		// actually connect.
+		if ( ! was_open )
+			// Actually, let's get a random new server instead.
+			f._ws_host_idx = -1; //(f._ws_host_idx + 1) % pool.length;
 
 		// We never ever want to not have a socket.
 		if ( f._ws_delay < 60000 )
@@ -161,7 +216,7 @@ FFZ.prototype.ws_create = function() {
 			// Randomize delay.
 			f._ws_delay = (Math.floor(Math.random()*60)+30)*1000;
 
-		setTimeout(f.ws_create.bind(f), f._ws_delay);
+		f._ws_recreate_timer = setTimeout(f.ws_create.bind(f), f._ws_delay);
 	}
 
 	ws.onmessage = function(e) {
@@ -193,7 +248,7 @@ FFZ.prototype.ws_create = function() {
 				delete f._ws_callbacks[request];
 
 		} else {
-			var success = cmd === 'True',
+			var success = cmd === 'ok',
 				has_callback = typeof f._ws_callbacks[request] === "function";
 
 			if ( ! has_callback )
@@ -251,7 +306,7 @@ FFZ.prototype._ws_on_hello = function(success, data) {
 	localStorage.ffzClientId = data;
 	this.log("Client ID: " + data);
 
-	var survey = {},
+	/*var survey = {},
 		set = survey['settings'] = {};
 
 	for(var key in FFZ.settings_info)
@@ -271,9 +326,34 @@ FFZ.prototype._ws_on_hello = function(success, data) {
 	survey['language'] = navigator.language;
 	survey['platform'] = navigator.platform;
 
-	this.ws_send("survey", [survey]);
+	this.ws_send("survey", [survey]);*/
 }
 
+
+// ----------------
+// Reconnect Logic
+// ----------------
+
+FFZ.ws_commands.reconnect = function() {
+	this.log("Socket Reconnect Command Received");
+
+	// Set the socket as closed and close it.
+	this._ws_open = false;
+	this._ws_sock.close();
+
+	// Socket Close Callbacks
+	for(var i=0; i < FFZ.ws_on_close.length; i++) {
+		try {
+			FFZ.ws_on_close[i].bind(this)();
+		} catch(err) {
+			this.log("Error on Socket Close Callback: " + err);
+		}
+	}
+
+	// Randomize the reconnect delay to avoid a complete hammering.
+	this._ws_delay = Math.floor(Math.random() * 5) * 1000;
+	this._ws_recreate_timer = setTimeout(this.ws_create.bind(this), this._ws_delay);
+}
 
 
 // ----------------

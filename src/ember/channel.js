@@ -456,8 +456,14 @@ FFZ.prototype._modify_cindex = function(view) {
 					el = stat_el && stat_el.querySelector('span'),
 
 					player_cont = f.players && f.players[channel_id],
-					player = player_cont && player_cont.ffz_player,
+					player = undefined, stats = undefined;
+
+				try {
+					player = player_cont && player_cont.ffz_player;
 					stats = player && player.stats;
+				} catch(err) {
+					f.error("Channel ffzUpdatePlayerStats: player.stats: " + err);
+				}
 
 				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
 					if ( stat_el )
@@ -508,8 +514,14 @@ FFZ.prototype._modify_cindex = function(view) {
 					el = stat_el && stat_el.querySelector('span'),
 
 					player_cont = f.players && f.players[hosted_id],
-					player = player_cont && player_cont.ffz_player,
+					player = undefined, stats = undefined;
+
+				try {
+					player = player_cont && player_cont.ffz_player;
 					stats = player && player.stats;
+				} catch(err) {
+					f.error("Channel ffzUpdatePlayerStats: player.stats: " + err);
+				}
 
 
 				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
