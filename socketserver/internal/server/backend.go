@@ -136,9 +136,12 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return "", httpError(resp.StatusCode)
+	}
 
 	respBytes, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
 	if err != nil {
 		return "", err
 	}
@@ -162,6 +165,10 @@ func SendAggregatedData(sealedForm url.Values) error {
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		return httpError(resp.StatusCode)
+	}
 
 	return resp.Body.Close()
 }
@@ -180,6 +187,10 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, httpError(resp.StatusCode)
+	}
 	dec := json.NewDecoder(resp.Body)
 	var messages []ClientMessage
 	err = dec.Decode(messages)
@@ -188,6 +199,10 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 	}
 
 	return messages, nil
+}
+
+func httpError(statusCode int) error {
+	return fmt.Errorf("backend http error: %d", statusCode)
 }
 
 func GenerateKeys(outputFile, serverId, theirPublicStr string) {

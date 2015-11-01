@@ -61,7 +61,7 @@ func commandLineConsole() {
 			if val.Mallocs == 0 {
 				continue
 			}
-			shell.Println(val.Size, "bytes:", val.Mallocs, "allocs", val.Frees, "frees")
+			shell.Print(fmt.Sprintf("%5d: %6d outstanding (%d total)\n", val.Size, val.Mallocs - val.Frees, val.Mallocs))
 		}
 		shell.Println(m.NumGC, "collections occurred")
 		return "", nil
