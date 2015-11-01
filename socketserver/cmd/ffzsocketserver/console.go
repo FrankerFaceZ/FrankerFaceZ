@@ -61,9 +61,16 @@ func commandLineConsole() {
 			if val.Mallocs == 0 {
 				continue
 			}
-			shell.Print(fmt.Sprintf("%5d: %6d outstanding (%d total)\n", val.Size, val.Mallocs - val.Frees, val.Mallocs))
+			shell.Print(fmt.Sprintf("%5d: %6d outstanding (%d total)\n", val.Size, val.Mallocs-val.Frees, val.Mallocs))
 		}
 		shell.Println(m.NumGC, "collections occurred")
+		return "", nil
+	})
+
+	shell.Register("panic", func(args ...string) (string, error) {
+		go func() {
+			panic("requested panic")
+		}()
 		return "", nil
 	})
 

@@ -318,17 +318,19 @@ func DoSendAggregateData() {
 
 type BunchedRequest struct {
 	Command Command
-	Param string
+	Param   string
 }
+
 func BunchedRequestFromCM(msg *ClientMessage) BunchedRequest {
 	return BunchedRequest{Command: msg.Command, Param: msg.origArguments}
 }
+
 type BunchedResponse struct {
-	Response string
+	Response  string
 	Timestamp time.Time
 }
 type BunchSubscriber struct {
-	Client *ClientInfo
+	Client    *ClientInfo
 	MessageID int
 }
 
@@ -337,17 +339,31 @@ type BunchSubscriberList struct {
 	Members []BunchSubscriber
 }
 
-var PendingBunchedRequests map[BunchedRequest]BunchSubscriberList = make(map[BunchedRequest]BunchSubscriberList)
+var PendingBunchedRequests map[BunchedRequest]*BunchSubscriberList = make(map[BunchedRequest]*BunchSubscriberList)
 var PendingBunchLock sync.RWMutex
-var CompletedBunchedRequests map[BunchedRequest]BunchedResponse
+var CompletedBunchedRequests map[BunchedRequest]BunchedResponse = make(map[BunchedRequest]BunchedResponse)
 var CompletedBunchLock sync.RWMutex
+
+func bunchingJanitor() {
+	for {
+		time.Sleep(5 * time.Minute)
+		keepIfAfter := time.Now().Add(-5 * time.Minute)
+		CompletedBunchLock.Lock()
+		for req, resp := range CompletedBunchedRequests {
+			if !resp.Timestamp.After(keepIfAfter) {
+				delete(CompletedBunchedRequests, req)
+			}
+		}
+		CompletedBunchLock.Unlock()
+	}
+}
 
 func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	br := BunchedRequestFromCM(&msg)
 
 	CompletedBunchLock.RLock()
 	resp, ok := CompletedBunchedRequests[br]
-	if ok && !resp.Timestamp.After(time.Now().Add(5 * time.Minute)) {
+	if ok && resp.Timestamp.After(time.Now().Add(-5*time.Minute)) {
 		CompletedBunchLock.RUnlock()
 		return SuccessMessageFromString(resp.Response), nil
 	} else if ok {
@@ -357,7 +373,7 @@ func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		CompletedBunchLock.Lock()
 		// recheck condition
 		resp, ok = CompletedBunchedRequests[br]
-		if ok && resp.Timestamp.After(time.Now().Add(5 * time.Minute)) {
+		if ok && !resp.Timestamp.After(time.Now().Add(-5*time.Minute)) {
 			delete(CompletedBunchedRequests, br)
 		}
 		CompletedBunchLock.Unlock()
@@ -378,7 +394,7 @@ func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		PendingBunchLock.RUnlock()
 
 		return ClientMessage{Command: AsyncResponseCommand}, nil
- 	} else {
+	} else {
 		PendingBunchLock.RUnlock()
 		PendingBunchLock.Lock()
 		// RECHECK because someone else might have added it
@@ -390,7 +406,7 @@ func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 			PendingBunchLock.Unlock()
 			return ClientMessage{Command: AsyncResponseCommand}, nil
 		} else {
-			PendingBunchedRequests[br] = BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
+			PendingBunchedRequests[br] = &BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
 			needToStart = true
 			PendingBunchLock.Unlock()
 		}
@@ -402,7 +418,7 @@ func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 
 			PendingBunchLock.Lock() // Prevent new signups
 			var msg ClientMessage
-			if err != nil {
+			if err == nil {
 				CompletedBunchLock.Lock() // mutex on map
 				CompletedBunchedRequests[request] = BunchedResponse{Response: resp, Timestamp: time.Now()}
 				CompletedBunchLock.Unlock()

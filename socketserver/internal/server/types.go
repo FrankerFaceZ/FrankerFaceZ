@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"github.com/satori/go.uuid"
+	"net"
 	"sync"
 	"time"
 )
@@ -67,6 +68,8 @@ type ClientInfo struct {
 
 	// TODO(riking) - does this need to be protected cross-thread?
 	AuthInfo
+
+	RemoteAddr net.Addr
 
 	// Username validation nonce.
 	ValidationNonce string

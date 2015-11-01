@@ -36,8 +36,8 @@ var CommandHandlers = map[Command]CommandHandler{
 	"survey":        HandleSurvey,
 
 	"twitch_emote":          HandleRemoteCommand,
-	"get_link":              HandleRemoteCommand,
-	"get_display_name":      HandleRemoteCommand,
+	"get_link":              HandleBunchedRemotecommand,
+	"get_display_name":      HandleBunchedRemotecommand,
 	"update_follow_buttons": HandleRemoteCommand,
 	"chat_history":          HandleRemoteCommand,
 }
@@ -151,6 +151,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 
 	var client ClientInfo
 	client.MessageChannel = _serverMessageChan
+	client.RemoteAddr = conn.RemoteAddr()
 
 	// Launch receiver goroutine
 	go func(errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
@@ -232,7 +233,7 @@ RunLoop:
 		case smsg := <-serverMessageChan:
 			SendMessage(conn, smsg)
 
-		case <- time.After(1 * time.Minute):
+		case <-time.After(1 * time.Minute):
 			client.pingCount++
 			if client.pingCount == 5 {
 				CloseConnection(conn, &CloseTimedOut)
@@ -389,8 +390,8 @@ func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []by
 // Command handlers should use this to construct responses.
 func SuccessMessageFromString(arguments string) ClientMessage {
 	cm := ClientMessage{
-		MessageID: -1, // filled by the select loop
-		Command:   SuccessCommand,
+		MessageID:     -1, // filled by the select loop
+		Command:       SuccessCommand,
 		origArguments: arguments,
 	}
 	cm.parseOrigArguments()
