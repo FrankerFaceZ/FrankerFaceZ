@@ -43,7 +43,7 @@ var CommandHandlers = map[Command]CommandHandler{
 }
 
 // Sent by the server in ClientMessage.Command to indicate success.
-const SuccessCommand Command = "True"
+const SuccessCommand Command = "ok"
 
 // Sent by the server in ClientMessage.Command to indicate failure.
 const ErrorCommand Command = "error"
