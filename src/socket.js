@@ -37,6 +37,7 @@ FFZ.prototype.ws_iframe = function() {
 
 FFZ.prototype.ws_create = function() {
 	// Disable sockets for now.
+	return;
 
 	var f = this, ws;
 
