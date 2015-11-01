@@ -387,12 +387,14 @@ func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []by
 }
 
 // Command handlers should use this to construct responses.
-func NewClientMessage(arguments interface{}) ClientMessage {
-	return ClientMessage{
-		MessageID: 0, // filled by the select loop
+func SuccessMessageFromString(arguments string) ClientMessage {
+	cm := ClientMessage{
+		MessageID: -1, // filled by the select loop
 		Command:   SuccessCommand,
-		Arguments: arguments,
+		origArguments: arguments,
 	}
+	cm.parseOrigArguments()
+	return cm
 }
 
 // Convenience method: Parse the arguments of the ClientMessage as a single string.

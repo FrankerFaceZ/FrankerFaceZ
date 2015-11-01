@@ -316,6 +316,122 @@ func DoSendAggregateData() {
 	// done
 }
 
+type BunchedRequest struct {
+	Command Command
+	Param string
+}
+func BunchedRequestFromCM(msg *ClientMessage) BunchedRequest {
+	return BunchedRequest{Command: msg.Command, Param: msg.origArguments}
+}
+type BunchedResponse struct {
+	Response string
+	Timestamp time.Time
+}
+type BunchSubscriber struct {
+	Client *ClientInfo
+	MessageID int
+}
+
+type BunchSubscriberList struct {
+	sync.Mutex
+	Members []BunchSubscriber
+}
+
+var PendingBunchedRequests map[BunchedRequest]BunchSubscriberList = make(map[BunchedRequest]BunchSubscriberList)
+var PendingBunchLock sync.RWMutex
+var CompletedBunchedRequests map[BunchedRequest]BunchedResponse
+var CompletedBunchLock sync.RWMutex
+
+func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	br := BunchedRequestFromCM(&msg)
+
+	CompletedBunchLock.RLock()
+	resp, ok := CompletedBunchedRequests[br]
+	if ok && !resp.Timestamp.After(time.Now().Add(5 * time.Minute)) {
+		CompletedBunchLock.RUnlock()
+		return SuccessMessageFromString(resp.Response), nil
+	} else if ok {
+		CompletedBunchLock.RUnlock()
+
+		// Entry expired, let's remove it...
+		CompletedBunchLock.Lock()
+		// recheck condition
+		resp, ok = CompletedBunchedRequests[br]
+		if ok && resp.Timestamp.After(time.Now().Add(5 * time.Minute)) {
+			delete(CompletedBunchedRequests, br)
+		}
+		CompletedBunchLock.Unlock()
+	} else {
+		CompletedBunchLock.RUnlock()
+	}
+
+	// !!! unlocked on reply
+	client.MsgChannelKeepalive.RLock()
+
+	PendingBunchLock.RLock()
+	list, ok := PendingBunchedRequests[br]
+	var needToStart bool
+	if ok {
+		list.Lock()
+		AddToSliceB(&list.Members, client, msg.MessageID)
+		list.Unlock()
+		PendingBunchLock.RUnlock()
+
+		return ClientMessage{Command: AsyncResponseCommand}, nil
+ 	} else {
+		PendingBunchLock.RUnlock()
+		PendingBunchLock.Lock()
+		// RECHECK because someone else might have added it
+		list, ok = PendingBunchedRequests[br]
+		if ok {
+			list.Lock()
+			AddToSliceB(&list.Members, client, msg.MessageID)
+			list.Unlock()
+			PendingBunchLock.Unlock()
+			return ClientMessage{Command: AsyncResponseCommand}, nil
+		} else {
+			PendingBunchedRequests[br] = BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
+			needToStart = true
+			PendingBunchLock.Unlock()
+		}
+	}
+
+	if needToStart {
+		go func(request BunchedRequest) {
+			resp, err := RequestRemoteDataCached(string(request.Command), request.Param, AuthInfo{})
+
+			PendingBunchLock.Lock() // Prevent new signups
+			var msg ClientMessage
+			if err != nil {
+				CompletedBunchLock.Lock() // mutex on map
+				CompletedBunchedRequests[request] = BunchedResponse{Response: resp, Timestamp: time.Now()}
+				CompletedBunchLock.Unlock()
+
+				msg = SuccessMessageFromString(resp)
+			} else {
+				msg.Command = ErrorCommand
+				msg.Arguments = err.Error()
+			}
+
+			bsl := PendingBunchedRequests[request]
+			bsl.Lock()
+			for _, member := range bsl.Members {
+				msg.MessageID = member.MessageID
+				member.Client.MessageChannel <- msg
+				member.Client.MsgChannelKeepalive.RUnlock()
+			}
+			bsl.Unlock()
+
+			delete(PendingBunchedRequests, request)
+			PendingBunchLock.Unlock()
+		}(br)
+
+		return ClientMessage{Command: AsyncResponseCommand}, nil
+	} else {
+		panic("logic error")
+	}
+}
+
 func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	go func(conn *websocket.Conn, msg ClientMessage, authInfo AuthInfo) {
 		resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, authInfo)
@@ -325,9 +441,7 @@ func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMes
 			if err != nil {
 				client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
 			} else {
-				cm := ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
-				cm.parseOrigArguments()
-				client.MessageChannel <- cm
+				client.MessageChannel <- SuccessMessageFromString(resp)
 			}
 		}
 		client.MsgChannelKeepalive.RUnlock()
