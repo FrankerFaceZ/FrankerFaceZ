@@ -159,14 +159,23 @@ FFZ.prototype._modify_player = function(player) {
 					return;
 
 				player = tp2.getPlayer();
-				if ( ! player )
+				if ( ! player || ! player.getVideo )
+					// We can't get a valid player. :-(
 					return;
 			}
 
 			this.set('ffz_player', player);
 
 			// Only set up the stats hooks if we need stats.
-			if ( ! player.getVideo() )
+			var has_video;
+
+			try {
+				has_video = player.getVideo();
+			} catch(err) {
+				f.error("Player2 ffzPostPlayer: getVideo: " + err);
+			}
+
+			if ( ! has_video )
 				this.ffzInitStats();
 		},
 
@@ -186,7 +195,7 @@ FFZ.prototype._modify_player = function(player) {
 				player.ffz_stats = player.getStatsEnabled();
 			} catch(err) {
 				// Assume stats are off.
-				f.log("player ffzInitStats: getStatsEnabled still doesn't work: " + err);
+				f.error("Player2 ffzInitStats: getStatsEnabled still doesn't work: " + err);
 				player.ffz_stats = false;
 			}
 

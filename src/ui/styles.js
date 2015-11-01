@@ -1,17 +1,16 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('../constants');
+	constants = require('../constants'),
+	styles = require('../styles');
 
 FFZ.prototype.setup_css = function() {
 	document.body.classList.toggle('ffz-flip-dashboard', this.settings.flip_dashboard);
 
 	this.log("Injecting main FrankerFaceZ CSS.");
 
-	var s = this._main_style = document.createElement('link');
+	var s = this._main_style = document.createElement('style');
 
+	s.textContent = styles.style;
 	s.id = "ffz-ui-css";
-	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
-	s.onerror = "this.href = this.href + '_';"
 
 	document.head.appendChild(s);
 

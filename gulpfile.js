@@ -13,7 +13,13 @@ var fs = require('fs'),
 // Templates
 var jsEscape = require('gulp-js-escape'),
 	wrap = require('gulp-wrap'),
-	declare = require('gulp-declare');
+	declare = require('gulp-declare'),
+	minifyCss = require('gulp-minify-css');
+
+
+// Deploy Dependencies
+var ftp = require('vinyl-ftp'),
+	request = require('request');
 
 
 // Server Dependencies
@@ -56,7 +62,25 @@ gulp.task('templates', ['prepare'], function() {
 });
 
 
-gulp.task('scripts', ['prepare', 'templates'], function() {
+gulp.task('styles', ['prepare'], function() {
+	gulp.src(['build/styles/**/*.css'])
+		.pipe(minifyCss())
+		.pipe(jsEscape())
+		.pipe(declare({
+			root: 'exports',
+			noRedeclare: true,
+			processName: function(filePath) {
+				var match = filePath.match(/build[\\\/]styles[\\\/](.*)\.css$/);
+				return declare.processNameByPath((match && match.length > 1) ? match[1] : filePath);
+			}
+		}))
+		.pipe(concat('styles.js'))
+		.pipe(gulp.dest('build/'))
+		.on('error', util.log)
+});
+
+
+gulp.task('scripts', ['prepare', 'templates', 'styles'], function() {
 	gulp.src(['build/main.js'])
 		.pipe(browserify())
 		.pipe(concat('script.js'))
@@ -74,6 +98,79 @@ gulp.task('watch', ['default', 'server'], function() {
 });
 
 gulp.task('default', ['scripts']);
+
+
+// Deploy
+
+gulp.task('upload', ['default'], function() {
+	// Load credentials from an external file.
+	var contents = fs.readFileSync('credentials.json', 'utf8'),
+		cred = JSON.parse(contents);
+
+	cred.log = util.log;
+
+	// Create the connection.
+	var conn = ftp.create(cred);
+
+	// What we're transfering.
+	var ftp_path = cred.remote_path,
+
+		globs = [
+			"script.min.js",
+			"style.css",
+			"dark.css",
+			"changelog.html"
+		];
+
+	util.log(cred.remote_path);
+
+	return gulp.src(globs, {base: '.', buffer: false})
+		.pipe(conn.newerOrDifferentSize(ftp_path))
+		.pipe(conn.dest(ftp_path))
+		.on('error', util.log);
+});
+
+gulp.task('clear_cache', ['upload'], function() {
+	// Load credentials from an external file.
+	var contents = fs.readFileSync('credentials.json', 'utf8'),
+		cred = JSON.parse(contents);
+
+	// Build the URLs.
+	var base = "://cdn.frankerfacez.com/script/",
+		files = [],
+		globs = [
+			"script.min.js",
+			"style.css",
+			"dark.css",
+			"changelog.html"
+		];
+
+	for(var i=0; i < globs.length; i++) {
+		files.push("http" + base + globs[i]);
+		files.push("https" + base + globs[i]);
+	}
+
+	request({
+		method: 'DELETE',
+		uri: "https://api.cloudflare.com/client/v4/zones/" + cred.cloudflare_zone + "/purge_cache",
+		headers: {
+			"X-Auth-Email": cred.cloudflare_email,
+			"X-Auth-Key": cred.cloudflare_key
+		},
+		json: {
+			"files": files
+		}
+	}, function(error, request, body) {
+		if ( error )
+			return util.log("[FAIL] Error: " + error);
+		else if ( request.statusCode !== 200 )
+			return util.log("[FAIL] Non-200 Status: " + request.statusCode);
+
+		util.log("[SUCCESS] Cache cleared.");
+	});
+});
+
+gulp.task('deploy', ['upload', 'clear_cache']);
 
 
 // Server

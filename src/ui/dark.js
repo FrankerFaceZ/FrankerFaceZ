@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require("../constants");
+	constants = require("../constants"),
+	styles = require("../styles");
 
 
 // ---------------------

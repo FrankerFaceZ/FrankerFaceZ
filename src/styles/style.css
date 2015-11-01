@@ -850,6 +850,7 @@ span.ffz-handle:after { left: 8px }
 
 
 /* Chat Mentions */
+
 .ember-chat .mentioned:empty,
 .ember-chat .mentioning:empty {
 	display: none;
@@ -1155,7 +1156,7 @@ body:not(.ffz-chat-purge-icon) .ember-chat .mod-icons .purge { display: none; }
 .ffz-chat-background .ember-chat-container.dark .ember-chat .chat-messages .chat-line.ffz-mentioned.ffz-alternate:before {
 	background-color: rgba(255,0,0, 0.3);
 }
-
+*/
 
 /* The New  Whispers */
 
@@ -1643,6 +1644,8 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	margin-right: 15px;
 }
 
+.ffz.room-state.truncated span { font-size: 8px; }
+
 .button.primary.ffz-waiting:not(:hover) {
 	background-color: rgba(0,0,0,0.1);
 	color: #32323e;
@@ -1932,28 +1935,28 @@ li[data-name="following"] a {
 .ffz-legacy-mod-badges .ember-chat .badges .moderator,
 .ffz-legacy-badges .ember-chat .badges .moderator {
 	background-color: #068c10;
-	background-image: url('legacy-mod.png');
+	background-image: url('//cdn.frankerfacez.com/script/legacy-mod.png');
 }
 
 .ffz-legacy-badges .ember-chat .badges .staff {
 	background-color: #6441a5;
-	background-image: url('legacy-staff.png');
+	background-image: url('//cdn.frankerfacez.com/script/legacy-staff.png');
 }
 
 .ffz-legacy-badges .ember-chat .badges .broadcaster {
 	background-color: #000;
-	background-image: url('legacy-broadcaster.png');
+	background-image: url('//cdn.frankerfacez.com/script/legacy-broadcaster.png');
 }
 
 .ffz-legacy-badges .ember-chat .badges .admin {
 	background-color: #ff0303;
-	background-image: url('legacy-admin.png');
+	background-image: url('//cdn.frankerfacez.com/script/legacy-admin.png');
 }
 
 .ffz-legacy-turbo-badges .ember-chat .badges .turbo,
 .ffz-legacy-badges .ember-chat .badges .turbo {
 	background-color: #6441a3;
-	background-image: url('legacy-turbo.png');
+	background-image: url('//cdn.frankerfacez.com/script/legacy-turbo.png');
 }
 
 /* High Contrast Chat */

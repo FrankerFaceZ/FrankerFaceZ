@@ -98,6 +98,36 @@ FFZ.settings_info.minimal_chat = {
 	};
 
 
+FFZ.settings_info.chat_batching = {
+	type: "select",
+	options: {
+		0: "No Batching",
+		250: "Minor (0.25s)",
+		500: "Normal (0.5s)",
+		750: "Large (0.75s)",
+		1000: "Extreme (1s)"
+	},
+	value: 0,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Chat Message Batching",
+	help: "Display chat messages in batches to improve performance in <em>extremely</em> fast chats.",
+
+	process_value: function(val) {
+		if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	on_update: function(val) {
+		if ( this._roomv )
+			this._roomv.ffzUpdateStatus();
+	}
+};
+
+
 FFZ.settings_info.chat_delay = {
 	type: "select",
 	options: {
