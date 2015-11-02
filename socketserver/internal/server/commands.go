@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
@@ -231,11 +232,27 @@ func HandleTrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessa
 
 var AggregateEmoteUsage map[int]map[string]int = make(map[int]map[string]int)
 var AggregateEmoteUsageLock sync.Mutex
+var ErrorNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
 
 func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	// arguments is [1]map[EmoteId]map[RoomName]float64
 
 	mapRoot := msg.Arguments.([]interface{})[0].(map[string]interface{})
+
+	for strEmote, val1 := range mapRoot {
+		_, err = strconv.Atoi(strEmote)
+		if err != nil {
+			return
+		}
+		mapInner := val1.(map[string]interface{})
+		for _, val2 := range mapInner {
+			var count int = int(val2.(float64))
+			if count <= 0 {
+				err = ErrorNegativeEmoteUsage
+				return
+			}
+		}
+	}
 
 	AggregateEmoteUsageLock.Lock()
 	defer AggregateEmoteUsageLock.Unlock()
@@ -256,6 +273,9 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 		mapInner := val1.(map[string]interface{})
 		for roomName, val2 := range mapInner {
 			var count int = int(val2.(float64))
+			if count > 200 {
+				count = 200
+			}
 			destMapInner[roomName] += count
 		}
 	}
