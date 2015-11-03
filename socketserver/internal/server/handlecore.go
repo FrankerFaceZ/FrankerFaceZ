@@ -257,11 +257,11 @@ RunLoop:
 	// Stop getting messages...
 	UnsubscribeAll(&client)
 
-	client.MsgChannelKeepalive.Lock()
+	// Wait for pending jobs to finish...
+	client.MsgChannelKeepalive.Wait()
 	client.MessageChannel = nil
-	client.MsgChannelKeepalive.Unlock()
 
-	// And finished.
+	// And done.
 	// Close the channel so the draining goroutine can finish, too.
 	close(_serverMessageChan)
 

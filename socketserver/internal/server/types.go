@@ -91,8 +91,8 @@ type ClientInfo struct {
 	// This field will be nil before it is closed.
 	MessageChannel chan<- ClientMessage
 
-	// Take a read-lock on this before checking whether MessageChannel is nil.
-	MsgChannelKeepalive sync.RWMutex
+	// Take out an Add() on this during a command if you need to use the MessageChannel later.
+	MsgChannelKeepalive sync.WaitGroup
 
 	// The number of pings sent without a response
 	pingCount int
