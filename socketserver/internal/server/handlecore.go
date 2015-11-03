@@ -36,8 +36,8 @@ var CommandHandlers = map[Command]CommandHandler{
 	"survey":        HandleSurvey,
 
 	"twitch_emote":          HandleRemoteCommand,
-	"get_link":              HandleBunchedRemotecommand,
-	"get_display_name":      HandleBunchedRemotecommand,
+	"get_link":              HandleBunchedRemoteCommand,
+	"get_display_name":      HandleBunchedRemoteCommand,
 	"update_follow_buttons": HandleRemoteCommand,
 	"chat_history":          HandleRemoteCommand,
 }

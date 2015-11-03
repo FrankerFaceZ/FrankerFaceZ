@@ -356,7 +356,7 @@ type BunchSubscriberList struct {
 }
 
 var PendingBunchedRequests map[BunchedRequest]*BunchSubscriberList = make(map[BunchedRequest]*BunchSubscriberList)
-var PendingBunchLock sync.RWMutex
+var PendingBunchLock sync.Mutex
 var CompletedBunchedRequests map[BunchedRequest]BunchedResponse = make(map[BunchedRequest]BunchedResponse)
 var CompletedBunchLock sync.RWMutex
 
@@ -374,16 +374,16 @@ func bunchingJanitor() {
 	}
 }
 
-func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	br := BunchedRequestFromCM(&msg)
 
 	CompletedBunchLock.RLock()
 	resp, ok := CompletedBunchedRequests[br]
+	CompletedBunchLock.RUnlock()
+
 	if ok && resp.Timestamp.After(time.Now().Add(-5*time.Minute)) {
-		CompletedBunchLock.RUnlock()
 		return SuccessMessageFromString(resp.Response), nil
 	} else if ok {
-		CompletedBunchLock.RUnlock()
 
 		// Entry expired, let's remove it...
 		CompletedBunchLock.Lock()
@@ -393,74 +393,54 @@ func HandleBunchedRemotecommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 			delete(CompletedBunchedRequests, br)
 		}
 		CompletedBunchLock.Unlock()
-	} else {
-		CompletedBunchLock.RUnlock()
 	}
 
-	client.MsgChannelKeepalive.Add(1)
-
-	PendingBunchLock.RLock()
+	PendingBunchLock.Lock()
 	list, ok := PendingBunchedRequests[br]
-	var needToStart bool
 	if ok {
 		list.Lock()
 		AddToSliceB(&list.Members, client, msg.MessageID)
 		list.Unlock()
-		PendingBunchLock.RUnlock()
+		PendingBunchLock.Unlock()
+		client.MsgChannelKeepalive.Add(1)
 
 		return ClientMessage{Command: AsyncResponseCommand}, nil
-	} else {
-		PendingBunchLock.RUnlock()
-		PendingBunchLock.Lock()
-		// RECHECK because someone else might have added it
-		list, ok = PendingBunchedRequests[br]
-		if ok {
-			list.Lock()
-			AddToSliceB(&list.Members, client, msg.MessageID)
-			list.Unlock()
-			PendingBunchLock.Unlock()
-			return ClientMessage{Command: AsyncResponseCommand}, nil
+	}
+
+	PendingBunchedRequests[br] = &BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
+	PendingBunchLock.Unlock()
+	client.MsgChannelKeepalive.Add(1)
+
+	go func(request BunchedRequest) {
+		resp, err := RequestRemoteDataCached(string(request.Command), request.Param, AuthInfo{})
+
+		PendingBunchLock.Lock() // Prevent new signups
+		var msg ClientMessage
+		if err == nil {
+			CompletedBunchLock.Lock() // mutex on map
+			CompletedBunchedRequests[request] = BunchedResponse{Response: resp, Timestamp: time.Now()}
+			CompletedBunchLock.Unlock()
+
+			msg = SuccessMessageFromString(resp)
 		} else {
-			PendingBunchedRequests[br] = &BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
-			needToStart = true
-			PendingBunchLock.Unlock()
+			msg.Command = ErrorCommand
+			msg.Arguments = err.Error()
 		}
-	}
 
-	if needToStart {
-		go func(request BunchedRequest) {
-			resp, err := RequestRemoteDataCached(string(request.Command), request.Param, AuthInfo{})
+		bsl := PendingBunchedRequests[request]
+		bsl.Lock()
+		for _, member := range bsl.Members {
+			msg.MessageID = member.MessageID
+			member.Client.MessageChannel <- msg
+			member.Client.MsgChannelKeepalive.Done()
+		}
+		bsl.Unlock()
 
-			PendingBunchLock.Lock() // Prevent new signups
-			var msg ClientMessage
-			if err == nil {
-				CompletedBunchLock.Lock() // mutex on map
-				CompletedBunchedRequests[request] = BunchedResponse{Response: resp, Timestamp: time.Now()}
-				CompletedBunchLock.Unlock()
+		delete(PendingBunchedRequests, request)
+		PendingBunchLock.Unlock()
+	}(br)
 
-				msg = SuccessMessageFromString(resp)
-			} else {
-				msg.Command = ErrorCommand
-				msg.Arguments = err.Error()
-			}
-
-			bsl := PendingBunchedRequests[request]
-			bsl.Lock()
-			for _, member := range bsl.Members {
-				msg.MessageID = member.MessageID
-				member.Client.MessageChannel <- msg
-				member.Client.MsgChannelKeepalive.Done()
-			}
-			bsl.Unlock()
-
-			delete(PendingBunchedRequests, request)
-			PendingBunchLock.Unlock()
-		}(br)
-
-		return ClientMessage{Command: AsyncResponseCommand}, nil
-	} else {
-		panic("logic error")
-	}
+	return ClientMessage{Command: AsyncResponseCommand}, nil
 }
 
 func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
