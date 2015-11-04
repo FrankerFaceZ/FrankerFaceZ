@@ -454,8 +454,8 @@ func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMes
 		if err != nil {
 			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
 		} else {
-			msg := SuccessMessageFromString(resp)
-			msg.MessageID = msg.MessageID
+			msg := ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
+			msg.parseOrigArguments()
 			client.MessageChannel <- msg
 		}
 		client.MsgChannelKeepalive.Done()
