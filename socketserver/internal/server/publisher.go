@@ -6,6 +6,7 @@ package server
 import (
 	"sync"
 	"time"
+	"log"
 )
 
 type SubscriberList struct {
@@ -82,6 +83,14 @@ func _subscribeWhileRlocked(channelName string, value chan<- ClientMessage) {
 		list.Members = []chan<- ClientMessage{value} // Create it populated, to avoid reaper
 		ChatSubscriptionInfo[channelName] = list
 		ChatSubscriptionLock.Unlock()
+
+		go func(topic string) {
+			err := SendNewTopicNotice(topic)
+			if err != nil {
+				log.Println("error reporting new sub:", err)
+			}
+		}(channelName)
+
 		ChatSubscriptionLock.RLock()
 	} else {
 		list.Lock()
@@ -152,21 +161,28 @@ func UnsubscribeSingleChat(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RUnlock()
 }
 
-const ReapingDelay = 120 * time.Minute
+const ReapingDelay = 20 * time.Minute
 
 // Checks ChatSubscriptionInfo for entries with no subscribers every ReapingDelay.
 // Started from SetupServer().
 func deadChannelReaper() {
 	for {
 		time.Sleep(ReapingDelay)
+		var cleanedUp = make([]string, 0, 6)
 		ChatSubscriptionLock.Lock()
 		for key, val := range ChatSubscriptionInfo {
-			if val != nil {
-				if len(val.Members) == 0 {
-					delete(ChatSubscriptionInfo, key)
-				}
+			if val == nil || len(val.Members) == 0 {
+				delete(ChatSubscriptionInfo, key)
+				cleanedUp = append(cleanedUp, key)
 			}
 		}
 		ChatSubscriptionLock.Unlock()
+
+		if len(cleanedUp) != 0 {
+			err := SendCleanupTopicsNotice(cleanedUp)
+			if err != nil {
+				log.Println("error reporting cleaned subs:", err)
+			}
+		}
 	}
 }

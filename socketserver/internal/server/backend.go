@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"github.com/gorilla/websocket"
 )
 
 var backendHttpClient http.Client
@@ -23,6 +24,7 @@ var responseCache *cache.Cache
 
 var getBacklogUrl string
 var postStatisticsUrl string
+var addTopicUrl string
 
 var backendSharedKey [32]byte
 var serverId int
@@ -35,10 +37,11 @@ func SetupBackend(config *ConfigFile) {
 	if responseCache != nil {
 		responseCache.Flush()
 	}
-	responseCache = cache.New(60*time.Second, 120*time.Second)
+	responseCache = cache.New(60 * time.Second, 120 * time.Second)
 
 	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
 	postStatisticsUrl = fmt.Sprintf("%s/stats", backendUrl)
+	addTopicUrl = fmt.Sprintf("%s/topics", backendUrl)
 
 	messageBufferPool.New = New4KByteBuffer
 
@@ -203,13 +206,67 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 		return nil, httpError(resp.StatusCode)
 	}
 	dec := json.NewDecoder(resp.Body)
-	var messages []ClientMessage
-	err = dec.Decode(messages)
+	var messageStrings []string
+	err = dec.Decode(messageStrings)
 	if err != nil {
 		return nil, err
 	}
 
+	var messages = make([]ClientMessage, len(messageStrings))
+	for i, str := range messageStrings {
+		UnmarshalClientMessage([]byte(str), websocket.TextMessage, &messages[i])
+	}
+
 	return messages, nil
+}
+
+type NotOkError struct {
+	Response string
+	Code int
+}
+func (noe NotOkError) Error() string {
+	return fmt.Sprintf("backend returned %d: %s", noe.Code, noe.Response)
+}
+
+func SendNewTopicNotice(topic string) error {
+	return sendTopicNotice(topic, true)
+}
+
+func SendCleanupTopicsNotice(topics []string) error {
+	return sendTopicNotice(strings.Join(topics, ","), false)
+}
+
+func sendTopicNotice(topic string, added bool) error {
+	formData := url.Values{}
+	formData.Set("channels", topic)
+	if added {
+		formData.Set("added", "t")
+	} else {
+		formData.Set("added", "f")
+	}
+
+	sealedForm, err := SealRequest(formData)
+	if err != nil {
+		return err
+	}
+
+	resp, err := backendHttpClient.PostForm(addTopicUrl, sealedForm)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	respStr := string(respBytes)
+	if respStr != "ok" {
+		return NotOkError{Code: resp.StatusCode, Response: respStr}
+	}
+
+	return nil
 }
 
 func httpError(statusCode int) error {
