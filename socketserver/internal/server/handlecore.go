@@ -152,6 +152,7 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	var client ClientInfo
 	client.MessageChannel = _serverMessageChan
 	client.RemoteAddr = conn.RemoteAddr()
+	client.MsgChannelIsDone = stoppedChan
 
 	// Launch receiver goroutine
 	go func(errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
@@ -186,7 +187,10 @@ func HandleSocketConnection(conn *websocket.Conn) {
 		if err != io.EOF && !isClose {
 			log.Println("Error while reading from client:", err)
 		}
-		errorChan <- err
+		select {
+		case errorChan <- err:
+		case <-stoppedChan:
+		}
 		close(errorChan)
 		close(clientChan)
 		// exit

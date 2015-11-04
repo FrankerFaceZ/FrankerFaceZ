@@ -91,6 +91,8 @@ type ClientInfo struct {
 	// This field will be nil before it is closed.
 	MessageChannel chan<- ClientMessage
 
+	MsgChannelIsDone <-chan struct{}
+
 	// Take out an Add() on this during a command if you need to use the MessageChannel later.
 	MsgChannelKeepalive sync.WaitGroup
 

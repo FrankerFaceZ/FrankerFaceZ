@@ -431,7 +431,10 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		bsl.Lock()
 		for _, member := range bsl.Members {
 			msg.MessageID = member.MessageID
-			member.Client.MessageChannel <- msg
+			select {
+			case member.Client.MessageChannel <- msg:
+			case <-member.Client.MsgChannelIsDone:
+			}
 			member.Client.MsgChannelKeepalive.Done()
 		}
 		bsl.Unlock()
