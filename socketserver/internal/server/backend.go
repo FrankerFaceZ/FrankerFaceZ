@@ -105,6 +105,12 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, count)
 }
 
+type BackendForwardedError string
+
+func (bfe BackendForwardedError) Error() string {
+	return string(bfe)
+}
+
 func RequestRemoteDataCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cached, ok := responseCache.Get(getCacheKey(remoteCommand, data))
 	if ok {
@@ -137,9 +143,6 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return "", httpError(resp.StatusCode)
-	}
 
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -147,6 +150,14 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 	}
 
 	responseStr = string(respBytes)
+
+	if resp.StatusCode != 200 {
+		if resp.Header.Get("Content-Type") == "application/json" {
+			return "", BackendForwardedError(responseStr)
+		} else {
+			return "", httpError(resp.StatusCode)
+		}
+	}
 
 	if resp.Header.Get("FFZ-Cache") != "" {
 		durSecs, err := strconv.ParseInt(resp.Header.Get("FFZ-Cache"), 10, 64)
