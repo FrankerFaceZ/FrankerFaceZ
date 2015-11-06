@@ -34,13 +34,13 @@ type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
 	// When replying to a command, the message ID must be echoed.
 	// When sending a server-initiated message, this is -1.
-	MessageID int `json:m`
+	MessageID int `json:"m"`
 	// The command that the client wants from the server.
 	// When sent from the server, the literal string 'True' indicates success.
 	// Before sending, a blank Command will be converted into SuccessCommand.
-	Command Command `json:c`
+	Command Command `json:"c"`
 	// Result of json.Unmarshal on the third field send from the client
-	Arguments interface{} `json:a`
+	Arguments interface{} `json:"a"`
 
 	origArguments string
 }

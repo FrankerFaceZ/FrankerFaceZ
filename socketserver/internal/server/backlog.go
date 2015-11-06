@@ -366,7 +366,7 @@ func HBackendUpdateAndPublish(w http.ResponseWriter, r *http.Request) {
 	cacheinfo, ok := ServerInitiatedCommands[cmd]
 	if !ok {
 		w.WriteHeader(422)
-		fmt.Fprintf(w, "Caching semantics unknown for command '%s'. Post to /addcachedcommand first.")
+		fmt.Fprintf(w, "Caching semantics unknown for command '%s'. Post to /addcachedcommand first.", cmd)
 		return
 	}
 

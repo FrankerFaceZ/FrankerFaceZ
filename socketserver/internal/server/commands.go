@@ -203,10 +203,10 @@ func HandleSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (
 }
 
 type FollowEvent struct {
-	User         string    `json:u`
-	Channel      string    `json:c`
-	NowFollowing bool      `json:f`
-	Timestamp    time.Time `json:t`
+	User         string    `json:"u"`
+	Channel      string    `json:"c"`
+	NowFollowing bool      `json:"f"`
+	Timestamp    time.Time `json:"t"`
 }
 
 var FollowEvents []FollowEvent
