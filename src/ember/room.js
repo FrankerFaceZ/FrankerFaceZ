@@ -5,6 +5,7 @@ var FFZ = window.FrankerFaceZ,
 	HOSTED_SUB = / subscribed to /,
 	constants = require('../constants'),
 	utils = require('../utils'),
+	helpers,
 
 	// StrimBagZ Support
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
@@ -14,7 +15,12 @@ var FFZ = window.FrankerFaceZ,
 			return "";
 
 		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-image:url("' + room.moderator_badge + '") !important; }';
-	}
+	};
+
+
+try {
+	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+} catch(err) { }
 
 
 // --------------------
@@ -723,10 +729,11 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		tmiRoom = r.tmiRoom,
 
 		inserted = 0,
+		purged = {},
 
 		last_msg = data[data.length - 1],
 		now = new Date(),
-		last_date = typeof last_msg.date === "string" ? utils.parse_date(last_msg.date) : last_msg.date,
+		last_date = (typeof last_msg.date === "string" || typeof last_msg.date === "number") ? (last_msg.date = utils.parse_date(last_msg.date)) : last_msg.date,
 		age = (now - last_date) / 1000,
 		is_old = age > 300,
 
@@ -738,9 +745,13 @@ FFZ.prototype._insert_history = function(room_id, data) {
 
 	var i = data.length;
 	while(i--) {
-		var msg = data[i];
+		var msg = data[i],
+			is_deleted = msg.ffz_deleted = purged[msg.from] || false;
 
-		if ( typeof msg.date === "string" )
+		if ( is_deleted && ! this.settings.prevent_clear )
+			msg.deleted = true;
+
+		if ( typeof msg.date === "string" || typeof msg.date === "number" )
 			msg.date = utils.parse_date(msg.date);
 
 		msg.ffz_alternate = alternation = ! alternation;
@@ -774,6 +785,14 @@ FFZ.prototype._insert_history = function(room_id, data) {
 				msg.style = "notification";
 		}
 
+		if ( msg.tags && typeof msg.tags.emotes === "string" )
+			try {
+				msg.tags.emotes = JSON.parse(msg.tags.emotes);
+			} catch(err) {
+				f.log("Error Parsing JSON Emotes: " + err);
+				msg.tags.emotes = {};
+			}
+
 		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
 			this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
 
@@ -791,6 +810,14 @@ FFZ.prototype._insert_history = function(room_id, data) {
 			} else
 				break;
 		}
+
+		// If there was a CLEARCHAT, stop processing.
+		if ( msg.tags && msg.tags.target === '@@' )
+			break;
+
+		// If there was a purge, just track the name.
+		else if ( msg.tags && msg.tags.target )
+			purged[msg.tags.target] = true;
 	}
 
 	if ( is_old ) {
@@ -1190,6 +1217,38 @@ FFZ.prototype._modify_room = function(room) {
 
 						if ( user_history.length > 20 )
 							user_history.shift();
+
+						if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
+							var el = f._mod_card.get('element'),
+								history = el && el.querySelector('.chat-history'),
+								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
+
+							if ( history ) {
+								var l_el = document.createElement('li');
+								l_el.className = 'message-line chat-line clearfix';
+
+								l_el.classList.toggle('ffz-alternate', f._mod_card.ffz_alternate);
+								f._mod_card.ffz_alternate = !f._mod_card.ffz_alternate;
+
+								if ( msg.style )
+									l_el.classList.add(msg.style);
+
+								l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(msg.date) + '</span> ' : '') + '<span class="message">' + (msg.style === 'action' ? '*' + msg.from + ' ' : '') + f.render_tokens(msg.cachedTokens) + '</span>';
+
+								// Interactivity
+								jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
+								jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
+								jQuery('.html-tooltip', l_el).tipsy({html:true});
+
+								history.appendChild(l_el);
+								if ( was_at_top )
+									setTimeout(function() { history.scrollTop = history.scrollHeight; })
+
+								// Don't do infinite scrollback.
+								if ( history.childElementCount > 50 )
+									history.removeChild(history.firstElementChild);
+							}
+						}
 					}
 				}
 

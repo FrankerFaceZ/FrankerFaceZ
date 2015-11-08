@@ -581,6 +581,18 @@ FFZ.prototype._update_colors = function(darkness_only) {
 
 		bit.style.color = is_dark ? colors[1] : colors[0];
 	}
+
+	colored_bits = document.querySelectorAll('.conversation-chat-line .has-color');
+	for(var i=0, l=colored_bits.length; i < l; i++) {
+		var bit = colored_bits[i],
+			color = bit.getAttribute('data-color'),
+			colors = color && this._handle_color(color);
+
+		if ( ! colors )
+			continue;
+
+		bit.style.color = is_dark ? colors[1] : colors[0];
+	}
 }
 
 

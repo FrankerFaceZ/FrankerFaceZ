@@ -555,6 +555,13 @@ FFZ.prototype.setup_line = function() {
 	if ( Line )
 		this._modify_line(Line);
 
+	this.log("Hooking the Ember Conversation Line component.");
+	var Conversation = App.__container__.resolve('component:conversation-line');
+
+	if ( Conversation )
+		this._modify_conversation_line(Conversation);
+
+
 	// Store the capitalization of our own name.
 	var user = this.get_user();
 	if ( user && user.name )
@@ -568,6 +575,67 @@ FFZ.prototype.save_aliases = function() {
 }
 
 
+FFZ.prototype._modify_conversation_line = function(component) {
+	var f = this,
+
+		Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings');
+
+	component.reopen({
+		tokenizedMessage: function() {
+			try {
+				return f.tokenize_conversation_line(this.get('message'));
+			} catch(err) {
+				f.error("convo-line tokenizedMessage: " + err);
+				return this._super();
+			}
+
+		}.property("message", "currentUsername"),
+
+		click: function(e) {
+			if ( e.target && e.target.classList.contains('deleted-link') )
+				return f._deleted_link_click.bind(e.target)(e);
+
+			if ( f._click_emote(e.target, e) )
+				return;
+
+			return this._super(e);
+		},
+
+		render: function(e) {
+			var user = this.get('message.from.username'),
+				raw_color = this.get('message.from.color'),
+				colors = raw_color && f._handle_color(raw_color),
+
+				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch;
+
+			e.push('<div class="indicator"></div>');
+
+			var alias = f.aliases[user],
+				name = this.get('message.from.displayName') || (user && user.capitalize()) || "unknown user",
+				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
+				colored = style ? ' has-color' : '';
+
+			if ( alias )
+				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-colors="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
+			else
+				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
+
+			e.push('<span class="colon">:</span> ');
+
+			if ( ! this.get('isActionMessage') ) {
+				style = '';
+				colored = '';
+			}
+
+			e.push('<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">');
+			e.push(f.render_tokens(this.get('tokenizedMessage'), true));
+			e.push('</span>');
+		}
+	});
+}
+
+
 FFZ.prototype._modify_line = function(component) {
 	var f = this,
 
@@ -577,45 +645,12 @@ FFZ.prototype._modify_line = function(component) {
 
 	component.reopen({
 		tokenizedMessage: function() {
-			// Add our own step to the tokenization procedure.
-			var tokens = this.get("msgObject.cachedTokens");
-			if ( tokens )
-				return tokens;
-
-			tokens = this._super();
-
-			var start = performance.now(),
-				user = f.get_user(),
-				from_me = user && this.get("msgObject.from") === user.login;
-
-			tokens = f._remove_banned(tokens);
-			tokens = f._emoticonize(this, tokens);
-
-			if ( f.settings.parse_emoji )
-				tokens = f.tokenize_emoji(tokens);
-
-			// Store the capitalization.
-			var display = this.get("msgObject.tags.display-name");
-			if ( display && display.length )
-				FFZ.capitalization[this.get("msgObject.from")] = [display.trim(), Date.now()];
-
-			if ( ! from_me )
-				tokens = f.tokenize_mentions(tokens);
-
-			for(var i = 0; i < tokens.length; i++) {
-				var token = tokens[i];
-				if ( ! _.isString(token) && token.mentionedUser && ! token.own ) {
-					this.set('msgObject.ffz_has_mention', true);
-					break;
-				}
+			try {
+				return f.tokenize_chat_line(this.get('msgObject'));
+			} catch(err) {
+				f.error("chat-line tokenizedMessage: " + err);
+				return this._super();
 			}
-
-			var end = performance.now();
-			if ( end - start > 5 )
-				f.log("Tokenizing Message Took Too Long - " + (end-start) + "ms", tokens, false, true);
-
-			this.set("msgObject.cachedTokens", tokens);
-			return tokens;
 
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
@@ -633,18 +668,6 @@ FFZ.prototype._modify_line = function(component) {
 			if ( e.target && e.target.classList.contains('mod-icon') ) {
 				jQuery(e.target).trigger('mouseout');
 
-				/*if ( e.target.classList.contains('purge') ) {
-					var i = this.get('msgObject.from'),
-						room_id = this.get('msgObject.room'),
-						room = room_id && f.rooms[room_id] && f.rooms[room_id].room;
-
-					if ( room ) {
-						room.send("/timeout " + i + " 1", true);
-						room.clearMessages(i);
-					}
-					return;
-				}*/
-
 				if ( e.target.classList.contains('custom') ) {
 					var room_id = this.get('msgObject.room'),
 						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
@@ -660,30 +683,8 @@ FFZ.prototype._modify_line = function(component) {
 				}
 			}
 
-			if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons && e.target && e.target.classList.contains('emoticon') ) {
-				var eid = e.target.getAttribute('data-emote');
-				if ( eid )
-					window.open("https://twitchemotes.com/emote/" + eid);
-				else {
-					eid = e.target.getAttribute("data-ffz-emote");
-					var es = e.target.getAttribute("data-ffz-set"),
-						set = es && f.emote_sets[es],
-						url;
-
-					if ( ! set )
-						return;
-
-					if ( set.hasOwnProperty('source_ext') ) {
-						var api = f._apis[set.source_ext];
-						if ( api && api.emote_url_generator )
-							url = api.emote_url_generator(set.source_id, eid);
-					} else
-						url = "https://www.frankerfacez.com/emoticons/" + eid;
-
-					if ( url )
-						window.open(url);
-				}
-			}
+			if ( f._click_emote(e.target, e) )
+				return;
 
 			return this._super(e);
 		},
@@ -768,7 +769,7 @@ FFZ.prototype._modify_line = function(component) {
 			else if ( this.get('isAdmin') )
 				badges[0] = {klass: 'admin', title: 'Admin'};
 			else if ( this.get('isGlobalMod') )
-				badges[0] = {klass: 'global-mod', title: 'Global Moderator'};
+				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
 			else if ( ! is_whisper && this.get('isModerator') )
 				badges[0] = {klass: 'moderator', title: 'Moderator'};
 
@@ -835,7 +836,7 @@ FFZ.prototype._modify_line = function(component) {
 			if ( deleted )
 				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
 			else {
-				e.push('<span class="message' + colored + '" style="' + style + '">');
+				e.push('<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">');
 				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
 
 				var old_messages = this.get('msgObject.ffz_old_messages');

@@ -280,6 +280,20 @@ FFZ.settings_info.group_tabs = {
 	};
 
 
+FFZ.settings_info.top_conversations = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Chat Appearance",
+	name: "Conversations on Top",
+	help: "Display the new conversation-style whisper UI at the top of the window instead of the bottom.",
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-top-conversations', val);
+		}
+	};
+
+
 FFZ.settings_info.pinned_rooms = {
 	value: [],
 	visible: false,
@@ -298,6 +312,7 @@ FFZ.settings_info.visible_rooms = {
 FFZ.prototype.setup_chatview = function() {
 	document.body.classList.toggle("ffz-minimal-chat-head", this.settings.minimal_chat === 1 || this.settings.minimal_chat === 3);
 	document.body.classList.toggle("ffz-minimal-chat-input", this.settings.minimal_chat === 2 || this.settings.minimal_chat === 3);
+	document.body.classList.toggle('ffz-top-conversations', this.settings.top_conversations);
 
 	this.log("Hooking the Ember Chat controller.");
 

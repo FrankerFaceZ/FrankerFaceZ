@@ -35,7 +35,7 @@ FFZ.settings_info.socket_server_pool = {
 		2: "Development"
 	},
 
-	value: ffz_socket_seed > 0.65 ? 1 : 0,
+	value: ffz_socket_seed > 0.4 ? 1 : 0,
 
 	process_value: function(val) {
 		if ( typeof val === "string" )

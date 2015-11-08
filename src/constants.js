@@ -2,10 +2,13 @@ var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4
 
 	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev'),
 	SERVER = DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/";
+	DIRECT_SERVER = DEBUG ? "//localhost:8000/" : "//direct-cdn.frankerfacez.com/";
 
 module.exports = {
 	DEBUG: DEBUG,
 	SERVER: SERVER,
+	DIRECT_SERVER: DIRECT_SERVER,
+
 	API_SERVER: "//api.frankerfacez.com/",
 	API_SERVER_2: "//direct-api.frankerfacez.com/",
 

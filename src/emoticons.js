@@ -142,6 +142,41 @@ FFZ.prototype._report_emotes = function() {
 
 
 // ------------------------
+// Emote Click Handler
+// ------------------------
+
+FFZ.prototype._click_emote = function(target, event) {
+	if ( ! this.settings.clickable_emoticons || (event && !((event.shiftKey || event.shiftLeft) && target && target.classList.contains('emoticon'))) )
+		return;
+
+	var eid = target.getAttribute('data-emote');
+	if ( eid )
+		window.open("https://twitchemotes.com/emote/" + eid);
+	else {
+		eid = target.getAttribute("data-ffz-emote");
+		var es = target.getAttribute("data-ffz-set"),
+			emote_set = es && this.emote_sets[es],
+			url;
+
+		if ( ! emote_set )
+			return;
+
+		if ( emote_set.hasOwnProperty('source_ext') ) {
+			var api = this._apis[emote_set.source_ext];
+			if ( api && api.emote_url_generator )
+				url = api.emote_url_generator(emote_set.source_id, eid);
+		} else
+			url = "https://www.frankerfacez.com/emoticons/" + eid;
+
+		if ( url ) {
+			window.open(url);
+			return true;
+		}
+	}
+}
+
+
+// ------------------------
 // Twitch Emoticon Checker
 // ------------------------
 

@@ -42,6 +42,9 @@ var sanitize_el = document.createElement('span'),
 	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
 
 	parse_date = function(str) {
+		if ( typeof str === "number" )
+			return new Date(str);
+
 		var parts = str.match(date_regex);
 		if ( ! parts )
 			return null;

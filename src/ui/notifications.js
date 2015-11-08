@@ -181,6 +181,11 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 // ---------------------
 
 FFZ.prototype.show_message = function(message) {
+	if ( ! window.jQuery || ! window.jQuery.noty || ! jQuery.noty.themes.ffzTheme ) {
+		setTimeout(this.show_message.bind(this, message), 50);
+		return;
+	}
+
 	window.noty({
 		text: message,
 		theme: "ffzTheme",

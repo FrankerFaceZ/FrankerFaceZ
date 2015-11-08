@@ -164,6 +164,7 @@
 
 /* Popups */
 
+.ffz-dark .conversation-settings-menu,
 .ffz-dark .ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
 .ffz-dark .card,
 .ffz-dark #flyout .content,
@@ -925,4 +926,114 @@
 .ffz-dark .playlist-container:not(.playlist-enabled) .playlist-item:hover,
 .ffz-dark .playlist-container:not(.playlist-enabled) .ui-sortable-helper {
 	background-color: rgba(255,255,255,0.2);
+}
+
+
+/* Conversations */
+
+.ffz-dark .conversation-settings-menu .options-divider {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .conversation-settings-menu:before {
+	border-color: transparent;
+	border-bottom-color: #32323e;
+}
+
+.ffz-dark .conversation-settings-menu:after {
+	border-color: transparent;
+	border-bottom-color: rgb(16,16,16);
+}
+
+.ffz-dark .conversations-list-icon {
+    background: #19191f;
+    color: #8c8c9c;
+    border-color: #19191f
+}
+
+.ffz-dark .conversations-list-icon:hover {
+    color: #fff
+}
+
+.ffz-dark .conversations-list {
+    background: #19191f;
+    border: 1px solid #32323e;
+    color: #fff
+}
+
+.ffz-dark .conversations-list:after {
+    border-color: rgba(25,25,31,0);
+    border-top-color: #19191f;
+    border-width: 10px;
+    margin-left: -10px
+}
+
+.ffz-dark .conversations-list:before {
+    right: 9px;
+    border-color: rgba(50,50,62,0);
+    border-top-color: #32323e
+}
+
+.ffz-dark .conversations-list .conversations-list-header {
+    background: #19191f;
+    border-bottom: 1px solid #32323e;
+    color: #fff
+}
+
+.ffz-dark .conversations-list .conversation-preview-line {
+    color: #8c8c9c
+}
+
+.ffz-dark .conversations-list .conversations-list-item {
+    border-bottom: 1px solid #32323e
+}
+
+.ffz-dark .conversations-list .conversations-list-item:hover {
+    background-color: #121217
+}
+
+.ffz-dark .conversation-window {
+    background: #19191f;
+    box-shadow: none;
+    color: #8c8c9c;
+}
+
+.ffz-dark .conversations-list-icon,
+.ffz-dark .conversation-window {
+	border: 1px solid rgba(255,255,255,0.2);
+	border-bottom: none;
+}
+
+.ffz-dark .conversation-header {
+    background: #121217;
+    box-shadow: none;
+	border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.ffz-dark .conversation-input-bar textarea {
+    border-color: rgba(255,255,255,0.1);
+    background-color: rgba(255,255,255,0.05);
+    color: #b6b6b6
+}
+
+.ffz-dark .conversation-input-actions .button,
+.ffz-dark .conversation-input-actions .follow-button:not(.ember-follow) .follow {
+    background-color: #444
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-header {
+    background-color: #121217
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-header-name {
+    color: #fff
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-input-bar textarea:focus {
+    border-color: rgba(255,255,255,0.2)
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-input-actions .button,
+.ffz-dark .conversation-window.has-focus .conversation-input-actions .follow-button:not(.ember-follow) .follow {
+    background-color: #6441a5
 }

@@ -401,14 +401,58 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 // Tokenization
 // ---------------------
 
+FFZ.prototype.tokenize_conversation_line = function(message, prevent_notification) {
+	var msg = message.get('body'),
+		user = this.get_user(),
+		from_user = message.get('from.username'),
+		from_me = user && from_user === user.login,
+
+		emotes = message.get('tags.emotes'),
+		tokens = [msg];
+
+	// Standard Tokenization
+	if ( helpers && helpers.linkifyMessage )
+		tokens = helpers.linkifyMessage(tokens);
+
+	if ( user && user.login && helpers && helpers.mentionizeMessage )
+		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
+	if ( helpers && helpers.emoticonizeMessage && emotes )
+		tokens = helpers.emoticonizeMessage(tokens, emotes);
+
+	if ( this.settings.replace_bad_emotes )
+		tokens = this.tokenize_replace_emotes(tokens);
+
+	// FrankerFaceZ Extras
+	tokens = this._remove_banned(tokens);
+	tokens = this.tokenize_emotes(from_user, undefined, tokens, from_me);
+
+	if ( this.settings.parse_emoji )
+		tokens = this.tokenize_emoji(tokens);
+
+	// Capitalization
+	var display_name = message.get('from.displayName');
+	if ( display_name && display_name.length )
+		FFZ.capitalization[from_user] = [display_name.trim(), Date.now()];
+
+	// Mentions!
+	if ( ! from_me )
+		tokens = this.tokenize_mentions(tokens);
+
+	// TODO: Notifications?
+
+	return tokens;
+}
+
 FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
-	var msg = msgObject.message,
+	var msg = msgObject.message || msgObject.get('body'),
 		user = this.get_user(),
 		room_id = msgObject.room,
-		from_me = user && msgObject.from === user.login,
+		from_user = msgObject.from,
+		from_me = user && from_user === user.login,
 		emotes = msgObject.tags && msgObject.tags.emotes,
 
 		tokens = [msg];
@@ -438,7 +482,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
-	tokens = this.tokenize_emotes(msgObject.from, room_id, tokens, from_me);
+	tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
 
 	if ( this.settings.parse_emoji )
 		tokens = this.tokenize_emoji(tokens);
@@ -446,7 +490,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	// Capitalization
 	var display = msgObject.tags && msgObject.tags['display-name'];
 	if ( display && display.length )
-		FFZ.capitalization[msgObject.from] = [display.trim(), Date.now()];
+		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
 
 
 	// Mentions!
@@ -482,7 +526,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 					else
 						room_name = FFZ.get_capitalization(room_id);
 
-					display = display || Twitch.display.capitalize(msgObject.from);
+					display = display || Twitch.display.capitalize(from_user);
 
 					if ( msgObject.style === 'action' )
 						msg = '* ' + display + ' ' + msg;
@@ -602,7 +646,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 
 				var mirror_url = utils.quote_attr(constants.EMOTE_MIRROR_BASE + id + '.png');
 
-				extra = ' data-emote="' + id + '" onerror="FrankerFaceZ._emote_mirror_swap(this)"';
+				extra = ' data-emote="' + id + '"'; // onerror="FrankerFaceZ._emote_mirror_swap(this)"'; // Disable error checking for now.
 
 				if ( ! constants.EMOTE_REPLACEMENTS[id] )
 					srcset = build_srcset(id);

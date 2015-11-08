@@ -435,12 +435,19 @@ FFZ.prototype.setup_mod_card = function() {
 			return alias || this.get("cardInfo.user.display_name") || user_id.capitalize();
 		}),
 
+		willDestroy: function() {
+			if ( f._mod_card === this )
+				f._mod_card = undefined;
+			this._super();
+		},
+
 		didInsertElement: function() {
 			this._super();
-			window._card = this;
 			try {
 				if ( f.has_bttv )
 					return;
+
+				f._mod_card = this;
 
 				var el = this.get('element'),
 					controller = this.get('controller'),
@@ -450,10 +457,13 @@ FFZ.prototype.setup_mod_card = function() {
 
 					chat = window.App && App.__container__.lookup('controller:chat'),
 					user = f.get_user(),
-					is_broadcaster = user && chat && chat.get('currentRoom.id') === user.login,
+					room_id = chat && chat.get('currentRoom.id'),
+					is_broadcaster = user && room_id === user.login,
 
 					user_id = controller.get('cardInfo.user.id'),
 					alias = f.aliases[user_id];
+
+				this.ffz_room_id = room_id;
 
 				// Alias Display
 				if ( alias ) {
@@ -735,16 +745,18 @@ FFZ.prototype.setup_mod_card = function() {
 
 							l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(line.date) + '</span> ' : '') + '<span class="message">' + (line.style === 'action' ? '*' + line.from + ' ' : '') + f.render_tokens(line.cachedTokens) + '</span>';
 
-							// Banned Links
-							var bad_links = l_el.querySelectorAll('a.deleted-link');
-							for(var x=0; x < bad_links.length; x++)
-								bad_links[x].addEventListener("click", f._deleted_link_click);
-
+							// Interactivity
+							jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
+							jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
 							jQuery('.html-tooltip', l_el).tipsy({html:true});
+
+							// Append
 							history.appendChild(l_el);
 						}
 
 						el.appendChild(history);
+
+						this.ffz_alternate = alternate;
 
 						// Lazy scroll-to-bottom
 						history.scrollTop = history.scrollHeight;

@@ -16,6 +16,7 @@ FFZ.prototype.setup_channel = function() {
 
 	// Settings stuff!
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
+	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats);
 
 	this.log("Creating channel style element.");
 	var s = this._channel_style = document.createElement('style');
@@ -786,6 +787,20 @@ FFZ.settings_info.stream_title = {
 	on_update: function(val) {
 			if ( this._cindex )
 				this._cindex.ffzFixTitle();
+		}
+	};
+
+
+FFZ.settings_info.theater_stats = {
+	type: "boolean",
+	value: true,
+	no_mobile: true,
+
+	category: "Channel Metadata",
+	name: "Display on Theater Mode Hover",
+	help: "Show the channel metadata and actions over the video player in theater mode when you hover it with your mouse.",
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-theater-stats', val);
 		}
 	};
 
