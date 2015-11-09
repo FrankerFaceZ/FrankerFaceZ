@@ -77,6 +77,7 @@ func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 	}
 
 	SubscribeGlobal(client)
+	SubscribeDefaults(client)
 
 	return ClientMessage{
 		Arguments: client.ClientID.String(),

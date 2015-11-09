@@ -52,7 +52,7 @@ func commandLineConsole() {
 		if target == "_ALL" {
 			count = server.PublishToAll(msg)
 		} else {
-			count = server.PublishToChat(target, msg)
+			count = server.PublishToChannel(target, msg)
 		}
 		return fmt.Sprintf("Published to %d clients", count), nil
 	})

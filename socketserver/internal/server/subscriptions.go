@@ -18,16 +18,20 @@ var ChatSubscriptionInfo map[string]*SubscriberList = make(map[string]*Subscribe
 var ChatSubscriptionLock sync.RWMutex
 var GlobalSubscriptionInfo SubscriberList
 
-func SubscribeGlobal(client *ClientInfo) {
-	GlobalSubscriptionInfo.Lock()
-	AddToSliceC(&GlobalSubscriptionInfo.Members, client.MessageChannel)
-	GlobalSubscriptionInfo.Unlock()
-}
-
 func SubscribeChannel(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
 	_subscribeWhileRlocked(channelName, client.MessageChannel)
 	ChatSubscriptionLock.RUnlock()
+}
+
+func SubscribeDefaults(client *ClientInfo) {
+
+}
+
+func SubscribeGlobal(client *ClientInfo) {
+	GlobalSubscriptionInfo.Lock()
+	AddToSliceC(&GlobalSubscriptionInfo.Members, client.MessageChannel)
+	GlobalSubscriptionInfo.Unlock()
 }
 
 func PublishToChannel(channel string, msg ClientMessage) (count int) {
@@ -130,7 +134,7 @@ func unsubscribeAllClients() {
 	ChatSubscriptionLock.Unlock()
 }
 
-const ReapingDelay = 20 * time.Minute
+const ReapingDelay = 1 * time.Minute
 
 // Checks ChatSubscriptionInfo for entries with no subscribers every ReapingDelay.
 // Started from SetupServer().
