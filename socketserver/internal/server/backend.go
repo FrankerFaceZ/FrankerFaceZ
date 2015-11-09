@@ -26,6 +26,7 @@ var responseCache *cache.Cache
 var getBacklogUrl string
 var postStatisticsUrl string
 var addTopicUrl string
+var announceStartupUrl string
 
 var backendSharedKey [32]byte
 var serverId int
@@ -43,6 +44,7 @@ func SetupBackend(config *ConfigFile) {
 	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
 	postStatisticsUrl = fmt.Sprintf("%s/stats", backendUrl)
 	addTopicUrl = fmt.Sprintf("%s/topics", backendUrl)
+	announceStartupUrl = fmt.Sprintf("%s/startup", backendUrl)
 
 	messageBufferPool.New = New4KByteBuffer
 

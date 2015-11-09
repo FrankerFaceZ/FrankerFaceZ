@@ -48,11 +48,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Could not create logfile: ", err)
 	}
-	log.SetOutput(logFile)
 
 	server.SetupServerAndHandle(conf, nil)
 
 	go commandLineConsole()
+
+	log.SetOutput(logFile)
 
 	if conf.UseSSL {
 		err = httpServer.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile)

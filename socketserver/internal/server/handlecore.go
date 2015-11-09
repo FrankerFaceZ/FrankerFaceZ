@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -92,7 +93,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 
 	bannerBytes, err := ioutil.ReadFile("index.html")
 	if err != nil {
-		log.Fatal("Could not open index.html", err)
+		log.Fatalln("Could not open index.html:", err)
 	}
 	BannerHTML = bannerBytes
 
@@ -100,6 +101,19 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
 	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
+
+	announceForm, err := SealRequest(url.Values{
+		"startup": []string{"1"},
+	})
+	if err != nil {
+		log.Fatalln("Unable to seal requests:", err)
+	}
+	resp, err := backendHttpClient.PostForm(announceStartupUrl, announceForm)
+	if err != nil {
+		log.Println(err)
+	} else {
+		resp.Body.Close()
+	}
 
 	go pubsubJanitor()
 	go backlogJanitor()
