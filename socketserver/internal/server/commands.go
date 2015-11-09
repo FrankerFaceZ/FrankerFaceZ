@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 	"log"
