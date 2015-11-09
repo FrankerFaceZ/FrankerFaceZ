@@ -21,13 +21,7 @@ const ChannelInfoDelay = 2 * time.Second
 func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) {
 	handler, ok := CommandHandlers[msg.Command]
 	if !ok {
-		log.Println("[!] Unknown command", msg.Command, "- sent by client", client.ClientID, "@", conn.RemoteAddr())
-		SendMessage(conn, ClientMessage{
-			MessageID: msg.MessageID,
-			Command:   "error",
-			Arguments: fmt.Sprintf("Unknown command %s", msg.Command),
-		})
-		return
+		handler = HandleRemoteCommand
 	}
 
 	response, err := CallHandler(handler, conn, client, msg)
