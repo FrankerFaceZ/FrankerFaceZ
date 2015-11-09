@@ -18,31 +18,6 @@ import (
 
 const MAX_PACKET_SIZE = 1024
 
-// A command is how the client refers to a function on the server. It's just a string.
-type Command string
-
-// A function that is called to respond to a Command.
-type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
-
-var CommandHandlers = map[Command]CommandHandler{
-	HelloCommand: HandleHello,
-	"setuser":    HandleSetUser,
-	"ready":      HandleReady,
-
-	"sub":   HandleSub,
-	"unsub": HandleUnsub,
-
-	"track_follow":  HandleTrackFollow,
-	"emoticon_uses": HandleEmoticonUses,
-	"survey":        HandleSurvey,
-
-	"twitch_emote":          HandleRemoteCommand,
-	"get_link":              HandleBunchedRemoteCommand,
-	"get_display_name":      HandleBunchedRemoteCommand,
-	"update_follow_buttons": HandleRemoteCommand,
-	"chat_history":          HandleRemoteCommand,
-}
-
 // Sent by the server in ClientMessage.Command to indicate success.
 const SuccessCommand Command = "ok"
 
@@ -58,27 +33,10 @@ const AuthorizeCommand Command = "do_authorize"
 // It signals that the work has been handed off to a background goroutine.
 const AsyncResponseCommand Command = "_async"
 
-var SocketUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return r.Header.Get("Origin") == "http://www.twitch.tv"
-	},
-}
-
-// Errors that get returned to the client.
-var ProtocolError error = errors.New("FFZ Socket protocol error.")
-var ProtocolErrorNegativeID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
-var ExpectedSingleString = errors.New("Error: Expected single string as arguments.")
-var ExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
-var ExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
-var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
-var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
-var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
+var ResponseSuccess = ClientMessage{Command: SuccessCommand}
+var ResponseFailure = ClientMessage{Command: "False"}
 
 var Configuation *ConfigFile
-
-var BannerHTML []byte
 
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
@@ -98,9 +56,9 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	BannerHTML = bannerBytes
 
 	serveMux.HandleFunc("/", ServeWebsocketOrCatbag)
-	serveMux.HandleFunc("/pub_msg", HBackendPublishRequest)
-	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
-	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
+	serveMux.HandleFunc("/drop_backlog", HBackendDropBacklog)
+	serveMux.HandleFunc("/uncached_pub", HBackendPublishRequest)
+	serveMux.HandleFunc("/cached_pub", HBackendUpdateAndPublish)
 
 	announceForm, err := SealRequest(url.Values{
 		"startup": []string{"1"},
@@ -123,6 +81,16 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	go ircConnection()
 }
 
+var SocketUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return r.Header.Get("Origin") == "http://www.twitch.tv"
+	},
+}
+
+var BannerHTML []byte
+
 func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Connection") == "Upgrade" {
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
@@ -137,6 +105,16 @@ func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
 		w.Write(BannerHTML)
 	}
 }
+
+// Errors that get returned to the client.
+var ProtocolError error = errors.New("FFZ Socket protocol error.")
+var ProtocolErrorNegativeID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
+var ExpectedSingleString = errors.New("Error: Expected single string as arguments.")
+var ExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
+var ExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
+var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
+var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
+var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
 var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
 var CloseGotMessageId0 = websocket.CloseError{Code: websocket.ClosePolicyViolation, Text: "got messageid 0"}

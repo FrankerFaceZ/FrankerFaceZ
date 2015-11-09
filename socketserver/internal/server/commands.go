@@ -12,8 +12,30 @@ import (
 	"time"
 )
 
-var ResponseSuccess = ClientMessage{Command: SuccessCommand}
-var ResponseFailure = ClientMessage{Command: "False"}
+// A command is how the client refers to a function on the server. It's just a string.
+type Command string
+
+// A function that is called to respond to a Command.
+type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
+
+var CommandHandlers = map[Command]CommandHandler{
+	HelloCommand: HandleHello,
+	"setuser":    HandleSetUser,
+	"ready":      HandleReady,
+
+	"sub":   HandleSub,
+	"unsub": HandleUnsub,
+
+	"track_follow":  HandleTrackFollow,
+	"emoticon_uses": HandleEmoticonUses,
+	"survey":        HandleSurvey,
+
+	"twitch_emote":          HandleRemoteCommand,
+	"get_link":              HandleBunchedRemoteCommand,
+	"get_display_name":      HandleBunchedRemoteCommand,
+	"update_follow_buttons": HandleRemoteCommand,
+	"chat_history":          HandleRemoteCommand,
+}
 
 const ChannelInfoDelay = 2 * time.Second
 
@@ -135,7 +157,7 @@ func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rms
 
 	client.Mutex.Unlock()
 
-	SubscribeChat(client, channel)
+	SubscribeChannel(client, channel)
 
 	return ResponseSuccess, nil
 }

@@ -97,7 +97,7 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	case MsgTargetTypeSingle:
 		// TODO
 	case MsgTargetTypeChat:
-		count = PublishToChat(channel, cm)
+		count = PublishToChannel(channel, cm)
 	case MsgTargetTypeMultichat:
 		count = PublishToMultiple(strings.Split(channel, ","), cm)
 	case MsgTargetTypeGlobal:
