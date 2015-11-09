@@ -51,6 +51,8 @@ const ErrorCommand Command = "error"
 // This must be the first command sent by the client once the connection is established.
 const HelloCommand Command = "hello"
 
+const AuthorizeCommand Command = "do_authorize"
+
 // A handler returning a ClientMessage with this Command will prevent replying to the client.
 // It signals that the work has been handed off to a background goroutine.
 const AsyncResponseCommand Command = "_async"
@@ -73,14 +75,14 @@ var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as a
 var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
 var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
-var gconfig *ConfigFile
+var Configuation *ConfigFile
 
 var BannerHTML []byte
 
 // Set up a websocket listener and register it on /.
 // (Uses http.DefaultServeMux .)
 func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
-	gconfig = config
+	Configuation = config
 
 	SetupBackend(config)
 
@@ -99,9 +101,12 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/dump_backlog", HBackendDumpBacklog)
 	serveMux.HandleFunc("/update_and_pub", HBackendUpdateAndPublish)
 
-	go deadChannelReaper()
+	go pubsubJanitor()
 	go backlogJanitor()
+	go authorizationJanitor()
 	go sendAggregateData()
+
+	go ircConnection()
 }
 
 func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {

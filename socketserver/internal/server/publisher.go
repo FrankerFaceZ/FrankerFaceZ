@@ -4,9 +4,9 @@ package server
 // If I screwed up the locking, I won't know until it's too late.
 
 import (
+	"log"
 	"sync"
 	"time"
-	"log"
 )
 
 type SubscriberList struct {
@@ -165,7 +165,7 @@ const ReapingDelay = 20 * time.Minute
 
 // Checks ChatSubscriptionInfo for entries with no subscribers every ReapingDelay.
 // Started from SetupServer().
-func deadChannelReaper() {
+func pubsubJanitor() {
 	for {
 		time.Sleep(ReapingDelay)
 		var cleanedUp = make([]string, 0, 6)

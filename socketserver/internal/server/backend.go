@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/pmylund/go-cache"
 	"golang.org/x/crypto/nacl/box"
 	"io/ioutil"
@@ -15,7 +17,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"github.com/gorilla/websocket"
 )
 
 var backendHttpClient http.Client
@@ -37,7 +38,7 @@ func SetupBackend(config *ConfigFile) {
 	if responseCache != nil {
 		responseCache.Flush()
 	}
-	responseCache = cache.New(60 * time.Second, 120 * time.Second)
+	responseCache = cache.New(60*time.Second, 120*time.Second)
 
 	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
 	postStatisticsUrl = fmt.Sprintf("%s/stats", backendUrl)
@@ -114,6 +115,8 @@ func (bfe BackendForwardedError) Error() string {
 	return string(bfe)
 }
 
+var AuthorizationNeededError = errors.New("Must authenticate Twitch username to use this command")
+
 func RequestRemoteDataCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cached, ok := responseCache.Get(getCacheKey(remoteCommand, data))
 	if ok {
@@ -154,7 +157,9 @@ func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr s
 
 	responseStr = string(respBytes)
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode == 401 {
+		return "", AuthorizationNeededError
+	} else if resp.StatusCode != 200 {
 		if resp.Header.Get("Content-Type") == "application/json" {
 			return "", BackendForwardedError(responseStr)
 		} else {
@@ -222,8 +227,9 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 
 type NotOkError struct {
 	Response string
-	Code int
+	Code     int
 }
+
 func (noe NotOkError) Error() string {
 	return fmt.Sprintf("backend returned %d: %s", noe.Code, noe.Response)
 }

@@ -28,6 +28,8 @@ type ConfigFile struct {
 	OurPrivateKey    []byte
 	OurPublicKey     []byte
 	BackendPublicKey []byte
+
+	SendAuthToNewClients bool
 }
 
 type ClientMessage struct {

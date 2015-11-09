@@ -109,6 +109,14 @@ func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 	client.UsernameValidated = false
 	client.Mutex.Unlock()
 
+	if Configuation.SendAuthToNewClients {
+		client.MsgChannelKeepalive.Add(1)
+		go client.StartAuthorization(func(_ *ClientInfo, _ bool) {
+			client.MsgChannelKeepalive.Done()
+		})
+
+	}
+
 	return ResponseSuccess, nil
 }
 
@@ -408,18 +416,32 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 
 func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	client.MsgChannelKeepalive.Add(1)
-	go func(conn *websocket.Conn, msg ClientMessage, authInfo AuthInfo) {
-		resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, authInfo)
-
-		if err != nil {
-			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
-		} else {
-			msg := ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
-			msg.parseOrigArguments()
-			client.MessageChannel <- msg
-		}
-		client.MsgChannelKeepalive.Done()
-	}(conn, msg, client.AuthInfo)
+	go doRemoteCommand(conn, msg, client)
 
 	return ClientMessage{Command: AsyncResponseCommand}, nil
+}
+
+const AuthorizationFailedErrorString = "Failed to verify your Twitch username."
+
+func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo) {
+	resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, client.AuthInfo)
+
+	if err == AuthorizationNeededError {
+		client.StartAuthorization(func(_ *ClientInfo, success bool) {
+			if success {
+				doRemoteCommand(conn, msg, client)
+			} else {
+				client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationFailedErrorString}
+				client.MsgChannelKeepalive.Done()
+			}
+		})
+		return // without keepalive.Done()
+	} else if err != nil {
+		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
+	} else {
+		msg := ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
+		msg.parseOrigArguments()
+		client.MessageChannel <- msg
+	}
+	client.MsgChannelKeepalive.Done()
 }
