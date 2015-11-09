@@ -376,7 +376,7 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 	PendingBunchedRequests[br] = &BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
 
 	go func(request BunchedRequest) {
-		resp, err := RequestRemoteDataCached(string(request.Command), request.Param, AuthInfo{})
+		resp, err := SendRemoteCommandCached(string(request.Command), request.Param, AuthInfo{})
 
 		var msg ClientMessage
 		if err == nil {
@@ -417,7 +417,7 @@ func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMes
 const AuthorizationFailedErrorString = "Failed to verify your Twitch username."
 
 func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo) {
-	resp, err := RequestRemoteDataCached(string(msg.Command), msg.origArguments, client.AuthInfo)
+	resp, err := SendRemoteCommandCached(string(msg.Command), msg.origArguments, client.AuthInfo)
 
 	if err == AuthorizationNeededError {
 		client.StartAuthorization(func(_ *ClientInfo, success bool) {

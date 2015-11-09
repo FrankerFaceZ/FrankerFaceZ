@@ -99,7 +99,7 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	case MsgTargetTypeChat:
 		count = PublishToChat(channel, cm)
 	case MsgTargetTypeMultichat:
-		// TODO
+		count = PublishToMultiple(strings.Split(channel, ","), cm)
 	case MsgTargetTypeGlobal:
 		count = PublishToAll(cm)
 	case MsgTargetTypeInvalid:
@@ -119,15 +119,15 @@ func (bfe BackendForwardedError) Error() string {
 
 var AuthorizationNeededError = errors.New("Must authenticate Twitch username to use this command")
 
-func RequestRemoteDataCached(remoteCommand, data string, auth AuthInfo) (string, error) {
+func SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cached, ok := responseCache.Get(getCacheKey(remoteCommand, data))
 	if ok {
 		return cached.(string), nil
 	}
-	return RequestRemoteData(remoteCommand, data, auth)
+	return SendRemoteCommand(remoteCommand, data, auth)
 }
 
-func RequestRemoteData(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
+func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
 	destUrl := fmt.Sprintf("%s/cmd/%s", backendUrl, remoteCommand)
 	var authKey string
 	if auth.UsernameValidated {
