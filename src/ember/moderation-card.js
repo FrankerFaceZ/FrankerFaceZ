@@ -724,38 +724,82 @@ FFZ.prototype.setup_mod_card = function() {
 				if ( f.settings.mod_card_history ) {
 					var Chat = App.__container__.lookup('controller:chat'),
 						room = Chat && Chat.get('currentRoom'),
-						ffz_room = room && f.rooms && f.rooms[room.get('id')],
-						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[controller.get('cardInfo.user.id')];
+						tmiSession = room.tmiSession || (window.TMI && TMI._sessions && TMI._sessions[0]),
+						room_id = room.get('id'),
+						user_id = controller.get('cardInfo.user.id'),
+						ffz_room = room && f.rooms && f.rooms[room_id],
+						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[user_id] || [],
 
-					if ( user_history && user_history.length ) {
-						var history = document.createElement('ul');
-						history.className = 'interface clearfix chat-history';
+						history = document.createElement('ul');
 
-						for(var i=0; i < user_history.length; i++) {
-							var line = user_history[i],
-								l_el = document.createElement('li');
+					history.className = 'interface clearfix chat-history';
 
-							l_el.className = 'message-line chat-line clearfix';
+					if ( user_history.length < 20 ) {
+						var before = user_history.length > 0 ? user_history[0].date.getTime() : Date.now();
+						f.ws_send("user_history", [room_id, user_id, 50 - user_history.length], function(success, data) {
+							if ( ! success )
+								return;
 
-							if ( line.style )
-								l_el.classList.add(line.style);
+							var i = data.length,
+								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight),
+								first = true;
 
-							l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(line.date) + '</span> ' : '') + '<span class="message">' + (line.style === 'action' ? '*' + line.from + ' ' : '') + f.render_tokens(line.cachedTokens) + '</span>';
+							while(i--) {
+								var msg = data[i];
+								if ( ! msg )
+									continue;
 
-							// Interactivity
-							jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
-							jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
-							jQuery('.html-tooltip', l_el).tipsy({html:true});
+								if ( typeof msg.date === "string" || typeof msg.date === "number" )
+									msg.date = utils.parse_date(msg.date);
 
-							// Append
-							history.appendChild(l_el);
-						}
+								if ( ! msg.date || msg.date.getTime() >= before )
+									continue;
 
-						el.appendChild(history);
+								if ( first ) {
+									first = false;
+									history.insertBefore(f._build_mod_card_history({
+										date: msg.date,
+										from: "jtv",
+										style: "admin",
+										cachedTokens: ["(Server History Above)"]
+									}), history.firstElementChild);
+								}
 
-						// Lazy scroll-to-bottom
-						history.scrollTop = history.scrollHeight;
+								if ( ! msg.style ) {
+									if ( msg.from === "jtv" )
+										msg.style = "admin";
+									else if ( msg.from === "twitchnotify" )
+										msg.style = "notification";
+								}
+
+								if ( msg.tags && typeof msg.tags.emotes === "string" )
+									try {
+										msg.tags.emotes = JSON.parse(msg.tags.emotes);
+									} catch(err) {
+										f.log("Error Parsing JSON Emotes: " + err);
+										msg.tags.emotes = {};
+									}
+
+								if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
+									f.tokenize_chat_line(msg, true, room.get('roomProperties.hide_chat_links'));
+
+								history.insertBefore(f._build_mod_card_history(msg), history.firstElementChild);
+								if ( history.childElementCount >= 50 )
+									break;
+							}
+
+							if ( was_at_top )
+								setTimeout(function() { history.scrollTop = history.scrollHeight; });
+						});
 					}
+
+					for(var i=0; i < user_history.length; i++)
+						history.appendChild(f._build_mod_card_history(user_history[i]));
+
+					el.appendChild(history);
+
+					// Lazy scroll-to-bottom
+					history.scrollTop = history.scrollHeight;
 				}
 
 				// Reposition the menu if it's off-screen.
@@ -782,6 +826,29 @@ FFZ.prototype.setup_mod_card = function() {
 				} catch(err) { }
 			}
 		}});
+}
+
+
+FFZ.prototype._build_mod_card_history = function(line) {
+	var l_el = document.createElement('li'),
+		f = this;
+
+	l_el.className = 'message-line chat-line clearfix';
+
+	if ( line.ffz_has_mention )
+		l_el.classList.add('ffz-mentioned');
+
+	if ( line.style )
+		l_el.classList.add(line.style);
+
+	l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(line.date) + '</span> ' : '') + '<span class="message">' + (line.style === 'action' ? '*' + line.from + ' ' : '') + f.render_tokens(line.cachedTokens) + '</span>';
+
+	// Interactivity
+	jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
+	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
+	jQuery('.html-tooltip', l_el).tipsy({html:true});
+
+	return l_el;
 }
 
 

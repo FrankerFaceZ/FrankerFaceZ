@@ -88,6 +88,7 @@ FFZ.settings_info.transparent_badges = {
 			this.toggle_style('badges-blank', val === 3 || val === 4);
 			this.toggle_style('badges-circular-small', val === 4);
 			this.toggle_style('badges-transparent', val === 5);
+			document.body.classList.toggle('ffz-transparent-badges', val === 5);
 		}
 	};
 
@@ -104,6 +105,7 @@ FFZ.prototype.setup_badges = function() {
 		this.toggle_style('badges-blank', val === 3 || val === 4);
 		this.toggle_style('badges-circular-small', val === 4);
 		this.toggle_style('badges-transparent', val === 5);
+		document.body.classList.toggle('ffz-transparent-badges', val === 5);
 	}
 
 	this.toggle_style('badges-legacy', this.settings.legacy_badges === 3);

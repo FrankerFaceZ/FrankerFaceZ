@@ -1201,20 +1201,7 @@ FFZ.prototype._modify_room = function(room) {
 								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
 
 							if ( history ) {
-								var l_el = document.createElement('li');
-								l_el.className = 'message-line chat-line clearfix';
-
-								if ( msg.style )
-									l_el.classList.add(msg.style);
-
-								l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(msg.date) + '</span> ' : '') + '<span class="message">' + (msg.style === 'action' ? '*' + msg.from + ' ' : '') + f.render_tokens(msg.cachedTokens) + '</span>';
-
-								// Interactivity
-								jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
-								jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
-								jQuery('.html-tooltip', l_el).tipsy({html:true});
-
-								history.appendChild(l_el);
+								history.appendChild(f._build_mod_card_history(msg));
 								if ( was_at_top )
 									setTimeout(function() { history.scrollTop = history.scrollHeight; })
 

@@ -716,10 +716,10 @@ FFZ.prototype._modify_cview = function(view) {
 			tabs.innerHTML = "";
 
 			var link = document.createElement('a'),
-				view = this,
-				total_unread = 0;
+				view = this;
+				//total_unread = 0;
 
-			for(var room_id in f.rooms) {
+			/*for(var room_id in f.rooms) {
 				var room = f.rooms[room_id] && f.rooms[room_id].room,
 					is_unread = room && room.get('unreadCount') > 0;
 
@@ -728,11 +728,11 @@ FFZ.prototype._modify_cview = function(view) {
 					total_unread++;
 				} else if ( room )
 					room._ffz_was_unread = false;
-			}
+			}*/
 
 			link.className = 'button glyph-only tooltip';
 			link.title = "Chat Room Management";
-			link.innerHTML = constants.ROOMS + '<span class="notifications">' + (total_unread || '') + '</span>';
+			link.innerHTML = constants.ROOMS; // + '<span class="notifications">' + (total_unread || '') + '</span>';
 
 			link.addEventListener('click', function() {
 				var controller = view.get('controller');

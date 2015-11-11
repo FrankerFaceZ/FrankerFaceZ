@@ -63,35 +63,6 @@
 	color: #fff !important;
 }
 
-/* moderation card */
-
-.ember-chat-container.dark .ember-chat .ffz-moderation-card,
-.chat-container.dark .ember-chat .ffz-moderation-card,
-.app-main.theatre .ember-chat .ffz-moderation-card {
-	border-color: #1b1b20;
-}
-
-.ember-chat-container.dark .ember-chat .moderation-card:focus,
-.chat-container.dark .ember-chat .moderation-card:focus,
-.app-main.theatre .ember-chat .moderation-card:focus {
-	border-color: #cbcbcb;
-}
-
-.ember-chat-container.dark .ember-chat .moderation-card .interface,
-.chat-container.dark .ember-chat .moderation-card .interface,
-.app-main.theatre .ember-chat .moderation-card .interface {
-	background-color: #232329;
-}
-
-.ffz-no-blue .ember-chat-container.dark .ember-chat .moderation-card .interface,
-.ffz-no-blue .chat-container.dark .ember-chat .moderation-card .interface,
-.ffz-no-blue .app-main.theatre .ember-chat .moderation-card .interface {
-	background-color: #232323;
-}
-
-.moderation-card h3.name a { color: #fff !important; }
-
-
 /* stats */
 .ffz-dark .stats-and-actions,
 .ffz-dark #main_col .content #stats_and_actions {
@@ -531,7 +502,7 @@
 
 /* FrankerFaceZ Menu */
 
-.ffz-dark .ember-chat .chat-menu .list-header {
+/*.ffz-dark .ember-chat .chat-menu .list-header {
 	border-top-color: rgba(255,255,255,0.2);
 }
 
@@ -553,7 +524,7 @@
 
 .ffz-dark .ffz-ui-popup ul.menu li.active a {
 	border-top-color: rgb(16,16,16);
-}
+}*/
 
 /* New User Prompt */
 
@@ -975,7 +946,7 @@
 }
 
 .ffz-dark .conversations-list .conversations-list-header {
-    background: #19191f;
+    background: #121218;
     border-bottom: 1px solid #32323e;
     color: #fff
 }
@@ -989,7 +960,7 @@
 }
 
 .ffz-dark .conversations-list .conversations-list-item:hover {
-    background-color: #121217
+    background-color: #121218;
 }
 
 .ffz-dark .conversation-window {
@@ -1007,6 +978,9 @@
 .ffz-dark .conversation-header {
     background: #121217;
     box-shadow: none;
+}
+
+.ffz-dark .conversation-window:not(.collapsed) .conversation-header {
 	border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 

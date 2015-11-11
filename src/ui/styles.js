@@ -1,7 +1,7 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants');
-	styles = require('../styles');
+	styles = require('../compiled_styles');
 
 FFZ.prototype.setup_css = function() {
 	document.body.classList.toggle('ffz-flip-dashboard', this.settings.flip_dashboard);
@@ -49,6 +49,6 @@ FFZ.prototype.toggle_style = function(key, enabled) {
 		return;
 
 	this._toggle_style_state[key] = enabled;
-	
+
 	utils.update_css(this._toggle_style, key, enabled ? styles[key] || null : null);
 }

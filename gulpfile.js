@@ -45,7 +45,7 @@ gulp.task('prepare', ['clean'], function() {
 
 
 //gulp.task('templates', ['prepare'], function() {
-//	gulp.src(['build/templates/**/*.hbs'])
+//	return gulp.src(['build/templates/**/*.hbs'])
 //		.pipe(jsEscape())
 //		.pipe(wrap('Handlebars.compile(<%= contents %>)'))
 //		.pipe(declare({
@@ -63,7 +63,7 @@ gulp.task('prepare', ['clean'], function() {
 
 
 gulp.task('styles', ['prepare'], function() {
-	gulp.src(['build/styles/**/*.css'])
+	return gulp.src(['build/styles/**/*.css'])
 		.pipe(minifyCss())
 		.pipe(jsEscape())
 		.pipe(declare({
@@ -74,14 +74,14 @@ gulp.task('styles', ['prepare'], function() {
 				return declare.processNameByPath((match && match.length > 1) ? match[1] : filePath);
 			}
 		}))
-		.pipe(concat('styles.js'))
+		.pipe(concat('compiled_styles.js'))
 		.pipe(gulp.dest('build/'))
 		.on('error', util.log)
 });
 
 
-gulp.task('scripts', ['prepare', 'styles'], function() {
-	gulp.src(['build/main.js'])
+gulp.task('scripts', ['styles'], function() {
+	return gulp.src(['build/main.js'])
 		.pipe(browserify())
 		.pipe(concat('script.js'))
 		.pipe(header('(function(window) {'))
@@ -94,7 +94,7 @@ gulp.task('scripts', ['prepare', 'styles'], function() {
 });
 
 gulp.task('watch', ['default', 'server'], function() {
-	gulp.watch('src/**/*', ['default']);
+	return gulp.watch('src/**/*', ['default']);
 });
 
 gulp.task('default', ['scripts']);
@@ -130,7 +130,7 @@ gulp.task('upload', ['default'], function() {
 		.on('error', util.log);
 });
 
-gulp.task('clear_cache', ['upload'], function() {
+gulp.task('clear_cache', ['upload'], function(cb) {
 	// Load credentials from an external file.
 	var contents = fs.readFileSync('credentials.json', 'utf8'),
 		cred = JSON.parse(contents);
@@ -167,6 +167,7 @@ gulp.task('clear_cache', ['upload'], function() {
 			return util.log("[FAIL] Non-200 Status: " + request.statusCode);
 
 		util.log("[SUCCESS] Cache cleared.");
+		cb();
 	});
 });
 

@@ -14,10 +14,10 @@
 .theatre .chat-history .chat-line:nth-child(2n+0):before,
 .theatre .ember-chat .chat-lines > div:nth-child(2n+0) .chat-line:before,
 
-.chat-container.dark .chat-lines > div:nth-child(2n+0) .chat-line:before,
-.ember-chat-container.dark .chat-lines > div:nth-child(2n+0) .chat-line:before,
-.chat-container.force-dark .chat-lines > div:nth-child(2n+0) .chat-line:before,
-.ember-chat-container.force-dark .chat-lines > div:nth-child(2n+0) .chat-line:before {
+.dark .chat-history .chat-line:nth-child(2n+0):before,
+.force-dark .chat-history .chat-line:nth-child(2n+0):before,
+.dark .chat-lines > div:nth-child(2n+0) .chat-line:before,
+.force-dark .chat-lines > div:nth-child(2n+0) .chat-line:before {
 	background-color: rgba(255,255,255, 0.05);
 }
 
@@ -38,21 +38,20 @@
 /* DEPRECIATED: DARK THEME: Mention Backgrounds */
 .ffz-dark .chat-history .chat-line.ffz-mentioned:before,
 
-.theatre .ember-chat .chat-line.ffz-mentioned:before,
-.chat-container.dark .chat-line.ffz-mentioned:before,
-.chat-container.force-dark .chat-line.ffz-mentioned:before,
-.ember-chat-container.dark .chat-line.ffz-mentioned:before,
-.ember-chat-container.force-dark .chat-line.ffz-mentioned:before {
+.theatre .chat-line.ffz-mentioned:before,
+.dark .chat-line.ffz-mentioned:before,
+.force-dark .chat-line.ffz-mentioned:before {
 	background-color: rgba(255,0,0, 0.2) !important;
 }
 
 
 .theatre .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
 
-.chat-container.dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
-.ember-chat-container.dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
-.chat-container.force-dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
-.ember-chat-container.force-dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before {
+.dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
+.force-dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
+
+.dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
+.force-dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before {
 	background-color: rgba(255,0,0, 0.3) !important;
 }
 
@@ -61,17 +60,13 @@
 /* Chat Mentions */
 /* TODO: Move this by itself */
 
-.ember-chat .mentioned:empty,
-.ember-chat .mentioning:empty,
-.chat-history .mentioned:empty,
-.chat-history .mentioning:empty {
+.mentioned:empty,
+.mentioning:empty {
 	display: none;
 }
 
-.ember-chat .chat-line .mentioned,
-.ember-chat .chat-line .mentioning,
-.chat-history .chat-line .mentioned,
-.chat-history .chat-line .mentioning {
+.chat-line .mentioned,
+.chat-line .mentioning {
 	border-radius: 10px;
 	padding: 3px 7px;
 	font-weight: bold;
@@ -83,6 +78,8 @@
 .ffz-dark .chat-history .mentioned,
 .ffz-dark .chat-history .mentioning,
 
+.app-main.theatre .chat-container .chat-line .mentioned,
+.app-main.theatre .chat-container .chat-line .mentioning,
 .chat-container.dark .chat-line .mentioned,
 .chat-container.dark .chat-line .mentioning,
 .chat-container.force-dark .chat-line .mentioned,

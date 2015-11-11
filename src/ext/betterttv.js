@@ -77,6 +77,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.toggle_style('badges-transparent');
 
 	// Disable other features too.
+	document.body.classList.remove('ffz-transparent-badges');
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-portrait");
 	document.body.classList.remove("ffz-flip-dashboard");

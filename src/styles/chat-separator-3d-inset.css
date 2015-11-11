@@ -10,10 +10,8 @@
 .theatre .conversation-chat-lines > div:before,
 
 .theatre .chat-line:before,
-.chat-container.dark .chat-line:before,
-.chat-container.force-dark .chat-line:before,
-.ember-chat-container.dark .chat-line:before,
-.ember-chat-container.force-dark .chat-line:before {
+.dark .chat-line:before,
+.force-dark .chat-line:before {
 	border-top-color: #000;
 	border-bottom-color: rgba(255,255,255, 0.1);
 }
