@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 57,
+	major: 3, minor: 5, revision: 62,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -123,11 +123,13 @@ require('./ember/room');
 require('./ember/layout');
 require('./ember/line');
 require('./ember/chatview');
+require('./ember/conversations');
 require('./ember/viewers');
 require('./ember/moderation-card');
 require('./ember/chat-input');
 //require('./ember/teams');
 require('./ember/directory');
+require('./ember/following');
 
 require('./debug');
 
@@ -335,10 +337,12 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_line();
 	this.setup_layout();
 	this.setup_chatview();
+	this.setup_conversations();
 	this.setup_viewers();
 	this.setup_mod_card();
 	this.setup_chat_input();
 	this.setup_directory();
+	this.setup_profile_following();
 
 	//this.setup_teams();
 

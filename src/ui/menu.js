@@ -224,6 +224,9 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	container.classList.toggle('dark', dark);
 
+	// Stuff
+	jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: jQuery.fn.tipsy.autoNS});
+
 
 	// Menu Container
 	var sub_container = document.createElement('div');
@@ -599,7 +602,7 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 		c++;
 		var s = document.createElement('span');
-		s.className = 'emoticon tooltip';
+		s.className = 'emoticon html-tooltip';
 		s.style.backgroundImage = 'url("' + emote.urls[1] + '")';
 
 		if ( srcset ) {

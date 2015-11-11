@@ -262,7 +262,7 @@ FFZ.prototype._emote_tooltip = function(emote) {
 		title = set && set.title || "Global",
 		source = set && set.source || "FFZ";
 
-	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "\n" + source + " " + title + (owner ? "\nBy: " + owner.display_name : "");
+	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "<br>" + source + " " + title + (owner ? "<br>By: " + owner.display_name : "");
 	return emote._tooltip;
 }
 

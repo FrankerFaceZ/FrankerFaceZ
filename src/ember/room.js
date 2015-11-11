@@ -115,6 +115,8 @@ FFZ.prototype.setup_room = function() {
 FFZ.prototype._modify_rview = function(view) {
 	var f = this;
 	view.reopen({
+		alternate: false,
+
 		didInsertElement: function() {
 			this._super();
 
@@ -133,6 +135,10 @@ FFZ.prototype._modify_rview = function(view) {
 			}
 			this._super();
 		},
+
+		ffzUpdateAlternate: function() {
+			this.get('element').classList.toggle('ffz-alternate', this.get('ffzAlternate'));
+		}.observes("ffzAlternate"),
 
 		ffzInit: function() {
 			f._roomv = this;
@@ -1182,10 +1188,10 @@ FFZ.prototype._modify_room = function(room) {
 					return;
 
 				var is_whisper = msg.style === 'whisper';
-				if ( f.settings.group_tabs && f.settings.whisper_room ) {
-					if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
-						return;
-				}
+
+				// Ignore whispers if conversations are enabled.
+				if ( is_whisper && App.__container__.lookup('route:application').controller.get('isConversationsEnabled') )
+					return;
 
 				if ( ! is_whisper )
 					msg.room = this.get('id');

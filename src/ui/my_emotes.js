@@ -166,7 +166,7 @@ FFZ.menu_pages.myemotes = {
 			if ( (settings === 1 && ! emoji.tw) || (settings === 2 && ! emoji.noto) )
 				continue;
 
-			em.className = 'emoticon tooltip';
+			em.className = 'emoticon html-tooltip';
 			em.title = 'Emoji: ' + emoji.raw + '\nName: ' + emoji.name + (emoji.short_name ? '\nShort Name: :' + emoji.short_name + ':' : '');
 			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
 
@@ -239,7 +239,7 @@ FFZ.menu_pages.myemotes = {
 				em = document.createElement('span'),
 				img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
 
-			em.className = 'emoticon tooltip';
+			em.className = 'emoticon html-tooltip';
 
 			if ( this.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[emote.id] ) {
 				em.style.backgroundImage = 'url("' + constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote.id] + '")';
@@ -316,7 +316,7 @@ FFZ.menu_pages.myemotes = {
 
 			img_set += ')';
 
-			em.className = 'emoticon tooltip';
+			em.className = 'emoticon html-tooltip';
 			em.style.backgroundImage = 'url("' + emote.urls[1] + '")';
 			em.style.backgroundImage = '-webkit-' + img_set;
 			em.style.backgroundImage = '-moz-' + img_set;

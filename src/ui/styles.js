@@ -16,7 +16,7 @@ FFZ.prototype.setup_css = function() {
 	/*var s = this._main_style = document.createElement('style');
 
 	s.textContent = styles.style;
-	s.id = "ffz-ui-css";
+	s.id = "ffz-main-css";
 
 	document.head.appendChild(s);*/
 

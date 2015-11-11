@@ -45,8 +45,12 @@ FFZ.prototype.setup_directory = function() {
 	// Initialize existing views.
 	for(var key in Ember.View.views) {
 		var view = Ember.View.views[key];
-		if ( view instanceof ChannelView || view instanceof CreativeChannel || view instanceof CSGOChannel || view instanceof HostView )
-			view.ffzInit();
+		try {
+			if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) || (CSGOChannel && view instanceof CSGOChannel) || (HostView && view instanceof HostView) )
+				view.ffzInit();
+		} catch(err) {
+			this.error("Directory Setup: " + err);
+		}
 	}
 }
 

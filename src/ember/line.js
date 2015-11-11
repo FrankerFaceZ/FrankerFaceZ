@@ -549,18 +549,10 @@ FFZ.prototype.setup_line = function() {
 		this._modify_line(Whisper);
 
 	this.log("Hooking the Ember Message Line component.");
-
 	var Line = App.__container__.resolve('component:message-line');
 
 	if ( Line )
 		this._modify_line(Line);
-
-	this.log("Hooking the Ember Conversation Line component.");
-	var Conversation = App.__container__.resolve('component:conversation-line');
-
-	if ( Conversation )
-		this._modify_conversation_line(Conversation);
-
 
 	// Store the capitalization of our own name.
 	var user = this.get_user();

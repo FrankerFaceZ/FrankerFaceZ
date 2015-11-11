@@ -35,7 +35,7 @@ var FFZ = window.FrankerFaceZ,
 			set_type = null;
 		}
 
-		return "Emoticon: " + data.code + "\n" + (set_type ? set_type + ": " : "") + set + (owner ? "\nBy: " + owner.display_name : "");
+		return "Emoticon: " + data.code + "<br>" + (set_type ? set_type + ": " : "") + set + (owner ? "<br>By: " + owner.display_name : "");
 	},
 
 	build_tooltip = function(id) {
@@ -603,7 +603,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
 					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
 
-				tooltip = emote ? utils.sanitize(f._emote_tooltip(emote)) : token.altText;
+				tooltip = emote ? f._emote_tooltip(emote) : token.altText;
 				srcset = emote ? emote.srcSet : token.srcSet;
 				extra = (emote ? ' data-ffz-emote="' + emote.id + '"' : '') + (emote_set ? ' data-ffz-set="' + emote_set.id + '"' : '');
 
@@ -652,7 +652,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 					srcset = build_srcset(id);
 			}
 
-			return '<img class="emoticon tooltip' + (cls||"") + '"' + (extra||"") + ' src="' + utils.quote_attr(src) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
+			return '<img class="emoticon html-tooltip' + (cls||"") + '"' + (extra||"") + ' src="' + utils.quote_attr(src) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
 		}
 
 		if ( token.isLink ) {

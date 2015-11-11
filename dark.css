@@ -1037,3 +1037,6 @@
 .ffz-dark .conversation-window.has-focus .conversation-input-actions .follow-button:not(.ember-follow) .follow {
     background-color: #6441a5
 }
+
+.ffz-dark .conversation-window .new-message-divider span { background: transparent; }
+.ffz-dark .conversation-window .new-message-divider:after { display: none; }
