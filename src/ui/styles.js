@@ -1,6 +1,7 @@
 var FFZ = window.FrankerFaceZ,
+	utils = require('../utils'),
 	constants = require('../constants');
-	//styles = require('../styles');
+	styles = require('../styles');
 
 FFZ.prototype.setup_css = function() {
 	document.body.classList.toggle('ffz-flip-dashboard', this.settings.flip_dashboard);
@@ -11,6 +12,14 @@ FFZ.prototype.setup_css = function() {
 	s.id = "ffz-main-css";
 	s.setAttribute('rel', 'stylesheet');
 	s.setAttribute('href', constants.DIRECT_SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	document.head.appendChild(s);
+
+	this.log("Readying toggleable styles.");
+	this._toggle_style_state = {};
+
+	s = this._toggle_style = document.createElement('style');
+	s.type = "text/css";
+	s.id = "ffz-toggle-css";
 	document.head.appendChild(s);
 
 	/*var s = this._main_style = document.createElement('style');
@@ -31,4 +40,15 @@ FFZ.prototype.setup_css = function() {
 				onClose: function() {}
 			}
 		};
+}
+
+
+FFZ.prototype.toggle_style = function(key, enabled) {
+	var state = this._toggle_style_state[key];
+	if ( (enabled && state) || (!enabled && !state) )
+		return;
+
+	this._toggle_style_state[key] = enabled;
+	
+	utils.update_css(this._toggle_style, key, enabled ? styles[key] || null : null);
 }

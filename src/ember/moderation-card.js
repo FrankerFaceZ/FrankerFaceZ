@@ -728,8 +728,7 @@ FFZ.prototype.setup_mod_card = function() {
 						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[controller.get('cardInfo.user.id')];
 
 					if ( user_history && user_history.length ) {
-						var history = document.createElement('ul'),
-							alternate = false;
+						var history = document.createElement('ul');
 						history.className = 'interface clearfix chat-history';
 
 						for(var i=0; i < user_history.length; i++) {
@@ -737,8 +736,6 @@ FFZ.prototype.setup_mod_card = function() {
 								l_el = document.createElement('li');
 
 							l_el.className = 'message-line chat-line clearfix';
-							l_el.classList.toggle('ffz-alternate', alternate);
-							alternate = !alternate;
 
 							if ( line.style )
 								l_el.classList.add(line.style);
@@ -755,8 +752,6 @@ FFZ.prototype.setup_mod_card = function() {
 						}
 
 						el.appendChild(history);
-
-						this.ffz_alternate = alternate;
 
 						// Lazy scroll-to-bottom
 						history.scrollTop = history.scrollHeight;

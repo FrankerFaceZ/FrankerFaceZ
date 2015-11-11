@@ -1,0 +1,3 @@
+.badges .badge:not(.subscriber) {
+	background-size: 0px;
+}

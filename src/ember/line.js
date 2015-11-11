@@ -269,7 +269,10 @@ FFZ.settings_info.chat_rows = {
 	name: "Chat Line Backgrounds",
 	help: "Display alternating background colors for lines in chat.",
 
-	on_update: function(val) { document.body.classList.toggle("ffz-chat-background", !this.has_bttv && val); }
+	on_update: function(val) {
+			this.toggle_style('chat-background', !this.has_bttv && val);
+			this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_separators));
+		}
 	};
 
 
@@ -301,10 +304,12 @@ FFZ.settings_info.chat_separators = {
 	help: "Display thin lines between chat messages for further visual separation.",
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && val !== 0);
-			document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && val === 2);
-			document.body.classList.toggle("ffz-chat-separator-3d-inset", !this.has_bttv && val === 3);
-			document.body.classList.toggle("ffz-chat-separator-wide", !this.has_bttv && val === 4);
+			this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_rows));
+
+			this.toggle_style('chat-separator', !this.has_bttv && val);
+			this.toggle_style('chat-separator-3d', !this.has_bttv && val === 2);
+			this.toggle_style('chat-separator-3d-inset', !this.has_bttv && val === 3);
+			this.toggle_style('chat-separator-wide', !this.has_bttv && val === 4);
 		}
 	};
 
@@ -319,7 +324,7 @@ FFZ.settings_info.chat_padding = {
 	name: "Reduced Chat Line Padding",
 	help: "Reduce the amount of padding around chat messages to fit more on-screen at once.",
 
-	on_update: function(val) { document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && val); }
+	on_update: function(val) { this.toggle_style('chat-padding', !this.has_bttv && val); }
 	};
 
 
@@ -352,9 +357,9 @@ FFZ.settings_info.high_contrast_chat = {
 	},
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && val[2] === '1');
-			document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && val[1] === '1');
-			document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && val[0] === '1');
+			this.toggle_style('chat-hc-text', !this.has_bttv && val[2] === '1');
+			this.toggle_style('chat-hc-bold', !this.has_bttv && val[1] === '1');
+			this.toggle_style('chat-hc-background', !this.has_bttv && val[0] === '1');
 		}
 	};
 
@@ -526,19 +531,19 @@ FFZ.prototype.setup_line = function() {
 
 
 	// Chat Enhancements
-	document.body.classList.toggle("ffz-chat-colors", !this.has_bttv && this.settings.fix_color !== '-1');
-	document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && this.settings.fix_color === '-1');
+	this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators));
+	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
 
-	document.body.classList.toggle('ffz-chat-background', !this.has_bttv && this.settings.chat_rows);
-	document.body.classList.toggle("ffz-chat-separator", !this.has_bttv && this.settings.chat_separators !== 0);
-	document.body.classList.toggle("ffz-chat-separator-wide", !this.has_bttv && this.settings.chat_separators === 4);
-	document.body.classList.toggle("ffz-chat-separator-3d", !this.has_bttv && this.settings.chat_separators === 2);
-	document.body.classList.toggle("ffz-chat-separator-3d-inset", !this.has_bttv && this.settings.chat_separators === 3);
-	document.body.classList.toggle("ffz-chat-padding", !this.has_bttv && this.settings.chat_padding);
+	this.toggle_style('chat-background', !this.has_bttv && this.settings.chat_rows);
 
-	document.body.classList.toggle("ffz-high-contrast-chat-text", !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
-	document.body.classList.toggle("ffz-high-contrast-chat-bold", !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
-	document.body.classList.toggle("ffz-high-contrast-chat-bg", !this.has_bttv && this.settings.high_contrast_chat[0] === '1');
+	this.toggle_style('chat-separator', !this.has_bttv && this.settings.chat_separators);
+	this.toggle_style('chat-separator-3d', !this.has_bttv && this.settings.chat_separators === 2);
+	this.toggle_style('chat-separator-3d-inset', !this.has_bttv && this.settings.chat_separators === 3);
+	this.toggle_style('chat-separator-wide', !this.has_bttv && this.settings.chat_separators === 4);
+
+	this.toggle_style('chat-hc-text', !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
+	this.toggle_style('chat-hc-bold', !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
+	this.toggle_style('chat-hc-background', !this.has_bttv && this.settings.high_contrast_chat[0] === '1');
 
 	this._last_row = {};
 
@@ -564,67 +569,6 @@ FFZ.prototype.setup_line = function() {
 FFZ.prototype.save_aliases = function() {
 	this.log("Saving " + Object.keys(this.aliases).length + " aliases to local storage.");
 	localStorage.ffz_aliases = JSON.stringify(this.aliases);
-}
-
-
-FFZ.prototype._modify_conversation_line = function(component) {
-	var f = this,
-
-		Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
-
-	component.reopen({
-		tokenizedMessage: function() {
-			try {
-				return f.tokenize_conversation_line(this.get('message'));
-			} catch(err) {
-				f.error("convo-line tokenizedMessage: " + err);
-				return this._super();
-			}
-
-		}.property("message", "currentUsername"),
-
-		click: function(e) {
-			if ( e.target && e.target.classList.contains('deleted-link') )
-				return f._deleted_link_click.bind(e.target)(e);
-
-			if ( f._click_emote(e.target, e) )
-				return;
-
-			return this._super(e);
-		},
-
-		render: function(e) {
-			var user = this.get('message.from.username'),
-				raw_color = this.get('message.from.color'),
-				colors = raw_color && f._handle_color(raw_color),
-
-				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch;
-
-			e.push('<div class="indicator"></div>');
-
-			var alias = f.aliases[user],
-				name = this.get('message.from.displayName') || (user && user.capitalize()) || "unknown user",
-				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
-				colored = style ? ' has-color' : '';
-
-			if ( alias )
-				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-colors="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
-			else
-				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
-
-			e.push('<span class="colon">:</span> ');
-
-			if ( ! this.get('isActionMessage') ) {
-				style = '';
-				colored = '';
-			}
-
-			e.push('<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">');
-			e.push(f.render_tokens(this.get('tokenizedMessage'), true));
-			e.push('</span>');
-		}
-	});
 }
 
 
@@ -840,7 +784,6 @@ FFZ.prototype._modify_line = function(component) {
 		},
 
 		classNameBindings: [
-			'msgObject.ffz_alternate:ffz-alternate',
 			'msgObject.ffz_has_mention:ffz-mentioned',
 			'ffzWasDeleted:ffz-deleted',
 			'ffzHasOldMessages:clearfix',

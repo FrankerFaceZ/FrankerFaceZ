@@ -115,8 +115,6 @@ FFZ.prototype.setup_room = function() {
 FFZ.prototype._modify_rview = function(view) {
 	var f = this;
 	view.reopen({
-		alternate: false,
-
 		didInsertElement: function() {
 			this._super();
 
@@ -135,10 +133,6 @@ FFZ.prototype._modify_rview = function(view) {
 			}
 			this._super();
 		},
-
-		ffzUpdateAlternate: function() {
-			this.get('element').classList.toggle('ffz-alternate', this.get('ffzAlternate'));
-		}.observes("ffzAlternate"),
 
 		ffzInit: function() {
 			f._roomv = this;
@@ -743,11 +737,7 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		age = (now - last_date) / 1000,
 		is_old = age > 300,
 
-		i = data.length,
-		alternation = r.get('messages.0.ffz_alternate') || false;
-
-	if ( is_old )
-		alternation = ! alternation;
+		i = data.length;
 
 	var i = data.length;
 	while(i--) {
@@ -760,7 +750,6 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		if ( typeof msg.date === "string" || typeof msg.date === "number" )
 			msg.date = utils.parse_date(msg.date);
 
-		msg.ffz_alternate = alternation = ! alternation;
 		if ( ! msg.room )
 			msg.room = room_id;
 
@@ -828,7 +817,6 @@ FFZ.prototype._insert_history = function(room_id, data) {
 
 	if ( is_old ) {
 		var msg = {
-			ffz_alternate: ! alternation,
 			color: "#755000",
 			date: new Date(),
 			from: "frankerfacez_admin",
@@ -1007,8 +995,7 @@ FFZ.prototype._modify_room = function(room) {
 
 				var msgs = t.get('messages'),
 					total = msgs.get('length'),
-					i = total,
-					alternate;
+					i = total;
 
 				// Delete visible messages
 				while(i--) {
@@ -1016,8 +1003,6 @@ FFZ.prototype._modify_room = function(room) {
 
 					if ( msg.from === user ) {
 						if ( f.settings.remove_deleted ) {
-							if ( alternate === undefined )
-								alternate = ! msg.ffz_alternate;
 							msgs.removeAt(i);
 							continue;
 						}
@@ -1025,13 +1010,6 @@ FFZ.prototype._modify_room = function(room) {
 						t.set('messages.' + i + '.ffz_deleted', true);
 						if ( ! f.settings.prevent_clear )
 							t.set('messages.' + i + '.deleted', true);
-					}
-
-					if ( alternate === undefined )
-						alternate = msg.ffz_alternate;
-					else {
-						alternate = ! alternate;
-						t.set('messages.' + i + '.ffz_alternate', alternate);
 					}
 				}
 
@@ -1108,13 +1086,6 @@ FFZ.prototype._modify_room = function(room) {
 
 		ffzActualPushMessage: function (msg) {
 			if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
-				var row_type = msg.ffz_alternate;
-				if ( row_type === undefined ) {
-					var room_id = this.get('id');
-					row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
-					msg.ffz_alternate = row_type;
-				}
-
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
 
@@ -1232,9 +1203,6 @@ FFZ.prototype._modify_room = function(room) {
 							if ( history ) {
 								var l_el = document.createElement('li');
 								l_el.className = 'message-line chat-line clearfix';
-
-								l_el.classList.toggle('ffz-alternate', f._mod_card.ffz_alternate);
-								f._mod_card.ffz_alternate = !f._mod_card.ffz_alternate;
 
 								if ( msg.style )
 									l_el.classList.add(msg.style);

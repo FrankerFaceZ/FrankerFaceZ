@@ -1,0 +1,15 @@
+/* High-Contrast Text */
+.chat-container,
+.ember-chat-container {
+	color: #000;
+}
+
+/* Dark: High-Contrast Text */
+.theatre .chat-container,
+.theatre .ember-chat-container,
+.chat-container.dark,
+.chat-container.force-dark,
+.ember-chat-container.dark,
+.ember-chat-container.force-dark {
+	color: #fff;
+}

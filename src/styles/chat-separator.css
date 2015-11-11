@@ -1,0 +1,31 @@
+/* Simple Separators */
+.conversation-chat-lines > div:before,
+.chat-line:before {
+	border-bottom: 1px solid #aaa;
+}
+
+/* Dark: Simple Separators */
+.ffz-dark .conversation-chat-lines > div:before,
+.theatre .conversation-chat-lines > div:before,
+
+.theatre .chat-line:before,
+.chat-container.dark .chat-line:before,
+.chat-container.force-dark .chat-line:before,
+.ember-chat-container.dark .chat-line:before,
+.ember-chat-container.force-dark .chat-line:before {
+	border-bottom-color: #000;
+}
+
+
+
+/* Hide First Line */
+.conversation-chat-lines > div:first-child:before,
+.chat-lines > div:first-child .chat-line:before {
+	border-top-color: transparent;
+}
+
+/* Hide Last Line */
+.conversation-chat-lines > div:last-child:nth-child(odd):before,
+.chat-lines > div:last-child:nth-child(odd) .chat-line:before {
+	border-bottom-color: transparent;
+}

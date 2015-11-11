@@ -45,7 +45,7 @@ FFZ.settings_info.fix_color = {
 	},
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
+			this.toggle_style('chat-colors-gray', !this.has_bttv && val === '-1');
 
 			if ( ! this.has_bttv && val !== '-1' )
 				this._rebuild_colors();
@@ -114,6 +114,8 @@ FFZ.settings_info.color_blind = {
 // --------------------
 
 FFZ.prototype.setup_colors = function() {
+	this.toggle_style('chat-colors-gray', !this.has_bttv && this.settings.fix_color === '-1');
+
 	this._colors = {};
 	this._rebuild_contrast();
 

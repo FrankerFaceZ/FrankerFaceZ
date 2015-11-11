@@ -44,22 +44,22 @@ gulp.task('prepare', ['clean'], function() {
 });
 
 
-gulp.task('templates', ['prepare'], function() {
-	gulp.src(['build/templates/**/*.hbs'])
-		.pipe(jsEscape())
-		.pipe(wrap('Handlebars.compile(<%= contents %>)'))
-		.pipe(declare({
-			root: 'exports',
-			noRedeclare: true,
-			processName: function(filePath) {
-				var match = filePath.match(/build[\\\/]templates[\\\/](.*)\.hbs$/);
-				return declare.processNameByPath((match && match.length > 1) ? match[1] : filePath);
-			}
-		}))
-		.pipe(concat('templates.js'))
-		.pipe(gulp.dest('build/'))
-		.on('error', util.log);
-});
+//gulp.task('templates', ['prepare'], function() {
+//	gulp.src(['build/templates/**/*.hbs'])
+//		.pipe(jsEscape())
+//		.pipe(wrap('Handlebars.compile(<%= contents %>)'))
+//		.pipe(declare({
+//			root: 'exports',
+//			noRedeclare: true,
+//			processName: function(filePath) {
+//				var match = filePath.match(/build[\\\/]templates[\\\/](.*)\.hbs$/);
+//				return declare.processNameByPath((match && match.length > 1) ? match[1] : filePath);
+//			}
+//		}))
+//		.pipe(concat('templates.js'))
+//		.pipe(gulp.dest('build/'))
+//		.on('error', util.log);
+//});
 
 
 gulp.task('styles', ['prepare'], function() {
@@ -80,7 +80,7 @@ gulp.task('styles', ['prepare'], function() {
 });
 
 
-gulp.task('scripts', ['prepare', 'templates', 'styles'], function() {
+gulp.task('scripts', ['prepare', 'styles'], function() {
 	gulp.src(['build/main.js'])
 		.pipe(browserify())
 		.pipe(concat('script.js'))

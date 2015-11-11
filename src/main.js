@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 62,
+	major: 3, minor: 5, revision: 63,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -243,6 +243,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 
 	// Start this early, for quick loading.
 	this.setup_dark();
+	this.setup_css();
 
 	if ( ! no_socket )
 		this.ws_create();
@@ -253,7 +254,6 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 
 	this.setup_notifications();
 	this.setup_following_count(false);
-	this.setup_css();
 	this.setup_menu();
 
 	this.find_bttv(10);
@@ -280,6 +280,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 
 	// Start this early, for quick loading.
 	this.setup_dark();
+	this.setup_css();
 
 	this.ws_create();
 	this.setup_colors();
@@ -289,7 +290,6 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_tokenization();
 	this.setup_notifications();
 	this.setup_following_count(false);
-	this.setup_css();
 	this.setup_menu();
 
 	this._update_subscribers();
@@ -321,6 +321,7 @@ FFZ.prototype.init_ember = function(delay) {
 
 	// Start this early, for quick loading.
 	this.setup_dark();
+	this.setup_css();
 
 	this.ws_create();
 	this.setup_emoticons();
@@ -347,7 +348,6 @@ FFZ.prototype.init_ember = function(delay) {
 	//this.setup_teams();
 
 	this.setup_notifications();
-	this.setup_css();
 	this.setup_menu();
 	this.setup_my_emotes();
 	this.setup_following();

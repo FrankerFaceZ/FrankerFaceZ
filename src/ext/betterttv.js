@@ -59,22 +59,27 @@ FFZ.prototype.setup_bttv = function(delay) {
 			this._roomv.ffzUpdateStatus();
 	}
 
+	// Disable style blocks.
+	this.toggle_style('chat-setup');
+	this.toggle_style('chat-padding');
+	this.toggle_style('chat-background');
+
+	this.toggle_style('chat-separator');
+	this.toggle_style('chat-separator-3d');
+	this.toggle_style('chat-separator-3d-inset');
+	this.toggle_style('chat-separator-wide');
+
+	this.toggle_style('chat-hc-text');
+	this.toggle_style('chat-hc-bold');
+	this.toggle_style('chat-hc-background');
+
+	this.toggle_style('chat-colors-gray');
+	this.toggle_style('badges-transparent');
+
 	// Disable other features too.
-	document.body.classList.remove("ffz-chat-colors");
-	document.body.classList.remove("ffz-chat-colors-gray");
-	document.body.classList.remove("ffz-chat-background");
-	document.body.classList.remove("ffz-chat-padding");
-	document.body.classList.remove("ffz-chat-separator");
-	document.body.classList.remove("ffz-chat-separator-3d");
-	document.body.classList.remove("ffz-chat-separator-wide");
-	document.body.classList.remove("ffz-chat-separator-3d-inset");
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-portrait");
 	document.body.classList.remove("ffz-flip-dashboard");
-	document.body.classList.remove("ffz-transparent-badges");
-	document.body.classList.remove("ffz-high-contrast-chat-text");
-	document.body.classList.remove("ffz-high-contrast-chat-bg");
-	document.body.classList.remove("ffz-high-contrast-chat-bold");
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {

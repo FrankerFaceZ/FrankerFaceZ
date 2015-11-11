@@ -43,9 +43,9 @@ FFZ.settings_info.legacy_badges = {
 	},
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-legacy-mod-badges", val !== 0);
-			document.body.classList.toggle("ffz-legacy-turbo-badges", val > 1);
-			document.body.classList.toggle("ffz-legacy-badges", val === 3);
+			this.toggle_style('badges-legacy', val === 3);
+			this.toggle_style('badges-legacy-mod', val !== 0);
+			this.toggle_style('badges-legacy-turbo', val > 1);
 		}
 	};
 
@@ -83,11 +83,11 @@ FFZ.settings_info.transparent_badges = {
 			if ( this.has_bttv )
 				return;
 
-			document.body.classList.toggle("ffz-rounded-badges", val === 1);
-			document.body.classList.toggle("ffz-circular-badges", val === 2);
-			document.body.classList.toggle("ffz-circular-blank-badges", val === 3);
-			document.body.classList.toggle("ffz-circular-small-badges", val === 4);
-			document.body.classList.toggle("ffz-transparent-badges", val === 5);
+			this.toggle_style('badges-rounded', val === 1);
+			this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
+			this.toggle_style('badges-blank', val === 3 || val === 4);
+			this.toggle_style('badges-circular-small', val === 4);
+			this.toggle_style('badges-transparent', val === 5);
 		}
 	};
 
@@ -98,16 +98,17 @@ FFZ.settings_info.transparent_badges = {
 
 FFZ.prototype.setup_badges = function() {
 	if ( ! this.has_bttv ) {
-		document.body.classList.toggle("ffz-rounded-badges", this.settings.transparent_badges === 1);
-		document.body.classList.toggle("ffz-circular-badges", this.settings.transparent_badges === 2);
-		document.body.classList.toggle("ffz-circular-blank-badges", this.settings.transparent_badges === 3);
-		document.body.classList.toggle("ffz-circular-small-badges", this.settings.transparent_badges === 4);
-		document.body.classList.toggle("ffz-transparent-badges", this.settings.transparent_badges === 5);
+		var val = this.settings.transparent_badges;
+		this.toggle_style('badges-rounded', val === 1);
+		this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
+		this.toggle_style('badges-blank', val === 3 || val === 4);
+		this.toggle_style('badges-circular-small', val === 4);
+		this.toggle_style('badges-transparent', val === 5);
 	}
 
-	document.body.classList.toggle("ffz-legacy-mod-badges", this.settings.legacy_badges !== 0);
-	document.body.classList.toggle("ffz-legacy-turbo-badges", this.settings.legacy_badges > 1);
-	document.body.classList.toggle("ffz-legacy-badges", this.settings.legacy_badges === 3);
+	this.toggle_style('badges-legacy', this.settings.legacy_badges === 3);
+	this.toggle_style('badges-legacy-mod', this.settings.legacy_badges !== 0);
+	this.toggle_style('badges-legacy-turbo', this.settings.legacy_badges > 1);
 
 	this.log("Preparing badge system.");
 	this.badges = {};
