@@ -73,9 +73,10 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		resp.Body.Close()
 	}
 
-	go pubsubJanitor()
-	go backlogJanitor()
 	go authorizationJanitor()
+	go backlogJanitor()
+	go bunchCacheJanitor()
+	go pubsubJanitor()
 	go sendAggregateData()
 
 	go ircConnection()
