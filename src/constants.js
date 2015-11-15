@@ -17,6 +17,8 @@ module.exports = {
 		2: ["ws://localhost:8001/"]
 	},
 
+	TOOLTIP_DISTANCE: 50,
+
 	KNOWN_CODES: {
 		"#-?[\\\\/]": "#-/",
 		":-?(?:7|L)": ":-7",
@@ -42,6 +44,7 @@ module.exports = {
 		"Gr(a|e)yFace": "GrayFace"
 		},
 
+	TWITCH_BASE: 'http://static-cdn.jtvnw.net/emoticons/v1/',
 	EMOTE_MIRROR_BASE: SERVER + "twitch-emote-mirror/",
 
 	EMOTE_REPLACEMENT_BASE: SERVER + "script/replacements/",

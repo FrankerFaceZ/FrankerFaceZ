@@ -159,7 +159,7 @@ FFZ.prototype.setup_profile_following = function() {
 				return false;
 
 			t_el.className = 'overlay_info length';
-			jQuery(t_el).tipsy({html: true});
+			jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
 
 			var age = data[0] ? Math.floor((Date.now() - data[0].getTime()) / 1000) : 0;
 			if ( age ) {

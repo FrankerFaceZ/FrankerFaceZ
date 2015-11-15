@@ -52,7 +52,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 
 	// If we don't have Ember, no point in trying this stuff.
 	if ( ! has_ember )
-		return this._update_following_count();
+		return this._following_get_me();
 
 	this.log("Connecting to Live Streams model.");
 	var Stream = window.App && App.__container__.resolve('model:stream');
@@ -77,6 +77,27 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 		if ( streams && streams.length )
 			this._draw_following_channels(streams, total);
 	}
+}
+
+
+FFZ.prototype._following_get_me = function(tries) {
+	// get_user doesn't properly return an oauth token any longer, so we need to get me manually.
+	if ( ! window.Twitch )
+		// Wait around till the API shows up.
+		return setTimeout(this._following_get_me.bind(this, tries), Math.floor(2000*Math.random()) + 500);
+
+	var f = this;
+	Twitch.api.get("/api/me").done(function(data) {
+		f.log("Fetched User Data -- " + (data.name || data.login));
+		f.__user = data;
+		f._update_following_count();
+
+	}).fail(function() {
+		tries = (tries||0) + 1;
+		if ( tries < 5 )
+			return setTimeout(f._following_get_me.bind(f, tries), Math.floor(2000*Math.random()) + 500);
+		f.log("Failed to get proper user object.");
+	});
 }
 
 
@@ -111,8 +132,13 @@ FFZ.prototype._update_following_count = function() {
 
 	if ( Live )
 		Live.load();
-	else
-		Twitch.api && Twitch.api.get("streams/followed", {limit:5, offset:0}, {version:3})
+	else {
+		var a = {},
+			u = this.get_user();
+
+		a.Authorization = "OAuth " + u.chat_oauth_token;
+
+		Twitch.api && Twitch.api.get("streams/followed", {limit:20, offset:0}, {version:3, headers: a})
 			.done(function(data) {
 				f._draw_following_count(data._total);
 				f._draw_following_channels(data.streams, data._total);
@@ -120,6 +146,7 @@ FFZ.prototype._update_following_count = function() {
 				f._draw_following_count();
 				f._draw_following_channels();
 			})
+	}
 }
 
 

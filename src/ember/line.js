@@ -113,7 +113,7 @@ FFZ.settings_info.scrollback_length = {
 
 			for(var room_id in this.rooms) {
 				var room = this.rooms[room_id];
-				room.room.set('messageBufferSize', new_val + ((this._roomv && !this._roomv.get('stuckToBottom') && current_id === room_id) ? 150 : 0));
+				room.room && room.room.set('messageBufferSize', new_val + ((this._roomv && !this._roomv.get('stuckToBottom') && current_id === room_id) ? 150 : 0));
 			}
 		}
 	};
@@ -149,7 +149,6 @@ FFZ.settings_info.banned_words = {
 
 	category: "Chat Filtering",
 	no_bttv: true,
-	//visible: function() { return ! this.has_bttv },
 
 	name: "Banned Words",
 	help: "Set a list of words that will be locally removed from chat messages.",
@@ -181,7 +180,6 @@ FFZ.settings_info.keywords = {
 
 	category: "Chat Filtering",
 	no_bttv: true,
-	//visible: function() { return ! this.has_bttv },
 
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
@@ -243,6 +241,21 @@ FFZ.settings_info.link_image_hover = {
 
 	name: "Image Preview",
 	help: "Display image thumbnails for links to Imgur and YouTube."
+	};
+
+
+FFZ.settings_info.emote_image_hover = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Tooltips",
+	no_mobile: true,
+
+	name: "Emote Preview",
+	help: "Display scaled up high-DPI emoticon images in tooltips to help see details on low-resolution monitors.",
+	on_update: function(val) {
+			this._reset_tooltips();
+		}
 	};
 
 
@@ -402,7 +415,7 @@ FFZ.settings_info.chat_font_family = {
 
 			var span = document.createElement('span');
 			span.style.fontFamily = val;
-			css = ".ember-chat .chat-messages {" + span.style.cssText + "}";
+			css = ".timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history,.ember-chat .chat-messages {" + span.style.cssText + "}";
 		}
 
 		utils.update_css(this._chat_style, "chat_font_family", css);
@@ -444,7 +457,7 @@ FFZ.settings_info.chat_font_size = {
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val)),
 				pd = Math.floor((lh - 20) / 2);
-			css = ".ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			css = ".timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history .chat-line,.ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 			if ( pd )
 				css += ".ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
 		}
@@ -492,7 +505,7 @@ FFZ.settings_info.chat_ts_size = {
 			css = "";
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val), Math.round((20/12)*this.settings.chat_font_size));
-			css = ".ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			css = ".chat-history .timestamp,.ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 		}
 
 		utils.update_css(this._chat_style, "chat_ts_font_size", css);
@@ -607,11 +620,13 @@ FFZ.prototype._modify_line = function(component) {
 				if ( e.target.classList.contains('custom') ) {
 					var room_id = this.get('msgObject.room'),
 						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
-
 						cmd = e.target.getAttribute('data-cmd');
 
 					if ( room ) {
-						room.send(cmd, true);
+						var lines = cmd.split("\n");
+						for(var i=0; i < lines.length; i++)
+							room.send(lines[i], true);
+
 						if ( e.target.classList.contains('is-timeout') )
 							room.clearMessages(this.get('msgObject.from'));
 					}
@@ -683,8 +698,8 @@ FFZ.prototype._modify_line = function(component) {
 
 					else {
 						if ( typeof btn === "string" ) {
-							cmd = btn.replace(/{user}/g, user);
-							tip = 'Custom Command\n' + cmd;
+							cmd = btn.replace(/{user}/g, user).replace(/ *<LINE> */, "\n");
+							tip = 'Custom Command' + (cmd.indexOf('\n') !== -1 ? 's' : '') + '\n' + cmd;
 						} else {
 							cmd = "/timeout " + user + " " + btn;
 							tip = "Timeout User (" + utils.duration_string(btn) + ")";

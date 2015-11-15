@@ -260,6 +260,10 @@ FFZ.prototype.render_badges = function(component, badges) {
 	var user = component.get('msgObject.from') || component.get('message.from.username'),
 		room_id = component.get('msgObject.room') || App.__container__.lookup('controller:chat').get('currentRoom.id');
 
+	return this._render_badges(user, room_id, badges, component);
+}
+
+FFZ.prototype._render_badges = function(user, room_id, badges, component) {
 	var data = this.users[user];
 	if ( ! data || ! data.badges )
 		return badges;

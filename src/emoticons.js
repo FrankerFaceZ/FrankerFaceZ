@@ -4,46 +4,11 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
-
-	/*check_margins = function(margins, height) {
-		var mlist = margins.split(/ +/);
-		if ( mlist.length != 2 )
-			return margins;
-
-		mlist[0] = parseFloat(mlist[0]);
-		mlist[1] = parseFloat(mlist[1]);
-
-		if ( mlist[0] == (height - 18) / -2 && mlist[1] == 0 )
-			return null;
-
-		return margins;
-	},
-
-
-	build_legacy_css = function(emote) {
-		var margin = emote.margins, srcset = "";
-		if ( ! margin )
-			margin = ((emote.height - 18) / -2) + "px 0";
-
-		if ( emote.urls[2] || emote.urls[4] ) {
-			srcset = 'url("' + emote.urls[1] + '") 1x';
-			if ( emote.urls[2] )
-				srcset += ', url("' + emote.urls[2] + '") 2x';
-			if ( emote.urls[4] )
-				srcset += ', url("' + emote.urls[4] + '") 4x';
-
-			srcset = '-webkit-image-set(' + srcset + '); image-set(' + srcset + ');';
-		}
-
-		return ".ffz-emote-" + emote.id + ' { background-image: url("' + emote.urls[1] + '"); height: ' + emote.height + "px; width: " + emote.width + "px; margin: " + margin + (srcset ? '; ' + srcset : '') + (emote.css ? "; " + emote.css : "") + "}\n";
-	},*/
-
-
 	build_css = function(emote) {
 		if ( ! emote.margins && ! emote.css )
-			return ""; //build_legacy_css(emote);
+			return "";
 
-		return /*build_legacy_css(emote) +*/ 'img[src="' + emote.urls[1] + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
+		return 'img[src="' + emote.urls[1] + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
 	},
 
 
@@ -120,8 +85,15 @@ FFZ.prototype.setup_emoticons = function() {
 // Emote Usage
 // ------------------------
 
-FFZ.prototype.add_usage = function(room_id, emote_id, count) {
-	var rooms = this.emote_usage[emote_id] = this.emote_usage[emote_id] || {};
+FFZ.prototype.add_usage = function(room_id, emote, count) {
+	// Only report usage from FFZ emotes. Not extensions to FFZ.
+	var emote_set = this.emote_sets[emote.set_id];
+	if ( ! emote_set || emote_set.source_ext )
+		return;
+
+	var emote_id = emote.id,
+		rooms = this.emote_usage[emote_id] = this.emote_usage[emote_id] || {};
+
 	rooms[room_id] = (rooms[room_id] || 0) + (count || 1);
 
 	if ( this._emote_report_scheduled )
@@ -260,10 +232,80 @@ FFZ.prototype._emote_tooltip = function(emote) {
 	var set = this.emote_sets[emote.set_id],
 		owner = emote.owner,
 		title = set && set.title || "Global",
-		source = set && set.source || "FFZ";
+		source = set && set.source || "FFZ",
 
-	emote._tooltip = "Emoticon: " + (emote.hidden ? "???" : emote.name) + "<br>" + source + " " + title + (owner ? "<br>By: " + owner.display_name : "");
+		preview_url = this.settings.emote_image_hover ? (emote.urls[4] || emote.urls[2]) : null,
+		image = preview_url ? '<img class="emoticon ffz-image-hover" src="' + preview_url + '?_=preview">' : '';
+
+	emote._tooltip = image + "Emoticon: " + (emote.hidden ? "???" : emote.name) + "<br>" + source + " " + title + (owner ? "<br>By: " + owner.display_name : "");
 	return emote._tooltip;
+}
+
+FFZ.prototype._reset_tooltips = function(twitch_only) {
+	for(var emote_id in this._twitch_emotes) {
+		var data = this._twitch_emotes[emote_id];
+		if ( data && data.tooltip )
+			data.tooltip = null;
+	}
+
+	if ( ! twitch_only ) {
+		for(var set_id in this.emote_sets) {
+			var emote_set = this.emote_sets[set_id];
+			for(var emote_id in emote_set.emoticons) {
+				var emote = emote_set.emoticons[emote_id];
+				if ( emote._tooltip )
+					emote._tooltip = null;
+			}
+		}
+	}
+
+	var emotes = document.querySelectorAll('img.emoticon');
+	for(var i=0; i < emotes.length; i++) {
+		var emote = emotes[i];
+		if ( emote.classList.contains('ffz-image-hover') )
+			continue;
+
+		var set_id,
+			emote_id = emote.getAttribute('data-emote');
+
+		if ( emote_id ) {
+			// Twitch Emotes
+			if ( this.has_bttv )
+				continue;
+
+			emote.setAttribute('original-title', utils.build_tooltip.bind(this)(emote_id, false, emote.alt));
+			continue;
+		}
+
+		if ( twitch_only )
+			continue;
+
+		// FFZ Emoji
+		emote_id = emote.getAttribute('data-ffz-emoji');
+		if ( emote_id ) {
+			var emoji = this.emoji_data && this.emoji_data[emote_id],
+				setting = this.settings.parse_emoji,
+
+				src = emoji ? (setting === 2 ? emoji.noto_src : emoji.tw_src) : null,
+				image = '';
+
+			if ( src && this.settings.emote_image_hover )
+				image = '<img class="emoticon ffz-image-hover emoji" src="' + src + '">';
+
+			emote.setAttribute('original-title', emoji ? (image + 'Emoji: ' + emote.alt + '<br>Name: ' + emoji.name + (emoji.short_name ? "<br>Short Name: :" + emoji.short_name + ":" : "")) : emote.alt);
+			continue;
+		}
+
+		// FFZ Emotes
+		emote_id = emote.getAttribute('data-ffz-emote');
+		set_id = emote.getAttribute('data-ffz-set');
+
+		var emote_set = this.emote_sets[set_id];
+		if ( ! emote_set || ! emote_set.emoticons || ! emote_set.emoticons[emote_id] )
+			continue;
+
+		emote.setAttribute('original-title', this._emote_tooltip(emote_set.emoticons[emote_id]));
+	}
 }
 
 

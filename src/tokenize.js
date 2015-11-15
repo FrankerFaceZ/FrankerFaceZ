@@ -1,75 +1,10 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require("./utils"),
 	constants = require("./constants"),
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	helpers,
+	conv_helpers,
 
 	EXPLANATION_TRAIL = '<hr>FFZ is hiding this link because this url shortener is known to be used by Twitch spam bots posting malicious links. Please use caution when visiting shortened links.',
-
-	SRCSETS = {};
-	build_srcset = function(id) {
-		if ( SRCSETS[id] )
-			return SRCSETS[id];
-		var out = SRCSETS[id] = TWITCH_BASE + id + "/1.0 1x, " + TWITCH_BASE + id + "/2.0 2x, " + TWITCH_BASE + id + "/3.0 4x";
-		return out;
-	},
-
-
-	data_to_tooltip = function(data) {
-		var set = data.set,
-			set_type = data.set_type,
-			owner = data.owner;
-
-		if ( set_type === undefined )
-			set_type = "Channel";
-
-		if ( ! set )
-			return data.code;
-
-		else if ( set === "--global--" ) {
-			set = "Twitch Global";
-			set_type = null;
-
-		} else if ( set == "--twitch-turbo--" || set == "turbo" || set == "--turbo-faces--" ) {
-			set = "Twitch Turbo";
-			set_type = null;
-		}
-
-		return "Emoticon: " + data.code + "<br>" + (set_type ? set_type + ": " : "") + set + (owner ? "<br>By: " + owner.display_name : "");
-	},
-
-	build_tooltip = function(id) {
-		var emote_data = this._twitch_emotes[id],
-			set = emote_data ? emote_data.set : null;
-
-		if ( ! emote_data )
-			return "???";
-
-		if ( typeof emote_data == "string" )
-			return emote_data;
-
-		if ( emote_data.tooltip )
-			return emote_data.tooltip;
-
-		return emote_data.tooltip = data_to_tooltip(emote_data);
-	},
-
-	load_emote_data = function(id, code, success, data) {
-		if ( ! success )
-			return code;
-
-		if ( code )
-			data.code = code;
-
-		this._twitch_emotes[id] = data;
-		var tooltip = build_tooltip.bind(this)(id);
-
-		var images = document.querySelectorAll('img[data-emote="' + id + '"]');
-		for(var x=0; x < images.length; x++)
-			images[x].title = tooltip;
-
-		return tooltip;
-	},
 
 
 	reg_escape = function(str) {
@@ -105,7 +40,7 @@ var FFZ = window.FrankerFaceZ,
 			return IMGUR_PATH.test(path);
 
 		return any_domain ? IMAGE_EXT.test(path) : IMAGE_DOMAINS.indexOf(domain) !== -1;
-	}
+	},
 
 	image_iframe = function(href, extra_class) {
 		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/img-proxy.html#' + utils.quote_attr(href) + '"></iframe>';
@@ -248,12 +183,12 @@ FFZ._emote_mirror_swap = function(img) {
 	img.setAttribute('data-alt-attempts', attempts + 1);
 	var id = img.getAttribute('data-emote');
 
-	if ( img.src.substr(0, TWITCH_BASE.length) === TWITCH_BASE ) {
+	if ( img.src.substr(0, constants.TWITCH_BASE.length) === constants.TWITCH_BASE ) {
 		img.src = constants.EMOTE_MIRROR_BASE + id + ".png";
 		img.srcset = "";
 	} else {
-		img.src = TWITCH_BASE + id + "/1.0";
-		img.srcset = build_srcset(id);
+		img.src = constants.TWITCH_BASE + id + "/1.0";
+		img.srcset = utils.build_srcset(id);
 	}
 }
 
@@ -316,6 +251,10 @@ FFZ.prototype.setup_tokenization = function() {
 	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
 	if ( ! helpers )
 		return this.log("Unable to get chat helper functions.");
+
+	conv_helpers = window.require && window.require("ember-twitch-conversations/helpers/conversation-line-helpers");
+	if ( ! conv_helpers )
+		this.log("Unable to get conversation helper functions.");
 
 	this.log("Hooking Ember chat line helpers.");
 
@@ -386,6 +325,8 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 			this._twitch_set_to_channel[33] = "--turbo-faces--";
 			this._twitch_set_to_channel[42] = "--turbo-faces--";
 
+			this._reset_tooltips(true);
+
 		}).fail(function(data) {
 			if ( data.status === 404 )
 				return;
@@ -409,6 +350,9 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 
 		emotes = message.get('tags.emotes'),
 		tokens = [msg];
+
+	if ( conv_helpers && conv_helpers.checkActionMessage )
+		tokens = conv_helpers.checkActionMessage(tokens);
 
 	// Standard Tokenization
 	if ( helpers && helpers.linkifyMessage )
@@ -597,8 +541,11 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji)
 FFZ.prototype.render_tokens = function(tokens, render_links) {
 	var f = this;
 	return _.map(tokens, function(token) {
+		if ( token.hidden )
+			return "";
+
 		if ( token.emoticonSrc ) {
-			var tooltip, src = token.emoticonSrc, srcset, extra;
+			var tooltip, src = token.emoticonSrc, srcset, cls, extra;
 			if ( token.ffzEmote ) {
 				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
 					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
@@ -610,26 +557,32 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 			} else if ( token.ffzEmoji ) {
 				var eid = token.ffzEmoji,
 					emoji = f.emoji_data && f.emoji_data[eid],
-					setting = f.settings.parse_emoji;
+					setting = f.settings.parse_emoji,
+					image = '';
 
 				if ( setting === 0 || (setting === 1 && ! emoji.tw) || (setting === 2 && ! emoji.noto) )
 					return token.altText;
 
-				tooltip = emoji ? "Emoji: " + token.altText + "\nName: " + emoji.name + (emoji.short_name ? "\nShort Name: :" + emoji.short_name + ":" : "") : token.altText;
-				extra = ' data-ffz-emoji="' + eid + '" height="18px"';
 				src = setting === 2 ? token.noto_src : token.tw_src;
+
+				if ( emoji && f.settings.emote_image_hover )
+					image = '<img class="emoticon ffz-image-hover" src="' + src + '">';
+
+				tooltip = emoji ? image + "Emoji: " + token.altText + "<br>Name: " + emoji.name + (emoji.short_name ? "<br>Short Name: :" + emoji.short_name + ":" : "") : token.altText;
+				extra = ' data-ffz-emoji="' + eid + '" height="18px"';
+				cls = ' emoji';
 
 			} else {
 				var id = token.replacedId || FFZ.src_to_id(token.emoticonSrc),
 					data = id && f._twitch_emotes && f._twitch_emotes[id];
 
 				if ( data )
-					tooltip = data.tooltip ? data.tooltip : token.altText;
+					tooltip = data.tooltip ? data.tooltip : utils.build_tooltip.bind(f)(id, false, token.altText);
 				else {
 					try {
 						var set_id = f._twitch_emote_to_set[id];
 						if ( set_id ) {
-							tooltip = load_emote_data.bind(f)(id, token.altText, true, {
+							tooltip = utils.load_emote_data.bind(f)(id, token.altText, true, {
 								code: token.altText,
 								id: id,
 								set: f._twitch_set_to_channel[set_id],
@@ -637,19 +590,18 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 							});
 						} else {
 							tooltip = f._twitch_emotes[id] = token.altText;
-							f.ws_send("twitch_emote", id, load_emote_data.bind(f, id, token.altText));
+							f.ws_send("twitch_emote", id, utils.load_emote_data.bind(f, id, token.altText));
 						}
 					} catch(err) {
 						f.error("Error Generating Emote Tooltip: " + err);
 					}
 				}
 
-				var mirror_url = utils.quote_attr(constants.EMOTE_MIRROR_BASE + id + '.png');
-
+				//var mirror_url = utils.quote_attr(constants.EMOTE_MIRROR_BASE + id + '.png');
 				extra = ' data-emote="' + id + '"'; // onerror="FrankerFaceZ._emote_mirror_swap(this)"'; // Disable error checking for now.
 
 				if ( ! constants.EMOTE_REPLACEMENTS[id] )
-					srcset = build_srcset(id);
+					srcset = utils.build_srcset(id);
 			}
 
 			return '<img class="emoticon html-tooltip' + (cls||"") + '"' + (extra||"") + ' src="' + utils.quote_attr(src) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
@@ -797,7 +749,7 @@ FFZ.prototype.tokenize_title_emotes = function(tokens) {
 			data = data.emoticon_sets[0];
 			for(var i=0; i < data.length; i++) {
 				var em = data[i];
-				emotes.push({regex: em.code, url: TWITCH_BASE + em.id + "/1.0"});
+				emotes.push({regex: em.code, url: utils.TWITCH_BASE + em.id + "/1.0"});
 			}
 
 			if ( f._cindex )
@@ -893,7 +845,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 					bits.push(eo);
 
 					if ( do_report && room )
-						f.add_usage(room, emote.id);
+						f.add_usage(room, emote);
 
 				} else
 					bits.push(bit);

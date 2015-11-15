@@ -134,6 +134,15 @@ FFZ.prototype._modify_rview = function(view) {
 			this._super();
 		},
 
+		ffzAlternate: function() {
+			/*if ( ! this._ffz_chat_display ) {
+				var el = this.get('element');
+				this._ffz_chat_display = el && el.querySelector('ul.chat-lines');
+			}
+
+			this._ffz_chat_display && this._ffz_chat_display.classList.toggle('ffz-should-alternate');*/
+		},
+
 		ffzInit: function() {
 			f._roomv = this;
 
@@ -178,6 +187,9 @@ FFZ.prototype._modify_rview = function(view) {
 		ffzTeardown: function() {
 			if ( f._roomv === this )
 				f._roomv = undefined;
+
+			if ( this._ffz_chat_display )
+				this._ffz_chat_display = undefined;
 
 			this.ffzDisableFreeze();
 		},
@@ -367,12 +379,12 @@ FFZ.prototype._modify_rview = function(view) {
 			}
 		},
 
-		ffzUnfreeze: function() {
+		ffzUnfreeze: function(from_stuck) {
 			this.ffz_frozen = false;
 			this._ffz_last_move = 0;
 			this.ffzUnwarnPaused();
 
-			if ( this.get('stuckToBottom') )
+			if ( ! from_stuck && this.get('stuckToBottom') )
 				this._scrollToBottom();
 		},
 
@@ -434,7 +446,7 @@ FFZ.prototype._modify_rview = function(view) {
 			this.set("stuckToBottom", val);
 			this.get("controller.model") && this.set("controller.model.messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
 			if ( ! val )
-				this.ffzUnfreeze();
+				this.ffzUnfreeze(true);
 		},
 
 		// Warnings~!
@@ -728,6 +740,7 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		tmiSession = r.tmiSession || (TMI._sessions && TMI._sessions[0]),
 		tmiRoom = r.tmiRoom,
 
+		removed = 0,
 		inserted = 0,
 		purged = {},
 
@@ -828,10 +841,15 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
 		if ( r.shouldShowMessage(msg) ) {
 			messages.insertAt(inserted, msg);
-			while( messages.length > r.get('messageBufferSize') )
+			while( messages.length > r.get('messageBufferSize') ) {
 				messages.removeAt(0);
+				removed++;
+			}
 		}
 	}
+
+	if ( (removed % 2) && this._roomv && this._roomv.get('context.model.id') === room_id )
+		this._roomv.ffzAlternate();
 }
 
 
@@ -995,7 +1013,8 @@ FFZ.prototype._modify_room = function(room) {
 
 				var msgs = t.get('messages'),
 					total = msgs.get('length'),
-					i = total;
+					i = total,
+					removed = 0;
 
 				// Delete visible messages
 				while(i--) {
@@ -1004,6 +1023,7 @@ FFZ.prototype._modify_room = function(room) {
 					if ( msg.from === user ) {
 						if ( f.settings.remove_deleted ) {
 							msgs.removeAt(i);
+							removed++;
 							continue;
 						}
 
@@ -1012,6 +1032,9 @@ FFZ.prototype._modify_room = function(room) {
 							t.set('messages.' + i + '.deleted', true);
 					}
 				}
+
+				if ( (removed % 2) && f._roomv && f._roomv.get('context.model.id') === this.get('id') )
+					f._roomv.ffzAlternate();
 
 				// Delete pending messages
 				if (t.ffzPending) {
@@ -1064,8 +1087,11 @@ FFZ.prototype._modify_room = function(room) {
 				len = messages.get("length"),
 				limit = this.get("messageBufferSize");
 
-			if ( len > limit )
+			if ( len > limit ) {
 				messages.removeAt(0, len - limit);
+				if ( ((len - limit) % 2) && f._roomv && f._roomv.get('context.model.id') === this.get('id') )
+					f._roomv.ffzAlternate();
+			}
 		},
 
 		// Artificial chat delay

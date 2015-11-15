@@ -1,7 +1,7 @@
 /* High-Contrast Text */
 .chat-container,
 .ember-chat-container {
-	color: #000;
+	color: #000 !important;
 }
 
 /* Dark: High-Contrast Text */
@@ -10,6 +10,10 @@
 .chat-container.dark,
 .chat-container.force-dark,
 .ember-chat-container.dark,
-.ember-chat-container.force-dark {
-	color: #fff;
+.ember-chat-container.force-dark,
+
+.ffz-dark .ember-chat-container.dark .chat-line,
+.ffz-dark .chat-container.dark .chat-line
+ {
+	color: #fff !important;
 }

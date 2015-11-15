@@ -187,6 +187,43 @@ RGBColor.prototype.eq = function(rgb) {
 	return rgb.r === this.r && rgb.g === this.g && rgb.b === this.b;
 }
 
+RGBColor.fromCSS = function(rgb) {
+	rgb = rgb.trim();
+
+	if ( rgb.charAt(0) === '#' )
+		return RGBColor.fromHex(rgb);
+
+	var match = /rgba?\( *(\d+%?) *, *(\d+%?) *, *(\d+%?) *(?:,[^\)]+)?\)/.exec(rgb);
+	if ( match ) {
+		var r = match[1],
+			g = match[2],
+			b = match[3];
+
+		if ( r.charAt(r.length-1) === '%' )
+			r = 255 * (parseInt(r) / 100);
+		else
+			r = parseInt(r);
+
+		if ( g.charAt(g.length-1) === '%' )
+			g = 255 * (parseInt(g) / 100);
+		else
+			g = parseInt(g);
+
+		if ( b.charAt(b.length-1) === '%' )
+			b = 255 * (parseInt(b) / 100);
+		else
+			b = parseInt(b);
+
+		return new RGBColor(
+			Math.min(Math.max(0, r), 255),
+			Math.min(Math.max(0, g), 255),
+			Math.min(Math.max(0, b), 255)
+			);
+	}
+
+	return null;
+}
+
 RGBColor.fromHex = function(code) {
 	var raw = parseInt(code.charAt(0) === '#' ? code.substr(1) : code, 16);
 	return new RGBColor(
@@ -587,6 +624,9 @@ FFZ.prototype._update_colors = function(darkness_only) {
 
 
 FFZ.prototype._handle_color = function(color) {
+	if ( color instanceof RGBColor )
+		color = color.toHex();
+
 	if ( ! color || this._colors.hasOwnProperty(color) )
 		return this._colors[color];
 

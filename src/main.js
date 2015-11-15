@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 65,
+	major: 3, minor: 5, revision: 77,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -90,12 +90,22 @@ FFZ.prototype._pastebin = function(data, callback) {
 // -------------------
 
 FFZ.prototype.get_user = function() {
-	if ( window.PP && PP.login ) {
-		return PP;
-	} else if ( window.App ) {
-		var nc = App.__container__.lookup("controller:login");
-		return nc ? nc.get("userData") : undefined;
+	if ( this.__user )
+		return this.__user;
+
+	var user;
+	if ( window.App ) {
+		var nc = App.__container__.lookup('controller:login');
+		user = nc ? nc.get('userData') : undefined;
 	}
+
+	if ( ! user && window.PP && PP.login )
+		user = PP;
+
+	if ( user )
+		this.__user = user;
+
+	return user;
 }
 
 
@@ -133,6 +143,7 @@ require('./ember/following');
 
 require('./debug');
 
+require('./ext/rechat');
 require('./ext/betterttv');
 require('./ext/emote_menu');
 
@@ -140,6 +151,7 @@ require('./featurefriday');
 
 require('./ui/styles');
 require('./ui/dark');
+require('./ui/tooltips');
 require('./ui/notifications');
 require('./ui/viewer_count');
 require('./ui/sub_count');
@@ -256,6 +268,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.setup_following_count(false);
 	this.setup_menu();
 
+	this.fix_tooltips();
 	this.find_bttv(10);
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
@@ -297,6 +310,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 	// Set up the FFZ message passer.
 	this.setup_message_event();
 
+	this.fix_tooltips();
 	this.find_bttv(10);
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
@@ -354,8 +368,10 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_following_count(true);
 	this.setup_races();
 
+	this.fix_tooltips();
 	this.connect_extra_chat();
 
+	this.setup_rechat();
 	this.find_bttv(10);
 	this.find_emote_menu(10);
 

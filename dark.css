@@ -902,6 +902,26 @@
 
 /* Conversations */
 
+.ffz-dark .conversation-input-bar .emoticon-selector-toggle svg path {
+	fill: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .conversation-input-bar .emoticon-selector-toggle:hover svg path {
+	fill: rgba(255,255,255,0.5);
+}
+
+.ffz-dark .conversation-input-bar .emoticon-selector-box .emote-set {
+	border-color: #323232;
+}
+
+.ffz-dark .conversation-input-bar .emoticon-selector-box .emoticon-grid {
+	background-color: #191919;
+}
+
+.ffz-dark .ember-chat .chat-settings .experimental-options {
+	border-top-color: rgba(255,255,255, 0.2);
+}
+
 .ffz-dark .conversation-settings-menu .options-divider {
 	border-bottom-color: rgba(255,255,255,0.2);
 }
@@ -1012,5 +1032,8 @@
     background-color: #6441a5
 }
 
+.ffz-dark .conversation-window .timestamp-line span,
 .ffz-dark .conversation-window .new-message-divider span { background: transparent; }
+
+.ffz-dark .conversation-window .timestamp-line:after,
 .ffz-dark .conversation-window .new-message-divider:after { display: none; }

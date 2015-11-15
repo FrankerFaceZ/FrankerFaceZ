@@ -7,23 +7,11 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // ---------------
 
-FFZ.settings_info.conv_title_clickable = {
-	type: "boolean",
-	value: false,
-	no_mobile: true,
-
-	category: "Conversations",
-	name: "Clickable Header Name",
-	help: "Make the conversation header a link that takes you to that person's page.",
-	on_update: function(val) {
-			document.body.classList.toggle('ffz-conv-title-clickable', val);
-		}
-	};
-
 FFZ.settings_info.conv_focus_on_click = {
 	type: "boolean",
 	value: false,
 	no_mobile: true,
+	visible: false,
 
 	category: "Conversations",
 	name: "Focus Input on Click",
@@ -43,19 +31,6 @@ FFZ.settings_info.top_conversations = {
 		}
 	};
 
-FFZ.settings_info.conv_beta_enable = {
-	type: "boolean",
-	value: false,
-	no_mobile: true,
-
-	category: "Conversations",
-	name: "Enable Conversations",
-	help: "Twitch hasn't enabled them yet, but they're in the code for testing. Try them out!",
-	on_update: function(val) {
-			App.__container__.lookup('route:application').controller.set('isConversationsEnabled', val);
-		}
-	};
-
 
 // ---------------
 // Initialization
@@ -63,10 +38,6 @@ FFZ.settings_info.conv_beta_enable = {
 
 FFZ.prototype.setup_conversations = function() {
 	document.body.classList.toggle('ffz-top-conversations', this.settings.top_conversations);
-	document.body.classList.toggle('ffz-conv-title-clickable', this.settings.conv_title_clickable);;
-
-	if ( this.settings.conv_beta_enable )
-		App.__container__.lookup('route:application').controller.set('isConversationsEnabled', true);
 
 	this.log("Hooking the Ember Conversation Window component.");
 	var ConvWindow = App.__container__.resolve('component:conversation-window');
@@ -78,6 +49,9 @@ FFZ.prototype.setup_conversations = function() {
 	var ConvLine = App.__container__.resolve('component:conversation-line');
 	if ( ConvLine )
 		this._modify_conversation_line(ConvLine);
+
+	// TODO: Make this better later.
+	jQuery('.conversations-list').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 }
 
 
@@ -88,14 +62,8 @@ FFZ.prototype._modify_conversation_window = function(component) {
 		Settings = App.__container__.lookup('controller:settings');
 
 	component.reopen({
-		onConversationClick: Ember.on('click', function() {
-			this.markConversationRead();
-			if ( f.settings.conv_focus_on_click )
-				this.$(".conversation-input-bar textarea").focus();
-		}),
-
-		headerBadges: Ember.computed("conversation.participants", "currentUsername", function() {
-			var e = this.get("conversation.participants").rejectBy("username", this.get("currentUsername")).objectAt(0),
+		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
+			var e = this.get("thread.participants").rejectBy("username", this.get("currentUsername")).objectAt(0),
 				badges = {},
 
 				ut = e.get("userType");
@@ -164,28 +132,18 @@ FFZ.prototype._modify_conversation_window = function(component) {
 				header = el && el.querySelector('.conversation-header'),
 				header_name = header && header.querySelector('.conversation-header-name'),
 
-				new_header_name = document.createElement('span'),
-
 				raw_color = this.get('otherUser.color'),
 				colors = raw_color && f._handle_color(raw_color),
 
 				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch;
 
-			if ( header_name ) {
-				new_header_name.className = 'conversation-header-name';
-				new_header_name.textContent = header_name.textContent;
-				header.insertBefore(new_header_name, header_name);
-
-				if ( raw_color ) {
-					header_name.style.color = (is_dark ? colors[1] : colors[0]);
-					header_name.classList.add('has-color');
-					header_name.setAttribute('data-color', raw_color);
-
-					new_header_name.style.color = (is_dark ? colors[1] : colors[0]);
-					new_header_name.classList.add('has-color');
-					new_header_name.setAttribute('data-color', raw_color);
-				}
+			if ( header_name && raw_color ) {
+				header_name.style.color = (is_dark ? colors[1] : colors[0]);
+				header_name.classList.add('has-color');
+				header_name.setAttribute('data-color', raw_color);
 			}
+
+			jQuery(el).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
 }

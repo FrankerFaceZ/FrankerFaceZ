@@ -2,8 +2,6 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
-
 	fix_menu_position = function(container) {
 		var swapped = document.body.classList.contains('ffz-sidebar-swap') && ! document.body.classList.contains('ffz-portrait');
 
@@ -63,7 +61,8 @@ FFZ.prototype.setup_menu = function() {
 
 	this.log("Hooking the Ember Chat Settings view.");
 
-	var Settings = window.App && App.__container__.resolve('view:settings');
+	var Settings = window.App && App.__container__.resolve('view:settings'),
+		Layout = App.__container__.lookup('controller:layout');
 
 	if ( ! Settings )
 		return;
@@ -155,12 +154,27 @@ FFZ.prototype.setup_menu = function() {
 
 			menu.appendChild(header);
 			menu.appendChild(content);
+
+			// Maximum Height
+			var e = el.querySelector('.chat-settings');
+			if ( Layout && e )
+				e.style.maxHeight = (Layout.get('windowHeight') - 90) + 'px';
+
 		},
 
 		ffzTeardown: function() {
 			// Nothing~!
 		}
 	});
+
+	// Maximum height~!
+	if ( Layout )
+		Layout.addObserver('windowHeight', function() {
+			var el = document.querySelector('.ember-chat .chat-settings');
+			if ( el )
+				el.style.maxHeight = (Layout.get('windowHeight') - 90) + 'px';
+		});
+
 
 	// For some reason, this doesn't work unless we create an instance of the
 	// chat settings view and then destroy it immediately.
@@ -225,7 +239,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 	container.classList.toggle('dark', dark);
 
 	// Stuff
-	jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: jQuery.fn.tipsy.autoNS});
+	jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
 
 
 	// Menu Container
@@ -316,7 +330,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 		link.title = page.name;
 		link.innerHTML = page.icon;
 
-		jQuery(link).tipsy();
+		jQuery(link).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 		link.addEventListener("click", this._ui_change_page.bind(this, view, inner, menu, sub_container, key));
 
@@ -438,11 +452,11 @@ FFZ.menu_pages.channel = {
 
 						var s = document.createElement('span'),
 							can_use = is_subscribed || !emote.subscriber_only,
-							img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+							img_set = 'image-set(url("' + constants.TWITCH_BASE + emote.id + '/1.0") 1x, url("' + constants.TWITCH_BASE + emote.id + '/2.0") 2x), url("' + constants.TWITCH_BASE + emote.id + '/3.0") 4x)';
 
-						s.className = 'emoticon tooltip' + (!can_use ? " locked" : "");
+						s.className = 'emoticon html-tooltip' + (!can_use ? " locked" : "");
 
-						s.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+						s.style.backgroundImage = 'url("' + constants.TWITCH_BASE + emote.id + '/1.0")';
 						s.style.backgroundImage = '-webkit-' + img_set;
 						s.style.backgroundImage = '-moz-' + img_set;
 						s.style.backgroundImage = '-ms-' + img_set;
@@ -450,7 +464,7 @@ FFZ.menu_pages.channel = {
 
 						s.style.width = emote.width + "px";
 						s.style.height = emote.height + "px";
-						s.title = emote.regex;
+						s.title = (this.settings.emote_image_hover ? '<img class="emoticon ffz-image-hover" src="' + constants.TWITCH_BASE + emote.id + '/3.0?_=preview">' : '') + emote.regex;
 
 						s.addEventListener('click', function(can_use, id, code, e) {
 							if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )

@@ -182,7 +182,7 @@ FFZ.settings_info.mod_buttons = {
 					old_val += ' ' + prefix + cmd;
 			}
 
-			var new_val = prompt("Custom In-Line Moderation Icons\n\nPlease enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"\n\nNumeric values will become timeout buttons for that number of seconds. The text \"<BAN>\" is a special value that will act like the normal Ban button in chat.\n\nTo assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.\n\nExample: A=\"!reg add\"\n\nDefault: <BAN> 600", old_val);
+			var new_val = prompt("Custom In-Line Moderation Icons\n\nPlease enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"\n\nTo send multiple commands, separate them with \"<LINE>\".\n\nNumeric values will become timeout buttons for that number of seconds. The text \"<BAN>\" is a special value that will act like the normal Ban button in chat.\n\nTo assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.\n\nExample: A=\"!reg add\"\n\nDefault: <BAN> 600", old_val);
 
 			if ( new_val === null || new_val === undefined )
 				return;
@@ -253,8 +253,15 @@ FFZ.settings_info.mod_buttons = {
 				} else
 					had_prefix = true;
 
-				if ( typeof val === "string" && val.indexOf('{user}') === -1 )
-					val += ' {user}';
+				if ( typeof val === "string" ) {
+					// Split it up for this step.
+					var lines = val.split(/ *<LINE> */);
+					for(var x=0; x < lines.length; x++) {
+						if ( lines[x].indexOf('{user}') === -1 )
+							lines[x] += ' {user}';
+					}
+					val = lines.join("<LINE>");
+				}
 
 				final.push([prefix, val, had_prefix]);
 			}
@@ -475,7 +482,7 @@ FFZ.prototype.setup_mod_card = function() {
 					if ( name ) {
 						name.classList.add('ffz-alias');
 						name.title = utils.sanitize(controller.get('cardInfo.user.display_name') || user_id.capitalize());
-						jQuery(name).tipsy();
+						jQuery(name).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 				}
 
@@ -522,7 +529,7 @@ FFZ.prototype.setup_mod_card = function() {
 							btn.innerHTML = utils.sanitize(title);
 							btn.title = utils.sanitize(cmd.replace(/{user}/g, controller.get('cardInfo.user.id') || '{user}'));
 
-							jQuery(btn).tipsy();
+							jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 							btn.addEventListener('click', add_btn_click.bind(this, cmd));
 							return btn;
 						};
@@ -601,7 +608,7 @@ FFZ.prototype.setup_mod_card = function() {
 							else if ( f.settings.mod_card_hotkeys &&  timeout === 1 )
 								btn.title = "(P)urge - " + btn.title;
 
-							jQuery(btn).tipsy();
+							jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 							btn.addEventListener('click', btn_click.bind(this, timeout));
 							return btn;
@@ -637,7 +644,7 @@ FFZ.prototype.setup_mod_card = function() {
 					unban_btn.innerHTML = CHECK;
 					unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
 
-					jQuery(unban_btn).tipsy();
+					jQuery(unban_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					unban_btn.addEventListener("click", btn_click.bind(this, -1));
 
 					jQuery(ban_btn).after(unban_btn);
@@ -661,7 +668,7 @@ FFZ.prototype.setup_mod_card = function() {
 					msg_btn.classList.add('message');
 
 					msg_btn.title = "Whisper User";
-					jQuery(msg_btn).tipsy();
+					jQuery(msg_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 
 					var real_msg = document.createElement('button');
@@ -846,7 +853,7 @@ FFZ.prototype._build_mod_card_history = function(line) {
 	// Interactivity
 	jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
 	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
-	jQuery('.html-tooltip', l_el).tipsy({html:true});
+	jQuery('.html-tooltip', l_el).tipsy({html:true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
 
 	return l_el;
 }

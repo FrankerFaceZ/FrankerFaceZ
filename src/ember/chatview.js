@@ -415,7 +415,7 @@ FFZ.prototype._modify_cview = function(view) {
 		ffzInit: function() {
 			f._chatv = this;
 			this.$('.textarea-contain').append(f.build_ui_link(this));
-			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity:  jQuery.fn.tipsy.autoNS});
+			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 			if ( !f.has_bttv && f.settings.group_tabs )
 				this.ffzEnableTabs();
@@ -447,7 +447,7 @@ FFZ.prototype._modify_cview = function(view) {
 			var room = this.get('controller.currentRoom'), rows;
 			room && room.resetUnreadCount();
 
-			if ( room._ffz_was_unread ) {
+			if ( room && room._ffz_was_unread ) {
 				room._ffz_was_unread = false;
 
 				var el = this.get('element'),

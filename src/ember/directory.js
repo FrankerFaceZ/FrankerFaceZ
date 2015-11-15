@@ -75,7 +75,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				var t_el = this._ffz_uptime = document.createElement('div');
 				t_el.className = 'overlay_info length live';
 
-				jQuery(t_el).tipsy({html: true});
+				jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
 
 				cap.appendChild(t_el);
 				this._ffz_uptime_timer = setInterval(this.ffzUpdateUptime.bind(this), 1000);

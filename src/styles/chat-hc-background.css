@@ -1,7 +1,7 @@
 /* High-Contrast Background */
 .chat-container,
 .ember-chat-container {
-	background-color: #fff;
+	background-color: #fff !important;
 }
 
 
@@ -12,5 +12,5 @@
 .chat-container.force-dark,
 .ember-chat-container.dark,
 .ember-chat-container.force-dark {
-	background-color: #000;
+	background-color: #000 !important;
 }
