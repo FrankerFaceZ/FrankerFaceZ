@@ -365,7 +365,7 @@ func BunchedRequestFromCM(msg *ClientMessage) BunchedRequest {
 	return BunchedRequest{Command: msg.Command, Param: msg.origArguments}
 }
 
-type BunchedResponse struct {
+type CachedBunchedResponse struct {
 	Response  string
 	Timestamp time.Time
 }
@@ -388,9 +388,9 @@ const (
 
 var PendingBunchedRequests map[BunchedRequest]*BunchSubscriberList = make(map[BunchedRequest]*BunchSubscriberList)
 var PendingBunchLock sync.Mutex
-var CachedBunchedRequests map[BunchedRequest]BunchedResponse = make(map[BunchedRequest]BunchedResponse)
-var CachedBunchLock sync.RWMutex
-var BunchCacheCleanupSignal *sync.Cond = sync.NewCond(&CachedBunchLock)
+var BunchCache map[BunchedRequest]CachedBunchedResponse = make(map[BunchedRequest]CachedBunchedResponse)
+var BunchCacheLock sync.RWMutex
+var BunchCacheCleanupSignal *sync.Cond = sync.NewCond(&BunchCacheLock)
 var BunchCacheLastCleanup time.Time
 
 func bunchCacheJanitor() {
@@ -401,7 +401,7 @@ func bunchCacheJanitor() {
 		}
 	}()
 
-	CachedBunchLock.Lock()
+	BunchCacheLock.Lock()
 	for {
 		// Unlocks CachedBunchLock, waits for signal, re-locks
 		BunchCacheCleanupSignal.Wait()
@@ -413,9 +413,9 @@ func bunchCacheJanitor() {
 
 		// CachedBunchLock is held here
 		keepIfAfter := time.Now().Add(-5*time.Minute)
-		for req, resp := range CachedBunchedRequests {
+		for req, resp := range BunchCache {
 			if !resp.Timestamp.After(keepIfAfter) {
-				delete(CachedBunchedRequests, req)
+				delete(BunchCache, req)
 			}
 		}
 		BunchCacheLastCleanup = time.Now()
@@ -427,9 +427,9 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 	br := BunchedRequestFromCM(&msg)
 
 	cacheStatus := func() byte {
-		CachedBunchLock.RLock()
-		defer CachedBunchLock.RUnlock()
-		bresp, ok := CachedBunchedRequests[br]
+		BunchCacheLock.RLock()
+		defer BunchCacheLock.RUnlock()
+		bresp, ok := BunchCache[br]
 		if ok && bresp.Timestamp.After(time.Now().Add(-5*time.Minute)) {
 			client.MsgChannelKeepalive.Add(1)
 			go func() {
@@ -482,9 +482,9 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		}
 
 		if err == nil {
-			CachedBunchLock.Lock()
-			CachedBunchedRequests[request] = BunchedResponse{Response: respStr, Timestamp: time.Now()}
-			CachedBunchLock.Unlock()
+			BunchCacheLock.Lock()
+			BunchCache[request] = CachedBunchedResponse{Response: respStr, Timestamp: time.Now()}
+			BunchCacheLock.Unlock()
 		}
 
 		PendingBunchLock.Lock()
