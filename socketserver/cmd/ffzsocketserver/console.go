@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bitbucket.org/stendec/frankerfacez/socketserver/internal/server"
+	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 	"fmt"
 	"github.com/abiosoft/ishell"
 	"github.com/gorilla/websocket"

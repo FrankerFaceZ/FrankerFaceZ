@@ -1,4 +1,4 @@
-package server // import "bitbucket.org/stendec/frankerfacez/socketserver/internal/server"
+package server // import "bitbucket.org/stendec/frankerfacez/socketserver/server"
 
 import (
 	"encoding/json"
@@ -220,14 +220,13 @@ func RunSocketConnection(conn *websocket.Conn) {
 			}
 		}
 
-		_, isClose := err.(*websocket.CloseError)
 		select {
 		case errorChan <- err:
 		case <-stoppedChan:
 		}
 		close(errorChan)
 		close(clientChan)
-		// exit
+		// exit goroutine
 	}(_errorChan, _clientChan, stoppedChan)
 
 	conn.SetPongHandler(func(pongBody string) error {
