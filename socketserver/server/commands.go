@@ -22,6 +22,7 @@ type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMes
 
 var commandHandlers = map[Command]CommandHandler{
 	HelloCommand: C2SHello,
+	"ping":       C2SPing,
 	"setuser":    C2SSetUser,
 	"ready":      C2SReady,
 
@@ -120,6 +121,34 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	}
 }
 
+func C2SPing(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	return ClientMessage{
+		Arguments: float64(time.Now().UnixNano() / 1000) / 1000,
+	}
+}
+
+func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	username, err := msg.ArgumentsAsString()
+	if err != nil {
+		return
+	}
+
+	client.Mutex.Lock()
+	client.TwitchUsername = username
+	client.UsernameValidated = false
+	client.Mutex.Unlock()
+
+	if Configuration.SendAuthToNewClients {
+		client.MsgChannelKeepalive.Add(1)
+		go client.StartAuthorization(func(_ *ClientInfo, _ bool) {
+			client.MsgChannelKeepalive.Done()
+		})
+
+	}
+
+	return ResponseSuccess, nil
+}
+
 func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 //	disconnectAt, err := msg.ArgumentsAsInt()
 //	if err != nil {
@@ -148,28 +177,6 @@ func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 		client.MsgChannelKeepalive.Done()
 	}()
 	return ClientMessage{Command: AsyncResponseCommand}, nil
-}
-
-func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	username, err := msg.ArgumentsAsString()
-	if err != nil {
-		return
-	}
-
-	client.Mutex.Lock()
-	client.TwitchUsername = username
-	client.UsernameValidated = false
-	client.Mutex.Unlock()
-
-	if Configuration.SendAuthToNewClients {
-		client.MsgChannelKeepalive.Add(1)
-		go client.StartAuthorization(func(_ *ClientInfo, _ bool) {
-			client.MsgChannelKeepalive.Done()
-		})
-
-	}
-
-	return ResponseSuccess, nil
 }
 
 func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
