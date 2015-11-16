@@ -60,9 +60,11 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	BannerHTML = bannerBytes
 
 	serveMux.HandleFunc("/", HTTPHandleRootURL)
+	serveMux.HandleFunc("/stats", HTTPShowStatistics)
+
 	serveMux.HandleFunc("/drop_backlog", HTTPBackendDropBacklog)
-	serveMux.HandleFunc("/uncached_pub", HBackendPublishRequest)
-	serveMux.HandleFunc("/cached_pub", HBackendUpdateAndPublish)
+	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
+	serveMux.HandleFunc("/cached_pub", HTTPBackendCachedPublish)
 
 	announceForm, err := SealRequest(url.Values{
 		"startup": []string{"1"},
@@ -118,25 +120,34 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 
 // ErrProtocolGeneric is sent in a ErrorCommand Reply.
 var ErrProtocolGeneric error = errors.New("FFZ Socket protocol error.")
+
 // ErrProtocolNegativeMsgID is sent in a ErrorCommand Reply when a negative MessageID is received.
 var ErrProtocolNegativeMsgID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
+
 // ErrExpectedSingleString is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedSingleString = errors.New("Error: Expected single string as arguments.")
+
 // ErrExpectedSingleInt is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
+
 // ErrExpectedTwoStrings is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
+
 // ErrExpectedStringAndBool is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
+
 // ErrExpectedStringAndInt is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
+
 // ErrExpectedStringAndIntGotFloat is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
 // CloseGotBinaryMessage is the termination reason when the client sends a binary websocket frame.
 var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
+
 // CloseTimedOut is the termination reason when the client fails to send or respond to ping frames.
 var CloseTimedOut = websocket.CloseError{Code: websocket.CloseNoStatusReceived, Text: "no ping replies for 5 minutes"}
+
 // CloseFirstMessageNotHello is the termination reason
 var CloseFirstMessageNotHello = websocket.CloseError{
 	Text: "Error - the first message sent must be a 'hello'",
@@ -305,7 +316,7 @@ func getDeadline() time.Time {
 }
 
 func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
-	Statistics.DisconnectCodes[closeMsg.Code]++
+	Statistics.DisconnectCodes[strconv.Itoa(closeMsg.Code)]++
 	Statistics.DisconnectReasons[closeMsg.Text]++
 
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), getDeadline())

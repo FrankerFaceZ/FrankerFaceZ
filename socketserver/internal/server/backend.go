@@ -64,7 +64,7 @@ func getCacheKey(remoteCommand, data string) string {
 // The backend can POST here to publish a message to clients with no caching.
 // The POST arguments are `cmd`, `args`, `channel`, and `scope`.
 // The `scope` argument is required because no attempt is made to infer the scope from the command, unlike /cached_pub.
-func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
+func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {

@@ -351,7 +351,7 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 // Publish a message to clients, and update the in-server cache for the message.
 // notes:
 // `scope` is implicit in the command
-func HBackendUpdateAndPublish(w http.ResponseWriter, r *http.Request) {
+func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
