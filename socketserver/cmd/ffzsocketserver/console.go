@@ -74,20 +74,18 @@ func commandLineConsole() {
 
 	shell.Register("authorizeeveryone", func(args ...string) (string, error) {
 		if len(args) == 0 {
-			if server.Configuation.SendAuthToNewClients {
+			if server.Configuration.SendAuthToNewClients {
 				return "All clients are recieving auth challenges upon claiming a name.", nil
-			} else {
-				return "All clients are not recieving auth challenges upon claiming a name.", nil
 			}
+			return "All clients are not recieving auth challenges upon claiming a name.", nil
 		} else if args[0] == "on" {
-			server.Configuation.SendAuthToNewClients = true
+			server.Configuration.SendAuthToNewClients = true
 			return "All new clients will recieve auth challenges upon claiming a name.", nil
 		} else if args[0] == "off" {
-			server.Configuation.SendAuthToNewClients = false
+			server.Configuration.SendAuthToNewClients = false
 			return "All new clients will not recieve auth challenges upon claiming a name.", nil
-		} else {
-			return "Usage: authorizeeveryone [ on | off ]", nil
 		}
+		return "Usage: authorizeeveryone [ on | off ]", nil
 	})
 
 	shell.Register("panic", func(args ...string) (string, error) {

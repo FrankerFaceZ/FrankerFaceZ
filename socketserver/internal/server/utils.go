@@ -54,7 +54,7 @@ func SealRequest(form url.Values) (url.Values, error) {
 	retval := url.Values{
 		"nonce": []string{nonceString},
 		"msg":   []string{cipherString},
-		"id":    []string{strconv.Itoa(serverId)},
+		"id":    []string{strconv.Itoa(serverID)},
 	}
 
 	return retval, nil

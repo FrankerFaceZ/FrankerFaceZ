@@ -19,39 +19,39 @@ import (
 	"time"
 )
 
-var backendHttpClient http.Client
-var backendUrl string
+var backendHTTPClient http.Client
+var backendURL string
 var responseCache *cache.Cache
 
-var getBacklogUrl string
-var postStatisticsUrl string
-var addTopicUrl string
-var announceStartupUrl string
+var getBacklogURL string
+var postStatisticsURL string
+var addTopicURL string
+var announceStartupURL string
 
 var backendSharedKey [32]byte
-var serverId int
+var serverID int
 
 var messageBufferPool sync.Pool
 
-func SetupBackend(config *ConfigFile) {
-	backendHttpClient.Timeout = 60 * time.Second
-	backendUrl = config.BackendUrl
+func setupBackend(config *ConfigFile) {
+	backendHTTPClient.Timeout = 60 * time.Second
+	backendURL = config.BackendURL
 	if responseCache != nil {
 		responseCache.Flush()
 	}
 	responseCache = cache.New(60*time.Second, 120*time.Second)
 
-	getBacklogUrl = fmt.Sprintf("%s/backlog", backendUrl)
-	postStatisticsUrl = fmt.Sprintf("%s/stats", backendUrl)
-	addTopicUrl = fmt.Sprintf("%s/topics", backendUrl)
-	announceStartupUrl = fmt.Sprintf("%s/startup", backendUrl)
+	getBacklogURL = fmt.Sprintf("%s/backlog", backendURL)
+	postStatisticsURL = fmt.Sprintf("%s/stats", backendURL)
+	addTopicURL = fmt.Sprintf("%s/topics", backendURL)
+	announceStartupURL = fmt.Sprintf("%s/startup", backendURL)
 
 	messageBufferPool.New = New4KByteBuffer
 
 	var theirPublic, ourPrivate [32]byte
 	copy(theirPublic[:], config.BackendPublicKey)
 	copy(ourPrivate[:], config.OurPrivateKey)
-	serverId = config.ServerId
+	serverID = config.ServerID
 
 	box.Precompute(&backendSharedKey, &theirPublic, &ourPrivate)
 }
@@ -60,8 +60,10 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
-// Publish a message to clients with no caching.
-// The scope must be specified because no attempt is made to recognize the command.
+// HBackendPublishRequest handles the /uncached_pub route.
+// The backend can POST here to publish a message to clients with no caching.
+// The POST arguments are `cmd`, `args`, `channel`, and `scope`.
+// The `scope` argument is required because no attempt is made to infer the scope from the command, unlike /cached_pub.
 func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
@@ -95,7 +97,7 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 
 	switch target {
 	case MsgTargetTypeSingle:
-		// TODO
+	// TODO
 	case MsgTargetTypeChat:
 		count = PublishToChannel(channel, cm)
 	case MsgTargetTypeMultichat:
@@ -111,14 +113,18 @@ func HBackendPublishRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, count)
 }
 
-type BackendForwardedError string
+// ErrForwardedFromBackend is an error returned by the backend server.
+type ErrForwardedFromBackend string
 
-func (bfe BackendForwardedError) Error() string {
+func (bfe ErrForwardedFromBackend) Error() string {
 	return string(bfe)
 }
 
-var AuthorizationNeededError = errors.New("Must authenticate Twitch username to use this command")
+// ErrAuthorizationNeeded is emitted when the backend replies with HTTP 401.
+// Indicates that an attempt to validate `ClientInfo.TwitchUsername` should be attempted.
+var ErrAuthorizationNeeded = errors.New("Must authenticate Twitch username to use this command")
 
+// SendRemoteCommandCached performs a RPC call on the backend, but caches responses.
 func SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cached, ok := responseCache.Get(getCacheKey(remoteCommand, data))
 	if ok {
@@ -127,8 +133,12 @@ func SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string,
 	return SendRemoteCommand(remoteCommand, data, auth)
 }
 
+// SendRemoteCommand performs a RPC call on the backend by POSTing to `/cmd/$remoteCommand`.
+// The form data is as follows: `clientData` is the JSON in the `data` parameter
+// (should be retrieved from ClientMessage.Arguments), and either `username` or
+// `usernameClaimed` depending on whether AuthInfo.UsernameValidates is true is AuthInfo.TwitchUsername.
 func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
-	destUrl := fmt.Sprintf("%s/cmd/%s", backendUrl, remoteCommand)
+	destURL := fmt.Sprintf("%s/cmd/%s", backendURL, remoteCommand)
 	var authKey string
 	if auth.UsernameValidated {
 		authKey = "usernameClaimed"
@@ -146,7 +156,7 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 		return "", err
 	}
 
-	resp, err := backendHttpClient.PostForm(destUrl, sealedForm)
+	resp, err := backendHTTPClient.PostForm(destURL, sealedForm)
 	if err != nil {
 		return "", err
 	}
@@ -160,13 +170,12 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 	responseStr = string(respBytes)
 
 	if resp.StatusCode == 401 {
-		return "", AuthorizationNeededError
+		return "", ErrAuthorizationNeeded
 	} else if resp.StatusCode != 200 {
 		if resp.Header.Get("Content-Type") == "application/json" {
-			return "", BackendForwardedError(responseStr)
-		} else {
-			return "", httpError(resp.StatusCode)
+			return "", ErrForwardedFromBackend(responseStr)
 		}
+		return "", httpError(resp.StatusCode)
 	}
 
 	if resp.Header.Get("FFZ-Cache") != "" {
@@ -182,7 +191,7 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 }
 
 func SendAggregatedData(sealedForm url.Values) error {
-	resp, err := backendHttpClient.PostForm(postStatisticsUrl, sealedForm)
+	resp, err := backendHTTPClient.PostForm(postStatisticsURL, sealedForm)
 	if err != nil {
 		return err
 	}
@@ -204,7 +213,7 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 		return nil, err
 	}
 
-	resp, err := backendHttpClient.PostForm(getBacklogUrl, sealedForm)
+	resp, err := backendHTTPClient.PostForm(getBacklogURL, sealedForm)
 	if err != nil {
 		return nil, err
 	}
@@ -227,12 +236,14 @@ func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 	return messages, nil
 }
 
-type NotOkError struct {
+// ErrBackendNotOK indicates that the backend replied with something other than the string "ok".
+type ErrBackendNotOK struct {
 	Response string
 	Code     int
 }
 
-func (noe NotOkError) Error() string {
+// Implements the error interface.
+func (noe ErrBackendNotOK) Error() string {
 	return fmt.Sprintf("backend returned %d: %s", noe.Code, noe.Response)
 }
 
@@ -258,7 +269,7 @@ func sendTopicNotice(topic string, added bool) error {
 		return err
 	}
 
-	resp, err := backendHttpClient.PostForm(addTopicUrl, sealedForm)
+	resp, err := backendHTTPClient.PostForm(addTopicURL, sealedForm)
 	if err != nil {
 		return err
 	}
@@ -271,7 +282,7 @@ func sendTopicNotice(topic string, added bool) error {
 
 	respStr := string(respBytes)
 	if respStr != "ok" {
-		return NotOkError{Code: resp.StatusCode, Response: respStr}
+		return ErrBackendNotOK{Code: resp.StatusCode, Response: respStr}
 	}
 
 	return nil
@@ -281,15 +292,15 @@ func httpError(statusCode int) error {
 	return fmt.Errorf("backend http error: %d", statusCode)
 }
 
-func GenerateKeys(outputFile, serverId, theirPublicStr string) {
+func GenerateKeys(outputFile, serverID, theirPublicStr string) {
 	var err error
 	output := ConfigFile{
 		ListenAddr:   "0.0.0.0:8001",
 		SocketOrigin: "localhost:8001",
-		BackendUrl:   "http://localhost:8002/ffz",
+		BackendURL:   "http://localhost:8002/ffz",
 	}
 
-	output.ServerId, err = strconv.Atoi(serverId)
+	output.ServerID, err = strconv.Atoi(serverID)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -24,7 +24,7 @@ func TCountOpenFDs() uint64 {
 
 const IgnoreReceivedArguments = 1 + 2i
 
-func TReceiveExpectedMessage(tb testing.TB, conn *websocket.Conn, messageId int, command Command, arguments interface{}) (ClientMessage, bool) {
+func TReceiveExpectedMessage(tb testing.TB, conn *websocket.Conn, messageID int, command Command, arguments interface{}) (ClientMessage, bool) {
 	var msg ClientMessage
 	var fail bool
 	messageType, packet, err := conn.ReadMessage()
@@ -42,8 +42,8 @@ func TReceiveExpectedMessage(tb testing.TB, conn *websocket.Conn, messageId int,
 		tb.Error(err)
 		return msg, false
 	}
-	if msg.MessageID != messageId {
-		tb.Error("Message ID was wrong. Expected", messageId, ", got", msg.MessageID, ":", msg)
+	if msg.MessageID != messageID {
+		tb.Error("Message ID was wrong. Expected", messageID, ", got", msg.MessageID, ":", msg)
 		fail = true
 	}
 	if msg.Command != command {
@@ -65,8 +65,8 @@ func TReceiveExpectedMessage(tb testing.TB, conn *websocket.Conn, messageId int,
 	return msg, !fail
 }
 
-func TSendMessage(tb testing.TB, conn *websocket.Conn, messageId int, command Command, arguments interface{}) bool {
-	SendMessage(conn, ClientMessage{MessageID: messageId, Command: command, Arguments: arguments})
+func TSendMessage(tb testing.TB, conn *websocket.Conn, messageID int, command Command, arguments interface{}) bool {
+	SendMessage(conn, ClientMessage{MessageID: messageID, Command: command, Arguments: arguments})
 	return true
 }
 
@@ -137,7 +137,7 @@ func TSetup(testserver **httptest.Server, urls *TURLs) {
 	DumpCache()
 
 	conf := &ConfigFile{
-		ServerId:     20,
+		ServerID:     20,
 		UseSSL:       false,
 		SocketOrigin: "localhost:2002",
 		BannerHTML: `
@@ -160,7 +160,7 @@ func TSetup(testserver **httptest.Server, urls *TURLs) {
 		BackendPublicKey: []byte{19, 163, 37, 157, 50, 139, 193, 85, 229, 47, 166, 21, 153, 231, 31, 133, 41, 158, 8, 53, 73, 0, 113, 91, 13, 181, 131, 248, 176, 18, 1, 107},
 	}
 	gconfig = conf
-	SetupBackend(conf)
+	setupBackend(conf)
 
 	if testserver != nil {
 		serveMux := http.NewServeMux()

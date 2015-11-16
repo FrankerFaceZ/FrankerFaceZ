@@ -12,12 +12,12 @@ const CryptoBoxKeyLength = 32
 
 type ConfigFile struct {
 	// Numeric server id known to the backend
-	ServerId   int
+	ServerID   int
 	ListenAddr string
 	// Hostname of the socket server
 	SocketOrigin string
 	// URL to the backend server
-	BackendUrl string
+	BackendURL string
 
 	// SSL/TLS
 	UseSSL             bool
@@ -168,19 +168,19 @@ func (bct BacklogCacheType) MarshalJSON() ([]byte, error) {
 }
 
 // Implements json.Unmarshaler
-func (pbct *BacklogCacheType) UnmarshalJSON(data []byte) error {
+func (bct *BacklogCacheType) UnmarshalJSON(data []byte) error {
 	var str string
 	err := json.Unmarshal(data, &str)
 	if err != nil {
 		return err
 	}
 	if str == "" {
-		*pbct = CacheTypeInvalid
+		*bct = CacheTypeInvalid
 		return nil
 	}
 	val := BacklogCacheTypeByName(str)
 	if val != CacheTypeInvalid {
-		*pbct = val
+		*bct = val
 		return nil
 	}
 	return ErrorUnrecognizedCacheType
@@ -224,19 +224,19 @@ func (mtt MessageTargetType) MarshalJSON() ([]byte, error) {
 }
 
 // Implements json.Unmarshaler
-func (pmtt *MessageTargetType) UnmarshalJSON(data []byte) error {
+func (mtt *MessageTargetType) UnmarshalJSON(data []byte) error {
 	var str string
 	err := json.Unmarshal(data, &str)
 	if err != nil {
 		return err
 	}
 	if str == "" {
-		*pmtt = MsgTargetTypeInvalid
+		*mtt = MsgTargetTypeInvalid
 		return nil
 	}
 	mtt := MessageTargetTypeByName(str)
 	if mtt != MsgTargetTypeInvalid {
-		*pmtt = mtt
+		*mtt = mtt
 		return nil
 	}
 	return ErrorUnrecognizedTargetType

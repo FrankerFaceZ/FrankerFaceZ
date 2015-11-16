@@ -12,13 +12,14 @@ import (
 	"time"
 )
 
-// A command is how the client refers to a function on the server. It's just a string.
+// Command is a string indicating which RPC is requested.
+// The Commands sent from Client -> Server and Server -> Client are disjoint sets.
 type Command string
 
-// A function that is called to respond to a Command.
+// CommandHandler is a RPC handler assosciated with a Command.
 type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
-var CommandHandlers = map[Command]CommandHandler{
+var commandHandlers = map[Command]CommandHandler{
 	HelloCommand: HandleHello,
 	"setuser":    HandleSetUser,
 	"ready":      HandleReady,
@@ -40,7 +41,7 @@ var CommandHandlers = map[Command]CommandHandler{
 const ChannelInfoDelay = 2 * time.Second
 
 func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) {
-	handler, ok := CommandHandlers[msg.Command]
+	handler, ok := commandHandlers[msg.Command]
 	if !ok {
 		handler = HandleRemoteCommand
 	}
@@ -65,13 +66,13 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 }
 
 func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	version, clientId, err := msg.ArgumentsAsTwoStrings()
+	version, clientID, err := msg.ArgumentsAsTwoStrings()
 	if err != nil {
 		return
 	}
 
 	client.Version = version
-	client.ClientID = uuid.FromStringOrNil(clientId)
+	client.ClientID = uuid.FromStringOrNil(clientID)
 	if client.ClientID == uuid.Nil {
 		client.ClientID = uuid.NewV4()
 	}
@@ -125,7 +126,7 @@ func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 	client.UsernameValidated = false
 	client.Mutex.Unlock()
 
-	if Configuation.SendAuthToNewClients {
+	if Configuration.SendAuthToNewClients {
 		client.MsgChannelKeepalive.Add(1)
 		go client.StartAuthorization(func(_ *ClientInfo, _ bool) {
 			client.MsgChannelKeepalive.Done()
@@ -200,7 +201,7 @@ func GetSubscriptionBacklog(conn *websocket.Conn, client *ClientInfo) {
 		return
 	}
 
-	if backendUrl == "" {
+	if backendURL == "" {
 		return // for testing runs
 	}
 	messages, err := FetchBacklogData(subs)
@@ -250,12 +251,17 @@ func HandleTrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessa
 	return ResponseSuccess, nil
 }
 
+// AggregateEmoteUsage is a map from emoteID to a map from chatroom name to usage count.
 var AggregateEmoteUsage map[int]map[string]int = make(map[int]map[string]int)
+
+// AggregateEmoteUsageLock is the lock for AggregateEmoteUsage.
 var AggregateEmoteUsageLock sync.Mutex
-var ErrorNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
+
+// ErrNegativeEmoteUsage is emitted when the submitted emote usage is negative.
+var ErrNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
 
 func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	// arguments is [1]map[EmoteId]map[RoomName]float64
+	// arguments is [1]map[emoteID]map[ChatroomName]float64
 
 	mapRoot := msg.Arguments.([]interface{})[0].(map[string]interface{})
 
@@ -268,7 +274,7 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 		for _, val2 := range mapInner {
 			var count int = int(val2.(float64))
 			if count <= 0 {
-				err = ErrorNegativeEmoteUsage
+				err = ErrNegativeEmoteUsage
 				return
 			}
 		}
@@ -278,16 +284,16 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 	defer AggregateEmoteUsageLock.Unlock()
 
 	for strEmote, val1 := range mapRoot {
-		var emoteId int
-		emoteId, err = strconv.Atoi(strEmote)
+		var emoteID int
+		emoteID, err = strconv.Atoi(strEmote)
 		if err != nil {
 			return
 		}
 
-		destMapInner, ok := AggregateEmoteUsage[emoteId]
+		destMapInner, ok := AggregateEmoteUsage[emoteID]
 		if !ok {
 			destMapInner = make(map[string]int)
-			AggregateEmoteUsage[emoteId] = destMapInner
+			AggregateEmoteUsage[emoteID] = destMapInner
 		}
 
 		mapInner := val1.(map[string]interface{})
@@ -322,23 +328,23 @@ func DoSendAggregateData() {
 
 	reportForm := url.Values{}
 
-	followJson, err := json.Marshal(follows)
+	followJSON, err := json.Marshal(follows)
 	if err != nil {
 		log.Print(err)
 	} else {
-		reportForm.Set("follows", string(followJson))
+		reportForm.Set("follows", string(followJSON))
 	}
 
 	strEmoteUsage := make(map[string]map[string]int)
-	for emoteId, usageByChannel := range emoteUsage {
-		strEmoteId := strconv.Itoa(emoteId)
-		strEmoteUsage[strEmoteId] = usageByChannel
+	for emoteID, usageByChannel := range emoteUsage {
+		strEmoteID := strconv.Itoa(emoteID)
+		strEmoteUsage[strEmoteID] = usageByChannel
 	}
-	emoteJson, err := json.Marshal(strEmoteUsage)
+	emoteJSON, err := json.Marshal(strEmoteUsage)
 	if err != nil {
 		log.Print(err)
 	} else {
-		reportForm.Set("emotes", string(emoteJson))
+		reportForm.Set("emotes", string(emoteJSON))
 	}
 
 	form, err := SealRequest(reportForm)
@@ -380,6 +386,7 @@ type BunchSubscriberList struct {
 }
 
 type CacheStatus byte
+
 const (
 	CacheStatusNotFound = iota
 	CacheStatusFound
@@ -396,7 +403,7 @@ var BunchCacheLastCleanup time.Time
 func bunchCacheJanitor() {
 	go func() {
 		for {
-			time.Sleep(30*time.Minute)
+			time.Sleep(30 * time.Minute)
 			BunchCacheCleanupSignal.Signal()
 		}
 	}()
@@ -406,13 +413,13 @@ func bunchCacheJanitor() {
 		// Unlocks CachedBunchLock, waits for signal, re-locks
 		BunchCacheCleanupSignal.Wait()
 
-		if BunchCacheLastCleanup.After(time.Now().Add(-1*time.Second)) {
+		if BunchCacheLastCleanup.After(time.Now().Add(-1 * time.Second)) {
 			// skip if it's been less than 1 second
 			continue
 		}
 
 		// CachedBunchLock is held here
-		keepIfAfter := time.Now().Add(-5*time.Minute)
+		keepIfAfter := time.Now().Add(-5 * time.Minute)
 		for req, resp := range BunchCache {
 			if !resp.Timestamp.After(keepIfAfter) {
 				delete(BunchCache, req)
@@ -518,7 +525,7 @@ const AuthorizationFailedErrorString = "Failed to verify your Twitch username."
 func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo) {
 	resp, err := SendRemoteCommandCached(string(msg.Command), msg.origArguments, client.AuthInfo)
 
-	if err == AuthorizationNeededError {
+	if err == ErrAuthorizationNeeded {
 		client.StartAuthorization(func(_ *ClientInfo, success bool) {
 			if success {
 				doRemoteCommand(conn, msg, client)

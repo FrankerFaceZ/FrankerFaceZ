@@ -16,34 +16,38 @@ import (
 	"time"
 )
 
-const MAX_PACKET_SIZE = 1024
-
-// Sent by the server in ClientMessage.Command to indicate success.
+// SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
 const SuccessCommand Command = "ok"
 
-// Sent by the server in ClientMessage.Command to indicate failure.
+// ErrorCommand is a Reply Command to indicate that a C2S Command failed.
 const ErrorCommand Command = "error"
 
-// This must be the first command sent by the client once the connection is established.
+// HelloCommand is a C2S Command.
+// HelloCommand must be the Command of the first ClientMessage sent during a connection.
+// Sending any other command will result in a CloseFirstMessageNotHello.
 const HelloCommand Command = "hello"
 
+// AuthorizeCommand is a S2C Command sent as part of Twitch username validation.
 const AuthorizeCommand Command = "do_authorize"
 
-// A handler returning a ClientMessage with this Command will prevent replying to the client.
-// It signals that the work has been handed off to a background goroutine.
+// AsyncResponseCommand is a pseudo-Reply Command.
+// It indicates that the Reply Command to the client's C2S Command will be delivered
+// on a goroutine over the ClientInfo.MessageChannel and should not be delivered immediately.
 const AsyncResponseCommand Command = "_async"
 
+// ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
-var ResponseFailure = ClientMessage{Command: "False"}
 
-var Configuation *ConfigFile
+// Configuration is the active ConfigFile.
+var Configuration *ConfigFile
 
-// Set up a websocket listener and register it on /.
-// (Uses http.DefaultServeMux .)
+// SetupServerAndHandle starts all background goroutines and registers HTTP listeners on the given ServeMux.
+// Essentially, this function completely preps the server for a http.ListenAndServe call.
+// (Uses http.DefaultServeMux if `serveMux` is nil.)
 func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
-	Configuation = config
+	Configuration = config
 
-	SetupBackend(config)
+	setupBackend(config)
 
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
@@ -66,7 +70,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	if err != nil {
 		log.Fatalln("Unable to seal requests:", err)
 	}
-	resp, err := backendHttpClient.PostForm(announceStartupUrl, announceForm)
+	resp, err := backendHTTPClient.PostForm(announceStartupURL, announceForm)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -82,6 +86,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	go ircConnection()
 }
 
+// SocketUpgrader is the websocket.Upgrader currently in use.
 var SocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -90,6 +95,8 @@ var SocketUpgrader = websocket.Upgrader{
 	},
 }
 
+// BannerHTML is the content served to web browsers viewing the socket server website.
+// Memes go here.
 var BannerHTML []byte
 
 func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +125,6 @@ var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as
 var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
 var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
-var CloseGotMessageId0 = websocket.CloseError{Code: websocket.ClosePolicyViolation, Text: "got messageid 0"}
 var CloseTimedOut = websocket.CloseError{Code: websocket.CloseNoStatusReceived, Text: "no ping replies for 5 minutes"}
 var CloseFirstMessageNotHello = websocket.CloseError{
 	Text: "Error - the first message sent must be a 'hello'",
@@ -296,6 +302,8 @@ func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
 	conn.Close()
 }
 
+// SendMessage sends a ClientMessage over the websocket connection with a timeout.
+// If marshalling the ClientMessage fails, this function will panic.
 func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 	messageType, packet, err := MarshalClientMessage(msg)
 	if err != nil {
@@ -305,7 +313,7 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 	conn.WriteMessage(messageType, packet)
 }
 
-// Unpack a message sent from the client into a ClientMessage.
+// UnmarshalClientMessage unpacks websocket TextMessage into a ClientMessage provided in the `v` parameter.
 func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err error) {
 	var spaceIdx int
 
@@ -317,12 +325,12 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 	if spaceIdx == -1 {
 		return ProtocolError
 	}
-	messageId, err := strconv.Atoi(dataStr[:spaceIdx])
-	if messageId < -1 || messageId == 0 {
+	messageID, err := strconv.Atoi(dataStr[:spaceIdx])
+	if messageID < -1 || messageID == 0 {
 		return ProtocolErrorNegativeID
 	}
 
-	out.MessageID = messageId
+	out.MessageID = messageID
 	dataStr = dataStr[spaceIdx+1:]
 
 	spaceIdx = strings.IndexRune(dataStr, ' ')
@@ -334,8 +342,8 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 		out.Command = Command(dataStr[:spaceIdx])
 	}
 	dataStr = dataStr[spaceIdx+1:]
-	argumentsJson := dataStr
-	out.origArguments = argumentsJson
+	argumentsJSON := dataStr
+	out.origArguments = argumentsJSON
 	err = out.parseOrigArguments()
 	if err != nil {
 		return
