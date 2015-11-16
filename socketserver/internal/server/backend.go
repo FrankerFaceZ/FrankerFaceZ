@@ -190,6 +190,7 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 	return
 }
 
+// SendAggregatedData sends aggregated emote usage and following data to the backend server.
 func SendAggregatedData(sealedForm url.Values) error {
 	resp, err := backendHTTPClient.PostForm(postStatisticsURL, sealedForm)
 	if err != nil {
@@ -203,6 +204,8 @@ func SendAggregatedData(sealedForm url.Values) error {
 	return resp.Body.Close()
 }
 
+// FetchBacklogData makes a request to the backend for backlog data on a set of pub/sub topics.
+// TODO scrap this, replaced by /cached_pub
 func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
 	formData := url.Values{
 		"subs": chatSubs,
@@ -247,10 +250,18 @@ func (noe ErrBackendNotOK) Error() string {
 	return fmt.Sprintf("backend returned %d: %s", noe.Code, noe.Response)
 }
 
+// SendNewTopicNotice notifies the backend that a client has performed the first subscription to a pub/sub topic.
+// POST data:
+// channels=room.trihex
+// added=t
 func SendNewTopicNotice(topic string) error {
 	return sendTopicNotice(topic, true)
 }
 
+// SendCleanupTopicsNotice notifies the backend that pub/sub topics have no subscribers anymore.
+// POST data:
+// channels=room.sirstendec,room.bobross,feature.foo
+// added=f
 func SendCleanupTopicsNotice(topics []string) error {
 	return sendTopicNotice(strings.Join(topics, ","), false)
 }
@@ -292,6 +303,7 @@ func httpError(statusCode int) error {
 	return fmt.Errorf("backend http error: %d", statusCode)
 }
 
+// GenerateKeys generates a new NaCl keypair for the server and writes out the default configuration file.
 func GenerateKeys(outputFile, serverID, theirPublicStr string) {
 	var err error
 	output := ConfigFile{

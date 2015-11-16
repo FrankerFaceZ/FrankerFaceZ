@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 	"log"
@@ -20,33 +21,34 @@ type Command string
 type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
 var commandHandlers = map[Command]CommandHandler{
-	HelloCommand: HandleHello,
-	"setuser":    HandleSetUser,
-	"ready":      HandleReady,
+	HelloCommand: C2SHello,
+	"setuser":    C2SSetUser,
+	"ready":      C2SReady,
 
-	"sub":   HandleSub,
-	"unsub": HandleUnsub,
+	"sub":   C2SSubscribe,
+	"unsub": C2SUnsubscribe,
 
-	"track_follow":  HandleTrackFollow,
-	"emoticon_uses": HandleEmoticonUses,
-	"survey":        HandleSurvey,
+	"track_follow":  C2STrackFollow,
+	"emoticon_uses": C2SEmoticonUses,
+	"survey":        C2SSurvey,
 
-	"twitch_emote":          HandleRemoteCommand,
-	"get_link":              HandleBunchedRemoteCommand,
-	"get_display_name":      HandleBunchedRemoteCommand,
-	"update_follow_buttons": HandleRemoteCommand,
-	"chat_history":          HandleRemoteCommand,
+	"twitch_emote":          C2SHandleRemoteCommand,
+	"get_link":              C2SHandleBunchedCommand,
+	"get_display_name":      C2SHandleBunchedCommand,
+	"update_follow_buttons": C2SHandleRemoteCommand,
+	"chat_history":          C2SHandleRemoteCommand,
 }
 
-const ChannelInfoDelay = 2 * time.Second
-
-func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) {
+// DispatchC2SCommand handles a C2S Command in the provided ClientMessage.
+// It calls the correct CommandHandler function, catching panics.
+// It sends either the returned Reply ClientMessage, setting the correct messageID, or sends an ErrorCommand
+func DispatchC2SCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) {
 	handler, ok := commandHandlers[msg.Command]
 	if !ok {
-		handler = HandleRemoteCommand
+		handler = C2SHandleRemoteCommand
 	}
 
-	response, err := CallHandler(handler, conn, client, msg)
+	response, err := callHandler(handler, conn, client, msg)
 
 	if err == nil {
 		if response.Command == AsyncResponseCommand {
@@ -59,13 +61,29 @@ func HandleCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 	} else {
 		SendMessage(conn, ClientMessage{
 			MessageID: msg.MessageID,
-			Command:   "error",
+			Command:   ErrorCommand,
 			Arguments: err.Error(),
 		})
 	}
 }
 
-func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (rmsg ClientMessage, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			fmt.Print("[!] Error executing command", cmsg.Command, "--", r)
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("command handler: %v", r)
+			}
+		}
+	}()
+	return handler(conn, client, cmsg)
+}
+
+// C2SHello implements the `hello` C2S Command.
+// It calls SubscribeGlobal() and SubscribeDefaults() with the client, and fills out ClientInfo.Version and ClientInfo.ClientID.
+func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	version, clientID, err := msg.ArgumentsAsTwoStrings()
 	if err != nil {
 		return
@@ -85,7 +103,7 @@ func HandleHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 	}, nil
 }
 
-func HandleReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	disconnectAt, err := msg.ArgumentsAsInt()
 	if err != nil {
 		return
@@ -115,7 +133,7 @@ func HandleReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 	return ClientMessage{Command: AsyncResponseCommand}, nil
 }
 
-func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	username, err := msg.ArgumentsAsString()
 	if err != nil {
 		return
@@ -137,7 +155,7 @@ func HandleSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) 
 	return ResponseSuccess, nil
 }
 
-func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
 	if err != nil {
@@ -145,18 +163,10 @@ func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rms
 	}
 
 	client.Mutex.Lock()
-
 	AddToSliceS(&client.CurrentChannels, channel)
-	client.PendingSubscriptionsBacklog = append(client.PendingSubscriptionsBacklog, channel)
-
-	//	if client.MakePendingRequests == nil {
-	//		client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
-	//	} else {
-	//		if !client.MakePendingRequests.Reset(ChannelInfoDelay) {
-	//			client.MakePendingRequests = time.AfterFunc(ChannelInfoDelay, GetSubscriptionBacklogFor(conn, client))
-	//		}
-	//	}
-
+	if usePendingSubscrptionsBacklog {
+		client.PendingSubscriptionsBacklog = append(client.PendingSubscriptionsBacklog, channel)
+	}
 	client.Mutex.Unlock()
 
 	SubscribeChannel(client, channel)
@@ -164,7 +174,9 @@ func HandleSub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rms
 	return ResponseSuccess, nil
 }
 
-func HandleUnsub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+// C2SUnsubscribe implements the `unsub` C2S Command.
+// It removes the channel from ClientInfo.CurrentChannels and calls UnsubscribeSingleChat.
+func C2SUnsubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
 
 	if err != nil {
@@ -180,91 +192,57 @@ func HandleUnsub(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (r
 	return ResponseSuccess, nil
 }
 
-func GetSubscriptionBacklogFor(conn *websocket.Conn, client *ClientInfo) func() {
-	return func() {
-		GetSubscriptionBacklog(conn, client)
-	}
-}
-
-// On goroutine
-func GetSubscriptionBacklog(conn *websocket.Conn, client *ClientInfo) {
-	var subs []string
-
-	// Lock, grab the data, and reset it
-	client.Mutex.Lock()
-	subs = client.PendingSubscriptionsBacklog
-	client.PendingSubscriptionsBacklog = nil
-	client.MakePendingRequests = nil
-	client.Mutex.Unlock()
-
-	if len(subs) == 0 {
-		return
-	}
-
-	if backendURL == "" {
-		return // for testing runs
-	}
-	messages, err := FetchBacklogData(subs)
-
-	if err != nil {
-		// Oh well.
-		log.Print("error in GetSubscriptionBacklog:", err)
-		return
-	}
-
-	// Deliver to client
-	client.MsgChannelKeepalive.Add(1)
-	if client.MessageChannel != nil {
-		for _, msg := range messages {
-			client.MessageChannel <- msg
-		}
-	}
-	client.MsgChannelKeepalive.Done()
-}
-
-func HandleSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+// C2SSurvey implements the survey C2S Command.
+// Surveys are discarded.s
+func C2SSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	// Discard
 	return ResponseSuccess, nil
 }
 
-type FollowEvent struct {
+type followEvent struct {
 	User         string    `json:"u"`
 	Channel      string    `json:"c"`
 	NowFollowing bool      `json:"f"`
 	Timestamp    time.Time `json:"t"`
 }
 
-var FollowEvents []FollowEvent
-var FollowEventsLock sync.Mutex
+var followEvents []followEvent
 
-func HandleTrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+// followEventsLock is the lock for followEvents.
+var followEventsLock sync.Mutex
+
+// C2STrackFollow implements the `track_follow` C2S Command.
+// It adds the record to `followEvents`, which is submitted to the backend on a timer.
+func C2STrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, following, err := msg.ArgumentsAsStringAndBool()
 	if err != nil {
 		return
 	}
 	now := time.Now()
 
-	FollowEventsLock.Lock()
-	FollowEvents = append(FollowEvents, FollowEvent{client.TwitchUsername, channel, following, now})
-	FollowEventsLock.Unlock()
+	followEventsLock.Lock()
+	followEvents = append(followEvents, followEvent{client.TwitchUsername, channel, following, now})
+	followEventsLock.Unlock()
 
 	return ResponseSuccess, nil
 }
 
 // AggregateEmoteUsage is a map from emoteID to a map from chatroom name to usage count.
-var AggregateEmoteUsage map[int]map[string]int = make(map[int]map[string]int)
+var aggregateEmoteUsage = make(map[int]map[string]int)
 
 // AggregateEmoteUsageLock is the lock for AggregateEmoteUsage.
-var AggregateEmoteUsageLock sync.Mutex
+var aggregateEmoteUsageLock sync.Mutex
 
 // ErrNegativeEmoteUsage is emitted when the submitted emote usage is negative.
 var ErrNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
 
-func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	// arguments is [1]map[emoteID]map[ChatroomName]float64
-
+// C2SEmoticonUses implements the `emoticon_uses` C2S Command.
+// msg.Arguments are in the JSON format of [1]map[emoteID]map[ChatroomName]float64.
+func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	// if this panics, will be caught by callHandler
 	mapRoot := msg.Arguments.([]interface{})[0].(map[string]interface{})
 
+	// Validate: male suire
 	for strEmote, val1 := range mapRoot {
 		_, err = strconv.Atoi(strEmote)
 		if err != nil {
@@ -272,7 +250,7 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 		}
 		mapInner := val1.(map[string]interface{})
 		for _, val2 := range mapInner {
-			var count int = int(val2.(float64))
+			var count = int(val2.(float64))
 			if count <= 0 {
 				err = ErrNegativeEmoteUsage
 				return
@@ -280,8 +258,8 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 		}
 	}
 
-	AggregateEmoteUsageLock.Lock()
-	defer AggregateEmoteUsageLock.Unlock()
+	aggregateEmoteUsageLock.Lock()
+	defer aggregateEmoteUsageLock.Unlock()
 
 	for strEmote, val1 := range mapRoot {
 		var emoteID int
@@ -290,15 +268,15 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 			return
 		}
 
-		destMapInner, ok := AggregateEmoteUsage[emoteID]
+		destMapInner, ok := aggregateEmoteUsage[emoteID]
 		if !ok {
 			destMapInner = make(map[string]int)
-			AggregateEmoteUsage[emoteID] = destMapInner
+			aggregateEmoteUsage[emoteID] = destMapInner
 		}
 
 		mapInner := val1.(map[string]interface{})
 		for roomName, val2 := range mapInner {
-			var count int = int(val2.(float64))
+			var count = int(val2.(float64))
 			if count > 200 {
 				count = 200
 			}
@@ -309,22 +287,22 @@ func HandleEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 	return ResponseSuccess, nil
 }
 
-func sendAggregateData() {
+func aggregateDataSender() {
 	for {
 		time.Sleep(5 * time.Minute)
-		DoSendAggregateData()
+		doSendAggregateData()
 	}
 }
 
-func DoSendAggregateData() {
-	FollowEventsLock.Lock()
-	follows := FollowEvents
-	FollowEvents = nil
-	FollowEventsLock.Unlock()
-	AggregateEmoteUsageLock.Lock()
-	emoteUsage := AggregateEmoteUsage
-	AggregateEmoteUsage = make(map[int]map[string]int)
-	AggregateEmoteUsageLock.Unlock()
+func doSendAggregateData() {
+	followEventsLock.Lock()
+	follows := followEvents
+	followEvents = nil
+	followEventsLock.Unlock()
+	aggregateEmoteUsageLock.Lock()
+	emoteUsage := aggregateEmoteUsage
+	aggregateEmoteUsage = make(map[int]map[string]int)
+	aggregateEmoteUsageLock.Unlock()
 
 	reportForm := url.Values{}
 
@@ -362,27 +340,23 @@ func DoSendAggregateData() {
 	// done
 }
 
-type BunchedRequest struct {
+type bunchedRequest struct {
 	Command Command
 	Param   string
 }
 
-func BunchedRequestFromCM(msg *ClientMessage) BunchedRequest {
-	return BunchedRequest{Command: msg.Command, Param: msg.origArguments}
-}
-
-type CachedBunchedResponse struct {
+type cachedBunchedResponse struct {
 	Response  string
 	Timestamp time.Time
 }
-type BunchSubscriber struct {
+type bunchSubscriber struct {
 	Client    *ClientInfo
 	MessageID int
 }
 
-type BunchSubscriberList struct {
+type bunchSubscriberList struct {
 	sync.Mutex
-	Members []BunchSubscriber
+	Members []bunchSubscriber
 }
 
 type CacheStatus byte
@@ -393,50 +367,57 @@ const (
 	CacheStatusExpired
 )
 
-var PendingBunchedRequests map[BunchedRequest]*BunchSubscriberList = make(map[BunchedRequest]*BunchSubscriberList)
-var PendingBunchLock sync.Mutex
-var BunchCache map[BunchedRequest]CachedBunchedResponse = make(map[BunchedRequest]CachedBunchedResponse)
-var BunchCacheLock sync.RWMutex
-var BunchCacheCleanupSignal *sync.Cond = sync.NewCond(&BunchCacheLock)
-var BunchCacheLastCleanup time.Time
+var pendingBunchedRequests = make(map[bunchedRequest]*bunchSubscriberList)
+var pendingBunchLock sync.Mutex
+var bunchCache = make(map[bunchedRequest]cachedBunchedResponse)
+var bunchCacheLock sync.RWMutex
+var bunchCacheCleanupSignal = sync.NewCond(&bunchCacheLock)
+var bunchCacheLastCleanup time.Time
+
+func bunchedRequestFromCM(msg *ClientMessage) bunchedRequest {
+	return bunchedRequest{Command: msg.Command, Param: msg.origArguments}
+}
 
 func bunchCacheJanitor() {
 	go func() {
 		for {
 			time.Sleep(30 * time.Minute)
-			BunchCacheCleanupSignal.Signal()
+			bunchCacheCleanupSignal.Signal()
 		}
 	}()
 
-	BunchCacheLock.Lock()
+	bunchCacheLock.Lock()
 	for {
 		// Unlocks CachedBunchLock, waits for signal, re-locks
-		BunchCacheCleanupSignal.Wait()
+		bunchCacheCleanupSignal.Wait()
 
-		if BunchCacheLastCleanup.After(time.Now().Add(-1 * time.Second)) {
+		if bunchCacheLastCleanup.After(time.Now().Add(-1 * time.Second)) {
 			// skip if it's been less than 1 second
 			continue
 		}
 
 		// CachedBunchLock is held here
 		keepIfAfter := time.Now().Add(-5 * time.Minute)
-		for req, resp := range BunchCache {
+		for req, resp := range bunchCache {
 			if !resp.Timestamp.After(keepIfAfter) {
-				delete(BunchCache, req)
+				delete(bunchCache, req)
 			}
 		}
-		BunchCacheLastCleanup = time.Now()
+		bunchCacheLastCleanup = time.Now()
 		// Loop and Wait(), which re-locks
 	}
 }
 
-func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	br := BunchedRequestFromCM(&msg)
+// C2SHandleBunchedCommand handles C2S Commands such as `get_link`.
+// It makes a request to the backend server for the data, but any other requests coming in while the first is pending also get the responses from the first one.
+// Additionally, results are cached.
+func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	br := bunchedRequestFromCM(&msg)
 
 	cacheStatus := func() byte {
-		BunchCacheLock.RLock()
-		defer BunchCacheLock.RUnlock()
-		bresp, ok := BunchCache[br]
+		bunchCacheLock.RLock()
+		defer bunchCacheLock.RUnlock()
+		bresp, ok := bunchCache[br]
 		if ok && bresp.Timestamp.After(time.Now().Add(-5*time.Minute)) {
 			client.MsgChannelKeepalive.Add(1)
 			go func() {
@@ -459,12 +440,12 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		return ClientMessage{Command: AsyncResponseCommand}, nil
 	} else if cacheStatus == CacheStatusExpired {
 		// Wake up the lazy janitor
-		BunchCacheCleanupSignal.Signal()
+		bunchCacheCleanupSignal.Signal()
 	}
 
-	PendingBunchLock.Lock()
-	defer PendingBunchLock.Unlock()
-	list, ok := PendingBunchedRequests[br]
+	pendingBunchLock.Lock()
+	defer pendingBunchLock.Unlock()
+	list, ok := pendingBunchedRequests[br]
 	if ok {
 		list.Lock()
 		AddToSliceB(&list.Members, client, msg.MessageID)
@@ -473,9 +454,9 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		return ClientMessage{Command: AsyncResponseCommand}, nil
 	}
 
-	PendingBunchedRequests[br] = &BunchSubscriberList{Members: []BunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
+	pendingBunchedRequests[br] = &bunchSubscriberList{Members: []bunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
 
-	go func(request BunchedRequest) {
+	go func(request bunchedRequest) {
 		respStr, err := SendRemoteCommandCached(string(request.Command), request.Param, AuthInfo{})
 
 		var msg ClientMessage
@@ -489,15 +470,15 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 		}
 
 		if err == nil {
-			BunchCacheLock.Lock()
-			BunchCache[request] = CachedBunchedResponse{Response: respStr, Timestamp: time.Now()}
-			BunchCacheLock.Unlock()
+			bunchCacheLock.Lock()
+			bunchCache[request] = cachedBunchedResponse{Response: respStr, Timestamp: time.Now()}
+			bunchCacheLock.Unlock()
 		}
 
-		PendingBunchLock.Lock()
-		bsl := PendingBunchedRequests[request]
-		delete(PendingBunchedRequests, request)
-		PendingBunchLock.Unlock()
+		pendingBunchLock.Lock()
+		bsl := pendingBunchedRequests[request]
+		delete(pendingBunchedRequests, request)
+		pendingBunchLock.Unlock()
 
 		bsl.Lock()
 		for _, member := range bsl.Members {
@@ -513,7 +494,7 @@ func HandleBunchedRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Cl
 	return ClientMessage{Command: AsyncResponseCommand}, nil
 }
 
-func HandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SHandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	client.MsgChannelKeepalive.Add(1)
 	go doRemoteCommand(conn, msg, client)
 

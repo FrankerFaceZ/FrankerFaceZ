@@ -117,7 +117,8 @@ var CachedGlobalMessages []TimestampedGlobalMessage
 var CachedChannelMessages []TimestampedMultichatMessage
 var CacheListsLock sync.RWMutex
 
-func DumpCache() {
+// DumpBacklogData drops all /cached_pub data.
+func DumpBacklogData() {
 	CachedLSMLock.Lock()
 	CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 	CachedLSMLock.Unlock()
@@ -132,6 +133,9 @@ func DumpCache() {
 	CacheListsLock.Unlock()
 }
 
+// SendBacklogForNewClient sends any backlog data relevant to a new client.
+// This should be done when the client sends a `ready` message.
+// This will only send data for CacheTypePersistent and CacheTypeLastOnly because those do not involve timestamps.
 func SendBacklogForNewClient(client *ClientInfo) {
 	client.Mutex.Lock() // reading CurrentChannels
 	PersistentLSMLock.RLock()
@@ -170,11 +174,13 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	client.Mutex.Unlock()
 }
 
+// SendTimedBacklogMessages sends any once-off messages that the client may have missed while it was disconnected.
+// Effectively, this can only process CacheTypeTimestamps.
 func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
 	client.Mutex.Lock() // reading CurrentChannels
 	CacheListsLock.RLock()
 
-	globIdx := FindFirstNewMessage(tgmarray(CachedGlobalMessages), disconnectTime)
+	globIdx := findFirstNewMessage(tgmarray(CachedGlobalMessages), disconnectTime)
 
 	if globIdx != -1 {
 		for i := globIdx; i < len(CachedGlobalMessages); i++ {
@@ -185,7 +191,7 @@ func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
 		}
 	}
 
-	chanIdx := FindFirstNewMessage(tmmarray(CachedChannelMessages), disconnectTime)
+	chanIdx := findFirstNewMessage(tmmarray(CachedChannelMessages), disconnectTime)
 
 	if chanIdx != -1 {
 		for i := chanIdx; i < len(CachedChannelMessages); i++ {
@@ -217,20 +223,20 @@ func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
 func backlogJanitor() {
 	for {
 		time.Sleep(1 * time.Hour)
-		CleanupTimedBacklogMessages()
+		cleanupTimedBacklogMessages()
 	}
 }
 
-func CleanupTimedBacklogMessages() {
+func cleanupTimedBacklogMessages() {
 	CacheListsLock.Lock()
 	oneHourAgo := time.Now().Add(-24 * time.Hour)
-	globIdx := FindFirstNewMessage(tgmarray(CachedGlobalMessages), oneHourAgo)
+	globIdx := findFirstNewMessage(tgmarray(CachedGlobalMessages), oneHourAgo)
 	if globIdx != -1 {
 		newGlobMsgs := make([]TimestampedGlobalMessage, len(CachedGlobalMessages)-globIdx)
 		copy(newGlobMsgs, CachedGlobalMessages[globIdx:])
 		CachedGlobalMessages = newGlobMsgs
 	}
-	chanIdx := FindFirstNewMessage(tmmarray(CachedChannelMessages), oneHourAgo)
+	chanIdx := findFirstNewMessage(tmmarray(CachedChannelMessages), oneHourAgo)
 	if chanIdx != -1 {
 		newChanMsgs := make([]TimestampedMultichatMessage, len(CachedChannelMessages)-chanIdx)
 		copy(newChanMsgs, CachedChannelMessages[chanIdx:])
@@ -239,7 +245,10 @@ func CleanupTimedBacklogMessages() {
 	CacheListsLock.Unlock()
 }
 
-func InsertionSort(ary sort.Interface) {
+// insertionSort implements insertion sort.
+// CacheTypeTimestamps should use insertion sort for O(N) average performance.
+// (The average case is the array is still sorted after insertion of the new item.)
+func insertionSort(ary sort.Interface) {
 	for i := 1; i < ary.Len(); i++ {
 		for j := i; j > 0 && ary.Less(j, j-1); j-- {
 			ary.Swap(j, j-1)
@@ -247,13 +256,12 @@ func InsertionSort(ary sort.Interface) {
 	}
 }
 
-type TimestampArray interface {
+type timestampArray interface {
 	Len() int
 	GetTime(int) time.Time
 }
 
-func FindFirstNewMessage(ary TimestampArray, disconnectTime time.Time) (idx int) {
-	// TODO needs tests
+func findFirstNewMessage(ary timestampArray, disconnectTime time.Time) (idx int) {
 	len := ary.Len()
 	i := len
 
@@ -304,14 +312,14 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 func SaveGlobalMessage(cmd Command, timestamp time.Time, data string) {
 	CacheListsLock.Lock()
 	CachedGlobalMessages = append(CachedGlobalMessages, TimestampedGlobalMessage{timestamp, cmd, data})
-	InsertionSort(tgmarray(CachedGlobalMessages))
+	insertionSort(tgmarray(CachedGlobalMessages))
 	CacheListsLock.Unlock()
 }
 
 func SaveMultichanMessage(cmd Command, channels string, timestamp time.Time, data string) {
 	CacheListsLock.Lock()
 	CachedChannelMessages = append(CachedChannelMessages, TimestampedMultichatMessage{timestamp, strings.Split(channels, ","), cmd, data})
-	InsertionSort(tmmarray(CachedChannelMessages))
+	insertionSort(tmmarray(CachedChannelMessages))
 	CacheListsLock.Unlock()
 }
 
@@ -325,7 +333,7 @@ func GetCommandsOfType(match PushCommandCacheInfo) []Command {
 	return ret
 }
 
-func HBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
+func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := UnsealRequest(r.Form)
 	if err != nil {
@@ -336,7 +344,7 @@ func HBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 
 	confirm := formData.Get("confirm")
 	if confirm == "1" {
-		DumpCache()
+		DumpBacklogData()
 	}
 }
 

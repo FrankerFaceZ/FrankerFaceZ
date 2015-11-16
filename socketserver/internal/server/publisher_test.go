@@ -11,7 +11,7 @@ func TestCleanupBacklogMessages(t *testing.T) {
 
 func TestFindFirstNewMessageEmpty(t *testing.T) {
 	CachedGlobalMessages = []TimestampedGlobalMessage{}
-	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
+	i := findFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
 	if i != -1 {
 		t.Errorf("Expected -1, got %d", i)
 	}
@@ -20,7 +20,7 @@ func TestFindFirstNewMessageOneBefore(t *testing.T) {
 	CachedGlobalMessages = []TimestampedGlobalMessage{
 		{Timestamp: time.Unix(8, 0)},
 	}
-	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
+	i := findFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
 	if i != -1 {
 		t.Errorf("Expected -1, got %d", i)
 	}
@@ -33,7 +33,7 @@ func TestFindFirstNewMessageSeveralBefore(t *testing.T) {
 		{Timestamp: time.Unix(4, 0)},
 		{Timestamp: time.Unix(5, 0)},
 	}
-	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
+	i := findFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
 	if i != -1 {
 		t.Errorf("Expected -1, got %d", i)
 	}
@@ -51,7 +51,7 @@ func TestFindFirstNewMessageInMiddle(t *testing.T) {
 		{Timestamp: time.Unix(14, 0)},
 		{Timestamp: time.Unix(15, 0)},
 	}
-	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
+	i := findFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
 	if i != 5 {
 		t.Errorf("Expected 5, got %d", i)
 	}
@@ -60,7 +60,7 @@ func TestFindFirstNewMessageOneAfter(t *testing.T) {
 	CachedGlobalMessages = []TimestampedGlobalMessage{
 		{Timestamp: time.Unix(15, 0)},
 	}
-	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
+	i := findFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
 	if i != 0 {
 		t.Errorf("Expected 0, got %d", i)
 	}
@@ -73,7 +73,7 @@ func TestFindFirstNewMessageSeveralAfter(t *testing.T) {
 		{Timestamp: time.Unix(14, 0)},
 		{Timestamp: time.Unix(15, 0)},
 	}
-	i := FindFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
+	i := findFirstNewMessage(tgmarray(CachedGlobalMessages), time.Unix(10, 0))
 	if i != 0 {
 		t.Errorf("Expected 0, got %d", i)
 	}

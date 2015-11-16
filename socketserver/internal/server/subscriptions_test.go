@@ -134,7 +134,7 @@ func TGetUrls(testserver *httptest.Server) TURLs {
 }
 
 func TSetup(testserver **httptest.Server, urls *TURLs) {
-	DumpCache()
+	DumpBacklogData()
 
 	conf := &ConfigFile{
 		ServerID:     20,

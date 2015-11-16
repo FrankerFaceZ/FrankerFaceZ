@@ -1,7 +1,7 @@
-package main
+package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/ffzsocketserver"
 
 import (
-	"../../internal/server"
+	"bitbucket.org/stendec/frankerfacez/socketserver/internal/server"
 	"encoding/json"
 	"flag"
 	"fmt"

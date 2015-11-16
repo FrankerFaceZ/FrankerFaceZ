@@ -160,8 +160,8 @@ func RemoveFromSliceC(ary *[]chan<- ClientMessage, val chan<- ClientMessage) boo
 	return true
 }
 
-func AddToSliceB(ary *[]BunchSubscriber, client *ClientInfo, mid int) bool {
-	newSub := BunchSubscriber{Client: client, MessageID: mid}
+func AddToSliceB(ary *[]bunchSubscriber, client *ClientInfo, mid int) bool {
+	newSub := bunchSubscriber{Client: client, MessageID: mid}
 	slice := *ary
 	for _, v := range slice {
 		if v == newSub {

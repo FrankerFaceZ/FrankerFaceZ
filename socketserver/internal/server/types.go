@@ -98,9 +98,12 @@ type ClientInfo struct {
 	// Take out an Add() on this during a command if you need to use the MessageChannel later.
 	MsgChannelKeepalive sync.WaitGroup
 
-	// The number of pings sent without a response
+	// The number of pings sent without a response.
+	// Protected by Mutex
 	pingCount int
 }
+
+const usePendingSubscrptionsBacklog = false
 
 type tgmarray []TimestampedGlobalMessage
 type tmmarray []TimestampedMultichatMessage
@@ -178,9 +181,9 @@ func (bct *BacklogCacheType) UnmarshalJSON(data []byte) error {
 		*bct = CacheTypeInvalid
 		return nil
 	}
-	val := BacklogCacheTypeByName(str)
-	if val != CacheTypeInvalid {
-		*bct = val
+	newBct := BacklogCacheTypeByName(str)
+	if newBct != CacheTypeInvalid {
+		*bct = newBct
 		return nil
 	}
 	return ErrorUnrecognizedCacheType
@@ -234,9 +237,9 @@ func (mtt *MessageTargetType) UnmarshalJSON(data []byte) error {
 		*mtt = MsgTargetTypeInvalid
 		return nil
 	}
-	mtt := MessageTargetTypeByName(str)
-	if mtt != MsgTargetTypeInvalid {
-		*mtt = mtt
+	newMtt := MessageTargetTypeByName(str)
+	if newMtt != MsgTargetTypeInvalid {
+		*mtt = newMtt
 		return nil
 	}
 	return ErrorUnrecognizedTargetType

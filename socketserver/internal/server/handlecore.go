@@ -59,8 +59,8 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	}
 	BannerHTML = bannerBytes
 
-	serveMux.HandleFunc("/", ServeWebsocketOrCatbag)
-	serveMux.HandleFunc("/drop_backlog", HBackendDropBacklog)
+	serveMux.HandleFunc("/", HTTPHandleRootURL)
+	serveMux.HandleFunc("/drop_backlog", HTTPBackendDropBacklog)
 	serveMux.HandleFunc("/uncached_pub", HBackendPublishRequest)
 	serveMux.HandleFunc("/cached_pub", HBackendUpdateAndPublish)
 
@@ -81,7 +81,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	go backlogJanitor()
 	go bunchCacheJanitor()
 	go pubsubJanitor()
-	go sendAggregateData()
+	go aggregateDataSender()
 
 	go ircConnection()
 }
@@ -99,14 +99,16 @@ var SocketUpgrader = websocket.Upgrader{
 // Memes go here.
 var BannerHTML []byte
 
-func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
+// HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
+// It either uses the SocketUpgrader or writes out the BannerHTML.
+func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Connection") == "Upgrade" {
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			fmt.Fprintf(w, "error: %v", err)
 			return
 		}
-		HandleSocketConnection(conn)
+		RunSocketConnection(conn)
 
 		return
 	} else {
@@ -114,26 +116,46 @@ func ServeWebsocketOrCatbag(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Errors that get returned to the client.
-var ProtocolError error = errors.New("FFZ Socket protocol error.")
-var ProtocolErrorNegativeID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
-var ExpectedSingleString = errors.New("Error: Expected single string as arguments.")
-var ExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
-var ExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
-var ExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
-var ExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
-var ExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
+// ErrProtocolGeneric is sent in a ErrorCommand Reply.
+var ErrProtocolGeneric error = errors.New("FFZ Socket protocol error.")
+// ErrProtocolNegativeMsgID is sent in a ErrorCommand Reply when a negative MessageID is received.
+var ErrProtocolNegativeMsgID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
+// ErrExpectedSingleString is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
+var ErrExpectedSingleString = errors.New("Error: Expected single string as arguments.")
+// ErrExpectedSingleInt is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
+var ErrExpectedSingleInt = errors.New("Error: Expected single integer as arguments.")
+// ErrExpectedTwoStrings is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
+var ErrExpectedTwoStrings = errors.New("Error: Expected array of string, string as arguments.")
+// ErrExpectedStringAndBool is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
+var ErrExpectedStringAndBool = errors.New("Error: Expected array of string, bool as arguments.")
+// ErrExpectedStringAndInt is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
+var ErrExpectedStringAndInt = errors.New("Error: Expected array of string, int as arguments.")
+// ErrExpectedStringAndIntGotFloat is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
+var ErrExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
+// CloseGotBinaryMessage is the termination reason when the client sends a binary websocket frame.
 var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
+// CloseTimedOut is the termination reason when the client fails to send or respond to ping frames.
 var CloseTimedOut = websocket.CloseError{Code: websocket.CloseNoStatusReceived, Text: "no ping replies for 5 minutes"}
+// CloseFirstMessageNotHello is the termination reason
 var CloseFirstMessageNotHello = websocket.CloseError{
 	Text: "Error - the first message sent must be a 'hello'",
 	Code: websocket.ClosePolicyViolation,
 }
 
-// Handle a new websocket connection from a FFZ client.
-// This runs in a goroutine started by net/http.
-func HandleSocketConnection(conn *websocket.Conn) {
+// RunSocketConnection contains the main run loop of a websocket connection.
+
+// First, it sets up the channels, the ClientInfo object, and the pong frame handler.
+// It starts the reader goroutine pointing at the newly created channels.
+// The function then enters the run loop (a `for{select{}}`).
+// The run loop is broken when an object is received on errorChan, or if `hello` is not the first C2S Command.
+
+// After the run loop stops, the function launches a goroutine to drain
+// client.MessageChannel, signals the reader goroutine to stop, unsubscribes
+// from all pub/sub channels, waits on MsgChannelKeepalive (remember, the
+// messages are being drained), and finally closes client.MessageChannel
+// (which ends the drainer goroutine).
+func RunSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
 
 	log.Println("Got socket connection from", conn.RemoteAddr())
@@ -201,7 +223,9 @@ func HandleSocketConnection(conn *websocket.Conn) {
 	}(_errorChan, _clientChan, stoppedChan)
 
 	conn.SetPongHandler(func(pongBody string) error {
+		client.Mutex.Lock()
 		client.pingCount = 0
+		client.Mutex.Unlock()
 		return nil
 	})
 
@@ -236,14 +260,17 @@ RunLoop:
 				break RunLoop
 			}
 
-			HandleCommand(conn, &client, msg)
+			DispatchC2SCommand(conn, &client, msg)
 
-		case smsg := <-serverMessageChan:
-			SendMessage(conn, smsg)
+		case msg := <-serverMessageChan:
+			SendMessage(conn, msg)
 
 		case <-time.After(1 * time.Minute):
+			client.Mutex.Lock()
 			client.pingCount++
-			if client.pingCount == 5 {
+			tooManyPings := client.pingCount == 5
+			client.Mutex.Unlock()
+			if tooManyPings {
 				CloseConnection(conn, &CloseTimedOut)
 				break RunLoop
 			} else {
@@ -280,20 +307,6 @@ func getDeadline() time.Time {
 	return time.Now().Add(1 * time.Minute)
 }
 
-func CallHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (rmsg ClientMessage, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			var ok bool
-			fmt.Print("[!] Error executing command", cmsg.Command, "--", r)
-			err, ok = r.(error)
-			if !ok {
-				err = fmt.Errorf("command handler: %v", r)
-			}
-		}
-	}()
-	return handler(conn, client, cmsg)
-}
-
 func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
 	if closeMsg != &CloseFirstMessageNotHello {
 		log.Println("Terminating connection with", conn.RemoteAddr(), "-", closeMsg.Text)
@@ -323,11 +336,11 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 	// Message ID
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
-		return ProtocolError
+		return ErrProtocolGeneric
 	}
 	messageID, err := strconv.Atoi(dataStr[:spaceIdx])
 	if messageID < -1 || messageID == 0 {
-		return ProtocolErrorNegativeID
+		return ErrProtocolNegativeMsgID
 	}
 
 	out.MessageID = messageID
@@ -397,23 +410,12 @@ func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []by
 	return websocket.TextMessage, []byte(dataStr), nil
 }
 
-// Command handlers should use this to construct responses.
-func SuccessMessageFromString(arguments string) ClientMessage {
-	cm := ClientMessage{
-		MessageID:     -1, // filled by the select loop
-		Command:       SuccessCommand,
-		origArguments: arguments,
-	}
-	cm.parseOrigArguments()
-	return cm
-}
-
 // Convenience method: Parse the arguments of the ClientMessage as a single string.
 func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {
 	var ok bool
 	string1, ok = cm.Arguments.(string)
 	if !ok {
-		err = ExpectedSingleString
+		err = ErrExpectedSingleString
 		return
 	} else {
 		return string1, nil
@@ -426,7 +428,7 @@ func (cm *ClientMessage) ArgumentsAsInt() (int1 int64, err error) {
 	var num float64
 	num, ok = cm.Arguments.(float64)
 	if !ok {
-		err = ExpectedSingleInt
+		err = ErrExpectedSingleInt
 		return
 	} else {
 		int1 = int64(num)
@@ -440,16 +442,16 @@ func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err e
 	var ary []interface{}
 	ary, ok = cm.Arguments.([]interface{})
 	if !ok {
-		err = ExpectedTwoStrings
+		err = ErrExpectedTwoStrings
 		return
 	} else {
 		if len(ary) != 2 {
-			err = ExpectedTwoStrings
+			err = ErrExpectedTwoStrings
 			return
 		}
 		string1, ok = ary[0].(string)
 		if !ok {
-			err = ExpectedTwoStrings
+			err = ErrExpectedTwoStrings
 			return
 		}
 		// clientID can be null
@@ -458,7 +460,7 @@ func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err e
 		}
 		string2, ok = ary[1].(string)
 		if !ok {
-			err = ExpectedTwoStrings
+			err = ErrExpectedTwoStrings
 			return
 		}
 		return string1, string2, nil
@@ -471,27 +473,27 @@ func (cm *ClientMessage) ArgumentsAsStringAndInt() (string1 string, int int64, e
 	var ary []interface{}
 	ary, ok = cm.Arguments.([]interface{})
 	if !ok {
-		err = ExpectedStringAndInt
+		err = ErrExpectedStringAndInt
 		return
 	} else {
 		if len(ary) != 2 {
-			err = ExpectedStringAndInt
+			err = ErrExpectedStringAndInt
 			return
 		}
 		string1, ok = ary[0].(string)
 		if !ok {
-			err = ExpectedStringAndInt
+			err = ErrExpectedStringAndInt
 			return
 		}
 		var num float64
 		num, ok = ary[1].(float64)
 		if !ok {
-			err = ExpectedStringAndInt
+			err = ErrExpectedStringAndInt
 			return
 		}
 		int = int64(num)
 		if float64(int) != num {
-			err = ExpectedStringAndIntGotFloat
+			err = ErrExpectedStringAndIntGotFloat
 			return
 		}
 		return string1, int, nil
@@ -504,21 +506,21 @@ func (cm *ClientMessage) ArgumentsAsStringAndBool() (str string, flag bool, err 
 	var ary []interface{}
 	ary, ok = cm.Arguments.([]interface{})
 	if !ok {
-		err = ExpectedStringAndBool
+		err = ErrExpectedStringAndBool
 		return
 	} else {
 		if len(ary) != 2 {
-			err = ExpectedStringAndBool
+			err = ErrExpectedStringAndBool
 			return
 		}
 		str, ok = ary[0].(string)
 		if !ok {
-			err = ExpectedStringAndBool
+			err = ErrExpectedStringAndBool
 			return
 		}
 		flag, ok = ary[1].(bool)
 		if !ok {
-			err = ExpectedStringAndBool
+			err = ErrExpectedStringAndBool
 			return
 		}
 		return str, flag, nil
