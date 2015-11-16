@@ -106,7 +106,7 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	SubscribeDefaults(client)
 
 	if client.Version.After(&lastVersionWithoutReplyWithServerTime) {
-		jsTime := float64(time.Now().UnixNano()) / (1000 * 1000)
+		jsTime := float64(time.Now().UnixNano() / 1000) / 1000
 		return ClientMessage{
 			Arguments: []interface{}{
 				client.ClientID.String(),
