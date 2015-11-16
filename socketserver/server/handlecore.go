@@ -261,7 +261,7 @@ RunLoop:
 			break RunLoop
 
 		case msg := <-clientChan:
-			if client.Version == "" && msg.Command != HelloCommand {
+			if client.VersionString == "" && msg.Command != HelloCommand {
 				CloseConnection(conn, &CloseFirstMessageNotHello)
 				Statistics.FirstNotHelloDisconnects++
 				break RunLoop

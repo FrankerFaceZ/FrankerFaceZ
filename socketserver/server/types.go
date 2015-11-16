@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 	"time"
+	"fmt"
 )
 
 const CryptoBoxKeyLength = 32
@@ -55,14 +56,22 @@ type AuthInfo struct {
 	UsernameValidated bool
 }
 
+type ClientVersion struct {
+	Major int
+	Minor int
+	Revision int
+}
+
 type ClientInfo struct {
 	// The client ID.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
 	ClientID uuid.UUID
 
-	// The client's version.
+	// The client's literal version string.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
-	Version string
+	VersionString string
+
+	Version ClientVersion
 
 	// This mutex protects writable data in this struct.
 	// If it seems to be a performance problem, we can split this.
@@ -101,6 +110,36 @@ type ClientInfo struct {
 	// The number of pings sent without a response.
 	// Protected by Mutex
 	pingCount int
+}
+
+func VersionFromString(v string) ClientVersion {
+	var cv ClientVersion
+	fmt.Sscanf(v, "ffz_%d.%d.%d", &cv.Major, &cv.Minor, &cv.Revision)
+	return cv
+}
+
+func (cv *ClientVersion) After(cv2 *ClientVersion) bool {
+	if cv.Major > cv2.Major {
+		return true
+	} else if cv.Major < cv2.Major {
+		return false
+	}
+	if cv.Minor > cv2.Minor {
+		return true
+	} else if cv.Minor < cv2.Minor {
+		return false
+	}
+	if cv.Revision > cv2.Revision {
+		return true
+	} else if cv.Revision < cv2.Revision {
+		return false
+	}
+
+	return false // equal
+}
+
+func (cv *ClientVersion) Equal(cv2 *ClientVersion) bool {
+	return cv.Major == cv2.Major && cv.Minor == cv2.Minor && cv.Revision == cv2.Revision
 }
 
 const usePendingSubscrptionsBacklog = false
