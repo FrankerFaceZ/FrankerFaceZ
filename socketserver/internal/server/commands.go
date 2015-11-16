@@ -48,6 +48,9 @@ func DispatchC2SCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 		handler = C2SHandleRemoteCommand
 	}
 
+	Statistics.CommandsIssuedTotal++
+	Statistics.CommandsIssuedMap[msg.Command]++
+
 	response, err := callHandler(handler, conn, client, msg)
 
 	if err == nil {
@@ -308,7 +311,7 @@ func doSendAggregateData() {
 
 	followJSON, err := json.Marshal(follows)
 	if err != nil {
-		log.Print(err)
+		log.Println("error reporting aggregate data:", err)
 	} else {
 		reportForm.Set("follows", string(followJSON))
 	}
@@ -320,20 +323,20 @@ func doSendAggregateData() {
 	}
 	emoteJSON, err := json.Marshal(strEmoteUsage)
 	if err != nil {
-		log.Print(err)
+		log.Println("error reporting aggregate data:", err)
 	} else {
 		reportForm.Set("emotes", string(emoteJSON))
 	}
 
 	form, err := SealRequest(reportForm)
 	if err != nil {
-		log.Print(err)
+		log.Println("error reporting aggregate data:", err)
 		return
 	}
 
 	err = SendAggregatedData(form)
 	if err != nil {
-		log.Print(err)
+		log.Println("error reporting aggregate data:", err)
 		return
 	}
 

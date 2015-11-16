@@ -89,7 +89,7 @@ func UnsealRequest(form url.Values) (url.Values, error) {
 	retValues, err := url.ParseQuery(string(message))
 	if err != nil {
 		// Assume that the signature was accidentally correct but the contents were garbage
-		log.Print(err)
+		log.Println("Error unsealing request:", err)
 		return nil, ErrorInvalidSignature
 	}
 

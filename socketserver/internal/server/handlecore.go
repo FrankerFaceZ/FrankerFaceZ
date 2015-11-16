@@ -72,7 +72,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	}
 	resp, err := backendHTTPClient.PostForm(announceStartupURL, announceForm)
 	if err != nil {
-		log.Println(err)
+		log.Println("could not announce startup to backend:", err)
 	} else {
 		resp.Body.Close()
 	}
@@ -158,7 +158,7 @@ var CloseFirstMessageNotHello = websocket.CloseError{
 func RunSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
 
-	log.Println("Got socket connection from", conn.RemoteAddr())
+	Statistics.ClientConnectsTotal++
 
 	var _closer sync.Once
 	closer := func() {
@@ -210,9 +210,6 @@ func RunSocketConnection(conn *websocket.Conn) {
 		}
 
 		_, isClose := err.(*websocket.CloseError)
-		if err != io.EOF && !isClose {
-			log.Println("Error while reading from client:", err)
-		}
 		select {
 		case errorChan <- err:
 		case <-stoppedChan:
@@ -255,8 +252,8 @@ RunLoop:
 
 		case msg := <-clientChan:
 			if client.Version == "" && msg.Command != HelloCommand {
-				log.Println("error - first message wasn't hello from", conn.RemoteAddr(), "-", msg)
 				CloseConnection(conn, &CloseFirstMessageNotHello)
+				Statistics.FirstNotHelloDisconnects++
 				break RunLoop
 			}
 
@@ -300,7 +297,7 @@ RunLoop:
 	// Close the channel so the draining goroutine can finish, too.
 	close(_serverMessageChan)
 
-	log.Println("End socket connection from", conn.RemoteAddr())
+	Statistics.ClientDisconnectsTotal++
 }
 
 func getDeadline() time.Time {
@@ -308,9 +305,9 @@ func getDeadline() time.Time {
 }
 
 func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
-	if closeMsg != &CloseFirstMessageNotHello {
-		log.Println("Terminating connection with", conn.RemoteAddr(), "-", closeMsg.Text)
-	}
+	Statistics.DisconnectCodes[closeMsg.Code]++
+	Statistics.DisconnectReasons[closeMsg.Text]++
+
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), getDeadline())
 	conn.Close()
 }
@@ -324,6 +321,7 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 	}
 	conn.SetWriteDeadline(getDeadline())
 	conn.WriteMessage(messageType, packet)
+	Statistics.MessagesSent++
 }
 
 // UnmarshalClientMessage unpacks websocket TextMessage into a ClientMessage provided in the `v` parameter.
