@@ -14,7 +14,7 @@ type StatsData struct {
 	StatsDataVersion int
 
 	StartTime time.Time
-	Uptime time.Duration
+	Uptime    string
 	BuildTime string
 	BuildHash string
 
@@ -24,8 +24,8 @@ type StatsData struct {
 
 	PubSubChannelCount int
 
-	MemoryInUse    uint64
-	MemoryRSS uint64
+	MemoryInUse uint64
+	MemoryRSS   uint64
 
 	MemoryPerClient uint64
 
@@ -59,7 +59,7 @@ const pageSize = 4096
 
 var cpuUsage struct {
 	UserTime uint64
-	SysTime uint64
+	SysTime  uint64
 }
 
 func newStatsData() *StatsData {
@@ -103,7 +103,7 @@ func updatePeriodicStats() {
 			cpuUsage.UserTime = pstat.Utime
 			cpuUsage.SysTime = pstat.Stime
 
-			Statistics.CpuUsagePct = 100 * float64(userTicks + sysTicks) / (timeDiff.Seconds() * float64(ticksPerSecond))
+			Statistics.CpuUsagePct = 100 * float64(userTicks+sysTicks) / (timeDiff.Seconds() * float64(ticksPerSecond))
 			Statistics.MemoryRSS = uint64(pstat.Rss * pageSize)
 			Statistics.MemoryPerClient = Statistics.MemoryRSS / Statistics.CurrentClientCount
 		}
@@ -120,7 +120,7 @@ func updatePeriodicStats() {
 	}
 
 	{
-		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime)
+		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime).String()
 	}
 }
 

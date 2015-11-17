@@ -151,9 +151,9 @@ func TSetup(testserver **httptest.Server, urls *TURLs) {
 </div>
 </div>`), 0600)
 	conf := &ConfigFile{
-		ServerID:     20,
-		UseSSL:       false,
-		SocketOrigin: "localhost:2002",
+		ServerID:         20,
+		UseSSL:           false,
+		SocketOrigin:     "localhost:2002",
 		OurPublicKey:     []byte{176, 149, 72, 209, 35, 42, 110, 220, 22, 236, 212, 129, 213, 199, 1, 227, 185, 167, 150, 159, 117, 202, 164, 100, 9, 107, 45, 141, 122, 221, 155, 73},
 		OurPrivateKey:    []byte{247, 133, 147, 194, 70, 240, 211, 216, 223, 16, 241, 253, 120, 14, 198, 74, 237, 180, 89, 33, 146, 146, 140, 58, 88, 160, 2, 246, 112, 35, 239, 87},
 		BackendPublicKey: []byte{19, 163, 37, 157, 50, 139, 193, 85, 229, 47, 166, 21, 153, 231, 31, 133, 41, 158, 8, 53, 73, 0, 113, 91, 13, 181, 131, 248, 176, 18, 1, 107},
