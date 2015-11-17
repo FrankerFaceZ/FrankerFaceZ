@@ -124,7 +124,7 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 func C2SPing(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	return ClientMessage{
 		Arguments: float64(time.Now().UnixNano() / 1000) / 1000,
-	}
+	}, nil
 }
 
 func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
