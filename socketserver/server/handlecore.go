@@ -69,8 +69,8 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	BannerHTML = bannerBytes
 
 	serveMux.HandleFunc("/", HTTPHandleRootURL)
+	serveMux.Handle("/.well-known/", http.FileServer(http.FileSystem(http.Dir("/tmp/letsencrypt/"))))
 	serveMux.HandleFunc("/stats", HTTPShowStatistics)
-	serveMux.Handle("/.well-known", http.FileServer(http.FileSystem(http.Dir("/tmp/letsencrypt/.well-known"))))
 
 	serveMux.HandleFunc("/drop_backlog", HTTPBackendDropBacklog)
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
@@ -114,6 +114,11 @@ var BannerHTML []byte
 // HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
 // It either uses the SocketUpgrader or writes out the BannerHTML.
 func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		fmt.Println(404)
+		return
+	}
 	if r.Header.Get("Connection") == "Upgrade" {
 		updateSysMem()
 
