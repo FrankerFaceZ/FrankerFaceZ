@@ -107,6 +107,13 @@ var BannerHTML []byte
 // It either uses the SocketUpgrader or writes out the BannerHTML.
 func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Connection") == "Upgrade" {
+		updateSysMem()
+
+		if Statistics.SysMemTotal-Statistics.SysMemFree < Configuration.MinMemoryBytes {
+			w.WriteHeader(503)
+			return
+		}
+
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			fmt.Fprintf(w, "error: %v", err)

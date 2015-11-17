@@ -8,6 +8,7 @@ import (
 	"time"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
+	"sync"
 )
 
 type StatsData struct {
@@ -24,6 +25,8 @@ type StatsData struct {
 
 	PubSubChannelCount int
 
+	SysMemTotal uint64
+	SysMemFree  uint64
 	MemoryInUse uint64
 	MemoryRSS   uint64
 
@@ -72,6 +75,7 @@ func newStatsData() *StatsData {
 	}
 }
 
+// SetBuildStamp should be called from the main package to identify the git build hash and build time.
 func SetBuildStamp(buildTime, buildHash string) {
 	Statistics.BuildTime = buildTime
 	Statistics.BuildHash = buildHash
@@ -107,6 +111,7 @@ func updatePeriodicStats() {
 			Statistics.MemoryRSS = uint64(pstat.Rss * pageSize)
 			Statistics.MemoryPerClient = Statistics.MemoryRSS / Statistics.CurrentClientCount
 		}
+		updateSysMem()
 	}
 
 	{
@@ -121,6 +126,27 @@ func updatePeriodicStats() {
 
 	{
 		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime).String()
+	}
+}
+
+var sysMemLastUpdate time.Time
+var sysMemUpdateLock sync.Mutex
+
+func updateSysMem() {
+	if time.Now().Add(-2 * time.Second).After(sysMemLastUpdate) {
+		sysMemUpdateLock.Lock()
+		defer sysMemUpdateLock.Unlock()
+		if !time.Now().Add(-2 * time.Second).After(sysMemLastUpdate) {
+			return
+		}
+	} else {
+		return
+	}
+	sysMemLastUpdate = time.Now()
+	memInfo, err := linuxproc.ReadMemInfo("/proc/meminfo")
+	if err == nil {
+		Statistics.SysMemTotal = memInfo.MemTotal
+		Statistics.SysMemFree = memInfo.MemAvailable
 	}
 }
 

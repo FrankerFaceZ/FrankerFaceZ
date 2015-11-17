@@ -307,9 +307,10 @@ func httpError(statusCode int) error {
 func GenerateKeys(outputFile, serverID, theirPublicStr string) {
 	var err error
 	output := ConfigFile{
-		ListenAddr:   "0.0.0.0:8001",
-		SocketOrigin: "localhost:8001",
-		BackendURL:   "http://localhost:8002/ffz",
+		ListenAddr:     "0.0.0.0:8001",
+		SocketOrigin:   "localhost:8001",
+		BackendURL:     "http://localhost:8002/ffz",
+		MinMemoryBytes: 1024 * 1024 * 24,
 	}
 
 	output.ServerID, err = strconv.Atoi(serverID)

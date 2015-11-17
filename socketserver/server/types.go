@@ -20,6 +20,9 @@ type ConfigFile struct {
 	// URL to the backend server
 	BackendURL string
 
+	// Minimum memory to accept a new connection
+	MinMemoryBytes uint64
+
 	// SSL/TLS
 	UseSSL             bool
 	SSLCertificateFile string
