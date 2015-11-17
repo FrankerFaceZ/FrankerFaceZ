@@ -33,7 +33,7 @@ var commandHandlers = map[Command]CommandHandler{
 	"emoticon_uses": C2SEmoticonUses,
 	"survey":        C2SSurvey,
 
-	"twitch_emote":          C2SHandleRemoteCommand,
+	"twitch_emote":          C2SHandleBunchedCommand,
 	"get_link":              C2SHandleBunchedCommand,
 	"get_display_name":      C2SHandleBunchedCommand,
 	"update_follow_buttons": C2SHandleRemoteCommand,
