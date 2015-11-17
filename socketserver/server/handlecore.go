@@ -35,6 +35,11 @@ const AuthorizeCommand Command = "do_authorize"
 // on a goroutine over the ClientInfo.MessageChannel and should not be delivered immediately.
 const AsyncResponseCommand Command = "_async"
 
+const defaultMinMemory = 1024 * 1024 * 24
+
+// TwitchDotTv is the http origin for twitch.tv.
+const TwitchDotTv = "http://www.twitch.tv"
+
 // ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
 
@@ -46,6 +51,10 @@ var Configuration *ConfigFile
 // (Uses http.DefaultServeMux if `serveMux` is nil.)
 func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	Configuration = config
+
+	if config.MinMemoryBytes == 0 {
+		config.MinMemoryBytes = defaultMinMemory
+	}
 
 	setupBackend(config)
 
@@ -87,8 +96,6 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 
 	go ircConnection()
 }
-
-const TwitchDotTv = "http://www.twitch.tv"
 
 // SocketUpgrader is the websocket.Upgrader currently in use.
 var SocketUpgrader = websocket.Upgrader{

@@ -310,7 +310,7 @@ func GenerateKeys(outputFile, serverID, theirPublicStr string) {
 		ListenAddr:     "0.0.0.0:8001",
 		SocketOrigin:   "localhost:8001",
 		BackendURL:     "http://localhost:8002/ffz",
-		MinMemoryBytes: 1024 * 1024 * 24,
+		MinMemoryBytes: defaultMinMemory,
 	}
 
 	output.ServerID, err = strconv.Atoi(serverID)
