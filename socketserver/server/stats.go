@@ -11,9 +11,13 @@ import (
 )
 
 type StatsData struct {
-	Version int
+	StatsDataVersion int
+
 	StartTime time.Time
 	Uptime time.Duration
+	BuildTime string
+	BuildHash string
+
 	CachedStatsLastUpdate time.Time
 
 	CurrentClientCount uint64
@@ -50,7 +54,7 @@ type StatsData struct {
 // I don't really care.
 var Statistics = newStatsData()
 
-const StatsDataVersion = 3
+const StatsDataVersion = 4
 const pageSize = 4096
 
 var cpuUsage struct {
@@ -64,8 +68,13 @@ func newStatsData() *StatsData {
 		CommandsIssuedMap: make(map[Command]uint64),
 		DisconnectCodes:   make(map[string]uint64),
 		DisconnectReasons: make(map[string]uint64),
-		Version:           StatsDataVersion,
+		StatsDataVersion:  StatsDataVersion,
 	}
+}
+
+func SetBuildStamp(buildTime, buildHash string) {
+	Statistics.BuildTime = buildTime
+	Statistics.BuildHash = buildHash
 }
 
 func updateStatsIfNeeded() {
