@@ -150,11 +150,17 @@ var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupporte
 // CloseTimedOut is the termination reason when the client fails to send or respond to ping frames.
 var CloseTimedOut = websocket.CloseError{Code: websocket.CloseNoStatusReceived, Text: "no ping replies for 5 minutes"}
 
+// CloseTooManyBufferedMessages is the termination reason when the sending thread buffers too many messages.
+var CloseTooManyBufferedMessages = websocket.CloseError{Code: websocket.CloseMessageTooBig, Text: "too many pending messages"}
+
 // CloseFirstMessageNotHello is the termination reason
 var CloseFirstMessageNotHello = websocket.CloseError{
 	Text: "Error - the first message sent must be a 'hello'",
 	Code: websocket.ClosePolicyViolation,
 }
+
+const sendMessageBufferLength = 125
+const sendMessageAbortLength = 50
 
 // RunSocketConnection contains the main run loop of a websocket connection.
 
@@ -185,7 +191,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 	defer closer()
 
 	_clientChan := make(chan ClientMessage)
-	_serverMessageChan := make(chan ClientMessage)
+	_serverMessageChan := make(chan ClientMessage, sendMessageBufferLength)
 	_errorChan := make(chan error)
 	stoppedChan := make(chan struct{})
 
@@ -272,6 +278,9 @@ RunLoop:
 			DispatchC2SCommand(conn, &client, msg)
 
 		case msg := <-serverMessageChan:
+			if len(serverMessageChan) > sendMessageAbortLength {
+				CloseConnection(conn, &CloseTooManyBufferedMessages)
+			}
 			SendMessage(conn, msg)
 
 		case <-time.After(1 * time.Minute):
