@@ -7,20 +7,22 @@ import (
 )
 
 type StatsData struct {
+	Version int
+
 	CurrentClientCount int64
 
 	ClientConnectsTotal    int64
 	ClientDisconnectsTotal int64
 
 	DisconnectCodes   map[string]int64
-	DisconnectReasons map[string]int64
 
 	CommandsIssuedTotal int64
 	CommandsIssuedMap   map[Command]int64
 
 	MessagesSent int64
 
-	Version int
+	// DisconnectReasons is at the bottom because it has indeterminate size
+	DisconnectReasons map[string]int64
 }
 
 const StatsDataVersion = 1
