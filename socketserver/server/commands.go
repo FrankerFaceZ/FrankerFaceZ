@@ -107,7 +107,7 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	SubscribeDefaults(client)
 
 	if client.Version.After(&lastVersionWithoutReplyWithServerTime) {
-		jsTime := float64(time.Now().UnixNano() / 1000) / 1000
+		jsTime := float64(time.Now().UnixNano()/1000) / 1000
 		return ClientMessage{
 			Arguments: []interface{}{
 				client.ClientID.String(),
@@ -123,7 +123,7 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 
 func C2SPing(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	return ClientMessage{
-		Arguments: float64(time.Now().UnixNano() / 1000) / 1000,
+		Arguments: float64(time.Now().UnixNano()/1000) / 1000,
 	}, nil
 }
 
@@ -150,10 +150,10 @@ func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rm
 }
 
 func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-//	disconnectAt, err := msg.ArgumentsAsInt()
-//	if err != nil {
-//		return
-//	}
+	//	disconnectAt, err := msg.ArgumentsAsInt()
+	//	if err != nil {
+	//		return
+	//	}
 
 	client.Mutex.Lock()
 	if client.MakePendingRequests != nil {
@@ -171,9 +171,9 @@ func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	go func() {
 		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
 		SendBacklogForNewClient(client)
-//		if disconnectAt != 0 {
-//			SendTimedBacklogMessages(client, time.Unix(disconnectAt, 0))
-//		}
+		//		if disconnectAt != 0 {
+		//			SendTimedBacklogMessages(client, time.Unix(disconnectAt, 0))
+		//		}
 		client.MsgChannelKeepalive.Done()
 	}()
 	return ClientMessage{Command: AsyncResponseCommand}, nil

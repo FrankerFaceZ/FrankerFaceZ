@@ -2,11 +2,11 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/satori/go.uuid"
 	"net"
 	"sync"
 	"time"
-	"fmt"
 )
 
 const CryptoBoxKeyLength = 32
@@ -57,8 +57,8 @@ type AuthInfo struct {
 }
 
 type ClientVersion struct {
-	Major int
-	Minor int
+	Major    int
+	Minor    int
 	Revision int
 }
 

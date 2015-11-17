@@ -170,6 +170,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 	// websocket.Conn is a ReadWriteCloser
 
 	Statistics.ClientConnectsTotal++
+	Statistics.CurrentClientCount++
 
 	var _closer sync.Once
 	closer := func() {
@@ -263,7 +264,6 @@ RunLoop:
 		case msg := <-clientChan:
 			if client.VersionString == "" && msg.Command != HelloCommand {
 				CloseConnection(conn, &CloseFirstMessageNotHello)
-				Statistics.FirstNotHelloDisconnects++
 				break RunLoop
 			}
 
@@ -308,6 +308,7 @@ RunLoop:
 	close(_serverMessageChan)
 
 	Statistics.ClientDisconnectsTotal++
+	Statistics.CurrentClientCount--
 }
 
 func getDeadline() time.Time {

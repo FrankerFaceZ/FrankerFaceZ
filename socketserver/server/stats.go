@@ -7,9 +7,10 @@ import (
 )
 
 type StatsData struct {
-	ClientConnectsTotal      int64
-	ClientDisconnectsTotal   int64
-	FirstNotHelloDisconnects int64
+	CurrentClientCount int64
+
+	ClientConnectsTotal    int64
+	ClientDisconnectsTotal int64
 
 	DisconnectCodes   map[string]int64
 	DisconnectReasons map[string]int64
