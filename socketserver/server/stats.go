@@ -12,6 +12,8 @@ import (
 
 type StatsData struct {
 	Version int
+	StartTime time.Time
+	Uptime time.Duration
 	CachedStatsLastUpdate time.Time
 
 	CurrentClientCount uint64
@@ -58,6 +60,7 @@ var cpuUsage struct {
 
 func newStatsData() *StatsData {
 	return &StatsData{
+		StartTime:         time.Now(),
 		CommandsIssuedMap: make(map[Command]uint64),
 		DisconnectCodes:   make(map[string]uint64),
 		DisconnectReasons: make(map[string]uint64),
@@ -105,6 +108,10 @@ func updatePeriodicStats() {
 		GlobalSubscriptionInfo.RLock()
 		Statistics.CurrentClientCount = uint64(len(GlobalSubscriptionInfo.Members))
 		GlobalSubscriptionInfo.RUnlock()
+	}
+
+	{
+		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime)
 	}
 }
 
