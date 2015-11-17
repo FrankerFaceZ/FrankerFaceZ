@@ -128,8 +128,8 @@ func TGetUrls(testserver *httptest.Server) TURLs {
 	return TURLs{
 		Websocket:  fmt.Sprintf("ws://%s/", addr),
 		Origin:     fmt.Sprintf("http://%s", addr),
-		PubMsg:     fmt.Sprintf("http://%s/pub_msg", addr),
-		SavePubMsg: fmt.Sprintf("http://%s/update_and_pub", addr),
+		PubMsg:     fmt.Sprintf("http://%s/uncached_pub", addr),
+		SavePubMsg: fmt.Sprintf("http://%s/cached_pub", addr),
 	}
 }
 
@@ -204,6 +204,9 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	var resp *http.Response
 	var err error
 
+	var headers http.Header = make(http.Header)
+	headers.Set("Origin", TwitchDotTv)
+
 	// client 1: sub ch1, ch2
 	// client 2: sub ch1, ch3
 	// client 3: sub none
@@ -213,10 +216,8 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	// msg 3: chEmpty
 	// msg 4: global
 
-	t.SkipNow()
-
 	// Client 1
-	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
 	if err != nil {
 		t.Error(err)
 		return
@@ -245,7 +246,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}(conn)
 
 	// Client 2
-	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
 	if err != nil {
 		t.Error(err)
 		return
@@ -274,7 +275,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}(conn)
 
 	// Client 3
-	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
 	if err != nil {
 		t.Error(err)
 		return
@@ -346,7 +347,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}
 
 	// Start client 4
-	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
+	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
 	if err != nil {
 		t.Error(err)
 		return
@@ -407,9 +408,12 @@ func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 	TSetup(&server, &urls)
 	defer unsubscribeAllClients()
 
+	var headers http.Header = make(http.Header)
+	headers.Set("Origin", TwitchDotTv)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		conn, _, err := websocket.DefaultDialer.Dial(urls.Websocket, http.Header{})
+		conn, _, err := websocket.DefaultDialer.Dial(urls.Websocket, headers)
 		if err != nil {
 			b.Error(err)
 			break

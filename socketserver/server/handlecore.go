@@ -88,12 +88,14 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	go ircConnection()
 }
 
+const TwitchDotTv = "http://www.twitch.tv"
+
 // SocketUpgrader is the websocket.Upgrader currently in use.
 var SocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return r.Header.Get("Origin") == "http://www.twitch.tv"
+		return r.Header.Get("Origin") == TwitchDotTv
 	},
 }
 
