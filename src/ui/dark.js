@@ -1,6 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require("../constants"),
-	styles = require("../styles");
+	constants = require("../constants");
+	//styles = require("../styles");
 
 
 // ---------------------
@@ -144,6 +144,9 @@ FFZ.settings_info.dark_twitch = {
 				model && model.set('darkMode', true);
 			} else
 				model && model.set('darkMode', this.settings.twitch_chat_dark);
+
+			// Try coloring ReChat
+			jQuery('.rechat-chat-line').parents('.chat-container').toggleClass('dark', val || this.settings.twitch_chat_dark);
 		}
 	};
 
@@ -211,7 +214,6 @@ FFZ.prototype._load_dark_css = function() {
 
 	s.id = "ffz-dark-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
-	s.onerror = "this.href = this.href + '_';"
+	s.setAttribute('href', constants.DIRECT_SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 }

@@ -1,0 +1,15 @@
+/* Chat Line Padding */
+.ember-chat .chat-messages .chat-line,
+.ember-chat .chat-messages .chat-line.admin,
+
+.conversation-window .conversation-system-messages,
+.conversation-window .conversation-chat-line,
+.conversation-window .timestamp-line {
+	padding: 5px;
+}
+
+
+/* Remove Extra Conversation Padding */
+.conversation-window .conversation-chat-lines {
+	padding-top: 0;
+}

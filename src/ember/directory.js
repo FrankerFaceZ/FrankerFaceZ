@@ -30,49 +30,52 @@ FFZ.prototype.setup_directory = function() {
 	if ( ChannelView )
 		this._modify_directory_live(ChannelView);
 
+	var CreativeChannel = App.__container__.resolve('view:creative-channel');
+	if ( CreativeChannel )
+		this._modify_directory_live(CreativeChannel);
+
+	var CSGOChannel = App.__container__.resolve('view:cs-go-channel');
+	if ( CSGOChannel )
+		this._modify_directory_live(CSGOChannel, true);
+
 	var HostView = App.__container__.resolve('view:host');
 	if ( HostView )
 		this._modify_directory_host(HostView);
 
-	var VideoView = App.__container__.resolve('view:video');
-	if ( VideoView )
-		this._modify_directory_video(VideoView);
-
-	// TODO: Process existing views.
-}
-
-
-FFZ.prototype._modify_directory_video = function(dir) {
-	var f = this;
-	dir.reopen({
-		didInsertElement: function() {
-			this._super();
+	// Initialize existing views.
+	for(var key in Ember.View.views) {
+		var view = Ember.View.views[key];
+		try {
+			if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) || (CSGOChannel && view instanceof CSGOChannel) || (HostView && view instanceof HostView) )
+				view.ffzInit();
+		} catch(err) {
+			this.error("Directory Setup: " + err);
 		}
-	});
-
-	try {
-		dir.create().destroy();
-	} catch(err) { }
+	}
 }
 
 
-FFZ.prototype._modify_directory_live = function(dir) {
+FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 	var f = this;
 	dir.reopen({
 		didInsertElement: function() {
 			this._super();
+			this.ffzInit();
+		},
 
+		ffzInit: function() {
 			var el = this.get('element'),
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
 				cap = thumb && thumb.querySelector('.cap');
 
 
-			if ( f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
+			// CSGO doesn't provide the actual uptime information...
+			if ( !is_csgo && f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
 				var t_el = this._ffz_uptime = document.createElement('div');
 				t_el.className = 'overlay_info length live';
 
-				jQuery(t_el).tipsy({html: true});
+				jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
 
 				cap.appendChild(t_el);
 				this._ffz_uptime_timer = setInterval(this.ffzUpdateUptime.bind(this), 1000);
@@ -88,6 +91,8 @@ FFZ.prototype._modify_directory_live = function(dir) {
 					target = this.get('context.model.channel.name');
 
 				logo.className = 'profile-photo';
+				logo.classList.toggle('is-csgo', is_csgo);
+
 				logo.src = this.get('context.model.channel.logo') || "http://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_150x150.png";
 				logo.alt = this.get('context.model.channel.display_name');
 

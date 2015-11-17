@@ -1,18 +1,33 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('../constants'),
-	styles = require('../styles');
+	utils = require('../utils'),
+	constants = require('../constants');
+	styles = require('../compiled_styles');
 
 FFZ.prototype.setup_css = function() {
 	document.body.classList.toggle('ffz-flip-dashboard', this.settings.flip_dashboard);
 
 	this.log("Injecting main FrankerFaceZ CSS.");
 
-	var s = this._main_style = document.createElement('style');
+	var s = this._main_style = document.createElement('link');
+	s.id = "ffz-main-css";
+	s.setAttribute('rel', 'stylesheet');
+	s.setAttribute('href', constants.DIRECT_SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	document.head.appendChild(s);
+
+	this.log("Readying toggleable styles.");
+	this._toggle_style_state = {};
+
+	s = this._toggle_style = document.createElement('style');
+	s.type = "text/css";
+	s.id = "ffz-toggle-css";
+	document.head.appendChild(s);
+
+	/*var s = this._main_style = document.createElement('style');
 
 	s.textContent = styles.style;
-	s.id = "ffz-ui-css";
+	s.id = "ffz-main-css";
 
-	document.head.appendChild(s);
+	document.head.appendChild(s);*/
 
 	if ( window.jQuery && jQuery.noty )
 		jQuery.noty.themes.ffzTheme = {
@@ -25,4 +40,15 @@ FFZ.prototype.setup_css = function() {
 				onClose: function() {}
 			}
 		};
+}
+
+
+FFZ.prototype.toggle_style = function(key, enabled) {
+	var state = this._toggle_style_state[key];
+	if ( (enabled && state) || (!enabled && !state) )
+		return;
+
+	this._toggle_style_state[key] = enabled;
+
+	utils.update_css(this._toggle_style, key, enabled ? styles[key] || null : null);
 }

@@ -1,0 +1,15 @@
+/* 3D Separators */
+.conversation-chat-lines > div:before,
+.chat-line:before {
+	border-top: 1px solid rgba(255,255,255, 0.5);
+}
+
+/* Dark: 3D Separators */
+.ffz-dark .conversation-chat-lines > div:before,
+.theatre .conversation-chat-lines > div:before,
+
+.theatre .chat-line:before,
+.dark .chat-line:before,
+.force-dark .chat-line:before {
+	border-top-color: rgba(255,255,255, 0.1);
+}

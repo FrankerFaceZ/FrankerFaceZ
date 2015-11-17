@@ -1,0 +1,6 @@
+.badges .badge:not(.subscriber) {
+	border-radius: 9px;
+	background-size: 16px;
+	background-repeat: no-repeat;
+	background-position: center;
+}

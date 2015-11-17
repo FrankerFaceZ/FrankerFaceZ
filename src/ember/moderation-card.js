@@ -182,7 +182,7 @@ FFZ.settings_info.mod_buttons = {
 					old_val += ' ' + prefix + cmd;
 			}
 
-			var new_val = prompt("Custom In-Line Moderation Icons\n\nPlease enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"\n\nNumeric values will become timeout buttons for that number of seconds. The text \"<BAN>\" is a special value that will act like the normal Ban button in chat.\n\nTo assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.\n\nExample: A=\"!reg add\"\n\nDefault: <BAN> 600", old_val);
+			var new_val = prompt("Custom In-Line Moderation Icons\n\nPlease enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. To include spaces in a command, surround the command with double quotes (\"). Use \"{user}\" to insert the user's username into the command, otherwise it will be appended to the end.\n\nExample: !permit \"!reg add {user}\"\n\nTo send multiple commands, separate them with \"<LINE>\".\n\nNumeric values will become timeout buttons for that number of seconds. The text \"<BAN>\" is a special value that will act like the normal Ban button in chat.\n\nTo assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.\n\nExample: A=\"!reg add\"\n\nDefault: <BAN> 600", old_val);
 
 			if ( new_val === null || new_val === undefined )
 				return;
@@ -253,8 +253,15 @@ FFZ.settings_info.mod_buttons = {
 				} else
 					had_prefix = true;
 
-				if ( typeof val === "string" && val.indexOf('{user}') === -1 )
-					val += ' {user}';
+				if ( typeof val === "string" ) {
+					// Split it up for this step.
+					var lines = val.split(/ *<LINE> */);
+					for(var x=0; x < lines.length; x++) {
+						if ( lines[x].indexOf('{user}') === -1 )
+							lines[x] += ' {user}';
+					}
+					val = lines.join("<LINE>");
+				}
 
 				final.push([prefix, val, had_prefix]);
 			}
@@ -435,12 +442,19 @@ FFZ.prototype.setup_mod_card = function() {
 			return alias || this.get("cardInfo.user.display_name") || user_id.capitalize();
 		}),
 
+		willDestroy: function() {
+			if ( f._mod_card === this )
+				f._mod_card = undefined;
+			this._super();
+		},
+
 		didInsertElement: function() {
 			this._super();
-			window._card = this;
 			try {
 				if ( f.has_bttv )
 					return;
+
+				f._mod_card = this;
 
 				var el = this.get('element'),
 					controller = this.get('controller'),
@@ -450,10 +464,13 @@ FFZ.prototype.setup_mod_card = function() {
 
 					chat = window.App && App.__container__.lookup('controller:chat'),
 					user = f.get_user(),
-					is_broadcaster = user && chat && chat.get('currentRoom.id') === user.login,
+					room_id = chat && chat.get('currentRoom.id'),
+					is_broadcaster = user && room_id === user.login,
 
 					user_id = controller.get('cardInfo.user.id'),
 					alias = f.aliases[user_id];
+
+				this.ffz_room_id = room_id;
 
 				// Alias Display
 				if ( alias ) {
@@ -465,7 +482,7 @@ FFZ.prototype.setup_mod_card = function() {
 					if ( name ) {
 						name.classList.add('ffz-alias');
 						name.title = utils.sanitize(controller.get('cardInfo.user.display_name') || user_id.capitalize());
-						jQuery(name).tipsy();
+						jQuery(name).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 				}
 
@@ -512,7 +529,7 @@ FFZ.prototype.setup_mod_card = function() {
 							btn.innerHTML = utils.sanitize(title);
 							btn.title = utils.sanitize(cmd.replace(/{user}/g, controller.get('cardInfo.user.id') || '{user}'));
 
-							jQuery(btn).tipsy();
+							jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 							btn.addEventListener('click', add_btn_click.bind(this, cmd));
 							return btn;
 						};
@@ -591,7 +608,7 @@ FFZ.prototype.setup_mod_card = function() {
 							else if ( f.settings.mod_card_hotkeys &&  timeout === 1 )
 								btn.title = "(P)urge - " + btn.title;
 
-							jQuery(btn).tipsy();
+							jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 							btn.addEventListener('click', btn_click.bind(this, timeout));
 							return btn;
@@ -627,7 +644,7 @@ FFZ.prototype.setup_mod_card = function() {
 					unban_btn.innerHTML = CHECK;
 					unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
 
-					jQuery(unban_btn).tipsy();
+					jQuery(unban_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					unban_btn.addEventListener("click", btn_click.bind(this, -1));
 
 					jQuery(ban_btn).after(unban_btn);
@@ -651,7 +668,7 @@ FFZ.prototype.setup_mod_card = function() {
 					msg_btn.classList.add('message');
 
 					msg_btn.title = "Whisper User";
-					jQuery(msg_btn).tipsy();
+					jQuery(msg_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 
 					var real_msg = document.createElement('button');
@@ -714,41 +731,82 @@ FFZ.prototype.setup_mod_card = function() {
 				if ( f.settings.mod_card_history ) {
 					var Chat = App.__container__.lookup('controller:chat'),
 						room = Chat && Chat.get('currentRoom'),
-						ffz_room = room && f.rooms && f.rooms[room.get('id')],
-						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[controller.get('cardInfo.user.id')];
+						tmiSession = room.tmiSession || (window.TMI && TMI._sessions && TMI._sessions[0]),
+						room_id = room.get('id'),
+						user_id = controller.get('cardInfo.user.id'),
+						ffz_room = room && f.rooms && f.rooms[room_id],
+						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[user_id] || [],
 
-					if ( user_history && user_history.length ) {
-						var history = document.createElement('ul'),
-							alternate = false;
-						history.className = 'interface clearfix chat-history';
+						history = document.createElement('ul');
 
-						for(var i=0; i < user_history.length; i++) {
-							var line = user_history[i],
-								l_el = document.createElement('li');
+					history.className = 'interface clearfix chat-history';
 
-							l_el.className = 'message-line chat-line clearfix';
-							l_el.classList.toggle('ffz-alternate', alternate);
-							alternate = !alternate;
+					if ( user_history.length < 20 ) {
+						var before = user_history.length > 0 ? user_history[0].date.getTime() : Date.now();
+						f.ws_send("user_history", [room_id, user_id, 50 - user_history.length], function(success, data) {
+							if ( ! success )
+								return;
 
-							if ( line.style )
-								l_el.classList.add(line.style);
+							var i = data.length,
+								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight),
+								first = true;
 
-							l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(line.date) + '</span> ' : '') + '<span class="message">' + (line.style === 'action' ? '*' + line.from + ' ' : '') + f.render_tokens(line.cachedTokens) + '</span>';
+							while(i--) {
+								var msg = data[i];
+								if ( ! msg )
+									continue;
 
-							// Banned Links
-							var bad_links = l_el.querySelectorAll('a.deleted-link');
-							for(var x=0; x < bad_links.length; x++)
-								bad_links[x].addEventListener("click", f._deleted_link_click);
+								if ( typeof msg.date === "string" || typeof msg.date === "number" )
+									msg.date = utils.parse_date(msg.date);
 
-							jQuery('.html-tooltip', l_el).tipsy({html:true});
-							history.appendChild(l_el);
-						}
+								if ( ! msg.date || msg.date.getTime() >= before )
+									continue;
 
-						el.appendChild(history);
+								if ( first ) {
+									first = false;
+									history.insertBefore(f._build_mod_card_history({
+										date: msg.date,
+										from: "jtv",
+										style: "admin",
+										cachedTokens: ["(Server History Above)"]
+									}), history.firstElementChild);
+								}
 
-						// Lazy scroll-to-bottom
-						history.scrollTop = history.scrollHeight;
+								if ( ! msg.style ) {
+									if ( msg.from === "jtv" )
+										msg.style = "admin";
+									else if ( msg.from === "twitchnotify" )
+										msg.style = "notification";
+								}
+
+								if ( msg.tags && typeof msg.tags.emotes === "string" )
+									try {
+										msg.tags.emotes = JSON.parse(msg.tags.emotes);
+									} catch(err) {
+										f.log("Error Parsing JSON Emotes: " + err);
+										msg.tags.emotes = {};
+									}
+
+								if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
+									f.tokenize_chat_line(msg, true, room.get('roomProperties.hide_chat_links'));
+
+								history.insertBefore(f._build_mod_card_history(msg), history.firstElementChild);
+								if ( history.childElementCount >= 50 )
+									break;
+							}
+
+							if ( was_at_top )
+								setTimeout(function() { history.scrollTop = history.scrollHeight; });
+						});
 					}
+
+					for(var i=0; i < user_history.length; i++)
+						history.appendChild(f._build_mod_card_history(user_history[i]));
+
+					el.appendChild(history);
+
+					// Lazy scroll-to-bottom
+					history.scrollTop = history.scrollHeight;
 				}
 
 				// Reposition the menu if it's off-screen.
@@ -775,6 +833,29 @@ FFZ.prototype.setup_mod_card = function() {
 				} catch(err) { }
 			}
 		}});
+}
+
+
+FFZ.prototype._build_mod_card_history = function(line) {
+	var l_el = document.createElement('li'),
+		f = this;
+
+	l_el.className = 'message-line chat-line clearfix';
+
+	if ( line.ffz_has_mention )
+		l_el.classList.add('ffz-mentioned');
+
+	if ( line.style )
+		l_el.classList.add(line.style);
+
+	l_el.innerHTML = (helpers ? '<span class="timestamp float-left">' + helpers.getTime(line.date) + '</span> ' : '') + '<span class="message">' + (line.style === 'action' ? '*' + line.from + ' ' : '') + f.render_tokens(line.cachedTokens) + '</span>';
+
+	// Interactivity
+	jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
+	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
+	jQuery('.html-tooltip', l_el).tipsy({html:true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
+
+	return l_el;
 }
 
 

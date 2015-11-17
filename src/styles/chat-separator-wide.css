@@ -1,0 +1,15 @@
+/* Wide Separators */
+.conversation-chat-lines > div:before,
+.chat-line:before {
+	border-top: 1px solid #aaa;
+}
+
+/* Dark: Wide Separators */
+.ffz-dark .conversation-chat-lines > div:before,
+.theatre .conversation-chat-lines > div:before,
+
+.theatre .chat-line:before,
+.dark .chat-line:before,
+.force-dark .chat-line:before {
+	border-top-color: #000;
+}

@@ -63,35 +63,6 @@
 	color: #fff !important;
 }
 
-/* moderation card */
-
-.ember-chat-container.dark .ember-chat .ffz-moderation-card,
-.chat-container.dark .ember-chat .ffz-moderation-card,
-.app-main.theatre .ember-chat .ffz-moderation-card {
-	border-color: #1b1b20;
-}
-
-.ember-chat-container.dark .ember-chat .moderation-card:focus,
-.chat-container.dark .ember-chat .moderation-card:focus,
-.app-main.theatre .ember-chat .moderation-card:focus {
-	border-color: #cbcbcb;
-}
-
-.ember-chat-container.dark .ember-chat .moderation-card .interface,
-.chat-container.dark .ember-chat .moderation-card .interface,
-.app-main.theatre .ember-chat .moderation-card .interface {
-	background-color: #232329;
-}
-
-.ffz-no-blue .ember-chat-container.dark .ember-chat .moderation-card .interface,
-.ffz-no-blue .chat-container.dark .ember-chat .moderation-card .interface,
-.ffz-no-blue .app-main.theatre .ember-chat .moderation-card .interface {
-	background-color: #232323;
-}
-
-.moderation-card h3.name a { color: #fff !important; }
-
-
 /* stats */
 .ffz-dark .stats-and-actions,
 .ffz-dark #main_col .content #stats_and_actions {
@@ -164,6 +135,7 @@
 
 /* Popups */
 
+.ffz-dark .conversation-settings-menu,
 .ffz-dark .ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
 .ffz-dark .card,
 .ffz-dark #flyout .content,
@@ -530,7 +502,7 @@
 
 /* FrankerFaceZ Menu */
 
-.ffz-dark .ember-chat .chat-menu .list-header {
+/*.ffz-dark .ember-chat .chat-menu .list-header {
 	border-top-color: rgba(255,255,255,0.2);
 }
 
@@ -552,7 +524,7 @@
 
 .ffz-dark .ffz-ui-popup ul.menu li.active a {
 	border-top-color: rgb(16,16,16);
-}
+}*/
 
 /* New User Prompt */
 
@@ -926,3 +898,142 @@
 .ffz-dark .playlist-container:not(.playlist-enabled) .ui-sortable-helper {
 	background-color: rgba(255,255,255,0.2);
 }
+
+
+/* Conversations */
+
+.ffz-dark .conversation-input-bar .emoticon-selector-toggle svg path {
+	fill: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .conversation-input-bar .emoticon-selector-toggle:hover svg path {
+	fill: rgba(255,255,255,0.5);
+}
+
+.ffz-dark .conversation-input-bar .emoticon-selector-box .emote-set {
+	border-color: #323232;
+}
+
+.ffz-dark .conversation-input-bar .emoticon-selector-box .emoticon-grid {
+	background-color: #191919;
+}
+
+.ffz-dark .ember-chat .chat-settings .experimental-options {
+	border-top-color: rgba(255,255,255, 0.2);
+}
+
+.ffz-dark .conversation-settings-menu .options-divider {
+	border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .conversation-settings-menu:before {
+	border-color: transparent;
+	border-bottom-color: #32323e;
+}
+
+.ffz-dark .conversation-settings-menu:after {
+	border-color: transparent;
+	border-bottom-color: rgb(16,16,16);
+}
+
+.ffz-dark .conversations-list-icon {
+    background: #19191f;
+    color: #8c8c9c;
+    border-color: #19191f
+}
+
+.ffz-dark .conversations-list-icon:hover {
+    color: #fff
+}
+
+.ffz-dark .conversations-list {
+    background: #19191f;
+    border: 1px solid #32323e;
+    color: #fff
+}
+
+.ffz-dark .conversations-list:after {
+    border-color: rgba(25,25,31,0);
+    border-top-color: #19191f;
+    border-width: 10px;
+    margin-left: -10px
+}
+
+.ffz-dark .conversations-list:before {
+    right: 9px;
+    border-color: rgba(50,50,62,0);
+    border-top-color: #32323e
+}
+
+.ffz-dark .conversations-list .conversations-list-header {
+    background: #121218;
+    border-bottom: 1px solid #32323e;
+    color: #fff
+}
+
+.ffz-dark .conversations-list .conversation-preview-line {
+    color: #8c8c9c
+}
+
+.ffz-dark .conversations-list .conversations-list-item {
+    border-bottom: 1px solid #32323e
+}
+
+.ffz-dark .conversations-list .conversations-list-item:hover {
+    background-color: #121218;
+}
+
+.ffz-dark .conversation-window {
+    background: #19191f;
+    box-shadow: none;
+    color: #8c8c9c;
+}
+
+.ffz-dark .conversations-list-icon,
+.ffz-dark .conversation-window {
+	border: 1px solid rgba(255,255,255,0.2);
+	border-bottom: none;
+}
+
+.ffz-dark .conversation-header {
+    background: #121217;
+    box-shadow: none;
+}
+
+.ffz-dark .conversation-window:not(.collapsed) .conversation-header {
+	border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.ffz-dark .conversation-input-bar textarea {
+    border-color: rgba(255,255,255,0.1);
+    background-color: rgba(255,255,255,0.05);
+    color: #b6b6b6
+}
+
+.ffz-dark .conversation-input-actions .button,
+.ffz-dark .conversation-input-actions .follow-button:not(.ember-follow) .follow {
+    background-color: #444
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-header {
+    background-color: #121217
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-header-name {
+    color: #fff
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-input-bar textarea:focus {
+    border-color: rgba(255,255,255,0.2)
+}
+
+.ffz-dark .conversation-window.has-focus .conversation-input-actions .button,
+.ffz-dark .conversation-window.has-focus .conversation-input-actions .follow-button:not(.ember-follow) .follow {
+    background-color: #6441a5
+}
+
+.ffz-dark .conversation-window .timestamp-line span,
+.ffz-dark .conversation-window .new-message-divider span { background: transparent; }
+
+.ffz-dark .conversation-window .timestamp-line:after,
+.ffz-dark .conversation-window .new-message-divider:after { display: none; }

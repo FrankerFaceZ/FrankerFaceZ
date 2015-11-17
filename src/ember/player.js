@@ -61,7 +61,7 @@ FFZ.prototype.setup_player = function() {
 
 	this.players = {};
 
-	var Player2 = App && App.__container__.resolve('component:twitch-player2');
+	var Player2 = window.App && App.__container__.resolve('component:twitch-player2');
 	if ( ! Player2 )
 		return this.log("Unable to find twitch-player2 component.");
 

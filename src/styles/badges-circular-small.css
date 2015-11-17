@@ -1,0 +1,5 @@
+.badges .badge:not(.subscriber) {
+	height: 10px;
+	min-width: 10px;
+	margin: 5px 3px 5px 0;
+}

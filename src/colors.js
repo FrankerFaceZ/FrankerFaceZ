@@ -45,7 +45,7 @@ FFZ.settings_info.fix_color = {
 	},
 
 	on_update: function(val) {
-			document.body.classList.toggle("ffz-chat-colors-gray", !this.has_bttv && (val === '-1'));
+			this.toggle_style('chat-colors-gray', !this.has_bttv && val === '-1');
 
 			if ( ! this.has_bttv && val !== '-1' )
 				this._rebuild_colors();
@@ -114,6 +114,8 @@ FFZ.settings_info.color_blind = {
 // --------------------
 
 FFZ.prototype.setup_colors = function() {
+	this.toggle_style('chat-colors-gray', !this.has_bttv && this.settings.fix_color === '-1');
+
 	this._colors = {};
 	this._rebuild_contrast();
 
@@ -183,6 +185,43 @@ var LUVColor = FFZ.Color.LUV = function(l, u, v) {
 
 RGBColor.prototype.eq = function(rgb) {
 	return rgb.r === this.r && rgb.g === this.g && rgb.b === this.b;
+}
+
+RGBColor.fromCSS = function(rgb) {
+	rgb = rgb.trim();
+
+	if ( rgb.charAt(0) === '#' )
+		return RGBColor.fromHex(rgb);
+
+	var match = /rgba?\( *(\d+%?) *, *(\d+%?) *, *(\d+%?) *(?:,[^\)]+)?\)/.exec(rgb);
+	if ( match ) {
+		var r = match[1],
+			g = match[2],
+			b = match[3];
+
+		if ( r.charAt(r.length-1) === '%' )
+			r = 255 * (parseInt(r) / 100);
+		else
+			r = parseInt(r);
+
+		if ( g.charAt(g.length-1) === '%' )
+			g = 255 * (parseInt(g) / 100);
+		else
+			g = parseInt(g);
+
+		if ( b.charAt(b.length-1) === '%' )
+			b = 255 * (parseInt(b) / 100);
+		else
+			b = parseInt(b);
+
+		return new RGBColor(
+			Math.min(Math.max(0, r), 255),
+			Math.min(Math.max(0, g), 255),
+			Math.min(Math.max(0, b), 255)
+			);
+	}
+
+	return null;
 }
 
 RGBColor.fromHex = function(code) {
@@ -570,7 +609,7 @@ FFZ.prototype._update_colors = function(darkness_only) {
 
 	this._color_old_darkness = is_dark;
 
-	var colored_bits = document.querySelectorAll('.chat-line .has-color');
+	var colored_bits = document.querySelectorAll('.has-color');
 	for(var i=0, l=colored_bits.length; i < l; i++) {
 		var bit = colored_bits[i],
 			color = bit.getAttribute('data-color'),
@@ -585,6 +624,9 @@ FFZ.prototype._update_colors = function(darkness_only) {
 
 
 FFZ.prototype._handle_color = function(color) {
+	if ( color instanceof RGBColor )
+		color = color.toHex();
+
 	if ( ! color || this._colors.hasOwnProperty(color) )
 		return this._colors[color];
 

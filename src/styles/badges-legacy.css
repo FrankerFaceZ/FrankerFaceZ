@@ -1,0 +1,14 @@
+.badges .staff {
+	background-color: #6441a5;
+	background-image: url('//cdn.frankerfacez.com/script/legacy-staff.png');
+}
+
+.badges .broadcaster {
+	background-color: #000;
+	background-image: url('//cdn.frankerfacez.com/script/legacy-broadcaster.png');
+}
+
+.badges .admin {
+	background-color: #ff0303;
+	background-image: url('//cdn.frankerfacez.com/script/legacy-admin.png');
+}

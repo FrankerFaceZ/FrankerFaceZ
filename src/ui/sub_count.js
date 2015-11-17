@@ -84,7 +84,7 @@ FFZ.prototype._update_subscribers = function() {
 					});
 
 				cont.appendChild(stat);
-				jQuery(stat).tipsy(f.is_dashboard ? {"gravity":"s"} : undefined);
+				jQuery(stat).tipsy({gravity: f.is_dashboard ? "s" : utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 			}
 
 			el.innerHTML = sub_count;

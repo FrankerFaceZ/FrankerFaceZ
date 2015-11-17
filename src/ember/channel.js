@@ -16,6 +16,7 @@ FFZ.prototype.setup_channel = function() {
 
 	// Settings stuff!
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
+	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats);
 
 	this.log("Creating channel style element.");
 	var s = this._channel_style = document.createElement('style');
@@ -214,7 +215,13 @@ FFZ.prototype._modify_cindex = function(view) {
 			el.classList.add('ffz-channel');
 
 			// Try changing the theater mode tooltip.
-			this.$('.theatre-button a').attr('title', 'Theater Mode (Alt+T)');
+			var tb = this.$('.theatre-button > a'),
+				opts = tb.data('tipsy');
+
+			tb.attr('title', 'Theater Mode (Alt+T)');
+			if ( opts && opts.options && typeof opts.options.gravity !== "function" )
+				opts.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, opts.options.gravity || 'n');
+
 
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
@@ -282,7 +289,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( ! btn ) {
 						btn = document.createElement('span');
 						btn.id = 'ffz-ui-host-button';
-						btn.className = 'button action tooltip';
+						btn.className = 'button action';
 
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, false));
 
@@ -294,6 +301,8 @@ FFZ.prototype._modify_cindex = function(view) {
 							container.insertBefore(btn, before);
 						else
 							container.appendChild(btn);
+
+						jQuery(btn).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 
 					btn.classList.remove('disabled');
@@ -320,7 +329,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( ! btn ) {
 						btn = document.createElement('span');
 						btn.id = 'ffz-ui-host-button';
-						btn.className = 'button action tooltip';
+						btn.className = 'button action';
 
 						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, true));
 
@@ -332,6 +341,8 @@ FFZ.prototype._modify_cindex = function(view) {
 							container.insertBefore(btn, before);
 						else
 							container.appendChild(btn);
+
+						jQuery(btn).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 
 					btn.classList.remove('disabled');
@@ -405,7 +416,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				else
 					cont.appendChild(stat);
 
-				jQuery(stat).tipsy();
+				jQuery(stat).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 			}
 
 			el.innerHTML = utils.number_commas(chatter_count);
@@ -437,7 +448,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				else
 					cont.appendChild(stat);
 
-				jQuery(stat).tipsy();
+				jQuery(stat).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 			}
 
 			el.innerHTML = utils.number_commas(ffz_viewers) + " (" + utils.number_commas(ffz_chatters) + ")";
@@ -472,7 +483,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( ! stat_el ) {
 						stat_el = document.createElement('span');
 						stat_el.id = 'ffz-ui-player-stats';
-						stat_el.className = 'ffz stat tooltip';
+						stat_el.className = 'ffz stat';
 
 						stat_el.innerHTML = constants.GRAPH + " ";
 						el = document.createElement('span');
@@ -483,16 +494,18 @@ FFZ.prototype._modify_cindex = function(view) {
 							container.insertBefore(stat_el, other.nextSibling);
 						else
 							container.appendChild(stat_el);
+
+						jQuery(stat_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 
 					var delay = parseFloat(stats.hlsLatencyBroadcaster);
 
 					if ( delay > 180 ) {
 						delay = Math.floor(delay);
-						stat_el.setAttribute('original-title', 'Video Information\nBroadcast ' + utils.time_to_string(delay, true) + ' Ago\n\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps')
+						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps')
 						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
 					} else {
-						stat_el.setAttribute('original-title', 'Stream Latency\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps');
+						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps');
 
 						delay = stats.hlsLatencyBroadcaster;
 						var pos = delay.lastIndexOf('.');
@@ -531,7 +544,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( ! stat_el ) {
 						stat_el = document.createElement('span');
 						stat_el.id = 'ffz-ui-player-stats';
-						stat_el.className = 'ffz stat tooltip';
+						stat_el.className = 'ffz stat';
 
 						stat_el.innerHTML = constants.GRAPH + " ";
 						el = document.createElement('span');
@@ -542,16 +555,18 @@ FFZ.prototype._modify_cindex = function(view) {
 							container.insertBefore(stat_el, other.nextSibling);
 						else
 							container.appendChild(stat_el);
+
+						jQuery(stat_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 
 					var delay = parseFloat(stats.hlsLatencyBroadcaster);
 
 					if ( delay > 180 ) {
 						delay = Math.floor(delay);
-						stat_el.setAttribute('original-title', 'Video Information\nBroadcast ' + utils.time_to_string(delay, true) + ' Ago\n\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps')
+						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps')
 						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
 					} else {
-						stat_el.setAttribute('original-title', 'Stream Latency\nVideo: ' + stats.videoResolution + 'p @ ' + stats.fps + '\nPlayback Rate: ' + stats.playbackRate + ' Kbps');
+						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps');
 
 						delay = stats.hlsLatencyBroadcaster;
 						var pos = delay.lastIndexOf('.');
@@ -623,7 +638,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					}
 				}
 
-				jQuery(stat).tipsy({html: true});
+				jQuery(stat).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 			}
 
 			el.innerHTML = utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1 || f.settings.stream_uptime === 3);
@@ -786,6 +801,20 @@ FFZ.settings_info.stream_title = {
 	on_update: function(val) {
 			if ( this._cindex )
 				this._cindex.ffzFixTitle();
+		}
+	};
+
+
+FFZ.settings_info.theater_stats = {
+	type: "boolean",
+	value: true,
+	no_mobile: true,
+
+	category: "Channel Metadata",
+	name: "Display on Theater Mode Hover",
+	help: "Show the channel metadata and actions over the video player in theater mode when you hover it with your mouse.",
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-theater-stats', val);
 		}
 	};
 

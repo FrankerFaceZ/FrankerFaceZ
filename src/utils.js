@@ -42,6 +42,9 @@ var sanitize_el = document.createElement('span'),
 	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
 
 	parse_date = function(str) {
+		if ( typeof str === "number" )
+			return new Date(str);
+
 		var parts = str.match(date_regex);
 		if ( ! parts )
 			return null;
@@ -179,10 +182,98 @@ var sanitize_el = document.createElement('span'),
 			out = es[variant] = r.join("-");
 
 		return out;
+	},
+
+	// Twitch Emote Tooltips
+
+	SRCSETS = {},
+	build_srcset = function(id) {
+		if ( SRCSETS[id] )
+			return SRCSETS[id];
+		var out = SRCSETS[id] = constants.TWITCH_BASE + id + "/1.0 1x, " + constants.TWITCH_BASE + id + "/2.0 2x, " + constants.TWITCH_BASE + id + "/3.0 4x";
+		return out;
+	},
+
+
+	data_to_tooltip = function(data) {
+		var emote_set = data.set,
+			set_type = data.set_type,
+
+			f = FFZ.get(),
+			image = '';
+
+		if ( data.id && f.settings.emote_image_hover )
+			image = '<img class="emoticon ffz-image-hover" src="' + constants.TWITCH_BASE + data.id + '/3.0?_=preview">';
+
+		if ( set_type === undefined )
+			set_type = "Channel";
+
+		if ( ! emote_set )
+			return image + data.code;
+
+		else if ( emote_set === "--global--" ) {
+			emote_set = "Twitch Global";
+			set_type = null;
+
+		} else if ( emote_set == "--twitch-turbo--" || emote_set == "turbo" || emote_set == "--turbo-faces--" ) {
+			emote_set = "Twitch Turbo";
+			set_type = null;
+		}
+
+		return image + "Emoticon: " + data.code + "<br>" + (set_type ? set_type + ": " : "") + emote_set;
+	},
+
+	build_tooltip = function(id, force_update, code) {
+		var emote_data = this._twitch_emotes[id];
+
+		if ( ! emote_data && code ) {
+			var set_id = this._twitch_emote_to_set[id];
+			if ( set_id ) {
+				emote_data = this._twitch_emotes[id] = {
+					code: code,
+					id: id,
+					set: this._twitch_set_to_channel[set_id],
+					set_id: set_id
+				}
+			}
+		}
+
+		if ( ! emote_data )
+			return "???";
+
+		if ( typeof emote_data == "string" )
+			return emote_data;
+
+		if ( ! force_update && emote_data.tooltip )
+			return emote_data.tooltip;
+
+		return emote_data.tooltip = data_to_tooltip(emote_data);
+	},
+
+	load_emote_data = function(id, code, success, data) {
+		if ( ! success )
+			return code;
+
+		if ( code )
+			data.code = code;
+
+		this._twitch_emotes[id] = data;
+		var tooltip = build_tooltip.bind(this)(id);
+
+		var images = document.querySelectorAll('img[data-emote="' + id + '"]');
+		for(var x=0; x < images.length; x++)
+			images[x].title = tooltip;
+
+		return tooltip;
 	};
 
 
 module.exports = {
+	build_srcset: build_srcset,
+	build_tooltip: build_tooltip,
+	load_emote_data: load_emote_data,
+
+
 	update_css: function(element, id, css) {
 		var all = element.innerHTML,
 			start = "/*BEGIN " + id + "*/",
@@ -201,6 +292,25 @@ module.exports = {
 			all += start + css + end;
 
 		element.innerHTML = all;
+	},
+
+
+	tooltip_placement: function(margin, prefer) {
+		return function() {
+			var dir = {ns: prefer[0], ew: (prefer.length > 1 ? prefer[1] : false)},
+			    $this = $(this),
+				half_width = $this.width() / 2,
+				half_height = $this.height() / 2,
+				boundTop = $(document).scrollTop() + half_height + (margin*2),
+			    boundLeft = $(document).scrollLeft() + half_width + margin;
+
+			if ($this.offset().top < boundTop) dir.ns = 'n';
+			if ($this.offset().left < boundLeft) dir.ew = 'w';
+			if ($(window).width() + $(document).scrollLeft() - ($this.offset().left + half_width) < margin) dir.ew = 'e';
+			if ($(window).height() + $(document).scrollTop() - ($this.offset().top + half_height) < (2*margin)) dir.ns = 's';
+
+			return dir.ns + (dir.ew ? dir.ew : '');
+		}
 	},
 
 

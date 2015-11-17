@@ -25,8 +25,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
 
-	// this.track('setCustomVariable', '3', 'BetterTTV', BetterTTV.info.versionString());
-
 	// Disable Dark if it's enabled.
 	document.body.classList.remove("ffz-dark");
 	if ( this._dark_style ) {
@@ -59,22 +57,28 @@ FFZ.prototype.setup_bttv = function(delay) {
 			this._roomv.ffzUpdateStatus();
 	}
 
+	// Disable style blocks.
+	this.toggle_style('chat-setup');
+	this.toggle_style('chat-padding');
+	this.toggle_style('chat-background');
+
+	this.toggle_style('chat-separator');
+	this.toggle_style('chat-separator-3d');
+	this.toggle_style('chat-separator-3d-inset');
+	this.toggle_style('chat-separator-wide');
+
+	this.toggle_style('chat-hc-text');
+	this.toggle_style('chat-hc-bold');
+	this.toggle_style('chat-hc-background');
+
+	this.toggle_style('chat-colors-gray');
+	this.toggle_style('badges-transparent');
+
 	// Disable other features too.
-	document.body.classList.remove("ffz-chat-colors");
-	document.body.classList.remove("ffz-chat-colors-gray");
-	document.body.classList.remove("ffz-chat-background");
-	document.body.classList.remove("ffz-chat-padding");
-	document.body.classList.remove("ffz-chat-separator");
-	document.body.classList.remove("ffz-chat-separator-3d");
-	document.body.classList.remove("ffz-chat-separator-wide");
-	document.body.classList.remove("ffz-chat-separator-3d-inset");
+	document.body.classList.remove('ffz-transparent-badges');
 	document.body.classList.remove("ffz-sidebar-swap");
 	document.body.classList.remove("ffz-portrait");
 	document.body.classList.remove("ffz-flip-dashboard");
-	document.body.classList.remove("ffz-transparent-badges");
-	document.body.classList.remove("ffz-high-contrast-chat-text");
-	document.body.classList.remove("ffz-high-contrast-chat-bg");
-	document.body.classList.remove("ffz-high-contrast-chat-bold");
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {
@@ -218,14 +222,14 @@ FFZ.prototype.setup_bttv = function(delay) {
 			// Why is emote parsing so bad? ;_;
 			_.each(emotes, function(emote) {
 				var tooltip = f._emote_tooltip(emote),
-					eo = ['<img class="emoticon" data-ffz-emote="' + emote.id + '" srcset="' + (emote.srcSet || "") + '" src="' + emote.urls[1] + '" data-regex="' + emote.name + '" title="' + tooltip + '" />'],
+					eo = ['<img class="emoticon html-tooltip" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" data-regex="' + utils.quote_attr(emote.name) + '" title="' + utils.quote_attr(tooltip) + '">'],
 					old_tokens = tokens;
 
 				tokens = [];
 
 				for(var i=0; i < old_tokens.length; i++) {
 					var token = old_tokens[i];
-					if ( typeof token != "string" ) {
+					if ( typeof token !== "string" ) {
 						tokens.push(token);
 						continue;
 					}
@@ -242,7 +246,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 							tokens.push(eo);
 
 							if ( mine && l_room )
-								f.add_usage(l_room, emote.id);
+								f.add_usage(l_room, emote);
 
 						} else
 							tokens.push(bit);
@@ -252,9 +256,10 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 
 		// Sneak in Emojicon Processing
-		/*
 		if ( f.settings.parse_emoji && f.emoji_data ) {
-			var old_tokens = tokens;
+			var old_tokens = tokens,
+				setting = f.settings.parse_emoji;
+
 			tokens = [];
 
 			for(var i=0; i < old_tokens.length; i++) {
@@ -274,20 +279,25 @@ FFZ.prototype.setup_bttv = function(delay) {
 							variant = tbits.shift();
 
 						if ( variant === '\uFE0E' )
-							bits.push(match);
+							tokens.push(match);
 						else {
 							var eid = utils.emoji_to_codepoint(match, variant),
-								data = f.emoji_data[eid];
+								data = f.emoji_data[eid],
+								src = data && (setting === 2 ? data.noto_src : data.tw_src);
 
-							if ( data ) {
-								tokens.push(['<img class="emoticon" height="18px" srcset="' + (data.srcSet || "") + '" src="' + data.src + '" alt="' + alt + '" title="Emoji: ' + data.raw + '\nName: :' + data.short_name + ':">']);
+							if ( data && src ) {
+								var image = src && f.settings.emote_image_hover ? '<img class="emoticon ffz-image-hover" src="' + src + '">' : '',
+									tooltip = image + "Emoji: " + data.raw + "<br>Name: " + data.name + (data.short_name ? "<br>Short Name: :" + data.short_name + ":" : ""),
+									code = utils.quote_attr(data.raw);
+
+								tokens.push(['<img class="emoticon emoji html-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" data-regex="' + code + '" alt="' + code + '" title="' + utils.quote_attr(tooltip) + '">']);
 							} else
 								tokens.push(match + (variant || ""));
 						}
 					}
 				}
 			}
-		}*/
+		}
 
 		return tokens;
 	}

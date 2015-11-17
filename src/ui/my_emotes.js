@@ -2,7 +2,6 @@ var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	utils = require("../utils"),
 
-	TWITCH_BASE = "http://static-cdn.jtvnw.net/emoticons/v1/",
 	BANNED_SETS = {"00000turbo":true};
 
 
@@ -166,11 +165,14 @@ FFZ.menu_pages.myemotes = {
 			if ( (settings === 1 && ! emoji.tw) || (settings === 2 && ! emoji.noto) )
 				continue;
 
-			em.className = 'emoticon tooltip';
-			em.title = 'Emoji: ' + emoji.raw + '\nName: ' + emoji.name + (emoji.short_name ? '\nShort Name: :' + emoji.short_name + ':' : '');
+			var src = settings === 2 ? emoji.noto_src : emoji.tw_src,
+				image = this.settings.emote_image_hover ? '<img class="emoticon ffz-image-hover" src="' + src + '">' : '';
+
+			em.className = 'emoticon emoji html-tooltip';
+			em.title = image + 'Emoji: ' + emoji.raw + '<br>Name: ' + emoji.name + (emoji.short_name ? '<br>Short Name: :' + emoji.short_name + ':' : '');
 			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw));
 
-			em.style.backgroundImage = 'url("' + (settings === 2 ? emoji.noto_src : emoji.tw_src) + '")';
+			em.style.backgroundImage = 'url("' + src + '")';
 			em.style.backgroundSize = "18px";
 
 			menu.appendChild(em);
@@ -237,21 +239,21 @@ FFZ.menu_pages.myemotes = {
 				code = constants.KNOWN_CODES[emote.code] || emote.code,
 
 				em = document.createElement('span'),
-				img_set = 'image-set(url("' + TWITCH_BASE + emote.id + '/1.0") 1x, url("' + TWITCH_BASE + emote.id + '/2.0") 2x, url("' + TWITCH_BASE + emote.id + '/3.0") 4x)';
+				img_set = 'image-set(url("' + constants.TWITCH_BASE + emote.id + '/1.0") 1x, url("' + constants.TWITCH_BASE + emote.id + '/2.0") 2x, url("' + constants.TWITCH_BASE + emote.id + '/3.0") 4x)';
 
-			em.className = 'emoticon tooltip';
+			em.className = 'emoticon html-tooltip';
 
 			if ( this.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[emote.id] ) {
 				em.style.backgroundImage = 'url("' + constants.EMOTE_REPLACEMENT_BASE + constants.EMOTE_REPLACEMENTS[emote.id] + '")';
 			} else {
-				em.style.backgroundImage = 'url("' + TWITCH_BASE + emote.id + '/1.0")';
+				em.style.backgroundImage = 'url("' + constants.TWITCH_BASE + emote.id + '/1.0")';
 				em.style.backgroundImage = '-webkit-' + img_set;
 				em.style.backgroundImage = '-moz-' + img_set;
 				em.style.backgroundImage = '-ms-' + img_set;
 				em.style.backgroudnImage = img_set;
 			}
 
-			em.title = code;
+			em.title = (this.settings.emote_image_hover ? '<img class="emoticon ffz-image-hover" src="' + constants.TWITCH_BASE + emote.id + '/3.0?_=preview">' : '') + code;
 			em.addEventListener("click", function(id, c, e) {
 				e.preventDefault();
 				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
@@ -316,7 +318,7 @@ FFZ.menu_pages.myemotes = {
 
 			img_set += ')';
 
-			em.className = 'emoticon tooltip';
+			em.className = 'emoticon html-tooltip';
 			em.style.backgroundImage = 'url("' + emote.urls[1] + '")';
 			em.style.backgroundImage = '-webkit-' + img_set;
 			em.style.backgroundImage = '-moz-' + img_set;

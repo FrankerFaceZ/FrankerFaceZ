@@ -47,6 +47,12 @@ FFZ.settings_info.portrait_mode = {
 	}
 }
 
+FFZ.settings_info.portrait_warning = {
+	value: false,
+	visible: false
+}
+
+
 FFZ.settings_info.swap_sidebars = {
 	type: "boolean",
 	value: false,
@@ -177,7 +183,7 @@ FFZ.prototype.setup_layout = function() {
 					height = size[1];
 
 				// Make sure we have at least a bit of room for the chat.
-				return this.get("windowHeight") < (height + 120 + 60 + 100);
+				return this.get("windowHeight") < (height + 120 + 60 + 200);
 
 			} else
 				return this.get("windowWidth") < (1090 - this.get('rightColumnWidth'))
@@ -217,27 +223,14 @@ FFZ.prototype.setup_layout = function() {
 			return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object{width:100% !important; height:100% !important}</style>";
 		}.property("playerSize"),
 
-		/*ffzUpdateWidth: _.throttle(function() {
-			var rc = document.querySelector('#right_close');
-			if ( ! rc )
+		ffzPortraitWarning: function() {
+			if ( ! f.settings.portrait_mode || f._portrait_warning || f.settings.portrait_warning || ! this.get('isTooSmallForRightColumn') )
 				return;
 
-			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
-				right_width;
+			f._portrait_warning = true;
+			f.show_message('Twitch\'s Chat Sidebar has been hidden as a result of FrankerFaceZ\'s Portrait Mode because the window is too wide.<br><br>Please <a href="#" onclick="ffz.settings.set(\'portrait_mode\',0);jQuery(this).parents(\'.ffz-noty\').remove();ffz._portrait_warning = false;return false">disable Portrait Mode</a> or make your window narrower.<br><br><a href="#" onclick="ffz.settings.set(\'portrait_warning\',true);jQuery(this).parents(\'.ffz-noty\').remove();return false">Do not show this message again</a>');
 
-			if ( f.settings.swap_sidebars )
-				right_width = rc.offsetLeft; // + this.get('rightColumnWidth') - 5;
-			else
-				right_width = document.body.offsetWidth - rc.offsetLeft - left_width - 25;
-
-			if ( right_width < 250 ) {
-				// Close it!
-
-			}
-
-			this.set('rightColumnWidth', right_width);
-			Ember.propertyDidChange(Layout, 'contentWidth');
-		}, 200),*/
+		}.observes("isTooSmallForRightColumn"),
 
 		ffzUpdateCss: function() {
 			// TODO: Fix this mess of duplicate code.
@@ -332,6 +325,6 @@ FFZ.prototype.setup_layout = function() {
 	Layout.set('rawPortraitMode', this.settings.portrait_mode);
 
 	// Force re-calculation of everything.
-	Ember.propertyDidChange(Layout, 'contentWidth');
+	Ember.propertyDidChange(Layout, 'windowWidth');
 	Ember.propertyDidChange(Layout, 'windowHeight');
 }

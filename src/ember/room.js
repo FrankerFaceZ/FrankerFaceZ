@@ -5,6 +5,7 @@ var FFZ = window.FrankerFaceZ,
 	HOSTED_SUB = / subscribed to /,
 	constants = require('../constants'),
 	utils = require('../utils'),
+	helpers,
 
 	// StrimBagZ Support
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
@@ -14,7 +15,12 @@ var FFZ = window.FrankerFaceZ,
 			return "";
 
 		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-image:url("' + room.moderator_badge + '") !important; }';
-	}
+	};
+
+
+try {
+	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+} catch(err) { }
 
 
 // --------------------
@@ -128,6 +134,15 @@ FFZ.prototype._modify_rview = function(view) {
 			this._super();
 		},
 
+		ffzAlternate: function() {
+			/*if ( ! this._ffz_chat_display ) {
+				var el = this.get('element');
+				this._ffz_chat_display = el && el.querySelector('ul.chat-lines');
+			}
+
+			this._ffz_chat_display && this._ffz_chat_display.classList.toggle('ffz-should-alternate');*/
+		},
+
 		ffzInit: function() {
 			f._roomv = this;
 
@@ -172,6 +187,9 @@ FFZ.prototype._modify_rview = function(view) {
 		ffzTeardown: function() {
 			if ( f._roomv === this )
 				f._roomv = undefined;
+
+			if ( this._ffz_chat_display )
+				this._ffz_chat_display = undefined;
 
 			this.ffzDisableFreeze();
 		},
@@ -361,12 +379,12 @@ FFZ.prototype._modify_rview = function(view) {
 			}
 		},
 
-		ffzUnfreeze: function() {
+		ffzUnfreeze: function(from_stuck) {
 			this.ffz_frozen = false;
 			this._ffz_last_move = 0;
 			this.ffzUnwarnPaused();
 
-			if ( this.get('stuckToBottom') )
+			if ( ! from_stuck && this.get('stuckToBottom') )
 				this._scrollToBottom();
 		},
 
@@ -428,7 +446,7 @@ FFZ.prototype._modify_rview = function(view) {
 			this.set("stuckToBottom", val);
 			this.get("controller.model") && this.set("controller.model.messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
 			if ( ! val )
-				this.ffzUnfreeze();
+				this.ffzUnfreeze(true);
 		},
 
 		// Warnings~!
@@ -722,28 +740,29 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		tmiSession = r.tmiSession || (TMI._sessions && TMI._sessions[0]),
 		tmiRoom = r.tmiRoom,
 
+		removed = 0,
 		inserted = 0,
+		purged = {},
 
 		last_msg = data[data.length - 1],
 		now = new Date(),
-		last_date = typeof last_msg.date === "string" ? utils.parse_date(last_msg.date) : last_msg.date,
+		last_date = (typeof last_msg.date === "string" || typeof last_msg.date === "number") ? (last_msg.date = utils.parse_date(last_msg.date)) : last_msg.date,
 		age = (now - last_date) / 1000,
 		is_old = age > 300,
 
-		i = data.length,
-		alternation = r.get('messages.0.ffz_alternate') || false;
-
-	if ( is_old )
-		alternation = ! alternation;
+		i = data.length;
 
 	var i = data.length;
 	while(i--) {
-		var msg = data[i];
+		var msg = data[i],
+			is_deleted = msg.ffz_deleted = purged[msg.from] || false;
 
-		if ( typeof msg.date === "string" )
+		if ( is_deleted && ! this.settings.prevent_clear )
+			msg.deleted = true;
+
+		if ( typeof msg.date === "string" || typeof msg.date === "number" )
 			msg.date = utils.parse_date(msg.date);
 
-		msg.ffz_alternate = alternation = ! alternation;
 		if ( ! msg.room )
 			msg.room = room_id;
 
@@ -774,6 +793,14 @@ FFZ.prototype._insert_history = function(room_id, data) {
 				msg.style = "notification";
 		}
 
+		if ( msg.tags && typeof msg.tags.emotes === "string" )
+			try {
+				msg.tags.emotes = JSON.parse(msg.tags.emotes);
+			} catch(err) {
+				f.log("Error Parsing JSON Emotes: " + err);
+				msg.tags.emotes = {};
+			}
+
 		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
 			this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
 
@@ -791,11 +818,18 @@ FFZ.prototype._insert_history = function(room_id, data) {
 			} else
 				break;
 		}
+
+		// If there was a CLEARCHAT, stop processing.
+		if ( msg.tags && msg.tags.target === '@@' )
+			break;
+
+		// If there was a purge, just track the name.
+		else if ( msg.tags && msg.tags.target )
+			purged[msg.tags.target] = true;
 	}
 
 	if ( is_old ) {
 		var msg = {
-			ffz_alternate: ! alternation,
 			color: "#755000",
 			date: new Date(),
 			from: "frankerfacez_admin",
@@ -807,10 +841,15 @@ FFZ.prototype._insert_history = function(room_id, data) {
 		this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
 		if ( r.shouldShowMessage(msg) ) {
 			messages.insertAt(inserted, msg);
-			while( messages.length > r.get('messageBufferSize') )
+			while( messages.length > r.get('messageBufferSize') ) {
 				messages.removeAt(0);
+				removed++;
+			}
 		}
 	}
+
+	if ( (removed % 2) && this._roomv && this._roomv.get('context.model.id') === room_id )
+		this._roomv.ffzAlternate();
 }
 
 
@@ -975,7 +1014,7 @@ FFZ.prototype._modify_room = function(room) {
 				var msgs = t.get('messages'),
 					total = msgs.get('length'),
 					i = total,
-					alternate;
+					removed = 0;
 
 				// Delete visible messages
 				while(i--) {
@@ -983,9 +1022,8 @@ FFZ.prototype._modify_room = function(room) {
 
 					if ( msg.from === user ) {
 						if ( f.settings.remove_deleted ) {
-							if ( alternate === undefined )
-								alternate = ! msg.ffz_alternate;
 							msgs.removeAt(i);
+							removed++;
 							continue;
 						}
 
@@ -993,14 +1031,10 @@ FFZ.prototype._modify_room = function(room) {
 						if ( ! f.settings.prevent_clear )
 							t.set('messages.' + i + '.deleted', true);
 					}
-
-					if ( alternate === undefined )
-						alternate = msg.ffz_alternate;
-					else {
-						alternate = ! alternate;
-						t.set('messages.' + i + '.ffz_alternate', alternate);
-					}
 				}
+
+				if ( (removed % 2) && f._roomv && f._roomv.get('context.model.id') === this.get('id') )
+					f._roomv.ffzAlternate();
 
 				// Delete pending messages
 				if (t.ffzPending) {
@@ -1053,8 +1087,11 @@ FFZ.prototype._modify_room = function(room) {
 				len = messages.get("length"),
 				limit = this.get("messageBufferSize");
 
-			if ( len > limit )
+			if ( len > limit ) {
 				messages.removeAt(0, len - limit);
+				if ( ((len - limit) % 2) && f._roomv && f._roomv.get('context.model.id') === this.get('id') )
+					f._roomv.ffzAlternate();
+			}
 		},
 
 		// Artificial chat delay
@@ -1075,13 +1112,6 @@ FFZ.prototype._modify_room = function(room) {
 
 		ffzActualPushMessage: function (msg) {
 			if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
-				var row_type = msg.ffz_alternate;
-				if ( row_type === undefined ) {
-					var room_id = this.get('id');
-					row_type = f._last_row[room_id] = f._last_row.hasOwnProperty(room_id) ? !f._last_row[room_id] : false;
-					msg.ffz_alternate = row_type;
-				}
-
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
 
@@ -1155,10 +1185,10 @@ FFZ.prototype._modify_room = function(room) {
 					return;
 
 				var is_whisper = msg.style === 'whisper';
-				if ( f.settings.group_tabs && f.settings.whisper_room ) {
-					if ( ( is_whisper && ! this.ffz_whisper_room ) || ( ! is_whisper && this.ffz_whisper_room ) )
-						return;
-				}
+
+				// Ignore whispers if conversations are enabled.
+				if ( is_whisper && App.__container__.lookup('route:application').controller.get('isConversationsEnabled') )
+					return;
 
 				if ( ! is_whisper )
 					msg.room = this.get('id');
@@ -1190,6 +1220,22 @@ FFZ.prototype._modify_room = function(room) {
 
 						if ( user_history.length > 20 )
 							user_history.shift();
+
+						if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
+							var el = f._mod_card.get('element'),
+								history = el && el.querySelector('.chat-history'),
+								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
+
+							if ( history ) {
+								history.appendChild(f._build_mod_card_history(msg));
+								if ( was_at_top )
+									setTimeout(function() { history.scrollTop = history.scrollHeight; })
+
+								// Don't do infinite scrollback.
+								if ( history.childElementCount > 50 )
+									history.removeChild(history.firstElementChild);
+							}
+						}
 					}
 				}
 
