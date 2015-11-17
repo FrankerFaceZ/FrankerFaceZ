@@ -70,6 +70,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 
 	serveMux.HandleFunc("/", HTTPHandleRootURL)
 	serveMux.HandleFunc("/stats", HTTPShowStatistics)
+	serveMux.Handle("/.well-known", http.FileServer(http.FileSystem(http.Dir("/tmp/letsencrypt/.well-known"))))
 
 	serveMux.HandleFunc("/drop_backlog", HTTPBackendDropBacklog)
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
