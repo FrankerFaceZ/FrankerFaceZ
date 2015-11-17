@@ -285,6 +285,8 @@ func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage
 	aggregateEmoteUsageLock.Lock()
 	defer aggregateEmoteUsageLock.Unlock()
 
+	var total int
+
 	for strEmote, val1 := range mapRoot {
 		var emoteID int
 		emoteID, err = strconv.Atoi(strEmote)
@@ -305,8 +307,11 @@ func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage
 				count = 200
 			}
 			destMapInner[roomName] += count
+			total += count
 		}
 	}
+
+	Statistics.EmotesReportedTotal += uint64(total)
 
 	return ResponseSuccess, nil
 }

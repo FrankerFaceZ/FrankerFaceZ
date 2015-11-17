@@ -12,8 +12,18 @@ import (
 
 type StatsData struct {
 	Version int
+	CachedStatsLastUpdate time.Time
 
 	CurrentClientCount uint64
+
+	PubSubChannelCount int
+
+	MemoryInUse    uint64
+	MemoryRSS uint64
+
+	MemoryPerClient uint64
+
+	CpuUsagePct float64
 
 	ClientConnectsTotal    uint64
 	ClientDisconnectsTotal uint64
@@ -25,12 +35,7 @@ type StatsData struct {
 
 	MessagesSent uint64
 
-	CachedStatsLastUpdate time.Time
-
-	MemoryInUse    uint64
-	MemoryRSS int64
-
-	CpuUsagePct float64
+	EmotesReportedTotal uint64
 
 	// DisconnectReasons is at the bottom because it has indeterminate size
 	DisconnectReasons map[string]uint64
@@ -38,9 +43,12 @@ type StatsData struct {
 
 // Statistics is several variables that get incremented during normal operation of the server.
 // Its structure should be versioned as it is exposed via JSON.
+//
+// Note as to threaded access - this is soft/fun data and not critical to data integrity.
+// I don't really care.
 var Statistics = newStatsData()
 
-const StatsDataVersion = 2
+const StatsDataVersion = 3
 const pageSize = 4096
 
 var cpuUsage struct {
@@ -84,8 +92,19 @@ func updatePeriodicStats() {
 			cpuUsage.SysTime = pstat.Stime
 
 			Statistics.CpuUsagePct = 100 * float64(userTicks + sysTicks) / (timeDiff.Seconds() * float64(ticksPerSecond))
-			Statistics.MemoryRSS = pstat.Rss * pageSize
+			Statistics.MemoryRSS = uint64(pstat.Rss * pageSize)
+			Statistics.MemoryPerClient = Statistics.MemoryRSS / Statistics.CurrentClientCount
 		}
+	}
+
+	{
+		ChatSubscriptionLock.RLock()
+		Statistics.PubSubChannelCount = len(ChatSubscriptionInfo)
+		ChatSubscriptionLock.RUnlock()
+
+		GlobalSubscriptionInfo.RLock()
+		Statistics.CurrentClientCount = uint64(len(GlobalSubscriptionInfo.Members))
+		GlobalSubscriptionInfo.RUnlock()
 	}
 }
 
