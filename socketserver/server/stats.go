@@ -27,10 +27,10 @@ type StatsData struct {
 
 	SysMemTotalKB uint64
 	SysMemFreeKB  uint64
-	MemoryInUse   uint64
-	MemoryRSS     uint64
+	MemoryInUseKB uint64
+	MemoryRSSKB   uint64
 
-	MemoryPerClient uint64
+	MemPerClientBytes uint64
 
 	CpuUsagePct float64
 
@@ -96,7 +96,7 @@ func updatePeriodicStats() {
 		m := runtime.MemStats{}
 		runtime.ReadMemStats(&m)
 
-		Statistics.MemoryInUse = m.Alloc
+		Statistics.MemoryInUseKB = m.Alloc / 1024
 	}
 
 	{
@@ -108,8 +108,8 @@ func updatePeriodicStats() {
 			cpuUsage.SysTime = pstat.Stime
 
 			Statistics.CpuUsagePct = 100 * float64(userTicks+sysTicks) / (timeDiff.Seconds() * float64(ticksPerSecond))
-			Statistics.MemoryRSS = uint64(pstat.Rss * pageSize)
-			Statistics.MemoryPerClient = Statistics.MemoryRSS / Statistics.CurrentClientCount
+			Statistics.MemoryRSSKB = uint64(pstat.Rss * pageSize / 1024)
+			Statistics.MemPerClientBytes = (Statistics.MemoryRSSKB * 1024) / Statistics.CurrentClientCount
 		}
 		updateSysMem()
 	}
