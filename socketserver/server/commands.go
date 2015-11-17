@@ -38,6 +38,7 @@ var commandHandlers = map[Command]CommandHandler{
 	"get_display_name":      C2SHandleBunchedCommand,
 	"update_follow_buttons": C2SHandleRemoteCommand,
 	"chat_history":          C2SHandleRemoteCommand,
+	"user_history":          C2SHandleRemoteCommand,
 }
 
 // DispatchC2SCommand handles a C2S Command in the provided ClientMessage.
