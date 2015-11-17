@@ -316,7 +316,13 @@ func getDeadline() time.Time {
 
 func CloseConnection(conn *websocket.Conn, closeMsg *websocket.CloseError) {
 	Statistics.DisconnectCodes[strconv.Itoa(closeMsg.Code)]++
-	Statistics.DisconnectReasons[closeMsg.Text]++
+	closeTxt := closeMsg.Text
+	if strings.Contains(closeTxt, "read: connection reset by peer") {
+		closeTxt = "read: connection reset by peer"
+	} else if closeMsg.Code == 1001 {
+		closeTxt = "clean shutdown"
+	}
+	Statistics.DisconnectReasons[closeTxt]++
 
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), getDeadline())
 	conn.Close()
