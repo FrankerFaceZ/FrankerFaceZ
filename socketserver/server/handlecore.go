@@ -35,7 +35,7 @@ const AuthorizeCommand Command = "do_authorize"
 // on a goroutine over the ClientInfo.MessageChannel and should not be delivered immediately.
 const AsyncResponseCommand Command = "_async"
 
-const defaultMinMemory = 1024 * 1024 * 24
+const defaultMinMemoryKB = 1024 * 24
 
 // TwitchDotTv is the http origin for twitch.tv.
 const TwitchDotTv = "http://www.twitch.tv"
@@ -52,8 +52,8 @@ var Configuration *ConfigFile
 func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	Configuration = config
 
-	if config.MinMemoryBytes == 0 {
-		config.MinMemoryBytes = defaultMinMemory
+	if config.MinMemoryKBytes == 0 {
+		config.MinMemoryKBytes = defaultMinMemoryKB
 	}
 
 	setupBackend(config)
@@ -116,7 +116,7 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Connection") == "Upgrade" {
 		updateSysMem()
 
-		if Statistics.SysMemTotal-Statistics.SysMemFree < Configuration.MinMemoryBytes {
+		if Statistics.SysMemTotalKB-Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
 			w.WriteHeader(503)
 			return
 		}

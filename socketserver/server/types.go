@@ -21,7 +21,7 @@ type ConfigFile struct {
 	BackendURL string
 
 	// Minimum memory to accept a new connection
-	MinMemoryBytes uint64
+	MinMemoryKBytes uint64
 
 	// SSL/TLS
 	UseSSL             bool

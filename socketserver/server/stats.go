@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"sync"
 	"time"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
-	"sync"
 )
 
 type StatsData struct {
@@ -25,10 +25,10 @@ type StatsData struct {
 
 	PubSubChannelCount int
 
-	SysMemTotal uint64
-	SysMemFree  uint64
-	MemoryInUse uint64
-	MemoryRSS   uint64
+	SysMemTotalKB uint64
+	SysMemFreeKB  uint64
+	MemoryInUse   uint64
+	MemoryRSS     uint64
 
 	MemoryPerClient uint64
 
@@ -145,8 +145,8 @@ func updateSysMem() {
 	sysMemLastUpdate = time.Now()
 	memInfo, err := linuxproc.ReadMemInfo("/proc/meminfo")
 	if err == nil {
-		Statistics.SysMemTotal = memInfo.MemTotal
-		Statistics.SysMemFree = memInfo.MemAvailable
+		Statistics.SysMemTotalKB = memInfo.MemTotal
+		Statistics.SysMemFreeKB = memInfo.MemAvailable
 	}
 }
 
