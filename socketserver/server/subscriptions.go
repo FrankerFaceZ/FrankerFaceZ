@@ -16,7 +16,8 @@ type SubscriberList struct {
 
 var ChatSubscriptionInfo map[string]*SubscriberList = make(map[string]*SubscriberList)
 var ChatSubscriptionLock sync.RWMutex
-var GlobalSubscriptionInfo SubscriberList
+var GlobalSubscriptionInfo []*ClientInfo
+var GlobalSubscriptionLock sync.RWMutex
 
 func SubscribeChannel(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
@@ -29,9 +30,9 @@ func SubscribeDefaults(client *ClientInfo) {
 }
 
 func SubscribeGlobal(client *ClientInfo) {
-	GlobalSubscriptionInfo.Lock()
-	AddToSliceC(&GlobalSubscriptionInfo.Members, client.MessageChannel)
-	GlobalSubscriptionInfo.Unlock()
+	GlobalSubscriptionLock.Lock()
+	AddToSliceCl(&GlobalSubscriptionInfo, client)
+	GlobalSubscriptionLock.Unlock()
 }
 
 func PublishToChannel(channel string, msg ClientMessage) (count int) {
@@ -75,12 +76,15 @@ func PublishToMultiple(channels []string, msg ClientMessage) (count int) {
 }
 
 func PublishToAll(msg ClientMessage) (count int) {
-	GlobalSubscriptionInfo.RLock()
-	for _, msgChan := range GlobalSubscriptionInfo.Members {
-		msgChan <- msg
+	GlobalSubscriptionLock.RLock()
+	for _, client := range GlobalSubscriptionInfo {
+		select {
+		case client.MessageChannel <- msg:
+		case <-client.MsgChannelIsDone:
+		}
 		count++
 	}
-	GlobalSubscriptionInfo.RUnlock()
+	GlobalSubscriptionLock.RUnlock()
 	return
 }
 
@@ -106,9 +110,9 @@ func UnsubscribeAll(client *ClientInfo) {
 	client.PendingSubscriptionsBacklog = nil
 	client.Mutex.Unlock()
 
-	GlobalSubscriptionInfo.Lock()
-	RemoveFromSliceC(&GlobalSubscriptionInfo.Members, client.MessageChannel)
-	GlobalSubscriptionInfo.Unlock()
+	GlobalSubscriptionLock.Lock()
+	RemoveFromSliceCl(&GlobalSubscriptionInfo, client)
+	GlobalSubscriptionLock.Unlock()
 
 	ChatSubscriptionLock.RLock()
 	client.Mutex.Lock()
@@ -126,9 +130,9 @@ func UnsubscribeAll(client *ClientInfo) {
 }
 
 func unsubscribeAllClients() {
-	GlobalSubscriptionInfo.Lock()
-	GlobalSubscriptionInfo.Members = nil
-	GlobalSubscriptionInfo.Unlock()
+	GlobalSubscriptionLock.Lock()
+	GlobalSubscriptionInfo = nil
+	GlobalSubscriptionLock.Unlock()
 	ChatSubscriptionLock.Lock()
 	ChatSubscriptionInfo = make(map[string]*SubscriberList)
 	ChatSubscriptionLock.Unlock()

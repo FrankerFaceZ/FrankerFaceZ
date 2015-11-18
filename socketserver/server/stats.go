@@ -119,9 +119,9 @@ func updatePeriodicStats() {
 		Statistics.PubSubChannelCount = len(ChatSubscriptionInfo)
 		ChatSubscriptionLock.RUnlock()
 
-		GlobalSubscriptionInfo.RLock()
-		Statistics.CurrentClientCount = uint64(len(GlobalSubscriptionInfo.Members))
-		GlobalSubscriptionInfo.RUnlock()
+		GlobalSubscriptionLock.RLock()
+		Statistics.CurrentClientCount = uint64(len(GlobalSubscriptionInfo))
+		GlobalSubscriptionLock.RUnlock()
 	}
 
 	{

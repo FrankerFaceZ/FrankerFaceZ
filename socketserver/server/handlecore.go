@@ -353,13 +353,16 @@ func getDeadline() time.Time {
 }
 
 func CloseConnection(conn *websocket.Conn, closeMsg websocket.CloseError) {
-	Statistics.DisconnectCodes[strconv.Itoa(closeMsg.Code)]++
 	closeTxt := closeMsg.Text
 	if strings.Contains(closeTxt, "read: connection reset by peer") {
 		closeTxt = "read: connection reset by peer"
+	} else if strings.Contains(closeTxt, "use of closed network connection") {
+		closeTxt = "read: use of closed network connection"
 	} else if closeMsg.Code == 1001 {
 		closeTxt = "clean shutdown"
 	}
+	// todo kibana cannot analyze these
+	Statistics.DisconnectCodes[strconv.Itoa(closeMsg.Code)]++
 	Statistics.DisconnectReasons[closeTxt]++
 
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), getDeadline())
