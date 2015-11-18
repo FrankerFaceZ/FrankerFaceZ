@@ -28,6 +28,11 @@ type ConfigFile struct {
 	SSLCertificateFile string
 	SSLKeyFile         string
 
+	UseElasticSearch bool
+	ESServer         string
+	ESIndexPrefix    string
+	ESHostName       string
+
 	// Nacl keys
 	OurPrivateKey    []byte
 	OurPublicKey     []byte
@@ -113,6 +118,13 @@ type ClientInfo struct {
 	// The number of pings sent without a response.
 	// Protected by Mutex
 	pingCount int
+}
+
+type esReportBasic struct {
+	Timestamp time.Time
+	Host string
+}
+type esDisconnectReport struct {
 }
 
 func VersionFromString(v string) ClientVersion {
