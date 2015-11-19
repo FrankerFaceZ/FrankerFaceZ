@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 	"sync/atomic"
+	"time"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -91,7 +91,6 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	}
 
 	go authorizationJanitor()
-	go backlogJanitor()
 	go bunchCacheJanitor()
 	go pubsubJanitor()
 	go aggregateDataSender()

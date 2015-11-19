@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -16,32 +15,18 @@ type PushCommandCacheInfo struct {
 	Target  MessageTargetType
 }
 
-// this value is just docs right now
-var ServerInitiatedCommands = map[Command]PushCommandCacheInfo{
-	/// Global updates & notices
-	"update_news": {CacheTypeTimestamps, MsgTargetTypeGlobal}, // timecache:global
-	"message":     {CacheTypeTimestamps, MsgTargetTypeGlobal}, // timecache:global
-	"reload_ff":   {CacheTypeTimestamps, MsgTargetTypeGlobal}, // timecache:global
-
-	/// Emote updates
-	"reload_badges": {CacheTypeTimestamps, MsgTargetTypeGlobal},    // timecache:global
-	"set_badge":     {CacheTypeTimestamps, MsgTargetTypeMultichat}, // timecache:multichat
-	"reload_set":    {},                                            // timecache:multichat
-	"load_set":      {},                                            // TODO what are the semantics of this?
-
-	/// User auth
-	"do_authorize": {CacheTypeNever, MsgTargetTypeSingle}, // nocache:single
-
+// S2CCommandsCacheInfo details what the behavior is of each command that can be sent to /cached_pub.
+var S2CCommandsCacheInfo = map[Command]PushCommandCacheInfo{
 	/// Channel data
 	// follow_sets: extra emote sets included in the chat
 	// follow_buttons: extra follow buttons below the stream
-	"follow_sets":    {CacheTypePersistent, MsgTargetTypeChat}, // mustcache:chat
-	"follow_buttons": {CacheTypePersistent, MsgTargetTypeChat}, // mustcache:watching
-	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeChat},   // cachelast:watching
+	"follow_sets":    {CacheTypePersistent, MsgTargetTypeChat},
+	"follow_buttons": {CacheTypePersistent, MsgTargetTypeChat},
+	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeChat},
 
 	/// Chatter/viewer counts
-	"chatters": {CacheTypeLastOnly, MsgTargetTypeChat}, // cachelast:watching
-	"viewers":  {CacheTypeLastOnly, MsgTargetTypeChat}, // cachelast:watching
+	"chatters": {CacheTypeLastOnly, MsgTargetTypeChat},
+	"viewers":  {CacheTypeLastOnly, MsgTargetTypeChat},
 }
 
 type BacklogCacheType int
@@ -51,10 +36,6 @@ const (
 	CacheTypeInvalid BacklogCacheType = iota
 	// This message cannot be cached.
 	CacheTypeNever
-	// Save the last 24 hours of this message.
-	// If a client indicates that it has reconnected, replay the messages sent after the disconnect.
-	// Do not replay if the client indicates that this is a firstload.
-	CacheTypeTimestamps
 	// Save only the last copy of this message, and always send it when the backlog is requested.
 	CacheTypeLastOnly
 	// Save this backlog data to disk with its timestamp.
@@ -67,8 +48,6 @@ type MessageTargetType int
 const (
 	// This is not a message target.
 	MsgTargetTypeInvalid MessageTargetType = iota
-	// This message is targeted to a single TODO(user or connection)
-	MsgTargetTypeSingle
 	// This message is targeted to all users in a chat
 	MsgTargetTypeChat
 	// This message is targeted to all users in multiple chats
@@ -85,19 +64,6 @@ var ErrorUnrecognizedCacheType = errors.New("Invalid value for cachetype")
 // Returned by MessageTargetType.UnmarshalJSON()
 var ErrorUnrecognizedTargetType = errors.New("Invalid value for message target")
 
-type TimestampedGlobalMessage struct {
-	Timestamp time.Time
-	Command   Command
-	Data      string
-}
-
-type TimestampedMultichatMessage struct {
-	Timestamp time.Time
-	Channels  []string
-	Command   Command
-	Data      string
-}
-
 type LastSavedMessage struct {
 	Timestamp time.Time
 	Data      string
@@ -113,10 +79,6 @@ var CachedLSMLock sync.RWMutex
 var PersistentLastMessages map[Command]map[string]LastSavedMessage
 var PersistentLSMLock sync.RWMutex
 
-var CachedGlobalMessages []TimestampedGlobalMessage
-var CachedChannelMessages []TimestampedMultichatMessage
-var CacheListsLock sync.RWMutex
-
 // DumpBacklogData drops all /cached_pub data.
 func DumpBacklogData() {
 	CachedLSMLock.Lock()
@@ -126,11 +88,6 @@ func DumpBacklogData() {
 	PersistentLSMLock.Lock()
 	PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
 	PersistentLSMLock.Unlock()
-
-	CacheListsLock.Lock()
-	CachedGlobalMessages = make(tgmarray, 0)
-	CachedChannelMessages = make(tmmarray, 0)
-	CacheListsLock.Unlock()
 }
 
 // SendBacklogForNewClient sends any backlog data relevant to a new client.
@@ -172,77 +129,6 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	}
 	CachedLSMLock.RUnlock()
 	client.Mutex.Unlock()
-}
-
-// SendTimedBacklogMessages sends any once-off messages that the client may have missed while it was disconnected.
-// Effectively, this can only process CacheTypeTimestamps.
-func SendTimedBacklogMessages(client *ClientInfo, disconnectTime time.Time) {
-	client.Mutex.Lock() // reading CurrentChannels
-	CacheListsLock.RLock()
-
-	globIdx := findFirstNewMessage(tgmarray(CachedGlobalMessages), disconnectTime)
-
-	if globIdx != -1 {
-		for i := globIdx; i < len(CachedGlobalMessages); i++ {
-			item := CachedGlobalMessages[i]
-			msg := ClientMessage{MessageID: -1, Command: item.Command, origArguments: item.Data}
-			msg.parseOrigArguments()
-			client.MessageChannel <- msg
-		}
-	}
-
-	chanIdx := findFirstNewMessage(tmmarray(CachedChannelMessages), disconnectTime)
-
-	if chanIdx != -1 {
-		for i := chanIdx; i < len(CachedChannelMessages); i++ {
-			item := CachedChannelMessages[i]
-			var send bool
-			for _, channel := range item.Channels {
-				for _, matchChannel := range client.CurrentChannels {
-					if channel == matchChannel {
-						send = true
-						break
-					}
-				}
-				if send {
-					break
-				}
-			}
-			if send {
-				msg := ClientMessage{MessageID: -1, Command: item.Command, origArguments: item.Data}
-				msg.parseOrigArguments()
-				client.MessageChannel <- msg
-			}
-		}
-	}
-
-	CacheListsLock.RUnlock()
-	client.Mutex.Unlock()
-}
-
-func backlogJanitor() {
-	for {
-		time.Sleep(1 * time.Hour)
-		cleanupTimedBacklogMessages()
-	}
-}
-
-func cleanupTimedBacklogMessages() {
-	CacheListsLock.Lock()
-	oneHourAgo := time.Now().Add(-24 * time.Hour)
-	globIdx := findFirstNewMessage(tgmarray(CachedGlobalMessages), oneHourAgo)
-	if globIdx != -1 {
-		newGlobMsgs := make([]TimestampedGlobalMessage, len(CachedGlobalMessages)-globIdx)
-		copy(newGlobMsgs, CachedGlobalMessages[globIdx:])
-		CachedGlobalMessages = newGlobMsgs
-	}
-	chanIdx := findFirstNewMessage(tmmarray(CachedChannelMessages), oneHourAgo)
-	if chanIdx != -1 {
-		newChanMsgs := make([]TimestampedMultichatMessage, len(CachedChannelMessages)-chanIdx)
-		copy(newChanMsgs, CachedChannelMessages[chanIdx:])
-		CachedChannelMessages = newChanMsgs
-	}
-	CacheListsLock.Unlock()
 }
 
 // insertionSort implements insertion sort.
@@ -309,23 +195,9 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	}
 }
 
-func SaveGlobalMessage(cmd Command, timestamp time.Time, data string) {
-	CacheListsLock.Lock()
-	CachedGlobalMessages = append(CachedGlobalMessages, TimestampedGlobalMessage{timestamp, cmd, data})
-	insertionSort(tgmarray(CachedGlobalMessages))
-	CacheListsLock.Unlock()
-}
-
-func SaveMultichanMessage(cmd Command, channels string, timestamp time.Time, data string) {
-	CacheListsLock.Lock()
-	CachedChannelMessages = append(CachedChannelMessages, TimestampedMultichatMessage{timestamp, strings.Split(channels, ","), cmd, data})
-	insertionSort(tmmarray(CachedChannelMessages))
-	CacheListsLock.Unlock()
-}
-
 func GetCommandsOfType(match PushCommandCacheInfo) []Command {
 	var ret []Command
-	for cmd, info := range ServerInitiatedCommands {
+	for cmd, info := range S2CCommandsCacheInfo {
 		if info == match {
 			ret = append(ret, cmd)
 		}
@@ -371,7 +243,7 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "error parsing time: %v", err)
 	}
 
-	cacheinfo, ok := ServerInitiatedCommands[cmd]
+	cacheinfo, ok := S2CCommandsCacheInfo[cmd]
 	if !ok {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "Caching semantics unknown for command '%s'. Post to /addcachedcommand first.", cmd)
@@ -388,12 +260,6 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	} else if cacheinfo.Caching == CacheTypePersistent && cacheinfo.Target == MsgTargetTypeChat {
 		SaveLastMessage(PersistentLastMessages, &PersistentLSMLock, cmd, channel, timestamp, json, deleteMode)
 		count = PublishToChannel(channel, msg)
-	} else if cacheinfo.Caching == CacheTypeTimestamps && cacheinfo.Target == MsgTargetTypeMultichat {
-		SaveMultichanMessage(cmd, channel, timestamp, json)
-		count = PublishToMultiple(strings.Split(channel, ","), msg)
-	} else if cacheinfo.Caching == CacheTypeTimestamps && cacheinfo.Target == MsgTargetTypeGlobal {
-		SaveGlobalMessage(cmd, timestamp, json)
-		count = PublishToAll(msg)
 	}
 
 	w.Write([]byte(strconv.Itoa(count)))

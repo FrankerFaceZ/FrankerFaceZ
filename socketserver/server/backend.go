@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"github.com/pmylund/go-cache"
 	"golang.org/x/crypto/nacl/box"
 	"io/ioutil"
@@ -23,7 +22,6 @@ var backendHTTPClient http.Client
 var backendURL string
 var responseCache *cache.Cache
 
-var getBacklogURL string
 var postStatisticsURL string
 var addTopicURL string
 var announceStartupURL string
@@ -41,7 +39,6 @@ func setupBackend(config *ConfigFile) {
 	}
 	responseCache = cache.New(60*time.Second, 120*time.Second)
 
-	getBacklogURL = fmt.Sprintf("%s/backlog", backendURL)
 	postStatisticsURL = fmt.Sprintf("%s/stats", backendURL)
 	addTopicURL = fmt.Sprintf("%s/topics", backendURL)
 	announceStartupURL = fmt.Sprintf("%s/startup", backendURL)
@@ -96,18 +93,16 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	var count int
 
 	switch target {
-	case MsgTargetTypeSingle:
-	// TODO
 	case MsgTargetTypeChat:
 		count = PublishToChannel(channel, cm)
 	case MsgTargetTypeMultichat:
 		count = PublishToMultiple(strings.Split(channel, ","), cm)
 	case MsgTargetTypeGlobal:
 		count = PublishToAll(cm)
-	case MsgTargetTypeInvalid:
+	case MsgTargetTypeInvalid: fallthrough
 	default:
 		w.WriteHeader(422)
-		fmt.Fprint(w, "Invalid 'scope'. must be single, chat, multichat, channel, or global")
+		fmt.Fprint(w, "Invalid 'scope'. must be chat, multichat, channel, or global")
 		return
 	}
 	fmt.Fprint(w, count)
@@ -202,41 +197,6 @@ func SendAggregatedData(sealedForm url.Values) error {
 	}
 
 	return resp.Body.Close()
-}
-
-// FetchBacklogData makes a request to the backend for backlog data on a set of pub/sub topics.
-// TODO scrap this, replaced by /cached_pub
-func FetchBacklogData(chatSubs []string) ([]ClientMessage, error) {
-	formData := url.Values{
-		"subs": chatSubs,
-	}
-
-	sealedForm, err := SealRequest(formData)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := backendHTTPClient.PostForm(getBacklogURL, sealedForm)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, httpError(resp.StatusCode)
-	}
-	dec := json.NewDecoder(resp.Body)
-	var messageStrings []string
-	err = dec.Decode(messageStrings)
-	if err != nil {
-		return nil, err
-	}
-
-	var messages = make([]ClientMessage, len(messageStrings))
-	for i, str := range messageStrings {
-		UnmarshalClientMessage([]byte(str), websocket.TextMessage, &messages[i])
-	}
-
-	return messages, nil
 }
 
 // ErrBackendNotOK indicates that the backend replied with something other than the string "ok".

@@ -122,7 +122,7 @@ type ClientInfo struct {
 
 type esReportBasic struct {
 	Timestamp time.Time
-	Host string
+	Host      string
 }
 type esDisconnectReport struct {
 }
@@ -159,42 +159,12 @@ func (cv *ClientVersion) Equal(cv2 *ClientVersion) bool {
 
 const usePendingSubscrptionsBacklog = false
 
-type tgmarray []TimestampedGlobalMessage
-type tmmarray []TimestampedMultichatMessage
-
-func (ta tgmarray) Len() int {
-	return len(ta)
-}
-func (ta tgmarray) Less(i, j int) bool {
-	return ta[i].Timestamp.Before(ta[j].Timestamp)
-}
-func (ta tgmarray) Swap(i, j int) {
-	ta[i], ta[j] = ta[j], ta[i]
-}
-func (ta tgmarray) GetTime(i int) time.Time {
-	return ta[i].Timestamp
-}
-func (ta tmmarray) Len() int {
-	return len(ta)
-}
-func (ta tmmarray) Less(i, j int) bool {
-	return ta[i].Timestamp.Before(ta[j].Timestamp)
-}
-func (ta tmmarray) Swap(i, j int) {
-	ta[i], ta[j] = ta[j], ta[i]
-}
-func (ta tmmarray) GetTime(i int) time.Time {
-	return ta[i].Timestamp
-}
-
 func (bct BacklogCacheType) Name() string {
 	switch bct {
 	case CacheTypeInvalid:
 		return ""
 	case CacheTypeNever:
 		return "never"
-	case CacheTypeTimestamps:
-		return "timed"
 	case CacheTypeLastOnly:
 		return "last"
 	case CacheTypePersistent:
@@ -205,7 +175,6 @@ func (bct BacklogCacheType) Name() string {
 
 var CacheTypesByName = map[string]BacklogCacheType{
 	"never":   CacheTypeNever,
-	"timed":   CacheTypeTimestamps,
 	"last":    CacheTypeLastOnly,
 	"persist": CacheTypePersistent,
 }
@@ -247,8 +216,6 @@ func (mtt MessageTargetType) Name() string {
 	switch mtt {
 	case MsgTargetTypeInvalid:
 		return ""
-	case MsgTargetTypeSingle:
-		return "single"
 	case MsgTargetTypeChat:
 		return "chat"
 	case MsgTargetTypeMultichat:
@@ -260,7 +227,6 @@ func (mtt MessageTargetType) Name() string {
 }
 
 var TargetTypesByName = map[string]MessageTargetType{
-	"single":    MsgTargetTypeSingle,
 	"chat":      MsgTargetTypeChat,
 	"multichat": MsgTargetTypeMultichat,
 	"global":    MsgTargetTypeGlobal,
