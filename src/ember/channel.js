@@ -600,10 +600,12 @@ FFZ.prototype._modify_cindex = function(view) {
 			this._ffz_update_uptime = setTimeout(this.ffzUpdateUptime.bind(this), 1000);
 
 			// Determine when the channel last went live.
-			var online = this.get("controller.content.stream.created_at");
+			var online = this.get("controller.content.stream.created_at"),
+				now = Date.now() - (f._ws_server_offset || 0);
+
 			online = online && utils.parse_date(online);
 
-			var uptime = online && Math.floor((Date.now() - online.getTime()) / 1000) || -1;
+			var uptime = online && Math.floor((now - online.getTime()) / 1000) || -1;
 			if ( uptime < 0 ) {
 				var el = this.get('element').querySelector('#ffz-uptime-display');
 				if ( el )

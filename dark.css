@@ -142,6 +142,7 @@
 .ffz-dark .whatisthis,
 .ffz-dark .ui-menu,
 .ffz-dark .dropmenu,
+.ffz-dark .sort-contain .sort-options,
 .ffz-dark .top-dropdown,
 .ffz-dark form.js-new_panel_form,
 .ffz-dark .js-new_panel_btn,
@@ -901,6 +902,15 @@
 
 
 /* Conversations */
+
+.ffz-dark .ignore-cta {
+	background-color: #333;
+	box-shadow: 0 3px 0 #000;
+}
+
+.ffz-dark .ignore-cta .conversation-system-message {
+	color: #ccc;
+}
 
 .ffz-dark .conversation-input-bar .emoticon-selector-toggle svg path {
 	fill: rgba(255,255,255,0.2);

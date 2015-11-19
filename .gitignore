@@ -6,6 +6,7 @@ Extension Building
 *.iml
 script.js
 script.min.js
+*.min.css
 credentials.json
 
 /socketserver/cmd/socketserver/socketserver

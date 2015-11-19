@@ -13,8 +13,12 @@ module.exports = {
 	API_SERVER_2: "//direct-api.frankerfacez.com/",
 
 	WS_SERVER_POOLS: {
-		1: ["ws://catbag.frankerfacez.com/", "ws://andknuckles.frankerfacez.com/"],
-		2: ["ws://localhost:8001/"]
+		1: [
+			["ws://catbag.frankerfacez.com/", 0.5],
+			["ws://andknuckles.frankerfacez.com/", 1],
+			["ws://tuturu.frankerfacez.com/", 1]],
+		2: [
+			["ws://localhost:8001/", 1]]
 	},
 
 	TOOLTIP_DISTANCE: 50,

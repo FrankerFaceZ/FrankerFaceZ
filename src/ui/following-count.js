@@ -180,7 +180,8 @@ FFZ.prototype._build_following_tooltip = function(el) {
 			}
 
 			var up_since = this.settings.stream_uptime && stream.created_at && utils.parse_date(stream.created_at),
-				uptime = up_since && Math.floor((Date.now() - up_since.getTime()) / 1000) || 0,
+				now = Date.now() - (this._ws_server_offset || 0),
+				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0,
 				minutes = Math.floor(uptime / 60) % 60,
 				hours = Math.floor(uptime / 3600);
 

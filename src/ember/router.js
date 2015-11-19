@@ -16,6 +16,12 @@ FFZ.prototype.setup_router = function() {
 	if ( Router )
 		Router.reopen({
 			ffzTransition: function() {
+				// TODO: Do this before the transition happens.
+				if ( f._force_refresh ) {
+					location.href = this.get('url');
+					return;
+				}
+
 				try {
 					document.body.setAttribute('data-current-path', App.get('currentPath'));
 				} catch(err) {
@@ -25,4 +31,11 @@ FFZ.prototype.setup_router = function() {
 		});
 
 	document.body.setAttribute('data-current-path', App.get('currentPath'));
+}
+
+
+
+FFZ.ws_commands.please_refresh = function() {
+	this.log("Refreshing the page upon the next transition.");
+	this._force_refresh = true;
 }

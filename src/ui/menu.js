@@ -35,26 +35,6 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 
 FFZ.prototype.setup_menu = function() {
-	this.log("Installing mouse-up event to auto-close menus.");
-	var f = this;
-
-	jQuery(document).mouseup(function(e) {
-		var popup = f._popup, parent;
-		if ( ! popup ) return;
-		if ( popup.id === 'ffz-chat-menu' && popup.style && popup.style.left )
-			return;
-
-		popup = jQuery(popup);
-		parent = popup.parent();
-
-		if ( ! parent.is(e.target) && parent.has(e.target).length === 0 ) {
-			popup.remove();
-			delete f._popup;
-			f._popup_kill && f._popup_kill();
-			delete f._popup_kill;
-		}
-	});
-
 	document.body.classList.toggle("ffz-menu-replace", this.settings.replace_twitch_menu);
 
 	// Add FFZ to the chat settings menu.
@@ -62,7 +42,8 @@ FFZ.prototype.setup_menu = function() {
 	this.log("Hooking the Ember Chat Settings view.");
 
 	var Settings = window.App && App.__container__.resolve('view:settings'),
-		Layout = App.__container__.lookup('controller:layout');
+		Layout = window.App && App.__container__.lookup('controller:layout'),
+		f = this;
 
 	if ( ! Settings )
 		return;
@@ -215,14 +196,9 @@ FFZ.prototype._fix_menu_position = function() {
 }
 
 FFZ.prototype.build_ui_popup = function(view) {
-	var popup = this._popup;
-	if ( popup ) {
-		popup.parentElement.removeChild(popup);
-		delete this._popup;
-		this._popup_kill && this._popup_kill();
-		delete this._popup_kill;
+	var popup = this._popup ? this.close_popup() : this._last_popup;
+	if ( popup && popup.id === 'ffz-chat-menu' )
 		return;
-	}
 
 	// Start building the DOM.
 	var container = document.createElement('div'),
@@ -271,12 +247,8 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	close_btn.addEventListener('click', function() {
 		var popup = f._popup;
-		if ( can_close && popup ) {
-			popup.parentElement.removeChild(popup);
-			delete f._popup;
-			f._popup_kill && f._popup_kill();
-			delete f._popup_kill;
-		}
+		if ( can_close && popup )
+			f.close_popup();
 	});
 
 	menu.appendChild(heading);
@@ -353,9 +325,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 
 	// Add the menu to the DOM.
-	this._popup = container;
 	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
 	view.$('.chat-interface').append(container);
+
+	// Keep track of the pop-up.
+	this._popup = container;
+	this._popup_allow_parent = true;
 }
 
 
@@ -511,7 +486,8 @@ FFZ.menu_pages.channel = {
 								sub_message = document.createElement("div"),
 								nonsub_message = document.createElement("div"),
 								unlock_text = document.createElement("span"),
-								end_time = ends_at ? Math.floor((ends_at.getTime() - Date.now()) / 1000) : null;
+								now = Date.now() - (this._ws_server_offset || 0),
+								end_time = ends_at ? Math.floor((ends_at.getTime() - now) / 1000) : null;
 
 							sub_message.className = "subscribe-message";
 							nonsub_message.className = "non-subscriber-message";

@@ -11,7 +11,7 @@ FFZ.prototype.setup_css = function() {
 	var s = this._main_style = document.createElement('link');
 	s.id = "ffz-main-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.DIRECT_SERVER + "script/style.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	s.setAttribute('href', constants.DIRECT_SERVER + "script/style" + (constants.DEBUG ? "" : ".min") + ".css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 
 	this.log("Readying toggleable styles.");

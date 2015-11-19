@@ -1,10 +1,29 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('./constants');
+	constants = require('./constants'),
+	utils = require('./utils'),
+
+	pick_server = function(pool) {
+		var total = 0, i = pool.length, val;
+		while(i--)
+			total += pool[i][1];
+
+		val = Math.random() * total;
+		for(i = 0; i < pool.length; i++) {
+			val -= pool[i][1];
+			if ( val <= 0 )
+				return i;
+		}
+
+		return pool.length - 1;
+	};
+
 
 FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 FFZ.prototype._ws_host_idx = -1;
 FFZ.prototype._ws_current_pool = -1;
+
+FFZ.prototype._ws_server_offset = null;
 
 
 FFZ.ws_commands = {};
@@ -15,7 +34,7 @@ FFZ.ws_on_close = [];
 // Settings
 // ----------------
 
-var ffz_socket_seed;
+/*var ffz_socket_seed;
 
 try {
 	ffz_socket_seed = JSON.parse(localStorage.ffz_socket_seed);
@@ -24,7 +43,7 @@ try {
 if ( ! ffz_socket_seed ) {
 	ffz_socket_seed = Math.random();
 	localStorage.ffz_socket_seed = JSON.stringify(ffz_socket_seed);
-}
+}*/
 
 
 FFZ.settings_info.socket_server_pool = {
@@ -35,7 +54,7 @@ FFZ.settings_info.socket_server_pool = {
 		2: "Development"
 	},
 
-	value: ffz_socket_seed > 0.4 ? 1 : 0,
+	value: 1,
 
 	process_value: function(val) {
 		if ( typeof val === "string" )
@@ -95,14 +114,14 @@ FFZ.prototype.ws_create = function() {
 		return;
 
 	if ( this._ws_host_idx < 0 )
-		this._ws_host_idx = Math.floor(Math.random() * pool.length);
+		this._ws_host_idx = pick_server(pool);
 
-	var server = pool[this._ws_host_idx];
+	var server = pool[this._ws_host_idx][0];
 
 	this.log("Using Socket Server: " + server + " [" + pool_id + ":" + this._ws_host_idx + "]");
 
 	try {
-		ws = this._ws_sock = new WebSocket(pool[this._ws_host_idx]);
+		ws = this._ws_sock = new WebSocket(server);
 	} catch(err) {
 		this._ws_exists = false;
 		return this.log("Error Creating WebSocket: " + err);
@@ -116,6 +135,7 @@ FFZ.prototype.ws_create = function() {
 		f.log("Socket Connected.");
 
 		// Hard-code the first command.
+		f._ws_ping_time = window.performance ? performance.now() : Date.now();
 		ws.send("1 hello " + JSON.stringify(["ffz_" + FFZ.version_info, localStorage.ffzClientId]));
 
 		var user = f.get_user();
@@ -303,30 +323,70 @@ FFZ.prototype._ws_on_hello = function(success, data) {
 	if ( ! success )
 		return this.log("Error Saying Hello: " + data);
 
-	localStorage.ffzClientId = data;
-	this.log("Client ID: " + data);
+	this._ws_on_pong(success, data[1]);
 
-	/*var survey = {},
-		set = survey['settings'] = {};
-
-	for(var key in FFZ.settings_info)
-		set[key] = this.settings[key];
-
-	set["keywords"] = this.settings.keywords.length;
-	set["banned_words"] = this.settings.banned_words.length;
+	localStorage.ffzClientId = data[0];
+	this.log("Client ID: " + localStorage.ffzClientId);
+}
 
 
-	// Detect BTTV.
-	survey['bttv'] = this.has_bttv || !!document.head.querySelector('script[src*="betterttv"]');
+// -----------------
+// Time Calculation
+// -----------------
 
+FFZ.prototype.setup_time = function() {
+	var last_time = Date.now(),
+		f = this;
 
-	// Client Info
-	survey['user-agent'] = navigator.userAgent;
-	survey['screen'] = [screen.width, screen.height];
-	survey['language'] = navigator.language;
-	survey['platform'] = navigator.platform;
+	setInterval(function() {
+		var new_time = Date.now(),
+			difference = (new_time - last_time) - 5000;
 
-	this.ws_send("survey", [survey]);*/
+		last_time = new_time;
+		if ( Math.abs(difference) > 250 ) {
+			f.log("WARNING! Time drift of " + difference + "ms across 5 seconds. Did the local time change?");
+			f._ws_server_offset = null;
+			f.ws_ping();
+		}
+	}, 5000);
+}
+
+FFZ.prototype.ws_ping = function() {
+	// Only 1 ping at a time.
+	if ( this._ws_ping_time )
+		return;
+
+	this._ws_ping_time = window.performance ? performance.now() : Date.now();
+	if ( ! this.ws_send("ping", null, this._ws_on_pong.bind(this)) )
+		this._ws_ping_time = null;
+}
+
+FFZ.prototype._ws_on_pong = function(success, server_time) {
+	var d_now = Date.now(),
+		now = window.performance ? performance.now() : d_now;
+
+	if ( ! success ) {
+		this._ws_ping_time = null;
+		this.log("Error Pinging Server: " + server_time);
+		return;
+	}
+
+	if ( this._ws_ping_time ) {
+		var rtt = now - this._ws_ping_time,
+			ping = rtt / 2;
+
+		this._ws_ping_time = null;
+		this._ws_server_offset = (d_now - (server_time + ping));
+
+		this.log("Server Time: " + new Date(server_time).toISOString());
+		this.log("Local Time: " + new Date(d_now).toISOString());
+		this.log("Estimated Ping: " + ping + "ms");
+		this.log("Time Offset: " + (this._ws_server_offset < 0 ? "-" : "") + utils.time_to_string(Math.abs(this._ws_server_offset) / 1000));
+
+		if ( Math.abs(this._ws_server_offset) > 300000 ) {
+			this.log("WARNING! The time offset with the server is greater than 5 minutes.");
+		}
+	}
 }
 
 

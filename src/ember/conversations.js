@@ -64,65 +64,18 @@ FFZ.prototype._modify_conversation_window = function(component) {
 	component.reopen({
 		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
 			var e = this.get("thread.participants").rejectBy("username", this.get("currentUsername")).objectAt(0),
-				badges = {},
 
-				ut = e.get("userType");
+				badges = f.get_other_badges(e.get('username'), null, e.get('userType'), false, e.get('hasTurbo')),
+				out = [];
 
-			if ( ut === "staff" )
-				badges[0] = {classes: 'badge staff', title: 'Staff'};
-			else if ( ut === 'admin' )
-				badges[0] = {classes: 'badge admin', title: 'Admin'};
-			else if ( ut === 'global_mod' )
-				badges[0] = {classes: 'badge global-moderator', title: 'Global Moderator'};
-
-			if ( e.get('hasTurbo') )
-				badges[15] = {classes: 'badge turbo', title: 'Turbo'}
-
-			// FFZ Badges
-			var data = f.users[e.get('username')];
-			if ( data && data.badges ) {
-				for(var slot in data.badges) {
-					if ( ! data.badges.hasOwnProperty(slot) )
-						continue;
-
-					var badge = data.badges[slot],
-						full_badge = f.badges[badge.id] || {},
-						old_badge = badges[slot];
-
-					if ( full_badge.visible !== undefined ) {
-						var visible = full_badge.visible;
-						if ( typeof visible === "function" )
-							try {
-								visible = visible.bind(f)(null, e.get('username'), null, badges);
-							} catch(err) {
-								f.error("badge " + badge.id + " visible: " + err);
-								continue;
-							}
-
-						if ( ! visible )
-							continue;
-					}
-
-					if ( old_badge ) {
-						var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces;
-						if ( ! replaces )
-							continue;
-
-						old_badge.klass = 'badge ffz-badge-' + badge.id;
-						old_badge.title += ', ' + (badge.title || full_badge.title);
-						continue;
-					}
-
-					badges[slot] = {
-						classes: 'badge ffz-badge-' + badge.id,
-						title: badge.title || full_badge.title
-					}
-				}
+			// It wants slightly different output from us.
+			for(var slot in badges) {
+				var badge = badges[slot];
+				out.push({
+					classes: 'badge ' + badge.klass,
+					title: badge.title
+				});
 			}
-
-			var out = [];
-			for(var slot in badges)
-				out.push(badges[slot]);
 
 			return out;
 		}),
@@ -143,6 +96,7 @@ FFZ.prototype._modify_conversation_window = function(component) {
 				header_name.setAttribute('data-color', raw_color);
 			}
 
+			jQuery('.badge', el).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 			jQuery(el).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});

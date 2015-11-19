@@ -443,7 +443,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i];
-			if ( msgObject.style !== 'whisper' && (_.isString(token) || ! token.mentionedUser || token.own) )
+			if ( _.isString(token) || ! token.mentionedUser || token.own )
 				continue;
 
 			// We have a mention!
@@ -544,7 +544,10 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 		if ( token.hidden )
 			return "";
 
-		if ( token.emoticonSrc ) {
+		else if ( token.isRaw )
+			return token.html;
+
+		else if ( token.emoticonSrc ) {
 			var tooltip, src = token.emoticonSrc, srcset, cls, extra;
 			if ( token.ffzEmote ) {
 				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
@@ -607,7 +610,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 			return '<img class="emoticon html-tooltip' + (cls||"") + '"' + (extra||"") + ' src="' + utils.quote_attr(src) + '" ' + (srcset ? 'srcset="' + utils.quote_attr(srcset) + '" ' : '') + 'alt="' + utils.quote_attr(token.altText) + '" title="' + utils.quote_attr(tooltip) + '">';
 		}
 
-		if ( token.isLink ) {
+		else if ( token.isLink ) {
 			var text = token.title || (token.isLong && '<long link>') || (token.isShortened && '<shortened link>') || (token.isDeleted && '<deleted link>') || token.href;
 
 			if ( ! render_links && render_links !== undefined )
@@ -676,10 +679,10 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 			return '<a class="' + cls + '" data-original-url="' + utils.quote_attr(token.href) + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href || '#') + '" title="' + utils.quote_attr(tooltip || '') + '" target="_blank">' + utils.sanitize(text) + '</a>';
 		}
 
-		if ( token.mentionedUser )
+		else if ( token.mentionedUser )
 			return '<span class="' + (token.own ? "mentioning" : "mentioned") + '">' + utils.sanitize(token.mentionedUser) + "</span>";
 
-		if ( token.deletedLink )
+		else if ( token.deletedLink )
 			return utils.sanitize(token.text);
 
 		return utils.sanitize(token);
@@ -1017,4 +1020,76 @@ FFZ.prototype._deleted_link_click = function(e) {
 
 	// Stop from Navigating
 	e.preventDefault();
+}
+
+
+// ---------------------
+// History Loading
+// ---------------------
+
+FFZ.prototype.parse_history = function(history, purged, room_id, delete_links, tmiSession, per_line) {
+	var i = history.length, was_cleared = false;
+	purged = purged || {};
+
+	while(i--) {
+		var msg = history[i],
+			is_deleted = msg.ffz_deleted = purged[msg.from] || false;
+
+		if ( is_deleted && ! this.settings.prevent_clear )
+			msg.deleted = true;
+
+		if ( ! msg.room && room_id )
+			msg.room = room_id;
+
+		if ( typeof msg.date === "string" || typeof msg.date === "number" )
+			msg.date = utils.parse_date(msg.date);
+
+		if ( ! msg.color )
+			msg.color = msg.tags && msg.tags.color ? msg.tags.color : tmiSession && msg.from ? tmiSession.getColor(msg.from) : "#755000";
+
+		if ( ! msg.labels || ! msg.labels.length ) {
+			var labels = msg.labels = [];
+
+			if ( msg.room && msg.room === msg.from )
+				labels.push("owner");
+			else if ( msg.tags ) {
+				var ut = msg.tags['user-type'];
+				if ( ut === 'mod' || ut === 'staff' || ut === 'admin' || ut === 'global_mod' )
+					labels.push(ut);
+			}
+
+			if ( msg.tags ) {
+				if ( msg.tags.turbo )
+					labels.push("turbo");
+				if ( msg.tags.subscriber )
+					labels.push("subscriber");
+			}
+		}
+
+		if ( ! msg.style ) {
+			if ( msg.from === "jtv" )
+				msg.style = "admin";
+			else if ( msg.from === "twitchnotify" )
+				msg.style = "notification";
+		}
+
+		if ( msg.tags && typeof msg.tags.emotes === "string" )
+			msg.tags.emotes = utils.uncompressEmotes(msg.tags.emotes);
+
+		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
+			this.tokenize_chat_line(msg, true, delete_links);
+
+		// CLEARCHAT
+		if ( msg.tags && msg.tags.target === '@@' )
+			was_cleared = true;
+
+		else if ( msg.tags && msg.tags.target )
+			purged[msg.tags.target] = true;
+
+		// Per-line
+		if ( per_line && ! per_line(msg) )
+			break;
+	}
+
+	return [history, purged, was_cleared];
 }

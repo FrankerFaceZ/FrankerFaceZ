@@ -180,16 +180,9 @@ FFZ.prototype._race_kill = function() {
 
 
 FFZ.prototype._build_race_popup = function(container, channel_id) {
-	var popup = this._popup;
-	if ( popup ) {
-		popup.parentElement.removeChild(popup);
-		delete this._popup;
-		this._popup_kill && this._popup_kill();
-		delete this._popup_kill;
-
-		if ( popup.id === "ffz-race-popup" && popup.getAttribute('data-channel') === channel_id )
-			return;
-	}
+	var popup = this.close_popup();
+	if ( popup && popup.id === "ffz-race-popup" && popup.getAttribute('data-channel') === channel_id )
+		return;
 
 	if ( ! container )
 		return;
@@ -204,6 +197,7 @@ FFZ.prototype._build_race_popup = function(container, channel_id) {
 	popup.className = (pos >= 300 ? 'right' : 'left') + ' share dropmenu';
 
 	this._popup_kill = this._race_kill.bind(this);
+	this._popup_allow_parent = true;
 	this._popup = popup;
 
 	var link = 'http://kadgar.net/live',
@@ -256,13 +250,8 @@ FFZ.prototype._update_race = function(container, not_timer) {
 	if ( ! race ) {
 		// No race. Abort.
 		container.parentElement.removeChild(container);
-		if ( this._popup && this._popup.id === 'ffz-race-popup' && this._popup.getAttribute('data-channel') === channel_id ) {
-			this._popup_kill && this._popup_kill();
-			if ( this._popup ) {
-				delete this._popup;
-				delete this._popup_kill;
-			}
-		}
+		if ( this._popup && this._popup.id === 'ffz-race-popup' && this._popup.getAttribute('data-channel') === channel_id )
+			this.close_popup();
 		return;
 	}
 
@@ -270,7 +259,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		entrant = race.entrants[entrant_id],
 
 		popup = container.querySelector('#ffz-race-popup'),
-		now = Date.now() / 1000,
+		now = (Date.now() - (this._ws_server_offset || 0)) / 1000,
 		elapsed = Math.floor(now - race.time);
 
 	container.querySelector('.logo').innerHTML = utils.placement(entrant);

@@ -30,6 +30,85 @@
 }
 
 
+/* DEPRECIATED: Whisper Backgrounds */
+.ember-chat .chat-line.whisper-line:before {
+	background-color: rgba(185, 163, 227, 0.2);
+}
+
+.ember-chat .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before {
+	background-color: rgba(185, 163, 227, 0.4);
+}
+
+.theatre .chat-line.whisper-line:before,
+.dark .chat-line.whisper-line:before,
+.force-dark .chat-line.whisper-line:before {
+	background-color: rgba(100, 65, 165, 0.2);
+}
+
+.theatre .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before,
+.dark .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before,
+.force-dark .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before {
+	background-color: rgba(100, 65, 165, 0.4);
+}
+
+
+/* Chat History: Original Sender */
+.chat-history .chat-line.original-sender:before {
+	background-color: rgba(0,127,255, 0.2);
+}
+
+.chat-history .chat-line.original-sender:nth-child(2n+0):before {
+	background-color: rgba(0,127,255, 0.4);
+}
+
+.theatre .chat-history .chat-line.original-sender:before,
+.dark .chat-history .chat-line.original-sender:before,
+.force-dark .chat-history .chat-line.original-sender:before {
+	background-color: rgba(0,63,127, 0.2);
+}
+
+.theatre .chat-history .chat-line.original-sender:nth-child(2n+0):before,
+.dark .chat-history .chat-line.original-sender:nth-child(2n+0):before,
+.force-dark .chat-history .chat-line.original-sender:nth-child(2n+0):before {
+	background-color: rgba(0,63,127, 0.4);
+}
+
+
+/* Chat History: Original Message */
+.chat-history .chat-line.original-msg:before {
+	background-color: rgba(0,255,127, 0.4);
+}
+
+.chat-history .chat-line.original-msg:nth-child(2n+0):before {
+	background-color: rgba(0,255,127, 0.8);
+}
+
+.theatre .chat-history .chat-line.original-msg:before,
+.dark .chat-history .chat-line.original-msg:before,
+.force-dark .chat-history .chat-line.original-msg:before {
+	background-color: rgba(0,127,63, 0.4);
+}
+
+.theatre .chat-history .chat-line.original-msg:nth-child(2n+0):before,
+.dark .chat-history .chat-line.original-msg:nth-child(2n+0):before,
+.force-dark .chat-history .chat-line.original-msg:nth-child(2n+0):before {
+	background-color: rgba(0,127,63, 0.8);
+}
+
+
+/* Reading contrast */
+.chat-history .chat-line.original-msg span.has-color {
+	color: #000 !important;
+}
+
+.theatre .chat-history .chat-line.original-msg span.has-color,
+.dark .chat-history .chat-line.original-msg span.has-color,
+.force-dark .chat-history .chat-line.original-msg span.has-color {
+	color: #fff !important;
+}
+
+
+
 
 /* DEPRECIATED: Mention Backgrounds */
 .chat-history .chat-line.ffz-mentioned:before,
@@ -98,4 +177,17 @@
 .ember-chat-container.force-dark .chat-line .mentioning {
 	color: #8c8c8c;
 	background-color: rgba(16,16,16, 0.75);
+}
+
+
+/* Fix Conversations */
+
+.conversation-window .timestamp-line span,
+.conversation-window .new-message-divider span {
+	background-color: transparent;
+}
+
+.conversation-window .new-message-divider:after,
+.conversation-window .timestamp-line:after {
+	display: none;
 }

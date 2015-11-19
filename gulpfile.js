@@ -24,6 +24,7 @@ var ftp = require('vinyl-ftp'),
 
 // Server Dependencies
 var http = require("http"),
+	//https = require("https"),
 	path = require("path"),
 	request = require("request"),
 	url = require("url");
@@ -87,11 +88,9 @@ gulp.task('scripts', ['styles'], function() {
 		.pipe(header('(function(window) {'))
 		.pipe(footer(';window.ffz = new FrankerFaceZ()}(window));'))
 		.pipe(gulp.dest(__dirname))
-		.pipe(uglify())
-		.pipe(rename('script.min.js'))
-		.pipe(gulp.dest(__dirname))
 		.on('error', util.log);
 });
+
 
 gulp.task('watch', ['default', 'server'], function() {
 	return gulp.watch('src/**/*', ['default']);
@@ -102,7 +101,28 @@ gulp.task('default', ['scripts']);
 
 // Deploy
 
-gulp.task('upload', ['default'], function() {
+gulp.task('minify_script', ['scripts'], function() {
+	return gulp.src(['script.js'])
+		.pipe(uglify())
+		.pipe(rename('script.min.js'))
+		.pipe(gulp.dest(__dirname))
+		.on('error', util.log);
+});
+
+gulp.task('minify_style', function() {
+	return gulp.src(['style.css', 'dark.css'])
+		.pipe(minifyCss())
+		.pipe(rename(function(path) {
+			path.basename += '.min';
+		}))
+		.pipe(gulp.dest(__dirname))
+		.on('error', util.log);
+});
+
+gulp.task('minify', ['minify_script', 'minify_style']);
+
+
+gulp.task('upload', ['minify'], function() {
 	// Load credentials from an external file.
 	var contents = fs.readFileSync('credentials.json', 'utf8'),
 		cred = JSON.parse(contents);
@@ -117,8 +137,8 @@ gulp.task('upload', ['default'], function() {
 
 		globs = [
 			"script.min.js",
-			"style.css",
-			"dark.css",
+			"style.min.css",
+			"dark.min.css",
 			"changelog.html"
 		];
 
@@ -140,8 +160,8 @@ gulp.task('clear_cache', ['upload'], function(cb) {
 		files = [],
 		globs = [
 			"script.min.js",
-			"style.css",
-			"dark.css",
+			"style.min.css",
+			"dark.min.css",
 			"changelog.html"
 		];
 
@@ -177,7 +197,7 @@ gulp.task('deploy', ['upload', 'clear_cache']);
 // Server
 
 gulp.task('server', function() {
-	http.createServer(function(req, res) {
+	var handle_req = function(req, res) {
 		var uri = url.parse(req.url).pathname,
 			lpath = path.join(uri).split(path.sep);
 
@@ -220,6 +240,10 @@ gulp.task('server', function() {
 			fs.createReadStream(file).pipe(res);
 		});
 
-	}).listen(8000, "localhost");
+	};
+
+	http.createServer(handle_req).listen(8000, "localhost");
+	//https.createServer(handle_req).listen(8000, "localhost");
+
 	util.log("[" + util.colors.cyan("HTTP") + "] Listening on Port: " + util.colors.magenta("8000"));
 });

@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 77,
+	major: 3, minor: 5, revision: 83,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -149,6 +149,7 @@ require('./ext/emote_menu');
 
 require('./featurefriday');
 
+require('./ui/popups');
 require('./ui/styles');
 require('./ui/dark');
 require('./ui/tooltips');
@@ -256,9 +257,12 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 	this.setup_css();
+	this.setup_popups();
 
-	if ( ! no_socket )
+	if ( ! no_socket ) {
+		this.setup_time();
 		this.ws_create();
+	}
 
 	this.setup_colors();
 	this.setup_emoticons();
@@ -294,8 +298,11 @@ FFZ.prototype.init_dashboard = function(delay) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 	this.setup_css();
+	this.setup_popups();
 
+	this.setup_time();
 	this.ws_create();
+
 	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
@@ -336,8 +343,11 @@ FFZ.prototype.init_ember = function(delay) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 	this.setup_css();
+	this.setup_popups();
 
+	this.setup_time();
 	this.ws_create();
+
 	this.setup_emoticons();
 	this.setup_badges();
 

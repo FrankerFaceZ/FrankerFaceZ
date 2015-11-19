@@ -713,7 +713,7 @@ FFZ.prototype._load_history = function(room_id, success, data) {
 	if ( ! data.length )
 		return;
 
-	return this._insert_history(room_id, data);
+	return this._insert_history(room_id, data, true);
 }
 
 
@@ -730,118 +730,93 @@ FFZ.prototype._show_deleted = function(room_id) {
 	this._insert_history(room_id, old_messages);
 }
 
-FFZ.prototype._insert_history = function(room_id, data) {
-	var room = this.rooms[room_id];
+FFZ.prototype._insert_history = function(room_id, data, from_server) {
+	var room = this.rooms[room_id], f = this;
 	if ( ! room || ! room.room )
 		return;
 
 	var r = room.room,
 		messages = r.get('messages'),
+		buffer_size = r.get('messageBufferSize'),
+
 		tmiSession = r.tmiSession || (TMI._sessions && TMI._sessions[0]),
-		tmiRoom = r.tmiRoom,
+		delete_links = r.get('roomProperties.hide_chat_links'),
 
 		removed = 0,
 		inserted = 0,
-		purged = {},
 
-		last_msg = data[data.length - 1],
-		now = new Date(),
-		last_date = (typeof last_msg.date === "string" || typeof last_msg.date === "number") ? (last_msg.date = utils.parse_date(last_msg.date)) : last_msg.date,
-		age = (now - last_date) / 1000,
-		is_old = age > 300,
+		first_inserted,
+		first_existing,
+		before;
 
-		i = data.length;
+	first_existing = messages.length ? messages[0] : null;
+	if ( first_existing && first_existing.from === 'jtv' && first_existing.message === 'Welcome to the chat room!' )
+		first_existing = messages.length > 1 ? messages[1] : null;
 
-	var i = data.length;
-	while(i--) {
-		var msg = data[i],
-			is_deleted = msg.ffz_deleted = purged[msg.from] || false;
+	if ( first_existing )
+		before = first_existing.date && first_existing.date.getTime();
 
-		if ( is_deleted && ! this.settings.prevent_clear )
-			msg.deleted = true;
 
-		if ( typeof msg.date === "string" || typeof msg.date === "number" )
-			msg.date = utils.parse_date(msg.date);
+	this.parse_history(data, null, room_id, delete_links, tmiSession, function(msg) {
+		if ( from_server )
+			msg.from_server = true;
 
-		if ( ! msg.room )
-			msg.room = room_id;
+		// Skip messages that are from the future.
+		if ( ! msg.date || (before && (before - (msg.from_server && ! first_existing.from_server ? f._ws_server_offset || 0 : 0)) < msg.date.getTime()) )
+			return true;
 
-		if ( ! msg.color )
-			msg.color = msg.tags && msg.tags.color ? msg.tags.color : tmiSession && msg.from ? tmiSession.getColor(msg.from.toLowerCase()) : "#755000";
+		if ( f.settings.remove_deleted && msg.deleted )
+			return true;
 
-		if ( ! msg.labels || ! msg.labels.length ) {
-			var labels = msg.labels = [];
-			if ( msg.tags ) {
-				if ( msg.tags.turbo )
-					labels.push("turbo");
-				if ( msg.tags.subscriber )
-					labels.push("subscriber");
-				if ( msg.from === room_id )
-					labels.push("owner")
-				else {
-					var ut = msg.tags['user-type'];
-					if ( ut === 'mod' || ut === 'staff' || ut === 'admin' || ut === 'global_mod' )
-						labels.push(ut);
-				}
-			}
-		}
-
-		if ( ! msg.style ) {
-			if ( msg.from === "jtv" )
-				msg.style = "admin";
-			else if ( msg.from === "twitchnotify" )
-				msg.style = "notification";
-		}
-
-		if ( msg.tags && typeof msg.tags.emotes === "string" )
-			try {
-				msg.tags.emotes = JSON.parse(msg.tags.emotes);
-			} catch(err) {
-				f.log("Error Parsing JSON Emotes: " + err);
-				msg.tags.emotes = {};
-			}
-
-		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
-			this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
-
-		if ( r.shouldShowMessage(msg) ) {
-			if ( messages.length < r.get("messageBufferSize") ) {
-				// One last thing! Make sure we don't have too many messages.
+		if ( r.shouldShowMessage(msg) && r.ffzShouldShowMessage(msg) ) {
+			if ( messages.length < buffer_size ) {
 				if ( msg.ffz_old_messages ) {
-					var max_msgs = r.get("messageBufferSize") - (messages.length + 1);
-					if ( msg.ffz_old_messages.length > max_msgs )
-						msg.ffz_old_messages = msg.ffz_old_messages.slice(msg.ffz_old_messages.length - max_msgs);
+					var max_messages = buffer_size - (messages.length + 1);
+					if ( max_messages <= 0 )
+						msg.ffz_old_messages = null;
+					else if ( msg.ffz_old_messages.length > max_messages )
+						msg.ffz_old_messages = msg.ffz_old_messages.slice(msg.ffz_old_messages.length - max_messages);
 				}
+
+				if ( ! first_inserted )
+					first_inserted = msg;
 
 				messages.unshiftObject(msg);
 				inserted += 1;
+
 			} else
-				break;
+				return false;
 		}
 
-		// If there was a CLEARCHAT, stop processing.
+		// If there's a CLEARCHAT, stop processing.
 		if ( msg.tags && msg.tags.target === '@@' )
-			break;
+			return false;
 
-		// If there was a purge, just track the name.
-		else if ( msg.tags && msg.tags.target )
-			purged[msg.tags.target] = true;
-	}
+		return true;
+	});
 
-	if ( is_old ) {
+
+	if ( ! first_inserted )
+		return;
+
+	var now = Date.now() - (first_inserted.from_server ? this._ws_server_offset || 0 : 0),
+		age = now - first_inserted.date.getTime();
+
+	if ( age > 300000 ) {
 		var msg = {
 			color: "#755000",
-			date: new Date(),
+			date: first_inserted.date,
 			from: "frankerfacez_admin",
 			style: "admin",
-			message: "(Last message is " + utils.human_time(age) + " old.)",
-			room: room_id
+			message: "(Last message is " + utils.human_time(age/1000) + " old.)",
+			room: room_id,
+			from_server: from_server
 		};
 
-		this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
+		this.tokenize_chat_line(msg, false, delete_links);
 		if ( r.shouldShowMessage(msg) ) {
 			messages.insertAt(inserted, msg);
-			while( messages.length > r.get('messageBufferSize') ) {
+			while ( messages.length > buffer_size ) {
 				messages.removeAt(0);
 				removed++;
 			}
@@ -1100,8 +1075,7 @@ FFZ.prototype._modify_room = function(room) {
 				if ( ! this.ffzPending )
 					this.ffzPending = [];
 
-				var now = Date.now();
-				msg.time = now;
+				var now = msg.time = Date.now();
 				this.ffzPending.push(msg);
 				this.ffzSchedulePendingFlush(now);
 
@@ -1134,9 +1108,10 @@ FFZ.prototype._modify_room = function(room) {
 			if ( this.ffzPending && this.ffzPending.length ) {
 				// We need either the amount of chat delay past the first message, if chat_delay is on, or the
 				// amount of time from the last batch.
+				now = now || Date.now();
 				var delay = Math.max(
-					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - (now || Date.now())) : 0),
-					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - ((now || Date.now()) - (this._ffz_last_batch||0))) : 0));
+					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - now) : 0),
+					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - (now - (this._ffz_last_batch||0))) : 0));
 
 				this._ffz_pending_flush = setTimeout(this.ffzPendingFlush.bind(this), delay);
 			}
@@ -1163,6 +1138,9 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzShouldShowMessage: function (msg) {
+			if ( ! f.settings.hosted_sub_notices && msg.style === 'notification' && HOSTED_SUB.test(msg.message) )
+				return false;
+
 			if (f.settings.remove_bot_ban_notices && this.ffzRecentlyBanned) {
 				var banned = '(' + this.ffzRecentlyBanned.join('|') + ')';
 				var bots = {
@@ -1181,9 +1159,6 @@ FFZ.prototype._modify_room = function(room) {
 
 		addMessage: function(msg) {
 			if ( msg ) {
-				if ( ! f.settings.hosted_sub_notices && msg.style === 'notification' && HOSTED_SUB.test(msg.message) )
-					return;
-
 				var is_whisper = msg.style === 'whisper';
 
 				// Ignore whispers if conversations are enabled.
@@ -1212,7 +1187,9 @@ FFZ.prototype._modify_room = function(room) {
 							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
 
 						user_history.push({
-							from: msg.tags && msg.tags['display-name'] || msg.from,
+							from: msg.from,
+							tags: {'display-name': msg.tags && msg.tags['display-name']},
+							message: msg.message,
 							cachedTokens: msg.cachedTokens,
 							style: msg.style,
 							date: msg.date
@@ -1223,16 +1200,16 @@ FFZ.prototype._modify_room = function(room) {
 
 						if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
 							var el = f._mod_card.get('element'),
-								history = el && el.querySelector('.chat-history'),
+								history = el && el.querySelector('.chat-history:not(.adjacent-history)'),
 								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
 
 							if ( history ) {
-								history.appendChild(f._build_mod_card_history(msg));
+								history.appendChild(f._build_mod_card_history(msg, f._mod_card));
 								if ( was_at_top )
 									setTimeout(function() { history.scrollTop = history.scrollHeight; })
 
 								// Don't do infinite scrollback.
-								if ( history.childElementCount > 50 )
+								if ( history.childElementCount > 100 )
 									history.removeChild(history.firstElementChild);
 							}
 						}

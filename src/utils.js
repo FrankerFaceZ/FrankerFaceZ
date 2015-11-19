@@ -25,6 +25,16 @@ var sanitize_el = document.createElement('span'),
 		return msg.replace(R_AMP, "&amp;").replace(R_QUOTE, "&quot;").replace(R_SQUOTE, "&apos;").replace(R_LT, "&lt;").replace(R_GT, "&gt;");
 	},
 
+	HUMAN_NUMBERS = [
+		"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"
+	],
+
+	number_commas = function(x) {
+		var parts = x.toString().split(".");
+		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		return parts.join(".");
+	},
+
 	pluralize = function(value, singular, plural) {
 		plural = plural || 's';
 		singular = singular || '';
@@ -155,6 +165,37 @@ var sanitize_el = document.createElement('span'),
 		}
 
 		return tags;
+	},
+
+	uncompressEmotes = function(value) {
+		var output = {},
+			emotes = value.split("/"),
+			i = emotes.length;
+
+		while(i--) {
+			var parts = emotes[i].split(":");
+			if ( parts.length !== 3 )
+				return {};
+
+			var emote_id = parts[0],
+				length = parseInt(parts[1]),
+				positions = parts[2].split(","),
+				indices = output[emote_id] = output[emote_id] || [];
+
+			for(var j=0, jl = positions.length; j < jl; j++) {
+				var start = parseInt(positions[j]),
+					end = start + length;
+
+				for(var x=0, xl = indices.length; x < xl; x++) {
+					if ( start < indices[x][0] )
+						break;
+				}
+
+				indices.splice(x, 0, [start, end]);
+			}
+		}
+
+		return output;
 	},
 
 
@@ -316,16 +357,13 @@ module.exports = {
 
 	splitIRCMessage: splitIRCMessage,
 	parseIRCTags: parseIRCTags,
+	uncompressEmotes: uncompressEmotes,
 
 	emoji_to_codepoint: emoji_to_codepoint,
 
 	parse_date: parse_date,
 
-	number_commas: function(x) {
-		var parts = x.toString().split(".");
-		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-		return parts.join(".");
-	},
+	number_commas: number_commas,
 
 	place_string: place_string,
 
@@ -344,6 +382,10 @@ module.exports = {
 	},
 
 	pluralize: pluralize,
+
+	human_number: function(value) {
+		return HUMAN_NUMBERS[value] || number_commas(value);
+	},
 
 	human_time: function(elapsed, factor) {
 		factor = factor || 1;

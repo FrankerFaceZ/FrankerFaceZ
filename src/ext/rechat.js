@@ -122,7 +122,8 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 
 	line.classList.add('ffz-processed');
 
-	var user_id = line.getAttribute('data-sender'),
+	var f = this,
+		user_id = line.getAttribute('data-sender'),
 		room_id = line.getAttribute('data-room'),
 
 		Layout = App.__container__.lookup('controller:layout'),
@@ -173,23 +174,9 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 			badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
 
 		if ( user_id )
-			badges = this._render_badges(user_id, room_id, badges);
+			badges = this.get_badges(user_id, room_id, badges, null);
 
-		var output = '';
-		for(var key in badges) {
-			var badge = badges[key],
-				css = badge.iamge ? 'background-image:url(&quot;' + badge.image + '&quot;);' : '';
-
-			if ( badge.color )
-				css += 'background-color:' + badge.color + ';';
-
-			if ( badge.extra_css )
-				css += badge.extra_css;
-
-			output += '<div class="badge float-left tooltip ' + badge.klass + '"' + (css ? ' style="' + css + '"' : '') + ' title="' + badge.title + '"></div>';
-		}
-
-		badges_el.innerHTML = output;
+		badges_el.innerHTML = this.render_badges(badges);
 	}
 
 	if ( ! reprocess && from_el ) {
@@ -243,8 +230,14 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 						own: node.classList.contains('mentioning')
 					});
 
-				else
+				else {
 					this.log("Unknown Tag Type: " + node.tagName);
+					tokens.push({
+						isRaw: true,
+						html: node.outerHTML
+					});
+				}
+
 			} else
 				this.log("Unknown Node Type Tokenizing Message: " + node.nodeType);
 		}
@@ -274,4 +267,8 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 
 	// Now, put the content back into the element.
 	message_el.innerHTML = this.render_tokens(tokens);
+
+	// Interactions
+	jQuery('a.deleted-link', message_el).click(f._deleted_link_click);
+	jQuery('img.emoticon', message_el).click(function(e) { f._click_emote(e.target, e); });
 }

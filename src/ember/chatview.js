@@ -426,7 +426,7 @@ FFZ.prototype._modify_cview = function(view) {
 				if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs )
 					f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
 
-				var controller = f._chatv.get('controller');
+				var controller = f._chatv && f._chatv.get('controller');
 				controller && controller.set('showList', false);
 			}, 1000);
 		},
@@ -443,6 +443,10 @@ FFZ.prototype._modify_cview = function(view) {
 
 		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
 			f.update_ui_link();
+
+			// Close mod cards when changing to a new room.
+			if ( f._mod_card )
+				f._mod_card.send('close');
 
 			var room = this.get('controller.currentRoom'), rows;
 			room && room.resetUnreadCount();

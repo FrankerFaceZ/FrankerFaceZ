@@ -281,7 +281,7 @@ FFZ.prototype.rebuild_following_ui = function() {
 FFZ.prototype._build_following_button = function(container, channel_id) {
 	if ( ! VALID_CHANNEL.test(channel_id) )
 		return this.log("Ignoring Invalid Channel: " + utils.sanitize(channel_id));
-	
+
 	var btn = document.createElement('a'), f = this,
 		btn_c = document.createElement('div'),
 		noti = document.createElement('a'),
@@ -376,7 +376,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 	btn.addEventListener('mousedown', function(e) {
 		if ( e.button !== 1 )
 			return;
-		
+
 		e.preventDefault();
 		window.open(Twitch.uri.profile(channel_id));
 	});
@@ -396,7 +396,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 	display_name = FFZ.get_capitalization(channel_id, on_name);
 	update();
-	
+
 	setTimeout(check_following, Math.random()*5000);
 
 	container.appendChild(btn_c);
@@ -405,19 +405,11 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 
 FFZ.prototype._build_following_popup = function(container, channel_id, notifications) {
-	var popup = this._popup, out = '',
+	var popup = this.close_popup(), out = '',
 		pos = container.offsetLeft + container.offsetWidth;
 
-
-	if ( popup ) {
-		popup.parentElement.removeChild(popup);
-		delete this._popup;
-		this._popup_kill && this._popup_kill();
-		delete this._popup_kill;
-
-		if ( popup.id == "ffz-following-popup" && popup.getAttribute('data-channel') === channel_id )
-			return null;
-	}
+	if ( popup && popup.id == "ffz-following-popup" && popup.getAttribute('data-channel') === channel_id )
+		return null;
 
 	popup = this._popup = document.createElement('div');
 	popup.id = 'ffz-following-popup';
