@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"runtime"
 	"strings"
+	"strconv"
 )
 
 func commandLineConsole() {
@@ -86,6 +87,41 @@ func commandLineConsole() {
 			return "All new clients will not recieve auth challenges upon claiming a name.", nil
 		}
 		return "Usage: authorizeeveryone [ on | off ]", nil
+	})
+
+	shell.Register("kickclients", func(args ...string) (string, error) {
+		if len(args) == 0 {
+			return "Please enter either a count or a fraction of clients to kick.", nil
+		}
+		input, err := strconv.ParseFloat(args[0], 64)
+		if err != nil {
+			return "Argument must be a number", err
+		}
+		var count int
+		if input >= 1 {
+			count = int(input)
+		} else {
+			server.GlobalSubscriptionLock.RLock()
+			count = int(float64(len(server.GlobalSubscriptionInfo)) * input)
+			server.GlobalSubscriptionLock.RUnlock()
+		}
+
+		msg := server.ClientMessage{ Arguments: &server.CloseRebalance }
+		server.GlobalSubscriptionLock.RLock()
+		defer server.GlobalSubscriptionLock.RUnlock()
+
+		kickCount := 0
+		for i, cl := range server.GlobalSubscriptionInfo {
+			if i >= count {
+				break
+			}
+			select {
+			case cl.MessageChannel <- msg:
+			case <-cl.MsgChannelIsDone:
+			}
+			kickCount++
+		}
+		return fmt.Sprintf("Kicked %d clients", kickCount), nil
 	})
 
 	shell.Register("panic", func(args ...string) (string, error) {

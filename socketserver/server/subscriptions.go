@@ -105,6 +105,10 @@ func UnsubscribeSingleChat(client *ClientInfo, channelName string) {
 //   - write lock to SubscriptionInfos
 //   - write lock to ClientInfo
 func UnsubscribeAll(client *ClientInfo) {
+	if StopAcceptingConnections {
+		return // no need to remove from a high-contention list when the server is closing
+	}
+
 	client.Mutex.Lock()
 	client.PendingSubscriptionsBacklog = nil
 	client.PendingSubscriptionsBacklog = nil
