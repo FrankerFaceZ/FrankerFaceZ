@@ -15,6 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -179,6 +180,11 @@ var CloseFirstMessageNotHello = websocket.CloseError{
 	Code: websocket.ClosePolicyViolation,
 }
 
+var CloseNonUTF8Data = websocket.CloseError{
+	Code: 4001,
+	Text: "Non UTF8 data recieved. Network corruption likely.",
+}
+
 const sendMessageBufferLength = 125
 const sendMessageAbortLength = 50
 
@@ -296,6 +302,13 @@ RunLoop:
 			if client.VersionString == "" && msg.Command != HelloCommand {
 				closeReason = CloseFirstMessageNotHello
 				break RunLoop
+			}
+
+			for _, char := range msg.Command {
+				if char == utf8.RuneError {
+					closeReason = CloseNonUTF8Data
+					break RunLoop
+				}
 			}
 
 			DispatchC2SCommand(conn, &client, msg)

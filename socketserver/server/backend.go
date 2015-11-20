@@ -99,7 +99,8 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		count = PublishToMultiple(strings.Split(channel, ","), cm)
 	case MsgTargetTypeGlobal:
 		count = PublishToAll(cm)
-	case MsgTargetTypeInvalid: fallthrough
+	case MsgTargetTypeInvalid:
+		fallthrough
 	default:
 		w.WriteHeader(422)
 		fmt.Fprint(w, "Invalid 'scope'. must be chat, multichat, channel, or global")

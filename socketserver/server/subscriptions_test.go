@@ -141,19 +141,19 @@ func TCheckResponse(tb testing.TB, resp *http.Response, expected string, desc st
 }
 
 type TURLs struct {
-	Websocket  string
-	Origin     string
+	Websocket      string
+	Origin         string
 	UncachedPubMsg string // uncached_pub
-	SavePubMsg string // cached_pub
+	SavePubMsg     string // cached_pub
 }
 
 func TGetUrls(testserver *httptest.Server) TURLs {
 	addr := testserver.Listener.Addr().String()
 	return TURLs{
-		Websocket:  fmt.Sprintf("ws://%s/", addr),
-		Origin:     fmt.Sprintf("http://%s", addr),
-		UncachedPubMsg:     fmt.Sprintf("http://%s/uncached_pub", addr),
-		SavePubMsg: fmt.Sprintf("http://%s/cached_pub", addr),
+		Websocket:      fmt.Sprintf("ws://%s/", addr),
+		Origin:         fmt.Sprintf("http://%s", addr),
+		UncachedPubMsg: fmt.Sprintf("http://%s/uncached_pub", addr),
+		SavePubMsg:     fmt.Sprintf("http://%s/cached_pub", addr),
 	}
 }
 
