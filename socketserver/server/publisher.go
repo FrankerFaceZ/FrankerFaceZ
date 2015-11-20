@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"strings"
 )
 
 type PushCommandCacheInfo struct {
@@ -260,6 +261,12 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	} else if cacheinfo.Caching == CacheTypePersistent && cacheinfo.Target == MsgTargetTypeChat {
 		SaveLastMessage(PersistentLastMessages, &PersistentLSMLock, cmd, channel, timestamp, json, deleteMode)
 		count = PublishToChannel(channel, msg)
+	} else if cacheinfo.Caching == CacheTypeLastOnly && cacheinfo.Target == MsgTargetTypeMultichat {
+		channels := strings.Split(channel, ",")
+		for _, channel := range channels {
+			SaveLastMessage(CachedLastMessages, &CachedLSMLock, cmd, channel, timestamp, json, deleteMode)
+		}
+		count = PublishToMultiple(channels, msg)
 	}
 
 	w.Write([]byte(strconv.Itoa(count)))

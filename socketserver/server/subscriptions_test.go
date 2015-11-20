@@ -93,7 +93,31 @@ func TSealForSavePubMsg(tb testing.TB, cmd Command, channel string, arguments in
 	return sealed, nil
 }
 
-func TCheckResponse(tb testing.TB, resp *http.Response, expected string) bool {
+func TSealForUncachedPubMsg(tb testing.TB, cmd Command, channel string, arguments interface{}, scope MessageTargetType, deleteMode bool) (url.Values, error) {
+	form := url.Values{}
+	form.Set("cmd", string(cmd))
+	argsBytes, err := json.Marshal(arguments)
+	if err != nil {
+		tb.Error(err)
+		return nil, err
+	}
+	form.Set("args", string(argsBytes))
+	form.Set("channel", channel)
+	if deleteMode {
+		form.Set("delete", "1")
+	}
+	form.Set("time", time.Now().Format(time.UnixDate))
+	form.Set("scope", scope.String())
+
+	sealed, err := SealRequest(form)
+	if err != nil {
+		tb.Error(err)
+		return nil, err
+	}
+	return sealed, nil
+}
+
+func TCheckResponse(tb testing.TB, resp *http.Response, expected string, desc string) bool {
 	var failed bool
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -110,7 +134,7 @@ func TCheckResponse(tb testing.TB, resp *http.Response, expected string) bool {
 	}
 
 	if respStr != expected {
-		tb.Errorf("Got wrong response from server. Expected: '%s' Got: '%s'", expected, respStr)
+		tb.Errorf("Got wrong response from server. %s Expected: '%s' Got: '%s'", desc, expected, respStr)
 		failed = true
 	}
 	return !failed
@@ -119,8 +143,8 @@ func TCheckResponse(tb testing.TB, resp *http.Response, expected string) bool {
 type TURLs struct {
 	Websocket  string
 	Origin     string
-	PubMsg     string
-	SavePubMsg string // update_and_pub
+	UncachedPubMsg string // uncached_pub
+	SavePubMsg string // cached_pub
 }
 
 func TGetUrls(testserver *httptest.Server) TURLs {
@@ -128,7 +152,7 @@ func TGetUrls(testserver *httptest.Server) TURLs {
 	return TURLs{
 		Websocket:  fmt.Sprintf("ws://%s/", addr),
 		Origin:     fmt.Sprintf("http://%s", addr),
-		PubMsg:     fmt.Sprintf("http://%s/uncached_pub", addr),
+		UncachedPubMsg:     fmt.Sprintf("http://%s/uncached_pub", addr),
 		SavePubMsg: fmt.Sprintf("http://%s/cached_pub", addr),
 	}
 }
@@ -191,8 +215,8 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	var TestData4 = []interface{}{"str1", "str2", "str3"}
 
 	S2CCommandsCacheInfo[TestCommandChan] = PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeChat}
-	S2CCommandsCacheInfo[TestCommandMulti] = PushCommandCacheInfo{CacheTypeTimestamps, MsgTargetTypeMultichat}
-	S2CCommandsCacheInfo[TestCommandGlobal] = PushCommandCacheInfo{CacheTypeTimestamps, MsgTargetTypeGlobal}
+	S2CCommandsCacheInfo[TestCommandMulti] = PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeMultichat}
+	S2CCommandsCacheInfo[TestCommandGlobal] = PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeGlobal}
 
 	var server *httptest.Server
 	var urls TURLs
@@ -214,7 +238,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	// msg 1: ch1
 	// msg 2: ch2, ch3
 	// msg 3: chEmpty
-	// msg 4: global
+	// msg 4: global uncached
 
 	// Client 1
 	conn, resp, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
@@ -309,7 +333,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 		t.FailNow()
 	}
 	resp, err = http.PostForm(urls.SavePubMsg, form)
-	if !TCheckResponse(t, resp, strconv.Itoa(2)) {
+	if !TCheckResponse(t, resp, strconv.Itoa(2), "pub msg 1") {
 		t.FailNow()
 	}
 
@@ -320,7 +344,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 		t.FailNow()
 	}
 	resp, err = http.PostForm(urls.SavePubMsg, form)
-	if !TCheckResponse(t, resp, strconv.Itoa(2)) {
+	if !TCheckResponse(t, resp, strconv.Itoa(2), "pub msg 2") {
 		t.FailNow()
 	}
 
@@ -331,18 +355,18 @@ func TestSubscriptionAndPublish(t *testing.T) {
 		t.FailNow()
 	}
 	resp, err = http.PostForm(urls.SavePubMsg, form)
-	if !TCheckResponse(t, resp, strconv.Itoa(0)) {
+	if !TCheckResponse(t, resp, strconv.Itoa(0), "pub msg 3") {
 		t.FailNow()
 	}
 
 	// Publish message 4 - should go to clients 1, 2, 3
 
-	form, err = TSealForSavePubMsg(t, TestCommandGlobal, "", TestData4, false)
+	form, err = TSealForUncachedPubMsg(t, TestCommandGlobal, "", TestData4, MsgTargetTypeGlobal, false)
 	if err != nil {
 		t.FailNow()
 	}
-	resp, err = http.PostForm(urls.SavePubMsg, form)
-	if !TCheckResponse(t, resp, strconv.Itoa(3)) {
+	resp, err = http.PostForm(urls.UncachedPubMsg, form)
+	if !TCheckResponse(t, resp, strconv.Itoa(3), "pub msg 4") {
 		t.FailNow()
 	}
 
