@@ -19,9 +19,9 @@ func commandLineConsole() {
 	})
 
 	shell.Register("clientcount", func(args ...string) (string, error) {
-		server.GlobalSubscriptionInfo.RLock()
-		count := len(server.GlobalSubscriptionInfo.Members)
-		server.GlobalSubscriptionInfo.RUnlock()
+		server.GlobalSubscriptionLock.RLock()
+		count := len(server.GlobalSubscriptionInfo)
+		server.GlobalSubscriptionLock.RUnlock()
 		return fmt.Sprintln(count, "clients connected"), nil
 	})
 
