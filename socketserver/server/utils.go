@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"golang.org/x/crypto/nacl/box"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -70,9 +69,11 @@ func UnsealRequest(form url.Values) (url.Values, error) {
 	dec := base64.NewDecoder(base64.URLEncoding, strings.NewReader(nonceString))
 	count, err := dec.Read(nonce[:])
 	if err != nil {
+		Statistics.BackendVerifyFails++
 		return nil, err
 	}
 	if count != 24 {
+		Statistics.BackendVerifyFails++
 		return nil, ErrorShortNonce
 	}
 
@@ -83,13 +84,13 @@ func UnsealRequest(form url.Values) (url.Values, error) {
 
 	message, ok := box.OpenAfterPrecomputation(nil, cipherBuffer.Bytes(), &nonce, &backendSharedKey)
 	if !ok {
+		Statistics.BackendVerifyFails++
 		return nil, ErrorInvalidSignature
 	}
 
 	retValues, err := url.ParseQuery(string(message))
 	if err != nil {
-		// Assume that the signature was accidentally correct but the contents were garbage
-		log.Println("Error unsealing request:", err)
+		Statistics.BackendVerifyFails++
 		return nil, ErrorInvalidSignature
 	}
 

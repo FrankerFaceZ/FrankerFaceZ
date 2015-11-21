@@ -46,6 +46,8 @@ type StatsData struct {
 
 	EmotesReportedTotal uint64
 
+	BackendVerifyFails uint64
+
 	// DisconnectReasons is at the bottom because it has indeterminate size
 	DisconnectReasons map[string]uint64
 }
@@ -57,7 +59,7 @@ type StatsData struct {
 // I don't really care.
 var Statistics = newStatsData()
 
-const StatsDataVersion = 4
+const StatsDataVersion = 5
 const pageSize = 4096
 
 var cpuUsage struct {
