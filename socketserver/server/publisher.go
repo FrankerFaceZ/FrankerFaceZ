@@ -96,13 +96,17 @@ func DumpBacklogData() {
 // This will only send data for CacheTypePersistent and CacheTypeLastOnly because those do not involve timestamps.
 func SendBacklogForNewClient(client *ClientInfo) {
 	client.Mutex.Lock() // reading CurrentChannels
+	curChannels := make([]string, len(client.CurrentChannels))
+	copy(curChannels, client.CurrentChannels)
+	client.Mutex.Unlock()
+
 	PersistentLSMLock.RLock()
 	for _, cmd := range GetCommandsOfType(PushCommandCacheInfo{CacheTypePersistent, MsgTargetTypeChat}) {
 		chanMap := CachedLastMessages[cmd]
 		if chanMap == nil {
 			continue
 		}
-		for _, channel := range client.CurrentChannels {
+		for _, channel := range curChannels {
 			msg, ok := chanMap[channel]
 			if ok {
 				msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
@@ -119,7 +123,7 @@ func SendBacklogForNewClient(client *ClientInfo) {
 		if chanMap == nil {
 			continue
 		}
-		for _, channel := range client.CurrentChannels {
+		for _, channel := range curChannels {
 			msg, ok := chanMap[channel]
 			if ok {
 				msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
@@ -129,7 +133,6 @@ func SendBacklogForNewClient(client *ClientInfo) {
 		}
 	}
 	CachedLSMLock.RUnlock()
-	client.Mutex.Unlock()
 }
 
 // insertionSort implements insertion sort.

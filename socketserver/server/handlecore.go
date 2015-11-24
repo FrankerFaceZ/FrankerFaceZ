@@ -204,7 +204,7 @@ var CloseRebalance = websocket.CloseError{Code: websocket.CloseGoingAway, Text: 
 var CloseGotBinaryMessage = websocket.CloseError{Code: websocket.CloseUnsupportedData, Text: "got binary packet"}
 
 // CloseTimedOut is the termination reason when the client fails to send or respond to ping frames.
-var CloseTimedOut = websocket.CloseError{Code: websocket.CloseNoStatusReceived, Text: "no ping replies for 5 minutes"}
+var CloseTimedOut = websocket.CloseError{Code: 3003, Text: "no ping replies for 5 minutes"}
 
 // CloseTooManyBufferedMessages is the termination reason when the sending thread buffers too many messages.
 var CloseTooManyBufferedMessages = websocket.CloseError{Code: websocket.CloseMessageTooBig, Text: "too many pending messages"}
@@ -216,7 +216,7 @@ var CloseFirstMessageNotHello = websocket.CloseError{
 }
 
 var CloseNonUTF8Data = websocket.CloseError{
-	Code: 4001,
+	Code: websocket.CloseUnsupportedData,
 	Text: "Non UTF8 data recieved. Network corruption likely.",
 }
 
