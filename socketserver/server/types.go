@@ -15,6 +15,7 @@ type ConfigFile struct {
 	// Numeric server id known to the backend
 	ServerID   int
 	ListenAddr string
+	SSLListenAddr string
 	// Hostname of the socket server
 	SocketOrigin string
 	// URL to the backend server

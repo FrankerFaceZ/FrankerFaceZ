@@ -43,29 +43,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpServer := &http.Server{
-		Addr: conf.ListenAddr,
-	}
-
 	//	logFile, err := os.OpenFile("output.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	//	if err != nil {
 	//		log.Fatal("Could not create logfile: ", err)
 	//	}
 
-	server.SetupServerAndHandle(conf, nil)
+	server.SetupServerAndHandle(conf, http.DefaultServeMux)
 	server.SetBuildStamp(BuildTime, BuildHash)
 
 	go commandLineConsole()
 
 	if conf.UseSSL {
 		go func() {
-			if err := httpServer.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile); err != nil {
+			if err := http.ListenAndServeTLS(conf.SSLListenAddr, conf.SSLCertificateFile, conf.SSLKeyFile, http.DefaultServeMux); err != nil {
 				log.Fatal("ListenAndServeTLS: ", err)
 			}
 		}()
 	}
 
-	if err = httpServer.ListenAndServe(); err != nil {
+	if err = http.ListenAndServe(conf.ListenAddr, http.DefaultServeMux); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
