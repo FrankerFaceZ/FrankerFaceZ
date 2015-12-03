@@ -306,76 +306,8 @@ func RunSocketConnection(conn *websocket.Conn) {
 		return nil
 	})
 
-	var errorChan <-chan error = _errorChan
-	var clientChan <-chan ClientMessage = _clientChan
-	var serverMessageChan <-chan ClientMessage = _serverMessageChan
-
 	// All set up, now enter the work loop
-
-	var closeReason websocket.CloseError
-
-RunLoop:
-	for {
-		select {
-		case err := <-errorChan:
-			if err == io.EOF {
-				closeReason = websocket.CloseError{
-					Code: websocket.CloseGoingAway,
-					Text: err.Error(),
-				}
-			} else if closeMsg, isClose := err.(*websocket.CloseError); isClose {
-				closeReason = *closeMsg
-			} else {
-				closeReason = websocket.CloseError{
-					Code: websocket.CloseInternalServerErr,
-					Text: err.Error(),
-				}
-			}
-			break RunLoop
-
-		case msg := <-clientChan:
-			if client.VersionString == "" && msg.Command != HelloCommand {
-				closeReason = CloseFirstMessageNotHello
-				break RunLoop
-			}
-
-			for _, char := range msg.Command {
-				if char == utf8.RuneError {
-					closeReason = CloseNonUTF8Data
-					break RunLoop
-				}
-			}
-
-			DispatchC2SCommand(conn, &client, msg)
-
-		case msg := <-serverMessageChan:
-			if len(serverMessageChan) > sendMessageAbortLength {
-				closeReason = CloseTooManyBufferedMessages
-				break RunLoop
-			}
-			if cls, ok := msg.Arguments.(*websocket.CloseError); ok {
-				closeReason = *cls
-				break RunLoop
-			}
-			SendMessage(conn, msg)
-
-		case <-time.After(1 * time.Minute):
-			client.Mutex.Lock()
-			client.pingCount++
-			tooManyPings := client.pingCount == 5
-			client.Mutex.Unlock()
-			if tooManyPings {
-				closeReason = CloseTimedOut
-				break RunLoop
-			} else {
-				conn.WriteControl(websocket.PingMessage, []byte(strconv.FormatInt(time.Now().Unix(), 10)), getDeadline())
-			}
-
-		case <-StopAcceptingConnectionsCh:
-			closeReason = CloseGoingAway
-			break RunLoop
-		}
-	}
+	closeReason := runSocketWriter(_errorChan, _clientChan, _serverMessageChan, conn, &client)
 
 	// Exit
 	CloseConnection(conn, closeReason)
@@ -404,6 +336,63 @@ RunLoop:
 		// Don't perform high contention operations when server is closing
 		atomic.AddUint64(&Statistics.ClientDisconnectsTotal, 1)
 		atomic.AddUint64(&Statistics.CurrentClientCount, ^uint64(0))
+	}
+}
+
+func runSocketWriter(errorChan <-chan error, clientChan <-chan ClientMessage, serverMessageChan <-chan ClientMessage, conn *websocket.Conn, client *ClientInfo) websocket.CloseError {
+	for {
+		select {
+		case err := <-errorChan:
+			if err == io.EOF {
+				return websocket.CloseError{
+					Code: websocket.CloseGoingAway,
+					Text: err.Error(),
+				}
+			} else if closeMsg, isClose := err.(*websocket.CloseError); isClose {
+				return *closeMsg
+			} else {
+				return websocket.CloseError{
+					Code: websocket.CloseInternalServerErr,
+					Text: err.Error(),
+				}
+			}
+
+		case msg := <-clientChan:
+			if client.VersionString == "" && msg.Command != HelloCommand {
+				return CloseFirstMessageNotHello
+			}
+
+			for _, char := range msg.Command {
+				if char == utf8.RuneError {
+					return CloseNonUTF8Data
+				}
+			}
+
+			DispatchC2SCommand(conn, client, msg)
+
+		case msg := <-serverMessageChan:
+			if len(serverMessageChan) > sendMessageAbortLength {
+				return CloseTooManyBufferedMessages
+			}
+			if cls, ok := msg.Arguments.(*websocket.CloseError); ok {
+				return *cls
+			}
+			SendMessage(conn, msg)
+
+		case <-time.After(1 * time.Minute):
+			client.Mutex.Lock()
+			client.pingCount++
+			tooManyPings := client.pingCount == 5
+			client.Mutex.Unlock()
+			if tooManyPings {
+				return CloseTimedOut
+			} else {
+				conn.WriteControl(websocket.PingMessage, []byte(strconv.FormatInt(time.Now().Unix(), 10)), getDeadline())
+			}
+
+		case <-StopAcceptingConnectionsCh:
+			return CloseGoingAway
+		}
 	}
 }
 
