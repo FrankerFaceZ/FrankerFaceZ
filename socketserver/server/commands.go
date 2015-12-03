@@ -386,7 +386,7 @@ type bunchSubscriberList struct {
 	Members []bunchSubscriber
 }
 
-type CacheStatus byte
+type cacheStatus byte
 
 const (
 	CacheStatusNotFound = iota
@@ -435,36 +435,38 @@ func bunchCacheJanitor() {
 	}
 }
 
+var emptyCachedBunchedResponse cachedBunchedResponse
+
+func bunchGetCacheStatus(br bunchedRequest, client *ClientInfo) (cacheStatus, cachedBunchedResponse) {
+	bunchCacheLock.RLock()
+	defer bunchCacheLock.RUnlock()
+	cachedResponse, ok := bunchCache[br]
+	if ok && cachedResponse.Timestamp.After(time.Now().Add(-5*time.Minute)) {
+		return CacheStatusFound, cachedResponse
+	} else if ok {
+		return CacheStatusExpired, emptyCachedBunchedResponse
+	}
+	return CacheStatusNotFound, emptyCachedBunchedResponse
+}
+
 // C2SHandleBunchedCommand handles C2S Commands such as `get_link`.
 // It makes a request to the backend server for the data, but any other requests coming in while the first is pending also get the responses from the first one.
 // Additionally, results are cached.
 func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+	// FIXME(riking): Function is too complex
+
 	br := bunchedRequestFromCM(&msg)
 
-	cacheStatus := func() byte {
-		bunchCacheLock.RLock()
-		defer bunchCacheLock.RUnlock()
-		bresp, ok := bunchCache[br]
-		if ok && bresp.Timestamp.After(time.Now().Add(-5*time.Minute)) {
-			client.MsgChannelKeepalive.Add(1)
-			go func() {
-				var rmsg ClientMessage
-				rmsg.Command = SuccessCommand
-				rmsg.MessageID = msg.MessageID
-				rmsg.origArguments = bresp.Response
-				rmsg.parseOrigArguments()
-				client.MessageChannel <- rmsg
-				client.MsgChannelKeepalive.Done()
-			}()
-			return CacheStatusFound
-		} else if ok {
-			return CacheStatusExpired
-		}
-		return CacheStatusNotFound
-	}()
+	cacheStatus, cachedResponse := bunchGetCacheStatus(br, client)
 
 	if cacheStatus == CacheStatusFound {
-		return ClientMessage{Command: AsyncResponseCommand}, nil
+		var response ClientMessage
+		response.Command = SuccessCommand
+		response.MessageID = msg.MessageID
+		response.origArguments = cachedResponse.Response
+		response.parseOrigArguments()
+
+		return response, nil
 	} else if cacheStatus == CacheStatusExpired {
 		// Wake up the lazy janitor
 		bunchCacheCleanupSignal.Signal()

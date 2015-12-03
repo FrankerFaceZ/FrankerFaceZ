@@ -10,15 +10,15 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 	"unicode/utf8"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -112,7 +112,7 @@ func shutdownHandler() {
 	StopAcceptingConnections = true
 	close(StopAcceptingConnectionsCh)
 
-	time.Sleep(1*time.Second)
+	time.Sleep(1 * time.Second)
 	os.Exit(0)
 }
 

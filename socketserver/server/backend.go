@@ -269,7 +269,7 @@ func GenerateKeys(outputFile, serverID, theirPublicStr string) {
 	var err error
 	output := ConfigFile{
 		ListenAddr:      "0.0.0.0:8001",
-		SSLListenAddr:      "0.0.0.0:443",
+		SSLListenAddr:   "0.0.0.0:443",
 		SocketOrigin:    "localhost:8001",
 		BackendURL:      "http://localhost:8002/ffz",
 		MinMemoryKBytes: defaultMinMemoryKB,

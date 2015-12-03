@@ -13,8 +13,8 @@ const CryptoBoxKeyLength = 32
 
 type ConfigFile struct {
 	// Numeric server id known to the backend
-	ServerID   int
-	ListenAddr string
+	ServerID      int
+	ListenAddr    string
 	SSLListenAddr string
 	// Hostname of the socket server
 	SocketOrigin string
