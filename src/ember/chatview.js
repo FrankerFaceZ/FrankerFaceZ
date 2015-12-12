@@ -258,24 +258,45 @@ FFZ.settings_info.chat_history = {
 	};
 
 FFZ.settings_info.group_tabs = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Rooms with Recent Activity",
+		2: "Rooms with Recent Mentions",
+		3: "All Rooms"
+	},
+
+	value: 0,
+
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		else if ( val === true )
+			return 3;
+		else if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
 
 	no_bttv: true,
 
-	category: "Chat Moderation",
-	name: "Chat Room Tabs <span>Beta</span>",
-	help: "Enhanced UI for switching the current chat room and noticing new messages.",
+	category: "Chat Appearance",
+	name: "Chat Room Tabs",
+	help: "Display tabs for chat rooms with recent activity at the top of the chat window for more convenient chatting.",
 
 	on_update: function(val) {
-			var enabled = !this.has_bttv && val;
-			if ( ! this._chatv || enabled === this._group_tabs_state )
+			if ( this.has_bttv || ! this._chatv )
 				return;
 
-			if ( enabled )
-				this._chatv.ffzEnableTabs();
+			if ( val )
+				if ( this._chatv._ffz_tabs )
+					this._chatv.ffzRebuildTabs();
+				else
+					this._chatv.ffzEnableTabs();
 			else
 				this._chatv.ffzDisableTabs();
+
+			this._chatv.ffzUpdateMenuUnread();
 		}
 	};
 
@@ -307,7 +328,7 @@ FFZ.prototype.setup_chatview = function() {
 	if ( Chat ) {
 		Chat.reopen({
 			ffzUpdateChannels: function() {
-				if ( ! f._chatv )
+				if ( ! f._chatv || f.has_bttv )
 					return;
 
 				f._chatv.ffzRebuildMenu();
@@ -316,21 +337,72 @@ FFZ.prototype.setup_chatview = function() {
 
 			}.observes("currentChannelRoom", "connectedPrivateGroupRooms"),
 
+			ffzUpdateInvites: function() {
+				if ( ! f._chatv || f.has_bttv )
+					return;
+
+				f._chatv.ffzUpdateMenuUnread();
+			}.observes("invitedPrivateGroupRooms"),
+
+			notificationsCount: function() {
+				if ( ! f._chatv || f.has_bttv )
+					return this._super();
+
+				var total = this.get('invitedPrivateGroupRooms.length') || 0;
+
+				if ( ! f._chatv._ffz_tabs )
+					for(var room_id in f._chatv.ffz_unread)
+						if ( f._chatv.ffz_unread[room_id] )
+							total++;
+
+				return total;
+			}.property("currentRoom", "currentChannelRoom", "currentChannelRoom.unreadCount", "invitedPrivateGroupRooms.length", "connectedPrivateGroupRooms.@each.unreadCount"),
+
+			_kickUserFromRoomNoLongerInList: function() {
+				// Remove an unread notice for any missing channels.
+				if ( f._chatv ) {
+					var updated = false;
+					for(var room_id in f._chatv.ffz_unread)
+						if ( f._chatv.ffz_unread[room_id] && (!f.rooms[room_id] || !f.rooms[room_id].room) ) {
+							f._chatv.ffz_unread[room_id] = false;
+							updated = true;
+						}
+
+					if ( updated )
+						f._chatv.ffzUpdateMenuUnread();
+				}
+
+				var room = this.get("currentRoom"),
+					room_id = room && room.get('id'),
+					channel_room = this.get("currentChannelRoom"),
+					is_group = room && _.contains(this.get("privateGroupRooms.content") || [], room);
+
+				if ( room === channel_room || is_group || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
+					return;
+
+				this.blurRoom();
+
+				if ( ! this.get("showList") )
+					this.send("toggleMode");
+
+			}.observes("privateGroupRooms.@each"),
+
 			removeCurrentChannelRoom: function() {
-				if ( ! f.settings.group_tabs || f.has_bttv )
+				if ( f.has_bttv )
 					return this._super();
 
 				var room = this.get("currentChannelRoom"),
 					room_id = room && room.get('id'),
 					user = f.get_user();
 
-				if ( ! f.settings.pinned_rooms || f.settings.pinned_rooms.indexOf(room_id) === -1 ) {
+				// Don't clean up pinned rooms or the current host target.
+				if ( !((f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1)) ) {
 					if ( room === this.get("currentRoom") )
 						this.blurRoom();
 
 					// Don't destroy it if it's the user's room.
 					if ( room && user && user.login !== room_id )
-						room.destroy();
+						room.ffzScheduleDestroy();
 				}
 
 				this.set("currentChannelRoom", void 0);
@@ -351,11 +423,12 @@ FFZ.prototype.setup_chatview = function() {
 	} catch(err) { }
 
 	// Modify all existing Chat views.
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		if ( ! views.hasOwnProperty(key) )
 			continue;
 
-		var view = Ember.View.views[key];
+		var view = views[key];
 		if ( !(view instanceof Chat) )
 			continue;
 
@@ -417,10 +490,16 @@ FFZ.prototype._modify_cview = function(view) {
 			this.$('.textarea-contain').append(f.build_ui_link(this));
 			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
-			if ( !f.has_bttv && f.settings.group_tabs )
-				this.ffzEnableTabs();
+			this.ffz_unread = {};
 
-			this.ffzRebuildMenu();
+			if ( ! f.has_bttv ) {
+				if ( f.settings.group_tabs )
+					this.ffzEnableTabs();
+
+				this.ffzRebuildMenu();
+			}
+
+			this.ffz_pruner = setInterval(this.ffzPruneTabs.bind(this), 10000);
 
 			setTimeout(function() {
 				if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs )
@@ -435,11 +514,44 @@ FFZ.prototype._modify_cview = function(view) {
 			if ( f._chatv === this )
 				f._chatv = null;
 
+			if ( this.ffz_pruner ) {
+				clearInterval(this.ffz_pruner);
+				this.ffz_pruner = null;
+			}
+
 			this.$('.textarea-contain .ffz-ui-toggle').remove();
 
 			if ( f.settings.group_tabs )
 				this.ffzDisableTabs();
+
+			this.ffzTeardownMenu();
+			this.ffzUnloadHost();
 		},
+
+
+		ffzPruneTabs: function() {
+			if ( ! this._ffz_tabs )
+				return;
+
+			var elements = this._ffz_tabs.querySelectorAll('.ffz-chat-tab:not(.hidden):not(.active)'),
+				update_height = false;
+
+			for(var i=0; i < elements.length; i++) {
+				var el = elements[i],
+					room_id = el.getAttribute('data-room'),
+					was_hidden = el.classList.contains('hidden'),
+					is_hidden = ! this.ffzTabVisible(room_id);
+
+				if ( was_hidden !== is_hidden ) {
+					el.classList.toggle('hidden', is_hidden);
+					update_height = true;
+				}
+			}
+
+			if ( update_height )
+				this.$('.chat-room').css('top', this._ffz_tabs.offsetHeight + "px");
+		},
+
 
 		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
 			f.update_ui_link();
@@ -448,67 +560,228 @@ FFZ.prototype._modify_cview = function(view) {
 			if ( f._mod_card )
 				f._mod_card.send('close');
 
-			var room = this.get('controller.currentRoom'), rows;
-			room && room.resetUnreadCount();
+			var room = this.get('controller.currentRoom'),
+				room_id = room && room.get('id'),
+				was_unread = room_id && this.ffz_unread[room_id],
+				update_height = false;
 
-			if ( room && room._ffz_was_unread ) {
-				room._ffz_was_unread = false;
-
-				var el = this.get('element'),
-					unread_display = el && el.querySelector('#ffz-group-tabs .button .notifications'),
-					unread_count = unread_display ? parseInt(unread_display.textContent) : 0;
-
-				unread_count--;
-				if ( unread_display )
-					unread_display.textContent = unread_count || '';
+			if ( room ) {
+				room.resetUnreadCount();
+				room.ffz_last_view = Date.now();
 			}
 
-			if ( this._ffz_chan_table ) {
-				rows = jQuery(this._ffz_chan_table);
-				rows.children('.ffz-room-row').removeClass('active');
-			}
 
-			if ( this._ffz_group_table ) {
-				rows = jQuery(this._ffz_group_table);
-				rows.children('.ffz-room-row').removeClass('active');
-			}
+			if ( room && room._ffz_tab ) {
+				var was_hidden = room._ffz_tab.classList.contains('hidden'),
+					is_hidden = ! this.ffzTabVisible(room_id);
 
-			if ( !f.has_bttv && f.settings.group_tabs && this._ffz_tabs ) {
-				var tabs = jQuery(this._ffz_tabs);
-				tabs.children('.ffz-chat-tab').removeClass('active');
-
-				if ( room && room._ffz_tab ) {
-					room._ffz_tab.classList.remove('tab-mentioned');
-					room._ffz_tab.classList.remove('hidden');
-					room._ffz_tab.classList.add('active');
-					var sp = room._ffz_tab.querySelector('span');
-					if ( sp )
-						sp.innerHTML = '';
+				if ( was_hidden !== is_hidden ) {
+					room._ffz_tab.classList.toggle('hidden', is_hidden);
+					update_height = true;
 				}
+			}
 
-				if ( room && room._ffz_row ) {
-					room._ffz_row.classList.remove('row-mentioned');
-					room._ffz_row.classList.remove('hidden');
-					room._ffz_row.classList.add('active');
-					var sp = room._ffz_row.querySelector('span');
-					if ( sp )
-						sp.innerHTML = '';
-				}
+			if ( was_unread && room_id ) {
+				this.ffz_unread[room_id] = false;
+				this.ffzUpdateMenuUnread();
+			}
+
+			if ( this._ffz_chan_table )
+				jQuery('.ffz-room-row.active', this._ffz_chan_table).removeClass('active');
+
+			if ( this._ffz_group_table )
+				jQuery('.ffz-room-row.active', this._ffz_group_table).removeClass('active');
+
+			if ( this._ffz_tabs ) {
+				jQuery('.ffz-chat-tab.active', this._ffz_tabs).removeClass('active');
 
 				// Invite Link
 				var can_invite = room && room.get('canInvite');
-				this._ffz_invite && this._ffz_invite.classList.toggle('hidden', !can_invite);
-				this.set('controller.showInviteUser', can_invite && this.get('controller.showInviteUser'))
+				if ( this._ffz_invite )
+					this._ffz_invite.classList.toggle('hidden', ! can_invite);
 
-				// Now, adjust the chat-room.
-				this.$('.chat-room').css('top', this._ffz_tabs.offsetHeight + "px");
+				this.set('controller.showInviteUser', can_invite && this.get('controller.showInviteUser'));
+				update_height = true;
 			}
+
+			if ( room && room._ffz_tab ) {
+				room._ffz_tab.classList.remove('tab-mentioned');
+				room._ffz_tab.classList.add('active');
+				var sp = room._ffz_tab.querySelector('span');
+				if ( sp )
+					sp.innerHTML = '';
+			}
+
+			if ( room && room._ffz_row ) {
+				room._ffz_row.classList.remove('row-mentioned');
+				room._ffz_row.classList.add('active');
+				var sp = room._ffz_row.querySelector('span');
+				if ( sp )
+					sp.innerHTML = '';
+			}
+
+			if ( update_height )
+				this.$('.chat-room').css('top', this._ffz_tabs.offsetHeight + "px");
 		}),
 
-		// Better Menu
+
+		// Hosted Channel Chat
+		ffzUnloadHost: function() {
+			if ( ! this._ffz_host )
+				return;
+
+			if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 ) {
+				if ( this.get('controller.currentRoom') === this._ffz_host_room )
+					this.get('controller').blurRoom();
+
+				// Schedule the room to be destroyed. This is after a short
+				// delay to make sure we aren't just loading the room in a
+				// new way.
+				this._ffz_host_room.ffzScheduleDestroy();
+			}
+
+			this._ffz_host = null;
+			this._ffz_host_room = null;
+		},
+
+		ffzUpdateHost: function() {
+			var Channel = App.__container__.lookup('controller:channel'),
+				Room = App.__container__.resolve('model:room'),
+				target = Room && Channel && Channel.get('hostModeTarget'),
+
+				updated = false;
+
+			if ( f.has_bttv )
+				return;
+
+			if ( target ) {
+				var target_id = target.get('id');
+				if ( this._ffz_host !== target_id ) {
+					this.ffzUnloadHost();
+
+					this._ffz_host = target_id;
+					this._ffz_host_room = Room.findOne(target_id);
+					updated = true;
+				}
+
+			} else if ( this._ffz_host ) {
+				this.ffzUnloadHost();
+				updated = true;
+			}
+
+			if ( updated ) {
+				this.ffzRebuildMenu();
+				this.ffzRebuildTabs();
+			}
+		},
+
+
+		// Unread Handling
+
+		ffzUpdateMenuUnread: function() {
+			var el = this.get('element'),
+				controller = this.get('controller'),
+				unread_display = el && el.querySelector('#ffz-group-tabs .button .notifications');
+
+			Ember.propertyDidChange(controller, 'notificationsCount');
+
+			if ( unread_display )
+				unread_display.innerHTML = utils.format_unread(controller.get('notificationsCount'));
+		},
+
+
+		ffzUpdateUnread: function(target_id) {
+			var current_id = this.get('controller.currentRoom.id');
+
+			if ( target_id === current_id )
+				// We don't care about updates to the current room.
+				return;
+
+			var to_update,
+				update_unread = false,
+				update_height = false;
+
+			// If we DO have a room ID, only update that room.
+			if ( target_id )
+				to_update = [target_id];
+			else
+				to_update = Object.keys(f.rooms);
+
+			for(var i=0; i < to_update.length; i++) {
+				var room_id = to_update[i],
+					room = f.rooms[room_id] && f.rooms[room_id].room,
+					row = room && room._ffz_row,
+					tab = room && room._ffz_tab,
+
+					unread_count = room_id === current_id ? 0 : room.get('unreadCount'),
+					is_unread = unread_count > 0,
+					unread = utils.format_unread(unread_count);
+
+
+				if ( this.ffz_unread[room_id] !== is_unread ) {
+					this.ffz_unread[room_id] = is_unread;
+					update_unread = true;
+				}
+
+				if ( row ) {
+					var sp = row.querySelector('span');
+					if ( sp )
+						sp.innerHTML = unread;
+				}
+
+				if ( tab ) {
+					var was_hidden = tab.classList.contains('hidden'),
+						is_hidden = ! this.ffzTabVisible(room_id),
+						sp = tab.querySelector('span');
+
+					if ( was_hidden !== is_hidden ) {
+						tab.classList.toggle('hidden', is_hidden);
+						update_height = true;
+					}
+
+					if ( sp )
+						sp.innerHTML = unread;
+				}
+			}
+
+			if ( update_height )
+				this.$('.chat-room').css('top', this._ffz_tabs.offsetHeight + "px");
+
+			if ( update_unread )
+				this.ffzUpdateMenuUnread();
+		},
+
+
+		// Menu Rendering
+
+		ffzTeardownMenu: function() {
+			var el = this.get('element'),
+				room_list = el && el.querySelector('.chat-rooms .tse-content'),
+
+				chan_table = room_list && room_list.querySelector('#ffz-channel-table'),
+				group_table = room_list && room_list.querySelector('#ffz-group-table');
+
+			if ( chan_table )
+				chan_table.parentElement.removeChild(chan_table);
+
+			if ( group_table )
+				group_table.parentElement.removeChild(group_table);
+
+			this._ffz_chan_table = null;
+			this._ffz_group_table = null;
+
+			if ( room_list && room_list.classList.contains('ffz-room-list') ) {
+				room_list.classList.remove('ffz-room-list');
+				jQuery('.ffz', room_list).removeClass('ffz');
+			}
+
+			for(var room_id in f.rooms)
+				if ( f.rooms[room_id] && f.rooms[room_id].room && f.rooms[room_id].room._ffz_row )
+					f.rooms[room_id].room._ffz_row = null;
+		},
 
 		ffzRebuildMenu: function() {
-			/*var el = this.get('element'),
+			var el = this.get('element'),
 				room_list = el && el.querySelector('.chat-rooms .tse-content');
 
 			if ( ! room_list )
@@ -530,40 +803,48 @@ FFZ.prototype._modify_cview = function(view) {
 
 
 			// Channel Table
-			var t = this,
+			var view = this,
 				chan_table = this._ffz_chan_table || room_list.querySelector('#ffz-channel-table tbody');
 
 			if ( ! chan_table ) {
 				var tbl = document.createElement('table');
-				tbl.setAttribute('cellspacing', 0);
+				tbl.setAttribute('cellspacing', '0');
 				tbl.id = 'ffz-channel-table';
 				tbl.className = 'ffz';
-				tbl.innerHTML = '<thead><tr><th colspan="2">Channels</th><th class="ffz-row-switch">Pin</th></tr></thead><tbody></tbody>';
+				tbl.innerHTML = '<thead><tr><th colspan="2">Channels</th><th class="ffz-row-switch" title="Pinning a channel makes it so you always join that channel\'s chat, no matter where you are on Twitch.">Pin</th></tr></thead><tbody></tbody>';
 				room_list.insertBefore(tbl, room_list.firstChild);
 
-				chan_table = this._ffz_chan_table = tbl.querySelector('tbody');
-			}
+				jQuery('.ffz-row-switch', tbl).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
 
-			chan_table.innerHTML = '';
+				chan_table = this._ffz_chan_table = tbl.querySelector('tbody');
+
+			} else
+				chan_table.innerHTML = '';
+
 
 			// Current Channel
-			var room = this.get('controller.currentChannelRoom'), row;
+			var room = this.get('controller.currentChannelRoom'),
+				room_id = room && room.get('id'),
+				row;
+
 			if ( room ) {
-				row = this.ffzBuildRow(this, room, true);
+				row = this.ffzBuildRow(room, true);
 				row && chan_table.appendChild(row);
 			}
+
 
 			// Host Target
 			if ( this._ffz_host_room ) {
-				row = this.ffzBuildRow(this, this._ffz_host_room, false, true);
+				row = this.ffzBuildRow(this._ffz_host_room, false, true);
 				row && chan_table.appendChild(row);
 			}
 
+
 			// Pinned Rooms
 			for(var i=0; i < f.settings.pinned_rooms.length; i++) {
-				var room_id = f.settings.pinned_rooms[i];
-				if ( room && room.get('id') !== room_id && this._ffz_host !== room_id && f.rooms[room_id] && f.rooms[room_id].room ) {
-					row = this.ffzBuildRow(this, f.rooms[room_id].room);
+				var pinned_id = f.settings.pinned_rooms[i];
+				if ( room_id !== pinned_id && this._ffz_host !== pinned_id && f.rooms[pinned_id] && f.rooms[pinned_id].room ) {
+					row = this.ffzBuildRow(f.rooms[pinned_id].room);
 					row && chan_table.appendChild(row);
 				}
 			}
@@ -573,7 +854,7 @@ FFZ.prototype._modify_cview = function(view) {
 			var group_table = this._ffz_group_table || room_list.querySelector('#ffz-group-table tbody');
 			if ( ! group_table ) {
 				var tbl = document.createElement('table');
-				tbl.setAttribute('cellspacing', 0);
+				tbl.setAttribute('cellspacing', '0');
 				tbl.id = 'ffz-group-table';
 				tbl.className = 'ffz';
 				tbl.innerHTML = '<thead><tr><th colspan="2">Group Chats</th></tr></thead><tbody></tbody>';
@@ -582,12 +863,12 @@ FFZ.prototype._modify_cview = function(view) {
 				room_list.insertBefore(tbl, before.nextSibling);
 
 				group_table = this._ffz_group_table = tbl.querySelector('tbody');
-			}
 
-			group_table.innerHTML = '';
+			} else
+				group_table.innerHTML = '';
 
 			_.each(this.get('controller.connectedPrivateGroupRooms'), function(room) {
-				var row = t.ffzBuildRow(t, room);
+				var row = view.ffzBuildRow(room);
 				row && group_table && group_table.appendChild(row);
 			});
 
@@ -595,64 +876,67 @@ FFZ.prototype._modify_cview = function(view) {
 			// Change Create Tooltip
 			var create_btn = el.querySelector('.button.create');
 			if ( create_btn )
-				create_btn.title = 'Create a Group Room';*/
+				create_btn.title = 'Create a Group Room';
 		},
 
-		/*ffzBuildRow: function(view, room, current_channel, host_channel) {
-			var row = document.createElement('tr'),
+
+		ffzBuildRow: function(room, current_channel, host_channel) {
+			var view = this,
+
+				row = document.createElement('tr'),
 				icon = document.createElement('td'),
 				name_el = document.createElement('td'),
 
 				btn,
 				toggle_pinned = document.createElement('td'),
 
+				room_id = room.get('id'),
 				group = room.get('isGroupRoom'),
-				current = room === view.get('controller.currentRoom'),
-				unread = utils.format_unread(current ? 0 : room.get('unreadCount')),
+				active_channel = room === this.get('controller.currentRoom'),
+				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount')),
 
-				name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('id'), function(name) {
-					f.log("Name for Row: " + name);
-					unread = utils.format_unread(current ? 0 : room.get('unreadCount'));
+				name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
+					var active_channel = room === view.get('controller.currentRoom');
+					unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
 					name_el.innerHTML = utils.sanitize(name) + ' <span>' + unread + '</span>';
 				}));
 
-			name_el.className = 'ffz-room';
-			name_el.innerHTML = utils.sanitize(name) + ' <span>' + unread + '</span>';
 
-			if ( current_channel ) {
-				icon.innerHTML = constants.CAMERA;
-				icon.title = name_el.title = "Current Channel";
-				icon.className = name_el.className = 'tooltip';
-			} else if ( host_channel ) {
-				icon.innerHTML = constants.EYE;
-				icon.title = name_el.title = "Hosted Channel";
-				icon.className = name_el.className = 'tooltip';
-			}
-
-			toggle_pinned.className = 'ffz-row-switch';
-
-			toggle_pinned.innerHTML = '<a class="switch' + (f.settings.pinned_rooms.indexOf(room.get('id')) !== -1 ? ' active' : '') + '"><span></span></a>';
-
-			row.setAttribute('data-room', room.get('id'));
+			row.setAttribute('data-room', room_id);
 
 			row.className = 'ffz-room-row';
 			row.classList.toggle('current-channel', current_channel);
 			row.classList.toggle('host-channel', host_channel);
 			row.classList.toggle('group-chat', group);
-			row.classList.toggle('active', current);
+			row.classList.toggle('active', active_channel);
+
+			if ( current_channel ) {
+				icon.innerHTML = constants.CAMERA;
+				row.title = "Current Channel";
+				row.classList.add('tooltip');
+
+			} else if ( host_channel ) {
+				icon.innerHTML = constants.EYE;
+				row.title = "Hosted Channel";
+				row.classList.add('tooltip');
+			}
+
+			name_el.className = 'ffz-room';
+			name_el.innerHTML = utils.sanitize(name) + ' <span>' + unread + '</span>';
 
 			row.appendChild(icon);
 			row.appendChild(name_el);
 
+			toggle_pinned.className = 'ffz-row-switch';
+
 			if ( ! group ) {
-				row.appendChild(toggle_pinned);
+				toggle_pinned.innerHTML = '<a class="switch' + (f.settings.pinned_rooms.indexOf(room_id) !== -1 ? ' active' : '') + '"><span></span></a>';
 				btn = toggle_pinned.querySelector('a.switch');
 				btn.addEventListener('click', function(e) {
 					e.preventDefault();
 					e.stopPropagation && e.stopPropagation();
 
-					var room_id = room.get('id'),
-						is_pinned = f.settings.pinned_rooms.indexOf(room_id) !== -1;
+					var is_pinned = f.settings.pinned_rooms.indexOf(room_id) !== -1;
 
 					if ( is_pinned )
 						f._leave_room(room_id);
@@ -667,7 +951,8 @@ FFZ.prototype._modify_cview = function(view) {
 				btn.innerHTML = constants.CLOSE;
 				btn.title = 'Leave Group';
 
-				name_el.appendChild(btn);
+				toggle_pinned.innerHTML = '';
+				toggle_pinned.appendChild(btn);
 
 				btn.addEventListener('click', function(e) {
 					e.preventDefault();
@@ -680,6 +965,8 @@ FFZ.prototype._modify_cview = function(view) {
 				});
 			}
 
+			row.appendChild(toggle_pinned);
+
 			row.addEventListener('click', function() {
 				var controller = view.get('controller');
 				controller.focusRoom(room);
@@ -689,12 +976,13 @@ FFZ.prototype._modify_cview = function(view) {
 
 			room._ffz_row = row;
 			return row;
-		},*/
+		},
 
-		// Group Tabs~!
+
+		// Group Tabs
 
 		ffzEnableTabs: function() {
-			if ( f.has_bttv || ! f.settings.group_tabs )
+			if ( f.has_bttv || ! f.settings.group_tabs || this._ffz_tabs )
 				return;
 
 			// Hide the existing chat UI.
@@ -709,34 +997,41 @@ FFZ.prototype._modify_cview = function(view) {
 			this.ffzRebuildTabs();
 		},
 
-		ffzRebuildTabs: function() {
-			if ( f.has_bttv || ! f.settings.group_tabs )
-				return;
+		ffzDisableTabs: function() {
+			if ( this._ffz_tabs ) {
+				this._ffz_tabs.parentElement.removeChild(this._ffz_tabs);
+				this._ffz_tabs = null;
+				this._ffz_invite = null;
 
+				for(var room_id in f.rooms)
+					if ( f.rooms[room_id] && f.rooms[room_id].room && f.rooms[room_id].room._ffz_tab )
+						f.rooms[room_id].room._ffz_tab = null;
+			}
+
+			// Show the old chat UI.
+			this.$('.chat-room').css('top', '');
+			this.$(".chat-header").removeClass("hidden");
+		},
+
+
+		ffzRebuildTabs: function() {
 			var tabs = this._ffz_tabs || this.get('element').querySelector('#ffz-group-tabs');
 			if ( ! tabs )
 				return;
 
 			tabs.innerHTML = "";
 
+			if ( f.has_bttv || ! f.settings.group_tabs )
+				return;
+
 			var link = document.createElement('a'),
 				view = this;
-				//total_unread = 0;
 
-			/*for(var room_id in f.rooms) {
-				var room = f.rooms[room_id] && f.rooms[room_id].room,
-					is_unread = room && room.get('unreadCount') > 0;
 
-				if ( is_unread ) {
-					room._ffz_was_unread = true;
-					total_unread++;
-				} else if ( room )
-					room._ffz_was_unread = false;
-			}*/
-
+			// Chat Room Management Button
 			link.className = 'button glyph-only tooltip';
 			link.title = "Chat Room Management";
-			link.innerHTML = constants.ROOMS; // + '<span class="notifications">' + (total_unread || '') + '</span>';
+			link.innerHTML = constants.ROOMS + '<span class="notifications"></span>';
 
 			link.addEventListener('click', function() {
 				var controller = view.get('controller');
@@ -746,6 +1041,7 @@ FFZ.prototype._modify_cview = function(view) {
 			tabs.appendChild(link);
 
 
+			// Invite Button
 			link = document.createElement('a'),
 			link.className = 'button glyph-only tooltip invite';
 			link.title = "Invite a User";
@@ -760,145 +1056,70 @@ FFZ.prototype._modify_cview = function(view) {
 			view._ffz_invite = link;
 			tabs.appendChild(link);
 
-			var room = this.get('controller.currentChannelRoom'), tab;
+
+			// Current Room
+			var room = this.get('controller.currentChannelRoom'),
+				room_id = room && room.get('id'),
+				tab;
+
 			if ( room ) {
-				tab = this.ffzBuildTab(view, room, true);
+				tab = this.ffzBuildTab(room, true);
 				tab && tabs.appendChild(tab);
 			}
 
-			// Check Host Target
-			var Channel = App.__container__.lookup('controller:channel'),
-				Room = App.__container__.resolve('model:room');
-				target = Channel && Channel.get('hostModeTarget');
 
-			if ( target && Room ) {
-				var target_id = target.get('id');
-				if ( this._ffz_host !== target_id ) {
-					if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
-						if ( this.get('controller.currentRoom') === this._ffz_host_room )
-							this.get('controller').blurRoom();
-						this._ffz_host_room.destroy();
-					}
-
-					this._ffz_host = target_id;
-					this._ffz_host_room = Room.findOne(target_id);
-				}
-			} else if ( this._ffz_host ) {
-				if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
-					if ( this.get('controller.currentRoom') === this._ffz_host_room )
-						this.get('controller').blurRoom();
-					this._ffz_host_room.destroy();
-				}
-
-				delete this._ffz_host;
-				delete this._ffz_host_room;
-			}
-
+			// Host Target
 			if ( this._ffz_host_room ) {
-				tab = view.ffzBuildTab(view, this._ffz_host_room, false, true);
+				tab = view.ffzBuildTab(this._ffz_host_room, false, true);
 				tab && tabs.appendChild(tab);
 			}
+
 
 			// Pinned Rooms
 			for(var i=0; i < f.settings.pinned_rooms.length; i++) {
-				var room_id = f.settings.pinned_rooms[i];
-				if ( room && room.get('id') !== room_id && this._ffz_host !== room_id && f.rooms[room_id] && f.rooms[room_id].room ) {
-					var tab = view.ffzBuildTab(view, f.rooms[room_id].room, false, false);
+				var pinned_id = f.settings.pinned_rooms[i];
+				if ( room_id !== pinned_id && this._ffz_host !== pinned_id && f.rooms[pinned_id] && f.rooms[pinned_id].room ) {
+					tab = view.ffzBuildTab(f.rooms[pinned_id].room, false, false);
 					tab && tabs.appendChild(tab);
 				}
 			}
 
+
+			// Group Chat
 			_.each(this.get('controller.connectedPrivateGroupRooms'), function(room) {
-				var tab = view.ffzBuildTab(view, room);
+				var tab = view.ffzBuildTab(room);
 				tab && tabs.appendChild(tab);
 			});
 
-			// Now, adjust the chat-room.
+
+			// Adjust the height of the chat room to account for the height of the numerous tabs.
 			this.$('.chat-room').css('top', tabs.offsetHeight + "px");
+			this.ffzUpdateMenuUnread();
 		},
 
-		ffzTabUnread: function(room_id) {
-			var current_id = this.get('controller.currentRoom.id');
+		ffzBuildTab: function(room, current_channel, host_channel) {
+			var view = this,
 
-			if ( room_id ) {
-				var room = f.rooms && f.rooms[room_id] && f.rooms[room_id].room,
-					row = room && room._ffz_row,
-					tab = room && room._ffz_tab,
-
-					unread_count = room_id === current_id ? 0 : room.get('unreadCount'),
-					is_unread = unread_count > 0,
-					unread = utils.format_unread(unread_count);
-
-				if ( ! room._ffz_was_unread && is_unread ) {
-					room._ffz_was_unread = true;
-
-					var el = this.get('element'),
-						unread_display = el && el.querySelector('#ffz-group-tabs .button .notifications'),
-						unread_count = unread_display ? parseInt(unread_display.textContent) : 0;
-
-					unread_count++;
-					if ( unread_display )
-						unread_display.textContent = unread_count || '';
-				}
-
-				if ( row )
-					row.querySelector('span').innerHTML = unread;
-
-				if ( tab )
-					tab.querySelector('span').innerHTML = unread;
-
-				return;
-			}
-
-			for(var room_id in f.rooms) {
-				var room = f.rooms[room_id] && f.rooms[room_id].room,
-					row = room && room._ffz_row,
-					tab = room && room._ffz_tab,
-
-					unread_count = room_id === current_id ? 0 : room.get('unreadCount'),
-					is_unread = unread_count > 0,
-					unread = utils.format_unread(unread_count);
-
-				if ( ! room._ffz_was_unread && is_unread ) {
-					room._ffz_was_unread = true;
-
-					var el = this.get('element'),
-						unread_display = el && el.querySelector('#ffz-group-tabs .button .notifications'),
-						unread_count = unread_display ? parseInt(unread_display.textContent) : 0;
-
-					unread_count++;
-					if ( unread_display )
-						unread_display.textContent = unread_count || '';
-				}
-
-				if ( row )
-					row.querySelector('span').innerHTML = unread;
-
-				if ( tab )
-					tab.querySelector('span').innerHTML = unread;
-			}
-		},
-
-		ffzBuildTab: function(view, room, current_channel, host_channel) {
-			var tab = document.createElement('span'), name, unread, icon = '',
+				tab = document.createElement('span'), name, unread, icon = '',
 				room_id = room.get('id'),
 				group = room.get('isGroupRoom'),
-				current = room === view.get('controller.currentRoom'),
-				visible = current || f.settings.visible_rooms.indexOf(room_id) !== -1;
+				active_channel = room === this.get('controller.currentRoom');
 
-			tab.setAttribute('data-room', room.id);
+			tab.setAttribute('data-room', room_id);
 
 			tab.className = 'ffz-chat-tab tooltip';
-			//tab.classList.toggle('hidden', ! visible);
 			tab.classList.toggle('current-channel', current_channel);
 			tab.classList.toggle('host-channel', host_channel);
 			tab.classList.toggle('group-chat', group);
-			tab.classList.toggle('active', current);
+			tab.classList.toggle('active', active_channel);
 
-			unread = utils.format_unread(current ? 0 : room.get('unreadCount'));
+			tab.classList.toggle('hidden', ! this.ffzTabVisible(room_id));
 
-			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('id'), function(name) {
-				unread = utils.format_unread(current ? 0 : room.get('unreadCount'));
+			unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
+
+			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
+				var active_channel = room === view.get('controller.currentRoom');
+				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
 				tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
 			}));
 
@@ -925,28 +1146,31 @@ FFZ.prototype._modify_cview = function(view) {
 			return tab;
 		},
 
-		ffzDisableTabs: function() {
-			if ( this._ffz_tabs ) {
-				this._ffz_tabs.parentElement.removeChild(this._ffz_tabs);
-				delete this._ffz_tabs;
-				delete this._ffz_invite;
-			}
+		ffzTabVisible: function(room_id) {
+			var room = f.rooms[room_id] && f.rooms[room_id].room,
+				is_current = room === this.get('controller.currentRoom'),
+				is_channel = room === this.get('controller.currentChannelRoom'),
 
-			if ( this._ffz_host ) {
-				if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 && this._ffz_host_room ) {
-					if ( this.get('controller.currentRoom') === this._ffz_host_room )
-						this.get('controller').blurRoom();
-					this._ffz_host_room.destroy();
-				}
+				now = Date.now();
 
-				delete this._ffz_host;
-				delete this._ffz_host_room;
-			}
+			if ( is_current || is_channel || room_id === this._ffz_host || f.settings.group_tabs === 3 )
+				// Important Tabs
+				return true;
 
-			// Show the old chat UI.
-			this.$('.chat-room').css('top', '');
-			this.$(".chat-header").removeClass("hidden");
-		},
+			else if ( now - room.ffz_last_view < 60000 || now - room.ffz_last_input < 2700000 )
+				// Recent Self Input or View
+				return true;
+
+			else if ( f.settings.group_tabs === 1 && now - (room.ffz_last_activity || 0) < 2700000 )
+				// Any Recent Activity
+				return true;
+
+			else if ( f.settings.group_tabs === 2 && now - (room.ffz_last_mention || 0) < 2700000 )
+				// Recent Mentions
+				return true;
+
+			return false;
+		}
 	});
 }
 
@@ -960,11 +1184,12 @@ FFZ.prototype.connect_extra_chat = function() {
 	if ( user && user.login ) {
 		// Make sure we're in the user's room.
 		if ( ! this.rooms[user.login] || this.rooms[user.login].room ) {
-			var Room = App.__container__.resolve('model:room'),
-				r = Room && Room.findOne(user.login);
+			var Room = App.__container__.resolve('model:room');
+			Room && Room.findOne(user.login);
 		}
 	}
 
+	// We don't join extra rooms with BTTV.
 	if ( this.has_bttv )
 		return;
 
@@ -974,10 +1199,36 @@ FFZ.prototype.connect_extra_chat = function() {
 	if ( ! this._chatv )
 		return;
 
-	if ( ! this.has_bttv && this.settings.group_tabs )
+
+	// Rebuild the chat UI.
+	if ( this.settings.group_tabs )
 		this._chatv.ffzRebuildTabs();
 
 	this._chatv.ffzRebuildMenu();
+}
+
+
+FFZ.prototype.disconnect_extra_chat = function() {
+	var Chat = App.__container__.lookup('controller:chat'),
+		current_channel_id = Chat && Chat.get('currentChannelRoom.id'),
+		current_id = Chat && Chat.get('currentRoom.id'),
+		user = this.get_user();
+
+	if ( ! Chat )
+		return;
+
+	for(var i=0; i < this.settings.pinned_rooms.length; i++) {
+		var room_id = this.settings.pinned_rooms[i];
+		if ( room_id === current_channel_id || (user && room_id === user.login) )
+			continue;
+
+		if ( this.rooms[room_id] && this.rooms[room_id].room ) {
+			if ( current_id === room_id )
+				Chat.blurRoom();
+
+			this.rooms[room_id].room.destroy();
+		}
+	}
 }
 
 
@@ -989,23 +1240,22 @@ FFZ.prototype._join_room = function(room_id, no_rebuild) {
 		did_join = true;
 	}
 
+
 	// Make sure we're not already there.
-	if ( this.rooms[room_id] && this.rooms[room_id].room ) {
-		if ( did_join && ! no_rebuild && ! this.has_bttv && this._chatv && this.settings.group_tabs )
-			this._chatv.ffzRebuildTabs();
-		return did_join;
+	if ( ! this.rooms[room_id] || ! this.rooms[room_id].room ) {
+		// Okay, fine. Get it.
+		var Room = App.__container__.resolve('model:room');
+		Room && Room.findOne(room_id);
 	}
 
-	// Okay, fine. Get it.
-	var Room = App.__container__.resolve('model:room'),
-		r = Room && Room.findOne(room_id);
 
-	// Finally, rebuild the chat UI.
-	if ( ! no_rebuild && ! this.has_bttv && this._chatv && this.settings.group_tabs )
-		this._chatv.ffzRebuildTabs();
+	// Rebuild the chat UI.
+	if ( ! no_rebuild && ! this.has_bttv && this._chatv ) {
+		if ( this.settings.group_tabs )
+			this._chatv.ffzRebuildTabs();
 
-	if ( ! no_rebuild && this._chatv )
 		this._chatv.ffzRebuildMenu();
+	}
 
 	return did_join;
 }
@@ -1036,11 +1286,14 @@ FFZ.prototype._leave_room = function(room_id, no_rebuild) {
 	if ( ! user || user.login !== room_id )
 		r.destroy();
 
-	if ( ! no_rebuild && ! this.has_bttv && this._chatv && this.settings.group_tabs )
-		this._chatv.ffzRebuildTabs();
 
-	if ( ! no_rebuild && this._chatv )
+	// Rebuild the chat UI.
+	if ( ! no_rebuild && ! this.has_bttv && this._chatv ) {
+		if ( this.settings.group_tabs )
+			this._chatv.ffzRebuildTabs();
+
 		this._chatv.ffzRebuildMenu();
+	}
 
 	return did_leave;
 }
@@ -1051,6 +1304,9 @@ FFZ.prototype._leave_room = function(room_id, no_rebuild) {
 // ----------------------
 
 FFZ.chat_commands.join = function(room, args) {
+	if ( this.has_bttv )
+		return "Pinned Rooms are not available with BetterTTV installed.";
+
 	if ( ! args || ! args.length || args.length > 1 )
 		return "Join Usage: /join <channel>";
 
@@ -1066,6 +1322,9 @@ FFZ.chat_commands.join = function(room, args) {
 
 
 FFZ.chat_commands.part = function(room, args) {
+	if ( this.has_bttv )
+		return "Pinned Rooms are not available with BetterTTV installed.";
+
 	if ( ! args || ! args.length || args.length > 1 )
 		return "Part Usage: /part <channel>";
 

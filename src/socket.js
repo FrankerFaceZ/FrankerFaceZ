@@ -357,7 +357,7 @@ FFZ.prototype.ws_ping = function() {
 		return;
 
 	this._ws_ping_time = window.performance ? performance.now() : Date.now();
-	if ( ! this.ws_send("ping", null, this._ws_on_pong.bind(this)) )
+	if ( ! this.ws_send("ping", undefined, this._ws_on_pong.bind(this)) )
 		this._ws_ping_time = null;
 }
 

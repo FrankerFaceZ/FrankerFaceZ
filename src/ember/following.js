@@ -71,7 +71,7 @@ FFZ.prototype.setup_profile_following = function() {
 		ffzInit: function() {
 			// Only process our own profile following page.
 			var user = f.get_user();
-			if ( ! f.settings.enhance_profile_following || ! user || ! user.login === this.get('context.id') )
+			if ( ! f.settings.enhance_profile_following || ! user || user.login !== this.get('context.id') )
 				return;
 
 			var el = this.get('element'),
@@ -259,8 +259,9 @@ FFZ.prototype.setup_profile_following = function() {
 		ProfileView.create().destroy();
 	} catch(err) { }
 
-	for(var key in Ember.View.views) {
-		var view = Ember.View.views[key];
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		var view = views[key];
 		if ( ! view || !(view instanceof ProfileView) )
 			continue;
 

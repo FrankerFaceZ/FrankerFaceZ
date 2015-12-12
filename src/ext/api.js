@@ -86,14 +86,14 @@ API.prototype.log = function(msg, data, to_json, log_json) {
 
 API.prototype._load_set = function(real_id, set_id, data) {
 	if ( ! data )
-		return false;
+		return null;
 
 	// Check for an existing set to copy the users.
 	var users = [];
 	if ( this.emote_sets[real_id] && this.emote_sets[real_id].users )
 		users = this.emote_sets[real_id].users;
 
-	var set = {
+	var emote_set = {
 			source: this.name,
 			source_ext: this.id,
 			source_id: set_id,
@@ -108,14 +108,14 @@ API.prototype._load_set = function(real_id, set_id, data) {
 			title: data.title || "Global Emoticons",
 		};
 
-	this.emote_sets[real_id] = set;
+	this.emote_sets[real_id] = emote_set;
 
 	if ( this.ffz.emote_sets )
-		this.ffz.emote_sets[real_id] = set;
+		this.ffz.emote_sets[real_id] = emote_set;
 
 	var output_css = "",
 		ems = data.emoticons,
-		emoticons = set.emoticons;
+		emoticons = emote_set.emoticons;
 
 	for(var i=0; i < ems.length; i++) {
 		var emote = ems[i],
@@ -158,15 +158,17 @@ API.prototype._load_set = function(real_id, set_id, data) {
 			new_emote.regex = emote.regex;
 		else if ( typeof emote.name !== "string" )
 			new_emote.regex = emote.name;
+		else if ( emote_set.require_spaces || emote.require_spaces )
+			new_emote.regex = new RegExp("(^| )(" + utils.escape_regex(emote.name) + ")(?= |$)", "g");
 		else
 			new_emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
 
 		output_css += build_css(new_emote);
-		set.count++;
+		emote_set.count++;
 		emoticons[id] = new_emote;
 	}
 
-	utils.update_css(this.ffz._emote_style, real_id, output_css + (set.css || ""));
+	utils.update_css(this.ffz._emote_style, real_id, output_css + (emote_set.css || ""));
 
 	if ( this.ffz._cindex )
 		this.ffz._cindex.ffzFixTitle();
@@ -175,7 +177,7 @@ API.prototype._load_set = function(real_id, set_id, data) {
 		this.ffz.update_ui_link();
 	} catch(err) { }
 
-	return set;
+	return emote_set;
 }
 
 
@@ -223,7 +225,7 @@ API.prototype.unload_set = function(id) {
 			if ( ! room )
 				continue;
 
-			ind = room.ext_sets.indexOf(exact_id);
+			var ind = room.ext_sets.indexOf(exact_id);
 			if ( ind !== -1 )
 				room.ext_sets.splice(ind,1);
 		}
@@ -232,7 +234,7 @@ API.prototype.unload_set = function(id) {
 	}
 
 
-	return set;
+	return emote_set;
 }
 
 

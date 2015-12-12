@@ -449,11 +449,21 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 			// We have a mention!
 			msgObject.ffz_has_mention = true;
 
-			// If we have chat tabs, update the status.
-			if ( room_id && ! this.has_bttv && this.settings.group_tabs && this._chatv && this._chatv._ffz_tabs ) {
-				var el = this._chatv._ffz_tabs.querySelector('.ffz-chat-tab[data-room="' + room_id + '"]');
-				if ( el && ! el.classList.contains('active') )
-					el.classList.add('tab-mentioned');
+			// If we have chat tabs/rows, update the status.
+			if ( room_id && ! this.has_bttv && this._chatv ) {
+				var room = this.rooms[room_id] && this.rooms[room_id].room;
+				if ( room._ffz_tab && ! room._ffz_tab.classList.contains('active') ) {
+					room._ffz_tab.classList.add('tab-mentioned');
+					var was_hidden = room._ffz_tab.classList.contains('hidden');
+
+					if ( was_hidden ) {
+						room._ffz_tab.classList.remove('hidden');
+						this._chatv.$('.chat-room').css('top', this._chatv._ffz_tabs.offsetHeight + "px");
+					}
+				}
+
+				if ( room._ffz_row && ! room._ffz_row.classList.contains('active') )
+					room._ffz_row.classList.add('row-mentioned');
 			}
 
 			// Display notifications if that setting is enabled. Also make sure
@@ -601,7 +611,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links) {
 				}
 
 				//var mirror_url = utils.quote_attr(constants.EMOTE_MIRROR_BASE + id + '.png');
-				extra = ' data-emote="' + id + '"'; // onerror="FrankerFaceZ._emote_mirror_swap(this)"'; // Disable error checking for now.
+				extra = ' data-emote="' + id + '" onerror="FrankerFaceZ._emote_mirror_swap(this)"'; // Disable error checking for now.
 
 				if ( ! constants.EMOTE_REPLACEMENTS[id] )
 					srcset = utils.build_srcset(id);

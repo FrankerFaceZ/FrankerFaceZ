@@ -399,7 +399,10 @@ FFZ.prototype.setup_mod_card = function() {
 	Card.reopen({
 		ffzForceRedraw: function() {
 			this.rerender();
-		}.observes("cardInfo.isModeratorOrHigher", "cardInfo.user"),
+			if ( f.settings.mod_card_history )
+				this.ffzRenderHistory();
+
+		}.observes("cardInfo.isModeratorOrHigher", "cardInfo.user.id"),
 
 		ffzRebuildInfo: function() {
 			var el = this.get('element'),
@@ -730,74 +733,26 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 				// Message History
-				if ( f.settings.mod_card_history ) {
-					var Chat = App.__container__.lookup('controller:chat'),
-						room = Chat && Chat.get('currentRoom'),
-						delete_links = room && room.get('roomProperties.hide_chat_links'),
-						tmiSession = room.tmiSession || (window.TMI && TMI._sessions && TMI._sessions[0]),
-						room_id = room.get('id'),
-						user_id = controller.get('cardInfo.user.id'),
-						ffz_room = room && f.rooms && f.rooms[room_id],
-						user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[user_id] || [],
-
-						history = document.createElement('ul');
-
-					history.className = 'interface clearfix chat-history';
-
-					if ( user_history.length < 50 ) {
-						var before = (user_history.length > 0 ? user_history[0].date.getTime() : Date.now()) - (f._ws_server_offset || 0);
-						f.ws_send("user_history", [room_id, user_id, 50 - user_history.length], function(success, data) {
-							if ( ! success )
-								return;
-
-							f.parse_history(data, null, room_id, delete_links, tmiSession);
-
-							var i = data.length,
-								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight),
-								first = true;
-
-							while(i--) {
-								var msg = data[i];
-								if ( ! msg )
-									continue;
-
-								msg.from_server = true;
-
-								if ( ! msg.date || msg.date.getTime() >= before )
-									continue;
-
-								if ( first ) {
-									first = false;
-									history.insertBefore(f._build_mod_card_history({
-										date: msg.date,
-										from: "jtv",
-										style: "admin",
-										cachedTokens: ["(Server History Above)"]
-									}), history.firstElementChild);
-								}
-
-								history.insertBefore(f._build_mod_card_history(msg, t), history.firstElementChild);
-							}
-
-							if ( was_at_top )
-								setTimeout(function() { history.scrollTop = history.scrollHeight; });
-						});
-					}
-
-					for(var i=0; i < user_history.length; i++)
-						history.appendChild(f._build_mod_card_history(user_history[i], t));
-
-					el.appendChild(history);
-
-					// Lazy scroll-to-bottom
-					history.scrollTop = history.scrollHeight;
-				}
+				if ( f.settings.mod_card_history )
+					this.ffzRenderHistory();
 
 				// Reposition the menu if it's off-screen.
 				var el_bound = el.getBoundingClientRect(),
-					body_bound = document.body.getBoundingClientRect();
+					body_bound = document.body.getBoundingClientRect(),
 
-				if ( el_bound.bottom > body_bound.bottom ) {
+					renderBottom = this.get('cardInfo.renderBottom'),
+					renderRight = this.get('cardInfo.renderRight');
+
+				if ( renderRight ) {
+					var offset = (el_bound.left + el_bound.width) - renderRight;
+					el.style.left = (el_bound.left - offset) + "px";
+				}
+
+				if ( renderBottom ) {
+					var offset = el_bound.bottom - renderBottom;
+					el.style.top = (el_bound.top - offset) + "px";
+
+				} else if ( el_bound.bottom > body_bound.bottom ) {
 					var offset = el_bound.bottom - body_bound.bottom;
 					if ( el_bound.top - offset > body_bound.top )
 						el.style.top = (el_bound.top - offset) + "px";
@@ -818,9 +773,78 @@ FFZ.prototype.setup_mod_card = function() {
 			}
 		},
 
+		ffzRenderHistory: function() {
+			var t = this,
+				Chat = App.__container__.lookup('controller:chat'),
+				room = Chat && Chat.get('currentRoom'),
+				delete_links = room && room.get('roomProperties.hide_chat_links'),
+				tmiSession = room.tmiSession || (window.TMI && TMI._sessions && TMI._sessions[0]),
+				room_id = room.get('id'),
+				user_id = this.get('cardInfo.user.id'),
+				ffz_room = room && f.rooms && f.rooms[room_id],
+				user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[user_id] || [],
+				el = this.get('element'),
+
+				history = el && el.querySelector('.chat-history');
+
+			if ( ! history ) {
+				history = document.createElement('ul');
+				history.className = 'interface clearfix chat-history';
+				el.appendChild(history);
+			} else {
+				history.classList.remove('loading');
+				history.innerHTML = '';
+			}
+
+			if ( user_history.length < 50 ) {
+				var before = (user_history.length > 0 ? user_history[0].date.getTime() : Date.now()) - (f._ws_server_offset || 0);
+				f.ws_send("user_history", [room_id, user_id, 50 - user_history.length], function(success, data) {
+					if ( ! success )
+						return;
+
+					f.parse_history(data, null, room_id, delete_links, tmiSession);
+
+					var i = data.length,
+						was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight),
+						first = true;
+
+					while(i--) {
+						var msg = data[i];
+						if ( ! msg )
+							continue;
+
+						msg.from_server = true;
+
+						if ( ! msg.date || msg.date.getTime() >= before )
+							continue;
+
+						if ( first ) {
+							first = false;
+							history.insertBefore(f._build_mod_card_history({
+								date: msg.date,
+								from: "jtv",
+								style: "admin",
+								cachedTokens: ["(Server History Above)"]
+							}), history.firstElementChild);
+						}
+
+						history.insertBefore(f._build_mod_card_history(msg, t), history.firstElementChild);
+					}
+
+					if ( was_at_top )
+						setTimeout(function() { history.scrollTop = history.scrollHeight; });
+				});
+			}
+
+			for(var i=0; i < user_history.length; i++)
+				history.appendChild(f._build_mod_card_history(user_history[i], t));
+
+			// Lazy scroll-to-bottom
+			history.scrollTop = history.scrollHeight;
+		},
+
 		ffzAdjacentHistory: function(line) {
 			var Chat = App.__container__.lookup('controller:chat'),
-				controller = this.get('controller'),
 				t = this,
 
 				user_id = this.get('cardInfo.user.id'),
@@ -835,23 +859,31 @@ FFZ.prototype.setup_mod_card = function() {
 				history = el && el.querySelector('.chat-history'),
 				logs = el && el.querySelector('.chat-history.adjacent-history'),
 
-				when = line.date.getTime();
+				when = line.date.getTime(),
+				scroll_top = logs && logs.scrollTop || history && history.scrollTop || 0;
 
 			if ( ! history )
 				return;
 
-			if ( logs )
+			if ( logs ) {
 				logs.classList.add('loading');
-			else
+				logs.scrollTop = 0;
+			} else {
 				history.classList.add('loading');
+				history.scrollTop = 0;
+			}
 
 			if ( ! f.ws_send("adjacent_history", [room_id, when, 2], function(success, data) {
-				if ( logs )
+				var was_loading = history.classList.contains('loading');
+				if ( logs ) {
 					logs.classList.remove('loading');
-				else
+					logs.scrollTop = scroll_top;
+				} else {
 					history.classList.remove('loading');
+					history.scrollTop = scroll_top;
+				}
 
-				if ( ! success || ! data || ! data.length )
+				if ( ! success || ! data || ! data.length || ! was_loading )
 					return;
 
 				var had_logs = false,
@@ -908,10 +940,13 @@ FFZ.prototype.setup_mod_card = function() {
 					});
 
 			}) )
-				if ( logs )
+				if ( logs ) {
 					logs.classList.remove('loading');
-				else
+					logs.scrollTop = scroll_top;
+				} else {
 					history.classList.remove('loading');
+					history.scrollTop = scroll_top;
+				}
 		}
 	});
 }
@@ -928,6 +963,9 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 		out.push('<span class="timestamp float-left">' + helpers.getTime(msg.date) + '</span>');
 
 
+	var alias = this.aliases[msg.from],
+		name = (msg.tags && msg.tags['display-name']) || (msg.from && msg.from.capitalize()) || "unknown user";
+
 	if ( show_from ) {
 		// Badges
 		out.push('<span class="badges float-left">');
@@ -942,13 +980,11 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 			Layout = App.__container__.lookup('controller:layout'),
 			Settings = App.__container__.lookup('controller:settings'),
 
-			is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+			is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 
 
 		// Aliases and Styling
-		var alias = this.aliases[msg.from],
-			name = (msg.tags && msg.tags['display-name']) || (msg.from && msg.from.capitalize()) || "unknown user",
-			style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
+		var style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
 			colored = style ? ' has-color' : '';
 
 

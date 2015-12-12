@@ -21,10 +21,26 @@ FFZ.settings_info.sort_viewers = {
 
 FFZ.prototype.setup_viewers = function() {
 	this.log("Hooking the Ember Viewers controller.");
-
 	var Viewers = App.__container__.resolve('controller:viewers');
-	this._modify_viewers(Viewers);
+	if ( Viewers )
+		this._modify_viewers(Viewers);
+
+	/* Disable for now because Twitch reverted this change
+	this.log("Hooking the Ember Viewers view.");
+	var ViewerView = App.__container__.resolve('view:viewers');
+	if ( ViewerView )
+		this._modify_viewer_view(ViewerView);*/
 }
+
+
+/*FFZ.prototype._modify_viewer_view = function(view) {
+	view.reopen({
+		setListDimensions: function(e) {
+			// Don't set the stupid scroll thing. Don't use the stupid height thing.
+			this.$(".js-chatters-container").width(e.width).height(e.height);
+		}
+	});
+}*/
 
 
 FFZ.prototype._modify_viewers = function(controller) {
@@ -55,7 +71,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 
 				// If the current room isn't the channel's chat, then we shouldn't
 				// display them as the broadcaster.
-				if ( room_id != broadcaster )
+				if ( room_id !== broadcaster )
 					broadcaster = null;
 
 				// Now, break the viewer array down into something we can use.

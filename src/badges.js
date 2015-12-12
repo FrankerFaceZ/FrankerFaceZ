@@ -228,9 +228,9 @@ FFZ.prototype.get_line_badges = function(msg) {
 			}
 		}
 
-	if ( msg.labels.indexOf('subscriber') !== -1 )
+	if ( msg.labels && msg.labels.indexOf('subscriber') !== -1 )
 		badges[10] = {klass: 'subscriber', title: 'Subscriber'}
-	if ( msg.labels.indexOf('turbo') !== -1 )
+	if ( msg.labels && msg.labels.indexOf('turbo') !== -1 )
 		badges[15] = {klass: 'turbo', title: 'Turbo'};
 
 	// FFZ Badges
@@ -338,7 +338,7 @@ FFZ.prototype.bttv_badges = function(data) {
 				if ( b.type === full_badge.replaces_type ) {
 					b.type = "ffz-badge-replacement " + b.type;
 					b.description += ", " + (badge.title || full_badge.title) +
-						'" style="background-image: url("' + utils.quote_attr(badge.image || full_badge.image) + '")';
+						'" style="background-image: url(' + utils.quote_attr('"' + (badge.image || full_badge.image) + '"') + ')';
 					replaced = true;
 					break;
 				}
@@ -349,18 +349,18 @@ FFZ.prototype.bttv_badges = function(data) {
 		}
 
 		if ( alpha && badge.transparent_image )
-			style += 'background-image: url("' + utils.quote_attr(badge.transparent_image) + '");';
+			style += 'background-image: url("' + badge.transparent_image + '");';
 		else if ( badge.image )
-			style += 'background-image: url("' + utils.quote_attr(badge.image) + '");';
+			style += 'background-image: url("' + badge.image + '");';
 
 		if ( badge.color && ! alpha )
-			style += 'background-color: ' + utils.quote_attr(badge.color) + '; ';
+			style += 'background-color: ' + badge.color + '; ';
 
 		if ( badge.extra_css )
-			style += utils.quote_attr(badge.extra_css);
+			style += badge.extra_css;
 
 		if ( style )
-			desc += '" style="' + style;
+			desc += '" style="' + utils.quote_attr(style);
 
 		badges_out.push([(insert_at == -1 ? 1 : -1) * slot, {type: "ffz-badge-" + badge.id + (alpha ? " alpha" : ""), name: "", description: desc}]);
 	}
@@ -451,14 +451,17 @@ FFZ.prototype._legacy_load_donors = function(callback, tries) {
 
 FFZ.prototype._legacy_parse_badges = function(callback, data, slot, badge_id, title_template) {
 	var title = this.badges[badge_id].title,
-		count = 0;
+		count = 0,
 		ds = null;
 
 	title_template = title_template || '{}';
 
 	if ( data != null ) {
-		var lines = data.trim().split(/\W+/);
+		var lines = data.trim().split(/[ \t\n\r]+/);
 		for(var i=0; i < lines.length; i++) {
+			if ( ! /^\w/.test(lines[i]) )
+				continue;
+
 			var line_data = lines[i].split(";"),
 				user_id = line_data[0],
 				user = this.users[user_id] = this.users[user_id] || {},
@@ -471,7 +474,7 @@ FFZ.prototype._legacy_parse_badges = function(callback, data, slot, badge_id, ti
 			if ( badges[slot] )
 				continue;
 
-			badges[slot] = {id:badge_id};
+			badges[slot] = {id: badge_id};
 			if ( line_data.length > 1 )
 				badges[slot].title = title_template.replace('{}', line_data[1]);
 			count += 1;

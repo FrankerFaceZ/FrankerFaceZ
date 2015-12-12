@@ -671,7 +671,7 @@ FFZ.prototype._modify_line = function(component) {
 				raw_color = this.get('msgObject.color'),
 				colors = raw_color && f._handle_color(raw_color),
 
-				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 
 
 			e.push('<div class="indicator"></div>');

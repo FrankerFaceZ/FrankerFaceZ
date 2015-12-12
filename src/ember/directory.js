@@ -149,9 +149,11 @@ FFZ.prototype.setup_directory = function() {
 	document.body.classList.toggle('ffz-creative-tags', this.settings.directory_creative_all_tags);
 	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
 
-	this.log("Hooking the Ember games-following controller.");
-	var GamesFollowing = App.__container__.lookup('controller:games-following');
+	var GamesFollowing = App.__container__.lookup('controller:games-following'),
+		f = this;
+
 	if ( GamesFollowing ) {
+		this.log("Hooking the Ember games-following controller.");
 		GamesFollowing.reopen({
 			ffz_sidebar_games: this.settings.sidebar_followed_games,
 
@@ -164,7 +166,8 @@ FFZ.prototype.setup_directory = function() {
 		});
 
 		Ember.propertyDidChange(GamesFollowing, 'sidePanelFollowing');
-	}
+	} else
+		this.error("Unable to load the Ember games-following controller.");
 
 
 	this.log("Attempting to modify the Following collection.");
@@ -189,8 +192,9 @@ FFZ.prototype.setup_directory = function() {
 		this._modify_directory_host(HostView);
 
 	// Initialize existing views.
-	for(var key in Ember.View.views) {
-		var view = Ember.View.views[key];
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		var view = views[key];
 		try {
 			if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) || (CSGOChannel && view instanceof CSGOChannel) || (HostView && view instanceof HostView) )
 				view.ffzInit();
@@ -469,10 +473,20 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			for(var i=0; i < hosts.length; i++)
 				make_link(hosts[i]);
 
-			f.show_popup(menu, [e.clientX - 60, e.clientY - 60], document.querySelector('#main_col > .tse-scroll-content > .tse-content'));
+			var cont = document.querySelector('#main_col > .tse-scroll-content > .tse-content'),
+				bounds = cont && cont.getBoundingClientRect(),
+
+				x = e.clientX - 60,
+				y = e.clientY - 60;
+
+			if ( bounds )
+				x = Math.max(bounds.left, Math.min(x, (bounds.left + bounds.width) - 302));
+
+			f.show_popup(menu, [x, y], document.querySelector('#main_col > .tse-scroll-content > .tse-content'));
 		},
 
 		ffzCleanup: function() {
+			var target = this.get('context.model.target.channel');
 			if ( f._popup && f._popup.classList.contains('ffz-channel-selector') && f._popup.getAttribute('data-channel') === target )
 				f.close_popup();
 		},
@@ -485,7 +499,41 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				title = meta && meta.querySelector('.title a'),
 
 				target = this.get('context.model.target.channel'),
-				hosts = this.get('context.model.ffz_hosts');
+				hosts = this.get('context.model.ffz_hosts'),
+
+				boxart = thumb && thumb.querySelector('.boxart');
+
+
+			// Fix the game not showing
+			if ( ! boxart && thumb && this.get('context.model.game') ) {
+				var img = document.createElement('img'),
+					game = this.get("context.model.game"),
+					c = this.get('controller');
+
+				boxart = document.createElement('a');
+				boxart.className = 'boxart';
+				boxart.href = this.get("context.model.gameUrl");
+				boxart.setAttribute('original-title', game);
+
+				boxart.addEventListener('click', function(e) {
+					e.preventDefault();
+					jQuery('.tipsy').remove();
+
+					if ( game === "Counter-Strike: Global Offensive" )
+						c.transitionTo('csgo.channels.index')
+					else if ( game === "Creative" )
+						c.transitionTo('creative.channels.index');
+					else
+						c.transitionTo('gameDirectory.index', encodeURIComponent(game));
+
+					return false;
+				});
+
+				img.src = this.get("context.model.gameBoxart");
+				boxart.appendChild(img);
+				thumb.appendChild(boxart);
+			}
+
 
 			if ( f.settings.directory_logos ) {
 				el.classList.add('ffz-directory-logo');

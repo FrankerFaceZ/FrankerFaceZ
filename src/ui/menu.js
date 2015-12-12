@@ -126,7 +126,7 @@ FFZ.prototype.setup_menu = function() {
 			content.appendChild(p);
 
 			a.addEventListener('click', function(e) {
-				view.set('controller.model.hidden', true);
+				view.set('controller.settings.hidden', true);
 				f._last_page = 'settings';
 				f.build_ui_popup(f._chatv);
 				e.stopPropagation();
@@ -164,11 +164,12 @@ FFZ.prototype.setup_menu = function() {
 	} catch(err) { }
 
 	// Modify all existing Chat Settings views.
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		if ( ! views.hasOwnProperty(key) )
 			continue;
 
-		var view = Ember.View.views[key];
+		var view = views[key];
 		if ( !(view instanceof Settings) )
 			continue;
 

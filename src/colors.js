@@ -129,9 +129,9 @@ FFZ.prototype.setup_colors = function() {
 		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
 
 	if ( Settings )
-		Settings.addObserver("model.darkMode", this._update_colors.bind(this, true))
+		Settings.addObserver("settings.darkMode", this._update_colors.bind(this, true))
 
-	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 }
 
 
@@ -602,7 +602,7 @@ FFZ.prototype._update_colors = function(darkness_only) {
 	var Layout = window.App && App.__container__.lookup('controller:layout'),
 		Settings = window.App && App.__container__.lookup('controller:settings'),
 
-		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 
 	if ( darkness_only && this._color_old_darkness === is_dark )
 		return;

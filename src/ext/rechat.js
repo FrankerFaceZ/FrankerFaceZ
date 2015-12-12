@@ -47,6 +47,26 @@ FFZ.prototype.setup_rechat = function() {
 FFZ.prototype.find_rechat = function() {
 	var el = !this.has_bttv ? document.querySelector('.rechat-chat-line') : null;
 
+	if ( ! this._rechat_listening && ! el ) {
+		// Try darkening a chat container. We don't have chat.
+		var container = document.querySelector('.chat-container'),
+			header = container && container.querySelector('.chat-header');
+
+		if ( header && header.textContent.indexOf('ReChat') !== -1 ) {
+			// Look-up dark mode.
+			var dark_chat = this.settings.dark_twitch;
+			if ( ! dark_chat ) {
+				var model = window.App ? App.__container__.lookup('controller:settings').get('model') : undefined;
+				dark_chat = model && model.get('darkMode');
+			}
+
+			container.classList.toggle('dark', dark_chat);
+			jQuery(container).find('.chat-lines').addClass('ffz-scrollbar');
+		}
+
+		return;
+	}
+
 	// If there's no change, don't continue.
 	if ( !!el === this._rechat_listening )
 		return;
@@ -128,7 +148,7 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 
 		Layout = App.__container__.lookup('controller:layout'),
 		Settings = App.__container__.lookup('controller:settings'),
-		is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode')),
+		is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),
 
 		badges_el = line.querySelector('.badges'),
 		from_el = line.querySelector('.from'),
@@ -196,7 +216,7 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 	if ( ! message_el )
 		return;
 
-	if ( ! reprocess && message_el.style.color ) {
+	if ( ! reprocess && colors && message_el.style.color ) {
 		message_el.classList.add('has-color');
 		message_el.style.color = is_dark ? colors[1] : colors[0];
 	}

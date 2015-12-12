@@ -72,11 +72,12 @@ FFZ.prototype.setup_player = function() {
 	if ( ! window.Ember )
 		return;
 
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		if ( ! views.hasOwnProperty(key) )
 			continue;
 
-		var view = Ember.View.views[key];
+		var view = views[key];
 		if ( !(view instanceof Player2) )
 			continue;
 

@@ -1,7 +1,4 @@
 var FFZ = window.FrankerFaceZ,
-	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
-	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
-	GROUP_CHAT = /^_([^_]+)_\d+$/,
 	HOSTED_SUB = / subscribed to /,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -58,6 +55,35 @@ FFZ.prototype.setup_room = function() {
 			this.get("model.tmiRoom").sendMessage("/timeout " + e.user + " 1");
 			this.get("model").clearMessages(e.user);
 		}
+
+		RC._actions.showModOverlay = function(e) {
+			var Channel = App.__container__.resolve('model:channel');
+			if ( ! Channel )
+				return;
+
+			var chan = Channel.find({id: e.sender});
+
+			// Don't try loading the channel if it's already loaded. Don't make mod cards
+			// refresh the channel page when you click the broadcaster, basically.
+			if ( ! chan.get('isLoaded') )
+				chan.load();
+
+			this.set("showModerationCard", true);
+
+			// We pass in renderBottom and renderRight, which we use to reposition the window
+			// after we know how big it actually is.
+			this.set("moderationCardInfo", {
+				user: chan,
+				renderTop: e.top,
+				renderLeft: e.left,
+				renderBottom: e.bottom,
+				renderRight: e.right,
+				isIgnored: this.get("tmiSession").isIgnored(e.sender),
+				isChannelOwner: this.get("controllers.login.userData.login") === e.sender,
+				profileHref: Twitch.uri.profile(e.sender),
+				isModeratorOrHigher: this.get("model.isModeratorOrHigher")
+			});
+		}
 	}
 
 	this.log("Hooking the Ember Room model.");
@@ -90,11 +116,12 @@ FFZ.prototype.setup_room = function() {
 	} catch(err) { }
 
 	// Modify all existing Room views.
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		if ( ! views.hasOwnProperty(key) )
 			continue;
 
-		var view = Ember.View.views[key];
+		var view = views[key];
 		if ( !(view instanceof RoomView) )
 			continue;
 
@@ -834,7 +861,7 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 
 FFZ.prototype.load_room = function(room_id, callback, tries) {
 	var f = this;
-	jQuery.getJSON(((tries||0)%2 === 0 ? constants.API_SERVER : constants.API_SERVER_2) + "v1/room/" + room_id)
+	jQuery.getJSON(constants.API_SERVER + "v1/room/" + room_id)
 		.done(function(data) {
 			if ( data.sets ) {
 				for(var key in data.sets)
@@ -933,6 +960,28 @@ FFZ.prototype._modify_room = function(room) {
 				this.set('ffz_banned', false);
 				f._roomv && f._roomv.ffzUpdateStatus();
 			}
+		},
+
+		ffzScheduleDestroy: function() {
+			if ( this._ffz_destroy_timer )
+				return;
+
+			var t = this;
+			this._ffz_destroy_timer = setTimeout(function() {
+				t._ffz_destroy_timer = null;
+				t.ffzCheckDestroy();
+			}, 5000);
+		},
+
+		ffzCheckDestroy: function() {
+			var Chat = App.__container__.lookup('controller:chat'),
+				user = f.get_user(),
+				room_id = this.get('id');
+
+			if ( (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
+				return;
+
+			this.destroy();
 		},
 
 		ffzUpdateStatus: function() {
@@ -1089,7 +1138,14 @@ FFZ.prototype._modify_room = function(room) {
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
 
-				"admin" === msg.style || ("whisper" === msg.style && ! this.ffz_whisper_room ) || this.incrementProperty("unreadCount", 1);
+				if ( msg.style !== "admin" && msg.style !== "whisper" ) {
+					if ( msg.ffz_has_mention ) {
+						this.ffz_last_mention = Date.now();
+					}
+
+					this.ffz_last_activity = Date.now();
+					this.incrementProperty("unreadCount", 1);
+				}
 			}
 		},
 
@@ -1101,9 +1157,6 @@ FFZ.prototype._modify_room = function(room) {
 			// If we have a pending flush, don't reschedule. It wouldn't change.
 			if ( this._ffz_pending_flush )
 				return;
-
-			/*if ( this._ffz_pending_flush )
-				clearTimeout(this._ffz_pending_flush);*/
 
 			if ( this.ffzPending && this.ffzPending.length ) {
 				// We need either the amount of chat delay past the first message, if chat_delay is on, or the
@@ -1258,10 +1311,9 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		send: function(text, ignore_history) {
-			if ( f.settings.group_tabs && f.settings.whisper_room && this.ffz_whisper_room )
-				return;
-
 			try {
+				this.ffz_last_input = Date.now();
+
 				if ( text && ! ignore_history ) {
 					// Command History
 					var mru = this.get('mru_list'),
@@ -1294,15 +1346,12 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzUpdateUnread: function() {
-			if ( f.settings.group_tabs ) {
-				var Chat = App.__container__.lookup('controller:chat');
-				if ( Chat && Chat.get('currentRoom') === this )
-					this.resetUnreadCount();
-				else if ( f._chatv )
-					f._chatv.ffzTabUnread(this.get('id'));
-			}
+			var Chat = App.__container__.lookup('controller:chat');
+			if ( Chat && Chat.get('currentRoom') === this )
+				this.resetUnreadCount();
+			else if ( f._chatv )
+				f._chatv.ffzUpdateUnread(this.get('id'));
 		}.observes('unreadCount'),
-
 
 		ffzInitChatterCount: function() {
 			if ( ! this.tmiRoom )

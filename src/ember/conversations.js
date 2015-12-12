@@ -58,8 +58,7 @@ FFZ.prototype.setup_conversations = function() {
 FFZ.prototype._modify_conversation_window = function(component) {
 	var f = this,
 
-		Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
+		Layout = App.__container__.lookup('controller:layout');
 
 	component.reopen({
 		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
@@ -106,8 +105,7 @@ FFZ.prototype._modify_conversation_window = function(component) {
 FFZ.prototype._modify_conversation_line = function(component) {
 	var f = this,
 
-		Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
+		Layout = App.__container__.lookup('controller:layout');
 
 	component.reopen({
 		tokenizedMessage: function() {

@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 83,
+	major: 3, minor: 5, revision: 100,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -333,9 +333,17 @@ FFZ.prototype.init_ember = function(delay) {
 
 	this.users = {};
 	this.is_dashboard = false;
+
 	try {
 		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
 	} catch(err) { this.embed_in_dash = false; }
+
+
+	// Make an alias so they STOP RENAMING THIS ON ME
+	var Settings = App.__container__.lookup('controller:settings');
+	if ( Settings && Settings.get('settings') === undefined )
+		Settings.reopen({settings: Ember.computed.alias('model')});
+
 
 	// Initialize all the modules.
 	this.load_settings();
