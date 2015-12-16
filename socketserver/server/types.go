@@ -31,7 +31,7 @@ type ConfigFile struct {
 	SSLCertificateFile string
 	SSLKeyFile         string
 
-	UseElasticSearch bool
+	UseESLogStashing bool
 	ESServer         string
 	ESIndexPrefix    string
 	ESHostName       string

@@ -96,7 +96,9 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		resp.Body.Close()
 	}
 
-	logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
+	if Configuration.UseESLogStashing {
+		logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
+	}
 
 	go authorizationJanitor()
 	go bunchCacheJanitor()
