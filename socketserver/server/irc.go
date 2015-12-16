@@ -64,7 +64,6 @@ func authorizationJanitor_do() {
 }
 
 func (client *ClientInfo) StartAuthorization(callback AuthCallback) {
-	fmt.Println(DEBUG, "starting auth for user", client.TwitchUsername, client.RemoteAddr)
 	var nonce [32]byte
 	_, err := rand.Read(nonce[:])
 	if err != nil {
@@ -79,10 +78,8 @@ func (client *ClientInfo) StartAuthorization(callback AuthCallback) {
 	enc.Close()
 	challenge := buf.String()
 
-	fmt.Println(DEBUG, "adding to auth array")
 	AddPendingAuthorization(client, challenge, callback)
 
-	fmt.Println(DEBUG, "sending auth message")
 	client.MessageChannel <- ClientMessage{MessageID: -1, Command: AuthorizeCommand, Arguments: challenge}
 }
 
