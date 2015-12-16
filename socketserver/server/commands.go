@@ -21,10 +21,10 @@ type Command string
 type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
 var commandHandlers = map[Command]CommandHandler{
-	HelloCommand: C2SHello,
-	"ping":       C2SPing,
-	"setuser":    C2SSetUser,
-	"ready":      C2SReady,
+	HelloCommand:   C2SHello,
+	"ping":         C2SPing,
+	SetUserCommand: C2SSetUser,
+	ReadyCommand:   C2SReady,
 
 	"sub":   C2SSubscribe,
 	"unsub": C2SUnsubscribe,
@@ -143,7 +143,6 @@ func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rm
 		go client.StartAuthorization(func(_ *ClientInfo, _ bool) {
 			client.MsgChannelKeepalive.Done()
 		})
-
 	}
 
 	return ResponseSuccess, nil
@@ -316,11 +315,11 @@ func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage
 func aggregateDataSender() {
 	for {
 		time.Sleep(5 * time.Minute)
-		doSendAggregateData()
+		aggregateDataSender_do()
 	}
 }
 
-func doSendAggregateData() {
+func aggregateDataSender_do() {
 	followEventsLock.Lock()
 	follows := followEvents
 	followEvents = nil
@@ -538,11 +537,18 @@ func C2SHandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg Client
 }
 
 const AuthorizationFailedErrorString = "Failed to verify your Twitch username."
+const AuthorizationNeededError = "You must be signed in to use that command."
 
 func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo) {
 	resp, err := SendRemoteCommandCached(string(msg.Command), msg.origArguments, client.AuthInfo)
 
 	if err == ErrAuthorizationNeeded {
+		if client.TwitchUsername == "" {
+			// Not logged in
+			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationNeededError}
+			client.MsgChannelKeepalive.Done()
+			return
+		}
 		client.StartAuthorization(func(_ *ClientInfo, success bool) {
 			if success {
 				doRemoteCommand(conn, msg, client)

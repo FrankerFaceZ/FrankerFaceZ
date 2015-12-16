@@ -34,6 +34,12 @@ const ErrorCommand Command = "error"
 // Sending any other command will result in a CloseFirstMessageNotHello.
 const HelloCommand Command = "hello"
 
+// ReadyCommand is a C2S Command.
+// It indicates that the client is finished sending the initial 'sub' commands and the server should send the backlog.
+const ReadyCommand Command = "ready"
+
+const SetUserCommand Command = "set_user"
+
 // AuthorizeCommand is a S2C Command sent as part of Twitch username validation.
 const AuthorizeCommand Command = "do_authorize"
 

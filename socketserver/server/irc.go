@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"errors"
 )
 
 type AuthCallback func(client *ClientInfo, successful bool)
@@ -39,28 +40,31 @@ func AddPendingAuthorization(client *ClientInfo, challenge string, callback Auth
 func authorizationJanitor() {
 	for {
 		time.Sleep(5 * time.Minute)
-
-		func() {
-			cullTime := time.Now().Add(-30 * time.Minute)
-
-			PendingAuthLock.Lock()
-			defer PendingAuthLock.Unlock()
-
-			newPendingAuths := make([]PendingAuthorization, 0, len(PendingAuths))
-
-			for _, v := range PendingAuths {
-				if !cullTime.After(v.EnteredAt) {
-					newPendingAuths = append(newPendingAuths, v)
-				}
-			}
-
-			PendingAuths = newPendingAuths
-		}()
+		authorizationJanitor_do()
 	}
 }
 
+func authorizationJanitor_do() {
+	cullTime := time.Now().Add(-30 * time.Minute)
+
+	PendingAuthLock.Lock()
+	defer PendingAuthLock.Unlock()
+
+	newPendingAuths := make([]PendingAuthorization, 0, len(PendingAuths))
+
+	for _, v := range PendingAuths {
+		if !cullTime.After(v.EnteredAt) {
+			newPendingAuths = append(newPendingAuths, v)
+		} else {
+			v.Callback(v.Client, false)
+		}
+	}
+
+	PendingAuths = newPendingAuths
+}
+
 func (client *ClientInfo) StartAuthorization(callback AuthCallback) {
-	fmt.Println(DEBUG, "startig auth for user", client.TwitchUsername, client.RemoteAddr)
+	fmt.Println(DEBUG, "starting auth for user", client.TwitchUsername, client.RemoteAddr)
 	var nonce [32]byte
 	_, err := rand.Read(nonce[:])
 	if err != nil {
@@ -88,6 +92,8 @@ const AuthCommand = "AUTH"
 
 const DEBUG = "DEBUG"
 
+var errChallengeNotFound = errors.New("did not find a challenge solved by that message")
+
 func ircConnection() {
 
 	c := irc.SimpleClient("justinfan123")
@@ -113,46 +119,7 @@ func ircConnection() {
 		submittedUser := line.Nick
 		submittedChallenge := msgArray[1]
 
-		var auth PendingAuthorization
-		var idx int = -1
-
-		PendingAuthLock.Lock()
-		for i, v := range PendingAuths {
-			if v.Client.TwitchUsername == submittedUser && v.Challenge == submittedChallenge {
-				auth = v
-				idx = i
-				break
-			}
-		}
-		if idx != -1 {
-			PendingAuths = append(PendingAuths[:idx], PendingAuths[idx+1:]...)
-		}
-		PendingAuthLock.Unlock()
-
-		if idx == -1 {
-			fmt.Println(DEBUG, "discarded msg - challenge not found", line.Raw)
-			return
-		}
-
-		// auth is valid, and removed from pending list
-
-		fmt.Println(DEBUG, "authorization success for user", auth.Client.TwitchUsername)
-		var usernameChanged bool
-		auth.Client.Mutex.Lock()
-		if auth.Client.TwitchUsername == submittedUser { // recheck condition
-			auth.Client.UsernameValidated = true
-		} else {
-			usernameChanged = true
-		}
-		auth.Client.Mutex.Unlock()
-
-		if auth.Callback != nil {
-			if !usernameChanged {
-				auth.Callback(auth.Client, true)
-			} else {
-				auth.Callback(auth.Client, false)
-			}
-		}
+		submitAuth(submittedUser, submittedChallenge)
 	})
 
 	err := c.ConnectTo("irc.twitch.tv")
@@ -160,4 +127,46 @@ func ircConnection() {
 		log.Fatalln("Cannot connect to IRC:", err)
 	}
 
+}
+
+func submitAuth(user, challenge string) error {
+	var auth PendingAuthorization
+	var idx int = -1
+
+	PendingAuthLock.Lock()
+	for i, v := range PendingAuths {
+		if v.Client.TwitchUsername == user && v.Challenge == challenge {
+			auth = v
+			idx = i
+			break
+		}
+	}
+	if idx != -1 {
+		PendingAuths = append(PendingAuths[:idx], PendingAuths[idx+1:]...)
+	}
+	PendingAuthLock.Unlock()
+
+	if idx == -1 {
+		return errChallengeNotFound // perhaps it was for another socket server
+	}
+
+	// auth is valid, and removed from pending list
+
+	fmt.Println(DEBUG, "authorization success for user", auth.Client.TwitchUsername)
+	var usernameChanged bool
+	auth.Client.Mutex.Lock()
+	if auth.Client.TwitchUsername == user { // recheck condition
+		auth.Client.UsernameValidated = true
+	} else {
+		usernameChanged = true
+	}
+	auth.Client.Mutex.Unlock()
+
+	if auth.Callback != nil {
+		if !usernameChanged {
+			auth.Callback(auth.Client, true)
+		} else {
+			auth.Callback(auth.Client, false)
+		}
+	}
 }

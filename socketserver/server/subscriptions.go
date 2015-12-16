@@ -149,21 +149,25 @@ const ReapingDelay = 1 * time.Minute
 func pubsubJanitor() {
 	for {
 		time.Sleep(ReapingDelay)
-		var cleanedUp = make([]string, 0, 6)
-		ChatSubscriptionLock.Lock()
-		for key, val := range ChatSubscriptionInfo {
-			if val == nil || len(val.Members) == 0 {
-				delete(ChatSubscriptionInfo, key)
-				cleanedUp = append(cleanedUp, key)
-			}
-		}
-		ChatSubscriptionLock.Unlock()
+		pubsubJanitor_do()
+	}
+}
 
-		if len(cleanedUp) != 0 {
-			err := SendCleanupTopicsNotice(cleanedUp)
-			if err != nil {
-				log.Println("error reporting cleaned subs:", err)
-			}
+func pubsubJanitor_do() {
+	var cleanedUp = make([]string, 0, 6)
+	ChatSubscriptionLock.Lock()
+	for key, val := range ChatSubscriptionInfo {
+		if val == nil || len(val.Members) == 0 {
+			delete(ChatSubscriptionInfo, key)
+			cleanedUp = append(cleanedUp, key)
+		}
+	}
+	ChatSubscriptionLock.Unlock()
+
+	if len(cleanedUp) != 0 {
+		err := SendCleanupTopicsNotice(cleanedUp)
+		if err != nil {
+			log.Println("error reporting cleaned subs:", err)
 		}
 	}
 }
