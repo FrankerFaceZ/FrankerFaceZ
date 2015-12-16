@@ -142,9 +142,9 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 	destURL := fmt.Sprintf("%s/cmd/%s", backendURL, remoteCommand)
 	var authKey string
 	if auth.UsernameValidated {
-		authKey = "usernameClaimed"
+		authKey = "usernameVerified"
 	} else {
-		authKey = "username"
+		authKey = "usernameClaimed"
 	}
 
 	formData := url.Values{

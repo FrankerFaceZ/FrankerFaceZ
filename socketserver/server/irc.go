@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	irc "github.com/fluffle/goirc/client"
 	"log"
 	"strings"
 	"sync"
 	"time"
-	"errors"
 )
 
 type AuthCallback func(client *ClientInfo, successful bool)
@@ -106,13 +106,11 @@ func ircConnection() {
 		channel := line.Args[0]
 		msg := line.Args[1]
 		if channel != AuthChannel || !strings.HasPrefix(msg, AuthCommand) || !line.Public() {
-			fmt.Println(DEBUG, "discarded msg", line.Raw)
 			return
 		}
 
 		msgArray := strings.Split(msg, " ")
 		if len(msgArray) != 2 {
-			fmt.Println(DEBUG, "discarded msg - not 2 strings", line.Raw)
 			return
 		}
 
@@ -129,7 +127,7 @@ func ircConnection() {
 
 }
 
-func submitAuth(user, challenge string) error {
+func submitAuth(user, challenge string) {
 	var auth PendingAuthorization
 	var idx int = -1
 
@@ -147,12 +145,11 @@ func submitAuth(user, challenge string) error {
 	PendingAuthLock.Unlock()
 
 	if idx == -1 {
-		return errChallengeNotFound // perhaps it was for another socket server
+		return // perhaps it was for another socket server
 	}
 
 	// auth is valid, and removed from pending list
 
-	fmt.Println(DEBUG, "authorization success for user", auth.Client.TwitchUsername)
 	var usernameChanged bool
 	auth.Client.Mutex.Lock()
 	if auth.Client.TwitchUsername == user { // recheck condition

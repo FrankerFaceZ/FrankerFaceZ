@@ -147,8 +147,8 @@ type TURLs struct {
 	SavePubMsg     string // cached_pub
 }
 
-func TGetUrls(testserver *httptest.Server) TURLs {
-	addr := testserver.Listener.Addr().String()
+func TGetUrls(socketserver *httptest.Server, backend *httptest.Server) TURLs {
+	addr := socketserver.Listener.Addr().String()
 	return TURLs{
 		Websocket:      fmt.Sprintf("ws://%s/", addr),
 		Origin:         fmt.Sprintf("http://%s", addr),
@@ -157,7 +157,13 @@ func TGetUrls(testserver *httptest.Server) TURLs {
 	}
 }
 
-func TSetup(testserver **httptest.Server, urls *TURLs) {
+const (
+	SetupWantSocketServer = 1 << iota
+	SetupWantBackendServer
+	SetupWantURLs
+)
+
+func TSetup(flags int, backendChecker *BackendRequestChecker) (socketserver *httptest.Server, backend *httptest.Server, urls TURLs) {
 	DumpBacklogData()
 
 	ioutil.WriteFile("index.html", []byte(`
@@ -174,28 +180,34 @@ func TSetup(testserver **httptest.Server, urls *TURLs) {
 	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
 </div>
 </div>`), 0600)
+
 	conf := &ConfigFile{
 		ServerID:         20,
 		UseSSL:           false,
-		SocketOrigin:     "localhost:2002",
 		OurPublicKey:     []byte{176, 149, 72, 209, 35, 42, 110, 220, 22, 236, 212, 129, 213, 199, 1, 227, 185, 167, 150, 159, 117, 202, 164, 100, 9, 107, 45, 141, 122, 221, 155, 73},
 		OurPrivateKey:    []byte{247, 133, 147, 194, 70, 240, 211, 216, 223, 16, 241, 253, 120, 14, 198, 74, 237, 180, 89, 33, 146, 146, 140, 58, 88, 160, 2, 246, 112, 35, 239, 87},
 		BackendPublicKey: []byte{19, 163, 37, 157, 50, 139, 193, 85, 229, 47, 166, 21, 153, 231, 31, 133, 41, 158, 8, 53, 73, 0, 113, 91, 13, 181, 131, 248, 176, 18, 1, 107},
 	}
+
+	if flags&SetupWantBackendServer != 0 {
+		backend = httptest.NewServer(backendChecker)
+		conf.BackendURL = fmt.Sprintf("http://%s", backend.Listener.Addr().String())
+	}
+
 	Configuration = conf
 	setupBackend(conf)
 
-	if testserver != nil {
+	if flags&SetupWantSocketServer != 0 {
 		serveMux := http.NewServeMux()
 		SetupServerAndHandle(conf, serveMux)
 
-		tserv := httptest.NewUnstartedServer(serveMux)
-		*testserver = tserv
-		tserv.Start()
-		if urls != nil {
-			*urls = TGetUrls(tserv)
-		}
+		socketserver = httptest.NewServer(serveMux)
 	}
+
+	if flags&SetupWantURLs != 0 {
+		urls = TGetUrls(socketserver, backend)
+	}
+	return
 }
 
 func TestSubscriptionAndPublish(t *testing.T) {
@@ -220,9 +232,18 @@ func TestSubscriptionAndPublish(t *testing.T) {
 
 	var server *httptest.Server
 	var urls TURLs
-	TSetup(&server, &urls)
+
+	var backendExpected = NewBackendRequestChecker(t,
+		ExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, ""},
+		ExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName1}, "added": []string{"t"}}, "ok"},
+		ExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName2}, "added": []string{"t"}}, "ok"},
+		ExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName3}, "added": []string{"t"}}, "ok"},
+	)
+	server, _, urls = TSetup(SetupWantSocketServer|SetupWantBackendServer|SetupWantURLs, backendExpected)
+
 	defer server.CloseClientConnections()
 	defer unsubscribeAllClients()
+	defer backendExpected.Close()
 
 	var conn *websocket.Conn
 	var resp *http.Response
@@ -277,6 +298,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}
 
 	doneWg.Add(1)
+	readyWg.Wait() // enforce ordering
 	readyWg.Add(1)
 	go func(conn *websocket.Conn) {
 		TSendMessage(t, conn, 1, HelloCommand, []interface{}{"ffz_0.0-test", uuid.NewV4().String()})
@@ -306,6 +328,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	}
 
 	doneWg.Add(1)
+	readyWg.Wait() // enforce ordering
 	readyWg.Add(1)
 	go func(conn *websocket.Conn) {
 		TSendMessage(t, conn, 1, HelloCommand, []interface{}{"ffz_0.0-test", uuid.NewV4().String()})
@@ -402,6 +425,106 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	server.Close()
 }
 
+func TestRestrictedCommands(t *testing.T) {
+	var doneWg sync.WaitGroup
+	var readyWg sync.WaitGroup
+
+	const TestCommandNeedsAuth = "needsauth"
+	const TestRequestData = "123456"
+	const TestRequestDataJSON = "\"" + TestRequestData + "\""
+	const TestReplyData = "success"
+	const TestUsername = "sirstendec"
+
+	var server *httptest.Server
+	var urls TURLs
+
+	var backendExpected = NewBackendRequestChecker(t,
+		ExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, ""},
+		ExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{""}, "clientData": []string{TestRequestDataJSON}}, ""},
+		ExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, ""},
+		ExpectedBackendRequest{200, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameVerified": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, fmt.Sprintf("\"%s\"", TestReplyData)},
+	)
+	server, _, urls = TSetup(SetupWantSocketServer|SetupWantBackendServer|SetupWantURLs, backendExpected)
+
+	defer server.CloseClientConnections()
+	defer unsubscribeAllClients()
+	defer backendExpected.Close()
+
+	var conn *websocket.Conn
+	var err error
+	var challengeChan = make(chan string)
+
+	var headers http.Header = make(http.Header)
+	headers.Set("Origin", TwitchDotTv)
+
+	// Client 1
+	conn, _, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	doneWg.Add(1)
+	readyWg.Add(1)
+	go func(conn *websocket.Conn) {
+		defer doneWg.Done()
+		defer conn.Close()
+		TSendMessage(t, conn, 1, HelloCommand, []interface{}{"ffz_0.0-test", uuid.NewV4().String()})
+		TReceiveExpectedMessage(t, conn, 1, SuccessCommand, IgnoreReceivedArguments)
+		TSendMessage(t, conn, 2, ReadyCommand, 0)
+		TReceiveExpectedMessage(t, conn, 2, SuccessCommand, nil)
+
+		// Should get immediate refusal because no username set
+		TSendMessage(t, conn, 3, TestCommandNeedsAuth, TestRequestData)
+		TReceiveExpectedMessage(t, conn, 3, ErrorCommand, AuthorizationNeededError)
+
+		// Set a username
+		TSendMessage(t, conn, 4, SetUserCommand, TestUsername)
+		TReceiveExpectedMessage(t, conn, 4, SuccessCommand, nil)
+
+		// Should get authorization prompt
+		TSendMessage(t, conn, 5, TestCommandNeedsAuth, TestRequestData)
+		readyWg.Done()
+		msg, success := TReceiveExpectedMessage(t, conn, -1, AuthorizeCommand, IgnoreReceivedArguments)
+		if !success {
+			t.Error("recieve authorize command failed, cannot continue")
+			return
+		}
+		challenge, err := msg.ArgumentsAsString()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		challengeChan <- challenge // mocked: sending challenge to IRC server, IRC server sends challenge to socket server
+
+		TReceiveExpectedMessage(t, conn, 5, SuccessCommand, TestReplyData)
+	}(conn)
+
+	readyWg.Wait()
+
+	challenge := <-challengeChan
+	PendingAuthLock.Lock()
+	found := false
+	for _, v := range PendingAuths {
+		if conn.LocalAddr().String() == v.Client.RemoteAddr.String() {
+			found = true
+			if v.Challenge != challenge {
+				t.Error("Challenge in array was not what client got")
+			}
+			break
+		}
+	}
+	PendingAuthLock.Unlock()
+	if !found {
+		t.Fatal("Did not find authorization challenge in the pending auths array")
+	}
+
+	submitAuth(TestUsername, challenge)
+
+	doneWg.Wait()
+	server.Close()
+}
+
 func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 	var doneWg sync.WaitGroup
 	var readyWg sync.WaitGroup
@@ -429,7 +552,7 @@ func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 
 	var server *httptest.Server
 	var urls TURLs
-	TSetup(&server, &urls)
+	server, _, urls = TSetup(SetupWantSocketServer|SetupWantURLs, nil)
 	defer unsubscribeAllClients()
 
 	var headers http.Header = make(http.Header)
