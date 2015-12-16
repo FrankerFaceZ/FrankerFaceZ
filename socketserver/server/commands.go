@@ -50,8 +50,7 @@ func DispatchC2SCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 		handler = C2SHandleRemoteCommand
 	}
 
-	Statistics.CommandsIssuedTotal++
-	Statistics.CommandsIssuedMap[msg.Command]++
+	CommandCounter <- msg.Command
 
 	response, err := callHandler(handler, conn, client, msg)
 

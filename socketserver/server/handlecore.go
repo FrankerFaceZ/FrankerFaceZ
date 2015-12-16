@@ -104,6 +104,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	go bunchCacheJanitor()
 	go pubsubJanitor()
 	go aggregateDataSender()
+	go commandCounter()
 
 	go ircConnection()
 	go shutdownHandler()

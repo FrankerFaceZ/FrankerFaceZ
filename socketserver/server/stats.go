@@ -59,6 +59,15 @@ type StatsData struct {
 // I don't really care.
 var Statistics = newStatsData()
 
+var CommandCounter = make(chan Command, 10)
+
+func commandCounter() {
+	for cmd := range CommandCounter {
+		Statistics.CommandsIssuedTotal++
+		Statistics.CommandsIssuedMap[cmd]++
+	}
+}
+
 const StatsDataVersion = 5
 const pageSize = 4096
 
