@@ -59,6 +59,8 @@ var ResponseSuccess = ClientMessage{Command: SuccessCommand}
 // Configuration is the active ConfigFile.
 var Configuration *ConfigFile
 
+var janitorsOnce sync.Once
+
 // SetupServerAndHandle starts all background goroutines and registers HTTP listeners on the given ServeMux.
 // Essentially, this function completely preps the server for a http.ListenAndServe call.
 // (Uses http.DefaultServeMux if `serveMux` is nil.)
@@ -106,14 +108,16 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
 	}
 
-	go authorizationJanitor()
-	go bunchCacheJanitor()
-	go pubsubJanitor()
-	go aggregateDataSender()
-	go commandCounter()
+	janitorsOnce.Do(func() {
+		go authorizationJanitor()
+		go bunchCacheJanitor()
+		go pubsubJanitor()
+		go aggregateDataSender()
+		go commandCounter()
 
-	go ircConnection()
-	go shutdownHandler()
+		go ircConnection()
+		go shutdownHandler()
+	})
 }
 
 func shutdownHandler() {
