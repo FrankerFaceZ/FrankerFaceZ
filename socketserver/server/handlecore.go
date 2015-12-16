@@ -20,7 +20,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"./logstash"
+	"./logstasher"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -95,6 +95,8 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	} else {
 		resp.Body.Close()
 	}
+
+	logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
 
 	go authorizationJanitor()
 	go bunchCacheJanitor()
@@ -253,7 +255,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 	// Close the connection when we're done.
 	defer closer()
 
-	var report logstash.ConnectionReport
+	var report logstasher.ConnectionReport
 	report.ConnectTime = time.Now()
 	report.RemoteAddr = conn.RemoteAddr()
 
@@ -306,7 +308,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
 	}
 
-	logstash.Submit(report)
+	logstasher.Submit(&report)
 }
 
 func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
@@ -407,7 +409,7 @@ func getDeadline() time.Time {
 	return time.Now().Add(1 * time.Minute)
 }
 
-func closeConnection(conn *websocket.Conn, closeMsg websocket.CloseError, report *esConnectionReport) {
+func closeConnection(conn *websocket.Conn, closeMsg websocket.CloseError, report *logstasher.ConnectionReport) {
 	closeTxt := closeMsg.Text
 	if strings.Contains(closeTxt, "read: connection reset by peer") {
 		closeTxt = "read: connection reset by peer"

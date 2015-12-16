@@ -1,4 +1,4 @@
-package server
+package logstasher
 
 import (
 	"bytes"
@@ -146,6 +146,7 @@ func checkServerPresent() {
 		resp.Body.Close()
 		serverPresent = true
 		submitChan = make(chan Report, 8)
+		fmt.Println("elasticsearch reports enabled")
 		go submissionWorker()
 	} else {
 		serverPresent = false
