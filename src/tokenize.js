@@ -95,21 +95,8 @@ var FFZ = window.FrankerFaceZ,
 
 
 		} else if ( link_data.type == "twitter" ) {
-			/*
-			Display Guidelines - https://about.twitter.com/company/display-requirements
-			[logo] Tweet
-			Ryan Greenberg (@greenberg) 24 Apr 2013
-			"Beware," wrote the prophets of San Francisco, "for what the sun giveth the wind taketh away."
-			 */
-			var ttparts = ["<span class='twitter_logo'></span> Tweet<br>",
-					utils.sanitize(link_data.user_display),
-					" (<b>@" + utils.sanitize(link_data.user) + "</b>) "];
-			var timestamp = utils.parse_date(link_data.timestamp);
-			if ( timestamp )
-				ttparts.push(utils.date_string(timestamp));
-			ttparts.push("<hr>");
-			ttparts.push(link_data.tweet_html || utils.sanitize(link_data.tweet));
-			tooltip = ttparts.join('');
+			tooltip = "<b>Tweet By: " + utils.sanitize(link_data.user) + "</b><hr>";
+			tooltip += utils.sanitize(link_data.tweet);
 
 
 		} else if ( link_data.type == "reputation" ) {
