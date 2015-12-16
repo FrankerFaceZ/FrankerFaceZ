@@ -140,16 +140,16 @@ func SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string,
 // `usernameClaimed` depending on whether AuthInfo.UsernameValidates is true is AuthInfo.TwitchUsername.
 func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
 	destURL := fmt.Sprintf("%s/cmd/%s", backendURL, remoteCommand)
-	var authKey string
-	if auth.UsernameValidated {
-		authKey = "usernameVerified"
-	} else {
-		authKey = "usernameClaimed"
-	}
 
 	formData := url.Values{
 		"clientData": []string{data},
-		authKey:      []string{auth.TwitchUsername},
+		"username":   []string{auth.TwitchUsername},
+	}
+
+	if auth.UsernameValidated {
+		formData.Set("authenticated", "1")
+	} else {
+		formData.Set("authenticated", "0")
 	}
 
 	sealedForm, err := SealRequest(formData)

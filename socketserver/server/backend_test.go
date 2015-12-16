@@ -58,18 +58,18 @@ func (s *BackendSuite) TestSendRemoteCommand(c *C) {
 	headersApplicationJson := http.Header{"Content-Type": []string{"application/json"}}
 
 	backend := NewTBackendRequestChecker(c,
-		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{""}}, TestResponse1, nil},
-		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{""}}, TestResponse2, nil},
-		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{TestUsername}}, TestResponse1, nil},
-		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameVerified": []string{TestUsername}}, TestResponse1, nil},
-		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData2}, "usernameClaimed": []string{TestUsername}}, TestResponse1, headersCacheTwoSeconds},
+		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{""}}, TestResponse1, nil},
+		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{""}}, TestResponse2, nil},
+		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestResponse1, nil},
+		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"1"}, "username": []string{TestUsername}}, TestResponse1, nil},
+		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData2}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestResponse1, headersCacheTwoSeconds},
 		// cached
 		// cached
-		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{TestUsername}}, TestResponse2, headersCacheTwoSeconds},
-		TExpectedBackendRequest{401, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{TestUsername}}, "", nil},
-		TExpectedBackendRequest{503, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{TestUsername}}, "", nil},
-		TExpectedBackendRequest{418, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "usernameClaimed": []string{TestUsername}}, TestErrorText, headersApplicationJson},
-		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData3}, "usernameClaimed": []string{TestUsername}}, TestResponse1, headersCacheInvalid},
+		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestResponse2, headersCacheTwoSeconds},
+		TExpectedBackendRequest{401, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, "", nil},
+		TExpectedBackendRequest{503, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, "", nil},
+		TExpectedBackendRequest{418, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestErrorText, headersApplicationJson},
+		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData3}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestResponse1, headersCacheInvalid},
 	)
 	_, _, _ = TSetup(SetupWantBackendServer, backend)
 	defer backend.Close()

@@ -243,9 +243,9 @@ func TestRestrictedCommands(t *testing.T) {
 
 	var backendExpected = NewTBackendRequestChecker(t,
 		TExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, "", nil},
-		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{""}, "clientData": []string{TestRequestDataJSON}}, "", nil},
-		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, "", nil},
-		TExpectedBackendRequest{200, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameVerified": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, fmt.Sprintf("\"%s\"", TestReplyData), nil},
+		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"authenticated": []string{"0"}, "username": []string{""}, "clientData": []string{TestRequestDataJSON}}, "", nil},
+		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"authenticated": []string{"0"}, "username": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, "", nil},
+		TExpectedBackendRequest{200, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"authenticated": []string{"1"}, "username": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, fmt.Sprintf("\"%s\"", TestReplyData), nil},
 	)
 	server, _, urls = TSetup(SetupWantSocketServer|SetupWantBackendServer|SetupWantURLs, backendExpected)
 
