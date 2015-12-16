@@ -1,11 +1,9 @@
 package server
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"golang.org/x/crypto/nacl/box"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,18 +13,57 @@ import (
 	"time"
 )
 
-func SetupRandomKeys(t testing.TB) {
-	_, senderPrivate, err := box.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-	receiverPublic, _, err := box.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatal(err)
+const (
+	SetupWantSocketServer = 1 << iota
+	SetupWantBackendServer
+	SetupWantURLs
+)
+
+func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *httptest.Server, backend *httptest.Server, urls TURLs) {
+	DumpBacklogData()
+
+	ioutil.WriteFile("index.html", []byte(`
+<!DOCTYPE html>
+<title>CatBag</title>
+<link rel="stylesheet" href="//cdn.frankerfacez.com/script/catbag.css">
+<div id="container">
+<div id="zf0"></div><div id="zf1"></div><div id="zf2"></div>
+<div id="zf3"></div><div id="zf4"></div><div id="zf5"></div>
+<div id="zf6"></div><div id="zf7"></div><div id="zf8"></div>
+<div id="zf9"></div><div id="catbag"></div>
+<div id="bottom">
+	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
+	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
+</div>
+</div>`), 0600)
+
+	conf := &ConfigFile{
+		ServerID:         20,
+		UseSSL:           false,
+		OurPublicKey:     []byte{176, 149, 72, 209, 35, 42, 110, 220, 22, 236, 212, 129, 213, 199, 1, 227, 185, 167, 150, 159, 117, 202, 164, 100, 9, 107, 45, 141, 122, 221, 155, 73},
+		OurPrivateKey:    []byte{247, 133, 147, 194, 70, 240, 211, 216, 223, 16, 241, 253, 120, 14, 198, 74, 237, 180, 89, 33, 146, 146, 140, 58, 88, 160, 2, 246, 112, 35, 239, 87},
+		BackendPublicKey: []byte{19, 163, 37, 157, 50, 139, 193, 85, 229, 47, 166, 21, 153, 231, 31, 133, 41, 158, 8, 53, 73, 0, 113, 91, 13, 181, 131, 248, 176, 18, 1, 107},
 	}
 
-	box.Precompute(&backendSharedKey, receiverPublic, senderPrivate)
-	messageBufferPool.New = New4KByteBuffer
+	if flags&SetupWantBackendServer != 0 {
+		backend = httptest.NewServer(backendChecker)
+		conf.BackendURL = fmt.Sprintf("http://%s", backend.Listener.Addr().String())
+	}
+
+	Configuration = conf
+	setupBackend(conf)
+
+	if flags&SetupWantSocketServer != 0 {
+		serveMux := http.NewServeMux()
+		SetupServerAndHandle(conf, serveMux)
+
+		socketserver = httptest.NewServer(serveMux)
+	}
+
+	if flags&SetupWantURLs != 0 {
+		urls = TGetUrls(socketserver, backend)
+	}
+	return
 }
 
 const MethodIsPost = "POST"
@@ -275,57 +312,4 @@ func TGetUrls(socketserver *httptest.Server, backend *httptest.Server) TURLs {
 		UncachedPubMsg: fmt.Sprintf("http://%s/uncached_pub", addr),
 		SavePubMsg:     fmt.Sprintf("http://%s/cached_pub", addr),
 	}
-}
-
-const (
-	SetupWantSocketServer = 1 << iota
-	SetupWantBackendServer
-	SetupWantURLs
-)
-
-func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *httptest.Server, backend *httptest.Server, urls TURLs) {
-	DumpBacklogData()
-
-	ioutil.WriteFile("index.html", []byte(`
-<!DOCTYPE html>
-<title>CatBag</title>
-<link rel="stylesheet" href="//cdn.frankerfacez.com/script/catbag.css">
-<div id="container">
-<div id="zf0"></div><div id="zf1"></div><div id="zf2"></div>
-<div id="zf3"></div><div id="zf4"></div><div id="zf5"></div>
-<div id="zf6"></div><div id="zf7"></div><div id="zf8"></div>
-<div id="zf9"></div><div id="catbag"></div>
-<div id="bottom">
-	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
-	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
-</div>
-</div>`), 0600)
-
-	conf := &ConfigFile{
-		ServerID:         20,
-		UseSSL:           false,
-		OurPublicKey:     []byte{176, 149, 72, 209, 35, 42, 110, 220, 22, 236, 212, 129, 213, 199, 1, 227, 185, 167, 150, 159, 117, 202, 164, 100, 9, 107, 45, 141, 122, 221, 155, 73},
-		OurPrivateKey:    []byte{247, 133, 147, 194, 70, 240, 211, 216, 223, 16, 241, 253, 120, 14, 198, 74, 237, 180, 89, 33, 146, 146, 140, 58, 88, 160, 2, 246, 112, 35, 239, 87},
-		BackendPublicKey: []byte{19, 163, 37, 157, 50, 139, 193, 85, 229, 47, 166, 21, 153, 231, 31, 133, 41, 158, 8, 53, 73, 0, 113, 91, 13, 181, 131, 248, 176, 18, 1, 107},
-	}
-
-	if flags&SetupWantBackendServer != 0 {
-		backend = httptest.NewServer(backendChecker)
-		conf.BackendURL = fmt.Sprintf("http://%s", backend.Listener.Addr().String())
-	}
-
-	Configuration = conf
-	setupBackend(conf)
-
-	if flags&SetupWantSocketServer != 0 {
-		serveMux := http.NewServeMux()
-		SetupServerAndHandle(conf, serveMux)
-
-		socketserver = httptest.NewServer(serveMux)
-	}
-
-	if flags&SetupWantURLs != 0 {
-		urls = TGetUrls(socketserver, backend)
-	}
-	return
 }

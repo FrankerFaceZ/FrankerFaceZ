@@ -6,7 +6,7 @@ import (
 )
 
 func TestSealRequest(t *testing.T) {
-	SetupRandomKeys(t)
+	TSetup(0, nil)
 
 	values := url.Values{
 		"QuickBrownFox": []string{"LazyDog"},
@@ -27,4 +27,8 @@ func TestSealRequest(t *testing.T) {
 	if unsealedValues.Get("QuickBrownFox") != "LazyDog" {
 		t.Errorf("Failed to round-trip, got back %v", unsealedValues)
 	}
+}
+
+func TestSendRemoteCommand(t *testing.T) {
+
 }
