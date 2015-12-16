@@ -160,6 +160,7 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 		updateSysMem()
 
 		if Statistics.SysMemTotalKB-Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
+			atomic.AddUint64(&Statistics.LowMemDroppedConnections, 1)
 			w.WriteHeader(503)
 			return
 		}
@@ -439,7 +440,7 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 	}
 	conn.SetWriteDeadline(getDeadline())
 	conn.WriteMessage(messageType, packet)
-	Statistics.MessagesSent++
+	atomic.AddUint64(&Statistics.MessagesSent, 1)
 }
 
 // UnmarshalClientMessage unpacks websocket TextMessage into a ClientMessage provided in the `v` parameter.

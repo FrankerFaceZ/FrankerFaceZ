@@ -30,6 +30,8 @@ type StatsData struct {
 	MemoryInUseKB uint64
 	MemoryRSSKB   uint64
 
+	LowMemDroppedConnections uint64
+
 	MemPerClientBytes uint64
 
 	CpuUsagePct float64
