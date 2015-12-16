@@ -18,6 +18,11 @@ import (
 	"time"
 )
 
+const bPathAnnounceStartup = "/startup"
+const bPathAddTopic = "/topics"
+const bPathAggStats = "/stats"
+const bPathOtherCommand = "/cmd/"
+
 var backendHTTPClient http.Client
 var backendURL string
 var responseCache *cache.Cache
@@ -39,9 +44,9 @@ func setupBackend(config *ConfigFile) {
 	}
 	responseCache = cache.New(60*time.Second, 120*time.Second)
 
-	postStatisticsURL = fmt.Sprintf("%s/stats", backendURL)
-	addTopicURL = fmt.Sprintf("%s/topics", backendURL)
-	announceStartupURL = fmt.Sprintf("%s/startup", backendURL)
+	announceStartupURL = fmt.Sprintf("%s%s", backendURL, bPathAnnounceStartup)
+	addTopicURL = fmt.Sprintf("%s%s", backendURL, bPathAddTopic)
+	postStatisticsURL = fmt.Sprintf("%s%s", backendURL, bPathAggStats)
 
 	messageBufferPool.New = New4KByteBuffer
 
@@ -270,7 +275,6 @@ func GenerateKeys(outputFile, serverID, theirPublicStr string) {
 	output := ConfigFile{
 		ListenAddr:      "0.0.0.0:8001",
 		SSLListenAddr:   "0.0.0.0:443",
-		SocketOrigin:    "localhost:8001",
 		BackendURL:      "http://localhost:8002/ffz",
 		MinMemoryKBytes: defaultMinMemoryKB,
 	}
