@@ -265,10 +265,6 @@ func RunSocketConnection(conn *websocket.Conn) {
 	// Close the connection when we're done.
 	defer closer()
 
-	var report logstasher.ConnectionReport
-	report.ConnectTime = time.Now()
-	report.RemoteAddr = conn.RemoteAddr()
-
 	_clientChan := make(chan ClientMessage)
 	_serverMessageChan := make(chan ClientMessage, sendMessageBufferLength)
 	_errorChan := make(chan error)
@@ -278,6 +274,10 @@ func RunSocketConnection(conn *websocket.Conn) {
 	client.MessageChannel = _serverMessageChan
 	client.RemoteAddr = conn.RemoteAddr()
 	client.MsgChannelIsDone = stoppedChan
+
+	var report logstasher.ConnectionReport
+	report.ConnectTime = time.Now()
+	report.RemoteAddr = client.RemoteAddr
 
 	conn.SetPongHandler(func(pongBody string) error {
 		client.Mutex.Lock()
@@ -318,6 +318,8 @@ func RunSocketConnection(conn *websocket.Conn) {
 		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
 	}
 
+	report.UsernameWasValidated = client.UsernameValidated
+	report.TwitchUsername = client.TwitchUsername
 	logstasher.Submit(&report)
 }
 

@@ -113,7 +113,10 @@ type ConnectionReport struct {
 	DisconnectCode   int
 	DisconnectReason string
 
-	RemoteAddr net.Addr
+	UsernameWasValidated bool
+
+	RemoteAddr     net.Addr `json:"-"` // not transmitted until I can figure out data minimization
+	TwitchUsername string   `json:"-"` // also not transmitted
 }
 
 // FillReport sets all the calculated fields, and calls esReportBasic.FillReport().
