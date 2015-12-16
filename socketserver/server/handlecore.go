@@ -19,6 +19,8 @@ import (
 	"syscall"
 	"time"
 	"unicode/utf8"
+
+	"./logstash"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -251,6 +253,10 @@ func RunSocketConnection(conn *websocket.Conn) {
 	// Close the connection when we're done.
 	defer closer()
 
+	var report logstash.ConnectionReport
+	report.ConnectTime = time.Now()
+	report.RemoteAddr = conn.RemoteAddr()
+
 	_clientChan := make(chan ClientMessage)
 	_serverMessageChan := make(chan ClientMessage, sendMessageBufferLength)
 	_errorChan := make(chan error)
@@ -261,44 +267,6 @@ func RunSocketConnection(conn *websocket.Conn) {
 	client.RemoteAddr = conn.RemoteAddr()
 	client.MsgChannelIsDone = stoppedChan
 
-	// Launch receiver goroutine
-	go func(errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
-		var msg ClientMessage
-		var messageType int
-		var packet []byte
-		var err error
-
-		defer close(errorChan)
-		defer close(clientChan)
-
-		for ; err == nil; messageType, packet, err = conn.ReadMessage() {
-			if messageType == websocket.BinaryMessage {
-				err = &CloseGotBinaryMessage
-				break
-			}
-			if messageType == websocket.CloseMessage {
-				err = io.EOF
-				break
-			}
-
-			UnmarshalClientMessage(packet, messageType, &msg)
-			if msg.MessageID == 0 {
-				continue
-			}
-			select {
-			case clientChan <- msg:
-			case <-stoppedChan:
-				return
-			}
-		}
-
-		select {
-		case errorChan <- err:
-		case <-stoppedChan:
-		}
-		// exit goroutine
-	}(_errorChan, _clientChan, stoppedChan)
-
 	conn.SetPongHandler(func(pongBody string) error {
 		client.Mutex.Lock()
 		client.pingCount = 0
@@ -307,10 +275,11 @@ func RunSocketConnection(conn *websocket.Conn) {
 	})
 
 	// All set up, now enter the work loop
-	closeReason := runSocketWriter(_errorChan, _clientChan, _serverMessageChan, conn, &client)
+	go runSocketReader(conn, _errorChan, _clientChan, stoppedChan)
+	closeReason := runSocketWriter(conn, &client, _errorChan, _clientChan, _serverMessageChan)
 
 	// Exit
-	CloseConnection(conn, closeReason)
+	closeConnection(conn, closeReason, &report)
 
 	// Launch message draining goroutine - we aren't out of the pub/sub records
 	go func() {
@@ -334,12 +303,50 @@ func RunSocketConnection(conn *websocket.Conn) {
 
 	if !StopAcceptingConnections {
 		// Don't perform high contention operations when server is closing
-		atomic.AddUint64(&Statistics.ClientDisconnectsTotal, 1)
-		atomic.AddUint64(&Statistics.CurrentClientCount, ^uint64(0))
+		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
 	}
+
+	logstash.Submit(report)
 }
 
-func runSocketWriter(errorChan <-chan error, clientChan <-chan ClientMessage, serverMessageChan <-chan ClientMessage, conn *websocket.Conn, client *ClientInfo) websocket.CloseError {
+func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
+	var msg ClientMessage
+	var messageType int
+	var packet []byte
+	var err error
+
+	defer close(errorChan)
+	defer close(clientChan)
+
+	for ; err == nil; messageType, packet, err = conn.ReadMessage() {
+		if messageType == websocket.BinaryMessage {
+			err = &CloseGotBinaryMessage
+			break
+		}
+		if messageType == websocket.CloseMessage {
+			err = io.EOF
+			break
+		}
+
+		UnmarshalClientMessage(packet, messageType, &msg)
+		if msg.MessageID == 0 {
+			continue
+		}
+		select {
+		case clientChan <- msg:
+		case <-stoppedChan:
+			return
+		}
+	}
+
+	select {
+	case errorChan <- err:
+	case <-stoppedChan:
+	}
+	// exit goroutine
+}
+
+func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan error, clientChan <-chan ClientMessage, serverMessageChan <-chan ClientMessage) websocket.CloseError {
 	for {
 		select {
 		case err := <-errorChan:
@@ -400,7 +407,7 @@ func getDeadline() time.Time {
 	return time.Now().Add(1 * time.Minute)
 }
 
-func CloseConnection(conn *websocket.Conn, closeMsg websocket.CloseError) {
+func closeConnection(conn *websocket.Conn, closeMsg websocket.CloseError, report *esConnectionReport) {
 	closeTxt := closeMsg.Text
 	if strings.Contains(closeTxt, "read: connection reset by peer") {
 		closeTxt = "read: connection reset by peer"
@@ -409,9 +416,10 @@ func CloseConnection(conn *websocket.Conn, closeMsg websocket.CloseError) {
 	} else if closeMsg.Code == 1001 {
 		closeTxt = "clean shutdown"
 	}
-	// todo kibana cannot analyze these
-	Statistics.DisconnectCodes[strconv.Itoa(closeMsg.Code)]++
-	Statistics.DisconnectReasons[closeTxt]++
+
+	report.DisconnectCode = closeMsg.Code
+	report.DisconnectReason = closeTxt
+	report.DisconnectTime = time.Now()
 
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), getDeadline())
 	conn.Close()

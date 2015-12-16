@@ -11,6 +11,8 @@ import (
 
 const CryptoBoxKeyLength = 32
 
+const NegativeOne = ^uint64(0)
+
 type ConfigFile struct {
 	// Numeric server id known to the backend
 	ServerID      int
@@ -119,13 +121,6 @@ type ClientInfo struct {
 	// The number of pings sent without a response.
 	// Protected by Mutex
 	pingCount int
-}
-
-type esReportBasic struct {
-	Timestamp time.Time
-	Host      string
-}
-type esDisconnectReport struct {
 }
 
 func VersionFromString(v string) ClientVersion {

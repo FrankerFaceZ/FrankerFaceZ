@@ -6,8 +6,8 @@ import (
 	"github.com/abiosoft/ishell"
 	"github.com/gorilla/websocket"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 func commandLineConsole() {
@@ -106,7 +106,7 @@ func commandLineConsole() {
 			server.GlobalSubscriptionLock.RUnlock()
 		}
 
-		msg := server.ClientMessage{ Arguments: &server.CloseRebalance }
+		msg := server.ClientMessage{Arguments: &server.CloseRebalance}
 		server.GlobalSubscriptionLock.RLock()
 		defer server.GlobalSubscriptionLock.RUnlock()
 
