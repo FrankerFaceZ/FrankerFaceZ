@@ -255,16 +255,6 @@ func RunSocketConnection(conn *websocket.Conn) {
 	atomic.AddUint64(&Statistics.ClientConnectsTotal, 1)
 	atomic.AddUint64(&Statistics.CurrentClientCount, 1)
 
-	var _closer sync.Once
-	closer := func() {
-		_closer.Do(func() {
-			conn.Close()
-		})
-	}
-
-	// Close the connection when we're done.
-	defer closer()
-
 	_clientChan := make(chan ClientMessage)
 	_serverMessageChan := make(chan ClientMessage, sendMessageBufferLength)
 	_errorChan := make(chan error)
