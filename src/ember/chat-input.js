@@ -90,22 +90,22 @@ FFZ.settings_info.input_emoji = {
 // ---------------------
 
 FFZ.prototype.setup_chat_input = function() {
-	this.log("Hooking the Ember Chat Input controller.");
+	this.log("Hooking the Ember Chat Input component.");
 	var Input = App.__container__.resolve('component:twitch-chat-input'),
 		f = this;
 
 	if ( ! Input )
-		return;
+		return this.log("Unable to get Chat Input component.");
 
 	this._modify_chat_input(Input);
 
-	if ( this._roomv ) {
-		for(var i=0; i < this._roomv._childViews.length; i++) {
-			var v = this._roomv._childViews[i];
-			if ( v instanceof Input ) {
-				this._modify_chat_input(v);
-				v.ffzInit();
-			}
+	var views = this._roomv && this._roomv._viewRegistry || window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		var v = views[key];
+		if ( v instanceof Input ) {
+			this.log("Manually modifying Chat Input component.", v);
+			this._modify_chat_input(v);
+			v.ffzInit();
 		}
 	}
 }
@@ -116,6 +116,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 	component.reopen({
 		ffz_mru_index: -1,
+		ffz_chatters: [],
 
 		didInsertElement: function() {
 			this._super();
@@ -149,9 +150,6 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 			this.ffzResizeInput();
 			setTimeout(this.ffzResizeInput.bind(this), 500);
-
-			/*var suggestions = this._parentView.get('context.model.chatSuggestions');
-			this.set('ffz_chatters', suggestions);*/
 		},
 
 		ffzTeardown: function() {
@@ -291,7 +289,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 				return;
 
 			var ind = this.get('ffz_mru_index'),
-				mru = this._parentView.get('context.model.mru_list') || [];
+				mru = this.get('parentView.context.model.mru_list') || [];
 
 			if ( key === KEYCODES.UP )
 				ind = (ind + 1) % (mru.length + 1);
@@ -336,7 +334,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 		/*ffz_emoticons: function() {
 			var output = [],
 
-				room = this._parentView.get('context.model'),
+				room = this.get('parentView.context.model'),
 				room_id = room && room.get('id'),
 				tmi = room && room.tmiSession,
 
@@ -349,7 +347,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 					for(var set_id in es.emoticon_sets) {
 						var emote_set = es.emoticon_sets[set_id];
 						for(var emote_id in emote_set) {
-							if ( emote_set[emote_id] ) {
+							if ( emote_set[emote_id] && emote_set[emote_id].code ) {
 								var code = emote_set[emote_id].code;
 								output.push({id: constants.KNOWN_CODES[code] || code});
 							}
@@ -365,15 +363,13 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 				for(var emote_id in emote_set.emoticons) {
 					var emote = emote_set.emoticons[emote_id];
-					if ( ! emote.hidden )
+					if ( ! emote.hidden && emote.name )
 						output.push({id:emote.name});
 				}
 			}
 
 			return output;
 		}.property(),
-
-		ffz_chatters: [],
 
 		suggestions: function(key, value, previousValue) {
 			if ( arguments.length > 1 ) {

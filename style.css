@@ -902,6 +902,49 @@ span.ffz-handle:after { left: 8px }
 .ffz-ui-popup.dark li.title { color: #fff; }
 .ffz-ui-popup.dark .ffz-ui-menu-page { background-color: #1e1e1e; }
 
+/* Host Menu */
+
+.ffz-channel-selector {
+	background-image: url("//cdn.frankerfacez.com/script/zreknarf-bg.png");
+	background-repeat: no-repeat;
+	background-size: 50%;
+	background-position: 110% 115%;
+}
+
+.ffz-channel-selector .dropmenu_action {
+	display: block;
+	position: relative;
+	line-height: 34px;
+	overflow: hidden;
+	padding: 0 !important;
+}
+
+.ffz-channel-selector .image {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	float: left;
+	margin: 6px 15px 8px 20px;
+}
+
+.ffz-channel-selector .title {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+	display: block;
+	padding-right: 20px;
+}
+
+.ffz-channel-selector .header {
+	padding: 5px 20px;
+	margin-bottom: 0;
+	border-bottom: none;
+	line-height: 22px;
+	text-transform: uppercase;
+	font-size: 11px;
+	color: #666;
+}
+
 
 /* Positioning Fixes */
 
@@ -912,6 +955,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+.chatters-container::-webkit-scrollbar,
 .ffz-scrollbar::-webkit-scrollbar,
 .ember-chat .chat-settings::-webkit-scrollbar,
 .conversations-list .conversations-list-inner::-webkit-scrollbar,
@@ -924,6 +968,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	width: 6px;
 }
 
+.chatters-container::-webkit-scrollbar-thumb,
 .ffz-scrollbar::-webkit-scrollbar-thumb,
 .ember-chat .chat-settings::-webkit-scrollbar-thumb,
 .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
@@ -944,6 +989,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .ffz-dark .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
 .ffz-dark .conversation-input-bar .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 
+.theatre .chatters-container::-webkit-scrollbar-thumb,
 .theatre .ffz-scrollbar::-webkit-scrollbar-thumb,
 .theatre .ember-chat .chat-settings::-webkit-scrollbar-thumb,
 .theatre .conversation-window .conversation-content::-webkit-scrollbar-thumb,
@@ -952,8 +998,9 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .theatre .chat-history::-webkit-scrollbar-thumb,
 .theatre .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 .theatre .ffz-ui-menu-page::-webkit-scrollbar-thumb,
-.theatre .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb
+.theatre .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
 
+.dark .chatters-container::-webkit-scrollbar-thumb,
 .dark .ffz-scrollbar::-webkit-scrollbar-thumb,
 .dark .ember-chat .chat-settings::-webkit-scrollbar-thumb,
 .dark .chat-history::-webkit-scrollbar-thumb,
@@ -961,6 +1008,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
 .dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
 
+.force-dark .chatters-container::-webkit-scrollbar-thumb,
 .force-dark .ffz-scrollbar::-webkit-scrollbar-thumb,
 .force-dark .ember-chat .chat-settings::-webkit-scrollbar-thumb,
 .force-dark .chat-history::-webkit-scrollbar-thumb,
@@ -969,6 +1017,12 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .force-dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb {
 	background: rgba(255,255,255,0.6);
 	box-shadow: 0 0 1px 1px rgba(0,0,0,0.25);
+}
+
+
+.chatters-container {
+	overflow-x: hidden !important;
+	overflow-y: auto !important;
 }
 
 /* Fix Moderation Cards */
@@ -1187,6 +1241,7 @@ body:not(.ffz-bttv) .more-messages-indicator {
 	overflow: hidden;
 }
 
+.chat-history.loading:after,
 .ffz-ui-sub-menu-page:empty::after,
 .ffz-ui-menu-page:empty::after {
 	content: " ";
@@ -1333,7 +1388,7 @@ a.unsafe-link {
 }
 
 .ffz-room-list td svg {
-	margin: 5px;
+	margin: 5px 10px 5px 0;
 	float: left;
 }
 
@@ -1347,9 +1402,9 @@ a.unsafe-link {
 .ffz-room-row:focus svg path,
 .ffz-room-row.active svg path { fill: #fff; }
 
-.ffz-room-row:hover td,
-.ffz-room-row:focus td,
-.ffz-room-row.active td {
+.ffz-room-row:hover,
+.ffz-room-row:focus,
+.ffz-room-row.active {
 	background-color: #6441A5;
 	color: #fff !important;
 }
@@ -1360,7 +1415,7 @@ th.ffz-row-switch {
 
 .ffz-room-row a.leave-chat {
 	float: right;
-	margin-right: 12px;
+	padding: 0 7px;
 }
 
 .ffz-row-switch .switch {
@@ -1374,6 +1429,8 @@ th.ffz-row-switch {
 
 
 /* Chat Tabs */
+
+.ember-chat .chat-room { z-index: 5; }
 
 #ffz-group-tabs {
 	padding: 10px 10px 6px;
@@ -1479,6 +1536,17 @@ th.ffz-row-switch {
 .ffz-room-row td > span {
 	line-height: 16px;
 	margin: 5px 0;
+}
+
+.ffz-room-row.row-mentioned {
+	background-color: rgba(128,50,50,0.1);
+	color: red !important;
+}
+
+.ffz-room-row.row-mentioned:not(.active):hover,
+.ffz-room-row.row-mentioned:not(.active):focus {
+	background-color: #a54141;
+	color: #fff !important;
 }
 
 #ffz-group-tabs .button .notifications {
@@ -1607,6 +1675,67 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	color: #8c8c8c;
 	margin-right: 5px;
 }
+
+.chat-history .chat-line:not(.original-sender) span.from:hover,
+.chat-history .timestamp:hover {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.chat-history.loading {
+	position: relative;
+	overflow-y: hidden !important;
+}
+.chat-history.loading li { pointer-events: none; }
+
+.chat-history .from { font-weight: 700; }
+
+.chat-history.loading:before {
+	content: " ";
+	display: block;
+	position: absolute;
+	z-index: 999;
+	top: 0; bottom: 0;
+	left: 0; right: 0;
+	background-color: rgba(128,128,128,0.8);
+}
+
+.theatre .chat-history.loading:before,
+.dark .chat-history.loading:before,
+.force-dark .chat-history.loading:before {
+	background-color: rgba(0,0,0,0.8);
+}
+
+.chat-history.loading:after {
+	visibility: visible;
+	clear: none;
+	position: absolute;
+	top: 0;
+	left: 50%;
+	margin-left: -40px;
+	z-index: 1000;
+}
+
+.ember-chat .moderation-card .back-button {
+	border: 1px solid rgba(0,0,0,0.2);
+	border-top: none;
+	float: none;
+	display: block;
+	width: 100%;
+	background-color: #fff;
+}
+
+.ember-chat .moderation-card .back-button:hover {
+	background-color: #6441A5 !important;
+	color: #fff !important;
+}
+
+.theatre .moderation-card .back-button,
+.dark .moderation-card .back-button,
+.force-dark .moderation-card .back-button {
+	background-color: #232329;
+}
+
 
 /* Room State */
 
@@ -1815,6 +1944,9 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: #191919;
 }
 
+.ffz-no-blue .theatre .moderation-card .back-button,
+.ffz-no-blue .dark .moderation-card .back-button,
+.ffz-no-blue .force-dark .moderation-card .back-button
 .ffz-no-blue .chat-container.dark .chat-interface .emoticon-selector .tabs,
 .ffz-no-blue .app-main.theatre .chat-container .chat-interface .emoticon-selector .tabs,
 .ffz-no-blue .chat-container.force-dark .chat-interface .emoticon-selector .tabs,
@@ -2069,8 +2201,52 @@ li[data-name="following"] a {
 	margin-right: 20px;
 }
 
+/* Chat Interactions Fixes */
+
+body:not(.ffz-bttv) .ember-chat .chat-commands-dropdown {
+	z-index: 998; /* 1 less than the header */
+	padding: 0;
+	margin-top: -1px;
+	background-color: #9265d5 !important;
+}
+
+body:not(.ffz-bttv) .ember-chat .chat-commands-dropdown li {
+	border: none;
+}
+
+body:not(.ffz-bttv) .ember-chat .chat-commands-dropdown li + li {
+	border-top: 1px solid rgba(0,0,0,0.25);
+}
+
+body:not(.ffz-bttv) .app-main.theatre .chat-container .chat-commands-dropdown li,
+body:not(.ffz-bttv) .dark .ember-chat .chat-commands-dropdown li,
+body:not(.ffz-bttv) .force-dark .ember-chat .chat-commands-dropdown li,
+body:not(.ffz-bttv) .ember-chat .chat-commands-dropdown li:hover {
+	background-color: rgba(0,0,0,0.25) !important;
+	color: #fff;
+}
+
+body:not(.ffz-bttv) .app-main.theatre .chat-container .chat-commands-dropdown li:hover,
+body:not(.ffz-bttv) .dark .ember-chat .chat-commands-dropdown li:hover,
+body:not(.ffz-bttv) .force-dark .ember-chat .chat-commands-dropdown li:hover {
+	background-color: rgba(0,0,0,0.75) !important;
+	color: #fff !important;
+}
+
+
 /* Conversations */
 
+body:not(.ffz-bttv) .conversation-window .new-message-divider + .timestamp-line {
+	margin-top: -3px;
+}
+
+/* Fix the ignore-cta covering up messages with no way to dismiss it. */
+body:not(.ffz-bttv) .conversation-window .ignore-cta + .conversation-content {
+	padding-top: 76px;
+}
+
+/* Hide that which should be hidden. */
+.conversation-window.collapsed .ignore-cta,
 .conversation-chat-line.action .colon,
 .conversation-input-bar .emoticon-selector .tabs,
 .conversation-preview-line .badges,
@@ -2237,4 +2413,42 @@ body:not(.ffz-conv-title-clickable) .conversation-header a.conversation-header-n
 
 .user.item .actions .follow svg {
 	margin: 4.5px 0 -4.5px -1px;
+}
+
+/* Creative Directory */
+
+.ffz-creative-tags .creativetag-list.filter-list,
+.ffz-creative-tags .creativetag-list ul,
+.ffz-creative-tags .creativetag-list-contain {
+	width: inherit;
+	height: inherit;
+	overflow: inherit;
+}
+
+body:not(.ffz-creative-showcase) .creative-hero,
+.ffz-creative-tags .creativetag-list-contain .filter-nav { display: none; }
+
+.ffz-creative-tags .creativetag-list ul {
+	display: flex;
+	flex-wrap: wrap;
+	position: inherit;
+	margin-bottom: -5px;
+}
+
+.ffz-creative-tags .creativetag-list li {
+	flex-grow: 1;
+	height: inherit;
+	float: none;
+	margin: 0 0 5px;
+}
+
+.ffz-creative-tags .creativetag-list a {
+	display: block;
+	text-align: center;
+	padding: 5px 10px;
+}
+
+.ffz-creative-tags .creativetag-list a.active {
+	color: #fff !important;
+	background-color: #6441a5 !important;
 }

@@ -3,7 +3,7 @@
 	background-color:rgb(16,16,16)!important;
 }
 
-.ffz-dark div#channel > .target-frame.active{
+.ffz-dark div#channel > .target-frame {
 	background-color:rgb(16,16,16)!important;
 }
 
@@ -22,6 +22,14 @@
 	border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.ffz-dark .offlineChannelStatus {
+	background-color: rgba(255,255,255, 0.05);
+}
+
+.ffz-dark .close-hostmode a:before,
+.ffz-dark .close-hostmode a:after {
+	border-bottom-color: rgba(255,255,255, 0.05);
+}
 
 
 /* hidden chat */
@@ -142,6 +150,7 @@
 .ffz-dark .whatisthis,
 .ffz-dark .ui-menu,
 .ffz-dark .dropmenu,
+.ffz-dark .sort-contain .sort-options,
 .ffz-dark .top-dropdown,
 .ffz-dark form.js-new_panel_form,
 .ffz-dark .js-new_panel_btn,
@@ -247,7 +256,7 @@
 .ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
 .ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
 .ffz-dark .dropmenu_action:not(:hover) span,
-.ffz-dark a:not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button) {
+.ffz-dark a:not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {
 	color: #a68ed2;
 }
 
@@ -901,6 +910,15 @@
 
 
 /* Conversations */
+
+.ffz-dark .ignore-cta {
+	background-color: #333;
+	box-shadow: 0 3px 0 #000;
+}
+
+.ffz-dark .ignore-cta .conversation-system-message {
+	color: #ccc;
+}
 
 .ffz-dark .conversation-input-bar .emoticon-selector-toggle svg path {
 	fill: rgba(255,255,255,0.2);

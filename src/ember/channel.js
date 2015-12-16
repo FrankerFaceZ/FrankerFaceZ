@@ -38,11 +38,12 @@ FFZ.prototype.setup_channel = function() {
 	} catch(err) { }
 
 	// Update Existing
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		if ( ! views.hasOwnProperty(key) )
 			continue;
 
-		var view = Ember.View.views[key];
+		var view = views[key];
 		if ( !(view instanceof Channel) )
 			continue;
 
@@ -166,8 +167,8 @@ FFZ.prototype.setup_channel = function() {
 			if ( display_name )
 				FFZ.capitalization[name] = [display_name, Date.now()];
 
-			if ( f.settings.group_tabs && f._chatv )
-				f._chatv.ffzRebuildTabs();
+			if ( f._chatv )
+				f._chatv.ffzUpdateHost(target);
 
 			if ( f.settings.follow_buttons )
 				f.rebuild_following_ui();
@@ -600,10 +601,12 @@ FFZ.prototype._modify_cindex = function(view) {
 			this._ffz_update_uptime = setTimeout(this.ffzUpdateUptime.bind(this), 1000);
 
 			// Determine when the channel last went live.
-			var online = this.get("controller.content.stream.created_at");
+			var online = this.get("controller.content.stream.created_at"),
+				now = Date.now() - (f._ws_server_offset || 0);
+
 			online = online && utils.parse_date(online);
 
-			var uptime = online && Math.floor((Date.now() - online.getTime()) / 1000) || -1;
+			var uptime = online && Math.floor((now - online.getTime()) / 1000) || -1;
 			if ( uptime < 0 ) {
 				var el = this.get('element').querySelector('#ffz-uptime-display');
 				if ( el )

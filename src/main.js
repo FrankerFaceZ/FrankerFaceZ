@@ -22,7 +22,7 @@ FFZ.get = function() { return FFZ.instance; }
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 77,
+	major: 3, minor: 5, revision: 100,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -149,6 +149,7 @@ require('./ext/emote_menu');
 
 require('./featurefriday');
 
+require('./ui/popups');
 require('./ui/styles');
 require('./ui/dark');
 require('./ui/tooltips');
@@ -256,9 +257,12 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 	this.setup_css();
+	this.setup_popups();
 
-	if ( ! no_socket )
+	if ( ! no_socket ) {
+		this.setup_time();
 		this.ws_create();
+	}
 
 	this.setup_colors();
 	this.setup_emoticons();
@@ -294,8 +298,11 @@ FFZ.prototype.init_dashboard = function(delay) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 	this.setup_css();
+	this.setup_popups();
 
+	this.setup_time();
 	this.ws_create();
+
 	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
@@ -326,9 +333,17 @@ FFZ.prototype.init_ember = function(delay) {
 
 	this.users = {};
 	this.is_dashboard = false;
+
 	try {
 		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
 	} catch(err) { this.embed_in_dash = false; }
+
+
+	// Make an alias so they STOP RENAMING THIS ON ME
+	var Settings = App.__container__.lookup('controller:settings');
+	if ( Settings && Settings.get('settings') === undefined )
+		Settings.reopen({settings: Ember.computed.alias('model')});
+
 
 	// Initialize all the modules.
 	this.load_settings();
@@ -336,8 +351,11 @@ FFZ.prototype.init_ember = function(delay) {
 	// Start this early, for quick loading.
 	this.setup_dark();
 	this.setup_css();
+	this.setup_popups();
 
+	this.setup_time();
 	this.ws_create();
+
 	this.setup_emoticons();
 	this.setup_badges();
 

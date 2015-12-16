@@ -43,9 +43,15 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 	// Disable Chat Tabs
-	if ( this.settings.group_tabs && this._chatv ) {
-		this._chatv.ffzDisableTabs();
+	if ( this._chatv ) {
+		if ( this.settings.group_tabs )
+			this._chatv.ffzDisableTabs();
+
+		this._chatv.ffzTeardownMenu();
+		this._chatv.ffzUnloadHost();
 	}
+
+	this.disconnect_extra_chat();
 
 	if ( this._roomv ) {
 		// Disable Chat Pause

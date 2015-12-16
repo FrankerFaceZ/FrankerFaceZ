@@ -2,19 +2,23 @@ var SVGPATH = '<path d="m120.95 1.74c4.08-0.09 8.33-0.84 12.21 0.82 3.61 1.8 7 4
 
 	DEBUG = localStorage.ffzDebugMode == "true" && document.body.classList.contains('ffz-dev'),
 	SERVER = DEBUG ? "//localhost:8000/" : "//cdn.frankerfacez.com/";
-	DIRECT_SERVER = DEBUG ? "//localhost:8000/" : "//direct-cdn.frankerfacez.com/";
+	//DIRECT_SERVER = DEBUG ? "//localhost:8000/" : "//direct-cdn.frankerfacez.com/";
 
 module.exports = {
 	DEBUG: DEBUG,
 	SERVER: SERVER,
-	DIRECT_SERVER: DIRECT_SERVER,
+	//DIRECT_SERVER: DIRECT_SERVER,
 
-	API_SERVER: "//api.frankerfacez.com/",
-	API_SERVER_2: "//direct-api.frankerfacez.com/",
+	API_SERVER: "https://api.frankerfacez.com/",
+	//API_SERVER_2: "http://direct-api.frankerfacez.com/",
 
 	WS_SERVER_POOLS: {
-		1: ["ws://catbag.frankerfacez.com/", "ws://andknuckles.frankerfacez.com/"],
-		2: ["ws://localhost:8001/"]
+		1: [
+			["wss://catbag.frankerfacez.com/", 0.5],
+			["wss://andknuckles.frankerfacez.com/", 1],
+			["wss://tuturu.frankerfacez.com/", 1]],
+		2: [
+			["ws://localhost:8001/", 1]]
 	},
 
 	TOOLTIP_DISTANCE: 50,

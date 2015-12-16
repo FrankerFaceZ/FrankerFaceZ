@@ -71,7 +71,7 @@ FFZ.prototype.setup_profile_following = function() {
 		ffzInit: function() {
 			// Only process our own profile following page.
 			var user = f.get_user();
-			if ( ! f.settings.enhance_profile_following || ! user || ! user.login === this.get('context.id') )
+			if ( ! f.settings.enhance_profile_following || ! user || user.login !== this.get('context.id') )
 				return;
 
 			var el = this.get('element'),
@@ -161,7 +161,8 @@ FFZ.prototype.setup_profile_following = function() {
 			t_el.className = 'overlay_info length';
 			jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
 
-			var age = data[0] ? Math.floor((Date.now() - data[0].getTime()) / 1000) : 0;
+			var now = Date.now() - (f._ws_server_offset || 0),
+				age = data[0] ? Math.floor((now - data[0].getTime()) / 1000) : 0;
 			if ( age ) {
 				t_el.innerHTML = constants.CLOCK + ' ' + utils.human_time(age, 10);
 				t_el.setAttribute('original-title', 'Following Since: <nobr>' + data[0].toLocaleString() + '</nobr>');
@@ -180,7 +181,8 @@ FFZ.prototype.setup_profile_following = function() {
 					follow.innerHTML = constants.HEART + constants.UNHEART + '<span> Follow</span>';
 
 					if ( t_el ) {
-						var age = data && data[0] ? Math.floor((Date.now() - data[0].getTime()) / 1000) : undefined;
+						var now = Date.now() - (f._ws_server_offset || 0),
+							age = data && data[0] ? Math.floor((now - data[0].getTime()) / 1000) : undefined;
 						if ( age !== undefined ) {
 							t_el.innerHTML = constants.CLOCK + ' ' + (age < 60 ? 'now' : utils.human_time(age, 10));
 							t_el.setAttribute('original-title', 'Following Since: <nobr>' + data[0].toLocaleString() + '</nobr>');
@@ -216,7 +218,7 @@ FFZ.prototype.setup_profile_following = function() {
 						Twitch.api.del("users/:login/follows/channels/" + user_id) :
 						Twitch.api.put("users/:login/follows/channels/" + user_id, {notifications: false}))
 					.done(function() {
-						data = f._following_cache[user_id] = was_following ? null : [new Date(), false];
+						data = f._following_cache[user_id] = was_following ? null : [new Date(Date.now() - (f._ws_server_offset||0)), false];
 					})
 					.always(function() {
 						update_follow();
@@ -257,8 +259,9 @@ FFZ.prototype.setup_profile_following = function() {
 		ProfileView.create().destroy();
 	} catch(err) { }
 
-	for(var key in Ember.View.views) {
-		var view = Ember.View.views[key];
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		var view = views[key];
 		if ( ! view || !(view instanceof ProfileView) )
 			continue;
 

@@ -1,7 +1,4 @@
 var FFZ = window.FrankerFaceZ,
-	CSS = /\.([\w\-_]+)\s*?\{content:\s*?"([^"]+)";\s*?background-image:\s*?url\("([^"]+)"\);\s*?height:\s*?(\d+)px;\s*?width:\s*?(\d+)px;\s*?margin:([^;}]+);?([^}]*)\}/mg,
-	MOD_CSS = /[^\n}]*\.badges\s+\.moderator\s*{\s*background-image:\s*url\(\s*['"]([^'"]+)['"][^}]+(?:}|$)/,
-	GROUP_CHAT = /^_([^_]+)_\d+$/,
 	HOSTED_SUB = / subscribed to /,
 	constants = require('../constants'),
 	utils = require('../utils'),
@@ -58,6 +55,35 @@ FFZ.prototype.setup_room = function() {
 			this.get("model.tmiRoom").sendMessage("/timeout " + e.user + " 1");
 			this.get("model").clearMessages(e.user);
 		}
+
+		RC._actions.showModOverlay = function(e) {
+			var Channel = App.__container__.resolve('model:channel');
+			if ( ! Channel )
+				return;
+
+			var chan = Channel.find({id: e.sender});
+
+			// Don't try loading the channel if it's already loaded. Don't make mod cards
+			// refresh the channel page when you click the broadcaster, basically.
+			if ( ! chan.get('isLoaded') )
+				chan.load();
+
+			this.set("showModerationCard", true);
+
+			// We pass in renderBottom and renderRight, which we use to reposition the window
+			// after we know how big it actually is.
+			this.set("moderationCardInfo", {
+				user: chan,
+				renderTop: e.top,
+				renderLeft: e.left,
+				renderBottom: e.bottom,
+				renderRight: e.right,
+				isIgnored: this.get("tmiSession").isIgnored(e.sender),
+				isChannelOwner: this.get("controllers.login.userData.login") === e.sender,
+				profileHref: Twitch.uri.profile(e.sender),
+				isModeratorOrHigher: this.get("model.isModeratorOrHigher")
+			});
+		}
 	}
 
 	this.log("Hooking the Ember Room model.");
@@ -90,11 +116,12 @@ FFZ.prototype.setup_room = function() {
 	} catch(err) { }
 
 	// Modify all existing Room views.
-	for(var key in Ember.View.views) {
-		if ( ! Ember.View.views.hasOwnProperty(key) )
+	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	for(var key in views) {
+		if ( ! views.hasOwnProperty(key) )
 			continue;
 
-		var view = Ember.View.views[key];
+		var view = views[key];
 		if ( !(view instanceof RoomView) )
 			continue;
 
@@ -713,7 +740,7 @@ FFZ.prototype._load_history = function(room_id, success, data) {
 	if ( ! data.length )
 		return;
 
-	return this._insert_history(room_id, data);
+	return this._insert_history(room_id, data, true);
 }
 
 
@@ -730,118 +757,93 @@ FFZ.prototype._show_deleted = function(room_id) {
 	this._insert_history(room_id, old_messages);
 }
 
-FFZ.prototype._insert_history = function(room_id, data) {
-	var room = this.rooms[room_id];
+FFZ.prototype._insert_history = function(room_id, data, from_server) {
+	var room = this.rooms[room_id], f = this;
 	if ( ! room || ! room.room )
 		return;
 
 	var r = room.room,
 		messages = r.get('messages'),
+		buffer_size = r.get('messageBufferSize'),
+
 		tmiSession = r.tmiSession || (TMI._sessions && TMI._sessions[0]),
-		tmiRoom = r.tmiRoom,
+		delete_links = r.get('roomProperties.hide_chat_links'),
 
 		removed = 0,
 		inserted = 0,
-		purged = {},
 
-		last_msg = data[data.length - 1],
-		now = new Date(),
-		last_date = (typeof last_msg.date === "string" || typeof last_msg.date === "number") ? (last_msg.date = utils.parse_date(last_msg.date)) : last_msg.date,
-		age = (now - last_date) / 1000,
-		is_old = age > 300,
+		first_inserted,
+		first_existing,
+		before;
 
-		i = data.length;
+	first_existing = messages.length ? messages[0] : null;
+	if ( first_existing && first_existing.from === 'jtv' && first_existing.message === 'Welcome to the chat room!' )
+		first_existing = messages.length > 1 ? messages[1] : null;
 
-	var i = data.length;
-	while(i--) {
-		var msg = data[i],
-			is_deleted = msg.ffz_deleted = purged[msg.from] || false;
+	if ( first_existing )
+		before = first_existing.date && first_existing.date.getTime();
 
-		if ( is_deleted && ! this.settings.prevent_clear )
-			msg.deleted = true;
 
-		if ( typeof msg.date === "string" || typeof msg.date === "number" )
-			msg.date = utils.parse_date(msg.date);
+	this.parse_history(data, null, room_id, delete_links, tmiSession, function(msg) {
+		if ( from_server )
+			msg.from_server = true;
 
-		if ( ! msg.room )
-			msg.room = room_id;
+		// Skip messages that are from the future.
+		if ( ! msg.date || (before && (before - (msg.from_server && ! first_existing.from_server ? f._ws_server_offset || 0 : 0)) < msg.date.getTime()) )
+			return true;
 
-		if ( ! msg.color )
-			msg.color = msg.tags && msg.tags.color ? msg.tags.color : tmiSession && msg.from ? tmiSession.getColor(msg.from.toLowerCase()) : "#755000";
+		if ( f.settings.remove_deleted && msg.deleted )
+			return true;
 
-		if ( ! msg.labels || ! msg.labels.length ) {
-			var labels = msg.labels = [];
-			if ( msg.tags ) {
-				if ( msg.tags.turbo )
-					labels.push("turbo");
-				if ( msg.tags.subscriber )
-					labels.push("subscriber");
-				if ( msg.from === room_id )
-					labels.push("owner")
-				else {
-					var ut = msg.tags['user-type'];
-					if ( ut === 'mod' || ut === 'staff' || ut === 'admin' || ut === 'global_mod' )
-						labels.push(ut);
-				}
-			}
-		}
-
-		if ( ! msg.style ) {
-			if ( msg.from === "jtv" )
-				msg.style = "admin";
-			else if ( msg.from === "twitchnotify" )
-				msg.style = "notification";
-		}
-
-		if ( msg.tags && typeof msg.tags.emotes === "string" )
-			try {
-				msg.tags.emotes = JSON.parse(msg.tags.emotes);
-			} catch(err) {
-				f.log("Error Parsing JSON Emotes: " + err);
-				msg.tags.emotes = {};
-			}
-
-		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
-			this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
-
-		if ( r.shouldShowMessage(msg) ) {
-			if ( messages.length < r.get("messageBufferSize") ) {
-				// One last thing! Make sure we don't have too many messages.
+		if ( r.shouldShowMessage(msg) && r.ffzShouldShowMessage(msg) ) {
+			if ( messages.length < buffer_size ) {
 				if ( msg.ffz_old_messages ) {
-					var max_msgs = r.get("messageBufferSize") - (messages.length + 1);
-					if ( msg.ffz_old_messages.length > max_msgs )
-						msg.ffz_old_messages = msg.ffz_old_messages.slice(msg.ffz_old_messages.length - max_msgs);
+					var max_messages = buffer_size - (messages.length + 1);
+					if ( max_messages <= 0 )
+						msg.ffz_old_messages = null;
+					else if ( msg.ffz_old_messages.length > max_messages )
+						msg.ffz_old_messages = msg.ffz_old_messages.slice(msg.ffz_old_messages.length - max_messages);
 				}
+
+				if ( ! first_inserted )
+					first_inserted = msg;
 
 				messages.unshiftObject(msg);
 				inserted += 1;
+
 			} else
-				break;
+				return false;
 		}
 
-		// If there was a CLEARCHAT, stop processing.
+		// If there's a CLEARCHAT, stop processing.
 		if ( msg.tags && msg.tags.target === '@@' )
-			break;
+			return false;
 
-		// If there was a purge, just track the name.
-		else if ( msg.tags && msg.tags.target )
-			purged[msg.tags.target] = true;
-	}
+		return true;
+	});
 
-	if ( is_old ) {
+
+	if ( ! first_inserted )
+		return;
+
+	var now = Date.now() - (first_inserted.from_server ? this._ws_server_offset || 0 : 0),
+		age = now - first_inserted.date.getTime();
+
+	if ( age > 300000 ) {
 		var msg = {
 			color: "#755000",
-			date: new Date(),
+			date: first_inserted.date,
 			from: "frankerfacez_admin",
 			style: "admin",
-			message: "(Last message is " + utils.human_time(age) + " old.)",
-			room: room_id
+			message: "(Last message is " + utils.human_time(age/1000) + " old.)",
+			room: room_id,
+			from_server: from_server
 		};
 
-		this.tokenize_chat_line(msg, true, r.get('roomProperties.hide_chat_links'));
+		this.tokenize_chat_line(msg, false, delete_links);
 		if ( r.shouldShowMessage(msg) ) {
 			messages.insertAt(inserted, msg);
-			while( messages.length > r.get('messageBufferSize') ) {
+			while ( messages.length > buffer_size ) {
 				messages.removeAt(0);
 				removed++;
 			}
@@ -859,7 +861,7 @@ FFZ.prototype._insert_history = function(room_id, data) {
 
 FFZ.prototype.load_room = function(room_id, callback, tries) {
 	var f = this;
-	jQuery.getJSON(((tries||0)%2 === 0 ? constants.API_SERVER : constants.API_SERVER_2) + "v1/room/" + room_id)
+	jQuery.getJSON(constants.API_SERVER + "v1/room/" + room_id)
 		.done(function(data) {
 			if ( data.sets ) {
 				for(var key in data.sets)
@@ -958,6 +960,28 @@ FFZ.prototype._modify_room = function(room) {
 				this.set('ffz_banned', false);
 				f._roomv && f._roomv.ffzUpdateStatus();
 			}
+		},
+
+		ffzScheduleDestroy: function() {
+			if ( this._ffz_destroy_timer )
+				return;
+
+			var t = this;
+			this._ffz_destroy_timer = setTimeout(function() {
+				t._ffz_destroy_timer = null;
+				t.ffzCheckDestroy();
+			}, 5000);
+		},
+
+		ffzCheckDestroy: function() {
+			var Chat = App.__container__.lookup('controller:chat'),
+				user = f.get_user(),
+				room_id = this.get('id');
+
+			if ( (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
+				return;
+
+			this.destroy();
 		},
 
 		ffzUpdateStatus: function() {
@@ -1100,8 +1124,7 @@ FFZ.prototype._modify_room = function(room) {
 				if ( ! this.ffzPending )
 					this.ffzPending = [];
 
-				var now = Date.now();
-				msg.time = now;
+				var now = msg.time = Date.now();
 				this.ffzPending.push(msg);
 				this.ffzSchedulePendingFlush(now);
 
@@ -1115,7 +1138,14 @@ FFZ.prototype._modify_room = function(room) {
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
 
-				"admin" === msg.style || ("whisper" === msg.style && ! this.ffz_whisper_room ) || this.incrementProperty("unreadCount", 1);
+				if ( msg.style !== "admin" && msg.style !== "whisper" ) {
+					if ( msg.ffz_has_mention ) {
+						this.ffz_last_mention = Date.now();
+					}
+
+					this.ffz_last_activity = Date.now();
+					this.incrementProperty("unreadCount", 1);
+				}
 			}
 		},
 
@@ -1128,15 +1158,13 @@ FFZ.prototype._modify_room = function(room) {
 			if ( this._ffz_pending_flush )
 				return;
 
-			/*if ( this._ffz_pending_flush )
-				clearTimeout(this._ffz_pending_flush);*/
-
 			if ( this.ffzPending && this.ffzPending.length ) {
 				// We need either the amount of chat delay past the first message, if chat_delay is on, or the
 				// amount of time from the last batch.
+				now = now || Date.now();
 				var delay = Math.max(
-					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - (now || Date.now())) : 0),
-					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - ((now || Date.now()) - (this._ffz_last_batch||0))) : 0));
+					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - now) : 0),
+					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - (now - (this._ffz_last_batch||0))) : 0));
 
 				this._ffz_pending_flush = setTimeout(this.ffzPendingFlush.bind(this), delay);
 			}
@@ -1163,6 +1191,9 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzShouldShowMessage: function (msg) {
+			if ( ! f.settings.hosted_sub_notices && msg.style === 'notification' && HOSTED_SUB.test(msg.message) )
+				return false;
+
 			if (f.settings.remove_bot_ban_notices && this.ffzRecentlyBanned) {
 				var banned = '(' + this.ffzRecentlyBanned.join('|') + ')';
 				var bots = {
@@ -1181,9 +1212,6 @@ FFZ.prototype._modify_room = function(room) {
 
 		addMessage: function(msg) {
 			if ( msg ) {
-				if ( ! f.settings.hosted_sub_notices && msg.style === 'notification' && HOSTED_SUB.test(msg.message) )
-					return;
-
 				var is_whisper = msg.style === 'whisper';
 
 				// Ignore whispers if conversations are enabled.
@@ -1212,7 +1240,9 @@ FFZ.prototype._modify_room = function(room) {
 							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
 
 						user_history.push({
-							from: msg.tags && msg.tags['display-name'] || msg.from,
+							from: msg.from,
+							tags: {'display-name': msg.tags && msg.tags['display-name']},
+							message: msg.message,
 							cachedTokens: msg.cachedTokens,
 							style: msg.style,
 							date: msg.date
@@ -1223,16 +1253,16 @@ FFZ.prototype._modify_room = function(room) {
 
 						if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
 							var el = f._mod_card.get('element'),
-								history = el && el.querySelector('.chat-history'),
+								history = el && el.querySelector('.chat-history:not(.adjacent-history)'),
 								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
 
 							if ( history ) {
-								history.appendChild(f._build_mod_card_history(msg));
+								history.appendChild(f._build_mod_card_history(msg, f._mod_card));
 								if ( was_at_top )
 									setTimeout(function() { history.scrollTop = history.scrollHeight; })
 
 								// Don't do infinite scrollback.
-								if ( history.childElementCount > 50 )
+								if ( history.childElementCount > 100 )
 									history.removeChild(history.firstElementChild);
 							}
 						}
@@ -1281,10 +1311,9 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		send: function(text, ignore_history) {
-			if ( f.settings.group_tabs && f.settings.whisper_room && this.ffz_whisper_room )
-				return;
-
 			try {
+				this.ffz_last_input = Date.now();
+
 				if ( text && ! ignore_history ) {
 					// Command History
 					var mru = this.get('mru_list'),
@@ -1317,15 +1346,12 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzUpdateUnread: function() {
-			if ( f.settings.group_tabs ) {
-				var Chat = App.__container__.lookup('controller:chat');
-				if ( Chat && Chat.get('currentRoom') === this )
-					this.resetUnreadCount();
-				else if ( f._chatv )
-					f._chatv.ffzTabUnread(this.get('id'));
-			}
+			var Chat = App.__container__.lookup('controller:chat');
+			if ( Chat && Chat.get('currentRoom') === this )
+				this.resetUnreadCount();
+			else if ( f._chatv )
+				f._chatv.ffzUpdateUnread(this.get('id'));
 		}.observes('unreadCount'),
-
 
 		ffzInitChatterCount: function() {
 			if ( ! this.tmiRoom )

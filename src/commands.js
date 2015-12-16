@@ -70,6 +70,47 @@ FFZ.ffz_commands.reload = function(room, args) {
 
 
 // -----------------
+// Moderation Cards
+// -----------------
+
+FFZ.chat_commands.card = function(room, args) {
+	if ( ! args || ! args.length || args.length > 1 )
+		return "Usage: /card <username>";
+
+	if ( ! this._roomv )
+		return "An error occured. (We don't have the Room View.)";
+
+	// Get the position of the input box.
+	var el = this._roomv.get('element'),
+		ta = el && el.querySelector('textarea'),
+		bounds = ta && ta.getBoundingClientRect(),
+
+		x = 0, y = 0, bottom, right;
+
+	if ( ! bounds )
+		bounds = el && el.getBoundingClientRect() || document.body.getBoundingClientRect();
+
+	if ( bounds ) {
+		if ( bounds.left > 400 ) {
+			right = bounds.left - 40;
+			bottom = bounds.top + bounds.height;
+		} else {
+			x = bounds.left - 20;
+			bottom = bounds.top - 20;
+		}
+	}
+
+	this._roomv.get('controller').send('showModOverlay', {
+		top: y,
+		left: x,
+		bottom: bottom,
+		right: right,
+		sender: args[0]
+	});
+}
+
+
+// -----------------
 // Mass Moderation
 // -----------------
 

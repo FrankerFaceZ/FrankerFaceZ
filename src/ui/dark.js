@@ -136,14 +136,15 @@ FFZ.settings_info.dark_twitch = {
 
 			document.body.classList.toggle("ffz-dark", val);
 
-			var model = window.App ? App.__container__.lookup('controller:settings').get('model') : undefined;
+			var Settings = window.App && App.__container__.lookup('controller:settings'),
+				settings = Settings.get('settings');
 
 			if ( val ) {
 				this._load_dark_css();
-				model && this.settings.set('twitch_chat_dark', model.get('darkMode'));
-				model && model.set('darkMode', true);
+				settings && this.settings.set('twitch_chat_dark', settings.get('darkMode'));
+				settings && settings.set('darkMode', true);
 			} else
-				model && model.set('darkMode', this.settings.twitch_chat_dark);
+				settings && settings.set('darkMode', this.settings.twitch_chat_dark);
 
 			// Try coloring ReChat
 			jQuery('.rechat-chat-line').parents('.chat-container').toggleClass('dark', val || this.settings.twitch_chat_dark);
@@ -199,7 +200,16 @@ FFZ.prototype.setup_dark = function() {
 	if ( ! this.settings.dark_twitch )
 		return;
 
-	window.App && App.__container__.lookup('controller:settings').set('model.darkMode', true);
+	var Settings = window.App && App.__container__.lookup('controller:settings');
+	if ( Settings ) {
+		try {
+			Settings.set('settings.darkMode', true);
+		} catch(err) {
+			this.error("Unable to set the darkMode setting because it isn't named what we expect. WTF?");
+		}
+	} else
+		this.error("Unable to load the Ember settings controller.");
+
 	this._load_dark_css();
 }
 
@@ -214,6 +224,6 @@ FFZ.prototype._load_dark_css = function() {
 
 	s.id = "ffz-dark-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.DIRECT_SERVER + "script/dark.css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	s.setAttribute('href', constants.SERVER + "script/dark" + (constants.DEBUG ? "" : ".min") + ".css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
 }

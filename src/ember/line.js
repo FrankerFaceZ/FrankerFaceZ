@@ -505,7 +505,7 @@ FFZ.settings_info.chat_ts_size = {
 			css = "";
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val), Math.round((20/12)*this.settings.chat_font_size));
-			css = ".chat-history .timestamp,.ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			css = ".ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 		}
 
 		utils.update_css(this._chat_style, "chat_ts_font_size", css);
@@ -658,8 +658,6 @@ FFZ.prototype._modify_line = function(component) {
 			var deleted = this.get('msgObject.deleted'),
 				r = this,
 
-				badges = {},
-
 				user = this.get('msgObject.from'),
 				room_id = this.get('msgObject.room'),
 				room = f.rooms && f.rooms[room_id],
@@ -673,12 +671,14 @@ FFZ.prototype._modify_line = function(component) {
 				raw_color = this.get('msgObject.color'),
 				colors = raw_color && f._handle_color(raw_color),
 
-				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('model.darkMode'));
+				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 
 
 			e.push('<div class="indicator"></div>');
 			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');
 
+
+			// Moderation actions
 			if ( ! is_whisper && this_ul < other_ul ) {
 				e.push('<span class="mod-icons float-left">');
 				for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
@@ -712,44 +712,14 @@ FFZ.prototype._modify_line = function(component) {
 				e.push('</span>');
 			}
 
-			// Stock Badges
-			if ( ! is_whisper && this.get('isBroadcaster') )
-				badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
-			else if ( this.get('isStaff') )
-				badges[0] = {klass: 'staff', title: 'Staff'};
-			else if ( this.get('isAdmin') )
-				badges[0] = {klass: 'admin', title: 'Admin'};
-			else if ( this.get('isGlobalMod') )
-				badges[0] = {klass: 'global-moderator', title: 'Global Moderator'};
-			else if ( ! is_whisper && this.get('isModerator') )
-				badges[0] = {klass: 'moderator', title: 'Moderator'};
 
-			if ( ! is_whisper && this.get('isSubscriber') )
-				badges[10] = {klass: 'subscriber', title: 'Subscriber'};
-			if ( this.get('hasTurbo') )
-				badges[15] = {klass: 'turbo', title: 'Turbo'};
-
-			// FFZ Badges
-			badges = f.render_badges(this, badges);
-
-			// Rendering!
+			// Badges
 			e.push('<span class="badges float-left">');
-
-			for(var key in badges) {
-				var badge = badges[key],
-					css = badge.image ? 'background-image:url(&quot;' + badge.image + '&quot;);' : '';
-
-				if ( badge.color )
-					css += 'background-color:' + badge.color + ';';
-
-				if ( badge.extra_css )
-					css += badge.extra_css;
-
-				e.push('<div class="badge float-left tooltip ' + badge.klass + '"' + (css ? ' style="' + css + '"' : '') + ' title="' + badge.title + '"></div>');
-			}
-
+			e.push(f.render_badges(f.get_line_badges(this.get('msgObject'), is_whisper)));
 			e.push('</span>');
 
+
+			// Handle aliases
 			var alias = f.aliases[user],
 				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
 				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
@@ -760,6 +730,8 @@ FFZ.prototype._modify_line = function(component) {
 			else
 				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
 
+
+			// If it's a whisper, we need to get that user's color, alias, and draw the whisper arrow thing.
 			if ( is_whisper ) {
 				var to_alias = f.aliases[recipient],
 					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
@@ -777,6 +749,8 @@ FFZ.prototype._modify_line = function(component) {
 					e.push('<span class="to' + to_colored + '" style="' + to_style + (to_colors ? '" data-color="' + to_color : '') + '">' + utils.sanitize(to_name) + '</span>');
 			}
 
+
+			// Finally, onto the message proper.
 			e.push('<span class="colon">:</span> ');
 
 			if ( this.get('msgObject.style') !== 'action' ) {
