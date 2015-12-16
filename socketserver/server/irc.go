@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	irc "github.com/fluffle/goirc/client"
 	"log"
 	"strings"
