@@ -37,10 +37,10 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	var urls TURLs
 
 	var backendExpected = NewTBackendRequestChecker(t,
-		TExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, ""},
-		TExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName1}, "added": []string{"t"}}, "ok"},
-		TExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName2}, "added": []string{"t"}}, "ok"},
-		TExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName3}, "added": []string{"t"}}, "ok"},
+		TExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, "", nil},
+		TExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName1}, "added": []string{"t"}}, "ok", nil},
+		TExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName2}, "added": []string{"t"}}, "ok", nil},
+		TExpectedBackendRequest{200, bPathAddTopic, &url.Values{"channels": []string{TestChannelName3}, "added": []string{"t"}}, "ok", nil},
 	)
 	server, _, urls = TSetup(SetupWantSocketServer|SetupWantBackendServer|SetupWantURLs, backendExpected)
 
@@ -242,10 +242,10 @@ func TestRestrictedCommands(t *testing.T) {
 	var urls TURLs
 
 	var backendExpected = NewTBackendRequestChecker(t,
-		TExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, ""},
-		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{""}, "clientData": []string{TestRequestDataJSON}}, ""},
-		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, ""},
-		TExpectedBackendRequest{200, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameVerified": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, fmt.Sprintf("\"%s\"", TestReplyData)},
+		TExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, "", nil},
+		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{""}, "clientData": []string{TestRequestDataJSON}}, "", nil},
+		TExpectedBackendRequest{401, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameClaimed": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, "", nil},
+		TExpectedBackendRequest{200, fmt.Sprintf("%s%s", bPathOtherCommand, TestCommandNeedsAuth), &url.Values{"usernameVerified": []string{TestUsername}, "clientData": []string{TestRequestDataJSON}}, fmt.Sprintf("\"%s\"", TestReplyData), nil},
 	)
 	server, _, urls = TSetup(SetupWantSocketServer|SetupWantBackendServer|SetupWantURLs, backendExpected)
 

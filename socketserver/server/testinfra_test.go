@@ -18,6 +18,7 @@ const (
 	SetupWantBackendServer
 	SetupWantURLs
 )
+const SetupNoServers = 0
 
 func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *httptest.Server, backend *httptest.Server, urls TURLs) {
 	DumpBacklogData()
@@ -66,14 +67,20 @@ func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *ht
 	return
 }
 
+type TBC interface {
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+}
+
 const MethodIsPost = "POST"
 
 type TExpectedBackendRequest struct {
 	ResponseCode int
 	Path         string
 	// Method       string // always POST
-	PostForm *url.Values
-	Response string
+	PostForm        *url.Values
+	Response        string
+	ResponseHeaders http.Header
 }
 
 func (er *TExpectedBackendRequest) String() string {
@@ -87,10 +94,10 @@ type TBackendRequestChecker struct {
 	ExpectedRequests []TExpectedBackendRequest
 
 	currentRequest int
-	tb             testing.TB
+	tb             TBC
 }
 
-func NewTBackendRequestChecker(tb testing.TB, urls ...TExpectedBackendRequest) *TBackendRequestChecker {
+func NewTBackendRequestChecker(tb TBC, urls ...TExpectedBackendRequest) *TBackendRequestChecker {
 	return &TBackendRequestChecker{ExpectedRequests: urls, tb: tb, currentRequest: 0}
 }
 
@@ -114,6 +121,17 @@ func (backend *TBackendRequestChecker) ServeHTTP(w http.ResponseWriter, r *http.
 
 	cur := backend.ExpectedRequests[backend.currentRequest]
 	backend.currentRequest++
+
+	headers := w.Header()
+	for k, v := range cur.ResponseHeaders {
+		if len(v) == 1 {
+			headers.Set(k, v[0])
+		} else if len(v) == 0 {
+			headers.Del(k)
+		} else {
+			for _, hv := range v { headers.Add(k, hv) }
+		}
+	}
 
 	defer func() {
 		w.WriteHeader(cur.ResponseCode)
@@ -144,7 +162,7 @@ func (backend *TBackendRequestChecker) Close() error {
 	return nil
 }
 
-func TcompareForms(tb testing.TB, ctx string, expectedForm, gotForm url.Values) (anyErrors bool) {
+func TcompareForms(tb TBC, ctx string, expectedForm, gotForm url.Values) (anyErrors bool) {
 	for k, expVal := range expectedForm {
 		gotVal, ok := gotForm[k]
 		if !ok {
