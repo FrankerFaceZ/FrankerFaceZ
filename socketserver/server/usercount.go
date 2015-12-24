@@ -46,7 +46,7 @@ const uniqCountDir = "./uniques"
 const usersDailyFmt = "daily-%d-%d-%d.gob"  // d-m-y
 const usersWeeklyFmt = "weekly-%d-%d.gob"   // w-y
 const usersMonthlyFmt = "monthly-%d-%d.gob" // m-y
-const counterPrecision uint8 = 12
+const CounterPrecision uint8 = 12
 
 var uniqueCounters [3]PeriodUniqueUsers
 var uniqueUserChannel chan uuid.UUID
@@ -100,7 +100,7 @@ func loadHLL(which int, at time.Time, dest *PeriodUniqueUsers) error {
 	}
 
 	if dest.Counter == nil {
-		dest.Counter, _ = hyperloglog.NewPlus(counterPrecision)
+		dest.Counter, _ = hyperloglog.NewPlus(CounterPrecision)
 	}
 
 	dec := gob.NewDecoder(bytes.NewReader(fileBytes))
@@ -184,7 +184,7 @@ func loadUniqueUsers() {
 		err := loadHLL(period, now, &uniqueCounters[period])
 		if err != nil && os.IsNotExist(err) {
 			// errors are bad precisions
-			uniqueCounters[period].Counter, _ = hyperloglog.NewPlus(counterPrecision)
+			uniqueCounters[period].Counter, _ = hyperloglog.NewPlus(CounterPrecision)
 		} else if err != nil && !os.IsNotExist(err) {
 			log.Panicln("failed to load unique users data:", err)
 		}
@@ -269,7 +269,7 @@ func rolloverCounters_do() {
 
 			uniqueCounters[period].Start, uniqueCounters[period].End = getCounterPeriod(period, now)
 			// errors are bad precisions, so we can ignore
-			uniqueCounters[period].Counter, _ = hyperloglog.NewPlus(counterPrecision)
+			uniqueCounters[period].Counter, _ = hyperloglog.NewPlus(CounterPrecision)
 		}
 	}
 
