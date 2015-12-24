@@ -17,9 +17,9 @@ import (
 )
 
 // uuidHash implements a hash for uuid.UUID by XORing the random bits.
-type uuidHash uuid.UUID
+type UuidHash uuid.UUID
 
-func (u uuidHash) Sum64() uint64 {
+func (u UuidHash) Sum64() uint64 {
 	var valLow, valHigh uint64
 	valLow = binary.LittleEndian.Uint64(u[0:8])
 	valHigh = binary.LittleEndian.Uint64(u[8:16])
@@ -173,6 +173,7 @@ func HTTPWriteHLL(w http.ResponseWriter, r *http.Request) {
 // loadUniqueUsers loads the previous HLLs into memory.
 // is_init_func
 func loadUniqueUsers() {
+	gob.RegisterName("hyperloglog", hyperloglog.HyperLogLogPlus{})
 	err := os.MkdirAll(uniqCountDir, 0755)
 	if err != nil {
 		log.Panicln("could not make unique users data dir:", err)
@@ -217,7 +218,7 @@ func processNewUsers() {
 	for {
 		select {
 		case u := <-uniqueUserChannel:
-			hashed := uuidHash(u)
+			hashed := UuidHash(u)
 			for _, period := range periods {
 				uniqueCounters[period].Counter.Add(hashed)
 			}

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"encoding/gob"
 	"os"
+	"github.com/satori/go.uuid"
 )
 
 var SERVERS = []string{
@@ -37,6 +38,7 @@ func main() {
 		os.Exit(2)
 		return
 	}
+	gob.RegisterName("hyperloglog", hyperloglog.HyperLogLogPlus{})
 
 	filename := flag.Arg(1)
 	hll, err := DownloadAll(filename)
@@ -70,9 +72,13 @@ func DownloadHLL(url string) (*hyperloglog.HyperLogLogPlus, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	dec := gob.NewDecoder(resp.Body)
-	dec.Decode(result)
-	resp.Body.Close()
+	err = dec.Decode(result)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(url, result.Count())
 
 	return result, nil
 }
