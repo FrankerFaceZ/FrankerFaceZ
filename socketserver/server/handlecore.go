@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -108,16 +109,21 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
 	}
 
-	janitorsOnce.Do(func() {
-		go authorizationJanitor()
-		go bunchCacheJanitor()
-		go pubsubJanitor()
-		go aggregateDataSender()
-		go commandCounter()
+	janitorsOnce.Do(startJanitors)
+}
 
-		go ircConnection()
-		go shutdownHandler()
-	})
+// startJanitors starts the 'is_init_func' goroutines
+func startJanitors() {
+	loadUniqueUsers()
+
+	go authorizationJanitor()
+	go bunchCacheJanitor()
+	go pubsubJanitor()
+	go aggregateDataSender()
+	go commandCounter()
+
+	go ircConnection()
+	go shutdownHandler()
 }
 
 func shutdownHandler() {
@@ -169,7 +175,7 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Connection") == "Upgrade" {
 		updateSysMem()
 
-		if Statistics.SysMemTotalKB-Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
+		if Statistics.SysMemFreeKB > 0 && Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
 			atomic.AddUint64(&Statistics.LowMemDroppedConnections, 1)
 			w.WriteHeader(503)
 			return

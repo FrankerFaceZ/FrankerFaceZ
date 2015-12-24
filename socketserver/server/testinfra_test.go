@@ -95,6 +95,7 @@ type TBackendRequestChecker struct {
 
 	currentRequest int
 	tb             TBC
+	mutex          sync.Mutex
 }
 
 func NewTBackendRequestChecker(tb TBC, urls ...TExpectedBackendRequest) *TBackendRequestChecker {
@@ -102,6 +103,9 @@ func NewTBackendRequestChecker(tb TBC, urls ...TExpectedBackendRequest) *TBacken
 }
 
 func (backend *TBackendRequestChecker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	backend.mutex.Lock()
+	defer backend.mutex.Unlock()
+
 	if r.Method != MethodIsPost {
 		backend.tb.Errorf("Bad backend request: was not a POST. %v", r)
 		return
@@ -129,7 +133,9 @@ func (backend *TBackendRequestChecker) ServeHTTP(w http.ResponseWriter, r *http.
 		} else if len(v) == 0 {
 			headers.Del(k)
 		} else {
-			for _, hv := range v { headers.Add(k, hv) }
+			for _, hv := range v {
+				headers.Add(k, hv)
+			}
 		}
 	}
 

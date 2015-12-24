@@ -122,7 +122,7 @@ func updatePeriodicStats() {
 
 			Statistics.CpuUsagePct = 100 * float64(userTicks+sysTicks) / (timeDiff.Seconds() * float64(ticksPerSecond))
 			Statistics.MemoryRSSKB = uint64(pstat.Rss * pageSize / 1024)
-			Statistics.MemPerClientBytes = (Statistics.MemoryRSSKB * 1024) / Statistics.CurrentClientCount
+			Statistics.MemPerClientBytes = (Statistics.MemoryRSSKB * 1024) / (Statistics.CurrentClientCount + 1)
 		}
 		updateSysMem()
 	}
