@@ -11,6 +11,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 )
 
 func TestSubscriptionAndPublish(t *testing.T) {
@@ -132,6 +133,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 
 	doneWg.Add(1)
 	readyWg.Wait() // enforce ordering
+	time.Sleep(2 * time.Millisecond)
 	readyWg.Add(1)
 	go func(conn *websocket.Conn) {
 		TSendMessage(t, conn, 1, HelloCommand, []interface{}{"ffz_0.0-test", uuid.NewV4().String()})

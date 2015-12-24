@@ -312,6 +312,7 @@ func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage
 	return ResponseSuccess, nil
 }
 
+// is_init_func
 func aggregateDataSender() {
 	for {
 		time.Sleep(5 * time.Minute)
@@ -403,6 +404,7 @@ func bunchedRequestFromCM(msg *ClientMessage) bunchedRequest {
 	return bunchedRequest{Command: msg.Command, Param: msg.origArguments}
 }
 
+// is_init_func
 func bunchCacheJanitor() {
 	go func() {
 		for {

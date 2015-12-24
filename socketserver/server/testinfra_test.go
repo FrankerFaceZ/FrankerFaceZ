@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
@@ -20,7 +21,13 @@ const (
 )
 const SetupNoServers = 0
 
+var signalCatch sync.Once
+
 func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *httptest.Server, backend *httptest.Server, urls TURLs) {
+	signalCatch.Do(func() {
+		go dumpStackOnCtrlZ()
+	})
+
 	DumpBacklogData()
 
 	ioutil.WriteFile("index.html", []byte(`
@@ -36,7 +43,7 @@ func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *ht
 	A <a href="http://www.frankerfacez.com/">FrankerFaceZ</a> Service
 	&mdash; CatBag by <a href="http://www.twitch.tv/wolsk">Wolsk</a>
 </div>
-</div>`), 0600)
+</div>`), 0644)
 
 	conf := &ConfigFile{
 		ServerID:         20,

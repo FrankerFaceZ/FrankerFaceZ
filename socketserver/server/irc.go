@@ -36,6 +36,7 @@ func AddPendingAuthorization(client *ClientInfo, challenge string, callback Auth
 	})
 }
 
+// is_init_func
 func authorizationJanitor() {
 	for {
 		time.Sleep(5 * time.Minute)
@@ -90,6 +91,7 @@ const DEBUG = "DEBUG"
 
 var errChallengeNotFound = errors.New("did not find a challenge solved by that message")
 
+// is_init_func
 func ircConnection() {
 
 	c := irc.SimpleClient("justinfan123")

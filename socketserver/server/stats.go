@@ -58,11 +58,14 @@ type StatsData struct {
 // Its structure should be versioned as it is exposed via JSON.
 //
 // Note as to threaded access - this is soft/fun data and not critical to data integrity.
-// I don't really care.
+// Fix anything that -race turns up, but otherwise it's not too much of a problem.
 var Statistics = newStatsData()
 
+// CommandCounter is a channel for race-free counting of command usage.
 var CommandCounter = make(chan Command, 10)
 
+// commandCounter receives from the CommandCounter channel and uses the value to increment the values in Statistics.
+// is_init_func
 func commandCounter() {
 	for cmd := range CommandCounter {
 		Statistics.CommandsIssuedTotal++
@@ -70,6 +73,7 @@ func commandCounter() {
 	}
 }
 
+// StatsDataVersion
 const StatsDataVersion = 5
 const pageSize = 4096
 
@@ -145,6 +149,7 @@ func updatePeriodicStats() {
 var sysMemLastUpdate time.Time
 var sysMemUpdateLock sync.Mutex
 
+// updateSysMem reads the system's available RAM.
 func updateSysMem() {
 	if time.Now().Add(-2 * time.Second).After(sysMemLastUpdate) {
 		sysMemUpdateLock.Lock()
@@ -163,6 +168,7 @@ func updateSysMem() {
 	}
 }
 
+// HTTPShowStatistics handles the /stats endpoint. It writes out the Statistics object as indented JSON.
 func HTTPShowStatistics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

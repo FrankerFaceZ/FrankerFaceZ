@@ -1,10 +1,10 @@
 package server
 
 import (
+	. "gopkg.in/check.v1"
+	"net/http"
 	"net/url"
 	"testing"
-	"net/http"
-	. "gopkg.in/check.v1"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -34,6 +34,7 @@ func TestSealRequest(t *testing.T) {
 }
 
 type BackendSuite struct{}
+
 var _ = Suite(&BackendSuite{})
 
 func (s *BackendSuite) TestSendRemoteCommand(c *C) {

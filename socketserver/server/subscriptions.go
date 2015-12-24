@@ -145,7 +145,7 @@ func unsubscribeAllClients() {
 const ReapingDelay = 1 * time.Minute
 
 // Checks ChatSubscriptionInfo for entries with no subscribers every ReapingDelay.
-// Started from SetupServer().
+// is_init_func
 func pubsubJanitor() {
 	for {
 		time.Sleep(ReapingDelay)

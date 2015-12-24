@@ -126,6 +126,7 @@ func startJanitors() {
 	go shutdownHandler()
 }
 
+// is_init_func
 func shutdownHandler() {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGUSR1)
@@ -137,6 +138,19 @@ func shutdownHandler() {
 
 	time.Sleep(1 * time.Second)
 	os.Exit(0)
+}
+
+// is_init_func +test
+func dumpStackOnCtrlZ() {
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGTSTP)
+	for _ = range ch {
+		fmt.Println("Got ^Z")
+
+		buf := make([]byte, 10000)
+		byteCnt := runtime.Stack(buf, true)
+		fmt.Println(string(buf[:byteCnt]))
+	}
 }
 
 // SocketUpgrader is the websocket.Upgrader currently in use.

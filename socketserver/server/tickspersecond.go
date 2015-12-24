@@ -6,4 +6,7 @@ package server
 // }
 import "C"
 
+// note: this seems to add 0.1s to compile time on my machine
 var ticksPerSecond = int(C.get_ticks_per_second())
+
+//var ticksPerSecond = 100
