@@ -85,8 +85,9 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	BannerHTML = bannerBytes
 
 	serveMux.HandleFunc("/", HTTPHandleRootURL)
-	serveMux.Handle("/.well-known/", http.FileServer(http.FileSystem(http.Dir("/tmp/letsencrypt/"))))
+	serveMux.Handle("/.well-known/", http.FileServer(http.Dir("/tmp/letsencrypt/")))
 	serveMux.HandleFunc("/stats", HTTPShowStatistics)
+	serveMux.HandleFunc("/hll/", HTTPShowHLL)
 
 	serveMux.HandleFunc("/drop_backlog", HTTPBackendDropBacklog)
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
@@ -130,13 +131,22 @@ func startJanitors() {
 func shutdownHandler() {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGUSR1)
+	signal.Notify(ch, syscall.SIGTERM)
 	<-ch
 	log.Println("Shutting down...")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		writeAllHLLs()
+		wg.Done()
+	}()
 
 	StopAcceptingConnections = true
 	close(StopAcceptingConnectionsCh)
 
 	time.Sleep(1 * time.Second)
+	wg.Wait()
 	os.Exit(0)
 }
 

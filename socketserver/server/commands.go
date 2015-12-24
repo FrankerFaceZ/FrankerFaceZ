@@ -103,6 +103,8 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 		client.ClientID = uuid.NewV4()
 	}
 
+	uniqueUserChannel <- client.ClientID
+
 	SubscribeGlobal(client)
 	SubscribeDefaults(client)
 

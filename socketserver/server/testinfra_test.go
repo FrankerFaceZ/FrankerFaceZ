@@ -64,6 +64,7 @@ func TSetup(flags int, backendChecker *TBackendRequestChecker) (socketserver *ht
 	if flags&SetupWantSocketServer != 0 {
 		serveMux := http.NewServeMux()
 		SetupServerAndHandle(conf, serveMux)
+		dumpUniqueUsers()
 
 		socketserver = httptest.NewServer(serveMux)
 	}
@@ -342,5 +343,13 @@ func TGetUrls(socketserver *httptest.Server, backend *httptest.Server) TURLs {
 		Origin:         fmt.Sprintf("http://%s", addr),
 		UncachedPubMsg: fmt.Sprintf("http://%s/uncached_pub", addr),
 		SavePubMsg:     fmt.Sprintf("http://%s/cached_pub", addr),
+	}
+}
+
+func TCheckHLLValue(tb testing.TB, expected uint64, actual uint64) {
+	high := uint64(float64(expected) * 1.05)
+	low := uint64(float64(expected) * 0.95)
+	if actual < low || actual > high {
+		tb.Errorf("Count outside expected range. Expected %d, Got %d", expected, actual)
 	}
 }
