@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"encoding/gob"
 	"os"
-	"github.com/satori/go.uuid"
 )
 
 var SERVERS = []string{
@@ -31,6 +30,8 @@ Filename should be in one of the following formats:
   monthly-12-2015.gob
 `
 
+var forceWrite = flag.Bool("f", false, "force servers to write out their current")
+
 func main() {
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -38,9 +39,12 @@ func main() {
 		os.Exit(2)
 		return
 	}
-	gob.RegisterName("hyperloglog", hyperloglog.HyperLogLogPlus{})
 
-	filename := flag.Arg(1)
+	if *forceWrite {
+		ForceWrite()
+	}
+
+	filename := flag.Arg(0)
 	hll, err := DownloadAll(filename)
 	if err != nil {
 		fmt.Println(err)
@@ -49,6 +53,17 @@ func main() {
 	}
 
 	fmt.Println(hll.Count())
+}
+
+func ForceWrite() {
+	for _, server := range SERVERS {
+		resp, err := http.Get(fmt.Sprintf("%s/hll_force_write", server))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+	}
 }
 
 func DownloadAll(filename string) (*hyperloglog.HyperLogLogPlus, error) {
