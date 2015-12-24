@@ -164,6 +164,12 @@ func HTTPShowHLL(w http.ResponseWriter, r *http.Request) {
 	hllFileServer.ServeHTTP(w, r)
 }
 
+func HTTPWriteHLL(w http.ResponseWriter, r *http.Request) {
+	writeAllHLLs()
+	w.WriteHeader(200)
+	w.Write([]byte("ok"))
+}
+
 // loadUniqueUsers loads the previous HLLs into memory.
 // is_init_func
 func loadUniqueUsers() {
