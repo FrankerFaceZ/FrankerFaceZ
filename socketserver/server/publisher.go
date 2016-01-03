@@ -73,11 +73,11 @@ type LastSavedMessage struct {
 // map is command -> channel -> data
 
 // CacheTypeLastOnly. Cleaned up by reaper goroutine every ~hour.
-var CachedLastMessages map[Command]map[string]LastSavedMessage
+var CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 var CachedLSMLock sync.RWMutex
 
 // CacheTypePersistent. Never cleaned.
-var PersistentLastMessages map[Command]map[string]LastSavedMessage
+var PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
 var PersistentLSMLock sync.RWMutex
 
 // DumpBacklogData drops all /cached_pub data.
