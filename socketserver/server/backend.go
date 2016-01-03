@@ -115,10 +115,13 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 }
 
 // ErrForwardedFromBackend is an error returned by the backend server.
-type ErrForwardedFromBackend string
+type ErrForwardedFromBackend struct {
+	JSONError interface{}
+}
 
 func (bfe ErrForwardedFromBackend) Error() string {
-	return string(bfe)
+	bytes, _ := json.Marshal(bfe)
+	return string(bytes)
 }
 
 // ErrAuthorizationNeeded is emitted when the backend replies with HTTP 401.
@@ -174,7 +177,12 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 		return "", ErrAuthorizationNeeded
 	} else if resp.StatusCode != 200 {
 		if resp.Header.Get("Content-Type") == "application/json" {
-			return "", ErrForwardedFromBackend(responseStr)
+			var err2 ErrForwardedFromBackend
+			err := json.Unmarshal(respBytes, &err2.JSONError)
+			if err != nil {
+				return "", fmt.Errorf("error decoding json error from backend: %v | %s", err, responseStr)
+			}
+			return "", err2
 		}
 		return "", httpError(resp.StatusCode)
 	}
