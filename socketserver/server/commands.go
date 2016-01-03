@@ -562,6 +562,8 @@ func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo
 			}
 		})
 		return // without keepalive.Done()
+	} else if bfe, ok := err.(ErrForwardedFromBackend); ok {
+		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: bfe.JSONError}
 	} else if err != nil {
 		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
 	} else {
