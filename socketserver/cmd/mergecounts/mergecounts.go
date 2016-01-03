@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/clarkduvall/hyperloglog"
+	"../../server"
+	"encoding/gob"
 	"flag"
 	"fmt"
-	"../../server"
+	"github.com/clarkduvall/hyperloglog"
 	"net/http"
-	"encoding/gob"
 	"os"
 )
 
@@ -40,10 +40,6 @@ func main() {
 		return
 	}
 
-	if *forceWrite {
-		ForceWrite()
-	}
-
 	filename := flag.Arg(0)
 	hll, err := DownloadAll(filename)
 	if err != nil {
@@ -70,6 +66,12 @@ func DownloadAll(filename string) (*hyperloglog.HyperLogLogPlus, error) {
 	result, _ := hyperloglog.NewPlus(server.CounterPrecision)
 
 	for _, server := range SERVERS {
+		if *forceWrite {
+			resp, err := http.Get(fmt.Sprintf("%s/hll_force_write", server))
+			if err == nil {
+				resp.Body.Close()
+			}
+		}
 		singleHLL, err := DownloadHLL(fmt.Sprintf("%s%s%s", server, folderPrefix, filename))
 		if err != nil {
 			return nil, err

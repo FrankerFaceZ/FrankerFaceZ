@@ -6,9 +6,9 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	"net/http"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -160,6 +160,7 @@ func writeAllHLLs() error {
 }
 
 var hllFileServer = http.StripPrefix("/hll", http.FileServer(http.Dir(uniqCountDir)))
+
 func HTTPShowHLL(w http.ResponseWriter, r *http.Request) {
 	hllFileServer.ServeHTTP(w, r)
 }
@@ -239,7 +240,9 @@ func getNextMidnight() time.Time {
 // is_init_func
 func rolloverCounters() {
 	for {
-		time.Sleep(getNextMidnight().Sub(time.Now()))
+		duration := getNextMidnight().Sub(time.Now())
+		//	fmt.Println(duration)
+		time.Sleep(duration)
 		rolloverCounters_do()
 	}
 }

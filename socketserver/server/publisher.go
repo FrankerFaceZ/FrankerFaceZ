@@ -241,11 +241,13 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	channel := formData.Get("channel")
 	deleteMode := formData.Get("delete") != ""
 	timeStr := formData.Get("time")
-	timestamp, err := time.Parse(time.UnixDate, timeStr)
+	timeNum, err := strconv.ParseInt(timeStr, 10, 64)
 	if err != nil {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "error parsing time: %v", err)
+		return
 	}
+	timestamp := time.Unix(timeNum, 0)
 
 	cacheinfo, ok := S2CCommandsCacheInfo[cmd]
 	if !ok {
