@@ -203,7 +203,17 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 		if Statistics.SysMemFreeKB > 0 && Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
 			atomic.AddUint64(&Statistics.LowMemDroppedConnections, 1)
 			w.WriteHeader(503)
+			fmt.Fprint(w, "error: low memory")
 			return
+		}
+
+		if Configuration.MaxClientCount != 0 {
+			curClients := atomic.LoadUint64(&Statistics.CurrentClientCount)
+			if curClients >= Configuration.MaxClientCount {
+				w.WriteHeader(503)
+				fmt.Fprint(w, "error: client limit reached")
+				return
+			}
 		}
 
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
