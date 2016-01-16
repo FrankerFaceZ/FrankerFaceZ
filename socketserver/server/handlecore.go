@@ -351,11 +351,12 @@ func RunSocketConnection(conn *websocket.Conn) {
 	if !StopAcceptingConnections {
 		// Don't perform high contention operations when server is closing
 		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
-	}
+		atomic.AddUint64(&Statistics.ClientDisconnectsTotal, 1)
 
-	report.UsernameWasValidated = client.UsernameValidated
-	report.TwitchUsername = client.TwitchUsername
-	logstasher.Submit(&report)
+		report.UsernameWasValidated = client.UsernameValidated
+		report.TwitchUsername = client.TwitchUsername
+		logstasher.Submit(&report)
+	}
 }
 
 func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
