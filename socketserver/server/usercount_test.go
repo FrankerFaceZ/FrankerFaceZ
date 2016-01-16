@@ -32,12 +32,10 @@ func TestUniqueConnections(t *testing.T) {
 		uniqueUserChannel <- uuid
 	}
 
-	TCheckHLLValue(t, TestExpectedCount, readHLL(periodDaily))
-	TCheckHLLValue(t, TestExpectedCount, readHLL(periodWeekly))
-	TCheckHLLValue(t, TestExpectedCount, readHLL(periodMonthly))
+	TCheckHLLValue(t, TestExpectedCount, readCurrentHLL())
 
 	token := <-uniqueCtrWritingToken
-	uniqueCounters[periodDaily].End = time.Now().In(counterLocation).Add(-1 * time.Second)
+	uniqueCounter.End = time.Now().In(counterLocation).Add(-1 * time.Second)
 	uniqueCtrWritingToken <- token
 
 	rolloverCounters_do()
@@ -48,17 +46,16 @@ func TestUniqueConnections(t *testing.T) {
 		uniqueUserChannel <- uuid
 	}
 
-	TCheckHLLValue(t, TestExpectedCount, readHLL(periodDaily))
-	TCheckHLLValue(t, TestExpectedCount*2, readHLL(periodWeekly))
-	TCheckHLLValue(t, TestExpectedCount*2, readHLL(periodMonthly))
+	TCheckHLLValue(t, TestExpectedCount, readCurrentHLL())
 
 	// Check: Merging the two days results in 2000
 	// note: rolloverCounters_do() wrote out a file, and loadHLL() is reading it back
+	// TODO need to rewrite some of the test to make this work
 	var loadDest PeriodUniqueUsers
-	loadHLL(periodDaily, testStart, &loadDest)
+	loadHLL(testStart, &loadDest)
 
 	token = <-uniqueCtrWritingToken
-	loadDest.Counter.Merge(uniqueCounters[periodDaily].Counter)
+	loadDest.Counter.Merge(uniqueCounter.Counter)
 	uniqueCtrWritingToken <- token
 
 	TCheckHLLValue(t, TestExpectedCount*2, loadDest.Counter.Count())

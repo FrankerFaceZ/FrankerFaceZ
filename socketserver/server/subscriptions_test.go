@@ -229,11 +229,9 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	doneWg.Wait()
 	server.Close()
 
-	for _, period := range periods {
-		clientCount := readHLL(period)
-		if clientCount < 3 || clientCount > 5 {
-			t.Error("clientCount outside acceptable range: expected 4, got ", clientCount)
-		}
+	clientCount := readCurrentHLL()
+	if clientCount < 3 || clientCount > 5 {
+		t.Error("clientCount outside acceptable range: expected 4, got ", clientCount)
 	}
 }
 

@@ -120,7 +120,7 @@ type ErrForwardedFromBackend struct {
 }
 
 func (bfe ErrForwardedFromBackend) Error() string {
-	bytes, _ := json.Marshal(bfe)
+	bytes, _ := json.Marshal(bfe.JSONError)
 	return string(bytes)
 }
 

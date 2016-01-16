@@ -165,10 +165,10 @@ func updateSysMem() {
 	if err == nil {
 		Statistics.SysMemTotalKB = memInfo.MemTotal
 		Statistics.SysMemFreeKB = memInfo.MemAvailable
+	}
 
-		if memInfo.MemAvailable > 0 && memInfo.MemAvailable < Configuration.MinMemoryKBytes {
-			writeAllHLLs()
-		}
+	{
+		writeHLL()
 	}
 }
 

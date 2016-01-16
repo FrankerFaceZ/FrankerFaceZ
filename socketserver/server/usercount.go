@@ -14,6 +14,7 @@ import (
 
 	"github.com/clarkduvall/hyperloglog"
 	"github.com/satori/go.uuid"
+	"io"
 )
 
 // uuidHash implements a hash for uuid.UUID by XORing the random bits.
@@ -34,67 +35,37 @@ type PeriodUniqueUsers struct {
 
 type usageToken struct{}
 
-const (
-	periodDaily = iota
-	periodWeekly
-	periodMonthly
-)
-
-var periods [3]int = [3]int{periodDaily, periodWeekly, periodMonthly}
-
 const uniqCountDir = "./uniques"
-const usersDailyFmt = "daily-%d-%d-%d.gob"  // d-m-y
-const usersWeeklyFmt = "weekly-%d-%d.gob"   // w-y
-const usersMonthlyFmt = "monthly-%d-%d.gob" // m-y
+const usersDailyFmt = "daily-%d-%d-%d.gob" // d-m-y
 const CounterPrecision uint8 = 12
 
-var uniqueCounters [3]PeriodUniqueUsers
+var uniqueCounter PeriodUniqueUsers
 var uniqueUserChannel chan uuid.UUID
 var uniqueCtrWritingToken chan usageToken
 
 var counterLocation *time.Location = time.FixedZone("UTC-5", int((time.Hour*-5)/time.Second))
 
 // getCounterPeriod calculates the start and end timestamps for the HLL measurement period that includes the 'at' timestamp.
-func getCounterPeriod(which int, at time.Time) (start time.Time, end time.Time) {
+func getCounterPeriod(at time.Time) (start time.Time, end time.Time) {
 	year, month, day := at.Date()
-
-	switch which {
-	case periodDaily:
-		start = time.Date(year, month, day, 0, 0, 0, 0, counterLocation)
-		end = time.Date(year, month, day+1, 0, 0, 0, 0, counterLocation)
-	case periodWeekly:
-		dayOffset := at.Weekday() - time.Sunday
-		start = time.Date(year, month, day-int(dayOffset), 0, 0, 0, 0, counterLocation)
-		end = time.Date(year, month, day-int(dayOffset)+7, 0, 0, 0, 0, counterLocation)
-	case periodMonthly:
-		start = time.Date(year, month, 1, 0, 0, 0, 0, counterLocation)
-		end = time.Date(year, month+1, 1, 0, 0, 0, 0, counterLocation)
-	}
+	start = time.Date(year, month, day, 0, 0, 0, 0, counterLocation)
+	end = time.Date(year, month, day+1, 0, 0, 0, 0, counterLocation)
 	return start, end
 }
 
 // getHLLFilename returns the filename for the saved HLL whose measurement period covers the given time.
-func getHLLFilename(which int, at time.Time) string {
+func getHLLFilename(at time.Time) string {
 	var filename string
-	switch which {
-	case periodDaily:
-		year, month, day := at.Date()
-		filename = fmt.Sprintf(usersDailyFmt, day, month, year)
-	case periodWeekly:
-		year, week := at.ISOWeek()
-		filename = fmt.Sprintf(usersWeeklyFmt, week, year)
-	case periodMonthly:
-		year, month, _ := at.Date()
-		filename = fmt.Sprintf(usersMonthlyFmt, month, year)
-	}
+	year, month, day := at.Date()
+	filename = fmt.Sprintf(usersDailyFmt, day, month, year)
 	return fmt.Sprintf("%s/%s", uniqCountDir, filename)
 }
 
 // loadHLL loads a HLL from disk and stores the result in dest.Counter.
 // If dest.Counter is nil, it will be initialized. (This is a useful side-effect.)
 // If dest is one of the uniqueCounters, the usageToken must be held.
-func loadHLL(which int, at time.Time, dest *PeriodUniqueUsers) error {
-	fileBytes, err := ioutil.ReadFile(getHLLFilename(which, at))
+func loadHLL(at time.Time, dest *PeriodUniqueUsers) error {
+	fileBytes, err := ioutil.ReadFile(getHLLFilename(at))
 	if err != nil {
 		return err
 	}
@@ -107,6 +78,7 @@ func loadHLL(which int, at time.Time, dest *PeriodUniqueUsers) error {
 	err = dec.Decode(dest.Counter)
 	if err != nil {
 		log.Panicln(err)
+
 		return err
 	}
 	return nil
@@ -114,49 +86,40 @@ func loadHLL(which int, at time.Time, dest *PeriodUniqueUsers) error {
 
 // writeHLL writes the indicated HLL to disk.
 // The function takes the usageToken.
-func writeHLL(which int) error {
+func writeHLL() error {
 	token := <-uniqueCtrWritingToken
-	result := writeHLL_do(which)
+	result := writeHLL_do(&uniqueCounter)
 	uniqueCtrWritingToken <- token
 	return result
 }
 
 // writeHLL_do writes out the HLL indicated by `which` to disk.
 // The usageToken must be held when calling this function.
-func writeHLL_do(which int) error {
-	counter := uniqueCounters[which]
-	filename := getHLLFilename(which, counter.Start)
+func writeHLL_do(hll *PeriodUniqueUsers) (err error) {
+	filename := getHLLFilename(hll.Start)
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
+
+	defer func(file io.Closer) {
+		fileErr := file.Close()
+		if err == nil {
+			err = fileErr
+		}
+	}(file)
+
 	enc := gob.NewEncoder(file)
-	enc.Encode(counter.Counter)
-	return file.Close()
+	return enc.Encode(hll.Counter)
 }
 
-// readHLL reads the current value of the indicated HLL counter.
+// readCurrentHLL reads the current value of the active HLL counter.
 // The function takes the usageToken.
-func readHLL(which int) uint64 {
+func readCurrentHLL() uint64 {
 	token := <-uniqueCtrWritingToken
-	result := uniqueCounters[which].Counter.Count()
+	result := uniqueCounter.Counter.Count()
 	uniqueCtrWritingToken <- token
 	return result
-}
-
-// writeAllHLLs writes out all in-memory HLLs to disk.
-// The function takes the usageToken.
-func writeAllHLLs() error {
-	var err, err2 error
-	token := <-uniqueCtrWritingToken
-	for _, period := range periods {
-		err2 = writeHLL_do(period)
-		if err == nil {
-			err = err2
-		}
-	}
-	uniqueCtrWritingToken <- token
-	return err
 }
 
 var hllFileServer = http.StripPrefix("/hll", http.FileServer(http.Dir(uniqCountDir)))
@@ -166,7 +129,7 @@ func HTTPShowHLL(w http.ResponseWriter, r *http.Request) {
 }
 
 func HTTPWriteHLL(w http.ResponseWriter, r *http.Request) {
-	writeAllHLLs()
+	writeHLL()
 	w.WriteHeader(200)
 	w.Write([]byte("ok"))
 }
@@ -181,15 +144,18 @@ func loadUniqueUsers() {
 	}
 
 	now := time.Now().In(counterLocation)
-	for _, period := range periods {
-		uniqueCounters[period].Start, uniqueCounters[period].End = getCounterPeriod(period, now)
-		err := loadHLL(period, now, &uniqueCounters[period])
-		if err != nil && os.IsNotExist(err) {
-			// errors are bad precisions
-			uniqueCounters[period].Counter, _ = hyperloglog.NewPlus(CounterPrecision)
-		} else if err != nil && !os.IsNotExist(err) {
-			log.Panicln("failed to load unique users data:", err)
-		}
+	uniqueCounter.Start, uniqueCounter.End = getCounterPeriod(now)
+	err = loadHLL(now, &uniqueCounter)
+	isIgnorableError := err != nil && (false ||
+		(os.IsNotExist(err)) ||
+		(err == io.EOF))
+
+	if isIgnorableError {
+		// file didn't finish writing
+		// errors in NewPlus are bad precisions
+		uniqueCounter.Counter, _ = hyperloglog.NewPlus(CounterPrecision)
+	} else if err != nil {
+		log.Panicln("failed to load unique users data:", err)
 	}
 
 	uniqueUserChannel = make(chan uuid.UUID)
@@ -203,9 +169,7 @@ func loadUniqueUsers() {
 func dumpUniqueUsers() {
 	token := <-uniqueCtrWritingToken
 
-	for _, period := range periods {
-		uniqueCounters[period].Counter.Clear()
-	}
+	uniqueCounter.Counter.Clear()
 
 	uniqueCtrWritingToken <- token
 }
@@ -220,9 +184,7 @@ func processNewUsers() {
 		select {
 		case u := <-uniqueUserChannel:
 			hashed := UuidHash(u)
-			for _, period := range periods {
-				uniqueCounters[period].Counter.Add(hashed)
-			}
+			uniqueCounter.Counter.Add(hashed)
 		case uniqueCtrWritingToken <- token:
 			// relinquish token. important that there is only one of this going on
 			// otherwise we thrash
@@ -253,29 +215,25 @@ func rolloverCounters_do() {
 
 	token = <-uniqueCtrWritingToken
 	now = time.Now().In(counterLocation)
-	for _, period := range periods {
-		if now.After(uniqueCounters[period].End) {
-			// Cycle for period
-			err := writeHLL_do(period)
-			if err != nil {
-				log.Println("could not cycle unique user counter:", err)
+	// Cycle for period
+	err := writeHLL_do(&uniqueCounter)
+	if err != nil {
+		log.Println("could not cycle unique user counter:", err)
 
-				// Attempt to rescue the data into the log
-				var buf bytes.Buffer
-				bytes, err := uniqueCounters[period].Counter.GobEncode()
-				if err == nil {
-					enc := base64.NewEncoder(base64.StdEncoding, &buf)
-					enc.Write(bytes)
-					enc.Close()
-					log.Print("data for ", getHLLFilename(period, now), ":", buf.String())
-				}
-			}
-
-			uniqueCounters[period].Start, uniqueCounters[period].End = getCounterPeriod(period, now)
-			// errors are bad precisions, so we can ignore
-			uniqueCounters[period].Counter, _ = hyperloglog.NewPlus(CounterPrecision)
+		// Attempt to rescue the data into the log
+		var buf bytes.Buffer
+		bytes, err := uniqueCounter.Counter.GobEncode()
+		if err == nil {
+			enc := base64.NewEncoder(base64.StdEncoding, &buf)
+			enc.Write(bytes)
+			enc.Close()
+			log.Print("data for ", getHLLFilename(uniqueCounter.Start), ":", buf.String())
 		}
 	}
+
+	uniqueCounter.Start, uniqueCounter.End = getCounterPeriod(now)
+	// errors are bad precisions, so we can ignore
+	uniqueCounter.Counter, _ = hyperloglog.NewPlus(CounterPrecision)
 
 	uniqueCtrWritingToken <- token
 }

@@ -139,7 +139,7 @@ func shutdownHandler() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		writeAllHLLs()
+		writeHLL()
 		wg.Done()
 	}()
 

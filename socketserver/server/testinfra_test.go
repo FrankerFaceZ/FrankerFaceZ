@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"strconv"
 )
 
 const (
@@ -272,7 +273,7 @@ func TSealForSavePubMsg(tb testing.TB, cmd Command, channel string, arguments in
 	if deleteMode {
 		form.Set("delete", "1")
 	}
-	form.Set("time", time.Now().Format(time.UnixDate))
+	form.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
 
 	sealed, err := SealRequest(form)
 	if err != nil {
