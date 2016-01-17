@@ -43,13 +43,18 @@ var uniqueCounter PeriodUniqueUsers
 var uniqueUserChannel chan uuid.UUID
 var uniqueCtrWritingToken chan usageToken
 
-var counterLocation *time.Location = time.FixedZone("UTC-5", int((time.Hour*-5)/time.Second))
+var CounterLocation *time.Location = time.FixedZone("UTC-5", int((time.Hour*-5)/time.Second))
+
+func TruncateToMidnight(at time.Time) time.Time {
+	year, month, day := at.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, CounterLocation)
+}
 
 // GetCounterPeriod calculates the start and end timestamps for the HLL measurement period that includes the 'at' timestamp.
 func GetCounterPeriod(at time.Time) (start time.Time, end time.Time) {
 	year, month, day := at.Date()
-	start = time.Date(year, month, day, 0, 0, 0, 0, counterLocation)
-	end = time.Date(year, month, day+1, 0, 0, 0, 0, counterLocation)
+	start = time.Date(year, month, day, 0, 0, 0, 0, CounterLocation)
+	end = time.Date(year, month, day+1, 0, 0, 0, 0, CounterLocation)
 	return start, end
 }
 
@@ -143,7 +148,7 @@ func loadUniqueUsers() {
 		log.Panicln("could not make unique users data dir:", err)
 	}
 
-	now := time.Now().In(counterLocation)
+	now := time.Now().In(CounterLocation)
 	uniqueCounter.Start, uniqueCounter.End = GetCounterPeriod(now)
 	err = loadHLL(now, &uniqueCounter)
 	isIgnorableError := err != nil && (false ||
@@ -194,9 +199,9 @@ func processNewUsers() {
 }
 
 func getNextMidnight() time.Time {
-	now := time.Now().In(counterLocation)
+	now := time.Now().In(CounterLocation)
 	year, month, day := now.Date()
-	return time.Date(year, month, day+1, 0, 0, 1, 0, counterLocation)
+	return time.Date(year, month, day+1, 0, 0, 1, 0, CounterLocation)
 }
 
 // is_init_func
@@ -214,7 +219,7 @@ func rolloverCounters_do() {
 	var now time.Time
 
 	token = <-uniqueCtrWritingToken
-	now = time.Now().In(counterLocation)
+	now = time.Now().In(CounterLocation)
 	// Cycle for period
 	err := writeHLL_do(&uniqueCounter)
 	if err != nil {

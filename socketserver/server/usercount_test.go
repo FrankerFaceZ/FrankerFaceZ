@@ -12,7 +12,7 @@ import (
 func TestUniqueConnections(t *testing.T) {
 	const TestExpectedCount = 1000
 
-	testStart := time.Now().In(counterLocation)
+	testStart := time.Now().In(CounterLocation)
 
 	var server *httptest.Server
 	var backendExpected = NewTBackendRequestChecker(t,
@@ -35,7 +35,7 @@ func TestUniqueConnections(t *testing.T) {
 	TCheckHLLValue(t, TestExpectedCount, readCurrentHLL())
 
 	token := <-uniqueCtrWritingToken
-	uniqueCounter.End = time.Now().In(counterLocation).Add(-1 * time.Second)
+	uniqueCounter.End = time.Now().In(CounterLocation).Add(-1 * time.Second)
 	uniqueCtrWritingToken <- token
 
 	rolloverCounters_do()

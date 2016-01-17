@@ -21,7 +21,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"./logstasher"
+	"bitbucket.org/stendec/frankerfacez/socketserver/server/logstasher"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
