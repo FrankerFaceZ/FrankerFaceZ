@@ -36,7 +36,7 @@ type PeriodUniqueUsers struct {
 type usageToken struct{}
 
 const uniqCountDir = "./uniques"
-const usersDailyFmt = "daily-%d-%d-%d.gob" // d-m-y
+const UsersDailyFmt = "daily-%d-%d-%d.gob" // d-m-y
 const CounterPrecision uint8 = 12
 
 var uniqueCounter PeriodUniqueUsers
@@ -45,19 +45,19 @@ var uniqueCtrWritingToken chan usageToken
 
 var counterLocation *time.Location = time.FixedZone("UTC-5", int((time.Hour*-5)/time.Second))
 
-// getCounterPeriod calculates the start and end timestamps for the HLL measurement period that includes the 'at' timestamp.
-func getCounterPeriod(at time.Time) (start time.Time, end time.Time) {
+// GetCounterPeriod calculates the start and end timestamps for the HLL measurement period that includes the 'at' timestamp.
+func GetCounterPeriod(at time.Time) (start time.Time, end time.Time) {
 	year, month, day := at.Date()
 	start = time.Date(year, month, day, 0, 0, 0, 0, counterLocation)
 	end = time.Date(year, month, day+1, 0, 0, 0, 0, counterLocation)
 	return start, end
 }
 
-// getHLLFilename returns the filename for the saved HLL whose measurement period covers the given time.
-func getHLLFilename(at time.Time) string {
+// GetHLLFilename returns the filename for the saved HLL whose measurement period covers the given time.
+func GetHLLFilename(at time.Time) string {
 	var filename string
 	year, month, day := at.Date()
-	filename = fmt.Sprintf(usersDailyFmt, day, month, year)
+	filename = fmt.Sprintf(UsersDailyFmt, day, month, year)
 	return fmt.Sprintf("%s/%s", uniqCountDir, filename)
 }
 
@@ -65,7 +65,7 @@ func getHLLFilename(at time.Time) string {
 // If dest.Counter is nil, it will be initialized. (This is a useful side-effect.)
 // If dest is one of the uniqueCounters, the usageToken must be held.
 func loadHLL(at time.Time, dest *PeriodUniqueUsers) error {
-	fileBytes, err := ioutil.ReadFile(getHLLFilename(at))
+	fileBytes, err := ioutil.ReadFile(GetHLLFilename(at))
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func writeHLL() error {
 // writeHLL_do writes out the HLL indicated by `which` to disk.
 // The usageToken must be held when calling this function.
 func writeHLL_do(hll *PeriodUniqueUsers) (err error) {
-	filename := getHLLFilename(hll.Start)
+	filename := GetHLLFilename(hll.Start)
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func loadUniqueUsers() {
 	}
 
 	now := time.Now().In(counterLocation)
-	uniqueCounter.Start, uniqueCounter.End = getCounterPeriod(now)
+	uniqueCounter.Start, uniqueCounter.End = GetCounterPeriod(now)
 	err = loadHLL(now, &uniqueCounter)
 	isIgnorableError := err != nil && (false ||
 		(os.IsNotExist(err)) ||
@@ -227,11 +227,11 @@ func rolloverCounters_do() {
 			enc := base64.NewEncoder(base64.StdEncoding, &buf)
 			enc.Write(bytes)
 			enc.Close()
-			log.Print("data for ", getHLLFilename(uniqueCounter.Start), ":", buf.String())
+			log.Print("data for ", GetHLLFilename(uniqueCounter.Start), ":", buf.String())
 		}
 	}
 
-	uniqueCounter.Start, uniqueCounter.End = getCounterPeriod(now)
+	uniqueCounter.Start, uniqueCounter.End = GetCounterPeriod(now)
 	// errors are bad precisions, so we can ignore
 	uniqueCounter.Counter, _ = hyperloglog.NewPlus(CounterPrecision)
 
