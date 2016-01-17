@@ -1,10 +1,10 @@
 package main
 
 import (
+	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 	"html/template"
 	"net/http"
 	"time"
-	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 )
 
 type CalendarData struct {
@@ -14,13 +14,13 @@ type CalWeekData struct {
 	Days []CalDayData
 }
 type CalDayData struct {
-	NoData bool
-	Date int
+	NoData    bool
+	Date      int
 	UniqUsers int
 }
 
 type CalendarMonthInfo struct {
-	Year int
+	Year  int
 	Month time.Month
 	// Ranges from -5 to +1.
 	// A value of +1 means the 1st of the month is a Sunday.
@@ -44,10 +44,10 @@ func GetMonthInfo(at time.Time) CalendarMonthInfo {
 	}
 
 	return CalendarMonthInfo{
-		Year: year,
-		Month: month,
+		Year:              year,
+		Month:             month,
 		FirstSundayOffset: monthWeekStartDay,
-		NeedSixSundays: needSixSundays,
+		NeedSixSundays:    needSixSundays,
 	}
 }
 

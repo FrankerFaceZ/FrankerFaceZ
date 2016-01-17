@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"os"
 )
 
 type ConfigFile struct {
