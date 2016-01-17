@@ -1,0 +1,18 @@
+<table class="calendar">
+    <thead>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th>
+    </thead>
+    <tbody>
+    {{range .Weeks}}
+        {{range .Days}}
+            {{template "cal_entry"}}
+        {{end}}
+    {{end}}
+    </tbody>
+</table>
