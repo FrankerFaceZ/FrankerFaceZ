@@ -39,7 +39,7 @@ const HelloCommand Command = "hello"
 // It indicates that the client is finished sending the initial 'sub' commands and the server should send the backlog.
 const ReadyCommand Command = "ready"
 
-const SetUserCommand Command = "set_user"
+const SetUserCommand Command = "setuser"
 
 // AuthorizeCommand is a S2C Command sent as part of Twitch username validation.
 const AuthorizeCommand Command = "do_authorize"
