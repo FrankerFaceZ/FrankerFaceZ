@@ -20,8 +20,6 @@ import (
 	"syscall"
 	"time"
 	"unicode/utf8"
-
-	"bitbucket.org/stendec/frankerfacez/socketserver/server/logstasher"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -108,7 +106,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	}
 
 	if Configuration.UseESLogStashing {
-		logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
+		// logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
 	}
 
 	janitorsOnce.Do(startJanitors)
@@ -310,9 +308,9 @@ func RunSocketConnection(conn *websocket.Conn) {
 	client.RemoteAddr = conn.RemoteAddr()
 	client.MsgChannelIsDone = stoppedChan
 
-	var report logstasher.ConnectionReport
-	report.ConnectTime = time.Now()
-	report.RemoteAddr = client.RemoteAddr
+	// var report logstasher.ConnectionReport
+	// report.ConnectTime = time.Now()
+	// report.RemoteAddr = client.RemoteAddr
 
 	conn.SetPongHandler(func(pongBody string) error {
 		client.Mutex.Lock()
@@ -326,7 +324,8 @@ func RunSocketConnection(conn *websocket.Conn) {
 	closeReason := runSocketWriter(conn, &client, _errorChan, _clientChan, _serverMessageChan)
 
 	// Exit
-	closeConnection(conn, closeReason, &report)
+	closeConnection(conn, closeReason)
+	// closeConnection(conn, closeReason, &report)
 
 	// Launch message draining goroutine - we aren't out of the pub/sub records
 	go func() {
@@ -353,9 +352,9 @@ func RunSocketConnection(conn *websocket.Conn) {
 		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
 		atomic.AddUint64(&Statistics.ClientDisconnectsTotal, 1)
 
-		report.UsernameWasValidated = client.UsernameValidated
-		report.TwitchUsername = client.TwitchUsername
-		logstasher.Submit(&report)
+		// report.UsernameWasValidated = client.UsernameValidated
+		// report.TwitchUsername = client.TwitchUsername
+		// logstasher.Submit(&report)
 	}
 }
 
@@ -457,7 +456,7 @@ func getDeadline() time.Time {
 	return time.Now().Add(1 * time.Minute)
 }
 
-func closeConnection(conn *websocket.Conn, closeMsg websocket.CloseError, report *logstasher.ConnectionReport) {
+func closeConnection(conn *websocket.Conn, closeMsg websocket.CloseError) {
 	closeTxt := closeMsg.Text
 	if strings.Contains(closeTxt, "read: connection reset by peer") {
 		closeTxt = "read: connection reset by peer"
@@ -467,9 +466,9 @@ func closeConnection(conn *websocket.Conn, closeMsg websocket.CloseError, report
 		closeTxt = "clean shutdown"
 	}
 
-	report.DisconnectCode = closeMsg.Code
-	report.DisconnectReason = closeTxt
-	report.DisconnectTime = time.Now()
+	// report.DisconnectCode = closeMsg.Code
+	// report.DisconnectReason = closeTxt
+	// report.DisconnectTime = time.Now()
 
 	conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeMsg.Code, closeMsg.Text), getDeadline())
 	conn.Close()
