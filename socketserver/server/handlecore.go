@@ -60,6 +60,8 @@ var Configuration *ConfigFile
 
 var janitorsOnce sync.Once
 
+var CommandPool StringPool
+
 // SetupServerAndHandle starts all background goroutines and registers HTTP listeners on the given ServeMux.
 // Essentially, this function completely preps the server for a http.ListenAndServe call.
 // (Uses http.DefaultServeMux if `serveMux` is nil.)
@@ -115,6 +117,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 // startJanitors starts the 'is_init_func' goroutines
 func startJanitors() {
 	loadUniqueUsers()
+	internCommands()
 
 	go authorizationJanitor()
 	go bunchCacheJanitor()
@@ -508,11 +511,11 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
-		out.Command = Command(dataStr)
+		out.Command = CommandPool.Intern(dataStr)
 		out.Arguments = nil
 		return nil
 	} else {
-		out.Command = Command(dataStr[:spaceIdx])
+		out.Command = CommandPool.Intern(dataStr[:spaceIdx])
 	}
 	dataStr = dataStr[spaceIdx+1:]
 	argumentsJSON := dataStr

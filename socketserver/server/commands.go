@@ -41,6 +41,25 @@ var commandHandlers = map[Command]CommandHandler{
 	"user_history":          C2SHandleRemoteCommand,
 }
 
+func internCommands() {
+	CommandPool = NewStringPool()
+	CommandPool._Intern_Setup(HelloCommand)
+	CommandPool._Intern_Setup("ping")
+	CommandPool._Intern_Setup(SetUserCommand)
+	CommandPool._Intern_Setup(ReadyCommand)
+	CommandPool._Intern_Setup("sub")
+	CommandPool._Intern_Setup("unsub")
+	CommandPool._Intern_Setup("track_follow")
+	CommandPool._Intern_Setup("emoticon_uses")
+	CommandPool._Intern_Setup("twitch_emote")
+	CommandPool._Intern_Setup("get_link")
+	CommandPool._Intern_Setup("get_display_name")
+	CommandPool._Intern_Setup("update_follow_buttons")
+	CommandPool._Intern_Setup("chat_history")
+	CommandPool._Intern_Setup("user_history")
+	CommandPool._Intern_Setup("adjacent_history")
+}
+
 // DispatchC2SCommand handles a C2S Command in the provided ClientMessage.
 // It calls the correct CommandHandler function, catching panics.
 // It sends either the returned Reply ClientMessage, setting the correct messageID, or sends an ErrorCommand

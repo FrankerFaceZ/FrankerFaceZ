@@ -62,7 +62,7 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
-// HBackendPublishRequest handles the /uncached_pub route.
+// HTTPBackendUncachedPublish handles the /uncached_pub route.
 // The backend can POST here to publish a message to clients with no caching.
 // The POST arguments are `cmd`, `args`, `channel`, and `scope`.
 // The `scope` argument is required because no attempt is made to infer the scope from the command, unlike /cached_pub.
@@ -93,7 +93,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cm := ClientMessage{MessageID: -1, Command: Command(cmd), origArguments: json}
+	cm := ClientMessage{MessageID: -1, Command: CommandPool.Intern(cmd), origArguments: json}
 	cm.parseOrigArguments()
 	var count int
 
@@ -219,7 +219,7 @@ type ErrBackendNotOK struct {
 	Code     int
 }
 
-// Implements the error interface.
+// Error Implements the error interface.
 func (noe ErrBackendNotOK) Error() string {
 	return fmt.Sprintf("backend returned %d: %s", noe.Code, noe.Response)
 }
