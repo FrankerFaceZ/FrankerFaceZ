@@ -114,10 +114,13 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	janitorsOnce.Do(startJanitors)
 }
 
+func init() {
+	internCommands()
+}
+
 // startJanitors starts the 'is_init_func' goroutines
 func startJanitors() {
 	loadUniqueUsers()
-	internCommands()
 
 	go authorizationJanitor()
 	go bunchCacheJanitor()
