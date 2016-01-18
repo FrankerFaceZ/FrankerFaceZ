@@ -73,7 +73,7 @@ func commandCounter() {
 	}
 }
 
-// StatsDataVersion
+// StatsDataVersion is the version of the StatsData struct.
 const StatsDataVersion = 5
 const pageSize = 4096
 

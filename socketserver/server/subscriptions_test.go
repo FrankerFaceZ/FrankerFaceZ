@@ -30,9 +30,9 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	const TestData3 = false
 	var TestData4 = []interface{}{"str1", "str2", "str3"}
 
-	S2CCommandsCacheInfo[TestCommandChan] = PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeChat}
-	S2CCommandsCacheInfo[TestCommandMulti] = PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeMultichat}
-	S2CCommandsCacheInfo[TestCommandGlobal] = PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeGlobal}
+	S2CCommandsCacheInfo[TestCommandChan] = PushCommandCacheInfo{Caching: CacheTypeLastOnly, Target: MsgTargetTypeChat}
+	S2CCommandsCacheInfo[TestCommandMulti] = PushCommandCacheInfo{Caching: CacheTypeLastOnly, Target: MsgTargetTypeMultichat}
+	S2CCommandsCacheInfo[TestCommandGlobal] = PushCommandCacheInfo{Caching: CacheTypeLastOnly, Target: MsgTargetTypeGlobal}
 
 	var server *httptest.Server
 	var urls TURLs

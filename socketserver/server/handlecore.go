@@ -60,7 +60,7 @@ var Configuration *ConfigFile
 
 var janitorsOnce sync.Once
 
-var CommandPool StringPool
+var CommandPool *StringPool
 
 // SetupServerAndHandle starts all background goroutines and registers HTTP listeners on the given ServeMux.
 // Essentially, this function completely preps the server for a http.ListenAndServe call.
@@ -573,7 +573,7 @@ func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []by
 	return websocket.TextMessage, []byte(dataStr), nil
 }
 
-// Convenience method: Parse the arguments of the ClientMessage as a single string.
+// ArgumentsAsString parses the arguments of the ClientMessage as a single string.
 func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {
 	var ok bool
 	string1, ok = cm.Arguments.(string)
@@ -585,7 +585,7 @@ func (cm *ClientMessage) ArgumentsAsString() (string1 string, err error) {
 	}
 }
 
-// Convenience method: Parse the arguments of the ClientMessage as a single int.
+// ArgumentsAsInt parses the arguments of the ClientMessage as a single int.
 func (cm *ClientMessage) ArgumentsAsInt() (int1 int64, err error) {
 	var ok bool
 	var num float64
@@ -599,7 +599,7 @@ func (cm *ClientMessage) ArgumentsAsInt() (int1 int64, err error) {
 	}
 }
 
-// Convenience method: Parse the arguments of the ClientMessage as an array of two strings.
+// ArgumentsAsTwoStrings parses the arguments of the ClientMessage as an array of two strings.
 func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err error) {
 	var ok bool
 	var ary []interface{}
@@ -630,7 +630,7 @@ func (cm *ClientMessage) ArgumentsAsTwoStrings() (string1, string2 string, err e
 	}
 }
 
-// Convenience method: Parse the arguments of the ClientMessage as an array of a string and an int.
+// ArgumentsAsStringAndInt parses the arguments of the ClientMessage as an array of a string and an int.
 func (cm *ClientMessage) ArgumentsAsStringAndInt() (string1 string, int int64, err error) {
 	var ok bool
 	var ary []interface{}
@@ -663,7 +663,7 @@ func (cm *ClientMessage) ArgumentsAsStringAndInt() (string1 string, int int64, e
 	}
 }
 
-// Convenience method: Parse the arguments of the ClientMessage as an array of a string and an int.
+// ArgumentsAsStringAndBool parses the arguments of the ClientMessage as an array of a string and an int.
 func (cm *ClientMessage) ArgumentsAsStringAndBool() (str string, flag bool, err error) {
 	var ok bool
 	var ary []interface{}

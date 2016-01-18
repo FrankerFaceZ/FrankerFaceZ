@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,36 +32,37 @@ var S2CCommandsCacheInfo = map[Command]PushCommandCacheInfo{
 type BacklogCacheType int
 
 const (
-	// This is not a cache type.
+	// CacheTypeInvalid is the sentinel value.
 	CacheTypeInvalid BacklogCacheType = iota
-	// This message cannot be cached.
+	// CacheTypeNever is a message that cannot be cached.
 	CacheTypeNever
-	// Save only the last copy of this message, and always send it when the backlog is requested.
+	// CacheTypeLastOnly means to save only the last copy of this message,
+	// and always send it when the backlog is requested.
 	CacheTypeLastOnly
-	// Save this backlog data to disk with its timestamp.
-	// Send it when the backlog is requested, or after a reconnect if it was updated.
+	// CacheTypePersistent means to save the last copy of this message,
+	// and always send it when the backlog is requested, but do not clean it periodically.
 	CacheTypePersistent
 )
 
 type MessageTargetType int
 
 const (
-	// This is not a message target.
+	// MsgTargetTypeInvalid is the sentinel value.
 	MsgTargetTypeInvalid MessageTargetType = iota
-	// This message is targeted to all users in a chat
+	// MsgTargetTypeChat is a message is targeted to all users in a particular chat.
 	MsgTargetTypeChat
-	// This message is targeted to all users in multiple chats
+	// MsgTargetTypeMultichat is a message is targeted to all users in multiple chats.
 	MsgTargetTypeMultichat
-	// This message is sent to all FFZ users.
+	// MsgTargetTypeGlobal is a message sent to all FFZ users.
 	MsgTargetTypeGlobal
 )
 
 // note: see types.go for methods on these
 
-// Returned by BacklogCacheType.UnmarshalJSON()
+// ErrorUnrecognizedCacheType is returned by BacklogCacheType.UnmarshalJSON()
 var ErrorUnrecognizedCacheType = errors.New("Invalid value for cachetype")
 
-// Returned by MessageTargetType.UnmarshalJSON()
+// ErrorUnrecognizedTargetType is returned by MessageTargetType.UnmarshalJSON()
 var ErrorUnrecognizedTargetType = errors.New("Invalid value for message target")
 
 type LastSavedMessage struct {
@@ -72,11 +72,11 @@ type LastSavedMessage struct {
 
 // map is command -> channel -> data
 
-// CacheTypeLastOnly. Cleaned up by reaper goroutine every ~hour.
+// CachedLastMessages is of CacheTypeLastOnly. Cleaned up by reaper goroutine every ~hour.
 var CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 var CachedLSMLock sync.RWMutex
 
-// CacheTypePersistent. Never cleaned.
+// PersistentLastMessages is of CacheTypePersistent. Never cleaned.
 var PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
 var PersistentLSMLock sync.RWMutex
 
@@ -135,48 +135,9 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	CachedLSMLock.RUnlock()
 }
 
-// insertionSort implements insertion sort.
-// CacheTypeTimestamps should use insertion sort for O(N) average performance.
-// (The average case is the array is still sorted after insertion of the new item.)
-func insertionSort(ary sort.Interface) {
-	for i := 1; i < ary.Len(); i++ {
-		for j := i; j > 0 && ary.Less(j, j-1); j-- {
-			ary.Swap(j, j-1)
-		}
-	}
-}
-
 type timestampArray interface {
 	Len() int
 	GetTime(int) time.Time
-}
-
-func findFirstNewMessage(ary timestampArray, disconnectTime time.Time) (idx int) {
-	len := ary.Len()
-	i := len
-
-	// Walk backwards until we find GetTime() before disconnectTime
-	step := 1
-	for i > 0 {
-		i -= step
-		if i < 0 {
-			i = 0
-		}
-		if !ary.GetTime(i).After(disconnectTime) {
-			break
-		}
-		step = int(float64(step)*1.5) + 1
-	}
-
-	// Walk forwards until we find GetTime() after disconnectTime
-	for i < len && !ary.GetTime(i).After(disconnectTime) {
-		i++
-	}
-
-	if i == len {
-		return -1
-	}
-	return i
 }
 
 func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.Locker, cmd Command, channel string, timestamp time.Time, data string, deleting bool) {
@@ -195,7 +156,7 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	if deleting {
 		delete(chanMap, channel)
 	} else {
-		chanMap[channel] = LastSavedMessage{timestamp, data}
+		chanMap[channel] = LastSavedMessage{Timestamp: timestamp, Data: data}
 	}
 }
 
@@ -224,7 +185,8 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Publish a message to clients, and update the in-server cache for the message.
+// HTTPBackendCachedPublish handles the /cached_pub route.
+// It publishes a message to clients, and then updates the in-server cache for the message.
 // notes:
 // `scope` is implicit in the command
 func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {

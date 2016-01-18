@@ -17,7 +17,7 @@ import (
 // The Commands sent from Client -> Server and Server -> Client are disjoint sets.
 type Command string
 
-// CommandHandler is a RPC handler assosciated with a Command.
+// CommandHandler is a RPC handler associated with a Command.
 type CommandHandler func(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 
 var commandHandlers = map[Command]CommandHandler{
@@ -43,10 +43,10 @@ var commandHandlers = map[Command]CommandHandler{
 
 func internCommands() {
 	CommandPool = NewStringPool()
-	CommandPool._Intern_Setup(HelloCommand)
+	CommandPool._Intern_Setup(string(HelloCommand))
 	CommandPool._Intern_Setup("ping")
-	CommandPool._Intern_Setup(SetUserCommand)
-	CommandPool._Intern_Setup(ReadyCommand)
+	CommandPool._Intern_Setup(string(SetUserCommand))
+	CommandPool._Intern_Setup(string(ReadyCommand))
 	CommandPool._Intern_Setup("sub")
 	CommandPool._Intern_Setup("unsub")
 	CommandPool._Intern_Setup("track_follow")
@@ -155,8 +155,8 @@ func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rm
 	}
 
 	client.Mutex.Lock()
-	client.TwitchUsername = username
 	client.UsernameValidated = false
+	client.TwitchUsername = username
 	client.Mutex.Unlock()
 
 	if Configuration.SendAuthToNewClients {
@@ -262,7 +262,7 @@ func C2STrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage)
 	now := time.Now()
 
 	followEventsLock.Lock()
-	followEvents = append(followEvents, followEvent{client.TwitchUsername, channel, following, now})
+	followEvents = append(followEvents, followEvent{User: client.TwitchUsername, Channel: channel, NowFollowing: following, Timestamp: now})
 	followEventsLock.Unlock()
 
 	return ResponseSuccess, nil

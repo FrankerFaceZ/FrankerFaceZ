@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	irc "github.com/fluffle/goirc/client"
 	"log"
 	"strings"
@@ -86,10 +85,6 @@ func (client *ClientInfo) StartAuthorization(callback AuthCallback) {
 const AuthChannelName = "frankerfacezauthorizer"
 const AuthChannel = "#" + AuthChannelName
 const AuthCommand = "AUTH"
-
-const DEBUG = "DEBUG"
-
-var errChallengeNotFound = errors.New("did not find a challenge solved by that message")
 
 // is_init_func
 func ircConnection() {

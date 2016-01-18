@@ -17,7 +17,7 @@ import (
 	"io"
 )
 
-// uuidHash implements a hash for uuid.UUID by XORing the random bits.
+// UuidHash implements a hash for uuid.UUID by XORing the random bits.
 type UuidHash uuid.UUID
 
 func (u UuidHash) Sum64() uint64 {

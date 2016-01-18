@@ -99,7 +99,9 @@ func UnsubscribeSingleChat(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RUnlock()
 }
 
-// Unsubscribe the client from all channels, AND clear the CurrentChannels / WatchingChannels fields.
+// UnsubscribeAll will unsubscribe the client from all channels,
+// AND clear the CurrentChannels / WatchingChannels fields.
+//
 // Locks:
 //   - read lock to top-level maps
 //   - write lock to SubscriptionInfos

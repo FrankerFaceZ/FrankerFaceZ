@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const CryptoBoxKeyLength = 32
-
 const NegativeOne = ^uint64(0)
 
 type ConfigFile struct {
@@ -94,7 +92,7 @@ type ClientInfo struct {
 	// If it seems to be a performance problem, we can split this.
 	Mutex sync.Mutex
 
-	// TODO(riking) - does this need to be protected cross-thread?
+	// Info about the client's username and whether or not we have verified it.
 	AuthInfo
 
 	RemoteAddr net.Addr
@@ -187,15 +185,15 @@ func BacklogCacheTypeByName(name string) (bct BacklogCacheType) {
 	return
 }
 
-// Implements Stringer
+// String implements Stringer
 func (bct BacklogCacheType) String() string { return bct.Name() }
 
-// Implements json.Marshaler
+// MarshalJSON implements json.Marshaler
 func (bct BacklogCacheType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(bct.Name())
 }
 
-// Implements json.Unmarshaler
+// UnmarshalJSON implements json.Unmarshaler
 func (bct *BacklogCacheType) UnmarshalJSON(data []byte) error {
 	var str string
 	err := json.Unmarshal(data, &str)
@@ -240,15 +238,15 @@ func MessageTargetTypeByName(name string) (mtt MessageTargetType) {
 	return
 }
 
-// Implements Stringer
+// String implements Stringer
 func (mtt MessageTargetType) String() string { return mtt.Name() }
 
-// Implements json.Marshaler
+// MarshalJSON implements json.Marshaler
 func (mtt MessageTargetType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mtt.Name())
 }
 
-// Implements json.Unmarshaler
+// UnmarshalJSON implements json.Unmarshaler
 func (mtt *MessageTargetType) UnmarshalJSON(data []byte) error {
 	var str string
 	err := json.Unmarshal(data, &str)

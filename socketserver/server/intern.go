@@ -32,6 +32,7 @@ func (p *StringPool) Intern(s string) Command {
 	if exists {
 		return ss
 	}
-	p.lookup[s] = Command(string([]byte(s)))
-	return s
+	ss = Command(string([]byte(s))) // make a copy
+	p.lookup[s] = ss
+	return ss
 }
