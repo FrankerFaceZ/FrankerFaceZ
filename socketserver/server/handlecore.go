@@ -277,8 +277,8 @@ var CloseNonUTF8Data = websocket.CloseError{
 	Text: "Non UTF8 data recieved. Network corruption likely.",
 }
 
-const sendMessageBufferLength = 125
-const sendMessageAbortLength = 50
+const sendMessageBufferLength = 30
+const sendMessageAbortLength = 20
 
 // RunSocketConnection contains the main run loop of a websocket connection.
 //
