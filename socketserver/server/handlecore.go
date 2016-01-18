@@ -518,7 +518,7 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 		out.Command = CommandPool.Intern(dataStr[:spaceIdx])
 	}
 	dataStr = dataStr[spaceIdx+1:]
-	argumentsJSON := dataStr
+	argumentsJSON := string([]byte(dataStr))
 	out.origArguments = argumentsJSON
 	err = out.parseOrigArguments()
 	if err != nil {
