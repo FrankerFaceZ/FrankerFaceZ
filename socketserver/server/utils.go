@@ -27,6 +27,10 @@ func New4KByteBuffer() interface{} {
 	return make([]byte, 0, 4096)
 }
 
+func copyString(s string) string {
+	return string([]byte(s))
+}
+
 func SealRequest(form url.Values) (url.Values, error) {
 	var nonce [24]byte
 	var err error

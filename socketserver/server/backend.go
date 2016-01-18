@@ -93,7 +93,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cm := ClientMessage{MessageID: -1, Command: CommandPool.Intern(cmd), origArguments: json}
+	cm := ClientMessage{MessageID: -1, Command: CommandPool.InternCommand(cmd), origArguments: json}
 	cm.parseOrigArguments()
 	var count int
 

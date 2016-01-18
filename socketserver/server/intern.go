@@ -6,19 +6,23 @@ import (
 
 type StringPool struct {
 	sync.RWMutex
-	lookup map[string]Command
+	lookup map[string]string
 }
 
 func NewStringPool() *StringPool {
-	return &StringPool{lookup: make(map[string]Command)}
+	return &StringPool{lookup: make(map[string]string)}
 }
 
 // doesn't lock, doesn't check for dupes.
 func (p *StringPool) _Intern_Setup(s string) {
-	p.lookup[s] = Command(s)
+	p.lookup[s] = s
 }
 
-func (p *StringPool) Intern(s string) Command {
+func (p *StringPool) InternCommand(s string) Command {
+	return Command(p.Intern(s))
+}
+
+func (p *StringPool) Intern(s string) string {
 	p.RLock()
 	ss, exists := p.lookup[s]
 	p.RUnlock()
@@ -32,7 +36,7 @@ func (p *StringPool) Intern(s string) Command {
 	if exists {
 		return ss
 	}
-	ss = Command(string([]byte(s))) // make a copy
-	p.lookup[s] = ss
+	ss = copyString(s)
+	p.lookup[ss] = ss
 	return ss
 }

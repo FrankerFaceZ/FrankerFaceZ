@@ -61,6 +61,8 @@ var Configuration *ConfigFile
 var janitorsOnce sync.Once
 
 var CommandPool *StringPool
+var PubSubChannelPool *StringPool
+var TwitchChannelPool *StringPool
 
 // SetupServerAndHandle starts all background goroutines and registers HTTP listeners on the given ServeMux.
 // Essentially, this function completely preps the server for a http.ListenAndServe call.
@@ -115,7 +117,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 }
 
 func init() {
-	internCommands()
+	setupInterning()
 }
 
 // startJanitors starts the 'is_init_func' goroutines
@@ -514,11 +516,11 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
-		out.Command = CommandPool.Intern(dataStr)
+		out.Command = CommandPool.InternCommand(dataStr)
 		out.Arguments = nil
 		return nil
 	} else {
-		out.Command = CommandPool.Intern(dataStr[:spaceIdx])
+		out.Command = CommandPool.InternCommand(dataStr[:spaceIdx])
 	}
 	dataStr = dataStr[spaceIdx+1:]
 	argumentsJSON := string([]byte(dataStr))

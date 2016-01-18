@@ -198,7 +198,7 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := CommandPool.Intern(formData.Get("cmd"))
+	cmd := CommandPool.InternCommand(formData.Get("cmd"))
 	json := formData.Get("args")
 	channel := formData.Get("channel")
 	deleteMode := formData.Get("delete") != ""

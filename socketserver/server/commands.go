@@ -41,7 +41,10 @@ var commandHandlers = map[Command]CommandHandler{
 	"user_history":          C2SHandleRemoteCommand,
 }
 
-func internCommands() {
+func setupInterning() {
+	PubSubChannelPool = NewStringPool()
+	TwitchChannelPool = NewStringPool()
+
 	CommandPool = NewStringPool()
 	CommandPool._Intern_Setup(string(HelloCommand))
 	CommandPool._Intern_Setup("ping")
@@ -114,7 +117,7 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 		return
 	}
 
-	client.VersionString = version
+	client.VersionString = copyString(version)
 	client.Version = VersionFromString(version)
 
 	client.ClientID = uuid.FromStringOrNil(clientID)
@@ -153,6 +156,8 @@ func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rm
 	if err != nil {
 		return
 	}
+
+	username = copyString(username)
 
 	client.Mutex.Lock()
 	client.UsernameValidated = false
@@ -198,10 +203,11 @@ func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 
 func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
-
 	if err != nil {
 		return
 	}
+
+	channel = PubSubChannelPool.Intern(channel)
 
 	client.Mutex.Lock()
 	AddToSliceS(&client.CurrentChannels, channel)
@@ -219,10 +225,11 @@ func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (
 // It removes the channel from ClientInfo.CurrentChannels and calls UnsubscribeSingleChat.
 func C2SUnsubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	channel, err := msg.ArgumentsAsString()
-
 	if err != nil {
 		return
 	}
+
+	channel = PubSubChannelPool.Intern(channel)
 
 	client.Mutex.Lock()
 	RemoveFromSliceS(&client.CurrentChannels, channel)
@@ -260,6 +267,8 @@ func C2STrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage)
 		return
 	}
 	now := time.Now()
+
+	channel = TwitchChannelPool.Intern(channel)
 
 	followEventsLock.Lock()
 	followEvents = append(followEvents, followEvent{User: client.TwitchUsername, Channel: channel, NowFollowing: following, Timestamp: now})
@@ -323,6 +332,7 @@ func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage
 			if count > 200 {
 				count = 200
 			}
+			roomName = TwitchChannelPool.Intern(roomName)
 			destMapInner[roomName] += count
 			total += count
 		}
@@ -422,7 +432,7 @@ var bunchCacheCleanupSignal = sync.NewCond(&bunchCacheLock)
 var bunchCacheLastCleanup time.Time
 
 func bunchedRequestFromCM(msg *ClientMessage) bunchedRequest {
-	return bunchedRequest{Command: msg.Command, Param: msg.origArguments}
+	return bunchedRequest{Command: msg.Command, Param: copyString(msg.origArguments)}
 }
 
 // is_init_func
@@ -563,7 +573,7 @@ const AuthorizationFailedErrorString = "Failed to verify your Twitch username."
 const AuthorizationNeededError = "You must be signed in to use that command."
 
 func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo) {
-	resp, err := SendRemoteCommandCached(string(msg.Command), msg.origArguments, client.AuthInfo)
+	resp, err := SendRemoteCommandCached(string(msg.Command), copyString(msg.origArguments), client.AuthInfo)
 
 	if err == ErrAuthorizationNeeded {
 		if client.TwitchUsername == "" {
