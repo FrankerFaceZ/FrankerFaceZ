@@ -33,8 +33,9 @@ type CalendarMonthInfo struct {
 
 func GetMonthInfo(at time.Time) CalendarMonthInfo {
 	year, month, _ := at.Date()
-	// 1 (start of month) - weekday of start of month = day offset of start of week at start of month
-	monthWeekStartDay := 1 - time.Date(year, month, 1, 0, 0, 0, 0, server.CounterLocation).Weekday()
+	monthStartWeekday := time.Date(year, month, 1, 0, 0, 0, 0, server.CounterLocation).Weekday()
+	// 1 (start of month) - weekday of start of month = day offset of start of week at start of mont
+	monthWeekStartDay := 1 - int(monthStartWeekday)
 	// first day on calendar + 6 weeks < end of month?
 	sixthSundayDay := monthWeekStartDay + 5*7
 	sixthSundayDate := time.Date(year, month, sixthSundayDay, 0, 0, 0, 0, server.CounterLocation)
@@ -55,5 +56,6 @@ func renderCalendar(w http.ResponseWriter, at time.Time) {
 	layout, err := template.ParseFiles("./webroot/layout.template.html", "./webroot/cal_entry.hbs", "./webroot/calendar.hbs")
 	data := CalendarData{}
 	data.Weeks = make([]CalWeekData, 6)
-
+	_ = layout
+	_ = err
 }

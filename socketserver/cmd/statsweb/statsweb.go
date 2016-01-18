@@ -10,7 +10,8 @@ import (
 	"fmt"
 	"strings"
 	"errors"
-	"github.com/dustin/gojson"
+	"encoding/json"
+	"sync"
 )
 
 var configLocation = flag.String("config", "./config.json", "Location of the configuration file. Defaults to ./config.json")
@@ -19,6 +20,8 @@ var genConfig = flag.Bool("genconf", false, "Generate a new configuration file."
 var config ConfigFile
 
 const ExitCodeBadConfig = 2
+
+var allServers []*serverInfo
 
 func main() {
 	flag.Parse()
@@ -29,6 +32,12 @@ func main() {
 	}
 
 	loadConfig()
+
+	allServers = make([]*serverInfo, len(ServerNames))
+	for i, v := range ServerNames {
+		allServers[i] = &serverInfo{}
+		allServers[i].Setup(v)
+	}
 
 	http.HandleFunc("/api/get", ServeAPIGet)
 	http.ListenAndServe(config.ListenAddr, http.DefaultServeMux)
@@ -43,10 +52,12 @@ const jsonErrBlankRequest = `{"status":"error","error":"no queries given"}`
 const statusError = "error"
 const statusPartial = "partial"
 const statusOk = "ok"
+
 type apiResponse struct {
 	Status string `json:"status"`
 	Responses []requestResponse `json:"resp"`
 }
+
 type requestResponse struct {
 	Status string `json:"status"`
 	Request string `json:"req"`
@@ -81,7 +92,7 @@ func ServeAPIGet(w http.ResponseWriter, r *http.Request) {
 		resp.Responses[i] = ProcessSingleGetRequest(v)
 	}
 	for _, v := range resp.Responses {
-		if v.Status == statusError {
+		if v.Status != statusOk {
 			resp.Status = statusPartial
 			break
 		}
@@ -92,7 +103,7 @@ func ServeAPIGet(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(resp)
 }
 
-const errRangeFormatIncorrect = errors.New("incorrect range format, must be yyyy-mm-dd~yyyy-mm-dd")
+var errRangeFormatIncorrect = errors.New("incorrect range format, must be yyyy-mm-dd~yyyy-mm-dd")
 
 // ProcessSingleGetRequest takes a request string and pulls the unique user data for the given dates and filters.
 //
@@ -122,14 +133,18 @@ const errRangeFormatIncorrect = errors.New("incorrect range format, must be yyyy
 //
 // It does not matter if a date is specified multiple times, due to the data format used.
 func ProcessSingleGetRequest(req string) (result requestResponse) {
-	var hll hyperloglog.HyperLogLogPlus, _ = hyperloglog.NewPlus(server.CounterPrecision)
+	fmt.Println("processing request:", req)
+	hll, _ := hyperloglog.NewPlus(server.CounterPrecision)
 
 	result.Request = req
 	result.Status = statusOk
 	filter := serverFilterAll
 
 	collectError := func(err error) bool {
-		if err != nil {
+		if err == ErrServerInFailedState {
+			result.Status = statusPartial
+			return false
+		} else if err != nil {
 			result.Status = statusError
 			result.Error = err.Error()
 			return true
@@ -161,7 +176,7 @@ func ProcessSingleGetRequest(req string) (result requestResponse) {
 				break outerLoop
 			}
 
-			err = addSingleDate(at, filter, &hll)
+			err = addSingleDate(at, filter, hll)
 			if collectError(err) {
 				break outerLoop
 			}
@@ -175,7 +190,7 @@ func ProcessSingleGetRequest(req string) (result requestResponse) {
 				break outerLoop
 			}
 
-			err = addRange(from, to, filter, &hll)
+			err = addRange(from, to, filter, hll)
 			if collectError(err) {
 				break outerLoop
 			}
@@ -200,26 +215,73 @@ func parseDateFromRequest(dateStr string) (time.Time, error) {
 	if err != nil || n != 3 {
 		return zeroTime, errBadDate
 	}
-	return time.Date(year, month, day, 0, 0, 0, 0, server.CounterLocation)
+	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, server.CounterLocation), nil
+}
+
+type hllAndError struct {
+	hll *hyperloglog.HyperLogLogPlus
+	err error
 }
 
 func addSingleDate(at time.Time, filter serverFilter, dest *hyperloglog.HyperLogLogPlus) error {
-	// TODO
-	return nil
+	var partialErr error
+	for _, si := range allServers {
+		if filter.IsServerAllowed(si) {
+			hll, err2 := si.GetHLL(at)
+			if err2 == ErrServerInFailedState {
+				partialErr = err2
+			} else if err2 != nil {
+				return err2
+			} else {
+				dest.Merge(hll)
+			}
+		}
+	}
+	return partialErr
 }
 
 func addRange(start time.Time, end time.Time, filter serverFilter, dest *hyperloglog.HyperLogLogPlus) error {
+	end = server.TruncateToMidnight(end)
+	year, month, day := start.Date()
+	var partialErr error
+	var myAllServers = make([]*serverInfo, 0, len(allServers))
+	for _, si := range allServers {
+		if filter.IsServerAllowed(si) {
+			myAllServers = append(myAllServers, si)
+		}
+	}
 
-	return nil
+	var ch = make(chan hllAndError)
+	var wg sync.WaitGroup
+	for current := start; current.Before(end); day = day + 1 {
+		current = time.Date(year, month, day, 0, 0, 0, 0, server.CounterLocation)
+		for _, si := range myAllServers {
+			wg.Add(1)
+			go getHLL(ch, si, current)
+		}
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for pair := range ch {
+		wg.Done()
+		hll, err := pair.hll, pair.err
+		if err != nil {
+			if partialErr == nil || partialErr == ErrServerInFailedState {
+				partialErr = err
+			}
+		} else {
+			dest.Merge(hll)
+		}
+	}
+
+	return partialErr
 }
 
-func combineDateRange(from time.Time, to time.Time, dest *hyperloglog.HyperLogLogPlus) error {
-	from = server.TruncateToMidnight(from)
-	to = server.TruncateToMidnight(to)
-	year, month, day := from.Date()
-	for current := from; current.Before(to); day = day + 1 {
-		current = time.Date(year, month, day, 0, 0, 0, 0, server.CounterLocation)
-
-	}
-	return nil
+func getHLL(ch chan hllAndError, si *serverInfo, at time.Time) {
+	hll, err := si.GetHLL(at)
+	ch <- hllAndError{hll: hll, err: err}
 }

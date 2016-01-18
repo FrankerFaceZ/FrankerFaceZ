@@ -177,7 +177,7 @@ var SocketUpgrader = websocket.Upgrader{
 // Memes go here.
 var BannerHTML []byte
 
-// StopAcceptingConnections is closed while the server is shutting down.
+// StopAcceptingConnectionsCh is closed while the server is shutting down.
 var StopAcceptingConnectionsCh = make(chan struct{})
 var StopAcceptingConnections = false
 
@@ -283,12 +283,12 @@ const sendMessageBufferLength = 125
 const sendMessageAbortLength = 50
 
 // RunSocketConnection contains the main run loop of a websocket connection.
-
+//
 // First, it sets up the channels, the ClientInfo object, and the pong frame handler.
 // It starts the reader goroutine pointing at the newly created channels.
 // The function then enters the run loop (a `for{select{}}`).
 // The run loop is broken when an object is received on errorChan, or if `hello` is not the first C2S Command.
-
+//
 // After the run loop stops, the function launches a goroutine to drain
 // client.MessageChannel, signals the reader goroutine to stop, unsubscribes
 // from all pub/sub channels, waits on MsgChannelKeepalive (remember, the

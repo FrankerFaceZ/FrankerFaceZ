@@ -18,11 +18,11 @@ func makeConfig() {
 	if ok {
 		config.DatabaseLocation = fmt.Sprintf("%s/.ffzstatsweb/database.sqlite", home)
 		config.GobFilesLocation = fmt.Sprintf("%s/.ffzstatsweb/gobcache", home)
-		os.MkdirAll(config.GobFilesLocation, 0644)
+		os.MkdirAll(config.GobFilesLocation, 0755)
 	} else {
 		config.DatabaseLocation = "./database.sqlite"
 		config.GobFilesLocation = "./gobcache"
-		os.MkdirAll(config.GobFilesLocation, 0644)
+		os.MkdirAll(config.GobFilesLocation, 0755)
 	}
 	file, err := os.Create(*configLocation)
 	if err != nil {
