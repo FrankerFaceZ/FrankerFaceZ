@@ -230,9 +230,12 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		count = PublishToChannel(channel, msg)
 	} else if cacheinfo.Caching == CacheTypeLastOnly && cacheinfo.Target == MsgTargetTypeMultichat {
 		channels := strings.Split(channel, ",")
+		var dummyLock sync.Mutex
+		CachedLSMLock.Lock()
 		for _, channel := range channels {
-			SaveLastMessage(CachedLastMessages, &CachedLSMLock, cmd, channel, timestamp, json, deleteMode)
+			SaveLastMessage(CachedLastMessages, &dummyLock, cmd, channel, timestamp, json, deleteMode)
 		}
+		CachedLSMLock.Unlock()
 		count = PublishToMultiple(channels, msg)
 	}
 
