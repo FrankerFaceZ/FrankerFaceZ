@@ -22,7 +22,7 @@ var S2CCommandsCacheInfo = map[Command]PushCommandCacheInfo{
 	// follow_buttons: extra follow buttons below the stream
 	"follow_sets":    {CacheTypePersistent, MsgTargetTypeChat},
 	"follow_buttons": {CacheTypePersistent, MsgTargetTypeChat},
-	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeChat},
+	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeMultichat},
 
 	/// Chatter/viewer counts
 	"chatters": {CacheTypeLastOnly, MsgTargetTypeChat},
