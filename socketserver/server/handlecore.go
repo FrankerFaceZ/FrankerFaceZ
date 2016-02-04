@@ -51,6 +51,7 @@ const defaultMinMemoryKB = 1024 * 24
 
 // TwitchDotTv is the http origin for twitch.tv.
 const TwitchDotTv = "http://www.twitch.tv"
+const TwitchDotTvHTTPS = "https://www.twitch.tv"
 
 // ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
@@ -175,7 +176,7 @@ var SocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return r.Header.Get("Origin") == TwitchDotTv
+		return r.Header.Get("Origin") == TwitchDotTv || r.Header.Get("Origin") == TwitchDotTvHTTPS
 	},
 }
 
