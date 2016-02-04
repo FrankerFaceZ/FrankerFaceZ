@@ -20,6 +20,7 @@ import (
 	"syscall"
 	"time"
 	"unicode/utf8"
+	"regexp"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -49,9 +50,9 @@ const AsyncResponseCommand Command = "_async"
 
 const defaultMinMemoryKB = 1024 * 24
 
-// TwitchDotTv is the http origin for twitch.tv.
-const TwitchDotTv = "http://www.twitch.tv"
-const TwitchDotTvHTTPS = "https://www.twitch.tv"
+// DotTwitchDotTv is the .twitch.tv suffix.
+const DotTwitchDotTv = ".twitch.tv"
+var OriginRegexp = regexp.MustCompile(DotTwitchDotTv + "$")
 
 // ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
@@ -176,7 +177,7 @@ var SocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return r.Header.Get("Origin") == TwitchDotTv || r.Header.Get("Origin") == TwitchDotTvHTTPS
+		return OriginRegexp.MatchString(r.Header.Get("Origin"))
 	},
 }
 

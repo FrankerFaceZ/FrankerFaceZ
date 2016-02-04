@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const TestOrigin = "http://www.twitch.tv"
+
 func TestSubscriptionAndPublish(t *testing.T) {
 	var doneWg sync.WaitGroup
 	var readyWg sync.WaitGroup
@@ -54,7 +56,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	var err error
 
 	var headers http.Header = make(http.Header)
-	headers.Set("Origin", TwitchDotTv)
+	headers.Set("Origin", TestOrigin)
 
 	// client 1: sub ch1, ch2
 	// client 2: sub ch1, ch3
@@ -71,6 +73,9 @@ func TestSubscriptionAndPublish(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	// both origins need testing
+	headers.Set("Origin", "https://www.twitch.tv")
 
 	doneWg.Add(1)
 	readyWg.Add(1)
@@ -265,7 +270,7 @@ func TestRestrictedCommands(t *testing.T) {
 	var challengeChan = make(chan string)
 
 	var headers http.Header = make(http.Header)
-	headers.Set("Origin", TwitchDotTv)
+	headers.Set("Origin", TestOrigin)
 
 	// Client 1
 	conn, _, err = websocket.DefaultDialer.Dial(urls.Websocket, headers)
@@ -366,7 +371,7 @@ func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 	defer unsubscribeAllClients()
 
 	var headers http.Header = make(http.Header)
-	headers.Set("Origin", TwitchDotTv)
+	headers.Set("Origin", TestOrigin)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
