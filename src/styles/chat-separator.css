@@ -15,15 +15,14 @@
 }
 
 
-
 /* Hide First Line */
 .conversation-chat-lines > div:first-child:before,
-.chat-lines > div:first-child .chat-line:before {
-	border-top-color: transparent;
+.chat-line:first-of-type:before {
+	border-top-color: transparent !important;
 }
 
 /* Hide Last Line */
 .conversation-chat-lines > div:last-child:nth-child(odd):before,
-.chat-lines > div:last-child:nth-child(odd) .chat-line:before {
-	border-bottom-color: transparent;
+.chat-line:last-of-type:nth-child(odd):before {
+	border-bottom-color: transparent !important;
 }

@@ -99,6 +99,7 @@ FFZ.prototype.find_rechat = function() {
 	// Tooltips
 	jQuery(container).find('.tooltip').tipsy({live: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 	jQuery(container).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+    jQuery(container).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 	// Load the room data.
 	var room_id = el.getAttribute('data-room');
@@ -234,20 +235,26 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 			else if ( node.nodeType === node.ELEMENT_NODE ) {
 				if ( node.tagName === 'IMG' )
 					tokens.push({
+                        type: "emoticon",
 						altText: node.alt,
-						emoticonSrc: node.src
+                        imgSrc: node.src
 					});
 
 				else if ( node.tagName === 'A' )
 					tokens.push({
-						isLink: true,
-						href: node.textContent
+                        type: "link",
+                        isDeleted: false,
+                        isLong: false,
+                        length: node.textContent.length,
+                        link: node.href,
+                        text: node.textContent
 					});
 
 				else if ( node.tagName === 'SPAN' )
 					tokens.push({
-						mentionedUser: node.textContent,
-						own: node.classList.contains('mentioning')
+                        type: "mention",
+						user: node.textContent,
+                        isOwnMessage: node.classList.contains('mentioning')
 					});
 
 				else {

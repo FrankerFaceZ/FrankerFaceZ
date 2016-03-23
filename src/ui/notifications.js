@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+    utils = require("../utils");
 
 
 // ---------------------
@@ -74,17 +75,21 @@ FFZ.settings_info.notification_timeout = {
 	help: "Specify how long notifications should be displayed before automatically closing.",
 
 	method: function() {
-			var old_val = this.settings.notification_timeout,
-				new_val = prompt("Notification Timeout\n\nPlease enter the time you'd like notifications to be displayed before automatically closing, in seconds.\n\nDefault is: 60", old_val);
+            var f = this;
+            utils.prompt(
+                "Notification Timeout",
+                "Please enter the time you'd like notifications to be displayed before automatically closing, in seconds.</p><p><b>Default:</b> 60",
+                this.settings.notification_timeout,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+                        return;
 
-			if ( new_val === null || new_val === undefined )
-				return;
+                    new_val = parseInt(new_val);
+                    if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) || new_val < 1 )
+                        new_val = 60;
 
-			var parsed = parseInt(new_val);
-			if ( parsed === NaN || parsed < 1 )
-				parsed = 60;
-
-			this.settings.set("notification_timeout", parsed);
+                    f.settings.set("notification_timeout", new_val);
+                });
 		}
 	};
 
@@ -136,7 +141,7 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 			dir: "ltr",
 			body: message,
 			tag: tag || "FrankerFaceZ",
-			icon: "http://cdn.frankerfacez.com/icon32.png"
+			icon: "//cdn.frankerfacez.com/icon32.png"
 			};
 
 		var f = this,

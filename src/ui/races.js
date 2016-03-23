@@ -304,7 +304,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		for(var i=0; i < entrants.length; i++) {
 			var ent = entrants[i],
 				name = '<a target="_new" href="http://www.speedrunslive.com/profiles/#!/' + utils.sanitize(ent.name) + '">' + ent.display_name + '</a>',
-				twitch_link = ent.channel ? '<a target="_new" class="twitch" href="http://www.twitch.tv/' + utils.sanitize(ent.channel) + '"></a>' : '',
+				twitch_link = ent.channel ? '<a target="_new" class="twitch" href="//www.twitch.tv/' + utils.sanitize(ent.channel) + '"></a>' : '',
 				hitbox_link = ent.hitbox ? '<a target="_new" class="hitbox" href="http://www.hitbox.tv/' + utils.sanitize(ent.hitbox) + '"></a>' : '',
 				time = elapsed ? utils.time_to_string(ent.time||elapsed) : "",
 				place = utils.place_string(ent.place),

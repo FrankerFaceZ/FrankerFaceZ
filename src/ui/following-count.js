@@ -70,6 +70,12 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 
 	Live.load();
 
+    /*var Host = window.App && App.__container__.resolve('model:host'),
+        HostLive = Host && Host.find("following");
+
+    if ( HostLive )
+        HostLive.load();*/
+
 	var total = Live.get('total'),
 		streams = Live.get('content');
 	if ( typeof total === "number" ) {
@@ -87,7 +93,7 @@ FFZ.prototype._following_get_me = function(tries) {
 		return setTimeout(this._following_get_me.bind(this, tries), Math.floor(2000*Math.random()) + 500);
 
 	var f = this;
-	Twitch.api.get("/api/me").done(function(data) {
+	utils.api.get("/api/me").done(function(data) {
 		f.log("Fetched User Data -- " + (data.name || data.login));
 		f.__user = data;
 		f._update_following_count();
@@ -128,17 +134,21 @@ FFZ.prototype._update_following_count = function() {
 
 	var Stream = window.App && App.__container__.resolve('model:stream'),
 		Live = Stream && Stream.find("live"),
+
+        Host = window.App && App.__container__.resolve('model:host'),
+        HostLive = Host && Host.find("following"),
+
 		f = this;
+
+    if ( HostLive && document.body.getAttribute('data-current-path').indexOf('directory.following') !== -1 )
+        HostLive.load();
 
 	if ( Live )
 		Live.load();
 	else {
-		var a = {},
-			u = this.get_user();
+		var u = this.get_user();
 
-		a.Authorization = "OAuth " + u.chat_oauth_token;
-
-		Twitch.api && Twitch.api.get("streams/followed", {limit:20, offset:0}, {version:3, headers: a})
+		utils.api.get("streams/followed", {limit:20, offset:0}, {version:3}, u && u.chat_oauth_token)
 			.done(function(data) {
 				f._draw_following_count(data._total);
 				f._draw_following_channels(data.streams, data._total);
@@ -159,15 +169,17 @@ FFZ.prototype._build_following_tooltip = function(el) {
 
 	var tooltip = (this.has_bttv ? '<span class="stat playing">FrankerFaceZ</span>' : '') + 'Following',
 		bb = el.getBoundingClientRect(),
-		height = document.body.clientHeight - (bb.bottom + 54),
-		max_lines = Math.max(Math.floor(height / 36) - 1, 2),
+		height = document.body.clientHeight - (bb.bottom + 50),
+		max_lines = Math.max(Math.floor(height / 40) - 1, 2),
+
+        /*Host = window.App && App.__container__.resolve('model:host'),
+        HostLive = Host && Host.find("following"),*/
 
 		streams = this._tooltip_streams,
-		total = this._tooltip_total || (streams && streams.length) || 0;
-
+		total = this._tooltip_total || (streams && streams.length) || 0,
+        c = 0;
 
 	if ( streams && streams.length ) {
-		var c = 0;
 		for(var i=0, l = streams.length; i < l; i++) {
 			var stream = streams[i];
 			if ( ! stream || ! stream.channel )
@@ -189,11 +201,43 @@ FFZ.prototype._build_following_tooltip = function(el) {
 				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + (hours > 0 ? hours + 'h' : '') + minutes + 'm</span>' : '') +
 				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
 				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
-				'<span class="playing">' + (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing') + '</span>';
+				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + '</span>';
 		}
-	} else
+	} else {
+        c++; // is a terrible programming language
 		tooltip += "<hr>No one you're following is online.";
+    }
 
+    // If we have hosts, and room, try displaying some hosts.
+    /*if ( HostLive && (c + 1) < max_lines && HostLive.get('content.length') > 0 ) {
+        var t = HostLive.get('content.length');
+        c++;
+        tooltip += '<hr>Live Hosts';
+        for(var i=0; i < t; i++) {
+            var host = HostLive.get('content.' + i),
+                stream = host && host.target;
+            if ( ! stream )
+                continue;
+
+            c += 1;
+            if ( c > max_lines ) {
+                var sc = 1 + (streams && streams.length || 0);
+                tooltip += '<hr><span>And ' + utils.number_commas(t - (max_lines - sc)) + ' more...</span>';
+                break;
+            }
+
+            var hosting;
+            if ( ! host.ffz_hosts || host.ffz_hosts.length === 1 )
+                hosting = host.display_name;
+            else
+                hosting = utils.number_commas(host.ffz_hosts.length);
+
+            tooltip += (i === 0 ? '<hr>' : '') +
+                '<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
+				hosting + ' hosting <b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
+				'<span class="playing">' + (stream.meta_game ? 'Playing ' + utils.sanitize(stream.meta_game) : 'Not Playing') + '</span>';
+        }
+    }*/
 
 	// Reposition the tooltip.
 	setTimeout(function() {

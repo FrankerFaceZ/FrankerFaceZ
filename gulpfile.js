@@ -24,7 +24,8 @@ var ftp = require('vinyl-ftp'),
 
 // Server Dependencies
 var http = require("http"),
-	//https = require("https"),
+	https = require("https"),
+    net = require('net'),
 	path = require("path"),
 	request = require("request"),
 	url = require("url");
@@ -220,7 +221,21 @@ gulp.task('server', function() {
 		fs.exists(file, function(exists) {
 			if ( ! exists ) {
 				util.log("[" + util.colors.cyan("HTTP") + "] " + util.colors.bold.blue("CDN") + " GET " + util.colors.magenta(uri));
-				return request.get("http://cdn.frankerfacez.com/" + uri).pipe(res);
+                /*https.request({
+                    hostname: 'cdn.frankerfacez.com',
+                    port: 443,
+                    path: uri,
+                    method: 'GET'
+                }, function(cli_res) {
+                    res.writeHead(cli_res.statusCode, cli_res.headers);
+                    cli_res.on('data', function(chunk) { res.write(chunk); });
+                    cli_res.on('end', function() { res.end() });
+                }).on('error', function(e) {
+                    res.writeHead(502, {"Access-Control-Allow-Origin": "*"});
+                    res.write('502 Bad Gateway');
+                    res.end();
+                });*/
+				return request.get("http://cdn.frankerfacez.com/" + uri).on('error', function(err) { res.end() }).pipe(res);
 			}
 
 			var headers = {"Access-Control-Allow-Origin": "*"};
@@ -242,8 +257,33 @@ gulp.task('server', function() {
 
 	};
 
-	http.createServer(handle_req).listen(8000, "localhost");
-	//https.createServer(handle_req).listen(8000, "localhost");
+    if ( fs.existsSync("dev_key.pem") ) {
+        var https_options = {
+            key: fs.readFileSync("dev_key.pem"),
+            cert: fs.readFileSync("dev_cert.pem")
+        };
 
-	util.log("[" + util.colors.cyan("HTTP") + "] Listening on Port: " + util.colors.magenta("8000"));
+        http.createServer(handle_req).listen(8001, "localhost");
+        https.createServer(https_options, handle_req).listen(8002, "localhost");
+
+        net.createServer(function(conn) {
+            conn.on('error', function(e) {
+                util.log("[" + util.colors.cyan("HTTP") + "] Connection Error: " + util.colors.magenta('' + e));
+            });
+
+            conn.once('data', function(buf) {
+                var address = (buf[0] === 22) ? 8002 : 8001;
+                var proxy = net.createConnection(address, function() {
+                    proxy.write(buf);
+                    conn.pipe(proxy).pipe(conn);
+                });
+            });
+        }).listen(8000);
+
+        util.log("[" + util.colors.cyan("HTTPS") + "] Listening on Port: " + util.colors.magenta("8000"));
+
+    } else {
+        http.createServer(handle_req).listen(8000, "localhost");
+        util.log("[" + util.colors.cyan("HTTP") + "] Listening on Port: " + util.colors.magenta("8000"));
+    }
 });

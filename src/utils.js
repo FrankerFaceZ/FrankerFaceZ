@@ -73,100 +73,6 @@ var sanitize_el = document.createElement('span'),
 	},
 
 
-	// IRC Messages
-	splitIRCMessage = function(msgString) {
-		msgString = $.trim(msgString);
-		var split = {raw: msgString};
-
-		var tagsEnd = -1;
-		if ( msgString.charAt(0) === '@' ) {
-			tagsEnd = msgString.indexOf(' ');
-			split.tags = msgString.substr(1, tagsEnd - 1);
-		}
-
-		var prefixStart = tagsEnd + 1,
-			prefixEnd = -1;
-
-		if ( msgString.charAt(prefixStart) === ':' ) {
-			prefixEnd = msgString.indexOf(' ', prefixStart);
-			split.prefix = msgString.substr(prefixStart + 1, prefixEnd - (prefixStart + 1));
-		}
-
-		var trailingStart = msgString.indexOf(' :', prefixStart);
-		if ( trailingStart >= 0 ) {
-			split.trailing = msgString.substr(trailingStart + 2);
-		} else {
-			trailingStart = msgString.length;
-		}
-
-		var commandAndParams = msgString.substr(prefixEnd + 1, trailingStart - prefixEnd - 1).split(' ');
-		split.command = commandAndParams[0];
-		if ( commandAndParams.length > 1 )
-			split.params = commandAndParams.slice(1);
-
-		return split;
-	},
-
-
-	ESCAPE_CHARS = {
-		':': ';',
-		s: ' ',
-		r: '\r',
-		n: '\n',
-		'\\': '\\'
-	},
-
-	unescapeTag = function(tag) {
-		var result = '';
-		for(var i=0; i < tag.length; i++) {
-			var c = tag.charAt(i);
-			if ( c === '\\' ) {
-				if ( i === tag.length - 1 )
-					throw 'Improperly escaped tag';
-
-				c = ESCAPE_CHARS[tag.charAt(i+1)];
-				if ( c === undefined )
-					throw 'Improperly escaped tag';
-
-				i++;
-			}
-			result += c;
-		}
-
-		return result;
-	},
-
-	parseTag = function(tag, value) {
-		switch(tag) {
-			case 'slow':
-				try {
-					return parseInt(value);
-				} catch(err) { return 0; }
-			case 'subs-only':
-			case 'r9k':
-			case 'subscriber':
-			case 'turbo':
-				return value === '1';
-			default:
-				try {
-					return unescapeTag(value);
-				} catch(err) { return ''; }
-		}
-	},
-
-	parseIRCTags = function(tagsString) {
-		var tags = {},
-			keyValues = tagsString.split(';');
-
-		for(var i=0; i < keyValues.length; ++i) {
-			var kv = keyValues[i].split('=');
-			if ( kv.length === 2 )
-				tags[kv[0]] = parseTag(kv[0], kv[1]);
-		}
-
-		return tags;
-	},
-
 	uncompressEmotes = function(value) {
 		var output = {},
 			emotes = value.split("/"),
@@ -199,121 +105,211 @@ var sanitize_el = document.createElement('span'),
 	},
 
 
+    // This code borrowed from the twemoji project, with tweaks.
+    UFE0Fg = /\uFE0F/g,
+    U200D = String.fromCharCode(0x200D),
+
 	EMOJI_CODEPOINTS = {},
-	emoji_to_codepoint = function(icon, variant) {
-		if ( EMOJI_CODEPOINTS[icon] && EMOJI_CODEPOINTS[icon][variant] )
-			return EMOJI_CODEPOINTS[icon][variant];
+	emoji_to_codepoint = function(surrogates, sep) {
+		if ( EMOJI_CODEPOINTS[surrogates] && EMOJI_CODEPOINTS[surrogates][sep] )
+            return EMOJI_CODEPOINTS[surrogates][sep];
 
-		var ico = variant === '\uFE0F' ? icon.slice(0, -1) : (icon.length === 3 && icon.charAt(1) === '\uFE0F' ? icon.charAt(0) + icon.charAt(2) : icon),
-			r = [], c = 0, p = 0, i = 0;
+        var input = surrogates.indexOf(U200D) === -1 ? surrogates.replace(UFE0Fg, '') : surrogates,
+            out = [],
+            c = 0, p = 0, i = 0;
 
-		while ( i < ico.length ) {
-			c = ico.charCodeAt(i++);
-			if ( p ) {
-				r.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
-				p = 0;
-			} else if ( 0xD800 <= c && c <= 0xDBFF) {
-				p = c;
-			} else {
-				r.push(c.toString(16));
-			}
-		}
+        while (i < input.length) {
+            c = input.charCodeAt(i++);
+            if ( p ) {
+                out.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
+                p = 0;
+            } else if ( 0xD800 <= c && c <= 0xDBFF )
+                p = c;
+            else
+                out.push(c.toString(16));
+        }
 
-		var es = EMOJI_CODEPOINTS[icon] = EMOJI_CODEPOINTS[icon] || {},
-			out = es[variant] = r.join("-");
-
-		return out;
+        var retval = EMOJI_CODEPOINTS[surrogates] = out.join('-');
+		return retval;
 	},
 
-	// Twitch Emote Tooltips
+    codepoint_to_emoji = function(codepoint) {
+        var code = typeof codepoint === 'string' ? parseInt(codepoint, 16) : codepoint;
+        if ( code < 0x10000 )
+            return String.fromCharCode(code);
+        code -= 0x10000;
+        return String.fromCharCode(
+            0xD800 + (code >> 10),
+            0xDC00 + (code & 0x3FF)
+        )
+    },
+
+
+	// Twitch Emote Helpers
 
 	SRCSETS = {},
 	build_srcset = function(id) {
 		if ( SRCSETS[id] )
 			return SRCSETS[id];
-		var out = SRCSETS[id] = constants.TWITCH_BASE + id + "/1.0 1x, " + constants.TWITCH_BASE + id + "/2.0 2x, " + constants.TWITCH_BASE + id + "/3.0 4x";
+		var out = SRCSETS[id] = constants.TWITCH_BASE + id + "/1.0 1x, " + constants.TWITCH_BASE + id + "/2.0 2x";
 		return out;
 	},
 
 
-	data_to_tooltip = function(data) {
-		var emote_set = data.set,
-			set_type = data.set_type,
+    // Twitch API
 
-			f = FFZ.get(),
-			image = '';
-
-		if ( data.id && f.settings.emote_image_hover )
-			image = '<img class="emoticon ffz-image-hover" src="' + constants.TWITCH_BASE + data.id + '/3.0?_=preview">';
-
-		if ( set_type === undefined )
-			set_type = "Channel";
-
-		if ( ! emote_set )
-			return image + data.code;
-
-		else if ( emote_set === "--global--" ) {
-			emote_set = "Twitch Global";
-			set_type = null;
-
-		} else if ( emote_set == "--twitch-turbo--" || emote_set == "turbo" || emote_set == "--turbo-faces--" ) {
-			emote_set = "Twitch Turbo";
-			set_type = null;
-		}
-
-		return image + "Emoticon: " + data.code + "<br>" + (set_type ? set_type + ": " : "") + emote_set;
-	},
-
-	build_tooltip = function(id, force_update, code) {
-		var emote_data = this._twitch_emotes[id];
-
-		if ( ! emote_data && code ) {
-			var set_id = this._twitch_emote_to_set[id];
-			if ( set_id ) {
-				emote_data = this._twitch_emotes[id] = {
-					code: code,
-					id: id,
-					set: this._twitch_set_to_channel[set_id],
-					set_id: set_id
-				}
-			}
-		}
-
-		if ( ! emote_data )
-			return "???";
-
-		if ( typeof emote_data == "string" )
-			return emote_data;
-
-		if ( ! force_update && emote_data.tooltip )
-			return emote_data.tooltip;
-
-		return emote_data.tooltip = data_to_tooltip(emote_data);
-	},
-
-	load_emote_data = function(id, code, success, data) {
-		if ( ! success )
-			return code;
-
-		if ( code )
-			data.code = code;
-
-		this._twitch_emotes[id] = data;
-		var tooltip = build_tooltip.bind(this)(id);
-
-		var images = document.querySelectorAll('img[data-emote="' + id + '"]');
-		for(var x=0; x < images.length; x++)
-			images[x].title = tooltip;
-
-		return tooltip;
-	};
+    api_call = function(method, url, data, options, token) {
+        options = options || {};
+        var headers = options.headers = options.headers || {};
+        headers['Client-ID'] = constants.CLIENT_ID;
+        if ( token )
+            headers.Authorization = 'OAuth ' + token;
+        return Twitch.api[method].call(this, url, data, options);
+    },
 
 
-module.exports = {
+    // Dialogs
+    show_modal = function(contents, on_close, width) {
+        var container = document.createElement('div'),
+            subwindow = document.createElement('div'),
+            card = document.createElement('div'),
+            close_button = document.createElement('div'),
+
+            closer = function() { container.parentElement.removeChild(container) };
+
+        container.className = 'twitch_subwindow_container';
+        container.id = 'ffz-modal-container';
+
+        subwindow.className = 'twitch_subwindow ffz-subwindow';
+        subwindow.style.width = '100%';
+        subwindow.style.maxWidth = (width||420) + 'px';
+
+        card.className = 'card';
+
+        close_button.className = 'modal-close-button';
+        close_button.innerHTML = constants.CLOSE;
+
+        close_button.addEventListener('click', function() {
+            closer();
+            if ( on_close )
+                on_close(false);
+        });
+
+        container.appendChild(subwindow);
+        subwindow.appendChild(card);
+        subwindow.appendChild(close_button);
+
+        card.appendChild(contents);
+
+        var el = document.querySelector('app-main');
+
+        if ( el )
+            el.parentElement.insertBefore(container, el.nextSibling);
+        else
+            document.body.appendChild(container);
+
+        return closer;
+    },
+
+
+    ember_lookup = function(thing) {
+        if ( ! window.App )
+            return;
+
+        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance_.registry.lookup )
+            return App.__deprecatedInstance__.registry.lookup(thing);
+        if ( App.__container__ && App.__container__.lookup )
+            return App.__container__.lookup(thing);
+    };
+
+
+module.exports = FFZ.utils = {
+    ember_views: function() {
+        return ember_lookup('-view-registry:main') || {};
+    },
+
+    ember_lookup: ember_lookup,
+
+    ember_resolve: function(thing) {
+        if ( ! window.App )
+            return;
+
+        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance_.registry.resolve )
+            return App.__deprecatedInstance__.registry.resolve(thing);
+        if ( App.__container__ && App.__container__.resolve )
+            return App.__container__.resolve(thing);
+    },
+
 	build_srcset: build_srcset,
-	build_tooltip: build_tooltip,
-	load_emote_data: load_emote_data,
+	/*build_tooltip: build_tooltip,
+	load_emote_data: load_emote_data,*/
 
+    api: {
+        del: function(u,d,o,t) { return api_call('del', u,d,o,t); },
+        get: function(u,d,o,t) { return api_call('get', u,d,o,t); },
+        post: function(u,d,o,t) { return api_call('post', u,d,o,t); },
+        put: function(u,d,o,t) { return api_call('put', u,d,o,t); }
+    },
+
+
+    show_modal: show_modal,
+    prompt: function(title, description, old_value, callback, width) {
+        var contents = document.createElement('div'),
+            heading = document.createElement('div'),
+            form = document.createElement('form'),
+            input, close_btn, okay_btn;
+
+        contents.className = 'text-content';
+        heading.className = 'content-header';
+        heading.innerHTML = '<h4>' + title + '</h4>';
+
+        form.innerHTML = '<div class="item">' + (description ? '<p>' + description + '</p>' : '') + '<input type="text"></div><div class="buttons"><a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button></div>';
+
+        contents.appendChild(heading);
+        contents.appendChild(form);
+
+        input = form.querySelector('input');
+        close_btn = form.querySelector('.js-subwindow-close');
+        okay_btn = form.querySelector('.button.primary');
+
+        if ( old_value !== undefined )
+            input.value = old_value;
+
+        var closer,
+            cb = function(success) {
+                closer();
+                if ( ! callback )
+                    return;
+
+                callback(success ? input.value : null);
+            };
+
+        closer = show_modal(contents, cb, width);
+
+        form.addEventListener('submit', function(e) { e.preventDefault(); cb(true); return false });
+        okay_btn.addEventListener('click', function(e) { e.preventDefault(); cb(true); return false });
+        close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
+    },
+
+
+    last_minute: function() {
+        var now = new Date();
+        if ( now.getSeconds() >= 30 )
+            now.setMinutes(now.getMinutes()+1);
+
+        now.setSeconds(0);
+        now.setMilliseconds(0);
+        return now.getTime();
+    },
+
+    maybe_chart: function(series, point, render, force) {
+        var len = series.data.length;
+        if ( force || point.y !== null || (len > 0 && series.data[len-1].y !== null) ) {
+            series.addPoint(point, render);
+            return true;
+        }
+        return false;
+    },
 
 	update_css: function(element, id, css) {
 		var all = element.innerHTML,
@@ -338,7 +334,11 @@ module.exports = {
 
 	tooltip_placement: function(margin, prefer) {
 		return function() {
-			var dir = {ns: prefer[0], ew: (prefer.length > 1 ? prefer[1] : false)},
+            var pref = prefer;
+            if ( typeof pref === "function" )
+                pref = pref.call(this);
+
+			var dir = {ns: pref[0], ew: (pref.length > 1 ? pref[1] : false)},
 			    $this = $(this),
 				half_width = $this.width() / 2,
 				half_height = $this.height() / 2,
@@ -354,12 +354,10 @@ module.exports = {
 		}
 	},
 
-
-	splitIRCMessage: splitIRCMessage,
-	parseIRCTags: parseIRCTags,
 	uncompressEmotes: uncompressEmotes,
 
 	emoji_to_codepoint: emoji_to_codepoint,
+    codepoint_to_emoji: codepoint_to_emoji,
 
 	parse_date: parse_date,
 
@@ -418,7 +416,7 @@ module.exports = {
 		var seconds = elapsed % 60,
 			minutes = Math.floor(elapsed / 60),
 			hours = Math.floor(minutes / 60),
-			days = "";
+			days = null;
 
 		minutes = minutes % 60;
 
@@ -431,7 +429,7 @@ module.exports = {
 			days = ( days > 0 ) ? days + " days, " : "";
 		}
 
-		return days + ((!no_hours || days || hours) ? ((days && hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + (no_seconds ? "" : (":" + (seconds < 10 ? "0" : "") + seconds));
+		return (days||'') + ((!no_hours || days || hours) ? ((days && hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + (no_seconds ? "" : (":" + (seconds < 10 ? "0" : "") + seconds));
 	},
 
 	duration_string: function(val) {

@@ -22,6 +22,7 @@ FFZ.prototype._ws_open = false;
 FFZ.prototype._ws_delay = 0;
 FFZ.prototype._ws_host_idx = -1;
 FFZ.prototype._ws_current_pool = -1;
+FFZ.prototype._ws_last_ping = null;
 
 FFZ.prototype._ws_server_offset = null;
 
@@ -166,7 +167,7 @@ FFZ.prototype.ws_create = function() {
 
 		// Send the channel(s).
 		if ( f._cindex ) {
-			var channel_id = f._cindex.get('controller.id'),
+			var channel_id = f._cindex.get('controller.model.id'),
 				hosted_id = f._cindex.get('controller.hostModeTarget.id');
 
 			if ( channel_id )
@@ -343,7 +344,7 @@ FFZ.prototype.setup_time = function() {
 			difference = (new_time - last_time) - 5000;
 
 		last_time = new_time;
-		if ( Math.abs(difference) > 250 ) {
+		if ( Math.abs(difference) > 1000 ) {
 			f.log("WARNING! Time drift of " + difference + "ms across 5 seconds. Did the local time change?");
 			f._ws_server_offset = null;
 			f.ws_ping();
@@ -373,7 +374,7 @@ FFZ.prototype._ws_on_pong = function(success, server_time) {
 
 	if ( this._ws_ping_time ) {
 		var rtt = now - this._ws_ping_time,
-			ping = rtt / 2;
+			ping = this._ws_last_ping = rtt / 2;
 
 		this._ws_ping_time = null;
 		this._ws_server_offset = (d_now - (server_time + ping));
@@ -404,7 +405,7 @@ FFZ.ws_commands.reconnect = function() {
 	// Socket Close Callbacks
 	for(var i=0; i < FFZ.ws_on_close.length; i++) {
 		try {
-			FFZ.ws_on_close[i].bind(this)();
+			FFZ.ws_on_close[i].call(this);
 		} catch(err) {
 			this.log("Error on Socket Close Callback: " + err);
 		}

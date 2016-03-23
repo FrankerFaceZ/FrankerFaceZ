@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+    utils = require('../utils');
 
 
 // --------------------
@@ -78,11 +79,11 @@ FFZ.settings_info.flip_dashboard = {
 	type: "boolean",
 	value: false,
 
-	category: "Appearance",
+	category: "Dashboard",
 	no_mobile: true,
 	no_bttv: true,
 
-	name: "Swap Dashboard Positions",
+	name: "Swap Column Positions",
 	help: "Swap the positions of the left and right columns of the dashboard.",
 
 	on_update: function(val) {
@@ -106,17 +107,19 @@ FFZ.settings_info.right_column_width = {
 	help: "Set the width of the right sidebar for chat.",
 
 	method: function() {
-			var old_val = this.settings.right_column_width || 340,
-				new_val = prompt("Right Sidebar Width\n\nPlease enter a new width for the right sidebar, in pixels. Minimum: 250, Default: 340", old_val);
+			var f = this,
+                old_val = this.settings.right_column_width || 340;
 
-			if ( new_val === null || new_val === undefined )
-				return;
+            utils.prompt("Right Sidebar Width", "Please enter a new width for the right sidebar, in pixels.</p><p><b>Minimum:</b> 250<br><b>Default:</b> 340", old_val, function(new_val) {
+                if ( new_val === null || new_val === undefined )
+                    return;
 
-			var width = parseInt(new_val);
-			if ( ! width || width === NaN )
-				width = 340;
+                var width = parseInt(new_val);
+                if ( ! width || Number.isNaN(width) || ! Number.isFinite(width) )
+                    width = 340;
 
-			this.settings.set('right_column_width', Math.max(250, width));
+                f.settings.set('right_column_width', Math.max(250, width));
+            });
 		},
 
 	on_update: function(val) {
@@ -220,7 +223,7 @@ FFZ.prototype.setup_layout = function() {
 				height = size[1],
 				host_height = size[2];
 
-			return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object{width:100% !important; height:100% !important}</style>";
+            return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
 		}.property("playerSize"),
 
 		ffzPortraitWarning: function() {

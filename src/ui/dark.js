@@ -88,7 +88,7 @@ FFZ.basic_settings.keywords = {
 	help: "Set additional keywords that will be highlighted in chat.",
 
 	method: function() {
-		FFZ.settings_info.keywords.method.bind(this)();
+		FFZ.settings_info.keywords.method.call(this);
 	}
 };
 
@@ -102,7 +102,7 @@ FFZ.basic_settings.banned_words = {
 	help: "Set a list of words that will be removed from chat messages, locally.",
 
 	method: function() {
-		FFZ.settings_info.banned_words.method.bind(this)();
+		FFZ.settings_info.banned_words.method.call(this);
 	}
 };
 
@@ -137,7 +137,7 @@ FFZ.settings_info.dark_twitch = {
 			document.body.classList.toggle("ffz-dark", val);
 
 			var Settings = window.App && App.__container__.lookup('controller:settings'),
-				settings = Settings.get('settings');
+				settings = Settings && Settings.get('settings');
 
 			if ( val ) {
 				this._load_dark_css();
@@ -146,8 +146,9 @@ FFZ.settings_info.dark_twitch = {
 			} else
 				settings && settings.set('darkMode', this.settings.twitch_chat_dark);
 
-			// Try coloring ReChat
-			jQuery('.rechat-chat-line').parents('.chat-container').toggleClass('dark', val || this.settings.twitch_chat_dark);
+			// Try coloring chat replay
+            jQuery('.chatReplay').toggleClass('dark', val || false);
+			//jQuery('.rechat-chat-line').parents('.chat-container').toggleClass('dark', val || this.settings.twitch_chat_dark);
 		}
 	};
 

@@ -42,6 +42,14 @@ FFZ.prototype.setup_bttv = function(delay) {
 		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
 	}
 
+    // Remove Sub Count and the Chart
+	if ( this.is_dashboard ) {
+		this._update_subscribers();
+        this._remove_dash_chart();
+    }
+
+	document.body.classList.add('ffz-bttv');
+
 	// Disable Chat Tabs
 	if ( this._chatv ) {
 		if ( this.settings.group_tabs )
@@ -79,6 +87,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	this.toggle_style('chat-colors-gray');
 	this.toggle_style('badges-transparent');
+    this.toggle_style('badges-sub-notice');
+    this.toggle_style('badges-sub-notice-on');
 
 	// Disable other features too.
 	document.body.classList.remove('ffz-transparent-badges');
@@ -92,12 +102,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 		this._draw_following_count();
 		this._draw_following_channels();
 	}
-
-	// Remove Sub Count
-	if ( this.is_dashboard )
-		this._update_subscribers();
-
-	document.body.classList.add('ffz-bttv');
 
 	// Send Message Behavior
 	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
@@ -197,6 +201,41 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 	};
 
+    // Emoji!
+    var parse_emoji = function(token) {
+        var setting = f.settings.parse_emoji,
+            output = [],
+            segments = token.split(constants.EMOJI_REGEX),
+            text = null;
+
+        if ( setting === 0 )
+            return [token];
+
+        while(segments.length) {
+            text = (text || '') + segments.shift();
+            if ( segments.length ) {
+                var match = segments.shift(),
+                    eid = utils.emoji_to_codepoint(match),
+                    data = f.emoji_data[eid],
+                    src = data && (setting === 3 ? data.one_src : (setting === 2 ? data.noto_src : data.tw_src));
+
+                if ( src ) {
+                    if ( text && text.length )
+                        output.push(text);
+                    var code = utils.quote_attr(data.raw);
+                    output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" data-regex="' + code + '" alt="' + code + '">']);
+                    text = null;
+                } else
+                    text = (text || '') + match;
+            }
+        }
+
+        if ( text && text.length )
+            output.push(text);
+
+        return output;
+	}
+
 	// Emoticonize
 	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
 	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
@@ -206,107 +245,65 @@ FFZ.prototype.setup_bttv = function(delay) {
 			l_room = room && room.toLowerCase(),
 			l_sender = received_sender && received_sender.toLowerCase(),
 			sets = f.getEmotes(l_sender, l_room),
-			emotes = [],
+			emotes = {}, emote,
 			user = f.get_user(),
+            new_tokens = [],
 			mine = user && user.login === l_sender;
 
-		// Build a list of emotes that match.
-		_.each(sets, function(set_id) {
-			var set = f.emote_sets[set_id];
-			if ( ! set )
-				return;
+        // Build an object with all of our emotes.
+        for(var i=0; i < sets.length; i++) {
+            var emote_set = f.emote_sets[sets[i]];
+            if ( emote_set && emote_set.emoticons )
+                for(var emote_id in emote_set.emoticons) {
+                    emote = emote_set.emoticons[emote_id];
+                    if ( ! emotes[emote.name] )
+                        emotes[emote.name] = emote;
+                }
+        }
 
-			_.each(set.emoticons, function(emote) {
-				_.any(tokens, function(token) {
-					return _.isString(token) && token.match(emote.regex);
-				}) && emotes.push(emote);
-			});
-		});
+        for(var i=0, l=tokens.length; i < l; i++) {
+            var token = tokens[i];
+            if ( typeof token !== "string" ) {
+                new_tokens.push(token);
+                continue;
+            }
 
-		// Don't bother proceeding if we have no emotes.
-		if ( emotes.length ) {
-			// Why is emote parsing so bad? ;_;
-			_.each(emotes, function(emote) {
-				var tooltip = f._emote_tooltip(emote),
-					eo = ['<img class="emoticon html-tooltip" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" data-regex="' + utils.quote_attr(emote.name) + '" title="' + utils.quote_attr(tooltip) + '">'],
-					old_tokens = tokens;
+            // Split the token!
+            var segments = token.split(' '),
+                text = [], segment;
 
-				tokens = [];
+            for(var x=0,y=segments.length; x < y; x++) {
+                segment = segments[x];
+                emote = emotes[segment];
 
-				for(var i=0; i < old_tokens.length; i++) {
-					var token = old_tokens[i];
-					if ( typeof token !== "string" ) {
-						tokens.push(token);
-						continue;
-					}
+                if ( emote ) {
+                    if ( text.length ) {
+                        var toks = parse_emoji(text.join(' ') + ' ');
+                        for(var q=0; q < toks.length; q++)
+                            new_tokens.push(toks[q]);
 
-					var tbits = token.split(emote.regex);
-					while(tbits.length) {
-						var bit = tbits.shift();
-						if ( tbits.length ) {
-							bit += tbits.shift();
-							if ( bit )
-								tokens.push(bit);
+                        text = [];
+                    }
 
-							tbits.shift();
-							tokens.push(eo);
+                    new_tokens.push(['<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" data-regex="' + utils.quote_attr(emote.name) + '">']);
 
-							if ( mine && l_room )
-								f.add_usage(l_room, emote);
+                    if ( mine && l_room )
+                        f.add_usage(l_room, emote);
 
-						} else
-							tokens.push(bit);
-					}
-				}
-			});
-		}
+                    text.push('');
+                } else
+                    text.push(segment);
+            }
 
-		// Sneak in Emojicon Processing
-		if ( f.settings.parse_emoji && f.emoji_data ) {
-			var old_tokens = tokens,
-				setting = f.settings.parse_emoji;
+            if ( text.length > 1 || (text.length === 1 && text[0] !== '') ) {
+                var toks = parse_emoji(text.join(' ') + ' ');
+                for(var q=0; q < toks.length; q++)
+                    new_tokens.push(toks[q]);
+            }
+        }
 
-			tokens = [];
-
-			for(var i=0; i < old_tokens.length; i++) {
-				var token = old_tokens[i];
-				if ( typeof token !== "string" ) {
-					tokens.push(token);
-					continue;
-				}
-
-				var tbits = token.split(constants.EMOJI_REGEX);
-				while(tbits.length) {
-					var bit = tbits.shift();
-					bit && tokens.push(bit);
-
-					if ( tbits.length ) {
-						var match = tbits.shift(),
-							variant = tbits.shift();
-
-						if ( variant === '\uFE0E' )
-							tokens.push(match);
-						else {
-							var eid = utils.emoji_to_codepoint(match, variant),
-								data = f.emoji_data[eid],
-								src = data && (setting === 2 ? data.noto_src : data.tw_src);
-
-							if ( data && src ) {
-								var image = src && f.settings.emote_image_hover ? '<img class="emoticon ffz-image-hover" src="' + src + '">' : '',
-									tooltip = image + "Emoji: " + data.raw + "<br>Name: " + data.name + (data.short_name ? "<br>Short Name: :" + data.short_name + ":" : ""),
-									code = utils.quote_attr(data.raw);
-
-								tokens.push(['<img class="emoticon emoji html-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" data-regex="' + code + '" alt="' + code + '" title="' + utils.quote_attr(tooltip) + '">']);
-							} else
-								tokens.push(match + (variant || ""));
-						}
-					}
-				}
-			}
-		}
-
-		return tokens;
-	}
+        return new_tokens;
+    }
 
 	this.update_ui_link();
 }

@@ -13,7 +13,12 @@ FFZ.basic_settings.delayed_chat = {
 		0: "No Delay",
 		300: "Minor (Bot Moderation; 0.3s)",
 		1200: "Normal (Human Moderation; 1.2s)",
-		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)"
+		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)",
+        10000: "Extra Large (10s)",
+        15000: "Extremely Large (15s)",
+        20000: "Mods Asleep; Delay Chat (20s)",
+        30000: "Half a Minute (30s)",
+        60000: "Why??? (1m)"
 	},
 
 	category: "Chat",
@@ -134,7 +139,12 @@ FFZ.settings_info.chat_delay = {
 		0: "No Delay",
 		300: "Minor (Bot Moderation; 0.3s)",
 		1200: "Normal (Human Moderation; 1.2s)",
-		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)"
+		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)",
+        10000: "Extra Large (10s)",
+        15000: "Extremely Large (15s)",
+        20000: "Mods Asleep; Delay Chat (20s)",
+        30000: "Half a Minute (30s)",
+        60000: "Why??? (1m)"
 	},
 	value: 0,
 
@@ -316,6 +326,25 @@ FFZ.settings_info.visible_rooms = {
 // Initialization
 // --------------------
 
+FFZ.prototype.refresh_chat = function() {
+    var parents, lines = jQuery('ul.chat-lines');
+    if ( this.has_bttv || ! lines || ! lines.length )
+        return;
+
+    parents = lines.parents('.chatReplay');
+    if ( parents && parents.length )
+        return;
+
+    // There are chat-lines in the DOM and they aren't chat replay.
+    var controller = App.__container__.lookup('controller:chat');
+    if ( ! controller )
+        return;
+
+    var current_room = controller.get("currentRoom");
+    controller.blurRoom();
+    controller.focusRoom(current_room);
+}
+
 FFZ.prototype.setup_chatview = function() {
 	document.body.classList.toggle("ffz-minimal-chat-head", this.settings.minimal_chat === 1 || this.settings.minimal_chat === 3);
 	document.body.classList.toggle("ffz-minimal-chat-input", this.settings.minimal_chat === 2 || this.settings.minimal_chat === 3);
@@ -423,7 +452,7 @@ FFZ.prototype.setup_chatview = function() {
 	} catch(err) { }
 
 	// Modify all existing Chat views.
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = window.App && App.__container__.lookup('-view-registry:main');
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
 			continue;
@@ -434,14 +463,18 @@ FFZ.prototype.setup_chatview = function() {
 
 		this.log("Manually updating existing Chat view.", view);
 		try {
+            if ( ! view.ffzInit )
+                this._modify_cview(view);
 			view.ffzInit();
 		} catch(err) {
 			this.error("setup: build_ui_link: " + err);
 		}
 	}
 
+    /*this.log("Hooking the Ember chat-right-column Component.");
+    var Column = App.__container__.resolve('component:')
 
-	this.log("Hooking the Ember 'Right Column' controller. Seriously...");
+	/*this.log("Hooking the Ember 'Right Column' controller. Seriously...");
 	var Column = App.__container__.lookup('controller:right-column');
 	if ( ! Column )
 		return;
@@ -454,7 +487,7 @@ FFZ.prototype.setup_chatview = function() {
 				},0);
 			}
 		}.observes("firstTabSelected")
-	});
+	});*/
 }
 
 
@@ -467,7 +500,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 	view.reopen({
 		didInsertElement: function() {
-			this._super();
+            this._super();
 
 			try {
 				this.ffzInit();
@@ -487,10 +520,11 @@ FFZ.prototype._modify_cview = function(view) {
 
 		ffzInit: function() {
 			f._chatv = this;
+            this.ffz_unread = {};
+
 			this.$('.textarea-contain').append(f.build_ui_link(this));
 			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-
-			this.ffz_unread = {};
+            this.$('.chat-messages').find('.ffz-tooltip').tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 			if ( ! f.has_bttv ) {
 				if ( f.settings.group_tabs )
@@ -556,13 +590,19 @@ FFZ.prototype._modify_cview = function(view) {
 		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
 			f.update_ui_link();
 
+            if ( ! this.ffz_unread )
+                f.log("!! Chat View Not Initialized !!", this);
+
+            // Temporary fix
+            this.ffz_unread = this.ffz_unread || {};
+
 			// Close mod cards when changing to a new room.
 			if ( f._mod_card )
 				f._mod_card.send('close');
 
 			var room = this.get('controller.currentRoom'),
 				room_id = room && room.get('id'),
-				was_unread = room_id && this.ffz_unread[room_id],
+				was_unread = room_id && this.ffz_unread && this.ffz_unread[room_id],
 				update_height = false;
 
 			if ( room ) {
@@ -1209,7 +1249,7 @@ FFZ.prototype.connect_extra_chat = function() {
 
 
 FFZ.prototype.disconnect_extra_chat = function() {
-	var Chat = App.__container__.lookup('controller:chat'),
+	var Chat = window.App && App.__container__.lookup('controller:chat'),
 		current_channel_id = Chat && Chat.get('currentChannelRoom.id'),
 		current_id = Chat && Chat.get('currentRoom.id'),
 		user = this.get_user();

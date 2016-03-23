@@ -9,19 +9,6 @@ var FFZ = window.FrankerFaceZ,
 			return "";
 
 		return 'img[src="' + emote.urls[1] + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
-	},
-
-
-	from_code_point = function(cp) {
-		var code = typeof cp === "string" ? parseInt(cp, 16) : cp;
-		if ( code < 0x10000)
-			return String.fromCharCode(code);
-
-		code -= 0x10000;
-		return String.fromCharCode(
-			0xD800 + (code >> 10),
-			0xDC00 + (code & 0x3FF)
-		);
 	};
 
 
@@ -219,97 +206,6 @@ FFZ.ws_commands.load_set = function(set_id) {
 
 
 // ---------------------
-// Tooltip Powah!
-// ---------------------
-
-FFZ.prototype._emote_tooltip = function(emote) {
-	if ( ! emote )
-		return null;
-
-	if ( emote._tooltip )
-		return emote._tooltip;
-
-	var set = this.emote_sets[emote.set_id],
-		owner = emote.owner,
-		title = set && set.title || "Global",
-		source = set && set.source || "FFZ",
-
-		preview_url = this.settings.emote_image_hover ? (emote.urls[4] || emote.urls[2]) : null,
-		image = preview_url ? '<img class="emoticon ffz-image-hover" src="' + preview_url + '?_=preview">' : '';
-
-	emote._tooltip = image + "Emoticon: " + (emote.hidden ? "???" : emote.name) + "<br>" + source + " " + title + (owner ? "<br>By: " + owner.display_name : "");
-	return emote._tooltip;
-}
-
-FFZ.prototype._reset_tooltips = function(twitch_only) {
-	for(var emote_id in this._twitch_emotes) {
-		var data = this._twitch_emotes[emote_id];
-		if ( data && data.tooltip )
-			data.tooltip = null;
-	}
-
-	if ( ! twitch_only ) {
-		for(var set_id in this.emote_sets) {
-			var emote_set = this.emote_sets[set_id];
-			for(var emote_id in emote_set.emoticons) {
-				var emote = emote_set.emoticons[emote_id];
-				if ( emote._tooltip )
-					emote._tooltip = null;
-			}
-		}
-	}
-
-	var emotes = document.querySelectorAll('img.emoticon');
-	for(var i=0; i < emotes.length; i++) {
-		var emote = emotes[i];
-		if ( emote.classList.contains('ffz-image-hover') )
-			continue;
-
-		var set_id,
-			emote_id = emote.getAttribute('data-emote');
-
-		if ( emote_id ) {
-			// Twitch Emotes
-			if ( this.has_bttv )
-				continue;
-
-			emote.setAttribute('original-title', utils.build_tooltip.bind(this)(emote_id, false, emote.alt));
-			continue;
-		}
-
-		if ( twitch_only )
-			continue;
-
-		// FFZ Emoji
-		emote_id = emote.getAttribute('data-ffz-emoji');
-		if ( emote_id ) {
-			var emoji = this.emoji_data && this.emoji_data[emote_id],
-				setting = this.settings.parse_emoji,
-
-				src = emoji ? (setting === 2 ? emoji.noto_src : emoji.tw_src) : null,
-				image = '';
-
-			if ( src && this.settings.emote_image_hover )
-				image = '<img class="emoticon ffz-image-hover emoji" src="' + src + '">';
-
-			emote.setAttribute('original-title', emoji ? (image + 'Emoji: ' + emote.alt + '<br>Name: ' + emoji.name + (emoji.short_name ? "<br>Short Name: :" + emoji.short_name + ":" : "")) : emote.alt);
-			continue;
-		}
-
-		// FFZ Emotes
-		emote_id = emote.getAttribute('data-ffz-emote');
-		set_id = emote.getAttribute('data-ffz-set');
-
-		var emote_set = this.emote_sets[set_id];
-		if ( ! emote_set || ! emote_set.emoticons || ! emote_set.emoticons[emote_id] )
-			continue;
-
-		emote.setAttribute('original-title', this._emote_tooltip(emote_set.emoticons[emote_id]));
-	}
-}
-
-
-// ---------------------
 // Emoji Loading
 // ---------------------
 
@@ -325,21 +221,29 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 				emoji.code = eid;
 
 				new_data[eid] = emoji;
-				by_name[emoji.short_name] = eid;
+                if ( emoji.short_name )
+				    by_name[emoji.short_name] = eid;
+                if ( emoji.names && emoji.names.length )
+                    for(var x=0,y=emoji.names.length; x < y; x++)
+                        by_name[emoji.names[x]] = eid;
 
-				emoji.raw = _.map(emoji.code.split("-"), from_code_point).join("");
+				emoji.raw = _.map(emoji.code.split("-"), utils.codepoint_to_emoji).join("");
 
-				emoji.tw_src = constants.SERVER + 'emoji/tw-' + eid + '.svg';
+				emoji.tw_src = constants.SERVER + 'emoji/tw/' + eid + '.svg';
 				emoji.noto_src = constants.SERVER + 'emoji/noto-' + eid + '.svg';
+                emoji.one_src = constants.SERVER + 'emoji/one/' + eid + '.svg';
 
 				emoji.token = {
-					emoticonSrc: true,
+                    type: "emoticon",
+                    imgSrc: true,
 
 					tw_src: emoji.tw_src,
 					noto_src: emoji.noto_src,
+                    one_src: emoji.one_src,
 
 					tw: emoji.tw,
 					noto: emoji.noto,
+                    one: emoji.one,
 
 					ffzEmoji: eid,
 					altText: emoji.raw
@@ -480,6 +384,15 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
 		else
 			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")\\b", "g");
+
+        emote.token = {
+            type: "emoticon",
+            srcSet: emote.srcSet,
+            imgSrc: emote.urls[1],
+            ffzEmote: emote.id,
+            ffzEmoteSet: set_id,
+            altText: emote.hidden ? '???' : emote.name
+        };
 
 		output_css += build_css(emote);
 		data.count++;

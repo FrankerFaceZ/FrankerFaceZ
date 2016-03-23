@@ -1,0 +1,2 @@
+var FFZ = window.FrankerFaceZ;
+

@@ -107,7 +107,6 @@ FFZ.prototype._modify_player = function(player) {
 			f._cindex && f._cindex.ffzUpdatePlayerStats();
 		};
 
-
 	player.reopen({
 		didInsertElement: function() {
 			this._super();
@@ -139,6 +138,10 @@ FFZ.prototype._modify_player = function(player) {
 		ffzInit: function() {
 			var id = this.get('channel.id');
 			f.players[id] = this;
+
+            var player = this.get('player');
+            if ( player )
+                this.ffzPostPlayer();
 		},
 
 		ffzTeardown: function() {
@@ -153,22 +156,12 @@ FFZ.prototype._modify_player = function(player) {
 		},
 
 		ffzPostPlayer: function() {
-			var player = this.get('ffz_player') || this.get('player');
-			if ( ! player ) {
-				var tp2 = window.require("web-client/components/twitch-player2");
-				if ( ! tp2 || ! tp2.getPlayer )
-					return;
-
-				player = tp2.getPlayer();
-				if ( ! player || ! player.getVideo )
-					// We can't get a valid player. :-(
-					return;
-			}
-
-			this.set('ffz_player', player);
+			var player = this.get('player');
+			if ( ! player )
+                return;
 
 			// Only set up the stats hooks if we need stats.
-			var has_video;
+			var has_video = false;
 
 			try {
 				has_video = player.getVideo();
@@ -184,72 +177,52 @@ FFZ.prototype._modify_player = function(player) {
 			if ( this.get('ffzStatsInitialized') )
 				return;
 
-			var player = this.get('ffz_player');
+			var t = this,
+                player = this.get('player');
+
 			if ( ! player )
 				return;
 
 			this.set('ffzStatsInitialized', true);
 
 			// Make it so stats can no longer be disabled if we want them.
-			player.ffzSetStatsEnabled = player.setStatsEnabled;
-			try {
-				player.ffz_stats = player.getStatsEnabled();
-			} catch(err) {
-				// Assume stats are off.
-				f.error("Player2 ffzInitStats: getStatsEnabled still doesn't work: " + err);
-				player.ffz_stats = false;
-			}
+            if ( player.setStatsEnabled ) {
+                player.ffzSetStatsEnabled = player.setStatsEnabled;
+                try {
+                    player.ffz_stats = player.getStatsEnabled();
+                } catch(err) {
+                    // Assume stats are off.
+                    f.log("Player2 ffzInitStats: getStatsEnabled still doesn't work.");
+                    player.ffz_stats = false;
+                }
 
-			var t = this;
+                player.setStatsEnabled = function(e, s) {
+                    if ( s !== false )
+                        player.ffz_stats = e;
 
-			player.setStatsEnabled = function(e, s) {
-				if ( s !== false )
-					player.ffz_stats = e;
+                    var out = player.ffzSetStatsEnabled(e || f.settings.player_stats);
 
-				var out = player.ffzSetStatsEnabled(e || f.settings.player_stats);
+                    if ( ! t._ffz_player_stats_initialized ) {
+                        t._ffz_player_stats_initialized = true;
+                        player.addEventListener('statschange', update_stats);
+                    }
 
-				if ( ! t._ffz_player_stats_initialized ) {
-					t._ffz_player_stats_initialized = true;
-					player.addEventListener('statschange', update_stats);
-				}
+                    return out;
+                }
 
-				return out;
-			}
+                this._ffz_stat_interval = setInterval(function() {
+                    if ( f.settings.player_stats || player.ffz_stats ) {
+                        player.ffzSetStatsEnabled(false);
+                        player.ffzSetStatsEnabled(true);
+                    }
+                }, 5000);
+            }
 
-			this._ffz_stat_interval = setInterval(function() {
-				if ( f.settings.player_stats || player.ffz_stats ) {
-					player.ffzSetStatsEnabled(false);
-					player.ffzSetStatsEnabled(true);
-				}
-			}, 5000);
-
-			if ( f.settings.player_stats && ! player.ffz_stats ) {
+			if ( f.settings.player_stats && ( ! player.setStatsEnabled || ! player.ffz_stats ) ) {
 				this._ffz_player_stats_initialized = true;
 				player.addEventListener('statschange', update_stats);
 				player.ffzSetStatsEnabled(true);
 			}
-		},
-
-		ffzSetQuality: function(q) {
-			var player = this.get('ffz_player');
-			if ( ! player )
-				return;
-
-			this.$(".js-quality-display-contain").attr("data-q", "loading");
-
-			player.setQuality(q);
-
-			var t = this.$(".js-player-alert");
-			t.find(".js-player-alert__message").text();
-			t.attr("data-active", !0);
-		},
-
-		ffzGetQualities: function() {
-			var player = this.get('ffz_player');
-			if ( ! player )
-				return [];
-			return player.getQualities();
-		},
-
+		}
 	});
 }

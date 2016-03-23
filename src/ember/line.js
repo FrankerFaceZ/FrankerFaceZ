@@ -1,14 +1,26 @@
 ﻿var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
-	constants = require("../constants"),
-
-	SEPARATORS = "[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]",
-	SPLITTER = new RegExp(SEPARATORS + "*," + SEPARATORS + "*");
+	constants = require("../constants");
 
 
 // ---------------------
 // Settings
 // ---------------------
+
+FFZ.settings_info.alias_italics = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+    no_bttv: true,
+
+    name: "Display Aliases in Italics",
+    help: "Format the names of users that have aliases with italics to make it obvious at a glance that they have been renamed.",
+
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-alias-italics', val);
+		}
+	};
 
 FFZ.settings_info.room_status = {
 	type: "boolean",
@@ -32,7 +44,7 @@ FFZ.settings_info.replace_bad_emotes = {
 	value: true,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
@@ -44,7 +56,8 @@ FFZ.settings_info.parse_emoji = {
 	options: {
 		0: "No Images / Font Only",
 		1: "Twitter Emoji Images",
-		2: "Google Noto Images"
+		2: "Google Noto Images",
+        3: "EmojiOne Images"
 	},
 
 	value: 1,
@@ -63,24 +76,7 @@ FFZ.settings_info.parse_emoji = {
 
 	name: "Emoji Display",
 	help: "Replace emoji in chat messages with nicer looking images from either Twitter or Google."
-	};
-
-
-FFZ.settings_info.room_status = {
-	type: "boolean",
-	value: true,
-
-	category: "Chat Appearance",
-	no_bttv: true,
-
-	name: "Room Status Indicators",
-	help: "Display the current room state (slow mode, sub mode, and r9k mode) next to the Chat button.",
-
-	on_update: function() {
-			if ( this._roomv )
-				this._roomv.ffzUpdateStatus();
-		}
-	};
+    };
 
 
 FFZ.settings_info.scrollback_length = {
@@ -94,27 +90,32 @@ FFZ.settings_info.scrollback_length = {
 	help: "Set the maximum number of lines to keep in chat.",
 
 	method: function() {
-			var new_val = prompt("Scrollback Length\n\nPlease enter a new maximum length for the chat scrollback. Default: 150\n\nNote: Making this too large will cause your browser to lag.", this.settings.scrollback_length);
-			if ( new_val === null || new_val === undefined )
-				return;
+            var f = this;
+            utils.prompt(
+                "Scrollback Length",
+                "Please enter a new maximum length for the chat scrollback. Please note that setting this too high may cause your computer to begin lagging as chat messages accumulate.</p><p><b>Default:</b> 150",
+                this.settings.scrollback_length,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+				        return;
 
-			new_val = parseInt(new_val);
-			if ( new_val === NaN )
-				return;
+                    new_val = parseInt(new_val);
+                    if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) )
+                        new_val = 150;
 
-			if ( new_val < 10 )
-				new_val = 10;
+                    new_val = Math.max(10, new_val);
 
-			this.settings.set("scrollback_length", new_val);
+                    f.settings.set("scrollback_length", new_val);
 
-			// Update our everything.
-			var Chat = App.__container__.lookup('controller:chat'),
-				current_id = Chat && Chat.get('currentRoom.id');
+                    // Update our everything.
+                    var Chat = App.__container__.lookup('controller:chat'),
+                        current_id = Chat && Chat.get('currentRoom.id');
 
-			for(var room_id in this.rooms) {
-				var room = this.rooms[room_id];
-				room.room && room.room.set('messageBufferSize', new_val + ((this._roomv && !this._roomv.get('stuckToBottom') && current_id === room_id) ? 150 : 0));
-			}
+                    for(var room_id in f.rooms) {
+                        var room = f.rooms[room_id];
+                        room.room && room.room.set('messageBufferSize', new_val + ((f._roomv && !f._roomv.get('stuckToBottom') && current_id === room_id) ? 150 : 0));
+                    }
+                });
 		}
 	};
 
@@ -127,19 +128,19 @@ FFZ.settings_info.hosted_sub_notices = {
 	no_bttv: true,
 
 	name: "Show Hosted Channel Subscriber Notices",
-	help: "Display notices in chat when someone subscribes to the hosted channel."
+	help: "Display (or more specifically <i>hides</i> when disabled) notices in chat when someone subscribes to the hosted channel."
 	};
 
 
-FFZ.settings_info.filter_bad_shorteners = {
+FFZ.settings_info.filter_whispered_links = {
 	type: "boolean",
 	value: true,
 
 	category: "Chat Filtering",
-	no_bttv: true,
+    warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 
-	name: "Auto-Hide Potentially Dangerous Shortened Links",
-	help: "Replace potentially dangerous shortened links. Links are still accessible, but require an extra click to access."
+	name: "Auto-Hide Potentially Dangerous Whispered Links",
+	help: "Removes whispered links and displays a placeholder, with a warning that the link has not been approved by moderation or staff. Links remain accessible with an additional click."
 };
 
 
@@ -148,28 +149,35 @@ FFZ.settings_info.banned_words = {
 	value: [],
 
 	category: "Chat Filtering",
-	no_bttv: true,
+
+	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 
 	name: "Banned Words",
 	help: "Set a list of words that will be locally removed from chat messages.",
 
 	method: function() {
-			var old_val = this.settings.banned_words.join(", "),
-				new_val = prompt("Banned Words\n\nPlease enter a comma-separated list of words that you would like to be removed from chat messages.", old_val);
+			var f = this,
+                old_val = this.settings.banned_words.join(", ");
 
-			if ( new_val === null || new_val === undefined )
-				return;
+            utils.prompt(
+                "Banned Words",
+                "Please enter a comma-separated list of words that you would like to have removed from chat messages.",
+                old_val,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+                        return;
 
-			new_val = new_val.trim().split(SPLITTER);
-			var vals = [];
+                    new_val = new_val.trim().split(constants.SPLITTER);
+                    var vals = [];
 
-			for(var i=0; i < new_val.length; i++)
-				new_val[i] && vals.push(new_val[i]);
+                    for(var i=0; i < new_val.length; i++)
+                        new_val[i] && vals.push(new_val[i]);
 
-			if ( vals.length == 1 && vals[0] == "disable" )
-				vals = [];
+                    if ( vals.length == 1 && vals[0] == "disable" )
+                        vals = [];
 
-			this.settings.set("banned_words", vals);
+                    f.settings.set("banned_words", vals);
+                });
 		}
 	};
 
@@ -179,29 +187,36 @@ FFZ.settings_info.keywords = {
 	value: [],
 
 	category: "Chat Filtering",
-	no_bttv: true,
+
+    warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
 
 	method: function() {
-			var old_val = this.settings.keywords.join(", "),
-				new_val = prompt("Highlight Keywords\n\nPlease enter a comma-separated list of words that you would like to be highlighted in chat.", old_val);
+			var f = this,
+                old_val = this.settings.keywords.join(", ");
 
-			if ( new_val === null || new_val === undefined )
-				return;
+            utils.prompt(
+                "Highlight Keywords",
+                "Please enter a comma-separated list of words that you would like to be highlighted in chat.",
+                old_val,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+                        return;
 
-			// Split them up.
-			new_val = new_val.trim().split(SPLITTER);
-			var vals = [];
+                    // Split them up.
+                    new_val = new_val.trim().split(constants.SPLITTER);
+                    var vals = [];
 
-			for(var i=0; i < new_val.length; i++)
-				new_val[i] && vals.push(new_val[i]);
+                    for(var i=0; i < new_val.length; i++)
+                        new_val[i] && vals.push(new_val[i]);
 
-			if ( vals.length == 1 && vals[0] == "disable" )
-				vals = [];
+                    if ( vals.length == 1 && vals[0] == "disable" )
+                        vals = [];
 
-			this.settings.set("keywords", vals);
+                    f.settings.set("keywords", vals);
+                });
 		}
 	};
 
@@ -211,7 +226,7 @@ FFZ.settings_info.clickable_emoticons = {
 	value: false,
 
 	category: "Chat Tooltips",
-	no_bttv: true,
+	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 	no_mobile: true,
 
 	name: "Emoticon Information Pages",
@@ -388,17 +403,23 @@ FFZ.settings_info.chat_font_family = {
 	help: "Change the font used for rendering chat messages.",
 
 	method: function() {
-			var old_val = this.settings.chat_font_family || "",
-				new_val = prompt("Chat Font Family\n\nPlease enter a font family to use rendering chat. Leave this blank to use the default.", old_val);
+            var f = this,
+                old_val = this.settings.chat_font_family || "";
 
-			if ( new_val === null || new_val === undefined )
-				return;
+            utils.prompt(
+                "Chat Font Family",
+                "Please enter a font family to use rendering chat. Leave this blank to use the default.",
+                old_val,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+                        return;
 
-			// Should we wrap this with quotes?
-			if ( ! new_val )
-				new_val = null;
+                    // Should we wrap this with quotes?
+                    if ( ! new_val )
+                        new_val = null;
 
-			this.settings.set("chat_font_family", new_val);
+                    f.settings.set("chat_font_family", new_val);
+                });
 		},
 
 	on_update: function(val) {
@@ -434,17 +455,23 @@ FFZ.settings_info.chat_font_size = {
 	help: "Make the chat font bigger or smaller.",
 
 	method: function() {
-			var old_val = this.settings.chat_font_size,
-				new_val = prompt("Chat Font Size\n\nPlease enter a new size for the chat font. The default is 12.", old_val);
+            var f = this,
+			    old_val = this.settings.chat_font_size;
 
-			if ( new_val === null || new_val === undefined )
-				return;
+            utils.prompt(
+                "Chat Font Size",
+                "Please enter a new size for the chat font.</p><p><b>Default:</b> 12",
+                old_val,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+                        return;
 
-			var parsed = parseInt(new_val);
-			if ( ! parsed || parsed === NaN || parsed < 1 )
-				parsed = 12;
+                    var parsed = parseInt(new_val);
+                    if ( ! parsed || Number.isNaN(parsed) || parsed < 1 )
+                        parsed = 12;
 
-			this.settings.set("chat_font_size", parsed);
+                    f.settings.set("chat_font_size", parsed);
+                });
 		},
 
 	on_update: function(val) {
@@ -463,7 +490,7 @@ FFZ.settings_info.chat_font_size = {
 		}
 
 		utils.update_css(this._chat_style, "chat_font_size", css);
-		FFZ.settings_info.chat_ts_size.on_update.bind(this)(this.settings.chat_ts_size);
+		FFZ.settings_info.chat_ts_size.on_update.call(this, this.settings.chat_ts_size);
 		}
 	};
 
@@ -479,21 +506,26 @@ FFZ.settings_info.chat_ts_size = {
 	help: "Make the chat timestamp font bigger or smaller.",
 
 	method: function() {
-			var old_val = this.settings.chat_ts_size;
+            var f = this,
+                old_val = this.settings.chat_ts_size;
 
 			if ( ! old_val )
 				old_val = this.settings.chat_font_size;
 
-			var new_val = prompt("Chat Timestamp Font Size\n\nPlease enter a new size for the chat timestamp font. The default is to match the regular chat font size.", old_val);
+            utils.prompt(
+                "Chat Timestamp Font Size",
+                "Please enter a new size for the chat timestamp font. The default is to match the regular chat font size.",
+                old_val,
+                function(new_val) {
+                    if ( new_val === null || new_val === undefined )
+                        return;
 
-			if ( new_val === null || new_val === undefined )
-				return;
+                    var parsed = parseInt(new_val);
+                    if ( parsed < 1 || Number.isNaN(parsed) || ! Number.isFinite(parsed) )
+                        parsed = null;
 
-			var parsed = parseInt(new_val);
-			if ( ! parsed || parsed === NaN || parsed < 1 )
-				parsed = null;
-
-			this.settings.set("chat_ts_size", parsed);
+                    f.settings.set("chat_ts_size", parsed);
+                });
 		},
 
 	on_update: function(val) {
@@ -539,11 +571,13 @@ FFZ.prototype.setup_line = function() {
 	document.head.appendChild(s);
 
 	// Initial calculation.
-	FFZ.settings_info.chat_font_size.on_update.bind(this)(this.settings.chat_font_size);
-	FFZ.settings_info.chat_font_family.on_update.bind(this)(this.settings.chat_font_family);
+	FFZ.settings_info.chat_font_size.on_update.call(this, this.settings.chat_font_size);
+	FFZ.settings_info.chat_font_family.on_update.call(this, this.settings.chat_font_family);
 
 
 	// Chat Enhancements
+    document.body.classList.toggle('ffz-alias-italics', this.settings.alias_italics);
+
 	this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators));
 	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
 
@@ -560,17 +594,30 @@ FFZ.prototype.setup_line = function() {
 
 	this._last_row = {};
 
-	this.log("Hooking the Ember Whisper Line component.");
+    this.log("Hooking the Ember Chat Line component.");
+	var Line = App.__container__.resolve('component:chat-line');
+
+	if ( Line )
+		this._modify_chat_line(Line);
+
+	/*this.log("Hooking the Ember Whisper Line component.");
 	var Whisper = App.__container__.resolve('component:whisper-line');
 
 	if ( Whisper )
 		this._modify_line(Whisper);
 
 	this.log("Hooking the Ember Message Line component.");
-	var Line = App.__container__.resolve('component:message-line');
+    var Message = App.__container__.resolve('component:message-line');
 
-	if ( Line )
-		this._modify_line(Line);
+    if ( Message )
+        this._modify_line(Message);*/
+
+    this.log("Hooking the Ember VOD Chat Line component.");
+    var VOD = App.__container__.resolve('component:vod-chat-line');
+    if ( VOD )
+        this._modify_vod_line(VOD);
+    else
+        this.log("Couldn't find VOD Chat Line component.");
 
 	// Store the capitalization of our own name.
 	var user = this.get_user();
@@ -585,7 +632,342 @@ FFZ.prototype.save_aliases = function() {
 }
 
 
-FFZ.prototype._modify_line = function(component) {
+FFZ.prototype._modify_chat_line = function(component, is_vod) {
+    var f = this,
+        Layout = App.__container__.lookup('controller:layout'),
+		Settings = App.__container__.lookup('controller:settings');
+
+    component.reopen({
+        tokenizedMessage: function() {
+			try {
+				return f.tokenize_chat_line(this.get('msgObject'));
+			} catch(err) {
+				f.error("chat-line tokenizedMessage: " + err);
+				return this._super();
+			}
+		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
+
+        lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", function() {
+            this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
+            if ( this.get("msgObject.deleted") ) {
+                this.$(".message").replaceWith(this.buildDeletedMessageHTML());
+            } else
+                this.$(".deleted,.message").replaceWith(this.buildMessageHTML());
+        }),
+
+        ffzUserLevel: function() {
+			if ( this.get('isStaff') )
+				return 5;
+			else if ( this.get('isAdmin') )
+				return 4;
+			else if ( this.get('isBroadcaster') )
+				return 3;
+			else if ( this.get('isGlobalMod') )
+				return 2;
+			else if ( this.get('isModerator') )
+				return 1;
+			return 0;
+		}.property('msgObject.labels.[]'),
+
+        buildModIconsHTML: function() {
+            var user = this.get('msgObject.from'),
+                room_id = this.get('msgObject.room'),
+                room = f.rooms && f.rooms[room_id],
+
+                deleted = this.get('msgObject.deleted'),
+
+                recipient = this.get('msgObject.to'),
+                is_whisper = recipient && recipient.length,
+
+                this_ul = this.get('ffzUserLevel'),
+                other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
+
+                output;
+
+            if ( is_whisper || this_ul >= other_ul || f.settings.mod_buttons.length === 0 )
+                return '';
+
+            output = '<span class="mod-icons float-left">';
+
+            for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
+                var pair = f.settings.mod_buttons[i],
+                    prefix = pair[0], btn = pair[1],
+
+                    cmd, tip;
+
+                if ( btn === false ) {
+                    if ( deleted )
+                        output += '<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>';
+                    else
+                        output += '<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>';
+
+                } else if ( btn === 600 )
+                    output += '<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>';
+
+                else {
+                    if ( typeof btn === "string" ) {
+                        cmd = btn.replace(/{user}/g, user).replace(/ *<LINE> */, "\n");
+                        tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '\n' + cmd;
+                    } else {
+                        cmd = "/timeout " + user + " " + btn;
+                        tip = "Timeout User (" + utils.duration_string(btn) + ")";
+                    }
+                    output += '<a class="mod-icon float-left tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + utils.quote_attr(tip) + '" href="#">' + prefix + '</a>';
+                }
+            }
+
+            return output + '</span>';
+        },
+
+        buildSenderHTML: function() {
+            var user = this.get('msgObject.from'),
+                room_id = this.get('msgObject.room'),
+                room = f.rooms && f.rooms[room_id],
+
+                deleted = this.get('msgObject.deleted'),
+                r = this,
+
+                recipient = this.get('msgObject.to'),
+                is_whisper = recipient && recipient.length,
+                is_replay = this.get('ffz_is_replay'),
+
+                this_ul = this.get('ffzUserLevel'),
+                other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
+
+                raw_color = this.get('msgObject.color'),
+                colors = raw_color && f._handle_color(raw_color),
+
+                is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('settings.darkMode'))),
+
+                output = '';
+
+
+            output = '<div class="indicator"></div><span class="timestamp float-left">' + this.get('timestamp') + '</span> ';
+
+            // Moderator Actions
+            output += this.buildModIconsHTML();
+
+            // Badges
+            output += '<span class="badges float-left">' + f.render_badges(f.get_line_badges(this.get('msgObject'), is_whisper)) + '</span>';
+
+            // Alias Support
+            var alias = f.aliases[user],
+                name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
+                style = colors && 'color:' + (is_dark ? colors[1] : colors[0]) || '',
+                colored = style ? ' has-color' + (is_replay ? ' replay-color' : '') : '';
+
+            output += '<span class="from' + (alias ? ' ffz-alias tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '');
+
+            if ( alias )
+                output += '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias);
+            else
+                output += '">' + utils.sanitize(name);
+
+
+            // Whisper Legacy Sucks
+            if ( is_whisper ) {
+                var to_alias = f.aliases[recipient],
+                    to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
+
+                    to_color = this.get('msgObject.toColor'),
+                    to_colors = to_color && f._handle_color(to_color),
+
+                    to_style = to_color ? 'color:' + (is_dark ? to_colors[1] : to_colors[0]) : '',
+                    to_colored = to_style ? ' has-color' : '';
+
+                output += "</span><svg class='svg-whisper-arrow' height='10px' version='1.1' width='16px'><polyline points='6 2, 10 6, 6 10, 6 2' /></svg>";
+                output += '<span class="to' + (to_alias ? ' ffz-alias tooltip' : '') + to_colored + '" style="' + to_style + (to_colors ? '" data=color="' + to_color : '');
+
+                if ( to_alias )
+                    output += '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias);
+                else
+                    output += '">' + utils.sanitize(to_name);
+            }
+
+            return output + '</span><span class="colon">:</span> ';
+        },
+
+        buildDeletedMessageHTML: function() {
+            return '<span class="deleted"><a class="undelete" href=#">&lt;message deleted&gt;</a></span>';
+        },
+
+        buildMessageHTML: function() {
+            var output,
+                recipient = this.get('msgObject.to'),
+                is_whisper = recipient && recipient.length;
+
+            if ( this.get('msgObject.style') === 'action' ) {
+                var raw_color = this.get('msgObject.color'),
+                    colors = raw_color && f._handle_color(raw_color),
+                    is_replay = this.get('ffz_is_replay'),
+                    is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('settings.darkMode')));
+
+                if ( raw_color )
+                    output = '<span class="message has-color' + (is_replay ? ' replay-color' : '') + '" style="color:' + (is_dark ? colors[1] : colors[0]) + '" data-color="' + raw_color + '">';
+                else
+                    output = '<span class="message">';
+            } else
+                output = '<span class="message">';
+
+            output += f.render_tokens(this.get('tokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4);
+
+            var old_messages = this.get('msgObject.ffz_old_messages');
+            if ( old_messages && old_messages.length )
+                output += '<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>';
+
+            return output + '</span>';
+        },
+
+        tagName: "li",
+        classNameBindings: is_vod ? ["msgObject.ffz_has_mention:ffz-mentioned"] : [":message-line", ":chat-line", "msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
+        attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
+
+        render: function(e) {
+            e.push(this.buildSenderHTML());
+            if ( this.get("msgObject.deleted") )
+                e.push(this.buildDeletedMessageHTML())
+            else
+                e.push(this.buildMessageHTML());
+        },
+
+        ffzWasDeleted: function() {
+            return f.settings.prevent_clear && this.get("msgObject.ffz_deleted")
+        }.property("msgObject.ffz_deleted"),
+
+        ffzHasOldMessages: function() {
+            var old_messages = this.get("msgObject.ffz_old_messages");
+            return old_messages && old_messages.length;
+        }.property("msgObject.ffz_old_messages"),
+
+        click: function(e) {
+            if ( ! e.target )
+                return;
+
+            var cl = e.target.classList,
+                from = this.get("msgObject.from");
+
+            if ( cl.contains('ffz-old-messages') )
+                return f._show_deleted(this.get('msgObject.room'));
+
+            else if ( cl.contains('deleted-word') ) {
+                jQuery(e.target).trigger('mouseout');
+                e.target.outerHTML = e.target.getAttribute('data-text');
+
+            } else if ( cl.contains('deleted-link') )
+                return f._deleted_link_click.call(e.target, e);
+
+            else if ( cl.contains('mod-icon') ) {
+                jQuery(e.target).trigger('mouseout');
+                e.preventDefault();
+
+				if ( cl.contains('custom') ) {
+					var room_id = this.get('msgObject.room'),
+						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
+						cmd = e.target.getAttribute('data-cmd');
+
+					if ( room ) {
+						var lines = cmd.split("\n");
+						for(var i=0; i < lines.length; i++)
+							room.send(lines[i], true);
+
+						if ( cl.contains('is-timeout') )
+							room.clearMessages(from);
+					}
+					return;
+
+				} else if ( cl.contains('ban') )
+                    this.sendAction("banUser", {user:from});
+
+                else if ( cl.contains('unban') )
+                    this.sendAction("unbanUser", {user:from});
+
+                else if ( cl.contains('timeout') )
+                    this.sendAction("timeoutUser", {user:from});
+
+            } else if ( cl.contains('badge') ) {
+                if ( cl.contains('turbo') )
+                    window.open("/products/turbo?ref=chat_badge", "_blank");
+
+                else if ( cl.contains('subscriber') )
+                    this.sendAction("clickSubscriber");
+
+            } else if ( f._click_emote(e.target, e) )
+                return;
+
+            else if ( e.target.classList.contains('from') ) {
+                var n = this.$();
+                this.sendAction("showModOverlay", {
+                    left: n.offset().left,
+                    top: n.offset().top + n.height(),
+                    sender: from
+                });
+
+            } else if ( e.target.classList.contains('undelete') )
+                this.set("msgObject.deleted", false);
+        }
+    });
+}
+
+
+FFZ.prototype._modify_vod_line = function(component) {
+    var f = this;
+    // We need to override a few things.
+    this._modify_chat_line(component, true);
+
+    component.reopen({
+        ffz_is_replay: true,
+
+        /*lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", function() {
+            this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
+            if ( this.get("msgObject.deleted") )
+                this.$(".message").replaceWith(this.buildMessageHTML());
+            else
+                this.$(".deleted").replaceWith(this.buildMessageHTML());
+        }),*/
+
+        buildModIconsHTML: function() {
+            if ( ! this.get("isViewerModeratorOrHigher") || this.get("isModeratorOrHigher") )
+                return "";
+
+            return '<span class="mod-icons float-left">' +
+                (this.get('msgObject.deleted') ?
+                    '<em class="mod-icon float-left unban"></em>' :
+                    '<a class="mod-icon float-left tooltip delete" title="Delete Message" href="#">Delete</a>') + '</span>';
+        },
+
+        buildDeletedMesageHTML: function() {
+            return '<span clas="deleted">&lt;message deleted&gt;</span>';
+        },
+
+        render: function(e) {
+            if ( this.get('msgObject.isHorizontalLine') )
+                e.push(this.buildHorizontalLineHTML());
+            else {
+                e.push(this.buildSenderHTML());
+                if ( this.get("msgObject.deleted") )
+                    e.push(this.buildDeletedMessageHTML())
+                else
+                    e.push(this.buildMessageHTML());
+            }
+        },
+
+        click: function(e) {
+            if ( e.target.classList.contains('delete') ) {
+                e.preventDefault();
+                this.sendAction("timeoutUser", this.get("msgObject.id"));
+            }
+        },
+
+        didInsertElement: function() {
+            this._super();
+            if ( this.get("msgObject.ffz_has_mention") )
+                this.get("element").classList.add("ffz-mentioned");
+        }
+    });
+}
+
+
+/*FFZ.prototype._modify_line = function(component) {
 	var f = this,
 
 		Layout = App.__container__.lookup('controller:layout'),
@@ -593,20 +975,6 @@ FFZ.prototype._modify_line = function(component) {
 
 
 	component.reopen({
-		tokenizedMessage: function() {
-			try {
-				return f.tokenize_chat_line(this.get('msgObject'));
-			} catch(err) {
-				f.error("chat-line tokenizedMessage: " + err);
-				return this._super();
-			}
-
-		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
-
-		ffzUpdated: Ember.observer("msgObject.ffz_deleted", "msgObject.ffz_old_messages", function() {
-			this.rerender();
-		}),
-
 		click: function(e) {
 			if ( e.target && e.target.classList.contains('ffz-old-messages') )
 				return f._show_deleted(this.get('msgObject.room'));
@@ -640,147 +1008,12 @@ FFZ.prototype._modify_line = function(component) {
 			return this._super(e);
 		},
 
-		ffzUserLevel: function() {
-			if ( this.get('isStaff') )
-				return 5;
-			else if ( this.get('isAdmin') )
-				return 4;
-			else if ( this.get('isBroadcaster') )
-				return 3;
-			else if ( this.get('isGlobalMod') )
-				return 2;
-			else if ( this.get('isModerator') )
-				return 1;
-			return 0;
-		}.property('msgObject.labels.[]'),
-
 		render: function(e) {
-			var deleted = this.get('msgObject.deleted'),
-				r = this,
+            e.push(this.buildSenderHTML());
+            e.push(this.buildMessageHTML())
+        },
 
-				user = this.get('msgObject.from'),
-				room_id = this.get('msgObject.room'),
-				room = f.rooms && f.rooms[room_id],
-
-				recipient = this.get('msgObject.to'),
-				is_whisper = recipient && recipient.length,
-
-				this_ul = this.get('ffzUserLevel'),
-				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
-
-				raw_color = this.get('msgObject.color'),
-				colors = raw_color && f._handle_color(raw_color),
-
-				is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
-
-
-			e.push('<div class="indicator"></div>');
-			e.push('<span class="timestamp float-left">' + this.get("timestamp") + '</span> ');
-
-
-			// Moderation actions
-			if ( ! is_whisper && this_ul < other_ul ) {
-				e.push('<span class="mod-icons float-left">');
-				for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
-					var pair = f.settings.mod_buttons[i],
-						prefix = pair[0], btn = pair[1],
-
-						cmd, tip;
-
-					if ( btn === false ) {
-						if ( deleted )
-							e.push('<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>');
-						else
-							e.push('<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>');
-
-					} else if ( btn === 600 )
-						e.push('<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>');
-
-					else {
-						if ( typeof btn === "string" ) {
-							cmd = btn.replace(/{user}/g, user).replace(/ *<LINE> */, "\n");
-							tip = 'Custom Command' + (cmd.indexOf('\n') !== -1 ? 's' : '') + '\n' + cmd;
-						} else {
-							cmd = "/timeout " + user + " " + btn;
-							tip = "Timeout User (" + utils.duration_string(btn) + ")";
-						}
-
-						e.push('<a class="mod-icon float-left tooltip' + (cmd.substr(0, 9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + utils.quote_attr(tip) + '" href="#">' + prefix + '</a>');
-					}
-				}
-
-				e.push('</span>');
-			}
-
-
-			// Badges
-			e.push('<span class="badges float-left">');
-			e.push(f.render_badges(f.get_line_badges(this.get('msgObject'), is_whisper)));
-			e.push('</span>');
-
-
-			// Handle aliases
-			var alias = f.aliases[user],
-				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
-				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
-				colored = style ? ' has-color' : '';
-
-			if ( alias )
-				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
-			else
-				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
-
-
-			// If it's a whisper, we need to get that user's color, alias, and draw the whisper arrow thing.
-			if ( is_whisper ) {
-				var to_alias = f.aliases[recipient],
-					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
-
-					to_color = this.get('msgObject.toColor'),
-					to_colors = to_color && f._handle_color(to_color),
-					to_style = to_color && 'color:' + (is_dark ? to_colors[1] : to_colors[0]),
-					to_colored = to_style ? ' has-color' : '';
-
-				this._renderWhisperArrow(e);
-
-				if ( to_alias )
-					e.push('<span class="to ffz-alias tooltip' + to_colored + '" style="' + to_style + (to_color ? '" data-color="' + to_color : '') + '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias) + '</span>');
-				else
-					e.push('<span class="to' + to_colored + '" style="' + to_style + (to_colors ? '" data-color="' + to_color : '') + '">' + utils.sanitize(to_name) + '</span>');
-			}
-
-
-			// Finally, onto the message proper.
-			e.push('<span class="colon">:</span> ');
-
-			if ( this.get('msgObject.style') !== 'action' ) {
-				style = '';
-				colored = '';
-			}
-
-			if ( deleted )
-				e.push('<span class="deleted"><a class="undelete" href="#">&lt;message deleted&gt;</a></span>');
-			else {
-				e.push('<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">');
-				e.push(f.render_tokens(this.get('tokenizedMessage'), true));
-
-				var old_messages = this.get('msgObject.ffz_old_messages');
-				if ( old_messages && old_messages.length )
-					e.push('<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>');
-
-				e.push('</span>');
-			}
-		},
-
-		classNameBindings: [
-			'msgObject.ffz_has_mention:ffz-mentioned',
-			'ffzWasDeleted:ffz-deleted',
-			'ffzHasOldMessages:clearfix',
-			'ffzHasOldMessages:ffz-has-deleted'
-			],
-
-
-		ffzWasDeleted: function() {
+        ffzWasDeleted: function() {
 			return f.settings.prevent_clear && this.get('msgObject.ffz_deleted');
 		}.property('msgObject.ffz_deleted'),
 
@@ -789,6 +1022,12 @@ FFZ.prototype._modify_line = function(component) {
 			return old_messages && old_messages.length;
 		}.property('msgObject.ffz_old_messages'),
 
+		classNameBindings: [
+			'msgObject.ffz_has_mention:ffz-mentioned',
+			'ffzWasDeleted:ffz-deleted',
+			'ffzHasOldMessages:clearfix',
+			'ffzHasOldMessages:ffz-has-deleted'
+			],
 
 		didInsertElement: function() {
 			this._super();
@@ -800,7 +1039,7 @@ FFZ.prototype._modify_line = function(component) {
 			el.setAttribute('data-deleted', this.get('msgObject.deleted') || false);
 		}
 	});
-}
+}*/
 
 
 // ---------------------
@@ -843,49 +1082,67 @@ FFZ.get_capitalization = function(name, callback) {
 // ---------------------
 
 FFZ.prototype._remove_banned = function(tokens) {
-	var banned_words = this.settings.banned_words,
-		banned_links = this.settings.filter_bad_shorteners ? ['apo.af', 'goo.gl', 'j.mp', 'bit.ly'] : null,
-
-		has_banned_words = banned_words && banned_words.length;
-
-	if ( !has_banned_words && (! banned_links || ! banned_links.length) )
+	var banned_words = this.settings.banned_words;
+	if ( ! banned_words || ! banned_words.length )
 		return tokens;
 
 	if ( typeof tokens == "string" )
 		tokens = [tokens];
 
 	var regex = FFZ._words_to_regex(banned_words),
-		link_regex = this.settings.filter_bad_shorteners && FFZ._words_to_regex(banned_links),
 		new_tokens = [];
 
 	for(var i=0, l = tokens.length; i < l; i++) {
 		var token = tokens[i];
-		if ( ! _.isString(token ) ) {
-			if ( token.emoticonSrc && has_banned_words && regex.test(token.altText) )
-				new_tokens.push(token.altText.replace(regex, "$1***"));
-			else if ( token.isLink && has_banned_words && regex.test(token.href) )
-				new_tokens.push({
-					isLink: true,
-					href: token.href,
-					isDeleted: true,
-					isLong: false,
-					censoredHref: token.href.replace(regex, "$1***")
-				});
-			else if ( token.isLink && this.settings.filter_bad_shorteners && link_regex.test(token.href) )
-				new_tokens.push({
-					isLink: true,
-					href: token.href,
-					isDeleted: true,
-					isLong: false,
-					isShortened: true
-				});
-			else
-				new_tokens.push(token);
+        if ( typeof token === "string" )
+            token = {type: "text", text: token};
 
-		} else if ( has_banned_words )
-			new_tokens.push(token.replace(regex, "$1***"));
-		else
-			new_tokens.push(token);
+        if ( token.type === "text" && regex.test(token.text) ) {
+            token = token.text.replace(regex, function(all, prefix, match) {
+                if ( prefix.length )
+                    new_tokens.push({type: "text", text: prefix});
+                new_tokens.push({
+                    type: "deleted",
+                    length: match.length,
+                    text: match
+                });
+
+                return "";
+            });
+
+            if ( token )
+                new_tokens.push({type: "text", text: token});
+
+        } else if ( token.type === "emoticon" && regex.test(token.altText) ) {
+            token = token.altText.replace(regex, function(all, prefix, match) {
+                if ( prefix.length )
+                    new_tokens.push({type: "text", text: prefix});
+                new_tokens.push({
+                    type: "deleted",
+                    length: match.length,
+                    text: match
+                });
+
+                return "";
+            });
+
+            if ( token )
+                new_tokens.push({type: "text", text: token});
+
+        } else if ( token.type === "link" && regex.test(token.text) )
+            new_tokens.push({
+                type: "link",
+                isDeleted: true,
+                isMailTo: token.isMailTo,
+                isLong: false,
+                length: token.text.length,
+                censoredLink: token.text.replace(regex, "$1***"),
+                link: token.link,
+                text: token.text
+            });
+
+        else
+            new_tokens.push(token);
 	}
 
 	return new_tokens;

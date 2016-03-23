@@ -100,30 +100,30 @@ FFZ.prototype.setup_channel = function() {
 			var t = this,
 				id = t.get('content.id');
 
-			id && Twitch.api && Twitch.api.get("streams/" + id, {}, {version:3})
+			id && utils.api.get("streams/" + id, {}, {version:3})
 				.done(function(data) {
 					if ( ! data || ! data.stream ) {
 						// If the stream is offline, clear its created_at time and set it to zero viewers.
-						t.set('stream.created_at', null);
-						t.set('stream.viewers', 0);
+						t.set('content.stream.created_at', null);
+						t.set('content.stream.viewers', 0);
 						return;
 					}
 
-					t.set('stream.created_at', data.stream.created_at || null);
-					t.set('stream.viewers', data.stream.viewers || 0);
+					t.set('content.stream.created_at', data.stream.created_at || null);
+					t.set('content.stream.viewers', data.stream.viewers || 0);
 
 					var game = data.stream.game || (data.stream.channel && data.stream.channel.game);
 					if ( game ) {
-						t.set('game', game);
-						t.set('rollbackData.game', game);
+						t.set('content.game', game);
+						t.set('content.rollbackData.game', game);
 					}
 
 					if ( data.stream.channel ) {
 						if ( data.stream.channel.status )
-							t.set('status', data.stream.channel.status);
+							t.set('content.status', data.stream.channel.status);
 
 						if ( data.stream.channel.views )
-							t.set('views', data.stream.channel.views);
+							t.set('content.views', data.stream.channel.views);
 
 						if ( data.stream.channel.followers && t.get('content.followers.isLoaded') )
 							t.set('content.followers.total', data.stream.channel.followers);
@@ -206,7 +206,7 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzInit: function() {
-			var id = this.get('controller.id'),
+			var id = this.get('controller.content.id') || this.get('controller.id'),
 				el = this.get('element');
 
 			f._cindex = this;
@@ -251,8 +251,8 @@ FFZ.prototype._modify_cindex = function(view) {
 			if ( f.has_bttv || ! f.settings.stream_title )
 				return;
 
-			var status = this.get("controller.status"),
-				channel = this.get("controller.id");
+			var status = this.get("controller.content.status") || this.get("controller.status"),
+				channel = this.get("controller.content.id") || this.get("controller.id");
 
 			status = f.render_tokens(f.tokenize_line(channel, channel, status, true));
 
@@ -267,7 +267,7 @@ FFZ.prototype._modify_cindex = function(view) {
 
 
 		ffzUpdateHostButton: function() {
-			var channel_id = this.get('controller.id'),
+			var channel_id = this.get('controller.content.id') || this.get('controller.id'),
 				hosted_id = this.get('controller.hostModeTarget.id'),
 
 				user = f.get_user(),
@@ -360,7 +360,7 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzClickHost: function(controller, is_host) {
-			var target = controller.get(is_host ? 'controller.hostModeTarget.id' : 'controller.id'),
+			var target = is_host ? controller.get('controller.hostModeTarget.id') : (controller.get('controller.content.id') || controller.get('controller.id')),
 				user = f.get_user(),
 				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
 				now_hosting = room && room.ffz_host_target;
@@ -381,7 +381,7 @@ FFZ.prototype._modify_cindex = function(view) {
 
 		ffzUpdateChatters: function() {
 			// Get the counts.
-			var room_id = this.get('controller.id'),
+			var room_id = this.get('controller.content.id') || this.get('controller.id'),
 				room = f.rooms && f.rooms[room_id];
 
 			if ( ! room || ! f.settings.chatter_count ) {
@@ -457,7 +457,7 @@ FFZ.prototype._modify_cindex = function(view) {
 
 
 		ffzUpdatePlayerStats: function() {
-			var channel_id = this.get('controller.id'),
+			var channel_id = this.get('controller.content.id') || this.get('controller.id'),
 				hosted_id = this.get('controller.hostModeTarget.id'),
 
 				el = this.get('element');
@@ -471,13 +471,13 @@ FFZ.prototype._modify_cindex = function(view) {
 					player = undefined, stats = undefined;
 
 				try {
-					player = player_cont && player_cont.ffz_player;
+					player = player_cont && player_cont.get && player_cont.get('player');
 					stats = player && player.stats;
 				} catch(err) {
 					f.error("Channel ffzUpdatePlayerStats: player.stats: " + err);
 				}
 
-				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
+				if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hlsLatencyBroadcaster || stats.hlsLatencyBroadcaster === 'NaN' || Number.isNaN(stats.hlsLatencyBroadcaster) ) {
 					if ( stat_el )
 						stat_el.parentElement.removeChild(stat_el);
 				} else {
@@ -538,7 +538,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				}
 
 
-				if ( ! container || ! f.settings.player_stats || ! stats || stats.hlsLatencyBroadcaster === 'NaN' || stats.hlsLatencyBroadcaster === NaN ) {
+				if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hlsLatencyBroadcaster || stats.hlsLatencyBroadcaster === 'NaN' || Number.isNaN(stats.hlsLatencyBroadcaster) ) {
 					if ( stat_el )
 						stat_el.parentElement.removeChild(stat_el);
 				} else {
@@ -648,7 +648,7 @@ FFZ.prototype._modify_cindex = function(view) {
 		},
 
 		ffzTeardown: function() {
-			var id = this.get('controller.id');
+			var id = this.get('controller.content.id') || this.get('controller.id');
 			if ( id )
 				f.ws_send("unsub", "channel." + id);
 

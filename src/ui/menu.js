@@ -5,9 +5,9 @@ var FFZ = window.FrankerFaceZ,
 	fix_menu_position = function(container) {
 		var swapped = document.body.classList.contains('ffz-sidebar-swap') && ! document.body.classList.contains('ffz-portrait');
 
-		var bounds = container.getBoundingClientRect(),
+		var bounds = container.children[0].getBoundingClientRect(),
 			left = parseInt(container.style.left || '0'),
-			right = bounds.left + container.scrollWidth,
+			right = bounds.left + bounds.width,
 			moved = !!container.style.left;
 
 		if ( swapped ) {
@@ -217,7 +217,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 	// Stuff
 	jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
-
+    jQuery(inner).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 	// Menu Container
 	var sub_container = document.createElement('div');
@@ -270,7 +270,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 
 		var page = FFZ.menu_pages[key];
 		try {
-			if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.bind(this)(view)))) )
+			if ( !page || (page.hasOwnProperty("visible") && (!page.visible || (typeof page.visible == "function" && !page.visible.call(this, view)))) )
 				continue;
 		} catch(err) {
 			this.error("menu_pages " + key + " visible: " + err);
@@ -298,7 +298,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 			el = document.createElement('li'),
 			link = document.createElement('a');
 
-		el.className = 'item' + (page.sub_menu ? ' has-sub-menu' : '');
+		el.className = 'item' + (page.sub_menu || page.pages ? ' has-sub-menu' : '');
 		el.id = "ffz-menu-page-" + key;
 		link.title = page.name;
 		link.innerHTML = page.icon;
@@ -315,12 +315,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 	var page = (this._last_page || "channel").split("_", 1)[0];
 
 	// Do we have news?
-	if ( this._has_news ) {
+	/*if ( this._has_news ) {
 		// Render news, then set the page back so our default doesn't change.
 		this._ui_change_page(view, inner, menu, sub_container, 'about_news');
 		this._last_page = page;
 
-	} else
+	} else*/
 		// Render Current Page
 		this._ui_change_page(view, inner, menu, sub_container, page);
 
@@ -335,26 +335,144 @@ FFZ.prototype.build_ui_popup = function(view) {
 }
 
 
+FFZ.prototype._ui_change_subpage = function(view, inner, menu, container, subpage) {
+    var page = this._last_page,
+        last_subpages = this._last_subpage = this._last_subpage || {};
+
+    last_subpages[page] = subpage;
+
+    container.innerHTML = "";
+    container.setAttribute('data-page', subpage);
+
+    // Get the data structure for this page.
+    var page_data = FFZ.menu_pages[page],
+        data = page_data.pages[subpage];
+
+    // Render the page first. If there's an error, it won't update the other UI stuff.
+	data.render.call(this, view, container, inner, menu);
+
+    // Make sure the correct menu tab is selected
+    jQuery('li.active', menu).removeClass('active');
+    jQuery('#ffz-menu-page-' + page + '-subpage-' + subpage, menu).addClass('active');
+
+    // Apply wideness - TODO: Revamp wide menus entirely for thin containers
+    var is_wide = false,
+        app = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+
+    if ( data.hasOwnProperty('wide') )
+        is_wide = data.wide || (typeof data.wide === "function" && data.wide.call(this));
+    else if ( page_data.hasOwnProperty('wide') )
+        is_wide = page_data.wide || (typeof page_data.wide === "function" && page_data.wide.call(this));
+
+	inner.style.maxWidth = is_wide ? (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600) + "px" : "";
+
+	// Re-position if necessary.
+	var f = this;
+	setTimeout(function(){f._fix_menu_position();});
+}
+
+
 FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 	this._last_page = page;
 	container.innerHTML = "";
 	container.setAttribute('data-page', page);
 
-	// Allow settings to be wide. We need to know if chat is stand-alone.
-	var app = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
-	inner.style.maxWidth = (!FFZ.menu_pages[page].wide || (typeof FFZ.menu_pages[page].wide == "function" && !FFZ.menu_pages[page].wide.bind(this)())) ? "" : (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600) + "px";
+    // Get the data structure for the new page.
+    var data = FFZ.menu_pages[page];
 
-	var els = menu.querySelectorAll('li.active');
-	for(var i=0; i < els.length; i++)
-		els[i].classList.remove('active');
+    // See if we're dealing with a sub-menu situation.
+    if ( data.pages ) {
+        // We need to render the sub-menu, and then call the _ui_change_sub_page method
+        // to render the sub-page.
+        var submenu = document.createElement('ul'),
+            subcontainer = document.createElement('div'),
 
-	var el = menu.querySelector('#ffz-menu-page-' + page);
-	if ( el )
-		el.classList.add('active');
-	else
-		this.log("No matching page: " + page);
+            height = parseInt(container.style.maxHeight || '0');
 
-	FFZ.menu_pages[page].render.bind(this)(view, container, inner, menu);
+        if ( ! height )
+            height = Math.max(200, view.$().height() - 172);
+
+        if ( height && ! Number.isNaN(height) ) {
+            height -= 37;
+            subcontainer.style.maxHeight = height + 'px';
+        }
+
+        submenu.className = 'menu sub-menu clearfix';
+        subcontainer.className = 'ffz-ui-sub-menu-page';
+
+        // Building Tabs
+        var subpages = [];
+        for(var key in data.pages) {
+            var subpage = data.pages[key];
+            try {
+                if ( ! subpage || (subpage.hasOwnProperty("visible") && (!subpage.visible || (typeof subpage.visible === "function" && !subpage.visible.call(this, view)))) )
+                    continue;
+            } catch(err) {
+                this.error("menu_pages " + page + " subpage " + key + " visible: " + err);
+                continue;
+            }
+
+            subpages.push([subpage.sort_order || 0, key, subpage]);
+        }
+
+        subpages.sort(function(a,b) {
+            if ( a[0] < b[0] ) return -1;
+            else if ( a[0] > b[0] ) return 1;
+
+            var al = a[1].toLowerCase(),
+                bl = b[1].toLowerCase();
+
+            if ( al < bl ) return -1;
+            if ( al > bl ) return 1;
+            return 0;
+        });
+
+        for(var i=0; i < subpages.length; i++) {
+            var key = subpages[i][1],
+                subpage = subpages[i][2],
+                tab = document.createElement('li'),
+                link = document.createElement('a');
+
+            tab.className = 'item';
+            tab.id = 'ffz-menu-page-' + page + '-subpage-' + key;
+            link.innerHTML = subpage.name;
+            link.addEventListener('click', this._ui_change_subpage.bind(this, view, inner, submenu, subcontainer, key));
+
+            tab.appendChild(link);
+            submenu.appendChild(tab);
+        }
+
+        // Activate a Tab
+        var last_subpages = this._last_subpage = this._last_subpage || {},
+            last_subpage = last_subpages[page] = last_subpages[page] || data.default_page || subpages[0][1];
+
+        if ( typeof last_subpage === "function" )
+            last_subpage = last_subpage.call(this);
+
+        this._ui_change_subpage(view, inner, submenu, subcontainer, last_subpage);
+
+        // Make sure the correct menu tab is selected
+        jQuery('li.active', menu).removeClass('active');
+        jQuery('#ffz-menu-page-' + page, menu).addClass('active');
+
+        // Add this to the container.
+        container.appendChild(subcontainer);
+        container.appendChild(submenu);
+        return;
+    }
+
+    // Render the page first. If there's an error, it won't update the other UI stuff.
+	data.render.call(this, view, container, inner, menu);
+
+    // Make sure the correct menu tab is selected
+    jQuery('li.active', menu).removeClass('active');
+    jQuery('#ffz-menu-page-' + page, menu).addClass('active');
+
+    // Apply wideness - TODO: Revamp wide menus entirely for thin containers
+    var is_wide = data.wide || (typeof data.wide === "function" && data.wide.call(this)),
+        app = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
+
+	inner.style.maxWidth = is_wide ? (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600) + "px" : "";
 
 	// Re-position if necessary.
 	var f = this;
@@ -430,7 +548,16 @@ FFZ.menu_pages.channel = {
 							can_use = is_subscribed || !emote.subscriber_only,
 							img_set = 'image-set(url("' + constants.TWITCH_BASE + emote.id + '/1.0") 1x, url("' + constants.TWITCH_BASE + emote.id + '/2.0") 2x), url("' + constants.TWITCH_BASE + emote.id + '/3.0") 4x)';
 
-						s.className = 'emoticon html-tooltip' + (!can_use ? " locked" : "");
+						s.className = 'emoticon ffz-tooltip ffz-tooltip-no-credit' + (!can_use ? " locked" : "");
+
+                        if ( emote.emoticon_set ) {
+                            var favs = this.settings.favorite_emotes["twitch-" + emote.emoticon_set];
+                            s.classList.add('ffz-can-favorite');
+                            s.classList.toggle('ffz-favorite', favs && favs.indexOf(emote.id) !== -1);
+                        }
+
+                        s.setAttribute('data-emote', emote.id);
+                        s.alt = emote.regex;
 
 						s.style.backgroundImage = 'url("' + constants.TWITCH_BASE + emote.id + '/1.0")';
 						s.style.backgroundImage = '-webkit-' + img_set;
@@ -438,19 +565,18 @@ FFZ.menu_pages.channel = {
 						s.style.backgroundImage = '-ms-' + img_set;
 						s.style.backgroundImage = img_set;
 
-						s.style.width = emote.width + "px";
-						s.style.height = emote.height + "px";
-						s.title = (this.settings.emote_image_hover ? '<img class="emoticon ffz-image-hover" src="' + constants.TWITCH_BASE + emote.id + '/3.0?_=preview">' : '') + emote.regex;
+						s.style.width = (10+emote.width) + "px";
+						s.style.height = (10+emote.height) + "px";
 
-						s.addEventListener('click', function(can_use, id, code, e) {
+						s.addEventListener('click', function(can_use, id, code, emote_set, e) {
 							if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
 								window.open("https://twitchemotes.com/emote/" + id);
 							else if ( can_use )
-								this._add_emote(view, code);
+                                this._add_emote(view, code, "twitch-" + emote_set, id, e);
 							else
 								return;
 							e.preventDefault();
-						}.bind(this, can_use, emote.id, emote.regex));
+						}.bind(this, can_use, emote.id, emote.regex, emote.emoticon_set));
 
 						grid.appendChild(s);
 						c++;
@@ -507,7 +633,7 @@ FFZ.menu_pages.channel = {
 			var extra_sets = _.union(room && room.extra_sets || [], room && room.ext_sets || [], []);
 
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, "http://cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+            this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, (room && room.moderator_badge) || "//cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
 
 			for(var i=0; i < extra_sets.length; i++) {
 				// Look up the set name.
@@ -593,7 +719,11 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 		c++;
 		var s = document.createElement('span');
-		s.className = 'emoticon html-tooltip';
+		s.className = 'emoticon ffz-tooltip';
+
+        s.setAttribute('data-ffz-emote', emote.id);
+        s.setAttribute('data-ffz-set', set.id);
+
 		s.style.backgroundImage = 'url("' + emote.urls[1] + '")';
 
 		if ( srcset ) {
@@ -604,9 +734,8 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 			s.style.backgroundImage = img_set;
 		}
 
-		s.style.width = emote.width + "px";
-		s.style.height = emote.height + "px";
-		s.title = this._emote_tooltip(emote);
+		s.style.width = (10+emote.width) + "px";
+        s.style.height = (10+emote.height) + "px";
 
 		s.addEventListener('click', function(id, code, e) {
 			e.preventDefault();
@@ -636,7 +765,29 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 }
 
 
-FFZ.prototype._add_emote = function(view, emote) {
+FFZ.prototype._add_emote = function(view, emote, favorites_set, favorites_key, event) {
+    if ( event && event.ctrlKey ) {
+        var el = event.target;
+        if ( ! el.classList.contains('locked') && el.classList.contains('ffz-can-favorite') && favorites_set && favorites_key ) {
+            var favs = this.settings.favorite_emotes[favorites_set] = this.settings.favorite_emotes[favorites_set] || [],
+                is_favorited = favs.indexOf(favorites_key) !== -1;
+
+            if ( is_favorited )
+                favs.removeObject(favorites_key);
+            else
+                favs.push(favorites_key);
+
+            this.settings.set("favorite_emotes", this.settings.favorite_emotes, true);
+
+            if ( el.classList.contains('ffz-is-favorite') && is_favorited ) {
+                jQuery(el).trigger('mouseout');
+                el.parentElement.removeChild(el);
+            } else
+                el.classList.toggle('ffz-favorite', ! is_favorited);
+        }
+        return;
+    }
+
 	var input_el, text, room;
 
 	if ( this.has_bttv ) {

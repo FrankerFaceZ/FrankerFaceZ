@@ -31,71 +31,75 @@ FFZ.prototype._update_subscribers = function() {
 	// context of the web user.
 
 	// Get the count!
-	jQuery.ajax({url: "/broadcast/dashboard/partnership"}).done(function(data) {
-		try {
-			var html = document.createElement('span'), dash;
+    jQuery.getJSON("/" + id + "/dashboard/revenue/summary_data").done(function(data) {
+        var el, sub_count = data && data.data && data.data.total_subscriptions;
+        if ( typeof sub_count === "string" )
+            sub_count = parseInt(sub_count.replace(/[,\.]/g, ""));
 
-			html.innerHTML = data;
-			dash = html.querySelector("#dash_main");
+        if ( typeof sub_count !== "number" || sub_count === 0 || sub_count === NaN || sub_count === Infinity ) {
+            el = document.querySelector("#ffz-sub-display");
+            if ( el )
+                el.parentElement.removeChild(el);
 
-			var match = dash && dash.textContent.match(/([\d,\.]+) total active subscribers/),
-				sub_count = match && match[1];
+            var failed = f._failed_sub_checks = (f._failed_sub_checks || 0) + 1;
+            if ( f._update_subscribers_timer && failed >= 5 ) {
+                f.log("Subscriber count failed 5 times. Giving up.");
+                clearTimeout(f._update_subscribers_timer);
+                delete f._update_subscribers_timer;
+            }
 
-			if ( ! sub_count ) {
-				var el = document.querySelector("#ffz-sub-display");
-				if ( el )
-					el.parentElement.removeChild(el);
+            return;
+        }
 
-				if ( f._update_subscribers_timer ) {
-					clearTimeout(f._update_subscribers_timer);
-					delete f._update_subscribers_timer;
-				}
+        // Graph this glorious data point
+        if ( f._dash_chart ) {
+            if ( ! f._dash_chart.series[3].options.showInLegend ) {
+                f._dash_chart.series[3].options.showInLegend = true;
+                f._dash_chart.legend.renderLegend();
+            }
 
-				return;
-			}
+            f._dash_chart.series[3].addPoint({x: utils.last_minute(), y: sub_count});
+        }
 
-			var el = document.querySelector('#ffz-sub-display span');
-			if ( ! el ) {
-				var cont = f.is_dashboard ? document.querySelector("#stats") : document.querySelector("#channel .stats-and-actions .channel-stats");
-				if ( ! cont )
-					return;
+        el = document.querySelector('#ffz-sub-display span');
+        if ( ! el ) {
+            var cont = f.is_dashboard ? document.querySelector("#stats") : document.querySelector("#channel .stats-and-actions .channel-stats");
+            if ( ! cont )
+                return;
 
-				var stat = document.createElement('span');
-				stat.className = 'ffz stat';
-				stat.id = 'ffz-sub-display';
-				stat.title = 'Active Channel Subscribers';
+            var stat = document.createElement('span');
+            stat.className = 'ffz stat';
+            stat.id = 'ffz-sub-display';
+            stat.title = 'Subscribers';
 
-				stat.innerHTML = constants.STAR + ' ';
+            stat.innerHTML = constants.STAR + ' ';
 
-				el = document.createElement('span');
-				stat.appendChild(el);
+            el = document.createElement('span');
+            stat.appendChild(el);
 
-				Twitch.api.get("chat/" + id + "/badges", null, {version: 3})
-					.done(function(data) {
-						if ( data.subscriber && data.subscriber.image ) {
-							stat.innerHTML = '';
-							stat.appendChild(el);
+            utils.api.get("chat/" + id + "/badges", null, {version: 3})
+                .done(function(data) {
+                    if ( data.subscriber && data.subscriber.image ) {
+                        stat.innerHTML = '';
+                        stat.appendChild(el);
 
-							stat.style.backgroundImage = 'url("' + data.subscriber.image + '")';
-							stat.style.backgroundRepeat = 'no-repeat';
-							stat.style.paddingLeft = '23px';
-							stat.style.backgroundPosition = '0 50%';
-						}
-					});
+                        stat.style.backgroundImage = 'url("' + data.subscriber.image + '")';
+                        stat.style.backgroundRepeat = 'no-repeat';
+                        stat.style.paddingLeft = '23px';
+                        stat.style.backgroundPosition = '0 50%';
+                    }
+                });
 
-				cont.appendChild(stat);
-				jQuery(stat).tipsy({gravity: f.is_dashboard ? "s" : utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-			}
+            cont.appendChild(stat);
+            jQuery(stat).tipsy({gravity: f.is_dashboard ? "s" : utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+        }
 
-			el.innerHTML = sub_count;
+        el.innerHTML = utils.number_commas(sub_count);
 
-		} catch(err) {
-			f.error("_update_subscribers: " + err);
-		}
 	}).fail(function(){
 		var el = document.querySelector("#ffz-sub-display");
 		if ( el )
 			el.parentElement.removeChild(el);
 		return;
-	});;
+	});
 }

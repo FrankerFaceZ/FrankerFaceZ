@@ -11,7 +11,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! room.moderator_badge )
 			return "";
 
-		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-image:url("' + room.moderator_badge + '") !important; }';
+		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-repeat: no-repeat; background-size: initial; background-position: center; background-image:url("' + room.moderator_badge + '") !important; }';
 	};
 
 
@@ -37,22 +37,18 @@ FFZ.prototype.setup_room = function() {
 	// Responsive ban button.
 	var f = this,
 		RC = App.__container__.lookup('controller:room');
+
 	if ( RC ) {
 		var orig_ban = RC._actions.banUser,
 			orig_to = RC._actions.timeoutUser;
 
 		RC._actions.banUser = function(e) {
-			orig_ban.bind(this)(e);
+			orig_ban.call(this, e);
 			this.get("model").clearMessages(e.user);
 		}
 
 		RC._actions.timeoutUser = function(e) {
-			orig_to.bind(this)(e);
-			this.get("model").clearMessages(e.user);
-		}
-
-		RC._actions.purgeUser = function(e) {
-			this.get("model.tmiRoom").sendMessage("/timeout " + e.user + " 1");
+			orig_to.call(this, e);
 			this.get("model").clearMessages(e.user);
 		}
 
@@ -79,7 +75,7 @@ FFZ.prototype.setup_room = function() {
 				renderBottom: e.bottom,
 				renderRight: e.right,
 				isIgnored: this.get("tmiSession").isIgnored(e.sender),
-				isChannelOwner: this.get("controllers.login.userData.login") === e.sender,
+				isChannelOwner: this.get("login.userData.login") === e.sender,
 				profileHref: Twitch.uri.profile(e.sender),
 				isModeratorOrHigher: this.get("model.isModeratorOrHigher")
 			});
@@ -161,15 +157,6 @@ FFZ.prototype._modify_rview = function(view) {
 			this._super();
 		},
 
-		ffzAlternate: function() {
-			/*if ( ! this._ffz_chat_display ) {
-				var el = this.get('element');
-				this._ffz_chat_display = el && el.querySelector('ul.chat-lines');
-			}
-
-			this._ffz_chat_display && this._ffz_chat_display.classList.toggle('ffz-should-alternate');*/
-		},
-
 		ffzInit: function() {
 			f._roomv = this;
 
@@ -232,6 +219,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 			var r9k_badge = cont.querySelector('#ffz-stat-r9k'),
 				sub_badge = cont.querySelector('#ffz-stat-sub'),
+                emote_badge = cont.querySelector('#ffz-stat-emote'),
 				slow_badge = cont.querySelector('#ffz-stat-slow'),
 				banned_badge = cont.querySelector('#ffz-stat-banned'),
 				delay_badge = cont.querySelector('#ffz-stat-delay'),
@@ -243,6 +231,8 @@ FFZ.prototype._modify_rview = function(view) {
 					r9k_badge.parentElement.removeChild(r9k_badge);
 				if ( sub_badge )
 					sub_badge.parentElement.removeChild(sub_badge);
+                if ( emote_badge )
+                    emote_badge.parentElement.removeChild(emote_badge);
 				if ( slow_badge )
 					slow_badge.parentElement.removeChild(slow_badge);
 				if ( delay_badge )
@@ -274,6 +264,16 @@ FFZ.prototype._modify_rview = function(view) {
 				cont.appendChild(sub_badge);
 				jQuery(sub_badge).tipsy({gravity:"s", offset:15});
 			}
+
+            if ( ! emote_badge ) {
+                emote_badge = document.createElement('span');
+                emote_badge.className = 'ffz room-state stat float-right';
+                emote_badge.id = 'ffz-stat-emote';
+                emote_badge.innerHTML = 'E<span>MOTE</span>';
+                emote_badge.title = "This room is in Twitch emote-only mode. Emotes added by extensions are not permitted in this mode.";
+                cont.appendChild(emote_badge);
+                jQuery(emote_badge).tipsy({gravity: "s", offset: 15});
+            }
 
 			if ( ! slow_badge ) {
 				slow_badge = document.createElement('span');
@@ -315,6 +315,7 @@ FFZ.prototype._modify_rview = function(view) {
 			var vis_count = 0,
 				r9k_vis = room && room.get('r9k'),
 				sub_vis = room && room.get('subsOnly'),
+                emote_vis = room && room.get('emoteOnly') && room.get('emoteOnly') !== '0',
 				ban_vis = room && room.get('ffz_banned'),
 				slow_vis = room && room.get('slowMode'),
 				delay_vis = f.settings.chat_delay !== 0,
@@ -322,13 +323,15 @@ FFZ.prototype._modify_rview = function(view) {
 
 			if ( r9k_vis ) vis_count += 1;
 			if ( sub_vis ) vis_count += 1;
-			if ( ban_vis ) vis_count += 1;
+            if ( emote_vis ) vis_count += 1;
+            if ( ban_vis ) vis_count += 1;
 			if ( slow_vis ) vis_count += 1;
 			if ( delay_vis ) vis_count += 1;
 			if ( batch_vis ) vis_count += 1;
 
 			r9k_badge.classList.toggle('truncated', vis_count > 3);
 			sub_badge.classList.toggle('truncated', vis_count > 3);
+            emote_badge.classList.toggle('truncated', vis_count > 3);
 			banned_badge.classList.toggle('truncated', vis_count > 3);
 			slow_badge.classList.toggle('truncated', vis_count > 3);
 			delay_badge.classList.toggle('truncated', vis_count > 3);
@@ -336,6 +339,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 			r9k_badge.classList.toggle('hidden', ! r9k_vis);
 			sub_badge.classList.toggle('hidden', ! sub_vis);
+            emote_badge.classList.toggle('hidden', ! emote_vis);
 			banned_badge.classList.toggle('hidden', ! ban_vis);
 
 			slow_badge.classList.toggle('hidden', ! slow_vis);
@@ -370,7 +374,6 @@ FFZ.prototype._modify_rview = function(view) {
 			messages.addEventListener('mousemove', this._ffz_mouse_move);
 			messages.addEventListener('touchmove', this._ffz_mouse_move);
 			messages.addEventListener('mouseout', this._ffz_mouse_out);
-			document.addEventListener('mouseout', this._ffz_mouse_out);
 		},
 
 		ffzDisableFreeze: function() {
@@ -389,6 +392,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 			if ( this._ffz_mouse_move ) {
 				messages.removeEventListener('mousemove', this._ffz_mouse_move);
+                messages.removeEventListener('touchmove', this._ffz_mouse_move);
 				this._ffz_mouse_move = undefined;
 			}
 
@@ -553,7 +557,7 @@ FFZ.prototype.run_command = function(text, room_id) {
 		var val = command.enabled;
 		if ( typeof val == "function" ) {
 			try {
-				val = command.enabled.bind(this)(room, args);
+				val = command.enabled.call(this, room, args);
 			} catch(err) {
 				this.error('command "' + cmd + '" enabled: ' + err);
 				val = false;
@@ -567,7 +571,7 @@ FFZ.prototype.run_command = function(text, room_id) {
 	this.log("Received Command: " + cmd, args, true);
 
 	try {
-		output = command.bind(this)(room, args);
+		output = command.call(this, room, args);
 	} catch(err) {
 		this.error('command "' + cmd + '" runner: ' + err);
 		output = "There was an error running the command.";
@@ -602,7 +606,7 @@ FFZ.prototype.run_ffz_command = function(text, room_id) {
 	var command = FFZ.ffz_commands[cmd], output;
 	if ( command ) {
 		try {
-			output = command.bind(this)(room, args);
+			output = command.call(this, room, args);
 		} catch(err) {
 			this.log("Error Running Command - " + cmd + ": " + err, room);
 			output = "There was an error running the command.";
@@ -849,9 +853,6 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 			}
 		}
 	}
-
-	if ( (removed % 2) && this._roomv && this._roomv.get('context.model.id') === room_id )
-		this._roomv.ffzAlternate();
 }
 
 
@@ -987,7 +988,7 @@ FFZ.prototype._modify_room = function(room) {
 		ffzUpdateStatus: function() {
 			if ( f._roomv )
 				f._roomv.ffzUpdateStatus();
-		}.observes('r9k', 'subsOnly', 'slow', 'ffz_banned'),
+		}.observes('r9k', 'subsOnly', 'emoteOnly', 'slow', 'ffz_banned'),
 
 		// User Level
 		ffzUserLevel: function() {
@@ -1057,9 +1058,6 @@ FFZ.prototype._modify_room = function(room) {
 					}
 				}
 
-				if ( (removed % 2) && f._roomv && f._roomv.get('context.model.id') === this.get('id') )
-					f._roomv.ffzAlternate();
-
 				// Delete pending messages
 				if (t.ffzPending) {
 					msgs = t.ffzPending;
@@ -1111,11 +1109,8 @@ FFZ.prototype._modify_room = function(room) {
 				len = messages.get("length"),
 				limit = this.get("messageBufferSize");
 
-			if ( len > limit ) {
+			if ( len > limit )
 				messages.removeAt(0, len - limit);
-				if ( ((len - limit) % 2) && f._roomv && f._roomv.get('context.model.id') === this.get('id') )
-					f._roomv.ffzAlternate();
-			}
 		},
 
 		// Artificial chat delay
@@ -1232,6 +1227,15 @@ FFZ.prototype._modify_room = function(room) {
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
+                // If it's from Twitch notify, and it's directly related to
+                if ( msg.from === 'twitchnotify' && msg.message.indexOf('subscribed to') === -1 && msg.message.indexOf('subscribed') !== -1 ) {
+                    if ( ! msg.tags )
+                        msg.tags = {};
+                    msg.tags.subscriber = true;
+                    if ( msg.labels && msg.labels.indexOf("subscriber") === -1 )
+                        msg.labels.push("subscriber");
+                }
+
 				// Keep the history.
 				if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
 					var room = f.rooms && f.rooms[msg.room];
@@ -1292,6 +1296,10 @@ FFZ.prototype._modify_room = function(room) {
 			// Color processing.
 			if ( msg.color )
 				f._handle_color(msg.color);
+
+            // Report this message to the dashboard.
+            if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
+                parent.postMessage({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, location.protocol + "//www.twitch.tv/");
 
 			// Add the message.
 			return this._super(msg);
@@ -1403,10 +1411,8 @@ FFZ.prototype._modify_room = function(room) {
 			if ( f._cindex )
 				f._cindex.ffzUpdateChatters();
 
-			try {
-				if ( window.parent && window.parent.postMessage )
-					window.parent.postMessage({from_ffz: true, command: 'chatter_count', message: Object.keys(this.get('ffz_chatters') || {}).length}, "http://www.twitch.tv/");
-			} catch(err) { /* Ignore errors because of security */ }
+            if ( window !== window.parent && parent.postMessage )
+                parent.postMessage({from_ffz: true, command: 'chatter_count', data: Object.keys(this.get('ffz_chatters') || {}).length}, location.protocol + "//www.twitch.tv/");
 		},
 
 

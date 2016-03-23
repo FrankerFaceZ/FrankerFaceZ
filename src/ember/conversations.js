@@ -13,7 +13,7 @@ FFZ.settings_info.conv_focus_on_click = {
 	no_mobile: true,
 	visible: false,
 
-	category: "Conversations",
+	category: "Whispers",
 	name: "Focus Input on Click",
 	help: "Focus on a conversation's input box when you click it."
 	};
@@ -23,11 +23,25 @@ FFZ.settings_info.top_conversations = {
 	value: false,
 	no_mobile: true,
 
-	category: "Conversations",
+	category: "Whispers",
 	name: "Position on Top",
 	help: "Display the new conversation-style whisper UI at the top of the window instead of the bottom.",
 	on_update: function(val) {
 			document.body.classList.toggle('ffz-top-conversations', val);
+		}
+	};
+
+
+FFZ.settings_info.minimize_conversations = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Whispers",
+	name: "Minimize Whisper UI",
+	help: "Slide the Whisper UI mostly out of view when it's not being used and you have no unread messages.",
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-minimize-conversations', val);
 		}
 	};
 
@@ -38,6 +52,7 @@ FFZ.settings_info.top_conversations = {
 
 FFZ.prototype.setup_conversations = function() {
 	document.body.classList.toggle('ffz-top-conversations', this.settings.top_conversations);
+	document.body.classList.toggle('ffz-minimize-conversations', this.settings.minimize_conversations);
 
 	this.log("Hooking the Ember Conversation Window component.");
 	var ConvWindow = App.__container__.resolve('component:conversation-window');
@@ -52,6 +67,7 @@ FFZ.prototype.setup_conversations = function() {
 
 	// TODO: Make this better later.
 	jQuery('.conversations-list').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+    jQuery('.conversations-list').find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 }
 
 
@@ -62,8 +78,7 @@ FFZ.prototype._modify_conversation_window = function(component) {
 
 	component.reopen({
 		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
-			var e = this.get("thread.participants").rejectBy("username", this.get("currentUsername")).objectAt(0),
-
+			var e = this.get("otherUser"),
 				badges = f.get_other_badges(e.get('username'), null, e.get('userType'), false, e.get('hasTurbo')),
 				out = [];
 
@@ -97,6 +112,7 @@ FFZ.prototype._modify_conversation_window = function(component) {
 
 			jQuery('.badge', el).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 			jQuery(el).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+            jQuery(el).find('.ffz-tooltip').tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
 }
@@ -120,7 +136,7 @@ FFZ.prototype._modify_conversation_line = function(component) {
 
 		click: function(e) {
 			if ( e.target && e.target.classList.contains('deleted-link') )
-				return f._deleted_link_click.bind(e.target)(e);
+				return f._deleted_link_click.call(e.target, e);
 
 			if ( f._click_emote(e.target, e) )
 				return;
@@ -133,7 +149,9 @@ FFZ.prototype._modify_conversation_line = function(component) {
 				raw_color = this.get('message.from.color'),
 				colors = raw_color && f._handle_color(raw_color),
 
-				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch;
+				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch,
+                myself = f.get_user(),
+                from_me = myself && myself.login === user;
 
 			e.push('<div class="indicator"></div>');
 
@@ -155,7 +173,7 @@ FFZ.prototype._modify_conversation_line = function(component) {
 			}
 
 			e.push('<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">');
-			e.push(f.render_tokens(this.get('tokenizedMessage'), true));
+			e.push(f.render_tokens(this.get('tokenizedMessage'), true, f.settings.filter_whispered_links && !from_me));
 			e.push('</span>');
 		}
 	});

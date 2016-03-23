@@ -69,7 +69,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 	btn.classList.toggle('live', ff.live);
 	btn.classList.toggle('blue', this.has_bttv && BetterTTV.settings.get('showBlueButtons'));
 
-	btn.href = "http://www.twitch.tv/" + ff.channel;
+	btn.href = "//www.twitch.tv/" + ff.channel;
 	btn.title = message;
 	btn.target = "_new";
 	btn.innerHTML = "<span>" + message + "</span>";
@@ -122,7 +122,7 @@ FFZ.prototype._update_ff_live = function() {
 		return;
 
 	var f = this;
-	Twitch.api.get("streams/" + this.feature_friday.channel)
+	utils.api.get("streams/" + this.feature_friday.channel)
 		.done(function(data) {
 			f.feature_friday.live = data.stream != null;
 			f.update_ui_link();

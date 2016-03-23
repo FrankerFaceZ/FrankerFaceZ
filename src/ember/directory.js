@@ -2,7 +2,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants'),
 
-	NO_LOGO = "http://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_150x150.png";
+	NO_LOGO = "//static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_150x150.png";
 
 
 // --------------------
@@ -37,6 +37,23 @@ FFZ.settings_info.sidebar_followed_games = {
 				controller.set('ffz_sidebar_games', val);
 		}
 	}
+
+
+FFZ.settings_info.sidebar_hide_recommended_channels = {
+	type: "boolean",
+	value: true,
+
+	category: "Appearance",
+	no_mobile: true,
+
+	name: "Sidebar Recommended Channels",
+    help: "Display the Recommended Channels section on the sidebar.",
+
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-hide-recommended-channels', !val);
+		}
+	};
+
 
 FFZ.settings_info.directory_creative_all_tags = {
 	type: "boolean",
@@ -145,9 +162,12 @@ FFZ.settings_info.directory_host_menus = {
 // Initialization
 // --------------------
 
+FFZ._image_cache = {};
+
 FFZ.prototype.setup_directory = function() {
 	document.body.classList.toggle('ffz-creative-tags', this.settings.directory_creative_all_tags);
 	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
+    document.body.classList.toggle('ffz-hide-recommended-channels', !this.settings.sidebar_hide_recommended_channels);
 
 	var GamesFollowing = App.__container__.lookup('controller:games-following'),
 		f = this;
@@ -235,6 +255,8 @@ FFZ.prototype._modify_following = function() {
 						offset: this.get('content.length') + this.get('ffz_skipped')
 					};
 
+                    // Don't use FFZ's Client ID because loading hosts is a normal part
+                    // of the dashboard. We're just manipulating the logic a bit.
 					return Twitch.api.get("/api/users/:login/followed/hosting", t);
 				},
 
@@ -304,8 +326,10 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 			var el = this.get('element'),
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
-				cap = thumb && thumb.querySelector('.cap');
+				cap = thumb && thumb.querySelector('.cap'),
+                channel_id = this.get('context.model.channel.name');
 
+            el.setAttribute('data-channel', channel_id);
 
 			// CSGO doesn't provide the actual uptime information...
 			if ( !is_csgo && f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
@@ -319,13 +343,15 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				this.ffzUpdateUptime();
 			}
 
+            this._ffz_image_timer = setInterval(this.ffzRotateImage.bind(this), 30000);
+            this.ffzRotateImage();
+
 			if ( f.settings.directory_logos ) {
 				el.classList.add('ffz-directory-logo');
 
 				var link = document.createElement('a'),
 					logo = document.createElement('img'),
-					t = this,
-					target = this.get('context.model.channel.name');
+					t = this;
 
 				logo.className = 'profile-photo';
 				logo.classList.toggle('is-csgo', is_csgo);
@@ -333,14 +359,17 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				logo.src = this.get('context.model.channel.logo') || NO_LOGO;
 				logo.alt = this.get('context.model.channel.display_name');
 
-				link.href = '/' + target;
+				link.href = '/' + channel_id;
 				link.addEventListener('click', function(e) {
+                    if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
+                        return;
+
 					var Channel = App.__container__.resolve('model:channel');
 					if ( ! Channel )
 						return;
 
 					e.preventDefault();
-					t.get('controller').transitionTo('channel.index', Channel.find({id: target}).load());
+					t.get('controller').transitionTo('channel.index', Channel.find({id: channel_id}).load());
 					return false;
 				});
 
@@ -358,9 +387,23 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 			if ( this._ffz_uptime_timer )
 				clearInterval(this._ffz_uptime_timer);
 
+            if ( this._ffz_image_timer )
+                clearInterval(this._ffz_image_timer);
+
 			this._super();
 		},
 
+        ffzRotateImage: function() {
+            var url = this.get('context.model.preview.medium'),
+                now = Math.round((new Date).getTime() / 150000);
+
+            if ( FFZ._image_cache[url] && FFZ._image_cache[url] !== now )
+                url += '?_=' + now;
+            else
+                FFZ._image_cache[url] = now;
+
+            this.$('.thumb .cap img').attr('src', url);
+        },
 
 		ffzUpdateUptime: function() {
 			var raw_created = this.get('context.model.created_at'),
@@ -411,7 +454,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				return;
 
 			if ( e ) {
-				if ( e.button !== 0 )
+				if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey  )
 					return;
 
 				e.preventDefault();
@@ -424,7 +467,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 		},
 
 		ffzShowHostMenu: function(e) {
-			if ( e.button !== 0 )
+			if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
 				return;
 
 			e.preventDefault();
@@ -485,10 +528,25 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			f.show_popup(menu, [x, y], document.querySelector('#main_col > .tse-scroll-content > .tse-content'));
 		},
 
+        ffzRotateImage: function() {
+            var url = this.get('context.model.target.preview'),
+                now = Math.round((new Date).getTime() / 150000);
+
+            if ( FFZ._image_cache[url] && FFZ._image_cache[url] !== now )
+                url += '?_=' + now;
+            else
+                FFZ._image_cache[url] = now;
+
+            this.$('.thumb .cap img').attr('src', url);
+        },
+
 		ffzCleanup: function() {
 			var target = this.get('context.model.target.channel');
 			if ( f._popup && f._popup.classList.contains('ffz-channel-selector') && f._popup.getAttribute('data-channel') === target )
 				f.close_popup();
+
+            if ( this._ffz_image_timer )
+                clearInterval(this._ffz_image_timer);
 		},
 
 		ffzInit: function() {
@@ -503,6 +561,10 @@ FFZ.prototype._modify_directory_host = function(dir) {
 
 				boxart = thumb && thumb.querySelector('.boxart');
 
+            el.setAttribute('data-channel', target.name);
+
+            this._ffz_image_timer = setInterval(this.ffzRotateImage.bind(this), 30000);
+            this.ffzRotateImage();
 
 			// Fix the game not showing
 			if ( ! boxart && thumb && this.get('context.model.game') ) {
@@ -516,6 +578,9 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				boxart.setAttribute('original-title', game);
 
 				boxart.addEventListener('click', function(e) {
+                    if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
+                        return;
+
 					e.preventDefault();
 					jQuery('.tipsy').remove();
 

@@ -14,7 +14,7 @@ var FFZ = window.FrankerFaceZ,
 // API Constructor
 // ---------------------
 
-var API = FFZ.API = function(instance, name, icon) {
+var API = FFZ.API = function(instance, name, icon, version) {
 	this.ffz = instance || FFZ.get();
 
 	// Check for a known API!
@@ -54,12 +54,13 @@ var API = FFZ.API = function(instance, name, icon) {
 
 	this.name = name || ("Extension#" + this.id);
 	this.icon = icon || null;
+    this.version = version || null;
 
 	this.ffz.log('Registered New Extension #' + this.id + ': ' + this.name);
 };
 
 
-FFZ.prototype.api = function(name, icon) {
+FFZ.prototype.api = function(name, icon, version) {
 	// Load the known APIs list.
 	if ( ! this._known_apis ) {
 		this._known_apis = {};
@@ -71,7 +72,7 @@ FFZ.prototype.api = function(name, icon) {
 			}
 	}
 
-	return new API(this, name, icon);
+	return new API(this, name, icon, version);
 }
 
 
@@ -162,6 +163,15 @@ API.prototype._load_set = function(real_id, set_id, data) {
 			new_emote.regex = new RegExp("(^| )(" + utils.escape_regex(emote.name) + ")(?= |$)", "g");
 		else
 			new_emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
+
+        new_emote.token = {
+            type: "emoticon",
+            srcSet: new_emote.srcSet,
+            imgSrc: new_emote.urls[1],
+            ffzEmote: id,
+            ffzEmoteSet: real_id,
+            altText: new_emote.hidden ? '???' : new_emote.name
+        };
 
 		output_css += build_css(new_emote);
 		emote_set.count++;

@@ -113,7 +113,7 @@ FFZ.ws_on_close.push(function() {
 
 FFZ.ws_commands.follow_buttons = function(data) {
 	var controller = window.App && App.__container__.lookup('controller:channel'),
-		current_id = controller && controller.get('id'),
+		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
 
@@ -132,7 +132,7 @@ FFZ.ws_commands.follow_buttons = function(data) {
 
 FFZ.ws_commands.follow_sets = function(data) {
 	var controller = App.__container__.lookup('controller:channel'),
-		current_id = controller && controller.get('id'),
+		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false,
 		f = this;
@@ -189,7 +189,7 @@ FFZ.ws_commands.follow_sets = function(data) {
 
 FFZ.prototype.rebuild_following_ui = function() {
 	var controller = App.__container__.lookup('controller:channel'),
-		channel_id = controller && controller.get('id'),
+		channel_id = controller && controller.get('content.id'),
 		hosted_id = controller && controller.get('hostModeTarget.id');
 
 	if ( ! this._cindex )
@@ -307,7 +307,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 				return update();
 			}
 
-			Twitch.api.get("users/" + user.login + "/follows/channels/" + channel_id)
+			utils.api.get("users/" + user.login + "/follows/channels/" + channel_id)
 				.done(function(data) {
 					following = true;
 					notifications = data.notifications;
@@ -330,7 +330,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 				return null;
 
 			notifications = notice;
-			return Twitch.api.put("users/:login/follows/channels/" + channel_id, {notifications: notifications})
+			return utils.api.put("users/:login/follows/channels/" + channel_id, {notifications: notifications})
 				.fail(check_following);
 		},
 
@@ -367,7 +367,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 		if ( following )
 			do_follow()
 		else
-			Twitch.api.del("users/:login/follows/channels/" + channel_id)
+			utils.api.del("users/:login/follows/channels/" + channel_id)
 				.done(check_following);
 
 		return false;

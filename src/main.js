@@ -12,6 +12,16 @@ var FFZ = window.FrankerFaceZ = function() {
 	this._log_data = [];
 	this._apis = {};
 
+    // Error Logging
+    var t = this;
+    window.addEventListener('error', function(event) {
+        if ( ! event.error )
+            return;
+
+        var has_stack = event.error && event.error.stack;
+        t.log("JavaScript Error: " + event.message + " [" + event.filename + ":" + event.lineno + ":" + event.colno + "]", has_stack ? event.error.stack : undefined, false, has_stack);
+    });
+
 	// Get things started.
 	this.initialize();
 }
@@ -19,10 +29,13 @@ var FFZ = window.FrankerFaceZ = function() {
 
 FFZ.get = function() { return FFZ.instance; }
 
+// TODO: This should be in a module.
+FFZ.msg_commands = {};
+
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 100,
+	major: 3, minor: 5, revision: 133,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -32,36 +45,38 @@ var VER = FFZ.version_info = {
 // Logging
 
 FFZ.prototype.log = function(msg, data, to_json, log_json) {
-	msg = "FFZ: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+    if ( to_json )
+        msg = msg + ' -- ' + JSON.stringify(data);
+
 	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed(msg);
+		console.groupCollapsed("FFZ: " + msg);
 		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd(msg);
+		console.groupEnd("FFZ: " + msg);
 	} else
-		console.log(msg);
+		console.log("FFZ: " + msg);
 }
 
 
-FFZ.prototype.error = function(msg, data, to_json) {
-	msg = "FFZ Error: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
-	this._log_data.push(msg);
+FFZ.prototype.error = function(msg, data, to_json, log_json) {
+	msg = "Error: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed(msg);
+		console.groupCollapsed("FFZ " + msg);
 		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd(msg);
+		console.groupEnd("FFZ " + msg);
 	} else
-		console.assert(false, msg);
+		console.assert(false, "FFZ " + msg);
 }
 
 
@@ -78,9 +93,9 @@ FFZ.prototype.paste_logs = function() {
 FFZ.prototype._pastebin = function(data, callback) {
 	jQuery.ajax({url: "http://putco.de/", type: "PUT", data: data, context: this})
 		.success(function(e) {
-			callback.bind(this)(e.trim() + ".log");
+			callback.call(this, e.trim() + ".log");
 		}).fail(function(e) {
-			callback.bind(this)(null);
+			callback.call(this, null);
 		});
 }
 
@@ -130,6 +145,7 @@ require('./ember/router');
 require('./ember/channel');
 require('./ember/player');
 require('./ember/room');
+require('./ember/vod-chat');
 require('./ember/layout');
 require('./ember/line');
 require('./ember/chatview');
@@ -143,7 +159,7 @@ require('./ember/following');
 
 require('./debug');
 
-require('./ext/rechat');
+//require('./ext/rechat');
 require('./ext/betterttv');
 require('./ext/emote_menu');
 
@@ -156,6 +172,7 @@ require('./ui/tooltips');
 require('./ui/notifications');
 require('./ui/viewer_count');
 require('./ui/sub_count');
+require('./ui/dash_stats');
 
 require('./ui/menu_button');
 require('./ui/following');
@@ -181,6 +198,14 @@ FFZ.prototype.initialize = function(increment, delay) {
 		this.init_player(delay);
 		return;
 	}
+
+
+    // Check for the transfer page.
+    if ( location.pathname === "/crossdomain/transfer" ) {
+        if ( location.hash.indexOf("ffz-settings-transfer") !== -1 )
+            this.init_settings_transfer();
+        return;
+    }
 
 	// Check for special non-ember pages.
 	if ( /^\/(?:$|search$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
@@ -218,9 +243,20 @@ FFZ.prototype.initialize = function(increment, delay) {
 }
 
 
+FFZ.prototype.init_settings_transfer = function() {
+    this.log("This is the HTTP Transfer URL. Building a settings backup and posting it to our parent.");
+    this.load_settings();
+    try { this.setup_line(); } catch(err) { }
+    var msg = {from_ffz: true, command: "http_settings", data: this._get_settings_object()};
+    window.opener.postMessage(msg, "https://www.twitch.tv");
+    window.close();
+}
+
+
 FFZ.prototype.init_player = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
-	this.log("Found Twitch Player after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Found Twitch Player after " + (delay||0) + " ms at: " + location);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -243,7 +279,8 @@ FFZ.prototype.init_player = function(delay) {
 
 FFZ.prototype.init_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
-	this.log("Found non-Ember Twitch after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Found non-Ember Twitch after " + (delay||0) + " ms at: " + location);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -272,6 +309,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.setup_following_count(false);
 	this.setup_menu();
 
+    this.setup_message_event();
 	this.fix_tooltips();
 	this.find_bttv(10);
 
@@ -286,7 +324,11 @@ FFZ.prototype.is_dashboard = false;
 
 FFZ.prototype.init_dashboard = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
-	this.log("Found Twitch Dashboard after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Found Twitch Dashboard after " + (delay||0) + " ms at: " + location);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+
+    var match = location.pathname.match(/\/([^\/]+)/);
+    this.dashboard_channel = match && match[1] || undefined;
 
 	this.users = {};
 	this.is_dashboard = true;
@@ -311,6 +353,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_notifications();
 	this.setup_following_count(false);
 	this.setup_menu();
+    this.setup_dash_stats();
 
 	this._update_subscribers();
 
@@ -329,7 +372,8 @@ FFZ.prototype.init_dashboard = function(delay) {
 
 FFZ.prototype.init_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
-	this.log("Found Twitch application after " + (delay||0) + " ms in \"" + location + "\". Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Found Twitch application after " + (delay||0) + " ms at: " + location);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -367,6 +411,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_player();
 	this.setup_channel();
 	this.setup_room();
+    this.setup_vod_chat();
 	this.setup_line();
 	this.setup_layout();
 	this.setup_chatview();
@@ -389,12 +434,14 @@ FFZ.prototype.init_ember = function(delay) {
 	this.fix_tooltips();
 	this.connect_extra_chat();
 
-	this.setup_rechat();
+	//this.setup_rechat();
+    this.setup_message_event();
 	this.find_bttv(10);
 	this.find_emote_menu(10);
 
 	//this.check_news();
 	this.check_ff();
+    this.refresh_chat();
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
@@ -414,8 +461,16 @@ FFZ.prototype.setup_message_event = function() {
 
 
 FFZ.prototype._on_window_message = function(e) {
-	if ( ! e.data || ! e.data.from_ffz )
+    var msg = e.data;
+    if ( typeof msg === "string" )
+        msg = JSON.parse(msg);
+
+	if ( ! msg || ! msg.from_ffz )
 		return;
 
-	var msg = e.data;
+	var handler = FFZ.msg_commands[msg.command];
+    if ( handler )
+        handler.call(this, msg.data);
+    else
+        this.log("Invalid Message: " + msg.command, msg.data, false, true);
 }

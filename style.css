@@ -19,6 +19,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-hide-recommended-channels .js-recommended-channels,
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
 .ffz-hide-view-count .stat.twitch-channel-views,
 .ffz-minimal-chat-input .chat-interface .emoticon-selector-toggle,
@@ -125,7 +126,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 }
 
 
-.ember-chat .chat-menu.ffz-ui-popup { padding: 0; }
+.ember-chat .chat-menu.ffz-ui-popup { padding: 0 }
 
 .ffz-button {
 	float: right;
@@ -216,8 +217,8 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 	color: #aaa;
 
 	position: absolute;
-	top: -25px;
-	left: 120px;
+	top: -20px;
+	left: 10px;
 	right: 10px;
 	z-index: 7;
 	opacity: 0.95;
@@ -525,6 +526,31 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 	margin: 0;
 }
 
+.emoticon-selector .emoticon-grid.ffz-no-emotes img {
+    padding: 5px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.emoticon-selector .emoticon-grid.ffz-no-emotes {
+    padding: 10px 20px;
+}
+
+.emoticon.ffz-favorite { position: relative; }
+
+.favorites-grid:not(:empty) + .ffz-no-emotes,
+.favorites-grid .emoticon.ffz-favorite:before { display: none }
+
+.emoticon.ffz-favorite:before {
+    content: "";
+    display: block;
+    height: 14px; width: 14px;
+    position: absolute;
+    right: 0; bottom: 0;
+    background: url("//cdn.frankerfacez.com/script/emoticon_favorite.png") no-repeat;
+}
+
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.menu-side-padding { padding-left: 20px; padding-right: 20px; }
 
 .emoticon-grid.collapsed span,
@@ -584,8 +610,30 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .ffz-ui-sub-menu-page,
 .ffz-ui-menu-page { overflow-y: auto; }
 
-.ffz-ui-menu-page[data-page="about"],
+.ffz-ui-menu-page[data-page="about"] .ffz-ui-sub-menu-page .chat-menu-content:first-child {
+    padding: 20px 0 10px;
+}
+
+.ffz-ui-sub-menu-page[data-page="about"],
 .ffz-ui-menu-page .chat-menu-content p { padding: 0 20px; }
+
+.ffz-ui-menu-page .version-list span { float: right }
+.ffz-ui-menu-page .version-list li:not(:last-of-type) {
+    border-bottom: 1px dotted rgba(127,127,127,0.5);
+}
+
+.ffz-ui-menu-page pre {
+    box-shadow: none !important;
+    white-space: pre-wrap;
+}
+
+#ffz-old-news-button {
+    text-align: center;
+    text-transform: none;
+    padding-bottom: 15px;
+}
+
+#ffz-old-news { display: none }
 
 
 .chat-container.dark .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
@@ -618,7 +666,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid:first-of-type .heading {
 	border-top: none;
 	padding-top: 0;
-	background-position-y: 0;
+    background-position: 20px 0;
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content {
@@ -661,6 +709,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 	list-style-type: none;
 	border-top: 1px solid rgba(0,0,0,0.2);
 	background-color: #eee;
+    margin: 0 1px 1px;
 }
 
 .ffz-ui-popup ul.menu:not(.sub-menu) {
@@ -695,7 +744,10 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 	float: left;
 }
 
-.ffz-ui-popup ul.sub-menu { background-color: #dfdfdf; }
+.ffz-ui-popup ul.sub-menu {
+    background-color: #dfdfdf;
+    margin: 0 1px;
+}
 
 .app-main.theatre .ffz-ui-popup ul.sub-menu,
 .chat-container.dark .ffz-ui-popup ul.sub-menu,
@@ -814,6 +866,10 @@ span.ffz-handle:after { left: 8px }
 	border-right: 1px solid rgba(0,0,0,0.2);
 }
 
+.ffz-ui-popup.dark ul.menu { border-top-color: rgba(255,255,255,0.1) }
+.ffz-ui-popup.dark ul.menu a { border-left-color: rgba(255,255,255,0.1) }
+.ffz-ui-popup.dark ul.sub-menu a { border-right-color: rgba(255,255,255,0.1) }
+
 .ffz-ui-popup ul.menu li.active {
 	background-color: #fff;
 }
@@ -898,12 +954,43 @@ span.ffz-handle:after { left: 8px }
 
 /* BTTV Menu Fixes */
 
+.bttv-incompatibility {
+    padding-top: 8px !important;
+}
+
 .ffz-ui-popup.dark .emoticon-grid .heading,
 .ffz-ui-popup.dark li.title { color: #fff; }
-.ffz-ui-popup.dark .ffz-ui-menu-page { background-color: #1e1e1e; }
+.ffz-ui-popup.dark .ffz-ui-menu-page { background-color: #101010; }
+.ffz-bttv .ffz-ui-popup .chat-menu-content p a {
+    padding: 0;
+}
+
+.ffz-bttv .ffz-ui-popup.dark ul.menu,
+.ffz-bttv .ffz-ui-popup.dark .ffz-ui-menu-page { margin: 0 }
+
+.ffz-ui-popup.dark .ffz-ui-menu-page .chat-menu-content .heading,
+.ffz-ui-popup.dark .ffz-ui-menu-page .emoticon-grid .heading {
+    border-color: rgba(255,255,255,0.1);
+}
+
+.ffz-ui-popup.dark ul.menu:not(.sub-menu),
+.ffz-ui-popup.dark .ffz-ui-menu-page { border: 1px solid rgba(255,255,255,0.1) }
+.ffz-ui-popup.dark .ffz-ui-menu-page { border-bottom: none }
+
+.ffz-bttv .emoticon.emoji { padding-top: 0 }
 
 /* Host Menu */
 
+.ffz-subwindow input {
+    padding: 5px;
+}
+
+.ffz-subwindow p {
+    margin-bottom: 0;
+    padding: 0 0 10px;
+}
+
+.ffz-subwindow .card,
 .ffz-channel-selector {
 	background-image: url("//cdn.frankerfacez.com/script/zreknarf-bg.png");
 	background-repeat: no-repeat;
@@ -946,6 +1033,29 @@ span.ffz-handle:after { left: 8px }
 }
 
 
+/* Oh my god this is awful why does Chat Replay move chat lines? */
+
+.app-main.theatre .chatReplay .chat-messages .chat-line .mod-icons,
+.ffz-dark .chatReplay .chat-messages .chat-line .mod-icons {
+    background-color: rgba(0,0,0,0.8);
+}
+
+.chatReplay .chat-messages .chat-line .mod-icons {
+    position: absolute;
+    z-index: 10;
+    left: 0; top: 2px; bottom: 2px;
+    padding: 4px 5px 4px 4px;
+    background: rgba(255,255,255,0.8);
+    transition: margin-left .08s linear;
+}
+
+.chatReplay .chat-messages .chat-line:hover .mod-icons {
+    margin-left: 0;
+}
+
+.chatReplay .chat-messages .horizontal-line { margin: 4px 0 }
+
+
 /* Positioning Fixes */
 
 body:not(.ffz-bttv) .ember-chat .chat-settings { bottom: 40px; }
@@ -953,8 +1063,36 @@ body:not(.ffz-bttv) .notification-controls .notify-menu { bottom: 25px; }
 body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 
+/* Dashboard Changes */
+
+#dash_main #stream-config-status, #chart_container.ffz-stat-chart { margin: 20px auto 0 }
+
+/*#dash_main #video_player { height: 303.75px }
+
+#stream-config-status { display: none }
+
+#delay_controls { float: left }
+#delay_controls + #commercial_buttons { float: right }
+#delay_controls + #commercial_buttons + div { clear: both }
+
+#delay_controls, #delay_controls + #commercial_buttons {
+    width: 50%;
+    margin-bottom: 20px;
+}
+
+#dash_main #delay_controls, #dash_main #commercial_buttons {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+#dash_main #delay_controls .section_header, #commercial_buttons .section_header { padding-top: 0 }
+#dash_main #delay_controls .ui-slider { margin-top: 18px }*/
+
+
 /* Menu Scrollbar */
 
+.conversations-list .scroll-container::-webkit-scrollbar,
 .chatters-container::-webkit-scrollbar,
 .ffz-scrollbar::-webkit-scrollbar,
 .ember-chat .chat-settings::-webkit-scrollbar,
@@ -965,9 +1103,11 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .emoticon-selector-box .all-emotes::-webkit-scrollbar,
 .ffz-ui-sub-menu-page::-webkit-scrollbar,
 .ffz-ui-menu-page::-webkit-scrollbar {
+    height: 6px;
 	width: 6px;
 }
 
+.conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .chatters-container::-webkit-scrollbar-thumb,
 .ffz-scrollbar::-webkit-scrollbar-thumb,
 .ember-chat .chat-settings::-webkit-scrollbar-thumb,
@@ -983,12 +1123,14 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
 
+.ffz-dark .conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .ffz-dark .ffz-scrollbar::-webkit-scrollbar-thumb,
 .ffz-dark .table::-webkit-scrollbar-thumb,
 .ffz-dark .conversation-window .conversation-content::-webkit-scrollbar-thumb,
 .ffz-dark .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
 .ffz-dark .conversation-input-bar .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 
+.theatre .conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .theatre .chatters-container::-webkit-scrollbar-thumb,
 .theatre .ffz-scrollbar::-webkit-scrollbar-thumb,
 .theatre .ember-chat .chat-settings::-webkit-scrollbar-thumb,
@@ -1027,6 +1169,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Fix Moderation Cards */
 
+img.channel_background[src=""],
 img.channel_background[src="null"] { display: none; }
 
 .ffz-moderation-card {
@@ -1034,7 +1177,11 @@ img.channel_background[src="null"] { display: none; }
 	max-width: 340px;
 }
 
-.ffz-moderation-card .extra-interface {
+.ember-chat .ffz-moderation-card .close-button {
+    right: 7px;
+}
+
+.ember-chat .ffz-moderation-card .extra-interface {
 	padding-top: 0;
 }
 
@@ -1043,7 +1190,9 @@ img.channel_background[src="null"] { display: none; }
 }
 
 .ffz-moderation-card.ffz-has-info h3.name {
-	margin-top: 0;
+	margin-top: -2px;
+	margin-bottom: 0;
+	padding-top: 0;
 	white-space: nowrap;
 }
 
@@ -1054,6 +1203,11 @@ img.channel_background[src="null"] { display: none; }
 	margin-left: 50px;
 	height: 18px;
 	line-height: 18px;
+    pointer-events: none;
+}
+
+.ffz-moderation-card .info .stat {
+    pointer-events: auto;
 }
 
 .ffz-moderation-card .info.channel-stats .stat {
@@ -1108,7 +1262,7 @@ img.channel_background[src="null"] { display: none; }
 	text-shadow: black 0 0 5px;
 }
 
-.ffz-moderation-card .channel_background {
+.ember-chat .ffz-moderation-card .channel_background {
 	width: 100%;
 	top: 0;
 }
@@ -1156,13 +1310,14 @@ img.channel_background[src="null"] { display: none; }
 	text-decoration: none;
 	font-size: 18px;
 	font-weight: bold;
+    margin-top: -1px !important;
 	color: #888 !important;
 }
 
 
 /* Chat Rows */
 
-.ffz-alias { font-style: italic; }
+.ffz-alias-italics .ffz-alias { font-style: italic; }
 
 .ember-chat .chat-messages .chat-line.ffz-has-deleted {
 	line-height: 30px;
@@ -1184,7 +1339,8 @@ img.channel_background[src="null"] { display: none; }
 	text-decoration: none;
 }
 
-body:not(.ffz-bttv) .more-messages-indicator {
+body:not(.ffz-bttv) .ember-chat-container:not(.chatReplay) .more-messages-indicator,
+body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	/* This looks better when it's full width. */
 	margin: 0 -20px;
 }
@@ -1198,6 +1354,10 @@ body:not(.ffz-bttv) .more-messages-indicator {
 }
 
 /* Emoticon Tooltips */
+
+.ffz-wide-tip hr {
+    margin: 5px 0;
+}
 
 .ffz-wide-tip .tipsy-inner {
 	min-width: 300px;
@@ -1310,6 +1470,8 @@ body:not(.ffz-bttv) .more-messages-indicator {
 
 /* Dumb Fixes */
 
+.channel-stats .stat { vertical-align: top; }
+
 .ffz-bttv .no-bttv { display: none; }
 
 .chat-container.dark, .app-main.theatre .chat-container,
@@ -1317,6 +1479,15 @@ body:not(.ffz-bttv) .more-messages-indicator {
 .app-main.theatre .ember-chat-container.chat-container,
 .ember-chat-container.force-dark {
 	box-shadow: none;
+}
+
+
+/* Banned Words */
+
+.deleted-word {
+    font-weight: bold;
+    opacity: 0.35;
+    cursor: pointer;
 }
 
 
@@ -1641,7 +1812,11 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 .ember-chat .chat-interface .more-messages-indicator.ffz-freeze-indicator {
 	opacity: 1;
 	cursor: default;
-	top: 0;
+    pointer-events: none;
+}
+
+.chat-container:not(.chatReplay) .chat-interface .more-messages-indicator.ffz-freeze-indicator {
+    top: 0;
 }
 
 /* Chat History */
@@ -1668,6 +1843,9 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	float: none;
 	margin-right: 0px;
 }
+
+.chat-history .chat-line.admin .from,
+.chat-history .chat-line.admin .colon { display: none }
 
 .chat-history .chat-line.admin .message { color: #666; }
 
@@ -1878,13 +2056,21 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 /* No Blue */
 
-.ffz-no-blue .theatre .conversations-list-icon,
-.ffz-no-blue.ffz-dark .conversations-list-icon,
+.ffz-no-blue #carousel .nav {
+    background-color: rgba(25,25,25,.5);
+}
+
+.ffz-no-blue .theatre .conversations-list-bottom-bar,
+.ffz-no-blue.ffz-dark .conversations-list-bottom-bar,
 .ffz-no-blue .theatre .conversations-list,
 .ffz-no-blue.ffz-dark .conversations-list,
+.ffz-no-blue .theatre .conversations-list-header,
 .ffz-no-blue .theatre .conversation-window,
 .ffz-no-blue.ffz-dark .conversation-window,
+.ffz-no-blue .theatre .conversation-system-message,
+.ffz-no-blue.ffz-dark .conversation-system-message,
 
+.ffz-no-blue .warp,
 .ffz-no-blue #large_nav .content,
 .ffz-no-blue #small_nav .content,
 .ffz-no-blue .chat-container.dark,
@@ -1940,10 +2126,18 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue .takeover #carousel,
 .ffz-no-blue #carousel_and_background,
 .ffz-no-blue #carousel .items .pic img,
+.ffz-no-blue .app-main.theatre .archives-contain,
+.ffz-no-blue.ffz-dark .archives-contain,
 .ffz-no-blue #content .turbo_landing {
 	background-color: #191919;
 }
 
+.ffz-no-blue .warp__anchor,
+.ffz-no-blue .warp__item--anchor,
+.ffz-no-blue .warp__drawer,
+.ffz-no-blue .leaf,
+.ffz-no-blue .app-main.theatre .archives-contain .list-video:hover,
+.ffz-no-blue.ffz-dark .archives-contain .list-video:hover,
 .ffz-no-blue .theatre .moderation-card .back-button,
 .ffz-no-blue .dark .moderation-card .back-button,
 .ffz-no-blue .force-dark .moderation-card .back-button
@@ -1956,8 +2150,8 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: #232323;
 }
 
-.ffz-no-blue .theatre .conversations-list-icon,
-.ffz-no-blue.ffz-dark .conversations-list-icon,
+.ffz-no-blue .theatre .conversations-list-bottom-bar,
+.ffz-no-blue.ffz-dark .conversations-list-bottom-bar,
 .ffz-no-blue .theatre .conversations-list .conversation-preview-line,
 .ffz-no-blue.ffz-dark .conversations-list .conversation-preview-line,
 .ffz-no-blue .theatre .conversation-window,
@@ -1991,7 +2185,8 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 .ffz-no-blue .theatre .conversation-header,
 .ffz-no-blue.ffz-dark .conversation-header,
-.ffz-no-blue .theatre .conversations-list .conversations-list-header,
+.ffz-no-blue .theatre .conversations-list .search-divider,
+.ffz-no-blue.ffz-dark .conversations-list .search-divider,
 .ffz-no-blue.ffz-dark .conversations-list .conversations-list-header,
 .ffz-no-blue .theatre .conversation-window.has-focus .conversation-header,
 .ffz-no-blue.ffz-dark .conversation-window.has-focus .conversation-header,
@@ -2036,14 +2231,13 @@ li[data-name="following"] a {
 	padding: 2px 5px;
 }
 
-#large_nav .game_filter.selected .ffz-follow-count { right: 13px; }
-
 #small_nav .ffz-follow-count {
 	position: absolute;
 	bottom: 2px;
-	right: 2px;
-	padding: 0 2px;
+	right: 5px;
+	padding: 2px;
 	font-size: 10px;
+    line-height: 10px;
 	background-color: #191919;
 	color: rgba(255,255,255,0.5);
 }
@@ -2052,8 +2246,6 @@ li[data-name="following"] a {
 #small_nav .content ul li a:hover .ffz-follow-count {
 	background-color: #101014;
 }
-
-#small_nav .game_filter.selected .ffz-follow-count { right: 5px; }
 
 /* Image Tooltips */
 
@@ -2109,7 +2301,9 @@ li[data-name="following"] a {
 }
 
 .ffz-classic-player:not(.ffz-top-conversations) .app-main.theatre .player .player-controls-bottom,
-.ffz-classic-player .app-main.theatre .player[data-fullscreen="true"] .player-controls-bottom {
+.ffz-classic-player:not(.ffz-top-conversations) .app-main.theatre .player[data-controls=true] .player-controls-bottom,
+.ffz-classic-player .app-main.theatre .player[data-fullscreen="true"] .player-controls-bottom,
+.ffz-classic-player .app-main.theatre .player[data-fullscreen="true"][data-controls=true] .player-controls-bottom {
 	padding-bottom: 0;
 }
 
@@ -2173,6 +2367,13 @@ li[data-name="following"] a {
 }
 
 /* Directory Logos */
+
+.item .meta .title a a,
+.item .meta .title a img { pointer-events: none }
+
+.ffz-directory-logo .meta p.title {
+    padding-top: 4px;
+}
 
 .ffz-directory-logo .meta p { width: auto; }
 
@@ -2240,10 +2441,15 @@ body:not(.ffz-bttv) .conversation-window .new-message-divider + .timestamp-line 
 	margin-top: -3px;
 }
 
-/* Fix the ignore-cta covering up messages with no way to dismiss it. */
-body:not(.ffz-bttv) .conversation-window .ignore-cta + .conversation-content {
+/* ignore-cta is a bit silly right now */
+body:not(.ffz-bttv) .conversation-window .ignore-cta:not(.hidden) + .conversation-content {
 	padding-top: 76px;
 }
+
+.conversation-window .conversation-system-message.ignore-cta-container {
+	padding-right: 26px;
+}
+
 
 /* Hide that which should be hidden. */
 .conversation-window.collapsed .ignore-cta,
@@ -2255,25 +2461,11 @@ body:not(.ffz-conv-title-clickable) .conversation-header a.conversation-header-n
 
 .conversation-window.has-unread .conversation-header .conversation-header-name { color: #fff !important; }
 
-.ffz-top-conversations:not(.ffz-bttv) .conversation-window.collapsed .conversation-header {
-	box-shadow: none;
-}
 
-.conversations-list:not(.ffz-bttv) .conversations-list-item:last-of-type {
-	border-bottom: none !important;
-}
+/* Top Conversations */
 
-.ffz-top-conversations:not(.ffz-bttv) .conversations-content .conversations-list-icon,
-.ffz-top-conversations:not(.ffz-bttv) .conversation-window {
-	border: 1px solid #dedede;
-	border-top: 0;
-}
-
-.ffz-top-conversations.ffz-dark:not(.ffz-bttv) .conversations-content .conversations-list-icon,
-.ffz-top-conversations.ffz-dark:not(.ffz-bttv) .conversation-window,
-.ffz-top-conversations:not(.ffz-bttv) .theatre .conversations-content .conversations-list-icon,
-.ffz-top-conversations:not(.ffz-bttv) .theatre .conversation-window {
-	border-color: rgba(255,255,255,0.2);
+body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
+	border-bottom: none;
 }
 
 .ffz-top-conversations .conversations-content {
@@ -2287,47 +2479,25 @@ body:not(.ffz-conv-title-clickable) .conversation-header a.conversation-header-n
 	top: 0px;
 }
 
-.ffz-top-conversations .conversations-list {
-	bottom: inherit;
-	top: 54px;
+.ffz-top-conversations .conversation-window.collapsed .conversation-header {
+	box-shadow: none;
 }
 
-.ffz-top-conversations.ffz-bttv .conversations-list { top: 46px; }
-
-.ffz-top-conversations.ffz-bttv .conversations-list:before,
-.ffz-top-conversations.ffz-bttv .conversations-list:after { display: none; }
-
-.ffz-top-conversations:not(.ffz-bttv) .conversations-list:before,
-.ffz-top-conversations:not(.ffz-bttv) .conversations-list:after {
-	bottom: 100%;
-	top: auto;
+.ffz-top-conversations .conversations-list-container.list-displayed {
+	top: 243px;
 }
 
-.ffz-top-conversations:not(.ffz-bttv) .conversations-list:before {
-	border-top-color: transparent;
-	border-bottom-color: #dedede;
+.ffz-top-conversations .conversations-list-bottom-bar {
+	border-top: none;
 }
 
-.ffz-top-conversations:not(.ffz-bttv) .conversations-list:after {
-	border-top-color: transparent;
-	border-bottom-color: #f2f2f2;
+.ffz-top-conversations .conversations-content .total-unread {
+	top: inherit;
+	bottom: -10px;
 }
 
-
-.ffz-dark.ffz-top-conversations:not(.ffz-bttv) .conversations-list:before,
-.ffz-top-conversations:not(.ffz-bttv) .theatre .conversations-list:before {
-	border-top-color: transparent;
-	border-bottom-color: #32323e;
-}
-
-.ffz-dark.ffz-top-conversations:not(.ffz-bttv) .conversations-list:after,
-.ffz-top-conversations:not(.ffz-bttv) .theatre .conversations-list:after {
-	border-top-color: transparent;
-	border-bottom-color: #121212;
-}
-
-
-.ffz-top-conversations .theatre .player-controls-bottom {
+.ffz-top-conversations .theatre .player-controls-bottom,
+.ffz-top-conversations .theatre .player[data-controls=true] .player-controls-bottom {
 	padding-bottom: 0;
 }
 
@@ -2337,7 +2507,51 @@ body:not(.ffz-conv-title-clickable) .conversation-header a.conversation-header-n
 
 .ffz-top-conversations #directory-list { padding-top: 50px; }
 
+
+/* Minimize Conversations */
+
+/*.ffz-minimize-conversations .conversation-window,*/
+.ffz-minimize-conversations .conversations-list-container {
+	transition: bottom ease-in-out 75ms, top ease-in-out 75ms, padding-bottom ease-in-out 75ms, padding-top ease-in-out 75ms;
+}
+
+.ffz-minimize-conversations .conversations-list-container,
+.ffz-minimize-conversations .conversations-content:hover {
+	pointer-events: all;
+}
+
+
+.ffz-minimize-conversations:not(.ffz-top-conversations) .conversations-content:hover .conversation-window.collapsed:not(.has-unread),
+.ffz-minimize-conversations:not(.ffz-top-conversations) .conversations-content:hover .conversations-list-container:not(.list-displayed) {
+	bottom: 0;
+	padding-top: 0;
+}
+
+.ffz-minimize-conversations:not(.ffz-top-conversations) .conversation-window.collapsed:not(.has-unread),
+.ffz-minimize-conversations:not(.ffz-top-conversations) .conversations-list-container:not(.list-displayed) {
+	bottom: -30px;
+	padding-top: 30px;
+}
+
+.ffz-minimize-conversations.ffz-top-conversations .conversations-content:hover .conversation-window.collapsed:not(.has-unread),
+.ffz-minimize-conversations.ffz-top-conversations .conversations-content:hover .conversations-list-container:not(.list-displayed) {
+	top: 0;
+	padding-bottom: 0;
+}
+
+.ffz-minimize-conversations.ffz-top-conversations .conversation-window.collapsed:not(.has-unread),
+.ffz-minimize-conversations.ffz-top-conversations .conversations-list-container:not(.list-displayed) {
+	top: -30px;
+	padding-bottom: 30px;
+}
+
+
 /* Following Page */
+
+.directory_header .nav li.ffz-manage-following {
+    float: right;
+    margin-right: 0;
+}
 
 .user.item { position: relative; }
 
@@ -2451,4 +2665,26 @@ body:not(.ffz-creative-showcase) .creative-hero,
 .ffz-creative-tags .creativetag-list a.active {
 	color: #fff !important;
 	background-color: #6441a5 !important;
+}
+
+/* Content-Box~! Down with Twitch randomly changing the box-sizing for everything! */
+
+#ffz-channel-table *,
+#ffz-group-table *,
+.ffz-ui-popup * {
+	box-sizing: content-box;
+}
+
+
+/* Dank * /
+
+.streams .ember-view[data-channel="memeathon"] .stream .thumb:after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 0; right: 0;
+    background: url("//cdn.frankerfacez.com/script/wow.gif") no-repeat;
+    background-size: contain;
+    background-position: bottom right;
+    pointer-events: none;
 }

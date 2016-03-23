@@ -1,10 +1,6 @@
 /* Regular Alternating Background */
 .conversation-chat-lines > div:nth-child(2n+0):before,
-.chat-history .chat-line:nth-child(2n+0):before,
-.ember-chat .chat-lines > div:nth-child(2n+0) .chat-line:before,
-
-/* ReChat */
-.ember-chat.chat-messages > .rechat-chat-line:nth-child(2n+0):before {
+.chat-line:nth-child(2n+0):before {
 	background-color: rgba(0,0,0, 0.1);
 }
 
@@ -14,40 +10,32 @@
 .ffz-dark .chat-history .chat-line:nth-child(2n+0):before,
 
 .theatre .conversation-chat-lines > div:nth-child(2n+0):before,
-.theatre .chat-history .chat-line:nth-child(2n+0):before,
-.theatre .ember-chat .chat-lines > div:nth-child(2n+0) .chat-line:before,
+.theatre .chat-line:nth-child(2n+0):before,
 
-.dark .chat-history .chat-line:nth-child(2n+0):before,
-.force-dark .chat-history .chat-line:nth-child(2n+0):before,
-.dark .chat-lines > div:nth-child(2n+0) .chat-line:before,
-.force-dark .chat-lines > div:nth-child(2n+0) .chat-line:before,
-
-/* ReChat */
-.theatre .chat-lines > .rechat-chat-line:nth-child(2n+0):before,
-.dark .chat-lines > .rechat-chat-line:nth-child(2n+0):before,
-.force-dark .chat-lines > .rechat-chat-line:nth-child(2n+0):before {
+.dark .chat-line:nth-child(2n+0):before,
+.force-dark .chat-line:nth-child(2n+0):before {
 	background-color: rgba(255,255,255, 0.05);
 }
 
 
 /* DEPRECIATED: Whisper Backgrounds */
-.ember-chat .chat-line.whisper-line:before {
+.chat-line.whisper:before {
 	background-color: rgba(185, 163, 227, 0.2);
 }
 
-.ember-chat .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before {
+.chat-line.whisper:nth-child(2n+0):before {
 	background-color: rgba(185, 163, 227, 0.4);
 }
 
-.theatre .chat-line.whisper-line:before,
-.dark .chat-line.whisper-line:before,
-.force-dark .chat-line.whisper-line:before {
+.theatre .chat-line.whisper:before,
+.dark .chat-line.whisper:before,
+.force-dark .chat-line.whisper:before {
 	background-color: rgba(100, 65, 165, 0.2);
 }
 
-.theatre .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before,
-.dark .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before,
-.force-dark .chat-lines > div:nth-child(2n+0) .chat-line.whisper-line:before {
+.theatre .chat-line.whisper:nth-child(2n+0):before,
+.dark .chat-line.whisper:nth-child(2n+0):before,
+.force-dark .chat-line.whisper:nth-child(2n+0):before {
 	background-color: rgba(100, 65, 165, 0.4);
 }
 
@@ -111,13 +99,11 @@
 
 
 /* DEPRECIATED: Mention Backgrounds */
-.chat-history .chat-line.ffz-mentioned:before,
-.ember-chat .chat-line.ffz-mentioned:before {
+.chat-line.ffz-mentioned:before {
 	background-color: rgba(255,127,127,0.2);
 }
 
-.chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
-.ember-chat .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before {
+.chat-line.ffz-mentioned:nth-child(2n+0):before {
 	background-color: rgba(255,127,127, 0.4);
 }
 
@@ -131,14 +117,10 @@
 	background-color: rgba(255,0,0, 0.2) !important;
 }
 
-
-.theatre .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
-
-.dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
-.force-dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
-
-.dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before,
-.force-dark .chat-lines > div:nth-child(2n+0) .chat-line.ffz-mentioned:before {
+.ffz-dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
+.theatre .chat-line.ffz-mentioned:nth-child(2n+0):before,
+.dark .chat-line.ffz-mentioned:nth-child(2n+0):before,
+.force-dark .chat-line.ffz-mentioned:nth-child(2n+0):before {
 	background-color: rgba(255,0,0, 0.3) !important;
 }
 

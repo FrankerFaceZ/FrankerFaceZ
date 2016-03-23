@@ -11,7 +11,7 @@ FFZ.settings_info.enhance_profile_following = {
 	type: "boolean",
 	value: true,
 
-	category: "Appearance",
+	category: "Directory",
 	name: "Enhanced Following Control",
 	help: "Display additional controls on your own profile's Following tab to make management easier."
 }
@@ -33,10 +33,8 @@ FFZ.prototype.setup_profile_following = function() {
 	// First, we need to hook the model. This is what we'll use to grab the following notification state,
 	// rather than making potentially hundreds of API requests.
 	var Following = App.__container__.resolve('model:kraken-channel-following');
-	if ( ! Following )
-		return;
-
-	this._hook_following(Following);
+	if ( Following )
+		this._hook_following(Following);
 
 	// Also try hooking that other model.
 	var Notification = App.__container__.resolve('model:notification');
@@ -71,7 +69,7 @@ FFZ.prototype.setup_profile_following = function() {
 		ffzInit: function() {
 			// Only process our own profile following page.
 			var user = f.get_user();
-			if ( ! f.settings.enhance_profile_following || ! user || user.login !== this.get('context.id') )
+			if ( ! f.settings.enhance_profile_following || ! user || user.login !== this.get('context.model.id') )
 				return;
 
 			var el = this.get('element'),
@@ -99,6 +97,9 @@ FFZ.prototype.setup_profile_following = function() {
 						following.load();
 					}
 
+                // Make sure the Following is modified.
+                f._hook_following(following);
+
 				// We use this weird function to prevent trying to load twice mucking things up.
 				setTimeout(refresher);
 			}
@@ -118,14 +119,15 @@ FFZ.prototype.setup_profile_following = function() {
 								continue;
 
 							// Is it an ember-view? Check its kids.
-							if ( added.classList.contains('ember-view') ) {
+                            if ( added.classList.contains('user') )
+                                t.ffzProcessUser(added);
+
+							else if ( added.classList.contains('ember-view') ) {
 								var users = added.querySelectorAll('.user.item');
 								if ( users )
 									for(var y=0; y < users.length; y++)
 										t.ffzProcessUser(users[y]);
-
-							} else if ( added.classList.contains('user') )
-								t.ffzProcessUser(added);
+							}
 						}
 					}
 				});
@@ -215,8 +217,8 @@ FFZ.prototype.setup_profile_following = function() {
 				follow.textContent = 'Updating';
 
 				(was_following ?
-						Twitch.api.del("users/:login/follows/channels/" + user_id) :
-						Twitch.api.put("users/:login/follows/channels/" + user_id, {notifications: false}))
+						utils.api.del("users/:login/follows/channels/" + user_id) :
+						utils.api.put("users/:login/follows/channels/" + user_id, {notifications: false}))
 					.done(function() {
 						data = f._following_cache[user_id] = was_following ? null : [new Date(Date.now() - (f._ws_server_offset||0)), false];
 					})
@@ -235,7 +237,7 @@ FFZ.prototype.setup_profile_following = function() {
 				notif.disabled = true;
 				notif.textContent = 'Updating';
 
-				Twitch.api.put("users/:login/follows/channels/" + user_id, {notifications: !was_following})
+				utils.api.put("users/:login/follows/channels/" + user_id, {notifications: !was_following})
 					.done(function() {
 						data[1] = ! was_following;
 					})
@@ -254,37 +256,106 @@ FFZ.prototype.setup_profile_following = function() {
 		}
 	});
 
+    /*// Try adding a nice Manage button to the Following page of the directory
+    var DirectoryFollowing = App.__container__.resolve('view:directory');
+    if ( DirectoryFollowing ) {
+        DirectoryFollowing.reopen({
+            didInsertElement: function() {
+                this._super();
+                try {
+                    this.ffzInit();
+                } catch(err) {
+                    f.error("view:following ffzInit: " + err);
+                }
+            },
+
+            willClearRender: function() {
+                try {
+                    this.ffzTeardown();
+                } catch(err) {
+                    f.error("view:following ffzTeardown: " + err);
+                }
+                this._super();
+            },
+
+            ffzInit: function() {
+                f.log("view:directory ffzInit called!", this);
+
+                var el = this.get('element'),
+                    nav_bar = el && el.querySelector('.directory_header ul.nav'),
+                    user = f.get_user();
+
+                if ( ! nav_bar || ! user || ! user.login || ! f.settings.enhance_profile_following )
+                    return;
+
+                var li = document.createElement('li'),
+                    btn = document.createElement('a'),
+                    t = this;
+
+                li.className = 'ffz-manage-following';
+                btn.innerHTML = 'Manage Following';
+                btn.href = '/' + user.login + '/profile/following';
+
+                btn.addEventListener('click', function(e) {
+                    var Channel = App.__container__.resolve('model:channel');
+                    if ( ! Channel )
+                        return;
+
+                    e.preventDefault();
+                    t.get('controller').transitionTo('profile.following', Channel.find({id: user.login}).load());
+                    return false;
+                });
+
+                li.appendChild(btn);
+                nav_bar.appendChild(li);
+            },
+
+            ffzTeardown: function() {
+                this.$('.ffz-manage-following').remove();
+            }
+        });
+
+        try {
+            DirectoryFollowing.create().destroy();
+        } catch(err) { }
+    } else
+        f.log("Could not find Directory Following View.");*/
+
 	// Now, rebuild any views.
 	try {
 		ProfileView.create().destroy();
 	} catch(err) { }
 
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
-	for(var key in views) {
-		var view = views[key];
-		if ( ! view || !(view instanceof ProfileView) )
-			continue;
+	var views = window.App && App.__container__.lookup('-view-registry:main');
+    if ( views )
+        for(var key in views) {
+            var view = views[key];
+            /*if ( DirectoryFollowing && view instanceof DirectoryFollowing ) {
+                try {
+                    view.ffzInit();
+                } catch(err) {
+                    this.error("setup: view:following: ffzInit: " + err);
+                }
 
-		this.log("Manually updating existing Following View.", view);
-		try {
-			var following = view.get('context.following');
-			this._hook_following(following);
-		} catch(err) {
-			this.error("setup: view:channel/following: model hook: " + err);
-		}
-
-		try {
-			view.ffzInit();
-		} catch(err) {
-			this.error("setup: view:channel/following: " + err);
-		}
-	}
+            } else*/ if ( view instanceof ProfileView ) {
+                this.log("Manually updating existing Following View.", view);
+                try {
+                    view.ffzInit();
+                } catch(err) {
+                    this.error("setup: view:channel/following: " + err);
+                }
+            }
+        }
 }
 
 
 FFZ.prototype._hook_following = function(Following) {
 	var f = this;
+    if ( Following.ffz_hooked )
+        return;
+
 	Following.reopen({
+        ffz_hooked: true,
 		apiLoad: function(e) {
 			var user = f.get_user(),
 				channel_id = this.get('id'),
