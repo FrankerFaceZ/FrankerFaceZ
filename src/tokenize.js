@@ -417,16 +417,66 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 	return tokens;
 }
 
+
+FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
+    var cached = msgObject.get('cachedTokens');
+    if ( cached )
+        return cached;
+
+    var msg = msgObject.get('message'),
+        room_id = msgObject.get('room'),
+        from_user = msgObject.get('from'),
+        user = this.get_user(),
+        from_me = user && from_user === user.login,
+        emotes = msgObject.get('tags.emotes'),
+        tokens = [msg];
+
+    if ( helpers && helpers.linkifyMessage )
+        tokens = helpers.linkifyMessage(tokens, delete_links);
+
+    if ( user && user.login && helpers && helpers.mentionizeMessage )
+        tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
+    if ( helpers && helpers.emoticonizeMessage && emotes )
+        tokens = helpers.emoticonizeMessage(tokens, emotes);
+
+    // FrankerFaceZ Extras
+    tokens = this._remove_banned(tokens);
+    tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
+
+    if ( this.settings.parse_emoji )
+        tokens = this.tokenize_emoji(tokens);
+
+    var display = msgObject.get('tags.display-name');
+    if ( display && display.length )
+        FFZ.capitalization[from_user] = [display.trim(), Date.now()];
+
+    if ( ! from_me ) {
+        tokens = this.tokenize_mentions(tokens);
+        for(var i=0; i < tokens.length; i++) {
+            var token = tokens[i];
+            if ( token.type === 'mention' && ! token.isOwnMessage ) {
+                msgObject.set('ffz_has_mention', true);
+                break;
+            }
+        }
+    }
+
+    msgObject.set('cachedTokens', tokens);
+    return tokens;
+}
+
+
 FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
-    var msg = msgObject.get && (msgObject.get('message') || msgObject.get('body')) || msgObject.message,
-        room_id = msgObject.get && msgObject.get('room') || msgObject.room,
-        from_user = msgObject.get && msgObject.get('from') || msgObject.from,
+    var msg = msgObject.message,
+        room_id = msgObject.room,
+        from_user = msgObject.from,
         user = this.get_user(),
         from_me = user && from_user === user.login,
-        emotes = msgObject.get && msgObject.get('tags.emotes') || msgObject.tags && msgObject.tags.emotes,
+        emotes = msgObject.tags && msgObject.tags.emotes,
         tokens = [msg];
 
 	// Standard tokenization
@@ -474,7 +524,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
                 continue;
 
 			// We have a mention!
-			msgObject.ffz_has_mention = true;
+            msgObject.ffz_has_mention = true;
 
 			// If we have chat tabs/rows, update the status.
 			if ( room_id && ! this.has_bttv && this._chatv ) {

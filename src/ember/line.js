@@ -937,6 +937,19 @@ FFZ.prototype._modify_vod_line = function(component) {
                 this.$(".deleted").replaceWith(this.buildMessageHTML());
         }),*/
 
+        tokenizedMessage: function() {
+			try {
+                return f.tokenize_vod_line(this.get('msgObject'), !(this.get('enableLinkification') || this.get('isModeratorOrHigher')));
+			} catch(err) {
+				f.error("vod-chat-line tokenizedMessage: " + err);
+				return this._super();
+			}
+		}.property("msgObject.message", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
+
+        buildHorizontalLineHTML: function() {
+            return '<div class="horizontal-line"><span>' + this.get('msgObject.timestamp') + '</span></div>';
+        },
+
         buildModIconsHTML: function() {
             if ( ! this.get("isViewerModeratorOrHigher") || this.get("isModeratorOrHigher") )
                 return "";
@@ -951,16 +964,23 @@ FFZ.prototype._modify_vod_line = function(component) {
             return '<span clas="deleted">&lt;message deleted&gt;</span>';
         },
 
-        render: function(e) {
+        didUpdate: function() { this.ffzRender() },
+        didInsertElement: function() { this.ffzRender() },
+
+        ffzRender: function() {
+            var el = this.get('element'), output;
+
             if ( this.get('msgObject.isHorizontalLine') )
-                e.push(this.buildHorizontalLineHTML());
+                output = this.buildHorizontalLineHTML();
             else {
-                e.push(this.buildSenderHTML());
-                if ( this.get("msgObject.deleted") )
-                    e.push(this.buildDeletedMessageHTML())
+                output = this.buildSenderHTML();
+                if ( this.get('msgObject.deleted') )
+                    output += this.buildDeletedMessageHTML()
                 else
-                    e.push(this.buildMessageHTML());
+                    output += this.buildMessageHTML();
             }
+
+            el.innerHTML = output;
         },
 
         click: function(e) {
@@ -968,12 +988,6 @@ FFZ.prototype._modify_vod_line = function(component) {
                 e.preventDefault();
                 this.sendAction("timeoutUser", this.get("msgObject.id"));
             }
-        },
-
-        didInsertElement: function() {
-            this._super();
-            if ( this.get("msgObject.ffz_has_mention") )
-                this.get("element").classList.add("ffz-mentioned");
         }
     });
 }
