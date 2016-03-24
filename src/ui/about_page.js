@@ -276,9 +276,7 @@ FFZ.menu_pages.about = {
                     player_head = createElement('div'),
                     player_list = createElement('ul'),
 
-                    pkeys = Object.keys(this.players),
-                    player = pkeys.length && this.players[pkeys[0]] && this.players[pkeys[0]].ffz_player,
-                    player_data,
+                    player, player_data,
 
                     ver_head = createElement('div'),
                     vers = createElement('ul'),
@@ -291,6 +289,12 @@ FFZ.menu_pages.about = {
 
                     log_head = createElement('div'),
                     logs = createElement('pre');
+
+                for(var pkey in this.players) {
+                    player = this.players[pkey] && this.players[pkey].player;
+                    if ( player )
+                        break;
+                }
 
                 if ( player ) {
                     try {
