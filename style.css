@@ -533,7 +533,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
     -ms-user-select: none;
 }
 
-.emoticon-selector .emoticon-grid.ffz-no-emotes {
+.ffz-ui-sub-menu-page[data-page="favorites"] .emoticon-grid.ffz-no-emotes {
     padding: 10px 20px;
 }
 

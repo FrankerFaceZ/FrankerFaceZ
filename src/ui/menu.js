@@ -2,6 +2,8 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
+    reported_sets = [],
+
 	fix_menu_position = function(container) {
 		var swapped = document.body.classList.contains('ffz-sidebar-swap') && ! document.body.classList.contains('ffz-portrait');
 
@@ -540,6 +542,8 @@ FFZ.menu_pages.channel = {
 					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
 					grid.appendChild(header);
 
+                    var known_sets = [];
+
 					for(var emotes=product.get("emoticons") || [], i=0; i < emotes.length; i++) {
 						var emote = emotes[i];
 						if ( emote.state !== "active" )
@@ -550,6 +554,9 @@ FFZ.menu_pages.channel = {
 							img_set = 'image-set(url("' + constants.TWITCH_BASE + emote.id + '/1.0") 1x, url("' + constants.TWITCH_BASE + emote.id + '/2.0") 2x), url("' + constants.TWITCH_BASE + emote.id + '/3.0") 4x)';
 
 						s.className = 'emoticon ffz-tooltip ffz-tooltip-no-credit' + (!can_use ? " locked" : "");
+
+                        if ( known_sets.indexOf(emote.emoticon_set) === -1 )
+                            known_sets.push(emote.emoticon_set);
 
                         if ( emote.emoticon_set ) {
                             var favs = this.settings.favorite_emotes["twitch-" + emote.emoticon_set];
@@ -582,6 +589,13 @@ FFZ.menu_pages.channel = {
 						grid.appendChild(s);
 						c++;
 					}
+
+                    if ( reported_sets.indexOf(product.get('id')) === -1 && known_sets.length ) {
+                        reported_sets.push(product.get('id'));
+                        this.log("Sets for " + product.get('id') + " [" + product.get('ticketProductId') + "]: " + JSON.stringify(known_sets));
+                        this.ws_send("report_twitch_set", [product.get('id'), product.get('ticketProductId'), known_sets]);
+                    }
+
 
 					if ( c > 0 )
 						inner.appendChild(grid);
