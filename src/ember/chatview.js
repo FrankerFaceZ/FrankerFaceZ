@@ -379,7 +379,7 @@ FFZ.prototype.setup_chatview = function() {
 
 				var total = this.get('invitedPrivateGroupRooms.length') || 0;
 
-				if ( ! f._chatv._ffz_tabs )
+				if ( ! f._chatv._ffz_tabs && f._chatv.ffz_unread )
 					for(var room_id in f._chatv.ffz_unread)
 						if ( f._chatv.ffz_unread[room_id] )
 							total++;
@@ -389,7 +389,7 @@ FFZ.prototype.setup_chatview = function() {
 
 			_kickUserFromRoomNoLongerInList: function() {
 				// Remove an unread notice for any missing channels.
-				if ( f._chatv ) {
+				if ( f._chatv && f._chatv.ffz_unread ) {
 					var updated = false;
 					for(var room_id in f._chatv.ffz_unread)
 						if ( f._chatv.ffz_unread[room_id] && (!f.rooms[room_id] || !f.rooms[room_id].room) ) {
@@ -487,22 +487,26 @@ FFZ.prototype._modify_cview = function(view) {
 			try {
 				this.ffzInit();
 			} catch(err) {
-				f.error("ChatView didInsertElement: " + err);
+				f.error("view:chat ffzInit error: " + err);
 			}
 		},
+
+        didUpdate: function() {
+            this._super();
+            f.log("view:chat didUpdate", this)
+        },
 
 		willClearRender: function() {
 			try {
 				this.ffzTeardown();
 			} catch(err) {
-				f.error("ChatView willClearRender: " + err);
+				f.error("view:chat ffzTeardown error: " + err);
 			}
 			this._super();
 		},
 
 		ffzInit: function() {
-			f._chatv = this;
-            this.ffz_unread = {};
+            f._chatv = this;
 
 			this.$('.textarea-contain').append(f.build_ui_link(this));
 			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
@@ -571,11 +575,6 @@ FFZ.prototype._modify_cview = function(view) {
 
 		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
 			f.update_ui_link();
-
-            if ( ! this.ffz_unread )
-                f.log("!! Chat View Not Initialized !!", this);
-
-            // Temporary fix
             this.ffz_unread = this.ffz_unread || {};
 
 			// Close mod cards when changing to a new room.
@@ -584,7 +583,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 			var room = this.get('controller.currentRoom'),
 				room_id = room && room.get('id'),
-				was_unread = room_id && this.ffz_unread && this.ffz_unread[room_id],
+				was_unread = room_id && this.ffz_unread[room_id],
 				update_height = false;
 
 			if ( room ) {
@@ -714,6 +713,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 		ffzUpdateUnread: function(target_id) {
 			var current_id = this.get('controller.currentRoom.id');
+            this.ffz_unread = this.ffz_unread || {};
 
 			if ( target_id === current_id )
 				// We don't care about updates to the current room.
@@ -1051,9 +1051,11 @@ FFZ.prototype._modify_cview = function(view) {
 
 
 			// Chat Room Management Button
-			link.className = 'button glyph-only tooltip';
+			link.className = 'button glyph-only';
 			link.title = "Chat Room Management";
 			link.innerHTML = constants.ROOMS + '<span class="notifications"></span>';
+
+            jQuery(link).tipsy({gravity: "n", offset: 5});
 
 			link.addEventListener('click', function() {
 				var controller = view.get('controller');

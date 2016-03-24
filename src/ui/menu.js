@@ -561,7 +561,7 @@ FFZ.menu_pages.channel = {
                         if ( emote.emoticon_set ) {
                             var favs = this.settings.favorite_emotes["twitch-" + emote.emoticon_set];
                             s.classList.add('ffz-can-favorite');
-                            s.classList.toggle('ffz-favorite', favs && favs.indexOf(emote.id) !== -1);
+                            s.classList.toggle('ffz-favorite', favs && favs.indexOf(emote.id) !== -1 || false);
                         }
 
                         s.setAttribute('data-emote', emote.id);

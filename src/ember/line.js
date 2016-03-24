@@ -607,6 +607,18 @@ FFZ.prototype.setup_line = function() {
     else
         this.log("Couldn't find VOD Chat Line component.");
 
+
+    var other_lines = ['message-line','whisper-line'];
+    for(var i=0; i < other_lines.length; i++) {
+        var component = utils.ember_resolve('component:' + other_lines[i]);
+        if ( component )
+            component.reopen({
+                didUpdate: function() { },
+                didInsertElement: function() { }
+            });
+    }
+
+
 	// Store the capitalization of our own name.
 	var user = this.get_user();
 	if ( user && user.name )
@@ -810,12 +822,24 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
         classNameBindings: is_vod ? ["msgObject.ffz_has_mention:ffz-mentioned"] : [":message-line", ":chat-line", "msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
         attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
-        render: function(e) {
-            e.push(this.buildSenderHTML());
-            if ( this.get("msgObject.deleted") )
-                e.push(this.buildDeletedMessageHTML())
+        didUpdate: function() {
+            this.ffzRender();
+        },
+
+        didInsertElement: function() {
+            this.ffzRender();
+        },
+
+        ffzRender: function() {
+            var el = this.get('element'),
+                output = this.buildSenderHTML();
+
+            if ( this.get('msgObject.deleted') )
+                output += this.buildDeletedMessageHTML()
             else
-                e.push(this.buildMessageHTML());
+                output += this.buildMessageHTML();
+
+            el.innerHTML = output;
         },
 
         ffzWasDeleted: function() {
