@@ -295,6 +295,10 @@ FFZ.prototype.setup_layout = function() {
 
 		}.observes("isRightColumnClosed", "playerSize", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
 
+        ffzUpdatePlayerStyle: function() {
+            Ember.propertyDidChange(Layout, 'playerStyle');
+        }.observes('windowHeight', 'windowWidth'),
+
 		ffzUpdatePortraitCSS: function() {
 			var portrait = this.get("portraitMode");
 			document.body.classList.toggle("ffz-portrait", ! f.has_bttv && portrait);
@@ -309,18 +313,6 @@ FFZ.prototype.setup_layout = function() {
 			}
 		}.observes("isRightColumnClosed", "rightColumnWidth", "portraitMode", "playerSize")
 	});
-
-	/*
-	// Try modifying the closer.
-	var rc = jQuery("#right_close");
-	if ( ! rc || ! rc.length )
-		return;
-
-	rc.draggable({
-		axis: "x",
-		drag: Layout.ffzUpdateWidth.bind(Layout),
-		stop: Layout.ffzUpdateWidth.bind(Layout)
-		});*/
 
 
 	// Force the layout to update.
