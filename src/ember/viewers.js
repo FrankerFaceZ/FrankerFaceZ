@@ -22,7 +22,7 @@ FFZ.settings_info.sort_viewers = {
 
 FFZ.prototype.setup_viewers = function() {
 	this.log("Hooking the Ember Viewers controller.");
-	var Viewers = utils.ember_lookup('controller:viewers');
+	var Viewers = utils.ember_resolve('controller:viewers');
 	if ( Viewers )
 		this._modify_viewers(Viewers);
 
@@ -61,11 +61,11 @@ FFZ.prototype._modify_viewers = function(controller) {
 				// Get the broadcaster name.
 				var Channel = utils.ember_lookup('controller:channel'),
 					room_id = this.get('parentController.model.id'),
-					broadcaster = Channel && Channel.get('id');
+					broadcaster = Channel && Channel.get('model.id');
 
 				// We can get capitalization for the broadcaster from the channel.
 				if ( broadcaster ) {
-					var display_name = Channel.get('display_name');
+					var display_name = Channel.get('model.display_name');
 					if ( display_name )
 						FFZ.capitalization[broadcaster] = [display_name, Date.now()];
 				}

@@ -432,11 +432,11 @@ FFZ.prototype._modify_directory_host = function(dir) {
 	dir.reopen({
 		didInsertElement: function() {
 			this._super();
-			try {
+			//try {
 				this.ffzInit();
-			} catch(err) {
-				f.error("directory/host ffzInit: " + err);
-			}
+			//} catch(err) {
+				//f.error("directory/host ffzInit: " + err);
+			//}
 		},
 
 		willClearRender: function() {
@@ -626,7 +626,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 
 				if ( hosts && hosts.length > 1 ) {
 					title.textContent = utils.number_commas(hosts.length) + ' hosting ' + utils.sanitize(target.display_name);
-					title.title = _.sortBy(hosts, "name").mapProperty("display_name").join(", ");
+					title.title = _.sortBy(hosts, "name").mapBy("display_name").join(", ");
 					jQuery(title).tipsy({gravity: 's'});
 				}
 			}
