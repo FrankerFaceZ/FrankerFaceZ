@@ -91,7 +91,7 @@ FFZ.settings_info.input_emoji = {
 
 FFZ.prototype.setup_chat_input = function() {
 	this.log("Hooking the Ember Chat Input component.");
-	var Input = App.__container__.resolve('component:twitch-chat-input'),
+	var Input = utils.ember_resolve('component:twitch-chat-input'),
 		f = this;
 
 	if ( ! Input )
@@ -99,7 +99,7 @@ FFZ.prototype.setup_chat_input = function() {
 
 	this._modify_chat_input(Input);
 
-	var views = this._roomv && this._roomv._viewRegistry || window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = this._roomv && this._roomv._viewRegistry || utils.ember_views();
 	for(var key in views) {
 		var v = views[key];
 		if ( v instanceof Input ) {

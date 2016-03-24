@@ -35,7 +35,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 133,
+	major: 3, minor: 5, revision: 134,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -108,19 +108,16 @@ FFZ.prototype.get_user = function() {
 	if ( this.__user )
 		return this.__user;
 
-	var user;
-	if ( window.App ) {
-		var nc = App.__container__.lookup('controller:login');
-		user = nc ? nc.get('userData') : undefined;
-	}
+    var LC = FFZ.utils.ember_lookup('controller:login'),
+        user = LC ? LC.get('userData') : undefined;
 
-	if ( ! user && window.PP && PP.login )
-		user = PP;
+    if ( ! user && window.PP && PP.login )
+        user = PP;
 
-	if ( user )
-		this.__user = user;
+    if ( user )
+        this.__user = user;
 
-	return user;
+    return user;
 }
 
 
@@ -225,10 +222,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return;
 	}
 
-	var loaded = window.App != undefined &&
-				 App.__container__ != undefined &&
-				 App.__container__.resolve('model:room') != undefined;
-
+	var loaded = FFZ.utils.ember_resolve('model:room');
 	if ( !loaded ) {
 		increment = increment || 10;
 		if ( delay >= 60000 )
@@ -384,7 +378,7 @@ FFZ.prototype.init_ember = function(delay) {
 
 
 	// Make an alias so they STOP RENAMING THIS ON ME
-	var Settings = App.__container__.lookup('controller:settings');
+	var Settings = FFZ.utils.ember_lookup('controller:settings');
 	if ( Settings && Settings.get('settings') === undefined )
 		Settings.reopen({settings: Ember.computed.alias('model')});
 

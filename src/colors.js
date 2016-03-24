@@ -132,8 +132,8 @@ FFZ.prototype.setup_colors = function() {
 	this._update_colors();
 
 	// Events for rebuilding colors.
-	var Layout = window.App && App.__container__.lookup('controller:layout'),
-		Settings = window.App && App.__container__.lookup('controller:settings');
+	var Layout = utils.ember_lookup('controller:layout'),
+		Settings = utils.ember_lookup('controller:settings');
 
 	if ( Layout )
 		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
@@ -656,8 +656,8 @@ FFZ.prototype._rebuild_colors = function() {
 
 FFZ.prototype._update_colors = function(darkness_only) {
 	// Update the lines. ALL of them.
-	var Layout = window.App && App.__container__.lookup('controller:layout'),
-		Settings = window.App && App.__container__.lookup('controller:settings'),
+	var Layout = utils.ember_lookup('controller:layout'),
+		Settings = utils.ember_lookup('controller:settings'),
 
 		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),
         cr_dark = this.settings.dark_twitch || (Layout && Layout.get('isTheatreMode'));

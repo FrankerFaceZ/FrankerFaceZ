@@ -56,7 +56,9 @@ FFZ.prototype.find_rechat = function() {
 			// Look-up dark mode.
 			var dark_chat = this.settings.dark_twitch;
 			if ( ! dark_chat ) {
-				var model = window.App ? App.__container__.lookup('controller:settings').get('model') : undefined;
+                var Settings = utils.ember_lookup('controller:settings'),
+                    model = Settings ? Settings.get('model') : undefined;
+
 				dark_chat = model && model.get('darkMode');
 			}
 
@@ -89,7 +91,9 @@ FFZ.prototype.find_rechat = function() {
 	// Look-up dark mode.
 	var dark_chat = this.settings.dark_twitch;
 	if ( ! dark_chat ) {
-		var model = window.App ? App.__container__.lookup('controller:settings').get('model') : undefined;
+        var Settings = utils.ember_lookup('controller:settings'),
+            model = Settings ? Settings.get('model') : undefined;
+
 		dark_chat = model && model.get('darkMode');
 	}
 
@@ -147,8 +151,8 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 		user_id = line.getAttribute('data-sender'),
 		room_id = line.getAttribute('data-room'),
 
-		Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings'),
+		Layout = utils.ember_lookup('controller:layout'),
+		Settings = utils.ember_lookup('controller:settings'),
 		is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),
 
 		badges_el = line.querySelector('.badges'),

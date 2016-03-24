@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('../constants');
+	constants = require('../constants'),
+    utils = require('../utils');
 
 // --------------------
 // Initialization
@@ -18,7 +19,7 @@ FFZ.prototype.build_ui_link = function(view) {
 
 
 FFZ.prototype.update_ui_link = function(link) {
-	var controller = window.App && App.__container__.lookup('controller:chat');
+	var controller = utils.ember_lookup('controller:chat');
 	link = link || document.querySelector('a.ffz-ui-toggle');
 	if ( !link || !controller )
 		return;

@@ -336,7 +336,7 @@ FFZ.prototype.refresh_chat = function() {
         return;
 
     // There are chat-lines in the DOM and they aren't chat replay.
-    var controller = App.__container__.lookup('controller:chat');
+    var controller = utils.ember_lookup('controller:chat');
     if ( ! controller )
         return;
 
@@ -351,7 +351,7 @@ FFZ.prototype.setup_chatview = function() {
 
 	this.log("Hooking the Ember Chat controller.");
 
-	var Chat = App.__container__.lookup('controller:chat'),
+	var Chat = utils.ember_lookup('controller:chat'),
 		f = this;
 
 	if ( Chat ) {
@@ -442,7 +442,7 @@ FFZ.prototype.setup_chatview = function() {
 
 	this.log("Hooking the Ember Chat view.");
 
-	var Chat = App.__container__.resolve('view:chat');
+	var Chat = utils.ember_resolve('view:chat');
 	this._modify_cview(Chat);
 
 	// For some reason, this doesn't work unless we create an instance of the
@@ -452,7 +452,7 @@ FFZ.prototype.setup_chatview = function() {
 	} catch(err) { }
 
 	// Modify all existing Chat views.
-	var views = window.App && App.__container__.lookup('-view-registry:main');
+	var views = utils.ember_views();
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
 			continue;
@@ -470,24 +470,6 @@ FFZ.prototype.setup_chatview = function() {
 			this.error("setup: build_ui_link: " + err);
 		}
 	}
-
-    /*this.log("Hooking the Ember chat-right-column Component.");
-    var Column = App.__container__.resolve('component:')
-
-	/*this.log("Hooking the Ember 'Right Column' controller. Seriously...");
-	var Column = App.__container__.lookup('controller:right-column');
-	if ( ! Column )
-		return;
-
-	Column.reopen({
-		ffzFixTabs: function() {
-			if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs ) {
-				setTimeout(function() {
-					f._chatv && f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
-				},0);
-			}
-		}.observes("firstTabSelected")
-	});*/
 }
 
 
@@ -685,8 +667,8 @@ FFZ.prototype._modify_cview = function(view) {
 		},
 
 		ffzUpdateHost: function() {
-			var Channel = App.__container__.lookup('controller:channel'),
-				Room = App.__container__.resolve('model:room'),
+			var Channel = utils.ember_lookup('controller:channel'),
+				Room = utils.ember_resolve('model:room'),
 				target = Room && Channel && Channel.get('hostModeTarget'),
 
 				updated = false;
@@ -1224,7 +1206,7 @@ FFZ.prototype.connect_extra_chat = function() {
 	if ( user && user.login ) {
 		// Make sure we're in the user's room.
 		if ( ! this.rooms[user.login] || this.rooms[user.login].room ) {
-			var Room = App.__container__.resolve('model:room');
+			var Room = utils.ember_resolve('model:room');
 			Room && Room.findOne(user.login);
 		}
 	}
@@ -1249,7 +1231,7 @@ FFZ.prototype.connect_extra_chat = function() {
 
 
 FFZ.prototype.disconnect_extra_chat = function() {
-	var Chat = window.App && App.__container__.lookup('controller:chat'),
+	var Chat = utils.ember_lookup('controller:chat'),
 		current_channel_id = Chat && Chat.get('currentChannelRoom.id'),
 		current_id = Chat && Chat.get('currentRoom.id'),
 		user = this.get_user();
@@ -1284,7 +1266,7 @@ FFZ.prototype._join_room = function(room_id, no_rebuild) {
 	// Make sure we're not already there.
 	if ( ! this.rooms[room_id] || ! this.rooms[room_id].room ) {
 		// Okay, fine. Get it.
-		var Room = App.__container__.resolve('model:room');
+		var Room = utils.ember_resolve('model:room');
 		Room && Room.findOne(room_id);
 	}
 
@@ -1312,7 +1294,7 @@ FFZ.prototype._leave_room = function(room_id, no_rebuild) {
 	if ( ! this.rooms[room_id] || ! this.rooms[room_id].room )
 		return did_leave;
 
-	var Chat = App.__container__.lookup('controller:chat'),
+	var Chat = utils.ember_lookup('controller:chat'),
 		r = this.rooms[room_id].room,
 		user = this.get_user();
 

@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+    utils = require('../utils');
 
 
 // --------------------
@@ -21,13 +22,13 @@ FFZ.settings_info.sort_viewers = {
 
 FFZ.prototype.setup_viewers = function() {
 	this.log("Hooking the Ember Viewers controller.");
-	var Viewers = App.__container__.resolve('controller:viewers');
+	var Viewers = utils.ember_lookup('controller:viewers');
 	if ( Viewers )
 		this._modify_viewers(Viewers);
 
 	/* Disable for now because Twitch reverted this change
 	this.log("Hooking the Ember Viewers view.");
-	var ViewerView = App.__container__.resolve('view:viewers');
+	var ViewerView = utils.ember_resolve('view:viewers');
 	if ( ViewerView )
 		this._modify_viewer_view(ViewerView);*/
 }
@@ -58,7 +59,7 @@ FFZ.prototype._modify_viewers = function(controller) {
 					last_category = null;
 
 				// Get the broadcaster name.
-				var Channel = App.__container__.lookup('controller:channel'),
+				var Channel = utils.ember_lookup('controller:channel'),
 					room_id = this.get('parentController.model.id'),
 					broadcaster = Channel && Channel.get('id');
 

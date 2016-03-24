@@ -35,7 +35,7 @@ FFZ.settings_info.srl_races = {
 // ---------------
 
 FFZ.ws_on_close.push(function() {
-	var controller = window.App && App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
@@ -55,7 +55,7 @@ FFZ.ws_on_close.push(function() {
 
 
 FFZ.ws_commands.srl_race = function(data) {
-	var controller = App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
@@ -91,7 +91,7 @@ FFZ.ws_commands.srl_race = function(data) {
 // ---------------
 
 FFZ.prototype.rebuild_race_ui = function() {
-	var controller = App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		channel_id = controller && controller.get('id'),
 		hosted_id = controller && controller.get('hostModeTarget.id');
 
@@ -211,7 +211,7 @@ FFZ.prototype._build_race_popup = function(container, channel_id) {
 	}
 
 	var height = document.querySelector('.app-main.theatre') ? document.body.clientHeight - 300 : container.parentElement.offsetTop - 175,
-		controller = App.__container__.lookup('controller:channel'),
+		controller = utils.ember_lookup('controller:channel'),
 		display_name = controller ? controller.get('display_name') : FFZ.get_capitalization(channel_id),
 		tweet = encodeURIComponent("I'm watching " + display_name + " race " + race.goal + " in " + race.game + " on SpeedRunsLive!");
 

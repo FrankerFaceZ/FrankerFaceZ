@@ -9,7 +9,7 @@ var FFZ = window.FrankerFaceZ,
 
 FFZ.prototype.fix_tooltips = function() {
 	// First, override the tooltip mixin.
-	var TipsyTooltip = window.App && App.__container__.resolve('component:tipsy-tooltip');
+	var TipsyTooltip = utils.ember_resolve('component:tipsy-tooltip');
 	if ( TipsyTooltip ) {
 		this.log("Modifying Tipsy-Tooltip component to use gravity.");
 		TipsyTooltip.reopen({

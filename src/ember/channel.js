@@ -24,7 +24,7 @@ FFZ.prototype.setup_channel = function() {
 	document.head.appendChild(s);
 
 	this.log("Hooking the Ember Channel Index view.");
-	var Channel = App.__container__.resolve('view:channel/index'),
+	var Channel = utils.ember_resolve('view:channel/index'),
 		f = this;
 
 	if ( ! Channel )
@@ -38,7 +38,7 @@ FFZ.prototype.setup_channel = function() {
 	} catch(err) { }
 
 	// Update Existing
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = utils.ember_views();
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
 			continue;
@@ -54,7 +54,7 @@ FFZ.prototype.setup_channel = function() {
 
 
 	this.log("Hooking the Ember Channel model.");
-	Channel = App.__container__.resolve('model:channel');
+	Channel = utils.ember_resolve('model:channel');
 	if ( ! Channel )
 		return;
 
@@ -75,7 +75,7 @@ FFZ.prototype.setup_channel = function() {
 
 	this.log("Hooking the Ember Channel controller.");
 
-	Channel = App.__container__.lookup('controller:channel');
+	Channel = utils.ember_lookup('controller:channel');
 	if ( ! Channel )
 		return;
 
@@ -241,7 +241,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				f.rebuild_race_ui();
 
 			if ( f.settings.auto_theater ) {
-				var Layout = App.__container__.lookup('controller:layout');
+				var Layout = utils.ember_lookup('controller:layout');
 				if ( Layout )
 					Layout.set('isTheatreMode', true);
 			}

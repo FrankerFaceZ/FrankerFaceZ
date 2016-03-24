@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+    utils = require('../utils');
 
 
 // ---------------
@@ -42,7 +43,7 @@ FFZ.settings_info.classic_player = {
 
 	on_update: function(val) {
 			document.body.classList.toggle('ffz-classic-player', val);
-			var Layout = window.App && App.__container__.lookup('controller:layout');
+			var Layout = utils.ember_lookup('controller:layout');
 			if ( Layout )
 				Layout.set('PLAYER_CONTROLS_HEIGHT', val ? 32 : 0);
 		}
@@ -55,13 +56,13 @@ FFZ.settings_info.classic_player = {
 
 FFZ.prototype.setup_player = function() {
 	document.body.classList.toggle('ffz-classic-player', this.settings.classic_player);
-	var Layout = window.App && App.__container__.lookup('controller:layout');
+	var Layout = utils.ember_lookup('controller:layout');
 	if ( Layout )
 		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
 
 	this.players = {};
 
-	var Player2 = window.App && App.__container__.resolve('component:twitch-player2');
+	var Player2 = utils.ember_resolve('component:twitch-player2');
 	if ( ! Player2 )
 		return this.log("Unable to find twitch-player2 component.");
 
@@ -72,7 +73,7 @@ FFZ.prototype.setup_player = function() {
 	if ( ! window.Ember )
 		return;
 
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = utils.ember_views();
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
 			continue;

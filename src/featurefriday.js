@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('./constants');
+	constants = require('./constants'),
+    utils = require('./utils');
 
 
 // --------------------
@@ -51,7 +52,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 
 	// Before we add the button, make sure the channel isn't the
 	// current channel.
-	var Channel = App.__container__.lookup('controller:channel');
+	var Channel = utils.ember_lookup('controller:channel');
 	if ( ! this.feature_friday.channel || (Channel && Channel.get('id') === this.feature_friday.channel) )
 		return;
 

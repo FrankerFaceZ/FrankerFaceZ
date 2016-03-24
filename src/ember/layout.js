@@ -39,7 +39,7 @@ FFZ.settings_info.portrait_mode = {
 		if ( this.has_bttv )
 			return;
 
-		var Layout = window.App && App.__container__.lookup('controller:layout');
+		var Layout = utils.ember_lookup('controller:layout');
 		if ( ! Layout )
 			return;
 
@@ -126,7 +126,7 @@ FFZ.settings_info.right_column_width = {
 			if ( this.has_bttv )
 				return;
 
-			var Layout = App.__container__.lookup('controller:layout');
+			var Layout = utils.ember_lookup('controller:layout');
 			if ( ! Layout )
 				return;
 
@@ -153,7 +153,7 @@ FFZ.prototype.setup_layout = function() {
 	document.head.appendChild(s);
 
 	this.log("Hooking the Ember Layout controller.");
-	var Layout = App.__container__.lookup('controller:layout'),
+	var Layout = utils.ember_lookup('controller:layout'),
 		f = this;
 
 	if ( ! Layout )

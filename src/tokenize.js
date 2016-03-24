@@ -533,7 +533,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 							(this.settings.notification_timeout*1000),
 							function() {
 								window.focus();
-								var cont = App.__container__.lookup('controller:chat');
+								var cont = utils.ember_lookup('controller:chat');
 								room && cont && cont.focusRoom(room);
 							}
 						);

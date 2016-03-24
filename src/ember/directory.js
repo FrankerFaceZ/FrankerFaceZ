@@ -32,7 +32,7 @@ FFZ.settings_info.sidebar_followed_games = {
 	help: "Display this number of followed games on the sidebar.",
 
 	on_update: function(val) {
-			var controller = App.__container__.lookup('controller:games-following');
+			var controller = utils.ember_lookup('controller:games-following');
 			if ( controller )
 				controller.set('ffz_sidebar_games', val);
 		}
@@ -111,7 +111,7 @@ FFZ.settings_info.directory_group_hosts = {
 
 	on_update: function() {
 			var f = this,
-				HostModel = App.__container__.resolve('model:host'),
+				HostModel = utils.ember_resolve('model:host'),
 				Following = HostModel && HostModel.collections[HostModel.collectionId("following")];
 
 			if ( ! Following )
@@ -146,7 +146,7 @@ FFZ.settings_info.directory_host_menus = {
 
 	on_update: function() {
 			var f = this,
-				HostModel = App.__container__.resolve('model:host'),
+				HostModel = utils.ember_resolve('model:host'),
 				Following = HostModel && HostModel.collections[HostModel.collectionId("following")];
 
 			if ( ! Following )
@@ -169,7 +169,7 @@ FFZ.prototype.setup_directory = function() {
 	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
     document.body.classList.toggle('ffz-hide-recommended-channels', !this.settings.sidebar_hide_recommended_channels);
 
-	var GamesFollowing = App.__container__.lookup('controller:games-following'),
+	var GamesFollowing = utils.ember_lookup('controller:games-following'),
 		f = this;
 
 	if ( GamesFollowing ) {
@@ -195,24 +195,24 @@ FFZ.prototype.setup_directory = function() {
 
 	this.log("Hooking the Ember Directory views.");
 
-	var ChannelView = App.__container__.resolve('view:channel');
+	var ChannelView = utils.ember_resolve('view:channel');
 	if ( ChannelView )
 		this._modify_directory_live(ChannelView);
 
-	var CreativeChannel = App.__container__.resolve('view:creative-channel');
+	var CreativeChannel = utils.ember_resolve('view:creative-channel');
 	if ( CreativeChannel )
 		this._modify_directory_live(CreativeChannel);
 
-	var CSGOChannel = App.__container__.resolve('view:cs-go-channel');
+	var CSGOChannel = utils.ember_resolve('view:cs-go-channel');
 	if ( CSGOChannel )
 		this._modify_directory_live(CSGOChannel, true);
 
-	var HostView = App.__container__.resolve('view:host');
+	var HostView = utils.ember_resolve('view:host');
 	if ( HostView )
 		this._modify_directory_host(HostView);
 
 	// Initialize existing views.
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = utils.ember_views();
 	for(var key in views) {
 		var view = views[key];
 		try {
@@ -226,7 +226,7 @@ FFZ.prototype.setup_directory = function() {
 
 
 FFZ.prototype._modify_following = function() {
-	var HostModel = App.__container__.resolve('model:host'),
+	var HostModel = utils.ember_resolve('model:host'),
 		f = this;
 
 	if ( HostModel ) {
@@ -364,7 +364,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
                     if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
                         return;
 
-					var Channel = App.__container__.resolve('model:channel');
+					var Channel = utils.ember_resolve('model:channel');
 					if ( ! Channel )
 						return;
 
@@ -449,7 +449,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 		},
 
 		ffzVisitChannel: function(target, e) {
-			var Channel = App.__container__.resolve('model:channel');
+			var Channel = utils.ember_resolve('model:channel');
 			if ( ! Channel )
 				return;
 

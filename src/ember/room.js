@@ -36,7 +36,7 @@ FFZ.prototype.setup_room = function() {
 
 	// Responsive ban button.
 	var f = this,
-		RC = App.__container__.lookup('controller:room');
+		RC = utils.ember_lookup('controller:room');
 
 	if ( RC ) {
 		var orig_ban = RC._actions.banUser,
@@ -53,7 +53,7 @@ FFZ.prototype.setup_room = function() {
 		}
 
 		RC._actions.showModOverlay = function(e) {
-			var Channel = App.__container__.resolve('model:channel');
+			var Channel = utils.ember_resolve('model:channel');
 			if ( ! Channel )
 				return;
 
@@ -84,7 +84,7 @@ FFZ.prototype.setup_room = function() {
 
 	this.log("Hooking the Ember Room model.");
 
-	var Room = App.__container__.resolve('model:room');
+	var Room = utils.ember_resolve('model:room');
 	this._modify_room(Room);
 
 	// Modify all current instances of Room, as the changes to the base
@@ -102,7 +102,7 @@ FFZ.prototype.setup_room = function() {
 
 	this.log("Hooking the Ember Room view.");
 
-	var RoomView = App.__container__.resolve('view:room');
+	var RoomView = utils.ember_resolve('view:room');
 	this._modify_rview(RoomView);
 
 	// For some reason, this doesn't work unless we create an instance of the
@@ -112,7 +112,7 @@ FFZ.prototype.setup_room = function() {
 	} catch(err) { }
 
 	// Modify all existing Room views.
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = utils.ember_views();
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
 			continue;
@@ -975,7 +975,7 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzCheckDestroy: function() {
-			var Chat = App.__container__.lookup('controller:chat'),
+			var Chat = utils.ember_lookup('controller:chat'),
 				user = f.get_user(),
 				room_id = this.get('id');
 
@@ -1210,7 +1210,7 @@ FFZ.prototype._modify_room = function(room) {
 				var is_whisper = msg.style === 'whisper';
 
 				// Ignore whispers if conversations are enabled.
-				if ( is_whisper && App.__container__.lookup('route:application').controller.get('isConversationsEnabled') )
+				if ( is_whisper && utils.ember_lookup('controller:application').get('isConversationsEnabled') )
 					return;
 
 				if ( ! is_whisper )
@@ -1311,7 +1311,7 @@ FFZ.prototype._modify_room = function(room) {
 			if ( user && f._cindex && this.get('id') === user.login )
 				f._cindex.ffzUpdateHostButton();
 
-			var Chat = App.__container__.lookup('controller:chat');
+			var Chat = utils.ember_lookup('controller:chat');
 			if ( ! Chat || Chat.get('currentChannelRoom') !== this )
 				return;
 
@@ -1354,7 +1354,7 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		ffzUpdateUnread: function() {
-			var Chat = App.__container__.lookup('controller:chat');
+			var Chat = utils.ember_lookup('controller:chat');
 			if ( Chat && Chat.get('currentRoom') === this )
 				this.resetUnreadCount();
 			else if ( f._chatv )

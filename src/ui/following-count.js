@@ -24,7 +24,7 @@ FFZ.settings_info.following_count = {
 	on_update: function(val) {
 			this._schedule_following_count();
 
-			var Stream = window.App && App.__container__.resolve('model:stream'),
+			var Stream = utils.ember_resolve('model:stream'),
 				Live = Stream && Stream.find("live");
 
 			if ( Live ) {
@@ -55,7 +55,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 		return this._following_get_me();
 
 	this.log("Connecting to Live Streams model.");
-	var Stream = window.App && App.__container__.resolve('model:stream');
+	var Stream = utils.ember_resolve('model:stream');
 	if ( ! Stream )
 		return this.log("Unable to find Stream model.");
 
@@ -70,7 +70,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 
 	Live.load();
 
-    /*var Host = window.App && App.__container__.resolve('model:host'),
+    /*var Host = utils.ember_resolve('model:hist'),
         HostLive = Host && Host.find("following");
 
     if ( HostLive )
@@ -132,10 +132,10 @@ FFZ.prototype._update_following_count = function() {
 
 	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
 
-	var Stream = window.App && App.__container__.resolve('model:stream'),
+	var Stream = utils.ember_resolve('model:stream'),
 		Live = Stream && Stream.find("live"),
 
-        Host = window.App && App.__container__.resolve('model:host'),
+        Host = utils.ember_resolve('model:host'),
         HostLive = Host && Host.find("following"),
 
 		f = this;
@@ -172,7 +172,7 @@ FFZ.prototype._build_following_tooltip = function(el) {
 		height = document.body.clientHeight - (bb.bottom + 50),
 		max_lines = Math.max(Math.floor(height / 40) - 1, 2),
 
-        /*Host = window.App && App.__container__.resolve('model:host'),
+        /*Host = utils.ember_resolve('model:host'),
         HostLive = Host && Host.find("following"),*/
 
 		streams = this._tooltip_streams,

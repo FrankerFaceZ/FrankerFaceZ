@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require("../constants");
+	constants = require("../constants"),
+    utils = require("../utils");
 	//styles = require("../styles");
 
 
@@ -136,7 +137,7 @@ FFZ.settings_info.dark_twitch = {
 
 			document.body.classList.toggle("ffz-dark", val);
 
-			var Settings = window.App && App.__container__.lookup('controller:settings'),
+			var Settings = utils.ember_lookup('controller:settings'),
 				settings = Settings && Settings.get('settings');
 
 			if ( val ) {
@@ -201,7 +202,7 @@ FFZ.prototype.setup_dark = function() {
 	if ( ! this.settings.dark_twitch )
 		return;
 
-	var Settings = window.App && App.__container__.lookup('controller:settings');
+	var Settings = utils.ember_lookup('controller:settings');
 	if ( Settings ) {
 		try {
 			Settings.set('settings.darkMode', true);

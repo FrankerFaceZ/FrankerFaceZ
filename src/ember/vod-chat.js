@@ -13,7 +13,7 @@ var FFZ = window.FrankerFaceZ,
 
 FFZ.prototype.setup_vod_chat = function() {
     var f = this,
-        VRC = App.__container__.resolve('component:vod-right-column');
+        VRC = utils.ember_resolve('component:vod-right-column');
 
     if ( VRC )
         this._modify_vod_right_column(VRC);
@@ -21,7 +21,7 @@ FFZ.prototype.setup_vod_chat = function() {
         f.error("Unable to locate VOD Right Column component.");
 
     // Get the VOD Chat Service
-    var VODService = App.__container__.lookup('service:vod-chat-service');
+    var VODService = utils.ember_lookup('service:vod-chat-service');
     if ( VODService )
         VODService.reopen({
             messageBufferSize: f.settings.scrollback_length,
@@ -51,7 +51,7 @@ FFZ.prototype.setup_vod_chat = function() {
         f.error("Unable to locate VOD Chat Service.");
 
     // Get the VOD Chat Display
-    var VODChat = App.__container__.resolve('component:vod-chat-display');
+    var VODChat = utils.ember_resolve('component:vod-chat-display');
 
     if ( VODChat )
         this._modify_vod_chat_display(VODChat);
@@ -59,7 +59,7 @@ FFZ.prototype.setup_vod_chat = function() {
         f.error("Unable to locate VOD Chat Display component.");
 
     // Modify all existing VOD Chat views.
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = utils.ember_views();
 	for(var key in views) {
         var view = views[key];
 
@@ -114,7 +114,7 @@ FFZ.prototype._modify_vod_right_column = function(component) {
 
 FFZ.prototype._modify_vod_chat_display = function(component) {
     var f = this,
-        VODService = App.__container__.lookup('service:vod-chat-service');
+        VODService = utils.ember_lookup('service:vod-chat-service');
 
     component.reopen({
         didInsertElement: function() {

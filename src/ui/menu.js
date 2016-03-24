@@ -41,8 +41,8 @@ FFZ.prototype.setup_menu = function() {
 
 	this.log("Hooking the Ember Chat Settings view.");
 
-	var Settings = window.App && App.__container__.resolve('view:settings'),
-		Layout = window.App && App.__container__.lookup('controller:layout'),
+	var Settings = utils.ember_resolve('view:settings'),
+		Layout = utils.ember_lookup('controller:layout'),
 		f = this;
 
 	if ( ! Settings )
@@ -164,7 +164,7 @@ FFZ.prototype.setup_menu = function() {
 	} catch(err) { }
 
 	// Modify all existing Chat Settings views.
-	var views = window.App && App.__container__.lookup('-view-registry:main') || Ember.View.views;
+	var views = utils.ember_views();
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
 			continue;
@@ -498,7 +498,8 @@ FFZ.menu_pages.channel = {
 				if ( product && !product.get("error") ) {
 					// We have a product, and no error~!
 					has_product = true;
-					var tickets = App.__container__.resolve('model:ticket').find('user', {channel: room_id}),
+                    var Ticket = utils.ember_resolve('model:ticket'),
+                        tickets = Ticket && Ticket.find('user', {channel: room_id}),
 						is_subscribed = tickets ? tickets.get('content') : false,
 						is_loaded = tickets ? tickets.get('isLoaded') : false,
 						icon = room.room.get("badgeSet.subscriber.image"),

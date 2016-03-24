@@ -108,7 +108,7 @@ FFZ.settings_info.scrollback_length = {
                     f.settings.set("scrollback_length", new_val);
 
                     // Update our everything.
-                    var Chat = App.__container__.lookup('controller:chat'),
+                    var Chat = utils.ember_lookup('controller:chat'),
                         current_id = Chat && Chat.get('currentRoom.id');
 
                     for(var room_id in f.rooms) {
@@ -595,25 +595,13 @@ FFZ.prototype.setup_line = function() {
 	this._last_row = {};
 
     this.log("Hooking the Ember Chat Line component.");
-	var Line = App.__container__.resolve('component:chat-line');
+	var Line = utils.ember_resolve('component:chat-line');
 
 	if ( Line )
 		this._modify_chat_line(Line);
 
-	/*this.log("Hooking the Ember Whisper Line component.");
-	var Whisper = App.__container__.resolve('component:whisper-line');
-
-	if ( Whisper )
-		this._modify_line(Whisper);
-
-	this.log("Hooking the Ember Message Line component.");
-    var Message = App.__container__.resolve('component:message-line');
-
-    if ( Message )
-        this._modify_line(Message);*/
-
     this.log("Hooking the Ember VOD Chat Line component.");
-    var VOD = App.__container__.resolve('component:vod-chat-line');
+    var VOD = utils.ember_resolve('component:vod-chat-line');
     if ( VOD )
         this._modify_vod_line(VOD);
     else
@@ -634,8 +622,8 @@ FFZ.prototype.save_aliases = function() {
 
 FFZ.prototype._modify_chat_line = function(component, is_vod) {
     var f = this,
-        Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
+        Layout = utils.ember_lookup('controller:layout'),
+		Settings = utils.ember_lookup('controller:settings');
 
     component.reopen({
         tokenizedMessage: function() {
@@ -965,81 +953,6 @@ FFZ.prototype._modify_vod_line = function(component) {
         }
     });
 }
-
-
-/*FFZ.prototype._modify_line = function(component) {
-	var f = this,
-
-		Layout = App.__container__.lookup('controller:layout'),
-		Settings = App.__container__.lookup('controller:settings');
-
-
-	component.reopen({
-		click: function(e) {
-			if ( e.target && e.target.classList.contains('ffz-old-messages') )
-				return f._show_deleted(this.get('msgObject.room'));
-
-			if ( e.target && e.target.classList.contains('deleted-link') )
-				return f._deleted_link_click.bind(e.target)(e);
-
-			if ( e.target && e.target.classList.contains('mod-icon') ) {
-				jQuery(e.target).trigger('mouseout');
-
-				if ( e.target.classList.contains('custom') ) {
-					var room_id = this.get('msgObject.room'),
-						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
-						cmd = e.target.getAttribute('data-cmd');
-
-					if ( room ) {
-						var lines = cmd.split("\n");
-						for(var i=0; i < lines.length; i++)
-							room.send(lines[i], true);
-
-						if ( e.target.classList.contains('is-timeout') )
-							room.clearMessages(this.get('msgObject.from'));
-					}
-					return;
-				}
-			}
-
-			if ( f._click_emote(e.target, e) )
-				return;
-
-			return this._super(e);
-		},
-
-		render: function(e) {
-            e.push(this.buildSenderHTML());
-            e.push(this.buildMessageHTML())
-        },
-
-        ffzWasDeleted: function() {
-			return f.settings.prevent_clear && this.get('msgObject.ffz_deleted');
-		}.property('msgObject.ffz_deleted'),
-
-		ffzHasOldMessages: function() {
-			var old_messages = this.get('msgObject.ffz_old_messages');
-			return old_messages && old_messages.length;
-		}.property('msgObject.ffz_old_messages'),
-
-		classNameBindings: [
-			'msgObject.ffz_has_mention:ffz-mentioned',
-			'ffzWasDeleted:ffz-deleted',
-			'ffzHasOldMessages:clearfix',
-			'ffzHasOldMessages:ffz-has-deleted'
-			],
-
-		didInsertElement: function() {
-			this._super();
-
-			var el = this.get('element');
-
-			el.setAttribute('data-room', this.get('msgObject.room'));
-			el.setAttribute('data-sender', this.get('msgObject.from'));
-			el.setAttribute('data-deleted', this.get('msgObject.deleted') || false);
-		}
-	});
-}*/
 
 
 // ---------------------

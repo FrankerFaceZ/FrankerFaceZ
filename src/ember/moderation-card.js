@@ -420,7 +420,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 	this.log("Hooking the Ember Moderation Card view.");
-	var Card = App.__container__.resolve('component:moderation-card'),
+	var Card = utils.ember_resolve('component:moderation-card'),
 		f = this;
 
 	Card.reopen({
@@ -494,7 +494,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 					is_mod = controller.get('cardInfo.isModeratorOrHigher'),
 
-					chat = window.App && App.__container__.lookup('controller:chat'),
+					chat = utils.ember_lookup('controller:chat'),
 					user = f.get_user(),
 					room_id = chat && chat.get('currentRoom.id'),
 					is_broadcaster = user && room_id === user.login,
@@ -541,7 +541,7 @@ FFZ.prototype.setup_mod_card = function() {
 					var cmds = {},
 						add_btn_click = function(cmd) {
 							var user_id = controller.get('cardInfo.user.id'),
-								cont = App.__container__.lookup('controller:chat'),
+								cont = utils.ember_lookup('controller:chat'),
 								room = cont && cont.get('currentRoom');
 
 							room && room.send(cmd.replace(/{user}/g, user_id), true);
@@ -593,7 +593,7 @@ FFZ.prototype.setup_mod_card = function() {
 						var key = e.keyCode || e.which,
 							user_id = controller.get('cardInfo.user.id'),
 							is_mod = controller.get('cardInfo.isModeratorOrHigher'),
-							room = App.__container__.lookup('controller:chat').get('currentRoom');
+							room = utils.ember_lookup('controller:chat').get('currentRoom');
 
 						if ( is_mod && key == keycodes.P )
 							room.send("/timeout " + user_id + " 1", true);
@@ -621,7 +621,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 					var btn_click = function(timeout) {
 						var user_id = controller.get('cardInfo.user.id'),
-							room = App.__container__.lookup('controller:chat').get('currentRoom');
+							room = utils.ember_lookup('controller:chat').get('currentRoom');
 
 							if ( timeout === -1 )
 								room.send("/unban " + user_id, true);
@@ -803,7 +803,7 @@ FFZ.prototype.setup_mod_card = function() {
 
 		ffzRenderHistory: function() {
 			var t = this,
-				Chat = App.__container__.lookup('controller:chat'),
+				Chat = utils.ember_lookup('controller:chat'),
 				room = Chat && Chat.get('currentRoom'),
 				delete_links = room && room.get('roomProperties.hide_chat_links'),
 				tmiSession = room.tmiSession || (window.TMI && TMI._sessions && TMI._sessions[0]),
@@ -872,7 +872,7 @@ FFZ.prototype.setup_mod_card = function() {
 		},
 
 		ffzAdjacentHistory: function(line) {
-			var Chat = App.__container__.lookup('controller:chat'),
+			var Chat = utils.ember_lookup('controller:chat'),
 				t = this,
 
 				user_id = this.get('cardInfo.user.id'),
@@ -1005,8 +1005,8 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 		var raw_color = msg.color,
 			colors = raw_color && this._handle_color(raw_color),
 
-			Layout = App.__container__.lookup('controller:layout'),
-			Settings = App.__container__.lookup('controller:settings'),
+			Layout = utils.ember_lookup('controller:layout'),
+			Settings = utils.ember_lookup('controller:settings'),
 
 			is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 

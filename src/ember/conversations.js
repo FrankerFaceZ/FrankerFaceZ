@@ -55,13 +55,13 @@ FFZ.prototype.setup_conversations = function() {
 	document.body.classList.toggle('ffz-minimize-conversations', this.settings.minimize_conversations);
 
 	this.log("Hooking the Ember Conversation Window component.");
-	var ConvWindow = App.__container__.resolve('component:conversation-window');
+	var ConvWindow = utils.ember_resolve('component:conversation-window');
 	if ( ConvWindow )
 		this._modify_conversation_window(ConvWindow);
 
 
 	this.log("Hooking the Ember Conversation Line component.");
-	var ConvLine = App.__container__.resolve('component:conversation-line');
+	var ConvLine = utils.ember_resolve('component:conversation-line');
 	if ( ConvLine )
 		this._modify_conversation_line(ConvLine);
 
@@ -73,8 +73,7 @@ FFZ.prototype.setup_conversations = function() {
 
 FFZ.prototype._modify_conversation_window = function(component) {
 	var f = this,
-
-		Layout = App.__container__.lookup('controller:layout');
+		Layout = utils.ember_lookup('controller:layout');
 
 	component.reopen({
 		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
@@ -120,8 +119,7 @@ FFZ.prototype._modify_conversation_window = function(component) {
 
 FFZ.prototype._modify_conversation_line = function(component) {
 	var f = this,
-
-		Layout = App.__container__.lookup('controller:layout');
+		Layout = utils.ember_lookup('controller:layout');
 
 	component.reopen({
 		tokenizedMessage: function() {

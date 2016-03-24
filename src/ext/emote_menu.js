@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+    utils = require('../utils');
 
 
 // --------------------
@@ -31,7 +32,7 @@ FFZ.prototype.setup_emote_menu = function(delay) {
 FFZ.prototype._emote_menu_enumerator = function() {
 	var twitch_user = this.get_user(),
 		user_id = twitch_user ? twitch_user.login : null,
-		controller = App.__container__.lookup('controller:chat'),
+		controller = utils.ember_lookup('controller:chat'),
 		room_id = controller ? controller.get('currentRoom.id') : null,
 		sets = this.getEmotes(user_id, room_id),
 		emotes = [];

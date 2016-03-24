@@ -216,7 +216,7 @@ var sanitize_el = document.createElement('span'),
         if ( ! window.App )
             return;
 
-        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance_.registry.lookup )
+        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.lookup )
             return App.__deprecatedInstance__.registry.lookup(thing);
         if ( App.__container__ && App.__container__.lookup )
             return App.__container__.lookup(thing);
@@ -234,7 +234,7 @@ module.exports = FFZ.utils = {
         if ( ! window.App )
             return;
 
-        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance_.registry.resolve )
+        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.resolve )
             return App.__deprecatedInstance__.registry.resolve(thing);
         if ( App.__container__ && App.__container__.resolve )
             return App.__container__.resolve(thing);

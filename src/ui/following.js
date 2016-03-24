@@ -76,7 +76,7 @@ FFZ.ffz_commands.following = function(room, args) {
 // ---------------
 
 FFZ.ws_on_close.push(function() {
-	var controller = window.App && App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		current_id = controller && controller.get('id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
@@ -112,7 +112,7 @@ FFZ.ws_on_close.push(function() {
 
 
 FFZ.ws_commands.follow_buttons = function(data) {
-	var controller = window.App && App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
@@ -131,7 +131,7 @@ FFZ.ws_commands.follow_buttons = function(data) {
 
 
 FFZ.ws_commands.follow_sets = function(data) {
-	var controller = App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false,
@@ -188,7 +188,7 @@ FFZ.ws_commands.follow_sets = function(data) {
 // ---------------
 
 FFZ.prototype.rebuild_following_ui = function() {
-	var controller = App.__container__.lookup('controller:channel'),
+	var controller = utils.ember_lookup('controller:channel'),
 		channel_id = controller && controller.get('content.id'),
 		hosted_id = controller && controller.get('hostModeTarget.id');
 

@@ -32,18 +32,18 @@ FFZ.prototype.setup_profile_following = function() {
 
 	// First, we need to hook the model. This is what we'll use to grab the following notification state,
 	// rather than making potentially hundreds of API requests.
-	var Following = App.__container__.resolve('model:kraken-channel-following');
+	var Following = utils.ember_resolve('model:kraken-channel-following');
 	if ( Following )
 		this._hook_following(Following);
 
 	// Also try hooking that other model.
-	var Notification = App.__container__.resolve('model:notification');
+	var Notification = utils.ember_resolve('model:notification');
 	if ( Notification )
 		this._hook_following(Notification, true);
 
 
 	// Now, we need to edit the profile Following view itself.
-	var ProfileView = App.__container__.resolve('view:channel/following');
+	var ProfileView = utils.ember_resolve('view:channel/following');
 	if ( ! ProfileView )
 		return;
 
@@ -256,88 +256,18 @@ FFZ.prototype.setup_profile_following = function() {
 		}
 	});
 
-    /*// Try adding a nice Manage button to the Following page of the directory
-    var DirectoryFollowing = App.__container__.resolve('view:directory');
-    if ( DirectoryFollowing ) {
-        DirectoryFollowing.reopen({
-            didInsertElement: function() {
-                this._super();
-                try {
-                    this.ffzInit();
-                } catch(err) {
-                    f.error("view:following ffzInit: " + err);
-                }
-            },
-
-            willClearRender: function() {
-                try {
-                    this.ffzTeardown();
-                } catch(err) {
-                    f.error("view:following ffzTeardown: " + err);
-                }
-                this._super();
-            },
-
-            ffzInit: function() {
-                f.log("view:directory ffzInit called!", this);
-
-                var el = this.get('element'),
-                    nav_bar = el && el.querySelector('.directory_header ul.nav'),
-                    user = f.get_user();
-
-                if ( ! nav_bar || ! user || ! user.login || ! f.settings.enhance_profile_following )
-                    return;
-
-                var li = document.createElement('li'),
-                    btn = document.createElement('a'),
-                    t = this;
-
-                li.className = 'ffz-manage-following';
-                btn.innerHTML = 'Manage Following';
-                btn.href = '/' + user.login + '/profile/following';
-
-                btn.addEventListener('click', function(e) {
-                    var Channel = App.__container__.resolve('model:channel');
-                    if ( ! Channel )
-                        return;
-
-                    e.preventDefault();
-                    t.get('controller').transitionTo('profile.following', Channel.find({id: user.login}).load());
-                    return false;
-                });
-
-                li.appendChild(btn);
-                nav_bar.appendChild(li);
-            },
-
-            ffzTeardown: function() {
-                this.$('.ffz-manage-following').remove();
-            }
-        });
-
-        try {
-            DirectoryFollowing.create().destroy();
-        } catch(err) { }
-    } else
-        f.log("Could not find Directory Following View.");*/
+    // TODO: Add nice Manage Following button to the directory.
 
 	// Now, rebuild any views.
 	try {
 		ProfileView.create().destroy();
 	} catch(err) { }
 
-	var views = window.App && App.__container__.lookup('-view-registry:main');
+	var views = utils.ember_views();
     if ( views )
         for(var key in views) {
             var view = views[key];
-            /*if ( DirectoryFollowing && view instanceof DirectoryFollowing ) {
-                try {
-                    view.ffzInit();
-                } catch(err) {
-                    this.error("setup: view:following: ffzInit: " + err);
-                }
-
-            } else*/ if ( view instanceof ProfileView ) {
+            if ( view instanceof ProfileView ) {
                 this.log("Manually updating existing Following View.", view);
                 try {
                     view.ffzInit();

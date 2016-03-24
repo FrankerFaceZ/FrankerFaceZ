@@ -1,4 +1,5 @@
-var FFZ = window.FrankerFaceZ;
+var FFZ = window.FrankerFaceZ,
+    utils = require("../utils");
 
 
 // --------------------
@@ -11,7 +12,7 @@ FFZ.prototype.setup_router = function() {
 		return;
 
 	var f = this,
-		Router = App.__container__.lookup('router:main');
+		Router = utils.ember_lookup('router:main');
 
 	if ( Router )
 		Router.reopen({
