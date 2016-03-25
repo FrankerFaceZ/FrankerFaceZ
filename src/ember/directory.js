@@ -195,7 +195,7 @@ FFZ.prototype.setup_directory = function() {
 
 	this.log("Hooking the Ember Directory views.");
 
-	var ChannelView = utils.ember_resolve('view:channel');
+	var ChannelView = utils.ember_resolve('component:stream-preview');
 	if ( ChannelView )
 		this._modify_directory_live(ChannelView);
 
@@ -235,11 +235,13 @@ FFZ.prototype._modify_following = function() {
 			this.log("Found Following model.");
 			Following.reopen({
 				ffz_streams: {},
+                ffz_hosts_for: {},
 				ffz_skipped: 0,
 
 				empty: function() {
 					this._super();
 					this.set("ffz_streams", {});
+                    this.set("ffz_hosts_for", {});
 					this.set("ffz_skipped", 0);
 				},
 
@@ -261,29 +263,40 @@ FFZ.prototype._modify_following = function() {
 				},
 
 				afterSuccess: function(e) {
-					var valid_hosts = [],
+                    var valid_hosts = [],
 						streams = this.get('ffz_streams'),
 						skipped = this.get('ffz_skipped'),
+                        hosts_for = this.get('ffz_hosts_for'),
+
 						t = this;
 
 					for(var i=0; i < e.hosts.length; i++) {
 						var host = e.hosts[i],
 							target = host && host.target && host.target.id;
 
+                        if ( host.rollbackData )
+                            host.rollbackData = undefined;
+
 						if ( f.settings.directory_group_hosts && streams[target] ) {
 							skipped++;
-							streams[target].ffz_hosts && streams[target].ffz_hosts.push({logo: host.logo, name: host.name, display_name: host.display_name});
+                            //hosts_for[target] && hosts_for[target]
+                            streams[target].ffz_hosts && streams[target].ffz_hosts.push({logo: host.logo, name: host.name, display_name: host.display_name});
 							continue;
 						}
 
 						streams[target] = host;
+                        //hosts_for[target] = [{logo: host.logo, name: host.name, display_name: host.display_name}];
 						host.ffz_hosts = [{logo: host.logo, name: host.name, display_name: host.display_name}];
 
 						valid_hosts.push(host);
 					}
 
-					this.set('ffz_skipped', skipped);
-					this.setContent(valid_hosts);
+                    f.log("Stuff!", [this, e, valid_hosts, skipped]);
+
+                    this.set('ffz_skipped', skipped);
+                    this.setContent(valid_hosts);
+                    this.set('total', e._total);
+                    return;
 
 					// We could get non-empty results even with no new hosts.
 					this.set('gotNonEmptyResults', e.hosts && e.hosts.length);
@@ -298,8 +311,32 @@ FFZ.prototype._modify_following = function() {
 					host_copy = [];
 
 				// TODO: Something less stupid.
-				for(var i=0; i < content.length; i++)
-					host_copy.push(content[i]);
+				for(var i=0; i < content.length; i++) {
+                    var host = content[i];
+					host_copy.push({
+                        display_name: host.display_name,
+                        game: host.game,
+                        id: host.id,
+                        logo: host.logo,
+                        name: host.name,
+                        target: {
+                            _id: host.target._id,
+                            channel: {
+                                display_name: host.target.channel.display_name,
+                                id: host.target.channel.id,
+                                logo: host.target.channel.logo,
+                                name: host.target.channel.name,
+                                url: host.target.channel.url
+                            },
+                            id: host.target.id,
+                            meta_game: host.target.meta_game,
+                            preview: host.target.preview,
+                            title: host.target.title,
+                            url: host.target.url,
+                            viewers: host.target.viewers
+                        }
+                    });
+                }
 
 				Following.clear();
 				Following.afterSuccess({hosts: host_copy, _total: total});
@@ -327,7 +364,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
 				cap = thumb && thumb.querySelector('.cap'),
-                channel_id = this.get('context.model.channel.name');
+                channel_id = this.get('stream.channel.name');
 
             el.setAttribute('data-channel', channel_id);
 
@@ -356,8 +393,8 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				logo.className = 'profile-photo';
 				logo.classList.toggle('is-csgo', is_csgo);
 
-				logo.src = this.get('context.model.channel.logo') || NO_LOGO;
-				logo.alt = this.get('context.model.channel.display_name');
+				logo.src = this.get('stream.channel.logo') || NO_LOGO;
+				logo.alt = this.get('stream.channel.display_name');
 
 				link.href = '/' + channel_id;
 				link.addEventListener('click', function(e) {
@@ -394,7 +431,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 		},
 
         ffzRotateImage: function() {
-            var url = this.get('context.model.preview.medium'),
+            var url = this.get('stream.preview.medium'),
                 now = Math.round((new Date).getTime() / 150000);
 
             if ( FFZ._image_cache[url] && FFZ._image_cache[url] !== now )
@@ -406,7 +443,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
         },
 
 		ffzUpdateUptime: function() {
-			var raw_created = this.get('context.model.created_at'),
+			var raw_created = this.get('stream.created_at'),
 				up_since = raw_created && utils.parse_date(raw_created),
 				now = Date.now() - (f._ws_server_offset || 0),
 				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0;
@@ -557,9 +594,9 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				title = meta && meta.querySelector('.title a'),
 
 				target = this.get('context.model.target.channel'),
-				hosts = this.get('context.model.ffz_hosts'),
+				hosts = this.get('context.model.ffz_hosts'); //,
 
-				boxart = thumb && thumb.querySelector('.boxart');
+				//boxart = thumb && thumb.querySelector('.boxart');
 
             el.setAttribute('data-channel', target.name);
 
@@ -567,7 +604,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
             this.ffzRotateImage();
 
 			// Fix the game not showing
-			if ( ! boxart && thumb && this.get('context.model.game') ) {
+			/*if ( ! boxart && thumb && this.get('context.model.game') ) {
 				var img = document.createElement('img'),
 					game = this.get("context.model.game"),
 					c = utils.ember_lookup('router:main');
@@ -597,7 +634,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				img.src = this.get("context.model.gameBoxart");
 				boxart.appendChild(img);
 				thumb.appendChild(boxart);
-			}
+			}*/
 
 
 			if ( f.settings.directory_logos ) {

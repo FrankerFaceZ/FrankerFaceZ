@@ -594,11 +594,11 @@ FFZ.prototype.setup_line = function() {
 
 	this._last_row = {};
 
-    this.log("Hooking the Ember Chat Line component.");
+    /*this.log("Hooking the Ember Chat Line component.");
 	var Line = utils.ember_resolve('component:chat-line');
 
 	if ( Line )
-		this._modify_chat_line(Line);
+		this._modify_chat_line(Line);*/
 
     this.log("Hooking the Ember VOD Chat Line component.");
     var VOD = utils.ember_resolve('component:vod-chat-line');
@@ -608,15 +608,19 @@ FFZ.prototype.setup_line = function() {
         this.log("Couldn't find VOD Chat Line component.");
 
 
-    var other_lines = ['message-line','whisper-line'];
-    for(var i=0; i < other_lines.length; i++) {
-        var component = utils.ember_resolve('component:' + other_lines[i]);
-        if ( component )
-            component.reopen({
-                didUpdate: function() { },
-                didInsertElement: function() { }
-            });
-    }
+    this.log("Hooking the Ember Message Line component.");
+    var MLine = utils.ember_resolve('component:message-line');
+    if ( MLine )
+        this._modify_chat_subline(MLine);
+    else
+        this.error("Couldn't find the Message Line component.");
+
+    this.log("Hooking the Ember Whisper Line component.");
+    var WLine = utils.ember_resolve('component:whisper-line');
+    if ( WLine )
+        this._modify_chat_subline(WLine);
+    else
+        this.error("Couldn't find the Whisper Line component.");
 
 
 	// Store the capitalization of our own name.
@@ -818,17 +822,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             return output + '</span>';
         },
 
-        tagName: "li",
-        classNameBindings: is_vod ? ["msgObject.ffz_has_mention:ffz-mentioned"] : [":message-line", ":chat-line", "msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
-        attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
-
-        didUpdate: function() {
-            this.ffzRender();
-        },
-
-        didInsertElement: function() {
-            this.ffzRender();
-        },
+        //tagName: "li",
 
         ffzRender: function() {
             var el = this.get('element'),
@@ -852,7 +846,22 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
         ffzHasOldMessages: function() {
             var old_messages = this.get("msgObject.ffz_old_messages");
             return old_messages && old_messages.length;
-        }.property("msgObject.ffz_old_messages"),
+        }.property("msgObject.ffz_old_messages")
+    });
+}
+
+
+FFZ.prototype._modify_chat_subline = function(component) {
+    var f = this;
+
+    this._modify_chat_line(component);
+
+    component.reopen({
+        classNameBindings: [":message-line", ":chat-line", "msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
+        attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
+
+        didInsertElement: function() { this.ffzRender(); },
+        didUpdate: function() { this.ffzRender(); },
 
         click: function(e) {
             if ( ! e.target )
@@ -920,7 +929,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             } else if ( e.target.classList.contains('undelete') )
                 this.set("msgObject.deleted", false);
         }
-    });
+    })
 }
 
 
@@ -939,6 +948,9 @@ FFZ.prototype._modify_vod_line = function(component) {
             else
                 this.$(".deleted").replaceWith(this.buildMessageHTML());
         }),*/
+
+        classNameBindings: ["msgObject.ffz_has_mention:ffz-mentioned"],
+        attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
         tokenizedMessage: function() {
 			try {
