@@ -369,7 +369,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 						return;
 
 					e.preventDefault();
-					t.get('controller').transitionTo('channel.index', Channel.find({id: channel_id}).load());
+					utils.ember_lookup('router:main').transitionTo('channel.index', Channel.find({id: channel_id}).load());
 					return false;
 				});
 
@@ -462,7 +462,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			}
 
 			f.close_popup();
-			this.get('controller').transitionTo('channel.index', Channel.find({id: target}).load());
+			utils.ember_lookup('router:main').transitionTo('channel.index', Channel.find({id: target}).load());
 			return false;
 		},
 
@@ -570,7 +570,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			if ( ! boxart && thumb && this.get('context.model.game') ) {
 				var img = document.createElement('img'),
 					game = this.get("context.model.game"),
-					c = this.get('controller');
+					c = utils.ember_lookup('router:main');
 
 				boxart = document.createElement('a');
 				boxart.className = 'boxart';
@@ -589,7 +589,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 					else if ( game === "Creative" )
 						c.transitionTo('creative.channels.index');
 					else
-						c.transitionTo('gameDirectory.index', encodeURIComponent(game));
+						c.transitionTo('game-directory.index', encodeURIComponent(game));
 
 					return false;
 				});

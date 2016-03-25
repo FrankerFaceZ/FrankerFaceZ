@@ -834,6 +834,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             var el = this.get('element'),
                 output = this.buildSenderHTML();
 
+            if ( el.tagName === 'DIV' )
+                return this.rerender();
+
             if ( this.get('msgObject.deleted') )
                 output += this.buildDeletedMessageHTML()
             else
