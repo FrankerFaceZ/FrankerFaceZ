@@ -227,68 +227,74 @@ FFZ.prototype.setup_layout = function() {
 		}.property("playerSize"),
 
 		ffzPortraitWarning: function() {
-			if ( ! f.settings.portrait_mode || f._portrait_warning || f.settings.portrait_warning || ! this.get('isTooSmallForRightColumn') )
-				return;
+            var t = this;
+            // Delay this, in case we're just resizing the window.
+            setTimeout(function() {
+                if ( ! f.settings.portrait_mode || f._portrait_warning || f.settings.portrait_warning || document.body.getAttribute('data-current-path').indexOf('user.') !== 0 || ! t.get('isTooSmallForRightColumn') )
+				    return;
 
-			f._portrait_warning = true;
-			f.show_message('Twitch\'s Chat Sidebar has been hidden as a result of FrankerFaceZ\'s Portrait Mode because the window is too wide.<br><br>Please <a href="#" onclick="ffz.settings.set(\'portrait_mode\',0);jQuery(this).parents(\'.ffz-noty\').remove();ffz._portrait_warning = false;return false">disable Portrait Mode</a> or make your window narrower.<br><br><a href="#" onclick="ffz.settings.set(\'portrait_warning\',true);jQuery(this).parents(\'.ffz-noty\').remove();return false">Do not show this message again</a>');
+			    f._portrait_warning = true;
+			    f.show_message('Twitch\'s Chat Sidebar has been hidden as a result of FrankerFaceZ\'s Portrait Mode because the window is too wide.<br><br>Please <a href="#" onclick="ffz.settings.set(\'portrait_mode\',0);jQuery(this).parents(\'.ffz-noty\').remove();ffz._portrait_warning = false;return false">disable Portrait Mode</a> or make your window narrower.<br><br><a href="#" onclick="ffz.settings.set(\'portrait_warning\',true);jQuery(this).parents(\'.ffz-noty\').remove();return false">Do not show this message again</a>');
+            }, 50);
 
 		}.observes("isTooSmallForRightColumn"),
 
 		ffzUpdateCss: function() {
-			// TODO: Fix this mess of duplicate code.
 			var out = '';
-
 			if ( ! f.has_bttv ) {
-				if ( this.get('portraitMode') ) {
-					var size = this.get('playerSize'),
-						height = size[1],
-						top = height + 120 + 60;
+                if ( this.get('isRightColumnClosed') )
+                    out = '';
+                else {
+				    if ( this.get('portraitMode') ) {
+                        var size = this.get('playerSize'),
+                            video_below = this.get('portraitVideoBelow'),
+                            window_height = this.get('windowHeight'),
+                            window_width = this.get('windowWidth'),
 
-					if ( this.get('portraitVideoBelow') ) {
-						var wh = this.get("windowHeight"),
-							mch = wh - top;
+                            video_height = size[1] + 120 + 60,
+                            chat_height = window_height - video_height,
 
-						out = (this.get('isRightColumnClosed') ? '' : 'body[data-current-path^="user."] #left_col, ') +
-						'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: 0 !important; top: ' + mch + 'px; height: ' + top + 'px; }' +
-						'body[data-current-path^="user."].ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: 0 !important; top: ' + mch + 'px; height: ' + top + 'px; }' +
-						'body[data-current-path^="user."] #right_col { width: 100%; height: ' + mch + 'px; left: 0; }';
-					} else
-						out = (this.get('isRightColumnClosed') ? '' : 'body[data-current-path^="user."] #left_col, ') +
-						'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: 0 !important; height: ' + top + 'px; }' +
-						'body[data-current-path^="user."].ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: 0 !important; height: ' + top + 'px; }' +
-						'body[data-current-path^="user."] #right_col { width: 100%; top: ' + top + 'px; left: 0; }';
+                            video_top = video_below ? chat_height : 0,
+                            chat_top = video_below ? 0 : video_height,
 
-					// Theatre Mode Portrait
-					if ( true ) { //this.get('theaterPortraitMode') ) {
-						// Recalculate the player height, not including the title or anything special.
-						var width = this.get("windowWidth"),
-							wh = this.get("windowHeight"),
-							height = (9 * width / 16);
+                            theatre_video_height = Math.floor(Math.max(window_height * 0.1, Math.min(window_height - 300, 9 * window_width / 16))),
+                            theatre_chat_height = window_height - theatre_video_height,
 
-						height = Math.floor(Math.max(wh * 0.1, Math.min(wh - 300, height)));
+                            theatre_video_top = video_below ? theatre_chat_height : 0,
+                            theatre_chat_top = video_below ? 0 : theatre_video_height;
 
-						if ( this.get('portraitVideoBelow') ) {
-							var mch = this.get("windowHeight") - height;
 
-							out += (this.get('isRightColumnClosed') ? '' : 'body[data-current-path^="user."] .app-main.theatre #left_col, ') +
-							'body[data-current-path^="user."]:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) { margin-right: 0 !important; top: ' + mch + 'px; height: ' + height + 'px; }' +
-							'body[data-current-path^="user."].ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) { margin-left: 0 !important; top: ' + mch + 'px; height: ' + height + 'px; }' +
-							'body[data-current-path^="user."] .app-main.theatre #right_col { width: 100%; height: ' + mch + 'px; left: 0; }';
-						} else
-							out += 'body[data-current-path^="user."]:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) { margin-right: 0 !important; height: ' + height + 'px; }' +
-							'body[data-current-path^="user."].ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) { margin-left: 0 !important; height: ' + height + 'px; }' +
-							'body[data-current-path^="user."] .app-main.theatre #right_col { width: 100%; top: ' + height + 'px; left: 0; }';
-					}
+                        out = 'body[data-current-path^="user."] #left_col,' +
+                            'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col{' +
+                                'margin-right:0 !important;' +
+                                'top:' + video_top + 'px;' +
+                                'height:' + video_height + 'px}' +
+                            'body[data-current-path^="user."].ffz-sidebar-swap #main_col{' +
+                                'margin-left:0 !important;' +
+                                'top:' + video_top + 'px;' +
+                                'height:' + video_height + 'px}' +
+                            'body[data-current-path^="user."] #right_col{' +
+                                'width:100%;' +
+                                'top:' + chat_top + 'px;' +
+                                'height:' + chat_height + 'px}' +
+                            'body[data-current-path^="user."] .app-main.theatre #left_col,' +
+                            'body[data-current-path^="user."] .app-main.theatre #main_col{' +
+                                'top:' + theatre_video_top + 'px;' +
+                                'height:' + theatre_video_height + 'px}' +
+                            'body[data-current-path^="user."] .app-main.theatre #right_col{' +
+                                'top:' + theatre_chat_top + 'px;' +
+                                'height:' + theatre_chat_height + 'px}';
 
-				} else {
-					var width = this.get('rightColumnWidth');
-
-					out = '#main_col.expandRight #right_close { left: none !important; }' +
-						'#right_col { width: ' + width + 'px; }' +
-						'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) { margin-right: ' + width + 'px; }' +
-						'body.ffz-sidebar-swap #main_col:not(.expandRight) { margin-left: ' + width + 'px; }';
-				}
+                    }  else {
+					    var width = this.get('rightColumnWidth');
+					    out = '#main_col.expandRight #right_close{left: none !important}' +
+                            '#right_col{width:' + width + 'px}' +
+                            'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight){' +
+                                'margin-right:' + width + 'px}' +
+                            'body.ffz-sidebar-swap #main_col:not(.expandRight){' +
+                                'margin-left:' + width + 'px}';
+				    }
+                }
 
 				f._layout_style.innerHTML = out;
 			}

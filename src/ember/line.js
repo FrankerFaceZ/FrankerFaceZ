@@ -900,13 +900,13 @@ FFZ.prototype._modify_chat_subline = function(component) {
 					return;
 
 				} else if ( cl.contains('ban') )
-                    this.sendAction("banUser", {user:from});
+                    this.sendAction("banUser", from);
 
                 else if ( cl.contains('unban') )
-                    this.sendAction("unbanUser", {user:from});
+                    this.sendAction("unbanUser", from);
 
                 else if ( cl.contains('timeout') )
-                    this.sendAction("timeoutUser", {user:from});
+                    this.sendAction("timeoutUser", from);
 
             } else if ( cl.contains('badge') ) {
                 if ( cl.contains('turbo') )
@@ -926,10 +926,16 @@ FFZ.prototype._modify_chat_subline = function(component) {
                     sender: from
                 });
 
-            } else if ( e.target.classList.contains('undelete') )
+            } else if ( e.target.classList.contains('undelete') ) {
+                e.preventDefault();
                 this.set("msgObject.deleted", false);
+            }
         }
-    })
+    });
+
+    try {
+        component.create().destroy()
+    } catch(err) { }
 }
 
 
@@ -1005,6 +1011,10 @@ FFZ.prototype._modify_vod_line = function(component) {
             }
         }
     });
+
+    try {
+        component.create().destroy()
+    } catch(err) { }
 }
 
 

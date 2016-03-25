@@ -291,12 +291,10 @@ FFZ.prototype._modify_following = function() {
 						valid_hosts.push(host);
 					}
 
-                    f.log("Stuff!", [this, e, valid_hosts, skipped]);
+                    //f.log("Stuff!", [this, e, valid_hosts, skipped]);
 
                     this.set('ffz_skipped', skipped);
                     this.setContent(valid_hosts);
-                    this.set('total', e._total);
-                    return;
 
 					// We could get non-empty results even with no new hosts.
 					this.set('gotNonEmptyResults', e.hosts && e.hosts.length);

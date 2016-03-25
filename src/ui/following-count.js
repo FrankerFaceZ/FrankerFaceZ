@@ -241,8 +241,11 @@ FFZ.prototype._build_following_tooltip = function(el) {
 
 	// Reposition the tooltip.
 	setTimeout(function() {
-		var tip = document.querySelector('.tipsy'),
-			bb = tip.getBoundingClientRect(),
+		var tip = document.querySelector('.tipsy');
+        if ( ! tip )
+            return;
+
+		var bb = tip.getBoundingClientRect(),
 
 			left = parseInt(tip.style.left || '0'),
 			right = bb.left + tip.scrollWidth;

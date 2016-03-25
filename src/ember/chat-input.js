@@ -99,7 +99,7 @@ FFZ.prototype.setup_chat_input = function() {
 
 	this._modify_chat_input(Input);
 
-	var views = this._roomv && this._roomv._viewRegistry || utils.ember_views();
+	var views = utils.ember_views();
 	for(var key in views) {
 		var v = views[key];
 		if ( v instanceof Input ) {
@@ -276,6 +276,8 @@ FFZ.prototype._modify_chat_input = function(component) {
 				case KEYCODES.ENTER:
 					if ( ! e.shiftKey && ! e.shiftLeft )
 						this.set('ffz_mru_index', -1);
+
+                    setTimeout(this.ffzResizeInput.bind(this),10);
 
 				default:
 					return this._onKeyDown(event);

@@ -235,7 +235,7 @@ API.prototype.unload_set = function(id) {
 			if ( ! room )
 				continue;
 
-			var ind = room.ext_sets.indexOf(exact_id);
+			var ind = room.ext_sets ? room.ext_sets.indexOf(exact_id) : -1;
 			if ( ind !== -1 )
 				room.ext_sets.splice(ind,1);
 		}
@@ -345,7 +345,7 @@ API.prototype.register_room_set = function(room_id, id, emote_set) {
 		this.ffz.emote_sets[exact_id] = emote_set;
 
 	// Register it on the room.
-	room.ext_sets.push(exact_id);
+	room.ext_sets && room.ext_sets.push(exact_id);
 	emote_set.users.push(room_id);
 }
 
@@ -358,7 +358,7 @@ API.prototype.unregister_room_set = function(room_id, id) {
 	if ( ! emote_set || ! room )
 		return;
 
-	var ind = room.ext_sets.indexOf(exact_id);
+	var ind = room.ext_sets ? room.ext_sets.indexOf(exact_id) : -1;
 	if ( ind !== -1 )
 		room.ext_sets.splice(ind,1);
 
