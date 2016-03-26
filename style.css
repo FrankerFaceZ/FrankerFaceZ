@@ -537,11 +537,13 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
     padding: 10px 20px;
 }
 
+.suggestion.ffz-is-favorite,
 .emoticon.ffz-favorite { position: relative; }
 
 .favorites-grid:not(:empty) + .ffz-no-emotes,
 .favorites-grid .emoticon.ffz-favorite:before { display: none }
 
+.suggestion.ffz-is-favorite:before,
 .emoticon.ffz-favorite:before {
     content: "";
     display: block;
@@ -550,6 +552,8 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
     right: 0; bottom: 0;
     background: url("//cdn.frankerfacez.com/script/emoticon_favorite.png") no-repeat;
 }
+
+.suggestion.ffz-is-favorite:before { right: 2.5px; bottom: 2.5px }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.menu-side-padding { padding-left: 20px; padding-right: 20px; }
 
@@ -1815,9 +1819,9 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
     pointer-events: none;
 }
 
-.chat-container:not(.chatReplay) .chat-interface .more-messages-indicator.ffz-freeze-indicator {
+/*.chat-container:not(.chatReplay) .chat-interface .more-messages-indicator.ffz-freeze-indicator {
     top: 0;
-}
+}*/
 
 /* Chat History */
 
@@ -2673,6 +2677,50 @@ body:not(.ffz-creative-showcase) .creative-hero,
 #ffz-group-table *,
 .ffz-ui-popup * {
 	box-sizing: content-box;
+}
+
+
+/* Draggable Stats on Player */
+
+.player .ui-draggable.player-playback-stats { cursor: move }
+.player .ui-draggable.player-playback-stats li { cursor: default }
+
+
+/* FFZ Suggestions */
+
+.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion {
+    width: auto;
+    background-repeat: no-repeat;
+    background-position: calc(100% - 10px) center;
+}
+
+.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.has-info {
+    height: 40px;
+    line-height: 20px;
+    padding-top: 2px;
+}
+
+.ffz-suggestions .suggestion div,
+.ffz-suggestions .suggestion span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ffz-suggestions .suggestion.is-emoji {
+    background-size: 18px;
+}
+
+.ffz-suggestions .suggestion i { opacity: 0.5 }
+
+.ffz-suggestions .suggestion.has-info span {
+    opacity: 0.5;
+    display: block;
+    margin-top: -4px;
+    font-size: 10px;
+}
+
+.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.has-image:not(.has-info) {
+    line-height: 40px;
 }
 
 

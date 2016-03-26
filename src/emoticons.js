@@ -346,6 +346,9 @@ FFZ.prototype.unload_set = function(set_id) {
 		if ( api && api.emote_sets && api.emote_sets[set_id] )
 			api.emote_sets[set_id] = undefined;
 	}
+
+    if ( this._inputv )
+        Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
 }
 
 
@@ -406,6 +409,9 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 		this._cindex.ffzFixTitle();
 
 	this.update_ui_link();
+
+    if ( this._inputv )
+        Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
 
 	if ( callback )
 		callback(true, data);

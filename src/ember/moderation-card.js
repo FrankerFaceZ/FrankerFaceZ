@@ -279,6 +279,17 @@ FFZ.settings_info.mod_buttons = {
                     }
 
                     f.settings.set('mod_buttons', final);
+
+                    // Update existing chat lines.
+                    var CL = utils.ember_resolve('component:chat-line'),
+                        views = CL ? utils.ember_views() : [];
+
+                    for(var vid in views) {
+                        var view = views[vid];
+                        if ( view instanceof CL && view.buildModIconsHTML )
+                            view.$('.mod-icons').replaceWith(view.buildModIconsHTML());
+                    }
+
                 }, 600);
 		}
 	};

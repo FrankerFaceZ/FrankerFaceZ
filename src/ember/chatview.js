@@ -373,6 +373,11 @@ FFZ.prototype.setup_chatview = function() {
 				f._chatv.ffzUpdateMenuUnread();
 			}.observes("invitedPrivateGroupRooms"),
 
+            ffzChangedRoom: function() {
+                if ( f._inputv )
+                    Ember.propertyDidChange(f._inputv, 'ffz_emoticons');
+            }.observes('currentRoom'),
+
 			notificationsCount: function() {
 				if ( ! f._chatv || f.has_bttv )
 					return this._super();

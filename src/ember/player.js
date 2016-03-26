@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require('../utils');
+    utils = require('../utils'),
+    constants = require('../constants');
 
 
 // ---------------
@@ -69,10 +70,11 @@ FFZ.prototype.setup_player = function() {
 	this.log("Hooking HTML5 Player UI.");
 	this._modify_player(Player2)
 
-	// Modify all existing players.
-	if ( ! window.Ember )
-		return;
+    try {
+        Player2.create().destroy();
+    } catch(err) { }
 
+	// Modify all existing players.
 	var views = utils.ember_views();
 	for(var key in views) {
 		if ( ! views.hasOwnProperty(key) )
@@ -86,10 +88,6 @@ FFZ.prototype.setup_player = function() {
 		try {
 			this._modify_player(view);
 			view.ffzInit();
-
-			var tp2 = window.require("web-client/components/twitch-player2");
-			if ( tp2 && tp2.getPlayer && tp2.getPlayer() )
-				view.ffzPostPlayer();
 
 		} catch(err) {
 			this.error("Player2 setup ffzInit: " + err);
@@ -160,6 +158,16 @@ FFZ.prototype._modify_player = function(player) {
 			var player = this.get('player');
 			if ( ! player )
                 return;
+
+
+            // Make the stats window draggable and fix the button.
+            var stats = this.$('.player .js-playback-stats');
+            stats.draggable({cancel: 'li', containment: 'parent'});
+
+            // Give the player time to do stuff before we change this
+            // text. It's a bit weird otherwise.
+            setTimeout(function(){stats.children('.js-stats-toggle').html(constants.CLOSE);},500);
+
 
 			// Only set up the stats hooks if we need stats.
 			var has_video = false;
