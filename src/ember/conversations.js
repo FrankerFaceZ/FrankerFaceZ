@@ -56,14 +56,20 @@ FFZ.prototype.setup_conversations = function() {
 
 	this.log("Hooking the Ember Conversation Window component.");
 	var ConvWindow = utils.ember_resolve('component:conversation-window');
-	if ( ConvWindow )
+	if ( ConvWindow ) {
 		this._modify_conversation_window(ConvWindow);
+        try { ConvWindow.create().destroy() }
+        catch(err) { }
+    }
 
 
 	this.log("Hooking the Ember Conversation Line component.");
 	var ConvLine = utils.ember_resolve('component:conversation-line');
-	if ( ConvLine )
+	if ( ConvLine ) {
 		this._modify_conversation_line(ConvLine);
+        try { ConvLine.create().destroy() }
+        catch(err) { }
+    }
 
 	// TODO: Make this better later.
 	jQuery('.conversations-list').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});

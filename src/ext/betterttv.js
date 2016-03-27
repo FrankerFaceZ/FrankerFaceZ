@@ -256,7 +256,7 @@ FFZ.prototype.setup_bttv = function(delay) {
             if ( emote_set && emote_set.emoticons )
                 for(var emote_id in emote_set.emoticons) {
                     emote = emote_set.emoticons[emote_id];
-                    if ( ! emotes[emote.name] )
+                    if ( ! emotes.hasOwnProperty(emote.name) )
                         emotes[emote.name] = emote;
                 }
         }
@@ -274,9 +274,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 
             for(var x=0,y=segments.length; x < y; x++) {
                 segment = segments[x];
-                emote = emotes[segment];
-
-                if ( emote ) {
+                if ( emotes.hasOwnProperty(segment) ) {
+                    emote = emotes[segment];
                     if ( text.length ) {
                         var toks = parse_emoji(text.join(' ') + ' ');
                         for(var q=0; q < toks.length; q++)

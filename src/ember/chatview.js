@@ -456,6 +456,7 @@ FFZ.prototype.setup_chatview = function() {
 		Chat.create().destroy();
 	} catch(err) { }
 
+
 	// Modify all existing Chat views.
 	var views = utils.ember_views();
 	for(var key in views) {

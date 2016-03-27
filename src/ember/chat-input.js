@@ -116,6 +116,18 @@ FFZ.settings_info.input_complete_emotes = {
 }
 
 
+FFZ.settings_info.input_complete_name_at = {
+    type: "boolean",
+    value: true,
+
+    category: "Chat Input",
+    no_bttv: true,
+
+    name: "Tab-Complete Usernames with At Sign",
+    help: "When enabled, tab-completed usernames will have an @ sign before them if you typed one. This is default Twitch behavior, but unnecessary."
+}
+
+
 FFZ.settings_info.input_complete_without_prefix = {
     type: "boolean",
     value: true,
@@ -160,12 +172,17 @@ FFZ.prototype.setup_chat_input = function() {
 
 	this._modify_chat_input(Input);
 
+    try { Input.create().destroy()
+    } catch(err) { }
+
 	var views = utils.ember_views();
 	for(var key in views) {
 		var v = views[key];
 		if ( v instanceof Input ) {
 			this.log("Manually modifying Chat Input component.", v);
-			this._modify_chat_input(v);
+            if ( ! v.ffzInit )
+			    this._modify_chat_input(v);
+
 			v.ffzInit();
 		}
 	}
@@ -439,8 +456,9 @@ FFZ.prototype._modify_chat_input = function(component) {
                 ind = this.get('ffz_partial_word_start'),
                 text = this.get('textareaValue'),
 
-                content = (item.command_content && text.charAt(0) === '/' ?
-                                item.command_content : item.content) || item.label,
+                content = ((f.settings.input_complete_name_at && item.type === 'user' && this.get('ffz_partial_word').charAt(0) === '@') ? '@' : '') +
+                            ((item.command_content && text.charAt(0) === '/' ?
+                                item.command_content : item.content) || item.label),
 
                 trail = text.substr(ind + this.get('ffz_partial_word').length),
                 prefix = text.substr(0, ind) + content + (trail ? '' : ' ');
@@ -931,9 +949,9 @@ FFZ.prototype._modify_chat_input = function(component) {
                                 }
                             }
                         });
-
-                        break;
                     }
+
+                    break;
 
 
                 case KEYCODES.ENTER:
