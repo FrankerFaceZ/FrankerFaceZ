@@ -196,28 +196,50 @@ FFZ.prototype.setup_directory = function() {
 	this.log("Hooking the Ember Directory views.");
 
 	var ChannelView = utils.ember_resolve('component:stream-preview');
-	if ( ChannelView )
+	if ( ChannelView ) {
 		this._modify_directory_live(ChannelView);
+        try {
+		    ChannelView.create().destroy();
+	    } catch(err) { }
+    }
 
-	var CreativeChannel = utils.ember_resolve('view:creative-channel');
-	if ( CreativeChannel )
+	var CreativeChannel = utils.ember_resolve('component:creative-preview');
+	if ( CreativeChannel ) {
 		this._modify_directory_live(CreativeChannel);
+        try {
+		    CreativeChannel.create().destroy();
+	    } catch(err) { }
+    }
 
 	var CSGOChannel = utils.ember_resolve('view:cs-go-channel');
 	if ( CSGOChannel )
 		this._modify_directory_live(CSGOChannel, true);
 
-	var HostView = utils.ember_resolve('view:host');
-	if ( HostView )
-		this._modify_directory_host(HostView);
+	var HostView = utils.ember_resolve('component:host-preview');
+	HostView = this._modify_directory_host(HostView);
+    try {
+        HostView.create().destroy();
+    } catch(err) { }
+
 
 	// Initialize existing views.
 	var views = utils.ember_views();
 	for(var key in views) {
 		var view = views[key];
+        if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) ) {
+            if ( ! view.ffzInit )
+                this._modify_directory_live(view);
+        } else if ( CSGOChannel && view instanceof CSGOChannel ) {
+            if ( ! view.ffzInit )
+                this._modify_directory_live(view, true);
+        } else if ( view instanceof HostView || view.get('tt_content') === 'live_host' ) {
+            if ( ! view.ffzInit )
+                this._modify_directory_host(view);
+        } else
+            continue;
+
 		try {
-			if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) || (CSGOChannel && view instanceof CSGOChannel) || (HostView && view instanceof HostView) )
-				view.ffzInit();
+            view.ffzInit();
 		} catch(err) {
 			this.error("Directory Setup: " + err);
 		}
@@ -350,7 +372,9 @@ FFZ.prototype._modify_following = function() {
 
 
 FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
-	var f = this;
+	var f = this,
+        pref = is_csgo ? 'context.model.' : 'stream.';
+
 	dir.reopen({
 		didInsertElement: function() {
 			this._super();
@@ -362,7 +386,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
 				cap = thumb && thumb.querySelector('.cap'),
-                channel_id = this.get('stream.channel.name');
+                channel_id = this.get(pref + 'channel.name');
 
             el.setAttribute('data-channel', channel_id);
 
@@ -391,8 +415,8 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				logo.className = 'profile-photo';
 				logo.classList.toggle('is-csgo', is_csgo);
 
-				logo.src = this.get('stream.channel.logo') || NO_LOGO;
-				logo.alt = this.get('stream.channel.display_name');
+				logo.src = this.get(pref + 'channel.logo') || NO_LOGO;
+				logo.alt = this.get(pref + 'channel.display_name');
 
 				link.href = '/' + channel_id;
 				link.addEventListener('click', function(e) {
@@ -429,7 +453,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 		},
 
         ffzRotateImage: function() {
-            var url = this.get('stream.preview.medium'),
+            var url = this.get(pref + 'preview.medium'),
                 now = Math.round((new Date).getTime() / 150000);
 
             if ( FFZ._image_cache[url] && FFZ._image_cache[url] !== now )
@@ -441,7 +465,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
         },
 
 		ffzUpdateUptime: function() {
-			var raw_created = this.get('stream.created_at'),
+			var raw_created = this.get(pref + 'created_at'),
 				up_since = raw_created && utils.parse_date(raw_created),
 				now = Date.now() - (f._ws_server_offset || 0),
 				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0;
@@ -455,23 +479,20 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 			}
 		}
 	});
-
-	try {
-		dir.create().destroy();
-	} catch(err) { }
 }
 
 
 FFZ.prototype._modify_directory_host = function(dir) {
-	var f = this;
-	dir.reopen({
+	var f = this, mutator;
+
+    mutator = {
 		didInsertElement: function() {
 			this._super();
-			//try {
+			try {
 				this.ffzInit();
-			//} catch(err) {
-				//f.error("directory/host ffzInit: " + err);
-			//}
+			} catch(err) {
+				f.error("component:host-preview ffzInit: " + err);
+			}
 		},
 
 		willClearRender: function() {
@@ -479,7 +500,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			try {
 				this.ffzCleanup();
 			} catch(err) {
-				f.error("directory/host ffzCleanup: " + err);
+				f.error("component:host-preview ffzCleanup: " + err);
 			}
 		},
 
@@ -508,8 +529,8 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			e.preventDefault();
 			e.stopPropagation();
 
-			var hosts = this.get('context.model.ffz_hosts'),
-				target = this.get('context.model.target.channel.name');
+			var hosts = this.get('stream.ffz_hosts'),
+				target = this.get('stream.target.channel.name');
 
 			if ( f.settings.directory_host_menus === 0 || ! hosts || (f.settings.directory_host_menus === 1 && hosts.length < 2) )
 				return this.ffzVisitChannel((hosts && hosts.length < 2) ? hosts[0].name : target);
@@ -541,7 +562,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 			hdr.textContent = 'Hosted Channel';
 			menu.appendChild(hdr);
 
-			make_link(this.get('context.model.target.channel'));
+			make_link(this.get('stream.target.channel'));
 
 			hdr = document.createElement('div');
 			hdr.className = 'header';
@@ -564,7 +585,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 		},
 
         ffzRotateImage: function() {
-            var url = this.get('context.model.target.preview'),
+            var url = this.get('stream.target.preview'),
                 now = Math.round((new Date).getTime() / 150000);
 
             if ( FFZ._image_cache[url] && FFZ._image_cache[url] !== now )
@@ -576,7 +597,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
         },
 
 		ffzCleanup: function() {
-			var target = this.get('context.model.target.channel');
+			var target = this.get('stream.target.channel');
 			if ( f._popup && f._popup.classList.contains('ffz-channel-selector') && f._popup.getAttribute('data-channel') === target )
 				f.close_popup();
 
@@ -591,8 +612,8 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				cap = thumb && thumb.querySelector('.cap'),
 				title = meta && meta.querySelector('.title a'),
 
-				target = this.get('context.model.target.channel'),
-				hosts = this.get('context.model.ffz_hosts'); //,
+				target = this.get('stream.target.channel'),
+				hosts = this.get('stream.ffz_hosts'); //,
 
 				//boxart = thumb && thumb.querySelector('.boxart');
 
@@ -641,8 +662,8 @@ FFZ.prototype._modify_directory_host = function(dir) {
 					link = document.createElement('a');
 
 				logo.className = 'profile-photo';
-				logo.src = this.get('context.model.target.channel.logo') || NO_LOGO;
-				logo.alt = this.get('context.model.target.channel.display_name');
+				logo.src = this.get('stream.target.channel.logo') || NO_LOGO;
+				logo.alt = this.get('stream.target.channel.display_name');
 
 				link.href = '/' + target.name;
 				link.addEventListener('click', this.ffzVisitChannel.bind(this, target.name));
@@ -671,9 +692,14 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				cap.addEventListener('click', this.ffzShowHostMenu.bind(this));
 			}
 		}
-	});
+	};
 
-	try {
-		dir.create().destroy();
-	} catch(err) { }
+    if ( dir )
+        dir.reopen(mutator);
+    else {
+        dir = Ember.Component.extend(mutator);
+        App.__deprecatedInstance__.registry.register('component:host-preview', dir);
+    }
+
+    return dir;
 }

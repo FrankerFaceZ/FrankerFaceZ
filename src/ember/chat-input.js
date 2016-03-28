@@ -230,6 +230,9 @@ FFZ.prototype._modify_chat_input = function(component) {
 			// Redo our key bindings.
 			var t = this.$("textarea");
 
+            if ( ! t || ! t.length )
+                f.error("Cannot find textarea in Twitch Chat Input.");
+
 			t.off("keydown");
             t.off("keyup");
 			t.on("keydown", this._ffzKeyDown.bind(this));
