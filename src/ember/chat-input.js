@@ -4,6 +4,11 @@ var FFZ = window.FrankerFaceZ,
 
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
 
+    CHARCODES = {
+        AT_SIGN: 64,
+        COLON: 58
+    },
+
 	KEYCODES = {
 		BACKSPACE: 8,
 		TAB: 9,
@@ -235,6 +240,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 			t.off("keydown");
             t.off("keyup");
+            t.on("keypress", this._ffzKeyPress.bind(this));
 			t.on("keydown", this._ffzKeyDown.bind(this));
 
 			t.attr('rows', 1);
@@ -261,6 +267,8 @@ FFZ.prototype._modify_chat_input = function(component) {
 
             t.off("keyup");
 			t.off("keydown");
+            t.off("keypress");
+
             t.on("keyup", this._onKeyUp.bind(this));
 			t.on("keydown", this._onKeyDown.bind(this));
 		},
@@ -787,6 +795,57 @@ FFZ.prototype._modify_chat_input = function(component) {
             this.ffzHideSuggestions();
         }),
 
+
+        _ffzKeyPress: function(event) {
+            var t = this,
+                e = event || window.event,
+                key = e.charCode || e.keyCode;
+
+            switch(key) {
+                case CHARCODES.AT_SIGN:
+                    // If we get an @, show the menu. But only if we're at a new word
+                    // boundary, or the start of the line.
+                    if ( ! this.get('ffz_suggestions_visible') ) {
+                        var ind = selection_start(this.get('chatTextArea')) - 1;
+                        Ember.run.next(function() {
+                            if ( ind < 0 || t.get('textareaValue').charAt(ind) === ' ' ) {
+                                t.ffzShowSuggestions();
+                                t.trackSuggestions("@");
+                            }
+                        });
+                    }
+
+                    break;
+
+                case CHARCODES.COLON:
+                    if ( f.settings.input_emoji ) {
+                        var textarea = this.get('chatTextArea'),
+                            ind = selection_start(textarea);
+
+                        ind > 0 && Ember.run.next(function() {
+                            var text = t.get('textareaValue'),
+                                emoji_start = text.lastIndexOf(':', ind - 1);
+
+                            if ( emoji_start !== -1 && ind !== -1 && text.charAt(ind) === ':' ) {
+                                var match = text.substr(emoji_start + 1, ind - emoji_start - 1),
+                                    emoji_id = f.emoji_names[match],
+                                    emoji = f.emoji_data[emoji_id];
+
+                                if ( emoji ) {
+                                    var prefix = text.substr(0, emoji_start) + emoji.raw;
+                                    t.ffzHideSuggestions();
+                                    t.set('textareaValue', prefix + text.substr(ind + 1));
+                                    Ember.run.next(function() {
+                                        move_selection(t.get('chatTextArea'), prefix.length);
+                                    });
+                                }
+                            }
+                        })
+                    }
+            }
+        },
+
+
 		_ffzKeyDown: function(event) {
 			var t = this,
                 e = event || window.event,
@@ -842,34 +901,6 @@ FFZ.prototype._modify_chat_input = function(component) {
                     break;
 
 
-                case KEYCODES.TWO:
-                    // Should: Pop open the suggestions tab if we add an @. This is
-                    // probably not the correct way to check for this, given how
-                    // different region keyboards work.
-                    if ( ! this.get('ffz_suggestions_visible') && (e.shiftKey || e.shiftLeft) ) {
-                        this.ffzFetchNameSuggestions();
-                        this.set('ffz_suggestions_visible', true);
-                        this.trackSuggestions("@");
-                    }
-
-                    break;
-
-
-                /* Not convinced this isn't annoying.
-                case KEYCODES.HOME:
-                case KEYCODES.END:
-                    // Navigate through suggestions if those are open.
-                    if ( this.get('ffz_suggestions_visible') && !( e.shiftKey || e.shiftLeft || e.ctrlKey || e.metaKey ) ) {
-                        var suggestions = this.get('ffz_sorted_suggestions'),
-                            current = key === KEYCODES.HOME ? 0 : (suggestions.length - 1);
-
-                        this.set('ffz_freeze_suggestions', -1);
-                        this.set('ffz_current_suggestion', current);
-                        e.preventDefault();
-                    }
-
-                    break;*/
-
                 case KEYCODES.PAGE_UP:
                 case KEYCODES.PAGE_DOWN:
                     // Navigate through suggestions if those are open.
@@ -923,40 +954,6 @@ FFZ.prototype._modify_chat_input = function(component) {
                     break;
 
 
-                case KEYCODES.COLON:
-                case KEYCODES.FAKE_COLON:
-                    // If the appropriate setting is enabled and the user has entered
-                    // an actual emoji, we need to replace the name in chat.
-
-                    // This is also not the right place to do this. We need to find the
-                    // character that was pressed, not the key.
-                    if ( f.settings.input_emoji && ( e.shiftKey || e.shiftLeft ) ) {
-                        var ind = selection_start(this.get('chatTextArea'));
-
-                        ind > 0 && Ember.run.next(function() {
-                            var text = t.get('textareaValue'),
-                                emoji_start = text.lastIndexOf(':', ind - 1);
-
-                            if ( emoji_start !== -1 && ind !== -1 && text.charAt(ind) === ':' ) {
-                                var match = text.substr(emoji_start + 1, ind - emoji_start - 1),
-                                    emoji_id = f.emoji_names[match],
-                                    emoji = f.emoji_data[emoji_id];
-
-                                if ( emoji ) {
-                                    var prefix = text.substr(0, emoji_start) + emoji.raw;
-                                    t.ffzHideSuggestions();
-                                    t.set('textareaValue', prefix + text.substr(ind + 1));
-                                    Ember.run.next(function() {
-                                        move_selection(t.get('chatTextArea'), prefix.length);
-                                    });
-                                }
-                            }
-                        });
-                    }
-
-                    break;
-
-
                 case KEYCODES.ENTER:
                     if ( e.shiftKey || e.shiftLeft )
                         break;
@@ -977,6 +974,10 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 
 				case KEYCODES.SPACE:
+                    // First things first, if we're currently showing suggestions, get rid of them.
+                    if ( this.get('ffz_suggestions_visible') )
+                        this.ffzHideSuggestions();
+
                     // After pressing space, if we're entering a command, do stuff!
                     // TODO: Better support for commands.
                     var sel = selection_start(this.get('chatTextArea'));
