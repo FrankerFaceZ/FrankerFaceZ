@@ -958,6 +958,8 @@ FFZ.prototype._modify_chat_input = function(component) {
                     if ( e.shiftKey || e.shiftLeft )
                         break;
 
+                    this.set('ffz_mru_index', -1);
+
                     if ( this.get('ffz_suggestions_visible') )
                         this.ffzCompleteSuggestion();
                     else {

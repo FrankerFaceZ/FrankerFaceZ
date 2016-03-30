@@ -30,8 +30,6 @@ FFZ.settings_info.fix_color = {
 	},
 	value: '1',
 
-    visible: function() { return localStorage.hasOwnProperty("ffz_setting_fix_color") },
-
 	category: "Chat Appearance",
 	no_bttv: true,
 
