@@ -413,6 +413,8 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
     if ( this._inputv )
         Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
 
+	this.rerender_feed_cards();
+
 	if ( callback )
 		callback(true, data);
 }

@@ -622,115 +622,162 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji)
 }
 
 
+FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id) {
+	"use strict";
+
+	if ( typeof message === "string" )
+		message = [{type: "text", text: message}];
+
+	if ( helpers && helpers.linkifyMessage )
+		message = helpers.linkifyMessage(message);
+
+	if ( helpers && helpers.emoticonizeMessage )
+		message = helpers.emoticonizeMessage(message, emotes);
+
+	// Tokenize Lines
+	var tokens = [], token;
+
+	for(var i = 0; i < message.length; i++) {
+		token = message[i];
+		if ( ! token )
+			continue;
+
+		if ( typeof token !== "string" )
+			if ( token.type === "text" )
+				token = token.text;
+			else {
+				tokens.push(token);
+				continue;
+			}
+
+		var segments = token.split(/\n/g);
+		while(segments.length) {
+			tokens.push({type: "text", text: segments.shift()});
+			if ( segments.length )
+				tokens.push({type: "raw", html: "</p><p>"});
+		}
+	}
+
+	tokens = this.tokenize_emotes(user_id, user_id, tokens)
+
+	if ( this.settings.parse_emoji )
+		tokens = this.tokenize_emoji(tokens);
+
+	return tokens;
+}
+
+
+FFZ.prototype.render_token = function(render_links, warn_links, token) {
+	if ( ! token )
+		return "";
+
+	if ( token.hidden )
+		return "";
+
+	else if ( token.type === "raw" )
+		return token.html;
+
+	else if ( token.type === "emoticon" ) {
+		var src = token.imgSrc, srcset, cls, extra;
+		if ( token.ffzEmote ) {
+			var emote_set = this.emote_sets && this.emote_sets[token.ffzEmoteSet],
+				emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
+
+			srcset = emote ? emote.srcSet : token.srcSet;
+			//extra = (emote ? ` data-ffz-emote="${emote.id}"` : '') + (emote_set ? ` data-ffz-set="${emote_set.id}"` : '');
+			extra = (emote ? ' data-ffz-emote="' + emote.id + '"' : '') + (emote_set ? ' data-ffz-set="' + emote_set.id + '"' : '')
+
+		} else if ( token.ffzEmoji ) {
+			var setting = this.settings.parse_emoji;
+			if ( setting === 0 || (setting === 1 && ! token.tw) || (setting === 2 && ! token.noto) || (setting === 3 && ! token.one) )
+				return token.altText;
+
+			src = setting === 3 ? token.one_src : (setting === 2 ? token.noto_src : token.tw_src);
+			//extra = ` data-ffz-emoji="${token.ffzEmoji}" height="18px"`;
+			extra = ' data-ffz-emoji="' + token.ffzEmoji + '" height="18px"';
+			cls = ' emoji';
+
+		} else {
+			var id = FFZ.src_to_id(src),
+				replacement = this.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[id];
+
+			//extra = ` data-emote="${id}" onerror="FrankerFaceZ._emote_mirror_swap(this)"`;
+			extra = ' data-emote="' + id + '" onerror="FrankerFaceZ._emote_mirror_swap(this)"';
+
+			if ( replacement ) {
+				src = constants.EMOTE_REPLACEMENT_BASE + replacement;
+				srcset = '';
+			} else
+				srcset = utils.build_srcset(id);
+		}
+
+		//return `<img class="emoticon ffz-tooltip${cls||''}"${extra||''} src="${utils.quote_attr(src)}"${srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : ''} alt="${utils.quote_attr(token.altText)}">`;
+		return '<img class="emoticon ffz-tooltip' + (cls||'') + '"' + (extra||'') + ' src="' + utils.quote_attr(src) + '"' + (srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : '') + ' alt="' + utils.quote_attr(token.altText) + '">';
+	}
+
+	else if ( token.type === "link" ) {
+		var text = token.title || (token.isLong && '<long link>') || (token.isDeleted && '<deleted link>') || (warn_links && '<whispered link>') || token.text;
+
+		if ( ! render_links && render_links !== undefined )
+			return utils.sanitize(text);
+
+		var href = token.link || token.text,
+			cls = '';
+
+		if ( token.isMailTo ) {
+			// E-Mail Link
+			cls = 'email-link';
+			href = 'mailto:' + href;
+
+		} else {
+			// Web Link
+			cls = 'chat-link';
+
+			if ( this.settings.link_info ) {
+				if (!( this._link_data && this._link_data[href] )) {
+					this._link_data = this._link_data || {};
+					this._link_data[href] = true;
+					this.ws_send("get_link", href, load_link_data.bind(this, href));
+				}
+			}
+		}
+
+		// Deleted Links
+		var actual_href = href;
+		if ( token.isDeleted ) {
+			cls = 'deleted-link ' + cls;
+			href = '#';
+
+		} else if ( warn_links ) {
+			cls = 'warn-link deleted-link ' + cls;
+			href = '#';
+		}
+
+		//return `<a class="ffz-tooltip ${cls}" data-text="${utils.quote_attr(token.text)}" data-url="${utils.quote_attr(actual_href)}" href="${utils.quote_attr(href||'#')}" target="_blank">${utils.sanitize(text)}</a>`;
+		return '<a class="ffz-tooltip' + (cls ? ' ' + cls : '') + '" data-text="' + utils.quote_attr(token.text) + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href||'#') + '" target="_blank">' + utils.sanitize(text) + '</a>';
+	}
+
+	else if ( token.type === "deleted" )
+		return '<span class="deleted-word tooltip" title="' + utils.quote_attr(token.text) + '" data-text="' + utils.sanitize(token.text) + '">&times;&times;&times;</span>';
+		//return `<span class="deleted-word tooltip" title="${utils.quote_attr(token.text)}" data-text="${utils.sanitize(token.text)}">&times;&times;&times;</span>`;
+
+	else if ( token.type === "mention" )
+		return '<span class="' + (token.isOwnMessage ? 'mentioning' : 'mentioned') + '">' + utils.sanitize(token.user) + '</span>';
+		//return `<span class="${token.isOwnMessage ? 'mentioning' : 'mentioned'}">${utils.sanitize(token.user)}</span>`;
+
+	else if ( token.deletedLink || token.text )
+		return utils.sanitize(token.text);
+
+	else if ( typeof token !== "string" )
+		return '<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>' + utils.quote_attr(JSON.stringify(token,null,2)) + '</div>">[invalid token]</b>';
+		//return `<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>${utils.quote_attr(JSON.stringify(token,null,2))}</div>">[invalid token]</b>`;
+
+	return utils.sanitize(token);
+}
+
+
 FFZ.prototype.render_tokens = function(tokens, render_links, warn_links) {
-	var f = this;
-	return _.map(tokens, function(token) {
-        if ( ! token )
-            return "";
-
-		if ( token.hidden )
-			return "";
-
-		else if ( token.type === "raw" )
-			return token.html;
-
-		else if ( token.type === "emoticon" ) {
-			var src = token.imgSrc, srcset, cls, extra;
-			if ( token.ffzEmote ) {
-				var emote_set = f.emote_sets && f.emote_sets[token.ffzEmoteSet],
-					emote = emote_set && emote_set.emoticons && emote_set.emoticons[token.ffzEmote];
-
-				srcset = emote ? emote.srcSet : token.srcSet;
-                //extra = (emote ? ` data-ffz-emote="${emote.id}"` : '') + (emote_set ? ` data-ffz-set="${emote_set.id}"` : '');
-                extra = (emote ? ' data-ffz-emote="' + emote.id + '"' : '') + (emote_set ? ' data-ffz-set="' + emote_set.id + '"' : '')
-
-			} else if ( token.ffzEmoji ) {
-				var setting = f.settings.parse_emoji;
-				if ( setting === 0 || (setting === 1 && ! token.tw) || (setting === 2 && ! token.noto) || (setting === 3 && ! token.one) )
-					return token.altText;
-
-				src = setting === 3 ? token.one_src : (setting === 2 ? token.noto_src : token.tw_src);
-                //extra = ` data-ffz-emoji="${token.ffzEmoji}" height="18px"`;
-                extra = ' data-ffz-emoji="' + token.ffzEmoji + '" height="18px"';
-				cls = ' emoji';
-
-			} else {
-				var id = FFZ.src_to_id(src),
-                    replacement = f.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[id];
-
-                //extra = ` data-emote="${id}" onerror="FrankerFaceZ._emote_mirror_swap(this)"`;
-                extra = ' data-emote="' + id + '" onerror="FrankerFaceZ._emote_mirror_swap(this)"';
-
-                if ( replacement ) {
-                    src = constants.EMOTE_REPLACEMENT_BASE + replacement;
-                    srcset = '';
-                } else
-					srcset = utils.build_srcset(id);
-			}
-
-            //return `<img class="emoticon ffz-tooltip${cls||''}"${extra||''} src="${utils.quote_attr(src)}"${srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : ''} alt="${utils.quote_attr(token.altText)}">`;
-            return '<img class="emoticon ffz-tooltip' + (cls||'') + '"' + (extra||'') + ' src="' + utils.quote_attr(src) + '"' + (srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : '') + ' alt="' + utils.quote_attr(token.altText) + '">';
-		}
-
-		else if ( token.type === "link" ) {
-			var text = token.title || (token.isLong && '<long link>') || (token.isDeleted && '<deleted link>') || (warn_links && '<whispered link>') || token.text;
-
-			if ( ! render_links && render_links !== undefined )
-				return utils.sanitize(text);
-
-			var href = token.link || token.text,
-				cls = '';
-
-			if ( token.isMailTo ) {
-				// E-Mail Link
-				cls = 'email-link';
-                href = 'mailto:' + href;
-
-			} else {
-				// Web Link
-                cls = 'chat-link';
-
-                if ( f.settings.link_info ) {
-                    if (!( f._link_data && f._link_data[href] )) {
-                        f._link_data = f._link_data || {};
-                        f._link_data[href] = true;
-                        f.ws_send("get_link", href, load_link_data.bind(f, href));
-                    }
-                }
-			}
-
-			// Deleted Links
-			var actual_href = href;
-			if ( token.isDeleted ) {
-				cls = 'deleted-link ' + cls;
-				href = '#';
-
-            } else if ( warn_links ) {
-                cls = 'warn-link deleted-link ' + cls;
-                href = '#';
-            }
-
-            //return `<a class="ffz-tooltip ${cls}" data-text="${utils.quote_attr(token.text)}" data-url="${utils.quote_attr(actual_href)}" href="${utils.quote_attr(href||'#')}" target="_blank">${utils.sanitize(text)}</a>`;
-            return '<a class="ffz-tooltip' + (cls ? ' ' + cls : '') + '" data-text="' + utils.quote_attr(token.text) + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href||'#') + '" target="_blank">' + utils.sanitize(text) + '</a>';
-		}
-
-        else if ( token.type === "deleted" )
-            return '<span class="deleted-word tooltip" title="' + utils.quote_attr(token.text) + '" data-text="' + utils.sanitize(token.text) + '">&times;&times;&times;</span>';
-            //return `<span class="deleted-word tooltip" title="${utils.quote_attr(token.text)}" data-text="${utils.sanitize(token.text)}">&times;&times;&times;</span>`;
-
-		else if ( token.type === "mention" )
-            return '<span class="' + (token.isOwnMessage ? 'mentioning' : 'mentioned') + '">' + utils.sanitize(token.user) + '</span>';
-            //return `<span class="${token.isOwnMessage ? 'mentioning' : 'mentioned'}">${utils.sanitize(token.user)}</span>`;
-
-		else if ( token.deletedLink || token.text )
-			return utils.sanitize(token.text);
-
-        else if ( typeof token !== "string" )
-            return '<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>' + utils.quote_attr(JSON.stringify(token,null,2)) + '</div>">[invalid token]</b>';
-            //return `<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>${utils.quote_attr(JSON.stringify(token,null,2))}</div>">[invalid token]</b>`;
-
-		return utils.sanitize(token);
-	}).join("");
+	return _.map(tokens, this.render_token.bind(this, render_links, warn_links)).join("");
 }
 
 

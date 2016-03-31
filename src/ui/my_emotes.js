@@ -93,9 +93,9 @@ FFZ.menu_pages.myemotes = {
 	name: "My Emoticons",
 	icon: constants.EMOTE,
 
-	visible: function(view) {
+	has_sets: function(view) {
 		var user = this.get_user(),
-			tmi = view.get('controller.currentRoom.tmiSession'),
+			tmi = view && view.get('controller.currentRoom.tmiSession'),
 			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
 			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
 
@@ -104,7 +104,11 @@ FFZ.menu_pages.myemotes = {
 		if ( sk && ! this.settings.global_emotes_in_menu && sk.indexOf('0') !== -1 )
 			sk.removeObject('0');
 
-		return ffz_sets.length || (sk && sk.length) || this.settings.emoji_in_menu;
+		return ffz_sets.length || (sk && sk.length);
+	},
+
+	visible: function(view) {
+		return this.settings.emoji_in_menu || FFZ.menu_pages.myemotes.has_sets.apply(this, view);
 	},
 
     default_page: function() {
@@ -133,6 +137,10 @@ FFZ.menu_pages.myemotes = {
         all: {
             name: "All Emoticons",
             sort_order: 2,
+
+			visible: function(view) {
+				return FFZ.menu_pages.myemotes.has_sets.apply(this, view);
+			},
 
             render: function(view, container) {
                 FFZ.menu_pages.myemotes.render_lists.call(this, view, container, false);

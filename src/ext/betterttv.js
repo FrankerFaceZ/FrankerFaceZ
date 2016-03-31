@@ -49,6 +49,7 @@ FFZ.prototype.setup_bttv = function(delay) {
     }
 
 	document.body.classList.add('ffz-bttv');
+	document.body.classList.toggle('ffz-bttv-dark', BetterTTV.settings.get('darkenedMode'));
 
 	// Disable Chat Tabs
 	if ( this._chatv ) {

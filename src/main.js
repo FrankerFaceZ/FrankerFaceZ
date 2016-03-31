@@ -35,7 +35,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 151,
+	major: 3, minor: 5, revision: 152,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -153,6 +153,7 @@ require('./ember/chat-input');
 //require('./ember/teams');
 require('./ember/directory');
 require('./ember/following');
+require('./ember/feed-card');
 
 require('./debug');
 
@@ -180,6 +181,7 @@ require('./ui/about_page');
 
 require('./commands');
 require('./ext/api');
+//require('./memes');
 
 
 // ---------------
@@ -415,6 +417,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_chat_input();
 	this.setup_directory();
 	this.setup_profile_following();
+	this.setup_feed_cards();
 
 	//this.setup_teams();
 
@@ -432,6 +435,8 @@ FFZ.prototype.init_ember = function(delay) {
     this.setup_message_event();
 	this.find_bttv(10);
 	this.find_emote_menu(10);
+
+	//this.setup_memes();
 
 	//this.check_news();
 	this.check_ff();

@@ -224,6 +224,23 @@ FFZ.prototype._modify_cindex = function(view) {
 				opts.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, opts.options.gravity || 'n');
 
 
+			/*if ( id === 'memeathon' ) {
+				var sb = document.createElement('a');
+				sb.className = 'action button js-sub-button primary subscribe-button meme-sub-button';
+				sb.id = 'meme-scribe';
+				sb.innerHTML = '<span class="subscribe-text">Subscribe</span><span class="subscribe-price">$599.99</span>';
+
+				var actions = el.querySelector('.channel-actions');
+				if ( actions ) {
+					var c = actions.querySelector('.notification-controls') || actions.querySelector('.follow-button');
+					if ( c )
+						actions.insertBefore(sb, c.nextSibling);
+					else
+						actions.appendChild(sb);
+				}
+			}*/
+
+
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();

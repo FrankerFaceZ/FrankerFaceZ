@@ -514,6 +514,11 @@ FFZ.prototype._modify_cview = function(view) {
 		ffzInit: function() {
             f._chatv = this;
 
+			var room_id = this.get('controller.currentRoom.id'),
+				el = this.get('element');
+
+			el && el.setAttribute('data-room', room_id || "");
+
 			this.$('.textarea-contain').append(f.build_ui_link(this));
 			this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
             this.$('.chat-messages').find('.ffz-tooltip').tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
@@ -589,6 +594,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 			var room = this.get('controller.currentRoom'),
 				room_id = room && room.get('id'),
+				el = this.get('element'),
 				was_unread = room_id && this.ffz_unread[room_id],
 				update_height = false;
 
@@ -597,6 +603,7 @@ FFZ.prototype._modify_cview = function(view) {
 				room.ffz_last_view = Date.now();
 			}
 
+			el && el.setAttribute('data-room', room_id || "");
 
 			if ( room && room._ffz_tab ) {
 				var was_hidden = room._ffz_tab.classList.contains('hidden'),
