@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -20,7 +20,8 @@ import (
 	"syscall"
 	"time"
 	"unicode/utf8"
-	"regexp"
+
+	"github.com/gorilla/websocket"
 )
 
 // SuccessCommand is a Reply Command to indicate success in reply to a C2S Command.
@@ -52,6 +53,7 @@ const defaultMinMemoryKB = 1024 * 24
 
 // DotTwitchDotTv is the .twitch.tv suffix.
 const DotTwitchDotTv = ".twitch.tv"
+
 var OriginRegexp = regexp.MustCompile(DotTwitchDotTv + "$")
 
 // ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
@@ -205,7 +207,7 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Connection") == "Upgrade" {
+	if strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
 		updateSysMem()
 
 		if Statistics.SysMemFreeKB > 0 && Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
