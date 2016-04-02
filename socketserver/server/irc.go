@@ -113,7 +113,7 @@ func ircConnection() {
 		submitAuth(submittedUser, submittedChallenge)
 	})
 
-	err := c.ConnectTo("irc.twitch.tv")
+	err := c.ConnectTo("irc.chat.twitch.tv")
 	if err != nil {
 		log.Fatalln("Cannot connect to IRC:", err)
 	}
