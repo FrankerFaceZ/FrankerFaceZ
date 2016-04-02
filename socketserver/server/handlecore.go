@@ -54,7 +54,9 @@ const defaultMinMemoryKB = 1024 * 24
 // DotTwitchDotTv is the .twitch.tv suffix.
 const DotTwitchDotTv = ".twitch.tv"
 
-var OriginRegexp = regexp.MustCompile(DotTwitchDotTv + "$")
+const dotCbenniDotCom = ".cbenni.com"
+
+var OriginRegexp = regexp.MustCompile("(" + DotTwitchDotTv + "|" + dotCbenniDotCom + ")" + "$")
 
 // ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
