@@ -917,6 +917,9 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 
 	this.update_ui_link();
 
+	if ( data.set )
+		this.rerender_feed_cards(data.set);
+
 	if ( callback )
 		callback(true, data);
 }

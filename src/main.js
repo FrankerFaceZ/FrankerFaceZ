@@ -35,7 +35,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 152,
+	major: 3, minor: 5, revision: 156,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -181,7 +181,6 @@ require('./ui/about_page');
 
 require('./commands');
 require('./ext/api');
-//require('./memes');
 
 
 // ---------------
@@ -435,8 +434,6 @@ FFZ.prototype.init_ember = function(delay) {
     this.setup_message_event();
 	this.find_bttv(10);
 	this.find_emote_menu(10);
-
-	//this.setup_memes();
 
 	//this.check_news();
 	this.check_ff();

@@ -1819,9 +1819,9 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
     pointer-events: none;
 }
 
-/*.chat-container:not(.chatReplay) .chat-interface .more-messages-indicator.ffz-freeze-indicator {
+.chat-container:not(.chatReplay) .chat-interface .more-messages-indicator.ffz-freeze-indicator {
     top: 0;
-}*/
+}
 
 /* Chat History */
 
@@ -2722,89 +2722,3 @@ body:not(.ffz-creative-showcase) .creative-hero,
 .ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.has-image:not(.has-info) {
     line-height: 40px;
 }
-
-
-/* Dank */
-
-.big-memes.ffz-channel[data-channel="memeathon"]:after,
-.streams .ember-view[data-channel="memeathon"] .stream .thumb:after {
-    content: "";
-    position: absolute;
-    top: 0; bottom: 0;
-    left: 0; right: 0;
-    background: url("//cdn.frankerfacez.com/script/wow.gif") no-repeat;
-    background-size: contain;
-    background-position: bottom right;
-    pointer-events: none;
-}
-
-.big-memes.ffz-channel[data-channel="memeathon"]:after { background-size: 50% }
-
-.ffz-channel[data-channel="memeathon"] {
-	margin-top: -30px;
-	padding-top: 30px;
-	background-image: linear-gradient(rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.8) 1080px),
-		url("https://static-cdn.jtvnw.net/jtv_user_pictures/memeathon-channel_offline_image-806e8ad012b1e372-1920x1080.png");
-}
-
-.ffz-bttv-dark .ffz-channel[data-channel="memeathon"],
-.ffz-dark .ffz-channel[data-channel="memeathon"] {
-	background-image: linear-gradient(rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.85) 1080px),
-		url("https://static-cdn.jtvnw.net/jtv_user_pictures/memeathon-channel_offline_image-806e8ad012b1e372-1920x1080.png");
-}
-
-.ember-chat[data-room="memeathon"] {
-	background-position: left center;
-	background-image: linear-gradient(rgba(242,242,242,0.9) 0%, rgba(242,242,242,0.9) 1%),
-		url("https://static-cdn.jtvnw.net/jtv_user_pictures/memeathon-channel_offline_image-806e8ad012b1e372-1920x1080.png");
-}
-
-.ffz-bttv-dark .ember-chat[data-room="memeathon"],
-.theatre .ember-chat[data-room="memeathon"],
-.dark .ember-chat[data-room="memeathon"],
-.force-dark .ember-chat[data-room="memeathon"] {
-	background-image: linear-gradient(rgba(25,25,25,0.95) 0%, rgba(25,25,25,0.95) 1%),
-		url("https://static-cdn.jtvnw.net/jtv_user_pictures/memeathon-channel_offline_image-806e8ad012b1e372-1920x1080.png");
-}
-
-.ffz-channel[data-channel="memeathon"] #broadcast-meta .title {
-	text-shadow: 1px 0 0 #fff, -1px 0 0 #fff, 0 1px 0 #fff, 0 -1px 0 #fff;
-}
-
-.theatre .ffz-channel[data-channel="memeathon"] #broadcast-meta .title,
-.ffz-dark .ffz-channel[data-channel="memeathon"] #broadcast-meta .title { text-shadow: none; }
-
-.ffz-channel[data-channel="memeathon"] #broadcast-meta,
-.ffz-channel[data-channel="memeathon"] #broadcast-meta .title {
-	transform: scaleX(-1);
-}
-
-.ffz-channel[data-channel="memeathon"] #broadcast-meta .profile-photo {
-	transform: scaleX(-1) rotate(12deg);
-}
-
-.player[data-channel="memeathon"] .player-loading-spinner {
-	background: url("//cdn.frankerfacez.com/script/lanking.png") no-repeat;
-	width: 188px;
-	height: 188px;
-	border: none;
-	animation: loading-spin 1.5s infinite linear;
-}
-
-/* Allow Zalgo */
-.chat-line[data-room="memeathon"] { overflow: visible !important }
-
-/* Tilted * /
-.tilted.ember-chat[data-room="memeathon"] { transform: rotate(2deg); }
-
-/* Comic Sans * /
-.comic-sans.chat-line[data-room="memeathon"] { font-family: "Comic Sans MS"; }
-
-/* BILLY MAYS * /
-.billy-mays.chat-line[data-room="memeathon"] { text-transform: uppercase; }
-
-/* Upside Down * /
-.upside-down.chat-line[data-room="memeathon"] { transform: scale(-1) }
-
-/* Big Emotes * /
-.big-emotes.chat-line[data-room="memeathon"] .emoticon { zoom: 2 }

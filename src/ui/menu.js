@@ -406,13 +406,13 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
         var subpages = [];
         for(var key in data.pages) {
             var subpage = data.pages[key];
-            try {
-                if ( ! subpage || (subpage.hasOwnProperty("visible") && (!subpage.visible || (typeof subpage.visible === "function" && !subpage.visible.call(this, view)))) )
-                    continue;
-            } catch(err) {
-                this.error("menu_pages " + page + " subpage " + key + " visible: " + err);
-                continue;
-            }
+			try {
+				if ( ! subpage || (subpage.hasOwnProperty("visible") && (!subpage.visible || (typeof subpage.visible == "function" && !subpage.visible.call(this, view)))) )
+					continue;
+			} catch(err) {
+				this.error("menu_pages " + page + " subpage " + key + " visible: " + err);
+				continue;
+			}
 
             subpages.push([subpage.sort_order || 0, key, subpage]);
         }

@@ -429,6 +429,7 @@ FFZ.ws_commands.do_authorize = function(data) {
 			continue;
 
 		var r = this.rooms[room_id];
+
 		if ( r && r.room && !r.room.get('roomProperties.eventchat') && !r.room.get('isGroupRoom') && r.room.tmiRoom ) {
 			var c = r.room.tmiRoom._getConnection();
 			if ( c.isConnected ) {

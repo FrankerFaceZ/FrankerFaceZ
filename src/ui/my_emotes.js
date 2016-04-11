@@ -108,7 +108,7 @@ FFZ.menu_pages.myemotes = {
 	},
 
 	visible: function(view) {
-		return this.settings.emoji_in_menu || FFZ.menu_pages.myemotes.has_sets.apply(this, view);
+		return this.settings.emoji_in_menu || FFZ.menu_pages.myemotes.has_sets.call(this, view);
 	},
 
     default_page: function() {
@@ -139,7 +139,7 @@ FFZ.menu_pages.myemotes = {
             sort_order: 2,
 
 			visible: function(view) {
-				return FFZ.menu_pages.myemotes.has_sets.apply(this, view);
+				return FFZ.menu_pages.myemotes.has_sets.call(this, view);
 			},
 
             render: function(view, container) {

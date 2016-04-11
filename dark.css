@@ -1119,6 +1119,9 @@ body.ffz-dark,
 
 /* Activity Feeds */
 
+.button.alert { color: #fff !important }
+
+.ffz-dark .activity-notice { background-color: rgba(24,24,24,0.9) }
 .ffz-dark .pill { background-color: rgba(255,255,255,0.2) }
 
 .ffz-dark .activity-list-end svg { fill: #474747 }

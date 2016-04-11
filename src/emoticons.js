@@ -8,7 +8,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! emote.margins && ! emote.css )
 			return "";
 
-		return 'img[src="' + emote.urls[1] + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
+		return 'img[data-ffz-emote="' + emote.id + '"] { ' + (emote.margins ? "margin: " + emote.margins + ";" : "") + (emote.css || "") + " }\n";
 	};
 
 
@@ -413,7 +413,7 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
     if ( this._inputv )
         Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
 
-	this.rerender_feed_cards();
+	this.rerender_feed_cards(set_id);
 
 	if ( callback )
 		callback(true, data);

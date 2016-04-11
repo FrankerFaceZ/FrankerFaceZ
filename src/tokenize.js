@@ -260,6 +260,9 @@ FFZ.prototype.render_tooltip = function(el) {
                 var preview_url, width=0, height=0, image, set_id, emote, emote_set,
                     emote_id = this.getAttribute('data-ffz-emote');
                 if ( emote_id ) {
+					if ( emote_id == "93269" )
+						return '';
+
                     set_id = this.getAttribute('data-ffz-set');
                     emote_set = f.emote_sets[set_id];
                     emote = emote_set && emote_set.emoticons[emote_id];
@@ -305,7 +308,8 @@ FFZ.prototype.render_tooltip = function(el) {
                     //image = preview_url ? `<img style="height:112px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
                     image = preview_url ? '<img style="height:112px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
 
-                    if ( emote_set === "--global--" ) {
+					// Global OR Golden Kappa
+                    if ( emote_set === "--global--" || emote_id === '80393' ) {
                         emote_set = "Twitch Global";
                         set_type = null;
                     } else if ( emote_set === "--twitch-turbo--" || emote_set === "turbo" || emote_set === "--turbo-faces--" ) {
@@ -622,7 +626,7 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji)
 }
 
 
-FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id) {
+FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 	"use strict";
 
 	if ( typeof message === "string" )
@@ -658,7 +662,7 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id) {
 		}
 	}
 
-	tokens = this.tokenize_emotes(user_id, user_id, tokens)
+	tokens = this.tokenize_emotes(user_id, room_id, tokens)
 
 	if ( this.settings.parse_emoji )
 		tokens = this.tokenize_emoji(tokens);

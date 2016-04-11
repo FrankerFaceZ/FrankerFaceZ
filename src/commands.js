@@ -41,7 +41,7 @@ FFZ.ffz_commands.reload = function(room, args) {
 	// Emote Sets
 	for(var set_id in this.emote_sets) {
 		var es = this.emote_sets[set_id];
-		if ( es.hasOwnProperty('source_ext') )
+		if ( ! es || es.hasOwnProperty('source_ext') )
 			continue;
 
 		promises.push(new Promise(function(done, fail) {
