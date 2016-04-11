@@ -1,17 +1,19 @@
 package main
 
 import (
-	"net/http"
-	"flag"
-	"github.com/clarkduvall/hyperloglog"
-	"time"
-	"bitbucket.org/stendec/frankerfacez/socketserver/server"
-	"net/url"
-	"fmt"
-	"strings"
-	"errors"
 	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
 	"sync"
+	"time"
+
+	"bitbucket.org/stendec/frankerfacez/socketserver/server"
+	"github.com/clarkduvall/hyperloglog"
 )
 
 var configLocation = flag.String("config", "./config.json", "Location of the configuration file. Defaults to ./config.json")
@@ -39,8 +41,39 @@ func main() {
 		allServers[i].Setup(v)
 	}
 
+	printEveryDay()
+	os.Exit(0)
 	http.HandleFunc("/api/get", ServeAPIGet)
 	http.ListenAndServe(config.ListenAddr, http.DefaultServeMux)
+}
+
+func printEveryDay() {
+	year := 2015
+	month := 12
+	day := 23
+	filter := serverFilterAll
+	var filter1, filter2, filter3 serverFilter
+	filter1.Mode = serverFilterModeWhitelist
+	filter2.Mode = serverFilterModeWhitelist
+	filter3.Mode = serverFilterModeWhitelist
+	filter1.Add(allServers[0].subdomain)
+	filter2.Add(allServers[1].subdomain)
+	filter3.Add(allServers[2].subdomain)
+	stopTime := time.Now()
+	var at time.Time
+	const timeFmt = "2006-01-02"
+	for ; stopTime.After(at); day++ {
+		at = time.Date(year, time.Month(month), day, 0, 0, 0, 0, server.CounterLocation)
+		hll, _ := hyperloglog.NewPlus(server.CounterPrecision)
+		hll1, _ := hyperloglog.NewPlus(server.CounterPrecision)
+		hll2, _ := hyperloglog.NewPlus(server.CounterPrecision)
+		hll3, _ := hyperloglog.NewPlus(server.CounterPrecision)
+		addSingleDate(at, filter, hll)
+		addSingleDate(at, filter1, hll1)
+		addSingleDate(at, filter2, hll2)
+		addSingleDate(at, filter3, hll3)
+		fmt.Printf("%s\t%d\t%d\t%d\t%d\n", at.Format(timeFmt), hll.Count(), hll1.Count(), hll2.Count(), hll3.Count())
+	}
 }
 
 const RequestURIName = "q"
@@ -54,15 +87,15 @@ const statusPartial = "partial"
 const statusOk = "ok"
 
 type apiResponse struct {
-	Status string `json:"status"`
+	Status    string            `json:"status"`
 	Responses []requestResponse `json:"resp"`
 }
 
 type requestResponse struct {
-	Status string `json:"status"`
+	Status  string `json:"status"`
 	Request string `json:"req"`
-	Error string `json:"error,omitempty"`
-	Count uint64 `json:"count,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Count   uint64 `json:"count,omitempty"`
 }
 
 func ServeAPIGet(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +196,7 @@ func ProcessSingleGetRequest(req string) (result requestResponse) {
 
 	addSplit := strings.Split(serverSplit[0], separatorAdd)
 
-	outerLoop:
+outerLoop:
 	for _, split1 := range addSplit {
 		if len(split1) == 0 {
 			continue

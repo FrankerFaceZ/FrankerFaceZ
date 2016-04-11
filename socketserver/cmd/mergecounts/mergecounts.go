@@ -11,7 +11,7 @@ import (
 )
 
 var SERVERS = []string{
-//	"https://catbag.frankerfacez.com",
+	"https://catbag.frankerfacez.com",
 	"https://andknuckles.frankerfacez.com",
 	"https://tuturu.frankerfacez.com",
 }

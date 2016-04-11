@@ -171,7 +171,7 @@ func (si *serverInfo) GetHLL(at time.Time) (*hyperloglog.HyperLogLogPlus, error)
 	if err != nil {
 		// continue to download
 	} else {
-		fmt.Printf("opened hll %s:%s\n", si.subdomain, getHLLCacheKey(at))
+		//fmt.Printf("opened hll %s:%s\n", si.subdomain, getHLLCacheKey(at))
 		return loadHLLFromStream(reader)
 	}
 
