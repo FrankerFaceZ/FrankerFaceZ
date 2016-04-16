@@ -286,6 +286,11 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 	opacity: 0.95;
 }
 
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus #hostmode > div.clearfix,
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover #hostmode > div.clearfix,
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus .stats-and-actions,
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover .stats-and-actions,
+
 .ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus #hostmode > div.clearfix,
 .ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:hover #hostmode > div.clearfix,
 .ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus .stats-and-actions,
@@ -2441,6 +2446,8 @@ body:not(.ffz-bttv) .force-dark .ember-chat .chat-commands-dropdown li:hover {
 
 /* Conversations */
 
+.ffz-theatre-conversations .app-main.theatre .conversations-content { display: none }
+
 body:not(.ffz-bttv) .conversation-window .new-message-divider + .timestamp-line {
 	margin-top: -3px;
 }
@@ -2500,6 +2507,8 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 	bottom: -10px;
 }
 
+.ffz-theatre-conversations .theatre .player-controls-bottom,
+.ffz-theatre-conversations .theatre .player[data-controls=true] .player-controls-bottom,
 .ffz-top-conversations .theatre .player-controls-bottom,
 .ffz-top-conversations .theatre .player[data-controls=true] .player-controls-bottom {
 	padding-bottom: 0;
@@ -2722,3 +2731,20 @@ body:not(.ffz-creative-showcase) .creative-hero,
 .ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.has-image:not(.has-info) {
     line-height: 40px;
 }
+
+/* Dashboard Channel Feed */
+
+.ffz-feed-button span { line-height: 30px; }
+#ffz-feed-tabs .tabs { margin-bottom: 10px }
+#ffz-feed-tabs textarea { resize: vertical }
+
+.ffz-feed-button .char-count.over-limit { color: #A00 }
+.ffz-feed-button .char-count.over-limit span { display: inline }
+.ffz-feed-button .char-count span { display: none; opacity: 0.75 }
+.ffz-feed-button .char-count,
+.ffz-feed-button button { float: right; margin-left: 10px }
+
+body.ffz-bttv #ffz-feed-tabs .tabs li:not(.selected):not(:hover) a { color: #6441a5; }
+body.ffz-bttv-dark #ffz-feed-tabs .tabs li:not(.selected):not(:hover) a { color: #999; }
+
+body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }

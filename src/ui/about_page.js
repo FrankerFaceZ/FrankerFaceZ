@@ -1,7 +1,7 @@
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
     utils = require("../utils"),
-    createElement = document.createElement.bind(document),
+    createElement = utils.createElement,
 
     NICE_DESCRIPTION = {
         "cluster": null,
@@ -54,8 +54,7 @@ FFZ.ws_commands.update_news = function(version) {
 
 var include_html = function(heading_text, filename) {
         return function(view, container) {
-            var heading = createElement('div');
-            heading.className = 'chat-menu-content center';
+            var heading = createElement('div', 'chat-menu-content center');
             heading.innerHTML = '<h1>FrankerFaceZ</h1>' + (heading_text ? '<div class="ffz-about-subheading">' + heading_text + '</div>' : '');
 
             jQuery.ajax(filename, {cache: false, context: this})
@@ -69,8 +68,7 @@ var include_html = function(heading_text, filename) {
                     });
 
                 }).fail(function(data) {
-                    var content = createElement('div');
-                    content.className = 'chat-menu-content menu-side-padding';
+                    var content = createElement('div', 'chat-menu-content menu-side-padding');
                     content.textContent = 'There was an error loading this page from the server.';
 
                     container.appendChild(heading);
@@ -107,9 +105,8 @@ var update_player_stats = function(player, container) {
             if ( ! desc )
                 continue;
 
-            line = createElement('li');
+            line = createElement('li', null, desc + '<span></span>');
             line.setAttribute('data-property', key);
-            line.innerHTML = desc + '<span></span>';
             container.appendChild(line);
         }
 
@@ -193,7 +190,7 @@ FFZ.menu_pages.about = {
 
                 content = '<table class="ffz-about-table">';
                 content += '<tr><th colspan="4">Developers</th></tr>';
-                content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="//www.twitch.tv/dansalvato" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato1" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_new">&nbsp;</a></td></tr>';
+                content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="//www.twitch.tv/dansalvato" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_new">&nbsp;</a></td></tr>';
                 content += '<tr><td>Stendec</td><td><a class="twitch" href="//www.twitch.tv/sirstendec" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/SirStendec" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/channel/UCnxuvmK1DCPCXSJ-mXIh4KQ" title="YouTube" target="_new">&nbsp;</a></td></tr>';
 
                 content += '<tr class="debug"><td><a href="#" id="ffz-changelog">Version ' + FFZ.version_info + '</a></td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';

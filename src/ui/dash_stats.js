@@ -1,5 +1,10 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require('../utils');
+    utils = require('../utils'),
+
+	update_viewer_count = function(text) {
+		var vc = jQuery("#channel_viewer_count");
+		vc.text() === 'Hidden' || vc.text(text);
+	};
 
 
 // -------------------
@@ -196,7 +201,6 @@ FFZ.prototype._remove_dash_chart = function() {
 }
 
 
-
 FFZ.prototype.update_dash_stats = function() {
     var f = this,
         id = this.dashboard_channel;
@@ -225,10 +229,10 @@ FFZ.prototype.update_dash_stats = function() {
                 status = null;
 
             if ( ! data || ! data.stream )
-                !f.has_bttv && jQuery("#channel_viewer_count").text("Offline");
+                !f.has_bttv && update_viewer_count("Offline");
 
             else {
-                !f.has_bttv && jQuery("#channel_viewer_count").text(utils.number_commas(data.stream.viewers));
+                !f.has_bttv && update_viewer_count(utils.number_commas(data.stream.viewers));
                 viewers = data.stream.viewers;
 
                 var chan = data.stream.channel;

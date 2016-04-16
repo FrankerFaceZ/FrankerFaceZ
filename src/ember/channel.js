@@ -222,7 +222,7 @@ FFZ.prototype._modify_cindex = function(view) {
 
 			tb.attr('title', 'Theater Mode (Alt+T)');
 			if ( opts && opts.options && typeof opts.options.gravity !== "function" )
-				opts.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, opts.options.gravity || 'n');*/
+				opts.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, opts.options.gravity || 'n');//*/
 
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();

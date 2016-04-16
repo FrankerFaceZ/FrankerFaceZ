@@ -9,9 +9,9 @@ var FFZ = window.FrankerFaceZ,
 	],
 
 	badge_css = function(badge) {
-		var out = ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.extra_css || "") + '}';
-		if ( badge.transparent_image )
-			out += ".badges .badge.alpha.ffz-badge-" + badge.id + ",.ffz-transparent-badges .badges .ffz-badge-" + badge.id + ' { background-image: url("' + badge.transparent_image + '"); }';
+		var out = ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+		if ( badge.alpha_image )
+			out += ".badges .badge.alpha.ffz-badge-" + badge.id + ",.ffz-transparent-badges .badges .ffz-badge-" + badge.id + ' { background-image: url("' + badge.alpha_image + '"); }';
 		return out;
 	};
 
@@ -151,8 +151,10 @@ FFZ.prototype.setup_badges = function() {
 	s.id = "ffz-badge-css";
 	document.head.appendChild(s);
 
-	this.log("Adding legacy donor badges.");
-	this._legacy_add_donors();
+	this.log("Loading badges.");
+	this.load_badges();
+	//this.log("Adding legacy donor badges.");
+	//this._legacy_add_donors();
 }
 
 
@@ -161,8 +163,7 @@ FFZ.prototype.setup_badges = function() {
 // --------------------
 
 FFZ.ws_commands.reload_badges = function() {
-	this._legacy_load_bots();
-	this._legacy_load_donors();
+	this.load_badges();
 }
 
 
@@ -403,13 +404,89 @@ FFZ.prototype.bttv_badges = function(data) {
 
 
 // --------------------
-// Legacy Support
+// Badge Loading
 // --------------------
 
 FFZ.bttv_known_bots = ["nightbot","moobot","sourbot","xanbot","manabot","mtgbot","ackbot","baconrobot","tardisbot","deejbot","valuebot","stahpbot"];
 
+FFZ.prototype.load_badges = function(callback, tries) {
+	var f = this;
+	jQuery.getJSON(constants.API_SERVER + "v1/badges")
+		.done(function(data) {
+			var badge_total = 0,
+				badge_count = 0;
 
-FFZ.prototype._legacy_add_donors = function() {
+			for(var i=0; i < data.badges.length; i++) {
+				var badge = data.badges[i];
+				if ( badge && badge.name ) {
+					f._load_badge_json(badge.id, badge);
+					badge_total++;
+				}
+			}
+
+			if ( data.users )
+				for(var badge_id in data.users)
+					if ( data.users.hasOwnProperty(badge_id) && f.badges[badge_id] ) {
+						var badge = f.badges[badge_id],
+							users = data.users[badge_id];
+
+						for(var i=0; i < users.length; i++) {
+							var user = users[i],
+								ud = f.users[user] = f.users[user] || {},
+								badges = ud.badges = ud.badges || {};
+
+							badge_count++;
+							badges[badge.slot] = {id: badge.id};
+						}
+
+						f.log('Added "' + badge.name + '" badge to ' + utils.number_commas(users.length) + ' users.');
+					}
+
+			// Special Badges
+			var zw = f.users.zenwan = f.users.zenwan || {},
+				badges = zw.badges = zw.badges || {};
+			if ( ! badges[1] )
+				badge_count++;
+			badges[1] = {id: 2, image: "//cdn.frankerfacez.com/script/momiglee_badge.png", title: "WAN"};
+
+
+			f.log("Loaded " + utils.number_commas(badge_count) + " total badges across " + badge_total + " types.");
+			typeof callback === "function" && callback(true);
+
+		}).fail(function(data) {
+			if ( data.status === 404 )
+				return typeof callback === "function" && callback(false);
+
+			tries = (tries || 0) + 1;
+			if ( tries < 10 )
+				return setTimeout(f.load_badges.bind(f, callback, tries), 500 + 500*tries);
+
+			f.error("Unable to load badge data. [HTTP Status " + data.status + "]", data);
+			typeof callback === "function" && callback(false);
+		});
+}
+
+
+FFZ.prototype._load_badge_json = function(badge_id, data) {
+	this.badges[badge_id] = data;
+	if ( data.replaces ) {
+		data.replaces_type = data.replaces;
+		data.replaces = true;
+	}
+
+	if ( data.name === 'bot' )
+		data.visible = function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); };
+
+	utils.update_css(this._badge_style, badge_id, badge_css(data));
+}
+
+
+
+// --------------------
+// Legacy Support
+// --------------------
+
+/*FFZ.prototype._legacy_add_donors = function() {
 	// Developer Badge
 	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png", transparent_image: "//cdn.frankerfacez.com/script/devtransicon.png"};
 	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
@@ -511,4 +588,4 @@ FFZ.prototype._legacy_parse_badges = function(callback, data, slot, badge_id, ti
 		callback(true, count);
 
 	return count;
-}
+}*/

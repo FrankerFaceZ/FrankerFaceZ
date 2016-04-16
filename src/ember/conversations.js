@@ -1,6 +1,8 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
-	constants = require('../constants');
+	constants = require('../constants'),
+
+	createElement = utils.createElement;
 
 
 // ---------------
@@ -25,9 +27,23 @@ FFZ.settings_info.top_conversations = {
 
 	category: "Whispers",
 	name: "Position on Top",
-	help: "Display the new conversation-style whisper UI at the top of the window instead of the bottom.",
+	help: "Display the whisper UI at the top of the window instead of the bottom.",
 	on_update: function(val) {
 			document.body.classList.toggle('ffz-top-conversations', val);
+		}
+	};
+
+
+FFZ.settings_info.hide_conversations_in_theatre = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Whispers",
+	name: "Hide Whispers in Theater Mode",
+	help: "Hide the whisper UI when the page is in theater mode.",
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-theatre-conversations', val);
 		}
 	};
 
@@ -39,7 +55,7 @@ FFZ.settings_info.minimize_conversations = {
 
 	category: "Whispers",
 	name: "Minimize Whisper UI",
-	help: "Slide the Whisper UI mostly out of view when it's not being used and you have no unread messages.",
+	help: "Slide the whisper UI mostly out of view when it's not being used and you have no unread messages.",
 	on_update: function(val) {
 			document.body.classList.toggle('ffz-minimize-conversations', val);
 		}
@@ -53,27 +69,70 @@ FFZ.settings_info.minimize_conversations = {
 FFZ.prototype.setup_conversations = function() {
 	document.body.classList.toggle('ffz-top-conversations', this.settings.top_conversations);
 	document.body.classList.toggle('ffz-minimize-conversations', this.settings.minimize_conversations);
+	document.body.classList.toggle('ffz-theatre-conversations', this.settings.hide_conversations_in_theatre);
 
-	this.log("Hooking the Ember Conversation Window component.");
 	var ConvWindow = utils.ember_resolve('component:conversation-window');
 	if ( ConvWindow ) {
+		this.log("Hooking the Ember Conversation Window component.");
 		this._modify_conversation_window(ConvWindow);
         try { ConvWindow.create().destroy() }
         catch(err) { }
-    }
+    } else
+		this.log("Unable to resolve: component:conversation-window");
 
 
-	this.log("Hooking the Ember Conversation Line component.");
+	var ConvSettings = utils.ember_resolve('component:conversation-settings-menu');
+	if ( ConvSettings ) {
+		this.log("Hooking the Ember Conversation Settings Menu component.");
+		this._modify_conversation_menu(ConvSettings);
+		try { ConvSettings.create().destroy() }
+		catch(err) { }
+	} else
+		this.log("Unable to resolve: component:conversation-settings-menu");
+
+
 	var ConvLine = utils.ember_resolve('component:conversation-line');
 	if ( ConvLine ) {
+		this.log("Hooking the Ember Conversation Line component.");
 		this._modify_conversation_line(ConvLine);
         try { ConvLine.create().destroy() }
         catch(err) { }
-    }
+    } else
+		this.log("Unable to resolve: component:conversation-line");
 
 	// TODO: Make this better later.
 	jQuery('.conversations-list').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
     jQuery('.conversations-list').find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+}
+
+
+FFZ.prototype._modify_conversation_menu = function(component) {
+	var f = this;
+
+	component.reopen({
+		didInsertElement: function() {
+			var user = this.get('thread.otherUsername'),
+				el = this.get('element'),
+				sections = el && el.querySelectorAll('.options-section');
+
+			if ( ! user || ! user.length || f.has_bttv )
+				return;
+
+			if ( sections && sections.length )
+				el.appendChild(createElement('div', 'options-divider'));
+
+			var ffz_options = createElement('div', 'options-section'),
+				card_link = createElement('a', 'ffz-show-card', "Open Moderation Card");
+
+			card_link.addEventListener('click', function(e) {
+				el.parentElement.classList.add('hidden');
+				FFZ.chat_commands.card.call(f, null, [user]);
+			});
+
+			ffz_options.appendChild(card_link);
+			el.appendChild(ffz_options);
+		}
+	})
 }
 
 

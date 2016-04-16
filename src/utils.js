@@ -467,5 +467,14 @@ module.exports = FFZ.utils = {
 		return "" + count;
 	},
 
-	escape_regex: escape_regex
+	escape_regex: escape_regex,
+
+	createElement: function(tag, className, content) {
+		var out = document.createElement(tag);
+		if ( className )
+			out.className = className;
+		if ( content )
+			out.innerHTML = content;
+		return out;
+	}
 }

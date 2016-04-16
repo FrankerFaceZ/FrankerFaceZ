@@ -46,6 +46,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	if ( this.is_dashboard ) {
 		this._update_subscribers();
         this._remove_dash_chart();
+		//this._remove_dash_feed();
     }
 
 	document.body.classList.add('ffz-bttv');
@@ -224,7 +225,7 @@ FFZ.prototype.setup_bttv = function(delay) {
                     if ( text && text.length )
                         output.push(text);
                     var code = utils.quote_attr(data.raw);
-                    output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" data-regex="' + code + '" alt="' + code + '">']);
+                    output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">']);
                     text = null;
                 } else
                     text = (text || '') + match;
@@ -285,7 +286,7 @@ FFZ.prototype.setup_bttv = function(delay) {
                         text = [];
                     }
 
-                    new_tokens.push(['<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" data-regex="' + utils.quote_attr(emote.name) + '">']);
+                    new_tokens.push(['<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" alt="' + utils.quote_attr(emote.name) + '">']);
 
                     if ( mine && l_room )
                         f.add_usage(l_room, emote);

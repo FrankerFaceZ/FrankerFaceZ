@@ -35,7 +35,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 156,
+	major: 3, minor: 5, revision: 159,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -171,6 +171,7 @@ require('./ui/notifications');
 require('./ui/viewer_count');
 require('./ui/sub_count');
 require('./ui/dash_stats');
+require('./ui/dash_feed');
 
 require('./ui/menu_button');
 require('./ui/following');
@@ -349,6 +350,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_following_count(false);
 	this.setup_menu();
     this.setup_dash_stats();
+	this.setup_dash_feed();
 
 	this._update_subscribers();
 
