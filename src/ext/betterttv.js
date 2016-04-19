@@ -46,7 +46,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	if ( this.is_dashboard ) {
 		this._update_subscribers();
         this._remove_dash_chart();
-		//this._remove_dash_feed();
     }
 
 	document.body.classList.add('ffz-bttv');
@@ -61,8 +60,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 		this._chatv.ffzUnloadHost();
 	}
 
-	this.disconnect_extra_chat();
-
 	if ( this._roomv ) {
 		// Disable Chat Pause
 		if ( this.settings.chat_hover_pause )
@@ -72,6 +69,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 		if ( this.settings.room_status )
 			this._roomv.ffzUpdateStatus();
 	}
+
+	this.disconnect_extra_chat();
 
 	// Disable style blocks.
 	this.toggle_style('chat-setup');

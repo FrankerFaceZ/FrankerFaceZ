@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require("../utils");
+    utils = require("../utils"),
+	constants = require("../constants");
 
 
 // ---------------------
@@ -193,6 +194,7 @@ FFZ.prototype.show_message = function(message) {
 
 	window.noty({
 		text: message,
+		template: '<div class="noty_message"><span class="noty_text"></span><div class="noty_close">' + constants.CLOSE + '</div></div>',
 		theme: "ffzTheme",
 		layout: "bottomCenter",
 		closeWith: ["button"]

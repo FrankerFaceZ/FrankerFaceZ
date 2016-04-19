@@ -4,11 +4,11 @@
 
 
 /* Invert Some Badges */
-body:not(.ffz-dark) .app-main:not(.theatre) .conversation-window .badges .badge:not(.subscriber):not(.ffz-badge-0),
-body:not(.ffz-dark) > .chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-0),
-body:not(.ffz-dark) > .ember-chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-0),
-.app-main:not(.theatre) .chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-0),
-.app-main:not(.theatre) .ember-chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-0) {
+body:not(.ffz-dark) .app-main:not(.theatre) .conversation-window .badges .badge:not(.subscriber):not(.ffz-badge-1),
+body:not(.ffz-dark) > .chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-1),
+body:not(.ffz-dark) > .ember-chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-1),
+.app-main:not(.theatre) .chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-1),
+.app-main:not(.theatre) .ember-chat-container:not(.dark):not(.force-dark) .badges .badge:not(.subscriber):not(.ffz-badge-1) {
 	filter: invert(100%);
 	-webkit-filter: invert(100%);
 }
