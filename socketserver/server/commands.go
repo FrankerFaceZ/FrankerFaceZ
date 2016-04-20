@@ -107,8 +107,6 @@ func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 	return handler(conn, client, cmsg)
 }
 
-var lastVersionWithoutReplyWithServerTime = VersionFromString("ffz_3.5.78")
-
 // C2SHello implements the `hello` C2S Command.
 // It calls SubscribeGlobal() and SubscribeDefaults() with the client, and fills out ClientInfo.Version and ClientInfo.ClientID.
 func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
@@ -130,19 +128,13 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	SubscribeGlobal(client)
 	SubscribeDefaults(client)
 
-	if client.Version.After(&lastVersionWithoutReplyWithServerTime) {
-		jsTime := float64(time.Now().UnixNano()/1000) / 1000
-		return ClientMessage{
-			Arguments: []interface{}{
-				client.ClientID.String(),
-				jsTime,
-			},
-		}, nil
-	} else {
-		return ClientMessage{
-			Arguments: client.ClientID.String(),
-		}, nil
-	}
+	jsTime := float64(time.Now().UnixNano()/1000) / 1000
+	return ClientMessage{
+		Arguments: []interface{}{
+			client.ClientID.String(),
+			jsTime,
+		},
+	}, nil
 }
 
 func C2SPing(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
