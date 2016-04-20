@@ -181,7 +181,7 @@ var SocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return OriginRegexp.MatchString(r.Header.Get("Origin"))
+		return r.Header.Get("Origin") == "" || OriginRegexp.MatchString(r.Header.Get("Origin"))
 	},
 }
 
