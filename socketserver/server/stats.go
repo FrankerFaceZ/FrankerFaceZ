@@ -39,6 +39,8 @@ type StatsData struct {
 	ClientConnectsTotal    uint64
 	ClientDisconnectsTotal uint64
 
+	ClientVersions map[string]uint64
+
 	DisconnectCodes map[string]uint64
 
 	CommandsIssuedTotal uint64
@@ -88,6 +90,7 @@ func newStatsData() *StatsData {
 		CommandsIssuedMap: make(map[Command]uint64),
 		DisconnectCodes:   make(map[string]uint64),
 		DisconnectReasons: make(map[string]uint64),
+		ClientVersions:    make(map[string]uint64),
 		StatsDataVersion:  StatsDataVersion,
 	}
 }
@@ -137,7 +140,14 @@ func updatePeriodicStats() {
 		ChatSubscriptionLock.RUnlock()
 
 		GlobalSubscriptionLock.RLock()
+
 		Statistics.CurrentClientCount = uint64(len(GlobalSubscriptionInfo))
+		versions := make(map[string]uint64)
+		for _, v := range GlobalSubscriptionInfo {
+			versions[v.VersionString]++
+		}
+		Statistics.ClientVersions = versions
+
 		GlobalSubscriptionLock.RUnlock()
 	}
 
