@@ -87,7 +87,7 @@ var serverFilterNone serverFilter = serverFilter{Mode: serverFilterModeWhitelist
 
 func cannotCacheHLL(at time.Time) bool {
 	now := time.Now()
-	now.Add(-25 * time.Hour)
+	now.Add(-72 * time.Hour)
 	return now.Before(at)
 }
 
@@ -127,15 +127,15 @@ func getHLLCacheKey(at time.Time) string {
 }
 
 type serverInfo struct {
-	subdomain    string
+	subdomain string
 
-	memcache     *lru.TwoQueueCache
+	memcache *lru.TwoQueueCache
 
 	FailedState  bool
 	FailureErr   error
 	failureCount int
 
-	lock         sync.Mutex
+	lock sync.Mutex
 }
 
 func (si *serverInfo) Setup(subdomain string) {
@@ -150,6 +150,7 @@ func (si *serverInfo) Setup(subdomain string) {
 // GetHLL gets the HLL from
 func (si *serverInfo) GetHLL(at time.Time) (*hyperloglog.HyperLogLogPlus, error) {
 	if cannotCacheHLL(at) {
+		fmt.Println(at)
 		err := si.ForceWrite()
 		if err != nil {
 			return nil, err
@@ -158,7 +159,8 @@ func (si *serverInfo) GetHLL(at time.Time) (*hyperloglog.HyperLogLogPlus, error)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("downloaded hll %s:%s\n", si.subdomain, getHLLCacheKey(at))
+		fmt.Printf("downloaded uncached hll %s:%s\n", si.subdomain, getHLLCacheKey(at))
+		defer si.DeleteHLL(at)
 		return loadHLLFromStream(reader)
 	}
 
@@ -213,6 +215,15 @@ func (si *serverInfo) PeekHLL(at time.Time) (*hyperloglog.HyperLogLogPlus, bool)
 	return nil, false
 }
 
+func (si *serverInfo) DeleteHLL(at time.Time) {
+	year, month, day := at.Date()
+	filename := fmt.Sprintf("%s/%s/%d-%d-%d.gob", config.GobFilesLocation, si.subdomain, year, month, day)
+	err := os.Remove(filename)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
 func (si *serverInfo) OpenHLL(at time.Time) (io.ReadCloser, error) {
 	year, month, day := at.Date()
 	filename := fmt.Sprintf("%s/%s/%d-%d-%d.gob", config.GobFilesLocation, si.subdomain, year, month, day)
@@ -253,10 +264,10 @@ func (si *serverInfo) DownloadHLL(at time.Time) (io.ReadCloser, error) {
 	}
 
 	filename := fmt.Sprintf("%s/%s/%d-%d-%d.gob", config.GobFilesLocation, si.subdomain, year, month, day)
-	file, err := os.OpenFile(filename, os.O_CREATE | os.O_EXCL | os.O_RDWR, 0644)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
 	if os.IsNotExist(err) {
 		os.MkdirAll(fmt.Sprintf("%s/%s", config.GobFilesLocation, si.subdomain), 0755)
-		file, err = os.OpenFile(filename, os.O_CREATE | os.O_EXCL | os.O_RDWR, 0644)
+		file, err = os.OpenFile(filename, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
 	}
 	if err != nil {
 		resp.Body.Close()
