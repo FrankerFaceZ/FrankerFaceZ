@@ -30,7 +30,7 @@ var S2CCommandsCacheInfo = map[Command]PushCommandCacheInfo{
 }
 
 var PersistentCachingCommands = []Command{"follow_sets", "follow_buttons"}
-var HourlyCachingCommands = []Command{"srl_race", "chatters", "viewers"}
+var HourlyCachingCommands = []Command{"chatters", "viewers"} /* srl_race */
 
 type BacklogCacheType int
 
@@ -75,13 +75,14 @@ type LastSavedMessage struct {
 
 // map is command -> channel -> data
 
-// CachedLastMessages is of CacheTypeLastOnly. Cleaned up by reaper goroutine every ~hour.
+// CachedLastMessages is of CacheTypeLastOnly.
+// Not actually cleaned up by reaper goroutine every ~hour.
 var CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 var CachedLSMLock sync.RWMutex
 
 // PersistentLastMessages is of CacheTypePersistent. Never cleaned.
-var PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
-var PersistentLSMLock sync.RWMutex
+var PersistentLastMessages = CachedLastMessages
+var PersistentLSMLock = CachedLSMLock
 
 // DumpBacklogData drops all /cached_pub data.
 func DumpBacklogData() {
@@ -89,9 +90,9 @@ func DumpBacklogData() {
 	CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 	CachedLSMLock.Unlock()
 
-	PersistentLSMLock.Lock()
-	PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
-	PersistentLSMLock.Unlock()
+	//PersistentLSMLock.Lock()
+	//PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
+	//PersistentLSMLock.Unlock()
 }
 
 // SendBacklogForNewClient sends any backlog data relevant to a new client.
@@ -177,13 +178,13 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	locker.Lock()
 	defer locker.Unlock()
 
-	chanMap, ok := which[cmd]
+	chanMap, ok := CachedLastMessages[cmd]
 	if !ok {
 		if deleting {
 			return
 		}
 		chanMap = make(map[string]LastSavedMessage)
-		which[cmd] = chanMap
+		CachedLastMessages[cmd] = chanMap
 	}
 
 	if deleting {
