@@ -3,16 +3,17 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
-	"strconv"
+
+	"github.com/gorilla/websocket"
 )
 
 const (

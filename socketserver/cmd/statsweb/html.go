@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 	"html/template"
 	"net/http"
 	"time"
+
+	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 )
 
 type CalendarData struct {

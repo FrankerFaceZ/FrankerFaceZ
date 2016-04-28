@@ -5,10 +5,11 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"golang.org/x/crypto/nacl/box"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"golang.org/x/crypto/nacl/box"
 )
 
 func FillCryptoRandom(buf []byte) error {

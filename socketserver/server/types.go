@@ -3,19 +3,19 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"net"
 	"sync"
-	"time"
+
+	"github.com/satori/go.uuid"
 )
 
 const NegativeOne = ^uint64(0)
 
 type ConfigFile struct {
 	// Numeric server id known to the backend
-	ServerID      int
+	ServerID int
 	// Address to bind the HTTP server to on startup.
-	ListenAddr    string
+	ListenAddr string
 	// Address to bind the TLS server to on startup.
 	SSLListenAddr string
 	// URL to the backend server
@@ -24,15 +24,15 @@ type ConfigFile struct {
 	// Minimum memory to accept a new connection
 	MinMemoryKBytes uint64
 	// Maximum # of clients that can be connected. 0 to disable.
-	MaxClientCount  uint64
+	MaxClientCount uint64
 
 	// SSL/TLS
 	// Enable the use of SSL.
-	UseSSL             bool
+	UseSSL bool
 	// Path to certificate file.
 	SSLCertificateFile string
 	// Path to key file.
-	SSLKeyFile         string
+	SSLKeyFile string
 
 	UseESLogStashing bool
 	ESServer         string

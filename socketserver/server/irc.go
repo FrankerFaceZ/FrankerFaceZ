@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
-	irc "github.com/fluffle/goirc/client"
 	"log"
 	"strings"
 	"sync"
 	"time"
+
+	irc "github.com/fluffle/goirc/client"
 )
 
 type AuthCallback func(client *ClientInfo, successful bool)

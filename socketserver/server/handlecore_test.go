@@ -2,8 +2,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"testing"
+
+	"github.com/gorilla/websocket"
 )
 
 func ExampleUnmarshalClientMessage() {

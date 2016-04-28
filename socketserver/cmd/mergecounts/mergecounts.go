@@ -1,13 +1,14 @@
 package main
 
 import (
-	"../../server"
 	"encoding/gob"
 	"flag"
 	"fmt"
-	"github.com/clarkduvall/hyperloglog"
 	"net/http"
 	"os"
+
+	"../../server"
+	"github.com/clarkduvall/hyperloglog"
 )
 
 var SERVERS = []string{

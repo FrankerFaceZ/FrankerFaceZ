@@ -1,10 +1,11 @@
 package server
 
 import (
-	. "gopkg.in/check.v1"
 	"net/http"
 	"net/url"
 	"testing"
+
+	. "gopkg.in/check.v1"
 )
 
 func Test(t *testing.T) { TestingT(t) }

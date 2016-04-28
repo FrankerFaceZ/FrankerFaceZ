@@ -1,7 +1,6 @@
 package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/ffzsocketserver"
 
 import (
-	"../../server"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"../../server"
 )
 
 import _ "net/http/pprof"

@@ -1,13 +1,14 @@
 package main
 
 import (
-	"../../server"
 	"fmt"
-	"github.com/abiosoft/ishell"
-	"github.com/gorilla/websocket"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"../../server"
+	"github.com/abiosoft/ishell"
+	"github.com/gorilla/websocket"
 )
 
 func commandLineConsole() {

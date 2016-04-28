@@ -12,9 +12,10 @@ import (
 	"os"
 	"time"
 
+	"io"
+
 	"github.com/clarkduvall/hyperloglog"
 	"github.com/satori/go.uuid"
-	"io"
 )
 
 // UuidHash implements a hash for uuid.UUID by XORing the random bits.

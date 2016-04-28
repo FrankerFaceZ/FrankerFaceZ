@@ -1,12 +1,13 @@
 package server
 
 import (
-	"github.com/satori/go.uuid"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/satori/go.uuid"
 )
 
 func TestUniqueConnections(t *testing.T) {

@@ -1,17 +1,18 @@
 package main
 
 import (
-	"time"
-	"io"
-	"fmt"
-	"os"
-	"net/http"
-	"errors"
-	"sync"
-	"github.com/hashicorp/golang-lru"
-	"github.com/clarkduvall/hyperloglog"
-	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 	"encoding/gob"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"sync"
+	"time"
+
+	"bitbucket.org/stendec/frankerfacez/socketserver/server"
+	"github.com/clarkduvall/hyperloglog"
+	"github.com/hashicorp/golang-lru"
 )
 
 type serverFilter struct {

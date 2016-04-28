@@ -2,8 +2,6 @@ package server
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,6 +10,9 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 )
 
 const TestOrigin = "http://www.twitch.tv"

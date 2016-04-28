@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/pmylund/go-cache"
-	"golang.org/x/crypto/nacl/box"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,6 +14,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pmylund/go-cache"
+	"golang.org/x/crypto/nacl/box"
 )
 
 const bPathAnnounceStartup = "/startup"

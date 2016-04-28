@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
 	"log"
 	"net/url"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 )
 
 // Command is a string indicating which RPC is requested.
