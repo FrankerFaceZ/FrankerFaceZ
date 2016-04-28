@@ -104,14 +104,8 @@ type ClientInfo struct {
 	// Protected by Mutex.
 	CurrentChannels []string
 
-	// List of channels that we have not yet checked current chat-related channel info for.
-	// This lets us batch the backlog requests.
-	// Protected by Mutex.
-	PendingSubscriptionsBacklog []string
-
-	// A timer that, when fired, will make the pending backlog requests.
-	// Usually nil. Protected by Mutex.
-	MakePendingRequests *time.Timer
+	// True if the client has already sent the 'ready' command
+	ReadyComplete bool
 
 	// Server-initiated messages should be sent here
 	// This field will be nil before it is closed.
@@ -156,8 +150,6 @@ func (cv *ClientVersion) After(cv2 *ClientVersion) bool {
 func (cv *ClientVersion) Equal(cv2 *ClientVersion) bool {
 	return cv.Major == cv2.Major && cv.Minor == cv2.Minor && cv.Revision == cv2.Revision
 }
-
-const usePendingSubscrptionsBacklog = false
 
 func (bct BacklogCacheType) Name() string {
 	switch bct {

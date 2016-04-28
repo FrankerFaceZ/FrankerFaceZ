@@ -29,6 +29,9 @@ var S2CCommandsCacheInfo = map[Command]PushCommandCacheInfo{
 	"viewers":  {CacheTypeLastOnly, MsgTargetTypeChat},
 }
 
+var PersistentCachingCommands = []Command{"follow_sets", "follow_buttons"}
+var HourlyCachingCommands = []Command{"srl_race", "chatters", "viewers"}
+
 type BacklogCacheType int
 
 const (
@@ -101,8 +104,8 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	client.Mutex.Unlock()
 
 	PersistentLSMLock.RLock()
-	for _, cmd := range GetCommandsOfType(PushCommandCacheInfo{CacheTypePersistent, MsgTargetTypeChat}) {
-		chanMap := CachedLastMessages[cmd]
+	for _, cmd := range GetCommandsOfType(CacheTypePersistent) {
+		chanMap := PersistentLastMessages[cmd]
 		if chanMap == nil {
 			continue
 		}
@@ -118,7 +121,7 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	PersistentLSMLock.RUnlock()
 
 	CachedLSMLock.RLock()
-	for _, cmd := range GetCommandsOfType(PushCommandCacheInfo{CacheTypeLastOnly, MsgTargetTypeChat}) {
+	for _, cmd := range GetCommandsOfType(CacheTypeLastOnly) {
 		chanMap := CachedLastMessages[cmd]
 		if chanMap == nil {
 			continue
@@ -135,6 +138,36 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	CachedLSMLock.RUnlock()
 }
 
+func SendBacklogForChannel(client *ClientInfo, channel string) {
+	PersistentLSMLock.RLock()
+	for _, cmd := range GetCommandsOfType(CacheTypePersistent) {
+		chanMap := PersistentLastMessages[cmd]
+		if chanMap == nil {
+			continue
+		}
+		if msg, ok := chanMap[channel]; ok {
+			msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
+			msg.parseOrigArguments()
+			client.MessageChannel <- msg
+		}
+	}
+	PersistentLSMLock.RUnlock()
+
+	CachedLSMLock.RLock()
+	for _, cmd := range GetCommandsOfType(CacheTypeLastOnly) {
+		chanMap := CachedLastMessages[cmd]
+		if chanMap == nil {
+			continue
+		}
+		if msg, ok := chanMap[channel]; ok {
+			msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
+			msg.parseOrigArguments()
+			client.MessageChannel <- msg
+		}
+	}
+	CachedLSMLock.RUnlock()
+}
+
 type timestampArray interface {
 	Len() int
 	GetTime(int) time.Time
@@ -144,13 +177,13 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	locker.Lock()
 	defer locker.Unlock()
 
-	chanMap, ok := CachedLastMessages[cmd]
+	chanMap, ok := which[cmd]
 	if !ok {
 		if deleting {
 			return
 		}
 		chanMap = make(map[string]LastSavedMessage)
-		CachedLastMessages[cmd] = chanMap
+		which[cmd] = chanMap
 	}
 
 	if deleting {
@@ -160,14 +193,14 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	}
 }
 
-func GetCommandsOfType(match PushCommandCacheInfo) []Command {
-	var ret []Command
-	for cmd, info := range S2CCommandsCacheInfo {
-		if info == match {
-			ret = append(ret, cmd)
-		}
+func GetCommandsOfType(match BacklogCacheType) []Command {
+	if match == CacheTypePersistent {
+		return PersistentCachingCommands
+	} else if match == CacheTypeLastOnly {
+		return HourlyCachingCommands
+	} else {
+		panic("unknown caching type")
 	}
-	return ret
 }
 
 func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {

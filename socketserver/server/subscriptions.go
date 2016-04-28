@@ -111,11 +111,6 @@ func UnsubscribeAll(client *ClientInfo) {
 		return // no need to remove from a high-contention list when the server is closing
 	}
 
-	client.Mutex.Lock()
-	client.PendingSubscriptionsBacklog = nil
-	client.PendingSubscriptionsBacklog = nil
-	client.Mutex.Unlock()
-
 	GlobalSubscriptionLock.Lock()
 	RemoveFromSliceCl(&GlobalSubscriptionInfo, client)
 	GlobalSubscriptionLock.Unlock()

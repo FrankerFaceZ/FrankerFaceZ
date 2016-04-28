@@ -174,15 +174,7 @@ func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	//	}
 
 	client.Mutex.Lock()
-	if client.MakePendingRequests != nil {
-		if !client.MakePendingRequests.Stop() {
-			// Timer already fired, GetSubscriptionBacklog() has started
-			rmsg.Command = SuccessCommand
-			return
-		}
-	}
-	client.PendingSubscriptionsBacklog = nil
-	client.MakePendingRequests = nil
+	client.ReadyComplete = true
 	client.Mutex.Unlock()
 
 	client.MsgChannelKeepalive.Add(1)
@@ -204,12 +196,17 @@ func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (
 
 	client.Mutex.Lock()
 	AddToSliceS(&client.CurrentChannels, channel)
-	if usePendingSubscrptionsBacklog {
-		client.PendingSubscriptionsBacklog = append(client.PendingSubscriptionsBacklog, channel)
-	}
 	client.Mutex.Unlock()
 
 	SubscribeChannel(client, channel)
+
+	if client.ReadyComplete {
+		client.MsgChannelKeepalive.Add(1)
+		go func() {
+			SendBacklogForChannel(client, channel)
+			client.MsgChannelKeepalive.Done()
+		}()
+	}
 
 	return ResponseSuccess, nil
 }

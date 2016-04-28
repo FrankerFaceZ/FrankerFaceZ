@@ -56,7 +56,7 @@ func authorizationJanitor_do() {
 		if !cullTime.After(v.EnteredAt) {
 			newPendingAuths = append(newPendingAuths, v)
 		} else {
-			v.Callback(v.Client, false)
+			go v.Callback(v.Client, false)
 		}
 	}
 
@@ -64,12 +64,13 @@ func authorizationJanitor_do() {
 }
 
 func (client *ClientInfo) StartAuthorization(callback AuthCallback) {
+	if callback == nil {
+		return // callback must not be nil
+	}
 	var nonce [32]byte
 	_, err := rand.Read(nonce[:])
 	if err != nil {
-		go func(client *ClientInfo, callback AuthCallback) {
-			callback(client, false)
-		}(client, callback)
+		go callback(client, false)
 		return
 	}
 	buf := bytes.NewBuffer(nil)
@@ -153,11 +154,9 @@ func submitAuth(user, challenge string) {
 	}
 	auth.Client.Mutex.Unlock()
 
-	if auth.Callback != nil {
-		if !usernameChanged {
-			auth.Callback(auth.Client, true)
-		} else {
-			auth.Callback(auth.Client, false)
-		}
+	if !usernameChanged {
+		auth.Callback(auth.Client, true)
+	} else {
+		auth.Callback(auth.Client, false)
 	}
 }
