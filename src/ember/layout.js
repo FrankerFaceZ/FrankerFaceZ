@@ -145,7 +145,6 @@ FFZ.prototype.setup_layout = function() {
 		return;
 
 	document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
-	document.body.classList.toggle("ffz-portrait", this.settings.portrait_mode);
 
 	this.log("Creating layout style element.");
 	var s = this._layout_style = document.createElement('style');
@@ -328,4 +327,5 @@ FFZ.prototype.setup_layout = function() {
 	// Force re-calculation of everything.
 	Ember.propertyDidChange(Layout, 'windowWidth');
 	Ember.propertyDidChange(Layout, 'windowHeight');
+	Layout.ffzUpdatePortraitCSS();
 }

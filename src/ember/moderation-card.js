@@ -704,6 +704,13 @@ FFZ.prototype.setup_mod_card = function() {
 				}
 
 
+				// Follow Button
+				var follow_button = el.querySelector(".interface > .follow-button");
+				if ( follow_button )
+					jQuery(follow_button).tipsy({title: function() { return follow_button.classList.contains('is-following') ? "Unfollow" : "Follow"}});
+
+
+				// Whisper and Message Buttons
 				var msg_btn = el.querySelector(".interface > button.message-button");
 				if ( msg_btn ) {
 					msg_btn.innerHTML = 'W';
@@ -1082,8 +1089,8 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
     jQuery('.deleted-word', l_el).click(function(e) { jQuery(this).trigger('mouseout'); this.outerHTML = this.getAttribute('data-text'); });
 	jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
 	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
-	jQuery('.html-tooltip', l_el).tipsy({html:true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
-    jQuery('.ffz-tooltip', l_el).tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
+	//jQuery('.html-tooltip', l_el).tipsy({html:true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
+    //jQuery('.ffz-tooltip', l_el).tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
 
 	if ( modcard ) {
 		modcard.get('cardInfo.user.id') !== msg.from && jQuery('span.from', l_el).click(function(e) {

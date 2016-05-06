@@ -153,10 +153,12 @@ FFZ.prototype.ws_create = function() {
 
 		// Send the current rooms.
 		for(var room_id in f.rooms) {
-			if ( ! f.rooms.hasOwnProperty(room_id) || ! f.rooms[room_id] )
+			var room = f.rooms[room_id];
+			if ( ! f.rooms.hasOwnProperty(room_id) || ! room )
 				continue;
 
-			f.ws_send("sub", "room." + room_id);
+			room.room && room.room.ffzSubscribe && room.room.ffzSubscribe();
+			//f.ws_send("sub", "room." + room_id);
 
 			if ( f.rooms[room_id].needs_history ) {
 				f.rooms[room_id].needs_history = false;

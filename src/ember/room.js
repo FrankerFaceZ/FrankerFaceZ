@@ -4,6 +4,15 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	helpers,
 
+	STATUS_BADGES = [
+		["r9k", "r9k", "This room is in R9K-mode."],
+		["sub", "subsOnly", "This room is in subscribers-only mode."],
+		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow') || 120) + " seconds." }],
+		["ban", "ffz_banned", "You have been banned from talking in this room."],
+		["delay", function() { return this.settings.chat_delay !== 0 }, function() { return "You have enabled artificial chat delay. Messages are displayed after " + (this.settings.chat_delay/1000) + " seconds." }],
+		["batch", function() { return this.settings.chat_batching !== 0 }, function() { return "You have enabled chat message batching. Messages are displayed in " + (this.settings.chat_batching/1000) + " second increments." }]
+	],
+
 	// StrimBagZ Support
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
 
@@ -210,151 +219,46 @@ FFZ.prototype._modify_rview = function(view) {
 
 		ffzUpdateStatus: function() {
 			var room = this.get('controller.model'),
-
 				el = this.get('element'),
 				cont = el && el.querySelector('.chat-buttons-container');
 
 			if ( ! cont )
 				return;
 
-			var r9k_badge = cont.querySelector('#ffz-stat-r9k'),
-				sub_badge = cont.querySelector('#ffz-stat-sub'),
-                emote_badge = cont.querySelector('#ffz-stat-emote'),
-				slow_badge = cont.querySelector('#ffz-stat-slow'),
-				banned_badge = cont.querySelector('#ffz-stat-banned'),
-				delay_badge = cont.querySelector('#ffz-stat-delay'),
-				batch_badge = cont.querySelector('#ffz-stat-batch'),
-				btn = cont.querySelector('button');
+			var btn = cont.querySelector('button');
 
 			if ( f.has_bttv || ! f.settings.room_status ) {
-				if ( r9k_badge )
-					r9k_badge.parentElement.removeChild(r9k_badge);
-				if ( sub_badge )
-					sub_badge.parentElement.removeChild(sub_badge);
-                if ( emote_badge )
-                    emote_badge.parentElement.removeChild(emote_badge);
-				if ( slow_badge )
-					slow_badge.parentElement.removeChild(slow_badge);
-				if ( delay_badge )
-					delay_badge.parentElement.removeChild(delay_badge);
-				if ( batch_badge )
-					batch_badge.parentElement.removeChild(batch_badge);
+				jQuery(".ffz.room-state", cont).remove();
 
 				if ( btn )
 					btn.classList.remove('ffz-waiting');
 				return;
-			}
 
-			if ( ! r9k_badge ) {
-				r9k_badge = document.createElement('span');
-				r9k_badge.className = 'ffz room-state stat float-right';
-				r9k_badge.id = 'ffz-stat-r9k';
-				r9k_badge.innerHTML = 'R<span>9K</span>';
-				r9k_badge.title = "This room is in R9K-mode.";
-				cont.appendChild(r9k_badge);
-				jQuery(r9k_badge).tipsy({gravity:"s", offset:15});
-			}
-
-			if ( ! sub_badge ) {
-				sub_badge = document.createElement('span');
-				sub_badge.className = 'ffz room-state stat float-right';
-				sub_badge.id = 'ffz-stat-sub';
-				sub_badge.innerHTML = 'S<span>UB</span>';
-				sub_badge.title = "This room is in subscribers-only mode.";
-				cont.appendChild(sub_badge);
-				jQuery(sub_badge).tipsy({gravity:"s", offset:15});
-			}
-
-            if ( ! emote_badge ) {
-                emote_badge = document.createElement('span');
-                emote_badge.className = 'ffz room-state stat float-right';
-                emote_badge.id = 'ffz-stat-emote';
-                emote_badge.innerHTML = 'E<span>MOTE</span>';
-                emote_badge.title = "This room is in Twitch emote-only mode. Emotes added by extensions are not permitted in this mode.";
-                cont.appendChild(emote_badge);
-                jQuery(emote_badge).tipsy({gravity: "s", offset: 15});
-            }
-
-			if ( ! slow_badge ) {
-				slow_badge = document.createElement('span');
-				slow_badge.className = 'ffz room-state stat float-right';
-				slow_badge.id = 'ffz-stat-slow';
-				slow_badge.innerHTML = 'S<span>LOW</span>';
-				cont.appendChild(slow_badge);
-				jQuery(slow_badge).tipsy({gravity:"s", offset:15});
-			}
-
-			if ( ! banned_badge ) {
-				banned_badge = document.createElement('span');
-				banned_badge.className = 'ffz room-state stat float-right';
-				banned_badge.id = 'ffz-stat-banned';
-				banned_badge.innerHTML = 'B<span>AN</span>';
-				banned_badge.title = "You have been banned from talking in this room.";
-				cont.appendChild(banned_badge);
-				jQuery(banned_badge).tipsy({gravity:"s", offset:15});
-			}
-
-			if ( ! delay_badge ) {
-				delay_badge = document.createElement('span');
-				delay_badge.className = 'ffz room-state stat float-right';
-				delay_badge.id = 'ffz-stat-delay';
-				delay_badge.innerHTML = 'D<span>ELAY</span>';
-				cont.appendChild(delay_badge);
-				jQuery(delay_badge).tipsy({gravity:"s", offset:15});
-			}
-
-			if ( ! batch_badge ) {
-				batch_badge = document.createElement('span');
-				batch_badge.className = 'ffz room-state stat float-right';
-				batch_badge.id = 'ffz-stat-batch';
-				batch_badge.innerHTML = 'B<span>ATCH</span>';
-				cont.appendChild(batch_badge);
-				jQuery(batch_badge).tipsy({gravity:"s", offset:15});
-			}
-
-			var vis_count = 0,
-				r9k_vis = room && room.get('r9k'),
-				sub_vis = room && room.get('subsOnly'),
-                emote_vis = room && room.get('emoteOnly') && room.get('emoteOnly') !== '0',
-				ban_vis = room && room.get('ffz_banned'),
-				slow_vis = room && room.get('slowMode'),
-				delay_vis = f.settings.chat_delay !== 0,
-				batch_vis = f.settings.chat_batching !== 0;
-
-			if ( r9k_vis ) vis_count += 1;
-			if ( sub_vis ) vis_count += 1;
-            if ( emote_vis ) vis_count += 1;
-            if ( ban_vis ) vis_count += 1;
-			if ( slow_vis ) vis_count += 1;
-			if ( delay_vis ) vis_count += 1;
-			if ( batch_vis ) vis_count += 1;
-
-			r9k_badge.classList.toggle('truncated', vis_count > 3);
-			sub_badge.classList.toggle('truncated', vis_count > 3);
-            emote_badge.classList.toggle('truncated', vis_count > 3);
-			banned_badge.classList.toggle('truncated', vis_count > 3);
-			slow_badge.classList.toggle('truncated', vis_count > 3);
-			delay_badge.classList.toggle('truncated', vis_count > 3);
-			batch_badge.classList.toggle('truncated', vis_count > 3);
-
-			r9k_badge.classList.toggle('hidden', ! r9k_vis);
-			sub_badge.classList.toggle('hidden', ! sub_vis);
-            emote_badge.classList.toggle('hidden', ! emote_vis);
-			banned_badge.classList.toggle('hidden', ! ban_vis);
-
-			slow_badge.classList.toggle('hidden', ! slow_vis);
-			slow_badge.title = "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow')||120) + " seconds.";
-
-			delay_badge.title = "You have enabled artificial chat delay. Messages are displayed after " + (f.settings.chat_delay/1000) + " seconds.";
-			delay_badge.classList.toggle('hidden', ! delay_vis);
-
-			batch_badge.title = "You have enabled chat message batching. Messages are displayed in " + (f.settings.chat_batching/1000) + " second increments.";
-			batch_badge.classList.toggle('hidden', ! batch_vis);
-
-			if ( btn ) {
+			} else if ( btn ) {
 				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
 				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned')));
 			}
+
+			var badge, id, info, vis_count = 0;
+			for(var i=0; i < STATUS_BADGES.length; i++) {
+				info = STATUS_BADGES[i];
+				id = 'ffz-stat-' + info[0];
+				badge = cont.querySelector('#' + id);
+				visible = typeof info[1] === "function" ? info[1].call(f, room) : room && room.get(info[1]);
+				if ( ! badge ) {
+					badge = utils.createElement('span', 'ffz room-state stat float-right', info[0].charAt(0).toUpperCase() + '<span>' + info[0].substr(1).toUpperCase() + '</span>');
+					badge.id = id;
+					jQuery(badge).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
+					cont.appendChild(badge);
+				}
+
+				badge.title = typeof info[2] === "function" ? info[2].call(f, room) : info[2];
+				badge.classList.toggle('hidden', ! visible);
+				if ( visible )
+					vis_count++;
+			}
+
+			jQuery(".ffz.room-state", cont).toggleClass("truncated", vis_count > 3);
 
 		}.observes('controller.model'),
 
@@ -677,7 +581,8 @@ FFZ.prototype.add_room = function(id, room) {
 	}
 
 	// Let the server know where we are.
-	this.ws_send("sub", "room." + id);
+	room && room.ffzSubscribe && room.ffzSubscribe();
+	//this.ws_send("sub", "room." + id);
 
 	// See if we need history?
 	if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
@@ -983,7 +888,7 @@ FFZ.prototype._modify_room = function(room) {
 				room_id = this.get('id');
 
 			if ( (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
-				return;
+				return this.ffzUnsubscribe(true);
 
 			this.destroy();
 		},
@@ -992,6 +897,24 @@ FFZ.prototype._modify_room = function(room) {
 			if ( f._roomv )
 				f._roomv.ffzUpdateStatus();
 		}.observes('r9k', 'subsOnly', 'emoteOnly', 'slow', 'ffz_banned'),
+
+
+		ffzShouldSubscribe: function() {
+			var Chat = utils.ember_lookup('controller:chat'),
+				room_id = this.get('id');
+
+			return (Chat && Chat.get('currentChannelRoom') === this) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1);
+		},
+
+		ffzSubscribe: function() {
+			if ( this.ffzShouldSubscribe() )
+				f.ws_send("sub", "room." + this.get('id'));
+		},
+
+		ffzUnsubscribe: function(not_always) {
+			if ( ! not_always || ! this.ffzShouldSubscribe() )
+				f.ws_send("unsub", "room." + this.get('id'));
+		},
 
 		// User Level
 		ffzUserLevel: function() {
@@ -1300,12 +1223,22 @@ FFZ.prototype._modify_room = function(room) {
 			if ( msg.color )
 				f._handle_color(msg.color);
 
+			// Message Filtering
+			var i = f._chat_filters.length;
+			while(i--)
+				if ( f._chat_filters[i](msg) === false )
+					return;
+
             // Report this message to the dashboard.
             if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
                 parent.postMessage({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, location.protocol + "//www.twitch.tv/");
 
 			// Add the message.
 			return this._super(msg);
+		},
+
+		ffzChatFilters: function(msg) {
+			var i = f._chat_filters.length;
 		},
 
 		setHostMode: function(e) {

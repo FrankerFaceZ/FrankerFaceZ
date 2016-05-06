@@ -15,6 +15,8 @@ module.exports = FrankerFaceZ.constants = {
 	DEBUG: DEBUG,
 	SERVER: SERVER,
 
+	IS_OSX: navigator.platform ? navigator.platform.indexOf('Mac') !== -1 : /OS X/.test(navigator.userAgent),
+
     // Twitch Client ID for API Stuff
     CLIENT_ID: "a3bc9znoz6vi8ozsoca0inlcr4fcvkl",
 
@@ -22,11 +24,11 @@ module.exports = FrankerFaceZ.constants = {
 
 	WS_SERVER_POOLS: {
 		1: [
-			["wss://catbag.frankerfacez.com/", 0.5],
+			["wss://catbag.frankerfacez.com/", 0.25],
 			["wss://andknuckles.frankerfacez.com/", 1],
 			["wss://tuturu.frankerfacez.com/", 1]],
 		2: [
-			["ws://localhost:8001/", 1]]
+			["wss://localhost:8001/", 1]]
 	},
 
     CHAT_COLORS: ["#FF0000", "#0000FF", "#008000", "#B22222", "#FF7F50", "#9ACD32", "#FF4500", "#2E8B57", "#DAA520", "#D2691E", "#5F9EA0", "#1E90FF", "#FF69B4", "#8A2BE2", "#00FF7F"],

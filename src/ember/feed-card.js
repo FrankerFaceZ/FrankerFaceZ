@@ -21,10 +21,11 @@ var FFZ = window.FrankerFaceZ,
 
 
 FFZ.prototype.setup_feed_cards = function() {
-	var FeedCard = utils.ember_resolve('component:feed-card');
+	var FeedCard = utils.ember_resolve('component:channel-feed/card');
 	if ( ! FeedCard )
-		return;
+		return this.error("Unable to locate component:channel-feed/card");
 
+	this.log("Modifying the feed-card component.");
 	this._modify_feed_card(FeedCard);
 
 	try { FeedCard.create().destroy();
@@ -35,7 +36,7 @@ FFZ.prototype.setup_feed_cards = function() {
 
 
 FFZ.prototype.rerender_feed_cards = function(for_set) {
-	var FeedCard = utils.ember_resolve('component:feed-card'),
+	var FeedCard = utils.ember_resolve('component:channel-feed/card'),
 		views = utils.ember_views();
 
 	if ( ! FeedCard )
@@ -49,7 +50,7 @@ FFZ.prototype.rerender_feed_cards = function(for_set) {
 					this._modify_feed_card(view);
 				view.ffzInit(for_set);
 			} catch(err) {
-				this.error("setup component:feed-card ffzInit: " + err)
+				this.error("setup component:channel-feed/card ffzInit: " + err)
 			}
 		}
 	}
@@ -64,7 +65,7 @@ FFZ.prototype._modify_feed_card = function(component) {
 			try {
 				this.ffzInit();
 			} catch(err) {
-				f.error("component:feed-card ffzInit: " + err);
+				f.error("component:channel-feed/card ffzInit: " + err);
 			}
 		},
 
@@ -73,7 +74,7 @@ FFZ.prototype._modify_feed_card = function(component) {
 				message = this.get('post.body'),
 				emotes = parse_emotes(this.get('post.emotes')),
 				user_id = this.get('post.user.login'),
-				room_id = this.get('channelId'),
+				room_id = this.get('channelId') || user_id,
 				pbody = el && el.querySelector('.activity-body');
 
 			if ( ! message || ! el || ! pbody )
@@ -91,8 +92,8 @@ FFZ.prototype._modify_feed_card = function(component) {
 
 			pbody.innerHTML = '<p>' + output + '</p>';
 
-			jQuery('.ffz-tooltip', pbody).tipsy({html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-			jQuery('.html-tooltip', pbody).tipsy({html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+			//jQuery('.ffz-tooltip', pbody).tipsy({html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+			//jQuery('.html-tooltip', pbody).tipsy({html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
 }

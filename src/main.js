@@ -11,6 +11,7 @@ var FFZ = window.FrankerFaceZ = function() {
 	// Logging
 	this._log_data = [];
 	this._apis = {};
+	this._chat_filters = [];
 
     // Error Logging
     var t = this;
@@ -35,7 +36,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 159,
+	major: 3, minor: 5, revision: 169,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -91,7 +92,7 @@ FFZ.prototype.paste_logs = function() {
 
 
 FFZ.prototype._pastebin = function(data, callback) {
-	jQuery.ajax({url: "http://putco.de/", type: "PUT", data: data, context: this})
+	jQuery.ajax({url: "https://putco.de/", type: "PUT", data: data, context: this})
 		.success(function(e) {
 			callback.call(this, e.trim() + ".log");
 		}).fail(function(e) {

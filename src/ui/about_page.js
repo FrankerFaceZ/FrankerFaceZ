@@ -79,6 +79,41 @@ var include_html = function(heading_text, filename) {
     render_news = include_html("news", constants.SERVER + "script/news.html");
 
 
+var make_line = function(key, container) {
+    var desc = NICE_DESCRIPTION.hasOwnProperty(key) ? NICE_DESCRIPTION[key] : key;
+    if ( ! desc )
+        return;
+
+    line = createElement('li', null, desc + '<span></span>');
+    line.setAttribute('data-property', key);
+    container.appendChild(line);
+    return line;
+};
+
+var update_mem_stats = function(container) {
+    if ( ! document.querySelector('.ffz-ui-sub-menu-page[data-page="debugging"]') )
+        return;
+
+    setTimeout(update_mem_stats.bind(this, container), 1000);
+
+    var mem = window.performance && performance.memory;
+    if ( ! mem )
+        return;
+
+    var sorted_keys = ['jsHeapSizeLimit', 'totalJSHeapSize', 'usedJSHeapSize'];
+    for(var i=0; i < sorted_keys.length; i++) {
+        var key = sorted_keys[i],
+            data = mem[key],
+            line = container.querySelector('li[data-property="' + key + '"]');
+
+        if ( ! line )
+            line = make_line(key, container);
+
+        if ( line )
+            line.querySelector('span').textContent = utils.format_size(data) + ' (' + data + ')';
+    }
+};
+
 var update_player_stats = function(player, container) {
     if ( ! document.querySelector('.ffz-ui-sub-menu-page[data-page="debugging"]') || ! player.getVideoInfo )
         return;
@@ -100,17 +135,11 @@ var update_player_stats = function(player, container) {
             data = player_data[key],
             line = container.querySelector('li[data-property="' + key + '"]');
 
-        if ( ! line ) {
-            var desc = NICE_DESCRIPTION.hasOwnProperty(key) ? NICE_DESCRIPTION[key] : key;
-            if ( ! desc )
-                continue;
+        if ( ! line )
+            line = make_line(key, container);
 
-            line = createElement('li', null, desc + '<span></span>');
-            line.setAttribute('data-property', key);
-            container.appendChild(line);
-        }
-
-        line.querySelector('span').textContent = data;
+        if ( line )
+            line.querySelector('span').textContent = data;
     }
 };
 
@@ -270,6 +299,10 @@ FFZ.menu_pages.about = {
                         ['Deploy Flavor', SiteOptions.deploy_flavor]
                     ],
 
+                    has_memory = window.performance && performance.memory,
+                    mem_head = createElement('div'),
+                    mem_list = createElement('ul'),
+
                     player_head = createElement('div'),
                     player_list = createElement('ul'),
 
@@ -279,6 +312,7 @@ FFZ.menu_pages.about = {
                     vers = createElement('ul'),
                     version_list = [
                             ['Ember', Ember.VERSION],
+                            ['Ember Data', window.DS && DS.VERSION || '<i>unknown</i>'],
                             ['GIT Version', EmberENV.GIT_VERSION],
                             null,
                             ['FrankerFaceZ', FFZ.version_info.toString()]
@@ -302,9 +336,8 @@ FFZ.menu_pages.about = {
                 heading.className = 'chat-menu-content center';
                 heading.innerHTML = '<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">woofs for nerds</div>';
 
-                info_head.className = twitch_head.className = player_head.className = ver_head.className = log_head.className = 'list-header';
-                info.className = twitch.className = player_list.className = vers.className = 'chat-menu-content menu-side-padding version-list';
-
+                info_head.className = mem_head.className = twitch_head.className = player_head.className = ver_head.className = log_head.className = 'list-header';
+                info.className = mem_list.className = twitch.className = player_list.className = vers.className = 'chat-menu-content menu-side-padding version-list';
 
                 info_head.innerHTML = 'Client Status';
 
@@ -351,13 +384,6 @@ FFZ.menu_pages.about = {
                     twitch.appendChild(line);
                 }
 
-
-                if ( player_data ) {
-                    player_head.innerHTML = "Player Statistics";
-                    update_player_stats(player, player_list);
-                }
-
-
                 ver_head.innerHTML = 'Versions';
 
                 if ( this.has_bttv )
@@ -395,7 +421,18 @@ FFZ.menu_pages.about = {
                 container.appendChild(twitch_head);
                 container.appendChild(twitch);
 
+                if ( has_memory ) {
+                    mem_head.innerHTML = 'Memory Statistics';
+                    setTimeout(update_mem_stats.bind(this,mem_list),0);
+
+                    container.appendChild(mem_head);
+                    container.appendChild(mem_list);
+                }
+
                 if ( player_data ) {
+                    player_head.innerHTML = "Player Statistics";
+                    setTimeout(update_player_stats.bind(this,player,player_list),0);
+
                     container.appendChild(player_head);
                     container.appendChild(player_list);
                 }

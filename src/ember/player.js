@@ -164,9 +164,9 @@ FFZ.prototype._modify_player = function(player) {
             var stats = this.$('.player .js-playback-stats');
             stats.draggable({cancel: 'li', containment: 'parent'});
 
-            // Give the player time to do stuff before we change this
+            /*// Give the player time to do stuff before we change this
             // text. It's a bit weird otherwise.
-            setTimeout(function(){stats.children('.js-stats-toggle').html(constants.CLOSE);},500);
+            setTimeout(function(){stats.children('.js-stats-toggle').html(constants.CLOSE);},500);*/
 
 
 			// Only set up the stats hooks if we need stats.

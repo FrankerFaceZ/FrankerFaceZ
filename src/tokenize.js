@@ -719,6 +719,11 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 		return '<img class="emoticon ffz-tooltip' + (cls||'') + '"' + (extra||'') + ' src="' + utils.quote_attr(src) + '"' + (srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : '') + ' alt="' + utils.quote_attr(token.altText) + '">';
 	}
 
+	else if ( token.type === "tag" ) {
+		var link = Twitch.uri.game("Creative") + "/" + token.tag;
+		return '<a href="' + utils.quote_attr(link) + '" data-tag="' + utils.quote_attr(token.tag) + '" class="ffz-creative-tag-link">' + utils.sanitize(token.text) + '</a>';
+	}
+
 	else if ( token.type === "link" ) {
 		var text = token.title || (token.isLong && '<long link>') || (token.isDeleted && '<deleted link>') || (warn_links && '<whispered link>') || token.text;
 
@@ -757,8 +762,8 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 			href = '#';
 		}
 
-		//return `<a class="ffz-tooltip ${cls}" data-text="${utils.quote_attr(token.text)}" data-url="${utils.quote_attr(actual_href)}" href="${utils.quote_attr(href||'#')}" target="_blank">${utils.sanitize(text)}</a>`;
-		return '<a class="ffz-tooltip' + (cls ? ' ' + cls : '') + '" data-text="' + utils.quote_attr(token.text) + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href||'#') + '" target="_blank">' + utils.sanitize(text) + '</a>';
+		//return `<a class="ffz-tooltip ${cls}" data-text="${utils.quote_attr(token.text)}" data-url="${utils.quote_attr(actual_href)}" href="${utils.quote_attr(href||'#')}" target="_blank" rel="noopener">${utils.sanitize(text)}</a>`;
+		return '<a class="ffz-tooltip' + (cls ? ' ' + cls : '') + '" data-text="' + utils.quote_attr(token.text) + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href||'#') + '" target="_blank" rel="noopener">' + utils.sanitize(text) + '</a>';
 	}
 
 	else if ( token.type === "deleted" )
@@ -782,6 +787,58 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 
 FFZ.prototype.render_tokens = function(tokens, render_links, warn_links) {
 	return _.map(tokens, this.render_token.bind(this, render_links, warn_links)).join("");
+}
+
+
+// ---------------------
+// Creative Tags
+// ---------------------
+
+FFZ.prototype.tokenize_ctags = function(tokens) {
+	"use strict";
+
+	if ( typeof tokens === "string" )
+		tokens = [tokens];
+
+	var banned_tags = window.SiteOptions && SiteOptions.creative_banned_tags && SiteOptions.creative_banned_tags.split(',') || [],
+		new_tokens = [];
+
+	for(var i=0, l = tokens.length; i < l; i++) {
+		var token = tokens[i];
+		if ( ! token )
+			continue;
+
+		if ( typeof token !== "string" )
+			if ( token.type === "text" )
+				token = token.text;
+			else {
+				new_tokens.push(token);
+				continue;
+			}
+
+		var segments = token.split(' '),
+			text = [], segment, tag;
+
+		for(var x=0,y=segments.length; x < y; x++) {
+			segment = segments[x];
+			tag = segment.substr(1).toLowerCase();
+			if ( segment.charAt(0) === '#' && banned_tags.indexOf(tag) === -1 ) {
+				if ( text.length ) {
+					new_tokens.push({type: "text", text: text.join(' ') + ' '});
+					text = [];
+				}
+
+				new_tokens.push({type: "tag", text: segment, tag: tag});
+				text.push('');
+			} else
+				text.push(segment);
+		}
+
+		if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+			new_tokens.push({type: "text", text: text.join(' ')});
+	}
+
+	return new_tokens;
 }
 
 

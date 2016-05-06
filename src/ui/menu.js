@@ -2,6 +2,8 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 
+	IS_OSX = constants.IS_OSX,
+
     reported_sets = [],
 
 	fix_menu_position = function(container) {
@@ -218,8 +220,8 @@ FFZ.prototype.build_ui_popup = function(view) {
 	container.classList.toggle('dark', dark);
 
 	// Stuff
-	jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
-    jQuery(inner).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+	//jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
+    //jQuery(inner).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 	// Menu Container
 	var sub_container = document.createElement('div');
@@ -761,7 +763,7 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 					if ( api && api.emote_url_generator )
 						url = api.emote_url_generator(set.source_id, id);
 				} else
-					url = "https://www.frankerfacez.com/emoticons/" + id;
+					url = "https://www.frankerfacez.com/emoticon/" + id;
 				if ( url )
 					window.open(url);
 			} else
@@ -781,7 +783,7 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 
 FFZ.prototype._add_emote = function(view, emote, favorites_set, favorites_key, event) {
-    if ( event && event.ctrlKey ) {
+    if ( event && ((!IS_OSX && event.ctrlKey) || (IS_OSX && event.metaKey)) ) {
         var el = event.target;
         if ( ! el.classList.contains('locked') && el.classList.contains('ffz-can-favorite') && favorites_set && favorites_key ) {
             var favs = this.settings.favorite_emotes[favorites_set] = this.settings.favorite_emotes[favorites_set] || [],

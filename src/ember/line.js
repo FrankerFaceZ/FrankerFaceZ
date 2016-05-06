@@ -1024,6 +1024,7 @@ FFZ.prototype._modify_vod_line = function(component) {
 
 FFZ.capitalization = {};
 FFZ._cap_fetching = 0;
+FFZ._cap_waiting = {};
 
 FFZ.get_capitalization = function(name, callback) {
 	if ( ! name )
@@ -1039,13 +1040,25 @@ FFZ.get_capitalization = function(name, callback) {
 			return old_data[0];
 	}
 
-	if ( FFZ._cap_fetching < 25 ) {
+    if ( FFZ._cap_waiting[name] )
+        FFZ._cap_waiting[name].push(callback);
+
+	else if ( FFZ._cap_fetching < 25 ) {
 		FFZ._cap_fetching++;
-		FFZ.get().ws_send("get_display_name", name, function(success, data) {
-			var cap_name = success ? data : name;
+        FFZ._cap_waiting[name] = [callback];
+
+        FFZ.get().ws_send("get_display_name", name, function(success, data) {
+			var cap_name = success ? data : name,
+                waiting = FFZ._cap_waiting[name];
+
 			FFZ.capitalization[name] = [cap_name, Date.now()];
 			FFZ._cap_fetching--;
-			typeof callback === "function" && callback(cap_name);
+            FFZ._cap_waiting[name] = false;
+
+            for(var i=0; i < waiting.length; i++)
+                try {
+                    typeof waiting[i] === "function" && waiting[i](cap_name);
+                } catch(err) { }
 		});
 	}
 

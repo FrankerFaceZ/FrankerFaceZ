@@ -2,12 +2,29 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants'),
 
+	FOLLOWING_CONTAINERS = [
+		['#small_nav ul.game_filters li[data-name="following"] a', true],
+		['nav a.warp__tipsy[data-href="following"]', true],
+		['#large_nav #nav_personal li[data-name="following"] a', false],
+		['#header_actions #header_following', false]
+	],
+
 	FOLLOW_GRAVITY = function(f, el) {
-		return (f.settings.following_count && el.parentElement.getAttribute('data-name') === 'following' ? 'n' : '') + (f.settings.swap_sidebars ? 'e' : 'w');
+		return (f.settings.following_count && (
+					el.getAttribute('data-href') === 'following' ||
+					el.parentElement.getAttribute('data-name') === 'following'
+				) ? 'n' : '') +
+
+				(f.settings.swap_sidebars ? 'e' : 'w');
 	},
 
 	WIDE_TIP = function(f, el) {
-		return ( ! f.settings.following_count || (el.id !== 'header_following' && el.parentElement.getAttribute('data-name') !== 'following') ) ? '' : 'ffz-wide-tip';
+		return (f.settings.following_count && (
+					el.id === 'header_following' ||
+					el.getAttribute('data-href') === 'following' ||
+					el.parentElement.getAttribute('data-name') === 'following'
+
+				)) ? 'ffz-wide-tip' : '';
 	};
 
 
@@ -49,6 +66,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 
 	// Tooltips~!
 	this._install_following_tooltips();
+	setTimeout(this._install_following_tooltips.bind(this), 2000);
 
 	// If we don't have Ember, no point in trying this stuff.
 	if ( ! has_ember )
@@ -76,13 +94,18 @@ FFZ.prototype.setup_following_count = function(has_ember) {
     if ( HostLive )
         HostLive.load();*/
 
-	var total = Live.get('total'),
-		streams = Live.get('content');
-	if ( typeof total === "number" ) {
-		this._draw_following_count(total);
-		if ( streams && streams.length )
-			this._draw_following_channels(streams, total);
+	var init = function() {
+		var total = Live.get('total'),
+			streams = Live.get('content');
+		if ( typeof total === "number" ) {
+			f._draw_following_count(total);
+			if ( streams && streams.length )
+				f._draw_following_channels(streams, total);
+		}
 	}
+
+	init()
+	setTimeout(init, 2000);
 }
 
 
@@ -161,7 +184,7 @@ FFZ.prototype._update_following_count = function() {
 
 
 FFZ.prototype._build_following_tooltip = function(el) {
-	if ( el.id !== 'header_following' && el.parentElement.getAttribute('data-name') !== 'following' )
+	if ( el.id !== 'header_following' && el.getAttribute('data-href') !== 'following' && el.parentElement.getAttribute('data-name') !== 'following' )
 		return el.getAttribute('original-title');
 
 	if ( ! this.settings.following_count )
@@ -262,43 +285,24 @@ FFZ.prototype._build_following_tooltip = function(el) {
 
 FFZ.prototype._install_following_tooltips = function() {
 	var f = this,
+		gravity = function() { return FOLLOW_GRAVITY(f, this) },
 		data = {
 			html: true,
 			className: function() { return WIDE_TIP(f, this); },
 			title: function() { return f._build_following_tooltip(this); }
 		};
 
-	// Small
-	var small_following = jQuery('#small_nav ul.game_filters li[data-name="following"] a');
-	if ( small_following && small_following.length ) {
-		var td = small_following.data('tipsy');
-		if ( td && td.options ) {
-			td.options = _.extend(td.options, data);
-			td.options.gravity = function() { return FOLLOW_GRAVITY(f, this); };
-		} else
-			small_following.tipsy(_.extend({gravity: function() { return FOLLOW_GRAVITY(f, this); }}, data));
-	}
-
-
-	// Large
-	var large_following = jQuery('#large_nav #nav_personal li[data-name="following"] a');
-	if ( large_following && large_following.length ) {
-		var td = large_following.data('tipsy');
-		if ( td && td.options )
-			td.options = _.extend(td.options, data);
-		else
-			large_following.tipsy(data);
-	}
-
-
-	// Heading
-	var head_following = jQuery('#header_actions #header_following');
-	if ( head_following && head_following.length ) {
-		var td = head_following.data('tipsy');
-		if ( td && td.options )
-			td.options = _.extend(td.options, data);
-		else
-			head_following.tipsy(data);
+	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
+		var following = jQuery(FOLLOWING_CONTAINERS[i][0]);
+		if ( following && following.length ) {
+			var td = following.data('tipsy');
+			if ( td && td.options ) {
+				td.options = _.extend(td.options, data);
+				if ( FOLLOWING_CONTAINERS[i][1] )
+					td.options.gravity = gravity;
+			} else
+				following.tipsy(FOLLOWING_CONTAINERS[i][1] ? _.extend({gravity: gravity}, data) : data);
+		}
 	}
 }
 
@@ -310,55 +314,22 @@ FFZ.prototype._draw_following_channels = function(streams, total) {
 
 
 FFZ.prototype._draw_following_count = function(count) {
-	// Small
-	var small_following = document.querySelector('#small_nav ul.game_filters li[data-name="following"] a');
-	if ( small_following ) {
-		var badge = small_following.querySelector('.ffz-follow-count');
-		if ( this.has_bttv || ! this.settings.following_count ) {
-			if ( badge )
-				badge.parentElement.removeChild(badge);
-		} else {
-			if ( ! badge ) {
-				badge = document.createElement('span');
-				badge.className = 'ffz-follow-count';
-				small_following.appendChild(badge);
-			}
-			badge.innerHTML = count ? utils.format_unread(count) : '';
-		}
-	}
+	count = count ? utils.format_unread(count) : '';
+	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
+		var container = document.querySelector(FOLLOWING_CONTAINERS[i][0]),
+			badge = container && container.querySelector('.ffz-follow-count');
+		if ( ! container )
+			continue;
 
-
-	// Large
-	var large_following = document.querySelector('#large_nav #nav_personal li[data-name="following"] a');
-	if ( large_following ) {
-		var badge = large_following.querySelector('.ffz-follow-count');
 		if ( this.has_bttv || ! this.settings.following_count ) {
-			if ( badge )
-				badge.parentElement.removeChild(badge);
-		} else {
-			if ( ! badge ) {
-				badge = document.createElement('span');
-				badge.className = 'ffz-follow-count';
-				large_following.appendChild(badge);
-			}
-			badge.innerHTML = count ? utils.format_unread(count) : '';
-		}
-	}
+			container.removeChild(badge);
+			continue;
 
-	// Heading
-	var head_following = document.querySelector('#header_actions #header_following');
-	if ( head_following ) {
-		var badge = head_following.querySelector('.ffz-follow-count');
-		if ( this.has_bttv || ! this.settings.following_count ) {
-			if ( badge )
-				badge.parentElement.removeChild(badge);
-		} else {
-			if ( ! badge ) {
-				badge = document.createElement('span');
-				badge.className = 'ffz-follow-count';
-				head_following.appendChild(badge);
-			}
-			badge.innerHTML = count ? utils.format_unread(count) : '';
+		} else if ( ! badge ) {
+			badge = utils.createElement('span', 'ffz-follow-count');
+			container.appendChild(badge);
 		}
+
+		badge.innerHTML = count;
 	}
 }

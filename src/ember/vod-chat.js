@@ -154,7 +154,7 @@ FFZ.prototype._modify_vod_chat_display = function(component) {
             if ( f.settings.chat_hover_pause )
                 this.ffzEnableFreeze();
 
-            this.$('.chat-messages').find('.html-tooltip').tipsy({
+            /*this.$('.chat-messages').find('.html-tooltip').tipsy({
                 live: true, html: true,
                 gravity: utils.tooltip_placement(2 * constants.TOOLTIP_DISTANCE, function() {
                     return this.classList.contains('right') ? 'e' : 'n'
@@ -165,7 +165,7 @@ FFZ.prototype._modify_vod_chat_display = function(component) {
                 title: f.render_tooltip(),
                 gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, function() {
                     return this.classList.contains('right') ? 'e' : 'n'
-                })});
+                })});*/
         },
 
         ffzTeardown: function() {

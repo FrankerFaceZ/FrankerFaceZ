@@ -467,6 +467,19 @@ module.exports = FFZ.utils = {
 		return "" + count;
 	},
 
+	format_size: function(bits) {
+		if(Math.abs(bits) < 1024)
+			return bits + ' b';
+
+		var units = ['Kb','Mb','Gb','Tb','Pb','Eb','Zb','Yb'],
+			u = -1;
+		do {
+			bits /= 1024;
+			++u;
+		} while(Math.abs(bits) >= 1024 && u < units.length - 1);
+		return bits.toFixed(1) + ' ' + units[u];
+	},
+
 	escape_regex: escape_regex,
 
 	createElement: function(tag, className, content) {

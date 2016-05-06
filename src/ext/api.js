@@ -50,6 +50,8 @@ var API = FFZ.API = function(instance, name, icon, version) {
 	this.global_sets = [];
 	this.default_sets = [];
 
+	this.users = {};
+	this.chat_filters = [];
 	this.on_room_callbacks = [];
 
 	this.name = name || ("Extension#" + this.id);
@@ -381,6 +383,76 @@ API.prototype.unregister_room_set = function(room_id, id) {
     // Update tab completion.
     if ( this.ffz._inputv )
         Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+}
+
+
+// -----------------------
+// User Modifications
+// -----------------------
+
+API.prototype.user_add_set = function(user_name, set_id) {
+	var user = this.users[user_name] = this.users[user_name] || {},
+		ffz_user = this.ffz.users[user_name] = this.ffz.users[user_name] || {},
+
+		emote_sets = user.sets = user.sets || [],
+		ffz_sets = ffz_user.sets = ffz_user.sets || [],
+
+		exact_id = this.id + '-' + set_id;
+
+	if ( emote_sets.indexOf(exact_id) === -1 )
+		emote_sets.push(exact_id);
+
+	if ( ffz_sets.indexOf(exact_id) === -1 )
+		ffz_sets.push(exact_id);
+
+	// Update tab completion.
+	var user = this.ffz.get_user();
+	if ( this.ffz._inputv && user && user.login === user_name )
+        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+}
+
+
+API.prototype.user_remove_set = function(user_name, set_id) {
+	var user = this.users[user_name],
+		ffz_user = this.ffz.users[user_name],
+
+		emote_sets = user && user.sets,
+		ffz_sets = ffz_user && ffz_user.sets,
+
+		exact_id = this.id + '-' + set_id;
+
+	var ind = emote_sets ? emote_sets.indexOf(exact_id) : -1;
+	if ( ind !== -1 )
+		emote_sets.splice(ind, 1);
+
+	ind = ffz_sets ? ffz_sets.indexOf(exact_id) : -1;
+	if ( ind !== -1 )
+		ffz_sets.splice(ind, 1);
+
+	// Update tab completion.
+	var user = this.ffz.get_user();
+	if ( this.ffz._inputv && user && user.login === user_name )
+        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+}
+
+
+// -----------------------
+// Chat Callback
+// -----------------------
+
+API.prototype.register_chat_filter = function(filter) {
+	this.chat_filters.push(filter);
+	this.ffz._chat_filters.push(filter);
+}
+
+API.prototype.unregister_chat_filter = function(filter) {
+	var ind = this.chat_filters.indexOf(filter);
+	if ( ind !== -1 )
+		this.chat_filters.splice(ind, 1);
+
+	ind = this.ffz._chat_filters.indexOf(filter);
+	if ( ind !== -1 )
+		this.ffz._chat_filters.splice(ind, 1);
 }
 
 

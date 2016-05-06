@@ -102,8 +102,8 @@ FFZ.prototype.find_rechat = function() {
 
 	// Tooltips
 	jQuery(container).find('.tooltip').tipsy({live: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-	jQuery(container).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-    jQuery(container).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+	//jQuery(container).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+    //jQuery(container).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 	// Load the room data.
 	var room_id = el.getAttribute('data-room');

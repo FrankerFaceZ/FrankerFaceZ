@@ -129,7 +129,7 @@ FFZ.menu_pages.myemotes = {
 
                 var el = document.createElement("div");
                 el.className = "emoticon-grid ffz-no-emotes center";
-                el.innerHTML = "You have no favorite emoticons.<br> <img src=\"//cdn.frankerfacez.com/emoticon/26608/2\"><br>To make an emote a favorite, find it on the <nobr>All Emoticons</nobr> tab and <nobr>Ctrl-Click</nobr> it.";
+                el.innerHTML = "You have no favorite emoticons.<br> <img src=\"//cdn.frankerfacez.com/emoticon/26608/2\"><br>To make an emote a favorite, find it on the <nobr>All Emoticons</nobr> tab and <nobr>" + (constants.IS_OSX ? '⌘' : 'Ctrl') + "-Click</nobr> it.";
                 container.appendChild(el);
             }
         },

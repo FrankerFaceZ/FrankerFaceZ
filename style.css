@@ -19,6 +19,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-hide-recommended-friends .recommended-friends,
 .ffz-hide-recommended-channels .js-recommended-channels,
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
 .ffz-hide-view-count .stat.twitch-channel-views,
@@ -1235,6 +1236,24 @@ img.channel_background[src="null"] { display: none; }
 	padding: 0 5px;
 }
 
+.ember-chat .ffz-moderation-card .mod-controls button {
+	width: auto;
+	margin-right: 10px;
+}
+
+.ffz-moderation-card .follow-button,
+.ffz-moderation-card .friend-button { max-height: 30px }
+
+.ffz-moderation-card .right button:last-of-type,
+.ffz-moderation-card .mod-controls button:last-of-type { margin-right: 0 }
+
+.ffz-moderation-card .follow-button a {
+	text-indent: -9999px;
+	padding-right: 0 !important;
+}
+
+.ffz-moderation-card .button.glyph-only { padding: 0 !important }
+
 .ffz-moderation-card button:not(.glyph-only):hover,
 .ffz-moderation-card button:not(.glyph-only):focus {
 	color: #fff;
@@ -1242,7 +1261,7 @@ img.channel_background[src="null"] { display: none; }
 }
 
 .ffz-moderation-card button.message {
-	height: 30px; width: 28px;
+	height: 30px;
 }
 
 .ffz-moderation-card.ffz-is-mod .interface .mod-controls:last-of-type,
@@ -1994,8 +2013,8 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 }
 
 .ffz-sidebar-swap #left_close {
-	right: auto;
-	left: -25px;
+	right: 5px;
+	left: auto;
 }
 
 .ffz-sidebar-swap #main_col {
@@ -2226,11 +2245,13 @@ li[data-name="following"] a {
 	background-color: rgba(25,25,25,0.5);
 }
 
+#left_col.open .warp__item .ffz-follow-count,
 #large_nav .ffz-follow-count,
 .ffz-dark #header_following .ffz-follow-count {
 	background-color: rgba(127,127,127,0.5);
 }
 
+#left_col.open .warp__item .ffz-follow-count,
 #large_nav .ffz-follow-count {
 	position: absolute;
 	right: 10px;
@@ -2240,6 +2261,12 @@ li[data-name="following"] a {
 	padding: 2px 5px;
 }
 
+#left_col.open .warp__item .ffz-follow-count {
+	top: 6px;
+	right: 20px;
+}
+
+#left_col.closed .warp__item .ffz-follow-count,
 #small_nav .ffz-follow-count {
 	position: absolute;
 	bottom: 2px;
@@ -2644,41 +2671,13 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 
 /* Creative Directory */
 
-.ffz-creative-tags .creativetag-list.filter-list,
-.ffz-creative-tags .creativetag-list ul,
-.ffz-creative-tags .creativetag-list-contain {
-	width: inherit;
-	height: inherit;
-	overflow: inherit;
-}
+.ffz-top-conversations .ct-banner { margin-top: -50px }
+.ffz-top-conversations .ct-banner__feature { top: 40px; margin-bottom: 0 }
 
-body:not(.ffz-creative-showcase) .creative-hero,
-.ffz-creative-tags .creativetag-list-contain .filter-nav { display: none; }
+body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,
+body:not(.ffz-creative-showcase) .ct-gallery { display: none; }
 
-.ffz-creative-tags .creativetag-list ul {
-	display: flex;
-	flex-wrap: wrap;
-	position: inherit;
-	margin-bottom: -5px;
-}
-
-.ffz-creative-tags .creativetag-list li {
-	flex-grow: 1;
-	height: inherit;
-	float: none;
-	margin: 0 0 5px;
-}
-
-.ffz-creative-tags .creativetag-list a {
-	display: block;
-	text-align: center;
-	padding: 5px 10px;
-}
-
-.ffz-creative-tags .creativetag-list a.active {
-	color: #fff !important;
-	background-color: #6441a5 !important;
-}
+body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 
 /* Content-Box~! Down with Twitch randomly changing the box-sizing for everything! */
 
@@ -2732,7 +2731,20 @@ body:not(.ffz-creative-showcase) .creative-hero,
     line-height: 40px;
 }
 
+/* Banned and Spoiler Games */
+
+.ffz-game-spoilered .thumb .cap img,
+.ffz-game-banned { display: none }
+.ffz-game-spoilered .thumb .cap {
+	position: absolute !important; top: 0; left: 0; bottom: 0; right: 0;
+	background: url("https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg") no-repeat !important;
+	background-size: cover !important;
+}
+
+
 /* Dashboard Channel Feed */
+
+.activity-card .emoticon-selector .tabs { display: none }
 
 .ffz-feed-button span { line-height: 30px; }
 #ffz-feed-tabs .tabs { margin-bottom: 10px }
@@ -2748,3 +2760,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs li:not(.selected):not(:hover) a { color: #644
 body.ffz-bttv-dark #ffz-feed-tabs .tabs li:not(.selected):not(:hover) a { color: #999; }
 
 body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
+
+/* New Sidebar */
+
+.warp__anchor { height: 5.5rem }

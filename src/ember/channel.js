@@ -40,16 +40,17 @@ FFZ.prototype.setup_channel = function() {
 	// Update Existing
 	var views = utils.ember_views();
 	for(var key in views) {
-		if ( ! views.hasOwnProperty(key) )
-			continue;
-
 		var view = views[key];
-		if ( !(view instanceof Channel) )
-			continue;
-
-		this.log("Manually updating Channel Index view.", view);
-		this._modify_cindex(view);
-		view.ffzInit();
+		if ( view instanceof Channel ) {
+			this.log("Manually updating existing Channel Index view.", view);
+			try {
+				if ( ! view.ffzInit )
+					this._modify_cindex(view);
+				view.ffzInit();
+			} catch(err) {
+				this.error("setup: view:channel/index: " + err);
+			}
+		}
 	};
 
 
@@ -145,7 +146,7 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( f._cindex )
 				f._cindex.ffzFixTitle();
-		}.observes("content.status", "content.id"),
+		}.observes("content.status", "content.id", "hostModeTarget.status", "hostModeTarget.id"),
 
 		ffzHostTarget: function() {
 			var target = this.get('content.hostModeTarget'),
@@ -245,24 +246,43 @@ FFZ.prototype._modify_cindex = function(view) {
 				if ( Layout )
 					Layout.set('isTheatreMode', true);
 			}
+
+			this.$().on("click", ".ffz-creative-tag-link", function(e) {
+				if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
+					return;
+
+				utils.ember_lookup("router:main").transitionTo('creative.hashtag.index', this.getAttribute('data-tag'));
+				e.preventDefault();
+				return false;
+			});
 		},
 
 		ffzFixTitle: function() {
 			if ( f.has_bttv || ! f.settings.stream_title )
 				return;
 
-			var status = this.get("controller.content.status") || this.get("controller.status"),
-				channel = this.get("controller.content.id") || this.get("controller.id");
+			var status = this.get("controller.content.status"),
+				channel = this.get("controller.content.id"),
+				game = this.get("controller.content.game"),
 
-			status = f.render_tokens(f.tokenize_line(channel, channel, status, true));
+				tokens = f.tokenize_line(channel, channel, status, true);
 
-			this.$(".title span").each(function(i, el) {
-				var scripts = el.querySelectorAll("script");
-				if ( ! scripts.length )
-					el.innerHTML = status;
-				else
-					el.innerHTML = scripts[0].outerHTML + status + scripts[1].outerHTML;
-			});
+			if ( game === 'Creative' )
+				tokens = f.tokenize_ctags(tokens);
+
+			this.$("#broadcast-meta .title").html(f.render_tokens(tokens));
+
+			status = this.get('controller.hostModeTarget.status');
+			channel = this.get('controller.hostModeTarget.id');
+			game = this.get('controller.hostModeTarget.game');
+
+			if ( channel ) {
+				tokens = f.tokenize_line(channel, channel, status, true);
+				if ( game === 'Creative' )
+					tokens = f.tokenize_ctags(tokens);
+
+				this.$(".target-meta .target-title").html(f.render_tokens(tokens));
+			}
 		},
 
 

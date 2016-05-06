@@ -72,6 +72,8 @@
 }
 
 /* stats */
+.ffz-dark .ct-tags--extracted { border-bottom: none }
+
 .ffz-dark .stats-and-actions,
 .ffz-dark #main_col .content #stats_and_actions {
 	border-bottom-color: rgba(255,255,255,0.2);
@@ -115,19 +117,23 @@ body.ffz-dark,
 }
 
 .ffz-dark div.title > span.real,
-.ffz-dark div.title > span.over{
-	color:rgb(222,222,222)!important;
-	background-color:rgba(16,16,16,0.3)!important;
+.ffz-dark div.title > span.over,
+.ffz-dark #broadcast-meta .info .title {
+	color: #DEDEDE !important;
+	background-color: rgba(16,16,16,0.3) !important;
 }
 
 .ffz-dark div.title > span.over:hover,
-.ffz-dark div.title > span.real:hover {
-	background-color:rgb(16,16,16)!important;
-	color:rgb(255,255,255)!important;
+.ffz-dark div.title > span.real:hover,
+.ffz-dark #broadcast-meta .info .title:hover {
+	color: #fff !important;
+	background-color: #101010 !important;
 }
+
 
 /* Right Column */
 
+.ffz-dark .ct-banner--off .ct-banner__toggle,
 .ffz-dark #right_col {
 	background-color: rgb(25,25,31);
 	color: #fff;
@@ -175,6 +181,9 @@ body.ffz-dark,
     box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
 }
 
+.ffz-dark .player-menu__header { color: #c3c3c3 }
+.ffz-dark .player-menu__section { border-bottom-color: rgba(255,255,255,0.2) }
+
 .ffz-dark .balloon:after { box-shadow: none }
 
 .ffz-dark .st-autocomplete-sidebar .label,
@@ -216,6 +225,7 @@ body.ffz-dark,
 }
 
 .ffz-dark .change-banner .banner-preview,
+.ffz-dark .ct-banner--off .ct-banner__inputbox,
 .ffz-dark form.js-new_panel_form input,
 .ffz-dark form.js-new_panel_form textarea,
 .ffz-dark .conversation-input-bar textarea,
@@ -269,9 +279,19 @@ body.ffz-dark,
 .ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
 .ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
 .ffz-dark .dropmenu_action:not(:hover) span,
-.ffz-dark a:not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {
+.ffz-dark a:not(.profile-card__content):not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {
 	color: #a68ed2;
 }
+
+.ffz-dark .balloon--cols .balloon__list~.balloon__list {
+	box-shadow: -1px 0 0 rgba(255,255,255,0.2);
+}
+
+.ffz-dark .warp__item a.js-language-select,
+.ffz-dark .warp__item > a { color: #d5d4d9 !important }
+
+.ffz-dark .warp__item--toggled a.js-language-select,
+.ffz-dark .warm__item--toggled > a { color: #eae9ec !important }
 
 .ffz-dark .exit-theatre > a { color: #000 !important; }
 
@@ -297,7 +317,7 @@ body.ffz-dark,
 	background-color: #25252a;
 }
 
-.ffz-dark .button:not(.primary) {
+.ffz-dark .button:not(.button--status):not(.primary) {
 	color: #a68ed2;
 }
 
@@ -1117,6 +1137,29 @@ body.ffz-dark,
 }
 
 
+/* Creative Tags */
+
+.ffz-dark .ct-tags__tag {
+	background-color: #191919;
+	color: #999 !important;
+}
+
+.ffz-dark .ct-tag--light .ct-tag__link:hover { color: #ccc !important }
+
+.ffz-dark .ct-tags__tag:hover {
+	background-color: #000;
+	color: #ccc !important;
+}
+
+.ffz-dark .ct-tags__tag.ct-tags__tag--current {
+	background-color: #7d5bbc;
+	color: #fff !important;
+}
+
+.ffz-dark .ct-banner--off .ct-banner__header { color: #999 }
+.ffz-dark .ct-banner--off .ct-banner__link { color: #ccc }
+
+
 /* Activity Feeds */
 
 .button.alert { color: #fff !important }
@@ -1128,12 +1171,12 @@ body.ffz-dark,
 
 .ffz-dark .activity-meta:before { background-color: #474747 }
 
-.ffz-dark .activity-react__like:hover {
+.ffz-dark .activity-react__item:hover {
 	border-color: #d5d5d5;
 	background-color: #242424;
 }
 
-.ffz-dark .activity-react__like svg.endorse-icon #head__base { fill: #fff }
+.ffz-dark .activity-react__item svg.endorse-icon #head__base { fill: #fff }
 
 .ffz-dark .activity-create__actions {
 	background-color: #191919;
@@ -1141,7 +1184,7 @@ body.ffz-dark,
 }
 
 .ffz-dark .activity-create,
-.ffz-dark .activity-react__like {
+.ffz-dark .activity-react__item {
 	border-color: #474747;
 	color: #fff !important;
 	background-color: #191919;

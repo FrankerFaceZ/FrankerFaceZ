@@ -1,6 +1,8 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
-	constants = require('../constants');
+	constants = require('../constants'),
+
+	createElement = utils.createElement;
 
 
 // --------------------
@@ -13,7 +15,7 @@ FFZ.settings_info.enhance_profile_following = {
 
 	category: "Directory",
 	name: "Enhanced Following Control",
-	help: "Display additional controls on your own profile's Following tab to make management easier."
+	help: "Display additional controls on your own profile's Following tab to make management easier, as well as telling you how long everyone has been following everyone else in the profile."
 }
 
 
@@ -29,6 +31,7 @@ FFZ.prototype.setup_profile_following = function() {
 
 	// Build our is-following cache.
 	this._following_cache = {};
+	this._follower_cache = {};
 
 	// First, we need to hook the model. This is what we'll use to grab the following notification state,
 	// rather than making potentially hundreds of API requests.
@@ -36,10 +39,22 @@ FFZ.prototype.setup_profile_following = function() {
 	if ( Following )
 		this._hook_following(Following);
 
+	var Followers = utils.ember_resolve('model:user-followers');
+	if ( Followers )
+		this._hook_followers(Followers);
+
 	// Also try hooking that other model.
 	var Notification = utils.ember_resolve('model:notification');
 	if ( Notification )
 		this._hook_following(Notification, true);
+
+
+	// Find the followed item view
+	var FollowedItem = utils.ember_resolve('component:display-followed-item');
+	if ( ! FollowedItem )
+		return;
+
+	this._modify_display_followed_item(FollowedItem);
 
 
 	// Now, we need to edit the profile Following view itself.
@@ -57,154 +72,170 @@ FFZ.prototype.setup_profile_following = function() {
 			}
 		},
 
+		ffzInit: function() {
+			// Only process our own profile following page.
+			if ( ! f.settings.enhance_profile_following )
+				return;
+
+			var el = this.get('element'),
+				user = f.get_user(),
+				user_id = this.get('context.model.id');
+
+			el.classList.add('ffz-enhanced-following');
+			el.classList.toggle('ffz-my-following', user && user.login === user_id);
+			el.setAttribute('data-user', user_id);
+		}
+	});
+
+    // TODO: Add nice Manage Following button to the directory.
+
+	// Now, rebuild any views.
+	try { FollowedItem.create().destroy();
+	} catch(err) { }
+
+	var views = utils.ember_views();
+
+    if ( views ) {
+        for(var key in views) {
+            var view = views[key];
+			if ( view instanceof FollowedItem ) {
+				this.log("Manually updating existing component:display-followed-item.", view);
+				try {
+					if ( ! view.ffzInit )
+						this._modify_display_followed_item(view);
+					view.ffzInit();
+				} catch(err) {
+					this.error("setup: component:display-followed-item ffzInit: " + err);
+				}
+			}
+        }
+	}
+
+
+	// Refresh all existing following data.
+	var count = 0,
+		Channel = utils.ember_resolve('model:channel');
+
+	if ( Channel && Channel._cache )
+		for(var key in Channel._cache) {
+			var chan = Channel._cache[key];
+			if ( chan instanceof Channel ) {
+				var following = chan.get('following'),
+					followers = chan.get('followers'),
+
+					refresher = function(x) {
+						if ( x.get('isLoading') )
+							setTimeout(refresher.bind(this,x), 25);
+
+						x.clear();
+						x.load();
+					};
+
+				// Make sure this channel's Following collection is modified.
+				this._hook_following(following);
+				this._hook_followers(followers);
+
+				var counted = false;
+				if ( following.get('isLoaded') || following.get('isLoading') ) {
+					refresher(following);
+					count++;
+					counted = true;
+				}
+
+				if ( followers.get('isLoaded') || followers.get('isLoading') ) {
+					refresher(followers);
+					if ( ! counted )
+						count++;
+				}
+			}
+		}
+
+	f.log("Refreshing previously loaded user following data for " + count + " channels.");
+}
+
+
+FFZ.prototype._modify_display_followed_item = function(component) {
+	var f = this;
+	component.reopen({
+		didInsertElement: function() {
+			this._super();
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("component:display-followed-item ffzInit: " + err);
+			}
+		},
+
 		willClearRender: function() {
 			try {
 				this.ffzTeardown();
 			} catch(err) {
-				f.error("ProvileView ffzTeardown: " + err);
+				f.error("component:display-followed-item ffzTeardown: " + err);
 			}
-			this._super();
 		},
 
 		ffzInit: function() {
-			// Only process our own profile following page.
-			var user = f.get_user();
-			if ( ! f.settings.enhance_profile_following || ! user || user.login !== this.get('context.model.id') )
+			var el = this.get('element'),
+				channel_id = this.get('parentView.parentView.model.id'),
+				is_following = document.body.getAttribute('data-current-path').indexOf('.following') !== -1,
+
+				user = f.get_user(),
+				mine = user && user.login && user.login === channel_id,
+				big_cache = is_following ? f._following_cache : f._follower_cache;
+				user_cache = big_cache[channel_id] = big_cache[channel_id] || {},
+
+				user_id = this.get('followed.id'),
+				data = user_cache[user_id];
+
+			if ( ! f.settings.enhance_profile_following )
 				return;
 
-			var el = this.get('element'),
-				users = el && el.querySelectorAll('.user.item');
+			el.classList.add('ffz-processed');
 
-			el.classList.add('ffz-enhanced-following');
+			// TODO: REMOVE
+			window._d = this;
 
-			var had_data = true;
-
-			if ( users && users.length )
-				for(var i=0; i < users.length; i++)
-					had_data = this.ffzProcessUser(users[i]) && had_data;
-			else
-				had_data = false;
-
-			if ( ! had_data ) {
-				// Force a refresh.
-				f.log("Forcing a refresh of user following data.");
-				var following = this.get('context.following'),
-					refresher = function() {
-						if ( following.get('isLoading') )
-							setTimeout(refresher, 25);
-
-						following.clear();
-						following.load();
-					}
-
-                // Make sure the Following is modified.
-                f._hook_following(following);
-
-				// We use this weird function to prevent trying to load twice mucking things up.
-				setTimeout(refresher);
-			}
-
-			// Watch for new ones the bad way.
-			if ( ! this._ffz_observer ) {
-				var t = this;
-				var observer = this._ffz_observer = new MutationObserver(function(mutations) {
-					for(var i=0; i < mutations.length; i++) {
-						var mutation = mutations[i];
-						if ( mutation.type !== "childList" )
-							continue;
-
-						for(var x=0; x < mutation.addedNodes.length; x++) {
-							var added = mutation.addedNodes[x];
-							if ( added.nodeType !== added.ELEMENT_NODE || added.tagName !== "DIV" )
-								continue;
-
-							// Is it an ember-view? Check its kids.
-                            if ( added.classList.contains('user') )
-                                t.ffzProcessUser(added);
-
-							else if ( added.classList.contains('ember-view') ) {
-								var users = added.querySelectorAll('.user.item');
-								if ( users )
-									for(var y=0; y < users.length; y++)
-										t.ffzProcessUser(users[y]);
-							}
-						}
-					}
-				});
-
-				observer.observe(el, {
-					childList: true,
-					subtree: true
-				});
-			}
-		},
-
-		ffzTeardown: function() {
-			if ( this._ffz_observer ) {
-				this._ffz_observer.disconnect();
-				this._ffz_observer = null;
-			}
-		},
-
-		ffzProcessUser: function(user) {
-			if ( user.classList.contains('ffz-processed') )
-				return true;
-
-			var link = user.querySelector('a'),
-				link_parts = link && link.href.split("/"),
-				user_id = link_parts && link_parts[3],
-				data = f._following_cache[user_id],
-				t_el = document.createElement('div');
-
-			user.classList.add('ffz-processed');
 			if ( ! data )
 				return false;
 
-			t_el.className = 'overlay_info length';
-			jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
-
 			var now = Date.now() - (f._ws_server_offset || 0),
-				age = data[0] ? Math.floor((now - data[0].getTime()) / 1000) : 0;
-			if ( age ) {
-				t_el.innerHTML = constants.CLOCK + ' ' + utils.human_time(age, 10);
-				t_el.setAttribute('original-title', 'Following Since: <nobr>' + data[0].toLocaleString() + '</nobr>');
-			} else
-				t_el.style.display = 'none';
+				age = data[0] ? Math.floor((now - data[0].getTime()) / 1000) : 0,
+				t_el = createElement('div', 'overlay_info length'),
 
-			user.appendChild(t_el);
+				update_time = function() {
+					var now = Date.now() - (f._ws_server_offset || 0),
+						age = data && data[0] ? Math.floor((now - data[0].getTime()) / 1000) : undefined;
 
-			var actions = document.createElement('div'),
-				follow = document.createElement('button'),
-				notif = document.createElement('button'),
+					if ( age !== undefined ) {
+						t_el.innerHTML = constants.CLOCK + ' ' + (age < 60 ? 'now' : utils.human_time(age, 10));
+						t_el.title = 'Following Since: <nobr>' + data[0].toLocaleString() + '</nobr>';
+						t_el.style.display = '';
+					} else
+						t_el.style.display = 'none';
+				};
+
+			update_time();
+			jQuery(t_el).tipsy({html:true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
+			el.appendChild(t_el);
+
+			if ( ! mine || ! is_following )
+				return;
+
+			var actions = createElement('div', 'actions'),
+				follow = createElement('button', 'button follow'),
+				notif = createElement('button', 'button notifications'),
 
 				update_follow = function() {
-					data = f._following_cache[user_id];
-					user.classList.toggle('followed', data);
+					data = user_cache[user_id];
+					el.classList.toggle('followed', data);
 					follow.innerHTML = constants.HEART + constants.UNHEART + '<span> Follow</span>';
-
-					if ( t_el ) {
-						var now = Date.now() - (f._ws_server_offset || 0),
-							age = data && data[0] ? Math.floor((now - data[0].getTime()) / 1000) : undefined;
-						if ( age !== undefined ) {
-							t_el.innerHTML = constants.CLOCK + ' ' + (age < 60 ? 'now' : utils.human_time(age, 10));
-							t_el.setAttribute('original-title', 'Following Since: <nobr>' + data[0].toLocaleString() + '</nobr>');
-							t_el.style.display = '';
-						} else {
-							t_el.style.display = 'none';
-						}
-					}
 				},
 
 				update_notif = function() {
-					data = f._following_cache[user_id];
+					data = user_cache[user_id];
 					notif.classList.toggle('notifications-on', data && data[1]);
 					notif.textContent = 'Notification ' + (data && data[1] ? 'On' : 'Off');
 				};
-
-			actions.className = 'actions';
-
-			follow.className = 'button follow';
-			notif.className = 'button notifications';
 
 			update_follow();
 			update_notif();
@@ -220,11 +251,12 @@ FFZ.prototype.setup_profile_following = function() {
 						utils.api.del("users/:login/follows/channels/" + user_id) :
 						utils.api.put("users/:login/follows/channels/" + user_id, {notifications: false}))
 					.done(function() {
-						data = f._following_cache[user_id] = was_following ? null : [new Date(Date.now() - (f._ws_server_offset||0)), false];
+						data = user_cache[user_id] = was_following ? null : [new Date(Date.now() - (f._ws_server_offset||0)), false];
 					})
 					.always(function() {
 						update_follow();
 						update_notif();
+						update_time();
 						follow.disabled = false;
 						notif.disabled = false;
 					})
@@ -250,32 +282,14 @@ FFZ.prototype.setup_profile_following = function() {
 
 			actions.appendChild(follow);
 			actions.appendChild(notif);
-			user.appendChild(actions);
 
-			return true;
+			el.appendChild(actions);
+		},
+
+		ffzTeardown: function() {
+
 		}
 	});
-
-    // TODO: Add nice Manage Following button to the directory.
-
-	// Now, rebuild any views.
-	try {
-		ProfileView.create().destroy();
-	} catch(err) { }
-
-	var views = utils.ember_views();
-    if ( views )
-        for(var key in views) {
-            var view = views[key];
-            if ( view instanceof ProfileView ) {
-                this.log("Manually updating existing Following View.", view);
-                try {
-                    view.ffzInit();
-                } catch(err) {
-                    this.error("setup: view:channel/following: " + err);
-                }
-            }
-        }
 }
 
 
@@ -287,12 +301,10 @@ FFZ.prototype._hook_following = function(Following) {
 	Following.reopen({
         ffz_hooked: true,
 		apiLoad: function(e) {
-			var user = f.get_user(),
-				channel_id = this.get('id'),
+			var channel_id = this.get('id'),
 				t = this;
 
-			if ( ! user || user.login !== channel_id )
-				return this._super(e);
+			f._following_cache[channel_id] = f._following_cache[channel_id] || {};
 
 			return new RSVP.Promise(function(success, fail) {
 				t._super(e).then(function(data) {
@@ -307,7 +319,47 @@ FFZ.prototype._hook_following = function(Following) {
 							if ( follow.channel.display_name )
 								FFZ.capitalization[follow.channel.name] = [follow.channel.display_name, now];
 
-							f._following_cache[follow.channel.name] = [follow.created_at ? utils.parse_date(follow.created_at) : null, follow.notifications || false];
+							f._following_cache[channel_id][follow.channel.name] = [follow.created_at ? utils.parse_date(follow.created_at) : null, follow.notifications || false];
+						}
+					}
+
+					success(data);
+
+				}, function(err) {
+					fail(err);
+				})
+			});
+		}
+	});
+}
+
+FFZ.prototype._hook_followers = function(Followers) {
+	var f = this;
+    if ( Followers.ffz_hooked )
+        return;
+
+	Followers.reopen({
+        ffz_hooked: true,
+		apiLoad: function(e) {
+			var channel_id = this.get('id'),
+				t = this;
+
+			f._follower_cache[channel_id] = f._follower_cache[channel_id] || {};
+
+			return new RSVP.Promise(function(success, fail) {
+				t._super(e).then(function(data) {
+					if ( data && data.follows ) {
+						var now = Date.now();
+						for(var i=0; i < data.follows.length; i++) {
+							var follow = data.follows[i];
+							if ( ! follow || ! follow.user || ! follow.user.name ) {
+								continue;
+							}
+
+							if ( follow.user.display_name )
+								FFZ.capitalization[follow.user.name] = [follow.user.display_name, now];
+
+							f._follower_cache[channel_id][follow.user.name] = [follow.created_at ? utils.parse_date(follow.created_at) : null, follow.notifications || false];
 						}
 					}
 

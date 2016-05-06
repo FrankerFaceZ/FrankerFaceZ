@@ -55,7 +55,23 @@ FFZ.settings_info.sidebar_hide_recommended_channels = {
 	};
 
 
-FFZ.settings_info.directory_creative_all_tags = {
+FFZ.settings_info.sidebar_hide_recommended_friends = {
+	type: "boolean",
+	value: true,
+
+	category: "Appearance",
+	no_mobile: true,
+
+	name: "Sidebar Recommended Friends",
+    help: "Display the Recommended Friends section on the sidebar.",
+
+	on_update: function(val) {
+			document.body.classList.toggle('ffz-hide-recommended-friends', !val);
+		}
+	};
+
+
+/*FFZ.settings_info.directory_creative_all_tags = {
 	type: "boolean",
 	value: false,
 
@@ -68,7 +84,7 @@ FFZ.settings_info.directory_creative_all_tags = {
 	on_update: function(val) {
 			document.body.classList.toggle('ffz-creative-tags', val);
 		}
-	};
+	};*/
 
 
 FFZ.settings_info.directory_creative_showcase = {
@@ -123,6 +139,82 @@ FFZ.settings_info.directory_group_hosts = {
 	};
 
 
+FFZ.settings_info.banned_games = {
+	type: "button",
+	value: [],
+
+	category: "Directory",
+	no_mobile: true,
+	name: "Banned Games",
+	help: "A list of games that will not be displayed in the Directory.",
+
+	on_update: function() {
+		var banned = this.settings.banned_games,
+			els = document.querySelectorAll('.ffz-directory-preview');
+
+		for(var i=0; i < els.length; i++) {
+			var el = els[i],
+				game = el.getAttribute('data-game');
+
+			el.classList.toggle('ffz-game-banned', banned.indexOf(game && game.toLowerCase()) !== -1);
+		}
+	},
+
+	method: function() {
+		var f = this,
+			old_val = f.settings.banned_games.join(", ");
+
+		utils.prompt(
+			"Banned Games",
+			"Please enter a comma-separated list of games that you would like to be banned from viewing in the Directory.</p><p>This is case insensitive, however you must type the full name.</p><p><b>Example:</b> <code>League of Legends, Dota 2, Smite</code>",
+			old_val,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+				f.settings.set("banned_games", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)));
+			}, 600);
+	}
+}
+
+
+FFZ.settings_info.spoiler_games = {
+	type: "button",
+	value: [],
+
+	category: "Directory",
+	no_mobile: true,
+	name: "Spoiler Games",
+	help: "Stream thumbnails will be hidden for games that you add to this list.",
+
+	on_update: function() {
+		var spoiled = this.settings.spoiler_games,
+			els = document.querySelectorAll('.ffz-directory-preview');
+
+		for(var i=0; i < els.length; i++) {
+			var el = els[i],
+				game = el.getAttribute('data-game');
+
+			el.classList.toggle('ffz-game-spoilered', spoiled.indexOf(game && game.toLowerCase()) !== -1);
+		}
+	},
+
+	method: function() {
+		var f = this,
+			old_val = f.settings.spoiler_games.join(", ");
+
+		utils.prompt(
+			"Spoiler Games",
+			"Please enter a comma-separated list of games that you would like to have the thumbnails hidden for in the Directory.</p><p>This is case insensitive, however you must type the full name.</p><p><b>Example:</b> <code>Undertale</code>",
+			old_val,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+				f.settings.set("spoiler_games", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)));
+			}, 600);
+	}
+}
+
+
 FFZ.settings_info.directory_host_menus = {
 	type: "select",
 	options: {
@@ -168,6 +260,7 @@ FFZ.prototype.setup_directory = function() {
 	document.body.classList.toggle('ffz-creative-tags', this.settings.directory_creative_all_tags);
 	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
     document.body.classList.toggle('ffz-hide-recommended-channels', !this.settings.sidebar_hide_recommended_channels);
+	document.body.classList.toggle('ffz-hide-recommended-friends', !this.settings.sidebar_hide_recommended_friends);
 
 	var GamesFollowing = utils.ember_lookup('controller:games-following'),
 		f = this;
@@ -197,7 +290,7 @@ FFZ.prototype.setup_directory = function() {
 
 	var ChannelView = utils.ember_resolve('component:stream-preview');
 	if ( ChannelView ) {
-		this._modify_directory_live(ChannelView);
+		this._modify_directory_live(ChannelView, false);
         try {
 		    ChannelView.create().destroy();
 	    } catch(err) { }
@@ -205,7 +298,7 @@ FFZ.prototype.setup_directory = function() {
 
 	var CreativeChannel = utils.ember_resolve('component:creative-preview');
 	if ( CreativeChannel ) {
-		this._modify_directory_live(CreativeChannel);
+		this._modify_directory_live(CreativeChannel, false);
         try {
 		    CreativeChannel.create().destroy();
 	    } catch(err) { }
@@ -222,20 +315,31 @@ FFZ.prototype.setup_directory = function() {
     } catch(err) { }
 
 
+	var VideoPreview = utils.ember_resolve('component:video-preview');
+	if ( VideoPreview ) {
+		VideoPreview = this._modify_video_preview(VideoPreview);
+		try { VideoPreview.create().destroy();
+		} catch(err) { }
+	}
+
+
 	// Initialize existing views.
 	var views = utils.ember_views();
 	for(var key in views) {
 		var view = views[key];
         if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) ) {
             if ( ! view.ffzInit )
-                this._modify_directory_live(view);
+                this._modify_directory_live(view, false);
         } else if ( CSGOChannel && view instanceof CSGOChannel ) {
             if ( ! view.ffzInit )
                 this._modify_directory_live(view, true);
         } else if ( view instanceof HostView || view.get('tt_content') === 'live_host' ) {
             if ( ! view.ffzInit )
                 this._modify_directory_host(view);
-        } else
+		} else if ( VideoPreview && view instanceof VideoPreview ) {
+			if ( ! view.ffzInit )
+				this._modify_video_preview(view);
+		} else
             continue;
 
 		try {
@@ -386,9 +490,15 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
 				cap = thumb && thumb.querySelector('.cap'),
-                channel_id = this.get(pref + 'channel.name');
+                channel_id = this.get(pref + 'channel.name'),
+				game = this.get(pref + 'game');
 
+			el.classList.add('ffz-directory-preview');
             el.setAttribute('data-channel', channel_id);
+			el.setAttribute('data-game', game);
+
+			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
+			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 
 			// CSGO doesn't provide the actual uptime information...
 			if ( !is_csgo && f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
@@ -477,6 +587,33 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				this._ffz_uptime.setAttribute('original-title', '');
 				this._ffz_uptime.innerHTML = '';
 			}
+		}
+	});
+}
+
+
+FFZ.prototype._modify_video_preview = function(vp) {
+	var f = this;
+	vp.reopen({
+		didInsertElement: function() {
+			this._super();
+			try {
+				this.ffzInit();
+			} catch(err) {
+				f.error("component:video-preview ffzInit: " + err);
+			}
+		},
+
+		ffzInit: function() {
+			var el = this.get('element'),
+				game = this.get('video.game');
+
+			el.classList.add('ffz-directory-preview');
+			el.setAttribute('data-channel', this.get('video.channel.id'));
+			el.setAttribute('data-game', game);
+
+			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
+			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 		}
 	});
 }
@@ -613,11 +750,17 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				title = meta && meta.querySelector('.title a'),
 
 				target = this.get('stream.target.channel'),
+				game = this.get('stream.target.meta_game'),
 				hosts = this.get('stream.ffz_hosts'); //,
 
 				//boxart = thumb && thumb.querySelector('.boxart');
 
-            el.setAttribute('data-channel', target.name);
+			el.classList.add('ffz-directory-preview');
+			el.setAttribute('data-channel', target.name);
+			el.setAttribute('data-game', game);
+
+			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
+			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 
             this._ffz_image_timer = setInterval(this.ffzRotateImage.bind(this), 30000);
             this.ffzRotateImage();

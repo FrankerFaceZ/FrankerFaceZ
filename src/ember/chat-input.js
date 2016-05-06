@@ -871,7 +871,7 @@ FFZ.prototype._modify_chat_input = function(component) {
                 case KEYCODES.TAB:
                     // If we do Ctrl-Tab or Alt-Tab. Just don't
                     // even think of doing suggestions.
-                    if ( e.ctrlKey || e.altKey )
+                    if ( e.ctrlKey || e.altKey || e.metaKey )
                         break;
 
                     e.preventDefault();
