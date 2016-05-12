@@ -489,5 +489,10 @@ module.exports = FFZ.utils = {
 		if ( content )
 			out.innerHTML = content;
 		return out;
+	},
+
+	toggle_cls: function(cls) {
+		var cl = document.body.classList;
+		return cl.toggle.bind(cl, cls);
 	}
 }

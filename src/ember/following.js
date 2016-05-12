@@ -181,7 +181,7 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 
 				user = f.get_user(),
 				mine = user && user.login && user.login === channel_id,
-				big_cache = is_following ? f._following_cache : f._follower_cache;
+				big_cache = is_following ? f._following_cache : f._follower_cache,
 				user_cache = big_cache[channel_id] = big_cache[channel_id] || {},
 
 				user_id = this.get('followed.id'),

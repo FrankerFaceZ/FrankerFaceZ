@@ -58,7 +58,7 @@ FFZ.settings_info.swap_sidebars = {
 	type: "boolean",
 	value: false,
 
-	category: "Appearance",
+	category: "Sidebar",
 	no_mobile: true,
 	no_bttv: true,
 

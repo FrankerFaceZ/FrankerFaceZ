@@ -92,11 +92,12 @@
 
 /* main column */
 body.ffz-dark,
+.ffz-dark .app-main,
 .ffz-dark div#mantle_skin,
 .ffz-dark div#main_col {
 	background:rgb(16,16,16);
 	color:rgb(195,195,195)!important;
-	border-right:1px solid rgb(0,0,0)!important;
+	border-right: 0 !important; /*1px solid rgb(0,0,0)!important;*/
 }
 
 .ffz-dark.ffz-portrait div#left_col .column,
@@ -291,7 +292,8 @@ body.ffz-dark,
 .ffz-dark .warp__item > a { color: #d5d4d9 !important }
 
 .ffz-dark .warp__item--toggled a.js-language-select,
-.ffz-dark .warm__item--toggled > a { color: #eae9ec !important }
+.ffz-dark .warp__item > a:hover,
+.ffz-dark .warp__item--toggled > a { color: #eae9ec !important }
 
 .ffz-dark .exit-theatre > a { color: #000 !important; }
 

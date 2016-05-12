@@ -236,7 +236,7 @@ FFZ.prototype._modify_rview = function(view) {
 
 			} else if ( btn ) {
 				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
-				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned')));
+				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned') || false));
 			}
 
 			var badge, id, info, vis_count = 0;
@@ -839,6 +839,8 @@ FFZ.prototype._modify_room = function(room) {
 	room.reopen({
 		slowWaiting: false,
 		slow: 0,
+
+		ffz_banned: false,
 
 		mru_list: [],
 

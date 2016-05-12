@@ -34,8 +34,8 @@ FFZ.settings_info.following_count = {
 
 	no_mobile: true,
 
-	category: "Appearance",
-	name: "Sidebar Following Data",
+	category: "Sidebar",
+	name: "Following Data",
 	help: "Display the number of live channels you're following on the sidebar, and list the channels in a tooltip.",
 
 	on_update: function(val) {
@@ -218,13 +218,14 @@ FFZ.prototype._build_following_tooltip = function(el) {
 				now = Date.now() - (this._ws_server_offset || 0),
 				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0,
 				minutes = Math.floor(uptime / 60) % 60,
-				hours = Math.floor(uptime / 3600);
+				hours = Math.floor(uptime / 3600),
+				tags = stream.channel.game === 'Creative' && this.tokenize_ctags(stream.channel.status, true);
 
 			tooltip += (i === 0 ? '<hr>' : '') +
 				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + (hours > 0 ? hours + 'h' : '') + minutes + 'm</span>' : '') +
 				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
 				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
-				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + '</span>';
+				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';
 		}
 	} else {
         c++; // is a terrible programming language
@@ -322,7 +323,7 @@ FFZ.prototype._draw_following_count = function(count) {
 			continue;
 
 		if ( this.has_bttv || ! this.settings.following_count ) {
-			container.removeChild(badge);
+			badge && container.removeChild(badge);
 			continue;
 
 		} else if ( ! badge ) {

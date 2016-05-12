@@ -9,68 +9,6 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
-FFZ.settings_info.sidebar_followed_games = {
-	type: "select",
-	options: {
-		0: "Disabled",
-		5: "Normal (5)",
-		10: "Large (10)",
-		999: "No Limit"
-	},
-
-	value: 5,
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
-
-	category: "Appearance",
-	no_mobile: true,
-
-	name: "Sidebar Followed Games",
-	help: "Display this number of followed games on the sidebar.",
-
-	on_update: function(val) {
-			var controller = utils.ember_lookup('controller:games-following');
-			if ( controller )
-				controller.set('ffz_sidebar_games', val);
-		}
-	}
-
-
-FFZ.settings_info.sidebar_hide_recommended_channels = {
-	type: "boolean",
-	value: true,
-
-	category: "Appearance",
-	no_mobile: true,
-
-	name: "Sidebar Recommended Channels",
-    help: "Display the Recommended Channels section on the sidebar.",
-
-	on_update: function(val) {
-			document.body.classList.toggle('ffz-hide-recommended-channels', !val);
-		}
-	};
-
-
-FFZ.settings_info.sidebar_hide_recommended_friends = {
-	type: "boolean",
-	value: true,
-
-	category: "Appearance",
-	no_mobile: true,
-
-	name: "Sidebar Recommended Friends",
-    help: "Display the Recommended Friends section on the sidebar.",
-
-	on_update: function(val) {
-			document.body.classList.toggle('ffz-hide-recommended-friends', !val);
-		}
-	};
-
-
 /*FFZ.settings_info.directory_creative_all_tags = {
 	type: "boolean",
 	value: false,
@@ -259,29 +197,6 @@ FFZ._image_cache = {};
 FFZ.prototype.setup_directory = function() {
 	document.body.classList.toggle('ffz-creative-tags', this.settings.directory_creative_all_tags);
 	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
-    document.body.classList.toggle('ffz-hide-recommended-channels', !this.settings.sidebar_hide_recommended_channels);
-	document.body.classList.toggle('ffz-hide-recommended-friends', !this.settings.sidebar_hide_recommended_friends);
-
-	var GamesFollowing = utils.ember_lookup('controller:games-following'),
-		f = this;
-
-	if ( GamesFollowing ) {
-		this.log("Hooking the Ember games-following controller.");
-		GamesFollowing.reopen({
-			ffz_sidebar_games: this.settings.sidebar_followed_games,
-
-			sidePanelFollowing: function() {
-				var content = this.get('liveFollowing.sortedContent'),
-					limit = this.get('ffz_sidebar_games');
-
-				return limit === 999 ? content : _.first(content, limit);
-			}.property("liveFollowing.@each", "ffz_sidebar_games")
-		});
-
-		Ember.propertyDidChange(GamesFollowing, 'sidePanelFollowing');
-	} else
-		this.error("Unable to load the Ember games-following controller.");
-
 
 	this.log("Attempting to modify the Following collection.");
 	this._modify_following();

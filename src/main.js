@@ -5,7 +5,9 @@
 // The Constructor
 // ----------------
 
-var FFZ = window.FrankerFaceZ = function() {
+var DOG = '░░░░░░░░░░░░▒▒▒▒\n░░░░░░░░░░░░▒▒░░░░▒▒\n░░░░░░░░░░▒▒░░████▄░▒\n░░░▄▄▄░░░▒▒░░░▀▀▀▀░░▒░░░░▄▄▄ \n░▄█████░▒▒▒▒░░░░░░░▒▒▒░░█████▄ \n ▄██████░▒▒▒▒▒░░░░▒▒▒▄▄▒▄░██████ \n ████████▒░██░▒░░░▒▒▒▀▀▒████████ \n ▀███████▒▒▒▒▒░░░░▒▒▒▒▒███████▀ \n ░░░▀▀████▒▒▒▒░░░░▒▒▒▄████▀▀\n ░░░░░░░▀░░▀▀▀▄▄▄█▄▀▀▀░░▀',
+
+	FFZ = window.FrankerFaceZ = function() {
 	FFZ.instance = this;
 
 	// Logging
@@ -19,8 +21,9 @@ var FFZ = window.FrankerFaceZ = function() {
         if ( ! event.error )
             return;
 
-        var has_stack = event.error && event.error.stack;
-        t.log("JavaScript Error: " + event.message + " [" + event.filename + ":" + event.lineno + ":" + event.colno + "]", has_stack ? event.error.stack : undefined, false, has_stack);
+        //var has_stack = event.error && event.error.stack;
+		t.error("Uncaught JavaScript Error", event.error);
+        //t.log("JavaScript Error: " + event.message + " [" + event.filename + ":" + event.lineno + ":" + event.colno + "]", has_stack ? event.error.stack : undefined, false, has_stack);
     });
 
 	// Get things started.
@@ -36,7 +39,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 169,
+	major: 3, minor: 5, revision: 172,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -52,32 +55,38 @@ FFZ.prototype.log = function(msg, data, to_json, log_json) {
 	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed("FFZ: " + msg);
-		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
+		console.groupCollapsed("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:black; font-weight: normal");
+		if ( typeof data === "string" || navigator.userAgent.indexOf("Firefox/") !== -1 )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd("FFZ: " + msg);
+		console.groupEnd("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:black; font-weight: normal");
 	} else
-		console.log("FFZ: " + msg);
+		console.log("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:black; font-weight: normal");
 }
 
 
-FFZ.prototype.error = function(msg, data, to_json, log_json) {
-	msg = "Error: " + msg + (to_json ? " -- " + JSON.stringify(data) : "");
+FFZ.prototype.error = function(msg, error, to_json, log_json) {
+	var data = error && error.stack || error;
+	msg = "Error: " + msg + " [" + error + "]" + (to_json ? " -- " + JSON.stringify(data) : "");
 	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
+	if ( data === undefined ) {
+		var err = new Error();
+		data = err.stack;
+	}
+
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed("FFZ " + msg);
-		if ( navigator.userAgent.indexOf("Firefox/") !== -1 )
+		console.groupCollapsed("%cFFZ " + msg, "color:red");
+		if ( typeof data === "string" || navigator.userAgent.indexOf("Firefox/") !== -1 )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd("FFZ " + msg);
+		console.groupEnd("%cFFZ " + msg, "color:red");
 	} else
-		console.assert(false, "FFZ " + msg);
+		console.log("%cFFZ " + msg, "color:red");
 }
 
 
@@ -155,6 +164,7 @@ require('./ember/chat-input');
 require('./ember/directory');
 require('./ember/following');
 require('./ember/feed-card');
+require('./ember/sidebar');
 
 require('./debug');
 
@@ -253,7 +263,7 @@ FFZ.prototype.init_settings_transfer = function() {
 FFZ.prototype.init_player = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Player after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -277,7 +287,7 @@ FFZ.prototype.init_player = function(delay) {
 FFZ.prototype.init_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -301,6 +311,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.setup_colors();
 	this.setup_emoticons();
 	this.setup_badges();
+	this.setup_sidebar();
 
 	this.setup_notifications();
 	this.setup_following_count(false);
@@ -322,7 +333,7 @@ FFZ.prototype.is_dashboard = false;
 FFZ.prototype.init_dashboard = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Dashboard after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
 
     var match = location.pathname.match(/\/([^\/]+)/);
     this.dashboard_channel = match && match[1] || undefined;
@@ -371,7 +382,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 FFZ.prototype.init_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -420,6 +431,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_directory();
 	this.setup_profile_following();
 	this.setup_feed_cards();
+	this.setup_sidebar();
 
 	//this.setup_teams();
 

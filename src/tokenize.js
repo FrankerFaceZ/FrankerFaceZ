@@ -794,7 +794,7 @@ FFZ.prototype.render_tokens = function(tokens, render_links, warn_links) {
 // Creative Tags
 // ---------------------
 
-FFZ.prototype.tokenize_ctags = function(tokens) {
+FFZ.prototype.tokenize_ctags = function(tokens, tags_only) {
 	"use strict";
 
 	if ( typeof tokens === "string" )
@@ -812,7 +812,7 @@ FFZ.prototype.tokenize_ctags = function(tokens) {
 			if ( token.type === "text" )
 				token = token.text;
 			else {
-				new_tokens.push(token);
+				! tags_only && new_tokens.push(token);
 				continue;
 			}
 
@@ -824,7 +824,7 @@ FFZ.prototype.tokenize_ctags = function(tokens) {
 			tag = segment.substr(1).toLowerCase();
 			if ( segment.charAt(0) === '#' && banned_tags.indexOf(tag) === -1 ) {
 				if ( text.length ) {
-					new_tokens.push({type: "text", text: text.join(' ') + ' '});
+					! tags_only && new_tokens.push({type: "text", text: text.join(' ') + ' '});
 					text = [];
 				}
 
@@ -834,7 +834,7 @@ FFZ.prototype.tokenize_ctags = function(tokens) {
 				text.push(segment);
 		}
 
-		if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+		if ( ! tags_only && (text.length > 1 || (text.length === 1 && text[0] !== '')) )
 			new_tokens.push({type: "text", text: text.join(' ')});
 	}
 

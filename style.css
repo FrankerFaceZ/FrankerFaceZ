@@ -4,11 +4,10 @@ body > div.tipsy { opacity: 1 !important; }
 body > div.tipsy .tipsy-inner { background-color: rgba(0,0,0,0.8); }
 body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 
-
+.ffz-flip .drawer__item--brick .warp__logo,
+.ffz-flip .drawer__item--xs .warp__glitch,
 .ffz-flip {
-	-ms-transform: rotate(180deg);
-	-webkit-transform: rotate(180deg);
-	transform: rotate(180deg);
+	transform: scale(-1);
 }
 
 .ffz-ui-toggle {
@@ -19,6 +18,9 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-hide-friends nav .friend-list,
+.ffz-hide-friends .warp__status .js-presence-indicator,
+.ffz-hide-more-at-twitch nav .tse-content > .warp__list:last-of-type,
 .ffz-hide-recommended-friends .recommended-friends,
 .ffz-hide-recommended-channels .js-recommended-channels,
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
@@ -113,17 +115,25 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 
 .ffz-ui-toggle.live {
 	animation: ffzfade 8s linear infinite;
-	-webkit-animation: ffzfade 8s linear infinite;
-}
-
-@-webkit-keyframes ffzfade {
-	from, to { opacity: 1; }
-	50% { opacity: 0.75; }
 }
 
 @keyframes ffzfade {
 	from, to { opacity: 1; }
 	50% { opacity: 0.75; }
+}
+
+.drawer__item--brick .warp__logo:hover {
+	animation: ffzflipwobble 4s infinite;
+}
+
+@keyframes ffzflipwobble {
+	0%,30% { transform: none }
+	36% { transform: rotate(185deg) }
+	38% { transform: rotate(175deg) }
+	40%,90% { transform: rotate(180deg) }
+	96% { transform: rotate(365deg) }
+	98% { transform: rotate(355deg) }
+	100% { transform: rotate(360deg) }
 }
 
 
@@ -153,8 +163,6 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 	width: 0px;
 	height: 0px;
 	border-radius: 999px;
-	-moz-border-radius: 999px;
-	-webkit-border-radius: 999px;
 	top: 50%;
 	left: 50%;
 	z-index: 1
@@ -174,16 +182,10 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 
 .ffz-ui-popup .button.live:before {
 	animation: expand 1500ms infinite ease-in;
-	-moz-animation: expand 1500ms infinite ease-in;
-	-webkit-animation: expand 1500ms infinite ease-in;
-	-o-animation: expand 1500ms infinite ease-in
 }
 
 .ffz-ui-popup .button.live:after {
 	animation: expand 1500ms infinite 750ms ease-in;
-	-moz-animation: expand 1500ms infinite 750ms ease-in;
-	-webkit-animation: expand 1500ms infinite 750ms ease-in;
-	-o-animation: expand 1500ms infinite 750ms ease-in
 }
 
 #dash_main #stats .stat.dark#ffz_count svg path { fill: #cacaca; }
@@ -1440,15 +1442,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	background-image: url("//cdn.frankerfacez.com/script/spinner-dark.png");
 
 	margin: 50px auto;
-	-webkit-animation: ffz-rotateplane 1.2s infinite linear;
 	animation: ffz-rotateplane 1.2s infinite linear;
-}
-
-@-webkit-keyframes ffz-rotateplane {
-	0% { -webkit-transform: perspective(120px) rotateY(90deg) }
-	25% { -webkit-transform: perspective(120px) rotateY(180deg) }
-	75% { -webkit-transform: perspective(120px) rotateY(180deg) rotateX(180deg) }
-	100% { -webkit-transform: perspective(120px) rotateY(90deg) rotateX(180deg) }
 }
 
 @keyframes ffz-rotateplane {
@@ -2710,6 +2704,7 @@ body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 
 .ffz-suggestions .suggestion div,
 .ffz-suggestions .suggestion span {
+	white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -2762,5 +2757,7 @@ body.ffz-bttv-dark #ffz-feed-tabs .tabs li:not(.selected):not(:hover) a { color:
 body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 /* New Sidebar */
+
+.ffz-hide-friends-collapsed .drawer--summary.closed .friend-list { display: none }
 
 .warp__anchor { height: 5.5rem }
