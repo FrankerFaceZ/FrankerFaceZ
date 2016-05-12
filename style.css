@@ -2729,11 +2729,42 @@ body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 /* Banned and Spoiler Games */
 
 .ffz-game-spoilered .thumb .cap img,
-.ffz-game-banned { display: none }
+body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game-directory"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none }
+
 .ffz-game-spoilered .thumb .cap {
 	position: absolute !important; top: 0; left: 0; bottom: 0; right: 0;
 	background: url("https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg") no-repeat !important;
 	background-size: cover !important;
+}
+
+.follow-button.ffz-block-button {
+	margin-left: 2px;
+}
+
+body[data-current-path^="directory.creative"] .follow-button.ffz-block-button {
+	margin: 0 1rem;
+}
+
+.follow-button.ffz-spoiler-button .spoiler,
+.follow-button.ffz-block-button .block {
+	background: #555;
+	padding: 0 10px;
+}
+
+.follow-button.ffz-spoiler-button .spoiler.active {
+	background: #006700;
+}
+
+.follow-button.ffz-spoiler-button .spoiler:not(.disabled):hover {
+	background: #247324;
+}
+
+.follow-button.ffz-block-button .block.active {
+	background: #973333;
+}
+
+.follow-button.ffz-block-button .block:not(.disabled):hover {
+	background: #a94444;
 }
 
 

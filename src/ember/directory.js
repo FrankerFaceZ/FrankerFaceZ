@@ -121,8 +121,8 @@ FFZ.settings_info.spoiler_games = {
 
 	category: "Directory",
 	no_mobile: true,
-	name: "Spoiler Games",
-	help: "Stream thumbnails will be hidden for games that you add to this list.",
+	name: "No-Thumbnail Games",
+	help: "Stream and video thumbnails will be hidden for games that you add to this list.",
 
 	on_update: function() {
 		var spoiled = this.settings.spoiler_games,
@@ -141,7 +141,7 @@ FFZ.settings_info.spoiler_games = {
 			old_val = f.settings.spoiler_games.join(", ");
 
 		utils.prompt(
-			"Spoiler Games",
+			"No-Thumbnail Games",
 			"Please enter a comma-separated list of games that you would like to have the thumbnails hidden for in the Directory.</p><p>This is case insensitive, however you must type the full name.</p><p><b>Example:</b> <code>Undertale</code>",
 			old_val,
 			function(new_val) {
@@ -209,7 +209,8 @@ FFZ.prototype.setup_directory = function() {
         try {
 		    ChannelView.create().destroy();
 	    } catch(err) { }
-    }
+    } else
+		this.log("Unable to locate the Ember component:stream-preview");
 
 	var CreativeChannel = utils.ember_resolve('component:creative-preview');
 	if ( CreativeChannel ) {
@@ -217,11 +218,17 @@ FFZ.prototype.setup_directory = function() {
         try {
 		    CreativeChannel.create().destroy();
 	    } catch(err) { }
-    }
+    } else
+		this.log("Unable to locate the Ember component:creative-preview");
 
 	var CSGOChannel = utils.ember_resolve('view:cs-go-channel');
-	if ( CSGOChannel )
+	if ( CSGOChannel ) {
 		this._modify_directory_live(CSGOChannel, true);
+		try {
+		    CSGOChannel.create().destroy();
+	    } catch(err) { }
+	} else
+		this.log("Unable to locate the Ember view:cs-go-channel");
 
 	var HostView = utils.ember_resolve('component:host-preview');
 	HostView = this._modify_directory_host(HostView);
@@ -232,10 +239,20 @@ FFZ.prototype.setup_directory = function() {
 
 	var VideoPreview = utils.ember_resolve('component:video-preview');
 	if ( VideoPreview ) {
-		VideoPreview = this._modify_video_preview(VideoPreview);
+		this._modify_video_preview(VideoPreview);
 		try { VideoPreview.create().destroy();
 		} catch(err) { }
-	}
+	} else
+		this.log("Unable to locate the Ember component:video-preview");
+
+
+	var GameFollow = utils.ember_resolve('component:game-follow-button');
+	if ( GameFollow ) {
+		this._modify_game_follow(GameFollow);
+		try { GameFollow.create().destroy() }
+		catch(err) { }
+	} else
+		this.log("Unable to locate the Ember component:game-follow-button");
 
 
 	// Initialize existing views.
@@ -254,6 +271,9 @@ FFZ.prototype.setup_directory = function() {
 		} else if ( VideoPreview && view instanceof VideoPreview ) {
 			if ( ! view.ffzInit )
 				this._modify_video_preview(view);
+		} else if ( GameFollow && view instanceof GameFollow ) {
+			if ( ! view.ffzInit )
+				this._modify_game_follow(view);
 		} else
             continue;
 
@@ -390,6 +410,74 @@ FFZ.prototype._modify_following = function() {
 }
 
 
+FFZ.prototype._modify_game_follow = function(component) {
+	var f = this;
+	component.reopen({
+		didInsertElement: function() {
+			this._super();
+			this.ffzInit();
+		},
+
+		ffzInit: function() {
+			var el = this.get('element'),
+				game = this.get('game.id').toLowerCase(),
+
+				click_button = function(setting, update_func) {
+					return function(e) {
+						e.preventDefault();
+						var games = f.settings.get(setting),
+							ind = games.indexOf(game);
+
+						if ( ind === -1 )
+							games.push(game);
+						else
+							games.splice(ind, 1);
+
+						f.settings.set(setting, games);
+						update_func();
+					}
+				};
+
+			// Block Button
+			var block = utils.createElement('div', 'follow-button ffz-block-button'),
+				block_link = utils.createElement('a', 'tooltip follow block');
+
+				update_block = function() {
+					var is_blocked = f.settings.banned_games.indexOf(game) !== -1;
+					block_link.classList.toggle('active', is_blocked);
+
+					block_link.innerHTML = '<span>' + (is_blocked ? 'Unblock' : 'Block') + '</span>';
+					block_link.title = 'Click to ' + (is_blocked ? 'unblock' : 'block') + " this game.\n\nBlocking a game hides all the streams and videos of the game when you're not viewing it directly.";
+				};
+
+			update_block();
+			block_link.addEventListener('click', click_button('banned_games', update_block));
+			block.appendChild(block_link);
+			el.appendChild(block);
+
+			// Spoiler Button
+			var spoiler = utils.createElement('div', 'follow-button ffz-spoiler-button'),
+				spoiler_link = utils.createElement('a', 'tooltip follow spoiler'),
+
+				update_spoiler = function() {
+					var is_spoiled = f.settings.spoiler_games.indexOf(game) !== -1;
+					spoiler_link.classList.toggle('active', is_spoiled);
+
+					spoiler_link.innerHTML = '<span>' + (is_spoiled ? 'Show Thumbnails' : 'Hide Thumbnails') + '</span>';
+					spoiler_link.title = 'Click to ' + (is_spoiled ? 'show' : 'hide') + " thumbnails for this game.\n\nHiding thumbnails for a game will help you avoid spoilers for a game that you haven't played yet.";
+				}
+
+			update_spoiler();
+			spoiler_link.addEventListener('click', click_button('spoiler_games', update_spoiler));
+			spoiler.appendChild(spoiler_link);
+			el.appendChild(spoiler);
+
+			jQuery('.tooltip', el).tipsy();
+		}
+	})
+}
+
+
 FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 	var f = this,
         pref = is_csgo ? 'context.model.' : 'stream.';
@@ -521,14 +609,46 @@ FFZ.prototype._modify_video_preview = function(vp) {
 
 		ffzInit: function() {
 			var el = this.get('element'),
-				game = this.get('video.game');
+				game = this.get('video.game'),
+
+				thumb = el && el.querySelector('.thumb'),
+				boxart = thumb && thumb.querySelector('.boxart');
 
 			el.classList.add('ffz-directory-preview');
-			el.setAttribute('data-channel', this.get('video.channel.id'));
+			el.setAttribute('data-channel', this.get('video.channel.name'));
 			el.setAttribute('data-game', game);
 
 			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
 			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
+
+			if ( ! boxart && thumb && game ) {
+				var img = utils.createElement('img'),
+					c = utils.ember_lookup('router:main');
+
+				boxart = utils.createElement('a', 'boxart');
+				boxart.href = this.get('video.gameUrl');
+				boxart.setAttribute('original-title', game);
+				boxart.addEventListener('click', function(e) {
+					if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
+                        return;
+
+					e.preventDefault();
+					jQuery('.tipsy').remove();
+
+					if ( game === "Counter-Strike: Global Offensive" )
+						c.transitionTo('csgo.channels.index')
+					else if ( game === "Creative" )
+						c.transitionTo('creative.index');
+					else
+						c.transitionTo('game-directory.index', encodeURIComponent(game));
+
+					return false;
+				});
+
+				img.src = this.get('video.gameBoxart');
+				boxart.appendChild(img);
+				thumb.appendChild(boxart);
+			}
 		}
 	});
 }
@@ -666,9 +786,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
 
 				target = this.get('stream.target.channel'),
 				game = this.get('stream.target.meta_game'),
-				hosts = this.get('stream.ffz_hosts'); //,
-
-				//boxart = thumb && thumb.querySelector('.boxart');
+				hosts = this.get('stream.ffz_hosts');
 
 			el.classList.add('ffz-directory-preview');
 			el.setAttribute('data-channel', target.name);
@@ -679,40 +797,6 @@ FFZ.prototype._modify_directory_host = function(dir) {
 
             this._ffz_image_timer = setInterval(this.ffzRotateImage.bind(this), 30000);
             this.ffzRotateImage();
-
-			// Fix the game not showing
-			/*if ( ! boxart && thumb && this.get('context.model.game') ) {
-				var img = document.createElement('img'),
-					game = this.get("context.model.game"),
-					c = utils.ember_lookup('router:main');
-
-				boxart = document.createElement('a');
-				boxart.className = 'boxart';
-				boxart.href = this.get("context.model.gameUrl");
-				boxart.setAttribute('original-title', game);
-
-				boxart.addEventListener('click', function(e) {
-                    if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
-                        return;
-
-					e.preventDefault();
-					jQuery('.tipsy').remove();
-
-					if ( game === "Counter-Strike: Global Offensive" )
-						c.transitionTo('csgo.channels.index')
-					else if ( game === "Creative" )
-						c.transitionTo('creative.channels.index');
-					else
-						c.transitionTo('game-directory.index', encodeURIComponent(game));
-
-					return false;
-				});
-
-				img.src = this.get("context.model.gameBoxart");
-				boxart.appendChild(img);
-				thumb.appendChild(boxart);
-			}*/
-
 
 			if ( f.settings.directory_logos ) {
 				el.classList.add('ffz-directory-logo');

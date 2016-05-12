@@ -99,10 +99,6 @@ FFZ.prototype.setup_conversations = function() {
         catch(err) { }
     } else
 		this.log("Unable to resolve: component:conversation-line");
-
-	// TODO: Make this better later.
-	//jQuery('.conversations-list').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-    //jQuery('.conversations-list').find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 }
 
 
@@ -175,8 +171,6 @@ FFZ.prototype._modify_conversation_window = function(component) {
 			}
 
 			jQuery('.badge', el).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-			//jQuery(el).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-            //jQuery(el).find('.ffz-tooltip').tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
 }

@@ -5,9 +5,7 @@
 // The Constructor
 // ----------------
 
-var DOG = '░░░░░░░░░░░░▒▒▒▒\n░░░░░░░░░░░░▒▒░░░░▒▒\n░░░░░░░░░░▒▒░░████▄░▒\n░░░▄▄▄░░░▒▒░░░▀▀▀▀░░▒░░░░▄▄▄ \n░▄█████░▒▒▒▒░░░░░░░▒▒▒░░█████▄ \n ▄██████░▒▒▒▒▒░░░░▒▒▒▄▄▒▄░██████ \n ████████▒░██░▒░░░▒▒▒▀▀▒████████ \n ▀███████▒▒▒▒▒░░░░▒▒▒▒▒███████▀ \n ░░░▀▀████▒▒▒▒░░░░▒▒▒▄████▀▀\n ░░░░░░░▀░░▀▀▀▄▄▄█▄▀▀▀░░▀',
-
-	FFZ = window.FrankerFaceZ = function() {
+var FFZ = window.FrankerFaceZ = function() {
 	FFZ.instance = this;
 
 	// Logging
@@ -39,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 172,
+	major: 3, minor: 5, revision: 174,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -263,7 +261,7 @@ FFZ.prototype.init_settings_transfer = function() {
 FFZ.prototype.init_player = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Player after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -287,7 +285,7 @@ FFZ.prototype.init_player = function(delay) {
 FFZ.prototype.init_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -333,7 +331,7 @@ FFZ.prototype.is_dashboard = false;
 FFZ.prototype.init_dashboard = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Dashboard after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
     var match = location.pathname.match(/\/([^\/]+)/);
     this.dashboard_channel = match && match[1] || undefined;
@@ -382,7 +380,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 FFZ.prototype.init_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info, DOG);
+    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -474,7 +472,12 @@ FFZ.prototype.setup_message_event = function() {
 FFZ.prototype._on_window_message = function(e) {
     var msg = e.data;
     if ( typeof msg === "string" )
-        msg = JSON.parse(msg);
+		try {
+        	msg = JSON.parse(msg);
+		} catch(err) {
+			// Not JSON? We don't care.
+			return;
+		}
 
 	if ( ! msg || ! msg.from_ffz )
 		return;

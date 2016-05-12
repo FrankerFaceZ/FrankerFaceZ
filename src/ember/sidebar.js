@@ -70,7 +70,7 @@ FFZ.settings_info.sidebar_hide_recommended_friends = {
 
 FFZ.settings_info.sidebar_hide_friends_collapsed = {
 	type: "boolean",
-	value: true,
+	value: false,
 
 	category: "Sidebar",
 	no_mobile: false,

@@ -530,8 +530,6 @@ FFZ.prototype._modify_cview = function(view) {
 			el && el.setAttribute('data-room', room_id || "");
 
 			this.$('.textarea-contain').append(f.build_ui_link(this));
-			//this.$('.chat-messages').find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-            //this.$('.chat-messages').find('.ffz-tooltip').tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 			if ( ! f.has_bttv ) {
 				if ( f.settings.group_tabs )

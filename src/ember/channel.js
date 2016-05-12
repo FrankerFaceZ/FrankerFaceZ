@@ -216,15 +216,6 @@ FFZ.prototype._modify_cindex = function(view) {
 			el.setAttribute('data-channel', id);
 			el.classList.add('ffz-channel');
 
-			// Try changing the theater mode tooltip.
-			/* Deprecated: Theatre button is now in the player.
-			var tb = this.$('.theatre-button > a'),
-				opts = tb.data('tipsy');
-
-			tb.attr('title', 'Theater Mode (Alt+T)');
-			if ( opts && opts.options && typeof opts.options.gravity !== "function" )
-				opts.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, opts.options.gravity || 'n');//*/
-
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();

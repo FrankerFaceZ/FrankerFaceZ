@@ -492,7 +492,8 @@ module.exports = FFZ.utils = {
 	},
 
 	toggle_cls: function(cls) {
-		var cl = document.body.classList;
-		return cl.toggle.bind(cl, cls);
+		return function(val) {
+			document.body.classList.toggle(cls, val);
+		}
 	}
 }
