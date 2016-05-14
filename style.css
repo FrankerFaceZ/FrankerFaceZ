@@ -2078,6 +2078,11 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 /* No Blue */
 
+.ffz-no-blue .theatre .ember-chat .chat-interface .textarea-contain textarea {
+	background-color: rgba(255,255,255,0.05);
+	border-color: rgba(255,255,255,0.1);
+}
+
 .ffz-no-blue #carousel .nav {
     background-color: rgba(25,25,25,.5);
 }
@@ -2403,6 +2408,7 @@ li[data-name="following"] a {
 
 .ffz-directory-logo .meta p.title {
     padding-top: 4px;
+	min-height: 24px;
 }
 
 .ffz-directory-logo .meta p { width: auto; }

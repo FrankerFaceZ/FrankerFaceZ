@@ -119,6 +119,29 @@ FFZ.settings_info.mod_card_info = {
 	};
 
 
+FFZ.settings_info.timeout_notices = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "If I'm a Moderator",
+		2: "Always"
+	},
+
+	value: 1,
+	process_value: function(val) {
+		if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	no_bttv: true,
+	category: "Chat Moderation",
+
+	name: "Display Timeout / Ban Notices",
+	help: "Display notices in chat when a user is timed out or banned. (You always see your own bans.)"
+	};
+
+
 FFZ.settings_info.mod_card_history = {
 	type: "boolean",
 	value: false,

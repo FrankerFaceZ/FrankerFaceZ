@@ -53,12 +53,12 @@ FFZ.prototype.setup_room = function() {
 
 		RC._actions.banUser = function(e) {
 			orig_ban.call(this, e);
-			this.get("model").clearMessages(e.user);
+			this.get("model").clearMessages(e.user, null, true);
 		}
 
 		RC._actions.timeoutUser = function(e) {
 			orig_to.call(this, e);
-			this.get("model").clearMessages(e.user);
+			this.get("model").clearMessages(e.user, null, true);
 		}
 
 		RC._actions.showModOverlay = function(e) {
@@ -671,7 +671,8 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 	if ( ! room || ! room.room )
 		return;
 
-	var r = room.room,
+	var current_user = this.get_user(),
+		r = room.room,
 		messages = r.get('messages'),
 		buffer_size = r.get('messageBufferSize'),
 
@@ -703,6 +704,18 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 
 		if ( f.settings.remove_deleted && msg.deleted )
 			return true;
+
+		if ( msg.tags.target && msg.tags.target !== '@@' ) {
+			var is_mine = current_user && current_user.login === msg.tags.target;
+			if ( ! is_mine && ! r.ffzShouldDisplayNotice() )
+				return true;
+
+			// Display the Ban Reason if we're a moderator or that user.
+			if ( msg.tags['ban-reason'] && is_mine || r.get('isModeratorOrHigher') ) {
+				msg.message = msg.message.substr(0, msg.message.length - 1) + ' with reason: ' + msg.tags['ban-reason'];
+				msg.cachedTokens = [utils.sanitize(msg.message)];
+			}
+		}
 
 		if ( r.shouldShowMessage(msg) && r.ffzShouldShowMessage(msg) ) {
 			if ( messages.length < buffer_size ) {
@@ -844,17 +857,17 @@ FFZ.prototype._modify_room = function(room) {
 
 		mru_list: [],
 
-		updateWait: function(value, was_banned) {
+		updateWait: function(value, was_banned, update) {
 			var wait = this.get('slowWait') || 0;
 			this.set('slowWait', value);
 			if ( wait < 1 && value > 0 ) {
 				if ( this._ffz_wait_timer )
 					clearTimeout(this._ffz_wait_timer);
 				this._ffz_wait_timer = setTimeout(this.ffzUpdateWait.bind(this), 1000);
-				f._roomv && f._roomv.ffzUpdateStatus();
+				! update && f._roomv && f._roomv.ffzUpdateStatus();
 			} else if ( (wait > 0 && value < 1) || was_banned ) {
 				this.set('ffz_banned', false);
-				f._roomv && f._roomv.ffzUpdateStatus();
+				! update && f._roomv && f._roomv.ffzUpdateStatus();
 			}
 		},
 
@@ -955,21 +968,53 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
-		clearMessages: function(user) {
+		clearMessages: function(user, tags, disable_log) {
 			var t = this;
-			if ( user ) {
-				if (!this.ffzRecentlyBanned)
-					this.ffzRecentlyBanned = [];
-				this.ffzRecentlyBanned.push(user);
-				while (this.ffzRecentlyBanned.length > 100)
-					this.ffzRecentlyBanned.shift();
 
+			if ( user ) {
+				var duration = undefined,
+					reason = undefined,
+					current_user = f.get_user(),
+					is_me = current_user && current_user.login === user;
+
+
+				// Read the ban duration and reason from the message tags.
+				if ( tags && tags['ban-duration'] )
+					duration = parseInt(tags['ban-duration']);
+				else if ( tags && ! tags.hasOwnProperty('ban-duration') )
+					duration = true;
+
+				if ( tags && tags['ban-reason'] && (is_me || t.get('isModeratorOrHigher')) )
+					reason = tags['ban-reason'];
+
+
+				// If we were banned, set the state and update the UI.
+				if ( is_me ) {
+					t.set('ffz_banned', true);
+					if ( typeof duration === "number" && duration )
+						t.updateWait(duration)
+					else if ( duration ) {
+						t.set('slowWait', 0);
+						f._roomv && f._roomv.ffzUpdateStatus();
+					}
+				}
+
+
+				// Mark the user as recently banned.
+				if ( ! t.ffzRecentlyBanned )
+					t.ffzRecentlyBanned = [];
+
+				t.ffzRecentlyBanned.push(user);
+				while ( t.ffzRecentlyBanned.length > 100 )
+					t.ffzRecentlyBanned.shift();
+
+
+				// Delete Visible Messages
 				var msgs = t.get('messages'),
 					total = msgs.get('length'),
 					i = total,
 					removed = 0;
 
-				// Delete visible messages
 				while(i--) {
 					var msg = msgs.get(i);
 
@@ -986,8 +1031,9 @@ FFZ.prototype._modify_room = function(room) {
 					}
 				}
 
-				// Delete pending messages
-				if (t.ffzPending) {
+
+				// Delete Panding Messages
+				if ( t.ffzPending ) {
 					msgs = t.ffzPending;
 					i = msgs.length;
 					while(i--) {
@@ -999,24 +1045,45 @@ FFZ.prototype._modify_room = function(room) {
 					}
 				}
 
-				if ( f.settings.mod_card_history ) {
-					var room = f.rooms && f.rooms[t.get('id')],
-						user_history = room && room.user_history && room.user_history[user]
 
-					if ( user_history !== null && user_history !== undefined ) {
-						var has_delete = false,
-							last = user_history.length > 0 ? user_history[user_history.length-1] : null;
+				// Look up the User's Last Ban
+				// TODO: STUFF and THINGS
+				var room = f.rooms && f.rooms[t.get('id')],
+					ban_history, last_ban, identical_ban;
 
-						has_delete = last !== null && last.is_delete;
-						if ( has_delete ) {
-							last.cachedTokens = ['User has been timed out ' + utils.number_commas(++last.deleted_times) + ' times.'];
-						} else {
-							user_history.push({from: 'jtv', is_delete: true, style: 'admin', cachedTokens: ['User has been timed out.'], deleted_times: 1, date: new Date()});
-							while ( user_history.length > 20 )
-								user_history.shift();
-						}
+				if ( room ) {
+					var now = Date.now();
+					ban_history = room.ban_history = room.ban_history || {};
+					last_ban = ban_history[user];
+					identical_ban = (now - last_ban[2] >= 1000*(typeof last_ban[0] === "number" ? Math.min(last_ban[0], 10) : 10));
+					ban_history[user] = [duration, reason, now];
+				}
+
+
+				// Show a Notice
+				var message = (is_me ? 'You have' : FFZ.get_capitalization(user) + ' has') + ' been ' + (duration === undefined ? 'timed out' : duration === true ? 'banned' : 'timed out for ' + utils.number_commas(duration) + utils.pluralize(' second'));
+				if ( ! identical_ban && ! disable_log && (is_me || this.ffzShouldDisplayNotice()) )
+					this.addTmiMessage(message + (reason ? ' with reason: ' + reason : '.'));
+
+
+				// Mod Card History
+				if ( room && f.settings.mod_card_history && ! disable_log ) {
+					var chat_history = room.user_history = room.user_history || {},
+						user_history = room.user_history[user] = room.user_history[user] || [],
+
+						has_delete = false,
+						last = user_history.length > 0 ? user_history[user_history.length-1] : null;
+
+					has_delete = last !== null && last.is_delete;
+					if ( has_delete && (identical_ban || (! last.has_reason && ! reason)) ) {
+						last.cachedTokens = [message + ' ' + utils.number_commas(++last.deleted_times) + ' times' + (reason ? ' with reason: ' + utils.sanitize(reason) : '.')];
+					} else {
+						user_history.push({from: 'jtv', is_delete: true, style: 'admin', cachedTokens: [message + (reason ? ' with reason: ' + utils.sanitize(reason) : '.')], has_reason: reason !== undefined, deleted_times: 1, date: new Date()});
+						while ( user_history.length > 20 )
+							user_history.shift();
 					}
 				}
+
 			} else {
 				if ( f.settings.prevent_clear )
 					this.addTmiMessage("A moderator's attempt to clear chat was ignored.");
@@ -1133,6 +1200,20 @@ FFZ.prototype._modify_room = function(room) {
 			return true;
 		},
 
+		ffzShouldDisplayNotice: function() {
+			return f.settings.timeout_notices === 2 || (f.settings.timeout_notices === 1 && this.get('isModeratorOrHigher'));
+		},
+
+		addNotification: function(msg) {
+			if ( msg ) {
+				// We don't want to display these notices because we're injecting our own messages.
+				if ( (msg.msgId === 'timeout_success' || msg.msgId === 'ban_success') && this.ffzShouldDisplayNotice() )
+					return;
+
+				return this._super(msg);
+			}
+		},
+
 		addMessage: function(msg) {
 			if ( msg ) {
 				var is_whisper = msg.style === 'whisper';
@@ -1200,6 +1281,13 @@ FFZ.prototype._modify_room = function(room) {
 						}
 					}
 				}
+
+				// Clear the last ban for that user.
+				var f_room = f.rooms && f.rooms[msg.room],
+					ban_history = f_room && f_room.ban_history;
+
+				if ( ban_history && msg.from )
+					ban_history[msg.from] = false;
 
 				// Check for message from us.
 				if ( ! is_whisper ) {
@@ -1355,14 +1443,44 @@ FFZ.prototype._modify_room = function(room) {
 
 
 		ffzPatchTMI: function() {
+			var tmi = this.get('tmiRoom'),
+				room = this;
+
+			// Re-bind clearChat
+			Ember.run.next(function(){
+				tmi = room.get('tmiRoom');
+				if ( ! tmi || room.get('ffz_clearchat_patch') )
+					return;
+
+				var func = function(user, tags) { room.clearMessages(user, tags) };
+				if ( room && room._callbacks ) {
+					for(var i=0; i < room._callbacks.length; i++) {
+						var cb = room._callbacks[i];
+						if ( cb && cb.eventName === "clearchat" ) {
+							room._callbacks.splice(i, 1);
+							tmi.off("clearchat", cb.callback);
+						}
+					}
+
+					room._callbacks.push({
+						emitter: tmi,
+						eventName: "clearchat",
+						callback: func
+					});
+				} else {
+					f.log("Room Not Fully Initialized -- Expect Double Timeouts", room);
+					tmi.off("clearchat");
+				}
+
+				tmi.on("clearchat", func);
+				room.set('ffz_clearchat_patch', true);
+			});
+
 			if ( this.get('ffz_is_patched') || ! this.get('tmiRoom') )
 				return;
 
 			if ( f.settings.chatter_count )
 				this.ffzInitChatterCount();
-
-			var tmi = this.get('tmiRoom'),
-				room = this;
 
 			// Let's get chatter information!
 			// TODO: Remove this cause it's terrible.

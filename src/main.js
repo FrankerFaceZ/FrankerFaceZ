@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 174,
+	major: 3, minor: 5, revision: 176,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -112,8 +112,8 @@ FFZ.prototype._pastebin = function(data, callback) {
 // User Data
 // -------------------
 
-FFZ.prototype.get_user = function() {
-	if ( this.__user )
+FFZ.prototype.get_user = function(force_reload) {
+	if ( ! force_reload && this.__user )
 		return this.__user;
 
     var LC = FFZ.utils.ember_lookup('controller:login'),

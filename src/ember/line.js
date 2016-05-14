@@ -860,7 +860,15 @@ FFZ.prototype._modify_chat_subline = function(component) {
         classNameBindings: [":message-line", ":chat-line", "msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
         attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
-        didInsertElement: function() { this.ffzRender(); },
+        didInsertElement: function() {
+            this.set('msgObject._line', this);
+            this.ffzRender();
+        },
+
+        willClearRender: function() {
+            this.set('msgObject._line', null);
+        },
+
         didUpdate: function() { this.ffzRender(); },
 
         click: function(e) {
@@ -895,7 +903,7 @@ FFZ.prototype._modify_chat_subline = function(component) {
 							room.send(lines[i], true);
 
 						if ( cl.contains('is-timeout') )
-							room.clearMessages(from);
+							room.clearMessages(from, null, true);
 					}
 					return;
 
