@@ -71,34 +71,34 @@ FFZ.prototype.setup_conversations = function() {
 	document.body.classList.toggle('ffz-minimize-conversations', this.settings.minimize_conversations);
 	document.body.classList.toggle('ffz-theatre-conversations', this.settings.hide_conversations_in_theatre);
 
-	var ConvWindow = utils.ember_resolve('component:conversation-window');
+	var ConvWindow = utils.ember_resolve('component:twitch-conversations/conversation-window');
 	if ( ConvWindow ) {
 		this.log("Hooking the Ember Conversation Window component.");
 		this._modify_conversation_window(ConvWindow);
         try { ConvWindow.create().destroy() }
         catch(err) { }
     } else
-		this.log("Unable to resolve: component:conversation-window");
+		this.log("Unable to resolve: component:twitch-conversations/conversation-window");
 
 
-	var ConvSettings = utils.ember_resolve('component:conversation-settings-menu');
+	var ConvSettings = utils.ember_resolve('component:twitch-conversations/conversation-settings-menu');
 	if ( ConvSettings ) {
 		this.log("Hooking the Ember Conversation Settings Menu component.");
 		this._modify_conversation_menu(ConvSettings);
 		try { ConvSettings.create().destroy() }
 		catch(err) { }
 	} else
-		this.log("Unable to resolve: component:conversation-settings-menu");
+		this.log("Unable to resolve: component:twitch-conversations/conversation-settings-menu");
 
 
-	var ConvLine = utils.ember_resolve('component:conversation-line');
+	var ConvLine = utils.ember_resolve('component:twitch-conversations/conversation-line');
 	if ( ConvLine ) {
 		this.log("Hooking the Ember Conversation Line component.");
 		this._modify_conversation_line(ConvLine);
         try { ConvLine.create().destroy() }
         catch(err) { }
     } else
-		this.log("Unable to resolve: component:conversation-line");
+		this.log("Unable to resolve: component:twitch-conversations/conversation-line");
 }
 
 

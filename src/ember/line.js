@@ -371,7 +371,6 @@ FFZ.settings_info.high_contrast_chat = {
 	value: '222',
 
 	category: "Chat Appearance",
-	no_bttv: true,
 
 	name: "High Contrast",
 	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
@@ -385,9 +384,9 @@ FFZ.settings_info.high_contrast_chat = {
 	},
 
 	on_update: function(val) {
-			this.toggle_style('chat-hc-text', !this.has_bttv && val[2] === '1');
-			this.toggle_style('chat-hc-bold', !this.has_bttv && val[1] === '1');
-			this.toggle_style('chat-hc-background', !this.has_bttv && val[0] === '1');
+			this.toggle_style('chat-hc-text', val[2] === '1');
+			this.toggle_style('chat-hc-bold', val[1] === '1');
+			this.toggle_style('chat-hc-background', val[0] === '1');
 		}
 	};
 
@@ -588,9 +587,9 @@ FFZ.prototype.setup_line = function() {
 	this.toggle_style('chat-separator-3d-inset', !this.has_bttv && this.settings.chat_separators === 3);
 	this.toggle_style('chat-separator-wide', !this.has_bttv && this.settings.chat_separators === 4);
 
-	this.toggle_style('chat-hc-text', !this.has_bttv && this.settings.high_contrast_chat[2] === '1');
-	this.toggle_style('chat-hc-bold', !this.has_bttv && this.settings.high_contrast_chat[1] === '1');
-	this.toggle_style('chat-hc-background', !this.has_bttv && this.settings.high_contrast_chat[0] === '1');
+	this.toggle_style('chat-hc-text', this.settings.high_contrast_chat[2] === '1');
+	this.toggle_style('chat-hc-bold', this.settings.high_contrast_chat[1] === '1');
+	this.toggle_style('chat-hc-background', this.settings.high_contrast_chat[0] === '1');
 
 	this._last_row = {};
 

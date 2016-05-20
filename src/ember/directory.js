@@ -221,14 +221,11 @@ FFZ.prototype.setup_directory = function() {
     } else
 		this.log("Unable to locate the Ember component:creative-preview");
 
-	var CSGOChannel = utils.ember_resolve('view:cs-go-channel');
-	if ( CSGOChannel ) {
-		this._modify_directory_live(CSGOChannel, true);
-		try {
-		    CSGOChannel.create().destroy();
-	    } catch(err) { }
-	} else
-		this.log("Unable to locate the Ember view:cs-go-channel");
+	var CSGOChannel = utils.ember_resolve('component:csgo-channel-preview');
+	CSGOChannel = this._modify_directory_live(CSGOChannel, true, 'component:csgo-channel-preview');
+	try {
+		CSGOChannel.create().destroy();
+	} catch(err) { }
 
 	var HostView = utils.ember_resolve('component:host-preview');
 	HostView = this._modify_directory_host(HostView);
@@ -478,11 +475,11 @@ FFZ.prototype._modify_game_follow = function(component) {
 }
 
 
-FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
+FFZ.prototype._modify_directory_live = function(dir, is_csgo, component_name) {
 	var f = this,
-        pref = is_csgo ? 'context.model.' : 'stream.';
+        pref = is_csgo ? 'channel.' : 'stream.';
 
-	dir.reopen({
+	var mutator = {
 		didInsertElement: function() {
 			this._super();
 			this.ffzInit();
@@ -503,8 +500,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
 			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 
-			// CSGO doesn't provide the actual uptime information...
-			if ( !is_csgo && f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
+			if (f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
 				var t_el = this._ffz_uptime = document.createElement('div');
 				t_el.className = 'overlay_info length live';
 
@@ -591,7 +587,16 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo) {
 				this._ffz_uptime.innerHTML = '';
 			}
 		}
-	});
+	};
+
+	if ( dir )
+		dir.reopen(mutator);
+	else {
+		dir = Ember.Component.extend(mutator);
+        App.__deprecatedInstance__.registry.register(component_name, dir);
+	}
+
+	return dir;
 }
 
 

@@ -72,15 +72,6 @@ FFZ.prototype.load_settings = function() {
 // Backup and Restore
 // --------------------
 
-FFZ.prototype._settings_open_http_window = function() {
-    window.open("http://www.twitch.tv/crossdomain/transfer#ffz-settings-transfer", "_ffz_settings");
-}
-
-FFZ.msg_commands.http_settings = function(data) {
-    this._load_settings_file(data);
-}
-
-
 FFZ.prototype.reset_settings = function() {
 	if ( ! confirm(this.tr('Are you sure you wish to reset FrankerFaceZ?\n\nThis will force the tab to refresh.')) )
 		return;
@@ -472,10 +463,6 @@ FFZ.menu_pages.settings = {
                     backup_link = createElement('a'),
                     backup_help = createElement('span'),
 
-                    http_para = createElement('p'),
-                    http_link = createElement('a'),
-                    http_help = createElement('span'),
-
                     restore_para = createElement('p'),
                     restore_input = createElement('input'),
                     restore_link = createElement('a'),
@@ -525,20 +512,6 @@ FFZ.menu_pages.settings = {
                 restore_para.appendChild(restore_link);
                 restore_para.appendChild(restore_help);
                 restore_cont.appendChild(restore_para);
-
-                http_para.className = 'clearfix option';
-                http_link.href = '#';
-                http_link.innerHTML = 'Import from HTTP';
-                http_link.addEventListener('click', this._settings_open_http_window.bind(this));
-
-                http_help.className = 'help';
-                http_help.innerHTML = 'Load your settings from HTTP into HTTPS. (This briefly opens a new window.)';
-
-                http_para.appendChild(http_link);
-                http_para.appendChild(http_help);
-
-                if ( location.protocol === "https:" )
-                    restore_cont.appendChild(http_para);
 
                 reset_cont.className = 'chat-menu-content';
                 reset_head.className = 'heading';

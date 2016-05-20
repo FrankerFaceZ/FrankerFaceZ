@@ -156,11 +156,16 @@ body.ffz-dark,
     border-color: #32323e !important;
 }
 
+.ffz-dark .twitch_subwindow_container.two-factor-auth .card,
+.ffz-dark .card#passport_modal {
+	color: #000;
+}
+
 .ffz-dark .balloon,
 .ffz-dark .balloon:after,
 .ffz-dark .conversation-settings-menu,
 .ffz-dark .ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
-.ffz-dark .card:not(#passport_modal),
+.ffz-dark .twitch_subwindow_container:not(.two-factor-auth) .card:not(#passport_modal),
 .ffz-dark #flyout .content,
 .ffz-dark .whatisthis,
 .ffz-dark .ui-menu,

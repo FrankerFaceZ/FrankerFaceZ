@@ -208,16 +208,12 @@ FFZ.prototype.build_ui_popup = function(view) {
 	// Start building the DOM.
 	var container = document.createElement('div'),
 		inner = document.createElement('div'),
-		menu = document.createElement('ul'),
-
-		dark = (this.has_bttv ? BetterTTV.settings.get('darkenedMode') : false);
+		menu = document.createElement('ul');
 
 	container.className = 'emoticon-selector chat-menu ffz-ui-popup';
 	container.id = 'ffz-chat-menu';
 	inner.className = 'emoticon-selector-box dropmenu';
 	container.appendChild(inner);
-
-	container.classList.toggle('dark', dark);
 
 	// Stuff
 	//jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});

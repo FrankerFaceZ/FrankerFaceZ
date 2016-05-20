@@ -49,7 +49,16 @@ FFZ.prototype.setup_bttv = function(delay) {
     }
 
 	document.body.classList.add('ffz-bttv');
-	document.body.classList.toggle('ffz-bttv-dark', BetterTTV.settings.get('darkenedMode'));
+
+	var last_dark = BetterTTV.settings.get('darkenedMode');
+	document.body.classList.toggle('ffz-bttv-dark', last_dark);
+	setInterval(function() {
+		var new_dark = BetterTTV.settings.get('darkenedMode');
+		if ( new_dark !== last_dark ) {
+			document.body.classList.toggle('ffz-bttv-dark', new_dark);
+			last_dark = new_dark;
+		}
+	}, 500);
 
 	// Disable Chat Tabs
 	if ( this._chatv ) {
@@ -82,9 +91,9 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.toggle_style('chat-separator-3d-inset');
 	this.toggle_style('chat-separator-wide');
 
-	this.toggle_style('chat-hc-text');
+	/*this.toggle_style('chat-hc-text');
 	this.toggle_style('chat-hc-bold');
-	this.toggle_style('chat-hc-background');
+	this.toggle_style('chat-hc-background');*/
 
 	this.toggle_style('chat-colors-gray');
 	this.toggle_style('badges-transparent');

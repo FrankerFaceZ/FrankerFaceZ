@@ -53,12 +53,12 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .ember-chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle svg.svg-emoticons path,
-.ffz-ui-toggle.dark svg.svg-emoticons path { fill: #888; }
+body.ffz-bttv-dark .ffz-ui-toggle svg.svg-emoticons path { fill: #888; }
 
 .ember-chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle:hover svg.svg-emoticons path,
-.ffz-ui-toggle.dark:hover svg.svg-emoticons path { fill: #777; }
+body.ffz-bttv-dark .ffz-ui-toggle:hover svg.svg-emoticons path { fill: #777; }
 
 
 .ffz-ui-toggle.no-emotes svg.svg-emoticons path { fill: rgba(80,0,0,0.2); }
@@ -73,44 +73,44 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .ember-chat-container.dark .ffz-ui-toggle.news svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.news svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.news svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.news svg.svg-emoticons path,
+body.ffz-bttv-dark .ffz-ui-toggle.news svg.svg-emoticons path,
 .ffz-ui-toggle.news svg.svg-emoticons path { fill: rgba(117, 80, 0, 0.5); }
 
 .ember-chat-container.dark .ffz-ui-toggle.news:hover svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.news:hover svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.news:hover svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.news:hover svg.svg-emoticons path,
+body.ffz-bttv-dark .ffz-ui-toggle.news:hover svg.svg-emoticons path,
 .ffz-ui-toggle.news:hover svg.svg-emoticons path { fill: rgba(117, 80, 0, 0.8); }
 
 .ember-chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes svg.svg-emoticons path { fill: #453434; }
+body.ffz-bttv-dark .ffz-ui-toggle.no-emotes svg.svg-emoticons path { fill: #453434; }
 
 .ember-chat-container.dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.no-emotes:hover svg.svg-emoticons path { fill: #543f3f; }
+body.ffz-bttv-dark .ffz-ui-toggle.no-emotes:hover svg.svg-emoticons path { fill: #543f3f; }
 
 .ember-chat-container.dark .ffz-ui-toggle.live svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.live svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.live svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live svg.svg-emoticons path { fill: #513c78; }
+body.ffz-bttv-dark .ffz-ui-toggle.live svg.svg-emoticons path { fill: #513c78; }
 
 .ember-chat-container.dark .ffz-ui-toggle.live:hover svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.live:hover svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.live:hover svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.live:hover svg.svg-emoticons path { fill: #5b4487; }
+body.ffz-bttv-dark .ffz-ui-toggle.live:hover svg.svg-emoticons path { fill: #5b4487; }
 
 .ember-chat-container.dark .ffz-ui-toggle.blue.live svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.blue.live svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.blue.live svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live svg.svg-emoticons path { fill: #3c4e78; }
+body.ffz-bttv-dark .ffz-ui-toggle.blue.live svg.svg-emoticons path { fill: #3c4e78; }
 
 .ember-chat-container.dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path,
-.ember-chat .chat-interface .textarea-contain .ffz-ui-toggle.dark.blue.live:hover svg.svg-emoticons path { fill: #445887; }
+body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill: #445887; }
 
 
 .ffz-ui-toggle.live {
@@ -741,7 +741,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .chat-container.force-dark .ffz-ui-popup ul.menu,
 .ember-chat-container.dark .ffz-ui-popup ul.menu,
 .ember-chat-container.force-dark .ffz-ui-popup ul.menu,
-.ffz-ui-popup.dark ul.menu {
+body.ffz-bttv-dark .ffz-ui-popup ul.menu {
 	background-color: #282828;
 }
 
@@ -766,7 +766,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .chat-container.force-dark .ffz-ui-popup ul.sub-menu,
 .ember-chat-container.dark .ffz-ui-popup ul.sub-menu,
 .ember-chat-container.force-dark .ffz-ui-popup ul.sub-menu,
-.ffz-ui-popup.dark ul.sub-menu {
+body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu {
 	background-color: #181818;
 }
 
@@ -780,7 +780,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .chat-container.force-dark .ffz-ui-popup ul.sub-menu a,
 .ember-chat-container.dark .ffz-ui-popup ul.sub-menu a,
 .ember-chat-container.force-dark .ffz-ui-popup ul.sub-menu a,
-.ffz-ui-popup.dark ul.sub-menu a {
+body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu a {
 	color: #d3d3d3 !important;
 }
 
@@ -822,13 +822,13 @@ span.ffz-handle:after { left: 8px }
 .chat-container.force-dark span.ffz-handle:before,
 .ember-chat-container.dark span.ffz-handle:before,
 .ember-chat-container.force-dark span.ffz-handle:before,
-.ffz-ui-popup.dark span.ffz-handle:before,
+body.ffz-bttv-dark .ffz-ui-popup span.ffz-handle:before,
 .app-main.theatre span.ffz-handle:after,
 .chat-container.dark span.ffz-handle:after,
 .chat-container.force-dark span.ffz-handle:after,
 .ember-chat-container.dark span.ffz-handle:after,
 .ember-chat-container.force-dark span.ffz-handle:after,
-.ffz-ui-popup.dark span.ffz-handle:after {
+body.ffz-bttv-dark .ffz-ui-popup span.ffz-handle:after {
 	border-color: #666;
 }
 
@@ -837,13 +837,13 @@ span.ffz-handle:after { left: 8px }
 .chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
 .ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
 .ember-chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
-.ffz-ui-popup.ui-moved.dark span.ffz-handle:before,
+body.ffz-bttv-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
 .app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:after,
 .chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
 .chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
 .ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
 .ember-chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
-.ffz-ui-popup.ui-moved.dark span.ffz-handle:after {
+body.ffz-bttv-dark .ffz-ui-popup.ui-moved span.ffz-handle:after {
 	border-color: #d3d3d3;
 }
 
@@ -878,9 +878,9 @@ span.ffz-handle:after { left: 8px }
 	border-right: 1px solid rgba(0,0,0,0.2);
 }
 
-.ffz-ui-popup.dark ul.menu { border-top-color: rgba(255,255,255,0.1) }
-.ffz-ui-popup.dark ul.menu a { border-left-color: rgba(255,255,255,0.1) }
-.ffz-ui-popup.dark ul.sub-menu a { border-right-color: rgba(255,255,255,0.1) }
+body.ffz-bttv-dark .ffz-ui-popup ul.menu { border-top-color: rgba(255,255,255,0.1) }
+body.ffz-bttv-dark .ffz-ui-popup ul.menu a { border-left-color: rgba(255,255,255,0.1) }
+body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu a { border-right-color: rgba(255,255,255,0.1) }
 
 .ffz-ui-popup ul.menu li.active {
 	background-color: #fff;
@@ -904,7 +904,7 @@ span.ffz-handle:after { left: 8px }
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active,
 .ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active,
-.ffz-ui-popup.dark ul.menu li.active {
+body.ffz-bttv-dark .ffz-ui-popup ul.menu li.active {
 	background-color: rgb(16,16,16);
 }
 
@@ -913,7 +913,7 @@ span.ffz-handle:after { left: 8px }
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active a,
 .ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active a,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active a,
-.ffz-ui-popup.dark ul.menu li.active a {
+body.ffz-bttv-dark .ffz-ui-popup ul.menu li.active a {
 	border-top-color: rgb(16,16,16);
 }
 
@@ -922,7 +922,7 @@ span.ffz-handle:after { left: 8px }
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
 .ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
-.ffz-ui-popup.dark ul.menu li.active.has-sub-menu {
+body.ffz-bttv-dark .ffz-ui-popup ul.menu li.active.has-sub-menu {
 	background-color: #181818;
 }
 
@@ -931,7 +931,7 @@ span.ffz-handle:after { left: 8px }
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
 .ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
-.ffz-ui-popup.dark ul.menu li.active.has-sub-menu a {
+body.ffz-bttv-dark .ffz-ui-popup li.active.has-sub-menu a {
 	border-top-color: #181818;
 }
 
@@ -940,7 +940,7 @@ span.ffz-handle:after { left: 8px }
 .ember-chat-container.dark .chat-interface .ffz-ui-popup a,
 .ember-chat-container.force-dark .chat-interface .ffz-ui-popup a,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup a,
-.ffz-ui-popup.dark .ffz-ui-menu-page a { color: #fff; }
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page a { color: #fff; }
 
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu svg path,
@@ -949,7 +949,7 @@ span.ffz-handle:after { left: 8px }
 .ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu svg path,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu svg path,
 .ffz-dark .ffz-ui-popup ul.menu svg path,
-.ffz-ui-popup.dark ul.menu svg path { fill: #d3d3d3; }
+body.ffz-bttv-dark .ffz-ui-popup ul.menu svg path { fill: #d3d3d3; }
 
 .ffz-ui-popup ul.menu svg path { fill: #333; }
 
@@ -970,24 +970,24 @@ span.ffz-handle:after { left: 8px }
     padding-top: 8px !important;
 }
 
-.ffz-ui-popup.dark .emoticon-grid .heading,
-.ffz-ui-popup.dark li.title { color: #fff; }
-.ffz-ui-popup.dark .ffz-ui-menu-page { background-color: #101010; }
+body.ffz-bttv-dark .ffz-ui-popup .emoticon-grid .heading,
+body.ffz-bttv-dark .ffz-ui-popup li.title { color: #fff; }
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { background-color: #101010; }
 .ffz-bttv .ffz-ui-popup .chat-menu-content p a {
     padding: 0;
 }
 
-.ffz-bttv .ffz-ui-popup.dark ul.menu,
-.ffz-bttv .ffz-ui-popup.dark .ffz-ui-menu-page { margin: 0 }
+body.ffz-bttv-dark .ffz-ui-popup ul.menu,
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { margin: 0 }
 
-.ffz-ui-popup.dark .ffz-ui-menu-page .chat-menu-content .heading,
-.ffz-ui-popup.dark .ffz-ui-menu-page .emoticon-grid .heading {
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
     border-color: rgba(255,255,255,0.1);
 }
 
-.ffz-ui-popup.dark ul.menu:not(.sub-menu),
-.ffz-ui-popup.dark .ffz-ui-menu-page { border: 1px solid rgba(255,255,255,0.1) }
-.ffz-ui-popup.dark .ffz-ui-menu-page { border-bottom: none }
+body.ffz-bttv-dark .ffz-ui-popup ul.menu:not(.sub-menu),
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { border: 1px solid rgba(255,255,255,0.1) }
+body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { border-bottom: none }
 
 .ffz-bttv .emoticon.emoji { padding-top: 0 }
 
@@ -1186,7 +1186,8 @@ img.channel_background[src="null"] { display: none; }
 
 .ffz-moderation-card {
 	border: 2px solid #cbcbcb;
-	max-width: 340px;
+	max-width: 350px;
+	min-width: 325px;
 }
 
 .ember-chat .ffz-moderation-card .close-button {
@@ -2300,6 +2301,48 @@ li[data-name="following"] a {
 	max-height: 90px;
 }
 
+/* Player Captions *\/
+
+.ffz-dark .player-modal__content,
+.theatre .player-modal__content {
+	background: #101010;
+	color: #ccc;
+	box-shadow: 0 1px 1px rgba(255,255,255,.1);
+}
+
+.ffz-dark .player-modal__header,
+.theatre .player-modal__header {
+	color: #ccc;
+}
+
+.ffz-dark .player-modal__content label,
+.theatre .player-modal__content label {
+	color: #aaa;
+}
+
+.ffz-dark .cc-font-size,
+.theatre .cc-font-size {
+	background-color: #101010;
+	border-color: #333;
+}
+
+
+
+.ffz-dark .cc-color-palette__square:not(:hover),
+.theatre .cc-color-palette__square:not(:hover),
+
+.ffz-dark .cc-edge-palette__square:not(:hover),
+.theatre .cc-edge-palette__square:not(:hover),
+
+.ffz-dark .cc-preset-square:not(:hover):not(.js-cc-preset-selected),
+.theatre .cc-preset-square:not(:hover):not(.js-cc-preset-selected) {
+	border-color: #101010;
+}
+
+.ffz-dark label.cc-edge-palette__square,
+.theatre label.cc-edge-palette__square { color: #fff }*/
+
+
 /* Classic Player */
 
 .ffz-classic-player .player .player-video {
@@ -2376,6 +2419,7 @@ li[data-name="following"] a {
 .ffz-classic-player .player .player-button svg { fill: #aeaeae; }
 .ffz-classic-player .player .player-seek .player-seek__time { color: #ddd; }
 
+.ffz-player-volume .player .player-volume__slider-container,
 .ffz-classic-player .player .player-volume__slider-container {
 	width: auto;
 }
@@ -2400,6 +2444,8 @@ li[data-name="following"] a {
 	padding: 0 5px;
 	opacity: 0.8;
 }
+
+.player-button--close { top: 0 }
 
 /* Directory Logos */
 
@@ -2798,3 +2844,8 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .ffz-hide-friends-collapsed .drawer--summary.closed .friend-list { display: none }
 
 .warp__anchor { height: 5.5rem }
+
+
+/* Chat Pane Overhaul */
+
+.ember-chat.ffz-chat-pane .chat-messages { bottom: 0 }

@@ -147,13 +147,18 @@ FFZ.prototype.setup_tokenization = function() {
 
 	this.load_twitch_emote_data();
 
-	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+	try {
+		helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+	} catch(err) { }
+
 	if ( ! helpers )
 		return this.log("Unable to get chat helper functions.");
 
-	conv_helpers = window.require && window.require("ember-twitch-conversations/helpers/conversation-line-helpers");
-	if ( ! conv_helpers )
-		this.log("Unable to get conversation helper functions.");
+	try {
+		conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
+	} catch(err) {
+		this.error("Unable to get conversation helper functions.", err);
+	}
 
 	this.log("Hooking Ember chat line helpers.");
 

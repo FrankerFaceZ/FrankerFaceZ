@@ -18,18 +18,18 @@ FFZ.settings_info.player_stats = {
 	help: "Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
 
 	on_update: function(val) {
-			for(var key in this.players) {
-				var player = this.players[key];
-				if ( player && player.player && player.player.ffzSetStatsEnabled )
-					player.player.ffzSetStatsEnabled(val || player.player.ffz_stats);
-			}
-
-			if ( ! this._cindex )
-				return;
-
-			this._cindex.ffzUpdatePlayerStats();
+		for(var key in this.players) {
+			var player = this.players[key];
+			if ( player && player.player && player.player.ffzSetStatsEnabled )
+				player.player.ffzSetStatsEnabled(val || player.player.ffz_stats);
 		}
-	};
+
+		if ( ! this._cindex )
+			return;
+
+		this._cindex.ffzUpdatePlayerStats();
+	}
+};
 
 
 FFZ.settings_info.classic_player = {
@@ -37,18 +37,32 @@ FFZ.settings_info.classic_player = {
 	value: false,
 	no_mobile: true,
 
-	category: "Appearance",
+	category: "Player",
 
 	name: "Classic Player",
 	help: "Alter the appearance of the player to resemble the older Twitch player with always visible controls.",
 
 	on_update: function(val) {
-			document.body.classList.toggle('ffz-classic-player', val);
-			var Layout = utils.ember_lookup('controller:layout');
-			if ( Layout )
-				Layout.set('PLAYER_CONTROLS_HEIGHT', val ? 32 : 0);
-		}
-	};
+		utils.toggle_cls('ffz-classic-player')(val);
+		var Layout = utils.ember_lookup('controller:layout');
+		if ( Layout )
+			Layout.set('PLAYER_CONTROLS_HEIGHT', val ? 32 : 0);
+	}
+};
+
+
+FFZ.settings_info.player_volume_bar = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Player",
+
+	name: "Volume Always Expanded",
+	help: "Keep the volume slider expanded even when not hovering over it with the mouse.",
+
+	on_update: utils.toggle_cls('ffz-player-volume')
+};
 
 
 // ---------------
@@ -56,7 +70,9 @@ FFZ.settings_info.classic_player = {
 // ---------------
 
 FFZ.prototype.setup_player = function() {
-	document.body.classList.toggle('ffz-classic-player', this.settings.classic_player);
+	utils.toggle_cls('ffz-player-volume')(this.settings.player_volume_bar);
+	utils.toggle_cls('ffz-classic-player')(this.settings.classic_player);
+
 	var Layout = utils.ember_lookup('controller:layout');
 	if ( Layout )
 		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
@@ -163,10 +179,6 @@ FFZ.prototype._modify_player = function(player) {
             // Make the stats window draggable and fix the button.
             var stats = this.$('.player .js-playback-stats');
             stats.draggable({cancel: 'li', containment: 'parent'});
-
-            /*// Give the player time to do stuff before we change this
-            // text. It's a bit weird otherwise.
-            setTimeout(function(){stats.children('.js-stats-toggle').html(constants.CLOSE);},500);*/
 
 
 			// Only set up the stats hooks if we need stats.

@@ -26,14 +26,8 @@ FFZ.ffz_commands.reload = function(room, args) {
 
 	// Badge Information
 	promises.push(new Promise(function(done, fail) {
-		f._legacy_load_bots(function(success, count) {
-			done(count || 0);
-		});
-	}));
-
-	promises.push(new Promise(function(done, fail) {
-		f._legacy_load_donors(function(success, count) {
-			done(count || 0);
+		f.load_badges(function(success, badge_count, badge_total, badge_data) {
+			done(success ? [badge_count, badge_total, badge_data] : [0, 0, {}]);
 		});
 	}));
 
@@ -52,19 +46,32 @@ FFZ.ffz_commands.reload = function(room, args) {
 
 	// Do it!
 	Promise.all(promises).then(function(results) {
-		var success = 0,
-			bots = results[0],
-			donors = results[1],
-			total = results.length - 2;
+		try {
+			var success = 0,
+				badge_count = results[0][0],
+				badge_total = results[0][1],
+				badges = results[0][2],
+				total = results.length - 1,
+				badge_string = [];
 
-		if ( results.length > 2 ) {
-			for(var i=2; i < results.length; i++) {
-				if ( results[i] )
-					success++;
+			if ( results.length > 1 ) {
+				for(var i=1; i < results.length; i++) {
+					if ( results[i] )
+						success++;
+				}
 			}
-		}
 
-		f.room_message(room, "Loaded " + utils.number_commas(bots) + " new bot badge" + utils.pluralize(bots) + " and " + utils.number_commas(donors) + " new donor badge" + utils.pluralize(donors) + ". Successfully reloaded " + utils.number_commas(success) + " of " + utils.number_commas(total) + " emoticon set" + utils.pluralize(total) + ".");
+			for(var key in badges) {
+				if ( badges.hasOwnProperty(key) )
+					badge_string.push(key + ': ' + badges[key])
+			}
+
+			f.room_message(room, "Loaded " + utils.number_commas(badge_count) + " badge" + utils.pluralize(badge_count) + " across " + utils.number_commas(badge_total) + " badge type" + utils.pluralize(badge_total) + (badge_string.length ? " (" + badge_string.join(", ") + ")" : "") + ". Successfully reloaded " + utils.number_commas(success) + " of " + utils.number_commas(total) + " emoticon set" + utils.pluralize(total) + ".");
+
+		} catch(err) {
+			f.room_message(room, "An error occured running the command.");
+			f.error("Error Running FFZ Reload", err);
+		}
 	})
 }
 

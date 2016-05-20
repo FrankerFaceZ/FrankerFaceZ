@@ -1,4 +1,7 @@
 /* High-Contrast Text */
+body.ffz-bttv .chat-line .message,
+body.ffz-bttv .chat-line .timestamp,
+
 .chat-container,
 .ember-chat-container {
 	color: #000 !important;
@@ -11,6 +14,10 @@
 .chat-container.force-dark,
 .ember-chat-container.dark,
 .ember-chat-container.force-dark,
+
+body.ffz-bttv-dark .chat-container,
+body.ffz-bttv-dark .chat-line .message,
+body.ffz-bttv-dark .chat-line .timestamp,
 
 .ffz-dark .ember-chat-container.dark .chat-line,
 .ffz-dark .chat-container.dark .chat-line

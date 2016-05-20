@@ -216,10 +216,15 @@ var sanitize_el = document.createElement('span'),
         if ( ! window.App )
             return;
 
-        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.lookup )
-            return App.__deprecatedInstance__.registry.lookup(thing);
-        if ( App.__container__ && App.__container__.lookup )
-            return App.__container__.lookup(thing);
+		try {
+        	if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.lookup )
+            	return App.__deprecatedInstance__.registry.lookup(thing);
+        	if ( App.__container__ && App.__container__.lookup )
+	            return App.__container__.lookup(thing);
+		} catch(err) {
+			FrankerFaceZ.get().error("There was an error looking up an Ember instance: " + thing, err);
+			return null;
+		}
     };
 
 
@@ -432,8 +437,8 @@ module.exports = FFZ.utils = {
 		return (days||'') + ((!no_hours || days || hours) ? ((days && hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + (no_seconds ? "" : (":" + (seconds < 10 ? "0" : "") + seconds));
 	},
 
-	duration_string: function(val) {
-		if ( val === 1 )
+	duration_string: function(val, no_purge) {
+		if ( ! no_purge && val === 1 )
 			return 'Purge';
 
 		if ( DURATIONS[val] )

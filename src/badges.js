@@ -414,7 +414,8 @@ FFZ.prototype.load_badges = function(callback, tries) {
 	jQuery.getJSON(constants.API_SERVER + "v1/badges")
 		.done(function(data) {
 			var badge_total = 0,
-				badge_count = 0;
+				badge_count = 0,
+				badge_data = {};
 
 			for(var i=0; i < data.badges.length; i++) {
 				var badge = data.badges[i];
@@ -429,6 +430,8 @@ FFZ.prototype.load_badges = function(callback, tries) {
 					if ( data.users.hasOwnProperty(badge_id) && f.badges[badge_id] ) {
 						var badge = f.badges[badge_id],
 							users = data.users[badge_id];
+
+						badge_data[badge.name] = users.length;
 
 						for(var i=0; i < users.length; i++) {
 							var user = users[i],
@@ -451,7 +454,7 @@ FFZ.prototype.load_badges = function(callback, tries) {
 
 
 			f.log("Loaded " + utils.number_commas(badge_count) + " total badges across " + badge_total + " types.");
-			typeof callback === "function" && callback(true);
+			typeof callback === "function" && callback(true, badge_count, badge_total, badge_data);
 
 		}).fail(function(data) {
 			if ( data.status === 404 )

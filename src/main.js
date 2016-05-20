@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 176,
+	major: 3, minor: 5, revision: 182,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -172,6 +172,7 @@ require('./ext/emote_menu');
 
 require('./featurefriday');
 
+//require('./ui/chatpane');
 require('./ui/popups');
 require('./ui/styles');
 require('./ui/dark');
@@ -201,29 +202,21 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Make sure that FrankerFaceZ doesn't start setting itself up until the
 	// Twitch ember application is ready.
 
+	// Pages we don't want to interact with at all.
+	if ( location.hostname === 'passport.twitch.tv' || /^\/user\/two_factor/.test(location.pathname) ) {
+		this.log("Found authentication sub-page. Not initializing.");
+		return;
+	}
+
 	// Check for the player
 	if ( location.hostname === 'player.twitch.tv' ) {
 		this.init_player(delay);
 		return;
 	}
 
-
-    // Check for the transfer page.
-    if ( location.pathname === "/crossdomain/transfer" ) {
-        if ( location.hash.indexOf("ffz-settings-transfer") !== -1 )
-            this.init_settings_transfer();
-        return;
-    }
-
 	// Check for special non-ember pages.
 	if ( /^\/(?:$|search$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
 		this.init_normal(delay);
-		return;
-	}
-
-	if ( location.hostname === 'passport' && /^\/(?:authorize)/.test(location.pathname) ) {
-		this.log("Running on passport!");
-		this.init_normal(delay, true);
 		return;
 	}
 
@@ -245,16 +238,6 @@ FFZ.prototype.initialize = function(increment, delay) {
 	}
 
 	this.init_ember(delay);
-}
-
-
-FFZ.prototype.init_settings_transfer = function() {
-    this.log("This is the HTTP Transfer URL. Building a settings backup and posting it to our parent.");
-    this.load_settings();
-    try { this.setup_line(); } catch(err) { }
-    var msg = {from_ffz: true, command: "http_settings", data: this._get_settings_object()};
-    window.opener.postMessage(msg, "https://www.twitch.tv");
-    window.close();
 }
 
 
