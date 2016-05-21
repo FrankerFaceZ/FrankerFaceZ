@@ -111,17 +111,32 @@ func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 // C2SHello implements the `hello` C2S Command.
 // It calls SubscribeGlobal() and SubscribeDefaults() with the client, and fills out ClientInfo.Version and ClientInfo.ClientID.
 func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	version, clientID, err := msg.ArgumentsAsTwoStrings()
-	if err != nil {
+	ary, ok := msg.Arguments.([]interface{})
+	if !ok {
+		err = ErrExpectedTwoStrings
+		return
+	}
+	if len(ary) != 2 {
+		err = ErrExpectedTwoStrings
+		return
+	}
+	version, ok := ary[0].(string)
+	if !ok {
+		err = ErrExpectedTwoStrings
 		return
 	}
 
 	client.VersionString = copyString(version)
 	client.Version = VersionFromString(version)
 
-	client.ClientID = uuid.FromStringOrNil(clientID)
-	if client.ClientID == uuid.Nil {
-		client.ClientID = uuid.NewV4()
+	if clientIDStr, ok := ary[1].(string); ok {
+		client.ClientID = uuid.FromStringOrNil(clientIDStr)
+		if client.ClientID == uuid.Nil {
+			client.ClientID = uuid.NewV4()
+		}
+	} else if _, ok := ary[1].(bool); ok {
+		// opt out
+		client.ClientID = AnonymousClientID
 	}
 
 	uniqueUserChannel <- client.ClientID

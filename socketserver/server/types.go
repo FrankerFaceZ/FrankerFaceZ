@@ -11,6 +11,8 @@ import (
 
 const NegativeOne = ^uint64(0)
 
+var AnonymousClientID = uuid.FromStringOrNil("683b45e4-f853-4c45-bf96-7d799cc93e34")
+
 type ConfigFile struct {
 	// Numeric server id known to the backend
 	ServerID int
