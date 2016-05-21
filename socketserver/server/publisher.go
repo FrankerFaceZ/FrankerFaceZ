@@ -195,13 +195,13 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 }
 
 func GetCommandsOfType(match BacklogCacheType) []Command {
-	if match == CacheTypePersistent {
-		return PersistentCachingCommands
-	} else if match == CacheTypeLastOnly {
-		return HourlyCachingCommands
-	} else {
-		panic("unknown caching type")
+	var ret []Command
+	for cmd, info := range S2CCommandsCacheInfo {
+		if info.Caching == match {
+			ret = append(ret, cmd)
+		}
 	}
+	return ret
 }
 
 func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
