@@ -137,6 +137,9 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	} else if _, ok := ary[1].(bool); ok {
 		// opt out
 		client.ClientID = AnonymousClientID
+	} else {
+		err = ErrExpectedTwoStrings
+		return
 	}
 
 	uniqueUserChannel <- client.ClientID

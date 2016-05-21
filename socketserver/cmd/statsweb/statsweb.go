@@ -16,6 +16,8 @@ import (
 	"github.com/clarkduvall/hyperloglog"
 )
 
+var _ = os.Exit
+
 var configLocation = flag.String("config", "./config.json", "Location of the configuration file. Defaults to ./config.json")
 var genConfig = flag.Bool("genconf", false, "Generate a new configuration file.")
 
@@ -41,8 +43,8 @@ func main() {
 		allServers[i].Setup(v)
 	}
 
-	printEveryDay()
-	os.Exit(0)
+	//printEveryDay()
+	//os.Exit(0)
 	http.HandleFunc("/api/get", ServeAPIGet)
 	http.ListenAndServe(config.ListenAddr, http.DefaultServeMux)
 }
