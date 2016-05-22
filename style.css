@@ -1248,7 +1248,7 @@ img.channel_background[src="null"] { display: none; }
 .ffz-moderation-card .friend-button { max-height: 30px }
 
 .ffz-moderation-card .right button:last-of-type,
-.ffz-moderation-card .mod-controls button:last-of-type { margin-right: 0 }
+.ffz-moderation-card .mod-controls:last-of-type button:last-of-type { margin-right: 0 }
 
 .ffz-moderation-card .follow-button a {
 	text-indent: -9999px;
@@ -1296,6 +1296,11 @@ img.channel_background[src="null"] { display: none; }
 .ember-chat .ffz-moderation-card .channel_background {
 	width: 100%;
 	top: 0;
+}
+
+.ffz-moderation-card .ffz-ban-reasons {
+	margin-top: 10px;
+	width: 100%;
 }
 
 

@@ -3,6 +3,10 @@ var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	helpers,
 
+	TO_REG = /^\/t(?:imeout)? +([^ ]+)(?: +(\d+)(?: +(.+))?)?$/,
+	BAN_REG = /^\/b(?:an)? +([^ ]+)(?: +(.+))?$/,
+	USER_REG = /\{user\}/g,
+
 	keycodes = {
 		ESC: 27,
 		P: 80,
@@ -164,6 +168,53 @@ FFZ.settings_info.mod_card_history = {
 			}
 		}
 	};
+
+
+FFZ.settings_info.mod_card_reasons = {
+	type: "button",
+	value: [
+		"One-Man Spam",
+		"Posting Bad Links",
+		"Ban Evasion",
+		"Threats / Personal Info",
+		"Hate / Harassment",
+		"Ignoring Broadcaster / Moderators"
+	],
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Moderation Card Ban Reasons",
+	help: "Change the available options in the chat moderation card ban reasons list.",
+
+	method: function() {
+		var f = this,
+			old_val = this.settings.mod_card_reasons.join("\n"),
+			input = utils.createElement('textarea');
+
+		input.style.marginBottom = "20px";
+
+		utils.prompt(
+			"Moderation Card Ban Reasons",
+			"Please enter a list of ban reasons to select from in chat moderation cards. One item per line.",
+			old_val,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+
+				var vals = new_val.trim().split(/\s*\n\s*/g),
+					i = vals.length;
+
+				while(i--)
+					if ( vals[i].length === 0 )
+						vals.splice(i,1);
+
+				f.settings.set('mod_card_reasons', vals);
+			},
+			600, input
+		);
+	}
+};
 
 
 FFZ.settings_info.mod_buttons = {
@@ -527,6 +578,7 @@ FFZ.prototype.setup_mod_card = function() {
 					line,
 
 					is_mod = controller.get('cardInfo.isModeratorOrHigher'),
+					ban_reasons,
 
 					chat = utils.ember_lookup('controller:chat'),
 					user = f.get_user(),
@@ -534,7 +586,12 @@ FFZ.prototype.setup_mod_card = function() {
 					is_broadcaster = user && room_id === user.login,
 
 					user_id = controller.get('cardInfo.user.id'),
-					alias = f.aliases[user_id];
+					alias = f.aliases[user_id],
+
+					ban_reason = function() {
+						return ban_reasons && ban_reasons.value ? ' ' + ban_reasons.value : "";
+					};
+
 
 				this.ffz_room_id = room_id;
 
@@ -576,9 +633,28 @@ FFZ.prototype.setup_mod_card = function() {
 						add_btn_click = function(cmd) {
 							var user_id = controller.get('cardInfo.user.id'),
 								cont = utils.ember_lookup('controller:chat'),
-								room = cont && cont.get('currentRoom');
+								room = cont && cont.get('currentRoom'),
 
-							room && room.send(cmd.replace(/{user}/g, user_id), true);
+								cm = cmd.replace(USER_REG, user_id),
+								reason = ban_reason();
+
+							if ( reason ) {
+								var match = TO_REG.exec(cm);
+								if ( match ) {
+									if ( ! match[2] )
+										cm += " 600";
+									if ( ! match[3] )
+										cm += reason;
+
+								} else {
+									match = BAN_REG.exec(cm);
+									if ( match && ! match[2] ) {
+										cm += reason;
+									}
+								}
+							}
+
+							room && room.send(cm, true);
 						},
 
 						add_btn_make = function(cmd) {
@@ -630,13 +706,13 @@ FFZ.prototype.setup_mod_card = function() {
 							room = utils.ember_lookup('controller:chat').get('currentRoom');
 
 						if ( is_mod && key == keycodes.P )
-							room.send("/timeout " + user_id + " 1", true);
+							room.send("/timeout " + user_id + " 1" + ban_reason(), true);
 
 						else if ( is_mod && key == keycodes.B )
-							room.send("/ban " + user_id, true);
+							room.send("/ban " + user_id + ban_reason(), true);
 
 						else if ( is_mod && key == keycodes.T )
-							room.send("/timeout " + user_id + " 600", true);
+							room.send("/timeout " + user_id + " 600" + ban_reason(), true);
 
 						else if ( is_mod && key == keycodes.U )
 							room.send("/unban " + user_id, true);
@@ -660,7 +736,7 @@ FFZ.prototype.setup_mod_card = function() {
 							if ( timeout === -1 )
 								room.send("/unban " + user_id, true);
 							else
-								room.send("/timeout " + user_id + " " + timeout, true);
+								room.send("/timeout " + user_id + " " + timeout + ban_reason(), true);
 						},
 
 					btn_make = function(timeout) {
@@ -699,6 +775,24 @@ FFZ.prototype.setup_mod_card = function() {
 						// Fix Other Buttons
 						this.$("button.timeout").remove();
 					}
+
+
+					if ( f.settings.mod_card_reasons && f.settings.mod_card_reasons.length ) {
+						// Moderation Reasons
+						line = utils.createElement('div', 'extra-interface interface clearfix');
+						ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban Reason</option>');
+						line.appendChild(ban_reasons);
+
+						for(var i=0; i < f.settings.mod_card_reasons.length; i++) {
+							var opt = utils.createElement('option'), r = f.settings.mod_card_reasons[i];
+							opt.value = r;
+							opt.textContent = (i+1) + ') ' + r;
+							ban_reasons.appendChild(opt);
+						}
+
+						el.appendChild(line);
+					}
+
 
 					var ban_btn = el.querySelector('button.ban');
 					if ( f.settings.mod_card_hotkeys )

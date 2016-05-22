@@ -355,6 +355,7 @@ FFZ.prototype.setup_chatview = function() {
 		f = this;
 
 	if ( Chat ) {
+		Chat.set('ffz_last_channel_room', Chat.get('currentChannelRoom.id'));
 		Chat.reopen({
 			ffzUpdateChannels: function() {
 				if ( ! f._chatv || f.has_bttv )
@@ -367,12 +368,29 @@ FFZ.prototype.setup_chatview = function() {
 			}.observes("currentChannelRoom", "connectedPrivateGroupRooms"),
 
 			ffzSubOwnChannelRoom: function() {
-				var user = f.get_user(),
-					room = this.get("currentChannelRoom"),
-					room_id = room && room.get("id");
+				try {
+				// This logic should keep us subscribed to the current chat room
+				// at all times. Hopefully.
+				var last_room_id = this.get("ffz_last_channel_room"),
+					room_id = this.get("currentChannelRoom.id"),
 
-				if ( user && user.login && user.login === room_id )
-					room && room.ffzSubscribe && room.ffzSubscribe();
+					last_room = f.rooms && f.rooms[last_room_id],
+					room = f.rooms && f.rooms[room_id];
+
+				this.set("ffz_last_channel_room", room_id);
+
+				f.update_room_important(last_room_id, this);
+				f.update_room_important(room_id, this);
+
+				if ( last_room && ! last_room.important )
+					f.ws_unsub("room." + last_room_id);
+
+				if ( room && room.important )
+					f.ws_sub("room." + room_id);
+
+				} catch(err) {
+					f.error("Error updating Chat Room Subscriptions", err);
+				}
 
 			}.observes("currentChannelRoom"),
 

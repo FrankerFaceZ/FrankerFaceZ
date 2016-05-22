@@ -95,6 +95,38 @@ FFZ.settings_info.socket_server_pool = {
 
 
 // ----------------
+// Subscription
+// ----------------
+
+FFZ.prototype.ws_sub = function(topic) {
+	this._ws_topics = this._ws_topics || {};
+	if ( this._ws_topics[topic] )
+		return true;
+
+	if ( ! this._ws_open )
+		return false;
+
+	this.ws_send("sub", topic);
+	this._ws_topics[topic] = true;
+	return true;
+}
+
+
+FFZ.prototype.ws_unsub = function(topic) {
+	this._ws_topics = this._ws_topics || {};
+	if ( ! this._ws_topics[topic] )
+		return true;
+
+	if ( ! this._ws_open )
+		return true;
+
+	this.ws_send("unsub", topic);
+	this._ws_topics[topic] = false;
+	return true;
+}
+
+
+// ----------------
 // Socket Creation
 // ----------------
 
@@ -104,6 +136,7 @@ FFZ.prototype.ws_create = function() {
 	this._ws_last_req = 1;
 	this._ws_callbacks = {1: f._ws_on_hello.bind(f)};
 	this._ws_pending = this._ws_pending || [];
+	this._ws_topics = {};
 	this._ws_recreate_timer = null;
 
 	var pool_id = this.settings.socket_server_pool,
@@ -146,9 +179,8 @@ FFZ.prototype.ws_create = function() {
 		// Join the right channel if we're in the dashboard.
 		if ( f.is_dashboard ) {
 			var match = location.pathname.match(/\/([^\/]+)/);
-			if ( match ) {
-				f.ws_send("sub", "channel." + match[1]);
-			}
+			if ( match )
+				f.ws_sub("channel." + match[1]);
 		}
 
 		// Send the current rooms.
@@ -157,13 +189,14 @@ FFZ.prototype.ws_create = function() {
 			if ( ! f.rooms.hasOwnProperty(room_id) || ! room )
 				continue;
 
-			room.room && room.room.ffzSubscribe && room.room.ffzSubscribe();
-			//f.ws_send("sub", "room." + room_id);
+			if ( room.important ) {
+				f.ws_sub("room." + room_id);
 
-			if ( f.rooms[room_id].needs_history ) {
-				f.rooms[room_id].needs_history = false;
-				if ( ! f.has_bttv && f.settings.chat_history )
-					f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
+				if ( room.needs_history ) {
+					room.needs_history = false;
+					if ( ! f.has_bttv && f.settings.chat_history )
+						f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
+				}
 			}
 		}
 
@@ -173,10 +206,10 @@ FFZ.prototype.ws_create = function() {
 				hosted_id = f._cindex.get('controller.hostModeTarget.id');
 
 			if ( channel_id )
-				f.ws_send("sub", "channel." + channel_id);
+				f.ws_sub("channel." + channel_id);
 
 			if ( hosted_id )
-				f.ws_send("sub", "channel." + hosted_id);
+				f.ws_sub("channel." + hosted_id);
 		}
 
 		// Send any pending commands.

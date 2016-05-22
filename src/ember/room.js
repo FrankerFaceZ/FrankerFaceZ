@@ -554,6 +554,17 @@ FFZ.ffz_commands.help.help = "Usage: /ffz help [command]\nList available command
 // Room Management
 // --------------------
 
+FFZ.prototype.update_room_important = function(id, controller) {
+	var Chat = controller || utils.ember_lookup('controller:chat'),
+		room = this.rooms[id];
+
+	if ( ! room )
+		return;
+
+	room.important = (Chat && room.room && Chat.get('currentChannelRoom') === room.room) || (room.room && room.room.get('isGroupRoom')) || (this.settings.pinned_rooms.indexOf(id) !== -1);
+};
+
+
 FFZ.prototype.add_room = function(id, room) {
 	if ( this.rooms[id] )
 		return this.log("Tried to add existing room: " + id);
@@ -584,15 +595,20 @@ FFZ.prototype.add_room = function(id, room) {
 		}
 	}
 
-	// Let the server know where we are.
-	room && room.ffzSubscribe && room.ffzSubscribe();
-	//this.ws_send("sub", "room." + id);
+	// Is the room important?
+	this.update_room_important(id);
 
-	// See if we need history?
-	if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
-		if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
-			data.needs_history = true;
+	if ( data.important ) {
+		// Let the server know where we are.
+		this.ws_sub("room." + id);
+
+		// Do we want history?
+		if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
+			if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
+				data.needs_history = true;
+		}
 	}
+
 
 	// Why don't we set the scrollback length, too?
 	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === id) ? 150 : 0));
@@ -620,7 +636,7 @@ FFZ.prototype.remove_room = function(id) {
 		utils.update_css(this._room_style, id, null);
 
 	// Let the server know we're gone and delete our data for this room.
-	this.ws_send("unsub", "room." + id);
+	this.ws_unsub("room." + id);
 	delete this.rooms[id];
 
 	// Clean up sets we aren't using any longer.
@@ -918,23 +934,6 @@ FFZ.prototype._modify_room = function(room) {
 		}.observes('r9k', 'subsOnly', 'emoteOnly', 'slow', 'ffz_banned'),
 
 
-		ffzShouldSubscribe: function() {
-			var Chat = utils.ember_lookup('controller:chat'),
-				room_id = this.get('id');
-
-			return (Chat && Chat.get('currentChannelRoom') === this) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1);
-		},
-
-		ffzSubscribe: function() {
-			if ( this.ffzShouldSubscribe() )
-				f.ws_send("sub", "room." + this.get('id'));
-		},
-
-		ffzUnsubscribe: function(not_always) {
-			if ( ! not_always || ! this.ffzShouldSubscribe() )
-				f.ws_send("unsub", "room." + this.get('id'));
-		},
-
 		// User Level
 		ffzUserLevel: function() {
 			if ( this.get('isStaff') )
@@ -1100,7 +1099,7 @@ FFZ.prototype._modify_room = function(room) {
 							last_ban.end_time = end_time;
 							last_ban.timeouts++;
 
-							last_ban.message = message + ' ' + utils.number_commas(last_ban.timeouts) + ' times' + (!show_reason || last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '));
+							last_ban.message = message + ' (' + utils.number_commas(last_ban.timeouts) + ' times)' + (!show_reason || last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '));
 							last_ban.cachedTokens = [{type: "text", text: last_ban.message}];
 
 							// Now that we've reset the tokens, if there's a line for this,
@@ -1119,9 +1118,18 @@ FFZ.prototype._modify_room = function(room) {
 						if ( ! last_ban || ! last_ban.is_delete || Math.abs(now - last_ban.date) > 15000 )
 							last_ban = null;
 
-						if ( last_ban )
-							last_ban.cachedTokens = [message + ' ' + utils.number_commas(last_ban.timeouts) + ' times' + (last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '))];
-						else {
+						if ( last_ban ) {
+							if ( reason && last_ban.reasons.indexOf(reason) === -1 )
+								last_ban.reasons.push(reason);
+
+							if ( last_ban.durations.indexOf(duration) === -1 )
+								last_ban.durations.push(duration);
+
+							last_ban.end_time = end_time;
+							last_ban.timeouts++;
+
+							last_ban.cachedTokens = [message + ' (' + utils.number_commas(last_ban.timeouts) + ' times)' + (last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '))];
+						} else {
 							user_history.push({
 								from: 'jtv',
 								is_delete: true,
@@ -1344,11 +1352,19 @@ FFZ.prototype._modify_room = function(room) {
 				var f_room = f.rooms && f.rooms[msg.room],
 					ban_history = f_room && f_room.ban_history;
 
-				if ( ban_history && msg.from )
-					ban_history[msg.from] = false;
+				if ( ban_history && msg.from ) {
+					// Is the last ban within 200ms? Chances are Twitch screwed up message order.
+					if ( ban_history[msg.from] && (new Date - ban_history[msg.from].date) <= 200 ) {
+						msg.ffz_deleted = true;
+						msg.deleted = !f.settings.prevent_clear;
+
+					} else
+						ban_history[msg.from] = false;
+				}
+
 
 				// Check for message from us.
-				if ( ! is_whisper ) {
+				if ( ! is_whisper && ! msg.ffz_deleted ) {
 					var user = f.get_user();
 					if ( user && user.login === msg.from ) {
 						var was_banned = this.get('ffz_banned');

@@ -258,22 +258,32 @@ module.exports = FFZ.utils = {
 
 
     show_modal: show_modal,
-    prompt: function(title, description, old_value, callback, width) {
+    prompt: function(title, description, old_value, callback, width, input) {
         var contents = document.createElement('div'),
             heading = document.createElement('div'),
             form = document.createElement('form'),
-            input, close_btn, okay_btn;
+            close_btn, okay_btn;
 
         contents.className = 'text-content';
         heading.className = 'content-header';
         heading.innerHTML = '<h4>' + title + '</h4>';
 
-        form.innerHTML = '<div class="item">' + (description ? '<p>' + description + '</p>' : '') + '<input type="text"></div><div class="buttons"><a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button></div>';
+		if ( ! input ) {
+			input = document.createElement('input');
+			input.type = 'text';
+		}
+
+        form.innerHTML = '<div class="item">' + (description ? '<p>' + description + '</p>' : '') + '<div class="input-placeholder"></div><div class="buttons"><a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button></div>';
+
+		var ph = form.querySelector('.input-placeholder'),
+			par = ph.parentElement;
+
+		par.insertBefore(input, ph);
+		par.removeChild(ph);
 
         contents.appendChild(heading);
         contents.appendChild(form);
 
-        input = form.querySelector('input');
         close_btn = form.querySelector('.js-subwindow-close');
         okay_btn = form.querySelector('.button.primary');
 
