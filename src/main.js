@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 183,
+	major: 3, minor: 5, revision: 185,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -126,6 +126,28 @@ FFZ.prototype.get_user = function(force_reload) {
         this.__user = user;
 
     return user;
+}
+
+
+FFZ.prototype.get_user_editor_of = function() {
+	var f = this;
+	return new Promise(function(succeed,fail) {
+		var user = f.get_user();
+		if ( ! user || ! user.login )
+			return fail('not logged in');
+
+		jQuery.get("/" + user.login + "/dashboard/permissions").done(function(data) {
+			var el = document.createElement('div');
+			el.innerHTML = data;
+
+			var links = _.pluck(el.querySelectorAll('#editable .label'), 'href');
+			succeed(_.map(links, function(e) { return e.substr(e.lastIndexOf('/') + 1) }));
+
+		}).fail(function(e) {
+			f.error("Failed to load User Editor State", e);
+			fail('failed to load dashboard');
+		});
+	});
 }
 
 

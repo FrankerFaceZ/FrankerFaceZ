@@ -9,6 +9,7 @@ var FFZ = window.FrankerFaceZ,
 
 	keycodes = {
 		ESC: 27,
+		R: 82,
 		P: 80,
 		B: 66,
 		T: 84,
@@ -355,7 +356,7 @@ FFZ.settings_info.mod_buttons = {
                     f.settings.set('mod_buttons', final);
 
                     // Update existing chat lines.
-                    var CL = utils.ember_resolve('component:chat-line'),
+                    var CL = utils.ember_resolve('component:chat/chat-line'),
                         views = CL ? utils.ember_views() : [];
 
                     for(var vid in views) {
@@ -498,14 +499,14 @@ FFZ.prototype.setup_mod_card = function() {
 		return orig_stop(e, element, combo);
 	}
 
-	Mousetrap.bind("up up down down left right left right b a enter", function() {
+	Mousetrap.bind("up up down down left right left right b a", function() {
 		var el = document.querySelector(".app-main") || document.querySelector(".ember-chat-container");
 		el && el.classList.toggle('ffz-flip');
 	});
 
 
 	this.log("Hooking the Ember Moderation Card view.");
-	var Card = utils.ember_resolve('component:moderation-card'),
+	var Card = utils.ember_resolve('component:chat/moderation-card'),
 		f = this;
 
 	Card.reopen({
@@ -594,6 +595,21 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 				this.ffz_room_id = room_id;
+
+
+				// Action Override
+				if ( this._actions ) {
+					this._actions.banUser = function(e) {
+						var room = utils.ember_lookup('controller:chat').get('currentRoom');
+						room.send("/ban " + e + ban_reason(), true);
+					}
+
+					this._actions.timeoutUser = function(e) {
+						var room = utils.ember_lookup('controller:chat').get('currentRoom');
+						room.send("/timeout " + e + " 600" + ban_reason(), true);
+					}
+				}
+
 
 				// Alias Display
 				if ( alias ) {
@@ -717,6 +733,19 @@ FFZ.prototype.setup_mod_card = function() {
 						else if ( is_mod && key == keycodes.U )
 							room.send("/unban " + user_id, true);
 
+						else if ( is_mod && ban_reasons && key == keycodes.R ) {
+							var event = document.createEvent('MouseEvents');
+							event.initMouseEvent('mousedown', true, true, window);
+							ban_reasons.focus();
+							ban_reasons.dispatchEvent(event);
+							return;
+						}
+
+						else if ( key == keycodes.ESC && e.target === ban_reasons ) {
+							el.focus();
+							return;
+						}
+
 						else if ( key != keycodes.ESC )
 							return;
 
@@ -780,7 +809,7 @@ FFZ.prototype.setup_mod_card = function() {
 					if ( f.settings.mod_card_reasons && f.settings.mod_card_reasons.length ) {
 						// Moderation Reasons
 						line = utils.createElement('div', 'extra-interface interface clearfix');
-						ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban Reason</option>');
+						ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban (R)eason</option>');
 						line.appendChild(ban_reasons);
 
 						for(var i=0; i < f.settings.mod_card_reasons.length; i++) {

@@ -608,14 +608,14 @@ FFZ.prototype.setup_line = function() {
 
 
     this.log("Hooking the Ember Message Line component.");
-    var MLine = utils.ember_resolve('component:message-line');
+    var MLine = utils.ember_resolve('component:chat/message-line');
     if ( MLine )
         this._modify_chat_subline(MLine);
     else
         this.error("Couldn't find the Message Line component.");
 
     this.log("Hooking the Ember Whisper Line component.");
-    var WLine = utils.ember_resolve('component:whisper-line');
+    var WLine = utils.ember_resolve('component:chat/whisper-line');
     if ( WLine )
         this._modify_chat_subline(WLine);
     else
