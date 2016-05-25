@@ -725,7 +725,7 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 		if ( f.settings.remove_deleted && msg.deleted )
 			return true;
 
-		if ( msg.tags.target && msg.tags.target !== '@@' ) {
+		if ( msg.tags && msg.tags.target && msg.tags.target !== '@@' ) {
 			var is_mine = current_user && current_user.login === msg.tags.target;
 			if ( ! is_mine && ! r.ffzShouldDisplayNotice() )
 				return true;

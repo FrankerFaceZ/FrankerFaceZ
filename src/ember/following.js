@@ -174,9 +174,19 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 			}
 		},
 
+		ffzParentModel: function() {
+			var x = this.get('parentView');
+			while(x) {
+				var model = x.get('model');
+				if ( model )
+					return model;
+				x = x.get('parentView');
+			}
+		}.property('parentView'),
+
 		ffzInit: function() {
 			var el = this.get('element'),
-				channel_id = this.get('parentView.parentView.model.id'),
+				channel_id = this.get('ffzParentModel.id'), //.get('parentView.parentView.parentView.model.id'),
 				is_following = document.body.getAttribute('data-current-path').indexOf('.following') !== -1,
 
 				user = f.get_user(),

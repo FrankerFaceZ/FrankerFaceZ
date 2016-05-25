@@ -303,7 +303,7 @@ FFZ.prototype._modify_cindex = function(view) {
 						btn.id = 'ffz-ui-host-button';
 						btn.className = 'button action';
 
-						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, false));
+						btn.addEventListener('click', this.ffzClickHost.bind(this, false));
 
 						var before;
 						try { before = container.querySelector(':scope > .theatre-button'); }
@@ -343,7 +343,7 @@ FFZ.prototype._modify_cindex = function(view) {
 						btn.id = 'ffz-ui-host-button';
 						btn.className = 'button action';
 
-						btn.addEventListener('click', this.ffzClickHost.bind(btn, this, true));
+						btn.addEventListener('click', this.ffzClickHost.bind(this, true));
 
 						var before;
 						try { before = container.querySelector(':scope > .theatre-button'); }
@@ -370,19 +370,20 @@ FFZ.prototype._modify_cindex = function(view) {
 			}
 		},
 
-		ffzClickHost: function(controller, is_host) {
-			var target = is_host ? controller.get('controller.hostModeTarget.id') : (controller.get('controller.content.id') || controller.get('controller.id')),
+		ffzClickHost: function(is_host, e) {
+			var btn = e.target,
+				target = is_host ? this.get('controller.hostModeTarget.id') : (this.get('controller.content.id') || this.get('controller.id')),
 				user = f.get_user(),
 				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
 				now_hosting = room && room.ffz_host_target;
 
-			if ( ! room || controller.get('ffz_host_updating') )
+			if ( ! room || this.get('ffz_host_updating') )
 				return;
 
-			this.classList.add('disabled');
-			this.title = 'Updating...';
+			btn.classList.add('disabled');
+			btn.title = 'Updating...';
 
-			controller.set('ffz_host_updating', true);
+			this.set('ffz_host_updating', true);
 			if ( now_hosting === target )
 				room.send("/unhost", true);
 			else

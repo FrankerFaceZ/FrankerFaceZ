@@ -907,13 +907,13 @@ FFZ.prototype._modify_chat_subline = function(component) {
 					return;
 
 				} else if ( cl.contains('ban') )
-                    this.sendAction("banUser", from);
+                    this.sendAction("banUser", {user:from});
 
                 else if ( cl.contains('unban') )
-                    this.sendAction("unbanUser", from);
+                    this.sendAction("unbanUser", {user:from});
 
                 else if ( cl.contains('timeout') )
-                    this.sendAction("timeoutUser", from);
+                    this.sendAction("timeoutUser", {user:from});
 
             } else if ( cl.contains('badge') ) {
                 if ( cl.contains('turbo') )

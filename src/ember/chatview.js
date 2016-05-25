@@ -616,7 +616,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 			// Close mod cards when changing to a new room.
 			if ( f._mod_card )
-				f._mod_card.send('close');
+				f._mod_card.get('closeAction')();
 
 			var room = this.get('controller.currentRoom'),
 				room_id = room && room.get('id'),

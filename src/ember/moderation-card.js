@@ -21,7 +21,7 @@ var FFZ = window.FrankerFaceZ,
 
 
 try {
-	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+	helpers = window.require && window.require("web-client/helpers/chat/chat-line-helpers");
 } catch(err) { }
 
 
@@ -490,6 +490,11 @@ FFZ.settings_info.mod_card_durations = {
 // ----------------
 
 FFZ.prototype.setup_mod_card = function() {
+	try {
+		helpers = window.require && window.require("web-client/helpers/chat/chat-line-helpers");
+	} catch(err) { }
+
+
 	this.log("Modifying Mousetrap stopCallback so we can catch ESC.");
 	var orig_stop = Mousetrap.stopCallback;
 	Mousetrap.stopCallback = function(e, element, combo) {
@@ -598,17 +603,15 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 				// Action Override
-				if ( this._actions ) {
-					this._actions.banUser = function(e) {
-						var room = utils.ember_lookup('controller:chat').get('currentRoom');
-						room.send("/ban " + e + ban_reason(), true);
-					}
+				this.set('banAction', function(e) {
+					var room = utils.ember_lookup('controller:chat').get('currentRoom');
+					room.send("/ban " + e.user + ban_reason(), true);
+				});
 
-					this._actions.timeoutUser = function(e) {
-						var room = utils.ember_lookup('controller:chat').get('currentRoom');
-						room.send("/timeout " + e + " 600" + ban_reason(), true);
-					}
-				}
+				this.set('timeoutAction', function(e) {
+					var room = utils.ember_lookup('controller:chat').get('currentRoom');
+					room.send("/timeout " + e.user + " 600 " + ban_reason(), true);
+				});
 
 
 				// Alias Display
@@ -749,7 +752,7 @@ FFZ.prototype.setup_mod_card = function() {
 						else if ( key != keycodes.ESC )
 							return;
 
-						controller.send('close');
+						t.get('closeAction')();
 					});
 				}
 

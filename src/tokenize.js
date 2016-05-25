@@ -148,7 +148,7 @@ FFZ.prototype.setup_tokenization = function() {
 	this.load_twitch_emote_data();
 
 	try {
-		helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
+		helpers = window.require && window.require("web-client/helpers/chat/chat-line-helpers");
 	} catch(err) { }
 
 	if ( ! helpers )
