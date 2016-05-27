@@ -133,6 +133,18 @@ FFZ.settings_info.input_complete_name_at = {
 }
 
 
+FFZ.settings_info.input_emoticons_case_sensitive = {
+    type: "boolean",
+    value: true,
+
+    category: "Chat Input",
+    no_bttv: true,
+
+    name: "Tab-Complete Emoticons Case Sensitive",
+    help: "When enabled, tab-completion for emoticons is case sensitive."
+}
+
+
 FFZ.settings_info.input_complete_without_prefix = {
     type: "boolean",
     value: true,
@@ -169,7 +181,7 @@ FFZ.settings_info.input_emoji = {
 
 FFZ.prototype.setup_chat_input = function() {
 	this.log("Hooking the Ember Chat Input component.");
-	var Input = utils.ember_resolve('component:twitch-chat-input'),
+	var Input = utils.ember_resolve('component:chat/twitch-chat-input'),
 		f = this;
 
 	if ( ! Input )
@@ -698,7 +710,7 @@ FFZ.prototype._modify_chat_input = function(component) {
                     name = name.toLowerCase();
                     return char === '@' ? name.indexOf(part2.toLowerCase()) === 0 : name.indexOf(partial.toLowerCase()) === 0;
 
-                } else if ( type === 'emoji' ) {
+                } else if ( type === 'emoji' || ! f.settings.input_emoticons_case_sensitive ) {
                     name = name.toLowerCase();
                     return name.indexOf(partial.toLowerCase()) === 0;
                 }

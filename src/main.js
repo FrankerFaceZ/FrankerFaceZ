@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 188,
+	major: 3, minor: 5, revision: 190,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -237,7 +237,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 	}
 
 	// Check for special non-ember pages.
-	if ( /^\/(?:$|search$|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
+	if ( /^\/(?:$|search$|team\/|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
 		this.init_normal(delay);
 		return;
 	}

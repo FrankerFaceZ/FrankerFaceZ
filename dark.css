@@ -89,11 +89,24 @@
 }
 
 
+/* Team Pages */
+
+.ffz-dark #stats_and_description { border-color: rgba(255,255,255,0.1) }
+.ffz-dark #stats_and_description .stat { color: #808080 }
+.ffz-dark #stats_and_description .stat:not(#channel_viewer_count) { -webkit-filter: invert(100%) }
+
+.ffz-dark .member.js-playing a { color: #fff !important }
+.ffz-dark .member { box-shadow: none !important }
+.ffz-dark .member.live { background-color: #222; }
+.ffz-dark .member:hover { background-color: #333 }
+.ffz-dark .member .channel_count { color: #ccc }
+
 
 /* main column */
-body.ffz-dark,
+body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .app-main,
-.ffz-dark div#mantle_skin,
+.ffz-dark[data-page="teams#show"] .main,
+.ffz-dark:not([data-page="teams#show"]) div#mantle_skin,
 .ffz-dark div#main_col {
 	background:rgb(16,16,16);
 	color:rgb(195,195,195)!important;
@@ -775,6 +788,7 @@ body.ffz-dark,
     background-color: rgb(25,25,25);
 }
 
+.ffz-dark .brick,
 .ffz-dark .brick--faint,
 .ffz-dark .brick--block,
 .ffz-dark #action_feed .action,

@@ -26,6 +26,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
 .ffz-hide-view-count .stat.twitch-channel-views,
 .ffz-minimal-chat-input .chat-interface .emoticon-selector-toggle,
+.ffz-menu-replace .chat-interface .ember-emoticon-selector,
 .ffz-menu-replace .chat-interface .emoticon-selector-toggle {
 	display: none !important;
 }
@@ -2172,6 +2173,11 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue .warp__item--anchor,
 .ffz-no-blue .warp__drawer,
 .ffz-no-blue .leaf,
+
+.ffz-no-blue .dark .emoticon-selector .tabs,
+.ffz-no-blue .theatre .emoticon-selector .tabs,
+.ffz-no-blue .force-dark .emoticon-selector .tabs,
+
 .ffz-no-blue .app-main.theatre .archives-contain .list-video:hover,
 .ffz-no-blue.ffz-dark .archives-contain .list-video:hover,
 .ffz-no-blue .theatre .moderation-card .back-button,

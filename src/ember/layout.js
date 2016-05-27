@@ -262,8 +262,10 @@ FFZ.prototype.setup_layout = function() {
                             theatre_video_top = video_below ? theatre_chat_height : 0,
                             theatre_chat_top = video_below ? 0 : theatre_video_height;
 
-
-                        out = 'body[data-current-path^="user."] #left_col,' +
+						out = 'body[data-current-path^="user."] #left_col .warp { min-height: inherit }' +
+							'body[data-current-path^="user."] #left_col { overflow: hidden }' +
+                        	'body[data-current-path^="user."] #left_col .warp,' +
+							'body[data-current-path^="user."] #left_col,' +
                             'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col{' +
                                 'margin-right:0 !important;' +
                                 'top:' + video_top + 'px;' +
@@ -276,6 +278,7 @@ FFZ.prototype.setup_layout = function() {
                                 'width:100%;' +
                                 'top:' + chat_top + 'px;' +
                                 'height:' + chat_height + 'px}' +
+							'body[data-current-path^="user."] .app-main.theatre #left_col .warp,' +
                             'body[data-current-path^="user."] .app-main.theatre #left_col,' +
                             'body[data-current-path^="user."] .app-main.theatre #main_col{' +
                                 'top:' + theatre_video_top + 'px;' +
