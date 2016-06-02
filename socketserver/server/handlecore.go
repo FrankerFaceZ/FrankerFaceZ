@@ -114,11 +114,9 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		log.Println("could not announce startup to backend:", err)
 	} else {
 		resp.Body.Close()
-		lastBackendSuccess[bPathAnnounceStartup] = time.Now().UTC()
-	}
-
-	if Configuration.UseESLogStashing {
-		// logstasher.Setup(Configuration.ESServer, Configuration.ESIndexPrefix, Configuration.ESHostName)
+		Backend.lastSuccessLock.Lock()
+		Backend.lastSuccess[bPathAnnounceStartup] = time.Now().UTC()
+		Backend.lastSuccessLock.Unlock()
 	}
 
 	janitorsOnce.Do(startJanitors)

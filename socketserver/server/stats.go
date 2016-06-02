@@ -97,6 +97,12 @@ func newStatsData() *StatsData {
 		DisconnectReasons: make(map[string]uint64),
 		ClientVersions:    make(map[string]uint64),
 		StatsDataVersion:  StatsDataVersion,
+		Health: struct {
+			IRC     bool
+			Backend map[string]time.Time
+		}{
+			Backend: make(map[string]time.Time),
+		},
 	}
 }
 
@@ -162,6 +168,11 @@ func updatePeriodicStats() {
 
 	{
 		Statistics.Health.IRC = authIrcConnection.Connected()
+		Backend.lastSuccessLock.Lock()
+		for k, v := range Backend.lastSuccess {
+			Statistics.Health.Backend[k] = v
+		}
+		Backend.lastSuccessLock.Unlock()
 	}
 }
 
