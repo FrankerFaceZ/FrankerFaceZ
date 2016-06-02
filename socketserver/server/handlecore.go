@@ -114,7 +114,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		log.Println("could not announce startup to backend:", err)
 	} else {
 		resp.Body.Close()
-		lastBackendSuccess[bPathAnnounceStartup] = time.Now()
+		lastBackendSuccess[bPathAnnounceStartup] = time.Now().UTC()
 	}
 
 	if Configuration.UseESLogStashing {

@@ -65,7 +65,7 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	announceStartupURL = fmt.Sprintf("%s%s", b.baseURL, bPathAnnounceStartup)
 	addTopicURL = fmt.Sprintf("%s%s", b.baseURL, bPathAddTopic)
 	postStatisticsURL = fmt.Sprintf("%s%s", b.baseURL, bPathAggStats)
-	epochTime := time.Unix(0, 0)
+	epochTime := time.Unix(0, 0).UTC()
 	lastBackendSuccess = map[string]time.Time{
 		bPathAnnounceStartup: epochTime,
 		bPathAddTopic:        epochTime,
@@ -221,7 +221,7 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 		responseCache.Set(getCacheKey(remoteCommand, data), responseStr, duration)
 	}
 
-	lastBackendSuccess[bPathOtherCommand] = time.Now()
+	lastBackendSuccess[bPathOtherCommand] = time.Now().UTC()
 
 	return
 }
@@ -237,7 +237,7 @@ func (backend *backendInfo) SendAggregatedData(sealedForm url.Values) error {
 		return httpError(resp.StatusCode)
 	}
 
-	lastBackendSuccess[bPathAggStats] = time.Now()
+	lastBackendSuccess[bPathAggStats] = time.Now().UTC()
 
 	return resp.Body.Close()
 }
@@ -299,7 +299,7 @@ func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 		return ErrBackendNotOK{Code: resp.StatusCode, Response: respStr}
 	}
 
-	lastBackendSuccess[bPathAddTopic] = time.Now()
+	lastBackendSuccess[bPathAddTopic] = time.Now().UTC()
 
 	return nil
 }
