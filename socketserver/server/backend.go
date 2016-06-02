@@ -40,7 +40,6 @@ type backendInfo struct {
 
 var Backend *backendInfo
 
-var backendHTTPClient http.Client
 var backendURL string
 var responseCache *cache.Cache
 
@@ -57,7 +56,7 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	Backend = b
 	b.serverID = config.ServerID
 
-	backendHTTPClient.Timeout = 60 * time.Second
+	b.HTTPClient.Timeout = 60 * time.Second
 	backendURL = config.BackendURL
 	if responseCache != nil {
 		responseCache.Flush()
@@ -156,19 +155,19 @@ func (bfe ErrForwardedFromBackend) Error() string {
 var ErrAuthorizationNeeded = errors.New("Must authenticate Twitch username to use this command")
 
 // SendRemoteCommandCached performs a RPC call on the backend, but caches responses.
-func SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string, error) {
+func (backend *backendInfo) SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cached, ok := responseCache.Get(getCacheKey(remoteCommand, data))
 	if ok {
 		return cached.(string), nil
 	}
-	return SendRemoteCommand(remoteCommand, data, auth)
+	return backend.SendRemoteCommand(remoteCommand, data, auth)
 }
 
 // SendRemoteCommand performs a RPC call on the backend by POSTing to `/cmd/$remoteCommand`.
 // The form data is as follows: `clientData` is the JSON in the `data` parameter
 // (should be retrieved from ClientMessage.Arguments), and either `username` or
 // `usernameClaimed` depending on whether AuthInfo.UsernameValidates is true is AuthInfo.TwitchUsername.
-func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
+func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
 	destURL := fmt.Sprintf("%s/cmd/%s", backendURL, remoteCommand)
 
 	formData := url.Values{
@@ -187,7 +186,7 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 		return "", err
 	}
 
-	resp, err := backendHTTPClient.PostForm(destURL, sealedForm)
+	resp, err := backend.HTTPClient.PostForm(destURL, sealedForm)
 	if err != nil {
 		return "", err
 	}
@@ -229,8 +228,8 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 }
 
 // SendAggregatedData sends aggregated emote usage and following data to the backend server.
-func SendAggregatedData(sealedForm url.Values) error {
-	resp, err := backendHTTPClient.PostForm(postStatisticsURL, sealedForm)
+func (backend *backendInfo) SendAggregatedData(sealedForm url.Values) error {
+	resp, err := backend.HTTPClient.PostForm(postStatisticsURL, sealedForm)
 	if err != nil {
 		return err
 	}
@@ -259,19 +258,19 @@ func (noe ErrBackendNotOK) Error() string {
 // POST data:
 // channels=room.trihex
 // added=t
-func SendNewTopicNotice(topic string) error {
-	return sendTopicNotice(topic, true)
+func (backend *backendInfo) SendNewTopicNotice(topic string) error {
+	return backend.sendTopicNotice(topic, true)
 }
 
 // SendCleanupTopicsNotice notifies the backend that pub/sub topics have no subscribers anymore.
 // POST data:
 // channels=room.sirstendec,room.bobross,feature.foo
 // added=f
-func SendCleanupTopicsNotice(topics []string) error {
-	return sendTopicNotice(strings.Join(topics, ","), false)
+func (backend *backendInfo) SendCleanupTopicsNotice(topics []string) error {
+	return backend.sendTopicNotice(strings.Join(topics, ","), false)
 }
 
-func sendTopicNotice(topic string, added bool) error {
+func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 	formData := url.Values{}
 	formData.Set("channels", topic)
 	if added {
@@ -285,7 +284,7 @@ func sendTopicNotice(topic string, added bool) error {
 		return err
 	}
 
-	resp, err := backendHTTPClient.PostForm(addTopicURL, sealedForm)
+	resp, err := backend.HTTPClient.PostForm(addTopicURL, sealedForm)
 	if err != nil {
 		return err
 	}

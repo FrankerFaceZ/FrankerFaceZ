@@ -80,7 +80,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		config.MinMemoryKBytes = defaultMinMemoryKB
 	}
 
-	setupBackend(config)
+	Backend = setupBackend(config)
 
 	if serveMux == nil {
 		serveMux = http.DefaultServeMux
@@ -109,7 +109,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	if err != nil {
 		log.Fatalln("Unable to seal requests:", err)
 	}
-	resp, err := backendHTTPClient.PostForm(announceStartupURL, announceForm)
+	resp, err := Backend.HTTPClient.PostForm(announceStartupURL, announceForm)
 	if err != nil {
 		log.Println("could not announce startup to backend:", err)
 	} else {

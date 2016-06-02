@@ -396,7 +396,7 @@ func aggregateDataSender_do() {
 		return
 	}
 
-	err = SendAggregatedData(form)
+	err = Backend.SendAggregatedData(form)
 	if err != nil {
 		log.Println("error reporting aggregate data:", err)
 		return
@@ -533,7 +533,7 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 	pendingBunchedRequests[br] = &bunchSubscriberList{Members: []bunchSubscriber{{Client: client, MessageID: msg.MessageID}}}
 
 	go func(request bunchedRequest) {
-		respStr, err := SendRemoteCommandCached(string(request.Command), request.Param, AuthInfo{})
+		respStr, err := Backend.SendRemoteCommandCached(string(request.Command), request.Param, AuthInfo{})
 
 		var msg ClientMessage
 		if err == nil {
@@ -581,7 +581,7 @@ const AuthorizationFailedErrorString = "Failed to verify your Twitch username."
 const AuthorizationNeededError = "You must be signed in to use that command."
 
 func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo) {
-	resp, err := SendRemoteCommandCached(string(msg.Command), copyString(msg.origArguments), client.AuthInfo)
+	resp, err := Backend.SendRemoteCommandCached(string(msg.Command), copyString(msg.origArguments), client.AuthInfo)
 
 	if err == ErrAuthorizationNeeded {
 		if client.TwitchUsername == "" {

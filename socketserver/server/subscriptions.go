@@ -162,7 +162,7 @@ func pubsubJanitor_do() {
 	ChatSubscriptionLock.Unlock()
 
 	if len(cleanedUp) != 0 {
-		err := SendCleanupTopicsNotice(cleanedUp)
+		err := Backend.SendCleanupTopicsNotice(cleanedUp)
 		if err != nil {
 			log.Println("error reporting cleaned subs:", err)
 		}
@@ -186,7 +186,7 @@ func _subscribeWhileRlocked(channelName string, value chan<- ClientMessage) {
 		ChatSubscriptionLock.Unlock()
 
 		go func(topic string) {
-			err := SendNewTopicNotice(topic)
+			err := Backend.SendNewTopicNotice(topic)
 			if err != nil {
 				log.Println("error reporting new sub:", err)
 			}
