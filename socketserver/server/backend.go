@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pmylund/go-cache"
@@ -24,6 +23,20 @@ const bPathAddTopic = "/topics"
 const bPathAggStats = "/stats"
 const bPathOtherCommand = "/cmd/"
 
+type backend struct {
+	HTTPClient http.Client
+	baseURL string
+	responseCache *cache.Cache
+
+	postStatsURL string
+	addTopicURL string
+	announceStartupURL string
+
+	sharedKey [32]byte
+	serverID int
+
+	lastSuccess map[string]time.Time
+}
 var backendHTTPClient http.Client
 var backendURL string
 var responseCache *cache.Cache
@@ -34,8 +47,6 @@ var announceStartupURL string
 
 var backendSharedKey [32]byte
 var serverID int
-
-var messageBufferPool sync.Pool
 
 var lastBackendSuccess map[string]time.Time
 
@@ -60,8 +71,6 @@ func setupBackend(config *ConfigFile) {
 		bPathOtherCommand:    epochTime,
 	}
 	Statistics.Health.Backend = lastBackendSuccess
-
-	messageBufferPool.New = New4KByteBuffer
 
 	var theirPublic, ourPrivate [32]byte
 	copy(theirPublic[:], config.BackendPublicKey)
