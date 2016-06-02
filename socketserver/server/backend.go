@@ -40,7 +40,6 @@ type backendInfo struct {
 
 var Backend *backendInfo
 
-var backendURL string
 var responseCache *cache.Cache
 
 var postStatisticsURL string
@@ -57,15 +56,15 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	b.serverID = config.ServerID
 
 	b.HTTPClient.Timeout = 60 * time.Second
-	backendURL = config.BackendURL
+	b.baseURL = config.BackendURL
 	if responseCache != nil {
 		responseCache.Flush()
 	}
 	responseCache = cache.New(60*time.Second, 120*time.Second)
 
-	announceStartupURL = fmt.Sprintf("%s%s", backendURL, bPathAnnounceStartup)
-	addTopicURL = fmt.Sprintf("%s%s", backendURL, bPathAddTopic)
-	postStatisticsURL = fmt.Sprintf("%s%s", backendURL, bPathAggStats)
+	announceStartupURL = fmt.Sprintf("%s%s", b.baseURL, bPathAnnounceStartup)
+	addTopicURL = fmt.Sprintf("%s%s", b.baseURL, bPathAddTopic)
+	postStatisticsURL = fmt.Sprintf("%s%s", b.baseURL, bPathAggStats)
 	epochTime := time.Unix(0, 0)
 	lastBackendSuccess = map[string]time.Time{
 		bPathAnnounceStartup: epochTime,
@@ -168,7 +167,7 @@ func (backend *backendInfo) SendRemoteCommandCached(remoteCommand, data string, 
 // (should be retrieved from ClientMessage.Arguments), and either `username` or
 // `usernameClaimed` depending on whether AuthInfo.UsernameValidates is true is AuthInfo.TwitchUsername.
 func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
-	destURL := fmt.Sprintf("%s/cmd/%s", backendURL, remoteCommand)
+	destURL := fmt.Sprintf("%s/cmd/%s", backend.baseURL, remoteCommand)
 
 	formData := url.Values{
 		"clientData": []string{data},
