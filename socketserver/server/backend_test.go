@@ -12,19 +12,20 @@ func Test(t *testing.T) { TestingT(t) }
 
 func TestSealRequest(t *testing.T) {
 	TSetup(SetupNoServers, nil)
+	b := Backend
 
 	values := url.Values{
 		"QuickBrownFox": []string{"LazyDog"},
 	}
 
-	sealedValues, err := SealRequest(values)
+	sealedValues, err := b.SealRequest(values)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// sealedValues.Encode()
 	// id=0&msg=KKtbng49dOLLyjeuX5AnXiEe6P0uZwgeP_7mMB5vhP-wMAAPZw%3D%3D&nonce=-wRbUnifscisWUvhm3gBEXHN5QzrfzgV
 
-	unsealedValues, err := UnsealRequest(sealedValues)
+	unsealedValues, err := b.UnsealRequest(sealedValues)
 	if err != nil {
 		t.Fatal(err)
 	}

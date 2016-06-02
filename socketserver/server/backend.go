@@ -82,9 +82,8 @@ func getCacheKey(remoteCommand, data string) string {
 // The POST arguments are `cmd`, `args`, `channel`, and `scope`.
 // The `scope` argument is required because no attempt is made to infer the scope from the command, unlike /cached_pub.
 func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
-	b := Backend
 	r.ParseForm()
-	formData, err := b.UnsealRequest(r.Form)
+	formData, err := Backend.UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)

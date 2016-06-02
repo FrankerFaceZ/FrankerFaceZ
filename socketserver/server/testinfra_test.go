@@ -123,7 +123,7 @@ func (backend *TBackendRequestChecker) ServeHTTP(w http.ResponseWriter, r *http.
 
 	r.ParseForm()
 
-	unsealedForm, err := UnsealRequest(r.PostForm)
+	unsealedForm, err := Backend.UnsealRequest(r.PostForm)
 	if err != nil {
 		backend.tb.Errorf("Failed to unseal backend request: %v", err)
 	}
@@ -276,7 +276,7 @@ func TSealForSavePubMsg(tb testing.TB, cmd Command, channel string, arguments in
 	}
 	form.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
 
-	sealed, err := SealRequest(form)
+	sealed, err := Backend.SealRequest(form)
 	if err != nil {
 		tb.Error(err)
 		return nil, err
@@ -300,7 +300,7 @@ func TSealForUncachedPubMsg(tb testing.TB, cmd Command, channel string, argument
 	form.Set("time", time.Now().Format(time.UnixDate))
 	form.Set("scope", scope.String())
 
-	sealed, err := SealRequest(form)
+	sealed, err := Backend.SealRequest(form)
 	if err != nil {
 		tb.Error(err)
 		return nil, err
