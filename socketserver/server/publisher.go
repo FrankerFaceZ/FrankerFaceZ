@@ -206,7 +206,7 @@ func GetCommandsOfType(match BacklogCacheType) []Command {
 
 func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	formData, err := UnsealRequest(r.Form)
+	formData, err := Backend.UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)
@@ -225,7 +225,7 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 // `scope` is implicit in the command
 func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	formData, err := UnsealRequest(r.Form)
+	formData, err := Backend.UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)

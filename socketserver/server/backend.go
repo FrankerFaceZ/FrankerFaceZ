@@ -92,8 +92,9 @@ func getCacheKey(remoteCommand, data string) string {
 // The POST arguments are `cmd`, `args`, `channel`, and `scope`.
 // The `scope` argument is required because no attempt is made to infer the scope from the command, unlike /cached_pub.
 func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
+	b := Backend
 	r.ParseForm()
-	formData, err := UnsealRequest(r.Form)
+	formData, err := b.UnsealRequest(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)
@@ -180,7 +181,7 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 		formData.Set("authenticated", "0")
 	}
 
-	sealedForm, err := SealRequest(formData)
+	sealedForm, err := backend.SealRequest(formData)
 	if err != nil {
 		return "", err
 	}
@@ -227,7 +228,12 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 }
 
 // SendAggregatedData sends aggregated emote usage and following data to the backend server.
-func (backend *backendInfo) SendAggregatedData(sealedForm url.Values) error {
+func (backend *backendInfo) SendAggregatedData(form url.Values) error {
+	sealedForm, err := backend.SealRequest(form)
+	if err != nil {
+		return err
+	}
+
 	resp, err := backend.HTTPClient.PostForm(postStatisticsURL, sealedForm)
 	if err != nil {
 		return err
@@ -278,7 +284,7 @@ func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 		formData.Set("added", "f")
 	}
 
-	sealedForm, err := SealRequest(formData)
+	sealedForm, err := backend.SealRequest(formData)
 	if err != nil {
 		return err
 	}

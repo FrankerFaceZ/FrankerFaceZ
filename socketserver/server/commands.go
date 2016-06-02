@@ -390,13 +390,7 @@ func aggregateDataSender_do() {
 		reportForm.Set("emotes", string(emoteJSON))
 	}
 
-	form, err := SealRequest(reportForm)
-	if err != nil {
-		log.Println("error reporting aggregate data:", err)
-		return
-	}
-
-	err = Backend.SendAggregatedData(form)
+	err = Backend.SendAggregatedData(reportForm)
 	if err != nil {
 		log.Println("error reporting aggregate data:", err)
 		return

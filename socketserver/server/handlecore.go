@@ -103,7 +103,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
 	serveMux.HandleFunc("/cached_pub", HTTPBackendCachedPublish)
 
-	announceForm, err := SealRequest(url.Values{
+	announceForm, err := Backend.SealRequest(url.Values{
 		"startup": []string{"1"},
 	})
 	if err != nil {

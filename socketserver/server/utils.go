@@ -24,15 +24,11 @@ func FillCryptoRandom(buf []byte) error {
 	return nil
 }
 
-func New4KByteBuffer() interface{} {
-	return make([]byte, 0, 4096)
-}
-
 func copyString(s string) string {
 	return string([]byte(s))
 }
 
-func SealRequest(form url.Values) (url.Values, error) {
+func (backend *backendInfo) SealRequest(form url.Values) (url.Values, error) {
 	var nonce [24]byte
 	var err error
 
@@ -41,7 +37,7 @@ func SealRequest(form url.Values) (url.Values, error) {
 		return nil, err
 	}
 
-	cipherMsg := box.SealAfterPrecomputation(nil, []byte(form.Encode()), &nonce, &backendSharedKey)
+	cipherMsg := box.SealAfterPrecomputation(nil, []byte(form.Encode()), &nonce, &backend.sharedKey)
 
 	bufMessage := new(bytes.Buffer)
 	enc := base64.NewEncoder(base64.URLEncoding, bufMessage)
@@ -67,7 +63,7 @@ func SealRequest(form url.Values) (url.Values, error) {
 var ErrorShortNonce = errors.New("Nonce too short.")
 var ErrorInvalidSignature = errors.New("Invalid signature or contents")
 
-func UnsealRequest(form url.Values) (url.Values, error) {
+func (backend *backendInfo) UnsealRequest(form url.Values) (url.Values, error) {
 	var nonce [24]byte
 
 	nonceString := form.Get("nonce")
@@ -87,7 +83,7 @@ func UnsealRequest(form url.Values) (url.Values, error) {
 	cipherBuffer := new(bytes.Buffer)
 	cipherBuffer.ReadFrom(dec)
 
-	message, ok := box.OpenAfterPrecomputation(nil, cipherBuffer.Bytes(), &nonce, &backendSharedKey)
+	message, ok := box.OpenAfterPrecomputation(nil, cipherBuffer.Bytes(), &nonce, &backend.sharedKey)
 	if !ok {
 		Statistics.BackendVerifyFails++
 		return nil, ErrorInvalidSignature
