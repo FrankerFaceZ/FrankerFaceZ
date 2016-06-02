@@ -42,10 +42,6 @@ type backendInfo struct {
 
 var Backend *backendInfo
 
-var backendSharedKey [32]byte
-
-var lastBackendSuccess map[string]time.Time
-
 func setupBackend(config *ConfigFile) *backendInfo {
 	b := new(backendInfo)
 	Backend = b
@@ -60,7 +56,7 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	b.postStatisticsURL = fmt.Sprintf("%s%s", b.baseURL, bPathAggStats)
 
 	epochTime := time.Unix(0, 0).UTC()
-	lastBackendSuccess = map[string]time.Time{
+	lastBackendSuccess := map[string]time.Time{
 		bPathAnnounceStartup: epochTime,
 		bPathAddTopic:        epochTime,
 		bPathAggStats:        epochTime,
@@ -72,7 +68,7 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	copy(theirPublic[:], config.BackendPublicKey)
 	copy(ourPrivate[:], config.OurPrivateKey)
 
-	box.Precompute(&backendSharedKey, &theirPublic, &ourPrivate)
+	box.Precompute(&b.sharedKey, &theirPublic, &ourPrivate)
 
 	return b
 }
