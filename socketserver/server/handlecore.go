@@ -94,6 +94,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 
 	serveMux.HandleFunc("/", HTTPHandleRootURL)
 	serveMux.Handle("/.well-known/", http.FileServer(http.Dir("/tmp/letsencrypt/")))
+	serveMux.HandleFunc("/healthcheck", HTTPSayOK)
 	serveMux.HandleFunc("/stats", HTTPShowStatistics)
 	serveMux.HandleFunc("/hll/", HTTPShowHLL)
 	serveMux.HandleFunc("/hll_force_write", HTTPWriteHLL)
@@ -113,6 +114,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 		log.Println("could not announce startup to backend:", err)
 	} else {
 		resp.Body.Close()
+		lastBackendSuccess[bPathAnnounceStartup] = time.Now()
 	}
 
 	if Configuration.UseESLogStashing {
@@ -167,13 +169,20 @@ func shutdownHandler() {
 func dumpStackOnCtrlZ() {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGTSTP)
-	for _ = range ch {
+	for range ch {
 		fmt.Println("Got ^Z")
 
 		buf := make([]byte, 10000)
 		byteCnt := runtime.Stack(buf, true)
 		fmt.Println(string(buf[:byteCnt]))
 	}
+}
+
+// HTTPSayOK replies with 200 and a body of "ok\n".
+func HTTPSayOK(w http.ResponseWriter, _ *http.Request) {
+	w.(interface {
+		WriteString(string) error
+	}).WriteString("ok\n")
 }
 
 // SocketUpgrader is the websocket.Upgrader currently in use.

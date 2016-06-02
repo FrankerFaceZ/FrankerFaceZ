@@ -37,7 +37,11 @@ var serverID int
 
 var messageBufferPool sync.Pool
 
+var lastBackendSuccess map[string]time.Time
+
 func setupBackend(config *ConfigFile) {
+	serverID = config.ServerID
+
 	backendHTTPClient.Timeout = 60 * time.Second
 	backendURL = config.BackendURL
 	if responseCache != nil {
@@ -48,13 +52,20 @@ func setupBackend(config *ConfigFile) {
 	announceStartupURL = fmt.Sprintf("%s%s", backendURL, bPathAnnounceStartup)
 	addTopicURL = fmt.Sprintf("%s%s", backendURL, bPathAddTopic)
 	postStatisticsURL = fmt.Sprintf("%s%s", backendURL, bPathAggStats)
+	epochTime := time.Unix(0, 0)
+	lastBackendSuccess = map[string]time.Time{
+		bPathAnnounceStartup: epochTime,
+		bPathAddTopic:        epochTime,
+		bPathAggStats:        epochTime,
+		bPathOtherCommand:    epochTime,
+	}
+	Statistics.Health.Backend = lastBackendSuccess
 
 	messageBufferPool.New = New4KByteBuffer
 
 	var theirPublic, ourPrivate [32]byte
 	copy(theirPublic[:], config.BackendPublicKey)
 	copy(ourPrivate[:], config.OurPrivateKey)
-	serverID = config.ServerID
 
 	box.Precompute(&backendSharedKey, &theirPublic, &ourPrivate)
 }
@@ -197,6 +208,8 @@ func SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr s
 		responseCache.Set(getCacheKey(remoteCommand, data), responseStr, duration)
 	}
 
+	lastBackendSuccess[bPathOtherCommand] = time.Now()
+
 	return
 }
 
@@ -210,6 +223,8 @@ func SendAggregatedData(sealedForm url.Values) error {
 		resp.Body.Close()
 		return httpError(resp.StatusCode)
 	}
+
+	lastBackendSuccess[bPathAggStats] = time.Now()
 
 	return resp.Body.Close()
 }
@@ -270,6 +285,8 @@ func sendTopicNotice(topic string, added bool) error {
 	if respStr != "ok" {
 		return ErrBackendNotOK{Code: resp.StatusCode, Response: respStr}
 	}
+
+	lastBackendSuccess[bPathAddTopic] = time.Now()
 
 	return nil
 }

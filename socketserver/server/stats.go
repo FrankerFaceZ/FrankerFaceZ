@@ -21,6 +21,11 @@ type StatsData struct {
 
 	CachedStatsLastUpdate time.Time
 
+	Health struct {
+		IRC     bool
+		Backend map[string]time.Time
+	}
+
 	CurrentClientCount uint64
 
 	PubSubChannelCount int
@@ -76,7 +81,7 @@ func commandCounter() {
 }
 
 // StatsDataVersion is the version of the StatsData struct.
-const StatsDataVersion = 5
+const StatsDataVersion = 6
 const pageSize = 4096
 
 var cpuUsage struct {
@@ -153,6 +158,10 @@ func updatePeriodicStats() {
 
 	{
 		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime).String()
+	}
+
+	{
+		Statistics.Health.IRC = authIrcConnection.Connected()
 	}
 }
 

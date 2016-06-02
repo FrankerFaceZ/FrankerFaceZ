@@ -88,13 +88,36 @@ const AuthChannelName = "frankerfacezauthorizer"
 const AuthChannel = "#" + AuthChannelName
 const AuthCommand = "AUTH"
 
+var authIrcConnection *irc.Conn
+
 // is_init_func
 func ircConnection() {
-
 	c := irc.SimpleClient("justinfan123")
+	c.Config().Server = "irc.chat.twitch.tv"
+	authIrcConnection = c
+
+	var reconnect func(conn *irc.Conn)
+	connect := func(conn *irc.Conn) {
+		err := c.Connect()
+		if err != nil {
+			log.Println("irc: failed to connect to IRC:", err)
+			go reconnect(conn)
+		}
+	}
+
+	reconnect = func(conn *irc.Conn) {
+		time.Sleep(5 * time.Second)
+		log.Println("irc: Reconnecting…")
+		connect(conn)
+	}
 
 	c.HandleFunc(irc.CONNECTED, func(conn *irc.Conn, line *irc.Line) {
 		conn.Join(AuthChannel)
+	})
+
+	c.HandleFunc(irc.DISCONNECTED, func(conn *irc.Conn, line *irc.Line) {
+		log.Println("irc: Disconnected. Reconnecting in 5 seconds.")
+		go reconnect(conn)
 	})
 
 	c.HandleFunc(irc.PRIVMSG, func(conn *irc.Conn, line *irc.Line) {
@@ -115,11 +138,7 @@ func ircConnection() {
 		submitAuth(submittedUser, submittedChallenge)
 	})
 
-	err := c.ConnectTo("irc.chat.twitch.tv")
-	if err != nil {
-		log.Fatalln("Cannot connect to IRC:", err)
-	}
-
+	connect(c)
 }
 
 func submitAuth(user, challenge string) {
