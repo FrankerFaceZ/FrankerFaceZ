@@ -23,7 +23,7 @@ const bPathAddTopic = "/topics"
 const bPathAggStats = "/stats"
 const bPathOtherCommand = "/cmd/"
 
-type backend struct {
+type backendInfo struct {
 	HTTPClient http.Client
 	baseURL string
 	responseCache *cache.Cache
@@ -37,6 +37,9 @@ type backend struct {
 
 	lastSuccess map[string]time.Time
 }
+
+var Backend *backendInfo
+
 var backendHTTPClient http.Client
 var backendURL string
 var responseCache *cache.Cache
@@ -46,12 +49,13 @@ var addTopicURL string
 var announceStartupURL string
 
 var backendSharedKey [32]byte
-var serverID int
 
 var lastBackendSuccess map[string]time.Time
 
-func setupBackend(config *ConfigFile) {
-	serverID = config.ServerID
+func setupBackend(config *ConfigFile) *backendInfo {
+	b := new(backendInfo)
+	Backend = b
+	b.serverID = config.ServerID
 
 	backendHTTPClient.Timeout = 60 * time.Second
 	backendURL = config.BackendURL
@@ -77,6 +81,8 @@ func setupBackend(config *ConfigFile) {
 	copy(ourPrivate[:], config.OurPrivateKey)
 
 	box.Precompute(&backendSharedKey, &theirPublic, &ourPrivate)
+
+	return b
 }
 
 func getCacheKey(remoteCommand, data string) string {
