@@ -59,7 +59,7 @@ func (s *BackendSuite) TestSendRemoteCommand(c *C) {
 	headersCacheInvalid := http.Header{"FFZ-Cache": []string{"NotANumber"}}
 	headersApplicationJson := http.Header{"Content-Type": []string{"application/json"}}
 
-	backend := NewTBackendRequestChecker(c,
+	mockBackend := NewTBackendRequestChecker(c,
 		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{""}}, TestResponse1, nil},
 		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{""}}, TestResponse2, nil},
 		TExpectedBackendRequest{200, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestResponse1, nil},
@@ -73,57 +73,58 @@ func (s *BackendSuite) TestSendRemoteCommand(c *C) {
 		TExpectedBackendRequest{418, PathTestCommand1, &url.Values{"clientData": []string{TestData1}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestErrorText, headersApplicationJson},
 		TExpectedBackendRequest{200, PathTestCommand2, &url.Values{"clientData": []string{TestData3}, "authenticated": []string{"0"}, "username": []string{TestUsername}}, TestResponse1, headersCacheInvalid},
 	)
-	_, _, _ = TSetup(SetupWantBackendServer, backend)
-	defer backend.Close()
+	_, _, _ = TSetup(SetupWantBackendServer, mockBackend)
+	defer mockBackend.Close()
 
 	var resp string
 	var err error
+	b := Backend
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, AnonAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, AnonAuthInfo)
 	c.Check(resp, Equals, TestResponse1)
 	c.Check(err, IsNil)
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, AnonAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, AnonAuthInfo)
 	c.Check(resp, Equals, TestResponse2)
 	c.Check(err, IsNil)
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
 	c.Check(resp, Equals, TestResponse1)
 	c.Check(err, IsNil)
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, ValidatedAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, ValidatedAuthInfo)
 	c.Check(resp, Equals, TestResponse1)
 	c.Check(err, IsNil)
 	// cache save
-	resp, err = SendRemoteCommandCached(TestCommand2, TestData2, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommandCached(TestCommand2, TestData2, NonValidatedAuthInfo)
 	c.Check(resp, Equals, TestResponse1)
 	c.Check(err, IsNil)
 
-	resp, err = SendRemoteCommandCached(TestCommand2, TestData2, NonValidatedAuthInfo) // cache hit
+	resp, err = b.SendRemoteCommandCached(TestCommand2, TestData2, NonValidatedAuthInfo) // cache hit
 	c.Check(resp, Equals, TestResponse1)
 	c.Check(err, IsNil)
 
-	resp, err = SendRemoteCommandCached(TestCommand2, TestData2, AnonAuthInfo) // cache hit
+	resp, err = b.SendRemoteCommandCached(TestCommand2, TestData2, AnonAuthInfo) // cache hit
 	c.Check(resp, Equals, TestResponse1)
 	c.Check(err, IsNil)
 	// cache miss - data is different
-	resp, err = SendRemoteCommandCached(TestCommand2, TestData1, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommandCached(TestCommand2, TestData1, NonValidatedAuthInfo)
 	c.Check(resp, Equals, TestResponse2)
 	c.Check(err, IsNil)
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
 	c.Check(resp, Equals, "")
 	c.Check(err, Equals, ErrAuthorizationNeeded)
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
 	c.Check(resp, Equals, "")
 	c.Check(err, ErrorMatches, "backend http error: 503")
 
-	resp, err = SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand1, TestData1, NonValidatedAuthInfo)
 	c.Check(resp, Equals, "")
 	c.Check(err, ErrorMatches, TestErrorText)
 
-	resp, err = SendRemoteCommand(TestCommand2, TestData3, NonValidatedAuthInfo)
+	resp, err = b.SendRemoteCommand(TestCommand2, TestData3, NonValidatedAuthInfo)
 	c.Check(resp, Equals, "")
 	c.Check(err, ErrorMatches, "The RPC server returned a non-integer cache duration: .*")
 }
