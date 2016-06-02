@@ -29,7 +29,7 @@ type backendInfo struct {
 	baseURL       string
 	responseCache *cache.Cache
 
-	postStatsURL       string
+	postStatisticsURL  string
 	addTopicURL        string
 	announceStartupURL string
 
@@ -41,10 +41,6 @@ type backendInfo struct {
 }
 
 var Backend *backendInfo
-
-var postStatisticsURL string
-var addTopicURL string
-var announceStartupURL string
 
 var backendSharedKey [32]byte
 
@@ -59,10 +55,9 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	b.baseURL = config.BackendURL
 	b.responseCache = cache.New(60*time.Second, 120*time.Second)
 
-	announceStartupURL = fmt.Sprintf("%s%s", b.baseURL, bPathAnnounceStartup)
-	addTopicURL = fmt.Sprintf("%s%s", b.baseURL, bPathAddTopic)
-	postStatisticsURL = fmt.Sprintf("%s%s", b.baseURL, bPathAggStats)
-
+	b.announceStartupURL = fmt.Sprintf("%s%s", b.baseURL, bPathAnnounceStartup)
+	b.addTopicURL = fmt.Sprintf("%s%s", b.baseURL, bPathAddTopic)
+	b.postStatisticsURL = fmt.Sprintf("%s%s", b.baseURL, bPathAggStats)
 
 	epochTime := time.Unix(0, 0).UTC()
 	lastBackendSuccess = map[string]time.Time{
@@ -238,7 +233,7 @@ func (backend *backendInfo) SendAggregatedData(form url.Values) error {
 		return err
 	}
 
-	resp, err := backend.HTTPClient.PostForm(postStatisticsURL, sealedForm)
+	resp, err := backend.HTTPClient.PostForm(backend.postStatisticsURL, sealedForm)
 	if err != nil {
 		return err
 	}
@@ -295,7 +290,7 @@ func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 		return err
 	}
 
-	resp, err := backend.HTTPClient.PostForm(addTopicURL, sealedForm)
+	resp, err := backend.HTTPClient.PostForm(backend.addTopicURL, sealedForm)
 	if err != nil {
 		return err
 	}

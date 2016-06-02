@@ -109,7 +109,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	if err != nil {
 		log.Fatalln("Unable to seal requests:", err)
 	}
-	resp, err := Backend.HTTPClient.PostForm(announceStartupURL, announceForm)
+	resp, err := Backend.HTTPClient.PostForm(Backend.announceStartupURL, announceForm)
 	if err != nil {
 		log.Println("could not announce startup to backend:", err)
 	} else {
