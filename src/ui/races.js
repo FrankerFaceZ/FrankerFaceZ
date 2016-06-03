@@ -210,7 +210,7 @@ FFZ.prototype._build_race_popup = function(container, channel_id) {
 		}
 	}
 
-	var height = document.querySelector('.app-main.theatre') ? document.body.clientHeight - 300 : container.parentElement.offsetTop - 175,
+	var height = document.querySelector('.app-main.theatre') ? document.body.clientHeight - 300 : container.parentElement.parentElement.offsetTop - 175,
 		controller = utils.ember_lookup('controller:channel'),
 		display_name = controller && controller.get('content.id') === channel_id ? controller.get('content.display_name') : FFZ.get_capitalization(channel_id),
 		tweet = encodeURIComponent("I'm watching " + display_name + " race " + race.goal + " in " + race.game + " on SpeedRunsLive!");
@@ -267,6 +267,11 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		var tbody = popup.querySelector('tbody'),
 			timer = popup.querySelector('.heading > span'),
 			info = popup.querySelector('.heading div');
+
+		// Make sure we don't leave any tooltips lying around when we update.
+		// Of course, we should just rewrite logic to not constantly mutilate
+		// rows.
+		jQuery('.tooltip', tbody).trigger('mouseout');
 
 		tbody.innerHTML = '';
 		var entrants = [], done = true;
@@ -327,8 +332,9 @@ FFZ.prototype._update_race = function(container, not_timer) {
 			}
 		}
 
-		if ( race.time ) {
-			timer.title = 'Started at: <nobr>' + utils.sanitize(utils.parse_date(1000 * race.time).toLocaleString()) + '</nobr>';
+		if ( race.time != timer.getAttribute('data-time') ) {
+			timer.setAttribute('data-time', race.time);
+			timer.setAttribute('original-title', race.time ? 'Started at: <nobr>' + utils.sanitize(utils.parse_date(1000 * race.time).toLocaleString()) + '</nobr>' : '');
 		}
 
 		if ( ! elapsed )

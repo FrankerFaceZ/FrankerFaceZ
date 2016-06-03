@@ -1226,3 +1226,35 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark a.balloon__link:hover { color: #fff !important }
+
+
+/* Search Panel */
+
+.ffz-dark[data-current-path="user.channel.index.index"] .searchPanel { background-color: rgba(16,16,16,0.9) }
+
+.ffz-dark .searchPanel {
+	background-color: #101010;
+	color: #C3C3C3;
+}
+
+.ffz-dark .titleBar {
+	background-color: #090909;
+}
+
+.ffz-dark .searchPanel,
+.ffz-dark .titleBar,
+.ffz-dark .titleBar__back {
+	border-color: rgba(255,255,255,0.2)
+}
+
+.ffz-dark .titleBar__title { color: #999 }
+
+.ffz-dark .titleBar__back:hover,
+.ffz-dark .resultView__titlesep.isActive { background-color: #222 }
+
+.ffz-dark .resultView__item .card__info span,
+.ffz-dark .resultView__item .card__title,
+.ffz-dark .resultView__titlesep.isActive .resultView__titleMore { color: #a68ed2 }
+.ffz-dark .resultView__titlesep {
+	background-color: #090909;
+}
