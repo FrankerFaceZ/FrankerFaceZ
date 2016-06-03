@@ -33,6 +33,59 @@ FFZ.prototype.setup_profile_following = function() {
 	this._following_cache = {};
 	this._follower_cache = {};
 
+	/*try {
+		var ChannelSerializer = window.require("web-client/serializers/new-channel"),
+			BaseSerializer = window.require("web-client/serializers/application"),
+			process_channel = function(chan) {
+				var cid = chan.name;
+				return {
+					type: "new-channel",
+					id: cid,
+					attributes: chan,
+					relationships: {
+						following: {
+							links: {
+								related: "/kraken/users/" + cid + "/follows/channels?offset=0&on_site=1"
+							}
+						}
+					}
+				}
+			};
+
+		var ser = ChannelSerializer.default = BaseSerializer.default.extend({
+			normalizeFindRecordResponse: function(e, t, a, r) {
+				var l = process_channel(a);
+				return this._super(e, t, {
+					data: l
+				}, r)
+			},
+
+			normalizeResponse: function(e, t, a, r, l) {
+				if ( ! a.follows )
+					return this._super.apply(this, arguments);
+
+				f.log("Normalizing Response", [e, t, a, r, l]);
+				var i = this.extractMeta(e, t, a),
+					o = a.follows.map(function(e) {
+						return process_channel(e.channel);
+					}),
+					d = {
+						data: o,
+						meta: i
+					};
+
+				return this._super(e, t, d, r, l);
+			}
+		});
+
+		App.registry.unregister('serializer:new-channel');
+		App.registry.register('serializer:new-channel', ser);
+
+	} catch(err) {
+		this.error("Unable to modify the Ember new-channel serializer", err);
+	}*/
+
+
 	// First, we need to hook the model. This is what we'll use to grab the following notification state,
 	// rather than making potentially hundreds of API requests.
 	var Following = utils.ember_resolve('model:kraken-channel-following');

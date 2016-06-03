@@ -36,7 +36,7 @@ FFZ.settings_info.srl_races = {
 
 FFZ.ws_on_close.push(function() {
 	var controller = utils.ember_lookup('controller:channel'),
-		current_id = controller && controller.get('id'),
+		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
 
@@ -56,7 +56,7 @@ FFZ.ws_on_close.push(function() {
 
 FFZ.ws_commands.srl_race = function(data) {
 	var controller = utils.ember_lookup('controller:channel'),
-		current_id = controller && controller.get('id'),
+		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
 
@@ -92,7 +92,7 @@ FFZ.ws_commands.srl_race = function(data) {
 
 FFZ.prototype.rebuild_race_ui = function() {
 	var controller = utils.ember_lookup('controller:channel'),
-		channel_id = controller && controller.get('id'),
+		channel_id = controller && controller.get('content.id'),
 		hosted_id = controller && controller.get('hostModeTarget.id');
 
 	if ( ! this._cindex )
@@ -111,7 +111,7 @@ FFZ.prototype.rebuild_race_ui = function() {
 
 		} else {
 			if ( ! race_container ) {
-				race_container = document.createElement('span');
+				race_container = utils.createElement('span', 'balloon-wrapper inline');
 				race_container.id = 'ffz-ui-race';
 				race_container.setAttribute('data-channel', channel_id);
 
@@ -143,7 +143,7 @@ FFZ.prototype.rebuild_race_ui = function() {
 
 		} else {
 			if ( ! race_container ) {
-				race_container = document.createElement('span');
+				race_container = utils.createElement('span', 'balloon-wrapper inline');
 				race_container.id = 'ffz-ui-race';
 				race_container.setAttribute('data-channel', hosted_id);
 
@@ -191,10 +191,10 @@ FFZ.prototype._build_race_popup = function(container, channel_id) {
 		pos = el.offsetLeft + el.offsetWidth,
 		race = this.srl_races[channel_id];
 
-	var popup = document.createElement('div'), out = '';
+	var popup = utils.createElement('div', 'share balloon balloon--md balloon--up balloon--dropmenu'), out = '';
 	popup.id = 'ffz-race-popup';
 	popup.setAttribute('data-channel', channel_id);
-	popup.className = (pos >= 300 ? 'right' : 'left') + ' share dropmenu';
+	//popup.className = (pos >= 300 ? 'right' : 'left') + ' share dropmenu';
 
 	this._popup_kill = this._race_kill.bind(this);
 	this._popup_allow_parent = true;
@@ -212,13 +212,12 @@ FFZ.prototype._build_race_popup = function(container, channel_id) {
 
 	var height = document.querySelector('.app-main.theatre') ? document.body.clientHeight - 300 : container.parentElement.offsetTop - 175,
 		controller = utils.ember_lookup('controller:channel'),
-		display_name = controller ? controller.get('display_name') : FFZ.get_capitalization(channel_id),
+		display_name = controller && controller.get('content.id') === channel_id ? controller.get('content.display_name') : FFZ.get_capitalization(channel_id),
 		tweet = encodeURIComponent("I'm watching " + display_name + " race " + race.goal + " in " + race.game + " on SpeedRunsLive!");
 
-	out = '<div class="heading"><div></div><span></span></div>';
+	out = '<div class="heading"><div></div><span class="html-tooltip"></span></div>';
 	out += '<div class="table" style="max-height:' + height + 'px"><table><thead><tr><th>#</th><th>Entrant</th><th>&nbsp;</th><th>Time</th></tr></thead>';
 	out += '<tbody></tbody></table></div>';
-	out += '<div class="divider"></div>';
 
 	out += '<iframe class="twitter_share_button" style="width:130px; height:25px" src="https://platform.twitter.com/widgets/tweet_button.html?text=' + tweet + '%20Watch%20at&via=Twitch&url=http://www.twitch.tv/' + channel_id + '"></iframe>';
 
@@ -266,7 +265,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 
 	if ( popup ) {
 		var tbody = popup.querySelector('tbody'),
-			timer = popup.querySelector('.heading span'),
+			timer = popup.querySelector('.heading > span'),
 			info = popup.querySelector('.heading div');
 
 		tbody.innerHTML = '';
@@ -310,7 +309,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 				place = utils.place_string(ent.place),
 				comment = ent.comment ? utils.sanitize(ent.comment) : "";
 
-			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
+			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + (comment ? ' tooltip' : '') + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
 		}
 
 		if ( this._race_game != race.game || this._race_goal != race.goal ) {
@@ -318,9 +317,18 @@ FFZ.prototype._update_race = function(container, not_timer) {
 			this._race_goal = race.goal;
 
 			var game = utils.sanitize(race.game),
-				goal = utils.sanitize(race.goal);
+				goal = utils.unquote_attr(race.goal),
+				old_goal = popup.getAttribute('data-old-goal');
 
-			info.innerHTML = '<h2 title="' + game + '">' + game + "</h2><b>Goal: </b>" + goal;
+			if ( goal !== old_goal ) {
+				popup.setAttribute('data-old-goal', goal);
+				goal = goal ? this.render_tokens(this.tokenize_line("jtv", null, goal, true)) : '';
+				info.innerHTML = '<h2 class="tooltip" title="' + game + '">' + game + '</h2><span class="goal"><b>Goal: </b>' + goal + '</span>';
+			}
+		}
+
+		if ( race.time ) {
+			timer.title = 'Started at: <nobr>' + utils.sanitize(utils.parse_date(1000 * race.time).toLocaleString()) + '</nobr>';
 		}
 
 		if ( ! elapsed )

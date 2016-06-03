@@ -52,7 +52,7 @@ FFZ.ws_commands.update_news = function(version) {
 // About Page
 // -------------------
 
-var include_html = function(heading_text, filename) {
+var include_html = function(heading_text, filename, callback) {
         return function(view, container) {
             var heading = createElement('div', 'chat-menu-content center');
             heading.innerHTML = '<h1>FrankerFaceZ</h1>' + (heading_text ? '<div class="ffz-about-subheading">' + heading_text + '</div>' : '');
@@ -66,6 +66,8 @@ var include_html = function(heading_text, filename) {
                         jQuery(this).remove();
                         jQuery('#ffz-old-news', container).css('display', 'block');
                     });
+
+                    typeof callback === "function" && callback(view, container);
 
                 }).fail(function(data) {
                     var content = createElement('div', 'chat-menu-content menu-side-padding');
@@ -252,7 +254,7 @@ FFZ.menu_pages.about = {
         },
 
         changelog: {
-            name: "Changelog",
+            name: "Changes",
             wide: true,
             render: include_html("change log", constants.SERVER + "script/changelog.html")
         },
@@ -272,10 +274,18 @@ FFZ.menu_pages.about = {
         },*/
 
         credits: {
-            name: "Credits",
+            name: "Credit",
             wide: true,
             render: include_html("credits", constants.SERVER + "script/credits.html")
         },
+
+        /*status: {
+            name: "Status",
+            wide: true,
+            render: include_html("server status", constants.SERVER + "script/status.html", function(view, container) {
+
+            })
+        },*/
 
         debugging: {
             name: "Debug",

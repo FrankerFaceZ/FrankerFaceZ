@@ -54,12 +54,12 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .ember-chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle svg.svg-emoticons path,
-body.ffz-bttv-dark .ffz-ui-toggle svg.svg-emoticons path { fill: #888; }
+body.ffz-bttv-dark .ffz-ui-toggle svg.svg-emoticons path { fill: #555; }
 
 .ember-chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,
 .chat-container.dark .ffz-ui-toggle:hover svg.svg-emoticons path,
 .app-main.theatre .ffz-ui-toggle:hover svg.svg-emoticons path,
-body.ffz-bttv-dark .ffz-ui-toggle:hover svg.svg-emoticons path { fill: #777; }
+body.ffz-bttv-dark .ffz-ui-toggle:hover svg.svg-emoticons path { fill: #999; }
 
 
 .ffz-ui-toggle.no-emotes svg.svg-emoticons path { fill: rgba(80,0,0,0.2); }
@@ -360,50 +360,79 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 #ffz-race-popup {
 	position: absolute;
-	bottom: 0;
+	display: block;
 	background-image: url("//cdn.frankerfacez.com/script/zreknarf-bg.png");
 	background-repeat: no-repeat;
+	padding: 1rem;
 	background-position: 115% 110%;
 }
 
 #ffz-race-popup.right { right: 10px; }
 
 #ffz-race-popup .heading {
-	margin: -20px -20px 20px;
-	width: 340px; height: 65px;
+	margin: -1rem -1rem 1rem;
+	height: 65px;
 	position: relative;
 }
 
 #ffz-race-popup .heading div {
-	padding: 10px 0 0 20px;
-	max-width: 240px;
+	padding: 0 1rem;
+}
+
+#ffz-race-popup .heading h2,
+#ffz-race-popup .heading .goal {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+#ffz-race-popup .heading .goal {
+	display: block;
+	margin: calc(-1rem + 1px);
+	padding: calc(1rem - 1px);
+}
+
+#ffz-race-popup .heading .goal:hover {
+	white-space: normal;
+	background-color: rgba(255,255,255,0.9);
+	border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.theatre #ffz-race-popup .heading .goal:hover,
+.ffz-dark #ffz-race-popup .heading .goal:hover {
+	background-color: rgba(16,16,16,0.9);
+	border-color: rgba(255,255,255,0.2);
 }
 
 #ffz-race-popup .heading h2 {
+	max-width: 240px;
 	font-size: 1.5em;
 	padding-bottom: 5px;
 	display: block;
-	width: 240px;
-	max-height: 45px;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	width: 200px;
+	margin-bottom: 0;
 }
 
-#ffz-race-popup .heading span {
+#ffz-race-popup .heading > span {
 	line-height: 30px;
 	position: absolute;
-	top: 17.5px;
-	right: 20px;
+	top: 7.5px;
+	right: 1rem;
 	padding: 0 5px;
 	background: rgba(0,0,0,0.5);
 	color: #fff;
 	border-radius: 5px;
 }
 
-#ffz-race-popup .right { text-align: right; }
+#ffz-race-popup .right {
+	padding-top: 0;
+	text-align: right;
+}
 
 #ffz-race-popup .table {
 	overflow-y: auto;
+	border-bottom: 1px solid;
+	margin-bottom: 1rem;
 }
 
 #ffz-race-popup table {
@@ -587,6 +616,16 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .list-header span.right { float: right; }
 
+.ember-chat .chat-menu .list-header.sub-header {
+	border-top: none;
+	margin: 0 20px;
+	padding: 5px 0 0;
+}
+
+.ember-chat .chat-menu .list-header.sub-header + .chat-menu-content {
+	padding-top: 0;
+}
+
 .chat-menu-content.collapsable .heading span.right {
 	padding-right: 15px;
 }
@@ -633,6 +672,10 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .ffz-ui-menu-page .version-list span { float: right }
 .ffz-ui-menu-page .version-list li:not(:last-of-type) {
     border-bottom: 1px dotted rgba(127,127,127,0.5);
+}
+
+.ffz-ui-menu-page .version-list ul {
+	margin-left: 20px
 }
 
 .ffz-ui-menu-page pre {
@@ -1255,7 +1298,7 @@ img.channel_background[src="null"] { display: none; }
 .ffz-moderation-card .mod-controls:last-of-type button:last-of-type { margin-right: 0 }
 
 .ffz-moderation-card .follow-button a {
-	text-indent: -9999px;
+	font-size: 0 !important;
 	padding-right: 0 !important;
 }
 
@@ -2795,7 +2838,7 @@ body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 /* Banned and Spoiler Games */
 
 .ffz-game-spoilered .thumb .cap img,
-body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game-directory"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none }
+body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none }
 
 .ffz-game-spoilered .thumb .cap {
 	position: absolute !important; top: 0; left: 0; bottom: 0; right: 0;

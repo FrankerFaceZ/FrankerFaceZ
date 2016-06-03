@@ -1172,7 +1172,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 		var raw_color = msg.color,
 			colors = raw_color && this._handle_color(raw_color),
 
-			Layout = utils.ember_lookup('controller:layout'),
+			Layout = utils.ember_lookup('service:layout'),
 			Settings = utils.ember_lookup('controller:settings'),
 
 			is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));

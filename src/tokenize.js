@@ -476,7 +476,7 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 }
 
 
-FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links, use_bits) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
@@ -489,6 +489,9 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
         tokens = [msg];
 
 	// Standard tokenization
+	if ( use_bits && helpers && helpers.tokenizeBits )
+		tokens = helpers.tokenizeBits(tokens);
+
 	if ( helpers && helpers.linkifyMessage ) {
 		var labels = msgObject.labels || [],
 			mod_or_higher = labels.indexOf("owner") !== -1 ||

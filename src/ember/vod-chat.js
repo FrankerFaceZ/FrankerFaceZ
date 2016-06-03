@@ -277,7 +277,7 @@ FFZ.prototype._modify_vod_chat_display = function(component) {
                 return;
 
             Ember.run.next(function() {
-                setTimeout(function() {
+                (window.requestAnimationFrame||setTimeout)(function() {
                     if ( e.ffz_frozen )
                         return;
 

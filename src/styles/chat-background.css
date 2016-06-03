@@ -1,6 +1,5 @@
 /* Regular Alternating Background */
 .conversation-chat-lines > div:nth-child(2n+0):before,
-.chat-lines > div:nth-child(2n+0) > .chat-line:before,
 .chat-line:nth-child(2n+0):before {
 	background-color: rgba(0,0,0, 0.1);
 }
@@ -12,10 +11,6 @@
 
 .theatre .conversation-chat-lines > div:nth-child(2n+0):before,
 .theatre .chat-line:nth-child(2n+0):before,
-.theatre .chat-lines > div:nth-child(2n+0) > .chat-line:before,
-
-.dark .chat-lines > div:nth-child(2n+0) > .chat-line:before,
-.force-dark .chat-lines > div:nth-child(2n+0) > .chat-line:before,
 
 .dark .chat-line:nth-child(2n+0):before,
 .force-dark .chat-line:nth-child(2n+0):before {
@@ -29,7 +24,6 @@
 }
 
 
-.chat-lines > div:nth-child(2n+0) > .chat-line.whisper:nth-child(2n+0):before,
 .chat-line.whisper:nth-child(2n+0):before {
 	background-color: rgba(185, 163, 227, 0.4);
 }
@@ -39,10 +33,6 @@
 .force-dark .chat-line.whisper:before {
 	background-color: rgba(100, 65, 165, 0.2);
 }
-
-.theatre .chat-lines > div:nth-child(2n+0) > .chat-line.whisper:before,
-.dark .chat-lines > div:nth-child(2n+0) > .chat-line.whisper:before,
-.force-dark .chat-lines > div:nth-child(2n+0) > .chat-line.whisper:before,
 
 .theatre .chat-line.whisper:nth-child(2n+0):before,
 .dark .chat-line.whisper:nth-child(2n+0):before,

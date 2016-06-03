@@ -46,7 +46,7 @@ FFZ.prototype.setup_menu = function() {
 	this.log("Hooking the Ember Chat Settings view.");
 
 	var Settings = utils.ember_resolve('view:settings'),
-		Layout = utils.ember_lookup('controller:layout'),
+		Layout = utils.ember_lookup('service:layout'),
 		f = this;
 
 	if ( ! Settings )

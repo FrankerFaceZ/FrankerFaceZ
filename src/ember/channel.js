@@ -233,7 +233,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				f.rebuild_race_ui();
 
 			if ( f.settings.auto_theater ) {
-				var Layout = utils.ember_lookup('controller:layout');
+				var Layout = utils.ember_lookup('service:layout');
 				if ( Layout )
 					Layout.set('isTheatreMode', true);
 			}

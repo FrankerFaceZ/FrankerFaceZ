@@ -130,7 +130,7 @@ FFZ.prototype.setup_colors = function() {
 	this._update_colors();
 
 	// Events for rebuilding colors.
-	var Layout = utils.ember_lookup('controller:layout'),
+	var Layout = utils.ember_lookup('service:layout'),
 		Settings = utils.ember_lookup('controller:settings');
 
 	if ( Layout )
@@ -654,7 +654,7 @@ FFZ.prototype._rebuild_colors = function() {
 
 FFZ.prototype._update_colors = function(darkness_only) {
 	// Update the lines. ALL of them.
-	var Layout = utils.ember_lookup('controller:layout'),
+	var Layout = utils.ember_lookup('service:layout'),
 		Settings = utils.ember_lookup('controller:settings'),
 
 		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),

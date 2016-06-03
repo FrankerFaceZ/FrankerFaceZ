@@ -77,7 +77,7 @@ FFZ.ffz_commands.following = function(room, args) {
 
 FFZ.ws_on_close.push(function() {
 	var controller = utils.ember_lookup('controller:channel'),
-		current_id = controller && controller.get('id'),
+		current_id = controller && controller.get('content.id'),
 		current_host = controller && controller.get('hostModeTarget.id'),
 		need_update = false;
 

@@ -44,7 +44,7 @@ FFZ.settings_info.classic_player = {
 
 	on_update: function(val) {
 		utils.toggle_cls('ffz-classic-player')(val);
-		var Layout = utils.ember_lookup('controller:layout');
+		var Layout = utils.ember_lookup('service:layout');
 		if ( Layout )
 			Layout.set('PLAYER_CONTROLS_HEIGHT', val ? 32 : 0);
 	}
@@ -73,7 +73,7 @@ FFZ.prototype.setup_player = function() {
 	utils.toggle_cls('ffz-player-volume')(this.settings.player_volume_bar);
 	utils.toggle_cls('ffz-classic-player')(this.settings.classic_player);
 
-	var Layout = utils.ember_lookup('controller:layout');
+	var Layout = utils.ember_lookup('service:layout');
 	if ( Layout )
 		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
 

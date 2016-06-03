@@ -39,7 +39,7 @@ FFZ.settings_info.portrait_mode = {
 		if ( this.has_bttv )
 			return;
 
-		var Layout = utils.ember_lookup('controller:layout');
+		var Layout = utils.ember_lookup('service:layout');
 		if ( ! Layout )
 			return;
 
@@ -126,7 +126,7 @@ FFZ.settings_info.right_column_width = {
 			if ( this.has_bttv )
 				return;
 
-			var Layout = utils.ember_lookup('controller:layout');
+			var Layout = utils.ember_lookup('service:layout');
 			if ( ! Layout )
 				return;
 
@@ -151,12 +151,13 @@ FFZ.prototype.setup_layout = function() {
 	s.id = 'ffz-layout-css';
 	document.head.appendChild(s);
 
-	this.log("Hooking the Ember Layout controller.");
-	var Layout = utils.ember_lookup('controller:layout'),
+	var Layout = utils.ember_lookup('service:layout'),
 		f = this;
 
 	if ( ! Layout )
-		return;
+		return this.log("Unable to locate the Ember service:layout");
+
+	this.log("Hooking the Ember service:layout");
 
 	Layout.reopen({
 		rightColumnWidth: 340,

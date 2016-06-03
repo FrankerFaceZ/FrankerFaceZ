@@ -9,6 +9,10 @@ var sanitize_el = document.createElement('span'),
 		return sanitize_el.innerHTML;
 	},
 
+	unquote_attr = function(msg) {
+		return msg.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+	},
+
 	escape_regex = RegExp.escape || function(str) {
 		return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	},
@@ -388,6 +392,7 @@ module.exports = FFZ.utils = {
 	},
 
 	sanitize: sanitize,
+	unquote_attr: unquote_attr,
 	quote_attr: quote_attr,
 
 	date_string: function(date) {

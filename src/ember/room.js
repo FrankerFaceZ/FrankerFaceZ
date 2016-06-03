@@ -371,7 +371,8 @@ FFZ.prototype._modify_rview = function(view) {
 				s = this._$chatMessagesScroller;
 
 			Ember.run.next(function() {
-				setTimeout(function(){
+				// Trying random performance tweaks for fun and profit!
+				(window.requestAnimationFrame||setTimeout)(function(){
 					if ( e.ffz_frozen || ! s || ! s.length )
 						return;
 
@@ -1104,7 +1105,7 @@ FFZ.prototype._modify_room = function(room) {
 
 							// Now that we've reset the tokens, if there's a line for this,
 							if ( last_ban._line )
-								Ember.propertyDidChange(last_ban._line, 'tokenizedMessage');
+								Ember.propertyDidChange(last_ban._line, 'ffzTokenizedMessage');
 						}
 					}
 
@@ -1218,7 +1219,8 @@ FFZ.prototype._modify_room = function(room) {
 				// We need either the amount of chat delay past the first message, if chat_delay is on, or the
 				// amount of time from the last batch.
 				now = now || Date.now();
-				var delay = Math.max(
+				var t = this,
+					delay = Math.max(
 					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - now) : 0),
 					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - (now - (this._ffz_last_batch||0))) : 0));
 
@@ -1316,16 +1318,23 @@ FFZ.prototype._modify_room = function(room) {
 					var room = f.rooms && f.rooms[msg.room];
 					if ( room ) {
 						var chat_history = room.user_history = room.user_history || {},
-							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [];
+							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [],
+							last_history = user_history.length && user_history[user_history.length - 1],
 
-						user_history.push({
-							from: msg.from,
-							tags: {'display-name': msg.tags && msg.tags['display-name']},
-							message: msg.message,
-							cachedTokens: msg.cachedTokens,
-							style: msg.style,
-							date: msg.date
-						});
+							new_msg = {
+								from: msg.from,
+								tags: {'display-name': msg.tags && msg.tags['display-name']},
+								message: msg.message,
+								cachedTokens: msg.cachedTokens,
+								style: msg.style,
+								date: msg.date
+							};
+
+						// Preserve message order if we *just* received a ban.
+						if ( last_history && last_history.is_delete && (msg.date - last_history.date) <= 200 ) {
+							user_history.splice(user_history.length - 1, 0, new_msg);
+						} else
+							user_history.push(new_msg);
 
 						if ( user_history.length > 20 )
 							user_history.shift();

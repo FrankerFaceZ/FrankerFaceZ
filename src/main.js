@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 190,
+	major: 3, minor: 5, revision: 194,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -116,7 +116,7 @@ FFZ.prototype.get_user = function(force_reload) {
 	if ( ! force_reload && this.__user )
 		return this.__user;
 
-    var LC = FFZ.utils.ember_lookup('controller:login'),
+    var LC = FFZ.utils.ember_lookup('service:login'),
         user = LC ? LC.get('userData') : undefined;
 
     if ( ! user && window.PP && PP.login )
@@ -225,10 +225,11 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Twitch ember application is ready.
 
 	// Pages we don't want to interact with at all.
-	if ( location.hostname === 'passport.twitch.tv' || /^\/user\/two_factor/.test(location.pathname) ) {
-		this.log("Found authentication sub-page. Not initializing.");
-		return;
-	}
+	if ( location.hostname === 'passport.twitch.tv' || /^\/user\/two_factor/.test(location.pathname) )
+		return this.log("Found authentication sub-page. Not initializing.");
+
+	if ( ['im.twitch.tv', 'api.twitch.tv'].indexOf(location.hostname) !== -1 )
+		return this.log("Found banned sub-domain. Not initializing.");
 
 	// Check for the player
 	if ( location.hostname === 'player.twitch.tv' ) {

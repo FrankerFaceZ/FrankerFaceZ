@@ -17,14 +17,12 @@
 
 /* Hide First Line */
 .conversation-chat-lines > div:first-child:before,
-.chat-lines > div:first-of-type > .chat-line:before,
-.chatReplay .chat-line:first-of-type:before {
+.chat-line:first-of-type:before {
 	border-top-color: transparent !important;
 }
 
 /* Hide Last Line */
 .conversation-chat-lines > div:last-child:nth-child(odd):before,
-.chat-lines > div:last-of-type:nth-child(odd) > .chat-line:before,
-.chatReplay .chat-line:last-of-type:nth-child(odd):before {
+.chat-line:last-of-type:nth-child(odd):before {
 	border-bottom-color: transparent !important;
 }

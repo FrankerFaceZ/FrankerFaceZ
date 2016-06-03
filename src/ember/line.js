@@ -637,11 +637,15 @@ FFZ.prototype.save_aliases = function() {
 
 FFZ.prototype._modify_chat_line = function(component, is_vod) {
     var f = this,
-        Layout = utils.ember_lookup('controller:layout'),
+        Layout = utils.ember_lookup('service:layout'),
 		Settings = utils.ember_lookup('controller:settings');
 
     component.reopen({
         tokenizedMessage: function() {
+            return [];
+        }.property('msgObject.message'),
+
+        ffzTokenizedMessage: function() {
 			try {
 				return f.tokenize_chat_line(this.get('msgObject'));
 			} catch(err) {
@@ -650,7 +654,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			}
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
-        lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", function() {
+        lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", "ffzTokenizedMessage", function() {
             this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
             if ( this.get("msgObject.deleted") ) {
                 this.$(".message").replaceWith(this.buildDeletedMessageHTML());
@@ -812,7 +816,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             } else
                 output = '<span class="message">';
 
-            output += f.render_tokens(this.get('tokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4);
+            output += f.render_tokens(this.get('ffzTokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4);
 
             var old_messages = this.get('msgObject.ffz_old_messages');
             if ( old_messages && old_messages.length )
@@ -821,14 +825,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             return output + '</span>';
         },
 
-        //tagName: "li",
-
         ffzRender: function() {
             var el = this.get('element'),
                 output = this.buildSenderHTML();
-
-            if ( el.tagName === 'DIV' )
-                return this.rerender();
 
             if ( this.get('msgObject.deleted') )
                 output += this.buildDeletedMessageHTML()
@@ -868,7 +867,7 @@ FFZ.prototype._modify_chat_subline = function(component) {
             this.set('msgObject._line', null);
         },
 
-        didUpdate: function() { this.ffzRender(); },
+        //didUpdate: function() { this.ffzRender(); },
 
         click: function(e) {
             if ( ! e.target )
@@ -966,6 +965,10 @@ FFZ.prototype._modify_vod_line = function(component) {
         attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
         tokenizedMessage: function() {
+            return [];
+        }.property('msgObject.message'),
+
+        ffzTokenizedMessage: function() {
 			try {
                 return f.tokenize_vod_line(this.get('msgObject'), !(this.get('enableLinkification') || this.get('isModeratorOrHigher')));
 			} catch(err) {
@@ -992,7 +995,7 @@ FFZ.prototype._modify_vod_line = function(component) {
             return '<span clas="deleted">&lt;message deleted&gt;</span>';
         },
 
-        didUpdate: function() { this.ffzRender() },
+        //didUpdate: function() { this.ffzRender() },
         didInsertElement: function() { this.ffzRender() },
 
         ffzRender: function() {

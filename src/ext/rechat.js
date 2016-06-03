@@ -151,7 +151,7 @@ FFZ.prototype.process_rechat_line = function(line, reprocess) {
 		user_id = line.getAttribute('data-sender'),
 		room_id = line.getAttribute('data-room'),
 
-		Layout = utils.ember_lookup('controller:layout'),
+		Layout = utils.ember_lookup('service:layout'),
 		Settings = utils.ember_lookup('controller:settings'),
 		is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),
 
