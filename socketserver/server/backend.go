@@ -232,7 +232,7 @@ func (backend *backendInfo) SendAggregatedData(form url.Values) error {
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		resp.Body.Close()
 		return httpError(resp.StatusCode)
 	}
@@ -291,14 +291,12 @@ func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 	}
 	defer resp.Body.Close()
 
-	respBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	respStr := string(respBytes)
-	if respStr != "ok" {
-		return ErrBackendNotOK{Code: resp.StatusCode, Response: respStr}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		respBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return ErrBackendNotOK{Code: resp.StatusCode, Response: fmt.Sprintf("(error reading non-2xx response): %s", err.Error()}
+		}
+		return ErrBackendNotOK{Code: resp.StatusCode, Response: string(respBytes)}
 	}
 
 	backend.lastSuccessLock.Lock()
