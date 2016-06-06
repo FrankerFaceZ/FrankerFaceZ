@@ -2910,3 +2910,79 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 /* Chat Pane Overhaul */
 
 .ember-chat.ffz-chat-pane .chat-messages { bottom: 0 }
+
+/* Hide Outlines */
+
+.conversation-header,
+.conversations-list-icon,
+.toggle-notification-menu {
+	outline: none !important
+}
+
+
+/* Badges */
+
+/*.badges .badge {
+    height: 18px;
+    min-width: 18px;
+    display: inline-block;
+    vertical-align: middle;
+    float: left;
+    margin: 1px 3px 1px 0
+}
+
+.badges .broadcaster {
+    background: #e71818 url(/images/xarth/badge_broadcaster.svg);
+    background-size: 100%
+}
+
+.badges .turbo {
+    cursor: pointer;
+    background: #6441a5 url(/images/xarth/badge_turbo.svg);
+    background-size: 100%
+}
+
+.badges .subscriber {
+    cursor: pointer
+}
+
+.badges .staff {
+    background: #200f33 url(/images/xarth/badge_staff.svg);
+    background-size: 100%
+}
+
+.badges .global-moderator {
+    background: #0c6f20 url(/images/xarth/badge_globalmod.svg);
+    background-size: 100%
+}
+
+.badges .moderator {
+    background: #34ae0a url(/images/xarth/badge_mod.svg);
+    background-size: 100%
+}
+
+.badges .admin {
+    background: #faaf19 url(/images/xarth/badge_admin.svg);
+    background-size: 100%
+}*/
+
+/* Odd Badges */
+.badge.click_url { cursor: pointer }
+
+.badge.warcraft.version-alliance {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/1.png") #004094;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/4.png") 4x);
+}
+
+.badge.warcraft.version-horde {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") #ab0016;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/4.png") 4x);
+}
+
+.badge.warcraft.version-protoss {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png") #5bc7ff;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/4.png") 4x);
+}

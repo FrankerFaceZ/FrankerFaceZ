@@ -1139,6 +1139,9 @@ FFZ.prototype.parse_history = function(history, purged, room_id, delete_links, t
 		if ( msg.tags && typeof msg.tags.emotes === "string" )
 			msg.tags.emotes = utils.uncompressEmotes(msg.tags.emotes);
 
+		if ( msg.tags && typeof msg.tags.badges === "string" )
+			msg.tags.badges = utils.uncompressBadges(msg.tags.badges);
+
 		if ( ! msg.cachedTokens || ! msg.cachedTokens.length )
 			this.tokenize_chat_line(msg, true, delete_links);
 

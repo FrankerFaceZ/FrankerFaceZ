@@ -1,3 +1,3 @@
-.badges .badge:not(.subscriber) {
+.badges .badge:not(.subscriber):not(.unknown-badge) {
 	background-size: 0px;
 }

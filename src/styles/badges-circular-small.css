@@ -1,4 +1,4 @@
-.badges .badge:not(.subscriber) {
+.badges .badge:not(.subscriber):not(.unknown-badge) {
 	height: 10px;
 	min-width: 10px;
 	margin: 5px 3px 5px 0;

@@ -200,10 +200,19 @@ body.ffz-dark:not([data-page="teams#show"]),
     box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
 }
 
+.ffz-dark #flyout .content,
+.ffz-dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box { border: none }
+
+.ffz-dark .balloon--up:after { box-shadow: 1px 1px 0 rgba(255,255,255,0.2) }
+.ffz-dark .balloon--down:after { box-shadow: -1px -1px 0 rgba(255,255,255,0.2) }
+.ffz-dark .balloon--left:after { box-shadow: 1px -1px 0 rgba(255,255,255,0.2) }
+.ffz-dark .balloon--right:after { box-shadow: -1px 1px 0 rgba(255,255,255,0.2) }
+
+
 .ffz-dark .player-menu__header { color: #c3c3c3 }
 .ffz-dark .player-menu__section { border-bottom-color: rgba(255,255,255,0.2) }
 
-.ffz-dark .balloon:after { box-shadow: none }
+/*.ffz-dark .balloon:after { box-shadow: none }*/
 
 .ffz-dark .st-autocomplete-sidebar .label,
 .ffz-dark .st-autocomplete-small .label,
@@ -286,6 +295,9 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .panel-formatting .panel {
 	color: #8c8c9c;
 }
+
+.ffz-dark .balloon .balloon__link { color: #a68ed2 !important }
+.ffz-dark .balloon .balloon__link:hover { color: #fff !important }
 
 .ffz-dark .st-autocomplete-sidebar .all p:not(.active),
 .ffz-dark .st-autocomplete-small .all p:not(.active),

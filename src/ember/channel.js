@@ -18,11 +18,6 @@ FFZ.prototype.setup_channel = function() {
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
 	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats);
 
-	this.log("Creating channel style element.");
-	var s = this._channel_style = document.createElement('style');
-	s.id = "ffz-channel-css";
-	document.head.appendChild(s);
-
 	this.log("Hooking the Ember Channel Index view.");
 	var Channel = utils.ember_resolve('view:channel/index'),
 		f = this;

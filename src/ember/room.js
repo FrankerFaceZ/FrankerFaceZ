@@ -995,7 +995,7 @@ FFZ.prototype._modify_room = function(room) {
 				// If we were banned, set the state and update the UI.
 				if ( is_me ) {
 					t.set('ffz_banned', true);
-					if ( typeof duration === "number" && duration )
+					if ( typeof duration === "number" && duration && isFinite(duration) && !isNaN(duration) )
 						t.updateWait(duration)
 					else if ( duration ) {
 						t.set('slowWait', 0);
@@ -1308,6 +1308,9 @@ FFZ.prototype._modify_room = function(room) {
                 if ( msg.from === 'twitchnotify' && msg.message.indexOf('subscribed to') === -1 && msg.message.indexOf('subscribed') !== -1 ) {
                     if ( ! msg.tags )
                         msg.tags = {};
+					if ( ! msg.tags.badges )
+						msg.tags.badges = {};
+					msg.tags.badges.subscriber = '1';
                     msg.tags.subscriber = true;
                     if ( msg.labels && msg.labels.indexOf("subscriber") === -1 )
                         msg.labels.push("subscriber");

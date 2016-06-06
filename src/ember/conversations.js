@@ -138,21 +138,21 @@ FFZ.prototype._modify_conversation_window = function(component) {
 
 	component.reopen({
 		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
-			var e = this.get("otherUser"),
-				badges = f.get_other_badges(e.get('username'), null, e.get('userType'), false, e.get('hasTurbo')),
-				out = [];
-
-			// It wants slightly different output from us.
-			for(var slot in badges) {
-				var badge = badges[slot];
-				out.push({
-					classes: 'badge ' + badge.klass,
-					title: badge.title
-				});
-			}
-
-			return out;
+			return [];
 		}),
+
+		ffzHeaderBadges: Ember.computed("thread.participants", "currentUsername", function() {
+			var e = this.get("otherUser");
+			return f.get_other_badges(e.get('username'), null, e.get('userType'), false, e.get('hasTurbo'));
+		}),
+
+		ffzReplaceBadges: function() {
+			var el = this.get('element'),
+				badge_el = el && el.querySelector('.badges'),
+				badges = this.get('ffzHeaderBadges');
+
+			badge_el.innerHTML = f.render_badges(badges);
+		}.observes('ffzHeaderBadges'),
 
 		didInsertElement: function() {
 			var el = this.get('element'),
@@ -163,6 +163,8 @@ FFZ.prototype._modify_conversation_window = function(component) {
 				colors = raw_color && f._handle_color(raw_color),
 
 				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch;
+
+			this.ffzReplaceBadges();
 
 			if ( header_name && raw_color ) {
 				header_name.style.color = (is_dark ? colors[1] : colors[0]);

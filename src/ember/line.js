@@ -662,6 +662,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
                 this.$(".deleted,.message").replaceWith(this.buildMessageHTML());
         }),
 
+        ffzUpdateBadges: function() {
+            this.$(".badges").html(f.render_badges(f.get_line_badges(this.get('msgObject'))));
+        },
+
         ffzUserLevel: function() {
 			if ( this.get('isStaff') )
 				return 5;
@@ -755,7 +759,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             output += this.buildModIconsHTML();
 
             // Badges
-            output += '<span class="badges float-left">' + f.render_badges(f.get_line_badges(this.get('msgObject'), is_whisper)) + '</span>';
+            output += '<span class="badges float-left">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
 
             // Alias Support
             var alias = f.aliases[user],
@@ -915,7 +919,10 @@ FFZ.prototype._modify_chat_subline = function(component) {
                     this.sendAction("timeoutUser", {user:from});
 
             } else if ( cl.contains('badge') ) {
-                if ( cl.contains('turbo') )
+                if ( cl.contains('click_url') )
+                    window.open(e.target.getAttribute('data-url'), "_blank");
+
+                else if ( cl.contains('turbo') )
                     window.open("/products/turbo?ref=chat_badge", "_blank");
 
                 else if ( cl.contains('subscriber') )
@@ -1015,7 +1022,19 @@ FFZ.prototype._modify_vod_line = function(component) {
         },
 
         click: function(e) {
-            if ( e.target.classList.contains('delete') ) {
+            var cl = e.target.classList;
+
+            if ( cl.contains('badge') ) {
+                if ( cl.contains('click_url') )
+                    window.open(e.target.getAttribute('data-url'), "_blank");
+
+                else if ( cl.contains('turbo') )
+                    window.open("/products/turbo?ref=chat_badge", "_blank");
+
+                else if ( cl.contains('subscriber') )
+                    this.sendAction("clickSubscriber");
+
+            } else if ( cl.contains('delete') ) {
                 e.preventDefault();
                 this.sendAction("timeoutUser", this.get("msgObject.id"));
             }

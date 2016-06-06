@@ -2,16 +2,36 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
-	SPECIAL_BADGES = [
-		['staff', 'staff', 'Staff'],
-		['admin', 'admin', 'Admin'],
-		['global_mod', 'global-moderator', 'Global Moderator']
-	],
+	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
+	OTHER_KNOWN = ['turbo', 'warcraft'],
 
-	badge_css = function(badge) {
-		var out = ".badges .ffz-badge-" + badge.id + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+	BTTV_TYPE_REPLACEMENTS = {
+		'global-moderator': 'global_mod'
+	},
+
+	BADGE_POSITIONS = {
+		'broadcaster': 0,
+		'staff': 0,
+		'admin': 0,
+		'global_mod': 0,
+		'mod': 1,
+		'moderator': 1,
+		'subscriber': 10,
+	},
+
+	BADGE_NAMES = {
+		'global_mod': 'Global Moderator'
+	},
+
+	BADGE_KLASSES = {
+		'global_mod': 'global-moderator'
+	},
+
+	badge_css = function(badge, klass) {
+		klass = klass || ('ffz-badge-' + badge.id);
+		var out = ".badges ." + klass + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
 		if ( badge.alpha_image )
-			out += ".badges .badge.alpha.ffz-badge-" + badge.id + ",.ffz-transparent-badges .badges .ffz-badge-" + badge.id + ' { background-image: url("' + badge.alpha_image + '"); }';
+			out += ".badges .badge.alpha." + klass + ",.ffz-transparent-badges .badges ." + klass + ' { background-image: url("' + badge.alpha_image + '"); }';
 		return out;
 	};
 
@@ -27,7 +47,80 @@ FFZ.settings_info.show_badges = {
 	category: "Chat Appearance",
 	name: "Additional Badges",
 	help: "Show additional badges for bots, FrankerFaceZ donors, and other special users."
-	};
+};
+
+
+FFZ.settings_info.hidden_badges = {
+	type: "button",
+	value: [],
+
+	category: "Chat Appearance",
+	name: "Hidden Badges",
+	help: "Any badges added to this list will not be displayed in chat.",
+
+	on_update: function(val) {
+		if ( this.has_bttv )
+			return;
+
+		var controller = utils.ember_lookup('controller:chat'),
+			messages = controller && controller.get('currentRoom.messages');
+
+		if ( ! messages )
+			return;
+
+		for(var i=0; i < messages.length; i++)
+			messages[i]._line && messages[i]._line.ffzUpdateBadges();
+	},
+
+	method: function() {
+		var f = this,
+			service = utils.ember_lookup('service:badges'),
+			badgeCollection = service && service.badgeCollection,
+			old_val = f.settings.hidden_badges.join(", "),
+			values = [];
+
+		if ( badgeCollection ) {
+			if ( badgeCollection.global )
+				for(var badge in badgeCollection.global)
+					if ( badgeCollection.global.hasOwnProperty(badge) && badge !== 'broadcasterName' )
+						values.push('<code>' + badge + '</code>');
+
+			if ( badgeCollection.channel )
+				for(var badge in badgeCollection.channel)
+					if ( badgeCollection.channel.hasOwnProperty(badge) && badge !== 'broadcasterName' )
+						values.push('<code>' + badge + '</code>');
+		}
+
+		for(var badge_id in f.badges) {
+			if ( f.badges.hasOwnProperty(badge_id) && f.badges[badge_id].name )
+				values.push('<code>ffz-' + f.badges[badge_id].name + '</code>');
+		}
+
+		if ( this.has_bttv && window.BetterTTV ) {
+			try {
+				for(var badge_id in BetterTTV.chat.store.__badgeTypes)
+					values.push('<code>bttv-' + badge_id + '</code>');
+
+				values.push('<code>bot</code>');
+
+			} catch(err) {
+				this.error("Unable to load known BetterTTV badges.", err);
+			}
+		}
+
+		utils.prompt(
+			"Hidden Badges",
+			"Please enter a comma-separated list of badges that you would like to be hidden in chat.</p><p><b>Possible Values:</b> " + _.unique(values).join(", "),
+			old_val,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+
+				f.settings.set("hidden_badges", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)));
+			}, 600
+		)
+	}
+};
 
 
 FFZ.settings_info.sub_notice_badges = {
@@ -39,10 +132,10 @@ FFZ.settings_info.sub_notice_badges = {
     help: "Display a subscriber badge on chat messages about new subscribers.",
 
     on_update: function(val) {
-            this.toggle_style('badges-sub-notice', ! val);
-            this.toggle_style('badges-sub-notice-on', val);
-        }
-	};
+		this.toggle_style('badges-sub-notice', ! val);
+		this.toggle_style('badges-sub-notice-on', val);
+	}
+};
 
 
 FFZ.settings_info.legacy_badges = {
@@ -71,11 +164,11 @@ FFZ.settings_info.legacy_badges = {
 	},
 
 	on_update: function(val) {
-			this.toggle_style('badges-legacy', val === 3);
-			this.toggle_style('badges-legacy-mod', val !== 0);
-			this.toggle_style('badges-legacy-turbo', val > 1);
-		}
-	};
+		this.toggle_style('badges-legacy', val === 3);
+		this.toggle_style('badges-legacy-mod', val !== 0);
+		this.toggle_style('badges-legacy-turbo', val > 1);
+	}
+};
 
 
 FFZ.settings_info.transparent_badges = {
@@ -108,17 +201,17 @@ FFZ.settings_info.transparent_badges = {
 	},
 
 	on_update: function(val) {
-			if ( this.has_bttv )
-				return;
+		if ( this.has_bttv )
+			return;
 
-			this.toggle_style('badges-rounded', val === 1);
-			this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
-			this.toggle_style('badges-blank', val === 3 || val === 4);
-			this.toggle_style('badges-circular-small', val === 4);
-			this.toggle_style('badges-transparent', val === 5);
-			document.body.classList.toggle('ffz-transparent-badges', val === 5);
-		}
-	};
+		this.toggle_style('badges-rounded', val === 1);
+		this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
+		this.toggle_style('badges-blank', val === 3 || val === 4);
+		this.toggle_style('badges-circular-small', val === 4);
+		this.toggle_style('badges-transparent', val === 5);
+		document.body.classList.toggle('ffz-transparent-badges', val === 5);
+	}
+};
 
 
 // --------------------
@@ -187,7 +280,9 @@ FFZ.ws_commands.set_badge = function(data) {
 // --------------------
 
 FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
-	var data = this.users[user];
+	var data = this.users[user],
+		hidden_badges = this.settings.hidden_badges;
+
 	if ( ! data || ! data.badges || ! this.settings.show_badges )
 		return badges;
 
@@ -198,6 +293,9 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 		var badge = data.badges[slot],
 			full_badge = this.badges[badge.id] || {},
 			old_badge = badges[slot];
+
+		if ( hidden_badges.indexOf('ffz-' + full_badge.name) !== -1 )
+			continue;
 
 		if ( full_badge.visible !== undefined ) {
 			var visible = full_badge.visible;
@@ -223,6 +321,7 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 			klass: 'ffz-badge-' + badge.id,
 			title: badge.title || full_badge.title,
 			image: badge.image,
+			full_image: full_badge.image,
 			color: badge.color,
 			extra_css: badge.extra_css
 		};
@@ -234,30 +333,77 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 
 FFZ.prototype.get_line_badges = function(msg) {
 	var badges = {},
+		hidden_badges = this.settings.hidden_badges,
+
+		last_id = -1,
+		had_last = false,
         room = msg.get && msg.get('room') || msg.room,
         from = msg.get && msg.get('from') || msg.from,
         tags = msg.get && msg.get('tags') || msg.tags || {},
-        labels = msg.labels || [];
+		badge_tag = tags.badges || {},
 
-    if ( room && from === room )
-		badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
-	else {
-        for(var i=0, l = SPECIAL_BADGES.length; i < l; i++) {
-            var mb = SPECIAL_BADGES[i];
-            if ( tags['user-type'] === mb[0] || labels.indexOf(mb[0]) !== -1 ) {
-                badges[0] = {klass: mb[1], title: mb[2]}
-                break;
-            }
-        }
+		service = utils.ember_lookup('service:badges'),
+		badgeCollection = service && service.badgeCollection,
 
-        if ( tags.mod || labels.indexOf('mod') !== -1 )
-            badges[1] = {klass: 'moderator', title: 'Moderator'};
-    }
+		globals = badgeCollection && badgeCollection.global || {},
+		channel = badgeCollection && badgeCollection.channel || {};
 
-    if ( tags.subscriber || labels.indexOf('subscriber') !== -1 )
-		badges[10] = {klass: 'subscriber', title: 'Subscriber'}
-	if ( tags.turbo || labels.indexOf('turbo') !== -1 )
-		badges[15] = {klass: 'turbo', title: 'Turbo'};
+	// VoD Chat lines don't have the badges pre-parsed for some reason.
+	if ( typeof badge_tag === 'string' ) {
+		var val = badge_tag.split(',');
+		badge_tag = {};
+		for(var i=0; i < val.length; i++) {
+			var parts = val[i].split('/');
+			if ( parts.length === 2 )
+				badge_tag[parts[0]] = parts[1];
+		}
+	}
+
+	for(var badge in badge_tag) {
+		var version = badge_tag[badge];
+		if ( ! badge_tag.hasOwnProperty(badge) || ! version )
+			continue;
+
+		var versions = channel[badge] || globals[badge],
+			binfo = versions && versions.versions && versions.versions[version];
+
+		if ( from === 'sirstendec' && badge === 'turbo' && globals.warcraft ) {
+			badge = 'warcraft';
+			version = 'protoss';
+			binfo = {
+				click_action: 'visit_url',
+				click_url: 'https://www.youtube.com/watch?v=dpBM2FIHprM',
+				description: 'My life for Aiur!',
+				title: 'Protoss',
+				image_url_1x: 'https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png',
+				image_url_2x: 'https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/2.png',
+				image_url_3x: 'https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/4.png'
+			}
+		}
+
+		if ( hidden_badges.indexOf(badge) !== -1 )
+			continue;
+
+		if ( BADGE_POSITIONS.hasOwnProperty(badge) )
+			last_id = BADGE_POSITIONS[badge];
+		else {
+			last_id = had_last ? last_id + 1 : 15;
+			had_last = true;
+		}
+
+		var is_known = BADGE_POSITIONS.hasOwnProperty(badge) || OTHER_KNOWN.indexOf(badge) !== -1;
+
+		badges[last_id] = {
+			klass: (BADGE_KLASSES[badge] || badge) + (is_known ? '' : ' unknown-badge') + ' version-' + version,
+			title: binfo && binfo.title || BADGE_NAMES[badge] || badge.capitalize(),
+			click_url: binfo && binfo.click_action === 'visit_url' && binfo.click_url
+		};
+
+		if ( ! is_known && binfo ) {
+			badges[last_id].image = binfo.image_url_1x;
+			badges[last_id].srcSet = 'url("' + binfo.image_url_1x + '") 1x, url("' + binfo.image_url_2x + '") 2x, url("' + binfo.image_url_3x + '") 4x';
+		}
+	}
 
 	// FFZ Badges
 	return this.get_badges(from, room, badges, msg);
@@ -272,8 +418,8 @@ FFZ.prototype.get_other_badges = function(user_id, room_id, user_type, has_sub, 
 	else
 		for(var i=0, l = SPECIAL_BADGES.length; i < l; i++) {
 			var mb = SPECIAL_BADGES[i];
-			if ( user_type === mb[0] ) {
-				badges[0] = {klass: mb[1], title: mb[2]};
+			if ( user_type === mb ) {
+				badges[0] = {klass: BADGE_KLASSES[mb] || mb, title: BADGE_TITLES[mb] || mb.capitalize()};
 				break;
 			}
 		}
@@ -295,7 +441,11 @@ FFZ.prototype.render_badges = function(badges) {
 	var out = [];
 	for(var key in badges) {
 		var badge = badges[key],
+			klass = badge.klass,
 			css = badge.image ? 'background-image:url("' + utils.quote_attr(badge.image) + '");' : '';
+
+		if ( badge.srcSet )
+			css += 'background-image:-webkit-image-set(' + badge.srcSet + ');background-image:image-set(' + badge.srcSet + ');'
 
 		if ( badge.color )
 			css += 'background-color:' + badge.color + ';'
@@ -303,7 +453,10 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.extra_css )
 			css += badge.extra_css;
 
-		out.push('<div class="badge float-left tooltip ' + utils.quote_attr(badge.klass) + '"' + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
+		if ( badge.click_url )
+			klass += ' click_url';
+
+		out.push('<div class="badge float-left tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
 	}
 
 	return out.join("");
@@ -322,23 +475,38 @@ FFZ.prototype.bttv_badges = function(data) {
 		user = this.users[user_id],
 		badges_out = [],
 		insert_at = -1,
+
+		hidden_badges = this.settings.hidden_badges,
 		alpha = BetterTTV.settings.get('alphaTags');
 
-	if ( ! user || ! user.badges )
-		return;
 
 	if ( ! data.badges )
 		data.badges = [];
 
 	// Determine where in the list to insert these badges.
+	// Also, strip out banned badges while we're at it.
 	for(var i=0; i < data.badges.length; i++) {
-		var badge = data.badges[i];
-		if ( badge.type == "subscriber" || badge.type == "turbo" ) {
+		var badge = data.badges[i],
+			space_ind = badge.type.indexOf(' '),
+			hidden_key = BTTV_TYPE_REPLACEMENTS[badge.type] || (space_ind === -1 ? badge.type : badge.type.substr(0, space_ind));
+
+		if ( hidden_badges.indexOf(hidden_key) !== -1 ) {
+			data.badges.splice(i, 1);
+			continue;
+		}
+
+		if ( badge.type === "subscriber" || badge.type === "turbo" || badge.type.substr(0, 8) === 'warcraft' ) {
 			insert_at = i;
 			break;
 		}
 	}
 
+	// If there's no user, we're done now.
+	if ( ! user || ! user.badges )
+		return;
+
+
+	// We have a user. Start replacing badges.
 	for (var slot in user.badges) {
 		if ( ! user.badges.hasOwnProperty(slot) )
 			continue;
@@ -348,9 +516,12 @@ FFZ.prototype.bttv_badges = function(data) {
 			desc = badge.title || full_badge.title,
 			style = "";
 
+		if ( hidden_badges.indexOf('ffz-' + full_badge.name) !== -1 )
+			continue;
+
 		if ( full_badge.visible !== undefined ) {
 			var visible = full_badge.visible;
-			if ( typeof visible == "function" )
+			if ( typeof visible === "function" )
 				visible = visible.call(this, null, user_id);
 
 			if ( ! visible )
@@ -400,6 +571,8 @@ FFZ.prototype.bttv_badges = function(data) {
 		while(badges_out.length)
 			data.badges.insertAt(insert_at, badges_out.shift()[1]);
 	}
+
+
 }
 
 

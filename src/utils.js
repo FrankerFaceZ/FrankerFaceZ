@@ -76,6 +76,34 @@ var sanitize_el = document.createElement('span'),
 		return new Date(unix);
 	},
 
+	BADGE_REV = {
+		'b': 'broadcaster',
+		's': 'staff',
+		'a': 'admin',
+		'g': 'global_mod',
+		'm': 'moderator',
+		'u': 'subscriber',
+		't': 'turbo'
+	},
+
+	uncompressBadges = function(value) {
+		if ( value === true )
+			return {};
+
+		var output = {},
+			badges = value.split(","),
+			l = badges.length;
+
+		for(var i=0; i < l; i++) {
+			var parts = badges[i].split('/');
+			if ( parts.length !== 2 )
+				return {};
+
+			output[BADGE_REV[parts[0]] || parts[0].substr(1)] = parts[1];
+		}
+
+		return output;
+	},
 
 	uncompressEmotes = function(value) {
 		var output = {},
@@ -373,6 +401,7 @@ module.exports = FFZ.utils = {
 		}
 	},
 
+	uncompressBadges: uncompressBadges,
 	uncompressEmotes: uncompressEmotes,
 
 	emoji_to_codepoint: emoji_to_codepoint,
