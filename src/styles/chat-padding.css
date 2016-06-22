@@ -9,6 +9,9 @@
 }
 
 
+.ember-chat .chat-messages .chat-line.brick--marked { padding-left: 8px }
+
+
 /* Remove Extra Conversation Padding */
 .conversation-window .conversation-chat-lines {
 	padding-top: 0;

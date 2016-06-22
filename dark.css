@@ -67,7 +67,7 @@
 	color:rgb(222,222,222)!important;
 }
 
-.ffz-dark .moderation-card .button:not(.glyph-only):hover {
+.ffz-dark .moderation-card .button:not(.button--icon-only):hover {
 	color: #fff !important;
 }
 
@@ -204,9 +204,15 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box { border: none }
 
 .ffz-dark .balloon--up:after { box-shadow: 1px 1px 0 rgba(255,255,255,0.2) }
+.ffz-dark .balloon--right.balloon--down:after,
 .ffz-dark .balloon--down:after { box-shadow: -1px -1px 0 rgba(255,255,255,0.2) }
 .ffz-dark .balloon--left:after { box-shadow: 1px -1px 0 rgba(255,255,255,0.2) }
 .ffz-dark .balloon--right:after { box-shadow: -1px 1px 0 rgba(255,255,255,0.2) }
+
+.ffz-dark .balloon__footer {
+	background-color: rgb(25,25,25);
+	border: 1px solid rgba(255,255,255,0.2);
+}
 
 
 .ffz-dark .player-menu__header { color: #c3c3c3 }
@@ -349,15 +355,17 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #25252a;
 }
 
-.ffz-dark .button:not(.button--status):not(.primary) {
+.ffz-dark .message-button,
+.ffz-dark .button--text,
+.ffz-dark .button.ffz-no-bg {
 	color: #a68ed2;
 }
 
-.ffz-dark .button.glyph-only svg path {
+.ffz-dark .button.button--icon-only svg path {
 	fill: #a68ed2;
 }
 
-.ffz-dark .button.glyph-only:hover svg path {
+.ffz-dark .button.button--icon-only:hover svg path {
 	fill: #fff;
 }
 
@@ -565,10 +573,6 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .toggle-darkmode { display: none; }
 
 /* Chat Text Contrast */
-.ffz-dark .ember-chat-container.dark .chat-line,
-.ffz-dark .chat-container.dark .chat-line {
-	color: #acacbf;
-}
 
 .ffz-dark .ember-chat .chat-settings .chat-colors .chat-colors-swatch:hover,
 .ffz-dark .ember-chat .chat-settings .chat-colors .chat-colors-switch.selected {
@@ -956,6 +960,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark #mantle_skin ul.vtabs li .not_linked,
 .ffz-dark #mantle_skin ul.vtabs li.selected a,
 .ffz-dark #mantle_skin ul.submenu li a:hover,
+.ffz-dark .sort-contain .sort-options li a:hover,
 .ffz-dark #mantle_skin ul.submenu .active a {
 	color: #fff !important;
 }
@@ -1128,8 +1133,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	fill: rgba(255,255,255,0.5);
 }
 
-.ffz-dark .conversation-input-bar .emoticon-selector-box .emote-set {
-	border-color: #323232;
+.ffz-dark .emoticon-selector-box .emote-set {
+	border-color: #323232 !important;
 }
 
 .ffz-dark .conversation-input-bar .emoticon-selector-box .emoticon-grid {
@@ -1203,14 +1208,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .activity-list-end svg { fill: #474747 }
 
-.ffz-dark .activity-meta:before { background-color: #474747 }
+.ffz-dark .activity-meta-divider:before { background-color: #474747 }
 
-.ffz-dark .activity-react__item:hover {
+.ffz-dark .activity-button:hover {
 	border-color: #d5d5d5;
 	background-color: #242424;
 }
-
-.ffz-dark .activity-react__item svg.endorse-icon #head__base { fill: #fff }
 
 .ffz-dark .activity-create__actions {
 	background-color: #191919;
@@ -1218,13 +1221,13 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .activity-create,
-.ffz-dark .activity-react__item {
+.ffz-dark .activity-button {
 	border-color: #474747;
 	color: #fff !important;
 	background-color: #191919;
 }
 
-.ffz-dark .activity-meta:before,
+.ffz-dark .activity-meta-divider:before,
 .ffz-dark .activity-card {
 	border-color: #474747;
 }
@@ -1233,11 +1236,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #191919;
 }
 
-.ffz-dark .activity-meta {
+.ffz-dark .activity-meta-divider {
 	box-shadow: inset 0 -1px 0 #474747;
 }
 
 .ffz-dark a.balloon__link:hover { color: #fff !important }
+.ffz-dark .activity-meta__name { color: #ccc }
 
 
 /* Search Panel */

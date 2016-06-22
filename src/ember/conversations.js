@@ -224,7 +224,7 @@ FFZ.prototype._modify_conversation_line = function(component) {
 				colored = style ? ' has-color' : '';
 
 			if ( alias )
-				e.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
+				e.push('<span class="from ffz-alias html-tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias) + '</span>');
 			else
 				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
 

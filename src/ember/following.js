@@ -189,13 +189,13 @@ FFZ.prototype.setup_profile_following = function() {
 				this._hook_followers(followers);
 
 				var counted = false;
-				if ( following.get('isLoaded') || following.get('isLoading') ) {
+				if ( following && (following.get('isLoaded') || following.get('isLoading')) ) {
 					refresher(following);
 					count++;
 					counted = true;
 				}
 
-				if ( followers.get('isLoaded') || followers.get('isLoading') ) {
+				if ( followers && (followers.get('isLoaded') || followers.get('isLoading')) ) {
 					refresher(followers);
 					if ( ! counted )
 						count++;
@@ -285,8 +285,8 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 				return;
 
 			var actions = createElement('div', 'actions'),
-				follow = createElement('button', 'button follow'),
-				notif = createElement('button', 'button notifications'),
+				follow = createElement('button', 'button ffz-no-bg follow'),
+				notif = createElement('button', 'button ffz-no-bg notifications'),
 
 				update_follow = function() {
 					data = user_cache[user_id];
@@ -358,7 +358,7 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 
 FFZ.prototype._hook_following = function(Following) {
 	var f = this;
-    if ( Following.ffz_hooked )
+    if ( ! Following || Following.ffz_hooked )
         return;
 
 	Following.reopen({
@@ -398,7 +398,7 @@ FFZ.prototype._hook_following = function(Following) {
 
 FFZ.prototype._hook_followers = function(Followers) {
 	var f = this;
-    if ( Followers.ffz_hooked )
+    if ( ! Followers || Followers.ffz_hooked )
         return;
 
 	Followers.reopen({

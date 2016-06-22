@@ -974,12 +974,12 @@ FFZ.prototype._modify_cview = function(view) {
 			if ( current_channel ) {
 				icon.innerHTML = constants.CAMERA;
 				row.title = "Current Channel";
-				row.classList.add('tooltip');
+				row.classList.add('html-tooltip');
 
 			} else if ( host_channel ) {
 				icon.innerHTML = constants.EYE;
 				row.title = "Hosted Channel";
-				row.classList.add('tooltip');
+				row.classList.add('html-tooltip');
 			}
 
 			name_el.className = 'ffz-room';
@@ -1008,7 +1008,7 @@ FFZ.prototype._modify_cview = function(view) {
 				});
 			} else {
 				btn = document.createElement('a');
-				btn.className = 'leave-chat tooltip';
+				btn.className = 'leave-chat html-tooltip';
 				btn.innerHTML = constants.CLOSE;
 				btn.title = 'Leave Group';
 
@@ -1090,9 +1090,9 @@ FFZ.prototype._modify_cview = function(view) {
 
 
 			// Chat Room Management Button
-			link.className = 'button glyph-only';
+			link.className = 'button button--icon-only';
 			link.title = "Chat Room Management";
-			link.innerHTML = constants.ROOMS + '<span class="notifications"></span>';
+			link.innerHTML = '<figure class="icon">' + constants.ROOMS + '</figure><span class="notifications"></span>';
 
             jQuery(link).tipsy({gravity: "n", offset: 5});
 
@@ -1106,9 +1106,9 @@ FFZ.prototype._modify_cview = function(view) {
 
 			// Invite Button
 			link = document.createElement('a'),
-			link.className = 'button glyph-only tooltip invite';
+			link.className = 'button button--icon-only html-tooltip invite';
 			link.title = "Invite a User";
-			link.innerHTML = constants.INVITE;
+			link.innerHTML = '<figure class="icon">' + constants.INVITE + '</figure>';
 
 			link.addEventListener('click', function() {
 				var controller = view.get('controller');
@@ -1170,7 +1170,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 			tab.setAttribute('data-room', room_id);
 
-			tab.className = 'ffz-chat-tab tooltip';
+			tab.className = 'ffz-chat-tab html-tooltip';
 			tab.classList.toggle('current-channel', current_channel);
 			tab.classList.toggle('host-channel', host_channel);
 			tab.classList.toggle('group-chat', group);

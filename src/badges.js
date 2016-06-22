@@ -128,8 +128,8 @@ FFZ.settings_info.sub_notice_badges = {
 	value: false,
 
 	category: "Chat Appearance",
-	name: "Subscriber Notice Badges",
-    help: "Display a subscriber badge on chat messages about new subscribers.",
+	name: "Old-Style Subscriber Notice Badges",
+    help: "Display a subscriber badge on old-style chat messages about new subscribers.",
 
     on_update: function(val) {
 		this.toggle_style('badges-sub-notice', ! val);
@@ -348,8 +348,16 @@ FFZ.prototype.get_line_badges = function(msg) {
 		globals = badgeCollection && badgeCollection.global || {},
 		channel = badgeCollection && badgeCollection.channel || {};
 
+	// Whisper Chat Lines have a non-associative array for some reason.
+	if ( Array.isArray(badge_tag) ) {
+		var val = badge_tag;
+		badge_tag = {};
+		for(var i=0; i < val.length; i++)
+			badge_tag[val[i].id] = val[i].version;
+	}
+
 	// VoD Chat lines don't have the badges pre-parsed for some reason.
-	if ( typeof badge_tag === 'string' ) {
+	else if ( typeof badge_tag === 'string' ) {
 		var val = badge_tag.split(',');
 		badge_tag = {};
 		for(var i=0; i < val.length; i++) {
@@ -366,20 +374,6 @@ FFZ.prototype.get_line_badges = function(msg) {
 
 		var versions = channel[badge] || globals[badge],
 			binfo = versions && versions.versions && versions.versions[version];
-
-		if ( from === 'sirstendec' && badge === 'turbo' && globals.warcraft ) {
-			badge = 'warcraft';
-			version = 'protoss';
-			binfo = {
-				click_action: 'visit_url',
-				click_url: 'https://www.youtube.com/watch?v=dpBM2FIHprM',
-				description: 'My life for Aiur!',
-				title: 'Protoss',
-				image_url_1x: 'https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png',
-				image_url_2x: 'https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/2.png',
-				image_url_3x: 'https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/4.png'
-			}
-		}
 
 		if ( hidden_badges.indexOf(badge) !== -1 )
 			continue;
@@ -456,7 +450,7 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.click_url )
 			klass += ' click_url';
 
-		out.push('<div class="badge float-left tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
+		out.push('<div class="badge float-left html-tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
 	}
 
 	return out.join("");

@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 203,
+	major: 3, minor: 5, revision: 216,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -228,7 +228,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 	if ( location.hostname === 'passport.twitch.tv' || /^\/user\/two_factor/.test(location.pathname) )
 		return this.log("Found authentication sub-page. Not initializing.");
 
-	if ( ['im.twitch.tv', 'api.twitch.tv'].indexOf(location.hostname) !== -1 )
+	if ( ['im.twitch.tv', 'api.twitch.tv'].indexOf(location.hostname) !== -1 || /^\/products\//.test(location.pathname) )
 		return this.log("Found banned sub-domain. Not initializing.");
 
 	// Check for the player

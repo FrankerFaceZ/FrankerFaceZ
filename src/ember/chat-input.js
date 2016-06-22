@@ -121,6 +121,35 @@ FFZ.settings_info.input_complete_emotes = {
 }
 
 
+FFZ.settings_info.input_complete_aliases = {
+    type: "select",
+    options: {
+        0: "Disabled",
+        1: "By Name or Alias",
+        2: "Aliases Only"
+    },
+
+    value: 1,
+
+    process_value: function(val) {
+        if ( typeof val === 'string' )
+            return parseInt(val) || 0;
+        return val;
+    },
+
+    category: "Chat Input",
+    no_bttv: true,
+
+    name: "Tab-Complete User Aliases",
+    help: "Use tab completion to complete aliases you've given to users rather than their username.",
+
+    on_update: function(val) {
+        if ( this._inputv )
+            Ember.propertyDidChange(this._inputv, 'ffz_name_suggestions');
+    }
+}
+
+
 FFZ.settings_info.input_complete_name_at = {
     type: "boolean",
     value: true,
@@ -479,8 +508,11 @@ FFZ.prototype._modify_chat_input = function(component) {
                 ind = this.get('ffz_partial_word_start'),
                 text = this.get('textareaValue'),
 
-                content = ((f.settings.input_complete_name_at && item.type === 'user' && this.get('ffz_partial_word').charAt(0) === '@') ? '@' : '') +
-                            ((item.command_content && text.charAt(0) === '/' ?
+                first_char = text.charAt(0),
+                is_cmd = first_char === '/' || first_char === '.',
+
+                content = ((f.settings.input_complete_name_at && ! is_cmd && item.type === 'user' && this.get('ffz_partial_word').charAt(0) === '@') ? '@' : '') +
+                            ((item.command_content && is_cmd ?
                                 item.command_content : item.content) || item.label),
 
                 trail = text.substr(ind + this.get('ffz_partial_word').length),
@@ -664,26 +696,50 @@ FFZ.prototype._modify_chat_input = function(component) {
 
 
             // Always include Users
-            var user_output = {};
+            var user_output = {},
+                alias_setting = f.settings.input_complete_aliases;
+
             for(var i=0; i < suggestions.length; i++) {
                 var suggestion = suggestions[i],
-                    name = suggestion.id;
+                    name = suggestion.id,
+                    alias = f.aliases[name];
 
-                if ( user_output[name] ) {
+                if ( user_output[name] && ! user_output[name].is_alias ) {
                     var token = user_output[name];
                     token.whispered |= suggestion.whispered;
                     if ( suggestion.timestamp > token.timestamp )
                         token.timestamp = suggestion.timestamp;
 
-                } else
-                    output.push(user_output[name] = {
-                        type: "user",
-                        command_content: name,
-                        label: FFZ.get_capitalization(name),
-                        whispered: suggestion.whispered,
-                        timestamp: suggestion.timestamp || new Date(0),
-                        info: 'User'
-                    });
+                } else {
+                    if ( alias_setting !== 2 )
+                        output.push(user_output[name] = {
+                            type: "user",
+                            command_content: name,
+                            label: FFZ.get_capitalization(name),
+                            whispered: suggestion.whispered,
+                            timestamp: suggestion.timestamp || new Date(0),
+                            info: 'User',
+                            is_alias: false
+                        });
+
+                    if ( alias && alias_setting ) {
+                        if ( user_output[alias] && user_output[alias].is_alias ) {
+                            var token = user_output[name];
+                            token.whispered |= suggestion.whispered;
+                            token.timestamp = Math.max(token.timestamp, suggestion.timestamp);
+
+                        } else if ( ! user_output[alias] )
+                            output.push(user_output[alias] = {
+                                type: "user",
+                                command_content: name,
+                                label: alias,
+                                whispered: suggestion.whispered,
+                                timestamp: suggestion.timestamp || new Date(0),
+                                info: 'User Alias',
+                                is_alias: true
+                            });
+                    }
+                }
             }
 
             return output;

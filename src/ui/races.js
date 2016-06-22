@@ -116,7 +116,7 @@ FFZ.prototype.rebuild_race_ui = function() {
 				race_container.setAttribute('data-channel', channel_id);
 
 				var btn = document.createElement('span');
-				btn.className = 'button drop action';
+				btn.className = 'button button--text button--dropmenu';
 				btn.title = "SpeedRunsLive Race";
 				btn.innerHTML = '<span class="logo"></span>';
 
@@ -148,7 +148,7 @@ FFZ.prototype.rebuild_race_ui = function() {
 				race_container.setAttribute('data-channel', hosted_id);
 
 				var btn = document.createElement('span');
-				btn.className = 'button drop action';
+				btn.className = 'button button--text button--dropmenu';
 				btn.title = "SpeedRunsLive Race";
 				btn.innerHTML = '<span class="logo"></span>';
 
@@ -271,7 +271,7 @@ FFZ.prototype._update_race = function(container, not_timer) {
 		// Make sure we don't leave any tooltips lying around when we update.
 		// Of course, we should just rewrite logic to not constantly mutilate
 		// rows.
-		jQuery('.tooltip', tbody).trigger('mouseout');
+		jQuery('.html-tooltip', tbody).trigger('mouseout');
 
 		tbody.innerHTML = '';
 		var entrants = [], done = true;
@@ -312,23 +312,23 @@ FFZ.prototype._update_race = function(container, not_timer) {
 				hitbox_link = ent.hitbox ? '<a target="_new" class="hitbox" href="http://www.hitbox.tv/' + utils.sanitize(ent.hitbox) + '"></a>' : '',
 				time = elapsed ? utils.time_to_string(ent.time||elapsed) : "",
 				place = utils.place_string(ent.place),
-				comment = ent.comment ? utils.sanitize(ent.comment) : "";
+				comment = ent.comment ? utils.quote_san(ent.comment) : "";
 
-			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + (comment ? ' tooltip' : '') + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
+			tbody.innerHTML += '<tr' + (comment ? ' title="' + comment + '"' : '') + ' class="' + ent.state + (comment ? ' html-tooltip' : '') + '"><td>' + place + '</td><td>' + name + '</td><td>' + twitch_link + hitbox_link + '</td><td class="time">' + (ent.state == "forfeit" ? "Forfeit" : time) + '</td></tr>';
 		}
 
 		if ( this._race_game != race.game || this._race_goal != race.goal ) {
 			this._race_game = race.game;
 			this._race_goal = race.goal;
 
-			var game = utils.sanitize(race.game),
+			var game = utils.quote_san(race.game),
 				goal = utils.unquote_attr(race.goal),
 				old_goal = popup.getAttribute('data-old-goal');
 
 			if ( goal !== old_goal ) {
 				popup.setAttribute('data-old-goal', goal);
 				goal = goal ? this.render_tokens(this.tokenize_line("jtv", null, goal, true)) : '';
-				info.innerHTML = '<h2 class="tooltip" title="' + game + '">' + game + '</h2><span class="goal"><b>Goal: </b>' + goal + '</span>';
+				info.innerHTML = '<h2 class="html-tooltip" title="' + game + '">' + game + '</h2><span class="goal"><b>Goal: </b>' + goal + '</span>';
 			}
 		}
 

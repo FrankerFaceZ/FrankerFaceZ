@@ -1,0 +1,19 @@
+.chat-lines .chat-line[data-sender="{user_id}"]:before {
+	background-color: rgba(0,127,255, 0.2);
+}
+
+.chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0):before {
+	background-color: rgba(0,127,255, 0.4);
+}
+
+.theatre .chat-lines .chat-line[data-sender="{user_id}"]:before,
+.dark .chat-lines .chat-line[data-sender="{user_id}"]:before,
+.force-dark .chat-lines .chat-line[data-sender="{user_id}"]:before {
+	background-color: rgba(0,63,127, 0.2);
+}
+
+.theatre .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0):before,
+.dark .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0):before,
+.force-dark .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0):before {
+	background-color: rgba(0,63,127, 0.4);
+}

@@ -111,7 +111,6 @@ FFZ.prototype.setup_channel = function() {
 					var game = data.stream.game || (data.stream.channel && data.stream.channel.game);
 					if ( game ) {
 						t.set('content.game', game);
-						t.set('content.rollbackData.game', game);
 					}
 
 					if ( data.stream.channel ) {
@@ -228,9 +227,9 @@ FFZ.prototype._modify_cindex = function(view) {
 				f.rebuild_race_ui();
 
 			if ( f.settings.auto_theater ) {
-				var Layout = utils.ember_lookup('service:layout');
-				if ( Layout )
-					Layout.set('isTheatreMode', true);
+				var player = f.players && f.players[id] && f.players[id].get('player');
+				if ( player )
+					player.setTheatre(true);
 			}
 
 			this.$().on("click", ".ffz-creative-tag-link", function(e) {
@@ -296,7 +295,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( ! btn ) {
 						btn = document.createElement('span');
 						btn.id = 'ffz-ui-host-button';
-						btn.className = 'button action';
+						btn.className = 'button button--text';
 
 						btn.addEventListener('click', this.ffzClickHost.bind(this, false));
 
@@ -336,7 +335,7 @@ FFZ.prototype._modify_cindex = function(view) {
 					if ( ! btn ) {
 						btn = document.createElement('span');
 						btn.id = 'ffz-ui-host-button';
-						btn.className = 'button action';
+						btn.className = 'button button--text';
 
 						btn.addEventListener('click', this.ffzClickHost.bind(this, true));
 

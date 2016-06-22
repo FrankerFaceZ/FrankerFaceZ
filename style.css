@@ -325,7 +325,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	color: #a68ed2;
 }
 
-.ffz-theater-stats .app-main.theatre .button.glyph-only svg path {
+.ffz-theater-stats .app-main.theatre .button.button--icon-only svg path {
 	fill: #a68ed2;
 }
 
@@ -335,6 +335,8 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 
 /* SRL Race Support */
+
+#ffz-ui-host-button { vertical-align: middle }
 
 #ffz-following-popup.right {
 	right: 0;
@@ -354,6 +356,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 #ffz-ui-race .button span.logo {
 	padding-left: 44px;
+	margin-bottom: -10px;
 	background-image: url("//cdn.frankerfacez.com/script/srl_button.png");
 }
 
@@ -1288,7 +1291,10 @@ img.channel_background[src="null"] { display: none; }
 .ffz-moderation-card button {
 	margin: 0;
 	padding: 0 5px;
+	color: #6441a4;
 }
+
+.ffz-moderation-card .mod-controls button figure { padding: 0 }
 
 .ember-chat .ffz-moderation-card .mod-controls button {
 	width: auto;
@@ -1306,10 +1312,13 @@ img.channel_background[src="null"] { display: none; }
 	padding-right: 0 !important;
 }
 
-.ffz-moderation-card .button.glyph-only { padding: 0 !important }
+.ffz-moderation-card .button.button--icon-only {
+	padding: 0 !important;
+	margin-right: 5px;
+}
 
-.ffz-moderation-card button:not(.glyph-only):hover,
-.ffz-moderation-card button:not(.glyph-only):focus {
+.ffz-moderation-card button:not(.button--icon-only):hover,
+.ffz-moderation-card button:not(.button--icon-only):focus {
 	color: #fff;
 	background-color: rgba(117,80,186, 1);
 }
@@ -1403,6 +1412,13 @@ img.channel_background[src="null"] { display: none; }
 
 
 /* Chat Rows */
+
+.theatre .conversation-window .conversation-chat-line,
+.dark .chat-line,
+.force-dark .chat-line,
+.theatre .chat-line {
+	color: #acacbf;
+}
 
 .ffz-alias-italics .ffz-alias { font-style: italic; }
 
@@ -1720,7 +1736,7 @@ th.ffz-row-switch {
 	margin-right: 4px;
 }
 
-#ffz-group-tabs .button.glyph-only svg {
+#ffz-group-tabs .button.button--icon-only svg {
 	margin: 6px 0;
 }
 
@@ -2214,6 +2230,14 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue.ffz-dark .archives-contain,
 .ffz-no-blue #content .turbo_landing {
 	background-color: #191919;
+}
+
+.ffz-no-blue .theatre .conversation-input-bar textarea,
+.ffz-no-blue .theatre input.text,
+.ffz-no-blue .theatre input.countries-input,
+.ffz-no-blue .theatre .recurly input,
+.ffz-no-blue .recurly .theatre input {
+	background-color: #202020;
 }
 
 .ffz-no-blue .warp__anchor,
@@ -2966,6 +2990,14 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
     background-size: 100%
 }*/
 
+/* Button Fix */
+
+.ffz-no-bg {
+	background: transparent;
+
+}
+
+
 /* Odd Badges */
 .badge.click_url { cursor: pointer }
 
@@ -2981,8 +3013,36 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/4.png") 4x);
 }
 
-.badge.warcraft.version-protoss {
-	background: url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png") #5bc7ff;
-	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/4.png") 4x);
-	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/protoss/4.png") 4x);
+
+/* New Resub Banner */
+
+.top-notification--resub {
+	position: relative;
+	z-index: 10;
+	pointer-events: none;
+}
+
+.top-notification--resub > * {
+	pointer-events: auto;
+}
+
+.sticky-message {
+	padding: 5px 10px;
+}
+
+.chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons {
+	display: block !important;
+	position: absolute;
+	top: 2px;
+	bottom: 1px;
+	padding: 4px 5px 0;
+	left: 0;
+	z-index: 99;
+	background-color: rgba(255,255,255,0.8);
+}
+
+.theatre .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons,
+.dark .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons,
+.force-dark .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons {
+	background-color: rgba(0,0,0,0.8);
 }

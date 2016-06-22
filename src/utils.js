@@ -29,6 +29,10 @@ var sanitize_el = document.createElement('span'),
 		return msg.replace(R_AMP, "&amp;").replace(R_QUOTE, "&quot;").replace(R_SQUOTE, "&apos;").replace(R_LT, "&lt;").replace(R_GT, "&gt;");
 	},
 
+	quote_san = function(msg) {
+		return sanitize(msg).replace(R_QUOTE, "&quot;").replace(R_SQUOTE, "&apos;");
+	},
+
 	HUMAN_NUMBERS = [
 		"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"
 	],
@@ -333,6 +337,10 @@ module.exports = FFZ.utils = {
 
         closer = show_modal(contents, cb, width);
 
+		try {
+			input.focus();
+		} catch(err) { }
+
         form.addEventListener('submit', function(e) { e.preventDefault(); cb(true); return false });
         okay_btn.addEventListener('click', function(e) { e.preventDefault(); cb(true); return false });
         close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
@@ -423,6 +431,7 @@ module.exports = FFZ.utils = {
 	sanitize: sanitize,
 	unquote_attr: unquote_attr,
 	quote_attr: quote_attr,
+	quote_san: quote_san,
 
 	date_string: function(date) {
 		return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate();

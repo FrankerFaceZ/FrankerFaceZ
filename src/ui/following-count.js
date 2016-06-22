@@ -69,7 +69,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 	setTimeout(this._install_following_tooltips.bind(this), 2000);
 
 	// If we don't have Ember, no point in trying this stuff.
-	if ( ! has_ember )
+	if ( this.is_dashboard || ! has_ember )
 		return this._following_get_me();
 
 	this.log("Connecting to Live Streams model.");
@@ -163,10 +163,10 @@ FFZ.prototype._update_following_count = function() {
 
 		f = this;
 
-    if ( HostLive && document.body.getAttribute('data-current-path').indexOf('directory.following') !== -1 )
+    if ( ! this.is_dashboard && HostLive && document.body.getAttribute('data-current-path').indexOf('directory.following') !== -1 )
         HostLive.load();
 
-	if ( Live )
+	if ( ! this.is_dashboard && Live )
 		Live.load();
 	else {
 		var u = this.get_user();

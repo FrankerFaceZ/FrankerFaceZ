@@ -16,3 +16,11 @@
 .chat-history .chat-line:before {
 	top: 0; bottom: 0;
 }
+
+.chat-line.brick--marked {
+	box-shadow: none;
+}
+
+.chat-line.brick--marked:before {
+	box-shadow: 3px 0 0 #6441a4 inset;
+}

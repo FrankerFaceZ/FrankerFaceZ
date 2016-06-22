@@ -3,6 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	constants = require("./constants"),
 	helpers,
 	conv_helpers,
+	emote_helpers,
 
     EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
 
@@ -158,6 +159,12 @@ FFZ.prototype.setup_tokenization = function() {
 		conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
 	} catch(err) {
 		this.error("Unable to get conversation helper functions.", err);
+	}
+
+	try {
+		emote_helpers = window.require && window.require("web-client/utilities/tmi-emotes").default;
+	} catch(err) {
+		this.error("Unable to get tmi-emotes helper function.", err);
 	}
 
 	this.log("Hooking Ember chat line helpers.");
@@ -394,6 +401,9 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 
 	if ( conv_helpers && conv_helpers.checkActionMessage )
 		tokens = conv_helpers.checkActionMessage(tokens);
+
+	if ( emote_helpers )
+		emotes = emote_helpers(emotes);
 
 	// Standard Tokenization
 	if ( helpers && helpers.linkifyMessage )
@@ -775,8 +785,8 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 	}
 
 	else if ( token.type === "deleted" )
-		return '<span class="deleted-word tooltip" title="' + utils.quote_attr(token.text) + '" data-text="' + utils.sanitize(token.text) + '">&times;&times;&times;</span>';
-		//return `<span class="deleted-word tooltip" title="${utils.quote_attr(token.text)}" data-text="${utils.sanitize(token.text)}">&times;&times;&times;</span>`;
+		return '<span class="deleted-word html-tooltip" title="' + utils.quote_san(token.text) + '" data-text="' + utils.sanitize(token.text) + '">&times;&times;&times;</span>';
+		//return `<span class="deleted-word html-tooltip" title="${utils.quote_attr(token.text)}" data-text="${utils.sanitize(token.text)}">&times;&times;&times;</span>`;
 
 	else if ( token.type === "mention" )
 		return '<span class="' + (token.isOwnMessage ? 'mentioning' : 'mentioned') + '">' + utils.sanitize(token.user) + '</span>';

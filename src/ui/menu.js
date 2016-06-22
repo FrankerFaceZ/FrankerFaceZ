@@ -612,9 +612,9 @@ FFZ.menu_pages.channel = {
 						unlock_text.innerHTML = "Subscribe to unlock Emoticons";
 						nonsub_message.appendChild(unlock_text);
 
-						sub_link.className = "action subscribe-button button primary";
+						sub_link.className = "action js-sub-button subscribe-button button button--purchase";
 						sub_link.href = product.get("product_url");
-						sub_link.innerHTML = '<span class="subscribe-text">Subscribe</span><span class="subscribe-price">' + product.get("price") + '</span>';
+						sub_link.innerHTML = '<span class="subscribe-text">Subscribe</span><span class="subscribe-price button__num-block">' + product.get("price") + '</span>';
 						nonsub_message.appendChild(sub_link);
 
 						inner.appendChild(sub_message);

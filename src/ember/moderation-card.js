@@ -1,6 +1,7 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
+	styles = require("../compiled_styles"),
 	helpers,
 
 	TO_REG = /^\/t(?:imeout)? +([^ ]+)(?: +(\d+)(?: +(.+))?)?$/,
@@ -66,24 +67,112 @@ FFZ.basic_settings.chat_hover_pause = {
 };
 
 
-FFZ.settings_info.chat_hover_pause = {
+FFZ.settings_info.highlight_messages_with_mod_card = {
 	type: "boolean",
 	value: false,
 
 	no_bttv: true,
+	category: "Chat Moderation",
+	name: "Highlight Messages with Mod Card Open",
+	help: "Highlight a user's messages in chat when their moderation card is open.",
+
+	on_update: function(val) {
+		this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators || val));
+
+		if ( ! this._mod_card )
+			return;
+
+		if ( val )
+			utils.update_css(this._chat_style, 'mod-card-highlight', styles['chat-user-bg'].replace(/{user_id}/g, this._mod_card.get('cardInfo.user.id')));
+		else
+			utils.update_css(this._chat_style, 'mod-card-highlight');
+	}
+};
+
+
+FFZ.settings_info.chat_mod_icon_visibility = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Enabled",
+		2: "When Ctrl is Held",
+		3: "When " + constants.META_NAME + " is Held",
+		4: "When Alt is Held",
+		5: "When Shift is Held"
+	},
+
+	value: function() {
+		var settings = utils.ember_lookup('controller:settings');
+		return (settings && settings.get('settings.showModIcons')) ? 1 : 0;
+	},
+
+	process_value: function(val) {
+		if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	no_bttv: true,
 
 	category: "Chat Moderation",
-	name: "Pause Chat Scrolling on Mouse Hover",
-	help: "Automatically prevent the chat from scrolling when moving the mouse over it to prevent moderation mistakes and link misclicks.",
+	name: "Display In-Line Mod Icons",
+	help: "Choose when you should see in-line moderation icons in chat.",
+
+	on_update: function(val) {
+		var settings = utils.ember_lookup('controller:settings');
+		if ( settings )
+			settings.set('settings.showModIcons', val === 1);
+	}
+}
+
+
+FFZ.settings_info.chat_hover_pause = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "On Hover",
+		2: "When Ctrl is Held",
+		3: "When " + constants.META_NAME + " is Held",
+		4: "When Alt is Held",
+		5: "When Shift is Held",
+
+		6: "Ctrl or Hover",
+		7: constants.META_NAME + " or Hover",
+		8: "Alt or Hover",
+		9: "Shift or Hover"
+	},
+	value: 0,
+
+	process_value: function(val) {
+		if ( val === true )
+			return 1;
+		else if ( val === false )
+			return 0;
+		else if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	no_bttv: true,
+
+	category: "Chat Moderation",
+	name: "Pause Chat Scrolling",
+	help: "Automatically prevent the chat from scrolling when moving the mouse over it or holding Ctrl to prevent moderation mistakes and link misclicks.",
 
 	on_update: function(val) {
 			if ( ! this._roomv )
 				return;
 
+			this._roomv.ffzDisableFreeze();
+
+			// Remove the old warning to make sure the label updates.
+			var el = this._roomv.get('element'),
+				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+			if ( warning )
+				warning.parentElement.removeChild(warning);
+
 			if ( val )
 				this._roomv.ffzEnableFreeze();
-			else
-				this._roomv.ffzDisableFreeze();
 		}
 	};
 
@@ -495,6 +584,17 @@ FFZ.prototype.setup_mod_card = function() {
 	} catch(err) { }
 
 
+	this.log("Listening to the Settings controller to catch mod icon state changes.");
+	var f = this,
+		Settings = utils.ember_lookup('controller:settings');
+
+	if ( Settings )
+		Settings.addObserver('settings.showModIcons', function() {
+			if ( Settings.get('settings.showModIcons') )
+				f.settings.set('chat_mod_icon_visibility', 1);
+		});
+
+
 	this.log("Modifying Mousetrap stopCallback so we can catch ESC.");
 	var orig_stop = Mousetrap.stopCallback;
 	Mousetrap.stopCallback = function(e, element, combo) {
@@ -511,14 +611,17 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 	this.log("Hooking the Ember Moderation Card view.");
-	var Card = utils.ember_resolve('component:chat/moderation-card'),
-		f = this;
+	var Card = utils.ember_resolve('component:chat/moderation-card');
 
 	Card.reopen({
 		ffzForceRedraw: function() {
 			this.rerender();
 			if ( f.settings.mod_card_history )
 				this.ffzRenderHistory();
+
+			// Highlight this user's chat messages.
+			if ( f.settings.highlight_messages_with_mod_card )
+				utils.update_css(f._chat_style, 'mod-card-highlight', styles['chat-user-bg'].replace(/{user_id}/g, this.get('cardInfo.user.id')));
 
 		}.observes("cardInfo.isModeratorOrHigher", "cardInfo.user.id"),
 
@@ -528,12 +631,12 @@ FFZ.prototype.setup_mod_card = function() {
 			if ( ! info )
 				return;
 
-			var out = '<span class="stat tooltip" title="Total Views">' + constants.EYE + ' ' + utils.number_commas(this.get('cardInfo.user.views') || 0) + '</span>',
+			var out = '<span class="stat html-tooltip" title="Total Views">' + constants.EYE + ' ' + utils.number_commas(this.get('cardInfo.user.views') || 0) + '</span>',
 				since = utils.parse_date(this.get('cardInfo.user.created_at') || ''),
 				followers = this.get('cardInfo.user.ffz_followers');
 
 			if ( typeof followers === "number" ) {
-				out += '<span class="stat tooltip" title="Followers">' + constants.HEART + ' ' + utils.number_commas(followers || 0) + '</span>';
+				out += '<span class="stat html-tooltip" title="Followers">' + constants.HEART + ' ' + utils.number_commas(followers || 0) + '</span>';
 
 			} else if ( followers === undefined ) {
 				var t = this;
@@ -550,7 +653,7 @@ FFZ.prototype.setup_mod_card = function() {
 				var now = Date.now() - (f._ws_server_offset || 0),
 					age = Math.floor((now - since.getTime()) / 1000);
 				if ( age > 0 ) {
-					out += '<span class="stat tooltip" title="Member Since: ' + (age > 86400 ? since.toLocaleDateString() : since.toLocaleString()) + '">' + constants.CLOCK + ' ' + utils.human_time(age, 10) + '</span>';
+					out += '<span class="stat html-tooltip" title="Member Since: ' + utils.quote_san(age > 86400 ? since.toLocaleDateString() : since.toLocaleString()) + '">' + constants.CLOCK + ' ' + utils.human_time(age, 10) + '</span>';
 				}
 			}
 
@@ -567,6 +670,9 @@ FFZ.prototype.setup_mod_card = function() {
 		willDestroy: function() {
 			if ( f._mod_card === this )
 				f._mod_card = undefined;
+
+			utils.update_css(f._chat_style, 'mod-card-highlight');
+
 			this._super();
 		},
 
@@ -594,6 +700,8 @@ FFZ.prototype.setup_mod_card = function() {
 					user_id = controller.get('cardInfo.user.id'),
 					alias = f.aliases[user_id],
 
+					handle_key,
+
 					ban_reason = function() {
 						return ban_reasons && ban_reasons.value ? ' ' + ban_reasons.value : "";
 					};
@@ -601,6 +709,9 @@ FFZ.prototype.setup_mod_card = function() {
 
 				this.ffz_room_id = room_id;
 
+				// Highlight this user's chat messages.
+				if ( f.settings.highlight_messages_with_mod_card )
+					utils.update_css(f._chat_style, 'mod-card-highlight', styles['chat-user-bg'].replace(/{user_id}/g, user_id));
 
 				// Action Override
 				this.set('banAction', function(e) {
@@ -677,7 +788,7 @@ FFZ.prototype.setup_mod_card = function() {
 						},
 
 						add_btn_make = function(cmd) {
-							var btn = document.createElement('button'),
+							var btn = utils.createElement('button', 'button ffz-no-bg'),
 								segment = cmd.split(' ', 1)[0],
 								title = cmds[segment] > 1 ? cmd.split(' ', cmds[segment]) : [segment];
 
@@ -686,7 +797,6 @@ FFZ.prototype.setup_mod_card = function() {
 
 							title = _.map(title, function(s){ return s.capitalize() }).join(' ');
 
-							btn.className = 'button';
 							btn.innerHTML = utils.sanitize(title);
 							btn.title = utils.sanitize(cmd.replace(/{user}/g, controller.get('cardInfo.user.id') || '{user}'));
 
@@ -718,7 +828,7 @@ FFZ.prototype.setup_mod_card = function() {
 				if ( f.settings.mod_card_hotkeys ) {
 					el.classList.add('no-mousetrap');
 
-					el.addEventListener('keyup', function(e) {
+					handle_key = function(e) {
 						var key = e.keyCode || e.which,
 							user_id = controller.get('cardInfo.user.id'),
 							is_mod = controller.get('cardInfo.isModeratorOrHigher'),
@@ -753,7 +863,9 @@ FFZ.prototype.setup_mod_card = function() {
 							return;
 
 						t.get('closeAction')();
-					});
+					};
+
+					el.addEventListener('keyup', handle_key);
 				}
 
 
@@ -773,13 +885,13 @@ FFZ.prototype.setup_mod_card = function() {
 
 					btn_make = function(timeout) {
 							var btn = document.createElement('button')
-							btn.className = 'button';
+							btn.className = 'button ffz-no-bg';
 							btn.innerHTML = utils.duration_string(timeout);
 							btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
 
 							if ( f.settings.mod_card_hotkeys && timeout === 600 )
 								btn.title = "(T)" + btn.title.substr(1);
-							else if ( f.settings.mod_card_hotkeys &&  timeout === 1 )
+							else if ( f.settings.mod_card_hotkeys && timeout === 1 )
 								btn.title = "(P)urge - " + btn.title;
 
 							jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
@@ -812,7 +924,7 @@ FFZ.prototype.setup_mod_card = function() {
 					if ( f.settings.mod_card_reasons && f.settings.mod_card_reasons.length ) {
 						// Moderation Reasons
 						line = utils.createElement('div', 'extra-interface interface clearfix');
-						ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban (R)eason</option>');
+						ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban ' + (f.settings.mod_card_hotkeys ? '(R)' : 'R') + 'eason</option>');
 						line.appendChild(ban_reasons);
 
 						for(var i=0; i < f.settings.mod_card_reasons.length; i++) {
@@ -832,8 +944,8 @@ FFZ.prototype.setup_mod_card = function() {
 
 					// Unban Button
 					var unban_btn = document.createElement('button');
-					unban_btn.className = 'unban button glyph-only light';
-					unban_btn.innerHTML = CHECK;
+					unban_btn.className = 'unban button button--icon-only light';
+					unban_btn.innerHTML = '<figure class="icon">' + CHECK + '</figure>';
 					unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
 
 					jQuery(unban_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
@@ -841,6 +953,10 @@ FFZ.prototype.setup_mod_card = function() {
 
 					jQuery(ban_btn).after(unban_btn);
 				}
+
+
+				// Tooltips for ban and ignore.
+				jQuery("button.ignore, button.ban").tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 
 				// More Fixing Other Buttons
@@ -863,7 +979,7 @@ FFZ.prototype.setup_mod_card = function() {
 				var msg_btn = el.querySelector(".interface > button.message-button");
 				if ( msg_btn ) {
 					msg_btn.innerHTML = 'W';
-					msg_btn.classList.add('glyph-only');
+					msg_btn.classList.add('button--icon-only');
 					msg_btn.classList.add('message');
 
 					msg_btn.title = "Whisper User";
@@ -871,8 +987,8 @@ FFZ.prototype.setup_mod_card = function() {
 
 
 					var real_msg = document.createElement('button');
-					real_msg.className = 'message-button button glyph-only message tooltip';
-					real_msg.innerHTML = MESSAGE;
+					real_msg.className = 'message-button button button--icon-only message html-tooltip';
+					real_msg.innerHTML = '<figure class="icon">' + MESSAGE + '</figure>';
 					real_msg.title = "Message User";
 
 					real_msg.addEventListener('click', function() {
@@ -885,8 +1001,8 @@ FFZ.prototype.setup_mod_card = function() {
 
 				// Alias Button
 				var alias_btn = document.createElement('button');
-				alias_btn.className = 'alias button glyph-only tooltip';
-				alias_btn.innerHTML = constants.EDIT;
+				alias_btn.className = 'alias button button--icon-only html-tooltip';
+				alias_btn.innerHTML = '<figure class="icon">' + constants.EDIT + '</figure>';
 				alias_btn.title = "Set Alias";
 
 				alias_btn.addEventListener('click', function() {
@@ -932,26 +1048,7 @@ FFZ.prototype.setup_mod_card = function() {
 					this.ffzRenderHistory();
 
 				// Reposition the menu if it's off-screen.
-				var el_bound = el.getBoundingClientRect(),
-					body_bound = document.body.getBoundingClientRect(),
-
-					renderBottom = this.get('cardInfo.renderBottom'),
-					renderRight = this.get('cardInfo.renderRight');
-
-				if ( renderRight ) {
-					var offset = (el_bound.left + el_bound.width) - renderRight;
-					el.style.left = (el_bound.left - offset) + "px";
-				}
-
-				if ( renderBottom ) {
-					var offset = el_bound.bottom - renderBottom;
-					el.style.top = (el_bound.top - offset) + "px";
-
-				} else if ( el_bound.bottom > body_bound.bottom ) {
-					var offset = el_bound.bottom - body_bound.bottom;
-					if ( el_bound.top - offset > body_bound.top )
-						el.style.top = (el_bound.top - offset) + "px";
-				}
+				this.ffzReposition();
 
 				// Focus the Element
 				this.$().draggable({
@@ -967,6 +1064,30 @@ FFZ.prototype.setup_mod_card = function() {
 				} catch(err) { }
 			}
 		},
+
+		ffzReposition: function() {
+			var el = this.get('element'),
+				el_bound = el.getBoundingClientRect(),
+				body_bound = document.body.getBoundingClientRect(),
+
+				renderBottom = this.get('cardInfo.renderBottom'),
+				renderRight = this.get('cardInfo.renderRight');
+
+			if ( renderRight ) {
+				var offset = (el_bound.left + el_bound.width) - renderRight;
+				el.style.left = (el_bound.left - offset) + "px";
+			}
+
+			if ( renderBottom ) {
+				var offset = el_bound.bottom - renderBottom;
+				el.style.top = (el_bound.top - offset) + "px";
+
+			} else if ( el_bound.bottom > body_bound.bottom ) {
+				var offset = el_bound.bottom - body_bound.bottom;
+				if ( el_bound.top - offset > body_bound.top )
+					el.style.top = (el_bound.top - offset) + "px";
+			}
+		}.observes('cardInfo.renderTop', 'cardInfo.renderLeft', 'cardInfo.renderRight', 'cardInfo.renderBottom'),
 
 		ffzRenderHistory: function() {
 			var t = this,
@@ -1093,7 +1214,7 @@ FFZ.prototype.setup_mod_card = function() {
 					logs = document.createElement('ul');
 					back = document.createElement('button');
 
-					back.className = 'button back-button';
+					back.className = 'button ffz-no-bg back-button';
 					back.innerHTML = '&laquo; Back';
 
 					back.addEventListener('click', function() {
@@ -1184,7 +1305,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 
 
 		if ( alias )
-			out.push('<span class="from ffz-alias tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias) + '</span>');
+			out.push('<span class="from ffz-alias html-tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias) + '</span>');
 		else
 			out.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name ) + '</span>');
 
@@ -1286,6 +1407,11 @@ FFZ.prototype._update_alias = function(user) {
 		el_from.textContent = display_name;
 		el_from.title = alias ? cap_name : '';
 	}
+
+
+	// Update tab completion.
+    if ( this._inputv )
+        Ember.propertyDidChange(this._inputv, 'ffz_name_suggestions');
 
 	// TODO: Update conversations~
 }

@@ -299,7 +299,7 @@ FFZ.settings_info.chat_rows = {
 
 	on_update: function(val) {
 			this.toggle_style('chat-background', !this.has_bttv && val);
-			this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_separators));
+            this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_separators || this.settings.highlight_messages_with_mod_card));
 		}
 	};
 
@@ -332,7 +332,7 @@ FFZ.settings_info.chat_separators = {
 	help: "Display thin lines between chat messages for further visual separation.",
 
 	on_update: function(val) {
-			this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_rows));
+            this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_rows || this.settings.highlight_messages_with_mod_card));
 
 			this.toggle_style('chat-separator', !this.has_bttv && val);
 			this.toggle_style('chat-separator-3d', !this.has_bttv && val === 2);
@@ -340,6 +340,18 @@ FFZ.settings_info.chat_separators = {
 			this.toggle_style('chat-separator-wide', !this.has_bttv && val === 4);
 		}
 	};
+
+
+FFZ.settings_info.old_sub_notices = {
+    type: "boolean",
+    value: false,
+
+    category: "Chat Appearance",
+    no_bttv: true,
+
+    name: "Old-Style Subscriber Notices",
+    help: "Display the old style subscriber notices, with the message on a separate line."
+};
 
 
 FFZ.settings_info.chat_padding = {
@@ -577,7 +589,7 @@ FFZ.prototype.setup_line = function() {
 	// Chat Enhancements
     document.body.classList.toggle('ffz-alias-italics', this.settings.alias_italics);
 
-	this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators));
+	this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators || this.settings.highlight_messages_with_mod_card));
 	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
 
 	this.toggle_style('chat-background', !this.has_bttv && this.settings.chat_rows);
@@ -708,22 +720,22 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
                 if ( btn === false ) {
                     if ( deleted )
-                        output += '<a class="mod-icon float-left tooltip unban" title="Unban User" href="#">Unban</a>';
+                        output += '<a class="mod-icon float-left html-tooltip unban" title="Unban User" href="#">Unban</a>';
                     else
-                        output += '<a class="mod-icon float-left tooltip ban" title="Ban User" href="#">Ban</a>';
+                        output += '<a class="mod-icon float-left html-tooltip ban" title="Ban User" href="#">Ban</a>';
 
                 } else if ( btn === 600 )
-                    output += '<a class="mod-icon float-left tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>';
+                    output += '<a class="mod-icon float-left html-tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>';
 
                 else {
                     if ( typeof btn === "string" ) {
                         cmd = btn.replace(/{user}/g, user).replace(/ *<LINE> */, "\n");
-                        tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '\n' + cmd;
+                        tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '<br>' + utils.quote_san(cmd).replace('\n','<br>');
                     } else {
                         cmd = "/timeout " + user + " " + btn;
                         tip = "Timeout User (" + utils.duration_string(btn) + ")";
                     }
-                    output += '<a class="mod-icon float-left tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + utils.quote_attr(tip) + '" href="#">' + prefix + '</a>';
+                    output += '<a class="mod-icon float-left html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>';
                 }
             }
 
@@ -750,10 +762,20 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
                 is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('settings.darkMode'))),
 
+                system_msg = this.get('systemMsg'),
                 output = '';
 
+            output = '<div class="indicator"></div>';
 
-            output = '<div class="indicator"></div><span class="timestamp float-left">' + this.get('timestamp') + '</span> ';
+            // System Message
+            if ( system_msg ) {
+                output += '<div class="system-msg">' + utils.sanitize(system_msg) + '</div>';
+                if ( this.get('shouldRenderMessageBody') === false )
+                    return output;
+            }
+
+            // Timestamp
+            output += '<span class="timestamp float-left">' + this.get('timestamp') + '</span> ';
 
             // Moderator Actions
             output += this.buildModIconsHTML();
@@ -767,10 +789,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
                 style = colors && 'color:' + (is_dark ? colors[1] : colors[0]) || '',
                 colored = style ? ' has-color' + (is_replay ? ' replay-color' : '') : '';
 
-            output += '<span class="from' + (alias ? ' ffz-alias tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '');
+            output += '<span class="from' + (alias ? ' ffz-alias html-tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '');
 
             if ( alias )
-                output += '" title="' + utils.sanitize(name) + '">' + utils.sanitize(alias);
+                output += '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias);
             else
                 output += '">' + utils.sanitize(name);
 
@@ -787,10 +809,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
                     to_colored = to_style ? ' has-color' : '';
 
                 output += "</span><svg class='svg-whisper-arrow' height='10px' version='1.1' width='16px'><polyline points='6 2, 10 6, 6 10, 6 2' /></svg>";
-                output += '<span class="to' + (to_alias ? ' ffz-alias tooltip' : '') + to_colored + '" style="' + to_style + (to_colors ? '" data=color="' + to_color : '');
+                output += '<span class="to' + (to_alias ? ' ffz-alias html-tooltip' : '') + to_colored + '" style="' + to_style + (to_colors ? '" data=color="' + to_color : '');
 
                 if ( to_alias )
-                    output += '" title="' + utils.sanitize(to_name) + '">' + utils.sanitize(to_alias);
+                    output += '" title="' + utils.quote_san(to_name) + '">' + utils.sanitize(to_alias);
                 else
                     output += '">' + utils.sanitize(to_name);
             }
@@ -833,10 +855,12 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             var el = this.get('element'),
                 output = this.buildSenderHTML();
 
-            if ( this.get('msgObject.deleted') )
-                output += this.buildDeletedMessageHTML()
-            else
-                output += this.buildMessageHTML();
+            // If this is a whisper, or if we should render the message body, render it.
+            if ( this.get('shouldRenderMessageBody') !== false )
+                if ( this.get('msgObject.deleted') )
+                    output += this.buildDeletedMessageHTML()
+                else
+                    output += this.buildMessageHTML();
 
             el.innerHTML = output;
         },
@@ -932,10 +956,18 @@ FFZ.prototype._modify_chat_subline = function(component) {
                 return;
 
             else if ( e.target.classList.contains('from') ) {
-                var n = this.$();
+                var n = this.get('element'),
+                    bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),
+                    x = 0, right;
+
+                if ( bounds.left > 400 )
+                    right = bounds.left - 40;
+
                 this.sendAction("showModOverlay", {
-                    left: n.offset().left,
-                    top: n.offset().top + n.height(),
+                    left: bounds.left,
+                    right: right,
+                    top: bounds.top + bounds.height,
+                    real_top: bounds.top,
                     sender: from
                 });
 
@@ -995,7 +1027,7 @@ FFZ.prototype._modify_vod_line = function(component) {
             return '<span class="mod-icons float-left">' +
                 (this.get('msgObject.deleted') ?
                     '<em class="mod-icon float-left unban"></em>' :
-                    '<a class="mod-icon float-left tooltip delete" title="Delete Message" href="#">Delete</a>') + '</span>';
+                    '<a class="mod-icon float-left html-tooltip delete" title="Delete Message" href="#">Delete</a>') + '</span>';
         },
 
         buildDeletedMesageHTML: function() {
