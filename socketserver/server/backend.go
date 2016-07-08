@@ -78,48 +78,6 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
-// HTTPBackendUncachedPublish handles the /uncached_pub route.
-// The backend can POST here to publish a message to clients with no caching.
-// The POST arguments are `cmd`, `args`, `channel`, and `scope`.
-// If "scope" is "global", then "channel" is not used.
-func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	formData, err := Backend.UnsealRequest(r.Form)
-	if err != nil {
-		w.WriteHeader(403)
-		fmt.Fprintf(w, "Error: %v", err)
-		return
-	}
-
-	cmd := formData.Get("cmd")
-	json := formData.Get("args")
-	channel := formData.Get("channel")
-	scope := formData.Get("scope")
-
-	if cmd == "" {
-		w.WriteHeader(422)
-		fmt.Fprintf(w, "Error: cmd cannot be blank")
-		return
-	}
-	if channel == "" && scope != "global" {
-		w.WriteHeader(422)
-		fmt.Fprintf(w, "Error: channel must be specified")
-		return
-	}
-
-	cm := ClientMessage{MessageID: -1, Command: CommandPool.InternCommand(cmd), origArguments: json}
-	cm.parseOrigArguments()
-	var count int
-
-	switch scope {
-	default:
-		count = PublishToMultiple(strings.Split(channel, ","), cm)
-	case "global":
-		count = PublishToAll(cm)
-	}
-	fmt.Fprint(w, count)
-}
-
 // ErrForwardedFromBackend is an error returned by the backend server.
 type ErrForwardedFromBackend struct {
 	JSONError interface{}
