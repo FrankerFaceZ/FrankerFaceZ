@@ -134,8 +134,11 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 
 // HTTPBackendCachedPublish handles the /cached_pub route.
 // It publishes a message to clients, and then updates the in-server cache for the message.
-// notes:
-// `scope` is implicit in the command
+//
+// The 'channel' parameter is a comma-separated list of topics to publish the message to.
+// The 'args' parameter is the JSON-encoded command data.
+// If the 'delete' parameter is present, an entry is removed from the cache instead of publishing a message.
+// If the 'expires' parameter is not specified, the message will not expire (though it is only kept in-memory).
 func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := Backend.UnsealRequest(r.Form)
