@@ -14,9 +14,10 @@ import (
 	"strings"
 	"time"
 
+	"sync"
+
 	"github.com/pmylund/go-cache"
 	"golang.org/x/crypto/nacl/box"
-	"sync"
 )
 
 const bPathAnnounceStartup = "/startup"
@@ -80,7 +81,7 @@ func getCacheKey(remoteCommand, data string) string {
 // HTTPBackendUncachedPublish handles the /uncached_pub route.
 // The backend can POST here to publish a message to clients with no caching.
 // The POST arguments are `cmd`, `args`, `channel`, and `scope`.
-// The `scope` argument is required because no attempt is made to infer the scope from the command, unlike /cached_pub.
+// If "scope" is "global", then "channel" is not used.
 func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	formData, err := Backend.UnsealRequest(r.Form)
@@ -95,14 +96,12 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	channel := formData.Get("channel")
 	scope := formData.Get("scope")
 
-	target := MessageTargetTypeByName(scope)
-
 	if cmd == "" {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "Error: cmd cannot be blank")
 		return
 	}
-	if channel == "" && (target == MsgTargetTypeChat || target == MsgTargetTypeMultichat) {
+	if channel == "" && scope != "global" {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "Error: channel must be specified")
 		return
@@ -112,19 +111,11 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	cm.parseOrigArguments()
 	var count int
 
-	switch target {
-	case MsgTargetTypeChat:
-		count = PublishToChannel(channel, cm)
-	case MsgTargetTypeMultichat:
-		count = PublishToMultiple(strings.Split(channel, ","), cm)
-	case MsgTargetTypeGlobal:
-		count = PublishToAll(cm)
-	case MsgTargetTypeInvalid:
-		fallthrough
+	switch scope {
 	default:
-		w.WriteHeader(422)
-		fmt.Fprint(w, "Invalid 'scope'. must be chat, multichat, channel, or global")
-		return
+		count = PublishToMultiple(strings.Split(channel, ","), cm)
+	case "global":
+		count = PublishToAll(cm)
 	}
 	fmt.Fprint(w, count)
 }
@@ -294,7 +285,7 @@ func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		respBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return ErrBackendNotOK{Code: resp.StatusCode, Response: fmt.Sprintf("(error reading non-2xx response): %s", err.Error()}
+			return ErrBackendNotOK{Code: resp.StatusCode, Response: fmt.Sprintf("(error reading non-2xx response): %s", err.Error())}
 		}
 		return ErrBackendNotOK{Code: resp.StatusCode, Response: string(respBytes)}
 	}

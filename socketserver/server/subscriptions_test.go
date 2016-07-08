@@ -33,9 +33,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 	const TestData3 = false
 	var TestData4 = []interface{}{"str1", "str2", "str3"}
 
-	S2CCommandsCacheInfo[TestCommandChan] = PushCommandCacheInfo{Caching: CacheTypeLastOnly, Target: MsgTargetTypeChat}
-	S2CCommandsCacheInfo[TestCommandMulti] = PushCommandCacheInfo{Caching: CacheTypeLastOnly, Target: MsgTargetTypeMultichat}
-	S2CCommandsCacheInfo[TestCommandGlobal] = PushCommandCacheInfo{Caching: CacheTypeLastOnly, Target: MsgTargetTypeGlobal}
+	t.Log("TestSubscriptionAndPublish")
 
 	var server *httptest.Server
 	var urls TURLs
@@ -195,7 +193,7 @@ func TestSubscriptionAndPublish(t *testing.T) {
 
 	// Publish message 4 - should go to clients 1, 2, 3
 
-	form, err = TSealForUncachedPubMsg(t, TestCommandGlobal, "", TestData4, MsgTargetTypeGlobal, false)
+	form, err = TSealForUncachedPubMsg(t, TestCommandGlobal, "", TestData4, "global", false)
 	if err != nil {
 		t.FailNow()
 	}
@@ -253,6 +251,8 @@ func TestRestrictedCommands(t *testing.T) {
 
 	var server *httptest.Server
 	var urls TURLs
+
+	t.Log("TestRestrictedCommands")
 
 	var backendExpected = NewTBackendRequestChecker(t,
 		TExpectedBackendRequest{200, bPathAnnounceStartup, &url.Values{"startup": []string{"1"}}, "", nil},

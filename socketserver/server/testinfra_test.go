@@ -284,7 +284,7 @@ func TSealForSavePubMsg(tb testing.TB, cmd Command, channel string, arguments in
 	return sealed, nil
 }
 
-func TSealForUncachedPubMsg(tb testing.TB, cmd Command, channel string, arguments interface{}, scope MessageTargetType, deleteMode bool) (url.Values, error) {
+func TSealForUncachedPubMsg(tb testing.TB, cmd Command, channel string, arguments interface{}, scope string, deleteMode bool) (url.Values, error) {
 	form := url.Values{}
 	form.Set("cmd", string(cmd))
 	argsBytes, err := json.Marshal(arguments)
@@ -298,7 +298,7 @@ func TSealForUncachedPubMsg(tb testing.TB, cmd Command, channel string, argument
 		form.Set("delete", "1")
 	}
 	form.Set("time", time.Now().Format(time.UnixDate))
-	form.Set("scope", scope.String())
+	form.Set("scope", scope)
 
 	sealed, err := Backend.SealRequest(form)
 	if err != nil {

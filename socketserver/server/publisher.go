@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,64 +8,6 @@ import (
 	"sync"
 	"time"
 )
-
-type PushCommandCacheInfo struct {
-	Caching BacklogCacheType
-	Target  MessageTargetType
-}
-
-// S2CCommandsCacheInfo details what the behavior is of each command that can be sent to /cached_pub.
-var S2CCommandsCacheInfo = map[Command]PushCommandCacheInfo{
-	/// Channel data
-	// follow_sets: extra emote sets included in the chat
-	// follow_buttons: extra follow buttons below the stream
-	"follow_sets":    {CacheTypePersistent, MsgTargetTypeChat},
-	"follow_buttons": {CacheTypePersistent, MsgTargetTypeChat},
-	"srl_race":       {CacheTypeLastOnly, MsgTargetTypeMultichat},
-
-	/// Chatter/viewer counts
-	"chatters": {CacheTypeLastOnly, MsgTargetTypeChat},
-	"viewers":  {CacheTypeLastOnly, MsgTargetTypeChat},
-}
-
-var PersistentCachingCommands = []Command{"follow_sets", "follow_buttons"}
-var HourlyCachingCommands = []Command{"chatters", "viewers"} /* srl_race */
-
-type BacklogCacheType int
-
-const (
-	// CacheTypeInvalid is the sentinel value.
-	CacheTypeInvalid BacklogCacheType = iota
-	// CacheTypeNever is a message that cannot be cached.
-	CacheTypeNever
-	// CacheTypeLastOnly means to save only the last copy of this message,
-	// and always send it when the backlog is requested.
-	CacheTypeLastOnly
-	// CacheTypePersistent means to save the last copy of this message,
-	// and always send it when the backlog is requested, but do not clean it periodically.
-	CacheTypePersistent
-)
-
-type MessageTargetType int
-
-const (
-	// MsgTargetTypeInvalid is the sentinel value.
-	MsgTargetTypeInvalid MessageTargetType = iota
-	// MsgTargetTypeChat is a message is targeted to all users in a particular chat.
-	MsgTargetTypeChat
-	// MsgTargetTypeMultichat is a message is targeted to all users in multiple chats.
-	MsgTargetTypeMultichat
-	// MsgTargetTypeGlobal is a message sent to all FFZ users.
-	MsgTargetTypeGlobal
-)
-
-// note: see types.go for methods on these
-
-// ErrorUnrecognizedCacheType is returned by BacklogCacheType.UnmarshalJSON()
-var ErrorUnrecognizedCacheType = errors.New("Invalid value for cachetype")
-
-// ErrorUnrecognizedTargetType is returned by MessageTargetType.UnmarshalJSON()
-var ErrorUnrecognizedTargetType = errors.New("Invalid value for message target")
 
 type LastSavedMessage struct {
 	Timestamp time.Time
@@ -80,19 +21,11 @@ type LastSavedMessage struct {
 var CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 var CachedLSMLock sync.RWMutex
 
-// PersistentLastMessages is of CacheTypePersistent. Never cleaned.
-var PersistentLastMessages = CachedLastMessages
-var PersistentLSMLock = CachedLSMLock
-
 // DumpBacklogData drops all /cached_pub data.
 func DumpBacklogData() {
 	CachedLSMLock.Lock()
 	CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 	CachedLSMLock.Unlock()
-
-	//PersistentLSMLock.Lock()
-	//PersistentLastMessages = make(map[Command]map[string]LastSavedMessage)
-	//PersistentLSMLock.Unlock()
 }
 
 // SendBacklogForNewClient sends any backlog data relevant to a new client.
@@ -104,26 +37,8 @@ func SendBacklogForNewClient(client *ClientInfo) {
 	copy(curChannels, client.CurrentChannels)
 	client.Mutex.Unlock()
 
-	PersistentLSMLock.RLock()
-	for _, cmd := range GetCommandsOfType(CacheTypePersistent) {
-		chanMap := PersistentLastMessages[cmd]
-		if chanMap == nil {
-			continue
-		}
-		for _, channel := range curChannels {
-			msg, ok := chanMap[channel]
-			if ok {
-				msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
-				msg.parseOrigArguments()
-				client.MessageChannel <- msg
-			}
-		}
-	}
-	PersistentLSMLock.RUnlock()
-
 	CachedLSMLock.RLock()
-	for _, cmd := range GetCommandsOfType(CacheTypeLastOnly) {
-		chanMap := CachedLastMessages[cmd]
+	for cmd, chanMap := range CachedLastMessages {
 		if chanMap == nil {
 			continue
 		}
@@ -140,23 +55,8 @@ func SendBacklogForNewClient(client *ClientInfo) {
 }
 
 func SendBacklogForChannel(client *ClientInfo, channel string) {
-	PersistentLSMLock.RLock()
-	for _, cmd := range GetCommandsOfType(CacheTypePersistent) {
-		chanMap := PersistentLastMessages[cmd]
-		if chanMap == nil {
-			continue
-		}
-		if msg, ok := chanMap[channel]; ok {
-			msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
-			msg.parseOrigArguments()
-			client.MessageChannel <- msg
-		}
-	}
-	PersistentLSMLock.RUnlock()
-
 	CachedLSMLock.RLock()
-	for _, cmd := range GetCommandsOfType(CacheTypeLastOnly) {
-		chanMap := CachedLastMessages[cmd]
+	for cmd, chanMap := range CachedLastMessages {
 		if chanMap == nil {
 			continue
 		}
@@ -192,16 +92,6 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	} else {
 		chanMap[channel] = LastSavedMessage{Timestamp: timestamp, Data: data}
 	}
-}
-
-func GetCommandsOfType(match BacklogCacheType) []Command {
-	var ret []Command
-	for cmd, info := range S2CCommandsCacheInfo {
-		if info.Caching == match {
-			ret = append(ret, cmd)
-		}
-	}
-	return ret
 }
 
 func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
@@ -245,33 +135,18 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	}
 	timestamp := time.Unix(timeNum, 0)
 
-	cacheinfo, ok := S2CCommandsCacheInfo[cmd]
-	if !ok {
-		w.WriteHeader(422)
-		fmt.Fprintf(w, "Caching semantics unknown for command '%s'. Post to /addcachedcommand first.", cmd)
-		return
-	}
-
 	var count int
 	msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: json}
 	msg.parseOrigArguments()
 
-	if cacheinfo.Caching == CacheTypeLastOnly && cacheinfo.Target == MsgTargetTypeChat {
-		SaveLastMessage(CachedLastMessages, &CachedLSMLock, cmd, channel, timestamp, json, deleteMode)
-		count = PublishToChannel(channel, msg)
-	} else if cacheinfo.Caching == CacheTypePersistent && cacheinfo.Target == MsgTargetTypeChat {
-		SaveLastMessage(PersistentLastMessages, &PersistentLSMLock, cmd, channel, timestamp, json, deleteMode)
-		count = PublishToChannel(channel, msg)
-	} else if cacheinfo.Caching == CacheTypeLastOnly && cacheinfo.Target == MsgTargetTypeMultichat {
-		channels := strings.Split(channel, ",")
-		var dummyLock sync.Mutex
-		CachedLSMLock.Lock()
-		for _, channel := range channels {
-			SaveLastMessage(CachedLastMessages, &dummyLock, cmd, channel, timestamp, json, deleteMode)
-		}
-		CachedLSMLock.Unlock()
-		count = PublishToMultiple(channels, msg)
+	channels := strings.Split(channel, ",")
+	var dummyLock sync.Mutex
+	CachedLSMLock.Lock()
+	for _, channel := range channels {
+		SaveLastMessage(CachedLastMessages, &dummyLock, cmd, channel, timestamp, json, deleteMode)
 	}
+	CachedLSMLock.Unlock()
+	count = PublishToMultiple(channels, msg)
 
 	w.Write([]byte(strconv.Itoa(count)))
 }

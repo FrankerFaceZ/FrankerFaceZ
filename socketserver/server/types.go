@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
@@ -151,110 +150,4 @@ func (cv *ClientVersion) After(cv2 *ClientVersion) bool {
 
 func (cv *ClientVersion) Equal(cv2 *ClientVersion) bool {
 	return cv.Major == cv2.Major && cv.Minor == cv2.Minor && cv.Revision == cv2.Revision
-}
-
-func (bct BacklogCacheType) Name() string {
-	switch bct {
-	case CacheTypeInvalid:
-		return ""
-	case CacheTypeNever:
-		return "never"
-	case CacheTypeLastOnly:
-		return "last"
-	case CacheTypePersistent:
-		return "persist"
-	}
-	panic("Invalid BacklogCacheType value")
-}
-
-var CacheTypesByName = map[string]BacklogCacheType{
-	"never":   CacheTypeNever,
-	"last":    CacheTypeLastOnly,
-	"persist": CacheTypePersistent,
-}
-
-func BacklogCacheTypeByName(name string) (bct BacklogCacheType) {
-	// CacheTypeInvalid is the zero value so it doesn't matter
-	bct, _ = CacheTypesByName[name]
-	return
-}
-
-// String implements Stringer
-func (bct BacklogCacheType) String() string { return bct.Name() }
-
-// MarshalJSON implements json.Marshaler
-func (bct BacklogCacheType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(bct.Name())
-}
-
-// UnmarshalJSON implements json.Unmarshaler
-func (bct *BacklogCacheType) UnmarshalJSON(data []byte) error {
-	var str string
-	err := json.Unmarshal(data, &str)
-	if err != nil {
-		return err
-	}
-	if str == "" {
-		*bct = CacheTypeInvalid
-		return nil
-	}
-	newBct := BacklogCacheTypeByName(str)
-	if newBct != CacheTypeInvalid {
-		*bct = newBct
-		return nil
-	}
-	return ErrorUnrecognizedCacheType
-}
-
-func (mtt MessageTargetType) Name() string {
-	switch mtt {
-	case MsgTargetTypeInvalid:
-		return ""
-	case MsgTargetTypeChat:
-		return "chat"
-	case MsgTargetTypeMultichat:
-		return "multichat"
-	case MsgTargetTypeGlobal:
-		return "global"
-	}
-	panic("Invalid MessageTargetType value")
-}
-
-var TargetTypesByName = map[string]MessageTargetType{
-	"chat":      MsgTargetTypeChat,
-	"multichat": MsgTargetTypeMultichat,
-	"global":    MsgTargetTypeGlobal,
-}
-
-func MessageTargetTypeByName(name string) (mtt MessageTargetType) {
-	// MsgTargetTypeInvalid is the zero value so it doesn't matter
-	mtt, _ = TargetTypesByName[name]
-	return
-}
-
-// String implements Stringer
-func (mtt MessageTargetType) String() string { return mtt.Name() }
-
-// MarshalJSON implements json.Marshaler
-func (mtt MessageTargetType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(mtt.Name())
-}
-
-// UnmarshalJSON implements json.Unmarshaler
-func (mtt *MessageTargetType) UnmarshalJSON(data []byte) error {
-	var str string
-	err := json.Unmarshal(data, &str)
-	if err != nil {
-		return err
-	}
-	if str == "" {
-		*mtt = MsgTargetTypeInvalid
-		return nil
-	}
-	newMtt := MessageTargetTypeByName(str)
-	if newMtt != MsgTargetTypeInvalid {
-		*mtt = newMtt
-		return nil
-	}
-	return ErrorUnrecognizedTargetType
 }
