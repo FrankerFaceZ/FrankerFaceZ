@@ -10,7 +10,7 @@ import (
 )
 
 type LastSavedMessage struct {
-	Timestamp time.Time
+	Expires time.Time
 	Data      string
 }
 
@@ -20,6 +20,31 @@ type LastSavedMessage struct {
 // Not actually cleaned up by reaper goroutine every ~hour.
 var CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 var CachedLSMLock sync.RWMutex
+
+func cachedMessageJanitor() {
+	for {
+		time.Sleep(1*time.Hour)
+		cachedMessageJanitor_do()
+	}
+}
+
+func cachedMessageJanitor_do() {
+	CachedLSMLock.Lock()
+	defer CachedLSMLock.Unlock()
+
+	now := time.Now()
+
+	for cmd, chanMap := range CachedLastMessages {
+		for channel, msg := range chanMap {
+			if !msg.Expires.IsZero() && msg.Expires.Before(now) {
+				delete(chanMap, channel)
+			}
+		}
+		if len(chanMap) == 0 {
+			delete(CachedLastMessages, cmd)
+		}
+	}
+}
 
 // DumpBacklogData drops all /cached_pub data.
 func DumpBacklogData() {
@@ -74,10 +99,8 @@ type timestampArray interface {
 	GetTime(int) time.Time
 }
 
-func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.Locker, cmd Command, channel string, timestamp time.Time, data string, deleting bool) {
-	locker.Lock()
-	defer locker.Unlock()
-
+// the CachedLSMLock must be held when calling this
+func saveLastMessage(cmd Command, channel string, expires time.Time, data string, deleting bool) {
 	chanMap, ok := CachedLastMessages[cmd]
 	if !ok {
 		if deleting {
@@ -90,7 +113,7 @@ func SaveLastMessage(which map[Command]map[string]LastSavedMessage, locker sync.
 	if deleting {
 		delete(chanMap, channel)
 	} else {
-		chanMap[channel] = LastSavedMessage{Timestamp: timestamp, Data: data}
+		chanMap[channel] = LastSavedMessage{Expires: expires, Data: data}
 	}
 }
 
@@ -126,24 +149,26 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	json := formData.Get("args")
 	channel := formData.Get("channel")
 	deleteMode := formData.Get("delete") != ""
-	timeStr := formData.Get("time")
-	timeNum, err := strconv.ParseInt(timeStr, 10, 64)
-	if err != nil {
-		w.WriteHeader(422)
-		fmt.Fprintf(w, "error parsing time: %v", err)
-		return
+	timeStr := formData.Get("expires")
+	var expires time.Time
+	if timeStr != "" {
+		timeNum, err := strconv.ParseInt(timeStr, 10, 64)
+		if err != nil {
+			w.WriteHeader(422)
+			fmt.Fprintf(w, "error parsing time: %v", err)
+			return
+		}
+		expires = time.Unix(timeNum, 0)
 	}
-	timestamp := time.Unix(timeNum, 0)
 
 	var count int
 	msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: json}
 	msg.parseOrigArguments()
 
 	channels := strings.Split(channel, ",")
-	var dummyLock sync.Mutex
 	CachedLSMLock.Lock()
 	for _, channel := range channels {
-		SaveLastMessage(CachedLastMessages, &dummyLock, cmd, channel, timestamp, json, deleteMode)
+		saveLastMessage(cmd, channel, expires, json, deleteMode)
 	}
 	CachedLSMLock.Unlock()
 	count = PublishToMultiple(channels, msg)

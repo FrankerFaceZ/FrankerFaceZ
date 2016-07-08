@@ -131,10 +131,11 @@ func startJanitors() {
 	loadUniqueUsers()
 
 	go authorizationJanitor()
-	go bunchCacheJanitor()
-	go pubsubJanitor()
 	go aggregateDataSender()
+	go bunchCacheJanitor()
+	go cachedMessageJanitor()
 	go commandCounter()
+	go pubsubJanitor()
 
 	go ircConnection()
 	go shutdownHandler()
