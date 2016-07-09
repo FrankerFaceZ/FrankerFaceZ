@@ -102,6 +102,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/drop_backlog", HTTPBackendDropBacklog)
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
 	serveMux.HandleFunc("/cached_pub", HTTPBackendCachedPublish)
+	serveMux.HandleFunc("/get_sub_count", HTTPGetSubscriberCount)
 
 	announceForm, err := Backend.SealRequest(url.Values{
 		"startup": []string{"1"},

@@ -19,6 +19,23 @@ var ChatSubscriptionLock sync.RWMutex
 var GlobalSubscriptionInfo []*ClientInfo
 var GlobalSubscriptionLock sync.RWMutex
 
+func CountSubscriptions(channels []string) int {
+	ChatSubscriptionLock.RLock()
+	defer ChatSubscriptionLock.RUnlock()
+
+	count := 0
+	for _, channelName := range channels {
+		list := ChatSubscriptionInfo[channelName]
+		if list != nil {
+			list.RLock()
+			count += len(list.Members)
+			list.RUnlock()
+		}
+	}
+
+	return count
+}
+
 func SubscribeChannel(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
 	_subscribeWhileRlocked(channelName, client.MessageChannel)

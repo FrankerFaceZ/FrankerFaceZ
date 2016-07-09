@@ -220,3 +220,20 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, count)
 }
+
+// HTTPGetSubscriberCount handles the /get_sub_count route.
+// It replies with the number of clients subscribed to a pub/sub topic.
+// A "global" option is not available, use fetch(/stats).CurrentClientCount instead.
+func HTTPGetSubscriberCount(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	formData, err := Backend.UnsealRequest(r.Form)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "Error: %v", err)
+		return
+	}
+
+	channel := formData.Get("channel")
+
+	fmt.Fprint(w, CountSubscriptions(strings.Split(channel, ",")))
+}
