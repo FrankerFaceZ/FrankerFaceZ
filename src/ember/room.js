@@ -50,7 +50,8 @@ FFZ.prototype.setup_room = function() {
 
 	if ( RC ) {
 		var orig_ban = RC._actions.banUser,
-			orig_to = RC._actions.timeoutUser;
+			orig_to = RC._actions.timeoutUser,
+			orig_show = RC._actions.showModOverlay;
 
 		RC._actions.banUser = function(e) {
 			orig_ban.call(this, e);
@@ -62,12 +63,15 @@ FFZ.prototype.setup_room = function() {
 			this.get("model").clearMessages(e.user, null, true);
 		}
 
-		RC._actions.showModOverlay = function(e) {
-			var Channel = utils.ember_resolve('model:channel');
-			if ( ! Channel )
-				return;
 
-			var chan = Channel.find({id: e.sender});
+		RC._actions.showModOverlay = function(e) {
+			var Channel = utils.ember_resolve('model:deprecated-channel'),
+				chan = Channel && Channel.find && Channel.find({id: e.sender});
+
+			if ( ! chan ) {
+				f.log("Error opening mod card. model:deprecated-channel does not exist or does not have find!");
+				return orig_show.call(this, e);
+			}
 
 			// Don't try loading the channel if it's already loaded. Don't make mod cards
 			// refresh the channel page when you click the broadcaster, basically.
@@ -111,33 +115,7 @@ FFZ.prototype.setup_room = function() {
 	}
 
 	this.log("Hooking the Ember Room view.");
-
-	var RoomView = utils.ember_resolve('view:room');
-	this._modify_rview(RoomView);
-
-	// For some reason, this doesn't work unless we create an instance of the
-	// room view and then destroy it immediately.
-	try {
-		RoomView.create().destroy();
-	} catch(err) { }
-
-	// Modify all existing Room views.
-	var views = utils.ember_views();
-	for(var key in views) {
-		if ( ! views.hasOwnProperty(key) )
-			continue;
-
-		var view = views[key];
-		if ( !(view instanceof RoomView) )
-			continue;
-
-		this.log("Manually updating existing Room view.", view);
-		try {
-			view.ffzInit();
-		} catch(err) {
-			this.error("RoomView setup ffzInit: " + err);
-		}
-	}
+	this.update_views('view:room', this.modify_room_view);
 }
 
 
@@ -145,29 +123,10 @@ FFZ.prototype.setup_room = function() {
 // View Customization
 // --------------------
 
-FFZ.prototype._modify_rview = function(view) {
+FFZ.prototype.modify_room_view = function(view) {
 	var f = this;
-	view.reopen({
-		didInsertElement: function() {
-			this._super();
-
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("RoomView didInsertElement: " + err);
-			}
-		},
-
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("RoomView willClearRender: " + err);
-			}
-			this._super();
-		},
-
-		ffzInit: function() {
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
 			f._roomv = this;
 
 			this.ffz_frozen = false;
@@ -196,6 +155,34 @@ FFZ.prototype._modify_rview = function(view) {
 			var controller = this.get('controller');
 			if ( controller ) {
 				controller.reopen({
+					calcRecipientEligibility: function(e) {
+						// Because this doesn't work properly with multiple channel rooms
+						// by default, do it ourselves.
+						var id = controller.get('model.roomProperties._id'),
+							update = function(data) {
+								if ( controller.isDestroyed || controller.get('model.roomProperties._id') !== id )
+									return;
+
+								controller.set('model._ffz_bits_eligibility', data);
+								controller.set('isRecipientBitsIneligible', ! data.eligible);
+								controller.set('isBitsHelperShown', data.eligible);
+								controller.set('minimumBits', data.minBits);
+
+								if ( ! data.eligible )
+									controller.set('isBitsTooltipActive', false);
+							};
+
+						if ( id === undefined )
+							return;
+
+						var data = controller.get('model._ffz_bits_eligibility');
+						if ( data === undefined )
+							controller.get('bits').loadRecipientEligibility(id).then(update);
+						else
+							update(data);
+
+					},
+
 					submitButtonText: function() {
 						if ( this.get("model.isWhisperMessage") && this.get("model.isWhispersEnabled") )
 							return i18n("Whisper");
@@ -214,7 +201,7 @@ FFZ.prototype._modify_rview = function(view) {
 			}
 		},
 
-		ffzTeardown: function() {
+		ffz_destroy: function() {
 			if ( f._roomv === this )
 				f._roomv = undefined;
 
@@ -280,7 +267,7 @@ FFZ.prototype._modify_rview = function(view) {
 				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned') || false));
 			}
 
-			var badge, id, info, vis_count = 0;
+			var badge, id, info, vis_count = 0, label;
 			for(var i=0; i < STATUS_BADGES.length; i++) {
 				info = STATUS_BADGES[i];
 				id = 'ffz-stat-' + info[0];
@@ -289,12 +276,17 @@ FFZ.prototype._modify_rview = function(view) {
 				if ( typeof visible === "string" )
 					visible = visible === "1";
 
+				label = typeof info[3] === "function" ? info[3].call(f, room) : undefined;
+
 				if ( ! badge ) {
-					badge = utils.createElement('span', 'ffz room-state stat float-right', info[0].charAt(0).toUpperCase() + '<span>' + info[0].substr(1).toUpperCase() + '</span>');
+					badge = utils.createElement('span', 'ffz room-state stat float-right', (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>');
 					badge.id = id;
 					jQuery(badge).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
 					cont.appendChild(badge);
 				}
+
+				if ( label )
+					badge.innerHTML = (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>';
 
 				badge.title = typeof info[2] === "function" ? info[2].call(f, room) : info[2];
 				badge.classList.toggle('hidden', ! visible);
@@ -494,7 +486,6 @@ FFZ.prototype._modify_rview = function(view) {
 			warning.classList.remove('hidden');
 		},
 
-
 		ffzUnwarnPaused: function() {
 			var el = this.get('element'),
 				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
@@ -502,7 +493,6 @@ FFZ.prototype._modify_rview = function(view) {
 			if ( warning )
 				warning.classList.add('hidden');
 		}
-
 	});
 }
 
@@ -640,12 +630,13 @@ FFZ.ffz_commands.help.help = "Usage: /ffz help [command]\nList available command
 
 FFZ.prototype.update_room_important = function(id, controller) {
 	var Chat = controller || utils.ember_lookup('controller:chat'),
+		current_room = Chat && Chat.get('currentChannelRoom'),
 		room = this.rooms[id];
 
 	if ( ! room )
 		return;
 
-	room.important = (Chat && room.room && Chat.get('currentChannelRoom') === room.room) || (room.room && room.room.get('isGroupRoom')) || (this.settings.pinned_rooms.indexOf(id) !== -1);
+	room.important = (room.room && current_room === room.room) || (current_room && current_room.ffz_host_target === id) || (room.room && room.room.get('isGroupRoom')) || (this.settings.pinned_rooms.indexOf(id) !== -1);
 };
 
 
@@ -798,7 +789,7 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 		before = first_existing.date && first_existing.date.getTime();
 
 
-	this.parse_history(data, null, room_id, delete_links, tmiSession, function(msg) {
+	this.parse_history(data, null, null, room_id, delete_links, tmiSession, function(msg) {
 		if ( from_server )
 			msg.from_server = true;
 
@@ -815,7 +806,7 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 				return true;
 
 			// Display the Ban Reason if we're a moderator or that user.
-			if ( msg.tags['ban-reason'] && is_mine || r.get('isModeratorOrHigher') ) {
+			if ( msg.tags['ban-reason'] && (is_mine || r.get('isModeratorOrHigher')) ) {
 				msg.message = msg.message.substr(0, msg.message.length - 1) + ' with reason: ' + msg.tags['ban-reason'];
 				msg.cachedTokens = [utils.sanitize(msg.message)];
 			}
@@ -833,6 +824,12 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 
 				if ( ! first_inserted )
 					first_inserted = msg;
+
+				// Store the message ID for this message, of course.
+				var msg_id = msg.tags && msg.tags.id,
+					ids = r.ffz_ids = r.ffz_ids || {};
+				if ( msg_id && ! ids[msg_id] )
+					ids[msg_id] = msg;
 
 				messages.unshiftObject(msg);
 				inserted += 1;
@@ -870,6 +867,11 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 		if ( r.shouldShowMessage(msg) ) {
 			messages.insertAt(inserted, msg);
 			while ( messages.length > buffer_size ) {
+				// Remove this message from the ID tracker.
+				var m = messages.get(0);
+				if ( m.tags && m.tags.id && r.ffz_ids && r.ffz_ids[m.tags.id] )
+					delete r.ffz_ids[m.tags.id];
+
 				messages.removeAt(0);
 				removed++;
 			}
@@ -1042,6 +1044,7 @@ FFZ.prototype._modify_room = function(room) {
 			try {
 				f.add_room(this.id, this);
 				this.set("ffz_chatters", {});
+				this.set("ffz_ids", this.get('ffz_ids') || {});
 			} catch(err) {
 				f.error("add_room: " + err);
 			}
@@ -1063,6 +1066,7 @@ FFZ.prototype._modify_room = function(room) {
 			if ( user ) {
 				var duration = Infinity,
 					reason = undefined,
+					msg_id = undefined,
 					current_user = f.get_user(),
 					is_me = current_user && current_user.login === user;
 
@@ -1075,6 +1079,18 @@ FFZ.prototype._modify_room = function(room) {
 
 				if ( tags && tags['ban-reason'] && (is_me || t.get('isModeratorOrHigher')) )
 					reason = tags['ban-reason'];
+
+
+				// Is there a UUID on the end of the ban reason?
+				if ( reason ) {
+					var match = constants.UUID_TEST.exec(reason);
+					if ( match ) {
+						msg_id = match[1];
+						reason = reason.substr(0, reason.length - match[0].length);
+						if ( ! reason.length )
+							reason = undefined;
+					}
+				}
 
 
 				// If we were banned, set the state and update the UI.
@@ -1098,39 +1114,81 @@ FFZ.prototype._modify_room = function(room) {
 					t.ffzRecentlyBanned.shift();
 
 
-				// Delete Visible Messages
-				var msgs = t.get('messages'),
-					total = msgs.get('length'),
-					i = total,
-					removed = 0;
+				// Are we deleting a specific message?
+				if ( msg_id && this.ffz_ids ) {
+					var msg = this.ffz_ids[msg_id];
+					if ( msg && msg.from === user ) {
+						msg.ffz_deleted = true;
+						if ( ! f.settings.prevent_clear )
+							msg.deleted = true;
 
-				while(i--) {
-					var msg = msgs.get(i);
+						if ( f.settings.remove_deleted )
+							if ( msg.pending )
+								msg.removed = true;
+							else {
+								var msgs = t.get('messages'),
+									total = msgs.get('length'),
+									i = total;
 
-					if ( msg.from === user ) {
-						if ( f.settings.remove_deleted ) {
-							msgs.removeAt(i);
-							removed++;
-							continue;
+								while(i--) {
+									var msg = msgs.get(i);
+									if ( msg.tags && msg.tags.id === msg_id ) {
+										msgs.removeAt(i);
+										delete this.ffz_ids[msg_id];
+										break;
+									}
+								}
+							}
+
+						if ( msg._line ) {
+							Ember.propertyDidChange(msg._line, 'msgObject.ffz_deleted');
+							Ember.propertyDidChange(msg._line, 'msgObject.deleted');
 						}
 
-						t.set('messages.' + i + '.ffz_deleted', true);
-						if ( ! f.settings.prevent_clear )
-							t.set('messages.' + i + '.deleted', true);
-					}
-				}
+					} else if ( msg.from !== user )
+						f.log("Banned Message ID #" + msg_id + " not owned by: " + user);
+					else
+						f.log("Banned Message ID #" + msg_id + " not found in chat.");
 
+				} else {
+					// Delete all messages from this user / chat.
+					// Delete Visible Messages
+					var msgs = t.get('messages'),
+						total = msgs.get('length'),
+						i = total,
+						removed = 0;
 
-				// Delete Panding Messages
-				if ( t.ffzPending ) {
-					msgs = t.ffzPending;
-					i = msgs.length;
 					while(i--) {
 						var msg = msgs.get(i);
-						if ( msg.from !== user ) continue;
-						msg.ffz_deleted = true;
-						msg.deleted = !f.settings.prevent_clear;
-						msg.removed = f.settings.remove_deleted;
+						if ( msg.from === user ) {
+							if ( f.settings.remove_deleted ) {
+								// Remove this message from the ID tracker.
+								if ( msg.tags && msg.tags.id && this.ffz_ids && this.ffz_ids[msg.tags.id] )
+									delete this.ffz_ids[msg.tags.id];
+
+								msgs.removeAt(i);
+								removed++;
+								continue;
+							}
+
+							t.set('messages.' + i + '.ffz_deleted', true);
+							if ( ! f.settings.prevent_clear )
+								t.set('messages.' + i + '.deleted', true);
+						}
+					}
+
+
+					// Delete Panding Messages
+					if ( t.ffzPending ) {
+						msgs = t.ffzPending;
+						i = msgs.length;
+						while(i--) {
+							var msg = msgs.get(i);
+							if ( msg.from !== user ) continue;
+							msg.ffz_deleted = true;
+							msg.deleted = !f.settings.prevent_clear;
+							msg.removed = f.settings.remove_deleted;
+						}
 					}
 				}
 
@@ -1164,6 +1222,7 @@ FFZ.prototype._modify_room = function(room) {
 								date: now,
 								ffz_ban_target: user,
 								reasons: reason ? [reason] : [],
+								msg_ids: msg_id ? [msg_id] : [],
 								durations: [duration],
 								end_time: end_time,
 								timeouts: 1,
@@ -1176,6 +1235,9 @@ FFZ.prototype._modify_room = function(room) {
 							this.addMessage(msg);
 
 						} else {
+							if ( msg_id && last_ban.msg_ids.indexOf(msg_id) === -1 )
+								last_ban.msg_ids.push(msg_id);
+
 							if ( reason && last_ban.reasons.indexOf(reason) === -1 )
 								last_ban.reasons.push(reason);
 
@@ -1205,6 +1267,9 @@ FFZ.prototype._modify_room = function(room) {
 							last_ban = null;
 
 						if ( last_ban ) {
+							if ( msg_id && last_ban.msg_ids.indexOf(msg_id) === -1 )
+								last_ban.msg_ids.push(msg_id);
+
 							if ( reason && last_ban.reasons.indexOf(reason) === -1 )
 								last_ban.reasons.push(reason);
 
@@ -1223,6 +1288,7 @@ FFZ.prototype._modify_room = function(room) {
 								date: now,
 								ffz_ban_target: user,
 								reasons: reason ? [reason] : [],
+								msg_ids: msg_id ? [msg_id] : [],
 								durations: [duration],
 								end_time: end_time,
 								timeouts: 1,
@@ -1256,8 +1322,17 @@ FFZ.prototype._modify_room = function(room) {
 				len = messages.get("length"),
 				limit = this.get("messageBufferSize");
 
-			if ( len > limit )
-				messages.removeAt(0, len - limit);
+			if ( len > limit ) {
+				var to_remove = len - limit;
+				for(var i = 0; i < to_remove; i++) {
+					// Remove this message from the ID tracker.
+					var msg = messages.get(i);
+					if ( msg.tags && msg.tags.id && this.ffz_ids && this.ffz_ids[msg.tags.id] )
+						delete this.ffz_ids[msg.tags.id];
+				}
+
+				messages.removeAt(0, to_remove);
+			}
 		},
 
 		// Artificial chat delay
@@ -1267,6 +1342,7 @@ FFZ.prototype._modify_room = function(room) {
 					this.ffzPending = [];
 
 				var now = msg.time = Date.now();
+				msg.pending = true;
 				this.ffzPending.push(msg);
 				this.ffzSchedulePendingFlush(now);
 
@@ -1320,12 +1396,18 @@ FFZ.prototype._modify_room = function(room) {
 
 			for (var i = 0, l = this.ffzPending.length; i < l; i++) {
 				var msg = this.ffzPending[i];
-				if ( msg.removed )
+				if ( msg.removed ) {
+					// Don't keep this message ID around.
+					var msg_id = msg && msg.tags && msg.tags.id;
+					if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
+						delete this.ffz_ids[msg_id];
 					continue;
+				}
 
 				if ( f.settings.chat_delay !== 0 && (f.settings.chat_delay + msg.time > now) )
 					break;
 
+				msg.pending = false;
 				this.ffzActualPushMessage(msg);
 			}
 
@@ -1367,10 +1449,16 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
+		onMessage: function(msg) {
+			// We do our own batching. With blackjack, and hookers. You know what? Forget the batching.
+			this.addMessage(msg);
+		},
+
 		addMessage: function(msg) {
 			if ( msg ) {
 				var is_resub = msg.tags && msg.tags['msg-id'] === 'resub',
-					room_id = this.get('id');
+					room_id = this.get('id'),
+					msg_id = msg.tags && msg.tags.id;
 
 				// Ignore resubs in other rooms.
 				if ( is_resub && ! f.settings.hosted_sub_notices && (msg.tags['room-id'] != this.get('roomProperties._id') || HOSTED_SUB.test(msg.tags['system-msg'])) )
@@ -1514,6 +1602,13 @@ FFZ.prototype._modify_room = function(room) {
 			while(i--)
 				if ( f._chat_filters[i](msg) === false )
 					return;
+
+			// We're past the last return, so store the message
+			// now that we know we're keeping it.
+			if ( msg_id ) {
+				var ids = this.ffz_ids = this.ffz_ids || {};
+				ids[msg_id] = msg;
+			}
 
             // Report this message to the dashboard.
             if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )

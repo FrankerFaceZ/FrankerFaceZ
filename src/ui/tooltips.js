@@ -30,6 +30,15 @@ FFZ.prototype.fix_tooltips = function() {
 		})
 	}
 
+	// Fix tipsy invalidation
+	if ( window.jQuery && jQuery.fn && jQuery.fn.tipsy )
+		jQuery.fn.tipsy.revalidate = function() {
+			jQuery(".tipsy").each(function() {
+				var t = jQuery.data(this, "tipsy-pointee");
+				(!t || !t[0] || !document.contains(t[0])) && jQuery(this).remove();
+			})
+		};
+
 	// Iterate all existing tipsy stuff~!
 	this.log('Fixing already existing tooltips.');
 	if ( ! window.jQuery || ! jQuery.cache )

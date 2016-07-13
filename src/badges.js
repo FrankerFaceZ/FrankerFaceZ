@@ -3,7 +3,11 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
-	OTHER_KNOWN = ['turbo', 'warcraft'],
+	OTHER_KNOWN = ['turbo', 'warcraft', 'bits'],
+
+	NO_INVERT_BADGES = ['subscriber', 'ffz-badge-1'],
+	INVERT_INVERT_BADGES = ['bits'],
+	TRANSPARENT_BADGES = ['subscriber'],
 
 	BTTV_TYPE_REPLACEMENTS = {
 		'global-moderator': 'global_mod'
@@ -25,14 +29,6 @@ var FFZ = window.FrankerFaceZ,
 
 	BADGE_KLASSES = {
 		'global_mod': 'global-moderator'
-	},
-
-	badge_css = function(badge, klass) {
-		klass = klass || ('ffz-badge-' + badge.id);
-		var out = ".badges ." + klass + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
-		if ( badge.alpha_image )
-			out += ".badges .badge.alpha." + klass + ",.ffz-transparent-badges .badges ." + klass + ' { background-image: url("' + badge.alpha_image + '"); }';
-		return out;
 	};
 
 
@@ -92,8 +88,13 @@ FFZ.settings_info.hidden_badges = {
 		}
 
 		for(var badge_id in f.badges) {
-			if ( f.badges.hasOwnProperty(badge_id) && f.badges[badge_id].name )
-				values.push('<code>ffz-' + f.badges[badge_id].name + '</code>');
+			if ( ! f.badges.hasOwnProperty(badge_id) )
+				continue;
+
+			var badge = f.badges[badge_id],
+				hide_key = (badge.source_ext ? f._apis[badge.source_ext].name_key : 'ffz') + '-' + (badge.name || badge.id);
+
+			values.push('<code>' + hide_key + '</code>');
 		}
 
 		if ( this.has_bttv && window.BetterTTV ) {
@@ -129,11 +130,13 @@ FFZ.settings_info.sub_notice_badges = {
 
 	category: "Chat Appearance",
 	name: "Old-Style Subscriber Notice Badges",
+	no_bttv: true,
+
     help: "Display a subscriber badge on old-style chat messages about new subscribers.",
 
     on_update: function(val) {
-		this.toggle_style('badges-sub-notice', ! val);
-		this.toggle_style('badges-sub-notice-on', val);
+		this.toggle_style('badges-sub-notice', ! this.has_bttv && ! val);
+		this.toggle_style('badges-sub-notice-on', ! this.has_bttv && val);
 	}
 };
 
@@ -269,7 +272,7 @@ FFZ.ws_commands.set_badge = function(data) {
 		badges = user.badges = user.badges || {};
 
 	if ( badge === undefined || badge === null )
-		delete badges[slot];
+		badges[slot] = null;
 	else
 		badges[slot] = badge;
 }
@@ -287,14 +290,16 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 		return badges;
 
 	for(var slot in data.badges) {
-		if ( ! data.badges.hasOwnProperty(slot) )
+		var badge = data.badges[slot];
+		if ( ! data.badges.hasOwnProperty(slot) || ! badge )
 			continue;
 
-		var badge = data.badges[slot],
-			full_badge = this.badges[badge.id] || {},
-			old_badge = badges[slot];
+		var full_badge = this.badges[badge.id] || {},
+			old_badge = badges[slot],
 
-		if ( hidden_badges.indexOf('ffz-' + full_badge.name) !== -1 )
+			hide_key = (full_badge.source_ext ? this._apis[full_badge.source_ext].name_key : 'ffz') + '-' + (full_badge.name || full_badge.id);
+
+		if ( hidden_badges.indexOf(hide_key) !== -1 )
 			continue;
 
 		if ( full_badge.visible !== undefined ) {
@@ -319,10 +324,13 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 
 		badges[slot] = {
 			klass: 'ffz-badge-' + badge.id,
-			title: badge.title || full_badge.title,
+			title: badge.title || full_badge.title || ('Unknown FFZ Badge\nID: ' + badge.id),
 			image: badge.image,
 			full_image: full_badge.image,
 			color: badge.color,
+			no_invert: badge.no_invert || full_badge.no_invert,
+			invert_invert: badge.invert_invert || full_badge.invert_invert,
+			transparent: badge.transparent || full_badge.transparent || (badge.color || full_badge.color) === "transparent",
 			extra_css: badge.extra_css
 		};
 	}
@@ -390,12 +398,15 @@ FFZ.prototype.get_line_badges = function(msg) {
 		badges[last_id] = {
 			klass: (BADGE_KLASSES[badge] || badge) + (is_known ? '' : ' unknown-badge') + ' version-' + version,
 			title: binfo && binfo.title || BADGE_NAMES[badge] || badge.capitalize(),
-			click_url: binfo && binfo.click_action === 'visit_url' && binfo.click_url
+			click_url: binfo && binfo.click_action === 'visit_url' && binfo.click_url,
+			no_invert: NO_INVERT_BADGES.indexOf(badge) !== -1,
+			invert_invert: INVERT_INVERT_BADGES.indexOf(badge) !== -1,
+			transparent: TRANSPARENT_BADGES.indexOf(badge) !== -1
 		};
 
 		if ( ! is_known && binfo ) {
 			badges[last_id].image = binfo.image_url_1x;
-			badges[last_id].srcSet = 'url("' + binfo.image_url_1x + '") 1x, url("' + binfo.image_url_2x + '") 2x, url("' + binfo.image_url_3x + '") 4x';
+			badges[last_id].srcSet = 'url("' + binfo.image_url_1x + '") 1x, url("' + binfo.image_url_2x + '") 2x, url("' + binfo.image_url_4x + '") 4x';
 		}
 	}
 
@@ -413,13 +424,13 @@ FFZ.prototype.get_other_badges = function(user_id, room_id, user_type, has_sub, 
 		for(var i=0, l = SPECIAL_BADGES.length; i < l; i++) {
 			var mb = SPECIAL_BADGES[i];
 			if ( user_type === mb ) {
-				badges[0] = {klass: BADGE_KLASSES[mb] || mb, title: BADGE_TITLES[mb] || mb.capitalize()};
+				badges[0] = {klass: BADGE_KLASSES[mb] || mb, title: BADGE_NAMES[mb] || mb.capitalize()};
 				break;
 			}
 		}
 
 	if ( has_sub )
-		badges[10] = {klass: 'subscriber', title: 'Subscriber'}
+		badges[10] = {klass: 'subscriber', title: 'Subscriber', no_invert: true, transparent: true}
 	if ( has_turbo )
 		badges[15] = {klass: 'turbo', title: 'Turbo'}
 
@@ -450,7 +461,16 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.click_url )
 			klass += ' click_url';
 
-		out.push('<div class="badge float-left html-tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
+		if ( badge.no_invert )
+			klass += ' no-invert';
+
+		if ( badge.invert_invert )
+			klass += ' invert-invert';
+
+		if ( badge.transparent )
+			klass += ' transparent';
+
+		out.push('<div class="badge html-tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
 	}
 
 	return out.join("");
@@ -482,17 +502,27 @@ FFZ.prototype.bttv_badges = function(data) {
 	for(var i=0; i < data.badges.length; i++) {
 		var badge = data.badges[i],
 			space_ind = badge.type.indexOf(' '),
-			hidden_key = BTTV_TYPE_REPLACEMENTS[badge.type] || (space_ind === -1 ? badge.type : badge.type.substr(0, space_ind));
+			hidden_key = space_ind !== -1 ? badge.type.substr(0, space_ind) : badge.type;
+
+		if ( hidden_key.indexOf('twitch-') === 0 )
+			hidden_key = hidden_key.substr(7);
+
+		if ( BTTV_TYPE_REPLACEMENTS.hasOwnProperty(hidden_key) )
+			hidden_key = BTTV_TYPE_REPLACEMENTS[hidden_key];
+		else {
+			var ind = hidden_key.indexOf('-');
+			if ( ind !== -1 )
+				hidden_key = hidden_key.substr(0, ind);
+		}
 
 		if ( hidden_badges.indexOf(hidden_key) !== -1 ) {
 			data.badges.splice(i, 1);
+			i--;
 			continue;
 		}
 
-		if ( badge.type === "subscriber" || badge.type === "turbo" || badge.type.substr(0, 8) === 'warcraft' ) {
+		if ( insert_at === -1 && (badge.type === "subscriber" || badge.type === "turbo" || badge.type.substr(0, 7) === 'twitch-') )
 			insert_at = i;
-			break;
-		}
 	}
 
 	// If there's no user, we're done now.
@@ -502,15 +532,17 @@ FFZ.prototype.bttv_badges = function(data) {
 
 	// We have a user. Start replacing badges.
 	for (var slot in user.badges) {
-		if ( ! user.badges.hasOwnProperty(slot) )
+		var badge = user.badges[slot];
+		if ( ! user.badges.hasOwnProperty(slot) || ! badge )
 			continue;
 
-		var badge = user.badges[slot],
-			full_badge = this.badges[badge.id] || {},
+		var full_badge = this.badges[badge.id] || {},
 			desc = badge.title || full_badge.title,
-			style = "";
+			style = "",
 
-		if ( hidden_badges.indexOf('ffz-' + full_badge.name) !== -1 )
+			hide_key = (full_badge.source_ext ? this._apis[full_badge.source_ext].name_key : 'ffz') + '-' + (full_badge.name || full_badge.id);
+
+		if ( hidden_badges.indexOf(hide_key) !== -1 )
 			continue;
 
 		if ( full_badge.visible !== undefined ) {
@@ -565,8 +597,6 @@ FFZ.prototype.bttv_badges = function(data) {
 		while(badges_out.length)
 			data.badges.insertAt(insert_at, badges_out.shift()[1]);
 	}
-
-
 }
 
 
@@ -644,10 +674,13 @@ FFZ.prototype._load_badge_json = function(badge_id, data) {
 		data.replaces = true;
 	}
 
+	if ( data.name === 'developer' )
+		data.no_invert = true;
+
 	if ( data.name === 'bot' )
 		data.visible = function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); };
 
-	utils.update_css(this._badge_style, badge_id, badge_css(data));
+	utils.update_css(this._badge_style, badge_id, utils.badge_css(data));
 }
 
 

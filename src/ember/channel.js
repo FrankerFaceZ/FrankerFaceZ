@@ -19,55 +19,24 @@ FFZ.prototype.setup_channel = function() {
 	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats);
 
 	this.log("Hooking the Ember Channel Index view.");
-	var Channel = utils.ember_resolve('view:channel/index'),
-		f = this;
-
-	if ( ! Channel )
+	if ( ! this.update_views('view:channel/index', this.modify_channel_index) )
 		return;
-
-	this._modify_cindex(Channel);
-
-	// The Stupid View Fix. Is this necessary still?
-	try {
-		Channel.create().destroy();
-	} catch(err) { }
-
-	// Update Existing
-	var views = utils.ember_views();
-	for(var key in views) {
-		var view = views[key];
-		if ( view instanceof Channel ) {
-			this.log("Manually updating existing Channel Index view.", view);
-			try {
-				if ( ! view.ffzInit )
-					this._modify_cindex(view);
-				view.ffzInit();
-			} catch(err) {
-				this.error("setup: view:channel/index: " + err);
-			}
-		}
-	};
-
 
 	this.log("Hooking the Ember Channel model.");
-	Channel = utils.ember_resolve('model:channel');
+	var f = this,
+		Channel = utils.ember_resolve('model:deprecated-channel');
+
 	if ( ! Channel )
-		return;
+		return this.log("Unable to find the Ember model:deprecated-channel");
 
-	Channel.reopen({
-		ffz_host_target: undefined,
+	this._modify_cmodel(Channel);
 
-		setHostMode: function(e) {
-			if ( f.settings.hosted_channels ) {
-				this.set('ffz_host_target', e.target);
-				return this._super(e);
-			} else {
-				this.set('ffz_host_target', undefined);
-				return this._super({target: void 0, delay: 0});
-			}
-		}
-	});
+	var Store = utils.ember_lookup('service:store'),
+		type_map = Store && Store.typeMapFor(Channel);
 
+	if ( type_map && type_map.records )
+		for(var i=0; i < type_map.records.length; i++)
+			this._modify_cmodel(type_map.records[i]);
 
 	this.log("Hooking the Ember Channel controller.");
 
@@ -89,7 +58,7 @@ FFZ.prototype.setup_channel = function() {
 			if ( ! this.get('content.id') )
 				return;
 
-			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 60000);
+			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 55000 + (Math.random() * 10000));
 		}.observes("content.id"),
 
 		ffzCheckUpdate: function() {
@@ -129,7 +98,6 @@ FFZ.prototype.setup_channel = function() {
 					t.ffzUpdateInfo();
 				});
 		},
-
 
 		ffzUpdateTitle: function() {
 			var name = this.get('content.name'),
@@ -178,29 +146,28 @@ FFZ.prototype.setup_channel = function() {
 }
 
 
-FFZ.prototype._modify_cindex = function(view) {
+FFZ.prototype._modify_cmodel = function(model) {
 	var f = this;
+	model.reopen({
+		ffz_host_target: undefined,
 
-	view.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("CIndex didInsertElement: " + err);
+		setHostMode: function(e) {
+			if ( f.settings.hosted_channels ) {
+				this.set('ffz_host_target', e.target);
+				return this._super(e);
+			} else {
+				this.set('ffz_host_target', undefined);
+				return this._super({target: void 0, delay: 0});
 			}
-		},
+		}
+	});
+}
 
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("CIndex willClearRender: " + err);
-			}
-			return this._super();
-		},
 
-		ffzInit: function() {
+FFZ.prototype.modify_channel_index = function(view) {
+	var f = this;
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
 			var id = this.get('controller.content.id') || this.get('controller.id'),
 				el = this.get('element');
 
@@ -215,6 +182,10 @@ FFZ.prototype._modify_cindex = function(view) {
 			this.ffzUpdateChatters();
 			this.ffzUpdateHostButton();
 			this.ffzUpdatePlayerStats();
+
+			// Listen to scrolling.
+			this._ffz_scroller = this.ffzOnScroll.bind(this);
+			jQuery(el).parents('.tse-scroll-content').on('scroll', this._ffz_scroller);
 
 			var views = this.get('element').querySelector('.svg-glyph_views:not(.ffz-svg)')
 			if ( views )
@@ -241,6 +212,41 @@ FFZ.prototype._modify_cindex = function(view) {
 				return false;
 			});
 		},
+
+		ffz_destroy: function() {
+			var id = this.get('controller.content.id') || this.get('controller.id');
+			if ( id )
+				f.ws_send("unsub", "channel." + id);
+
+			this.get('element').setAttribute('data-channel', '');
+			f._cindex = undefined;
+			if ( this._ffz_update_uptime )
+				clearTimeout(this._ffz_update_uptime);
+
+			if ( this._ffz_update_stats )
+				clearTimeout(this._ffz_update_stats);
+
+			if ( this._ffz_scroller ) {
+				jQuery(this.get('element')).parents('.tse-scroll-content').off('scroll', this._ffz_scroller);
+				this._ffz_scroller = null;
+			}
+
+			document.body.classList.remove('ffz-small-player');
+			utils.update_css(f._channel_style, id, null);
+		},
+
+
+		ffzOnScroll: function(event) {
+			// When we scroll past the bottom of the player, do stuff!
+			var top = event && event.target && event.target.scrollTop,
+				height = this.get('layout.playerSize.1');
+
+            if ( ! top )
+                top = jQuery(this.get('element')).parents('.tse-scroll-content').scrollTop();
+
+			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= height);
+		},
+
 
 		ffzFixTitle: function() {
 			if ( f.has_bttv || ! f.settings.stream_title )
@@ -463,6 +469,15 @@ FFZ.prototype._modify_cindex = function(view) {
 
 
 		ffzUpdatePlayerStats: function() {
+			if ( this._ffz_update_stats ) {
+				clearTimeout(this._ffz_update_stats);
+				this._ffz_update_stats = null;
+			}
+
+			// Schedule an update.
+			if ( f.settings.player_stats )
+				this._ffz_update_stats = setTimeout(this.ffzUpdatePlayerStats.bind(this), 1000);
+
 			var channel_id = this.get('controller.content.id') || this.get('controller.id'),
 				hosted_id = this.get('controller.hostModeTarget.id'),
 
@@ -478,12 +493,12 @@ FFZ.prototype._modify_cindex = function(view) {
 
 				try {
 					player = player_cont && player_cont.get && player_cont.get('player');
-					stats = player && player.stats;
+					stats = player && player.getVideoInfo();
 				} catch(err) {
-					f.error("Channel ffzUpdatePlayerStats: player.stats: " + err);
+					f.error("Channel ffzUpdatePlayerStats: player.getVideoInfo: " + err);
 				}
 
-				if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hlsLatencyBroadcaster || stats.hlsLatencyBroadcaster === 'NaN' || Number.isNaN(stats.hlsLatencyBroadcaster) ) {
+				if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster || Number.isNaN(stats.hls_latency_broadcaster) ) {
 					if ( stat_el )
 						stat_el.parentElement.removeChild(stat_el);
 				} else {
@@ -505,21 +520,20 @@ FFZ.prototype._modify_cindex = function(view) {
 						jQuery(stat_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 
-					var delay = parseFloat(stats.hlsLatencyBroadcaster);
+					var delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
+						bitrate = Math.round(stats.current_bitrate * 1000) / 1000;
 
 					if ( delay > 180 ) {
 						delay = Math.floor(delay);
-						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps')
+						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps')
 						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
 					} else {
-						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps');
-
-						delay = stats.hlsLatencyBroadcaster;
-						var pos = delay.lastIndexOf('.');
-
-						if ( pos === -1 )
+						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + stats.current_bitrate + ' Kbps');
+						delay = delay.toString();
+						var ind = delay.indexOf('.');
+						if ( ind === -1 )
 							delay = delay + '.00';
-						else if ( delay.length - pos < 3 )
+						else if ( ind >= delay.length - 2 )
 							delay = delay + '0';
 
 						el.textContent = delay + 's';
@@ -544,7 +558,7 @@ FFZ.prototype._modify_cindex = function(view) {
 				}
 
 
-				if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hlsLatencyBroadcaster || stats.hlsLatencyBroadcaster === 'NaN' || Number.isNaN(stats.hlsLatencyBroadcaster) ) {
+				if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster || Number.isNaN(stats.hls_latency_broadcaster) ) {
 					if ( stat_el )
 						stat_el.parentElement.removeChild(stat_el);
 				} else {
@@ -566,21 +580,20 @@ FFZ.prototype._modify_cindex = function(view) {
 						jQuery(stat_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					}
 
-					var delay = parseFloat(stats.hlsLatencyBroadcaster);
+					var delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
+						bitrate = Math.round(stats.current_bitrate * 1000) / 1000;
 
 					if ( delay > 180 ) {
 						delay = Math.floor(delay);
-						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps')
+						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps')
 						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
 					} else {
-						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.videoResolution + 'p @ ' + stats.fps + '<br>Playback Rate: ' + stats.playbackRate + ' Kbps');
-
-						delay = stats.hlsLatencyBroadcaster;
-						var pos = delay.lastIndexOf('.');
-
-						if ( pos === -1 )
+						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + stats.current_bitrate + ' Kbps');
+						delay = delay.toString();
+						var ind = delay.indexOf('.');
+						if ( ind === -1 )
 							delay = delay + '.00';
-						else if ( delay.length - pos < 3 )
+						else if ( ind >= delay.length - 2 )
 							delay = delay + '0';
 
 						el.textContent = delay + 's';
@@ -651,19 +664,6 @@ FFZ.prototype._modify_cindex = function(view) {
 			}
 
 			el.innerHTML = utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1 || f.settings.stream_uptime === 3);
-		},
-
-		ffzTeardown: function() {
-			var id = this.get('controller.content.id') || this.get('controller.id');
-			if ( id )
-				f.ws_send("unsub", "channel." + id);
-
-			this.get('element').setAttribute('data-channel', '');
-			f._cindex = undefined;
-			if ( this._ffz_update_uptime )
-				clearTimeout(this._ffz_update_uptime);
-
-			utils.update_css(f._channel_style, id, null);
 		}
 	});
 }
@@ -684,6 +684,28 @@ FFZ.settings_info.auto_theater = {
 	name: "Automatic Theater Mode",
 	help: "Automatically enter theater mode when opening a channel."
 	};
+
+
+FFZ.settings_info.small_player = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+	no_bttv: true,
+
+	category: "Appearance",
+	name: "Mini-Player on Scroll",
+	help: "When you scroll down on the page, shrink the player and put it in the upper right corner so you can still watch.",
+
+	on_update: function(val) {
+		if ( ! val )
+			return document.body.classList.remove('ffz-small-player');
+
+		else if ( this._vodc )
+			this._vodc.ffzOnScroll();
+		else if ( this._cindex )
+			this._cindex.ffzOnScroll();
+	}
+}
 
 
 FFZ.settings_info.chatter_count = {

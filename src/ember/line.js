@@ -18,9 +18,9 @@ FFZ.settings_info.alias_italics = {
     help: "Format the names of users that have aliases with italics to make it obvious at a glance that they have been renamed.",
 
 	on_update: function(val) {
-			document.body.classList.toggle('ffz-alias-italics', val);
-		}
-	};
+        document.body.classList.toggle('ffz-alias-italics', val);
+    }
+};
 
 FFZ.settings_info.room_status = {
 	type: "boolean",
@@ -33,10 +33,10 @@ FFZ.settings_info.room_status = {
 	help: "Display the current room state (slow mode, sub mode, and r9k mode) next to the Chat button.",
 
 	on_update: function() {
-			if ( this._roomv )
-				this._roomv.ffzUpdateStatus();
-		}
-	};
+        if ( this._roomv )
+            this._roomv.ffzUpdateStatus();
+    }
+};
 
 
 FFZ.settings_info.replace_bad_emotes = {
@@ -48,7 +48,19 @@ FFZ.settings_info.replace_bad_emotes = {
 
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
-	};
+};
+
+
+FFZ.settings_info.parse_emoticons = {
+    type: "boolean",
+    value: true,
+
+    category: "Chat Appearance",
+    no_bttv: true,
+
+    name: "Display Emoticons",
+    help: "Display emoticons in chat messages rather than just text."
+};
 
 
 FFZ.settings_info.parse_emoji = {
@@ -74,9 +86,9 @@ FFZ.settings_info.parse_emoji = {
 
 	category: "Chat Appearance",
 
-	name: "Emoji Display",
+	name: "Display Emoji",
 	help: "Replace emoji in chat messages with nicer looking images from either Twitter or Google."
-    };
+};
 
 
 FFZ.settings_info.scrollback_length = {
@@ -354,6 +366,19 @@ FFZ.settings_info.old_sub_notices = {
 };
 
 
+FFZ.settings_info.emote_alignment = {
+    type: "boolean",
+    value: false,
+
+    category: "Chat Appearance",
+    no_bttv: true,
+
+    name: "Baseline Emoticon Alignment",
+    help: "Align emotes on the text baseline, making messages taller but ensuring emotes don't overlap.",
+
+    on_update: function(val) { document.body.classList.toggle('ffz-baseline-emoticons', !this.has_bttv && val) }
+};
+
 FFZ.settings_info.chat_padding = {
 	type: "boolean",
 	value: false,
@@ -588,6 +613,7 @@ FFZ.prototype.setup_line = function() {
 
 	// Chat Enhancements
     document.body.classList.toggle('ffz-alias-italics', this.settings.alias_italics);
+    document.body.classList.toggle('ffz-baseline-emoticons', !this.has_bttv && this.settings.emote_alignment);
 
 	this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators || this.settings.highlight_messages_with_mod_card));
 	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
@@ -710,7 +736,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             if ( is_whisper || this_ul >= other_ul || f.settings.mod_buttons.length === 0 )
                 return '';
 
-            output = '<span class="mod-icons float-left">';
+            output = '<span class="mod-icons">';
 
             for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
                 var pair = f.settings.mod_buttons[i],
@@ -720,22 +746,22 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
                 if ( btn === false ) {
                     if ( deleted )
-                        output += '<a class="mod-icon float-left html-tooltip unban" title="Unban User" href="#">Unban</a>';
+                        output += '<a class="mod-icon html-tooltip unban" title="Unban User" href="#">Unban</a>';
                     else
-                        output += '<a class="mod-icon float-left html-tooltip ban" title="Ban User" href="#">Ban</a>';
+                        output += '<a class="mod-icon html-tooltip ban" title="Ban User" href="#">Ban</a>';
 
                 } else if ( btn === 600 )
-                    output += '<a class="mod-icon float-left html-tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>';
+                    output += '<a class="mod-icon html-tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>';
 
                 else {
                     if ( typeof btn === "string" ) {
-                        cmd = btn.replace(/{user}/g, user).replace(/ *<LINE> */, "\n");
+                        cmd = btn.replace(/{user}/g, user).replace(/{id}/g, this.get('msgObject.tags.id')).replace(/ *<LINE> */, "\n");
                         tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '<br>' + utils.quote_san(cmd).replace('\n','<br>');
                     } else {
                         cmd = "/timeout " + user + " " + btn;
                         tip = "Timeout User (" + utils.duration_string(btn) + ")";
                     }
-                    output += '<a class="mod-icon float-left html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>';
+                    output += '<a class="mod-icon html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>';
                 }
             }
 
@@ -770,18 +796,18 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             // System Message
             if ( system_msg ) {
                 output += '<div class="system-msg">' + utils.sanitize(system_msg) + '</div>';
-                if ( this.get('shouldRenderMessageBody') === false )
+                if ( this.get('ffzShouldRenderMessageBody') === false )
                     return output;
             }
 
             // Timestamp
-            output += '<span class="timestamp float-left">' + this.get('timestamp') + '</span> ';
+            output += '<span class="timestamp">' + this.get('timestamp') + '</span> ';
 
             // Moderator Actions
             output += this.buildModIconsHTML();
 
             // Badges
-            output += '<span class="badges float-left">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
+            output += '<span class="badges">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
 
             // Alias Support
             var alias = f.aliases[user],
@@ -842,7 +868,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
             } else
                 output = '<span class="message">';
 
-            output += f.render_tokens(this.get('ffzTokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4);
+            output += f.render_tokens(this.get('ffzTokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4, this.get('isBitsEnabled'));
 
             var old_messages = this.get('msgObject.ffz_old_messages');
             if ( old_messages && old_messages.length )
@@ -856,7 +882,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
                 output = this.buildSenderHTML();
 
             // If this is a whisper, or if we should render the message body, render it.
-            if ( this.get('shouldRenderMessageBody') !== false )
+            if ( this.get('ffzShouldRenderMessageBody') !== false )
                 if ( this.get('msgObject.deleted') )
                     output += this.buildDeletedMessageHTML()
                 else
@@ -864,6 +890,14 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
             el.innerHTML = output;
         },
+
+        ffzShouldRenderMessageBody: function() {
+            return ! this.get('hasSystemMsg') || this.get('hasMessageBody');
+        }.property('hasSystemMsg', 'hasMessageBody'),
+
+        shouldRenderMessageBody: function() {
+            return false;
+        }.property('hasSystemMsg', 'hasMessageBody'),
 
         ffzWasDeleted: function() {
             return f.settings.prevent_clear && this.get("msgObject.ffz_deleted")
@@ -883,8 +917,8 @@ FFZ.prototype._modify_chat_subline = function(component) {
     this._modify_chat_line(component);
 
     component.reopen({
-        classNameBindings: [":message-line", ":chat-line", "msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
-        attributeBindings: ["msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
+        classNameBindings: ["msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
+        attributeBindings: ["msgObject.tags.id:data-id", "msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
         didInsertElement: function() {
             this.set('msgObject._line', this);
@@ -1024,10 +1058,10 @@ FFZ.prototype._modify_vod_line = function(component) {
             if ( ! this.get("isViewerModeratorOrHigher") || this.get("isModeratorOrHigher") )
                 return "";
 
-            return '<span class="mod-icons float-left">' +
+            return '<span class="mod-icons">' +
                 (this.get('msgObject.deleted') ?
-                    '<em class="mod-icon float-left unban"></em>' :
-                    '<a class="mod-icon float-left html-tooltip delete" title="Delete Message" href="#">Delete</a>') + '</span>';
+                    '<em class="mod-icon unban"></em>' :
+                    '<a class="mod-icon html-tooltip delete" title="Delete Message" href="#">Delete</a>') + '</span>';
         },
 
         buildDeletedMesageHTML: function() {

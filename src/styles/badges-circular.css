@@ -1,4 +1,4 @@
-.badges .badge:not(.subscriber):not(.unknown-badge) {
+.badges .badge:not(.unknown-badge):not(.transparent) {
 	border-radius: 9px;
 	background-size: 16px;
 	background-repeat: no-repeat;

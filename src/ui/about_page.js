@@ -131,6 +131,10 @@ var update_player_stats = function(player, container) {
     if ( ! player_data )
         return;
 
+    try {
+        player_data.backend = player.getBackend();
+    } catch(err) { player_data.backend = undefined }
+
     var sorted_keys = Object.keys(player_data).sort();
     for(var i=0; i < sorted_keys.length; i++) {
         var key = sorted_keys[i],
@@ -309,6 +313,9 @@ FFZ.menu_pages.about = {
                         ['Deploy Flavor', SiteOptions.deploy_flavor]
                     ],
 
+                    exp_head = createElement('div'),
+                    experiments = createElement('ul'),
+
                     has_memory = window.performance && performance.memory,
                     mem_head = createElement('div'),
                     mem_list = createElement('ul'),
@@ -346,8 +353,8 @@ FFZ.menu_pages.about = {
                 heading.className = 'chat-menu-content center';
                 heading.innerHTML = '<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">woofs for nerds</div>';
 
-                info_head.className = mem_head.className = twitch_head.className = player_head.className = ver_head.className = log_head.className = 'list-header';
-                info.className = mem_list.className = twitch.className = player_list.className = vers.className = 'chat-menu-content menu-side-padding version-list';
+                info_head.className = exp_head.className = mem_head.className = twitch_head.className = player_head.className = ver_head.className = log_head.className = 'list-header';
+                info.className = mem_list.className = twitch.className = experiments.className = player_list.className = vers.className = 'chat-menu-content menu-side-padding version-list';
 
                 info_head.innerHTML = 'Client Status';
 
@@ -394,6 +401,21 @@ FFZ.menu_pages.about = {
                     twitch.appendChild(line);
                 }
 
+                var exp_service = utils.ember_lookup('service:experiments');
+                if ( exp_service ) {
+                    exp_head.innerHTML = 'Twitch Experiments';
+                    for(var key in exp_service.values) {
+                        if ( ! exp_service.values.hasOwnProperty(key) )
+                            continue;
+
+                        var val = exp_service.values[key],
+                            line = createElement('li');
+
+                        line.innerHTML = key + '<span>' + utils.sanitize(val) + '</span>';
+                        experiments.appendChild(line);
+                    }
+                }
+
                 ver_head.innerHTML = 'Versions';
 
                 if ( this.has_bttv )
@@ -430,6 +452,11 @@ FFZ.menu_pages.about = {
 
                 container.appendChild(twitch_head);
                 container.appendChild(twitch);
+
+                if ( exp_service ) {
+                    container.appendChild(exp_head);
+                    container.appendChild(experiments);
+                }
 
                 if ( has_memory ) {
                     mem_head.innerHTML = 'Memory Statistics';

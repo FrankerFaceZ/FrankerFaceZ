@@ -12,16 +12,10 @@ var FFZ = window.FrankerFaceZ,
 // ---------------------
 
 FFZ.prototype.setup_vod_chat = function() {
-    var f = this,
-        VRC = utils.ember_resolve('component:vod-right-column');
-
-    if ( VRC )
-        this._modify_vod_right_column(VRC);
-    else
-        f.error("Unable to locate VOD Right Column component.");
-
     // Get the VOD Chat Service
-    var VODService = utils.ember_lookup('service:vod-chat-service');
+    var f = this,
+        VODService = utils.ember_lookup('service:vod-chat-service');
+
     if ( VODService )
         VODService.reopen({
             messageBufferSize: f.settings.scrollback_length,
@@ -50,56 +44,59 @@ FFZ.prototype.setup_vod_chat = function() {
     else
         f.error("Unable to locate VOD Chat Service.");
 
-    // Get the VOD Chat Display
-    var VODChat = utils.ember_resolve('component:vod-chat-display');
-
-    if ( VODChat )
-        this._modify_vod_chat_display(VODChat);
-    else
-        f.error("Unable to locate VOD Chat Display component.");
-
-    // Modify all existing VOD Chat views.
-	var views = utils.ember_views();
-	for(var key in views) {
-        var view = views[key];
-
-        if ( VRC && view instanceof VRC ) {
-            this.log("Manually updating existing VOD Right Column.");
-            try {
-                this._modify_vod_right_column(view);
-                view.ffzInit();
-                //Ember.propertyDidChange(view, 'canSeeDarkLaunch');
-            } catch(err) {
-                this.error("setup: setup_vod_chat: " + err);
-            }
-
-        } else if ( VODChat && view instanceof VODChat ) {
-            this.log("Manually updating existing VOD Chat view.", view);
-            try {
-                this._modify_vod_chat_display(view);
-                view.ffzInit();
-            } catch(err) {
-                this.error("setup: setup_vod_chat: " + err);
-            }
-        }
-    }
+    this.update_views('component:vod-right-column', this.modify_vod_right_column);
+    this.update_views('view:vod', this.modify_vod_view);
+    this.update_views('component:vod-chat-display', this.modify_vod_chat_display);
 }
 
 
-FFZ.prototype._modify_vod_right_column = function(component) {
+FFZ.prototype.modify_vod_view = function(view) {
     var f = this;
+    utils.ember_reopen_view(view, {
+        ffz_init: function() {
+            f._vodv = this;
 
-    component.reopen({
-        didInsertElement: function() {
-            this._super();
-            try {
-                this.ffzInit();
-            } catch(err) {
-                f.error("VODRightColumn didInsertElement: " + err);
-            }
+            var channel_id = this.get('context.channel.name');
+
+            if ( f.settings.auto_theater ) {
+				var player = f.players && f.players[channel_id] && f.players[channel_id].get('player');
+				if ( player )
+					player.setTheatre(true);
+			}
+
+            // Listen to scrolling.
+			this._ffz_scroller = this.ffzOnScroll.bind(this);
+			jQuery(this.get('element')).parents('.tse-scroll-content').on('scroll', this._ffz_scroller);
         },
 
-        ffzInit: function() {
+        ffz_destroy: function() {
+            if ( f._vodv === this )
+                f._vodv = null;
+
+            if ( this._ffz_scroller ) {
+				jQuery(this.get('element')).parents('.tse-scroll-content').off('scroll', this._ffz_scroller);
+				this._ffz_scroller = null;
+			}
+        },
+
+        ffzOnScroll: function(event) {
+			// When we scroll past the bottom of the player, do stuff!
+			var top = event && event.target && event.target.scrollTop,
+				height = this.get('layout.playerSize.1');
+
+            if ( ! top )
+                top = jQuery(this.get('element')).parents('.tse-scroll-content').scrollTop();
+
+			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= height);
+		}
+    });
+}
+
+
+FFZ.prototype.modify_vod_right_column = function(component) {
+    var f = this;
+    utils.ember_reopen_view(component, {
+        ffz_init: function() {
             if ( f.settings.dark_twitch ) {
                 var el = this.get('element'),
                     cont = el && el.querySelector('.chat-container');
@@ -112,29 +109,11 @@ FFZ.prototype._modify_vod_right_column = function(component) {
 }
 
 
-FFZ.prototype._modify_vod_chat_display = function(component) {
+FFZ.prototype.modify_vod_chat_display = function(component) {
     var f = this,
         VODService = utils.ember_lookup('service:vod-chat-service');
 
-    component.reopen({
-        didInsertElement: function() {
-            this._super();
-            try {
-                this.ffzInit();
-            } catch(err) {
-                f.error("VODChat didInsertElement: " + err);
-            }
-        },
-
-        willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("VODChat willClearRender: " + err);
-			}
-			this._super();
-		},
-
+    utils.ember_reopen_view(component, {
         _prepareToolTips: function() {
             this.$(".tooltip").tipsy({
                 live: true,
@@ -142,7 +121,7 @@ FFZ.prototype._modify_vod_chat_display = function(component) {
             })
         },
 
-        ffzInit: function() {
+        ffz_init: function() {
             f._vodc = this;
 
             // Load the room, if necessary
@@ -153,22 +132,9 @@ FFZ.prototype._modify_vod_chat_display = function(component) {
             this.ffz_frozen = false;
             if ( f.settings.chat_hover_pause )
                 this.ffzEnableFreeze();
-
-            /*this.$('.chat-messages').find('.html-tooltip').tipsy({
-                live: true, html: true,
-                gravity: utils.tooltip_placement(2 * constants.TOOLTIP_DISTANCE, function() {
-                    return this.classList.contains('right') ? 'e' : 'n'
-                })});
-
-            this.$('.chat-messages').find('.ffz-tooltip').tipsy({
-                live: true, html: true,
-                title: f.render_tooltip(),
-                gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, function() {
-                    return this.classList.contains('right') ? 'e' : 'n'
-                })});*/
         },
 
-        ffzTeardown: function() {
+        ffz_destroy: function() {
             if ( f._vodc === this )
                 f._vodc = undefined;
 
@@ -231,14 +197,6 @@ FFZ.prototype._modify_vod_chat_display = function(component) {
                     this.ffzUnfreeze();
             }
         },
-
-        /*ffzMouseDown: function(event) {
-            var scroller = this.get('chatMessagesScroller');
-            if ( scroller && scroller[0] && ((!this.ffz_frozen && "mousedown" === event.type) || "mousewheel" === event.type || (is_android && "scroll" === event.type) ) ) {
-                var r = scroller[0].scrollHeight - scroller[0].scrollTop - scroller[0].offsetHeight;
-                this._setStuckToBottom(10 >= r);
-            }
-        },*/
 
         ffzMouseOut: function(event) {
             this._ffz_outside = true;

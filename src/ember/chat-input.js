@@ -210,35 +210,13 @@ FFZ.settings_info.input_emoji = {
 
 FFZ.prototype.setup_chat_input = function() {
 	this.log("Hooking the Ember Chat Input component.");
-	var Input = utils.ember_resolve('component:chat/twitch-chat-input'),
-		f = this;
-
-	if ( ! Input )
-		return this.log("Unable to get Chat Input component.");
-
-	this._modify_chat_input(Input);
-
-    try { Input.create().destroy()
-    } catch(err) { }
-
-	var views = utils.ember_views();
-	for(var key in views) {
-		var v = views[key];
-		if ( v instanceof Input ) {
-			this.log("Manually modifying Chat Input component.", v);
-            if ( ! v.ffzInit )
-			    this._modify_chat_input(v);
-
-			v.ffzInit();
-		}
-	}
+    this.update_views("component:chat/twitch-chat-input", this.modify_chat_input);
 }
 
 
-FFZ.prototype._modify_chat_input = function(component) {
+FFZ.prototype.modify_chat_input = function(component) {
 	var f = this;
-
-	component.reopen({
+	utils.ember_reopen_view(component, {
 		ffz_mru_index: -1,
         ffz_current_suggestion: 0,
         ffz_partial_word: '',
@@ -249,22 +227,7 @@ FFZ.prototype._modify_chat_input = function(component) {
         ffz_name_suggestions: [],
 		ffz_chatters: [],
 
-		didInsertElement: function() {
-			this._super();
-
-			try {
-				this.ffzInit();
-			} catch(err) { f.error("ChatInput didInsertElement: " + err); }
-		},
-
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) { f.error("ChatInput willClearRender: " + err); }
-			return this._super();
-		},
-
-		ffzInit: function() {
+		ffz_init: function() {
 			f._inputv = this;
 
 			var s = this._ffz_minimal_style = document.createElement('style');
@@ -290,7 +253,7 @@ FFZ.prototype._modify_chat_input = function(component) {
 			setTimeout(this.ffzResizeInput.bind(this), 500);
 		},
 
-		ffzTeardown: function() {
+		ffz_destroy: function() {
 			if ( f._inputv === this )
 				f._inputv = undefined;
 
@@ -322,11 +285,10 @@ FFZ.prototype._modify_chat_input = function(component) {
                 return null;
 
             var t = this,
-                el = document.createElement('div'),
-                inner = document.createElement('div'),
+                el = utils.createElement('div', 'suggestion'),
+                inner = utils.createElement('div'),
                 width = item.width ? (246 - item.width) + 'px' : null;
 
-            el.className = 'suggestion';
             el.setAttribute('data-id', i);
             el.classList.toggle('ffz-is-favorite', item.favorite || false);
 
@@ -342,7 +304,7 @@ FFZ.prototype._modify_chat_input = function(component) {
             el.appendChild(inner);
 
             if ( f.settings.input_complete_emotes && item.info ) {
-                var info = document.createElement('span');
+                var info = utils.createElement('span');
                 info.innerHTML = item.info;
                 el.classList.add('has-info');
                 if ( width )
@@ -394,8 +356,7 @@ FFZ.prototype._modify_chat_input = function(component) {
                     current = this.get('ffz_current_suggestion') || 0;
 
                 if ( ! el ) {
-                    el = this.ffz_suggestions_el = document.createElement('div');
-                    el.className = 'suggestions ffz-suggestions';
+                    el = this.ffz_suggestions_el = utils.createElement('div', 'suggestions ffz-suggestions');
                     this.get('element').appendChild(el);
 
                 } else
@@ -430,8 +391,7 @@ FFZ.prototype._modify_chat_input = function(component) {
                 }
 
                 if ( ! added ) {
-                    var item_el = document.createElement('div');
-                    item_el.className = 'suggestion disabled';
+                    var item_el = utils.createElement('div', 'suggestion disabled');
                     item_el.textContent = 'No matches.';
                     el.appendChild(item_el);
                 }

@@ -9,6 +9,23 @@ var FFZ = window.FrankerFaceZ,
 		return "ffz_setting_" + key;
 	},
 
+    favorite_setting = function(swit, key, info) {
+        var ind = this.settings.favorite_settings.indexOf(key);
+
+        if ( ind === -1 ) {
+            this.settings.favorite_settings.push(key);
+            swit.setAttribute('original-title', 'Unfavorite this Setting');
+            swit.classList.add('active');
+        } else {
+            this.settings.favorite_settings.splice(ind,1);
+            swit.setAttribute('original-title', 'Favorite this Setting');
+            swit.classList.remove('active');
+        }
+
+        jQuery(swit).trigger('mouseout').trigger('mouseover');
+        this.settings.set('favorite_settings', this.settings.favorite_settings);
+    },
+
 	toggle_setting = function(swit, key, info) {
         var val = !(info.get ? (typeof info.get === 'function' ? info.get.call(this) : this.settings.get(info.get)) : this.settings.get(key));
         if ( typeof info.set === "function" )
@@ -208,11 +225,70 @@ FFZ.prototype._load_settings_file = function(data, hide_alert) {
 // --------------------
 
 var is_android = navigator.userAgent.indexOf('Android') !== -1,
-    settings_renderer = function(settings_data, collapsable, collapsed_key) {
+    settings_renderer = function(settings_data, collapsable, collapsed_key, show_pin) {
         return function(view, container) {
             var f = this,
                 settings = {},
                 categories = [];
+
+            // Searching!
+            if ( show_pin ) {
+                var search_cont = utils.createElement('div', 'ffz-filter-container'),
+                    search_input = utils.createElement('input', 'emoticon-selector__filter-input js-filter-input text text--full-width'),
+                    filtered_cont = utils.createElement('div', 'ffz-filter-children ffz-ui-sub-menu-page');
+
+                search_input.placeholder = 'Search for Settings';
+                search_input.type = 'text';
+
+                filtered_cont.style.maxHeight = (parseInt(container.style.maxHeight) - 51) + 'px';
+
+                search_cont.appendChild(search_input);
+                container.appendChild(filtered_cont);
+                container.appendChild(search_cont);
+
+                container = filtered_cont;
+
+                search_input.addEventListener('input', function(e) {
+                    var filter = search_input.value || '',
+                        groups = filtered_cont.querySelectorAll('.chat-menu-content');
+
+                    filter = filter.toLowerCase();
+
+                    for(var i=0; i < groups.length; i++) {
+                        var el = groups[i],
+                            settings = el.querySelectorAll('.ffz-setting'),
+                            hidden = true;
+
+                        for(var j=0; j < settings.length; j++) {
+                            var se = settings[j],
+                                shidden = filter.length && se.getAttribute('data-filter').indexOf(filter) === -1;
+
+                            se.classList.toggle('hidden', shidden);
+                            hidden = hidden && shidden;
+                        }
+
+                        var incompat = el.querySelector('.bttv-incompatibility'),
+                            settings = incompat && incompat.querySelectorAll('b'),
+                            incompat_hidden = true;
+
+                        if ( incompat ) {
+                            for(var j=0; j < settings.length; j++) {
+                                var se = settings[j],
+                                    shidden = filter.length && se.getAttribute('data-filter').indexOf(filter) === -1;
+
+                                se.classList.toggle('hidden', shidden);
+                                incompat_hidden = incompat_hidden && shidden;
+                            }
+
+                            incompat.classList.toggle('hidden', incompat_hidden);
+                            hidden = hidden && incompat_hidden;
+                        }
+
+                        el.classList.toggle('collapsable', ! filter.length);
+                        el.classList.toggle('hidden', hidden);
+                    }
+                });
+            }
 
             for(var key in settings_data) {
                 var info = settings_data[key],
@@ -254,7 +330,7 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
                 return 0;
             });
 
-            var current_category = (collapsed_key ? this[collapsed_key] : null) || categories[0];
+            var current_category = collapsed_key ? this[collapsed_key] || true : categories[0];
 
             for(var ci=0; ci < categories.length; ci++) {
                 var category = categories[ci],
@@ -274,15 +350,23 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
                 if ( collapsable ) {
                     menu.classList.add('collapsable');
                     menu.classList.toggle('collapsed', current_category !== category);
-                    menu.addEventListener('click', function() {
+                    menu.addEventListener('click', function(e) {
                         var t = this;
-                        if ( ! t.classList.contains('collapsed') )
+                        if ( ! t.classList.contains('collapsable') )
                             return;
+                        else if ( ! t.classList.contains('collapsed') ) {
+                            if ( e.target.classList.contains('heading') ) {
+                                t.classList.add('collapsed');
+                                if ( collapsed_key )
+                                   f[collapsed_key] = true;
+                            }
 
-                        jQuery(".chat-menu-content:not(.collapsed)", container).addClass("collapsed");
-                        t.classList.remove('collapsed');
-                        if ( collapsed_key )
-                            f[collapsed_key] = t.getAttribute('data-category');
+                        } else {
+                            jQuery(".chat-menu-content:not(.collapsed)", container).addClass("collapsed");
+                            t.classList.remove('collapsed');
+                            if ( collapsed_key )
+                                f[collapsed_key] = t.getAttribute('data-category');
+                        }
 
                         setTimeout(function(){t.scrollIntoViewIfNeeded()});
                     });
@@ -313,15 +397,26 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
                 for(var i=0; i < cset.length; i++) {
                     var key = cset[i][0],
                         info = cset[i][1],
+
                         el = createElement('p'),
+                        pin_btn = createElement('a'),
                         val = info.get ? (typeof info.get === 'function' ? info.get.call(this) : this.settings.get(info.get)) : this.settings.get(key);
 
-                    el.className = 'clearfix';
+                    el.className = 'ffz-setting clearfix';
 
                     if ( this.has_bttv && info.no_bttv ) {
                         bttv_skipped.push([info.name, info.help]);
                         continue;
                     } else {
+                        if ( show_pin ) {
+                            var faved = this.settings.favorite_settings.indexOf(key) !== -1;
+                            pin_btn.className = 'pin-switch html-tooltip';
+                            pin_btn.classList.toggle('active', faved);
+                            pin_btn.addEventListener('click', favorite_setting.bind(this, pin_btn, key, info));
+                            pin_btn.title = (faved ? 'Unf' : 'F') + 'avorite this Setting';
+                            pin_btn.innerHTML = constants.STAR;
+                        }
+
                         if ( info.type === "boolean" ) {
                             var swit = createElement('a'),
                                 label = createElement('span');
@@ -334,6 +429,8 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
                             label.innerHTML = info.name;
 
                             el.appendChild(swit);
+                            if ( show_pin )
+                                el.appendChild(pin_btn);
                             el.appendChild(label);
 
                             swit.addEventListener('click', toggle_setting.bind(this, swit, key, info))
@@ -356,6 +453,8 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 
                             select.addEventListener('change', option_setting.bind(this, select, key, info));
 
+                            if ( show_pin )
+                                el.appendChild(pin_btn);
                             el.appendChild(label);
                             el.appendChild(select);
 
@@ -364,6 +463,9 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
                             var link = createElement('a');
                             link.innerHTML = info.name;
                             link.href = '#';
+
+                            if ( show_pin )
+                                el.appendChild(pin_btn);
                             el.appendChild(link);
 
                             link.addEventListener('click', info.method.bind(this));
@@ -371,13 +473,26 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
                         } else
                             continue;
 
-                        if ( info.help || (this.has_bttv && info.warn_bttv) ) {
+                        if ( info.help || info.experiment_warn || (this.has_bttv && info.warn_bttv) ) {
                             var help = document.createElement('span');
                             help.className = 'help';
-                            help.innerHTML = (this.has_bttv && info.warn_bttv ? '<i>' + info.warn_bttv + (info.help ? '</i><br>' : '</i>') : '') + (info.help || "");
+                            var parts = [];
+                            if ( info.experiment_warn )
+                                parts.push('<b>Note:</b> This affects an active Twitch experiment. Give feedback at: <a href="mailto:feedback@twitch.tv">feedback@twitch.tv</a>');
+
+                            if ( this.has_bttv && info.warn_bttv )
+                                parts.push('<i>' + info.warn_bttv + '</i>');
+
+                            if ( info.help )
+                                parts.push(info.help);
+
+                            help.innerHTML = parts.join('<br>');
                             el.appendChild(help);
                         }
                     }
+
+                    // Search by any of the present text.
+                    el.setAttribute('data-filter', el.textContent.toLowerCase());
 
                     added++;
                     menu.appendChild(el);
@@ -397,8 +512,9 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 
                     help.className = 'help';
                     for(var i=0; i < bttv_skipped.length; i++) {
-                        var skipped = bttv_skipped[i];
-                        help.innerHTML += (i > 0 ? ', ' : '') + '<b' + (skipped[1] ? ' class="html-tooltip" title="' + utils.quote_attr(skipped[1]) + '"' : '') + '>' + skipped[0] + '</b>';
+                        var skipped = bttv_skipped[i],
+                            filter_text = skipped[0].toLowerCase() + (skipped[1] ? ' ' + skipped[1].toLowerCase() : '');
+                        help.innerHTML += '<b data-filter="' + utils.quote_attr(filter_text) + '"' + (skipped[1] ? ' class="html-tooltip" title="' + utils.quote_attr(skipped[1]) + '"' : '') + '>' + skipped[0] + '</b>';
                     }
 
                     el.appendChild(label);
@@ -414,7 +530,13 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
     },
 
     render_basic = settings_renderer(FFZ.basic_settings, false, '_ffz_basic_settings_page'),
-    render_advanced = settings_renderer(FFZ.settings_info, true, '_ffz_settings_page');
+    render_advanced = settings_renderer(FFZ.settings_info, true, '_ffz_settings_page', true);
+
+
+FFZ.settings_info.favorite_settings = {
+    value: [],
+    hidden: true
+}
 
 
 FFZ.menu_pages.settings = {
@@ -423,12 +545,42 @@ FFZ.menu_pages.settings = {
 	sort_order: 99999,
 	wide: true,
 
-    default_page: function() { return this.settings.advanced_settings ? 'advanced' : 'basic' },
+    default_page: function() { return this.settings.favorite_settings.length ? "favorites" : this.settings.advanced_settings ? 'advanced' : 'basic' },
 
     pages: {
+        favorites: {
+            name: "Favorites",
+            sort_order: 1,
+
+            render: function(view, container) {
+                var favorites = this.settings.favorite_settings;
+                if ( ! favorites.length ) {
+                    var el = utils.createElement('div');
+                    el.className = 'emoticon-grid ffz-no-emotes center';
+                    el.innerHTML = "You have no favorite settings.<br>" +
+                        '<img src=\"//cdn.frankerfacez.com/emoticon/26608/2\"><br>' +
+                        'To make a setting a favorite, find it on the <nobr>Advanced</nobr> tab and click the star icon to the right.';
+
+                    container.appendChild(el);
+                    return;
+                }
+
+                var favorite_settings = {};
+                for(var i=0, l = favorites.length; i < l; i++) {
+                    var key = favorites[i],
+                        val = FFZ.settings_info[key];
+
+                    if ( val )
+                        favorite_settings[key] = val;
+                }
+
+                return settings_renderer(favorite_settings, false, '_ffz_favorite_settings_page').call(this, view, container);
+            }
+        },
+
         basic: {
             name: "Basic",
-            sort_order: 1,
+            sort_order: 2,
 
             render: function(view, container) {
                 this.settings.set("advanced_settings", false);
@@ -438,7 +590,7 @@ FFZ.menu_pages.settings = {
 
         advanced: {
             name: "Advanced",
-            sort_order: 2,
+            sort_order: 3,
 
             render: function(view, container) {
                 this.settings.set("advanced_settings", true);
@@ -448,7 +600,7 @@ FFZ.menu_pages.settings = {
 
         backup: {
             name: "Backup & Restore",
-            sort_order: 3,
+            sort_order: 4,
 
             render: function(view, container) {
                 var backup_head = createElement('div'),

@@ -71,42 +71,16 @@ FFZ.prototype.setup_conversations = function() {
 	document.body.classList.toggle('ffz-minimize-conversations', this.settings.minimize_conversations);
 	document.body.classList.toggle('ffz-theatre-conversations', this.settings.hide_conversations_in_theatre);
 
-	var ConvWindow = utils.ember_resolve('component:twitch-conversations/conversation-window');
-	if ( ConvWindow ) {
-		this.log("Hooking the Ember Conversation Window component.");
-		this._modify_conversation_window(ConvWindow);
-        try { ConvWindow.create().destroy() }
-        catch(err) { }
-    } else
-		this.log("Unable to resolve: component:twitch-conversations/conversation-window");
-
-
-	var ConvSettings = utils.ember_resolve('component:twitch-conversations/conversation-settings-menu');
-	if ( ConvSettings ) {
-		this.log("Hooking the Ember Conversation Settings Menu component.");
-		this._modify_conversation_menu(ConvSettings);
-		try { ConvSettings.create().destroy() }
-		catch(err) { }
-	} else
-		this.log("Unable to resolve: component:twitch-conversations/conversation-settings-menu");
-
-
-	var ConvLine = utils.ember_resolve('component:twitch-conversations/conversation-line');
-	if ( ConvLine ) {
-		this.log("Hooking the Ember Conversation Line component.");
-		this._modify_conversation_line(ConvLine);
-        try { ConvLine.create().destroy() }
-        catch(err) { }
-    } else
-		this.log("Unable to resolve: component:twitch-conversations/conversation-line");
+	this.update_views('component:twitch-conversations/conversation-window', this.modify_conversation_window);
+	this.update_views('component:twitch-conversations/conversation-settings-menu', this.modify_conversation_menu);
+	this.update_views('component:twitch-conversations/conversation-line', this.modify_conversation_line);
 }
 
 
-FFZ.prototype._modify_conversation_menu = function(component) {
+FFZ.prototype.modify_conversation_menu = function(component) {
 	var f = this;
-
-	component.reopen({
-		didInsertElement: function() {
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
 			var user = this.get('thread.otherUsername'),
 				el = this.get('element'),
 				sections = el && el.querySelectorAll('.options-section');
@@ -132,11 +106,11 @@ FFZ.prototype._modify_conversation_menu = function(component) {
 }
 
 
-FFZ.prototype._modify_conversation_window = function(component) {
+FFZ.prototype.modify_conversation_window = function(component) {
 	var f = this,
 		Layout = utils.ember_lookup('service:layout');
 
-	component.reopen({
+	utils.ember_reopen_view(component, {
 		headerBadges: Ember.computed("thread.participants", "currentUsername", function() {
 			return [];
 		}),
@@ -154,7 +128,7 @@ FFZ.prototype._modify_conversation_window = function(component) {
 			badge_el.innerHTML = f.render_badges(badges);
 		}.observes('ffzHeaderBadges'),
 
-		didInsertElement: function() {
+		ffz_init: function() {
 			var el = this.get('element'),
 				header = el && el.querySelector('.conversation-header'),
 				header_name = header && header.querySelector('.conversation-header-name'),
@@ -178,11 +152,11 @@ FFZ.prototype._modify_conversation_window = function(component) {
 }
 
 
-FFZ.prototype._modify_conversation_line = function(component) {
+FFZ.prototype.modify_conversation_line = function(component) {
 	var f = this,
 		Layout = utils.ember_lookup('service:layout');
 
-	component.reopen({
+	utils.ember_reopen_view(component, {
 		tokenizedMessage: function() {
 			try {
 				return f.tokenize_conversation_line(this.get('message'));
@@ -204,7 +178,7 @@ FFZ.prototype._modify_conversation_line = function(component) {
 		},
 
         didUpdate: function() { this.ffzRender() },
-        didInsertElement: function() { this.ffzRender() },
+        ffz_init: function() { this.ffzRender() },
 
 		ffzRender: function() {
             var el = this.get('element'),

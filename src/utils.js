@@ -2,7 +2,20 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants');
 
 
-var sanitize_el = document.createElement('span'),
+var createElement = function(tag, className, content) {
+		var out = document.createElement(tag);
+		if ( className )
+			out.className = className;
+		if ( content )
+			if ( content.nodeType )
+				out.appendChild(content);
+			else
+				out.innerHTML = content;
+
+		return out;
+	},
+
+	sanitize_el = createElement('span'),
 
 	sanitize = function(msg) {
 		sanitize_el.textContent = msg;
@@ -206,24 +219,17 @@ var sanitize_el = document.createElement('span'),
 
     // Dialogs
     show_modal = function(contents, on_close, width) {
-        var container = document.createElement('div'),
-            subwindow = document.createElement('div'),
-            card = document.createElement('div'),
-            close_button = document.createElement('div'),
+        var container = createElement('div', 'twitch_subwindow_container'),
+            subwindow = createElement('div', 'twitch_subwindow ffz-subwindow'),
+            card = createElement('div', 'card'),
+            close_button = createElement('div', 'modal-close-button', constants.CLOSE),
 
             closer = function() { container.parentElement.removeChild(container) };
 
-        container.className = 'twitch_subwindow_container';
         container.id = 'ffz-modal-container';
 
-        subwindow.className = 'twitch_subwindow ffz-subwindow';
         subwindow.style.width = '100%';
         subwindow.style.maxWidth = (width||420) + 'px';
-
-        card.className = 'card';
-
-        close_button.className = 'modal-close-button';
-        close_button.innerHTML = constants.CLOSE;
 
         close_button.addEventListener('click', function() {
             closer();
@@ -265,6 +271,7 @@ var sanitize_el = document.createElement('span'),
 
 
 module.exports = FFZ.utils = {
+	// Ember Manipulation
     ember_views: function() {
         return ember_lookup('-view-registry:main') || {};
     },
@@ -281,6 +288,38 @@ module.exports = FFZ.utils = {
             return App.__container__.resolve(thing);
     },
 
+	ember_reopen_view: function(component, data) {
+        if ( typeof component === 'string' )
+            component = ember_resolve(component);
+
+		data.ffz_modified = true;
+
+        if ( data.ffz_init && ! data.didInsertElement )
+            data.didInsertElement = function() {
+                this._super();
+                try {
+                    this.ffz_init();
+                } catch(err) {
+                    FFZ.get().error("An error occured running ffz_init on " + this.toString(), err);
+                }
+            };
+
+        if ( data.ffz_destroy && ! data.willClearRender )
+            data.willClearRender = function() {
+                try {
+                    this.ffz_destroy();
+                } catch(err) {
+                    FFZ.get().error("An error occured running ffz_destroy on " + this.toString(), err);
+                }
+
+                this._super();
+            };
+
+        return component.reopen(data);
+    },
+
+	// Other Stuff
+
 	build_srcset: build_srcset,
 	/*build_tooltip: build_tooltip,
 	load_emote_data: load_emote_data,*/
@@ -294,18 +333,52 @@ module.exports = FFZ.utils = {
 
 
     show_modal: show_modal,
+	confirm: function(title, description, callback) {
+		var contents = createElement('div', 'text-content'),
+			heading = title ? createElement('div', 'content-header', '<h4>' + title + '</h4>') : null,
+			body = createElement('div', 'item'),
+			buttons = createElement('div', 'buttons', '<a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button>'),
+
+			close_btn = buttons.querySelector('.js-subwindow-close'),
+        	okay_btn = buttons.querySelector('.button.primary');
+
+		if ( heading )
+			contents.appendChild(heading);
+
+		if ( description ) {
+			if ( description.nodeType )
+				body.appendChild(description);
+			else
+				body.innerHTML = '<p>' + description + '</p>';
+
+			contents.appendChild(body);
+		}
+
+		contents.appendChild(buttons);
+
+		var closer,
+			cb = function(success) {
+				closer();
+				if ( ! callback )
+					return;
+
+				callback(success);
+			};
+
+		closer = show_modal(contents, cb);
+
+		okay_btn.addEventListener('click', function(e) { e.preventDefault(); cb(true); return false });
+        close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
+	},
+
     prompt: function(title, description, old_value, callback, width, input) {
-        var contents = document.createElement('div'),
-            heading = document.createElement('div'),
-            form = document.createElement('form'),
+        var contents = createElement('div', 'text-content'),
+            heading = createElement('div', 'content-header', '<h4>' + title + '</h4>'),
+            form = createElement('form'),
             close_btn, okay_btn;
 
-        contents.className = 'text-content';
-        heading.className = 'content-header';
-        heading.innerHTML = '<h4>' + title + '</h4>';
-
 		if ( ! input ) {
-			input = document.createElement('input');
+			input = createElement('input');
 			input.type = 'text';
 		}
 
@@ -540,18 +613,19 @@ module.exports = FFZ.utils = {
 
 	escape_regex: escape_regex,
 
-	createElement: function(tag, className, content) {
-		var out = document.createElement(tag);
-		if ( className )
-			out.className = className;
-		if ( content )
-			out.innerHTML = content;
-		return out;
-	},
+	createElement: createElement,
 
 	toggle_cls: function(cls) {
 		return function(val) {
 			document.body.classList.toggle(cls, val);
 		}
+	},
+
+	badge_css: function(badge, klass) {
+		klass = klass || ('ffz-badge-' + badge.id);
+		var out = ".badges ." + klass + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+		if ( badge.alpha_image )
+			out += ".badges .badge.alpha." + klass + ",.ffz-transparent-badges .badges ." + klass + ' { background-image: url("' + badge.alpha_image + '"); }';
+		return out;
 	}
 }

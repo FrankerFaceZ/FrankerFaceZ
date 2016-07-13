@@ -77,14 +77,44 @@ FFZ.settings_info.directory_group_hosts = {
 	};
 
 
-FFZ.settings_info.banned_games = {
-	type: "button",
-	value: [],
+FFZ.settings_info.enable_recommended_vods = {
+	type: "boolean",
+	value: true,
 
 	category: "Directory",
 	no_mobile: true,
-	name: "Banned Games",
-	help: "A list of games that will not be displayed in the Directory.",
+	experiment_warn: true,
+
+	name: 'Show Twitch\'s  Recommended Videos',
+	help: 'Show the "Based on your Viewing History" section of the directory rather than <nobr>Most Recent Videos.</nobr>',
+
+	on_update: function(val) {
+		Ember.propertyDidChange(utils.ember_lookup('service:vod-coviews'), 'areVodsViewable');
+	}
+}
+
+
+FFZ.settings_info.recommended_above_hosts = {
+	type: "boolean",
+	value: function() { var s = utils.ember_lookup('service:vod-coviews'); return s && s.get('isFollowingAboveHost') },
+
+	category: "Directory",
+	no_mobile: true,
+	experiment_warn: true,
+
+	name: "Show Twitch's Recommended Videos above Hosts",
+	help: 'Enable this to place the "Based on your Viewing History" section above Live Hosts.',
+
+	on_update: function(val) {
+		Ember.propertyDidChange(utils.ember_lookup('service:vod-coviews'), 'isFollowingAboveHost');
+		//utils.ember_lookup('service:vod-coviews').set('isFollowingAboveHost', val);
+	}
+}
+
+
+FFZ.settings_info.banned_games = {
+	visible: false,
+	value: [],
 
 	on_update: function() {
 		var banned = this.settings.banned_games,
@@ -96,33 +126,13 @@ FFZ.settings_info.banned_games = {
 
 			el.classList.toggle('ffz-game-banned', banned.indexOf(game && game.toLowerCase()) !== -1);
 		}
-	},
-
-	method: function() {
-		var f = this,
-			old_val = f.settings.banned_games.join(", ");
-
-		utils.prompt(
-			"Banned Games",
-			"Please enter a comma-separated list of games that you would like to be banned from viewing in the Directory.</p><p>This is case insensitive, however you must type the full name.</p><p><b>Example:</b> <code>League of Legends, Dota 2, Smite</code>",
-			old_val,
-			function(new_val) {
-				if ( new_val === null || new_val === undefined )
-					return;
-				f.settings.set("banned_games", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)));
-			}, 600);
 	}
 }
 
 
 FFZ.settings_info.spoiler_games = {
-	type: "button",
+	visible: false,
 	value: [],
-
-	category: "Directory",
-	no_mobile: true,
-	name: "No-Thumbnail Games",
-	help: "Stream and video thumbnails will be hidden for games that you add to this list.",
 
 	on_update: function() {
 		var spoiled = this.settings.spoiler_games,
@@ -134,21 +144,6 @@ FFZ.settings_info.spoiler_games = {
 
 			el.classList.toggle('ffz-game-spoilered', spoiled.indexOf(game && game.toLowerCase()) !== -1);
 		}
-	},
-
-	method: function() {
-		var f = this,
-			old_val = f.settings.spoiler_games.join(", ");
-
-		utils.prompt(
-			"No-Thumbnail Games",
-			"Please enter a comma-separated list of games that you would like to have the thumbnails hidden for in the Directory.</p><p>This is case insensitive, however you must type the full name.</p><p><b>Example:</b> <code>Undertale</code>",
-			old_val,
-			function(new_val) {
-				if ( new_val === null || new_val === undefined )
-					return;
-				f.settings.set("spoiler_games", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)));
-			}, 600);
 	}
 }
 
@@ -198,88 +193,46 @@ FFZ.prototype.setup_directory = function() {
 	document.body.classList.toggle('ffz-creative-tags', this.settings.directory_creative_all_tags);
 	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
 
+	var f = this,
+		VodCoviews = utils.ember_lookup('service:vod-coviews');
+
+	if ( VodCoviews ) {
+		VodCoviews.reopen({
+			// checkExperiment likes setting this back. Don't let it.
+			isFollowingAboveHost: Ember.computed('_ffz', {
+				get: function(key) {
+					return f.settings.recommended_above_hosts;
+				},
+				set: function(key, val) {
+					return f.settings.recommended_above_hosts;
+				}
+			}),
+
+			areVodsViewable: function() {
+				var filtered = this.get('filteredVods');
+				return f.settings.enable_recommended_vods && filtered && filtered.length > 0;
+			}.property('filteredVods')
+		});
+
+		Ember.propertyDidChange(VodCoviews, 'isFollowingAboveHost');
+		Ember.propertyDidChange(VodCoviews, 'areVodsViewable');
+
+	} else
+		this.log("Unable to locate the Ember service:vod-coviews");
+
+
 	this.log("Attempting to modify the Following collection.");
 	this._modify_following();
 
 	this.log("Hooking the Ember Directory views.");
 
-	var ChannelView = utils.ember_resolve('component:stream-preview');
-	if ( ChannelView ) {
-		this._modify_directory_live(ChannelView, false);
-        try {
-		    ChannelView.create().destroy();
-	    } catch(err) { }
-    } else
-		this.log("Unable to locate the Ember component:stream-preview");
+	this.update_views('component:stream-preview', function(x) { this.modify_directory_live(x, false) }, true);
+	this.update_views('component:creative-preview', function(x) { this.modify_directory_live(x, false) }, true);
+	this.update_views('component:csgo-channel-preview', function(x) { this.modify_directory_live(x, true) }, true);
+	this.update_views('component:host-preview', this.modify_directory_host, true);
+	this.update_views('component:video-preview', this.modify_video_preview, true);
 
-	var CreativeChannel = utils.ember_resolve('component:creative-preview');
-	if ( CreativeChannel ) {
-		this._modify_directory_live(CreativeChannel, false);
-        try {
-		    CreativeChannel.create().destroy();
-	    } catch(err) { }
-    } else
-		this.log("Unable to locate the Ember component:creative-preview");
-
-	var CSGOChannel = utils.ember_resolve('component:csgo-channel-preview');
-	CSGOChannel = this._modify_directory_live(CSGOChannel, true, 'component:csgo-channel-preview');
-	try {
-		CSGOChannel.create().destroy();
-	} catch(err) { }
-
-	var HostView = utils.ember_resolve('component:host-preview');
-	HostView = this._modify_directory_host(HostView);
-    try {
-        HostView.create().destroy();
-    } catch(err) { }
-
-
-	var VideoPreview = utils.ember_resolve('component:video-preview');
-	if ( VideoPreview ) {
-		this._modify_video_preview(VideoPreview);
-		try { VideoPreview.create().destroy();
-		} catch(err) { }
-	} else
-		this.log("Unable to locate the Ember component:video-preview");
-
-
-	var GameFollow = utils.ember_resolve('component:game-follow-button');
-	if ( GameFollow ) {
-		this._modify_game_follow(GameFollow);
-		try { GameFollow.create().destroy() }
-		catch(err) { }
-	} else
-		this.log("Unable to locate the Ember component:game-follow-button");
-
-
-	// Initialize existing views.
-	var views = utils.ember_views();
-	for(var key in views) {
-		var view = views[key];
-        if ( (ChannelView && view instanceof ChannelView) || (CreativeChannel && view instanceof CreativeChannel) ) {
-            if ( ! view.ffzInit )
-                this._modify_directory_live(view, false);
-        } else if ( CSGOChannel && view instanceof CSGOChannel ) {
-            if ( ! view.ffzInit )
-                this._modify_directory_live(view, true);
-        } else if ( view instanceof HostView || view.get('tt_content') === 'live_host' ) {
-            if ( ! view.ffzInit )
-                this._modify_directory_host(view);
-		} else if ( VideoPreview && view instanceof VideoPreview ) {
-			if ( ! view.ffzInit )
-				this._modify_video_preview(view);
-		} else if ( GameFollow && view instanceof GameFollow ) {
-			if ( ! view.ffzInit )
-				this._modify_game_follow(view);
-		} else
-            continue;
-
-		try {
-            view.ffzInit();
-		} catch(err) {
-			this.error("Directory Setup: " + err);
-		}
-	}
+	this.update_views('component:game-follow-button', this.modify_game_follow_button);
 }
 
 
@@ -407,15 +360,10 @@ FFZ.prototype._modify_following = function() {
 }
 
 
-FFZ.prototype._modify_game_follow = function(component) {
+FFZ.prototype.modify_game_follow_button = function(component) {
 	var f = this;
-	component.reopen({
-		didInsertElement: function() {
-			this._super();
-			this.ffzInit();
-		},
-
-		ffzInit: function() {
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
 			var el = this.get('element'),
 				game = this.get('game.id').toLowerCase(),
 
@@ -436,37 +384,33 @@ FFZ.prototype._modify_game_follow = function(component) {
 				};
 
 			// Block Button
-			var block = utils.createElement('div', 'follow-button ffz-block-button'),
-				block_link = utils.createElement('a', 'tooltip follow block');
-
+			var block = utils.createElement('button', 'button tooltip ffz-block-button'),
 				update_block = function() {
 					var is_blocked = f.settings.banned_games.indexOf(game) !== -1;
-					block_link.classList.toggle('active', is_blocked);
+					block.classList.toggle('active', is_blocked);
 
-					block_link.innerHTML = '<span>' + (is_blocked ? 'Unblock' : 'Block') + '</span>';
-					block_link.title = 'Click to ' + (is_blocked ? 'unblock' : 'block') + " this game.\n\nBlocking a game hides all the streams and videos of the game when you're not viewing it directly.";
+					block.innerHTML = (is_blocked ? 'Unblock' : 'Block');
+					block.title = 'Click to ' + (is_blocked ? 'unblock' : 'block') + " this game.\n\nBlocking a game hides all the streams and videos of the game when you're not viewing it directly.";
+					jQuery(block).trigger('mouseout').trigger('mouseover');
 				};
 
 			update_block();
-			block_link.addEventListener('click', click_button('banned_games', update_block));
-			block.appendChild(block_link);
+			block.addEventListener('click', click_button('banned_games', update_block));
 			el.appendChild(block);
 
 			// Spoiler Button
-			var spoiler = utils.createElement('div', 'follow-button ffz-spoiler-button'),
-				spoiler_link = utils.createElement('a', 'tooltip follow spoiler'),
-
+			var spoiler = utils.createElement('button', 'button tooltip ffz-spoiler-button'),
 				update_spoiler = function() {
 					var is_spoiled = f.settings.spoiler_games.indexOf(game) !== -1;
-					spoiler_link.classList.toggle('active', is_spoiled);
+					spoiler.classList.toggle('active', is_spoiled);
 
-					spoiler_link.innerHTML = '<span>' + (is_spoiled ? 'Show Thumbnails' : 'Hide Thumbnails') + '</span>';
-					spoiler_link.title = 'Click to ' + (is_spoiled ? 'show' : 'hide') + " thumbnails for this game.\n\nHiding thumbnails for a game will help you avoid spoilers for a game that you haven't played yet.";
+					spoiler.innerHTML = (is_spoiled ? 'Show Thumbnails' : 'Hide Thumbnails');
+					spoiler.title = 'Click to ' + (is_spoiled ? 'show' : 'hide') + " thumbnails for this game.\n\nHiding thumbnails for a game will help you avoid spoilers for a game that you haven't played yet.";
+					jQuery(spoiler).trigger('mouseout').trigger('mouseover');
 				}
 
 			update_spoiler();
-			spoiler_link.addEventListener('click', click_button('spoiler_games', update_spoiler));
-			spoiler.appendChild(spoiler_link);
+			spoiler.addEventListener('click', click_button('spoiler_games', update_spoiler));
 			el.appendChild(spoiler);
 
 			jQuery('.tooltip', el).tipsy();
@@ -475,17 +419,12 @@ FFZ.prototype._modify_game_follow = function(component) {
 }
 
 
-FFZ.prototype._modify_directory_live = function(dir, is_csgo, component_name) {
+FFZ.prototype.modify_directory_live = function(component, is_csgo) {
 	var f = this,
         pref = is_csgo ? 'channel.' : 'stream.';
 
-	var mutator = {
-		didInsertElement: function() {
-			this._super();
-			this.ffzInit();
-		},
-
-		ffzInit: function() {
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
 			var el = this.get('element'),
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
@@ -532,12 +471,12 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo, component_name) {
                     if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
                         return;
 
-					var Channel = utils.ember_resolve('model:channel');
+					var Channel = utils.ember_resolve('model:deprecated-channel');
 					if ( ! Channel )
 						return;
 
-					e.preventDefault();
 					utils.ember_lookup('router:main').transitionTo('channel.index', Channel.find({id: channel_id}).load());
+					e.preventDefault();
 					return false;
 				});
 
@@ -546,7 +485,7 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo, component_name) {
 			}
 		},
 
-		willClearRender: function() {
+		ffz_destroy: function() {
 			if ( this._ffz_uptime ) {
 				this._ffz_uptime.parentElement.removeChild(this._ffz_uptime);
 				this._ffz_uptime = null;
@@ -557,8 +496,6 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo, component_name) {
 
             if ( this._ffz_image_timer )
                 clearInterval(this._ffz_image_timer);
-
-			this._super();
 		},
 
         ffzRotateImage: function() {
@@ -587,32 +524,14 @@ FFZ.prototype._modify_directory_live = function(dir, is_csgo, component_name) {
 				this._ffz_uptime.innerHTML = '';
 			}
 		}
-	};
-
-	if ( dir )
-		dir.reopen(mutator);
-	else {
-		dir = Ember.Component.extend(mutator);
-        App.__deprecatedInstance__.registry.register(component_name, dir);
-	}
-
-	return dir;
+	});
 }
 
 
-FFZ.prototype._modify_video_preview = function(vp) {
+FFZ.prototype.modify_video_preview = function(component) {
 	var f = this;
-	vp.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("component:video-preview ffzInit: " + err);
-			}
-		},
-
-		ffzInit: function() {
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
 			var el = this.get('element'),
 				game = this.get('video.game'),
 
@@ -659,30 +578,11 @@ FFZ.prototype._modify_video_preview = function(vp) {
 }
 
 
-FFZ.prototype._modify_directory_host = function(dir) {
-	var f = this, mutator;
-
-    mutator = {
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("component:host-preview ffzInit: " + err);
-			}
-		},
-
-		willClearRender: function() {
-			this._super();
-			try {
-				this.ffzCleanup();
-			} catch(err) {
-				f.error("component:host-preview ffzCleanup: " + err);
-			}
-		},
-
+FFZ.prototype.modify_directory_host = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
 		ffzVisitChannel: function(target, e) {
-			var Channel = utils.ember_resolve('model:channel');
+			var Channel = utils.ember_resolve('model:deprecated-channel');
 			if ( ! Channel )
 				return;
 
@@ -773,7 +673,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
             this.$('.thumb .cap img').attr('src', url);
         },
 
-		ffzCleanup: function() {
+		ffz_destroy: function() {
 			var target = this.get('stream.target.channel');
 			if ( f._popup && f._popup.classList.contains('ffz-channel-selector') && f._popup.getAttribute('data-channel') === target )
 				f.close_popup();
@@ -782,7 +682,7 @@ FFZ.prototype._modify_directory_host = function(dir) {
                 clearInterval(this._ffz_image_timer);
 		},
 
-		ffzInit: function() {
+		ffz_init: function() {
 			var el = this.get('element'),
 				meta = el && el.querySelector('.meta'),
 				thumb = el && el.querySelector('.thumb'),
@@ -839,14 +739,5 @@ FFZ.prototype._modify_directory_host = function(dir) {
 				cap.addEventListener('click', this.ffzShowHostMenu.bind(this));
 			}
 		}
-	};
-
-    if ( dir )
-        dir.reopen(mutator);
-    else {
-        dir = Ember.Component.extend(mutator);
-        App.__deprecatedInstance__.registry.register('component:host-preview', dir);
-    }
-
-    return dir;
+	});
 }

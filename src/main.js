@@ -37,7 +37,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 216,
+	major: 3, minor: 5, revision: 247,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -167,8 +167,9 @@ require('./badges');
 require('./tokenize');
 //require('./filtering');
 
-
+require('./ember/wrapper');
 require('./ember/router');
+require('./ember/bits');
 require('./ember/channel');
 require('./ember/player');
 require('./ember/room');
@@ -188,7 +189,6 @@ require('./ember/sidebar');
 
 require('./debug');
 
-//require('./ext/rechat');
 require('./ext/betterttv');
 require('./ext/emote_menu');
 
@@ -214,6 +214,7 @@ require('./ui/about_page');
 
 require('./commands');
 require('./ext/api');
+require('./ext/warpworld');
 
 
 // ---------------
@@ -404,6 +405,7 @@ FFZ.prototype.init_ember = function(delay) {
 
 	// Initialize all the modules.
 	this.load_settings();
+	this.setup_ember_wrapper();
 
 	// Start this early, for quick loading.
 	this.setup_dark();
@@ -426,6 +428,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_room();
     this.setup_vod_chat();
 	this.setup_line();
+	this.setup_bits();
 	this.setup_layout();
 	this.setup_chatview();
 	this.setup_conversations();
@@ -446,10 +449,13 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_following_count(true);
 	this.setup_races();
 
+
+	// Do all Ember modification before this point.
+	this.finalize_ember_wrapper();
+
 	this.fix_tooltips();
 	this.connect_extra_chat();
 
-	//this.setup_rechat();
     this.setup_message_event();
 	this.find_bttv(10);
 	this.find_emote_menu(10);

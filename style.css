@@ -321,10 +321,6 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	background-color: #25252a;
 }
 
-.ffz-theater-stats .app-main.theatre .button:not(.primary) {
-	color: #a68ed2;
-}
-
 .ffz-theater-stats .app-main.theatre .button.button--icon-only svg path {
 	fill: #a68ed2;
 }
@@ -501,6 +497,11 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	border-top-color: rgba(255,255,255, 0.2);
 }
 
+.ffz-dark .ffz-ui-menu-page .ffz-filter-container,
+.theatre .ffz-ui-menu-page .ffz-filter-container,
+.dark .ffz-ui-menu-page .ffz-filter-container,
+.force-dark .ffz-ui-menu-page .ffz-filter-container,
+
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .theatre .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
@@ -598,17 +599,18 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.menu-side-padding { padding-left: 20px; padding-right: 20px; }
 
-.emoticon-grid.collapsed span,
-.chat-menu-content.collapsed p { display: none; }
+.emoticon-grid.collapsable.collapsed span,
+.chat-menu-content.collapsable.collapsed p { display: none; }
 
-.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.collapsed .heading,
-.chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid.collapsed .heading {
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.collapsable.collapsed .heading,
+.chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid.collapsable.collapsed .heading {
 	padding-bottom: 0;
 }
 
 .emoticon-grid.collapsable .heading,
-.emoticon-grid.collapsed,
-.chat-menu-content.collapsed {
+.emoticon-grid.collapsable.collapsed,
+.chat-menu-content.collapsable.collapsed,
+.chat-menu-content.collapsable .heading {
 	cursor: pointer;
 }
 
@@ -617,6 +619,25 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	position: relative;
 }
 
+.pin-switch {
+	display: block;
+	height: 16px;
+	padding: 2px;
+	margin: 0 !important;
+	cursor: pointer;
+}
+
+.pin-switch:hover svg path,
+.pin-switch.active svg path { fill: #14b866 !important }
+.pin-switch.active:hover svg path { fill: #fc3636 !important }
+
+.pin-switch svg path { fill: rgba(0,0,0,0.2); }
+
+.dark .pin-switch svg path,
+.force-dark .pin-switch svg path,
+.theatre .dark .pin-switch svg path { fill: rgba(255,255,255,0.2) }
+
+.pin-switch,
 .list-header span.right { float: right; }
 
 .ember-chat .chat-menu .list-header.sub-header {
@@ -1307,7 +1328,7 @@ img.channel_background[src="null"] { display: none; }
 .ffz-moderation-card .right button:last-of-type,
 .ffz-moderation-card .mod-controls:last-of-type button:last-of-type { margin-right: 0 }
 
-.ffz-moderation-card .follow-button a {
+.ffz-moderation-card .follow-button {
 	font-size: 0 !important;
 	padding-right: 0 !important;
 }
@@ -1413,6 +1434,8 @@ img.channel_background[src="null"] { display: none; }
 
 /* Chat Rows */
 
+.chat-line { overflow: hidden }
+
 .theatre .conversation-window .conversation-chat-line,
 .dark .chat-line,
 .force-dark .chat-line,
@@ -1455,6 +1478,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 .ember-chat .chat-messages .tse-scroll-content {
 	padding: 0;
 }
+
 
 /* Emoticon Tooltips */
 
@@ -2170,6 +2194,14 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue .theatre .conversation-system-message,
 .ffz-no-blue.ffz-dark .conversation-system-message,
 
+.ffz-no-blue .theatre .bits-card,
+.ffz-no-blue .dark .bits-card,
+.ffz-no-blue .force-dark .bits-card,
+
+.ffz-no-blue .theatre .bits-card--standard,
+.ffz-no-blue .dark .bits-card--standard,
+.ffz-no-blue .force-dark .bits-card--standard,
+
 .ffz-no-blue .warp,
 .ffz-no-blue #large_nav .content,
 .ffz-no-blue #small_nav .content,
@@ -2369,6 +2401,14 @@ li[data-name="following"] a {
 }
 
 /* Image Tooltips */
+
+.ffz-clip-title {
+	display: block;
+	white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+	margin-bottom: 5px;
+}
 
 .ffz-image-hover {
 	border:none;
@@ -2802,13 +2842,16 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 
 /* Creative Directory */
 
-.ffz-top-conversations .ct-banner { margin-top: -50px }
-.ffz-top-conversations .ct-banner__feature { top: 40px; margin-bottom: 0 }
-
-body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,
-body:not(.ffz-creative-showcase) .ct-gallery { display: none; }
+/* Make sure the fancy banner art goes all the way up */
+.ffz-top-conversations .ct-banner-container { margin-top: -50px }
 
 body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
+
+body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,
+/*body:not(.ffz-creative-showcase) .ct-banner-handler .tower > div:last-child,*/
+body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
+
+
 
 /* Content-Box~! Down with Twitch randomly changing the box-sizing for everything! */
 
@@ -2874,33 +2917,42 @@ body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directo
 	background-size: cover !important;
 }
 
-.follow-button.ffz-block-button {
-	margin-left: 2px;
+.directory_header .ffz-block-button,
+.directory_header .ffz-spoiler-button {
+	margin-left: 1rem;
+	vertical-align: top;
+}
+
+.balloon .balloon__title button {
+	display: block;
+}
+
+.balloon .balloon__title button:not(:last-of-type) {
+	margin-bottom: 1rem;
 }
 
 body[data-current-path^="directory.creative"] .follow-button.ffz-block-button {
 	margin: 0 1rem;
 }
 
-.follow-button.ffz-spoiler-button .spoiler,
-.follow-button.ffz-block-button .block {
+.button.ffz-spoiler-button,
+.button.ffz-block-button {
 	background: #555;
-	padding: 0 10px;
 }
 
-.follow-button.ffz-spoiler-button .spoiler.active {
+.button.ffz-spoiler-button.active {
 	background: #006700;
 }
 
-.follow-button.ffz-spoiler-button .spoiler:not(.disabled):hover {
+.button.ffz-spoiler-button:not(.disabled):hover {
 	background: #247324;
 }
 
-.follow-button.ffz-block-button .block.active {
+.button.ffz-block-button.active {
 	background: #973333;
 }
 
-.follow-button.ffz-block-button .block:not(.disabled):hover {
+.button.ffz-block-button:not(.disabled):hover {
 	background: #a94444;
 }
 
@@ -2945,6 +2997,8 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 
 /* Badges */
+
+.badges .badge { background-size: 18px 18px }
 
 /*.badges .badge {
     height: 18px;
@@ -3001,18 +3055,41 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 /* Odd Badges */
 .badge.click_url { cursor: pointer }
 
-.badge.warcraft.version-alliance {
-	background: url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/1.png") #004094;
-	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/4.png") 4x);
-	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/alliance/4.png") 4x);
+.badge.bits.version-1 {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png") #cbc8d0;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/4.png") 4x);
 }
 
-.badge.warcraft.version-horde {
-	background: url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") #ab0016;
-	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/4.png") 4x);
-	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/1.png") 1x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/2.png") 2x,url("https://cdn.frankerfacez.com/badges/twitch/warcraft/horde/4.png") 4x);
+.badge.bits.version-100 {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png") #ca7eff;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/4.png") 4x);
 }
 
+.badge.bits.version-1000 {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png") #3ed8b3;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/4.png") 4x);
+}
+
+.badge.bits.version-5000 {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png") #49acff;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/4.png") 4x);
+}
+
+.badge.bits.version-10000 {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png") #ff271e;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/4.png") 4x);
+}
+
+.badge.bits.version-100000 {
+	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png") #ffcb13;
+	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/4.png") 4x);
+	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/4.png") 4x);
+}
 
 /* New Resub Banner */
 
@@ -3045,4 +3122,58 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .dark .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons,
 .force-dark .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons {
 	background-color: rgba(0,0,0,0.8);
+}
+
+
+/* Bits */
+
+.bits-card { z-index: 10 }
+
+.ffz-bit {
+	display: inline-block;
+	height: 28px;
+	line-height: 28px;
+	font-weight: bold;
+	padding-left: 30px;
+	margin: -5px 5px;
+	box-sizing: content-box;
+	background-position: 0;
+}
+
+.tipsy .ffz-bit {
+	margin: 0 5px;
+}
+
+.ffz-bit:after {
+	content: attr(data-amount);
+}
+
+/* New Chat Formatting */
+
+.ember-chat .chat-messages .timestamp { margin-right: 0; }
+.badges { display: inline-block }
+.badges .badge {
+	float: none;
+	margin: -1px 3px 0 0;
+}
+
+.ffz-baseline-emoticons .activity-body .emoticon,
+.ffz-baseline-emoticons .chat-line .emoticon {
+	vertical-align: baseline;
+	padding-top: 5px;
+}
+
+
+/* Settings Filtering */
+
+.ffz-ui-menu-page .ffz-filter-container {
+	padding: 10px;
+	border-top: 1px solid rgba(0,0,0,0.2);
+}
+
+.ffz-ui-menu-page input.js-filter-input { margin: 0 }
+
+.bttv-incompatibility b + b:before {
+	content: ', ';
+	font-weight: normal;
 }

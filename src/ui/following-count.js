@@ -73,7 +73,7 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 		return this._following_get_me();
 
 	this.log("Connecting to Live Streams model.");
-	var Stream = utils.ember_resolve('model:stream');
+	var Stream = utils.ember_resolve('model:deprecated-stream');
 	if ( ! Stream )
 		return this.log("Unable to find Stream model.");
 

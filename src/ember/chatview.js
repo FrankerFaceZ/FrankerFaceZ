@@ -107,6 +107,7 @@ FFZ.settings_info.chat_batching = {
 	type: "select",
 	options: {
 		0: "No Batching",
+		125: "Minimal (0.125s)",
 		250: "Minor (0.25s)",
 		500: "Normal (0.5s)",
 		750: "Large (0.75s)",
@@ -474,36 +475,7 @@ FFZ.prototype.setup_chatview = function() {
 
 
 	this.log("Hooking the Ember Chat view.");
-
-	var Chat = utils.ember_resolve('view:chat');
-	this._modify_cview(Chat);
-
-	// For some reason, this doesn't work unless we create an instance of the
-	// chat view and then destroy it immediately.
-	try {
-		Chat.create().destroy();
-	} catch(err) { }
-
-
-	// Modify all existing Chat views.
-	var views = utils.ember_views();
-	for(var key in views) {
-		if ( ! views.hasOwnProperty(key) )
-			continue;
-
-		var view = views[key];
-		if ( !(view instanceof Chat) )
-			continue;
-
-		this.log("Manually updating existing Chat view.", view);
-		try {
-            if ( ! view.ffzInit )
-                this._modify_cview(view);
-			view.ffzInit();
-		} catch(err) {
-			this.error("setup: build_ui_link: " + err);
-		}
-	}
+	this.update_views('view:chat', this.modify_chat_view);
 }
 
 
@@ -511,35 +483,10 @@ FFZ.prototype.setup_chatview = function() {
 // Modify Chat View
 // --------------------
 
-FFZ.prototype._modify_cview = function(view) {
+FFZ.prototype.modify_chat_view = function(view) {
 	var f = this;
-
-	view.reopen({
-		didInsertElement: function() {
-            this._super();
-
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("view:chat ffzInit error: " + err);
-			}
-		},
-
-        didUpdate: function() {
-            this._super();
-            f.log("view:chat didUpdate", this)
-        },
-
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("view:chat ffzTeardown error: " + err);
-			}
-			this._super();
-		},
-
-		ffzInit: function() {
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
             f._chatv = this;
 
 			var room_id = this.get('controller.currentRoom.id'),
@@ -567,7 +514,7 @@ FFZ.prototype._modify_cview = function(view) {
 			}, 1000);
 		},
 
-		ffzTeardown: function() {
+		ffz_destroy: function() {
 			if ( f._chatv === this )
 				f._chatv = null;
 
@@ -868,10 +815,9 @@ FFZ.prototype._modify_cview = function(view) {
 				chan_table = this._ffz_chan_table || room_list.querySelector('#ffz-channel-table tbody');
 
 			if ( ! chan_table ) {
-				var tbl = document.createElement('table');
+				var tbl = utils.createElement('table', 'ffz');
 				tbl.setAttribute('cellspacing', '0');
 				tbl.id = 'ffz-channel-table';
-				tbl.className = 'ffz';
 				tbl.innerHTML = '<thead><tr><th colspan="2">Channels</th><th class="ffz-row-switch" title="Pinning a channel makes it so you always join that channel\'s chat, no matter where you are on Twitch.">Pin</th></tr></thead><tbody></tbody>';
 				room_list.insertBefore(tbl, room_list.firstChild);
 
@@ -914,10 +860,9 @@ FFZ.prototype._modify_cview = function(view) {
 			// Group Chat Table
 			var group_table = this._ffz_group_table || room_list.querySelector('#ffz-group-table tbody');
 			if ( ! group_table ) {
-				var tbl = document.createElement('table');
+				var tbl = utils.createElement('table', 'ffz');
 				tbl.setAttribute('cellspacing', '0');
 				tbl.id = 'ffz-group-table';
-				tbl.className = 'ffz';
 				tbl.innerHTML = '<thead><tr><th colspan="2">Group Chats</th></tr></thead><tbody></tbody>';
 
 				var before = room_list.querySelector('#ffz-channel-table');
@@ -1007,8 +952,7 @@ FFZ.prototype._modify_cview = function(view) {
 					this.classList.toggle('active', !is_pinned);
 				});
 			} else {
-				btn = document.createElement('a');
-				btn.className = 'leave-chat html-tooltip';
+				btn = utils.createElement('a', 'leave-chat html-tooltip');
 				btn.innerHTML = constants.CLOSE;
 				btn.title = 'Leave Group';
 
@@ -1085,12 +1029,10 @@ FFZ.prototype._modify_cview = function(view) {
 			if ( f.has_bttv || ! f.settings.group_tabs )
 				return;
 
-			var link = document.createElement('a'),
+			var link = utils.createElement('a', 'button button--icon-only'),
 				view = this;
 
-
 			// Chat Room Management Button
-			link.className = 'button button--icon-only';
 			link.title = "Chat Room Management";
 			link.innerHTML = '<figure class="icon">' + constants.ROOMS + '</figure><span class="notifications"></span>';
 
@@ -1105,8 +1047,7 @@ FFZ.prototype._modify_cview = function(view) {
 
 
 			// Invite Button
-			link = document.createElement('a'),
-			link.className = 'button button--icon-only html-tooltip invite';
+			link = utils.createElement('a', 'button button--icon-only html-tooltip invite');
 			link.title = "Invite a User";
 			link.innerHTML = '<figure class="icon">' + constants.INVITE + '</figure>';
 
@@ -1215,6 +1156,10 @@ FFZ.prototype._modify_cview = function(view) {
 				is_channel = room === this.get('controller.currentChannelRoom'),
 
 				now = Date.now();
+
+			// Non-Existant Rooms
+			if ( ! room )
+				return false;
 
 			if ( is_current || is_channel || room_id === this._ffz_host || f.settings.group_tabs === 3 )
 				// Important Tabs

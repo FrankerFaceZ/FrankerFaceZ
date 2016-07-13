@@ -4,6 +4,8 @@ var FFZ = window.FrankerFaceZ,
 	helpers,
 	conv_helpers,
 	emote_helpers,
+	bits_helpers,
+	bits_service,
 
     EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
 
@@ -12,6 +14,8 @@ var FFZ = window.FrankerFaceZ,
 	},
 
     LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/g,
+
+	CLIP_URL = /(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)\/(\w+)/,
 
 	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
 	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
@@ -123,6 +127,18 @@ FFZ.settings_info.timestamp_seconds = {
 	};
 
 
+FFZ.settings_info.collect_bits = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Bits Stacking",
+	help: "Collect all the bits emoticons in a message into a single one at the start of the message."
+};
+
+
 FFZ.settings_info.show_deleted_links = {
 	type: "boolean",
 	value: false,
@@ -154,6 +170,14 @@ FFZ.prototype.setup_tokenization = function() {
 
 	if ( ! helpers )
 		return this.log("Unable to get chat helper functions.");
+
+	try {
+		bits_helpers = window.require && window.require("web-client/utilities/bits/tokenize");
+	} catch(err) {
+		this.error("Unable to get bits tokenizer.", err);
+	}
+
+	bits_service = utils.ember_lookup('service:bits-rendering-config');
 
 	try {
 		conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
@@ -268,7 +292,31 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 FFZ.prototype.render_tooltip = function(el) {
     var f = this,
         func = function() {
-            if ( this.classList.contains('emoticon') ) {
+			if ( this.classList.contains('ffz-bit') ) {
+				var amount = parseInt(this.getAttribute('data-amount').replace(/,/g, '')),
+					individuals = JSON.parse(this.getAttribute('data-individuals') || "null"),
+					tier = bits_service.ffz_get_tier(amount),
+					preview_url,
+					image,
+					out = utils.number_commas(amount) + ' Bit' + utils.pluralize(amount);
+
+				if ( f.settings.emote_image_hover )
+					preview_url = bits_service.ffz_get_preview(tier[1]);
+
+				if ( individuals && individuals.length > 1 ) {
+					out += '<br>';
+					individuals.sort().reverse();
+					for(var i=0; i < individuals.length && i < 12; i++)
+						out += f.render_token(false, false, true, {type: "bits", amount: individuals[i]});
+
+					if ( individuals.length >= 12 )
+						out += '<br>(and ' + (individuals.length - 12) + ' more)';
+				}
+
+				image = preview_url ? '<img style="height:112px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
+				return image + out;
+
+			} else if ( this.classList.contains('emoticon') ) {
                 var preview_url, width=0, height=0, image, set_id, emote, emote_set,
                     emote_id = this.getAttribute('data-ffz-emote');
                 if ( emote_id ) {
@@ -356,17 +404,29 @@ FFZ.prototype.render_tooltip = function(el) {
             } else if ( this.classList.contains('chat-link') ) {
                 // TODO: A lot of shit. Lookup data.
                 var url = this.getAttribute("data-url"),
+					data = url && f._link_data[url],
+
+					preview_url = null,
+					preview_iframe = true,
+					image = '',
                     text = '';
 
                 if ( ! url )
                     return;
 
-                if ( f.settings.link_image_hover && is_image(url, f.settings.image_hover_all_domains) )
-                    preview_url = url;
-                else
-                    preview_url = null;
+				// Do we have data?
+				if ( data && data !== true ) {
+					text = data.html;
+					preview_url = data.image;
+					preview_iframe = data.image_iframe !== undefined ? data.image_iframe : true;
+				} else
+					preview_url = is_image(url, f.settings.image_hover_all_domains) ? url : null;
 
-                image = preview_url ? image_iframe(url) : '';
+				if ( f.settings.link_image_hover && preview_url )
+					if ( preview_iframe )
+						image = image_iframe(url);
+					else
+						image = '<img class="emoticon ffz-image-hover" src="' + utils.quote_attr(preview_url) + '">';
 
                 // If it's not a deleted link, don't waste time showing the URL in the tooltip.
                 if ( this.classList.contains('deleted-link') )
@@ -412,12 +472,14 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 	if ( user && user.login && helpers && helpers.mentionizeMessage )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
 
-	if ( helpers && helpers.emoticonizeMessage && emotes )
+	if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
 
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
-	tokens = this.tokenize_emotes(from_user, undefined, tokens, from_me);
+
+	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
+		tokens = this.tokenize_emotes(from_user, undefined, tokens, from_me);
 
 	if ( this.settings.parse_emoji )
 		tokens = this.tokenize_emoji(tokens);
@@ -456,12 +518,14 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
     if ( user && user.login && helpers && helpers.mentionizeMessage )
         tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
 
-    if ( helpers && helpers.emoticonizeMessage && emotes )
+    if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
         tokens = helpers.emoticonizeMessage(tokens, emotes);
 
     // FrankerFaceZ Extras
     tokens = this._remove_banned(tokens);
-    tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
+
+	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
+    	tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
 
     if ( this.settings.parse_emoji )
         tokens = this.tokenize_emoji(tokens);
@@ -486,7 +550,7 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 }
 
 
-FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links, use_bits) {
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
@@ -495,12 +559,17 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
         from_user = msgObject.from,
         user = this.get_user(),
         from_me = user && from_user === user.login,
-        emotes = msgObject.tags && msgObject.tags.emotes,
+		tags = msgObject.tags || {},
+        emotes = tags.emotes,
         tokens = [msg];
 
-	// Standard tokenization
-	if ( use_bits && helpers && helpers.tokenizeBits )
-		tokens = helpers.tokenizeBits(tokens);
+	// Standard Tokenization
+	if ( tags.bits && bits_helpers && bits_helpers.tokenizeBits )
+		tokens = bits_helpers.tokenizeBits(tokens);
+
+	// For Later
+	//if ( helpers && helpers.tokenizeRichContent )
+	//	tokens = helpers.tokenizeRichContent(tokens, tags.content, delete_links);
 
 	if ( helpers && helpers.linkifyMessage ) {
 		var labels = msgObject.labels || [],
@@ -518,18 +587,37 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	if ( user && user.login && helpers && helpers.mentionizeMessage )
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
 
-	if ( helpers && helpers.emoticonizeMessage )
+	if ( helpers && helpers.emoticonizeMessage && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
 
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
-	tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
+
+	if ( tags.bits && this.settings.collect_bits ) {
+		var total = 0, individuals = [];
+		for(var i=0; i < tokens.length; i++)
+			if ( tokens[i] && tokens[i].type === "bits" ) {
+				tokens[i].hidden = true;
+				total += tokens[i].amount || 0;
+				individuals.push(tokens[i].amount);
+			}
+
+		tokens.splice(0, 0, {
+			type: "bits",
+			amount: total,
+			individuals: individuals,
+			length: 0
+		});
+	}
+
+	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
+		tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
 
 	if ( this.settings.parse_emoji )
 		tokens = this.tokenize_emoji(tokens);
 
 	// Capitalization
-	var display = msgObject.tags && msgObject.tags['display-name'];
+	var display = tags['display-name'];
 	if ( display && display.length )
 		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
 
@@ -634,7 +722,7 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji)
 			message = helpers.mentionizeMessage(message, u.login, user === u.login);
 	}
 
-	if ( ! no_emotes )
+	if ( ! no_emotes && this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
 		message = this.tokenize_emotes(user, room, message);
 
 	if ( this.settings.parse_emoji && ! no_emoji )
@@ -653,7 +741,7 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 	if ( helpers && helpers.linkifyMessage )
 		message = helpers.linkifyMessage(message);
 
-	if ( helpers && helpers.emoticonizeMessage )
+	if ( helpers && helpers.emoticonizeMessage && this.settings.parse_emoticons )
 		message = helpers.emoticonizeMessage(message, emotes);
 
 	// Tokenize Lines
@@ -680,7 +768,8 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 		}
 	}
 
-	tokens = this.tokenize_emotes(user_id, room_id, tokens)
+	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
+		tokens = this.tokenize_emotes(user_id, room_id, tokens)
 
 	if ( this.settings.parse_emoji )
 		tokens = this.tokenize_emoji(tokens);
@@ -689,7 +778,7 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 }
 
 
-FFZ.prototype.render_token = function(render_links, warn_links, token) {
+FFZ.prototype.render_token = function(render_links, warn_links, render_bits, token) {
 	if ( ! token )
 		return "";
 
@@ -764,7 +853,24 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 				if (!( this._link_data && this._link_data[href] )) {
 					this._link_data = this._link_data || {};
 					this._link_data[href] = true;
-					this.ws_send("get_link", href, load_link_data.bind(this, href));
+
+					var success = load_link_data.bind(this, href),
+						clip_info = CLIP_URL.exec(href);
+
+					if ( clip_info ) {
+						var clips = utils.ember_lookup('service:clips');
+						clips && clips.getClipInfo(clip_info[1], clip_info[2]).then(function(data) {
+							success(true, {
+								image: data.previewImage,
+								image_iframe: false,
+								html: '<span class="ffz-clip-title">' + utils.sanitize(data.title) + '</span>' +
+									'Channel: ' + utils.sanitize(data.broadcasterDisplayName) +
+									'<br>Game: ' + utils.sanitize(data.game)
+							});
+						});
+
+					} else
+						this.ws_send("get_link", href, success);
 				}
 			}
 		}
@@ -784,6 +890,14 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 		return '<a class="ffz-tooltip' + (cls ? ' ' + cls : '') + '" data-text="' + utils.quote_attr(token.text) + '" data-url="' + utils.quote_attr(actual_href) + '" href="' + utils.quote_attr(href||'#') + '" target="_blank" rel="noopener">' + utils.sanitize(text) + '</a>';
 	}
 
+	else if ( token.type === "bits" ) {
+		var tier = render_bits && bits_service.ffz_get_tier(token.amount) || [null, null];
+		if ( ! tier[1] )
+			return 'cheer' + token.amount;
+
+		return '<span class="emoticon ffz-bit ffz-tooltip bit-tier-' + tier[0] + '"' + (token.individuals ? ' data-individuals="' + utils.quote_attr(JSON.stringify(token.individuals)) + '"' : '') + ' data-amount="' + utils.number_commas(token.amount) + '" alt="cheer' + token.amount + '"></span>';
+	}
+
 	else if ( token.type === "deleted" )
 		return '<span class="deleted-word html-tooltip" title="' + utils.quote_san(token.text) + '" data-text="' + utils.sanitize(token.text) + '">&times;&times;&times;</span>';
 		//return `<span class="deleted-word html-tooltip" title="${utils.quote_attr(token.text)}" data-text="${utils.sanitize(token.text)}">&times;&times;&times;</span>`;
@@ -796,15 +910,15 @@ FFZ.prototype.render_token = function(render_links, warn_links, token) {
 		return utils.sanitize(token.text);
 
 	else if ( typeof token !== "string" )
-		return '<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>' + utils.quote_attr(JSON.stringify(token,null,2)) + '</div>">[invalid token]</b>';
-		//return `<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>${utils.quote_attr(JSON.stringify(token,null,2))}</div>">[invalid token]</b>`;
+		return '<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>' + utils.quote_attr(JSON.stringify(token,null,2)) + '</div>">[unknown token]</b>';
+		//return `<b class="html-tooltip" title="<div style=&quot;text-align:left&quot;>${utils.quote_attr(JSON.stringify(token,null,2))}</div>">[unknown token]</b>`;
 
 	return utils.sanitize(token);
 }
 
 
-FFZ.prototype.render_tokens = function(tokens, render_links, warn_links) {
-	return _.map(tokens, this.render_token.bind(this, render_links, warn_links)).join("");
+FFZ.prototype.render_tokens = function(tokens, render_links, warn_links, render_bits) {
+	return _.map(tokens, this.render_token.bind(this, render_links, warn_links, render_bits)).join("");
 }
 
 
@@ -1100,13 +1214,15 @@ FFZ.prototype._deleted_link_click = function(e) {
 // History Loading
 // ---------------------
 
-FFZ.prototype.parse_history = function(history, purged, room_id, delete_links, tmiSession, per_line) {
+FFZ.prototype.parse_history = function(history, purged, bad_ids, room_id, delete_links, tmiSession, per_line) {
 	var i = history.length, was_cleared = false;
 	purged = purged || {};
+	bad_ids = bad_ids || {};
 
 	while(i--) {
 		var msg = history[i],
-			is_deleted = msg.ffz_deleted = purged[msg.from] || false;
+			msg_id = msg.tags && msg.tags.id,
+			is_deleted = msg.ffz_deleted = purged[msg.from] || (msg_id && bad_ids[msg_id]) || false;
 
 		if ( is_deleted && ! this.settings.prevent_clear )
 			msg.deleted = true;
@@ -1159,8 +1275,17 @@ FFZ.prototype.parse_history = function(history, purged, room_id, delete_links, t
 		if ( msg.tags && msg.tags.target === '@@' )
 			was_cleared = true;
 
-		else if ( msg.tags && msg.tags.target )
-			purged[msg.tags.target] = true;
+		else if ( msg.tags && msg.tags.target ) {
+			var ban_reason = msg.tags && msg.tags['ban-reason'],
+				ban_id = ban_reason && constants.UUID_TEST.exec(ban_reason);
+
+			if ( ban_id ) {
+				bad_ids[ban_id[1]] = true;
+				ban_reason = ban_reason.substr(0, ban_reason.length - ban_id[0].length);
+				msg.tags['ban-reason'] = ban_reason ? ban_reason : undefined;
+			} else
+				purged[msg.tags.target] = true;
+		}
 
 		// Per-line
 		if ( per_line && ! per_line(msg) )

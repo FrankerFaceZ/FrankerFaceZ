@@ -96,6 +96,10 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.toggle_style('chat-hc-background');*/
 
 	this.toggle_style('chat-colors-gray');
+	this.toggle_style('badges-rounded');
+	this.toggle_style('badges-circular');
+	this.toggle_style('badges-blank');
+	this.toggle_style('badges-circular-small');
 	this.toggle_style('badges-transparent');
     this.toggle_style('badges-sub-notice');
     this.toggle_style('badges-sub-notice-on');
@@ -114,12 +118,15 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 	// Send Message Behavior
-	var original_send = BetterTTV.chat.helpers.sendMessage, f = this;
-	BetterTTV.chat.helpers.sendMessage = function(message) {
+	var f = this,
+		BC = BetterTTV.chat,
+		original_send = BC.helpers.sendMessage;
+
+	BC.helpers.sendMessage = function(message) {
 		var cmd = message.split(' ', 1)[0].toLowerCase();
 
-		if ( cmd === "/ffz" )
-			f.run_ffz_command(message.substr(5), BetterTTV.chat.store.currentRoom);
+		if ( cmd === '/ffz' )
+			f.run_ffz_command(message.substr(5), BC.store.currentRoom);
 		else
 			return original_send(message);
 	}
@@ -127,9 +134,10 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	// Ugly Hack for Current Room, as this is stripped out before we get to
 	// the actual privmsg renderer.
-	var original_handler = BetterTTV.chat.handlers.onPrivmsg,
+	var original_handler = BC.handlers.onPrivmsg,
 		received_room;
-	BetterTTV.chat.handlers.onPrivmsg = function(room, data) {
+
+	BC.handlers.onPrivmsg = function(room, data) {
 		received_room = room;
 		var output = original_handler(room, data);
 		received_room = null;
@@ -138,39 +146,48 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 
 	// Message Display Behavior
-	var original_privmsg = BetterTTV.chat.templates.privmsg;
-	BetterTTV.chat.templates.privmsg = function(highlight, action, server, isMod, data) {
+	var original_privmsg = BC.templates.privmsg;
+	BC.templates.privmsg = function(data, opts) {
 		try {
+			opts = opts || {};
+
 			// Handle badges.
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.
-			return '<div class="chat-line'+(highlight?' highlight':'')+(action?' action':'')+(server?' admin':'')+'" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
-				BetterTTV.chat.templates.timestamp(data.time)+' '+
-				(isMod?BetterTTV.chat.templates.modicons():'')+' '+
-				BetterTTV.chat.templates.badges(data.badges)+
-				BetterTTV.chat.templates.from(data.nickname, data.color)+
-				BetterTTV.chat.templates.message(data.sender, data.message, data.emotes, action?data.color:false)+
+			return '<div class="chat-line'+(opts.highlight?' highlight':'')+(opts.action?' action':'')+(opts.server?' admin':'')+'" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
+				BC.templates.timestamp(data.time)+' '+
+				(opts.isMod ? BC.templates.modicons():'')+' '+
+				BC.templates.badges(data.badges)+
+				BC.templates.from(data.nickname, data.color)+
+				BC.templates.message(data.sender, data.message, {
+					emotes: data.emotes,
+					colored: (opts.action && !opts.highlight) ? data.color : false,
+					bits: data.bits
+				}) +
 				'</div>';
 		} catch(err) {
 			f.log("Error: ", err);
-			return original_privmsg(highlight, action, server, isMod, data);
+			return original_privmsg(data, opts);
 		}
 	}
 
 	// Whispers too!
-	var original_whisper = BetterTTV.chat.templates.whisper;
-	BetterTTV.chat.templates.whisper = function(data) {
+	var original_whisper = BC.templates.whisper;
+	BC.templates.whisper = function(data) {
 		try {
 			// Handle badges.
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.
 			return '<div class="chat-line whisper" data-sender="' + data.sender + '">' +
-				BetterTTV.chat.templates.timestamp(data.time) + ' ' +
-				(data.badges && data.badges.length ? BetterTTV.chat.templates.badges(data.badges) : '') +
-				BetterTTV.chat.templates.whisperName(data.sender, data.receiver, data.from, data.to, data.fromColor, data.toColor) +
-				BetterTTV.chat.templates.message(data.sender, data.message, data.emotes, false) +
+				BC.templates.timestamp(data.time) + ' ' +
+				(data.badges && data.badges.length ? BC.templates.badges(data.badges) : '') +
+				BC.templates.whisperName(data.sender, data.receiver, data.from, data.to, data.fromColor, data.toColor) +
+				BC.templates.message(data.sender, data.message, {
+					emotes: data.emotes,
+					colored: false
+				}) +
 				'</div>';
 		} catch(err) {
 			f.log("Error: ", err);
@@ -180,22 +197,24 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	// Message Renderer. I had to completely rewrite this method to get it to
 	// use my replacement emoticonizer.
-	var original_message = BetterTTV.chat.templates.message,
+	var original_message = BC.templates.message,
 		received_sender;
-	BetterTTV.chat.templates.message = function(sender, message, emotes, colored) {
+	BC.templates.message = function(sender, message, data) {
 		try {
-			colored = colored || false;
-			var rawMessage = encodeURIComponent(message);
+			var colored = data.colored || false,
+				force = data.force || false,
+				emotes = data.emotes,
+				rawMessage = encodeURIComponent(message);
 
 			if(sender !== 'jtv') {
 				// Hackilly send our state across.
 				received_sender = sender;
-				var tokenizedMessage = BetterTTV.chat.templates.emoticonize(message, emotes);
+				var tokenizedMessage = BC.templates.emoticonize(message, emotes);
 				received_sender = null;
 
 				for(var i=0; i<tokenizedMessage.length; i++) {
 					if(typeof tokenizedMessage[i] === 'string') {
-						tokenizedMessage[i] = BetterTTV.chat.templates.bttvMessageTokenize(sender, tokenizedMessage[i]);
+						tokenizedMessage[i] = BC.templates.bttvMessageTokenize(sender, tokenizedMessage[i], data.bits);
 					} else {
 						tokenizedMessage[i] = tokenizedMessage[i][0];
 					}
@@ -204,7 +223,14 @@ FFZ.prototype.setup_bttv = function(delay) {
 				message = tokenizedMessage.join(' ');
 			}
 
-			return '<span class="message" '+(colored?'style="color: '+colored+'" ':'')+'data-raw="'+rawMessage+'" data-emotes="'+(emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false')+'">'+message+'</span>';
+			var spam = false;
+			if ( BetterTTV.settings.get('hideSpam') && BC.helpers.isSpammer(sender) && !BC.helpers.isModerator(sender) && !force) {
+				message = '<span class="deleted">&lt;spam deleted&gt;</span>';
+				spam = true;
+			}
+
+			return '<span class="message ' + (spam ? 'spam' : '') + '" ' + (colored ? 'style="color: ' + colored + '" ' : '') + 'data-raw="' + rawMessage + '" data-emotes="' + (emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false') + '">' + message + '</span>';
+
 		} catch(err) {
 			f.log("Error: ", err);
 			return original_message(sender, message, emotes, colored);
@@ -247,8 +273,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 	// Emoticonize
-	var original_emoticonize = BetterTTV.chat.templates.emoticonize;
-	BetterTTV.chat.templates.emoticonize = function(message, emotes) {
+	var original_emoticonize = BC.templates.emoticonize;
+	BC.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
 
 			room = (received_room || BetterTTV.getChannel()),

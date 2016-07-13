@@ -18,12 +18,6 @@ FFZ.settings_info.player_stats = {
 	help: "Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
 
 	on_update: function(val) {
-		for(var key in this.players) {
-			var player = this.players[key];
-			if ( player && player.player && player.player.ffzSetStatsEnabled )
-				player.player.ffzSetStatsEnabled(val || player.player.ffz_stats);
-		}
-
 		if ( ! this._cindex )
 			return;
 
@@ -79,36 +73,7 @@ FFZ.prototype.setup_player = function() {
 
 	this.players = {};
 
-	var Player2 = utils.ember_resolve('component:twitch-player2');
-	if ( ! Player2 )
-		return this.log("Unable to find twitch-player2 component.");
-
-	this.log("Hooking HTML5 Player UI.");
-	this._modify_player(Player2)
-
-    try {
-        Player2.create().destroy();
-    } catch(err) { }
-
-	// Modify all existing players.
-	var views = utils.ember_views();
-	for(var key in views) {
-		if ( ! views.hasOwnProperty(key) )
-			continue;
-
-		var view = views[key];
-		if ( !(view instanceof Player2) )
-			continue;
-
-		this.log("Manually updating existing Player instance.", view);
-		try {
-			this._modify_player(view);
-			view.ffzInit();
-
-		} catch(err) {
-			this.error("Player2 setup ffzInit: " + err);
-		}
-	}
+	this.update_views('component:twitch-player2', this.modify_twitch_player);
 }
 
 
@@ -116,29 +81,22 @@ FFZ.prototype.setup_player = function() {
 // Component
 // ---------------
 
-FFZ.prototype._modify_player = function(player) {
-	var f = this,
-		update_stats = function() {
-			f._cindex && f._cindex.ffzUpdatePlayerStats();
-		};
+FFZ.prototype.modify_twitch_player = function(player) {
+	var f = this;
+	utils.ember_reopen_view(player, {
+		ffz_init: function() {
+			var id = this.get('channel.id');
+			f.players[id] = this;
 
-	player.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("Player2 didInsertElement: " + err);
-			}
+            var player = this.get('player');
+            if ( player )
+                this.ffzPostPlayer();
 		},
 
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("Player2 willClearRender: " + err);
-			}
-			this._super();
+		ffz_destroy: function() {
+			var id = this.get('channel.id');
+			if ( f.players[id] === this )
+				f.players[id] = undefined;
 		},
 
 		postPlayerSetup: function() {
@@ -150,24 +108,21 @@ FFZ.prototype._modify_player = function(player) {
 			}
 		},
 
-		ffzInit: function() {
-			var id = this.get('channel.id');
-			f.players[id] = this;
+		ffzRecreatePlayer: function() {
+			var player = this.get('player'),
+				theatre = player && player.getTheatre();
 
-            var player = this.get('player');
-            if ( player )
-                this.ffzPostPlayer();
-		},
+			// Tell the player to destroy itself.
+			if ( player )
+				player.destroy();
 
-		ffzTeardown: function() {
-			var id = this.get('channel.id');
-			if ( f.players[id] === this )
-				f.players[id] = undefined;
+			// Break down everything left over from that player.
+			this.$('#video-1').html('');
+			Mousetrap.unbind(['alt+x', 'alt+t', 'esc']);
+			this.set('player', null);
 
-			if ( this._ffz_stat_interval ) {
-				clearInterval(this._ffz_stat_interval);
-				this._ffz_stat_interval = null;
-			}
+			// Now, let Twitch create a new player as usual.
+			Ember.run.next(this.insertPlayer.bind(this));
 		},
 
 		ffzPostPlayer: function() {
@@ -175,74 +130,29 @@ FFZ.prototype._modify_player = function(player) {
 			if ( ! player )
                 return;
 
-
             // Make the stats window draggable and fix the button.
             var stats = this.$('.player .js-playback-stats');
             stats.draggable({cancel: 'li', containment: 'parent'});
 
-
-			// Only set up the stats hooks if we need stats.
-			var has_video = false;
-
-			try {
-				has_video = player.getVideo();
-			} catch(err) {
-				f.error("Player2 ffzPostPlayer: getVideo: " + err);
-			}
-
-			if ( ! has_video )
-				this.ffzInitStats();
-		},
-
-		ffzInitStats: function() {
-			if ( this.get('ffzStatsInitialized') )
-				return;
-
+			// Add an option to the menu to recreate the player.
 			var t = this,
-                player = this.get('player');
+				el = this.$('.player-menu .player-menu__item--stats')[0],
+				container = el && el.parentElement;
 
-			if ( ! player )
-				return;
+			if ( el && ! container.querySelector('.js-player-reset') ) {
+				var btn_link = utils.createElement('a', 'player-text-link js-player-reset', 'Reset Player'),
+					btn = utils.createElement('p', 'player-menu__item player-menu__item--reset', btn_link);
 
-			this.set('ffzStatsInitialized', true);
+				btn_link.tabindex = '-1';
+				btn_link.href = '#';
 
-			// Make it so stats can no longer be disabled if we want them.
-            if ( player.setStatsEnabled ) {
-                player.ffzSetStatsEnabled = player.setStatsEnabled;
-                try {
-                    player.ffz_stats = player.getStatsEnabled();
-                } catch(err) {
-                    // Assume stats are off.
-                    f.log("Player2 ffzInitStats: getStatsEnabled still doesn't work.");
-                    player.ffz_stats = false;
-                }
+				btn_link.addEventListener('click', function(e) {
+					t.ffzRecreatePlayer();
+					e.preventDefault();
+					return false;
+				});
 
-                player.setStatsEnabled = function(e, s) {
-                    if ( s !== false )
-                        player.ffz_stats = e;
-
-                    var out = player.ffzSetStatsEnabled(e || f.settings.player_stats);
-
-                    if ( ! t._ffz_player_stats_initialized ) {
-                        t._ffz_player_stats_initialized = true;
-                        player.addEventListener('statschange', update_stats);
-                    }
-
-                    return out;
-                }
-
-                this._ffz_stat_interval = setInterval(function() {
-                    if ( f.settings.player_stats || player.ffz_stats ) {
-                        player.ffzSetStatsEnabled(false);
-                        player.ffzSetStatsEnabled(true);
-                    }
-                }, 5000);
-            }
-
-			if ( f.settings.player_stats && ( ! player.setStatsEnabled || ! player.ffz_stats ) ) {
-				this._ffz_player_stats_initialized = true;
-				player.addEventListener('statschange', update_stats);
-				player.ffzSetStatsEnabled(true);
+				container.insertBefore(btn, el.nextSibling);
 			}
 		}
 	});

@@ -21,15 +21,8 @@ var FFZ = window.FrankerFaceZ,
 
 
 FFZ.prototype.setup_feed_cards = function() {
-	var FeedCard = utils.ember_resolve('component:channel-feed/card');
-	if ( ! FeedCard )
-		return this.error("Unable to locate component:channel-feed/card");
-
-	this.log("Modifying the feed-card component.");
-	this._modify_feed_card(FeedCard);
-
-	try { FeedCard.create().destroy();
-	} catch(err) { }
+	this.update_views('component:channel-feed/card', this.modify_feed_card);
+	this.update_views('component:channel-feed/comment', this.modify_feed_comment);
 
 	this.rerender_feed_cards();
 }
@@ -37,6 +30,7 @@ FFZ.prototype.setup_feed_cards = function() {
 
 FFZ.prototype.rerender_feed_cards = function(for_set) {
 	var FeedCard = utils.ember_resolve('component:channel-feed/card'),
+		FeedComment = utils.ember_resolve('component:channel-feed/comment'),
 		views = utils.ember_views();
 
 	if ( ! FeedCard )
@@ -46,30 +40,31 @@ FFZ.prototype.rerender_feed_cards = function(for_set) {
 		var view = views[view_id];
 		if ( view instanceof FeedCard ) {
 			try {
-				if ( ! view.ffzInit )
-					this._modify_feed_card(view);
-				view.ffzInit(for_set);
+				if ( ! view.ffz_init )
+					this.modify_feed_card(view);
+				view.ffz_init(for_set);
 			} catch(err) {
-				this.error("setup component:channel-feed/card ffzInit: " + err)
+				this.error("setup component:channel-feed/card ffzInit", err)
+			}
+		}
+
+		if ( FeedComment && view instanceof FeedComment ) {
+			try {
+				if ( ! view.ffz_init )
+					this.modify_feed_comment(view);
+				view.ffz_init(for_set);
+			} catch(err) {
+				this.error("setup component:channel-feed/comment ffzInit", err);
 			}
 		}
 	}
 }
 
 
-FFZ.prototype._modify_feed_card = function(component) {
+FFZ.prototype.modify_feed_card = function(component) {
 	var f = this;
-	component.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("component:channel-feed/card ffzInit: " + err);
-			}
-		},
-
-		ffzInit: function(for_set) {
+	utils.ember_reopen_view(component, {
+		ffz_init: function(for_set) {
 			var el = this.get('element'),
 				message = this.get('post.body'),
 				emotes = parse_emotes(this.get('post.emotes')),
@@ -96,4 +91,34 @@ FFZ.prototype._modify_feed_card = function(component) {
 			//jQuery('.html-tooltip', pbody).tipsy({html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
+}
+
+
+FFZ.prototype.modify_feed_comment = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffz_init: function(for_set) {
+			var el = this.get('element'),
+				message = this.get('comment.body'),
+				emotes = parse_emotes(this.get('comment.emotes')),
+				user_id = this.get('comment.user.login'),
+				room_id = this.get('parentView.parentView.channelId') || this.get('parentView.parentView.post.user.login') || null,
+				pbody = el && el.querySelector('.activity-body');
+
+			if ( ! message || ! el || ! pbody )
+				return;
+
+			// If this is for a specific emote set, only rerender if it matters.
+			if ( for_set && f.rooms && f.rooms[room_id] ) {
+				var sets = f.getEmotes(user_id, room_id);
+				if ( sets.indexOf(for_set) === -1 )
+					return;
+			}
+
+			var tokens = f.tokenize_feed_body(message, emotes, user_id, room_id),
+				output = f.render_tokens(tokens, true, false);
+
+			pbody.innerHTML = '<p>' + output + '</p>';
+		}
+	})
 }

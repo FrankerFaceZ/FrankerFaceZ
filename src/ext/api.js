@@ -1,7 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 
-
 	build_css = function(emote) {
 		if ( ! emote.margins && ! emote.css )
 			return "";
@@ -50,11 +49,15 @@ var API = FFZ.API = function(instance, name, icon, version) {
 	this.global_sets = [];
 	this.default_sets = [];
 
+	this.badges = {};
+
 	this.users = {};
 	this.chat_filters = [];
 	this.on_room_callbacks = [];
 
 	this.name = name || ("Extension#" + this.id);
+	this.name_key = this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
+
 	this.icon = icon || null;
     this.version = version || null;
 
@@ -387,12 +390,74 @@ API.prototype.unregister_room_set = function(room_id, id) {
 
 
 // -----------------------
+// Badge APIs
+// -----------------------
+
+API.prototype.add_badge = function(badge_id, badge) {
+	var exact_id = this.id + '-' + badge_id,
+
+		real_badge = {
+			id: exact_id,
+			source_ext: this.id,
+			source_id: badge_id,
+			alpha_image: badge.alpha_image,
+			color: badge.color || "transparent",
+			no_invert: badge.no_invert,
+			invert_invert: badge.invert_invert,
+			css: badge.css,
+			image: badge.image,
+			name: badge.name,
+			title: badge.title,
+			slot: badge.slot,
+			visible: badge.visible,
+			replaces: badge.replaces,
+			replaces_type: badge.replaces_type
+		};
+
+	this.ffz.badges[exact_id] = this.badges[badge_id] = real_badge;
+	utils.update_css(this.ffz._badge_style, exact_id, utils.badge_css(real_badge));
+}
+
+
+API.prototype.remove_badge = function(badge_id) {
+	var exact_id = this.id + '-' + badge_id;
+	this.ffz.badges[exact_id] = this.badges[badge_id] = undefined;
+	utils.update_css(this.ffz._badge_style, exact_id);
+}
+
+
+// -----------------------
 // User Modifications
 // -----------------------
 
-API.prototype.user_add_set = function(user_name, set_id) {
-	var user = this.users[user_name] = this.users[user_name] || {},
-		ffz_user = this.ffz.users[user_name] = this.ffz.users[user_name] || {},
+API.prototype.user_add_badge = function(username, slot, badge_id) {
+	var user = this.users[username] = this.users[username] || {},
+		ffz_user = this.ffz.users[username] = this.ffz.users[username] || {},
+
+		badges = user.badges = user.badges || {},
+		ffz_badges = ffz_user.badges = ffz_user.badges || {},
+
+		exact_id = this.id + '-' + badge_id,
+		badge = {id: exact_id};
+
+	badges[slot] = ffz_badges[slot] = badge;
+}
+
+
+API.prototype.user_remove_badge = function(username, slot) {
+	var user = this.users[username] = this.users[username] || {},
+		ffz_user = this.ffz.users[username] = this.ffz.users[username] || {},
+
+		badges = user.badges = user.badges || {},
+		ffz_badges = ffz_user.badges = ffz_user.badges || {};
+
+	badges[slot] = ffz_badges[slot] = null;
+}
+
+
+API.prototype.user_add_set = function(username, set_id) {
+	var user = this.users[username] = this.users[username] || {},
+		ffz_user = this.ffz.users[username] = this.ffz.users[username] || {},
 
 		emote_sets = user.sets = user.sets || [],
 		ffz_sets = ffz_user.sets = ffz_user.sets || [],
@@ -407,14 +472,14 @@ API.prototype.user_add_set = function(user_name, set_id) {
 
 	// Update tab completion.
 	var user = this.ffz.get_user();
-	if ( this.ffz._inputv && user && user.login === user_name )
+	if ( this.ffz._inputv && user && user.login === username )
         Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 }
 
 
-API.prototype.user_remove_set = function(user_name, set_id) {
-	var user = this.users[user_name],
-		ffz_user = this.ffz.users[user_name],
+API.prototype.user_remove_set = function(username, set_id) {
+	var user = this.users[username],
+		ffz_user = this.ffz.users[username],
 
 		emote_sets = user && user.sets,
 		ffz_sets = ffz_user && ffz_user.sets,
@@ -431,7 +496,7 @@ API.prototype.user_remove_set = function(user_name, set_id) {
 
 	// Update tab completion.
 	var user = this.ffz.get_user();
-	if ( this.ffz._inputv && user && user.login === user_name )
+	if ( this.ffz._inputv && user && user.login === username )
         Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 }
 
@@ -454,7 +519,6 @@ API.prototype.unregister_chat_filter = function(filter) {
 	if ( ind !== -1 )
 		this.ffz._chat_filters.splice(ind, 1);
 }
-
 
 // -----------------------
 // Channel Callbacks

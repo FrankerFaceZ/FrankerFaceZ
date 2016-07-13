@@ -4,15 +4,19 @@
 
 
 /* Invert Some Badges */
-.badge:not(.subscriber):not(.ffz-badge-1) {
+.ffz-dark .badge.invert-invert,
+.theatre .badge.invert-invert,
+.dark .badge.invert-invert,
+.force-dark .badge.invert-invert,
+.badge:not(.no-invert):not(.invert-invert) {
 	filter: invert(75%);
 	-webkit-filter: invert(75%);
 }
 
-.ffz-dark .badge,
-.theatre .badge,
-.dark .badge,
-.force-dark .badge {
+.ffz-dark .badge:not(.invert-invert),
+.theatre .badge:not(.invert-invert),
+.dark .badge:not(.invert-invert),
+.force-dark .badge:not(.invert-invert) {
 	filter: none !important;
 	-webkit-filter: none !important;
 }

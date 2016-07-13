@@ -167,7 +167,7 @@ FFZ.prototype.setup_profile_following = function() {
 
 	// Refresh all existing following data.
 	var count = 0,
-		Channel = utils.ember_resolve('model:channel');
+		Channel = utils.ember_resolve('model:deprecated-channel');
 
 	if ( Channel && Channel._cache )
 		for(var key in Channel._cache) {

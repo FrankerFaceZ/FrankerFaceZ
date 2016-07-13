@@ -221,20 +221,6 @@ gulp.task('server', function() {
 		fs.exists(file, function(exists) {
 			if ( ! exists ) {
 				util.log("[" + util.colors.cyan("HTTP") + "] " + util.colors.bold.blue("CDN") + " GET " + util.colors.magenta(uri));
-                /*https.request({
-                    hostname: 'cdn.frankerfacez.com',
-                    port: 443,
-                    path: uri,
-                    method: 'GET'
-                }, function(cli_res) {
-                    res.writeHead(cli_res.statusCode, cli_res.headers);
-                    cli_res.on('data', function(chunk) { res.write(chunk); });
-                    cli_res.on('end', function() { res.end() });
-                }).on('error', function(e) {
-                    res.writeHead(502, {"Access-Control-Allow-Origin": "*"});
-                    res.write('502 Bad Gateway');
-                    res.end();
-                });*/
 				return request.get("http://cdn.frankerfacez.com/" + uri).on('error', function(err) { res.end() }).pipe(res);
 			}
 

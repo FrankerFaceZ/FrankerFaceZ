@@ -361,11 +361,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #a68ed2;
 }
 
-.ffz-dark .button.button--icon-only svg path {
+.ffz-dark .button.button--icon-only svg {
 	fill: #a68ed2;
 }
 
-.ffz-dark .button.button--icon-only:hover svg path {
+.ffz-dark .button.button--icon-only:hover svg {
 	fill: #fff;
 }
 
@@ -481,11 +481,6 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .following-col .col-header .search-contain .search .search-button:hover svg path {
 	fill: rgba(255,255,255,0.5);
-}
-
-.ffz-dark .following-col .col-header,
-.ffz-dark .following-col .header {
-	border-color: #32323e;
 }
 
 .ffz-dark .following-col .following-list .load-more span,
@@ -1176,10 +1171,73 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 
+/* Creative UI */
+
+.ffz-dark .ct-spotlight__right {
+	background-color: #121212;
+}
+
+.ffz-dark .ct-spotlight__controls-container {
+	background-color: #161616;
+	box-shadow: -1px 0 0 #303030 inset;
+}
+
+.ffz-dark .ct-bar {
+	background-color: #121212;
+	box-shadow:
+		0 2px 6px -2px rgba(255,255,255,0.1),
+		0 1px 0 rgba(255,255,255,0.05),
+		0 -1px 0 rgba(255,255,255,0.05);
+}
+
+.ffz-dark .ct-banner__name,
+.ffz-dark .ct-banner__status,
+.ffz-dark .ct-type-2,
+.ffz-dark .ct-type-4 {
+	color: #aaa;
+}
+
+.ffz-dark .ct-type-grey-light {
+	color: #ccc;
+}
+
+
+.ffz-dark .ct-crumb:after {
+	box-shadow: 12px -6px 24px -8px rgba(255,255,255,0.1);
+	border-color: #303030;
+}
+
+.ffz-dark .ct-spotlight__avatar {
+	box-shadow: 0 0 0 1px #303030, 0 2px 3px #303030;
+}
+
+.ffz-dark .ct-spotlight__right--col .ct-spotlight__card-container {
+	box-shadow: 0 -1px 0 #303030 inset;
+}
+
+.ffz-dark hr,
+.ffz-dark .ct-spotlight__section,
+.ffz-dark .balloon__stroke,
+.ffz-dark .ct-spotlight__avatar,
+.ffz-dark .ct-bar__item {
+	border-color: #303030;
+}
+
+.ffz-dark .ct-crumb--1:after,
+.ffz-dark .ct-crumb--1 .ct-crumb__label {
+	background-color: #121212;
+}
+
+.ffz-dark .ct-crumb--2:after,
+.ffz-dark .ct-crumb--2 .ct-crumb__label {
+	background-color: #161616;
+}
+
+
 /* Creative Tags */
 
 .ffz-dark .ct-tags__tag {
-	background-color: #191919;
+	background-color: #121212;
 	color: #999 !important;
 }
 
@@ -1228,6 +1286,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .activity-meta-divider:before,
+.ffz-dark .list-load-more,
 .ffz-dark .activity-card {
 	border-color: #474747;
 }
@@ -1242,6 +1301,20 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark a.balloon__link:hover { color: #fff !important }
 .ffz-dark .activity-meta__name { color: #ccc }
+
+
+.ffz-dark .activity-card__comments {
+	background-color: #121212;
+	box-shadow:inset 0 1px 0 #474747;
+}
+
+.ffz-dark .activity-add-comment__textarea:before {
+	background: #1d1d1d;
+	border-left-color: #474747;
+	border-bottom-color: #474747;
+}
+
+.inherit-color { color: inherit !important }
 
 
 /* Search Panel */
