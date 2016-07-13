@@ -140,7 +140,7 @@ FFZ.prototype.setup_profile_following = function() {
 		}
 	});
 
-    // TODO: Add nice Manage Following button to the directory.
+	// TODO: Add nice Manage Following button to the directory.
 
 	// Now, rebuild any views.
 	try { FollowedItem.create().destroy();
@@ -148,9 +148,9 @@ FFZ.prototype.setup_profile_following = function() {
 
 	var views = utils.ember_views();
 
-    if ( views ) {
-        for(var key in views) {
-            var view = views[key];
+	if ( views ) {
+		for(var key in views) {
+			var view = views[key];
 			if ( view instanceof FollowedItem ) {
 				this.log("Manually updating existing component:display-followed-item.", view);
 				try {
@@ -161,7 +161,7 @@ FFZ.prototype.setup_profile_following = function() {
 					this.error("setup: component:display-followed-item ffzInit: " + err);
 				}
 			}
-        }
+		}
 	}
 
 
@@ -358,11 +358,11 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 
 FFZ.prototype._hook_following = function(Following) {
 	var f = this;
-    if ( ! Following || Following.ffz_hooked )
-        return;
+	if ( ! Following || Following.ffz_hooked )
+		return;
 
 	Following.reopen({
-        ffz_hooked: true,
+		ffz_hooked: true,
 		apiLoad: function(e) {
 			var channel_id = this.get('id'),
 				t = this;
@@ -398,11 +398,11 @@ FFZ.prototype._hook_following = function(Following) {
 
 FFZ.prototype._hook_followers = function(Followers) {
 	var f = this;
-    if ( ! Followers || Followers.ffz_hooked )
-        return;
+	if ( ! Followers || Followers.ffz_hooked )
+		return;
 
 	Followers.reopen({
-        ffz_hooked: true,
+		ffz_hooked: true,
 		apiLoad: function(e) {
 			var channel_id = this.get('id'),
 				t = this;

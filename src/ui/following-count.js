@@ -88,11 +88,11 @@ FFZ.prototype.setup_following_count = function(has_ember) {
 
 	Live.load();
 
-    /*var Host = utils.ember_resolve('model:hist'),
-        HostLive = Host && Host.find("following");
+	/*var Host = utils.ember_resolve('model:hist'),
+		HostLive = Host && Host.find("following");
 
-    if ( HostLive )
-        HostLive.load();*/
+	if ( HostLive )
+		HostLive.load();*/
 
 	var init = function() {
 		var total = Live.get('total'),
@@ -158,13 +158,13 @@ FFZ.prototype._update_following_count = function() {
 	var Stream = utils.ember_resolve('model:stream'),
 		Live = Stream && Stream.find("live"),
 
-        Host = utils.ember_resolve('model:host'),
-        HostLive = Host && Host.find("following"),
+		Host = utils.ember_resolve('model:host'),
+		HostLive = Host && Host.find("following"),
 
 		f = this;
 
-    if ( ! this.is_dashboard && HostLive && document.body.getAttribute('data-current-path').indexOf('directory.following') !== -1 )
-        HostLive.load();
+	if ( ! this.is_dashboard && HostLive && document.body.getAttribute('data-current-path').indexOf('directory.following') !== -1 )
+		HostLive.load();
 
 	if ( ! this.is_dashboard && Live )
 		Live.load();
@@ -195,12 +195,12 @@ FFZ.prototype._build_following_tooltip = function(el) {
 		height = document.body.clientHeight - (bb.bottom + 50),
 		max_lines = Math.max(Math.floor(height / 40) - 1, 2),
 
-        /*Host = utils.ember_resolve('model:host'),
-        HostLive = Host && Host.find("following"),*/
+		/*Host = utils.ember_resolve('model:host'),
+		HostLive = Host && Host.find("following"),*/
 
 		streams = this._tooltip_streams,
 		total = this._tooltip_total || (streams && streams.length) || 0,
-        c = 0;
+		c = 0;
 
 	if ( streams && streams.length ) {
 		for(var i=0, l = streams.length; i < l; i++) {
@@ -228,46 +228,46 @@ FFZ.prototype._build_following_tooltip = function(el) {
 				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';
 		}
 	} else {
-        c++; // is a terrible programming language
+		c++; // is a terrible programming language
 		tooltip += "<hr>No one you're following is online.";
-    }
+	}
 
-    // If we have hosts, and room, try displaying some hosts.
-    /*if ( HostLive && (c + 1) < max_lines && HostLive.get('content.length') > 0 ) {
-        var t = HostLive.get('content.length');
-        c++;
-        tooltip += '<hr>Live Hosts';
-        for(var i=0; i < t; i++) {
-            var host = HostLive.get('content.' + i),
-                stream = host && host.target;
-            if ( ! stream )
-                continue;
+	// If we have hosts, and room, try displaying some hosts.
+	/*if ( HostLive && (c + 1) < max_lines && HostLive.get('content.length') > 0 ) {
+		var t = HostLive.get('content.length');
+		c++;
+		tooltip += '<hr>Live Hosts';
+		for(var i=0; i < t; i++) {
+			var host = HostLive.get('content.' + i),
+				stream = host && host.target;
+			if ( ! stream )
+				continue;
 
-            c += 1;
-            if ( c > max_lines ) {
-                var sc = 1 + (streams && streams.length || 0);
-                tooltip += '<hr><span>And ' + utils.number_commas(t - (max_lines - sc)) + ' more...</span>';
-                break;
-            }
+			c += 1;
+			if ( c > max_lines ) {
+				var sc = 1 + (streams && streams.length || 0);
+				tooltip += '<hr><span>And ' + utils.number_commas(t - (max_lines - sc)) + ' more...</span>';
+				break;
+			}
 
-            var hosting;
-            if ( ! host.ffz_hosts || host.ffz_hosts.length === 1 )
-                hosting = host.display_name;
-            else
-                hosting = utils.number_commas(host.ffz_hosts.length);
+			var hosting;
+			if ( ! host.ffz_hosts || host.ffz_hosts.length === 1 )
+				hosting = host.display_name;
+			else
+				hosting = utils.number_commas(host.ffz_hosts.length);
 
-            tooltip += (i === 0 ? '<hr>' : '') +
-                '<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
+			tooltip += (i === 0 ? '<hr>' : '') +
+				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
 				hosting + ' hosting <b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
 				'<span class="playing">' + (stream.meta_game ? 'Playing ' + utils.sanitize(stream.meta_game) : 'Not Playing') + '</span>';
-        }
-    }*/
+		}
+	}*/
 
 	// Reposition the tooltip.
 	setTimeout(function() {
 		var tip = document.querySelector('.tipsy');
-        if ( ! tip )
-            return;
+		if ( ! tip )
+			return;
 
 		var bb = tip.getBoundingClientRect(),
 

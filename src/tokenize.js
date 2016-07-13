@@ -7,13 +7,13 @@ var FFZ = window.FrankerFaceZ,
 	bits_helpers,
 	bits_service,
 
-    EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
+	EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 	},
 
-    LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/g,
+	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/g,
 
 	CLIP_URL = /(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)\/(\w+)/,
 
@@ -53,12 +53,12 @@ var FFZ = window.FrankerFaceZ,
 		this._link_data[href] = data;
 		//data.unsafe = false;
 
-        if ( ! this.settings.link_info )
-            return;
+		if ( ! this.settings.link_info )
+			return;
 
-        // If this link is unsafe, add the unsafe-link class to all instances of the link.
-        if ( data.unsafe )
-            jQuery('a.chat-link[data-url="' + href + '"]').addClass('unsafe-link');
+		// If this link is unsafe, add the unsafe-link class to all instances of the link.
+		if ( data.unsafe )
+			jQuery('a.chat-link[data-url="' + href + '"]').addClass('unsafe-link');
 	};
 
 
@@ -85,7 +85,7 @@ FFZ._emote_mirror_swap = function(img) {
 
 	img.setAttribute('data-alt-attempts', attempts + 1);
 	var id = img.getAttribute('data-emote'),
-        src = '//' + img.src.split('//')[1];
+		src = '//' + img.src.split('//')[1];
 
 	if ( src.substr(0, constants.TWITCH_BASE.length) === constants.TWITCH_BASE ) {
 		img.src = constants.EMOTE_MIRROR_BASE + id + ".png";
@@ -218,8 +218,8 @@ FFZ.prototype.setup_tokenization = function() {
 		var show_deleted = f.settings.show_deleted_links;
 
 		return _.chain(tokens).map(function(token) {
-            if ( token.type === "text" )
-                token = token.text;
+			if ( token.type === "text" )
+				token = token.text;
 
 			if ( ! _.isString(token) )
 				return token;
@@ -231,21 +231,21 @@ FFZ.prototype.setup_tokenization = function() {
 			return _.zip(
 				token.split(LINK),
 				_.map(matches, function(e) {
-                    var long = e.length > 255,
-                        out = {
-                            type: "link",
-                            length: e.length,
-                            isDeleted: ! show_deleted && (delete_links || long),
-                            isLong: long,
-                            isMailTo: e.indexOf("@") > -1 && (-1 === e.indexOf("/") || e.indexOf("@") < e.indexOf("/")),
-                            text: e,
-                            link: e
-                        };
+					var long = e.length > 255,
+						out = {
+							type: "link",
+							length: e.length,
+							isDeleted: ! show_deleted && (delete_links || long),
+							isLong: long,
+							isMailTo: e.indexOf("@") > -1 && (-1 === e.indexOf("/") || e.indexOf("@") < e.indexOf("/")),
+							text: e,
+							link: e
+						};
 
-                    if ( ! out.isMailTo && ! e.match(/^(?:https?:\/\/)/) )
-                        out.link = "http://" + e;
+					if ( ! out.isMailTo && ! e.match(/^(?:https?:\/\/)/) )
+						out.link = "http://" + e;
 
-                    return out;
+					return out;
 				})
 			);
 		}).flatten().compact().value();
@@ -290,8 +290,8 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 // ---------------------
 
 FFZ.prototype.render_tooltip = function(el) {
-    var f = this,
-        func = function() {
+	var f = this,
+		func = function() {
 			if ( this.classList.contains('ffz-bit') ) {
 				var amount = parseInt(this.getAttribute('data-amount').replace(/,/g, '')),
 					individuals = JSON.parse(this.getAttribute('data-individuals') || "null"),
@@ -317,102 +317,102 @@ FFZ.prototype.render_tooltip = function(el) {
 				return image + out;
 
 			} else if ( this.classList.contains('emoticon') ) {
-                var preview_url, width=0, height=0, image, set_id, emote, emote_set,
-                    emote_id = this.getAttribute('data-ffz-emote');
-                if ( emote_id ) {
+				var preview_url, width=0, height=0, image, set_id, emote, emote_set,
+					emote_id = this.getAttribute('data-ffz-emote');
+				if ( emote_id ) {
 					if ( emote_id == "93269" )
 						return '';
 
-                    set_id = this.getAttribute('data-ffz-set');
-                    emote_set = f.emote_sets[set_id];
-                    emote = emote_set && emote_set.emoticons[emote_id];
+					set_id = this.getAttribute('data-ffz-set');
+					emote_set = f.emote_sets[set_id];
+					emote = emote_set && emote_set.emoticons[emote_id];
 
-                    if ( emote ) {
-                        var owner = emote.owner,
-                            title = emote_set.title || "Global",
-                            source = emote_set.source || "FFZ";
+					if ( emote ) {
+						var owner = emote.owner,
+							title = emote_set.title || "Global",
+							source = emote_set.source || "FFZ";
 
-                        if ( f.settings.emote_image_hover ) {
-                            if ( emote.urls[4] ) {
-                                height = emote.height * 4;
-                                width = emote.width * 4;
-                                preview_url = emote.urls[4];
+						if ( f.settings.emote_image_hover ) {
+							if ( emote.urls[4] ) {
+								height = emote.height * 4;
+								width = emote.width * 4;
+								preview_url = emote.urls[4];
 
-                            } else if ( emote.urls[2] ) {
-                                height = emote.height * 2;
-                                width = emote.width * 2;
-                            }
+							} else if ( emote.urls[2] ) {
+								height = emote.height * 2;
+								width = emote.width * 2;
+							}
 
-                            if ( width > 186 )
-                                height *= 186 / width;
-                            height = Math.min(186, height);
+							if ( width > 186 )
+								height *= 186 / width;
+							height = Math.min(186, height);
 
-                        } else
-                            preview_url = null;
+						} else
+							preview_url = null;
 
-                        //image = preview_url ? `<img style="height:${height}px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
-                        image = preview_url ? '<img style="height:' + height + 'px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
-                        return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source + ' ' + title + (owner ? '<br>By: ' + owner.display_name : '');
+						//image = preview_url ? `<img style="height:${height}px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
+						image = preview_url ? '<img style="height:' + height + 'px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
+						return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source + ' ' + title + (owner ? '<br>By: ' + owner.display_name : '');
 
-                        //return `${image}Emoticon: ${emote.hidden ? '???' : emote.name}<br>${source} ${title}${owner ? '<br>By: ' + owner.display_name : ""}`;
-                    }
-                }
+						//return `${image}Emoticon: ${emote.hidden ? '???' : emote.name}<br>${source} ${title}${owner ? '<br>By: ' + owner.display_name : ""}`;
+					}
+				}
 
-                emote_id = this.getAttribute('data-emote');
-                if ( emote_id ) {
-                    set_id = f._twitch_emote_to_set[emote_id];
-                    emote_set = set_id && f._twitch_set_to_channel[set_id];
-                    var set_type = "Channel";
+				emote_id = this.getAttribute('data-emote');
+				if ( emote_id ) {
+					set_id = f._twitch_emote_to_set[emote_id];
+					emote_set = set_id && f._twitch_set_to_channel[set_id];
+					var set_type = "Channel";
 
-                    preview_url = f.settings.emote_image_hover && (constants.TWITCH_BASE + emote_id + '/3.0');
-                    //image = preview_url ? `<img style="height:112px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
-                    image = preview_url ? '<img style="height:112px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
+					preview_url = f.settings.emote_image_hover && (constants.TWITCH_BASE + emote_id + '/3.0');
+					//image = preview_url ? `<img style="height:112px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
+					image = preview_url ? '<img style="height:112px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
 
 					// Global OR Golden Kappa
-                    if ( emote_set === "--global--" || emote_id === '80393' ) {
-                        emote_set = "Twitch Global";
-                        set_type = null;
-                    } else if ( emote_set === "--twitch-turbo--" || emote_set === "turbo" || emote_set === "--turbo-faces--" ) {
-                        emote_set = "Twitch Turbo";
-                        set_type = null;
-                    }
+					if ( emote_set === "--global--" || emote_id === '80393' ) {
+						emote_set = "Twitch Global";
+						set_type = null;
+					} else if ( emote_set === "--twitch-turbo--" || emote_set === "turbo" || emote_set === "--turbo-faces--" ) {
+						emote_set = "Twitch Turbo";
+						set_type = null;
+					}
 
-                    if ( this.classList.contains('ffz-tooltip-no-credit') )
-                        return image + this.alt;
-                    else
-                        return image + 'Emoticon: ' + this.alt + '<br>' + (set_type ? set_type + ': ' : '') + emote_set;
-                        //return `${image}Emoticon: ${this.alt}<br>${set_type ? set_type + ": " : ""}${emote_set}`;
-                }
+					if ( this.classList.contains('ffz-tooltip-no-credit') )
+						return image + this.alt;
+					else
+						return image + 'Emoticon: ' + this.alt + '<br>' + (set_type ? set_type + ': ' : '') + emote_set;
+						//return `${image}Emoticon: ${this.alt}<br>${set_type ? set_type + ": " : ""}${emote_set}`;
+				}
 
-                emote_id = this.getAttribute('data-ffz-emoji');
-                if ( emote_id ) {
-                    emote = f.emoji_data[emote_id];
-                    var src = emote && (f.settings.parse_emoji === 3 ? emote.one_src : (f.settings.parse_emoji === 2 ? emote.noto_src : emote.tw_src));
+				emote_id = this.getAttribute('data-ffz-emoji');
+				if ( emote_id ) {
+					emote = f.emoji_data[emote_id];
+					var src = emote && (f.settings.parse_emoji === 3 ? emote.one_src : (f.settings.parse_emoji === 2 ? emote.noto_src : emote.tw_src));
 
-                    preview_url = f.settings.emote_image_hover && src;
-                    //image = preview_url ? `<img style="height:72px" class="emoticon ffz-image-hover" src="${preview_url}">` : '';
-                    image = preview_url ? '<img style="height:72px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
+					preview_url = f.settings.emote_image_hover && src;
+					//image = preview_url ? `<img style="height:72px" class="emoticon ffz-image-hover" src="${preview_url}">` : '';
+					image = preview_url ? '<img style="height:72px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
 
-                    return image + "Emoji: " + this.alt + '<br>Name: ' + emote.name + (emote.short_name ? '<br>Short Name :' + emote.short_name + ':' : '') + (emote.cat ? '<br>Category: ' + utils.sanitize(constants.EMOJI_CATEGORIES[emote.cat] || emote.cat) : '');
-                    //return `${image}Emoji: ${this.alt}<br>Name: ${emote.name}${emote.short_name ? '<br>Short Name: :' + emote.short_name + ':' : ''}`;
-                }
+					return image + "Emoji: " + this.alt + '<br>Name: ' + emote.name + (emote.short_name ? '<br>Short Name :' + emote.short_name + ':' : '') + (emote.cat ? '<br>Category: ' + utils.sanitize(constants.EMOJI_CATEGORIES[emote.cat] || emote.cat) : '');
+					//return `${image}Emoji: ${this.alt}<br>Name: ${emote.name}${emote.short_name ? '<br>Short Name: :' + emote.short_name + ':' : ''}`;
+				}
 
-            } else if ( this.classList.contains('email-link') ) {
-                var url = this.getAttribute("data-url");
-                return url ? "E-Mail " + url.substr(7) : '';
+			} else if ( this.classList.contains('email-link') ) {
+				var url = this.getAttribute("data-url");
+				return url ? "E-Mail " + url.substr(7) : '';
 
-            } else if ( this.classList.contains('chat-link') ) {
-                // TODO: A lot of shit. Lookup data.
-                var url = this.getAttribute("data-url"),
+			} else if ( this.classList.contains('chat-link') ) {
+				// TODO: A lot of shit. Lookup data.
+				var url = this.getAttribute("data-url"),
 					data = url && f._link_data[url],
 
 					preview_url = null,
 					preview_iframe = true,
 					image = '',
-                    text = '';
+					text = '';
 
-                if ( ! url )
-                    return;
+				if ( ! url )
+					return;
 
 				// Do we have data?
 				if ( data && data !== true ) {
@@ -428,21 +428,21 @@ FFZ.prototype.render_tooltip = function(el) {
 					else
 						image = '<img class="emoticon ffz-image-hover" src="' + utils.quote_attr(preview_url) + '">';
 
-                // If it's not a deleted link, don't waste time showing the URL in the tooltip.
-                if ( this.classList.contains('deleted-link') )
-                    text = url;
+				// If it's not a deleted link, don't waste time showing the URL in the tooltip.
+				if ( this.classList.contains('deleted-link') )
+					text = url;
 
-                if ( this.classList.contains('warn-link') )
-                    text += EXPLANATION_WARN;
+				if ( this.classList.contains('warn-link') )
+					text += EXPLANATION_WARN;
 
-                return image + text; //`${image}${text}`;
-            }
+				return image + text; //`${image}${text}`;
+			}
 
-            f.log("Unable to Build Tooltip For: " + this.className, this);
-            return "";
-        };
+			f.log("Unable to Build Tooltip For: " + this.className, this);
+			return "";
+		};
 
-    return el ? func(el) : func;
+	return el ? func(el) : func;
 };
 
 
@@ -500,53 +500,53 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 
 
 FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
-    var cached = msgObject.get('cachedTokens');
-    if ( cached )
-        return cached;
+	var cached = msgObject.get('cachedTokens');
+	if ( cached )
+		return cached;
 
-    var msg = msgObject.get('message'),
-        room_id = msgObject.get('room'),
-        from_user = msgObject.get('from'),
-        user = this.get_user(),
-        from_me = user && from_user === user.login,
-        emotes = msgObject.get('tags.emotes'),
-        tokens = [msg];
+	var msg = msgObject.get('message'),
+		room_id = msgObject.get('room'),
+		from_user = msgObject.get('from'),
+		user = this.get_user(),
+		from_me = user && from_user === user.login,
+		emotes = msgObject.get('tags.emotes'),
+		tokens = [msg];
 
-    if ( helpers && helpers.linkifyMessage )
-        tokens = helpers.linkifyMessage(tokens, delete_links);
+	if ( helpers && helpers.linkifyMessage )
+		tokens = helpers.linkifyMessage(tokens, delete_links);
 
-    if ( user && user.login && helpers && helpers.mentionizeMessage )
-        tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+	if ( user && user.login && helpers && helpers.mentionizeMessage )
+		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
 
-    if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
-        tokens = helpers.emoticonizeMessage(tokens, emotes);
+	if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
+		tokens = helpers.emoticonizeMessage(tokens, emotes);
 
-    // FrankerFaceZ Extras
-    tokens = this._remove_banned(tokens);
+	// FrankerFaceZ Extras
+	tokens = this._remove_banned(tokens);
 
 	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
-    	tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
+		tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
 
-    if ( this.settings.parse_emoji )
-        tokens = this.tokenize_emoji(tokens);
+	if ( this.settings.parse_emoji )
+		tokens = this.tokenize_emoji(tokens);
 
-    var display = msgObject.get('tags.display-name');
-    if ( display && display.length )
-        FFZ.capitalization[from_user] = [display.trim(), Date.now()];
+	var display = msgObject.get('tags.display-name');
+	if ( display && display.length )
+		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
 
-    if ( ! from_me ) {
-        tokens = this.tokenize_mentions(tokens);
-        for(var i=0; i < tokens.length; i++) {
-            var token = tokens[i];
-            if ( token.type === 'mention' && ! token.isOwnMessage ) {
-                msgObject.set('ffz_has_mention', true);
-                break;
-            }
-        }
-    }
+	if ( ! from_me ) {
+		tokens = this.tokenize_mentions(tokens);
+		for(var i=0; i < tokens.length; i++) {
+			var token = tokens[i];
+			if ( token.type === 'mention' && ! token.isOwnMessage ) {
+				msgObject.set('ffz_has_mention', true);
+				break;
+			}
+		}
+	}
 
-    msgObject.set('cachedTokens', tokens);
-    return tokens;
+	msgObject.set('cachedTokens', tokens);
+	return tokens;
 }
 
 
@@ -554,14 +554,14 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
 
-    var msg = msgObject.message,
-        room_id = msgObject.room,
-        from_user = msgObject.from,
-        user = this.get_user(),
-        from_me = user && from_user === user.login,
+	var msg = msgObject.message,
+		room_id = msgObject.room,
+		from_user = msgObject.from,
+		user = this.get_user(),
+		from_me = user && from_user === user.login,
 		tags = msgObject.tags || {},
-        emotes = tags.emotes,
-        tokens = [msg];
+		emotes = tags.emotes,
+		tokens = [msg];
 
 	// Standard Tokenization
 	if ( tags.bits && bits_helpers && bits_helpers.tokenizeBits )
@@ -628,13 +628,13 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i],
-                is_mention = token.type === "mention";
+				is_mention = token.type === "mention";
 
-            if ( ! is_mention || token.isOwnMessage )
-                continue;
+			if ( ! is_mention || token.isOwnMessage )
+				continue;
 
 			// We have a mention!
-            msgObject.ffz_has_mention = true;
+			msgObject.ffz_has_mention = true;
 
 			// If we have chat tabs/rows, update the status.
 			if ( room_id && ! this.has_bttv && this._chatv ) {
@@ -979,79 +979,79 @@ FFZ.prototype.tokenize_ctags = function(tokens, tags_only) {
 // ---------------------
 
 FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
-    "use strict";
+	"use strict";
 
-    var sets = this.getEmotes(user, room),
-        emotes = {},
-        emote,
+	var sets = this.getEmotes(user, room),
+		emotes = {},
+		emote,
 
-        new_tokens = [];
+		new_tokens = [];
 
-    if ( ! tokens || ! tokens.length || ! sets || ! sets.length )
-        return tokens;
+	if ( ! tokens || ! tokens.length || ! sets || ! sets.length )
+		return tokens;
 
-    // Build an object with all of our emotes.
-    for(var i=0; i < sets.length; i++) {
-        var emote_set = this.emote_sets[sets[i]];
-        if ( emote_set && emote_set.emoticons )
-            for(var emote_id in emote_set.emoticons) {
-                emote = emote_set.emoticons[emote_id];
-                if ( ! emotes.hasOwnProperty(emote.name) )
-                    emotes[emote.name] = emote;
-            }
-    }
+	// Build an object with all of our emotes.
+	for(var i=0; i < sets.length; i++) {
+		var emote_set = this.emote_sets[sets[i]];
+		if ( emote_set && emote_set.emoticons )
+			for(var emote_id in emote_set.emoticons) {
+				emote = emote_set.emoticons[emote_id];
+				if ( ! emotes.hasOwnProperty(emote.name) )
+					emotes[emote.name] = emote;
+			}
+	}
 
-    if ( typeof tokens === "string" )
-        tokens = [tokens];
+	if ( typeof tokens === "string" )
+		tokens = [tokens];
 
-    for(var i=0, l=tokens.length; i < l; i++) {
-        var token = tokens[i];
-        if ( ! token )
-            continue;
+	for(var i=0, l=tokens.length; i < l; i++) {
+		var token = tokens[i];
+		if ( ! token )
+			continue;
 
-        if ( typeof token !== "string" )
-            if ( token.type === "text" )
-                token = token.text;
-            else {
-                new_tokens.push(token);
-                continue;
-            }
+		if ( typeof token !== "string" )
+			if ( token.type === "text" )
+				token = token.text;
+			else {
+				new_tokens.push(token);
+				continue;
+			}
 
-        // Split the token!
-        var segments = token.split(' '),
-            text = [], segment;
+		// Split the token!
+		var segments = token.split(' '),
+			text = [], segment;
 
-        for(var x=0,y=segments.length; x < y; x++) {
-            segment = segments[x];
-            if ( emotes.hasOwnProperty(segment) ) {
-                emote = emotes[segment];
+		for(var x=0,y=segments.length; x < y; x++) {
+			segment = segments[x];
+			if ( emotes.hasOwnProperty(segment) ) {
+				emote = emotes[segment];
 
-                if ( text.length ) {
-                    // We have pending text. Join it together, with an extra space
-                    // on the end for good measure.
-                    new_tokens.push({type: "text", text: text.join(' ') + ' '});
-                    text = []
-                }
+				if ( text.length ) {
+					// We have pending text. Join it together, with an extra space
+					// on the end for good measure.
+					new_tokens.push({type: "text", text: text.join(' ') + ' '});
+					text = []
+				}
 
-                // Push this emote to the tokens.
-                new_tokens.push(emote.token);
+				// Push this emote to the tokens.
+				new_tokens.push(emote.token);
 
-                if ( do_report && room )
-                    this.add_usage(room, emote);
+				if ( do_report && room )
+					this.add_usage(room, emote);
 
-                // Finally, push an empty string to text so that this emote gets spaced.
-                text.push('');
+				// Finally, push an empty string to text so that this emote gets spaced.
+				text.push('');
 
-            } else
-                text.push(segment);
-        }
+			} else
+				text.push(segment);
+		}
 
-        // Add any left over text from this segment.
-        if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
-            new_tokens.push({type: "text", text: text.join(' ')});
-    }
+		// Add any left over text from this segment.
+		if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+			new_tokens.push({type: "text", text: text.join(' ')});
+	}
 
-    return new_tokens;
+	return new_tokens;
 }
 
 
@@ -1060,54 +1060,54 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 // ---------------------
 
 FFZ.prototype.tokenize_emoji = function(tokens) {
-    "use strict";
-    if ( ! tokens || ! tokens.length || ! this.emoji_data )
-        return tokens;
+	"use strict";
+	if ( ! tokens || ! tokens.length || ! this.emoji_data )
+		return tokens;
 
-    if ( typeof tokens === "string" )
-        tokens = [tokens];
+	if ( typeof tokens === "string" )
+		tokens = [tokens];
 
-    var new_tokens = [];
+	var new_tokens = [];
 
-    for(var i=0, l=tokens.length; i < l; i++) {
-        var token = tokens[i];
-        if ( ! token )
-            continue;
+	for(var i=0, l=tokens.length; i < l; i++) {
+		var token = tokens[i];
+		if ( ! token )
+			continue;
 
-        if ( typeof token !== "string" )
-            if ( token.type === "text" )
-                token = token.text;
-            else {
-                new_tokens.push(token);
-                continue;
-            }
+		if ( typeof token !== "string" )
+			if ( token.type === "text" )
+				token = token.text;
+			else {
+				new_tokens.push(token);
+				continue;
+			}
 
-        var segments = token.split(constants.EMOJI_REGEX),
-            text = null;
+		var segments = token.split(constants.EMOJI_REGEX),
+			text = null;
 
-        while(segments.length) {
-            text = (text || '') + segments.shift();
+		while(segments.length) {
+			text = (text || '') + segments.shift();
 
-            if ( segments.length ) {
-                var match = segments.shift(),
-                    eid = utils.emoji_to_codepoint(match),
-                    data = this.emoji_data[eid];
+			if ( segments.length ) {
+				var match = segments.shift(),
+					eid = utils.emoji_to_codepoint(match),
+					data = this.emoji_data[eid];
 
-                if ( data ) {
-                    if ( text && text.length )
-                        new_tokens.push({type: "text", text: text});
-                    new_tokens.push(data.token);
-                    text = null;
-                } else
-                    text = (text || '') + match;
-            }
-        }
+				if ( data ) {
+					if ( text && text.length )
+						new_tokens.push({type: "text", text: text});
+					new_tokens.push(data.token);
+					text = null;
+				} else
+					text = (text || '') + match;
+			}
+		}
 
-        if ( text && text.length )
-            new_tokens.push({type: "text", text: text});
-    }
+		if ( text && text.length )
+			new_tokens.push({type: "text", text: text});
+	}
 
-    return new_tokens;
+	return new_tokens;
 }
 
 
@@ -1152,8 +1152,8 @@ FFZ.prototype.tokenize_mentions = function(tokens) {
 
 	for(var i=0; i < tokens.length; i++) {
 		var token = tokens[i];
-        if ( token.type === "text" )
-            token = token.text;
+		if ( token.type === "text" )
+			token = token.text;
 
 		if ( ! _.isString(token) || ! token.match(regex) ) {
 			new_tokens.push(token);
@@ -1163,10 +1163,10 @@ FFZ.prototype.tokenize_mentions = function(tokens) {
 		token = token.replace(regex, function(all, prefix, match) {
 			new_tokens.push(prefix);
 			new_tokens.push({
-                type: "mention",
-                length: match.length,
-                user: match,
-                isOwnMessage: false,
+				type: "mention",
+				length: match.length,
+				user: match,
+				isOwnMessage: false,
 				});
 
 			return "";
@@ -1188,7 +1188,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 	if ( ! this.classList.contains("deleted-link") )
 		return true;
 
-    // Stop from Navigating
+	// Stop from Navigating
 	e.preventDefault();
 
 	// Get the URL
@@ -1198,7 +1198,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 
 	// Delete Old Stuff
 	this.classList.remove('deleted-link');
-    this.classList.remove('warn-link');
+	this.classList.remove('warn-link');
 
 	// Set up the Link
 	this.href = link;
@@ -1206,7 +1206,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 	this.textContent = text;
 
 	// Refresh tipsy.
-    jQuery(this).trigger('mouseout').trigger('mouseover');
+	jQuery(this).trigger('mouseout').trigger('mouseover');
 }
 
 

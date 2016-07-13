@@ -1,5 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require('./utils'),
+	utils = require('./utils'),
 
 	hue2rgb = function(p, q, t) {
 		if ( t < 0 ) t += 1;
@@ -66,30 +66,30 @@ FFZ.settings_info.luv_contrast = {
 
 	method: function() {
 			var f = this,
-                old_val = this.settings.luv_contrast;
+				old_val = this.settings.luv_contrast;
 
-            utils.prompt(
-                "Luv Adjustment Minimum Contrast Ratio",
-                "Please enter a new value for the minimum contrast ratio required between username colors and the background.</p><p><b>Default:</b> 4.5",
-                old_val,
-                function(new_val) {
-                    if ( new_val === null || new_val === undefined )
-                        return;
+			utils.prompt(
+				"Luv Adjustment Minimum Contrast Ratio",
+				"Please enter a new value for the minimum contrast ratio required between username colors and the background.</p><p><b>Default:</b> 4.5",
+				old_val,
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
 
-                    var parsed = parseFloat(new_val);
-                    if ( Number.isNaN(parsed) || ! Number.isFinite(parsed) )
-                        parsed = 4.5;
+					var parsed = parseFloat(new_val);
+					if ( Number.isNaN(parsed) || ! Number.isFinite(parsed) )
+						parsed = 4.5;
 
-                    f.settings.set("luv_contrast", parsed);
-                });
+					f.settings.set("luv_contrast", parsed);
+				});
 		},
 
 	on_update: function(val) {
 			this._rebuild_contrast();
-            this._rebuild_filter_styles();
+			this._rebuild_filter_styles();
 
 			if ( ! this.has_bttv && this.settings.fix_color == '1' )
-                this._rebuild_colors();
+				this._rebuild_colors();
 		}
 	};
 
@@ -199,26 +199,26 @@ RGBAColor.prototype.eq = function(rgb) {
 }
 
 RGBAColor.fromName = function(name) {
-    var context = FFZ.Color._context;
-    if ( ! context ) {
-        var canvas = FFZ.Color._canvas = document.createElement('canvas');
-        context = FFZ.Color._context = canvas.getContext("2d");
-    }
+	var context = FFZ.Color._context;
+	if ( ! context ) {
+		var canvas = FFZ.Color._canvas = document.createElement('canvas');
+		context = FFZ.Color._context = canvas.getContext("2d");
+	}
 
-    context.clearRect(0,0,1,1);
-    context.fillStyle = name;
-    context.fillRect(0,0,1,1);
-    var data = context.getImageData(0,0,1,1);
+	context.clearRect(0,0,1,1);
+	context.fillStyle = name;
+	context.fillRect(0,0,1,1);
+	var data = context.getImageData(0,0,1,1);
 
-    if ( ! data || ! data.data || data.data.length !== 4 )
-        return null;
+	if ( ! data || ! data.data || data.data.length !== 4 )
+		return null;
 
-    return new RGBAColor(data.data[0], data.data[1], data.data[2], data.data[3] / 255);
+	return new RGBAColor(data.data[0], data.data[1], data.data[2], data.data[3] / 255);
 }
 
 RGBAColor.fromCSS = function(rgb) {
-    if ( ! rgb )
-        return null;
+	if ( ! rgb )
+		return null;
 
 	rgb = rgb.trim();
 
@@ -230,7 +230,7 @@ RGBAColor.fromCSS = function(rgb) {
 		var r = match[1],
 			g = match[2],
 			b = match[3],
-            a = match[4];
+			a = match[4];
 
 		if ( r.charAt(r.length-1) === '%' )
 			r = 255 * (parseInt(r) / 100);
@@ -247,19 +247,19 @@ RGBAColor.fromCSS = function(rgb) {
 		else
 			b = parseInt(b);
 
-        if ( a )
-            if ( a.charAt(a.length-1) === '%' )
-                a = parseInt(a) / 100;
-            else
-                a = parseFloat(a);
-        else
-            a = 1;
+		if ( a )
+			if ( a.charAt(a.length-1) === '%' )
+				a = parseInt(a) / 100;
+			else
+				a = parseFloat(a);
+		else
+			a = 1;
 
 		return new RGBAColor(
 			Math.min(Math.max(0, r), 255),
 			Math.min(Math.max(0, g), 255),
 			Math.min(Math.max(0, b), 255),
-            Math.min(Math.max(0, a), 1)
+			Math.min(Math.max(0, a), 1)
 			);
 	}
 
@@ -272,7 +272,7 @@ RGBAColor.fromHex = function(code) {
 		(raw >> 16),		 // Red
 		(raw >> 8 & 0x00FF), // Green
 		(raw & 0x0000FF),    // Blue,
-        1                    // Alpha
+		1                    // Alpha
 		)
 }
 
@@ -298,7 +298,7 @@ RGBAColor.fromHSVA = function(h, s, v, a) {
 		Math.round(Math.min(Math.max(0, r*255), 255)),
 		Math.round(Math.min(Math.max(0, g*255), 255)),
 		Math.round(Math.min(Math.max(0, b*255), 255)),
-        a === undefined ? 1 : a
+		a === undefined ? 1 : a
 	);
 }
 
@@ -312,7 +312,7 @@ RGBAColor.fromXYZA = function(x, y, z, a) {
 		Math.max(0, Math.min(255, 255 * XYZAColor.channelConverter(R))),
 		Math.max(0, Math.min(255, 255 * XYZAColor.channelConverter(G))),
 		Math.max(0, Math.min(255, 255 * XYZAColor.channelConverter(B))),
-        a === undefined ? 1 : a
+		a === undefined ? 1 : a
 	);
 }
 
@@ -329,7 +329,7 @@ RGBAColor.fromHSLA = function(h, s, l, a) {
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h + 1/3)), 255)),
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h)), 255)),
 		Math.round(Math.min(Math.max(0, 255 * hue2rgb(p, q, h - 1/3)), 255)),
-        a === undefined ? 1 : a
+		a === undefined ? 1 : a
 	);
 }
 
@@ -366,7 +366,7 @@ RGBAColor.prototype.brighten = function(amount) {
 		Math.max(0, Math.min(255, this.r + amount)),
 		Math.max(0, Math.min(255, this.g + amount)),
 		Math.max(0, Math.min(255, this.b + amount)),
-        this.a
+		this.a
 	);
 }
 
@@ -548,7 +548,7 @@ XYZAColor.fromRGBA = function(r, g, b, a) {
 		0.412453 * R + 0.357580 * G + 0.180423 * B,
 		0.212671 * R + 0.715160 * G + 0.072169 * B,
 		0.019334 * R + 0.119193 * G + 0.950227 * B,
-        a === undefined ? 1 : a
+		a === undefined ? 1 : a
 	);
 }
 
@@ -638,8 +638,8 @@ FFZ.prototype._rebuild_contrast = function() {
 	this._luv_required_bright = new XYZAColor(0, (this.settings.luv_contrast * (new RGBAColor(35,35,35,1).toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
 	this._luv_required_dark = new XYZAColor(0, ((new RGBAColor(217,217,217,1).toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
 
-    this._luv_background_bright = new XYZAColor(0, (this.settings.luv_contrast * (RGBAColor.fromCSS("#3c3a41").toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
-    this._luv_background_dark = new XYZAColor(0, ((RGBAColor.fromCSS("#acacbf").toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
+	this._luv_background_bright = new XYZAColor(0, (this.settings.luv_contrast * (RGBAColor.fromCSS("#3c3a41").toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
+	this._luv_background_dark = new XYZAColor(0, ((RGBAColor.fromCSS("#acacbf").toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
 }
 
 FFZ.prototype._rebuild_colors = function() {
@@ -658,7 +658,7 @@ FFZ.prototype._update_colors = function(darkness_only) {
 		Settings = utils.ember_lookup('controller:settings'),
 
 		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),
-        cr_dark = this.settings.dark_twitch || (Layout && Layout.get('isTheatreMode'));
+		cr_dark = this.settings.dark_twitch || (Layout && Layout.get('isTheatreMode'));
 
 	if ( darkness_only && this._color_old_darkness === is_dark )
 		return;
@@ -680,20 +680,20 @@ FFZ.prototype._update_colors = function(darkness_only) {
 
 
 FFZ.prototype._handle_filter_color = function(color) {
-    if (!( color instanceof RGBAColor ))
-        color = RGBAColor.fromCSS(color);
+	if (!( color instanceof RGBAColor ))
+		color = RGBAColor.fromCSS(color);
 
-    var light_color = color,
-        dark_color = color,
-        luv = color.toLUVA();
+	var light_color = color,
+		dark_color = color,
+		luv = color.toLUVA();
 
-    if ( luv.l < this._luv_background_bright )
-        light_color = luv._l(this._luv_background_bright).toRGBA();
+	if ( luv.l < this._luv_background_bright )
+		light_color = luv._l(this._luv_background_bright).toRGBA();
 
-    if ( luv.l > this._luv_background_dark )
-        dark_color = luv._l(this._luv_background_dark).toRGBA();
+	if ( luv.l > this._luv_background_dark )
+		dark_color = luv._l(this._luv_background_dark).toRGBA();
 
-    return [light_color, dark_color];
+	return [light_color, dark_color];
 }
 
 
@@ -701,90 +701,90 @@ FFZ.prototype._handle_color = function(color) {
 	if ( color instanceof RGBAColor )
 		color = color.toCSS();
 
-    if ( ! color )
-        return null;
+	if ( ! color )
+		return null;
 
 	if ( this._hex_colors.hasOwnProperty(color) )
-        return this._hex_colors[color];
+		return this._hex_colors[color];
 
-    var rgb = RGBAColor.fromCSS(color),
+	var rgb = RGBAColor.fromCSS(color),
 
-        light_color = rgb,
-        dark_color = rgb;
+		light_color = rgb,
+		dark_color = rgb;
 
-    // Color Blindness Handling
-    if ( this.settings.color_blind !== '0' ) {
-        var new_color = rgb.daltonize(this.settings.color_blind);
-        if ( ! rgb.eq(new_color) ) {
-            rgb = new_color;
-            light_color = dark_color = rgb;
-        }
-    }
-
-
-    // Color Processing - RGB
-    if ( this.settings.fix_color === '4' ) {
-        var lum = rgb.luminance();
-
-        if ( lum > 0.3 ) {
-            var s = 127, nc = rgb;
-            while(s--) {
-                nc = nc.brighten(-1);
-                if ( nc.luminance() <= 0.3 )
-                    break;
-            }
-
-            light_color = nc;
-        }
-
-        if ( lum < 0.15 ) {
-            var s = 127, nc = rgb;
-            while(s--) {
-                nc = nc.brighten();
-                if ( nc.luminance() >= 0.15 )
-                    break;
-            }
-
-            dark_color = nc;
-        }
-    }
+	// Color Blindness Handling
+	if ( this.settings.color_blind !== '0' ) {
+		var new_color = rgb.daltonize(this.settings.color_blind);
+		if ( ! rgb.eq(new_color) ) {
+			rgb = new_color;
+			light_color = dark_color = rgb;
+		}
+	}
 
 
-    // Color Processing - HSL
-    if ( this.settings.fix_color === '2' ) {
-        var hsl = rgb.toHSLA();
+	// Color Processing - RGB
+	if ( this.settings.fix_color === '4' ) {
+		var lum = rgb.luminance();
 
-        light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toRGBA();
-        dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toRGBA();
-    }
+		if ( lum > 0.3 ) {
+			var s = 127, nc = rgb;
+			while(s--) {
+				nc = nc.brighten(-1);
+				if ( nc.luminance() <= 0.3 )
+					break;
+			}
+
+			light_color = nc;
+		}
+
+		if ( lum < 0.15 ) {
+			var s = 127, nc = rgb;
+			while(s--) {
+				nc = nc.brighten();
+				if ( nc.luminance() >= 0.15 )
+					break;
+			}
+
+			dark_color = nc;
+		}
+	}
 
 
-    // Color Processing - HSV
-    if ( this.settings.fix_color === '3' ) {
-        var hsv = rgb.toHSVA();
+	// Color Processing - HSL
+	if ( this.settings.fix_color === '2' ) {
+		var hsl = rgb.toHSLA();
 
-        if ( hsv.s === 0 ) {
-            // Black and White
-            light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGBA();
-            dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGBA();
+		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toRGBA();
+		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toRGBA();
+	}
 
-        } else {
-            light_color = RGBAColor.fromHSVA(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v), hsv.a);
-            dark_color = RGBAColor.fromHSVA(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1), hsv.a);
-        }
-    }
 
-    // Color Processing - LUV
-    if ( this.settings.fix_color === '1' ) {
-        var luv = rgb.toLUVA();
+	// Color Processing - HSV
+	if ( this.settings.fix_color === '3' ) {
+		var hsv = rgb.toHSVA();
 
-        if ( luv.l > this._luv_required_dark )
-            light_color = luv._l(this._luv_required_dark).toRGBA();
+		if ( hsv.s === 0 ) {
+			// Black and White
+			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGBA();
+			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGBA();
 
-        if ( luv.l < this._luv_required_bright )
-            dark_color = luv._l(this._luv_required_bright).toRGBA();
-    }
+		} else {
+			light_color = RGBAColor.fromHSVA(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v), hsv.a);
+			dark_color = RGBAColor.fromHSVA(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1), hsv.a);
+		}
+	}
 
-    var out = this._hex_colors[color] = [light_color.toHex(), dark_color.toHex()];
-    return out;
+	// Color Processing - LUV
+	if ( this.settings.fix_color === '1' ) {
+		var luv = rgb.toLUVA();
+
+		if ( luv.l > this._luv_required_dark )
+			light_color = luv._l(this._luv_required_dark).toRGBA();
+
+		if ( luv.l < this._luv_required_bright )
+			dark_color = luv._l(this._luv_required_bright).toRGBA();
+	}
+
+	var out = this._hex_colors[color] = [light_color.toHex(), dark_color.toHex()];
+	return out;
 }

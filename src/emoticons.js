@@ -221,29 +221,29 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 				emoji.code = eid;
 
 				new_data[eid] = emoji;
-                if ( emoji.short_name )
-				    by_name[emoji.short_name] = eid;
-                if ( emoji.names && emoji.names.length )
-                    for(var x=0,y=emoji.names.length; x < y; x++)
-                        by_name[emoji.names[x]] = eid;
+				if ( emoji.short_name )
+					by_name[emoji.short_name] = eid;
+				if ( emoji.names && emoji.names.length )
+					for(var x=0,y=emoji.names.length; x < y; x++)
+						by_name[emoji.names[x]] = eid;
 
 				emoji.raw = _.map(emoji.code.split("-"), utils.codepoint_to_emoji).join("");
 
 				emoji.tw_src = constants.SERVER + 'emoji/tw/' + eid + '.svg';
 				emoji.noto_src = constants.SERVER + 'emoji/noto-' + eid + '.svg';
-                emoji.one_src = constants.SERVER + 'emoji/one/' + eid + '.svg';
+				emoji.one_src = constants.SERVER + 'emoji/one/' + eid + '.svg';
 
 				emoji.token = {
-                    type: "emoticon",
-                    imgSrc: true,
+					type: "emoticon",
+					imgSrc: true,
 
 					tw_src: emoji.tw_src,
 					noto_src: emoji.noto_src,
-                    one_src: emoji.one_src,
+					one_src: emoji.one_src,
 
 					tw: emoji.tw,
 					noto: emoji.noto,
-                    one: emoji.one,
+					one: emoji.one,
 
 					ffzEmoji: eid,
 					altText: emoji.raw
@@ -347,8 +347,8 @@ FFZ.prototype.unload_set = function(set_id) {
 			api.emote_sets[set_id] = undefined;
 	}
 
-    if ( this._inputv )
-        Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
+	if ( this._inputv )
+		Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
 }
 
 
@@ -388,14 +388,14 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 		else
 			emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")\\b", "g");
 
-        emote.token = {
-            type: "emoticon",
-            srcSet: emote.srcSet,
-            imgSrc: emote.urls[1],
-            ffzEmote: emote.id,
-            ffzEmoteSet: set_id,
-            altText: emote.hidden ? '???' : emote.name
-        };
+		emote.token = {
+			type: "emoticon",
+			srcSet: emote.srcSet,
+			imgSrc: emote.urls[1],
+			ffzEmote: emote.id,
+			ffzEmoteSet: set_id,
+			altText: emote.hidden ? '???' : emote.name
+		};
 
 		output_css += build_css(emote);
 		data.count++;
@@ -410,8 +410,8 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 
 	this.update_ui_link();
 
-    if ( this._inputv )
-        Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
+	if ( this._inputv )
+		Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
 
 	this.rerender_feed_cards(set_id);
 

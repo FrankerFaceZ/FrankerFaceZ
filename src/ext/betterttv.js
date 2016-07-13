@@ -42,11 +42,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
 	}
 
-    // Remove Sub Count and the Chart
+	// Remove Sub Count and the Chart
 	if ( this.is_dashboard ) {
 		this._update_subscribers();
-        this._remove_dash_chart();
-    }
+		this._remove_dash_chart();
+	}
 
 	document.body.classList.add('ffz-bttv');
 
@@ -101,8 +101,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.toggle_style('badges-blank');
 	this.toggle_style('badges-circular-small');
 	this.toggle_style('badges-transparent');
-    this.toggle_style('badges-sub-notice');
-    this.toggle_style('badges-sub-notice-on');
+	this.toggle_style('badges-sub-notice');
+	this.toggle_style('badges-sub-notice-on');
 
 	// Disable other features too.
 	document.body.classList.remove('ffz-transparent-badges');
@@ -237,39 +237,39 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 	};
 
-    // Emoji!
-    var parse_emoji = function(token) {
-        var setting = f.settings.parse_emoji,
-            output = [],
-            segments = token.split(constants.EMOJI_REGEX),
-            text = null;
+	// Emoji!
+	var parse_emoji = function(token) {
+		var setting = f.settings.parse_emoji,
+			output = [],
+			segments = token.split(constants.EMOJI_REGEX),
+			text = null;
 
-        if ( setting === 0 )
-            return [token];
+		if ( setting === 0 )
+			return [token];
 
-        while(segments.length) {
-            text = (text || '') + segments.shift();
-            if ( segments.length ) {
-                var match = segments.shift(),
-                    eid = utils.emoji_to_codepoint(match),
-                    data = f.emoji_data[eid],
-                    src = data && (setting === 3 ? data.one_src : (setting === 2 ? data.noto_src : data.tw_src));
+		while(segments.length) {
+			text = (text || '') + segments.shift();
+			if ( segments.length ) {
+				var match = segments.shift(),
+					eid = utils.emoji_to_codepoint(match),
+					data = f.emoji_data[eid],
+					src = data && (setting === 3 ? data.one_src : (setting === 2 ? data.noto_src : data.tw_src));
 
-                if ( src ) {
-                    if ( text && text.length )
-                        output.push(text);
-                    var code = utils.quote_attr(data.raw);
-                    output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">']);
-                    text = null;
-                } else
-                    text = (text || '') + match;
-            }
-        }
+				if ( src ) {
+					if ( text && text.length )
+						output.push(text);
+					var code = utils.quote_attr(data.raw);
+					output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">']);
+					text = null;
+				} else
+					text = (text || '') + match;
+			}
+		}
 
-        if ( text && text.length )
-            output.push(text);
+		if ( text && text.length )
+			output.push(text);
 
-        return output;
+		return output;
 	}
 
 	// Emoticonize
@@ -283,62 +283,62 @@ FFZ.prototype.setup_bttv = function(delay) {
 			sets = f.getEmotes(l_sender, l_room),
 			emotes = {}, emote,
 			user = f.get_user(),
-            new_tokens = [],
+			new_tokens = [],
 			mine = user && user.login === l_sender;
 
-        // Build an object with all of our emotes.
-        for(var i=0; i < sets.length; i++) {
-            var emote_set = f.emote_sets[sets[i]];
-            if ( emote_set && emote_set.emoticons )
-                for(var emote_id in emote_set.emoticons) {
-                    emote = emote_set.emoticons[emote_id];
-                    if ( ! emotes.hasOwnProperty(emote.name) )
-                        emotes[emote.name] = emote;
-                }
-        }
+		// Build an object with all of our emotes.
+		for(var i=0; i < sets.length; i++) {
+			var emote_set = f.emote_sets[sets[i]];
+			if ( emote_set && emote_set.emoticons )
+				for(var emote_id in emote_set.emoticons) {
+					emote = emote_set.emoticons[emote_id];
+					if ( ! emotes.hasOwnProperty(emote.name) )
+						emotes[emote.name] = emote;
+				}
+		}
 
-        for(var i=0, l=tokens.length; i < l; i++) {
-            var token = tokens[i];
-            if ( typeof token !== "string" ) {
-                new_tokens.push(token);
-                continue;
-            }
+		for(var i=0, l=tokens.length; i < l; i++) {
+			var token = tokens[i];
+			if ( typeof token !== "string" ) {
+				new_tokens.push(token);
+				continue;
+			}
 
-            // Split the token!
-            var segments = token.split(' '),
-                text = [], segment;
+			// Split the token!
+			var segments = token.split(' '),
+				text = [], segment;
 
-            for(var x=0,y=segments.length; x < y; x++) {
-                segment = segments[x];
-                if ( emotes.hasOwnProperty(segment) ) {
-                    emote = emotes[segment];
-                    if ( text.length ) {
-                        var toks = parse_emoji(text.join(' ') + ' ');
-                        for(var q=0; q < toks.length; q++)
-                            new_tokens.push(toks[q]);
+			for(var x=0,y=segments.length; x < y; x++) {
+				segment = segments[x];
+				if ( emotes.hasOwnProperty(segment) ) {
+					emote = emotes[segment];
+					if ( text.length ) {
+						var toks = parse_emoji(text.join(' ') + ' ');
+						for(var q=0; q < toks.length; q++)
+							new_tokens.push(toks[q]);
 
-                        text = [];
-                    }
+						text = [];
+					}
 
-                    new_tokens.push(['<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" alt="' + utils.quote_attr(emote.name) + '">']);
+					new_tokens.push(['<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" alt="' + utils.quote_attr(emote.name) + '">']);
 
-                    if ( mine && l_room )
-                        f.add_usage(l_room, emote);
+					if ( mine && l_room )
+						f.add_usage(l_room, emote);
 
-                    text.push('');
-                } else
-                    text.push(segment);
-            }
+					text.push('');
+				} else
+					text.push(segment);
+			}
 
-            if ( text.length > 1 || (text.length === 1 && text[0] !== '') ) {
-                var toks = parse_emoji(text.join(' ') + ' ');
-                for(var q=0; q < toks.length; q++)
-                    new_tokens.push(toks[q]);
-            }
-        }
+			if ( text.length > 1 || (text.length === 1 && text[0] !== '') ) {
+				var toks = parse_emoji(text.join(' ') + ' ');
+				for(var q=0; q < toks.length; q++)
+					new_tokens.push(toks[q]);
+			}
+		}
 
-        return new_tokens;
-    }
+		return new_tokens;
+	}
 
 	this.update_ui_link();
 }

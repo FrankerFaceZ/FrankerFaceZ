@@ -1,5 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require("../utils"),
+	utils = require("../utils"),
 	constants = require("../constants");
 
 
@@ -76,21 +76,21 @@ FFZ.settings_info.notification_timeout = {
 	help: "Specify how long notifications should be displayed before automatically closing.",
 
 	method: function() {
-            var f = this;
-            utils.prompt(
-                "Notification Timeout",
-                "Please enter the time you'd like notifications to be displayed before automatically closing, in seconds.</p><p><b>Default:</b> 60",
-                this.settings.notification_timeout,
-                function(new_val) {
-                    if ( new_val === null || new_val === undefined )
-                        return;
+			var f = this;
+			utils.prompt(
+				"Notification Timeout",
+				"Please enter the time you'd like notifications to be displayed before automatically closing, in seconds.</p><p><b>Default:</b> 60",
+				this.settings.notification_timeout,
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
 
-                    new_val = parseInt(new_val);
-                    if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) || new_val < 1 )
-                        new_val = 60;
+					new_val = parseInt(new_val);
+					if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) || new_val < 1 )
+						new_val = 60;
 
-                    f.settings.set("notification_timeout", new_val);
-                });
+					f.settings.set("notification_timeout", new_val);
+				});
 		}
 	};
 

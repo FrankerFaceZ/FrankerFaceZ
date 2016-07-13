@@ -241,8 +241,8 @@ FFZ.prototype.modify_channel_index = function(view) {
 			var top = event && event.target && event.target.scrollTop,
 				height = this.get('layout.playerSize.1');
 
-            if ( ! top )
-                top = jQuery(this.get('element')).parents('.tse-scroll-content').scrollTop();
+			if ( ! top )
+				top = jQuery(this.get('element')).parents('.tse-scroll-content').scrollTop();
 
 			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= height);
 		},

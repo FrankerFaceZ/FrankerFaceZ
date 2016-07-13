@@ -13,16 +13,16 @@ var FFZ = window.FrankerFaceZ = function() {
 	this._apis = {};
 	this._chat_filters = [];
 
-    // Error Logging
-    var t = this;
-    window.addEventListener('error', function(event) {
-        if ( ! event.error )
-            return;
+	// Error Logging
+	var t = this;
+	window.addEventListener('error', function(event) {
+		if ( ! event.error )
+			return;
 
-        //var has_stack = event.error && event.error.stack;
+		//var has_stack = event.error && event.error.stack;
 		t.error("Uncaught JavaScript Error", event.error);
-        //t.log("JavaScript Error: " + event.message + " [" + event.filename + ":" + event.lineno + ":" + event.colno + "]", has_stack ? event.error.stack : undefined, false, has_stack);
-    });
+		//t.log("JavaScript Error: " + event.message + " [" + event.filename + ":" + event.lineno + ":" + event.colno + "]", has_stack ? event.error.stack : undefined, false, has_stack);
+	});
 
 	// Get things started.
 	this.initialize();
@@ -47,8 +47,8 @@ var VER = FFZ.version_info = {
 // Logging
 
 FFZ.prototype.log = function(msg, data, to_json, log_json) {
-    if ( to_json )
-        msg = msg + ' -- ' + JSON.stringify(data);
+	if ( to_json )
+		msg = msg + ' -- ' + JSON.stringify(data);
 
 	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
@@ -116,16 +116,16 @@ FFZ.prototype.get_user = function(force_reload) {
 	if ( ! force_reload && this.__user )
 		return this.__user;
 
-    var LC = FFZ.utils.ember_lookup('service:login'),
-        user = LC ? LC.get('userData') : undefined;
+	var LC = FFZ.utils.ember_lookup('service:login'),
+		user = LC ? LC.get('userData') : undefined;
 
-    if ( ! user && window.PP && PP.login )
-        user = PP;
+	if ( ! user && window.PP && PP.login )
+		user = PP;
 
-    if ( user )
-        this.__user = user;
+	if ( user )
+		this.__user = user;
 
-    return user;
+	return user;
 }
 
 
@@ -268,7 +268,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 FFZ.prototype.init_player = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Player after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -292,7 +292,7 @@ FFZ.prototype.init_player = function(delay) {
 FFZ.prototype.init_normal = function(delay, no_socket) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -322,7 +322,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.setup_following_count(false);
 	this.setup_menu();
 
-    this.setup_message_event();
+	this.setup_message_event();
 	this.fix_tooltips();
 	this.find_bttv(10);
 
@@ -338,10 +338,10 @@ FFZ.prototype.is_dashboard = false;
 FFZ.prototype.init_dashboard = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch Dashboard after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
-    var match = location.pathname.match(/\/([^\/]+)/);
-    this.dashboard_channel = match && match[1] || undefined;
+	var match = location.pathname.match(/\/([^\/]+)/);
+	this.dashboard_channel = match && match[1] || undefined;
 
 	this.users = {};
 	this.is_dashboard = true;
@@ -366,7 +366,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_notifications();
 	this.setup_following_count(false);
 	this.setup_menu();
-    this.setup_dash_stats();
+	this.setup_dash_stats();
 	this.setup_dash_feed();
 
 	this._update_subscribers();
@@ -387,7 +387,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 FFZ.prototype.init_ember = function(delay) {
 	var start = (window.performance && performance.now) ? performance.now() : Date.now();
 	this.log("Found Twitch application after " + (delay||0) + " ms at: " + location);
-    this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
 	this.users = {};
 	this.is_dashboard = false;
@@ -426,7 +426,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_player();
 	this.setup_channel();
 	this.setup_room();
-    this.setup_vod_chat();
+	this.setup_vod_chat();
 	this.setup_line();
 	this.setup_bits();
 	this.setup_layout();
@@ -456,13 +456,13 @@ FFZ.prototype.init_ember = function(delay) {
 	this.fix_tooltips();
 	this.connect_extra_chat();
 
-    this.setup_message_event();
+	this.setup_message_event();
 	this.find_bttv(10);
 	this.find_emote_menu(10);
 
 	//this.check_news();
 	this.check_ff();
-    this.refresh_chat();
+	this.refresh_chat();
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
@@ -482,10 +482,10 @@ FFZ.prototype.setup_message_event = function() {
 
 
 FFZ.prototype._on_window_message = function(e) {
-    var msg = e.data;
-    if ( typeof msg === "string" )
+	var msg = e.data;
+	if ( typeof msg === "string" )
 		try {
-        	msg = JSON.parse(msg);
+			msg = JSON.parse(msg);
 		} catch(err) {
 			// Not JSON? We don't care.
 			return;
@@ -495,8 +495,8 @@ FFZ.prototype._on_window_message = function(e) {
 		return;
 
 	var handler = FFZ.msg_commands[msg.command];
-    if ( handler )
-        handler.call(this, msg.data);
-    else
-        this.log("Invalid Message: " + msg.command, msg.data, false, true);
+	if ( handler )
+		handler.call(this, msg.data);
+	else
+		this.log("Invalid Message: " + msg.command, msg.data, false, true);
 }

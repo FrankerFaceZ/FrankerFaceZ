@@ -1,6 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require('../utils'),
-    constants = require('../constants');
+	utils = require('../utils'),
+	constants = require('../constants');
 
 
 // ---------------
@@ -88,9 +88,9 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			var id = this.get('channel.id');
 			f.players[id] = this;
 
-            var player = this.get('player');
-            if ( player )
-                this.ffzPostPlayer();
+			var player = this.get('player');
+			if ( player )
+				this.ffzPostPlayer();
 		},
 
 		ffz_destroy: function() {
@@ -128,11 +128,11 @@ FFZ.prototype.modify_twitch_player = function(player) {
 		ffzPostPlayer: function() {
 			var player = this.get('player');
 			if ( ! player )
-                return;
+				return;
 
-            // Make the stats window draggable and fix the button.
-            var stats = this.$('.player .js-playback-stats');
-            stats.draggable({cancel: 'li', containment: 'parent'});
+			// Make the stats window draggable and fix the button.
+			var stats = this.$('.player .js-playback-stats');
+			stats.draggable({cancel: 'li', containment: 'parent'});
 
 			// Add an option to the menu to recreate the player.
 			var t = this,

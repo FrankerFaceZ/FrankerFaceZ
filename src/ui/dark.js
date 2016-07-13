@@ -1,6 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
-    utils = require("../utils");
+	utils = require("../utils");
 	//styles = require("../styles");
 
 
@@ -148,7 +148,7 @@ FFZ.settings_info.dark_twitch = {
 				settings && settings.set('darkMode', this.settings.twitch_chat_dark);
 
 			// Try coloring chat replay
-            jQuery('.chatReplay').toggleClass('dark', val || false);
+			jQuery('.chatReplay').toggleClass('dark', val || false);
 			//jQuery('.rechat-chat-line').parents('.chat-container').toggleClass('dark', val || this.settings.twitch_chat_dark);
 		}
 	};

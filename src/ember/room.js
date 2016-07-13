@@ -332,7 +332,7 @@ FFZ.prototype.modify_room_view = function(view) {
 
 			if ( this._ffz_mouse_move ) {
 				messages.removeEventListener('mousemove', this._ffz_mouse_move);
-                messages.removeEventListener('touchmove', this._ffz_mouse_move);
+				messages.removeEventListener('touchmove', this._ffz_mouse_move);
 				this._ffz_mouse_move = undefined;
 			}
 
@@ -1502,17 +1502,17 @@ FFZ.prototype._modify_room = function(room) {
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
-                // If it's from Twitch notify, and it's directly related to
-                if ( msg.from === 'twitchnotify' && msg.message.indexOf('subscribed to') === -1 && msg.message.indexOf('subscribed') !== -1 ) {
-                    if ( ! msg.tags )
-                        msg.tags = {};
+				// If it's from Twitch notify, and it's directly related to
+				if ( msg.from === 'twitchnotify' && msg.message.indexOf('subscribed to') === -1 && msg.message.indexOf('subscribed') !== -1 ) {
+					if ( ! msg.tags )
+						msg.tags = {};
 					if ( ! msg.tags.badges )
 						msg.tags.badges = {};
 					msg.tags.badges.subscriber = '1';
-                    msg.tags.subscriber = true;
-                    if ( msg.labels && msg.labels.indexOf("subscriber") === -1 )
-                        msg.labels.push("subscriber");
-                }
+					msg.tags.subscriber = true;
+					if ( msg.labels && msg.labels.indexOf("subscriber") === -1 )
+						msg.labels.push("subscriber");
+				}
 
 				// Keep the history.
 				if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
@@ -1610,9 +1610,9 @@ FFZ.prototype._modify_room = function(room) {
 				ids[msg_id] = msg;
 			}
 
-            // Report this message to the dashboard.
-            if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
-                parent.postMessage({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, "*"); //location.protocol + "//www.twitch.tv/");
+			// Report this message to the dashboard.
+			if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
+				parent.postMessage({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, "*"); //location.protocol + "//www.twitch.tv/");
 
 			// Add the message.
 			return this._super(msg);
@@ -1735,8 +1735,8 @@ FFZ.prototype._modify_room = function(room) {
 			if ( f._cindex )
 				f._cindex.ffzUpdateChatters();
 
-            if ( window !== window.parent && parent.postMessage )
-                parent.postMessage({from_ffz: true, command: 'chatter_count', data: Object.keys(this.get('ffz_chatters') || {}).length}, "*"); //location.protocol + "//www.twitch.tv/");
+			if ( window !== window.parent && parent.postMessage )
+				parent.postMessage({from_ffz: true, command: 'chatter_count', data: Object.keys(this.get('ffz_chatters') || {}).length}, "*"); //location.protocol + "//www.twitch.tv/");
 		},
 
 

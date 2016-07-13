@@ -177,22 +177,22 @@ FFZ.prototype.modify_conversation_line = function(component) {
 			return this._super(e);
 		},
 
-        didUpdate: function() { this.ffzRender() },
-        ffz_init: function() { this.ffzRender() },
+		didUpdate: function() { this.ffzRender() },
+		ffz_init: function() { this.ffzRender() },
 
 		ffzRender: function() {
-            var el = this.get('element'),
-                e = [],
+			var el = this.get('element'),
+				e = [],
 
-			    user = this.get('message.from.username'),
+				user = this.get('message.from.username'),
 				raw_color = this.get('message.from.color'),
 				colors = raw_color && f._handle_color(raw_color),
 
 				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch,
-                myself = f.get_user(),
-                from_me = myself && myself.login === user,
+				myself = f.get_user(),
+				from_me = myself && myself.login === user,
 
-			    alias = f.aliases[user],
+				alias = f.aliases[user],
 				name = this.get('message.from.displayName') || (user && user.capitalize()) || "unknown user",
 				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
 				colored = style ? ' has-color' : '';
@@ -212,7 +212,7 @@ FFZ.prototype.modify_conversation_line = function(component) {
 			e.push('<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">');
 			e.push(f.render_tokens(this.get('tokenizedMessage'), true, f.settings.filter_whispered_links && !from_me));
 			e.push('</span>');
-            el.innerHTML = e.join('');
+			el.innerHTML = e.join('');
 		}
 	});
 }

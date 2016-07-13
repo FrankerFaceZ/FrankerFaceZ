@@ -154,44 +154,44 @@ var createElement = function(tag, className, content) {
 	},
 
 
-    // This code borrowed from the twemoji project, with tweaks.
-    UFE0Fg = /\uFE0F/g,
-    U200D = String.fromCharCode(0x200D),
+	// This code borrowed from the twemoji project, with tweaks.
+	UFE0Fg = /\uFE0F/g,
+	U200D = String.fromCharCode(0x200D),
 
 	EMOJI_CODEPOINTS = {},
 	emoji_to_codepoint = function(surrogates, sep) {
 		if ( EMOJI_CODEPOINTS[surrogates] && EMOJI_CODEPOINTS[surrogates][sep] )
-            return EMOJI_CODEPOINTS[surrogates][sep];
+			return EMOJI_CODEPOINTS[surrogates][sep];
 
-        var input = surrogates.indexOf(U200D) === -1 ? surrogates.replace(UFE0Fg, '') : surrogates,
-            out = [],
-            c = 0, p = 0, i = 0;
+		var input = surrogates.indexOf(U200D) === -1 ? surrogates.replace(UFE0Fg, '') : surrogates,
+			out = [],
+			c = 0, p = 0, i = 0;
 
-        while (i < input.length) {
-            c = input.charCodeAt(i++);
-            if ( p ) {
-                out.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
-                p = 0;
-            } else if ( 0xD800 <= c && c <= 0xDBFF )
-                p = c;
-            else
-                out.push(c.toString(16));
-        }
+		while (i < input.length) {
+			c = input.charCodeAt(i++);
+			if ( p ) {
+				out.push((0x10000 + ((p - 0xD800) << 10) + (c - 0xDC00)).toString(16));
+				p = 0;
+			} else if ( 0xD800 <= c && c <= 0xDBFF )
+				p = c;
+			else
+				out.push(c.toString(16));
+		}
 
-        var retval = EMOJI_CODEPOINTS[surrogates] = out.join('-');
+		var retval = EMOJI_CODEPOINTS[surrogates] = out.join('-');
 		return retval;
 	},
 
-    codepoint_to_emoji = function(codepoint) {
-        var code = typeof codepoint === 'string' ? parseInt(codepoint, 16) : codepoint;
-        if ( code < 0x10000 )
-            return String.fromCharCode(code);
-        code -= 0x10000;
-        return String.fromCharCode(
-            0xD800 + (code >> 10),
-            0xDC00 + (code & 0x3FF)
-        )
-    },
+	codepoint_to_emoji = function(codepoint) {
+		var code = typeof codepoint === 'string' ? parseInt(codepoint, 16) : codepoint;
+		if ( code < 0x10000 )
+			return String.fromCharCode(code);
+		code -= 0x10000;
+		return String.fromCharCode(
+			0xD800 + (code >> 10),
+			0xDC00 + (code & 0x3FF)
+		)
+	},
 
 
 	// Twitch Emote Helpers
@@ -205,118 +205,118 @@ var createElement = function(tag, className, content) {
 	},
 
 
-    // Twitch API
+	// Twitch API
 
-    api_call = function(method, url, data, options, token) {
-        options = options || {};
-        var headers = options.headers = options.headers || {};
-        headers['Client-ID'] = constants.CLIENT_ID;
-        if ( token )
-            headers.Authorization = 'OAuth ' + token;
-        return Twitch.api[method].call(this, url, data, options);
-    },
-
-
-    // Dialogs
-    show_modal = function(contents, on_close, width) {
-        var container = createElement('div', 'twitch_subwindow_container'),
-            subwindow = createElement('div', 'twitch_subwindow ffz-subwindow'),
-            card = createElement('div', 'card'),
-            close_button = createElement('div', 'modal-close-button', constants.CLOSE),
-
-            closer = function() { container.parentElement.removeChild(container) };
-
-        container.id = 'ffz-modal-container';
-
-        subwindow.style.width = '100%';
-        subwindow.style.maxWidth = (width||420) + 'px';
-
-        close_button.addEventListener('click', function() {
-            closer();
-            if ( on_close )
-                on_close(false);
-        });
-
-        container.appendChild(subwindow);
-        subwindow.appendChild(card);
-        subwindow.appendChild(close_button);
-
-        card.appendChild(contents);
-
-        var el = document.querySelector('app-main');
-
-        if ( el )
-            el.parentElement.insertBefore(container, el.nextSibling);
-        else
-            document.body.appendChild(container);
-
-        return closer;
-    },
+	api_call = function(method, url, data, options, token) {
+		options = options || {};
+		var headers = options.headers = options.headers || {};
+		headers['Client-ID'] = constants.CLIENT_ID;
+		if ( token )
+			headers.Authorization = 'OAuth ' + token;
+		return Twitch.api[method].call(this, url, data, options);
+	},
 
 
-    ember_lookup = function(thing) {
-        if ( ! window.App )
-            return;
+	// Dialogs
+	show_modal = function(contents, on_close, width) {
+		var container = createElement('div', 'twitch_subwindow_container'),
+			subwindow = createElement('div', 'twitch_subwindow ffz-subwindow'),
+			card = createElement('div', 'card'),
+			close_button = createElement('div', 'modal-close-button', constants.CLOSE),
+
+			closer = function() { container.parentElement.removeChild(container) };
+
+		container.id = 'ffz-modal-container';
+
+		subwindow.style.width = '100%';
+		subwindow.style.maxWidth = (width||420) + 'px';
+
+		close_button.addEventListener('click', function() {
+			closer();
+			if ( on_close )
+				on_close(false);
+		});
+
+		container.appendChild(subwindow);
+		subwindow.appendChild(card);
+		subwindow.appendChild(close_button);
+
+		card.appendChild(contents);
+
+		var el = document.querySelector('app-main');
+
+		if ( el )
+			el.parentElement.insertBefore(container, el.nextSibling);
+		else
+			document.body.appendChild(container);
+
+		return closer;
+	},
+
+
+	ember_lookup = function(thing) {
+		if ( ! window.App )
+			return;
 
 		try {
-        	if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.lookup )
-            	return App.__deprecatedInstance__.registry.lookup(thing);
-        	if ( App.__container__ && App.__container__.lookup )
-	            return App.__container__.lookup(thing);
+			if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.lookup )
+				return App.__deprecatedInstance__.registry.lookup(thing);
+			if ( App.__container__ && App.__container__.lookup )
+				return App.__container__.lookup(thing);
 		} catch(err) {
 			FrankerFaceZ.get().error("There was an error looking up an Ember instance: " + thing, err);
 			return null;
 		}
-    };
+	};
 
 
 module.exports = FFZ.utils = {
 	// Ember Manipulation
-    ember_views: function() {
-        return ember_lookup('-view-registry:main') || {};
-    },
+	ember_views: function() {
+		return ember_lookup('-view-registry:main') || {};
+	},
 
-    ember_lookup: ember_lookup,
+	ember_lookup: ember_lookup,
 
-    ember_resolve: function(thing) {
-        if ( ! window.App )
-            return;
+	ember_resolve: function(thing) {
+		if ( ! window.App )
+			return;
 
-        if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.resolve )
-            return App.__deprecatedInstance__.registry.resolve(thing);
-        if ( App.__container__ && App.__container__.resolve )
-            return App.__container__.resolve(thing);
-    },
+		if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.resolve )
+			return App.__deprecatedInstance__.registry.resolve(thing);
+		if ( App.__container__ && App.__container__.resolve )
+			return App.__container__.resolve(thing);
+	},
 
 	ember_reopen_view: function(component, data) {
-        if ( typeof component === 'string' )
-            component = ember_resolve(component);
+		if ( typeof component === 'string' )
+			component = ember_resolve(component);
 
 		data.ffz_modified = true;
 
-        if ( data.ffz_init && ! data.didInsertElement )
-            data.didInsertElement = function() {
-                this._super();
-                try {
-                    this.ffz_init();
-                } catch(err) {
-                    FFZ.get().error("An error occured running ffz_init on " + this.toString(), err);
-                }
-            };
+		if ( data.ffz_init && ! data.didInsertElement )
+			data.didInsertElement = function() {
+				this._super();
+				try {
+					this.ffz_init();
+				} catch(err) {
+					FFZ.get().error("An error occured running ffz_init on " + this.toString(), err);
+				}
+			};
 
-        if ( data.ffz_destroy && ! data.willClearRender )
-            data.willClearRender = function() {
-                try {
-                    this.ffz_destroy();
-                } catch(err) {
-                    FFZ.get().error("An error occured running ffz_destroy on " + this.toString(), err);
-                }
+		if ( data.ffz_destroy && ! data.willClearRender )
+			data.willClearRender = function() {
+				try {
+					this.ffz_destroy();
+				} catch(err) {
+					FFZ.get().error("An error occured running ffz_destroy on " + this.toString(), err);
+				}
 
-                this._super();
-            };
+				this._super();
+			};
 
-        return component.reopen(data);
-    },
+		return component.reopen(data);
+	},
 
 	// Other Stuff
 
@@ -324,15 +324,15 @@ module.exports = FFZ.utils = {
 	/*build_tooltip: build_tooltip,
 	load_emote_data: load_emote_data,*/
 
-    api: {
-        del: function(u,d,o,t) { return api_call('del', u,d,o,t); },
-        get: function(u,d,o,t) { return api_call('get', u,d,o,t); },
-        post: function(u,d,o,t) { return api_call('post', u,d,o,t); },
-        put: function(u,d,o,t) { return api_call('put', u,d,o,t); }
-    },
+	api: {
+		del: function(u,d,o,t) { return api_call('del', u,d,o,t); },
+		get: function(u,d,o,t) { return api_call('get', u,d,o,t); },
+		post: function(u,d,o,t) { return api_call('post', u,d,o,t); },
+		put: function(u,d,o,t) { return api_call('put', u,d,o,t); }
+	},
 
 
-    show_modal: show_modal,
+	show_modal: show_modal,
 	confirm: function(title, description, callback) {
 		var contents = createElement('div', 'text-content'),
 			heading = title ? createElement('div', 'content-header', '<h4>' + title + '</h4>') : null,
@@ -340,7 +340,7 @@ module.exports = FFZ.utils = {
 			buttons = createElement('div', 'buttons', '<a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button>'),
 
 			close_btn = buttons.querySelector('.js-subwindow-close'),
-        	okay_btn = buttons.querySelector('.button.primary');
+			okay_btn = buttons.querySelector('.button.primary');
 
 		if ( heading )
 			contents.appendChild(heading);
@@ -368,21 +368,21 @@ module.exports = FFZ.utils = {
 		closer = show_modal(contents, cb);
 
 		okay_btn.addEventListener('click', function(e) { e.preventDefault(); cb(true); return false });
-        close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
+		close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
 	},
 
-    prompt: function(title, description, old_value, callback, width, input) {
-        var contents = createElement('div', 'text-content'),
-            heading = createElement('div', 'content-header', '<h4>' + title + '</h4>'),
-            form = createElement('form'),
-            close_btn, okay_btn;
+	prompt: function(title, description, old_value, callback, width, input) {
+		var contents = createElement('div', 'text-content'),
+			heading = createElement('div', 'content-header', '<h4>' + title + '</h4>'),
+			form = createElement('form'),
+			close_btn, okay_btn;
 
 		if ( ! input ) {
 			input = createElement('input');
 			input.type = 'text';
 		}
 
-        form.innerHTML = '<div class="item">' + (description ? '<p>' + description + '</p>' : '') + '<div class="input-placeholder"></div><div class="buttons"><a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button></div>';
+		form.innerHTML = '<div class="item">' + (description ? '<p>' + description + '</p>' : '') + '<div class="input-placeholder"></div><div class="buttons"><a class="js-subwindow-close button"><span>Cancel</span></a><button class="button primary" type="submit"><span>OK</span></button></div>';
 
 		var ph = form.querySelector('.input-placeholder'),
 			par = ph.parentElement;
@@ -390,54 +390,54 @@ module.exports = FFZ.utils = {
 		par.insertBefore(input, ph);
 		par.removeChild(ph);
 
-        contents.appendChild(heading);
-        contents.appendChild(form);
+		contents.appendChild(heading);
+		contents.appendChild(form);
 
-        close_btn = form.querySelector('.js-subwindow-close');
-        okay_btn = form.querySelector('.button.primary');
+		close_btn = form.querySelector('.js-subwindow-close');
+		okay_btn = form.querySelector('.button.primary');
 
-        if ( old_value !== undefined )
-            input.value = old_value;
+		if ( old_value !== undefined )
+			input.value = old_value;
 
-        var closer,
-            cb = function(success) {
-                closer();
-                if ( ! callback )
-                    return;
+		var closer,
+			cb = function(success) {
+				closer();
+				if ( ! callback )
+					return;
 
-                callback(success ? input.value : null);
-            };
+				callback(success ? input.value : null);
+			};
 
-        closer = show_modal(contents, cb, width);
+		closer = show_modal(contents, cb, width);
 
 		try {
 			input.focus();
 		} catch(err) { }
 
-        form.addEventListener('submit', function(e) { e.preventDefault(); cb(true); return false });
-        okay_btn.addEventListener('click', function(e) { e.preventDefault(); cb(true); return false });
-        close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
-    },
+		form.addEventListener('submit', function(e) { e.preventDefault(); cb(true); return false });
+		okay_btn.addEventListener('click', function(e) { e.preventDefault(); cb(true); return false });
+		close_btn.addEventListener('click', function(e) { e.preventDefault(); cb(false); return false });
+	},
 
 
-    last_minute: function() {
-        var now = new Date();
-        if ( now.getSeconds() >= 30 )
-            now.setMinutes(now.getMinutes()+1);
+	last_minute: function() {
+		var now = new Date();
+		if ( now.getSeconds() >= 30 )
+			now.setMinutes(now.getMinutes()+1);
 
-        now.setSeconds(0);
-        now.setMilliseconds(0);
-        return now.getTime();
-    },
+		now.setSeconds(0);
+		now.setMilliseconds(0);
+		return now.getTime();
+	},
 
-    maybe_chart: function(series, point, render, force) {
-        var len = series.data.length;
-        if ( force || point.y !== null || (len > 0 && series.data[len-1].y !== null) ) {
-            series.addPoint(point, render);
-            return true;
-        }
-        return false;
-    },
+	maybe_chart: function(series, point, render, force) {
+		var len = series.data.length;
+		if ( force || point.y !== null || (len > 0 && series.data[len-1].y !== null) ) {
+			series.addPoint(point, render);
+			return true;
+		}
+		return false;
+	},
 
 	update_css: function(element, id, css) {
 		var all = element.innerHTML,
@@ -462,16 +462,16 @@ module.exports = FFZ.utils = {
 
 	tooltip_placement: function(margin, prefer) {
 		return function() {
-            var pref = prefer;
-            if ( typeof pref === "function" )
-                pref = pref.call(this);
+			var pref = prefer;
+			if ( typeof pref === "function" )
+				pref = pref.call(this);
 
 			var dir = {ns: pref[0], ew: (pref.length > 1 ? pref[1] : false)},
-			    $this = $(this),
+				$this = $(this),
 				half_width = $this.width() / 2,
 				half_height = $this.height() / 2,
 				boundTop = $(document).scrollTop() + half_height + (margin*2),
-			    boundLeft = $(document).scrollLeft() + half_width + margin;
+				boundLeft = $(document).scrollLeft() + half_width + margin;
 
 			if ($this.offset().top < boundTop) dir.ns = 'n';
 			if ($this.offset().left < boundLeft) dir.ew = 'w';
@@ -486,7 +486,7 @@ module.exports = FFZ.utils = {
 	uncompressEmotes: uncompressEmotes,
 
 	emoji_to_codepoint: emoji_to_codepoint,
-    codepoint_to_emoji: codepoint_to_emoji,
+	codepoint_to_emoji: codepoint_to_emoji,
 
 	parse_date: parse_date,
 

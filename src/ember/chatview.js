@@ -14,11 +14,11 @@ FFZ.basic_settings.delayed_chat = {
 		300: "Minor (Bot Moderation; 0.3s)",
 		1200: "Normal (Human Moderation; 1.2s)",
 		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)",
-        10000: "Extra Large (10s)",
-        15000: "Extremely Large (15s)",
-        20000: "Mods Asleep; Delay Chat (20s)",
-        30000: "Half a Minute (30s)",
-        60000: "Why??? (1m)"
+		10000: "Extra Large (10s)",
+		15000: "Extremely Large (15s)",
+		20000: "Mods Asleep; Delay Chat (20s)",
+		30000: "Half a Minute (30s)",
+		60000: "Why??? (1m)"
 	},
 
 	category: "Chat",
@@ -141,11 +141,11 @@ FFZ.settings_info.chat_delay = {
 		300: "Minor (Bot Moderation; 0.3s)",
 		1200: "Normal (Human Moderation; 1.2s)",
 		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)",
-        10000: "Extra Large (10s)",
-        15000: "Extremely Large (15s)",
-        20000: "Mods Asleep; Delay Chat (20s)",
-        30000: "Half a Minute (30s)",
-        60000: "Why??? (1m)"
+		10000: "Extra Large (10s)",
+		15000: "Extremely Large (15s)",
+		20000: "Mods Asleep; Delay Chat (20s)",
+		30000: "Half a Minute (30s)",
+		60000: "Why??? (1m)"
 	},
 	value: 0,
 
@@ -328,22 +328,22 @@ FFZ.settings_info.visible_rooms = {
 // --------------------
 
 FFZ.prototype.refresh_chat = function() {
-    var parents, lines = jQuery('ul.chat-lines');
-    if ( this.has_bttv || ! lines || ! lines.length )
-        return;
+	var parents, lines = jQuery('ul.chat-lines');
+	if ( this.has_bttv || ! lines || ! lines.length )
+		return;
 
-    parents = lines.parents('.chatReplay');
-    if ( parents && parents.length )
-        return;
+	parents = lines.parents('.chatReplay');
+	if ( parents && parents.length )
+		return;
 
-    // There are chat-lines in the DOM and they aren't chat replay.
-    var controller = utils.ember_lookup('controller:chat');
-    if ( ! controller )
-        return;
+	// There are chat-lines in the DOM and they aren't chat replay.
+	var controller = utils.ember_lookup('controller:chat');
+	if ( ! controller )
+		return;
 
-    var current_room = controller.get("currentRoom");
-    controller.blurRoom();
-    controller.focusRoom(current_room);
+	var current_room = controller.get("currentRoom");
+	controller.blurRoom();
+	controller.focusRoom(current_room);
 }
 
 FFZ.prototype.setup_chatview = function() {
@@ -402,10 +402,10 @@ FFZ.prototype.setup_chatview = function() {
 				f._chatv.ffzUpdateMenuUnread();
 			}.observes("invitedPrivateGroupRooms"),
 
-            ffzChangedRoom: function() {
-                if ( f._inputv )
-                    Ember.propertyDidChange(f._inputv, 'ffz_emoticons');
-            }.observes('currentRoom'),
+			ffzChangedRoom: function() {
+				if ( f._inputv )
+					Ember.propertyDidChange(f._inputv, 'ffz_emoticons');
+			}.observes('currentRoom'),
 
 			notificationsCount: function() {
 				if ( ! f._chatv || f.has_bttv )
@@ -487,7 +487,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 	var f = this;
 	utils.ember_reopen_view(view, {
 		ffz_init: function() {
-            f._chatv = this;
+			f._chatv = this;
 
 			var room_id = this.get('controller.currentRoom.id'),
 				el = this.get('element');
@@ -559,7 +559,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
 			f.update_ui_link();
-            this.ffz_unread = this.ffz_unread || {};
+			this.ffz_unread = this.ffz_unread || {};
 
 			// Close mod cards when changing to a new room.
 			if ( f._mod_card )
@@ -699,7 +699,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 		ffzUpdateUnread: function(target_id) {
 			var current_id = this.get('controller.currentRoom.id');
-            this.ffz_unread = this.ffz_unread || {};
+			this.ffz_unread = this.ffz_unread || {};
 
 			if ( target_id === current_id )
 				// We don't care about updates to the current room.
@@ -1036,7 +1036,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			link.title = "Chat Room Management";
 			link.innerHTML = '<figure class="icon">' + constants.ROOMS + '</figure><span class="notifications"></span>';
 
-            jQuery(link).tipsy({gravity: "n", offset: 5});
+			jQuery(link).tipsy({gravity: "n", offset: 5});
 
 			link.addEventListener('click', function() {
 				var controller = view.get('controller');

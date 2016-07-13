@@ -1,6 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
-    utils = require('../utils');
+	utils = require('../utils');
 
 // --------------------
 // Initialization

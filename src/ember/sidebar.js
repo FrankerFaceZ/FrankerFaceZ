@@ -48,7 +48,7 @@ FFZ.settings_info.sidebar_hide_recommended_channels = {
 	no_mobile: true,
 
 	name: "Hide Recommended Channels",
-    help: "Hide the Recommended Channels section from the sidebar.",
+	help: "Hide the Recommended Channels section from the sidebar.",
 
 	on_update: utils.toggle_cls('ffz-hide-recommended-channels')
 };
@@ -62,7 +62,7 @@ FFZ.settings_info.sidebar_hide_recommended_friends = {
 	no_mobile: true,
 
 	name: "Hide Recommended Friends",
-    help: "Hide the Recommended Friends section from the sidebar.",
+	help: "Hide the Recommended Friends section from the sidebar.",
 
 	on_update: utils.toggle_cls('ffz-hide-recommended-friends')
 };

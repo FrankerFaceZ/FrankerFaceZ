@@ -59,7 +59,7 @@ var API = FFZ.API = function(instance, name, icon, version) {
 	this.name_key = this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
 
 	this.icon = icon || null;
-    this.version = version || null;
+	this.version = version || null;
 
 	this.ffz.log('Registered New Extension #' + this.id + ': ' + this.name);
 };
@@ -169,14 +169,14 @@ API.prototype._load_set = function(real_id, set_id, data) {
 		else
 			new_emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
 
-        new_emote.token = {
-            type: "emoticon",
-            srcSet: new_emote.srcSet,
-            imgSrc: new_emote.urls[1],
-            ffzEmote: id,
-            ffzEmoteSet: real_id,
-            altText: new_emote.hidden ? '???' : new_emote.name
-        };
+		new_emote.token = {
+			type: "emoticon",
+			srcSet: new_emote.srcSet,
+			imgSrc: new_emote.urls[1],
+			ffzEmote: id,
+			ffzEmoteSet: real_id,
+			altText: new_emote.hidden ? '???' : new_emote.name
+		};
 
 		output_css += build_css(new_emote);
 		emote_set.count++;
@@ -294,9 +294,9 @@ API.prototype.register_global_set = function(id, emote_set) {
 	if ( this.ffz.default_sets && this.ffz.default_sets.indexOf(exact_id) === -1 )
 		this.ffz.default_sets.push(exact_id);
 
-    // Update tab completion.
-    if ( this.ffz._inputv )
-        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+	// Update tab completion.
+	if ( this.ffz._inputv )
+		Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 };
 
 
@@ -324,9 +324,9 @@ API.prototype.unregister_global_set = function(id) {
 	if ( ind !== -1 )
 		this.ffz.default_sets.splice(ind,1);
 
-    // Update tab completion.
-    if ( this.ffz._inputv )
-        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+	// Update tab completion.
+	if ( this.ffz._inputv )
+		Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 };
 
 
@@ -361,9 +361,9 @@ API.prototype.register_room_set = function(room_id, id, emote_set) {
 	room.ext_sets && room.ext_sets.push(exact_id);
 	emote_set.users.push(room_id);
 
-    // Update tab completion.
-    if ( this.ffz._inputv )
-        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+	// Update tab completion.
+	if ( this.ffz._inputv )
+		Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 }
 
 
@@ -383,9 +383,9 @@ API.prototype.unregister_room_set = function(room_id, id) {
 	if ( ind !== -1 )
 		emote_set.users.splice(ind,1);
 
-    // Update tab completion.
-    if ( this.ffz._inputv )
-        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+	// Update tab completion.
+	if ( this.ffz._inputv )
+		Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 }
 
 
@@ -473,7 +473,7 @@ API.prototype.user_add_set = function(username, set_id) {
 	// Update tab completion.
 	var user = this.ffz.get_user();
 	if ( this.ffz._inputv && user && user.login === username )
-        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+		Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 }
 
 
@@ -497,7 +497,7 @@ API.prototype.user_remove_set = function(username, set_id) {
 	// Update tab completion.
 	var user = this.ffz.get_user();
 	if ( this.ffz._inputv && user && user.login === username )
-        Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
+		Ember.propertyDidChange(this.ffz._inputv, 'ffz_emoticons');
 }
 
 

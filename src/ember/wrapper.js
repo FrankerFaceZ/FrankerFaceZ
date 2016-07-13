@@ -1,5 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require("../utils"),
+	utils = require("../utils"),
 	constants = require("../constants");
 
 // --------------------
@@ -66,23 +66,23 @@ FFZ.prototype._update_views = function(klasses) {
 	// Iterate over all existing views and update them as necessary.
 	var views = utils.ember_views();
 	for(var view_id in views) {
-        var view = views[view_id];
-        if ( ! view )
-            continue;
+		var view = views[view_id];
+		if ( ! view )
+			continue;
 
-        for(var i=0; i < klasses.length; i++)
-            if ( view instanceof klasses[i][1] ) {
-                try {
-                    if ( ! view.ffz_modified )
-                        klasses[i][2].call(this, view);
+		for(var i=0; i < klasses.length; i++)
+			if ( view instanceof klasses[i][1] ) {
+				try {
+					if ( ! view.ffz_modified )
+						klasses[i][2].call(this, view);
 
-                    (view.ffz_update || view.ffz_init).call(view);
+					(view.ffz_update || view.ffz_init).call(view);
 
-                } catch(err) {
-                    this.error("An error occured when updating an existing Ember instance of: " + klasses[i][0], err);
-                }
+				} catch(err) {
+					this.error("An error occured when updating an existing Ember instance of: " + klasses[i][0], err);
+				}
 
-                break;
-            }
-    }
+				break;
+			}
+	}
 }

@@ -132,9 +132,9 @@ FFZ.settings_info.sub_notice_badges = {
 	name: "Old-Style Subscriber Notice Badges",
 	no_bttv: true,
 
-    help: "Display a subscriber badge on old-style chat messages about new subscribers.",
+	help: "Display a subscriber badge on old-style chat messages about new subscribers.",
 
-    on_update: function(val) {
+	on_update: function(val) {
 		this.toggle_style('badges-sub-notice', ! this.has_bttv && ! val);
 		this.toggle_style('badges-sub-notice-on', ! this.has_bttv && val);
 	}
@@ -231,8 +231,8 @@ FFZ.prototype.setup_badges = function() {
 		this.toggle_style('badges-transparent', val === 5);
 		document.body.classList.toggle('ffz-transparent-badges', val === 5);
 
-        this.toggle_style('badges-sub-notice', ! this.settings.sub_notice_badges);
-        this.toggle_style('badges-sub-notice-on', this.settings.sub_notice_badges);
+		this.toggle_style('badges-sub-notice', ! this.settings.sub_notice_badges);
+		this.toggle_style('badges-sub-notice-on', this.settings.sub_notice_badges);
 	}
 
 	this.toggle_style('badges-legacy', this.settings.legacy_badges === 3);
@@ -345,9 +345,9 @@ FFZ.prototype.get_line_badges = function(msg) {
 
 		last_id = -1,
 		had_last = false,
-        room = msg.get && msg.get('room') || msg.room,
-        from = msg.get && msg.get('from') || msg.from,
-        tags = msg.get && msg.get('tags') || msg.tags || {},
+		room = msg.get && msg.get('room') || msg.room,
+		from = msg.get && msg.get('from') || msg.from,
+		tags = msg.get && msg.get('tags') || msg.tags || {},
 		badge_tag = tags.badges || {},
 
 		service = utils.ember_lookup('service:badges'),

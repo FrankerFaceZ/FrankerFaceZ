@@ -1,5 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require('../utils');
+	utils = require('../utils');
 
 
 // --------------------
@@ -108,18 +108,18 @@ FFZ.settings_info.right_column_width = {
 
 	method: function() {
 			var f = this,
-                old_val = this.settings.right_column_width || 340;
+				old_val = this.settings.right_column_width || 340;
 
-            utils.prompt("Right Sidebar Width", "Please enter a new width for the right sidebar, in pixels.</p><p><b>Minimum:</b> 250<br><b>Default:</b> 340", old_val, function(new_val) {
-                if ( new_val === null || new_val === undefined )
-                    return;
+			utils.prompt("Right Sidebar Width", "Please enter a new width for the right sidebar, in pixels.</p><p><b>Minimum:</b> 250<br><b>Default:</b> 340", old_val, function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
 
-                var width = parseInt(new_val);
-                if ( ! width || Number.isNaN(width) || ! Number.isFinite(width) )
-                    width = 340;
+				var width = parseInt(new_val);
+				if ( ! width || Number.isNaN(width) || ! Number.isFinite(width) )
+					width = 340;
 
-                f.settings.set('right_column_width', Math.max(250, width));
-            });
+				f.settings.set('right_column_width', Math.max(250, width));
+			});
 		},
 
 	on_update: function(val) {
@@ -223,19 +223,19 @@ FFZ.prototype.setup_layout = function() {
 				height = size[1],
 				host_height = size[2];
 
-            return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
+			return "<style>.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object, .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
 		}.property("playerSize"),
 
 		ffzPortraitWarning: function() {
-            var t = this;
-            // Delay this, in case we're just resizing the window.
-            setTimeout(function() {
-                if ( ! f.settings.portrait_mode || f._portrait_warning || f.settings.portrait_warning || document.body.getAttribute('data-current-path').indexOf('user.') !== 0 || ! t.get('isTooSmallForRightColumn') )
-				    return;
+			var t = this;
+			// Delay this, in case we're just resizing the window.
+			setTimeout(function() {
+				if ( ! f.settings.portrait_mode || f._portrait_warning || f.settings.portrait_warning || document.body.getAttribute('data-current-path').indexOf('user.') !== 0 || ! t.get('isTooSmallForRightColumn') )
+					return;
 
-			    f._portrait_warning = true;
-			    f.show_message('Twitch\'s Chat Sidebar has been hidden as a result of FrankerFaceZ\'s Portrait Mode because the window is too wide.<br><br>Please <a href="#" onclick="ffz.settings.set(\'portrait_mode\',0);jQuery(this).parents(\'.ffz-noty\').remove();ffz._portrait_warning = false;return false">disable Portrait Mode</a> or make your window narrower.<br><br><a href="#" onclick="ffz.settings.set(\'portrait_warning\',true);jQuery(this).parents(\'.ffz-noty\').remove();return false">Do not show this message again</a>');
-            }, 50);
+				f._portrait_warning = true;
+				f.show_message('Twitch\'s Chat Sidebar has been hidden as a result of FrankerFaceZ\'s Portrait Mode because the window is too wide.<br><br>Please <a href="#" onclick="ffz.settings.set(\'portrait_mode\',0);jQuery(this).parents(\'.ffz-noty\').remove();ffz._portrait_warning = false;return false">disable Portrait Mode</a> or make your window narrower.<br><br><a href="#" onclick="ffz.settings.set(\'portrait_warning\',true);jQuery(this).parents(\'.ffz-noty\').remove();return false">Do not show this message again</a>');
+			}, 50);
 
 		}.observes("isTooSmallForRightColumn"),
 
@@ -253,73 +253,73 @@ FFZ.prototype.setup_layout = function() {
 				out += 'width: 50vh !important; height: 28.125vh !important;';
 
 			if ( ! f.has_bttv ) {
-                if ( this.get('isRightColumnClosed') )
+				if ( this.get('isRightColumnClosed') )
 					out += 'top: 0; right: 0}';
 
-                else {
-				    if ( this.get('portraitMode') ) {
-                        var size = this.get('playerSize'),
-                            video_below = this.get('portraitVideoBelow'),
+				else {
+					if ( this.get('portraitMode') ) {
+						var size = this.get('playerSize'),
+							video_below = this.get('portraitVideoBelow'),
 
-                            video_height = size[1] + 120 + 60,
-                            chat_height = window_height - video_height,
+							video_height = size[1] + 120 + 60,
+							chat_height = window_height - video_height,
 
-                            video_top = video_below ? chat_height : 0,
-                            chat_top = video_below ? 0 : video_height,
+							video_top = video_below ? chat_height : 0,
+							chat_top = video_below ? 0 : video_height,
 
-                            theatre_video_height = Math.floor(Math.max(window_height * 0.1, Math.min(window_height - 300, 9 * window_width / 16))),
-                            theatre_chat_height = window_height - theatre_video_height,
+							theatre_video_height = Math.floor(Math.max(window_height * 0.1, Math.min(window_height - 300, 9 * window_width / 16))),
+							theatre_chat_height = window_height - theatre_video_height,
 
-                            theatre_video_top = video_below ? theatre_chat_height : 0,
-                            theatre_chat_top = video_below ? 0 : theatre_video_height;
+							theatre_video_top = video_below ? theatre_chat_height : 0,
+							theatre_chat_top = video_below ? 0 : theatre_video_height;
 
 						out += 'top: ' + video_top + 'px;right: 0}' +
 							'body[data-current-path^="user."] #left_col .warp { min-height: inherit }' +
 							'body[data-current-path^="user."] #left_col { overflow: hidden }' +
-                        	'body[data-current-path^="user."] #left_col .warp,' +
+							'body[data-current-path^="user."] #left_col .warp,' +
 							'body[data-current-path^="user."] #left_col,' +
-                            'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col{' +
-                                'margin-right:0 !important;' +
-                                'top:' + video_top + 'px;' +
-                                'height:' + video_height + 'px}' +
-                            'body[data-current-path^="user."].ffz-sidebar-swap #main_col{' +
-                                'margin-left:0 !important;' +
-                                'top:' + video_top + 'px;' +
-                                'height:' + video_height + 'px}' +
-                            'body[data-current-path^="user."] #right_col{' +
-                                'width:100%;' +
-                                'top:' + chat_top + 'px;' +
-                                'height:' + chat_height + 'px}' +
+							'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col{' +
+								'margin-right:0 !important;' +
+								'top:' + video_top + 'px;' +
+								'height:' + video_height + 'px}' +
+							'body[data-current-path^="user."].ffz-sidebar-swap #main_col{' +
+								'margin-left:0 !important;' +
+								'top:' + video_top + 'px;' +
+								'height:' + video_height + 'px}' +
+							'body[data-current-path^="user."] #right_col{' +
+								'width:100%;' +
+								'top:' + chat_top + 'px;' +
+								'height:' + chat_height + 'px}' +
 							'body[data-current-path^="user."] .app-main.theatre #left_col .warp,' +
-                            'body[data-current-path^="user."] .app-main.theatre #left_col,' +
-                            'body[data-current-path^="user."] .app-main.theatre #main_col{' +
-                                'top:' + theatre_video_top + 'px;' +
-                                'height:' + theatre_video_height + 'px}' +
-                            'body[data-current-path^="user."] .app-main.theatre #right_col{' +
-                                'top:' + theatre_chat_top + 'px;' +
-                                'height:' + theatre_chat_height + 'px}';
+							'body[data-current-path^="user."] .app-main.theatre #left_col,' +
+							'body[data-current-path^="user."] .app-main.theatre #main_col{' +
+								'top:' + theatre_video_top + 'px;' +
+								'height:' + theatre_video_height + 'px}' +
+							'body[data-current-path^="user."] .app-main.theatre #right_col{' +
+								'top:' + theatre_chat_top + 'px;' +
+								'height:' + theatre_chat_height + 'px}';
 
-                    }  else {
-					    var width = this.get('rightColumnWidth');
+					}  else {
+						var width = this.get('rightColumnWidth');
 
 						out += 'top: 0; right: ' + width + 'px}' +
 							'#main_col.expandRight #right_close{left: none !important}' +
-                            '#right_col{width:' + width + 'px}' +
-                            'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight){' +
-                                'margin-right:' + width + 'px}' +
-                            'body.ffz-sidebar-swap #main_col:not(.expandRight){' +
-                                'margin-left:' + width + 'px}';
-				    }
-                }
+							'#right_col{width:' + width + 'px}' +
+							'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight){' +
+								'margin-right:' + width + 'px}' +
+							'body.ffz-sidebar-swap #main_col:not(.expandRight){' +
+								'margin-left:' + width + 'px}';
+					}
+				}
 
 				f._layout_style.innerHTML = out;
 			}
 
 		}.observes("isRightColumnClosed", "playerSize", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
 
-        ffzUpdatePlayerStyle: function() {
-            Ember.propertyDidChange(Layout, 'playerStyle');
-        }.observes('windowHeight', 'windowWidth'),
+		ffzUpdatePlayerStyle: function() {
+			Ember.propertyDidChange(Layout, 'playerStyle');
+		}.observes('windowHeight', 'windowWidth'),
 
 		ffzUpdatePortraitCSS: function() {
 			var portrait = this.get("portraitMode");

@@ -323,7 +323,7 @@ FFZ.settings_info.mod_buttons = {
 
 	method: function() {
 			var f = this,
-                old_val = "";
+				old_val = "";
 
 			for(var i=0; i < this.settings.mod_buttons.length; i++) {
 				var pair = this.settings.mod_buttons[i],
@@ -349,113 +349,113 @@ FFZ.settings_info.mod_buttons = {
 			}
 
 
-            utils.prompt(
-                "Custom In-Line Moderation Icons",
-                "Please enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. " +
-                    "To include spaces in a command, surround the command with double quotes (\"). Use <code>{user}</code> to insert the user's name " +
-                    "into the command, otherwise it will be appended to the end. Use <code>{id}</code> to insert the unique message ID into the command.</p>" +
+			utils.prompt(
+				"Custom In-Line Moderation Icons",
+				"Please enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. " +
+					"To include spaces in a command, surround the command with double quotes (\"). Use <code>{user}</code> to insert the user's name " +
+					"into the command, otherwise it will be appended to the end. Use <code>{id}</code> to insert the unique message ID into the command.</p>" +
 					"<p><b>Example:</b> <code>!permit \"!reg add {user}\" \"/timeout {user} 1 {id}\"</code></p><p>To " +
-                    "send multiple commands, separate them with <code>&lt;LINE&gt;</code>.</p><p>Numeric values will become timeout buttons for " +
-                    "that number of seconds. The text <code>&lt;BAN&gt;</code> is a special value that will act like the normal Ban button in chat.</p><p>" +
-                    "To assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.</p><p>" +
-                    "<b>Example:</b> <code>A=\"!reg add\"</code></p><p><b>Default:</b> <code>&lt;BAN&gt; 600</code>",
-                old_val.substr(1),
-                function(new_val) {
-                    if ( new_val === null || new_val === undefined )
-                        return;
+					"send multiple commands, separate them with <code>&lt;LINE&gt;</code>.</p><p>Numeric values will become timeout buttons for " +
+					"that number of seconds. The text <code>&lt;BAN&gt;</code> is a special value that will act like the normal Ban button in chat.</p><p>" +
+					"To assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.</p><p>" +
+					"<b>Example:</b> <code>A=\"!reg add\"</code></p><p><b>Default:</b> <code>&lt;BAN&gt; 600</code>",
+				old_val.substr(1),
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
 
-                    var vals = [], prefix = '';
-                    new_val = new_val.trim();
+					var vals = [], prefix = '';
+					new_val = new_val.trim();
 
-                    while(new_val) {
-                        if ( new_val.charAt(1) === '=' ) {
-                            prefix = new_val.charAt(0);
-                            new_val = new_val.substr(2);
-                            continue;
-                        }
+					while(new_val) {
+						if ( new_val.charAt(1) === '=' ) {
+							prefix = new_val.charAt(0);
+							new_val = new_val.substr(2);
+							continue;
+						}
 
-                        if ( new_val.charAt(0) === '"' ) {
-                            var end = new_val.indexOf('"', 1);
-                            if ( end === -1 )
-                                end = new_val.length;
+						if ( new_val.charAt(0) === '"' ) {
+							var end = new_val.indexOf('"', 1);
+							if ( end === -1 )
+								end = new_val.length;
 
-                            var segment = new_val.substr(1, end - 1);
-                            if ( segment ) {
-                                vals.push([prefix, segment]);
-                                prefix = '';
-                            }
+							var segment = new_val.substr(1, end - 1);
+							if ( segment ) {
+								vals.push([prefix, segment]);
+								prefix = '';
+							}
 
-                            new_val = new_val.substr(end + 1);
+							new_val = new_val.substr(end + 1);
 
-                        } else {
-                            var ind = new_val.indexOf(' ');
-                            if ( ind === -1 ) {
-                                if ( new_val ) {
-                                    vals.push([prefix, new_val]);
-                                    prefix = '';
-                                }
+						} else {
+							var ind = new_val.indexOf(' ');
+							if ( ind === -1 ) {
+								if ( new_val ) {
+									vals.push([prefix, new_val]);
+									prefix = '';
+								}
 
-                                new_val = '';
+								new_val = '';
 
-                            } else {
-                                var segment = new_val.substr(0, ind);
-                                if ( segment ) {
-                                    vals.push([prefix, segment]);
-                                    prefix = '';
-                                }
+							} else {
+								var segment = new_val.substr(0, ind);
+								if ( segment ) {
+									vals.push([prefix, segment]);
+									prefix = '';
+								}
 
-                                new_val = new_val.substr(ind + 1);
-                            }
-                        }
-                    }
+								new_val = new_val.substr(ind + 1);
+							}
+						}
+					}
 
-                    var final = [];
-                    for(var i=0; i < vals.length; i++) {
-                        var had_prefix = false, prefix = vals[i][0], val = vals[i][1];
-                        if ( val === "<BAN>" )
-                            val = false;
+					var final = [];
+					for(var i=0; i < vals.length; i++) {
+						var had_prefix = false, prefix = vals[i][0], val = vals[i][1];
+						if ( val === "<BAN>" )
+							val = false;
 
-                        var num = parseInt(val);
-                        if ( num > 0 && ! Number.isNaN(num) )
-                            val = num;
+						var num = parseInt(val);
+						if ( num > 0 && ! Number.isNaN(num) )
+							val = num;
 
-                        if ( ! prefix ) {
-                            var tmp;
-                            if ( typeof val === "string" )
-                                tmp = /\w/.exec(val);
-                            else
-                                tmp = utils.duration_string(val);
+						if ( ! prefix ) {
+							var tmp;
+							if ( typeof val === "string" )
+								tmp = /\w/.exec(val);
+							else
+								tmp = utils.duration_string(val);
 
-                            prefix = tmp && tmp.length ? tmp[0].toUpperCase() : "C";
-                        } else
-                            had_prefix = true;
+							prefix = tmp && tmp.length ? tmp[0].toUpperCase() : "C";
+						} else
+							had_prefix = true;
 
-                        if ( typeof val === "string" ) {
-                            // Split it up for this step.
-                            var lines = val.split(/ *<LINE> */);
-                            for(var x=0; x < lines.length; x++) {
-                                if ( lines[x].indexOf('{user}') === -1 )
-                                    lines[x] += ' {user}';
-                            }
-                            val = lines.join("<LINE>");
-                        }
+						if ( typeof val === "string" ) {
+							// Split it up for this step.
+							var lines = val.split(/ *<LINE> */);
+							for(var x=0; x < lines.length; x++) {
+								if ( lines[x].indexOf('{user}') === -1 )
+									lines[x] += ' {user}';
+							}
+							val = lines.join("<LINE>");
+						}
 
-                        final.push([prefix, val, had_prefix]);
-                    }
+						final.push([prefix, val, had_prefix]);
+					}
 
-                    f.settings.set('mod_buttons', final);
+					f.settings.set('mod_buttons', final);
 
-                    // Update existing chat lines.
-                    var CL = utils.ember_resolve('component:chat/chat-line'),
-                        views = CL ? utils.ember_views() : [];
+					// Update existing chat lines.
+					var CL = utils.ember_resolve('component:chat/chat-line'),
+						views = CL ? utils.ember_views() : [];
 
-                    for(var vid in views) {
-                        var view = views[vid];
-                        if ( view instanceof CL && view.buildModIconsHTML )
-                            view.$('.mod-icons').replaceWith(view.buildModIconsHTML());
-                    }
+					for(var vid in views) {
+						var view = views[vid];
+						if ( view instanceof CL && view.buildModIconsHTML )
+							view.$('.mod-icons').replaceWith(view.buildModIconsHTML());
+					}
 
-                }, 600);
+				}, 600);
 		}
 	};
 
@@ -472,7 +472,7 @@ FFZ.settings_info.mod_card_buttons = {
 
 	method: function() {
 			var f = this,
-                old_val = "";
+				old_val = "";
 			for(var i=0; i < this.settings.mod_card_buttons.length; i++) {
 				var cmd = this.settings.mod_card_buttons[i];
 				if ( cmd.indexOf(' ') !== -1 )
@@ -481,51 +481,51 @@ FFZ.settings_info.mod_card_buttons = {
 					old_val += ' ' + cmd;
 			}
 
-            utils.prompt(
-                "Moderation Card Additional Buttons",
-                    "Please enter a list of additional commands to display buttons for on moderation cards. Commands are separated by spaces. " +
-                    "To include spaces in a command, surround the command with double quotes (\"). Use <code>{user}</code> to insert the " +
-                    "user's name into the command, otherwise it will be appended to the end.</p><p><b>Example:</b> !permit \"!reg add {user}\"",
-                old_val.substr(1),
-                function(new_val) {
-                    if ( new_val === null || new_val === undefined )
-                        return;
+			utils.prompt(
+				"Moderation Card Additional Buttons",
+					"Please enter a list of additional commands to display buttons for on moderation cards. Commands are separated by spaces. " +
+					"To include spaces in a command, surround the command with double quotes (\"). Use <code>{user}</code> to insert the " +
+					"user's name into the command, otherwise it will be appended to the end.</p><p><b>Example:</b> !permit \"!reg add {user}\"",
+				old_val.substr(1),
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
 
-                    var vals = [];
-                    new_val = new_val.trim();
+					var vals = [];
+					new_val = new_val.trim();
 
-                    while(new_val) {
-                        if ( new_val.charAt(0) === '"' ) {
-                            var end = new_val.indexOf('"', 1);
-                            if ( end === -1 )
-                                end = new_val.length;
+					while(new_val) {
+						if ( new_val.charAt(0) === '"' ) {
+							var end = new_val.indexOf('"', 1);
+							if ( end === -1 )
+								end = new_val.length;
 
-                            var segment = new_val.substr(1, end - 1);
-                            if ( segment )
-                                vals.push(segment);
+							var segment = new_val.substr(1, end - 1);
+							if ( segment )
+								vals.push(segment);
 
-                            new_val = new_val.substr(end + 1);
+							new_val = new_val.substr(end + 1);
 
-                        } else {
-                            var ind = new_val.indexOf(' ');
-                            if ( ind === -1 ) {
-                                if ( new_val )
-                                    vals.push(new_val);
+						} else {
+							var ind = new_val.indexOf(' ');
+							if ( ind === -1 ) {
+								if ( new_val )
+									vals.push(new_val);
 
-                                new_val = '';
+								new_val = '';
 
-                            } else {
-                                var segment = new_val.substr(0, ind);
-                                if ( segment )
-                                    vals.push(segment);
+							} else {
+								var segment = new_val.substr(0, ind);
+								if ( segment )
+									vals.push(segment);
 
-                                new_val = new_val.substr(ind + 1);
-                            }
-                        }
-                    }
+								new_val = new_val.substr(ind + 1);
+							}
+						}
+					}
 
-                    f.settings.set("mod_card_buttons", vals);
-                }, 600);
+					f.settings.set("mod_card_buttons", vals);
+				}, 600);
 		}
 	};
 
@@ -541,36 +541,36 @@ FFZ.settings_info.mod_card_durations = {
 	help: "Add additional timeout buttons to moderation cards with specific durations.",
 
 	method: function() {
-            var f = this,
-			    old_val = this.settings.mod_card_durations.join(", ");
+			var f = this,
+				old_val = this.settings.mod_card_durations.join(", ");
 
-            utils.prompt(
-                "Moderation Card Timeout Buttons",
-                "Please enter a comma-separated list of durations that you would like to have timeout buttons for. " +
-                    "Durations must be expressed in seconds.</p><p><b>Default:</b> 300, 600, 3600, 43200, 86400, 604800",
-                old_val,
-                function(new_val) {
-                    if ( new_val === null || new_val === undefined )
-                        return;
+			utils.prompt(
+				"Moderation Card Timeout Buttons",
+				"Please enter a comma-separated list of durations that you would like to have timeout buttons for. " +
+					"Durations must be expressed in seconds.</p><p><b>Default:</b> 300, 600, 3600, 43200, 86400, 604800",
+				old_val,
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
 
-                    if ( new_val === "reset" )
-                        new_val = FFZ.settings_info.mod_card_durations.value.join(", ");
+					if ( new_val === "reset" )
+						new_val = FFZ.settings_info.mod_card_durations.value.join(", ");
 
-                    // Split them up.
-                    new_val = new_val.trim().split(/[ ,]+/);
-                    var vals = [];
+					// Split them up.
+					new_val = new_val.trim().split(/[ ,]+/);
+					var vals = [];
 
-                    for(var i=0; i < new_val.length; i++) {
-                        var val = parseInt(new_val[i]);
-                        if ( val === 0 )
-                            val = 1;
+					for(var i=0; i < new_val.length; i++) {
+						var val = parseInt(new_val[i]);
+						if ( val === 0 )
+							val = 1;
 
-                        if ( ! Number.isNaN(val) && val > 0 )
-                            vals.push(val);
-                    }
+						if ( ! Number.isNaN(val) && val > 0 )
+							vals.push(val);
+					}
 
-                    f.settings.set("mod_card_durations", vals);
-                }, 600);
+					f.settings.set("mod_card_durations", vals);
+				}, 600);
 		}
 	};
 
@@ -1335,11 +1335,11 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 
 	// Interactivity
 	jQuery('a.undelete', l_el).click(function(e) { this.parentElement.outerHTML = this.getAttribute('data-message'); });
-    jQuery('.deleted-word', l_el).click(function(e) { jQuery(this).trigger('mouseout'); this.outerHTML = this.getAttribute('data-text'); });
+	jQuery('.deleted-word', l_el).click(function(e) { jQuery(this).trigger('mouseout'); this.outerHTML = this.getAttribute('data-text'); });
 	jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
 	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
 	//jQuery('.html-tooltip', l_el).tipsy({html:true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
-    //jQuery('.ffz-tooltip', l_el).tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
+	//jQuery('.ffz-tooltip', l_el).tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
 
 	if ( modcard ) {
 		modcard.get('cardInfo.user.id') !== msg.from && jQuery('span.from', l_el).click(function(e) {
@@ -1379,8 +1379,8 @@ FFZ.prototype._update_alias = function(user) {
 		var line = lines[i],
 			el_from = line.querySelector('.from');
 
-        if ( ! el_from )
-            continue;
+		if ( ! el_from )
+			continue;
 
 		el_from.classList.toggle('ffz-alias', alias);
 		el_from.textContent = display_name;
@@ -1389,8 +1389,8 @@ FFZ.prototype._update_alias = function(user) {
 
 
 	// Update tab completion.
-    if ( this._inputv )
-        Ember.propertyDidChange(this._inputv, 'ffz_name_suggestions');
+	if ( this._inputv )
+		Ember.propertyDidChange(this._inputv, 'ffz_name_suggestions');
 
 	// TODO: Update conversations~
 }

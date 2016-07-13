@@ -1,5 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-    utils = require("../utils");
+	utils = require("../utils");
 
 
 // --------------------

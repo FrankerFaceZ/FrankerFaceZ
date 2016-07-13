@@ -1,5 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-    constants = require('../constants');
+	constants = require('../constants');
 
 
 // ---------------
@@ -14,10 +14,10 @@ FFZ.prototype.setup_popups = function() {
 		if ( e.button && e.button !== 0 )
 			return;
 
-        // Check for modal clicks
-        var modal = document.getElementById('ffz-modal-container');
-        if ( modal && (modal === e.target || modal.contains(e.target)) )
-            return;
+		// Check for modal clicks
+		var modal = document.getElementById('ffz-modal-container');
+		if ( modal && (modal === e.target || modal.contains(e.target)) )
+			return;
 
 		var popup = f._popup,
 			parent = f._popup_parent;
