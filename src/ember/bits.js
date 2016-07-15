@@ -14,18 +14,26 @@ FFZ.settings_info.bits_animated = {
 	category: "Chat Appearance",
 	no_bttv: true,
 
-	visible: function() {
-		var globals = utils.ember_lookup('service:globals'),
-			user = this.get_user();
-
-		return (globals && globals.get('isBitsEnabled')) || (user && user.is_staff);
-	},
-
 	name: "Bits Animation",
 	help: "Display bits with animation.",
 
 	on_update: utils.toggle_cls('ffz-animate-bits')
 }
+
+
+FFZ.settings_info.bits_tags_container = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Bits Tag Display",
+	help: "Display competitive bits tags at the top of chats that have it enabled.",
+
+	on_update: utils.toggle_cls('ffz-show-bits-tags')
+}
+
 
 
 // --------------------
@@ -34,6 +42,7 @@ FFZ.settings_info.bits_animated = {
 
 FFZ.prototype.setup_bits = function() {
 	utils.toggle_cls('ffz-animate-bits')(this.settings.bits_animated);
+	utils.toggle_cls('ffz-show-bits-tags')(this.settings.bits_tags_container);
 
 	var f = this,
 		Service = utils.ember_lookup('service:bits-rendering-config');

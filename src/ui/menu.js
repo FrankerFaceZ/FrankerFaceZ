@@ -529,7 +529,7 @@ FFZ.menu_pages.channel = {
 					}
 
 
-					grid.className = "emoticon-grid";
+					grid.className = "emoticon-grid top-set";
 					header.className = "heading";
 					if ( icon ) {
 						header.style.backgroundImage = 'url("' + icon + '")';
@@ -646,7 +646,7 @@ FFZ.menu_pages.channel = {
 			var extra_sets = _.union(room && room.extra_sets || [], room && room.ext_sets || [], []);
 
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, (room && room.moderator_badge) || "//cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ");
+			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, (room && room.moderator_badge) || "//cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ", ! has_product && extra_sets.length);
 
 			for(var i=0; i < extra_sets.length; i++) {
 				// Look up the set name.
@@ -669,9 +669,11 @@ FFZ.menu_pages.channel = {
 // Emotes for Sets
 // --------------------
 
-FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text) {
+FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text, top_set) {
 	var grid = document.createElement('div'), c = 0, f = this;
 	grid.className = 'emoticon-grid';
+	if ( top_set )
+		grid.classList.add('top-set');
 
 	if ( header != null ) {
 		var el_header = document.createElement('div');

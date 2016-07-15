@@ -52,9 +52,13 @@ FFZ.prototype.finalize_ember_wrapper = function() {
 
 FFZ.prototype._update_views = function(klasses) {
 	this.log("Updating Ember classes and instances.", klasses);
+	var updated_instances = 0,
+		updated_klasses = 0;
+
 	// Modify all pending classes and clear them from cache.
 	for(var i=0; i < klasses.length; i++) {
 		klasses[i][2].call(this, klasses[i][1]);
+		updated_klasses++;
 
 		try {
 			klasses[i][1].create().destroy()
@@ -72,6 +76,8 @@ FFZ.prototype._update_views = function(klasses) {
 
 		for(var i=0; i < klasses.length; i++)
 			if ( view instanceof klasses[i][1] ) {
+				updated_instances++;
+
 				try {
 					if ( ! view.ffz_modified )
 						klasses[i][2].call(this, view);
@@ -85,4 +91,6 @@ FFZ.prototype._update_views = function(klasses) {
 				break;
 			}
 	}
+
+	this.log("Updated " + utils.number_commas(updated_instances) + " existing instances across " + updated_klasses + " classes.");
 }

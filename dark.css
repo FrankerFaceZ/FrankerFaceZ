@@ -316,7 +316,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
 .ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
 .ffz-dark .dropmenu_action:not(:hover) span,
-.ffz-dark a:not(.profile-card__content):not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {
+.ffz-dark a {
+/*.ffz-dark a:not(.profile-card__content):not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {*/
 	color: #a68ed2;
 }
 
@@ -333,9 +334,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .exit-theatre > a { color: #000 !important; }
 
+.ffz-dark .switch,
+.ffz-dark .button,
 .ffz-dark .follow-button a,
 .ffz-dark a.dropmenu_action:hover {
-	color: #fff !important;
+	color: #fff;
 }
 
 .ffz-dark .panel-formatting .panel h3 {

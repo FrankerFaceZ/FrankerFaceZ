@@ -17,6 +17,11 @@ var jsEscape = require('gulp-js-escape'),
 	minifyCss = require('gulp-minify-css');
 
 
+// LESS
+var less = require('gulp-less'),
+	sourcemaps = require('gulp-sourcemaps');
+
+
 // Deploy Dependencies
 var ftp = require('vinyl-ftp'),
 	request = require('request');
@@ -63,8 +68,18 @@ gulp.task('prepare', ['clean'], function() {
 //		.on('error', util.log);
 //});
 
-
 gulp.task('styles', ['prepare'], function() {
+	return;
+	return gulp.src(['build/less/*.less'])
+		.pipe(sourcemaps.init())
+		.pipe(less())
+		.pipe(sourcemaps.write())
+		.pipe(gulp.dest(__dirname))
+		.on('error', util.log);
+});
+
+
+gulp.task('embedded_styles', ['prepare'], function() {
 	return gulp.src(['build/styles/**/*.css'])
 		.pipe(minifyCss())
 		.pipe(jsEscape())
@@ -82,7 +97,7 @@ gulp.task('styles', ['prepare'], function() {
 });
 
 
-gulp.task('scripts', ['styles'], function() {
+gulp.task('scripts', ['embedded_styles'], function() {
 	return gulp.src(['build/main.js'])
 		.pipe(browserify())
 		.pipe(concat('script.js'))
@@ -97,7 +112,7 @@ gulp.task('watch', ['default', 'server'], function() {
 	return gulp.watch('src/**/*', ['default']);
 });
 
-gulp.task('default', ['scripts']);
+gulp.task('default', ['styles', 'scripts']);
 
 
 // Deploy

@@ -18,6 +18,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+body:not(.ffz-show-bits-tags) .bits-tag--container,
 .ffz-hide-friends nav .friend-list,
 .ffz-hide-friends .warp__status .js-presence-indicator,
 .ffz-hide-more-at-twitch nav .tse-content > .warp__list:last-of-type,
@@ -29,6 +30,10 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-menu-replace .chat-interface .ember-emoticon-selector,
 .ffz-menu-replace .chat-interface .emoticon-selector-toggle {
 	display: none !important;
+}
+
+body:not(.ffz-show-bits-tags) .ember-chat .chat-messages.bits-tags__offset {
+	top: 0;
 }
 
 body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + .ffz-ui-toggle svg,

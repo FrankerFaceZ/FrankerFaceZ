@@ -290,7 +290,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				width = item.width ? (246 - item.width) + 'px' : null;
 
 			el.setAttribute('data-id', i);
-			el.classList.toggle('ffz-is-favorite', item.favorite || false);
+			el.classList.toggle('ffz-favorite', item.favorite || false);
 
 			if ( item.image ) {
 				el.classList.add('has-image');

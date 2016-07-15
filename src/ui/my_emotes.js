@@ -168,6 +168,9 @@ FFZ.menu_pages.myemotes = {
 					return 0;
 				});
 
+				if ( sets.length )
+					sets[0][1].classList.add('top-set');
+
 				for(var i=0; i < sets.length; i++)
 					container.appendChild(sets[i][1]);
 			}
@@ -264,9 +267,11 @@ FFZ.menu_pages.myemotes = {
 
 			container.appendChild(grid);
 
-		} else
+		} else if ( sets.length ) {
+			sets[0][1].classList.add('top-set');
 			for(var i=0; i < sets.length; i++)
 				container.appendChild(sets[i][1]);
+		}
 
 		return true;
 	},
