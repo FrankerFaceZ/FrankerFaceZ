@@ -83,8 +83,6 @@ func loadHLL(at time.Time, dest *PeriodUniqueUsers) error {
 	dec := gob.NewDecoder(bytes.NewReader(fileBytes))
 	err = dec.Decode(dest.Counter)
 	if err != nil {
-		log.Panicln(err)
-
 		return err
 	}
 	return nil
@@ -160,6 +158,7 @@ func loadUniqueUsers() {
 		// file didn't finish writing
 		// errors in NewPlus are bad precisions
 		uniqueCounter.Counter, _ = hyperloglog.NewPlus(CounterPrecision)
+		log.Println("failed to load unique users data:", err)
 	} else if err != nil {
 		log.Panicln("failed to load unique users data:", err)
 	}
