@@ -133,7 +133,8 @@ var update_player_stats = function(player, container) {
 
 	try {
 		player_data.backend = player.getBackend();
-	} catch(err) { player_data.backend = undefined }
+		player_data.version = player.getVersion();
+	} catch(err) { }
 
 	var sorted_keys = Object.keys(player_data).sort();
 	for(var i=0; i < sorted_keys.length; i++) {

@@ -553,8 +553,17 @@ FFZ.menu_pages.settings = {
 			sort_order: 1,
 
 			render: function(view, container) {
-				var favorites = this.settings.favorite_settings;
-				if ( ! favorites.length ) {
+				var favorites = this.settings.favorite_settings,
+					count = 0;
+
+				if ( ! this.has_bttv )
+					count = favorites.length;
+				else
+					for(var i=0; i < favorites.length; i++)
+						if ( ! FFZ.settings_info[favorites[i]].no_bttv )
+							count++;
+
+				if ( ! count ) {
 					var el = utils.createElement('div');
 					el.className = 'emoticon-grid ffz-no-emotes center';
 					el.innerHTML = "You have no favorite settings.<br>" +

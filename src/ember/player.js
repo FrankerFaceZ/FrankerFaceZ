@@ -163,7 +163,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 				var stats_el = stats[0],
 					toggle_btn = this.$('.js-stats-toggle'),
 
-					setup_player = function() {
+					setup_player = function(tries) {
 						// If this player is destroyed, stop trying.
 						if ( ! document.contains(stats_el) )
 							return;
@@ -178,7 +178,11 @@ FFZ.prototype.modify_twitch_player = function(player) {
 							if ( ! res || ! res.length ) {
 								// Not available yet. Keep going.
 								toggle_btn.click();
-								setTimeout(setup_player, 100);
+								tries = (tries || 0) + 1;
+								if ( tries < 50 )
+									setTimeout(setup_player.bind(this, tries), 100);
+								else
+									stats_el.classList.remove('hidden');
 								return;
 							}
 
@@ -214,7 +218,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 								match = el && / *([\d,]+) *x *([\d,]+)/i.exec(el.textContent);
 								if ( match ) {
 									output.stageWidth = output.vid_display_width = parseInt(match[1]);
-									output.stageHeight = output.vid_height = parseInt(match[2]);
+									output.stageHeight = output.vid_display_height = parseInt(match[2]);
 								}
 
 								// FPS
@@ -245,10 +249,19 @@ FFZ.prototype.modify_twitch_player = function(player) {
 									var val = parseFloat(el.textContent),
 										val2 = parseFloat(el2.textContent);
 
-									if ( ! isNaN(val) && isFinite(val) && ! isNaN(val2) && isFinite(val2) ) {
-										if ( val < 1000 && val2 < 1000) {
+									if ( val === -1 || val2 === -1 ) {
+										// ... nothing :D
+									} else if ( ! isNaN(val) && isFinite(val) && ! isNaN(val2) && isFinite(val2) ) {
+										if ( Math.abs(val) < 1000 && Math.abs(val2) < 1000) {
 											val *= 1000;
 											val2 *= 1000;
+										}
+
+										// Only make this change for known bad versions.
+										var version = player.getVersion();
+										if ( version === "0.5.4" ) {
+											val -= (f._ws_server_offset || 0);
+											val2 -= (f._ws_server_offset || 0);
 										}
 
 										if ( val > val2 ) {

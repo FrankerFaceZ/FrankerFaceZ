@@ -41,7 +41,7 @@ FFZ.settings_info.following_count = {
 	on_update: function(val) {
 			this._schedule_following_count();
 
-			var Stream = utils.ember_resolve('model:stream'),
+			var Stream = utils.ember_resolve('model:deprecated-stream'),
 				Live = Stream && Stream.find("live");
 
 			if ( Live ) {
@@ -155,7 +155,7 @@ FFZ.prototype._update_following_count = function() {
 
 	this._following_count_timer = setTimeout(this._update_following_count.bind(this), 55000 + (10000*Math.random()));
 
-	var Stream = utils.ember_resolve('model:stream'),
+	var Stream = utils.ember_resolve('model:deprecated-stream'),
 		Live = Stream && Stream.find("live"),
 
 		Host = utils.ember_resolve('model:host'),
@@ -205,7 +205,7 @@ FFZ.prototype._build_following_tooltip = function(el) {
 	if ( streams && streams.length ) {
 		for(var i=0, l = streams.length; i < l; i++) {
 			var stream = streams[i];
-			if ( ! stream || ! stream.channel )
+			if ( ! stream || ! stream.channel || (stream.game && this.settings.banned_games.indexOf(stream.game.toLowerCase()) !== -1) )
 				continue;
 
 			c += 1;
@@ -216,13 +216,11 @@ FFZ.prototype._build_following_tooltip = function(el) {
 
 			var up_since = this.settings.stream_uptime && stream.created_at && utils.parse_date(stream.created_at),
 				now = Date.now() - (this._ws_server_offset || 0),
-				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0,
-				minutes = Math.floor(uptime / 60) % 60,
-				hours = Math.floor(uptime / 3600),
+				uptime = up_since && (Math.floor((now - up_since.getTime()) / 60000) * 60) || 0,
 				tags = stream.channel.game === 'Creative' && this.tokenize_ctags(stream.channel.status, true);
 
-			tooltip += (i === 0 ? '<hr>' : '') +
-				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + (hours > 0 ? hours + 'h' : '') + minutes + 'm</span>' : '') +
+			tooltip += (c === 1 ? '<hr>' : '') +
+				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + utils.duration_string(uptime) + '</span>' : '') +
 				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
 				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
 				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';

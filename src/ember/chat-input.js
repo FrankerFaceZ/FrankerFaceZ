@@ -246,6 +246,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 			t.off("keyup");
 			t.on("keypress", this._ffzKeyPress.bind(this));
 			t.on("keydown", this._ffzKeyDown.bind(this));
+			t.on("paste", this._ffzPaste.bind(this));
 
 			t.attr('rows', 1);
 
@@ -272,10 +273,64 @@ FFZ.prototype.modify_chat_input = function(component) {
 			t.off("keyup");
 			t.off("keydown");
 			t.off("keypress");
+			t.off("paste");
 
 			t.on("keyup", this._onKeyUp.bind(this));
 			t.on("keydown", this._onKeyDown.bind(this));
 		},
+
+		// Pasting~!
+		_ffzPaste: function(event) {
+			var data = (event.clipboardData || (event.originalEvent && event.originalEvent.clipboardData) || window.clipboardData),
+				text = data && data.getData('text/plain');
+
+			// If we don't have a colon, there can't be any emoji.
+			// Likewise, if the user doesn't want input emoji, don't convert them.
+			if ( ! f.settings.input_emoji || text.indexOf(':') === -1 )
+				return;
+
+			// Alright, check for emoji now.
+			var output = [],
+				input = text.split(':'),
+				last_was_emoji = false;
+
+			output.push(input.shift());
+			for(var i=0, l = input.length - 1; i < l; i++) {
+				var segment = input[i],
+					emoji = ! last_was_emoji ? f.emoji_data[f.emoji_names[segment]] : null;
+
+				if ( emoji ) {
+					output.push(emoji.raw);
+					last_was_emoji = true;
+				} else {
+					output.push((last_was_emoji ? '' : ':') + segment);
+					last_was_emoji = false;
+				}
+			}
+
+			output = output.join("") + (last_was_emoji ? '' : ':') + input[input.length-1];
+
+			// Let the browser's paste be do as it do if there weren't any emoji.
+			if ( output.length === text.length )
+				return f.log("No emoji in paste");
+
+			// Can we get the selection in our input box?
+			var input = this.get('chatTextArea'),
+				s_val = input && input.value,
+				s_start = input && input.selectionStart,
+				s_end = input && input.selectionEnd;
+
+			if ( ! input || typeof s_start !== "number" || typeof s_end !== "number" )
+				return f.log("Can't get input");
+
+			// Still here? We're clear to inject this ourselves then.
+			event.stopPropagation();
+			event.preventDefault();
+
+			input.value = s_val.substr(0, s_start) + output + s_val.substr(s_end);
+			move_selection(input, s_start + output.length);
+		},
+
 
 		// Suggestions
 

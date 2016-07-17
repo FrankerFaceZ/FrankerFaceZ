@@ -1,3 +1,17 @@
+<div class="list-header">3.5.252</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Parse emoji out of text that is pasted into the chat box.</li>
+	<li>Changed: Hide channels broadcasting blocked games from the Following tooltip.</li>
+	<li>Changed: Start blocking BetterTTV's emoji parsing if the user has emoji disabled in FFZ's settings.</li>
+	<li>Fixed: Favorite Settings could appear to never load if a user's favorited settings were all disabled with BetterTTV and it is present.</li>
+	<li>Fixed: References to outdated Stream models causing issues with the Following count and tooltip.</li>
+</ul>
+
+<div class="list-header">3.5.251</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Apply the FFZ server time offset to the stream latency display on known bad player versions for more accurate time display.</li>
+</ul>
+
 <div class="list-header">3.5.250</div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Changed: Stream Latency now works with the HTML5 player! For now, until Twitch implements <code>getVideoInfo</code>, FFZ will parse stats from the overlay that shows on-stream.</li>
@@ -48,6 +62,9 @@
 	<li>Changed: Add a smaller value (125ms) for Chat Batching.</li>
 	<li>Fixed: Not subscribing to current host target's chat with the socket server.</li>
 </ul>
+
+<div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>
+<div id="ffz-old-news">
 
 <div class="list-header">3.5.241</div>
 <ul class="chat-menu-content menu-side-padding">
@@ -395,9 +412,6 @@
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Shortcut key to select the new ban reason dropdown on mod cards. It's not perfect though, since you have to ESC out of the list after picking one before you can press a key to ban.</li>
 </ul>
-
-<div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>
-<div id="ffz-old-news">
 
 <div class="list-header">3.5.183</div>
 <ul class="chat-menu-content menu-side-padding">

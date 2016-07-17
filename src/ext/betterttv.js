@@ -91,10 +91,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.toggle_style('chat-separator-3d-inset');
 	this.toggle_style('chat-separator-wide');
 
-	/*this.toggle_style('chat-hc-text');
-	this.toggle_style('chat-hc-bold');
-	this.toggle_style('chat-hc-background');*/
-
 	this.toggle_style('chat-colors-gray');
 	this.toggle_style('badges-rounded');
 	this.toggle_style('badges-circular');
@@ -244,9 +240,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 			segments = token.split(constants.EMOJI_REGEX),
 			text = null;
 
-		if ( setting === 0 )
-			return [token];
-
 		while(segments.length) {
 			text = (text || '') + segments.shift();
 			if ( segments.length ) {
@@ -258,8 +251,16 @@ FFZ.prototype.setup_bttv = function(delay) {
 				if ( src ) {
 					if ( text && text.length )
 						output.push(text);
-					var code = utils.quote_attr(data.raw);
-					output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">']);
+
+					// We still want to use a special token even if emoji display is disabled
+					// as, otherwise, BTTV will render the emoji itself, which the user has no
+					// way of disabling if not for this.
+					if ( setting === 0 )
+						output.push([data.raw]);
+					else {
+						var code = utils.quote_attr(data.raw);
+						output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">']);
+					}
 					text = null;
 				} else
 					text = (text || '') + match;
