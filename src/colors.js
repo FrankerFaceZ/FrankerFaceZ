@@ -659,8 +659,8 @@ FFZ.prototype._rebuild_contrast = function() {
 	this._luv_required_bright = new XYZAColor(0, (this.settings.luv_contrast * (new RGBAColor(35,35,35,1).toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
 	this._luv_required_dark = new XYZAColor(0, ((new RGBAColor(217,217,217,1).toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
 
-	this._luv_background_bright = new XYZAColor(0, (this.settings.luv_contrast * (RGBAColor.fromCSS("#acacbf").toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
-	this._luv_background_dark = new XYZAColor(0, ((RGBAColor.fromCSS("#3c3a41").toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
+	this._luv_background_bright = new XYZAColor(0, (this.settings.luv_contrast * (RGBAColor.fromCSS("#3c3a41").toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
+	this._luv_background_dark = new XYZAColor(0, ((RGBAColor.fromCSS("#acacbf").toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
 	
 	this._hslluma_required_bright = this.settings.luv_contrast * (RGBAColor.fromCSS("#17141f").luminance() + 0.05) - 0.05;
 	this._hslluma_required_dark = (RGBAColor.fromCSS("#efeef1").luminance() + 0.05) / this.settings.luv_contrast - 0.05;
