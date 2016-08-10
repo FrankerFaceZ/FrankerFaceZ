@@ -11,6 +11,23 @@ var FFZ = window.FrankerFaceZ,
 		if ( t < 2/3 )
 			return p + (q-p) * (2/3 - t) * 6;
 		return p;
+	},
+
+	bit2linear = function(channel) {
+		// http://www.brucelindbloom.com/Eqn_RGB_to_XYZ.html
+		// This converts rgb 8bit to rgb linear, lazy because the other algorithm is really really dumb
+		//return Math.pow(channel, 2.2);
+
+		// CSS Colors Level 4 says 0.03928, Bruce Lindbloom who cared to write all algos says 0.04045, used bruce because whynawt
+		return (channel <= 0.04045) ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+	},
+
+	linear2bit = function(channel) {
+		// Using lazy conversion in the other direction as well
+		//return Math.pow(channel, 1/2.2);
+
+		// I'm honestly not sure about 0.0031308, I've only seen it referenced on Bruce Lindbloom's site
+		return (channel <= 0.0031308) ? channel * 12.92 : Math.pow(1.055 * channel, 1/2.4) - 0.055;
 	};
 
 
@@ -22,20 +39,22 @@ FFZ.settings_info.fix_color = {
 	type: "select",
 	options: {
 		'-1': "Disabled",
-		0: "Default Colors",
-		1: "Luv Adjustment",
-		2: "HSL Adjustment (Depreciated)",
-		3: "HSV Adjustment (Depreciated)",
-		4: "RGB Adjustment (Depreciated)",
-		//5: "HSL (BTTV-Like)",
-		6: "HSL Luma Adjustment",
+		0: ["Default (Unprocessed)", 1],
+		6: ["HSL Luma (New Default)", 2],
+		1: ["Luv Luma (Old Default)", 3],
+		5: ["HSL Loop (BTTV-Like)", 4],
+
+		2: ["HSL Adjustment (Deprecated)", 5],
+		3: ["HSV Adjustment (Deprecated)", 6],
+		4: ["RGB Adjustment (Deprecated)", 7],
 	},
-	value: 1,
+
+	value: 6,
 
 	category: "Chat Appearance",
 	no_bttv: true,
 
-	name: "Username Colors - Brightness",
+	name: "Username Colors",
 	help: "Ensure that username colors contrast with the background enough to be readable.",
 
 	process_value: function(val) {
@@ -44,8 +63,12 @@ FFZ.settings_info.fix_color = {
 			return 0;
 		else if ( val === true )
 			return 1;
-		else if ( typeof val === "string" )
-			return parseInt(val) || 1;
+		else if ( typeof val === "string" ) {
+			val = parseInt(val);
+			if ( Number.isNaN(val) || ! Number.isFinite(val) )
+				val = 6;
+		}
+
 		return val;
 	},
 
@@ -69,33 +92,33 @@ FFZ.settings_info.luv_contrast = {
 	help: "Set the minimum contrast ratio used by Luv Adjustment to ensure colors are readable.",
 
 	method: function() {
-			var f = this,
-				old_val = this.settings.luv_contrast;
+		var f = this,
+			old_val = this.settings.luv_contrast;
 
-			utils.prompt(
-				"Luv Adjustment Minimum Contrast Ratio",
-				"Please enter a new value for the minimum contrast ratio required between username colors and the background.</p><p><b>Default:</b> 4.5",
-				old_val,
-				function(new_val) {
-					if ( new_val === null || new_val === undefined )
-						return;
+		utils.prompt(
+			"Luv Adjustment Minimum Contrast Ratio",
+			"Please enter a new value for the minimum contrast ratio required between username colors and the background.</p><p><b>Default:</b> 4.5",
+			old_val,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
 
-					var parsed = parseFloat(new_val);
-					if ( Number.isNaN(parsed) || ! Number.isFinite(parsed) )
-						parsed = 4.5;
+				var parsed = parseFloat(new_val);
+				if ( Number.isNaN(parsed) || ! Number.isFinite(parsed) )
+					parsed = 4.5;
 
-					f.settings.set("luv_contrast", parsed);
-				});
-		},
+				f.settings.set("luv_contrast", parsed);
+			});
+	},
 
 	on_update: function(val) {
-			this._rebuild_contrast();
-			this._rebuild_filter_styles();
+		this._rebuild_contrast();
+		this._rebuild_filter_styles();
 
-			if ( ! this.has_bttv && this.settings.fix_color === 1 )
-				this._rebuild_colors();
-		}
-	};
+		if ( ! this.has_bttv && this.settings.fix_color === 1 )
+			this._rebuild_colors();
+	}
+};
 
 
 FFZ.settings_info.color_blind = {
@@ -115,10 +138,10 @@ FFZ.settings_info.color_blind = {
 	help: "Adjust username colors in an attempt to make them more distinct for people with color blindness.",
 
 	on_update: function(val) {
-			if ( ! this.has_bttv && this.settings.fix_color !== -1 )
+		if ( ! this.has_bttv && this.settings.fix_color !== -1 )
 			this._rebuild_colors();
-		}
-	};
+	}
+};
 
 
 // --------------------
@@ -313,9 +336,9 @@ RGBAColor.fromXYZA = function(x, y, z, a) {
 
 	// Make sure we end up in a real color space
 	return new RGBAColor(
-		Math.max(0, Math.min(255, 255 * XYZAColor.channelConverter(R))),
-		Math.max(0, Math.min(255, 255 * XYZAColor.channelConverter(G))),
-		Math.max(0, Math.min(255, 255 * XYZAColor.channelConverter(B))),
+		Math.max(0, Math.min(255, 255 * linear2bit(R))),
+		Math.max(0, Math.min(255, 255 * linear2bit(G))),
+		Math.max(0, Math.min(255, 255 * linear2bit(B))),
 		a === undefined ? 1 : a
 	);
 }
@@ -349,16 +372,17 @@ RGBAColor.prototype.toHex = function() {
 }
 
 
+RGBAColor.prototype.get_Y = function() {
+	return ((0.299 * this.r) + ( 0.587 * this.g) + ( 0.114 * this.b)) / 255;
+}
+
+
 RGBAColor.prototype.luminance = function() {
-	var rgb = [this.r / 255, this.g / 255, this.b / 255];
-	for (var i =0, l = rgb.length; i < l; i++) {
-		if (rgb[i] <= 0.03928) {
-			rgb[i] = rgb[i] / 12.92;
-		} else {
-			rgb[i] = Math.pow( ((rgb[i]+0.055)/1.055), 2.4 );
-		}
-	}
-	return (0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2]);
+	var r = bit2linear(this.r / 255),
+		g = bit2linear(this.g / 255),
+		b = bit2linear(this.b / 255);
+
+	return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
 }
 
 
@@ -464,7 +488,7 @@ HSLAColor.fromRGBA = function(r, g, b, a) {
 HSLAColor.prototype.targetLuminance = function (target) {
 	var s = this.s;
 	s *= Math.pow(this.l > 0.5 ? -this.l : this.l - 1, 7) + 1;
-	
+
 	var min = 0, max = 1, d = (max - min) / 2, mid = min + d;
 	for (; d > 1/65536; d /= 2, mid = min + d) {
 		var luminance = RGBAColor.fromHSLA(this.h, s, mid, 1).luminance()
@@ -474,7 +498,7 @@ HSLAColor.prototype.targetLuminance = function (target) {
 			min = mid;
 		}
 	}
-	
+
 	return new HSLAColor(this.h, s, mid, this.a);
 }
 
@@ -540,30 +564,12 @@ HSVAColor.prototype._a = function(a) { return new HSVAColor(this.h, this.s, this
 
 // XYZ Colors
 
-RGBAColor.channelConverter = function (channel) {
-	// http://www.brucelindbloom.com/Eqn_RGB_to_XYZ.html
-	// This converts rgb 8bit to rgb linear, lazy because the other algorithm is really really dumb
-	return Math.pow(channel, 2.2);
-
-	// CSS Colors Level 4 says 0.03928, Bruce Lindbloom who cared to write all algos says 0.04045, used bruce because whynawt
-	return (channel <= 0.04045) ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
-};
-
-XYZAColor.channelConverter = function (channel) {
-	// Using lazy conversion in the other direction as well
-	return Math.pow(channel, 1/2.2);
-
-	// I'm honestly not sure about 0.0031308, I've only seen it referenced on Bruce Lindbloom's site
-	return (channel <= 0.0031308) ? channel * 12.92 : Math.pow(1.055 * channel, 1/2.4) - 0.055;
-};
-
-
 XYZAColor.prototype.eq = function(xyz) {  return xyz.x === this.x && xyz.y === this.y && xyz.z === this.z; }
 
 XYZAColor.fromRGBA = function(r, g, b, a) {
-	var R = RGBAColor.channelConverter(r / 255),
-		G = RGBAColor.channelConverter(g / 255),
-		B = RGBAColor.channelConverter(b / 255);
+	var R = bit2linear(r / 255),
+		G = bit2linear(g / 255),
+		B = bit2linear(b / 255);
 
 	return new XYZAColor(
 		0.412453 * R + 0.357580 * G + 0.180423 * B,
@@ -661,7 +667,7 @@ FFZ.prototype._rebuild_contrast = function() {
 
 	this._luv_background_bright = new XYZAColor(0, (this.settings.luv_contrast * (RGBAColor.fromCSS("#3c3a41").toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
 	this._luv_background_dark = new XYZAColor(0, ((RGBAColor.fromCSS("#acacbf").toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
-	
+
 	this._hslluma_required_bright = this.settings.luv_contrast * (RGBAColor.fromCSS("#17141f").luminance() + 0.05) - 0.05;
 	this._hslluma_required_dark = (RGBAColor.fromCSS("#efeef1").luminance() + 0.05) / this.settings.luv_contrast - 0.05;
 }
@@ -746,7 +752,44 @@ FFZ.prototype._handle_color = function(color) {
 	}
 
 
-	// Color Processing - RGB
+	// Color Processing - LUV
+	if ( this.settings.fix_color === 1 ) {
+		var luv = rgb.toLUVA();
+
+		if ( luv.l > this._luv_required_dark )
+			light_color = luv._l(this._luv_required_dark).toRGBA();
+
+		if ( luv.l < this._luv_required_bright )
+			dark_color = luv._l(this._luv_required_bright).toRGBA();
+	}
+
+
+	// Color Processing - HSL (Deprecated)
+	if ( this.settings.fix_color === 2 ) {
+		var hsl = rgb.toHSLA();
+
+		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toRGBA();
+		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toRGBA();
+	}
+
+
+	// Color Processing - HSV (Deprecated)
+	if ( this.settings.fix_color === 3 ) {
+		var hsv = rgb.toHSVA();
+
+		if ( hsv.s === 0 ) {
+			// Black and White
+			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGBA();
+			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGBA();
+
+		} else {
+			light_color = RGBAColor.fromHSVA(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v), hsv.a);
+			dark_color = RGBAColor.fromHSVA(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1), hsv.a);
+		}
+	}
+
+
+	// Color Processing - RGB (Deprecated)
 	if ( this.settings.fix_color === 4 ) {
 		var lum = rgb.luminance();
 
@@ -775,56 +818,31 @@ FFZ.prototype._handle_color = function(color) {
 
 
 	// Color Processing - HSL BTTV-Like
-	/*if ( this.settings.fix_color === 5 ) {
-		var hsl = rgb.toHSLA();
+	if ( this.settings.fix_color === 5 ) {
+		// BetterTTV adjusts its colors by converting them to the YIQ color space and then
+		// checking the value of Y. If it isn't past the half-way threshold, it then either
+		// brightens or darkens the luminosity, in HSL color space and checks again. Repeat
+		// until the color is acceptible.
 
-		light_color = hsl._l(Math.min(Math.max(0, .9 * (1 - hsl.l)), 1)).toRGBA();
-		dark_color = hsl._l(Math.min(Math.max(0, 1 - .9 * (1 - hsl.l)), 1)).toRGBA();
-	}*/
+		while ( light_color.get_Y() >= 0.5 ) {
+			var hsl = light_color.toHSLA();
+			light_color = hsl._l(Math.min(Math.max(0, 0.9 * hsl.l), 1)).toRGBA();
+		}
 
-
-	// Color Processing - HSL
-	if ( this.settings.fix_color === 2 ) {
-		var hsl = rgb.toHSLA();
-
-		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toRGBA();
-		dark_color = hsl._l(Math.min(Math.max(0, 0.3 + (0.7 * hsl.l)), 1)).toRGBA();
-	}
-
-
-	// Color Processing - HSV
-	if ( this.settings.fix_color === 3 ) {
-		var hsv = rgb.toHSVA();
-
-		if ( hsv.s === 0 ) {
-			// Black and White
-			light_color = hsv._v(Math.min(Math.max(0.5, 0.5 * hsv.v), 1)).toRGBA();
-			dark_color = hsv._v(Math.min(Math.max(0.5, 0.5 + (0.5 * hsv.v)), 1)).toRGBA();
-
-		} else {
-			light_color = RGBAColor.fromHSVA(hsv.h, Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.s)), 1), Math.min(0.7, hsv.v), hsv.a);
-			dark_color = RGBAColor.fromHSVA(hsv.h, Math.min(0.7, hsv.s), Math.min(Math.max(0.7, 0.7 + (0.3 * hsv.v)), 1), hsv.a);
+		while ( dark_color.get_Y() < 0.5 ) {
+			var hsl = dark_color.toHSLA();
+			dark_color = hsl._l(Math.min(Math.max(0, 0.1 + 0.9 * hsl.l), 1)).toRGBA();
 		}
 	}
 
-	// Color Processing - LUV
-	if ( this.settings.fix_color === 1 ) {
-		var luv = rgb.toLUVA();
 
-		if ( luv.l > this._luv_required_dark )
-			light_color = luv._l(this._luv_required_dark).toRGBA();
-
-		if ( luv.l < this._luv_required_bright )
-			dark_color = luv._l(this._luv_required_bright).toRGBA();
-	}
-	
 	// Color Processing - HSL Luma
 	if ( this.settings.fix_color === 6 ) {
 		var lum = rgb.luminance();
-		
+
 		if ( lum > this._hslluma_required_dark )
 			light_color = rgb.toHSLA().targetLuminance(this._hslluma_required_dark).toRGBA();
-		
+
 		if ( lum < this._hslluma_required_bright )
 			dark_color = rgb.toHSLA().targetLuminance(this._hslluma_required_bright).toRGBA();
 	}

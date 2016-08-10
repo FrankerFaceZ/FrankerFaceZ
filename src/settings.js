@@ -354,12 +354,14 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 						var t = this;
 						if ( ! t.classList.contains('collapsable') )
 							return;
+
 						else if ( ! t.classList.contains('collapsed') ) {
 							if ( e.target.classList.contains('heading') ) {
 								t.classList.add('collapsed');
 								if ( collapsed_key )
 								   f[collapsed_key] = true;
-							}
+							} else
+								return;
 
 						} else {
 							jQuery(".chat-menu-content:not(.collapsed)", container).addClass("collapsed");
@@ -442,14 +444,30 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 							label.className = 'option-label';
 							label.innerHTML = info.name;
 
+							var op_list = [];
+
 							for(var ok in info.options) {
-								var op = createElement('option');
+								var op = createElement('option'),
+									desc = info.options[ok],
+									sort_key = 0;
+
 								op.value = JSON.stringify(ok);
 								if ( val == ok )
 									op.setAttribute('selected', true);
-								op.innerHTML = info.options[ok];
-								select.appendChild(op);
+
+								if ( typeof desc === "object" ) {
+									op.innerHTML = desc[0];
+									sort_key = desc[1];
+								} else
+									op.innerHTML = desc;
+
+								op_list.push([sort_key, op]);
 							}
+
+							op_list.sort(function(a,b) {return a[0] - b[0]});
+
+							for(var op_i=0; op_i < op_list.length; op_i++)
+								select.appendChild(op_list[op_i][1]);
 
 							select.addEventListener('change', option_setting.bind(this, select, key, info));
 
