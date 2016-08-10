@@ -211,9 +211,18 @@ FFZ.prototype.rebuild_following_ui = function() {
 				cont = document.createElement('span');
 				cont.id = 'ffz-ui-following';
 
-				var before;
-				try { before = container.querySelector(':scope > span'); }
-				catch(err) { before = undefined; }
+				var before = null;
+				try {
+					var before_btn = container.querySelector('.subscribe-button');
+					if ( before_btn )
+						before = before_btn.parentElement.nextSibling;
+					else {
+						before_btn = container.querySelector('.notification-controls');
+						if ( before_btn )
+							before = before_btn.nextSibling;
+					}
+
+				} catch(err) { }
 
 				if ( before )
 					container.insertBefore(cont, before);
@@ -250,9 +259,17 @@ FFZ.prototype.rebuild_following_ui = function() {
 				cont = document.createElement('span');
 				cont.id = 'ffz-ui-following';
 
-				var before;
-				try { before = container.querySelector(':scope > span'); }
-				catch(err) { before = undefined; }
+				var before = null;
+				try {
+					var before_btn = container.querySelector('.subscribe-button');
+					if ( before_btn )
+						before = before_btn.parentElement.nextSibling;
+					else {
+						before_btn = container.querySelector('.notification-controls');
+						if ( before_btn )
+							before = before_btn.nextSibling;
+					}
+				} catch(err) { }
 
 				if ( before )
 					container.insertBefore(cont, before);
@@ -278,21 +295,23 @@ FFZ.prototype.rebuild_following_ui = function() {
 // UI Construction
 // ---------------
 
-FFZ.prototype._build_following_button = function(container, channel_id) {
+FFZ.prototype._build_following_button = function(cont, channel_id) {
 	if ( ! VALID_CHANNEL.test(channel_id) )
 		return this.log("Ignoring Invalid Channel: " + utils.sanitize(channel_id));
 
-	var btn = document.createElement('a'), f = this,
-		btn_c = document.createElement('div'),
-		noti = document.createElement('a'),
-		noti_c = document.createElement('div'),
+	var f = this,
+		btn = utils.createElement('button', 'follow-button button'),
+
+		noti = utils.createElement('a', 'toggle-notification-menu js-toggle-notification-menu'),
+		noti_c = utils.createElement('div', 'notification-controls v2 hidden', noti),
 
 		display_name,
 		following = false,
 		notifications = false,
 
 		update = function() {
-			btn_c.classList.toggle('is-following', following);
+			btn.classList.toggle('is-following', following);
+			btn.classList.toggle('button--status', following);
 			btn.title = (following ? "Unf" : "F") + "ollow " + utils.sanitize(display_name);
 			btn.innerHTML = (following ? "" : "Follow ") + utils.sanitize(display_name);
 			noti_c.classList.toggle('hidden', !following);
@@ -303,7 +322,7 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 			if ( ! user || ! user.login ) {
 				following = false;
 				notification = false;
-				btn_c.classList.add('is-initialized');
+				btn.classList.add('is-initialized');
 				return update();
 			}
 
@@ -311,12 +330,12 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 				.done(function(data) {
 					following = true;
 					notifications = data.notifications;
-					btn_c.classList.add('is-initialized');
+					btn.classList.add('is-initialized');
 					update();
 				}).fail(function(data) {
 					following = false;
 					notifications = false;
-					btn_c.classList.add('is-initialized');
+					btn.classList.add('is-initialized');
 					update();
 				});
 		},
@@ -339,15 +358,8 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 			update();
 		};
 
-	btn_c.className = 'ember-follow follow-button';
-	btn_c.appendChild(btn);
-
 	// The drop-down button!
-	noti.className = 'toggle-notification-menu js-toggle-notification-menu';
 	noti.href = '#';
-
-	noti_c.className = 'notification-controls v2 hidden';
-	noti_c.appendChild(noti);
 
 	// Event Listeners!
 	btn.addEventListener('click', function(e) {
@@ -399,8 +411,8 @@ FFZ.prototype._build_following_button = function(container, channel_id) {
 
 	setTimeout(check_following, Math.random()*5000);
 
-	container.appendChild(btn_c);
-	container.appendChild(noti_c);
+	cont.appendChild(btn);
+	cont.appendChild(noti_c);
 }
 
 
@@ -411,11 +423,12 @@ FFZ.prototype._build_following_popup = function(container, channel_id, notificat
 	if ( popup && popup.id == "ffz-following-popup" && popup.getAttribute('data-channel') === channel_id )
 		return null;
 
-	popup = this._popup = document.createElement('div');
+	popup = this._popup = utils.createElement('div', 'dropmenu notify-menu js-notify');
 	popup.id = 'ffz-following-popup';
 	popup.setAttribute('data-channel', channel_id);
 
-	popup.className = (pos >= 300 ? 'right' : 'left') + ' dropmenu notify-menu js-notify';
+	this._popup_allow_parent = true;
+	this._popup_parent = container;
 
 	out  = '<div class="header">You are following ' + FFZ.get_capitalization(channel_id) + '</div>';
 	out += '<p class="clearfix">';
@@ -424,6 +437,6 @@ FFZ.prototype._build_following_popup = function(container, channel_id, notificat
 	out += '</p>';
 
 	popup.innerHTML = out;
-	container.appendChild(popup);
+	container.insertBefore(popup, container.firstChild);
 	return popup.querySelector('a.switch');
 }

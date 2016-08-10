@@ -12,7 +12,7 @@ FFZ.prototype.setup_ember_wrapper = function() {
 }
 
 
-FFZ.prototype.update_views = function(klass, modifier, if_not_exists) {
+FFZ.prototype.update_views = function(klass, modifier, if_not_exists, immediate) {
 	var original_klass;
 	if ( typeof klass === 'string' ) {
 		original_klass = klass;
@@ -33,7 +33,7 @@ FFZ.prototype.update_views = function(klass, modifier, if_not_exists) {
 	} else
 		original_klass = klass.toString();
 
-	if ( this._ember_finalized )
+	if ( this._ember_finalized || immediate )
 		this._update_views([[original_klass, klass, modifier]]);
 	else
 		this._views_to_update.push([original_klass, klass, modifier]);

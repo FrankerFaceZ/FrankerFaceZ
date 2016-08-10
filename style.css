@@ -18,12 +18,14 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.app-main .ad_leader:empty,
 body:not(.ffz-show-bits-tags) .bits-tag--container,
 .ffz-hide-friends nav .friend-list,
 .ffz-hide-friends .warp__status .js-presence-indicator,
 .ffz-hide-more-at-twitch nav .tse-content > .warp__list:last-of-type,
 .ffz-hide-recommended-friends .recommended-friends,
 .ffz-hide-recommended-channels .js-recommended-channels,
+.ffz-hide-promoted-games .promotedGames,
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
 .ffz-hide-view-count .stat.twitch-channel-views,
 .ffz-minimal-chat-input .chat-interface .emoticon-selector-toggle,
@@ -216,56 +218,40 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	margin-bottom: -5px;
 }
 
+
+/* Minimal Channel Title */
+
+.ffz-minimal-channel-title #broadcast-meta {
+	height: 25px;
+	margin: 20px 0;
+}
+
+.ffz-minimal-channel-title #channel #broadcast-meta .profile-link .profile-photo img {
+	width: 25px; height: 25px;
+}
+
+.ffz-minimal-channel-title #channel #broadcast-meta .info {
+	padding-top: 25px;
+	padding-left: 50px;
+}
+
+.ffz-minimal-channel-title #channel #broadcast-meta .info .title {
+	padding-top: 0;
+	margin: 0;
+	left: calc(25px + 1.5rem);
+	height: 25px;
+	min-height: 25px;
+}
+
+.ffz-minimal-channel-title #broadcast-meta .profile-photo .goto,
+.ffz-minimal-channel-title #broadcast-meta .channel { display: none }
+
+
 /* Theater Mode hover bar */
 
-.ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.target-meta,
-.ffz-theater-stats .app-main.theatre .player-column:hover #hostmode > div.target-meta,
-.ffz-theater-stats .app-main.theatre #channel .player-column:focus #broadcast-meta,
-.ffz-theater-stats .app-main.theatre #channel .player-column:hover #broadcast-meta {
-	background-color: #19191f;
-	color: #aaa;
-
-	position: absolute;
-	top: -20px;
-	left: 10px;
-	right: 10px;
-	z-index: 7;
-	opacity: 0.95;
-	height: 20px;
-}
-
-.ffz-theater-stats.ffz-sidebar-swap .app-main.theatre .player-column:focus #hostmode > div.target-meta,
-.ffz-theater-stats.ffz-sidebar-swap .app-main.theatre .player-column:hover #hostmode > div.target-meta,
-.ffz-theater-stats.ffz-sidebar-swap .app-main.theatre #channel .player-column:focus #broadcast-meta,
-.ffz-theater-stats.ffz-sidebar-swap .app-main.theatre #channel .player-column:hover #broadcast-meta {
-	left: 145px;
-}
-
-.ffz-theater-stats .app-main.theatre #hostmode > div.target-meta div.target-title {
-	padding: 5px 0 2px 5px;
-}
-
-.ffz-theater-stats .app-main.theatre #hostmode > div.target-meta div.target-title,
-.ffz-theater-stats .app-main.theatre #channel .player-column #broadcast-meta .info { padding-left: 5px; }
-
-.ffz-theater-stats .app-main.theatre #hostmode > div.target-meta div.target-title,
-.ffz-theater-stats .app-main.theatre #channel .player-column #broadcast-meta .info .title {
-	font-size: 12px;
-	line-height: 20px;
-	color: #dedede;
-}
-
-.ffz-theater-stats .app-main.theatre #hostmode > div.target-meta div.target-title,
-.ffz-theater-stats .app-main.theatre #channel .player-column #broadcast-meta .info .title,
-.ffz-theater-stats .app-main.theatre #channel .player-column #broadcast-meta .info .title .over {
-	background-color: rgba(16,16,16,0.3);
-}
-
-.ffz-theater-stats .app-main.theatre #hostmode > div.target-meta .target-user-and-game,
-.ffz-theater-stats .app-main.theatre #channel .player-column #broadcast-meta .info .channel,
-.ffz-theater-stats .app-main.theatre #channel .player-column #broadcast-meta .info .edit-link,
-.ffz-theater-stats .app-main.theatre #broadcast-meta .profile-link {
-	display: none;
+.ffz-theater-stats .app-main.theatre .player-userinfo__game,
+.ffz-theater-stats .app-main.theatre .player-controls-top {
+	display: block
 }
 
 .ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
@@ -326,7 +312,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	background-color: #25252a;
 }
 
-.ffz-theater-stats .app-main.theatre .button.button--icon-only svg path {
+.ffz-theater-stats .app-main.theatre .button.button--icon-only:not(.follow-button) svg path {
 	fill: #a68ed2;
 }
 
@@ -1336,6 +1322,7 @@ img.channel_background[src="null"] { display: none; }
 .ffz-moderation-card .follow-button {
 	font-size: 0 !important;
 	padding-right: 0 !important;
+	animation: none !important;
 }
 
 .ffz-moderation-card .button.button--icon-only {
@@ -2508,8 +2495,8 @@ li[data-name="following"] a {
 	transition: margin-bottom .2s ease-out, padding-bottom .2s ease-out;
 }
 
-.ffz-classic-player:not(.ffz-top-conversations) .app-main.theatre .player .player-controls-bottom,
-.ffz-classic-player:not(.ffz-top-conversations) .app-main.theatre .player[data-controls=true] .player-controls-bottom,
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player .player-controls-bottom,
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player[data-controls=true] .player-controls-bottom,
 .ffz-classic-player .app-main.theatre .player[data-fullscreen="true"] .player-controls-bottom,
 .ffz-classic-player .app-main.theatre .player[data-fullscreen="true"][data-controls=true] .player-controls-bottom {
 	padding-bottom: 0;
@@ -2526,7 +2513,7 @@ li[data-name="following"] a {
 	margin-bottom: 0;
 }
 
-.ffz-classic-player:not(.ffz-top-conversations) .app-main.theatre .player-column:hover .player[data-fullscreen="false"] .player-controls-bottom {
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player-column:hover .player[data-fullscreen="false"] .player-controls-bottom {
 	padding-bottom: 40px;
 }
 
@@ -2816,6 +2803,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 
 .user.item .actions .notifications {
 	flex-grow: 1;
+	padding: 0;
 }
 
 .user.item .actions button:hover,
@@ -2842,7 +2830,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 }
 
 .user.item .actions .follow svg {
-	margin: 4.5px 0 -4.5px -1px;
+	margin: 4px 0 -5px -5.5px;
 }
 
 /* Creative Directory */
@@ -2913,13 +2901,17 @@ body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 
 /* Banned and Spoiler Games */
 
-.ffz-game-spoilered .thumb .cap img,
 body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none }
 
-.ffz-game-spoilered .thumb .cap {
-	position: absolute !important; top: 0; left: 0; bottom: 0; right: 0;
-	background: url("https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg") no-repeat !important;
-	background-size: cover !important;
+.ffz-game-spoilered .thumb .cap img { visibility: hidden }
+
+.ffz-game-spoilered .thumb .cap:after {
+	position: absolute;
+	top: 0; left: 0;
+	bottom: 0; right: 0;
+	background: url("https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg") no-repeat #64439a;
+	background-size: cover;
+	content: '';
 }
 
 .directory_header .ffz-block-button,
@@ -2983,7 +2975,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 /* New Sidebar */
 
-.ffz-hide-friends-collapsed .drawer--summary.closed .friend-list { display: none }
+.ffz-hide-friends-collapsed .drawer.closed .friend-list { display: none }
 
 .warp__anchor { height: 5.5rem }
 
@@ -3181,4 +3173,18 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .bttv-incompatibility b + b:before {
 	content: ', ';
 	font-weight: normal;
+}
+
+/* Chat Rules */
+
+.ember-chat .chat-interface .chat-rules {
+	z-index: 1;
+}
+
+.theatre .chat-interface .chat-rules,
+.chat-container.dark .chat-rules,
+.chat-container.force-dark {
+	background: #101010;
+	color: #ccc;
+	border-color: rgba(255,255,255,0.2);
 }

@@ -679,9 +679,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 		Settings = utils.ember_lookup('controller:settings');
 
 	component.reopen({
-		tokenizedMessage: function() {
-			return [];
-		}.property('msgObject.message'),
+		/*tokenizedMessage: function() {
+			return [{type: 'text', text: 'hi'}];
+		}.property('msgObject.message'),*/
 
 		ffzTokenizedMessage: function() {
 			try {

@@ -54,6 +54,21 @@ FFZ.settings_info.sidebar_hide_recommended_channels = {
 };
 
 
+FFZ.settings_info.sidebar_hide_promoted_games = {
+	type: "boolean",
+	value: false,
+
+	category: "Sidebar",
+	no_mobile: true,
+
+	name: "Hide Promoted Games",
+	help: "Hide the Promoted Games section from the sidebar.",
+
+	on_update: utils.toggle_cls('ffz-hide-promoted-games')
+};
+
+
+
 FFZ.settings_info.sidebar_hide_recommended_friends = {
 	type: "boolean",
 	value: false,
@@ -131,12 +146,25 @@ FFZ.settings_info.sidebar_start_open = {
 };
 
 
+FFZ.settings_info.sidebar_directly_to_followed_channels = {
+	type: "boolean",
+	value: false,
+
+	category: "Sidebar",
+	no_mobile: true,
+
+	name: "Open Following to Channels",
+	help: "When going to your Following directory, view the Live Channels tab by default."
+};
+
+
 // --------------------
 // Initialization
 // --------------------
 
 FFZ.prototype.setup_sidebar = function() {
 	// CSS to Hide Stuff
+	utils.toggle_cls('ffz-hide-promoted-games')(this.settings.sidebar_hide_promoted_games);
 	utils.toggle_cls('ffz-hide-recommended-channels')(this.settings.sidebar_hide_recommended_channels);
 	utils.toggle_cls('ffz-hide-recommended-friends')(this.settings.sidebar_hide_recommended_friends);
 	utils.toggle_cls('ffz-hide-friends-collapsed')(this.settings.sidebar_hide_friends_collapsed);
@@ -188,51 +216,54 @@ FFZ.prototype.setup_sidebar = function() {
 	} else
 		this.error("Unable to load the Ember navigation controller.", null);
 
-	/*
-	var NavView = this._modify_navigation(utils.ember_resolve('component:new-navigation')),
-		views = utils.ember_views(),
-
-		el = document.querySelector('nav#js-warp'),
-		view = el && views[el.parentElement.id];
-
-	if ( view ) {
-		try {
-			if ( ! view.ffzInit )
-				this._modify_navigation(view);
-			view.ffzInit();
-		} catch(err) {
-			this.error("Sidebar Setup", err);
-		}
-	}*/
+	if ( this._views_to_update )
+		this.update_views('view:navigation', this.modify_navigation, true);
 }
 
 
-/*FFZ.prototype._modify_navigation = function(component) {
+FFZ.prototype.setup_following_link = function() {
 	var f = this,
-		mutator = {
-			didInsertElement: function() {
-				this.ffzInit();
-			},
-
-			ffzInit: function() {
-				f._nav = this;
-				f.log("Got New Navigation", this);
-
-				var el = this.get("element");
-
-				if ( f.settings.sidebar_start_open ) {
-
-				}
-
-			}
-		};
-
-	if ( component )
-		component.reopen(mutator);
-	else if ( window.App && App.__deprecatedInstance__ ) {
-		component = Ember.Component.extend(mutator);
-		App.__deprecatedInstance__.registry.register('component:new-navigation', component);
+		following_link = document.body.querySelector('#header_following');
+	if ( following_link ) {
+		following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');
+		following_link.addEventListener('click', function(e) {
+			following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');
+		});
 	}
+}
 
-	return component;
-}*/
+
+FFZ.prototype.modify_navigation = function(component) {
+	var f = this;
+
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			f._nav = this;
+
+			// Override behavior for the Following link.
+			var el = this.get('element'),
+				following_link = el && el.querySelector('a[data-href="following"]');
+
+			if ( following_link ) {
+				following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');
+
+				following_link.addEventListener('click', function(e) {
+					following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');
+					var router = utils.ember_lookup('router:main');
+					if ( ! router || e && (e.button !== 0 || e.ctrlKey || e.metaKey) )
+						return;
+
+					router.transitionTo('directory.following.' + (f.settings.sidebar_directly_to_followed_channels ? 'channels' : 'index'));
+					e.stopImmediatePropagation();
+					e.preventDefault();
+					return false;
+				});
+			}
+		},
+
+		ffz_destroy: function() {
+			if ( f._nav === this )
+				f._nav = null;
+		}
+	});
+}

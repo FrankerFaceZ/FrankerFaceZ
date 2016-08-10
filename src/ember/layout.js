@@ -136,6 +136,31 @@ FFZ.settings_info.right_column_width = {
 	};
 
 
+FFZ.settings_info.minimal_channel_title = {
+	type: "boolean",
+	value: false,
+
+	category: "Appearance",
+	no_mobile: true,
+	no_bttv: true,
+
+	name: "Minimal Channel Title",
+	help: "Hide the channel's name and current game when viewing a channel to maximize player size.",
+
+	on_update: function(val) {
+		if ( this.has_bttv )
+			return;
+
+		var Layout = utils.ember_lookup('service:layout');
+		if ( ! Layout )
+			return;
+
+		document.body.classList.toggle('ffz-minimal-channel-title', val);
+		Ember.propertyDidChange(Layout, 'windowHeight');
+	}
+}
+
+
 // --------------------
 // Initialization
 // --------------------
@@ -145,6 +170,7 @@ FFZ.prototype.setup_layout = function() {
 		return;
 
 	document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
+	document.body.classList.toggle('ffz-minimal-channel-title', this.settings.minimal_channel_title);
 
 	this.log("Creating layout style element.");
 	var s = this._layout_style = document.createElement('style');
@@ -207,7 +233,7 @@ FFZ.prototype.setup_layout = function() {
 				r = this.get('contentWidth'),
 
 				i = (9 * r / 16) + c,
-				d = h - 120 - 60,
+				d = h - (f.settings.minimal_channel_title ? 75 : 120) - 60,
 				c = h - 94 - 185,
 
 				l = Math.floor(r),
@@ -261,7 +287,7 @@ FFZ.prototype.setup_layout = function() {
 						var size = this.get('playerSize'),
 							video_below = this.get('portraitVideoBelow'),
 
-							video_height = size[1] + 120 + 60,
+							video_height = size[1] + (f.settings.minimal_channel_title ? 75 : 120) + 60,
 							chat_height = window_height - video_height,
 
 							video_top = video_below ? chat_height : 0,
@@ -307,6 +333,7 @@ FFZ.prototype.setup_layout = function() {
 							'#right_col{width:' + width + 'px}' +
 							'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight){' +
 								'margin-right:' + width + 'px}' +
+							'body.ffz-sidebar-swap .theatre #main_col:not(.expandRight),' +
 							'body.ffz-sidebar-swap #main_col:not(.expandRight){' +
 								'margin-left:' + width + 'px}';
 					}

@@ -10,10 +10,29 @@ var FFZ = window.FrankerFaceZ,
 
 
 // ---------------------
+// Badware Check
+// ---------------------
+
+FFZ.prototype.check_badware = function() {
+	if ( this.embed_in_dash || ! window.jQuery || ! window.jQuery.noty )
+		return;
+
+	// Check for the stolen version of BTTV4FFZ.
+	if ( FFZ.settings_info.bttv_global_emotes && FFZ.settings_info.bttv_global_emotes.category === "BetterTTV" ) {
+		var shown = localStorage.ffz_warning_bttv4ffz_clone;
+		if ( shown !== "true" ) {
+			localStorage.ffz_warning_bttv4ffz_clone = "true";
+			this.show_message("You appear to be using an unofficial version of BTTV4FFZ that was copied without the developer's permission. Please use the official version available at <a href=\"https://lordmau5.com/bttv4ffz/\">https://lordmau5.com/bttv4ffz/</a>");
+		}
+	}
+}
+
+
+// ---------------------
 // API Constructor
 // ---------------------
 
-var API = FFZ.API = function(instance, name, icon, version) {
+var API = FFZ.API = function(instance, name, icon, version, name_key) {
 	this.ffz = instance || FFZ.get();
 
 	// Check for a known API!
@@ -56,7 +75,7 @@ var API = FFZ.API = function(instance, name, icon, version) {
 	this.on_room_callbacks = [];
 
 	this.name = name || ("Extension#" + this.id);
-	this.name_key = this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
+	this.name_key = name_key || this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
 
 	this.icon = icon || null;
 	this.version = version || null;

@@ -2,6 +2,10 @@ node_modules
 npm-debug.log
 build
 Extension Building
+Old Files
+badges
+cdn
+
 .idea
 *.iml
 script.js

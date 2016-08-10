@@ -10,6 +10,7 @@ var FFZ = window.FrankerFaceZ,
 FFZ.basic_settings.delayed_chat = {
 	type: "select",
 	options: {
+		"-1": "Default Delay (Room Specific; Non-Mod Only)",
 		0: "No Delay",
 		300: "Minor (Bot Moderation; 0.3s)",
 		1200: "Normal (Human Moderation; 1.2s)",
@@ -137,6 +138,7 @@ FFZ.settings_info.chat_batching = {
 FFZ.settings_info.chat_delay = {
 	type: "select",
 	options: {
+		"-1": "Default Delay (Room Specific; Non-Mod Only)",
 		0: "No Delay",
 		300: "Minor (Bot Moderation; 0.3s)",
 		1200: "Normal (Human Moderation; 1.2s)",
@@ -147,7 +149,7 @@ FFZ.settings_info.chat_delay = {
 		30000: "Half a Minute (30s)",
 		60000: "Why??? (1m)"
 	},
-	value: 0,
+	value: -1,
 
 	category: "Chat Appearance",
 	no_bttv: true,
@@ -162,6 +164,12 @@ FFZ.settings_info.chat_delay = {
 	},
 
 	on_update: function (val) {
+		for(var room_id in this.rooms) {
+			var room = this.rooms[room_id].room;
+			if ( room )
+				Ember.propertyDidChange(room, 'ffz_chat_delay');
+		}
+
 		if ( this._roomv )
 			this._roomv.ffzUpdateStatus();
 	}

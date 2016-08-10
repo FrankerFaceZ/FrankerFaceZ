@@ -1,7 +1,9 @@
 var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
-	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/;
+	SENDER_REGEX = /(\sdata-sender="[^"]*"(?=>))/,
+
+	HOP = Object.prototype.hasOwnProperty;
 
 
 // --------------------
@@ -101,10 +103,12 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.toggle_style('badges-sub-notice-on');
 
 	// Disable other features too.
-	document.body.classList.remove('ffz-transparent-badges');
-	document.body.classList.remove("ffz-sidebar-swap");
-	document.body.classList.remove("ffz-portrait");
-	document.body.classList.remove("ffz-flip-dashboard");
+	var cl = document.body.classList;
+	cl.remove('ffz-transparent-badges');
+	cl.remove("ffz-sidebar-swap");
+	cl.remove("ffz-portrait");
+	cl.remove("ffz-minimal-channel-title");
+	cl.remove("ffz-flip-dashboard");
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {
@@ -293,7 +297,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			if ( emote_set && emote_set.emoticons )
 				for(var emote_id in emote_set.emoticons) {
 					emote = emote_set.emoticons[emote_id];
-					if ( ! emotes.hasOwnProperty(emote.name) )
+					if ( ! HOP.call(emotes, emote.name) )
 						emotes[emote.name] = emote;
 				}
 		}
@@ -311,7 +315,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 			for(var x=0,y=segments.length; x < y; x++) {
 				segment = segments[x];
-				if ( emotes.hasOwnProperty(segment) ) {
+				if ( HOP.call(emotes, segment) ) {
 					emote = emotes[segment];
 					if ( text.length ) {
 						var toks = parse_emoji(text.join(' ') + ' ');

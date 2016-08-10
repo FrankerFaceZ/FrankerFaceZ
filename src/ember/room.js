@@ -10,7 +10,7 @@ var FFZ = window.FrankerFaceZ,
 		["sub", "subsOnly", "This room is in subscribers-only mode."],
 		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow') || 120) + " seconds." }],
 		["ban", "ffz_banned", "You have been banned from talking in this room."],
-		["delay", function() { return this.settings.chat_delay !== 0 }, function() { return "You have enabled artificial chat delay. Messages are displayed after " + (this.settings.chat_delay/1000) + " seconds." }],
+		["delay", function(room) { return room && room.get('ffz_chat_delay') !== 0 }, function(room) { return "Artificial chat delay is enabled. Messages are displayed after " + (room.get('ffz_chat_delay')/1000) + " seconds." }],
 		["batch", function() { return this.settings.chat_batching !== 0 }, function() { return "You have enabled chat message batching. Messages are displayed in " + (this.settings.chat_batching/1000) + " second increments." }]
 	],
 
@@ -158,6 +158,14 @@ FFZ.prototype.modify_room_view = function(view) {
 					calcRecipientEligibility: function(e) {
 						// Because this doesn't work properly with multiple channel rooms
 						// by default, do it ourselves.
+						if ( controller.get('model.isGroupRoom') ) {
+							controller.set('isRecipientBitsIneligible', true);
+							controller.set('isBitsHelperShown', false);
+							controller.set('minimumBits', 0);
+							controller.set('isBitsTooltipActive', false);
+							return;
+						}
+
 						var id = controller.get('model.roomProperties._id'),
 							update = function(data) {
 								if ( controller.isDestroyed || controller.get('model.roomProperties._id') !== id )
@@ -1008,10 +1016,9 @@ FFZ.prototype._modify_room = function(room) {
 				user = f.get_user(),
 				room_id = this.get('id');
 
-			/* ???
-				if ( (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
-				f.ws_unsub()
-				return this.ffzUnsubscribe(true);*/
+			// Don't destroy the room if it's still relevant.
+			if ( (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
+				return;
 
 			this.destroy();
 		},
@@ -1336,8 +1343,24 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		// Artificial chat delay
+		ffz_chat_delay: function() {
+			var val = f.settings.chat_delay;
+			if ( val !== -1 )
+				return val;
+
+			val = this.get('roomProperties.chat_delay_duration');
+			return ( Number.isNaN(val) || ! Number.isFinite(val) || this.get('isModeratorOrHigher') ) ? 0 : val;
+
+		}.property('roomProperties.chat_delay_duration', 'isModeratorOrHigher'),
+
+		ffz_update_display: function() {
+			if ( f._roomv )
+				f._roomv.ffzUpdateStatus();
+
+		}.observes('roomProperties.chat_delay_duration'),
+
 		pushMessage: function(msg) {
-			if ( f.settings.chat_batching !== 0 || f.settings.chat_delay !== 0 || (this.ffzPending && this.ffzPending.length) ) {
+			if ( f.settings.chat_batching !== 0 || this.get('ffz_chat_delay') !== 0 || (this.ffzPending && this.ffzPending.length) ) {
 				if ( ! this.ffzPending )
 					this.ffzPending = [];
 
@@ -1381,8 +1404,9 @@ FFZ.prototype._modify_room = function(room) {
 				// amount of time from the last batch.
 				now = now || Date.now();
 				var t = this,
+					chat_delay = this.get('ffz_chat_delay'),
 					delay = Math.max(
-					(f.settings.chat_delay !== 0 ? 50 + Math.max(0, (f.settings.chat_delay + (this.ffzPending[0].time||0)) - now) : 0),
+					(chat_delay !== 0 ? 50 + Math.max(0, (chat_delay + (this.ffzPending[0].time||0)) - now) : 0),
 					(f.settings.chat_batching !== 0 ? Math.max(0, f.settings.chat_batching - (now - (this._ffz_last_batch||0))) : 0));
 
 				this._ffz_pending_flush = setTimeout(this.ffzPendingFlush.bind(this), delay);
@@ -1392,7 +1416,8 @@ FFZ.prototype._modify_room = function(room) {
 		ffzPendingFlush: function() {
 			this._ffz_pending_flush = null;
 
-			var now = this._ffz_last_batch = Date.now();
+			var now = this._ffz_last_batch = Date.now(),
+				chat_delay = this.get('ffz_chat_delay');
 
 			for (var i = 0, l = this.ffzPending.length; i < l; i++) {
 				var msg = this.ffzPending[i];
@@ -1404,7 +1429,7 @@ FFZ.prototype._modify_room = function(room) {
 					continue;
 				}
 
-				if ( f.settings.chat_delay !== 0 && (f.settings.chat_delay + msg.time > now) )
+				if ( chat_delay !== 0 && (chat_delay + msg.time > now) )
 					break;
 
 				msg.pending = false;
@@ -1524,7 +1549,10 @@ FFZ.prototype._modify_room = function(room) {
 
 							new_msg = {
 								from: msg.from,
-								tags: {'display-name': msg.tags && msg.tags['display-name']},
+								tags: {
+									'display-name': msg.tags && msg.tags['display-name'],
+									bits: msg.tags && msg.tags.bits
+								},
 								message: msg.message,
 								cachedTokens: msg.cachedTokens,
 								style: msg.style,

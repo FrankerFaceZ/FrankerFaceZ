@@ -1285,7 +1285,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 		if ( alias )
 			out.push('<span class="from ffz-alias html-tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias) + '</span>');
 		else
-			out.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name ) + '</span>');
+			out.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
 
 		out.push('<span class="colon">:</span> ');
 	}
@@ -1299,7 +1299,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 
 
 	var message = '<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' +
-			(msg.style === 'action' && ! show_from ? '*' + name + ' ' : '') + this.render_tokens(msg.cachedTokens) + '</span>';
+			(msg.style === 'action' && ! show_from ? '*' + name + ' ' : '') + this.render_tokens(msg.cachedTokens, true, false, msg.tags && msg.tags.bits) + '</span>';
 
 	if ( msg.deleted )
 		out.push('<span class="deleted"><a class="undelete" href="#" data-message="' + utils.quote_attr(message) + '">&lt;message deleted&gt;</a></span>');

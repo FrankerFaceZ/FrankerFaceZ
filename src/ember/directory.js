@@ -220,19 +220,18 @@ FFZ.prototype.setup_directory = function() {
 	} else
 		this.log("Unable to locate the Ember service:vod-coviews");
 
-
-	this.log("Attempting to modify the Following collection.");
-	this._modify_following();
-
 	this.log("Hooking the Ember Directory views.");
 
 	this.update_views('component:stream-preview', function(x) { this.modify_directory_live(x, false) }, true);
 	this.update_views('component:creative-preview', function(x) { this.modify_directory_live(x, false) }, true);
 	this.update_views('component:csgo-channel-preview', function(x) { this.modify_directory_live(x, true) }, true);
-	this.update_views('component:host-preview', this.modify_directory_host, true);
+	this.update_views('component:host-preview', this.modify_directory_host, true, true);
 	this.update_views('component:video-preview', this.modify_video_preview, true);
 
 	this.update_views('component:game-follow-button', this.modify_game_follow_button);
+
+	this.log("Attempting to modify the Following collection.");
+	this._modify_following();
 }
 
 
@@ -270,7 +269,7 @@ FFZ.prototype._modify_following = function() {
 
 					// Don't use FFZ's Client ID because loading hosts is a normal part
 					// of the dashboard. We're just manipulating the logic a bit.
-					return Twitch.api.get("/api/users/:login/followed/hosting", t);
+					return this.get("api").request("get", "/api/users/:login/followed/hosting", t);
 				},
 
 				afterSuccess: function(e) {

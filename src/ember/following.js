@@ -2,7 +2,10 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants'),
 
-	createElement = utils.createElement;
+	createElement = utils.createElement,
+
+	FOLLOWING_RE = /^\/kraken\/users\/([^/]+)\/follows\/channels/,
+	FOLLOWER_RE = /^\/kraken\/channels\/([^/]+)\/follows/;
 
 
 // --------------------
@@ -33,200 +36,73 @@ FFZ.prototype.setup_profile_following = function() {
 	this._following_cache = {};
 	this._follower_cache = {};
 
-	/*try {
-		var ChannelSerializer = window.require("web-client/serializers/new-channel"),
-			BaseSerializer = window.require("web-client/serializers/application"),
-			process_channel = function(chan) {
-				var cid = chan.name;
-				return {
-					type: "new-channel",
-					id: cid,
-					attributes: chan,
-					relationships: {
-						following: {
-							links: {
-								related: "/kraken/users/" + cid + "/follows/channels?offset=0&on_site=1"
-							}
+
+	// We want to hook the API to gather this information. It's easier than
+	// modifying the deserialization path.
+	var process_follows = function(channel_id, data, cache) {
+		f.log("Loading Follow Information for: " + channel_id, data);
+
+		var user_cache = cache[channel_id] = cache[channel_id] || {},
+			now = Date.now();
+
+		for(var i=0; i < data.length; i++) {
+			var follow = data[i],
+				user = follow && (follow.user || follow.channel);
+
+			if ( ! user || ! user.name )
+				continue;
+
+			if ( user.display_name )
+				FFZ.capitalization[user.name] = [user.display_name, now];
+
+			user_cache[user.name] = [
+				follow.created_at ? utils.parse_date(follow.created_at) : null,
+				follow.notifications || false];
+		}
+	};
+
+
+	var ServiceAPI = utils.ember_lookup('service:api');
+	if ( ServiceAPI )
+		ServiceAPI.reopen({
+			request: function(method, url, data, options) {
+				if ( method !== 'get' || url.indexOf('/kraken/') !== 0 )
+					return this._super(method, url, data, options);
+
+				var t = this;
+				return new Promise(function(success, fail) {
+					t._super(method, url, data, options).then(function(result) {
+						if ( result.follows ) {
+							var match = FOLLOWING_RE.exec(url);
+							if ( match )
+								// Following Information
+								process_follows(match[1], result.follows, f._following_cache);
+
+							match = FOLLOWER_RE.exec(url);
+							if ( match )
+								// Follower Information
+								process_follows(match[1], result.follows, f._follower_cache);
 						}
-					}
-				}
-			};
 
-		var ser = ChannelSerializer.default = BaseSerializer.default.extend({
-			normalizeFindRecordResponse: function(e, t, a, r) {
-				var l = process_channel(a);
-				return this._super(e, t, {
-					data: l
-				}, r)
-			},
-
-			normalizeResponse: function(e, t, a, r, l) {
-				if ( ! a.follows )
-					return this._super.apply(this, arguments);
-
-				f.log("Normalizing Response", [e, t, a, r, l]);
-				var i = this.extractMeta(e, t, a),
-					o = a.follows.map(function(e) {
-						return process_channel(e.channel);
-					}),
-					d = {
-						data: o,
-						meta: i
-					};
-
-				return this._super(e, t, d, r, l);
+						success(result);
+					}).catch(function(err) {
+						fail(result);
+					})
+				});
 			}
 		});
-
-		App.registry.unregister('serializer:new-channel');
-		App.registry.register('serializer:new-channel', ser);
-
-	} catch(err) {
-		this.error("Unable to modify the Ember new-channel serializer", err);
-	}*/
+	else
+		this.error("Unable to locate the Ember service:api");
 
 
-	// First, we need to hook the model. This is what we'll use to grab the following notification state,
-	// rather than making potentially hundreds of API requests.
-	var Following = utils.ember_resolve('model:kraken-channel-following');
-	if ( Following )
-		this._hook_following(Following);
-
-	var Followers = utils.ember_resolve('model:user-followers');
-	if ( Followers )
-		this._hook_followers(Followers);
-
-	// Also try hooking that other model.
-	var Notification = utils.ember_resolve('model:notification');
-	if ( Notification )
-		this._hook_following(Notification, true);
-
-
-	// Find the followed item view
-	var FollowedItem = utils.ember_resolve('component:display-followed-item');
-	if ( ! FollowedItem )
-		return;
-
-	this._modify_display_followed_item(FollowedItem);
-
-
-	// Now, we need to edit the profile Following view itself.
-	var ProfileView = utils.ember_resolve('view:channel/following');
-	if ( ! ProfileView )
-		return;
-
-	ProfileView.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("ProfileView ffzInit: " + err);
-			}
-		},
-
-		ffzInit: function() {
-			// Only process our own profile following page.
-			if ( ! f.settings.enhance_profile_following )
-				return;
-
-			var el = this.get('element'),
-				user = f.get_user(),
-				user_id = this.get('context.model.id');
-
-			el.classList.add('ffz-enhanced-following');
-			el.classList.toggle('ffz-my-following', user && user.login === user_id);
-			el.setAttribute('data-user', user_id);
-		}
-	});
-
-	// TODO: Add nice Manage Following button to the directory.
-
-	// Now, rebuild any views.
-	try { FollowedItem.create().destroy();
-	} catch(err) { }
-
-	var views = utils.ember_views();
-
-	if ( views ) {
-		for(var key in views) {
-			var view = views[key];
-			if ( view instanceof FollowedItem ) {
-				this.log("Manually updating existing component:display-followed-item.", view);
-				try {
-					if ( ! view.ffzInit )
-						this._modify_display_followed_item(view);
-					view.ffzInit();
-				} catch(err) {
-					this.error("setup: component:display-followed-item ffzInit: " + err);
-				}
-			}
-		}
-	}
-
-
-	// Refresh all existing following data.
-	var count = 0,
-		Channel = utils.ember_resolve('model:deprecated-channel');
-
-	if ( Channel && Channel._cache )
-		for(var key in Channel._cache) {
-			var chan = Channel._cache[key];
-			if ( chan instanceof Channel ) {
-				var following = chan.get('following'),
-					followers = chan.get('followers'),
-
-					refresher = function(x) {
-						if ( x.get('isLoading') )
-							setTimeout(refresher.bind(this,x), 25);
-
-						x.clear();
-						x.load();
-					};
-
-				// Make sure this channel's Following collection is modified.
-				this._hook_following(following);
-				this._hook_followers(followers);
-
-				var counted = false;
-				if ( following && (following.get('isLoaded') || following.get('isLoading')) ) {
-					refresher(following);
-					count++;
-					counted = true;
-				}
-
-				if ( followers && (followers.get('isLoaded') || followers.get('isLoading')) ) {
-					refresher(followers);
-					if ( ! counted )
-						count++;
-				}
-			}
-		}
-
-	f.log("Refreshing previously loaded user following data for " + count + " channels.");
+	// Modify followed items.
+	this.update_views('component:display-followed-item', this.modify_display_followed_item);
 }
 
 
-FFZ.prototype._modify_display_followed_item = function(component) {
+FFZ.prototype.modify_display_followed_item = function(component) {
 	var f = this;
-	component.reopen({
-		didInsertElement: function() {
-			this._super();
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("component:display-followed-item ffzInit: " + err);
-			}
-		},
-
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("component:display-followed-item ffzTeardown: " + err);
-			}
-		},
-
+	utils.ember_reopen_view(component, {
 		ffzParentModel: function() {
 			var x = this.get('parentView');
 			while(x) {
@@ -237,7 +113,7 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 			}
 		}.property('parentView'),
 
-		ffzInit: function() {
+		ffz_init: function() {
 			var el = this.get('element'),
 				channel_id = this.get('ffzParentModel.id'), //.get('parentView.parentView.parentView.model.id'),
 				is_following = document.body.getAttribute('data-current-path').indexOf('.following') !== -1,
@@ -271,7 +147,7 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 
 					if ( age !== undefined ) {
 						t_el.innerHTML = constants.CLOCK + ' ' + (age < 60 ? 'now' : utils.human_time(age, 10));
-						t_el.title = 'Following Since: <nobr>' + data[0].toLocaleString() + '</nobr>';
+						t_el.title = 'Follow' + (is_following ? 'ing' : 'er') + ' Since: <nobr>' + data[0].toLocaleString() + '</nobr>';
 						t_el.style.display = '';
 					} else
 						t_el.style.display = 'none';
@@ -347,91 +223,6 @@ FFZ.prototype._modify_display_followed_item = function(component) {
 			actions.appendChild(notif);
 
 			el.appendChild(actions);
-		},
-
-		ffzTeardown: function() {
-
-		}
-	});
-}
-
-
-FFZ.prototype._hook_following = function(Following) {
-	var f = this;
-	if ( ! Following || Following.ffz_hooked )
-		return;
-
-	Following.reopen({
-		ffz_hooked: true,
-		apiLoad: function(e) {
-			var channel_id = this.get('id'),
-				t = this;
-
-			f._following_cache[channel_id] = f._following_cache[channel_id] || {};
-
-			return new RSVP.Promise(function(success, fail) {
-				t._super(e).then(function(data) {
-					if ( data && data.follows ) {
-						var now = Date.now();
-						for(var i=0; i < data.follows.length; i++) {
-							var follow = data.follows[i];
-							if ( ! follow || ! follow.channel || ! follow.channel.name ) {
-								continue;
-							}
-
-							if ( follow.channel.display_name )
-								FFZ.capitalization[follow.channel.name] = [follow.channel.display_name, now];
-
-							f._following_cache[channel_id][follow.channel.name] = [follow.created_at ? utils.parse_date(follow.created_at) : null, follow.notifications || false];
-						}
-					}
-
-					success(data);
-
-				}, function(err) {
-					fail(err);
-				})
-			});
-		}
-	});
-}
-
-FFZ.prototype._hook_followers = function(Followers) {
-	var f = this;
-	if ( ! Followers || Followers.ffz_hooked )
-		return;
-
-	Followers.reopen({
-		ffz_hooked: true,
-		apiLoad: function(e) {
-			var channel_id = this.get('id'),
-				t = this;
-
-			f._follower_cache[channel_id] = f._follower_cache[channel_id] || {};
-
-			return new RSVP.Promise(function(success, fail) {
-				t._super(e).then(function(data) {
-					if ( data && data.follows ) {
-						var now = Date.now();
-						for(var i=0; i < data.follows.length; i++) {
-							var follow = data.follows[i];
-							if ( ! follow || ! follow.user || ! follow.user.name ) {
-								continue;
-							}
-
-							if ( follow.user.display_name )
-								FFZ.capitalization[follow.user.name] = [follow.user.display_name, now];
-
-							f._follower_cache[channel_id][follow.user.name] = [follow.created_at ? utils.parse_date(follow.created_at) : null, follow.notifications || false];
-						}
-					}
-
-					success(data);
-
-				}, function(err) {
-					fail(err);
-				})
-			});
 		}
 	});
 }

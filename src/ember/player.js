@@ -59,6 +59,27 @@ FFZ.settings_info.player_volume_bar = {
 };
 
 
+FFZ.settings_info.player_pause_hosts = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "When Hosting Channel was Paused",
+		2: "Always"
+	},
+
+	value: 1,
+	process_value: function(val) {
+		if ( typeof val === "string" )
+			return parseInt(val) || 0;
+		return val;
+	},
+
+	category: "Player",
+	name: "Auto-Pause Hosted Channels",
+	help: "Automatically pause hosted channels if you paused the channel doing the hosting, or just pause all hosts."
+}
+
+
 // ---------------
 // Initialization
 // ---------------
@@ -72,6 +93,7 @@ FFZ.prototype.setup_player = function() {
 		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
 
 	this.players = {};
+	this.players_paused = {};
 
 	this.update_views('component:twitch-player2', this.modify_twitch_player);
 }
@@ -89,7 +111,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			f.players[id] = this;
 
 			var player = this.get('player');
-			if ( player )
+			if ( player && !this.get('ffz_post_player') )
 				this.ffzPostPlayer();
 		},
 
@@ -99,10 +121,33 @@ FFZ.prototype.modify_twitch_player = function(player) {
 				f.players[id] = undefined;
 		},
 
+		insertPlayer: function(ffz_reset) {
+			// We want to see if this is a hosted video on a play
+			var should_start_paused = this.get('shouldStartPaused'),
+				hosting_channel = this.get('hostChannel.id');
+
+			// Always start unpaused if the person used the FFZ setting to Reset Player.
+			if ( ffz_reset )
+				this.set('shouldStartPaused', false);
+
+			// Alternatively, depending on the setting...
+			else if (
+				(f.settings.player_pause_hosts === 1 && f.players_paused[hosting_channel]) ||
+				(f.settings.player_pause_hosts === 2 && hosting_channel) )
+					this.set('shouldStartPaused', true);
+
+			this._super();
+
+			// Restore the previous value so it doesn't mess anything up.
+			this.set('shouldStartPaused', should_start_paused);
+
+		}.on('didInsertElement'),
+
 		postPlayerSetup: function() {
 			this._super();
 			try {
-				this.ffzPostPlayer();
+				if ( ! this.get('ffz_post_player') )
+					this.ffzPostPlayer();
 			} catch(err) {
 				f.error("Player2 postPlayerSetup: " + err);
 			}
@@ -122,13 +167,27 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			this.set('player', null);
 
 			// Now, let Twitch create a new player as usual.
-			Ember.run.next(this.insertPlayer.bind(this));
+			Ember.run.next(this.insertPlayer.bind(this, true));
+		},
+
+		ffzUpdatePlayerPaused: function() {
+			var id = this.get('channel.id'),
+				is_paused = this.get('player.paused');
+
+			f.log("Player Pause State for " + id + ": " + is_paused);
+			f.players_paused[id] = is_paused;
 		},
 
 		ffzPostPlayer: function() {
 			var player = this.get('player');
 			if ( ! player )
 				return;
+
+			this.set('ffz_post_player', true);
+			f.players_paused[this.get('channel.id')] = player.paused;
+
+			player.addEventListener('pause', this.ffzUpdatePlayerPaused.bind(this));
+			player.addEventListener('play', this.ffzUpdatePlayerPaused.bind(this));
 
 			// Make the stats window draggable and fix the button.
 			var stats = this.$('.player .js-playback-stats');
@@ -156,6 +215,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			}
 
 			// Check player statistics. If necessary, override getVideoInfo.
+			/*
 			if ( ! Object.keys(player.getVideoInfo()).length && ! player.ffz_stats_hooked ) {
 				f.log("No Video Data. Installing handler.");
 				player.ffz_stats_hooked = true;
@@ -189,10 +249,6 @@ FFZ.prototype.modify_twitch_player = function(player) {
 							toggle_btn.text('Show Video Stats');
 
 							jQuery('.js-stats-close', stats_el).remove();
-							/*off().on('click', function(e) {
-								stats_el.classList.add('hidden');
-								toggle_btn.text('Show Video Stats');
-							});*/
 
 							toggle_btn.off().on('click', function(e) {
 								var visible = stats_el.classList.contains('hidden');
@@ -257,13 +313,6 @@ FFZ.prototype.modify_twitch_player = function(player) {
 											val2 *= 1000;
 										}
 
-										// Only make this change for known bad versions.
-										var version = player.getVersion();
-										if ( version === "0.5.4" ) {
-											val -= (f._ws_server_offset || 0);
-											val2 -= (f._ws_server_offset || 0);
-										}
-
 										if ( val > val2 ) {
 											output.hls_latency_broadcaster = val;
 											output.hls_latency_encoder = val2;
@@ -296,7 +345,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 					};
 
 				setup_player();
-			}
+			}*/
 		}
 	});
 }

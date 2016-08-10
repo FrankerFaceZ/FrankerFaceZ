@@ -7,13 +7,15 @@ var FFZ = window.FrankerFaceZ,
 	bits_helpers,
 	bits_service,
 
+	HOP = Object.prototype.hasOwnProperty,
+
 	EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
 
 	reg_escape = function(str) {
 		return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 	},
 
-	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)/g,
+	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=()]*)/g,
 
 	CLIP_URL = /(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)\/(\w+)/,
 
@@ -101,18 +103,48 @@ FFZ._emote_mirror_swap = function(img) {
 // Settings
 // ---------------------
 
-var ts = new Date(0).toLocaleTimeString().toUpperCase();
+var ts = new Date(0).toLocaleTimeString().toUpperCase(),
+	default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
 
 FFZ.settings_info.twenty_four_timestamps = {
-	type: "boolean",
-	value: ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1,
+	type: "select",
+	options: {
+		0: "12-Hour" + (default_24 ? '' : ' (Default)'),
+		1: "12-Hour Zero-Padded",
+		2: "24-Hour" + (default_24 ? ' (Default)' : ''),
+		3: "24-Hour Zero-Padded"
+	},
+
+	value: default_24 ? 2 : 0,
+
+	process_value: function(val) {
+		if ( val === false )
+			return 0;
+		else if ( val === true )
+			return 2;
+		else if ( typeof val === 'string' )
+			return parseInt(val) || 0;
+		return val;
+	},
 
 	category: "Chat Appearance",
 	no_bttv: true,
 
-	name: "24hr Timestamps",
-	help: "Display timestamps in chat in the 24 hour format rather than 12 hour."
-	};
+	name: "Timestamp Format",
+	help: "Display timestamps in chat in the 24 hour format rather than 12 hour.",
+
+	on_update: function(val) {
+		// Update existing chat lines.
+		var CL = utils.ember_resolve('component:chat/chat-line'),
+			views = (CL && helpers && helpers.getTime) ? utils.ember_views() : {};
+
+		for(var vid in views) {
+			var view = views[vid];
+			if ( view instanceof CL )
+				view.$('.timestamp').text(view.get('timestamp'));
+		}
+	}
+};
 
 
 FFZ.settings_info.timestamp_seconds = {
@@ -198,18 +230,22 @@ FFZ.prototype.setup_tokenization = function() {
 	// Timestamp Display
 	helpers.getTime = function(e) {
 		if ( e === undefined || e === null )
-			return '?:??';
+			return '?:??' + (f.settings.timestamp_seconds ? ':??' : '');
 
 		var hours = e.getHours(),
 			minutes = e.getMinutes(),
-			seconds = e.getSeconds();
+			seconds = e.getSeconds(),
 
-		if ( hours > 12 && ! f.settings.twenty_four_timestamps )
-			hours -= 12;
-		else if ( hours === 0 && ! f.settings.twenty_four_timestamps )
-			hours = 12;
+			s = f.settings.twenty_four_timestamps;
 
-		return hours + ':' + (minutes < 10 ? '0' : '') + minutes + (f.settings.timestamp_seconds ? ':' + (seconds < 10 ? '0' : '') + seconds : '');
+		if ( s < 2 ) {
+			if ( hours > 12 )
+				hours -= 12;
+			else if ( hours === 0 )
+				hours = 12;
+		}
+
+		return ((s === 1 || s === 3) && hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + (f.settings.timestamp_seconds ? ':' + (seconds < 10 ? '0' : '') + seconds : '');
 	};
 
 
@@ -741,6 +777,10 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 	if ( helpers && helpers.linkifyMessage )
 		message = helpers.linkifyMessage(message);
 
+	// We want to tokenize emoji first to make sure that they don't cause issues
+	// with the indices used by emoticonizeMessage.
+	message = this.tokenize_emoji(message);
+
 	if ( helpers && helpers.emoticonizeMessage && this.settings.parse_emoticons )
 		message = helpers.emoticonizeMessage(message, emotes);
 
@@ -770,9 +810,6 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 
 	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
 		tokens = this.tokenize_emotes(user_id, room_id, tokens)
-
-	if ( this.settings.parse_emoji )
-		tokens = this.tokenize_emoji(tokens);
 
 	return tokens;
 }
@@ -996,7 +1033,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 		if ( emote_set && emote_set.emoticons )
 			for(var emote_id in emote_set.emoticons) {
 				emote = emote_set.emoticons[emote_id];
-				if ( ! emotes.hasOwnProperty(emote.name) )
+				if ( ! HOP.call(emotes, emote.name) )
 					emotes[emote.name] = emote;
 			}
 	}
@@ -1023,7 +1060,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 
 		for(var x=0,y=segments.length; x < y; x++) {
 			segment = segments[x];
-			if ( emotes.hasOwnProperty(segment) ) {
+			if ( HOP.call(emotes, segment) ) {
 				emote = emotes[segment];
 
 				if ( text.length ) {
@@ -1095,7 +1132,7 @@ FFZ.prototype.tokenize_emoji = function(tokens) {
 
 				if ( data ) {
 					if ( text && text.length )
-						new_tokens.push({type: "text", text: text});
+						new_tokens.push(text);
 					new_tokens.push(data.token);
 					text = null;
 				} else
@@ -1104,7 +1141,7 @@ FFZ.prototype.tokenize_emoji = function(tokens) {
 		}
 
 		if ( text && text.length )
-			new_tokens.push({type: "text", text: text});
+			new_tokens.push(text);
 	}
 
 	return new_tokens;

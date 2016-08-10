@@ -466,8 +466,19 @@ module.exports = FFZ.utils = {
 			if ( typeof pref === "function" )
 				pref = pref.call(this);
 
-			var dir = {ns: pref[0], ew: (pref.length > 1 ? pref[1] : false)},
-				$this = $(this),
+			var dir = {};
+
+			if ( pref.indexOf('n') !== -1 )
+				dir.ns = 'n';
+			else if ( pref.indexOf('s') !== -1 )
+				dir.ns = 's';
+
+			if ( pref.indexOf('e') !== -1 )
+				dir.ew = 'e';
+			else if ( pref.indexOf('w') !== -1 )
+				dir.ew = 'w';
+
+			var $this = $(this),
 				half_width = $this.width() / 2,
 				half_height = $this.height() / 2,
 				boundTop = $(document).scrollTop() + half_height + (margin*2),
@@ -478,7 +489,7 @@ module.exports = FFZ.utils = {
 			if ($(window).width() + $(document).scrollLeft() - ($this.offset().left + half_width) < margin) dir.ew = 'e';
 			if ($(window).height() + $(document).scrollTop() - ($this.offset().top + half_height) < (2*margin)) dir.ns = 's';
 
-			return dir.ns + (dir.ew ? dir.ew : '');
+			return (dir.ns ? dir.ns : '') + (dir.ew ? dir.ew : '');
 		}
 	},
 

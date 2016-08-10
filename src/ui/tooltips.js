@@ -46,7 +46,8 @@ FFZ.prototype.fix_tooltips = function() {
 
 	for(var obj_id in jQuery.cache) {
 		var obj = jQuery.cache[obj_id];
-		if ( obj && obj.data && obj.data.tipsy && obj.data.tipsy.options && typeof obj.data.tipsy.options.gravity !== "function" )
+		if ( obj && obj.data && obj.data.tipsy && obj.data.tipsy.options && typeof obj.data.tipsy.options.gravity !== "function" ) {
 			obj.data.tipsy.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, obj.data.tipsy.options.gravity || 's');
+		}
 	}
 }

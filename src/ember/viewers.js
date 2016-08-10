@@ -1,5 +1,13 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils');
+	utils = require('../utils'),
+
+	VIEWER_CATEGORIES = [
+		['staff', 'Staff'],
+		['admins', 'Admins'],
+		['global_mods', 'Global Moderators'],
+		['moderators', 'Moderators'],
+		['viewers', 'Viewers']
+	];
 
 
 // --------------------
@@ -21,46 +29,27 @@ FFZ.settings_info.sort_viewers = {
 // --------------------
 
 FFZ.prototype.setup_viewers = function() {
-	this.log("Hooking the Ember Viewers controller.");
-	var Viewers = utils.ember_resolve('controller:viewers');
-	if ( Viewers )
-		this._modify_viewers(Viewers);
-
-	/* Disable for now because Twitch reverted this change
-	this.log("Hooking the Ember Viewers view.");
-	var ViewerView = utils.ember_resolve('view:viewers');
-	if ( ViewerView )
-		this._modify_viewer_view(ViewerView);*/
+	this.update_views('component:chat/twitch-chat-viewers', this.modify_viewer_list);
 }
 
 
-/*FFZ.prototype._modify_viewer_view = function(view) {
-	view.reopen({
-		setListDimensions: function(e) {
-			// Don't set the stupid scroll thing. Don't use the stupid height thing.
-			this.$(".js-chatters-container").width(e.width).height(e.height);
-		}
-	});
-}*/
-
-
-FFZ.prototype._modify_viewers = function(controller) {
+FFZ.prototype.modify_viewer_list = function(component) {
 	var f = this;
 
-	controller.reopen({
+	utils.ember_reopen_view(component, {
 		lines: function() {
 			var viewers = this._super();
 			if ( ! f.settings.sort_viewers )
-				return viewers;
+				return this._super();
 
 			try {
-				var categories = [],
-					data = {},
-					last_category = null;
+				var viewers = [],
+					has_broadcaster = false,
+					raw_viewers = this.get('model.chatters') || {};
 
 				// Get the broadcaster name.
 				var Channel = utils.ember_lookup('controller:channel'),
-					room_id = this.get('parentController.model.id'),
+					room_id = this.get('model.id'),
 					broadcaster = Channel && Channel.get('model.id');
 
 				// We can get capitalization for the broadcaster from the channel.
@@ -75,57 +64,45 @@ FFZ.prototype._modify_viewers = function(controller) {
 				if ( room_id !== broadcaster )
 					broadcaster = null;
 
-				// Now, break the viewer array down into something we can use.
-				for(var i=0; i < viewers.length; i++) {
-					var entry = viewers[i];
-					if ( entry.category ) {
-						last_category = entry.category;
-						categories.push(last_category);
-						data[last_category] = [];
 
-					} else {
-						var viewer = entry.chatter.toLowerCase();
-						if ( ! viewer )
-							continue;
+				// Iterate over everything~!
+				for(var i=0; i < VIEWER_CATEGORIES.length; i++) {
+					var data = raw_viewers[VIEWER_CATEGORIES[i][0]],
+						label = VIEWER_CATEGORIES[i][1],
+						first_user = true;
 
-						// If the viewer is the broadcaster, give them their own
-						// group. Don't put them with normal mods!
-						if ( viewer == broadcaster ) {
-							categories.unshift("Broadcaster");
-							data["Broadcaster"] = [viewer];
-
-						} else if ( data.hasOwnProperty(last_category) )
-							data[last_category].push(viewer);
-					}
-				}
-
-				// Now, rebuild the viewer list. However, we're going to actually
-				// sort it this time.
-				viewers = [];
-				for(var i=0; i < categories.length; i++) {
-					var category = categories[i],
-						chatters = data[category];
-
-					if ( ! chatters || ! chatters.length )
+					if ( ! data || ! data.length )
 						continue;
 
-					viewers.push({category: category});
-					viewers.push({chatter: ""});
+					for(var x=0; x < data.length; x++) {
+						if ( data[x] === broadcaster ) {
+							has_broadcaster = true;
+							continue;
+						}
 
-					// Push the chatters, capitalizing them as we go.
-					chatters.sort();
-					while(chatters.length) {
-						var viewer = chatters.shift();
-						viewer = FFZ.get_capitalization(viewer);
-						viewers.push({chatter: viewer});
+						if ( first_user ) {
+							viewers.push({category: i18n(label)});
+							viewers.push({chatter: ""});
+							first_user = false;
+						}
+
+						viewers.push({chatter: FFZ.get_capitalization(data[x])});
 					}
 				}
+
+				if ( has_broadcaster )
+					viewers.splice(0, 0,
+						{category: i18n("Broadcaster")},
+						{chatter: ""},
+						{chatter: FFZ.get_capitalization(broadcaster)});
+
+				return viewers;
 
 			} catch(err) {
 				f.error("ViewersController lines: " + err);
+				return this._super();
 			}
 
-			return viewers;
-		}.property("content.chatters")
+		}.property("model.chatters")
 	});
 }

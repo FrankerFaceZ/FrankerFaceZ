@@ -27,8 +27,9 @@ FFZ.settings_info.fix_color = {
 		2: "HSL Adjustment (Depreciated)",
 		3: "HSV Adjustment (Depreciated)",
 		4: "RGB Adjustment (Depreciated)"
+		//5: "HSL (BTTV-Like)"
 	},
-	value: '1',
+	value: 1,
 
 	category: "Chat Appearance",
 	no_bttv: true,
@@ -39,16 +40,18 @@ FFZ.settings_info.fix_color = {
 	process_value: function(val) {
 		// Load legacy setting.
 		if ( val === false )
-			return '0';
+			return 0;
 		else if ( val === true )
-			return '1';
+			return 1;
+		else if ( typeof val === "string" )
+			return parseInt(val) || 1;
 		return val;
 	},
 
 	on_update: function(val) {
-		this.toggle_style('chat-colors-gray', !this.has_bttv && val === '-1');
+		this.toggle_style('chat-colors-gray', !this.has_bttv && val === -1);
 
-		if ( ! this.has_bttv && val !== '-1' )
+		if ( ! this.has_bttv && val !== -1 )
 			this._rebuild_colors();
 	}
 };
@@ -88,7 +91,7 @@ FFZ.settings_info.luv_contrast = {
 			this._rebuild_contrast();
 			this._rebuild_filter_styles();
 
-			if ( ! this.has_bttv && this.settings.fix_color == '1' )
+			if ( ! this.has_bttv && this.settings.fix_color === 1 )
 				this._rebuild_colors();
 		}
 	};
@@ -111,7 +114,7 @@ FFZ.settings_info.color_blind = {
 	help: "Adjust username colors in an attempt to make them more distinct for people with color blindness.",
 
 	on_update: function(val) {
-			if ( ! this.has_bttv && this.settings.fix_color !== '-1' )
+			if ( ! this.has_bttv && this.settings.fix_color !== -1 )
 			this._rebuild_colors();
 		}
 	};
@@ -122,7 +125,7 @@ FFZ.settings_info.color_blind = {
 // --------------------
 
 FFZ.prototype.setup_colors = function() {
-	this.toggle_style('chat-colors-gray', !this.has_bttv && this.settings.fix_color === '-1');
+	this.toggle_style('chat-colors-gray', !this.has_bttv && this.settings.fix_color === -1);
 
 	this._hex_colors = {};
 	this._rebuild_contrast();
@@ -723,7 +726,7 @@ FFZ.prototype._handle_color = function(color) {
 
 
 	// Color Processing - RGB
-	if ( this.settings.fix_color === '4' ) {
+	if ( this.settings.fix_color === 4 ) {
 		var lum = rgb.luminance();
 
 		if ( lum > 0.3 ) {
@@ -750,8 +753,17 @@ FFZ.prototype._handle_color = function(color) {
 	}
 
 
+	// Color Processing - HSL BTTV-Like
+	/*if ( this.settings.fix_color === 5 ) {
+		var hsl = rgb.toHSLA();
+
+		light_color = hsl._l(Math.min(Math.max(0, .9 * (1 - hsl.l)), 1)).toRGBA();
+		dark_color = hsl._l(Math.min(Math.max(0, 1 - .9 * (1 - hsl.l)), 1)).toRGBA();
+	}*/
+
+
 	// Color Processing - HSL
-	if ( this.settings.fix_color === '2' ) {
+	if ( this.settings.fix_color === 2 ) {
 		var hsl = rgb.toHSLA();
 
 		light_color = hsl._l(Math.min(Math.max(0, 0.7 * hsl.l), 1)).toRGBA();
@@ -760,7 +772,7 @@ FFZ.prototype._handle_color = function(color) {
 
 
 	// Color Processing - HSV
-	if ( this.settings.fix_color === '3' ) {
+	if ( this.settings.fix_color === 3 ) {
 		var hsv = rgb.toHSVA();
 
 		if ( hsv.s === 0 ) {
@@ -775,7 +787,7 @@ FFZ.prototype._handle_color = function(color) {
 	}
 
 	// Color Processing - LUV
-	if ( this.settings.fix_color === '1' ) {
+	if ( this.settings.fix_color === 1 ) {
 		var luv = rgb.toLUVA();
 
 		if ( luv.l > this._luv_required_dark )

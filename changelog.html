@@ -1,3 +1,93 @@
+<div class="list-header">3.5.266</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Option to automatically pause hosted channels as an alternative to disabling hosting entirely. This is enabled by default.</li>
+	<li>Fixed: The Bits UI would not properly hide when switching to a group chat.</li>
+	<li>Fixed: Chat Delay would appear as <code>NaN</code> for group chats.</li>
+</ul>
+
+<div class="list-header">3.5.265</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Implement support for Twitch's new room-specific chat delay property.</li>
+</ul>
+
+<div class="list-header">3.5.264</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Check for a bootleg version of the BTTV4FFZ extension and warn users.</li>
+	<li>Changed: Expand the 24-hour Timestamps option to allow for zero-padding. It has been renamed to Timestamp Format.</li>
+	<li>Changed: Update the link matching regex to match the one used by Twitch. (Now it matches parenthesis.)</li>
+</ul>
+
+<div class="list-header">3.5.263</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Someone was cheeky enough to make an emote called <code>hasOwnProperty</code>, which is a JavaScript function named and it broke things slightly.</li>
+	<li>Fixed: The Viewer List component has long been renamed, so the code to put Broadcaster off by itself wasn't working. Refactored to be faster too.</li>
+</ul>
+
+<div class="list-header">3.5.262</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Potential issue that would cause the Ember application to stop responding when browsing the Following directory.</li>
+</ul>
+
+<div class="list-header">3.5.261</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Friends list not being properly hidden when sidebar collapsed with that option enabled.</li>
+	<li>Fixed: Try fixing the bug causing chat rooms to spontaneously unload for some users. (Still not guaranteed fixed)</li>
+</ul>
+
+<div class="list-header">3.5.260</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Tooltips bugging out for navigation.</li>
+	<li>Fixed: Sorting order for additional follow buttons beneath a stream.</li>
+	<li>Fixed: Channel Feed rendering with emoji in messages.</li>
+</ul>
+
+<div class="list-header">3.5.259</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Display Dropped Frames on the Stream Latency tooltip.</li>
+	<li>Fixed: Use <code>current_bitrate</code> if the more accurate player stat is not available.</li>
+	<li>Fixed: Unable to open Following link in sidebar in new tab due to click event handler.</li>
+	<li>Removed: We no longer need the override <code>getVideoInfo</code> function as the new HTML5 player now exposes playback statistics.</li>
+</ul>
+
+<div class="list-header">3.5.258</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Totally forgot to make the chat in Portrait Mode a bit taller when using the new Minimal Channel Title option.</li>
+</ul>
+
+<div class="list-header">3.5.257</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Option to hide Promoted Games in the sidebar.</li>
+	<li>Added: Option to minimize the channel information at the top of a channel page.</li>
+	<li>Added: Option to go directly to the Live Channels tab of the Following directory.</li>
+	<li>Changed: Use the player's own channel name and status display in theater mode on hover.</li>
+	<li>Fixed: Height of player controls with Whispers Position on Top disabled and Hide Whispers in Theater Mode enabled, when in theater mode.</li>
+	<li>Fixed: Chat would cover player in theater mode with Swap Sidebars enabled and a custom sidebar width set.</li>
+</ul>
+
+<div class="list-header">3.5.256</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Further Twitch changes (reversion?) caused FFZ loading to break.</li>
+	<li>Fixed: Missing styles on relevant Follow buttons under streams.</li>
+	<li>Fixed: Clicking the popup arrow next to a relevant Follow button would not close that button's popup if it was already open.</li>
+</ul>
+
+<div class="list-header">3.5.255</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Style tweaks to the new Chat Rules UI to make it dark and not under chat.</li>
+</ul>
+
+<div class="list-header">3.5.254</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Twitch changes caused chat rendering to break. Fixed.</li>
+</ul>
+
+<div class="list-header">3.5.253</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: On the Following tooltip, display the number of channels hidden by blocked games.</li>
+	<li>Fixed: Enhanced Following Control works again.</li>
+	<li>Fixed: Race condition causing Hosted Channels to not update on the directory.</li>
+</ul>
+
 <div class="list-header">3.5.252</div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Changed: Parse emoji out of text that is pasted into the chat box.</li>

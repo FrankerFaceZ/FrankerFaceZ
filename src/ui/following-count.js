@@ -3,20 +3,9 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 
 	FOLLOWING_CONTAINERS = [
-		['#small_nav ul.game_filters li[data-name="following"] a', true],
-		['nav a.warp__tipsy[data-href="following"]', true],
-		['#large_nav #nav_personal li[data-name="following"] a', false],
-		['#header_actions #header_following', false]
+		'.warp__item a[data-href="following"]',
+		'#header_actions #header_following'
 	],
-
-	FOLLOW_GRAVITY = function(f, el) {
-		return (f.settings.following_count && (
-					el.getAttribute('data-href') === 'following' ||
-					el.parentElement.getAttribute('data-name') === 'following'
-				) ? 'n' : '') +
-
-				(f.settings.swap_sidebars ? 'e' : 'w');
-	},
 
 	WIDE_TIP = function(f, el) {
 		return (f.settings.following_count && (
@@ -158,13 +147,14 @@ FFZ.prototype._update_following_count = function() {
 	var Stream = utils.ember_resolve('model:deprecated-stream'),
 		Live = Stream && Stream.find("live"),
 
-		Host = utils.ember_resolve('model:host'),
-		HostLive = Host && Host.find("following"),
+		/*Host = utils.ember_resolve('model:host'),
+		HostLive = Host && Host.find("following"),*/
 
+		current_path = document.body.getAttribute('data-current-path') || '',
 		f = this;
 
-	if ( ! this.is_dashboard && HostLive && document.body.getAttribute('data-current-path').indexOf('directory.following') !== -1 )
-		HostLive.load();
+	/*if ( ! this.is_dashboard && HostLive && current_path.indexOf('directory.following') !== -1 )
+		HostLive.load();*/
 
 	if ( ! this.is_dashboard && Live )
 		Live.load();
@@ -200,17 +190,24 @@ FFZ.prototype._build_following_tooltip = function(el) {
 
 		streams = this._tooltip_streams,
 		total = this._tooltip_total || (streams && streams.length) || 0,
-		c = 0;
+		c = 0,
+		filtered = 0;
 
 	if ( streams && streams.length ) {
 		for(var i=0, l = streams.length; i < l; i++) {
 			var stream = streams[i];
-			if ( ! stream || ! stream.channel || (stream.game && this.settings.banned_games.indexOf(stream.game.toLowerCase()) !== -1) )
+			if ( ! stream || ! stream.channel )
 				continue;
+
+			if ( stream.game && this.settings.banned_games.indexOf(stream.game.toLowerCase()) !== -1 ) {
+				filtered++;
+				continue;
+			}
 
 			c += 1;
 			if ( c > max_lines ) {
-				tooltip += '<hr><span>And ' + utils.number_commas(total - max_lines) + ' more...</span>';
+				tooltip += '<hr><span>And ' + utils.number_commas(total - max_lines) + ' more' + (filtered ? ' (' + filtered + ' hidden)' : '') + '...</span>';
+				filtered = 0;
 				break;
 			}
 
@@ -225,6 +222,10 @@ FFZ.prototype._build_following_tooltip = function(el) {
 				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
 				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';
 		}
+
+		if ( filtered )
+			tooltip += '<hr><span>(' + filtered + ' hidden)';
+
 	} else {
 		c++; // is a terrible programming language
 		tooltip += "<hr>No one you're following is online.";
@@ -284,23 +285,21 @@ FFZ.prototype._build_following_tooltip = function(el) {
 
 FFZ.prototype._install_following_tooltips = function() {
 	var f = this,
-		gravity = function() { return FOLLOW_GRAVITY(f, this) },
 		data = {
 			html: true,
 			className: function() { return WIDE_TIP(f, this); },
-			title: function() { return f._build_following_tooltip(this); }
+			title: function() { return f._build_following_tooltip(this); },
+			gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE * 2, 'w')
 		};
 
 	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
-		var following = jQuery(FOLLOWING_CONTAINERS[i][0]);
+		var following = jQuery(FOLLOWING_CONTAINERS[i]);
 		if ( following && following.length ) {
 			var td = following.data('tipsy');
 			if ( td && td.options ) {
 				td.options = _.extend(td.options, data);
-				if ( FOLLOWING_CONTAINERS[i][1] )
-					td.options.gravity = gravity;
 			} else
-				following.tipsy(FOLLOWING_CONTAINERS[i][1] ? _.extend({gravity: gravity}, data) : data);
+				following.tipsy(data);
 		}
 	}
 }
@@ -315,7 +314,7 @@ FFZ.prototype._draw_following_channels = function(streams, total) {
 FFZ.prototype._draw_following_count = function(count) {
 	count = count ? utils.format_unread(count) : '';
 	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
-		var container = document.querySelector(FOLLOWING_CONTAINERS[i][0]),
+		var container = document.querySelector(FOLLOWING_CONTAINERS[i]),
 			badge = container && container.querySelector('.ffz-follow-count');
 		if ( ! container )
 			continue;

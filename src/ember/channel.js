@@ -108,7 +108,7 @@ FFZ.prototype.setup_channel = function() {
 
 			if ( f._cindex )
 				f._cindex.ffzFixTitle();
-		}.observes("content.status", "content.id", "hostModeTarget.status", "hostModeTarget.id"),
+		}.observes("content.status", "content.game", "content.id", "hostModeTarget.status", "hostModeTarget.id", "hostModeTarget.game"),
 
 		ffzHostTarget: function() {
 			var target = this.get('content.hostModeTarget'),
@@ -528,14 +528,20 @@ FFZ.prototype.modify_channel_index = function(view) {
 						je = jQuery(stat_el);
 
 					var delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
+						dropped = utils.number_commas(stats.dropped_frames || 0),
+						bitrate;
+
+					if ( stats.playback_bytes_per_second )
 						bitrate = Math.round(stats.playback_bytes_per_second * 8 / 10.24) / 100;
+					else
+						bitrate = Math.round(stats.current_bitrate * 100) / 100;
 
 					if ( delay > 180 ) {
 						delay = Math.floor(delay);
-						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps')
+						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps<br>Dropped Frames: ' + dropped);
 						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
 					} else {
-						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps');
+						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps<br>Dropped Frames: ' + dropped);
 						delay = delay.toString();
 						var ind = delay.indexOf('.');
 						if ( ind === -1 )
@@ -597,14 +603,20 @@ FFZ.prototype.modify_channel_index = function(view) {
 						je = jQuery(stat_el);
 
 					var delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
+						dropped = utils.number_commas(stats.dropped_frames || 0),
+						bitrate;
+
+					if ( stats.playback_bytes_per_second )
 						bitrate = Math.round(stats.playback_bytes_per_second * 8 / 10.24) / 100;
+					else
+						bitrate = Math.round(stats.current_bitrate * 100) / 100;
 
 					if ( delay > 180 ) {
 						delay = Math.floor(delay);
-						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps')
+						stat_el.setAttribute('original-title', 'Video Information<br>Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps<br>Dropped Frames: ' + dropped);
 						el.textContent = utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old';
 					} else {
-						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps');
+						stat_el.setAttribute('original-title', 'Stream Latency<br>Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p @ ' + stats.current_fps + '<br>Playback Rate: ' + bitrate + ' Kbps<br>Dropped Frames: ' + dropped);
 						delay = delay.toString();
 						var ind = delay.indexOf('.');
 						if ( ind === -1 )

@@ -1,6 +1,3 @@
-// Modify Array and others.
-// require('./shims');
-
 // ----------------
 // The Constructor
 // ----------------
@@ -37,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 252,
+	major: 3, minor: 5, revision: 266,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -308,6 +305,8 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.setup_css();
 	this.setup_popups();
 
+	this.setup_following_link();
+
 	if ( ! no_socket ) {
 		this.setup_time();
 		this.ws_create();
@@ -354,6 +353,8 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_dark();
 	this.setup_css();
 	this.setup_popups();
+
+	this.setup_following_link();
 
 	this.setup_time();
 	this.ws_create();
@@ -459,6 +460,8 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_message_event();
 	this.find_bttv(10);
 	this.find_emote_menu(10);
+
+	setTimeout(this.check_badware.bind(this), 10000);
 
 	//this.check_news();
 	this.check_ff();

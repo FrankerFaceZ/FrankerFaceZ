@@ -210,7 +210,9 @@ FFZ.ws_commands.load_set = function(set_id) {
 // ---------------------
 
 FFZ.prototype.load_emoji_data = function(callback, tries) {
-	var f = this;
+	var f = this,
+		puny = window.punycode && punycode.ucs2;
+
 	jQuery.getJSON(constants.SERVER + "emoji/emoji-data.json")
 		.done(function(data) {
 			var new_data = {},
@@ -236,6 +238,8 @@ FFZ.prototype.load_emoji_data = function(callback, tries) {
 				emoji.token = {
 					type: "emoticon",
 					imgSrc: true,
+
+					length: puny ? puny.decode(emoji.raw).length : emoji.raw.length,
 
 					tw_src: emoji.tw_src,
 					noto_src: emoji.noto_src,
