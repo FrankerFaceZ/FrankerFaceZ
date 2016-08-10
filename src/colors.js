@@ -26,8 +26,9 @@ FFZ.settings_info.fix_color = {
 		1: "Luv Adjustment",
 		2: "HSL Adjustment (Depreciated)",
 		3: "HSV Adjustment (Depreciated)",
-		4: "RGB Adjustment (Depreciated)"
-		//5: "HSL (BTTV-Like)"
+		4: "RGB Adjustment (Depreciated)",
+		//5: "HSL (BTTV-Like)",
+		6: "HSL Luma Adjustment",
 	},
 	value: 1,
 
@@ -460,6 +461,23 @@ HSLAColor.fromRGBA = function(r, g, b, a) {
 	return new HSLAColor(h, s, l, a === undefined ? 1 : a);
 }
 
+HSLAColor.prototype.targetLuminance = function (target) {
+	var s = this.s;
+	s *= Math.pow(this.l > 0.5 ? -this.l : this.l - 1, 7) + 1;
+	
+	var min = 0, max = 1, d = (max - min) / 2, mid = min + d;
+	for (; d > 1/65536; d /= 2, mid = min + d) {
+		var luminance = RGBAColor.fromHSLA(this.h, s, mid, 1).luminance()
+		if (luminance > target) {
+			max = mid;
+		} else {
+			min = mid;
+		}
+	}
+	
+	return new HSLAColor(this.h, s, mid, this.a);
+}
+
 HSLAColor.prototype.toRGBA = function() { return RGBAColor.fromHSLA(this.h, this.s, this.l, this.a); }
 HSLAColor.prototype.toCSS = function() { return "hsl" + (this.a !== 1 ? "a" : "") + "(" + Math.round(this.h*360) + "," + Math.round(this.s*100) + "%," + Math.round(this.l*100) + "%" + (this.a !== 1 ? "," + this.a : "") + ")"; }
 HSLAColor.prototype.toHSVA = function() { return this.toRGBA().toHSVA(); }
@@ -643,6 +661,9 @@ FFZ.prototype._rebuild_contrast = function() {
 
 	this._luv_background_bright = new XYZAColor(0, (this.settings.luv_contrast * (RGBAColor.fromCSS("#3c3a41").toXYZA().y + 0.05) - 0.05), 0, 1).toLUVA().l;
 	this._luv_background_dark = new XYZAColor(0, ((RGBAColor.fromCSS("#acacbf").toXYZA().y + 0.05) / this.settings.luv_contrast - 0.05), 0, 1).toLUVA().l;
+	
+	this._hslluma_required_bright = this.settings.luv_contrast * (RGBAColor.fromCSS("#17141f").luminance() + 0.05) - 0.05;
+	this._hslluma_required_dark = (RGBAColor.fromCSS("#efeef1").luminance() + 0.05) / this.settings.luv_contrast - 0.05;
 }
 
 FFZ.prototype._rebuild_colors = function() {
@@ -795,6 +816,17 @@ FFZ.prototype._handle_color = function(color) {
 
 		if ( luv.l < this._luv_required_bright )
 			dark_color = luv._l(this._luv_required_bright).toRGBA();
+	}
+	
+	// Color Processing - HSL Luma
+	if ( this.settings.fix_color === 6 ) {
+		var lum = rgb.luminance();
+		
+		if ( lum > this._hslluma_required_dark )
+			light_color = rgb.toHSLA().targetLuminance(this._hslluma_required_dark).toRGBA();
+		
+		if ( lum < this._hslluma_required_bright )
+			dark_color = rgb.toHSLA().targetLuminance(this._hslluma_required_bright).toRGBA();
 	}
 
 	var out = this._hex_colors[color] = [light_color.toHex(), dark_color.toHex()];
