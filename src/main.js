@@ -34,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 268,
+	major: 3, minor: 5, revision: 270,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -125,24 +125,35 @@ FFZ.prototype.get_user = function(force_reload) {
 	return user;
 }
 
+FFZ.prototype._editor_of = null;
 
 FFZ.prototype.get_user_editor_of = function() {
 	var f = this;
 	return new Promise(function(succeed,fail) {
 		var user = f.get_user();
 		if ( ! user || ! user.login )
-			return fail('not logged in');
+			return fail();
 
 		jQuery.get("/" + user.login + "/dashboard/permissions").done(function(data) {
-			var el = document.createElement('div');
-			el.innerHTML = data;
+			try {
+				var dom = new DOMParser().parseFromString(data, 'text/html'),
+					links = dom.querySelectorAll('#editable .label');
 
-			var links = _.pluck(el.querySelectorAll('#editable .label'), 'href');
-			succeed(_.map(links, function(e) { return e.substr(e.lastIndexOf('/') + 1) }));
+				f._editor_of = _.map(links, function(e) {
+					var href = e.getAttribute('href');
+					return href && href.substr(href.lastIndexOf('/') + 1);
+				});
+
+				succeed(f._editor_of);
+
+			} catch(err) {
+				f.error("Failed to parse User Editor State", err);
+				fail();
+			}
 
 		}).fail(function(e) {
 			f.error("Failed to load User Editor State", e);
-			fail('failed to load dashboard');
+			fail();
 		});
 	});
 }

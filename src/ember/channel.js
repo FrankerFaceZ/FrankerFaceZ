@@ -45,6 +45,32 @@ FFZ.prototype.setup_channel = function() {
 		return;
 
 	Channel.reopen({
+		/*isEditable: function() {
+			var channel_id = this.get('content.id'),
+				user = this.get('login.userData');
+
+			if ( ! user || ! user.login )
+				return false;
+
+			else if ( user.login === channel_id || user.is_admin || user.is_staff)
+				return true;
+
+			// Okay, have we loaded this user's editor status? Try that.
+			if ( f._editor_of )
+				return f._editor_of.indexOf(channel_id) !== -1;
+
+			var t = this;
+			f.get_user_editor_of().then(function(result) {
+				// Once editor status is loaded, if the user does have editor
+				// status for this channel, update this property.
+				if ( result.indexOf(channel_id) !== -1 )
+					Ember.propertyDidChange(t, 'isEditable');
+			});
+
+			return false;
+
+		}.property('content.id', 'login.userData', 'login.userData.login'),*/
+
 		ffzUpdateUptime: function() {
 			if ( f._cindex )
 				f._cindex.ffzUpdateUptime();
@@ -142,6 +168,7 @@ FFZ.prototype.setup_channel = function() {
 		}.observes("content.hostModeTarget")
 	});
 
+	Ember.propertyDidChange(Channel, 'isEditable');
 	Channel.ffzUpdateInfo();
 }
 

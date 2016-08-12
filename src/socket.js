@@ -298,12 +298,12 @@ FFZ.prototype.ws_create = function() {
 			else
 				f.log("Invalid command: " + cmd, data, false, true);
 
-		} else if ( cmd === "error" ) {
+		} /*else if ( cmd === "error" ) {
 			f.log("Socket server reported error: " + data);
 			if (f._ws_callbacks[request] )
 				delete f._ws_callbacks[request];
 
-		} else {
+		}*/ else {
 			var success = cmd === 'ok',
 				has_callback = typeof f._ws_callbacks[request] === "function";
 

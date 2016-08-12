@@ -155,7 +155,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.
-			return '<div class="chat-line'+(opts.highlight?' highlight':'')+(opts.action?' action':'')+(opts.server?' admin':'')+'" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
+			return '<div class="chat-line'+(opts.highlight?' highlight':'')+(opts.action?' action':'')+(opts.server?' admin':'')+(opts.notice?' notice':'')+'" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
 				BC.templates.timestamp(data.time)+' '+
 				(opts.isMod ? BC.templates.modicons():'')+' '+
 				BC.templates.badges(data.badges)+
@@ -201,9 +201,11 @@ FFZ.prototype.setup_bttv = function(delay) {
 		received_sender;
 	BC.templates.message = function(sender, message, data) {
 		try {
+			data = data || {};
 			var colored = data.colored || false,
 				force = data.force || false,
 				emotes = data.emotes,
+				bits = data.bits,
 				rawMessage = encodeURIComponent(message);
 
 			if(sender !== 'jtv') {
@@ -214,7 +216,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 				for(var i=0; i<tokenizedMessage.length; i++) {
 					if(typeof tokenizedMessage[i] === 'string') {
-						tokenizedMessage[i] = BC.templates.bttvMessageTokenize(sender, tokenizedMessage[i], data.bits);
+						tokenizedMessage[i] = BC.templates.bttvMessageTokenize(sender, tokenizedMessage[i], bits);
 					} else {
 						tokenizedMessage[i] = tokenizedMessage[i][0];
 					}
@@ -229,7 +231,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 				spam = true;
 			}
 
-			return '<span class="message ' + (spam ? 'spam' : '') + '" ' + (colored ? 'style="color: ' + colored + '" ' : '') + 'data-raw="' + rawMessage + '" data-emotes="' + (emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false') + '">' + message + '</span>';
+			return '<span class="message ' + (spam ? 'spam' : '') + '" ' + (colored ? 'style="color: ' + colored + '" ' : '') + 'data-raw="' + rawMessage + '" data-bits="' + (bits ? encodeURIComponent(JSON.stringify(bits)) : 'false') + '" data-emotes="' + (emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false') + '">' + message + '</span>';
 
 		} catch(err) {
 			f.log("Error: ", err);

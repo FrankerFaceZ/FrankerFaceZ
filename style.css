@@ -130,7 +130,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	50% { opacity: 0.75; }
 }
 
-.drawer__item--brick .warp__logo:hover {
+.warp__logo:hover {
 	animation: ffzflipwobble 4s infinite;
 }
 

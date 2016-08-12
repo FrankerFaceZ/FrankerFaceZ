@@ -41,7 +41,9 @@ FFZ.settings_info.follow_buttons = {
 FFZ.ffz_commands.following = function(room, args) {
 	args = args.join(" ").trim().toLowerCase().split(/[ ,]+/);
 
-	var out = [];
+	var f = this,
+		out = [];
+
 	for(var i=0,l=args.length; i<l; i++) {
 		var arg = args[i],
 			match = arg.match(TWITCH_URL);
@@ -52,13 +54,10 @@ FFZ.ffz_commands.following = function(room, args) {
 			out.push(arg);
 	}
 
-	var user = this.get_user(), f = this;
-	if ( ! user || (user.login !== room.id && user.login !== "sirstendec" && user.login !== "dansalvato")  )
-		return "You must be logged in as the broadcaster to use this command.";
-
 	if ( ! this.ws_send("update_follow_buttons", [room.id, out], function(success, data) {
 		if ( ! success ) {
-			f.room_message(room, "There was an error updating the following buttons.");
+			f.log("Not a Success: " + JSON.stringify(data));
+			f.room_message(room, data);
 			return;
 		}
 
