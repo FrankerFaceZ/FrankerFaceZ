@@ -34,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 270,
+	major: 3, minor: 5, revision: 283,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -241,22 +241,20 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return this.log("Found banned sub-domain. Not initializing.");
 
 	// Check for the player
-	if ( location.hostname === 'player.twitch.tv' ) {
-		this.init_player(delay);
-		return;
-	}
+	if ( location.hostname === 'player.twitch.tv' )
+		return this.init_player(delay);
+
+	// Clips~
+	if ( location.hostname === 'clips.twitch.tv' )
+		return this.init_clips(delay);
 
 	// Check for special non-ember pages.
-	if ( /^\/(?:$|search$|team\/|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) ) {
-		this.init_normal(delay);
-		return;
-	}
+	if ( /^\/(?:$|search$|team\/|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) )
+		return this.init_normal(delay);
 
 	// Check for the dashboard.
-	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) ) {
-		this.init_dashboard(delay);
-		return;
-	}
+	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) )
+		return this.init_dashboard(delay);
 
 	var loaded = FFZ.utils.ember_resolve('model:room');
 	if ( !loaded ) {
@@ -270,6 +268,32 @@ FFZ.prototype.initialize = function(increment, delay) {
 	}
 
 	this.init_ember(delay);
+}
+
+
+FFZ.prototype.init_clips = function(delay) {
+	var start = (window.performance && performance.now) ? performance.now() : Date.now();
+	this.log("Found Twitch Clips after " + (delay||0) + " ms at: " + location);
+	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
+
+	this.users = {};
+	this.is_dashboard = false;
+	this.embed_in_dash = false;
+	this.is_clips = true;
+	try {
+		this.embed_in_clips = window.top !== window && window.top.location.hostname === 'clips.twitch.tv';
+	} catch(err) { this.embed_in_clips = false; }
+
+	this.load_settings();
+	this.setup_dark();
+	this.setup_css();
+
+	this.add_clips_darken_button();
+
+ 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
+		duration = end - start;
+
+	this.log("Initialization complete in " + duration + "ms");
 }
 
 
@@ -415,8 +439,24 @@ FFZ.prototype.init_ember = function(delay) {
 		Settings.reopen({settings: Ember.computed.alias('model')});
 
 
-	// Initialize all the modules.
+	// Settings are important.
 	this.load_settings();
+
+	// Is debug mode enabled? Scratch that, everyone gets error handlers!
+	if ( true ) { //this.settings.developer_mode ) {
+		// Set up an error listener for RSVP.
+		var f = this;
+		if ( Ember.RSVP && Ember.RSVP.on )
+			Ember.RSVP.on('error', function(error) {
+				f.error("There was an error within an Ember RSVP.", error);
+			});
+
+		Ember.onerror = function(error) {
+			f.error("There was an unknown error within Ember.", error);
+		}
+	}
+
+	// Set up all the everything.
 	this.setup_ember_wrapper();
 
 	// Start this early, for quick loading.

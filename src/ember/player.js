@@ -165,6 +165,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			this.$('#video-1').html('');
 			Mousetrap.unbind(['alt+x', 'alt+t', 'esc']);
 			this.set('player', null);
+			this.set('ffz_post_player', false);
 
 			// Now, let Twitch create a new player as usual.
 			Ember.run.next(this.insertPlayer.bind(this, true));

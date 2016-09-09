@@ -661,13 +661,6 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			info.innerHTML = out;
 		}.observes("cardInfo.user.views"),
 
-		userName: Ember.computed("cardInfo.user.id", "cardInfo.user.display_name", function() {
-			var user_id = this.get("cardInfo.user.id"),
-				alias = f.aliases[user_id];
-
-			return alias || this.get("cardInfo.user.display_name") || user_id.capitalize();
-		}),
-
 		ffz_destroy: function() {
 			if ( f._mod_card === this )
 				f._mod_card = undefined;
@@ -724,15 +717,15 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 			// Alias Display
 			if ( alias ) {
-				var name = el.querySelector('h3.name'),
-					link = name && name.querySelector('a');
-
-				if ( link )
-					name = link;
+				var name = el.querySelector('h4.name a');
 				if ( name ) {
 					name.classList.add('ffz-alias');
-					name.title = utils.sanitize(controller.get('cardInfo.user.display_name') || user_id.capitalize());
-					jQuery(name).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+					var results = f.format_display_name(controller.get('cardInfo.user.display_name'), user_id);
+
+					name.innerHTML = results[0];
+					name.title = results[1] || '';
+					if ( results[1] )
+						jQuery(name).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 				}
 			}
 
@@ -742,7 +735,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			// Info-tize it!
 			if ( f.settings.mod_card_info ) {
 				var info = utils.createElement('div', 'info channel-stats'),
-					after = el.querySelector('h3.name');
+					after = el.querySelector('h4.name');
 				if ( after ) {
 					el.classList.add('ffz-has-info');
 					after.parentElement.insertBefore(info, after.nextSibling);
@@ -995,10 +988,11 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 			alias_btn.addEventListener('click', function() {
 				var user = controller.get('cardInfo.user.id'),
-					alias = f.aliases[user];
+					alias = f.aliases[user],
+					results = f.format_display_name(controller.get('cardInfo.user.display_name'), user, true);
 
 				utils.prompt(
-					"Alias for <b>" + utils.sanitize(controller.get('cardInfo.user.display_name') || user) + "</b>",
+					"Alias for <b" + (results[1] ? ' class="html-tooltip" title="' + utils.quote_attr(results[1]) + '">' : '>') + results[0] + "</b>",
 					"Please enter an alias for the user. Leave it blank to remove the alias.",
 					alias,
 					function(new_val) {
@@ -1015,10 +1009,16 @@ FFZ.prototype.modify_moderation_card = function(component) {
 						// Update UI
 						f._update_alias(user);
 
-						Ember.propertyDidChange(controller, 'cardInfo.user.display_name');
-						var name = el.querySelector('h3.name');
-						if ( name )
+						var name = el.querySelector('h4.name');
+						if ( name ) {
 							name.classList.toggle('ffz-alias', new_val);
+							var results = f.format_display_name(controller.get('cardInfo.user.display_name'), user_id);
+
+							name.innerHTML = results[0];
+							name.title = results[1] || '';
+							if ( results[1] )
+								jQuery(name).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+						}
 					});
 			});
 
@@ -1256,11 +1256,10 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 	if ( helpers && helpers.getTime )
 		out.push('<span class="timestamp">' + helpers.getTime(msg.date) + '</span>');
 
-
-	var alias = this.aliases[msg.from],
-		name = (msg.tags && msg.tags['display-name']) || (msg.from && msg.from.capitalize()) || "unknown user";
-
 	if ( show_from ) {
+		var alias = this.aliases[msg.from],
+			results = this.format_display_name(msg.tags && msg.tags['display-name'], msg.from);
+
 		// Badges
 		out.push('<span class="badges">');
 		out.push(this.render_badges(this.get_line_badges(msg, false)));
@@ -1277,15 +1276,18 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 			is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
 
 
-		// Aliases and Styling
+		// Styling
 		var style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
 			colored = style ? ' has-color' : '';
 
-
-		if ( alias )
-			out.push('<span class="from ffz-alias html-tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias) + '</span>');
-		else
-			out.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
+		out.push('<span class="from' +
+				(alias ? ' ffz-alias' : '') +
+				(results[1] ? ' html-tooltip' : '') +
+				(style ? ' has-color' : '') +
+			'" style="' + style + '"' +
+			(colors ? ' data-color="' + raw_color + '"' : '') +
+			(results[1] ? ' title="' + utils.quote_attr(results[1]) + '"' : '') + '>'
+			+ results[0] + '</span>');
 
 		out.push('<span class="colon">:</span> ');
 	}
@@ -1367,8 +1369,8 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 
 FFZ.prototype._update_alias = function(user) {
 	var alias = this.aliases && this.aliases[user],
-		cap_name = FFZ.get_capitalization(user),
-		display_name = alias || cap_name,
+		results = this.format_display_name(FFZ.get_capitalization(user), user),
+
 		el = this._roomv && this._roomv.get('element'),
 		lines = el && el.querySelectorAll('.chat-line[data-sender="' + user + '"]');
 
@@ -1383,8 +1385,9 @@ FFZ.prototype._update_alias = function(user) {
 			continue;
 
 		el_from.classList.toggle('ffz-alias', alias);
-		el_from.textContent = display_name;
-		el_from.title = alias ? cap_name : '';
+		el_from.classList.toggle('html-tooltip', results[1] || false);
+		el_from.innerHTML = results[0];
+		el_from.title = results[1] || '';
 	}
 
 
@@ -1402,16 +1405,12 @@ FFZ.prototype._update_alias = function(user) {
 
 FFZ.chat_commands.purge = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Purge Usage: /p username [more usernames separated by spaces]";
+		return "Purge Usage: /p username [ban reason]";
 
-	if ( args.length > 10 )
-		return "Please only purge up to 10 users at once.";
+	var name = args.shift(),
+		reason = args.length ? args.join(" ") : "";
 
-	for(var i=0; i < args.length; i++) {
-		var name = args[i];
-		if ( name )
-			room.room.send("/timeout " + name + " 1", true);
-	}
+	room.room.send("/timeout " + name + " 1 " + reason, true);
 }
 
 FFZ.chat_commands.p = function(room, args) {
@@ -1423,7 +1422,7 @@ FFZ.chat_commands.p.enabled = function() { return this.settings.short_commands; 
 
 FFZ.chat_commands.t = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Timeout Usage: /t username [duration]";
+		return "Timeout Usage: /t username [duration] [ban reason]";
 	room.room.send("/timeout " + args.join(" "), true);
 }
 
@@ -1432,16 +1431,12 @@ FFZ.chat_commands.t.enabled = function() { return this.settings.short_commands; 
 
 FFZ.chat_commands.b = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Ban Usage: /b username [more usernames separated by spaces]";
+		return "Ban Usage: /b username [ban reason]";
 
-	if ( args.length > 10 )
-		return "Please only ban up to 10 users at once.";
+	var name = args.shift(),
+		reason = args.length ? args.join(" ") : "";
 
-	for(var i=0; i < args.length; i++) {
-		var name = args[i];
-		if ( name )
-			room.room.send("/ban " + name, true);
-	}
+	room.room.send("/ban " + name + " " + reason, true);
 }
 
 FFZ.chat_commands.b.enabled = function() { return this.settings.short_commands; }

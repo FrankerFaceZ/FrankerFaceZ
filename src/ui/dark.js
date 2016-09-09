@@ -135,7 +135,7 @@ FFZ.settings_info.dark_twitch = {
 			if ( this.has_bttv )
 				return;
 
-			document.body.classList.toggle("ffz-dark", val);
+			(this.is_clips ? document.querySelector('html') : document.body).classList.toggle("ffz-dark", val);
 
 			var Settings = utils.ember_lookup('controller:settings'),
 				settings = Settings && Settings.get('settings');
@@ -148,7 +148,7 @@ FFZ.settings_info.dark_twitch = {
 				settings && settings.set('darkMode', this.settings.twitch_chat_dark);
 
 			// Try coloring chat replay
-			jQuery('.chatReplay').toggleClass('dark', val || false);
+			window.jQuery && jQuery('.chatReplay').toggleClass('dark', val || false);
 			//jQuery('.rechat-chat-line').parents('.chat-container').toggleClass('dark', val || this.settings.twitch_chat_dark);
 		}
 	};
@@ -198,7 +198,8 @@ FFZ.prototype.setup_dark = function() {
 	if ( this.has_bttv )
 		return;
 
-	document.body.classList.toggle("ffz-dark", this.settings.dark_twitch);
+	(this.is_clips ? document.querySelector('html') : document.body).classList.toggle('ffz-dark', this.settings.dark_twitch);
+
 	if ( ! this.settings.dark_twitch )
 		return;
 
@@ -226,6 +227,24 @@ FFZ.prototype._load_dark_css = function() {
 
 	s.id = "ffz-dark-css";
 	s.setAttribute('rel', 'stylesheet');
-	s.setAttribute('href', constants.SERVER + "script/dark" + (constants.DEBUG ? "" : ".min") + ".css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
+	s.setAttribute('href', constants.SERVER + "script/dark" + (this.is_clips ? '-clips' : '') + (constants.DEBUG ? "" : ".min") + ".css?_=" + (constants.DEBUG ? Date.now() : FFZ.version_info));
 	document.head.appendChild(s);
+}
+
+
+FFZ.prototype.add_clips_darken_button = function() {
+	if ( this.embed_in_clips )
+		return;
+
+	this.log("Adding Clips Darken button.");
+
+	var f = this,
+		btn = utils.createElement('a', 'button button--hollow ffz-darken-clips', f.settings.dark_twitch ? 'Light' : 'Dark');
+
+	btn.addEventListener('click', function() {
+		f.settings.set('dark_twitch', ! f.settings.dark_twitch);
+		btn.textContent = f.settings.dark_twitch ? 'Light' : 'Dark';
+	});
+
+	document.body.appendChild(btn);
 }

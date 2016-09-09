@@ -340,15 +340,25 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 
 
 FFZ.prototype.get_line_badges = function(msg) {
+	var room = msg.get && msg.get('room') || msg.room,
+		from = msg.get && msg.get('from') || msg.from,
+		tags = msg.get && msg.get('tags') || msg.tags || {},
+		badge_tag = tags.badges || {};
+
+	// Twitch Badges
+	var badges = this.get_twitch_badges(badge_tag);
+
+	// FFZ Badges
+	return this.get_badges(from, room, badges, msg);
+}
+
+
+FFZ.prototype.get_twitch_badges = function(badge_tag) {
 	var badges = {},
 		hidden_badges = this.settings.hidden_badges,
 
 		last_id = -1,
 		had_last = false,
-		room = msg.get && msg.get('room') || msg.room,
-		from = msg.get && msg.get('from') || msg.from,
-		tags = msg.get && msg.get('tags') || msg.tags || {},
-		badge_tag = tags.badges || {},
 
 		service = utils.ember_lookup('service:badges'),
 		badgeCollection = service && service.badgeCollection,
@@ -410,12 +420,11 @@ FFZ.prototype.get_line_badges = function(msg) {
 		}
 	}
 
-	// FFZ Badges
-	return this.get_badges(from, room, badges, msg);
+	return badges;
 }
 
 
-FFZ.prototype.get_other_badges = function(user_id, room_id, user_type, has_sub, has_turbo) {
+/*FFZ.prototype.get_other_badges = function(user_id, room_id, user_type, has_sub, has_turbo) {
 	var badges = {};
 
 	if ( room_id && user_id === room_id )
@@ -435,7 +444,7 @@ FFZ.prototype.get_other_badges = function(user_id, room_id, user_type, has_sub, 
 		badges[15] = {klass: 'turbo', title: 'Turbo'}
 
 	return this.get_badges(user_id, room_id, badges, null);
-}
+}*/
 
 
 // --------------------

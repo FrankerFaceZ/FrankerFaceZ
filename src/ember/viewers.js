@@ -86,7 +86,11 @@ FFZ.prototype.modify_viewer_list = function(component) {
 							first_user = false;
 						}
 
-						viewers.push({chatter: FFZ.get_capitalization(data[x])});
+						var display_name = FFZ.get_capitalization(data[x]);
+						if ( display_name.trim().toLowerCase() !== data[x] )
+							display_name = data[x];
+
+						viewers.push({chatter: display_name});
 					}
 				}
 

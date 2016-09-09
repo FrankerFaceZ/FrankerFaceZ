@@ -22,6 +22,50 @@ FFZ.settings_info.alias_italics = {
 	}
 };
 
+FFZ.settings_info.username_display = {
+	type: "select",
+	options: {
+		0: "Username Only",
+		1: "Capitalization Only",
+		2: "Display Name Only",
+		3: "Username in Parenthesis",
+		4: "Username in Tooltip"
+	},
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Username Display",
+	help: "How a user's name should be rendered when their display name differs from the username.",
+
+	value: 3,
+
+	process_value: function(val) {
+		if ( typeof val === "string" ) {
+			val = parseInt(val);
+			if ( isNaN(val) || ! isFinite(val) )
+				val = 3;
+		}
+
+		return val;
+	},
+
+	on_update: function(val) {
+		var CL = utils.ember_resolve('component:chat/chat-line'),
+			views = CL ? utils.ember_views() : [];
+
+		for(var vid in views) {
+			var view = views[vid];
+			if ( view instanceof CL && view.buildFromHTML ) {
+				view.$('.from').replaceWith(view.buildFromHTML());
+				if ( view.get('msgObject.to') )
+					view.$('.to').replaceWith(view.buildFromHTML(true));
+			}
+		}
+	}
+}
+
+
 FFZ.settings_info.room_status = {
 	type: "boolean",
 	value: true,
@@ -768,27 +812,27 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return output + '</span>';
 		},
 
-		buildSenderHTML: function() {
-			var user = this.get('msgObject.from'),
-				room_id = this.get('msgObject.room'),
-				room = f.rooms && f.rooms[room_id],
+		buildFromHTML: function(is_recipient) {
+			var username = this.get(is_recipient ? 'msgObject.to' : 'msgObject.from'),
+				raw_display = this.get(is_recipient ? 'msgObject.tags.recipient-display-name' : 'msgObject.tags.display-name'),
+				alias = f.aliases[username],
 
-				deleted = this.get('msgObject.deleted'),
-				r = this,
-
-				recipient = this.get('msgObject.to'),
-				is_whisper = recipient && recipient.length,
-				is_replay = this.get('ffz_is_replay'),
-
-				this_ul = this.get('ffzUserLevel'),
-				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
-
-				raw_color = this.get('msgObject.color'),
-				colors = raw_color && f._handle_color(raw_color),
+				raw_color = this.get(is_recipient ? 'msgObject.toColor' : 'msgObject.color'),
 
 				is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('settings.darkMode'))),
+				is_replay = this.get('ffz_is_replay'),
 
-				system_msg = this.get('systemMsg'),
+				colors = raw_color && f._handle_color(raw_color),
+				style = colors ? 'color:' + (is_dark ? colors[1] : colors[0]) : '',
+				colored = colors ? ' has-color' + (is_replay ? ' replay-color' : '') : '',
+
+				results = f.format_display_name(raw_display, username);
+
+			return '<span class="' + (is_recipient ? 'to' : 'from') + (alias ? ' ffz-alias' : '') + (results[1] ? ' html-tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + (results[1] ? '" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</span>';
+		},
+
+		buildSenderHTML: function() {
+			var system_msg = this.get('systemMsg'),
 				output = '';
 
 			output = '<div class="indicator"></div>';
@@ -809,41 +853,15 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			// Badges
 			output += '<span class="badges">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
 
-			// Alias Support
-			var alias = f.aliases[user],
-				name = this.get('msgObject.tags.display-name') || (user && user.capitalize()) || "unknown user",
-				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]) || '',
-				colored = style ? ' has-color' + (is_replay ? ' replay-color' : '') : '';
+			// From!
+			output += this.buildFromHTML();
 
-			output += '<span class="from' + (alias ? ' ffz-alias html-tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '');
-
-			if ( alias )
-				output += '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias);
-			else
-				output += '">' + utils.sanitize(name);
-
-
-			// Whisper Legacy Sucks
-			if ( is_whisper ) {
-				var to_alias = f.aliases[recipient],
-					to_name = this.get('msgObject.tags.recipient-display-name') || (recipient && recipient.capitalize()) || "unknown user",
-
-					to_color = this.get('msgObject.toColor'),
-					to_colors = to_color && f._handle_color(to_color),
-
-					to_style = to_color ? 'color:' + (is_dark ? to_colors[1] : to_colors[0]) : '',
-					to_colored = to_style ? ' has-color' : '';
-
-				output += "</span><svg class='svg-whisper-arrow' height='10px' version='1.1' width='16px'><polyline points='6 2, 10 6, 6 10, 6 2' /></svg>";
-				output += '<span class="to' + (to_alias ? ' ffz-alias html-tooltip' : '') + to_colored + '" style="' + to_style + (to_colors ? '" data=color="' + to_color : '');
-
-				if ( to_alias )
-					output += '" title="' + utils.quote_san(to_name) + '">' + utils.sanitize(to_alias);
-				else
-					output += '">' + utils.sanitize(to_name);
+			if ( this.get('msgObject.to') ) {
+				output += "<svg class='svg-whisper-arrow' height='10px' version='1.1' width='16px'><polyline points='6 2, 10 6, 6 10, 6 2' /></svg>";
+				output += this.buildFromHTML(true);
 			}
 
-			return output + '</span><span class="colon">:</span> ';
+			return output + '<span class="colon">:</span> ';
 		},
 
 		buildDeletedMessageHTML: function() {
@@ -917,7 +935,7 @@ FFZ.prototype._modify_chat_subline = function(component) {
 	this._modify_chat_line(component);
 
 	component.reopen({
-		classNameBindings: ["msgObject.style", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
+		classNameBindings: ["msgObject.style", "msgObject.isModerationMessage:moderation-message", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
 		attributeBindings: ["msgObject.tags.id:data-id", "msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
 		didInsertElement: function() {
@@ -989,7 +1007,7 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			} else if ( f._click_emote(e.target, e) )
 				return;
 
-			else if ( e.target.classList.contains('from') ) {
+			else if ( e.target.classList.contains('from') || e.target.parentElement.classList.contains('from') ) {
 				var n = this.get('element'),
 					bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),
 					x = 0, right;
@@ -1003,6 +1021,22 @@ FFZ.prototype._modify_chat_subline = function(component) {
 					top: bounds.top + bounds.height,
 					real_top: bounds.top,
 					sender: from
+				});
+
+			} else if ( e.target.classList.contains('to') || e.target.parentElement.classList.contains('to') ) {
+				var n = this.get('element'),
+					bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),
+					x = 0, right;
+
+				if ( bounds.left > 400 )
+					right = bounds.left - 40;
+
+				this.sendAction("showModOverlay", {
+					left: bounds.left,
+					right: right,
+					top: bounds.top + bounds.height,
+					real_top: bounds.top,
+					sender: this.get('msgObject.to')
 				});
 
 			} else if ( e.target.classList.contains('undelete') ) {

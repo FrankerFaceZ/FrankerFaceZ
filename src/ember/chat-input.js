@@ -312,7 +312,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			// Let the browser's paste be do as it do if there weren't any emoji.
 			if ( output.length === text.length )
-				return f.log("No emoji in paste");
+				return;
 
 			// Can we get the selection in our input box?
 			var input = this.get('chatTextArea'),
@@ -321,7 +321,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				s_end = input && input.selectionEnd;
 
 			if ( ! input || typeof s_start !== "number" || typeof s_end !== "number" )
-				return f.log("Can't get input");
+				return;
 
 			// Still here? We're clear to inject this ourselves then.
 			event.stopPropagation();
@@ -717,6 +717,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 			for(var i=0; i < suggestions.length; i++) {
 				var suggestion = suggestions[i],
 					name = suggestion.id,
+					display_name = suggestion.displayName || (name && name.capitalize()),
+					username_match = display_name.trim().toLowerCase() === name,
 					alias = f.aliases[name];
 
 				if ( user_output[name] && ! user_output[name].is_alias ) {
@@ -724,22 +726,43 @@ FFZ.prototype.modify_chat_input = function(component) {
 					token.whispered |= suggestion.whispered;
 					if ( suggestion.timestamp > token.timestamp )
 						token.timestamp = suggestion.timestamp;
+				}
+
+				if ( user_output[display_name] && ! user_output[display_name].is_alias ) {
+					var token = user_output[display_name];
+					token.whispered |= suggestion.whispered;
+					if ( suggestion.timestamp > token.timestamp )
+						token.timestamp = suggestion.timestamp;
 
 				} else {
-					if ( alias_setting !== 2 )
-						output.push(user_output[name] = {
+					if ( alias_setting !== 2 ) {
+						output.push(user_output[display_name] = {
 							type: "user",
 							command_content: name,
-							label: FFZ.get_capitalization(name),
+							label: display_name,
+							alternate_match: username_match ? null : name,
 							whispered: suggestion.whispered,
 							timestamp: suggestion.timestamp || new Date(0),
-							info: 'User',
+							info: 'User' + (username_match ? '' : ' (' + name + ')'),
+							is_display_name: ! username_match,
 							is_alias: false
 						});
 
+						if ( ! username_match )
+							output.push(user_output[name] = {
+								type: "user",
+								label: name,
+								alternate_match: display_name,
+								whispered: suggestion.whispered,
+								timestamp: suggestion.timestamp || new Date(0),
+								info: 'User (' + display_name + ')',
+								is_alias: false
+							});
+					}
+
 					if ( alias && alias_setting ) {
 						if ( user_output[alias] && user_output[alias].is_alias ) {
-							var token = user_output[name];
+							var token = user_output[alias];
 							token.whispered |= suggestion.whispered;
 							token.timestamp = Math.max(token.timestamp, suggestion.timestamp);
 
@@ -750,7 +773,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 								label: alias,
 								whispered: suggestion.whispered,
 								timestamp: suggestion.timestamp || new Date(0),
-								info: 'User Alias',
+								info: 'User Alias (' + name + ')',
 								is_alias: true
 							});
 					}
@@ -779,7 +802,10 @@ FFZ.prototype.modify_chat_input = function(component) {
 					// Names are case insensitive, and we have to ignore the leading @ of our
 					// partial word when matching.
 					name = name.toLowerCase();
-					return char === '@' ? name.indexOf(part2.toLowerCase()) === 0 : name.indexOf(partial.toLowerCase()) === 0;
+					var part = (char === '@' ? part2 : partial).toLowerCase(),
+						alt_name = item.alternate_match;
+
+					return name.indexOf(part) === 0 || (alt_name && alt_name.indexOf(part) === 0);
 
 				} else if ( type === 'emoji' || ! f.settings.input_emoticons_case_sensitive ) {
 					name = name.toLowerCase();
@@ -794,7 +820,9 @@ FFZ.prototype.modify_chat_input = function(component) {
 		ffz_sorted_suggestions: Ember.computed("ffz_filtered_suggestions.[]", function() {
 			var text = this.get('textareaValue'),
 				now = Date.now(),
-				is_whisper = text.substr(0,3) === '/w ';
+				char = text.charAt(0),
+				is_command = char === '/' || char === '.',
+				is_whisper = is_command && text.substr(1, 2) === 'w ';
 
 			return this.get('ffz_filtered_suggestions').sort(function(a, b) {
 				// First off, sort users ahead of everything else.
@@ -808,6 +836,11 @@ FFZ.prototype.modify_chat_input = function(component) {
 						else if ( ! a.whisper && b.whisper )
 							return 1;
 					}
+
+					if ( a.is_display_name && ! b.is_display_name )
+						return -1;
+					else if ( ! a.is_display_name && b.is_display_name )
+						return 1;
 
 					if ( a.timestamp > b.timestamp ) return -1;
 					else if ( a.timestamp < b.timestamp ) return 1;

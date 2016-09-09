@@ -39,22 +39,24 @@ body:not(.ffz-show-bits-tags) .ember-chat .chat-messages.bits-tags__offset {
 }
 
 body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + .ffz-ui-toggle svg,
-body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + script + .ffz-ui-toggle svg
+body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + div + .ffz-ui-toggle svg
 {
 	height: 14px;
 	width: 18px;
 }
 
 body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + .ffz-ui-toggle,
-body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + script + .ffz-ui-toggle {
+body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + div + .ffz-ui-toggle {
 	height: 14px;
 	width: 18px;
 	top: 28px;
+	right: 6px;
 }
 
 .ffz-ui-toggle svg.svg-emoticons path { fill: rgba(0,0,0,0.2); }
 .ffz-ui-toggle:hover svg.svg-emoticons path { fill: rgba(0,0,0,0.5); }
 
+.carousel__item .card__img .overlay_info.live svg path,
 .streams .stream .content .overlay_info.live svg path,
 .videos .video .content .overlay_info.live svg path { fill: #ff2020; }
 
@@ -1257,7 +1259,8 @@ img.channel_background[src="null"] { display: none; }
 }
 
 .ember-chat .ffz-moderation-card .close-button {
-    right: 7px;
+	right: 7px;
+	width: 20px;
 }
 
 .ember-chat .ffz-moderation-card .extra-interface {
@@ -1268,11 +1271,15 @@ img.channel_background[src="null"] { display: none; }
 	margin-top: -10px;
 }
 
-.ffz-moderation-card.ffz-has-info h3.name {
-	margin-top: -2px;
+.ffz-moderation-card.ffz-has-info h4.name {
+	/*margin-top: -2px;*/
 	margin-bottom: 0;
 	padding-top: 0;
 	white-space: nowrap;
+}
+
+.ffz-moderation-card.ffz-has-info .name .intl-login {
+	margin: -2px 0 -4px;
 }
 
 .ffz-moderation-card .info {
@@ -1359,10 +1366,10 @@ img.channel_background[src="null"] { display: none; }
 	border-top: none;
 }
 
-.ffz-moderation-card h3.name { display: inline-block; }
+.ffz-moderation-card h4.name { display: inline-block; }
 
 .ffz-moderation-card .info,
-.ffz-moderation-card h3.name {
+.ffz-moderation-card h4.name {
 	text-shadow: black 0 0 5px;
 }
 
@@ -1403,7 +1410,7 @@ img.channel_background[src="null"] { display: none; }
 	background-color: #232323;
 }
 
-.moderation-card h3.name a { color: #fff !important; }
+.moderation-card h4.name a { color: #fff !important; }
 
 
 /* purge icon */
@@ -1799,7 +1806,7 @@ th.ffz-row-switch {
 .ffz-room-row td > span:empty,
 .ffz-chat-tab span:empty { display: none; }
 
-.ffz-room-row td > span,
+.ffz-room-row td > span:not(.intl-login),
 .ffz-chat-tab span {
 	padding: 0 4px;
 	display: inline-block;
@@ -1815,7 +1822,7 @@ th.ffz-row-switch {
 	position: relative;
 }
 
-.ffz-room-row td > span {
+.ffz-room-row td > span:not(.intl-login) {
 	line-height: 16px;
 	margin: 5px 0;
 }
@@ -1860,7 +1867,7 @@ th.ffz-row-switch {
 	color: #B9A3E3;
 }
 
-.ffz-dark .ffz-room-row td > span,
+.ffz-dark .ffz-room-row td > span:not(.intl-login),
 .app-main.theatre .ffz-chat-tab span,
 .chat-container.dark .ffz-chat-tab span,
 .ember-chat-container.dark .ffz-chat-tab span {
@@ -2186,11 +2193,11 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue .theatre .conversation-system-message,
 .ffz-no-blue.ffz-dark .conversation-system-message,
 
-.ffz-no-blue .theatre .bits-card,
+.ffz-no-blue .app-main.theatre .bits-card,
 .ffz-no-blue .dark .bits-card,
 .ffz-no-blue .force-dark .bits-card,
 
-.ffz-no-blue .theatre .bits-card--standard,
+.ffz-no-blue .app-main.theatre .bits-card--standard,
 .ffz-no-blue .dark .bits-card--standard,
 .ffz-no-blue .force-dark .bits-card--standard,
 
@@ -2256,6 +2263,10 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: #191919;
 }
 
+.ffz-no-blue .app-main.theatre .bits-footer,
+.ffz-no-blue .dark .bits-footer,
+.ffz-no-blue .force-dark .bits-footer,
+
 .ffz-no-blue .theatre .conversation-input-bar textarea,
 .ffz-no-blue .theatre input.text,
 .ffz-no-blue .theatre input.countries-input,
@@ -2320,13 +2331,13 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	border-bottom-color: #323232;
 }
 
-.ffz-no-blue .theatre .conversation-header,
-.ffz-no-blue.ffz-dark .conversation-header,
+.ffz-no-blue .theatre .convoHeader,
+.ffz-no-blue.ffz-dark .convoHeader,
 .ffz-no-blue .theatre .conversations-list .search-divider,
 .ffz-no-blue.ffz-dark .conversations-list .search-divider,
 .ffz-no-blue.ffz-dark .conversations-list .conversations-list-header,
-.ffz-no-blue .theatre .conversation-window.has-focus .conversation-header,
-.ffz-no-blue.ffz-dark .conversation-window.has-focus .conversation-header,
+.ffz-no-blue .theatre .conversation-window.has-focus .convoHeader,
+.ffz-no-blue.ffz-dark .conversation-window.has-focus .convoHeader,
 .ffz-no-blue .theatre .conversations-list .conversations-list-item:hover,
 .ffz-no-blue.ffz-dark .conversations-list .conversations-list-item:hover {
 	background-color: #121212;
@@ -2418,7 +2429,7 @@ li[data-name="following"] a {
 	max-height: 90px;
 }
 
-/* Player Captions *\/
+/* Player Captions */
 
 .ffz-dark .player-modal__content,
 .theatre .player-modal__content {
@@ -2457,7 +2468,7 @@ li[data-name="following"] a {
 }
 
 .ffz-dark label.cc-edge-palette__square,
-.theatre label.cc-edge-palette__square { color: #fff }*/
+.theatre label.cc-edge-palette__square { color: #fff }
 
 
 /* Classic Player */
@@ -2484,12 +2495,12 @@ li[data-name="following"] a {
 }
 
 .ffz-classic-player .app-main.theatre .player .player-video,
-.ffz-classic-player .player[data-fullscreen="true"] .player-video {
+.ffz-classic-player .player[data-isfullscreen="true"] .player-video {
 	bottom: 0;
 }
 
 .ffz-classic-player .app-main.theatre .player .player-controls-bottom,
-.ffz-classic-player .player[data-fullscreen="true"] .player-controls-bottom {
+.ffz-classic-player .player[data-isfullscreen="true"] .player-controls-bottom {
 	margin-bottom: -32px;
 	-webkit-transition: margin-bottom .2s ease-out, padding-bottom .2s ease-out;
 	transition: margin-bottom .2s ease-out, padding-bottom .2s ease-out;
@@ -2497,23 +2508,22 @@ li[data-name="following"] a {
 
 .ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player .player-controls-bottom,
 .ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player[data-controls=true] .player-controls-bottom,
-.ffz-classic-player .app-main.theatre .player[data-fullscreen="true"] .player-controls-bottom,
-.ffz-classic-player .app-main.theatre .player[data-fullscreen="true"][data-controls=true] .player-controls-bottom {
+.ffz-classic-player .app-main.theatre .player[data-isfullscreen="true"] .player-controls-bottom,
+.ffz-classic-player .app-main.theatre .player[data-isfullscreen="true"][data-controls=true] .player-controls-bottom {
 	padding-bottom: 0;
 }
 
 .ffz-classic-player .app-main.theatre .player.player-isvod .player-controls-bottom,
-.ffz-classic-player .player.player-isvod[data-fullscreen="true"] .player-controls-bottom {
+.ffz-classic-player .player.player-isvod[data-isfullscreen="true"] .player-controls-bottom {
 	margin-bottom: -36px;
 }
 
-.ffz-classic-player .app-main.theatre .player-column:hover .player .player-controls-bottom,
-.ffz-classic-player .app-main.theatre .player-column:focus .player .player-controls-bottom,
-.ffz-classic-player .player[data-fullscreen="true"][data-controls="true"] .player-controls-bottom {
+.ffz-classic-player .app-main.theatre .player-column .player[data-controls=true] .player-controls-bottom,
+.ffz-classic-player .player[data-isfullscreen="true"][data-controls="true"] .player-controls-bottom {
 	margin-bottom: 0;
 }
 
-.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player-column:hover .player[data-fullscreen="false"] .player-controls-bottom {
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player[data-isfullscreen=false][data-controls=true] .player-controls-bottom {
 	padding-bottom: 40px;
 }
 
@@ -2569,8 +2579,14 @@ li[data-name="following"] a {
 .item .meta .title a a,
 .item .meta .title a img { pointer-events: none }
 
+.ffz-directory-logo .card__body,
+.ffz-directory-logo .meta {
+	padding-top: 5px;
+}
+
+.ffz-directory-logo .card__title,
 .ffz-directory-logo .meta p.title {
-    padding-top: 4px;
+	padding-top: 4px;
 	min-height: 24px;
 }
 
@@ -2656,11 +2672,9 @@ body:not(.ffz-bttv) .conversation-window .ignore-cta:not(.hidden) + .conversatio
 .conversation-window.collapsed .ignore-cta,
 .conversation-chat-line.action .colon,
 .conversation-input-bar .emoticon-selector .tabs,
-.conversation-preview-line .badges,
-body.ffz-conv-title-clickable .conversation-header span.conversation-header-name,
-body:not(.ffz-conv-title-clickable) .conversation-header a.conversation-header-name { display:none }
+.conversation-preview-line .badges { display:none }
 
-.conversation-window.has-unread .conversation-header .conversation-header-name { color: #fff !important; }
+.conversation-window.has-unread .convoHeader .username { color: #fff !important; }
 
 
 /* Top Conversations */
@@ -2680,7 +2694,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 	top: 0px;
 }
 
-.ffz-top-conversations .conversation-window.collapsed .conversation-header {
+.ffz-top-conversations .conversation-window.collapsed .convoHeader {
 	box-shadow: none;
 }
 
@@ -2758,13 +2772,15 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 
 .user.item { position: relative; }
 
+.card__img .overlay_info.length,
 .user.item .overlay_info.length {
 	position: absolute;
 	top: 5px;
-	right: 25px;
+	right: 15px;
 	z-index: 1;
 
 	display: inline-block;
+	cursor: pointer;
 
 	padding: 0 5px;
 	font-size: 11px;
@@ -2775,18 +2791,20 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 	opacity: 0.75;
 }
 
+.card__img .overlay_info.length { right: 5px }
+
+.card__img .overlay_info.length svg,
 .user.item .overlay_info.length svg {
 	float: left;
 	margin: 3px 5px 3px 0;
 }
 
+.card__img .overlay_info.length svg path,
 .user.item .actions .follow svg path,
 .user.item .overlay_info.length svg path { fill: #fff; }
 
 .user.item .actions {
-	margin-top: -15px;
-	margin-bottom: 20px;
-	margin-right: 20px;
+	margin-top: 5px;
 	display: flex;
 	flex-wrap: nowrap;
 }
@@ -2901,10 +2919,12 @@ body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 
 /* Banned and Spoiler Games */
 
-body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none }
+body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none !important }
 
+.ffz-game-spoilered .card__img a:not(.card__boxpin) img,
 .ffz-game-spoilered .thumb .cap img { visibility: hidden }
 
+.ffz-game-spoilered .card__img a:not(.card__boxpin):after,
 .ffz-game-spoilered .thumb .cap:after {
 	position: absolute;
 	top: 0; left: 0;
@@ -2986,7 +3006,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 /* Hide Outlines */
 
-.conversation-header,
+.convoHeader,
 .conversations-list-icon,
 .toggle-notification-menu {
 	outline: none !important
@@ -2996,6 +3016,10 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 /* Badges */
 
 .badges .badge { background-size: 18px 18px }
+
+.convoHeader .badges .badge {
+	background-size: 14px 14px;
+}
 
 /*.badges .badge {
     height: 18px;
@@ -3144,6 +3168,29 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .ffz-bit:after {
 	content: attr(data-amount);
 }
+
+.theatre .bits-purchase__header,
+.dark .bits-purchase__header,
+.force-dark .bits-purchase__header {
+	color: #acacbf;
+}
+
+.theatre .bits-card,
+.app-main.theatre .chat-container .bits-card, /* Twitch's CSS is retarded */
+.dark .bits-card,
+.force-dark .bits-card,
+
+.theatre .bits-purchase__row,
+.dark .bits-purchase__row,
+.force-dark .bits-purchase__row,
+
+.theatre .bits-footer,
+.dark .bits-footer,
+.force-dark .bits-footer {
+	border-color: rgba(255,255,255,0.2);
+	color: #ccc;
+}
+
 
 /* New Chat Formatting */
 

@@ -67,6 +67,9 @@ FFZ.prototype.load_settings = function() {
 	this.settings.del = this._setting_del.bind(this);
 	this.settings.load = this._setting_load.bind(this);
 
+	this.settings.get_twitch = this._setting_get_twitch.bind(this);
+
+
 	var found_settings = false;
 
 	for(var key in FFZ.settings_info) {
@@ -809,6 +812,11 @@ FFZ.prototype._setting_get = function(key) {
 		this._setting_load(key);
 
 	return this.settings[key];
+}
+
+FFZ.prototype._setting_get_twitch = function(key) {
+	var Settings = utils.ember_lookup('controller:settings');
+	return Settings && Settings.get('settings.' + key);
 }
 
 

@@ -299,20 +299,22 @@ FFZ.prototype._build_following_button = function(cont, channel_id) {
 		return this.log("Ignoring Invalid Channel: " + utils.sanitize(channel_id));
 
 	var f = this,
-		btn = utils.createElement('button', 'follow-button button'),
+		btn = utils.createElement('button', 'follow-button button html-tooltip'),
 
 		noti = utils.createElement('a', 'toggle-notification-menu js-toggle-notification-menu'),
 		noti_c = utils.createElement('div', 'notification-controls v2 hidden', noti),
 
 		display_name,
+		tooltip,
+
 		following = false,
 		notifications = false,
 
 		update = function() {
 			btn.classList.toggle('is-following', following);
 			btn.classList.toggle('button--status', following);
-			btn.title = (following ? "Unf" : "F") + "ollow " + utils.sanitize(display_name);
-			btn.innerHTML = (following ? "" : "Follow ") + utils.sanitize(display_name);
+			btn.title = tooltip ? (following ? "Unf" : "F") + "ollow " + tooltip : '';
+			btn.innerHTML = (following ? "" : "Follow ") + display_name;
 			noti_c.classList.toggle('hidden', !following);
 		},
 
@@ -353,7 +355,9 @@ FFZ.prototype._build_following_button = function(cont, channel_id) {
 		},
 
 		on_name = function(cap_name) {
-			display_name = cap_name || channel_id;
+			var results = f.format_display_name(cap_name, channel_id, true, true);
+			display_name = results[0];
+			tooltip = results[1];
 			update();
 		};
 
@@ -404,9 +408,7 @@ FFZ.prototype._build_following_button = function(cont, channel_id) {
 		return false;
 	});
 
-
-	display_name = FFZ.get_capitalization(channel_id, on_name);
-	update();
+	on_name(FFZ.get_capitalization(channel_id, on_name));
 
 	setTimeout(check_following, Math.random()*5000);
 
@@ -429,7 +431,9 @@ FFZ.prototype._build_following_popup = function(container, channel_id, notificat
 	this._popup_allow_parent = true;
 	this._popup_parent = container;
 
-	out  = '<div class="header">You are following ' + FFZ.get_capitalization(channel_id) + '</div>';
+	var results = this.format_display_name(FFZ.get_capitalization(channel_id), channel_id, true);
+
+	out  = '<div class="header">You are following <span' + (results[1] ? ' class="html-tooltip" title="' + utils.quote_attr(results[1]) + '"' : '') + '>' + results[0] + '</span></div>';
 	out += '<p class="clearfix">';
 	out += '<a class="switch' + (notifications ? ' active' : '') + '"><span></span></a>';
 	out += '<span class="switch-label">Notify me when the broadcaster goes live</span>';

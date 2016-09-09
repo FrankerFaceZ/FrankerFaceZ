@@ -185,8 +185,8 @@ FFZ.prototype.setup_sidebar = function() {
 	}
 
 	// Sidebar Followed Games
-	var GamesFollowing = utils.ember_lookup('controller:games-following'),
-		f = this;
+	var f = this,
+		GamesFollowing = utils.ember_lookup('controller:games-following');
 
 	if ( GamesFollowing ) {
 		this.log("Hooking the Ember games-following controller.");

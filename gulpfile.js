@@ -14,7 +14,7 @@ var fs = require('fs'),
 var jsEscape = require('gulp-js-escape'),
 	wrap = require('gulp-wrap'),
 	declare = require('gulp-declare'),
-	minifyCss = require('gulp-minify-css');
+	cleanCSS = require('gulp-clean-css');
 
 
 // LESS
@@ -30,7 +30,7 @@ var ftp = require('vinyl-ftp'),
 // Server Dependencies
 var http = require("http"),
 	https = require("https"),
-    net = require('net'),
+	net = require('net'),
 	path = require("path"),
 	request = require("request"),
 	url = require("url");
@@ -69,8 +69,8 @@ gulp.task('prepare', ['clean'], function() {
 //});
 
 gulp.task('styles', ['prepare'], function() {
-	return;
-	return gulp.src(['build/less/*.less'])
+	//return;
+	return gulp.src(['build/less/*.less', '!build/less/style.less'])
 		.pipe(sourcemaps.init())
 		.pipe(less())
 		.pipe(sourcemaps.write())
@@ -81,7 +81,7 @@ gulp.task('styles', ['prepare'], function() {
 
 gulp.task('embedded_styles', ['prepare'], function() {
 	return gulp.src(['build/styles/**/*.css'])
-		.pipe(minifyCss())
+		.pipe(cleanCSS())
 		.pipe(jsEscape())
 		.pipe(declare({
 			root: 'exports',
@@ -126,8 +126,8 @@ gulp.task('minify_script', ['scripts'], function() {
 });
 
 gulp.task('minify_style', function() {
-	return gulp.src(['style.css', 'dark.css'])
-		.pipe(minifyCss())
+	return gulp.src(['style.css', 'style-clips.css', 'dark.css', 'dark-clips.css'])
+		.pipe(cleanCSS())
 		.pipe(rename(function(path) {
 			path.basename += '.min';
 		}))
@@ -258,33 +258,33 @@ gulp.task('server', function() {
 
 	};
 
-    if ( fs.existsSync("dev_key.pem") ) {
-        var https_options = {
-            key: fs.readFileSync("dev_key.pem"),
-            cert: fs.readFileSync("dev_cert.pem")
-        };
+	if ( fs.existsSync("dev_key.pem") ) {
+		var https_options = {
+			key: fs.readFileSync("dev_key.pem"),
+			cert: fs.readFileSync("dev_cert.pem")
+		};
 
-        http.createServer(handle_req).listen(8001, "localhost");
-        https.createServer(https_options, handle_req).listen(8002, "localhost");
+		http.createServer(handle_req).listen(8001, "localhost");
+		https.createServer(https_options, handle_req).listen(8002, "localhost");
 
-        net.createServer(function(conn) {
-            conn.on('error', function(e) {
-                util.log("[" + util.colors.cyan("HTTP") + "] Connection Error: " + util.colors.magenta('' + e));
-            });
+		net.createServer(function(conn) {
+			conn.on('error', function(e) {
+				util.log("[" + util.colors.cyan("HTTP") + "] Connection Error: " + util.colors.magenta('' + e));
+			});
 
-            conn.once('data', function(buf) {
-                var address = (buf[0] === 22) ? 8002 : 8001;
-                var proxy = net.createConnection(address, function() {
-                    proxy.write(buf);
-                    conn.pipe(proxy).pipe(conn);
-                });
-            });
-        }).listen(8000);
+			conn.once('data', function(buf) {
+				var address = (buf[0] === 22) ? 8002 : 8001;
+				var proxy = net.createConnection(address, function() {
+					proxy.write(buf);
+					conn.pipe(proxy).pipe(conn);
+				});
+			});
+		}).listen(8000);
 
-        util.log("[" + util.colors.cyan("HTTPS") + "] Listening on Port: " + util.colors.magenta("8000"));
+		util.log("[" + util.colors.cyan("HTTPS") + "] Listening on Port: " + util.colors.magenta("8000"));
 
-    } else {
-        http.createServer(handle_req).listen(8000, "localhost");
-        util.log("[" + util.colors.cyan("HTTP") + "] Listening on Port: " + util.colors.magenta("8000"));
-    }
+	} else {
+		http.createServer(handle_req).listen(8000, "localhost");
+		util.log("[" + util.colors.cyan("HTTP") + "] Listening on Port: " + util.colors.magenta("8000"));
+	}
 });

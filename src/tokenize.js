@@ -289,6 +289,46 @@ FFZ.prototype.setup_tokenization = function() {
 }
 
 
+// ------------------------
+// Display Name Formatting
+// ------------------------
+
+FFZ.prototype.format_display_name = function(display_name, user_id, disable_alias, disable_intl, disable_html) {
+	var setting = this.settings.username_display,
+		alias = this.aliases[user_id],
+
+		name_matches = ! display_name || display_name.trim().toLowerCase() === user_id,
+
+		tooltip,
+		display_name;
+
+	if ( setting === 0 )
+		display_name = user_id;
+
+	else if ( setting === 1 )
+		display_name = name_matches ? (display_name || (user_id && user_id.capitalize())) : user_id;
+
+	else {
+		display_name = utils.sanitize(display_name || (user_id && user_id.capitalize()));
+
+		if ( ! disable_intl && setting === 3 && ! name_matches )
+			display_name += disable_html ? '(' + user_id + ')' : ' <span class="intl-login">(' + user_id + ')</span>';
+
+		else if ( ((disable_intl && setting === 3) || setting === 4) && ! name_matches )
+			tooltip = user_id;
+	}
+
+	if ( ! disable_alias && alias ) {
+		if ( display_name )
+			tooltip = display_name + (tooltip ? ' (' + tooltip + ')' : '');
+
+		display_name = utils.sanitize(alias);
+	}
+
+	return [display_name, tooltip];
+}
+
+
 // ---------------------
 // Twitch Emote Data
 // ---------------------
@@ -505,8 +545,13 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 	if ( helpers && helpers.linkifyMessage )
 		tokens = helpers.linkifyMessage(tokens);
 
-	if ( user && user.login && helpers && helpers.mentionizeMessage )
+	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
+		// Display names~~
+		if ( ! from_me && user.name && user.name.trim().toLowerCase() !== user.login )
+			tokens = helpers.mentionizeMessage(tokens, user.name, from_me);
+	}
 
 	if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
@@ -546,13 +591,19 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 		user = this.get_user(),
 		from_me = user && from_user === user.login,
 		emotes = msgObject.get('tags.emotes'),
+
 		tokens = [msg];
 
 	if ( helpers && helpers.linkifyMessage )
 		tokens = helpers.linkifyMessage(tokens, delete_links);
 
-	if ( user && user.login && helpers && helpers.mentionizeMessage )
+	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
+		// Display names~~
+		if ( ! from_me && user.name && user.name.trim().toLowerCase() !== user.login )
+			tokens = helpers.mentionizeMessage(tokens, user.name, from_me);
+	}
 
 	if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
@@ -620,8 +671,13 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	}
 
 
-	if ( user && user.login && helpers && helpers.mentionizeMessage )
+	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);
+
+		// Display names~~
+		if ( ! from_me && user.name && user.name.trim().toLowerCase() !== user.login )
+			tokens = helpers.mentionizeMessage(tokens, user.name, from_me);
+	}
 
 	if ( helpers && helpers.emoticonizeMessage && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
@@ -754,8 +810,13 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji)
 
 	if ( helpers && helpers.mentionizeMessage ) {
 		var u = this.get_user();
-		if ( u && u.login )
+		if ( u && u.login ) {
 			message = helpers.mentionizeMessage(message, u.login, user === u.login);
+
+			// Display names~~
+			if ( ! user === u.login && u.name && u.name.trim().toLowerCase() !== u.login )
+				tokens = helpers.mentionizeMessage(tokens, u.name, from_me);
+		}
 	}
 
 	if ( ! no_emotes && this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )

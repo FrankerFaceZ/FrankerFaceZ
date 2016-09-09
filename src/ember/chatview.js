@@ -622,7 +622,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			if ( room && room._ffz_tab ) {
 				room._ffz_tab.classList.remove('tab-mentioned');
 				room._ffz_tab.classList.add('active');
-				var sp = room._ffz_tab.querySelector('span');
+				var sp = room._ffz_tab.querySelector('span:not(.intl-login)');
 				if ( sp )
 					sp.innerHTML = '';
 			}
@@ -630,7 +630,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			if ( room && room._ffz_row ) {
 				room._ffz_row.classList.remove('row-mentioned');
 				room._ffz_row.classList.add('active');
-				var sp = room._ffz_row.querySelector('span');
+				var sp = room._ffz_row.querySelector('span:not(.intl-login)');
 				if ( sp )
 					sp.innerHTML = '';
 			}
@@ -740,7 +740,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 				}
 
 				if ( row ) {
-					var sp = row.querySelector('span');
+					var sp = row.querySelector('span:not(.intl-login)');
 					if ( sp )
 						sp.innerHTML = unread;
 				}
@@ -748,7 +748,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 				if ( tab ) {
 					var was_hidden = tab.classList.contains('hidden'),
 						is_hidden = ! this.ffzTabVisible(room_id),
-						sp = tab.querySelector('span');
+						sp = tab.querySelector('span:not(.intl-login)');
 
 					if ( was_hidden !== is_hidden ) {
 						tab.classList.toggle('hidden', is_hidden);
@@ -909,10 +909,13 @@ FFZ.prototype.modify_chat_view = function(view) {
 				active_channel = room === this.get('controller.currentRoom'),
 				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount')),
 
-				name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
+				name = room.get('channel.display_name') || room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
 					var active_channel = room === view.get('controller.currentRoom');
 					unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
-					name_el.innerHTML = utils.sanitize(name) + ' <span>' + unread + '</span>';
+					var results = group ? [name, undefined] : f.format_display_name(name, room_id, true);
+					name_el.innerHTML = results[0] + ' <span>' + unread + '</span>';
+					if ( results[1] )
+						row.title += '<br>' + results[1];
 				}));
 
 
@@ -936,7 +939,11 @@ FFZ.prototype.modify_chat_view = function(view) {
 			}
 
 			name_el.className = 'ffz-room';
-			name_el.innerHTML = utils.sanitize(name) + ' <span>' + unread + '</span>';
+
+			var results = group ? [name, undefined] : f.format_display_name(name, room_id, true);
+			name_el.innerHTML = results[0] + ' <span>' + unread + '</span>';
+			if ( results[1] )
+				row.title += '<br>' + results[1];
 
 			row.appendChild(icon);
 			row.appendChild(name_el);
@@ -1044,7 +1051,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			link.title = "Chat Room Management";
 			link.innerHTML = '<figure class="icon">' + constants.ROOMS + '</figure><span class="notifications"></span>';
 
-			jQuery(link).tipsy({gravity: "n", offset: 5});
+			jQuery(link).tipsy({gravity: "n", offset: 10});
 
 			link.addEventListener('click', function() {
 				var controller = view.get('controller');
@@ -1129,10 +1136,13 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 			unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
 
-			name = room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
+			name = room.get('channel.display_name') || room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
 				var active_channel = room === view.get('controller.currentRoom');
 				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
-				tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
+				var results = group ? [name, undefined] : f.format_display_name(name, room_id, true, true);
+				tab.innerHTML = icon + results[0] + '<span>' + unread + '</span>';
+				if ( results[1] )
+					tab.title += '<br>' + results[1];
 			}));
 
 			if ( current_channel ) {
@@ -1146,7 +1156,10 @@ FFZ.prototype.modify_chat_view = function(view) {
 			else
 				tab.title = "Pinned Channel";
 
-			tab.innerHTML = icon + utils.sanitize(name) + '<span>' + unread + '</span>';
+			var results = group ? [name, undefined] : f.format_display_name(name, room_id, true, true);
+			tab.innerHTML = icon + results[0] + '<span>' + unread + '</span>';
+			if ( results[1] )
+				tab.title += '<br>' + results[1];
 
 			tab.addEventListener('click', function() {
 				var controller = view.get('controller');
@@ -1336,6 +1349,8 @@ FFZ.chat_commands.join = function(room, args) {
 		return "You have already joined " + room_id + ". Please use \"/part " + room_id + "\" to leave it.";
 }
 
+FFZ.chat_commands.join.no_bttv = true;
+
 
 FFZ.chat_commands.part = function(room, args) {
 	if ( this.has_bttv )
@@ -1355,3 +1370,5 @@ FFZ.chat_commands.part = function(room, args) {
 	else
 		return "You are not in " + room_id + ".";
 }
+
+FFZ.chat_commands.part.no_bttv = true;

@@ -175,6 +175,46 @@ FFZ.ffz_commands.massmod = function(room, args) {
 FFZ.ffz_commands.massmod.help = "Usage: /ffz massmod <list, of, users>\nBroadcaster only. Mod all the users in the provided list.";
 
 
+// -----------------
+// Mass Unbanning
+// -----------------
+
+FFZ.prototype.get_banned_users = function() {
+	var f = this;
+	return new Promise(function(succeed, fail) {
+		var user = f.get_user();
+		if ( ! user )
+			return fail();
+
+		jQuery.get("/settings/channel").done(function(data) {
+			try {
+				var dom = new DOMParser().parseFromString(data, 'text/html'),
+					users = _.pluck(dom.querySelectorAll('.ban .obj'), 'textContent');
+
+				succeed(_.map(users, function(x) { return x.trim() }));
+
+			} catch(err) {
+				f.error("Failed to parse banned users", err);
+				fail();
+			}
+
+		}).fail(function(err) {
+			f.error("Failed to load banned users", err);
+			fail();
+		})
+	});
+}
+
+
+/*FFZ.ffz_commands.massunban = function(room, args) {
+	var user = this.get_user();
+	if ( ! user || (user.login !== room.id && ! user.is_admin && ! user.is_staff) )
+		return "You must be the broadcaster to use massunban.";
+
+
+}*/
+
+
 /*FFZ.ffz_commands.massunban = function(room, args) {
 	args = args.join(" ").trim();
 

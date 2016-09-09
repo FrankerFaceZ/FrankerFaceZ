@@ -80,14 +80,9 @@ FFZ.prototype.setup_menu = function() {
 			if ( ! menu )
 				return;
 
-			var header = document.createElement('div'),
-				content = document.createElement('div'),
+			var header = utils.createElement('div', 'list-header', 'FrankerFaceZ'),
+				content = utils.createElement('div', 'chat-menu-content'),
 				p, cb, a;
-
-			header.className = 'list-header';
-			header.innerHTML = 'FrankerFaceZ';
-
-			content.className = 'chat-menu-content';
 
 			// Dark Twitch
 			p = document.createElement('p');

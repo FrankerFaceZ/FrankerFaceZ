@@ -4,13 +4,24 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	helpers,
 
+	NOTICE_MAPPING = {
+		'slow': 'slow_on',
+		'slowoff': 'slow_off',
+		'r9kbeta': 'r9k_on',
+		'r9kbetaoff': 'r9k_off',
+		'subscribers': 'subs_on',
+		'subscribersoff': 'subs_off',
+		'emoteonly': 'emote_only_on',
+		'emoteonlyoff': 'emote_only_off'
+	},
+
 	STATUS_BADGES = [
 		["r9k", "r9k", "This room is in R9K-mode."],
 		["emote", "emoteOnly", "This room is in Twitch emoticons only mode. Emoticons added by extensions are not available in this mode."],
 		["sub", "subsOnly", "This room is in subscribers-only mode."],
 		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow') || 120) + " seconds." }],
 		["ban", "ffz_banned", "You have been banned from talking in this room."],
-		["delay", function(room) { return room && room.get('ffz_chat_delay') !== 0 }, function(room) { return "Artificial chat delay is enabled. Messages are displayed after " + (room.get('ffz_chat_delay')/1000) + " seconds." }],
+		["delay", function(room) { return room && room.get('ffz_chat_delay') !== 0 }, function(room) { return "Artificial chat delay is enabled. Messages are displayed after " + (room ? room.get('ffz_chat_delay')/1000 : 0) + " seconds." }],
 		["batch", function() { return this.settings.chat_batching !== 0 }, function() { return "You have enabled chat message batching. Messages are displayed in " + (this.settings.chat_batching/1000) + " second increments." }]
 	],
 
@@ -38,15 +49,24 @@ FFZ.prototype.setup_room = function() {
 	this.rooms = {};
 
 	this.log("Creating room style element.");
-	var s = this._room_style = document.createElement("style");
+	var f = this,
+		s = this._room_style = document.createElement("style");
+
 	s.id = "ffz-room-css";
 	document.head.appendChild(s);
+
+	this.log("Hooking the Ember Chat PubSub service.");
+	var PubSub = utils.ember_lookup('service:chat-pubsub');
+
+	if ( PubSub )
+		this._modify_chat_pubsub(PubSub);
+	else
+		this.error("Cannot locate the Chat PubSub service.");
 
 	this.log("Hooking the Ember Room controller.");
 
 	// Responsive ban button.
-	var f = this,
-		RC = utils.ember_lookup('controller:room');
+	var RC = utils.ember_lookup('controller:room');
 
 	if ( RC ) {
 		var orig_ban = RC._actions.banUser,
@@ -116,6 +136,120 @@ FFZ.prototype.setup_room = function() {
 
 	this.log("Hooking the Ember Room view.");
 	this.update_views('view:room', this.modify_room_view);
+}
+
+
+// --------------------
+// PubSub is fucking awful
+// --------------------
+
+FFZ.prototype._modify_chat_pubsub = function(pubsub) {
+	var f = this;
+	pubsub.reopen({
+		setupService: function(room_id, t) {
+			var n = this;
+			this.get("session").withCurrentUser(function(user) {
+				if ( n.isDestroyed )
+					return;
+
+				var ps = n._pubsub(),
+					token = user.chat_oauth_token,
+					new_topics = [
+						"chat_message_updated." + room_id,
+						"chat_moderator_actions." + room_id];
+
+				for(var i=0; i < new_topics.length; i++)
+					ps.Listen({
+						topic: new_topics[i],
+						auth: token,
+						success: function() {},
+						failure: function() {},
+						message: Ember.run.bind(n, n._onPubsubMessage, new_topics[i])
+					});
+
+				if ( n.chatTopics )
+					n.chatTopics = n.chatTopics.concat(new_topics);
+				else
+					n.chatTopics = new_topics;
+
+				ps.on("connected", Ember.run.bind(n, n._onPubsubConnect));
+				ps.on("disconnected", Ember.run.bind(n, n._onPubsubDisconnect));
+				t();
+			});
+		},
+
+		tearDownService: function(room_id) {
+			if ( ! this.chatTopics )
+				return;
+
+			var ps = this._pubsub(),
+				old_topics;
+
+			if ( ! room_id )
+				room_id = this.get("ffz_teardown_target");
+
+			if ( room_id ) {
+				// Make sure it's a string.
+				room_id = '.' + room_id;
+				old_topics = this.chatTopics.filter(function(x) { return x.substr(-room_id.length) === room_id });
+			} else
+				old_topics = this.chatTopics;
+
+			for(var i=0; i < old_topics.length; i++) {
+				ps.Unlisten({
+					topic: old_topics[i],
+					success: function() {},
+					failure: function() {}
+				});
+				this.chatTopics.removeObject(old_topics[i]);
+			}
+
+			if ( ! this.chatTopics.length )
+				this.chatTopics = null;
+		},
+
+		_onPubsubMessage: function(topic, e) {
+			if ( this.isDestroyed )
+				return;
+
+			var msg = JSON.parse(e),
+				msg_data = msg.data,
+				msg_type = msg.type || msg_data.type;
+
+			if ( msg_data )
+				msg_data.topic = topic;
+
+			this.trigger(msg_type, msg_data);
+		}
+	});
+
+	if ( ! pubsub.chatTopics )
+		return;
+
+	// Now that we've modified that, we need to re-listen to everything.
+	pubsub.get("session").withCurrentUser(function(user) {
+		if ( pubsub.isDestroyed )
+			return;
+
+		var ps = pubsub._pubsub(),
+			token = user.chat_oauth_token;
+
+		for(var i=0; i < pubsub.chatTopics.length; i++) {
+			ps.Unlisten({
+				topic: pubsub.chatTopics[i],
+				success: function() {},
+				failure: function() {}
+			});
+
+			ps.Listen({
+				topic: pubsub.chatTopics[i],
+				auth: token,
+				success: function() {},
+				failure: function() {},
+				message: Ember.run.bind(pubsub, pubsub._onPubsubMessage, pubsub.chatTopics[i])
+			});
+		}
+	});
 }
 
 
@@ -224,6 +358,7 @@ FFZ.prototype.modify_room_view = function(view) {
 
 			this.ffzDisableFreeze();
 		},
+
 
 		ffzOnKey: function(event) {
 			this.ffz_ctrl = event.ctrlKey;
@@ -835,9 +970,16 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 
 				// Store the message ID for this message, of course.
 				var msg_id = msg.tags && msg.tags.id,
-					ids = r.ffz_ids = r.ffz_ids || {};
+					notice_type = msg.tags && msg.tags['msg-id'],
+
+					ids = r.ffz_ids = r.ffz_ids || {},
+					notices = r.ffz_last_notices = r.ffz_last_notices || {};
+
 				if ( msg_id && ! ids[msg_id] )
 					ids[msg_id] = msg;
+
+				if ( notice_type && ! notices[notice_type] )
+					notices[notice_type] = msg;
 
 				messages.unshiftObject(msg);
 				inserted += 1;
@@ -876,9 +1018,15 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 			messages.insertAt(inserted, msg);
 			while ( messages.length > buffer_size ) {
 				// Remove this message from the ID tracker.
-				var m = messages.get(0);
-				if ( m.tags && m.tags.id && r.ffz_ids && r.ffz_ids[m.tags.id] )
-					delete r.ffz_ids[m.tags.id];
+				var m = messages.get(0),
+					msg_id = m.tags && m.tags.id,
+					notice_type = m.tags && m.tags['msg-id'];
+
+				if ( msg_id && r.ffz_ids && r.ffz_ids[msg_id] )
+					delete r.ffz_ids[msg_id];
+
+				if ( notice_type && r.ffz_last_notices && r.ffz_last_notices[notice_type] === m )
+					delete r.ffz_last_notices[notice_type];
 
 				messages.removeAt(0);
 				removed++;
@@ -1052,13 +1200,16 @@ FFZ.prototype._modify_room = function(room) {
 				f.add_room(this.id, this);
 				this.set("ffz_chatters", {});
 				this.set("ffz_ids", this.get('ffz_ids') || {});
+				this.set("ffz_last_notices", this.get('ffz_last_notices') || {});
 			} catch(err) {
 				f.error("add_room: " + err);
 			}
 		},
 
 		willDestroy: function() {
+			this.get("pubsub").set("ffz_teardown_target", this.get('roomProperties._id'));
 			this._super();
+			this.get("pubsub").set("ffz_teardown_target", null);
 
 			try {
 				f.remove_room(this.id);
@@ -1067,26 +1218,80 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
-		clearMessages: function(user, tags, disable_log) {
+		addChannelModerationMessage: function(event) {
+			// Throw out messages that are for other rooms.
+			var room_id = '.' + this.get("roomProperties._id");
+			if ( event.topic && event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
+				return;
+
+			var target_notice = NOTICE_MAPPING[event.moderation_action];
+			if ( target_notice ) {
+				var last_notice = this.ffz_last_notices && this.ffz_last_notices[target_notice];
+
+				if ( last_notice && ! last_notice.has_owner ) {
+					last_notice.message += ' (By: ' + event.created_by + ')';
+					last_notice.has_owner = true;
+					last_notice.cachedTokens = undefined;
+					if ( last_notice._line )
+						last_notice._line.ffzRender();
+				} else {
+					var waiting = this.ffz_waiting_notices = this.ffz_waiting_notices || {};
+					waiting[target_notice] = event.created_by;
+				}
+
+			} else if ( f.settings.get_twitch('showModerationActions') )
+				this._super(event);
+		},
+
+		addLoginModerationMessage: function(event) {
+			// Throw out messages that are for other rooms.
+			var room_id = '.' + this.get("roomProperties._id");
+			if ( event.topic && event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
+				return;
+
+			// In case we get unexpected input, do the other thing.
+			if ( ["ban", "unban", "timeout"].indexOf(event.moderation_action) === -1 )
+				return this._super(event);
+
+			var tags = {
+				'ban-duration': event.moderation_action === 'unban' ? -Infinity : event.args[1],
+				'ban-reason': event.args[2],
+				'ban-moderator': event.created_by
+			};
+
+			this.clearMessages(event.args[0], tags, false, event.moderation_action !== 'unban');
+		},
+
+		clearMessages: function(user, tags, disable_log, report_only) {
 			var t = this;
 
 			if ( user ) {
 				var duration = Infinity,
 					reason = undefined,
+					moderator = undefined,
 					msg_id = undefined,
 					current_user = f.get_user(),
 					is_me = current_user && current_user.login === user;
 
 				// Read the ban duration and reason from the message tags.
-				if ( tags && tags['ban-duration'] )
-					duration = parseInt(tags['ban-duration']);
+				if ( tags && tags['ban-duration'] ) {
+					duration = tags['ban-duration'];
+					if ( typeof duration === 'string' )
+						duration = parseInt(duration);
 
-				if ( isNaN(duration) )
-					duration = Infinity;
+					if ( isNaN(duration) )
+						duration = Infinity;
+				}
 
 				if ( tags && tags['ban-reason'] && (is_me || t.get('isModeratorOrHigher')) )
 					reason = tags['ban-reason'];
 
+				if ( tags && tags['ban-moderator'] && (is_me || t.get('isModeratorOrHigher')) )
+					moderator = tags['ban-moderator'];
+
+
+				// Does anything really matter?
+				if ( ! report_only && duration !== -Infinity ) {
 
 				// Is there a UUID on the end of the ban reason?
 				if ( reason ) {
@@ -1142,6 +1347,11 @@ FFZ.prototype._modify_room = function(room) {
 									if ( msg.tags && msg.tags.id === msg_id ) {
 										msgs.removeAt(i);
 										delete this.ffz_ids[msg_id];
+
+										var notice_type = msg.tags && msg.tags['msg-id'];
+										if ( notice_type && this.ffz_last_notices && this.ffz_last_notices[notice_type] === msg )
+											delete this.ffz_last_notices[notice_type];
+
 										break;
 									}
 								}
@@ -1170,8 +1380,14 @@ FFZ.prototype._modify_room = function(room) {
 						if ( msg.from === user ) {
 							if ( f.settings.remove_deleted ) {
 								// Remove this message from the ID tracker.
-								if ( msg.tags && msg.tags.id && this.ffz_ids && this.ffz_ids[msg.tags.id] )
-									delete this.ffz_ids[msg.tags.id];
+								var msg_id = msg.tags && msg.tags.id,
+									notice_type = msg.tags && msg.tags['msg-id'];
+
+								if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
+									delete this.ffz_ids[msg_id];
+
+								if ( notice_type && this.ffz_last_notices && this.ffz_last_notices[notice_type] === msg )
+									delete this.ffz_last_notices[notice_type];
 
 								msgs.removeAt(i);
 								removed++;
@@ -1199,6 +1415,9 @@ FFZ.prototype._modify_room = function(room) {
 					}
 				}
 
+				// End of report_only check.
+				}
+
 
 				// Now we need to see about displaying a ban notice.
 				if ( ! disable_log ) {
@@ -1220,7 +1439,11 @@ FFZ.prototype._modify_room = function(room) {
 					}
 
 					// Display a notice in chat.
-					var message = (is_me ? "You have" : FFZ.get_capitalization(user) + " has") + " been " + (isFinite(duration) ? "timed out for " + utils.duration_string(duration, true) : "banned");
+					var message = (is_me ?
+						"You have" : ffz.format_display_name(FFZ.get_capitalization(user), user, true, false, true)[0] + " has") +
+						" been " + (duration === -Infinity ? 'unbanned' :
+						(duration === 1 ? 'purged' :
+						(isFinite(duration) ? "timed out for " + utils.duration_string(duration, true) : "banned")));
 
 					if ( show_notice ) {
 						if ( ! last_ban ) {
@@ -1229,11 +1452,12 @@ FFZ.prototype._modify_room = function(room) {
 								date: now,
 								ffz_ban_target: user,
 								reasons: reason ? [reason] : [],
+								moderators: moderator ? [moderator] : [],
 								msg_ids: msg_id ? [msg_id] : [],
 								durations: [duration],
 								end_time: end_time,
-								timeouts: 1,
-								message: message + (show_reason && reason ? ' with reason: ' + reason : '.')
+								timeouts: report_only ? 0 : 1,
+								message: message + (show_reason && moderator ? ' by ' + moderator : '') + (show_reason && reason ? ' with reason: ' + reason : '.')
 							};
 
 							if ( ban_history )
@@ -1248,13 +1472,21 @@ FFZ.prototype._modify_room = function(room) {
 							if ( reason && last_ban.reasons.indexOf(reason) === -1 )
 								last_ban.reasons.push(reason);
 
+							if ( moderator && last_ban.moderators.indexOf(moderator) === -1 )
+								last_ban.moderators.push(moderator);
+
 							if ( last_ban.durations.indexOf(duration) === -1 )
 								last_ban.durations.push(duration);
 
 							last_ban.end_time = end_time;
-							last_ban.timeouts++;
 
-							last_ban.message = message + ' (' + utils.number_commas(last_ban.timeouts) + ' times)' + (!show_reason || last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '));
+							if ( ! report_only )
+								last_ban.timeouts++;
+
+							last_ban.message = message +
+								(last_ban.timeouts > 1 ? ' (' + utils.number_commas(last_ban.timeouts) + ' times)' : '') +
+								(!show_reason || last_ban.moderators.length === 0 ? '' : ' by ' + last_ban.moderators.join(', ') ) +
+								(!show_reason || last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '));
 							last_ban.cachedTokens = [{type: "text", text: last_ban.message}];
 
 							// Now that we've reset the tokens, if there's a line for this,
@@ -1333,9 +1565,15 @@ FFZ.prototype._modify_room = function(room) {
 				var to_remove = len - limit;
 				for(var i = 0; i < to_remove; i++) {
 					// Remove this message from the ID tracker.
-					var msg = messages.get(i);
-					if ( msg.tags && msg.tags.id && this.ffz_ids && this.ffz_ids[msg.tags.id] )
-						delete this.ffz_ids[msg.tags.id];
+					var msg = messages.get(i),
+						msg_id = msg.tags && msg.tags.id,
+						notice_type = msg.tags && msg.tags['msg-id'];
+
+					if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
+						delete this.ffz_ids[msg_id];
+
+					if ( notice_type && this.ffz_last_notices && this.ffz_last_notices[notice_type] === msg )
+						delete this.ffz_last_notices[notice_type];
 				}
 
 				messages.removeAt(0, to_remove);
@@ -1423,9 +1661,15 @@ FFZ.prototype._modify_room = function(room) {
 				var msg = this.ffzPending[i];
 				if ( msg.removed ) {
 					// Don't keep this message ID around.
-					var msg_id = msg && msg.tags && msg.tags.id;
+					var msg_id = msg && msg.tags && msg.tags.id,
+						notice_type = msg && msg.tags && msg.tags['msg-id'];
+
 					if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
 						delete this.ffz_ids[msg_id];
+
+					if ( notice_type && this.ffz_last_notices && this.ffz_last_notices[notice_type] === msg )
+						delete this.ffz_last_notices[notice_type];
+
 					continue;
 				}
 
@@ -1470,7 +1714,24 @@ FFZ.prototype._modify_room = function(room) {
 				if ( (msg.msgId === 'timeout_success' || msg.msgId === 'ban_success') && this.ffzShouldDisplayNotice() )
 					return;
 
-				return this._super(msg);
+				f.log("Notification", msg);
+
+				if ( ! msg.tags )
+					msg.tags = {};
+
+				if ( ! msg.tags['msg-id'] )
+					msg.tags['msg-id'] = msg.msgId;
+
+				if ( ! msg.style )
+					msg.style = 'admin';
+
+				if ( this.ffz_waiting_notices && this.ffz_waiting_notices[msg.msgId]) {
+					msg.has_owner = true;
+					msg.message += ' (By: ' + this.ffz_waiting_notices[msg.msgId] + ')';
+					delete this.ffz_waiting_notices[msg.msgId];
+				}
+
+				return this.addMessage(msg);
 			}
 		},
 
@@ -1481,7 +1742,8 @@ FFZ.prototype._modify_room = function(room) {
 
 		addMessage: function(msg) {
 			if ( msg ) {
-				var is_resub = msg.tags && msg.tags['msg-id'] === 'resub',
+				var notice_type = msg.tags && msg.tags['msg-id'],
+					is_resub = notice_type === 'resub',
 					room_id = this.get('id'),
 					msg_id = msg.tags && msg.tags.id;
 
@@ -1510,8 +1772,11 @@ FFZ.prototype._modify_room = function(room) {
 				var is_whisper = msg.style === 'whisper';
 
 				// Ignore whispers if conversations are enabled.
-				if ( is_whisper && utils.ember_lookup('controller:application').get('isConversationsEnabled') )
-					return;
+				if ( is_whisper ) {
+					var conv_enabled = utils.ember_lookup('controller:application').get('isConversationsEnabled');
+					if ( conv_enabled || (!conv_enabled && f.settings.hide_whispers_in_embedded_chat) )
+						return;
+				}
 
 				if ( ! is_whisper )
 					msg.room = room_id;
@@ -1636,6 +1901,12 @@ FFZ.prototype._modify_room = function(room) {
 			if ( msg_id ) {
 				var ids = this.ffz_ids = this.ffz_ids || {};
 				ids[msg_id] = msg;
+			}
+
+			// If this is a notice, store that this is the last of its type.
+			if ( notice_type ) {
+				var ids = this.ffz_last_notices = this.ffz_last_notices || {};
+				ids[notice_type] = msg;
 			}
 
 			// Report this message to the dashboard.

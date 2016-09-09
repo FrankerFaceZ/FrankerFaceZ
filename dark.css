@@ -197,7 +197,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: rgb(16,16,16);
 	color: rgb(195,195,195); /*#acacbf;*/
 	border-color: #32323e;
-    box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
+	box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
 }
 
 .ffz-dark #flyout .content,
@@ -315,6 +315,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .st-autocomplete-small .list ul .result:not(.active) p,
 .ffz-dark .manager .videos-grid .video:hover .meta .actions li a,
 .ffz-dark .ember-chat .chat-room-list .room:not(:hover) p.room-title,
+.ffz-dark .dropmenu_action:not(:hover),
 .ffz-dark .dropmenu_action:not(:hover) span,
 .ffz-dark a {
 /*.ffz-dark a:not(.profile-card__content):not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {*/
@@ -522,6 +523,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #999;
 }
 
+.ffz-dark .card__boxpin,
 .ffz-dark .streams .stream .content .thumb .boxart,
 .ffz-dark .videos .video .content .thumb .boxart {
 	border-color: rgb(16,16,16);
@@ -532,6 +534,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: rgb(16,16,16);
 }
 
+.ffz-dark .card .card__title a,
+.ffz-dark .card .card__info a,
 .ffz-dark .items-grid .meta .title,
 .ffz-dark .items-grid .meta p a {
 	color: #9c9c9c !important;
@@ -541,18 +545,21 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #6c6c6c;
 }
 
+.ffz-dark .mininav li > a,
 .ffz-dark ul.tabs li > a,
 .ffz-dark .directory_header .nav li > a,
 .ffz-dark ul.tabs_fake li > a {
 	color: #a68ed2;
 }
 
+.ffz-dark .mininav,
 .ffz-dark ul.tabs:before,
 .ffz-dark .direcotry_header .nav:before,
 .ffz-dark ul.tabs_fake:before {
 	border-color: #32323e;
 }
 
+.ffz-dark .mininav li > a:hover,
 .ffz-dark ul.mininav li.active,
 .ffz-dark ul.tabs li.selected a,
 .ffz-dark .directory_header .nav li.selected a,
@@ -793,13 +800,34 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* Dashboard */
 
+.ffz-dark .carousel__button {
+	background-color: #101010;
+}
+
+.ffz-dark .carousel__arrow:before {
+	border-color: #a68ed2;
+}
+
+.ffz-dark .carousel__button:hover .carousel__arrow:before {
+	border-color: #fff;
+}
+
+.ffz-dark .carousel__button:hover {
+	background-color: #191919;
+}
+
 .ffz-dark .brick {
-    background-color: #121212;
+	background-color: #121212;
+}
+
+.ffz-dark .brick--marked.brick--theme-white,
+.ffz-dark .brick--marked.brick--theme-grey {
+	box-shadow: 3px 0 0 #9a7fcc inset,0 0 0 1px rgba(255,255,255,0.2) inset;
 }
 
 .ffz-dark .brick--faint,
 .ffz-dark .brick--block {
-    background-color: rgb(25,25,25);
+	background-color: rgb(25,25,25);
 }
 
 .ffz-dark .brick,
@@ -807,7 +835,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .brick--block,
 .ffz-dark #action_feed .action,
 .ffz-dark .revHeader__item {
-    border-color: rgba(255,255,255,0.2);
+	border-color: rgba(255,255,255,0.2);
 }
 
 .ffz-dark #mantle_skin .what { background-color: #6441a5; }
@@ -955,7 +983,23 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: transparent;
 }
 
+.ffz-dark #mantle_skin div[style^=" display:background:#ffffff"],
+.ffz-dark #mantle_skin .social_links img {
+	background-color: #fff;
+}
+
+.ffz-dark #mantle_skin div[style^=" display:background:#ffffff"] .extraspace { color: #333 }
+
 .ffz-dark #mantle_skin ul.vtabs li .not_linked,
+.ffz-dark #mantle_skin ul.vtabs li a {
+	color: #acacbf;
+}
+
+.ffz-dark #partner_application .partner_reqs {
+	background-color: #191919;
+	border-color: #404040;
+}
+
 .ffz-dark #mantle_skin ul.vtabs li.selected a,
 .ffz-dark #mantle_skin ul.submenu li a:hover,
 .ffz-dark .sort-contain .sort-options li a:hover,
@@ -996,6 +1040,15 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark li.video.vods img.video_type {
 	filter: invert(100%);
 	-webkit-filter: invert(100%);
+}
+
+.ffz-dark .new-header-search input {
+	color: #fff;
+	box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
+}
+
+.ffz-dark .new-header-search input:focus {
+	box-shadow: rgba(255,255,255,0.4) 0 0 0 1px inset;
 }
 
 /* Playlist */
@@ -1088,7 +1141,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .conversations-list .search-divider,
-.ffz-dark .conversation-header {
+.ffz-dark .convoHeader {
 	background-color: #121217;
 	box-shadow: none;
 }
@@ -1099,11 +1152,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #444;
 }
 
-.ffz-dark .conversation-window.has-focus .conversation-header {
+.ffz-dark .conversation-window.has-focus .convoHeader {
 	background-color: #121217;
 }
 
-.ffz-dark .conversation-window.has-focus .conversation-header-name {
+.ffz-dark .conversation-window.has-focus .convoHeader .username {
 	color: #fff;
 }
 
@@ -1169,7 +1222,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-top: none;
 }
 
-.ffz-dark .conversation-window:not(.collapsed) .conversation-header {
+.ffz-dark .conversation-window:not(.collapsed) .convoHeader {
 	border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
@@ -1329,6 +1382,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #C3C3C3;
 }
 
+.ffz-dark .searchPanel--fly:before,
+.ffz-dark .searchPanel--fly:after {
+	border-bottom-color: #404040;
+}
+
 .ffz-dark .titleBar {
 	background-color: #090909;
 }
@@ -1343,6 +1401,15 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .titleBar__back:hover,
 .ffz-dark .resultView__titlesep.isActive { background-color: #222 }
+
+.ffz-dark .searchPanel .card__body--overlay .card__title {
+	text-shadow: 1px 1px #000, -1px 1px #000, -1px -1px #000, 1px -1px #000;
+}
+
+.ffz-dark .card__title a:hover,
+.ffz-dark .card__info a:hover {
+	color: #ccd;
+}
 
 .ffz-dark .resultView__item .card__info span,
 .ffz-dark .resultView__item .card__title,

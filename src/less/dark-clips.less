@@ -1,0 +1,240 @@
+/* Colors */
+@fg-color: #a49ab5;
+@bg-color: #101010;
+@link-color: #a68ed2;
+@remove-link-color: #fc3636;
+
+@hollow-button-color: darken(@link-color, 5%); //#9d8dba;
+
+@bright-bg: lighten(@bg-color, 15%);
+@bright-fg: lighten(@fg-color, 15%);
+
+@nav-bg-color: #191919;
+
+.ffz-dark {
+	html&, body {
+		background-color: @bg-color;
+		color: @fg-color;
+	}
+
+	a {
+		color: @link-color;
+
+		&:hover, &:focus {
+			color: lighten(@link-color, 10%);
+		}
+	}
+
+
+	.sub-text { color: darken(@fg-color, 10%) }
+
+
+	// Navigation
+	.nav {
+		background-color: @nav-bg-color;
+		border-bottom-color: lighten(@nav-bg-color, 10%);
+	}
+
+	.svg-logo_twitch, .clips-nav__logo { fill: white }
+
+
+	// Buttons
+
+	.button {
+		&, &:hover, &:focus {
+			color: #fff;
+		}
+
+		figure img, figure svg {
+			fill: @link-color;
+		}
+	}
+
+	.button--hollow {
+		box-shadow: inset 0 0 0 1px fade(@link-color, 50%);
+		color: @hollow-button-color;
+
+		&:hover, &:focus {
+			background-color: fade(@link-color, 10%);
+			color: @hollow-button-color;
+		}
+	}
+
+	.button--hollow.button--dropmenu {
+		&:after {
+
+		}
+	}
+
+
+	// Balloons
+
+	.balloon {
+		background-color: lighten(@bg-color, 10%);
+		color: #ccc;
+		box-shadow: 0 0 0 1px fade(white, 20%), 0 1px 1px fade(white, 5%);
+
+		&:after {
+			background-color: lighten(@bg-color, 10%);
+		}
+
+		&--fancy {
+			color: lighten(@link-color, 5%);
+			box-shadow: 0 0 0 1px fade(white, 10%);
+		}
+
+		&--left:after { box-shadow: 1px -1px 0 fade(white, 20%) }
+		&--right:after { box-shadow: -1px 1px 0 fade(white, 20%) }
+		&--up:after { box-shadow: 1px 1px 0 fade(white, 20%) }
+		&--down:after { box-shadow: -1px -1px 0 fade(white, 20%) }
+
+		&--cols .balloon__list ~ .balloon__list { box-shadow: -1px 0 0 #202021 }
+
+		&__stroke { border-bottom-color: fade(white, 10%) }
+
+		.balloon__link {
+			color: @link-color !important;
+
+			&:hover {
+				background-color: @link-color !important;
+				color: @bg-color !important;
+			}
+
+			&.request-removal-link,
+			&.clip-remove-link {
+				color: @remove-link-color !important;
+
+				&:hover {
+					background-color: @remove-link-color !important;
+					color: white !important;
+				}
+			}
+		}
+	}
+
+
+	// Modal Content
+	.modal {
+		&__content {
+			background-color: @bg-color;
+			box-shadow: 0 1px 1px fade(white, 10%);
+		}
+
+		&-title {
+			color: @bright-fg;
+		}
+
+		&-body-text {
+			color: @fg-color;
+		}
+	}
+
+
+	// Table
+	.table {
+		background-color: @bg-color;
+		box-shadow: 0 2px 4px 0 fade(white, 20%);
+
+		&__row {
+			background-color: @bg-color;
+			color: @fg-color;
+
+			&:nth-child(even) {
+				background-color: lighten(@bg-color, 5%);
+			}
+
+			&:hover {
+				background-color: lighten(@bg-color, 10%);
+			}
+
+			&--no-hover:hover { background-color: @bg-color }
+		}
+
+		&__header {
+			background-color: lighten(@bg-color, 5%)
+		}
+
+		&__cell {
+			border-top-color: @bright-bg;
+			border-bottom-color: @bright-bg;
+			color: @fg-color;
+		}
+
+		&__cell--header {
+			border-bottom-color: @bright-bg;
+			color: @bright-fg;
+		}
+
+		&__zero-title {
+			color: @bright-fg;
+		}
+
+		&__zero-body {
+			color: @fg-color;
+		}
+	}
+
+
+	// Tabs
+	.tabs {
+		box-shadow: inset 0 -1px 0 #202021;
+
+		&__item {
+			box-shadow: inset 0 -1px 0 #202021;
+
+			& > a { color: @link-color }
+
+			&:hover, &--active {
+				box-shadow: inset 0 -1px 0 @link-color;
+
+				& > a {
+					color: @bright-fg;
+				}
+			}
+		}
+	}
+
+
+	.loading-spinner {
+		border-color: fade(white, 18%);
+		border-left-color: @bright-fg;
+	}
+
+	.expand-button__border,
+	.ldboard-head {
+		border-bottom-color: #3e3d40;
+	}
+
+
+	// Previewer
+	.ld-previewer__iframe, .previewer__pane {
+		background-color: @bg-color;
+	}
+
+	.previewer__close {
+		fill: @link-color;
+
+		&:hover, &:focus {
+			fill: lighten(@link-color, 10%);
+		}
+	}
+
+
+	// Labels
+	.label {
+		color: @bright-fg;
+	}
+
+	// Input
+	select,
+	.input--text {
+		background-color: @bg-color;
+		color: @bright-fg;
+		border-color: @bright-bg;
+
+		&:focus {
+			border-color: lighten(@bright-bg, 15%);
+		}
+	}
+
+}

@@ -504,7 +504,7 @@ FFZ.menu_pages.myemotes = {
 			menu_id = set.hasOwnProperty('source_ext') ? 'ffz-ext-' + set.source_ext + '-' + set.source_id : 'ffz-' + set.id,
 			favorites = this.settings.favorite_emotes[menu_id] || [],
 			c = 0,
-			icon = set.icon || (set.hasOwnProperty('source_ext') && '//cdn.frankerfacez.com/emoji/tw-1f4ac.svg') || '//cdn.frankerfacez.com/script/devicon.png',
+			icon = set.icon || (set.hasOwnProperty('source_ext') && this._apis[set.source_ext] && this._apis[set.source_ext].icon) || '//cdn.frankerfacez.com/script/devicon.png',
 			collapsed = ! favorites_only && this.settings.emote_menu_collapsed.indexOf(menu_id) === -1;
 
 		menu.className = 'emoticon-grid';

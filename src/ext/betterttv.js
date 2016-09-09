@@ -239,6 +239,43 @@ FFZ.prototype.setup_bttv = function(delay) {
 		}
 	};
 
+	// Tab Completion
+	var original_emotes = BC.emotes;
+
+	BC.emotes = function() {
+		var output = original_emotes(),
+			user = f.get_user(),
+			room_id = BetterTTV.getChannel(),
+
+			ffz_sets = f.getEmotes(user && user.login, room_id);
+
+		for(var i=0; i < ffz_sets.length; i++) {
+			var emote_set = f.emote_sets[ffz_sets[i]];
+			if ( ! emote_set )
+				continue;
+
+			var set_name = (emote_set.source || "FFZ") + " " + (emote_set.title || "Global") + " Emotes",
+				set_icon = emote_set.icon || (emote_set.hasOwnProperty('source_ext') && f._apis[emote_set.source_ext] && f._apis[emote_set.source_ext].icon) || '//cdn.frankerfacez.com/script/devicon.png';
+
+			for(var emote_id in emote_set.emoticons) {
+				var emote = emote_set.emoticons[emote_id];
+				if ( ! emote.hidden && emote.name ) {
+					output.push({
+						text: emote.name,
+						channel: set_name,
+						badge: set_icon,
+						url: emote.urls[1]
+					});
+				}
+			}
+		}
+
+		f.log("BTTV Emotes", output);
+
+		return output;
+	}
+
+
 	// Emoji!
 	var parse_emoji = function(token) {
 		var setting = f.settings.parse_emoji,

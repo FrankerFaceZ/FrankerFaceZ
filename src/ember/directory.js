@@ -225,6 +225,7 @@ FFZ.prototype.setup_directory = function() {
 	this.update_views('component:stream-preview', function(x) { this.modify_directory_live(x, false) }, true);
 	this.update_views('component:creative-preview', function(x) { this.modify_directory_live(x, false) }, true);
 	this.update_views('component:csgo-channel-preview', function(x) { this.modify_directory_live(x, true) }, true);
+	this.update_views('component:twitch-carousel/stream-item', function(x) { this.modify_directory_live(x, false, true) }, true);
 	this.update_views('component:host-preview', this.modify_directory_host, true, true);
 	this.update_views('component:video-preview', this.modify_video_preview, true);
 
@@ -418,16 +419,22 @@ FFZ.prototype.modify_game_follow_button = function(component) {
 }
 
 
-FFZ.prototype.modify_directory_live = function(component, is_csgo) {
+FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 	var f = this,
-		pref = is_csgo ? 'channel.' : 'stream.';
+		pref = is_csgo ? 'channel.' : 'stream.',
+
+		meta_selector = is_card ? '.card__body' : '.meta',
+		thumb_selector = is_card ? '.card__img' : '.thumb',
+		cap_selector = is_card ? 'a:not(.card__boxpin)' : '.cap';
+
 
 	utils.ember_reopen_view(component, {
 		ffz_init: function() {
 			var el = this.get('element'),
-				meta = el && el.querySelector('.meta'),
-				thumb = el && el.querySelector('.thumb'),
-				cap = thumb && thumb.querySelector('.cap'),
+				meta = el && el.querySelector(meta_selector),
+				thumb = el && el.querySelector(thumb_selector),
+				cap = thumb && thumb.querySelector(cap_selector),
+				uptime_parent = is_card ? thumb : cap,
 				channel_id = this.get(pref + 'channel.name'),
 				game = this.get(pref + 'game');
 
@@ -438,13 +445,13 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo) {
 			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
 			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 
-			if (f.settings.stream_uptime && f.settings.stream_uptime < 3 && cap ) {
+			if (f.settings.stream_uptime && f.settings.stream_uptime < 3 && uptime_parent ) {
 				var t_el = this._ffz_uptime = document.createElement('div');
 				t_el.className = 'overlay_info length live';
 
 				jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
 
-				cap.appendChild(t_el);
+				uptime_parent.appendChild(t_el);
 				this._ffz_uptime_timer = setInterval(this.ffzUpdateUptime.bind(this), 1000);
 				this.ffzUpdateUptime();
 			}
@@ -463,7 +470,7 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo) {
 				logo.classList.toggle('is-csgo', is_csgo);
 
 				logo.src = this.get(pref + 'channel.logo') || NO_LOGO;
-				logo.alt = this.get(pref + 'channel.display_name');
+				logo.alt = f.format_display_name(this.get(pref + 'channel.display_name'), channel_id, true, true)[0];
 
 				link.href = '/' + channel_id;
 				link.addEventListener('click', function(e) {
@@ -510,9 +517,16 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo) {
 		},
 
 		ffzUpdateUptime: function() {
-			var raw_created = this.get(pref + 'created_at'),
-				up_since = raw_created && utils.parse_date(raw_created),
-				now = Date.now() - (f._ws_server_offset || 0),
+			var up_since;
+
+			if ( is_card )
+				up_since = this.get(pref + 'createdAt');
+			else {
+				var raw_created = this.get(pref + 'created_at');
+				up_since = raw_created && utils.parse_date(raw_created);
+			}
+
+			var now = Date.now() - (f._ws_server_offset || 0),
 				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0;
 
 			if ( uptime > 0 ) {
@@ -620,11 +634,13 @@ FFZ.prototype.modify_directory_host = function(component) {
 
 			var menu = document.createElement('div'), hdr,
 				make_link = function(target) {
-						var link = document.createElement('a');
+						var link = document.createElement('a'),
+							results = f.format_display_name(target.display_name, target.name, true);
+
 						link.className = 'dropmenu_action';
 						link.setAttribute('data-channel', target.name);
 						link.href = '/' + target.name;
-						link.innerHTML = '<img class="image" src="' + utils.sanitize(target.logo || NO_LOGO) + '"><span class="title">' + utils.sanitize(target.display_name) + '</span>';
+						link.innerHTML = '<img class="image" src="' + utils.sanitize(target.logo || NO_LOGO) + '"><span class="title' + (results[1] ? ' html-tooltip" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</span>';
 						link.addEventListener('click', t.ffzVisitChannel.bind(t, target.name));
 						menu.appendChild(link);
 						return link;
@@ -709,7 +725,7 @@ FFZ.prototype.modify_directory_host = function(component) {
 
 				logo.className = 'profile-photo';
 				logo.src = this.get('stream.target.channel.logo') || NO_LOGO;
-				logo.alt = this.get('stream.target.channel.display_name');
+				logo.alt = f.format_display_name(target.display_name, target.name, true, true)[0];
 
 				link.href = '/' + target.name;
 				link.addEventListener('click', this.ffzVisitChannel.bind(this, target.name));

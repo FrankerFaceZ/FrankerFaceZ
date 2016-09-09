@@ -20,6 +20,7 @@ FFZ.settings_info.conv_focus_on_click = {
 	help: "Focus on a conversation's input box when you click it."
 	};
 
+
 FFZ.settings_info.top_conversations = {
 	type: "boolean",
 	value: false,
@@ -32,6 +33,37 @@ FFZ.settings_info.top_conversations = {
 			document.body.classList.toggle('ffz-top-conversations', val);
 		}
 	};
+
+
+FFZ.settings_info.hide_whispers_in_embedded_chat = {
+	type: "boolean",
+	value: false,
+	no_bttv: true,
+
+	category: "Whispers",
+	name: "Hide Whispers in Embedded Chat",
+	help: "Do not display whispers on the dashboard, in pop-out chat, or in chat embedded into other websites.",
+
+	on_update: function(val) {
+		if ( ! val || this.has_bttv )
+			return;
+
+		for(var room_id in this.rooms) {
+			var room = this.rooms[room_id].room;
+			if ( ! room )
+				continue;
+
+			var messages = room.get('messages'),
+				length = messages && messages.length || 0,
+				i = length;
+
+			while(--i >= 0) {
+				if ( messages[i] && messages[i].style === 'whisper' )
+					messages.removeAt(i);
+			}
+		}
+	}
+};
 
 
 FFZ.settings_info.hide_conversations_in_theatre = {
@@ -117,7 +149,7 @@ FFZ.prototype.modify_conversation_window = function(component) {
 
 		ffzHeaderBadges: Ember.computed("thread.participants", "currentUsername", function() {
 			var e = this.get("otherUser");
-			return f.get_other_badges(e.get('username'), null, e.get('userType'), false, e.get('hasTurbo'));
+			return f.get_badges(e.get('username'), null, f.get_twitch_badges(e.get('badges')), null);
 		}),
 
 		ffzReplaceBadges: function() {
@@ -125,13 +157,25 @@ FFZ.prototype.modify_conversation_window = function(component) {
 				badge_el = el && el.querySelector('.badges'),
 				badges = this.get('ffzHeaderBadges');
 
+			if ( ! el )
+				return;
+
+			if ( ! badge_el ) {
+				badge_el = createElement('span', 'badges');
+				var header = el && el.querySelector('.convoHeader .username');
+				if ( ! header )
+					return;
+
+				header.insertBefore(badge_el, header.firstChild);
+			}
+
 			badge_el.innerHTML = f.render_badges(badges);
 		}.observes('ffzHeaderBadges'),
 
 		ffz_init: function() {
 			var el = this.get('element'),
-				header = el && el.querySelector('.conversation-header'),
-				header_name = header && header.querySelector('.conversation-header-name'),
+				header = el && el.querySelector('.convoHeader'),
+				header_name = header && header.querySelector('.username'),
 
 				raw_color = this.get('otherUser.color'),
 				colors = raw_color && f._handle_color(raw_color),

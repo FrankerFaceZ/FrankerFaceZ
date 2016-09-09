@@ -85,8 +85,9 @@ FFZ.prototype.setup_profile_following = function() {
 						}
 
 						success(result);
+
 					}).catch(function(err) {
-						fail(result);
+						fail(err);
 					})
 				});
 			}
@@ -131,15 +132,14 @@ FFZ.prototype.modify_display_followed_item = function(component) {
 
 			el.classList.add('ffz-processed');
 
-			// TODO: REMOVE
-			window._d = this;
+			jQuery('.aspect', el).tipsy();
 
 			if ( ! data )
 				return false;
 
 			var now = Date.now() - (f._ws_server_offset || 0),
 				age = data[0] ? Math.floor((now - data[0].getTime()) / 1000) : 0,
-				t_el = createElement('div', 'overlay_info length'),
+				t_el = createElement('div', 'overlay_info length html-tooltip'),
 
 				update_time = function() {
 					var now = Date.now() - (f._ws_server_offset || 0),
@@ -154,7 +154,6 @@ FFZ.prototype.modify_display_followed_item = function(component) {
 				};
 
 			update_time();
-			jQuery(t_el).tipsy({html:true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
 			el.appendChild(t_el);
 
 			if ( ! mine || ! is_following )
@@ -162,7 +161,7 @@ FFZ.prototype.modify_display_followed_item = function(component) {
 
 			var actions = createElement('div', 'actions'),
 				follow = createElement('button', 'button ffz-no-bg follow'),
-				notif = createElement('button', 'button ffz-no-bg notifications'),
+				notif = createElement('button', 'button ffz-no-bg notifications html-tooltip'),
 
 				update_follow = function() {
 					data = user_cache[user_id];
@@ -173,7 +172,9 @@ FFZ.prototype.modify_display_followed_item = function(component) {
 				update_notif = function() {
 					data = user_cache[user_id];
 					notif.classList.toggle('notifications-on', data && data[1]);
-					notif.textContent = 'Notification ' + (data && data[1] ? 'On' : 'Off');
+					notif.textContent = 'Notifications'; // ' + (data && data[1] ? 'On' : 'Off');
+					notif.setAttribute('original-title', 'Email Notifications: ' + (data && data[1] ? 'En' : 'Dis') + 'abled');
+					jQuery(notif).trigger('mouseout');
 				};
 
 			update_follow();
