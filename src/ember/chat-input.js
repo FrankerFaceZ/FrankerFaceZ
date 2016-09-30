@@ -100,7 +100,7 @@ FFZ.settings_info.input_complete_emotes = {
 		2: "All Emoticons"
 	},
 
-	value: 0,
+	value: 1,
 
 	process_value: function(val) {
 		if ( typeof val === 'string' )
@@ -111,7 +111,7 @@ FFZ.settings_info.input_complete_emotes = {
 	category: "Chat Input",
 	no_bttv: true,
 
-	name: "Tab-Complete Emoticons <span>Beta</span>",
+	name: "Tab-Complete Emoticons",
 	help: "Use tab completion to complete emoticon names in chat.",
 
 	on_update: function(val) {
@@ -503,7 +503,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 		ffzFetchNameSuggestions: function() {
 			if ( ! this.get('ffz_suggestions_visible') )
-				this.set('ffz_name_suggestions', this.get('suggestions'));
+				this.set('ffz_name_suggestions', this.get('suggestions')());
 		}.observes('suggestions'),
 
 

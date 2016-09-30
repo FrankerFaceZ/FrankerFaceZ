@@ -158,15 +158,15 @@ FFZ.prototype.setup_colors = function() {
 
 	// Events for rebuilding colors.
 	var Layout = utils.ember_lookup('service:layout'),
-		Settings = utils.ember_lookup('controller:settings');
+		Settings = utils.ember_settings();
 
 	if ( Layout )
 		Layout.addObserver("isTheatreMode", this._update_colors.bind(this, true));
 
 	if ( Settings )
-		Settings.addObserver("settings.darkMode", this._update_colors.bind(this, true))
+		Settings.addObserver("darkMode", this._update_colors.bind(this, true))
 
-	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
+	this._color_old_darkness = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('darkMode'));
 }
 
 
@@ -685,9 +685,8 @@ FFZ.prototype._rebuild_colors = function() {
 FFZ.prototype._update_colors = function(darkness_only) {
 	// Update the lines. ALL of them.
 	var Layout = utils.ember_lookup('service:layout'),
-		Settings = utils.ember_lookup('controller:settings'),
 
-		is_dark =  (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode')),
+		is_dark =  (Layout && Layout.get('isTheatreMode')) || this.settings.get_twitch("darkMode"),
 		cr_dark = this.settings.dark_twitch || (Layout && Layout.get('isTheatreMode'));
 
 	if ( darkness_only && this._color_old_darkness === is_dark )

@@ -728,6 +728,10 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 			// We have a mention!
 			msgObject.ffz_has_mention = true;
 
+			// If it's a historical message we don't want to update any other UI.
+			if ( msg.tags && msg.tags.historical )
+				continue;
+
 			// If we have chat tabs/rows, update the status.
 			if ( room_id && ! this.has_bttv && this._chatv ) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room;
@@ -1227,7 +1231,7 @@ FFZ._words_to_regex = function(list) {
 			if ( ! list[i] )
 				continue;
 
-			reg += (reg ? "|" : "") + reg_escape(list[i]);
+			reg += (reg ? "|" : "") + (list[i].substr(0,6) === "regex:" ? list[i].substr(6) : reg_escape(list[i]));
 		}
 
 		regex = FFZ._regex_cache[list] = new RegExp("(^|.*?" + constants.SEPARATORS + ")(" + reg + ")(?=$|" + constants.SEPARATORS + ")", "ig");

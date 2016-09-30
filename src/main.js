@@ -34,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 283,
+	major: 3, minor: 5, revision: 302,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -249,7 +249,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return this.init_clips(delay);
 
 	// Check for special non-ember pages.
-	if ( /^\/(?:$|search$|team\/|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) )
+	if ( /^\/(?:team\/|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) )
 		return this.init_normal(delay);
 
 	// Check for the dashboard.
@@ -410,6 +410,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 	// Set up the FFZ message passer.
 	this.setup_message_event();
 
+	this.cache_command_aliases();
 	this.fix_tooltips();
 	this.find_bttv(10);
 
@@ -433,12 +434,6 @@ FFZ.prototype.init_ember = function(delay) {
 	} catch(err) { this.embed_in_dash = false; }
 
 
-	// Make an alias so they STOP RENAMING THIS ON ME
-	var Settings = FFZ.utils.ember_lookup('controller:settings');
-	if ( Settings && Settings.get('settings') === undefined )
-		Settings.reopen({settings: Ember.computed.alias('model')});
-
-
 	// Settings are important.
 	this.load_settings();
 
@@ -448,10 +443,18 @@ FFZ.prototype.init_ember = function(delay) {
 		var f = this;
 		if ( Ember.RSVP && Ember.RSVP.on )
 			Ember.RSVP.on('error', function(error) {
+				// We want to ignore errors that are just 4xx HTTP responses.
+				if ( error && error.responseJSON && typeof error.responseJSON.status === "number" && error.responseJSON.status >= 400 )
+					return;
+
 				f.error("There was an error within an Ember RSVP.", error);
 			});
 
 		Ember.onerror = function(error) {
+			// We want to ignore errors that are just 4xx HTTP responses.
+			if ( error && error.responseJSON && typeof error.responseJSON.status === "number" && error.responseJSON.status >= 400 )
+				return;
+
 			f.error("There was an unknown error within Ember.", error);
 		}
 	}
@@ -505,6 +508,7 @@ FFZ.prototype.init_ember = function(delay) {
 	// Do all Ember modification before this point.
 	this.finalize_ember_wrapper();
 
+	this.cache_command_aliases();
 	this.fix_tooltips();
 	this.connect_extra_chat();
 

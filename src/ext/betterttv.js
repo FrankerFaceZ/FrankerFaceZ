@@ -109,6 +109,9 @@ FFZ.prototype.setup_bttv = function(delay) {
 	cl.remove("ffz-portrait");
 	cl.remove("ffz-minimal-channel-title");
 	cl.remove("ffz-flip-dashboard");
+	cl.remove('ffz-minimal-channel-bar');
+	cl.remove('ffz-channel-bar-bottom');
+	cl.remove('ffz-channel-title-top');
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {
@@ -269,8 +272,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 				}
 			}
 		}
-
-		f.log("BTTV Emotes", output);
 
 		return output;
 	}

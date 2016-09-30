@@ -6,7 +6,6 @@ var FFZ = window.FrankerFaceZ,
 
 	TO_REG = /^\/t(?:imeout)? +([^ ]+)(?: +(\d+)(?: +(.+))?)?$/,
 	BAN_REG = /^\/b(?:an)? +([^ ]+)(?: +(.+))?$/,
-	USER_REG = /\{user\}/g,
 
 	keycodes = {
 		ESC: 27,
@@ -102,8 +101,7 @@ FFZ.settings_info.chat_mod_icon_visibility = {
 	},
 
 	value: function() {
-		var settings = utils.ember_lookup('controller:settings');
-		return (settings && settings.get('settings.showModIcons')) ? 1 : 0;
+		return this.settings.get_twitch("showModIcons") ? 1 : 0;
 	},
 
 	process_value: function(val) {
@@ -119,9 +117,9 @@ FFZ.settings_info.chat_mod_icon_visibility = {
 	help: "Choose when you should see in-line moderation icons in chat.",
 
 	on_update: function(val) {
-		var settings = utils.ember_lookup('controller:settings');
+		var settings = utils.ember_settings();
 		if ( settings )
-			settings.set('settings.showModIcons', val === 1);
+			settings.set('showModIcons', val === 1);
 	}
 }
 
@@ -260,6 +258,33 @@ FFZ.settings_info.mod_card_history = {
 	};
 
 
+FFZ.settings_info.mod_button_context = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Show Ban Reasons Only",
+		2: "Show Chat Rules Only",
+		3: "Ban Reasons + Chat Rules"
+	},
+
+	value: 3,
+	process_value: function(val) {
+		if ( typeof val === "string" ) {
+			val = parseInt(val);
+			if ( isNaN(val) || ! isFinite(val) )
+				val = 3;
+		}
+		return val;
+	},
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Mod Icon Context Menus",
+	help: "Choose the available options when right-clicking an in-line moderation icon."
+}
+
+
 FFZ.settings_info.mod_card_reasons = {
 	type: "button",
 	value: [
@@ -274,8 +299,8 @@ FFZ.settings_info.mod_card_reasons = {
 	category: "Chat Moderation",
 	no_bttv: true,
 
-	name: "Moderation Card Ban Reasons",
-	help: "Change the available options in the chat moderation card ban reasons list.",
+	name: "Ban / Timeout Reasons",
+	help: "Change the available options in the chat ban reasons list shown in moderation cards and when right-clicking an in-line ban or timeout button.",
 
 	method: function() {
 		var f = this,
@@ -286,7 +311,7 @@ FFZ.settings_info.mod_card_reasons = {
 
 		utils.prompt(
 			"Moderation Card Ban Reasons",
-			"Please enter a list of ban reasons to select from in chat moderation cards. One item per line.",
+			"Please enter a list of ban reasons to select from. One item per line.",
 			old_val,
 			function(new_val) {
 				if ( new_val === null || new_val === undefined )
@@ -323,127 +348,124 @@ FFZ.settings_info.mod_buttons = {
 
 	method: function() {
 			var f = this,
-				old_val = "";
+				old_val = "",
+				input = utils.createElement('textarea');
+
+			input.style.marginBottom = '20px';
+			input.placeholder = '/ban\n600';
 
 			for(var i=0; i < this.settings.mod_buttons.length; i++) {
 				var pair = this.settings.mod_buttons[i],
 					prefix = pair[0], cmd = pair[1], had_prefix = pair[2];
 
 				if ( cmd === false )
-					cmd = "<BAN>";
+					cmd = "/ban";
+				else if ( cmd === 600 )
+					cmd = "/timeout";
 				else if ( typeof cmd !== "string" )
 					cmd = '' + cmd;
 
-				if ( ! had_prefix )
-					prefix = '';
-				else
-					prefix += '=';
-
-				if ( cmd.substr(cmd.length - 7) === ' {user}' )
-					cmd = cmd.substr(0, cmd.length - 7);
-
-				if ( cmd.indexOf(' ') !== -1 )
-					old_val += ' ' + prefix + '"' + cmd + '"';
-				else
-					old_val += ' ' + prefix + cmd;
+				prefix = had_prefix ? 'name:' + prefix + '=' : '';
+				old_val += (old_val.length ? '\n' : '') + prefix + cmd;
 			}
-
 
 			utils.prompt(
 				"Custom In-Line Moderation Icons",
-				"Please enter a list of commands to be made available as mod icons within chat lines. Commands are separated by spaces. " +
-					"To include spaces in a command, surround the command with double quotes (\"). Use <code>{user}</code> to insert the user's name " +
-					"into the command, otherwise it will be appended to the end. Use <code>{id}</code> to insert the unique message ID into the command.</p>" +
-					"<p><b>Example:</b> <code>!permit \"!reg add {user}\" \"/timeout {user} 1 {id}\"</code></p><p>To " +
-					"send multiple commands, separate them with <code>&lt;LINE&gt;</code>.</p><p>Numeric values will become timeout buttons for " +
-					"that number of seconds. The text <code>&lt;BAN&gt;</code> is a special value that will act like the normal Ban button in chat.</p><p>" +
-					"To assign a specific letter for use as the icon, specify it at the start of the command followed by an equals sign.</p><p>" +
-					"<b>Example:</b> <code>A=\"!reg add\"</code></p><p><b>Default:</b> <code>&lt;BAN&gt; 600</code>",
-				old_val.substr(1),
+					"Please enter a list of commands to be displayed as moderation buttons within chat lines. " +
+					"One item per line. As a shortcut for specific duration timeouts, you can enter the number of seconds by itself. " +
+					" To send multiple commands, separate them with <code>&lt;LINE&gt;</code>. " +
+					"Variables, such as the target user's name, can be inserted into your commands. If no variables are detected " +
+					"in a line, <code>{user}</code> will be added to the end of the first command.<hr>" +
+
+					"To set a custom label for the button, start your line with <code>name:</code> followed by the " +
+					"name of the button. End the name with an equals sign. Only the first character will be displayed.<br>" +
+					"<strong>Example:</strong> <code>name:B=/ban {user}</code><hr>" +
+
+					"<strong>Allowed Variables</strong><br><table><tbody>" +
+					"<tr><td><code>{user}</code></td><td>target user's name</td>" +
+					"<td><code>{user_name}</code></td><td>target user's name</td></tr>" +
+					"<tr><td><code>{user_display_name}</code></td><td>target user's display name</td>" +
+					"<td><code>{user_id}</code></td><td>target user's numeric ID</td></tr>" +
+					"<tr><td><code>{room}</code></td><td>chat room's name</td>" +
+					"<td><code>{room_name}</code></td><td>chat room's name</td></tr>" +
+					"<tr><td><code>{room_display_name}</code></td><td>chat room's display name</td>" +
+					"<td><code>{room_id}</code></td><td>chat room's numeric ID</td></tr>" +
+					"<tr><td><code>{id}</code></td><td>message's UUID</td></tr>" +
+					"</tbody></table>",
+
+				old_val,
 				function(new_val) {
 					if ( new_val === null || new_val === undefined )
 						return;
 
-					var vals = [], prefix = '';
-					new_val = new_val.trim();
+					var vals = new_val.trim().split(/\s*\n\s*/g),
+						output = [];
 
-					while(new_val) {
-						if ( new_val.charAt(1) === '=' ) {
-							prefix = new_val.charAt(0);
-							new_val = new_val.substr(2);
-							continue;
-						}
-
-						if ( new_val.charAt(0) === '"' ) {
-							var end = new_val.indexOf('"', 1);
-							if ( end === -1 )
-								end = new_val.length;
-
-							var segment = new_val.substr(1, end - 1);
-							if ( segment ) {
-								vals.push([prefix, segment]);
-								prefix = '';
-							}
-
-							new_val = new_val.substr(end + 1);
-
-						} else {
-							var ind = new_val.indexOf(' ');
-							if ( ind === -1 ) {
-								if ( new_val ) {
-									vals.push([prefix, new_val]);
-									prefix = '';
-								}
-
-								new_val = '';
-
-							} else {
-								var segment = new_val.substr(0, ind);
-								if ( segment ) {
-									vals.push([prefix, segment]);
-									prefix = '';
-								}
-
-								new_val = new_val.substr(ind + 1);
-							}
-						}
-					}
-
-					var final = [];
 					for(var i=0; i < vals.length; i++) {
-						var had_prefix = false, prefix = vals[i][0], val = vals[i][1];
-						if ( val === "<BAN>" )
-							val = false;
+						var cmd = vals[i],
+							prefix,
+							is_emoji = false,
+							name_match = /^name:([^=]+)=/.exec(cmd);
 
-						var num = parseInt(val);
-						if ( num > 0 && ! Number.isNaN(num) )
-							val = num;
+						if ( ! cmd || ! cmd.length )
+							continue;
 
-						if ( ! prefix ) {
-							var tmp;
-							if ( typeof val === "string" )
-								tmp = /\w/.exec(val);
-							else
-								tmp = utils.duration_string(val);
+						if ( name_match ) {
+							label = name_match[1];
 
-							prefix = tmp && tmp.length ? tmp[0].toUpperCase() : "C";
+							if ( window.punycode && punycode.ucs2 )
+								label = punycode.ucs2.encode([punycode.ucs2.decode(label)[0]]);
+
+							// Check for an emoji
+							var tokens = f.tokenize_emoji(label);
+							if ( tokens && tokens[0] && tokens[0].ffzEmoji )
+								is_emoji = tokens[0].ffzEmoji;
+
+							cmd = cmd.substr(name_match[0].length).trim();
 						} else
-							had_prefix = true;
+							label = undefined;
 
-						if ( typeof val === "string" ) {
-							// Split it up for this step.
-							var lines = val.split(/ *<LINE> */);
-							for(var x=0; x < lines.length; x++) {
-								if ( lines[x].indexOf('{user}') === -1 )
-									lines[x] += ' {user}';
-							}
-							val = lines.join("<LINE>");
+						// Check for a plain ban.
+						if ( /^\/b(?:an)?(?:\s+{user(?:_name)?})?\s*$/.test(cmd) )
+							cmd = false;
+
+						// Numeric Timeout
+						else if ( /^\d+$/.test(cmd) )
+							cmd = parseInt(cmd);
+
+						// Command Timeout
+						else if ( /^\/t(?:imeout)?(?:\s+{user(?:_name)?}(?:\s+(\d+))?)?\s*$/.test(cmd) ) {
+							cmd = parseInt(/^\/t(?:imeout)?(?:\s+{user(?:_name)?}(?:\s+(\d+))?)?\s*$/.exec(cmd)[1]);
+							if ( isNaN(cmd) || ! isFinite(cmd) )
+								cmd = 600;
 						}
 
-						final.push([prefix, val, had_prefix]);
+
+						// Okay. Do we still need a prefix?
+						if ( label === undefined ) {
+							var tmp;
+							if ( typeof cmd === "string" )
+								tmp = /\w/.exec(cmd);
+							else
+								tmp = utils.duration_string(cmd);
+
+							label = tmp && tmp.length ? tmp[0].toUpperCase() : 'C';
+						}
+
+						// Add {user} to the first command if it's a custom command and missing.
+						if ( typeof cmd === "string" ) {
+							utils.CMD_VAR_REGEX.lastIndex = 0;
+							if ( ! utils.CMD_VAR_REGEX.test(cmd) ) {
+								var lines = cmd.split(/\s*<LINE>\s*/g);
+								lines[0] += ' {user}';
+								cmd = lines.join("<LINE>");
+							}
+						}
+
+						output.push([label, cmd, name_match != null, is_emoji]);
 					}
 
-					f.settings.set('mod_buttons', final);
+					f.settings.set('mod_buttons', output);
 
 					// Update existing chat lines.
 					var CL = utils.ember_resolve('component:chat/chat-line'),
@@ -455,7 +477,7 @@ FFZ.settings_info.mod_buttons = {
 							view.$('.mod-icons').replaceWith(view.buildModIconsHTML());
 					}
 
-				}, 600);
+				}, 600, input);
 		}
 	};
 
@@ -472,60 +494,74 @@ FFZ.settings_info.mod_card_buttons = {
 
 	method: function() {
 			var f = this,
-				old_val = "";
+				old_val = "",
+				input = utils.createElement('textarea');
+
+			input.style.marginBottom = '20px';
+
 			for(var i=0; i < this.settings.mod_card_buttons.length; i++) {
-				var cmd = this.settings.mod_card_buttons[i];
-				if ( cmd.indexOf(' ') !== -1 )
-					old_val += ' "' + cmd + '"';
-				else
-					old_val += ' ' + cmd;
+				var label, cmd, had_label, pair = this.settings.mod_card_buttons[i];
+				if ( Array.isArray(pair) ) {
+					label = pair[0];
+					cmd = pair[1];
+					had_label = pair[2];
+				} else {
+					cmd = pair;
+					had_label = false;
+				}
+
+				label = had_label ? 'name:' + label + '=' : '';
+				old_val += (old_val.length ? '\n' : '') + label + cmd;
 			}
 
 			utils.prompt(
 				"Moderation Card Additional Buttons",
-					"Please enter a list of additional commands to display buttons for on moderation cards. Commands are separated by spaces. " +
-					"To include spaces in a command, surround the command with double quotes (\"). Use <code>{user}</code> to insert the " +
-					"user's name into the command, otherwise it will be appended to the end.</p><p><b>Example:</b> !permit \"!reg add {user}\"",
-				old_val.substr(1),
+					"Please enter a list of additional commands to display buttons for on moderation cards. " +
+					"One item per line. To send multiple commands, separate them with <code>&lt;LINE&gt;</code>. " +
+					"Variables, such as the target user's name, can be inserted into your commands. If no variables are detected " +
+					"in a line, <code>{user}</code> will be added to the end of the first command.<hr>" +
+
+					"To set a custom label for the button, start your line with <code>name:</code> followed by the name of the button. " +
+					"End the name with an equals sign.<br>" +
+					"<strong>Example:</strong> <code>name:Boop=/timeout {user} 15 Boop!</code><hr>" +
+
+					"<strong>Allowed Variables</strong><br><table><tbody>" +
+					"<tr><td><code>{user}</code></td><td>target user's name</td>" +
+					"<td><code>{user_name}</code></td><td>target user's name</td></tr>" +
+					"<tr><td><code>{user_display_name}</code></td><td>target user's display name</td>" +
+					"<td><code>{user_id}</code></td><td>target user's numeric ID</td></tr>" +
+					"<tr><td><code>{room}</code></td><td>chat room's name</td>" +
+					"<td><code>{room_name}</code></td><td>chat room's name</td></tr>" +
+					"<tr><td><code>{room_display_name}</code></td><td>chat room's display name</td>" +
+					"<td><code>{room_id}</code></td><td>chat room's numeric ID</td></tr>" +
+					"</tbody></table>",
+				old_val,
 				function(new_val) {
 					if ( new_val === null || new_val === undefined )
 						return;
 
-					var vals = [];
-					new_val = new_val.trim();
+					var vals = new_val.trim().split(/\s*\n\s*/g),
+						output = [];
 
-					while(new_val) {
-						if ( new_val.charAt(0) === '"' ) {
-							var end = new_val.indexOf('"', 1);
-							if ( end === -1 )
-								end = new_val.length;
+					for(var i=0; i < vals.length; i++) {
+						var cmd = vals[i],
+							label,
+							name_match = /^name:([^=]+)=/.exec(cmd);
 
-							var segment = new_val.substr(1, end - 1);
-							if ( segment )
-								vals.push(segment);
+						if ( ! cmd || ! cmd.length )
+							continue;
 
-							new_val = new_val.substr(end + 1);
+						if ( name_match ) {
+							label = name_match[1];
+							cmd = cmd.substr(name_match[0].length);
+						} else
+							label = cmd.split(' ', 1)[0]
 
-						} else {
-							var ind = new_val.indexOf(' ');
-							if ( ind === -1 ) {
-								if ( new_val )
-									vals.push(new_val);
-
-								new_val = '';
-
-							} else {
-								var segment = new_val.substr(0, ind);
-								if ( segment )
-									vals.push(segment);
-
-								new_val = new_val.substr(ind + 1);
-							}
-						}
+						output.push([label, cmd, name_match != null]);
 					}
 
-					f.settings.set("mod_card_buttons", vals);
-				}, 600);
+					f.settings.set("mod_card_buttons", output);
+				}, 600, input);
 		}
 	};
 
@@ -586,11 +622,11 @@ FFZ.prototype.setup_mod_card = function() {
 
 	this.log("Listening to the Settings controller to catch mod icon state changes.");
 	var f = this,
-		Settings = utils.ember_lookup('controller:settings');
+		Settings = utils.ember_settings();
 
 	if ( Settings )
-		Settings.addObserver('settings.showModIcons', function() {
-			if ( Settings.get('settings.showModIcons') )
+		Settings.addObserver('showModIcons', function() {
+			if ( Settings.get('showModIcons') )
 				f.settings.set('chat_mod_icon_visibility', 1);
 		});
 
@@ -684,7 +720,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 				chat = utils.ember_lookup('controller:chat'),
 				user = f.get_user(),
-				room_id = chat && chat.get('currentRoom.id'),
+				room = chat && chat.get('currentRoom'),
+				room_id = room && room.get('id'),
 				is_broadcaster = user && room_id === user.login,
 
 				user_id = controller.get('cardInfo.user.id'),
@@ -747,13 +784,12 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			if ( is_mod && f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
 				line = utils.createElement('div', 'extra-interface interface clearfix');
 
-				var cmds = {},
-					add_btn_click = function(cmd) {
-						var user_id = controller.get('cardInfo.user.id'),
-							cont = utils.ember_lookup('controller:chat'),
-							room = cont && cont.get('currentRoom'),
+				var add_btn_click = function(cmd) {
+						var user = controller.get('cardInfo.user'),
+							chat_controller = utils.ember_lookup('controller:chat'),
+							room = chat_controller && chat_controller.get('currentRoom'),
 
-							cm = cmd.replace(USER_REG, user_id),
+							cm = utils.replace_cmd_variables(cmd, user, room),
 							reason = ban_reason();
 
 						if ( reason ) {
@@ -775,36 +811,49 @@ FFZ.prototype.modify_moderation_card = function(component) {
 						room && room.send(cm, true);
 					},
 
-					add_btn_make = function(cmd) {
-						var btn = utils.createElement('button', 'button ffz-no-bg'),
-							segment = cmd.split(' ', 1)[0],
-							title = cmds[segment] > 1 ? cmd.split(' ', cmds[segment]) : [segment];
+					add_btn_make = function(label, cmd) {
+						var btn = utils.createElement('button', 'button ffz-no-bg', utils.sanitize(label));
 
-						if ( /^[!~./]/.test(title[0]) )
-							title[0] = title[0].substr(1);
+						jQuery(btn).tipsy({
+							html: true,
+							gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
+							title: function() {
+								var user = controller.get('cardInfo.user'),
+									chat_controller = utils.ember_lookup('controller:chat'),
+									room = chat_controller && chat_controller.get('currentRoom');
 
-						title = _.map(title, function(s){ return s.capitalize() }).join(' ');
+									title = utils.replace_cmd_variables(cmd, user, room);
 
-						btn.innerHTML = utils.sanitize(title);
-						btn.title = utils.sanitize(cmd.replace(/{user}/g, controller.get('cardInfo.user.id') || '{user}'));
+								title = _.map(title.split(/\s*<LINE>\s*/g, utils.sanitize).join("<br>"));
 
-						jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+								return "Custom Command" + (title.indexOf('<br>') !== -1 ? 's' : '') +
+									"<br>" + title;
+							}
+						});
+
 						btn.addEventListener('click', add_btn_click.bind(this, cmd));
 						return btn;
 					};
 
-				var cmds = {};
-				for(var i=0; i < f.settings.mod_card_buttons.length; i++)
-					cmds[f.settings.mod_card_buttons[i].split(' ',1)[0]] = (cmds[f.settings.mod_card_buttons[i].split(' ',1)[0]] || 0) + 1;
 
 				for(var i=0; i < f.settings.mod_card_buttons.length; i++) {
-					var cmd = f.settings.mod_card_buttons[i],
-						ind = cmd.indexOf('{user}');
+					var label, cmd, pair = f.settings.mod_card_buttons[i];
+					if ( ! Array.isArray(pair) ) {
+						cmd = pair;
+						label = cmd.split(' ', 1)[0];
+					} else {
+						label = pair[0];
+						cmd = pair[1];
+					}
 
-					if ( ind === -1 )
-						cmd += ' {user}';
+					utils.CMD_VAR_REGEX.lastIndex = 0;
+					if ( ! utils.CMD_VAR_REGEX.test(cmd) ) {
+						var lines = cmd.split(/\s*<LINE>\s*/g);
+						lines[0] += ' {user}';
+						cmd = lines.join("<LINE>");
+					}
 
-					line.appendChild(add_btn_make(cmd))
+					line.appendChild(add_btn_make(label, cmd));
 				}
 
 				el.appendChild(line);
@@ -1094,7 +1143,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			}
 
 			if ( user_history.length < 50 ) {
-				var before = (user_history.length > 0 ? user_history[0].date.getTime() : Date.now()) - (f._ws_server_offset || 0);
+				var before = (user_history.length > 0 && user_history[0].date ? user_history[0].date.getTime() : Date.now()) - (f._ws_server_offset || 0);
 				f.ws_send("user_history", [room_id, user_id, 50 - user_history.length], function(success, data) {
 					if ( ! success )
 						return;
@@ -1271,9 +1320,9 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 			colors = raw_color && this._handle_color(raw_color),
 
 			Layout = utils.ember_lookup('service:layout'),
-			Settings = utils.ember_lookup('controller:settings'),
+			Settings = utils.ember_settings(),
 
-			is_dark = (Layout && Layout.get('isTheatreMode')) || (Settings && Settings.get('settings.darkMode'));
+			is_dark = (Layout && Layout.get('isTheatreMode')) || this.settings.get_twitch("darkMode");
 
 
 		// Styling

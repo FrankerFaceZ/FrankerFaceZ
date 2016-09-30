@@ -267,7 +267,20 @@ var createElement = function(tag, className, content) {
 			FrankerFaceZ.get().error("There was an error looking up an Ember instance: " + thing, err);
 			return null;
 		}
-	};
+	},
+
+	ember_resolve = function(thing) {
+		if ( ! window.App )
+			return;
+
+		if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.resolve )
+			return App.__deprecatedInstance__.registry.resolve(thing);
+		if ( App.__container__ && App.__container__.resolve )
+			return App.__container__.resolve(thing);
+	},
+
+
+	CMD_VAR_REGEX = /{(\d+(?:\$(?:\d+)?)?|id|msg_id|message_id|(?:user|room)(?:_id|_name|_display_name)?)}/g;
 
 
 module.exports = FFZ.utils = {
@@ -277,15 +290,10 @@ module.exports = FFZ.utils = {
 	},
 
 	ember_lookup: ember_lookup,
-
-	ember_resolve: function(thing) {
-		if ( ! window.App )
-			return;
-
-		if ( App.__deprecatedInstance__ && App.__deprecatedInstance__.registry && App.__deprecatedInstance__.registry.resolve )
-			return App.__deprecatedInstance__.registry.resolve(thing);
-		if ( App.__container__ && App.__container__.resolve )
-			return App.__container__.resolve(thing);
+	ember_resolve: ember_resolve,
+	ember_settings: function() {
+		var settings = ember_resolve('model:settings');
+		return settings && settings.findOne();
 	},
 
 	ember_reopen_view: function(component, data) {
@@ -329,6 +337,62 @@ module.exports = FFZ.utils = {
 		get: function(u,d,o,t) { return api_call('get', u,d,o,t); },
 		post: function(u,d,o,t) { return api_call('post', u,d,o,t); },
 		put: function(u,d,o,t) { return api_call('put', u,d,o,t); }
+	},
+
+
+	find_parent: function(el, klass) {
+		while (el && el.parentNode) {
+			el = el.parentNode;
+			if ( el.classList.contains(klass) )
+				return el;
+		}
+
+		return null;
+	},
+
+
+	CMD_VAR_REGEX: CMD_VAR_REGEX,
+
+	replace_cmd_variables: function(command, user, room, message, args) {
+		user = user || {};
+		room = room || {};
+		message = message || {};
+		message.tags = message.tags || {};
+
+		var msg_id = message.tags.id,
+			replacements = {
+				user: user.name,
+				user_name: user.name,
+				user_display_name: user.display_name || message.tags['display-name'],
+				user_id: user._id || message.tags['user-id'],
+
+				room: room.id,
+				room_name: room.id,
+				room_display_name: room.get && (room.get('tmiRoom.displayName') || room.get('channel.displayName')),
+				room_id: room.get && room.get('roomProperties._id') || message.tags['room-id'],
+
+				id: msg_id,
+				message_id: msg_id,
+				msg_id: msg_id
+			};
+
+		CMD_VAR_REGEX.lastIndex = 0;
+		return command.replace(CMD_VAR_REGEX, function(match, variable) {
+			if ( replacements[variable] )
+				return replacements[variable];
+
+			if ( args ) {
+				var match = /(\d+)(?:(\$)(\d+)?)?/.exec(variable);
+				if ( match ) {
+					var num = parseInt(match[1]),
+						second_num = match[3] ? parseInt(match[3]) : undefined;
+
+					return match[2] === '$' ? args.slice(num, second_num).join(" ") : args[num];
+				}
+			}
+
+			return '{' + variable + '}';
+		});
 	},
 
 

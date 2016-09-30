@@ -224,7 +224,7 @@ FFZ.menu_pages.myemotes = {
 			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
 				continue;
 
-			if ( ! set || ! set.count || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
+			if ( ! set || ! set.count || set.hidden || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
 				continue;
 
 			var menu = FFZ.menu_pages.myemotes.draw_ffz_set.call(this, view, set, favorites_only);

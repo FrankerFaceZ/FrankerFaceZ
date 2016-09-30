@@ -76,8 +76,8 @@ FFZ.ffz_commands.following = function(room, args) {
 
 FFZ.ws_on_close.push(function() {
 	var controller = utils.ember_lookup('controller:channel'),
-		current_id = controller && controller.get('content.id'),
-		current_host = controller && controller.get('hostModeTarget.id'),
+		current_id = controller && controller.get('channelModel.id'),
+		current_host = controller && controller.get('channelModel.hostModeTarget.id'),
 		need_update = false;
 
 	this.follow_sets = {};
@@ -112,8 +112,8 @@ FFZ.ws_on_close.push(function() {
 
 FFZ.ws_commands.follow_buttons = function(data) {
 	var controller = utils.ember_lookup('controller:channel'),
-		current_id = controller && controller.get('content.id'),
-		current_host = controller && controller.get('hostModeTarget.id'),
+		current_id = controller && controller.get('channelModel.id'),
+		current_host = controller && controller.get('channelModel.hostModeTarget.id'),
 		need_update = false;
 
 	this.follow_data = this.follow_data || {};
@@ -131,8 +131,8 @@ FFZ.ws_commands.follow_buttons = function(data) {
 
 FFZ.ws_commands.follow_sets = function(data) {
 	var controller = utils.ember_lookup('controller:channel'),
-		current_id = controller && controller.get('content.id'),
-		current_host = controller && controller.get('hostModeTarget.id'),
+		current_id = controller && controller.get('channelModel.id'),
+		current_host = controller && controller.get('channelModel.hostModeTarget.id'),
 		need_update = false,
 		f = this;
 
@@ -187,12 +187,11 @@ FFZ.ws_commands.follow_sets = function(data) {
 // ---------------
 
 FFZ.prototype.rebuild_following_ui = function() {
-	var controller = utils.ember_lookup('controller:channel'),
-		channel_id = controller && controller.get('content.id'),
-		hosted_id = controller && controller.get('hostModeTarget.id');
-
 	if ( ! this._cindex )
 		return;
+
+	var channel_id = this._cindex.get('channel.id'),
+		hosted_id = this._cindex.get('channel.hostModeTarget.id');
 
 	if ( channel_id ) {
 		var data = this.follow_data && this.follow_data[channel_id],

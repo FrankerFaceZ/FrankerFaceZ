@@ -98,6 +98,83 @@ FFZ.prototype.setup_profile_following = function() {
 
 	// Modify followed items.
 	this.update_views('component:display-followed-item', this.modify_display_followed_item);
+	this.update_views('component:twitch-profile-card', this.modify_twitch_profile_card);
+}
+
+
+FFZ.prototype.modify_twitch_profile_card = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffzParentModel: function() {
+			var x = this.get('parentView');
+			while(x) {
+				var model = x.get('model');
+				if ( model )
+					return model;
+				x = x.get('parentView');
+			}
+		}.property('parentView'),
+
+		ffz_init: function() {
+			var el = this.get('element');
+
+			el.classList.add('ffz-processed');
+			jQuery('.aspect', el).tipsy();
+
+			if ( ! f.settings.enhance_profile_following )
+				return;
+
+			this.ffzUpdate();
+		},
+
+		ffzUpdate: function() {
+			var el = this.get('element'),
+				t_el = el.querySelector('.ffz-followed-since'),
+
+				channel_id = this.get('ffzParentModel.model.id'),
+				is_following = this.get('ffzParentModel.relationshipName') === 'following',
+
+				user = f.get_user(),
+				mine = user && user.login && user.login === channel_id,
+				big_cache = is_following ? f._following_cache : f._follower_cache,
+				user_cache = big_cache[channel_id] = big_cache[channel_id] || {},
+
+				user_id = this.get('channelInfo.id'),
+				data = user_cache[user_id];
+
+			f.log("Profile Card [" + channel_id + "] " + user_id + " <" + JSON.stringify(data) + ">", this);
+
+			if ( ! data || ! el ) {
+				if ( t_el )
+					t_el.parentElement.removeChild(t_el);
+				return false;
+			}
+
+			var now = Date.now() - (f._ws_server_offset || 0),
+				age = data[0] ? Math.floor((now - data[0].getTime()) / 1000) : 0,
+				t_el = el.querySelector('.ffz-followed-since')
+
+				update_time = function() {
+					var now = Date.now() - (f._ws_server_offset || 0),
+						age = data && data[0] ? Math.floor((now - data[0].getTime()) / 1000) : undefined;
+
+					if ( age !== undefined ) {
+						t_el.innerHTML = constants.CLOCK + ' ' + (age < 60 ? 'now' : utils.human_time(age, 10));
+						t_el.title = 'Follow' + (is_following ? 'ed by ' : 'er of ') + channel_id + ' since: <nobr>' + data[0].toLocaleString() + '</nobr>';
+						t_el.style.display = '';
+					} else
+						t_el.style.display = 'none';
+				};
+
+			if ( ! t_el ) {
+				t_el = createElement('div', 'overlay_info length html-tooltip ffz-followed-since');
+				el.appendChild(t_el);
+			}
+
+			update_time();
+
+		}.observes('channelInfo')
+	});
 }
 
 

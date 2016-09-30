@@ -192,18 +192,18 @@ FFZ.prototype.ws_create = function() {
 			if ( room.important ) {
 				f.ws_sub("room." + room_id);
 
-				if ( room.needs_history ) {
+				/*if ( room.needs_history ) {
 					room.needs_history = false;
 					if ( ! f.has_bttv && f.settings.chat_history )
 						f.ws_send("chat_history", [room_id,25], f._load_history.bind(f, room_id));
-				}
+				}*/
 			}
 		}
 
 		// Send the channel(s).
 		if ( f._cindex ) {
-			var channel_id = f._cindex.get('controller.model.id'),
-				hosted_id = f._cindex.get('controller.hostModeTarget.id');
+			var channel_id = f._cindex.get('channel.id'),
+				hosted_id = f._cindex.get('channel.hostModeTarget.id');
 
 			if ( channel_id )
 				f.ws_sub("channel." + channel_id);
@@ -463,14 +463,12 @@ FFZ.ws_commands.do_authorize = function(data) {
 		if ( ! this.rooms.hasOwnProperty(room_id) )
 			continue;
 
-		var r = this.rooms[room_id];
+		var r = this.rooms[room_id],
+			c = r && r.room && r.room.tmiRoom && r.room.tmiRoom._getConnection();
 
-		if ( r && r.room && !r.room.get('roomProperties.eventchat') && !r.room.get('isGroupRoom') && r.room.tmiRoom ) {
-			var c = r.room.tmiRoom._getConnection();
-			if ( c.isConnected ) {
-				conn = c;
-				break;
-			}
+		if ( c.isConnected ) {
+			conn = c;
+			break;
 		}
 	}
 
@@ -478,5 +476,5 @@ FFZ.ws_commands.do_authorize = function(data) {
 		conn._send("PRIVMSG #frankerfacezauthorizer :AUTH " + data);
 	else
 		// Try again shortly.
-		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 5000);
+		setTimeout(FFZ.ws_commands.do_authorize.bind(this, data), 1000);
 }

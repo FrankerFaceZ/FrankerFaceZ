@@ -18,6 +18,10 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-minimal-channel-title .cn-metabar__title:not(:hover) .card__info,
+.ffz-minimal-channel-bar .cn-bar-spacer,
+.ffz-channel-bar-bottom .cn-bar-spacer,
+.ffz-channel-bar-bottom .cn-cover-wrap,
 .app-main .ad_leader:empty,
 body:not(.ffz-show-bits-tags) .bits-tag--container,
 .ffz-hide-friends nav .friend-list,
@@ -28,10 +32,35 @@ body:not(.ffz-show-bits-tags) .bits-tag--container,
 .ffz-hide-promoted-games .promotedGames,
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
 .ffz-hide-view-count .stat.twitch-channel-views,
+.ffz-hide-view-count .cn-metabar__viewcount,
 .ffz-minimal-chat-input .chat-interface .emoticon-selector-toggle,
 .ffz-menu-replace .chat-interface .ember-emoticon-selector,
 .ffz-menu-replace .chat-interface .emoticon-selector-toggle {
 	display: none !important;
+}
+
+.ffz-channel-bar-bottom #channel {
+	margin-bottom: 60px;
+}
+
+.ffz-channel-bar-bottom .notification-controls .balloon {
+	top: auto;
+	bottom: 50px;
+}
+
+.ffz-channel-bar-bottom .js-username-hover-tip .balloon {
+	top: auto;
+	bottom: 100px;
+}
+
+.ffz-channel-bar-bottom .cn-bar {
+	top: auto;
+	bottom: 0;
+	box-shadow: inset 0 1px 0 #e5e3e8,0 -1px -1px rgba(0,0,0,.065);
+}
+
+.ffz-dark.ffz-channel-bar-bottom .cn-bar {
+	box-shadow: inset 0 1px 0 #161616, -1px -1px rgba(255,255,255,0.065);
 }
 
 body:not(.ffz-show-bits-tags) .ember-chat .chat-messages.bits-tags__offset {
@@ -223,30 +252,17 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 /* Minimal Channel Title */
 
-.ffz-minimal-channel-title #broadcast-meta {
-	height: 25px;
-	margin: 20px 0;
+.ffz-minimal-channel-title .cn-metabar__title:hover {
+	background-color: #fff;
+	padding: 1rem;
+	margin-left: -1rem;
 }
+.ffz-dark.ffz-minimal-channel-title .cn-metabar__title:hover { background-color: #101010 }
 
-.ffz-minimal-channel-title #channel #broadcast-meta .profile-link .profile-photo img {
-	width: 25px; height: 25px;
+.ffz-minimal-channel-title .cn-metabar__title:not(:hover) .card__img--boxart {
+	height: 20px !important;
+	width: 14px !important;
 }
-
-.ffz-minimal-channel-title #channel #broadcast-meta .info {
-	padding-top: 25px;
-	padding-left: 50px;
-}
-
-.ffz-minimal-channel-title #channel #broadcast-meta .info .title {
-	padding-top: 0;
-	margin: 0;
-	left: calc(25px + 1.5rem);
-	height: 25px;
-	min-height: 25px;
-}
-
-.ffz-minimal-channel-title #broadcast-meta .profile-photo .goto,
-.ffz-minimal-channel-title #broadcast-meta .channel { display: none }
 
 
 /* Theater Mode hover bar */
@@ -1404,6 +1420,7 @@ img.channel_background[src="null"] { display: none; }
 	background-color: #232329;
 }
 
+.ffz-no-blue .cn-hosting,
 .ffz-no-blue .dark .ember-chat .moderation-card .interface,
 .ffz-no-blue .force-dark .ember-chat .moderation-card .interface,
 .ffz-no-blue .theatre .ember-chat .moderation-card .interface {
@@ -1426,8 +1443,13 @@ img.channel_background[src="null"] { display: none; }
 	text-decoration: none;
 	font-size: 18px;
 	font-weight: bold;
-    margin-top: -1px !important;
+	margin-top: -1px !important;
 	color: #888 !important;
+	background: none !important;
+}
+
+.mod-icons .mod-icon img {
+	pointer-events: none;
 }
 
 
@@ -1549,6 +1571,8 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 }
 
 /* Menu About Page */
+
+#ffz-chat-menu .center { text-align: center }
 
 .ffz-about-table {
 	width: 100%;
@@ -2039,7 +2063,10 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	line-height: 30px;
 	margin-left: -10px;
 	margin-right: 15px;
+	cursor: default;
 }
+
+.ffz.room-state.faded { opacity: 0.5 }
 
 .ffz.room-state.truncated span { font-size: 8px; }
 
@@ -2080,6 +2107,14 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-sidebar-swap:not(.ffz-portrait) .ember-chat .chat-interface .emoticon-selector {
 	right: auto;
 	left: 20px;
+}
+
+.ffz-sidebar-swap #main_col .cn-bar-fixed {
+	right: 50px;
+}
+
+.ffz-sidebar-swap #left_col.open ~ #main_col .cn-bar-fixed {
+	right: 240px;
 }
 
 .ffz-sidebar-swap #left_col {
@@ -3234,4 +3269,65 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	background: #101010;
 	color: #ccc;
 	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-mod-balloon {
+	display: block;
+	max-width: 200px;
+}
+
+.ffz-mod-balloon .ffz-title {
+	padding: 0 1rem;
+}
+
+
+.cn-metabar__ffz svg { fill: #898395; }
+.cn-metabar__ffz {
+	cursor: default;
+	color: #706a7c;
+	font-size: 1.4rem;
+}
+.cn-metabar__ffz figure {
+	margin-right: 5px;
+}
+
+.ffz-channel-title-top .cn-metabar__more { width: 100% }
+.ffz-channel-title-top #channel {
+	position: relative;
+	padding-top: 80px;
+}
+
+.ffz-minimal-channel-title.ffz-channel-title-top #channel {
+	padding-top: 50px;
+}
+
+.ffz-channel-title-top .cn-metabar__title {
+	position: absolute;
+	top: 5px;
+}
+
+.ffz-channel-title-top:not(.ffz-channel-bar-bottom) #channel.ffz-bar-fixed .cn-metabar__title {
+	margin-top: 50px;
+}
+
+.ffz-channel-title-top .cn-metabar__more > div { order: 999; }
+.ffz-channel-title-top .cn-metabar__more > span:last-of-type { flex-grow: 1 }
+.ffz-channel-title-top .cn-metabar__more > span:last-of-type > div { float: left }
+.ffz-channel-title-top .cn-metabar__more > div:last-of-type { margin-right: 0 !important }
+.ffz-channel-title-top .cn-metabar__more > div + button:first-of-type,
+.ffz-channel-title-top .cn-metabar__more > div + span:first-of-type button.mg-l-1 { margin-left: 0 !important }
+.ffz-channel-title-top .cn-metabar__viewcount { flex-grow: 0 !important; }
+
+.ffz-minimal-channel-bar .cn-bar-fixed {
+	top: -40px;
+	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
+}
+
+.ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
+.ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed { top: auto; bottom: -40px }
+.ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed:hover { bottom: 0 }
+
+.ffz-minimal-channel-title .cn-metabar,
+.ffz-channel-title-top .cn-metabar {
+	min-height: 70px;
 }

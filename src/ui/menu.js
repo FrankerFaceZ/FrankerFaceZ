@@ -45,42 +45,20 @@ FFZ.prototype.setup_menu = function() {
 
 	this.log("Hooking the Ember Chat Settings view.");
 
-	var Settings = utils.ember_resolve('view:settings'),
+	var Settings = utils.ember_resolve('component:chat/chat-settings-menu'),
 		Layout = utils.ember_lookup('service:layout'),
 		f = this;
 
 	if ( ! Settings )
 		return;
 
-	Settings.reopen({
-		didInsertElement: function() {
-			this._super();
-
-			try {
-				this.ffzInit();
-			} catch(err) {
-				f.error("ChatSettings didInsertElement: " + err);
-			}
-		},
-
-		willClearRender: function() {
-			try {
-				this.ffzTeardown();
-			} catch(err) {
-				f.error("ChatSettings willClearRender: " + err);
-			}
-			this._super();
-		},
-
-		ffzInit: function() {
+	utils.ember_reopen_view(Settings, {
+		ffz_init: function() {
 			var view = this,
-				el = this.get('element'),
-				menu = el && el.querySelector('.dropmenu');
+				el = this.get('element');
 
-			if ( ! menu )
-				return;
-
-			var header = utils.createElement('div', 'list-header', 'FrankerFaceZ'),
+			var container = utils.createElement('div', ''),
+				header = utils.createElement('div', 'list-header', 'FrankerFaceZ'),
 				content = utils.createElement('div', 'chat-menu-content'),
 				p, cb, a;
 
@@ -125,25 +103,35 @@ FFZ.prototype.setup_menu = function() {
 			content.appendChild(p);
 
 			a.addEventListener('click', function(e) {
-				view.set('controller.settings.hidden', true);
+				view.set('isHidden', true);
 				f._last_page = 'settings';
 				f.build_ui_popup(f._chatv);
 				e.stopPropagation();
 				return false;
 			});
 
-			menu.appendChild(header);
-			menu.appendChild(content);
+			container.appendChild(header);
+			container.appendChild(content);
+
+			container.classList.toggle('hidden', this.get('showDisplaySettings'));
+			el.appendChild(container);
+			this.ffz_menu = container;
 
 			// Maximum Height
-			var e = el.querySelector('.chat-settings');
-			if ( Layout && e )
-				e.style.maxHeight = (Layout.get('windowHeight') - 90) + 'px';
-
+			if ( Layout && el )
+				el.style.maxHeight = (Layout.get('windowHeight') - 90) + 'px';
 		},
 
-		ffzTeardown: function() {
-			// Nothing~!
+		ffz_update_visibility: function() {
+			if ( this.ffz_menu )
+				this.ffz_menu.classList.toggle('hidden', this.get('showDisplaySettings'));
+		}.observes('showDisplaySettings'),
+
+		ffz_destroy: function() {
+			if ( this.ffz_menu ) {
+				this.ffz_menu.parentElement.removeChild(this.ffz_menu);
+				this.ffz_menu = null;
+			}
 		}
 	});
 
@@ -647,6 +635,9 @@ FFZ.menu_pages.channel = {
 				// Look up the set name.
 				var set = this.emote_sets[extra_sets[i]],
 					name = set ? (set.hasOwnProperty('source_ext') ? "" : "Featured ") + set.title : "Featured Channel";
+
+				if ( ! set || ! set.count || set.hidden )
+					continue;
 
 				this._emotes_for_sets(inner, view, [extra_sets[i]], name, set.icon || "//cdn.frankerfacez.com/script/devicon.png", set.source || "FrankerFaceZ");
 			}

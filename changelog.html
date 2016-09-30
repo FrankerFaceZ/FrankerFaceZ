@@ -1,3 +1,123 @@
+<div class="list-header">3.5.302</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Bug causing chat pausing by scrolling up / moving the mouse / pressing a key to stop working.</li>
+</ul>
+
+<div class="list-header">3.5.301</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Channel Bar on Bottom, Channel Title on Top, and Minimal Channel Bar settings to reflow the new channel design as the user wishes.</li>
+	<li>Fixed: Layout spacing tweaks.</li>
+</ul>
+
+<div class="list-header">3.5.300</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>This... is... <em>breaking layout changes</em>!</li>
+	<li>&nbsp;</li>
+	<li>Fixed: Sidebar Width, Swap Sidebars, and Portrait Mode were all doing bad things with theater mode. They've been whipped into shape.</li>
+	<li>Fixed: That one lighter-than-it-should-be bar separating channel title and info if you had dark theme.</li>
+	<li>Fixed: Host mode's ugly dark borders were not just ugly, but too purpley. Fixed.</li>
+	<li>&nbsp;</li>
+	<li>Still Broken: Some minor spacing issues, Auto-Theater Mode, disabling Hosting, extra following buttons, SRL races. Not looking like this.</li>
+</ul>
+
+<div class="list-header">3.5.299</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Command Aliases! Define custom commands for chat that are shortcuts for other commands! Madness! (pls no recursion)</li>
+	<li>API Added: <code>hidden</code> property for emote sets to keep them out of the emote menu.</li>
+	<li>API Fixed: API instances were storing incorrect emote set IDs (the global FFZ IDs instead of the per-API IDs specifically).</li>
+</ul>
+
+<div class="list-header">3.5.298</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: <code>/rules</code> chat command to show the chat rules for a room.</li>
+	<li>Added: <code>/open_link</code> chat command for use with moderation actions.</li>
+	<li>Added: <code>/fetch_link</code> chat command for user with moderation actions.</li>
+	<li>Changed: Completely redo the UI for setting in-line mod icons and additional mod card buttons.</li>
+	<li>Changed: Add extra variables to custom in-line mod icons and additional mod card buttons.</li>
+	<li>Changed: Allow the use of emoji for in-line mod icons.</li>
+	<li>Fixed: Ensure moderation logs are compared in a case-sensitive manner.</li>
+	<li>Fixed: Don't add a message to a chat room if that message ID already exists.</li>
+</ul>
+
+<div class="list-header">3.5.297</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Stuff.</li>
+	<li>Fixed: Append historical messages to chatter history in the correct order.</li>
+	<li>Fixed: Bug with the rendering of chat room states, specifically regarding Delay.</li>
+	<li>Fixed: Treat the front page of Twitch as a standard part of the Ember app to avoid only partially loading FFZ elsewhere.</li>
+</ul>
+
+<div class="list-header">3.5.296</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Bug with a straight timeout not working with the next context menu.</li>
+</ul>
+
+<div class="list-header">3.5.295</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Accidental debugging code made the new context menu always use the last option. I'm a dumb.</li>
+</ul>
+
+<div class="list-header">3.5.294</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Context menu for in-line moderation icons to let moderators easily apply a reason to their ban or timeout.</li>
+</ul>
+
+<div class="list-header">3.5.293</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: CBenni memes.</li>
+	<li>Changed: The Delay badge will be faded to indicate that it's disabled if you are a moderator who doesn't experience chat delay in a room.</li>
+	<li>Fixed: The Slow Mode status indicator would not display in some situations.</li>
+	<li>Fixed: Badges not rendering correctly in the chat menu's preview.</li>
+</ul>
+
+<div class="list-header">3.5.292</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Timestamps rendering as <code>undefined</code> in chat under certain situations.</li>
+	<li>Fixed: Message history showing in reverse order.</li>
+	<li>Removed: FFZ's experimental chat history that had very limited server-side support.</li>
+</ul>
+
+<div class="list-header">3.5.291</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Enhanced channel information, including clickable links in titles, stream uptime, stream latency, the Host button, and chatter count should all be working now. The channel model was reworked and I had to update my code to match.</li>
+	<li>Fixed: FFZ settings weren't appearing in the chat settings menu.</li>
+</ul>
+
+<div class="list-header">3.5.290</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Unable to tab complete usernames. It works now. (For some reason, the suggestions property is now a function I have to call? Okay Twitch.)</li>
+</ul>
+
+<div class="list-header">3.5.289</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Username colors were not being calculated properly. (Twitch moved the settings controller and so FFZ didn't realize chat was dark.)</li>
+	<li>Fixed: Mod icons could potentially be a bit screwy for the same reason.</li>
+</ul>
+
+<div class="list-header">3.5.288</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Proper fix for chat messages not appearing. Rewrote the message queue.</li>
+</ul>
+
+<div class="list-header">3.5.287</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Temporary fix for chat messages not appearing as they should.</li>
+</ul>
+
+<div class="list-header">3.5.286</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Disabled two debugging logging statements that were erroneously left intact.</li>
+</ul>
+
+<div class="list-header">3.5.285</div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Show FFZ badges in the Name Display section of the Twitch chat settings menu.</li>
+	<li>Added: Basic regular expression support for highlighting and banning words.</li>
+	<li>Fixed: Update the pubsub patch for chat for the new topics.</li>
+	<li>Changed: Logic tweaks to make the Show Moderation Actions setting in the Twitch chat settings menu more effectual with FFZ present.</li>
+	<li>Changed: Dark CSS tweaks.</li>
+</ul>
+
 <div class="list-header">3.5.284</div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Changed: Inject FFZ emotes into the BetterTTV tab completion list.</li>

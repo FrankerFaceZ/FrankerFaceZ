@@ -1,5 +1,132 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('./utils');
+	constants = require('./constants'),
+	utils = require('./utils'),
+
+	KNOWN_COMMANDS = ['ffz', 'unban', 'ban', 'timeout', 'r9kbeta', 'r9kbetaoff', 'slow', 'slowoff', 'subscribers', 'subscribersoff', 'mod', 'unmod', 'me', 'emotesonly', 'emotesonlyoff', 'host', 'unhost', 'commercial'],
+
+	STATUS_CODES = {
+		400: "Bad Request",
+		401: "Unauthorized",
+		403: "Forbidden",
+		404: "Not Found",
+		500: "Internal Server Error"
+	},
+
+	format_result = function(response) {
+		if ( typeof response === "string" )
+			return response;
+
+		else if ( Array.isArray(response) )
+			return _.map(response, format_result).join(", ");
+
+		return JSON.stringify(response);
+	},
+
+	ObjectPath = require('./ObjectPath');
+
+
+FFZ.ObjectPath = ObjectPath;
+
+// -----------------
+// Settings
+// -----------------
+
+FFZ.settings_info.command_aliases = {
+	type: "button",
+	value: [],
+
+	category: "Chat Moderation",
+	no_bttv: true,
+
+	name: "Command Aliases",
+	help: "Define custom commands for chat that are shortcuts for other commands or messages to send in chat.",
+
+	on_update: function() {
+		this.cache_command_aliases();
+	},
+
+	method: function() {
+			var f = this,
+				old_val = [],
+				input = utils.createElement('textarea');
+
+			input.style.marginBottom = '20px';
+
+			for(var i=0; i < this.settings.command_aliases.length; i++) {
+				var pair = this.settings.command_aliases[i],
+					name = pair[0],
+					command = pair[1];
+
+				old_val.push(name + '=' + command);
+			}
+
+			utils.prompt(
+				"Command Aliases",
+					"Please enter a list of custom commands that you would like to use in Twitch chat. " +
+					"One item per line. To send multiple commands, separate them with <code>&lt;LINE&gt;</code>. " +
+					"Variables, such as arguments you provide running the custom command, can be inserted into the output.<hr>" +
+
+					"All custom commands require names. Names go at the start of each line, and are separated from " +
+					" the actual command by an equals sign. Do not include the leading slash or dot. Those are automatically included.<br>" +
+					"<strong>Example:</strong> <code>boop=/timeout {0} 15 Boop!</code><hr>" +
+
+					"<code>{0}</code>, <code>{1}</code>, <code>{2}</code>, etc. will be replaced with any arguments you've supplied. " +
+					"Follow an argument index with a <code>$</code> to also include all remaining arguments.<br>" +
+					"<strong>Example:</strong> <code>boop=/timeout {0} 15 {1$}</code><hr>" +
+
+					"<strong>Allowed Variables</strong><br><table><tbody>" +
+					"<tr><td><code>{room}</code></td><td>chat room's name</td>" +
+					"<td><code>{room_name}</code></td><td>chat room's name</td></tr>" +
+					"<tr><td><code>{room_display_name}</code></td><td>chat room's display name</td>" +
+					"<td><code>{room_id}</code></td><td>chat room's numeric ID</td></tr>" +
+					"</tbody></table>",
+				old_val.join("\n"),
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
+
+					var vals = new_val.trim().split(/\s*\n\s*/g),
+						output = [];
+
+					for(var i=0; i < vals.length; i++) {
+						var cmd = vals[i],
+							name,
+							name_match = /^([^=]+)=/.exec(cmd);
+
+						if ( ! cmd || ! cmd.length )
+							continue;
+
+						if ( name_match ) {
+							name = name_match[1].toLowerCase();
+							cmd = cmd.substr(name_match[0].length);
+						}
+
+						output.push([name, cmd]);
+					}
+
+					f.settings.set("command_aliases", output);
+				}, 600, input);
+		}
+	};
+
+
+FFZ.prototype._command_aliases = {};
+
+FFZ.prototype.cache_command_aliases = function() {
+	var aliases = this._command_aliases = {};
+	for(var i=0; i < this.settings.command_aliases.length; i++) {
+		var pair = this.settings.command_aliases[i],
+			name = pair[0],
+			command = pair[1];
+
+		// Skip taken/invalid names.
+		if ( ! name || ! name.length || aliases[name] || KNOWN_COMMANDS.indexOf(name) !== -1 )
+			continue;
+
+		aliases[name] = command;
+	}
+}
+
 
 
 // -----------------
@@ -115,6 +242,82 @@ FFZ.chat_commands.card = function(room, args) {
 		sender: args[0]
 	});
 }
+
+
+FFZ.chat_commands.rules = function(room, args) {
+	var f = this,
+		r = room.room;
+
+	r.waitForRoomProperties().then(function() {
+		var rules = r.get("roomProperties.chat_rules");
+		if ( ! rules || ! rules.length )
+			return f.room_message(room, "This chat room does not have rules set.");
+
+		r.set("chatRules", rules);
+		r.set("shouldDisplayChatRules", true);
+	});
+}
+
+
+FFZ.chat_commands.open_link = function(room, args) {
+	if ( ! args || ! args.length )
+		return "Usage: /open_link <url>";
+
+	var wnd = window.open(args.join(" "), "_blank");
+	wnd.opener = null;
+}
+
+
+FFZ.chat_commands.fetch_link = function(room, args) {
+	if ( ! args || ! args.length )
+		return "Usage: /fetch_link <url> [template]\nTemplates use http://objectpath.org/ to format data. Default Template is \"Response: #$#\"";
+
+	var f = this,
+		url = args.shift(),
+		headers = {};
+
+	if ( /https?:\/\/[^.]+\.twitch\.tv\//.test(url) )
+		headers['Client-ID'] = constants.CLIENT_ID;
+
+	jQuery.ajax({
+		url: url,
+		headers: headers,
+
+		success: function(data) {
+			f.log("Response Received", data);
+			args = (args && args.length) ? args.join(" ").split(/#/g) : ["Response: ", "$"];
+
+			if ( typeof data === "string" )
+				data = [data];
+
+			var is_special = true,
+				output = [],
+				op = new ObjectPath(data);
+
+			for(var i=0; i < args.length; i++) {
+				var segment = args[i];
+				is_special = !is_special;
+				if ( ! is_special )
+					output.push(segment);
+				else
+					try {
+						output.push(format_result(op.execute(segment)));
+					} catch(err) {
+						f.log("Error", err);
+						output.push("[Error: " + (err.message || err) + "]");
+					}
+			}
+
+			f.room_message(room, output.join(''));
+
+		},
+		error: function(xhr) {
+			f.log("Request Error", xhr);
+			f.room_message(room, "Request Failed: " + (xhr.status === 0 ? 'Unknown Error. ' + (url.indexOf('https') === -1 ? 'Please make sure you\'re making HTTPS requests.' : 'Likely a CORS problem. Check your browser\'s Networking console for more.') : xhr.status + ' ' + (STATUS_CODES[xhr.status] || '' )));
+		}
+	});
+}
+
 
 
 // -----------------

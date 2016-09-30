@@ -89,7 +89,7 @@ FFZ.basic_settings.keywords = {
 	help: "Set additional keywords that will be highlighted in chat.",
 
 	method: function() {
-		FFZ.settings_info.keywords.method.call(this);
+		FFZ.settings_info.keywords.method.call(this, null, true);
 	}
 };
 
@@ -103,7 +103,7 @@ FFZ.basic_settings.banned_words = {
 	help: "Set a list of words that will be removed from chat messages, locally.",
 
 	method: function() {
-		FFZ.settings_info.banned_words.method.call(this);
+		FFZ.settings_info.banned_words.method.call(this, null, true);
 	}
 };
 
@@ -137,15 +137,14 @@ FFZ.settings_info.dark_twitch = {
 
 			(this.is_clips ? document.querySelector('html') : document.body).classList.toggle("ffz-dark", val);
 
-			var Settings = utils.ember_lookup('controller:settings'),
-				settings = Settings && Settings.get('settings');
+			var Settings = utils.ember_settings();
 
 			if ( val ) {
 				this._load_dark_css();
-				settings && this.settings.set('twitch_chat_dark', settings.get('darkMode'));
-				settings && settings.set('darkMode', true);
+				Settings && this.settings.set('twitch_chat_dark', Settings.get('darkMode'));
+				Settings && Settings.set('darkMode', true);
 			} else
-				settings && settings.set('darkMode', this.settings.twitch_chat_dark);
+				Settings && Settings.set('darkMode', this.settings.twitch_chat_dark);
 
 			// Try coloring chat replay
 			window.jQuery && jQuery('.chatReplay').toggleClass('dark', val || false);
@@ -203,10 +202,10 @@ FFZ.prototype.setup_dark = function() {
 	if ( ! this.settings.dark_twitch )
 		return;
 
-	var Settings = utils.ember_lookup('controller:settings');
+	var Settings = utils.ember_settings();
 	if ( Settings ) {
 		try {
-			Settings.set('settings.darkMode', true);
+			Settings.set('darkMode', true);
 		} catch(err) {
 			this.error("Unable to set the darkMode setting because it isn't named what we expect. WTF?");
 		}

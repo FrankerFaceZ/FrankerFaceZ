@@ -1,6 +1,8 @@
 ﻿var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
-	constants = require("../constants");
+	constants = require("../constants"),
+
+	BAN_SPLIT = /[/\.](?:ban ([^ ]+)|timeout ([^ ]+)(?: (\d+))?)(?: (.*))?$/;
 
 
 // ---------------------
@@ -211,29 +213,31 @@ FFZ.settings_info.banned_words = {
 	name: "Banned Words",
 	help: "Set a list of words that will be locally removed from chat messages.",
 
-	method: function() {
+	method: function(e, from_basic) {
 			var f = this,
-				old_val = this.settings.banned_words.join(", ");
+				old_val = this.settings.banned_words.join("\n"),
+				input = utils.createElement('textarea');
+
+			input.style.marginBottom = "20px";
 
 			utils.prompt(
 				"Banned Words",
-				"Please enter a comma-separated list of words that you would like to have removed from chat messages.",
+				"Please enter a list of words or phrases that you would like to have removed from chat messages. One item per line." + (from_basic ? "" : "<hr><strong>Advanced Stuff:</strong> If you know regex, you can use regular expressions to match too! Start a line with <code>regex:</code> to trigger that behavior.<br><div class=\"small\">(Note: Your expression is wrapped in a capture group and may be joined with other expressions within that group via <code>|</code>. All regular expressions are executed with the flags <code>ig</code>.)</div>"),
 				old_val,
 				function(new_val) {
 					if ( new_val === null || new_val === undefined )
 						return;
 
-					new_val = new_val.trim().split(constants.SPLITTER);
-					var vals = [];
+					var vals = new_val.trim().split(/\s*\n\s*/g),
+						i = vals.length;
 
-					for(var i=0; i < new_val.length; i++)
-						new_val[i] && vals.push(new_val[i]);
-
-					if ( vals.length == 1 && vals[0] == "disable" )
-						vals = [];
+					while(i--)
+						if ( vals[i].length === 0 )
+							vals.splice(i, 1);
 
 					f.settings.set("banned_words", vals);
-				});
+				},
+				600, input);
 		}
 	};
 
@@ -249,30 +253,32 @@ FFZ.settings_info.keywords = {
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
 
-	method: function() {
+	method: function(e, from_basic) {
 			var f = this,
-				old_val = this.settings.keywords.join(", ");
+				old_val = this.settings.keywords.join("\n"),
+				input = utils.createElement('textarea');
+
+			input.style.marginBottom = "20px";
 
 			utils.prompt(
 				"Highlight Keywords",
-				"Please enter a comma-separated list of words that you would like to be highlighted in chat.",
+				"Please enter a list of words or phrases that you would like to be highlighted in chat. One item per line." + (from_basic ? "" : "<hr><strong>Advanced Stuff:</strong> If you know regex, you can use regular expressions to match too! Start a line with <code>regex:</code> to trigger that behavior.<br><div class=\"small\">(Note: Your expression is wrapped in a capture group and may be joined with other expressions within that group via <code>|</code>. All regular expressions are executed with the flags <code>ig</code>.)</div>"),
 				old_val,
 				function(new_val) {
 					if ( new_val === null || new_val === undefined )
 						return;
 
 					// Split them up.
-					new_val = new_val.trim().split(constants.SPLITTER);
-					var vals = [];
+					var vals = new_val.trim().split(/\s*\n\s*/g),
+						i = vals.length;
 
-					for(var i=0; i < new_val.length; i++)
-						new_val[i] && vals.push(new_val[i]);
-
-					if ( vals.length == 1 && vals[0] == "disable" )
-						vals = [];
+					while(i--)
+						if ( vals[i].length === 0 )
+							vals.splice(i,1);
 
 					f.settings.set("keywords", vals);
-				});
+				},
+				600, input);
 		}
 	};
 
@@ -720,7 +726,7 @@ FFZ.prototype.save_aliases = function() {
 FFZ.prototype._modify_chat_line = function(component, is_vod) {
 	var f = this,
 		Layout = utils.ember_lookup('service:layout'),
-		Settings = utils.ember_lookup('controller:settings');
+		Settings = utils.ember_settings();
 
 	component.reopen({
 		/*tokenizedMessage: function() {
@@ -784,22 +790,39 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
 				var pair = f.settings.mod_buttons[i],
-					prefix = pair[0], btn = pair[1],
+					prefix = pair[0], btn = pair[1], had_label = pair[2], is_emoji = pair[3],
 
 					cmd, tip;
+
+				if ( is_emoji ) {
+					var setting = f.settings.parse_emoji,
+						token = f.emoji_data[is_emoji],
+						url = null;
+					if ( token ) {
+						if ( setting === 1 && token.tw )
+							url = token.tw_src;
+						else if ( setting === 2 && token.noto )
+							url = token.noto_src;
+						else if ( setting === 3 && token.one )
+							url = token.one_src;
+
+						if ( url )
+							prefix = '<img class="mod-icon-emoji" src="' + utils.quote_attr(url) + '">';
+					}
+				}
 
 				if ( btn === false ) {
 					if ( deleted )
 						output += '<a class="mod-icon html-tooltip unban" title="Unban User" href="#">Unban</a>';
 					else
-						output += '<a class="mod-icon html-tooltip ban" title="Ban User" href="#">Ban</a>';
+						output += '<a class="mod-icon html-tooltip ban' + (had_label ? ' custom' : '') + '" title="Ban User" href="#">' + (had_label ? prefix : 'Ban') + '</a>';
 
 				} else if ( btn === 600 )
-					output += '<a class="mod-icon html-tooltip timeout" title="Timeout User (10m)" href="#">Timeout</a>';
+					output += '<a class="mod-icon html-tooltip timeout' + (had_label ? ' custom' : '') + '" title="Timeout User (10m)" href="#">' + ( had_label ? prefix : 'Timeout') + '</a>';
 
 				else {
 					if ( typeof btn === "string" ) {
-						cmd = btn.replace(/{user}/g, user).replace(/{id}/g, this.get('msgObject.tags.id')).replace(/ *<LINE> */, "\n");
+						cmd = utils.replace_cmd_variables(btn, {name: user}, room && room.room, this.get('msgObject')).replace(/\s*<LINE>\s*/g, '\n');
 						tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '<br>' + utils.quote_san(cmd).replace('\n','<br>');
 					} else {
 						cmd = "/timeout " + user + " " + btn;
@@ -819,7 +842,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 				raw_color = this.get(is_recipient ? 'msgObject.toColor' : 'msgObject.color'),
 
-				is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('settings.darkMode'))),
+				is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('darkMode'))),
 				is_replay = this.get('ffz_is_replay'),
 
 				colors = raw_color && f._handle_color(raw_color),
@@ -845,7 +868,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			}
 
 			// Timestamp
-			output += '<span class="timestamp">' + this.get('timestamp') + '</span> ';
+			var timestamp = this.get('timestamp');
+			if ( timestamp )
+				output += '<span class="timestamp">' + timestamp + '</span> ';
 
 			// Moderator Actions
 			output += this.buildModIconsHTML();
@@ -877,7 +902,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				var raw_color = this.get('msgObject.color'),
 					colors = raw_color && f._handle_color(raw_color),
 					is_replay = this.get('ffz_is_replay'),
-					is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('settings.darkMode')));
+					is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('darkMode')));
 
 				if ( raw_color )
 					output = '<span class="message has-color' + (is_replay ? ' replay-color' : '') + '" style="color:' + (is_dark ? colors[1] : colors[0]) + '" data-color="' + raw_color + '">';
@@ -886,7 +911,11 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			} else
 				output = '<span class="message">';
 
-			output += f.render_tokens(this.get('ffzTokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4, this.get('isBitsEnabled'));
+			var body = f.render_tokens(this.get('ffzTokenizedMessage'), true, is_whisper && f.settings.filter_whispered_links && this.get("ffzUserLevel") < 4, this.get('isBitsEnabled'));
+			if ( this.get('msgObject.ffz_line_returns') )
+				body = body.replace(/\n/g, '<br>');
+
+			output += body;
 
 			var old_messages = this.get('msgObject.ffz_old_messages');
 			if ( old_messages && old_messages.length )
@@ -913,9 +942,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return ! this.get('hasSystemMsg') || this.get('hasMessageBody');
 		}.property('hasSystemMsg', 'hasMessageBody'),
 
-		shouldRenderMessageBody: function() {
-			return false;
-		}.property('hasSystemMsg', 'hasMessageBody'),
+		//shouldRenderMessageBody: function() {
+		//	return false;
+		//}.property('hasSystemMsg', 'hasMessageBody'),
 
 		ffzWasDeleted: function() {
 			return f.settings.prevent_clear && this.get("msgObject.ffz_deleted")
@@ -949,6 +978,135 @@ FFZ.prototype._modify_chat_subline = function(component) {
 
 		//didUpdate: function() { this.ffzRender(); },
 
+		ffzBuildModMenu: function(el) {
+			var t = this,
+				setting = f.settings.mod_button_context,
+				cl = el.classList,
+				from = this.get("msgObject.from"),
+				cmd = el.getAttribute('data-cmd'),
+				trail = '';
+
+			if ( ! cmd && cl.contains('ban') )
+				cmd = "/ban " + from;
+			else if ( ! cmd && cl.contains('timeout') )
+				cmd = "/timeout " + from + " 600";
+			else if ( ! cmd || cl.contains('unban') )
+				return; // We can't send mod reasons for unbans and we need a command.
+			else {
+				var lines = cmd.split("\n"),
+					first_line = lines.shift(),
+					trail = lines.length ? "\n" + lines.join("\n") : "",
+					match = BAN_SPLIT.exec(first_line);
+
+				// If the line didn't match this, it's invalid.
+				if ( ! match )
+					return;
+
+				cmd = match[1] ? "/ban " + match[1] : "/timeout " + match[2] + " " + (match[3] || "600");
+				if ( match[4] )
+					trail = match[4] + trail;
+			}
+
+			var bl = utils.createElement('ul', 'balloon__list'),
+				balloon = utils.createElement('div', 'balloon balloon--dropmenu ffz-mod-balloon', bl),
+				bc = utils.createElement('div', 'balloon-wrapper', balloon),
+				has_items = false,
+
+				is_ban = cmd.substr(1, 4) === 'ban ',
+				title = utils.createElement('li', 'ffz-title');
+
+			title.textContent = (is_ban ? 'Ban ' : 'Timeout ') + from + ' for...';
+			bl.appendChild(title);
+			bl.appendChild(utils.createElement('li', 'balloon__stroke'));
+
+			var btn_click = function(reason, e) {
+				if ( e.button !== 0 )
+					return;
+
+				var room_id = t.get('msgObject.room'),
+					room = room_id && f.rooms[room_id] && f.rooms[room_id].room;
+
+				if ( room ) {
+					cmd = cmd + ' ' + reason + (trail ? (trail[0] === '\n' ? '' : ' ') + trail : '');
+					var lines = cmd.split("\n");
+					for(var i=0; i < lines.length; i++)
+						room.send(lines[i], true);
+
+					if ( cl.contains('is-timeout') )
+						room.clearMessages(from, null, true);
+				}
+
+				f.close_popup();
+				e.stopImmediatePropagation();
+				e.preventDefault();
+				return false;
+			};
+
+			if ( setting & 1 )
+				for(var i=0; i < f.settings.mod_card_reasons.length; i++) {
+					var btn = utils.createElement('div', 'balloon__link ellipsis'),
+						line = utils.createElement('li', '', btn),
+						reason = f.settings.mod_card_reasons[i];
+
+					btn.textContent = btn.title = reason;
+					btn.addEventListener('click', btn_click.bind(btn, reason));
+					bl.appendChild(line);
+					has_items = true;
+				}
+
+			if ( setting & 2 ) {
+				var room_id = t.get('msgObject.room'),
+					room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
+					rules = room && room.get('roomProperties.chat_rules');
+
+				if ( rules && rules.length ) {
+					if ( has_items )
+						bl.appendChild(utils.createElement('li', 'balloon__stroke'));
+
+					for(var i=0; i < rules.length; i++) {
+						var btn = utils.createElement('div', 'balloon__link ellipsis'),
+							line = utils.createElement('li', '', btn),
+							reason = rules[i];
+
+						btn.textContent = btn.title = reason;
+						btn.addEventListener('click', btn_click.bind(btn, reason));
+						bl.appendChild(line);
+						has_items = true;
+					}
+				}
+			}
+
+			if ( ! has_items )
+				return false;
+
+			var rect = el.getBoundingClientRect(),
+				is_bottom = rect.top > (window.innerHeight / 2),
+				position = [rect.left, (is_bottom ? rect.top : rect.bottom)];
+
+			balloon.classList.add('balloon--' + (is_bottom ? 'up' : 'down'));
+
+			f.show_popup(bc, position, utils.find_parent(this.get('element'), 'chat-messages'));
+			return true;
+		},
+
+		contextMenu: function(e) {
+			if ( ! e.target )
+				return;
+
+			var cl = e.target.classList,
+				from = this.get("msgObject.from"),
+				abort = false;
+
+			// We only want to show a context menu for mod icons right now.
+			if ( cl.contains('mod-icon') )
+				abort |= this.ffzBuildModMenu(e.target);
+
+			if ( abort ) {
+				e.stopImmediatePropagation();
+				e.preventDefault();
+			}
+		},
+
 		click: function(e) {
 			if ( ! e.target )
 				return;
@@ -970,7 +1128,16 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				jQuery(e.target).trigger('mouseout');
 				e.preventDefault();
 
-				if ( cl.contains('custom') ) {
+				if ( cl.contains('ban') )
+					this.sendAction("banUser", {user:from});
+
+				else if ( cl.contains('unban') )
+					this.sendAction("unbanUser", {user:from});
+
+				else if ( cl.contains('timeout') )
+					this.sendAction("timeoutUser", {user:from});
+
+				else if ( cl.contains('custom')  ) {
 					var room_id = this.get('msgObject.room'),
 						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
 						cmd = e.target.getAttribute('data-cmd');
@@ -985,14 +1152,7 @@ FFZ.prototype._modify_chat_subline = function(component) {
 					}
 					return;
 
-				} else if ( cl.contains('ban') )
-					this.sendAction("banUser", {user:from});
-
-				else if ( cl.contains('unban') )
-					this.sendAction("unbanUser", {user:from});
-
-				else if ( cl.contains('timeout') )
-					this.sendAction("timeoutUser", {user:from});
+				}
 
 			} else if ( cl.contains('badge') ) {
 				if ( cl.contains('click_url') )

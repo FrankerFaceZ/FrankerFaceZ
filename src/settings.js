@@ -815,8 +815,8 @@ FFZ.prototype._setting_get = function(key) {
 }
 
 FFZ.prototype._setting_get_twitch = function(key) {
-	var Settings = utils.ember_lookup('controller:settings');
-	return Settings && Settings.get('settings.' + key);
+	var Settings = utils.ember_settings();
+	return Settings && Settings.get(key);
 }
 
 

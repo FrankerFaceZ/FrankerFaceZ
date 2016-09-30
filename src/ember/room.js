@@ -12,17 +12,28 @@ var FFZ = window.FrankerFaceZ,
 		'subscribers': 'subs_on',
 		'subscribersoff': 'subs_off',
 		'emoteonly': 'emote_only_on',
-		'emoteonlyoff': 'emote_only_off'
+		'emoteonlyoff': 'emote_only_off',
+		'host': 'host_on',
+		'unhost': 'host_off'
 	},
 
 	STATUS_BADGES = [
 		["r9k", "r9k", "This room is in R9K-mode."],
 		["emote", "emoteOnly", "This room is in Twitch emoticons only mode. Emoticons added by extensions are not available in this mode."],
 		["sub", "subsOnly", "This room is in subscribers-only mode."],
-		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every " + utils.number_commas(room && room.get('slow') || 120) + " seconds." }],
+		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every <nobr>" + utils.number_commas(room && room.get('slow') || 120) + " seconds</nobr>." }],
 		["ban", "ffz_banned", "You have been banned from talking in this room."],
-		["delay", function(room) { return room && room.get('ffz_chat_delay') !== 0 }, function(room) { return "Artificial chat delay is enabled. Messages are displayed after " + (room ? room.get('ffz_chat_delay')/1000 : 0) + " seconds." }],
-		["batch", function() { return this.settings.chat_batching !== 0 }, function() { return "You have enabled chat message batching. Messages are displayed in " + (this.settings.chat_batching/1000) + " second increments." }]
+		["delay", function(room) {
+			return room && (this.settings.chat_delay === -1 ?
+				room.get('roomProperties.chat_delay_duration')
+				: room.get('ffz_chat_delay'))
+			}, function(room) {
+				var is_mod = this.settings.chat_delay === -1;
+				return "Artificial chat delay is enabled" + (is_mod ? " for this channel" : "") + ". Messages are displayed after " + (room ? (is_mod ? room.get('roomProperties.chat_delay_duration') : room.get('ffz_chat_delay')/1000) : 0) + " seconds" + (is_mod ? " for <nobr>non-moderators</nobr>." : ".");
+			}, null, function(room) {
+				return room && this.settings.chat_delay === -1 && room.get('isModeratorOrHigher') || false;
+			}],
+		["batch", function() { return this.settings.chat_batching !== 0 }, function() { return "You have enabled chat message batching. Messages are displayed in <nobr>" + (this.settings.chat_batching/1000) + " second</nobr> increments." }]
 	],
 
 	// StrimBagZ Support
@@ -32,7 +43,7 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! room.moderator_badge )
 			return "";
 
-		return '.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-repeat: no-repeat; background-size: initial; background-position: center; background-image:url("' + room.moderator_badge + '") !important; }';
+		return '.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement),.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-repeat: no-repeat; background-size: initial; background-position: center; background-image:url("' + room.moderator_badge + '") !important; }';
 	};
 
 
@@ -156,14 +167,14 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 					token = user.chat_oauth_token,
 					new_topics = [
 						"chat_message_updated." + room_id,
-						"chat_moderator_actions." + room_id];
+						"chat_moderator_actions." + user.id + "." + room_id];
 
 				for(var i=0; i < new_topics.length; i++)
 					ps.Listen({
 						topic: new_topics[i],
 						auth: token,
 						success: function() {},
-						failure: function() {},
+						failure: function(t) { f.log("[PubSub] Failed to listen to topic: " + new_topics[i], t); },
 						message: Ember.run.bind(n, n._onPubsubMessage, new_topics[i])
 					});
 
@@ -199,7 +210,7 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 				ps.Unlisten({
 					topic: old_topics[i],
 					success: function() {},
-					failure: function() {}
+					failure: function(t) { f.log("[PubSub] Failed to unlisten to topic: " + old_topics[i], t); }
 				});
 				this.chatTopics.removeObject(old_topics[i]);
 			}
@@ -238,14 +249,14 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 			ps.Unlisten({
 				topic: pubsub.chatTopics[i],
 				success: function() {},
-				failure: function() {}
+				failure: function(t) { f.log("[PubSub] Failed to unlisten to topic: " + old_topics[i], t); }
 			});
 
 			ps.Listen({
 				topic: pubsub.chatTopics[i],
 				auth: token,
 				success: function() {},
-				failure: function() {},
+				failure: function(t) { f.log("[PubSub] Failed to listen to topic: " + new_topics[i], t); },
 				message: Ember.run.bind(pubsub, pubsub._onPubsubMessage, pubsub.chatTopics[i])
 			});
 		}
@@ -424,7 +435,7 @@ FFZ.prototype.modify_room_view = function(view) {
 				if ( ! badge ) {
 					badge = utils.createElement('span', 'ffz room-state stat float-right', (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>');
 					badge.id = id;
-					jQuery(badge).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
+					jQuery(badge).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
 					cont.appendChild(badge);
 				}
 
@@ -433,6 +444,7 @@ FFZ.prototype.modify_room_view = function(view) {
 
 				badge.title = typeof info[2] === "function" ? info[2].call(f, room) : info[2];
 				badge.classList.toggle('hidden', ! visible);
+				badge.classList.toggle('faded', info[4] !== undefined ? typeof info[4] === "function" ? info[4].call(f, room) : info[4] : false);
 				if ( visible )
 					vis_count++;
 			}
@@ -576,7 +588,8 @@ FFZ.prototype.modify_room_view = function(view) {
 			var e = this,
 				s = this._$chatMessagesScroller;
 
-			Ember.run.next(function() {
+			//this.runTask(function() {
+			Ember.run.next(function(){
 				// Trying random performance tweaks for fun and profit!
 				(window.requestAnimationFrame||setTimeout)(function(){
 					if ( e.ffz_frozen || ! s || ! s.length )
@@ -584,13 +597,16 @@ FFZ.prototype.modify_room_view = function(view) {
 
 					s[0].scrollTop = s[0].scrollHeight;
 					e._setStuckToBottom(true);
+					e._tagVisibleMessages();
 				})
 			})
 		}, 200),
 
 		_setStuckToBottom: function(val) {
 			this.set("stuckToBottom", val);
-			this.get("controller.model") && this.set("controller.model.messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
+			var model = this.get("controller.model");
+			if ( model )
+				model.messageBufferSize = f.settings.scrollback_length + (val ? 0 : 150);
 			if ( ! val )
 				this.ffzUnfreeze(true);
 		},
@@ -649,15 +665,13 @@ FFZ.ffz_commands = {};
 
 
 FFZ.prototype.room_message = function(room, text) {
-	var lines = text.split("\n");
 	if ( this.has_bttv ) {
+		var lines = text.split("\n");
 		for(var i=0; i < lines.length; i++)
 			BetterTTV.chat.handlers.onPrivmsg(room.id, {style: 'admin', date: new Date(), from: 'jtv', message: lines[i]});
 
-	} else {
-		for(var i=0; i < lines.length; i++)
-			room.room.addMessage({style: 'ffz admin', date: new Date(), from: 'FFZ', message: lines[i]});
-	}
+	} else
+		room.room.addMessage({ffz_line_returns: true, style: 'ffz admin', date: new Date(), from: 'FFZ', message: text});
 }
 
 
@@ -821,10 +835,10 @@ FFZ.prototype.add_room = function(id, room) {
 		this.ws_sub("room." + id);
 
 		// Do we want history?
-		if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
+		/*if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
 			if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
 				data.needs_history = true;
-		}
+		}*/
 	}
 
 
@@ -874,7 +888,7 @@ FFZ.prototype.remove_room = function(id) {
 // Chat History
 // --------------------
 
-FFZ.prototype._load_history = function(room_id, success, data) {
+/*FFZ.prototype._load_history = function(room_id, success, data) {
 	var room = this.rooms[room_id];
 	if ( ! room || ! room.room )
 		return;
@@ -888,7 +902,7 @@ FFZ.prototype._load_history = function(room_id, success, data) {
 		return;
 
 	return this._insert_history(room_id, data, true);
-}
+}*/
 
 
 FFZ.prototype._show_deleted = function(room_id) {
@@ -1224,6 +1238,9 @@ FFZ.prototype._modify_room = function(room) {
 			if ( event.topic && event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
 				return;
 
+			if ( ! f.settings.get_twitch('showModerationActions') )
+				return;
+
 			var target_notice = NOTICE_MAPPING[event.moderation_action];
 			if ( target_notice ) {
 				var last_notice = this.ffz_last_notices && this.ffz_last_notices[target_notice];
@@ -1233,13 +1250,13 @@ FFZ.prototype._modify_room = function(room) {
 					last_notice.has_owner = true;
 					last_notice.cachedTokens = undefined;
 					if ( last_notice._line )
-						last_notice._line.ffzRender();
+						Ember.propertyDidChange(last_notice._line, 'ffzTokenizedMessage');
 				} else {
 					var waiting = this.ffz_waiting_notices = this.ffz_waiting_notices || {};
 					waiting[target_notice] = event.created_by;
 				}
 
-			} else if ( f.settings.get_twitch('showModerationActions') )
+			} else
 				this._super(event);
 		},
 
@@ -1248,6 +1265,8 @@ FFZ.prototype._modify_room = function(room) {
 			var room_id = '.' + this.get("roomProperties._id");
 			if ( event.topic && event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
 				return;
+
+			// f.log("Login Moderation", event);
 
 			// In case we get unexpected input, do the other thing.
 			if ( ["ban", "unban", "timeout"].indexOf(event.moderation_action) === -1 )
@@ -1259,7 +1278,7 @@ FFZ.prototype._modify_room = function(room) {
 				'ban-moderator': event.created_by
 			};
 
-			this.clearMessages(event.args[0], tags, false, event.moderation_action !== 'unban');
+			this.clearMessages(event.args[0].toLowerCase(), tags, false, event.moderation_action !== 'unban');
 		},
 
 		clearMessages: function(user, tags, disable_log, report_only) {
@@ -1424,6 +1443,7 @@ FFZ.prototype._modify_room = function(room) {
 					// Look up the user's last ban.
 					var show_notice = is_me || this.ffzShouldDisplayNotice(),
 						show_reason = is_me || this.get('isModeratorOrHigher'),
+						show_moderator = f.settings.get_twitch('showModerationActions'),
 						room = f.rooms && f.rooms[t.get('id')],
 						now = new Date,
 						end_time = now + (duration * 1000),
@@ -1457,7 +1477,7 @@ FFZ.prototype._modify_room = function(room) {
 								durations: [duration],
 								end_time: end_time,
 								timeouts: report_only ? 0 : 1,
-								message: message + (show_reason && moderator ? ' by ' + moderator : '') + (show_reason && reason ? ' with reason: ' + reason : '.')
+								message: message + (show_reason && show_moderator && moderator ? ' by ' + moderator : '') + (show_reason && reason ? ' with reason: ' + reason : '.')
 							};
 
 							if ( ban_history )
@@ -1485,7 +1505,7 @@ FFZ.prototype._modify_room = function(room) {
 
 							last_ban.message = message +
 								(last_ban.timeouts > 1 ? ' (' + utils.number_commas(last_ban.timeouts) + ' times)' : '') +
-								(!show_reason || last_ban.moderators.length === 0 ? '' : ' by ' + last_ban.moderators.join(', ') ) +
+								(!show_reason || !show_moderator || last_ban.moderators.length === 0 ? '' : ' by ' + last_ban.moderators.join(', ') ) +
 								(!show_reason || last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '));
 							last_ban.cachedTokens = [{type: "text", text: last_ban.message}];
 
@@ -1556,7 +1576,7 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
-		trimMessages: function() {
+		/*trimMessages: function() {
 			var messages = this.get("messages"),
 				len = messages.get("length"),
 				limit = this.get("messageBufferSize");
@@ -1578,7 +1598,7 @@ FFZ.prototype._modify_room = function(room) {
 
 				messages.removeAt(0, to_remove);
 			}
-		},
+		},*/
 
 		// Artificial chat delay
 		ffz_chat_delay: function() {
@@ -1608,14 +1628,81 @@ FFZ.prototype._modify_room = function(room) {
 				this.ffzSchedulePendingFlush(now);
 
 			} else {
-				this.ffzActualPushMessage(msg);
+				this.ffzPushMessages([msg]);
 			}
 		},
 
-		ffzActualPushMessage: function (msg) {
+		ffzPushMessages: function(messages) {
+			var new_messages = [],
+				new_unread = 0;
+
+			for(var i=0; i < messages.length; i++) {
+				var msg = messages[i];
+				if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
+					new_messages.push(msg);
+
+					if ( ! (msg.tags && msg.tags.historical) && msg.style !== "admin" && msg.style !== "whisper" ) {
+						if ( msg.ffz_has_mention )
+							this.ffz_last_mention = Date.now();
+
+						new_unread++;
+					}
+				}
+			}
+
+			if ( ! new_messages.length )
+				return;
+
+			var room_messages = this.get("messages"),
+				trimmed = room_messages.length + new_messages.length > this.messageBufferSize ?
+					room_messages.slice(Math.max(0, (room_messages.length - this.messageBufferSize)) + new_messages.length, room_messages.length) :
+					room_messages.slice(0, room_messages.length);
+
+			var earliest_message;
+			for(var i=0; i < trimmed.length; i++)
+				if ( trimmed[i].date ) {
+					earliest_message = trimmed[i].date;
+					break;
+				}
+
+			for(var i = 0; i < new_messages.length; i++) {
+				var msg = new_messages[i];
+				if ( msg.tags && msg.tags.historical ) {
+					// Add a warning about really old messages.
+					if ( earliest_message ) {
+						var age = earliest_message - msg.date;
+						if ( age > 300000 )
+							trimmed.unshift({
+								color: '#755000',
+								date: msg.date,
+								from: 'frankerfacez_admin',
+								style: 'admin',
+								message: '(Last message is ' + utils.human_time(age/1000) + ' old.)',
+								room: msg.room,
+								from_server: true
+							});
+					}
+
+					trimmed.unshift(msg);
+					earliest_message = null;
+
+				} else
+					trimmed.push(msg);
+			}
+
+			this.set("messages", trimmed);
+
+			if ( new_unread ) {
+				this.incrementProperty("unreadCount", new_unread);
+				this.ffz_last_activity  = Date.now();
+			}
+		},
+
+		/*ffzActualPushMessage: function (msg) {
 			if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
 				this.get("messages").pushObject(msg);
 				this.trimMessages();
+				Ember.propertyDidChange(this, "messages");
 
 				if ( msg.style !== "admin" && msg.style !== "whisper" ) {
 					if ( msg.ffz_has_mention ) {
@@ -1626,7 +1713,7 @@ FFZ.prototype._modify_room = function(room) {
 					this.incrementProperty("unreadCount", 1);
 				}
 			}
-		},
+		},*/
 
 		ffzSchedulePendingFlush: function(now) {
 			// Instead of just blindly looping every x seconds, we want to calculate the time until
@@ -1655,7 +1742,8 @@ FFZ.prototype._modify_room = function(room) {
 			this._ffz_pending_flush = null;
 
 			var now = this._ffz_last_batch = Date.now(),
-				chat_delay = this.get('ffz_chat_delay');
+				chat_delay = this.get('ffz_chat_delay'),
+				to_display = [];
 
 			for (var i = 0, l = this.ffzPending.length; i < l; i++) {
 				var msg = this.ffzPending[i];
@@ -1677,8 +1765,10 @@ FFZ.prototype._modify_room = function(room) {
 					break;
 
 				msg.pending = false;
-				this.ffzActualPushMessage(msg);
+				to_display.push(msg);
 			}
+
+			this.ffzPushMessages(to_display);
 
 			this.ffzPending = this.ffzPending.slice(i);
 			this.ffzSchedulePendingFlush(now);
@@ -1714,7 +1804,7 @@ FFZ.prototype._modify_room = function(room) {
 				if ( (msg.msgId === 'timeout_success' || msg.msgId === 'ban_success') && this.ffzShouldDisplayNotice() )
 					return;
 
-				f.log("Notification", msg);
+				// f.log("Notification", msg);
 
 				if ( ! msg.tags )
 					msg.tags = {};
@@ -1740,7 +1830,7 @@ FFZ.prototype._modify_room = function(room) {
 			this.addMessage(msg);
 		},
 
-		addMessage: function(msg) {
+		ffzProcessMessage: function(msg) {
 			if ( msg ) {
 				var notice_type = msg.tags && msg.tags['msg-id'],
 					is_resub = notice_type === 'resub',
@@ -1769,6 +1859,13 @@ FFZ.prototype._modify_room = function(room) {
 					msg.tags['system-msg'] = '';
 				}
 
+				// Fix dates for historical messages.
+				if ( ! msg.date && msg.tags && msg.tags['tmi-sent-ts'] ) {
+					var sent = parseInt(msg.tags['tmi-sent-ts']);
+					if ( sent && ! isNaN(sent) && isFinite(sent) )
+						msg.date = new Date(sent);
+				}
+
 				var is_whisper = msg.style === 'whisper';
 
 				// Ignore whispers if conversations are enabled.
@@ -1792,7 +1889,7 @@ FFZ.prototype._modify_room = function(room) {
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
-				// If it's from Twitch notify, and it's directly related to
+				// Check for a new subscription line that would need a chat badge.
 				if ( msg.from === 'twitchnotify' && msg.message.indexOf('subscribed to') === -1 && msg.message.indexOf('subscribed') !== -1 ) {
 					if ( ! msg.tags )
 						msg.tags = {};
@@ -1804,26 +1901,55 @@ FFZ.prototype._modify_room = function(room) {
 						msg.labels.push("subscriber");
 				}
 
-				// Keep the history.
-				if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
-					var room = f.rooms && f.rooms[msg.room];
-					if ( room ) {
-						var chat_history = room.user_history = room.user_history || {},
-							user_history = room.user_history[msg.from] = room.user_history[msg.from] || [],
-							last_history = user_history.length && user_history[user_history.length - 1],
+				// Color processing.
+				if ( msg.color )
+					f._handle_color(msg.color);
 
-							new_msg = {
-								from: msg.from,
-								tags: {
-									'display-name': msg.tags && msg.tags['display-name'],
-									bits: msg.tags && msg.tags.bits
-								},
-								message: msg.message,
-								cachedTokens: msg.cachedTokens,
-								style: msg.style,
-								date: msg.date
-							};
+				return msg;
+			}
+		},
 
+		addMessage: function(msg) {
+			msg = this.ffzProcessMessage(msg);
+			if ( ! msg )
+				return;
+
+			var msg_id = msg.tags && msg.tags.id,
+				notice_type = msg.tags && msg.tags['msg-id'],
+				is_whisper = msg.style === 'whisper';
+
+
+			// If this message is already in the room, discard the duplicate.
+			if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
+				return;
+
+
+			// Keep the history.
+			if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
+				var room = f.rooms && f.rooms[msg.room];
+				if ( room ) {
+					var chat_history = room.user_history = room.user_history || {},
+						user_history = room.user_history[msg.from] = room.user_history[msg.from] || [],
+						last_history = user_history.length && user_history[user_history.length - 1],
+
+						new_msg = {
+							from: msg.from,
+							tags: {
+								'display-name': msg.tags && msg.tags['display-name'],
+								bits: msg.tags && msg.tags.bits
+							},
+							message: msg.message,
+							cachedTokens: msg.cachedTokens,
+							style: msg.style,
+							date: msg.date
+						};
+
+					if ( msg.tags && msg.tags.historical ) {
+						// If it's historical, insert it at the beginning. And stuff.
+						if ( user_history.length < 20 )
+							user_history.unshift(new_msg);
+
+					} else {
 						// Preserve message order if we *just* received a ban.
 						if ( last_history && last_history.is_delete && (msg.date - last_history.date) <= 200 ) {
 							user_history.splice(user_history.length - 1, 0, new_msg);
@@ -1832,69 +1958,71 @@ FFZ.prototype._modify_room = function(room) {
 
 						if ( user_history.length > 20 )
 							user_history.shift();
+					}
 
-						if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
-							var el = f._mod_card.get('element'),
-								history = el && el.querySelector('.chat-history:not(.adjacent-history)'),
-								was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
+					if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
+						var el = f._mod_card.get('element'),
+							history = el && el.querySelector('.chat-history:not(.adjacent-history)'),
+							was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
 
-							if ( history ) {
-								history.appendChild(f._build_mod_card_history(msg, f._mod_card));
-								if ( was_at_top )
-									setTimeout(function() { history.scrollTop = history.scrollHeight; })
+						if ( history ) {
+							var el = f._build_mod_card_history(msg, f._mod_card);
+							if ( msg.tags && msg.tags.historical )
+								history.insertBefore(el, history.firstElementChild);
+							else
+								history.appendChild(el);
+							if ( was_at_top )
+								setTimeout(function() { history.scrollTop = history.scrollHeight; })
 
-								// Don't do infinite scrollback.
-								if ( history.childElementCount > 100 )
-									history.removeChild(history.firstElementChild);
-							}
+							// Don't do infinite scrollback.
+							if ( history.childElementCount > 100 )
+								history.removeChild(history.firstElementChild);
 						}
 					}
 				}
-
-				// Clear the last ban for that user.
-				var f_room = f.rooms && f.rooms[msg.room],
-					ban_history = f_room && f_room.ban_history;
-
-				if ( ban_history && msg.from ) {
-					// Is the last ban within 200ms? Chances are Twitch screwed up message order.
-					if ( ban_history[msg.from] && (new Date - ban_history[msg.from].date) <= 200 ) {
-						msg.ffz_deleted = true;
-						msg.deleted = !f.settings.prevent_clear;
-
-					} else
-						ban_history[msg.from] = false;
-				}
-
-
-				// Check for message from us.
-				if ( ! is_whisper && ! msg.ffz_deleted ) {
-					var user = f.get_user();
-					if ( user && user.login === msg.from ) {
-						var was_banned = this.get('ffz_banned');
-						this.set('ffz_banned', false);
-
-						// Update the wait time.
-						if ( this.get('isSubscriber') || this.get('isModeratorOrHigher') || ! this.get('slowMode') )
-							this.updateWait(0, was_banned)
-						else if ( this.get('slowMode') )
-							this.updateWait(this.get('slow'));
-					}
-				}
-
-				// Also update chatters.
-				if ( ! is_whisper && this.chatters && ! this.chatters[msg.from] && msg.from !== 'twitchnotify' && msg.from !== 'jtv' )
-					this.ffzUpdateChatters(msg.from);
 			}
 
-			// Color processing.
-			if ( msg.color )
-				f._handle_color(msg.color);
+			// Clear the last ban for that user.
+			var f_room = f.rooms && f.rooms[msg.room],
+				ban_history = f_room && f_room.ban_history;
+
+			if ( ban_history && msg.from ) {
+				// Is the last ban within 200ms? Chances are Twitch screwed up message order.
+				if ( ban_history[msg.from] && (new Date - ban_history[msg.from].date) <= 200 ) {
+					msg.ffz_deleted = true;
+					msg.deleted = !f.settings.prevent_clear;
+
+				} else
+					ban_history[msg.from] = false;
+			}
+
+
+			// Check for message from us.
+			if ( ! is_whisper && ! msg.ffz_deleted ) {
+				var user = f.get_user();
+				if ( user && user.login === msg.from ) {
+					var was_banned = this.get('ffz_banned');
+					this.set('ffz_banned', false);
+
+					// Update the wait time.
+					if ( this.get('isSubscriber') || this.get('isModeratorOrHigher') || ! this.get('slowMode') )
+						this.updateWait(0, was_banned)
+					else if ( this.get('slowMode') )
+						this.updateWait(this.get('slow'));
+				}
+			}
+
 
 			// Message Filtering
 			var i = f._chat_filters.length;
 			while(i--)
 				if ( f._chat_filters[i](msg) === false )
 					return;
+
+
+			// Also update chatters.
+			if ( ! is_whisper && this.chatters && ! this.chatters[msg.from] && msg.from !== 'twitchnotify' && msg.from !== 'jtv' )
+				this.ffzUpdateChatters(msg.from);
 
 			// We're past the last return, so store the message
 			// now that we know we're keeping it.
@@ -1913,8 +2041,15 @@ FFZ.prototype._modify_room = function(room) {
 			if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
 				parent.postMessage({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, "*"); //location.protocol + "//www.twitch.tv/");
 
-			// Add the message.
-			return this._super(msg);
+			// Flagging for review.
+			if ( msg.tags && msg.tags.risk === "high" )
+				msg.flaggedForReview = true;
+
+			// Add the message. We don't do super anymore because it does stupid stuff.'
+			this.pushMessage(msg);
+			msg.from && msg.style !== "admin" && msg.style !== "notification" && msg.tags && this.addChatter(msg);
+			this.trackLatency(msg);
+			//return this._super(msg);
 		},
 
 		ffzChatFilters: function(msg) {
@@ -1934,7 +2069,7 @@ FFZ.prototype._modify_room = function(room) {
 			return this._super(e);
 		},
 
-		send: function(text, ignore_history) {
+		send: function(text, ignore_history, used_aliases) {
 			try {
 				this.ffz_last_input = Date.now();
 
@@ -1958,15 +2093,41 @@ FFZ.prototype._modify_room = function(room) {
 					mru.unshift(text);
 				}
 
-				var cmd = text.split(' ', 1)[0].toLowerCase();
-				if ( cmd === "/ffz" ) {
-					this.set("messageToSend", "");
-					f.run_ffz_command(text.substr(5), this.get('id'));
-					return;
+				if ( is_cmd ) {
+					var cmd = text.substr(1).split(' ', 1)[0].toLowerCase(),
+						was_handled = false;
 
-				} else if ( cmd.charAt(0) === "/" && f.run_command(text, this.get('id')) ) {
-					this.set("messageToSend", "");
-					return;
+					if ( cmd === "ffz" ) {
+						f.run_ffz_command(text.substr(5), this.get('id'));
+						was_handled = true;
+
+					} else if ( f._command_aliases[cmd] ) {
+						used_aliases = used_aliases || [];
+						if ( used_aliases.indexOf(cmd) !== -1 ) {
+							f.room_message(f.rooms[this.get('id')], "Error: Your command aliases are recursing. [Path: " + used_aliases.join(", ") + "]");
+							was_handled = true;
+
+						} else {
+							var alias = f._command_aliases[cmd],
+								args = text.substr(1 + cmd.length).trimLeft().split(/\s+/g),
+								output = utils.replace_cmd_variables(alias, null, this, null, args);
+
+							used_aliases.push(cmd);
+							this.set("messageToSend", "");
+							var lines = output.split(/\s*<LINE>\s*/g);
+							for(var i=0; i < lines.length; i++)
+								this.send(lines[i], true, used_aliases);
+
+							return;
+						}
+
+					} else if ( f.run_command(text, this.get('id')) )
+						was_handled = true;
+
+					if ( was_handled ) {
+						this.set("messageToSend", "");
+						return;
+					}
 				}
 
 			} catch(err) {
@@ -2129,10 +2290,6 @@ FFZ.prototype._modify_room = function(room) {
 		}.observes('tmiRoom'),
 
 		// Room State Stuff
-
-		slowMode: function() {
-			return this.get('slow') > 0;
-		}.property('slow'),
 
 		onSlowOff: function() {
 			if ( ! this.get('slowMode') )

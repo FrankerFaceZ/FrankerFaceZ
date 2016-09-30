@@ -45,12 +45,12 @@ FFZ.prototype.setup_vod_chat = function() {
 		f.error("Unable to locate VOD Chat Service.");
 
 	this.update_views('component:vod-right-column', this.modify_vod_right_column);
-	this.update_views('view:vod', this.modify_vod_view);
+	//this.update_views('view:vod', this.modify_vod_view);
 	this.update_views('component:vod-chat-display', this.modify_vod_chat_display);
 }
 
 
-FFZ.prototype.modify_vod_view = function(view) {
+/*FFZ.prototype.modify_vod_view = function(view) {
 	var f = this;
 	utils.ember_reopen_view(view, {
 		ffz_init: function() {
@@ -90,7 +90,7 @@ FFZ.prototype.modify_vod_view = function(view) {
 			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= height);
 		}
 	});
-}
+}*/
 
 
 FFZ.prototype.modify_vod_right_column = function(component) {

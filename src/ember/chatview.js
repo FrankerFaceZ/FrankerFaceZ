@@ -138,16 +138,17 @@ FFZ.settings_info.chat_batching = {
 FFZ.settings_info.chat_delay = {
 	type: "select",
 	options: {
-		"-1": "Default Delay (Room Specific; Non-Mod Only)",
-		0: "No Delay",
-		300: "Minor (Bot Moderation; 0.3s)",
-		1200: "Normal (Human Moderation; 1.2s)",
-		5000: "Large (Spoiler Removal / Really Slow Mods; 5s)",
-		10000: "Extra Large (10s)",
-		15000: "Extremely Large (15s)",
-		20000: "Mods Asleep; Delay Chat (20s)",
-		30000: "Half a Minute (30s)",
-		60000: "Why??? (1m)"
+		"-1": ["Default Delay (Room Specific; Non-Mod Only)", 0],
+		0: ["No Delay", 1],
+		300: ["Minor (Bot Moderation; 0.3s)", 2],
+		1200: ["Normal (Human Moderation; 1.2s)", 3],
+		5000: ["Large (Spoiler Removal / Really Slow Mods; 5s)", 4],
+		10000: ["Extra Large (10s)", 5],
+		15000: ["Extremely Large (15s)", 6],
+		20000: ["Mods Asleep; Delay Chat (20s)", 7],
+		30000: ["Half a Minute (30s)", 8],
+		60000: ["Why??? (1m)", 9],
+		788400000000: ["The CBenni Option (Literally 25 Years)", 10]
 	},
 	value: -1,
 
@@ -484,7 +485,81 @@ FFZ.prototype.setup_chatview = function() {
 
 	this.log("Hooking the Ember Chat view.");
 	this.update_views('view:chat', this.modify_chat_view);
+
+	this.log("Hooking the Ember from-display-preview component.");
+	this.update_views('component:chat/from-display-preview', this.modify_from_display_preview);
+
 }
+
+
+// ----------------------------
+// Modify From Display Preview
+// ----------------------------
+
+FFZ.prototype.modify_from_display_preview = function(view) {
+	var f = this;
+	utils.ember_reopen_view(view, {
+		attributeBindings: ["chatUser.id:data-room"],
+
+		ffz_init: function() {
+			var el = this.get('element');
+			if ( el )
+				el.classList.add('from-display-preview');
+
+			//this.ffzUpdateChatColor();
+			this.ffzRenderBadges();
+		},
+
+		ffz_badges: function() {
+			var badges = f.get_twitch_badges(this.get('chatUser.chatBadges'));
+			return f.get_badges(this.get('userData.login'), this.get('chatUser.id'), badges);
+		}.property('chatUser.chatBadges', 'userData.login', 'chatUser.id'),
+
+		/*ffzUpdateChatColor: function() {
+			var el = this.get('element'),
+				name = el && el.querySelector('span.strong');
+
+			if ( ! name )
+				return;
+
+			name.classList.add('has-color');
+			name.classList.add('replay-color');
+			name.setAttribute('data-color', this.get('room.model.chatColor'));
+
+		}.observes('room.model.chatColor'),*/
+
+		ffzRenderBadges: function() {
+			var badges = this.get('ffz_badges'),
+				el = this.get('element'),
+				badge_container = el && el.querySelector('.ffz_badges');
+
+			if ( ! badge_container ) {
+				var old_container = el && el.querySelector('.badges');
+				if ( ! old_container )
+					return;
+
+				old_container.classList.add('hidden');
+
+				badge_container = utils.createElement('div', 'badges ffz_badges');
+				old_container.parentElement.insertBefore(badge_container, old_container);
+			}
+
+			badge_container.innerHTML = f.render_badges(badges);
+
+		}.observes('ffz_badges'),
+
+		/*colorStyle: function(e) {
+			var base_color = this.get('room.model.chatColor'),
+				colors = f._handle_color(base_color);
+
+			if ( ! colors )
+				return "";
+
+			return "color:" + ( f.settings.dark_twitch ? colors[1] : colors[0] );
+		}*/
+	});
+}
+
 
 
 // --------------------
@@ -662,7 +737,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 		ffzUpdateHost: function() {
 			var Channel = utils.ember_lookup('controller:channel'),
 				Room = utils.ember_resolve('model:room'),
-				target = Room && Channel && Channel.get('hostModeTarget'),
+				target = Room && Channel && Channel.get('channelModel.hostModeTarget'),
 
 				updated = false;
 

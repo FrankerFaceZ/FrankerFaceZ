@@ -136,31 +136,6 @@ FFZ.settings_info.right_column_width = {
 	};
 
 
-FFZ.settings_info.minimal_channel_title = {
-	type: "boolean",
-	value: false,
-
-	category: "Appearance",
-	no_mobile: true,
-	no_bttv: true,
-
-	name: "Minimal Channel Title",
-	help: "Hide the channel's name and current game when viewing a channel to maximize player size.",
-
-	on_update: function(val) {
-		if ( this.has_bttv )
-			return;
-
-		var Layout = utils.ember_lookup('service:layout');
-		if ( ! Layout )
-			return;
-
-		document.body.classList.toggle('ffz-minimal-channel-title', val);
-		Ember.propertyDidChange(Layout, 'windowHeight');
-	}
-}
-
-
 // --------------------
 // Initialization
 // --------------------
@@ -170,7 +145,6 @@ FFZ.prototype.setup_layout = function() {
 		return;
 
 	document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
-	document.body.classList.toggle('ffz-minimal-channel-title', this.settings.minimal_channel_title);
 
 	this.log("Creating layout style element.");
 	var s = this._layout_style = document.createElement('style');
@@ -232,8 +206,13 @@ FFZ.prototype.setup_layout = function() {
 				c = this.get('PLAYER_CONTROLS_HEIGHT'),
 				r = this.get('contentWidth'),
 
+				extra_height =
+					(f.settings.channel_bar_collapse ? 10 : 60) + 15 +
+					(f.settings.channel_title_top === 2 ? 20 : f.settings.channel_title_top > 0 ? 55 : 0) +
+					(f.settings.channel_title_top ? 70 : 80),
+
 				i = (9 * r / 16) + c,
-				d = h - (f.settings.minimal_channel_title ? 75 : 120) - 60,
+				d = h - extra_height,
 				c = h - 94 - 185,
 
 				l = Math.floor(r),
@@ -268,6 +247,7 @@ FFZ.prototype.setup_layout = function() {
 		ffzUpdateCss: function() {
 			var window_height = this.get('windowHeight'),
 				window_width = this.get('windowWidth'),
+				width = this.get('rightColumnWidth'),
 				out = 'body.ffz-small-player #player .dynamic-player {' +
 						'position: fixed;' +
 						'z-index: 9;' +
@@ -318,16 +298,29 @@ FFZ.prototype.setup_layout = function() {
 								'height:' + chat_height + 'px}' +
 							'body[data-current-path^="user."] .app-main.theatre #left_col .warp,' +
 							'body[data-current-path^="user."] .app-main.theatre #left_col,' +
+							'body[data-current-path^="user."] .app-main.theatre .cn-content #player,' +
 							'body[data-current-path^="user."] .app-main.theatre #main_col{' +
 								'top:' + theatre_video_top + 'px;' +
-								'height:' + theatre_video_height + 'px}' +
+								'height:' + theatre_video_height + 'px !important}' +
 							'body[data-current-path^="user."] .app-main.theatre #right_col{' +
 								'top:' + theatre_chat_top + 'px;' +
-								'height:' + theatre_chat_height + 'px}';
+								'height:' + theatre_chat_height + 'px}' +
+							'.app-main.theatre .cn-content #player {' +
+								'right: 0 !important}' +
+							'body.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .cn-bar-fixed {' +
+								'top: ' + (video_top - 40) + 'px}' +
+							'body.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .cn-bar-fixed:hover,' +
+							'body:not(.ffz-channel-bar-bottom) .cn-bar-fixed {' +
+								'top: ' + video_top + 'px}' +
+							'.ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar {' +
+								'bottom: ' + (chat_top - 40) + 'px}' +
+							'.ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar:hover,' +
+							'.ffz-channel-bar-bottom .cn-bar {' +
+								'bottom: ' + chat_top + 'px}' +
+							'body:not(.ffz-sidebar-swap) .cn-bar-fixed { right: 0 !important }' +
+							'body.ffz-sidebar-swap .cn-bar-fixed { left: 0 !important }';
 
 					}  else {
-						var width = this.get('rightColumnWidth');
-
 						out += 'top: 0; right: ' + width + 'px}' +
 							'#main_col.expandRight #right_close{left: none !important}' +
 							'#right_col{width:' + width + 'px}' +
@@ -335,7 +328,16 @@ FFZ.prototype.setup_layout = function() {
 								'margin-right:' + width + 'px}' +
 							'body.ffz-sidebar-swap .theatre #main_col:not(.expandRight),' +
 							'body.ffz-sidebar-swap #main_col:not(.expandRight){' +
-								'margin-left:' + width + 'px}';
+								'margin-left:' + width + 'px}' +
+							'body:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) .cn-content #player {' +
+								'right: ' + width + 'px !important}' +
+							'body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) .cn-content #player {' +
+								'right: 0 !important;' +
+								'left:' + width + 'px !important}' +
+							'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) .cn-bar-fixed {' +
+								'right: ' + width + 'px}' +
+							'body.ffz-sidebar-swap #main_col:not(.expandRight) .cn-bar-fixed {' +
+								'left: ' + width + 'px !important}';
 					}
 				}
 
