@@ -54,6 +54,37 @@ FFZ.settings_info.sidebar_hide_recommended_channels = {
 };
 
 
+FFZ.settings_info.sidebar_hide_prime = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "When Collapsed",
+		2: "Always"
+	},
+
+	value: 0,
+	process_value: function(val) {
+		if ( typeof val === "string" ) {
+			val = parseInt(val);
+			if ( isNaN(val) || ! isFinite(val) )
+				val = 0;
+		}
+		return val;
+	},
+
+	category: "Sidebar",
+	no_mobile: true,
+
+	name: "Hide Twitch Prime Offers",
+	help: "Hide the Free with Prime section from the sidebar.",
+
+	on_update: function(val) {
+		utils.toggle_cls('ffz-hide-prime')(val === 2);
+		utils.toggle_cls('ffz-hide-prime-collapsed')(val === 1);
+	}
+};
+
+
 FFZ.settings_info.sidebar_hide_promoted_games = {
 	type: "boolean",
 	value: false,
@@ -170,6 +201,8 @@ FFZ.prototype.setup_sidebar = function() {
 	utils.toggle_cls('ffz-hide-friends-collapsed')(this.settings.sidebar_hide_friends_collapsed);
 	utils.toggle_cls('ffz-hide-more-at-twitch')(this.settings.sidebar_hide_more_at_twitch);
 	utils.toggle_cls('ffz-hide-friends')(this.settings.sidebar_disable_friends);
+	utils.toggle_cls('ffz-hide-prime')(this.settings.sidebar_hide_prime === 2);
+	utils.toggle_cls('ffz-hide-prime-collapsed')(this.settings.sidebar_hide_prime === 1);
 
 	if ( this.settings.sidebar_disable_friends ) {
 		try {

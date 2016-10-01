@@ -40,6 +40,8 @@
 
 
 /* edit icon */
+.ffz-dark .js-video-stats__video-header + a svg,
+.ffz-dark .subscription-modal__balloon svg,
 .ffz-dark #channel .player-column #broadcast-meta .info .edit-link svg path{
 	fill:rgba(255,255,255,0.5)!important;
 }
@@ -264,6 +266,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #101014;
 }
 
+.ffz-dark .pika-input,
+.ffz-dark .video-stats .form__input[type=search],
 .ffz-dark .change-banner .banner-preview,
 .ffz-dark .ct-banner--off .ct-banner__inputbox,
 .ffz-dark form.js-new_panel_form input,
@@ -287,6 +291,37 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark option {
 	background-color: #191919;
+}
+
+.ffz-dark .video-stats .form__input[type=search]:not(:focus):not(:hover) {
+	box-shadow: inset 0 0 1px rgba(255,255,255,0.2);
+}
+
+.ffz-dark .video-stats .table__cell--header,
+.ffz-dark .video-stats__table-title {
+	color: #ccc;
+	box-shadow: inset 0 -1px 0 rgba(255,255,255,0.2);
+}
+
+.ffz-dark .video-stats .table__header {
+	background-color: #191919;
+	color: #ccc;
+}
+
+.ffz-dark .video-stats .table {
+	border-color: rgba(255,255,255,0.2);
+	background-color: #101010;
+	box-shadow: 0 2px 4px 0 rgba(255,255,255,0.2);
+}
+
+.ffz-dark .video-stats .table__row {
+	background-color: #101010;
+	color: #999;
+}
+
+.ffz-dark .video-stats .table__cell {
+	border-color: rgba(255,255,255,0.2);
+	color: #999;
 }
 
 
@@ -832,6 +867,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: #fff;
 }
 
+.ffz-dark .brick.brick--theme-grey,
 .ffz-dark .carousel__button:hover {
 	background-color: #191919;
 }
@@ -1481,4 +1517,24 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .cn-tabs__item > a:hover:after {
 	border-color: #a68ed2;
+}
+
+.ffz-dark .offer-item__ci:after {
+	background-image: linear-gradient(rgba(16,16,16,0) 0,#101010 100%)
+}
+
+/* Video Uploads */
+
+.ffz-dark .videos.uploads .card > div[style] {
+	background-color: #101010 !important;
+}
+
+.ffz-dark .cn-vod-info__divider { background-color: rgba(255,255,255,0.2) }
+.ffz-dark .card__body--theme-grey {
+	background-color: #161616;
+}
+
+.ffz-dark .subscription-modal__right,
+.ffz-dark .subscription-modal__bar {
+	border-color: rgba(255,255,255,0.2);
 }

@@ -328,6 +328,17 @@ module.exports = FFZ.utils = {
 
 	// Other Stuff
 
+	process_int: function(default_value) {
+		return function(val) {
+			if ( typeof val === "string" ) {
+				val = parseInt(val);
+				if ( isNaN(val) || ! isFinite(val) )
+					val = default_value;
+			}
+			return val;
+		}
+	},
+
 	build_srcset: build_srcset,
 	/*build_tooltip: build_tooltip,
 	load_emote_data: load_emote_data,*/

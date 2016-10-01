@@ -17,39 +17,30 @@ FFZ.prototype.setup_channel = function() {
 	// Settings stuff!
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
 	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats);
-	document.body.classList.toggle('ffz-channel-bar-bottom', this.settings.channel_bar_bottom);
+
+	var banner_hidden = this.settings.hide_channel_banner;
+		banner_hidden = banner_hidden === 1 ? this.settings.channel_bar_bottom : banner_hidden > 0;
+
+	utils.toggle_cls('ffz-hide-channel-banner')(banner_hidden);
+	utils.toggle_cls('ffz-channel-bar-bottom')(this.settings.channel_bar_bottom);
 	utils.toggle_cls('ffz-minimal-channel-title')(this.settings.channel_title_top === 2);
 	utils.toggle_cls('ffz-channel-title-top')(this.settings.channel_title_top > 0);
 	utils.toggle_cls('ffz-minimal-channel-bar')(this.settings.channel_bar_collapse);
 
 	this.log("Hooking the Ember Channel Index redesign.");
 	this.update_views('component:channel-redesign', this.modify_channel_redesign);
+	this.update_views('component:channel-redesign/live', this.modify_channel_live);
 
 	this.log("Hooking the Ember Channel Index component.");
 	if ( ! this.update_views('component:legacy-channel', this.modify_channel_index) )
 		return;
 
-	this.log("Hooking the Ember Channel model.");
 	var f = this,
-		Channel = utils.ember_resolve('model:deprecated-channel');
-
+		Channel = utils.ember_lookup('controller:channel');
 	if ( ! Channel )
-		return this.log("Unable to find the Ember model:deprecated-channel");
-
-	this._modify_cmodel(Channel);
-
-	var Store = utils.ember_lookup('service:store'),
-		type_map = Store && Store.typeMapFor(Channel);
-
-	if ( type_map && type_map.records )
-		for(var i=0; i < type_map.records.length; i++)
-			this._modify_cmodel(type_map.records[i]);
+		return f.error("Unable to find the Ember Channel controller");
 
 	this.log("Hooking the Ember Channel controller.");
-
-	Channel = utils.ember_lookup('controller:channel');
-	if ( ! Channel )
-		return;
 
 	Channel.reopen({
 		/*isEditable: function() {
@@ -132,17 +123,6 @@ FFZ.prototype.setup_channel = function() {
 				});
 		},
 
-		/*ffzUpdateTitle: function() {
-			var name = this.get('channel.name'),
-				display_name = this.get('channel.display_name');
-
-			if ( display_name )
-				FFZ.capitalization[name] = [display_name, Date.now()];
-
-			if ( f._cindex )
-				f._cindex.ffzFixTitle();
-		}.observes("channel.status", "channel.game", "channel.id", "channel.hostModeTarget.status", "channel.hostModeTarget.id", "channel.hostModeTarget.game"),*/
-
 		ffzHostTarget: function() {
 			var target = this.get('channel.hostModeTarget'),
 				name = target && target.get('name'),
@@ -179,43 +159,24 @@ FFZ.prototype.setup_channel = function() {
 }
 
 
-FFZ.prototype._modify_cmodel = function(model) {
-	var f = this;
-	model.reopen({
-		ffz_host_target: undefined,
-
-		setHostMode: function(e) {
-			if ( f.settings.hosted_channels ) {
-				this.set('ffz_host_target', e.target);
-				return this._super(e);
-			} else {
-				this.set('ffz_host_target', undefined);
-				return this._super({target: void 0, delay: 0});
-			}
-		}
-	});
-}
-
-
-FFZ.prototype.modify_channel_redesign = function(view) {
+FFZ.prototype.modify_channel_live = function(view) {
 	var f = this;
 	utils.ember_reopen_view(view, {
+		ffz_host: null,
+
 		ffz_init: function() {
 			var channel_id = this.get("channel.id"),
 				el = this.get("element");
 
 			f._cindex = this;
-			f.ws_send("sub", "channel." + channel_id);
+			f.ws_sub("channel." + channel_id);
 
-			el.setAttribute('data-channel', channel_id);
-			el.classList.add('ffz-channel');
-
+			this.ffzUpdateAttributes();
 			this.ffzFixTitle();
 			this.ffzUpdateUptime();
 			this.ffzUpdateChatters();
 			this.ffzUpdateHostButton();
 			this.ffzUpdatePlayerStats();
-			this.ffzUpdateCoverHeight();
 
 			if ( f.settings.auto_theater ) {
 				var player = f.players && f.players[channel_id] && f.players[channel_id].get('player');
@@ -233,17 +194,52 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 			});
 		},
 
-		ffzUpdateCoverHeight: function() {
-			var old_height = this.get('channelCoverHeight'),
-				new_height = f.settings.channel_bar_bottom ? 0 : 380;
+		ffzUpdateAttributes: function() {
+			var channel_id = this.get("channel.id"),
+				hosted_id = this.get("channel.hostModeTarget.id"),
+				el = this.get("element");
 
-			this.set('channelCoverHeight', new_height);
-			this.$("#channel").toggleClass('ffz-bar-fixed', this.get('isFixed'));
+			if ( hosted_id !== this.ffz_host ) {
+				if ( this.ffz_host )
+					f.ws_unsub("channel." + this.ffz_host);
 
-			if ( old_height !== new_height )
-				this.scrollTo(this.$scrollContainer.scrollTop() + (new_height - old_height));
+				if ( hosted_id )
+					f.ws_sub("channel." + hosted_id);
 
-		}.observes('isFixed'),
+				this.ffz_host = hosted_id;
+			}
+
+			el.classList.add('ffz-channel');
+			el.classList.toggle('ffz-host', hosted_id || false);
+			el.setAttribute('data-channel', channel_id || '');
+			el.setAttribute('data-hosted', hosted_id || '');
+
+		}.observes('channel.id', 'channel.hostModeTarget'),
+
+		ffz_destroy: function() {
+			var channel_id = this.get("channel.id"),
+				el = this.get("element");
+
+			if ( channel_id )
+				f.ws_unsub("channel." + channel_id);
+
+			if ( this.ffz_host ) {
+				f.ws_unsub("channel." + this.ffz_host);
+				this.ffz_host = null;
+			}
+
+			if ( f._cindex === this )
+				f._cindex = null;
+
+			if ( this._ffz_update_uptime )
+				clearTimeout(this._ffz_update_uptime);
+
+			if ( this._ffz_update_stats )
+				clearTimeout(this._ffz_update_stats);
+
+			document.body.classList.remove('ffz-small-player');
+			utils.update_css(f._channel_style, channel_id, null);
+		},
 
 		ffzFixTitle: function() {
 			if ( ! f.settings.stream_title )
@@ -335,9 +331,7 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 			try {
 				player = player_cont && player_cont.get('player');
 				stats = player && player.getVideoInfo();
-			} catch(err) {
-				f.error("Channel ffzUpdatePlayerStats: player.getVideoInfo", err);
-			}
+			} catch(err) { } // This gets spammy if we try logging it.
 
 			if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster )
 				return container && this.$("#ffz-player-stats").remove();
@@ -521,6 +515,55 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 			else
 				room.send('/host ' + target, true);
 		}
+	});
+}
+
+
+FFZ.prototype.modify_channel_redesign = function(view) {
+	var f = this;
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
+			// Twitch y u make me do dis
+			// (If this isn't the outer channel-redesign abort)
+			if ( this.parentView instanceof view )
+				return;
+
+			var channel_id = this.get("channel.id"),
+				el = this.get("element");
+
+			f._credesign = this;
+
+			this.ffzUpdateCoverHeight();
+
+			el.setAttribute('data-channel', channel_id);
+			el.classList.add('ffz-channel-container');
+		},
+
+		ffz_destroy: function() {
+			var channel_id = this.get("channel.id"),
+				el = this.get("element");
+
+			el.setAttribute('data-channel', '');
+			el.classList.remove('ffz-channel-container');
+
+			if ( f._credesign === this )
+				f._credesign = null;
+		},
+
+		ffzUpdateCoverHeight: function() {
+			var old_height = this.get('channelCoverHeight'),
+				setting = f.settings.hide_channel_banner,
+				banner_hidden = setting === 1 ? f.settings.channel_bar_bottom : setting > 0,
+
+				new_height = banner_hidden ? 0 : 380;
+
+			this.set('channelCoverHeight', new_height);
+			this.$("#channel").toggleClass('ffz-bar-fixed', this.get('isFixed'));
+
+			if ( old_height !== new_height )
+				this.scrollTo(this.$scrollContainer.scrollTop() + (new_height - old_height));
+
+		}.observes('isFixed')
 	})
 }
 
@@ -1155,16 +1198,14 @@ FFZ.settings_info.hosted_channels = {
 			if ( cb )
 				cb.checked = val;
 
-			if ( ! this._cindex )
-				return;
+			var Chat = utils.ember_lookup('controller:chat'),
+				room = Chat && Chat.get('currentChannelRoom');
 
-			var chan = this._cindex.get('controller.model'),
-				room = chan && this.rooms && this.rooms[chan.get('id')],
-				target = room && room.room && room.room.get('ffz_host_target');
-			if ( ! chan || ! room )
-				return;
-
-			chan.setHostMode({target: target, delay: 0});
+			if ( room )
+				room.setHostMode({
+					hostTarget: room.ffz_host_target,
+					recentlyJoined: true
+				});
 		}
 	};
 
@@ -1246,14 +1287,54 @@ FFZ.settings_info.channel_bar_bottom = {
 		if ( this.has_bttv )
 			return;
 
+		var banner_hidden = this.settings.hide_channel_banner;
+		banner_hidden = banner_hidden === 1 ? val : banner_hidden > 0;
+
 		utils.toggle_cls('ffz-channel-bar-bottom')(val);
-		if ( this._cindex )
-			this._cindex.ffzUpdateCoverHeight();
+		utils.toggle_cls('ffz-hide-channel-banner')(banner_hidden);
+
+		if ( this._credesign )
+			this._credesign.ffzUpdateCoverHeight();
 
 		var Layout = utils.ember_lookup('service:layout');
 		if ( Layout )
 			Ember.propertyDidChange(Layout, 'windowHeight');
 	}
+}
+
+
+FFZ.settings_info.hide_channel_banner = {
+	type: "select",
+	options: {
+		0: "Never",
+		1: "When Channel Bar is on Bottom",
+		2: "Always"
+	},
+
+	value: 1,
+	process_value: utils.process_int(1),
+
+	no_bttv: true,
+	no_mobile: true,
+
+	category: "Appearance",
+	name: "Hide Channel Banner",
+	help: "Hide the banner at the top of channel pages.",
+
+	on_update: function(val) {
+		if ( this.has_bttv )
+			return;
+
+		var is_hidden = val === 1 ? this.settings.channel_bar_bottom : val > 0;
+		utils.toggle_cls('ffz-hide-channel-banner')(is_hidden);
+		if ( this._credesign )
+			this._credesign.ffzUpdateCoverHeight();
+
+		var Layout = utils.ember_lookup('service:layout');
+		if ( Layout )
+			Ember.propertyDidChange(Layout, 'windowHeight');
+	}
+
 }
 
 

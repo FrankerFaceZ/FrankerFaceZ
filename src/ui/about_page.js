@@ -194,31 +194,38 @@ FFZ.menu_pages.about = {
 
 
 				// Button Stuff
-				var btn_container = createElement('div'),
-					ad_button = createElement('a'),
-					news_button = createElement('a'),
-					donate_button = createElement('a'),
+				var btn_container = createElement('div', 'chat-menu-content center'),
+					more_buttons = createElement('div', 'chat-menu-content center'),
+
+					ad_button = createElement('a', 'button primary', 'Advertise in Chat'),
+					donate_button = createElement('a', 'button ffz-donate mg-l-1', 'Donate'),
+					issue_button = createElement('a', 'button ffz-issues', 'Bugs &amp; Issues'),
+					idea_button = createElement('a', 'button ffz-ideas mg-l-1', 'Ideas'),
+
 					message = "To use custom emoticons in " + (has_emotes ? "this channel" : "tons of channels") + ", get FrankerFaceZ from https://www.frankerfacez.com";
 
-
 				// Advertising
-
-				ad_button.className = 'button primary';
-				ad_button.innerHTML = "Advertise in Chat";
 				ad_button.addEventListener('click', this._add_emote.bind(this, view, message));
-
 				btn_container.appendChild(ad_button);
 
 				// Donate
-
-				donate_button.className = 'button ffz-donate';
 				donate_button.href = "https://www.frankerfacez.com/donate";
-				donate_button.target = "_new";
-				donate_button.innerHTML = "Donate";
-
+				donate_button.target = "_blank";
 				btn_container.appendChild(donate_button);
-				btn_container.className = 'chat-menu-content center';
+
+				// Issues
+				issue_button.href = "https://github.com/FrankerFaceZ/FrankerFaceZ/labels/bug";
+				issue_button.target = "_blank";
+				more_buttons.appendChild(issue_button);
+
+				// Ideas
+				idea_button.href = "https://github.com/FrankerFaceZ/FrankerFaceZ/labels/enhancement";
+				idea_button.target = "_blank";
+				more_buttons.appendChild(idea_button);
+
+
 				container.appendChild(btn_container);
+				container.appendChild(more_buttons);
 
 
 				// Credits
@@ -226,8 +233,8 @@ FFZ.menu_pages.about = {
 
 				content = '<table class="ffz-about-table">';
 				content += '<tr><th colspan="4">Developers</th></tr>';
-				content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="//www.twitch.tv/dansalvato" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_new">&nbsp;</a></td></tr>';
-				content += '<tr><td>Stendec</td><td><a class="twitch" href="//www.twitch.tv/sirstendec" title="Twitch" target="_new">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/SirStendec" title="Twitter" target="_new">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/channel/UCnxuvmK1DCPCXSJ-mXIh4KQ" title="YouTube" target="_new">&nbsp;</a></td></tr>';
+				content += '<tr><td>Dan Salvato</td><td><a class="twitch" href="//www.twitch.tv/dansalvato" title="Twitch" target="_blank">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/dansalvato" title="Twitter" target="_blank">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/user/dansalvato1" title="YouTube" target="_blank">&nbsp;</a></td></tr>';
+				content += '<tr><td>Stendec</td><td><a class="twitch" href="//www.twitch.tv/sirstendec" title="Twitch" target="_blank">&nbsp;</a></td><td><a class="twitter" href="https://twitter.com/SirStendec" title="Twitter" target="_blank">&nbsp;</a></td><td><a class="youtube" href="https://www.youtube.com/channel/UCnxuvmK1DCPCXSJ-mXIh4KQ" title="YouTube" target="_blank">&nbsp;</a></td></tr>';
 
 				content += '<tr class="debug"><td><a href="#" id="ffz-changelog">Version ' + FFZ.version_info + '</a></td><td colspan="3"><a href="#" id="ffz-debug-logs">Logs</a></td></tr>';
 

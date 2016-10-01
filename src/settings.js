@@ -581,7 +581,7 @@ FFZ.menu_pages.settings = {
 					count = favorites.length;
 				else
 					for(var i=0; i < favorites.length; i++)
-						if ( ! FFZ.settings_info[favorites[i]].no_bttv )
+						if ( FFZ.settings_info[favorites[i]] && ! FFZ.settings_info[favorites[i]].no_bttv )
 							count++;
 
 				if ( ! count ) {

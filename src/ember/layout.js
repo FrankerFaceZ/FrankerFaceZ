@@ -211,7 +211,7 @@ FFZ.prototype.setup_layout = function() {
 					(f.settings.channel_title_top === 2 ? 20 : f.settings.channel_title_top > 0 ? 55 : 0) +
 					(f.settings.channel_title_top ? 70 : 80),
 
-				i = (9 * r / 16) + c,
+				i = Math.round(9 * r / 16) + c,
 				d = h - extra_height,
 				c = h - 94 - 185,
 

@@ -3,7 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
-	OTHER_KNOWN = ['turbo', 'warcraft', 'bits'],
+	OTHER_KNOWN = ['turbo', 'warcraft', 'bits', 'premium'],
 
 	NO_INVERT_BADGES = ['subscriber', 'ffz-badge-1'],
 	INVERT_INVERT_BADGES = ['bits'],

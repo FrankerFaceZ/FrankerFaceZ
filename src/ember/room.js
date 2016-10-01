@@ -2062,11 +2062,38 @@ FFZ.prototype._modify_room = function(room) {
 			if ( user && f._cindex && this.get('id') === user.login )
 				f._cindex.ffzUpdateHostButton();
 
+			// If hosting is disabled, or this isn't the current channel room,
+			// ignore the host mode.
 			var Chat = utils.ember_lookup('controller:chat');
 			if ( ! Chat || Chat.get('currentChannelRoom') !== this )
 				return;
 
-			return this._super(e);
+			var target = f.settings.hosted_channels ? (e.hostTarget ? e.hostTarget.toLowerCase() : null) : null,
+				channel = this.get("channel");
+
+			if ( channel ) {
+				var delay = 0;
+				if ( target && ! e.recentlyJoined ) {
+					var percentile = Math.max((e.numViewers || 0) / .5, 4000);
+					delay = 3000 + Math.floor((percentile || 0) * Math.random());
+				}
+
+				if ( this.get("experiments.shouldSeeRedesign") ) {
+					var c = this.get("store").peekRecord("channel", channel.get("name"));
+					if ( c ) {
+						if ( target )
+							this.pendingFetchHostModeTarget = Ember.run.debounce(this, "fetchHostModeTarget", {
+								currentChannel: c,
+								targetName: target
+							}, delay);
+						else
+							c.set("hostModeTarget", null);
+					}
+
+				} else channel.setHostMode({
+					target: target, delay: delay
+				});
+			}
 		},
 
 		send: function(text, ignore_history, used_aliases) {
