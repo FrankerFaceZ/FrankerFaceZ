@@ -20,15 +20,11 @@ FFZ.settings_info.sidebar_followed_games = {
 	},
 
 	value: 5,
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(5),
 
-	category: "Sidebar",
 	no_mobile: true,
 
+	category: "Sidebar",
 	name: "Followed Games",
 	help: "Display this number of followed games on the sidebar.",
 
@@ -63,18 +59,11 @@ FFZ.settings_info.sidebar_hide_prime = {
 	},
 
 	value: 0,
-	process_value: function(val) {
-		if ( typeof val === "string" ) {
-			val = parseInt(val);
-			if ( isNaN(val) || ! isFinite(val) )
-				val = 0;
-		}
-		return val;
-	},
+	process_value: utils.process_int(0),
 
-	category: "Sidebar",
 	no_mobile: true,
 
+	category: "Sidebar",
 	name: "Hide Twitch Prime Offers",
 	help: "Hide the Free with Prime section from the sidebar.",
 

@@ -17,16 +17,7 @@ FFZ.settings_info.portrait_mode = {
 	},
 
 	value: 0,
-
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		if ( val === true )
-			return 1;
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(0, 0, 1),
 
 	category: "Appearance",
 	no_mobile: true,

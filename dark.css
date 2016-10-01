@@ -1538,3 +1538,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .subscription-modal__bar {
 	border-color: rgba(255,255,255,0.2);
 }
+
+.ffz-dark .balloon .filter-bar__balloon-link--active {
+	color: #fff !important;
+	background-color: #6441a5 !important;
+}

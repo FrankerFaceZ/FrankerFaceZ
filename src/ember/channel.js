@@ -1236,15 +1236,7 @@ FFZ.settings_info.stream_uptime = {
 	},
 
 	value: 1,
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		if ( val === true )
-			return 2;
-		if ( typeof val === "string" )
-			return parseInt(val || "0") || 0;
-		return val;
-	},
+	process_value: utils.process_int(1, 0, 2),
 
 	no_mobile: true,
 	category: "Channel Metadata",
@@ -1370,14 +1362,7 @@ FFZ.settings_info.channel_title_top = {
 	},
 
 	value: 0,
-	process_value: function(val) {
-		if ( typeof val === "string" ) {
-			val = parseInt(val);
-			if ( isNaN(val) || ! isFinite(val) )
-				val = 0;
-		}
-		return val;
-	},
+	process_value: utils.process_int(0),
 
 	no_bttv: true,
 	no_mobile: true,

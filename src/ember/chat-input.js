@@ -100,13 +100,9 @@ FFZ.settings_info.input_complete_emotes = {
 		2: "All Emoticons"
 	},
 
-	value: 1,
+	value: 2,
 
-	process_value: function(val) {
-		if ( typeof val === 'string' )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(2),
 
 	category: "Chat Input",
 	no_bttv: true,
@@ -131,11 +127,7 @@ FFZ.settings_info.input_complete_aliases = {
 
 	value: 1,
 
-	process_value: function(val) {
-		if ( typeof val === 'string' )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(1),
 
 	category: "Chat Input",
 	no_bttv: true,

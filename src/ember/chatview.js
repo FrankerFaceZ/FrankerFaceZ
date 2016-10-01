@@ -61,15 +61,7 @@ FFZ.settings_info.minimal_chat = {
 	name: "Minimalistic Chat",
 	help: "Hide all of the chat user interface, only showing messages and an input box.",
 
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		else if ( val === true )
-			return 3;
-		else if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(0, 0, 3),
 
 	on_update: function(val) {
 			document.body.classList.toggle("ffz-minimal-chat-head", val === 1 || val === 3);
@@ -122,11 +114,7 @@ FFZ.settings_info.chat_batching = {
 	name: "Chat Message Batching",
 	help: "Display chat messages in batches to improve performance in <em>extremely</em> fast chats.",
 
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(0),
 
 	on_update: function(val) {
 		if ( this._roomv )
@@ -158,11 +146,7 @@ FFZ.settings_info.chat_delay = {
 	name: "Artificial Chat Delay",
 	help: "Delay the appearance of chat messages to allow for moderation before you see them.",
 
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val || "0");
-		return val;
-	},
+	process_value: utils.process_int(-1),
 
 	on_update: function (val) {
 		for(var room_id in this.rooms) {
@@ -288,15 +272,7 @@ FFZ.settings_info.group_tabs = {
 
 	value: 0,
 
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		else if ( val === true )
-			return 3;
-		else if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(0, 0, 3),
 
 	no_bttv: true,
 

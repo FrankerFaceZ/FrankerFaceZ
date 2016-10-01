@@ -328,9 +328,13 @@ module.exports = FFZ.utils = {
 
 	// Other Stuff
 
-	process_int: function(default_value) {
+	process_int: function(default_value, false_value, true_value) {
 		return function(val) {
-			if ( typeof val === "string" ) {
+			if ( val === false && false_value !== undefined )
+				val = false_value;
+			else if ( val === true && true_value !== undefined )
+				val = true_value;
+			else if ( typeof val === "string" ) {
 				val = parseInt(val);
 				if ( isNaN(val) || ! isFinite(val) )
 					val = default_value;

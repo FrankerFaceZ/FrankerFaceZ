@@ -157,11 +157,7 @@ FFZ.settings_info.directory_host_menus = {
 	},
 
 	value: 1,
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(1),
 
 	category: "Directory",
 	no_mobile: true,

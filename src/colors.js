@@ -57,20 +57,7 @@ FFZ.settings_info.fix_color = {
 	name: "Username Colors",
 	help: "Ensure that username colors contrast with the background enough to be readable.",
 
-	process_value: function(val) {
-		// Load legacy setting.
-		if ( val === false )
-			return 0;
-		else if ( val === true )
-			return 1;
-		else if ( typeof val === "string" ) {
-			val = parseInt(val);
-			if ( Number.isNaN(val) || ! Number.isFinite(val) )
-				val = 6;
-		}
-
-		return val;
-	},
+	process_value: utils.process_int(6, 0, 6),
 
 	on_update: function(val) {
 		this.toggle_style('chat-colors-gray', !this.has_bttv && val === -1);

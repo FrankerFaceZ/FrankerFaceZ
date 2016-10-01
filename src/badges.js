@@ -156,15 +156,7 @@ FFZ.settings_info.legacy_badges = {
 	name: "Legacy Badges",
 	help: "Use the old, pre-vector chat badges from Twitch in place of the new.",
 
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		else if ( val === true )
-			return 3;
-		else if ( typeof val === "string" )
-			return parseInt(val || "0");
-		return val;
-	},
+	process_value: utils.process_int(0, 0, 3),
 
 	on_update: function(val) {
 		this.toggle_style('badges-legacy', val === 3);
@@ -193,15 +185,7 @@ FFZ.settings_info.transparent_badges = {
 	name: "Badge Style",
 	help: "Make badges appear rounded, completely circular, or transparent with no background at all.",
 
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		else if ( val === true )
-			return 5;
-		else if ( typeof val === "string" )
-			return parseInt(val || "0");
-		return val;
-	},
+	process_value: utils.process_int(0, 0, 5),
 
 	on_update: function(val) {
 		if ( this.has_bttv )

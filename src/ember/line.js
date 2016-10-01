@@ -41,16 +41,7 @@ FFZ.settings_info.username_display = {
 	help: "How a user's name should be rendered when their display name differs from the username.",
 
 	value: 3,
-
-	process_value: function(val) {
-		if ( typeof val === "string" ) {
-			val = parseInt(val);
-			if ( isNaN(val) || ! isFinite(val) )
-				val = 3;
-		}
-
-		return val;
-	},
+	process_value: utils.process_int(3),
 
 	on_update: function(val) {
 		var CL = utils.ember_resolve('component:chat/chat-line'),
@@ -119,16 +110,7 @@ FFZ.settings_info.parse_emoji = {
 	},
 
 	value: 1,
-
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		if ( val === true )
-			return 1;
-		if ( typeof val === "string" )
-			return parseInt(val || "0");
-		return val;
-	},
+	process_value: utils.process_int(1, 0, 1),
 
 	category: "Chat Appearance",
 
@@ -375,21 +357,13 @@ FFZ.settings_info.chat_separators = {
 		3: "3D Line (2px groove inset)",
 		4: "Wide Line (2px solid)"
 	},
-	value: 0,
 
-	category: "Chat Appearance",
+	value: 0,
+	process_value: utils.process_int(0, 0, 1),
+
 	no_bttv: true,
 
-	process_value: function(val) {
-		if ( val === false )
-			return 0;
-		else if ( val === true )
-			return 1;
-		else if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
-
+	category: "Chat Appearance",
 	name: "Chat Line Separators",
 	help: "Display thin lines between chat messages for further visual separation.",
 
@@ -455,13 +429,8 @@ FFZ.settings_info.high_contrast_chat = {
 		'112': "Background + Bold",
 		'111': 'All'
 	},
+
 	value: '222',
-
-	category: "Chat Appearance",
-
-	name: "High Contrast",
-	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
-
 	process_value: function(val) {
 		if ( val === false )
 			return '222';
@@ -469,6 +438,11 @@ FFZ.settings_info.high_contrast_chat = {
 			return '111';
 		return val;
 	},
+
+	category: "Chat Appearance",
+
+	name: "High Contrast",
+	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
 
 	on_update: function(val) {
 			this.toggle_style('chat-hc-text', val[2] === '1');

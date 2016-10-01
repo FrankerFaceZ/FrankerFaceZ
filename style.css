@@ -2908,6 +2908,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 
 body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,
+.cn-metabar__title .ct-tags,
 /*body:not(.ffz-creative-showcase) .ct-banner-handler .tower > div:last-child,*/
 body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 

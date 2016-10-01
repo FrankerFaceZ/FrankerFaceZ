@@ -104,11 +104,7 @@ FFZ.settings_info.chat_mod_icon_visibility = {
 		return this.settings.get_twitch("showModIcons") ? 1 : 0;
 	},
 
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(0),
 
 	no_bttv: true,
 
@@ -139,17 +135,9 @@ FFZ.settings_info.chat_hover_pause = {
 		8: "Alt or Hover",
 		9: "Shift or Hover"
 	},
-	value: 0,
 
-	process_value: function(val) {
-		if ( val === true )
-			return 1;
-		else if ( val === false )
-			return 0;
-		else if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	value: 0,
+	process_value: utils.process_int(0, 0, 1),
 
 	no_bttv: true,
 
@@ -180,11 +168,11 @@ FFZ.settings_info.short_commands = {
 	value: true,
 
 	no_bttv: true,
-	category: "Chat Moderation",
 
+	category: "Chat Moderation",
 	name: "Short Moderation Commands",
 	help: "Use /t, /b, and /u in chat in place of /timeout, /ban, /unban for quicker moderation, and use /p for 1 second timeouts."
-	};
+};
 
 
 FFZ.settings_info.mod_card_hotkeys = {
@@ -192,11 +180,11 @@ FFZ.settings_info.mod_card_hotkeys = {
 	value: false,
 
 	no_bttv: true,
-	category: "Chat Moderation",
 
+	category: "Chat Moderation",
 	name: "Moderation Card Hotkeys",
 	help: "With a moderation card selected, press B to ban the user, T to time them out for 10 minutes, P to time them out for 1 second, or U to unban them. ESC closes the card."
-	};
+};
 
 
 FFZ.settings_info.mod_card_info = {
@@ -204,11 +192,11 @@ FFZ.settings_info.mod_card_info = {
 	value: true,
 
 	no_bttv: true,
-	category: "Chat Moderation",
 
+	category: "Chat Moderation",
 	name: "Moderation Card Additional Information",
 	help: "Display a channel's follower count, view count, and account age on moderation cards."
-	};
+};
 
 
 FFZ.settings_info.timeout_notices = {
@@ -220,18 +208,14 @@ FFZ.settings_info.timeout_notices = {
 	},
 
 	value: 1,
-	process_value: function(val) {
-		if ( typeof val === "string" )
-			return parseInt(val) || 0;
-		return val;
-	},
+	process_value: utils.process_int(1),
 
 	no_bttv: true,
-	category: "Chat Moderation",
 
+	category: "Chat Moderation",
 	name: "Display Timeout / Ban Notices",
 	help: "Display notices in chat when a user is timed out or banned. (You always see your own bans.)"
-	};
+};
 
 
 FFZ.settings_info.mod_card_history = {
@@ -245,17 +229,17 @@ FFZ.settings_info.mod_card_history = {
 	help: "Display a few of the user's previously sent messages on moderation cards.",
 
 	on_update: function(val) {
-			if ( val || ! this.rooms )
-				return;
+		if ( val || ! this.rooms )
+			return;
 
-			// Delete all history~!
-			for(var room_id in this.rooms) {
-				var room = this.rooms[room_id];
-				if ( room )
-					room.user_history = undefined;
-			}
+		// Delete all history~!
+		for(var room_id in this.rooms) {
+			var room = this.rooms[room_id];
+			if ( room )
+				room.user_history = undefined;
 		}
-	};
+	}
+};
 
 
 FFZ.settings_info.mod_button_context = {
@@ -268,21 +252,14 @@ FFZ.settings_info.mod_button_context = {
 	},
 
 	value: 3,
-	process_value: function(val) {
-		if ( typeof val === "string" ) {
-			val = parseInt(val);
-			if ( isNaN(val) || ! isFinite(val) )
-				val = 3;
-		}
-		return val;
-	},
+	process_value: utils.process_int(3),
 
-	category: "Chat Moderation",
 	no_bttv: true,
 
+	category: "Chat Moderation",
 	name: "Mod Icon Context Menus",
 	help: "Choose the available options when right-clicking an in-line moderation icon."
-}
+};
 
 
 FFZ.settings_info.mod_card_reasons = {
@@ -340,146 +317,146 @@ FFZ.settings_info.mod_buttons = {
 	//  integer = Timeout (that amount of time)
 	value: [['', false, false], ['',600, false]], //, ['', 1, false]],
 
-	category: "Chat Moderation",
 	no_bttv: true,
 
+	category: "Chat Moderation",
 	name: "Custom In-Line Moderation Icons",
 	help: "Change out the different in-line moderation icons to use any command quickly.",
 
 	method: function() {
-			var f = this,
-				old_val = "",
-				input = utils.createElement('textarea');
+		var f = this,
+			old_val = "",
+			input = utils.createElement('textarea');
 
-			input.style.marginBottom = '20px';
-			input.placeholder = '/ban\n600';
+		input.style.marginBottom = '20px';
+		input.placeholder = '/ban\n600';
 
-			for(var i=0; i < this.settings.mod_buttons.length; i++) {
-				var pair = this.settings.mod_buttons[i],
-					prefix = pair[0], cmd = pair[1], had_prefix = pair[2];
+		for(var i=0; i < this.settings.mod_buttons.length; i++) {
+			var pair = this.settings.mod_buttons[i],
+				prefix = pair[0], cmd = pair[1], had_prefix = pair[2];
 
-				if ( cmd === false )
-					cmd = "/ban";
-				else if ( cmd === 600 )
-					cmd = "/timeout";
-				else if ( typeof cmd !== "string" )
-					cmd = '' + cmd;
+			if ( cmd === false )
+				cmd = "/ban";
+			else if ( cmd === 600 )
+				cmd = "/timeout";
+			else if ( typeof cmd !== "string" )
+				cmd = '' + cmd;
 
-				prefix = had_prefix ? 'name:' + prefix + '=' : '';
-				old_val += (old_val.length ? '\n' : '') + prefix + cmd;
-			}
-
-			utils.prompt(
-				"Custom In-Line Moderation Icons",
-					"Please enter a list of commands to be displayed as moderation buttons within chat lines. " +
-					"One item per line. As a shortcut for specific duration timeouts, you can enter the number of seconds by itself. " +
-					" To send multiple commands, separate them with <code>&lt;LINE&gt;</code>. " +
-					"Variables, such as the target user's name, can be inserted into your commands. If no variables are detected " +
-					"in a line, <code>{user}</code> will be added to the end of the first command.<hr>" +
-
-					"To set a custom label for the button, start your line with <code>name:</code> followed by the " +
-					"name of the button. End the name with an equals sign. Only the first character will be displayed.<br>" +
-					"<strong>Example:</strong> <code>name:B=/ban {user}</code><hr>" +
-
-					"<strong>Allowed Variables</strong><br><table><tbody>" +
-					"<tr><td><code>{user}</code></td><td>target user's name</td>" +
-					"<td><code>{user_name}</code></td><td>target user's name</td></tr>" +
-					"<tr><td><code>{user_display_name}</code></td><td>target user's display name</td>" +
-					"<td><code>{user_id}</code></td><td>target user's numeric ID</td></tr>" +
-					"<tr><td><code>{room}</code></td><td>chat room's name</td>" +
-					"<td><code>{room_name}</code></td><td>chat room's name</td></tr>" +
-					"<tr><td><code>{room_display_name}</code></td><td>chat room's display name</td>" +
-					"<td><code>{room_id}</code></td><td>chat room's numeric ID</td></tr>" +
-					"<tr><td><code>{id}</code></td><td>message's UUID</td></tr>" +
-					"</tbody></table>",
-
-				old_val,
-				function(new_val) {
-					if ( new_val === null || new_val === undefined )
-						return;
-
-					var vals = new_val.trim().split(/\s*\n\s*/g),
-						output = [];
-
-					for(var i=0; i < vals.length; i++) {
-						var cmd = vals[i],
-							prefix,
-							is_emoji = false,
-							name_match = /^name:([^=]+)=/.exec(cmd);
-
-						if ( ! cmd || ! cmd.length )
-							continue;
-
-						if ( name_match ) {
-							label = name_match[1];
-
-							if ( window.punycode && punycode.ucs2 )
-								label = punycode.ucs2.encode([punycode.ucs2.decode(label)[0]]);
-
-							// Check for an emoji
-							var tokens = f.tokenize_emoji(label);
-							if ( tokens && tokens[0] && tokens[0].ffzEmoji )
-								is_emoji = tokens[0].ffzEmoji;
-
-							cmd = cmd.substr(name_match[0].length).trim();
-						} else
-							label = undefined;
-
-						// Check for a plain ban.
-						if ( /^\/b(?:an)?(?:\s+{user(?:_name)?})?\s*$/.test(cmd) )
-							cmd = false;
-
-						// Numeric Timeout
-						else if ( /^\d+$/.test(cmd) )
-							cmd = parseInt(cmd);
-
-						// Command Timeout
-						else if ( /^\/t(?:imeout)?(?:\s+{user(?:_name)?}(?:\s+(\d+))?)?\s*$/.test(cmd) ) {
-							cmd = parseInt(/^\/t(?:imeout)?(?:\s+{user(?:_name)?}(?:\s+(\d+))?)?\s*$/.exec(cmd)[1]);
-							if ( isNaN(cmd) || ! isFinite(cmd) )
-								cmd = 600;
-						}
-
-
-						// Okay. Do we still need a prefix?
-						if ( label === undefined ) {
-							var tmp;
-							if ( typeof cmd === "string" )
-								tmp = /\w/.exec(cmd);
-							else
-								tmp = utils.duration_string(cmd);
-
-							label = tmp && tmp.length ? tmp[0].toUpperCase() : 'C';
-						}
-
-						// Add {user} to the first command if it's a custom command and missing.
-						if ( typeof cmd === "string" ) {
-							utils.CMD_VAR_REGEX.lastIndex = 0;
-							if ( ! utils.CMD_VAR_REGEX.test(cmd) ) {
-								var lines = cmd.split(/\s*<LINE>\s*/g);
-								lines[0] += ' {user}';
-								cmd = lines.join("<LINE>");
-							}
-						}
-
-						output.push([label, cmd, name_match != null, is_emoji]);
-					}
-
-					f.settings.set('mod_buttons', output);
-
-					// Update existing chat lines.
-					var CL = utils.ember_resolve('component:chat/chat-line'),
-						views = CL ? utils.ember_views() : [];
-
-					for(var vid in views) {
-						var view = views[vid];
-						if ( view instanceof CL && view.buildModIconsHTML )
-							view.$('.mod-icons').replaceWith(view.buildModIconsHTML());
-					}
-
-				}, 600, input);
+			prefix = had_prefix ? 'name:' + prefix + '=' : '';
+			old_val += (old_val.length ? '\n' : '') + prefix + cmd;
 		}
-	};
+
+		utils.prompt(
+			"Custom In-Line Moderation Icons",
+				"Please enter a list of commands to be displayed as moderation buttons within chat lines. " +
+				"One item per line. As a shortcut for specific duration timeouts, you can enter the number of seconds by itself. " +
+				" To send multiple commands, separate them with <code>&lt;LINE&gt;</code>. " +
+				"Variables, such as the target user's name, can be inserted into your commands. If no variables are detected " +
+				"in a line, <code>{user}</code> will be added to the end of the first command.<hr>" +
+
+				"To set a custom label for the button, start your line with <code>name:</code> followed by the " +
+				"name of the button. End the name with an equals sign. Only the first character will be displayed.<br>" +
+				"<strong>Example:</strong> <code>name:B=/ban {user}</code><hr>" +
+
+				"<strong>Allowed Variables</strong><br><table><tbody>" +
+				"<tr><td><code>{user}</code></td><td>target user's name</td>" +
+				"<td><code>{user_name}</code></td><td>target user's name</td></tr>" +
+				"<tr><td><code>{user_display_name}</code></td><td>target user's display name</td>" +
+				"<td><code>{user_id}</code></td><td>target user's numeric ID</td></tr>" +
+				"<tr><td><code>{room}</code></td><td>chat room's name</td>" +
+				"<td><code>{room_name}</code></td><td>chat room's name</td></tr>" +
+				"<tr><td><code>{room_display_name}</code></td><td>chat room's display name</td>" +
+				"<td><code>{room_id}</code></td><td>chat room's numeric ID</td></tr>" +
+				"<tr><td><code>{id}</code></td><td>message's UUID</td></tr>" +
+				"</tbody></table>",
+
+			old_val,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+
+				var vals = new_val.trim().split(/\s*\n\s*/g),
+					output = [];
+
+				for(var i=0; i < vals.length; i++) {
+					var cmd = vals[i],
+						prefix,
+						is_emoji = false,
+						name_match = /^name:([^=]+)=/.exec(cmd);
+
+					if ( ! cmd || ! cmd.length )
+						continue;
+
+					if ( name_match ) {
+						label = name_match[1];
+
+						if ( window.punycode && punycode.ucs2 )
+							label = punycode.ucs2.encode([punycode.ucs2.decode(label)[0]]);
+
+						// Check for an emoji
+						var tokens = f.tokenize_emoji(label);
+						if ( tokens && tokens[0] && tokens[0].ffzEmoji )
+							is_emoji = tokens[0].ffzEmoji;
+
+						cmd = cmd.substr(name_match[0].length).trim();
+					} else
+						label = undefined;
+
+					// Check for a plain ban.
+					if ( /^\/b(?:an)?(?:\s+{user(?:_name)?})?\s*$/.test(cmd) )
+						cmd = false;
+
+					// Numeric Timeout
+					else if ( /^\d+$/.test(cmd) )
+						cmd = parseInt(cmd);
+
+					// Command Timeout
+					else if ( /^\/t(?:imeout)?(?:\s+{user(?:_name)?}(?:\s+(\d+))?)?\s*$/.test(cmd) ) {
+						cmd = parseInt(/^\/t(?:imeout)?(?:\s+{user(?:_name)?}(?:\s+(\d+))?)?\s*$/.exec(cmd)[1]);
+						if ( isNaN(cmd) || ! isFinite(cmd) )
+							cmd = 600;
+					}
+
+
+					// Okay. Do we still need a prefix?
+					if ( label === undefined ) {
+						var tmp;
+						if ( typeof cmd === "string" )
+							tmp = /\w/.exec(cmd);
+						else
+							tmp = utils.duration_string(cmd);
+
+						label = tmp && tmp.length ? tmp[0].toUpperCase() : 'C';
+					}
+
+					// Add {user} to the first command if it's a custom command and missing.
+					if ( typeof cmd === "string" ) {
+						utils.CMD_VAR_REGEX.lastIndex = 0;
+						if ( ! utils.CMD_VAR_REGEX.test(cmd) ) {
+							var lines = cmd.split(/\s*<LINE>\s*/g);
+							lines[0] += ' {user}';
+							cmd = lines.join("<LINE>");
+						}
+					}
+
+					output.push([label, cmd, name_match != null, is_emoji]);
+				}
+
+				f.settings.set('mod_buttons', output);
+
+				// Update existing chat lines.
+				var CL = utils.ember_resolve('component:chat/chat-line'),
+					views = CL ? utils.ember_views() : [];
+
+				for(var vid in views) {
+					var view = views[vid];
+					if ( view instanceof CL && view.buildModIconsHTML )
+						view.$('.mod-icons').replaceWith(view.buildModIconsHTML());
+				}
+
+			}, 600, input);
+	}
+};
 
 
 FFZ.settings_info.mod_card_buttons = {
