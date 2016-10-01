@@ -78,13 +78,21 @@ FFZ.settings_info.hidden_badges = {
 		if ( badgeCollection ) {
 			if ( badgeCollection.global )
 				for(var badge in badgeCollection.global)
-					if ( badgeCollection.global.hasOwnProperty(badge) && badge !== 'broadcasterName' )
-						values.push('<code>' + badge + '</code>');
+					if ( badgeCollection.global.hasOwnProperty(badge) && badge !== 'broadcasterName' ) {
+						var badge_data = badgeCollection.global[badge],
+							version = Object.keys(badge_data.versions)[0];
+
+						values.push([badge, f.render_badges(f.get_twitch_badges(badge + "/" + version))]);
+					}
 
 			if ( badgeCollection.channel )
 				for(var badge in badgeCollection.channel)
-					if ( badgeCollection.channel.hasOwnProperty(badge) && badge !== 'broadcasterName' )
-						values.push('<code>' + badge + '</code>');
+					if ( badgeCollection.channel.hasOwnProperty(badge) && badge !== 'broadcasterName' ) {
+						var badge_data = badgeCollection.channel[badge],
+							version = Object.keys(badge_data.versions)[0];
+
+						values.push([badge, f.render_badges(f.get_twitch_badges(badge + "/" + version))]);
+					}
 		}
 
 		for(var badge_id in f.badges) {
@@ -92,26 +100,40 @@ FFZ.settings_info.hidden_badges = {
 				continue;
 
 			var badge = f.badges[badge_id],
-				hide_key = (badge.source_ext ? f._apis[badge.source_ext].name_key : 'ffz') + '-' + (badge.name || badge.id);
+				hide_key = (badge.source_ext ? f._apis[badge.source_ext].name_key : 'ffz') + '-' + (badge.name || badge.id),
+				render_badge = {};
 
-			values.push('<code>' + hide_key + '</code>');
+			render_badge[badge.slot] = f._get_badge_object({}, badge);
+			values.push([hide_key, f.render_badges(render_badge)]);
 		}
 
 		if ( this.has_bttv && window.BetterTTV ) {
 			try {
 				for(var badge_id in BetterTTV.chat.store.__badgeTypes)
-					values.push('<code>bttv-' + badge_id + '</code>');
+					values.push(['bttv-' + badge_id, null]);
 
-				values.push('<code>bot</code>');
+				values.push(['bot', null]);
 
 			} catch(err) {
 				this.error("Unable to load known BetterTTV badges.", err);
 			}
 		}
 
+		var already_used = [],
+			output = [];
+
+		for(var i=0; i < values.length; i++) {
+			var badge = values[i];
+			if ( already_used.indexOf(badge[0]) !== -1 )
+				continue;
+
+			already_used.push(badge[0]);
+			output.push((badge[1] ? '<div class="ffz-hidden-badges badges">' + badge[1] + '</div>' : '') + '<code>' + badge[0] + '</code>');
+		}
+
 		utils.prompt(
 			"Hidden Badges",
-			"Please enter a comma-separated list of badges that you would like to be hidden in chat.</p><p><b>Possible Values:</b> " + _.unique(values).join(", "),
+			"Please enter a comma-separated list of badges that you would like to be hidden in chat.</p><p><b>Possible Values:</b> " + output.join(", "),
 			old_val,
 			function(new_val) {
 				if ( new_val === null || new_val === undefined )
@@ -306,20 +328,24 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 			continue;
 		}
 
-		badges[slot] = {
-			klass: 'ffz-badge-' + badge.id,
-			title: badge.title || full_badge.title || ('Unknown FFZ Badge\nID: ' + badge.id),
-			image: badge.image,
-			full_image: full_badge.image,
-			color: badge.color,
-			no_invert: badge.no_invert || full_badge.no_invert,
-			invert_invert: badge.invert_invert || full_badge.invert_invert,
-			transparent: badge.transparent || full_badge.transparent || (badge.color || full_badge.color) === "transparent",
-			extra_css: badge.extra_css
-		};
+		badges[slot] = this._get_badge_object(badge, full_badge);
 	}
 
 	return badges;
+}
+
+FFZ.prototype._get_badge_object = function(badge, full_badge) {
+	return {
+		klass: 'ffz-badge-' + (badge.id || full_badge.id),
+		title: badge.title || full_badge.title || ('Unknown FFZ Badge\nID: ' + (badge.id | full_badge.id)),
+		image: badge.image,
+		full_image: full_badge.image,
+		color: badge.color,
+		no_invert: badge.no_invert || full_badge.no_invert,
+		invert_invert: badge.invert_invert || full_badge.invert_invert,
+		transparent: badge.transparent || full_badge.transparent || (badge.color || full_badge.color) === "transparent",
+		extra_css: (badge.extra_css || full_badge.extra_css)
+	}
 }
 
 

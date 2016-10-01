@@ -3120,6 +3120,8 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 }
 
+.ffz-hidden-badges.badges { margin-left: 5px }
+
 
 /* Odd Badges */
 .badge.click_url { cursor: pointer }
