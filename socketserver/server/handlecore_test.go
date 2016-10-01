@@ -2,14 +2,15 @@ package server
 
 import (
 	"fmt"
-	"golang.org/x/net/websocket"
 	"testing"
+
+	"github.com/gorilla/websocket"
 )
 
 func ExampleUnmarshalClientMessage() {
 	sourceData := []byte("100 hello [\"ffz_3.5.30\",\"898b5bfa-b577-47bb-afb4-252c703b67d6\"]")
 	var cm ClientMessage
-	err := UnmarshalClientMessage(sourceData, websocket.TextFrame, &cm)
+	err := UnmarshalClientMessage(sourceData, websocket.TextMessage, &cm)
 	fmt.Println(err)
 	fmt.Println(cm.MessageID)
 	fmt.Println(cm.Command)
@@ -27,9 +28,9 @@ func ExampleMarshalClientMessage() {
 		Command:   "do_authorize",
 		Arguments: "1234567890",
 	}
-	data, payloadType, err := MarshalClientMessage(&cm)
+	payloadType, data, err := MarshalClientMessage(&cm)
 	fmt.Println(err)
-	fmt.Println(payloadType == websocket.TextFrame)
+	fmt.Println(payloadType == websocket.TextMessage)
 	fmt.Println(string(data))
 	// Output:
 	// <nil>
@@ -40,7 +41,7 @@ func ExampleMarshalClientMessage() {
 func TestArgumentsAsStringAndBool(t *testing.T) {
 	sourceData := []byte("1 foo [\"string\", false]")
 	var cm ClientMessage
-	err := UnmarshalClientMessage(sourceData, websocket.TextFrame, &cm)
+	err := UnmarshalClientMessage(sourceData, websocket.TextMessage, &cm)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,1 @@
+{"ListenAddr":"localhost:3000","DatabaseLocation":"./database.sqlite","GobFilesLocation":"./gobcache"}

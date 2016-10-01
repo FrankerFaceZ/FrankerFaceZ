@@ -1,7 +1,6 @@
-package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/socketserver"
+package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/ffzsocketserver"
 
 import (
-	"../../internal/server"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,16 +8,23 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"../../server"
 )
 
-var configFilename *string = flag.String("config", "config.json", "Configuration file, including the keypairs for the NaCl crypto library, for communicating with the backend.")
-var generateKeys *bool = flag.Bool("genkeys", false, "Generate NaCl keys instead of serving requests.\nArguments: [int serverId] [base64 backendPublic]\nThe backend public key can either be specified in base64 on the command line, or put in the json file later.")
+import _ "net/http/pprof"
+
+var configFilename = flag.String("config", "config.json", "Configuration file, including the keypairs for the NaCl crypto library, for communicating with the backend.")
+var flagGenerateKeys = flag.Bool("genkeys", false, "Generate NaCl keys instead of serving requests.\nArguments: [int serverId] [base64 backendPublic]\nThe backend public key can either be specified in base64 on the command line, or put in the json file later.")
+
+var BuildTime string = "build not stamped"
+var BuildHash string = "build not stamped"
 
 func main() {
 	flag.Parse()
 
-	if *generateKeys {
-		GenerateKeys(*configFilename)
+	if *flagGenerateKeys {
+		generateKeys(*configFilename)
 		return
 	}
 
@@ -40,24 +46,30 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpServer := &http.Server{
-		Addr: conf.ListenAddr,
-	}
+	//	logFile, err := os.OpenFile("output.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	//	if err != nil {
+	//		log.Fatal("Could not create logfile: ", err)
+	//	}
 
-	server.SetupServerAndHandle(conf, httpServer.TLSConfig, nil)
+	server.SetupServerAndHandle(conf, http.DefaultServeMux)
+	server.SetBuildStamp(BuildTime, BuildHash)
+
+	go commandLineConsole()
 
 	if conf.UseSSL {
-		err = httpServer.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile)
-	} else {
-		err = httpServer.ListenAndServe()
+		go func() {
+			if err := http.ListenAndServeTLS(conf.SSLListenAddr, conf.SSLCertificateFile, conf.SSLKeyFile, http.DefaultServeMux); err != nil {
+				log.Fatal("ListenAndServeTLS: ", err)
+			}
+		}()
 	}
 
-	if err != nil {
+	if err = http.ListenAndServe(conf.ListenAddr, http.DefaultServeMux); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func GenerateKeys(outputFile string) {
+func generateKeys(outputFile string) {
 	if flag.NArg() < 1 {
 		fmt.Println("Specify a numeric server ID after -genkeys")
 		os.Exit(2)
