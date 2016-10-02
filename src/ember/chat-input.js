@@ -185,7 +185,7 @@ FFZ.settings_info.input_complete_without_prefix = {
 
 FFZ.settings_info.input_emoji = {
 	type: "boolean",
-	value: false,
+	value: true,
 
 	category: "Chat Input",
 	//visible: false,

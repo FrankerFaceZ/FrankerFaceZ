@@ -289,6 +289,10 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	display: none;
 }
 
+.ffz-theater-stats .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
+.ffz-theater-stats .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
+.ffz-theater-stats .app-main.theatre .cn-metabar__more:hover,
+.ffz-theater-stats .app-main.theatre .cn-metabar__more:focus,
 .ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
 .ffz-theater-stats .app-main.theatre .player-column:hover #hostmode > div.clearfix,
 .ffz-theater-stats .app-main.theatre .player-column:focus .stats-and-actions,
@@ -306,11 +310,27 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	opacity: 0.95;
 }
 
+.ffz-theater-stats .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
+.ffz-theater-stats .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
+.ffz-theater-stats .app-main.theatre .cn-metabar__more:hover,
+.ffz-theater-stats .app-main.theatre .cn-metabar__more:focus {
+	width: calc(100% - 20px);
+	margin-bottom: 40px;
+}
+
 .ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus #hostmode > div.clearfix,
 .ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover #hostmode > div.clearfix,
 .ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus .stats-and-actions,
 .ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover .stats-and-actions,
 
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .cn-metabar__more:hover,
+.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .cn-metabar__more:focus,
+.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
+.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
+.ffz-theater-stats.ffz-top-conversations .app-main.theatre .cn-metabar__more:hover,
+.ffz-theater-stats.ffz-top-conversations .app-main.theatre .cn-metabar__more:focus,
 .ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus #hostmode > div.clearfix,
 .ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:hover #hostmode > div.clearfix,
 .ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus .stats-and-actions,

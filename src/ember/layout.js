@@ -174,15 +174,16 @@ FFZ.prototype.setup_layout = function() {
 		isTooSmallForRightColumn: function() {
 			if ( ! f.has_bttv && this.get('portraitMode') ) {
 				var size = this.get('playerSize'),
-					height = size[1];
+					extra = this.get('ffzExtraHeight'),
+					height = size[1] + extra;
 
 				// Make sure we have at least a bit of room for the chat.
-				return this.get("windowHeight") < (height + 120 + 60 + 200);
+				return this.get("windowHeight") < height;
 
 			} else
 				return this.get("windowWidth") < (1090 - this.get('rightColumnWidth'))
 
-		}.property("windowWidth", "rightColumnWidth", "playerSize", "windowHeight"),
+		}.property("ffzExtraHeight", "windowWidth", "rightColumnWidth", "playerSize", "windowHeight"),
 
 		contentWidth: function() {
 			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
@@ -192,15 +193,17 @@ FFZ.prototype.setup_layout = function() {
 
 		}.property("windowWidth", "portraitMode", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth"),
 
+		ffzExtraHeight: function() {
+			return (f.settings.channel_bar_collapse ? 10 : 60) + 15 +
+				(f.settings.channel_title_top === 2 ? 20 : f.settings.channel_title_top > 0 ? 55 : 0) +
+				(f.settings.channel_title_top ? 70 : 80);
+		}.property(""),
+
 		playerSize: function() {
 			var h = this.get('windowHeight'),
 				c = this.get('PLAYER_CONTROLS_HEIGHT'),
 				r = this.get('contentWidth'),
-
-				extra_height =
-					(f.settings.channel_bar_collapse ? 10 : 60) + 15 +
-					(f.settings.channel_title_top === 2 ? 20 : f.settings.channel_title_top > 0 ? 55 : 0) +
-					(f.settings.channel_title_top ? 70 : 80),
+				extra_height = this.get('ffzExtraHeight'),
 
 				i = Math.round(9 * r / 16) + c,
 				d = h - extra_height,
@@ -211,7 +214,7 @@ FFZ.prototype.setup_layout = function() {
 				s = Math.floor(Math.min(i, c));
 
 			return [l, o, s];
-		}.property("contentWidth", "windowHeight", "portraitMode", "PLAYER_CONTROLS_HEIGHT"),
+		}.property("ffzExtraHeight", "contentWidth", "windowHeight", "portraitMode", "PLAYER_CONTROLS_HEIGHT"),
 
 		playerStyle: function() {
 			var size = this.get('playerSize'),
@@ -258,10 +261,11 @@ FFZ.prototype.setup_layout = function() {
 						var size = this.get('playerSize'),
 							video_below = this.get('portraitVideoBelow'),
 
-							video_height = size[1] + (f.settings.minimal_channel_title ? 75 : 120) + 60,
+							video_height = size[1] + this.get('ffzExtraHeight'),
 							chat_height = window_height - video_height,
 
 							video_top = video_below ? chat_height : 0,
+							video_bottom = window_height - (video_top + video_height),
 							chat_top = video_below ? 0 : video_height,
 
 							theatre_video_height = Math.floor(Math.max(window_height * 0.1, Math.min(window_height - 300, 9 * window_width / 16))),
@@ -304,10 +308,10 @@ FFZ.prototype.setup_layout = function() {
 							'body:not(.ffz-channel-bar-bottom) .cn-bar-fixed {' +
 								'top: ' + video_top + 'px}' +
 							'.ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar {' +
-								'bottom: ' + (chat_top - 40) + 'px}' +
+								'bottom: ' + (video_bottom - 40) + 'px}' +
 							'.ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar:hover,' +
 							'.ffz-channel-bar-bottom .cn-bar {' +
-								'bottom: ' + chat_top + 'px}' +
+								'bottom: ' + video_bottom + 'px}' +
 							'body:not(.ffz-sidebar-swap) .cn-bar-fixed { right: 0 !important }' +
 							'body.ffz-sidebar-swap .cn-bar-fixed { left: 0 !important }';
 
@@ -335,7 +339,7 @@ FFZ.prototype.setup_layout = function() {
 				f._layout_style.innerHTML = out;
 			}
 
-		}.observes("isRightColumnClosed", "playerSize", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
+		}.observes("ffzExtraHeight", "isRightColumnClosed", "playerSize", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
 
 		ffzUpdatePlayerStyle: function() {
 			Ember.propertyDidChange(Layout, 'playerStyle');
@@ -365,5 +369,7 @@ FFZ.prototype.setup_layout = function() {
 	// Force re-calculation of everything.
 	Ember.propertyDidChange(Layout, 'windowWidth');
 	Ember.propertyDidChange(Layout, 'windowHeight');
+	Ember.propertyDidChange(Layout, 'ffzExtraHeight');
+	Ember.propertyDidChange(Layout, 'isTooSmallForRightColumn');
 	Layout.ffzUpdatePortraitCSS();
 }

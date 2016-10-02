@@ -79,42 +79,42 @@ FFZ.prototype.setup_channel = function() {
 			if ( this._ffz_update_timer )
 				clearTimeout(this._ffz_update_timer);
 
-			if ( ! this.get('channel.id') )
+			if ( ! this.get('channelModel.id') )
 				return;
 
 			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 55000 + (Math.random() * 10000));
-		}.observes("channel.id"),
+		}.observes("channelModel"),
 
 		ffzCheckUpdate: function() {
 			var t = this,
-				id = t.get('channel.id');
+				channel_id = t.get('channelModel.id');
 
-			id && utils.api.get("streams/" + id, {}, {version:3})
+			channel_id && utils.api.get("streams/" + channel_id, {}, {version:3})
 				.done(function(data) {
 					if ( ! data || ! data.stream ) {
 						// If the stream is offline, clear its created_at time and set it to zero viewers.
-						t.set('channel.stream.createdAt', null);
-						t.set('channel.stream.viewers', 0);
+						t.set('channelModel.stream.createdAt', null);
+						t.set('channelModel.stream.viewers', 0);
 						return;
 					}
 
-					t.set('channel.stream.createdAt', utils.parse_date(data.stream.created_at) || null);
-					t.set('channel.stream.viewers', data.stream.viewers || 0);
+					t.set('channelModel.stream.createdAt', utils.parse_date(data.stream.created_at) || null);
+					t.set('channelModel.stream.viewers', data.stream.viewers || 0);
 
 					var game = data.stream.game || (data.stream.channel && data.stream.channel.game);
 					if ( game ) {
-						t.set('channel.game', game);
+						t.set('channelModel.game', game);
 					}
 
 					if ( data.stream.channel ) {
 						if ( data.stream.channel.status )
-							t.set('channel.status', data.stream.channel.status);
+							t.set('channelModel.status', data.stream.channel.status);
 
 						if ( data.stream.channel.views )
-							t.set('channel.views', data.stream.channel.views);
+							t.set('channelModel.views', data.stream.channel.views);
 
-						if ( data.stream.channel.followers && t.get('channel.followers.isLoaded') )
-							t.set('channel.followers.total', data.stream.channel.followers);
+						if ( data.stream.channel.followers && t.get('channelModel.followers.isFulfilled') )
+							t.set('channelModel.followers.content.meta.total', data.stream.channel.followers);
 					}
 
 				})
@@ -124,12 +124,12 @@ FFZ.prototype.setup_channel = function() {
 		},
 
 		ffzHostTarget: function() {
-			var target = this.get('channel.hostModeTarget'),
+			var target = this.get('channelModel.hostModeTarget'),
 				name = target && target.get('name'),
 				id = target && target.get('id'),
 				display_name = target && target.get('display_name');
 
-			if ( id !== f.__old_host_target ) {
+			/*if ( id !== f.__old_host_target ) {
 				if ( f.__old_host_target )
 					f.ws_send("unsub", "channel." + f.__old_host_target);
 
@@ -138,7 +138,7 @@ FFZ.prototype.setup_channel = function() {
 					f.__old_host_target = id;
 				} else
 					delete f.__old_host_target;
-			}
+			}*/
 
 			if ( display_name )
 				FFZ.capitalization[name] = [display_name, Date.now()];
@@ -152,7 +152,7 @@ FFZ.prototype.setup_channel = function() {
 			if ( f.settings.srl_races )
 				f.rebuild_race_ui();
 
-		}.observes("channel.hostModeTarget")
+		}.observes("channelModel.hostModeTarget")
 	});
 
 	Channel.ffzUpdateInfo();
@@ -1290,7 +1290,7 @@ FFZ.settings_info.channel_bar_bottom = {
 
 		var Layout = utils.ember_lookup('service:layout');
 		if ( Layout )
-			Ember.propertyDidChange(Layout, 'windowHeight');
+			Ember.propertyDidChange(Layout, 'ffzExtraHeight');
 	}
 }
 
@@ -1324,7 +1324,7 @@ FFZ.settings_info.hide_channel_banner = {
 
 		var Layout = utils.ember_lookup('service:layout');
 		if ( Layout )
-			Ember.propertyDidChange(Layout, 'windowHeight');
+			Ember.propertyDidChange(Layout, 'ffzExtraHeight');
 	}
 
 }
@@ -1348,7 +1348,7 @@ FFZ.settings_info.channel_bar_collapse = {
 
 		var Layout = utils.ember_lookup('service:layout');
 		if ( Layout )
-			Ember.propertyDidChange(Layout, 'windowHeight');
+			Ember.propertyDidChange(Layout, 'ffzExtraHeight');
 	}
 }
 
@@ -1380,7 +1380,7 @@ FFZ.settings_info.channel_title_top = {
 
 		var Layout = utils.ember_lookup('service:layout');
 		if ( Layout )
-			Ember.propertyDidChange(Layout, 'windowHeight');
+			Ember.propertyDidChange(Layout, 'ffzExtraHeight');
 	}
 }
 
