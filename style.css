@@ -279,7 +279,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	display: block
 }
 
-.ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
+/*.ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
 .ffz-theater-stats .app-main.theatre .player-column:hover #hostmode > div.clearfix {
 	margin-bottom: 30px;
 }
@@ -287,56 +287,32 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .ffz-theater-stats .app-main.theatre #channel .player-column:focus .archive_info + .stats-and-actions,
 .ffz-theater-stats .app-main.theatre #channel .player-column:hover .archive_info + .stats-and-actions {
 	display: none;
-}
+}*/
 
 .ffz-theater-stats .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
 .ffz-theater-stats .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
 .ffz-theater-stats .app-main.theatre .cn-metabar__more:hover,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more:focus,
+.ffz-theater-stats .app-main.theatre .cn-metabar__more:focus /*,
 .ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
 .ffz-theater-stats .app-main.theatre .player-column:hover #hostmode > div.clearfix,
 .ffz-theater-stats .app-main.theatre .player-column:focus .stats-and-actions,
-.ffz-theater-stats .app-main.theatre .player-column:hover .stats-and-actions {
-	background-color: #19191f;
+.ffz-theater-stats .app-main.theatre .player-column:hover .stats-and-actions */ {
+	background-color: rgba(25,25,31,0.95);
 
 	color: #aaa;
 
-	position: absolute;
+	position: fixed;
 	bottom: 55px;
-	margin-right: 150px;
 	left: 10px;
+
+	width: auto;
+
 	z-index: 7;
 	padding: 10px;
-	opacity: 0.95;
 }
 
-.ffz-theater-stats .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
-.ffz-theater-stats .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more:hover,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more:focus {
-	width: calc(100% - 20px);
-	margin-bottom: 40px;
-}
-
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus #hostmode > div.clearfix,
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover #hostmode > div.clearfix,
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus .stats-and-actions,
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover .stats-and-actions,
-
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .cn-metabar__more:hover,
-.ffz-theater-stats.ffz-theatre-conversations .app-main.theatre .cn-metabar__more:focus,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .cn-metabar__more:hover,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .cn-metabar__more:focus,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus #hostmode > div.clearfix,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:hover #hostmode > div.clearfix,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:focus .stats-and-actions,
-.ffz-theater-stats.ffz-top-conversations .app-main.theatre .player-column:hover .stats-and-actions {
-	bottom: 15px;
-}
+.ffz-theater-stats .app-main.theatre .cn-metabar__more span,
+.ffz-theater-stats .app-main.theatre .cn-metabar__more div { flex-grow: 0 !important }
 
 .ffz-theater-stats .app-main.theatre .channel-stats .stat { color: #aaa; }
 
@@ -2927,7 +2903,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 
 body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 
-body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,
+/*body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,*/
 .cn-metabar__title .ct-tags,
 /*body:not(.ffz-creative-showcase) .ct-banner-handler .tower > div:last-child,*/
 body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }

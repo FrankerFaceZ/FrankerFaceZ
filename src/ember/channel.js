@@ -31,9 +31,9 @@ FFZ.prototype.setup_channel = function() {
 	this.update_views('component:channel-redesign', this.modify_channel_redesign);
 	this.update_views('component:channel-redesign/live', this.modify_channel_live);
 
-	this.log("Hooking the Ember Channel Index component.");
+	/*this.log("Hooking the Ember Channel Index component.");
 	if ( ! this.update_views('component:legacy-channel', this.modify_channel_index) )
-		return;
+		return;*/
 
 	var f = this,
 		Channel = utils.ember_lookup('controller:channel');
@@ -568,7 +568,7 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 }
 
 
-FFZ.prototype.modify_channel_index = function(view) {
+/*FFZ.prototype.modify_channel_index = function(view) {
 	var f = this;
 	utils.ember_reopen_view(view, {
 		ffz_init: function() {
@@ -1105,7 +1105,7 @@ FFZ.prototype.modify_channel_index = function(view) {
 			el.innerHTML = utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1 || f.settings.stream_uptime === 3);
 		}
 	});
-}
+}*/
 
 
 // ---------------
