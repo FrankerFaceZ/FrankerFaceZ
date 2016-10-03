@@ -1,8 +1,6 @@
 **Web Browser**:
 
-**Do you use BetterTTV**:
-**Do you use other Twitch extensions**:
-**Do you use PrivacyBadger**:
+**Do you use BetterTTV or other Twitch extensions**:
 
 **FFZ Logs (via FFZ Menu > About > Logs; if Applicable)**:
 
