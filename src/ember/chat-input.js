@@ -154,6 +154,18 @@ FFZ.settings_info.input_complete_name_at = {
 }
 
 
+FFZ.settings_info.input_complete_name_require_at = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+
+	category: "Chat Input",
+	name: "Tab-Complete Usernames Require At Sign",
+	help: "When enabled, tab-completion will only suggest usernames if triggered with an @ sign."
+}
+
+
 FFZ.settings_info.input_emoticons_case_sensitive = {
 	type: "boolean",
 	value: true,
@@ -781,7 +793,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 			var suggestions = this.get('ffz_suggestions'),
 				partial = this.get('ffz_partial_word'),
 				part2 = partial.substr(1),
-				char = partial.charAt(0);
+				char = partial.charAt(0),
+				is_at = char === '@';
 
 			return suggestions.filter(function(item) {
 				var name = item.match || item.content || item.label,
@@ -793,8 +806,11 @@ FFZ.prototype.modify_chat_input = function(component) {
 				if ( type === 'user' ) {
 					// Names are case insensitive, and we have to ignore the leading @ of our
 					// partial word when matching.
+					if ( ! is_at && f.settings.input_complete_name_require_at )
+						return false;
+
 					name = name.toLowerCase();
-					var part = (char === '@' ? part2 : partial).toLowerCase(),
+					var part = (is_at ? part2 : partial).toLowerCase(),
 						alt_name = item.alternate_match;
 
 					return name.indexOf(part) === 0 || (alt_name && alt_name.indexOf(part) === 0);
