@@ -916,6 +916,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return ! this.get('hasSystemMsg') || this.get('hasMessageBody');
 		}.property('hasSystemMsg', 'hasMessageBody'),
 
+		systemMsg: function() {
+			return this.get('msgObject.tags.system-msg')
+		}.property('msgObject.tags.system-msg'),
+
 		//shouldRenderMessageBody: function() {
 		//	return false;
 		//}.property('hasSystemMsg', 'hasMessageBody'),
