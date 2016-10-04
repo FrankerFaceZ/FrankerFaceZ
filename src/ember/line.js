@@ -903,7 +903,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			if ( this.get('ffzShouldRenderMessageBody') ) {
 				output += this.buildSenderHTML();
 				output += this.get('msgObject.deleted') ?
-					this.buildDeletedMesageHTML() : this.buildMessageHTML();
+					this.buildDeletedMessageHTML() : this.buildMessageHTML();
 			}
 
 			el.innerHTML = output;
