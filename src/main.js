@@ -34,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 310,
+	major: 3, minor: 5, revision: 311,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -510,6 +510,7 @@ FFZ.prototype.init_ember = function(delay) {
 
 	this.cache_command_aliases();
 	this.fix_tooltips();
+	this.fix_scroll();
 	this.connect_extra_chat();
 
 	this.setup_message_event();

@@ -828,18 +828,14 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return '<span class="' + (is_recipient ? 'to' : 'from') + (alias ? ' ffz-alias' : '') + (results[1] ? ' html-tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + (results[1] ? '" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</span>';
 		},
 
+		buildSystemMessageHTML: function() {
+			return this.get('hasSystemMsg') ?
+				'<div class="system-msg">' + utils.sanitize(this.get('systemMsg')) + '</div>' :
+				'';
+		},
+
 		buildSenderHTML: function() {
-			var system_msg = this.get('systemMsg'),
-				output = '';
-
-			output = '<div class="indicator"></div>';
-
-			// System Message
-			if ( system_msg ) {
-				output += '<div class="system-msg">' + utils.sanitize(system_msg) + '</div>';
-				if ( this.get('ffzShouldRenderMessageBody') === false )
-					return output;
-			}
+			var output = '';
 
 			// Timestamp
 			var timestamp = this.get('timestamp');
@@ -900,29 +896,31 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 		ffzRender: function() {
 			var el = this.get('element'),
-				output = this.buildSenderHTML();
+				output = '<div class="indicator"></div>';
 
-			// If this is a whisper, or if we should render the message body, render it.
-			if ( this.get('ffzShouldRenderMessageBody') !== false )
-				if ( this.get('msgObject.deleted') )
-					output += this.buildDeletedMessageHTML()
-				else
-					output += this.buildMessageHTML();
+			output += this.buildSystemMessageHTML();
+
+			if ( this.get('ffzShouldRenderMessageBody') ) {
+				output += this.buildSenderHTML();
+				output += this.get('msgObject.deleted') ?
+					this.buildDeletedMesageHTML() : this.buildMessageHTML();
+			}
 
 			el.innerHTML = output;
 		},
 
 		ffzShouldRenderMessageBody: function() {
-			return ! this.get('hasSystemMsg') || this.get('hasMessageBody');
+			return !this.get("hasSystemMsg") || this.get("hasMessageBody");
 		}.property('hasSystemMsg', 'hasMessageBody'),
 
-		systemMsg: function() {
-			return this.get('msgObject.tags.system-msg')
+		hasSystemMsg: function() {
+			var msg = this.get('msgObject.tags.system-msg');
+			return msg && msg.length > 0;
 		}.property('msgObject.tags.system-msg'),
 
-		//shouldRenderMessageBody: function() {
-		//	return false;
-		//}.property('hasSystemMsg', 'hasMessageBody'),
+		shouldRenderMessageBody: function() {
+			return false;
+		}.property(),
 
 		ffzWasDeleted: function() {
 			return f.settings.prevent_clear && this.get("msgObject.ffz_deleted")
