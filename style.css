@@ -302,13 +302,20 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	color: #aaa;
 
 	position: fixed;
-	bottom: 55px;
 	left: 10px;
 
 	width: auto;
 
 	z-index: 7;
 	padding: 10px;
+}
+
+.ffz-theater-stats .app-main.theatre .cn-metabar__more {
+	bottom: 55px;
+}
+
+.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-metabar__more {
+	bottom: 95px;
 }
 
 .ffz-theater-stats .app-main.theatre .cn-metabar__more span,

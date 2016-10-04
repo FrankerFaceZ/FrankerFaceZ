@@ -18,9 +18,9 @@ FFZ.prototype._update_subscribers = function() {
 
 	var user = this.get_user(), f = this,
 		match = this.is_dashboard ? location.pathname.match(/\/([^\/]+)/) : undefined,
-		id = this.is_dashboard && match && match[1];
+		channel_id = this.is_dashboard && match && match[1];
 
-	if ( this.has_bttv || ! id || id !== user.login ) {
+	if ( this.has_bttv || ! channel_id || channel_id !== user.login ) {
 		var el = document.querySelector("#ffz-sub-display");
 		if ( el )
 			el.parentElement.removeChild(el);
@@ -31,8 +31,8 @@ FFZ.prototype._update_subscribers = function() {
 	// context of the web user.
 
 	// Get the count!
-	jQuery.getJSON("/" + id + "/dashboard/revenue/summary_data").done(function(data) {
-		var el, sub_count = data && data.data && data.data.total_subscriptions;
+	utils.api.get("/api/channels/" + channel_id + "/subscriber_count").done(function(data) {
+		var el, sub_count = data && data.count;
 		if ( typeof sub_count === "string" )
 			sub_count = parseInt(sub_count.replace(/[,\.]/g, ""));
 
@@ -77,7 +77,7 @@ FFZ.prototype._update_subscribers = function() {
 			el = document.createElement('span');
 			stat.appendChild(el);
 
-			utils.api.get("chat/" + id + "/badges", null, {version: 3})
+			utils.api.get("chat/" + channel_id + "/badges", null, {version: 3})
 				.done(function(data) {
 					if ( data.subscriber && data.subscriber.image ) {
 						stat.innerHTML = '';

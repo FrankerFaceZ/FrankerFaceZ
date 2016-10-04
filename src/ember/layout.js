@@ -317,7 +317,9 @@ FFZ.prototype.setup_layout = function() {
 							'body.ffz-sidebar-swap .cn-bar-fixed { left: 0 !important }' +
 							'.ffz-theater-stats .app-main.theatre .cn-metabar__more {' +
 								'max-width: calc(100% - 300px);' +
-								'bottom: ' + (theatre_video_bottom + 55) + 'px !important}';
+								'bottom: ' + (theatre_video_bottom + 55) + 'px !important}' +
+							'.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-metabar__more {' +
+								'bottom: ' + (theatre_video_bottom + 90) + 'px !important}';
 
 					}  else {
 						out += 'top: 0; right: ' + width + 'px}' +
