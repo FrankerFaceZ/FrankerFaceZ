@@ -18,6 +18,8 @@ module.exports = FrankerFaceZ.constants = {
 	DEBUG: DEBUG,
 	SERVER: SERVER,
 
+	LV_SOCKET_SERVER: "wss://cbenni.com/socket.io/",
+
 	IS_OSX: IS_OSX,
 	IS_WIN: IS_WIN,
 	META_NAME: IS_OSX ? "⌘" : (IS_WIN ? "Win" : "Meta"),

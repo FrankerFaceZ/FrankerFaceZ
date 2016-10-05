@@ -385,15 +385,9 @@ FFZ.prototype.get_twitch_badges = function(badge_tag) {
 	}
 
 	// VoD Chat lines don't have the badges pre-parsed for some reason.
-	else if ( typeof badge_tag === 'string' ) {
-		var val = badge_tag.split(',');
-		badge_tag = {};
-		for(var i=0; i < val.length; i++) {
-			var parts = val[i].split('/');
-			if ( parts.length === 2 )
-				badge_tag[parts[0]] = parts[1];
-		}
-	}
+	else if ( typeof badge_tag === 'string' )
+		badge_tag = utils.parse_badge_tag(badge_tag);
+
 
 	for(var badge in badge_tag) {
 		var version = badge_tag[badge];

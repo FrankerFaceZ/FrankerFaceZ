@@ -887,9 +887,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			output += body;
 
-			var old_messages = this.get('msgObject.ffz_old_messages');
+			/*var old_messages = this.get('msgObject.ffz_old_messages');
 			if ( old_messages && old_messages.length )
-				output += '<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>';
+				output += '<div class="button primary float-right ffz-old-messages">Show ' + utils.number_commas(old_messages.length) + ' Old</div>';*/
 
 			return output + '</span>';
 		},
@@ -909,8 +909,12 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			el.innerHTML = output;
 		},
 
+		systemMsg: function() {
+			return this.get('msgObject.tags.system-msg')
+		}.property('msgObject.tags.system-msg'),
+
 		ffzShouldRenderMessageBody: function() {
-			return !this.get("hasSystemMsg") || this.get("hasMessageBody");
+			return ! this.get('hasSystemMsg') || this.get('hasMessageBody');
 		}.property('hasSystemMsg', 'hasMessageBody'),
 
 		hasSystemMsg: function() {
@@ -1090,10 +1094,10 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			var cl = e.target.classList,
 				from = this.get("msgObject.from");
 
-			if ( cl.contains('ffz-old-messages') )
-				return f._show_deleted(this.get('msgObject.room'));
+			/*if ( cl.contains('ffz-old-messages') )
+				return f._show_deleted(this.get('msgObject.room'));*/
 
-			else if ( cl.contains('deleted-word') ) {
+			if ( cl.contains('deleted-word') ) {
 				jQuery(e.target).trigger('mouseout');
 				e.target.outerHTML = e.target.getAttribute('data-text');
 

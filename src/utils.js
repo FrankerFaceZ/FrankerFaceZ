@@ -93,6 +93,162 @@ var createElement = function(tag, className, content) {
 		return new Date(unix);
 	},
 
+
+	/* IRC Processing */
+
+	irc_regex = /^(?:@([^ ]+) )?(?:[:](\S+) )?(\S+)(?: (?!:)(.+?))?(?: [:](.+))?$/,
+	tag_regex = /([^=;]+)=([^;]*)/g,
+
+	parse_badge_tag = function(tag) {
+		var badges = {},
+			values = tag.split(',');
+
+		for(var i=0; i < values.length; i++) {
+			var parts = values[i].split('/');
+			if ( parts.length === 2 )
+				badges[parts[0]] = parts[1];
+		}
+
+		return badges;
+	},
+
+	parse_emote_tag = function(tag) {
+		var emotes = {},
+			values = tag.split("/"),
+			i = values.length;
+
+		while(i--) {
+			var parts = values[i].split(":");
+			if ( parts.length !== 2 )
+				return {};
+
+			var emote_id = parts[0],
+				matches = emotes[emote_id] = [],
+				indices = parts[1].split(",");
+
+			for(var j=0, jl = indices.length; j < jl; j++) {
+				var pair = indices[j].split("-");
+				if ( pair.length !== 2 )
+					return {};
+
+				var start = parseInt(pair[0]),
+					end = parseInt(pair[1]);
+
+				matches.push([start,end]);
+			}
+		}
+
+		return emotes;
+	},
+
+	parse_tag = function(tag, value) {
+		switch (tag) {
+			case "badges":
+				return parse_badge_tag(value);
+			case "emotes":
+				return parse_emote_tag(value);
+			case "sent-ts":
+			case "sent-tmi-ts":
+			case "slow":
+				return +value;
+			case "subscriber":
+			case "mod":
+			case "turbo":
+			case "r9k":
+			case "subs-only":
+			case "historical":
+				return value === "1";
+			default:
+				// Try to unescape the value.
+				try {
+					return value;
+				} catch(err) {
+					return "";
+				}
+		}
+	},
+
+	parse_tags = function(raw_tags) {
+		var m, tags = {};
+		do {
+			m = tag_regex.exec(raw_tags);
+			if ( m )
+				tags[m[1]] = parse_tag(m[1], m[2]);
+
+		} while(m);
+
+		return tags;
+	},
+
+	parse_sender = function(prefix, tags) {
+		var ind = prefix.indexOf('!');
+		if ( ind !== -1 )
+			return prefix.substr(0, ind);
+		if ( prefix === "tmi.twitch.tv" && tags.login )
+			return tags.login;
+		return prefix;
+	},
+
+	parse_irc_message = function(message) {
+		var data = irc_regex.exec(message);
+		if ( ! data )
+			return null;
+
+		var m,
+			tags = {},
+			output = {
+				tags: tags,
+				prefix: data[2],
+				command: data[3],
+				params: data[4],
+				trailing: data[5]
+			};
+
+		if ( data[1] )
+			output.tags = parse_tags(data[1]);
+
+		return output;
+	},
+
+
+	parse_irc_privmsg = function(message) {
+		var parsed = parse_irc_message(message);
+		if ( parsed.command.toLowerCase() !== "privmsg" )
+			return null;
+
+		var params = (parsed.params || "").split(' '),
+			target = params.shift();
+
+		if ( target.charAt(0) !== '#' )
+			return null;
+
+		if ( parsed.trailing )
+			params.push(parsed.trailing);
+
+		var from = parse_sender(parsed.prefix),
+			message = params.join(' '),
+			style = '';
+
+		if ( from === 'jtv' )
+			style = 'admin';
+		else if ( from === 'twitchnotify' )
+			style = 'notification';
+
+		if ( message.substr(0,8) === '\u0001ACTION ' && message.charAt(message.length-1) === '\u0001' ) {
+			message = message.substr(8, message.length - 9);
+			style += (style ? ' ' : '') + 'action';
+		}
+
+		return {
+			tags: parsed.tags,
+			from: parse_sender(parsed.prefix),
+			room: target.substr(1),
+			message: message,
+			style: style
+		}
+	},
+
+
 	BADGE_REV = {
 		'b': 'broadcaster',
 		's': 'staff',
@@ -214,6 +370,16 @@ var createElement = function(tag, className, content) {
 		if ( token )
 			headers.Authorization = 'OAuth ' + token;
 		return Twitch.api[method].call(this, url, data, options);
+	},
+
+
+	logviewer_call = function(method, url, token, info) {
+		info = info || {};
+		info['method'] = method;
+		if ( token )
+			url += (url.indexOf('?') === -1 ? '?' : '&') + 'token=' + token;
+
+		return fetch("https://cbenni.com/api/" + url, info);
 	},
 
 
@@ -354,6 +520,19 @@ module.exports = FFZ.utils = {
 		put: function(u,d,o,t) { return api_call('put', u,d,o,t); }
 	},
 
+	logviewer: {
+		del: function(u,t,i) { return logviewer_call('del', u,t,i) },
+		get: function(u,t,i) { return logviewer_call('get', u,t,i) },
+		post: function(u,t,i) { return logviewer_call('post', u,t,i) },
+		put: function(u,t,i) { return logviewer_call('put', u,t,i) },
+	},
+
+	json: function(response) {
+		if ( ! response.ok )
+			return Promise.resolve(null);
+		return response.json();
+	},
+
 
 	find_parent: function(el, klass) {
 		while (el && el.parentNode) {
@@ -364,6 +543,13 @@ module.exports = FFZ.utils = {
 
 		return null;
 	},
+
+
+	parse_badge_tag: parse_badge_tag,
+	parse_emote_tag: parse_emote_tag,
+	parse_tags: parse_tags,
+	parse_irc_message: parse_irc_message,
+	parse_irc_privmsg: parse_irc_privmsg,
 
 
 	CMD_VAR_REGEX: CMD_VAR_REGEX,

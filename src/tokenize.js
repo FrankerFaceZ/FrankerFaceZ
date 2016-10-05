@@ -659,17 +659,8 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	//if ( helpers && helpers.tokenizeRichContent )
 	//	tokens = helpers.tokenizeRichContent(tokens, tags.content, delete_links);
 
-	if ( helpers && helpers.linkifyMessage ) {
-		var labels = msgObject.labels || [],
-			mod_or_higher = labels.indexOf("owner") !== -1 ||
-							labels.indexOf("staff") !== -1 ||
-							labels.indexOf("admin") !== -1 ||
-							labels.indexOf("global_mod") !== -1 ||
-							labels.indexOf("mod") !== -1 ||
-							msgObject.style === 'admin';
-
-		tokens = helpers.linkifyMessage(tokens, delete_links && !mod_or_higher);
-	}
+	if ( helpers && helpers.linkifyMessage )
+		tokens = helpers.linkifyMessage(tokens, delete_links && ! tags.mod);
 
 
 	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
@@ -1317,7 +1308,7 @@ FFZ.prototype._deleted_link_click = function(e) {
 // History Loading
 // ---------------------
 
-FFZ.prototype.parse_history = function(history, purged, bad_ids, room_id, delete_links, tmiSession, per_line) {
+/*FFZ.prototype.parse_history = function(history, purged, bad_ids, room_id, delete_links, tmiSession, per_line) {
 	var i = history.length, was_cleared = false;
 	purged = purged || {};
 	bad_ids = bad_ids || {};
@@ -1396,4 +1387,4 @@ FFZ.prototype.parse_history = function(history, purged, bad_ids, room_id, delete
 	}
 
 	return [history, purged, was_cleared];
-}
+}*/

@@ -13,7 +13,11 @@ var FFZ = window.FrankerFaceZ,
 		P: 80,
 		B: 66,
 		T: 84,
-		U: 85
+		U: 85,
+		C: 67,
+		H: 72,
+		S: 83,
+		N: 78
 		},
 
 	MESSAGE = '<svg class="svg-messages" height="16px" version="1.1" viewBox="0 0 18 18" width="16px" x="0px" y="0px"><path clip-rule="evenodd" d="M1,15V3h16v12H1z M15.354,5.354l-0.707-0.707L9,10.293L3.354,4.646L2.646,5.354L6.293,9l-3.646,3.646l0.707,0.707L7,9.707l1.646,1.646h0.707L11,9.707l3.646,3.646l0.707-0.707L11.707,9L15.354,5.354z" fill-rule="evenodd"></path></svg>',
@@ -87,6 +91,18 @@ FFZ.settings_info.highlight_messages_with_mod_card = {
 			utils.update_css(this._chat_style, 'mod-card-highlight');
 	}
 };
+
+
+FFZ.settings_info.logviewer_test = {
+	type: "boolean",
+	value: false,
+
+	no_bttv: true,
+
+	category: "Chat Moderation",
+	name: "Logviewer Integration <small>Beta</small>",
+	help: "Display information from CBenni's logviewer directly on moderation cards."
+}
 
 
 FFZ.settings_info.chat_mod_icon_visibility = {
@@ -630,8 +646,19 @@ FFZ.prototype.modify_moderation_card = function(component) {
 	utils.ember_reopen_view(component, {
 		ffzForceRedraw: function() {
 			this.rerender();
-			if ( f.settings.mod_card_history )
-				this.ffzRenderHistory();
+
+			var el = this.get('element');
+			this.ffzChangePage(null);
+
+			var chat = utils.ember_lookup('controller:chat'),
+				room_id = chat && chat.get('currentRoom.id'),
+				user_id = this.get('cardInfo.user.id');
+
+			if (( this._lv_sock_room && this._lv_sock_room !== room_id ) || (this._lv_sock_user && this._lv_sock_user !== user_id) ) {
+				f.lv_ws_unsub(this._lv_sock_room + '-' + this._lv_sock_user);
+				this._lv_sock_room = null;
+				this._lv_sock_user = null;
+			}
 
 			// Highlight this user's chat messages.
 			if ( f.settings.highlight_messages_with_mod_card )
@@ -674,9 +701,123 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			info.innerHTML = out;
 		}.observes("cardInfo.user.views"),
 
+		lvGetLogs: function() {
+			var t = this,
+				logs = this._lv_logs,
+
+				chat = utils.ember_lookup('controller:chat'),
+				room_id = chat && chat.get('currentRoom.id'),
+				user_id = this.get('cardInfo.user.id');
+
+			return new Promise(function(succeed, fail) {
+				// Don't expire data if we're connected to the websocket.
+				if ( logs && (f._lv_ws_open || logs.expires > Date.now()) && logs.room === room_id && logs.user === user_id )
+					return succeed(logs.data);
+
+				if ( t._lv_log_requests )
+					return t._lv_log_requests.push(succeed);
+
+				t._lv_log_requests = [succeed];
+
+				f.lv_get_logs(room_id, user_id).then(function(data) {
+					var new_room_id = chat && chat.get('currentRoom.id'),
+						new_user_id = t.get('cardInfo.user.id');
+
+					if ( user_id !== new_user_id || room_id !== new_room_id )
+						return;
+
+					t._lv_logs = {
+						expires: Date.now() + 30000,
+						room: room_id,
+						user: user_id,
+						data: data
+					};
+
+					t._lv_sock_room = room_id;
+					t._lv_sock_user = user_id;
+					f.lv_ws_sub(room_id + '-' + user_id);
+
+					var requests = t._lv_log_requests;
+					t._lv_log_requests = null;
+
+					for(var i=0; i < requests.length; i++)
+						requests[i](data);
+				});
+			});
+		},
+
+		lvOnMessage: function(cmd, data) {
+			//f.log("[LV] Socket Message: " + cmd, data)
+			// Make sure:
+			//  1) It's a log-add command.
+			//  2) We have logs loaded already.
+			//  3) The loaded logs are for this user.
+			if ( cmd !== 'log-add' || ! this._lv_logs || ! this._lv_logs.data || data.nick !== this._lv_logs.data.user.nick )
+				return;
+
+			// Parse the message. Store the data.
+			var t,
+				message = f.lv_parse_message(data);
+			this._lv_logs.data.before.push(message);
+			this._lv_logs.data.user[message.is_ban ? 'timeouts' : 'messages'] += 1;
+
+			// If we're viewing the chat history, update it.
+			var el = this.get('element'),
+				container = el && el.querySelector('.ffz-tab-container'),
+				history = container && container.querySelector('.chat-history.lv-history');
+
+			if ( history ) {
+				var was_at_bottom = history.scrollTop >= (history.scrollHeight - history.clientHeight),
+					last_line = history.querySelector('.chat-line:last-of-type'),
+					ll_date = last_line && last_line.getAttribute('data-date'),
+					date = message.date.toLocaleDateString();
+
+				if ( last_line && ll_date !== date ) {
+					var date_line = utils.createElement('li', 'chat-line timestamp-line', date);
+					date_line.setAttribute('data-date', date);
+					history.appendChild(date_line);
+				}
+
+				history.appendChild(f._build_mod_card_history(message, this, false,
+					FFZ.mod_card_pages.history.render_adjacent.bind(f, t, container, message)));
+
+				if ( was_at_bottom )
+					setTimeout(function() { history.scrollTop = history.scrollHeight; })
+			}
+		},
+
+		lvUpdateLevels: function(levels) {
+			var channel = levels.channel,
+				user = levels.me,
+				level = user && user.level || 0;
+
+			this.lv_view = level >= channel.viewlogs;
+			this.lv_view_mod = level >= channel.viewmodlogs;
+
+			this.lv_view_notes = level >= channel.viewcomments;
+			this.lv_write_notes = level >= channel.writecomments;
+			this.lv_delete_notes = level >= channel.deletecomments;
+
+			var el = this.get('element');
+			el.classList.toggle('lv-notes', this.lv_view_notes);
+			el.classList.toggle('lv-logs', this.lv_view);
+			el.classList.toggle('lv-tabs', this.lv_view || this.lv_view_notes);
+		},
+
 		ffz_destroy: function() {
 			if ( f._mod_card === this )
 				f._mod_card = undefined;
+
+			if ( this._lv_sock_room && this._lv_sock_user ) {
+				f.lv_ws_unsub(this._lv_sock_room + '-' + this._lv_sock_user);
+				this._lv_sock_room = null;
+				this._lv_sock_user = null;
+			}
+
+			if ( this._lv_callback ) {
+				f.lv_ws_remove_callback(this._lv_callback);
+				this._lv_callback = null;
+			}
 
 			utils.update_css(f._chat_style, 'mod-card-highlight');
 		},
@@ -686,6 +827,11 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				return;
 
 			f._mod_card = this;
+
+			if ( f.settings.logviewer_test ) {
+				this._lv_callback = this.lvOnMessage.bind(this);
+				f.lv_ws_add_callback(this._lv_callback);
+			}
 
 			var el = this.get('element'),
 				controller = this.get('controller'),
@@ -699,6 +845,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				user = f.get_user(),
 				room = chat && chat.get('currentRoom'),
 				room_id = room && room.get('id'),
+				ffz_room = f.rooms && f.rooms[room_id] || {},
 				is_broadcaster = user && room_id === user.login,
 
 				user_id = controller.get('cardInfo.user.id'),
@@ -712,6 +859,23 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 
 			this.ffz_room_id = room_id;
+
+			// Should we be requesting a token? How about access levels?
+			if ( f.settings.logviewer_test && ffz_room.has_logs )
+				if ( ! ffz_room.logviewer_levels )
+					f.lv_get_token().then(function(token) {
+						if ( ! token )
+							return;
+
+						utils.logviewer.get("channel/" + room_id, token)
+								.then(utils.json).then(function(result) {
+							f.log("[LV] Channel Info: " + room_id, result);
+							ffz_room.logviewer_levels = result;
+							t.lvUpdateLevels(result);
+						});
+					})
+				else
+					t.lvUpdateLevels(ffz_room.logviewer_levels);
 
 			// Highlight this user's chat messages.
 			if ( f.settings.highlight_messages_with_mod_card )
@@ -847,6 +1011,18 @@ FFZ.prototype.modify_moderation_card = function(component) {
 						user_id = controller.get('cardInfo.user.id'),
 						is_mod = controller.get('cardInfo.isModeratorOrHigher'),
 						room = utils.ember_lookup('controller:chat').get('currentRoom');
+
+					if ( key === keycodes.C )
+						return t.ffzChangePage('default');
+
+					else if ( t.lv_view && key === keycodes.H )
+						return t.ffzChangePage('history');
+
+					else if ( t.lv_view && key === keycodes.S )
+						return t.ffzChangePage('stats');
+
+					else if ( t.lv_view_notes && key === keycodes.N )
+						return t.ffzChangePage('notes');
 
 					if ( is_mod && key == keycodes.P )
 						room.send("/timeout " + user_id + " 1" + ban_reason(), true);
@@ -1057,9 +1233,42 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			}
 
 
+			// Tabbed Content
+			var tabs = utils.createElement('ul', 'interface menu clearfix'),
+				tab_container = utils.createElement('div', 'ffz-tab-container');
+
+			for(var page_id in FFZ.mod_card_pages) {
+				var page = FFZ.mod_card_pages[page_id];
+				if ( page && page.title && (page_id !== 'history' || f.settings.mod_card_history) ) {
+					var tab = utils.createElement('li', 'item', page.title);
+					if ( page_id === 'default' )
+						tab.classList.add('active');
+
+					tab.setAttribute('data-page', page_id);
+					tabs.appendChild(tab);
+
+					tab.addEventListener('click', function(e) {
+						t.ffzChangePage(this.getAttribute('data-page'), tabs, tab_container);
+					});
+				}
+			}
+
+			el.insertBefore(tab_container, el.querySelector('.interface'));
+			el.insertBefore(tabs, tab_container);
+
+			el.classList.add('ffz-default-tab');
+
 			// Message History
-			if ( f.settings.mod_card_history )
-				this.ffzRenderHistory();
+			if ( f.settings.mod_card_history ) {
+				var history = utils.createElement('ul', 'interface chat-history live-history');
+				el.appendChild(history);
+
+				var chat_history = ffz_room.user_history && ffz_room.user_history[user_id] || [];
+				for(var i=0; i < chat_history.length; i++)
+					history.appendChild(f._build_mod_card_history(chat_history[i], t, false));
+
+				setTimeout(function(){history.scrollTop = history.scrollHeight;});
+			}
 
 			// Reposition the menu if it's off-screen.
 			this.ffzReposition();
@@ -1071,6 +1280,31 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					}});
 
 			el.focus();
+		},
+
+		ffzChangePage: function(page_id, tabs, tab_container) {
+			if ( ! tabs || ! tab_container ) {
+				var el = this.get('element');
+				tabs = el.querySelector('ul.menu');
+				tab_container = el.querySelector('.ffz-tab-container');
+			}
+
+			var active_page = tab_container.getAttribute('data-page');
+			if ( active_page === page_id )
+				return;
+
+			if ( page_id === null )
+				page_id = active_page;
+
+			jQuery('.item', tabs).removeClass('active');
+			jQuery('.item[data-page="' + page_id + '"]').addClass('active');
+
+			this.get('element').classList.toggle('ffz-default-tab', page_id === 'default');
+
+			tab_container.setAttribute('data-page', page_id);
+			tab_container.innerHTML = '';
+
+			FFZ.mod_card_pages[page_id].render.call(f, this, tab_container);
 		},
 
 		ffzReposition: function() {
@@ -1097,7 +1331,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			}
 		}.observes('cardInfo.renderTop', 'cardInfo.renderLeft', 'cardInfo.renderRight', 'cardInfo.renderBottom'),
 
-		ffzRenderHistory: function() {
+		/*ffzRenderHistory: function() {
 			var t = this,
 				Chat = utils.ember_lookup('controller:chat'),
 				room = Chat && Chat.get('currentRoom'),
@@ -1109,17 +1343,22 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				user_history = ffz_room && ffz_room.user_history && ffz_room.user_history[user_id] || [],
 				el = this.get('element'),
 
-				history = el && el.querySelector('.chat-history');
+				history = el && el.querySelector('.ffz-tab-container');
+
+			if ( history && ! history.classList.contains('chat-history') ) {
+				history.parentElement.removeChild(history);
+				history = null;
+			}
 
 			if ( ! history ) {
-				history = utils.createElement('ul', 'interface clearfix chat-history');
+				history = utils.createElement('ul', 'interface clearfix ffz-tab-container chat-history');
 				el.appendChild(history);
 			} else {
 				history.classList.remove('loading');
 				history.innerHTML = '';
 			}
 
-			if ( user_history.length < 50 ) {
+			/*if ( user_history.length < 50 ) {
 				var before = (user_history.length > 0 && user_history[0].date ? user_history[0].date.getTime() : Date.now()) - (f._ws_server_offset || 0);
 				f.ws_send("user_history", [room_id, user_id, 50 - user_history.length], function(success, data) {
 					if ( ! success )
@@ -1157,16 +1396,16 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					if ( was_at_top )
 						setTimeout(function() { history.scrollTop = history.scrollHeight; });
 				});
-			}
+			}*//*
 
 			for(var i=0; i < user_history.length; i++)
 				history.appendChild(f._build_mod_card_history(user_history[i], t));
 
 			// Lazy scroll-to-bottom
 			history.scrollTop = history.scrollHeight;
-		},
+		},*/
 
-		ffzAdjacentHistory: function(line) {
+		/*ffzAdjacentHistory: function(line) {
 			var Chat = utils.ember_lookup('controller:chat'),
 				t = this,
 
@@ -1267,12 +1506,12 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					history.classList.remove('loading');
 					history.scrollTop = scroll_top;
 				}
-		}
+		}*/
 	});
 }
 
 
-FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
+FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_click) {
 	var l_el = document.createElement('li'),
 		out = [],
 		f = this;
@@ -1280,7 +1519,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 		style = '', colored = '';
 
 	if ( helpers && helpers.getTime )
-		out.push('<span class="timestamp">' + helpers.getTime(msg.date) + '</span>');
+		out.push('<span class="timestamp' + (ts_click ? ' ts-action' : '') + '">' + helpers.getTime(msg.date) + '</span>');
 
 	if ( show_from ) {
 		var alias = this.aliases[msg.from],
@@ -1315,7 +1554,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 			(results[1] ? ' title="' + utils.quote_attr(results[1]) + '"' : '') + '>'
 			+ results[0] + '</span>');
 
-		out.push('<span class="colon">:</span> ');
+		out.push(msg.style !== 'action' ? '<span class="colon">:</span> ' : ' ');
 	}
 
 
@@ -1356,6 +1595,8 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 	l_el.setAttribute('data-room', msg.room);
 	l_el.setAttribute('data-sender', msg.from);
 	l_el.setAttribute('data-id', msg.tags && msg.tags.id);
+	l_el.setAttribute('data-lv-id', msg.lv_id);
+	l_el.setAttribute('data-date', msg.date.toLocaleDateString());
 	l_el.setAttribute('data-deleted', msg.deleted || false);
 
 	l_el.innerHTML = out.join("");
@@ -1379,9 +1620,9 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from) {
 			});
 		});
 
-		l_el.querySelector('.timestamp').addEventListener('click', function(e) {
+		ts_click && l_el.querySelector('.timestamp').addEventListener('click', function(e) {
 			if ( e.button === 0 )
-				modcard.ffzAdjacentHistory(msg);
+				return ts_click.call(this, e);
 		});
 	}
 
@@ -1483,3 +1724,328 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
+
+// ----------------
+// Moderation Card Pages
+// ----------------
+
+FFZ.mod_card_pages = {};
+
+FFZ.mod_card_pages.default = {
+	title: "<span>C</span>ontrols",
+	render: function(mod_card, el) { }
+}
+
+FFZ.mod_card_pages.history = {
+	title: "Chat <span>H</span>istory",
+
+	render_more: function(mod_card, el, history, ref_id, is_user, is_after) {
+		var f = this,
+			controller = utils.ember_lookup('controller:chat'),
+			user_id = mod_card.get('cardInfo.user.id'),
+			room_id = controller && controller.get('currentRoom.id'),
+
+			btn_more = utils.createElement('li', 'button ffz-load-more' + (is_after ? ' load-after' : ''), '<span class="ffz-chevron"></span> Load More <span class="ffz-chevron"></span>');
+
+		if ( is_after )
+			history.appendChild(btn_more);
+		else
+			history.insertBefore(btn_more, history.firstElementChild);
+
+		btn_more.addEventListener('click', function() {
+			history.scrollTop = 0;
+			history.classList.add('loading');
+			f.lv_get_logs(room_id, is_user ? user_id : null, ref_id, is_after ? 0 : 10, is_after ? 10 : 0).then(function(data) {
+				history.removeChild(btn_more);
+				history.classList.remove('loading');
+
+				var messages = is_after ? data.after : data.before,
+					last_message = history.querySelector('.chat-line:' + (is_after ? 'last' : 'first') + '-of-type'),
+					last_date = last_message ? last_message.getAttribute('data-date') : (new Date).toLocaleDateString();
+
+				if ( last_message.classList.contains('timestamp-line') )
+					last_message.parentElement.removeChild(last_message);
+
+				if ( ! is_after )
+					messages.reverse();
+
+				var original_message = history.querySelector('.original-msg'),
+					original_sender = original_message && original_message.getAttribute('data-sender');
+
+				for(var i=0; i < messages.length; i++) {
+					var new_message = messages[i],
+						date = new_message.date.toLocaleDateString(),
+						date_line = null;
+
+					new_message.original_sender = original_sender === new_message.from;
+
+					var new_line = f._build_mod_card_history(
+							new_message, mod_card, !is_user,
+							FFZ.mod_card_pages.history.render_adjacent.bind(f, mod_card, el, new_message)
+						);
+
+					if ( is_user )
+						new_line.classList.remove('ffz-mentioned');
+
+					new_message.original_sender = null;
+
+					if ( last_date !== date ) {
+						date_line = utils.createElement('li', 'chat-line timestamp-line', is_after ? date : last_date);
+						date_line.setAttribute('data-date', is_after ? date : last_date);
+						last_date = date;
+						if ( is_after )
+							history.appendChild(date_line);
+						else
+							history.insertBefore(date_line, history.firstElementChild);
+					}
+
+					if ( is_after )
+						history.appendChild(new_line);
+					else
+						history.insertBefore(new_line, history.firstElementChild);
+				}
+
+				if ( ! is_after && last_date !== (new Date).toLocaleDateString() ) {
+					var date_line = utils.createElement('li', 'chat-line timestamp-line', last_date);
+					date_line.setAttribute('data-date', last_date);
+					history.insertBefore(date_line, history.firstElementChild);
+				}
+
+				// Only add the button back if there are even more messages to load.
+				if ( messages.length >= 10 )
+					if ( is_after )
+						history.appendChild(btn_more);
+					else
+						history.insertBefore(btn_more, history.firstElementChild);
+
+				var original = history.querySelector('.chat-line[data-lv-id="' + ref_id + '"]');
+				if ( original )
+					setTimeout(function() {
+						history.scrollTop = (original.offsetTop - history.offsetTop) - (history.clientHeight - original.clientHeight) / 2;
+					});
+
+				ref_id = messages[messages.length-1].lv_id;
+			});
+		})
+	},
+
+	render_adjacent: function(mod_card, el, message) {
+		var f = this,
+			controller = utils.ember_lookup('controller:chat'),
+			user_id = mod_card.get('cardInfo.user.id'),
+			room_id = controller && controller.get('currentRoom.id'),
+			ffz_room = this.rooms[room_id],
+
+			old_history = el.querySelector('.chat-history'),
+			history = el.querySelector('.adjacent-history');
+
+		old_history.classList.add('hidden');
+
+		if ( history )
+			history.innerHTML = '';
+		else {
+			var btn_hide = utils.createElement('li', 'button ffz-back-button', '<span class="ffz-chevron"></span> Back'),
+				btn_container = utils.createElement('ul', 'interface chat-history chat-back-button', btn_hide);
+
+			btn_hide.addEventListener('click', function() {
+				el.removeChild(history);
+				el.removeChild(btn_container);
+				old_history.classList.remove('hidden');
+			})
+
+			history = utils.createElement('ul', 'interface chat-history adjacent-history');
+			el.appendChild(btn_container);
+			el.appendChild(history);
+		}
+
+		history.classList.add('loading');
+
+		f.lv_get_logs(room_id, null, message.lv_id, 10, 10).then(function(data) {
+			history.classList.remove('loading');
+
+			// Should we display more?
+			if ( data.before.length >= 10 )
+				FFZ.mod_card_pages.history.render_more.call(
+					f, mod_card, el, history, data.before[0].lv_id, false, false);
+
+			var last_date = (new Date).toLocaleDateString(),
+				messages = _.union(data.before, [message], data.after);
+
+			for(var i=0; i < messages.length; i++) {
+				var new_message = messages[i],
+					date = new_message.date.toLocaleDateString();
+
+				if ( date !== last_date ) {
+					var date_line = utils.createElement('li', 'chat-line timestamp-line', date);
+					date_line.setAttribute('data-date', date);
+					history.appendChild(date_line);
+					last_date = date;
+				}
+
+				new_message.is_original = new_message.lv_id === message.lv_id;
+				new_message.original_sender = new_message.from === message.from;
+
+				var msg_line = f._build_mod_card_history(new_message, mod_card, true,
+					FFZ.mod_card_pages.history.render_adjacent.bind(f, mod_card, el, new_message));
+
+				if ( new_message.is_original )
+					msg_line.classList.remove('ffz-mentioned');
+
+				history.appendChild(msg_line);
+
+				// These objects can be persistent, so clear these.
+				new_message.is_original = null;
+				new_message.original_sender = null;
+			}
+
+			if ( data.after.length >= 10 )
+				FFZ.mod_card_pages.history.render_more.call(
+					f, mod_card, el, history, data.after[data.after.length-1].lv_id, false, true);
+
+			setTimeout(function() {
+				var original = history.querySelector('.original-msg');
+				if ( original )
+					history.scrollTop = (original.offsetTop - history.offsetTop) - (history.clientHeight - original.clientHeight) / 2;
+			})
+		});
+	},
+
+	render: function(mod_card, el) {
+		var f = this,
+			controller = utils.ember_lookup('controller:chat'),
+			user_id = mod_card.get('cardInfo.user.id'),
+			room_id = controller && controller.get('currentRoom.id'),
+			ffz_room = this.rooms[room_id],
+
+			history = utils.createElement('ul', 'interface chat-history lv-history');
+
+		el.appendChild(history);
+
+		// Are we relying on LogViewer here?
+		if ( ! ffz_room.has_logs || ! mod_card.lv_view ) {
+			history.innerHTML = '<li class="chat-line admin"><span class="message">You do not have permission to view chat history in this channel.</span></li>';
+			return;
+		}
+
+		// Start loading!
+		history.classList.add('loading');
+
+		mod_card.lvGetLogs().then(function(data) {
+			f.log("[LV] Logs: " + user_id + " in " + room_id, data);
+			history.classList.remove('loading');
+
+			// Should we display more?
+			if ( data.before.length >= 10 )
+				FFZ.mod_card_pages.history.render_more.call(
+					f, mod_card, el, history, data.before[0].lv_id, true, false);
+
+			var last_date = (new Date).toLocaleDateString();
+
+			for(var i=0; i < data.before.length; i++) {
+				var message = data.before[i],
+					date = message.date.toLocaleDateString();
+
+				if ( date !== last_date ) {
+					var date_line = utils.createElement('li', 'chat-line timestamp-line', date);
+					date_line.setAttribute('data-date', date);
+					history.appendChild(date_line);
+					last_date = date;
+				}
+
+				var msg_line = f._build_mod_card_history(message, mod_card, false,
+					FFZ.mod_card_pages.history.render_adjacent.bind(f, mod_card, el, message));
+
+				msg_line.classList.remove('ffz-mentioned');
+				history.appendChild(msg_line);
+			}
+
+			history.scrollTop = history.scrollHeight;
+		});
+	}
+}
+
+FFZ.mod_card_pages.stats = {
+	title: "<span>S</span>tatistics",
+	render: function(mod_card, el) {
+		var f = this,
+			controller = utils.ember_lookup('controller:chat'),
+			room_id = controller && controller.get('currentRoom.id'),
+			user_id = mod_card.get('cardInfo.user.id'),
+			ffz_room = f.rooms && f.rooms[room_id];
+
+		var container = utils.createElement('ul', 'interface version-list');
+		el.appendChild(container);
+
+		if ( ffz_room.has_logs && mod_card.lv_view ) {
+			container.classList.add('loading');
+
+			mod_card.lvGetLogs().then(function(data) {
+				container.classList.remove('loading');
+				container.innerHTML = '<li>Messages <span>' + utils.number_commas(data.user.messages) + '</span></li><li>Timeouts <span> ' + utils.number_commas(data.user.timeouts) + '</span></li>';
+			});
+
+			var notice = utils.createElement('div', 'interface');
+			notice.innerHTML = 'Chat Log Source: <a target="_blank" href="https://cbenni.com/' + room_id + '?user=' + user_id + '">CBenni\'s logviewer</a>';
+			el.appendChild(notice);
+		}
+	}
+}
+
+FFZ.mod_card_pages.notes = {
+	title: "<span>N</span>otes",
+	render: function(mod_card, el) {
+		var f = this,
+			controller = utils.ember_lookup('controller:chat'),
+			room = controller && controller.get('currentRoom'),
+			tmiSession = room.tmiSession || (window.TMI && TMI._sessions && TMI._sessions[0]),
+
+			room_id = room && room.get('id'),
+			user_id = mod_card.get('cardInfo.user.id'),
+
+			ffz_room = this.rooms[room_id],
+			history = utils.createElement('ul', 'interface chat-history user-notes');
+
+
+		el.appendChild(history);
+
+		if ( ! ffz_room.has_logs || ! mod_card.lv_view_notes ) {
+			history.innerHTML = '<li class="chat-line admin"><span class="message">You do not have permission to view notes in this channel.</span></li>';
+			return;
+		}
+
+		history.classList.add('loading');
+
+		this.lv_get_token().then(function(token) {
+			utils.logviewer.get("comments/" + room_id + "?topic=" + user_id, token)
+					.then(utils.json).then(function(data) {
+
+				f.log("[LV] Comments: " + user_id + " in " + room_id, data);
+				history.classList.remove('loading');
+
+				if ( data.length )
+					for(var i=0; i < data.length; i++) {
+						var raw = data[i],
+							msg = {
+								date: new Date(raw.added * 1000),
+								from: raw.author,
+								room: raw.channel,
+								lv_id: raw.id,
+								message: raw.text,
+								tags: {},
+								color: tmiSession && raw.author ? tmiSession.getColor(raw.author) : "#755000"
+							};
+
+						f.tokenize_chat_line(msg, true, false);
+						history.appendChild(f._build_mod_card_history(msg, mod_card, true));
+					}
+				else
+					history.appendChild(utils.createElement('li', 'chat-line message-line admin',
+						'<span class="message">There are no notes on this user.</span>'));
+
+				history.appendChild(utils.createElement('li', 'chat-line message-line admin',
+					'<span clss="message">Create notes for this user at <a target="_blank" href="https://cbenni.com/' + room_id + '?user=' + user_id + '">CBenni\'s logviewer.</a></span>'));
+
+			});
+		});
+	}
+}

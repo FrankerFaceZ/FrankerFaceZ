@@ -18,6 +18,10 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-moderation-card:not(.lv-notes) ul.menu li[data-page="notes"],
+.ffz-moderation-card:not(.lv-logs) ul.menu li[data-page="history"],
+.ffz-moderation-card:not(.lv-logs) ul.menu li[data-page="stats"],
+.ffz-moderation-card:not(.lv-tabs) ul.menu,
 .ffz-hide-prime .drawer .warp__list.js-offers,
 .ffz-hide-prime-collapsed .drawer.closed .js-offers,
 .ffz-hide-friends-collapsed .drawer.closed .friend-list,
@@ -713,9 +717,12 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .ffz-ui-sub-menu-page[data-page="about"],
 .ffz-ui-menu-page .chat-menu-content p { padding: 0 20px; }
 
+.ffz-moderation-card .version-list span,
 .ffz-ui-menu-page .version-list span { float: right }
+
+.ffz-moderation-card .version-list li:not(:last-of-type),
 .ffz-ui-menu-page .version-list li:not(:last-of-type) {
-    border-bottom: 1px dotted rgba(127,127,127,0.5);
+	border-bottom: 1px dotted rgba(127,127,127,0.5);
 }
 
 .ffz-ui-menu-page .version-list ul {
@@ -723,14 +730,14 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 }
 
 .ffz-ui-menu-page pre {
-    box-shadow: none !important;
-    white-space: pre-wrap;
+	box-shadow: none !important;
+	white-space: pre-wrap;
 }
 
 #ffz-old-news-button {
-    text-align: center;
-    text-transform: none;
-    padding-bottom: 15px;
+	text-align: center;
+	text-transform: none;
+	padding-bottom: 15px;
 }
 
 #ffz-old-news { display: none }
@@ -809,7 +816,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	list-style-type: none;
 	border-top: 1px solid rgba(0,0,0,0.2);
 	background-color: #eee;
-    margin: 0 1px 1px;
+	margin: 0 1px 1px;
 }
 
 .ffz-ui-popup ul.menu:not(.sub-menu) {
@@ -824,12 +831,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .ember-chat .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon-grid { background-color: transparent !important; }
 
-.app-main.theatre .ffz-ui-popup ul.menu,
-.chat-container.dark .ffz-ui-popup ul.menu,
-.chat-container.force-dark .ffz-ui-popup ul.menu,
-.ember-chat-container.dark .ffz-ui-popup ul.menu,
-.ember-chat-container.force-dark .ffz-ui-popup ul.menu,
-body.ffz-bttv-dark .ffz-ui-popup ul.menu {
+.ffz-bttv-dark .ffz-ui-popup ul.menu {
 	background-color: #282828;
 }
 
@@ -845,8 +847,8 @@ body.ffz-bttv-dark .ffz-ui-popup ul.menu {
 }
 
 .ffz-ui-popup ul.sub-menu {
-    background-color: #dfdfdf;
-    margin: 0 1px;
+	background-color: #dfdfdf;
+	margin: 0 1px;
 }
 
 .app-main.theatre .ffz-ui-popup ul.sub-menu,
@@ -1281,8 +1283,7 @@ img.channel_background[src="null"] { display: none; }
 
 .ffz-moderation-card {
 	border: 2px solid #cbcbcb;
-	max-width: 350px;
-	min-width: 325px;
+	width: 340px;
 }
 
 .ember-chat .ffz-moderation-card .close-button {
@@ -1385,12 +1386,10 @@ img.channel_background[src="null"] { display: none; }
 	/*box-shadow: #000 0 0 5px;*/
 }
 
+.ffz-moderation-card ul.menu + .interface { border-top: none }
+
 .ffz-moderation-card .interface:not(:last-of-type) {
 	border-bottom: none;
-}
-
-.ffz-moderation-card .interface {
-	border-top: none;
 }
 
 .ffz-moderation-card h4.name { display: inline-block; }
@@ -1408,6 +1407,60 @@ img.channel_background[src="null"] { display: none; }
 .ffz-moderation-card .ffz-ban-reasons {
 	margin-top: 10px;
 	width: 100%;
+}
+
+.ffz-moderation-card ul.menu {
+	list-style-type: none;
+	padding: 0 !important;
+	border: none !important;
+	border-bottom: 1px solid rgba(0,0,0,0.2) !important;
+}
+
+.ffz-moderation-card ul.menu span { text-decoration: underline }
+
+.ffz-dark .ffz-moderation-card ul.menu,
+.theatre .ffz-moderation-card ul.menu,
+.dark .ffz-moderation-card ul.menu,
+.force-dark .ffz-moderation-card ul.menu {
+	border-bottom-color: rgba(255,255,255,0.2) !important;
+}
+
+.ffz-moderation-card ul.menu li:first-of-type { margin-left: 5px }
+.ffz-moderation-card ul.menu li:last-of-type { margin-right: 5px }
+
+.ffz-moderation-card ul.menu li {
+	display: block;
+	cursor: pointer;
+	float: left;
+	padding: 5px 5px 3px;
+	margin-bottom: -1px;
+	border-bottom: 2px solid transparent;
+}
+
+.ffz-moderation-card ul.menu li:hover {
+	color: #7d5bbe;
+	border-bottom-color: #7d5bbe;
+}
+
+.ffz-dark .ffz-moderation-card ul.menu li,
+.theatre .ffz-moderation-card ul.menu li,
+.dark .ffz-moderation-card ul.menu li,
+.force-dark .ffz-moderation-card ul.menu li {
+	color: #999;
+}
+
+.ffz-dark .ffz-moderation-card ul.menu li:hover,
+.theatre .ffz-moderation-card ul.menu li:hover,
+.dark .ffz-moderation-card ul.menu li:hover,
+.force-dark .ffz-moderation-card ul.menu li:hover {
+	color: #a68ed2;
+	border-bottom-color: #a68ed2;
+}
+
+.ffz-moderation-card ul.menu li.active { border-bottom-color: #6441a4 }
+
+.ffz-moderation-card:not(.ffz-default-tab) > .interface:not(.menu) {
+	display: none
 }
 
 
@@ -1984,8 +2037,12 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 .chat-history {
 	list-style-type: none;
 	padding: 0;
-	max-height: 200px;
+	max-height: 320px;
 	overflow-y: auto;
+}
+
+.moderation-card .chat-history.live-history {
+	max-height: 200px;
 }
 
 .chat-history.interface li:first-child { padding-top: 10px; }
@@ -1996,6 +2053,12 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	padding: 4px 10px;
 	word-wrap: break-word;
 	list-style-position: unset;
+}
+
+.chat-history .timestamp-line {
+	text-align: center;
+	color: #8c8c8c;
+	font-size: 1.1rem;
 }
 
 .ember-chat .moderation-card .interface.chat-history .chat-line.action {
@@ -2014,13 +2077,22 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 }
 
 .chat-history .chat-line:not(.original-sender) span.from:hover,
-.chat-history .timestamp:hover {
+.chat-history .timestamp.ts-action:hover {
 	cursor: pointer;
 	text-decoration: underline;
 }
 
+.chat-history .chat-line.admin.original-msg .message { color: #000 }
+
+.ffz-dark .chat-history .chat-line.admin.original-msg .message,
+.theatre .chat-history .chat-line.admin.original-msg .message,
+.dark .chat-history .chat-line.admin.original-msg .message,
+.force-dark .chat-history .chat-line.admin.original-msg .message { color: #fff }
+
+
 .chat-history.loading {
 	position: relative;
+	min-height: 160px;
 	overflow-y: hidden !important;
 }
 .chat-history.loading li { pointer-events: none; }
@@ -2051,6 +2123,50 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	left: 50%;
 	margin-left: -40px;
 	z-index: 1000;
+}
+
+.moderation-card .ffz-back-button,
+.moderation-card .ffz-load-more {
+	display: block;
+	text-align: center;
+	padding: 0 1rem !important;
+	margin: 10px;
+}
+
+.ffz-moderation-card .chat-back-button {
+	border-bottom: 1px solid rgba(0,0,0,0.2) !important;
+}
+
+.ffz-chevron {
+	position: relative;
+	display: inline-block;
+	height: 1rem;
+	width: 1rem;
+	margin: 0 .5rem;
+}
+
+.ffz-chevron:before {
+	position: absolute;
+	display: block;
+	content: '';
+	border: .5rem solid transparent;
+}
+
+.ffz-back-button .ffz-chevron {
+	margin-left: -1rem;
+}
+
+.ffz-back-button .ffz-chevron:before {
+	border-right-color: #fff;
+}
+
+.ffz-load-more:not(.load-after) .ffz-chevron:before {
+	top: -.25rem;
+	border-bottom-color: #fff;
+}
+.ffz-load-more.load-after .ffz-chevron:before {
+	top: .25rem;
+	border-top-color: #fff;
 }
 
 .ember-chat .moderation-card .back-button {

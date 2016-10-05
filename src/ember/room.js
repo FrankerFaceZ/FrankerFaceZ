@@ -827,6 +827,16 @@ FFZ.prototype.add_room = function(id, room) {
 		}
 	}
 
+	// Look up if the room has moderation logs.
+	var f = this;
+	this.ws_send("has_logs", id, function(success, response) {
+		if ( ! success )
+			return;
+
+		data.has_logs = response.has_logs;
+		data.log_source = response.log_source;
+	}, true);
+
 	// Is the room important?
 	this.update_room_important(id);
 
@@ -905,7 +915,7 @@ FFZ.prototype.remove_room = function(id) {
 }*/
 
 
-FFZ.prototype._show_deleted = function(room_id) {
+/*FFZ.prototype._show_deleted = function(room_id) {
 	var room = this.rooms[room_id];
 	if ( ! room || ! room.room )
 		return;
@@ -1047,7 +1057,7 @@ FFZ.prototype._insert_history = function(room_id, data, from_server) {
 			}
 		}
 	}
-}
+}*/
 
 
 // --------------------
@@ -1084,8 +1094,15 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 
 	data = data.room;
 
+	// Apply the data we've received to the room data model.
+	var model = this.rooms[room_id] = this.rooms[room_id] || {};
+
+	for(var key in data)
+		if ( key !== 'room' && data.hasOwnProperty(key) )
+			model[key] = data[key];
+
 	// Preserve the pointer to the Room instance.
-	if ( this.rooms[room_id] )
+	/*if ( this.rooms[room_id] )
 		data.room = this.rooms[room_id].room;
 
 	// Preserve everything else.
@@ -1096,26 +1113,26 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 
 	data.needs_history = this.rooms[room_id] && this.rooms[room_id].needs_history || false;
 
-	this.rooms[room_id] = data;
+	this.rooms[room_id] = data;*/
 
-	if ( data.css || data.moderator_badge )
-		utils.update_css(this._room_style, room_id, moderator_css(data) + (data.css||""));
+	if ( model.css || model.moderator_badge )
+		utils.update_css(this._room_style, room_id, moderator_css(model) + (model.css || ""));
 
-	if ( ! this.emote_sets.hasOwnProperty(data.set) )
-		this.load_set(data.set, function(success, set) {
+	if ( ! this.emote_sets.hasOwnProperty(model.set) )
+		this.load_set(model.set, function(success, set) {
 			if ( set.users.indexOf(room_id) === -1 )
 				set.users.push(room_id);
 		});
-	else if ( this.emote_sets[data.set].users.indexOf(room_id) === -1 )
-		this.emote_sets[data.set].users.push(room_id);
+	else if ( this.emote_sets[model.set].users.indexOf(room_id) === -1 )
+		this.emote_sets[model.set].users.push(room_id);
 
 	this.update_ui_link();
 
-	if ( data.set )
-		this.rerender_feed_cards(data.set);
+	if ( model.set )
+		this.rerender_feed_cards(model.set);
 
 	if ( callback )
-		callback(true, data);
+		callback(true, model);
 }
 
 
@@ -1569,8 +1586,8 @@ FFZ.prototype._modify_room = function(room) {
 					t.set("messages", []);
 					t.addMessage({
 						style: 'admin',
-						message: i18n("Chat was cleared by a moderator"),
-						ffz_old_messages: msgs
+						message: i18n("Chat was cleared by a moderator")
+						//ffz_old_messages: msgs
 					});
 				}
 			}
@@ -1962,11 +1979,12 @@ FFZ.prototype._modify_room = function(room) {
 
 					if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
 						var el = f._mod_card.get('element'),
-							history = el && el.querySelector('.chat-history:not(.adjacent-history)'),
-							was_at_top = history && history.scrollTop >= (history.scrollHeight - history.clientHeight);
+							history = el && el.querySelector('.chat-history.live-history');
 
 						if ( history ) {
-							var el = f._build_mod_card_history(msg, f._mod_card);
+							var was_at_top = history.scrollTop >= (history.scrollHeight - history.clientHeight),
+								el = f._build_mod_card_history(msg, f._mod_card);
+
 							if ( msg.tags && msg.tags.historical )
 								history.insertBefore(el, history.firstElementChild);
 							else
