@@ -228,7 +228,7 @@ FFZ.prototype.setup_tokenization = function() {
 	var f = this;
 
 	// Timestamp Display
-	helpers.getTime = function(e) {
+	helpers.getTime = function(e, show_ampm) {
 		if ( e === undefined || e === null )
 			return '?:??' + (f.settings.timestamp_seconds ? ':??' : '');
 
@@ -236,16 +236,19 @@ FFZ.prototype.setup_tokenization = function() {
 			minutes = e.getMinutes(),
 			seconds = e.getSeconds(),
 
-			s = f.settings.twenty_four_timestamps;
+			s = f.settings.twenty_four_timestamps,
+			pm = false;
 
 		if ( s < 2 ) {
-			if ( hours > 12 )
+			if ( hours > 12 ) {
 				hours -= 12;
+				pm = true;
+			}
 			else if ( hours === 0 )
 				hours = 12;
 		}
 
-		return ((s === 1 || s === 3) && hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + (f.settings.timestamp_seconds ? ':' + (seconds < 10 ? '0' : '') + seconds : '');
+		return ((s === 1 || s === 3) && hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + (f.settings.timestamp_seconds ? ':' + (seconds < 10 ? '0' : '') + seconds : '') + (show_ampm && s < 2 ? '<span class="cp-hidden">' + (pm ? 'pm' : 'am') + '</span>' : '');
 	};
 
 

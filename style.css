@@ -2045,6 +2045,13 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	max-height: 200px;
 }
 
+.cp-hidden {
+	display: inline-block;
+	width: 1px; height: 1px;
+	margin-left: -1px;
+	overflow: hidden;
+}
+
 .chat-history.interface li:first-child { padding-top: 10px; }
 .chat-history.interface li:last-child { padding-bottom: 10px; }
 

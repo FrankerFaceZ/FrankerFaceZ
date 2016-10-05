@@ -1008,9 +1008,14 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 				handle_key = function(e) {
 					var key = e.keyCode || e.which,
+						is_meta = e.ctrlKey || e.altKey || e.metaKey,
 						user_id = controller.get('cardInfo.user.id'),
 						is_mod = controller.get('cardInfo.isModeratorOrHigher'),
 						room = utils.ember_lookup('controller:chat').get('currentRoom');
+
+					// We don't want modifier keys.'
+					if ( is_meta )
+						return;
 
 					if ( key === keycodes.C )
 						return t.ffzChangePage('default');
@@ -1519,12 +1524,12 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 		style = '', colored = '';
 
 	if ( helpers && helpers.getTime )
-		out.push('<span class="timestamp' + (ts_click ? ' ts-action' : '') + '">' + helpers.getTime(msg.date) + '</span>');
+		out.push('<span class="timestamp' + (ts_click ? ' ts-action' : '') + '">' + helpers.getTime(msg.date, true) + '</span>');
+
+	var alias = this.aliases[msg.from],
+		results = this.format_display_name(msg.tags && msg.tags['display-name'], msg.from);
 
 	if ( show_from ) {
-		var alias = this.aliases[msg.from],
-			results = this.format_display_name(msg.tags && msg.tags['display-name'], msg.from);
-
 		// Badges
 		out.push('<span class="badges">');
 		out.push(this.render_badges(this.get_line_badges(msg, false)));
@@ -1555,7 +1560,8 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 			+ results[0] + '</span>');
 
 		out.push(msg.style !== 'action' ? '<span class="colon">:</span> ' : ' ');
-	}
+	} else if ( msg.style !== 'admin' )
+		out.push('<span class="cp-hidden"> ' + results[0] + (msg.style === 'action' ? '' : ':') + ' </span>');
 
 
 	// The message itself.

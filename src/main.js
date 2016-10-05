@@ -34,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 313,
+	major: 3, minor: 5, revision: 314,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
