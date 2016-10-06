@@ -352,7 +352,8 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 			this._twitch_set_to_channel[0] = "--global--";
 			this._twitch_set_to_channel[33] = "--turbo-faces--";
 			this._twitch_set_to_channel[42] = "--turbo-faces--";
-			this._twitch_set_to_channel[19194] = "prime";
+			this._twitch_set_to_channel[19194] = "--prime--";
+			this._twitch_set_to_channel[19151] = "--curse--";
 
 		}).fail(function(data) {
 			if ( data.status === 404 )

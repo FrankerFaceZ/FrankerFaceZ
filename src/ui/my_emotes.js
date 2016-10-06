@@ -82,7 +82,8 @@ FFZ.prototype.setup_my_emotes = function() {
 	this._twitch_badges = {};
 	this._twitch_badges["--global--"] = "//cdn.frankerfacez.com/script/twitch_logo.png";
 	this._twitch_badges["--turbo-faces--"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
-	this._twitch_badges["--prime-faces--"] = this._twitch_badges["prime"] = "//cdn.frankerfacez.com/badges/twitch/premium/1/1.png";
+	this._twitch_badges["--prime-faces--"] = this._twitch_badges["--prime--"] = "//cdn.frankerfacez.com/badges/twitch/premium/1/1.png";
+	this._twitch_badges["--curse--"] = "//cdn.frankerfacez.com/script/curse_logo.png";
 }
 
 
@@ -191,6 +192,10 @@ FFZ.menu_pages.myemotes = {
 			if ( ! twitch_sets.hasOwnProperty(set_id) || ( ! this.settings.global_emotes_in_menu && set_id === '0' ) )
 				continue;
 
+			// Skip the Twitch Turbo set if we have Twitch Prime. They're identical.
+			if ( set_id == 793 && twitch_sets.hasOwnProperty(19194) )
+				continue;
+
 			var favorites_list = this.settings.favorite_emotes["twitch-" + set_id];
 			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
 				continue;
@@ -241,14 +246,14 @@ FFZ.menu_pages.myemotes = {
 		// Finally, sort and add them all.
 		sets.sort(function(a,b) {
 			var an = a[0], bn = b[0];
-			if ( an === "prime" || an === "--prime-faces--" || an === "turbo" || an === "--turbo-faces--" )
+			if ( an === "--curse--" || an === "--prime--" || an === "--prime-faces--" || an === "turbo" || an === "--turbo-faces--" )
 				an = "zza|" + an;
 			else if ( an === "global" || (an && an.substr(0,16) === "global emoticons") || an === "--global--" )
 				an = "zzy|" + an;
 			else if ( an && an.substr(0,5) === "emoji" )
 				an = "zzz|" + an;
 
-			if ( bn === "prime" || bn === "--prime-faces--" || bn === "turbo" || bn === "--turbo-faces--" )
+			if ( bn === "--curse--" || bn === "--prime--" || bn === "--prime-faces--" || bn === "turbo" || bn === "--turbo-faces--" )
 				bn = "zza|" + bn;
 			else if ( bn === "global" || (bn && bn.substr(0,16) === "global emoticons") || bn === "--global--" )
 				bn = "zzy|" + bn;
@@ -403,8 +408,10 @@ FFZ.menu_pages.myemotes = {
 				title = "Global Emoticons";
 			else if ( channel_id === "turbo" || channel_id === "--turbo-faces--" )
 				title = "Twitch Turbo";
-			else if ( channel_id === "prime" || channel_id === "--prime-faces--" )
+			else if ( channel_id === "--prime--" || channel_id === "--prime-faces--" )
 				title = "Twitch Prime";
+			else if ( channel_id === "--curse--" )
+				title = "Curse Emoticons";
 			else
 				title = FFZ.get_capitalization(channel_id, function(name) {
 					heading.innerHTML = '<span class="right">Twitch</span>' + utils.sanitize(name);

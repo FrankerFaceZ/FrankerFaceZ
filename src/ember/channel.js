@@ -16,7 +16,8 @@ FFZ.prototype.setup_channel = function() {
 
 	// Settings stuff!
 	document.body.classList.toggle("ffz-hide-view-count", !this.settings.channel_views);
-	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats);
+	document.body.classList.toggle('ffz-theater-stats', this.settings.theater_stats === 2);
+	document.body.classList.toggle('ffz-theater-basic-stats', this.settings.theater_stats > 0);
 
 	var banner_hidden = this.settings.hide_channel_banner;
 		banner_hidden = banner_hidden === 1 ? this.settings.channel_bar_bottom : banner_hidden > 0;
@@ -1386,15 +1387,25 @@ FFZ.settings_info.channel_title_top = {
 
 
 FFZ.settings_info.theater_stats = {
-	type: "boolean",
-	value: true,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Basic",
+		2: "Full"
+	},
+
+	value: 2,
+	process_value: utils.process_int(2, 0, 2),
+
 	no_mobile: true,
 
 	category: "Channel Metadata",
 	name: "Display on Theater Mode Hover",
 	help: "Show the channel metadata and actions over the video player in theater mode when you hover it with your mouse.",
+
 	on_update: function(val) {
-			document.body.classList.toggle('ffz-theater-stats', val);
+			document.body.classList.toggle('ffz-theater-stats', val === 2);
+			document.body.classList.toggle('ffz-theater-basic-stats', val > 0);
 		}
 	};
 

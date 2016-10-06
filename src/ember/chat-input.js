@@ -219,7 +219,9 @@ FFZ.prototype.setup_chat_input = function() {
 
 
 FFZ.prototype.modify_chat_input = function(component) {
-	var f = this;
+	var f = this,
+		ConvoInput = utils.ember_resolve('component:twitch-conversations/conversation-input');
+
 	utils.ember_reopen_view(component, {
 		ffz_mru_index: -1,
 		ffz_current_suggestion: 0,
@@ -507,7 +509,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 		ffzFetchNameSuggestions: function() {
 			if ( ! this.get('ffz_suggestions_visible') )
-				this.set('ffz_name_suggestions', this.get('suggestions')());
+				this.set('ffz_name_suggestions', this.get('suggestions')() || []);
 		}.observes('suggestions'),
 
 
@@ -553,9 +555,10 @@ FFZ.prototype.modify_chat_input = function(component) {
 		ffz_emoticons: function() {
 			var emotes = {},
 
-				room = this.get('parentView.context.model'),
+				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
+				room = ! in_conversation && this.get('parentView.context.model'),
 				room_id = room && room.get('id'),
-				tmi = room && room.tmiSession,
+				tmi = in_conversation ? window.TMI && TMI._sessions && TMI._sessions[0] : room && room.tmiSession,
 
 				set_name, replacement, url, is_sub_set, fav_list,
 				emote_set, emote, emote_id, code,
@@ -585,6 +588,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 								set_name = 'Twitch Global';
 							else if ( set_name === '--twitch-turbo--' || set_name === 'turbo' || set_name === '--turbo-faces--' )
 								set_name = 'Twitch Turbo';
+							else if ( set_name === 'prime' || set_name === '--prime-faces--' )
+								set_name = 'Twitch Prime';
 							else {
 								set_name = 'Channel: ' + FFZ.get_capitalization(set_name);
 								is_sub_set = true;

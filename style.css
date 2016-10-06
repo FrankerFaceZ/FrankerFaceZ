@@ -64,13 +64,13 @@ body:not(.ffz-show-bits-tags) .bits-tag--container,
 	top: -220px !important;
 }
 
-.ffz-channel-bar-bottom .cn-bar {
+.ffz-channel-bar-bottom .cn-bar-fixed {
 	top: auto;
 	bottom: 0;
 	box-shadow: inset 0 1px 0 #e5e3e8,0 -1px -1px rgba(0,0,0,.065);
 }
 
-.ffz-dark.ffz-channel-bar-bottom .cn-bar {
+.ffz-dark.ffz-channel-bar-bottom .cn-bar-fixed {
 	box-shadow: inset 0 1px 0 #161616, -1px -1px rgba(255,255,255,0.065);
 }
 
@@ -278,8 +278,8 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 /* Theater Mode hover bar */
 
-.ffz-theater-stats .app-main.theatre .player-userinfo__game,
-.ffz-theater-stats .app-main.theatre .player-controls-top {
+.ffz-theater-basic-stats .app-main.theatre .player-userinfo__game,
+.ffz-theater-basic-stats .app-main.theatre .player-controls-top {
 	display: block
 }
 
@@ -602,13 +602,13 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
     padding: 10px 20px;
 }
 
-.suggestion.ffz-is-favorite,
+.suggestion.ffz-favorite,
 .emoticon.ffz-favorite { position: relative; }
 
 .favorites-grid:not(:empty) + .ffz-no-emotes,
 .favorites-grid .emoticon.ffz-favorite:before { display: none }
 
-.suggestion.ffz-is-favorite:before,
+.suggestion.ffz-favorite:before,
 .emoticon.ffz-favorite:before {
     content: "";
     display: block;
@@ -618,7 +618,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
     background: url("//cdn.frankerfacez.com/script/emoticon_favorite.png") no-repeat;
 }
 
-.suggestion.ffz-is-favorite:before { right: 2.5px; bottom: 2.5px }
+.suggestion.ffz-favorite:before { right: 2.5px; bottom: 2.5px }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content.menu-side-padding { padding-left: 20px; padding-right: 20px; }
 
@@ -3057,40 +3057,71 @@ body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 
 /* FFZ Suggestions */
 
-.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion {
-    width: auto;
-    background-repeat: no-repeat;
-    background-position: calc(100% - 10px) center;
+.ffz-dark .ffz-suggestions,
+.theatre .ffz-suggestions,
+.dark .ffz-suggestions,
+.force-dark .ffz-suggestions {
+	background-color: #101010 !important;
+	border-color: rgba(255,255,255,0.2) !important;
 }
 
-.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.has-info {
-    height: 40px;
-    line-height: 20px;
-    padding-top: 2px;
+.conversation-input-bar .ffz-suggestions {
+	padding: 5px 0;
+	position: absolute;
+	bottom: 30px;
+	left: 6px;
+	width: 268px;
+	background-color: white;
+	border: 1px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	z-index: 100;
+}
+
+.conversation-input-bar .ffz-suggestions .suggestion {
+	padding: 0 10px;
+	line-height: 24px;
+	font-size: 12px;
+}
+
+.conversation-input-bar .ffz-suggestions .highlighted {
+	color: #fff;
+	background-color: #6441a4;
+}
+
+.suggestions.ffz-suggestions .suggestion {
+	width: auto !important;
+	background-repeat: no-repeat;
+	background-position: calc(100% - 10px) center;
+}
+
+.suggestions.ffz-suggestions .suggestion.has-info {
+	height: 40px;
+	line-height: 20px;
+	padding-top: 2px;
 }
 
 .ffz-suggestions .suggestion div,
 .ffz-suggestions .suggestion span {
 	white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .ffz-suggestions .suggestion.is-emoji {
-    background-size: 18px;
+	background-size: 18px;
 }
 
 .ffz-suggestions .suggestion i { opacity: 0.5 }
 
 .ffz-suggestions .suggestion.has-info span {
-    opacity: 0.5;
-    display: block;
-    margin-top: -4px;
-    font-size: 10px;
+	opacity: 0.5;
+	display: block;
+	margin-top: -4px;
+	font-size: 10px;
 }
 
-.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.has-image:not(.has-info) {
-    line-height: 40px;
+.suggestions.ffz-suggestions .suggestion.has-image:not(.has-info) {
+	line-height: 40px;
 }
 
 /* Banned and Spoiler Games */
@@ -3189,10 +3220,14 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 /* Badges */
 
-.badges .badge { background-size: 18px 18px }
+.badges .badge {
+	background-size: 18px 18px !important;
+}
 
 .convoHeader .badges .badge {
-	background-size: 14px 14px;
+	background-size: 14px 14px !important;
+	-webkit-mask-size: 14px 14px;
+	mask-size: 14px 14px;
 }
 
 /*.badges .badge {
@@ -3252,47 +3287,82 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 /* Odd Badges */
 .badge.click_url { cursor: pointer }
 
-.badge.premium.version-1 {
+/*.badge.premium.version-1:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/premium/1/1.png") #009cdc;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/premium/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/premium/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/premium/1/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/premium/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/premium/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/premium/1/4.png") 4x);
 }
 
-.badge.bits.version-1 {
+.badge.premium.version-1.colored {
+	background: linear-gradient(#009cdc,#009cdc);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/premium/1/1.png");
+}
+
+.badge.bits.version-1:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png") #cbc8d0;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1/4.png") 4x);
 }
 
-.badge.bits.version-100 {
+.badge.bits.version-1.colored {
+	background: linear-gradient(#cbc8d0,#cbc8d0);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/bits/1/1.png");
+}
+
+.badge.bits.version-100:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png") #ca7eff;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100/4.png") 4x);
 }
 
-.badge.bits.version-1000 {
+.badge.bits.version-100.colored {
+	background: linear-gradient(#ca7eff,#ca7eff);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/bits/100/1.png");
+}
+
+.badge.bits.version-1000:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png") #3ed8b3;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/4.png") 4x);
 }
 
-.badge.bits.version-5000 {
+.badge.bits.version-1000.colored {
+	background: linear-gradient(#3ed8b3,#3ed8b3);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/bits/1000/1.png");
+}
+
+.badge.bits.version-5000:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png") #49acff;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/4.png") 4x);
 }
 
-.badge.bits.version-10000 {
+.badge.bits.version-5000.colored {
+	background: linear-gradient(#49acff,#49acff);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/bits/5000/1.png");
+}
+
+.badge.bits.version-10000:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png") #ff271e;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/4.png") 4x);
 }
 
-.badge.bits.version-100000 {
+.badge.bits.version-10000.colored {
+	background: linear-gradient(#ff271e,#ff271e);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/bits/10000/1.png");
+}
+
+.badge.bits.version-100000:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png") #ffcb13;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/4.png") 4x);
 	background-image: image-set(url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/4.png") 4x);
 }
+
+.badge.bits.version-100000.colored {
+	background: linear-gradient(#ffcb13,#ffcb13);
+	-webkit-mask-image: url("https://cdn.frankerfacez.com/badges/twitch/bits/100000/1.png");
+}*/
 
 /* New Resub Banner */
 

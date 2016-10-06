@@ -43,7 +43,18 @@ var FFZ = window.FrankerFaceZ,
 		if ( ! room.moderator_badge )
 			return "";
 
-		return '.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement),.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement) { background-repeat: no-repeat; background-size: initial; background-position: center; background-image:url("' + room.moderator_badge + '") !important; }';
+		return '.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored),' +
+			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored) {' +
+				'background-repeat: no-repeat;' +
+				'background-size: initial !important;' +
+				'background-position: center;' +
+				'background-image:url("' + room.moderator_badge + '") !important; }' +
+			'.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored,' +
+			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored {' +
+				'-webkit-mask-repeat: no-repeat;' +
+				'-webkit-mask-size: initial !important;' +
+				'-webkit-mask-position: center;' +
+				'-webkit-mask-image: url("' + room.moderator_badge + '"); }';
 	};
 
 
@@ -1938,6 +1949,10 @@ FFZ.prototype._modify_room = function(room) {
 
 			// If this message is already in the room, discard the duplicate.
 			if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
+				return;
+
+			// If it's historical, make sure it's for this room.
+			if ( msg.tags && msg.tags.historical && msg.tags['room-id'] != this.get('roomProperties._id') )
 				return;
 
 

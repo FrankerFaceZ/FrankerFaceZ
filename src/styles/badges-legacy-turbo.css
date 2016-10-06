@@ -1,4 +1,9 @@
-.badges .turbo {
+.badges .turbo:not(.colored) {
 	background-color: #6441a3;
 	background-image: url('//cdn.frankerfacez.com/script/legacy-turbo.png');
+}
+
+.badges .turbo.colored {
+	background: linear-gradient(#6441a3,#6441a3);
+	-webkit-mask-image: url('//cdn.frankerfacez.com/script/legacy-turbo.png');
 }

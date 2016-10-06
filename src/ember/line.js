@@ -834,6 +834,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				'';
 		},
 
+		buildBadgesHTML: function() {
+			return '<span class="badges">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
+		},
+
 		buildSenderHTML: function() {
 			var output = '';
 
@@ -846,7 +850,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			output += this.buildModIconsHTML();
 
 			// Badges
-			output += '<span class="badges">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
+			output += this.buildBadgesHTML();
 
 			// From!
 			output += this.buildFromHTML();

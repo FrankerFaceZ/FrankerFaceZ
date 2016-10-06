@@ -5,7 +5,27 @@ var FFZ = window.FrankerFaceZ,
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
 	OTHER_KNOWN = ['turbo', 'warcraft', 'bits', 'premium'],
 
+	CSS_BADGES = {
+		staff: { 1: { color: "#200f33", use_svg: true } },
+		admin: { 1: { color: "#faaf19", use_svg: true  } },
+		broadcaster: { 1: { color: "#e71818", use_svg: true } },
+		moderator: { 1: { color: "#34ae0a", use_svg: true } },
+
+		turbo: { 1: { color: "#6441a5", use_svg: true } },
+		premium: { 1: { color: "#009cdc" } },
+
+		bits: {
+			1: { color: "#cbc8d0" },
+			100: { color: "#ca7eff" },
+			1000: { color: "#3ed8b3" },
+			5000: { color: "#49acff" },
+			10000: { color: "#ff271e" },
+			100000: { color: "#ffcb13" }
+		}
+	},
+
 	NO_INVERT_BADGES = ['subscriber', 'ffz-badge-1'],
+
 	INVERT_INVERT_BADGES = ['bits'],
 	TRANSPARENT_BADGES = ['subscriber'],
 
@@ -30,6 +50,11 @@ var FFZ = window.FrankerFaceZ,
 	BADGE_KLASSES = {
 		'global_mod': 'global-moderator'
 	};
+
+
+CSS_BADGES['global-moderator'] = {
+	1: { color: "#0c6f20", use_svg: true }
+};
 
 
 // --------------------
@@ -196,7 +221,8 @@ FFZ.settings_info.transparent_badges = {
 		2: "Circular",
 		3: "Circular (Color Only)",
 		4: "Circular (Color Only, Small)",
-		5: "Transparent"
+		5: "Transparent" //,
+		//6: "Transparent (Colored)"
 	},
 
 	value: 0,
@@ -217,10 +243,30 @@ FFZ.settings_info.transparent_badges = {
 		this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
 		this.toggle_style('badges-blank', val === 3 || val === 4);
 		this.toggle_style('badges-circular-small', val === 4);
-		this.toggle_style('badges-transparent', val === 5);
-		document.body.classList.toggle('ffz-transparent-badges', val === 5);
+		this.toggle_style('badges-transparent', val >= 5);
+		document.body.classList.toggle('ffz-transparent-badges', val >= 5);
+
+		// Update existing chat lines.
+		var CL = utils.ember_resolve('component:chat/chat-line'),
+			CW = utils.ember_resolve('component:twitch-conversations/conversation-window'),
+			DP = utils.ember_resolve('component:chat/from-display-preview'),
+			views = (CL || CW || DP) ? utils.ember_views() : [];
+
+		for(var vid in views) {
+			var view = views[vid];
+			if ( CL && view instanceof CL && view.buildBadgesHTML )
+				view.$('.badges').replaceWith(view.buildBadgesHTML());
+			else if ( DP && view instanceof DP && view.ffzRenderBadges )
+				view.ffzRenderBadges();
+			else if ( CW && view instanceof CW && view.ffzReplaceBadges )
+				view.ffzReplaceBadges();
+		}
 	}
 };
+
+// This requires -webkit-mask-image which isn't working in non-WebKit browsers.
+if ( navigator.userAgent.indexOf('AppleWebKit') !== -1 )
+	FFZ.settings_info.transparent_badges.options[6] = "Transparent (Colored)";
 
 
 // --------------------
@@ -234,8 +280,8 @@ FFZ.prototype.setup_badges = function() {
 		this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
 		this.toggle_style('badges-blank', val === 3 || val === 4);
 		this.toggle_style('badges-circular-small', val === 4);
-		this.toggle_style('badges-transparent', val === 5);
-		document.body.classList.toggle('ffz-transparent-badges', val === 5);
+		this.toggle_style('badges-transparent', val >= 5);
+		document.body.classList.toggle('ffz-transparent-badges', val >= 5);
 
 		this.toggle_style('badges-sub-notice', ! this.settings.sub_notice_badges);
 		this.toggle_style('badges-sub-notice-on', this.settings.sub_notice_badges);
@@ -253,10 +299,15 @@ FFZ.prototype.setup_badges = function() {
 	s.id = "ffz-badge-css";
 	document.head.appendChild(s);
 
+	this.log("Generating CSS for existing Twitch badges.");
+	for(var badge_id in CSS_BADGES) {
+		var badge_data = CSS_BADGES[badge_id];
+		for(var version in badge_data)
+			utils.update_css(s, 'twitch-' + badge_id + '-' + version, utils.cdn_badge_css(badge_id, version, badge_data[version]));
+	}
+
 	this.log("Loading badges.");
 	this.load_badges();
-	//this.log("Adding legacy donor badges.");
-	//this._legacy_add_donors();
 }
 
 
@@ -276,6 +327,9 @@ FFZ.ws_commands.set_badge = function(data) {
 
 		user = this.users[user_id] = this.users[user_id] || {},
 		badges = user.badges = user.badges || {};
+
+	if ( typeof badge === "number" )
+		badge = {id: badge};
 
 	if ( badge === undefined || badge === null )
 		badges[slot] = null;
@@ -342,6 +396,7 @@ FFZ.prototype._get_badge_object = function(badge, full_badge) {
 		full_image: full_badge.image,
 		color: badge.color,
 		no_invert: badge.no_invert || full_badge.no_invert,
+		no_color: badge.no_color || full_badge.no_color,
 		invert_invert: badge.invert_invert || full_badge.invert_invert,
 		transparent: badge.transparent || full_badge.transparent || (badge.color || full_badge.color) === "transparent",
 		extra_css: (badge.extra_css || full_badge.extra_css)
@@ -414,6 +469,7 @@ FFZ.prototype.get_twitch_badges = function(badge_tag) {
 			title: binfo && binfo.title || BADGE_NAMES[badge] || badge.capitalize(),
 			click_url: binfo && binfo.click_action === 'visit_url' && binfo.click_url,
 			no_invert: NO_INVERT_BADGES.indexOf(badge) !== -1,
+			no_color: ! CSS_BADGES.hasOwnProperty(badge),
 			invert_invert: INVERT_INVERT_BADGES.indexOf(badge) !== -1,
 			transparent: TRANSPARENT_BADGES.indexOf(badge) !== -1
 		};
@@ -428,45 +484,33 @@ FFZ.prototype.get_twitch_badges = function(badge_tag) {
 }
 
 
-/*FFZ.prototype.get_other_badges = function(user_id, room_id, user_type, has_sub, has_turbo) {
-	var badges = {};
-
-	if ( room_id && user_id === room_id )
-		badges[0] = {klass: 'broadcaster', title: 'Broadcaster'};
-	else
-		for(var i=0, l = SPECIAL_BADGES.length; i < l; i++) {
-			var mb = SPECIAL_BADGES[i];
-			if ( user_type === mb ) {
-				badges[0] = {klass: BADGE_KLASSES[mb] || mb, title: BADGE_NAMES[mb] || mb.capitalize()};
-				break;
-			}
-		}
-
-	if ( has_sub )
-		badges[10] = {klass: 'subscriber', title: 'Subscriber', no_invert: true, transparent: true}
-	if ( has_turbo )
-		badges[15] = {klass: 'turbo', title: 'Turbo'}
-
-	return this.get_badges(user_id, room_id, badges, null);
-}*/
-
-
 // --------------------
 // Render Badge
 // --------------------
 
 FFZ.prototype.render_badges = function(badges) {
-	var out = [];
+	var out = [],
+		setting = this.settings.transparent_badges;
+
 	for(var key in badges) {
 		var badge = badges[key],
 			klass = badge.klass,
-			css = badge.image ? 'background-image:url("' + utils.quote_attr(badge.image) + '");' : '';
+			css = '';
 
-		if ( badge.srcSet )
+		if ( badge.image )
+			if ( setting === 6 )
+				css += '-webkit-mask-image:url("' + utils.quote_attr(badge.image) + '");';
+			else
+				css += 'background-image:url("' + utils.quote_attr(badge.image) + '");';
+
+		if ( badge.srcSet && setting !== 6 )
 			css += 'background-image:-webkit-image-set(' + badge.srcSet + ');background-image:image-set(' + badge.srcSet + ');'
 
 		if ( badge.color )
-			css += 'background-color:' + badge.color + ';'
+			if ( setting === 6 )
+				css += 'background: linear-gradient(' + badge.color + ',' + badge.color + ');';
+			else
+				css += 'background-color:' + badge.color + ';'
 
 		if ( badge.extra_css )
 			css += badge.extra_css;
@@ -479,6 +523,9 @@ FFZ.prototype.render_badges = function(badges) {
 
 		if ( badge.invert_invert )
 			klass += ' invert-invert';
+
+		if ( ! badge.no_color && setting === 6 )
+			klass += ' colored';
 
 		if ( badge.transparent )
 			klass += ' transparent';
@@ -662,7 +709,6 @@ FFZ.prototype.load_badges = function(callback, tries) {
 				badge_count++;
 			badges[1] = {id: 2, image: "//cdn.frankerfacez.com/script/momiglee_badge.png", title: "WAN"};
 
-
 			f.log("Loaded " + utils.number_commas(badge_count) + " total badges across " + badge_total + " types.");
 			typeof callback === "function" && callback(true, badge_count, badge_total, badge_data);
 
@@ -695,113 +741,3 @@ FFZ.prototype._load_badge_json = function(badge_id, data) {
 
 	utils.update_css(this._badge_style, badge_id, utils.badge_css(data));
 }
-
-
-
-// --------------------
-// Legacy Support
-// --------------------
-
-/*FFZ.prototype._legacy_add_donors = function() {
-	// Developer Badge
-	this.badges[0] = {id: 0, title: "FFZ Developer", color: "#FAAF19", image: "//cdn.frankerfacez.com/script/devicon.png", transparent_image: "//cdn.frankerfacez.com/script/devtransicon.png"};
-	utils.update_css(this._badge_style, 0, badge_css(this.badges[0]));
-
-	// Donor Badge
-	this.badges[1] = {id: 1, title: "FFZ Donor", color: "#755000", image: "//cdn.frankerfacez.com/script/devicon.png"};
-	utils.update_css(this._badge_style, 1, badge_css(this.badges[1]));
-
-	// Bot Badge
-	this.badges[2] = {id: 2, title: "Bot", color: "#595959", image: "//cdn.frankerfacez.com/script/boticon.png",
-		replaces: true, replaces_type: "moderator",
-		visible: function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); }};
-
-	utils.update_css(this._badge_style, 2, badge_css(this.badges[2]));
-
-	// Load BTTV Bots
-	for(var i=0; i < FFZ.bttv_known_bots.length; i++) {
-		var name = FFZ.bttv_known_bots[i],
-			user = this.users[name] = this.users[name] || {},
-			badges = user.badges = user.badges || {};
-
-		if ( ! badges[0] )
-			badges[1] = {id:2};
-	}
-
-	// Special Badges
-	this.users.sirstendec = {badges: {5: {id:0}}, sets: [4330]};
-	this.users.zenwan = {badges: {1: {id:2, image: "//cdn.frankerfacez.com/script/momiglee_badge.png", title: "WAN"}}};
-
-	this._legacy_load_bots();
-	this._legacy_load_donors();
-}
-
-FFZ.prototype._legacy_load_bots = function(callback, tries) {
-	jQuery.ajax(constants.SERVER + "script/bots.txt", {context: this})
-		.done(function(data) {
-			this._legacy_parse_badges(callback, data, 1, 2, "Bot (By: {})");
-
-		}).fail(function(data) {
-			if ( data.status == 404 )
-				return typeof callback === "function" && callback(false, 0);
-
-			tries = (tries || 0) + 1;
-			if ( tries < 10 )
-				this._legacy_load_bots(callback, tries);
-		});
-}
-
-FFZ.prototype._legacy_load_donors = function(callback, tries) {
-	jQuery.ajax(constants.SERVER + "script/donors.txt", {context: this})
-		.done(function(data) {
-			this._legacy_parse_badges(callback, data, 5, 1);
-
-		}).fail(function(data) {
-			if ( data.status == 404 )
-				return typeof callback === "function" && callback(false, 0);
-
-			tries = (tries || 0) + 1;
-			if ( tries < 10 )
-				return this._legacy_load_donors(callback, tries);
-		});
-}
-
-
-FFZ.prototype._legacy_parse_badges = function(callback, data, slot, badge_id, title_template) {
-	var title = this.badges[badge_id].title,
-		count = 0,
-		ds = null;
-
-	title_template = title_template || '{}';
-
-	if ( data != null ) {
-		var lines = data.trim().split(/[ \t\n\r]+/);
-		for(var i=0; i < lines.length; i++) {
-			if ( ! /^\w/.test(lines[i]) )
-				continue;
-
-			var line_data = lines[i].split(";"),
-				user_id = line_data[0],
-				user = this.users[user_id] = this.users[user_id] || {},
-				badges = user.badges = user.badges || {},
-				sets = user.sets = user.sets || [];
-
-			if ( ds !== null && sets.indexOf(ds) === -1 )
-				sets.push(ds);
-
-			if ( badges[slot] )
-				continue;
-
-			badges[slot] = {id: badge_id};
-			if ( line_data.length > 1 )
-				badges[slot].title = title_template.replace('{}', line_data[1]);
-			count += 1;
-		}
-	}
-
-	this.log('Added "' + title + '" badge to ' + utils.number_commas(count) + " users.");
-	if ( callback )
-		callback(true, count);
-
-	return count;
-}*/

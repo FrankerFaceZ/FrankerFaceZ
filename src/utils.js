@@ -899,9 +899,30 @@ module.exports = FFZ.utils = {
 
 	badge_css: function(badge, klass) {
 		klass = klass || ('ffz-badge-' + badge.id);
-		var out = ".badges ." + klass + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+		var out = ".badges ." + klass + (badge.no_color ? ":not(.colored)" : "") + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+		if ( ! badge.no_color )
+			out += ".badges ." + klass + ".colored { background: linear-gradient(" + badge.color + "," + badge.color + '); -webkit-mask-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
 		if ( badge.alpha_image )
 			out += ".badges .badge.alpha." + klass + ",.ffz-transparent-badges .badges ." + klass + ' { background-image: url("' + badge.alpha_image + '"); }';
 		return out;
+	},
+
+	cdn_badge_css: function(badge_id, version, data) {
+		var color = data.color,
+			base_image = data.image || ("https://cdn.frankerfacez.com/badges/twitch/" + badge_id + (data.use_svg ? '.svg' : "/" + version + "/")),
+			is_svg = base_image.substr(-4) === '.svg',
+			image_1x = base_image + (is_svg ? '' : "1.png"),
+			image_2x = base_image + (is_svg ? '' : "2.png"),
+			image_4x = base_image + (is_svg ? '' : "4.png");
+
+		return '.badge.' + badge_id + '.version-' + version + (data.no_color ? '' : ':not(.colored)') + ' {' +
+				'background: url("' + image_1x + '") ' + color + ';' +
+				(is_svg ? '}' : 'background-image: -webkit-image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x);' +
+				'background-image: image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x); }') +
+			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + '.colored {' +
+				'background: linear-gradient(' + color + ',' + color + ');' +
+				(is_svg ? '-webkit-mask-size: 18px 18px;mask-size: 18px 18px' : '') +
+				'-webkit-mask-image: url("' + image_1x + '");' +
+				'mask-image: url("' + image_1x + '");}');
 	}
 }

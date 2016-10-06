@@ -42,17 +42,25 @@ FFZ.prototype.setup_menu = function() {
 	document.body.classList.toggle("ffz-menu-replace", this.settings.replace_twitch_menu);
 
 	// Add FFZ to the chat settings menu.
+	this.update_views('component:chat/chat-settings-menu', this.modify_chat_settings_menu);
 
-	this.log("Hooking the Ember Chat Settings view.");
+	// Maximum Menu Height
+	var Layout = utils.ember_lookup('service:layout');
+	if ( Layout )
+		Layout.addObserver('windowHeight', function() {
+			var el = document.querySelector('.ember-chat .chat-settings');
+			if ( el )
+				el.style.maxHeight = (Layout.get('windowHeight') - 90) + 'px';
+		});
 
-	var Settings = utils.ember_resolve('component:chat/chat-settings-menu'),
-		Layout = utils.ember_lookup('service:layout'),
-		f = this;
+}
 
-	if ( ! Settings )
-		return;
 
-	utils.ember_reopen_view(Settings, {
+FFZ.prototype.modify_chat_settings_menu = function(component) {
+	var f = this,
+		Layout = utils.ember_lookup('service:layout');
+
+	utils.ember_reopen_view(component, {
 		ffz_init: function() {
 			var view = this,
 				el = this.get('element');
@@ -134,39 +142,6 @@ FFZ.prototype.setup_menu = function() {
 			}
 		}
 	});
-
-	// Maximum height~!
-	if ( Layout )
-		Layout.addObserver('windowHeight', function() {
-			var el = document.querySelector('.ember-chat .chat-settings');
-			if ( el )
-				el.style.maxHeight = (Layout.get('windowHeight') - 90) + 'px';
-		});
-
-
-	// For some reason, this doesn't work unless we create an instance of the
-	// chat settings view and then destroy it immediately.
-	try {
-		Settings.create().destroy();
-	} catch(err) { }
-
-	// Modify all existing Chat Settings views.
-	var views = utils.ember_views();
-	for(var key in views) {
-		if ( ! views.hasOwnProperty(key) )
-			continue;
-
-		var view = views[key];
-		if ( !(view instanceof Settings) )
-			continue;
-
-		this.log("Manually updating existing Chat Settings view.", view);
-		try {
-			view.ffzInit();
-		} catch(err) {
-			this.error("setup: ChatSettings ffzInit: " + err);
-		}
-	}
 }
 
 
