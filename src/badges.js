@@ -8,6 +8,7 @@ var FFZ = window.FrankerFaceZ,
 	CSS_BADGES = {
 		staff: { 1: { color: "#200f33", use_svg: true } },
 		admin: { 1: { color: "#faaf19", use_svg: true  } },
+		global_mod: { 1: { color: "#0c6f20", use_svg: true } },
 		broadcaster: { 1: { color: "#e71818", use_svg: true } },
 		moderator: { 1: { color: "#34ae0a", use_svg: true } },
 
@@ -50,11 +51,6 @@ var FFZ = window.FrankerFaceZ,
 	BADGE_KLASSES = {
 		'global_mod': 'global-moderator'
 	};
-
-
-CSS_BADGES['global-moderator'] = {
-	1: { color: "#0c6f20", use_svg: true }
-};
 
 
 // --------------------
@@ -301,9 +297,10 @@ FFZ.prototype.setup_badges = function() {
 
 	this.log("Generating CSS for existing Twitch badges.");
 	for(var badge_id in CSS_BADGES) {
-		var badge_data = CSS_BADGES[badge_id];
+		var badge_data = CSS_BADGES[badge_id],
+			klass = BADGE_KLASSES[badge_id] || badge_id;
 		for(var version in badge_data)
-			utils.update_css(s, 'twitch-' + badge_id + '-' + version, utils.cdn_badge_css(badge_id, version, badge_data[version]));
+			utils.update_css(s, 'twitch-' + badge_id + '-' + version, utils.cdn_badge_css(klass, version, badge_data[version]));
 	}
 
 	this.log("Loading badges.");

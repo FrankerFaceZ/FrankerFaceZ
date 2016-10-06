@@ -3287,6 +3287,13 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 /* Odd Badges */
 .badge.click_url { cursor: pointer }
 
+.ffz-dark .badge.staff.version-1.colored,
+.theatre .badge.staff.version-1.colored,
+.dark .badge.staff.version-1.colored,
+.force-dark .badge.staff.version-1.colored {
+	background: linear-gradient(#6441a4,#6441a4);
+}
+
 /*.badge.premium.version-1:not(.colored) {
 	background: url("https://cdn.frankerfacez.com/badges/twitch/premium/1/1.png") #009cdc;
 	background-image: -webkit-image-set(url("https://cdn.frankerfacez.com/badges/twitch/premium/1/1.png") 1x, url("https://cdn.frankerfacez.com/badges/twitch/premium/1/2.png") 2x, url("https://cdn.frankerfacez.com/badges/twitch/premium/1/4.png") 4x);

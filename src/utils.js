@@ -921,7 +921,7 @@ module.exports = FFZ.utils = {
 				'background-image: image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x); }') +
 			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + '.colored {' +
 				'background: linear-gradient(' + color + ',' + color + ');' +
-				(is_svg ? '-webkit-mask-size: 18px 18px;mask-size: 18px 18px' : '') +
+				(is_svg ? '-webkit-mask-size: 18px 18px;mask-size: 18px 18px;' : '') +
 				'-webkit-mask-image: url("' + image_1x + '");' +
 				'mask-image: url("' + image_1x + '");}');
 	}
