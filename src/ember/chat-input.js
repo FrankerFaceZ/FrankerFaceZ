@@ -588,7 +588,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 								set_name = 'Twitch Global';
 							else if ( set_name === '--twitch-turbo--' || set_name === 'turbo' || set_name === '--turbo-faces--' )
 								set_name = 'Twitch Turbo';
-							else if ( set_name === 'prime' || set_name === '--prime-faces--' )
+							else if ( set_name === '--prime--' || set_name === '--prime-faces--' )
 								set_name = 'Twitch Prime';
 							else {
 								set_name = 'Channel: ' + FFZ.get_capitalization(set_name);
