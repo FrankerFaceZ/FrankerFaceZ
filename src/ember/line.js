@@ -661,7 +661,12 @@ FFZ.prototype.setup_line = function() {
 	if ( Line )
 		this._modify_chat_line(Line);*/
 
-	this.log("Hooking the Ember VOD Chat Line component.");
+
+	this.update_views('component:vod-chat-line', this._modify_vod_line);
+	this.update_views('component:chat/message-line', this._modify_chat_subline);
+	this.update_views('component:chat/whisper-line', this._modify_chat_subline);
+
+	/*this.log("Hooking the Ember VOD Chat Line component.");
 	var VOD = utils.ember_resolve('component:vod-chat-line');
 	if ( VOD )
 		this._modify_vod_line(VOD);
@@ -681,7 +686,7 @@ FFZ.prototype.setup_line = function() {
 	if ( WLine )
 		this._modify_chat_subline(WLine);
 	else
-		this.error("Couldn't find the Whisper Line component.");
+		this.error("Couldn't find the Whisper Line component.");*/
 
 
 	// Store the capitalization of our own name.

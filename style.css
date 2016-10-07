@@ -1139,20 +1139,20 @@ body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { border-bottom: none }
 
 .app-main.theatre .chatReplay .chat-messages .chat-line .mod-icons,
 .ffz-dark .chatReplay .chat-messages .chat-line .mod-icons {
-    background-color: rgba(0,0,0,0.8);
+	background-color: rgba(0,0,0,0.8);
 }
 
 .chatReplay .chat-messages .chat-line .mod-icons {
-    position: absolute;
-    z-index: 10;
-    left: 0; top: 2px; bottom: 2px;
-    padding: 4px 5px 4px 4px;
-    background: rgba(255,255,255,0.8);
-    transition: margin-left .08s linear;
+	position: absolute;
+	z-index: 10;
+	left: 0; top: 2px; bottom: 2px;
+	padding: 4px 5px 4px 4px;
+	background: rgba(255,255,255,0.8);
+	transition: margin-left .08s linear;
 }
 
 .chatReplay .chat-messages .chat-line:hover .mod-icons {
-    margin-left: 0;
+	margin-left: 0;
 }
 
 .chatReplay .chat-messages .horizontal-line { margin: 4px 0 }
@@ -1388,6 +1388,7 @@ img.channel_background[src="null"] { display: none; }
 
 .ffz-moderation-card ul.menu + .interface { border-top: none }
 
+.ffz-moderation-card .interface:last-child,
 .ffz-moderation-card .interface:not(:last-of-type) {
 	border-bottom: none;
 }
@@ -1417,6 +1418,11 @@ img.channel_background[src="null"] { display: none; }
 }
 
 .ffz-moderation-card ul.menu span { text-decoration: underline }
+
+.ffz-dark .moderation-card .interface,
+.theatre .moderation-card .interface,
+.dark .moderation-card .interface,
+.force-dark .moderation-card .interface,
 
 .ffz-dark .ffz-moderation-card ul.menu,
 .theatre .ffz-moderation-card ul.menu,
@@ -1519,7 +1525,10 @@ img.channel_background[src="null"] { display: none; }
 
 /* Chat Rows */
 
-.chat-line { overflow: hidden }
+.ember-chat .chat-messages .chat-line {
+	margin: 0;
+	padding: 3px 20px;
+}
 
 .theatre .conversation-window .conversation-chat-line,
 .dark .chat-line,
@@ -1568,7 +1577,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 /* Emoticon Tooltips */
 
 .ffz-wide-tip hr {
-    margin: 5px 0;
+	margin: 5px 0;
 }
 
 .ffz-wide-tip .tipsy-inner {
@@ -3387,20 +3396,19 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	padding: 5px 10px;
 }
 
-.chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons {
+.chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons {
 	display: block !important;
 	position: absolute;
-	top: 2px;
-	bottom: 1px;
-	padding: 4px 5px 0;
+	top: 0; bottom: 0;
+	padding: 3px 5px 0;
 	left: 0;
 	z-index: 99;
 	background-color: rgba(255,255,255,0.8);
 }
 
-.theatre .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons,
-.dark .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons,
-.force-dark .chat-room .show-mod-icons .chat-line:not(.admin) .mod-icons {
+.theatre .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons,
+.dark .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons,
+.force-dark .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons {
 	background-color: rgba(0,0,0,0.8);
 }
 
@@ -3557,3 +3565,22 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 }
 
 .ffz-hide-channel-banner .cn-bar__avatar-wrap { width: 4rem; height: 4rem; }
+
+/* Mod Card Notes */
+
+.ffz-moderation-card .note-input textarea {
+	width: 100%;
+	height: 50px;
+	resize: none;
+	margin-bottom: 10px;
+}
+
+.ffz-moderation-card .mod-icons .delete-note {
+	background-image: url("//cdn.frankerfacez.com/script/button_ban.svg");
+	background-repeat: no-repeat;
+}
+
+.ffz-moderation-card .mod-icons .edit-note {
+	background-image: url("//cdn.frankerfacez.com/script/button_edit.svg");
+	background-repeat: no-repeat;
+}

@@ -10,10 +10,6 @@
 	position: absolute;
 	z-index: -1;
 	left: 0; right: 0;
-	top: 2px; bottom: 1px;
-}
-
-.chat-history .chat-line:before {
 	top: 0; bottom: 0;
 }
 

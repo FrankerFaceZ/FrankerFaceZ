@@ -521,7 +521,7 @@ module.exports = FFZ.utils = {
 	},
 
 	logviewer: {
-		del: function(u,t,i) { return logviewer_call('del', u,t,i) },
+		del: function(u,t,i) { return logviewer_call('delete', u,t,i) },
 		get: function(u,t,i) { return logviewer_call('get', u,t,i) },
 		post: function(u,t,i) { return logviewer_call('post', u,t,i) },
 		put: function(u,t,i) { return logviewer_call('put', u,t,i) },

@@ -301,6 +301,9 @@ FFZ.prototype.load_global_sets = function(callback, tries) {
 				gs.push(key);
 				f._load_set_json(key, undefined, set);
 			}
+
+			f._load_set_users(data.users);
+
 		}).fail(function(data) {
 			if ( data.status == 404 )
 				return typeof callback == "function" && callback(false);
@@ -315,11 +318,33 @@ FFZ.prototype.load_global_sets = function(callback, tries) {
 }
 
 
+FFZ.prototype._load_set_users = function(data) {
+	if ( data )
+		for(var set_id in data)
+			if ( data.hasOwnProperty(set_id) ) {
+				var emote_set = this.emote_sets[set_id],
+					users = data[set_id];
+
+				for(var i=0; i < users.length; i++) {
+					var user = users[i],
+						ud = this.users[user] = this.users[user] || {},
+						sets = ud.sets = ud.sets || [];
+
+					if ( sets.indexOf(set_id) === -1 )
+						sets.push(set_id);
+				}
+
+				this.log('Added "' + (emote_set ? emote_set.title : set_id) + '" emote set to ' + utils.number_commas(users.length) + ' users.');
+			}
+}
+
+
 FFZ.prototype.load_set = function(set_id, callback, tries) {
 	var f = this;
 	jQuery.getJSON(constants.API_SERVER + "v1/set/" + set_id)
 		.done(function(data) {
 			f._load_set_json(set_id, callback, data && data.set);
+			f._load_set_users(data.users);
 
 		}).fail(function(data) {
 			if ( data.status == 404 )

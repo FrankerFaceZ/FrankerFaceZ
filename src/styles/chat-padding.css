@@ -5,7 +5,7 @@
 .conversation-window .conversation-system-messages,
 .conversation-window .conversation-chat-line,
 .conversation-window .timestamp-line {
-	padding: 5px;
+	padding: 3px 5px;
 }
 
 

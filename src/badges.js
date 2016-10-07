@@ -492,19 +492,20 @@ FFZ.prototype.render_badges = function(badges) {
 	for(var key in badges) {
 		var badge = badges[key],
 			klass = badge.klass,
-			css = '';
+			css = '',
+			is_colored = !(badge.no_color !== undefined ? badge.no_color : badge.transparent);
 
 		if ( badge.image )
-			if ( setting === 6 )
+			if ( is_colored && setting === 6 )
 				css += '-webkit-mask-image:url("' + utils.quote_attr(badge.image) + '");';
 			else
 				css += 'background-image:url("' + utils.quote_attr(badge.image) + '");';
 
-		if ( badge.srcSet && setting !== 6 )
+		if ( badge.srcSet && (setting !== 6 || !is_colored) )
 			css += 'background-image:-webkit-image-set(' + badge.srcSet + ');background-image:image-set(' + badge.srcSet + ');'
 
 		if ( badge.color )
-			if ( setting === 6 )
+			if ( is_colored && setting === 6 )
 				css += 'background: linear-gradient(' + badge.color + ',' + badge.color + ');';
 			else
 				css += 'background-color:' + badge.color + ';'
@@ -521,7 +522,7 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.invert_invert )
 			klass += ' invert-invert';
 
-		if ( ! badge.no_color && setting === 6 )
+		if ( is_colored && setting === 6 )
 			klass += ' colored';
 
 		if ( badge.transparent )

@@ -83,6 +83,8 @@ FFZ.prototype.modify_chat_settings_menu = function(component) {
 
 			cb.addEventListener("change", function(e) {
 				f.settings.set("dark_twitch", this.checked);
+				if ( this.checked )
+					f.settings.set("dark_no_blue", true);
 			});
 
 
@@ -580,7 +582,8 @@ FFZ.menu_pages.channel = {
 						var last_content = tickets.get("content");
 						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
 						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
-							var ends_at = utils.parse_date(last_content.access_end || "");
+							var ends_at = utils.parse_date(last_content.access_end || ""),
+								provider = last_content.purchase_profile && last_content.purchase_profile.payment_provider,
 								sub_message = document.createElement("div"),
 								nonsub_message = document.createElement("div"),
 								unlock_text = document.createElement("span"),
@@ -593,6 +596,10 @@ FFZ.menu_pages.channel = {
 
 							unlock_text.className = "unlock-text";
 							unlock_text.innerHTML = "Subscription expires in " + utils.time_to_string(end_time, true, true);
+
+							if ( provider === "samus" )
+								unlock_text.innerHTML += '<br>(Twitch Prime Free Sub)';
+
 							nonsub_message.appendChild(unlock_text);
 							inner.appendChild(sub_message);
 						}
