@@ -315,7 +315,7 @@ FFZ.prototype.format_display_name = function(display_name, user_id, disable_alia
 		display_name = utils.sanitize(display_name || (user_id && user_id.capitalize()));
 
 		if ( ! disable_intl && setting === 3 && ! name_matches )
-			display_name += disable_html ? '(' + user_id + ')' : ' <span class="intl-login">(' + user_id + ')</span>';
+			display_name += disable_html ? ' (' + user_id + ')' : ' <span class="intl-login">(' + user_id + ')</span>';
 
 		else if ( ((disable_intl && setting === 3) || setting === 4) && ! name_matches )
 			tooltip = user_id;
@@ -455,6 +455,9 @@ FFZ.prototype.render_tooltip = function(el) {
 						set_type = null;
 					} else if ( emote_set === "--twitch-turbo--" || emote_set === "turbo" || emote_set === "--turbo-faces--" ) {
 						emote_set = "Twitch Turbo";
+						set_type = null;
+					} else if ( emote_set === '--prime--' || emote_set === '--prime-faces--' ) {
+						emote_set = "Twitch Prime";
 						set_type = null;
 					}
 

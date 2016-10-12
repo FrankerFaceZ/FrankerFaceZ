@@ -218,10 +218,19 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 				old_topics = this.chatTopics;
 
 			for(var i=0; i < old_topics.length; i++) {
+				var topic = old_topics[i];
+				// Try stupid stuff to remove duplicate events.
+				if ( topic.substr(0, 23) === 'chat_moderator_actions.' )
+					ps.Unlisten({
+						topic: topic.split('.', 2).join('.'),
+						success: function() {},
+						failure: function() {}
+					});
+
 				ps.Unlisten({
-					topic: old_topics[i],
+					topic: topic,
 					success: function() {},
-					failure: function(t) { f.log("[PubSub] Failed to unlisten to topic: " + old_topics[i], t); }
+					failure: function(topic, t) { f.log("[PubSub] Failed to unlisten to topic: " +topic, t); }.bind(this, topic)
 				});
 				this.chatTopics.removeObject(old_topics[i]);
 			}
@@ -257,18 +266,27 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 			token = user.chat_oauth_token;
 
 		for(var i=0; i < pubsub.chatTopics.length; i++) {
+			var topic = pubsub.chatTopics[i];
+			// Try stupid stuff to remove duplicate events.
+			if ( topic.substr(0, 23) === 'chat_moderator_actions.' )
+				ps.Unlisten({
+					topic: topic.split('.', 2).join('.'),
+					success: function() {},
+					failure: function() {}
+				});
+
 			ps.Unlisten({
-				topic: pubsub.chatTopics[i],
+				topic: topic,
 				success: function() {},
-				failure: function(t) { f.log("[PubSub] Failed to unlisten to topic: " + old_topics[i], t); }
+				failure: function(topic, t) { f.log("[PubSub] Failed to unlisten to topic: " + topic, t); }.bind(this, topic)
 			});
 
 			ps.Listen({
-				topic: pubsub.chatTopics[i],
+				topic: topic,
 				auth: token,
 				success: function() {},
-				failure: function(t) { f.log("[PubSub] Failed to listen to topic: " + new_topics[i], t); },
-				message: Ember.run.bind(pubsub, pubsub._onPubsubMessage, pubsub.chatTopics[i])
+				failure: function(topic, t) { f.log("[PubSub] Failed to listen to topic: " + topic, t); }.bind(this, topic),
+				message: Ember.run.bind(pubsub, pubsub._onPubsubMessage, topic)
 			});
 		}
 	});
@@ -1604,30 +1622,6 @@ FFZ.prototype._modify_room = function(room) {
 			}
 		},
 
-		/*trimMessages: function() {
-			var messages = this.get("messages"),
-				len = messages.get("length"),
-				limit = this.get("messageBufferSize");
-
-			if ( len > limit ) {
-				var to_remove = len - limit;
-				for(var i = 0; i < to_remove; i++) {
-					// Remove this message from the ID tracker.
-					var msg = messages.get(i),
-						msg_id = msg.tags && msg.tags.id,
-						notice_type = msg.tags && msg.tags['msg-id'];
-
-					if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
-						delete this.ffz_ids[msg_id];
-
-					if ( notice_type && this.ffz_last_notices && this.ffz_last_notices[notice_type] === msg )
-						delete this.ffz_last_notices[notice_type];
-				}
-
-				messages.removeAt(0, to_remove);
-			}
-		},*/
-
 		// Artificial chat delay
 		ffz_chat_delay: function() {
 			var val = f.settings.chat_delay;
@@ -1682,9 +1676,11 @@ FFZ.prototype._modify_room = function(room) {
 				return;
 
 			var room_messages = this.get("messages"),
-				trimmed = room_messages.length + new_messages.length > this.messageBufferSize ?
-					room_messages.slice(Math.max(0, (room_messages.length - this.messageBufferSize)) + new_messages.length, room_messages.length) :
-					room_messages.slice(0, room_messages.length);
+				raw_remove = room_messages.length + new_messages.length > this.messageBufferSize ?
+					Math.max(0, room_messages.length - this.messageBufferSize) + new_messages.length : 0,
+
+				to_remove = raw_remove - raw_remove % 2,
+				trimmed = room_messages.slice(to_remove, room_messages.length);
 
 			var earliest_message;
 			for(var i=0; i < trimmed.length; i++)
@@ -1725,23 +1721,6 @@ FFZ.prototype._modify_room = function(room) {
 				this.ffz_last_activity  = Date.now();
 			}
 		},
-
-		/*ffzActualPushMessage: function (msg) {
-			if ( this.shouldShowMessage(msg) && this.ffzShouldShowMessage(msg) ) {
-				this.get("messages").pushObject(msg);
-				this.trimMessages();
-				Ember.propertyDidChange(this, "messages");
-
-				if ( msg.style !== "admin" && msg.style !== "whisper" ) {
-					if ( msg.ffz_has_mention ) {
-						this.ffz_last_mention = Date.now();
-					}
-
-					this.ffz_last_activity = Date.now();
-					this.incrementProperty("unreadCount", 1);
-				}
-			}
-		},*/
 
 		ffzSchedulePendingFlush: function(now) {
 			// Instead of just blindly looping every x seconds, we want to calculate the time until

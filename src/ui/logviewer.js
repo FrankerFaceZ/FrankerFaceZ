@@ -593,7 +593,7 @@ FFZ.mod_card_pages.notes = {
 
 		var output = this._build_mod_card_history(message, mod_card, true, false, can_mod);
 
-		/*if ( can_mod ) {
+		if ( can_mod ) {
 			var mod_icons = output.querySelector('.mod-icons');
 			if ( can_delete ) {
 				var btn_delete = utils.createElement('a', 'mod-icon html-tooltip delete-note', 'Delete');
@@ -633,8 +633,8 @@ FFZ.mod_card_pages.notes = {
 				var btn_edit = utils.createElement('a', 'mod-icon html-tooltip edit-note', 'Edit');
 				btn_edit.title = 'Edit Note';
 				mod_icons.appendChild(btn_edit);
-			}*
-		}*/
+			}*/
+		}
 
 		return output;
 	},

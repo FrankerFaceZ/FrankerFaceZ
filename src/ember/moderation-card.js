@@ -840,9 +840,11 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			this.lv_delete_notes = level >= channel.deletecomments;
 
 			var el = this.get('element');
-			el.classList.toggle('lv-notes', this.lv_view_notes);
-			el.classList.toggle('lv-logs', this.lv_view);
-			el.classList.toggle('lv-tabs', this.lv_view || this.lv_view_notes);
+			if ( el ) {
+				el.classList.toggle('lv-notes', this.lv_view_notes);
+				el.classList.toggle('lv-logs', this.lv_view);
+				el.classList.toggle('lv-tabs', this.lv_view || this.lv_view_notes);
+			}
 		},
 
 		ffz_destroy: function() {

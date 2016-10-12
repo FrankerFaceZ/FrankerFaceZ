@@ -32,6 +32,10 @@ FFZ.prototype.setup_channel = function() {
 	this.update_views('component:channel-redesign', this.modify_channel_redesign);
 	this.update_views('component:channel-redesign/live', this.modify_channel_live);
 
+	this.update_views('component:share-box',  this.modify_channel_share_box);
+	this.update_views('component:channel-options', this.modify_channel_options);
+	this.update_views('component:edit-broadcast-link', this.modify_channel_broadcast_link);
+
 	/*this.log("Hooking the Ember Channel Index component.");
 	if ( ! this.update_views('component:legacy-channel', this.modify_channel_index) )
 		return;*/
@@ -159,6 +163,30 @@ FFZ.prototype.setup_channel = function() {
 	Channel.ffzUpdateInfo();
 }
 
+FFZ.prototype.modify_channel_share_box = function(view) {
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
+			this.get('element').classList.toggle('ffz-share-box', true)
+		}
+	});
+}
+
+FFZ.prototype.modify_channel_options = function(view) {
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
+			this.get('element').classList.toggle('ffz-channel-options', true)
+		}
+	});
+}
+
+FFZ.prototype.modify_channel_broadcast_link = function(view) {
+	utils.ember_reopen_view(view, {
+		ffz_init: function() {
+			this.get('element').classList.toggle('ffz-channel-broadcast-link', true)
+		}
+	});
+}
+
 
 FFZ.prototype.modify_channel_live = function(view) {
 	var f = this;
@@ -180,9 +208,20 @@ FFZ.prototype.modify_channel_live = function(view) {
 			this.ffzUpdatePlayerStats();
 
 			if ( f.settings.auto_theater ) {
-				var player = f.players && f.players[channel_id] && f.players[channel_id].get('player');
+				var layout = this.get('layout'),
+					player = f.players && f.players[channel_id] && f.players[channel_id].get('player'),
+					func = function() {
+						if ( player.isLoading() )
+							return setTimeout(func, 500);
+
+						// In case this happens before the event bindings are in, we just set
+						// the layout into theater mode manually.
+						player.setTheatre(true);
+						layout.setTheatreMode(true);
+					}
+
 				if ( player )
-					player.setTheatre(true);
+					func();
 			}
 
 			this.$().on("click", ".ffz-creative-tag-link", function(e) {
@@ -288,22 +327,13 @@ FFZ.prototype.modify_channel_live = function(view) {
 
 				var stat = utils.createElement('span'),
 					figure = utils.createElement('figure', 'icon cn-metabar__icon', constants.CLOCK + ' '),
-					balloon = utils.createElement('div', 'balloon balloon--tooltip balloon--down balloon--center'),
-					balloon_wrapper = utils.createElement('div', 'balloon-wrapper', figure),
-					stat_wrapper = utils.createElement('div', 'cn-metabar__ffz flex__item mg-l-1', balloon_wrapper);
+					stat_wrapper = utils.createElement('div', 'cn-metabar__ffz html-tooltip flex__item', figure);
 
-				balloon_wrapper.appendChild(stat);
-				balloon_wrapper.appendChild(balloon);
-
+				stat_wrapper.appendChild(stat);
 				stat_wrapper.id = 'ffz-uptime-display';
-				balloon.innerHTML = 'Stream Uptime <nobr>(since ' + online.toLocaleString() + ')</nobr>';
+				stat_wrapper.title = 'Stream Uptime <nobr>(since ' + online.toLocaleString() + ')</nobr>';
 
-				var viewers = cont.querySelector(".cn-metabar__livecount");
-				if ( viewers )
-					cont.insertBefore(stat_wrapper, viewers.nextSibling);
-				else
-					cont.appendChild(stat_wrapper);
-
+				cont.appendChild(stat_wrapper);
 				el = stat;
 			}
 
@@ -337,35 +367,37 @@ FFZ.prototype.modify_channel_live = function(view) {
 			if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster )
 				return container && this.$("#ffz-player-stats").remove();
 
-			var el = container.querySelector("#ffz-player-stats");
+			var je, el = container.querySelector("#ffz-player-stats");
 			if ( ! el ) {
 				var cont = container.querySelector('.cn-metabar__more');
 				if ( ! cont )
 					return;
 
 				var stat = utils.createElement('span'),
-					figure = utils.createElement('figure', 'icon cn-metabar__icon', constants.GRAPH + ' '),
-					balloon = utils.createElement('div', 'balloon balloon--tooltip balloon--up balloon--center'),
-					balloon_wrapper = utils.createElement('div', 'balloon-wrapper', figure);
+					figure = utils.createElement('figure', 'icon cn-metabar__icon', constants.GRAPH + ' ');
 
-				el = utils.createElement('div', 'cn-metabar__ffz flex__item mg-l-1', balloon_wrapper);
-
-				balloon_wrapper.appendChild(stat);
-				balloon_wrapper.appendChild(balloon);
-
+				el = utils.createElement('div', 'cn-metabar__ffz flex__item', figure);
 				el.id = 'ffz-player-stats';
+				el.appendChild(stat);
 
-				var viewers = cont.querySelector('#ffz-uptime-display') || cont.querySelector(".cn-metabar__livecount");
-				if ( viewers )
-					cont.insertBefore(el, viewers.nextSibling);
-				else
-					cont.appendChild(el);
-			}
+				je = jQuery(el);
+				je.hover(
+						function() { je.data("hover", true).tipsy("show") },
+						function() { je.data("hover", false).tipsy("hide") })
+					.data("hover", false)
+					.tipsy({
+						trigger: 'manual',
+						html: true,
+						gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')
+					});
+
+				cont.appendChild(el);
+			} else
+				je = jQuery(el)
 
 			var stat = el.querySelector('span'),
-				balloon = el.querySelector('.balloon');
 
-			var delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
+				delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
 				dropped = utils.number_commas(stats.dropped_frames || 0),
 				bitrate;
 
@@ -385,11 +417,14 @@ FFZ.prototype.modify_channel_live = function(view) {
 				stat.textContent = delay;
 			}
 
-			balloon.innerHTML = (is_old ? 'Video Information<br>' +
+			el.setAttribute('original-title', (is_old ? 'Video Information<br>' +
 					'Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>' : 'Stream Latency<br>') +
 					'Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p ' + stats.current_fps + ' fps<br>' +
 					'Playback Rate: ' + bitrate + ' Kbps<br>' +
-					'Dropped Frames: ' + dropped;
+					'Dropped Frames: ' + dropped);
+
+			if ( je.data("hover") )
+				je.tipsy("hide").tipsy("show");
 		},
 
 		ffzUpdateChatters: function() {
@@ -521,7 +556,9 @@ FFZ.prototype.modify_channel_live = function(view) {
 
 
 FFZ.prototype.modify_channel_redesign = function(view) {
-	var f = this;
+	var f = this,
+		Layout = utils.ember_lookup('service:layout');
+
 	utils.ember_reopen_view(view, {
 		ffz_init: function() {
 			// Twitch y u make me do dis
@@ -549,6 +586,12 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 
 			if ( f._credesign === this )
 				f._credesign = null;
+		},
+
+		handleScroll: function(top) {
+			this._super();
+			var height = Layout.get('playerSize.1');
+			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= (height * .8));
 		},
 
 		ffzUpdateCoverHeight: function() {

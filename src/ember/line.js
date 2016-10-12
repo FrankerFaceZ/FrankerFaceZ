@@ -961,6 +961,11 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			this.ffzRender();
 		},
 
+		ffz_update: function() {
+			this.set('msgObject._line', this);
+			this.ffzRender();
+		},
+
 		willClearRender: function() {
 			this.set('msgObject._line', null);
 		},

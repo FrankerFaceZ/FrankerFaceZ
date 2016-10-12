@@ -1,3 +1,16 @@
+<div class="list-header">3.5.320 <time datetime="2016-10-03">(2016-10-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Automatic theater mode should hopefully be working for everyone now.</li>
+	<li>Fixed: Don't scroll down when exiting fullscreen with the player.</li>
+	<li>Fixed: Channel metadata order is set via CSS so it should <em>always</em> work consistently.</li>
+	<li>Fixed: Use normal tooltips for FFZ-added channel metadata to ensure they're positioned well.</li>
+	<li>Fixed: Delete chat messages in batches of 2 to prevent message background colors from jumping.</li>
+	<li>Fixed: Format localized display names correctly in whisper conversations.</li>
+	<li>Fixed: The navigation controller has changed into a navigation service. Likewise, there's now a component rather than a view. This broke a couple sidebar features.</li>
+	<li>Fixed: Twitch Prime emotes would display <code>--prime--</code> in FFZ's emote tooltips.</li>
+	<li>Removed: Automatically pausing the player when a host starts is not currently possible due to how the player reacts to a `setChannel` event. There is no way to prevent it from playing without glitching out.</li>
+</ul>
+
 <div class="list-header">3.5.319 <time datetime="2016-10-03">(2016-10-07)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Load emote set &lt;-&gt; user mappings from the API.</li>

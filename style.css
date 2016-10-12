@@ -1525,6 +1525,11 @@ img.channel_background[src="null"] { display: none; }
 
 /* Chat Rows */
 
+.conversation-window .conversation-chat-line {
+	margin: 0;
+	padding: 3px 10px;
+}
+
 .ember-chat .chat-messages .chat-line {
 	margin: 0;
 	padding: 3px 20px;
@@ -3529,9 +3534,8 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	padding-top: 80px;
 }
 
-.ffz-minimal-channel-title.ffz-channel-title-top #channel {
-	padding-top: 50px;
-}
+.ffz-hide-channel-banner .cn-cover { height: 0 !important }
+.ffz-minimal-channel-title.ffz-channel-title-top #channel { padding-top: 50px }
 
 .ffz-channel-title-top .cn-metabar__title {
 	position: absolute;
@@ -3542,18 +3546,15 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	margin-top: 50px;
 }
 
-.ffz-channel-title-top .cn-metabar__more > div { order: 999; }
-.ffz-channel-title-top .cn-metabar__more > span:last-of-type { flex-grow: 1 }
-.ffz-channel-title-top .cn-metabar__more > span:last-of-type > div { float: left }
-.ffz-channel-title-top .cn-metabar__more > div:last-of-type { margin-right: 0 !important }
-.ffz-channel-title-top .cn-metabar__more > div + button:first-of-type,
-.ffz-channel-title-top .cn-metabar__more > div + span:first-of-type button.mg-l-1 { margin-left: 0 !important }
-.ffz-channel-title-top .cn-metabar__viewcount { flex-grow: 0 !important; }
-
 .ffz-minimal-channel-bar .cn-bar-fixed {
 	top: -40px;
 	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 }
+
+body:not(.ffz-channel-bar-bottom).ffz-small-player #player .dynamic-player { margin-top: 50px }
+body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #player .dynamic-player { margin-top: 10px }
+
+.cn-bar-fixed { z-index: 100 }
 
 .ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed { top: auto; bottom: -40px }
@@ -3565,6 +3566,36 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 }
 
 .ffz-hide-channel-banner .cn-bar__avatar-wrap { width: 4rem; height: 4rem; }
+
+/* Channel Metadata Sorting */
+
+.cn-metabar__more > * {
+	margin: 0 1rem 0 0 !important;
+	order: 49;
+}
+
+.cn-metabar__more > span { order: 150 }
+
+.cn-metabar__more:after {
+	content: '';
+	order: 75;
+	flex-grow: 1;
+}
+
+.ffz-channel-options .qa-channel-options,
+.ffz-share-box .qa-share-box__button { margin: 0 !important }
+
+.cn-metabar__more > .cn-metabar__livecount { order: 1 }
+.cn-metabar__more > #ffz-uptime-display { order: 2 }
+.cn-metabar__more > #ffz-player-stats { order: 3 }
+.cn-metabar__more > .cn-metabar__viewcount { order: 50; flex-grow: 0 !important }
+.cn-metabar__more > #ffz-chatter-display { order: 51 }
+
+.cn-metabar__more > #ffz-ui-host-button { order: 98 }
+.cn-metabar__more > .ffz-channel-broadcast-link { order: 100 }
+.cn-metabar__more > .ffz-share-box { order: 101 }
+.cn-metabar__more > .ffz-channel-options { order: 999; margin-right: 0 !important }
+
 
 /* Mod Card Notes */
 

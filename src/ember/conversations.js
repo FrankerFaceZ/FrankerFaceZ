@@ -228,23 +228,32 @@ FFZ.prototype.modify_conversation_line = function(component) {
 			var el = this.get('element'),
 				e = [],
 
-				user = this.get('message.from.username'),
+				username = this.get('message.from.username').toLowerCase(),
+				raw_display = this.get('message.from.displayName'),
+				alias = f.aliases[username],
+
 				raw_color = this.get('message.from.color'),
-				colors = raw_color && f._handle_color(raw_color),
 
 				is_dark = (Layout && Layout.get('isTheatreMode')) || f.settings.dark_twitch,
+				colors = raw_color && f._handle_color(raw_color),
+
+				style = colors ? 'color:' + (is_dark ? colors[1] : colors[0]) : '',
+				colored = colors ? ' has-color' : '',
+
+				results = f.format_display_name(raw_display, username),
+
 				myself = f.get_user(),
-				from_me = myself && myself.login === user,
+				from_me = myself && myself.login === username;
 
-				alias = f.aliases[user],
-				name = this.get('message.from.displayName') || (user && user.capitalize()) || "unknown user",
-				style = colors && 'color:' + (is_dark ? colors[1] : colors[0]),
-				colored = style ? ' has-color' : '';
 
-			if ( alias )
-				e.push('<span class="from ffz-alias html-tooltip' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '" title="' + utils.quote_san(name) + '">' + utils.sanitize(alias) + '</span>');
-			else
-				e.push('<span class="from' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' + utils.sanitize(name) + '</span>');
+			e.push('<span class="from' +
+						(alias ? ' ffz-alias' : '') +
+						(results[1] ? ' html-tooltip' : '') +
+						colored +
+					'" style="' + style + '"' +
+					(colors ? ' data-color="' + raw_color + '"' : '') +
+					(results[1] ? ' title="' + utils.quote_attr(results[1]) + '"' : '') +
+				'>' + results[0] + '</span>');
 
 			e.push('<span class="colon">:</span> ');
 

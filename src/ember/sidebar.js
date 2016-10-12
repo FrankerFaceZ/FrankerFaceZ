@@ -228,18 +228,17 @@ FFZ.prototype.setup_sidebar = function() {
 		this.error("Unable to load the Ember games-following controller.", null);
 
 
-	// Navigation Controller
-	var NavController = utils.ember_lookup('controller:navigation');
-	if ( NavController ) {
+	// Navigation Component
+	this.update_views('component:twitch-navigation', this.modify_navigation);
+
+	// Navigation Service
+	var NavService = utils.ember_lookup('service:navigation');
+	if ( NavService ) {
 		// Open Drawer by Default
 		if ( this.settings.sidebar_start_open )
-			NavController.set('isDrawerOpen', true);
-
+			NavService.set('isDrawerOpen', true);
 	} else
-		this.error("Unable to load the Ember navigation controller.", null);
-
-	if ( this._views_to_update )
-		this.update_views('view:navigation', this.modify_navigation, true);
+		this.error("Unable to load the Ember Navigation service.")
 }
 
 
