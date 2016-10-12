@@ -222,7 +222,7 @@ FFZ.prototype.setup_layout = function() {
 				height = size[1],
 				host_height = size[2];
 
-			return "<style>.app-main:not(.theatre) #player,.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .cn-hosted .dynamic-target-player,.cn-hosted .dynamic-target-player object,.app-main:not(.theatre) .cn-hosted #player, .cn-hosted .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
+			return "<style>body[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) #player,.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .cn-hosted .dynamic-target-player,.cn-hosted .dynamic-target-player object,body[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) .cn-hosted #player, .cn-hosted .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
 		}.property("playerSize"),
 
 		ffzPortraitWarning: function() {

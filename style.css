@@ -3554,8 +3554,6 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 body:not(.ffz-channel-bar-bottom).ffz-small-player #player .dynamic-player { margin-top: 50px }
 body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #player .dynamic-player { margin-top: 10px }
 
-.cn-bar-fixed { z-index: 100 }
-
 .ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed { top: auto; bottom: -40px }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed:hover { bottom: 0 }
