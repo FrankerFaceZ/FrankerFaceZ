@@ -590,7 +590,7 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 
 		handleScroll: function(top) {
 			this._super();
-			var height = Layout.get('playerSize.1');
+			var height = this.get('channelCoverHeight') + Layout.get('playerSize.1');
 			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= (height * .8));
 		},
 

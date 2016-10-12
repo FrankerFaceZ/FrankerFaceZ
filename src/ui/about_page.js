@@ -52,6 +52,260 @@ FFZ.ws_commands.update_news = function(version) {
 // About Page
 // -------------------
 
+FFZ.debugging_blocks = {
+	version: {
+		order: 1,
+		title: "Version Breakdown",
+		refresh: false,
+		type: "list",
+
+		render: function() {
+			var output = [
+				['Ember', Ember.VERSION],
+				['Ember Data', window.DS && DS.VERSION || '<i>unknown</i>'],
+				['GIT Version', EmberENV.GIT_VERSION],
+				null,
+				['FrankerFaceZ', FFZ.version_info.toString()]
+			];
+
+			if ( this.has_bttv )
+				output.push(['BetterTTV', BetterTTV.info.version + 'r' + BetterTTV.info.release]);
+
+			if ( Object.keys(this._apis).length ) {
+				output.push(null);
+				for(var key in this._apis) {
+					var api = this._apis[key];
+					output.push(['<b>Ext #' + api.id + '.</b> ' + api.name, api.version || '<i>unknown</i>']);
+				}
+			}
+
+			return output;
+		}
+	},
+
+	socket: {
+		order: 2,
+		title: "WS Client Status",
+		refresh: 5000,
+		type: "list",
+
+		render: function() {
+			this.ws_ping(true);
+
+			var last_ping = this._ws_last_ping;
+			if ( typeof last_ping === "number" )
+				last_ping = (Math.floor(last_ping * 1000) / 1000) + 'ms';
+
+			var offset = this._ws_sock && this._ws_server_offset && (Math.floor(this._ws_server_offset) / 1000);
+			if ( typeof offset === "number" )
+				offset = (offset < 0 ? '-' : '') + utils.time_to_string(Math.abs(offset));
+
+			return [
+				['Client ID', localStorage.ffzClientId || '<i>not set</i>'],
+				['Socket Server', this._ws_sock && this._ws_sock.url || '<i>disconnected</i>'],
+				['Server Ping', last_ping || '<i>unknown</i>'],
+				['Time Offset', offset || '<i>unknown</i>']
+			]
+		}
+	},
+
+	logviewer: {
+		order: 3,
+		title: "Logviewer Status",
+		refresh: true,
+		type: "list",
+
+		render: function() {
+			var f = this,
+				chat = utils.ember_lookup('controller:chat'),
+				room_id = chat && chat.get('currentRoom.id'),
+				ffz_room = room_id && this.rooms[room_id];
+
+			return new Promise(function(succeed, fail) {
+				f.lv_get_token().then(function(token) {
+					var output = [
+						['Authentication', '<i>succeeded</i>'],
+						['Token Expires', new Date(f._lv_token.expires * 1000).toLocaleString()],
+						['Socket Server', f._lv_ws_sock && f._lv_ws_sock.url || '<i>disconnected</i>'],
+						['Socket Topics', f._lv_ws_topics && _.map(f._lv_ws_topics, function(x) { return '<code>' + x + '</code>' }).join(', ') || '<i>no topics</i>']
+					];
+
+					if ( ! ffz_room ) {
+						output.push(['Current Room', '<i>none</i>']);
+						return succeed(output);
+					}
+
+					output.push(['Current Room', room_id]);
+
+					if ( ! ffz_room.logviewer_levels ) {
+						output.push(['Logging Enabled', '<i>loading</i>']);
+
+						utils.logviewer.get('channel/' + room_id, token)
+								.then(utils.json).then(function(result) {
+							f.log("[LV] Channel Info: " + room_id, result);
+							ffz_room.logviewer_levels = result;
+						});
+
+						return succeed(output);
+					}
+
+					var data = ffz_room.logviewer_levels;
+
+					if ( ! data.channel ) {
+						output.push(['Logging Enabled', false]);
+						return succeed(output);
+					}
+
+					output.push(['Logging Enabled', data.channel.active === 1]);
+					output.push(['User Level', data.me.valid ? data.me.level : '<i>invalid</i>']);
+					output.push(['Level: View Logs', data.channel.viewlogs]);
+					output.push(['Level: View Moderation Logs', data.channel.viewmodlogs]);
+					output.push(['Level: View Comments', data.channel.viewcomments]);
+					output.push(['Level: Write Comments', data.channel.writecomments]);
+					output.push(['Level: Delete Comments', data.channel.deletecomments]);
+
+					succeed(output);
+
+				}).catch(function(err) {
+					succeed(['Authentication', '<i>unable to get token</i>']);
+				});
+			});
+		}
+	},
+
+	twitch: {
+		order: 4,
+		title: "Twitch Configuration",
+		refresh: false,
+		type: "list",
+
+		render: function() {
+			var user = this.get_user(),
+				output = [ ['Deploy Flavor', SiteOptions.deploy_flavor] ];
+
+			if ( user && user.login ) {
+				output.push(['Current User', user.login + ' [' + user.id + ']']);
+				var us = [];
+
+				user.is_staff && us.push('staff');
+				user.is_admin && us.push('admin');
+				user.is_partner && us.push('partner');
+				user.is_broadcaster && us.push('broadcaster');
+				user.has_premium && us.push('premium');
+				user.has_turbo && us.push('turbo');
+				user.account_verified && us.push('verified');
+
+				output.push(['User State', us.join(', ') || '<i>none</i>']);
+			} else
+				output.push(['Current User', '<i>not logged in</i>']);
+
+			if ( window.Twitch && Twitch.geo && Twitch.geo._result ) {
+				var data = Twitch.geo._result;
+				if ( data.geo )
+					output.push(['Region', data.geo + (data.eu ? ' [EU]' : '')]);
+
+				if ( data.received_language )
+					output.push(['Received Language', data.received_language]);
+			}
+
+			return output;
+		}
+	},
+
+	experiments: {
+		order: 5,
+		title: "Twitch Experiments",
+		refresh: false,
+		type: "list",
+
+		render: function() {
+			var exp_service = utils.ember_lookup('service:experiments'),
+				output = [];
+
+			if ( exp_service ) {
+				for(var key in exp_service.values) {
+					if ( ! exp_service.values.hasOwnProperty(key) )
+						continue;
+
+					output.push([key, exp_service.values[key]]);
+				}
+			}
+
+			return output;
+		}
+	},
+
+	memory: {
+		order: 6,
+		title: "Memory Statistics",
+		refresh: true,
+		type: "list",
+
+		visible: function() { return window.performance && performance.memory },
+
+		render: function() {
+			var mem = performance.memory;
+			return [
+				['jsHeapSizeLimit', utils.format_size(mem.jsHeapSizeLimit) + ' (' + mem.jsHeapSizeLimit + ')'],
+				['totalJSHeapSize', utils.format_size(mem.totalJSHeapSize) + ' (' + mem.totalJSHeapSize + ')'],
+				['usedJSHeapSize',  utils.format_size(mem.usedJSHeapSize)  + ' (' + mem.usedJSHeapSize  + ')']
+			]
+		}
+	},
+
+	player: {
+		order: 7,
+		title: "Player Statistics",
+		refresh: true,
+		type: "list",
+
+		get_player: function() {
+			for(var key in this.players)
+				if ( this.players[key] && ! this.players[key].isDestroyed && this.players[key].player )
+					return this.players[key].player;
+		},
+
+		visible: function() { return FFZ.debugging_blocks.player.get_player.call(this) },
+
+		render: function() {
+			var player = FFZ.debugging_blocks.player.get_player.call(this),
+				data;
+
+			try {
+				data = player.getVideoInfo();
+			} catch(err) {}
+
+			if ( ! data )
+				return [];
+
+			try {
+				data.backend = player.getBackend();
+				data.version = player.getVersion();
+			} catch(err) {}
+
+			var sorted_keys = Object.keys(data).sort(),
+				output = [];
+
+			for(var i=0; i < sorted_keys.length; i++)
+				output.push([sorted_keys[i], data[sorted_keys[i]]]);
+
+			return output;
+		}
+	},
+
+	logs: {
+		order: 100,
+		title: "Logs",
+		refresh: false,
+		type: "text",
+
+		render: function() {
+			return this._log_data.join("\n");
+		}
+	}
+}
+
+
 var include_html = function(heading_text, filename, callback) {
 		return function(view, container) {
 			var heading = createElement('div', 'chat-menu-content center');
@@ -79,76 +333,6 @@ var include_html = function(heading_text, filename, callback) {
 		}
 	},
 	render_news = include_html("news", constants.SERVER + "script/news.html");
-
-
-var make_line = function(key, container) {
-	var desc = NICE_DESCRIPTION.hasOwnProperty(key) ? NICE_DESCRIPTION[key] : key;
-	if ( ! desc )
-		return;
-
-	line = createElement('li', null, desc + '<span></span>');
-	line.setAttribute('data-property', key);
-	container.appendChild(line);
-	return line;
-};
-
-var update_mem_stats = function(container) {
-	if ( ! document.querySelector('.ffz-ui-sub-menu-page[data-page="debugging"]') )
-		return;
-
-	setTimeout(update_mem_stats.bind(this, container), 1000);
-
-	var mem = window.performance && performance.memory;
-	if ( ! mem )
-		return;
-
-	var sorted_keys = ['jsHeapSizeLimit', 'totalJSHeapSize', 'usedJSHeapSize'];
-	for(var i=0; i < sorted_keys.length; i++) {
-		var key = sorted_keys[i],
-			data = mem[key],
-			line = container.querySelector('li[data-property="' + key + '"]');
-
-		if ( ! line )
-			line = make_line(key, container);
-
-		if ( line )
-			line.querySelector('span').textContent = utils.format_size(data) + ' (' + data + ')';
-	}
-};
-
-var update_player_stats = function(player, container) {
-	if ( ! document.querySelector('.ffz-ui-sub-menu-page[data-page="debugging"]') || ! player.getVideoInfo )
-		return;
-
-	setTimeout(update_player_stats.bind(this, player, container), 1000);
-
-	var player_data;
-
-	try {
-		player_data = player.getVideoInfo();
-	} catch(err) { }
-
-	if ( ! player_data )
-		return;
-
-	try {
-		player_data.backend = player.getBackend();
-		player_data.version = player.getVersion();
-	} catch(err) { }
-
-	var sorted_keys = Object.keys(player_data).sort();
-	for(var i=0; i < sorted_keys.length; i++) {
-		var key = sorted_keys[i],
-			data = player_data[key],
-			line = container.querySelector('li[data-property="' + key + '"]');
-
-		if ( ! line )
-			line = make_line(key, container);
-
-		if ( line )
-			line.querySelector('span').textContent = data;
-	}
-};
 
 
 FFZ.menu_pages.about = {
@@ -303,187 +487,118 @@ FFZ.menu_pages.about = {
 			name: "Debug",
 			wide: true,
 			render: function(view, container) {
-				// Heading
-				var heading = createElement('div'),
+				var f = this;
 
-					info_head = createElement('div'),
-					info = createElement('ul'),
-					info_list = [
-						['Client ID', localStorage.ffzClientId || '<i>not set</i>'],
-						['Socket Server', this._ws_sock && this._ws_sock.url || '<i>disconnected</i>' ],
-						['Server Ping', this._ws_last_ping || '<i>unknown</i>'],
-						['Time Offset', this._ws_sock && this._ws_server_offset && (this._ws_server_offset < 0 ? "-" : "") + utils.time_to_string(Math.abs(this._ws_server_offset) / 1000) || '<i>unknown</i>']
-					],
+				// Heading!
+				container.appendChild(createElement('div', 'chat-menu-content center',
+					'<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">woofs for nerds</div>'));
 
-					twitch_head = createElement('div'),
-					twitch = createElement('ul'),
-					twitch_list = [
-						['Deploy Flavor', SiteOptions.deploy_flavor]
-					],
+				var segments = [];
+				for(var key in FFZ.debugging_blocks) {
+					var info = FFZ.debugging_blocks[key];
+					if ( ! info )
+						continue;
 
-					exp_head = createElement('div'),
-					experiments = createElement('ul'),
+					var visible = info.visible || true;
+					if ( typeof visible === "function" )
+						visible = visible.call(this);
 
-					has_memory = window.performance && performance.memory,
-					mem_head = createElement('div'),
-					mem_list = createElement('ul'),
+					if ( ! visible )
+						continue;
 
-					player_head = createElement('div'),
-					player_list = createElement('ul'),
-
-					player, player_data,
-
-					ver_head = createElement('div'),
-					vers = createElement('ul'),
-					version_list = [
-							['Ember', Ember.VERSION],
-							['Ember Data', window.DS && DS.VERSION || '<i>unknown</i>'],
-							['GIT Version', EmberENV.GIT_VERSION],
-							null,
-							['FrankerFaceZ', FFZ.version_info.toString()]
-						],
-
-					log_head = createElement('div'),
-					logs = createElement('pre');
-
-				for(var pkey in this.players) {
-					player = this.players[pkey] && this.players[pkey].player;
-					if ( player )
-						break;
+					segments.push([info.order || 50, info]);
 				}
 
-				if ( player ) {
-					try {
-						player_data = player.getVideoInfo();
-					} catch(err) { }
+				segments.sort(function(a,b) { return a[0] > b[0] });
+
+				for(var i=0; i < segments.length; i++) {
+					var info = segments[i][1],
+						output;
+
+					if ( info.type === 'list' )
+						output = createElement('ul', 'chat-menu-content menu-side-padding version-list');
+					else if ( info.type === 'text' )
+						output = createElement('pre', 'chat-menu-content menu-side-padding');
+					else
+						continue;
+
+					container.appendChild(createElement('div', 'list-header', info.title));
+					container.appendChild(output);
+
+					var update_content = function(info, output, func) {
+						// If we've removed this from the DOM, stop updating it!
+						if ( ! document.body.contains(output) )
+							return;
+
+						var result = info.render.call(f);
+						if ( ! (result instanceof Promise) )
+							result = Promise.resolve(result);
+
+						result.then(function(data) {
+							if ( info.type === 'list' ) {
+								var handled_keys = [],
+									had_keys = output.childElementCount > 0;
+
+								for(var i=0; i < data.length; i++) {
+									var pair = data[i];
+									if ( pair === null ) {
+										if ( ! had_keys ) {
+											var line = createElement('li', '', '<br>');
+											line.setAttribute('data-key', 'null');
+											handled_keys.push('null');
+											output.appendChild(line);
+										}
+										continue;
+									}
+
+									var key = pair[0], value = pair[1],
+										line = output.querySelector('li[data-key="' + key + '"]');
+
+									if ( value === null )
+										continue;
+
+									handled_keys.push(key);
+
+									if ( ! line ) {
+										line = createElement('li');
+										line.setAttribute('data-key', key);
+										line.innerHTML = key + '<span></span>';
+										output.appendChild(line);
+									}
+
+									line.querySelector('span').innerHTML = value;
+								}
+
+								var lines = output.querySelectorAll('li');
+								for(var i=0; i < lines.length; i++) {
+									var line = lines[i];
+									if ( handled_keys.indexOf(line.getAttribute('data-key')) === -1 )
+										output.removeChild(line);
+								}
+
+							} else if ( info.type === 'text' ) {
+								output.textContent = data;
+							}
+
+							if ( info.refresh )
+								setTimeout(func.bind(f, info, output, func), typeof info.refresh === "number" ? info.refresh : 1000);
+
+						}).catch(function(err) {
+							f.error("Debugging Menu Error", err);
+
+							if ( info.type === 'list' )
+								output.innerHTML = '<li><i>An error occured while updating this information.</i></li>';
+							else
+								output.innerHTML = 'An error occured while updating this information.';
+
+							if ( info.refresh )
+								setTimeout(func.bind(f, info, output, func), typeof info.refresh === "number" ? info.refresh : 1000);
+						});
+
+					};
+
+					update_content.call(f, info, output, update_content);
 				}
-
-				heading.className = 'chat-menu-content center';
-				heading.innerHTML = '<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">woofs for nerds</div>';
-
-				info_head.className = exp_head.className = mem_head.className = twitch_head.className = player_head.className = ver_head.className = log_head.className = 'list-header';
-				info.className = mem_list.className = twitch.className = experiments.className = player_list.className = vers.className = 'chat-menu-content menu-side-padding version-list';
-
-				info_head.innerHTML = 'Client Status';
-
-				for(var i=0; i < info_list.length; i++) {
-					var data = info_list[i],
-						line = createElement('li');
-					line.innerHTML = data === null ? '<br>' : data[0] + '<span>' + data[1] + '</span>';
-					info.appendChild(line);
-				}
-
-
-				twitch_head.innerHTML = 'Twitch Configuration';
-
-				// Check for Twitch geo-location
-				var user = this.get_user();
-				if ( user && user.login ) {
-					twitch_list.push(["Current User", user.login + " [" + user.id + "]"]);
-					var us = [];
-
-					user.is_staff && us.push("staff");
-					user.is_admin && us.push("admin");
-					user.is_partner && us.push("partner");
-					user.is_broadcaster && us.push("broadcaster");
-					user.has_turbo && us.push("turbo");
-
-					twitch_list.push(["User State", us.join(", ") || "<i>none</i>"]);
-
-				} else
-					twitch_list.push(["Current User", "<i>not logged in</i>"]);
-
-				if ( window.Twitch && Twitch.geo && Twitch.geo._result ) {
-					var data = Twitch.geo._result;
-					if ( data.geo )
-						twitch_list.push(["Region", data.geo + (data.eu ? " [EU]" : "")]);
-
-					if ( data.received_language )
-						twitch_list.push(["Received Language", data.received_language])
-				}
-
-				for(var i=0; i < twitch_list.length; i++) {
-					var data = twitch_list[i],
-						line = createElement('li');
-					line.innerHTML = data === null ? '<br>' : data[0] + '<span>' + data[1] + '</span>';
-					twitch.appendChild(line);
-				}
-
-				var exp_service = utils.ember_lookup('service:experiments');
-				if ( exp_service ) {
-					exp_head.innerHTML = 'Twitch Experiments';
-					for(var key in exp_service.values) {
-						if ( ! exp_service.values.hasOwnProperty(key) )
-							continue;
-
-						var val = exp_service.values[key],
-							line = createElement('li');
-
-						line.innerHTML = key + '<span>' + utils.sanitize(val) + '</span>';
-						experiments.appendChild(line);
-					}
-				}
-
-				ver_head.innerHTML = 'Versions';
-
-				if ( this.has_bttv )
-					version_list.push(["BetterTTV", BetterTTV.info.version + 'r' + BetterTTV.info.release]);
-
-				if ( Object.keys(this._apis).length ) {
-					version_list.push(null);
-					for(var key in this._apis) {
-						var api = this._apis[key];
-						version_list.push(['<b>Ext #' + api.id + '.</b> ' + api.name, api.version || '<i>unknown</i>']);
-					}
-				}
-
-				for(var i=0; i < version_list.length; i++) {
-					var data = version_list[i],
-						line = createElement('li');
-					line.innerHTML = data === null ? '<br>' : data[0] + '<span>' + data[1] + '</span>';
-					vers.appendChild(line);
-				}
-
-				log_head.className = 'list-header';
-				log_head.innerHTML = 'Logs';
-
-				logs.className = 'chat-menu-content menu-side-padding';
-				logs.textContent = this._log_data.join("\n");
-
-				container.appendChild(heading);
-
-				container.appendChild(ver_head);
-				container.appendChild(vers);
-
-				container.appendChild(info_head);
-				container.appendChild(info);
-
-				container.appendChild(twitch_head);
-				container.appendChild(twitch);
-
-				if ( exp_service ) {
-					container.appendChild(exp_head);
-					container.appendChild(experiments);
-				}
-
-				if ( has_memory ) {
-					mem_head.innerHTML = 'Memory Statistics';
-					setTimeout(update_mem_stats.bind(this,mem_list),0);
-
-					container.appendChild(mem_head);
-					container.appendChild(mem_list);
-				}
-
-				if ( player_data ) {
-					player_head.innerHTML = "Player Statistics";
-					setTimeout(update_player_stats.bind(this,player,player_list),0);
-
-					container.appendChild(player_head);
-					container.appendChild(player_list);
-				}
-
-				container.appendChild(log_head);
-				container.appendChild(logs);
 			}
 		}
 	}

@@ -387,23 +387,24 @@ FFZ.prototype.setup_time = function() {
 	}, 5000);
 }
 
-FFZ.prototype.ws_ping = function() {
+FFZ.prototype.ws_ping = function(skip_log) {
 	// Only 1 ping at a time.
 	if ( this._ws_ping_time )
 		return;
 
 	this._ws_ping_time = window.performance ? performance.now() : Date.now();
-	if ( ! this.ws_send("ping", undefined, this._ws_on_pong.bind(this)) )
+	if ( ! this.ws_send("ping", undefined, this._ws_on_pong.bind(this, skip_log)) )
 		this._ws_ping_time = null;
 }
 
-FFZ.prototype._ws_on_pong = function(success, server_time) {
+FFZ.prototype._ws_on_pong = function(skip_log, success, server_time) {
 	var d_now = Date.now(),
 		now = window.performance ? performance.now() : d_now;
 
 	if ( ! success ) {
 		this._ws_ping_time = null;
-		this.log("Error Pinging Server: " + server_time);
+		if ( ! skip_log )
+			this.log("Error Pinging Server: " + server_time);
 		return;
 	}
 
@@ -414,13 +415,15 @@ FFZ.prototype._ws_on_pong = function(success, server_time) {
 		this._ws_ping_time = null;
 		this._ws_server_offset = (d_now - (server_time + ping));
 
-		this.log("Server Time: " + new Date(server_time).toISOString());
-		this.log("Local Time: " + new Date(d_now).toISOString());
-		this.log("Estimated Ping: " + ping + "ms");
-		this.log("Time Offset: " + (this._ws_server_offset < 0 ? "-" : "") + utils.time_to_string(Math.abs(this._ws_server_offset) / 1000));
+		if ( ! skip_log ) {
+			this.log("Server Time: " + new Date(server_time).toISOString());
+			this.log("Local Time: " + new Date(d_now).toISOString());
+			this.log("Estimated Ping: " + ping + "ms");
+			this.log("Time Offset: " + (this._ws_server_offset < 0 ? "-" : "") + utils.time_to_string(Math.abs(this._ws_server_offset) / 1000));
 
-		if ( Math.abs(this._ws_server_offset) > 300000 ) {
-			this.log("WARNING! The time offset with the server is greater than 5 minutes.");
+			if ( Math.abs(this._ws_server_offset) > 300000 ) {
+				this.log("WARNING! The time offset with the server is greater than 5 minutes.");
+			}
 		}
 	}
 }

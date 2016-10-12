@@ -1,15 +1,21 @@
-<div class="list-header">3.5.322 <time datetime="2016-10-03">(2016-10-11)</time></div>
+<div class="list-header">3.5.323 <time datetime="2016-10-12">(2016-10-12)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Refactor how the Debug tab of the About menu works so that it's easier to add more content.</li>
+	<li>Fixed: Take the channel banner height into account when determining if the page is scrolled down enough to enable the mini-player.</li>
+</ul>
+
+<div class="list-header">3.5.322 <time datetime="2016-10-11">(2016-10-11)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: The Video Manager's video player was a bit too big.</li>
 	<li>Fixed: The Channel Bar appears over the arrows to open and close the sidebars and theater mode.</li>
 </ul>
 
-<div class="list-header">3.5.321 <time datetime="2016-10-03">(2016-10-11)</time></div>
+<div class="list-header">3.5.321 <time datetime="2016-10-11">(2016-10-11)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Theater mode video player height.</li>
 </ul>
 
-<div class="list-header">3.5.320 <time datetime="2016-10-03">(2016-10-11)</time></div>
+<div class="list-header">3.5.320 <time datetime="2016-10-11">(2016-10-11)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Automatic theater mode should hopefully be working for everyone now.</li>
 	<li>Fixed: Don't scroll down when exiting fullscreen with the player.</li>
@@ -22,7 +28,7 @@
 	<li>Removed: Automatically pausing the player when a host starts is not currently possible due to how the player reacts to a `setChannel` event. There is no way to prevent it from playing without glitching out.</li>
 </ul>
 
-<div class="list-header">3.5.319 <time datetime="2016-10-03">(2016-10-07)</time></div>
+<div class="list-header">3.5.319 <time datetime="2016-10-07">(2016-10-07)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Load emote set &lt;-&gt; user mappings from the API.</li>
 	<li>Added: Logviewer integration now supports notes.</li>
@@ -31,24 +37,24 @@
 	<li>Fixed: Legacy badges got broken when I added colored badges.</li>
 </ul>
 
-<div class="list-header">3.5.318 <time datetime="2016-10-03">(2016-10-06)</time></div>
+<div class="list-header">3.5.318 <time datetime="2016-10-06">(2016-10-06)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Twitch's player is still the wrong height. <em>**sigh**</em> Temporary fix.</li>
 </ul>
 
-<div class="list-header">3.5.317 <time datetime="2016-10-03">(2016-10-05)</time></div>
+<div class="list-header">3.5.317 <time datetime="2016-10-05">(2016-10-05)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: More tweaks to Transparent (Color) badge rendering to make sure all badges are rendered correctly.</li>
 	<li>&nbsp;</li>
 	<li>Let's be honest, a release just isn't a release without a pair of immediate bugfixes, am I right?</li>
 </ul>
 
-<div class="list-header">3.5.316 <time datetime="2016-10-03">(2016-10-05)</time></div>
+<div class="list-header">3.5.316 <time datetime="2016-10-05">(2016-10-05)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Prime emotes aren't sub emotes, tab-completion. Stop being silly.</li>
 </ul>
 
-<div class="list-header">3.5.315 <time datetime="2016-10-03">(2016-10-05)</time></div>
+<div class="list-header">3.5.315 <time datetime="2016-10-05">(2016-10-05)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Emoticon tab-completion for whisper windows.</li>
 	<li>Added: Transparent (Colored) badge display for users with browsers supporting the <code>-webkit-mask</code> property.</li>
@@ -56,23 +62,23 @@
 	<li>Fixed: The Curse Emoticons set had no information in the My Emoticons menu.</li>
 </ul>
 
-<div class="list-header">3.5.314 <time datetime="2016-10-03">(2016-10-05)</time></div>
+<div class="list-header">3.5.314 <time datetime="2016-10-05">(2016-10-05)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Changed: Ensure you get the user's username when copy-pasting from the moderation card's chat history.</li>
 	<li>Fixed: Don't try to change tabs in moderation cards if a modifier key is being held.</li>
 </ul>
 
-<div class="list-header">3.5.313 <time datetime="2016-10-03">(2016-10-05)</time></div>
+<div class="list-header">3.5.313 <time datetime="2016-10-05">(2016-10-05)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Logviewer Integration (Beta)</li>
 </ul>
 
-<div class="list-header">3.5.312 <time datetime="2016-10-03">(2016-10-04)</time></div>
+<div class="list-header">3.5.312 <time datetime="2016-10-04">(2016-10-04)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Typo causing chat lines to not render correctly if a message is deleted.</li>
 </ul>
 
-<div class="list-header">3.5.311 <time datetime="2016-10-03">(2016-10-04)</time></div>
+<div class="list-header">3.5.311 <time datetime="2016-10-04">(2016-10-04)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Opening sections of the FFZ settings menu could cause the page to scroll oddly in a way that's not easily fixed.</li>
 	<li>Updated Fix: Message Doubling. Properly check a message's <code>hasSystemMsg</code> property as <code>systemMsg</code> will always contain a string now.</li>
