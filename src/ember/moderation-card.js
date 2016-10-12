@@ -1567,7 +1567,7 @@ FFZ.prototype._update_alias = function(user) {
 
 FFZ.chat_commands.purge = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Purge Usage: /p username [ban reason]";
+		return "Usage: /purge <user> [ban reason]";
 
 	var name = args.shift(),
 		reason = args.length ? args.join(" ") : "";
@@ -1575,25 +1575,34 @@ FFZ.chat_commands.purge = function(room, args) {
 	room.room.send("/timeout " + name + " 1 " + reason, true);
 }
 
+FFZ.chat_commands.purge.label = '/purge &lt;user&gt; <i>[reason]</i>';
+FFZ.chat_commands.purge.info = 'Ban User for 1 Second';
+
 FFZ.chat_commands.p = function(room, args) {
 	return FFZ.chat_commands.purge.call(this, room, args);
 }
 
 FFZ.chat_commands.p.enabled = function() { return this.settings.short_commands; }
+FFZ.chat_commands.p.short = true;
+FFZ.chat_commands.p.label = '/p &lt;user&gt; <i>[reason]</i>';
+FFZ.chat_commands.p.info = 'Ban User for 1 Second';
 
 
 FFZ.chat_commands.t = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Timeout Usage: /t username [duration] [ban reason]";
+		return "Usage: /t <user> [duration=600] [reason]";
 	room.room.send("/timeout " + args.join(" "), true);
 }
 
 FFZ.chat_commands.t.enabled = function() { return this.settings.short_commands; }
+FFZ.chat_commands.t.short = true;
+FFZ.chat_commands.t.label = '/t &lt;user&gt; <i>[duration=600] [reason]</i>';
+FFZ.chat_commands.t.info = 'Temporarily Ban User';
 
 
 FFZ.chat_commands.b = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Ban Usage: /b username [ban reason]";
+		return "Usage: /b <user> [reason]";
 
 	var name = args.shift(),
 		reason = args.length ? args.join(" ") : "";
@@ -1602,11 +1611,14 @@ FFZ.chat_commands.b = function(room, args) {
 }
 
 FFZ.chat_commands.b.enabled = function() { return this.settings.short_commands; }
+FFZ.chat_commands.b.short = true;
+FFZ.chat_commands.b.label = '/b &lt;user&gt; <i>[reason]</i>';
+FFZ.chat_commands.b.info = 'Permanently Ban User';
 
 
 FFZ.chat_commands.u = function(room, args) {
 	if ( ! args || ! args.length )
-		return "Unban Usage: /u username [more usernames separated by spaces]";
+		return "Usage: /u <user> [more usernames separated by spaces]";
 
 	if ( args.length > 10 )
 		return "Please only unban up to 10 users at once.";
@@ -1619,3 +1631,6 @@ FFZ.chat_commands.u = function(room, args) {
 }
 
 FFZ.chat_commands.u.enabled = function() { return this.settings.short_commands; }
+FFZ.chat_commands.u.short = true;
+FFZ.chat_commands.u.label = '/u &lt;user&gt; <i>[&lt;user&gt; ...]';
+FFZ.chat_commands.u.info = 'Unban User(s)';

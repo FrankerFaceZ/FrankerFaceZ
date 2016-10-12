@@ -712,6 +712,8 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return [{type: 'text', text: 'hi'}];
 		}.property('msgObject.message'),*/
 
+		ffz_modified: true,
+
 		ffzTokenizedMessage: function() {
 			try {
 				return f.tokenize_chat_line(this.get('msgObject'));

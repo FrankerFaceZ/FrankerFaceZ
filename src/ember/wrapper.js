@@ -12,7 +12,7 @@ FFZ.prototype.setup_ember_wrapper = function() {
 }
 
 
-FFZ.prototype.update_views = function(klass, modifier, if_not_exists, immediate) {
+FFZ.prototype.update_views = function(klass, modifier, if_not_exists, immediate, no_modify_existing) {
 	var original_klass;
 	if ( typeof klass === 'string' ) {
 		original_klass = klass;
@@ -33,10 +33,10 @@ FFZ.prototype.update_views = function(klass, modifier, if_not_exists, immediate)
 	} else
 		original_klass = klass.toString();
 
-	if ( this._ember_finalized || immediate )
-		this._update_views([[original_klass, klass, modifier]]);
+	if ( this._ember_finalized || immediate || ! this._views_to_update )
+		this._update_views([[original_klass, klass, modifier, no_modify_existing || false]]);
 	else
-		this._views_to_update.push([original_klass, klass, modifier]);
+		this._views_to_update.push([original_klass, klass, modifier, no_modify_existing || false]);
 
 	return true;
 }
@@ -79,10 +79,12 @@ FFZ.prototype._update_views = function(klasses) {
 				updated_instances++;
 
 				try {
-					if ( ! view.ffz_modified )
+					if ( ! view.ffz_modified && ! klasses[i][3] )
 						klasses[i][2].call(this, view);
 
-					(view.ffz_update || view.ffz_init).call(view);
+					var func = view.ffz_update || view.ffz_init;
+					if ( func )
+						func.call(view);
 
 				} catch(err) {
 					this.error("An error occured when updating an existing Ember instance of: " + klasses[i][0], err);

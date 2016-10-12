@@ -554,6 +554,19 @@ module.exports = FFZ.utils = {
 
 	CMD_VAR_REGEX: CMD_VAR_REGEX,
 
+	extract_cmd_variables: function(command, args_only) {
+		var matches = [];
+
+		CMD_VAR_REGEX.lastIndex = 0;
+		command.replace(CMD_VAR_REGEX, function(match, variable) {
+			if ( args_only && ! /\d+(?:$\d*)?/.test(variable) )
+				return;
+			matches.push('{' + variable + '}');
+		});
+
+		return _.unique(matches);
+	},
+
 	replace_cmd_variables: function(command, user, room, message, args) {
 		user = user || {};
 		room = room || {};

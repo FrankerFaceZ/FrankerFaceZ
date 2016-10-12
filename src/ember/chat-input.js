@@ -4,9 +4,90 @@ var FFZ = window.FrankerFaceZ,
 
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
 
+	MOD_COMMANDS = {
+		ban: {
+			label: '/ban &lt;user&gt; <i>[reason]</i>',
+			info: 'Permanently Ban User'
+		},
+		unban: {
+			label: '/unban &lt;user&gt;',
+			info: 'Unban User'
+		},
+		timeout: {
+			label: '/timeout &lt;user&gt; <i>[duration=600] [reason]</i>',
+			info: 'Temporarily Ban User'
+		},
+
+		clear: {info: 'Clear Chat for All Users'},
+		slow: {
+			label: '/slow <i>[duration=120]</i>',
+			info: 'Enable Slow Mode'
+		},
+		slowoff: {info: 'Disable Slow Mode'},
+
+		r9kbeta: {info: 'Enable R9k Mode'},
+		r9kbetaoff: {info: 'Disable R9k Mode'},
+
+		subscribers: {info: 'Enable Subscribers-Only Mode'},
+		subscribersoff: {info: 'Disable Subscribers-Only Mode'},
+
+		emotesonly: {info: 'Enable Emotes-Only Mode'},
+		emotesonlyoff: {info: 'Disable Emotes-Only Mode'},
+	},
+
+	BROADCASTER_COMMANDS = {
+		mod: {
+			label: '/mod &lt;user&gt;',
+			info: 'Make User a Moderator'
+		},
+		unmod: {
+			label: '/unmod &lt;user&gt;',
+			info: 'Remove User\'s Moderator Status'
+		},
+
+		host: {
+			label: '/host &lt;channel&gt;',
+			info: 'Enter Host Mode with Channel'
+		},
+
+		unhost: {info: 'Exit Host Mode'},
+
+		commercial: {
+			label: '/commercial <i>[length]</i>',
+			info: 'Trigger Commercial(s) for Length'
+		}
+	},
+
+	DEFAULT_COMMANDS = {
+		color: {
+			label: '/color &lt;color&gt;',
+			info: 'Set Username Color'
+		},
+
+		help: {
+			label: '/help <i>[command]</i>',
+			info: 'List Available Chat Commands'
+		},
+
+		me: {
+			label: '/me &lt;message&gt;',
+			info: 'Send a Colored Chat "Action"'
+		},
+
+		w: {
+			label: '/w &lt;user&gt; &lt;message&gt;',
+			info: 'Whisper to User'
+		},
+
+		disconnect: {info: 'Disconnect from Chat'},
+		mods: {info: 'List Chat Moderators'},
+	},
+
 	CHARCODES = {
 		AT_SIGN: 64,
-		COLON: 58
+		COLON: 58,
+		PERIOD: 46,
+		SLASH: 47
 	},
 
 	KEYCODES = {
@@ -113,6 +194,23 @@ FFZ.settings_info.input_complete_emotes = {
 	on_update: function(val) {
 		if ( this._inputv )
 			Ember.propertyDidChange(this._inputv, 'ffz_emoticons');
+	}
+}
+
+
+FFZ.settings_info.input_complete_commands = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Input",
+	no_bttv: true,
+
+	name: "Tab-Complete Commands",
+	help: "Use tab completion to complete commands in chat.",
+
+	on_update: function(val) {
+		if ( this._inputv )
+			Ember.propertyDidChange(this._inputv, 'ffz_commands');
 	}
 }
 
@@ -548,8 +646,92 @@ FFZ.prototype.modify_chat_input = function(component) {
 				var area = t.get('chatTextArea');
 				move_selection(area, prefix.length);
 				area.focus();
+
+				var text = t.get('textareaValue'),
+					ind = text.indexOf(' '),
+					start = ind !== -1 && text.substr(0, ind);
+
+				if ( (prefix.length-1) === ind && f.settings.input_complete_commands && (start.charAt(0) === '/' || start.charAt(0) === '.') ) {
+					var commands = t.get('ffz_commands'),
+						cmd = commands[start.substr(1)];
+
+					if ( cmd && cmd.label && cmd.label.split(' ',2)[1] === '&lt;user&gt;' ) {
+						t.ffzFetchNameSuggestions();
+						t.set("ffz_suggestions_visible", true);
+						t.ffzSetPartialWord();
+					}
+				}
 			});
 		},
+
+
+		ffz_commands: function() {
+			var commands = _.extend({}, DEFAULT_COMMANDS),
+				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
+				room = this.get('parentView.context.model'),
+				is_moderator = room && room.get('isModeratorOrHigher'),
+				user = f.get_user(),
+				is_broadcaster = room && user && user.login === room.get('name');
+
+			if ( in_conversation )
+				return {};
+
+			if ( is_moderator )
+				commands = _.extend(commands, MOD_COMMANDS);
+
+			if ( is_broadcaster)
+				commands = _.extend(commands, BROADCASTER_COMMANDS);
+
+			// FFZ Commands
+
+			for(var cmd in FFZ.chat_commands) {
+				var data = FFZ.chat_commands[cmd];
+				if ( commands[cmd] )
+					continue;
+
+				var enabled = data.hasOwnProperty('enabled') ? data.enabled : true;
+				if ( typeof enabled === "function" )
+					try {
+						enabled = data.enabled.call(f, room, [])
+					} catch(err) {
+						f.error('command "' + cmd + '" enabled', err);
+						enabled = false;
+					}
+
+				if ( ! enabled )
+					continue;
+
+				commands[cmd] = {
+					label: data.label,
+					info: data.info,
+					alias: false,
+					short: data.short
+				}
+			}
+
+
+			// Aliases
+			for(var cmd in f._command_aliases) {
+				var data = f._command_aliases[cmd],
+					replacement = data[0],
+					label = data[1];
+
+				if ( ! label ) {
+					var vars = utils.extract_cmd_variables(replacement, true);
+					label = vars.join(' ');
+				} else
+					label = utils.sanitize(label);
+
+				commands[cmd] = {
+					label: '/' + cmd + (label ? ' ' + label : ''),
+					info: replacement,
+					alias: true
+				}
+			}
+
+			return commands;
+
+		}.property('parentView.context.model.isModeratorOrHigher', 'parentView.context.model.name'),
 
 
 		ffz_emoticons: function() {
@@ -653,7 +835,25 @@ FFZ.prototype.modify_chat_input = function(component) {
 		ffz_suggestions: function() {
 			var output = [],
 				emotes = this.get('ffz_emoticons'),
+				commands = this.get('ffz_commands'),
 				suggestions = this.get('ffz_name_suggestions'); //.mapBy('id').uniq();
+
+			if ( f.settings.input_complete_commands ) {
+				// Include Commands
+				for(var command_name in commands) {
+					var cmd = '/' + command_name,
+						data = commands[command_name];
+
+					output.push({
+						type: "command",
+						match: cmd,
+						alternate_match: command_name.toLowerCase(),
+						content: data.content || cmd,
+						label: data.label || cmd,
+						info: data.alias ? 'Alias: ' + data.info : (data.short ? 'Short ' : '') + 'Command' + (data.info ? ': ' + data.info : '')
+					});
+				}
+			}
 
 			if ( f.settings.input_complete_emotes ) {
 				// Include Emoticons
@@ -794,12 +994,14 @@ FFZ.prototype.modify_chat_input = function(component) {
 		}.property('ffz_emoticons', 'ffz_name_suggestions'),
 
 
-		ffz_filtered_suggestions: Ember.computed("ffz_suggestions", "ffz_partial_word", function() {
+		ffz_filtered_suggestions: Ember.computed("ffz_suggestions", "ffz_partial_word", "ffz_partial_word_start", function() {
 			var suggestions = this.get('ffz_suggestions'),
 				partial = this.get('ffz_partial_word'),
+				word_start = this.get('ffz_partial_word_start'),
 				part2 = partial.substr(1),
 				char = partial.charAt(0),
-				is_at = char === '@';
+				is_at = char === '@',
+				is_command = char === '.' || char === '/';
 
 			return suggestions.filter(function(item) {
 				var name = item.match || item.content || item.label,
@@ -807,6 +1009,16 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 				if ( ! name )
 					return false;
+
+				if ( type === 'command' ) {
+					if ( word_start > 0 )
+						return false;
+
+					if ( is_command )
+						return item.alternate_match.indexOf(part2.toLowerCase()) === 0;
+
+					return name.toLowerCase().indexOf(partial.toLowerCase()) === 0;
+				}
 
 				if ( type === 'user' ) {
 					// Names are case insensitive, and we have to ignore the leading @ of our
@@ -941,6 +1153,19 @@ FFZ.prototype.modify_chat_input = function(component) {
 								t.ffzShowSuggestions();
 								t.trackSuggestions("@");
 							}
+						});
+					}
+
+					break;
+
+				case CHARCODES.PERIOD:
+				case CHARCODES.SLASH:
+					// If we get a command, show the menu, but only if we're at the start of a line.
+					if ( ! this.get('ffz_suggestions_visible') && f.settings.input_complete_commands && !(ConvoInput && this.parentView instanceof ConvoInput) ) {
+						var ind = selection_start(this.get('chatTextArea')) - 1;
+						Ember.run.next(function() {
+							if ( ind === -1 )
+								t.ffzShowSuggestions();
 						});
 					}
 
@@ -1139,10 +1364,15 @@ FFZ.prototype.modify_chat_input = function(component) {
 								});
 							}
 
-						} else if ( start === '/w' || start === '/ignore' || start === '/unignore' || start === '/mod' || start === '/unmod' || start === '/ban' || start === '/unban' || start === '/timeout' || start === '/purge' ) {
-							t.ffzFetchNameSuggestions();
-							t.set("ffz_suggestions_visible", true);
-							t.ffzSetPartialWord();
+						} else if ( f.settings.input_complete_commands && (start.charAt(0) === '/' || start.charAt(0) === '.') ) {
+							var commands = t.get('ffz_commands'),
+								cmd = commands[start.substr(1)];
+
+							if ( cmd && cmd.label && cmd.label.split(' ',2)[1] === '&lt;user&gt;' ) {
+								t.ffzFetchNameSuggestions();
+								t.set("ffz_suggestions_visible", true);
+								t.ffzSetPartialWord();
+							}
 						}
 					});
 			}

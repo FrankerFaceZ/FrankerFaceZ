@@ -34,7 +34,7 @@ FFZ.msg_commands = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 323,
+	major: 3, minor: 5, revision: 325,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -335,6 +335,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 
 	// Initialize all the modules.
 	this.load_settings();
+	this.setup_ember_wrapper();
 
 	// Start this early, for quick loading.
 	this.setup_dark();
@@ -357,6 +358,7 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.setup_following_count(false);
 	this.setup_menu();
 
+	this.finalize_ember_wrapper();
 	this.setup_message_event();
 	this.fix_tooltips();
 	this.find_bttv(10);
@@ -384,6 +386,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 
 	// Initialize all the modules.
 	this.load_settings();
+	this.setup_ember_wrapper();
 
 	// Start this early, for quick loading.
 	this.setup_dark();
@@ -405,6 +408,8 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_menu();
 	this.setup_dash_stats();
 	this.setup_dash_feed();
+
+	this.finalize_ember_wrapper();
 
 	this._update_subscribers();
 

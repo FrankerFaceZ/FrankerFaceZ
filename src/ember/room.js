@@ -727,7 +727,7 @@ FFZ.prototype.run_command = function(text, room_id) {
 			try {
 				val = command.enabled.call(this, room, args);
 			} catch(err) {
-				this.error('command "' + cmd + '" enabled: ' + err);
+				this.error('command "' + cmd + '" enabled', err);
 				val = false;
 			}
 		}
@@ -2147,7 +2147,7 @@ FFZ.prototype._modify_room = function(room) {
 							was_handled = true;
 
 						} else {
-							var alias = f._command_aliases[cmd],
+							var alias = f._command_aliases[cmd][0],
 								args = text.substr(1 + cmd.length).trimLeft().split(/\s+/g),
 								output = utils.replace_cmd_variables(alias, null, this, null, args);
 

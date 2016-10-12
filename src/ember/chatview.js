@@ -1401,6 +1401,8 @@ FFZ.chat_commands.join = function(room, args) {
 }
 
 FFZ.chat_commands.join.no_bttv = true;
+FFZ.chat_commands.join.label = '/join &lt;channel&gt;';
+FFZ.chat_commands.join.info = 'Add Channel to Pinned Rooms';
 
 
 FFZ.chat_commands.part = function(room, args) {
@@ -1423,3 +1425,5 @@ FFZ.chat_commands.part = function(room, args) {
 }
 
 FFZ.chat_commands.part.no_bttv = true;
+FFZ.chat_commands.part.label = '/part &lt;channel&gt;';
+FFZ.chat_commands.part.info = 'Remove Channel from Pinned Rooms';

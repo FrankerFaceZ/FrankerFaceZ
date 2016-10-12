@@ -55,9 +55,10 @@ FFZ.settings_info.command_aliases = {
 			for(var i=0; i < this.settings.command_aliases.length; i++) {
 				var pair = this.settings.command_aliases[i],
 					name = pair[0],
-					command = pair[1];
+					command = pair[1],
+					label = pair[2];
 
-				old_val.push(name + '=' + command);
+				old_val.push(name + (label ? ' ' + label : '') + '=' + command);
 			}
 
 			utils.prompt(
@@ -67,8 +68,10 @@ FFZ.settings_info.command_aliases = {
 					"Variables, such as arguments you provide running the custom command, can be inserted into the output.<hr>" +
 
 					"All custom commands require names. Names go at the start of each line, and are separated from " +
-					" the actual command by an equals sign. Do not include the leading slash or dot. Those are automatically included.<br>" +
-					"<strong>Example:</strong> <code>boop=/timeout {0} 15 Boop!</code><hr>" +
+					"the actual command by an equals sign. Do not include the leading slash or dot. Those are automatically included. " +
+					"You can also include a description of the arguments after the name but before the equals-sign " +
+					"to include a helpful reminder when using tab-completion with the command.<br>" +
+					"<strong>Example:</strong> <code>boop &lt;user&gt;=/timeout {0} 15 Boop!</code><hr>" +
 
 					"<code>{0}</code>, <code>{1}</code>, <code>{2}</code>, etc. will be replaced with any arguments you've supplied. " +
 					"Follow an argument index with a <code>$</code> to also include all remaining arguments.<br>" +
@@ -89,22 +92,35 @@ FFZ.settings_info.command_aliases = {
 						output = [];
 
 					for(var i=0; i < vals.length; i++) {
-						var cmd = vals[i],
-							name,
+						var cmd = vals[i];
+						if ( cmd.charAt(0) === '.' || cmd.charAt(0) === '/' )
+							cmd = cmd.substr(1);
+
+						var name,
+							label,
 							name_match = /^([^=]+)=/.exec(cmd);
 
 						if ( ! cmd || ! cmd.length )
 							continue;
 
 						if ( name_match ) {
-							name = name_match[1].toLowerCase();
+							var ind = name_match[1].indexOf(' ');
+							if ( ind === -1 ) {
+								name = name_match[1].toLowerCase();
+								label = null;
+							} else {
+								name = name_match[1].substr(0,ind).toLowerCase();
+								label = name_match[1].substr(ind).trim();
+							}
+
 							cmd = cmd.substr(name_match[0].length);
 						}
 
-						output.push([name, cmd]);
+						output.push([name, cmd, label]);
 					}
 
 					f.settings.set("command_aliases", output);
+
 				}, 600, input);
 		}
 	};
@@ -117,14 +133,18 @@ FFZ.prototype.cache_command_aliases = function() {
 	for(var i=0; i < this.settings.command_aliases.length; i++) {
 		var pair = this.settings.command_aliases[i],
 			name = pair[0],
-			command = pair[1];
+			command = pair[1],
+			label = pair[2];
 
 		// Skip taken/invalid names.
 		if ( ! name || ! name.length || aliases[name] || KNOWN_COMMANDS.indexOf(name) !== -1 )
 			continue;
 
-		aliases[name] = command;
+		aliases[name] = [command, label];
 	}
+
+	if ( this._inputv )
+		Ember.propertyDidChange(this._inputv, 'ffz_commands');
 }
 
 
@@ -243,6 +263,9 @@ FFZ.chat_commands.card = function(room, args) {
 	});
 }
 
+FFZ.chat_commands.card.label = '/card &lt;user&gt;';
+FFZ.chat_commands.card.info = 'Open Moderation Card';
+
 
 FFZ.chat_commands.rules = function(room, args) {
 	var f = this,
@@ -258,6 +281,8 @@ FFZ.chat_commands.rules = function(room, args) {
 	});
 }
 
+FFZ.chat_commands.rules.info = 'Show Chat Room Rules';
+
 
 FFZ.chat_commands.open_link = function(room, args) {
 	if ( ! args || ! args.length )
@@ -266,6 +291,9 @@ FFZ.chat_commands.open_link = function(room, args) {
 	var wnd = window.open(args.join(" "), "_blank");
 	wnd.opener = null;
 }
+
+FFZ.chat_commands.open_link.label = '/open_link &lt;url&gt;';
+FFZ.chat_commands.open_link.info = 'Open URL in Tab';
 
 
 FFZ.chat_commands.fetch_link = function(room, args) {
@@ -318,6 +346,8 @@ FFZ.chat_commands.fetch_link = function(room, args) {
 	});
 }
 
+FFZ.chat_commands.fetch_link.label = '/fetch_link &lt;url&gt; <i>[template]</i>';
+FFZ.chat_commands.fetch_link.info = 'Fetch URL and Display in Chat';
 
 
 // -----------------

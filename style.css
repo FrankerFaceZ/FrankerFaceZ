@@ -311,7 +311,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	width: auto;
 
 	z-index: 7;
-	padding: 10px;
+	padding: 10px !important;
 }
 
 .ffz-theater-stats .app-main.theatre .cn-metabar__more {
@@ -3532,6 +3532,13 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .ffz-channel-title-top #channel {
 	position: relative;
 	padding-top: 80px;
+}
+
+.ffz-channel-title-top .cn-metabar__more,
+.app-main.theatre .cn-metabar__more {
+	margin-top: 0 !important;
+	padding-top: 0 !important;
+	border-top: none !important;
 }
 
 .ffz-hide-channel-banner .cn-cover { height: 0 !important }
