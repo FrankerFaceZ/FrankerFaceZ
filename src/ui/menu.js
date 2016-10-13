@@ -447,7 +447,8 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 FFZ.menu_pages.channel = {
 	render: function(view, inner) {
 			// Get the current room.
-			var room_id = view.get('controller.currentRoom.id'),
+			var controller = utils.ember_lookup('controller:chat'),
+				room_id = controller.get('currentRoom.id'),
 				room = this.rooms[room_id],
 				has_product = false,
 				f = this;
@@ -778,7 +779,8 @@ FFZ.prototype._add_emote = function(view, emote, favorites_set, favorites_key, e
 		text = input_el.value;
 
 	} else {
-		room = view.get('controller.currentRoom');
+		var controller = utils.ember_lookup('controller:chat');
+		room = controller.get('currentRoom');
 		text = room.get('messageToSend') || '';
 	}
 

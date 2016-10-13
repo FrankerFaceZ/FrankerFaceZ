@@ -97,7 +97,8 @@ FFZ.menu_pages.myemotes = {
 
 	has_sets: function(view) {
 		var user = this.get_user(),
-			tmi = view && view.get('controller.currentRoom.tmiSession'),
+			controller = utils.ember_lookup('controller:chat'),
+			tmi = controller && controller.get('currentRoom.tmiSession'),
 			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
 			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
 
@@ -180,7 +181,8 @@ FFZ.menu_pages.myemotes = {
 	},
 
 	render_lists: function(view, container, favorites_only) {
-		var tmi = view.get('controller.currentRoom.tmiSession'),
+		var controller = utils.ember_lookup('controller:chat'),
+			tmi = controller && controller.get('currentRoom.tmiSession'),
 			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
 
 			user = this.get_user(),

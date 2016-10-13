@@ -75,8 +75,8 @@ FFZ.settings_info.minimal_chat = {
 				},0);
 			}
 
-			if ( (val === 1 || val === 3) && this._chatv && this._chatv.get('controller.showList') )
-				this._chatv.set('controller.showList', false);
+			if ( (val === 1 || val === 3) && this._chatv && this._chatv.get('isShowingList') )
+				this._chatv.set('isShowingList', false);
 
 			// Remove the style if we have it.
 			if ( ! (val > 1) && this._chat_style ) {
@@ -459,8 +459,8 @@ FFZ.prototype.setup_chatview = function() {
 	}
 
 
-	this.log("Hooking the Ember Chat view.");
-	this.update_views('view:chat', this.modify_chat_view);
+	this.log("Hooking the Ember Chat Room Manager component.");
+	this.update_views('component:chat/chat-room-manager', this.modify_chat_room_manager);
 
 	this.log("Hooking the Ember from-display-preview component.");
 	this.update_views('component:chat/from-display-preview', this.modify_from_display_preview);
@@ -542,13 +542,16 @@ FFZ.prototype.modify_from_display_preview = function(view) {
 // Modify Chat View
 // --------------------
 
-FFZ.prototype.modify_chat_view = function(view) {
-	var f = this;
-	utils.ember_reopen_view(view, {
+FFZ.prototype.modify_chat_room_manager = function(component) {
+	var f = this,
+		controller = utils.ember_lookup('controller:chat');
+
+	utils.ember_reopen_view(component, {
 		ffz_init: function() {
 			f._chatv = this;
 
-			var room_id = this.get('controller.currentRoom.id'),
+			var t = this,
+				room_id = this.get('room.name'),
 				el = this.get('element');
 
 			el && el.setAttribute('data-room', room_id || "");
@@ -565,11 +568,10 @@ FFZ.prototype.modify_chat_view = function(view) {
 			this.ffz_pruner = setInterval(this.ffzPruneTabs.bind(this), 10000);
 
 			setTimeout(function() {
-				if ( f.settings.group_tabs && f._chatv && f._chatv._ffz_tabs )
-					f._chatv.$('.chat-room').css('top', f._chatv._ffz_tabs.offsetHeight + "px");
+				if ( f.settings.group_tabs && t._ffz_tabs )
+					t.$('.chat-room').css('top', t._ffz_tabs.offsetHeight + "px");
 
-				var controller = f._chatv && f._chatv.get('controller');
-				controller && controller.set('showList', false);
+				t.set('isShowingList', false);
 			}, 1000);
 		},
 
@@ -616,7 +618,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 		},
 
 
-		ffzChangeRoom: Ember.observer('controller.currentRoom', function() {
+		ffzChangeRoom: Ember.observer('room', function() {
 			f.update_ui_link();
 			this.ffz_unread = this.ffz_unread || {};
 
@@ -624,14 +626,14 @@ FFZ.prototype.modify_chat_view = function(view) {
 			if ( f._mod_card )
 				f._mod_card.get('closeAction')();
 
-			var room = this.get('controller.currentRoom'),
+			var room = controller.get('currentRoom'),
 				room_id = room && room.get('id'),
 				el = this.get('element'),
 				was_unread = room_id && this.ffz_unread[room_id],
 				update_height = false;
 
 			if ( room ) {
-				room.resetUnreadCount();
+				room.resetUnreadCount && room.resetUnreadCount();
 				room.ffz_last_view = Date.now();
 			}
 
@@ -666,7 +668,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 				if ( this._ffz_invite )
 					this._ffz_invite.classList.toggle('hidden', ! can_invite);
 
-				this.set('controller.showInviteUser', can_invite && this.get('controller.showInviteUser'));
+				this.set('isShowingInviteUser', false);
 				update_height = true;
 			}
 
@@ -697,8 +699,8 @@ FFZ.prototype.modify_chat_view = function(view) {
 				return;
 
 			if ( f.settings.pinned_rooms.indexOf(this._ffz_host) === -1 ) {
-				if ( this.get('controller.currentRoom') === this._ffz_host_room )
-					this.get('controller').blurRoom();
+				if ( controller.get('currentRoom') === this._ffz_host_room )
+					controller.blurRoom();
 
 				// Schedule the room to be destroyed. This is after a short
 				// delay to make sure we aren't just loading the room in a
@@ -746,7 +748,6 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 		ffzUpdateMenuUnread: function() {
 			var el = this.get('element'),
-				controller = this.get('controller'),
 				unread_display = el && el.querySelector('#ffz-group-tabs .button .notifications');
 
 			Ember.propertyDidChange(controller, 'notificationsCount');
@@ -757,7 +758,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 
 		ffzUpdateUnread: function(target_id) {
-			var current_id = this.get('controller.currentRoom.id');
+			var current_id = this.get('room.id');
 			this.ffz_unread = this.ffz_unread || {};
 
 			if ( target_id === current_id )
@@ -889,7 +890,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 
 			// Current Channel
-			var room = this.get('controller.currentChannelRoom'),
+			var room = controller.get('currentChannelRoom'),
 				room_id = room && room.get('id'),
 				row;
 
@@ -932,7 +933,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			} else
 				group_table.innerHTML = '';
 
-			_.each(this.get('controller.connectedPrivateGroupRooms'), function(room) {
+			_.each(controller.get('connectedPrivateGroupRooms'), function(room) {
 				var row = view.ffzBuildRow(room);
 				row && group_table && group_table.appendChild(row);
 			});
@@ -957,11 +958,11 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 				room_id = room.get('id'),
 				group = room.get('isGroupRoom'),
-				active_channel = room === this.get('controller.currentRoom'),
+				active_channel = room === controller.get('currentRoom'),
 				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount')),
 
 				name = room.get('channel.display_name') || room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
-					var active_channel = room === view.get('controller.currentRoom');
+					var active_channel = room === controller.get('currentRoom');
 					unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
 					var results = group ? [name, undefined] : f.format_display_name(name, room_id, true);
 					name_el.innerHTML = results[0] + ' <span>' + unread + '</span>';
@@ -1039,11 +1040,9 @@ FFZ.prototype.modify_chat_view = function(view) {
 			row.appendChild(toggle_pinned);
 
 			row.addEventListener('click', function() {
-				var controller = view.get('controller');
 				controller.focusRoom(room);
-				controller.set('showList', false);
+				view.set('isShowingList', false);
 			});
-
 
 			room._ffz_row = row;
 			return row;
@@ -1105,8 +1104,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			jQuery(link).tipsy({gravity: "n", offset: 10});
 
 			link.addEventListener('click', function() {
-				var controller = view.get('controller');
-				controller && controller.set('showList', !controller.get('showList'));
+				view.set('isShowingList', !view.get('isShowingList'));
 			});
 
 			tabs.appendChild(link);
@@ -1118,17 +1116,16 @@ FFZ.prototype.modify_chat_view = function(view) {
 			link.innerHTML = '<figure class="icon">' + constants.INVITE + '</figure>';
 
 			link.addEventListener('click', function() {
-				var controller = view.get('controller');
-				controller && controller.set('showInviteUser', controller.get('currentRoom.canInvite') && !controller.get('showInviteUser'));
+				view.set('isShowingInviteUser', view.get('room.canInvite') && !view.get('isShowingInviteUser') );
 			});
 
-			link.classList.toggle('hidden', !this.get("controller.currentRoom.canInvite"));
+			link.classList.toggle('hidden', !this.get('room.canInvite'));
 			view._ffz_invite = link;
 			tabs.appendChild(link);
 
 
 			// Current Room
-			var room = this.get('controller.currentChannelRoom'),
+			var room = controller.get('currentChannelRoom'),
 				room_id = room && room.get('id'),
 				tab;
 
@@ -1156,7 +1153,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 
 			// Group Chat
-			_.each(this.get('controller.connectedPrivateGroupRooms'), function(room) {
+			_.each(controller.get('connectedPrivateGroupRooms'), function(room) {
 				var tab = view.ffzBuildTab(room);
 				tab && tabs.appendChild(tab);
 			});
@@ -1173,7 +1170,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 				tab = document.createElement('span'), name, unread, icon = '',
 				room_id = room.get('id'),
 				group = room.get('isGroupRoom'),
-				active_channel = room === this.get('controller.currentRoom');
+				active_channel = room === controller.get('currentRoom');
 
 			tab.setAttribute('data-room', room_id);
 
@@ -1188,7 +1185,7 @@ FFZ.prototype.modify_chat_view = function(view) {
 			unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
 
 			name = room.get('channel.display_name') || room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
-				var active_channel = room === view.get('controller.currentRoom');
+				var active_channel = room === controller.get('currentRoom');
 				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
 				var results = group ? [name, undefined] : f.format_display_name(name, room_id, true, true);
 				tab.innerHTML = icon + results[0] + '<span>' + unread + '</span>';
@@ -1213,10 +1210,9 @@ FFZ.prototype.modify_chat_view = function(view) {
 				tab.title += '<br>' + results[1];
 
 			tab.addEventListener('click', function() {
-				var controller = view.get('controller');
 				controller.focusRoom(room);
-				controller.set('showList', false);
-				});
+				view.set('isShowingList', false);
+			});
 
 			room._ffz_tab = tab;
 			return tab;
@@ -1224,8 +1220,8 @@ FFZ.prototype.modify_chat_view = function(view) {
 
 		ffzTabVisible: function(room_id) {
 			var room = f.rooms[room_id] && f.rooms[room_id].room,
-				is_current = room === this.get('controller.currentRoom'),
-				is_channel = room === this.get('controller.currentChannelRoom'),
+				is_current = room === controller.get('currentRoom'),
+				is_channel = room === controller.get('currentChannelRoom'),
 
 				now = Date.now();
 

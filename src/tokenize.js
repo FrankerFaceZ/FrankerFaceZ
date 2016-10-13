@@ -66,13 +66,13 @@ var FFZ = window.FrankerFaceZ,
 
 FFZ.SRC_IDS = {},
 FFZ.src_to_id = function(src) {
-	if ( FFZ.SRC_IDS.hasOwnProperty(src) )
+	if ( Object.hasOwnProperty.call(FFZ.SRC_IDS, src) )
 		return FFZ.SRC_IDS[src];
 
 	var match = /\/emoticons\/v1\/(\d+)\/1\.0/.exec(src),
 		id = match ? parseInt(match[1]) : null;
 
-	if ( Number.isNaN(id) )
+	if ( typeof id === "number" && (isNaN(id) || !isFinite(id)) )
 		id = null;
 
 	FFZ.SRC_IDS[src] = id;

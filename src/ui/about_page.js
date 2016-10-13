@@ -344,7 +344,7 @@ FFZ.menu_pages.about = {
 		about: {
 			name: "About",
 			render: function(view, container, inner, menu) {
-				var room = this.rooms[view.get("context.currentRoom.id")],
+				var room = this.rooms[view.get('room.id')],
 					has_emotes = false, f = this;
 
 				if ( room && room.set ) {
