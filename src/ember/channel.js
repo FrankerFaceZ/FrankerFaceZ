@@ -1086,17 +1086,17 @@ FFZ.settings_info.chatter_count = {
 	help: "Display the current number of users connected to chat beneath the channel.",
 
 	on_update: function(val) {
-			if ( this._cindex )
-				this._cindex.ffzUpdateChatters();
+		if ( this._cindex )
+			this._cindex.ffzUpdateMetadata('chatters');
 
-			if ( ! val || ! this.rooms )
-				return;
+		if ( ! val || ! this.rooms )
+			return;
 
-			// Refresh the data.
-			for(var room_id in this.rooms)
-				this.rooms.hasOwnProperty(room_id) && this.rooms[room_id].room && this.rooms[room_id].room.ffzInitChatterCount();
-		}
-	};
+		// Refresh the data.
+		for(var room_id in this.rooms)
+			this.rooms.hasOwnProperty(room_id) && this.rooms[room_id].room && this.rooms[room_id].room.ffzInitChatterCount();
+	}
+};
 
 
 FFZ.settings_info.channel_views = {
@@ -1147,10 +1147,10 @@ FFZ.settings_info.stream_host_button = {
 	name: "Host This Channel Button",
 	help: "Display a button underneath streams that make it easy to host them with your own channel.",
 	on_update: function(val) {
-			if ( this._cindex )
-				this._cindex.ffzUpdateHostButton();
-		}
-	};
+		if ( this._cindex )
+			this._cindex.ffzUpdateHostButton();
+	}
+};
 
 
 FFZ.settings_info.stream_uptime = {
@@ -1171,10 +1171,10 @@ FFZ.settings_info.stream_uptime = {
 	name: "Stream Uptime",
 	help: 'Display the stream uptime under a channel by the viewer count.',
 	on_update: function(val) {
-			if ( this._cindex )
-				this._cindex.ffzUpdateUptime();
-		}
-	};
+		if ( this._cindex )
+			this._cindex.ffzUpdateMetadata('uptime');
+	}
+};
 
 
 FFZ.settings_info.stream_title = {
@@ -1187,10 +1187,10 @@ FFZ.settings_info.stream_title = {
 	name: "Title Links",
 	help: "Make links in stream titles clickable.",
 	on_update: function(val) {
-			if ( this._cindex )
-				this._cindex.ffzFixTitle();
-		}
-	};
+		if ( this._cindex )
+			this._cindex.ffzFixTitle();
+	}
+};
 
 
 FFZ.settings_info.channel_bar_bottom = {

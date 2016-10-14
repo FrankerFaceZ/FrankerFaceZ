@@ -122,7 +122,7 @@ metadata.host = {
 
 	order: 98,
 	label: function(user, channel_id, hosting_id) {
-		if ( ! user || user.login === channel_id )
+		if ( ! this.settings.stream_host_button || ! user || user.login === channel_id )
 			return null;
 
 		return channel_id === hosting_id ? 'Unhost' : 'Host';
