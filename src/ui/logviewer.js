@@ -588,7 +588,7 @@ FFZ.mod_card_pages.notes = {
 		this.tokenize_chat_line(message, true, false);
 
 		var can_edit = false, // mod_card.lv_write_notes && user && user.login === message.from,
-			can_delete = false, //mod_card.lv_delete_notes || (user && user.login === message.from),
+			can_delete = mod_card.lv_delete_notes || (user && user.login === message.from),
 			can_mod = can_edit || can_delete;
 
 		var output = this._build_mod_card_history(message, mod_card, true, false, can_mod);

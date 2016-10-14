@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
+	constants = require('../constants'),
 
 	VALID_CHANNEL = /^[A-Za-z0-9_]+$/,
 	TWITCH_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([A-Za-z0-9_]+)/i;
@@ -26,12 +27,13 @@ FFZ.settings_info.follow_buttons = {
 	no_mobile: true,
 
 	category: "Channel Metadata",
-	name: "Relevant Follow Buttons",
-	help: 'Display additional Follow buttons for channels relevant to the stream, such as people participating in co-operative gameplay.',
+	name: "Featured Channels",
+	help: 'Display additional Follow buttons for channels featured by the stream, such as people participating in co-operative gameplay.',
 	on_update: function(val) {
-			this.rebuild_following_ui();
-		}
-	};
+		if ( this._cindex )
+			this._cindex.ffzUpdateMetadata('following');
+	}
+};
 
 
 // ---------------
@@ -105,8 +107,8 @@ FFZ.ws_on_close.push(function() {
 		}
 	}
 
-	if ( need_update )
-		this.rebuild_following_ui();
+	if ( need_update && this._cindex )
+		this._cindex.ffzUpdateMetadata('following');
 });
 
 
@@ -124,8 +126,8 @@ FFZ.ws_commands.follow_buttons = function(data) {
 			need_update = true;
 	}
 
-	if ( need_update )
-		this.rebuild_following_ui();
+	if ( need_update && this._cindex )
+		this._cindex.ffzUpdateMetadata('following');
 }
 
 
@@ -186,259 +188,143 @@ FFZ.ws_commands.follow_sets = function(data) {
 // Following UI
 // ---------------
 
-FFZ.prototype.rebuild_following_ui = function() {
-	if ( ! this._cindex )
-		return;
+FFZ.channel_metadata.following = {
+	refresh: false,
 
-	var channel_id = this._cindex.get('channel.id'),
-		hosted_id = this._cindex.get('channel.hostModeTarget.id');
+	setup: function(view, channel) {
+		var channel_id = channel.get('id'),
+			data = this.follow_data && this.follow_data[channel_id];
 
-	if ( channel_id ) {
-		var data = this.follow_data && this.follow_data[channel_id],
+		return [_.unique(data).without("")];
+	},
 
-			el = this._cindex.get('element'),
-			container = el && el.querySelector('.stats-and-actions .channel-actions'),
-			cont = container && container.querySelector('#ffz-ui-following');
+	order: 97,
+	button: true,
+	static_label: constants.HEART,
+	label: function(data) {
+		if ( ! data || ! data.length )
+			return null;
 
-		if ( ! container || ! this.settings.follow_buttons || ! data || ! data.length ) {
-			if ( cont )
-				cont.parentElement.removeChild(cont);
+		return 'Featured';
+	},
 
-		} else {
-			if ( ! cont ) {
-				cont = document.createElement('span');
-				cont.id = 'ffz-ui-following';
-
-				var before = null;
-				try {
-					var before_btn = container.querySelector('.subscribe-button');
-					if ( before_btn )
-						before = before_btn.parentElement.nextSibling;
-					else {
-						before_btn = container.querySelector('.notification-controls');
-						if ( before_btn )
-							before = before_btn.nextSibling;
-					}
-
-				} catch(err) { }
-
-				if ( before )
-					container.insertBefore(cont, before);
-				else
-					container.appendChild(cont);
-			} else
-				cont.innerHTML = '';
-
-			var processed = [channel_id];
-			for(var i=0; i < data.length && i < 10; i++) {
-				var cid = data[i];
-				if ( processed.indexOf(cid) !== -1 )
-					continue;
-				this._build_following_button(cont, cid);
-				processed.push(cid);
-			}
+	popup: function(container, data) {
+		var user = this.get_user();
+		if ( ! user || ! user.login ) {
+			Ember.$.login({mpSourceAction: "follow-button"});
+			return false;
 		}
-	}
 
+		container.classList.add('balloon--md');
+		var scroller = utils.createElement('div', 'scroller');
+		container.appendChild(scroller);
 
-	if ( hosted_id ) {
-		var data = this.follow_data && this.follow_data[hosted_id],
+		for(var i=0; i < data.length && i < 50; i++)
+			FFZ.channel_metadata.following.draw_row.call(this, scroller, data[i]);
+	},
 
-			el = this._cindex.get('element'),
-			container = el && el.querySelector('#hostmode .channel-actions'),
-			cont = container && container.querySelector('#ffz-ui-following');
+	draw_row: function(container, user_id) {
+		var f = this,
+			user = this.get_user(),
 
-		if ( ! container || ! this.settings.follow_buttons || ! data || ! data.length ) {
-			if ( cont )
-				cont.parentElement.removeChild(cont);
+			el = utils.createElement('div', 'ffz-following-row'),
 
-		} else {
-			if ( ! cont ) {
-				cont = document.createElement('span');
-				cont.id = 'ffz-ui-following';
+			avatar = utils.createElement('img', 'image'),
+			name_el = utils.createElement('a', 'html-tooltip'),
 
-				var before = null;
-				try {
-					var before_btn = container.querySelector('.subscribe-button');
-					if ( before_btn )
-						before = before_btn.parentElement.nextSibling;
-					else {
-						before_btn = container.querySelector('.notification-controls');
-						if ( before_btn )
-							before = before_btn.nextSibling;
-					}
-				} catch(err) { }
+			btn_follow = utils.createElement('button', 'follow-button button'),
+			sw_notif = utils.createElement('a', 'switch html-tooltip', '<span>'),
 
-				if ( before )
-					container.insertBefore(cont, before);
-				else
-					container.appendChild(cont);
-			} else
-				cont.innerHTML = '';
+			channel = {
+				name: user_id
+			},
 
-			var processed = [hosted_id];
-			for(var i=0; i < data.length && i < 10; i++) {
-				var cid = data[i];
-				if ( processed.indexOf(cid) !== -1 )
-					continue;
-				this._build_following_button(cont, cid);
-				processed.push(cid);
-			}
-		}
-	}
-}
+			is_following = null,
+			is_notified = false,
 
+			update = function() {
+				if ( channel.logo )
+					avatar.src = channel.logo;
 
-// ---------------
-// UI Construction
-// ---------------
+				var name = f.format_display_name(channel.display_name || user_id, user_id);
+				name_el.innerHTML = name[0];
+				name_el.setAttribute('original-title', name[1] || '');
 
-FFZ.prototype._build_following_button = function(cont, channel_id) {
-	if ( ! VALID_CHANNEL.test(channel_id) )
-		return this.log("Ignoring Invalid Channel: " + utils.sanitize(channel_id));
+				el.setAttribute('data-loaded', is_following !== null);
+				el.setAttribute('data-following', is_following);
 
-	var f = this,
-		btn = utils.createElement('button', 'follow-button button html-tooltip'),
+				btn_follow.textContent = is_following ? 'Unfollow' : 'Follow';
+				btn_follow.classList.toggle('is-following', is_following);
+				btn_follow.classList.toggle('button--status', is_following);
+				sw_notif.classList.toggle('active', is_notified);
+				sw_notif.setAttribute('original-title', 'Notify me when ' + name[0] + ' goes live.');
+			},
 
-		noti = utils.createElement('a', 'toggle-notification-menu js-toggle-notification-menu'),
-		noti_c = utils.createElement('div', 'notification-controls v2 hidden', noti),
+			check_following = function() {
+				// Minimize our API calls.
+				utils.api.get("users/:login/follows/channels/" + user_id)
+					.done(function(data) {
+						is_following = true;
+						is_notified = data.notifications;
+						channel = data.channel;
+						update();
 
-		display_name,
-		tooltip,
+					}).fail(function() {
+						utils.api.get("channels/" + user_id)
+							.done(function(data) {
+								is_following = false;
+								is_notified = false;
+								channel = data;
+								update();
+							}).fail(function() {
+								el.removeChild(btn_follow);
+								el.removeChild(sw_notif);
+								el.appendChild(utils.createElement('span', 'right', 'Invalid Channel'));
+							});
+					});
+			},
 
-		following = false,
-		notifications = false,
+			do_follow = function(notice) {
+				if ( notice !== false )
+					notice = true;
 
-		update = function() {
-			btn.classList.toggle('is-following', following);
-			btn.classList.toggle('button--status', following);
-			btn.title = tooltip ? (following ? "Unf" : "F") + "ollow " + tooltip : '';
-			btn.innerHTML = (following ? "" : "Follow ") + display_name;
-			noti_c.classList.toggle('hidden', !following);
-		},
+				is_following = true;
+				is_notified = notice;
+				update();
 
-		check_following = function() {
-			var user = f.get_user();
-			if ( ! user || ! user.login ) {
-				following = false;
-				notification = false;
-				btn.classList.add('is-initialized');
-				return update();
-			}
+				return utils.api.put("users/:login/follows/channels/" + user_id, {notifications: notice})
+					.fail(check_following);
+			};
 
-			utils.api.get("users/" + user.login + "/follows/channels/" + channel_id)
-				.done(function(data) {
-					following = true;
-					notifications = data.notifications;
-					btn.classList.add('is-initialized');
-					update();
-				}).fail(function(data) {
-					following = false;
-					notifications = false;
-					btn.classList.add('is-initialized');
-					update();
-				});
-		},
-
-		do_follow = function(notice) {
-			if ( notice !== false )
-				notice = true;
-
-			var user = f.get_user();
-			if ( ! user || ! user.login )
-				return null;
-
-			notifications = notice;
-			return utils.api.put("users/:login/follows/channels/" + channel_id, {notifications: notifications})
-				.fail(check_following);
-		},
-
-		on_name = function(cap_name) {
-			var results = f.format_display_name(cap_name, channel_id, true, true);
-			display_name = results[0];
-			tooltip = results[1];
+		btn_follow.addEventListener('click', function() {
+			is_following = is_notified = ! is_following;
 			update();
-		};
 
-	// The drop-down button!
-	noti.href = '#';
+			f.ws_send("track_follow", [user_id, is_following]);
 
-	// Event Listeners!
-	btn.addEventListener('click', function(e) {
-		var user = f.get_user();
-		if ( ! user || ! user.login )
-			// Show the login dialog~!
-			return Ember.$.login({mpSourceAction: "follow-button", follow: channel_id});
+			if ( is_following )
+				do_follow();
+			else
+				utils.api.del("users/:login/follows/channels/" + user_id)
+					.fail(check_following);
+		});
 
-		// Immediate update for nice UI.
-		following = ! following;
+		sw_notif.addEventListener('click', function() {
+			do_follow(!is_notified);
+		});
+
+		el.setAttribute('data-user', user_id);
+
+		name_el.href = 'https://www.twitch.tv/' + user_id;
+		name_el.target = '_blank';
+
+		el.appendChild(avatar);
+		el.appendChild(name_el);
+		el.appendChild(btn_follow);
+		el.appendChild(sw_notif);
+		container.appendChild(el);
+
+		check_following();
 		update();
-
-		// Report it!
-		f.ws_send("track_follow", [channel_id, following]);
-
-		// Do it, and make sure it happened.
-		if ( following )
-			do_follow()
-		else
-			utils.api.del("users/:login/follows/channels/" + channel_id)
-				.done(check_following);
-
-		return false;
-	});
-
-	btn.addEventListener('mousedown', function(e) {
-		if ( e.button !== 1 )
-			return;
-
-		e.preventDefault();
-		window.open(Twitch.uri.profile(channel_id));
-	});
-
-	noti.addEventListener('click', function() {
-		var sw = f._build_following_popup(noti_c, channel_id, notifications);
-		if ( sw )
-			sw.addEventListener('click', function() {
-				var notice = ! notifications;
-				sw.classList.toggle('active', notice);
-				do_follow(notice);
-				return false;
-			});
-		return false;
-	});
-
-	on_name(FFZ.get_capitalization(channel_id, on_name));
-
-	setTimeout(check_following, Math.random()*5000);
-
-	cont.appendChild(btn);
-	cont.appendChild(noti_c);
-}
-
-
-FFZ.prototype._build_following_popup = function(container, channel_id, notifications) {
-	var popup = this.close_popup(), out = '',
-		pos = container.offsetLeft + container.offsetWidth;
-
-	if ( popup && popup.id == "ffz-following-popup" && popup.getAttribute('data-channel') === channel_id )
-		return null;
-
-	popup = this._popup = utils.createElement('div', 'dropmenu notify-menu js-notify');
-	popup.id = 'ffz-following-popup';
-	popup.setAttribute('data-channel', channel_id);
-
-	this._popup_allow_parent = true;
-	this._popup_parent = container;
-
-	var results = this.format_display_name(FFZ.get_capitalization(channel_id), channel_id, true);
-
-	out  = '<div class="header">You are following <span' + (results[1] ? ' class="html-tooltip" title="' + utils.quote_attr(results[1]) + '"' : '') + '>' + results[0] + '</span></div>';
-	out += '<p class="clearfix">';
-	out += '<a class="switch' + (notifications ? ' active' : '') + '"><span></span></a>';
-	out += '<span class="switch-label">Notify me when the broadcaster goes live</span>';
-	out += '</p>';
-
-	popup.innerHTML = out;
-	container.insertBefore(popup, container.firstChild);
-	return popup.querySelector('a.switch');
+	}
 }

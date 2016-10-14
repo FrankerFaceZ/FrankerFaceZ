@@ -18,6 +18,9 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-following-row[data-loaded="false"] .button,
+.ffz-following-row[data-loaded="false"] .switch,
+.ffz-following-row[data-following="false"] .switch,
 .ffz-moderation-card:not(.lv-notes) ul.menu li[data-page="notes"],
 .ffz-moderation-card:not(.lv-logs) ul.menu li[data-page="history"],
 .ffz-moderation-card:not(.lv-logs) ul.menu li[data-page="stats"],
@@ -240,18 +243,6 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 #dash_main #stats .stat.dark#ffz_count svg path { fill: #cacaca; }
 
-#ffz-ui-following .follow-button a {
-	padding: 0 10px;
-	color: #fff;
-}
-
-#ffz-following-popup {
-	background-image: url('//cdn.frankerfacez.com/script/zreknarf-bg.png');
-	background-repeat: no-repeat;
-	background-position: 115% -75%;
-	background-size: 50%;
-}
-
 .ffz-live-team-channel .ffz-game {
 	display: inline-block;
 	max-width: 150px;
@@ -357,76 +348,61 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 #ffz-ui-host-button { vertical-align: middle }
 
-#ffz-following-popup.right {
-	right: 0;
-	left: auto;
-}
-
-#ffz-ui-following .notification-controls,
-#ffz-ui-race {
-	position: relative;
-}
-
-#ffz-ui-race .button span {
+.srl-logo {
 	display: inline-block;
-	height: 30px;
-	background: no-repeat 0 50%;
-}
-
-#ffz-ui-race .button span.logo {
-	padding-left: 44px;
-	margin-bottom: -10px;
+	width: 34px;
+	height: 16px;
 	background-image: url("//cdn.frankerfacez.com/script/srl_button.png");
 }
 
+.cn-metabar__ffz .srl-logo {
+	vertical-align: middle;
+	margin-top: -2px;
+}
 
-#ffz-race-popup {
-	position: absolute;
-	display: block;
+#ffz-metadata-popup[data-key="srl_race"] {
 	background-image: url("//cdn.frankerfacez.com/script/zreknarf-bg.png");
 	background-repeat: no-repeat;
 	padding: 1rem;
 	background-position: 115% 110%;
 }
 
-#ffz-race-popup.right { right: 10px; }
-
-#ffz-race-popup .heading {
+#ffz-metadata-popup[data-key="srl_race"] .heading {
 	margin: -1rem -1rem 1rem;
 	height: 65px;
 	position: relative;
 }
 
-#ffz-race-popup .heading div {
+#ffz-metadata-popup[data-key="srl_race"] .heading div {
 	padding: 0 1rem;
 }
 
-#ffz-race-popup .heading h2,
-#ffz-race-popup .heading .goal {
+#ffz-metadata-popup[data-key="srl_race"] .heading h2,
+#ffz-metadata-popup[data-key="srl_race"] .heading .goal {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-#ffz-race-popup .heading .goal {
+#ffz-metadata-popup[data-key="srl_race"] .heading .goal {
 	display: block;
 	margin: calc(-1rem + 1px);
 	padding: calc(1rem - 1px);
 }
 
-#ffz-race-popup .heading .goal:hover {
+#ffz-metadata-popup[data-key="srl_race"] .heading .goal:hover {
 	white-space: normal;
 	background-color: rgba(255,255,255,0.9);
 	border-bottom: 1px solid rgba(0,0,0,0.2);
 }
 
-.theatre #ffz-race-popup .heading .goal:hover,
-.ffz-dark #ffz-race-popup .heading .goal:hover {
+.theatre #ffz-metadata-popup[data-key="srl_race"] .heading .goal:hover,
+.ffz-dark #ffz-metadata-popup[data-key="srl_race"] .heading .goal:hover {
 	background-color: rgba(16,16,16,0.9);
 	border-color: rgba(255,255,255,0.2);
 }
 
-#ffz-race-popup .heading h2 {
+#ffz-metadata-popup[data-key="srl_race"] .heading h2 {
 	max-width: 240px;
 	font-size: 1.5em;
 	padding-bottom: 5px;
@@ -435,7 +411,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	margin-bottom: 0;
 }
 
-#ffz-race-popup .heading > span {
+#ffz-metadata-popup[data-key="srl_race"] .heading > span {
 	line-height: 30px;
 	position: absolute;
 	top: 7.5px;
@@ -446,32 +422,37 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	border-radius: 5px;
 }
 
-#ffz-race-popup .right {
+#ffz-metadata-popup[data-key="srl_race"] p {
+	float: right;
+	margin-bottom: 0;
+}
+
+#ffz-metadata-popup[data-key="srl_race"] .right {
 	padding-top: 0;
 	text-align: right;
 }
 
-#ffz-race-popup .table {
+#ffz-metadata-popup[data-key="srl_race"] .table {
 	overflow-y: auto;
 	border-bottom: 1px solid;
 	margin-bottom: 1rem;
 }
 
-#ffz-race-popup table {
+#ffz-metadata-popup[data-key="srl_race"] table {
 	width: 100%;
 	text-align: center;
 	border-spacing: 0;
 }
 
-#ffz-race-popup table a {
+#ffz-metadata-popup[data-key="srl_race"] table a {
 	color: inherit;
 }
 
 .ffz-about-table a.twitch,
 .ffz-about-table a.youtube,
 .ffz-about-table a.twitter,
-#ffz-race-popup a.twitch,
-#ffz-race-popup a.hitbox {
+#ffz-metadata-popup[data-key="srl_race"] a.twitch,
+#ffz-metadata-popup[data-key="srl_race"] a.hitbox {
 	display: inline-block;
 	height: 16px;
 	margin-left: 5px;
@@ -488,25 +469,25 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	background-image: url("//cdn.frankerfacez.com/script/twitter_logo.png");
 }
 
-#ffz-race-popup a.twitch,
+#ffz-metadata-popup[data-key="srl_race"] a.twitch,
 .ffz-about-table a.twitch {
 	width: 15px;
 	background-image: url("//cdn.frankerfacez.com/script/twitch_logo.png");
 }
 
-#ffz-race-popup a.hitbox {
+#ffz-metadata-popup[data-key="srl_race"] a.hitbox {
 	width: 12px;
 	background-image: url("//cdn.frankerfacez.com/script/hitbox_logo.png");
 }
 
-#ffz-race-popup table tbody tr.done:nth-child(0n+1) td { background-color: rgba(255,255,0,.2); }
-#ffz-race-popup table tbody tr.done:nth-child(0n+2) td { background-color: rgba(128,128,128,.2); }
-#ffz-race-popup table tbody tr.done:nth-child(0n+3) td { background-color: rgba(210,100,0,.2); }
-#ffz-race-popup table tbody tr.forfeit td { opacity: 0.5; background-color: rgba(210,100,100,.2); }
-#ffz-race-popup table tbody tr.racing td.time { opacity: 0.5; }
+#ffz-metadata-popup[data-key="srl_race"] table tbody tr[data-state="done"]:nth-child(0n+1) td { background-color: rgba(255,255,0,.2); }
+#ffz-metadata-popup[data-key="srl_race"] table tbody tr[data-state="done"]:nth-child(0n+2) td { background-color: rgba(128,128,128,.2); }
+#ffz-metadata-popup[data-key="srl_race"] table tbody tr[data-state="done"]:nth-child(0n+3) td { background-color: rgba(210,100,0,.2); }
+#ffz-metadata-popup[data-key="srl_race"] table tbody tr[data-state="forfeit"] td { opacity: 0.5; background-color: rgba(210,100,100,.2); }
+#ffz-metadata-popup[data-key="srl_race"] table tbody tr[data-state="racing"] td.time { opacity: 0.5; }
 
-#ffz-race-popup table th, #ffz-race-popup td { padding: 1px; }
-#ffz-race-popup table th { border-bottom: 1px solid; }
+#ffz-metadata-popup[data-key="srl_race"] table th, #ffz-metadata-popup[data-key="srl_race"] td { padding: 1px; }
+#ffz-metadata-popup[data-key="srl_race"] table th { border-bottom: 1px solid; }
 
 
 /* Dark Menu */
@@ -592,10 +573,10 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 }
 
 .emoticon-selector .emoticon-grid.ffz-no-emotes img {
-    padding: 5px;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+	padding: 5px;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
 }
 
 .ffz-ui-sub-menu-page[data-page="favorites"] .emoticon-grid.ffz-no-emotes {
@@ -1088,10 +1069,11 @@ body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { border-bottom: none }
 }
 
 .ffz-subwindow p {
-    margin-bottom: 0;
-    padding: 0 0 10px;
+	margin-bottom: 0;
+	padding: 0 0 10px;
 }
 
+#ffz-metadata-popup,
 .ffz-subwindow .card,
 .ffz-channel-selector {
 	background-image: url("//cdn.frankerfacez.com/script/zreknarf-bg.png");
@@ -1194,6 +1176,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+#ffz-metadata-popup .scroller::-webkit-scrollbar,
 .searchPanel .collectionWrapper::-webkit-scrollbar,
 .activity-react__all::-webkit-scrollbar,
 .conversations-list .scroll-container::-webkit-scrollbar,
@@ -1203,14 +1186,15 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .conversations-list .conversations-list-inner::-webkit-scrollbar,
 .conversation-window .conversation-content::-webkit-scrollbar,
 .chat-history::-webkit-scrollbar,
-#ffz-race-popup .table::-webkit-scrollbar,
+#ffz-metadata-popup[data-key="srl_race"] .table::-webkit-scrollbar,
 .emoticon-selector-box .all-emotes::-webkit-scrollbar,
 .ffz-ui-sub-menu-page::-webkit-scrollbar,
 .ffz-ui-menu-page::-webkit-scrollbar {
-    height: 6px;
+	height: 6px;
 	width: 6px;
 }
 
+#ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 .searchPanel .collectionWrapper::-webkit-scrollbar-thumb,
 .activity-react__all::-webkit-scrollbar-thumb,
 .conversations-list .scroll-container::-webkit-scrollbar-thumb,
@@ -1220,7 +1204,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
 .conversation-window .conversation-content::-webkit-scrollbar-thumb,
 .chat-history::-webkit-scrollbar-thumb,
-#ffz-race-popup .table::-webkit-scrollbar-thumb,
+#ffz-metadata-popup[data-key="srl_race"] .table::-webkit-scrollbar-thumb,
 .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
 .ffz-ui-menu-page::-webkit-scrollbar-thumb {
@@ -1228,6 +1212,9 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	background: rgba(0,0,0,0.7);
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
+
+.ffz-dark #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
+.theatre #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 
 .ffz-dark .searchPanel .collectionWrapper::-webkit-scrollbar-thumb,
 .ffz-dark .activity-react__all::-webkit-scrollbar-thumb,
@@ -1418,6 +1405,9 @@ img.channel_background[src="null"] { display: none; }
 }
 
 .ffz-moderation-card ul.menu span { text-decoration: underline }
+
+.ffz-dark .ffz-following-row,
+.theatre .ffz-following-row,
 
 .ffz-dark .moderation-card .interface,
 .theatre .moderation-card .interface,
@@ -3591,10 +3581,10 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 .ffz-share-box .qa-share-box__button { margin: 0 !important }
 
 .cn-metabar__more > .cn-metabar__livecount { order: 1 }
-.cn-metabar__more > #ffz-uptime-display { order: 2 }
-.cn-metabar__more > #ffz-player-stats { order: 3 }
-.cn-metabar__more > .cn-metabar__viewcount { order: 50; flex-grow: 0 !important }
+/*.cn-metabar__more > .cn-metabar__ffz[data-key="uptime"] { order: 2 }
 .cn-metabar__more > #ffz-chatter-display { order: 51 }
+.cn-metabar__more > #ffz-player-stats { order: 3 }*/
+.cn-metabar__more > .cn-metabar__viewcount { order: 50; flex-grow: 0 !important }
 
 .cn-metabar__more > #ffz-ui-host-button { order: 98 }
 .cn-metabar__more > .ffz-channel-broadcast-link { order: 100 }
@@ -3619,4 +3609,48 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 .ffz-moderation-card .mod-icons .edit-note {
 	background-image: url("//cdn.frankerfacez.com/script/button_edit.svg");
 	background-repeat: no-repeat;
+}
+
+/* Following Menu */
+
+#ffz-metadata-popup .scroller {
+	max-height: 420px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	margin: -1rem;
+	padding: 1rem;
+}
+
+/* Remove BTTV's ugly styling */
+.ffz-following-row .button {
+	color: #fff !important;
+	box-shadow: none !important;
+}
+
+.ffz-following-row {
+	padding: 1rem 0;
+	line-height: 30px;
+	border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.ffz-following-row:first-child { padding-top: 0 }
+.ffz-following-row:last-child { padding-bottom: 0; border-bottom: none }
+
+.ffz-following-row .image:not([src]) { visibility: hidden }
+
+.ffz-following-row .image {
+	display: inline-block;
+	height: 30px;
+	width: 30px;
+	margin-right: 1rem;
+}
+
+.ffz-following-row .right,
+.ffz-following-row .button {
+	float: right;
+}
+
+.ffz-following-row .switch {
+	float: right;
+	margin: 7px 1rem 0 0;
 }

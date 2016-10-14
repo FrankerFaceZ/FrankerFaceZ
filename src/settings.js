@@ -115,7 +115,7 @@ FFZ.prototype.reset_settings = function() {
 }
 
 
-FFZ.prototype._get_settings_object = function() {
+FFZ.prototype._get_settings_object = function(skip_default) {
 	var data = {
 		version: 1,
 		script_version: FFZ.version_info + '',
@@ -131,7 +131,7 @@ FFZ.prototype._get_settings_object = function() {
 		var info = FFZ.settings_info[key],
 			ls_key = info.storage_key || make_ls(key);
 
-		if ( localStorage.hasOwnProperty(ls_key) )
+		if ( localStorage.hasOwnProperty(ls_key) && (!skip_default || this.settings[key] !== info.value) )
 			data.settings[key] = this.settings[key];
 	}
 

@@ -160,7 +160,7 @@ FFZ.settings_info.hidden_badges = {
 				if ( new_val === null || new_val === undefined )
 					return;
 
-				f.settings.set("hidden_badges", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)));
+				f.settings.set("hidden_badges", _.unique(new_val.trim().toLowerCase().split(/\s*,\s*/)).without(""));
 			}, 600
 		)
 	}

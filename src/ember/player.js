@@ -21,7 +21,7 @@ FFZ.settings_info.player_stats = {
 		if ( ! this._cindex )
 			return;
 
-		this._cindex.ffzUpdatePlayerStats();
+		this._cindex.ffzUpdateMetadata('player_stats');
 	}
 };
 

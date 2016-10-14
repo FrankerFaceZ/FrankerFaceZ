@@ -49,21 +49,14 @@ FFZ.prototype.modify_viewer_list = function(component) {
 
 				// Get the broadcaster name.
 				var Channel = utils.ember_lookup('controller:channel'),
-					room_id = this.get('model.id'),
-					broadcaster = Channel && Channel.get('model.id');
+					broadcaster = room_id = this.get('model.id');
 
 				// We can get capitalization for the broadcaster from the channel.
-				if ( broadcaster ) {
-					var display_name = Channel.get('model.display_name');
+				if ( Channel && Channel.get('channelModel.id') === room_id ) {
+					var display_name = Channel.get('channelModel.displayName');
 					if ( display_name )
 						FFZ.capitalization[broadcaster] = [display_name, Date.now()];
 				}
-
-				// If the current room isn't the channel's chat, then we shouldn't
-				// display them as the broadcaster.
-				if ( room_id !== broadcaster )
-					broadcaster = null;
-
 
 				// Iterate over everything~!
 				for(var i=0; i < VIEWER_CATEGORIES.length; i++) {

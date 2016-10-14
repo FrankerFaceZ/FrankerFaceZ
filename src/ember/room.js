@@ -2232,7 +2232,7 @@ FFZ.prototype._modify_room = function(room) {
 				return;
 
 			if ( f._cindex )
-				f._cindex.ffzUpdateChatters();
+				f._cindex.ffzUpdateMetadata('chatters');
 
 			if ( window !== window.parent && parent.postMessage )
 				parent.postMessage({from_ffz: true, command: 'chatter_count', data: Object.keys(this.get('ffz_chatters') || {}).length}, "*"); //location.protocol + "//www.twitch.tv/");

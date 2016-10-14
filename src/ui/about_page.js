@@ -3,11 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	createElement = utils.createElement,
 
-	NICE_DESCRIPTION = {
-		"cluster": null,
-		"manifest_cluster": null,
-		"user_ip": null
-	};
+	BANNED_KEYS = ['user_ip'];
 
 
 // -------------------
@@ -156,18 +152,24 @@ FFZ.debugging_blocks = {
 						return succeed(output);
 					}
 
+					var perms = [],
+						ul = data.me.valid ? data.me.level : 0,
+						chan = data.channel;
+
+					ul >= chan.viewlogs && perms.push('view');
+					ul >= chan.viewmodlogs && perms.push('view-mod');
+					ul >= chan.viewcomments && perms.push('comment-view');
+					ul >= chan.writecomments && perms.push('comment-write');
+					ul >= chan.deletecomments && perms.push('comment-delete');
+
 					output.push(['Logging Enabled', data.channel.active === 1]);
 					output.push(['User Level', data.me.valid ? data.me.level : '<i>invalid</i>']);
-					output.push(['Level: View Logs', data.channel.viewlogs]);
-					output.push(['Level: View Moderation Logs', data.channel.viewmodlogs]);
-					output.push(['Level: View Comments', data.channel.viewcomments]);
-					output.push(['Level: Write Comments', data.channel.writecomments]);
-					output.push(['Level: Delete Comments', data.channel.deletecomments]);
+					output.push(['User Permissions', perms.join(', ') || '<i>none</i>']);
 
 					succeed(output);
 
 				}).catch(function(err) {
-					succeed(['Authentication', '<i>unable to get token</i>']);
+					succeed([['Authentication', '<i>unable to get token</i>']]);
 				});
 			});
 		}
@@ -286,10 +288,30 @@ FFZ.debugging_blocks = {
 			var sorted_keys = Object.keys(data).sort(),
 				output = [];
 
-			for(var i=0; i < sorted_keys.length; i++)
-				output.push([sorted_keys[i], data[sorted_keys[i]]]);
+			for(var i=0; i < sorted_keys.length; i++) {
+				var key = sorted_keys[i];
+				if ( BANNED_KEYS.indexOf(key) === -1 )
+					output.push([key, data[key]]);
+			}
 
 			return output;
+		}
+	},
+
+	settings: {
+		order: 8,
+		title: "Current Settings",
+		refresh: false,
+		type: "text",
+
+		render: function() {
+			var output = this._get_settings_object(true).settings;
+			delete output.favorite_settings;
+			delete output.mod_card_reasons;
+			delete output.emote_menu_collapsed;
+			delete output.favorite_emotes;
+
+			return JSON.stringify(output, null, 2);
 		}
 	},
 
@@ -303,6 +325,78 @@ FFZ.debugging_blocks = {
 			return this._log_data.join("\n");
 		}
 	}
+}
+
+FFZ.prototype._sorted_debug_blocks = function() {
+	var segments = [];
+	for(var key in FFZ.debugging_blocks) {
+		var info = FFZ.debugging_blocks[key];
+		if ( ! info )
+			continue;
+
+		var visible = info.visible || true;
+		if ( typeof visible === "function" )
+			visible = visible.call(this);
+
+		if ( ! visible )
+			continue;
+
+		segments.push([info.order || 50, info]);
+	}
+
+	segments.sort(function(a,b) { return a[0] > b[0] });
+	return segments;
+}
+
+FFZ.prototype.get_debugging_info = function() {
+	var f = this;
+	return new Promise(function(succeed, fail) {
+		var output = [
+			'FrankerFaceZ - Debugging Information',
+			(new Date).toISOString(), ''];
+
+		var segments = f._sorted_debug_blocks(),
+			promises = [];
+
+		for(var i=0; i < segments.length; i++) {
+			var info = segments[i][1];
+			promises.push(new Promise(function(info, s) {
+				var result = info.render.call(f);
+				if (!( result instanceof Promise ))
+					result = Promise.resolve(result);
+
+				result.then(function(data) {
+					var el = utils.createElement('span'),
+						out = [info.title, '----------------------------------------'];
+					if ( info.type === 'list' )
+						for(var x=0; x < data.length; x++) {
+							if ( data[x] ) {
+								el.innerHTML = data[x].join(': ');
+								out.push(el.textContent);
+							} else
+								out.push('');
+						}
+					else if ( info.type === 'text' )
+						out.push(data);
+
+					s(out);
+				}).catch(function(err) {
+					s(['', info.title, 'Error: ' + err]);
+				});
+
+			}.bind(f, info)));
+		}
+
+		Promise.all(promises).then(function(result) {
+			for(var i=0; i < result.length; i++) {
+				output.push.apply(output, result[i]);
+				output.push('');
+				output.push('');
+			}
+
+			succeed(output.join('\n').trim());
+		});
+	});
 }
 
 
@@ -436,12 +530,15 @@ FFZ.menu_pages.about = {
 						return;
 
 					getting_logs = true;
-					f._pastebin(f._log_data.join("\n"), function(url) {
-						getting_logs = false;
-						if ( ! url )
-							alert("There was an error uploading the FrankerFaceZ logs.");
-						else
+
+					f.get_debugging_info().then(function(data) {
+						f._pastebin(data).then(function(url) {
+							getting_logs = false;
 							prompt("Your FrankerFaceZ logs have been uploaded to the URL:", url);
+						}).catch(function() {
+							getting_logs = false;
+							alert("An error occured uploading your FrankerFaceZ logs.");
+						});
 					});
 				});
 
@@ -493,24 +590,7 @@ FFZ.menu_pages.about = {
 				container.appendChild(createElement('div', 'chat-menu-content center',
 					'<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">woofs for nerds</div>'));
 
-				var segments = [];
-				for(var key in FFZ.debugging_blocks) {
-					var info = FFZ.debugging_blocks[key];
-					if ( ! info )
-						continue;
-
-					var visible = info.visible || true;
-					if ( typeof visible === "function" )
-						visible = visible.call(this);
-
-					if ( ! visible )
-						continue;
-
-					segments.push([info.order || 50, info]);
-				}
-
-				segments.sort(function(a,b) { return a[0] > b[0] });
-
+				var segments = this._sorted_debug_blocks();
 				for(var i=0; i < segments.length; i++) {
 					var info = segments[i][1],
 						output;

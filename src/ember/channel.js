@@ -48,38 +48,6 @@ FFZ.prototype.setup_channel = function() {
 	this.log("Hooking the Ember Channel controller.");
 
 	Channel.reopen({
-		/*isEditable: function() {
-			var channel_id = this.get('content.id'),
-				user = this.get('login.userData');
-
-			if ( ! user || ! user.login )
-				return false;
-
-			else if ( user.login === channel_id || user.is_admin || user.is_staff)
-				return true;
-
-			// Okay, have we loaded this user's editor status? Try that.
-			if ( f._editor_of )
-				return f._editor_of.indexOf(channel_id) !== -1;
-
-			var t = this;
-			f.get_user_editor_of().then(function(result) {
-				// Once editor status is loaded, if the user does have editor
-				// status for this channel, update this property.
-				if ( result.indexOf(channel_id) !== -1 )
-					Ember.propertyDidChange(t, 'isEditable');
-			});
-
-			return false;
-
-		}.property('content.id', 'login.userData', 'login.userData.login'),*/
-
-		/*ffzUpdateUptime: function() {
-			if ( f._cindex )
-				f._cindex.ffzUpdateUptime();
-
-		}.observes("isLive", "channel.id"),*/
-
 		ffzUpdateInfo: function() {
 			if ( this._ffz_update_timer )
 				clearTimeout(this._ffz_update_timer);
@@ -134,17 +102,6 @@ FFZ.prototype.setup_channel = function() {
 				id = target && target.get('id'),
 				display_name = target && target.get('display_name');
 
-			/*if ( id !== f.__old_host_target ) {
-				if ( f.__old_host_target )
-					f.ws_send("unsub", "channel." + f.__old_host_target);
-
-				if ( id ) {
-					f.ws_send("sub", "channel." + id);
-					f.__old_host_target = id;
-				} else
-					delete f.__old_host_target;
-			}*/
-
 			if ( display_name )
 				FFZ.capitalization[name] = [display_name, Date.now()];
 
@@ -162,6 +119,9 @@ FFZ.prototype.setup_channel = function() {
 
 	Channel.ffzUpdateInfo();
 }
+
+
+// These have to be done in order to ensure the channel metadata all sorts correctly.
 
 FFZ.prototype.modify_channel_share_box = function(view) {
 	utils.ember_reopen_view(view, {
@@ -188,6 +148,8 @@ FFZ.prototype.modify_channel_broadcast_link = function(view) {
 }
 
 
+// Channel Live
+
 FFZ.prototype.modify_channel_live = function(view) {
 	var f = this;
 	utils.ember_reopen_view(view, {
@@ -202,10 +164,8 @@ FFZ.prototype.modify_channel_live = function(view) {
 
 			this.ffzUpdateAttributes();
 			this.ffzFixTitle();
-			this.ffzUpdateUptime();
-			this.ffzUpdateChatters();
-			this.ffzUpdateHostButton();
-			this.ffzUpdatePlayerStats();
+
+			this.ffzUpdateMetadata();
 
 			if ( f.settings.auto_theater ) {
 				var layout = this.get('layout'),
@@ -298,259 +258,183 @@ FFZ.prototype.modify_channel_live = function(view) {
 			el && el.html(f.render_tokens(tokens));
 		}.observes('channel.id', 'channel.status', 'channel.game'),
 
-		ffzUpdateUptime: function() {
-			if ( this._ffz_update_uptime ) {
-				clearTimeout(this._ffz_update_uptime);
-				delete this._ffz_update_uptime;
-			}
+		ffzUpdateMetadata: function(key) {
+			var t = this,
+				keys = key ? [key] : Object.keys(FFZ.channel_metadata),
+				basic_info = [this, this.get('channel')],
+				timers = this.ffz_timers = this.ffz_timers || {},
 
-			var container = this.get('element');
-			if ( this.isDestroyed || ! container || ! f.settings.stream_uptime || ! this.get('isLiveAccordingToKraken') )
-				return container && this.$("#ffz-uptime-display").remove();
+				container = this.get('element'),
+				metabar = container && container.querySelector('.cn-metabar__more');
 
-			// Schedule an update.
-			this._ffz_update_uptime = setTimeout(this.ffzUpdateUptime.bind(this), 1000);
-
-			// Determine when the channel last went live.
-			var online = this.get("channel.stream.createdAt"),
-				now = Date.now() - (f._ws_server_offset || 0);
-
-			var uptime = online && Math.floor((now - online.getTime()) / 1000) || -1;
-			if ( uptime < 0 )
-				return this.$("#ffz-uptime-display").remove();
-
-			var el = container.querySelector('#ffz-uptime-display span');
-			if ( ! el ) {
-				var cont = container.querySelector('.cn-metabar__more');
-				if ( ! cont )
-					return;
-
-				var stat = utils.createElement('span'),
-					figure = utils.createElement('figure', 'icon cn-metabar__icon', constants.CLOCK + ' '),
-					stat_wrapper = utils.createElement('div', 'cn-metabar__ffz html-tooltip flex__item', figure);
-
-				stat_wrapper.appendChild(stat);
-				stat_wrapper.id = 'ffz-uptime-display';
-				stat_wrapper.title = 'Stream Uptime <nobr>(since ' + online.toLocaleString() + ')</nobr>';
-
-				cont.appendChild(stat_wrapper);
-				el = stat;
-			}
-
-			el.innerHTML = utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1 || f.settings.stream_uptime === 3);
-		}.observes('channel.stream.createdAt', 'isLiveAccordingToKraken'),
-
-		ffzUpdatePlayerStats: function() {
-			if ( this._ffz_update_stats ) {
-				clearTimeout(this._ffz_update_stats);
-				this._ffz_update_stats = null;
-			}
-
-			// Stop scheduling this so it can die.
-			if ( this.isDestroyed )
+			// Stop once this is destroyed.
+			if ( this.isDestroyed || ! metabar )
 				return;
 
-			// Schedule an update.
-			if ( f.settings.player_stats )
-				this._ffz_update_stats = setTimeout(this.ffzUpdatePlayerStats.bind(this), 1000);
-
-			var channel_id = this.get("channel.id"),
-				container = this.get("element"),
-				player_cont = f.players && f.players[channel_id],
-				player, stats;
-
-			try {
-				player = player_cont && player_cont.get('player');
-				stats = player && player.getVideoInfo();
-			} catch(err) { } // This gets spammy if we try logging it.
-
-			if ( ! container || ! f.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster )
-				return container && this.$("#ffz-player-stats").remove();
-
-			var je, el = container.querySelector("#ffz-player-stats");
-			if ( ! el ) {
-				var cont = container.querySelector('.cn-metabar__more');
-				if ( ! cont )
-					return;
-
-				var stat = utils.createElement('span'),
-					figure = utils.createElement('figure', 'icon cn-metabar__icon', constants.GRAPH + ' ');
-
-				el = utils.createElement('div', 'cn-metabar__ffz flex__item', figure);
-				el.id = 'ffz-player-stats';
-				el.appendChild(stat);
-
-				je = jQuery(el);
-				je.hover(
-						function() { je.data("hover", true).tipsy("show") },
-						function() { je.data("hover", false).tipsy("hide") })
-					.data("hover", false)
-					.tipsy({
-						trigger: 'manual',
-						html: true,
-						gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')
-					});
-
-				cont.appendChild(el);
-			} else
-				je = jQuery(el)
-
-			var stat = el.querySelector('span'),
-
-				delay = Math.round(stats.hls_latency_broadcaster / 10) / 100,
-				dropped = utils.number_commas(stats.dropped_frames || 0),
-				bitrate;
-
-			if ( stats.playback_bytes_per_second )
-				bitrate = Math.round(stats.playback_bytes_per_second * 8 / 10.24) / 100;
-			else
-				bitrate = Math.round(stats.current_bitrate * 100) / 100;
-
-			var is_old = delay > 180;
-			if ( is_old ) {
-				delay = Math.floor(delay);
-				stat.textContent = utils.time_to_string(delay, true, delay > 172800) + ' old';
-			} else {
-				delay = delay.toString();
-				var ind = delay.indexOf('.');
-				delay += (ind === -1 ? '.00' : (ind >= delay.length - 2 ? '0' : '')) + 's';
-				stat.textContent = delay;
-			}
-
-			el.setAttribute('original-title', (is_old ? 'Video Information<br>' +
-					'Broadcast ' + utils.time_to_string(delay, true) + ' Ago<br><br>' : 'Stream Latency<br>') +
-					'Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p ' + stats.current_fps + ' fps<br>' +
-					'Playback Rate: ' + bitrate + ' Kbps<br>' +
-					'Dropped Frames: ' + dropped);
-
-			if ( je.data("hover") )
-				je.tipsy("hide").tipsy("show");
+			for(var i=0; i < keys.length; i++)
+				this._ffzUpdateStat(keys[i], basic_info, timers, metabar);
 		},
 
-		ffzUpdateChatters: function() {
-			var channel_id = this.get("channel.id"),
-				room = f.rooms && f.rooms[channel_id],
-				container = this.get('element');
+		_ffzUpdateStat: function(key, basic_info, timers, metabar) {
+			var t = this,
+				info = FFZ.channel_metadata[key];
+			if ( ! info )
+				return;
 
-			if ( ! container || ! room || ! f.settings.chatter_count )
-				return container && this.$("#ffz-chatter-display").remove();
+			if ( timers[key] )
+				clearTimeout(timers[key]);
 
-			var chatter_count = Object.keys(room.room.get('ffz_chatters') || {}).length,
-				el = container.querySelector('#ffz-chatter-display span');
+			// Build the data we use for function calls.
+			var data = info.setup ? info.setup.apply(f, basic_info) : basic_info,
+				refresh = typeof info.refresh === "function" ? info.refresh.apply(f, data) : info.refresh;
 
-			if ( ! el ) {
-				var cont = container.querySelector('.cn-metabar__more');
-				if ( ! cont )
-					return;
+			// If we have a positive refresh value, schedule another go.
+			if ( refresh )
+				timers[key] = setTimeout(this.ffzUpdateMetadata.bind(this, key), typeof refresh === "number" ? refresh : 1000);
 
-				var stat = utils.createElement('span'),
-					figure = utils.createElement('figure', 'icon cn-metabar__icon', constants.ROOMS + ' '),
-					balloon = utils.createElement('div', 'balloon balloon--tooltip balloon--down balloon--center', 'Currently in Chat'),
-					balloon_wrapper = utils.createElement('div', 'balloon-wrapper', figure),
-					stat_wrapper = utils.createElement('div', 'cn-metabar__ffz flex__item mg-l-1', balloon_wrapper);
+			var el = metabar.querySelector('.cn-metabar__ffz[data-key="' + key + '"]'),
+				je,
+				stat,
+				dynamic_tooltip = typeof info.tooltip === "function",
+				label = typeof info.label === "function" ? info.label.apply(f, data) : info.label;
 
-				balloon_wrapper.appendChild(stat);
-				balloon_wrapper.appendChild(balloon);
+			if ( ! label ) {
+				if ( el )
+					el.parentElement.removeChild(el);
 
-				stat_wrapper.id = 'ffz-chatter-display';
+				if ( f._popup && f._popup.id === 'ffz-metadata-popup' && f._popup.getAttribute('data-key') === key )
+					f.close_popup();
 
-				var viewers = cont.querySelector('#ffz-player-stats') || cont.querySelector('#ffz-uptime-display') || cont.querySelector(".cn-metabar__livecount") || cont.querySelector(".cn-metabar__viewcount");
-				if ( viewers )
-					cont.insertBefore(stat_wrapper, viewers.nextSibling);
-				else
-					cont.appendChild(stat_wrapper);
+				return;
 
-				el = stat;
+			} else if ( ! el ) {
+				var btn,
+					static_label = typeof info.static_label === "function" ? info.static_label.apply(f, data) : info.static_label;
+
+				if ( ! static_label )
+					static_label = '';
+				else if ( static_label.substr(0,4) === '<svg' )
+					static_label = utils.createElement('figure', 'icon cn-metabar__icon', static_label + ' ');
+
+				if ( info.popup ) {
+					btn = utils.createElement('button', 'button button--dropmenu', static_label)
+					el = utils.createElement('div', 'cn-metabar__ffz flex__item ember-view balloon-wrapper inline-block', btn);
+
+					btn.classList.add(info.button ? 'button--hollow' : 'button--text');
+
+				} else if ( info.button ) {
+					btn = utils.createElement('button', 'button', static_label);
+					el = utils.createElement('div', 'cn-metabar__ffz flex__item ember-view inline-block', btn);
+
+					btn.classList.add(typeof info.button === 'string' ? info.button : 'button--hollow');
+
+				} else
+					btn = el = utils.createElement('div', 'cn-metabar__ffz flex__item', static_label);
+
+				el.setAttribute('data-key', key);
+				if ( info.order )
+					el.style.order = info.order;
+
+				if ( ! dynamic_tooltip && info.tooltip ) {
+					btn.classList.add('html-tooltip');
+					btn.title = info.tooltip;
+				}
+
+				stat = utils.createElement('span', 'ffz-label');
+				btn.appendChild(stat);
+
+				if ( dynamic_tooltip ) {
+					je = jQuery(btn)
+					je.hover(
+							function() { je.data("hover", true).tipsy("show") },
+							function() { je.data("hover", false).tipsy("hide") })
+						.data("hover", false)
+						.tipsy({
+							trigger: 'manual',
+							html: true,
+							gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
+							title: function() {
+								var data = [t, t.get('channel')];
+								data = info.setup ? info.setup.apply(f, data) : data;
+								return info.tooltip.apply(f, data);
+							}
+						})
+				}
+
+				if ( info.click )
+					btn.addEventListener('click', function(e) {
+						if ( btn.disabled || btn.classList.contains('disabled') )
+							return false;
+
+						e.update_stat = t._ffzUpdateStat.bind(t, key, basic_info, timers, metabar);
+
+						var data = [t, t.get('channel')];
+						data = info.setup ? info.setup.apply(f, data) : data;
+						data.unshift(btn);
+						data.unshift(e);
+						return info.click.apply(f, data);
+					});
+
+				if ( info.popup ) {
+					btn.classList.add('button--dropmenu');
+					btn.addEventListener('click', function(el, e) {
+						if ( btn.disabled || btn.classList.contains('disabled') )
+							return false;
+
+						var popup = f.close_popup();
+						if ( popup && popup.id === 'ffz-metadata-popup' && popup.getAttribute('data-key') === key )
+							return;
+
+						var data = [t, t.get('channel')];
+						data = info.setup ? info.setup.apply(f, data) : data;
+
+						var balloon = utils.createElement('div', 'balloon balloon--up show');
+						data.unshift(balloon);
+
+						balloon.id = 'ffz-metadata-popup';
+						balloon.setAttribute('data-key', key);
+
+						var result = info.popup.apply(f, data);
+						if ( result === false )
+							return false;
+
+						// Set the balloon to face away from the nearest side of the channel.
+						var container = t.get('element'),
+							outer = container.getBoundingClientRect(),
+							rect = el.getBoundingClientRect();
+
+						balloon.classList.toggle('balloon--right', (rect.left - outer.left) > (outer.right - rect.right));
+
+						f._popup_kill = info.on_popup_close ? function() { info.on_popup_close.apply(f, data) } : null;
+						f._popup_allow_parent = true;
+						f._popup = balloon;
+
+						el.appendChild(balloon);
+					}.bind(this, el));
+				}
+
+				metabar.appendChild(el);
+				el = btn;
+
+			} else {
+				stat = el.querySelector('span.ffz-label');
+				if ( dynamic_tooltip )
+					je = jQuery(el);
 			}
 
-			el.innerHTML = utils.number_commas(chatter_count);
-		}.observes('channel.id'),
+			stat.innerHTML = label;
+
+			if ( dynamic_tooltip && je.data("hover") )
+				 je.tipsy("hide").tipsy("show");
+
+			if ( info.hasOwnProperty('disabled') )
+				el.classList.toggle('disabled', typeof info.disabled === "function" ? info.disabled.apply(f, data) : info.disabled);
+		},
 
 		ffzUpdateHostButton: function() {
-			var t = this,
-				channel_id = this.get("channel.id"),
-				hosted_id = this.get("channel.hostModeTarget.id"),
-
-				user = f.get_user(),
-				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
-				now_hosting = room && room.ffz_host_target,
-				hosts_left = room && room.ffz_hosts_left,
-
-				el = this.get("element"),
-
-			update_button = function(channel, container, before) {
-				if ( ! container )
-					return;
-
-				var btn = container.querySelector('#ffz-ui-host-button');
-
-				if ( ! f.settings.stream_host_button || ! user || user.login === channel ) {
-					if ( btn )
-						btn.parentElement.removeChild(btn);
-					return;
-				}
-
-				if ( ! btn ) {
-					btn = utils.createElement('button', 'button button--hollow mg-l-1'),
-
-					btn.id = 'ffz-ui-host-button';
-					btn.addEventListener('click', t.ffzClickHost.bind(t, channel !== channel_id));
-
-					if ( before )
-						container.insertBefore(btn, before);
-					else
-						container.appendChild(btn);
-
-					jQuery(btn).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-				}
-
-				btn.classList.remove('disabled');
-				btn.innerHTML = channel === now_hosting ? 'Unhost' : 'Host';
-				if ( now_hosting ) {
-					var name = FFZ.get_capitalization(now_hosting);
-					btn.title = 'You are now hosting ' + f.format_display_name(name, now_hosting, true)[0] + '.';
-				} else
-					btn.title = 'You are not hosting any channel.';
-
-				if ( typeof hosts_left === 'number' )
-					btn.title += ' You have ' + hosts_left + ' host command' + utils.pluralize(hosts_left) + ' remaining this half hour.';
-			};
-
-			if ( ! el )
-				return;
-
-			this.set("ffz_host_updating", false);
-
-			if ( channel_id ) {
-				var container = el.querySelector('.cn-metabar__more'),
-					share = container && container.querySelector('.js-share-box');
-
-				update_button(channel_id, container, share ? share.parentElement : null);
-			}
-
-			if ( hosted_id )
-				update_button(hosted_id, el.querySelector('.cn-hosting--bottom'));
-		}.observes('channel.id', 'channel.hostModeTarget.id'),
-
-		ffzClickHost: function(is_host, e) {
-			var btn = e.target,
-				target = this.get(is_host ? 'channel.hostModeTarget.id' : 'channel.id'),
-				user = f.get_user(),
-				room = user && f.rooms && f.rooms[user.login] && f.rooms[user.login].room,
-				now_hosting = room && room.ffz_host_target;
-
-			if ( ! room || this.get('ffz_host_updating') )
-				return;
-
-			btn.classList.add('disabled');
-			btn.title = 'Updating...';
-
-			this.set('ffz_host_updating', true);
-			if ( now_hosting === target )
-				room.send('/unhost', true);
-			else
-				room.send('/host ' + target, true);
-		}
+			this.set('ffz_host_updating', false);
+			return this.ffzUpdateMetadata('host');
+		}.observes('channel.id', 'channel.hostModeTarget.id')
 	});
 }
 

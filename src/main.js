@@ -30,11 +30,12 @@ FFZ.get = function() { return FFZ.instance; }
 
 // TODO: This should be in a module.
 FFZ.msg_commands = {};
+FFZ.channel_metadata = {};
 
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 327,
+	major: 3, minor: 5, revision: 328,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -86,22 +87,30 @@ FFZ.prototype.error = function(msg, error, to_json, log_json) {
 
 
 FFZ.prototype.paste_logs = function() {
-	this._pastebin(this._log_data.join("\n"), function(url) {
-		if ( ! url )
-			return console.log("FFZ Error: Unable to upload log to pastebin.");
+	var f = this,
+		output = function(result) {
+			f._pastebin(result).then(function(url) {
+				f.log("Your FrankerFaceZ logs have been uploaded to: " + url);
+			}).catch(function() {
+				f.error("An error occured uploading the logs to a pastebin.");
+			});
+		}
 
-		console.log("FFZ: Your FrankerFaceZ log has been pasted to: " + url);
+	this.get_debugging_info().then(function(data) {
+		output(data);
+	}).catch(function(err) {
+		f.error("Error building debugging information.", err);
+		output(f._log_data.join("\n"));
 	});
 }
 
 
-FFZ.prototype._pastebin = function(data, callback) {
-	jQuery.ajax({url: "https://putco.de/", type: "PUT", data: data, context: this})
-		.success(function(e) {
-			callback.call(this, e.trim() + ".log");
-		}).fail(function(e) {
-			callback.call(this, null);
-		});
+FFZ.prototype._pastebin = function(data) {
+	return new Promise(function(succeed, fail) {
+		jQuery.ajax({url: "https://putco.de/", type: "PUT", data: data})
+			.success(function(e) { succeed(e.trim() + ".log"); })
+			.fail(function(e) { fail(null); });
+	});
 }
 
 
@@ -202,6 +211,7 @@ require('./ext/emote_menu');
 
 require('./featurefriday');
 
+require('./ui/channel_stats');
 require('./ui/logviewer');
 //require('./ui/chatpane');
 require('./ui/popups');
@@ -209,7 +219,7 @@ require('./ui/styles');
 require('./ui/dark');
 require('./ui/tooltips');
 require('./ui/notifications');
-require('./ui/viewer_count');
+//require('./ui/viewer_count');
 require('./ui/sub_count');
 require('./ui/dash_stats');
 require('./ui/dash_feed');

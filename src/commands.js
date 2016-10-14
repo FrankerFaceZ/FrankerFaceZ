@@ -154,11 +154,13 @@ FFZ.prototype.cache_command_aliases = function() {
 // -----------------
 
 FFZ.ffz_commands.log = function(room, args) {
-	this._pastebin(this._log_data.join("\n"), function(url) {
-		if ( ! url )
-			return this.room_message(room, "There was an error uploading the FrankerFaceZ log.");
-
-		this.room_message(room, "Your FrankerFaceZ log has been pasted to: " + url);
+	var f = this;
+	this.get_debugging_info().then(function(result) {
+		f._pastebin(result).then(function(url) {
+			f.room_message(room, "Your FrankerFaceZ logs have been pasted to: " + url);
+		}).catch(function() {
+			f.room_message(room, "An error occured uploading the logs to a pastebin.");
+		});
 	});
 };
 

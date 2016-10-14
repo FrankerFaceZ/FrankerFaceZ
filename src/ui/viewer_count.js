@@ -19,7 +19,7 @@ FFZ.ws_commands.chatters = function(data) {
 		if ( room ) {
 			room.ffz_chatters = count;
 			if ( this._cindex )
-				this._cindex.ffzUpdateChatters();
+				this._cindex.ffzUpdateMetadata('chatters');
 		}
 		return;
 	}
@@ -39,7 +39,7 @@ FFZ.ws_commands.viewers = function(data) {
 		if ( room ) {
 			room.ffz_viewers = count;
 			if ( this._cindex )
-				this._cindex.ffzUpdateChatters();
+				this._cindex.ffzUpdateMetadata('chatters');
 		}
 		return;
 	}
