@@ -626,7 +626,6 @@ FFZ.prototype.modify_room_view = function(view) {
 
 					s[0].scrollTop = s[0].scrollHeight;
 					e._setStuckToBottom(true);
-					e._tagVisibleMessages();
 				})
 			})
 		}, 200),
