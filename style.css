@@ -3611,6 +3611,26 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 	background-repeat: no-repeat;
 }
 
+/* Ban Notices */
+
+.theatre .chat-messages .chat-line.admin .message,
+.dark .chat-messages .chat-line.admin .message,
+.force-dark .chat-messages .chat-line.admin .message,
+.theatre .chat-messages .chat-line.notification .message,
+.dark .chat-messages .chat-line.notification .message,
+.force-dark .chat-messages .chat-line.notification .message {
+	color: #777
+}
+
+.ban-tip { border-bottom: 1px dotted rgba(102,102,102,0.5); }
+
+.chat-display .chat-line .ban-target { font-weight: bold }
+.chat-display .chat-line .ban-target:hover {
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+
 /* Following Menu */
 
 #ffz-metadata-popup .scroller {

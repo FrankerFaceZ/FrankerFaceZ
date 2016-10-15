@@ -1,6 +1,8 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
-	constants = require('../constants');
+	constants = require('../constants'),
+
+	BAN_REGEX = /^<([^ ]+) has been (banned|timed out|unbanned)(?: for ([^.]+))?\.?(?: Reasons?: ([^(>]+))?(?: ?\((\d+) times\))?>$/;
 
 
 // ----------------
@@ -90,12 +92,35 @@ FFZ.prototype.lv_parse_message = function(message) {
 		room = ffz_room && ffz_room.room;
 
 	parsed.lv_id = message.id;
-	parsed.date = new Date(message.time * 1000);
+	parsed.mod_logs = message.modlog;
+	parsed.date = typeof message.time === "number" ? new Date(message.time * 1000) : utils.parse_date(message.time);
 
-	// Check for ban notices. Those are identifiable via display-name.
-	parsed.is_ban = parsed.tags['display-name'] === 'jtv';
-	if ( parsed.is_ban )
+	// Is this administrative?
+	parsed.is_admin = parsed.tags['display-name'] === 'jtv';
+	if ( parsed.is_admin ) {
 		parsed.style = 'admin';
+		parsed.tags['display-name'] = undefined;
+	}
+
+	// Is this a ban?
+	var match = parsed.is_admin && BAN_REGEX.exec(parsed.message);
+	if ( match ) {
+		var unban = match[2] === 'unbanned',
+			duration = unban ? -Infinity : match[2] === 'banned' ? Infinity : utils.parse_lv_duration(match[3]),
+			reasons = match[4] ? match[4].trim().split(/\s*,\s*/) : [],
+			ban_count = match[5] && parseInt(match[5]) || 1;
+
+		parsed.message = this.format_ban_notice(
+			parsed.from, false, duration, ban_count, reasons,
+			parsed.mod_logs && Object.keys(parsed.mod_logs),
+			parsed.mod_logs);
+
+		parsed.cachedTokens = [{type: "raw", html: parsed.message}];
+
+	} else if ( parsed.from === "jtv" && parsed.mod_logs ) {
+		parsed.message = Object.keys(parsed.mod_logs).join(", ") + " used: " + parsed.message;
+		parsed.cachedTokens = [{type: "text", text: parsed.message}];
+	}
 
 	if ( parsed.tags.color )
 		parsed.color = parsed.tags.color;
@@ -109,7 +134,9 @@ FFZ.prototype.lv_parse_message = function(message) {
 		parsed.tags.mod = parsed.from === parsed.room || badges.hasOwnProperty('staff') || badges.hasOwnProperty('admin') || badges.hasOwnProperty('global_mod') || badges.hasOwnProperty('moderator');
 	}
 
-	this.tokenize_chat_line(parsed, true, room && room.get('roomProperties.hide_chat_links'));
+	if ( ! parsed.cachedTokens )
+		this.tokenize_chat_line(parsed, true, room && room.get('roomProperties.hide_chat_links'));
+
 	return parsed;
 }
 
@@ -670,7 +697,7 @@ FFZ.mod_card_pages.notes = {
 				// We want to listen to get new notes for this user.
 				mod_card._lv_sock_room = room_id;
 				mod_card._lv_sock_user = user_id;
-				f.lv_ws_sub(room_id + '-' + user_id);
+				f.lv_ws_sub('logs-' + room_id + '-' + user_id);
 
 				if ( data.length ) {
 					var last_line = null;

@@ -52,7 +52,7 @@ FFZ.prototype.setup_profile_following = function() {
 			if ( ! user || ! user.name )
 				continue;
 
-			if ( user.display_name )
+			if ( user.display_name && user.display_name !== 'jtv' )
 				FFZ.capitalization[user.name] = [user.display_name, now];
 
 			user_cache[user.name] = [

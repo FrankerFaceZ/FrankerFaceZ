@@ -575,7 +575,7 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 
 	// Capitalization
 	var display_name = message.get('from.displayName');
-	if ( display_name && display_name.length )
+	if ( display_name && display_name.length && display_name !== 'jtv' )
 		FFZ.capitalization[from_user] = [display_name.trim(), Date.now()];
 
 	// Mentions!
@@ -626,7 +626,7 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 		tokens = this.tokenize_emoji(tokens);
 
 	var display = msgObject.get('tags.display-name');
-	if ( display && display.length )
+	if ( display && display.length && display !== 'jtv' )
 		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
 
 	if ( ! from_me ) {
@@ -709,7 +709,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 
 	// Capitalization
 	var display = tags['display-name'];
-	if ( display && display.length )
+	if ( display && display.length && display !== 'jtv' )
 		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
 
 

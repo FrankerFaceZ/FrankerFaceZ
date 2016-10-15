@@ -130,7 +130,7 @@ FFZ.prototype.clear_notifications = function() {
 
 FFZ.prototype.show_notification = function(message, title, tag, timeout, on_click, on_close) {
 	var perm = Notification.permission;
-	if ( perm === "denied " )
+	if ( perm === "denied" )
 		return false;
 
 	if ( perm === "granted" ) {

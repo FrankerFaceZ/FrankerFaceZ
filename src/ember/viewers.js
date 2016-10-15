@@ -54,7 +54,7 @@ FFZ.prototype.modify_viewer_list = function(component) {
 				// We can get capitalization for the broadcaster from the channel.
 				if ( Channel && Channel.get('channelModel.id') === room_id ) {
 					var display_name = Channel.get('channelModel.displayName');
-					if ( display_name )
+					if ( display_name && display_name !== 'jtv' )
 						FFZ.capitalization[broadcaster] = [display_name, Date.now()];
 				}
 

@@ -655,7 +655,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				user_id = this.get('cardInfo.user.id');
 
 			if (( this._lv_sock_room && this._lv_sock_room !== room_id ) || (this._lv_sock_user && this._lv_sock_user !== user_id) ) {
-				f.lv_ws_unsub(this._lv_sock_room + '-' + this._lv_sock_user);
+				f.lv_ws_unsub('logs-' + this._lv_sock_room + '-' + this._lv_sock_user);
 				this._lv_sock_room = null;
 				this._lv_sock_user = null;
 			}
@@ -738,7 +738,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 					t._lv_sock_room = room_id;
 					t._lv_sock_user = user_id;
-					f.lv_ws_sub(room_id + '-' + user_id);
+					f.lv_ws_sub('logs-' + room_id + '-' + user_id);
 
 					var requests = t._lv_log_requests;
 					t._lv_log_requests = null;
@@ -785,13 +785,48 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				// Remove the line itself.
 				line.parentElement.removeChild(line);
 
+			} else if ( cmd === "log-update" ) {
+				if ( ! this._lv_logs || ! this._lv_logs.data || data.nick !== this._lv_logs.data.user.nick )
+					return;
+
+				// Parse the message. Store the data.
+				var message = f.lv_parse_message(data),
+					msgs = this._lv_logs.data.before,
+					ind = -1,
+					i = msgs.length;
+
+				// Find the existing entry.
+				while(--i) {
+					var msg = msgs[i];
+					if ( msg.lv_id === message.lv_id ) {
+						ind = i;
+						break;
+					}
+				}
+
+				// Nothing to update, so don't.
+				if ( ind === -1 )
+					return;
+
+				msgs[ind] = message;
+				var el = this.get('element'),
+					container = el && el.querySelector('.ffz-tab-container'),
+					line = container && container.querySelector('.lv-history .chat-line[data-lv-id="' + message.lv_id + '"]');
+
+				if ( ! line )
+					return;
+
+				var new_line = f._build_mod_card_history(message, this, false,
+					FFZ.mod_card_pages.history.render_adjacent.bind(f, this, container, message));
+				line.parentElement.insertBefore(new_line, line);
+				line.parentElement.removeChild(line);
+
 			} else if ( cmd === "log-add" ) {
 				if ( ! this._lv_logs || ! this._lv_logs.data || data.nick !== this._lv_logs.data.user.nick )
 					return;
 
 				// Parse the message. Store the data.
-				var t,
-					message = f.lv_parse_message(data);
+				var message = f.lv_parse_message(data);
 				this._lv_logs.data.before.push(message);
 				this._lv_logs.data.user[message.is_ban ? 'timeouts' : 'messages'] += 1;
 
@@ -819,7 +854,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					}
 
 					history.appendChild(f._build_mod_card_history(message, this, false,
-						FFZ.mod_card_pages.history.render_adjacent.bind(f, t, container, message)));
+						FFZ.mod_card_pages.history.render_adjacent.bind(f, this, container, message)));
 
 					if ( was_at_bottom )
 						setTimeout(function() { history.scrollTop = history.scrollHeight; })
@@ -852,7 +887,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				f._mod_card = undefined;
 
 			if ( this._lv_sock_room && this._lv_sock_user ) {
-				f.lv_ws_unsub(this._lv_sock_room + '-' + this._lv_sock_user);
+				f.lv_ws_unsub('logs-' + this._lv_sock_room + '-' + this._lv_sock_user);
 				this._lv_sock_room = null;
 				this._lv_sock_user = null;
 			}

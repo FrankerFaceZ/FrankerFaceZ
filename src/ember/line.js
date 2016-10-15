@@ -1163,7 +1163,13 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			} else if ( f._click_emote(e.target, e) )
 				return;
 
-			else if ( e.target.classList.contains('from') || e.target.parentElement.classList.contains('from') ) {
+			else if ( cl.contains('ban-target') || cl.contains('from') || cl.contains('to') || e.target.parentElement.classList.contains('from') || e.target.parentElement.classList.contains('to') ) {
+				var target = cl.contains('ban-target') ?
+						e.target.getAttribute('data-user') :
+					(cl.contains('from') || e.target.parentElement.classList.contains('from')) ?
+						from :
+						this.get('msgObject.to');
+
 				var n = this.get('element'),
 					bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),
 					x = 0, right;
@@ -1176,26 +1182,10 @@ FFZ.prototype._modify_chat_subline = function(component) {
 					right: right,
 					top: bounds.top + bounds.height,
 					real_top: bounds.top,
-					sender: from
+					sender: target
 				});
 
-			} else if ( e.target.classList.contains('to') || e.target.parentElement.classList.contains('to') ) {
-				var n = this.get('element'),
-					bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),
-					x = 0, right;
-
-				if ( bounds.left > 400 )
-					right = bounds.left - 40;
-
-				this.sendAction("showModOverlay", {
-					left: bounds.left,
-					right: right,
-					top: bounds.top + bounds.height,
-					real_top: bounds.top,
-					sender: this.get('msgObject.to')
-				});
-
-			} else if ( e.target.classList.contains('undelete') ) {
+			} else if ( cl.contains('undelete') ) {
 				e.preventDefault();
 				this.set("msgObject.deleted", false);
 			}

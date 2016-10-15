@@ -70,6 +70,8 @@ var createElement = function(tag, className, content) {
 		return num + "th";
 	},
 
+	lv_duration_regex = / ?(\d+) ?(\w+)/g,
+
 	date_regex = /^(\d{4}|\+\d{6})(?:-?(\d{2})(?:-?(\d{2})(?:T(\d{2})(?::?(\d{2})(?::?(\d{2})(?:(?:\.|,)(\d{1,}))?)?)?(Z|([\-+])(\d{2})(?::?(\d{2}))?)?)?)?)?$/,
 
 	parse_date = function(str) {
@@ -873,8 +875,31 @@ module.exports = FFZ.utils = {
 		minutes = Math.floor(seconds / 60);
 		seconds %= 60;
 
-		var out = DURATIONS[val] = (weeks ? weeks + 'w' : '') + ((days || (weeks && (hours || minutes || seconds))) ? days + 'd' : '') + ((hours || ((weeks || days) && (minutes || seconds))) ? hours + 'h' : '') + ((minutes || ((weeks || days || hours) && seconds)) ? minutes + 'm' : '') + (seconds ? seconds + 's' : '');
+		var out = DURATIONS[val] = (weeks ? weeks + 'w' : '') +
+			(days ? days + 'd' : '') +
+			(hours ? hours + 'h' : '') +
+			(minutes ? minutes + 'm' : '') +
+			(seconds ? seconds + 's' : '');
+
 		return out;
+	},
+
+	parse_lv_duration: function(input) {
+		var match, value = 0;
+		while(match = lv_duration_regex.exec(input)) {
+			var mod = match[2],
+				val = parseInt(match[1]);
+			if ( mod === 'd' )
+				value += val * 86400;
+			else if ( mod === 'hrs' )
+				value += val * 3600;
+			else if ( mod === 'min' )
+				value += val * 60;
+			else if ( mod === 'sec' )
+				value += val;
+		}
+
+		return value;
 	},
 
 	format_unread: function(count) {

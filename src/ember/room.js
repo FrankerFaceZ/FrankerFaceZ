@@ -14,7 +14,8 @@ var FFZ = window.FrankerFaceZ,
 		'emoteonly': 'emote_only_on',
 		'emoteonlyoff': 'emote_only_off',
 		'host': 'host_on',
-		'unhost': 'host_off'
+		'unhost': 'host_off',
+		'clear': 'clear_chat'
 	},
 
 	STATUS_BADGES = [
@@ -162,6 +163,31 @@ FFZ.prototype.setup_room = function() {
 
 
 // --------------------
+// Ban Message Formatting
+// --------------------
+
+FFZ.prototype.format_ban_notice = function(username, is_me, duration, count, reasons, moderators, notices) {
+	var name = this.format_display_name(FFZ.get_capitalization(username), username, true),
+		duration_tip = [];
+
+	for(var mod_id in notices) {
+		var notice = notices[mod_id];
+		if ( ! Array.isArray(notice) )
+			notice = [notice];
+
+		var nd = notice[0] === -Infinity ? 'unban' : isFinite(notice[0]) ? utils.duration_string(notice[0], true) : 'ban';
+		duration_tip.push(utils.sanitize(mod_id) + ' - ' + nd + (notice[1] ? ': ' + utils.sanitize(notice[1]) : ''));
+	}
+
+	return (is_me ? 'You have' : '<span data-user="' + utils.quote_san(username) + '" class="ban-target html-tooltip" title="' + utils.quote_attr(name[1] || '') + '">' + name[0] + '</span> has') +
+		' been ' + (duration_tip.length ? '<span class="ban-tip html-tooltip" title="' + utils.quote_attr(duration_tip.join('<br>')) + '">' : '') + (duration === -Infinity ? 'unbanned' :
+		(duration === 1 ? 'purged' : isFinite(duration) ? 'timed out for ' + utils.duration_string(duration) : 'banned')) +
+		(count > 1 ? ' (' + utils.number_commas(count) + ' times)' : '') +
+		(moderators && moderators.length ? ' by ' + utils.sanitize(moderators.join(', ')) : '') + (duration_tip.length ? '</span>' : '') +
+		(reasons && reasons.length ? ' with reason' + utils.pluralize(reasons.length) + ': ' + utils.sanitize(reasons.join(', ')) : '.');
+}
+
+// --------------------
 // PubSub is fucking awful
 // --------------------
 
@@ -263,17 +289,11 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 			return;
 
 		var ps = pubsub._pubsub(),
-			token = user.chat_oauth_token;
+			token = user.chat_oauth_token,
+			internal_topics = ps._client & ps._client._listens && ps._client._listens._events || {};
 
 		for(var i=0; i < pubsub.chatTopics.length; i++) {
 			var topic = pubsub.chatTopics[i];
-			// Try stupid stuff to remove duplicate events.
-			if ( topic.substr(0, 23) === 'chat_moderator_actions.' )
-				ps.Unlisten({
-					topic: topic.split('.', 2).join('.'),
-					success: function() {},
-					failure: function() {}
-				});
 
 			ps.Unlisten({
 				topic: topic,
@@ -281,6 +301,14 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 				failure: function(topic, t) { f.log("[PubSub] Failed to unlisten to topic: " + topic, t); }.bind(this, topic)
 			});
 
+			// Find the event and manually remove our listeners. We still want the topic so
+			// we don't clean it up too much, but we need to get rid of the existing bound
+			// functions to avoid anything screwing up.
+			var it = internal_topics[topic];
+			if ( it && it.length )
+				it.splice(0, it.length);
+
+			// Now, register our own event handler.
 			ps.Listen({
 				topic: topic,
 				auth: token,
@@ -1306,29 +1334,173 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		addLoginModerationMessage: function(event) {
-			// Throw out messages that are for other rooms.
+			// Throw out messages that are for other rooms or that don't have topics.
 			var room_id = '.' + this.get("roomProperties._id");
-			if ( event.topic && event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
+			if ( ! event.topic || event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
 				return;
 
-			// f.log("Login Moderation", event);
+			//f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
 
 			// In case we get unexpected input, do the other thing.
 			if ( ["ban", "unban", "timeout"].indexOf(event.moderation_action) === -1 )
 				return this._super(event);
 
-			var tags = {
-				'ban-duration': event.moderation_action === 'unban' ? -Infinity : event.args[1],
-				'ban-reason': event.args[2],
-				'ban-moderator': event.created_by
-			};
+			var msg_id,
+				reason = event.args[2],
+				duration = event.moderator_action === 'unban' ? -Infinity : event.args[1];
 
-			this.clearMessages(event.args[0].toLowerCase(), tags, false, event.moderation_action !== 'unban');
+			if ( typeof duration === "string" )
+				duration = parseInt(duration);
+
+			if ( isNaN(duration) )
+				duration = Infinity;
+
+			if ( reason ) {
+				var match = constants.UUID_TEST.exec(reason);
+				if ( match ) {
+					msg_id = match[1];
+					reason = reason.substr(0, reason.length - match[0].length);
+					if ( ! reason.length )
+						reason = null;
+				}
+			}
+
+			this.addBanNotice(event.args[0].toLowerCase(), duration, reason, event.created_by, msg_id, true);
 		},
 
-		clearMessages: function(user, tags, disable_log, report_only) {
-			var t = this;
+		addBanNotice: function(username, duration, reason, moderator, msg_id, report_only) {
+			var current_user = f.get_user(),
+				is_me = current_user && current_user.login === username,
 
+				show_notice = is_me || this.ffzShouldDisplayNotice(),
+				show_reason = is_me || this.get('isModeratorOrHigher'),
+				show_moderator = f.settings.get_twitch('showModerationActions'),
+
+				now = new Date,
+				room_id = this.get('id'),
+				ffz_room = f.rooms[room_id],
+				ban_history, last_ban;
+
+			// Find an existing ban to modify.
+			if ( ffz_room ) {
+				var ban_history = ffz_room.ban_history = ffz_room.ban_history || {};
+				last_ban = ban_history[username];
+
+				// Only overwrite bans in the last 15 seconds.
+				if ( ! last_ban || Math.abs(now - last_ban.date) > 15000 )
+					last_ban = null;
+			}
+
+			// If we have an existing ban, modify that.
+			if ( last_ban ) {
+				if ( reason && last_ban.reasons.indexOf(reason) === -1 )
+					last_ban.reasons.push(reason);
+
+				if ( moderator && last_ban.moderators.indexOf(moderator) === -1 )
+					last_ban.moderators.push(moderator);
+
+				if ( moderator )
+					last_ban.notices[moderator] = [duration, reason];
+
+				if ( ! report_only )
+					last_ban.count++;
+
+				// Don't update the displayed duration if the new end time is within five
+				// seconds to avoid changing messages when bots do multiple timeouts.
+				var end_time = now.getTime() + (duration * 1000);
+				if ( Math.abs(end_time - last_ban.end_time) > 5000 ) {
+					last_ban.duration = duration;
+					last_ban.end_time = end_time;
+				} else
+					duration = last_ban.duration;
+
+				last_ban.message = f.format_ban_notice(username, is_me, duration, last_ban.count, show_reason && last_ban.reasons, show_moderator && last_ban.moderators, show_moderator && last_ban.notices);
+				last_ban.cachedTokens = [{type: "raw", html: last_ban.message}];
+
+				if ( last_ban._line )
+					Ember.propertyDidChange(last_ban._line, 'ffzTokenizedMessage');
+
+			} else {
+				var notices = {};
+				if ( moderator )
+					notices[moderator] = [duration, reason];
+
+				var count = report_only ? 0 : 1,
+					msg = f.format_ban_notice(username, is_me, duration, count, show_reason && reason && [reason], show_moderator && moderator && [moderator], show_moderator && notices),
+					message = {
+						style: 'admin',
+						date: now,
+						room: room_id,
+						ffz_ban_target: username,
+						reasons: reason ? [reason] : [],
+						moderators: moderator ? [moderator] : [],
+						notices: notices,
+						duration: duration,
+						end_time: now.getTime() + (duration * 1000),
+						count: count,
+						message: msg,
+						cachedTokens: [{type: "raw", html: msg}]
+					};
+
+				if ( ban_history )
+					ban_history[username] = message;
+
+				if ( show_notice )
+					this.addMessage(message);
+
+				this.addUserHistory(message);
+			}
+		},
+
+		addUserHistory: function(message) {
+			var room_id = this.get('id'),
+				ffz_room = f.rooms[room_id];
+
+			if ( ! ffz_room || ! f.settings.mod_card_history )
+				return;
+
+			var username = message.ffz_ban_target || message.from,
+				historical = message.tags && message.tags.historical,
+
+				chat_history = ffz_room.user_history = ffz_room.user_history || {},
+				user_history = chat_history[username] = chat_history[username] || [];
+
+			if ( historical ) {
+				if ( user_history.length >= 20 )
+					return;
+
+				user_history.unshift(message);
+
+			} else {
+				user_history.push(message);
+				while ( user_history.length > 20 )
+					user_history.shift();
+			}
+
+			if ( f._mod_card && f._mod_card.ffz_room_id === room_id && f._mod_card.get('cardInfo.user.id') === username) {
+				var el = f._mod_card.get('element'),
+					history = el && el.querySelector('.chat-history.live-history');
+
+				if ( history ) {
+					var was_at_top = history.scrollTop >= (history.scrollHeight - history.clientHeight),
+						line = f._build_mod_card_history(message, f._mod_card);
+
+					if ( historical )
+						history.insertBefore(line, history.firstElementChild);
+					else
+						history.appendChild(line);
+
+					if ( was_at_top )
+						setTimeout(function() { history.scrollTop = history.scrollHeight });
+
+					if ( history.childElementCount > 20 )
+						history.removeChild(history.firstElementChild);
+				}
+			}
+		},
+
+		clearMessages: function(user, tags, disable_log) {
+			var t = this;
 			if ( user ) {
 				var duration = Infinity,
 					reason = undefined,
@@ -1353,10 +1525,6 @@ FFZ.prototype._modify_room = function(room) {
 				if ( tags && tags['ban-moderator'] && (is_me || t.get('isModeratorOrHigher')) )
 					moderator = tags['ban-moderator'];
 
-
-				// Does anything really matter?
-				if ( ! report_only && duration !== -Infinity ) {
-
 				// Is there a UUID on the end of the ban reason?
 				if ( reason ) {
 					var match = constants.UUID_TEST.exec(reason);
@@ -1368,18 +1536,17 @@ FFZ.prototype._modify_room = function(room) {
 					}
 				}
 
-
 				// If we were banned, set the state and update the UI.
 				if ( is_me ) {
 					t.set('ffz_banned', true);
-					if ( typeof duration === "number" && duration && isFinite(duration) && !isNaN(duration) )
-						t.updateWait(duration)
-					else if ( duration ) {
-						t.set('slowWait', 0);
-						f._roomv && f._roomv.ffzUpdateStatus();
-					}
+					if ( duration )
+						if ( isFinite(duration) )
+							t.updateWait(duration);
+						else {
+							t.set('slowWait', 0);
+							f._roomv && f._roomv.ffzUpdateStatus();
+						}
 				}
-
 
 				// Mark the user as recently banned.
 				if ( ! t.ffzRecentlyBanned )
@@ -1388,7 +1555,6 @@ FFZ.prototype._modify_room = function(room) {
 				t.ffzRecentlyBanned.push(user);
 				while ( t.ffzRecentlyBanned.length > 100 )
 					t.ffzRecentlyBanned.shift();
-
 
 				// Are we deleting a specific message?
 				if ( msg_id && this.ffz_ids ) {
@@ -1479,143 +1645,27 @@ FFZ.prototype._modify_room = function(room) {
 					}
 				}
 
-				// End of report_only check.
-				}
-
-
-				// Now we need to see about displaying a ban notice.
-				if ( ! disable_log ) {
-					// Look up the user's last ban.
-					var show_notice = is_me || this.ffzShouldDisplayNotice(),
-						show_reason = is_me || this.get('isModeratorOrHigher'),
-						show_moderator = f.settings.get_twitch('showModerationActions'),
-						room = f.rooms && f.rooms[t.get('id')],
-						now = new Date,
-						end_time = now + (duration * 1000),
-						ban_history, last_ban;
-
-					if ( room ) {
-						ban_history = room.ban_history = room.ban_history || {};
-						last_ban = ban_history[user];
-
-						// Only overwrite a ban in the last 15 seconds.
-						if ( ! last_ban || Math.abs(now - last_ban.date) > 15000 )
-							last_ban = null;
-					}
-
-					// Display a notice in chat.
-					var message = (is_me ?
-						"You have" : ffz.format_display_name(FFZ.get_capitalization(user), user, true, false, true)[0] + " has") +
-						" been " + (duration === -Infinity ? 'unbanned' :
-						(duration === 1 ? 'purged' :
-						(isFinite(duration) ? "timed out for " + utils.duration_string(duration, true) : "banned")));
-
-					if ( show_notice ) {
-						if ( ! last_ban ) {
-							var msg = {
-								style: "admin",
-								date: now,
-								ffz_ban_target: user,
-								reasons: reason ? [reason] : [],
-								moderators: moderator ? [moderator] : [],
-								msg_ids: msg_id ? [msg_id] : [],
-								durations: [duration],
-								end_time: end_time,
-								timeouts: report_only ? 0 : 1,
-								message: message + (show_reason && show_moderator && moderator ? ' by ' + moderator : '') + (show_reason && reason ? ' with reason: ' + reason : '.')
-							};
-
-							if ( ban_history )
-								ban_history[user] = msg;
-
-							this.addMessage(msg);
-
-						} else {
-							if ( msg_id && last_ban.msg_ids.indexOf(msg_id) === -1 )
-								last_ban.msg_ids.push(msg_id);
-
-							if ( reason && last_ban.reasons.indexOf(reason) === -1 )
-								last_ban.reasons.push(reason);
-
-							if ( moderator && last_ban.moderators.indexOf(moderator) === -1 )
-								last_ban.moderators.push(moderator);
-
-							if ( last_ban.durations.indexOf(duration) === -1 )
-								last_ban.durations.push(duration);
-
-							last_ban.end_time = end_time;
-
-							if ( ! report_only )
-								last_ban.timeouts++;
-
-							last_ban.message = message +
-								(last_ban.timeouts > 1 ? ' (' + utils.number_commas(last_ban.timeouts) + ' times)' : '') +
-								(!show_reason || !show_moderator || last_ban.moderators.length === 0 ? '' : ' by ' + last_ban.moderators.join(', ') ) +
-								(!show_reason || last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '));
-							last_ban.cachedTokens = [{type: "text", text: last_ban.message}];
-
-							// Now that we've reset the tokens, if there's a line for this,
-							if ( last_ban._line )
-								Ember.propertyDidChange(last_ban._line, 'ffzTokenizedMessage');
-						}
-					}
-
-
-					// Mod Card History
-					if ( room && f.settings.mod_card_history ) {
-						var chat_history = room.user_history = room.user_history || {},
-							user_history = room.user_history[user] = room.user_history[user] || [],
-							last_ban = user_history.length > 0 ? user_history[user_history.length-1] : null;
-
-						if ( ! last_ban || ! last_ban.is_delete || Math.abs(now - last_ban.date) > 15000 )
-							last_ban = null;
-
-						if ( last_ban ) {
-							if ( msg_id && last_ban.msg_ids.indexOf(msg_id) === -1 )
-								last_ban.msg_ids.push(msg_id);
-
-							if ( reason && last_ban.reasons.indexOf(reason) === -1 )
-								last_ban.reasons.push(reason);
-
-							if ( last_ban.durations.indexOf(duration) === -1 )
-								last_ban.durations.push(duration);
-
-							last_ban.end_time = end_time;
-							last_ban.timeouts++;
-
-							last_ban.cachedTokens = [message + ' (' + utils.number_commas(last_ban.timeouts) + ' times)' + (last_ban.reasons.length === 0 ? '.' : ' with reason' + utils.pluralize(last_ban.reasons.length) + ': ' + last_ban.reasons.join(', '))];
-						} else {
-							user_history.push({
-								from: 'jtv',
-								is_delete: true,
-								style: 'admin',
-								date: now,
-								ffz_ban_target: user,
-								reasons: reason ? [reason] : [],
-								msg_ids: msg_id ? [msg_id] : [],
-								durations: [duration],
-								end_time: end_time,
-								timeouts: 1,
-								cachedTokens: message + (reason ? ' with reason: ' + reason : '.')
-							})
-
-							while ( user_history.length > 20 )
-								user_history.shift();
-						}
-					}
-				}
-
+				if ( ! disable_log )
+					this.addBanNotice(user, duration, reason, null, msg_id);
 
 			} else {
 				if ( f.settings.prevent_clear )
-					this.addTmiMessage("A moderator's attempt to clear chat was ignored.");
+					t.addMessage({
+						style: 'admin',
+						message: "A moderator's attempt to clear chat was ignored.",
+						tags: {
+							'msg-id': 'clear_chat'
+						}
+					});
 				else {
 					var msgs = t.get("messages");
 					t.set("messages", []);
 					t.addMessage({
 						style: 'admin',
-						message: i18n("Chat was cleared by a moderator")
-						//ffz_old_messages: msgs
+						message: i18n("Chat was cleared by a moderator"),
+						tags: {
+							'msg-id': 'clear_chat'
+						}
 					});
 				}
 			}
@@ -1679,7 +1729,21 @@ FFZ.prototype._modify_room = function(room) {
 					Math.max(0, room_messages.length - this.messageBufferSize) + new_messages.length : 0,
 
 				to_remove = raw_remove - raw_remove % 2,
+				removed = room_messages.slice(0, to_remove),
 				trimmed = room_messages.slice(to_remove, room_messages.length);
+
+			// Garbage collect removed messages.
+			for(var i=0; i < removed.length; i++) {
+				var msg = removed[i],
+					msg_id = msg.tags && msg.tags.id,
+					notice_type = msg.tags && msg.tags['msg-id'];
+
+				if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
+					delete this.ffz_ids[msg_id];
+
+				if ( notice_type && this.ffz_last_notices && this.ffz_last_notices[notice_type] === msg )
+					delete this.ffz_last_notices[notice_type];
+			}
 
 			var earliest_message;
 			for(var i=0; i < trimmed.length; i++)
@@ -1892,6 +1956,10 @@ FFZ.prototype._modify_room = function(room) {
 						msg.labels = this.tmiRoom.getLabels(msg.from);
 				}
 
+				// Tag the broadcaster.
+				if ( room_id === msg.from )
+					msg.tags.mod = true;
+
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
@@ -1935,63 +2003,19 @@ FFZ.prototype._modify_room = function(room) {
 
 
 			// Keep the history.
-			if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' && f.settings.mod_card_history ) {
-				var room = f.rooms && f.rooms[msg.room];
-				if ( room ) {
-					var chat_history = room.user_history = room.user_history || {},
-						user_history = room.user_history[msg.from] = room.user_history[msg.from] || [],
-						last_history = user_history.length && user_history[user_history.length - 1],
-
-						new_msg = {
-							from: msg.from,
-							tags: {
-								'display-name': msg.tags && msg.tags['display-name'],
-								bits: msg.tags && msg.tags.bits
-							},
-							message: msg.message,
-							cachedTokens: msg.cachedTokens,
-							style: msg.style,
-							date: msg.date
-						};
-
-					if ( msg.tags && msg.tags.historical ) {
-						// If it's historical, insert it at the beginning. And stuff.
-						if ( user_history.length < 20 )
-							user_history.unshift(new_msg);
-
-					} else {
-						// Preserve message order if we *just* received a ban.
-						if ( last_history && last_history.is_delete && (msg.date - last_history.date) <= 200 ) {
-							user_history.splice(user_history.length - 1, 0, new_msg);
-						} else
-							user_history.push(new_msg);
-
-						if ( user_history.length > 20 )
-							user_history.shift();
-					}
-
-					if ( f._mod_card && f._mod_card.ffz_room_id === msg.room && f._mod_card.get('cardInfo.user.id') === msg.from ) {
-						var el = f._mod_card.get('element'),
-							history = el && el.querySelector('.chat-history.live-history');
-
-						if ( history ) {
-							var was_at_top = history.scrollTop >= (history.scrollHeight - history.clientHeight),
-								el = f._build_mod_card_history(msg, f._mod_card);
-
-							if ( msg.tags && msg.tags.historical )
-								history.insertBefore(el, history.firstElementChild);
-							else
-								history.appendChild(el);
-							if ( was_at_top )
-								setTimeout(function() { history.scrollTop = history.scrollHeight; })
-
-							// Don't do infinite scrollback.
-							if ( history.childElementCount > 100 )
-								history.removeChild(history.firstElementChild);
-						}
-					}
-				}
-			}
+			if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' )
+				this.addUserHistory({
+					from: msg.from,
+					tags: {
+						id: msg.tags && msg.tags.id,
+						'display-name': msg.tags && msg.tags['display-name'],
+						bits: msg.tags && msg.tags.bits
+					},
+					message: msg.message,
+					cachedTokens: msg.cachedTokens,
+					style: msg.style,
+					date: msg.date
+				});
 
 			// Clear the last ban for that user.
 			var f_room = f.rooms && f.rooms[msg.room],

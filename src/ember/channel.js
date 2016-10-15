@@ -102,7 +102,7 @@ FFZ.prototype.setup_channel = function() {
 				id = target && target.get('id'),
 				display_name = target && target.get('display_name');
 
-			if ( display_name )
+			if ( display_name && display_name !== 'jtv' )
 				FFZ.capitalization[name] = [display_name, Date.now()];
 
 			if ( f._chatv )
