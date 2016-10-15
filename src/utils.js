@@ -448,6 +448,15 @@ var createElement = function(tag, className, content) {
 	},
 
 
+	ember_transition = function(route, model) {
+		var router = ember_lookup('router:main');
+		if ( model )
+			router.transitionTo(route, model);
+		else
+			router.transitionTo(route);
+	},
+
+
 	CMD_VAR_REGEX = /{(\d+(?:\$(?:\d+)?)?|id|msg_id|message_id|(?:user|room)(?:_id|_name|_display_name)?)}/g;
 
 
@@ -462,6 +471,34 @@ module.exports = FFZ.utils = {
 	ember_settings: function() {
 		var settings = ember_resolve('model:settings');
 		return settings && settings.findOne();
+	},
+
+	transition: ember_transition,
+	transition_game: function(game) {
+		if ( game === "Counter-Strike: Global Offensive" )
+			ember_transition('directory.csgo.channels.index')
+		else if ( game === "Creative" )
+			ember_transition('directory.creative.index')
+		else
+			ember_transition('directory.game.index', encodeURIComponent(game))
+	},
+
+	transition_user: function(username) {
+		var Channel = ember_resolve('model:deprecated-channel');
+		ember_transition('channel.index', Channel.find({id: username}).load());
+	},
+
+	transition_link: function(callback) {
+		return function(e) {
+			if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
+				return;
+
+			e.preventDefault();
+			jQuery('.tipsy').remove();
+
+			callback.call(this, e);
+			return false;
+		}
 	},
 
 	ember_reopen_view: function(component, data) {

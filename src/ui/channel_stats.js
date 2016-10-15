@@ -9,6 +9,45 @@ var FFZ = window.FrankerFaceZ,
 // Channel Stats
 // --------------
 
+metadata.viewers = {
+	refresh: 5000,
+	host_order: 100,
+
+	static_label: constants.LIVE,
+	label: function(view, channel, is_hosting) {
+		var viewers = channel.get('stream.viewers');
+		return is_hosting && viewers && utils.number_commas(viewers);
+	},
+
+	tooltip: "Watching Now"
+};
+
+metadata.followers = {
+	refresh: 5000,
+	host_order: 199,
+
+	static_label: constants.HEART,
+	label: function(view, channel, is_hosting) {
+		var followers = channel.get('followers.content.meta.total');
+		return is_hosting && followers && utils.number_commas(followers);
+	},
+
+	tooltip: "Total Followers"
+}
+
+metadata.views = {
+	refresh: 5000,
+	host_order: 200,
+
+	static_label: constants.EYE,
+	label: function(view, channel, is_hosting) {
+		var views = channel.get('views');
+		return is_hosting && views && utils.number_commas(views);
+	},
+
+	tooltip: "Total Views"
+}
+
 metadata.uptime = {
 	refresh: function(channel) { return this.settings.stream_uptime > 0; },
 
@@ -22,6 +61,8 @@ metadata.uptime = {
 	},
 
 	order: 2,
+	host_order: 101,
+
 	static_label: constants.CLOCK,
 	label: function(online, uptime) {
 		var setting = this.settings.stream_uptime;
@@ -36,27 +77,10 @@ metadata.uptime = {
 	}
 };
 
-metadata.chatters = {
-	refresh: false,
-
-	static_label: constants.ROOMS,
-	label: function(view, channel) {
-		var channel_id = channel.get('id'),
-			room = this.rooms[channel_id];
-
-		if ( ! room || ! this.settings.chatter_count )
-			return null;
-
-		return utils.number_commas(Object.keys(room.room.get('ffz_chatters') || {}).length);
-	},
-
-	tooltip: 'Currently in Chat'
-};
-
 metadata.player_stats = {
 	refresh: function() { return this.settings.player_stats },
 
-	setup: function(view, channel) {
+	setup: function(view, maybe_channel, is_hosting, channel) {
 		var channel_id = channel.get('id'),
 			player_cont = this.players && this.players[channel_id],
 			player = player_cont && player_cont.player,
@@ -71,6 +95,8 @@ metadata.player_stats = {
 	},
 
 	order: 3,
+	host_order: 102,
+
 	static_label: constants.GRAPH,
 	label: function(stats, delay, is_old) {
 		if ( ! this.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster )
@@ -107,6 +133,23 @@ metadata.player_stats = {
 	}
 };
 
+metadata.chatters = {
+	refresh: false,
+
+	static_label: constants.ROOMS,
+	label: function(view, channel) {
+		var channel_id = channel.get('id'),
+			room = this.rooms[channel_id];
+
+		if ( ! room || ! this.settings.chatter_count )
+			return null;
+
+		return utils.number_commas(Object.keys(room.room.get('ffz_chatters') || {}).length);
+	},
+
+	tooltip: 'Currently in Chat'
+};
+
 metadata.host = {
 	refresh: false,
 
@@ -121,6 +164,8 @@ metadata.host = {
 	},
 
 	order: 98,
+	host_order: 3,
+
 	label: function(user, channel_id, hosting_id) {
 		if ( ! this.settings.stream_host_button || ! user || user.login === channel_id )
 			return null;

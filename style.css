@@ -18,6 +18,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-host-info .card__layout:not(.ffz),
 .ffz-following-row[data-loaded="false"] .button,
 .ffz-following-row[data-loaded="false"] .switch,
 .ffz-following-row[data-following="false"] .switch,
@@ -284,6 +285,11 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	display: none;
 }*/
 
+.ffz-theater-stats .app-main.theatre .player-column:hover .cn-hosting--bottom,
+.ffz-theater-stats .app-main.theatre .player-column:focus .cn-hosting--bottom,
+.ffz-theater-stats .app-main.theatre .cn-hosting--bottom:hover,
+.ffz-theater-stats .app-main.theatre .cn-hosting--bottom:focus,
+
 .ffz-theater-stats .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
 .ffz-theater-stats .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
 .ffz-theater-stats .app-main.theatre .cn-metabar__more:hover,
@@ -305,10 +311,12 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	padding: 10px !important;
 }
 
+.ffz-theater-stats .app-main.theatre .cn-hosting--bottom,
 .ffz-theater-stats .app-main.theatre .cn-metabar__more {
 	bottom: 55px;
 }
 
+.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-hosting--bottom,
 .ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-metabar__more {
 	bottom: 95px;
 }
@@ -754,7 +762,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid:first-of-type .heading {
 	border-top: none;
 	padding-top: 0;
-    background-position: 20px 0;
+	background-position: 20px 0;
 }
 
 .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content {
@@ -3524,6 +3532,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	padding-top: 80px;
 }
 
+.cn-hosting .ffz.card__layout .card__title,
 .ffz-channel-title-top .cn-metabar__more,
 .app-main.theatre .cn-metabar__more {
 	margin-top: 0 !important;
@@ -3533,6 +3542,9 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 .ffz-hide-channel-banner .cn-cover { height: 0 !important }
 .ffz-minimal-channel-title.ffz-channel-title-top #channel { padding-top: 50px }
+
+.ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -55px }
+.ffz-minimal-channel-title.ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -25px }
 
 .ffz-channel-title-top .cn-metabar__title {
 	position: absolute;
@@ -3564,19 +3576,25 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 
 /* Channel Metadata Sorting */
 
+.cn-hosting--bottom > *,
 .cn-metabar__more > * {
 	margin: 0 1rem 0 0 !important;
 	order: 49;
 }
 
+.cn-hosting--bottom > *,
 .cn-metabar__more > span { order: 150 }
 
+.cn-hosting--bottom:after,
 .cn-metabar__more:after {
 	content: '';
 	order: 75;
 	flex-grow: 1;
 }
 
+.cn-hosting--bottom { padding-right: 0 }
+
+.cn-hosting--bottom .button,
 .ffz-channel-options .qa-channel-options,
 .ffz-share-box .qa-share-box__button { margin: 0 !important }
 
@@ -3586,10 +3604,16 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 .cn-metabar__more > #ffz-player-stats { order: 3 }*/
 .cn-metabar__more > .cn-metabar__viewcount { order: 50; flex-grow: 0 !important }
 
-.cn-metabar__more > #ffz-ui-host-button { order: 98 }
 .cn-metabar__more > .ffz-channel-broadcast-link { order: 100 }
 .cn-metabar__more > .ffz-share-box { order: 101 }
 .cn-metabar__more > .ffz-channel-options { order: 999; margin-right: 0 !important }
+
+.cn-hosting--bottom > .follow-button { order: 1; margin-right: 0 !important }
+.cn-hosting--bottom > .notification-controls { order: 1 }
+.cn-hosting--bottom > span.ember-view { order: 2 }
+
+.cn-metabar__ffz[data-key="viewers"] svg { fill: #fc3636 }
+.cn-metabar__ffz[data-key="viewers"] { color: #fc3636 }
 
 
 /* Mod Card Notes */

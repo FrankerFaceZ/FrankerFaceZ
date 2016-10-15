@@ -270,13 +270,13 @@ FFZ.prototype.modify_navigation = function(component) {
 
 				following_link.addEventListener('click', function(e) {
 					following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');
-					var router = utils.ember_lookup('router:main');
-					if ( ! router || e && (e.button !== 0 || e.ctrlKey || e.metaKey) )
+					if ( e && (e.button !== 0 || e.ctrlKey || e.metaKey) )
 						return;
 
-					router.transitionTo('directory.following.' + (f.settings.sidebar_directly_to_followed_channels ? 'channels' : 'index'));
 					e.stopImmediatePropagation();
 					e.preventDefault();
+
+					utils.transition('directory.following.' + (f.settings.sidebar_directly_to_followed_channels ? 'channels' : 'index'));
 					return false;
 				});
 			}

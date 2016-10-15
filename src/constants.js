@@ -45,6 +45,7 @@ module.exports = FrankerFaceZ.constants = {
 	SEPARATORS: SEPARATORS,
 	SPLITTER: SPLITTER,
 
+	NO_LOGO: "//static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_150x150.png",
 	UUID_TEST: /(?:^| +)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) *$/i,
 
 	KNOWN_CODES: {

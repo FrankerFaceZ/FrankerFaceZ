@@ -203,11 +203,13 @@ FFZ.prototype.setup_layout = function() {
 			var h = this.get('windowHeight'),
 				c = this.get('PLAYER_CONTROLS_HEIGHT'),
 				r = this.get('contentWidth'),
+
 				extra_height = this.get('ffzExtraHeight'),
+				extra_theater_height = 120 + (f.settings.channel_bar_collapse ? 10 : 60) + 40,
 
 				i = Math.round(9 * r / 16) + c,
 				d = h - extra_height,
-				c = h - 94 - 185,
+				c = h - extra_theater_height,
 
 				l = Math.floor(r),
 				o = Math.floor(Math.min(i, d)),
@@ -222,7 +224,7 @@ FFZ.prototype.setup_layout = function() {
 				height = size[1],
 				host_height = size[2];
 
-			return "<style>.ffz-small-player:not(.ffz-bttv)[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) #player,.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .cn-hosted .dynamic-target-player,.cn-hosted .dynamic-target-player object,.ffz-small-player:not(.ffz-bttv)[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) .cn-hosted #player, .cn-hosted .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
+			return "<style>.ffz-small-player:not(.ffz-bttv)[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) #player,.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object,.ffz-small-player:not(.ffz-bttv)[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) .cn-hosted #player, .cn-hosted .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
 		}.property("playerSize"),
 
 		ffzPortraitWarning: function() {

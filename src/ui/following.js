@@ -199,6 +199,8 @@ FFZ.channel_metadata.following = {
 	},
 
 	order: 97,
+	host_order: 4,
+
 	button: true,
 	static_label: constants.HEART,
 	label: function(data) {

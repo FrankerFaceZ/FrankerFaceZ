@@ -1,8 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
-	constants = require('../constants'),
-
-	NO_LOGO = "//static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_150x150.png";
+	constants = require('../constants');
 
 
 // --------------------
@@ -465,22 +463,11 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 				logo.className = 'profile-photo';
 				logo.classList.toggle('is-csgo', is_csgo);
 
-				logo.src = this.get(pref + 'channel.logo') || NO_LOGO;
+				logo.src = this.get(pref + 'channel.logo') || constants.NO_LOGO;
 				logo.alt = f.format_display_name(this.get(pref + 'channel.display_name'), channel_id, true, true)[0];
 
 				link.href = '/' + channel_id;
-				link.addEventListener('click', function(e) {
-					if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
-						return;
-
-					var Channel = utils.ember_resolve('model:deprecated-channel');
-					if ( ! Channel )
-						return;
-
-					utils.ember_lookup('router:main').transitionTo('channel.index', Channel.find({id: channel_id}).load());
-					e.preventDefault();
-					return false;
-				});
+				link.addEventListener('click', utils.transition_link(utils.transition_user.bind(this, channel_id)));
 
 				link.appendChild(logo);
 				meta.insertBefore(link, meta.firstChild);
@@ -555,28 +542,12 @@ FFZ.prototype.modify_video_preview = function(component) {
 			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 
 			if ( ! boxart && thumb && game ) {
-				var img = utils.createElement('img'),
-					c = utils.ember_lookup('router:main');
+				var img = utils.createElement('img');
 
 				boxart = utils.createElement('a', 'boxart');
 				boxart.href = this.get('video.gameUrl');
 				boxart.setAttribute('original-title', game);
-				boxart.addEventListener('click', function(e) {
-					if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey )
-						return;
-
-					e.preventDefault();
-					jQuery('.tipsy').remove();
-
-					if ( game === "Counter-Strike: Global Offensive" )
-						c.transitionTo('csgo.channels.index')
-					else if ( game === "Creative" )
-						c.transitionTo('creative.index');
-					else
-						c.transitionTo('game-directory.index', encodeURIComponent(game));
-
-					return false;
-				});
+				boxart.addEventListener('click', utils.transition_link(utils.transition_game.bind(this, game)));
 
 				img.src = this.get('video.gameBoxart');
 				boxart.appendChild(img);
@@ -591,10 +562,6 @@ FFZ.prototype.modify_directory_host = function(component) {
 	var f = this;
 	utils.ember_reopen_view(component, {
 		ffzVisitChannel: function(target, e) {
-			var Channel = utils.ember_resolve('model:deprecated-channel');
-			if ( ! Channel )
-				return;
-
 			if ( e ) {
 				if ( e.button !== 0 || e.altKey || e.ctrlKey || e.shiftKey || e.metaKey  )
 					return;
@@ -604,7 +571,7 @@ FFZ.prototype.modify_directory_host = function(component) {
 			}
 
 			f.close_popup();
-			utils.ember_lookup('router:main').transitionTo('channel.index', Channel.find({id: target}).load());
+			utils.transition_user(target);
 			return false;
 		},
 
@@ -636,7 +603,7 @@ FFZ.prototype.modify_directory_host = function(component) {
 						link.className = 'dropmenu_action';
 						link.setAttribute('data-channel', target.name);
 						link.href = '/' + target.name;
-						link.innerHTML = '<img class="image" src="' + utils.sanitize(target.logo || NO_LOGO) + '"><span class="title' + (results[1] ? ' html-tooltip" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</span>';
+						link.innerHTML = '<img class="image" src="' + utils.sanitize(target.logo || constants.NO_LOGO) + '"><span class="title' + (results[1] ? ' html-tooltip" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</span>';
 						link.addEventListener('click', t.ffzVisitChannel.bind(t, target.name));
 						menu.appendChild(link);
 						return link;
@@ -720,7 +687,7 @@ FFZ.prototype.modify_directory_host = function(component) {
 					link = document.createElement('a');
 
 				logo.className = 'profile-photo';
-				logo.src = this.get('stream.target.channel.logo') || NO_LOGO;
+				logo.src = this.get('stream.target.channel.logo') || constants.NO_LOGO;
 				logo.alt = f.format_display_name(target.display_name, target.name, true, true)[0];
 
 				link.href = '/' + target.name;
