@@ -95,13 +95,13 @@ FFZ.settings_info.highlight_messages_with_mod_card = {
 
 FFZ.settings_info.logviewer_test = {
 	type: "boolean",
-	value: false,
+	value: true,
 
 	no_bttv: true,
 
 	category: "Chat Moderation",
-	name: "Logviewer Integration <small>Beta</small>",
-	help: "Display information from CBenni's logviewer directly on moderation cards."
+	name: "Logviewer Integration",
+	help: "Display information from CBenni's Logviewer directly on moderation cards."
 }
 
 

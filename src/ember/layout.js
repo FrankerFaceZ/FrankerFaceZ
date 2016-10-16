@@ -173,9 +173,9 @@ FFZ.prototype.setup_layout = function() {
 
 		isTooSmallForRightColumn: function() {
 			if ( ! f.has_bttv && this.get('portraitMode') ) {
-				var size = this.get('playerSize'),
+				var size = this.get('fullSizePlayerDimensions'),
 					extra = this.get('ffzExtraHeight'),
-					height = size[1] + extra;
+					height = size.height + extra;
 
 				// Make sure we have at least a bit of room for the chat.
 				return this.get("windowHeight") < height;
@@ -183,7 +183,7 @@ FFZ.prototype.setup_layout = function() {
 			} else
 				return this.get("windowWidth") < (1090 - this.get('rightColumnWidth'))
 
-		}.property("ffzExtraHeight", "windowWidth", "rightColumnWidth", "playerSize", "windowHeight"),
+		}.property("ffzExtraHeight", "windowWidth", "rightColumnWidth", "fullSizePlayerDimensions", "windowHeight"),
 
 		contentWidth: function() {
 			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
@@ -199,7 +199,7 @@ FFZ.prototype.setup_layout = function() {
 				(f.settings.channel_title_top ? 70 : 80);
 		}.property(""),
 
-		playerSize: function() {
+		fullSizePlayerDimensions: function() {
 			var h = this.get('windowHeight'),
 				c = this.get('PLAYER_CONTROLS_HEIGHT'),
 				r = this.get('contentWidth'),
@@ -215,17 +215,32 @@ FFZ.prototype.setup_layout = function() {
 				o = Math.floor(Math.min(i, d)),
 				s = Math.floor(Math.min(i, c));
 
-			return [l, o, s];
+			return {
+				width: l,
+				height: o,
+				targetHeight: s
+			}
+
 		}.property("ffzExtraHeight", "contentWidth", "windowHeight", "portraitMode", "PLAYER_CONTROLS_HEIGHT"),
 
-		playerStyle: function() {
-			var size = this.get('playerSize'),
-				width = size[0],
-				height = size[1],
-				host_height = size[2];
+		fullSizePlayerStyle: function() {
+			var size = this.get('fullSizePlayerDimensions');
 
-			return "<style>.ffz-small-player:not(.ffz-bttv)[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) #player,.dynamic-player, .dynamic-player object, .dynamic-player video{width:" + width + "px !important;height:" + height + "px !important} .dynamic-target-player,.dynamic-target-player object,.ffz-small-player:not(.ffz-bttv)[data-current-path^=\"user.channel.\"] .app-main:not(.theatre) .cn-hosted #player, .cn-hosted .dynamic-target-player video{width:" + width + "px !important;height:" + host_height + "px !important}</style><style>.dynamic-player .player object, .dynamic-player .player video{width:100% !important; height:100% !important}</style>";
-		}.property("playerSize"),
+			return '<style>' +
+				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user.channel."] .app-main:not(.theatre) #player,' +
+				'.dynamic-player, .dynamic-player object, .dynamic-player video {' +
+					'width:' + size.width + 'px !important;' +
+					'height:' + size.height + 'px !important}' +
+				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user.channel."] .app-main:not(.theatre) #player,' +
+				'.dynamic-target-player, .dynamic-target-player object, .dynamic-target-player video {' +
+					'width:' + size.width + 'px !important;' +
+					'height:' + size.targetHeight + 'px !important}' +
+				'.dynamic-player .player object,' +
+				'.dynamic-player .player video {' +
+					'width: 100% !important;' +
+					'height: 100% !important}';
+
+		}.property("fullSizePlayerDimensions"),
 
 		ffzPortraitWarning: function() {
 			var t = this;
@@ -260,10 +275,10 @@ FFZ.prototype.setup_layout = function() {
 
 				else {
 					if ( this.get('portraitMode') ) {
-						var size = this.get('playerSize'),
+						var size = this.get('fullSizePlayerDimensions'),
 							video_below = this.get('portraitVideoBelow'),
 
-							video_height = size[1] + this.get('ffzExtraHeight'),
+							video_height = size.height + this.get('ffzExtraHeight'),
 							chat_height = window_height - video_height,
 
 							video_top = video_below ? chat_height : 0,
@@ -339,6 +354,8 @@ FFZ.prototype.setup_layout = function() {
 								'left:' + width + 'px !important}' +
 							'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) .cn-bar-fixed {' +
 								'right: ' + width + 'px}' +
+							'body.ffz-sidebar-swap .theatre .cn-metabar__more {' +
+								'left: ' + (width + 10) + 'px !important}' +
 							'body.ffz-sidebar-swap #main_col:not(.expandRight) .cn-bar-fixed {' +
 								'left: ' + width + 'px !important}' +
 							'.ffz-theater-stats .app-main.theatre .cn-metabar__more {' +
@@ -349,7 +366,7 @@ FFZ.prototype.setup_layout = function() {
 				f._layout_style.innerHTML = out;
 			}
 
-		}.observes("ffzExtraHeight", "isRightColumnClosed", "playerSize", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
+		}.observes("ffzExtraHeight", "isRightColumnClosed", "fullSizePlayerDimensions", "rightColumnWidth", "portraitMode", "windowHeight", "windowWidth"),
 
 		ffzUpdatePlayerStyle: function() {
 			Ember.propertyDidChange(Layout, 'playerStyle');
@@ -368,7 +385,7 @@ FFZ.prototype.setup_layout = function() {
 					cr && cr.css && cr.css('top', f._chatv._ffz_tabs.offsetHeight + "px");
 				},0);
 			}
-		}.observes("isRightColumnClosed", "rightColumnWidth", "portraitMode", "playerSize")
+		}.observes("isRightColumnClosed", "rightColumnWidth", "portraitMode", "fullSizePlayerDimensions")
 	});
 
 

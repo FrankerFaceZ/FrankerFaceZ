@@ -3593,8 +3593,9 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 }
 
 .cn-hosting--bottom { padding-right: 0 }
+#ffz-metadata-popup .button { margin: 0 }
 
-.cn-hosting--bottom .button,
+.cn-hosting--bottom .button:not(.follow-button),
 .ffz-channel-options .qa-channel-options,
 .ffz-share-box .qa-share-box__button { margin: 0 !important }
 
@@ -3608,7 +3609,8 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 .cn-metabar__more > .ffz-share-box { order: 101 }
 .cn-metabar__more > .ffz-channel-options { order: 999; margin-right: 0 !important }
 
-.cn-hosting--bottom > .follow-button { order: 1; margin-right: 0 !important }
+.cn-hosting--bottom > .follow-button { order: 1 }
+.cn-hosting--bottom > .follow-button.is-following { margin-right: 0 !important }
 .cn-hosting--bottom > .notification-controls { order: 1 }
 .cn-hosting--bottom > span.ember-view { order: 2 }
 

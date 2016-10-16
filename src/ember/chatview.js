@@ -487,8 +487,9 @@ FFZ.prototype.modify_from_display_preview = function(view) {
 		},
 
 		ffz_badges: function() {
-			var badges = f.get_twitch_badges(this.get('chatUser.chatBadges'));
-			return f.get_badges(this.get('userData.login'), this.get('chatUser.id'), badges);
+			var room_id = this.get('chatUser.id'),
+				badges = f.get_twitch_badges(this.get('chatUser.chatBadges'), room_id);
+			return f.get_badges(this.get('userData.login'), room_id, badges);
 		}.property('chatUser.chatBadges', 'userData.login', 'chatUser.id'),
 
 		/*ffzUpdateChatColor: function() {

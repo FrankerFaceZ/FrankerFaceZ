@@ -549,7 +549,7 @@ FFZ.mod_card_pages.stats = {
 			});
 
 			var notice = utils.createElement('div', 'interface');
-			notice.innerHTML = 'Chat Log Source: <a target="_blank" href="https://cbenni.com/' + room_id + '?user=' + user_id + '">CBenni\'s logviewer</a>';
+			notice.innerHTML = 'Chat Log Source: <a target="_blank" href="https://cbenni.com/' + room_id + '?user=' + user_id + '">CBenni\'s Logviewer</a>';
 			el.appendChild(notice);
 		}
 	}
@@ -714,7 +714,7 @@ FFZ.mod_card_pages.notes = {
 		if ( mod_card.lv_write_notes ) {
 			var textarea = utils.createElement('textarea', 'chat_text_input mousetrap note-text-input'),
 				note_container = utils.createElement('div', 'interface textarea-contain note-input', textarea),
-				btn_submit = utils.createElement('button', 'button float-right', 'Add Note'),
+				btn_submit = utils.createElement('a', 'button float-right', 'Add Note'),
 				btn_container = utils.createElement('div', 'chat-buttons-container clearfix', btn_submit),
 
 			submit_note = function() {

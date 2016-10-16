@@ -261,6 +261,9 @@ FFZ.prototype.modify_navigation = function(component) {
 		ffz_init: function() {
 			f._nav = this;
 
+			// Fix tooltips now that we've overrode the function.
+			this._initTooltips();
+
 			// Override behavior for the Following link.
 			var el = this.get('element'),
 				following_link = el && el.querySelector('a[data-href="following"]');
@@ -280,6 +283,35 @@ FFZ.prototype.modify_navigation = function(component) {
 					return false;
 				});
 			}
+
+			// Find the Settings warp item.
+			/*var settings_svg = el && el.querySelector('.svg-nav_settings');
+			if ( settings_svg ) {
+				var warp = settings_svg.parentElement.parentElement.parentElement,
+					container = warp.parentElement;
+
+				var figure = utils.createElement('figure', 'warp__avatar', constants.ZREKNARF),
+					span = utils.createElement('span', 'is-drawer-closed--hide', 'FrankerFaceZ Settings'),
+					ffz_setting = utils.createElement('a', 'ffz-settings-link html-tooltip', figure),
+					ffz_warp = utils.createElement('li', 'warp__item', ffz_setting);
+
+				ffz_setting.title = 'FrankerFaceZ Settings';
+				ffz_setting.appendChild(span);
+				container.insertBefore(ffz_warp, warp.nextElementSibling);
+			}*/
+		},
+
+		_initTooltips: function() {
+			this._tipsySelector = this.$("#js-warp a, #small_search button, #small_more button");
+			this._tipsySelector.off("mouseenter").off("mouseleave").teardownTipsy();
+			this._tipsySelector.tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'w')});
+
+			this.$('a[data-href="following"]').tipsy({
+				html: true,
+				className: function() { return f.settings.following_count ? 'ffz-wide-tip' : '' },
+				title: function() { return f._build_following_tooltip(this) },
+				gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE * 2, 'w')
+			});
 		},
 
 		ffz_destroy: function() {

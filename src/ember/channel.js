@@ -49,56 +49,48 @@ FFZ.prototype.setup_channel = function() {
 
 	Channel.reopen({
 		ffzUpdateInfo: function() {
-			return;
 			if ( this._ffz_update_timer )
 				clearTimeout(this._ffz_update_timer);
 
-			if ( ! this.get('channelModel.id') )
-				return;
-
 			this._ffz_update_timer = setTimeout(this.ffzCheckUpdate.bind(this), 55000 + (Math.random() * 10000));
-		}.observes("channelModel"),
+
+		}.observes("channelModel", "channelModel.hostModeTarget"),
 
 		ffzCheckUpdate: function() {
-			return;
-			var t = this,
-				channel_id = t.get('channelModel.id');
+			this.ffzUpdateInfo();
+			this._ffzUpdateModel(this.get('channelModel'));
+			this._ffzUpdateModel(this.get('channelModel.hostModeTarget'), true);
+		},
 
-			channel_id && utils.api.get("streams/" + channel_id, {}, {version:3})
+		_ffzUpdateModel: function(model, is_host) {
+			var channel_id = model && model.get('id');
+			if ( ! channel_id || model.get('isLoading') )
+				return;
+
+			utils.api.get("streams/" + channel_id, {}, {version: 3})
 				.done(function(data) {
-					// If it's loading, we can't update it or Ember will whine.
-					if ( t.get('channelModel.isLoading') )
-						return;
-
+					// If there's no stream, we can't update much.
 					if ( ! data || ! data.stream ) {
-						// If the stream is offline, clear its created_at time and set it to zero viewers.
-						t.set('channelModel.stream.createdAt', null);
-						t.set('channelModel.stream.viewers', 0);
+						model.set('stream.createdAt', null);
+						model.set('stream.viewers', 0);
 						return;
 					}
 
-					t.set('channelModel.stream.createdAt', utils.parse_date(data.stream.created_at) || null);
-					t.set('channelModel.stream.viewers', data.stream.viewers || 0);
-
-					var game = data.stream.game || (data.stream.channel && data.stream.channel.game);
-					if ( game ) {
-						t.set('channelModel.game', game);
-					}
+					model.set('stream.createdAt', utils.parse_date(data.stream.created_at));
+					model.set('stream.viewers', data.stream.viewers || 0);
+					model.set('stream.game', data.stream.game);
 
 					if ( data.stream.channel ) {
-						if ( data.stream.channel.status )
-							t.set('channelModel.status', data.stream.channel.status);
-
-						if ( data.stream.channel.views )
-							t.set('channelModel.views', data.stream.channel.views);
-
-						if ( data.stream.channel.followers && t.get('channelModel.followers.isFulfilled') )
-							t.set('channelModel.followers.content.meta.total', data.stream.channel.followers);
+						var info = data.stream.channel;
+						model.set('game', info.game);
+						model.set('status', info.status);
+						model.set('views', info.views);
+						if ( model.get('followers.isFulfilled') )
+							model.set('followers.content.meta.total', info.followers);
 					}
 
-				})
-				.always(function(data) {
-					t.ffzUpdateInfo();
+					if ( is_host && f._cindex )
+						f._cindex.ffzFixHostTitle();
 				});
 		},
 
@@ -189,7 +181,7 @@ FFZ.prototype.modify_channel_live = function(view) {
 			}
 
 			this.$().on("click", ".ffz-creative-tag-link", utils.transition_link(function(e) {
-				utils.transition('creative.hashtag.index', this.getAttribute('data-tag'));
+				utils.transition('directory.creative.hashtag.index', this.getAttribute('data-tag'));
 			}));
 		},
 
@@ -474,10 +466,9 @@ FFZ.prototype.modify_channel_live = function(view) {
 						if ( popup && popup.id === 'ffz-metadata-popup' && popup.getAttribute('data-key') === key )
 							return;
 
-						var data = info.setup ? info.setup.apply(f, basic_info) : basic_info;
-						data = info.setup ? info.setup.apply(f, data) : data;
+						var data = info.setup ? info.setup.apply(f, basic_info) : basic_info,
+							balloon = utils.createElement('div', 'balloon balloon--up show');
 
-						var balloon = utils.createElement('div', 'balloon balloon--up show');
 						data.unshift(balloon);
 
 						balloon.id = 'ffz-metadata-popup';
@@ -563,7 +554,7 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 
 		handleScroll: function(top) {
 			this._super();
-			var height = this.get('channelCoverHeight') + Layout.get('playerSize.1');
+			var height = this.get('channelCoverHeight') + Layout.get('fullSizePlayerDimensions.height');
 			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= (height * .8));
 		},
 

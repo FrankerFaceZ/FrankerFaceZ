@@ -121,7 +121,7 @@ metadata.player_stats = {
 
 		var bitrate;
 		if ( stats.playback_bytes_per_second )
-			bitrate = Math.round(stats.playback_bytes_per_second * 8 / 10.24) / 1000;
+			bitrate = Math.round(stats.playback_bytes_per_second * 8 / 10.24) / 100;
 		else
 			bitrate = Math.round(stats.current_bitrate * 100) / 100;
 

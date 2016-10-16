@@ -3,6 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
+	NOT_KNOWN = ['subscriber'],
 	OTHER_KNOWN = ['turbo', 'warcraft', 'bits', 'premium'],
 
 	CSS_BADGES = {
@@ -261,7 +262,7 @@ FFZ.settings_info.transparent_badges = {
 };
 
 // This requires -webkit-mask-image which isn't working in non-WebKit browsers.
-if ( navigator.userAgent.indexOf('AppleWebKit') !== -1 )
+if ( constants.IS_WEBKIT )
 	FFZ.settings_info.transparent_badges.options[6] = "Transparent (Colored)";
 
 
@@ -408,14 +409,14 @@ FFZ.prototype.get_line_badges = function(msg) {
 		badge_tag = tags.badges || {};
 
 	// Twitch Badges
-	var badges = this.get_twitch_badges(badge_tag);
+	var badges = this.get_twitch_badges(badge_tag, room);
 
 	// FFZ Badges
 	return this.get_badges(from, room, badges, msg);
 }
 
 
-FFZ.prototype.get_twitch_badges = function(badge_tag) {
+FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 	var badges = {},
 		hidden_badges = this.settings.hidden_badges,
 
@@ -427,6 +428,12 @@ FFZ.prototype.get_twitch_badges = function(badge_tag) {
 
 		globals = badgeCollection && badgeCollection.global || {},
 		channel = badgeCollection && badgeCollection.channel || {};
+
+	// Is this the right channel?
+	if ( room_id && room_id !== channel.broadcasterName ) {
+		var ffz_room = this.rooms && this.rooms[room_id];
+		channel = ffz_room && ffz_room.badges || {};
+	}
 
 	// Whisper Chat Lines have a non-associative array for some reason.
 	if ( Array.isArray(badge_tag) ) {
@@ -459,7 +466,7 @@ FFZ.prototype.get_twitch_badges = function(badge_tag) {
 			had_last = true;
 		}
 
-		var is_known = BADGE_POSITIONS.hasOwnProperty(badge) || OTHER_KNOWN.indexOf(badge) !== -1;
+		var is_known = NOT_KNOWN.indexOf(badge) === -1 && (BADGE_POSITIONS.hasOwnProperty(badge) || OTHER_KNOWN.indexOf(badge) !== -1);
 
 		badges[last_id] = {
 			klass: (BADGE_KLASSES[badge] || badge) + (is_known ? '' : ' unknown-badge') + ' version-' + version,
@@ -502,7 +509,7 @@ FFZ.prototype.render_badges = function(badges) {
 				css += 'background-image:url("' + utils.quote_attr(badge.image) + '");';
 
 		if ( badge.srcSet && (setting !== 6 || !is_colored) )
-			css += 'background-image:-webkit-image-set(' + badge.srcSet + ');background-image:image-set(' + badge.srcSet + ');'
+			css += constants.IS_WEBKIT ? 'background-image:-webkit-image-set(' + badge.srcSet + ');' : 'background-image:image-set(' + badge.srcSet + ');';
 
 		if ( badge.color )
 			if ( is_colored && setting === 6 )

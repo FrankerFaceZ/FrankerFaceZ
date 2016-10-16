@@ -203,9 +203,9 @@ FFZ.prototype.setup_directory = function() {
 			}),
 
 			areVodsViewable: function() {
-				var filtered = this.get('filteredVods');
-				return f.settings.enable_recommended_vods && filtered && filtered.length > 0;
-			}.property('filteredVods')
+				var vods = this.get('recommendedVods');
+				return f.settings.enable_recommended_vods && vods && vods.length > 0;
+			}.property('recommendedVods')
 		});
 
 		Ember.propertyDidChange(VodCoviews, 'isFollowingAboveHost');
