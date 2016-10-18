@@ -180,7 +180,7 @@ FFZ.settings_info.show_deleted_links = {
 
 	name: "Show Deleted Links",
 	help: "Do not delete links based on room settings or link length."
-	};
+};
 
 
 // ---------------------
@@ -550,7 +550,7 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 		emotes = emote_helpers(emotes);
 
 	// Standard Tokenization
-	if ( helpers && helpers.linkifyMessage )
+	if ( helpers && helpers.linkifyMessage && this.settings.parse_links )
 		tokens = helpers.linkifyMessage(tokens);
 
 	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
@@ -602,7 +602,7 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 
 		tokens = [msg];
 
-	if ( helpers && helpers.linkifyMessage )
+	if ( helpers && helpers.linkifyMessage && this.settings.parse_links )
 		tokens = helpers.linkifyMessage(tokens, delete_links);
 
 	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
@@ -666,7 +666,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	//if ( helpers && helpers.tokenizeRichContent )
 	//	tokens = helpers.tokenizeRichContent(tokens, tags.content, delete_links);
 
-	if ( helpers && helpers.linkifyMessage )
+	if ( helpers && helpers.linkifyMessage && this.settings.parse_links )
 		tokens = helpers.linkifyMessage(tokens, delete_links && ! tags.mod);
 
 

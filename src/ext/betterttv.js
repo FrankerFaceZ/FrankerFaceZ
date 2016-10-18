@@ -158,7 +158,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.
-			return '<div class="chat-line'+(opts.highlight?' highlight':'')+(opts.action?' action':'')+(opts.server?' admin':'')+(opts.notice?' notice':'')+'" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
+			return '<div class="chat-line'+(opts.highlight?' highlight':'')+(opts.action?' action':'')+(opts.server?' admin':'')+(opts.notice?' notice':'')+'" data-id="' + data.id + '" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
 				BC.templates.timestamp(data.time)+' '+
 				(opts.isMod ? BC.templates.modicons():'')+' '+
 				BC.templates.badges(data.badges)+
@@ -228,13 +228,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 				message = tokenizedMessage.join(' ');
 			}
 
-			var spam = false;
-			if ( BetterTTV.settings.get('hideSpam') && BC.helpers.isSpammer(sender) && !BC.helpers.isModerator(sender) && !force) {
-				message = '<span class="deleted">&lt;spam deleted&gt;</span>';
-				spam = true;
-			}
-
-			return '<span class="message ' + (spam ? 'spam' : '') + '" ' + (colored ? 'style="color: ' + colored + '" ' : '') + 'data-raw="' + rawMessage + '" data-bits="' + (bits ? encodeURIComponent(JSON.stringify(bits)) : 'false') + '" data-emotes="' + (emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false') + '">' + message + '</span>';
+			return '<span class="message" ' + (colored ? 'style="color: ' + colored + '" ' : '') + 'data-raw="' + rawMessage + '" data-bits="' + (bits ? encodeURIComponent(JSON.stringify(bits)) : 'false') + '" data-emotes="' + (emotes ? encodeURIComponent(JSON.stringify(emotes)) : 'false') + '">' + message + '</span>';
 
 		} catch(err) {
 			f.log("Error: ", err);

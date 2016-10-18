@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
+	constants = require('../constants'),
 
 	update_viewer_count = function(text) {
 		var vc = jQuery("#channel_viewer_count");
@@ -35,6 +36,37 @@ FFZ.msg_commands.chat_message = function(data) {
 	this._stat_chat_lines++;
 	if ( this._stat_chatters.indexOf(data.from) === -1 )
 		this._stat_chatters.push(data.from);
+}
+
+
+FFZ.msg_commands.chatter_count = function(data) {
+	if ( ! this.dashboard_channel || data.room !== this.dashboard_channel )
+		return;
+
+	var el = document.querySelector('#ffz-chatter-display span');
+	if ( ! this.settings.chatter_count || this.has_bttv || ! this.is_dashboard || ! data.chatters ) {
+		if ( el )
+			jQuery(el).parent().remove();
+		return;
+	}
+
+	if ( ! el ) {
+		var cont = document.querySelector('#stats');
+		if ( ! cont )
+			return;
+
+		var stat = utils.createElement('span', 'ffz stat', constants.ROOMS + ' ');
+		stat.id = 'ffz-chatter-display';
+		stat.title = 'Currently in Chat';
+
+		el = utils.createElement('span');
+		stat.appendChild(el);
+
+		cont.appendChild(stat);
+		jQuery(stat).tipsy({gravity: 's'});
+	}
+
+	el.textContent = utils.number_commas(data.chatters);
 }
 
 

@@ -88,6 +88,18 @@ FFZ.settings_info.replace_bad_emotes = {
 };
 
 
+FFZ.settings_info.parse_links = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Make Links Clickable",
+	help: "Display links as real, clickable hyperlinks rather than just text."
+}
+
+
 FFZ.settings_info.parse_emoticons = {
 	type: "boolean",
 	value: true,

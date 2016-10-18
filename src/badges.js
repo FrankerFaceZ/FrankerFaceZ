@@ -480,7 +480,8 @@ FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 
 		if ( ! is_known && binfo ) {
 			badges[last_id].image = binfo.image_url_1x;
-			badges[last_id].srcSet = 'url("' + binfo.image_url_1x + '") 1x, url("' + binfo.image_url_2x + '") 2x, url("' + binfo.image_url_4x + '") 4x';
+			if ( binfo.image_url_2x || binfo.image_url_4x )
+				badges[last_id].srcSet = 'url("' + binfo.image_url_1x + '") 1x' + (binfo.image_url_2x ? ', url("' + binfo.image_url_2x + '") 2x' : '') + (binfo.image_url_4x ? ', url("' + binfo.image_url_4x + '") 4x' : '');
 		}
 	}
 

@@ -176,7 +176,7 @@ FFZ.prototype.format_ban_notice = function(username, is_me, duration, count, rea
 		if ( ! Array.isArray(notice) )
 			notice = [notice];
 
-		var nd = notice[0] === -Infinity ? 'unban' : isFinite(notice[0]) ? utils.duration_string(notice[0], true) : 'ban';
+		var nd = (notice[0] === -Infinity || notice[0] === -1) ? 'unban' : (notice[0] !== null && isFinite(notice[0])) ? utils.duration_string(notice[0], true) : 'ban';
 		duration_tip.push(utils.sanitize(mod_id) + ' - ' + nd + (notice[1] ? ': ' + utils.sanitize(notice[1]) : ''));
 	}
 
@@ -1213,7 +1213,7 @@ FFZ.prototype._modify_room = function(room) {
 
 			var msg_id,
 				reason = event.args[2],
-				duration = event.moderator_action === 'unban' ? -Infinity : event.args[1];
+				duration = event.moderation_action === 'unban' ? -Infinity : event.args[1];
 
 			if ( typeof duration === "string" )
 				duration = parseInt(duration);
@@ -2141,7 +2141,7 @@ FFZ.prototype._modify_room = function(room) {
 				f._cindex.ffzUpdateMetadata('chatters');
 
 			if ( window !== window.parent && parent.postMessage )
-				parent.postMessage({from_ffz: true, command: 'chatter_count', data: Object.keys(this.get('ffz_chatters') || {}).length}, "*"); //location.protocol + "//www.twitch.tv/");
+				parent.postMessage({from_ffz: true, command: 'chatter_count', data: {room: this.get('id'), chatters: Object.keys(this.get('ffz_chatters') || {}).length}}, "*"); //location.protocol + "//www.twitch.tv/");
 		},
 
 

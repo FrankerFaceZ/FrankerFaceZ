@@ -8,44 +8,32 @@ var FFZ = window.FrankerFaceZ,
 // -------------------
 
 FFZ.prototype._update_subscribers = function() {
-	if ( this._update_subscribers_timer ) {
+	if ( this._update_subscribers_timer )
 		clearTimeout(this._update_subscribers_timer);
-		delete this._update_subscribers_timer;
-	}
+
+	var f = this,
+		user = this.get_user();
+
+	if ( this.has_bttv || ! user || ! user.login || this.dashboard_channel !== user.login )
+		return jQuery("#ffz-sub-display").remove();
 
 	// Schedule an update.
 	this._update_subscribers_timer = setTimeout(this._update_subscribers.bind(this), 60000);
 
-	var user = this.get_user(), f = this,
-		match = this.is_dashboard ? location.pathname.match(/\/([^\/]+)/) : undefined,
-		channel_id = this.is_dashboard && match && match[1];
-
-	if ( this.has_bttv || ! channel_id || channel_id !== user.login ) {
-		var el = document.querySelector("#ffz-sub-display");
-		if ( el )
-			el.parentElement.removeChild(el);
-		return;
-	}
-
-	// Spend a moment wishing we could just hit the subscribers API from the
-	// context of the web user.
-
 	// Get the count!
-	utils.api.get("/api/channels/" + channel_id + "/subscriber_count").done(function(data) {
+	utils.api.get("/api/channels/" + this.dashboard_channel + "/subscriber_count").done(function(data) {
 		var el, sub_count = data && data.count;
 		if ( typeof sub_count === "string" )
 			sub_count = parseInt(sub_count.replace(/[,\.]/g, ""));
 
-		if ( typeof sub_count !== "number" || sub_count === 0 || sub_count === NaN || sub_count === Infinity ) {
-			el = document.querySelector("#ffz-sub-display");
-			if ( el )
-				el.parentElement.removeChild(el);
+		if ( typeof sub_count !== "number" || ! sub_count || isNaN(sub_count) || ! isFinite(sub_count) ) {
+			jQuery("#ffz-sub-display").remove();
 
 			var failed = f._failed_sub_checks = (f._failed_sub_checks || 0) + 1;
 			if ( f._update_subscribers_timer && failed >= 5 ) {
 				f.log("Subscriber count failed 5 times. Giving up.");
 				clearTimeout(f._update_subscribers_timer);
-				delete f._update_subscribers_timer;
+				f._update_subscribers_timer = undefined;
 			}
 
 			return;
@@ -63,18 +51,15 @@ FFZ.prototype._update_subscribers = function() {
 
 		el = document.querySelector('#ffz-sub-display span');
 		if ( ! el ) {
-			var cont = f.is_dashboard ? document.querySelector("#stats") : document.querySelector("#channel .stats-and-actions .channel-stats");
+			var cont = document.querySelector('#stats');
 			if ( ! cont )
 				return;
 
-			var stat = document.createElement('span');
-			stat.className = 'ffz stat';
+			var stat = utils.createElement('span', 'ffz stat', constants.STAR + ' ');
 			stat.id = 'ffz-sub-display';
 			stat.title = 'Subscribers';
 
-			stat.innerHTML = constants.STAR + ' ';
-
-			el = document.createElement('span');
+			el = utils.createElement('span');
 			stat.appendChild(el);
 
 			utils.api.get("chat/" + channel_id + "/badges", null, {version: 3})
@@ -91,15 +76,12 @@ FFZ.prototype._update_subscribers = function() {
 				});
 
 			cont.appendChild(stat);
-			jQuery(stat).tipsy({gravity: f.is_dashboard ? "s" : utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+			jQuery(stat).tipsy({gravity: 's'});
 		}
 
-		el.innerHTML = utils.number_commas(sub_count);
+		el.textContent = utils.number_commas(sub_count);
 
 	}).fail(function(){
-		var el = document.querySelector("#ffz-sub-display");
-		if ( el )
-			el.parentElement.removeChild(el);
-		return;
+		jQuery("#ffz-sub-display").remove();
 	});
 }

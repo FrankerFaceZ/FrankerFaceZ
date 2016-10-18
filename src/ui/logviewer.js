@@ -71,9 +71,13 @@ FFZ.prototype.lv_get_logs = function(room_id, user_id, ref_id, before_cnt, after
 			utils.logviewer.get("logs/" + room_id + "?" + args.join('&'), token)
 				.then(utils.json).then(function(data) {
 					// Parse every message immediately.
-					var bound = f.lv_parse_message.bind(f);
-					data.before = _.map(data.before, bound);
-					data.after = _.map(data.after, bound);
+					if ( data ) {
+						var bound = f.lv_parse_message.bind(f);
+						if ( data.before )
+							data.before = _.map(data.before, bound);
+						if ( data.after )
+							data.after = _.map(data.after, bound);
+					}
 
 					succeed(data);
 				});
