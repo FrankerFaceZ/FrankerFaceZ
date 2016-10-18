@@ -1100,6 +1100,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .new-header-search input {
 	color: #fff;
+	background-color: rgba(255,255,255,0.05);
 	box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
 }
 

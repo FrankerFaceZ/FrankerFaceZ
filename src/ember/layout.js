@@ -98,33 +98,59 @@ FFZ.settings_info.right_column_width = {
 	help: "Set the width of the right sidebar for chat.",
 
 	method: function() {
-			var f = this,
-				old_val = this.settings.right_column_width || 340;
+		var f = this,
+			old_val = this.settings.right_column_width || 340;
 
-			utils.prompt("Right Sidebar Width", "Please enter a new width for the right sidebar, in pixels.</p><p><b>Minimum:</b> 250<br><b>Default:</b> 340", old_val, function(new_val) {
-				if ( new_val === null || new_val === undefined )
-					return;
+		utils.prompt("Right Sidebar Width", "Please enter a new width for the right sidebar, in pixels.</p><p><b>Minimum:</b> 250<br><b>Default:</b> 340", old_val, function(new_val) {
+			if ( new_val === null || new_val === undefined )
+				return;
 
-				var width = parseInt(new_val);
-				if ( ! width || Number.isNaN(width) || ! Number.isFinite(width) )
-					width = 340;
+			var width = parseInt(new_val);
+			if ( ! width || Number.isNaN(width) || ! Number.isFinite(width) )
+				width = 340;
 
-				f.settings.set('right_column_width', Math.max(250, width));
-			});
-		},
+			f.settings.set('right_column_width', Math.max(250, width));
+		});
+	},
 
 	on_update: function(val) {
-			if ( this.has_bttv )
-				return;
+		if ( this.has_bttv )
+			return;
 
-			var Layout = utils.ember_lookup('service:layout');
-			if ( ! Layout )
-				return;
+		var Layout = utils.ember_lookup('service:layout');
+		if ( ! Layout )
+			return;
 
-			Layout.set('rightColumnWidth', val);
-			Ember.propertyDidChange(Layout, 'contentWidth');
-		}
-	};
+		Layout.set('rightColumnWidth', val);
+		Ember.propertyDidChange(Layout, 'contentWidth');
+	}
+};
+
+
+FFZ.settings_info.minimize_navigation = {
+	type: "boolean",
+	value: false,
+
+	category: "Sidebar",
+	no_mobile: true,
+	no_bttv: true,
+
+	name: "Minimize Navigation",
+	help: "Slide the navigation bar mostly out of view when it's not being used.",
+
+	on_update: function(val) {
+		if ( this.has_bttv )
+			return;
+
+		var Layout = utils.ember_lookup('service:layout');
+		if ( ! Layout )
+			return;
+
+		utils.toggle_cls('ffz-sidebar-minimize')(val);
+		Layout.set('ffzMinimizeNavigation', val);
+		//Ember.propertyDidChange(Layout, 'contentWidth');
+	}
+}
 
 
 // --------------------
@@ -135,7 +161,8 @@ FFZ.prototype.setup_layout = function() {
 	if ( this.has_bttv )
 		return;
 
-	document.body.classList.toggle("ffz-sidebar-swap", this.settings.swap_sidebars);
+	utils.toggle_cls("ffz-sidebar-swap")(this.settings.swap_sidebars);
+	utils.toggle_cls('ffz-sidebar-minimize')(this.settings.minimize_navigation);
 
 	this.log("Creating layout style element.");
 	var s = this._layout_style = document.createElement('style');
@@ -186,12 +213,12 @@ FFZ.prototype.setup_layout = function() {
 		}.property("ffzExtraHeight", "windowWidth", "rightColumnWidth", "fullSizePlayerDimensions", "windowHeight"),
 
 		contentWidth: function() {
-			var left_width = this.get("isLeftColumnClosed") ? 50 : 240,
+			var left_width = this.get('ffzMinimizeNavigation') ? 10 : this.get("isLeftColumnClosed") ? 50 : 240,
 				right_width = ! f.has_bttv && this.get('portraitMode') ? 0 : this.get("isRightColumnClosed") ? 0 : this.get("rightColumnWidth");
 
 			return this.get("windowWidth") - left_width - right_width - 60;
 
-		}.property("windowWidth", "portraitMode", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth"),
+		}.property("windowWidth", 'ffzMinimizeNavigation', "portraitMode", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth"),
 
 		ffzExtraHeight: function() {
 			return (f.settings.channel_bar_collapse ? 10 : 60) + 15 +
@@ -223,7 +250,7 @@ FFZ.prototype.setup_layout = function() {
 
 		}.property("ffzExtraHeight", "contentWidth", "windowHeight", "portraitMode", "PLAYER_CONTROLS_HEIGHT"),
 
-		fullSizePlayerStyle: function() {
+		playerStyle: function() {
 			var size = this.get('fullSizePlayerDimensions');
 
 			return '<style>' +
@@ -392,6 +419,7 @@ FFZ.prototype.setup_layout = function() {
 	// Force the layout to update.
 	Layout.set('rightColumnWidth', this.settings.right_column_width);
 	Layout.set('rawPortraitMode', this.settings.portrait_mode);
+	Layout.set('ffzMinimizeNavigation', this.settings.minimize_navigation);
 
 	// Force re-calculation of everything.
 	Ember.propertyDidChange(Layout, 'windowWidth');

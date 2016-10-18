@@ -647,7 +647,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				move_selection(area, prefix.length);
 				area.focus();
 
-				var text = t.get('textareaValue'),
+				/*var text = t.get('textareaValue'),
 					ind = text.indexOf(' '),
 					start = ind !== -1 && text.substr(0, ind);
 
@@ -660,7 +660,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 						t.set("ffz_suggestions_visible", true);
 						t.ffzSetPartialWord();
 					}
-				}
+				}*/
 			});
 		},
 
@@ -686,7 +686,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			for(var cmd in FFZ.chat_commands) {
 				var data = FFZ.chat_commands[cmd];
-				if ( commands[cmd] )
+				if ( commands[cmd] || ! data || data.short )
 					continue;
 
 				var enabled = data.hasOwnProperty('enabled') ? data.enabled : true;
@@ -704,8 +704,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				commands[cmd] = {
 					label: data.label,
 					info: data.info,
-					alias: false,
-					short: data.short
+					alias: false
 				}
 			}
 
@@ -850,7 +849,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 						alternate_match: command_name.toLowerCase(),
 						content: data.content || cmd,
 						label: data.label || cmd,
-						info: data.alias ? 'Alias: ' + data.info : (data.short ? 'Short ' : '') + 'Command' + (data.info ? ': ' + data.info : '')
+						info: data.alias ? 'Alias: ' + data.info : 'Command' + (data.info ? ': ' + data.info : '')
 					});
 				}
 			}
@@ -1364,7 +1363,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 								});
 							}
 
-						} else if ( f.settings.input_complete_commands && (start.charAt(0) === '/' || start.charAt(0) === '.') ) {
+						} /* else if ( f.settings.input_complete_commands && (start.charAt(0) === '/' || start.charAt(0) === '.') ) {
 							var commands = t.get('ffz_commands'),
 								cmd = commands[start.substr(1)];
 
@@ -1373,7 +1372,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 								t.set("ffz_suggestions_visible", true);
 								t.ffzSetPartialWord();
 							}
-						}
+						}*/
 					});
 			}
 		},

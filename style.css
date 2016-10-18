@@ -2085,9 +2085,12 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	margin-right: 0px;
 }
 
+.chat-history .chat-line.notification .from,
+.chat-history .chat-line.notification .colon,
 .chat-history .chat-line.admin .from,
 .chat-history .chat-line.admin .colon { display: none }
 
+.chat-history .chat-line.notification .message,
 .chat-history .chat-line.admin .message { color: #666; }
 
 .chat-history .timestamp {
@@ -2261,11 +2264,11 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	left: 20px;
 }
 
-.ffz-sidebar-swap #main_col .cn-bar-fixed {
+.ffz-sidebar-swap .cn-bar-fixed {
 	right: 50px;
 }
 
-.ffz-sidebar-swap #left_col.open ~ #main_col .cn-bar-fixed {
+.ffz-sidebar-swap:not(.ffz-sidebar-minimize) #left_col.open ~ #main_col .cn-bar-fixed {
 	right: 240px;
 }
 
@@ -2361,13 +2364,31 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 /* No Blue */
 
+.ffz-no-blue .form--theme-dark .form__input {
+	background-color: rgba(255,255,255,0.05);
+	box-shadow: rgba(255,255,255,0.1) 0 0 0 1px inset;
+}
+
+.ffz-no-blue .form--theme-dark .form__input:focus {
+	box-shadow: rgba(255,255,255,0.3) 0 0 0 1px inset;
+}
+
 .ffz-no-blue .theatre .ember-chat .chat-interface .textarea-contain textarea {
 	background-color: rgba(255,255,255,0.05);
 	border-color: rgba(255,255,255,0.1);
 }
 
 .ffz-no-blue #carousel .nav {
-    background-color: rgba(25,25,25,.5);
+	background-color: rgba(25,25,25,.5);
+}
+
+.ffz-no-blue .warp__item a:hover {
+	background-color: #2b2b2b;
+}
+
+.ffz-no-blue .warp__item--toggled > a {
+	background-color: #2b2b2b;
+	box-shadow: 3px 0 0 #a3a3a3 inset;
 }
 
 .ffz-no-blue .theatre .conversations-list-bottom-bar,
@@ -3639,6 +3660,13 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 
 /* Ban Notices */
 
+.theatre .chat-history .chat-line.notification .message,
+.dark .chat-history .chat-line.notification .message,
+.force-dark .chat-history .chat-line.notification .message,
+.theatre .chat-history .chat-line.admin .message,
+.dark .chat-history .chat-line.admin .message,
+.force-dark .chat-history .chat-line.admin .message,
+
 .theatre .chat-messages .chat-line.admin .message,
 .dark .chat-messages .chat-line.admin .message,
 .force-dark .chat-messages .chat-line.admin .message,
@@ -3700,3 +3728,15 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 	float: right;
 	margin: 7px 1rem 0 0;
 }
+
+/* Hidden Navigation */
+
+.ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col.closed:not(:hover) { left: -40px }
+.ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col.open:not(:hover) { left: -230px }
+.ffz-sidebar-minimize:not(.ffz-sidebar-swap) #main_col { margin-left: 10px }
+.ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col ~ #main_col .cn-bar-fixed { left: 10px }
+
+.ffz-sidebar-minimize.ffz-sidebar-swap #left_col.closed:not(:hover) { right: -40px }
+.ffz-sidebar-minimize.ffz-sidebar-swap #left_col.open:not(:hover) { right: -230px }
+.ffz-sidebar-minimize.ffz-sidebar-swap #main_col { margin-right: 10px }
+.ffz-sidebar-minimize.ffz-sidebar-swap .cn-bar-fixed { right: 10px }

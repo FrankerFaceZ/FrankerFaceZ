@@ -3,8 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
-	NOT_KNOWN = ['subscriber'],
-	OTHER_KNOWN = ['turbo', 'warcraft', 'bits', 'premium'],
+	OTHER_KNOWN = ['turbo', 'bits', 'premium'],
 
 	CSS_BADGES = {
 		staff: { 1: { color: "#200f33", use_svg: true } },
@@ -466,7 +465,7 @@ FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 			had_last = true;
 		}
 
-		var is_known = NOT_KNOWN.indexOf(badge) === -1 && (BADGE_POSITIONS.hasOwnProperty(badge) || OTHER_KNOWN.indexOf(badge) !== -1);
+		var is_known = BADGE_POSITIONS.hasOwnProperty(badge) || OTHER_KNOWN.indexOf(badge) !== -1;
 
 		badges[last_id] = {
 			klass: (BADGE_KLASSES[badge] || badge) + (is_known ? '' : ' unknown-badge') + ' version-' + version,

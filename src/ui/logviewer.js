@@ -103,8 +103,17 @@ FFZ.prototype.lv_parse_message = function(message) {
 	parsed.is_admin = parsed.tags['display-name'] === 'jtv';
 	if ( parsed.is_admin ) {
 		parsed.style = 'admin';
-		parsed.tags['display-name'] = undefined;
+		delete parsed.tags['display-name'];
 	}
+
+
+	// Is this a notification?
+	parsed.is_notice = parsed.tags['display-name'] === 'twitchnotify';
+	if ( parsed.is_notice ) {
+		parsed.style = 'notification';
+		delete parsed.tags['display-name'];
+	}
+
 
 	// Is this a ban?
 	var match = parsed.is_admin && BAN_REGEX.exec(parsed.message);

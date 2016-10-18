@@ -862,6 +862,21 @@ FFZ.prototype.update_room_important = function(id, controller) {
 };
 
 
+FFZ.prototype._update_room_badge_css = function(room_id) {
+	var room = this.rooms[room_id],
+		badges = room && room.badges || {},
+		output = [];
+
+	for(var badge_id in badges) {
+		var versions = badges[badge_id] && badges[badge_id].versions || {};
+		for(var version in versions)
+			output.push(utils.room_badge_css(room_id, badge_id, version, versions[version]));
+	}
+
+	utils.update_css(this._badge_style, 'twitch-room-' + room_id, output.join(''));
+}
+
+
 FFZ.prototype.add_room = function(id, room) {
 	if ( this.rooms[id] )
 		return this.log("Tried to add existing room: " + id);
@@ -894,8 +909,10 @@ FFZ.prototype.add_room = function(id, room) {
 
 	// Store the badges for this room now if we have them.
 	var bs = utils.ember_lookup('service:badges');
-	if ( bs && bs.badgeCollection && bs.badgeCollection.channel && bs.badgeCollection.channel.broadcasterName === id )
+	if ( bs && bs.badgeCollection && bs.badgeCollection.channel && bs.badgeCollection.channel.broadcasterName === id ) {
 		data.badges = bs.badgeCollection.channel;
+		this._update_room_badge_css(id);
+	}
 
 	// Look up if the room has moderation logs.
 	var f = this;
@@ -1068,6 +1085,7 @@ FFZ.prototype._modify_room = function(room) {
 				}
 			}).then(utils.json).then(function(data) {
 				ffz_room.badges = data && data.badge_sets;
+				f._update_room_badge_css(room_name);
 			});
 
 		}.observes('roomProperties._id'),

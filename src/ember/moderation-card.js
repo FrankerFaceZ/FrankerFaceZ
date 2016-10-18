@@ -828,7 +828,10 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				// Parse the message. Store the data.
 				var message = f.lv_parse_message(data);
 				this._lv_logs.data.before.push(message);
-				this._lv_logs.data.user[message.is_ban ? 'timeouts' : 'messages'] += 1;
+				if ( message.is_ban )
+					this._lv_logs.data.user.timeouts++;
+				else if ( ! message.is_admin && (! message.is_notice || message.message.indexOf('Message: ') !== -1) )
+					this._lv_logs.data.user.messages++;
 
 				// If we're viewing the chat history, update it.
 				var el = this.get('element'),
@@ -1434,10 +1437,11 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 
 FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_click, mod_icons) {
-	var l_el = document.createElement('li'),
+	var l_el = utils.createElement('li', 'message-line chat-line clearfix'),
 		out = [],
-		f = this;
+		f = this,
 
+		is_notice = msg.style === 'admin' || msg.style === 'notification',
 		style = '', colored = '';
 
 	if ( helpers && helpers.getTime )
@@ -1453,7 +1457,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 		out.push('</span>');
 	}
 
-	if ( show_from ) {
+	if ( show_from && ! is_notice ) {
 		// Badges
 		out.push('<span class="badges">');
 		out.push(this.render_badges(this.get_line_badges(msg, false)));
@@ -1484,7 +1488,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 			+ results[0] + '</span>');
 
 		out.push(msg.style !== 'action' ? '<span class="colon">:</span> ' : ' ');
-	} else if ( msg.style !== 'admin' )
+	} else if ( ! is_notice )
 		out.push('<span class="cp-hidden"> ' + results[0] + (msg.style === 'action' ? '' : ':') + ' </span>');
 
 
@@ -1505,8 +1509,6 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 
 
 	// Line attributes and classes.
-	l_el.className = 'message-line chat-line clearfix';
-
 	if ( msg.style )
 		l_el.classList.add(msg.style);
 

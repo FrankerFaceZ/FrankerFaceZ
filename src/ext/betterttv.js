@@ -112,6 +112,14 @@ FFZ.prototype.setup_bttv = function(delay) {
 	cl.remove('ffz-minimal-channel-bar');
 	cl.remove('ffz-channel-bar-bottom');
 	cl.remove('ffz-channel-title-top');
+	cl.remove('ffz-sidebar-minimize');
+
+	// Update the layout service.
+	var Layout = utils.ember_lookup('service:layout');
+	if ( Layout ) {
+		Layout.set('ffzMinimizeNavigation', false);
+		Layout.set('rawPortraitMode', 0);
+	}
 
 	// Remove Following Count
 	if ( this.settings.following_count ) {

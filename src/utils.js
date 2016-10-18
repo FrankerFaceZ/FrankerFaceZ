@@ -982,7 +982,18 @@ module.exports = FFZ.utils = {
 		return out;
 	},
 
-	cdn_badge_css: function(badge_id, version, data) {
+	room_badge_css: function(room_id, badge_id, version, data) {
+		var img_1x = data.image_url_1x,
+			img_2x = data.image_url_2x,
+			img_4x = data.image_url_4x;
+
+		return '.from-display-preview[data-room="' + room_id + '"] .badge.' + badge_id + '.version-' + version +
+				',.chat-line[data-room="' + room_id + '"] .badge.' + badge_id + '.version-' + version + '{' +
+			'background-image:url("' + img_1x + '");' +
+			'background-image:' + (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(url("' + img_1x + '") 1x' + (img_2x ? ',url("' + img_2x + '") 2x' : '') + (img_4x ? ',url("' + img_4x + '") 4x' : '') + ')}';
+	},
+
+	cdn_badge_css: function(badge_id, version, data, room) {
 		var color = data.color,
 			base_image = data.image || ("https://cdn.frankerfacez.com/badges/twitch/" + badge_id + (data.use_svg ? '.svg' : "/" + version + "/")),
 			is_svg = base_image.substr(-4) === '.svg',
@@ -990,11 +1001,11 @@ module.exports = FFZ.utils = {
 			image_2x = base_image + (is_svg ? '' : "2.png"),
 			image_4x = base_image + (is_svg ? '' : "4.png");
 
-		return '.badge.' + badge_id + '.version-' + version + (data.no_color ? '' : ':not(.colored)') + ' {' +
+		return '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + (data.no_color ? '' : ':not(.colored)') + ' {' +
 				'background: url("' + image_1x + '") ' + color + ';' +
 				(is_svg ? '}' : 'background-image: -webkit-image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x);' +
 				'background-image: image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x); }') +
-			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + '.colored {' +
+			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + '.colored {' +
 				'background: linear-gradient(' + color + ',' + color + ');' +
 				(is_svg ? '-webkit-mask-size: 18px 18px;mask-size: 18px 18px;' : '') +
 				'-webkit-mask-image: url("' + image_1x + '");' +
