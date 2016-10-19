@@ -26,7 +26,7 @@ FFZ.prototype._update_subscribers = function() {
 		if ( typeof sub_count === "string" )
 			sub_count = parseInt(sub_count.replace(/[,\.]/g, ""));
 
-		if ( typeof sub_count !== "number" || ! sub_count || isNaN(sub_count) || ! isFinite(sub_count) ) {
+		if ( typeof sub_count !== "number" || isNaN(sub_count) || ! isFinite(sub_count) ) {
 			jQuery("#ffz-sub-display").remove();
 
 			var failed = f._failed_sub_checks = (f._failed_sub_checks || 0) + 1;
@@ -62,7 +62,7 @@ FFZ.prototype._update_subscribers = function() {
 			el = utils.createElement('span');
 			stat.appendChild(el);
 
-			utils.api.get("chat/" + channel_id + "/badges", null, {version: 3})
+			utils.api.get("chat/" + f.dashboard_channel + "/badges", null, {version: 3})
 				.done(function(data) {
 					if ( data.subscriber && data.subscriber.image ) {
 						stat.innerHTML = '';

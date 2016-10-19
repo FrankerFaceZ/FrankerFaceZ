@@ -25,6 +25,10 @@
 		}
 	}
 
+	hr {
+		border-color: fade(white, 10%);
+	}
+
 
 	.sub-text { color: darken(@fg-color, 10%) }
 
@@ -36,6 +40,17 @@
 	}
 
 	.svg-logo_twitch, .clips-nav__logo { fill: white }
+
+
+	// Content Meta
+	.nv-clip-content {
+		background-color: @nav-bg-color;
+
+		.nv-clip-content__meta {
+			background-color: @nav-bg-color;
+		}
+
+	}
 
 
 	// Buttons
@@ -58,6 +73,12 @@
 			background-color: fade(@link-color, 10%);
 			color: @hollow-button-color;
 		}
+	}
+
+	.button--following {
+		background-color: darken(@nav-bg-color, 2%);
+		color: @fg-color;
+		box-shadow: inset 0 0 0 1px lighten(@bg-color, 10%);
 	}
 
 	.button--hollow.button--dropmenu {
@@ -109,6 +130,49 @@
 					color: white !important;
 				}
 			}
+		}
+	}
+
+
+	// Card~
+	.card__title {
+		color: @fg-color;
+	}
+
+	.more-clips {
+		border-color: fade(white, 10%);
+
+		.card__layout:hover {
+			background-color: lighten(@nav-bg-color, 10%);
+		}
+	}
+
+
+	// Popup Card
+	.popup-card {
+		background-color: lighten(@bg-color, 10%);
+		box-shadow:
+			0 0 0 1px fade(white, 10%),
+			0 1rem 2rem -.8rem fade(#6441A4, 25%);
+
+		.popup-card__header {
+			color: lighten(@fg-color, 10%);
+		}
+
+		.cf-footer {
+			background-color: lighten(@bg-color, 5%);
+			border-top: fade(white, 10%);
+		}
+
+	}
+
+
+	.cf-textarea-input {
+		background-color: fade(white, 5%);
+		color: lighten(@fg-color, 10%);
+
+		textarea {
+			background: transparent;
 		}
 	}
 

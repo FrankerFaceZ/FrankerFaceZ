@@ -656,7 +656,8 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 		from_me = user && from_user === user.login,
 		tags = msgObject.tags || {},
 		emotes = tags.emotes,
-		tokens = [msg];
+		tokens = [msg],
+		mod_or_higher = tags.mod || from_user === room_id || tags['user-type'] === 'staff' || tags['user-type'] === 'admin' || tags['user-type'] === 'global_mod';
 
 	// Standard Tokenization
 	if ( tags.bits && bits_helpers && bits_helpers.tokenizeBits )
@@ -667,8 +668,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	//	tokens = helpers.tokenizeRichContent(tokens, tags.content, delete_links);
 
 	if ( helpers && helpers.linkifyMessage && this.settings.parse_links )
-		tokens = helpers.linkifyMessage(tokens, delete_links && ! tags.mod);
-
+		tokens = helpers.linkifyMessage(tokens, delete_links && ! mod_or_higher);
 
 	if ( user && user.login && helpers && helpers.mentionizeMessage ) {
 		tokens = helpers.mentionizeMessage(tokens, user.login, from_me);

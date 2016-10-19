@@ -271,20 +271,6 @@ FFZ.prototype.build_ui_popup = function(view) {
 		menu.appendChild(el);
 	}
 
-
-	var page = (this._last_page || "channel").split("_", 1)[0];
-
-	// Do we have news?
-	/*if ( this._has_news ) {
-		// Render news, then set the page back so our default doesn't change.
-		this._ui_change_page(view, inner, menu, sub_container, 'about_news');
-		this._last_page = page;
-
-	} else*/
-		// Render Current Page
-		this._ui_change_page(view, inner, menu, sub_container, page);
-
-
 	// Add the menu to the DOM.
 	sub_container.style.maxHeight = Math.max(200, view.$().height() - 172) + "px";
 	view.$('.chat-interface').append(container);
@@ -292,6 +278,10 @@ FFZ.prototype.build_ui_popup = function(view) {
 	// Keep track of the pop-up.
 	this._popup = container;
 	this._popup_allow_parent = true;
+
+	// Render Current Page
+	var page = (this._last_page || "channel").split("_", 1)[0];
+	this._ui_change_page(view, inner, menu, sub_container, page);
 }
 
 
@@ -402,6 +392,10 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 			submenu.appendChild(tab);
 		}
 
+		// Add this to the container.
+		container.appendChild(subcontainer);
+		container.appendChild(submenu);
+
 		// Activate a Tab
 		var last_subpages = this._last_subpage = this._last_subpage || {},
 			last_subpage = last_subpages[page] = last_subpages[page] || data.default_page || subpages[0][1];
@@ -415,9 +409,6 @@ FFZ.prototype._ui_change_page = function(view, inner, menu, container, page) {
 		jQuery('li.active', menu).removeClass('active');
 		jQuery('#ffz-menu-page-' + page, menu).addClass('active');
 
-		// Add this to the container.
-		container.appendChild(subcontainer);
-		container.appendChild(submenu);
 		return;
 	}
 
