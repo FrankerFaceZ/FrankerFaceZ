@@ -69,8 +69,6 @@ try {
 // --------------------
 
 FFZ.prototype.setup_room = function() {
-	this.rooms = {};
-
 	this.log("Creating room style element.");
 	var f = this,
 		s = this._room_style = document.createElement("style");
@@ -946,6 +944,9 @@ FFZ.prototype.add_room = function(id, room) {
 	this.load_room(id);
 
 	// Announce this room to any extension callback functions.
+	this.api_trigger('room-add', id);
+
+	// Legacy announcement.
 	for(var api_id in this._apis) {
 		var api = this._apis[api_id];
 		api._room_callbacks(id, data);
@@ -978,6 +979,8 @@ FFZ.prototype.remove_room = function(id) {
 		if ( ! this.global_sets.contains(room.set) && ! set.users.length )
 			this.unload_set(room.set);
 	}
+
+	this.api_trigger('room-remove', id);
 }
 
 
@@ -1072,6 +1075,9 @@ FFZ.prototype._modify_room = function(room) {
 		mru_list: [],
 
 		ffzUpdateBadges: function() {
+			if ( this.get('isGroupRoom') )
+				return;
+
 			var room_name = this.get('id'),
 				room_id = this.get('roomProperties._id'),
 				ffz_room = f.rooms && f.rooms[room_name];
@@ -1950,10 +1956,7 @@ FFZ.prototype._modify_room = function(room) {
 
 
 			// Message Filtering
-			var i = f._chat_filters.length;
-			while(i--)
-				if ( f._chat_filters[i](msg) === false )
-					return;
+			f.api_trigger('room-message', msg);
 
 
 			// Also update chatters.
@@ -1986,10 +1989,6 @@ FFZ.prototype._modify_room = function(room) {
 			msg.from && msg.style !== "admin" && msg.style !== "notification" && msg.tags && this.addChatter(msg);
 			this.trackLatency(msg);
 			//return this._super(msg);
-		},
-
-		ffzChatFilters: function(msg) {
-			var i = f._chat_filters.length;
 		},
 
 		setHostMode: function(e) {

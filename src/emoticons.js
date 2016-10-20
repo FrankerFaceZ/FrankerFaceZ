@@ -19,22 +19,22 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype.setup_emoticons = function() {
 	this.log("Preparing emoticon system.");
 
-	this.emoji_data = {};
-	this.emoji_names = {};
-
-	this.emote_sets = {};
-	this.global_sets = [];
-	this.default_sets = [];
-	this._last_emote_id = 0;
-
 	// Usage Data
 	this.emote_usage = {};
-
 
 	this.log("Creating emoticon style element.");
 	var s = this._emote_style = document.createElement('style');
 	s.id = "ffz-emoticon-css";
 	document.head.appendChild(s);
+
+	this.log("Generating CSS for existing API emoticon sets.");
+	for(var set_id in this.emote_sets) {
+		var es = this.emote_sets[set_id];
+		if ( es && es.pending_css ) {
+			utils.update_css(s, set_id, es.pending_css + (es.css || ''));
+			es.pending_css = null;
+		}
+	}
 
 	this.log("Loading global emote sets.");
 	this.load_global_sets();
@@ -44,27 +44,6 @@ FFZ.prototype.setup_emoticons = function() {
 
 	this.log("Watching Twitch emoticon parser to ensure it loads.");
 	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
-
-
-	if ( this._apis ) {
-		for(var api_id in this._apis) {
-			var api = this._apis[api_id];
-			for(var es_id in api.emote_sets)
-				this.emote_sets[es_id] = api.emote_sets[es_id];
-
-			for(var i=0; i < api.global_sets.length; i++) {
-				var es_id = api.global_sets[i];
-				if ( this.global_sets.indexOf(es_id) === -1 )
-					this.global_sets.push(es_id);
-			}
-
-			for(var i=0; i < api.default_sets.length; i++) {
-				var es_id = api.default_sets[i];
-				if ( this.default_sets.indexOf(es_id) === -1 )
-					this.default_sets.push(es_id);
-			}
-		}
-	}
 }
 
 
@@ -282,24 +261,36 @@ FFZ.prototype.load_global_sets = function(callback, tries) {
 	var f = this;
 	jQuery.getJSON(constants.API_SERVER + "v1/set/global")
 		.done(function(data) {
-			f.default_sets = data.default_sets;
-			var gs = f.global_sets = [],
+			// Apply default sets.
+			var ds = f.default_sets,
+				gs = f.global_sets,
 				sets = data.sets || {};
 
-			if ( f.feature_friday && f.feature_friday.set ) {
-				if ( f.global_sets.indexOf(f.feature_friday.set) === -1 )
-					f.global_sets.push(f.feature_friday.set);
-				if ( f.default_sets.indexOf(f.feature_friday.set) === -1 )
-					f.default_sets.push(f.feature_friday.set);
+			// Remove non-API sets from default and global sets.
+			for(var i=ds.length; i--; ) {
+				var set_id = ds[i];
+				if ( data.default_sets.indexOf(set_id) === -1 && (! f.emote_sets[set_id] || ! f.emote_sets[set_id].source_ext) )
+					ds.splice(i, 1);
 			}
 
-			for(var key in sets) {
-				if ( ! sets.hasOwnProperty(key) )
-					continue;
+			for(var i=0; i < data.default_sets.length; i++) {
+				var set_id = data.default_sets[i];
+				if ( ds.indexOf(set_id) === -1 )
+					ds.push(set_id);
+			}
 
-				var set = sets[key];
-				gs.push(key);
-				f._load_set_json(key, undefined, set);
+			for(var i=gs.length; i--; ) {
+				var set_id = gs[i];
+				if ( ! sets[set_id] && (! f.emote_sets[set_id] || ! f.emote_sets[set_id].source_ext) )
+					gs.splice(i, 1);
+			}
+
+			for(var set_id in sets) {
+				var set = sets[set_id];
+				if ( gs.indexOf(set_id) === -1 )
+					gs.push(set_id);
+
+				f._load_set_json(set_id, undefined, set);
 			}
 
 			f._load_set_users(data.users);

@@ -388,4 +388,5 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 	this.update_ui_link();
+	this.api_trigger('bttv-initialized');
 }

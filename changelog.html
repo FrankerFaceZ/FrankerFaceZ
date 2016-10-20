@@ -1,7 +1,21 @@
+<div class="list-header">3.5.342 <time datetime="2016-10-20">(2016-10-20)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>API Added: A flexible event system with <code>api.on(event, callback)</code>, <code>api.off(event, <em>callback</em>)</code>, and <code>api.trigger(event, <em>args...</em>)</code></li>
+	<li>API Added: Events <code>initialized</code>, <code>bttv-initialized</code>, <code>room-add</code>, <code>room-remove</code>, <code>room-message</code></li>
+	<li>API Added: <code>api.iterate_rooms(<em>function(room_id) { }</em>)</code> to call a function for every current chat room.</li>
+	<li>API Deprecated: <code>register_chat_filter</code>, <code>unregister_chat_filter</code>, <code>register_on_room_callback</code>, and <code>unregister_on_room_callback</code></li>
+</ul>
+
+<div class="list-header">3.5.341 <time datetime="2016-10-19">(2016-10-19)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Issue loading the script in browsers that still don't support <code>fetch</code>.</li>
+</ul>
+
 <div class="list-header">3.5.340 <time datetime="2016-10-19">(2016-10-19)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Subscriber count display was broken.</li>
 	<li>Fixed: Dark theme tweaks for Clips.</li>
+	<li>Fixed: Links showing as <code>&gt;deleted link&lt;</code> when they shouldn't.</li>
 </ul>
 
 <div class="list-header">3.5.339 <time datetime="2016-10-18">(2016-10-18)</time></div>

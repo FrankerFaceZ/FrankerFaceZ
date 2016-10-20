@@ -8,7 +8,20 @@ var FFZ = window.FrankerFaceZ = function() {
 	// Logging
 	this._log_data = [];
 	this._apis = {};
-	this._chat_filters = [];
+
+	// Data structures
+	this.badges = {};
+	this.users = {};
+	this.rooms = {};
+
+	this.emoji_data = {};
+	this.emoji_names = {};
+
+	this.emote_sets = {};
+	this.global_sets = [];
+	this.default_sets = [];
+	this._last_emote_id = 0;
+
 
 	// Error Logging
 	var t = this;
@@ -21,8 +34,21 @@ var FFZ = window.FrankerFaceZ = function() {
 		//t.log("JavaScript Error: " + event.message + " [" + event.filename + ":" + event.lineno + ":" + event.colno + "]", has_stack ? event.error.stack : undefined, false, has_stack);
 	});
 
-	// Get things started.
-	this.initialize();
+	// Initialize settings as early as possible.
+	this.load_settings();
+
+	// Detect if we need to polyfill
+	if ( ! window.fetch ) {
+		this.log("Fetch is not detected. Requesting polyfill.");
+		var script = document.createElement('script');
+		script.id = 'ffz-polyfill';
+		script.type = 'text/javascript';
+		script.src = FrankerFaceZ.constants.SERVER + 'script/fetch.polyfill.' + (FrankerFaceZ.constants.DEBUG ? '' : 'min.') + 'js?_=' + Date.now();
+		document.head.appendChild(script);
+
+	} else
+		// Get things started.
+		this.initialize();
 }
 
 
@@ -35,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 340,
+	major: 3, minor: 5, revision: 342,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -240,6 +266,8 @@ require('./ext/warpworld');
 // Initialization
 // ---------------
 
+FFZ.prototype.initialized = false;
+
 FFZ.prototype.initialize = function(increment, delay) {
 	// Make sure that FrankerFaceZ doesn't start setting itself up until the
 	// Twitch ember application is ready.
@@ -287,7 +315,6 @@ FFZ.prototype.init_clips = function(delay) {
 	this.log("Found Twitch Clips after " + (delay||0) + " ms at: " + location);
 	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
-	this.users = {};
 	this.is_dashboard = false;
 	this.embed_in_dash = false;
 	this.is_clips = true;
@@ -295,11 +322,13 @@ FFZ.prototype.init_clips = function(delay) {
 		this.embed_in_clips = window.top !== window && window.top.location.hostname === 'clips.twitch.tv';
 	} catch(err) { this.embed_in_clips = false; }
 
-	this.load_settings();
 	this.setup_dark();
 	this.setup_css();
 
 	this.add_clips_darken_button();
+
+	this.initialized = true;
+	this.api_trigger('initialized');
 
  	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
@@ -313,17 +342,18 @@ FFZ.prototype.init_player = function(delay) {
 	this.log("Found Twitch Player after " + (delay||0) + " ms at: " + location);
 	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
-	this.users = {};
 	this.is_dashboard = false;
 	try {
 		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
 	} catch(err) { this.embed_in_dash = false; }
 
 	// Literally only make it dark.
-	this.load_settings();
 	this.setup_dark();
 	this.setup_css();
 	this.setup_player();
+
+	this.initialized = true;
+	this.api_trigger('initialized');
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
@@ -337,14 +367,12 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.log("Found non-Ember Twitch after " + (delay||0) + " ms at: " + location);
 	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
-	this.users = {};
 	this.is_dashboard = false;
 	try {
 		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
 	} catch(err) { this.embed_in_dash = false; }
 
 	// Initialize all the modules.
-	this.load_settings();
 	this.setup_ember_wrapper();
 
 	// Start this early, for quick loading.
@@ -373,6 +401,9 @@ FFZ.prototype.init_normal = function(delay, no_socket) {
 	this.fix_tooltips();
 	this.find_bttv(10);
 
+	this.initialized = true;
+	this.api_trigger('initialized');
+
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
 
@@ -390,12 +421,10 @@ FFZ.prototype.init_dashboard = function(delay) {
 	var match = location.pathname.match(/\/([^\/]+)/);
 	this.dashboard_channel = match && match[1] || undefined;
 
-	this.users = {};
 	this.is_dashboard = true;
 	this.embed_in_dash = false;
 
 	// Initialize all the modules.
-	this.load_settings();
 	this.setup_ember_wrapper();
 
 	// Start this early, for quick loading.
@@ -430,6 +459,9 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.fix_tooltips();
 	this.find_bttv(10);
 
+	this.initialized = true;
+	this.api_trigger('initialized');
+
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;
 
@@ -442,16 +474,11 @@ FFZ.prototype.init_ember = function(delay) {
 	this.log("Found Twitch application after " + (delay||0) + " ms at: " + location);
 	this.log("Initializing FrankerFaceZ version " + FFZ.version_info);
 
-	this.users = {};
 	this.is_dashboard = false;
 
 	try {
 		this.embed_in_dash = window.top !== window && /\/[^\/]+\/dashboard/.test(window.top.location.pathname) && !/bookmarks$/.test(window.top.location.pathname);
 	} catch(err) { this.embed_in_dash = false; }
-
-
-	// Settings are important.
-	this.load_settings();
 
 	// Is debug mode enabled? Scratch that, everyone gets error handlers!
 	if ( true ) { //this.settings.developer_mode ) {
@@ -538,6 +565,9 @@ FFZ.prototype.init_ember = function(delay) {
 	//this.check_news();
 	this.check_ff();
 	this.refresh_chat();
+
+	this.initialized = true;
+	this.api_trigger('initialized');
 
 	var end = (window.performance && performance.now) ? performance.now() : Date.now(),
 		duration = end - start;

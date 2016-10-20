@@ -118,15 +118,17 @@ gulp.task('default', ['styles', 'scripts']);
 // Deploy
 
 gulp.task('minify_script', ['scripts'], function() {
-	return gulp.src(['script.js'])
+	return gulp.src(['*.js', '!*.min.js', '!gulpfile.js'])
 		.pipe(uglify())
-		.pipe(rename('script.min.js'))
+		.pipe(rename(function(path) {
+			path.basename += '.min';
+		}))
 		.pipe(gulp.dest(__dirname))
 		.on('error', util.log);
 });
 
 gulp.task('minify_style', function() {
-	return gulp.src(['style.css', 'style-clips.css', 'dark.css', 'dark-clips.css'])
+	return gulp.src(['*.css', '!*.min.css'])
 		.pipe(cleanCSS())
 		.pipe(rename(function(path) {
 			path.basename += '.min';

@@ -61,6 +61,7 @@ var API = FFZ.API = function(instance, name, icon, version, name_key) {
 		}
 	}
 
+	this._events = {};
 
 	this.ffz._apis[this.id] = this;
 
@@ -71,7 +72,6 @@ var API = FFZ.API = function(instance, name, icon, version, name_key) {
 	this.badges = {};
 
 	this.users = {};
-	this.chat_filters = [];
 	this.on_room_callbacks = [];
 
 	this.name = name || ("Extension#" + this.id);
@@ -107,6 +107,47 @@ API.prototype.log = function(msg, data, to_json, log_json) {
 
 API.prototype.error = function(msg, error, to_json, log_json) {
 	this.ffz.error('Ext "' + this.name + '": ' + msg, data, to_json, log_json);
+}
+
+
+// ---------------------
+// Events
+// ---------------------
+
+API.prototype.on = function(event, func) {
+	var e = this._events[event] = this._events[event] || [];
+	if ( e.indexOf(func) === -1 )
+		e.push(func);
+}
+
+
+API.prototype.off = function(event, func) {
+	if ( func === undefined )
+		this._events[event] = [];
+	else {
+		var e = this._events[event] = this._events[event] || [],
+			ind = e.indexOf(func);
+		if ( ind !== -1 )
+			e.splice(ind, 1);
+	}
+}
+
+
+var slice = Array.prototype.slice;
+
+API.prototype.trigger = function(event /*, args... */) {
+	var e = this._events[event];
+	if ( e && e.length )
+		for(var i=0; i < e.length; i++)
+			e[i].apply(this, slice.call(arguments, 1));
+}
+
+
+FFZ.prototype.api_trigger = function(/*event, args...*/) {
+	for(var api_id in this._apis) {
+		var api = this._apis[api_id];
+		api.trigger.apply(api, arguments);
+	}
 }
 
 
@@ -210,7 +251,10 @@ API.prototype._load_set = function(real_id, set_id, data) {
 	}
 
 	// Use the real ID for building CSS.
-	utils.update_css(this.ffz._emote_style, real_id, output_css + (emote_set.css || ""));
+	if ( this.ffz._emote_style )
+		utils.update_css(this.ffz._emote_style, real_id, output_css + (emote_set.css || ""));
+	else
+		emote_set.pending_css = output_css;
 
 	if ( this.ffz._cindex )
 		this.ffz._cindex.ffzFixTitle();
@@ -249,14 +293,13 @@ API.prototype.unload_set = function(set_id) {
 	// First, let's unregister it as a global.
 	this.unregister_global_set(set_id);
 
-
 	// Now, remove the set data.
-	utils.update_css(this.ffz._emote_style, exact_id, null);
+	if ( this.ffz._emote_style )
+		utils.update_css(this.ffz._emote_style, exact_id, null);
 
 	this.emote_sets[set_id] = undefined;
 	if ( this.ffz.emote_sets )
 		this.ffz.emote_sets[exact_id] = undefined;
-
 
 	// Remove from all its Rooms
 	if ( emote_set.users ) {
@@ -303,7 +346,7 @@ API.prototype.register_global_set = function(set_id, emote_set) {
 
 
 	// Make sure the set is still available with FFZ.
-	if ( ! this.ffz.emote_sets[exact_id] )
+	if ( this.ffz.emote_sets && ! this.ffz.emote_sets[exact_id] )
 		this.ffz.emote_sets[exact_id] = emote_set;
 
 
@@ -440,15 +483,25 @@ API.prototype.add_badge = function(badge_id, badge) {
 			replaces_type: badge.replaces_type
 		};
 
-	this.ffz.badges[exact_id] = this.badges[badge_id] = real_badge;
-	utils.update_css(this.ffz._badge_style, exact_id, utils.badge_css(real_badge));
+	this.badges[badge_id] = real_badge;
+
+	if ( this.ffz.badges )
+		this.ffz.badges[exact_id] = real_badge;
+
+	if ( this.ffz._badge_style )
+		utils.update_css(this.ffz._badge_style, exact_id, utils.badge_css(real_badge));
 }
 
 
 API.prototype.remove_badge = function(badge_id) {
 	var exact_id = this.id + '-' + badge_id;
-	this.ffz.badges[exact_id] = this.badges[badge_id] = undefined;
-	utils.update_css(this.ffz._badge_style, exact_id);
+	this.badges[badge_id] = undefined;
+
+	if ( this.ffz.badges )
+		this.ffz.badges[exact_id] = undefined;
+
+	if ( this.ffz._badge_style )
+		utils.update_css(this.ffz._badge_style, exact_id);
 }
 
 
@@ -532,23 +585,24 @@ API.prototype.user_remove_set = function(username, set_id) {
 // -----------------------
 
 API.prototype.register_chat_filter = function(filter) {
-	this.chat_filters.push(filter);
-	this.ffz._chat_filters.push(filter);
+	this.on('room-message', filter);
 }
 
 API.prototype.unregister_chat_filter = function(filter) {
-	var ind = this.chat_filters.indexOf(filter);
-	if ( ind !== -1 )
-		this.chat_filters.splice(ind, 1);
-
-	ind = this.ffz._chat_filters.indexOf(filter);
-	if ( ind !== -1 )
-		this.ffz._chat_filters.splice(ind, 1);
+	this.off('room-message', filter);
 }
 
 // -----------------------
 // Channel Callbacks
 // -----------------------
+
+API.prototype.iterate_rooms = function(func) {
+	if ( func === undefined )
+		func = this.trigger.bind(this, 'room-add');
+
+	for(var room_id in this.ffz.rooms)
+		func(room_id);
+}
 
 API.prototype._room_callbacks = function(room_id, room, specific_func) {
 	var callback = this.register_room_set.bind(this, room_id);
@@ -574,23 +628,23 @@ API.prototype._room_callbacks = function(room_id, room, specific_func) {
 
 
 API.prototype.register_on_room_callback = function(callback, dont_iterate) {
-	this.on_room_callbacks.push(callback);
-	var register_callback = this.register_room_set.bind(this, room_id);
+	var a = this,
+		thing = function(room_id) {
+			callback(room_id, a.register_room_set.bind(a, room_id));
+		};
 
-	// Call this for all current rooms.
-	if ( ! dont_iterate && this.ffz.rooms ) {
-		for(var room_id in this.ffz.rooms)
-			try {
-				callback(room_id, register_callback);
-			} catch(err) {
-				this.error("Error in On-Room Callback", err);
-			}
-	}
+	thing.original_func = callback;
+	this.on('room-add', thing);
+
+	if ( ! dont_iterate )
+		this.iterate_rooms(thing);
 }
 
-
 API.prototype.unregister_on_room_callback = function(callback) {
-	var ind = this.on_room_callbacks.indexOf(callback);
-	if ( ind !== -1 )
-		this.on_room_callbacks.splice(ind, 1);
+	var e = this._events['room-add'] || [];
+	for(var i=e.length; i--;) {
+		var cb = e[i];
+		if ( cb && cb.original_func === callback )
+			e.splice(i, 1);
+	}
 }

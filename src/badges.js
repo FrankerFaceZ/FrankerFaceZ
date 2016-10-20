@@ -270,6 +270,7 @@ if ( constants.IS_WEBKIT )
 // --------------------
 
 FFZ.prototype.setup_badges = function() {
+	this.log("Preparing badge system.");
 	if ( ! this.has_bttv ) {
 		var val = this.settings.transparent_badges;
 		this.toggle_style('badges-rounded', val === 1);
@@ -287,13 +288,15 @@ FFZ.prototype.setup_badges = function() {
 	this.toggle_style('badges-legacy-mod', this.settings.legacy_badges !== 0);
 	this.toggle_style('badges-legacy-turbo', this.settings.legacy_badges > 1);
 
-	this.log("Preparing badge system.");
-	this.badges = {};
-
 	this.log("Creating badge style element.");
 	var s = this._badge_style = document.createElement('style');
 	s.id = "ffz-badge-css";
 	document.head.appendChild(s);
+
+	this.log("Generating CSS for existing API badges.");
+	for(var badge_id in this.badges)
+		if ( this.badges.hasOwnProperty(badge_id) )
+			utils.update_css(s, badge_id, utils.badge_css(this.badges[badge_id]));
 
 	this.log("Generating CSS for existing Twitch badges.");
 	for(var badge_id in CSS_BADGES) {
