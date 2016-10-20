@@ -875,46 +875,46 @@ FFZ.prototype._update_room_badge_css = function(room_id) {
 }
 
 
-FFZ.prototype.add_room = function(id, room) {
-	if ( this.rooms[id] )
-		return this.log("Tried to add existing room: " + id);
+FFZ.prototype.add_room = function(room_id, room) {
+	if ( this.rooms[room_id] )
+		return this.log("Tried to add existing room: " + room_id);
 
-	this.log("Adding Room: " + id);
+	this.log("Adding Room: " + room_id);
 
 	// Create a basic data table for this room.
-	var data = this.rooms[id] = {id: id, room: room, sets: [], ext_sets: [], css: null, needs_history: false};
+	var data = this.rooms[room_id] = {id: room_id, room: room, sets: [], ext_sets: [], css: null, needs_history: false};
 
-	if ( this.follow_sets && this.follow_sets[id] ) {
-		data.extra_sets = this.follow_sets[id];
-		delete this.follow_sets[id];
+	if ( this.follow_sets && this.follow_sets[room_id] ) {
+		data.extra_sets = this.follow_sets[room_id];
+		delete this.follow_sets[room_id];
 
 		for(var i=0; i < data.extra_sets.length; i++) {
 			var sid = data.extra_sets[i],
 				set = this.emote_sets && this.emote_sets[sid];
 
 			if ( set ) {
-				if ( set.users.indexOf(id) === -1 )
-					set.users.push(id);
+				if ( set.users.indexOf(room_id) === -1 )
+					set.users.push(room_id);
 				continue;
 			}
 
 			this.load_set(sid, function(success, data) {
 				if ( success )
-					data.users.push(id);
+					data.users.push(room_id);
 			});
 		}
 	}
 
 	// Store the badges for this room now if we have them.
 	var bs = utils.ember_lookup('service:badges');
-	if ( bs && bs.badgeCollection && bs.badgeCollection.channel && bs.badgeCollection.channel.broadcasterName === id ) {
+	if ( bs && bs.badgeCollection && bs.badgeCollection.channel && bs.badgeCollection.channel.broadcasterName === room_id ) {
 		data.badges = bs.badgeCollection.channel;
-		this._update_room_badge_css(id);
+		this._update_room_badge_css(room_id);
 	}
 
 	// Look up if the room has moderation logs.
 	var f = this;
-	this.ws_send("has_logs", id, function(success, response) {
+	this.ws_send("has_logs", room_id, function(success, response) {
 		if ( ! success )
 			return;
 
@@ -923,64 +923,54 @@ FFZ.prototype.add_room = function(id, room) {
 	}, true);
 
 	// Is the room important?
-	this.update_room_important(id);
+	this.update_room_important(room_id);
 
-	if ( data.important ) {
+	if ( data.important )
 		// Let the server know where we are.
-		this.ws_sub("room." + id);
+		this.ws_sub("room." + room_id);
 
 		// Do we want history?
 		/*if ( ! this.has_bttv && this.settings.chat_history && room && (room.get('messages.length') || 0) < 10 ) {
 			if ( ! this.ws_send("chat_history", [id,25], this._load_history.bind(this, id)) )
 				data.needs_history = true;
 		}*/
-	}
 
 
 	// Why don't we set the scrollback length, too?
-	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === id) ? 150 : 0));
+	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === room_id) ? 150 : 0));
 
 	// Load the room's data from the API.
-	this.load_room(id);
+	this.load_room(room_id);
 
 	// Announce this room to any extension callback functions.
-	this.api_trigger('room-add', id);
-
-	// Legacy announcement.
-	for(var api_id in this._apis) {
-		var api = this._apis[api_id];
-		api._room_callbacks(id, data);
-	}
+	this.api_trigger('room-add', room_id);
 }
 
 
-FFZ.prototype.remove_room = function(id) {
-	var room = this.rooms[id];
+FFZ.prototype.remove_room = function(room_id) {
+	var room = this.rooms[room_id];
 	if ( ! room )
 		return;
 
-	this.log("Removing Room: " + id);
+	this.log("Removing Room: " + room_id);
 
 	// Remove the CSS
 	if ( room.css || room.moderator_badge )
-		utils.update_css(this._room_style, id, null);
+		utils.update_css(this._room_style, room_id, null);
 
 	// Let the server know we're gone and delete our data for this room.
-	this.ws_unsub("room." + id);
-	delete this.rooms[id];
+	this.ws_unsub("room." + room_id);
+	delete this.rooms[room_id];
 
 	// Clean up sets we aren't using any longer.
-	if ( id.charAt(0) === "_" )
-		return;
-
 	var set = this.emote_sets[room.set];
 	if ( set ) {
-		set.users.removeObject(id);
+		set.users.removeObject(room_id);
 		if ( ! this.global_sets.contains(room.set) && ! set.users.length )
 			this.unload_set(room.set);
 	}
 
-	this.api_trigger('room-remove', id);
+	this.api_trigger('room-remove', room_id);
 }
 
 

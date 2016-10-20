@@ -395,6 +395,7 @@ FFZ.prototype._get_badge_object = function(badge, full_badge) {
 		image: badge.image,
 		full_image: full_badge.image,
 		color: badge.color,
+		click_url: badge.click_url || full_badge.click_url,
 		no_invert: badge.no_invert || full_badge.no_invert,
 		no_color: badge.no_color || full_badge.no_color,
 		invert_invert: badge.invert_invert || full_badge.invert_invert,
@@ -746,6 +747,9 @@ FFZ.prototype._load_badge_json = function(badge_id, data) {
 
 	if ( data.name === 'bot' )
 		data.visible = function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); };
+
+	if ( data.name === 'developer' || data.name === 'supporter' )
+		data.click_url = 'https://www.frankerfacez.com/donate';
 
 	utils.update_css(this._badge_style, badge_id, utils.badge_css(data));
 }

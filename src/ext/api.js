@@ -72,7 +72,6 @@ var API = FFZ.API = function(instance, name, icon, version, name_key) {
 	this.badges = {};
 
 	this.users = {};
-	this.on_room_callbacks = [];
 
 	this.name = name || ("Extension#" + this.id);
 	this.name_key = name_key || this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
@@ -427,8 +426,10 @@ API.prototype.register_room_set = function(room_id, set_id, emote_set) {
 		this.ffz.emote_sets[exact_id] = emote_set;
 
 	// Register it on the room.
-	room.ext_sets && room.ext_sets.push(exact_id);
-	emote_set.users.push(room_id);
+	if ( room.ext_sets && room.ext_sets.indexOf(exact_id) === -1 )
+		room.ext_sets.push(exact_id);
+	if ( emote_set.users.indexOf(room_id) === -1 )
+		emote_set.users.push(room_id);
 
 	// Update tab completion.
 	if ( this.ffz._inputv )
@@ -604,33 +605,10 @@ API.prototype.iterate_rooms = function(func) {
 		func(room_id);
 }
 
-API.prototype._room_callbacks = function(room_id, room, specific_func) {
-	var callback = this.register_room_set.bind(this, room_id);
-
-	if ( specific_func ) {
-		try {
-			specific_func(room_id, callback);
-		} catch(err) {
-			this.error("Error in On-Room Callback", err);
-		}
-
-	} else {
-		for(var i=0; i < this.on_room_callbacks.length; i++) {
-			var cb = this.on_room_callbacks[i];
-			try {
-				cb(room_id, callback);
-			} catch(err) {
-				this.error("Error in On-Room Callback", err);
-			}
-		}
-	}
-}
-
-
 API.prototype.register_on_room_callback = function(callback, dont_iterate) {
-	var a = this,
+	var cb = this.register_room_set.bind(this, room_id),
 		thing = function(room_id) {
-			callback(room_id, a.register_room_set.bind(a, room_id));
+			return callback(room_id, cb);
 		};
 
 	thing.original_func = callback;

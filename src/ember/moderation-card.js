@@ -80,8 +80,7 @@ FFZ.settings_info.highlight_messages_with_mod_card = {
 	help: "Highlight a user's messages in chat when their moderation card is open.",
 
 	on_update: function(val) {
-		this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators || val));
-
+		this._toggle_chat_setup_style();
 		if ( ! this._mod_card )
 			return;
 
@@ -129,6 +128,7 @@ FFZ.settings_info.chat_mod_icon_visibility = {
 	help: "Choose when you should see in-line moderation icons in chat.",
 
 	on_update: function(val) {
+		this._toggle_chat_setup_style();
 		var settings = utils.ember_settings();
 		if ( settings )
 			settings.set('showModIcons', val === 1);
@@ -1510,7 +1510,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 
 	// Line attributes and classes.
 	if ( msg.style )
-		l_el.classList.add(msg.style);
+		l_el.className += ' ' + msg.style;
 
 	if ( msg.original_sender )
 		l_el.classList.add('original-sender');
@@ -1539,8 +1539,6 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 	jQuery('.deleted-word', l_el).click(function(e) { jQuery(this).trigger('mouseout'); this.outerHTML = this.getAttribute('data-text'); });
 	jQuery('a.deleted-link', l_el).click(f._deleted_link_click);
 	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
-	//jQuery('.html-tooltip', l_el).tipsy({html:true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
-	//jQuery('.ffz-tooltip', l_el).tipsy({live: true, html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
 
 	if ( modcard ) {
 		modcard.get('cardInfo.user.id') !== msg.from && jQuery('span.from', l_el).click(function(e) {

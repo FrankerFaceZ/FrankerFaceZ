@@ -355,7 +355,7 @@ FFZ.settings_info.chat_rows = {
 
 	on_update: function(val) {
 			this.toggle_style('chat-background', !this.has_bttv && val);
-			this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_separators || this.settings.highlight_messages_with_mod_card));
+			this._toggle_chat_setup_style();
 		}
 	};
 
@@ -380,7 +380,7 @@ FFZ.settings_info.chat_separators = {
 	help: "Display thin lines between chat messages for further visual separation.",
 
 	on_update: function(val) {
-			this.toggle_style('chat-setup', !this.has_bttv && (val || this.settings.chat_rows || this.settings.highlight_messages_with_mod_card));
+			this._toggle_chat_setup_style();
 
 			this.toggle_style('chat-separator', !this.has_bttv && val);
 			this.toggle_style('chat-separator-3d', !this.has_bttv && val === 2);
@@ -403,16 +403,28 @@ FFZ.settings_info.old_sub_notices = {
 
 
 FFZ.settings_info.emote_alignment = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Standard",
+		1: "Padded",
+		2: "Baseline (BTTV-Like)",
+	},
+
+	value: 0,
+	process_value: utils.process_int(0, 0, 2),
 
 	category: "Chat Appearance",
 	no_bttv: true,
 
-	name: "Baseline Emoticon Alignment",
-	help: "Align emotes on the text baseline, making messages taller but ensuring emotes don't overlap.",
+	name: "Emoticon Alignment",
+	help: "Change how emotes are aligned and padded in chat, making messages taller but preventing emotes from overlapping.",
 
-	on_update: function(val) { document.body.classList.toggle('ffz-baseline-emoticons', !this.has_bttv && val) }
+	on_update: function(val) {
+		if ( this.has_bttv )
+			return;
+		utils.toggle_cls('ffz-padded-emoticons')(val === 1);
+		utils.toggle_cls('ffz-baseline-emoticons')(val === 2);
+	}
 };
 
 FFZ.settings_info.chat_padding = {
@@ -648,12 +660,12 @@ FFZ.prototype.setup_line = function() {
 
 
 	// Chat Enhancements
-	document.body.classList.toggle('ffz-alias-italics', this.settings.alias_italics);
-	document.body.classList.toggle('ffz-baseline-emoticons', !this.has_bttv && this.settings.emote_alignment);
+	utils.toggle_cls('ffz-alias-italics')(this.settings.alias_italics);
+	utils.toggle_cls('ffz-padded-emoticons')(!this.has_bttv && this.settings.emote_alignment === 1);
+	utils.toggle_cls('ffz-baseline-emoticons')(!this.has_bttv && this.settings.emote_alignment === 2);
 
-	this.toggle_style('chat-setup', !this.has_bttv && (this.settings.chat_rows || this.settings.chat_separators || this.settings.highlight_messages_with_mod_card));
+	this._toggle_chat_setup_style();
 	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
-
 	this.toggle_style('chat-background', !this.has_bttv && this.settings.chat_rows);
 
 	this.toggle_style('chat-separator', !this.has_bttv && this.settings.chat_separators);
@@ -665,46 +677,25 @@ FFZ.prototype.setup_line = function() {
 	this.toggle_style('chat-hc-bold', this.settings.high_contrast_chat[1] === '1');
 	this.toggle_style('chat-hc-background', this.settings.high_contrast_chat[0] === '1');
 
-	this._last_row = {};
-
-	/*this.log("Hooking the Ember Chat Line component.");
-	var Line = utils.ember_resolve('component:chat-line');
-
-	if ( Line )
-		this._modify_chat_line(Line);*/
-
 
 	this.update_views('component:vod-chat-line', this._modify_vod_line);
 	this.update_views('component:chat/message-line', this._modify_chat_subline);
 	this.update_views('component:chat/whisper-line', this._modify_chat_subline);
-
-	/*this.log("Hooking the Ember VOD Chat Line component.");
-	var VOD = utils.ember_resolve('component:vod-chat-line');
-	if ( VOD )
-		this._modify_vod_line(VOD);
-	else
-		this.log("Couldn't find VOD Chat Line component.");
-
-
-	this.log("Hooking the Ember Message Line component.");
-	var MLine = utils.ember_resolve('component:chat/message-line');
-	if ( MLine )
-		this._modify_chat_subline(MLine);
-	else
-		this.error("Couldn't find the Message Line component.");
-
-	this.log("Hooking the Ember Whisper Line component.");
-	var WLine = utils.ember_resolve('component:chat/whisper-line');
-	if ( WLine )
-		this._modify_chat_subline(WLine);
-	else
-		this.error("Couldn't find the Whisper Line component.");*/
 
 
 	// Store the capitalization of our own name.
 	var user = this.get_user();
 	if ( user && user.name )
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
+}
+
+
+FFZ.prototype._toggle_chat_setup_style = function() {
+	this.toggle_style('chat-setup', !this.has_bttv && (
+		this.settings.chat_mod_icon_visibility > 1 ||
+		this.settings.chat_separators ||
+		this.settings.chat_rows ||
+		this.settings.highlight_messages_with_mod_card));
 }
 
 
@@ -774,12 +765,19 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
+				is_tb = this.get('msgObject.twitchBotRejected'),
+
 				output;
 
-			if ( is_whisper || this_ul >= other_ul || f.settings.mod_buttons.length === 0 )
+			if ( is_whisper || this_ul >= other_ul || (f.settings.mod_buttons.length === 0 && ! is_tb) )
 				return '';
 
-			output = '<span class="mod-icons">';
+			output = ['<span class="mod-icons">'];
+
+			if ( is_tb ) {
+				output.push('<a class="mod-icon html-tooltip tb-reject" title="Not Allowed">Not Allowed</a>');
+				output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed">Allowed</a>');
+			}
 
 			for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
 				var pair = f.settings.mod_buttons[i],
@@ -806,12 +804,12 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 				if ( btn === false ) {
 					if ( deleted )
-						output += '<a class="mod-icon html-tooltip unban" title="Unban User" href="#">Unban</a>';
+						output.push('<a class="mod-icon html-tooltip unban" title="Unban User" href="#">Unban</a>');
 					else
-						output += '<a class="mod-icon html-tooltip ban' + (had_label ? ' custom' : '') + '" title="Ban User" href="#">' + (had_label ? prefix : 'Ban') + '</a>';
+						output.push('<a class="mod-icon html-tooltip ban' + (had_label ? ' custom' : '') + '" title="Ban User" href="#">' + (had_label ? prefix : 'Ban') + '</a>');
 
 				} else if ( btn === 600 )
-					output += '<a class="mod-icon html-tooltip timeout' + (had_label ? ' custom' : '') + '" title="Timeout User (10m)" href="#">' + ( had_label ? prefix : 'Timeout') + '</a>';
+					output.push('<a class="mod-icon html-tooltip timeout' + (had_label ? ' custom' : '') + '" title="Timeout User (10m)" href="#">' + ( had_label ? prefix : 'Timeout') + '</a>');
 
 				else {
 					if ( typeof btn === "string" ) {
@@ -821,11 +819,11 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 						cmd = "/timeout " + user + " " + btn;
 						tip = "Timeout User (" + utils.duration_string(btn) + ")";
 					}
-					output += '<a class="mod-icon html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>';
+					output.push('<a class="mod-icon html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>');
 				}
 			}
 
-			return output + '</span>';
+			return output.join('') + '</span>';
 		},
 
 		buildFromHTML: function(is_recipient) {
@@ -1136,7 +1134,13 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				jQuery(e.target).trigger('mouseout');
 				e.preventDefault();
 
-				if ( cl.contains('ban') )
+				if ( cl.contains('tb-reject') )
+					this.sendAction("clickedTwitchBotNo", this.get('msgObject.tags.id'));
+
+				else if ( cl.contains('tb-allow') )
+					this.sendAction("clickedTwitchBotYes", this.get('msgObject.tags.id'));
+
+				else if ( cl.contains('ban') )
 					this.sendAction("banUser", {user:from});
 
 				else if ( cl.contains('unban') )

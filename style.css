@@ -3492,6 +3492,11 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	margin: -1px 3px 0 0;
 }
 
+.ffz-padded-emoticons .activity-body .emoticon,
+.ffz-padded-emoticons .chat-line .emoticon {
+	margin: -1px 0 0;
+}
+
 .ffz-baseline-emoticons .activity-body .emoticon,
 .ffz-baseline-emoticons .chat-line .emoticon {
 	vertical-align: baseline;
