@@ -9,8 +9,9 @@ FFZ.settings_info.warp_world = {
 	value: true,
 
 	category: "Channel Metadata",
-	name: "Warp World <small>(Requires Refresh)</small>",
+	no_mobile: true,
 
+	name: "Warp World <small>(Requires Refresh)</small>",
 	help: 'Automatically load <a href="https://warp.world" target="_blank">Warp World</a> when viewing a channel that uses Warp World.'
 }
 

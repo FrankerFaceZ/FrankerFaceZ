@@ -399,7 +399,18 @@ FFZ.prototype.render_tooltip = function(el) {
 
 			} else if ( this.classList.contains('emoticon') ) {
 				var preview_url, width=0, height=0, image, set_id, emote, emote_set,
-					emote_id = this.getAttribute('data-ffz-emote');
+					emote_id = this.getAttribute('data-ffz-emote'),
+					modifiers = this.getAttribute('data-ffz-modifiers'),
+					mod_text = '';
+
+				if ( modifiers ) {
+					mod_text = '<hr>' + _.map(JSON.parse(modifiers), function(m) {
+						emote_set = f.emote_sets[m[0]];
+						emote = emote_set && emote_set.emoticons[m[1]];
+						return emote ? f.render_token(true, true, true, emote.token) + ' - ' + (emote.hidden ? '???' : emote.name) : '';
+					}).join('<br>');
+				}
+
 				if ( emote_id ) {
 					if ( emote_id == "93269" )
 						return '';
@@ -433,7 +444,7 @@ FFZ.prototype.render_tooltip = function(el) {
 
 						//image = preview_url ? `<img style="height:${height}px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
 						image = preview_url ? '<img style="height:' + height + 'px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
-						return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source + ' ' + title + (owner ? '<br>By: ' + owner.display_name : '');
+						return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source + ' ' + title + (owner ? '<br>By: ' + owner.display_name : '') + mod_text;
 
 						//return `${image}Emoticon: ${emote.hidden ? '???' : emote.name}<br>${source} ${title}${owner ? '<br>By: ' + owner.display_name : ""}`;
 					}
@@ -462,9 +473,9 @@ FFZ.prototype.render_tooltip = function(el) {
 					}
 
 					if ( this.classList.contains('ffz-tooltip-no-credit') )
-						return image + this.alt;
+						return image + this.alt + mod_text;
 					else
-						return image + 'Emoticon: ' + this.alt + '<br>' + (set_type ? set_type + ': ' : '') + emote_set;
+						return image + 'Emoticon: ' + this.alt + '<br>' + (set_type ? set_type + ': ' : '') + emote_set + mod_text;
 						//return `${image}Emoticon: ${this.alt}<br>${set_type ? set_type + ": " : ""}${emote_set}`;
 				}
 
@@ -477,7 +488,7 @@ FFZ.prototype.render_tooltip = function(el) {
 					//image = preview_url ? `<img style="height:72px" class="emoticon ffz-image-hover" src="${preview_url}">` : '';
 					image = preview_url ? '<img style="height:72px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
 
-					return image + "Emoji: " + this.alt + '<br>Name: ' + emote.name + (emote.short_name ? '<br>Short Name :' + emote.short_name + ':' : '') + (emote.cat ? '<br>Category: ' + utils.sanitize(constants.EMOJI_CATEGORIES[emote.cat] || emote.cat) : '');
+					return image + "Emoji: " + this.alt + '<br>Name: ' + emote.name + (emote.short_name ? '<br>Short Name :' + emote.short_name + ':' : '') + (emote.cat ? '<br>Category: ' + utils.sanitize(constants.EMOJI_CATEGORIES[emote.cat] || emote.cat) : '') + mod_text;
 					//return `${image}Emoji: ${this.alt}<br>Name: ${emote.name}${emote.short_name ? '<br>Short Name: :' + emote.short_name + ':' : ''}`;
 				}
 
@@ -701,11 +712,11 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 		});
 	}
 
-	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
-		tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
-
 	if ( this.settings.parse_emoji )
 		tokens = this.tokenize_emoji(tokens);
+
+	if ( this.settings.parse_emoticons && this.settings.parse_emoticons !== 2 )
+		tokens = this.tokenize_emotes(from_user, room_id, tokens, from_me);
 
 	// Capitalization
 	var display = tags['display-name'];
@@ -924,7 +935,17 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 		}
 
 		//return `<img class="emoticon ffz-tooltip${cls||''}"${extra||''} src="${utils.quote_attr(src)}"${srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : ''} alt="${utils.quote_attr(token.altText)}">`;
-		return '<img class="emoticon ffz-tooltip' + (cls||'') + '"' + (extra||'') + ' src="' + utils.quote_attr(src) + '"' + (srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : '') + ' alt="' + utils.quote_attr(token.altText) + '">';
+		var f = this, prefix = '', suffix = '';
+		if ( token.modifiers && token.modifiers.length ) {
+			prefix = '<span class="emoticon modified-emoticon">';
+			suffix = _.map(token.modifiers, function(t) {
+					return '<span>' + f.render_token(render_links, warn_links, render_bits, t) + '</span>';
+				}).join('') + '</span>';
+
+			extra += ' data-ffz-modifiers="' + utils.quote_attr(JSON.stringify(_.map(token.modifiers, function(t) { return [t.ffzEmoteSet, t.ffzEmote] }))) + '"';
+		}
+
+		return prefix + '<img class="emoticon ffz-tooltip' + (cls||'') + '"' + (extra||'') + ' src="' + utils.quote_attr(src) + '"' + (srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : '') + ' alt="' + utils.quote_attr(token.altText) + '">' + suffix;
 	}
 
 	else if ( token.type === "tag" ) {
@@ -1105,6 +1126,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 	if ( typeof tokens === "string" )
 		tokens = [tokens];
 
+	var last_token;
 	for(var i=0, l=tokens.length; i < l; i++) {
 		var token = tokens[i];
 		if ( ! token )
@@ -1114,12 +1136,16 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 			if ( token.type === "text" )
 				token = token.text;
 			else {
+				if ( ! token.modifiers && token.type === 'emoticon' )
+					token.modifiers = [];
+
 				new_tokens.push(token);
+				last_token = token;
 				continue;
 			}
 
 		// Split the token!
-		var segments = token.split(' '),
+		var segments = token.split(/ +/),
 			text = [], segment;
 
 		for(var x=0,y=segments.length; x < y; x++) {
@@ -1127,15 +1153,33 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 			if ( HOP.call(emotes, segment) ) {
 				emote = emotes[segment];
 
+				// Is this emote a modifier?
+				if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
+					if ( last_token.modifiers.indexOf(emote.token) === -1 )
+						last_token.modifiers.push(emote.token);
+
+					if ( do_report && room )
+						this.add_usage(room, emote);
+
+					continue;
+				}
+
 				if ( text.length ) {
 					// We have pending text. Join it together, with an extra space
 					// on the end for good measure.
-					new_tokens.push({type: "text", text: text.join(' ') + ' '});
+					var token = {type: "text", text: text.join(' ') + ' '};
+					new_tokens.push(token);
+					if ( token.text.trim().length )
+						last_token = token;
 					text = []
 				}
 
 				// Push this emote to the tokens.
-				new_tokens.push(emote.token);
+				var token = Object.assign({}, emote.token);
+				token.modifiers = [];
+
+				new_tokens.push(token);
+				last_token = token;
 
 				if ( do_report && room )
 					this.add_usage(room, emote);

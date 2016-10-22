@@ -1222,7 +1222,7 @@ FFZ.prototype._modify_room = function(room) {
 			//f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
 
 			// In case we get unexpected input, do the other thing.
-			if ( ["ban", "unban", "timeout"].indexOf(event.moderation_action) === -1 )
+			if ( f.has_bttv || ["ban", "unban", "timeout"].indexOf(event.moderation_action) === -1 )
 				return this._super(event);
 
 			var msg_id,

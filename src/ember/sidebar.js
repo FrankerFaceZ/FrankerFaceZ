@@ -108,7 +108,7 @@ FFZ.settings_info.sidebar_hide_friends_collapsed = {
 	value: false,
 
 	category: "Sidebar",
-	no_mobile: false,
+	no_mobile: true,
 
 	name: "Hide Friends when Collapsed",
 	help: "Hide your friends from the sidebar when it's collapsed.",

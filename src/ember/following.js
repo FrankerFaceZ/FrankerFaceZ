@@ -17,6 +17,8 @@ FFZ.settings_info.enhance_profile_following = {
 	value: true,
 
 	category: "Directory",
+	no_mobile: true,
+
 	name: "Enhanced Following Control",
 	help: "Display additional controls on your own profile's Following tab to make management easier, as well as telling you how long everyone has been following everyone else in the profile."
 }
@@ -142,7 +144,7 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 				user_id = this.get('channelInfo.id'),
 				data = user_cache[user_id];
 
-			f.log("Profile Card [" + channel_id + "] " + user_id + " <" + JSON.stringify(data) + ">", this);
+			//f.log("Profile Card [" + channel_id + "] " + user_id + " <" + JSON.stringify(data) + ">", this);
 
 			if ( ! data || ! el ) {
 				if ( t_el )

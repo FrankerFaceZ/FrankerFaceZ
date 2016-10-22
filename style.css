@@ -2068,6 +2068,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 .chat-history.interface li:last-child { padding-bottom: 10px; }
 
 .chat-history .chat-line {
+	overflow: hidden;
 	line-height: 20px;
 	padding: 4px 10px;
 	word-wrap: break-word;
@@ -3745,3 +3746,35 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 .ffz-sidebar-minimize.ffz-sidebar-swap #left_col.open:not(:hover) { right: -230px }
 .ffz-sidebar-minimize.ffz-sidebar-swap #main_col { margin-right: 10px }
 .ffz-sidebar-minimize.ffz-sidebar-swap .cn-bar-fixed { right: 10px }
+
+
+/* Modifier Emotes */
+
+.modified-emoticon {
+	position: relative;
+}
+
+.modified-emoticon > .emoticon { margin: 0 }
+
+.modified-emoticon span {
+	position: absolute;
+	top: -100px; bottom: -100px; left: -100px; right: -100px;
+	margin: auto;
+	pointer-events: none;
+}
+
+.modified-emoticon span img {
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.ffz-baseline-emoticons .modified-emoticon span {
+	top: -105px;
+}
+
+.ffz-baseline-emoticons .chat-line .modified-emoticon {
+	padding-top: 0;
+	margin-bottom: -3px;
+	vertical-align: bottom;
+}

@@ -105,7 +105,7 @@ FFZ.channel_metadata.srl_race = {
 
 	static_label: '<figure class="icon cn-metabar__icon"><span class="srl-logo"></span></figure>',
 	label: function(channel, channel_id, race, entrant) {
-		if ( ! entrant )
+		if ( ! entrant || ! this.settings.srl_races )
 			return null;
 
 		return utils.placement(entrant) || '&#8203;';
