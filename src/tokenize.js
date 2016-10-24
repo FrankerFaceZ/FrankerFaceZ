@@ -1175,7 +1175,7 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 				}
 
 				// Push this emote to the tokens.
-				var token = Object.assign({}, emote.token);
+				var token = _.extend({}, emote.token);
 				token.modifiers = [];
 
 				new_tokens.push(token);
