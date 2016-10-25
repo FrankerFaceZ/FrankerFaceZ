@@ -156,8 +156,12 @@ FFZ.prototype.setup_room = function() {
 		inst.ffzPatchTMI();
 	}
 
-	this.log("Hooking the Ember Room view.");
-	this.update_views('view:room', this.modify_room_view);
+
+	this.update_views('component:chat/chat-room', this.modify_room_component);
+	this.update_views('component:chat/chat-interface', this.modify_chat_interface);
+
+	//this.log("Hooking the Ember Room view.");
+	//this.update_views('view:room', this.modify_room_view);
 }
 
 
@@ -324,7 +328,390 @@ FFZ.prototype._modify_chat_pubsub = function(pubsub) {
 // View Customization
 // --------------------
 
-FFZ.prototype.modify_room_view = function(view) {
+FFZ.prototype.modify_chat_interface = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			f._chati = this;
+		},
+
+		ffz_destroy: function() {
+			if ( f._chati === this )
+				f._chati = undefined;
+		},
+
+		submitButtonText: function() {
+			if ( this.get('room.isWhisperMessage') )
+				return i18n('Whisper');
+
+			var wait = this.get('room.slowWait'),
+				msg = this.get('room.messageToSend') || '',
+				first_char = msg.charAt(0),
+				is_cmd = first_char === '/' || first_char === '.';
+
+			if ( (is_cmd && msg.substr(0,4) !== '/me ') || ! wait || ! f.settings.room_status )
+				return i18n('Chat');
+
+			return utils.time_to_string(wait, false, false, true);
+
+		}.property('room.isWhisperMessage', 'room.slowWait')
+	});
+}
+
+
+FFZ.HoverPause = {
+	ffz_frozen: false,
+	ffz_ctrl: false,
+	ffz_freeze_selector: '.chat-messages',
+
+	ffzAddKeyHook: function() {
+		if ( ! this._ffz_freeze_key ) {
+			var key = this._ffz_freeze_key = this.ffzFreezeOnKey.bind(this);
+			document.body.addEventListener('keydown', key);
+			document.body.addEventListener('keyup', key);
+		}
+	},
+
+	ffzRemoveKeyHook: function() {
+		if ( this._ffz_freeze_key ) {
+			var key = this._ffz_freeze_key;
+			this._ffz_freeze_key = null;
+			document.body.removeEventListener('keydown', key);
+			document.body.removeEventListener('keyup', key);
+		}
+	},
+
+	ffzEnableFreeze: function() {
+		var el = this.get('element'),
+			messages = el && el.querySelector(this.get('ffz_freeze_selector'));
+
+		if ( ! messages )
+			return;
+
+		this._ffz_freeze_messages = messages;
+
+		if ( ! this._ffz_freeze_mouse_move ) {
+			var mm = this._ffz_freeze_mouse_move = this.ffzFreezeMouseMove.bind(this);
+			messages.addEventListener('mousemove', mm);
+			messages.addEventListener('touchmove', mm);
+		}
+
+		if ( ! this._ffz_freeze_mouse_out ) {
+			var mo = this._ffz_freeze_mouse_out = this.ffzFreezeMouseOut.bind(this);
+			messages.addEventListener('mouseout', mo);
+		}
+
+		this.ffzAddKeyHook();
+	},
+
+	ffzDisableFreeze: function() {
+		if ( this._ffz_freeze_interval ) {
+			clearInterval(this._ffz_freeze_interval);
+			this._ffz_freeze_interval = null;
+		}
+
+		if ( this._ffz_freeze_messages ) {
+			var messages = this._ffz_freeze_messages;
+			this._ffz_freeze_messages = null;
+
+			if ( this._ffz_freeze_mouse_move ) {
+				var mm = this._ffz_freeze_mouse_move;
+				this._ffz_freeze_mouse_move = null;
+				messages.removeEventListener('mousemove', mm);
+				messages.removeEventListener('touchmove', mm);
+			}
+
+			if ( this._ffz_freeze_mouse_out ) {
+				messages.removeEventListener('mouseout', this._ffz_freeze_mouse_out);
+				this._ffz_freeze_mouse_out = null;
+			}
+		}
+	},
+
+	ffzFreezePulse: function() {
+		if ( this.ffz_frozen && ! this.ffzShouldBeFrozen() )
+			this.ffzUnfreeze();
+	},
+
+	ffzFreeze: function() {
+		this.set('ffz_frozen', true);
+		if ( this.get('stuckToBottom') ) {
+			if ( ! this._ffz_freeze_interval )
+				this._ffz_freeze_interval = setInterval(this.ffzFreezePulse.bind(this), 200);
+
+			this.ffzFreezeWarn();
+		}
+	},
+
+	ffzUnfreeze: function(from_stuck) {
+		this.set('ffz_frozen', false);
+		this._ffz_freeze_last_move = 0;
+		this.ffzFreezeUnwarn();
+
+		if ( this._ffz_freeze_interval ) {
+			clearInterval(this._ffz_freeze_interval);
+			this._ffz_freeze_interval = null;
+		}
+
+		if ( ! from_stuck && this.get('stuckToBottom') )
+			this._scrollToBottom();
+	},
+
+	ffzFreezeWarn: function() {
+		var el = this.get('element'),
+			warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+
+		if ( ! el )
+			return;
+
+		if ( warning )
+			return warning.classList.remove('hidden');
+
+		warning = utils.createElement('div', 'more-messages-indicator ffz-freeze-indicator');
+
+		var hp = FFZ.get().settings.chat_hover_pause,
+			label = hp === 2 ? 'Ctrl Key' :
+				hp === 3 ? (constants.META_NAME + ' Key') :
+				hp === 4 ? 'Alt Key' :
+				hp === 5 ? 'Shift Key' :
+				hp === 6 ? 'Ctrl or Mouse' :
+				hp === 7 ? (constants.META_NAME + ' or Mouse') :
+				hp === 8 ? 'Alt or Mouse' :
+				hp === 9 ? 'Shift or Mouse' :
+				'Mouse Movement';
+
+		warning.innerHTML = '(Chat Paused Due to ' + label + ')';
+
+		var cont = el.querySelector('.chat-interface');
+		if ( ! cont )
+			return;
+		cont.insertBefore(warning, cont.childNodes[0])
+	},
+
+	ffzFreezeUnwarn: function() {
+		var el = this.get('element'),
+			warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
+
+		if ( warning )
+			warning.classList.add('hidden');
+	},
+
+	ffzShouldBeFrozen: function(since) {
+		if ( since === undefined )
+			since = Date.now() - this._ffz_freeze_last_move;
+
+		var hp = FFZ.get().settings.chat_hover_pause;
+		return (this._ffz_freeze_ctrl && (hp === 2 || hp === 6)) ||
+			(this._ffz_freeze_meta    && (hp === 3 || hp === 7)) ||
+			(this._ffz_freeze_alt     && (hp === 4 || hp === 8)) ||
+			(this._ffz_freeze_shift   && (hp === 5 || hp === 9)) ||
+			(since < 750              && (hp === 1 || hp > 5));
+	},
+
+	ffzFreezeMouseOut: function(event) {
+		this._ffz_freeze_outside = true;
+		var e = this;
+		setTimeout(function() {
+			if ( e._ffz_freeze_outside ) {
+				if ( FFZ.get().settings.chat_mod_icon_visibility > 1 )
+					e.get('element').classList.toggle('show-mod-icons', false);
+
+				e.ffzUnfreeze();
+			}
+		}, 25);
+	},
+
+	ffzFreezeOnKey: function(event) {
+		this._ffz_freeze_alt = event.altKey;
+		this._ffz_freeze_ctrl = event.ctrlKey;
+		this._ffz_freeze_meta = event.metaKey;
+		this._ffz_freeze_shift = event.shiftKey;
+
+		var f = FFZ.get(),
+			cmi = f.settings.chat_mod_icon_visibility;
+
+		if ( ! this._ffz_freeze_outside && cmi > 1 )
+			this.get('element').classList.toggle('show-mod-icons',
+				cmi === 2 ? this._ffz_freeze_ctrl :
+				cmd === 3 ? this._ffz_freeze_meta :
+				cmi === 4 ? this._ffz_freeze_alt :
+				this._ffz_freeze_shift);
+
+		if ( this._ffz_outside || f.settings.chat_hover_pause < 2 )
+			return;
+
+		// Okay, so at this point we should change the state of the freeze?
+		var should_freeze = this.ffzShouldBeFrozen(),
+			freeze_change = this.ffz_frozen !== should_freeze;
+
+		if ( freeze_change )
+			if ( should_freeze )
+				this.ffzFreeze();
+			else
+				this.ffzUnfreeze();
+	},
+
+	ffzFreezeMouseMove: function(event) {
+		this._ffz_freeze_last_move = Date.now();
+		this._ffz_freeze_outside = false;
+
+		// If nothing of interest has happened, stop.
+		if ( event.altKey === this._ffz_freeze_alt &&
+				event.shiftKey === this._ffz_freeze_shift &&
+				event.ctrlKey === this._ffz_freeze_ctrl &&
+				event.metaKey === this._ffz_freeze_meta &&
+				event.screenX === this._ffz_freeze_last_screenx &&
+				event.screenY === this._ffz_freeze_last_screeny )
+			return;
+
+		// Grab state.
+		this._ffz_freeze_alt = event.altKey;
+		this._ffz_freeze_ctrl = event.ctrlKey;
+		this._ffz_freeze_meta = event.metaKey;
+		this._ffz_freeze_shift = event.shiftKey;
+
+		this._ffz_freeze_last_screenx = event.screenX;
+		this._ffz_freeze_last_screeny = event.screenY;
+
+		var cmi = FFZ.get().settings.chat_mod_icon_visibility;
+		if ( ! this._ffz_freeze_outside && cmi > 1 )
+			this.get('element').classList.toggle('show-mod-icons',
+				cmi === 2 ? this._ffz_freeze_ctrl :
+				cmd === 3 ? this._ffz_freeze_meta :
+				cmi === 4 ? this._ffz_freeze_alt :
+				this._ffz_freeze_shift);
+
+		var should_freeze = this.ffzShouldBeFrozen(),
+			freeze_change = this.ffz_frozen !== should_freeze;
+
+		if ( freeze_change )
+			if ( should_freeze )
+				this.ffzFreeze();
+			else
+				this.ffzUnfreeze();
+	},
+
+	_prepareStickyBottom: function() {
+		var e = this,
+			t = 10;
+
+		this._setStuckToBottom(true);
+		this._$chatMessagesScroller.on(this._scrollEvents, function(n) {
+			var a = e._$chatMessagesScroller;
+			a && a[0] && (!e.ffz_frozen && (n.which > 0 || 'mousedown' === n.type || 'mousewheel' === n.type)) && ! function() {
+				var n = a[0].scrollHeight = a[0].scrollTop - a[0].offsetHeight;
+				e._setStuckToBottom(n <= t);
+			}
+		});
+	},
+
+	ffzFixStickyBottom: function() {
+		this._$chatMessagesScroller.off(this._scrollEvents);
+		this._prepareStickyBottom();
+	},
+
+	_scrollToBottom: function() {
+		var e = this;
+		this._scrollToBottomRequested = true;
+		Ember.run.schedule("afterRender", function() {
+			if ( ! e.ffz_frozen && ! e.isDestroyed && ! e.isDestroying && e._scrollToBottomRequested ) {
+				var t = e._$chatMessagesScroller;
+				if ( t && t.length ) {
+					t[0].scrollTop = t[0].scrollHeight;
+					e._setStuckToBottom(true);
+				}
+			}
+		});
+	}
+}
+
+
+FFZ.prototype.modify_room_component = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, _.extend({
+		ffz_init: function() {
+			f._roomv = this;
+
+			this.ffzFixStickyBottom();
+			this.ffzAddKeyHook();
+
+			if ( f.settings.chat_hover_pause )
+				this.ffzEnableFreeze();
+
+			if ( f.settings.room_status )
+				this.ffzUpdateStatus();
+
+			// TODO: Fix bits visibility calculation
+		},
+
+		ffz_destroy: function() {
+			if ( f._roomv === this )
+				f._roomv = undefined;
+
+			this.ffzDisableFreeze();
+			this.ffzRemoveKeyHook();
+		},
+
+		ffzUpdateStatus: function() {
+			var room = this.get('room'),
+				el = this.get('element'),
+				container = el && el.querySelector('.chat-buttons-container');
+
+			if ( ! container )
+				return;
+
+			var btn = container.querySelector('button');
+
+			if ( f.has_bttv || ! f.settings.room_status ) {
+				jQuery(".ffz.room-state", container).remove();
+
+				if ( btn ) {
+					btn.classList.remove('ffz-waiting');
+					btn.classList.remove('ffz-banned');
+				}
+
+				return;
+
+			} else if ( btn ) {
+				btn.classList.toggle('ffz-waiting', room && room.get('slowWait') || 0);
+				btn.classList.toggle('ffz-banned', room && room.get('ffz_banned') || false);
+			}
+
+			var badge, id, info, vis_count = 0, label;
+			for(var i=0; i < STATUS_BADGES.length; i++) {
+				info = STATUS_BADGES[i];
+				id = 'ffz-stat-' + info[0];
+				badge = container.querySelector('#' + id);
+				visible = typeof info[1] === 'function' ? info[1].call(f, room) : room && room.get(info[1]);
+				if ( typeof visible === 'string' )
+					visible = visible === '1';
+
+				label = typeof info[3] === "function" ? info[3].call(f, room) : undefined;
+
+				if ( ! badge ) {
+					badge = utils.createElement('span', 'ffz room-state stat float-right', (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>');
+					badge.id = id;
+					jQuery(badge).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
+					container.appendChild(badge);
+				}
+
+				if ( label )
+					badge.innerHTML = (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>';
+
+				badge.title = typeof info[2] === "function" ? info[2].call(f, room) : info[2];
+				badge.classList.toggle('hidden', ! visible);
+				badge.classList.toggle('faded', info[4] !== undefined ? typeof info[4] === "function" ? info[4].call(f, room) : info[4] : false);
+				if ( visible )
+					vis_count++;
+			}
+
+			jQuery(".ffz.room-state", container).toggleClass('truncated', vis_count > 3);
+		}.observes('room')
+
+	}, FFZ.HoverPause));
+}
+
+/*FFZ.prototype.modify_room_view = function(view) {
 	var f = this;
 	utils.ember_reopen_view(view, {
 		ffz_init: function() {
@@ -608,7 +995,11 @@ FFZ.prototype.modify_room_view = function(view) {
 				since = Date.now() - this._ffz_last_move;
 
 			var hp = f.settings.chat_hover_pause;
-			return  (this.ffz_ctrl  && (hp === 2 || hp === 6)) || (this.ffz_meta  && (hp === 3 || hp === 7)) || (this.ffz_alt   && (hp === 4 || hp === 8)) || (this.ffz_shift && (hp === 5 || hp === 9)) || (since < 750 && (hp === 1 || hp > 5));
+			return  (this.ffz_ctrl  && (hp === 2 || hp === 6)) ||
+				(this.ffz_meta  && (hp === 3 || hp === 7)) ||
+				(this.ffz_alt   && (hp === 4 || hp === 8)) ||
+				(this.ffz_shift && (hp === 5 || hp === 9)) ||
+				(since < 750 && (hp === 1 || hp > 5));
 		},
 
 		ffzMouseMove: function(event) {
@@ -716,7 +1107,7 @@ FFZ.prototype.modify_room_view = function(view) {
 				warning.classList.add('hidden');
 		}
 	});
-}
+}*/
 
 
 // --------------------
@@ -1093,9 +1484,11 @@ FFZ.prototype._modify_room = function(room) {
 				if ( this._ffz_wait_timer )
 					clearTimeout(this._ffz_wait_timer);
 				this._ffz_wait_timer = setTimeout(this.ffzUpdateWait.bind(this), 1000);
+				! update && f._chati && Ember.propertyDidChange(f._chati, 'submitButtonText');
 				! update && f._roomv && f._roomv.ffzUpdateStatus();
 			} else if ( (wait > 0 && value < 1) || was_banned ) {
 				this.set('ffz_banned', false);
+				! update && f._chati && Ember.propertyDidChange(f._chati, 'submitButtonText');
 				! update && f._roomv && f._roomv.ffzUpdateStatus();
 			}
 		},
@@ -1107,6 +1500,8 @@ FFZ.prototype._modify_room = function(room) {
 				return;
 
 			this.set('slowWait', --wait);
+			f._chati && Ember.propertyDidChange(f._chati, 'submitButtonText');
+
 			if ( wait > 0 )
 				this._ffz_wait_timer = setTimeout(this.ffzUpdateWait.bind(this), 1000);
 			else {

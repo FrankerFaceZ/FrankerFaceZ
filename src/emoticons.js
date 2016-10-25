@@ -5,39 +5,22 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 	MODIFIERS = {
-		59847: '0 10px 10px 0',
-		70852: '0 5px 20px 0',
-		70854: '30px 0 0',
-	},
+		59847: {
+			margins: '0 10px 10px 0',
+			modifier: true
+		},
 
-	build_css = function(emote) {
-		var output = '';
-		if ( ! emote.margins && ! emote.css )
-			return output;
+		70852: {
+			modifier: true,
+			margins: '0 5px 20px 0',
+			extra_width: 5,
+			shrink_to_fit: true
+		},
 
-		if ( emote.modifier && emote.margins ) {
-			var margins = _.map(emote.margins.split(/\s+/), function(n) { return parseInt(n) });
-			if ( margins.length === 3 )
-				margins.push(margins[1]);
-
-			var l = margins.length,
-				m_left = margins[3 % l],
-				m_right = margins[1 % l],
-				m_top = margins[0 % l],
-				m_bottom = margins[2 % l];
-
-			output += '.modified-emoticon img[data-ffz-emote="' + emote.id + '"] {' +
-				'padding:' + m_top + 'px ' + m_right + 'px ' + m_bottom + 'px ' + m_left + 'px;' +
-				'max-width: calc(100% - ' + (200 - (2*m_left) - (2*m_right)) + 'px);' +
-				'margin: 0 !important' +
-			'}\n';
+		70854: {
+			modifier: true,
+			margins: '30px 0 0'
 		}
-
-		return output +
-			'img[data-ffz-emote="' + emote.id + '"] {' +
-				(emote.margins && ! emote.modifier ? 'margin:' + emote.margins + ' !important;' : '') +
-				(emote.css || '') +
-			'}\n';
 	};
 
 
@@ -446,12 +429,10 @@ FFZ.prototype._load_set_json = function(set_id, callback, data) {
 			altText: emote.hidden ? '???' : emote.name
 		};
 
-		if ( MODIFIERS.hasOwnProperty(emote.id) ) {
-			emote.modifier = true;
-			emote.margins = MODIFIERS[emote.id];
-		}
+		if ( MODIFIERS.hasOwnProperty(emote.id) )
+			emote = _.extend(emote, MODIFIERS[emote.id]);
 
-		output_css += build_css(emote);
+		output_css += utils.emote_css(emote);
 		data.count++;
 		data.emoticons[emote.id] = emote;
 	}

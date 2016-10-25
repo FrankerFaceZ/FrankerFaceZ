@@ -670,7 +670,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 		ffz_commands: function() {
 			var commands = _.extend({}, DEFAULT_COMMANDS),
 				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
-				room = this.get('parentView.context.model'),
+				room = this.get('parentView.room'),
 				is_moderator = room && room.get('isModeratorOrHigher'),
 				user = f.get_user(),
 				is_broadcaster = room && user && user.login === room.get('name');
@@ -732,14 +732,14 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			return commands;
 
-		}.property('parentView.context.model.isModeratorOrHigher', 'parentView.context.model.name'),
+		}.property('parentView.room.isModeratorOrHigher', 'parentView.room.name'),
 
 
 		ffz_emoticons: function() {
 			var emotes = {},
 
 				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
-				room = ! in_conversation && this.get('parentView.context.model'),
+				room = ! in_conversation && this.get('parentView.room'),
 				room_id = room && room.get('id'),
 				tmi = in_conversation ? window.TMI && TMI._sessions && TMI._sessions[0] : room && room.tmiSession,
 
@@ -1387,7 +1387,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				return;
 
 			var ind = this.get('ffz_mru_index'),
-				mru = this.get('parentView.context.model.mru_list') || [];
+				mru = this.get('parentView.room.mru_list') || [];
 
 			if ( key === KEYCODES.UP )
 				ind = (ind + 1) % (mru.length + 1);

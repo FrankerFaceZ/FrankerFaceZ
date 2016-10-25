@@ -972,6 +972,36 @@ module.exports = FFZ.utils = {
 		}
 	},
 
+	emote_css: function(emote) {
+		var output = '';
+		if ( ! emote.margins && ! emote.css )
+			return output;
+
+		if ( emote.modifier && emote.margins ) {
+			var margins = _.map(emote.margins.split(/\s+/), function(n) { return parseInt(n) });
+			if ( margins.length === 3 )
+				margins.push(margins[1]);
+
+			var l = margins.length,
+				m_left = margins[3 % l],
+				m_right = margins[1 % l],
+				m_top = margins[0 % l],
+				m_bottom = margins[2 % l];
+
+			output += '.modified-emoticon img[data-ffz-emote="' + emote.id + '"] {' +
+				'padding:' + m_top + 'px ' + m_right + 'px ' + m_bottom + 'px ' + m_left + 'px;' +
+				(emote.shrink_to_fit ? 'max-width: calc(100% - ' + (40 - m_left - m_right - (emote.extra_width || 0)) + 'px);' : '') +
+				'margin: 0 !important' +
+			'}\n';
+		}
+
+		return output +
+			'img[data-ffz-emote="' + emote.id + '"] {' +
+				(emote.margins && ! emote.modifier ? 'margin:' + emote.margins + ' !important;' : '') +
+				(emote.css || '') +
+			'}\n';
+	},
+
 	badge_css: function(badge, klass) {
 		klass = klass || ('ffz-badge-' + badge.id);
 		var out = ".badges ." + klass + (badge.no_color ? ":not(.colored)" : "") + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';

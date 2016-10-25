@@ -400,7 +400,7 @@ FFZ.prototype.render_tooltip = function(el) {
 			} else if ( this.classList.contains('emoticon') ) {
 				var preview_url, width=0, height=0, image, set_id, emote, emote_set,
 					emote_id = this.getAttribute('data-ffz-emote'),
-					modifiers = this.getAttribute('data-ffz-modifiers'),
+					modifiers = this.getAttribute('data-modifier-info'),
 					mod_text = '';
 
 				if ( modifiers ) {
@@ -942,7 +942,7 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 					return '<span>' + f.render_token(render_links, warn_links, render_bits, t) + '</span>';
 				}).join('') + '</span>';
 
-			extra += ' data-ffz-modifiers="' + utils.quote_attr(JSON.stringify(_.map(token.modifiers, function(t) { return [t.ffzEmoteSet, t.ffzEmote] }))) + '"';
+			extra += ' data-ffz-modifiers="' + utils.quote_attr(_.map(token.modifiers, function(t) { return t.ffzEmote }).join(' ')) + '" data-modifier-info="' + utils.quote_attr(JSON.stringify(_.map(token.modifiers, function(t) { return [t.ffzEmoteSet, t.ffzEmote] }))) + '"';
 		}
 
 		return prefix + '<img class="emoticon ffz-tooltip' + (cls||'') + '"' + (extra||'') + ' src="' + utils.quote_attr(src) + '"' + (srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : '') + ' alt="' + utils.quote_attr(token.altText) + '">' + suffix;

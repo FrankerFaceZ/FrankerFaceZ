@@ -1,12 +1,5 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils'),
-
-	build_css = function(emote) {
-		if ( ! emote.margins && ! emote.css )
-			return "";
-
-		return 'img[src="' + emote.urls[1] + '"]{' + (emote.margins ? 'margin:' + emote.margins + ';' : '') + (emote.css || "") + '}'
-	};
+	utils = require('../utils');
 
 
 // ---------------------
@@ -209,7 +202,10 @@ API.prototype._load_set = function(real_id, set_id, data) {
 
 		new_emote.css = emote.css;
 		new_emote.margins = emote.margins;
+
 		new_emote.modifier = emote.modifier;
+		new_emote.extra_width = emote.extra_width;
+		new_emote.shrink_to_fit = emote.shrink_to_fit;
 
 		new_emote.srcSet = emote.urls[1] + ' 1x';
 		new_emote.urls[1] = emote.urls[1];
@@ -245,7 +241,7 @@ API.prototype._load_set = function(real_id, set_id, data) {
 			altText: new_emote.hidden ? '???' : new_emote.name
 		};
 
-		output_css += build_css(new_emote);
+		output_css += utils.emote_css(new_emote);
 		emote_set.count++;
 		emoticons[id] = new_emote;
 	}

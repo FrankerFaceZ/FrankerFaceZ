@@ -3758,7 +3758,7 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 
 .modified-emoticon span {
 	position: absolute;
-	top: -100px; bottom: -100px; left: -100px; right: -100px;
+	top: -20px; bottom: -20px; left: -20px; right: -20px;
 	margin: auto;
 	pointer-events: none;
 }
