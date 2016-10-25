@@ -332,7 +332,9 @@ FFZ.prototype.modify_chat_input = function(component) {
 		ffz_chatters: [],
 
 		ffz_init: function() {
-			f._inputv = this;
+			// We don't want to store references to conversation input handlers.
+			if ( ! ConvoInput || ! (this.parentView instanceof ConvoInput) )
+				f._inputv = this;
 
 			var s = this._ffz_minimal_style = document.createElement('style');
 			s.id = 'ffz-minimal-chat-textarea-height';

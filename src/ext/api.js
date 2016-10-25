@@ -209,6 +209,7 @@ API.prototype._load_set = function(real_id, set_id, data) {
 
 		new_emote.css = emote.css;
 		new_emote.margins = emote.margins;
+		new_emote.modifier = emote.modifier;
 
 		new_emote.srcSet = emote.urls[1] + ' 1x';
 		new_emote.urls[1] = emote.urls[1];

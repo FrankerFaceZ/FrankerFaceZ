@@ -30,6 +30,9 @@ FFZ.prototype.setup_emote_menu = function(delay) {
 // --------------------
 
 FFZ.prototype._emote_menu_enumerator = function() {
+	if ( this.has_bttv )
+		return [];
+
 	var twitch_user = this.get_user(),
 		user_id = twitch_user ? twitch_user.login : null,
 		controller = utils.ember_lookup('controller:chat'),
