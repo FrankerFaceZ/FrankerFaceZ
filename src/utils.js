@@ -977,8 +977,9 @@ module.exports = FFZ.utils = {
 		if ( ! emote.margins && ! emote.css )
 			return output;
 
-		if ( emote.modifier && emote.margins ) {
-			var margins = _.map(emote.margins.split(/\s+/), function(n) { return parseInt(n) });
+		if ( emote.modifier && (emote.modifier_offset || emote.margins || emote.extra_width || emote.shrink_to_fit) ) {
+			var margins = emote.modifier_offset || emote.margins || '0';
+			margins = _.map(margins.split(/\s+/), function(n) { return parseInt(n) });
 			if ( margins.length === 3 )
 				margins.push(margins[1]);
 
@@ -988,7 +989,7 @@ module.exports = FFZ.utils = {
 				m_top = margins[0 % l],
 				m_bottom = margins[2 % l];
 
-			output += '.modified-emoticon img[data-ffz-emote="' + emote.id + '"] {' +
+			output += '.modified-emoticon span img[data-ffz-emote="' + emote.id + '"] {' +
 				'padding:' + m_top + 'px ' + m_right + 'px ' + m_bottom + 'px ' + m_left + 'px;' +
 				(emote.shrink_to_fit ? 'max-width: calc(100% - ' + (40 - m_left - m_right - (emote.extra_width || 0)) + 'px);' : '') +
 				'margin: 0 !important' +
@@ -996,8 +997,9 @@ module.exports = FFZ.utils = {
 		}
 
 		return output +
-			'img[data-ffz-emote="' + emote.id + '"] {' +
-				(emote.margins && ! emote.modifier ? 'margin:' + emote.margins + ' !important;' : '') +
+			'.activity-body img[data-ffz-emote="' + emote.id + '"],' +
+			'.chat-line img[data-ffz-emote="' + emote.id + '"] {' +
+				(emote.margins && (! emote.modifier || emote.modifier_offset) ? 'margin:' + emote.margins + ' !important;' : '') +
 				(emote.css || '') +
 			'}\n';
 	},

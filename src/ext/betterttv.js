@@ -304,8 +304,9 @@ FFZ.prototype.setup_bttv = function(delay) {
 					if ( setting === 0 )
 						output.push([data.raw]);
 					else {
-						var code = utils.quote_attr(data.raw);
-						output.push(['<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">']);
+						var code = utils.quote_attr(data.raw),
+							html = '<img class="emoticon emoji ffz-tooltip" height="18px" data-ffz-emoji="' + eid + '" src="' + utils.quote_attr(src) + '" alt="' + code + '">';
+						output.push([html, html, []]);
 					}
 					text = null;
 				} else
@@ -320,6 +321,10 @@ FFZ.prototype.setup_bttv = function(delay) {
 	}
 
 	// Emoticonize
+	var emote_token = function(emote) {
+		return '<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" alt="' + utils.quote_attr(emote.name) + '">';
+	};
+
 	var original_emoticonize = BC.templates.emoticonize;
 	BC.templates.emoticonize = function(message, emotes) {
 		var tokens = original_emoticonize(message, emotes),
@@ -344,9 +349,21 @@ FFZ.prototype.setup_bttv = function(delay) {
 				}
 		}
 
+		//var last_token = null;
 		for(var i=0, l=tokens.length; i < l; i++) {
 			var token = tokens[i];
 			if ( typeof token !== "string" ) {
+				// Detect emoticons!
+				/*if ( /class="emoticon/.test(token[0]) ) {
+					if ( token.length === 1 ) {
+						token = [token[0], token[0], []];
+					}
+
+					last_token = token;
+
+				} else
+					last_token = null;*/
+
 				new_tokens.push(token);
 				continue;
 			}
@@ -359,15 +376,40 @@ FFZ.prototype.setup_bttv = function(delay) {
 				segment = segments[x];
 				if ( HOP.call(emotes, segment) ) {
 					emote = emotes[segment];
+
+					/*if ( false && emote.modifier && last_token && last_token.length > 1 ) {
+						if ( last_token[2].indexOf(emote) === -1 ) {
+							last_token[2].push(emote);
+
+							last_token[0] = '<span class="emoticon modified-emoticon">' + last_token[1] + _.map(last_token[2], function(em) {
+								return ' <span>' + emote_token(em) + '</span>';
+							}).join('') + '</span>'
+
+						}
+
+						if ( mine && l_room )
+							f.add_usage(l_room, emote);
+
+						continue;
+					}*/
+
 					if ( text.length ) {
 						var toks = parse_emoji(text.join(' ') + ' ');
-						for(var q=0; q < toks.length; q++)
-							new_tokens.push(toks[q]);
+						for(var q=0; q < toks.length; q++) {
+							var tok = toks[q];
+							/*if ( tok.length > 1 )
+								last_token = tok;
+							else
+								last_token = null;*/
+
+							new_tokens.push(tok);
+						}
 
 						text = [];
 					}
 
-					new_tokens.push(['<img class="emoticon ffz-tooltip" data-ffz-set="' + emote.set_id + '" data-ffz-emote="' + emote.id + '" srcset="' + utils.quote_attr(emote.srcSet || "") + '" src="' + utils.quote_attr(emote.urls[1]) + '" alt="' + utils.quote_attr(emote.name) + '">']);
+					var html = emote_token(emote);
+					new_tokens.push([html, html, []]);
 
 					if ( mine && l_room )
 						f.add_usage(l_room, emote);

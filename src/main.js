@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 349,
+	major: 3, minor: 5, revision: 351,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}

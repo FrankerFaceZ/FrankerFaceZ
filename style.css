@@ -3769,12 +3769,18 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 	transform: translate(-50%, -50%);
 }
 
+.ffz-bttv .modified-emoticon span,
 .ffz-baseline-emoticons .modified-emoticon span {
-	top: -105px;
+	top: -25px;
 }
 
+body:not(.ffz-bttv) .modified-emoticon span,
+.ffz-bttv .modified-emoticon { pointer-events: none }
+.ffz-bttv .modified-emoticon > .emoticon { pointer-events: all }
+
+.ffz-bttv .chat-line .modified-emoticon,
 .ffz-baseline-emoticons .chat-line .modified-emoticon {
 	padding-top: 0;
 	margin-bottom: -3px;
-	vertical-align: bottom;
+	vertical-align: bottom !important;
 }

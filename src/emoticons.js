@@ -6,20 +6,20 @@ var FFZ = window.FrankerFaceZ,
 
 	MODIFIERS = {
 		59847: {
-			margins: '0 10px 10px 0',
+			modifier_offset: '0 15px 15px 0',
 			modifier: true
 		},
 
 		70852: {
 			modifier: true,
-			margins: '0 5px 20px 0',
+			modifier_offset: '0 5px 20px 0',
 			extra_width: 5,
 			shrink_to_fit: true
 		},
 
 		70854: {
 			modifier: true,
-			margins: '30px 0 0'
+			modifier_offset: '30px 0 0'
 		}
 	};
 

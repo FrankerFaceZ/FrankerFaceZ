@@ -439,6 +439,7 @@ FFZ.HoverPause = {
 			if ( ! this._ffz_freeze_interval )
 				this._ffz_freeze_interval = setInterval(this.ffzFreezePulse.bind(this), 200);
 
+			this.ffzFreezeUpdateBuffer && this.ffzFreezeUpdateBuffer(false);
 			this.ffzFreezeWarn();
 		}
 	},
@@ -592,15 +593,13 @@ FFZ.HoverPause = {
 	},
 
 	_prepareStickyBottom: function() {
-		var e = this,
-			t = 10;
-
+		var t = this;
 		this._setStuckToBottom(true);
-		this._$chatMessagesScroller.on(this._scrollEvents, function(n) {
-			var a = e._$chatMessagesScroller;
-			a && a[0] && (!e.ffz_frozen && (n.which > 0 || 'mousedown' === n.type || 'mousewheel' === n.type)) && ! function() {
-				var n = a[0].scrollHeight = a[0].scrollTop - a[0].offsetHeight;
-				e._setStuckToBottom(n <= t);
+		this._$chatMessagesScroller.on(this._scrollEvents, function(e) {
+			var a = t._$chatMessagesScroller;
+			if ( a && a[0] && ((!t.ffz_frozen && 'mousedown' === e.type) || 'wheel' === e.type || 'mousewheel' === e.type) ) {
+				var distance = a[0].scrollHeight - a[0].scrollTop - a[0].offsetHeight;
+				t._setStuckToBottom(distance <= 10);
 			}
 		});
 	},
@@ -622,6 +621,13 @@ FFZ.HoverPause = {
 				}
 			}
 		});
+	},
+
+	_setStuckToBottom: function(val) {
+		this.set('stuckToBottom', val);
+		this.ffzFreezeUpdateBuffer && this.ffzFreezeUpdateBuffer(val);
+		if ( ! val )
+			this.ffzUnfreeze();
 	}
 }
 
@@ -650,6 +656,15 @@ FFZ.prototype.modify_room_component = function(component) {
 
 			this.ffzDisableFreeze();
 			this.ffzRemoveKeyHook();
+		},
+
+		ffzFreezeUpdateBuffer: function(val) {
+			var room = this.get('room');
+			if ( val === undefined )
+				val = this.get('stuckToBottom');
+
+			if ( room )
+				room.messageBufferSize = f.settings.scrollback_length + ( val ? 0 : 150 );
 		},
 
 		ffzUpdateStatus: function() {
