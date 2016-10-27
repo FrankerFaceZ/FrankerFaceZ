@@ -17,6 +17,10 @@ var FFZ = window.FrankerFaceZ,
 			label: '/timeout &lt;user&gt; <i>[duration=600] [reason]</i>',
 			info: 'Temporarily Ban User'
 		},
+		untimeout: {
+			label: '/untimeout &lt;user&gt;',
+			info: 'Unban Temporarily-Banned User'
+		},
 
 		clear: {info: 'Clear Chat for All Users'},
 		slow: {

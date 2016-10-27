@@ -254,11 +254,11 @@ FFZ.prototype.setup_layout = function() {
 			var size = this.get('fullSizePlayerDimensions');
 
 			return '<style>' +
-				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user.channel."] .app-main:not(.theatre) #player,' +
+				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user."] .app-main:not(.theatre) #player,' +
 				'.dynamic-player, .dynamic-player object, .dynamic-player video {' +
 					'width:' + size.width + 'px !important;' +
 					'height:' + size.height + 'px !important}' +
-				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user.channel."] .app-main:not(.theatre) #player,' +
+				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user."] .app-main:not(.theatre) #player,' +
 				'.dynamic-target-player, .dynamic-target-player object, .dynamic-target-player video {' +
 					'width:' + size.width + 'px !important;' +
 					'height:' + size.targetHeight + 'px !important}' +

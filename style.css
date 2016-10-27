@@ -1045,8 +1045,10 @@ body.ffz-bttv-dark .ffz-ui-popup ul.menu svg path { fill: #d3d3d3; }
 
 /* BTTV Menu Fixes */
 
+.emote-menu .header-info img { max-width: 18px; max-height: 18px }
+
 .bttv-incompatibility {
-    padding-top: 8px !important;
+	padding-top: 8px !important;
 }
 
 body.ffz-bttv-dark .ffz-ui-popup .emoticon-grid .heading,
@@ -1135,11 +1137,14 @@ body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { border-bottom: none }
 .chatReplay .chat-messages .chat-line .mod-icons {
 	position: absolute;
 	z-index: 10;
-	left: 0; top: 2px; bottom: 2px;
-	padding: 4px 5px 4px 4px;
+	left: 0; top: 0; bottom: 0;
+	padding: 3px 5px 4px 4px;
 	background: rgba(255,255,255,0.8);
 	transition: margin-left .08s linear;
 }
+
+.chatReplay .show-mod-icons .chat-line .mod-icons { transition: none }
+.chatReplay .chat-messages .chat-line:hover { overflow: visible }
 
 .chatReplay .chat-messages .chat-line:hover .mod-icons {
 	margin-left: 0;
@@ -1312,7 +1317,7 @@ img.channel_background[src="null"] { display: none; }
 	margin-left: 50px;
 	height: 18px;
 	line-height: 18px;
-    pointer-events: none;
+	pointer-events: none;
 }
 
 .ffz-moderation-card .info .stat {
@@ -2036,11 +2041,11 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 .ember-chat .chat-interface .more-messages-indicator.ffz-freeze-indicator {
 	opacity: 1;
 	cursor: default;
-    pointer-events: none;
+	pointer-events: none;
 }
 
 .chat-container:not(.chatReplay) .chat-interface .more-messages-indicator.ffz-freeze-indicator {
-    top: 0;
+	top: 0;
 }
 
 /* Chat History */
@@ -3559,6 +3564,8 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	padding-top: 80px;
 }
 
+.cn-hosting .ffz.card__layout .card__title { color: #9c9c9c }
+
 .cn-hosting .ffz.card__layout .card__title,
 .ffz-channel-title-top .cn-metabar__more,
 .app-main.theatre .cn-metabar__more {
@@ -3750,11 +3757,21 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar #play
 
 /* Modifier Emotes */
 
-.modified-emoticon {
-	position: relative;
+.emoticon-grid span.emoticon:not([data-ffz-emote="59829"]) {
+	padding-top: 0;
+	margin: 0 !important
 }
 
-.modified-emoticon > .emoticon { margin: 0 }
+.modified-emoticon ~ .emoticon { position: relative; z-index: 1}
+
+.modified-emoticon {
+	position: relative;
+	z-index: 0;
+}
+
+.modified-emoticon[data-ffz-emote="59829"] span { right: 128px }
+
+.modified-emoticon > img.emoticon { margin: 0 !important }
 
 .modified-emoticon span {
 	position: absolute;

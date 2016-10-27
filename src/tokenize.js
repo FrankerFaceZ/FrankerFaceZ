@@ -937,7 +937,7 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 		//return `<img class="emoticon ffz-tooltip${cls||''}"${extra||''} src="${utils.quote_attr(src)}"${srcset ? ' srcset="' + utils.quote_attr(srcset) + '"' : ''} alt="${utils.quote_attr(token.altText)}">`;
 		var f = this, prefix = '', suffix = '';
 		if ( token.modifiers && token.modifiers.length ) {
-			prefix = '<span class="emoticon modified-emoticon">';
+			prefix = '<span class="emoticon modified-emoticon"' + (token.ffzEmote ? ' data-ffz-emote="' + token.ffzEmote + '"' : '') + '>';
 			suffix = _.map(token.modifiers, function(t) {
 					return '<span>' + f.render_token(render_links, warn_links, render_bits, t) + '</span>';
 				}).join('') + '</span>';

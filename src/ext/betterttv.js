@@ -73,8 +73,8 @@ FFZ.prototype.setup_bttv = function(delay) {
 
 	if ( this._roomv ) {
 		// Disable Chat Pause
-		if ( this.settings.chat_hover_pause )
-			this._roomv.ffzDisableFreeze();
+		this._roomv.ffzDisableFreeze();
+		this._roomv.ffzRemoveKeyHook();
 
 		// And hide the status
 		if ( this.settings.room_status )

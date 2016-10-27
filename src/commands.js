@@ -173,6 +173,9 @@ FFZ.ffz_commands.reload = function(room, args) {
 	var f = this,
 		promises = [];
 
+	// Feature Friday. There's no feedback possible so don't use a promise.
+	this.check_ff();
+
 	// Badge Information
 	promises.push(new Promise(function(done, fail) {
 		f.load_badges(function(success, badge_count, badge_total, badge_data) {

@@ -59,7 +59,7 @@ FFZ.settings_info.player_volume_bar = {
 };
 
 
-/*FFZ.settings_info.player_pause_hosts = {
+FFZ.settings_info.player_pause_hosts = {
 	type: "select",
 	options: {
 		0: "Disabled",
@@ -73,7 +73,7 @@ FFZ.settings_info.player_volume_bar = {
 	category: "Player",
 	name: "Auto-Pause Hosted Channels",
 	help: "Automatically pause hosted channels if you paused the channel doing the hosting, or just pause all hosts."
-}*/
+}
 
 
 // ---------------
@@ -116,7 +116,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 				f.players[channel_id] = undefined;
 		},
 
-		/*insertPlayer: function(ffz_reset) {
+		insertPlayer: function(ffz_reset) {
 			// We want to see if this is a hosted video on a play
 			var should_start_paused = this.get('shouldStartPaused'),
 				channel_id = this.get('hostChannel.name'),
@@ -128,17 +128,15 @@ FFZ.prototype.modify_twitch_player = function(player) {
 				this.set('shouldStartPaused', false);
 
 			// Alternatively, depending on the setting...
-			else if (
-				(f.settings.player_pause_hosts === 1 && this.get('ffz_original_paused') ) ||
-				(f.settings.player_pause_hosts === 2 && is_hosting) )
-					this.set('shouldStartPaused', true);
+			else if ( f.settings.player_pause_hosts === 2 && is_hosting )
+				this.set('shouldStartPaused', true);
 
 			this._super();
 
 			// Restore the previous value so it doesn't mess anything up.
 			this.set('shouldStartPaused', should_start_paused);
 
-		}.on('didInsertElement'),*/
+		}.on('didInsertElement'),
 
 		postPlayerSetup: function() {
 			this._super();
@@ -168,21 +166,38 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			Ember.run.next(this.insertPlayer.bind(this, true));
 		},
 
-		/*ffzUpdatePlayerPaused: function() {
+		ffzUpdatePlayerPaused: function() {
 			var channel_id = this.get('hostChannel.name'),
 				hosted_id = this.get('channel.name'),
 				is_hosting = channel_id !== hosted_id,
 
-				is_paused = this.get('player.paused');
-
-			if ( ! is_hosting )
-				this.set('ffz_original_paused', is_paused);
+				player = this.get('player'),
+				is_paused = player.paused;
 
 			f.log("Player Pause State for " + channel_id + ": " + is_paused);
-		},*/
+
+			if ( ! is_hosting ) {
+				this.set('ffz_host_paused', false);
+				this.set('ffz_original_paused', is_paused);
+				return;
+			}
+
+			if ( ! f.settings.player_pause_hosts || is_paused || this.get('ffz_host_paused') )
+				return;
+
+			this.set('ffz_host_paused', true);
+
+			if ( this.get('ffz_original_paused') || f.settings.player_pause_hosts === 2 )
+				player.pause();
+		},
+
+		ffzHostChange: function() {
+			this.set('ffz_host_paused', false);
+		}.observes('channel'),
 
 		ffzPostPlayer: function() {
-			var channel_id = this.get('hostChannel.name'),
+			var f = this,
+				channel_id = this.get('hostChannel.name'),
 				hosted_id = this.get('channel.name'),
 				is_hosting = channel_id !== hosted_id,
 
@@ -192,11 +207,11 @@ FFZ.prototype.modify_twitch_player = function(player) {
 
 			this.set('ffz_post_player', true);
 
-			/*if ( ! is_hosting )
+			if ( ! is_hosting )
 				this.set('ffz_original_paused', player.paused);
 
 			player.addEventListener('pause', this.ffzUpdatePlayerPaused.bind(this));
-			player.addEventListener('play', this.ffzUpdatePlayerPaused.bind(this));*/
+			player.addEventListener('play', this.ffzUpdatePlayerPaused.bind(this));
 
 			// Make the stats window draggable and fix the button.
 			var stats = this.$('.player .js-playback-stats');

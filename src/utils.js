@@ -989,7 +989,7 @@ module.exports = FFZ.utils = {
 				m_top = margins[0 % l],
 				m_bottom = margins[2 % l];
 
-			output += '.modified-emoticon span img[data-ffz-emote="' + emote.id + '"] {' +
+			output += '.modified-emoticon span .emoticon[data-ffz-emote="' + emote.id + '"] {' +
 				'padding:' + m_top + 'px ' + m_right + 'px ' + m_bottom + 'px ' + m_left + 'px;' +
 				(emote.shrink_to_fit ? 'max-width: calc(100% - ' + (40 - m_left - m_right - (emote.extra_width || 0)) + 'px);' : '') +
 				'margin: 0 !important' +
@@ -997,9 +997,9 @@ module.exports = FFZ.utils = {
 		}
 
 		return output +
-			'.activity-body img[data-ffz-emote="' + emote.id + '"],' +
-			'.chat-line img[data-ffz-emote="' + emote.id + '"] {' +
-				(emote.margins && (! emote.modifier || emote.modifier_offset) ? 'margin:' + emote.margins + ' !important;' : '') +
+			(emote.modifier && emote.margins ? '.ffz-bttv .emoticon[data-ffz-emote="' + emote.id + '"] { margin: ' + emote.margins + ' !important;}' : '') +
+			'.emoticon[data-ffz-emote="' + emote.id + '"] {' +
+				((emote.margins && ! emote.modifier) ? 'margin:' + emote.margins + ' !important;' : '') +
 				(emote.css || '') +
 			'}\n';
 	},

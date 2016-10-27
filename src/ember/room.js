@@ -184,7 +184,8 @@ FFZ.prototype.format_ban_notice = function(username, is_me, duration, count, rea
 
 	return (is_me ? 'You have' : '<span data-user="' + utils.quote_san(username) + '" class="ban-target html-tooltip" title="' + utils.quote_attr(name[1] || '') + '">' + name[0] + '</span> has') +
 		' been ' + (duration_tip.length ? '<span class="ban-tip html-tooltip" title="' + utils.quote_attr(duration_tip.join('<br>')) + '">' : '') + (duration === -Infinity ? 'unbanned' :
-		(duration === 1 ? 'purged' : isFinite(duration) ? 'timed out for ' + utils.duration_string(duration) : 'banned')) +
+		(duration === -1 ? 'untimed out' :
+		(duration === 1 ? 'purged' : isFinite(duration) ? 'timed out for ' + utils.duration_string(duration) : 'banned'))) +
 		(count > 1 ? ' (' + utils.number_commas(count) + ' times)' : '') +
 		(moderators && moderators.length ? ' by ' + utils.sanitize(moderators.join(', ')) : '') + (duration_tip.length ? '</span>' : '') +
 		(reasons && reasons.length ? ' with reason' + utils.pluralize(reasons.length) + ': ' + utils.sanitize(reasons.join(', ')) : '.');
@@ -383,7 +384,8 @@ FFZ.HoverPause = {
 
 	ffzEnableFreeze: function() {
 		var el = this.get('element'),
-			messages = el && el.querySelector(this.get('ffz_freeze_selector'));
+			scroller = this.get('chatMessagesScroller'),
+			messages = (scroller && scroller[0]) || (el && el.querySelector(this.get('ffz_freeze_selector')));
 
 		if ( ! messages )
 			return;
@@ -534,11 +536,11 @@ FFZ.HoverPause = {
 		if ( ! this._ffz_freeze_outside && cmi > 1 )
 			this.get('element').classList.toggle('show-mod-icons',
 				cmi === 2 ? this._ffz_freeze_ctrl :
-				cmd === 3 ? this._ffz_freeze_meta :
+				cmi === 3 ? this._ffz_freeze_meta :
 				cmi === 4 ? this._ffz_freeze_alt :
 				this._ffz_freeze_shift);
 
-		if ( this._ffz_outside || f.settings.chat_hover_pause < 2 )
+		if ( this._ffz_freeze_outside || f.settings.chat_hover_pause < 2 )
 			return;
 
 		// Okay, so at this point we should change the state of the freeze?
@@ -578,7 +580,7 @@ FFZ.HoverPause = {
 		if ( ! this._ffz_freeze_outside && cmi > 1 )
 			this.get('element').classList.toggle('show-mod-icons',
 				cmi === 2 ? this._ffz_freeze_ctrl :
-				cmd === 3 ? this._ffz_freeze_meta :
+				cmi === 3 ? this._ffz_freeze_meta :
 				cmi === 4 ? this._ffz_freeze_alt :
 				this._ffz_freeze_shift);
 
@@ -593,19 +595,19 @@ FFZ.HoverPause = {
 	},
 
 	_prepareStickyBottom: function() {
-		var t = this;
+		var t = this,
+			scroller = this.get('chatMessagesScroller') || this._$chatMessagesScroller;
 		this._setStuckToBottom(true);
-		this._$chatMessagesScroller.on(this._scrollEvents, function(e) {
-			var a = t._$chatMessagesScroller;
-			if ( a && a[0] && ((!t.ffz_frozen && 'mousedown' === e.type) || 'wheel' === e.type || 'mousewheel' === e.type) ) {
-				var distance = a[0].scrollHeight - a[0].scrollTop - a[0].offsetHeight;
+		scroller.on(this._scrollEvents, function(e) {
+			if ( scroller && scroller[0] && ((!t.ffz_frozen && 'mousedown' === e.type) || 'wheel' === e.type || 'mousewheel' === e.type) ) {
+				var distance = scroller[0].scrollHeight - scroller[0].scrollTop - scroller[0].offsetHeight;
 				t._setStuckToBottom(distance <= 10);
 			}
 		});
 	},
 
 	ffzFixStickyBottom: function() {
-		this._$chatMessagesScroller.off(this._scrollEvents);
+		(this.get('chatMessagesScroller') || this._$chatMessagesScroller).off(this._scrollEvents);
 		this._prepareStickyBottom();
 	},
 
@@ -614,7 +616,7 @@ FFZ.HoverPause = {
 		this._scrollToBottomRequested = true;
 		Ember.run.schedule("afterRender", function() {
 			if ( ! e.ffz_frozen && ! e.isDestroyed && ! e.isDestroying && e._scrollToBottomRequested ) {
-				var t = e._$chatMessagesScroller;
+				var t = e.get('chatMessagesScroller') || e._$chatMessagesScroller;
 				if ( t && t.length ) {
 					t[0].scrollTop = t[0].scrollHeight;
 					e._setStuckToBottom(true);
@@ -638,16 +640,50 @@ FFZ.prototype.modify_room_component = function(component) {
 		ffz_init: function() {
 			f._roomv = this;
 
-			this.ffzFixStickyBottom();
-			this.ffzAddKeyHook();
+			if ( ! f.has_bttv ) {
+				this.ffzFixStickyBottom();
+				this.ffzAddKeyHook();
 
-			if ( f.settings.chat_hover_pause )
-				this.ffzEnableFreeze();
+				if ( f.settings.chat_hover_pause )
+					this.ffzEnableFreeze();
 
-			if ( f.settings.room_status )
-				this.ffzUpdateStatus();
+				if ( f.settings.room_status )
+					this.ffzUpdateStatus();
+			}
 
-			// TODO: Fix bits visibility calculation
+			var actions = this._actions || {},
+				orig_show = actions.showModOverlay;
+
+			actions.showModOverlay = function(e) {
+				var Channel = utils.ember_resolve('model:deprecated-channel'),
+					chan = Channel && Channel.find && Channel.find({id: e.sender});
+
+				if ( ! chan ) {
+					f.log("Error opening mod card. model:deprecated-channel does not exist or does not have find!");
+					return orig_show && orig_show.call(this, e);
+				}
+
+				// Don't try loading the channel if it's already loaded. Don't make mod cards
+				// refresh the channel page when you click the broadcaster, basically.
+				if ( ! chan.get('isLoaded') )
+					chan.load();
+
+				this.set("showModerationCard", true);
+
+				// We pass in renderBottom and renderRight, which we use to reposition the window
+				// after we know how big it actually is. This doesn't work a lot of the time.
+				this.set("moderationCardInfo", {
+					user: chan,
+					renderTop: e.real_top || e.top,
+					renderLeft: e.left,
+					renderBottom: e.bottom,
+					renderRight: e.right,
+					isIgnored: this.get("tmiSession").isIgnored(e.sender),
+					isChannelOwner: this.get("session.userData.login") === e.sender,
+					profileHref: Twitch.uri.profile(e.sender),
+					isModeratorOrHigher: this.get("room.isModeratorOrHigher")
+				});
+			}
 		},
 
 		ffz_destroy: function() {
@@ -657,6 +693,18 @@ FFZ.prototype.modify_room_component = function(component) {
 			this.ffzDisableFreeze();
 			this.ffzRemoveKeyHook();
 		},
+
+		ffzUpdateBits: function() {
+			var t = this,
+				channel = this.get('room.channel');
+			if ( ! channel )
+				return;
+			else if ( ! channel.get('isLoaded') )
+				channel.load().then(function() { t._initializeBits(channel) })
+			else
+				this._initializeBits(channel);
+
+		}.observes('room'),
 
 		ffzFreezeUpdateBuffer: function(val) {
 			var room = this.get('room');
@@ -725,404 +773,6 @@ FFZ.prototype.modify_room_component = function(component) {
 
 	}, FFZ.HoverPause));
 }
-
-/*FFZ.prototype.modify_room_view = function(view) {
-	var f = this;
-	utils.ember_reopen_view(view, {
-		ffz_init: function() {
-			f._roomv = this;
-
-			this.ffz_frozen = false;
-			this.ffz_ctrl = false;
-
-			// Fix scrolling.
-			this._ffz_mouse_down = this.ffzMouseDown.bind(this);
-			if ( is_android )
-				// We don't unbind scroll because that messes with the scrollbar. ;_;
-				this._$chatMessagesScroller.bind('scroll', this._ffz_mouse_down);
-
-			this._$chatMessagesScroller.unbind('mousedown');
-			this._$chatMessagesScroller.bind('mousedown', this._ffz_mouse_down);
-
-			if ( f.settings.chat_hover_pause )
-				this.ffzEnableFreeze();
-
-			if ( f.settings.room_status )
-				this.ffzUpdateStatus();
-
-			var controller = this.get('controller');
-			if ( controller ) {
-				controller.reopen({
-					calcRecipientEligibility: function(e) {
-						// Because this doesn't work properly with multiple channel rooms
-						// by default, do it ourselves.
-						if ( controller.get('model.isGroupRoom') ) {
-							controller.set('isRecipientBitsIneligible', true);
-							controller.set('isBitsHelperShown', false);
-							controller.set('minimumBits', 0);
-							controller.set('isBitsTooltipActive', false);
-							return;
-						}
-
-						var id = controller.get('model.roomProperties._id'),
-							update = function(data) {
-								if ( controller.isDestroyed || controller.get('model.roomProperties._id') !== id )
-									return;
-
-								controller.set('model._ffz_bits_eligibility', data);
-								controller.set('isRecipientBitsIneligible', ! data.eligible);
-								controller.set('isBitsHelperShown', data.eligible);
-								controller.set('minimumBits', data.minBits);
-
-								if ( ! data.eligible )
-									controller.set('isBitsTooltipActive', false);
-							};
-
-						if ( id === undefined )
-							return;
-
-						var data = controller.get('model._ffz_bits_eligibility');
-						if ( data === undefined )
-							controller.get('bits').loadRecipientEligibility(id).then(update);
-						else
-							update(data);
-
-					},
-
-					submitButtonText: function() {
-						if ( this.get("model.isWhisperMessage") && this.get("model.isWhispersEnabled") )
-							return i18n("Whisper");
-
-						var wait = this.get("model.slowWait"),
-							msg = this.get("model.messageToSend") || "";
-
-						if ( (msg.charAt(0) === "/" && msg.substr(0, 4) !== "/me ") || !wait || !f.settings.room_status )
-							return i18n("Chat");
-
-						return utils.time_to_string(wait, false, false, true);
-					}.property("model.isWhisperMessage", "model.isWhispersEnabled", "model.slowWait")
-				});
-
-				Ember.propertyDidChange(controller, 'submitButtonText');
-			}
-		},
-
-		ffz_destroy: function() {
-			if ( f._roomv === this )
-				f._roomv = undefined;
-
-			if ( this._ffz_chat_display )
-				this._ffz_chat_display = undefined;
-
-			this.ffzDisableFreeze();
-		},
-
-
-		ffzOnKey: function(event) {
-			this.ffz_ctrl = event.ctrlKey;
-			this.ffz_alt = event.altKey;
-			this.ffz_shift = event.shiftKey;
-			this.ffz_meta = event.metaKey;
-
-			var cmi = f.settings.chat_mod_icon_visibility;
-			if ( ! this._ffz_outside && cmi > 1 )
-				this.get('element').classList.toggle('show-mod-icons',
-					cmi === 2 ? this.ffz_ctrl :
-					cmi === 3 ? this.ffz_meta :
-					cmi === 4 ? this.ffz_alt :
-					this.ffz_shift);
-
-			if ( this._ffz_outside || f.settings.chat_hover_pause < 2 )
-				return;
-
-			// Okay, so at this point we should change the state of the freeze?
-			var should_freeze = this.ffzShouldBeFrozen(),
-				freeze_change = this.ffz_frozen !== should_freeze;
-
-			if ( freeze_change )
-				if ( should_freeze )
-					this.ffzFreeze();
-				else
-					this.ffzUnfreeze();
-		},
-
-		ffzUpdateStatus: function() {
-			var room = this.get('controller.model'),
-				el = this.get('element'),
-				cont = el && el.querySelector('.chat-buttons-container');
-
-			if ( ! cont )
-				return;
-
-			var btn = cont.querySelector('button');
-
-			if ( f.has_bttv || ! f.settings.room_status ) {
-				jQuery(".ffz.room-state", cont).remove();
-
-				if ( btn )
-					btn.classList.remove('ffz-waiting');
-				return;
-
-			} else if ( btn ) {
-				btn.classList.toggle('ffz-waiting', (room && room.get('slowWait') || 0));
-				btn.classList.toggle('ffz-banned', (room && room.get('ffz_banned') || false));
-			}
-
-			var badge, id, info, vis_count = 0, label;
-			for(var i=0; i < STATUS_BADGES.length; i++) {
-				info = STATUS_BADGES[i];
-				id = 'ffz-stat-' + info[0];
-				badge = cont.querySelector('#' + id);
-				visible = typeof info[1] === "function" ? info[1].call(f, room) : room && room.get(info[1]);
-				if ( typeof visible === "string" )
-					visible = visible === "1";
-
-				label = typeof info[3] === "function" ? info[3].call(f, room) : undefined;
-
-				if ( ! badge ) {
-					badge = utils.createElement('span', 'ffz room-state stat float-right', (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>');
-					badge.id = id;
-					jQuery(badge).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
-					cont.appendChild(badge);
-				}
-
-				if ( label )
-					badge.innerHTML = (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>';
-
-				badge.title = typeof info[2] === "function" ? info[2].call(f, room) : info[2];
-				badge.classList.toggle('hidden', ! visible);
-				badge.classList.toggle('faded', info[4] !== undefined ? typeof info[4] === "function" ? info[4].call(f, room) : info[4] : false);
-				if ( visible )
-					vis_count++;
-			}
-
-			jQuery(".ffz.room-state", cont).toggleClass("truncated", vis_count > 3);
-
-		}.observes('controller.model'),
-
-		ffzEnableFreeze: function() {
-			var el = this.get('element'),
-				messages = el.querySelector('.chat-messages');
-
-			if ( ! messages )
-				return;
-
-			this._ffz_messages = messages;
-
-			if ( ! this._ffz_interval )
-				this._ffz_interval = setInterval(this.ffzPulse.bind(this), 200);
-
-			if ( ! this._ffz_mouse_move ) {
-				this._ffz_mouse_move = this.ffzMouseMove.bind(this);
-				messages.addEventListener('mousemove', this._ffz_mouse_move);
-				messages.addEventListener('touchmove', this._ffz_mouse_move);
-			}
-
-			if ( ! this._ffz_mouse_out ) {
-				this._ffz_mouse_out = this.ffzMouseOut.bind(this);
-				messages.addEventListener('mouseout', this._ffz_mouse_out);
-			}
-
-			// Monitor the Ctrl key.
-			if ( ! this._ffz_keyw ) {
-				this._ffz_keyw = this.ffzOnKey.bind(this);
-				document.body.addEventListener('keydown', this._ffz_keyw);
-				document.body.addEventListener('keyup', this._ffz_keyw);
-			}
-		},
-
-		ffzDisableFreeze: function() {
-			if ( this._ffz_interval ) {
-				clearInterval(this._ffz_interval);
-				this._ffz_interval = undefined;
-			}
-
-			this.ffzUnfreeze();
-
-			var messages = this._ffz_messages;
-			if ( ! messages )
-				return;
-
-			this._ffz_messages = undefined;
-
-			if ( this._ffz_mouse_move ) {
-				messages.removeEventListener('mousemove', this._ffz_mouse_move);
-				messages.removeEventListener('touchmove', this._ffz_mouse_move);
-				this._ffz_mouse_move = undefined;
-			}
-
-			if ( this._ffz_mouse_out ) {
-				messages.removeEventListener('mouseout', this._ffz_mouse_out);
-				this._ffz_mouse_out = undefined;
-			}
-
-			if ( this._ffz_keyw ) {
-				document.body.removeEventListener('keydown', this._ffz_keyw);
-				document.body.removeEventListener('keyup', this._ffz_keyw);
-				this._ffz_keyw = undefined;
-			}
-		},
-
-		ffzPulse: function() {
-			if ( this.ffz_frozen && ! this.ffzShouldBeFrozen() )
-				this.ffzUnfreeze();
-		},
-
-		ffzUnfreeze: function(from_stuck) {
-			this.ffz_frozen = false;
-			this._ffz_last_move = 0;
-			this.ffzUnwarnPaused();
-
-			if ( ! from_stuck && this.get('stuckToBottom') )
-				this._scrollToBottom();
-		},
-
-		ffzFreeze: function() {
-			this.ffz_frozen = true;
-			if ( this.get('stuckToBottom') ) {
-				this.set('controller.model.messageBufferSize', f.settings.scrollback_length + 150);
-				this.ffzWarnPaused();
-			}
-		},
-
-		ffzMouseDown: function(event) {
-			var t = this._$chatMessagesScroller;
-			if ( t && t[0] && ((!this.ffz_frozen && "mousedown" === event.type) || "mousewheel" === event.type || (is_android && "scroll" === event.type) ) ) {
-				var r = t[0].scrollHeight - t[0].scrollTop - t[0].offsetHeight;
-				this._setStuckToBottom(10 >= r);
-			}
-		},
-
-		ffzMouseOut: function(event) {
-			this._ffz_outside = true;
-			var e = this;
-			setTimeout(function() {
-				if ( e._ffz_outside ) {
-					if ( f.settings.chat_mod_icon_visibility > 1 )
-						e.get('element').classList.toggle('show-mod-icons', false);
-					e.ffzUnfreeze();
-				}
-			}, 25);
-		},
-
-		ffzShouldBeFrozen: function(since) {
-			if ( since === undefined )
-				since = Date.now() - this._ffz_last_move;
-
-			var hp = f.settings.chat_hover_pause;
-			return  (this.ffz_ctrl  && (hp === 2 || hp === 6)) ||
-				(this.ffz_meta  && (hp === 3 || hp === 7)) ||
-				(this.ffz_alt   && (hp === 4 || hp === 8)) ||
-				(this.ffz_shift && (hp === 5 || hp === 9)) ||
-				(since < 750 && (hp === 1 || hp > 5));
-		},
-
-		ffzMouseMove: function(event) {
-			// Store the last move time.
-			this._ffz_last_move = Date.now();
-			this._ffz_outside = false;
-
-			// If nothing of interest has happened, stop.
-			if ( event.altKey === this.ffz_alt && event.shiftKey === this.ffz_shift && event.ctrlKey === this.ffz_ctrl && event.metaKey === this.ffz_meta && event.screenX === this._ffz_last_screenx && event.screenY === this._ffz_last_screeny )
-				return;
-
-			// Grab a bit of state.
-			this.ffz_ctrl = event.ctrlKey;
-			this.ffz_alt = event.altKey;
-			this.ffz_shift = event.shiftKey;
-			this.ffz_meta = event.metaKey;
-
-			this._ffz_last_screenx = event.screenX;
-			this._ffz_last_screeny = event.screenY;
-
-			var cmi = f.settings.chat_mod_icon_visibility;
-			if ( ! this._ffz_outside && cmi > 1 )
-				this.get('element').classList.toggle('show-mod-icons',
-					cmi === 2 ? this.ffz_ctrl :
-					cmi === 3 ? this.ffz_meta :
-					cmi === 4 ? this.ffz_alt :
-					this.ffz_shift);
-
-			// Should the state have changed?
-			var should_freeze = this.ffzShouldBeFrozen(),
-				freeze_change = this.ffz_frozen !== should_freeze;
-
-			if ( freeze_change )
-				if ( should_freeze )
-					this.ffzFreeze();
-				else
-					this.ffzUnfreeze();
-		},
-
-		_scrollToBottom: _.throttle(function() {
-			var e = this,
-				s = this._$chatMessagesScroller;
-
-			//this.runTask(function() {
-			Ember.run.next(function(){
-				// Trying random performance tweaks for fun and profit!
-				(window.requestAnimationFrame||setTimeout)(function(){
-					if ( e.ffz_frozen || ! s || ! s.length )
-						return;
-
-					s[0].scrollTop = s[0].scrollHeight;
-					e._setStuckToBottom(true);
-				})
-			})
-		}, 200),
-
-		_setStuckToBottom: function(val) {
-			this.set("stuckToBottom", val);
-			var model = this.get("controller.model");
-			if ( model )
-				model.messageBufferSize = f.settings.scrollback_length + (val ? 0 : 150);
-			if ( ! val )
-				this.ffzUnfreeze(true);
-		},
-
-		// Warnings~!
-		ffzWarnPaused: function() {
-			var el = this.get('element'),
-				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
-
-			if ( ! el )
-				return;
-
-			if ( ! warning ) {
-				warning = document.createElement('div');
-				warning.className = 'more-messages-indicator ffz-freeze-indicator';
-
-				var hp = f.settings.chat_hover_pause,
-					label = hp === 2 ? 'Ctrl Key' :
-						hp === 3 ? (constants.META_NAME + ' Key') :
-						hp === 4 ? 'Alt Key' :
-						hp === 5 ? 'Shift Key' :
-						hp === 6 ? 'Ctrl or Mouse' :
-						hp === 7 ? (constants.META_NAME + ' or Mouse') :
-						hp === 8 ? 'Alt or Mouse' :
-						hp === 9 ? 'Shift or Mouse' :
-						'Mouse Movement';
-
-				warning.innerHTML = '(Chat Paused Due to ' + label + ')';
-
-				var cont = el.querySelector('.chat-interface');
-				if ( ! cont )
-					return;
-				cont.insertBefore(warning, cont.childNodes[0])
-			}
-
-			warning.classList.remove('hidden');
-		},
-
-		ffzUnwarnPaused: function() {
-			var el = this.get('element'),
-				warning = el && el.querySelector('.chat-interface .more-messages-indicator.ffz-freeze-indicator');
-
-			if ( warning )
-				warning.classList.add('hidden');
-		}
-	});
-}*/
 
 
 // --------------------
@@ -1632,12 +1282,14 @@ FFZ.prototype._modify_room = function(room) {
 			//f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
 
 			// In case we get unexpected input, do the other thing.
-			if ( f.has_bttv || ["ban", "unban", "timeout"].indexOf(event.moderation_action) === -1 )
+			if ( f.has_bttv || ["ban", "unban", "timeout", "untimeout"].indexOf(event.moderation_action) === -1 )
 				return this._super(event);
 
 			var msg_id,
 				reason = event.args[2],
-				duration = event.moderation_action === 'unban' ? -Infinity : event.args[1];
+				duration = event.moderation_action === 'unban' ? -Infinity :
+					event.moderation_action === 'untimeout' ? -1 :
+					event.args[1];
 
 			if ( typeof duration === "string" )
 				duration = parseInt(duration);
