@@ -2,7 +2,7 @@ var FFZ = window.FrankerFaceZ,
 	HOSTED_SUB = / subscribed to /,
 	constants = require('../constants'),
 	utils = require('../utils'),
-	helpers,
+	tmimotes,
 
 	NOTICE_MAPPING = {
 		'slow': 'slow_on',
@@ -58,17 +58,15 @@ var FFZ = window.FrankerFaceZ,
 				'-webkit-mask-image: url("' + room.moderator_badge + '"); }';
 	};
 
-
-try {
-	helpers = window.require && window.require("ember-twitch-chat/helpers/chat-line-helpers");
-} catch(err) { }
-
-
 // --------------------
 // Initialization
 // --------------------
 
 FFZ.prototype.setup_room = function() {
+	try {
+		tmimotes = window.require && window.require("web-client/utilities/tmi-emotes").default;
+	} catch(err) { }
+
 	this.log("Creating room style element.");
 	var f = this,
 		s = this._room_style = document.createElement("style");
@@ -1243,6 +1241,26 @@ FFZ.prototype._modify_room = function(room) {
 			} catch(err) {
 				f.error("remove_room: " + err);
 			}
+		},
+
+		friendsInSameRoom: function(source) {
+			if ( f.settings.sidebar_disable_friends || f.settings.disable_friend_notices )
+				return [];
+
+			var room_name = this.get('roomProperties.id');
+			return _.filter(this._super(source), function(x) {
+				return x && x['id'] !== room_name;
+			});
+		},
+
+		addFriendsWatchingMessage: function(msg) {
+			this.addMessage({
+				style: 'admin friend-watching',
+				message: msg,
+				tags: {
+					emotes: tmimotes && tmimotes(this.get('userEmotes').tryParseEmotes(msg))
+				}
+			});
 		},
 
 		addChannelModerationMessage: function(event) {

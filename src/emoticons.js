@@ -281,7 +281,7 @@ FFZ.prototype.load_global_sets = function(callback, tries) {
 			// Remove non-API sets from default and global sets.
 			for(var i=ds.length; i--; ) {
 				var set_id = ds[i];
-				if ( data.default_sets.indexOf(set_id) === -1 && (! f.emote_sets[set_id] || ! f.emote_sets[set_id].source_ext) )
+				if ( data.default_sets.indexOf(set_id) === -1 && (!f.feature_friday && f.feature_friday.set !== set_id) && (! f.emote_sets[set_id] || ! f.emote_sets[set_id].source_ext) )
 					ds.splice(i, 1);
 			}
 
@@ -293,7 +293,7 @@ FFZ.prototype.load_global_sets = function(callback, tries) {
 
 			for(var i=gs.length; i--; ) {
 				var set_id = gs[i];
-				if ( ! sets[set_id] && (! f.emote_sets[set_id] || ! f.emote_sets[set_id].source_ext) )
+				if ( ! sets[set_id] && (!f.feature_friday && f.feature_friday.set !== set_id) && (! f.emote_sets[set_id] || ! f.emote_sets[set_id].source_ext) )
 					gs.splice(i, 1);
 			}
 

@@ -91,8 +91,13 @@ FFZ.prototype._load_ff = function(data) {
 	// Check for previous Feature Friday data and remove it.
 	if ( this.feature_friday ) {
 		// Remove the global set, delete the data, and reset the UI link.
-		this.global_sets.removeObject(this.feature_friday.set);
-		this.default_sets.removeObject(this.feature_friday.set);
+		var ind = this.global_sets.indexOf(this.feature_friday.set);
+		if ( ind !== -1 )
+			this.global_sets.splice(ind, 1);
+
+		ind = this.default_sets.indexOf(this.feature_friday.set);
+		if ( ind !== -1 )
+			this.default_sets.splice(ind, 1);
 
 		this.feature_friday = null;
 		this.update_ui_link();
@@ -103,10 +108,14 @@ FFZ.prototype._load_ff = function(data) {
 		return;
 
 	// We have our data! Set it up.
-	this.feature_friday = {set: data.set, channel: data.channel, live: false,
-			title: data.title || "Feature Friday",
-			icon: data.icon,
-			display_name: data.channel ? FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this)) : data.title || "Feature Friday"};
+	this.feature_friday = {
+		set: data.set,
+		channel: data.channel,
+		live: false,
+		title: data.title || "Feature Friday",
+		icon: data.icon,
+		display_name: data.channel ? FFZ.get_capitalization(data.channel, this._update_ff_name.bind(this)) : data.title || "Feature Friday"
+	};
 
 	// Add the set.
 	this.global_sets.push(data.set);
