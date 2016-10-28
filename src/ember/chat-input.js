@@ -740,7 +740,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 
 		ffz_emoticons: function() {
-			var emotes = {},
+			var emotes = [],
+				used_ids = [],
 
 				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
 				room = ! in_conversation && this.get('parentView.room'),
@@ -748,7 +749,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				tmi = in_conversation ? window.TMI && TMI._sessions && TMI._sessions[0] : room && room.tmiSession,
 
 				set_name, replacement, url, is_sub_set, fav_list,
-				emote_set, emote, emote_id, code,
+				emote_set, emote, emote_id, code, sort_factor,
 
 				user = f.get_user(),
 				ffz_sets = f.getEmotes(user && user.login, room_id),
@@ -788,8 +789,13 @@ FFZ.prototype.modify_chat_input = function(component) {
 						if ( setting === 1 && ! is_sub_set )
 							continue;
 
+						sort_factor = is_sub_set ? 1 : 9;
+
 						for(var i = 0; i < emote_set.length; i++) {
 							emote = emote_set[i];
+							if ( used_ids.indexOf(emote.id) !== -1 )
+								continue;
+
 							code = emote && emote.code;
 							code = code && (constants.KNOWN_CODES[code] || code);
 							replacement = f.settings.replace_bad_emotes && constants.EMOTE_REPLACEMENTS[emote.id];
@@ -797,22 +803,43 @@ FFZ.prototype.modify_chat_input = function(component) {
 								(constants.EMOTE_REPLACEMENT_BASE + replacement) :
 								(constants.TWITCH_BASE + emote.id + "/1.0");
 
-							if ( ! emotes[code] || ! emotes[code][0] )
-									emotes[code] = [true, code, true, is_sub_set, set_name, url, null, fav_list.indexOf(emote.id) !== -1];
+							emotes.push({
+								type: 'emoticon',
+								label: code,
+								info: set_name,
+								sort: sort_factor,
+								image: url,
+								width: null,
+								favorite: fav_list.indexOf(emote.id) !== -1
+							});
+
+							used_ids.push(emote.id);
 
 							if ( f.settings.input_complete_without_prefix && is_sub_set ) {
 								// It's a sub emote, so try splitting off the end of the code.
 								// It's a bit weird, but people might like it. Also, make sure
 								// we aren't just grabbing an initial capital.
-								var unprefixed = code.substr(1).match(/[A-Z].+$/);
+								var unprefixed = code.substr(1).match(/[A-Z](?:.+)?$/);
 								unprefixed = unprefixed ? unprefixed[0] : null;
-								if ( unprefixed && ! emotes[unprefixed] )
-									emotes[unprefixed] = [false, code, true, is_sub_set, set_name, url, null, fav_list.indexOf(emote.id) !== -1];
+								if ( unprefixed )
+									emotes.push({
+										type: 'emoticon',
+										label: '<i>' + code.substr(0, code.length - unprefixed.length) + '</i>' + unprefixed,
+										match: unprefixed,
+										content: code,
+										info: set_name,
+										sort: sort_factor,
+										image: url,
+										width: null,
+										favorite: fav_list.indexOf(emote.id) !== -1
+									});
 							}
 						}
 					}
 				}
 			}
+
+			used_ids = [];
 
 			for(var i=0; i < ffz_sets.length; i++) {
 				emote_set = f.emote_sets[ffz_sets[i]];
@@ -825,10 +852,22 @@ FFZ.prototype.modify_chat_input = function(component) {
 				set_name = (emote_set.source || "FFZ") + " " + (emote_set.title || "Global");
 				fav_list = f.settings.favorite_emotes[emote_set.hasOwnProperty('source_ext') ? 'ffz-ext-' + emote_set.source_ext + '-' + emote_set.source_id : 'ffz-' + emote_set.id] || [];
 
+				sort_factor = emote_set._type === 1 ? 3 : f.default_sets.indexOf(emote_set.id) === -1 ? 2 : 6;
+
 				for(emote_id in emote_set.emoticons) {
 					emote = emote_set.emoticons[emote_id];
-					if ( ! emote.hidden && emote.name && (! emotes[emote.name] || ! emotes[emote.name][0]) )
-						emotes[emote.name] = [true, emote.name, false, emote_set.id, set_name, emote.urls[1], emote.width, fav_list.indexOf(emote.id) !== -1];
+					if ( emote.hidden || ! emote.name || used_ids.indexOf(emote_id) !== -1 )
+						continue;
+
+					emotes.push({
+						type: "emoticon",
+						label: emote.name,
+						info: set_name,
+						sort: sort_factor,
+						image: emote.urls[1],
+						width: emote.width,
+						favorite: fav_list.indexOf(emote.id) !== -1
+					});
 				}
 			}
 
@@ -862,10 +901,13 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			if ( f.settings.input_complete_emotes ) {
 				// Include Emoticons
-				for(var emote_name in emotes) {
-					var emote = emotes[emote_name],
+				for(var i=0; i < emotes.length; i++)
+					output.push(emotes[i]);
+					/*var emote = emotes[i],
 						sort_factor = 9,
-						label = emote[1] === emote_name ? emote[1] : ('<i>' + emote[1].substr(0, emote[1].length - emote_name.length) + '</i>' + emote_name);
+						label = emote[1] === emote_name ?
+							emote[1] :
+							('<i>' + emote[1].substr(0, emote[1].length - emote_name.length) + '</i>' + emote_name);
 
 					if ( emote[2] ) {
 						if ( emote[3] )
@@ -891,7 +933,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 						width: emote[6],
 						favorite: emote[7] || false
 					});
-				}
+				}*/
 
 
 				if ( f.settings.parse_emoji ) {

@@ -44,25 +44,7 @@ FFZ.prototype.setup_vod_chat = function() {
 	else
 		f.error("Unable to locate VOD Chat Service.");
 
-	this.update_views('component:vod-right-column', this.modify_vod_right_column);
-	//this.update_views('view:vod', this.modify_vod_view);
 	this.update_views('component:vod-chat-display', this.modify_vod_chat_display);
-}
-
-
-FFZ.prototype.modify_vod_right_column = function(component) {
-	var f = this;
-	utils.ember_reopen_view(component, {
-		ffz_init: function() {
-			if ( f.settings.dark_twitch ) {
-				var el = this.get('element'),
-					cont = el && el.querySelector('.chat-container');
-
-				if ( cont )
-					cont.classList.add('dark');
-			}
-		}
-	});
 }
 
 
@@ -73,6 +55,9 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 	utils.ember_reopen_view(component, _.extend({
 		ffz_init: function() {
 			f._vodc = this;
+
+			if ( f.settings.dark_twitch )
+				this.$().parents('.chat-container').addClass('dark');
 
 			this.ffzUpdateBadges();
 

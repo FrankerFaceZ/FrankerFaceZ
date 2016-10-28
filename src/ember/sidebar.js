@@ -137,7 +137,6 @@ FFZ.settings_info.disable_friend_notices = {
 
 	category: 'Chat Filtering',
 	no_mobile: true,
-	no_bttv: true,
 
 	name: 'Disable Watching Friends Notices',
 	help: 'Do not display notices in chat when your friends are watching the same stream.'

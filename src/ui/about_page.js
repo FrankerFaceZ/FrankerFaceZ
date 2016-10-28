@@ -412,7 +412,10 @@ var include_html = function(heading_text, filename, callback) {
 
 					jQuery('#ffz-old-news-button', container).on('click', function() {
 						jQuery(this).remove();
-						jQuery('#ffz-old-news', container).css('display', 'block');
+						var onc = jQuery('#ffz-old-news', container);
+						onc.load(constants.SERVER + "script/old_changes.html", function() {
+							onc.css('display', 'block');
+						});
 					});
 
 					typeof callback === "function" && callback(view, container);
