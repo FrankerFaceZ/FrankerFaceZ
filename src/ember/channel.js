@@ -167,7 +167,7 @@ FFZ.prototype.modify_channel_live = function(view) {
 				var layout = this.get('layout'),
 					player = f.players && f.players[channel_id] && f.players[channel_id].get('player'),
 					func = function() {
-						if ( player.isLoading() )
+						if ( typeof player.isLoading === 'function' && player.isLoading() )
 							return setTimeout(func, 500);
 
 						// In case this happens before the event bindings are in, we just set
