@@ -337,7 +337,7 @@ FFZ.prototype.format_display_name = function(display_name, user_id, disable_alia
 // ---------------------
 
 FFZ.prototype.load_twitch_emote_data = function(tries) {
-	jQuery.ajax(constants.SERVER + "script/twitch_emotes.json", {context: this})
+	jQuery.ajax(constants.SERVER + "twitch_emotes.json", {context: this})
 		.done(function(data) {
 			for(var set_id in data) {
 				var set = data[set_id];

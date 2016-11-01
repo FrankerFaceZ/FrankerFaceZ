@@ -255,15 +255,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .notification-controls .toggle-notification-menu {
-	background-color: #19191f;
-}
-
-.ffz-dark .notification-controls .toggle-notification-menu:before {
-	border-top-color: #8c8c9c;
+	background-color: #0f8a4d;
 }
 
 .ffz-dark .notification-controls .toggle-notification-menu:hover {
-	background-color: #101014;
+	background-color: #119754;
 }
 
 .ffz-dark .pika-input,
@@ -369,7 +365,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .warp__item a.js-language-select,
-.ffz-dark .warp__item > a { color: #d5d4d9 !important }
+.ffz-dark .warp__item > a:not { color: #d5d4d9 !important }
 
 .ffz-dark .warp__item--toggled a.js-language-select,
 .ffz-dark .warp__item > a:hover,

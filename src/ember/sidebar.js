@@ -2,7 +2,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('../utils'),
 	constants = require('../constants'),
 
-	PRESENCE_SERVICE = 'service:ember-twitch-presence@presence',
+	PRESENCE_SERVICE = 'service:twitch-presence/presence',
 	was_invisible = false;
 
 
@@ -10,7 +10,7 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
-FFZ.settings_info.sidebar_followed_games = {
+/*FFZ.settings_info.sidebar_followed_games = {
 	type: "select",
 	options: {
 		0: "Disabled",
@@ -33,7 +33,7 @@ FFZ.settings_info.sidebar_followed_games = {
 		if ( controller )
 			controller.set('ffz_sidebar_games', val);
 	}
-};
+};*/
 
 
 FFZ.settings_info.sidebar_hide_recommended_channels = {
@@ -74,7 +74,7 @@ FFZ.settings_info.sidebar_hide_prime = {
 };
 
 
-FFZ.settings_info.sidebar_hide_promoted_games = {
+/*FFZ.settings_info.sidebar_hide_promoted_games = {
 	type: "boolean",
 	value: false,
 
@@ -85,7 +85,7 @@ FFZ.settings_info.sidebar_hide_promoted_games = {
 	help: "Hide the Promoted Games section from the sidebar.",
 
 	on_update: utils.toggle_cls('ffz-hide-promoted-games')
-};
+};*/
 
 
 
@@ -158,9 +158,9 @@ FFZ.settings_info.sidebar_disable_friends = {
 		var presence = utils.ember_lookup(PRESENCE_SERVICE);
 		if ( presence ) {
 			if ( val )
-				presence.setInvisible && presence.setInvisible();
+				presence.setVisibility('none');
 			else if ( ! was_invisible )
-				presence.setOnline && presence.setOnline();
+				presence.setVisibility('full');
 		}
 	}
 };
@@ -196,7 +196,7 @@ FFZ.settings_info.sidebar_directly_to_followed_channels = {
 
 FFZ.prototype.setup_sidebar = function() {
 	// CSS to Hide Stuff
-	utils.toggle_cls('ffz-hide-promoted-games')(this.settings.sidebar_hide_promoted_games);
+	//utils.toggle_cls('ffz-hide-promoted-games')(this.settings.sidebar_hide_promoted_games);
 	utils.toggle_cls('ffz-hide-recommended-channels')(this.settings.sidebar_hide_recommended_channels);
 	utils.toggle_cls('ffz-hide-recommended-friends')(this.settings.sidebar_hide_recommended_friends);
 	utils.toggle_cls('ffz-hide-friends-collapsed')(this.settings.sidebar_hide_friends_collapsed);
@@ -210,16 +210,15 @@ FFZ.prototype.setup_sidebar = function() {
 			var presence = utils.ember_lookup(PRESENCE_SERVICE);
 			if ( presence ) {
 				was_invisible = presence.get('isInvisible') || false;
-				presence.setInvisible && presence.setInvisible();
+				presence.setVisibility('none');
 			}
 		} catch(err) {
-			window.dumberror = err;
 			this.error("Setting Friends Visibility", err);
 		}
 	}
 
 	// Sidebar Followed Games
-	var f = this,
+	/*var f = this,
 		GamesFollowing = utils.ember_lookup('controller:games-following');
 
 	if ( GamesFollowing ) {
@@ -237,7 +236,7 @@ FFZ.prototype.setup_sidebar = function() {
 
 		Ember.propertyDidChange(GamesFollowing, 'sidePanelFollowing');
 	} else
-		this.error("Unable to load the Ember games-following controller.", null);
+		this.error("Unable to load the Ember games-following controller.", null);*/
 
 
 	// Navigation Component
