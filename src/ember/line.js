@@ -678,7 +678,7 @@ FFZ.prototype.setup_line = function() {
 	this.toggle_style('chat-hc-background', this.settings.high_contrast_chat[0] === '1');
 
 
-	this.update_views('component:vod-chat-line', this._modify_vod_line);
+	this.update_views('component:video/rechat/chat-message', this._modify_vod_line);
 	this.update_views('component:chat/message-line', this._modify_chat_subline);
 	this.update_views('component:chat/whisper-line', this._modify_chat_subline);
 
