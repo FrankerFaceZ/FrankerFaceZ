@@ -254,11 +254,11 @@ FFZ.prototype.setup_layout = function() {
 			var size = this.get('fullSizePlayerDimensions');
 
 			return '<style>' +
-				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user."] .app-main:not(.theatre) #player,' +
+				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user."] .app-main:not(.theatre) .js-player,' +
 				'.dynamic-player, .dynamic-player object, .dynamic-player video {' +
 					'width:' + size.width + 'px !important;' +
 					'height:' + size.height + 'px !important}' +
-				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user."] .app-main:not(.theatre) #player,' +
+				'.ffz-small-player:not(.ffz-bttv)[data-current-path^="user."] .app-main:not(.theatre) .js-player,' +
 				'.dynamic-target-player, .dynamic-target-player object, .dynamic-target-player video {' +
 					'width:' + size.width + 'px !important;' +
 					'height:' + size.targetHeight + 'px !important}' +
@@ -286,7 +286,7 @@ FFZ.prototype.setup_layout = function() {
 			var window_height = this.get('windowHeight'),
 				window_width = this.get('windowWidth'),
 				width = this.get('rightColumnWidth'),
-				out = 'body.ffz-small-player #player .dynamic-player {' +
+				out = 'body.ffz-small-player .js-player .dynamic-player {' +
 						'position: fixed;' +
 						'z-index: 9;' +
 						'box-shadow: 0 0 20px 0 black;';
@@ -338,14 +338,14 @@ FFZ.prototype.setup_layout = function() {
 								'height:' + chat_height + 'px}' +
 							'body[data-current-path^="user."] .app-main.theatre #left_col .warp,' +
 							'body[data-current-path^="user."] .app-main.theatre #left_col,' +
-							'body[data-current-path^="user."] .app-main.theatre .cn-content #player,' +
+							'body[data-current-path^="user."] .app-main.theatre #player,' +
 							'body[data-current-path^="user."] .app-main.theatre #main_col{' +
 								'top:' + theatre_video_top + 'px;' +
 								'height:' + theatre_video_height + 'px !important}' +
 							'body[data-current-path^="user."] .app-main.theatre #right_col{' +
 								'top:' + theatre_chat_top + 'px;' +
 								'height:' + theatre_chat_height + 'px}' +
-							'.app-main.theatre .cn-content #player {' +
+							'.app-main.theatre #player {' +
 								'right: 0 !important}' +
 							'body.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .cn-bar-fixed {' +
 								'top: ' + (video_top - 40) + 'px}' +
@@ -374,9 +374,9 @@ FFZ.prototype.setup_layout = function() {
 							'body.ffz-sidebar-swap .theatre #main_col:not(.expandRight),' +
 							'body.ffz-sidebar-swap #main_col:not(.expandRight){' +
 								'margin-left:' + width + 'px}' +
-							'body:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) .cn-content #player {' +
+							'body:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) #player {' +
 								'right: ' + width + 'px !important}' +
-							'body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) .cn-content #player {' +
+							'body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player {' +
 								'right: 0 !important;' +
 								'left:' + width + 'px !important}' +
 							'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) .cn-bar-fixed {' +

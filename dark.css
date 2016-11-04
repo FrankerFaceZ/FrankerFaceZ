@@ -876,6 +876,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #121212;
 }
 
+.ffz-dark .ct-type-grey { color: #ccc }
+
 .ffz-dark .brick--marked.brick--theme-white,
 .ffz-dark .brick--marked.brick--theme-grey {
 	box-shadow: 3px 0 0 #9a7fcc inset,0 0 0 1px rgba(255,255,255,0.2) inset;
@@ -1380,26 +1382,32 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .activity-list-end svg { fill: #474747 }
 
-.ffz-dark .activity-meta-divider:before { background-color: #474747 }
+.ffz-dark .activity-meta-divider:before {
+	background-color: #191919;
+	border-top-color: #474747;
+	border-left-color: #474747;
+}
 
 .ffz-dark .activity-button:hover {
 	border-color: #d5d5d5;
 	background-color: #242424;
 }
 
+.ffz-dark .activity-create:not(.activity-create--expand) { border-color: #474747 }
+
 .ffz-dark .activity-create__actions {
 	background-color: #191919;
-	box-shadow: 0 -1px 0 #474747;
+	border-color: #474747;
+	box-shadow: none;
 }
 
-.ffz-dark .activity-create,
+.ffz-dark .activity-create__container,
 .ffz-dark .activity-button {
 	border-color: #474747;
 	color: #fff !important;
 	background-color: #191919;
 }
 
-.ffz-dark .activity-meta-divider:before,
 .ffz-dark .list-load-more,
 .ffz-dark .activity-card {
 	border-color: #474747;

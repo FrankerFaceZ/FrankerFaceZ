@@ -21,16 +21,16 @@ var FFZ = window.FrankerFaceZ,
 
 
 FFZ.prototype.setup_feed_cards = function() {
-	this.update_views('component:channel-feed/card', this.modify_feed_card);
-	this.update_views('component:channel-feed/comment', this.modify_feed_comment);
+	this.update_views('component:twitch-feed/story-card', this.modify_feed_card);
+	this.update_views('component:twitch-feed/comment', this.modify_feed_comment);
 
 	this.rerender_feed_cards();
 }
 
 
 FFZ.prototype.rerender_feed_cards = function(for_set) {
-	var FeedCard = utils.ember_resolve('component:channel-feed/card'),
-		FeedComment = utils.ember_resolve('component:channel-feed/comment'),
+	var FeedCard = utils.ember_resolve('component:twitch-feed/story-card'),
+		FeedComment = utils.ember_resolve('component:twitch-feed/comment'),
 		views = utils.ember_views();
 
 	if ( ! FeedCard )
@@ -44,7 +44,7 @@ FFZ.prototype.rerender_feed_cards = function(for_set) {
 					this.modify_feed_card(view);
 				view.ffz_init(for_set);
 			} catch(err) {
-				this.error("setup component:channel-feed/card ffzInit", err)
+				this.error("setup component:twitch-feed/story-card ffzInit", err)
 			}
 		}
 
@@ -54,7 +54,7 @@ FFZ.prototype.rerender_feed_cards = function(for_set) {
 					this.modify_feed_comment(view);
 				view.ffz_init(for_set);
 			} catch(err) {
-				this.error("setup component:channel-feed/comment ffzInit", err);
+				this.error("setup component:twitch-feed/comment ffzInit", err);
 			}
 		}
 	}

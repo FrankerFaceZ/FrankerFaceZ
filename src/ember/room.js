@@ -1943,9 +1943,9 @@ FFZ.prototype._modify_room = function(room) {
 						msg.tags.badges.subscriber = ( months >= 24 && sub_version[24] ) ? 24 :
 							(months >= 12 && sub_version[12] ) ? 12 :
 							(months >= 6 && sub_version[6] ) ? 6 :
-							(months >= 3 && sub_version[3] ) ? 3 : 1;
+							(months >= 3 && sub_version[3] ) ? 3 : 0;
 					} else
-						msg.tags.badges.subscriber = 1;
+						msg.tags.badges.subscriber = 0;
 
 					msg.tags.subscriber = true;
 					if ( msg.labels && msg.labels.indexOf("subscriber") === -1 )

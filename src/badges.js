@@ -453,7 +453,7 @@ FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 
 	for(var badge in badge_tag) {
 		var version = badge_tag[badge];
-		if ( ! badge_tag.hasOwnProperty(badge) || ! version )
+		if ( ! badge_tag.hasOwnProperty(badge) || version === undefined || version === null )
 			continue;
 
 		var versions = channel[badge] || globals[badge],
