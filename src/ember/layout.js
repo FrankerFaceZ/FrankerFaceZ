@@ -324,6 +324,7 @@ FFZ.prototype.setup_layout = function() {
 							'body[data-current-path^="user."] #left_col { overflow: hidden }' +
 							'body[data-current-path^="user."] #left_col .warp,' +
 							'body[data-current-path^="user."] #left_col,' +
+							'body[data-current-path^="user."] .searchPanel--slide,' +
 							'body[data-current-path^="user."]:not(.ffz-sidebar-swap) #main_col{' +
 								'margin-right:0 !important;' +
 								'top:' + video_top + 'px;' +

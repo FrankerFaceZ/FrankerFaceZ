@@ -2,6 +2,8 @@
 	utils = require("../utils"),
 	constants = require("../constants"),
 
+	TB_TOOLTIP = '<hr>This message was flagged by TwitchBot. Should it be allowed?',
+
 	BAN_SPLIT = /[/\.](?:ban ([^ ]+)|timeout ([^ ]+)(?: (\d+))?)(?: (.*))?$/;
 
 
@@ -726,7 +728,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			}
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
-		lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", "ffzTokenizedMessage", function() {
+		lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", "ffzTokenizedMessage", "hasClickedFlaggedMessage", function() {
 			this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
 			if ( this.get("msgObject.deleted") ) {
 				this.$(".message").replaceWith(this.buildDeletedMessageHTML());
@@ -774,9 +776,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			output = ['<span class="mod-icons">'];
 
-			if ( is_tb ) {
-				output.push('<a class="mod-icon html-tooltip tb-reject" title="Not Allowed">Not Allowed</a>');
-				output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed">Allowed</a>');
+			if ( is_tb && ! this.get('hasClickedFlaggedMessage') ) {
+				output.push('<a class="mod-icon html-tooltip tb-reject" title="Not Allowed' + TB_TOOLTIP + '">Not Allowed</a>');
+				output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed' + TB_TOOLTIP + '">Allowed</a>');
 			}
 
 			for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
@@ -1135,10 +1137,10 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				e.preventDefault();
 
 				if ( cl.contains('tb-reject') )
-					this.sendAction("clickedTwitchBotNo", this.get('msgObject.tags.id'));
+					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'no');
 
 				else if ( cl.contains('tb-allow') )
-					this.sendAction("clickedTwitchBotYes", this.get('msgObject.tags.id'));
+					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'yes');
 
 				else if ( cl.contains('ban') )
 					this.sendAction("banUser", {user:from});

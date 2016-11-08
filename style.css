@@ -1328,11 +1328,12 @@ img.channel_background[src="null"] { display: none; }
 }
 
 .ffz-moderation-card .info .stat {
-    pointer-events: auto;
+	pointer-events: auto;
 }
 
 .ffz-moderation-card .info.channel-stats .stat {
 	color: #fff !important;
+	padding-left: 10px;
 }
 
 .ffz-moderation-card .info.channel-stats .stat svg {
@@ -1516,6 +1517,9 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 	background-image: url('//cdn.frankerfacez.com/script/PurgeButton.svg');
 	background-repeat: no-repeat;
 }
+
+.mod-icons .tb-allow { background-image: url("//cdn.frankerfacez.com/script/button_accept.svg") }
+.mod-icons .tb-reject { background-image: url("//cdn.frankerfacez.com/script/button_reject.svg") }
 
 .mod-icons .custom {
 	text-indent: 0 !important;
@@ -2275,6 +2279,11 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-sidebar-swap:not(.ffz-portrait) .ember-chat .chat-interface .emoticon-selector {
 	right: auto;
 	left: 20px;
+}
+
+.ffz-sidebar-swap .searchPanel--slide {
+	left: auto;
+	right: 240px;
 }
 
 .ffz-sidebar-swap .cn-bar-fixed {

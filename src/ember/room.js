@@ -1255,7 +1255,7 @@ FFZ.prototype._modify_room = function(room) {
 
 		addFriendsWatchingMessage: function(msg) {
 			this.addMessage({
-				style: 'admin friend-watching',
+				style: 'admin' + (f.has_bttv ? '' : ' friend-watching'),
 				message: msg,
 				tags: {
 					emotes: tmimotes && tmimotes(this.get('userEmotes').tryParseEmotes(msg))

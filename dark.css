@@ -289,6 +289,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #191919;
 }
 
+.ffz-dark select.pl-form__input,
 .ffz-dark .video-stats .form__input[type=search]:not(:focus):not(:hover) {
 	box-shadow: inset 0 0 1px rgba(255,255,255,0.2);
 }
@@ -483,6 +484,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* Video Manager */
 
+.ffz-dark .player-menu-options,
 .ffz-dark ul.tabs:before,
 .ffz-dark .directory_header .nav:before,
 .ffz-dark ul.tabs_fake:before,

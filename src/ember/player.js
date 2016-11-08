@@ -224,7 +224,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 
 			if ( el && ! container.querySelector('.js-player-reset') ) {
 				var btn_link = utils.createElement('a', 'player-text-link js-player-reset', 'Reset Player'),
-					btn = utils.createElement('p', 'player-menu__item player-menu__item--reset', btn_link);
+					btn = utils.createElement('p', 'player-menu__item player-menu__item--reset pl-small', btn_link);
 
 				btn_link.tabindex = '-1';
 				btn_link.href = '#';
