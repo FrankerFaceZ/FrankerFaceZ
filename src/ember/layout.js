@@ -360,8 +360,9 @@ FFZ.prototype.setup_layout = function() {
 								'bottom: ' + video_bottom + 'px}' +
 							'body:not(.ffz-sidebar-swap) .cn-bar-fixed { right: 0 !important }' +
 							'body.ffz-sidebar-swap .cn-bar-fixed { left: 0 !important }' +
+							'.ffz-theater-stats .app-main.theatre .cn-hosting--bottom,' +
 							'.ffz-theater-stats .app-main.theatre .cn-metabar__more {' +
-								'max-width: calc(100% - 300px);' +
+								'max-width: calc(100% - 350px);' +
 								'bottom: ' + (theatre_video_bottom + 55) + 'px !important}' +
 							'.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-metabar__more {' +
 								'bottom: ' + (theatre_video_bottom + 90) + 'px !important}';
@@ -382,12 +383,14 @@ FFZ.prototype.setup_layout = function() {
 								'left:' + width + 'px !important}' +
 							'body:not(.ffz-sidebar-swap) #main_col:not(.expandRight) .cn-bar-fixed {' +
 								'right: ' + width + 'px}' +
+							'body.ffz-sidebar-swap .theatre .cn-hosting--bottom,' +
 							'body.ffz-sidebar-swap .theatre .cn-metabar__more {' +
 								'left: ' + (width + 10) + 'px !important}' +
 							'body.ffz-sidebar-swap #main_col:not(.expandRight) .cn-bar-fixed {' +
 								'left: ' + width + 'px !important}' +
+							'.ffz-theater-stats .app-main.theatre .cn-hosting--bottom,' +
 							'.ffz-theater-stats .app-main.theatre .cn-metabar__more {' +
-								'max-width: calc(100% - ' + (width + 300) + 'px)}';
+								'max-width: calc(100% - ' + (width + 350) + 'px)}';
 					}
 				}
 

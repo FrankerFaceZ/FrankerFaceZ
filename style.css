@@ -18,6 +18,8 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.pinned-cheers__dismiss,
+.ffz-hide-pinned-cheers .pinned-cheers,
 .cn-hosting--bottom .ffz-channel-options .balloon:after,
 .ffz-host-info .card__layout:not(.ffz),
 .ffz-following-row[data-loaded="false"] .button,
@@ -316,6 +318,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 	z-index: 7;
 	padding: 10px !important;
+	flex-wrap: wrap;
 }
 
 .ffz-theater-stats .app-main.theatre .cn-hosting--bottom,
@@ -1520,6 +1523,9 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 .mod-icons .tb-allow { background-image: url("//cdn.frankerfacez.com/script/button_accept.svg") }
 .mod-icons .tb-reject { background-image: url("//cdn.frankerfacez.com/script/button_reject.svg") }
+
+.mod-icons .pc-dismiss { background-image: url("//cdn.frankerfacez.com/script/button_trash.svg") }
+.mod-icons .pc-dismiss-local { background-image: url("//cdn.frankerfacez.com/script/button_close.svg") }
 
 .mod-icons .custom {
 	text-indent: 0 !important;
@@ -3441,7 +3447,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 }
 
 .sticky-message {
-	padding: 5px 10px;
+	padding: 5px 15px;
 }
 
 .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons {
@@ -3630,7 +3636,7 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar .js-p
 
 .cn-hosting--bottom > *,
 .cn-metabar__more > * {
-	margin: 0 1rem 0 0 !important;
+	margin: .5rem 1rem .5rem 0 !important;
 	order: 49;
 }
 
@@ -3829,3 +3835,17 @@ body:not(.ffz-bttv) .modified-emoticon span,
 	margin-bottom: -3px;
 	vertical-align: bottom !important;
 }
+
+body:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) #player[data-isfullscreen=true] { right: 0 !important }
+body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data-isfullscreen=true] { left: 0 !important }
+
+.pinned-cheer__hack-box,
+.pinned-cheers__message .chat-line:before,
+.pinned-cheers__message:before { display: none }
+
+.pinned-cheers__message .chat-line { padding: 5px }
+.pinned-cheers .mod-icons { display: inline !important }
+
+.ffz-pinned-cheer-expand .pinned-cheers__message .chat-line,
+.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:hover { max-height: none }
+.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:not(:hover) { max-height: 4rem }

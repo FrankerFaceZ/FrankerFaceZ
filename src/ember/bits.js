@@ -35,6 +35,44 @@ FFZ.settings_info.bits_tags_container = {
 }
 
 
+FFZ.settings_info.bits_pinned = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+
+	name: "Display Pinned Cheers",
+	help: "Show pinned messages with bits at the top of chat in channels that have it enabled.",
+
+	on_update: function(val) {
+		utils.toggle_cls('ffz-hide-pinned-cheers')(!val);
+	}
+}
+
+
+FFZ.settings_info.bits_pinned_expand = {
+	type: "select",
+	options: {
+		0: "On Click (Default)",
+		1: "On Hover",
+		2: "Always"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0),
+
+	category: "Chat Appearance",
+
+	name: "Expand Pinned Cheers",
+	help: "Set when to expand pinned cheers beyond a minimal height.",
+
+	on_update: function(val) {
+		utils.toggle_cls('ffz-pinned-cheer-expand-hover')(val === 1);
+		utils.toggle_cls('ffz-pinned-cheer-expand')(val === 2);
+	}
+}
+
+
 
 // --------------------
 // Initialization
@@ -43,6 +81,9 @@ FFZ.settings_info.bits_tags_container = {
 FFZ.prototype.setup_bits = function() {
 	utils.toggle_cls('ffz-animate-bits')(this.settings.bits_animated);
 	utils.toggle_cls('ffz-show-bits-tags')(this.settings.bits_tags_container);
+	utils.toggle_cls('ffz-hide-pinned-cheers')(!this.settings.bits_pinned);
+	utils.toggle_cls('ffz-pinned-cheer-expand-hover')(this.settings.bits_pinned_expand === 1);
+	utils.toggle_cls('ffz-pinned-cheer-expand')(this.settings.bits_pinned_expand === 2);
 
 	var f = this,
 		Service = utils.ember_lookup('service:bits-rendering-config');

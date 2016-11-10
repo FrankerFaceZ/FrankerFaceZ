@@ -35,8 +35,10 @@ var FFZ = window.FrankerFaceZ,
 		subscribers: {info: 'Enable Subscribers-Only Mode'},
 		subscribersoff: {info: 'Disable Subscribers-Only Mode'},
 
-		emotesonly: {info: 'Enable Emotes-Only Mode'},
-		emotesonlyoff: {info: 'Disable Emotes-Only Mode'},
+		emoteonly: {info: 'Enable Emote-Only Mode'},
+		emoteonlyoff: {info: 'Disable Emote-Only Mode'},
+
+		unpin: {info: 'Unpin the current Pinned Cheer'}
 	},
 
 	BROADCASTER_COMMANDS = {

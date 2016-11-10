@@ -633,7 +633,9 @@ FFZ.HoverPause = {
 
 
 FFZ.prototype.modify_room_component = function(component) {
-	var f = this;
+	var f = this,
+		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers');
+
 	utils.ember_reopen_view(component, _.extend({
 		ffz_init: function() {
 			f._roomv = this;
@@ -697,7 +699,10 @@ FFZ.prototype.modify_room_component = function(component) {
 				channel = this.get('room.channel');
 			if ( ! channel )
 				return;
-			else if ( ! channel.get('isLoaded') )
+
+			PinnedCheers && PinnedCheers.dismissLocalMessage();
+
+			if ( ! channel.get('isLoaded') )
 				channel.load().then(function() { t._initializeBits(channel) })
 			else
 				this._initializeBits(channel);

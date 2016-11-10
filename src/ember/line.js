@@ -710,6 +710,8 @@ FFZ.prototype.save_aliases = function() {
 FFZ.prototype._modify_chat_line = function(component, is_vod) {
 	var f = this,
 		Layout = utils.ember_lookup('service:layout'),
+		Chat = utils.ember_lookup('controller:chat'),
+		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers'),
 		Settings = utils.ember_settings();
 
 	component.reopen({
@@ -724,7 +726,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				return f.tokenize_chat_line(this.get('msgObject'));
 			} catch(err) {
 				f.error("chat-line tokenizedMessage: " + err);
-				return this._super();
+				return this.get('tokenizedMessage');
 			}
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
@@ -756,7 +758,11 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 		buildModIconsHTML: function() {
 			var user = this.get('msgObject.from'),
-				room_id = this.get('msgObject.room'),
+
+				is_tb = this.get('msgObject.twitchBotRejected'),
+				is_pinned_cheer = this.get('msgObject.payday_timestamp'),
+
+				room_id = is_pinned_cheer ? Chat.get('currentRoom.id') : this.get('msgObject.room'),
 				room = f.rooms && f.rooms[room_id],
 
 				deleted = this.get('msgObject.deleted'),
@@ -767,11 +773,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
-				is_tb = this.get('msgObject.twitchBotRejected'),
-
+				shouldnt_show =is_whisper || this_ul >= other_ul || (f.settings.mod_buttons.length === 0 && ! is_tb),
 				output;
 
-			if ( is_whisper || this_ul >= other_ul || (f.settings.mod_buttons.length === 0 && ! is_tb) )
+			if ( ! is_pinned_cheer && shouldnt_show )
 				return '';
 
 			output = ['<span class="mod-icons">'];
@@ -781,49 +786,56 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed' + TB_TOOLTIP + '">Allowed</a>');
 			}
 
-			for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
-				var pair = f.settings.mod_buttons[i],
-					prefix = pair[0], btn = pair[1], had_label = pair[2], is_emoji = pair[3],
-
-					cmd, tip;
-
-				if ( is_emoji ) {
-					var setting = f.settings.parse_emoji,
-						token = f.emoji_data[is_emoji],
-						url = null;
-					if ( token ) {
-						if ( setting === 1 && token.tw )
-							url = token.tw_src;
-						else if ( setting === 2 && token.noto )
-							url = token.noto_src;
-						else if ( setting === 3 && token.one )
-							url = token.one_src;
-
-						if ( url )
-							prefix = '<img class="mod-icon-emoji" src="' + utils.quote_attr(url) + '">';
-					}
-				}
-
-				if ( btn === false ) {
-					if ( deleted )
-						output.push('<a class="mod-icon html-tooltip unban" title="Unban User" href="#">Unban</a>');
-					else
-						output.push('<a class="mod-icon html-tooltip ban' + (had_label ? ' custom' : '') + '" title="Ban User" href="#">' + (had_label ? prefix : 'Ban') + '</a>');
-
-				} else if ( btn === 600 )
-					output.push('<a class="mod-icon html-tooltip timeout' + (had_label ? ' custom' : '') + '" title="Timeout User (10m)" href="#">' + ( had_label ? prefix : 'Timeout') + '</a>');
-
-				else {
-					if ( typeof btn === "string" ) {
-						cmd = utils.replace_cmd_variables(btn, {name: user}, room && room.room, this.get('msgObject')).replace(/\s*<LINE>\s*/g, '\n');
-						tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '<br>' + utils.quote_san(cmd).replace('\n','<br>');
-					} else {
-						cmd = "/timeout " + user + " " + btn;
-						tip = "Timeout User (" + utils.duration_string(btn) + ")";
-					}
-					output.push('<a class="mod-icon html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>');
-				}
+			if ( is_pinned_cheer ) {
+				if ( PinnedCheers && PinnedCheers.canDismissPinnedCheer(this.get('parentView.userData.id'), this.get('parentView.isViewerModeratorOrHigher')) )
+					output.push('<a class="mod-icon html-tooltip pc-dismiss" title="Dismiss for Everyone">Dismiss</a>');
+				output.push('<a class="mod-icon html-tooltip pc-dismiss-local" title="Dismiss">Dismiss</a>');
 			}
+
+			if ( ! shouldnt_show )
+				for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
+					var pair = f.settings.mod_buttons[i],
+						prefix = pair[0], btn = pair[1], had_label = pair[2], is_emoji = pair[3],
+
+						cmd, tip;
+
+					if ( is_emoji ) {
+						var setting = f.settings.parse_emoji,
+							token = f.emoji_data[is_emoji],
+							url = null;
+						if ( token ) {
+							if ( setting === 1 && token.tw )
+								url = token.tw_src;
+							else if ( setting === 2 && token.noto )
+								url = token.noto_src;
+							else if ( setting === 3 && token.one )
+								url = token.one_src;
+
+							if ( url )
+								prefix = '<img class="mod-icon-emoji" src="' + utils.quote_attr(url) + '">';
+						}
+					}
+
+					if ( btn === false ) {
+						if ( deleted )
+							output.push('<a class="mod-icon html-tooltip unban" title="Unban User" href="#">Unban</a>');
+						else
+							output.push('<a class="mod-icon html-tooltip ban' + (had_label ? ' custom' : '') + '" title="Ban User" href="#">' + (had_label ? prefix : 'Ban') + '</a>');
+
+					} else if ( btn === 600 )
+						output.push('<a class="mod-icon html-tooltip timeout' + (had_label ? ' custom' : '') + '" title="Timeout User (10m)" href="#">' + ( had_label ? prefix : 'Timeout') + '</a>');
+
+					else {
+						if ( typeof btn === "string" ) {
+							cmd = utils.replace_cmd_variables(btn, {name: user}, room && room.room, this.get('msgObject')).replace(/\s*<LINE>\s*/g, '\n');
+							tip = "Custom Command" + (cmd.indexOf("\n") !== -1 ? 's' : '') + '<br>' + utils.quote_san(cmd).replace('\n','<br>');
+						} else {
+							cmd = "/timeout " + user + " " + btn;
+							tip = "Timeout User (" + utils.duration_string(btn) + ")";
+						}
+						output.push('<a class="mod-icon html-tooltip' + (cmd.substr(0,9) === '/timeout' ? ' is-timeout' : '') + ' custom" data-cmd="' + utils.quote_attr(cmd) + '" title="' + tip + '" href="#">' + prefix + '</a>');
+					}
+				}
 
 			return output.join('') + '</span>';
 		},
@@ -854,6 +866,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 		},
 
 		buildBadgesHTML: function() {
+			if ( ! this.get('msgObject.room') && this.get('msgObject.payday_timestamp') )
+				this.set('msgObject.room', Chat.get('currentRoom.id'));
+
 			return '<span class="badges">' + f.render_badges(f.get_line_badges(this.get('msgObject'))) + '</span>';
 		},
 
@@ -962,7 +977,8 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 
 FFZ.prototype._modify_chat_subline = function(component) {
-	var f = this;
+	var f = this,
+		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers');
 
 	this._modify_chat_line(component);
 
@@ -971,17 +987,22 @@ FFZ.prototype._modify_chat_subline = function(component) {
 		attributeBindings: ["msgObject.tags.id:data-id", "msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
 		didInsertElement: function() {
-			this.set('msgObject._line', this);
-			this.ffzRender();
+			if ( this.get('msgObject') ) {
+				this.set('msgObject._line', this);
+				this.ffzRender();
+			}
 		},
 
 		ffz_update: function() {
-			this.set('msgObject._line', this);
-			this.ffzRender();
+			if ( this.get('msgObject') ) {
+				this.set('msgObject._line', this);
+				this.ffzRender();
+			}
 		},
 
 		willClearRender: function() {
-			this.set('msgObject._line', null);
+			if ( this.get('msgObject') )
+				this.set('msgObject._line', null);
 		},
 
 		//didUpdate: function() { this.ffzRender(); },
@@ -1122,6 +1143,9 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			var cl = e.target.classList,
 				from = this.get("msgObject.from");
 
+			if ( ! from )
+				return;
+
 			/*if ( cl.contains('ffz-old-messages') )
 				return f._show_deleted(this.get('msgObject.room'));*/
 
@@ -1136,7 +1160,13 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				jQuery(e.target).trigger('mouseout');
 				e.preventDefault();
 
-				if ( cl.contains('tb-reject') )
+				if ( cl.contains('pc-dismiss-local') )
+					PinnedCheers.dismissLocalMessage();
+
+				else if ( cl.contains('pc-dismiss') )
+					PinnedCheers.dismissCurrentMessage(this.get('parentView.userData.id'));
+
+				else if ( cl.contains('tb-reject') )
 					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'no');
 
 				else if ( cl.contains('tb-allow') )
