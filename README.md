@@ -3,8 +3,7 @@ FrankerFaceZ
 
 Copyright (c) 2016 FrankerFaceZ
 
-This script is free to modify for personal use. You are not allowed to sell or
-distribute FrankerFaceZ or any components of FrankerFaceZ.
+Licensed under the Apache License, Version 2.0. See LICENSE.
 
 
 Developing
