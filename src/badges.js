@@ -376,8 +376,8 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 			if ( ! replaces )
 				continue;
 
-			old_badge.image = badge.image || full_badge.image;
-			old_badge.klass += ' ffz-badge-replacement';
+			old_badge.image = badge.image || null;
+			old_badge.klass += ' ffz-badge-replacement ffz-replacer-ffz-badge-' + (badge.id || full_badge.id);
 			old_badge.title += ', ' + (badge.title || full_badge.title);
 			continue;
 		}
@@ -508,12 +508,15 @@ FFZ.prototype.render_badges = function(badges) {
 
 		if ( badge.image )
 			if ( is_colored && setting === 6 )
-				css += '-webkit-mask-image:url("' + utils.quote_attr(badge.image) + '");';
+				css += (constants.IS_WEBKIT ? '-webkit-' : '') + 'mask-image:url("' + utils.quote_attr(badge.image) + '");';
 			else
 				css += 'background-image:url("' + utils.quote_attr(badge.image) + '");';
 
-		if ( badge.srcSet && (setting !== 6 || !is_colored) )
-			css += constants.IS_WEBKIT ? 'background-image:-webkit-image-set(' + badge.srcSet + ');' : 'background-image:image-set(' + badge.srcSet + ');';
+		if ( badge.srcSet )
+			if ( is_colored && setting === 6 )
+				css += (constants.IS_WEBKIT ? '-webkit-mask-image:-webkit-' : 'mask-image:') + 'image-set(' + badge.srcSet + ');';
+			else
+				css += 'background-image:' + (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(' + badge.srcSet + ');';
 
 		if ( badge.color )
 			if ( is_colored && setting === 6 )
@@ -628,9 +631,9 @@ FFZ.prototype.bttv_badges = function(data) {
 			for(var i=0; i < data.badges.length; i++) {
 				var b = data.badges[i];
 				if ( b.type === full_badge.replaces_type ) {
-					b.type = "ffz-badge-replacement " + b.type;
+					b.type += " ffz-badge-replacement ffz-replacer-ffz-badge-" + (badge.id || full_badge.id);
 					b.description += ", " + (badge.title || full_badge.title) +
-						'" style="background-image: url(' + utils.quote_attr('"' + (badge.image || full_badge.image) + '"') + ')';
+						(badge.image ? '" style="background-image: url(' + utils.quote_attr('"' + badge.image + '"') + ')' : '');
 					replaced = true;
 					break;
 				}
@@ -741,9 +744,6 @@ FFZ.prototype._load_badge_json = function(badge_id, data) {
 		data.replaces_type = data.replaces;
 		data.replaces = true;
 	}
-
-	if ( data.name === 'developer' )
-		data.no_invert = true;
 
 	if ( data.name === 'bot' )
 		data.visible = function(r,user) { return !(this.has_bttv && FFZ.bttv_known_bots.indexOf(user)!==-1); };

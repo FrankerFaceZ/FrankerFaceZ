@@ -74,7 +74,7 @@ FFZ.settings_info.sidebar_hide_prime = {
 };
 
 
-/*FFZ.settings_info.sidebar_hide_promoted_games = {
+FFZ.settings_info.sidebar_hide_promoted_games = {
 	type: "boolean",
 	value: false,
 
@@ -85,7 +85,7 @@ FFZ.settings_info.sidebar_hide_prime = {
 	help: "Hide the Promoted Games section from the sidebar.",
 
 	on_update: utils.toggle_cls('ffz-hide-promoted-games')
-};*/
+};
 
 
 
@@ -196,7 +196,7 @@ FFZ.settings_info.sidebar_directly_to_followed_channels = {
 
 FFZ.prototype.setup_sidebar = function() {
 	// CSS to Hide Stuff
-	//utils.toggle_cls('ffz-hide-promoted-games')(this.settings.sidebar_hide_promoted_games);
+	utils.toggle_cls('ffz-hide-promoted-games')(this.settings.sidebar_hide_promoted_games);
 	utils.toggle_cls('ffz-hide-recommended-channels')(this.settings.sidebar_hide_recommended_channels);
 	utils.toggle_cls('ffz-hide-recommended-friends')(this.settings.sidebar_hide_recommended_friends);
 	utils.toggle_cls('ffz-hide-friends-collapsed')(this.settings.sidebar_hide_friends_collapsed);

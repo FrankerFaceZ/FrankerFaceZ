@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	constants = require('./constants');
+	constants = require('./constants'),
+	WEBKIT = constants.IS_WEBKIT ? '-webkit-' : '';
 
 
 var createElement = function(tag, className, content) {
@@ -1006,11 +1007,43 @@ module.exports = FFZ.utils = {
 
 	badge_css: function(badge, klass) {
 		klass = klass || ('ffz-badge-' + badge.id);
-		var out = ".badges ." + klass + (badge.no_color ? ":not(.colored)" : "") + " { background-color: " + badge.color + '; background-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+		var urls = badge.urls || {1: badge.image},
+			image_set = image = 'url("' + urls[1] + '")';
+
+		if ( urls[2] || urls[4] ) {
+			image_set += ' 1x';
+			if ( urls[2] )
+				image_set += ', url("' + urls[2] + '") 2x';
+			if ( urls[4] )
+				image_set += ', url("' + urls[4] + '") 4x'
+
+			image_set = WEBKIT + 'image-set(' + image_set + ')';
+		}
+
+		var out = '.badges .' + klass + (badge.no_color ? ':not(.colored){' : '{') +
+			'background-color:' + badge.color + ';' +
+			'background-image:' + image + ';' +
+			'background-image:' + image_set + ';' +
+			(badge.css || '') + '}' +
+
+			'.badges .badge.ffz-badge-replacement.ffz-replacer-' + klass + ':not(.colored){' +
+				'background-image:' + image + ';' +
+				'background-image:' + image_set + '}';
+
 		if ( ! badge.no_color )
-			out += ".badges ." + klass + ".colored { background: linear-gradient(" + badge.color + "," + badge.color + '); -webkit-mask-image: url("' + badge.image + '"); ' + (badge.css || "") + '}';
+			out += '.badges .badge.ffz-badge-replacement.ffz-replacer-' + klass + '.colored{' +
+				WEBKIT + 'mask-image:' + image + ';' +
+				WEBKIT + 'mask-image:' + image_set + '}' +
+			'.badges .' + klass + '.colored {' +
+				'background: linear-gradient(' + badge.color + ',' + badge.color + ');' +
+				WEBKIT + 'mask-image:' + image + ';' +
+				WEBKIT + 'mask-image:' + image_set + ';' +
+				(badge.css || '') + '}';
+
 		if ( badge.alpha_image )
-			out += ".badges .badge.alpha." + klass + ",.ffz-transparent-badges .badges ." + klass + ' { background-image: url("' + badge.alpha_image + '"); }';
+			out += '.badges .badge.alpha.' + klass + ',' +
+					'.ffz-transparent-badges .badges .' + klass + ' {' +
+				'background-image:url("' + badge.alpha_image + '")}';
 		return out;
 	},
 
@@ -1022,7 +1055,7 @@ module.exports = FFZ.utils = {
 		return '.from-display-preview[data-room="' + room_id + '"] .badge.' + badge_id + '.version-' + version +
 				',.chat-line[data-room="' + room_id + '"] .badge.' + badge_id + '.version-' + version + '{' +
 			'background-image:url("' + img_1x + '");' +
-			'background-image:' + (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(url("' + img_1x + '") 1x' + (img_2x ? ',url("' + img_2x + '") 2x' : '') + (img_4x ? ',url("' + img_4x + '") 4x' : '') + ')}';
+			'background-image:' + WEBKIT + 'image-set(url("' + img_1x + '") 1x' + (img_2x ? ',url("' + img_2x + '") 2x' : '') + (img_4x ? ',url("' + img_4x + '") 4x' : '') + ')}';
 	},
 
 	cdn_badge_css: function(badge_id, version, data, room) {
@@ -1031,16 +1064,23 @@ module.exports = FFZ.utils = {
 			is_svg = base_image.substr(-4) === '.svg',
 			image_1x = base_image + (is_svg ? '' : "1.png"),
 			image_2x = base_image + (is_svg ? '' : "2.png"),
-			image_4x = base_image + (is_svg ? '' : "4.png");
+			image_4x = base_image + (is_svg ? '' : "4.png"),
 
-		return '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + (data.no_color ? '' : ':not(.colored)') + ' {' +
-				'background: url("' + image_1x + '") ' + color + ';' +
-				(is_svg ? '}' : 'background-image: -webkit-image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x);' +
-				'background-image: image-set(url("' + image_1x + '") 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x); }') +
-			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + '.colored {' +
+			image_set = image = 'url("' + image_1x + '")';
+
+		if ( ! is_svg )
+			image_set = WEBKIT + 'image-set(' + image +
+				' 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x)';
+
+		return '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + (data.no_color ? '' : ':not(.colored)') + '{' +
+				'background:' + image + ' ' + color + ';' +
+				(is_svg ? '}' : 'background-image:' + image_set + '}' ) +
+
+			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + '.colored{' +
 				'background: linear-gradient(' + color + ',' + color + ');' +
-				(is_svg ? '-webkit-mask-size: 18px 18px;mask-size: 18px 18px;' : '') +
-				'-webkit-mask-image: url("' + image_1x + '");' +
-				'mask-image: url("' + image_1x + '");}');
+				(is_svg ? WEBKIT + 'mask-size:18px 18px;' : '') +
+				WEBKIT + 'mask-image:' + image + ';' +
+				(is_svg ? '}' : WEBKIT + 'mask-image:' + image_set + '}')
+			);
 	}
 }

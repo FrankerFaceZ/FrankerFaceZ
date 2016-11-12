@@ -1,7 +1,7 @@
 FrankerFaceZ
 ============
 
-Copyright (c) 2016 FrankerFaceZ
+Copyright (c) 2016 Dan Salvato LLC
 
 Licensed under the Apache License, Version 2.0. See LICENSE.
 

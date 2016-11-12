@@ -1006,31 +1006,45 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			if ( is_mod && f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
 				line = utils.createElement('div', 'extra-interface interface clearfix');
 
-				var add_btn_click = function(cmd) {
-						var user = controller.get('cardInfo.user'),
-							chat_controller = utils.ember_lookup('controller:chat'),
-							room = chat_controller && chat_controller.get('currentRoom'),
-
-							cm = utils.replace_cmd_variables(cmd, user, room),
+				var build_cmd = function(user, room, cmd) {
+						var lines = utils.replace_cmd_variables(cmd, user, room).split(/\s*<LINE>\s*/g),
 							reason = ban_reason();
 
 						if ( reason ) {
-							var match = TO_REG.exec(cm);
-							if ( match ) {
-								if ( ! match[2] )
-									cm += " 600";
-								if ( ! match[3] )
-									cm += reason;
+							for(var i=0; i < lines.length; i++) {
+								var match = TO_REG.exec(lines[i]);
+								if ( match ) {
+									if ( ! match[2] )
+										lines[i] += ' 600';
+									if ( ! match[3] )
+										lines[i] += reason;
 
-							} else {
-								match = BAN_REG.exec(cm);
-								if ( match && ! match[2] ) {
-									cm += reason;
+									break;
+								} else {
+									match = BAN_REG.exec(lines[i]);
+									if ( match ) {
+										if ( ! match[2] )
+											lines[i] += reason;
+										break;
+									}
 								}
 							}
 						}
 
-						room && room.send(cm, true);
+						return lines;
+					},
+
+					add_btn_click = function(cmd) {
+						var user = controller.get('cardInfo.user'),
+							chat_controller = utils.ember_lookup('controller:chat'),
+							room = chat_controller && chat_controller.get('currentRoom');
+
+						if ( ! room )
+							return;
+
+						var lines = build_cmd(user, room, cmd);
+						for(var i=0; i < lines.length; i++)
+							room.send(lines[i], true);
 					},
 
 					add_btn_make = function(label, cmd) {
@@ -1044,11 +1058,10 @@ FFZ.prototype.modify_moderation_card = function(component) {
 									chat_controller = utils.ember_lookup('controller:chat'),
 									room = chat_controller && chat_controller.get('currentRoom');
 
-									title = utils.replace_cmd_variables(cmd, user, room);
+									lines = build_cmd(user, room, cmd),
+									title = _.map(lines, utils.sanitize).join('<br>');
 
-								title = _.map(title.split(/\s*<LINE>\s*/g, utils.sanitize).join("<br>"));
-
-								return "Custom Command" + (title.indexOf('<br>') !== -1 ? 's' : '') +
+								return "Custom Command" + (lines.length > 1 ? 's' : '') +
 									"<br>" + title;
 							}
 						});
