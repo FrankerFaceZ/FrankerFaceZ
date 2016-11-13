@@ -1967,7 +1967,7 @@ FFZ.prototype._modify_room = function(room) {
 
 		addMessage: function(msg) {
 			msg = this.ffzProcessMessage(msg);
-			if ( ! msg )
+			if ( ! msg || msg.ffz_removed )
 				return;
 
 			var msg_id = msg.tags && msg.tags.id,

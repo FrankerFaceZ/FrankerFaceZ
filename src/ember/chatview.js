@@ -161,6 +161,25 @@ FFZ.settings_info.chat_delay = {
 };
 
 
+FFZ.settings_info.remove_filtered = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Mark as Message Deleted",
+		2: "Remove Message"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0),
+
+	category: "Chat Filtering",
+	no_bttv: true,
+
+	name: "Remove Messages with Banned Words",
+	help: "Mark messages with banned words as deleted or outright remove them from chat.",
+};
+
+
 FFZ.settings_info.remove_deleted = {
 	type: "boolean",
 	value: false,
@@ -188,20 +207,8 @@ FFZ.settings_info.remove_deleted = {
 
 				while(i--) {
 					var msg = msgs.get(i);
-
-					if ( msg.ffz_deleted || msg.deleted ) {
-						if ( alternate === undefined )
-							alternate = msg.ffz_alternate;
+					if ( msg.ffz_deleted || msg.deleted )
 						msgs.removeAt(i);
-						continue;
-					}
-
-					if ( alternate === undefined )
-						alternate = msg.ffz_alternate;
-					else {
-						alternate = ! alternate;
-						room.set('messages.' + i + '.ffz_alternate', alternate);
-					}
 				}
 			}
 		}

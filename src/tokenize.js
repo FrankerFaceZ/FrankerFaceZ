@@ -727,10 +727,20 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	// Mentions!
 	if ( ! from_me ) {
 		tokens = this.tokenize_mentions(tokens);
+		var st = this.settings.remove_filtered;
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i],
-				is_mention = token.type === "mention";
+				is_mention = token.type === "mention",
+				is_removed = token.type === "deleted" || token.censoredLink;
+
+			if ( is_removed )
+				if ( st === 2 )
+					msgObject.ffz_removed = true;
+				else if ( st === 1 ) {
+					msgObject.ffz_deleted = true;
+					msgObject.deleted = true;
+				}
 
 			if ( ! is_mention || token.isOwnMessage )
 				continue;
