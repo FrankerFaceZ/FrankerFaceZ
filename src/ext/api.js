@@ -156,21 +156,19 @@ API.prototype._load_set = function(real_id, set_id, data) {
 	if ( this.emote_sets[set_id] && this.emote_sets[set_id].users )
 		users = this.emote_sets[set_id].users;
 
-	var emote_set = {
-			source: this.name,
-			source_ext: this.id,
-			source_id: set_id,
-			users: users,
-			count: 0,
-			emoticons: {},
-			_type: data._type || 0,
-			css: data.css || null,
-			hidden: data.hidden || false,
-			description: data.description || null,
-			icon: data.icon || this.icon || null,
-			id: real_id,
-			title: data.title || "Global Emoticons",
-		};
+	var emote_set = _.extend({
+		source: this.name,
+		icon: this.icon || null,
+		title: "Global Emoticons",
+		_type: 0
+	}, data, {
+		source_ext: this.id,
+		source_id: set_id,
+		id: real_id,
+		users: users,
+		count: 0,
+		emoticons: {},
+	});
 
 	this.emote_sets[set_id] = emote_set;
 
@@ -184,53 +182,25 @@ API.prototype._load_set = function(real_id, set_id, data) {
 
 	for(var i=0; i < ems.length; i++) {
 		var emote = ems[i],
-			new_emote = {urls: {}},
 			id = emote.id || (this.name + '-' + set_id + '-' + i);
 
 		if ( ! emote.name )
 			continue;
 
-		new_emote.id = id;
-		new_emote.set_id = real_id;
-		new_emote.name = emote.name;
+		var new_emote = _.extend({}, emote, {
+			id: id,
+			set_id: real_id,
+			srcSet: emote.urls[1] + ' 1x'
+		});
 
-		new_emote.width = emote.width;
-		new_emote.height = emote.height;
-
-		new_emote.hidden = emote.hidden;
-		new_emote.owner = emote.owner;
-
-		new_emote.css = emote.css;
-		new_emote.margins = emote.margins;
-
-		new_emote.modifier = emote.modifier;
-		new_emote.extra_width = emote.extra_width;
-		new_emote.shrink_to_fit = emote.shrink_to_fit;
-
-		new_emote.srcSet = emote.urls[1] + ' 1x';
-		new_emote.urls[1] = emote.urls[1];
-
-		if ( emote.urls[2] ) {
-			new_emote.urls[2] = emote.urls[2];
+		if ( emote.urls[2] )
 			new_emote.srcSet += ', ' + emote.urls[2] + ' 2x';
-		}
-		if ( emote.urls[3] ) {
-			new_emote.urls[3] = emote.urls[3];
-			new_emote.srcSet += ', ' + emote.urls[3] + ' 3x';
-		}
-		if ( emote.urls[4] ) {
-			new_emote.urls[4] = emote.urls[4];
-			new_emote.srcSet += ', ' + emote.urls[4] + ' 4x';
-		}
 
-		if ( emote.regex )
-			new_emote.regex = emote.regex;
-		else if ( typeof emote.name !== "string" )
-			new_emote.regex = emote.name;
-		else if ( emote_set.require_spaces || emote.require_spaces )
-			new_emote.regex = new RegExp("(^| )(" + utils.escape_regex(emote.name) + ")(?= |$)", "g");
-		else
-			new_emote.regex = new RegExp("(^|\\W|\\b)(" + utils.escape_regex(emote.name) + ")(?=\\W|$)", "g");
+		if ( emote.urls[3] )
+			new_emote.srcSet += ', ' + emote.urls[3] + ' 3x';
+
+		if ( emote.urls[4] )
+			new_emote.srcSet += ', ' + emote.urls[4] + ' 4x';
 
 		new_emote.token = {
 			type: "emoticon",
@@ -463,23 +433,14 @@ API.prototype.unregister_room_set = function(room_id, set_id) {
 API.prototype.add_badge = function(badge_id, badge) {
 	var exact_id = this.id + '-' + badge_id,
 
-		real_badge = {
+		real_badge = _.extend({}, badge, {
 			id: exact_id,
 			source_ext: this.id,
-			source_id: badge_id,
-			alpha_image: badge.alpha_image,
-			color: badge.color || "transparent",
-			no_invert: badge.no_invert,
-			invert_invert: badge.invert_invert,
-			css: badge.css,
-			image: badge.image,
-			name: badge.name,
-			title: badge.title,
-			slot: badge.slot,
-			visible: badge.visible,
-			replaces: badge.replaces,
-			replaces_type: badge.replaces_type
-		};
+			source_id: badge_id
+		});
+
+	if ( ! real_badge.color )
+		real_badge.color = "transparent";
 
 	this.badges[badge_id] = real_badge;
 

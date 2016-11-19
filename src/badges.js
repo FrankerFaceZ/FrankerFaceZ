@@ -389,12 +389,15 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 }
 
 FFZ.prototype._get_badge_object = function(badge, full_badge) {
+	var id = badge.id || full_badge.id;
 	return {
-		klass: 'ffz-badge-' + (badge.id || full_badge.id),
+		id: id,
+		klass: 'ffz-badge-' + id,
 		title: badge.title || full_badge.title || ('Unknown FFZ Badge\nID: ' + (badge.id | full_badge.id)),
 		image: badge.image,
 		full_image: full_badge.image,
 		color: badge.color,
+		click_action: badge.click_action || full_badge.click_action,
 		click_url: badge.click_url || full_badge.click_url,
 		no_invert: badge.no_invert || full_badge.no_invert,
 		no_color: badge.no_color || full_badge.no_color,
@@ -530,6 +533,9 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.click_url )
 			klass += ' click_url';
 
+		if ( badge.click_action )
+			klass += ' click_action';
+
 		if ( badge.no_invert )
 			klass += ' no-invert';
 
@@ -542,7 +548,7 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.transparent )
 			klass += ' transparent';
 
-		out.push('<div class="badge html-tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
+		out.push('<div class="badge html-tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-badge-id="' + badge.id + '" data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
 	}
 
 	return out.join("");

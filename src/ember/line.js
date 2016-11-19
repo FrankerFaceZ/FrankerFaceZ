@@ -522,7 +522,7 @@ FFZ.settings_info.chat_font_family = {
 
 			var span = document.createElement('span');
 			span.style.fontFamily = val;
-			css = ".timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history,.ember-chat .chat-messages {" + span.style.cssText + "}";
+			css = ".pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history,.ember-chat .chat-messages {" + span.style.cssText + "}";
 		}
 
 		utils.update_css(this._chat_style, "chat_font_family", css);
@@ -570,9 +570,9 @@ FFZ.settings_info.chat_font_size = {
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val)),
 				pd = Math.floor((lh - 20) / 2);
-			css = ".timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history .chat-line,.ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			css = ".pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history .chat-line,.ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 			if ( pd )
-				css += ".ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
+				css += ".pinned-cheers .chat-line,.ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
 		}
 
 		utils.update_css(this._chat_style, "chat_font_size", css);
@@ -1199,7 +1199,12 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				}
 
 			} else if ( cl.contains('badge') ) {
-				if ( cl.contains('click_url') )
+				if ( cl.contains('click_action') ) {
+					var badge = f.badges && f.badges[e.target.getAttribute('data-badge-id')];
+					if ( badge.click_action )
+						badge.click_action.call(f, this.get('msgObject'), e);
+
+				} else if ( cl.contains('click_url') )
 					window.open(e.target.getAttribute('data-url'), "_blank");
 
 				else if ( cl.contains('turbo') )

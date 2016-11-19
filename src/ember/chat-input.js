@@ -204,6 +204,18 @@ FFZ.settings_info.input_complete_emotes = {
 }
 
 
+FFZ.settings_info.input_complete_keys = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Input",
+	no_bttv: true,
+
+	name: "Tab-Complete Alternate Input",
+	help: "When this is enabled, Tab and Shift-Tab will cycle through possible values and Space will insert the value."
+}
+
+
 FFZ.settings_info.input_complete_commands = {
 	type: "boolean",
 	value: true,
@@ -619,7 +631,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 		}.observes('suggestions'),
 
 
-		ffzCompleteSuggestion: function(item) {
+		ffzCompleteSuggestion: function(item, add_space) {
 			if ( ! item ) {
 				var suggestions = this.get('ffz_sorted_suggestions'),
 					current = this.get('ffz_current_suggestion');
@@ -628,8 +640,6 @@ FFZ.prototype.modify_chat_input = function(component) {
 			}
 
 			this.ffzHideSuggestions();
-			if ( ! item )
-				return;
 
 			var t = this,
 				ind = this.get('ffz_partial_word_start'),
@@ -638,18 +648,30 @@ FFZ.prototype.modify_chat_input = function(component) {
 				first_char = text.charAt(0),
 				is_cmd = first_char === '/' || first_char === '.',
 
-				content = ((f.settings.input_complete_name_at && ! is_cmd && item.type === 'user' && this.get('ffz_partial_word').charAt(0) === '@') ? '@' : '') +
-							((item.command_content && is_cmd ?
-								item.command_content : item.content) || item.label),
+				trail, prefix;
 
-				trail = text.substr(ind + this.get('ffz_partial_word').length),
-				prefix = text.substr(0, ind) + content + (trail ? '' : ' ');
+			if ( item ) {
+				var content = ((f.settings.input_complete_name_at && ! is_cmd && item.type === 'user' && this.get('ffz_partial_word').charAt(0) === '@') ? '@' : '') +
+						((item.command_content && is_cmd ?
+							item.command_content : item.content) || item.label);
 
+				prefix = text.substr(0, ind) + content;
+				trail =  text.substr(ind + this.get('ffz_partial_word').length);
+			} else {
+				var area = this.get('chatTextArea'),
+					ind = selection_start(area);
+
+				prefix = text.substr(0, ind);
+				trail = text.substr(ind);
+			}
+
+			prefix += !add_space && trail ? '' : ' ';
 
 			this.set('textareaValue', prefix + trail);
 			this.set('ffz_partial_word', '');
 			this.set('ffz_partial_word_start', -1);
-			this.trackSuggestionsCompleted();
+			if ( item )
+				this.trackSuggestionsCompleted();
 			Ember.run.next(function() {
 				var area = t.get('chatTextArea');
 				move_selection(area, prefix.length);
@@ -821,7 +843,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 								// It's a sub emote, so try splitting off the end of the code.
 								// It's a bit weird, but people might like it. Also, make sure
 								// we aren't just grabbing an initial capital.
-								var unprefixed = code.substr(1).match(/[A-Z](?:.+)?$/);
+								var unprefixed = code.substr(1).match(/[A-Z0-9](?:.+)?$/);
 								unprefixed = unprefixed ? unprefixed[0] : null;
 								if ( unprefixed )
 									emotes.push({
@@ -1283,21 +1305,38 @@ FFZ.prototype.modify_chat_input = function(component) {
 					if ( text.length === 0 )
 						break;
 
-					if ( text.charAt(0) !== '/' ) {
-						var parts = text.split(' ');
-						if ( parts[parts.length - 1].length === 0 )
+					if ( text.charAt(0) !== '/' || f.settings.input_complete_name_require_at ) {
+						var ind = selection_start(this.get('chatTextArea')),
+							part = text.substr(ind > 0 ? ind - 1 : 0),
+							match = /^[^ ]+/.exec(part);
+
+						if ( ! match || match[0].length === 0 )
 							break;
 					}
 
 					// If suggestions aren't visible... show them. And set that we
 					// triggered the suggestions with tab.
 					if ( ! this.get('ffz_suggestions_visible') ) {
+						f.log("Showing Suggestions from Tab");
 						this.ffzFetchNameSuggestions();
 						this.set('ffz_suggestions_visible', true);
 						this.ffzSetPartialWord();
 						this.trackSuggestions("Tab");
 
-					// If suggestions *are* visible, enter a suggestion.
+					// If suggestions are visible, tab through the possibilities.
+					} else if ( f.settings.input_complete_keys ) {
+						var suggestions = this.get('ffz_sorted_suggestions'),
+							current = this.get('ffz_current_suggestion') + ((e.shiftKey || e.shiftLeft) ? -1 : 1);
+
+						if ( current < 0 )
+							current = suggestions.length - 1;
+						else if ( current >= suggestions.length )
+							current = 0;
+
+						this.set('ffz_freeze_suggestions', -1);
+						this.set('ffz_current_suggestion', current);
+
+					// Otherwise, complete the suggestion.
 					} else
 						this.ffzCompleteSuggestion();
 
@@ -1381,7 +1420,11 @@ FFZ.prototype.modify_chat_input = function(component) {
 				case KEYCODES.SPACE:
 					// First things first, if we're currently showing suggestions, get rid of them.
 					if ( this.get('ffz_suggestions_visible') )
-						this.ffzHideSuggestions();
+						if ( f.settings.input_complete_keys ) {
+							this.ffzCompleteSuggestion(null, true);
+							e.preventDefault();
+						} else
+							this.ffzHideSuggestions();
 
 					// After pressing space, if we're entering a command, do stuff!
 					// TODO: Better support for commands.

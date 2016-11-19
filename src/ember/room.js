@@ -1470,7 +1470,7 @@ FFZ.prototype._modify_room = function(room) {
 				var duration = Infinity,
 					reason = undefined,
 					moderator = undefined,
-					msg_id = undefined,
+					msg_id = tags && tags['target-msg-id'],
 					current_user = f.get_user(),
 					is_me = current_user && current_user.login === user;
 
@@ -1491,7 +1491,7 @@ FFZ.prototype._modify_room = function(room) {
 					moderator = tags['ban-moderator'];
 
 				// Is there a UUID on the end of the ban reason?
-				if ( reason ) {
+				if ( ! msg_id && reason ) {
 					var match = constants.UUID_TEST.exec(reason);
 					if ( match ) {
 						msg_id = match[1];

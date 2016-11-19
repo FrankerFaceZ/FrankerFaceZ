@@ -381,6 +381,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #fff;
 }
 
+.ffz-dark .button--hollow { box-shadow: inset 0 0 0 1px #4b367c }
+
 .ffz-dark .panel-formatting .panel h3 {
 	color: inherit;
 }
@@ -1443,47 +1445,49 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* Search Panel */
 
-.ffz-dark[data-current-path="user.channel.index.index"] .searchPanel { background-color: rgba(16,16,16,0.9) }
+.ffz-dark[data-current-path="user.channel.index.index"] .search-panel { background-color: rgba(16,16,16,0.9) }
 
-.ffz-dark .searchPanel {
+.ffz-dark .search-panel {
 	background-color: #101010;
 	color: #C3C3C3;
 }
 
-.ffz-dark .searchPanel--fly:before,
-.ffz-dark .searchPanel--fly:after {
+.ffz-dark .search-panel--fly:before,
+.ffz-dark .search-panel--fly:after {
 	border-bottom-color: #404040;
 }
 
-.ffz-dark .titleBar {
+.ffz-dark .search-panel__title-bar {
 	background-color: #090909;
 }
 
-.ffz-dark .searchPanel,
-.ffz-dark .titleBar,
-.ffz-dark .titleBar__back {
+.ffz-dark .search-panel,
+.ffz-dark .search-panel__title-bar,
+.ffz-dark .search-panel__title-back {
 	border-color: rgba(255,255,255,0.2)
 }
 
-.ffz-dark .titleBar__title { color: #999 }
+.ffz-dark .search-panel__title { color: #999 }
 
-.ffz-dark .titleBar__back:hover,
-.ffz-dark .resultView__titlesep.isActive { background-color: #222 }
+.ffz-dark .search-panel__title-back:hover,
+.ffz-dark .search-result-view__block.isActive { background-color: #222 }
 
-.ffz-dark .searchPanel .card__body--overlay .card__title {
-	text-shadow: 1px 1px #000, -1px 1px #000, -1px -1px #000, 1px -1px #000;
-}
-
+.ffz-dark .search-result-view__titlesep:hover,
 .ffz-dark .card__title a:hover,
 .ffz-dark .card__info a:hover {
 	color: #ccd;
 }
 
-.ffz-dark .resultView__item .card__info span,
-.ffz-dark .resultView__item .card__title,
-.ffz-dark .resultView__titlesep.isActive .resultView__titleMore { color: #a68ed2 }
-.ffz-dark .resultView__titlesep {
+.ffz-dark .search-result-view__block .card__info span,
+.ffz-dark .search-result-view__block .card__title,
+.ffz-dark .search-result-view__title-more { color: #a68ed2 !important }
+.ffz-dark .search-result-view__titlesep {
 	background-color: #090909;
+}
+
+.ffz-dark .search-result-view__block .card__layout:hover .card__info span,
+.ffz-dark .search-result-view__block .card__layout:hover .card__title {
+	color: #fff !important
 }
 
 

@@ -53,6 +53,21 @@
 	}
 
 
+	// Clip Center?
+	.ce-clip-center:not(.ce-clip-center--editing) .ce-clip-center__pre-control {
+		background-color: @nav-bg-color;
+		border-color: fade(white, 10%);
+	}
+
+	.ce-filmstrip-fade--left {
+		background-image: linear-gradient(90deg, @bg-color 13%, fade(@bg-color, 0%) 70%)
+	}
+
+	.ce-filmstrip-fade--right {
+		background-image: linear-gradient(-90deg, @bg-color 13%, fade(@bg-color, 0%) 70%)
+	}
+
+
 	// Buttons
 
 	.button {

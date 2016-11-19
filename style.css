@@ -1201,7 +1201,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 /* Menu Scrollbar */
 
 #ffz-metadata-popup .scroller::-webkit-scrollbar,
-.searchPanel .collectionWrapper::-webkit-scrollbar,
+.search-panel .collection-wrapper::-webkit-scrollbar,
 .activity-react__all::-webkit-scrollbar,
 .conversations-list .scroll-container::-webkit-scrollbar,
 .chatters-container::-webkit-scrollbar,
@@ -1219,7 +1219,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 }
 
 #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
-.searchPanel .collectionWrapper::-webkit-scrollbar-thumb,
+.search-panel .collection-wrapper::-webkit-scrollbar-thumb,
 .activity-react__all::-webkit-scrollbar-thumb,
 .conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .chatters-container::-webkit-scrollbar-thumb,
@@ -1240,7 +1240,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .ffz-dark #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 .theatre #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 
-.ffz-dark .searchPanel .collectionWrapper::-webkit-scrollbar-thumb,
+.ffz-dark .search-panel .collection-wrapper::-webkit-scrollbar-thumb,
 .ffz-dark .activity-react__all::-webkit-scrollbar-thumb,
 .ffz-dark .conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .ffz-dark .ffz-scrollbar::-webkit-scrollbar-thumb,
@@ -1249,7 +1249,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .ffz-dark .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
 .ffz-dark .conversation-input-bar .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 
-.theatre .searchPanel .collectionWrapper::-webkit-scrollbar-thumb,
+.theatre .search-panel .collection-wrapper::-webkit-scrollbar-thumb,
 .theatre .conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .theatre .chatters-container::-webkit-scrollbar-thumb,
 .theatre .ffz-scrollbar::-webkit-scrollbar-thumb,
@@ -2288,7 +2288,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	left: 20px;
 }
 
-.ffz-sidebar-swap .searchPanel--slide {
+.ffz-sidebar-swap .search-panel--slide {
 	left: auto;
 	right: 240px;
 }
@@ -3842,11 +3842,18 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 
 .pinned-cheer__hack-box,
 .pinned-cheers__message .chat-line:before,
+.ffz-pinned-cheer-expand .pinned-cheer__expando-arrow,
 .pinned-cheers__message:before { display: none }
 
 .pinned-cheers__message .chat-line { padding: 5px }
 .pinned-cheers .mod-icons { display: inline !important }
 
 .ffz-pinned-cheer-expand .pinned-cheers__message .chat-line,
-.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:hover { max-height: none }
-.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:not(:hover) { max-height: 4rem }
+.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:hover { max-height: none !important }
+.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:not(:hover) { max-height: 4rem !important }
+.pinned-cheers--padding { padding: 0 !important }
+
+.ffz-pinned-cheer-expand-hover .pinned-cheers__message:hover .pinned-cheer__expando-arrow { transform: none }
+.ffz-pinned-cheer-expand-hover .pinned-cheers__message .pinned-cheer__expando-arrow {
+	transform: rotateX(180deg);
+}
