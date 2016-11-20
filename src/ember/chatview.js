@@ -575,6 +575,8 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 			this.ffz_pruner = setInterval(this.ffzPruneTabs.bind(this), 10000);
 
+			f.api_trigger('chat-view-init', el, this);
+
 			setTimeout(function() {
 				if ( f.settings.group_tabs && t._ffz_tabs )
 					t.$('.chat-room').css('top', t._ffz_tabs.offsetHeight + "px");
@@ -599,6 +601,8 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 			this.ffzTeardownMenu();
 			this.ffzUnloadHost();
+
+			f.api_trigger('chat-view-destroy', this.get('element'), this);
 		},
 
 

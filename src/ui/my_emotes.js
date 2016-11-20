@@ -206,9 +206,17 @@ FFZ.menu_pages.myemotes = {
 			if ( ! set.length )
 				continue;
 
-			var menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, set_id, set, favorites_only);
+			var menu_id = this._twitch_set_to_channel[set_id].toLowerCase(),
+				sort_key = 0,
+				menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, set_id, set, favorites_only);
+
+			if ( menu_id.indexOf('global') !== -1 )
+				sort_key = 100;
+			else if ( menu_id.substr(0,2) === '--' || menu_id === 'turbo' )
+				sort_key = 75;
+
 			if ( menu )
-				sets.push([this._twitch_set_to_channel[set_id], menu]);
+				sets.push([[sort_key, menu_id], menu]);
 		}
 
 		// Emoji~!
@@ -217,7 +225,7 @@ FFZ.menu_pages.myemotes = {
 			if ( favorites_list && favorites_list.length ) {
 				var menu = FFZ.menu_pages.myemotes.draw_emoji.call(this, view, null, favorites_only);
 				if ( menu )
-					sets.push(["emoji", menu]);
+					sets.push([[200, "emoji"], menu]);
 			}
 		}
 
@@ -235,9 +243,19 @@ FFZ.menu_pages.myemotes = {
 			if ( ! set || ! set.count || set.hidden || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
 				continue;
 
-			var menu = FFZ.menu_pages.myemotes.draw_ffz_set.call(this, view, set, favorites_only);
+			var menu_id = set.title.toLowerCase(),
+				sort_key = set.sort,
+				menu = FFZ.menu_pages.myemotes.draw_ffz_set.call(this, view, set, favorites_only);
+
+			if ( sort_key === undefined || sort_key === null ) {
+				if ( menu_id.indexOf('global') !== -1 )
+					sort_key = 100;
+				else
+					sort_key = 0;
+			}
+
 			if ( menu )
-				sets.push([set.title.toLowerCase(), menu]);
+				sets.push([[sort_key, menu_id], menu]);
 		}
 
 
@@ -247,20 +265,14 @@ FFZ.menu_pages.myemotes = {
 
 		// Finally, sort and add them all.
 		sets.sort(function(a,b) {
-			var an = a[0], bn = b[0];
-			if ( an === "--curse--" || an === "--prime--" || an === "--prime-faces--" || an === "turbo" || an === "--turbo-faces--" )
-				an = "zza|" + an;
-			else if ( an === "global" || (an && an.substr(0,16) === "global emoticons") || an === "--global--" )
-				an = "zzy|" + an;
-			else if ( an && an.substr(0,5) === "emoji" )
-				an = "zzz|" + an;
+			var ask = a[0][0],
+				an = a[0][1],
 
-			if ( bn === "--curse--" || bn === "--prime--" || bn === "--prime-faces--" || bn === "turbo" || bn === "--turbo-faces--" )
-				bn = "zza|" + bn;
-			else if ( bn === "global" || (bn && bn.substr(0,16) === "global emoticons") || bn === "--global--" )
-				bn = "zzy|" + bn;
-			else if ( bn && bn.substr(0,5) === "emoji" )
-				bn = "zzz|" + bn;
+				bsk = b[0][0],
+				bn = b[0][1];
+
+			if ( ask < bsk ) return -1;
+			if ( ask > bsk ) return 1;
 
 			if ( an < bn ) return -1;
 			if ( an > bn ) return 1;

@@ -422,7 +422,8 @@ FFZ.prototype.render_tooltip = function(el) {
 					if ( emote ) {
 						var owner = emote.owner,
 							title = emote_set.title || "Global",
-							source = emote_set.source || "FFZ";
+							source = emote_set.source || "FFZ",
+							source_line = emote_set.source_line || (source + ' ' + title);
 
 						if ( f.settings.emote_image_hover ) {
 							if ( emote.urls[4] ) {
@@ -444,7 +445,7 @@ FFZ.prototype.render_tooltip = function(el) {
 
 						//image = preview_url ? `<img style="height:${height}px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
 						image = preview_url ? '<img style="height:' + height + 'px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
-						return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source + ' ' + title + (owner ? '<br>By: ' + owner.display_name : '') + mod_text;
+						return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source_line + (owner ? '<br>By: ' + owner.display_name : '') + mod_text;
 
 						//return `${image}Emoticon: ${emote.hidden ? '???' : emote.name}<br>${source} ${title}${owner ? '<br>By: ' + owner.display_name : ""}`;
 					}

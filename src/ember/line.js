@@ -1143,9 +1143,6 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			var cl = e.target.classList,
 				from = this.get("msgObject.from");
 
-			if ( ! from )
-				return;
-
 			/*if ( cl.contains('ffz-old-messages') )
 				return f._show_deleted(this.get('msgObject.room'));*/
 
@@ -1157,6 +1154,7 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				return f._deleted_link_click.call(e.target, e);
 
 			else if ( cl.contains('mod-icon') ) {
+
 				jQuery(e.target).trigger('mouseout');
 				e.preventDefault();
 
@@ -1171,6 +1169,9 @@ FFZ.prototype._modify_chat_subline = function(component) {
 
 				else if ( cl.contains('tb-allow') )
 					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'yes');
+
+				else if ( ! from )
+					return;
 
 				else if ( cl.contains('ban') )
 					this.sendAction("banUser", {user:from});
@@ -1222,6 +1223,9 @@ FFZ.prototype._modify_chat_subline = function(component) {
 					(cl.contains('from') || e.target.parentElement.classList.contains('from')) ?
 						from :
 						this.get('msgObject.to');
+
+				if ( ! target )
+					return;
 
 				var n = this.get('element'),
 					bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),

@@ -554,18 +554,18 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 
 		handleScroll: function(top) {
 			this._super();
-			var height = this.get('channelCoverHeight') + Layout.get('fullSizePlayerDimensions.height');
+			var height = this.channelCoverHeight + Layout.get('fullSizePlayerDimensions.height');
 			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= (height * .8));
 		},
 
 		ffzUpdateCoverHeight: function() {
-			var old_height = this.get('channelCoverHeight'),
+			var old_height = this.channelCoverHeight,
 				setting = f.settings.hide_channel_banner,
 				banner_hidden = setting === 1 ? f.settings.channel_bar_bottom : setting > 0,
 
 				new_height = banner_hidden ? 0 : 380;
 
-			this.set('channelCoverHeight', new_height);
+			this.channelCoverHeight = new_height;
 			this.$("#channel").toggleClass('ffz-bar-fixed', this.get('isFixed'));
 
 			if ( old_height !== new_height )

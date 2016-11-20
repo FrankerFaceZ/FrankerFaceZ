@@ -397,6 +397,7 @@ FFZ.prototype._get_badge_object = function(badge, full_badge) {
 		image: badge.image,
 		full_image: full_badge.image,
 		color: badge.color,
+		no_tooltip: badge.no_tooltip || full_badge.no_tooltip,
 		click_action: badge.click_action || full_badge.click_action,
 		click_url: badge.click_url || full_badge.click_url,
 		no_invert: badge.no_invert || full_badge.no_invert,
@@ -548,7 +549,7 @@ FFZ.prototype.render_badges = function(badges) {
 		if ( badge.transparent )
 			klass += ' transparent';
 
-		out.push('<div class="badge html-tooltip ' + utils.quote_attr(klass) + '"' + (badge.click_url ? ' data-badge-id="' + badge.id + '" data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
+		out.push('<div class="badge ' + (badge.no_tooltip ? '' : 'html-tooltip ') + utils.quote_attr(klass) + '"' + (badge.id ? ' data-badge-id="' + badge.id + '"' : '') + (badge.click_url ? ' data-url="' + utils.quote_attr(badge.click_url) + '"' : '') + (css ? ' style="' + utils.quote_attr(css) + '"' : '') + ' title="' + utils.quote_attr(badge.title) + '"></div>');
 	}
 
 	return out.join("");

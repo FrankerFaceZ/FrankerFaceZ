@@ -555,6 +555,16 @@ API.prototype.unregister_chat_filter = function(filter) {
 // Channel Callbacks
 // -----------------------
 
+API.prototype.iterate_chat_views = function(func) {
+	if ( func === undefined )
+		func = this.trigger.bind(this, 'chat-view-init');
+
+	if ( this.ffz._chatv ) {
+		var view = this.ffz._chatv;
+		func(view.get('element'), view);
+	}
+}
+
 API.prototype.iterate_rooms = function(func) {
 	if ( func === undefined )
 		func = this.trigger.bind(this, 'room-add');
