@@ -6,6 +6,7 @@ var FFZ = window.FrankerFaceZ,
 	emote_helpers,
 	bits_helpers,
 	bits_service,
+	bits_tags,
 
 	HOP = Object.prototype.hasOwnProperty,
 
@@ -210,6 +211,7 @@ FFZ.prototype.setup_tokenization = function() {
 	}
 
 	bits_service = utils.ember_lookup('service:bits-rendering-config');
+	bits_tags = utils.ember_lookup('service:bits-tags');
 
 	try {
 		conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
@@ -376,7 +378,8 @@ FFZ.prototype.render_tooltip = function(el) {
 			if ( this.classList.contains('ffz-bit') ) {
 				var amount = parseInt(this.getAttribute('data-amount').replace(/,/g, '')),
 					individuals = JSON.parse(this.getAttribute('data-individuals') || "null"),
-					tier = bits_service.ffz_get_tier(amount),
+					prefix = this.getAttribute('data-prefix'),
+					tier = bits_service.ffz_get_tier(prefix, amount),
 					preview_url,
 					image,
 					out = utils.number_commas(amount) + ' Bit' + utils.pluralize(amount);
@@ -388,7 +391,7 @@ FFZ.prototype.render_tooltip = function(el) {
 					out += '<br>';
 					individuals.sort().reverse();
 					for(var i=0; i < individuals.length && i < 12; i++)
-						out += f.render_token(false, false, true, {type: "bits", amount: individuals[i]});
+						out += f.render_token(false, false, true, {type: "bits", prefix: prefix, amount: individuals[i]});
 
 					if ( individuals.length >= 12 )
 						out += '<br>(and ' + (individuals.length - 12) + ' more)';
@@ -657,6 +660,18 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 }
 
 
+FFZ.prototype._tokenize_bits = function(tokens) {
+	if ( bits_helpers && bits_helpers.tokenizeBits )
+		try {
+			return bits_helpers.tokenizeBits(tokens,
+				bits_tags && bits_tags.allTagNames,
+				bits_service && bits_service.regexes);
+
+		} catch(err) { }
+	return tokens;
+}
+
+
 FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
 	if ( msgObject.cachedTokens )
 		return msgObject.cachedTokens;
@@ -672,8 +687,8 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 		mod_or_higher = tags.mod || from_user === room_id || tags['user-type'] === 'staff' || tags['user-type'] === 'admin' || tags['user-type'] === 'global_mod';
 
 	// Standard Tokenization
-	if ( tags.bits && bits_helpers && bits_helpers.tokenizeBits )
-		tokens = bits_helpers.tokenizeBits(tokens);
+	if ( tags.bits )
+		tokens = this._tokenize_bits(tokens);
 
 	// For Later
 	//if ( helpers && helpers.tokenizeRichContent )
@@ -697,20 +712,27 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	tokens = this._remove_banned(tokens);
 
 	if ( tags.bits && this.settings.collect_bits ) {
+		var stuff = {};
 		var total = 0, individuals = [];
 		for(var i=0; i < tokens.length; i++)
 			if ( tokens[i] && tokens[i].type === "bits" ) {
 				tokens[i].hidden = true;
-				total += tokens[i].amount || 0;
-				individuals.push(tokens[i].amount);
+				var prefix = tokens[i].prefix,
+					amount = tokens[i].amount || 0,
+					grouped = stuff[prefix] = stuff[prefix] || {total: 0, individuals: []};
+
+				grouped.total += amount;
+				grouped.individuals.push(amount);
 			}
 
-		tokens.splice(0, 0, {
-			type: "bits",
-			amount: total,
-			individuals: individuals,
-			length: 0
-		});
+		for(var prefix in stuff)
+			tokens.splice(0, 0, {
+				type: "bits",
+				prefix: prefix,
+				amount: stuff[prefix].total,
+				individuals: stuff[prefix].individuals,
+				length: 0
+			});
 	}
 
 	if ( this.settings.parse_emoji )
@@ -1024,11 +1046,12 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 	}
 
 	else if ( token.type === "bits" ) {
-		var tier = render_bits && bits_service.ffz_get_tier(token.amount) || [null, null];
+		var tier = render_bits && bits_service.ffz_get_tier(token.prefix, token.amount) || [null, null];
 		if ( ! tier[1] )
 			return 'cheer' + token.amount;
 
-		return '<span class="emoticon ffz-bit ffz-tooltip bit-tier-' + tier[0] + '"' + (token.individuals ? ' data-individuals="' + utils.quote_attr(JSON.stringify(token.individuals)) + '"' : '') + ' data-amount="' + utils.number_commas(token.amount) + '" alt="cheer' + token.amount + '"></span>';
+		var prefix = utils.quote_attr(token.prefix);
+		return '<span class="emoticon ffz-bit ffz-tooltip bit-prefix-' + prefix + ' bit-tier-' + tier[0] + '"' + (token.individuals ? ' data-individuals="' + utils.quote_attr(JSON.stringify(token.individuals)) + '"' : '') + ' data-prefix="' + prefix + '" data-amount="' + utils.number_commas(token.amount) + '" alt="cheer' + token.amount + '"></span>';
 	}
 
 	else if ( token.type === "deleted" )

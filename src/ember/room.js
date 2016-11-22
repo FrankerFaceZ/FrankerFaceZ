@@ -924,10 +924,29 @@ FFZ.prototype._update_room_badge_css = function(room_id) {
 		badges = room && room.badges || {},
 		output = [];
 
+	// For rooms that don't have sub badges set.
+	if ( ! badges.subscriber ) {
+		var BadgeService = utils.ember_lookup('service:badges'),
+			global = BadgeService && BadgeService.badgeCollection && BadgeService.badgeCollection.global;
+		badges.subscriber = global.subscriber;
+		if ( badges.subscriber ) {
+			badges.subscriber.allow_invert = true;
+			badges.subscriber.invert_invert = true;
+		}
+	}
+
 	for(var badge_id in badges) {
 		var versions = badges[badge_id] && badges[badge_id].versions || {};
 		for(var version in versions)
 			output.push(utils.room_badge_css(room_id, badge_id, version, versions[version]));
+	}
+
+	if ( badges.subscriber ) {
+		var versions = badges.subscriber.versions || {},
+			lowest = versions[0] || versions[1];
+
+		if ( lowest )
+			output.push(utils.room_badge_css(room_id, badge_id, Infinity, lowest));
 	}
 
 	utils.update_css(this._badge_style, 'twitch-room-' + room_id, output.join(''));

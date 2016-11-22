@@ -67,6 +67,21 @@ FFZ.settings_info.show_badges = {
 };
 
 
+FFZ.settings_info.loyalty_badges = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+	name: "Display Subscriber Loyalty Badges",
+	help: "Show different badge images for users that have been subscribed 3, 6, 12, and 24 months in supported channels.",
+
+	on_update: function(val) {
+		utils.toggle_cls('ffz-no-loyalty')(!val);
+	}
+
+};
+
+
 FFZ.settings_info.hidden_badges = {
 	type: "button",
 	value: [],
@@ -278,7 +293,9 @@ FFZ.prototype.setup_badges = function() {
 		this.toggle_style('badges-blank', val === 3 || val === 4);
 		this.toggle_style('badges-circular-small', val === 4);
 		this.toggle_style('badges-transparent', val >= 5);
-		document.body.classList.toggle('ffz-transparent-badges', val >= 5);
+
+		utils.toggle_cls('ffz-transparent-badges')(val >= 5);
+		utils.toggle_cls('ffz-no-loyalty')(!this.settings.loyalty_badges);
 
 		this.toggle_style('badges-sub-notice', ! this.settings.sub_notice_badges);
 		this.toggle_style('badges-sub-notice-on', this.settings.sub_notice_badges);
@@ -479,9 +496,9 @@ FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 			klass: (BADGE_KLASSES[badge] || badge) + (is_known ? '' : ' unknown-badge') + ' version-' + version,
 			title: binfo && binfo.title || BADGE_NAMES[badge] || badge.capitalize(),
 			click_url: binfo && binfo.click_action === 'visit_url' && binfo.click_url,
-			no_invert: NO_INVERT_BADGES.indexOf(badge) !== -1,
+			no_invert: ! versions.allow_invert && NO_INVERT_BADGES.indexOf(badge) !== -1,
 			no_color: ! CSS_BADGES.hasOwnProperty(badge),
-			invert_invert: INVERT_INVERT_BADGES.indexOf(badge) !== -1,
+			invert_invert: versions.invert_invert || INVERT_INVERT_BADGES.indexOf(badge) !== -1,
 			transparent: TRANSPARENT_BADGES.indexOf(badge) !== -1
 		};
 

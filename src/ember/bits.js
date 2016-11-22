@@ -91,9 +91,10 @@ FFZ.prototype.setup_bits = function() {
 		return this.error("Unable to locate the Ember service:bits-rendering-config");
 
 	Service.reopen({
-		ffz_get_tier: function(amount) {
-			var config = this.get('config'),
-				tiers = config.tiers || [],
+		ffz_get_tier: function(prefix, amount) {
+			var config = this.get('config') || {},
+				pre_config = config[prefix] || {},
+				tiers = pre_config.tiers || [],
 				tier = null,
 				index = null;
 
@@ -110,45 +111,57 @@ FFZ.prototype.setup_bits = function() {
 		},
 
 		ffz_get_preview: function(tier) {
-			return this._templateUrlConstructor(tier.image, "dark", (f.settings.bits_animated ? 'animated' : 'static'), 4);
+			return this._constructImageSrc([4], tier, {
+				background: 'dark',
+				scale: 4,
+				state: f.settings.bits_animated ? 'animated' : 'static'
+			}).src;
 		},
 
-		_ffz_tier_css: function(ind, tier) {
-			var selector = '.ffz-bit.bit-tier-' + ind,
-				color = f._handle_color(tier.color),
+		_ffz_image_css: function(images) {
+			return 'background-image: url("' + images[1] + '");' +
+				'background-image: ' + (constants.IS_WEBKIT ? ' -webkit-' : '') + 'image-set(' +
+					'url("' + images[1] + '") 1x, url("' + images[2] + '") 2x, url("' + images[4] + '") 4x);';
+		},
 
-				template = 'url("' + this.get('config.templateUrl').replace('{background}', 'light').replace('{image}', tier.image) + '")',
-				template_srcset = template.replace('{scale}', 1) + ' 1x, ' + template.replace('{scale}', 2) + ' 2x, ' + template.replace('{scale}', 4) + ' 4x',
+		_ffz_tier_css: function(ind, prefix, tier) {
+			var selector = '.ffz-bit.bit-prefix-' + prefix + '.bit-tier-' + ind,
+				color = f._handle_color(tier.color),
 				output;
 
 			output = selector + '{' +
 				'color: ' + color[0] + ';' +
-				'background-image: ' + template.replace('{scale}', 1).replace(/{state}/g, 'static') + ';' +
-				'background-image: -webkit-image-set(' + template_srcset.replace(/{state}/g, 'static') + ');' +
+				this._ffz_image_css(tier.images.light.static) +
 			'}.ffz-animate-bits ' + selector + '{' +
-				'background-image: ' + template.replace('{scale}', 1).replace(/{state}/g, 'animated') + ';' +
-				'background-image: -webkit-image-set(' + template_srcset.replace(/{state}/g, 'animated') + ');' +
+				this._ffz_image_css(tier.images.light.animated) +
 			'}';
-
-			template = template.replace('/light/', '/dark/');
-			template_srcset = template_srcset.replace(/\/light\//g, '/dark/');
 
 			return output + '.tipsy ' + selector + ',.dark ' + selector + ',.force-dark ' + selector + ',.theatre ' + selector + '{' +
 				'color: ' + color[1] + ';' +
-				'background-image: ' + template.replace('{scale}', 1).replace(/{state}/g, 'static') + ';' +
-				'background-image: -webkit-image-set(' + template_srcset.replace(/{state}/g, 'static') + ');' +
+				this._ffz_image_css(tier.images.dark.static) +
 			'}.ffz-animate-bits .tipsy ' + selector + ',.ffz-animate-bits .dark ' + selector + ',.ffz-animate-bits .force-dark ' + selector + ',.ffz-animate-bits .theatre ' + selector + '{' +
-				'background-image: ' + template.replace('{scale}', 1).replace(/{state}/g, 'animated') + ';' +
-				'background-image: -webkit-image-set(' + template_srcset.replace(/{state}/g, 'animated') + ');' +
+				this._ffz_image_css(tier.images.dark.animated) +
 			'}';
 		},
 
 		ffz_update_css: function() {
-			var tiers = this.get('config.tiers') || [],
-				output = [];
+			var output = [],
+				config = this.get('config') || {prefixes: []};
 
-			for(var i=0, l = tiers.length; i < l; i++)
-				output.push(this._ffz_tier_css(i, tiers[i]));
+			f.log("update_css start");
+
+			for(var i=0; i < config.prefixes.length; i++) {
+				var prefix = config.prefixes[i],
+					data = config[prefix],
+					tiers = data && data.tiers;
+
+				f.log("prefix: " + prefix + " -- tiers: " + tiers.length, tiers);
+
+				for(var x=0; x < tiers.length; x++)
+					output.push(this._ffz_tier_css(x, prefix, tiers[x]));
+			}
+
+			f.log("update_css end", output.join(''));
 
 			utils.update_css(f._chat_style, 'bit-styles', output.join(''));
 
