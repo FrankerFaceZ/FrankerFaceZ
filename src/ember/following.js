@@ -99,7 +99,7 @@ FFZ.prototype.setup_profile_following = function() {
 
 
 	// Modify followed items.
-	this.update_views('component:display-followed-item', this.modify_display_followed_item);
+	//this.update_views('component:display-followed-item', this.modify_display_followed_item);
 	this.update_views('component:twitch-profile-card', this.modify_twitch_profile_card);
 }
 
@@ -180,7 +180,7 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 }
 
 
-FFZ.prototype.modify_display_followed_item = function(component) {
+/*FFZ.prototype.modify_display_followed_item = function(component) {
 	var f = this;
 	utils.ember_reopen_view(component, {
 		ffzParentModel: function() {
@@ -305,4 +305,4 @@ FFZ.prototype.modify_display_followed_item = function(component) {
 			el.appendChild(actions);
 		}
 	});
-}
+}*/

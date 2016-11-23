@@ -496,7 +496,7 @@ FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 			klass: (BADGE_KLASSES[badge] || badge) + (is_known ? '' : ' unknown-badge') + ' version-' + version,
 			title: binfo && binfo.title || BADGE_NAMES[badge] || badge.capitalize(),
 			click_url: binfo && binfo.click_action === 'visit_url' && binfo.click_url,
-			no_invert: ! versions.allow_invert && NO_INVERT_BADGES.indexOf(badge) !== -1,
+			no_invert: ! (versions && versions.allow_invert) && NO_INVERT_BADGES.indexOf(badge) !== -1,
 			no_color: ! CSS_BADGES.hasOwnProperty(badge),
 			invert_invert: versions.invert_invert || INVERT_INVERT_BADGES.indexOf(badge) !== -1,
 			transparent: TRANSPARENT_BADGES.indexOf(badge) !== -1

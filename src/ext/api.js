@@ -69,14 +69,18 @@ var API = FFZ.API = function(instance, name, icon, version, name_key) {
 	this.name = name || ("Extension#" + this.id);
 	this.name_key = name_key || this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
 
+	// We can't start name key with a number.
+	if ( /^[0-9]/.test(this.name_key) )
+		this.name_key = '_' + this.name_key;
+
 	this.icon = icon || null;
 	this.version = version || null;
 
-	this.ffz.log('Registered New Extension #' + this.id + ': ' + this.name);
+	this.ffz.log('Registered New Extension #' + this.id + ' (' + this.name_key + '): ' + this.name);
 };
 
 
-FFZ.prototype.api = function(name, icon, version) {
+FFZ.prototype.api = function(name, icon, version, name_key) {
 	// Load the known APIs list.
 	if ( ! this._known_apis ) {
 		this._known_apis = {};
@@ -88,17 +92,17 @@ FFZ.prototype.api = function(name, icon, version) {
 			}
 	}
 
-	return new API(this, name, icon, version);
+	return new API(this, name, icon, version, name_key);
 }
 
 
 API.prototype.log = function(msg, data, to_json, log_json) {
-	this.ffz.log('Ext "' + this.name + '": ' + msg, data, to_json, log_json);
+	this.ffz.log('Ext #' + this.id + ' (' + this.name_key + '): ' + msg, data, to_json, log_json);
 }
 
 
 API.prototype.error = function(msg, error, to_json, log_json) {
-	this.ffz.error('Ext "' + this.name + '": ' + msg, data, to_json, log_json);
+	this.ffz.error('Ext #' + this.id + ' (' + this.name_key + '): ' + msg, data, to_json, log_json);
 }
 
 
@@ -431,7 +435,7 @@ API.prototype.unregister_room_set = function(room_id, set_id) {
 // -----------------------
 
 API.prototype.add_badge = function(badge_id, badge) {
-	var exact_id = this.id + '-' + badge_id,
+	var exact_id = this.name_key + '-' + badge_id, // this.id + '-' + badge_id,
 
 		real_badge = _.extend({}, badge, {
 			id: exact_id,
@@ -453,7 +457,7 @@ API.prototype.add_badge = function(badge_id, badge) {
 
 
 API.prototype.remove_badge = function(badge_id) {
-	var exact_id = this.id + '-' + badge_id;
+	var exact_id = this.name_key + '-' + badge_id;
 	this.badges[badge_id] = undefined;
 
 	if ( this.ffz.badges )
@@ -475,7 +479,7 @@ API.prototype.user_add_badge = function(username, slot, badge_id) {
 		badges = user.badges = user.badges || {},
 		ffz_badges = ffz_user.badges = ffz_user.badges || {},
 
-		exact_id = this.id + '-' + badge_id,
+		exact_id = this.name_key + '-' + badge_id,
 		badge = {id: exact_id};
 
 	badges[slot] = ffz_badges[slot] = badge;

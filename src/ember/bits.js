@@ -92,9 +92,8 @@ FFZ.prototype.setup_bits = function() {
 
 	Service.reopen({
 		ffz_get_tier: function(prefix, amount) {
-			var config = this.get('config') || {},
-				pre_config = config[prefix] || {},
-				tiers = pre_config.tiers || [],
+			var config = this._getConfigPrefix(prefix) || {},
+				tiers = config.tiers || [],
 				tier = null,
 				index = null;
 
@@ -148,20 +147,14 @@ FFZ.prototype.setup_bits = function() {
 			var output = [],
 				config = this.get('config') || {prefixes: []};
 
-			f.log("update_css start");
-
 			for(var i=0; i < config.prefixes.length; i++) {
 				var prefix = config.prefixes[i],
 					data = config[prefix],
 					tiers = data && data.tiers;
 
-				f.log("prefix: " + prefix + " -- tiers: " + tiers.length, tiers);
-
 				for(var x=0; x < tiers.length; x++)
 					output.push(this._ffz_tier_css(x, prefix, tiers[x]));
 			}
-
-			f.log("update_css end", output.join(''));
 
 			utils.update_css(f._chat_style, 'bit-styles', output.join(''));
 

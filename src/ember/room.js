@@ -2107,21 +2107,16 @@ FFZ.prototype._modify_room = function(room) {
 					delay = 3000 + Math.floor((percentile || 0) * Math.random());
 				}
 
-				if ( this.get("experiments.shouldSeeRedesign") ) {
-					var c = this.get("store").peekRecord("channel", channel.get("name"));
-					if ( c ) {
-						if ( target )
-							this.pendingFetchHostModeTarget = Ember.run.debounce(this, "fetchHostModeTarget", {
-								currentChannel: c,
-								targetName: target
-							}, delay);
-						else
-							c.set("hostModeTarget", null);
-					}
-
-				} else channel.setHostMode({
-					target: target, delay: delay
-				});
+				var c = this.get("store").peekRecord("channel", channel.get("name"));
+				if ( c ) {
+					if ( target )
+						this.pendingFetchHostModeTarget = Ember.run.debounce(this, "fetchHostModeTarget", {
+							currentChannel: c,
+							targetName: target
+						}, delay);
+					else
+						c.set("hostModeTarget", null);
+				}
 			}
 		},
 
