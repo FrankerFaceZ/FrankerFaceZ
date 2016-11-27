@@ -1,5 +1,7 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils');
+	utils = require('../utils'),
+
+	route_helper;
 
 
 // --------------------
@@ -169,6 +171,12 @@ FFZ.prototype.setup_layout = function() {
 	s.id = 'ffz-layout-css';
 	document.head.appendChild(s);
 
+	try {
+		route_helper = window.require("web-client/utilities/route-matcher");
+	} catch(err) {
+		this.error("Unable to require the route-matcher utility.", err);
+	}
+
 	var Layout = utils.ember_lookup('service:layout'),
 		f = this;
 
@@ -182,6 +190,15 @@ FFZ.prototype.setup_layout = function() {
 		rawPortraitMode: 0,
 
 		portraitVideoBelow: false,
+
+		channelCoverHeight: function() {
+			var setting = f.settings.hide_channel_banner,
+				banner_hidden = setting === 1 ? f.settings.channel_bar_bottom : setting > 0;
+
+			return ( banner_hidden || ! route_helper || route_helper.routeMatches && route_helper.routeMatches(this.get('globals.currentPath'), route_helper.ROUTES.CHANNEL_ANY) ) ?
+				0 : 380;
+
+		}.property("globals.currentPath"),
 
 		portraitMode: function() {
 			var raw = this.get("rawPortraitMode");

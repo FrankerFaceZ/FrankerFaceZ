@@ -91,7 +91,15 @@ FFZ.prototype.setup_bits = function() {
 		return this.error("Unable to locate the Ember service:bits-rendering-config");
 
 	Service.reopen({
+		ffz_has_css: false,
+
 		ffz_get_tier: function(prefix, amount) {
+			if ( ! this.get('isLoaded') ) {
+				this._actionPromiseCache = false;
+				this.loadRenderConfig();
+			} else if ( ! this.ffz_has_css )
+				this.ffz_update_css();
+
 			var config = this._getConfigPrefix(prefix) || {},
 				tiers = config.tiers || [],
 				tier = null,
@@ -157,12 +165,17 @@ FFZ.prototype.setup_bits = function() {
 			}
 
 			utils.update_css(f._chat_style, 'bit-styles', output.join(''));
+			this.ffz_has_css = true;
+		}.observes('config'),
 
-		}.observes('config')
+		loadRenderConfig: function() {
+			var out = this._super();
+			if ( ! this.get('config') )
+				this._actionPromiseCache = false;
+			return out;
+		}
 	});
 
-	if ( ! Service.get('isLoaded') )
+	if ( Service.get('isLoaded') )
 		Service.loadRenderConfig();
-	else
-		Service.ffz_update_css();
 }
