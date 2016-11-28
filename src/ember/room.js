@@ -180,7 +180,7 @@ FFZ.prototype.format_ban_notice = function(username, is_me, duration, count, rea
 		duration_tip.push(utils.sanitize(mod_id) + ' - ' + nd + (notice[1] ? ': ' + utils.sanitize(notice[1]) : ''));
 	}
 
-	return (is_me ? 'You have' : '<span data-user="' + utils.quote_san(username) + '" class="ban-target html-tooltip" title="' + utils.quote_attr(name[1] || '') + '">' + name[0] + '</span> has') +
+	return (is_me ? 'You have' : '<span data-user="' + utils.quote_san(username) + '" class="user-token html-tooltip" title="' + utils.quote_attr(name[1] || '') + '">' + name[0] + '</span> has') +
 		' been ' + (duration_tip.length ? '<span class="ban-tip html-tooltip" title="' + utils.quote_attr(duration_tip.join('<br>')) + '">' : '') + (duration === -Infinity ? 'unbanned' :
 		(duration === -1 ? 'untimed out' :
 		(duration === 1 ? 'purged' : isFinite(duration) ? 'timed out for ' + utils.duration_string(duration) : 'banned'))) +

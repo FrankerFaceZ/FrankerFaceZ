@@ -184,6 +184,20 @@ FFZ.settings_info.show_deleted_links = {
 };
 
 
+FFZ.settings_info.clickable_mentions = {
+	type: 'boolean',
+	value: true,
+
+	category: 'Chat Moderation',
+	no_bttv: true,
+
+	name: 'Clickable Mentions',
+	help: 'Make mentions in chat starting with an at sign (<code>@</code>) open the user\'s moderation card when clicked.',
+
+	on_update: utils.toggle_cls('ffz-clickable-mentions')
+}
+
+
 // ---------------------
 // Setup
 // ---------------------
@@ -196,6 +210,7 @@ FFZ.prototype.setup_tokenization = function() {
 	this._link_data = {};
 
 	this.load_twitch_emote_data();
+	utils.toggle_cls('ffz-clickable-mentions')(this.settings.clickable_mentions);
 
 	try {
 		helpers = window.require && window.require("web-client/helpers/chat/chat-line-helpers");
@@ -843,6 +858,9 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 		}
 	}
 
+	// Tokenize users last.
+	tokens = this.tokenize_users(tokens);
+
 	msgObject.cachedTokens = tokens;
 	return tokens;
 }
@@ -871,6 +889,8 @@ FFZ.prototype.tokenize_line = function(user, room, message, no_emotes, no_emoji)
 
 	if ( this.settings.parse_emoji && ! no_emoji )
 		message = this.tokenize_emoji(message);
+
+	message = this.tokenize_users(message);
 
 	return message;
 }
@@ -932,6 +952,9 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 
 	else if ( token.type === "raw" )
 		return token.html;
+
+	else if ( token.type === "user" )
+		return '<span data-user="' + utils.quote_attr(token.user) + '" class="user-token">' + utils.sanitize(token.text) + '</span>';
 
 	else if ( token.type === "emoticon" ) {
 		var src = token.imgSrc, srcset, cls, extra;
@@ -1133,6 +1156,42 @@ FFZ.prototype.tokenize_ctags = function(tokens, tags_only) {
 // ---------------------
 // Emoticon Processing
 // ---------------------
+
+FFZ.prototype.tokenize_users = function(tokens) {
+	"use strict";
+
+	if ( typeof tokens === "string" )
+		tokens = [tokens];
+
+	var new_tokens = [];
+	for(var i=0, l=tokens.length; i < l; i++) {
+		var token = tokens[i];
+		if ( ! token )
+			continue;
+
+		if ( typeof token !== "string" )
+			if ( token.type === "text" )
+				token = token.text;
+			else {
+				new_tokens.push(token);
+				continue;
+			}
+
+		var segments = token.split(/(@[a-z0-9][a-z0-9_]{3,24})/i);
+		for(var x=0, y = segments.length; x < y; x += 2) {
+			var text = segments[x] || '',
+				match = segments[x+1] || '';
+
+			if ( text.length )
+				new_tokens.push({type: 'text', text: text});
+
+			if ( match.length )
+				new_tokens.push({type: 'user', text: match, user: match.substr(1)});
+		}
+	}
+
+	return new_tokens;
+}
 
 FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 	"use strict";

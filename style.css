@@ -3726,8 +3726,8 @@ body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar .js-p
 
 .ban-tip { border-bottom: 1px dotted rgba(102,102,102,0.5); }
 
-.chat-display .chat-line .ban-target { font-weight: bold }
-.chat-display .chat-line .ban-target:hover {
+.ffz-clickable-mentions .chat-display .chat-line .user-token { font-weight: bold }
+.ffz-clickable-mentions .chat-display .chat-line .user-token:hover {
 	text-decoration: underline;
 	cursor: pointer;
 }

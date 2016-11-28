@@ -195,7 +195,7 @@ FFZ.prototype.setup_layout = function() {
 			var setting = f.settings.hide_channel_banner,
 				banner_hidden = setting === 1 ? f.settings.channel_bar_bottom : setting > 0;
 
-			return ( banner_hidden || ! route_helper || route_helper.routeMatches && route_helper.routeMatches(this.get('globals.currentPath'), route_helper.ROUTES.CHANNEL_ANY) ) ?
+			return ( banner_hidden || ! route_helper || route_helper.routeMatches && !route_helper.routeMatches(this.get('globals.currentPath'), route_helper.ROUTES.CHANNEL_ANY) ) ?
 				0 : 380;
 
 		}.property("globals.currentPath"),

@@ -1217,8 +1217,8 @@ FFZ.prototype._modify_chat_subline = function(component) {
 			} else if ( f._click_emote(e.target, e) )
 				return;
 
-			else if ( cl.contains('ban-target') || cl.contains('from') || cl.contains('to') || e.target.parentElement.classList.contains('from') || e.target.parentElement.classList.contains('to') ) {
-				var target = cl.contains('ban-target') ?
+			else if ( (f.settings.clickable_mentions && cl.contains('user-token')) || cl.contains('from') || cl.contains('to') || e.target.parentElement.classList.contains('from') || e.target.parentElement.classList.contains('to') ) {
+				var target = cl.contains('user-token') ?
 						e.target.getAttribute('data-user') :
 					(cl.contains('from') || e.target.parentElement.classList.contains('from')) ?
 						from :
