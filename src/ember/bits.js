@@ -157,8 +157,8 @@ FFZ.prototype.setup_bits = function() {
 
 			for(var i=0; i < config.prefixes.length; i++) {
 				var prefix = config.prefixes[i],
-					data = config[prefix],
-					tiers = data && data.tiers;
+					data = this._getConfigPrefix(prefix),
+					tiers = data && data.tiers || [];
 
 				for(var x=0; x < tiers.length; x++)
 					output.push(this._ffz_tier_css(x, prefix, tiers[x]));
