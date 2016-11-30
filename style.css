@@ -1289,20 +1289,16 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Fix Moderation Cards */
 
-img.channel_background[src=""],
-img.channel_background[src="null"] { display: none; }
-
 .ffz-moderation-card {
 	border: 2px solid #cbcbcb;
 	width: 340px;
 }
 
-.ember-chat .ffz-moderation-card .close-button {
-	right: 7px;
-	width: 20px;
+.moderation-card__close-button {
+	margin-right: 0 !important;
 }
 
-.ember-chat .ffz-moderation-card .extra-interface {
+.ffz-moderation-card .extra-interface {
 	padding-top: 0;
 }
 
@@ -1310,24 +1306,17 @@ img.channel_background[src="null"] { display: none; }
 	margin-top: -10px;
 }
 
-.ffz-moderation-card.ffz-has-info h4.name {
-	/*margin-top: -2px;*/
-	margin-bottom: 0;
-	padding-top: 0;
-	white-space: nowrap;
-}
+.ffz-moderation-card.ffz-has-info .moderation-card__name .intl-login { display: inline }
 
-.ffz-moderation-card.ffz-has-info .name .intl-login {
-	margin: -2px 0 -4px;
-}
+.ffz-moderation-card.ffz-has-info .flex { position: relative }
 
-.ffz-moderation-card .info {
-	float: none;
-	position: relative;
-	z-index: 4;
-	margin-left: 50px;
+.ffz-moderation-card .flex .info {
+	position: absolute;
+	bottom: 0;
+	left: 50px;
 	height: 18px;
 	line-height: 18px;
+	z-index: 4;
 	pointer-events: none;
 }
 
@@ -1353,12 +1342,9 @@ img.channel_background[src="null"] { display: none; }
 	color: #6441a4;
 }
 
-.ffz-moderation-card .mod-controls button figure { padding: 0 }
+.ffz-moderation-card .button.ignore { margin-left: 0 !important }
 
-.ember-chat .ffz-moderation-card .mod-controls button {
-	width: auto;
-	margin-right: 10px;
-}
+.ffz-moderation-card .moderation-card__controls button figure { padding: 0 }
 
 .ffz-moderation-card .follow-button,
 .ffz-moderation-card .friend-button { max-height: 30px }
@@ -1373,9 +1359,11 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 }
 
 .ffz-moderation-card .button.button--icon-only {
-	padding: 0 !important;
+	padding: 0 2.5px 0 2.5px !important;
 	margin-right: 5px;
 }
+
+.ffz-moderation-card .button.button--icon-only figure { padding: 0 !important }
 
 .ffz-moderation-card button:not(.button--icon-only):hover,
 .ffz-moderation-card button:not(.button--icon-only):focus {
@@ -1387,8 +1375,10 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 	height: 30px;
 }
 
-.ffz-moderation-card.ffz-is-mod .interface .mod-controls:last-of-type,
-.ffz-moderation-card .interface span.right {
+.ffz-moderation-card.ffz-is-mod .button.ban,
+.ffz-moderation-card.ffz-is-mod .button.mod,
+.ffz-moderation-card.ffz-is-mod .button.unban,
+.ffz-moderation-card span.right {
 	float: right;
 }
 
@@ -1398,23 +1388,16 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 	/*box-shadow: #000 0 0 5px;*/
 }
 
-.ffz-moderation-card ul.menu + .interface { border-top: none }
+.ffz-moderation-card ul.menu + .moderation-card__actions { border-top: none }
 
-.ffz-moderation-card .interface:last-child,
-.ffz-moderation-card .interface:not(:last-of-type) {
+.ffz-moderation-card .moderation-card__actions:last-child,
+.ffz-moderation-card .moderation-card__actions:not(:last-of-type) {
 	border-bottom: none;
 }
 
-.ffz-moderation-card h4.name { display: inline-block; }
-
 .ffz-moderation-card .info,
-.ffz-moderation-card h4.name {
+.ffz-moderation-card .moderation-card__name {
 	text-shadow: black 0 0 5px;
-}
-
-.ember-chat .ffz-moderation-card .channel_background {
-	width: 100%;
-	top: 0;
 }
 
 .ffz-moderation-card .ffz-ban-reasons {
@@ -1434,10 +1417,10 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 .ffz-dark .ffz-following-row,
 .theatre .ffz-following-row,
 
-.ffz-dark .moderation-card .interface,
-.theatre .moderation-card .interface,
-.dark .moderation-card .interface,
-.force-dark .moderation-card .interface,
+.ffz-dark .moderation-card .moderation-card__actions,
+.theatre .moderation-card .moderation-card__actions,
+.dark .moderation-card .moderation-card__actions,
+.force-dark .moderation-card .moderation-card__actions,
 
 .ffz-dark .ffz-moderation-card ul.menu,
 .theatre .ffz-moderation-card ul.menu,
@@ -1480,7 +1463,7 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 .ffz-moderation-card ul.menu li.active { border-bottom-color: #6441a4 }
 
-.ffz-moderation-card:not(.ffz-default-tab) > .interface:not(.menu) {
+.ffz-moderation-card:not(.ffz-default-tab) > .moderation-card__actions:not(.menu) {
 	display: none
 }
 
@@ -1499,20 +1482,20 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 	border-color: #cbcbcb;
 }
 
-.dark .ffz-moderation-card .interface,
-.force-dark .ffz-moderation-card .interface,
-.theatre .ffz-moderation-card .interface {
+.dark .ffz-moderation-card .moderation-card__actions,
+.force-dark .ffz-moderation-card .moderation-card__actions,
+.theatre .ffz-moderation-card .moderation-card__actions {
 	background-color: #232329;
 }
 
 .ffz-no-blue .cn-hosting,
-.ffz-no-blue .dark .ember-chat .moderation-card .interface,
-.ffz-no-blue .force-dark .ember-chat .moderation-card .interface,
-.ffz-no-blue .theatre .ember-chat .moderation-card .interface {
+.ffz-no-blue .dark .ember-chat .moderation-card .moderation-card__actions,
+.ffz-no-blue .force-dark .ember-chat .moderation-card .moderation-card__actions,
+.ffz-no-blue .theatre .ember-chat .moderation-card .moderation-card__actions {
 	background-color: #232323;
 }
 
-.moderation-card h4.name a { color: #fff !important; }
+.moderation-card .moderation-card__name a { color: #fff !important; }
 
 
 /* purge icon */
@@ -2087,8 +2070,8 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	overflow: hidden;
 }
 
-.chat-history.interface li:first-child { padding-top: 10px; }
-.chat-history.interface li:last-child { padding-bottom: 10px; }
+.chat-history.moderation-card__actions li:first-child { padding-top: 10px; }
+.chat-history.moderation-card__actions li:last-child { padding-bottom: 10px; }
 
 .chat-history .chat-line {
 	overflow: hidden;
@@ -2104,7 +2087,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	font-size: 1.1rem;
 }
 
-.ember-chat .moderation-card .interface.chat-history .chat-line.action {
+.ember-chat .moderation-card .moderation-card__actions.chat-history .chat-line.action {
 	float: none;
 	margin-right: 0px;
 }

@@ -420,7 +420,7 @@ FFZ.mod_card_pages.history = {
 			history.innerHTML = '';
 		else {
 			var btn_hide = utils.createElement('li', 'button ffz-back-button', '<span class="ffz-chevron"></span> Back'),
-				btn_container = utils.createElement('ul', 'interface chat-history chat-back-button', btn_hide);
+				btn_container = utils.createElement('ul', 'moderation-card__actions chat-history chat-back-button', btn_hide);
 
 			btn_hide.addEventListener('click', function() {
 				el.removeChild(history);
@@ -428,7 +428,7 @@ FFZ.mod_card_pages.history = {
 				old_history.classList.remove('hidden');
 			})
 
-			history = utils.createElement('ul', 'interface chat-history adjacent-history');
+			history = utils.createElement('ul', 'moderation-card__actions chat-history adjacent-history');
 			el.appendChild(btn_container);
 			el.appendChild(history);
 		}
@@ -492,7 +492,7 @@ FFZ.mod_card_pages.history = {
 			room_id = controller && controller.get('currentRoom.id'),
 			ffz_room = this.rooms[room_id],
 
-			history = utils.createElement('ul', 'interface chat-history lv-history');
+			history = utils.createElement('ul', 'moderation-card__actions chat-history lv-history');
 
 		el.appendChild(history);
 
@@ -550,7 +550,7 @@ FFZ.mod_card_pages.stats = {
 			user_id = mod_card.get('cardInfo.user.id'),
 			ffz_room = f.rooms && f.rooms[room_id];
 
-		var container = utils.createElement('ul', 'interface version-list');
+		var container = utils.createElement('ul', 'moderation-card__actions version-list');
 		el.appendChild(container);
 
 		if ( ffz_room.has_logs && mod_card.lv_view ) {
@@ -561,7 +561,7 @@ FFZ.mod_card_pages.stats = {
 				container.innerHTML = '<li>Messages <span>' + utils.number_commas(data.user.messages) + '</span></li><li>Timeouts <span> ' + utils.number_commas(data.user.timeouts) + '</span></li>';
 			});
 
-			var notice = utils.createElement('div', 'interface');
+			var notice = utils.createElement('div', 'moderation-card__actions');
 			notice.innerHTML = 'Chat Log Source: <a target="_blank" href="https://cbenni.com/' + room_id + '?user=' + user_id + '">CBenni\'s Logviewer</a>';
 			el.appendChild(notice);
 		}
@@ -689,7 +689,7 @@ FFZ.mod_card_pages.notes = {
 			user_id = mod_card.get('cardInfo.user.id'),
 
 			ffz_room = this.rooms[room_id],
-			history = utils.createElement('ul', 'interface chat-history user-notes');
+			history = utils.createElement('ul', 'moderation-card__actions chat-history user-notes');
 
 		el.appendChild(history);
 
@@ -726,7 +726,7 @@ FFZ.mod_card_pages.notes = {
 
 		if ( mod_card.lv_write_notes ) {
 			var textarea = utils.createElement('textarea', 'chat_text_input mousetrap note-text-input'),
-				note_container = utils.createElement('div', 'interface textarea-contain note-input', textarea),
+				note_container = utils.createElement('div', 'moderation-card__actions textarea-contain note-input', textarea),
 				btn_submit = utils.createElement('a', 'button float-right', 'Add Note'),
 				btn_container = utils.createElement('div', 'chat-buttons-container clearfix', btn_submit),
 
