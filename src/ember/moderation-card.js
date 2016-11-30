@@ -978,15 +978,17 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			var def_actions = el.querySelector('.moderation-card__actions');
 			if ( def_actions ) {
 				var def_line = def_actions.querySelector('.clearfix'),
-					bad_line = def_actions.querySelector('.moderation-card__controls'),
-					children = bad_line.querySelectorAll('button');
+					bad_line = def_actions.querySelector('.moderation-card__controls');
 
-				for(var i=0; i < children.length; i++) {
-					bad_line.removeChild(children[i]);
-					def_line.appendChild(children[i]);
+				if ( def_line && bad_line ) {
+					var children = bad_line.querySelectorAll('button');
+					for(var i=0; i < children.length; i++) {
+						bad_line.removeChild(children[i]);
+						def_line.appendChild(children[i]);
+					}
+
+					bad_line.classList.add('hidden');
 				}
-
-				bad_line.classList.add('hidden');
 			}
 
 

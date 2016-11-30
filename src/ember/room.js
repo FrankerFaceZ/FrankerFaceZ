@@ -41,21 +41,34 @@ var FFZ = window.FrankerFaceZ,
 	is_android = navigator.userAgent.indexOf('Android') !== -1,
 
 	moderator_css = function(room) {
-		if ( ! room.moderator_badge )
+		if ( ! room.mod_urls )
 			return "";
+
+		var urls = room.mod_urls,
+			image_set = image = 'url("' + urls[1] + '")';
+
+		if ( urls[2] || urls[4] ) {
+			image_set += ' 1x';
+			if ( urls[2] )
+				image_set += ', url("' + urls[2] + '") 2x';
+			if ( urls[4] )
+				image_set += ', url("' + urls[4] + '") 4x';
+
+			image_set = (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(' + image_set + ')';
+		}
 
 		return '.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored),' +
 			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored) {' +
-				'background-repeat: no-repeat;' +
-				'background-size: initial !important;' +
-				'background-position: center;' +
-				'background-image:url("' + room.moderator_badge + '") !important; }' +
+				'background-repeat:no-repeat;' +
+				'background-size:initial !important;' +
+				'background-position:center;' +
+				'background-image:' + image_set + ' !important}' +
 			'.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored,' +
 			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored {' +
-				'-webkit-mask-repeat: no-repeat;' +
-				'-webkit-mask-size: initial !important;' +
-				'-webkit-mask-position: center;' +
-				'-webkit-mask-image: url("' + room.moderator_badge + '"); }';
+				'-webkit-mask-repeat:no-repeat;' +
+				'-webkit-mask-size:initial !important;' +
+				'-webkit-mask-position:center;' +
+				'-webkit-mask-image:' + image_set + '}';
 	};
 
 // --------------------
