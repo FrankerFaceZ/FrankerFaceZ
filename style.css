@@ -3591,6 +3591,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .ffz-channel-title-top .cn-metabar__title {
 	position: absolute;
 	top: 5px;
+	z-index: 3;
 }
 
 .ffz-channel-title-top:not(.ffz-channel-bar-bottom):not(.ffz-minimal-channel-bar) #channel.ffz-bar-fixed .cn-metabar__title {
@@ -3602,8 +3603,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 }
 
-body:not(.ffz-channel-bar-bottom).ffz-small-player .js-player .dynamic-player { margin-top: 50px }
-body:not(.ffz-channel-bar-bottom).ffz-small-player.ffz-minimal-channel-bar .js-player .dynamic-player { margin-top: 10px }
+.ffz-channel-bar-bottom .player-mini { bottom: 20px }
 
 .ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed { top: auto; bottom: -40px }
@@ -3839,4 +3839,10 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 .ffz-pinned-cheer-expand-hover .pinned-cheers__message:hover .pinned-cheer__expando-arrow { transform: none }
 .ffz-pinned-cheer-expand-hover .pinned-cheers__message .pinned-cheer__expando-arrow {
 	transform: rotateX(180deg);
+}
+
+/* Player Mini Positioning Stuff */
+
+.ffz-sidebar-swap .expandRight .player-mini {
+	left: 10px !important;
 }

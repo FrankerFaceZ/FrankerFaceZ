@@ -183,6 +183,23 @@ FFZ.prototype.modify_channel_live = function(view) {
 			this.$().on("click", ".ffz-creative-tag-link", utils.transition_link(function(e) {
 				utils.transition('directory.creative.hashtag.index', this.getAttribute('data-tag'));
 			}));
+
+			var t = this;
+			this.$('.player-placeholder').on('click', function() { t.updatePlayerPosition() })
+
+			if ( this.updatePlayerPosition ) {
+				this._ffz_loaded = Date.now();
+				this._ffz_player_repositoner = setInterval(this.ffzUpdatePlayerPosition.bind(this), 250);
+			}
+		},
+
+		ffzUpdatePlayerPosition: function() {
+			if ( this._ffz_player_repositoner && Date.now() - this._ffz_loaded > 60000 ) {
+				clearInterval(this._ffz_player_repositoner);
+				this._ffz_player_repositoner = null;
+			}
+
+			this.updatePlayerPosition();
 		},
 
 		ffzUpdateAttributes: function() {
@@ -247,7 +264,11 @@ FFZ.prototype.modify_channel_live = function(view) {
 				this._fix_host_timer = null;
 			}
 
-			document.body.classList.remove('ffz-small-player');
+			if ( this._ffz_player_repositoner ) {
+				clearInterval(this._ffz_player_repositoner);
+				this._ffz_player_repositoner = null;
+			}
+
 			utils.update_css(f._channel_style, channel_id, null);
 		},
 
@@ -554,8 +575,6 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 
 		handleScroll: function(top) {
 			this._super();
-			var height = this.channelCoverHeight + Layout.get('fullSizePlayerDimensions.height');
-			document.body.classList.toggle('ffz-small-player', f.settings.small_player && top >= (height * .8));
 		},
 
 		ffzUpdateCoverHeight: function() {
@@ -568,8 +587,11 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 			this.channelCoverHeight = new_height;
 			this.$("#channel").toggleClass('ffz-bar-fixed', this.get('isFixed'));
 
-			if ( old_height !== new_height )
+			if ( this.$scrollContainer && old_height !== new_height )
 				this.scrollTo(this.$scrollContainer.scrollTop() + (new_height - old_height));
+
+			if ( this.updatePlayerPosition )
+				setTimeout(this.updatePlayerPosition.bind(this));
 
 		}.observes('isFixed')
 	})
@@ -591,28 +613,6 @@ FFZ.settings_info.auto_theater = {
 	name: "Automatic Theater Mode",
 	help: "Automatically enter theater mode when opening a channel."
 	};
-
-
-FFZ.settings_info.small_player = {
-	type: "boolean",
-	value: false,
-	no_mobile: true,
-	no_bttv: true,
-
-	category: "Appearance",
-	name: "Mini-Player on Scroll",
-	help: "When you scroll down on the page, shrink the player and put it in the upper right corner so you can still watch.",
-
-	on_update: function(val) {
-		if ( ! val )
-			return document.body.classList.remove('ffz-small-player');
-
-		else if ( this._vodc )
-			this._vodc.ffzOnScroll();
-		else if ( this._cindex )
-			this._cindex.ffzOnScroll();
-	}
-}
 
 
 FFZ.settings_info.chatter_count = {

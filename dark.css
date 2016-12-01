@@ -139,6 +139,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: rgba(16,16,16,0.3) !important;
 }
 
+.ffz-dark .player-placeholder { background: #000 }
+
 .ffz-dark div.title > span.over:hover,
 .ffz-dark div.title > span.real:hover,
 .ffz-dark #broadcast-meta .info .title:hover {
