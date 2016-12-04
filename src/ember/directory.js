@@ -164,17 +164,40 @@ FFZ.settings_info.directory_host_menus = {
 	help: "Display a menu to select which channel to visit when clicking a hosted channel in the directory.",
 
 	on_update: function() {
-			var f = this,
-				HostModel = utils.ember_resolve('model:host'),
-				Following = HostModel && HostModel.collections[HostModel.collectionId("following")];
+		var f = this,
+			HostModel = utils.ember_resolve('model:host'),
+			Following = HostModel && HostModel.collections[HostModel.collectionId("following")];
 
-			if ( ! Following )
-				return;
+		if ( ! Following )
+			return;
 
-			Following.clear();
-			Following.load();
-		}
-	};
+		Following.clear();
+		Following.load();
+	}
+};
+
+
+FFZ.settings_info.directory_uploads_position = {
+	type: "select",
+	options: {
+		0: "Default",
+		1: "At Bottom",
+		2: "Hidden"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0),
+
+	category: "Directory",
+	no_mobile: true,
+
+	name: "Display Latest Uploads",
+	help: "Choose where to display the Latest Uploads section.",
+
+	on_update: function(val) {
+		utils.toggle_cls('ffz-hide-directory-uploads')(val === 2);
+	}
+};
 
 
 // --------------------
@@ -184,8 +207,9 @@ FFZ.settings_info.directory_host_menus = {
 FFZ._image_cache = {};
 
 FFZ.prototype.setup_directory = function() {
-	document.body.classList.toggle('ffz-creative-tags', this.settings.directory_creative_all_tags);
-	document.body.classList.toggle('ffz-creative-showcase', this.settings.directory_creative_showcase);
+	utils.toggle_cls('ffz-creative-tags')(this.settings.directory_creative_all_tags);
+	utils.toggle_cls('ffz-creative-showcase')(this.settings.directory_creative_showcase);
+	utils.toggle_cls('ffz-hide-directory-uploads')(this.settings.directory_uploads_position === 2);
 
 	var f = this,
 		VodCoviews = utils.ember_lookup('service:vod-coviews');
@@ -222,11 +246,29 @@ FFZ.prototype.setup_directory = function() {
 	this.update_views('component:twitch-carousel/stream-item', function(x) { this.modify_directory_live(x, false, true) }, true);
 	this.update_views('component:host-preview', this.modify_directory_host, true, true);
 	this.update_views('component:video-preview', this.modify_video_preview, true);
+	this.update_views("component:video/following-uploads", this.modify_following_uploads);
 
 	this.update_views('component:game-follow-button', this.modify_game_follow_button);
 
 	this.log("Attempting to modify the Following collection.");
 	this._modify_following();
+}
+
+
+FFZ.prototype.modify_following_uploads = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			var el = this.get('element');
+			el.classList.add('ffz-following-uploads');
+
+			if ( f.settings.directory_uploads_position === 1 ) {
+				var p = el.parentElement;
+				p.removeChild(el);
+				p.appendChild(el);
+			}
+		}
+	});
 }
 
 

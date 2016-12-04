@@ -59,7 +59,7 @@ FFZ.settings_info.player_volume_bar = {
 };
 
 
-FFZ.settings_info.player_pause_hosts = {
+/*FFZ.settings_info.player_pause_hosts = {
 	type: "select",
 	options: {
 		0: "Disabled",
@@ -73,7 +73,7 @@ FFZ.settings_info.player_pause_hosts = {
 	category: "Player",
 	name: "Auto-Pause Hosted Channels",
 	help: "Automatically pause hosted channels if you paused the channel doing the hosting, or just pause all hosts."
-}
+}*/
 
 
 // ---------------
@@ -88,8 +88,6 @@ FFZ.prototype.setup_player = function() {
 	if ( Layout )
 		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
 
-	this.players = {};
-
 	this.update_views('component:twitch-player2', this.modify_twitch_player);
 }
 
@@ -102,8 +100,11 @@ FFZ.prototype.modify_twitch_player = function(player) {
 	var f = this;
 	utils.ember_reopen_view(player, {
 		ffz_init: function() {
-			var channel_id = this.get('hostChannel.name');
-			f.players[channel_id] = this;
+			// We can have multiple players in page now, thanks to persistent players.
+			// Usually the second one will be something we don't want though. Like
+			// the creative showcase.
+			if ( ! f._player || f._player.isDestroying || f._player.isDestroyed )
+				f._player = this;
 
 			var player = this.get('player');
 			if ( player && !this.get('ffz_post_player') )
@@ -111,12 +112,11 @@ FFZ.prototype.modify_twitch_player = function(player) {
 		},
 
 		ffz_destroy: function() {
-			var channel_id = this.get('hostChannel.name');
-			if ( f.players[channel_id] === this )
-				f.players[channel_id] = undefined;
+			if ( f._player === this )
+				f._player = undefined;
 		},
 
-		insertPlayer: function(ffz_reset) {
+		/*insertPlayer: function(ffz_reset) {
 			// We want to see if this is a hosted video on a play
 			var should_start_paused = this.get('shouldStartPaused'),
 				channel_id = this.get('hostChannel.name'),
@@ -136,7 +136,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			// Restore the previous value so it doesn't mess anything up.
 			this.set('shouldStartPaused', should_start_paused);
 
-		}.on('didInsertElement'),
+		}.on('didInsertElement'),*/
 
 		postPlayerSetup: function() {
 			this._super();
@@ -157,16 +157,16 @@ FFZ.prototype.modify_twitch_player = function(player) {
 				player.destroy();
 
 			// Break down everything left over from that player.
-			this.$('#video-1').html('');
+			this.$('#player').html('');
 			Mousetrap.unbind(['alt+x', 'alt+t', 'esc']);
 			this.set('player', null);
 			this.set('ffz_post_player', false);
 
 			// Now, let Twitch create a new player as usual.
-			Ember.run.next(this.insertPlayer.bind(this, true));
+			Ember.run.next(this.didInsertElement.bind(this));
 		},
 
-		ffzUpdatePlayerPaused: function() {
+		/*ffzUpdatePlayerPaused: function() {
 			var channel_id = this.get('hostChannel.name'),
 				hosted_id = this.get('channel.name'),
 				is_hosting = channel_id !== hosted_id,
@@ -193,13 +193,13 @@ FFZ.prototype.modify_twitch_player = function(player) {
 
 		ffzHostChange: function() {
 			this.set('ffz_host_paused', false);
-		}.observes('channel'),
+		}.observes('channel'),*/
 
 		ffzPostPlayer: function() {
 			var f = this,
-				channel_id = this.get('hostChannel.name'),
+				/*channel_id = this.get('hostChannel.name'),
 				hosted_id = this.get('channel.name'),
-				is_hosting = channel_id !== hosted_id,
+				is_hosting = channel_id !== hosted_id,*/
 
 				player = this.get('player');
 			if ( ! player )
@@ -207,11 +207,11 @@ FFZ.prototype.modify_twitch_player = function(player) {
 
 			this.set('ffz_post_player', true);
 
-			if ( ! is_hosting )
-				this.set('ffz_original_paused', player.paused);
+			//if ( ! is_hosting )
+			//	this.set('ffz_original_paused', player.paused);
 
-			player.addEventListener('pause', this.ffzUpdatePlayerPaused.bind(this));
-			player.addEventListener('play', this.ffzUpdatePlayerPaused.bind(this));
+			//player.addEventListener('pause', this.ffzUpdatePlayerPaused.bind(this));
+			//player.addEventListener('play', this.ffzUpdatePlayerPaused.bind(this));
 
 			// Make the stats window draggable and fix the button.
 			var stats = this.$('.player .js-playback-stats');

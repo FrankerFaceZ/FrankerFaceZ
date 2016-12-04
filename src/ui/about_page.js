@@ -262,9 +262,8 @@ FFZ.debugging_blocks = {
 		type: "list",
 
 		get_player: function() {
-			for(var key in this.players)
-				if ( this.players[key] && ! this.players[key].isDestroyed && this.players[key].player )
-					return this.players[key].player;
+			if ( this._player && ! this._player.isDestroyed )
+				return this._player.player;
 		},
 
 		visible: function() { return FFZ.debugging_blocks.player.get_player.call(this) },
@@ -283,6 +282,8 @@ FFZ.debugging_blocks = {
 			try {
 				data.backend = player.getBackend();
 				data.version = player.getVersion();
+				data.quality = player.getVariant();
+				data.qualities = _.map(player.getQualities(), function(x) { return x.group });
 			} catch(err) {}
 
 			var sorted_keys = Object.keys(data).sort(),

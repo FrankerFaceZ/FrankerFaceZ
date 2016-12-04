@@ -915,11 +915,10 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			}
 
 			var el = this.get('element'),
-				controller = this.get('controller'),
 				t = this,
 				line,
 
-				is_mod = controller.get('cardInfo.isModeratorOrHigher'),
+				is_mod = t.get('cardInfo.isModeratorOrHigher'),
 				ban_reasons,
 
 				chat = utils.ember_lookup('controller:chat'),
@@ -929,7 +928,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				ffz_room = f.rooms && f.rooms[room_id] || {},
 				is_broadcaster = user && room_id === user.login,
 
-				user_id = controller.get('cardInfo.user.id'),
+				user_id = this.get('cardInfo.user.id'),
 				alias = f.aliases[user_id],
 
 				handle_key,
@@ -997,7 +996,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				var name = el.querySelector('.moderation-card__name a');
 				if ( name ) {
 					name.classList.add('ffz-alias');
-					var results = f.format_display_name(controller.get('cardInfo.user.display_name'), user_id);
+					var results = f.format_display_name(this.get('cardInfo.user.display_name'), user_id);
 
 					name.innerHTML = results[0];
 					name.title = results[1] || '';
@@ -1053,7 +1052,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					},
 
 					add_btn_click = function(cmd) {
-						var user = controller.get('cardInfo.user'),
+						var user = t.get('cardInfo.user'),
 							chat_controller = utils.ember_lookup('controller:chat'),
 							room = chat_controller && chat_controller.get('currentRoom');
 
@@ -1072,7 +1071,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 							html: true,
 							gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
 							title: function() {
-								var user = controller.get('cardInfo.user'),
+								var user = t.get('cardInfo.user'),
 									chat_controller = utils.ember_lookup('controller:chat'),
 									room = chat_controller && chat_controller.get('currentRoom');
 
@@ -1122,8 +1121,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					var key = e.keyCode || e.which,
 						is_meta = e.ctrlKey || e.altKey || e.metaKey,
 						tag = e.target && e.target.tagName,
-						user_id = controller.get('cardInfo.user.id'),
-						is_mod = controller.get('cardInfo.isModeratorOrHigher'),
+						user_id = t.get('cardInfo.user.id'),
+						is_mod = t.get('cardInfo.isModeratorOrHigher'),
 						room = utils.ember_lookup('controller:chat').get('currentRoom');
 
 					// We don't want modifier keys. Also don't override input to input elements.
@@ -1182,7 +1181,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				el.classList.add('ffz-is-mod');
 
 				var btn_click = function(timeout) {
-					var user_id = controller.get('cardInfo.user.id'),
+					var user_id = t.get('cardInfo.user.id'),
 						room = utils.ember_lookup('controller:chat').get('currentRoom');
 
 						if ( timeout === -1 )
@@ -1295,7 +1294,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				real_msg.title = "Message User";
 
 				real_msg.addEventListener('click', function() {
-					window.open('//www.twitch.tv/message/compose?to=' + controller.get('cardInfo.user.id'));
+					window.open('//www.twitch.tv/message/compose?to=' + t.get('cardInfo.user.id'));
 				})
 
 				msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
@@ -1308,9 +1307,9 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			alias_btn.title = "Set Alias";
 
 			alias_btn.addEventListener('click', function() {
-				var user = controller.get('cardInfo.user.id'),
+				var user = t.get('cardInfo.user.id'),
 					alias = f.aliases[user],
-					results = f.format_display_name(controller.get('cardInfo.user.display_name'), user, true);
+					results = f.format_display_name(t.get('cardInfo.user.display_name'), user, true);
 
 				utils.prompt(
 					"Alias for <b" + (results[1] ? ' class="html-tooltip" title="' + utils.quote_attr(results[1]) + '">' : '>') + results[0] + "</b>",
@@ -1333,7 +1332,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 						var name = el.querySelector('h4.name');
 						if ( name ) {
 							name.classList.toggle('ffz-alias', new_val);
-							var results = f.format_display_name(controller.get('cardInfo.user.display_name'), user_id);
+							var results = f.format_display_name(t.get('cardInfo.user.display_name'), user_id);
 
 							name.innerHTML = results[0];
 							name.title = results[1] || '';

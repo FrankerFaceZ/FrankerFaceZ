@@ -82,7 +82,7 @@ metadata.player_stats = {
 
 	setup: function(view, maybe_channel, is_hosting, channel) {
 		var channel_id = channel.get('id'),
-			player_cont = this.players && this.players[channel_id],
+			player_cont = this._player,
 			player = player_cont && player_cont.player,
 			stats;
 

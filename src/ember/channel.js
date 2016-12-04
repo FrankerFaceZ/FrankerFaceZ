@@ -165,10 +165,10 @@ FFZ.prototype.modify_channel_live = function(view) {
 
 			if ( f.settings.auto_theater ) {
 				var layout = this.get('layout'),
-					player = f.players && f.players[channel_id] && f.players[channel_id].get('player'),
-					func = function() {
-						if ( typeof player.isLoading === 'function' && player.isLoading() )
-							return setTimeout(func, 500);
+					func = function(tries) {
+						var player = f._player && f._player.get('player');
+						if ( ! player || typeof player.isLoading === 'function' && player.isLoading() )
+							return (tries||0) < 20 ? setTimeout(func.bind(this, (tries||0) + 1), 500) : null;
 
 						// In case this happens before the event bindings are in, we just set
 						// the layout into theater mode manually.
@@ -176,8 +176,7 @@ FFZ.prototype.modify_channel_live = function(view) {
 						layout.setTheatreMode(true);
 					}
 
-				if ( player )
-					func();
+				func();
 			}
 
 			this.$().on("click", ".ffz-creative-tag-link", utils.transition_link(function(e) {

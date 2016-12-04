@@ -350,6 +350,13 @@ FFZ.prototype.setup_chatview = function() {
 	if ( Chat ) {
 		Chat.set('ffz_last_channel_room', Chat.get('currentChannelRoom.id'));
 		Chat.reopen({
+			openPopout: function() {
+				var room_id = this.get('currentRoom.id'),
+					width = f.settings.right_column_width;
+
+				return window.open("/" + room_id + "/chat?popout=", "_blank", "right=50,top=50,width=" + width + ",height=600,resizable=yes,scrollbars=no,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no");
+			},
+
 			ffzUpdateChannels: function() {
 				if ( ! f._chatv || f.has_bttv )
 					return;

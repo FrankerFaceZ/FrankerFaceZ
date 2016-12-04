@@ -18,6 +18,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-hide-directory-uploads .ffz-following-uploads,
 .pinned-cheers__dismiss,
 .ffz-hide-pinned-cheers .pinned-cheers,
 .cn-hosting--bottom .ffz-channel-options .balloon:after,
@@ -1306,6 +1307,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	margin-top: -10px;
 }
 
+.ember-chat .chat-messages .chat-line--force-timestamp .timestamp,
 .ffz-moderation-card.ffz-has-info .moderation-card__name .intl-login { display: inline }
 
 .ffz-moderation-card.ffz-has-info .flex { position: relative }
@@ -1398,6 +1400,10 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 .ffz-moderation-card .info,
 .ffz-moderation-card .moderation-card__name {
 	text-shadow: black 0 0 5px;
+}
+
+.ffz-moderation-card .moderation-card__name {
+	max-width: 235px;
 }
 
 .ffz-moderation-card .ffz-ban-reasons {

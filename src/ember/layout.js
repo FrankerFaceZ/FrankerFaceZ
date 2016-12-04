@@ -253,11 +253,11 @@ FFZ.prototype.setup_layout = function() {
 
 				i = Math.round(9 * r / 16) + c,
 				d = h - extra_height,
-				c = h - extra_theater_height,
+				e = h - extra_theater_height,
 
 				l = Math.floor(r),
 				o = Math.floor(Math.min(i, d)),
-				s = Math.floor(Math.min(i, c));
+				s = Math.floor(Math.min(i, e));
 
 			return {
 				width: l,
