@@ -425,7 +425,7 @@ FFZ.prototype.render_tooltip = function(el) {
 					mod_text = '<hr>' + _.map(JSON.parse(modifiers), function(m) {
 						emote_set = f.emote_sets[m[0]];
 						emote = emote_set && emote_set.emoticons[m[1]];
-						return emote ? f.render_token(true, true, true, emote.token) + ' - ' + (emote.hidden ? '???' : emote.name) : '';
+						return emote ? f.render_token(true, true, true, emote.token) + ' - ' + (emote.hidden ? '???' : utils.sanitize(emote.name)) : '';
 					}).join('<br>');
 				}
 
@@ -463,7 +463,7 @@ FFZ.prototype.render_tooltip = function(el) {
 
 						//image = preview_url ? `<img style="height:${height}px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
 						image = preview_url ? '<img style="height:' + height + 'px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
-						return image + 'Emoticon: ' + (emote.hidden ? '???' : emote.name) + '<br>' + source_line + (owner ? '<br>By: ' + owner.display_name : '') + mod_text;
+						return image + 'Emoticon: ' + (emote.hidden ? '???' : utils.sanitize(emote.name)) + '<br>' + source_line + (owner ? '<br>By: ' + utils.sanitize(owner.display_name) : '') + mod_text;
 
 						//return `${image}Emoticon: ${emote.hidden ? '???' : emote.name}<br>${source} ${title}${owner ? '<br>By: ' + owner.display_name : ""}`;
 					}
@@ -492,9 +492,9 @@ FFZ.prototype.render_tooltip = function(el) {
 					}
 
 					if ( this.classList.contains('ffz-tooltip-no-credit') )
-						return image + this.alt + mod_text;
+						return image + utils.sanitize(this.alt) + mod_text;
 					else
-						return image + 'Emoticon: ' + this.alt + '<br>' + (set_type ? set_type + ': ' : '') + emote_set + mod_text;
+						return image + 'Emoticon: ' + utils.sanitize(this.alt) + '<br>' + (set_type ? set_type + ': ' : '') + emote_set + mod_text;
 						//return `${image}Emoticon: ${this.alt}<br>${set_type ? set_type + ": " : ""}${emote_set}`;
 				}
 
@@ -544,7 +544,7 @@ FFZ.prototype.render_tooltip = function(el) {
 
 				// If it's not a deleted link, don't waste time showing the URL in the tooltip.
 				if ( this.classList.contains('deleted-link') )
-					text = url;
+					text = utils.sanitize(url);
 
 				if ( this.classList.contains('warn-link') )
 					text += EXPLANATION_WARN;

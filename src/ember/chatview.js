@@ -983,7 +983,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 				name = room.get('channel.display_name') || room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
 					var active_channel = room === controller.get('currentRoom');
 					unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
-					var results = group ? [name, undefined] : f.format_display_name(name, room_id, true);
+					var results = group ? [utils.sanitize(name), undefined] : f.format_display_name(name, room_id, true);
 					name_el.innerHTML = results[0] + ' <span>' + unread + '</span>';
 					if ( results[1] )
 						row.title += '<br>' + results[1];
@@ -1011,7 +1011,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 			name_el.className = 'ffz-room';
 
-			var results = group ? [name, undefined] : f.format_display_name(name, room_id, true);
+			var results = group ? [utils.sanitize(name), undefined] : f.format_display_name(name, room_id, true);
 			name_el.innerHTML = results[0] + ' <span>' + unread + '</span>';
 			if ( results[1] )
 				row.title += '<br>' + results[1];
@@ -1206,7 +1206,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 			name = room.get('channel.display_name') || room.get('tmiRoom.displayName') || (group ? room.get('tmiRoom.name') : FFZ.get_capitalization(room_id, function(name) {
 				var active_channel = room === controller.get('currentRoom');
 				unread = utils.format_unread(active_channel ? 0 : room.get('unreadCount'));
-				var results = group ? [name, undefined] : f.format_display_name(name, room_id, true, true);
+				var results = group ? [utils.sanitize(name), undefined] : f.format_display_name(name, room_id, true, true);
 				tab.innerHTML = icon + results[0] + '<span>' + unread + '</span>';
 				if ( results[1] )
 					tab.title += '<br>' + results[1];
@@ -1223,7 +1223,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 			else
 				tab.title = "Pinned Channel";
 
-			var results = group ? [name, undefined] : f.format_display_name(name, room_id, true, true);
+			var results = group ? [utils.sanitize(name), undefined] : f.format_display_name(name, room_id, true, true);
 			tab.innerHTML = icon + results[0] + '<span>' + unread + '</span>';
 			if ( results[1] )
 				tab.title += '<br>' + results[1];

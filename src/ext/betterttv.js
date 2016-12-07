@@ -163,6 +163,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 			opts = opts || {};
 
 			// Handle badges.
+			data.room = data.room || received_room;
 			f.bttv_badges(data);
 
 			// Now, do everything else manually because things are hard-coded.

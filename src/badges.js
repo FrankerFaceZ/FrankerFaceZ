@@ -361,14 +361,20 @@ FFZ.ws_commands.set_badge = function(data) {
 
 FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 	var data = this.users[user],
-		hidden_badges = this.settings.hidden_badges;
+		room = this.rooms[room_id],
+		room_data = room && room.users && room.users[user],
+		hidden_badges = this.settings.hidden_badges,
+		badge_data = data && data.badges || {};
 
-	if ( ! data || ! data.badges || ! this.settings.show_badges )
+	if ( room_data && room_data.badges )
+		badge_data = _.extend({}, badge_data, room_data.badges);
+
+	if ( ! badge_data || ! this.settings.show_badges )
 		return badges;
 
-	for(var slot in data.badges) {
-		var badge = data.badges[slot];
-		if ( ! data.badges.hasOwnProperty(slot) || ! badge )
+	for(var slot in badge_data) {
+		var badge = badge_data[slot];
+		if ( ! badge_data.hasOwnProperty(slot) || ! badge )
 			continue;
 
 		var full_badge = this.badges[badge.id] || {},
@@ -583,12 +589,13 @@ FFZ.prototype.bttv_badges = function(data) {
 
 	var user_id = data.sender,
 		user = this.users[user_id],
+		room = this.rooms[data.room],
+		room_data = room && room.users && room.users[user_id],
 		badges_out = [],
 		insert_at = -1,
 
 		hidden_badges = this.settings.hidden_badges,
 		alpha = BetterTTV.settings.get('alphaTags');
-
 
 	if ( ! data.badges )
 		data.badges = [];
@@ -621,15 +628,18 @@ FFZ.prototype.bttv_badges = function(data) {
 			insert_at = i;
 	}
 
+	var badge_data = user && user.badges || {};
+	if ( room_data && room_data.badges )
+		badge_data = _.extend({}, badge_data, room_data.badges);
+
 	// If there's no user, we're done now.
-	if ( ! user || ! user.badges )
+	if ( ! badge_data )
 		return;
 
-
 	// We have a user. Start replacing badges.
-	for (var slot in user.badges) {
-		var badge = user.badges[slot];
-		if ( ! user.badges.hasOwnProperty(slot) || ! badge )
+	for (var slot in badge_data) {
+		var badge = badge_data[slot];
+		if ( ! badge_data.hasOwnProperty(slot) || ! badge )
 			continue;
 
 		var full_badge = this.badges[badge.id] || {},
@@ -644,7 +654,7 @@ FFZ.prototype.bttv_badges = function(data) {
 		if ( full_badge.visible !== undefined ) {
 			var visible = full_badge.visible;
 			if ( typeof visible === "function" )
-				visible = visible.call(this, null, user_id);
+				visible = visible.call(this, data.room, user_id);
 
 			if ( ! visible )
 				continue;

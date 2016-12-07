@@ -497,6 +497,31 @@ API.prototype.user_remove_badge = function(username, slot) {
 }
 
 
+API.prototype.room_add_user_badge = function(room_name, username, slot, badge_id) {
+	var ffz_room_users = this.ffz.rooms[room_name] && this.ffz.rooms[room_name].users;
+	if ( ! ffz_room_users )
+		return;
+
+	var ffz_user = ffz_room_users[username] = ffz_room_users[username] || {badges: {}, sets: []},
+		ffz_badges = ffz_user && ffz_user.badges,
+
+		exact_id = this.name_key + '-' + badge_id,
+		badge = {id: exact_id};
+
+	ffz_badges[slot] = badge;
+}
+
+
+API.prototype.room_remove_user_badge = function(room_name, username, slot) {
+	var ffz_room_users = this.ffz.rooms[room_name] && this.ffz.rooms[room_name].users,
+		ffz_user = ffz_room_users && ffz_room_users[username],
+		ffz_badges = ffz_user && ffz_user.badges;
+
+	if ( ffz_badges )
+		ffz_badges[slot] = null;
+}
+
+
 API.prototype.user_add_set = function(username, set_id) {
 	var user = this.users[username] = this.users[username] || {},
 		ffz_user = this.ffz.users[username] = this.ffz.users[username] || {},

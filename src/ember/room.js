@@ -973,7 +973,14 @@ FFZ.prototype.add_room = function(room_id, room) {
 	this.log("Adding Room: " + room_id);
 
 	// Create a basic data table for this room.
-	var data = this.rooms[room_id] = {id: room_id, room: room, sets: [], ext_sets: [], css: null, needs_history: false};
+	var data = this.rooms[room_id] = {
+		id: room_id,
+		room: room,
+		users: {},
+		sets: [],
+		ext_sets: [],
+		css: null,
+		needs_history: false};
 
 	if ( this.follow_sets && this.follow_sets[room_id] ) {
 		data.extra_sets = this.follow_sets[room_id];
@@ -1103,8 +1110,19 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	var model = this.rooms[room_id] = this.rooms[room_id] || {};
 
 	for(var key in data)
-		if ( key !== 'room' && data.hasOwnProperty(key) )
+		if ( key !== 'users' && key !== 'room' && data.hasOwnProperty(key) )
 			model[key] = data[key];
+
+	// Merge the user data.
+	for(var user_id in data.users) {
+		var original = model.users[user_id] || {},
+			new_data = data.users[user_id] || {};
+
+		model.users[user_id] = {
+			sets: _.uniq((original.sets || []).concat(new_data.sets || [])),
+			badges: _.extend(original.badges || {}, new_data.badges || {})
+		}
+	}
 
 	// Preserve the pointer to the Room instance.
 	/*if ( this.rooms[room_id] )
@@ -1120,7 +1138,7 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 
 	this.rooms[room_id] = data;*/
 
-	if ( model.css || model.moderator_badge )
+	if ( model.css || model.mod_urls )
 		utils.update_css(this._room_style, room_id, moderator_css(model) + (model.css || ""));
 
 	if ( ! this.emote_sets.hasOwnProperty(model.set) )

@@ -175,9 +175,10 @@ FFZ.prototype.check_twitch_emotes = function() {
 
 FFZ.prototype.getEmotes = function(user_id, room_id) {
 	var user = this.users && this.users[user_id],
-		room = this.rooms && this.rooms[room_id];
+		room = this.rooms && this.rooms[room_id],
+		room_user = room && room.users && room.users[user_id];
 
-	return _.union(user && user.sets || [], room && room.set && [room.set] || [], room && room.extra_sets || [], room && room.ext_sets || [], this.default_sets);
+	return _.union(user && user.sets || [], room_user && room_user.sets || [], room && room.set && [room.set] || [], room && room.extra_sets || [], room && room.ext_sets || [], this.default_sets);
 }
 
 
