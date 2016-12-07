@@ -132,6 +132,7 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 		ffzUpdate: function() {
 			var el = this.get('element'),
 				t_el = el.querySelector('.ffz-followed-since'),
+				//notif_el = el.querySelector('.ffz-followed-notifications'),
 
 				channel_id = this.get('ffzParentModel.model.id'),
 				is_following = this.get('ffzParentModel.relationshipName') === 'following',
@@ -148,7 +149,9 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 
 			if ( ! data || ! el ) {
 				if ( t_el )
-					t_el.parentElement.removeChild(t_el);
+					jQuery(t_el).remove();
+				/*if ( notif_el )
+					jQuery(notif_el).remove();*/
 				return false;
 			}
 
@@ -157,7 +160,8 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 				t_el = el.querySelector('.ffz-followed-since')
 
 				update_time = function() {
-					var now = Date.now() - (f._ws_server_offset || 0),
+					var data = user_cache[user_id],
+						now = Date.now() - (f._ws_server_offset || 0),
 						age = data && data[0] ? Math.floor((now - data[0].getTime()) / 1000) : undefined;
 
 					if ( age !== undefined ) {
@@ -174,6 +178,30 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 			}
 
 			update_time();
+
+			/*if ( ! mine || ! is_following ) {
+				if ( notif_el )
+					jQuery(notif_el).remove();
+				return;
+			}
+
+			if ( ! notif_el ) {
+				notif_el = createElement('button', 'ffz-followed-notifications button html-tooltip');
+				var cont = el.querySelector('.profile-card__actions');
+				if ( ! cont )
+					return;
+				cont.appendChild(notif_el);
+			}
+
+			var update_notif = function() {
+				var data = user_cache[user_id];
+				notif_el.classList.toggle('notifications-on', data && data[1]);
+				notif_el.textContent = 'Notifications';
+				notif_el.setAttribute('original-title', 'Email Notifications: ' + (data && data[1] ? 'En' : 'Dis') + 'abled');
+				jQuery(notif_el).trigger('mouseout');
+			};
+
+			update_notif();*/
 
 		}.observes('channelInfo')
 	});

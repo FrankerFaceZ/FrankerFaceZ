@@ -97,6 +97,7 @@
 .ffz-dark #stats_and_description .stat { color: #808080 }
 .ffz-dark #stats_and_description .stat:not(#channel_viewer_count) { -webkit-filter: invert(100%) }
 
+.ffz-dark .profile-card__content,
 .ffz-dark .member.js-playing a { color: #fff !important }
 .ffz-dark .member { box-shadow: none !important }
 .ffz-dark .member.live { background-color: #222; }
@@ -219,6 +220,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .balloon--left:after { box-shadow: 1px -1px 0 rgba(255,255,255,0.2) }
 .ffz-dark .balloon--right:after { box-shadow: -1px 1px 0 rgba(255,255,255,0.2) }
 
+.ffz-dark .filter-bar__balloon-footer,
 .ffz-dark .balloon__footer {
 	background-color: rgb(25,25,25);
 	border: 1px solid rgba(255,255,255,0.2);
@@ -1436,6 +1438,16 @@ body.ffz-dark:not([data-page="teams#show"]),
 	box-shadow:inset 0 1px 0 #474747;
 }
 
+.ffz-dark .activity-create {
+	background-color: #101010;
+	box-shadow: inset 0 0 0 1px #474747;
+}
+
+.ffz-dark .activity-create--focus {
+	background-color: #1d1d1d;
+	box-shadow: inset 0 0 0 1px #474747;
+}
+
 .ffz-dark .activity-add-comment__textarea:before {
 	background: #1d1d1d;
 	border-left-color: #474747;
@@ -1505,6 +1517,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 
+.ffz-dark .cn-bar__button--resubscribe,
 .ffz-dark .button--icon.cn-bar__button--subscribed {
 	background-color: #161616;
 	box-shadow: 0 0 0 1px rgba(255,255,255,0.065) inset;
