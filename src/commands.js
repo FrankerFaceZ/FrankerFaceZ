@@ -476,6 +476,7 @@ FFZ.chat_commands.renamegroup = function(room, args) {
 			"/rooms/" + room.id,
 			{display_name:newname}
 		)
+    return( "Room renamed to \"" + newname + "\"" )
 }
 
 /*FFZ.ffz_commands.massunban = function(room, args) {
