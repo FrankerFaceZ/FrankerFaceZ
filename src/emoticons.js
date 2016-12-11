@@ -20,6 +20,26 @@ var FFZ = window.FrankerFaceZ,
 		70854: {
 			modifier: true,
 			modifier_offset: '30px 0 0'
+		},
+
+		147049: {
+			modifier: true,
+			modifier_offset: '4px 1px 0 3px'
+		},
+
+		147011: {
+			modifier: true,
+			modifier_offset: '0'
+		},
+
+		70864: {
+			modifier: true,
+			modifier_offset: '0'
+		},
+
+		147038: {
+			modifier: true,
+			modifier_offset: '0'
 		}
 	};
 

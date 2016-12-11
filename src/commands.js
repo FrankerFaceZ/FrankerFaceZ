@@ -259,7 +259,7 @@ FFZ.chat_commands.card = function(room, args) {
 		}
 	}
 
-	this._roomv.get('controller').send('showModOverlay', {
+	this._roomv.actions.showModOverlay.call(this._roomv, {
 		top: y,
 		left: x,
 		bottom: bottom,

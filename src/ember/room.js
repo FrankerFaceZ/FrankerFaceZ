@@ -1035,7 +1035,7 @@ FFZ.prototype.add_room = function(room_id, room) {
 
 
 	// Why don't we set the scrollback length, too?
-	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('controller.model.id') === room_id) ? 150 : 0));
+	room.set('messageBufferSize', this.settings.scrollback_length + ((this._roomv && !this._roomv.get('stuckToBottom') && this._roomv.get('room.id') === room_id) ? 150 : 0));
 
 	// Load the room's data from the API.
 	this.load_room(room_id);

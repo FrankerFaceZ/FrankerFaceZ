@@ -975,7 +975,7 @@ module.exports = FFZ.utils = {
 
 	emote_css: function(emote) {
 		var output = '';
-		if ( ! emote.margins && ! emote.css )
+		if ( ! emote.margins && (!emote.modifier || (! emote.modifier_offset && ! emote.extra_width && ! emote.shrink_to_fit)) && ! emote.css )
 			return output;
 
 		if ( emote.modifier && (emote.modifier_offset || emote.margins || emote.extra_width || emote.shrink_to_fit) ) {

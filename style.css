@@ -3793,9 +3793,20 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	z-index: 0;
 }
 
-.modified-emoticon[data-ffz-emote="59829"] span { right: 128px }
+.ffz-bttv .emoticon[data-ffz-emote="70864"]:hover { opacity: 0 }
 
+.modified-emoticon[data-ffz-emote="59829"] span { right: 128px }
 .modified-emoticon > img.emoticon { margin: 0 !important }
+
+.emoticon[data-ffz-modifiers~="147011"] { clip-path: circle(14px at 50% 50%) }
+.modified-emoticon > img.emoticon[data-ffz-modifiers~="147038"] {
+	transform: translateY(-2px);
+	max-height: 24px;
+	clip-path: circle(14px at 50% 50%);
+}
+
+.modified-emoticon:hover span .emoticon[data-ffz-emote="70864"],
+.modified-emoticon:not(:hover) .emoticon[data-ffz-modifiers~="70864"] { opacity: 0 }
 
 .modified-emoticon span {
 	position: absolute;

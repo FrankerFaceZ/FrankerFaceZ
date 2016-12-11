@@ -1574,7 +1574,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 	if ( modcard ) {
 		modcard.get('cardInfo.user.id') !== msg.from && jQuery('span.from', l_el).click(function(e) {
 			var el = modcard.get('element');
-			el && f._roomv && f._roomv.get('context.model.id') === msg.room && f._roomv.get('controller').send('showModOverlay', {
+			el && f._roomv && f._roomv.get('room.id') === msg.room && f._roomv.actions.showModCard.call(f._roomv, {
 				sender: msg.from,
 				top: parseInt(el.style.top),
 				left: parseInt(el.style.left)

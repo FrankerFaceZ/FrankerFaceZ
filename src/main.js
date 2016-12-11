@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 393,
+	major: 3, minor: 5, revision: 394,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -292,7 +292,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return this.init_normal(delay);
 
 	// Check for the dashboard.
-	if ( /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) )
+	if ( window.PP && /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) )
 		return this.init_dashboard(delay);
 
 	var loaded = FFZ.utils.ember_resolve('model:room');
