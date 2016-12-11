@@ -973,6 +973,14 @@ module.exports = FFZ.utils = {
 		}
 	},
 
+	utf8_encode: function(text) {
+		return unescape(encodeURIComponent(text))
+	},
+
+	utf8_decode: function(text) {
+		return decodeURIComponent(escape(text));
+	},
+
 	emote_css: function(emote) {
 		var output = '';
 		if ( ! emote.margins && (!emote.modifier || (! emote.modifier_offset && ! emote.extra_width && ! emote.shrink_to_fit)) && ! emote.css )

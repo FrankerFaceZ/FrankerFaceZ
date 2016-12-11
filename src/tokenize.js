@@ -1334,7 +1334,7 @@ FFZ.prototype.tokenize_emoji = function(tokens) {
 				if ( data ) {
 					if ( text && text.length )
 						new_tokens.push(text);
-					new_tokens.push(data.token);
+					new_tokens.push(_.extend({modifiers: []}, data.token));
 					text = null;
 				} else
 					text = (text || '') + match;

@@ -2,7 +2,7 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
-	KNOWN_COMMANDS = ['ffz', 'unban', 'ban', 'timeout', 'r9kbeta', 'r9kbetaoff', 'slow', 'slowoff', 'subscribers', 'subscribersoff', 'mod', 'unmod', 'me', 'emotesonly', 'emotesonlyoff', 'host', 'unhost', 'commercial'],
+	KNOWN_COMMANDS = ['ffz', 'unban', 'ban', 'timeout', 'r9kbeta', 'r9kbetaoff', 'slow', 'slowoff', 'subscribers', 'subscribersoff', 'mod', 'unmod', 'me', 'emoteonly', 'emoteonlyoff', 'host', 'unhost', 'commercial'],
 
 	STATUS_CODES = {
 		400: "Bad Request",
@@ -355,6 +355,39 @@ FFZ.chat_commands.fetch_link.label = '/fetch_link &lt;url&gt; <i>[template]</i>'
 FFZ.chat_commands.fetch_link.info = 'Fetch URL and Display in Chat';
 
 
+// ---------------------
+// Group Chat Renaming
+// ---------------------
+
+FFZ.chat_commands.renamegroup = function(room, args) {
+	var f = this,
+		new_name = args.join(' ');
+	if ( ! new_name.length )
+		return "Usage: /renamegroup <name>\nGroup owner only. Rename a group chat.";
+
+	// Check that the length of the arguments is less than 120 bytes
+	else if ( utils.utf8_encode(new_name).length > 120 )
+		return "You entered a room name that is too long.";
+
+	// Set the group name
+	room.room.tmiRoom.session._depotApi.put("/rooms/" + room.id, {
+		display_name: new_name
+	}).then(function(result) {
+		if ( result && result.room && result.room.display_name === new_name )
+			f.room_message(room, 'The room was renamed to: ' + new_name);
+		else
+			f.room_message(room, 'The room name was not changed successfully.')
+	});
+}
+
+FFZ.chat_commands.renamegroup.label = '/renamegroup &lt;name&gt;';
+FFZ.chat_commands.renamegroup.info = 'Rename a group chat. Group owner only.'
+FFZ.chat_commands.renamegroup.enabled = function(room) {
+	// Are we in a group chat and are we the owner?
+	return room && room.room && room.room.get('isGroupRoom') && room.room.get('isOwner');
+}
+
+
 // -----------------
 // Mass Moderation
 // -----------------
@@ -443,42 +476,6 @@ FFZ.prototype.get_banned_users = function() {
 	});
 }
 
-
-
- // ---------------------
- // Group Chat Renaming
- // ---------------------
-FFZ.chat_commands.renamegroup = function(room, args) {
-		// Shorten the FFZ instance
-		var f = this;
-
-		// Join the arguments and check to see if something was entered
-		var newname = args.join(' ');
-		if ( ! newname.length ) {
-			return "Usage: /renamegroup <name>\nThis command must be used inside a group chat that you are owner of."
-		}
-
-		// Are we in a group chat and are we the owner?
-		if ( ! room.room.get('isGroupRoom') ) {
-			return "You must be in a group chat to use renamegroup."
-		}
-		if ( ! room.room.get('isOwner') ) {
-			return "You must be the owner of the current group chat to use renamegroup."
-		}
-
-		// Check that the length of the arguments is less than 120 bytes
-		if ( unescape(encodeURIComponent(newname)).length > 120 ) {
-			return "You entered a room name that was too long."
-		}
-
-		// Set the group name
-		room.room.tmiRoom.session._depotApi.put(
-			"/rooms/" + room.id,
-			{display_name:newname}
-		)
-    return( "Room renamed to \"" + newname + "\"" )
-}
-
 /*FFZ.ffz_commands.massunban = function(room, args) {
 	var user = this.get_user();
 	if ( ! user || (user.login !== room.id && ! user.is_admin && ! user.is_staff) )
@@ -490,7 +487,5 @@ FFZ.chat_commands.renamegroup = function(room, args) {
 
 /*FFZ.ffz_commands.massunban = function(room, args) {
 	args = args.join(" ").trim();
-
-
 
 }*/

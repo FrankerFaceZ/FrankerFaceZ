@@ -699,6 +699,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 			var commands = _.extend({}, DEFAULT_COMMANDS),
 				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
 				room = this.get('parentView.room'),
+				ffz_room = room && f.rooms[room.get('id')],
 				is_moderator = room && room.get('isModeratorOrHigher'),
 				user = f.get_user(),
 				is_broadcaster = room && user && user.login === room.get('name');
@@ -722,7 +723,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				var enabled = data.hasOwnProperty('enabled') ? data.enabled : true;
 				if ( typeof enabled === "function" )
 					try {
-						enabled = data.enabled.call(f, room, [])
+						enabled = data.enabled.call(f, ffz_room, [])
 					} catch(err) {
 						f.error('command "' + cmd + '" enabled', err);
 						enabled = false;
