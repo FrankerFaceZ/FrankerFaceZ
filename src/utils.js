@@ -164,7 +164,7 @@ var createElement = function(tag, className, content) {
 			default:
 				// Try to unescape the value.
 				try {
-					return value;
+					return unescape_tag_value(value);
 				} catch(err) {
 					return "";
 				}
@@ -181,6 +181,75 @@ var createElement = function(tag, className, content) {
 		} while(m);
 
 		return tags;
+	},
+
+	ESCAPE_CHARS = {
+		';': '\\:',
+		' ': '\\s',
+		'\r': '\\r',
+		'\n': '\\n',
+		'\\': '\\\\'
+	},
+
+	UNESCAPE_CHARS = {
+		':': ';',
+		's': ' ',
+		'r': '\r',
+		'n': '\n'
+	},
+
+	unescape_tag_value = function(value) {
+		var result = '';
+		for(var i=0,l=value.length; i < l; i++) {
+			var c = value.charAt(i);
+			if ( c === '\\' ) {
+				if ( i === l - 1 )
+					throw "Improperly escaped tag";
+
+				i++;
+				c = value.charAt(i);
+				result += UNESCAPE_CHARS[c] || c;
+
+			} else
+				result += c;
+		}
+		return result;
+	},
+
+	escape_tag_value = function(value) {
+		var value_str = ''+value,
+			result = '';
+
+		for(var i=0,l=value_str.length; i < l; i++) {
+			var c = value_str.charAt(i);
+			result += ESCAPE_CHARS[c] || c;
+		}
+
+		return result;
+	},
+
+	format_tag = function(tag, value) {
+		switch(tag) {
+			case "subscriber":
+			case "mod":
+			case "turbo":
+			case "r9k":
+			case "subs-only":
+			case "historical":
+				return value ? '1' : '0';
+			default:
+				return escape_tag_value(value)
+		}
+	},
+
+	build_tags = function(tags) {
+		var raw_tags = [];
+		for(var key in tags) {
+			if ( ! tags.hasOwnProperty(key) )
+				continue;
+			raw_tags.push(key + '=' + format_tag(key, tags[key]));
+		}
+		return raw_tags.join(';');
 	},
 
 	parse_sender = function(prefix, tags) {
@@ -591,6 +660,10 @@ module.exports = FFZ.utils = {
 	parse_irc_message: parse_irc_message,
 	parse_irc_privmsg: parse_irc_privmsg,
 
+	format_tag: format_tag,
+	escape_tag_value: escape_tag_value,
+	unescape_tag_value: unescape_tag_value,
+	build_tags: build_tags,
 
 	CMD_VAR_REGEX: CMD_VAR_REGEX,
 

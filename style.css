@@ -18,6 +18,15 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #main_col { margin: 0 !important }
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 70px) }
+.ffz-minimize-conversations.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 50px) }
+
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #right_col,
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #right_close,
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .new-dashboard .directory_header,
 .ffz-hide-directory-uploads .ffz-following-uploads,
 .pinned-cheers__dismiss,
 .ffz-hide-pinned-cheers .pinned-cheers,
@@ -1201,6 +1210,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+.dash-column::-webkit-scrollbar,
 #ffz-metadata-popup .scroller::-webkit-scrollbar,
 .search-panel .collection-wrapper::-webkit-scrollbar,
 .activity-react__all::-webkit-scrollbar,
@@ -1219,6 +1229,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	width: 6px;
 }
 
+.dash-column::-webkit-scrollbar-thumb,
 #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 .search-panel .collection-wrapper::-webkit-scrollbar-thumb,
 .activity-react__all::-webkit-scrollbar-thumb,
@@ -1237,6 +1248,9 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	background: rgba(0,0,0,0.7);
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
+
+.ffz-dark .dash-column::-webkit-scrollbar-thumb,
+.theatre .dash-column::-webkit-scrollbar-thumb,
 
 .ffz-dark #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 .theatre #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
@@ -2950,7 +2964,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 	top: 40px;
 }
 
-.ffz-top-conversations #directory-list { padding-top: 50px; }
+.ffz-top-conversations:not([data-current-path="user.dashboards.index"]) #directory-list { padding-top: 50px; }
 
 
 /* Minimize Conversations */
@@ -3862,4 +3876,23 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 
 .ffz-sidebar-swap .expandRight .player-mini {
 	left: 10px !important;
+}
+
+/* New Dashboard */
+
+.dash-chat {
+	font-size: 1.2rem;
+	width: calc(100% - 2px);
+	height: calc(100% - 2px);
+}
+
+.dash-column {
+	margin-right: calc(1rem - 5px);
+	padding-right: 5px;
+}
+
+@media(min-width: 1200px) {
+	.dash-column {
+		margin-right: calc(1.5rem - 5px);
+	}
 }

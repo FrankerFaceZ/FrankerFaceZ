@@ -148,6 +148,36 @@ FFZ.prototype.api_trigger = function(/*event, args...*/) {
 
 
 // ---------------------
+// Metadata~!
+// ---------------------
+
+API.prototype.register_metadata = function(key, data) {
+	var real_key = this.id + '-' + key;
+	data.source_ext = this.id;
+	data.source_id = key;
+	FFZ.channel_metadata[real_key] = data;
+	if ( this.ffz._cindex )
+		this.ffz._cindex.ffzUpdateMetadata(real_key);
+}
+
+
+API.prototype.unregister_metadata = function(key) {
+	var real_key = this.id + '-' + key;
+	delete FFZ.channel_metadata[real_key];
+	if ( this.ffz._cindex ) {
+		this.ffz._cindex.$('.cn-metabar__ffz[data-key="' + real_key + '"]').remove();
+		this.ffz._cindex.ffzUpdateMetadata(real_key);
+	}
+}
+
+
+API.prototype.update_metadata = function(key) {
+	if ( this.ffz._cindex )
+		this.ffz._cindex.ffzUpdateMetadata(this.id + '-' + real_key);
+}
+
+
+// ---------------------
 // Set Loading
 // ---------------------
 

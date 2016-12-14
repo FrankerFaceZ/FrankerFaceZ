@@ -314,7 +314,8 @@ FFZ.prototype._ui_change_subpage = function(view, inner, menu, container, subpag
 	else if ( page_data.hasOwnProperty('wide') )
 		is_wide = page_data.wide || (typeof page_data.wide === "function" && page_data.wide.call(this));
 
-	inner.style.maxWidth = is_wide ? (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600) + "px" : "";
+	var is_dash = is_wide && jQuery(menu).parents('.chat-container').hasClass('dash-chat');
+	inner.style.maxWidth = is_wide ? (is_dash ? 380 : (app.offsetWidth < 640 ? (app.offsetWidth-40) : 600)) + "px" : "";
 
 	// Re-position if necessary.
 	var f = this;

@@ -380,11 +380,11 @@ FFZ.prototype.modify_channel_live = function(view) {
 		_ffzUpdateStat: function(key, basic_info, timers, metabar, is_hosting) {
 			var t = this,
 				info = FFZ.channel_metadata[key];
-			if ( ! info )
-				return;
 
 			if ( timers[key] )
 				clearTimeout(timers[key]);
+			if ( ! info )
+				return;
 
 			// Build the data we use for function calls.
 			var data = info.setup ? info.setup.apply(f, basic_info) : basic_info,
@@ -411,11 +411,12 @@ FFZ.prototype.modify_channel_live = function(view) {
 
 			} else if ( ! el ) {
 				var btn,
-					static_label = typeof info.static_label === "function" ? info.static_label.apply(f, data) : info.static_label;
+					static_label = typeof info.static_label === "function" ? info.static_label.apply(f, data) : info.static_label,
+					lbl_start = static_label && static_label.substr(0,4);
 
 				if ( ! static_label )
 					static_label = '';
-				else if ( static_label.substr(0,4) === '<svg' )
+				else if ( lbl_start === '<svg' || lbl_start === '<img' )
 					static_label = utils.createElement('figure', 'icon cn-metabar__icon', static_label + ' ');
 
 				if ( info.popup ) {

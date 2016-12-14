@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 395,
+	major: 3, minor: 5, revision: 398,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -229,6 +229,7 @@ require('./ember/directory');
 require('./ember/following');
 require('./ember/feed-card');
 require('./ember/sidebar');
+require('./ember/dashboard');
 
 require('./debug');
 
@@ -537,6 +538,7 @@ FFZ.prototype.init_ember = function(delay) {
 	this.setup_profile_following();
 	this.setup_feed_cards();
 	this.setup_sidebar();
+	this.setup_dashboard();
 
 	//this.setup_teams();
 

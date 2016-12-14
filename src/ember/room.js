@@ -142,7 +142,7 @@ FFZ.prototype.setup_room = function() {
 				renderRight: e.right,
 				isIgnored: this.get("tmiSession").isIgnored(e.sender),
 				isChannelOwner: this.get("login.userData.login") === e.sender,
-				profileHref: Twitch.uri.profile(e.sender),
+				profileHref: Twitch.uri.channel(e.sender),
 				isModeratorOrHigher: this.get("model.isModeratorOrHigher")
 			});
 		}
@@ -2149,6 +2149,15 @@ FFZ.prototype._modify_room = function(room) {
 						c.set("hostModeTarget", null);
 				}
 			}
+		},
+
+		sendTags: function(text, tags) {
+			var tmi = this.get('tmiRoom'),
+				conn = tmi && tmi._roomConn,
+				tag_string = utils.build_tags(tags || {});
+
+			if ( conn )
+				conn.send((tag_string ? '@' + tag_string + ' ' : '') + 'PRIVMSG ' + tmi.ircChannel + ' :' + text);
 		},
 
 		send: function(text, ignore_history, used_aliases) {

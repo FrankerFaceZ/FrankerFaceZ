@@ -170,8 +170,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 /* Popups */
 
 .ffz-dark #commission_modal {
-    background-color: #101010 !important;
-    border-color: #32323e !important;
+	background-color: #101010 !important;
+	border-color: #32323e !important;
 }
 
 .ffz-dark .twitch_subwindow_container.two-factor-auth .card,
@@ -1108,12 +1108,22 @@ body.ffz-dark:not([data-page="teams#show"]),
 	-webkit-filter: invert(100%);
 }
 
+.ffz-dark .form__input[type=text],
+.ffz-dark .form__input[type=email],
+.ffz-dark .form__input[type=search],
+.ffz-dark textarea.form__input,
+.ffz-dark select.form__input,
 .ffz-dark .new-header-search input {
 	color: #fff;
 	background-color: rgba(255,255,255,0.05);
 	box-shadow: rgba(255,255,255,0.2) 0 0 0 1px inset;
 }
 
+.ffz-dark .form__input[type=text]:focus,
+.ffz-dark .form__input[type=email]:focus,
+.ffz-dark .form__input[type=search]:focus,
+.ffz-dark textarea.form__input:focus,
+.ffz-dark select.form__input:focus,
 .ffz-dark .new-header-search input:focus {
 	box-shadow: rgba(255,255,255,0.4) 0 0 0 1px inset;
 }
@@ -1512,8 +1522,17 @@ body.ffz-dark:not([data-page="teams#show"]),
 	box-shadow: inset 0 -1px 0 #161616, -1px 1px rgba(255,255,255,0.065);
 }
 
+.ffz-dark .twitchbot-border-more,
+.ffz-dark .border-t,
+.ffz-dark .border-b,
 .ffz-dark .cn-metabar__more {
 	border-color: rgba(255,255,255,0.2) !important;
+}
+
+.ffz-dark .twitchbot-hover-text-help,
+.ffz-dark .twitchbot-rule-container:hover,
+.ffz-dark .twitchbot-right-container {
+	background-color: #191919;
 }
 
 
@@ -1524,6 +1543,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 
+.ffz-dark .twitchbot-help,
+.ffz-dark .twitchbot-level-context,
 .ffz-dark .cn-bar__avatar-wrap {
 	background-color: #101010;
 	border-color: #101010;
@@ -1573,4 +1594,22 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .balloon .filter-bar__balloon-link--active {
 	color: #fff !important;
 	background-color: #6441a5 !important;
+}
+
+
+/* New Dashboard */
+
+.ffz-dark .gu-transit,
+.ffz-dark .dash-widget {
+	background-color: #191919;
+	border-color: rgba(255,255,255,0.2);
+	box-shadow: 0 2px 2px 0 rgba(255,255,255,0.05);
+	color: #c3c3c3;
+}
+
+.ffz-dark .form__input[type=checkbox]:not(:checked)+label:before,
+.ffz-dark .form__input[type=radio]:not(:checked)+label:before,
+.ffz-dark .dash-widget__header {
+	background-color: #232323;
+	border-color: rgba(255,255,255,0.2);
 }

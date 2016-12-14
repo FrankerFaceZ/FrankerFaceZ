@@ -355,6 +355,25 @@ FFZ.chat_commands.fetch_link.label = '/fetch_link &lt;url&gt; <i>[template]</i>'
 FFZ.chat_commands.fetch_link.info = 'Fetch URL and Display in Chat';
 
 
+// --------------------------
+// Message-Specific Deletion
+// --------------------------
+
+FFZ.chat_commands.timeout_message = function(room, args) {
+	var username = args.shift(),
+		target_message = args.shift(),
+		duration = args.shift(),
+		reason = args.join(' ');
+
+	if ( ! username || ! target_message )
+		return 'Usage: /timeout_message <username> <target-message-id> [duration=600] [reason]\nTimeout a user and provide the ID of a specific message to remove.';
+
+	room.room.sendTags('/timeout ' + username + ' ' + (duration || '600') + (reason ? ' ' + reason : ''), {
+		'target-message-id': target_message
+	});
+}
+
+
 // ---------------------
 // Group Chat Renaming
 // ---------------------

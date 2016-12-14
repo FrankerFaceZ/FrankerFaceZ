@@ -2,9 +2,9 @@
 	utils = require("../utils"),
 	constants = require("../constants"),
 
-	TB_TOOLTIP = '<hr>This message was flagged by TwitchBot. Should it be allowed?',
+	TB_TOOLTIP = '<hr>This message was flagged by AutoMod. Should it be allowed?',
 
-	BAN_SPLIT = /[/\.](?:ban ([^ ]+)|timeout ([^ ]+)(?: (\d+))?)(?: (.*))?$/;
+	BAN_SPLIT = /[\/\.](?:ban ([^ ]+)|timeout ([^ ]+)(?: (\d+))?|timeout_message ([^ ]+) ([^ ]+)(?: (\d+))?)(?: (.*))?$/;
 
 
 // ---------------------
@@ -1031,9 +1031,12 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				if ( ! match )
 					return;
 
-				cmd = match[1] ? "/ban " + match[1] : "/timeout " + match[2] + " " + (match[3] || "600");
-				if ( match[4] )
-					trail = match[4] + trail;
+				cmd = match[1] ? '/ban ' + match[1] :
+					match[2] ? '/timeout ' + match[2] + ' ' + (match[3] || '600') :
+					'/timeout_message ' + match[4] + ' ' + match[5] + ' ' + (match[6] || '600');
+
+				if ( match[7] )
+					trail = match[7] = trail;
 			}
 
 			var bl = utils.createElement('ul', 'balloon__list'),
@@ -1042,9 +1045,10 @@ FFZ.prototype._modify_chat_subline = function(component) {
 				has_items = false,
 
 				is_ban = cmd.substr(1, 4) === 'ban ',
+				is_timeout = cmd.substr(1, 8) === 'timeout ',
 				title = utils.createElement('li', 'ffz-title');
 
-			title.textContent = (is_ban ? 'Ban ' : 'Timeout ') + from + ' for...';
+			title.textContent = (is_ban ? 'Ban ' : (is_timeout ? 'Timeout ' : 'Remove Message and Timeout ')) + from + ' for...';
 			bl.appendChild(title);
 			bl.appendChild(utils.createElement('li', 'balloon__stroke'));
 

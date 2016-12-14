@@ -646,7 +646,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				text = this.get('textareaValue'),
 
 				first_char = text.charAt(0),
-				is_cmd = first_char === '/' || first_char === '.',
+				is_cmd = (first_char === '/' || first_char === '.') && text.substr(1,3).toLowerCase() !== 'me ',
 
 				trail, prefix;
 
