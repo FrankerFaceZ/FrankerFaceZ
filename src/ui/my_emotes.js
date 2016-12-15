@@ -232,15 +232,14 @@ FFZ.menu_pages.myemotes = {
 		// Now, FFZ!
 		for(var i=0; i < ffz_sets.length; i++) {
 			var set_id = ffz_sets[i],
-				set = this.emote_sets[set_id],
+				set = this.emote_sets[set_id];
+			if ( ! set || ! set.count || set.hidden || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
+				continue;
 
-				menu_id = set.hasOwnProperty('source_ext') ? 'ffz-ext-' + set.source_ext + '-' + set.source_id : 'ffz-' + set.id,
+			var menu_id = set.hasOwnProperty('source_ext') ? 'ffz-ext-' + set.source_ext + '-' + set.source_id : 'ffz-' + set.id,
 				favorites_list = this.settings.favorite_emotes[menu_id];
 
 			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
-				continue;
-
-			if ( ! set || ! set.count || set.hidden || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
 				continue;
 
 			var menu_id = set.title.toLowerCase(),

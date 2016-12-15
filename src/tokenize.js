@@ -160,18 +160,6 @@ FFZ.settings_info.timestamp_seconds = {
 	};
 
 
-FFZ.settings_info.collect_bits = {
-	type: "boolean",
-	value: false,
-
-	category: "Chat Appearance",
-	no_bttv: true,
-
-	name: "Bits Stacking",
-	help: "Collect all the bits emoticons in a message into a single one at the start of the message."
-};
-
-
 FFZ.settings_info.show_deleted_links = {
 	type: "boolean",
 	value: false,
@@ -406,7 +394,7 @@ FFZ.prototype.render_tooltip = function(el) {
 					out += '<br>';
 					individuals.sort().reverse();
 					for(var i=0; i < individuals.length && i < 12; i++)
-						out += f.render_token(false, false, true, {type: "bits", prefix: prefix, amount: individuals[i]});
+						out += f.render_token(false, false, true, {type: "bits", prefix: individuals[i][1], amount: individuals[i][0]});
 
 					if ( individuals.length >= 12 )
 						out += '<br>(and ' + (individuals.length - 12) + ' more)';
@@ -727,17 +715,19 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	tokens = this._remove_banned(tokens);
 
 	if ( tags.bits && this.settings.collect_bits ) {
-		var stuff = {};
-		var total = 0, individuals = [];
+		var stuff = {},
+			into_one = this.settings.collect_bits === 2;
+
 		for(var i=0; i < tokens.length; i++)
 			if ( tokens[i] && tokens[i].type === "bits" ) {
 				tokens[i].hidden = true;
-				var prefix = tokens[i].prefix,
+				var real_prefix = tokens[i].prefix,
+					prefix = into_one ? 'Cheer' : real_prefix,
 					amount = tokens[i].amount || 0,
 					grouped = stuff[prefix] = stuff[prefix] || {total: 0, individuals: []};
 
 				grouped.total += amount;
-				grouped.individuals.push(amount);
+				grouped.individuals.push([amount, real_prefix]);
 			}
 
 		for(var prefix in stuff)

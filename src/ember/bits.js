@@ -7,6 +7,25 @@ var FFZ = window.FrankerFaceZ,
 // Settings
 // --------------------
 
+FFZ.settings_info.collect_bits = {
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Grouped by Type",
+		2: "All in One"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0),
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Bits Stacking",
+	help: "Collect all the bits emoticons in a message into a single one at the start of the message."
+};
+
+
 FFZ.settings_info.bits_animated = {
 	type: "boolean",
 	value: true,
@@ -17,7 +36,11 @@ FFZ.settings_info.bits_animated = {
 	name: "Bits Animation",
 	help: "Display bits with animation.",
 
-	on_update: utils.toggle_cls('ffz-animate-bits')
+	on_update: function() {
+		var bits = utils.ember_lookup('service:bits-rendering-config');
+		if ( bits && bits.ffz_has_css )
+			bits.ffz_update_css();
+	}
 }
 
 
@@ -79,7 +102,6 @@ FFZ.settings_info.bits_pinned_expand = {
 // --------------------
 
 FFZ.prototype.setup_bits = function() {
-	utils.toggle_cls('ffz-animate-bits')(this.settings.bits_animated);
 	utils.toggle_cls('ffz-show-bits-tags')(this.settings.bits_tags_container);
 	utils.toggle_cls('ffz-hide-pinned-cheers')(!this.settings.bits_pinned);
 	utils.toggle_cls('ffz-pinned-cheer-expand-hover')(this.settings.bits_pinned_expand === 1);
@@ -134,20 +156,17 @@ FFZ.prototype.setup_bits = function() {
 		_ffz_tier_css: function(ind, prefix, tier) {
 			var selector = '.ffz-bit.bit-prefix-' + prefix + '.bit-tier-' + ind,
 				color = f._handle_color(tier.color),
+				animated = f.settings.bits_animated,
 				output;
 
 			output = selector + '{' +
 				'color: ' + color[0] + ';' +
-				this._ffz_image_css(tier.images.light.static) +
-			'}.ffz-animate-bits ' + selector + '{' +
-				this._ffz_image_css(tier.images.light.animated) +
+				this._ffz_image_css(tier.images.light[animated ? 'animated' : 'static']) +
 			'}';
 
 			return output + '.tipsy ' + selector + ',.dark ' + selector + ',.force-dark ' + selector + ',.theatre ' + selector + '{' +
 				'color: ' + color[1] + ';' +
-				this._ffz_image_css(tier.images.dark.static) +
-			'}.ffz-animate-bits .tipsy ' + selector + ',.ffz-animate-bits .dark ' + selector + ',.ffz-animate-bits .force-dark ' + selector + ',.ffz-animate-bits .theatre ' + selector + '{' +
-				this._ffz_image_css(tier.images.dark.animated) +
+				this._ffz_image_css(tier.images.dark[animated ? 'animated' : 'static']) +
 			'}';
 		},
 
