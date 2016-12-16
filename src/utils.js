@@ -965,11 +965,11 @@ module.exports = FFZ.utils = {
 		return (days||'') + ((!no_hours || days || hours) ? ((days && hours < 10 ? "0" : "") + hours + ':') : '') + (minutes < 10 ? "0" : "") + minutes + (no_seconds ? "" : (":" + (seconds < 10 ? "0" : "") + seconds));
 	},
 
-	duration_string: function(val, no_purge) {
+	duration_string: function(val, no_purge, full_names) {
 		if ( ! no_purge && val === 1 )
 			return 'Purge';
 
-		if ( DURATIONS[val] )
+		if ( ! full_names && DURATIONS[val] )
 			return DURATIONS[val];
 
 		var weeks, days, hours, minutes, seconds;
@@ -986,12 +986,16 @@ module.exports = FFZ.utils = {
 		minutes = Math.floor(seconds / 60);
 		seconds %= 60;
 
-		var out = DURATIONS[val] = (weeks ? weeks + 'w' : '') +
-			(days ? days + 'd' : '') +
-			(hours ? hours + 'h' : '') +
-			(minutes ? minutes + 'm' : '') +
-			(seconds ? seconds + 's' : '');
+		var out = (weeks ? weeks + (full_names ? ' week' + pluralize(weeks) + ', ' : 'w') : '') +
+			(days ? days + (full_names ? ' day' + pluralize(days) + ', ' : 'd') : '') +
+			(hours ? hours + (full_names ? ' hour' + pluralize(hours) + ', ' : 'h') : '') +
+			(minutes ? minutes + (full_names ? ' minute' + pluralize(minutes) + ', ' : 'm') : '') +
+			(seconds ? seconds + (full_names ? ' second' + pluralize(seconds) + ', ' : 's') : '');
 
+		if ( full_names )
+			return out.substr(0, out.length - 2);
+
+		DURATIONS[val] = out;
 		return out;
 	},
 

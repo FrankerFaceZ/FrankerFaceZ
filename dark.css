@@ -345,7 +345,9 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .balloon .balloon__link { color: #a68ed2 !important }
+.ffz-dark .balloon .balloon__link--selected,
 .ffz-dark .balloon .balloon__link:hover { color: #fff !important }
+.ffz-dark .balloon .balloon__link--selected { background-color: #6441a5 !important }
 
 .ffz-dark .st-autocomplete-sidebar .all p:not(.active),
 .ffz-dark .st-autocomplete-small .all p:not(.active),
@@ -1108,6 +1110,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 	-webkit-filter: invert(100%);
 }
 
+.ffz-dark .form__input[type=range] {
+	background-color: transparent;
+}
+
 .ffz-dark .form__input[type=text],
 .ffz-dark .form__input[type=email],
 .ffz-dark .form__input[type=search],
@@ -1274,6 +1280,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-top-color: rgba(255,255,255, 0.2);
 }
 
+.ffz-dark .dash-widget__divider,
 .ffz-dark .conversation-settings-menu .options-divider {
 	border-bottom-color: rgba(255,255,255,0.2);
 }

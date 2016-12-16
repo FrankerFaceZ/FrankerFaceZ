@@ -22,6 +22,12 @@ var FFZ = window.FrankerFaceZ,
 		["r9k", "r9k", "This room is in R9K-mode."],
 		["emote", "emoteOnly", "This room is in Twitch emoticons only mode. Emoticons added by extensions are not available in this mode."],
 		["sub", "subsOnly", "This room is in subscribers-only mode."],
+		["follow", function(room) {
+				return room && room.get('followersOnly') > -1
+			}, function(room) {
+				var name = room && (room.get('channel.display_name') || room.get("tmiRoom.displayName") || room.get('isGroupRoom') ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('name')) );
+				return "This room is in followers-only mode. You may only participate in chat if you have been following " + utils.sanitize(name) + " for at least " + utils.duration_string((room && room.get('followersOnly') || 0) * 60, true, true) + "."
+			}],
 		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every <nobr>" + utils.number_commas(room && room.get('slow') || 120) + " seconds</nobr>." }],
 		["ban", "ffz_banned", "You have been banned from talking in this room."],
 		["delay", function(room) {

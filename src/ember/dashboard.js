@@ -27,35 +27,8 @@ FFZ.prototype.setup_dashboard = function() {
 		utils.toggle_cls('ffz-minimal-dashboard')(true);
 
 	this.update_views('component:dashboards/live-widget', this.modify_dashboard_widget);
-	this.update_views('component:dashboards/live/stream-stats', this.make_uptime_great_again);
-}
-
-
-FFZ.prototype.make_uptime_great_again = function(component) {
-	var f = this;
-	utils.ember_reopen_view(component, {
-		ffz_update: function() {
-			this.ffzFixUptime();
-		},
-
-		ffzFixUptime: function() {
-			var online = this.get('channel.stream.createdAt'),
-				now = Date.now() - (f._ws_server_offset || 0),
-				uptime = online && Math.floor((now - online.getTime()) / 1000) || -1,
-				setting = f.settings.stream_uptime;
-
-			this.set('timeLive', uptime >= 0 ? utils.time_to_string(uptime, false, false, false, true) : 'Offline');
-		},
-
-		_reloadStream: function() {
-			var t = this;
-			this.get('channel.stream').then(function(stream) {
-				t.isDestroyed || stream.reload().then(function(stream) {
-					t.isDestroyed || t.ffzFixUptime();
-				});
-			})
-		}
-	});
+	//this.update_views('component:dashboards/live/stream-stats', this.modify_dashboard_stats);
+	//this.update_views('component:dashboards/live/stream-health', this.modify_dashboard_health);
 }
 
 
