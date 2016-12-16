@@ -49,8 +49,24 @@ FFZ.ws_commands.update_news = function(version) {
 // -------------------
 
 FFZ.debugging_blocks = {
-	version: {
+	navigator: {
 		order: 1,
+		title: 'Navigator',
+		refresh: false,
+		type: 'list',
+
+		render: function() {
+			var flash = _.find(navigator.plugins, function(x) { return x.name.indexOf('Flash') !== -1});
+			return [
+				['User Agent', navigator.userAgent],
+				['Screen Size', screen.width + 'x' + screen.height + ' ' + screen.pixelDepth + 'bpp ' + window.devicePixelRatio + 'x DPI'],
+				['Flash Version', flash ? flash.description : '<i>not found</i>']
+			];
+		}
+	},
+
+	version: {
+		order: 2,
 		title: "Version Breakdown",
 		refresh: false,
 		type: "list",
@@ -80,7 +96,7 @@ FFZ.debugging_blocks = {
 	},
 
 	socket: {
-		order: 2,
+		order: 3,
 		title: "WS Client Status",
 		refresh: 5000,
 		type: "list",
@@ -106,7 +122,7 @@ FFZ.debugging_blocks = {
 	},
 
 	logviewer: {
-		order: 3,
+		order: 4,
 		title: "Logviewer Status",
 		refresh: true,
 		type: "list",
@@ -176,7 +192,7 @@ FFZ.debugging_blocks = {
 	},
 
 	twitch: {
-		order: 4,
+		order: 5,
 		title: "Twitch Configuration",
 		refresh: false,
 		type: "list",
@@ -215,7 +231,7 @@ FFZ.debugging_blocks = {
 	},
 
 	experiments: {
-		order: 5,
+		order: 6,
 		title: "Twitch Experiments",
 		refresh: false,
 		type: "list",
@@ -238,7 +254,7 @@ FFZ.debugging_blocks = {
 	},
 
 	memory: {
-		order: 6,
+		order: 7,
 		title: "Memory Statistics",
 		refresh: true,
 		type: "list",
@@ -256,7 +272,7 @@ FFZ.debugging_blocks = {
 	},
 
 	player: {
-		order: 7,
+		order: 8,
 		title: "Player Statistics",
 		refresh: true,
 		type: "list",
@@ -300,7 +316,7 @@ FFZ.debugging_blocks = {
 	},
 
 	settings: {
-		order: 8,
+		order: 9,
 		title: "Current Settings",
 		refresh: false,
 		type: "text",
