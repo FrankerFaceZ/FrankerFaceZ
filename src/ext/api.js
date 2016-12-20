@@ -599,6 +599,13 @@ API.prototype.user_remove_set = function(username, set_id) {
 }
 
 
+API.prototype.retokenize_messages = function(room, user, max_age) {
+	var rooms = room ? [room] : Object.keys(this.ffz.rooms);
+	for(var i=0; i < rooms.length; i++)
+		rooms[i] && rooms[i].room && rooms[i].room.ffzRetokenizeUser(user, max_age);
+}
+
+
 // -----------------------
 // Chat Callback
 // -----------------------

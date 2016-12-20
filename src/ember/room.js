@@ -23,10 +23,11 @@ var FFZ = window.FrankerFaceZ,
 		["emote", "emoteOnly", "This room is in Twitch emoticons only mode. Emoticons added by extensions are not available in this mode."],
 		["sub", "subsOnly", "This room is in subscribers-only mode."],
 		["follow", function(room) {
-				return room && room.get('followersOnly') > -1
+				return room && ! room.get('isGroupRoom') && room.get('followersOnly') > -1
 			}, function(room) {
-				var name = room && (room.get('channel.display_name') || room.get("tmiRoom.displayName") || room.get('isGroupRoom') ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('name')) );
-				return "This room is in followers-only mode. You may only participate in chat if you have been following " + utils.sanitize(name) + " for at least " + utils.duration_string((room && room.get('followersOnly') || 0) * 60, true, true) + "."
+				var name = room && (room.get('channel.display_name') || room.get("tmiRoom.displayName") || room.get('isGroupRoom') ? room.get('tmiRoom.name') : FFZ.get_capitalization(room.get('name')) ),
+					duration = room && room.get('followersOnly') || 0;
+				return "This room is in followers-only mode. You may only participate in chat if you " + (duration > 0 ? " have been following " : 'follow ') + utils.sanitize(name) + (duration > 0 ? " for at least " + utils.duration_string(duration * 60, true, true) : '') + ".";
 			}],
 		["slow", "slow", function(room) { return "This room is in slow mode. You may send messages every <nobr>" + utils.number_commas(room && room.get('slow') || 120) + " seconds</nobr>." }],
 		["ban", "ffz_banned", "You have been banned from talking in this room."],
@@ -999,12 +1000,16 @@ FFZ.prototype.add_room = function(room_id, room) {
 			if ( set ) {
 				if ( set.users.indexOf(room_id) === -1 )
 					set.users.push(room_id);
+				room.ffzRetokenizeUser();
 				continue;
 			}
 
 			this.load_set(sid, function(success, data) {
-				if ( success )
-					data.users.push(room_id);
+				if ( success ) {
+					if ( data.users.indexOf(room_id) === -1 )
+						data.users.push(room_id);
+					room.ffzRetokenizeUser();
+				}
 			});
 		}
 	}
@@ -1260,7 +1265,7 @@ FFZ.prototype._modify_room = function(room) {
 		ffzUpdateStatus: function() {
 			if ( f._roomv )
 				f._roomv.ffzUpdateStatus();
-		}.observes('r9k', 'subsOnly', 'emoteOnly', 'slow', 'ffz_banned'),
+		}.observes('r9k', 'subsOnly', 'emoteOnly', 'slow', 'ffz_banned', 'followersOnly'),
 
 
 		// User Level
@@ -1887,6 +1892,39 @@ FFZ.prototype._modify_room = function(room) {
 
 		ffzShouldDisplayNotice: function() {
 			return f.settings.timeout_notices === 2 || (f.settings.timeout_notices === 1 && this.get('isModeratorOrHigher'));
+		},
+
+		ffzRetokenizeUser: function(user, max_age) {
+			// Retokenize all messages by a user, or just all messages.
+			var messages = this.get('messages'),
+				i = messages.length,
+				now = new Date;
+
+			while(i--) {
+				var msg = messages[i],
+					age = msg.date ? (now - msg.date) / 1000 : 0;
+
+				if ( max_age && age > max_age )
+					break;
+
+				if ( ! user || msg.from === user ) {
+					msg.cachedTokens = null;
+					if ( msg._line )
+						Ember.propertyDidChange(msg._line, 'ffzTokenizedMessage');
+				}
+			}
+
+			messages = this.ffzPending;
+			i = messages ? messages.length : 0;
+
+			while(i--) {
+				var msg = messages[i],
+					age = msg.date ? (now - msg.date) / 1000 : 0;
+				if ( max_age && age > max_age )
+					break;
+				if ( ! user || msg.from === user )
+					msg.cachedTokens = null;
+			}
 		},
 
 		addNotification: function(msg) {

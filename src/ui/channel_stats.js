@@ -303,7 +303,7 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 						return false;
 
 					e.update_stat = f.render_metadata.bind(f, key, basic_info, metabar, timers, refresh_func, is_hosting);
-					var data = info.setup ? info.setup.apply(f, basic_info) : basic_info;
+					var data = info.setup ? info.setup.apply(f, basic_info) : basic_info.copy();
 					if ( ! (data instanceof Promise) )
 						data = Promise.resolve(data);
 
@@ -323,7 +323,7 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 					if ( popup && popup.id === 'ffz-metadata-popup' && popup.dataset.key === key )
 						return;
 
-					var data = info.setup ? info.setup.apply(f, basic_info) : basic_info;
+					var data = info.setup ? info.setup.apply(f, basic_info) : basic_info.copy();
 					if ( ! (data instanceof Promise) )
 						data = Promise.resolve(data);
 

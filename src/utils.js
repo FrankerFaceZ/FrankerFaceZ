@@ -986,14 +986,14 @@ module.exports = FFZ.utils = {
 		minutes = Math.floor(seconds / 60);
 		seconds %= 60;
 
-		var out = (weeks ? weeks + (full_names ? ' week' + pluralize(weeks) + ', ' : 'w') : '') +
-			(days ? days + (full_names ? ' day' + pluralize(days) + ', ' : 'd') : '') +
-			(hours ? hours + (full_names ? ' hour' + pluralize(hours) + ', ' : 'h') : '') +
-			(minutes ? minutes + (full_names ? ' minute' + pluralize(minutes) + ', ' : 'm') : '') +
-			(seconds ? seconds + (full_names ? ' second' + pluralize(seconds) + ', ' : 's') : '');
+		var out = (weeks ? weeks + (full_names ? ' week' + pluralize(weeks) + ' ' : 'w') : '') +
+			(days ? days + (full_names ? ' day' + pluralize(days) + ' ' : 'd') : '') +
+			(hours ? hours + (full_names ? ' hour' + pluralize(hours) + ' ' : 'h') : '') +
+			(minutes ? minutes + (full_names ? ' minute' + pluralize(minutes) + ' ' : 'm') : '') +
+			(seconds ? seconds + (full_names ? ' second' + pluralize(seconds) + ' ' : 's') : '');
 
 		if ( full_names )
-			return out.substr(0, out.length - 2);
+			return out.substr(0, out.length - 1);
 
 		DURATIONS[val] = out;
 		return out;

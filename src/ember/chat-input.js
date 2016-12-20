@@ -29,11 +29,11 @@ var FFZ = window.FrankerFaceZ,
 		},
 		slowoff: {info: 'Disable Slow Mode'},
 
-		/*followers: {
-			label: '/followers <i>[duration followed]</i>',
+		followers: {
+			label: '/followers <i>[duration]</i>',
 			info: 'Enable Followers-Only Mode'
 		},
-		followersoff: { info: 'Disable Followers-Only Mode'},*/
+		followersoff: { info: 'Disable Followers-Only Mode'},
 
 		r9kbeta: {info: 'Enable R9k Mode'},
 		r9kbetaoff: {info: 'Disable R9k Mode'},

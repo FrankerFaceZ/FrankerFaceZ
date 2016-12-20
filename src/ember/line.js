@@ -679,10 +679,10 @@ FFZ.prototype.setup_line = function() {
 	this.toggle_style('chat-hc-bold', this.settings.high_contrast_chat[1] === '1');
 	this.toggle_style('chat-hc-background', this.settings.high_contrast_chat[0] === '1');
 
-
+	var f = this;
 	this.update_views('component:video/rechat/chat-message', this._modify_vod_line);
 	this.update_views('component:chat/message-line', this._modify_chat_subline);
-	this.update_views('component:chat/whisper-line', this._modify_chat_subline);
+	this.update_views('component:chat/whisper-line', function(x) { return f._modify_chat_subline(x, true) });
 
 
 	// Store the capitalization of our own name.
@@ -773,7 +773,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
-				shouldnt_show =is_whisper || this_ul >= other_ul || (f.settings.mod_buttons.length === 0 && ! is_tb),
+				shouldnt_show = is_whisper || this_ul >= other_ul || (f.settings.mod_buttons.length === 0 && ! is_tb),
 				output;
 
 			if ( ! is_pinned_cheer && shouldnt_show )
@@ -976,15 +976,19 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 }
 
 
-FFZ.prototype._modify_chat_subline = function(component) {
+FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 	var f = this,
 		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers');
 
 	this._modify_chat_line(component);
 
 	component.reopen({
-		classNameBindings: ["msgObject.style", "msgObject.isModerationMessage:moderation-message", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
-		attributeBindings: ["msgObject.tags.id:data-id", "msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
+		classNameBindings: is_whisper ?
+			[':whisper-line', ':chat-line', 'isReceivedWhisper:whisper-incoming:whisper-outgoing'] :
+			["msgObject.style", "msgObject.isModerationMessage:moderation-message", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
+		attributeBindings: is_whisper ?
+			['msgObject.nonce:data-nonce', 'msgObject.tags.id:data-id', 'msgObject.from:data-sender'] :
+			["msgObject.tags.id:data-id", "msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
 
 		didInsertElement: function() {
 			if ( this.get('msgObject') ) {

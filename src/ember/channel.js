@@ -193,9 +193,11 @@ FFZ.prototype.modify_channel_live = function(view) {
 		},
 
 		ffzUpdatePlayerPosition: function() {
-			if ( this._ffz_player_repositoner && Date.now() - this._ffz_loaded > 60000 ) {
+			if ( f.has_bttv || this._ffz_player_repositoner && Date.now() - this._ffz_loaded > 60000 ) {
 				clearInterval(this._ffz_player_repositoner);
 				this._ffz_player_repositoner = null;
+				if ( f.has_bttv )
+					return;
 			}
 
 			this.updatePlayerPosition();

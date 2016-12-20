@@ -1,3 +1,33 @@
+<div class="list-header">3.5.405 <time datetime="2016-12-19">(2016-12-19)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Display Channel Metadata on Theater Mode Hover</li>
+	<li>Fixed: Twitch goofed up player positioning.</li>
+	<li>Fixed: Classic Player controls not rendering as the correct height in theater mode with whispers on bottom.</li>
+</ul>
+
+<div class="list-header">3.5.404 <time datetime="2016-12-18">(2016-12-18)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Compatibility issue with BetterTTV and FFZ getting into a fight over positioning the player.</li>
+</ul>
+
+<div class="list-header">3.5.403 <time datetime="2016-12-16">(2016-12-16)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Whisper display in pop-out chat.</li>
+</ul>
+
+<div class="list-header">3.5.402 <time datetime="2016-12-16">(2016-12-16)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>API Changed: <code>api.retokenize_messages(room, user, max_age)</code> now takes a maximum age to prevent it from processing old chat messages.</li>
+	<li>Fixed: Room status indicator for Follower-Only chat mode wasn't updating.</li>
+	<li>Added: Enable the tab-completion for <code>/followers</code> and <code>/followersoff</code> as they can be used even if you don't have the tab enabling the UI.</li>
+</ul>
+
+<div class="list-header">3.5.401 <time datetime="2016-12-16">(2016-12-16)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>API Added: <code>api.retokenize_messages</code> to force retokenization of old chat messages after emoticons load.</li>
+	<li>API Fixed: Bug modifying the source data array in metadata click functions.</li>
+</ul>
+
 <div class="list-header">3.5.400 <time datetime="2016-12-16">(2016-12-16)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Support for Follower-Only chat mode.</li>
@@ -46,40 +76,6 @@
 	<li>Fixed: Modifiers sticking to the master emoji token, causing all emoji to become decorated with modifiers.</li>
 	<li>Fixed: Incorrect detection of certain dashboard pages causing FFZ to do an incomplete initialization.</li>
 	<li>Fixed: Bug when testing to see if a chat command should be accessible.</li>
-</ul>
-
-<div class="list-header">3.5.394 <time datetime="2016-12-08">(2016-12-08)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: The <code>/card</code> command and the link in whisper windows to Open Moderation Card were not working.</li>
-	<li>Fixed: Switching moderation cards to another user by clicking their name in moderation card chat history.</li>
-</ul>
-
-<div class="list-header">3.5.393 <time datetime="2016-12-07">(2016-12-07)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>API Added: <code>api.room_add_user_badge</code> and <code>api.room_remove_user_badge</code> methods for adding and removing room-specific badges from a user. Note: These methods only function when the associated room is loaded.</li>
-</ul>
-
-<div class="list-header">3.5.392 <time datetime="2016-12-07">(2016-12-07)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Not sanitizing emoticon names in tooltips.</li>
-</ul>
-
-<div class="list-header">3.5.391 <time datetime="2016-12-07">(2016-12-07)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Security issue.</li>
-</ul>
-
-<div class="list-header">3.5.390 <time datetime="2016-12-06">(2016-12-06)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Dark theme CSS tweaks.</li>
-</ul>
-
-<div class="list-header">3.5.389 <time datetime="2016-12-03">(2016-12-03)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Setting to move the Latest Uploads to the bottom of the Following page or to hide it outright.</li>
-	<li>Changed: When you pop out chat, it will take the custom width you've given the right sidebar.</li>
-	<li>Removed: Auto-Pause Hosted Channels. Twitch has made it impossible to determine from the player if it is a host or not.</li>
-	<li>Fixed: Stream latency display.</li>
 </ul>
 
 <div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>

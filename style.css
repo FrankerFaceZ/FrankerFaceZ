@@ -290,34 +290,20 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 /* Theater Mode hover bar */
 
-.ffz-theater-basic-stats .app-main.theatre .player-userinfo__game,
-.ffz-theater-basic-stats .app-main.theatre .player-controls-top {
+.ffz-theater-basic-stats .theatre .player-userinfo__game,
+.ffz-theater-basic-stats .theatre .player-controls-top {
 	display: block
 }
 
-/*.ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
-.ffz-theater-stats .app-main.theatre .player-column:hover #hostmode > div.clearfix {
-	margin-bottom: 30px;
-}
+.ffz-theater-stats .theatre #main_col:hover .cn-hosting--bottom,
+.ffz-theater-stats .theatre #main_col:focus .cn-hosting--bottom,
+.ffz-theater-stats .theatre .cn-hosting--bottom:hover,
+.ffz-theater-stats .theatre .cn-hosting--bottom:focus,
 
-.ffz-theater-stats .app-main.theatre #channel .player-column:focus .archive_info + .stats-and-actions,
-.ffz-theater-stats .app-main.theatre #channel .player-column:hover .archive_info + .stats-and-actions {
-	display: none;
-}*/
-
-.ffz-theater-stats .app-main.theatre .player-column:hover .cn-hosting--bottom,
-.ffz-theater-stats .app-main.theatre .player-column:focus .cn-hosting--bottom,
-.ffz-theater-stats .app-main.theatre .cn-hosting--bottom:hover,
-.ffz-theater-stats .app-main.theatre .cn-hosting--bottom:focus,
-
-.ffz-theater-stats .app-main.theatre .player-column:hover + .metadata-box .cn-metabar__more,
-.ffz-theater-stats .app-main.theatre .player-column:focus + .metadata-box .cn-metabar__more,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more:hover,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more:focus /*,
-.ffz-theater-stats .app-main.theatre .player-column:focus #hostmode > div.clearfix,
-.ffz-theater-stats .app-main.theatre .player-column:hover #hostmode > div.clearfix,
-.ffz-theater-stats .app-main.theatre .player-column:focus .stats-and-actions,
-.ffz-theater-stats .app-main.theatre .player-column:hover .stats-and-actions */ {
+.ffz-theater-stats .theatre #main_col:hover .cn-metabar__more,
+.ffz-theater-stats .theatre #main_col:focus .cn-metabar__more,
+.ffz-theater-stats .theatre .cn-metabar__more:hover,
+.ffz-theater-stats .theatre .cn-metabar__more:focus {
 	background-color: rgba(25,25,31,0.95);
 
 	color: #aaa;
@@ -332,43 +318,43 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	flex-wrap: wrap;
 }
 
-.ffz-theater-stats .app-main.theatre .cn-hosting--bottom,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more {
+.ffz-theater-stats .theatre .cn-hosting--bottom,
+.ffz-theater-stats .theatre .cn-metabar__more {
 	bottom: 55px;
 }
 
-.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-hosting--bottom,
-.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-metabar__more {
+.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .theatre .cn-hosting--bottom,
+.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .theatre .cn-metabar__more {
 	bottom: 95px;
 }
 
-.ffz-theater-stats .app-main.theatre .cn-metabar__more span,
-.ffz-theater-stats .app-main.theatre .cn-metabar__more div { flex-grow: 0 !important }
+.ffz-theater-stats .theatre .cn-metabar__more span,
+.ffz-theater-stats .theatre .cn-metabar__more div { flex-grow: 0 !important }
 
-.ffz-theater-stats .app-main.theatre .channel-stats .stat { color: #aaa; }
+.ffz-theater-stats .theatre .channel-stats .stat { color: #aaa; }
 
-.ffz-theater-stats .app-main.theatre .channel-stats span:not(.live-count) svg path {
+.ffz-theater-stats .theatre .channel-stats span:not(.live-count) svg path {
 	fill: rgba(255,255,255,0.35);
 }
 
-.ffz-theater-stats .app-main.theatre .follow-button .notify:before,
-.ffz-theater-stats .app-main.theatre .button.drop:after,
-.ffz-theater-stats .app-main.theatre .follow-button .drop.follow:after {
+.ffz-theater-stats .theatre .follow-button .notify:before,
+.ffz-theater-stats .theatre .button.drop:after,
+.ffz-theater-stats .theatre .follow-button .drop.follow:after {
 	border: 5px solid rgba(255,255,255,0.35);
 	border-left-color: transparent;
 	border-right-color: transparent;
 	border-bottom-color: transparent;
 }
 
-.ffz-theater-stats .app-main.theatre .follow-button .notify {
+.ffz-theater-stats .theatre .follow-button .notify {
 	background-color: #25252a;
 }
 
-.ffz-theater-stats .app-main.theatre .button.button--icon-only:not(.follow-button) svg path {
+.ffz-theater-stats .theatre .button.button--icon-only:not(.follow-button) svg path {
 	fill: #a68ed2;
 }
 
-.ffz-theater-stats .app-main.theatre .button.primary.subscribe-button {
+.ffz-theater-stats .theatre .button.primary.subscribe-button {
 	color: #fff;
 }
 
@@ -2736,36 +2722,36 @@ li[data-name="following"] a {
 	background: linear-gradient(to top, #252525, #666);
 }
 
-.ffz-classic-player .app-main.theatre .player .player-video,
+.ffz-classic-player .theatre .player .player-video,
 .ffz-classic-player .player[data-isfullscreen="true"] .player-video {
 	bottom: 0;
 }
 
-.ffz-classic-player .app-main.theatre .player .player-controls-bottom,
+.ffz-classic-player .theatre .player .player-controls-bottom,
 .ffz-classic-player .player[data-isfullscreen="true"] .player-controls-bottom {
 	margin-bottom: -32px;
 	-webkit-transition: margin-bottom .2s ease-out, padding-bottom .2s ease-out;
 	transition: margin-bottom .2s ease-out, padding-bottom .2s ease-out;
 }
 
-.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player .player-controls-bottom,
-.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player[data-controls=true] .player-controls-bottom,
-.ffz-classic-player .app-main.theatre .player[data-isfullscreen="true"] .player-controls-bottom,
-.ffz-classic-player .app-main.theatre .player[data-isfullscreen="true"][data-controls=true] .player-controls-bottom {
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .theatre .player .player-controls-bottom,
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .theatre .player[data-controls=true] .player-controls-bottom,
+.ffz-classic-player .theatre .player[data-isfullscreen="true"] .player-controls-bottom,
+.ffz-classic-player .theatre .player[data-isfullscreen="true"][data-controls=true] .player-controls-bottom {
 	padding-bottom: 0;
 }
 
-.ffz-classic-player .app-main.theatre .player.player-isvod .player-controls-bottom,
+.ffz-classic-player .theatre .player.player-isvod .player-controls-bottom,
 .ffz-classic-player .player.player-isvod[data-isfullscreen="true"] .player-controls-bottom {
 	margin-bottom: -36px;
 }
 
-.ffz-classic-player .app-main.theatre .player-column .player[data-controls=true] .player-controls-bottom,
+.ffz-classic-player .theatre .player[data-controls=true] .player-controls-bottom,
 .ffz-classic-player .player[data-isfullscreen="true"][data-controls="true"] .player-controls-bottom {
 	margin-bottom: 0;
 }
 
-.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .app-main.theatre .player[data-isfullscreen=false][data-controls=true] .player-controls-bottom {
+.ffz-classic-player:not(.ffz-top-conversations):not(.ffz-theatre-conversations) .theatre .player[data-isfullscreen=false][data-controls=true] .player-controls-bottom {
 	padding-bottom: 40px;
 }
 
@@ -3586,11 +3572,20 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	margin-right: 5px;
 }
 
+body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
+	padding-top: 75px;
+}
+
 .ffz-channel-title-top .cn-metabar__more { width: 100% }
 .ffz-channel-title-top #channel {
 	position: relative;
 	padding-top: 80px;
 }
+
+.ffz-channel-title-top:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
+	padding-top: 135px;
+}
+
 
 .cn-hosting .ffz.card__layout .card__title { color: #9c9c9c }
 
@@ -3604,6 +3599,10 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 .ffz-hide-channel-banner .cn-cover { height: 0 !important }
 .ffz-minimal-channel-title.ffz-channel-title-top #channel { padding-top: 50px }
+
+.ffz-minimal-channel-title.ffz-channel-title-top:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
+	padding-top: 100px;
+}
 
 .ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -55px }
 .ffz-minimal-channel-title.ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -25px }
