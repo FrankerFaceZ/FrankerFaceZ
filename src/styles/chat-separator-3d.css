@@ -1,15 +1,17 @@
 /* 3D Separators */
-.conversation-chat-lines > div:before,
-.chat-line:before {
+.conversation-chat-lines > div,
+.chat-line {
 	border-top: 1px solid rgba(255,255,255, 0.5);
 }
 
-/* Dark: 3D Separators */
-.ffz-dark .conversation-chat-lines > div:before,
-.theatre .conversation-chat-lines > div:before,
+.ember-chat .chat-messages .chat-line,
+.ember-chat .chat-messages .chat-line.admin { padding-top: 2px }
 
-.theatre .chat-line:before,
-.dark .chat-line:before,
-.force-dark .chat-line:before {
+/* Dark: 3D Separators */
+.ffz-dark .conversation-chat-lines > div,
+.theatre .conversation-chat-lines > div,
+
+.theatre .chat-line,
+.dark .chat-line {
 	border-top-color: rgba(255,255,255, 0.1);
 }

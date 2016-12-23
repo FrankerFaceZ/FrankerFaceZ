@@ -80,7 +80,6 @@ FFZ.settings_info.highlight_messages_with_mod_card = {
 	help: "Highlight a user's messages in chat when their moderation card is open.",
 
 	on_update: function(val) {
-		this._toggle_chat_setup_style();
 		if ( ! this._mod_card )
 			return;
 
@@ -128,7 +127,6 @@ FFZ.settings_info.chat_mod_icon_visibility = {
 	help: "Choose when you should see in-line moderation icons in chat.",
 
 	on_update: function(val) {
-		this._toggle_chat_setup_style();
 		var settings = utils.ember_settings();
 		if ( settings )
 			settings.set('showModIcons', val === 1);
@@ -842,7 +840,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					var was_at_bottom = history.scrollTop >= (history.scrollHeight - history.clientHeight),
 						last_line = history.querySelector('.chat-line:last-of-type'),
 						ll_date = last_line && last_line.getAttribute('data-date'),
-						date = message.date.toLocaleDateString();
+						date = message.date && message.date.toLocaleDateString();
 
 					if ( last_line.classList.contains('no-messages') ) {
 						last_line.parentElement.removeChild(last_line);
@@ -1559,7 +1557,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 	l_el.setAttribute('data-sender', msg.from);
 	l_el.setAttribute('data-id', msg.tags && msg.tags.id);
 	l_el.setAttribute('data-lv-id', msg.lv_id);
-	l_el.setAttribute('data-date', msg.date.toLocaleDateString());
+	l_el.setAttribute('data-date', msg.date && msg.date.toLocaleDateString());
 	l_el.setAttribute('data-deleted', msg.deleted || false);
 
 	l_el.innerHTML = out.join("");

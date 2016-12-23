@@ -96,6 +96,16 @@ FFZ.settings_info.bits_pinned_expand = {
 }
 
 
+FFZ.settings_info.bits_disable_charity = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Filtering",
+	name: "Disable Cheering with #Charity Notices",
+	help: "Stop displaying Twitch's notices about Cheering with #Charity."
+}
+
+
 
 // --------------------
 // Initialization

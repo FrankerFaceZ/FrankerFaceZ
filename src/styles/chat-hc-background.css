@@ -15,8 +15,6 @@ body.ffz-bttv-dark .chat-interface,
 .theatre .chat-container,
 .theatre .ember-chat-container,
 .chat-container.dark,
-.chat-container.force-dark,
-.ember-chat-container.dark,
-.ember-chat-container.force-dark {
+.ember-chat-container.dark {
 	background-color: #000 !important;
 }

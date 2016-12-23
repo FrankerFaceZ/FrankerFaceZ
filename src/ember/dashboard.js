@@ -38,7 +38,7 @@ FFZ.prototype.modify_dashboard_widget = function(component) {
 		ffz_init: function() {
 			var t = this;
 			this.$(".dash-widget__header").click(function(e) {
-				if ( ! f.settings.dash_widget_click_to_expand || e.target.tagName === 'button' || jQuery(e.target).parents('button').length )
+				if ( ! f.settings.dash_widget_click_to_expand || e.target.tagName === 'button' || jQuery(e.target).parents('button').length || jQuery(e.target).parents('.balloon-wrapper').length )
 					return;
 
 				t.actions.collapseWidget.call(t);

@@ -53,6 +53,39 @@
 	}
 
 
+	.yin-alert {
+		background-color: lighten(@nav-bg-color, 10%);
+
+		.yin-link {
+			color: #fff;
+
+			&:hover {
+				background-color: fade(white, 10%);
+			}
+		}
+	}
+
+
+	.ct-editable-text {
+		&:hover {
+			background-color: transparent;
+			&:after {
+				background-color: fade(white, 10%);
+			}
+		}
+	}
+
+	.ct-text-input {
+		background-color: fade(white, 10%);
+		color: white;
+		border-color: fade(white, 20%);
+
+		&:focus {
+			border-color: fade(white, 50%);
+		}
+	}
+
+
 	// Clip Center?
 	.ce-clip-center:not(.ce-clip-center--editing) .ce-clip-center__pre-control {
 		background-color: @nav-bg-color;

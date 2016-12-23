@@ -667,8 +667,8 @@ FFZ.prototype._tokenize_bits = function(tokens) {
 	if ( bits_helpers && bits_helpers.tokenizeBits )
 		try {
 			return bits_helpers.tokenizeBits(tokens,
-				bits_tags && bits_tags.allTagNames,
-				bits_service && bits_service.regexes);
+				bits_tags && bits_tags.get('allTagNames'),
+				bits_service && bits_service.get('regexes'));
 
 		} catch(err) { }
 	return tokens;
@@ -802,10 +802,15 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 			// can't actually go to it is a bad thing.
 			if ( this._chatv && this.settings.highlight_notifications && ! this.embed_in_dash && ! document.hasFocus() && ! prevent_notification ) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room,
+					controller = utils.ember_lookup('controller:chat'),
 					room_name;
 
 				// Make sure we have UI for this channel.
-				if ( (this.settings.group_tabs && (this.settings.pinned_rooms.indexOf(room_id) !== -1 || this._chatv._ffz_host )) || room.get('isGroupRoom') || room === this._chatv.get('controller.currentChannelRoom') ) {
+				if ( this.settings.pinned_rooms.indexOf(room_id) !== -1 ||
+						room_id === this._chatv._ffz_host ||
+						room.get('isGroupRoom') ||
+						(controller && room === controller.get('currentChannelRoom')) ) {
+
 					if ( room && room.get('isGroupRoom') )
 						room_name = room.get('tmiRoom.displayName');
 					else
@@ -837,8 +842,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 							(this.settings.notification_timeout*1000),
 							function() {
 								window.focus();
-								var cont = utils.ember_lookup('controller:chat');
-								room && cont && cont.focusRoom(room);
+								room && controller && controller.focusRoom(room);
 							}
 						);
 				}
@@ -1065,6 +1069,10 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 
 		var prefix = utils.quote_attr(token.prefix);
 		return '<span class="emoticon ffz-bit ffz-tooltip bit-prefix-' + prefix + ' bit-tier-' + tier[0] + '"' + (token.individuals ? ' data-individuals="' + utils.quote_attr(JSON.stringify(token.individuals)) + '"' : '') + ' data-prefix="' + prefix + '" data-amount="' + utils.number_commas(token.amount) + '" alt="cheer' + token.amount + '"></span>';
+	}
+
+	else if ( token.type === 'bits-tag' ) {
+		return '<span class="bits-tag mentioning">' + utils.sanitize(token.tag) + '</span>';
 	}
 
 	else if ( token.type === "deleted" )

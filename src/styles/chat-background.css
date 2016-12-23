@@ -1,86 +1,79 @@
 /* Regular Alternating Background */
-.conversation-chat-lines > div:nth-child(2n+0):before,
-.chat-line:nth-child(2n+0):before {
+.conversation-chat-lines > div:nth-child(2n+0),
+.chat-line:nth-child(2n+0) {
 	background-color: rgba(0,0,0, 0.1);
 }
 
 
 /* Dark: Alternating Background */
-.ffz-dark .conversation-chat-lines > div:nth-child(2n+0):before,
-.ffz-dark .chat-history .chat-line:nth-child(2n+0):before,
+.ffz-dark .conversation-chat-lines > div:nth-child(2n+0),
+.ffz-dark .chat-history .chat-line:nth-child(2n+0),
 
-.theatre .conversation-chat-lines > div:nth-child(2n+0):before,
-.theatre .chat-line:nth-child(2n+0):before,
+.theatre .conversation-chat-lines > div:nth-child(2n+0),
+.theatre .chat-line:nth-child(2n+0),
 
-.dark .chat-line:nth-child(2n+0):before,
-.force-dark .chat-line:nth-child(2n+0):before {
+.dark .chat-line:nth-child(2n+0) {
 	background-color: rgba(255,255,255, 0.05);
 }
 
 
 /* DEPRECIATED: Whisper Backgrounds */
-.chat-line.whisper:before {
+.chat-line.whisper {
 	background-color: rgba(185, 163, 227, 0.2);
 }
 
 
-.chat-line.whisper:nth-child(2n+0):before {
+.chat-line.whisper:nth-child(2n+0) {
 	background-color: rgba(185, 163, 227, 0.4);
 }
 
-.theatre .chat-line.whisper:before,
-.dark .chat-line.whisper:before,
-.force-dark .chat-line.whisper:before {
+.theatre .chat-line.whisper,
+.dark .chat-line.whisper {
 	background-color: rgba(100, 65, 165, 0.2);
 }
 
-.theatre .chat-line.whisper:nth-child(2n+0):before,
-.dark .chat-line.whisper:nth-child(2n+0):before,
-.force-dark .chat-line.whisper:nth-child(2n+0):before {
+.theatre .chat-line.whisper:nth-child(2n+0),
+.dark .chat-line.whisper:nth-child(2n+0) {
 	background-color: rgba(100, 65, 165, 0.4);
 }
 
 
 /* Chat History: Original Sender */
-.chat-history .chat-line.original-sender:before {
+.chat-history .chat-line.original-sender {
 	background-color: rgba(0,127,255, 0.2);
 }
 
-.chat-history .chat-line.original-sender:nth-child(2n+0):before {
+.chat-history .chat-line.original-sender:nth-child(2n+0) {
 	background-color: rgba(0,127,255, 0.4);
 }
 
-.theatre .chat-history .chat-line.original-sender:before,
-.dark .chat-history .chat-line.original-sender:before,
-.force-dark .chat-history .chat-line.original-sender:before {
+.theatre .chat-history .chat-line.original-sender,
+.dark .chat-history .chat-line.original-sender {
 	background-color: rgba(0,63,127, 0.2);
 }
 
-.theatre .chat-history .chat-line.original-sender:nth-child(2n+0):before,
-.dark .chat-history .chat-line.original-sender:nth-child(2n+0):before,
-.force-dark .chat-history .chat-line.original-sender:nth-child(2n+0):before {
+.theatre .chat-history .chat-line.original-sender:nth-child(2n+0),
+.dark .chat-history .chat-line.original-sender:nth-child(2n+0) {
 	background-color: rgba(0,63,127, 0.4);
 }
 
 
 /* Chat History: Original Message */
-.chat-history .chat-line.original-msg:before {
+.chat-history .chat-line.original-msg {
 	background-color: rgba(0,255,127, 0.4);
 }
 
-.chat-history .chat-line.original-msg:nth-child(2n+0):before {
+.chat-history .chat-line.original-msg:nth-child(2n+0) {
 	background-color: rgba(0,255,127, 0.8);
 }
 
-.theatre .chat-history .chat-line.original-msg:before,
-.dark .chat-history .chat-line.original-msg:before,
-.force-dark .chat-history .chat-line.original-msg:before {
+.theatre .chat-history .chat-line.original-msg,
+.dark .chat-history .chat-line.original-msg {
 	background-color: rgba(0,127,63, 0.4);
 }
 
-.theatre .chat-history .chat-line.original-msg:nth-child(2n+0):before,
-.dark .chat-history .chat-line.original-msg:nth-child(2n+0):before,
-.force-dark .chat-history .chat-line.original-msg:nth-child(2n+0):before {
+.theatre .chat-history .chat-line.original-msg:nth-child(2n+0),
+.dark .chat-history .chat-line.original-msg:nth-child(2n+0) {
 	background-color: rgba(0,127,63, 0.8);
 }
 
@@ -91,8 +84,7 @@
 }
 
 .theatre .chat-history .chat-line.original-msg span.has-color,
-.dark .chat-history .chat-line.original-msg span.has-color,
-.force-dark .chat-history .chat-line.original-msg span.has-color {
+.dark .chat-history .chat-line.original-msg span.has-color {
 	color: #fff !important;
 }
 
@@ -100,34 +92,31 @@
 
 
 /* DEPRECIATED: Mention Backgrounds */
-.chat-line.ffz-mentioned:before {
+.chat-line.ffz-mentioned {
 	background-color: rgba(255,127,127,0.2);
 }
 
-.chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned:before,
+.chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned,
 
-.chat-line.ffz-mentioned:nth-child(2n+0):before {
+.chat-line.ffz-mentioned:nth-child(2n+0) {
 	background-color: rgba(255,127,127, 0.4);
 }
 
 
 /* DEPRECIATED: DARK THEME: Mention Backgrounds */
-.ffz-dark .chat-history .chat-line.ffz-mentioned:before,
+.ffz-dark .chat-history .chat-line.ffz-mentioned,
 
-.theatre .chat-line.ffz-mentioned:before,
-.dark .chat-line.ffz-mentioned:before,
-.force-dark .chat-line.ffz-mentioned:before {
+.theatre .chat-line.ffz-mentioned,
+.dark .chat-line.ffz-mentioned {
 	background-color: rgba(255,0,0, 0.2) !important;
 }
 
-.theatre .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned:before,
-.dark .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned:before,
-.force-dark .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned:before,
+.theatre .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned,
+.dark .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned,
 
-.ffz-dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0):before,
-.theatre .chat-line.ffz-mentioned:nth-child(2n+0):before,
-.dark .chat-line.ffz-mentioned:nth-child(2n+0):before,
-.force-dark .chat-line.ffz-mentioned:nth-child(2n+0):before {
+.ffz-dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0),
+.theatre .chat-line.ffz-mentioned:nth-child(2n+0),
+.dark .chat-line.ffz-mentioned:nth-child(2n+0) {
 	background-color: rgba(255,0,0, 0.3) !important;
 }
 
@@ -154,16 +143,10 @@
 .ffz-dark .chat-history .mentioned,
 .ffz-dark .chat-history .mentioning,
 
-.app-main.theatre .chat-container .chat-line .mentioned,
-.app-main.theatre .chat-container .chat-line .mentioning,
 .chat-container.dark .chat-line .mentioned,
-.chat-container.dark .chat-line .mentioning,
-.chat-container.force-dark .chat-line .mentioned,
-.chat-container.force-dark .chat-line .mentioning,
 .ember-chat-container.dark .chat-line .mentioned,
-.ember-chat-container.dark .chat-line .mentioning,
-.ember-chat-container.force-dark .chat-line .mentioned,
-.ember-chat-container.force-dark .chat-line .mentioning {
+.chat-container.dark .chat-line .mentioning,
+.ember-chat-container.dark .chat-line .mentioning {
 	color: #8c8c8c;
 	background-color: rgba(16,16,16, 0.75);
 }

@@ -356,10 +356,9 @@ FFZ.settings_info.chat_rows = {
 	help: "Display alternating background colors for lines in chat.",
 
 	on_update: function(val) {
-			this.toggle_style('chat-background', !this.has_bttv && val);
-			this._toggle_chat_setup_style();
-		}
-	};
+		this.toggle_style('chat-background', !this.has_bttv && val);
+	}
+};
 
 
 FFZ.settings_info.chat_separators = {
@@ -382,14 +381,12 @@ FFZ.settings_info.chat_separators = {
 	help: "Display thin lines between chat messages for further visual separation.",
 
 	on_update: function(val) {
-			this._toggle_chat_setup_style();
-
-			this.toggle_style('chat-separator', !this.has_bttv && val);
-			this.toggle_style('chat-separator-3d', !this.has_bttv && val === 2);
-			this.toggle_style('chat-separator-3d-inset', !this.has_bttv && val === 3);
-			this.toggle_style('chat-separator-wide', !this.has_bttv && val === 4);
-		}
-	};
+		this.toggle_style('chat-separator', !this.has_bttv && val);
+		this.toggle_style('chat-separator-3d', !this.has_bttv && val === 2);
+		this.toggle_style('chat-separator-3d-inset', !this.has_bttv && val === 3);
+		this.toggle_style('chat-separator-wide', !this.has_bttv && val === 4);
+	}
+};
 
 
 FFZ.settings_info.old_sub_notices = {
@@ -440,7 +437,7 @@ FFZ.settings_info.chat_padding = {
 	help: "Reduce the amount of padding around chat messages to fit more on-screen at once.",
 
 	on_update: function(val) { this.toggle_style('chat-padding', !this.has_bttv && val); }
-	};
+};
 
 
 FFZ.settings_info.high_contrast_chat = {
@@ -666,7 +663,6 @@ FFZ.prototype.setup_line = function() {
 	utils.toggle_cls('ffz-padded-emoticons')(!this.has_bttv && this.settings.emote_alignment === 1);
 	utils.toggle_cls('ffz-baseline-emoticons')(!this.has_bttv && this.settings.emote_alignment === 2);
 
-	this._toggle_chat_setup_style();
 	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
 	this.toggle_style('chat-background', !this.has_bttv && this.settings.chat_rows);
 
@@ -689,15 +685,6 @@ FFZ.prototype.setup_line = function() {
 	var user = this.get_user();
 	if ( user && user.name )
 		FFZ.capitalization[user.login] = [user.name, Date.now()];
-}
-
-
-FFZ.prototype._toggle_chat_setup_style = function() {
-	this.toggle_style('chat-setup', !this.has_bttv && (
-		this.settings.chat_mod_icon_visibility > 1 ||
-		this.settings.chat_separators ||
-		this.settings.chat_rows ||
-		this.settings.highlight_messages_with_mod_card));
 }
 
 

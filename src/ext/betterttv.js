@@ -84,7 +84,6 @@ FFZ.prototype.setup_bttv = function(delay) {
 	this.disconnect_extra_chat();
 
 	// Disable style blocks.
-	this.toggle_style('chat-setup');
 	this.toggle_style('chat-padding');
 	this.toggle_style('chat-background');
 

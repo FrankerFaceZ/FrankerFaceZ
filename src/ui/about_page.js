@@ -134,7 +134,18 @@ FFZ.debugging_blocks = {
 				ffz_room = room_id && this.rooms[room_id];
 
 			return new Promise(function(succeed, fail) {
+				var failed = false,
+					fail_timer = setTimeout(function() {
+						failed = true;
+						succeed([['Authentication', '<i>unable to get token</i>']]);
+					}, 500);
+
 				f.lv_get_token().then(function(token) {
+					if ( failed )
+						return;
+					else
+						clearTimeout(fail_timer);
+
 					var output = [
 						['Authentication', '<i>succeeded</i>'],
 						['Token Expires', new Date(f._lv_token.expires * 1000).toLocaleString()],

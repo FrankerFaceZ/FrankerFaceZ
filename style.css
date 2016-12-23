@@ -22,6 +22,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 70px) }
 .ffz-minimize-conversations.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 50px) }
 
+.cn-bar-spacer.show,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #right_col,
@@ -511,68 +512,57 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .ffz-dark .ember-chat .chat-menu .list-header,
 .theatre .ember-chat .chat-menu .list-header,
-.dark .ember-chat .chat-menu .list-header,
-.force-dark .ember-chat .chat-menu .list-header {
+.dark .ember-chat .chat-menu .list-header {
 	border-top-color: rgba(255,255,255, 0.2);
 }
 
 .ffz-dark .ffz-ui-menu-page .ffz-filter-container,
 .theatre .ffz-ui-menu-page .ffz-filter-container,
 .dark .ffz-ui-menu-page .ffz-filter-container,
-.force-dark .ffz-ui-menu-page .ffz-filter-container,
 
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .theatre .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 .dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
-.force-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 
 .ffz-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
 .theatre .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
 .dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
-.force-dark .chat-menu.ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading,
 
 .ffz-dark .ffz-ui-popup ul.menu,
 .theatre .ffz-ui-popup ul.menu,
 .dark .ffz-ui-popup ul.menu,
-.force-dark .ffz-ui-popup ul.menu,
 
 .ffz-dark .ffz-ui-popup ul.menu a,
 .theatre .ffz-ui-popup ul.menu a,
 .dark .ffz-ui-popup ul.menu a,
-.force-dark .ffz-ui-popup ul.menu a,
 
 .ffz-sidebar-swap.ffz-dark .ffz-ui-popup ul.menu a,
 .ffz-sidebar-swap .theatre .ffz-ui-popup ul.menu a,
-.ffz-sidebar-swap .dark .ffz-ui-popup ul.menu a,
-.ffz-sidebar-swap .force-dark .ffz-ui-popup ul.menu a {
+.ffz-sidebar-swap .dark .ffz-ui-popup ul.menu a {
 	border-color: #32323e;
 }
 
 .ffz-dark .ffz-ui-popup ul.menu,
 .theatre .ffz-ui-popup ul.menu,
-.dark .ffz-ui-popup ul.menu,
-.force-dark .ffz-ui-popup ul.menu {
+.dark .ffz-ui-popup ul.menu {
 	background-color: #212121;
 }
 
 .ffz-dark .ffz-ui-popup ul.menu li.active,
 .theatre .ffz-ui-popup ul.menu li.active,
-.dark .ffz-ui-popup ul.menu li.active,
-.force-dark .ffz-ui-popup ul.menu li.active {
+.dark .ffz-ui-popup ul.menu li.active {
 	background-color: #101010;
 }
 
 .ffz-dark .ffz-ui-popup ul.menu li.active a,
 .theatre .ffz-ui-popup ul.menu li.active a,
-.dark .ffz-ui-popup ul.menu li.active a,
-.force-dark .ffz-ui-popup ul.menu li.active a {
+.dark .ffz-ui-popup ul.menu li.active a {
 	border-top-color: #101010;
 }
 
 .ffz-dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
 .theatre .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
-.dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
-.force-dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box {
+.dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box {
 	background-color: #101010;
 	color: #c3c3c3;
 	border-color: #32323e;
@@ -606,12 +596,12 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .suggestion.ffz-favorite:before,
 .emoticon.ffz-favorite:before {
-    content: "";
-    display: block;
-    height: 14px; width: 14px;
-    position: absolute;
-    right: 0; bottom: 0;
-    background: url("//cdn.frankerfacez.com/script/emoticon_favorite.png") no-repeat;
+	content: "";
+	display: block;
+	height: 14px; width: 14px;
+	position: absolute;
+	right: 0; bottom: 0;
+	background: url("//cdn.frankerfacez.com/script/emoticon_favorite.png") no-repeat;
 }
 
 .suggestion.ffz-favorite:before { right: 2.5px; bottom: 2.5px }
@@ -653,7 +643,6 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .pin-switch svg path { fill: rgba(0,0,0,0.2); }
 
 .dark .pin-switch svg path,
-.force-dark .pin-switch svg path,
 .theatre .dark .pin-switch svg path { fill: rgba(255,255,255,0.2) }
 
 .pin-switch,
@@ -741,9 +730,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .chat-container.dark .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
-.chat-container.force-dark .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
-.ember-chat-container.dark .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box {
+.ember-chat-container.dark .chat-interface .ffz-ui-popup.emoticon-selector .emoticon-selector-box {
 	background-color: rgb(16,16,16);
 	color: rgb(195,195,195);
 	border-color: #32323e;
@@ -849,9 +836,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .app-main.theatre .ffz-ui-popup ul.sub-menu,
 .chat-container.dark .ffz-ui-popup ul.sub-menu,
-.chat-container.force-dark .ffz-ui-popup ul.sub-menu,
 .ember-chat-container.dark .ffz-ui-popup ul.sub-menu,
-.ember-chat-container.force-dark .ffz-ui-popup ul.sub-menu,
 body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu {
 	background-color: #181818;
 }
@@ -863,9 +848,7 @@ body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu {
 
 .app-main.theatre .ffz-ui-popup ul.sub-menu a,
 .chat-container.dark .ffz-ui-popup ul.sub-menu a,
-.chat-container.force-dark .ffz-ui-popup ul.sub-menu a,
 .ember-chat-container.dark .ffz-ui-popup ul.sub-menu a,
-.ember-chat-container.force-dark .ffz-ui-popup ul.sub-menu a,
 body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu a {
 	color: #d3d3d3 !important;
 }
@@ -905,30 +888,22 @@ span.ffz-handle:after { left: 8px }
 
 .app-main.theatre span.ffz-handle:before,
 .chat-container.dark span.ffz-handle:before,
-.chat-container.force-dark span.ffz-handle:before,
 .ember-chat-container.dark span.ffz-handle:before,
-.ember-chat-container.force-dark span.ffz-handle:before,
 body.ffz-bttv-dark .ffz-ui-popup span.ffz-handle:before,
 .app-main.theatre span.ffz-handle:after,
 .chat-container.dark span.ffz-handle:after,
-.chat-container.force-dark span.ffz-handle:after,
 .ember-chat-container.dark span.ffz-handle:after,
-.ember-chat-container.force-dark span.ffz-handle:after,
 body.ffz-bttv-dark .ffz-ui-popup span.ffz-handle:after {
 	border-color: #666;
 }
 
 .app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:before,
 .chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
-.chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
 .ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
-.ember-chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
 body.ffz-bttv-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
 .app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:after,
 .chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
-.chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
 .ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
-.ember-chat-container.force-dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
 body.ffz-bttv-dark .ffz-ui-popup.ui-moved span.ffz-handle:after {
 	border-color: #d3d3d3;
 }
@@ -986,53 +961,41 @@ body.ffz-bttv-dark .ffz-ui-popup ul.sub-menu a { border-right-color: rgba(255,25
 
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active,
-.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active,
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active,
 body.ffz-bttv-dark .ffz-ui-popup ul.menu li.active {
 	background-color: rgb(16,16,16);
 }
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active a,
-.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active a,
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active a,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active a,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active a,
 body.ffz-bttv-dark .ffz-ui-popup ul.menu li.active a {
 	border-top-color: rgb(16,16,16);
 }
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
-.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu,
 body.ffz-bttv-dark .ffz-ui-popup ul.menu li.active.has-sub-menu {
 	background-color: #181818;
 }
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
-.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu li.active.has-sub-menu a,
 body.ffz-bttv-dark .ffz-ui-popup li.active.has-sub-menu a {
 	border-top-color: #181818;
 }
 
 .chat-container.dark .chat-interface .ffz-ui-popup a,
-.chat-container.force-dark .chat-interface .ffz-ui-popup a,
 .ember-chat-container.dark .chat-interface .ffz-ui-popup a,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup a,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup a,
 body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page a { color: #fff; }
 
 
 .chat-container.dark .chat-interface .ffz-ui-popup ul.menu svg path,
-.chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu svg path,
 .ember-chat-container.dark .chat-interface .ffz-ui-popup ul.menu svg path,
-.ember-chat-container.force-dark .chat-interface .ffz-ui-popup ul.menu svg path,
 .app-main.theatre .chat-container .chat-interface .ffz-ui-popup ul.menu svg path,
 .ffz-dark .ffz-ui-popup ul.menu svg path,
 body.ffz-bttv-dark .ffz-ui-popup ul.menu svg path { fill: #d3d3d3; }
@@ -1269,15 +1232,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .dark .chat-history::-webkit-scrollbar-thumb,
 .dark .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 .dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
-.dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
-
-.force-dark .chatters-container::-webkit-scrollbar-thumb,
-.force-dark .ffz-scrollbar::-webkit-scrollbar-thumb,
-.force-dark .ember-chat .chat-settings::-webkit-scrollbar-thumb,
-.force-dark .chat-history::-webkit-scrollbar-thumb,
-.force-dark .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
-.force-dark .ffz-ui-menu-page::-webkit-scrollbar-thumb,
-.force-dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb {
+.dark .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb {
 	background: rgba(255,255,255,0.6);
 	box-shadow: 0 0 1px 1px rgba(0,0,0,0.25);
 }
@@ -1426,12 +1381,10 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 .ffz-dark .moderation-card .moderation-card__actions,
 .theatre .moderation-card .moderation-card__actions,
 .dark .moderation-card .moderation-card__actions,
-.force-dark .moderation-card .moderation-card__actions,
 
 .ffz-dark .ffz-moderation-card ul.menu,
 .theatre .ffz-moderation-card ul.menu,
-.dark .ffz-moderation-card ul.menu,
-.force-dark .ffz-moderation-card ul.menu {
+.dark .ffz-moderation-card ul.menu {
 	border-bottom-color: rgba(255,255,255,0.2) !important;
 }
 
@@ -1454,15 +1407,13 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 .ffz-dark .ffz-moderation-card ul.menu li,
 .theatre .ffz-moderation-card ul.menu li,
-.dark .ffz-moderation-card ul.menu li,
-.force-dark .ffz-moderation-card ul.menu li {
+.dark .ffz-moderation-card ul.menu li {
 	color: #999;
 }
 
 .ffz-dark .ffz-moderation-card ul.menu li:hover,
 .theatre .ffz-moderation-card ul.menu li:hover,
-.dark .ffz-moderation-card ul.menu li:hover,
-.force-dark .ffz-moderation-card ul.menu li:hover {
+.dark .ffz-moderation-card ul.menu li:hover {
 	color: #a68ed2;
 	border-bottom-color: #a68ed2;
 }
@@ -1477,26 +1428,22 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 /* dark moderation card */
 
 .dark .ffz-moderation-card,
-.force-dark .ffz-moderation-card,
 .theatre .ffz-moderation-card {
 	border-color: #1b1b20;
 }
 
 .dark .ffz-moderation-card:focus,
-.force-dark .ffz-moderation-card:focus,
 .theatre .ffz-moderation-card:focus {
 	border-color: #cbcbcb;
 }
 
 .dark .ffz-moderation-card .moderation-card__actions,
-.force-dark .ffz-moderation-card .moderation-card__actions,
 .theatre .ffz-moderation-card .moderation-card__actions {
 	background-color: #232329;
 }
 
 .ffz-no-blue .cn-hosting,
 .ffz-no-blue .dark .ember-chat .moderation-card .moderation-card__actions,
-.ffz-no-blue .force-dark .ember-chat .moderation-card .moderation-card__actions,
 .ffz-no-blue .theatre .ember-chat .moderation-card .moderation-card__actions {
 	background-color: #232323;
 }
@@ -1543,11 +1490,11 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 .ember-chat .chat-messages .chat-line {
 	margin: 0;
 	padding: 3px 20px;
+	position: relative;
 }
 
 .theatre .conversation-window .conversation-chat-line,
 .dark .chat-line,
-.force-dark .chat-line,
 .theatre .chat-line {
 	color: #acacbf;
 }
@@ -1711,9 +1658,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 .ffz-bttv .no-bttv { display: none; }
 
 .chat-container.dark, .app-main.theatre .chat-container,
-.chat-container.force-dark, .ember-chat-container.dark,
-.app-main.theatre .ember-chat-container.chat-container,
-.ember-chat-container.force-dark {
+.app-main.theatre .ember-chat-container.chat-container {
 	box-shadow: none;
 }
 
@@ -1735,9 +1680,7 @@ a.unsafe-link {
 
 .theatre a.unsafe-link,
 .chat-container.dark a.unsafe-link,
-.chat-container.force-dark a.unsafe-link,
-.ember-chat-container.dark a.unsafe-link,
-.ember-chat-container.force-dark a.unsafe-link {
+.ember-chat-container.dark a.unsafe-link {
 	color: #d28e8e !important;
 }
 
@@ -2121,8 +2064,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 
 .ffz-dark .chat-history .chat-line.admin.original-msg .message,
 .theatre .chat-history .chat-line.admin.original-msg .message,
-.dark .chat-history .chat-line.admin.original-msg .message,
-.force-dark .chat-history .chat-line.admin.original-msg .message { color: #fff }
+.dark .chat-history .chat-line.admin.original-msg .message { color: #fff }
 
 
 .chat-history.loading {
@@ -2145,8 +2087,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 }
 
 .theatre .chat-history.loading:before,
-.dark .chat-history.loading:before,
-.force-dark .chat-history.loading:before {
+.dark .chat-history.loading:before {
 	background-color: rgba(0,0,0,0.8);
 }
 
@@ -2219,8 +2160,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 }
 
 .theatre .moderation-card .back-button,
-.dark .moderation-card .back-button,
-.force-dark .moderation-card .back-button {
+.dark .moderation-card .back-button {
 	background-color: #232329;
 }
 
@@ -2250,18 +2190,14 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 
 .chat-container.dark .button.primary.ffz-waiting:not(:hover),
 .app-main.theatre .button-primary.ffz-waiting:not(:hover),
-.chat-container.force-dark .button-primary.ffz-waiting:not(:hover),
-.ember-chat-container.dark .button-primary.ffz-waiting:not(:hover),
-.ember-chat-container.force-dark .button-primary.ffz-waiting:not(:hover) {
+.ember-chat-container.dark .button-primary.ffz-waiting:not(:hover) {
 	background-color: rgba(255,255,255,0.1);
 	color: #fff;
 }
 
 .chat-container.dark .button.primary.ffz-waiting.ffz-banned:not(:hover),
 .app-main.theatre .button-primary.ffz-waiting.ffz-banned:not(:hover),
-.chat-container.force-dark .button-primary.ffz-waiting.ffz-banned:not(:hover),
-.ember-chat-container.dark .button-primary.ffz-waiting.ffz-banned:not(:hover),
-.ember-chat-container.force-dark .button-primary.ffz-waiting.ffz-banned:not(:hover) {
+.ember-chat-container.dark .button-primary.ffz-waiting.ffz-banned:not(:hover) {
 	background-color: rgba(255,128,128,0.1);
 	color: #f66;
 }
@@ -2423,63 +2359,41 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 .ffz-no-blue .app-main.theatre .bits-card,
 .ffz-no-blue .dark .bits-card,
-.ffz-no-blue .force-dark .bits-card,
 
 .ffz-no-blue .app-main.theatre .bits-card--standard,
 .ffz-no-blue .dark .bits-card--standard,
-.ffz-no-blue .force-dark .bits-card--standard,
 
 .ffz-no-blue .warp,
 .ffz-no-blue #large_nav .content,
 .ffz-no-blue #small_nav .content,
 .ffz-no-blue .chat-container.dark,
 .ffz-no-blue .app-main.theatre .chat-container,
-.ffz-no-blue .chat-container.force-dark,
 .ffz-no-blue .ember-chat-container.dark,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container,
-.ffz-no-blue .ember-chat-container.force-dark,
 .ffz-no-blue .chat-container.dark .chat-hidden-overlay,
 .ffz-no-blue .app-main.theatre .chat-container .chat-hidden-overlay,
-.ffz-no-blue .chat-container.force-dark .chat-hidden-overlay,
 .ffz-no-blue .ember-chat-container.dark .chat-hidden-overlay,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .chat-hidden-overlay,
-.ffz-no-blue .ember-chat-container.force-dark .chat-hidden-overlay,
 .ffz-no-blue .chat-container.dark .chatters-view,
 .ffz-no-blue .app-main.theatre .chat-container .chatters-view,
-.ffz-no-blue .chat-container.force-dark .chatters-view,
 .ffz-no-blue .ember-chat-container.dark .chatters-view,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .chatters-view,
-.ffz-no-blue .ember-chat-container.force-dark .chatters-view,
 .ffz-no-blue .chat-container.dark .emoticon-selector .emoticon-selector-box,
 .ffz-no-blue .app-main.theatre .chat-container .emoticon-selector .emoticon-selector-box,
-.ffz-no-blue .chat-container.force-dark .emoticon-selector .emoticon-selector-box,
 .ffz-no-blue .ember-chat-container.dark .emoticon-selector .emoticon-selector-box,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .emoticon-selector .emoticon-selector-box,
-.ffz-no-blue .ember-chat-container.force-dark .emoticon-selector .emoticon-selector-box,
 .ffz-no-blue .chat-container.dark .emoticon-selector .emoticon-grid,
 .ffz-no-blue .app-main.theatre .chat-container .emoticon-selector .emoticon-grid,
-.ffz-no-blue .chat-container.force-dark .emoticon-selector .emoticon-grid,
 .ffz-no-blue .ember-chat-container.dark .emoticon-selector .emoticon-grid,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .emoticon-selector .emoticon-grid,
-.ffz-no-blue .ember-chat-container.force-dark .emoticon-selector .emoticon-grid,
-/*.ffz-no-blue .chat-container.dark .emoticon-selector .subscribe-message,
-.ffz-no-blue .app-main.theatre .chat-container .emoticon-selector .subscribe-message,
-.ffz-no-blue .chat-container.force-dark .emoticon-selector .subscribe-message,
-.ffz-no-blue .ember-chat-container.dark .emoticon-selector .subscribe-message,
-.ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .emoticon-selector .subscribe-message,
-.ffz-no-blue .ember-chat-container.force-dark .emoticon-selector .subscribe-message,*/
 .ffz-no-blue .chat-container.dark .chat-commands-dropdown,
 .ffz-no-blue .app-main.theatre .chat-container .chat-commands-dropdown,
-.ffz-no-blue .chat-container.force-dark .chat-commands-dropdown,
 .ffz-no-blue .ember-chat-container.dark .chat-commands-dropdown,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .chat-commands-dropdown,
-.ffz-no-blue .ember-chat-container.force-dark .chat-commands-dropdown,
 .ffz-no-blue .chat-container.dark .chat-commands-dropdown li,
 .ffz-no-blue .app-main.theatre .chat-container .chat-commands-dropdown li,
-.ffz-no-blue .chat-container.force-dark .chat-commands-dropdown li,
 .ffz-no-blue .ember-chat-container.dark .chat-commands-dropdown li,
 .ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .chat-commands-dropdown li,
-.ffz-no-blue .ember-chat-container.force-dark .chat-commands-dropdown li,
 .ffz-no-blue.error_500,
 .ffz-no-blue.error_400,
 .ffz-no-blue .takeover #carousel,
@@ -2493,7 +2407,6 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 .ffz-no-blue .app-main.theatre .bits-footer,
 .ffz-no-blue .dark .bits-footer,
-.ffz-no-blue .force-dark .bits-footer,
 
 .ffz-no-blue .theatre .conversation-input-bar textarea,
 .ffz-no-blue .theatre input.text,
@@ -2510,19 +2423,15 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 .ffz-no-blue .dark .emoticon-selector .tabs,
 .ffz-no-blue .theatre .emoticon-selector .tabs,
-.ffz-no-blue .force-dark .emoticon-selector .tabs,
 
 .ffz-no-blue .app-main.theatre .archives-contain .list-video:hover,
 .ffz-no-blue.ffz-dark .archives-contain .list-video:hover,
 .ffz-no-blue .theatre .moderation-card .back-button,
 .ffz-no-blue .dark .moderation-card .back-button,
-.ffz-no-blue .force-dark .moderation-card .back-button
 .ffz-no-blue .chat-container.dark .chat-interface .emoticon-selector .tabs,
 .ffz-no-blue .app-main.theatre .chat-container .chat-interface .emoticon-selector .tabs,
-.ffz-no-blue .chat-container.force-dark .chat-interface .emoticon-selector .tabs,
 .ffz-no-blue .ember-chat-container.dark .chat-interface .emoticon-selector .tabs,
-.ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .chat-interface .emoticon-selector .tabs,
-.ffz-no-blue .ember-chat-container.force-dark .chat-interface .emoticon-selector .tabs {
+.ffz-no-blue .app-main.theatre .ember-chat-container.chat-container .chat-interface .emoticon-selector .tabs {
 	background-color: #232323;
 }
 
@@ -2864,15 +2773,13 @@ body:not(.ffz-bttv) .ember-chat .chat-commands-dropdown li + li {
 
 body:not(.ffz-bttv) .app-main.theatre .chat-container .chat-commands-dropdown li,
 body:not(.ffz-bttv) .dark .ember-chat .chat-commands-dropdown li,
-body:not(.ffz-bttv) .force-dark .ember-chat .chat-commands-dropdown li,
 body:not(.ffz-bttv) .ember-chat .chat-commands-dropdown li:hover {
 	background-color: rgba(0,0,0,0.25) !important;
 	color: #fff;
 }
 
 body:not(.ffz-bttv) .app-main.theatre .chat-container .chat-commands-dropdown li:hover,
-body:not(.ffz-bttv) .dark .ember-chat .chat-commands-dropdown li:hover,
-body:not(.ffz-bttv) .force-dark .ember-chat .chat-commands-dropdown li:hover {
+body:not(.ffz-bttv) .dark .ember-chat .chat-commands-dropdown li:hover {
 	background-color: rgba(0,0,0,0.75) !important;
 	color: #fff !important;
 }
@@ -3112,8 +3019,7 @@ body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 
 .ffz-dark .ffz-suggestions,
 .theatre .ffz-suggestions,
-.dark .ffz-suggestions,
-.force-dark .ffz-suggestions {
+.dark .ffz-suggestions {
 	background-color: #101010 !important;
 	border-color: rgba(255,255,255,0.2) !important;
 }
@@ -3342,8 +3248,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 .ffz-dark .badge.staff.version-1.colored,
 .theatre .badge.staff.version-1.colored,
-.dark .badge.staff.version-1.colored,
-.force-dark .badge.staff.version-1.colored {
+.dark .badge.staff.version-1.colored {
 	background: linear-gradient(#6441a4,#6441a4);
 }
 
@@ -3451,8 +3356,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 }
 
 .theatre .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons,
-.dark .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons,
-.force-dark .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons {
+.dark .chat-room .show-mod-icons .chat-lines .chat-line:not(.admin) .mod-icons {
 	background-color: rgba(0,0,0,0.8);
 }
 
@@ -3481,23 +3385,19 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 }
 
 .theatre .bits-purchase__header,
-.dark .bits-purchase__header,
-.force-dark .bits-purchase__header {
+.dark .bits-purchase__header {
 	color: #acacbf;
 }
 
 .theatre .bits-card,
 .app-main.theatre .chat-container .bits-card, /* Twitch's CSS is retarded */
 .dark .bits-card,
-.force-dark .bits-card,
 
 .theatre .bits-purchase__row,
 .dark .bits-purchase__row,
-.force-dark .bits-purchase__row,
 
 .theatre .bits-footer,
-.dark .bits-footer,
-.force-dark .bits-footer {
+.dark .bits-footer {
 	border-color: rgba(255,255,255,0.2);
 	color: #ccc;
 }
@@ -3545,8 +3445,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 }
 
 .theatre .chat-interface .chat-rules,
-.chat-container.dark .chat-rules,
-.chat-container.force-dark {
+.chat-container.dark .chat-rules {
 	background: #101010;
 	color: #ccc;
 	border-color: rgba(255,255,255,0.2);
@@ -3712,17 +3611,13 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 
 .theatre .chat-history .chat-line.notification .message,
 .dark .chat-history .chat-line.notification .message,
-.force-dark .chat-history .chat-line.notification .message,
 .theatre .chat-history .chat-line.admin .message,
 .dark .chat-history .chat-line.admin .message,
-.force-dark .chat-history .chat-line.admin .message,
 
 .theatre .chat-messages .chat-line.admin .message,
 .dark .chat-messages .chat-line.admin .message,
-.force-dark .chat-messages .chat-line.admin .message,
 .theatre .chat-messages .chat-line.notification .message,
-.dark .chat-messages .chat-line.notification .message,
-.force-dark .chat-messages .chat-line.notification .message {
+.dark .chat-messages .chat-line.notification .message {
 	color: #777
 }
 
