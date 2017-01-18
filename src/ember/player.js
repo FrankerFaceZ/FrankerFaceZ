@@ -59,6 +59,18 @@ FFZ.settings_info.player_volume_bar = {
 };
 
 
+FFZ.settings_info.player_volume_scroll = {
+	type: "boolean",
+	value: false,
+	no_mobile: true,
+
+	category: "Player",
+
+	name: "Adjust Volume by Scrolling",
+	help: "Adjust the player's volume by scrolling up and down with your mouse wheel."
+};
+
+
 /*FFZ.settings_info.player_pause_hosts = {
 	type: "select",
 	options: {
@@ -89,12 +101,39 @@ FFZ.prototype.setup_player = function() {
 		Layout.set('PLAYER_CONTROLS_HEIGHT', this.settings.classic_player ? 32 : 0);
 
 	this.update_views('component:twitch-player2', this.modify_twitch_player);
+	this.update_views('component:persistent-player', this.modify_persistent_player);
 }
 
 
 // ---------------
 // Component
 // ---------------
+
+FFZ.prototype.modify_persistent_player = function(player) {
+	var f = this;
+	utils.ember_reopen_view(player, {
+		ffz_init: function() {
+			var t = this;
+			this.$().off('mousewheel').on('mousewheel', function(event) {
+				f.log("Player-Scroll", event);
+				if ( ! f.settings.player_volume_scroll )
+					return;
+
+				// I ain't about that life, jQuery.
+				event = event.originalEvent || event;
+				var delta = event.wheelDelta || -event.detail,
+					player = t.childViews && t.childViews[0] && t.childViews[0].get('player');
+
+				if ( player )
+					player.volume += delta > 0 ? .1 : -.1;
+
+				event.preventDefault();
+				return false;
+			});
+		}
+	})
+}
+
 
 FFZ.prototype.modify_twitch_player = function(player) {
 	var f = this;
@@ -196,7 +235,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 		}.observes('channel'),*/
 
 		ffzPostPlayer: function() {
-			var f = this,
+			var t = this,
 				/*channel_id = this.get('hostChannel.name'),
 				hosted_id = this.get('channel.name'),
 				is_hosting = channel_id !== hosted_id,*/

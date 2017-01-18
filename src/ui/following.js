@@ -204,7 +204,7 @@ FFZ.channel_metadata.following = {
 	button: true,
 	static_label: constants.HEART,
 	label: function(data) {
-		if ( ! data || ! data.length )
+		if ( ! this.settings.follow_buttons || ! data || ! data.length )
 			return null;
 
 		return 'Featured';
@@ -294,7 +294,7 @@ FFZ.channel_metadata.following = {
 				is_notified = notice;
 				update();
 
-				return utils.api.put("users/:login/follows/channels/" + user_id, {notifications: notice})
+				return utils.api.put("users/:login/follows/channels/" + user_id, {notifications: notice}, undefined, user.chat_oauth_token)
 					.fail(check_following);
 			};
 
@@ -307,7 +307,7 @@ FFZ.channel_metadata.following = {
 			if ( is_following )
 				do_follow();
 			else
-				utils.api.del("users/:login/follows/channels/" + user_id)
+				utils.api.del("users/:login/follows/channels/" + user_id, undefined, undefined, user.chat_oauth_token)
 					.fail(check_following);
 		});
 
@@ -322,8 +322,11 @@ FFZ.channel_metadata.following = {
 
 		el.appendChild(avatar);
 		el.appendChild(name_el);
-		el.appendChild(btn_follow);
-		el.appendChild(sw_notif);
+		if ( user ) {
+			el.appendChild(btn_follow);
+			el.appendChild(sw_notif);
+		} else
+			this.log("No User", user);
 		container.appendChild(el);
 
 		check_following();

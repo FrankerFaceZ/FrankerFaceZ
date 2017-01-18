@@ -25,10 +25,16 @@ FFZ.prototype.setup_vod_chat = function() {
 					var colors = this.get("colorSettings"),
 						from = msg.get("from");
 
-					if ( ! colors.get(from) )
-						colors.set(from, constants.CHAT_COLORS[Math.floor(Math.random() * constants.CHAT_COLORS.length)]);
+					if ( from ) {
+						var clr = colors.get(from);
+						if ( ! clr ) {
+							clr = constants.CHAT_COLORS[Math.floor(Math.random() * constants.CHAT_COLORS.length)];
+							colors.set(from, clr);
+						}
 
-					msg.set("color", colors.get(from));
+						if ( typeof clr === 'string' )
+							msg.set('color', clr);
+					}
 				}
 
 				this.get("messages").pushObject(msg);

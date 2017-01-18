@@ -1894,7 +1894,7 @@ FFZ.prototype._modify_room = function(room) {
 			return f.settings.timeout_notices === 2 || (f.settings.timeout_notices === 1 && this.get('isModeratorOrHigher'));
 		},
 
-		ffzRetokenizeUser: function(user, max_age) {
+		ffzRetokenizeUser: function(user, max_age, update_badges) {
 			// Retokenize all messages by a user, or just all messages.
 			var messages = this.get('messages'),
 				i = messages.length,
@@ -1909,8 +1909,11 @@ FFZ.prototype._modify_room = function(room) {
 
 				if ( ! user || msg.from === user ) {
 					msg.cachedTokens = null;
-					if ( msg._line )
+					if ( msg._line ) {
 						Ember.propertyDidChange(msg._line, 'ffzTokenizedMessage');
+						if ( update_badges )
+							msg._line.ffzUpdateBadges();
+					}
 				}
 			}
 

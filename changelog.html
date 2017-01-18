@@ -1,72 +1,61 @@
+<div class="list-header">3.5.418 <time datetime="2017-01-18">(2017-01-18)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Setting to allow controlling player volume by scrolling the mouse wheel.</li>
+	<li>Fixed: AutoMod settings dark theme.</li>
+</ul>
+
+<div class="list-header">3.5.417 <time datetime="2017-01-13">(2017-01-13)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Twitch broke Chat Replay handling of chat timeouts and bans somehow. Fix color handling with blank usernames.</li>
+</ul>
+
+<div class="list-header">3.5.416 <time datetime="2017-01-11">(2017-01-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: An issue could prevent bits from rendering correctly in certain situations.</li>
+</ul>
+
+<div class="list-header">3.5.415 <time datetime="2017-01-10">(2017-01-10)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Featured Channel follow buttons. FFZ would cache an incomplete user data object without a necessary authentication token.</li>
+</ul>
+
+<div class="list-header">3.5.414 <time datetime="2017-01-08">(2017-01-08)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Schedule pop-up not rendering for Safari, Opera, and Edge users.</li>
+	<li>&nbsp;</li>
+	<li>This FFZ update brought to you by my AGDQ hotel room.</li>
+</ul>
+
+<div class="list-header">3.5.413 <time datetime="2017-01-05">(2017-01-05)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Schedule rendering could goof up if a category was very long, leading to horizontal scrolling.</li>
+	<li>Changed: Refactor some bits stuff to potentially fix things if they potentially break.</li>
+</ul>
+
+<div class="list-header">3.5.412 <time datetime="2017-01-01">(2017-01-01)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Do not push the entire event schedule to the client every time there's an update.</li>
+</ul>
+
+<div class="list-header">3.5.411 <time datetime="2016-12-31">(2016-12-31)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Experimental event schedule feature.</li>
+	<li>&nbsp;</li>
+	<li>Yes, I'm spending New Years Eve writing code. Leave me alone.</li>
+</ul>
+
+<div class="list-header">3.5.410 <time datetime="2016-12-28">(2016-12-28)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>API Fixed: <code>api.retokenize_messages</code> didn't actually work.</li>
+	<li>Fixed: Pinned cheers showing with a strange background color.</li>
+</ul>
+
 <div class="list-header">3.5.409 <time datetime="2016-12-23">(2016-12-23)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Don't collapse a widget on the dashboard clicking in its settings menu.</li>
 	<li>Fixed: Dark theme CSS tweaks for the dashboard.</li>
 	<li>Fixed: Dark theme CSS tweaks for clips.</li>
 	<li>Changed: Re-factor chat line CSS to eliminate the need for <code>:before</code> pseudo-elements.</li>
-</ul>
-
-<div class="list-header">3.5.408 <time datetime="2016-12-22">(2016-12-22)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Option to hide Cheering with #Charity notices.</li>
-	<li>Fixed: Highlight notifications not appearing.</li>
-</ul>
-
-<div class="list-header">3.5.407 <time datetime="2016-12-21">(2016-12-21)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Cheer rendering when hashtags are present.</li>
-</ul>
-
-<div class="list-header">3.5.406 <time datetime="2016-12-19">(2016-12-19)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Another tweak for player positioning. Hopefully fixed properly now.</li>
-</ul>
-
-<div class="list-header">3.5.405 <time datetime="2016-12-19">(2016-12-19)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Display Channel Metadata on Theater Mode Hover</li>
-	<li>Fixed: Twitch goofed up player positioning.</li>
-	<li>Fixed: Classic Player controls not rendering as the correct height in theater mode with whispers on bottom.</li>
-</ul>
-
-<div class="list-header">3.5.404 <time datetime="2016-12-18">(2016-12-18)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Compatibility issue with BetterTTV and FFZ getting into a fight over positioning the player.</li>
-</ul>
-
-<div class="list-header">3.5.403 <time datetime="2016-12-16">(2016-12-16)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Whisper display in pop-out chat.</li>
-</ul>
-
-<div class="list-header">3.5.402 <time datetime="2016-12-16">(2016-12-16)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>API Changed: <code>api.retokenize_messages(room, user, max_age)</code> now takes a maximum age to prevent it from processing old chat messages.</li>
-	<li>Fixed: Room status indicator for Follower-Only chat mode wasn't updating.</li>
-	<li>Added: Enable the tab-completion for <code>/followers</code> and <code>/followersoff</code> as they can be used even if you don't have the tab enabling the UI.</li>
-</ul>
-
-<div class="list-header">3.5.401 <time datetime="2016-12-16">(2016-12-16)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>API Added: <code>api.retokenize_messages</code> to force retokenization of old chat messages after emoticons load.</li>
-	<li>API Fixed: Bug modifying the source data array in metadata click functions.</li>
-</ul>
-
-<div class="list-header">3.5.400 <time datetime="2016-12-16">(2016-12-16)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Support for Follower-Only chat mode.</li>
-	<li>Changed: Include user agent strings in debugging information.</li>
-	<li>Changed: Minor dark theme CSS tweaks.</li>
-	<li>&nbsp;</li>
-	<li>400 revisions is a lot.</li>
-</ul>
-
-<div class="list-header">3.5.399 <time datetime="2016-12-15">(2016-12-15)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Holiday cheer.</li>
-	<li>Changed: The Bits Stacking option now lets you combine all cheer emoticons into one, or combine them by type.</li>
-	<li>Changed: Refactor metadata rendering internally in preparation to add it to the new dashboard.</li>
-	<li>Fixed: Bug rendering the My Emoticons menu if the user is registered to have an emote set that isn't currently loaded in the client.</li>
 </ul>
 
 <div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>

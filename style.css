@@ -696,7 +696,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .ffz-ui-menu-page { overflow-y: auto; }
 
 .ffz-ui-menu-page[data-page="about"] .ffz-ui-sub-menu-page .chat-menu-content:first-child {
-    padding: 20px 0 10px;
+	padding: 20px 0 10px;
 }
 
 .ffz-ui-sub-menu-page[data-page="about"],
@@ -1375,6 +1375,9 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 .ffz-moderation-card ul.menu span { text-decoration: underline }
 
+.ffz-dark .ffz-schedule-row,
+.theatre .ffz-schedule-row,
+
 .ffz-dark .ffz-following-row,
 .theatre .ffz-following-row,
 
@@ -1584,6 +1587,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	overflow: hidden;
 }
 
+.ffz-loading-spinner:after,
 .chat-history.loading:after,
 .ffz-ui-sub-menu-page:empty::after,
 .ffz-ui-menu-page:empty::after {
@@ -3674,6 +3678,92 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 	margin: 7px 1rem 0 0;
 }
 
+/* Schedule */
+
+.ffz-schedule-row {
+	position: relative;
+	margin: 0 -1rem;
+	padding: 1rem 1rem 1rem 6rem;
+	border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.ffz-schedule-row:first-child { margin-top: -1rem }
+.ffz-schedule-row:last-child { margin-bottom: -1rem; border-bottom: none }
+
+.ffz-schedule-row.ffz-old-item { background-color: rgba(0,0,0,0.15); opacity: 0.6 }
+
+.ffz-schedule-date { background-color: rgba(127,127,127,0.1) }
+.ffz-schedule-row.ffz-current-item { background-color: rgba(0,0,0,0.2) }
+
+.ffz-dark .ffz-schedule-row.ffz-old-item,
+.theatre .ffz-schedule-row.ffz-old-item {
+	background-color: rgba(255,255,255,0.1)
+}
+
+.ffz-dark .ffz-schedule-row.ffz-current-item,
+.theatre .ffz-schedule-row.ffz-current-item {
+	background-color: rgba(255,255,255,0.15)
+}
+
+.ffz-schedule-row .heading h2 span,
+.ffz-schedule-row .runners,
+.ffz-schedule-row .meta,
+.ffz-schedule-date {
+	color: #666;
+}
+
+
+.ffz-dark .ffz-schedule-row .heading h2 span,
+.theatre .ffz-schedule-row .heading h2 span,
+.ffz-dark .ffz-schedule-row .runners,
+.theatre .ffz-schedule-row .runners,
+.ffz-dark .ffz-schedule-row .meta,
+.theatre .ffz-schedule-row .meta,
+.ffz-dark .ffz-schedule-date,
+.theatre .ffz-schedule-date {
+	color: #999;
+}
+
+
+.ffz-schedule-row .runners span { color: #000 }
+
+.ffz-dark .ffz-schedule-row .runners span,
+.theatre .ffz-schedule-row .runners span { color: #fff }
+
+.ffz-schedule-row .meta {
+	margin-bottom: 5px;
+}
+
+.ffz-schedule-row .heading h2 {
+	padding: 0;
+	margin: 0 0 5px;
+	font-size: 2rem;
+	line-height: 1em;
+}
+
+.ffz-schedule-row .heading h2 span {
+	font-size: 1.5rem;
+	line-height: 1em;
+	white-space: nowrap;
+}
+
+.ffz-schedule-row .time-start {
+	position: absolute;
+	left: 1rem;
+	width: 45px;
+
+	font: 16px Sans-Serif;
+}
+
+.ffz-schedule-row .time-start { top: 1rem }
+
+.ffz-schedule-date {
+	padding-left: 0;
+	text-align: center;
+	font: bold 1.1rem Sans-Serif;
+}
+
+
 /* Hidden Navigation */
 
 .ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col.closed:not(:hover) { left: -40px }
@@ -3752,6 +3842,8 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 .pinned-cheers__message .chat-line:before,
 .ffz-pinned-cheer-expand .pinned-cheer__expando-arrow,
 .pinned-cheers__message:before { display: none }
+
+.pinned-cheers__message .chat-line { background-color: transparent !important }
 
 .pinned-cheers__message .chat-line { padding: 5px }
 .pinned-cheers .mod-icons { display: inline !important }

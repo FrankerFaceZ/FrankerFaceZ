@@ -57,6 +57,33 @@ var createElement = function(tag, className, content) {
 		return parts.join(".");
 	},
 
+	human_time = function(elapsed, factor) {
+		factor = factor || 1;
+		elapsed = Math.floor(elapsed);
+
+		var years = Math.floor((elapsed*factor) / 31536000) / factor;
+		if ( years >= 1 )
+			return years + ' year' + pluralize(years);
+
+		var days = Math.floor((elapsed %= 31536000) / 86400);
+		if ( days >= 1 )
+			return days + ' day' + pluralize(days);
+
+		var hours = Math.floor((elapsed %= 86400) / 3600);
+		if ( hours >= 1 )
+			return hours + ' hour' + pluralize(hours);
+
+		var minutes = Math.floor((elapsed %= 3600) / 60);
+		if ( minutes >= 1 )
+			return minutes + ' minute' + pluralize(minutes);
+
+		var seconds = elapsed % 60;
+		if ( seconds >= 1 )
+			return seconds + ' second' + pluralize(seconds);
+
+		return 'less than a second';
+	},
+
 	pluralize = function(value, singular, plural) {
 		plural = plural || 's';
 		singular = singular || '';
@@ -918,31 +945,20 @@ module.exports = FFZ.utils = {
 		return HUMAN_NUMBERS[value] || number_commas(value);
 	},
 
-	human_time: function(elapsed, factor) {
-		factor = factor || 1;
-		elapsed = Math.floor(elapsed);
+	human_time: human_time,
+	full_human_time: function(elapsed, factor) {
+		var before = elapsed >= 0,
+			output = human_time(Math.abs(elapsed), factor);
 
-		var years = Math.floor((elapsed*factor) / 31536000) / factor;
-		if ( years >= 1 )
-			return years + ' year' + pluralize(years);
+		return before ? output + ' ago' : 'in ' + output;
+	},
 
-		var days = Math.floor((elapsed %= 31536000) / 86400);
-		if ( days >= 1 )
-			return days + ' day' + pluralize(days);
-
-		var hours = Math.floor((elapsed %= 86400) / 3600);
-		if ( hours >= 1 )
-			return hours + ' hour' + pluralize(hours);
-
-		var minutes = Math.floor((elapsed %= 3600) / 60);
-		if ( minutes >= 1 )
-			return minutes + ' minute' + pluralize(minutes);
-
-		var seconds = elapsed % 60;
-		if ( seconds >= 1 )
-			return seconds + ' second' + pluralize(seconds);
-
-		return 'less than a second';
+	human_join: function(list) {
+		if ( list.length === 2 )
+			return list[0] + ' and ' + list[1];
+		else if ( list.length === 1 )
+			return list[0];
+		return list.slice(0, -1).join(', ') + ' and ' + list[list.length-1];
 	},
 
 	time_to_string: function(elapsed, separate_days, days_only, no_hours, no_seconds) {

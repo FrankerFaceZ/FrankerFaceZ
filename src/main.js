@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 409,
+	major: 3, minor: 5, revision: 418,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -145,7 +145,7 @@ FFZ.prototype._pastebin = function(data) {
 // -------------------
 
 FFZ.prototype.get_user = function(force_reload) {
-	if ( ! force_reload && this.__user )
+	if ( ! force_reload && this.__user && this.__user.chat_oauth_token )
 		return this.__user;
 
 	var LC = FFZ.utils.ember_lookup('service:login'),
@@ -257,6 +257,7 @@ require('./ui/following-count');
 require('./ui/races');
 require('./ui/my_emotes');
 require('./ui/about_page');
+require('./ui/schedule');
 
 require('./commands');
 require('./ext/api');

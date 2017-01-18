@@ -213,7 +213,10 @@ FFZ.prototype.setup_tokenization = function() {
 		this.error("Unable to get bits tokenizer.", err);
 	}
 
-	bits_service = utils.ember_lookup('service:bits-rendering-config');
+	bits_service = utils.ember_lookup('service:bits-emotes');
+	if ( ! bits_service )
+		bits_service = utils.ember_lookup('service:bits-rendering-config');
+
 	bits_tags = utils.ember_lookup('service:bits-tags');
 
 	try {
@@ -388,7 +391,7 @@ FFZ.prototype.render_tooltip = function(el) {
 					out = utils.number_commas(amount) + ' Bit' + utils.pluralize(amount);
 
 				if ( f.settings.emote_image_hover )
-					preview_url = bits_service.ffz_get_preview(tier[1]);
+					preview_url = bits_service.ffz_get_preview(prefix, amount); //tier[1]);
 
 				if ( individuals && individuals.length > 1 ) {
 					out += '<br>';

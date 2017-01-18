@@ -599,10 +599,14 @@ API.prototype.user_remove_set = function(username, set_id) {
 }
 
 
-API.prototype.retokenize_messages = function(room, user, max_age) {
-	var rooms = room ? [room] : Object.keys(this.ffz.rooms);
-	for(var i=0; i < rooms.length; i++)
-		rooms[i] && rooms[i].room && rooms[i].room.ffzRetokenizeUser(user, max_age);
+API.prototype.retokenize_messages = function(room, user, max_age, update_badges) {
+	var rooms = room ? [room] : Object.keys(this.ffz.rooms),
+		ffz_rooms = this.ffz && this.ffz.rooms || {};
+	for(var i=0; i < rooms.length; i++) {
+		var room_id = rooms[i],
+			room = ffz_rooms[room_id];
+		room && room.room && room.room.ffzRetokenizeUser(user, max_age, update_badges);
+	}
 }
 
 

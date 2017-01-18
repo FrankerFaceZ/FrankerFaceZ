@@ -1543,16 +1543,16 @@ body.ffz-dark:not([data-page="teams#show"]),
 	box-shadow: inset 0 -1px 0 #161616, -1px 1px rgba(255,255,255,0.065);
 }
 
-.ffz-dark .twitchbot-border-more,
+.ffz-dark .twitchbot-settings__border-more,
 .ffz-dark .border-t,
 .ffz-dark .border-b,
 .ffz-dark .cn-metabar__more {
 	border-color: rgba(255,255,255,0.2) !important;
 }
 
-.ffz-dark .twitchbot-hover-text-help,
-.ffz-dark .twitchbot-rule-container:hover,
-.ffz-dark .twitchbot-right-container {
+.ffz-dark .twitchbot-settings__hover-text-help,
+.ffz-dark .twitchbot-settings__rule-container:hover,
+.ffz-dark .twitchbot-settings__right-container {
 	background-color: #191919;
 }
 
@@ -1564,11 +1564,15 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 
-.ffz-dark .twitchbot-help,
-.ffz-dark .twitchbot-level-context,
+.ffz-dark .twitchbot-settings__help,
+.ffz-dark .twitchbot-settings__level-context,
 .ffz-dark .cn-bar__avatar-wrap {
 	background-color: #101010;
 	border-color: #101010;
+}
+
+.ffz-dark .twitchbot-settings__arrow-up {
+	border-bottom-color: #101010;
 }
 
 .ffz-dark .cn-bar__displayname {
