@@ -115,7 +115,6 @@ FFZ.prototype.modify_persistent_player = function(player) {
 		ffz_init: function() {
 			var t = this;
 			this.$().off('mousewheel').on('mousewheel', function(event) {
-				f.log("Player-Scroll", event);
 				if ( ! f.settings.player_volume_scroll )
 					return;
 

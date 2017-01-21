@@ -44,7 +44,8 @@ var FFZ = window.FrankerFaceZ,
 		emoteonly: {info: 'Enable Emote-Only Mode'},
 		emoteonlyoff: {info: 'Disable Emote-Only Mode'},
 
-		unpin: {info: 'Unpin the current Pinned Cheer'}
+		unpin: {info: 'Unpin the current Pinned Cheer'},
+		reset: {info: 'Clear the current Top Cheer'}
 	},
 
 	BROADCASTER_COMMANDS = {

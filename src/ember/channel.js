@@ -422,10 +422,6 @@ FFZ.prototype.modify_channel_redesign = function(view) {
 				f._credesign = null;
 		},
 
-		handleScroll: function(top) {
-			this._super();
-		},
-
 		ffzUpdateCoverHeight: function() {
 			var old_height = this.channelCoverHeight,
 				setting = f.settings.hide_channel_banner,

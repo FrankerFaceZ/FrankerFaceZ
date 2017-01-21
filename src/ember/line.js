@@ -679,7 +679,8 @@ FFZ.prototype.setup_line = function() {
 	this.update_views('component:video/rechat/chat-message', this._modify_vod_line);
 	this.update_views('component:chat/message-line', this._modify_chat_subline);
 	this.update_views('component:chat/whisper-line', function(x) { return f._modify_chat_subline(x, true) });
-
+	this.update_views('component:bits/pinned-cheers/top-cheer-line', this._modify_top_cheer_line);
+	this.update_views('component:bits/pinned-cheers/top-cheer', this._modify_top_cheer);
 
 	// Store the capitalization of our own name.
 	var user = this.get_user();
@@ -691,6 +692,42 @@ FFZ.prototype.setup_line = function() {
 FFZ.prototype.save_aliases = function() {
 	this.log("Saving " + Object.keys(this.aliases).length + " aliases to local storage.");
 	localStorage.ffz_aliases = JSON.stringify(this.aliases);
+}
+
+
+FFZ.prototype._modify_top_cheer = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			var PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers'),
+				el = this.get('element'),
+				container = el && el.querySelector('.pinned-cheer__top-bar');
+
+			if ( ! PinnedCheers || ! container )
+				return;
+
+			var btn_dismiss = utils.createElement('a', 'mod-icon html-tooltip pc-dismiss-local', 'Dismiss'),
+				mod_icons = utils.createElement('div', 'mod-icons', btn_dismiss);
+
+			btn_dismiss.title = 'Dismiss';
+			container.insertBefore(mod_icons, container.firstElementChild);
+
+			btn_dismiss.addEventListener('click', function() {
+				PinnedCheers.dismissLocalMessage();
+			});
+		}
+	});
+}
+
+
+FFZ.prototype._modify_top_cheer_line = function(component) {
+	var f = this;
+	component.reopen({
+		ffzRender: function() {
+			var el = this.get('element');
+			el.innerHTML = this.buildFromHTML() + '<span class="colon">:</span> ';
+		}
+	})
 }
 
 
@@ -729,6 +766,11 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			this.$(".badges").html(f.render_badges(f.get_line_badges(this.get('msgObject'))));
 		},
 
+		ffzPinnedParent: function() {
+			var is_pinned_cheer = this.get('msgObject.is_pinned_cheer');
+			return is_pinned_cheer === 2 ? this.get('parentView.parentView.parentView.parentView.parentView') : this.get('parentView');
+		}.property('msgObject.is_pinned_cheer'),
+
 		ffzUserLevel: function() {
 			if ( this.get('isStaff') )
 				return 5;
@@ -747,9 +789,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			var user = this.get('msgObject.from'),
 
 				is_tb = this.get('msgObject.twitchBotRejected'),
-				is_pinned_cheer = this.get('msgObject.payday_timestamp'),
+				is_pinned_cheer = this.get('msgObject.is_pinned_cheer'),
 
-				room_id = is_pinned_cheer ? Chat.get('currentRoom.id') : this.get('msgObject.room'),
+				room_id = this.get('msgObject.room'),
 				room = f.rooms && f.rooms[room_id],
 
 				deleted = this.get('msgObject.deleted'),
@@ -774,9 +816,11 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			}
 
 			if ( is_pinned_cheer ) {
-				if ( PinnedCheers && PinnedCheers.canDismissPinnedCheer(this.get('parentView.userData.id'), this.get('parentView.isViewerModeratorOrHigher')) )
+				var parent = this.get('ffzPinnedParent');
+				if ( parent && PinnedCheers && PinnedCheers.canDismissPinnedCheer(parent.get('userData.id'), parent.get('isViewerModeratorOrHigher')) )
 					output.push('<a class="mod-icon html-tooltip pc-dismiss" title="Dismiss for Everyone">Dismiss</a>');
-				output.push('<a class="mod-icon html-tooltip pc-dismiss-local" title="Dismiss">Dismiss</a>');
+				if ( is_pinned_cheer !== 2 )
+					output.push('<a class="mod-icon html-tooltip pc-dismiss-local" title="Dismiss">Dismiss</a>');
 			}
 
 			if ( ! shouldnt_show )
@@ -1157,7 +1201,10 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 					PinnedCheers.dismissLocalMessage();
 
 				else if ( cl.contains('pc-dismiss') )
-					PinnedCheers.dismissCurrentMessage(this.get('parentView.userData.id'));
+					PinnedCheers.dismissMessage(
+						this.get('ffzPinnedParent.userData.id'),
+						this.get('msgObject.is_pinned_cheer') === '2' ? 'top' : 'recent'
+					);
 
 				else if ( cl.contains('tb-reject') )
 					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'no');

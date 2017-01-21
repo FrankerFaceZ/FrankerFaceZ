@@ -60,8 +60,16 @@ FFZ.settings_info.bits_tags_container = {
 
 
 FFZ.settings_info.bits_pinned = {
-	type: "boolean",
-	value: true,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Show Recent",
+		2: "Show Top",
+		3: "Show All (Default)"
+	},
+
+	value: 3,
+	process_value: utils.process_int(3, 0, 3),
 
 	category: "Chat Appearance",
 
@@ -69,30 +77,15 @@ FFZ.settings_info.bits_pinned = {
 	help: "Show pinned messages with bits at the top of chat in channels that have it enabled.",
 
 	on_update: function(val) {
-		utils.toggle_cls('ffz-hide-pinned-cheers')(!val);
-	}
-}
+		var PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers');
+		if ( val === 3 || ! PinnedCheers )
+			return;
 
+		if ( val !== 1 )
+			PinnedCheers.set('recentPinnedCheer', null);
 
-FFZ.settings_info.bits_pinned_expand = {
-	type: "select",
-	options: {
-		0: "On Click (Default)",
-		1: "On Hover",
-		2: "Always"
-	},
-
-	value: 0,
-	process_value: utils.process_int(0),
-
-	category: "Chat Appearance",
-
-	name: "Expand Pinned Cheers",
-	help: "Set when to expand pinned cheers beyond a minimal height.",
-
-	on_update: function(val) {
-		utils.toggle_cls('ffz-pinned-cheer-expand-hover')(val === 1);
-		utils.toggle_cls('ffz-pinned-cheer-expand')(val === 2);
+		if ( val !== 2 )
+			PinnedCheers.set('topPinnedCheer', null);
 	}
 }
 
@@ -114,12 +107,12 @@ FFZ.settings_info.bits_disable_charity = {
 
 FFZ.prototype.setup_bits = function() {
 	utils.toggle_cls('ffz-show-bits-tags')(this.settings.bits_tags_container);
-	utils.toggle_cls('ffz-hide-pinned-cheers')(!this.settings.bits_pinned);
-	utils.toggle_cls('ffz-pinned-cheer-expand-hover')(this.settings.bits_pinned_expand === 1);
-	utils.toggle_cls('ffz-pinned-cheer-expand')(this.settings.bits_pinned_expand === 2);
+
+	this.update_views('component:bits/chat-token', this._modify_bits_token);
 
 	var f = this,
 		Service = utils.ember_lookup('service:bits-emotes'),
+		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers'),
 
 		image_css = function(images) {
 			return 'background-image: url("' + images[1] + '");' +
@@ -143,6 +136,27 @@ FFZ.prototype.setup_bits = function() {
 				this._ffz_image_css(tier.images.dark[animated ? 'animated' : 'static']) +
 			'}';
 		};
+
+	if ( PinnedCheers ) {
+		PinnedCheers.reopen({
+			_updatePinnedCheerData: function(data) {
+				var setting = f.settings.bits_pinned;
+				if ( setting < 2 )
+					data.top = null;
+				else if ( data.top )
+					data.top.is_pinned_cheer = 2;
+
+				if ( setting !== 3 && setting !== 1 )
+					data.recent = null;
+				else if ( data.recent )
+					data.recent.is_pinned_cheer = true;
+
+				return this._super(data);
+			}
+		});
+
+		FFZ.settings_info.bits_pinned.on_update.call(this, this.settings.bits_pinned);
+	}
 
 	if ( Service ) {
 		Service.reopen({
@@ -274,4 +288,27 @@ FFZ.prototype.setup_bits = function() {
 
 	if ( Service.get('isLoaded') )
 		Service.loadRenderConfig();
+}
+
+
+FFZ.prototype._modify_bits_token = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			this.ffzRender();
+		},
+
+		ffzRender: function() {
+			var el = this.get('element'),
+				prefix = this.get('prefix'),
+				amount = this.get('amount');
+
+			el.innerHTML = f.render_token(false, false, true, {
+				type: 'bits',
+				amount: amount,
+				prefix: prefix
+			});
+
+		}.observes('prefix', 'amount')
+	})
 }

@@ -66,6 +66,8 @@ body:not(.ffz-show-bits-tags) .bits-tag--container,
 	display: none !important;
 }
 
+.ffz-hide-pinned-cheers .chat-messages { top: 0 !important }
+
 .ffz-channel-bar-bottom #channel {
 	margin-bottom: 60px;
 }
@@ -1784,6 +1786,7 @@ th.ffz-row-switch {
 
 /* Chat Tabs */
 
+.ember-chat .chat-header,
 .ember-chat .chat-room { z-index: 5; }
 
 #ffz-group-tabs {
@@ -2366,6 +2369,10 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 .ffz-no-blue .app-main.theatre .bits-card--standard,
 .ffz-no-blue .dark .bits-card--standard,
+
+.ffz-no-blue .chat-container.dark .chat-header,
+.ffz-no-blue .ember-chat-container.dark .chat-header,
+.ffz-no-blue .theatre .chat-header,
 
 .ffz-no-blue .warp,
 .ffz-no-blue #large_nav .content,
@@ -3627,7 +3634,9 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 
 .ban-tip { border-bottom: 1px dotted rgba(102,102,102,0.5); }
 
+.ffz-clickable-mentions .pinned-cheers .chat-line .user-token,
 .ffz-clickable-mentions .chat-display .chat-line .user-token { font-weight: bold }
+.ffz-clickable-mentions .pinned-cheers .chat-line .user-token:hover,
 .ffz-clickable-mentions .chat-display .chat-line .user-token:hover {
 	text-decoration: underline;
 	cursor: pointer;
@@ -3838,25 +3847,16 @@ body:not(.ffz-bttv) .modified-emoticon span,
 body:not(.ffz-sidebar-swap) .app-main.theatre #main_col:not(.expandRight) #player[data-isfullscreen=true] { right: 0 !important }
 body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data-isfullscreen=true] { left: 0 !important }
 
-.pinned-cheer__hack-box,
-.pinned-cheers__message .chat-line:before,
-.ffz-pinned-cheer-expand .pinned-cheer__expando-arrow,
-.pinned-cheers__message:before { display: none }
+.pinned-cheers__message-wrapper .chat-line:before,
+.pinned-cheers__message-wrapper:before { display: none }
 
-.pinned-cheers__message .chat-line { background-color: transparent !important }
+.pinned-cheers .chat-line { background-color: transparent !important }
 
-.pinned-cheers__message .chat-line { padding: 5px }
+.pinned-cheers__message-wrapper .chat-line { margin: 10px 0; padding: 0 }
 .pinned-cheers .mod-icons { display: inline !important }
 
-.ffz-pinned-cheer-expand .pinned-cheers__message .chat-line,
-.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:hover { max-height: none !important }
-.ffz-pinned-cheer-expand-hover .pinned-cheers__message .chat-line:not(:hover) { max-height: 4rem !important }
+.pinned-cheer__top-bar,
 .pinned-cheers--padding { padding: 0 !important }
-
-.ffz-pinned-cheer-expand-hover .pinned-cheers__message:hover .pinned-cheer__expando-arrow { transform: none }
-.ffz-pinned-cheer-expand-hover .pinned-cheers__message .pinned-cheer__expando-arrow {
-	transform: rotateX(180deg);
-}
 
 /* Player Mini Positioning Stuff */
 
