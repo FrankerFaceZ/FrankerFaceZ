@@ -286,7 +286,7 @@ FFZ.prototype.setup_bits = function() {
 		});
 	}
 
-	if ( Service.get('isLoaded') )
+	if ( Service.get('isLoaded') && Service.loadRenderConfig )
 		Service.loadRenderConfig();
 }
 
