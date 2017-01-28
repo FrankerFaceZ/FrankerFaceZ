@@ -1034,7 +1034,7 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 
 					if ( clip_info ) {
 						var clips = utils.ember_lookup('service:clips');
-						clips && clips.getClipInfo(clip_info[1], clip_info[2]).then(function(data) {
+						clips && clips.getClipInfo(clip_info[1] + '/' + clip_info[2]).then(function(data) {
 							success(true, {
 								image: data.previewImage,
 								image_iframe: false,

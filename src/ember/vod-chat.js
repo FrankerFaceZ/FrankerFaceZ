@@ -74,10 +74,14 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 
 			this.ffzUpdateBadges();
 
-			// Load the room, if nencessary.
-			var room_id = this.get('channel.name');
-			if ( room_id && ! f.rooms[room_id] )
-				f.load_room(room_id);
+			// Load the room, if necessary.
+			var room_id = this.get('video.channel.id');
+			if ( room_id && ! f.rooms[room_id] ) {
+				// Load the room model.
+				f.log("Loading Room for VOD: " + room_id);
+				var Room = utils.ember_resolve('model:room');
+				Room && Room.findOne(room_id);
+			}
 
 			if ( ! f.has_bttv ) {
 				this.ffzFixStickyBottom();
@@ -92,13 +96,21 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 			if ( f._vodc === this )
 				f._vodc = undefined;
 
+			var room_id = this.get('video.channel.id'),
+				room = f.rooms && f.rooms[room_id];
+
+			// We don't need the chat room anymore, in theory. This will
+			// check if the room is still important after a short delay.
+			if ( room && room.room )
+				room.room.ffzScheduleDestroy();
+
 			this.ffzDisableFreeze();
 			this.ffzRemoveKeyHook();
 		},
 
 		ffzUpdateBadges: function() {
 			var t = this,
-				channel_name = this.get('channel.name'),
+				channel_name = this.get('video.channel.id'),
 				owner_name = this.get('video.owner.name'),
 				owner_id = this.get('video.owner._id');
 
@@ -122,7 +134,7 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 			if ( ! badges )
 				return this._super();
 
-			var room_id = this.get('channel.name'),
+			var room_id = this.get('video.channel.id'),
 				output = [];
 
 			for(var badge_id in badges) {
@@ -140,6 +152,10 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 				val = this.get('stuckToBottom');
 
 			VODService && VODService.set("messageBufferSize", f.settings.scrollback_length + (val ? 0 : 150));
+		},
+
+		_scheduleScrollToBottom: function() {
+			this._scrollToBottom();
 		}
 
 	}, FFZ.HoverPause));

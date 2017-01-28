@@ -1325,7 +1325,6 @@ FFZ.prototype.modify_chat_input = function(component) {
 					// If suggestions aren't visible... show them. And set that we
 					// triggered the suggestions with tab.
 					if ( ! this.get('ffz_suggestions_visible') ) {
-						f.log("Showing Suggestions from Tab");
 						this.ffzFetchNameSuggestions();
 						this.set('ffz_suggestions_visible', true);
 						this.ffzSetPartialWord();

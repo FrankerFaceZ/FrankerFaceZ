@@ -1252,11 +1252,12 @@ FFZ.prototype._modify_room = function(room) {
 
 		ffzCheckDestroy: function() {
 			var Chat = utils.ember_lookup('controller:chat'),
+				current_vod = f._vodc && f._vodc.get('channel.name'),
 				user = f.get_user(),
 				room_id = this.get('id');
 
 			// Don't destroy the room if it's still relevant.
-			if ( (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
+			if ( (current_vod === room_id) || (Chat && Chat.get('currentChannelRoom') === this) || (user && user.login === room_id) || (f._chatv && f._chatv._ffz_host === room_id) || (f.settings.pinned_rooms && f.settings.pinned_rooms.indexOf(room_id) !== -1) )
 				return;
 
 			this.destroy();

@@ -995,6 +995,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return false;
 		}.property(),
 
+		ffzIsSpecialMessage: function() {
+			return this.get('hasSystemMsg') || this.get('msgObject.from') === 'twitchnotify';
+		}.property('hasSystemMsg', 'msgObject.from'),
+
 		ffzWasDeleted: function() {
 			return f.settings.prevent_clear && this.get("msgObject.ffz_deleted")
 		}.property("msgObject.ffz_deleted"),
@@ -1016,7 +1020,7 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 	component.reopen({
 		classNameBindings: is_whisper ?
 			[':whisper-line', ':chat-line', 'isReceivedWhisper:whisper-incoming:whisper-outgoing'] :
-			["msgObject.style", "msgObject.isModerationMessage:moderation-message", "msgObject.ffz_has_mention:ffz-mentioned", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
+			["msgObject.isModerationMessage:moderation-message", "msgObject.ffz_has_mention:ffz-mentioned", "ffzIsSpecialMessage:special-message", "ffzWasDeleted:ffz-deleted", "ffzHasOldMessages:clearfix", "ffzHasOldMessages:ffz-has-deleted"],
 		attributeBindings: is_whisper ?
 			['msgObject.nonce:data-nonce', 'msgObject.tags.id:data-id', 'msgObject.from:data-sender'] :
 			["msgObject.tags.id:data-id", "msgObject.room:data-room", "msgObject.from:data-sender", "msgObject.deleted:data-deleted"],
