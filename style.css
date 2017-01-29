@@ -1485,6 +1485,21 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 }
 
 
+/* AutoMod actions */
+
+.tb-actions {
+  margin-right: 5px;
+}
+
+.tb-actions.inactive {
+  opacity: 0.25;
+}
+
+.tb-actions.inactive .mod-icon {
+  cursor: default;
+}
+
+
 /* Chat Rows */
 
 .conversation-window .conversation-chat-line {

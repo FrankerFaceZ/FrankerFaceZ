@@ -810,9 +810,18 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			output = ['<span class="mod-icons">'];
 
-			if ( is_tb && ! this.get('hasClickedFlaggedMessage') ) {
-				output.push('<a class="mod-icon html-tooltip tb-reject" title="Not Allowed' + TB_TOOLTIP + '">Not Allowed</a>');
-				output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed' + TB_TOOLTIP + '">Allowed</a>');
+			if ( is_tb ) {
+				output.push('<span class="tb-actions' + (this.get('hasClickedFlaggedMessage') ? ' inactive' : '') + '">');
+
+				if ( this.get('hasClickedFlaggedMessage') ) {
+					output.push('<a class="mod-icon tb-reject">Not Allowed</a>');
+					output.push('<a class="mod-icon tb-allow">Allowed</a>');
+				} else {
+					output.push('<a class="mod-icon html-tooltip tb-reject" title="Not Allowed' + TB_TOOLTIP + '">Not Allowed</a>');
+					output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed' + TB_TOOLTIP + '">Allowed</a>');
+				}
+
+				output.push('</span>');
 			}
 
 			if ( is_pinned_cheer ) {
