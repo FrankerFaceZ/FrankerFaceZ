@@ -22,6 +22,15 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 70px) }
 .ffz-minimize-conversations.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 50px) }
 
+.ffz-hide-thumb-info-on-hover .stream.item:hover .boxart,
+.ffz-hide-thumb-info-on-hover .stream.item:hover .overlay_info,
+.ffz-hide-thumb-info-on-hover .stream.item:hover .card__meta,
+.ffz-hide-thumb-info-on-hover .video.item:hover .boxart,
+.ffz-hide-thumb-info-on-hover .video.item:hover .overlay_info,
+.ffz-hide-thumb-info-on-hover .video.item:hover .card__meta,
+.ffz-hide-thumb-info-on-hover .video.item:hover .progress-bar-wrapper,
+.ffz-hide-thumb-info-on-hover .card-carousel__item:hover .card__boxpin,
+
 .cn-bar-spacer.show,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
@@ -694,6 +703,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	margin: 11px 13px;
 }
 
+.player-menu__menu,
 .ffz-ui-sub-menu-page,
 .ffz-ui-menu-page { overflow-y: auto; }
 
@@ -1161,6 +1171,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+.player-menu__menu::-webkit-scrollbar,
 .dash-column::-webkit-scrollbar,
 #ffz-metadata-popup .scroller::-webkit-scrollbar,
 .search-panel .collection-wrapper::-webkit-scrollbar,
@@ -1180,6 +1191,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	width: 6px;
 }
 
+.player-menu__menu::-webkit-scrollbar-thumb,
 .dash-column::-webkit-scrollbar-thumb,
 #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
 .search-panel .collection-wrapper::-webkit-scrollbar-thumb,
@@ -1199,6 +1211,8 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	background: rgba(0,0,0,0.7);
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
+
+.ffz-dark .player-menu__menu::-webkit-scrollbar-thumb,
 
 .ffz-dark .dash-column::-webkit-scrollbar-thumb,
 .theatre .dash-column::-webkit-scrollbar-thumb,
@@ -1508,6 +1522,11 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 .ember-chat .chat-messages .chat-line.ffz-has-deleted {
 	line-height: 30px;
+}
+
+.mod-icon.inactive {
+	opacity: 0.25;
+	filter: grayscale(1);
 }
 
 .chat-line.ffz-deleted > span {

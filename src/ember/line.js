@@ -810,9 +810,12 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			output = ['<span class="mod-icons">'];
 
-			if ( is_tb && ! this.get('hasClickedFlaggedMessage') ) {
-				output.push('<a class="mod-icon html-tooltip tb-reject" title="Not Allowed' + TB_TOOLTIP + '">Not Allowed</a>');
-				output.push('<a class="mod-icon html-tooltip tb-allow" title="Allowed' + TB_TOOLTIP + '">Allowed</a>');
+			if ( is_tb ) {
+				var clicked = this.get('hasClickedFlaggedMessage'),
+					inactive = clicked ? ' inactive' : '';
+
+				output.push('<a class="mod-icon html-tooltip tb-reject' + inactive + (clicked ? '' : '" title="Not Allowed' + TB_TOOLTIP) + '">Not Allowed</a>');
+				output.push('<a class="mod-icon html-tooltip tb-allow' + inactive + (clicked ? '' : '" title="Allowed' + TB_TOOLTIP) + '">Allowed</a>');
 			}
 
 			if ( is_pinned_cheer ) {
@@ -1201,7 +1204,10 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 				jQuery(e.target).trigger('mouseout');
 				e.preventDefault();
 
-				if ( cl.contains('pc-dismiss-local') )
+				if ( cl.contains('inactive') )
+					return;
+
+				else if ( cl.contains('pc-dismiss-local') )
 					PinnedCheers.dismissLocalMessage();
 
 				else if ( cl.contains('pc-dismiss') )

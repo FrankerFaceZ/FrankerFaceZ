@@ -200,6 +200,20 @@ FFZ.settings_info.directory_uploads_position = {
 };
 
 
+FFZ.settings_info.directory_hide_info_on_hover = {
+	type: "boolean",
+	value: false,
+
+	category: "Directory",
+	no_mobile: true,
+
+	name: "Hide Boxart on Hover",
+	help: "Do not display boxart and other information over a stream or video's thumbnail when hovering over it.",
+
+	on_update: utils.toggle_cls('ffz-hide-thumb-info-on-hover')
+}
+
+
 // --------------------
 // Initialization
 // --------------------
@@ -210,6 +224,7 @@ FFZ.prototype.setup_directory = function() {
 	utils.toggle_cls('ffz-creative-tags')(this.settings.directory_creative_all_tags);
 	utils.toggle_cls('ffz-creative-showcase')(this.settings.directory_creative_showcase);
 	utils.toggle_cls('ffz-hide-directory-uploads')(this.settings.directory_uploads_position === 2);
+	utils.toggle_cls('ffz-hide-thumb-info-on-hover')(this.settings.directory_hide_info_on_hover);
 
 	var f = this,
 		VodCoviews = utils.ember_lookup('service:vod-coviews');

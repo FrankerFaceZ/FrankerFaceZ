@@ -678,8 +678,8 @@ FFZ.prototype._tokenize_bits = function(tokens) {
 }
 
 
-FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links) {
-	if ( msgObject.cachedTokens )
+FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links, disable_cache) {
+	if ( msgObject.cachedTokens && ! disable_cache )
 		return msgObject.cachedTokens;
 
 	var msg = msgObject.message,
@@ -858,7 +858,9 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	// Tokenize users last.
 	tokens = this.tokenize_users(tokens);
 
-	msgObject.cachedTokens = tokens;
+	if ( ! disable_cache )
+		msgObject.cachedTokens = tokens;
+
 	return tokens;
 }
 

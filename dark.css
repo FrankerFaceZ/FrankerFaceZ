@@ -33,6 +33,7 @@
 
 
 /* hidden chat */
+.ffz-dark .card__img,
 .ffz-dark .ember-chat .chat-hidden-overlay{
 	background-color:rgb(24,24,24)!important;
 }

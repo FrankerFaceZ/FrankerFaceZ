@@ -233,8 +233,15 @@ FFZ.settings_info.timeout_notices = {
 
 
 FFZ.settings_info.mod_card_history = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "On Rooms without Logviewer",
+		2: "Always"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0, 0, 1),
 
 	no_bttv: true,
 	category: "Chat Moderation",
@@ -243,13 +250,13 @@ FFZ.settings_info.mod_card_history = {
 	help: "Display a few of the user's previously sent messages on moderation cards.",
 
 	on_update: function(val) {
-		if ( val || ! this.rooms )
+		if ( val === 2 || ! this.rooms )
 			return;
 
 		// Delete all history~!
 		for(var room_id in this.rooms) {
 			var room = this.rooms[room_id];
-			if ( room )
+			if ( room && (val === 0 || room.has_logs) )
 				room.user_history = undefined;
 		}
 	}
@@ -1527,9 +1534,9 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 		colored = '';
 	}
 
-
-	var message = '<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' +
-			(msg.style === 'action' && ! show_from ? '*' + name + ' ' : '') + this.render_tokens(msg.cachedTokens, true, false, msg.tags && msg.tags.bits) + '</span>';
+	var tokens = this.tokenize_chat_line(msg, true, false, true),
+		message = '<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' +
+			(msg.style === 'action' && ! show_from ? '*' + name + ' ' : '') + this.render_tokens(tokens, true, false, msg.tags && msg.tags.bits) + '</span>';
 
 	if ( msg.deleted )
 		out.push('<span class="deleted"><a class="undelete" href="#" data-message="' + utils.quote_attr(message) + '">&lt;message deleted&gt;</a></span>');

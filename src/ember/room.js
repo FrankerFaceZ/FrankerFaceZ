@@ -1029,6 +1029,10 @@ FFZ.prototype.add_room = function(room_id, room) {
 
 		data.has_logs = response.has_logs;
 		data.log_source = response.log_source;
+
+		if ( f.settings.mod_card_history === 1 )
+			data.user_history = undefined;
+
 	}, true);
 
 	// Is the room important?
@@ -1481,25 +1485,43 @@ FFZ.prototype._modify_room = function(room) {
 
 		addUserHistory: function(message) {
 			var room_id = this.get('id'),
+				is_group = this.get('isGroupRoom'),
+				setting = f.settings.mod_card_history,
 				ffz_room = f.rooms[room_id];
 
-			if ( ! ffz_room || ! f.settings.mod_card_history )
+			if ( is_group || ! ffz_room || setting === 0 || (setting === 1 && ffz_room.has_logs) )
 				return;
 
 			var username = message.ffz_ban_target || message.from,
 				historical = message.tags && message.tags.historical,
 
 				chat_history = ffz_room.user_history = ffz_room.user_history || {},
-				user_history = chat_history[username] = chat_history[username] || [];
+				user_history = chat_history[username] = chat_history[username] || [],
+
+				// Don't store any computed values that would take a lot of memory.
+				old_tags = message.tags || {},
+				cache_object = {
+					date: message.date,
+					from: message.from,
+					room: message.room,
+					message: message.message,
+					style: message.style,
+					tags: {
+						emotes: old_tags.emotes,
+						bits: old_tags.bits,
+						'display-name': old_tags['display-name'],
+						id: old_tags.id
+					}
+				};
 
 			if ( historical ) {
 				if ( user_history.length >= 20 )
 					return;
 
-				user_history.unshift(message);
+				user_history.unshift(cache_object);
 
 			} else {
-				user_history.push(message);
+				user_history.push(cache_object);
 				while ( user_history.length > 20 )
 					user_history.shift();
 			}
@@ -1510,7 +1532,7 @@ FFZ.prototype._modify_room = function(room) {
 
 				if ( history ) {
 					var was_at_top = history.scrollTop >= (history.scrollHeight - history.clientHeight),
-						line = f._build_mod_card_history(message, f._mod_card);
+						line = f._build_mod_card_history(cache_object, f._mod_card);
 
 					if ( historical )
 						history.insertBefore(line, history.firstElementChild);
@@ -2086,18 +2108,7 @@ FFZ.prototype._modify_room = function(room) {
 
 			// Keep the history.
 			if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' )
-				this.addUserHistory({
-					from: msg.from,
-					tags: {
-						id: msg.tags && msg.tags.id,
-						'display-name': msg.tags && msg.tags['display-name'],
-						bits: msg.tags && msg.tags.bits
-					},
-					message: msg.message,
-					cachedTokens: msg.cachedTokens,
-					style: msg.style,
-					date: msg.date
-				});
+				this.addUserHistory(msg);
 
 			// Clear the last ban for that user.
 			var f_room = f.rooms && f.rooms[msg.room],

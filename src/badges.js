@@ -22,7 +22,19 @@ var FFZ = window.FrankerFaceZ,
 			1000: { color: "#3ed8b3" },
 			5000: { color: "#49acff" },
 			10000: { color: "#ff271e" },
-			100000: { color: "#ffcb13" }
+			25000: { color: "#f560ab" },
+			50000: { color: "#ff881f" },
+			75000: { color: "#16d03d" },
+			100000: { color: "#ffcb13" },
+			200000: { color: "#cbc8d0" },
+			300000: { color: "#c97ffd" },
+			400000: { color: "#3dd8b3" },
+			500000: { color: "#48acfe" },
+			600000: { color: "#ff281f" },
+			700000: { color: "#f560ab" },
+			800000: { color: "#ff881f" },
+			900000: { color: "#16d03d" },
+			1000000: { color: "#fecb11" }
 		}
 	},
 
