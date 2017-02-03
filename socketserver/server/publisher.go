@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
 )
 
 // LastSavedMessage contains a reply to a command along with an expiration time.
@@ -135,7 +136,7 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func rateLimitFromRequest(r *http.Request) (RateLimit, error) {
+func rateLimitFromRequest(r *http.Request) (rate.Limiter, error) {
 	if r.FormValue("rateCount") != "" {
 		c, err := strconv.ParseInt(r.FormValue("rateCount"), 10, 32)
 		if err != nil {
@@ -145,9 +146,9 @@ func rateLimitFromRequest(r *http.Request) (RateLimit, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "rateTime")
 		}
-		return NewRateLimit(int(c), d), nil
+		return rate.NewRateLimit(int(c), d), nil
 	}
-	return Unlimited(), nil
+	return rate.Unlimited(), nil
 }
 
 // HTTPBackendCachedPublish handles the /cached_pub route.
@@ -213,7 +214,7 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		close(ch)
 	}()
 	select {
-	case time.After(3 * time.Second):
+	case <-time.After(3 * time.Second):
 		count = -1
 	case <-ch:
 	}
@@ -278,7 +279,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		close(ch)
 	}()
 	select {
-	case time.After(3 * time.Second):
+	case <-time.After(3 * time.Second):
 		count = -1
 	case <-ch:
 	}

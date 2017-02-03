@@ -108,7 +108,7 @@ type ClientInfo struct {
 	// True if the client has already sent the 'ready' command
 	ReadyComplete bool
 
-	// Server-initiated messages should be sent via the Send() method
+	// Server-initiated messages should be sent via the Send() method.
 	MessageChannel chan<- ClientMessage
 
 	// Closed when the client is shutting down.

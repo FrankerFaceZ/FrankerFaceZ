@@ -1,16 +1,16 @@
-package server
+package rate
 
 import (
 	"io"
 	"time"
 )
 
-// A RateLimit supports a constant number of Performed() calls every
-// time a given unit of time passes.
+// A Limiter supports a constant number of Performed() calls every
+// time a certain amount of time passes.
 //
 // Calls to Performed() when no "action tokens" are available will block
 // until one is available.
-type RateLimit interface {
+type Limiter interface {
 	// Run begins emitting tokens for the ratelimiter.
 	// A call to Run must be followed by a call to Close.
 	Run()
@@ -29,8 +29,8 @@ type timeRateLimit struct {
 	done   chan struct{}
 }
 
-// Construct a new RateLimit with the given count and duration.
-func NewRateLimit(count int, period time.Duration) RateLimit {
+// Construct a new Limiter with the given count and duration.
+func NewRateLimit(count int, period time.Duration) Limiter {
 	return &timeRateLimit{
 		count:  count,
 		period: period,
@@ -67,8 +67,8 @@ type unlimited struct{}
 
 var unlimitedInstance unlimited
 
-// Unlimited returns a RateLimit that never blocks. The Run() and Close() calls are no-ops.
-func Unlimited() RateLimit {
+// Unlimited returns a Limiter that never blocks. The Run() and Close() calls are no-ops.
+func Unlimited() Limiter {
 	return unlimitedInstance
 }
 

@@ -1,12 +1,11 @@
 package server
 
-// This is the scariest code I've written yet for the server.
-// If I screwed up the locking, I won't know until it's too late.
-
 import (
 	"log"
 	"sync"
 	"time"
+
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
 )
 
 type SubscriberList struct {
@@ -60,7 +59,7 @@ func SubscribeGlobal(client *ClientInfo) {
 	GlobalSubscriptionLock.Unlock()
 }
 
-func PublishToChannel(channel string, msg ClientMessage, rl RateLimit) (count int) {
+func PublishToChannel(channel string, msg ClientMessage, rl rate.Limiter) (count int) {
 	var found []*ClientInfo
 
 	ChatSubscriptionLock.RLock()
@@ -82,7 +81,7 @@ func PublishToChannel(channel string, msg ClientMessage, rl RateLimit) (count in
 	return
 }
 
-func PublishToMultiple(channels []string, msg ClientMessage, rl RateLimit) (count int) {
+func PublishToMultiple(channels []string, msg ClientMessage, rl rate.Limiter) (count int) {
 	var found []*ClientInfo
 
 	ChatSubscriptionLock.RLock()
@@ -107,7 +106,7 @@ func PublishToMultiple(channels []string, msg ClientMessage, rl RateLimit) (coun
 	return count
 }
 
-func PublishToAll(msg ClientMessage, rl RateLimit) (count int) {
+func PublishToAll(msg ClientMessage, rl rate.Limiter) (count int) {
 	var found []*ClientInfo
 
 	GlobalSubscriptionLock.RLock()

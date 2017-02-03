@@ -1,4 +1,4 @@
-package server // import "bitbucket.org/stendec/frankerfacez/socketserver/server"
+package server // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 
 import (
 	"encoding/json"

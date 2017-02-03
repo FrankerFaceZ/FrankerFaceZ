@@ -119,7 +119,6 @@ func commandLineConsole() {
 			if cl.Send(msg) {
 				kickCount++
 			}
-			kickCount++
 		}
 		return fmt.Sprintf("Kicked %d clients", kickCount), nil
 	})
