@@ -1479,11 +1479,11 @@ FFZ.prototype._modify_room = function(room) {
 				if ( show_notice )
 					this.addMessage(message);
 
-				this.addUserHistory(message);
+				this.addUserHistory(message, true);
 			}
 		},
 
-		addUserHistory: function(message) {
+		addUserHistory: function(message, dont_copy) {
 			var room_id = this.get('id'),
 				is_group = this.get('isGroupRoom'),
 				setting = f.settings.mod_card_history,
@@ -1513,6 +1513,9 @@ FFZ.prototype._modify_room = function(room) {
 						id: old_tags.id
 					}
 				};
+
+			if ( dont_copy )
+				cache_object = message;
 
 			if ( historical ) {
 				if ( user_history.length >= 20 )

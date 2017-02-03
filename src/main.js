@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 423,
+	major: 3, minor: 5, revision: 425,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -77,15 +77,15 @@ FFZ.prototype.log = function(msg, data, to_json, log_json) {
 	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:black; font-weight: normal");
+		console.groupCollapsed("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:auto; font-weight: normal");
 		if ( typeof data === "string" || navigator.userAgent.indexOf("Firefox/") !== -1 )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:black; font-weight: normal");
+		console.groupEnd("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:auto; font-weight: normal");
 	} else
-		console.log("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:black; font-weight: normal");
+		console.log("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:auto; font-weight: normal");
 }
 
 

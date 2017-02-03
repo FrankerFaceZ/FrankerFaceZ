@@ -362,7 +362,7 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 							if ( e.target.classList.contains('heading') ) {
 								t.classList.add('collapsed');
 								if ( collapsed_key )
-								   f[collapsed_key] = true;
+									f[collapsed_key] = true;
 							} else
 								return;
 

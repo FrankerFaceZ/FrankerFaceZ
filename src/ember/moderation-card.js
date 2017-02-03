@@ -1534,7 +1534,8 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 		colored = '';
 	}
 
-	var tokens = this.tokenize_chat_line(msg, true, false, true),
+	// Use cached tokens on the off chance we have them, but don't count on them.
+	var tokens = msg.cachedTokens || this.tokenize_chat_line(msg, true, false, true),
 		message = '<span class="message' + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + '">' +
 			(msg.style === 'action' && ! show_from ? '*' + name + ' ' : '') + this.render_tokens(tokens, true, false, msg.tags && msg.tags.bits) + '</span>';
 

@@ -63,7 +63,8 @@ FFZ.prototype._update_views = function(klasses) {
 		try {
 			klasses[i][1].create().destroy()
 		} catch(err) {
-			this.log("There was an error creating and destroying an instance of the Ember class \"" + klasses[i][0] + "\" to clear its cache.", err);
+			if ( constants.DEBUG )
+				this.log("There was an error creating and destroying an instance of the Ember class \"" + klasses[i][0] + "\" to clear its cache.", err);
 		}
 	}
 

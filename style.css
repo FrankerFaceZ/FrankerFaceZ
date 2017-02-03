@@ -1346,6 +1346,7 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 .ffz-moderation-card button.message {
 	height: 30px;
+	font-size: 1.2em;
 }
 
 .ffz-moderation-card.ffz-is-mod .button.ban,
