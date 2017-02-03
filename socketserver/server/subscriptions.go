@@ -103,7 +103,7 @@ func PublishToMultiple(channels []string, msg ClientMessage, rl rate.Limiter) (c
 			count++
 		}
 	}
-	return count
+	return
 }
 
 func PublishToAll(msg ClientMessage, rl rate.Limiter) (count int) {
