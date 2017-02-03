@@ -7,8 +7,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"github.com/pkg/errors"
 )
 
+// LastSavedMessage contains a reply to a command along with an expiration time.
 type LastSavedMessage struct {
 	Expires time.Time
 	Data      string
@@ -72,7 +74,7 @@ func SendBacklogForNewClient(client *ClientInfo) {
 			if ok {
 				msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
 				msg.parseOrigArguments()
-				client.MessageChannel <- msg
+				client.Send(msg)
 			}
 		}
 	}
@@ -88,7 +90,7 @@ func SendBacklogForChannel(client *ClientInfo, channel string) {
 		if msg, ok := chanMap[channel]; ok {
 			msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: msg.Data}
 			msg.parseOrigArguments()
-			client.MessageChannel <- msg
+			client.Send(msg)
 		}
 	}
 	CachedLSMLock.RUnlock()
@@ -132,6 +134,21 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func rateLimitFromRequest(r *http.Request) (RateLimit, error) {
+	if r.FormValue("rateCount") != "" {
+		c, err := strconv.ParseInt(r.FormValue("rateCount"), 10, 32)
+		if err != nil {
+			return nil, errors.Wrap(err, "rateCount")
+		}
+		d, err := time.ParseDuration(r.FormValue("rateTime"))
+		if err != nil {
+			return nil, errors.Wrap(err, "rateTime")
+		}
+		return NewRateLimit(int(c), d), nil
+	}
+	return Unlimited(), nil
+}
+
 // HTTPBackendCachedPublish handles the /cached_pub route.
 // It publishes a message to clients, and then updates the in-server cache for the message.
 //
@@ -163,6 +180,12 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		}
 		expires = time.Unix(timeNum, 0)
 	}
+	rl, err := rateLimitFromRequest(r)
+	if err != nil {
+		w.WriteHeader(422)
+		fmt.Fprintf(w, "error parsing ratelimit: %v", err)
+		return
+	}
 
 	var count int
 	msg := ClientMessage{MessageID: -1, Command: cmd, origArguments: json}
@@ -174,8 +197,25 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		saveLastMessage(cmd, channel, expires, json, deleteMode)
 	}
 	CachedLSMLock.Unlock()
-	count = PublishToMultiple(channels, msg)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go rl.Run()
+	go func() {
+		count = PublishToMultiple(channels, msg, rl)
+		wg.Done()
+		rl.Close()
+	}()
+	ch := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+	select {
+	case time.After(3*time.Second):
+		count = -1
+	case <-ch:
+	}
 	w.Write([]byte(strconv.Itoa(count)))
 }
 
@@ -199,26 +239,50 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 
 	if cmd == "" {
 		w.WriteHeader(422)
-		fmt.Fprintf(w, "Error: cmd cannot be blank")
+		fmt.Fprint(w, "Error: cmd cannot be blank")
 		return
 	}
 	if channel == "" && scope != "global" {
 		w.WriteHeader(422)
-		fmt.Fprintf(w, "Error: channel must be specified")
+		fmt.Fprint(w, "Error: channel must be specified")
+		return
+	}
+	rl, err := rateLimitFromRequest(r)
+	if err != nil {
+		w.WriteHeader(422)
+		fmt.Fprintf(w, "error parsing ratelimit: %v", err)
 		return
 	}
 
 	cm := ClientMessage{MessageID: -1, Command: CommandPool.InternCommand(cmd), origArguments: json}
 	cm.parseOrigArguments()
-	var count int
 
-	switch scope {
-	default:
-		count = PublishToMultiple(strings.Split(channel, ","), cm)
-	case "global":
-		count = PublishToAll(cm)
+	var count int
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go rl.Run()
+	go func() {
+		switch scope {
+		default:
+			count = PublishToMultiple(strings.Split(channel, ","), cm, rl)
+		case "global":
+			count = PublishToAll(cm, rl)
+		}
+		wg.Done()
+		rl.Close()
+	}()
+	ch := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+	select {
+	case time.After(3*time.Second):
+		count = -1
+	case <-ch:
 	}
-	fmt.Fprint(w, count)
+	w.Write([]byte(strconv.Itoa(count)))
+
 }
 
 // HTTPGetSubscriberCount handles the /get_sub_count route.

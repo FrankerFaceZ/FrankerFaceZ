@@ -112,6 +112,7 @@ type ClientInfo struct {
 	// This field will be nil before it is closed.
 	MessageChannel chan<- ClientMessage
 
+	// Closed when the client is shutting down.
 	MsgChannelIsDone <-chan struct{}
 
 	// Take out an Add() on this during a command if you need to use the MessageChannel later.

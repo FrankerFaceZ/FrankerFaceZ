@@ -11,13 +11,25 @@ import (
 
 type SubscriberList struct {
 	sync.RWMutex
-	Members []chan<- ClientMessage
+	Members []*ClientInfo
 }
 
 var ChatSubscriptionInfo map[string]*SubscriberList = make(map[string]*SubscriberList)
 var ChatSubscriptionLock sync.RWMutex
 var GlobalSubscriptionInfo []*ClientInfo
 var GlobalSubscriptionLock sync.RWMutex
+
+func (client *ClientInfo) Send(msg ClientMessage) bool {
+	select {
+	case client.MessageChannel <- msg:
+		return true
+	case <-client.MsgChannelIsDone:
+		return false
+	default:
+		// if we can't immediately send, ignore it
+		return false
+	}
+}
 
 func CountSubscriptions(channels []string) int {
 	ChatSubscriptionLock.RLock()
@@ -38,12 +50,8 @@ func CountSubscriptions(channels []string) int {
 
 func SubscribeChannel(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
-	_subscribeWhileRlocked(channelName, client.MessageChannel)
+	_subscribeWhileRlocked(channelName, client)
 	ChatSubscriptionLock.RUnlock()
-}
-
-func SubscribeDefaults(client *ClientInfo) {
-
 }
 
 func SubscribeGlobal(client *ClientInfo) {
@@ -52,56 +60,67 @@ func SubscribeGlobal(client *ClientInfo) {
 	GlobalSubscriptionLock.Unlock()
 }
 
-func PublishToChannel(channel string, msg ClientMessage) (count int) {
+func PublishToChannel(channel string, msg ClientMessage, rl RateLimit) (count int) {
+	var found []*ClientInfo
+
 	ChatSubscriptionLock.RLock()
 	list := ChatSubscriptionInfo[channel]
 	if list != nil {
 		list.RLock()
-		for _, msgChan := range list.Members {
-			msgChan <- msg
-			count++
-		}
+		found = make([]*ClientInfo, len(list.Members))
+		copy(found, list.Members)
 		list.RUnlock()
 	}
 	ChatSubscriptionLock.RUnlock()
+
+	for _, cl := range found {
+		rl.Performed()
+		if cl.Send(msg) {
+			count++
+		}
+	}
 	return
 }
 
-func PublishToMultiple(channels []string, msg ClientMessage) (count int) {
-	found := make(map[chan<- ClientMessage]struct{})
+func PublishToMultiple(channels []string, msg ClientMessage, rl RateLimit) (count int) {
+	var found []*ClientInfo
 
 	ChatSubscriptionLock.RLock()
-
 	for _, channel := range channels {
 		list := ChatSubscriptionInfo[channel]
 		if list != nil {
 			list.RLock()
-			for _, msgChan := range list.Members {
-				found[msgChan] = struct{}{}
+			for _, cl := range list.Members {
+				found = append(found, cl)
 			}
 			list.RUnlock()
 		}
 	}
-
 	ChatSubscriptionLock.RUnlock()
 
-	for msgChan, _ := range found {
-		msgChan <- msg
-		count++
+	for _, cl := range found {
+		rl.Performed()
+		if cl.Send(msg) {
+			count++
+		}
 	}
-	return
+	return count
 }
 
-func PublishToAll(msg ClientMessage) (count int) {
+func PublishToAll(msg ClientMessage, rl RateLimit) (count int) {
+	var found []*ClientInfo
+
 	GlobalSubscriptionLock.RLock()
-	for _, client := range GlobalSubscriptionInfo {
-		select {
-		case client.MessageChannel <- msg:
-		case <-client.MsgChannelIsDone:
-		}
-		count++
-	}
+	found = make([]*ClientInfo, len(GlobalSubscriptionInfo))
+	copy(found, GlobalSubscriptionInfo)
 	GlobalSubscriptionLock.RUnlock()
+
+	for _, cl := range found {
+		rl.Performed()
+		if cl.Send(msg) {
+			count++
+		}
+	}
 	return
 }
 
@@ -110,7 +129,7 @@ func UnsubscribeSingleChat(client *ClientInfo, channelName string) {
 	list := ChatSubscriptionInfo[channelName]
 	if list != nil {
 		list.Lock()
-		RemoveFromSliceC(&list.Members, client.MessageChannel)
+		RemoveFromSliceCl(&list.Members, client)
 		list.Unlock()
 	}
 	ChatSubscriptionLock.RUnlock()
@@ -138,7 +157,7 @@ func UnsubscribeAll(client *ClientInfo) {
 		list := ChatSubscriptionInfo[v]
 		if list != nil {
 			list.Lock()
-			RemoveFromSliceC(&list.Members, client.MessageChannel)
+			RemoveFromSliceCl(&list.Members, client)
 			list.Unlock()
 		}
 	}
@@ -191,14 +210,14 @@ func pubsubJanitor_do() {
 //   - ALREADY HOLDING a read-lock to the 'which' top-level map via the rlocker object
 //   - possible write lock to the 'which' top-level map via the wlocker object
 //   - write lock to SubscriptionInfo (if not creating new)
-func _subscribeWhileRlocked(channelName string, value chan<- ClientMessage) {
+func _subscribeWhileRlocked(channelName string, value *ClientInfo) {
 	list := ChatSubscriptionInfo[channelName]
 	if list == nil {
 		// Not found, so create it
 		ChatSubscriptionLock.RUnlock()
 		ChatSubscriptionLock.Lock()
 		list = &SubscriberList{}
-		list.Members = []chan<- ClientMessage{value} // Create it populated, to avoid reaper
+		list.Members = []*ClientInfo{value} // Create it populated, to avoid reaper
 		ChatSubscriptionInfo[channelName] = list
 		ChatSubscriptionLock.Unlock()
 
@@ -212,7 +231,7 @@ func _subscribeWhileRlocked(channelName string, value chan<- ClientMessage) {
 		ChatSubscriptionLock.RLock()
 	} else {
 		list.Lock()
-		AddToSliceC(&list.Members, value)
+		AddToSliceCl(&list.Members, value)
 		list.Unlock()
 	}
 }
