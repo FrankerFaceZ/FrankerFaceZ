@@ -7,13 +7,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"github.com/pkg/errors"
 )
 
 // LastSavedMessage contains a reply to a command along with an expiration time.
 type LastSavedMessage struct {
 	Expires time.Time
-	Data      string
+	Data    string
 }
 
 // map is command -> channel -> data
@@ -25,7 +26,7 @@ var CachedLSMLock sync.RWMutex
 
 func cachedMessageJanitor() {
 	for {
-		time.Sleep(1*time.Hour)
+		time.Sleep(1 * time.Hour)
 		cachedMessageJanitor_do()
 	}
 }
@@ -212,7 +213,7 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		close(ch)
 	}()
 	select {
-	case time.After(3*time.Second):
+	case time.After(3 * time.Second):
 		count = -1
 	case <-ch:
 	}
@@ -277,7 +278,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		close(ch)
 	}()
 	select {
-	case time.After(3*time.Second):
+	case time.After(3 * time.Second):
 		count = -1
 	case <-ch:
 	}

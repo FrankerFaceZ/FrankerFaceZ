@@ -1,8 +1,8 @@
 package server
 
 import (
-	"time"
 	"io"
+	"time"
 )
 
 // A RateLimit supports a constant number of Performed() calls every
@@ -22,7 +22,7 @@ type RateLimit interface {
 	io.Closer
 }
 
-type timeRateLimit struct{
+type timeRateLimit struct {
 	count  int
 	period time.Duration
 	ch     chan struct{}
@@ -30,7 +30,7 @@ type timeRateLimit struct{
 }
 
 // Construct a new RateLimit with the given count and duration.
-func NewRateLimit(count int, period time.Duration) (RateLimit) {
+func NewRateLimit(count int, period time.Duration) RateLimit {
 	return &timeRateLimit{
 		count:  count,
 		period: period,
@@ -64,13 +64,14 @@ func (r *timeRateLimit) Close() error {
 }
 
 type unlimited struct{}
+
 var unlimitedInstance unlimited
 
 // Unlimited returns a RateLimit that never blocks. The Run() and Close() calls are no-ops.
-func Unlimited() (RateLimit) {
+func Unlimited() RateLimit {
 	return unlimitedInstance
 }
 
-func (r unlimited) Run() { }
-func (r unlimited) Performed() { }
+func (r unlimited) Run()         {}
+func (r unlimited) Performed()   {}
 func (r unlimited) Close() error { return nil }

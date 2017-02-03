@@ -12,11 +12,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"sync"
-
-	"github.com/pmylund/go-cache"
+	cache "github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/nacl/box"
 )
 

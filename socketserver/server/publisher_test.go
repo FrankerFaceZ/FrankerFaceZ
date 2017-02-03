@@ -16,9 +16,9 @@ func TestExpiredCleanup(t *testing.T) {
 	defer DumpBacklogData()
 
 	var zeroTime time.Time
-	hourAgo := time.Now().Add(-1*time.Hour)
+	hourAgo := time.Now().Add(-1 * time.Hour)
 	now := time.Now()
-	hourFromNow := time.Now().Add(1*time.Hour)
+	hourFromNow := time.Now().Add(1 * time.Hour)
 
 	saveLastMessage(cmd, channel, hourAgo, "1", false)
 	saveLastMessage(cmd, channel2, now, "2", false)
@@ -26,11 +26,11 @@ func TestExpiredCleanup(t *testing.T) {
 	if len(CachedLastMessages) != 1 {
 		t.Error("messages not saved")
 	}
-	if len(CachedLastMessages[cmd]) != 2{
+	if len(CachedLastMessages[cmd]) != 2 {
 		t.Error("messages not saved")
 	}
 
-	time.Sleep(2*time.Millisecond)
+	time.Sleep(2 * time.Millisecond)
 
 	cachedMessageJanitor_do()
 
@@ -47,7 +47,7 @@ func TestExpiredCleanup(t *testing.T) {
 		t.Error("messages not saved")
 	}
 
-	time.Sleep(2*time.Millisecond)
+	time.Sleep(2 * time.Millisecond)
 
 	cachedMessageJanitor_do()
 

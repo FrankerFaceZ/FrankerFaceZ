@@ -1,8 +1,8 @@
 package server
 
 import (
-	"time"
 	"testing"
+	"time"
 )
 
 var exampleData = []string{}
