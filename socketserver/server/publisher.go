@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
+	"github.com/pkg/errors"
 )
 
 // LastSavedMessage contains a reply to a command along with an expiration time.
