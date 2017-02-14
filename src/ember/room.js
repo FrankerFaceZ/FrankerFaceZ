@@ -1154,9 +1154,6 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 
 	this.rooms[room_id] = data;*/
 
-	this.log("Loading Room Data: " + room_id, model);
-	this.log("  -- has CSS: " + ~~(model.css) + " -- has mod URLs: " + ~~(model.mod_urls));
-
 	if ( model.css || model.mod_urls )
 		utils.update_css(this._room_style, room_id, moderator_css(model) + (model.css || ""));
 

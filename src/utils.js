@@ -1107,7 +1107,7 @@ module.exports = FFZ.utils = {
 	},
 
 	badge_css: function(badge, klass) {
-		klass = klass || ('ffz-badge-' + badge.id);
+		klass = klass || ('ffz-badge-' + (badge.real_id || badge.id));
 		var urls = badge.urls || {1: badge.image},
 			image_set = image = 'url("' + urls[1] + '")';
 
@@ -1123,21 +1123,21 @@ module.exports = FFZ.utils = {
 
 		var out = '.badges .' + klass + (badge.no_color ? ':not(.colored){' : '{') +
 			'background-color:' + badge.color + ';' +
-			'background-image:' + image + ';' +
+			(image !== image_set ? 'background-image:' + image + ';' : '') +
 			'background-image:' + image_set + ';' +
 			(badge.css || '') + '}' +
 
 			'.badges .badge.ffz-badge-replacement.ffz-replacer-' + klass + ':not(.colored){' +
-				'background-image:' + image + ';' +
+				(image !== image_set ? 'background-image:' + image + ';' : '') +
 				'background-image:' + image_set + '}';
 
 		if ( ! badge.no_color )
 			out += '.badges .badge.ffz-badge-replacement.ffz-replacer-' + klass + '.colored{' +
-				WEBKIT + 'mask-image:' + image + ';' +
+				(image !== image_set ? WEBKIT + 'mask-image:' + image + ';' : '') +
 				WEBKIT + 'mask-image:' + image_set + '}' +
 			'.badges .' + klass + '.colored {' +
 				'background: linear-gradient(' + badge.color + ',' + badge.color + ');' +
-				WEBKIT + 'mask-image:' + image + ';' +
+				(image !== image_set ? WEBKIT + 'mask-image:' + image + ';' : '') +
 				WEBKIT + 'mask-image:' + image_set + ';' +
 				(badge.css || '') + '}';
 

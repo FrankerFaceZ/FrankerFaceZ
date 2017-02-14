@@ -508,7 +508,7 @@ API.prototype.user_add_badge = function(username, slot, badge_id) {
 		badges = user.badges = user.badges || {},
 		ffz_badges = ffz_user.badges = ffz_user.badges || {},
 
-		badge = typeof badge_id === "number" ? {id: badge_id} : badge_id;
+		badge = typeof badge_id !== "object" ? {id: badge_id} : badge_id;
 
 	badge.real_id = this.name_key + '-' + badge.id;
 	badges[slot] = ffz_badges[slot] = badge;
@@ -534,7 +534,7 @@ API.prototype.room_add_user_badge = function(room_name, username, slot, badge_id
 	var ffz_user = ffz_room_users[username] = ffz_room_users[username] || {badges: {}, sets: []},
 		ffz_badges = ffz_user && ffz_user.badges,
 
-		badge = typeof badge_id === "number" ? {id: badge_id} : badge_id;
+		badge = typeof badge_id !== "object" ? {id: badge_id} : badge_id;
 
 	badge.real_id = this.name_key + '-' + badge.id;
 	ffz_badges[slot] = badge;

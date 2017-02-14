@@ -129,19 +129,21 @@ FFZ.settings_info.hidden_badges = {
 			if ( badgeCollection.global )
 				for(var badge in badgeCollection.global)
 					if ( badgeCollection.global.hasOwnProperty(badge) && badge !== 'broadcasterName' ) {
-						var badge_data = badgeCollection.global[badge],
-							version = Object.keys(badge_data.versions)[0];
+						var badge_data = badgeCollection.global[badge] || {},
+							version = badge_data.versions && Object.keys(badge_data.versions)[0];
 
-						values.push([badge, f.render_badges(f.get_twitch_badges(badge + "/" + version))]);
+						if ( version )
+							values.push([badge, f.render_badges(f.get_twitch_badges(badge + "/" + version))]);
 					}
 
 			if ( badgeCollection.channel )
 				for(var badge in badgeCollection.channel)
 					if ( badgeCollection.channel.hasOwnProperty(badge) && badge !== 'broadcasterName' ) {
-						var badge_data = badgeCollection.channel[badge],
-							version = Object.keys(badge_data.versions)[0];
+						var badge_data = badgeCollection.channel[badge] || {},
+							version = badge_data.versions && Object.keys(badge_data.versions)[0];
 
-						values.push([badge, f.render_badges(f.get_twitch_badges(badge + "/" + version))]);
+						if ( version )
+							values.push([badge, f.render_badges(f.get_twitch_badges(badge + "/" + version))]);
 					}
 		}
 
