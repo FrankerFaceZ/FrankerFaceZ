@@ -1,5 +1,6 @@
 /* Simple Separators */
 .conversation-chat-lines > div,
+.chat-line.notification,
 .chat-line {
 	border-bottom: 1px solid #aaa;
 }

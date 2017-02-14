@@ -1927,18 +1927,18 @@ th.ffz-row-switch {
 }
 
 #ffz-group-tabs .button .notifications {
-    background-color: #d44949;
-    top: 0;
-    right: 0;
-    position: absolute;
-    height: 12px;
-    line-height: 12px;
-    padding: 0 3px;
-    width: auto;
-    color: #fff;
-    font-size: 9px;
-    vertical-align: middle;
-    margin: 0;
+	background-color: #d44949;
+	top: 0;
+	right: 0;
+	position: absolute;
+	height: 12px;
+	line-height: 12px;
+	padding: 0 3px;
+	width: auto;
+	color: #fff;
+	font-size: 9px;
+	vertical-align: middle;
+	margin: 0;
 }
 
 /* Dark Group Tabs */
@@ -2066,6 +2066,11 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 .ember-chat .moderation-card .moderation-card__actions.chat-history .chat-line.action {
 	float: none;
 	margin-right: 0px;
+}
+
+.chat-line.notification {
+	border-bottom: none;
+	background-color: transparent;
 }
 
 .chat-history .chat-line.notification .from,

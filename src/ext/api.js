@@ -466,24 +466,22 @@ API.prototype.unregister_room_set = function(room_id, set_id) {
 // -----------------------
 
 API.prototype.add_badge = function(badge_id, badge) {
-	var exact_id = this.name_key + '-' + badge_id, // this.id + '-' + badge_id,
+	var exact_id = this.name_key + '-' + badge_id;
 
-		real_badge = _.extend({}, badge, {
-			id: exact_id,
-			source_ext: this.id,
-			source_id: badge_id
-		});
+	badge.id = badge_id;
+	badge.source_ext = this.id,
+	badge.real_id = exact_id;
 
-	if ( ! real_badge.color )
-		real_badge.color = "transparent";
+	if ( ! badge.color )
+		badge.color = "transparent";
 
-	this.badges[badge_id] = real_badge;
+	this.badges[badge_id] = badge;
 
 	if ( this.ffz.badges )
-		this.ffz.badges[exact_id] = real_badge;
+		this.ffz.badges[exact_id] = badge;
 
 	if ( this.ffz._badge_style )
-		utils.update_css(this.ffz._badge_style, exact_id, utils.badge_css(real_badge));
+		utils.update_css(this.ffz._badge_style, exact_id, utils.badge_css(badge));
 }
 
 
@@ -510,9 +508,9 @@ API.prototype.user_add_badge = function(username, slot, badge_id) {
 		badges = user.badges = user.badges || {},
 		ffz_badges = ffz_user.badges = ffz_user.badges || {},
 
-		exact_id = this.name_key + '-' + badge_id,
-		badge = {id: exact_id};
+		badge = typeof badge_id === "number" ? {id: badge_id} : badge_id;
 
+	badge.real_id = this.name_key + '-' + badge.id;
 	badges[slot] = ffz_badges[slot] = badge;
 }
 
@@ -536,9 +534,9 @@ API.prototype.room_add_user_badge = function(room_name, username, slot, badge_id
 	var ffz_user = ffz_room_users[username] = ffz_room_users[username] || {badges: {}, sets: []},
 		ffz_badges = ffz_user && ffz_user.badges,
 
-		exact_id = this.name_key + '-' + badge_id,
-		badge = {id: exact_id};
+		badge = typeof badge_id === "number" ? {id: badge_id} : badge_id;
 
+	badge.real_id = this.name_key + '-' + badge.id;
 	ffz_badges[slot] = badge;
 }
 

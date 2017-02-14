@@ -577,7 +577,7 @@ module.exports = FFZ.utils = {
 		else if ( game === "Creative" )
 			ember_transition('directory.creative.index')
 		else
-			ember_transition('directory.game.index', encodeURIComponent(game))
+			ember_transition('directory.game.index', game)
 	},
 
 	transition_user: function(username) {

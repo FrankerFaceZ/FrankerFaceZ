@@ -1,3 +1,11 @@
+<div class="list-header">3.5.426 <time datetime="2017-02-13">(2017-02-13)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Not Found bug when clicking links to game directory pages.</li>
+	<li>Fixed: Custom moderator badges not displaying in Mozilla Firefox.</li>
+	<li>API Added: <code>bttv-room-message</code> event for awareness of chat messages sent when BetterTTV is installed. This data structure is not like standard <code>room-message</code>.</li>
+	<li>API Changed: To reduce memory usage, badge objects are now not cloned. <code>user_add_badge</code> and <code>room_add_user_badge</code> now support complex badge structures rather than just IDs for more flexible badge setups.</li>
+</ul>
+
 <div class="list-header">3.5.425 <time datetime="2017-02-03">(2017-02-03)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Whisper User button not rendering on moderation cards.</li>
@@ -56,11 +64,6 @@
 <div class="list-header">3.5.417 <time datetime="2017-01-13">(2017-01-13)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Twitch broke Chat Replay handling of chat timeouts and bans somehow. Fix color handling with blank usernames.</li>
-</ul>
-
-<div class="list-header">3.5.416 <time datetime="2017-01-11">(2017-01-11)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: An issue could prevent bits from rendering correctly in certain situations.</li>
 </ul>
 
 <div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>

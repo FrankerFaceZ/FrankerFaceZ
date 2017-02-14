@@ -69,6 +69,7 @@ var FFZ = window.FrankerFaceZ,
 				'background-repeat:no-repeat;' +
 				'background-size:initial !important;' +
 				'background-position:center;' +
+				'background-image: url("' + urls[1] + '") !important;' +
 				'background-image:' + image_set + ' !important}' +
 			'.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored,' +
 			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored {' +
@@ -1152,6 +1153,9 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	data.needs_history = this.rooms[room_id] && this.rooms[room_id].needs_history || false;
 
 	this.rooms[room_id] = data;*/
+
+	this.log("Loading Room Data: " + room_id, model);
+	this.log("  -- has CSS: " + ~~(model.css) + " -- has mod URLs: " + ~~(model.mod_urls));
 
 	if ( model.css || model.mod_urls )
 		utils.update_css(this._room_style, room_id, moderator_css(model) + (model.css || ""));

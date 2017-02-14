@@ -307,10 +307,11 @@ FFZ.prototype.ws_create = function() {
 			var success = cmd === 'ok',
 				has_callback = typeof f._ws_callbacks[request] === "function";
 
-			if ( ! has_callback && (!success || constants.DEBUG) )
-				f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);
+			if ( ! has_callback ) {
+				if ( ! success || constants.DEBUG)
+					f.log("Socket Reply to " + request + " - " + (success ? "SUCCESS" : "FAIL"), data, false, true);
 
-			else {
+			} else {
 				try {
 					f._ws_callbacks[request](success, data);
 				} catch(err) {

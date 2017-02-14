@@ -165,6 +165,9 @@ FFZ.prototype.setup_bttv = function(delay) {
 			data.room = data.room || received_room;
 			f.bttv_badges(data);
 
+			// API Support
+			f.api_trigger('bttv-room-message', data, opts);
+
 			// Now, do everything else manually because things are hard-coded.
 			return '<div class="chat-line'+(opts.highlight?' highlight':'')+(opts.action?' action':'')+(opts.server?' admin':'')+(opts.notice?' notice':'')+'" data-id="' + data.id + '" data-sender="'+(data.sender||"").toLowerCase()+'" data-room="'+received_room+'">'+
 				BC.templates.timestamp(data.time)+' '+

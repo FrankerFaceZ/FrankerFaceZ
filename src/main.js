@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 425,
+	major: 3, minor: 5, revision: 426,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -70,6 +70,14 @@ var VER = FFZ.version_info = {
 
 // Logging
 
+var ua = navigator.userAgent,
+	IS_WEBKIT = ua.indexOf('AppleWebKit/') !== -1 && ua.indexOf('Edge/') === -1,
+	IS_FIREFOX = ua.indexOf('Firefox/') !== -1,
+
+	RED_COLOR = "color: red",
+	FFZ_COLOR = "color:#755000; font-weight: bold",
+	TXT_COLOR = "color:auto; font-weight: normal";
+
 FFZ.prototype.log = function(msg, data, to_json, log_json) {
 	if ( to_json )
 		msg = msg + ' -- ' + JSON.stringify(data);
@@ -77,15 +85,23 @@ FFZ.prototype.log = function(msg, data, to_json, log_json) {
 	this._log_data.push(msg + ((!to_json && log_json) ? " -- " + JSON.stringify(data) : ""));
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:auto; font-weight: normal");
-		if ( typeof data === "string" || navigator.userAgent.indexOf("Firefox/") !== -1 )
+		if ( IS_WEBKIT )
+			console.groupCollapsed("%cFFZ:%c " + msg, FFZ_COLOR, TXT_COLOR);
+		else
+			console.groupCollapsed("FFZ: " + msg);
+
+		if ( typeof data === "string" || IS_FIREFOX )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:auto; font-weight: normal");
+		if ( IS_WEBKIT )
+			console.groupEnd("%cFFZ:%c " + msg, FFZ_COLOR, TXT_COLOR);
+		else
+			console.groupEnd("FFZ: " + msg);
+
 	} else
-		console.log("%cFFZ:%c " + msg, "color:#755000; font-weight: bold", "color:auto; font-weight: normal");
+		console.log("%cFFZ:%c " + msg, FFZ_COLOR, TXT_COLOR);
 }
 
 
@@ -100,15 +116,22 @@ FFZ.prototype.error = function(msg, error, to_json, log_json) {
 	}
 
 	if ( data !== undefined && console.groupCollapsed && console.dir ) {
-		console.groupCollapsed("%cFFZ " + msg, "color:red");
-		if ( typeof data === "string" || navigator.userAgent.indexOf("Firefox/") !== -1 )
+		if ( IS_WEBKIT )
+			console.groupCollapsed("%cFFZ " + msg, RED_COLOR);
+		else
+			console.groupCollapsed("FFZ " + msg);
+
+		if ( typeof data === "string" || IS_FIREFOX )
 			console.log(data);
 		else
 			console.dir(data);
 
-		console.groupEnd("%cFFZ " + msg, "color:red");
+		if ( IS_WEBKIT )
+			console.groupEnd("%cFFZ " + msg, RED_COLOR);
+		else
+			console.groupEnd("FFZ " + msg);
 	} else
-		console.log("%cFFZ " + msg, "color:red");
+		console.log("%cFFZ " + msg, RED_COLOR);
 }
 
 
