@@ -222,33 +222,37 @@ API.prototype._load_set = function(real_id, set_id, data) {
 		if ( ! emote.name )
 			continue;
 
-		var new_emote = _.extend({}, emote, {
+		/*var new_emote = _.extend({}, emote, {
 			id: id,
 			set_id: real_id,
 			srcSet: emote.urls[1] + ' 1x'
-		});
+		});*/
+
+		emote.id = id;
+		emote.set_id = real_id;
+		emote.srcSet = emote.urls[1] + ' 1x';
 
 		if ( emote.urls[2] )
-			new_emote.srcSet += ', ' + emote.urls[2] + ' 2x';
+			/*new_*/emote.srcSet += ', ' + emote.urls[2] + ' 2x';
 
 		if ( emote.urls[3] )
-			new_emote.srcSet += ', ' + emote.urls[3] + ' 3x';
+			/*new_*/emote.srcSet += ', ' + emote.urls[3] + ' 3x';
 
 		if ( emote.urls[4] )
-			new_emote.srcSet += ', ' + emote.urls[4] + ' 4x';
+			/*new_*/emote.srcSet += ', ' + emote.urls[4] + ' 4x';
 
-		new_emote.token = {
+		/*new_*/emote.token = {
 			type: "emoticon",
-			srcSet: new_emote.srcSet,
-			imgSrc: new_emote.urls[1],
+			srcSet: /*new_*/emote.srcSet,
+			imgSrc: /*new_*/emote.urls[1],
 			ffzEmote: id,
 			ffzEmoteSet: real_id,
-			altText: new_emote.hidden ? '???' : new_emote.name
+			altText: /*new_*/emote.hidden ? '???' : /*new_*/emote.name
 		};
 
-		output_css += utils.emote_css(new_emote);
+		output_css += utils.emote_css(/*new_*/emote);
 		emote_set.count++;
-		emoticons[id] = new_emote;
+		emoticons[id] = /*new_*/emote;
 	}
 
 	// Use the real ID for building CSS.
@@ -272,14 +276,20 @@ API.prototype._load_set = function(real_id, set_id, data) {
 // Loading / Unloading Sets
 // -------------------------
 
-API.prototype.load_set = function(id, emote_set) {
-	var exact_id = this.id + '-' + id;
+API.prototype.load_set = function(set_id, emote_set) {
+	var exact_id = this.id + '-' + set_id,
+		already_loaded = this.emote_sets[set_id];
 
 	emote_set.title = emote_set.title || "Global Emoticons";
 	emote_set._type = emote_set._type || 0;
 
-	emote_set = this._load_set(exact_id, id, emote_set);
-	this.log("Loaded Emoticon Set #" + id + ": " + emote_set.title + " (" + emote_set.count + " emotes)", emote_set);
+	emote_set = this._load_set(exact_id, set_id, emote_set);
+
+	// Avoid spamming the console if and when other extensions
+	// spend time constantly updating emote sets.
+	if ( ! already_loaded || constants.DEBUG )
+		this.log("Loaded Emoticon Set #" + set_id + ": " + emote_set.title + " (" + emote_set.count + " emotes)", emote_set);
+
 	return emote_set;
 }
 

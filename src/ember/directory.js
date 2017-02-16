@@ -259,6 +259,7 @@ FFZ.prototype.setup_directory = function() {
 	this.update_views('component:creative-preview', function(x) { this.modify_directory_live(x, false) }, true);
 	this.update_views('component:csgo-channel-preview', function(x) { this.modify_directory_live(x, true) }, true);
 	this.update_views('component:twitch-carousel/stream-item', function(x) { this.modify_directory_live(x, false, true) }, true);
+	this.update_views('component:stream/snapshot-card', function(x) { this.modify_directory_live(x, false, true) }, true);
 	this.update_views('component:host-preview', this.modify_directory_host, true, true);
 	this.update_views('component:video-preview', this.modify_video_preview, true);
 	this.update_views("component:video/following-uploads", this.modify_following_uploads);
@@ -485,7 +486,7 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 				meta = el && el.querySelector(meta_selector),
 				thumb = el && el.querySelector(thumb_selector),
 				cap = thumb && thumb.querySelector(cap_selector),
-				uptime_parent = is_card ? thumb : cap,
+				uptime_setting = f.settings.stream_uptime,
 				channel_id = this.get(pref + 'channel.name'),
 				game = this.get(pref + 'game');
 
@@ -496,14 +497,10 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 			el.classList.toggle('ffz-game-banned', f.settings.banned_games.indexOf(game && game.toLowerCase()) !== -1);
 			el.classList.toggle('ffz-game-spoilered', f.settings.spoiler_games.indexOf(game && game.toLowerCase()) !== -1);
 
-			if (f.settings.stream_uptime && f.settings.stream_uptime < 3 && uptime_parent ) {
-				var t_el = this._ffz_uptime = document.createElement('div');
-				t_el.className = 'overlay_info length live';
-
-				jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
-
-				uptime_parent.appendChild(t_el);
-				this._ffz_uptime_timer = setInterval(this.ffzUpdateUptime.bind(this), 1000);
+			if ( uptime_setting && uptime_setting < 3 ) {
+				this._ffz_uptime_timer = setInterval(
+					this.ffzUpdateUptime.bind(this),
+					uptime_setting === 2 ? 1000 : 60000);
 				this.ffzUpdateUptime();
 			}
 
@@ -533,8 +530,8 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 
 		ffz_destroy: function() {
 			if ( this._ffz_uptime ) {
-				this._ffz_uptime.parentElement.removeChild(this._ffz_uptime);
-				this._ffz_uptime = null;
+				jQuery(this._ffz_uptime).remove();
+				this._ffz_uptime = this._ffz_uptime_span = null;
 			}
 
 			if ( this._ffz_uptime_timer )
@@ -570,11 +567,31 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0;
 
 			if ( uptime > 0 ) {
-				this._ffz_uptime.innerHTML = constants.CLOCK + utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1);
-				this._ffz_uptime.setAttribute('original-title', 'Stream Uptime <nobr>(since ' + up_since.toLocaleString() + ')</nobr>');;
-			} else {
-				this._ffz_uptime.setAttribute('original-title', '');
-				this._ffz_uptime.innerHTML = '';
+				if ( ! this._ffz_uptime ) {
+					var el = this.get('element'),
+						cont = el && el.querySelector(thumb_selector);
+
+					if ( ! is_card )
+						cont = cont && cont.querySelector(cap_selector);
+
+					if ( ! cont )
+						return;
+
+					var t_el = this._ffz_uptime = utils.createElement('div', 'overlay_info length live', constants.CLOCK),
+						t_span = this._ffz_uptime_span = utils.createElement('span');
+
+					t_el.appendChild(t_span);
+					t_el.setAttribute('original-title', 'Stream Uptime <nobr>(since ' + up_since.toLocaleString() + ')</nobr>');
+
+					jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
+					cont.appendChild(t_el);
+				}
+
+				this._ffz_uptime_span.textContent = utils.time_to_string(uptime, false, false, false, f.settings.stream_uptime === 1);
+
+			} else if ( this._ffz_uptime ) {
+				jQuery(this._ffz_uptime).remove();
+				this._ffz_uptime = this._ffz_uptime_span = null;
 			}
 		}
 	});

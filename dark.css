@@ -346,6 +346,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 .ffz-dark .balloon .balloon__link { color: #a68ed2 !important }
+.ffz-dark .balloon .balloon__link--active,
 .ffz-dark .balloon .balloon__link--selected,
 .ffz-dark .balloon .balloon__link:hover { color: #fff !important }
 .ffz-dark .balloon .balloon__link--selected { background-color: #6441a5 !important }
@@ -603,8 +604,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #a68ed2;
 }
 
+.ffz-dark .tw-tabs,
 .ffz-dark .tabs { box-shadow: 0 -1px 0 rgba(255,255,255,0.2) inset; }
 
+.ffz-dark .tw-tabs__item > a:hover,
 .ffz-dark .tabs>.tab:hover,
 .ffz-dark .tabs>li:hover,
 .ffz-dark .tabs__item:hover,
@@ -619,6 +622,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .direcotry_header .nav:before,
 .ffz-dark ul.tabs_fake:before {
 	border-color: #32323e;
+}
+
+.ffz-dark .tw-tabs__item > a.active,
+.ffz-dark .tw-tabs__item > button.active {
+	color: #aaa;
+	box-shadow: 0 -1px 0 #ccc inset;
 }
 
 .ffz-dark .mininav li > a:hover,
@@ -1053,6 +1062,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: transparent;
 }
 
+.ffz-dark .following-col .col-header,
+.ffz-dark .following-col .header,
 .ffz-dark .whatisthis .actions .divider,
 .ffz-dark .dash-chat-column {
 	border-color: rgba(255,255,255,0.2);

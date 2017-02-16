@@ -132,7 +132,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .ffz-ui-toggle svg.svg-emoticons path { fill: rgba(0,0,0,0.2); }
 .ffz-ui-toggle:hover svg.svg-emoticons path { fill: rgba(0,0,0,0.5); }
 
-.carousel__item .card__img .overlay_info.live svg path,
+.card-carousel__item .card__img .overlay_info.live svg path,
 .streams .stream .content .overlay_info.live svg path,
 .videos .video .content .overlay_info.live svg path { fill: #ff2020; }
 
@@ -1171,6 +1171,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+.balloon__list.scroll-y::-webkit-scrollbar,
 .player-menu__menu::-webkit-scrollbar,
 .dash-column::-webkit-scrollbar,
 #ffz-metadata-popup .scroller::-webkit-scrollbar,
@@ -1191,6 +1192,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	width: 6px;
 }
 
+.balloon__list.scroll-y::-webkit-scrollbar-thumb,
 .player-menu__menu::-webkit-scrollbar-thumb,
 .dash-column::-webkit-scrollbar-thumb,
 #ffz-metadata-popup .scroller::-webkit-scrollbar-thumb,
@@ -1212,6 +1214,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
 
+.ffz-dark .balloon__list.scroll-y::-webkit-scrollbar-thumb,
 .ffz-dark .player-menu__menu::-webkit-scrollbar-thumb,
 
 .ffz-dark .dash-column::-webkit-scrollbar-thumb,
