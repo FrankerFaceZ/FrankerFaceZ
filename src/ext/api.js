@@ -1,5 +1,6 @@
 var FFZ = window.FrankerFaceZ,
-	utils = require('../utils');
+	utils = require('../utils'),
+	constants = require('../constants');
 
 
 // ---------------------
@@ -481,6 +482,11 @@ API.prototype.add_badge = function(badge_id, badge) {
 	badge.id = badge_id;
 	badge.source_ext = this.id,
 	badge.real_id = exact_id;
+
+	if ( badge.replaces && badge.replaces !== true && ! badge.replaces_type ) {
+		badge.replaces_type = badge.replaces;
+		badge.replaces = true;
+	}
 
 	if ( ! badge.color )
 		badge.color = "transparent";

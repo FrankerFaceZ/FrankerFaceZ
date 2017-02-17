@@ -413,14 +413,26 @@ FFZ.prototype.get_badges = function(user, room_id, badges, msg) {
 		}
 
 		if ( old_badge ) {
-			var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces;
+			var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces,
+				replace_mode = badge.replace_mode || full_badge.replace_mode || 'merge';
 			if ( ! replaces )
 				continue;
 
-			old_badge.image = badge.image || null;
-			old_badge.klass += ' ffz-badge-replacement ffz-replacer-ffz-badge-' + (badge_id || full_badge_id);
-			old_badge.title += ', ' + (badge.title || full_badge.title);
-			continue;
+			if ( replace_mode === 'merge' ) {
+				old_badge.image = badge.image || null;
+				old_badge.klass += ' ffz-badge-replacement ffz-replacer-ffz-badge-' + (badge_id || full_badge_id);
+				old_badge.title += ', ' + (badge.title || full_badge.title);
+				continue;
+
+			} else if ( replace_mode === 'keep_title' ) {
+				var b = badges[slot] = this._get_badge_object(badge, full_badge);
+				b.title = old_badge.title + ', ' + b.title;
+				continue;
+
+			} else if ( replace_mode === 'title_only' ) {
+				old_badge.title += ', ' + (badge.title || full_badge.title);
+				continue;
+			}
 		}
 
 		badges[slot] = this._get_badge_object(badge, full_badge);
@@ -665,6 +677,7 @@ FFZ.prototype.bttv_badges = function(data) {
 			full_badge_id = full_badge.real_id || full_badge.id,
 			desc = badge.title || full_badge.title,
 			style = "",
+			klass = 'ffz-badge-' + badge_id + (alpha ? ' alpha' : ''),
 
 			hide_key = (full_badge.source_ext ? this._apis[full_badge.source_ext].name_key : 'ffz') + '-' + (full_badge.name || full_badge.id);
 
@@ -677,23 +690,6 @@ FFZ.prototype.bttv_badges = function(data) {
 				visible = visible.call(this, data.room, user_id);
 
 			if ( ! visible )
-				continue;
-		}
-
-		if ( full_badge.replaces ) {
-			var replaced = false;
-			for(var i=0; i < data.badges.length; i++) {
-				var b = data.badges[i];
-				if ( b.type === full_badge.replaces_type ) {
-					b.type += " ffz-badge-replacement ffz-replacer-ffz-badge-" + (badge_id || full_badge_id);
-					b.description += ", " + (badge.title || full_badge.title) +
-						(badge.image ? '" style="background-image: url(' + utils.quote_attr('"' + badge.image + '"') + ')' : '');
-					replaced = true;
-					break;
-				}
-			}
-
-			if ( replaced )
 				continue;
 		}
 
@@ -711,7 +707,42 @@ FFZ.prototype.bttv_badges = function(data) {
 		if ( style )
 			desc += '" style="' + utils.quote_attr(style);
 
-		badges_out.push([(insert_at == -1 ? 1 : -1) * slot, {type: "ffz-badge-" + badge_id + (alpha ? " alpha" : ""), name: "", description: desc}]);
+		var replaces = badge.hasOwnProperty('replaces') ? badge.replaces : full_badge.replaces,
+			replace_mode = badge.replace_mode || full_badge.replace_mode || 'merge';
+
+		if ( replaces ) {
+			var replaced = false;
+			for(var i=0; i < data.badges.length; i++) {
+				var b = data.badges[i];
+				if ( b.type === full_badge.replaces_type ) {
+					if ( replace_mode === 'merge' ) {
+						b.type += " ffz-badge-replacement ffz-replacer-ffz-badge-" + (badge_id || full_badge_id);
+						b.description += ", " + (badge.title || full_badge.title) +
+						(badge.image ? '" style="background-image: url(' + utils.quote_attr('"' + badge.image + '"') + ')' : '');
+
+					} else if ( replace_mode === 'keep_title' ) {
+						data.badges[i] = {
+							type: klass,
+							name: '',
+							description: b.description + ', ' + desc
+						};
+
+					} else if ( replace_mode === 'title_only' ) {
+						b.description += ', ' + (badge.title || full_badge.title);
+					} else {
+						data.badges[i] = {type: klass, name: '', description: desc};
+					}
+
+					replaced = true;
+					break;
+				}
+			}
+
+			if ( replaced )
+				continue;
+		}
+
+		badges_out.push([(insert_at == -1 ? 1 : -1) * slot, {type: klass, name: "", description: desc}]);
 	}
 
 	badges_out.sort(function(a,b){return a[0] - b[0]});
