@@ -355,10 +355,10 @@ FFZ.debugging_blocks = {
 	}
 }
 
-FFZ.prototype._sorted_debug_blocks = function() {
+FFZ.prototype._sorted_blocks = function(blocks) {
 	var segments = [];
-	for(var key in FFZ.debugging_blocks) {
-		var info = FFZ.debugging_blocks[key];
+	for(var key in blocks) {
+		var info = blocks[key];
 		if ( ! info )
 			continue;
 
@@ -383,7 +383,7 @@ FFZ.prototype.get_debugging_info = function() {
 			'FrankerFaceZ - Debugging Information',
 			(new Date).toISOString(), ''];
 
-		var segments = f._sorted_debug_blocks(),
+		var segments = f._sorted_blocks(FFZ.debugging_blocks),
 			promises = [];
 
 		for(var i=0; i < segments.length; i++) {
@@ -615,101 +615,14 @@ FFZ.menu_pages.about = {
 			name: "Debug",
 			wide: true,
 			render: function(view, container) {
-				var f = this;
-
 				// Heading!
 				container.appendChild(createElement('div', 'chat-menu-content center',
 					'<h1>FrankerFaceZ</h1><div class="ffz-about-subheading">woofs for nerds</div>'));
 
-				var segments = this._sorted_debug_blocks();
-				for(var i=0; i < segments.length; i++) {
-					var info = segments[i][1],
-						output;
-
-					if ( info.type === 'list' )
-						output = createElement('ul', 'chat-menu-content menu-side-padding version-list');
-					else if ( info.type === 'text' )
-						output = createElement('pre', 'chat-menu-content menu-side-padding');
-					else
-						continue;
-
-					container.appendChild(createElement('div', 'list-header', info.title));
-					container.appendChild(output);
-
-					var update_content = function(info, output, func) {
-						// If we've removed this from the DOM, stop updating it!
-						if ( ! document.body.contains(output) )
-							return;
-
-						var result = info.render.call(f);
-						if ( ! (result instanceof Promise) )
-							result = Promise.resolve(result);
-
-						result.then(function(data) {
-							if ( info.type === 'list' ) {
-								var handled_keys = [],
-									had_keys = output.childElementCount > 0;
-
-								for(var i=0; i < data.length; i++) {
-									var pair = data[i];
-									if ( pair === null ) {
-										if ( ! had_keys ) {
-											var line = createElement('li', '', '<br>');
-											line.setAttribute('data-key', 'null');
-											handled_keys.push('null');
-											output.appendChild(line);
-										}
-										continue;
-									}
-
-									var key = pair[0], value = pair[1],
-										line = output.querySelector('li[data-key="' + key + '"]');
-
-									if ( value === null )
-										continue;
-
-									handled_keys.push(key);
-
-									if ( ! line ) {
-										line = createElement('li');
-										line.setAttribute('data-key', key);
-										line.innerHTML = key + '<span></span>';
-										output.appendChild(line);
-									}
-
-									line.querySelector('span').innerHTML = value;
-								}
-
-								var lines = output.querySelectorAll('li');
-								for(var i=0; i < lines.length; i++) {
-									var line = lines[i];
-									if ( handled_keys.indexOf(line.getAttribute('data-key')) === -1 )
-										output.removeChild(line);
-								}
-
-							} else if ( info.type === 'text' ) {
-								output.textContent = data;
-							}
-
-							if ( info.refresh )
-								setTimeout(func.bind(f, info, output, func), typeof info.refresh === "number" ? info.refresh : 1000);
-
-						}).catch(function(err) {
-							f.error("Debugging Menu Error", err);
-
-							if ( info.type === 'list' )
-								output.innerHTML = '<li><i>An error occured while updating this information.</i></li>';
-							else
-								output.innerHTML = 'An error occured while updating this information.';
-
-							if ( info.refresh )
-								setTimeout(func.bind(f, info, output, func), typeof info.refresh === "number" ? info.refresh : 1000);
-						});
-
-					};
-
-					update_content.call(f, info, output, update_content);
-				}
+				// Stuff
+				utils.render_update_list(this,
+					this._sorted_blocks(FFZ.debugging_blocks),
+					container, 'chat-menu-content menu-side-padding');
 			}
 		}
 	}

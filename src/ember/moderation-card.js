@@ -17,6 +17,7 @@ var FFZ = window.FrankerFaceZ,
 		C: 67,
 		H: 72,
 		S: 83,
+		Y: 89,
 		N: 78
 		},
 
@@ -1140,8 +1141,11 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					else if ( t.lv_view && key === keycodes.H )
 						return t.ffzChangePage('history');
 
-					else if ( t.lv_view && key === keycodes.S )
+					else if ( key === keycodes.S )
 						return t.ffzChangePage('stats');
+
+					else if ( key === keycodes.Y )
+						return t.ffzChangePage('name_history');
 
 					else if ( t.lv_view_notes && key === keycodes.N )
 						return t.ffzChangePage('notes');
@@ -1366,6 +1370,9 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					var tab = utils.createElement('li', 'item', page.title);
 					if ( page_id === 'default' )
 						tab.classList.add('active');
+
+					if ( page.needs_lv )
+						tab.classList.add('needs-lv');
 
 					tab.setAttribute('data-page', page_id);
 					tabs.appendChild(tab);

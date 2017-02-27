@@ -374,9 +374,9 @@ FFZ.prototype.setup_layout = function() {
 							'.ffz-theater-stats .app-main.theatre .cn-hosting--bottom,' +
 							'.ffz-theater-stats .app-main.theatre .cn-metabar__more {' +
 								'max-width: calc(100% - 350px);' +
-								'bottom: ' + (theatre_video_bottom + 55) + 'px !important}' +
+								'bottom: ' + (theatre_video_bottom + 85) + 'px !important}' +
 							'.ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .app-main.theatre .cn-metabar__more {' +
-								'bottom: ' + (theatre_video_bottom + 90) + 'px !important}';
+								'bottom: ' + (theatre_video_bottom + 130) + 'px !important}';
 
 					} else {
 						out += '.ffz-sidebar-swap .player-mini{left:' + (width + 10) + 'px !important}' +

@@ -31,6 +31,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-thumb-info-on-hover .video.item:hover .progress-bar-wrapper,
 .ffz-hide-thumb-info-on-hover .card-carousel__item:hover .card__boxpin,
 
+.moderation-card__actions:not(.loading):empty,
 .cn-bar-spacer.show,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
@@ -47,8 +48,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-following-row[data-following="false"] .switch,
 .ffz-moderation-card:not(.lv-notes) ul.menu li[data-page="notes"],
 .ffz-moderation-card:not(.lv-logs) ul.menu li[data-page="history"],
-.ffz-moderation-card:not(.lv-logs) ul.menu li[data-page="stats"],
-.ffz-moderation-card:not(.lv-tabs) ul.menu,
+.ffz-moderation-card:not(.lv-tabs) ul.menu li.needs-lv,
 .ffz-hide-prime .drawer .warp__list.js-offers,
 .ffz-hide-prime-collapsed .drawer.closed .js-offers,
 .ffz-hide-friends-collapsed .drawer.closed .friend-list,
@@ -332,7 +332,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 .ffz-theater-stats .theatre .cn-hosting--bottom,
 .ffz-theater-stats .theatre .cn-metabar__more {
-	bottom: 55px;
+	bottom: 85px;
 }
 
 .ffz-theater-stats:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .theatre .cn-hosting--bottom,

@@ -15,7 +15,9 @@ var FFZ = window.FrankerFaceZ,
 		'emoteonlyoff': 'emote_only_off',
 		'host': 'host_on',
 		'unhost': 'host_off',
-		'clear': 'clear_chat'
+		'clear': 'clear_chat',
+		'followersoff': 'followers_off',
+		'followers': 'followers_on'
 	},
 
 	STATUS_BADGES = [
@@ -1346,7 +1348,19 @@ FFZ.prototype._modify_room = function(room) {
 
 			var target_notice = NOTICE_MAPPING[event.moderation_action];
 			if ( target_notice ) {
-				var last_notice = this.ffz_last_notices && this.ffz_last_notices[target_notice];
+				var last_notice;
+				if ( ! this.ffz_last_notices )
+					last_notice = null;
+				else if ( Array.isArray(target_notice) )
+					for(var i=0; i < target_notice.length; i++) {
+						var tn = this.ffz_last_notices[target_notice[i]];
+						if ( tn ) {
+							last_notice = tn;
+							break;
+						}
+					}
+				else
+					last_notice = this.ffz_last_notices[target_notice];
 
 				if ( last_notice && ! last_notice.has_owner ) {
 					last_notice.message += ' (By: ' + event.created_by + ')';
@@ -1369,7 +1383,7 @@ FFZ.prototype._modify_room = function(room) {
 			if ( ! event.topic || event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
 				return;
 
-			//f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
+			f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
 
 			// In case we get unexpected input, do the other thing.
 			if ( f.has_bttv || ["ban", "unban", "timeout", "untimeout"].indexOf(event.moderation_action) === -1 )

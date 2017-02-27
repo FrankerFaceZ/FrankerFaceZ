@@ -1185,5 +1185,107 @@ module.exports = FFZ.utils = {
 				WEBKIT + 'mask-image:' + image + ';' +
 				(is_svg ? '}' : WEBKIT + 'mask-image:' + image_set + '}')
 			);
+	},
+
+
+	// Render Updating List
+
+	render_update_list: function(ffz, segments, container, extra_classes, set_loading) {
+		extra_classes = extra_classes ? extra_classes + ' ' : '';
+		for(var i=0; i < segments.length; i++) {
+			var info = segments[i][1],
+				output;
+
+			if ( info.type === 'list' )
+				output = createElement('ul', extra_classes + 'version-list');
+			else if ( info.type === 'text' )
+				output = createElement('pre', extra_classes);
+			else
+				continue;
+
+			if ( info.title )
+				container.appendChild(createElement('div', 'list-header', info.title));
+
+			if ( set_loading )
+				output.classList.add('loading');
+
+			container.appendChild(output);
+
+			var update_content = function(info, output, func) {
+				if ( ! document.body.contains(output) )
+					return;
+
+				var result = info.render.call(ffz);
+				if ( ! (result instanceof Promise) )
+					result = Promise.resolve(result);
+
+				result.then(function(data) {
+					if ( set_loading )
+						output.classList.remove('loading');
+
+					if ( info.type === 'list' ) {
+						var handled_keys = [],
+							had_keys = output.childElementCount > 0;
+
+						for(var i=0; i < data.length; i++) {
+							var pair = data[i];
+							if ( pair === null ) {
+								if ( ! had_keys ) {
+									var line = createElement('li', '', '<br>');
+									line.setAttribute('data-key', 'null');
+									handled_keys.push('null');
+									output.appendChild(line);
+								}
+								continue;
+							}
+
+							var key = pair[0], value = pair[1],
+								line = output.querySelector('li[data-key="' + key + '"]');
+
+							if ( value === null )
+								continue;
+
+							handled_keys.push(key);
+
+							if ( ! line ) {
+								line = createElement('li');
+								line.setAttribute('data-key', key);
+								line.innerHTML = key + '<span></span>';
+								output.appendChild(line);
+							}
+
+							line.querySelector('span').innerHTML = value;
+						}
+
+						var lines = output.querySelectorAll('li');
+						for(var i=0; i < lines.length; i++) {
+							var line = lines[i];
+							if ( handled_keys.indexOf(line.getAttribute('data-key')) === -1 )
+								output.removeChild(line);
+						}
+
+					} else if ( info.type === 'text' ) {
+						output.textContent = data;
+					}
+
+					if ( info.refresh )
+						setTimeout(func.bind(ffz, info, output, func), typeof info.refresh === "number" ? info.refresh : 1000);
+
+				}).catch(function(err) {
+					ffz.error("Debugging Menu Error", err);
+
+					if ( info.type === 'list' )
+						output.innerHTML = '<li><i>An error occured while updating this information.</i></li>';
+					else
+						output.innerHTML = 'An error occured while updating this information.';
+
+					if ( info.refresh )
+						setTimeout(func.bind(ffz, info, output, func), typeof info.refresh === "number" ? info.refresh : 1000);
+				});
+
+			};
+
+			update_content.call(ffz, info, output, update_content);
+		}
 	}
 }

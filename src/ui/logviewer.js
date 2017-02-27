@@ -313,6 +313,7 @@ FFZ.mod_card_pages.default = {
 
 FFZ.mod_card_pages.history = {
 	title: "Chat <span>H</span>istory",
+	needs_lv: true,
 
 	render_more: function(mod_card, el, history, ref_id, is_user, is_after) {
 		var f = this,
@@ -542,34 +543,87 @@ FFZ.mod_card_pages.history = {
 }
 
 FFZ.mod_card_pages.stats = {
-	title: "<span>S</span>tatistics",
+	title: "<span>S</span>tats",
 	render: function(mod_card, el) {
-		var f = this,
-			controller = utils.ember_lookup('controller:chat'),
-			room_id = controller && controller.get('currentRoom.id'),
-			user_id = mod_card.get('cardInfo.user.id'),
-			ffz_room = f.rooms && f.rooms[room_id];
+		var f = this;
 
-		var container = utils.createElement('ul', 'moderation-card__actions version-list');
-		el.appendChild(container);
+		utils.render_update_list(this, this._sorted_blocks(FFZ.mod_stats_blocks), el, 'moderation-card__actions', true);
+	}
+};
 
-		if ( ffz_room.has_logs && mod_card.lv_view ) {
-			container.classList.add('loading');
 
-			mod_card.lvGetLogs().then(function(data) {
-				container.classList.remove('loading');
-				container.innerHTML = '<li>Messages <span>' + utils.number_commas(data.user.messages) + '</span></li><li>Timeouts <span> ' + utils.number_commas(data.user.timeouts) + '</span></li>';
+FFZ.mod_stats_blocks = {
+	basics: {
+		refresh: false,
+		type: 'list',
+
+		render: function() {
+			var f = this,
+				mod_card = this._mod_card,
+				user_id = mod_card.get('cardInfo.user._id'),
+				controller = utils.ember_lookup('controller:chat'),
+				room = controller && controller.get('currentRoom');
+
+			return new Promise(function(succeed, fail) {
+				var room_id = room.get('roomProperties._id'),
+					room_name = room.get('channel.display_name') || room.get('name');
+				if ( room.get('isGroupRoom') || ! room_id )
+					succeed([
+						['User ID', user_id]
+					]);
+
+				utils.api.get("users/" + user_id + "/follows/channels/" + room_id, null, {version: 5}).done(function(data) {
+					var now = Date.now() - (f._ws_server_offset || 0),
+						since = utils.parse_date(data.created_at),
+						age = Math.floor((now - since.getTime()) / 1000);
+
+					succeed([
+						['User ID', user_id],
+						['Follows ' + utils.sanitize(room_name), '<span class="html-tooltip" title="Since: ' + utils.quote_san(since.toLocaleString()) + '">' + utils.human_time(age, 10) + '</span>']
+					]);
+				}).fail(function() {
+					succeed([
+						['User ID', user_id],
+						['Does not follow ' + utils.sanitize(room_name), '']
+					]);
+				});
 			});
+		}
+	},
 
-			var notice = utils.createElement('div', 'moderation-card__actions');
-			notice.innerHTML = 'Chat Log Source: <a target="_blank" href="https://cbenni.com/' + room_id + '?user=' + user_id + '">CBenni\'s Logviewer</a>';
-			el.appendChild(notice);
+	logviewer: {
+		refresh: 1000,
+		type: 'list',
+
+		render: function() {
+			var mod_card = this._mod_card,
+				controller = utils.ember_lookup('controller:chat'),
+				room_id = controller && controller.get('currentRoom.id'),
+				user_name = mod_card.get('cardInfo.user.id'),
+				ffz_room = this.rooms && this.rooms[room_id];
+
+			if ( ! ffz_room.has_logs || ! mod_card.lv_view )
+				return [];
+
+			return new Promise(function(succeed) {
+				mod_card.lvGetLogs().then(function(data) {
+					succeed([
+						['Messages', utils.number_commas(data.user.messages || 0)],
+						['Timeouts', utils.number_commas(data.user.timeouts || 0)],
+						['Bans', utils.number_commas(data.user.bans || 0)],
+						['Chat Log Source', '<a target="_blank" href="https://cbenni.com/' + utils.quote_attr(room_id) + '?user=' + utils.quote_attr(user_name) + '">CBenni\'s Logviewer</a>']
+					]);
+				})
+			});
 		}
 	}
+
 }
+
 
 FFZ.mod_card_pages.notes = {
 	title: "<span>N</span>otes",
+	needs_lv: true,
 
 	add_note: function(mod_card, el, note, history, last_line, do_scroll) {
 		if ( ! history )
@@ -783,5 +837,38 @@ FFZ.mod_card_pages.notes = {
 			note_container.appendChild(btn_container);
 			el.appendChild(note_container);
 		}
+	}
+}
+
+FFZ.mod_card_pages.name_history = {
+	title: "Name Histor<span>y</span>",
+
+	render: function(mod_card, el) {
+		var f = this,
+			user_id = mod_card.get('cardInfo.user._id'),
+
+			history = utils.createElement('ul', 'moderation-card__actions chat-history lv-history');
+
+		el.appendChild(history);
+
+		// Start loading!
+		history.classList.add('loading');
+
+		f.ws_send("get_name_history", user_id, function(success, data) {
+			history.classList.remove('loading');
+
+			if ( success ) {
+				for(var i=0; i < data.length; i++) {
+					var changed_at = data[i][0],
+						changed = changed_at ? utils.parse_date(changed_at).toLocaleString() : 'Unknown';
+
+					history.appendChild(utils.createElement('li', 'chat-line message-line admin no-messages',
+						'<span class="timestamp">' + utils.sanitize(changed) + ':</span>' +
+						'<span class="message">' + utils.sanitize(data[i][1]) + '</span>'));
+				}
+			} else
+				history.appendChild(utils.createElement('li', 'chat-line message-line admin no-messages',
+						'<span class="message">Unable to load username history for this user.</span>'));
+		});
 	}
 }
