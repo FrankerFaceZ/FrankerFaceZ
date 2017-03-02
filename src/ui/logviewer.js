@@ -860,7 +860,7 @@ FFZ.mod_card_pages.name_history = {
 			if ( success ) {
 				for(var i=0; i < data.length; i++) {
 					var changed_at = data[i][0],
-						changed = changed_at ? utils.parse_date(changed_at).toLocaleString() : 'Unknown';
+						changed = changed_at ? utils.parse_date(changed_at).toLocaleString() : (i === 0 ? 'Initial' : 'Unknown');
 
 					history.appendChild(utils.createElement('li', 'chat-line message-line admin no-messages',
 						'<span class="timestamp">' + utils.sanitize(changed) + ':</span>' +

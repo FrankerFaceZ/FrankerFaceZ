@@ -1072,6 +1072,13 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* /p/ Pages */
 
+.ffz-dark .header-announcement__link,
+.ffz-dark .front-page-announcement__link { color: inherit }
+
+.ffz-dark .header-announcement {
+	color: #fff;
+}
+
 .ffz-dark #mantle_skin .wrapper {
 	background-color: transparent;
 }

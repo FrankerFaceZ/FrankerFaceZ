@@ -18,7 +18,8 @@ var FFZ = window.FrankerFaceZ,
 
 	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=()]*)/g,
 
-	CLIP_URL = /(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)\/(\w+)/,
+	CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+?\/?\w*?)(?:\/edit)?(?:[\?#]|$)/,
+	VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)twitch\.tv\/(?:\w+\/v|videos)\/(\w+)$/,
 
 	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
 	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
@@ -1032,11 +1033,12 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 					this._link_data[href] = true;
 
 					var success = load_link_data.bind(this, href),
-						clip_info = CLIP_URL.exec(href);
+						clip_info = CLIP_URL.exec(href),
+						video_info = VIDEO_URL.exec(href);
 
 					if ( clip_info ) {
 						var clips = utils.ember_lookup('service:clips');
-						clips && clips.getClipInfo(clip_info[1] + '/' + clip_info[2]).then(function(data) {
+						clips && clips.getClipInfo(clip_info[1]).then(function(data) {
 							success(true, {
 								image: data.previewImage,
 								image_iframe: false,
@@ -1045,6 +1047,17 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 									'<br>Game: ' + utils.sanitize(data.game)
 							});
 						});
+
+					} else if ( video_info ) {
+						utils.api.get("videos/" + video_info[1], undefined, {version: 5})
+								.then(function(data) {
+							success(true, {
+								image: data.preview.large,
+								image_iframe: false,
+								html: '<span class="ffz-clip-title">' + utils.sanitize(data.title) + ' [' + utils.time_to_string(data.length) + ']</span>' +
+									'Channel: ' + utils.sanitize(data.channel.display_name) +
+									'<br>Game: ' + utils.sanitize(data.game)
+							})});
 
 					} else
 						this.ws_send("get_link", href, success);
