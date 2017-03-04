@@ -241,6 +241,7 @@ FFZ.prototype.setup_sidebar = function() {
 
 	// Navigation Component
 	this.update_views('component:twitch-navigation', this.modify_navigation);
+	this.update_views('component:recommended-channels', this.modify_recommended_channels);
 
 	// Navigation Service
 	var NavService = utils.ember_lookup('service:navigation');
@@ -262,6 +263,16 @@ FFZ.prototype.setup_following_link = function() {
 			following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');
 		});
 	}
+}
+
+
+FFZ.prototype.modify_recommended_channels = function(component) {
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			var el = this.get('element');
+			el.classList.add('js-recommended-channels');
+		}
+	});
 }
 
 

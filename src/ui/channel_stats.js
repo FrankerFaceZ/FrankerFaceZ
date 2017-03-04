@@ -111,6 +111,18 @@ metadata.player_stats = {
 		}
 	},
 
+	color: function(stats, delay, is_old) {
+		var setting = this.settings.player_stats;
+		if ( setting === -1 )
+			return '';
+
+		else if ( delay > (setting * 2) )
+			return '#fc3636';
+
+		else if ( delay > setting )
+			return '#fc7835';
+	},
+
 	click: function(event, button, stats, delay, is_old, player_cont) {
 		player_cont.$('.js-stats-toggle').click();
 	},
@@ -239,9 +251,10 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 		if ( refresh )
 			timers[key] = setTimeout(function(){refresh_func(key)}, typeof refresh === "number" ? refresh : 1000);
 
-		var je, stat,
+		var je, stat, old_color,
 			dynamic_tooltip = typeof info.tooltip === 'function',
-			label = typeof info.label === 'function' ? info.label.apply(f, data) : info.label;
+			label = typeof info.label === 'function' ? info.label.apply(f, data) : info.label,
+			color = (typeof info.color === 'function' ? info.color.apply(f, data) : info.color) || '';
 
 		if ( ! label )
 			return close();
@@ -352,13 +365,23 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 					});
 				}.bind(this, el))
 
+			old_color = '';
 			metabar.appendChild(el);
 			el = btn;
 
 		} else {
 			stat = el.querySelector('span.ffz-label');
+			old_color = el.dataset.color;
 			if ( dynamic_tooltip )
 				je = jQuery(el);
+		}
+
+		if ( old_color !== color ) {
+			el.dataset.color = color;
+			el.style.color = color;
+			var svg = el.querySelector('svg');
+			if ( svg )
+				svg.style.fill = color;
 		}
 
 		stat.innerHTML = label;

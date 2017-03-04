@@ -1657,3 +1657,49 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #232323;
 	border-color: rgba(255,255,255,0.2);
 }
+
+
+/* Notification Center */
+
+.ffz-dark .notification-center {
+	background-color: #101010;
+	color: #C3C3C3;
+	box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+}
+
+.ffz-dark .notification-center-balloon:before,
+.ffz-dark .notification-center-balloon:after { display: none }
+
+.ffz-dark .notification__content-msg,
+.ffz-dark .notification-center__header-text { color: #C3C3C3 }
+.ffz-dark .notification__details { color: #777 }
+
+.ffz-dark .notification__dismiss svg,
+.ffz-dark .notification__details svg { fill: #777 }
+
+.ffz-dark .notification__dismiss:hover svg { fill: #AAA }
+.ffz-dark .notification__dismiss svg polygon { fill: #333 }
+
+.ffz-dark .notification-center__footer,
+.ffz-dark .notification-center__header {
+	border-color: rgba(255,255,255,0.2);
+	background-color: #101010;
+}
+
+.ffz-dark .notification-center__core {
+	background-color: rgba(255,255,255,0.05);
+}
+
+.ffz-dark .notification-center__core-end {
+	box-shadow: inset 0.1rem 0.4rem 1rem -.5rem;
+	color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .notification {
+	background-color: rgba(255,255,255,0.05);
+	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .notification--unread {
+	background-color: rgba(255,255,255,0.1);
+}

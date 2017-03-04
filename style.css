@@ -64,6 +64,7 @@ body:not(.ffz-show-bits-tags) .bits-tag--container,
 .ffz-hide-more-at-twitch nav .tse-content > .warp__list:last-of-type,
 .ffz-hide-recommended-friends .recommended-friends,
 .ffz-hide-recommended-channels .js-recommended-channels,
+.drawer.closed .js-recommended-channels .warp__item--header,
 .drawer.closed .promotedGames .warp__item--header,
 .ffz-hide-promoted-games .promotedGames,
 .ffz-hide-recent-past-broadcast .recent-past-broadcast,
@@ -1171,6 +1172,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+.notification-center__content::-webkit-scrollbar,
 .balloon__list.scroll-y::-webkit-scrollbar,
 .player-menu__menu::-webkit-scrollbar,
 .dash-column::-webkit-scrollbar,
@@ -1192,6 +1194,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	width: 6px;
 }
 
+.notification-center__content::-webkit-scrollbar-thumb,
 .balloon__list.scroll-y::-webkit-scrollbar-thumb,
 .player-menu__menu::-webkit-scrollbar-thumb,
 .dash-column::-webkit-scrollbar-thumb,
@@ -1214,6 +1217,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
 
+.ffz-dark .notification-center__content::-webkit-scrollbar-thumb,
 .ffz-dark .balloon__list.scroll-y::-webkit-scrollbar-thumb,
 .ffz-dark .player-menu__menu::-webkit-scrollbar-thumb,
 
@@ -2239,6 +2243,11 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 
 /* Swap Sidebars */
 
+.ffz-sidebar-swap .notification-center-balloon {
+	left: auto !important;
+	right: 0 !important;
+}
+
 body[data-current-path^="user."].ffz-portrait #right_close { transform: rotate(90deg); }
 body[data-current-path^="user."].ffz-portrait .archives-contain .more-archives { width: 100%; }
 
@@ -2353,6 +2362,38 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 /* No Blue */
 
+.ffz-dark .toast,
+.ffz-no-blue .theme--dark .toast {
+	box-shadow: 0 0.2rem 0.7rem rgba(82,82,82,.2);
+	border-color: #525252;
+	background-color: #323232;
+}
+
+.ffz-dark .toast:hover,
+.ffz-no-blue .theme--dark .toast:hover {
+	box-shadow: 0 0.2rem 0.7rem rgba(127,127,127,.4);
+}
+
+.ffz-dark .toast__content-msg { color: #EEE }
+.ffz-dark .toast__details { color: #999 }
+
+.ffz-dark .toast__action-wrapper,
+.ffz-dark .toast__action--primary,
+.ffz-no-blue .theme--dark .toast__action-wrapper,
+.ffz-no-blue .theme--dark .toast__action--primary {
+	border-color: #525252;
+}
+
+.ffz-dark .toast__action--primary { color: #c5b6e2 }
+.ffz-dark .toast__action--secondary { color: #aaa }
+
+.ffz-dark .toast__action--secondary:hover,
+.ffz-dark .toast__action--primary:hover {
+	background-color: #525252;
+	color: #eee;
+}
+
+
 .ffz-no-blue .theme--dark .form__input,
 .ffz-no-blue .form--theme-dark .form__input {
 	background-color: rgba(255,255,255,0.05);
@@ -2457,6 +2498,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 
 .ffz-no-blue .warp__anchor,
 .ffz-no-blue .warp__item--anchor,
+.ffz-no-blue .warp__item--anchor-beta,
 .ffz-no-blue .warp__drawer,
 .ffz-no-blue .leaf,
 

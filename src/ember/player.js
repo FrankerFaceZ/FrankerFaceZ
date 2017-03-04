@@ -8,8 +8,20 @@ var FFZ = window.FrankerFaceZ,
 // ---------------
 
 FFZ.settings_info.player_stats = {
-	type: "boolean",
-	value: false,
+	type: 'select',
+	options: {
+		0: ['Disabled', -2],
+		'-1': ['Monochrome', -1],
+		10: 'Warning Colors (10s+)',
+		15: 'Warning Colors (15s+)',
+		20: 'Warning Colors (20s+)',
+		25: 'Warning Colors (25s+)',
+		30: 'Warning Colors (30s+)',
+	},
+
+	value: 0,
+	process_value: utils.process_int(0, 0, -1),
+
 	no_mobile: true,
 
 	category: "Channel Metadata",
