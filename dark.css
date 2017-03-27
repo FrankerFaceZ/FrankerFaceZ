@@ -107,6 +107,7 @@
 
 
 /* main column */
+.ffz-dark .fp-container,
 body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .app-main,
 .ffz-dark[data-page="teams#show"] .main,
@@ -210,6 +211,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .balloon--tooltip {
 	background-color: #000;
 }
+
+.ffz-dark .chat-container { border-color: rgba(0,0,0,0.2) }
 
 .ffz-dark #flyout .content,
 .ffz-dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box { border: none }
@@ -373,7 +376,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 	box-shadow: -1px 0 0 rgba(255,255,255,0.2);
 }
 
+.ffz-dark .top-nav__nav-link:hover { color: #fff !important }
+
 .ffz-dark .warp__item a.js-language-select,
+.ffz-dark .top-nav__nav-link,
 .ffz-dark .warp__item > a { color: #d5d4d9 !important }
 
 .ffz-dark .warp__item--toggled a.js-language-select,
@@ -570,6 +576,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-left-color: #6441a5;
 }
 
+.ffz-dark label,
 .ffz-dark code {
 	color: #999;
 }
@@ -585,6 +592,13 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: rgb(16,16,16);
 }
 
+.ffz-dark .event-img--card { box-shadow: 1px 0 0 #101010 }
+
+.ffz-dark .toggle__button { background-color: #666 }
+.ffz-dark .toggle__button:after { background-color: #242424 }
+.ffz-dark .toggle input[type=checkbox]:checked+.toggle__button { background-color: #0f8a4d }
+
+
 .ffz-dark .card__title,
 .ffz-dark .card .card__title a,
 .ffz-dark .card .card__info a,
@@ -593,6 +607,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #9c9c9c !important;
 }
 
+.ffz-dark .event-calendar {
+	background: #101010;
+	color: #ccc;
+}
+
+.ffz-dark .card__info,
 .ffz-dark .items-grid .meta .info {
 	color: #6c6c6c;
 }
@@ -1070,6 +1090,14 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 
+/* Front Page: Pulse */
+
+.ffz-dark .newsfeed {
+	background-color: #101010;
+}
+
+
+
 /* /p/ Pages */
 
 .ffz-dark .header-announcement__link,
@@ -1465,6 +1493,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #191919;
 }
 
+.ffz-dark .activity-card {
+	border: 1px solid;
+}
+
 .ffz-dark .list-load-more,
 .ffz-dark .activity-card {
 	border-color: #474747;
@@ -1670,6 +1702,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .notification-center-balloon:before,
 .ffz-dark .notification-center-balloon:after { display: none }
 
+.ffz-dark .friend-request__content-msg,
+.ffz-dark .friend-requests__footer a:hover,
+.ffz-dark .notification-center__unread-container,
+.ffz-dark .notification-center__subheader-text,
 .ffz-dark .notification__content-msg,
 .ffz-dark .notification-center__header-text { color: #C3C3C3 }
 .ffz-dark .notification__details { color: #777 }
@@ -1680,12 +1716,19 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .notification__dismiss:hover svg { fill: #AAA }
 .ffz-dark .notification__dismiss svg polygon { fill: #333 }
 
+.ffz-dark .notification-center__subheader {
+	background-color: #1a1a1a;
+	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .offer-item--title,
 .ffz-dark .notification-center__footer,
 .ffz-dark .notification-center__header {
 	border-color: rgba(255,255,255,0.2);
 	background-color: #101010;
 }
 
+.ffz-dark .offer-item__background--gray,
 .ffz-dark .notification-center__core {
 	background-color: rgba(255,255,255,0.05);
 }
@@ -1695,11 +1738,74 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: rgba(255,255,255,0.2);
 }
 
+.ffz-dark .friend-requests__footer,
+.ffz-dark .notification--read,
 .ffz-dark .notification {
-	background-color: rgba(255,255,255,0.05);
-	border-color: rgba(255,255,255,0.2);
+	background-color: rgba(255,255,255,0.01);
+	border-color: rgba(255,255,255,0.1);
 }
 
 .ffz-dark .notification--unread {
+	background-color: rgba(255,255,255,0.05);
+	border-color: rgba(255,255,255,0.1);
+}
+
+.ffz-dark .friend-requests__footer:hover,
+.ffz-dark .notification--read:hover,
+.ffz-dark .notification--unread:hover {
 	background-color: rgba(255,255,255,0.1);
 }
+
+.ffz-dark .friend-requests__footer a {
+	color: #a68ed2;
+}
+
+/* Playlists are Stupid */
+
+.ffz-dark .playlist-card__title { color: #ccc }
+.ffz-dark .playlist-card-meta__stat { color: #a68cd4 }
+
+.ffz-dark .playlist-add-search-card__layout {
+	border-color: transparent !important;
+	box-shadow: none !important;
+}
+
+.ffz-dark .playlist-add-search-card--selected:before {
+	background-color: rgba(255,255,255,0.1);
+}
+
+.ffz-dark .playlist-card {
+	color: #ccc;
+	background-color: #161616;
+}
+
+.ffz-dark .playlist-editor-card__gripper {
+	background-color: #242424;
+	box-shadow: -8px 0 5px -5px #202020;
+}
+
+.ffz-dark img[src="https://static-cdn.jtvnw.net/ttv-playlists-thumbnails-prod/missing-video-thumb-640x360.png"] {
+	filter: grayscale(100%) invert(100%);
+}
+
+/* Front Page is Stupid */
+
+.ffz-dark .fp-side {
+	background-color: #191919;
+	box-shadow: inset 0 0 0 1px #474747;
+}
+
+.ffz-dark .fp-side__footer {
+	background-color: #121212;
+	box-shadow:
+		inset 0 -1px 0 #474747,
+		inset -1px 0 0 #474747,
+		inset 1px 0 0 #474747;
+}
+
+.ffz-dark .fp-carousel-nav__item:not(.fp-carousel-nav__item--active) {
+	border-color: #474747;
+}
+
+.ffz-dark .fp-carousel__name,
+.ffz-dark .fp-side__header { color: #c3c3c3 }

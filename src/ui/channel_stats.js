@@ -78,7 +78,7 @@ metadata.uptime = {
 };
 
 metadata.player_stats = {
-	refresh: function() { return this.settings.player_stats },
+	refresh: function() { return this.settings.player_stats !== 0 },
 
 	setup: function(view, maybe_channel, is_hosting, channel) {
 		var channel_id = channel.get('id'),
@@ -371,7 +371,7 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 
 		} else {
 			stat = el.querySelector('span.ffz-label');
-			old_color = el.dataset.color;
+			old_color = el.getAttribute('data-color') || '';
 			if ( dynamic_tooltip )
 				je = jQuery(el);
 		}

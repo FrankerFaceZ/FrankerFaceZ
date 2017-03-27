@@ -119,7 +119,14 @@ FFZ.menu_pages.myemotes = {
 			if ( this.settings.favorite_emotes[key] && this.settings.favorite_emotes[key].length )
 				return 'favorites';
 
-		return 'all';
+		var has_emotes = FFZ.menu_pages.myemotes.has_sets.call(this);
+		if ( has_emotes )
+			return 'all';
+
+		if ( this.settings.emoji_in_menu )
+			return 'emoji';
+
+		return 'favorites';
 	},
 
 	pages: {
@@ -206,7 +213,8 @@ FFZ.menu_pages.myemotes = {
 			if ( ! set.length )
 				continue;
 
-			var menu_id = this._twitch_set_to_channel[set_id].toLowerCase(),
+			var raw_id = this._twitch_set_to_channel[set_id],
+				menu_id = raw_id ? raw_id.toLowerCase() : 'unknown',
 				sort_key = 0,
 				menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, set_id, set, favorites_only);
 
@@ -407,7 +415,7 @@ FFZ.menu_pages.myemotes = {
 			collapsed = ! favorites_only && this.settings.emote_menu_collapsed.indexOf('twitch-' + set_id) === -1,
 			f = this,
 
-			channel_id = this._twitch_set_to_channel[set_id], title,
+			channel_id = this._twitch_set_to_channel[set_id] || 'twitch_unknown', title,
 			favorites = this.settings.favorite_emotes["twitch-" + set_id] || [],
 			c = 0;
 

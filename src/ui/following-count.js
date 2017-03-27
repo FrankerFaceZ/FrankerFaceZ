@@ -151,12 +151,13 @@ FFZ.prototype._update_following_count = function() {
 		HostLive = Host && Host.find("following"),*/
 
 		current_path = document.body.getAttribute('data-current-path') || '',
+		is_directory = current_path === 'directory.following.channels',
 		f = this;
 
 	/*if ( ! this.is_dashboard && HostLive && current_path.indexOf('directory.following') !== -1 )
 		HostLive.load();*/
 
-	if ( ! this.is_dashboard && Live )
+	if ( ! this.is_dashboard && ! is_directory && Live )
 		Live.load();
 	else {
 		var u = this.get_user();

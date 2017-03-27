@@ -346,31 +346,39 @@ FFZ.prototype.format_display_name = function(display_name, user_id, disable_alia
 // ---------------------
 
 FFZ.prototype.load_twitch_emote_data = function(tries) {
-	jQuery.ajax(constants.SERVER + "twitch_emotes.json", {context: this})
+	var f = this;
+	f._twitch_set_to_channel[0] = "--global--";
+	f._twitch_set_to_channel[33] = "--turbo-faces--";
+	f._twitch_set_to_channel[42] = "--turbo-faces--";
+	f._twitch_set_to_channel[19194] = "--prime--";
+	f._twitch_set_to_channel[19151] = "--curse--";
+
+	this.log("Loading Twitch Emote Data (Try " + (tries || 0) + ")");
+
+	jQuery.ajax(constants.SERVER + "twitch_emotes.json")
 		.done(function(data) {
+			f.log("Loaded Twitch Emote Data", data);
 			for(var set_id in data) {
-				var set = data[set_id];
+				var set = data[set_id],
+					old_id = f._twitch_set_to_channel[set_id];
 				if ( ! set )
 					continue;
 
-				this._twitch_set_to_channel[set_id] = set.name;
+				if ( ! old_id || old_id.indexOf('--') === -1 )
+					f._twitch_set_to_channel[set_id] = set.name;
+
 				for(var i=0, l = set.emotes.length; i < l; i++)
-					this._twitch_emote_to_set[set.emotes[i]] = set_id;
+					f._twitch_emote_to_set[set.emotes[i]] = set_id;
 			}
 
-			this._twitch_set_to_channel[0] = "--global--";
-			this._twitch_set_to_channel[33] = "--turbo-faces--";
-			this._twitch_set_to_channel[42] = "--turbo-faces--";
-			this._twitch_set_to_channel[19194] = "--prime--";
-			this._twitch_set_to_channel[19151] = "--curse--";
-
 		}).fail(function(data) {
+			f.log("Error loading Twitch Emote Data", data);
 			if ( data.status === 404 )
 				return;
 
 			tries = (tries || 0) + 1;
 			if ( tries < 10 )
-				setTimeout(this.load_twitch_emote_data.bind(this, tries), 1000);
+				setTimeout(f.load_twitch_emote_data.bind(f, tries), 1000);
 		});
 }
 

@@ -31,8 +31,9 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-thumb-info-on-hover .video.item:hover .progress-bar-wrapper,
 .ffz-hide-thumb-info-on-hover .card-carousel__item:hover .card__boxpin,
 
+body:not(.ffz-theater-basic-stats) .player-userinfo__game,
+body:not(.ffz-theater-basic-stats) .player-controls-top,
 .moderation-card__actions:not(.loading):empty,
-.cn-bar-spacer.show,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #right_col,
@@ -58,11 +59,19 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-channel-banner .cn-cover-wrap,
 .app-main .ad_leader:empty,
 body:not(.ffz-show-bits-tags) .bits-tag--container,
+.ffz-hide-socialbar .social-column,
+.ffz-hide-socialbar .has-sc #left_close,
 .ffz-hide-friends .friend-button,
+.ffz-hide-friends .sc-online-friends,
+.ffz-hide-friends .sc-suggestions,
+.ffz-hide-friends .sc-search,
+.ffz-hide-friends .top-nav-drawer__status,
 .ffz-hide-friends nav .friend-list,
-.ffz-hide-friends .warp__status .js-presence-indicator,
+.ffz-hide-friends .js-presence-indicator,
+.ffz-hide-friends #friend-requests-in-notifications,
 .ffz-hide-more-at-twitch nav .tse-content > .warp__list:last-of-type,
 .ffz-hide-recommended-friends .recommended-friends,
+.ffz-hide-recommended-friends .sc-suggestions,
 .ffz-hide-recommended-channels .js-recommended-channels,
 .drawer.closed .js-recommended-channels .warp__item--header,
 .drawer.closed .promotedGames .warp__item--header,
@@ -1046,7 +1055,7 @@ body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page { margin: 0 }
 
 body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page .chat-menu-content .heading,
 body.ffz-bttv-dark .ffz-ui-popup .ffz-ui-menu-page .emoticon-grid .heading {
-    border-color: rgba(255,255,255,0.1);
+	border-color: rgba(255,255,255,0.1);
 }
 
 body.ffz-bttv-dark .ffz-ui-popup ul.menu:not(.sub-menu),
@@ -2270,6 +2279,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	right: 240px;
 }
 
+.ffz-sidebar-swap .social-column,
 .ffz-sidebar-swap #left_col {
 	left: auto;
 	right: 0;
@@ -2295,18 +2305,34 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	left: auto;
 }
 
+.ffz-sidebar-swap .social-column {
+	box-shadow: none !important
+}
+
+.ffz-hide-socialbar .has-sc .cn-bar-fixed { left: 0 !important }
+.ffz-sidebar-swap.ffz-hide-socialbar .has-sc .cn-bar-fixed { right: 0 }
+
+.ffz-hide-socialbar:not(.ffz-sidebar-swap) .has-sc #main_col {
+	margin-left: 0 !important;
+}
+
 .ffz-sidebar-swap #main_col {
-	margin-left: 340px;
-	margin-right: 240px;
+	margin-left: 340px !important;
+	margin-right: 240px !important;
+}
+
+.ffz-sidebar-swap.ffz-hide-socialbar .has-sc #main_col.expandLeft,
+.ffz-sidebar-swap.ffz-hide-socialbar .has-sc #main_col {
+	margin-right: 0 !important;
 }
 
 .ffz-sidebar-swap .app-main.theatre #main_col {
-	margin-left: 340px;
-	margin-right: 0px;
+	margin-left: 340px !important;
+	margin-right: 0px !important;
 }
 
 .ffz-sidebar-swap .app-main.theatre #main_col.expandRight {
-	margin-left: 0px;
+	margin-left: 0px !important;
 }
 
 
@@ -2315,11 +2341,15 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 }
 
 .ffz-sidebar-swap #main_col.expandLeft {
-	margin-right: 50px;
+	margin-right: 50px !important;
+}
+
+.ffz-sidebar-swap .has-sc:not(.has-sc--collapsed) #main_col.expandLeft {
+	margin-right: 240px !important;
 }
 
 .ffz-sidebar-swap #main_col.expandRight {
-	margin-left: 0px;
+	margin-left: 0px !important;
 }
 
 .ffz-sidebar-swap #flyout {
@@ -2394,6 +2424,10 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 }
 
 
+.ffz-no-blue .theme--dark .sc-header { box-shadow: 0 -0.1rem 0 #5c5c5c inset }
+.ffz-no-blue .theme--dark .sc-card:hover { box-shadow: -0.1rem 0 0 #414141 inset }
+.ffz-no-blue .theme--dark .social-column { box-shadow: -0.1rem 0 0 #2b2b2b inset}
+
 .ffz-no-blue .theme--dark .form__input,
 .ffz-no-blue .form--theme-dark .form__input {
 	background-color: rgba(255,255,255,0.05);
@@ -2414,6 +2448,8 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: rgba(25,25,25,.5);
 }
 
+.ffz-no-blue .theme--dark .sc-card:hover,
+.ffz-no-blue .theme--dark .sc-toggle:hover,
 .ffz-no-blue .warp__item a:not(.warp__logo):hover {
 	background-color: #2b2b2b;
 }
@@ -2423,6 +2459,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	box-shadow: 3px 0 0 #a3a3a3 inset;
 }
 
+.ffz-no-blue .theme--dark .social-column,
 .ffz-no-blue .theatre .conversations-list-bottom-bar,
 .ffz-no-blue.ffz-dark .conversations-list-bottom-bar,
 .ffz-no-blue .theatre .conversations-list,
@@ -2443,6 +2480,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue .ember-chat-container.dark .chat-header,
 .ffz-no-blue .theatre .chat-header,
 
+.ffz-no-blue .theme--dark .sc-search,
 .ffz-no-blue .warp,
 .ffz-no-blue #large_nav .content,
 .ffz-no-blue #small_nav .content,
@@ -2525,6 +2563,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	color: #8c8c8c;
 }
 
+.ffz-no-blue .theme--dark .sc-search,
 .ffz-no-blue .theatre .conversations-list,
 .ffz-no-blue.ffz-dark .conversations-list {
 	border-color: #323232;
@@ -2559,6 +2598,14 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 .ffz-no-blue .theatre .conversations-list .conversations-list-item:hover,
 .ffz-no-blue.ffz-dark .conversations-list .conversations-list-item:hover {
 	background-color: #121212;
+}
+
+.ffz-no-blue .top-nav-drawer__status {
+	background-color: #080808;
+}
+
+.ffz-no-blue .top-nav-drawer {
+	background-color: #101010;
 }
 
 /* Following Count */
@@ -3552,10 +3599,6 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	margin-right: 5px;
 }
 
-body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
-	padding-top: 75px;
-}
-
 .ffz-channel-title-top .cn-metabar__more { width: 100% }
 .ffz-channel-title-top #channel {
 	position: relative;
@@ -3563,7 +3606,7 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 }
 
 .ffz-channel-title-top:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
-	padding-top: 135px;
+	padding-top: 85px;
 }
 
 
@@ -3581,7 +3624,7 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 .ffz-minimal-channel-title.ffz-channel-title-top #channel { padding-top: 50px }
 
 .ffz-minimal-channel-title.ffz-channel-title-top:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
-	padding-top: 100px;
+	padding-top: 50px;
 }
 
 .ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -55px }
@@ -3590,6 +3633,7 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 .ffz-channel-title-top .cn-metabar__title {
 	position: absolute;
 	top: 5px;
+	padding: 1rem 0;
 	z-index: 3;
 }
 
@@ -3602,20 +3646,44 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 }
 
+.ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
+.ffz-minimal-channel-bar .has-sc .cn-bar-fixed { top: 10px }
+
+.ffz-sidebar-minimize.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .has-sc .cn-bar-fixed { top: -30px }
+.ffz-sidebar-minimize.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .has-sc div:hover + .app-body .cn-bar-fixed { top: 10px }
+.ffz-sidebar-minimize.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .has-sc .cn-bar-fixed:hover { top: 10px }
+
 .ffz-channel-bar-bottom .player-mini { bottom: 20px }
 
-.ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
+.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .has-sc div:hover + .app-body .cn-bar-fixed,
+.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .has-sc .cn-bar-fixed:hover { top: 50px }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed { top: auto; bottom: -40px }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed:hover { bottom: 0 }
 
-.ffz-minimal-channel-title .cn-metabar,
+.ffz-sidebar-minimize .top-nav {
+	top: -40px;
+	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
+}
+
+.ffz-sidebar-minimize .app-main.has-sc:not(.theatre) { top: 10px }
+.ffz-sidebar-minimize .top-nav:hover { top: 0 }
+.ffz-sidebar-minimize .has-sc .js-player-persistent { margin-top: 40px }
+
+/*.ffz-minimal-channel-title .cn-metabar,
 .ffz-channel-title-top .cn-metabar {
 	min-height: 70px;
-}
+}*/
 
 .ffz-hide-channel-banner .cn-bar__avatar-wrap { width: 4rem; height: 4rem; }
 
 /* Channel Metadata Sorting */
+
+div.metadata-box {
+	border: none !important;
+	margin: 0 !important;
+	padding: 1rem 0 !important;
+	background: transparent !important;
+}
 
 .cn-hosting--bottom > *,
 .cn-metabar__more > * {
@@ -3847,13 +3915,13 @@ body:not(.ffz-minimal-channel-bar):not(.ffz-channel-bar-bottom) #channel {
 
 .ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col.closed:not(:hover) { left: -40px }
 .ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col.open:not(:hover) { left: -230px }
-.ffz-sidebar-minimize:not(.ffz-sidebar-swap) #main_col { margin-left: 10px }
-.ffz-sidebar-minimize:not(.ffz-sidebar-swap) #left_col ~ #main_col .cn-bar-fixed { left: 10px }
+.ffz-sidebar-minimize:not(.ffz-sidebar-swap) .app-main:not(.has-sc) #main_col { margin-left: 10px !important }
+.ffz-sidebar-minimize:not(.ffz-sidebar-swap) .app-main:not(.has-sc) #left_col ~ #main_col .cn-bar-fixed { left: 10px }
 
 .ffz-sidebar-minimize.ffz-sidebar-swap #left_col.closed:not(:hover) { right: -40px }
 .ffz-sidebar-minimize.ffz-sidebar-swap #left_col.open:not(:hover) { right: -230px }
-.ffz-sidebar-minimize.ffz-sidebar-swap #main_col { margin-right: 10px }
-.ffz-sidebar-minimize.ffz-sidebar-swap .cn-bar-fixed { right: 10px }
+.ffz-sidebar-minimize.ffz-sidebar-swap .app-main:not(.has-sc) #main_col { margin-right: 10px !important }
+.ffz-sidebar-minimize.ffz-sidebar-swap .app-main:not(.has-sc) .cn-bar-fixed { right: 10px }
 
 
 /* Modifier Emotes */

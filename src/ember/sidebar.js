@@ -50,6 +50,24 @@ FFZ.settings_info.sidebar_hide_recommended_channels = {
 };
 
 
+FFZ.settings_info.socialbar_hide = {
+	type: "boolean",
+	value: false,
+
+	no_mobile: true,
+
+	category: "Sidebar",
+	name: "Hide Social Bar",
+	help: "Hide the social bar to the left of the page.",
+
+	on_update: function(val) {
+		utils.toggle_cls('ffz-hide-socialbar')(val);
+		var Layout = utils.ember_lookup('service:layout');
+		Layout && Ember.propertyDidChange(Layout, 'contentWidth');
+	}
+}
+
+
 FFZ.settings_info.sidebar_hide_prime = {
 	type: "select",
 	options: {
@@ -166,7 +184,7 @@ FFZ.settings_info.sidebar_disable_friends = {
 };
 
 
-FFZ.settings_info.sidebar_start_open = {
+/*FFZ.settings_info.sidebar_start_open = {
 	type: "boolean",
 	value: false,
 
@@ -175,7 +193,7 @@ FFZ.settings_info.sidebar_start_open = {
 
 	name: "Automatically Open Drawer",
 	help: "Open the drawer at the bottom of the sidebar by default when the page is loaded."
-};
+};*/
 
 
 FFZ.settings_info.sidebar_directly_to_followed_channels = {
@@ -204,6 +222,7 @@ FFZ.prototype.setup_sidebar = function() {
 	utils.toggle_cls('ffz-hide-friends')(this.settings.sidebar_disable_friends);
 	utils.toggle_cls('ffz-hide-prime')(this.settings.sidebar_hide_prime === 2);
 	utils.toggle_cls('ffz-hide-prime-collapsed')(this.settings.sidebar_hide_prime === 1);
+	utils.toggle_cls('ffz-hide-socialbar')(this.settings.socialbar_hide);
 
 	if ( this.settings.sidebar_disable_friends ) {
 		try {
@@ -244,13 +263,14 @@ FFZ.prototype.setup_sidebar = function() {
 	this.update_views('component:recommended-channels', this.modify_recommended_channels);
 
 	// Navigation Service
-	var NavService = utils.ember_lookup('service:navigation');
+	/*var NavService = utils.ember_lookup('service:navigation');
 	if ( NavService ) {
 		// Open Drawer by Default
-		if ( this.settings.sidebar_start_open )
+		var Layout = utils.ember_lookup('service:layout');
+		if ( this.settings.sidebar_start_open && Layout && ! Layout.get('isSocialColumnEnabled') )
 			NavService.set('isDrawerOpen', true);
 	} else
-		this.error("Unable to load the Ember Navigation service.")
+		this.error("Unable to load the Ember Navigation service.")*/
 }
 
 

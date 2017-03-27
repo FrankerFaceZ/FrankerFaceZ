@@ -1213,7 +1213,7 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 				else if ( cl.contains('pc-dismiss') )
 					PinnedCheers.dismissMessage(
 						this.get('ffzPinnedParent.userData.id'),
-						this.get('msgObject.is_pinned_cheer') === '2' ? 'top' : 'recent'
+						this.get('msgObject.is_pinned_cheer') === 2 ? 'top' : 'recent'
 					);
 
 				else if ( cl.contains('tb-reject') )

@@ -1,67 +1,59 @@
+<div class="list-header">3.5.444 <time datetime="2017-03-27">(2017-03-27)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>4</li>
+	<li>Fixed: Bug causing My Emoticons menu to not render if set data hasn't been loaded from the API yet.</li>
+	<li>Fixed: Bug causing the All Emoticons tab of the My Emoticons menu to render when it shouldn't.</li>
+	<li>Fixed: Dark CSS tweaks.</li>
+</ul>
+
+<div class="list-header">3.5.443 <time datetime="2017-03-21">(2017-03-21)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Player height calculation incorrectly assuming the top navigation bar is always present.</li>
+</ul>
+
+<div class="list-header">3.5.442 <time datetime="2017-03-20">(2017-03-20)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Clean up some issues created with various configurations when adding support for the new layout.</li>
+</ul>
+
+<div class="list-header">3.5.441 <time datetime="2017-03-20">(2017-03-20)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Initial support for the new Twitch layout.</li>
+</ul>
+
+<div class="list-header">3.5.440 <time datetime="2017-03-11">(2017-03-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Don't re-use the live model when on the Channels page of the Following directory.</li>
+	<li>Fixed: High CPU usage bug with stream latency display.</li>
+</ul>
+
+<div class="list-header">3.5.439 <time datetime="2017-03-10">(2017-03-10)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Update dark theme for Collections.</li>
+	<li>Fixed: Also remove the white line next to chat.</li>
+</ul>
+
+<div class="list-header">3.5.438 <time datetime="2017-03-08">(2017-03-08)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Dismiss for Everyone showing up for everyone.</li>
+</ul>
+
+<div class="list-header">3.5.437 <time datetime="2017-03-06">(2017-03-06)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Dismiss for Everyone not working for Top Cheers. (How has no one reported this before now...?)</li>
+	<li>Fixed: Unsightly border around the channel metadata area and related sizing issues.</li>
+</ul>
+
+<div class="list-header">3.5.436 <time datetime="2017-03-06">(2017-03-06)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Darken Pulse</li>
+</ul>
+
 <div class="list-header">3.5.435 <time datetime="2017-03-04">(2017-03-04)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Warning colors for the Stream Latency display to draw attention when the value is too high.</li>
 	<li>Fixed: Dark theme tweaks for notifications.</li>
 	<li>Fixed: Wasn't removing the blue tint to the collapsable user menu in the sidebar.</li>
-</ul>
-
-<div class="list-header">3.5.434 <time datetime="2017-03-03">(2017-03-03)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Dark theme for the Notification Center.</li>
-	<li>Fixed: Notification Center position with swapped sidebars.</li>
-	<li>Fixed: Twitch removed the CSS class for Recommended Channels from the sidebar, breaking a setting and making it look ugly when collapsed.</li>
-</ul>
-
-<div class="list-header">3.5.433 <time datetime="2017-03-01">(2017-03-01)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Link information for Twitch Videos.</li>
-	<li>Fixed: Link information not showing for Twitch Clips.</li>
-	<li>Fixed: Dark theme for Prime advertisement bars on the front page. (Sorry Daxter please don't hate me anymore.)</li>
-</ul>
-
-<div class="list-header">3.5.432 <time datetime="2017-02-26">(2017-02-26)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: The Stats tab of moderation cards now tells you a user's ID, if and when they followed a channel, and how many times they've been banned in the channel.</li>
-	<li>Added: Name History, so you can see what a user's previous usernames have been. This data is sourced from CommanderRoot's tools and Twitch's own API.</li>
-	<li>Changed: Refactor stats rendering for moderation cards and the debugging menu to reduce duplicate code.</li>
-	<li>Fixed: Theater Hover Stats could cover up timestamps when viewing a video.</li>
-	<li>Fixed: Follower-only moderation action messages weren't being de-duplicated correctly.</li>
-</ul>
-
-<div class="list-header">3.5.431 <time datetime="2017-02-17">(2017-02-17)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>API Changed: Add different modes for merging badges.</li>
-</ul>
-
-<div class="list-header">3.5.430 <time datetime="2017-02-17">(2017-02-17)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Bug with the API because constants isn't defined.</li>
-</ul>
-
-<div class="list-header">3.5.429 <time datetime="2017-02-16">(2017-02-16)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: CSS tweaks for the dark theme.</li>
-	<li>Fixed: Display uptime on the Discover queue.</li>
-</ul>
-
-<div class="list-header">3.5.428 <time datetime="2017-02-14">(2017-02-14)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Minimize DOM changes for the stream uptime display on the directory to reduce nodes that need to be garbage collected.</li>
-</ul>
-
-<div class="list-header">3.5.427 <time datetime="2017-02-14">(2017-02-14)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: API badges not rendering correctly.</li>
-	<li>Fixed: Hidden Badges UI not opening due to a malformed badge data structure from Ember.</li>
-	<li>Fixed: Remove unnecessary logging mistakenly left in the last build.</li>
-</ul>
-
-<div class="list-header">3.5.426 <time datetime="2017-02-13">(2017-02-13)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Not Found bug when clicking links to game directory pages.</li>
-	<li>Fixed: Custom moderator badges not displaying in Mozilla Firefox.</li>
-	<li>API Added: <code>bttv-room-message</code> event for awareness of chat messages sent when BetterTTV is installed. This data structure is not like standard <code>room-message</code>.</li>
-	<li>API Changed: To reduce memory usage, badge objects are now not cloned. <code>user_add_badge</code> and <code>room_add_user_badge</code> now support complex badge structures rather than just IDs for more flexible badge setups.</li>
 </ul>
 
 <div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>

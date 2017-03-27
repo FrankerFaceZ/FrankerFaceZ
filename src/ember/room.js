@@ -1383,7 +1383,7 @@ FFZ.prototype._modify_room = function(room) {
 			if ( ! event.topic || event.topic.substr(-room_id.length) !== room_id || event.created_by === this.get("session.userData.login") )
 				return;
 
-			f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
+			//f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
 
 			// In case we get unexpected input, do the other thing.
 			if ( f.has_bttv || ["ban", "unban", "timeout", "untimeout"].indexOf(event.moderation_action) === -1 )
