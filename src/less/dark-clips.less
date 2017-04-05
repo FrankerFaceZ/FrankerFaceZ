@@ -52,6 +52,27 @@
 
 	}
 
+	.view-clip__meta-wrapper {
+		background-color: @nav-bg-color;
+	}
+
+	.view-clip__actions,
+	.view-clip__bc {
+		border-color: lighten(@nav-bg-color, 10%);
+	}
+
+	.view-clip__title {
+		color: @fg-color;
+	}
+
+	.emote-picker {
+		background-color: @nav-bg-color;
+	}
+
+	.emote-picker__emotes .reaction__emote:hover {
+		background-color: lighten(@nav-bg-color, 10%);
+	}
+
 
 	.yin-alert {
 		background-color: lighten(@nav-bg-color, 10%);
@@ -102,6 +123,10 @@
 
 
 	// Buttons
+
+	.emote-picker__trigger {
+		fill: @link-color;
+	}
 
 	.button {
 		&, &:hover, &:focus {
@@ -214,6 +239,11 @@
 
 	}
 
+	.form__input {
+		background-color: fade(white, 5%);
+		color: lighten(@fg-color, 10%);
+		border-color: fade(white, 10%);
+	}
 
 	.cf-textarea-input {
 		background-color: fade(white, 5%);

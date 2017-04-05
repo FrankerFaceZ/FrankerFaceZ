@@ -26,6 +26,11 @@ module.exports = FrankerFaceZ.constants = {
 	IS_WEBKIT: IS_WEBKIT,
 	META_NAME: IS_OSX ? "⌘" : (IS_WIN ? "Win" : "Meta"),
 
+	// ITAD Stuff
+	ITAD_SERVER: "https://api.isthereanydeal.com/",
+	ITAD_CLIENT_ID: "ffdd6ec4951be145",
+	ITAD_API_KEY: "43667479346a55e9b473f605a6b07ede02c8f3b2",
+
 	// Twitch Client ID for API Stuff
 	CLIENT_ID: "a3bc9znoz6vi8ozsoca0inlcr4fcvkl",
 

@@ -34,6 +34,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 body:not(.ffz-theater-basic-stats) .player-userinfo__game,
 body:not(.ffz-theater-basic-stats) .player-controls-top,
 .moderation-card__actions:not(.loading):empty,
+.ffz-hide-purchase-game .cmrc-channel-box,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #right_col,
@@ -615,6 +616,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 .favorites-grid:not(:empty) + .ffz-no-emotes,
 .favorites-grid .emoticon.ffz-favorite:before { display: none }
 
+.tipsy .ffz-favorite,
 .suggestion.ffz-favorite:before,
 .emoticon.ffz-favorite:before {
 	content: "";
@@ -624,6 +626,8 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	right: 0; bottom: 0;
 	background: url("//cdn.frankerfacez.com/script/emoticon_favorite.png") no-repeat;
 }
+
+.tipsy .ffz-favorite { right: 10px; bottom: 10px }
 
 .suggestion.ffz-favorite:before { right: 2.5px; bottom: 2.5px }
 
@@ -2015,6 +2019,8 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface {
 	padding: 0;
 }
 
+body.ffz-minimal-chat-input .ember-chat .chat-messages .chat-lines { padding-bottom: 0 }
+
 body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain {
 	top: 0 !important;
 	margin: 0 !important;
@@ -2032,6 +2038,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 /* Chat Pause */
 
 .ember-chat .chat-interface .more-messages-indicator.ffz-freeze-indicator {
+	z-index: 10;
 	opacity: 1;
 	cursor: default;
 	pointer-events: none;
@@ -3551,6 +3558,11 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	padding-top: 5px;
 }
 
+.ffz-baseline-emoticons .activity-body .emoticon.emoji,
+.ffz-baseline-emoticons .chat-line .emoticon.emoji {
+	padding-top: 0px;
+}
+
 
 /* Settings Filtering */
 
@@ -3731,6 +3743,7 @@ div.metadata-box {
 .cn-metabar__ffz[data-key="viewers"] svg { fill: #fc3636 }
 .cn-metabar__ffz[data-key="viewers"] { color: #fc3636 }
 
+.ffz-dark .pl-button--hollow:hover,
 .ffz-dark .button--hollow:hover,
 .cn-hosting--bottom .button-hollow {
 	background-color: #2c2541;
@@ -4020,3 +4033,57 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 		margin-right: calc(1.5rem - 5px);
 	}
 }
+
+
+/* ITAD */
+
+.button.button--large + .ffz-price-info > .itad-button {
+	font-size: 1.6rem;
+	line-height: 3.6rem;
+	padding: 0 1.2rem;
+}
+
+.itad-button {
+	background-color: #046eb2;
+	overflow: hidden;
+}
+
+.itad-button .button__num-block {
+	margin: 0 -3rem 0 0;
+	padding-right: 3rem !important;
+	display: inline-block;
+}
+
+.button.button--large + .ffz-price-info > .itad-button .button__num-block {
+	padding-right: 4.8rem !important;
+}
+
+.itad-button:focus,
+.itad-button:hover {
+	background-color: #1587cf;
+}
+
+.itad-button:focus { box-shadow: 0 0 6px 0 #5c99bf, inset 0 0 0 1px #9ec2d9 }
+
+.itad-balloon table {
+	width: 100%;
+	border-spacing: 0;
+}
+
+.itad-balloon th { border-bottom: 1px solid rgba(0,0,0,0.2) }
+.itad-balloon td { padding: 4px 0 0 }
+
+.itad-balloon span {
+	display: block;
+	border-top: 1px solid rgba(0,0,0,0.2);
+	margin-top: 5px;
+	padding-top: 5px;
+}
+
+.ffz-dark .itad-balloon th,
+.ffz-dark .itad-balloon span {
+	border-color: rgba(255,255,255,0.2);
+}
+
+.itad-balloon table th:not(:first-child),
+.itad-balloon table td:not(:first-child) { text-align: right }

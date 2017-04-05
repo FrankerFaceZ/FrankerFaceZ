@@ -80,6 +80,7 @@ FFZ.settings_info.favorite_emotes = {
 
 FFZ.prototype.setup_my_emotes = function() {
 	this._twitch_badges = {};
+	this._twitch_badges["--inventory--"] = "//cdn.frankerfacez.com/script/inventory_icon.svg";
 	this._twitch_badges["--global--"] = "//cdn.frankerfacez.com/script/twitch_logo.png";
 	this._twitch_badges["--turbo-faces--"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
 	this._twitch_badges["--prime-faces--"] = this._twitch_badges["--prime--"] = "//cdn.frankerfacez.com/badges/twitch/premium/1/1.png";
@@ -139,7 +140,7 @@ FFZ.menu_pages.myemotes = {
 
 				var el = document.createElement("div");
 				el.className = "emoticon-grid ffz-no-emotes center";
-				el.innerHTML = "You have no favorite emoticons.<br> <img src=\"//cdn.frankerfacez.com/emoticon/26608/2\"><br>To make an emote a favorite, find it on the <nobr>All Emoticons</nobr> tab and <nobr>" + (constants.IS_OSX ? '⌘' : 'Ctrl') + "-Click</nobr> it.";
+				el.innerHTML = "You have no favorite emoticons.<br> <img src=\"//cdn.frankerfacez.com/emoticon/26608/2\"><br>To make an emote a favorite, find it and <nobr>" + (constants.IS_OSX ? '⌘' : 'Ctrl') + "-Click</nobr> it.";
 				container.appendChild(el);
 			}
 		},
@@ -194,19 +195,18 @@ FFZ.menu_pages.myemotes = {
 
 			user = this.get_user(),
 			ffz_sets = this.getEmotes(user && user.login, null),
-			sets = [];
+			sets = [],
+			gathered_emotes = [];
 
 		// Start with Twitch Sets
+		var gathered_favorites = this.settings.favorite_emotes['twitch-inventory'] || [];
+
 		for(var set_id in twitch_sets) {
-			if ( ! twitch_sets.hasOwnProperty(set_id) || ( ! this.settings.global_emotes_in_menu && set_id === '0' ) )
+			if ( ! twitch_sets.hasOwnProperty(set_id) || ( ! favorites_only && ! this.settings.global_emotes_in_menu && set_id === '0' ) )
 				continue;
 
 			// Skip the Twitch Turbo set if we have Twitch Prime. They're identical.
 			if ( set_id == 793 && twitch_sets.hasOwnProperty(19194) )
-				continue;
-
-			var favorites_list = this.settings.favorite_emotes["twitch-" + set_id];
-			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
 				continue;
 
 			var set = twitch_sets[set_id];
@@ -214,8 +214,19 @@ FFZ.menu_pages.myemotes = {
 				continue;
 
 			var raw_id = this._twitch_set_to_channel[set_id],
-				menu_id = raw_id ? raw_id.toLowerCase() : 'unknown',
-				sort_key = 0,
+				menu_id = raw_id ? raw_id.toLowerCase() : 'unknown';
+
+			if ( set.length === 1 && ! raw_id ) {
+				if ( ! favorites_only || gathered_favorites.indexOf(set[0].id) !== -1 )
+					gathered_emotes.push(set[0]);
+				continue;
+			}
+
+			var favorites_list = this.settings.favorite_emotes["twitch-" + set_id];
+			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
+				continue;
+
+			var sort_key = 0,
 				menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, set_id, set, favorites_only);
 
 			if ( menu_id.indexOf('global') !== -1 )
@@ -226,6 +237,13 @@ FFZ.menu_pages.myemotes = {
 			if ( menu )
 				sets.push([[sort_key, menu_id], menu]);
 		}
+
+		// Handle the gathered single emotes.
+		if ( gathered_emotes.length ) {
+			var menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, 'inventory', gathered_emotes, favorites_only);
+			sets.push([[50, 'twitch-inventory'], menu]);
+		}
+
 
 		// Emoji~!
 		if ( favorites_only && this.settings.emoji_in_menu ) {
@@ -238,10 +256,25 @@ FFZ.menu_pages.myemotes = {
 		}
 
 		// Now, FFZ!
+		if ( favorites_only ) {
+			// But first, inject all the sets from this specific room.
+			var ffz_room = controller && this.rooms && this.rooms[controller.get('currentRoom.id')];
+			if ( ffz_room ) {
+				if ( ffz_room.set && ffz_sets.indexOf(ffz_room.set) === -1 )
+					ffz_sets.push(ffz_room.set);
+
+				if ( ffz_room.sets && ffz_room.sets.length )
+					ffz_sets = _.uniq(ffz_sets.concat(ffz_room.sets));
+
+				if ( ffz_room.extra_sets && ffz_room.extra_sets.length )
+					ffz_sets = _.uniq(ffz_sets.concat(ffz_room.extra_sets));
+			}
+		}
+
 		for(var i=0; i < ffz_sets.length; i++) {
 			var set_id = ffz_sets[i],
 				set = this.emote_sets[set_id];
-			if ( ! set || ! set.count || set.hidden || ( ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
+			if ( ! set || ! set.count || set.hidden || ( ! favorites_only && ! this.settings.global_emotes_in_menu && this.default_sets.indexOf(set_id) !== -1 ) )
 				continue;
 
 			var menu_id = set.hasOwnProperty('source_ext') ? 'ffz-ext-' + set.source_ext + '-' + set.source_id : 'ffz-' + set.id,
@@ -415,7 +448,7 @@ FFZ.menu_pages.myemotes = {
 			collapsed = ! favorites_only && this.settings.emote_menu_collapsed.indexOf('twitch-' + set_id) === -1,
 			f = this,
 
-			channel_id = this._twitch_set_to_channel[set_id] || 'twitch_unknown', title,
+			channel_id = set_id === 'inventory' ? '--inventory--' : (this._twitch_set_to_channel[set_id] || 'twitch_unknown'), title,
 			favorites = this.settings.favorite_emotes["twitch-" + set_id] || [],
 			c = 0;
 
@@ -423,7 +456,9 @@ FFZ.menu_pages.myemotes = {
 		menu.setAttribute('data-set', 'twitch-' + set_id);
 
 		if ( ! favorites_only ) {
-			if ( channel_id === "twitch_unknown" )
+			if ( channel_id === '--inventory--' )
+				title = "Inventory";
+			else if ( channel_id === "twitch_unknown" )
 				title = "Unknown Channel";
 			else if ( channel_id === "--global--" )
 				title = "Global Emoticons";
@@ -441,9 +476,12 @@ FFZ.menu_pages.myemotes = {
 			heading.className = 'heading';
 			heading.innerHTML = '<span class="right">Twitch</span>' + utils.sanitize(title);
 
-			if ( this._twitch_badges[channel_id] )
-				heading.style.backgroundImage = 'url("' + this._twitch_badges[channel_id] + '")';
-			else {
+			var icon = this._twitch_badges[channel_id];
+			if ( icon ) {
+				heading.style.backgroundImage = 'url("' + icon + '")';
+				if ( icon.indexOf('.svg') !== -1 )
+					heading.style.backgroundSize = "18px";
+			} else {
 				var f = this;
 				utils.api.get("chat/" + channel_id + "/badges", null, {version: 3})
 					.done(function(data) {

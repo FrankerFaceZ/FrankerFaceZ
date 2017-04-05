@@ -10,6 +10,8 @@ var FFZ = window.FrankerFaceZ,
 
 	HOP = Object.prototype.hasOwnProperty,
 
+	FAV_MARKER = '<span class="ffz-favorite"></span>',
+
 	EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
 
 	reg_escape = function(str) {
@@ -416,7 +418,9 @@ FFZ.prototype.render_tooltip = function(el) {
 				return image + out;
 
 			} else if ( this.classList.contains('emoticon') ) {
-				var preview_url, width=0, height=0, image, set_id, emote, emote_set,
+				var can_favorite = this.classList.contains('ffz-can-favorite'),
+
+					preview_url, width=0, height=0, image, set_id, emote, emote_set,
 					emote_id = this.getAttribute('data-ffz-emote'),
 					modifiers = this.getAttribute('data-modifier-info'),
 					mod_text = '';
@@ -438,6 +442,10 @@ FFZ.prototype.render_tooltip = function(el) {
 					emote = emote_set && emote_set.emoticons[emote_id];
 
 					if ( emote ) {
+						var favorite_key = 'ffz-' + (emote_set.hasOwnProperty('source_ext') ? 'ext-' + emote_set.source_ext + '-' + emote_set.source_id : emote_set.id),
+							favorites = f.settings.favorite_emotes[favorite_key] || [],
+							is_favorite = ! can_favorite && favorites.indexOf(emote && emote.id) !== -1;
+
 						var owner = emote.owner,
 							title = emote_set.title || "Global",
 							source = emote_set.source || "FFZ",
@@ -463,7 +471,7 @@ FFZ.prototype.render_tooltip = function(el) {
 
 						//image = preview_url ? `<img style="height:${height}px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
 						image = preview_url ? '<img style="height:' + height + 'px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
-						return image + 'Emoticon: ' + (emote.hidden ? '???' : utils.sanitize(emote.name)) + '<br>' + source_line + (owner ? '<br>By: ' + utils.sanitize(owner.display_name) : '') + mod_text;
+						return (is_favorite ? FAV_MARKER : '') + image + 'Emoticon: ' + (emote.hidden ? '???' : utils.sanitize(emote.name)) + '<br>' + source_line + (owner ? '<br>By: ' + utils.sanitize(owner.display_name) : '') + mod_text;
 
 						//return `${image}Emoticon: ${emote.hidden ? '???' : emote.name}<br>${source} ${title}${owner ? '<br>By: ' + owner.display_name : ""}`;
 					}
@@ -473,7 +481,22 @@ FFZ.prototype.render_tooltip = function(el) {
 				if ( emote_id ) {
 					set_id = f._twitch_emote_to_set[emote_id];
 					emote_set = set_id && f._twitch_set_to_channel[set_id];
-					var set_type = "Channel";
+
+					var set_type = "Channel",
+						favorite_key = 'twitch-' + set_id,
+
+						Chat = utils.ember_lookup('controller:chat'),
+						tmi = Chat && Chat.get('currentRoom.tmiSession'),
+						twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
+
+					if ( ! emote_set && twitch_sets[set_id] ) {
+						var set = twitch_sets[set_id];
+						if ( set.length === 1 )
+							favorite_key = 'twitch-inventory';
+					}
+
+					var favorites = set_id && f.settings.favorite_emotes[favorite_key] || [],
+						is_favorite = ! can_favorite && favorites.indexOf(parseInt(emote_id)) !== -1;
 
 					preview_url = f.settings.emote_image_hover && (constants.TWITCH_BASE + emote_id + '/3.0');
 					//image = preview_url ? `<img style="height:112px" class="emoticon ffz-image-hover" src="${preview_url}?_=preview">` : '';
@@ -492,9 +515,9 @@ FFZ.prototype.render_tooltip = function(el) {
 					}
 
 					if ( this.classList.contains('ffz-tooltip-no-credit') )
-						return image + utils.sanitize(this.alt) + mod_text;
+						return (is_favorite ? FAV_MARKER : '') + image + utils.sanitize(this.alt) + mod_text;
 					else
-						return image + 'Emoticon: ' + utils.sanitize(this.alt) + '<br>' + (set_type ? set_type + ': ' : '') + emote_set + mod_text;
+						return (is_favorite ? FAV_MARKER : '') + image + 'Emoticon: ' + utils.sanitize(this.alt) + '<br>' + (set_type ? set_type + ': ' : '') + emote_set + mod_text;
 						//return `${image}Emoticon: ${this.alt}<br>${set_type ? set_type + ": " : ""}${emote_set}`;
 				}
 
@@ -503,11 +526,14 @@ FFZ.prototype.render_tooltip = function(el) {
 					emote = f.emoji_data[emote_id];
 					var src = emote && (f.settings.parse_emoji === 3 ? emote.one_src : (f.settings.parse_emoji === 2 ? emote.noto_src : emote.tw_src));
 
+					var favorites = f.settings.favorite_emotes.emoji || [],
+						is_favorite = ! can_favorite && favorites.indexOf(emote.raw) !== -1;
+
 					preview_url = f.settings.emote_image_hover && src;
 					//image = preview_url ? `<img style="height:72px" class="emoticon ffz-image-hover" src="${preview_url}">` : '';
 					image = preview_url ? '<img style="height:72px" class="emoticon ffz-image-hover" src="' + preview_url + '"?_=preview">' : '';
 
-					return image + "Emoji: " + this.alt + '<br>Name: ' + emote.name + (emote.short_name ? '<br>Short Name :' + emote.short_name + ':' : '') + (emote.cat ? '<br>Category: ' + utils.sanitize(constants.EMOJI_CATEGORIES[emote.cat] || emote.cat) : '') + mod_text;
+					return (is_favorite ? FAV_MARKER : '') + image + "Emoji: " + this.alt + '<br>Name: ' + emote.name + (emote.short_name ? '<br>Short Name :' + emote.short_name + ':' : '') + (emote.cat ? '<br>Category: ' + utils.sanitize(constants.EMOJI_CATEGORIES[emote.cat] || emote.cat) : '') + mod_text;
 					//return `${image}Emoji: ${this.alt}<br>Name: ${emote.name}${emote.short_name ? '<br>Short Name: :' + emote.short_name + ':' : ''}`;
 				}
 

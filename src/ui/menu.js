@@ -604,7 +604,7 @@ FFZ.menu_pages.channel = {
 			var extra_sets = _.union(room && room.extra_sets || [], room && room.ext_sets || [], []);
 
 			// Basic Emote Sets
-			this._emotes_for_sets(inner, view, room && room.set && [room.set] || [], (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, (room && room.moderator_badge) || "//cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ", ! has_product && extra_sets.length);
+			this._emotes_for_set(inner, view, room && room.set, (this.feature_friday || has_product || extra_sets.length ) ? "Channel Emoticons" : null, (room && room.moderator_badge) || "//cdn.frankerfacez.com/script/devicon.png", "FrankerFaceZ", ! has_product && extra_sets.length);
 
 			for(var i=0; i < extra_sets.length; i++) {
 				// Look up the set name.
@@ -614,7 +614,7 @@ FFZ.menu_pages.channel = {
 				if ( ! set || ! set.count || set.hidden )
 					continue;
 
-				this._emotes_for_sets(inner, view, [extra_sets[i]], name, set.icon || "//cdn.frankerfacez.com/script/devicon.png", set.source || "FrankerFaceZ");
+				this._emotes_for_set(inner, view, extra_sets[i], name, set.icon || "//cdn.frankerfacez.com/script/devicon.png", set.source || "FrankerFaceZ");
 			}
 
 			// Feature Friday!
@@ -630,8 +630,10 @@ FFZ.menu_pages.channel = {
 // Emotes for Sets
 // --------------------
 
-FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub_text, top_set) {
-	var grid = document.createElement('div'), c = 0, f = this;
+FFZ.prototype._emotes_for_set = function(parent, view, set_id, header, image, sub_text, top_set) {
+	var grid = document.createElement('div'), c = 0, f = this,
+		set = this.emote_sets[set_id];
+
 	grid.className = 'emoticon-grid';
 	if ( top_set )
 		grid.classList.add('top-set');
@@ -659,18 +661,13 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 	}
 
 	var emotes = [];
-	for(var i=0; i < sets.length; i++) {
-		var set = this.emote_sets[sets[i]];
-		if ( ! set || ! set.emoticons )
-			continue;
-
+	if ( set && set.emoticons )
 		for(var eid in set.emoticons) {
 			if ( ! set.emoticons.hasOwnProperty(eid) || set.emoticons[eid].hidden )
 				continue;
 
 			emotes.push(set.emoticons[eid]);
 		}
-	}
 
 	// Sort the emotes!
 	emotes.sort(function(a,b) {
@@ -681,6 +678,10 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 		else if ( an > bn ) return 1;
 		return 0;
 	});
+
+	// Favoriting Info
+	var favorite_key = set ? 'ffz-' + (set.hasOwnProperty('source_ext') ? 'ext-' + set.source_ext + '-' + set.source_id : set.id) : undefined,
+		favorites = this.settings.favorite_emotes[favorite_key] || [];
 
 	for(var i=0; i < emotes.length; i++) {
 		var emote = emotes[i], srcset = null;
@@ -695,7 +696,9 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 
 		c++;
 		var s = document.createElement('span');
-		s.className = 'emoticon ffz-tooltip';
+		s.className = 'emoticon ffz-tooltip ffz-can-favorite';
+		if ( favorites.indexOf(emote.id) !== -1 )
+			s.classList.add('ffz-favorite');
 
 		s.setAttribute('data-ffz-emote', emote.id);
 		s.setAttribute('data-ffz-set', set.id);
@@ -726,7 +729,7 @@ FFZ.prototype._emotes_for_sets = function(parent, view, sets, header, image, sub
 				if ( url )
 					window.open(url);
 			} else
-				this._add_emote(view, code);
+				this._add_emote(view, code, favorite_key, id, e);
 		}.bind(this, emote.id, emote.name));
 
 		grid.appendChild(s);

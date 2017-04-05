@@ -90,20 +90,28 @@ FFZ.settings_info.bits_pinned = {
 }
 
 
-FFZ.settings_info.bits_disable_charity = {
+FFZ.settings_info.bits_redesign = {
 	type: "boolean",
 	value: false,
 
-	category: "Chat Filtering",
-	name: "Disable Cheering with #Charity Notices",
-	help: "Stop displaying Twitch's notices about Cheering with #Charity."
-}
+	category: "Chat Appearance",
+	name: "Bits Redesign",
+	help: "Use the special cheering animations from April 1st, 2017.",
 
+	on_update: function() {
+		var bits = utils.ember_lookup('service:bits-emotes') ||
+					utils.ember_lookup('service:bits-rendering-config');
+		if ( bits && bits.ffz_has_css )
+			bits.ffz_update_css();
+	}
+}
 
 
 // --------------------
 // Initialization
 // --------------------
+
+var redesign = function(x) { return x.replace('/actions/cheer/', '/actions/cheer-redesign/') };
 
 FFZ.prototype.setup_bits = function() {
 	utils.toggle_cls('ffz-show-bits-tags')(this.settings.bits_tags_container);
@@ -115,9 +123,19 @@ FFZ.prototype.setup_bits = function() {
 		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers'),
 
 		image_css = function(images) {
-			return 'background-image: url("' + images[1] + '");' +
+			var im_1 = images[1],
+				im_2 = images[2],
+				im_4 = images[4];
+
+			if ( f.settings.bits_redesign ) {
+				im_1 = redesign(im_1);
+				im_2 = redesign(im_2);
+				im_4 = redesign(im_4);
+			}
+
+			return 'background-image: url("' + im_1 + '");' +
 				'background-image: ' + (constants.IS_WEBKIT ? ' -webkit-' : '') + 'image-set(' +
-					'url("' + images[1] + '") 1x, url("' + images[2] + '") 2x, url("' + images[4] + '") 4x);';
+					'url("' + im_1 + '") 1x, url("' + im_2 + '") 2x, url("' + im_4 + '") 4x);';
 		},
 
 		tier_css = function(ind, prefix, tier) {
@@ -184,7 +202,8 @@ FFZ.prototype.setup_bits = function() {
 			},
 
 			ffz_get_preview: function(prefix, amount) {
-				return this.getImageSrc(amount, prefix, true, !f.settings.bits_animated, 4);
+				var src = this.getImageSrc(amount, prefix, true, !f.settings.bits_animated, 4);
+				return f.settings.bits_redesign ? redesign(src) : src;
 			},
 
 			_ffz_image_css: image_css,
@@ -249,12 +268,14 @@ FFZ.prototype.setup_bits = function() {
 
 			ffz_get_preview: function(prefix, amount) {
 				var data = this.ffz_get_tier(prefix, amount),
-					tier = data && data[1];
-				return tier ? this._constructImageSrc([4], tier, {
-					background: 'dark',
-					scale: 4,
-					state: f.settings.bits_animated ? 'animated' : 'static'
-				}).src : '';
+					tier = data && data[1],
+					src = tier ? this._constructImageSrc([4], tier, {
+							background: 'dark',
+							scale: 4,
+							state: f.settings.bits_animated ? 'animated' : 'static'
+						}).src : '';
+
+				return f.settings.bits_redesign ? redesign(src) : src;
 			},
 
 			_ffz_image_css: image_css,

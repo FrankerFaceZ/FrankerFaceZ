@@ -346,17 +346,30 @@ FFZ.settings_info.image_hover_all_domains = {
 
 
 FFZ.settings_info.chat_rows = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Alternating",
+		2: "Red Highlights",
+		3: "Both"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0, 0, 3),
 
 	category: "Chat Appearance",
 	no_bttv: true,
 
 	name: "Chat Line Backgrounds",
-	help: "Display alternating background colors for lines in chat.",
+	help: "Display alternating background colors for lines in chat or make messages with highlighted words red.",
 
 	on_update: function(val) {
-		this.toggle_style('chat-background', !this.has_bttv && val);
+		if ( this.has_bttv )
+			val = 0;
+
+		this.toggle_style('chat-background', val === 1 || val === 3);
+		this.toggle_style('chat-mention-bg', val > 1);
+		this.toggle_style('chat-mention-bg-alt', val === 3);
 	}
 };
 
@@ -527,6 +540,36 @@ FFZ.settings_info.chat_font_family = {
 	};
 
 
+FFZ.settings_info.emoji_scale = {
+	type: "select",
+	options: {
+		0: "Scale with Text (Default)",
+		1: "Old Default (18px)",
+		2: "Emote Size (28px)"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0),
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Emoji Size",
+	help: "Make emoji in chat bigger or smaller.",
+
+	on_update: function(val) {
+		var size = 18;
+		if ( val === 0 )
+			size = 1.5 * this.settings.chat_font_size;
+		else if ( val === 2 )
+			size = 28;
+
+		utils.update_css(this._chat_style, 'emoji_size',
+			size !== 18 ? '.chat-line .emoji{height:' + size + 'px}' : '');
+	}
+}
+
+
 FFZ.settings_info.chat_font_size = {
 	type: "button",
 	value: 12,
@@ -567,6 +610,7 @@ FFZ.settings_info.chat_font_size = {
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val)),
 				pd = Math.floor((lh - 20) / 2);
+
 			css = ".pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history .chat-line,.ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 			if ( pd )
 				css += ".pinned-cheers .chat-line,.ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
@@ -574,6 +618,7 @@ FFZ.settings_info.chat_font_size = {
 
 		utils.update_css(this._chat_style, "chat_font_size", css);
 		FFZ.settings_info.chat_ts_size.on_update.call(this, this.settings.chat_ts_size);
+		FFZ.settings_info.emoji_scale.on_update.call(this, this.settings.emoji_scale);
 		}
 	};
 
@@ -664,7 +709,7 @@ FFZ.prototype.setup_line = function() {
 	utils.toggle_cls('ffz-baseline-emoticons')(!this.has_bttv && this.settings.emote_alignment === 2);
 
 	this.toggle_style('chat-padding', !this.has_bttv && this.settings.chat_padding);
-	this.toggle_style('chat-background', !this.has_bttv && this.settings.chat_rows);
+	FFZ.settings_info.chat_rows.on_update.call(this, this.settings.chat_rows);
 
 	this.toggle_style('chat-separator', !this.has_bttv && this.settings.chat_separators);
 	this.toggle_style('chat-separator-3d', !this.has_bttv && this.settings.chat_separators === 2);

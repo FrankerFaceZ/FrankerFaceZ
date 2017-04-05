@@ -76,17 +76,20 @@ FFZ.settings_info.notification_timeout = {
 	help: "Specify how long notifications should be displayed before automatically closing.",
 
 	method: function() {
-			var f = this;
+			var f = this,
+				old_val = this.settings.notification_timeout;
 			utils.prompt(
 				"Notification Timeout",
-				"Please enter the time you'd like notifications to be displayed before automatically closing, in seconds.</p><p><b>Default:</b> 60",
-				this.settings.notification_timeout,
+				"Please enter the time you'd like notifications to be displayed before automatically closing, in seconds. A value of zero may prevent notifications from disappearing automatically. This value is subject to the limitations of your web browser.</p><p><b>Default:</b> 60",
+				old_val === false ? 0 : old_val,
 				function(new_val) {
 					if ( new_val === null || new_val === undefined )
 						return;
 
 					new_val = parseInt(new_val);
-					if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) || new_val < 1 )
+					if ( new_val <= 0 )
+						new_val = false;
+					else if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) )
 						new_val = 60;
 
 					f.settings.set("notification_timeout", new_val);
@@ -135,7 +138,7 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 
 	if ( perm === "granted" ) {
 		title = title || "FrankerFaceZ";
-		timeout = timeout || (this.settings.notification_timeout*1000);
+		timeout = timeout || (this.settings.notification_timeout === false ? false : this.settings.notification_timeout * 1000);
 
 		var options = {
 			lang: "en-US",

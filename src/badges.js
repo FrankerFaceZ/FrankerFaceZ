@@ -185,7 +185,7 @@ FFZ.settings_info.hidden_badges = {
 
 		utils.prompt(
 			"Hidden Badges",
-			"Please enter a comma-separated list of badges that you would like to be hidden in chat.</p><p><b>Possible Values:</b> " + output.join(", "),
+			"Please enter a comma-separated list of badges that you would like to be hidden in chat. You can use the special value <code>game</code> to hide all the game-specific badges at once.</p><p><b>Possible Values:</b> " + output.join(", "),
 			old_val,
 			function(new_val) {
 				if ( new_val === null || new_val === undefined )
@@ -514,9 +514,10 @@ FFZ.prototype.get_twitch_badges = function(badge_tag, room_id) {
 			continue;
 
 		var versions = channel[badge] || globals[badge],
-			binfo = versions && versions.versions && versions.versions[version];
+			binfo = versions && versions.versions && versions.versions[version],
+			is_game = badge.substr(-2) === '_1';
 
-		if ( hidden_badges.indexOf(badge) !== -1 )
+		if ( hidden_badges.indexOf(badge) !== -1 || (is_game && hidden_badges.indexOf('game') !== -1) )
 			continue;
 
 		if ( BADGE_POSITIONS.hasOwnProperty(badge) )
@@ -648,7 +649,8 @@ FFZ.prototype.bttv_badges = function(data) {
 				hidden_key = hidden_key.substr(0, ind);
 		}
 
-		if ( hidden_badges.indexOf(hidden_key) !== -1 ) {
+		var is_game = hidden_key.substr(-2) === '_1';
+		if ( hidden_badges.indexOf(hidden_key) !== -1 || (is_game && hidden_badges.indexOf('game') !== -1) ) {
 			data.badges.splice(i, 1);
 			i--;
 			continue;

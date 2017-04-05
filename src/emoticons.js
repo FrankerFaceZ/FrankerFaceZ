@@ -4,6 +4,8 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
+	IS_OSX = constants.IS_OSX,
+
 	MODIFIERS = {
 		59847: {
 			modifier_offset: '0 15px 15px 0',
@@ -116,7 +118,68 @@ FFZ.prototype._report_emotes = function() {
 // ------------------------
 
 FFZ.prototype._click_emote = function(target, event) {
-	if ( ! this.settings.clickable_emoticons || (event && !((event.shiftKey || event.shiftLeft) && target && target.classList.contains('emoticon'))) )
+	if ( ! target || ! target.classList.contains('emoticon') )
+		return;
+
+	if ( event && ((!IS_OSX && event.ctrlKey) || (IS_OSX && event.metaKey)) ) {
+		var eid, favorite_key;
+
+		if ( target.classList.contains('emoji') ) {
+			var emoji = target.getAttribute('data-ffz-emoji'),
+				emoji_data = this.emoji_data[emoji];
+
+			if ( emoji_data ) {
+				favorite_key = 'emoji';
+				eid = emoji_data.raw;
+			}
+
+		} else {
+			eid = target.getAttribute('data-emote');
+
+			if ( eid ) {
+				eid = parseInt(eid);
+				var twitch_set = this._twitch_emote_to_set[eid];
+				if ( twitch_set ) {
+					var Chat = utils.ember_lookup('controller:chat'),
+						tmi = Chat && Chat.get('currentRoom.tmiSession'),
+						twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
+
+					if ( twitch_sets[twitch_set] ) {
+						var set = twitch_sets[twitch_set];
+						if ( set.length === 1 && ! this._twitch_set_to_channel[twitch_set] )
+							favorite_key = 'twitch-inventory';
+						else
+							favorite_key = 'twitch-' + twitch_set;
+					}
+				}
+
+			} else {
+				eid = parseInt(target.getAttribute('data-ffz-emote'));
+				var set_id = target.getAttribute('data-ffz-set'),
+					emote_set = set_id && this.emote_sets[set_id];
+
+				if ( emote_set && emote_set.emoticons && emote_set.emoticons[eid] )
+					favorite_key = 'ffz-' + (emote_set.hasOwnProperty('source_ext') ? 'ext-' + emote_set.source_ext + '-' + set.source_id : set_id);
+			}
+		}
+
+		if ( favorite_key ) {
+			var favs = this.settings.favorite_emotes[favorite_key] = this.settings.favorite_emotes[favorite_key] || [],
+				is_favorited = favs.indexOf(eid) !== -1;
+
+			if ( is_favorited )
+				favs.removeObject(eid);
+			else
+				favs.push(eid);
+
+			this.settings.set("favorite_emotes", this.settings.favorite_emotes, true);
+			jQuery(target).trigger('mouseout').trigger('mouseover');
+		}
+
+		return true;
+	}
+
+	if ( ! this.settings.clickable_emoticons || (event && !(event.shiftKey || event.shiftLeft)) )
 		return;
 
 	var eid = target.getAttribute('data-emote');

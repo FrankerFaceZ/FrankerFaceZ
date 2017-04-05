@@ -2112,9 +2112,6 @@ FFZ.prototype._modify_room = function(room) {
 				notice_type = msg.tags && msg.tags['msg-id'],
 				is_whisper = msg.style === 'whisper';
 
-			if ( notice_type === 'charity' && f.settings.bits_disable_charity )
-				return;
-
 			// If this message is already in the room, discard the duplicate.
 			if ( msg_id && this.ffz_ids && this.ffz_ids[msg_id] )
 				return;

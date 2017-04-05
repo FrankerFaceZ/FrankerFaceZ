@@ -89,69 +89,6 @@
 }
 
 
-
-
-/* DEPRECIATED: Mention Backgrounds */
-.chat-line.ffz-mentioned {
-	background-color: rgba(255,127,127,0.2);
-}
-
-.chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned,
-
-.chat-line.ffz-mentioned:nth-child(2n+0) {
-	background-color: rgba(255,127,127, 0.4);
-}
-
-
-/* DEPRECIATED: DARK THEME: Mention Backgrounds */
-.ffz-dark .chat-history .chat-line.ffz-mentioned,
-
-.theatre .chat-line.ffz-mentioned,
-.dark .chat-line.ffz-mentioned {
-	background-color: rgba(255,0,0, 0.2) !important;
-}
-
-.theatre .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned,
-.dark .chat-lines > div:nth-child(2n+0) > .chat-line.ffz-mentioned,
-
-.ffz-dark .chat-history .chat-line.ffz-mentioned:nth-child(2n+0),
-.theatre .chat-line.ffz-mentioned:nth-child(2n+0),
-.dark .chat-line.ffz-mentioned:nth-child(2n+0) {
-	background-color: rgba(255,0,0, 0.3) !important;
-}
-
-
-
-/* Chat Mentions */
-/* TODO: Move this by itself */
-
-.mentioned:empty,
-.mentioning:empty {
-	display: none;
-}
-
-.chat-line .mentioned,
-.chat-line .mentioning {
-	border-radius: 10px;
-	padding: 3px 7px;
-	font-weight: bold;
-	color: #323232;
-	background-color: rgba(255,255,255, 0.75);
-}
-
-/* DARK THEME: Chat Mentions */
-.ffz-dark .chat-history .mentioned,
-.ffz-dark .chat-history .mentioning,
-
-.chat-container.dark .chat-line .mentioned,
-.ember-chat-container.dark .chat-line .mentioned,
-.chat-container.dark .chat-line .mentioning,
-.ember-chat-container.dark .chat-line .mentioning {
-	color: #8c8c8c;
-	background-color: rgba(16,16,16, 0.75);
-}
-
-
 /* Fix Conversations */
 
 .conversation-window .timestamp-line span,
