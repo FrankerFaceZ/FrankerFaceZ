@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 457,
+	major: 3, minor: 5, revision: 458,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -166,6 +166,29 @@ FFZ.prototype._pastebin = function(data) {
 // -------------------
 // User Data
 // -------------------
+
+FFZ.prototype.get_location = function(force_reload) {
+	var f = this;
+	return new Promise(function(succeed, fail) {
+		if ( ! force_reload && f.__location )
+			succeed(f.__location);
+
+		if ( window.Twitch && Twitch.geo )
+			Twitch.geo.then(function(data) {
+				f.__location = {
+					region: data.region,
+					country: data.geo,
+					lang: data.preferred_language
+				};
+
+				succeed(f.__location);
+			});
+		else
+			// TODO: Implement my own lookup.
+			fail('no provider available');
+	})
+}
+
 
 FFZ.prototype.get_user = function(force_reload) {
 	if ( ! force_reload && this.__user && this.__user.chat_oauth_token )

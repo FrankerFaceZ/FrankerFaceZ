@@ -113,7 +113,7 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 	utils.ember_reopen_view(view, {
 		itad_plain: null,
 		itad_price: null,
-		twitch_geo: null,
+		itad_country: null,
 
 		ffz_init: function() {
 			//f.log("Buy-Game-New Component", this);
@@ -121,14 +121,14 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 			this.ffzUpdateITADPlain();
 
 			var t = this;
-			Twitch.geo.then(function(data) {
-				t.set('twitch_geo', data && data.geo);
+			f.get_location().then(function(data) {
+				t.set('itad_country', data && data.country);
 			});
 		},
 
 		ffzTitle: function() {
 			// Do this because Twitch's ToS say you're not allowed to use data collected from
-			// the API to show users commercial offers. This extracts the game title from the
+			// the API to show users commercial offers. This scrapes the game title from the
 			// page itself and not from any kind of JS API.
 
 			// Granted, they're probably more worried about automated chat spam and people
@@ -189,23 +189,23 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 		ffzUpdateITADPrice: function() {
 			var t = this,
 				old_price = this.get('itad_price'),
-				geo = this.get('twitch_geo'),
+				country = this.get('itad_country'),
 				plain = this.get('itad_plain');
 
 			if ( old_price && old_price[0] === plain )
 				return;
 
-			if ( ! plain || ! geo )
+			if ( ! plain || ! country )
 				return this.set('itad_price', null);
 
 			this.set('itad_price', [plain, null]);
-			f.ws_send("get_itad_prices", [plain, geo], function(success, data) {
+			f.ws_send("get_itad_prices", [plain, country], function(success, data) {
 				if ( ! success ) return;
 
 				t.set('itad_price', [plain, data]);
 			});
 
-		}.observes('itad_plain', 'twitch_geo'),
+		}.observes('itad_plain', 'itad_country'),
 
 
 		ffzRenderPricing: function() {
@@ -292,7 +292,9 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 			// Add a by-line for IsThereAnyDeal.
 
 			var url = data[1].urls && data[1].urls.game || "https://isthereanydeal.com",
-				by_line = utils.createElement('span', 'ffz-attribution', 'Source: <a rel="noreferrer" target="_blank" href="' + utils.quote_san(url) + '">IsThereAnyDeal.com</a><br><br>Any affiliate links in the provided data are the responsibility of IsThereAnyDeal.');
+				by_line = utils.createElement('span', 'ffz-attributiona',
+					'<hr>Source: <a rel="noreferrer" target="_blank" href="' + utils.quote_san(url) + '">IsThereAnyDeal.com</a><br><br>Any affiliate links in the provided data are the responsibility of IsThereAnyDeal.' +
+					'<hr>Reminder: Buying games on Twitch directly supports partnered streamers and you can earn <a target="_blank" href="https://blog.twitch.tv/twitch-crates-are-coming-soon-f50fa0cd4cdf">Twitch Crates</a> containing emotes and badges.');
 
 			balloon.appendChild(by_line);
 

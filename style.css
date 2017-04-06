@@ -2821,6 +2821,7 @@ li[data-name="following"] a {
 .ffz-player-volume .player .player-volume__slider-container,
 .ffz-classic-player .player .player-volume__slider-container {
 	width: auto;
+	opacity: 1;
 }
 
 
@@ -4075,9 +4076,9 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 
 .itad-balloon span {
 	display: block;
-	border-top: 1px solid rgba(0,0,0,0.2);
+	/*border-top: 1px solid rgba(0,0,0,0.2);
 	margin-top: 5px;
-	padding-top: 5px;
+	padding-top: 5px;*/
 }
 
 .ffz-dark .itad-balloon th,

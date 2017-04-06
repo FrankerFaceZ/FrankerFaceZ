@@ -136,7 +136,7 @@ FFZ.prototype.modify_persistent_player = function(player) {
 					player = t.childViews && t.childViews[0] && t.childViews[0].get('player');
 
 				if ( player )
-					player.volume += delta > 0 ? .1 : -.1;
+					player.volume = Math.max(0, Math.min(1, player.volume + (delta > 0 ? .1 : -.1)));
 
 				event.preventDefault();
 				return false;
