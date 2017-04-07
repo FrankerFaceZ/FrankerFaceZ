@@ -1066,6 +1066,23 @@ module.exports = FFZ.utils = {
 		}
 	},
 
+
+	find_common_prefix: function(list, lower_only) {
+		var p = 0,
+			l = list.length,
+			w = lower_only ? list[0].toLowerCase() : list[0];
+
+		while(true) {
+			var c = w[p];
+			for(var i=0; i < l; ++i)
+				if ( list[i][p] !== c)
+					return p;
+
+			++p;
+		}
+	},
+
+
 	utf8_encode: function(text) {
 		return unescape(encodeURIComponent(text))
 	},

@@ -781,7 +781,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 				tmi = in_conversation ? window.TMI && TMI._sessions && TMI._sessions[0] : room && room.tmiSession,
 
 				set_name, replacement, url, is_sub_set, fav_list,
-				emote_set, emote, emote_id, code, sort_factor,
+				emote_set, emote, emote_id, code, sort_factor, is_fav,
+				prefix_length, per_pref,
 
 				user = f.get_user(),
 				ffz_sets = f.getEmotes(user && user.login, room_id),
@@ -821,7 +822,11 @@ FFZ.prototype.modify_chat_input = function(component) {
 						if ( setting === 1 && ! is_sub_set )
 							continue;
 
+						prefix_length = f.settings.input_complete_without_prefix && is_sub_set ? utils.find_common_prefix(_.pluck(emote_set, 'code'), true) : 0;
 						sort_factor = is_sub_set ? 1 : 9;
+
+						if ( is_sub_set )
+							f.log("Sub Set: " + set_name + " -- Common Prefix: " + prefix_length + " [" + emote_set[0].code.substr(0, prefix_length) + "]", emote_set);
 
 						for(var i = 0; i < emote_set.length; i++) {
 							emote = emote_set[i];
@@ -835,6 +840,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 								(constants.EMOTE_REPLACEMENT_BASE + replacement) :
 								(constants.TWITCH_BASE + emote.id + "/1.0");
 
+							is_fav = fav_list.indexOf(emote.id) !== -1;
+
 							emotes.push({
 								type: 'emoticon',
 								label: code,
@@ -842,28 +849,26 @@ FFZ.prototype.modify_chat_input = function(component) {
 								sort: sort_factor,
 								image: url,
 								width: null,
-								favorite: fav_list.indexOf(emote.id) !== -1
+								favorite: is_fav
 							});
 
 							used_ids.push(emote.id);
 
-							if ( f.settings.input_complete_without_prefix && is_sub_set ) {
-								// It's a sub emote, so try splitting off the end of the code.
-								// It's a bit weird, but people might like it. Also, make sure
-								// we aren't just grabbing an initial capital.
-								var unprefixed = code.substr(1).match(/[A-Z0-9](?:.+)?$/);
-								unprefixed = unprefixed ? unprefixed[0] : null;
+							if ( prefix_length !== 0 ) {
+								// We have a common prefix, so make sure this emote is longer
+								// than the prefix length, and add it.
+								var unprefixed = code.substr(prefix_length);
 								if ( unprefixed )
 									emotes.push({
 										type: 'emoticon',
-										label: '<i>' + code.substr(0, code.length - unprefixed.length) + '</i>' + unprefixed,
+										label: '<i>' + code.substr(0, prefix_length) + '</i>' + unprefixed,
 										match: unprefixed,
 										content: code,
 										info: set_name,
 										sort: sort_factor,
 										image: url,
 										width: null,
-										favorite: fav_list.indexOf(emote.id) !== -1
+										favorite: is_fav
 									});
 							}
 						}
@@ -884,12 +889,19 @@ FFZ.prototype.modify_chat_input = function(component) {
 				set_name = (emote_set.source || "FFZ") + " " + (emote_set.title || "Global");
 				fav_list = f.settings.favorite_emotes[emote_set.hasOwnProperty('source_ext') ? 'ffz-ext-' + emote_set.source_ext + '-' + emote_set.source_id : 'ffz-' + emote_set.id] || [];
 
+				prefix_length = emote_set.prefix_length || 0;
+
+				if ( prefix_length === 0 && emote_set.has_prefix )
+					prefix_length = utils.find_common_prefix(_.pluck(emote_set.emoticons, 'name'), emote_set.has_prefix !== 2);
+
 				sort_factor = emote_set._type === 1 ? 3 : f.default_sets.indexOf(emote_set.id) === -1 ? 2 : 6;
 
 				for(emote_id in emote_set.emoticons) {
 					emote = emote_set.emoticons[emote_id];
 					if ( emote.hidden || ! emote.name || used_ids.indexOf(emote_id) !== -1 )
 						continue;
+
+					is_fav = fav_list.indexOf(emote.id) !== -1;
 
 					emotes.push({
 						type: "emoticon",
@@ -898,8 +910,28 @@ FFZ.prototype.modify_chat_input = function(component) {
 						sort: sort_factor,
 						image: emote.urls[1],
 						width: emote.width,
-						favorite: fav_list.indexOf(emote.id) !== -1
+						favorite: is_fav
 					});
+
+					per_pref = emote.hasOwnProperty('prefix_length') ? emote.prefix_length : prefix_length;
+
+					if ( per_pref !== 0 ) {
+						// We have a common prefix, so make sure this emote is longer
+						// than the prefix length, and add it.
+						var unprefixed = emote.name.substr(per_pref);
+						if ( unprefixed )
+							emotes.push({
+								type: "emoticon",
+								label: '<i>' + emote.name.substr(0, per_pref) + '</i>' + unprefixed,
+								match: unprefixed,
+								content: emote.name,
+								info: set_name,
+								sort: sort_factor,
+								image: emote.urls[1],
+								width: emote.width,
+								favorite: is_fav
+							});
+					}
 				}
 			}
 

@@ -514,6 +514,29 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-top-color: rgba(255,255,255,0.25);
 }
 
+.ffz-dark .twitch_subwindow_container .card .text-content .content-header,
+.ffz-dark .kraken-embed .card .text-content .content-header,
+.ffz-dark .kraken-page .card .text-content .content-header,
+.ffz-dark .twitch_subwindow_container .card .buttons,
+.ffz-dark .kraken-embed .card .buttons,
+.ffz-dark .kraken-page .card .buttons,
+.ffz-dark .card-vod-edit {
+	border-color: #474747;
+}
+
+.ffz-dark .playlist-menu-create {
+	background-color: #101010;
+	border-color: #474747;
+}
+
+.ffz-dark .button--disabled {
+	background-color: #333;
+}
+
+.ffz-dark .card-vod-edit {
+	box-shadow: 0 2px 4px 0 rgba(255,255,255,0.1);
+}
+
 .ffz-dark #highlighter .highlight-content .form-container li label {
 	color: #fff;
 }
