@@ -65,8 +65,6 @@ FFZ.basic_settings.high_contrast = {
 	type: "boolean",
 
 	category: "Chat",
-	no_bttv: true,
-
 	name: "High Contrast",
 	help: "Display chat using white and black for maximum contrast. This is suitable for capturing and chroma keying chat to display on stream.",
 
@@ -83,7 +81,7 @@ FFZ.basic_settings.keywords = {
 	type: "button",
 
 	category: "Chat",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
@@ -97,7 +95,7 @@ FFZ.basic_settings.banned_words = {
 	type: "button",
 
 	category: "Chat",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Banned Keywords",
 	help: "Set a list of words that will be removed from chat messages, locally.",

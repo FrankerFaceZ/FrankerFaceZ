@@ -409,8 +409,14 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 
 					el.className = 'ffz-setting clearfix';
 
-					if ( this.has_bttv && info.no_bttv ) {
+					if ( (info.no_bttv === 6 && this.has_bttv_6) ||
+						 (info.no_bttv === 7 && this.has_bttv_7) ||
+						 (info.no_bttv === true && this.has_bttv) ) {
 						bttv_skipped.push([info.name, info.help]);
+						continue;
+					} else if ( (info.require_bttv === 6 && ! this.has_bttv_6) ||
+								(info.require_bttv === 7 && ! this.has_bttv_7) ||
+								(info.require_bttv === true && ! this.has_bttv) ) {
 						continue;
 					} else {
 						if ( show_pin ) {

@@ -83,7 +83,7 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 				Room && Room.findOne(room_id);
 			}
 
-			if ( ! f.has_bttv ) {
+			if ( ! f.has_bttv_6 ) {
 				this.ffzFixStickyBottom();
 				this.ffzAddKeyHook();
 

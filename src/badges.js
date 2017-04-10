@@ -105,7 +105,7 @@ FFZ.settings_info.hidden_badges = {
 	help: "Any badges added to this list will not be displayed in chat.",
 
 	on_update: function(val) {
-		if ( this.has_bttv )
+		if ( this.has_bttv_6 )
 			return;
 
 		var controller = utils.ember_lookup('controller:chat'),
@@ -159,7 +159,7 @@ FFZ.settings_info.hidden_badges = {
 			values.push([hide_key, f.render_badges(render_badge)]);
 		}
 
-		if ( this.has_bttv && window.BetterTTV ) {
+		if ( this.has_bttv_6 && window.BetterTTV ) {
 			try {
 				for(var badge_id in BetterTTV.chat.store.__badgeTypes)
 					values.push(['bttv-' + badge_id, null]);
@@ -255,7 +255,7 @@ FFZ.settings_info.transparent_badges = {
 	value: 0,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Badge Style",
 	help: "Make badges appear rounded, completely circular, or transparent with no background at all.",
@@ -263,7 +263,7 @@ FFZ.settings_info.transparent_badges = {
 	process_value: utils.process_int(0, 0, 5),
 
 	on_update: function(val) {
-		if ( this.has_bttv )
+		if ( this.has_bttv_6 )
 			return;
 
 		this.toggle_style('badges-rounded', val === 1);
@@ -302,7 +302,7 @@ if ( constants.IS_WEBKIT )
 
 FFZ.prototype.setup_badges = function() {
 	this.log("Preparing badge system.");
-	if ( ! this.has_bttv ) {
+	if ( ! this.has_bttv_6 ) {
 		var val = this.settings.transparent_badges;
 		this.toggle_style('badges-rounded', val === 1);
 		this.toggle_style('badges-circular', val === 2 || val === 3 || val === 4);
@@ -312,7 +312,9 @@ FFZ.prototype.setup_badges = function() {
 
 		utils.toggle_cls('ffz-transparent-badges')(val >= 5);
 		utils.toggle_cls('ffz-no-loyalty')(!this.settings.loyalty_badges);
+	}
 
+	if ( ! this.has_bttv ) {
 		this.toggle_style('badges-sub-notice', ! this.settings.sub_notice_badges);
 		this.toggle_style('badges-sub-notice-on', this.settings.sub_notice_badges);
 	}

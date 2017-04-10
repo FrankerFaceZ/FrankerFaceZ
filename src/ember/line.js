@@ -37,7 +37,7 @@ FFZ.settings_info.username_display = {
 	},
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Username Display",
 	help: "How a user's name should be rendered when their display name differs from the username.",
@@ -83,8 +83,6 @@ FFZ.settings_info.replace_bad_emotes = {
 	value: true,
 
 	category: "Chat Appearance",
-	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
-
 	name: "Fix Low Quality Twitch Global Emoticons",
 	help: "Replace emoticons such as DansGame and RedCoat with cleaned up versions that don't have pixels around the edges or white backgrounds for nicer display on dark chat."
 };
@@ -95,7 +93,7 @@ FFZ.settings_info.parse_links = {
 	value: true,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Make Links Clickable",
 	help: "Display links as real, clickable hyperlinks rather than just text."
@@ -107,7 +105,7 @@ FFZ.settings_info.parse_emoticons = {
 	value: true,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Display Emoticons",
 	help: "Display emoticons in chat messages rather than just text."
@@ -138,7 +136,7 @@ FFZ.settings_info.scrollback_length = {
 	value: 150,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Scrollback Length",
 	help: "Set the maximum number of lines to keep in chat.",
@@ -179,7 +177,7 @@ FFZ.settings_info.hosted_sub_notices = {
 	value: true,
 
 	category: "Chat Filtering",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Show Hosted Channel Subscriber Notices",
 	help: "Display (or more specifically <i>hides</i> when disabled) notices in chat when someone subscribes to the hosted channel."
@@ -188,11 +186,9 @@ FFZ.settings_info.hosted_sub_notices = {
 
 FFZ.settings_info.filter_whispered_links = {
 	type: "boolean",
-	value: true,
+	value: 6,
 
 	category: "Chat Filtering",
-	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
-
 	name: "Auto-Hide Potentially Dangerous Whispered Links",
 	help: "Removes whispered links and displays a placeholder, with a warning that the link has not been approved by moderation or staff. Links remain accessible with an additional click."
 };
@@ -203,8 +199,6 @@ FFZ.settings_info.banned_words = {
 	value: [],
 
 	category: "Chat Filtering",
-
-	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 
 	name: "Banned Words",
 	help: "Set a list of words that will be locally removed from chat messages.",
@@ -244,8 +238,6 @@ FFZ.settings_info.keywords = {
 
 	category: "Chat Filtering",
 
-	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
-
 	name: "Highlight Keywords",
 	help: "Set additional keywords that will be highlighted in chat.",
 
@@ -284,7 +276,6 @@ FFZ.settings_info.clickable_emoticons = {
 	value: false,
 
 	category: "Chat Tooltips",
-	warn_bttv: "Only affects Whispers when BetterTTV is enabled.",
 	no_mobile: true,
 
 	name: "Emoticon Information Pages",
@@ -297,7 +288,7 @@ FFZ.settings_info.link_info = {
 	value: true,
 
 	category: "Chat Tooltips",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Link Information <span>Beta</span>",
 	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
@@ -309,7 +300,7 @@ FFZ.settings_info.link_image_hover = {
 	value: false,
 
 	category: "Chat Tooltips",
-	no_bttv: true,
+	no_bttv: 6,
 	no_mobile: true,
 
 	name: "Image Preview",
@@ -337,7 +328,7 @@ FFZ.settings_info.image_hover_all_domains = {
 	value: false,
 
 	category: "Chat Tooltips",
-	no_bttv: true,
+	no_bttv: 6,
 	no_mobile: true,
 
 	name: "Image Preview - All Domains",
@@ -407,7 +398,7 @@ FFZ.settings_info.old_sub_notices = {
 	value: false,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Old-Style Subscriber Notices",
 	help: "Display the old style subscriber notices, with the message on a separate line."
@@ -933,15 +924,43 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				style = colors ? 'color:' + (is_dark ? colors[1] : colors[0]) : '',
 				colored = colors ? ' has-color' + (is_replay ? ' replay-color' : '') : '',
 
-				results = f.format_display_name(raw_display, username);
+				results = f.format_display_name(raw_display, username),
+				tag = f.settings.disable_bttv_mod_cards ? 'fspan' : 'span';
 
-			return '<span class="' + (is_recipient ? 'to' : 'from') + (alias ? ' ffz-alias' : '') + (results[1] ? ' html-tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + (results[1] ? '" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</span>';
+			return '<' + tag + ' class="' + (is_recipient ? 'to' : 'from') + (alias ? ' ffz-alias' : '') + (results[1] ? ' html-tooltip' : '') + colored + '" style="' + style + (colors ? '" data-color="' + raw_color : '') + (results[1] ? '" title="' + utils.quote_attr(results[1]) : '') + '">' + results[0] + '</' + tag + '>';
 		},
 
 		buildSystemMessageHTML: function() {
-			return this.get('hasSystemMsg') ?
-				'<div class="system-msg">' + utils.sanitize(this.get('systemMsg')) + '</div>' :
-				'';
+			if ( ! this.get('hasSystemMsg') )
+				return '';
+
+			var tags = this.get('msgObject.tags') || {},
+				msg_type = tags['msg-id'],
+				out = '';
+
+			if ( msg_type === 'bits-hashtag' )
+				out = f.render_token(true,false,true, {type: "bits", prefix: "Cheer", amount: parseInt(tags['msg-param-total'])}) +
+					utils.sanitize(tags['system-msg'] || '')
+						.replace('{hashtag}', '<strong>#' + utils.sanitize(tags['msg-param-hashtag']) + '</strong>')
+						.replace('{link}', '<a target="_blank" href="' + utils.quote_san(tags['msg-param-link']) + '">' + utils.sanitize(tags['msg-param-linkname']) + '</a>')
+
+
+			else if ( msg_type === 'purchase' ) {
+				var Intl = utils.ember_lookup('service:intl');
+				out = Intl && ('<p class="purchase-message-title pd-t-0 float-left">' +
+					Intl.tHtml('gameCommerce.purchaseNotifications.message', {
+						userName: tags['login'],
+						purchaseTitle: tags['msg-param-title']
+					}).string +
+					'</p><div><img class="purchase-notif__box-art float-right mg-t-0 mg-1-1" src="' +
+					utils.quote_san(tags['msg-param-imageURL']) +
+					'"></div>');
+			}
+
+			else
+				out = utils.sanitize(this.get('systemMsg'));
+
+			return out ? '<div class="system-msg">' + out + '</div>' : '';
 		},
 
 		buildBadgesHTML: function() {

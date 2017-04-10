@@ -373,10 +373,13 @@ FFZ.prototype.modify_chat_input = function(component) {
 			if ( ! t || ! t.length )
 				f.error("Cannot find textarea in Twitch Chat Input.");
 
-			t.off("keydown");
-			t.off("keyup");
-			t.on("keypress", this._ffzKeyPress.bind(this));
-			t.on("keydown", this._ffzKeyDown.bind(this));
+			if ( ! this.has_bttv ) {
+				t.off("keydown");
+				t.off("keyup");
+				t.on("keypress", this._ffzKeyPress.bind(this));
+				t.on("keydown", this._ffzKeyDown.bind(this));
+			}
+
 			t.on("paste", this._ffzPaste.bind(this));
 
 			t.attr('rows', 1);
@@ -824,9 +827,6 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 						prefix_length = f.settings.input_complete_without_prefix && is_sub_set ? utils.find_common_prefix(_.pluck(emote_set, 'code'), true) : 0;
 						sort_factor = is_sub_set ? 1 : 9;
-
-						if ( is_sub_set )
-							f.log("Sub Set: " + set_name + " -- Common Prefix: " + prefix_length + " [" + emote_set[0].code.substr(0, prefix_length) + "]", emote_set);
 
 						for(var i = 0; i < emote_set.length; i++) {
 							emote = emote_set[i];

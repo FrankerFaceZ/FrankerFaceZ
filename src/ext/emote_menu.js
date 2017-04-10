@@ -30,7 +30,7 @@ FFZ.prototype.setup_emote_menu = function(delay) {
 // --------------------
 
 FFZ.prototype._emote_menu_enumerator = function() {
-	if ( this.has_bttv )
+	if ( this.has_bttv_6 )
 		return [];
 
 	var twitch_user = this.get_user(),

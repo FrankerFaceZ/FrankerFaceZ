@@ -11,7 +11,10 @@ var FFZ = window.FrankerFaceZ,
 // --------------------
 
 FFZ.prototype.find_bttv = function(increment, delay) {
-	this.has_bttv = false;
+	this.has_bttv = this.has_bttv_6 = this.has_bttv_7 = false;
+	if ( window.BetterTTV && BetterTTV.version && BetterTTV.version.indexOf('7.') === 0 )
+		return this.setup_bttv_7(delay||0);
+
 	if ( window.BTTVLOADED )
 		return this.setup_bttv(delay||0);
 
@@ -23,9 +26,94 @@ FFZ.prototype.find_bttv = function(increment, delay) {
 }
 
 
+FFZ.prototype.setup_bttv_7 = function(delay) {
+	this.log("BetterTTV v7 was detected after " + delay + "ms. Hooking.");
+	this.has_bttv = 7;
+	this.has_bttv_6 = false;
+	this.has_bttv_7 = true;
+
+	var settings = BetterTTV.settings,
+		cl = document.body.classList;
+
+	// Disable FFZ Dark if it's enabled.
+	cl.remove("ffz-dark");
+	if ( this._dark_style ) {
+		this._dark_style.parentElement.removeChild(this._dark_style);
+		this._dark_style = undefined;
+	}
+
+	// Disable other styling.
+	if ( this._layout_style ) {
+		this._layout_style.parentElement.removeChild(this._layout_style);
+		this._layout_style = undefined;
+	}
+
+	if ( this._chat_style ) {
+		utils.update_css(this._chat_style, 'chat_font_size', '');
+		utils.update_css(this._chat_style, 'chat_ts_font_size', '');
+	}
+
+	this.toggle_style('chat-padding');
+	this.toggle_style('chat-background');
+
+	this.toggle_style('chat-separator');
+	this.toggle_style('chat-separator-3d');
+	this.toggle_style('chat-separator-3d-inset');
+	this.toggle_style('chat-separator-wide');
+
+	this.toggle_style('chat-colors-gray');
+	/*this.toggle_style('badges-rounded');
+	this.toggle_style('badges-circular');
+	this.toggle_style('badges-blank');
+	this.toggle_style('badges-circular-small');
+	this.toggle_style('badges-transparent');*/
+	this.toggle_style('badges-sub-notice');
+	this.toggle_style('badges-sub-notice-on');
+
+	//cl.remove('ffz-transparent-badges');
+	cl.remove("ffz-sidebar-swap");
+	cl.remove("ffz-portrait");
+	cl.remove("ffz-minimal-channel-title");
+	cl.remove("ffz-flip-dashboard");
+	cl.remove('ffz-minimal-channel-bar');
+	cl.remove('ffz-channel-bar-bottom');
+	cl.remove('ffz-channel-title-top');
+	cl.remove('ffz-sidebar-minimize');
+	cl.remove('ffz-alias-italics');
+
+	// Update the layout service.
+	var Layout = utils.ember_lookup('service:layout');
+	if ( Layout ) {
+		Layout.set('ffzMinimizeNavigation', false);
+		Layout.set('rawPortraitMode', 0);
+	}
+
+	// Remove Following Count
+	if ( this.settings.following_count ) {
+		this._schedule_following_count();
+		this._draw_following_count();
+		this._draw_following_channels();
+	}
+
+
+	// Hook into BTTV's dark mode.
+	cl.add('ffz-bttv');
+	cl.toggle('ffz-bttv-dark', settings.get('darkenedMode'));
+
+	settings.on('changed.darkenedMode', function(val) {
+		cl.toggle('ffz-bttv-dark', val);
+	});
+
+	this.update_ui_link();
+	this.api_trigger('bttv-initialized', 7);
+}
+
+
 FFZ.prototype.setup_bttv = function(delay) {
 	this.log("BetterTTV was detected after " + delay + "ms. Hooking.");
 	this.has_bttv = true;
+	this.has_bttv_6 = true;
+	this.has_bttv_7 = false;
 
 	// Disable Dark if it's enabled.
 	document.body.classList.remove("ffz-dark");
@@ -112,6 +200,7 @@ FFZ.prototype.setup_bttv = function(delay) {
 	cl.remove('ffz-channel-bar-bottom');
 	cl.remove('ffz-channel-title-top');
 	cl.remove('ffz-sidebar-minimize');
+	cl.remove('ffz-alias-italics');
 
 	// Update the layout service.
 	var Layout = utils.ember_lookup('service:layout');

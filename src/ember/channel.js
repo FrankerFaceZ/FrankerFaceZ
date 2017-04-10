@@ -565,7 +565,7 @@ FFZ.settings_info.stream_uptime = {
 FFZ.settings_info.stream_title = {
 	type: "boolean",
 	value: true,
-	no_bttv: true,
+	no_bttv: 6,
 	no_mobile: true,
 
 	category: "Channel Metadata",

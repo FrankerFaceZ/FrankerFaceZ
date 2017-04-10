@@ -38,14 +38,14 @@ FFZ.settings_info.top_conversations = {
 FFZ.settings_info.hide_whispers_in_embedded_chat = {
 	type: "boolean",
 	value: false,
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Whispers",
 	name: "Hide Whispers in Embedded Chat",
 	help: "Do not display whispers on the dashboard, in pop-out chat, or in chat embedded into other websites.",
 
 	on_update: function(val) {
-		if ( ! val || this.has_bttv )
+		if ( ! val || this.has_bttv_6 )
 			return;
 
 		for(var room_id in this.rooms) {
@@ -117,7 +117,7 @@ FFZ.prototype.modify_conversation_menu = function(component) {
 				el = this.get('element'),
 				sections = el && el.querySelectorAll('.options-section');
 
-			if ( ! user || ! user.length || f.has_bttv )
+			if ( ! user || ! user.length || f.has_bttv_6 )
 				return;
 
 			if ( sections && sections.length )

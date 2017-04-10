@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 459,
+	major: 3, minor: 5, revision: 463,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -295,7 +295,7 @@ require('./ui/tooltips');
 require('./ui/notifications');
 //require('./ui/viewer_count');
 require('./ui/sub_count');
-require('./ui/dash_stats');
+//require('./ui/dash_stats');
 require('./ui/dash_feed');
 
 require('./ui/menu_button');
@@ -494,7 +494,7 @@ FFZ.prototype.init_dashboard = function(delay) {
 	this.setup_notifications();
 	this.setup_following_count(false);
 	this.setup_menu();
-	this.setup_dash_stats();
+	//this.setup_dash_stats();
 	this.setup_dash_feed();
 
 	this.finalize_ember_wrapper();

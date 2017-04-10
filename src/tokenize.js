@@ -132,7 +132,7 @@ FFZ.settings_info.twenty_four_timestamps = {
 	},
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Timestamp Format",
 	help: "Display timestamps in chat in the 24 hour format rather than 12 hour.",
@@ -156,7 +156,7 @@ FFZ.settings_info.timestamp_seconds = {
 	value: false,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Timestamp Seconds",
 	help: "Display seconds in chat timestamps."
@@ -168,7 +168,7 @@ FFZ.settings_info.show_deleted_links = {
 	value: false,
 
 	category: "Chat Moderation",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Show Deleted Links",
 	help: "Do not delete links based on room settings or link length."
@@ -180,7 +180,7 @@ FFZ.settings_info.clickable_mentions = {
 	value: true,
 
 	category: 'Chat Moderation',
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: 'Clickable Mentions',
 	help: 'Make mentions in chat starting with an at sign (<code>@</code>) open the user\'s moderation card when clicked.',
@@ -819,7 +819,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 				continue;
 
 			// If we have chat tabs/rows, update the status.
-			if ( room_id && ! this.has_bttv && this._chatv ) {
+			if ( room_id && ! this.has_bttv_6 && this._chatv ) {
 				var room = this.rooms[room_id] && this.rooms[room_id].room;
 				if ( room._ffz_tab && ! room._ffz_tab.classList.contains('active') ) {
 					room._ffz_tab.classList.add('tab-mentioned');

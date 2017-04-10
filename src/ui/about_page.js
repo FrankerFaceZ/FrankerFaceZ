@@ -81,7 +81,7 @@ FFZ.debugging_blocks = {
 			];
 
 			if ( this.has_bttv )
-				output.push(['BetterTTV', BetterTTV.info.version + 'r' + BetterTTV.info.release]);
+				output.push(['BetterTTV', this.has_bttv_7 ? BetterTTV.version : (BetterTTV.info.version + 'r' + BetterTTV.info.release)]);
 
 			if ( Object.keys(this._apis).length ) {
 				output.push(null);

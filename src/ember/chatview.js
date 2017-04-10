@@ -23,7 +23,7 @@ FFZ.basic_settings.delayed_chat = {
 	},
 
 	category: "Chat",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Delay and Filter Chat",
 	help: "Delay the appearance of chat messages to allow time for moderation and completely hide removed messages.",
@@ -109,7 +109,7 @@ FFZ.settings_info.chat_batching = {
 	value: 0,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Chat Message Batching",
 	help: "Display chat messages in batches to improve performance in <em>extremely</em> fast chats.",
@@ -141,7 +141,7 @@ FFZ.settings_info.chat_delay = {
 	value: -1,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Artificial Chat Delay",
 	help: "Delay the appearance of chat messages to allow for moderation before you see them.",
@@ -173,7 +173,7 @@ FFZ.settings_info.remove_filtered = {
 	process_value: utils.process_int(0),
 
 	category: "Chat Filtering",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Remove Messages with Banned Words",
 	help: "Mark messages with banned words as deleted or outright remove them from chat.",
@@ -184,14 +184,14 @@ FFZ.settings_info.remove_deleted = {
 	type: "boolean",
 	value: false,
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Filtering",
 	name: "Remove Deleted Messages",
 	help: "Remove deleted messages from chat entirely rather than leaving behind a clickable &lt;deleted message&gt;.",
 
 	on_update: function(val) {
-			if ( this.has_bttv || ! this.rooms || ! val )
+			if ( this.has_bttv_6 || ! this.rooms || ! val )
 				return;
 
 			for(var room_id in this.rooms) {
@@ -219,7 +219,7 @@ FFZ.settings_info.remove_bot_ban_notices = {
 	type: "boolean",
 	value: false,
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Filtering",
 	name: "Remove Bot Ban Notices",
@@ -231,14 +231,14 @@ FFZ.settings_info.prevent_clear = {
 	type: "boolean",
 	value: false,
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Filtering",
 	name: "Show Deleted Messages",
 	help: "Fade deleted messages instead of replacing them, and prevent chat from being cleared.",
 
 	on_update: function(val) {
-			if ( this.has_bttv || ! this.rooms )
+			if ( this.has_bttv_6 || ! this.rooms )
 				return;
 
 			for(var room_id in this.rooms) {
@@ -281,14 +281,14 @@ FFZ.settings_info.group_tabs = {
 
 	process_value: utils.process_int(0, 0, 3),
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Appearance",
 	name: "Chat Room Tabs",
 	help: "Display tabs for chat rooms with recent activity at the top of the chat window for more convenient chatting.",
 
 	on_update: function(val) {
-			if ( this.has_bttv || ! this._chatv )
+			if ( this.has_bttv_6 || ! this._chatv )
 				return;
 
 			if ( val )
@@ -321,7 +321,7 @@ FFZ.settings_info.visible_rooms = {
 
 FFZ.prototype.refresh_chat = function() {
 	var parents, lines = jQuery('ul.chat-lines');
-	if ( this.has_bttv || ! lines || ! lines.length )
+	if ( this.has_bttv_6 || ! lines || ! lines.length )
 		return;
 
 	parents = lines.parents('.chatReplay');
@@ -358,7 +358,7 @@ FFZ.prototype.setup_chatview = function() {
 			},
 
 			ffzUpdateChannels: function() {
-				if ( ! f._chatv || f.has_bttv )
+				if ( ! f._chatv || f.has_bttv_6 )
 					return;
 
 				f._chatv.ffzRebuildMenu();
@@ -395,7 +395,7 @@ FFZ.prototype.setup_chatview = function() {
 			}.observes("currentChannelRoom"),
 
 			ffzUpdateInvites: function() {
-				if ( ! f._chatv || f.has_bttv )
+				if ( ! f._chatv || f.has_bttv_6 )
 					return;
 
 				f._chatv.ffzUpdateMenuUnread();
@@ -407,7 +407,7 @@ FFZ.prototype.setup_chatview = function() {
 			}.observes('currentRoom'),
 
 			notificationsCount: function() {
-				if ( ! f._chatv || f.has_bttv )
+				if ( ! f._chatv || f.has_bttv_6 )
 					return this._super();
 
 				var total = this.get('invitedPrivateGroupRooms.length') || 0;
@@ -450,7 +450,7 @@ FFZ.prototype.setup_chatview = function() {
 			}.observes("privateGroupRooms.@each"),
 
 			removeCurrentChannelRoom: function() {
-				if ( f.has_bttv )
+				if ( f.has_bttv_6 )
 					return this._super();
 
 				var room = this.get("currentChannelRoom"),
@@ -573,7 +573,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 			this.$('.textarea-contain').append(f.build_ui_link(this));
 
-			if ( ! f.has_bttv ) {
+			if ( ! f.has_bttv_6 ) {
 				if ( f.settings.group_tabs )
 					this.ffzEnableTabs();
 
@@ -738,7 +738,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 				updated = false;
 
-			if ( f.has_bttv )
+			if ( f.has_bttv_6 )
 				return;
 
 			if ( target ) {
@@ -1071,7 +1071,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 		// Group Tabs
 
 		ffzEnableTabs: function() {
-			if ( f.has_bttv || ! f.settings.group_tabs || this._ffz_tabs )
+			if ( f.has_bttv_6 || ! f.settings.group_tabs || this._ffz_tabs )
 				return;
 
 			// Hide the existing chat UI.
@@ -1110,7 +1110,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 			tabs.innerHTML = "";
 
-			if ( f.has_bttv || ! f.settings.group_tabs )
+			if ( f.has_bttv_6 || ! f.settings.group_tabs )
 				return;
 
 			var link = utils.createElement('a', 'button button--icon-only'),
@@ -1285,7 +1285,7 @@ FFZ.prototype.connect_extra_chat = function() {
 	}
 
 	// We don't join extra rooms with BTTV.
-	if ( this.has_bttv )
+	if ( this.has_bttv_6 )
 		return;
 
 	for(var i=0; i < this.settings.pinned_rooms.length; i++)
@@ -1345,7 +1345,7 @@ FFZ.prototype._join_room = function(room_id, no_rebuild) {
 
 
 	// Rebuild the chat UI.
-	if ( ! no_rebuild && ! this.has_bttv && this._chatv ) {
+	if ( ! no_rebuild && ! this.has_bttv_6 && this._chatv ) {
 		if ( this.settings.group_tabs )
 			this._chatv.ffzRebuildTabs();
 
@@ -1383,7 +1383,7 @@ FFZ.prototype._leave_room = function(room_id, no_rebuild) {
 
 
 	// Rebuild the chat UI.
-	if ( ! no_rebuild && ! this.has_bttv && this._chatv ) {
+	if ( ! no_rebuild && ! this.has_bttv_6 && this._chatv ) {
 		if ( this.settings.group_tabs )
 			this._chatv.ffzRebuildTabs();
 
@@ -1399,7 +1399,7 @@ FFZ.prototype._leave_room = function(room_id, no_rebuild) {
 // ----------------------
 
 FFZ.chat_commands.join = function(room, args) {
-	if ( this.has_bttv )
+	if ( this.has_bttv_6 )
 		return "Pinned Rooms are not available with BetterTTV installed.";
 
 	if ( ! args || ! args.length || args.length > 1 )
@@ -1415,13 +1415,13 @@ FFZ.chat_commands.join = function(room, args) {
 		return "You have already joined " + room_id + ". Please use \"/part " + room_id + "\" to leave it.";
 }
 
-FFZ.chat_commands.join.no_bttv = true;
+FFZ.chat_commands.join.no_bttv = 6;
 FFZ.chat_commands.join.label = '/join &lt;channel&gt;';
 FFZ.chat_commands.join.info = 'Add Channel to Pinned Rooms';
 
 
 FFZ.chat_commands.part = function(room, args) {
-	if ( this.has_bttv )
+	if ( this.has_bttv_6 )
 		return "Pinned Rooms are not available with BetterTTV installed.";
 
 	if ( ! args || ! args.length || args.length > 1 )
@@ -1439,6 +1439,6 @@ FFZ.chat_commands.part = function(room, args) {
 		return "You are not in " + room_id + ".";
 }
 
-FFZ.chat_commands.part.no_bttv = true;
+FFZ.chat_commands.part.no_bttv = 6;
 FFZ.chat_commands.part.label = '/part &lt;channel&gt;';
 FFZ.chat_commands.part.info = 'Remove Channel from Pinned Rooms';

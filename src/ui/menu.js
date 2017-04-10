@@ -769,7 +769,7 @@ FFZ.prototype._add_emote = function(view, emote, favorites_set, favorites_key, e
 
 	var input_el, text, room;
 
-	if ( this.has_bttv ) {
+	if ( this.has_bttv_6 ) {
 		input_el = view.get('element').querySelector('textarea');
 		text = input_el.value;
 

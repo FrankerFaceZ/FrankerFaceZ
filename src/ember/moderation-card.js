@@ -34,6 +34,32 @@ try {
 // Settings
 // ----------------
 
+FFZ.settings_info.disable_bttv_mod_cards = {
+	type: "boolean",
+	value: false,
+
+	require_bttv: 7,
+
+	category: "Chat Moderation",
+	name: "Disable BTTV Mod Cards",
+	help: "This disables mod cards from BetterTTV, forcing FFZ mod cards to show instead.",
+
+	on_update: function(val) {
+		var CL = utils.ember_resolve('component:chat/chat-line'),
+			views = CL ? utils.ember_views() : [];
+
+		for(var vid in views) {
+			var view = views[vid];
+			if ( view instanceof CL && view.buildFromHTML ) {
+				view.$('.from').replaceWith(view.buildFromHTML());
+				if ( view.get('msgObject.to') )
+					view.$('.to').replaceWith(view.buildFromHTML(true));
+			}
+		}
+	}
+};
+
+
 FFZ.basic_settings.enhanced_moderation_cards = {
 	type: "boolean",
 
@@ -60,7 +86,7 @@ FFZ.basic_settings.enhanced_moderation_cards = {
 FFZ.basic_settings.chat_hover_pause = {
 	type: "boolean",
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat",
 	name: "Pause Chat Scrolling on Mouse Hover",
@@ -121,7 +147,7 @@ FFZ.settings_info.chat_mod_icon_visibility = {
 
 	process_value: utils.process_int(0),
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Moderation",
 	name: "Display In-Line Mod Icons",
@@ -154,7 +180,7 @@ FFZ.settings_info.chat_hover_pause = {
 	value: 0,
 	process_value: utils.process_int(0, 0, 1),
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Moderation",
 	name: "Pause Chat Scrolling",
@@ -182,7 +208,7 @@ FFZ.settings_info.short_commands = {
 	type: "boolean",
 	value: true,
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Moderation",
 	name: "Short Moderation Commands",
@@ -225,7 +251,7 @@ FFZ.settings_info.timeout_notices = {
 	value: 1,
 	process_value: utils.process_int(1),
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Moderation",
 	name: "Display Timeout / Ban Notices",
@@ -276,7 +302,7 @@ FFZ.settings_info.mod_button_context = {
 	value: 3,
 	process_value: utils.process_int(3),
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Moderation",
 	name: "Mod Icon Context Menus",
@@ -296,7 +322,7 @@ FFZ.settings_info.mod_card_reasons = {
 	],
 
 	category: "Chat Moderation",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Ban / Timeout Reasons",
 	help: "Change the available options in the chat ban reasons list shown in moderation cards and when right-clicking an in-line ban or timeout button.",
@@ -339,7 +365,7 @@ FFZ.settings_info.mod_buttons = {
 	//  integer = Timeout (that amount of time)
 	value: [['', false, false], ['',600, false]], //, ['', 1, false]],
 
-	no_bttv: true,
+	no_bttv: 6,
 
 	category: "Chat Moderation",
 	name: "Custom In-Line Moderation Icons",
@@ -910,7 +936,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 		},
 
 		ffz_init: function() {
-			if ( f.has_bttv )
+			if ( f.has_bttv_6 )
 				return;
 
 			f._mod_card = this;

@@ -1284,6 +1284,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .ffz-moderation-card {
 	border: 2px solid #cbcbcb;
 	width: 340px;
+	line-height: inherit !important;
 }
 
 .moderation-card__close-button {
@@ -1311,6 +1312,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	line-height: 18px;
 	z-index: 4;
 	pointer-events: none;
+	margin-left: 0 !important;
 }
 
 .ffz-moderation-card .info .stat {
@@ -1418,10 +1420,12 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 .ffz-dark .ffz-following-row,
 .theatre .ffz-following-row,
 
+.ffz-bttv-dark .moderation-card .moderation-card__actions,
 .ffz-dark .moderation-card .moderation-card__actions,
 .theatre .moderation-card .moderation-card__actions,
 .dark .moderation-card .moderation-card__actions,
 
+.ffz-bttv-dark .ffz-moderation-card ul.menu,
 .ffz-dark .ffz-moderation-card ul.menu,
 .theatre .ffz-moderation-card ul.menu,
 .dark .ffz-moderation-card ul.menu {
@@ -1445,12 +1449,14 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 	border-bottom-color: #7d5bbe;
 }
 
+.ffz-bttv-dark .ffz-moderation-card ul.menu li,
 .ffz-dark .ffz-moderation-card ul.menu li,
 .theatre .ffz-moderation-card ul.menu li,
 .dark .ffz-moderation-card ul.menu li {
 	color: #999;
 }
 
+.ffz-bttv-dark .ffz-moderation-card ul.menu li:hover,
 .ffz-dark .ffz-moderation-card ul.menu li:hover,
 .theatre .ffz-moderation-card ul.menu li:hover,
 .dark .ffz-moderation-card ul.menu li:hover {
@@ -1467,21 +1473,25 @@ body:not(.ffz-hide-friends) .ffz-moderation-card .follow-button {
 
 /* dark moderation card */
 
+.ffz-bttv-dark .ffz-moderation-card,
 .dark .ffz-moderation-card,
 .theatre .ffz-moderation-card {
 	border-color: #1b1b20;
 }
 
+.ffz-bttv-dark .ffz-moderation-card:focus,
 .dark .ffz-moderation-card:focus,
 .theatre .ffz-moderation-card:focus {
 	border-color: #cbcbcb;
 }
 
+.ffz-bttv-dark .ffz-moderation-card .moderation-card__actions,
 .dark .ffz-moderation-card .moderation-card__actions,
 .theatre .ffz-moderation-card .moderation-card__actions {
 	background-color: #232329;
 }
 
+.ffz-bttv-dark.ffz-no-blue .moderation-card .moderation-card__actions,
 .ffz-no-blue .cn-hosting,
 .ffz-no-blue .dark .ember-chat .moderation-card .moderation-card__actions,
 .ffz-no-blue .theatre .ember-chat .moderation-card .moderation-card__actions {
@@ -1788,7 +1798,10 @@ a.unsafe-link {
 	float: left;
 }
 
+.ffz-bttv-dark .ffz-room-row,
 .ffz-dark .ffz-room-row { color: #a68ed2; }
+
+.ffz-bttv-dark .ffz-room-row svg path,
 .ffz-dark .ffz-room-row svg path { fill: #a68ed2; }
 
 .ffz-room-row { color: #6441a5; }
@@ -1963,19 +1976,24 @@ th.ffz-row-switch {
 
 /* Dark Group Tabs */
 
+.ffz-bttv-dark #ffz-group-tabs,
 .app-main.theatre #ffz-group-tabs,
 .chat-container.dark #ffz-group-tabs,
 .ember-chat-container.dark #ffz-group-tabs {
 	box-shadow: inset 0 -1px 0 0 #32323e;
 }
 
+.ffz-bttv-dark .ffz-chat-tab,
 .app-main.theatre .ffz-chat-tab,
 .chat-container.dark .ffz-chat-tab,
 .ember-chat-container.dark .ffz-chat-tab {
 	color: #B9A3E3;
 }
 
+.ffz-bttv-dark .ffz-room-row td > span:not(.intl-login),
 .ffz-dark .ffz-room-row td > span:not(.intl-login),
+
+.ffz-bttv-dark .ffz-chat-tab span,
 .app-main.theatre .ffz-chat-tab span,
 .chat-container.dark .ffz-chat-tab span,
 .ember-chat-container.dark .ffz-chat-tab span {
@@ -1983,6 +2001,7 @@ th.ffz-row-switch {
 	color: #fff;
 }
 
+.ffz-bttv-dark .ffz-chat-tab svg path,
 .app-main.theatre .ffz-chat-tab svg path,
 .chat-container.dark .ffz-chat-tab svg path,
 .ember-chat-container.dark .ffz-chat-tab svg path {
@@ -2214,6 +2233,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	color: #fff !important;
 }
 
+.ffz-bttv-dark .moderation-card .back-button,
 .theatre .moderation-card .back-button,
 .dark .moderation-card .back-button {
 	background-color: #232329;

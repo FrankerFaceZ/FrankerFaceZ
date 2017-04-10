@@ -663,13 +663,15 @@ FFZ.prototype.modify_room_component = function(component) {
 		ffz_init: function() {
 			f._roomv = this;
 
-			if ( ! f.has_bttv ) {
+			if ( ! f.has_bttv_6 ) {
 				this.ffzFixStickyBottom();
 				this.ffzAddKeyHook();
 
 				if ( f.settings.chat_hover_pause )
 					this.ffzEnableFreeze();
+			}
 
+			if ( ! f.has_bttv ) {
 				if ( f.settings.room_status )
 					this.ffzUpdateStatus();
 			}
@@ -810,7 +812,7 @@ FFZ.ffz_commands = {};
 
 
 FFZ.prototype.room_message = function(room, text) {
-	if ( this.has_bttv ) {
+	if ( this.has_bttv_6 ) {
 		var lines = text.split("\n");
 		for(var i=0; i < lines.length; i++)
 			BetterTTV.chat.handlers.onPrivmsg(room.id, {style: 'admin', date: new Date(), from: 'jtv', message: lines[i]});
@@ -1329,7 +1331,7 @@ FFZ.prototype._modify_room = function(room) {
 
 		addFriendsWatchingMessage: function(msg) {
 			this.addMessage({
-				style: 'admin' + (f.has_bttv ? '' : ' friend-watching'),
+				style: 'admin' + (f.has_bttv_6 ? '' : ' friend-watching'),
 				message: msg,
 				tags: {
 					emotes: tmimotes && tmimotes(this.get('userEmotes').tryParseEmotes(msg))
@@ -1386,7 +1388,7 @@ FFZ.prototype._modify_room = function(room) {
 			//f.log("Login Moderation for " + this.get('id') + ' [' + room_id + ']', event);
 
 			// In case we get unexpected input, do the other thing.
-			if ( f.has_bttv || ["ban", "unban", "timeout", "untimeout"].indexOf(event.moderation_action) === -1 )
+			if ( f.has_bttv_6 || ["ban", "unban", "timeout", "untimeout"].indexOf(event.moderation_action) === -1 )
 				return this._super(event);
 
 			var msg_id,

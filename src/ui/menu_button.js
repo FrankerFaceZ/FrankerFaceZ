@@ -28,7 +28,7 @@ FFZ.prototype.update_ui_link = function(link) {
 		room = this.rooms[room_id],
 		has_emotes = false,
 
-		blue = (this.has_bttv ? BetterTTV.settings.get('showBlueButtons') : false),
+		blue = (this.has_bttv_6 ? BetterTTV.settings.get('showBlueButtons') : false),
 		live = (this.feature_friday && this.feature_friday.live);
 
 

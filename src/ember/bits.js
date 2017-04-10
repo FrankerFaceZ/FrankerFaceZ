@@ -19,7 +19,7 @@ FFZ.settings_info.collect_bits = {
 	process_value: utils.process_int(0),
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Bits Stacking",
 	help: "Collect all the bits emoticons in a message into a single one at the start of the message."
@@ -31,7 +31,7 @@ FFZ.settings_info.bits_animated = {
 	value: true,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Bits Animation",
 	help: "Display bits with animation.",
@@ -50,7 +50,7 @@ FFZ.settings_info.bits_tags_container = {
 	value: true,
 
 	category: "Chat Appearance",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Bits Tag Display",
 	help: "Display competitive bits tags at the top of chats that have it enabled.",

@@ -1068,11 +1068,15 @@ module.exports = FFZ.utils = {
 
 
 	find_common_prefix: function(list, lower_only) {
+		if ( ! list || ! list.length )
+			return 0;
+
 		var p = 0,
 			l = list.length,
-			w = lower_only ? list[0].toLowerCase() : list[0];
+			w = lower_only ? list[0].toLowerCase() : list[0],
+			wl = w.length;
 
-		while(true) {
+		while (p < wl) {
 			var c = w[p];
 			for(var i=0; i < l; ++i)
 				if ( list[i][p] !== c)
@@ -1080,6 +1084,8 @@ module.exports = FFZ.utils = {
 
 			++p;
 		}
+
+		return wl;
 	},
 
 

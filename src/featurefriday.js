@@ -68,7 +68,7 @@ FFZ.prototype._feature_friday_ui = function(room_id, parent, view) {
 
 	btn.className = 'button primary';
 	btn.classList.toggle('live', ff.live);
-	btn.classList.toggle('blue', this.has_bttv && BetterTTV.settings.get('showBlueButtons'));
+	btn.classList.toggle('blue', this.has_bttv_6 && BetterTTV.settings.get('showBlueButtons'));
 
 	btn.href = "//www.twitch.tv/" + ff.channel;
 	btn.title = message;

@@ -36,7 +36,7 @@ FFZ.settings_info.command_aliases = {
 	value: [],
 
 	category: "Chat Moderation",
-	no_bttv: true,
+	no_bttv: 6,
 
 	name: "Command Aliases",
 	help: "Define custom commands for chat that are shortcuts for other commands or messages to send in chat.",
