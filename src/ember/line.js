@@ -11,6 +11,18 @@
 // Settings
 // ---------------------
 
+FFZ.settings_info.friend_notifications = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Filtering",
+	no_bttv: 6,
+
+	name: "Friend Watching Notifications",
+	help: "Display notifications when you receive a message that a friend has started watching the same channel."
+}
+
+
 FFZ.settings_info.alias_italics = {
 	type: "boolean",
 	value: true,
@@ -226,6 +238,45 @@ FFZ.settings_info.banned_words = {
 							vals.splice(i, 1);
 
 					f.settings.set("banned_words", vals);
+				},
+				600, input);
+		}
+	};
+
+
+FFZ.settings_info.key_users = {
+	type: "button",
+	value: [],
+
+	category: "Chat Filtering",
+
+	name: "Highlight Users",
+	help: "Set a list of users that will have all their messages highlighted in chat.",
+
+	method: function(e, from_basic) {
+			var f = this,
+				old_val = this.settings.key_users.join("\n"),
+				input = utils.createElement('textarea');
+
+			input.style.marginBottom = "20px";
+
+			utils.prompt(
+				"Highlight Users",
+				"Please enter a list of usernames of users that you would like to be highlighted in chat.</p><p>Case insensitive. One name per line.",
+				old_val,
+				function(new_val) {
+					if ( new_val === null || new_val === undefined )
+						return;
+
+					// Split them up.
+					var vals = new_val.toLowerCase().trim().split(/\s*\n\s*/g),
+						i = vals.length;
+
+					while(i--)
+						if ( vals[i].length === 0 )
+							vals.splice(i,1);
+
+					f.settings.set("key_users", vals);
 				},
 				600, input);
 		}

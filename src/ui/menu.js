@@ -83,7 +83,7 @@ FFZ.prototype.modify_chat_settings_menu = function(component) {
 
 			cb.addEventListener("change", function(e) {
 				f.settings.set("dark_twitch", this.checked);
-				if ( this.checked )
+				if ( this.checked && ! localStorage.hasOwnProperty('ffz_setting_dark_no_blue') )
 					f.settings.set("dark_no_blue", true);
 			});
 

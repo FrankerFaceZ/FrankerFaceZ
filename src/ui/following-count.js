@@ -4,11 +4,13 @@ var FFZ = window.FrankerFaceZ,
 
 	FOLLOWING_CONTAINERS = [
 		'.warp__item a[data-href="following"]',
-		'#header_actions #header_following'
+		'#header_actions #header_following',
+		'.top-nav__nav-link[data-tt_content="directory_following"]'
 	],
 
 	WIDE_TIP = function(f, el) {
 		return (f.settings.following_count && (
+					(el.classList.contains('top-nav__nav-link') && el.dataset['tt_content'] === 'directory_following') ||
 					el.id === 'header_following' ||
 					el.getAttribute('data-href') === 'following' ||
 					el.parentElement.getAttribute('data-name') === 'following'
@@ -175,11 +177,12 @@ FFZ.prototype._update_following_count = function() {
 
 
 FFZ.prototype._build_following_tooltip = function(el) {
-	if ( el.id !== 'header_following' && el.getAttribute('data-href') !== 'following' && el.parentElement.getAttribute('data-name') !== 'following' )
+	var is_top_nav = el.classList.contains('top-nav__nav-link') && el.dataset['tt_content'] === 'directory_following';
+	if ( ! is_top_nav && el.id !== 'header_following' && el.getAttribute('data-href') !== 'following' && el.parentElement.getAttribute('data-name') !== 'following' )
 		return el.getAttribute('original-title');
 
 	if ( ! this.settings.following_count )
-		return 'Following';
+		return is_top_nav ? '' : 'Following';
 
 	var tooltip = (this.has_bttv ? '<span class="stat playing">FrankerFaceZ</span>' : '') + 'Following',
 		bb = el.getBoundingClientRect(),
@@ -326,6 +329,9 @@ FFZ.prototype._draw_following_count = function(count) {
 
 		} else if ( ! badge ) {
 			badge = utils.createElement('span', 'ffz-follow-count');
+			if ( container.classList.contains('top-nav__nav-link') )
+				badge.className += ' flex flex--horizontalCenter flex--verticalCenter pill';
+
 			container.appendChild(badge);
 		}
 

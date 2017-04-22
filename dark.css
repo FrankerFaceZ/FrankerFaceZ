@@ -425,6 +425,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #a68ed2;
 }
 
+.ffz-dark .form__icon svg { fill: rgba(255,255,255,0.2) }
+
 .ffz-dark .button--icon.button--hollow figure svg,
 .ffz-dark .button.button--icon-only svg {
 	fill: #a68ed2;
@@ -1680,6 +1682,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: #a68ed2;
 }
 
+.ffz-dark .offer-list__core:after,
 .ffz-dark .offer-item__ci:after {
 	background-image: linear-gradient(rgba(16,16,16,0) 0,#101010 100%)
 }
@@ -1735,6 +1738,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .notification-center-balloon:before,
 .ffz-dark .notification-center-balloon:after { display: none }
 
+.ffz-dark .friend-requests__empty,
 .ffz-dark .friend-request__content-msg,
 .ffz-dark .friend-requests__footer a:hover,
 .ffz-dark .notification-center__unread-container,
@@ -1754,6 +1758,19 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: rgba(255,255,255,0.2);
 }
 
+.ffz-dark .sc-onboarding .sc-onboarding__content,
+.ffz-dark .sc-onboarding .sc-onboarding__close {
+	background-color: #101010;
+	box-shadow: -0.1rem 0 0 #474747 inset;
+}
+
+.ffz-dark .sc-onboarding {
+	box-shadow: 0 0 0 0.1rem #474747;
+}
+
+.ffz-dark .offer-item__ci--wrap { border-color: #474747 }
+
+.ffz-dark .offer-item__background--purple,
 .ffz-dark .offer-item--title,
 .ffz-dark .notification-center__footer,
 .ffz-dark .notification-center__header {
@@ -1771,6 +1788,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: rgba(255,255,255,0.2);
 }
 
+.ffz-dark .friend-requests__empty,
 .ffz-dark .friend-requests__footer,
 .ffz-dark .notification--read,
 .ffz-dark .notification {

@@ -414,9 +414,9 @@ var createElement = function(tag, className, content) {
 	U200D = String.fromCharCode(0x200D),
 
 	EMOJI_CODEPOINTS = {},
-	emoji_to_codepoint = function(surrogates, sep) {
-		if ( EMOJI_CODEPOINTS[surrogates] && EMOJI_CODEPOINTS[surrogates][sep] )
-			return EMOJI_CODEPOINTS[surrogates][sep];
+	emoji_to_codepoint = function(surrogates) {
+		if ( EMOJI_CODEPOINTS[surrogates] )
+			return EMOJI_CODEPOINTS[surrogates];
 
 		var input = surrogates.indexOf(U200D) === -1 ? surrogates.replace(UFE0Fg, '') : surrogates,
 			out = [],

@@ -131,7 +131,7 @@ FFZ.prototype.clear_notifications = function() {
 }
 
 
-FFZ.prototype.show_notification = function(message, title, tag, timeout, on_click, on_close) {
+FFZ.prototype.show_notification = function(message, title, tag, timeout, on_click, on_close, icon) {
 	var perm = Notification.permission;
 	if ( perm === "denied" )
 		return false;
@@ -145,7 +145,7 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 			dir: "ltr",
 			body: message,
 			tag: tag || "FrankerFaceZ",
-			icon: "//cdn.frankerfacez.com/icon32.png"
+			icon: icon || "//cdn.frankerfacez.com/icon32.png"
 			};
 
 		var f = this,
@@ -156,6 +156,7 @@ FFZ.prototype.show_notification = function(message, title, tag, timeout, on_clic
 
 		n.addEventListener("click", function() {
 			delete FFZ._notifications[nid];
+			n.close();
 			if ( on_click )
 				on_click.bind(f)();
 			});

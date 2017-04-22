@@ -141,8 +141,8 @@ FFZ.prototype._get_settings_object = function(skip_default) {
 
 FFZ.prototype.save_settings_file = function() {
 	var data = this._get_settings_object(),
-	   blob = new Blob(
-		   [JSON.stringify(data, null, 4)], {type: "application/json;charset=utf-8"});
+		blob = new Blob(
+			[JSON.stringify(data, null, 4)], {type: "application/json;charset=utf-8"});
 
 	FileSaver.saveAs(blob, "ffz-settings.json");
 }
@@ -844,7 +844,7 @@ FFZ.prototype._setting_set = function(key, val, suppress_log) {
 	localStorage.setItem(ls_key, jval);
 
 	if ( ! suppress_log )
-	   this.log('Changed Setting "' + key + '" to: ' + jval);
+		this.log('Changed Setting "' + key + '" to: ' + jval);
 
 	if ( info.on_update )
 		try {

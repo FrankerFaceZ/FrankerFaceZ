@@ -143,6 +143,7 @@ body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emotic
 .ffz-ui-toggle svg.svg-emoticons path { fill: rgba(0,0,0,0.2); }
 .ffz-ui-toggle:hover svg.svg-emoticons path { fill: rgba(0,0,0,0.5); }
 
+.card__img .overlay_info.length.live svg path,
 .card-carousel__item .card__img .overlay_info.live svg path,
 .streams .stream .content .overlay_info.live svg path,
 .videos .video .content .overlay_info.live svg path { fill: #ff2020; }
@@ -1185,6 +1186,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 
 /* Menu Scrollbar */
 
+.offer-list__core::-webkit-scrollbar,
 .notification-center__content::-webkit-scrollbar,
 .balloon__list.scroll-y::-webkit-scrollbar,
 .player-menu__menu::-webkit-scrollbar,
@@ -1207,6 +1209,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	width: 6px;
 }
 
+.offer-list__core::-webkit-scrollbar-thumb,
 .notification-center__content::-webkit-scrollbar-thumb,
 .balloon__list.scroll-y::-webkit-scrollbar-thumb,
 .player-menu__menu::-webkit-scrollbar-thumb,
@@ -1230,6 +1233,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 	box-shadow: 0 0 1px 1px rgba(255,255,255,0.25);
 }
 
+.ffz-dark .offer-list__core::-webkit-scrollbar-thumb,
 .ffz-dark .notification-center__content::-webkit-scrollbar-thumb,
 .ffz-dark .balloon__list.scroll-y::-webkit-scrollbar-thumb,
 .ffz-dark .player-menu__menu::-webkit-scrollbar-thumb,
@@ -1249,6 +1253,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .ffz-dark .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
 .ffz-dark .conversation-input-bar .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 
+.theatre .offer-list__core::-webkit-scrollbar-thumb,
 .theatre .search-panel .collection-wrapper::-webkit-scrollbar-thumb,
 .theatre .conversations-list .scroll-container::-webkit-scrollbar-thumb,
 .theatre .chatters-container::-webkit-scrollbar-thumb,
@@ -1262,6 +1267,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .theatre .ffz-ui-menu-page::-webkit-scrollbar-thumb,
 .theatre .ffz-ui-sub-menu-page::-webkit-scrollbar-thumb,
 
+.dark .offer-list__core::-webkit-scrollbar-thumb,
 .dark .chatters-container::-webkit-scrollbar-thumb,
 .dark .ffz-scrollbar::-webkit-scrollbar-thumb,
 .dark .ember-chat .chat-settings::-webkit-scrollbar-thumb,
@@ -1602,6 +1608,10 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	max-width: 600px;
 	text-align: left;
 	position: relative;
+}
+
+.ffz-follow-tip .tipsy-inner {
+	width: 316px;
 }
 
 .ffz-wide-tip span.stat {
@@ -2120,6 +2130,8 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 .chat-history .chat-line.admin .from,
 .chat-history .chat-line.admin .colon { display: none }
 
+.chat-line .colon, .conversation-chat-line .colon { margin-left: 0 !important }
+
 .chat-history .chat-line.notification .message,
 .chat-history .chat-line.admin .message { color: #666; }
 
@@ -2128,7 +2140,7 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	margin-right: 5px;
 }
 
-.chat-history .chat-line:not(.original-sender) span.from:hover,
+.chat-history .chat-line:not(.original-sender) .from:hover,
 .chat-history .timestamp.ts-action:hover {
 	cursor: pointer;
 	text-decoration: underline;
@@ -2700,9 +2712,13 @@ li[data-name="following"] a {
 .ffz-clip-title {
 	display: block;
 	white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	margin-bottom: 5px;
+}
+
+.ffz-tt-channel-title {
+	display: block;
 }
 
 .ffz-image-hover {
@@ -2715,6 +2731,12 @@ li[data-name="following"] a {
 .emoticon.ffz-image-hover {
 	display: block;
 	margin: 5px auto;
+}
+
+.ffz-follow-tip .ffz-image-hover {
+	margin-top: 3px;
+	max-width: 300px;
+	max-height: 300px;
 }
 
 .ffz-yt-thumb {
@@ -3243,6 +3265,7 @@ body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 
 body:not([data-current-path^="directory.csgo"]):not([data-current-path^="directory.game"]):not([data-current-path^="directory.creative"]) .ffz-game-banned { display: none !important }
 
+.ffz-game-spoilered .card__img > img,
 .ffz-game-spoilered .card__img a:not(.card__boxpin) img,
 .ffz-game-spoilered .thumb .cap img { visibility: hidden }
 
@@ -3391,9 +3414,9 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 
 /* Button Fix */
 
+.ffz-no-bg.button,
 .ffz-no-bg {
 	background: transparent;
-
 }
 
 .ffz-hidden-badges.badges { margin-left: 5px }
@@ -3679,6 +3702,8 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 }
 
+.ffz-sidebar-minimize:not(.ffz-minimal-channel-bar) .has-sc .cn-bar-fixed { top: 10px }
+
 .ffz-minimal-channel-bar .cn-bar-fixed:hover { top: 0 }
 .ffz-minimal-channel-bar .has-sc .cn-bar-fixed { top: 10px }
 
@@ -3694,12 +3719,12 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .ffz-minimal-channel-bar.ffz-channel-bar-bottom .cn-bar-fixed:hover { bottom: 0 }
 
 .ffz-sidebar-minimize .top-nav {
-	top: -40px;
+	top: -40px !important;
 	transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 }
 
 .ffz-sidebar-minimize .app-main.has-sc:not(.theatre) { top: 10px }
-.ffz-sidebar-minimize .top-nav:hover { top: 0 }
+.ffz-sidebar-minimize .top-nav:hover { top: 0 !important }
 .ffz-sidebar-minimize .has-sc .js-player-persistent { margin-top: 40px }
 
 /*.ffz-minimal-channel-title .cn-metabar,

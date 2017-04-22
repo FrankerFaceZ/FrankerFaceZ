@@ -204,14 +204,14 @@ FFZ.prototype.setup_tokenization = function() {
 	utils.toggle_cls('ffz-clickable-mentions')(this.settings.clickable_mentions);
 
 	try {
-		helpers = window.require && window.require("web-client/helpers/chat/chat-line-helpers");
+		this.chat_helpers = helpers = window.require && window.require("web-client/helpers/chat/chat-line-helpers");
 	} catch(err) { }
 
 	if ( ! helpers )
 		return this.log("Unable to get chat helper functions.");
 
 	try {
-		bits_helpers = window.require && window.require("web-client/utilities/bits/tokenize");
+		this.bits_helpers = bits_helpers = window.require && window.require("web-client/utilities/bits/tokenize");
 	} catch(err) {
 		this.error("Unable to get bits tokenizer.", err);
 	}
@@ -223,13 +223,13 @@ FFZ.prototype.setup_tokenization = function() {
 	bits_tags = utils.ember_lookup('service:bits-tags');
 
 	try {
-		conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
+		this.conv_helpers = conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
 	} catch(err) {
 		this.error("Unable to get conversation helper functions.", err);
 	}
 
 	try {
-		emote_helpers = window.require && window.require("web-client/utilities/tmi-emotes").default;
+		this.emote_helpers = emote_helpers = window.require && window.require("web-client/utilities/tmi-emotes").default;
 	} catch(err) {
 		this.error("Unable to get tmi-emotes helper function.", err);
 	}
@@ -685,15 +685,20 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 	if ( display && display.length && display !== 'jtv' )
 		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
 
+	var key_user = this.settings.key_users.indexOf(from_user) !== -1;
+	if ( key_user )
+		msgObject.set('ffz_has_mention', true);
+
 	if ( ! from_me ) {
 		tokens = this.tokenize_mentions(tokens);
-		for(var i=0; i < tokens.length; i++) {
-			var token = tokens[i];
-			if ( token.type === 'mention' && ! token.isOwnMessage ) {
-				msgObject.set('ffz_has_mention', true);
-				break;
+		if ( ! key_user )
+			for(var i=0; i < tokens.length; i++) {
+				var token = tokens[i];
+				if ( token.type === 'mention' && ! token.isOwnMessage ) {
+					msgObject.set('ffz_has_mention', true);
+					break;
+				}
 			}
-		}
 	}
 
 	msgObject.set('cachedTokens', tokens);
@@ -788,6 +793,11 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	var display = tags['display-name'];
 	if ( display && display.length && display !== 'jtv' )
 		FFZ.capitalization[from_user] = [display.trim(), Date.now()];
+
+
+	var key_user = this.settings.key_users.indexOf(from_user) !== -1;
+	if ( key_user )
+		msgObject.ffz_has_mention = true;
 
 
 	// Mentions!
@@ -1135,7 +1145,7 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 		return '<span class="' + (token.isOwnMessage ? 'mentioning' : 'mentioned') + '">' + utils.sanitize(token.user) + '</span>';
 		//return `<span class="${token.isOwnMessage ? 'mentioning' : 'mentioned'}">${utils.sanitize(token.user)}</span>`;
 
-	else if ( token.deletedLink || token.text )
+	else if ( token.deletedLink || token.hasOwnProperty('text') )
 		return utils.sanitize(token.text);
 
 	else if ( typeof token !== "string" )

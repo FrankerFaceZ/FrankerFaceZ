@@ -588,7 +588,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				this.set('ffz_updating', false);
 
 			} else if ( this.ffz_suggestions_el ) {
-				this.ffz_suggestions_el.parentElement.removeChild(this.ffz_suggestions_el);
+				jQuery(this.ffz_suggestions_el).remove();
 				this.ffz_suggestions_el = null;
 			}
 

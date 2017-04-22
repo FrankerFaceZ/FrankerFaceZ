@@ -184,6 +184,71 @@ FFZ.settings_info.sidebar_disable_friends = {
 };
 
 
+var TWITCH_NAV_COLOR = "#4b367c",
+	TWITCH_NAV_RGB = FFZ.Color.RGBA.fromCSS(TWITCH_NAV_COLOR),
+	TWITCH_NAV_Luv = TWITCH_NAV_RGB.toLUVA();
+
+FFZ.settings_info.top_nav_color = {
+	type: "button",
+	value: "#4b367c",
+
+	category: "Sidebar",
+	no_mobile: true,
+
+	name: "Top Navigation Color",
+	help: "Set a custom background color for the top navigation bar.",
+
+	on_update: function(val) {
+		var process = true;
+		val = val.trim();
+
+		if ( val.charAt(0) === '!' ) {
+			process = false;
+			val = val.substr(1).trimLeft();
+		}
+
+		var color = val && FFZ.Color.RGBA.fromCSS(val),
+			color_luv = color && color.toLUVA();
+
+		if ( ! val || process && ! color )
+			return utils.update_css(this._theme_style, 'top-nav-color');
+
+		else if ( process && color_luv.l > TWITCH_NAV_Luv.l ) {
+			color = color_luv._l(TWITCH_NAV_Luv.l).toRGBA();
+			val = color.toCSS();
+		}
+
+		var out = '.top-nav__menu,.top-nav__drawer-anchor,.top-nav__logo{background-color:' + val + '}';
+
+		if ( color.luminance() > 0.2 ) {
+			out += '.top-nav .notification-center__icon svg,.top-nav .prime-logo-crown.prime-logo-crown--white svg,.top-nav__logo svg path, .top-nav__overflow svg path{fill: #000}' +
+				'.top-nav__user-card:after{border-top-color:#000}' +
+				'.top-nav__user-status,.top-nav__nav-link{color: #111}' +
+				'.top-nav #user_display_name,.top-nav__nav-link:hover{color: #000}';
+		} else
+			out += '.top-nav__nav-link{color: #d7d7d7}';
+
+		utils.update_css(this._theme_style, 'top-nav-color', out);
+	},
+
+	method: function() {
+		var f = this;
+		utils.prompt(
+			"Top Navigation Color",
+			"Please enter a custom color for the top navigation bar. This supports any valid CSS color or color name.</p><p><b>Examples:</b> <code>red</code>, <code>orange</code>, <code>#333</code>, <code>rgb(255,127,127)</code></p><p><b>Note:</b> Colors will be darkened by default. To prevent a color being darkened, please start your input with an exclamation mark. Example: <code>!orange</code>",
+			this.settings.top_nav_color,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+
+				new_val = new_val.trim();
+				f.settings.set("top_nav_color", new_val);
+			}
+		)
+	}
+}
+
+
 /*FFZ.settings_info.sidebar_start_open = {
 	type: "boolean",
 	value: false,
@@ -213,6 +278,13 @@ FFZ.settings_info.sidebar_directly_to_followed_channels = {
 // --------------------
 
 FFZ.prototype.setup_sidebar = function() {
+	var s = this._theme_style = utils.createElement('style');
+	s.id = 'ffz-theme-style';
+	s.type = 'text/css';
+	document.head.appendChild(s);
+
+	FFZ.settings_info.top_nav_color.on_update.call(this, this.settings.top_nav_color);
+
 	// CSS to Hide Stuff
 	utils.toggle_cls('ffz-hide-promoted-games')(this.settings.sidebar_hide_promoted_games);
 	utils.toggle_cls('ffz-hide-recommended-channels')(this.settings.sidebar_hide_recommended_channels);
@@ -259,8 +331,11 @@ FFZ.prototype.setup_sidebar = function() {
 
 
 	// Navigation Component
-	this.update_views('component:twitch-navigation', this.modify_navigation);
+	var f = this;
+	this.update_views('component:twitch-navigation', function(x) { return f.modify_navigation(x, false) });
+	this.update_views('component:top-nav', function(x) { return f.modify_navigation(x, true) });
 	this.update_views('component:recommended-channels', this.modify_recommended_channels);
+	this.update_views('component:social-column/followed-channel', this.modify_social_followed_channel)
 
 	// Navigation Service
 	/*var NavService = utils.ember_lookup('service:navigation');
@@ -296,7 +371,66 @@ FFZ.prototype.modify_recommended_channels = function(component) {
 }
 
 
-FFZ.prototype.modify_navigation = function(component) {
+FFZ._sc_followed_tooltip_id = 0;
+
+FFZ.prototype.modify_social_followed_channel = function(component) {
+	var f = this;
+	utils.ember_reopen_view(component, {
+		ffz_init: function() {
+			var t = this,
+				el = this.get('element'),
+				card = jQuery('.sc-card', el),
+				data = card && card.data('tipsy');
+
+			if ( ! data || ! data.options )
+				return;
+
+			data.options.html = true;
+			data.options.gravity = utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'w');
+			data.options.title = function(el) {
+				var old_text = t.get('tooltipText');
+				if ( ! f.settings.following_count )
+					return utils.sanitize(old_text);
+
+				var tt_id = FFZ._sc_followed_tooltip_id++;
+				utils.api.get("streams/" + t.get('stream.id'), null, {version: 5}).then(function(data) {
+					var el = document.querySelector('#ffz-sc-tooltip-' + tt_id);
+					if ( ! el || ! data || ! data.stream )
+						return;
+
+					var channel = data.stream.channel,
+						is_spoilered = f.settings.spoiler_games.indexOf(channel.game && channel.game.toLowerCase()) !== -1,
+
+						up_since = f.settings.stream_uptime && data.stream.created_at && utils.parse_date(data.stream.created_at),
+						now = Date.now() - (f._ws_server_offset || 0),
+						uptime = up_since && (Math.floor((now - up_since.getTime()) / 60000) * 60) || 0;
+
+					var cl = el.parentElement.parentElement.classList;
+					cl.add('ffz-wide-tip');
+					cl.add('ffz-follow-tip');
+
+					el.innerHTML = '<img class="ffz-image-hover" src="' + utils.quote_san(is_spoilered ? 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg' : data.stream.preview.large) + '">' +
+						'<span class="ffz-tt-channel-title">' + utils.sanitize(channel.status) + '</span><hr>' +
+						(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + utils.duration_string(uptime) + '</span>' : '') +
+						'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(data.stream.viewers) + '</span>' +
+						'<b>' + utils.sanitize(channel.display_name || channel.name) + '</b><br>' +
+						'<span class="playing">' +
+							(channel.game === 'Creative' ?
+								'Being Creative' :
+								(channel.game ?
+									'Playing ' + utils.sanitize(channel.game) :
+									'Not Playing')) +
+							'</span>';
+				});
+
+				return '<div id="ffz-sc-tooltip-' + tt_id + '">' + utils.sanitize(old_text) + '</div>';
+			};
+		}
+	})
+}
+
+
+FFZ.prototype.modify_navigation = function(component, is_top_nav) {
 	var f = this;
 
 	utils.ember_reopen_view(component, {
@@ -304,11 +438,11 @@ FFZ.prototype.modify_navigation = function(component) {
 			f._nav = this;
 
 			// Fix tooltips now that we've overrode the function.
-			this._initTooltips();
+			! is_top_nav && this._initTooltips();
 
 			// Override behavior for the Following link.
 			var el = this.get('element'),
-				following_link = el && el.querySelector('a[data-href="following"]');
+				following_link = el && el.querySelector(is_top_nav ? 'a[data-tt_content="directory_following"]' : 'a[data-href="following"]');
 
 			if ( following_link ) {
 				following_link.href = '/directory/following' + (f.settings.sidebar_directly_to_followed_channels ? '/live' : '');

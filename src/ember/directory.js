@@ -255,13 +255,15 @@ FFZ.prototype.setup_directory = function() {
 
 	this.log("Hooking the Ember Directory views.");
 
-	this.update_views('component:stream-preview', function(x) { this.modify_directory_live(x, false) }, true);
-	this.update_views('component:creative-preview', function(x) { this.modify_directory_live(x, false) }, true);
-	this.update_views('component:csgo-channel-preview', function(x) { this.modify_directory_live(x, true) }, true);
-	this.update_views('component:twitch-carousel/stream-item', function(x) { this.modify_directory_live(x, false, true) }, true);
-	this.update_views('component:stream/snapshot-card', function(x) { this.modify_directory_live(x, false, true) }, true);
+	this.update_views('component:stream-preview', this.modify_directory_live, true);
+	this.update_views('component:creative-preview', this.modify_directory_live, true);
+	this.update_views('component:csgo-channel-preview', function(x) { this.modify_directory_live(x, 'channel.') }, true);
+	this.update_views('component:stream/lol-metadata', function(x) { this.modify_directory_live(x, 'content.') }, true);
+	this.update_views('component:twitch-carousel/stream-item', this.modify_directory_live, true);
+	this.update_views('component:stream/snapshot-card', this.modify_directory_live, true);
 	this.update_views('component:host-preview', this.modify_directory_host, true, true);
 	this.update_views('component:video-preview', this.modify_video_preview, true);
+	this.update_views('component:video/resumable-wrapper', this.modify_video_preview, true);
 	this.update_views("component:video/following-uploads", this.modify_following_uploads);
 
 	this.update_views('component:game-follow-button', this.modify_game_follow_button);
@@ -471,21 +473,16 @@ FFZ.prototype.modify_game_follow_button = function(component) {
 }
 
 
-FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
+FFZ.prototype.modify_directory_live = function(component, mode) {
 	var f = this,
-		pref = is_csgo ? 'channel.' : 'stream.',
-
-		meta_selector = is_card ? '.card__body' : '.meta',
-		thumb_selector = is_card ? '.card__img' : '.thumb',
-		cap_selector = is_card ? 'a:not(.card__boxpin)' : '.cap';
-
+		pref = mode || 'stream.';
 
 	utils.ember_reopen_view(component, {
 		ffz_init: function() {
 			var el = this.get('element'),
-				meta = el && el.querySelector(meta_selector),
-				thumb = el && el.querySelector(thumb_selector),
-				cap = thumb && thumb.querySelector(cap_selector),
+				meta = el && el.querySelector('.card__body'),
+				thumb = el && el.querySelector('.card__img'),
+				cap = thumb && thumb.querySelector('a:not(.card__boxpin)'),
 				uptime_setting = f.settings.stream_uptime,
 				channel_id = this.get(pref + 'channel.name'),
 				game = this.get(pref + 'game');
@@ -515,7 +512,7 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 					t = this;
 
 				logo.className = 'profile-photo';
-				logo.classList.toggle('is-csgo', is_csgo);
+				logo.classList.toggle('is-csgo', mode === 'channel.');
 
 				logo.src = this.get(pref + 'channel.logo') || constants.NO_LOGO;
 				logo.alt = f.format_display_name(this.get(pref + 'channel.display_name'), channel_id, true, true)[0];
@@ -554,14 +551,9 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 		},
 
 		ffzUpdateUptime: function() {
-			var up_since;
-
-			if ( is_card )
-				up_since = this.get(pref + 'createdAt');
-			else {
-				var raw_created = this.get(pref + 'created_at');
-				up_since = raw_created && utils.parse_date(raw_created);
-			}
+			var up_since = this.get(pref + 'created_at');
+			if ( typeof up_since === "string" )
+				up_since = utils.parse_date(up_since);
 
 			var now = Date.now() - (f._ws_server_offset || 0),
 				uptime = up_since && Math.floor((now - up_since.getTime()) / 1000) || 0;
@@ -569,10 +561,7 @@ FFZ.prototype.modify_directory_live = function(component, is_csgo, is_card) {
 			if ( uptime > 0 ) {
 				if ( ! this._ffz_uptime ) {
 					var el = this.get('element'),
-						cont = el && el.querySelector(thumb_selector);
-
-					if ( ! is_card )
-						cont = cont && cont.querySelector(cap_selector);
+						cont = el && el.querySelector('.card__img');
 
 					if ( ! cont )
 						return;
@@ -736,10 +725,10 @@ FFZ.prototype.modify_directory_host = function(component) {
 
 		ffz_init: function() {
 			var el = this.get('element'),
-				meta = el && el.querySelector('.meta'),
-				thumb = el && el.querySelector('.thumb'),
-				cap = thumb && thumb.querySelector('.cap'),
-				title = meta && meta.querySelector('.title a'),
+				meta = el && el.querySelector('.card__body'), //meta'),
+				thumb = el && el.querySelector('.card__img'), //thumb'),
+				cap = thumb && thumb.querySelector('a:not(.card__boxpin)'), //.cap'),
+				title = meta && meta.querySelector('.card__title a'),
 
 				target = this.get('stream.target.channel'),
 				game = this.get('stream.target.meta_game'),

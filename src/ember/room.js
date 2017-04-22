@@ -1330,6 +1330,18 @@ FFZ.prototype._modify_room = function(room) {
 		},
 
 		addFriendsWatchingMessage: function(msg) {
+			if ( f.settings.friend_notifications && ! document.hasFocus() )
+				f.show_notification(
+					msg.replace(/ *VoHiYo$/g, ''),
+					document.title,
+					"ffz_watching_notice",
+					(this.settings.notification_timeout*1000),
+					function() {
+						window.focus();
+					},
+					null,
+					'https://static-cdn.jtvnw.net/emoticons/v1/81274/3.0');
+
 			this.addMessage({
 				style: 'admin' + (f.has_bttv_6 ? '' : ' friend-watching'),
 				message: msg,

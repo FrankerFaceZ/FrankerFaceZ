@@ -371,7 +371,7 @@ FFZ.prototype.setup_layout = function() {
 								'top:' + theatre_chat_top + 'px;' +
 								'height:' + theatre_chat_height + 'px}' +
 							'.app-main.theatre #player {' +
-								'right: 0 !important}' +
+								'left: 0 !important;right: 0 !important}' +
 							'body.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .cn-bar-fixed {' +
 								'top: ' + (video_top - 40) + 'px}' +
 							'body.ffz-minimal-channel-bar:not(.ffz-channel-bar-bottom) .cn-bar-fixed:hover,' +

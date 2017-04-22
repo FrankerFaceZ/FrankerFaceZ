@@ -89,8 +89,11 @@ FFZ.prototype.setup_channel = function() {
 							model.set('followers.content.meta.total', info.followers);
 					}
 
-					if ( is_host && f._cindex )
-						f._cindex.ffzFixHostTitle();
+					if ( f._cindex )
+						if ( is_host )
+							f._cindex.ffzFixHostTitle();
+						else
+							f._cindex.ffzFixTitle();
 				});
 		},
 

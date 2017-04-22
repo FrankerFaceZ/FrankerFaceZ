@@ -261,6 +261,7 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 				t = this,
 				data = t.get('itad_price'),
 				el = this.get('element'),
+				has_support = el && el.parentElement && (el.parentElement.querySelector('.cmrc-channel-box__support') || el.parentElement.querySelector('.cmrc-game-detail-box__support')),
 				cont = el && el.querySelector('.ffz-price-info');
 
 			if ( popup && popup.id === 'ffz-price-popup' || ! data || ! data[1] || ! data[1].list || ! data[1].list.length )
@@ -281,7 +282,7 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 				var entry = sales[i],
 					row = utils.createElement('tr');
 
-				row.innerHTML = '<td><a rel="noreferrer" target="_blank" href="' + utils.quote_san(entry.url) + '">' + utils.sanitize(entry.shop.name) + '</a></td>' +
+				row.innerHTML = '<td><a class="store-link" rel="noreferrer" target="_blank" href="' + utils.quote_san(entry.url) + '">' + utils.sanitize(entry.shop.name) + '</a></td>' +
 					'<td>' + (entry.price_cut < 0 ? '' : '-') + utils.sanitize(entry.price_cut) + '%</td>' +
 					'<td>' + formatter.format(entry.price_new) + '</td>' +
 					'<td>' + formatter.format(entry.price_old) + '</td>';
@@ -289,15 +290,23 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 				tbody.appendChild(row);
 			}
 
+			if ( has_support )
+				jQuery('.store-link', tbody).click(function(e) {
+					var name = has_support.querySelector('strong').textContent,
+						link_text = e.target.textContent;
+
+					if ( ! confirm("By following this link and purchasing from " + link_text + " you will NOT be supporting " + name + ".\n\nAre you sure you wish to contune?") )
+						return false;
+				});
+
 			// Add a by-line for IsThereAnyDeal.
 
 			var url = data[1].urls && data[1].urls.game || "https://isthereanydeal.com",
 				by_line = utils.createElement('span', 'ffz-attributiona',
-					'<hr>Source: <a rel="noreferrer" target="_blank" href="' + utils.quote_san(url) + '">IsThereAnyDeal.com</a><br><br>Any affiliate links in the provided data are the responsibility of IsThereAnyDeal.' +
-					'<hr>Reminder: Buying games on Twitch directly supports partnered streamers and you can earn <a target="_blank" href="https://blog.twitch.tv/twitch-crates-are-coming-soon-f50fa0cd4cdf">Twitch Crates</a> containing emotes and badges.');
+					'<hr>Source: <a rel="noreferrer" target="_blank" href="' + utils.quote_san(url) + '">IsThereAnyDeal.com</a><br><br>Any affiliate links in the provided data are the responsibility of IsThereAnyDeal and do not benefit FrankerFaceZ. You may consider visiting the store directly.' +
+					'<hr>Reminder: When you buy a game from other services, you miss out on the benefits of purchasing from Twitch directly including: supporting partnered streamers and earning <a target="_blank" href="https://blog.twitch.tv/twitch-crates-are-coming-soon-f50fa0cd4cdf">Twitch Crates</a> containing emotes and badges.');
 
 			balloon.appendChild(by_line);
-
 
 			// Now calculate the position and add the balloon to the DOM.
 

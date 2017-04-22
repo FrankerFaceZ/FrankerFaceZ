@@ -859,11 +859,16 @@ FFZ.mod_card_pages.name_history = {
 
 			if ( success ) {
 				for(var i=0; i < data.length; i++) {
-					var changed_at = data[i][0],
-						changed = changed_at ? utils.parse_date(changed_at).toLocaleString() : (i === 0 ? 'Initial' : 'Unknown');
+					var changed_at = data[i][0] && utils.parse_date(data[i][0]),
+						changed = changed_at ?
+							(Date.now() - changed_at.getTime()) > 86400000 ?
+								changed_at.toLocaleDateString() :
+								changed_at.toLocaleTimeString()
+							:
+							i === 0 ? 'Initial' : 'Unknown';
 
 					history.appendChild(utils.createElement('li', 'chat-line message-line admin no-messages',
-						'<span class="timestamp">' + utils.sanitize(changed) + ':</span>' +
+						'<span class="timestamp html-tooltip" title="' + (changed_at ? utils.quote_san(changed_at.toLocaleString()) : '') + '">' + utils.sanitize(changed) + ':</span>' +
 						'<span class="message">' + utils.sanitize(data[i][1]) + '</span>'));
 				}
 			} else

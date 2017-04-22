@@ -1611,9 +1611,9 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 	jQuery('img.emoticon', l_el).click(function(e) { f._click_emote(this, e) });
 
 	if ( modcard ) {
-		modcard.get('cardInfo.user.id') !== msg.from && jQuery('span.from', l_el).click(function(e) {
+		modcard.get('cardInfo.user.id') !== msg.from && jQuery('.from', l_el).click(function(e) {
 			var el = modcard.get('element');
-			el && f._roomv && f._roomv.get('room.id') === msg.room && f._roomv.actions.showModCard.call(f._roomv, {
+			el && f._roomv && f._roomv.get('room.id') === msg.room && f._roomv.actions.showModOverlay.call(f._roomv, {
 				sender: msg.from,
 				top: parseInt(el.style.top),
 				left: parseInt(el.style.left)
