@@ -483,17 +483,10 @@ FFZ.prototype.render_tooltip = function(el) {
 					emote_set = set_id && f._twitch_set_to_channel[set_id];
 
 					var set_type = "Channel",
-						favorite_key = 'twitch-' + set_id,
+						favorite_key = 'twitch-' + set_id;
 
-						Chat = utils.ember_lookup('controller:chat'),
-						tmi = Chat && Chat.get('currentRoom.tmiSession'),
-						twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
-
-					if ( ! emote_set && twitch_sets[set_id] ) {
-						var set = twitch_sets[set_id];
-						if ( set.length === 1 )
-							favorite_key = 'twitch-inventory';
-					}
+					if ( f._twitch_inventory_sets.indexOf(set_id) !== -1 )
+						favorite_key = 'twitch-inventory';
 
 					var favorites = set_id && f.settings.favorite_emotes[favorite_key] || [],
 						is_favorite = ! can_favorite && favorites.indexOf(parseInt(emote_id)) !== -1;
@@ -514,10 +507,12 @@ FFZ.prototype.render_tooltip = function(el) {
 						set_type = null;
 					}
 
-					if ( this.classList.contains('ffz-tooltip-no-credit') )
-						return (is_favorite ? FAV_MARKER : '') + image + utils.sanitize(this.alt) + mod_text;
-					else
-						return (is_favorite ? FAV_MARKER : '') + image + 'Emoticon: ' + utils.sanitize(this.alt) + '<br>' + (set_type ? set_type + ': ' : '') + emote_set + mod_text;
+					var no_credit = this.classList.contains('ffz-tooltip-no-credit'),
+						no_set = ! emote_set || no_credit;
+
+					return (is_favorite ? FAV_MARKER : '') + image + (no_credit ? '' : 'Emoticon: ') +
+						utils.sanitize(this.alt) + (no_set ? '' : '<br>' + (set_type ? set_type + ': ' : '') + emote_set) +
+						mod_text;
 						//return `${image}Emoticon: ${this.alt}<br>${set_type ? set_type + ": " : ""}${emote_set}`;
 				}
 

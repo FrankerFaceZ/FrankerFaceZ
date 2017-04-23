@@ -783,7 +783,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				room_id = room && room.get('id'),
 				tmi = in_conversation ? window.TMI && TMI._sessions && TMI._sessions[0] : room && room.tmiSession,
 
-				set_name, replacement, url, is_sub_set, fav_list,
+				set_name, replacement, url, is_inventory, is_sub_set, fav_list,
 				emote_set, emote, emote_id, code, sort_factor, is_fav,
 				prefix_length, per_pref,
 
@@ -801,13 +801,17 @@ FFZ.prototype.modify_chat_input = function(component) {
 				if ( es && es.emoticon_sets ) {
 					for(var set_id in es.emoticon_sets) {
 						emote_set = es.emoticon_sets[set_id];
-						fav_list = f.settings.favorite_emotes['twitch-' + set_id] || [];
+						is_inventory = f._twitch_inventory_sets.indexOf(set_id) !== -1;
+						fav_list = f.settings.favorite_emotes['twitch-' + (is_inventory ? 'inventory' : set_id)] || [];
 						is_sub_set = false;
 						set_name = f._twitch_set_to_channel[set_id];
 						if ( ! emote_set )
 							continue;
 
-						if ( set_name ) {
+						if ( is_inventory )
+							set_name = 'Twitch Inventory';
+
+						else if ( set_name ) {
 							if ( set_name === '--global--' )
 								set_name = 'Twitch Global';
 							else if ( set_name === '--twitch-turbo--' || set_name === 'turbo' || set_name === '--turbo-faces--' )
@@ -826,7 +830,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 							continue;
 
 						prefix_length = f.settings.input_complete_without_prefix && is_sub_set ? utils.find_common_prefix(_.pluck(emote_set, 'code'), true) : 0;
-						sort_factor = is_sub_set ? 1 : 9;
+						sort_factor = is_sub_set ? 1 : is_inventory ? 8 : 9;
 
 						for(var i = 0; i < emote_set.length; i++) {
 							emote = emote_set[i];

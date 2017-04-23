@@ -4133,3 +4133,37 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 
 .itad-balloon table th:not(:first-child),
 .itad-balloon table td:not(:first-child) { text-align: right }
+
+
+/*
+        H O T  *  G A R B A G E
+
+ ___/-\___     ___/-\___     ___/-\___
+|---------|   |---------|   |---------|
+ |       |     | | | | |     |   |   |
+ |       |     | | | | |     | | | | |
+ |       |     | | | | |     | | | | |
+ | | | | |     | | | | |     | | | | |
+ |_______|     |_______|     |_______|
+
+*/
+
+#ffz-chat-menu.ui-draggable-dragging {
+	height: auto !important;
+	width: auto !important;
+	background: transparent;
+	border: none;
+	padding: 0;
+	display: block;
+	max-width: inherit;
+}
+
+.moderation-card.ui-draggable-dragging {
+	position: fixed;
+	height: auto !important;
+	width: auto !important;
+	background: black;
+	padding: 0;
+	display: block;
+	max-width: 340px;
+}

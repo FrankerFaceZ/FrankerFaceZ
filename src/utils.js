@@ -1185,28 +1185,47 @@ module.exports = FFZ.utils = {
 	},
 
 	cdn_badge_css: function(badge_id, version, data, room) {
-		var color = data.color,
-			base_image = data.image || ("https://cdn.frankerfacez.com/badges/twitch/" + badge_id + (data.use_svg ? '.svg' : "/" + version + "/")),
-			is_svg = base_image.substr(-4) === '.svg',
-			image_1x = base_image + (is_svg ? '' : "1.png"),
-			image_2x = base_image + (is_svg ? '' : "2.png"),
-			image_4x = base_image + (is_svg ? '' : "4.png"),
+		var color = data.color || 'transparent',
+			ht = data.has_trans,
+			trans_color = data.trans_color || color,
 
-			image_set = image = 'url("' + image_1x + '")';
+			base_image = data.image || ("https://cdn.frankerfacez.com/badges/twitch/" + badge_id + (data.use_svg ? '.svg' : "/" + version + "/")),
+			base_trans = ht ? (data.trans_image || ("https://cdn.frankerfacez.com/badges/twitch/" + badge_id + (data.trans_svg ? '.svg' : '/' + version + '/'))) : base_image,
+
+			is_svg = base_image.substr(-4) === '.svg',
+			trans_svg = base_trans.substr(-4) === '.svg',
+
+			image_set = image = 'url("' + base_image + (is_svg ? '' : "1.png") + '")',
+			trans_set = trans = 'url("' + base_trans + (trans_svg ? '' : '1_trans.png') + '")',
+
+			selector = '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '');
 
 		if ( ! is_svg )
 			image_set = WEBKIT + 'image-set(' + image +
-				' 1x, url("' + image_2x + '") 2x, url("' + image_4x + '") 4x)';
+				' 1x, url("' + base_image + (is_svg ? '' : '2.png') +
+				'") 2x, url("' + base_image + (is_svg ? '' : '4.png') + '") 4x)';
 
-		return '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + (data.no_color ? '' : ':not(.colored)') + '{' +
+		if ( ! trans_svg )
+			trans_set = WEBKIT + 'image-set(' + trans +
+				' 1x, url("' + base_trans + (trans_svg ? '' : '2_trans.png') +
+				'") 2x, url("' + base_trans + (trans_svg ? '' : '4_trans.png') + '") 4x)';
+
+		return selector + (data.no_color ? '' : ':not(.colored)') + '{' +
 				'background:' + image + ' ' + color + ';' +
 				(is_svg ? '}' : 'background-image:' + image_set + '}' ) +
 
-			(data.no_color ? '' : '.badge.' + badge_id + '.version-' + version + (room ? '[data-room="' + room + '"]' : '') + '.colored{' +
-				'background: linear-gradient(' + color + ',' + color + ');' +
+			(ht ? '.ffz-transparent-badges ' + selector + '{' +
+				'background:' + trans + ';' +
+				(trans_svg ? '}' : 'background-image:' + trans_set + '}') : '') +
+
+			(color === 'transparent' && ht ? '.ffz-blank-badges ' + selector + '{' +
+				'background:' + trans_color + '}' : '') +
+
+			(data.no_color ? '' : selector + '.colored{' +
+				'background: linear-gradient(' +  (ht ? trans_color + ',' + trans_color : color + ',' + color) + ');' +
 				(is_svg ? WEBKIT + 'mask-size:18px 18px;' : '') +
-				WEBKIT + 'mask-image:' + image + ';' +
-				(is_svg ? '}' : WEBKIT + 'mask-image:' + image_set + '}')
+				WEBKIT + 'mask-image:' + (ht ? trans : image) + ';' +
+				((ht ? trans_svg : is_svg) ? '}' : WEBKIT + 'mask-image:' + (ht ? trans_set : image_set) + '}')
 			);
 	},
 

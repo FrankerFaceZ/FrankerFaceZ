@@ -757,6 +757,7 @@ FFZ.prototype._add_emote = function(view, emote, favorites_set, favorites_key, e
 				favs.push(favorites_key);
 
 			this.settings.set("favorite_emotes", this.settings.favorite_emotes, true);
+			this._inputv && this._inputv.propertyDidChange('ffz_emoticons');
 
 			if ( el.classList.contains('ffz-is-favorite') && is_favorited ) {
 				jQuery(el).trigger('mouseout');

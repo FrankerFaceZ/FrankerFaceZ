@@ -3,7 +3,7 @@ var FFZ = window.FrankerFaceZ,
 	utils = require('./utils'),
 
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
-	OTHER_KNOWN = ['turbo', 'bits', 'premium'],
+	OTHER_KNOWN = ['turbo', 'bits', 'premium', 'partner'],
 
 	CSS_BADGES = {
 		staff: { 1: { color: "#200f33", use_svg: true } },
@@ -12,6 +12,7 @@ var FFZ = window.FrankerFaceZ,
 		broadcaster: { 1: { color: "#e71818", use_svg: true } },
 		moderator: { 1: { color: "#34ae0a", use_svg: true } },
 		twitchbot: { 1: { color: "#34ae0a" } },
+		partner: { 1: { color: "transparent", has_trans: true, trans_color: "#6441a5" } },
 
 		turbo: { 1: { color: "#6441a5", use_svg: true } },
 		premium: { 1: { color: "#009cdc" } },
@@ -271,7 +272,8 @@ FFZ.settings_info.transparent_badges = {
 		this.toggle_style('badges-blank', val === 3 || val === 4);
 		this.toggle_style('badges-circular-small', val === 4);
 		this.toggle_style('badges-transparent', val >= 5);
-		document.body.classList.toggle('ffz-transparent-badges', val >= 5);
+		utils.toggle_cls('ffz-transparent-badges')(val >= 5);
+		utils.toggle_cls('ffz-blank-badges')(val === 3 || val === 4);
 
 		// Update existing chat lines.
 		var CL = utils.ember_resolve('component:chat/chat-line'),
@@ -311,6 +313,7 @@ FFZ.prototype.setup_badges = function() {
 		this.toggle_style('badges-transparent', val >= 5);
 
 		utils.toggle_cls('ffz-transparent-badges')(val >= 5);
+		utils.toggle_cls('ffz-blank-badges')(val === 3 || val === 4);
 		utils.toggle_cls('ffz-no-loyalty')(!this.settings.loyalty_badges);
 	}
 

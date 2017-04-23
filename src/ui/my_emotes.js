@@ -213,16 +213,18 @@ FFZ.menu_pages.myemotes = {
 			if ( ! set.length )
 				continue;
 
-			var raw_id = this._twitch_set_to_channel[set_id],
-				menu_id = raw_id ? raw_id.toLowerCase() : 'unknown';
+			if ( this._twitch_inventory_sets.indexOf(set_id) !== -1 ) {
+				for(var i=0; i < set.length; i++)
+					if ( ! favorites_only || gathered_favorites.indexOf(set[i].id) !== -1 )
+						gathered_emotes.push(set[i]);
 
-			if ( set.length === 1 && ! raw_id ) {
-				if ( ! favorites_only || gathered_favorites.indexOf(set[0].id) !== -1 )
-					gathered_emotes.push(set[0]);
 				continue;
 			}
 
-			var favorites_list = this.settings.favorite_emotes["twitch-" + set_id];
+			var raw_id = this._twitch_set_to_channel[set_id],
+				menu_id = raw_id ? raw_id.toLowerCase() : 'unknown',
+				favorites_list = this.settings.favorite_emotes["twitch-" + set_id];
+
 			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
 				continue;
 

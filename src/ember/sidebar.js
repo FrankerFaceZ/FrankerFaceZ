@@ -221,10 +221,13 @@ FFZ.settings_info.top_nav_color = {
 		var out = '.top-nav__menu,.top-nav__drawer-anchor,.top-nav__logo{background-color:' + val + '}';
 
 		if ( color.luminance() > 0.2 ) {
-			out += '.top-nav .notification-center__icon svg,.top-nav .prime-logo-crown.prime-logo-crown--white svg,.top-nav__logo svg path, .top-nav__overflow svg path{fill: #000}' +
+			out += '.top-nav__search .form__icon svg,.top-nav .notification-center__icon svg,.top-nav .prime-logo-crown.prime-logo-crown--white svg,.top-nav__logo svg path, .top-nav__overflow svg path{fill: #000}' +
 				'.top-nav__user-card:after{border-top-color:#000}' +
-				'.top-nav__user-status,.top-nav__nav-link{color: #111}' +
-				'.top-nav #user_display_name,.top-nav__nav-link:hover{color: #000}';
+				'.top-nav__nav-link .pill{background-color:rgba(0,0,0,0.2)}' +
+				'.top-nav__user-status,.ffz-dark .top-nav__nav-link,.top-nav__nav-link{color: #111!important}' +
+				'.top-nav__nav-link .ffz-follow-count,.top-nav #user_display_name,.ffz-dark .top-nav__nav-link:hover,.top-nav__nav-link:hover{color: #000!important}' +
+				'.ffz-dark .top-nav__search .form__input[type=text],.top-nav__search .form__input[type=text]{color:#000;background-color:rgba(0,0,0,0.05);box-shadow:rgba(0,0,0,0.2) 0 0 0 1px inset}' +
+				'.ffz-dark .top-nav__search .form__input[type=text]:focus,.top-nav__search .form__input[type=text]:focus{box-shadow:rgba(0,0,0,0.4) 0 0 0 1px inset}';
 		} else
 			out += '.top-nav__nav-link{color: #d7d7d7}';
 

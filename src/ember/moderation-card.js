@@ -1485,10 +1485,16 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				room_id = Chat && Chat.get('currentRoom.id'),
 				user_id = this.get('cardInfo.user.id'),
 				ffz_room = f.rooms && f.rooms[room_id],
-				chat_history = ffz_room && ffz_room.user_history && ffz_room.user_history[user_id] || [],
+				chat_history = ffz_room && ffz_room.user_history ? (ffz_room.user_history[user_id] || []) : null,
 
 				el = this.get('element'),
 				history = el.querySelector('.chat-history.live-history');
+
+			if ( chat_history === null ) {
+				if ( history )
+					jQuery(history).remove();
+				return;
+			}
 
 			if ( ! history ) {
 				history = utils.createElement('ul', 'moderation-card__actions chat-history live-history');

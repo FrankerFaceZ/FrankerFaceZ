@@ -78,6 +78,43 @@ FFZ.prototype.setup_emoticons = function() {
 
 	this.log("Watching Twitch emoticon parser to ensure it loads.");
 	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
+
+	this._twitch_inventory_sets = [];
+	this.refresh_twitch_inventory();
+}
+
+
+FFZ.prototype.refresh_twitch_inventory = function() {
+	var f = this;
+	return new Promise(function(succeed) {
+		var o = [],
+			user = f.get_user();
+
+		if ( ! user ) {
+			f._twitch_inventory_sets = o;
+			return succeed(o);
+		}
+
+		utils.api.get("/v5/inventory/emoticons", null, {version: 5}, user.chat_oauth_token)
+				.done(function(data) {
+
+			o = Object.keys(data.emoticon_sets || {});
+
+			for(var i=0; i < o.length; i++) {
+				var set_id = o[i],
+					emotes = data.emoticon_sets[set_id];
+				for(var j=0; j < emotes.length; j++)
+					f._twitch_emote_to_set[emotes[j].id] = set_id;
+			}
+
+			f._twitch_inventory_sets = o;
+			return succeed(o);
+
+		}).fail(function() {
+			f._twitch_inventory_sets = o;
+			return succeed(o);
+		});
+	});
 }
 
 
@@ -121,7 +158,7 @@ FFZ.prototype._click_emote = function(target, event) {
 	if ( ! target || ! target.classList.contains('emoticon') )
 		return;
 
-	if ( event && ((!IS_OSX && event.ctrlKey) || (IS_OSX && event.metaKey)) ) {
+	if ( event && ! event.shiftKey && ! event.shiftLeft && ((!IS_OSX && event.ctrlKey) || (IS_OSX && event.metaKey)) ) {
 		var eid, favorite_key;
 
 		if ( target.classList.contains('emoji') ) {
@@ -139,27 +176,21 @@ FFZ.prototype._click_emote = function(target, event) {
 			if ( eid ) {
 				eid = parseInt(eid);
 				var twitch_set = this._twitch_emote_to_set[eid];
-				if ( twitch_set ) {
-					var Chat = utils.ember_lookup('controller:chat'),
-						tmi = Chat && Chat.get('currentRoom.tmiSession'),
-						twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'];
-
-					if ( twitch_sets[twitch_set] ) {
-						var set = twitch_sets[twitch_set];
-						if ( set.length === 1 && ! this._twitch_set_to_channel[twitch_set] )
-							favorite_key = 'twitch-inventory';
-						else
-							favorite_key = 'twitch-' + twitch_set;
-					}
-				}
+				if ( twitch_set )
+					if ( this._twitch_inventory_sets.indexOf(twitch_set) !== -1 )
+						favorite_key = 'twitch-inventory';
+					else
+						favorite_key = 'twitch-' + twitch_set;
 
 			} else {
-				eid = parseInt(target.getAttribute('data-ffz-emote'));
+				eid = target.getAttribute('data-ffz-emote');
 				var set_id = target.getAttribute('data-ffz-set'),
 					emote_set = set_id && this.emote_sets[set_id];
 
-				if ( emote_set && emote_set.emoticons && emote_set.emoticons[eid] )
-					favorite_key = 'ffz-' + (emote_set.hasOwnProperty('source_ext') ? 'ext-' + emote_set.source_ext + '-' + set.source_id : set_id);
+				if ( emote_set && emote_set.emoticons && emote_set.emoticons[eid] ) {
+					favorite_key = 'ffz-' + (emote_set.hasOwnProperty('source_ext') ? 'ext-' + emote_set.source_ext + '-' + emote_set.source_id : set_id);
+					eid = emote_set.emoticons[eid].id || eid;
+				}
 			}
 		}
 
@@ -174,6 +205,7 @@ FFZ.prototype._click_emote = function(target, event) {
 
 			this.settings.set("favorite_emotes", this.settings.favorite_emotes, true);
 			jQuery(target).trigger('mouseout').trigger('mouseover');
+			this._inputv && this._inputv.propertyDidChange('ffz_emoticons');
 		}
 
 		return true;
