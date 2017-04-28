@@ -85,9 +85,10 @@ FFZ.prototype.api = function(name, icon, version, name_key) {
 	// Load the known APIs list.
 	if ( ! this._known_apis ) {
 		this._known_apis = {};
-		if ( localStorage.hasOwnProperty('ffz_known_apis') )
+		var stored_val = localStorage.getItem("ffz_known_apis");
+		if ( stored_val !== null )
 			try {
-				this._known_apis = JSON.parse(localStorage.ffz_known_apis);
+				this._known_apis = JSON.parse(stored_val);
 			} catch(err) {
 				this.error("Error loading Known APIs", err);
 			}

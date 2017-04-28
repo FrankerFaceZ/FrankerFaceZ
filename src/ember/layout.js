@@ -178,10 +178,15 @@ FFZ.prototype.setup_layout = function() {
 	}
 
 	var Layout = utils.ember_lookup('service:layout'),
+		LS = function(x) { return x },
 		f = this;
 
 	if ( ! Layout )
 		return this.log("Unable to locate the Ember service:layout");
+
+	try {
+		LS = window.require("web-client/utilities/layout-scaling").scalePixelValue;
+	} catch(err) { }
 
 	this.log("Hooking the Ember service:layout");
 
@@ -230,17 +235,17 @@ FFZ.prototype.setup_layout = function() {
 		}.property("ffzExtraHeight", "windowWidth", "rightColumnWidth", "fullSizePlayerDimensions", "windowHeight"),
 
 		contentWidth: function() {
-			var left_width = this.get('isSocialColumnEnabled') ? (
+			var left_width = this.get('isSocialColumnEnabled') ? LS(
 				f.settings.socialbar_hide ? 0 :
 				this.get('isSocialColumnCollapsed') ? 50 : 240
-			) : (
+			) : LS(
 				this.get('ffzMinimizeNavigation') ? 10 :
 				this.get('isLeftColumnClosed') ? 50 : 240
 			),
 
 				right_width = ! f.has_bttv && this.get('portraitMode') ? 0 : this.get("isRightColumnClosed") ? 0 : this.get("rightColumnWidth");
 
-			return this.get("windowWidth") - left_width - right_width - 60;
+			return this.get("windowWidth") - left_width - right_width - LS(60);
 
 		}.property("windowWidth", 'ffzMinimizeNavigation', "portraitMode", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth", "isSocialColumnCollapsed", "isSocialColumnEnabled"),
 

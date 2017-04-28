@@ -1183,6 +1183,21 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: rgb(222,222,222);
 }
 
+.ffz-dark .static-page h1 {
+	color: #fff !important;
+	-webkit-text-stroke: none !important;
+}
+
+.ffz-dark .static-page p.p2 {
+	color: #ccc;
+	-webkit-text-stroke: none;
+}
+
+.ffz-dark .static-page td,
+.ffz-dark .static-page td {
+	border-color: #474747;
+}
+
 .ffz-dark .legal_page ol.legal li p {
 	color: #ccc;
 }

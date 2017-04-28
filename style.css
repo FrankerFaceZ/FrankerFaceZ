@@ -54,6 +54,7 @@ body:not(.ffz-theater-basic-stats) .player-controls-top,
 .ffz-hide-prime .drawer .warp__list.js-offers,
 .ffz-hide-prime-collapsed .drawer.closed .js-offers,
 .ffz-hide-friends-collapsed .drawer.closed .friend-list,
+.ffz-minimal-channel-title .cn-metabar > div:first-child:not(:hover) .js-card__info,
 .ffz-minimal-channel-title .cn-metabar__title:not(:hover) .card__info,
 .ffz-minimal-channel-bar .cn-bar-spacer,
 .ffz-channel-bar-bottom .cn-bar-spacer,
@@ -299,13 +300,21 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 /* Minimal Channel Title */
 
+.ffz-minimal-channel-title .cn-metabar > div:first-child:hover,
 .ffz-minimal-channel-title .cn-metabar__title:hover {
 	background-color: #fff;
 	padding: 1rem;
 	margin-left: -1rem;
 }
+
+.ffz-dark.ffz-minimal-channel-title .cn-metabar > div:first-child:hover,
 .ffz-dark.ffz-minimal-channel-title .cn-metabar__title:hover { background-color: #101010 }
 
+.ffz-minimal-channel-title .cn-metabar > div:first-child:not(:hover) h3 {
+	margin-bottom: 0 !important;
+}
+
+.ffz-minimal-channel-title .cn-metabar > div:first-child:not(:hover) .cn-metabar__boxart,
 .ffz-minimal-channel-title .cn-metabar__title:not(:hover) .card__img--boxart {
 	height: 20px !important;
 	width: 14px !important;
@@ -3085,6 +3094,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 
 .user.item { position: relative; }
 
+.profile-card .overlay_info.length,
 .card__img .overlay_info.length,
 .user.item .overlay_info.length {
 	position: absolute;
@@ -3104,14 +3114,17 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 	opacity: 0.75;
 }
 
+.profile-card .overlay_info.length,
 .card__img .overlay_info.length { right: 5px }
 
+.profile-card .overlay_info.length svg,
 .card__img .overlay_info.length svg,
 .user.item .overlay_info.length svg {
 	float: left;
 	margin: 3px 5px 3px 0;
 }
 
+.profile-card .overlay_info.length svg path,
 .card__img .overlay_info.length svg path,
 .user.item .actions .follow svg path,
 .user.item .overlay_info.length svg path { fill: #fff; }
@@ -3172,6 +3185,7 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 body:not(.ffz-tags-on-channel) .tw-title--tall { height: 60px }
 
 /*body:not(.ffz-tags-on-channel) #broadcast-meta .ct-tags,*/
+.cn-metabar > div:first-child .ct-tags,
 .cn-metabar__title .ct-tags,
 /*body:not(.ffz-creative-showcase) .ct-banner-handler .tower > div:last-child,*/
 body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
@@ -3686,6 +3700,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 .ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -55px }
 .ffz-minimal-channel-title.ffz-channel-title-top .ffz-channel.ffz-host { margin-top: -25px }
 
+.ffz-channel-title-top .cn-metabar > div:first-child,
 .ffz-channel-title-top .cn-metabar__title {
 	position: absolute;
 	top: 5px;
@@ -3693,6 +3708,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	z-index: 3;
 }
 
+.ffz-channel-title-top:not(.ffz-channel-bar-bottom):not(.ffz-minimal-channel-bar) #channel.ffz-bar-fixed .cn-metabar > div:first-child,
 .ffz-channel-title-top:not(.ffz-channel-bar-bottom):not(.ffz-minimal-channel-bar) #channel.ffz-bar-fixed .cn-metabar__title {
 	margin-top: 50px;
 }

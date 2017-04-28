@@ -875,7 +875,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 		buildModIconsHTML: function() {
 			var user = this.get('msgObject.from'),
 
-				is_tb = this.get('msgObject.twitchBotRejected'),
+				is_tb = this.get('msgObject.autoModRejected'),
 				is_pinned_cheer = this.get('msgObject.is_pinned_cheer'),
 
 				room_id = this.get('msgObject.room'),
@@ -1332,10 +1332,10 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 					);
 
 				else if ( cl.contains('tb-reject') )
-					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'no');
+					this.actions.clickedAutoModResponse.call(this, this.get('msgObject.tags.id'), 'no');
 
 				else if ( cl.contains('tb-allow') )
-					this.actions.clickedTwitchBotResponse.call(this, this.get('msgObject.tags.id'), 'yes');
+					this.actions.clickedAutoModResponse.call(this, this.get('msgObject.tags.id'), 'yes');
 
 				else if ( ! from )
 					return;

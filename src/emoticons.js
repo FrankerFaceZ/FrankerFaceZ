@@ -99,12 +99,13 @@ FFZ.prototype.refresh_twitch_inventory = function() {
 				.done(function(data) {
 
 			o = Object.keys(data.emoticon_sets || {});
+			var ets = f._twitch_emote_to_set = f._twitch_emote_to_set || {};
 
 			for(var i=0; i < o.length; i++) {
 				var set_id = o[i],
 					emotes = data.emoticon_sets[set_id];
 				for(var j=0; j < emotes.length; j++)
-					f._twitch_emote_to_set[emotes[j].id] = set_id;
+					ets[emotes[j].id] = set_id;
 			}
 
 			f._twitch_inventory_sets = o;

@@ -63,7 +63,7 @@ FFZ.settings_info.socket_server_pool = {
 		return val;
 	},
 
-	visible: function() { return (localStorage.hasOwnProperty('ffz_socket_server_pool') && this.settings.socket_server_pool !== 1) || this.settings.developer_mode || (Date.now() - parseInt(localStorage.ffzLastDevMode || "0")) < 604800000; },
+	visible: function() { return (localStorage.getItem('ffz_socket_server_pool') !== null && this.settings.socket_server_pool !== 1) || this.settings.developer_mode || (Date.now() - parseInt(localStorage.ffzLastDevMode || "0")) < 604800000; },
 
 	category: "Debugging",
 	name: "Socket Server Cluster",

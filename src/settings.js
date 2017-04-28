@@ -69,9 +69,6 @@ FFZ.prototype.load_settings = function() {
 
 	this.settings.get_twitch = this._setting_get_twitch.bind(this);
 
-
-	var found_settings = false;
-
 	for(var key in FFZ.settings_info) {
 		if ( ! FFZ.settings_info.hasOwnProperty(key) )
 			continue;
@@ -79,8 +76,7 @@ FFZ.prototype.load_settings = function() {
 		var info = FFZ.settings_info[key],
 			ls_key = info && info.storage_key || make_ls(key);
 
-		found_settings = found_settings || localStorage.hasOwnProperty(key);
-		this._setting_load(key) || found_settings;
+		this._setting_load(key);
 	}
 
 	// Listen for Changes
@@ -117,21 +113,22 @@ FFZ.prototype.reset_settings = function() {
 
 FFZ.prototype._get_settings_object = function(skip_default) {
 	var data = {
-		version: 1,
-		script_version: FFZ.version_info + '',
-		aliases: this.aliases,
-		filters: this.filters,
-		settings: {}
-		};
+			version: 1,
+			script_version: FFZ.version_info + '',
+			aliases: this.aliases,
+			filters: this.filters,
+			settings: {}
+			};
 
 	for(var key in FFZ.settings_info) {
 		if ( ! FFZ.settings_info.hasOwnProperty(key) )
 			continue;
 
 		var info = FFZ.settings_info[key],
-			ls_key = info.storage_key || make_ls(key);
+			ls_key = info.storage_key || make_ls(key),
+			stored_val = localStorage.getItem(ls_key);
 
-		if ( localStorage.hasOwnProperty(ls_key) && (!skip_default || this.settings[key] !== info.value) )
+		if ( (stored_val !== null) && (!skip_default || this.settings[key] !== info.value) )
 			data.settings[key] = this.settings[key];
 	}
 
@@ -215,9 +212,9 @@ FFZ.prototype._load_settings_file = function(data, hide_alert) {
 
 	// Do this in a timeout so that any styles have a moment to update.
 	if ( ! hide_alert )
-	   setTimeout(function(){
-		  alert('Successfully loaded ' + applied.length + ' settings and skipped ' + skipped.length + ' settings. Added ' + aliases + ' user nicknames.');
-	   });
+		setTimeout(function(){
+			alert('Successfully loaded ' + applied.length + ' settings and skipped ' + skipped.length + ' settings. Added ' + aliases + ' user nicknames.');
+		});
 
 	return [applied.length, skipped.length, aliases];
 }
@@ -797,13 +794,13 @@ FFZ.prototype._setting_load = function(key, default_value) {
 		ls_key = info && info.storage_key || make_ls(key),
 		val = default_value || (info && info.hasOwnProperty("value") ? info.value : undefined);
 
-	if ( localStorage.hasOwnProperty(ls_key) ) {
+	var stored_val = localStorage.getItem(ls_key);
+	if ( stored_val !== null )
 		try {
-			val = JSON.parse(localStorage.getItem(ls_key));
+			val = JSON.parse(stored_val);
 		} catch(err) {
-			this.log('Error loading value for "' + key + '": ' + err);
+			this.log('Error parsing value for "' + key + '": ' + err);
 		}
-	}
 
 	if ( info && info.process_value )
 		val = info.process_value.call(this, val);
@@ -860,9 +857,7 @@ FFZ.prototype._setting_del = function(key) {
 		ls_key = info.storage_key || make_ls(key),
 		val = undefined;
 
-	if ( localStorage.hasOwnProperty(ls_key) )
-		localStorage.removeItem(ls_key);
-
+	localStorage.removeItem(ls_key);
 	if ( info )
 		val = this.settings[key] = info.hasOwnProperty("value") ? info.value : undefined;
 
