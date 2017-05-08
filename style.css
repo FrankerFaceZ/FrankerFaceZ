@@ -4183,3 +4183,11 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 	display: block;
 	max-width: 340px;
 }
+
+.moderation-card div.note-counter {
+	display: inline-block;
+	background-color: #555;
+	color: white;
+	padding: 0 8px;
+	border-radius: 100%;
+}

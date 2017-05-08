@@ -536,7 +536,9 @@ FFZ.mod_card_pages.history = {
 				msg_line.classList.remove('ffz-mentioned');
 				history.appendChild(msg_line);
 			}
-
+			
+			FFZ.mod_card_pages.notes.update_counter(mod_card, data.comments.length)
+			
 			history.scrollTop = history.scrollHeight;
 		});
 	}
@@ -624,6 +626,11 @@ FFZ.mod_stats_blocks = {
 FFZ.mod_card_pages.notes = {
 	title: "<span>N</span>otes",
 	needs_lv: true,
+	
+	update_counter: function(mod_card, count) {
+		var tabelement = document.getElementById(mod_card.elementId).querySelector(".moderation-card__actions [data-page=notes]");
+		tabelement.innerHTML = '<span>N</span>otes' + ( count > 0 ? ' <div class="note-counter">' + count + '</div>' : '');
+	},
 
 	add_note: function(mod_card, el, note, history, last_line, do_scroll) {
 		if ( ! history )
@@ -653,6 +660,7 @@ FFZ.mod_card_pages.notes = {
 		}
 
 		history.appendChild(output);
+		FFZ.mod_card_pages.notes.update_counter(mod_card, history.querySelectorAll(".message-line").length);
 
 		if ( was_at_bottom )
 			setTimeout(function() { history.scrollTop = history.scrollHeight });
