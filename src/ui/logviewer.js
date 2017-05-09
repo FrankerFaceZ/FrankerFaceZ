@@ -536,9 +536,9 @@ FFZ.mod_card_pages.history = {
 				msg_line.classList.remove('ffz-mentioned');
 				history.appendChild(msg_line);
 			}
-			
+
 			FFZ.mod_card_pages.notes.update_counter(mod_card, data.comments.length)
-			
+
 			history.scrollTop = history.scrollHeight;
 		});
 	}
@@ -626,10 +626,14 @@ FFZ.mod_stats_blocks = {
 FFZ.mod_card_pages.notes = {
 	title: "<span>N</span>otes",
 	needs_lv: true,
-	
+
 	update_counter: function(mod_card, count) {
-		var tabelement = document.getElementById(mod_card.elementId).querySelector(".moderation-card__actions [data-page=notes]");
-		tabelement.innerHTML = '<span>N</span>otes' + ( count > 0 ? ' <div class="note-counter">' + count + '</div>' : '');
+		var el = mod_card.get('element'),
+			notes_tab = el && el.querySelector('.moderation-card__actions [data-page=notes]');
+
+		if ( notes_tab )
+			notes_tab.innerHTML = FFZ.mod_card_pages.notes.title +
+				(count > 0 ? ' <div class="pill">' + utils.number_commas(count) + '</div>' : '');
 	},
 
 	add_note: function(mod_card, el, note, history, last_line, do_scroll) {
@@ -774,6 +778,8 @@ FFZ.mod_card_pages.notes = {
 				mod_card._lv_sock_user = user_id;
 				f.lv_ws_sub('logs-' + room_id + '-' + user_id);
 
+				FFZ.mod_card_pages.notes.update_counter(mod_card, data.length);
+
 				if ( data.length ) {
 					var last_line = null;
 					for(var i=0; i < data.length; i++)
@@ -787,7 +793,7 @@ FFZ.mod_card_pages.notes = {
 		});
 
 		if ( mod_card.lv_write_notes ) {
-			var textarea = utils.createElement('textarea', 'chat_text_input mousetrap note-text-input'),
+			var textarea = utils.createElement('textarea', 'chat_text_input mousetrap form__input note-text-input'),
 				note_container = utils.createElement('div', 'moderation-card__actions textarea-contain note-input', textarea),
 				btn_submit = utils.createElement('a', 'button float-right', 'Add Note'),
 				btn_container = utils.createElement('div', 'chat-buttons-container clearfix', btn_submit),
