@@ -234,7 +234,7 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 			// Searching!
 			if ( show_pin ) {
 				var search_cont = utils.createElement('div', 'ffz-filter-container'),
-					search_input = utils.createElement('input', 'emoticon-selector__filter-input js-filter-input text text--full-width'),
+					search_input = utils.createElement('input', 'emoticon-selector__filter-input form__input js-filter-input text text--full-width'),
 					filtered_cont = utils.createElement('div', 'ffz-filter-children ffz-ui-sub-menu-page');
 
 				search_input.placeholder = 'Search for Settings';

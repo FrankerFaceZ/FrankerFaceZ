@@ -116,6 +116,9 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 		itad_country: null,
 
 		ffz_init: function() {
+			if ( ! this.$().parents('.cmrc-game-details-box,.cmrc-channel-box').length || ! this.$('button').length )
+				return;
+
 			//f.log("Buy-Game-New Component", this);
 			this.itad_count = 0;
 			this.ffzUpdateITADPlain();
@@ -138,7 +141,7 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 			if ( document.body.dataset.currentPath === 'directory.game-details' )
 				el = document.querySelector('.game-details__page-title');
 			else
-				el = document.querySelector('.card__info [data-tt_content="current_game"]');
+				el = document.querySelector('.js-card__info [data-tt_content="current_game"]');
 
 			var output = el ? _.pluck(_.filter(el.childNodes, function(x) { return x.nodeType === document.TEXT_NODE }), 'textContent').join(' ').trim() : null;
 
@@ -302,7 +305,7 @@ FFZ.prototype.modify_buy_game_now = function(view) {
 			// Add a by-line for IsThereAnyDeal.
 
 			var url = data[1].urls && data[1].urls.game || "https://isthereanydeal.com",
-				by_line = utils.createElement('span', 'ffz-attributiona',
+				by_line = utils.createElement('span', 'ffz-attributions',
 					'<hr>Source: <a rel="noreferrer" target="_blank" href="' + utils.quote_san(url) + '">IsThereAnyDeal.com</a><br><br>Any affiliate links in the provided data are the responsibility of IsThereAnyDeal and do not benefit FrankerFaceZ. You may consider visiting the store directly.' +
 					'<hr>Reminder: When you buy a game from other services, you miss out on the benefits of purchasing from Twitch directly including: supporting partnered streamers and earning <a target="_blank" href="https://blog.twitch.tv/twitch-crates-are-coming-soon-f50fa0cd4cdf">Twitch Crates</a> containing emotes and badges.');
 

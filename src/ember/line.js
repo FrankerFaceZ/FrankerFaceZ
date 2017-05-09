@@ -2,7 +2,7 @@
 	utils = require("../utils"),
 	constants = require("../constants"),
 
-	TB_TOOLTIP = '<hr>This message was flagged by AutoMod. Should it be allowed?',
+	TB_TOOLTIP = 'This message was flagged by AutoMod. Should it be allowed?',
 
 	BAN_SPLIT = /[\/\.](?:ban ([^ ]+)|timeout ([^ ]+)(?: (\d+))?|timeout_message ([^ ]+) ([^ ]+)(?: (\d+))?)(?: (.*))?$/;
 
@@ -10,6 +10,29 @@
 // ---------------------
 // Settings
 // ---------------------
+
+FFZ.settings_info.automod_inline = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Moderation",
+	no_bttv: 6,
+
+	name: "AutoMod In-Line Actions",
+	help: "Display AutoMod controls as in-line mod icons instead of space wasting buttons.",
+
+	on_update: function(val) {
+		var CL = utils.ember_resolve('component:chat/chat-line'),
+			views = CL ? utils.ember_views() : [];
+
+		for(var vid in views) {
+			var view = views[vid];
+			if ( view instanceof CL && view.ffzRender )
+				view.ffzRender();
+		}
+	}
+}
+
 
 FFZ.settings_info.friend_notifications = {
 	type: "boolean",
@@ -841,12 +864,19 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			}
 		}.property("msgObject.message", "isChannelLinksDisabled", "currentUserNick", "msgObject.from", "msgObject.tags.emotes"),
 
-		lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", "ffzTokenizedMessage", "hasClickedFlaggedMessage", function() {
+		lineChanged: Ember.observer("msgObject.deleted", "isModeratorOrHigher", "msgObject.ffz_old_messages", "ffzTokenizedMessage", function() {
 			this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
 			if ( this.get("msgObject.deleted") ) {
 				this.$(".message").replaceWith(this.buildDeletedMessageHTML());
 			} else
 				this.$(".deleted,.message").replaceWith(this.buildMessageHTML());
+		}),
+
+		clickedChanged: Ember.observer("hasClickedFlaggedMessage", function() {
+			if ( f.settings.automod_inline )
+				this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
+			else
+				this.ffzRender();
 		}),
 
 		ffzUpdateBadges: function() {
@@ -889,36 +919,34 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				this_ul = this.get('ffzUserLevel'),
 				other_ul = room && room.room && room.room.get('ffzUserLevel') || 0,
 
-				shouldnt_show = is_whisper || this_ul >= other_ul || (f.settings.mod_buttons.length === 0 && ! is_tb),
+				shouldnt_show = (f.settings.mod_buttons.length === 0 && ! is_tb),
+				had_output = false,
 				output;
 
 			if ( ! is_pinned_cheer && shouldnt_show )
 				return '';
 
+			shouldnt_show = shouldnt_show || this_ul >= other_ul;
 			output = ['<span class="mod-icons">'];
-
-			if ( is_tb ) {
-				var clicked = this.get('hasClickedFlaggedMessage'),
-					inactive = clicked ? ' inactive' : '';
-
-				output.push('<a class="mod-icon html-tooltip tb-reject' + inactive + (clicked ? '' : '" title="Not Allowed' + TB_TOOLTIP) + '">Not Allowed</a>');
-				output.push('<a class="mod-icon html-tooltip tb-allow' + inactive + (clicked ? '' : '" title="Allowed' + TB_TOOLTIP) + '">Allowed</a>');
-			}
 
 			if ( is_pinned_cheer ) {
 				var parent = this.get('ffzPinnedParent');
+				had_output = true;
 				if ( parent && PinnedCheers && PinnedCheers.canDismissPinnedCheer(parent.get('userData.id'), parent.get('isViewerModeratorOrHigher')) )
 					output.push('<a class="mod-icon html-tooltip pc-dismiss" title="Dismiss for Everyone">Dismiss</a>');
 				if ( is_pinned_cheer !== 2 )
 					output.push('<a class="mod-icon html-tooltip pc-dismiss-local" title="Dismiss">Dismiss</a>');
 			}
 
-			if ( ! shouldnt_show )
+			if ( ! is_whisper )
 				for(var i=0, l = f.settings.mod_buttons.length; i < l; i++) {
 					var pair = f.settings.mod_buttons[i],
-						prefix = pair[0], btn = pair[1], had_label = pair[2], is_emoji = pair[3],
+						prefix = pair[0], btn = pair[1], had_label = pair[2], is_emoji = pair[3], non_mod = pair[4],
 
 						cmd, tip;
+
+					if ( ! non_mod && shouldnt_show )
+						continue;
 
 					if ( is_emoji ) {
 						var setting = f.settings.parse_emoji,
@@ -936,6 +964,8 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 								prefix = '<img class="mod-icon-emoji" src="' + utils.quote_attr(url) + '">';
 						}
 					}
+
+					had_output = true;
 
 					if ( btn === false ) {
 						if ( deleted )
@@ -958,7 +988,16 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 					}
 				}
 
-			return output.join('') + '</span>';
+			if ( f.settings.automod_inline && is_tb ) {
+				var clicked = this.get('hasClickedFlaggedMessage'),
+					inactive = clicked ? ' inactive' : '';
+
+				had_output = true;
+				output.push('<a class="mod-icon html-tooltip tb-reject' + inactive + (clicked ? '' : '" title="Not Allowed<hr>' + TB_TOOLTIP) + '">Not Allowed</a>');
+				output.push('<a class="mod-icon html-tooltip tb-allow' + inactive + (clicked ? '' : '" title="Allowed<hr>' + TB_TOOLTIP) + '">Allowed</a>');
+			}
+
+			return had_output ? output.join('') + '</span>' : '';
 		},
 
 		buildFromHTML: function(is_recipient) {
@@ -1081,6 +1120,18 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return output + '</span>';
 		},
 
+		buildAutoModHTML: function() {
+			if ( this.get('hasClickedFlaggedMessage') )
+				return '<div class="system-msg">Thank you for your response!</div>';
+
+			return  '<p class="inline-warning">' + TB_TOOLTIP + '</p>' +
+				'<div class="pd-y-1 clearfix">' +
+					'<a class="button button--small button--alert float-left mg-r-1 tb-button" data-action="no">Deny</a>' +
+					'<a class="button button--small float-left mg-r-1 tb-button" data-action="yes">Allow</a>' +
+					'<a class="button button--small button--text float-left tb-button" data-action="not sure">Not Sure</a>' +
+				'</div>';
+		},
+
 		ffzRender: function() {
 			var el = this.get('element'),
 				output = '<div class="indicator"></div>';
@@ -1092,6 +1143,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				output += this.get('msgObject.deleted') ?
 					this.buildDeletedMessageHTML() : this.buildMessageHTML();
 			}
+
+			if ( ! f.settings.automod_inline && this.get('msgObject.autoModRejected') )
+				output += this.buildAutoModHTML();
 
 			el.innerHTML = output;
 		},
@@ -1302,7 +1356,8 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 				return;
 
 			var cl = e.target.classList,
-				from = this.get("msgObject.from");
+				from = this.get("msgObject.from"),
+				msg_id = this.get("msgObject.tags.id");
 
 			/*if ( cl.contains('ffz-old-messages') )
 				return f._show_deleted(this.get('msgObject.room'));*/
@@ -1313,6 +1368,13 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 
 			} else if ( cl.contains('deleted-link') )
 				return f._deleted_link_click.call(e.target, e);
+
+			else if ( cl.contains('tb-button') ) {
+				jQuery(e.target).trigger('mouseout');
+				e.preventDefault();
+				this.actions.clickedAutoModResponse.call(this, msg_id, e.target.dataset.action);
+
+			}
 
 			else if ( cl.contains('mod-icon') ) {
 
@@ -1332,10 +1394,10 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 					);
 
 				else if ( cl.contains('tb-reject') )
-					this.actions.clickedAutoModResponse.call(this, this.get('msgObject.tags.id'), 'no');
+					this.actions.clickedAutoModResponse.call(this, msg_id, 'no');
 
 				else if ( cl.contains('tb-allow') )
-					this.actions.clickedAutoModResponse.call(this, this.get('msgObject.tags.id'), 'yes');
+					this.actions.clickedAutoModResponse.call(this, msg_id, 'yes');
 
 				else if ( ! from )
 					return;

@@ -181,6 +181,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #000;
 }
 
+.ffz-dark .subdash-feature-notice,
+.ffz-dark #channel-prompt,
 .ffz-dark .balloon,
 .ffz-dark .balloon:after,
 .ffz-dark .conversation-settings-menu,
@@ -368,6 +370,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .dropmenu_action:not(:hover) span,
 .ffz-dark .chat-menu-content button.font-color-purple,
 .ffz-dark .player a.player-text-link,
+.ffz-dark .cn-metabar .cn-metabar__title a,
 .ffz-dark a {
 /*.ffz-dark a:not(.profile-card__content):not(.filter-item):not(.ui-state-focus):not(.button):not(.switch):not(.follow):not(.fb_button):not(.what) {*/
 	color: #a68ed2;
@@ -388,6 +391,15 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .warp__item--toggled > a { color: #eae9ec !important }
 
 .ffz-dark .exit-theatre > a { color: #000 !important; }
+
+.ffz-dark .cheermote-tier {
+	background-color: #111;
+	border-color: #474747;
+}
+
+.ffz-dark .progress-bar {
+	background-color: #444;
+}
 
 .ffz-dark .switch,
 .ffz-dark .button,
@@ -557,6 +569,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* Subscriptions Page */
 
+.ffz-dark .ticket__benefits,
 .ffz-dark .tickets .ticket .benefits {
 	background-color: rgb(16,16,16);
 	color: rgb(195,195,195); /*#acacbf;*/
@@ -606,6 +619,8 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-left-color: #6441a5;
 }
 
+.ffz-dark .form__input[type=checkbox] + label,
+.ffz-dark .form__input[type=radio] + label,
 .ffz-dark label,
 .ffz-dark code {
 	color: #999;
@@ -642,6 +657,30 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #ccc;
 }
 
+.ffz-dark .subscription-dash .video-quality-list li.non-selectables .option,
+.ffz-dark .subscription-dash .video-quality-list li {
+	background-color: #191919;
+	border-color: #474747;
+}
+
+.ffz-dark .subscription-dash .video-quality-list li .quality-setting {
+	background-color: #000;
+}
+
+.ffz-dark .subscription-dash .video-quality-list li.selectable.over {
+	background-image: none;
+	background-color: #242424;
+}
+
+.ffz-dark .subscription-dash .video-quality-list li.selectable.restricted {
+	background-color: #cc2b2b;
+	border-color: #801b1b;
+}
+
+.ffz-dark .subscription-dash .video-quality-list li.selectable.restricted.over {
+	background-color: #fc3636;
+}
+
 .ffz-dark .card__info,
 .ffz-dark .items-grid .meta .info {
 	color: #6c6c6c;
@@ -650,6 +689,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .mininav li > a,
 .ffz-dark ul.tabs li > a,
 .ffz-dark .directory_header .nav li > a,
+.ffz-dark .tw-tabs__item > button,
 .ffz-dark ul.tabs_fake li > a {
 	color: #a68ed2;
 }
@@ -674,10 +714,16 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: #32323e;
 }
 
+.ffz-dark .tw-tabs__item > button:hover,
 .ffz-dark .tw-tabs__item > a.active,
 .ffz-dark .tw-tabs__item > button.active {
 	color: #ccc;
 	box-shadow: 0 -1px 0 #ccc inset;
+}
+
+.ffz-dark .contract-amendments-window {
+	border-color: #474747;
+	background-color: #000;
 }
 
 .ffz-dark .game-details__nav > li > a.active { color: #fff }
@@ -895,6 +941,27 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: rgba(255,255,255,0.2);
 }
 
+.ffz-dark .subscription-dash .list-head th {
+	border-color: #474747;
+	color: #ccc;
+}
+
+.ffz-dark .subdash-feature-section,
+.ffz-dark .subdash-feature-header__back,
+.ffz-dark .subdash-feature-header,
+.ffz-dark .subdash-feature-row--border,
+.ffz-dark .cl-container .section-header .header-content.indented,
+.ffz-dark .cl-container .section-header .header-back {
+	border-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .subdash-feature-header__back:hover,
+.ffz-dark .cl-container .section-header .header-back:hover {
+	background-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .new-dashboard .dashboard-section .submit-button-fieldset,
+.ffz-dark .subdash-feature-header,
 .ffz-dark .cl-container .section-header,
 .ffz-dark .cl-container .cl-section .cl-subheader {
 	background-color: rgb(32,32,32);
@@ -911,10 +978,14 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-bottom-color: rgba(255,255,255,0.2);
 }
 
+.ffz-dark .cl-container fieldset .cl-input-container label { color: #fff }
+
+.ffz-dark .subdash-feature-row__title,
 .ffz-dark .cl-container fieldset .label-wrapper label {
 	color: #ccc;
 }
 
+.ffz-dark .subdash-feature,
 .ffz-dark #emoticons #emote_switch .set-button,
 .ffz-dark #example .line {
 	background-color: #19191f;
@@ -951,6 +1022,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: #fff;
 }
 
+.ffz-dark .card .brick,
 .ffz-dark .brick.brick--theme-grey,
 .ffz-dark .card-carousel__button:hover
 .ffz-dark .carousel__button:hover {
@@ -1704,6 +1776,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* Video Uploads */
 
+.ffz-dark #video-manager .card > div[style],
 .ffz-dark .videos.uploads .card > div[style] {
 	background-color: #101010 !important;
 }

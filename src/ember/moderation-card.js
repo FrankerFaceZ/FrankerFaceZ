@@ -381,7 +381,7 @@ FFZ.settings_info.mod_buttons = {
 
 		for(var i=0; i < this.settings.mod_buttons.length; i++) {
 			var pair = this.settings.mod_buttons[i],
-				prefix = pair[0], cmd = pair[1], had_prefix = pair[2];
+				prefix = pair[0], cmd = pair[1], had_prefix = pair[2], non_mod = pair[4];
 
 			if ( cmd === false )
 				cmd = "/ban";
@@ -391,7 +391,7 @@ FFZ.settings_info.mod_buttons = {
 				cmd = '' + cmd;
 
 			prefix = had_prefix ? 'name:' + prefix + '=' : '';
-			old_val += (old_val.length ? '\n' : '') + prefix + cmd;
+			old_val += (old_val.length ? '\n' : '') + (non_mod ? 'nonmod:' : '') + prefix + cmd;
 		}
 
 		utils.prompt(
@@ -405,6 +405,10 @@ FFZ.settings_info.mod_buttons = {
 				"To set a custom label for the button, start your line with <code>name:</code> followed by the " +
 				"name of the button. End the name with an equals sign. Only the first character will be displayed.<br>" +
 				"<strong>Example:</strong> <code>name:B=/ban {user}</code><hr>" +
+
+				"To create a button that will be visible even if you don't have moderator privileges over a user, " +
+				"start your line with <code>nonmod:</code><br>" +
+				"<strong>Example:</strong> <code>nonmod:/w some_bot !info {user}</code><hr>" +
 
 				"<strong>Allowed Variables</strong><br><table><tbody>" +
 				"<tr><td><code>{user}</code></td><td>target user's name</td>" +
@@ -430,11 +434,15 @@ FFZ.settings_info.mod_buttons = {
 					var cmd = vals[i],
 						prefix,
 						is_emoji = false,
-						name_match = /^name:([^=]+)=/.exec(cmd);
+						non_mod = /^nonmod:/.test(cmd);
 
 					if ( ! cmd || ! cmd.length )
 						continue;
 
+					if ( non_mod )
+						cmd = cmd.substr(7).trim();
+
+					var name_match = /^name:([^=]+)=/.exec(cmd);
 					if ( name_match ) {
 						label = name_match[1];
 
@@ -447,6 +455,13 @@ FFZ.settings_info.mod_buttons = {
 							is_emoji = tokens[0].ffzEmoji;
 
 						cmd = cmd.substr(name_match[0].length).trim();
+
+						if ( ! non_mod ) {
+							non_mod = /^nonmod:/.test(cmd);
+							if ( non_mod )
+								cmd = cmd.substr(7).trim();
+						}
+
 					} else
 						label = undefined;
 
@@ -487,7 +502,7 @@ FFZ.settings_info.mod_buttons = {
 						}
 					}
 
-					output.push([label, cmd, name_match != null, is_emoji]);
+					output.push([label, cmd, name_match != null, is_emoji, non_mod]);
 				}
 
 				f.settings.set('mod_buttons', output);

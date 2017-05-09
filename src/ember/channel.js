@@ -360,7 +360,7 @@ FFZ.prototype.modify_channel_live = function(view) {
 			if ( game === 'Creative' )
 				tokens = f.tokenize_ctags(tokens);
 
-			var el = this.$(".cn-metabar__title .card__title");
+			var el = this.$(".cn-metabar > div:first-child .js-card__title");
 			el && el.html(f.render_tokens(tokens));
 		}.observes('channel.id', 'channel.status', 'channel.game'),
 

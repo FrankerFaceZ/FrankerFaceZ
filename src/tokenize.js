@@ -1125,7 +1125,7 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 			return 'cheer' + token.amount;
 
 		var prefix = utils.quote_attr(token.prefix);
-		return '<span class="emoticon ffz-bit ffz-tooltip bit-prefix-' + prefix + ' bit-tier-' + tier[0] + '"' + (token.individuals ? ' data-individuals="' + utils.quote_attr(JSON.stringify(token.individuals)) + '"' : '') + ' data-prefix="' + prefix + '" data-amount="' + utils.number_commas(token.amount) + '" alt="cheer' + token.amount + '"></span>';
+		return '<span class="emoticon js-bits-emote-image ffz-bit ffz-tooltip bit-prefix-' + prefix + ' bit-tier-' + tier[0] + '"' + (token.individuals ? ' data-individuals="' + utils.quote_attr(JSON.stringify(token.individuals)) + '"' : '') + ' data-prefix="' + prefix + '" data-amount="' + utils.number_commas(token.amount) + '" alt="cheer' + token.amount + '"></span>';
 	}
 
 	else if ( token.type === 'bits-tag' ) {

@@ -18,9 +18,14 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 	cursor: pointer;
 }
 
+.app-main.has-sc .dash-dragula { height: calc(100vh - 18rem); }
+.ffz-sidebar-minimize .app-main.has-sc .dash-dragula { height: calc(100vh - 14rem) }
+
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .app-main.has-sc { top: 0 }
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #main_col { margin: 0 !important }
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 70px) }
 .ffz-minimize-conversations.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .dash-dragula { height: calc(100vh - 50px) }
+
 
 .ffz-hide-thumb-info-on-hover .stream.item:hover .boxart,
 .ffz-hide-thumb-info-on-hover .stream.item:hover .overlay_info,
@@ -31,10 +36,12 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-thumb-info-on-hover .video.item:hover .progress-bar-wrapper,
 .ffz-hide-thumb-info-on-hover .card-carousel__item:hover .card__boxpin,
 
+.player[data-paused="false"] #js-follow-panel,
 body:not(.ffz-theater-basic-stats) .player-userinfo__game,
 body:not(.ffz-theater-basic-stats) .player-controls-top,
 .moderation-card__actions:not(.loading):empty,
 .ffz-hide-purchase-game .cmrc-channel-box,
+.ffz-minimal-dashboard[data-current-path="user.dashboards.index"] .top-nav,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_col,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #left_close,
 .ffz-minimal-dashboard[data-current-path="user.dashboards.index"] #right_col,
@@ -387,6 +394,7 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	fill: #a68ed2;
 }
 
+.chat-container.dark .chat-line .button,
 .ffz-theater-stats .theatre .button.primary.subscribe-button {
 	color: #fff;
 }
@@ -1607,6 +1615,13 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 
 
 /* Emoticon Tooltips */
+
+#ffz-price-popup hr,
+.ffz-subwindow hr {
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	margin: 10px 0;
+}
 
 .ffz-wide-tip hr {
 	margin: 5px 0;
@@ -3629,7 +3644,10 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	border-top: 1px solid rgba(0,0,0,0.2);
 }
 
-.ffz-ui-menu-page input.js-filter-input { margin: 0 }
+.ffz-ui-menu-page input.js-filter-input {
+	margin: 0;
+	width: calc(100% - 2rem);
+}
 
 .bttv-incompatibility b + b:before {
 	content: ', ';
