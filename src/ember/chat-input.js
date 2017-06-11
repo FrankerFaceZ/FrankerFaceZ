@@ -942,7 +942,10 @@ FFZ.prototype.modify_chat_input = function(component) {
 			return emotes;
 		}.property(),
 
-		_setPartialName: function() { },
+		_setPartialName: function() {
+			if ( f.has_bttv )
+				return this._super();
+		}.observes('textareaValue'),
 
 		ffz_suggestions: function() {
 			var output = [],
@@ -1041,9 +1044,24 @@ FFZ.prototype.modify_chat_input = function(component) {
 			for(var i=0; i < suggestions.length; i++) {
 				var suggestion = suggestions[i],
 					name = suggestion.id,
-					display_name = suggestion.displayName || (name && name.capitalize()),
-					username_match = display_name.trim().toLowerCase() === name,
-					alias = f.aliases[name];
+					display_name = suggestion.displayName,
+					username_match;
+
+				if ( name === undefined ) {
+					var dnt = display_name && display_name.trim();
+					if ( dnt && /^[a-z0-9_]+$/i.test(dnt) )
+						name = dnt.toLowerCase();
+					else
+						continue;
+				}
+
+				if ( ! display_name ) {
+					display_name = name.capitalize();
+					username_match = true;
+				} else
+					username_match = display_name.trim().toLowerCase() === name;
+
+				var alias = f.aliases[name];
 
 				if ( user_output[name] && ! user_output[name].is_alias ) {
 					var token = user_output[name];
@@ -1244,6 +1262,9 @@ FFZ.prototype.modify_chat_input = function(component) {
 		hideSuggestions: Ember.on("document.mouseup", function(event) {
 			var target = event.target,
 				cl = target.classList;
+
+			if ( f.has_bttv )
+				this._super();
 
 			if ( ! this.get('ffz_suggestions_visible') || cl.contains('suggestion') || cl.contains('suggestions') || target === this.get('chatTextArea') )
 				return;

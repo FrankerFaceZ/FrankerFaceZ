@@ -5,6 +5,7 @@
 	border-bottom: 1px solid #aaa;
 }
 
+.chat-history .chat-line,
 .ember-chat .chat-messages .chat-line,
 .ember-chat .chat-messages .chat-line.admin { padding-bottom: 2px }
 

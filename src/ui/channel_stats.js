@@ -90,30 +90,39 @@ metadata.player_stats = {
 			stats = player.getVideoInfo();
 		} catch(err) { }
 
+		// Check for server offset.
+		var delayed = undefined;
+		if ( this._ws_open ) {
+			var offset = this._ws_server_offset;
+			if ( isNaN(offset) || ! isFinite(offset) )
+				this.ws_ping();
+			else
+				delayed = offset > 5000;
+		}
+
 		var delay = stats && Math.round(stats.hls_latency_broadcaster / 10) / 100;
-		return [stats, delay, delay > 180, player_cont];
+		return [stats, delay, delay > 180, player_cont, delayed];
 	},
 
 	order: 3,
 	host_order: 102,
 
 	static_label: constants.GRAPH,
-	label: function(stats, delay, is_old) {
-		if ( ! this.settings.player_stats || ! stats || ! stats.hls_latency_broadcaster )
+	label: function(stats, delay, is_old, player_cont, delayed) {
+		if ( ! this.settings.player_stats || ! delay )
 			return null;
 
+		delayed = delayed ? '(!) ' : '';
+
 		if ( is_old )
-			return utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old'
-		else {
-			delay = delay.toString();
-			var ind = delay.indexOf('.');
-			return delay + (ind === -1 ? '.00' : (ind >= delay.length - 2 ? '0' : '')) + 's';
-		}
+			return delayed + utils.time_to_string(Math.floor(delay), true, delay > 172800) + ' old'
+		else
+			return delayed + delay.toFixed(2) + 's';
 	},
 
 	color: function(stats, delay, is_old) {
 		var setting = this.settings.player_stats;
-		if ( setting === -1 )
+		if ( setting === -1 || is_old )
 			return '';
 
 		else if ( delay > (setting * 2) )
@@ -127,9 +136,11 @@ metadata.player_stats = {
 		player_cont.$('.js-stats-toggle').click();
 	},
 
-	tooltip: function(stats, delay, is_old) {
+	tooltip: function(stats, delay, is_old, player_cont, delayed) {
+		delayed = delayed ? 'Your local clock seems to be off by roughly ' + (Math.round(this._ws_server_offset / 10) / 100).toFixed(2) + ' seconds, and that could be making this inaccurate.<hr>' : '';
+
 		if ( ! stats || ! stats.hls_latency_broadcaster )
-			return 'Stream Latency';
+			return delayed + 'Stream Latency';
 
 		var bitrate;
 		if ( stats.playback_bytes_per_second )
@@ -137,7 +148,7 @@ metadata.player_stats = {
 		else
 			bitrate = Math.round(stats.current_bitrate * 100) / 100;
 
-		return (is_old ? 'Video Information<br>' +
+		return delayed + (is_old ? 'Video Information<br>' +
 			'Broadcast ' + utils.time_to_string(Math.floor(delay), true) + ' Ago<br><br>' : 'Stream Latency<br>') +
 			'Video: ' + stats.vid_width + 'x' + stats.vid_height + 'p' + stats.current_fps + '<br>' +
 			'Playback Rate: ' + utils.number_commas(bitrate) + ' Kbps<br>' +
@@ -156,7 +167,7 @@ metadata.chatters = {
 		if ( ! room || ! this.settings.chatter_count )
 			return null;
 
-		return utils.number_commas(Object.keys(room.room.get('ffz_chatters') || {}).length);
+		return utils.number_commas((room.room.get('ffz_chatters') || []).length);
 	},
 
 	tooltip: 'Currently in Chat'

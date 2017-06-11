@@ -41,6 +41,29 @@
 
 	.svg-logo_twitch, .clips-nav__logo { fill: white }
 
+	.nav-banner {
+		background-color: lighten(@nav-bg-color, 10%);
+	}
+
+
+	// Chat
+
+	.clip-chat-message {
+		color: #ccc;
+	}
+
+	.view-clip__main--darker {
+		background-color: darken(@nav-bg-color, 2%);
+	}
+
+	.view-clip__smallTitle {
+		color: @fg-color;
+
+		& > div {
+			background-color: @nav-bg-color;
+			border-bottom: lighten(@nav-bg-color, 10%);
+		}
+	}
 
 	// Content Meta
 	.nv-clip-content {

@@ -2,7 +2,8 @@ var FFZ = window.FrankerFaceZ,
 	constants = require("../constants"),
 	utils = require("../utils"),
 
-	BANNED_SETS = {"00000turbo":true};
+	BANNED_SETS = {"00000turbo":true},
+	EXTRA_INVENTORY = ['33563'];
 
 
 // -------------------
@@ -154,6 +155,43 @@ FFZ.menu_pages.myemotes = {
 			},
 
 			render: function(view, container) {
+				/*var search_cont = utils.createElement('div', 'ffz-filter-container'),
+					search_input = utils.createElement('input', 'emoticon-selector__filter-input form__input js-filter-input text text--full-width'),
+					filtered_cont = utils.createElement('div', 'ffz-filter-children ffz-ui-sub-menu-page'),
+					was_filtered = false;
+
+				search_input.placeholder = 'Search for Emotes';
+				search_input.type = 'text';
+
+				filtered_cont.style.maxHeight = (parseInt(container.style.maxHeight) - 53) + 'px';
+
+				search_cont.appendChild(search_input);
+				container.appendChild(filtered_cont);
+				container.appendChild(search_cont);
+
+				search_input.addEventListener('input', function(e) {
+					var filter = (search_input.value || '').toLowerCase(),
+						groups = filtered_cont.querySelectorAll('.emoticon-grid');
+
+					for(var i=0; i < groups.length; i++) {
+						var el = groups[i],
+							emotes = el.querySelectorAll('.emoticon'),
+							hidden = true;
+
+						for(var j=0; j < emotes.length; j++) {
+							var em = emotes[j],
+								ehidden = filter.length && em.getAttribute('data-filter').indexOf(filter) === -1;
+
+							em.classList.toggle('hidden', ehidden);
+							hidden = hidden && ehidden;
+						}
+
+						el.classList.toggle('hidden', hidden);
+						el.classList.toggle('collapsable', ! filter.length);
+					}
+				});
+
+				container = filtered_cont;*/
 				FFZ.menu_pages.myemotes.render_lists.call(this, view, container, false);
 			}
 		},
@@ -199,7 +237,9 @@ FFZ.menu_pages.myemotes = {
 			gathered_emotes = [];
 
 		// Start with Twitch Sets
-		var gathered_favorites = this.settings.favorite_emotes['twitch-inventory'] || [];
+		var gathered_favorites = this.settings.favorite_emotes['twitch-inventory'] || [],
+			gathered_channels = {},
+			other_channels = [];
 
 		for(var set_id in twitch_sets) {
 			if ( ! twitch_sets.hasOwnProperty(set_id) || ( ! favorites_only && ! this.settings.global_emotes_in_menu && set_id === '0' ) )
@@ -213,7 +253,7 @@ FFZ.menu_pages.myemotes = {
 			if ( ! set.length )
 				continue;
 
-			if ( this._twitch_inventory_sets.indexOf(set_id) !== -1 ) {
+			if ( this._twitch_inventory_sets.indexOf(set_id) !== -1 || EXTRA_INVENTORY.indexOf(set_id) !== -1 ) {
 				for(var i=0; i < set.length; i++)
 					if ( ! favorites_only || gathered_favorites.indexOf(set[i].id) !== -1 )
 						gathered_emotes.push(set[i]);
@@ -228,6 +268,12 @@ FFZ.menu_pages.myemotes = {
 			if ( favorites_only && (! favorites_list || ! favorites_list.length) )
 				continue;
 
+			if ( menu_id !== 'unknown' ) {
+				var gathered = gathered_channels[menu_id] = gathered_channels[menu_id] || [];
+				gathered.push(set_id);
+				continue;
+			}
+
 			var sort_key = 0,
 				menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, set_id, set, favorites_only);
 
@@ -239,6 +285,33 @@ FFZ.menu_pages.myemotes = {
 			if ( menu )
 				sets.push([[sort_key, menu_id], menu]);
 		}
+
+		for(var menu_id in gathered_channels) {
+			var gathered = [],
+				stuff = gathered_channels[menu_id];
+
+			if ( ! stuff.length )
+				continue;
+
+			for(var i=0; i < stuff.length; i++) {
+				var set_id = stuff[i],
+					set = twitch_sets[set_id];
+				for(var j=0; j < set.length; j++)
+					gathered.push([set_id, set[j]]);
+			}
+
+			var sort_key = 0,
+				menu = FFZ.menu_pages.myemotes.draw_twitch_set.call(this, view, stuff[0], gathered, favorites_only);
+
+			if ( menu_id.indexOf('global') !== -1 )
+				sort_key = 100;
+			else if ( menu_id.substr(0,2) === '--' || menu_id === 'turbo' )
+				sort_key = 75;
+
+			if ( menu )
+				sets.push([[sort_key, menu_id], menu]);
+		}
+
 
 		// Handle the gathered single emotes.
 		if ( gathered_emotes.length ) {
@@ -338,18 +411,22 @@ FFZ.menu_pages.myemotes = {
 		return true;
 	},
 
-	toggle_section: function(heading, container) {
+	toggle_section: function(heading, container, set_state) {
 		var menu = heading.parentElement,
 			set_id = menu.getAttribute('data-set'),
 			collapsed_list = this.settings.emote_menu_collapsed,
-			is_collapsed = collapsed_list.indexOf(set_id) === -1;
+			has_state = set_state !== undefined,
+			is_collapsed = has_state ? set_state : collapsed_list.indexOf(set_id) === -1;
 
-		if ( ! is_collapsed )
-			collapsed_list.removeObject(set_id);
-		else
-			collapsed_list.push(set_id);
+		if ( ! has_state ) {
+			if ( ! is_collapsed )
+				collapsed_list.removeObject(set_id);
+			else
+				collapsed_list.push(set_id);
 
-		this.settings.set('emote_menu_collapsed', collapsed_list, true);
+			this.settings.set('emote_menu_collapsed', collapsed_list, true);
+		}
+
 		menu.classList.toggle('collapsed', !is_collapsed);
 
 		if ( is_collapsed )
@@ -382,7 +459,7 @@ FFZ.menu_pages.myemotes = {
 			menu.classList.add('collapsable');
 			menu.appendChild(heading);
 			menu.classList.toggle('collapsed', collapsed);
-		  heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this, emotes); });
+			heading.addEventListener('click', function() { FFZ.menu_pages.myemotes.toggle_section.bind(f)(this, emotes); });
 		}
 
 		var set = [];
@@ -420,6 +497,7 @@ FFZ.menu_pages.myemotes = {
 			em.classList.toggle('ffz-is-favorite', favorites_only);
 
 			em.setAttribute('data-ffz-emoji', emoji.code);
+			em.setAttribute('data-filter', emoji.name.toLowerCase() + ' :' + emoji.short_name.toLowerCase() + ':');
 			em.alt = emoji.raw;
 
 			em.addEventListener('click', this._add_emote.bind(this, view, emoji.raw, "emoji", emoji.raw));
@@ -502,6 +580,11 @@ FFZ.menu_pages.myemotes = {
 		}
 
 		set.sort(function(a,b) {
+			if ( Array.isArray(a) )
+				a = a[1];
+			if ( Array.isArray(b) )
+				b = b[1];
+
 			var an = a.code.toLowerCase(),
 				bn = b.code.toLowerCase();
 
@@ -514,8 +597,16 @@ FFZ.menu_pages.myemotes = {
 
 		for(var i=0; i < set.length; i++) {
 			var emote = set[i],
-				code = constants.KNOWN_CODES[emote.code] || emote.code,
-				is_favorite = favorites.indexOf(emote.id) !== -1;
+				esid = set_id,
+				favs = favorites;
+			if ( Array.isArray(emote) ) {
+				esid = emote[0];
+				emote = emote[1];
+				favs = this.settings.favorite_emotes["twitch-" + esid] || [];
+			}
+
+			var code = constants.KNOWN_CODES[emote.code] || emote.code,
+				is_favorite = favs.indexOf(emote.id) !== -1;
 
 			if ( favorites_only && ! is_favorite )
 				continue;
@@ -525,6 +616,7 @@ FFZ.menu_pages.myemotes = {
 
 			em.className = 'emoticon ffz-tooltip ffz-can-favorite';
 			em.setAttribute('data-emote', emote.id);
+			em.setAttribute('data-filter', code.toLowerCase());
 			em.alt = code;
 
 			em.classList.toggle('ffz-favorite', is_favorite);
@@ -541,13 +633,13 @@ FFZ.menu_pages.myemotes = {
 				em.style.backgroundImage = img_set;
 			}
 
-			em.addEventListener("click", function(id, c, e) {
+			em.addEventListener("click", function(id, c, q, e) {
 				e.preventDefault();
 				if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
 					window.open("https://twitchemotes.com/emote/" + id);
 				else
-					this._add_emote(view, c, "twitch-" + set_id, id, e);
-			}.bind(this, emote.id, code));
+					this._add_emote(view, c, "twitch-" + q, id, e);
+			}.bind(this, emote.id, code, esid));
 
 			c++;
 			emotes.appendChild(em);
@@ -634,6 +726,7 @@ FFZ.menu_pages.myemotes = {
 
 			em.setAttribute('data-ffz-emote', emote.id);
 			em.setAttribute('data-ffz-set', set.id);
+			em.setAttribute('data-filter', emote.name.toLowerCase());
 
 			em.style.backgroundImage = 'url("' + emote.urls[1] + '")';
 			em.style.backgroundImage = '-webkit-' + img_set;

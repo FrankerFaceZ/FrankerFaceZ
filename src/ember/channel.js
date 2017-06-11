@@ -474,15 +474,17 @@ FFZ.settings_info.chatter_count = {
 	help: "Display the current number of users connected to chat beneath the channel.",
 
 	on_update: function(val) {
-		if ( this._cindex )
-			this._cindex.ffzUpdateMetadata('chatters');
-
-		if ( ! val || ! this.rooms )
+		if ( ! this.rooms )
 			return;
 
 		// Refresh the data.
-		for(var room_id in this.rooms)
-			this.rooms.hasOwnProperty(room_id) && this.rooms[room_id].room && this.rooms[room_id].room.ffzInitChatterCount();
+		for(var room_id in this.rooms) {
+			var r = this.rooms[room_id] && this.rooms[room_id].room;
+			r && r.ffzInitChatterCount();
+		}
+
+		if ( this._cindex )
+			this._cindex.ffzUpdateMetadata('chatters');
 	}
 };
 

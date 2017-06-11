@@ -798,7 +798,7 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	// Mentions!
 	if ( ! from_me ) {
 		tokens = this.tokenize_mentions(tokens);
-		var st = this.settings.remove_filtered;
+		var st = (mod_or_higher && !this.settings.remove_filtered_mod) ? 0 : this.settings.remove_filtered;
 
 		for(var i=0; i < tokens.length; i++) {
 			var token = tokens[i],
@@ -1076,14 +1076,16 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 						video_info = VIDEO_URL.exec(href);
 
 					if ( clip_info ) {
-						var clips = utils.ember_lookup('service:clips');
-						clips && clips.getClipInfo(clip_info[1]).then(function(data) {
+						var clips = utils.ember_lookup('service:store');
+						clips && clips.findRecord && clips.findRecord('clip', clip_info[1]).then(function(data) {
+						//clips && clips.getClipInfo(clip_info[1]).then(function(data) {
+							data &&
 							success(true, {
-								image: data.previewImage,
+								image: data.get('scaledPreviewUrl'),
 								image_iframe: false,
-								html: '<span class="ffz-clip-title">' + utils.sanitize(data.title) + '</span>' +
-									'Channel: ' + utils.sanitize(data.broadcasterDisplayName) +
-									'<br>Game: ' + utils.sanitize(data.game)
+								html: '<span class="ffz-clip-title">' + utils.sanitize(data.get('title')) + '</span>' +
+									'Channel: ' + utils.sanitize(data.get('broadcasterDisplayName')) +
+									'<br>Game: ' + utils.sanitize(data.get('game'))
 							});
 						});
 

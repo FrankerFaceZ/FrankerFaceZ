@@ -30,10 +30,8 @@ FFZ.settings_info.player_stats = {
 	help: "Display your current stream latency (how far behind the broadcast you are) under the player, with a few useful statistics in a tooltip.",
 
 	on_update: function(val) {
-		if ( ! this._cindex )
-			return;
-
-		this._cindex.ffzUpdateMetadata('player_stats');
+		if ( this._cindex )
+			this._cindex.ffzUpdateMetadata('player_stats');
 	}
 };
 
@@ -199,12 +197,19 @@ FFZ.prototype.modify_twitch_player = function(player) {
 		},
 
 		ffzRecreatePlayer: function() {
-			var player = this.get('player'),
-				theatre = player && player.getTheatre();
+			var t = this,
+				player = this.get('player'),
+				theatre, fullscreen, had_player = false;
 
 			// Tell the player to destroy itself.
-			if ( player )
+			if ( player ) {
+				had_player = true;
+				fullscreen = player.fullscreen;
+				theatre = player.theatre;
+				player.fullscreen = false;
+				player.theatre = false;
 				player.destroy();
+			}
 
 			// Break down everything left over from that player.
 			this.$('#player').html('');
@@ -213,7 +218,16 @@ FFZ.prototype.modify_twitch_player = function(player) {
 			this.set('ffz_post_player', false);
 
 			// Now, let Twitch create a new player as usual.
-			Ember.run.next(this.didInsertElement.bind(this));
+			Ember.run.next(function() {
+				t.didInsertElement();
+				had_player && setTimeout(function() {
+					var player = t.get('player');
+					if ( player ) {
+						//player.fullscreen = fullscreen;
+						player.theatre = theatre;
+					}
+				})
+			});
 		},
 
 		/*ffzUpdatePlayerPaused: function() {
@@ -269,17 +283,18 @@ FFZ.prototype.modify_twitch_player = function(player) {
 
 			// Add an option to the menu to recreate the player.
 			var t = this,
-				el = this.$('.player-menu .player-menu__item--stats')[0],
+				el = this.$('.player-buttons-right #js-settings')[0],
 				container = el && el.parentElement;
 
-			if ( el && ! container.querySelector('.js-player-reset') ) {
-				var btn_link = utils.createElement('a', 'player-text-link js-player-reset', 'Reset Player'),
-					btn = utils.createElement('p', 'player-menu__item player-menu__item--reset pl-small', btn_link);
+			if ( el && ! container.querySelector('.ffz-player-reset') ) {
+				var btn = utils.createElement('button', 'player-button player-button--reset ffz-player-reset');
+				btn.type = 'button';
 
-				btn_link.tabindex = '-1';
-				btn_link.href = '#';
+				btn.innerHTML = '<span class="player-tip js-control-tip" data-tip="Double-Click to Reset Player"></span>' +
+					constants.CLOSE;
 
-				btn_link.addEventListener('click', function(e) {
+				jQuery(btn).on('dblclick', function(e) {
+				//btn.addEventListener('click', function(e) {
 					t.ffzRecreatePlayer();
 					e.preventDefault();
 					return false;

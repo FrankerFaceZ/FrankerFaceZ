@@ -133,6 +133,10 @@ FFZ.settings_info.dark_twitch = {
 			if ( this.has_bttv )
 				return;
 
+			var RH = this._roomv && this._roomv.get('ffz_recent_el');
+			if ( RH )
+				RH.classList.toggle('dark', val);
+
 			(this.is_clips ? document.querySelector('html') : document.body).classList.toggle("ffz-dark", val);
 
 			var Settings = utils.ember_settings();

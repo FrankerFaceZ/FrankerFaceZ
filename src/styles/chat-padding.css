@@ -1,4 +1,5 @@
 /* Chat Line Padding */
+.chat-history .chat-line,
 .ember-chat .chat-messages .chat-line,
 .ember-chat .chat-messages .chat-line.admin,
 

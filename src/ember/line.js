@@ -13,7 +13,7 @@
 
 FFZ.settings_info.automod_inline = {
 	type: "boolean",
-	value: true,
+	value: false,
 
 	category: "Chat Moderation",
 	no_bttv: 6,
@@ -597,12 +597,78 @@ FFZ.settings_info.chat_font_family = {
 
 			var span = document.createElement('span');
 			span.style.fontFamily = val;
-			css = ".pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history,.ember-chat .chat-messages {" + span.style.cssText + "}";
+			css = ".ffz-recent-messages .chat-line,.pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history,.ember-chat .chat-messages {" + span.style.cssText + "}";
 		}
 
 		utils.update_css(this._chat_style, "chat_font_family", css);
 		}
 	};
+
+
+FFZ.settings_info.recent_highlights = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Recent Highlights <span>Beta</span>",
+	help: "Display a Recent Highlights section at the top of chat to make sure you don't miss anything.",
+
+	on_update: function(val) {
+		this._roomv && this._roomv.ffzUpdateRecent();
+		if ( ! val )
+			for(var room_id in this.rooms) {
+				var r = this.rooms[room_id] && this.rooms[room_id].room;
+				r.set('ffz_recent_highlights', []);
+				r.set('ffz_recent_highlights_unread', 0);
+			}
+	}
+}
+
+
+FFZ.settings_info.recent_highlight_count = {
+	type: "button",
+	value: 50,
+
+	category: "Chat Appearance",
+	no_bttv: true,
+
+	name: "Recent Highlights Length",
+	help: "Set the maximum number of recent highlights to keep at once.",
+
+	method: function() {
+		var f = this;
+		utils.prompt(
+			"Recent Highlights Length",
+			"Please enter a new maximum length for the recent highlights scrollback. Please note that setting this too high may cause your computer to begin lagging as chat messages accumulate.</p><p><b>Default:</b> 50",
+			this.settings.recent_highlight_count,
+			function(new_val) {
+				if ( new_val === null || new_val === undefined )
+					return;
+
+				new_val = parseInt(new_val);
+				if ( Number.isNaN(new_val) || ! Number.isFinite(new_val) )
+					new_val = 50;
+
+				new_val = Math.max(1, new_val);
+
+				f.settings.set("recent_highlight_count", new_val);
+			});
+	},
+
+	on_update: function(val) {
+		for(var room_id in this.rooms) {
+			var r = this.rooms[room_id] && this.rooms[room_id].room,
+				rh = r && r.get('ffz_recent_highlights');
+
+			if ( rh && rh.length > val )
+				r.set('ffz_recent_highlights', rh.splice(Math.max(0, rh.length - val), rh.length));
+		}
+
+		this._roomv && this._roomv.ffzUpdateRecent();
+	}
+}
 
 
 FFZ.settings_info.emoji_scale = {
@@ -676,9 +742,9 @@ FFZ.settings_info.chat_font_size = {
 			var lh = Math.max(20, Math.round((20/12)*val)),
 				pd = Math.floor((lh - 20) / 2);
 
-			css = ".pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history .chat-line,.ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			css = ".ffz-recent-messages .chat-line,.pinned-cheers .chat-line,.timestamp-line,.conversation-chat-line,.conversation-system-messages,.chat-history .chat-line,.ember-chat .chat-messages .chat-line { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 			if ( pd )
-				css += ".pinned-cheers .chat-line,.ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
+				css += ".ffz-recent-messages .chat-line .mod-icons,.pinned-cheers .chat-line,.ember-chat .chat-messages .chat-line .mod-icons, .ember-chat .chat-messages .chat-line .badges { padding-top: " + pd + "px; }";
 		}
 
 		utils.update_css(this._chat_style, "chat_font_size", css);
@@ -730,7 +796,7 @@ FFZ.settings_info.chat_ts_size = {
 			css = "";
 		else {
 			var lh = Math.max(20, Math.round((20/12)*val), Math.round((20/12)*this.settings.chat_font_size));
-			css = ".ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
+			css = ".ffz-recent-messages .timestamp,.ember-chat .chat-messages .timestamp { font-size: " + val + "px !important; line-height: " + lh + "px !important; }";
 		}
 
 		utils.update_css(this._chat_style, "chat_ts_font_size", css);

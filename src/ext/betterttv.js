@@ -96,6 +96,18 @@ FFZ.prototype.setup_bttv_7 = function(delay) {
 	}
 
 
+	/* Update the chat input to not use FFZ's input handling.
+	if ( this._inputv ) {
+		var t = this._inputv.$("textarea");
+		t.off("keyup");
+		t.off("keydown");
+		t.off("keypress");
+		t.on("keyup", this._inputv._onKeyUp.bind(this._inputv));
+		t.on("keydown", this._inputv._onKeyDown.bind(this._inputv));
+	}//*/
+
+
+
 	// Hook into BTTV's dark mode.
 	cl.add('ffz-bttv');
 	cl.toggle('ffz-bttv-dark', settings.get('darkenedMode'));
@@ -105,6 +117,7 @@ FFZ.prototype.setup_bttv_7 = function(delay) {
 	});
 
 	this.update_ui_link();
+	this._roomv && this._roomv.ffzUpdateRecent();
 	this.api_trigger('bttv-initialized', 7);
 }
 

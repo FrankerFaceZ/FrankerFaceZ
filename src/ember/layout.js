@@ -235,26 +235,19 @@ FFZ.prototype.setup_layout = function() {
 		}.property("ffzExtraHeight", "windowWidth", "rightColumnWidth", "fullSizePlayerDimensions", "windowHeight"),
 
 		contentWidth: function() {
-			var left_width = this.get('isSocialColumnEnabled') ? LS(
-				f.settings.socialbar_hide ? 0 :
-				this.get('isSocialColumnCollapsed') ? 50 : 240
-			) : LS(
-				this.get('ffzMinimizeNavigation') ? 10 :
-				this.get('isLeftColumnClosed') ? 50 : 240
-			),
-
+			var left_width = LS(f.settings.socialbar_hide ? 0 : this.get('isSocialColumnCollapsed') ? 50 : 240),
 				right_width = ! f.has_bttv && this.get('portraitMode') ? 0 : this.get("isRightColumnClosed") ? 0 : this.get("rightColumnWidth");
 
 			return this.get("windowWidth") - left_width - right_width - LS(60);
 
-		}.property("windowWidth", 'ffzMinimizeNavigation', "portraitMode", "isRightColumnClosed", "isLeftColumnClosed", "rightColumnWidth", "isSocialColumnCollapsed", "isSocialColumnEnabled"),
+		}.property("windowWidth", 'ffzMinimizeNavigation', "portraitMode", "isRightColumnClosed", "rightColumnWidth", "isSocialColumnCollapsed"),
 
 		ffzExtraHeight: function() {
-			return (this.get('isSocialColumnEnabled') ? this.get('ffzMinimizeNavigation') ? 10 : 50 : 0) +
+			return (this.get('ffzMinimizeNavigation') ? 10 : 50) +
 				(f.settings.channel_bar_collapse ? 10 : 60) + 15 +
 				(f.settings.channel_title_top === 2 ? 20 : f.settings.channel_title_top > 0 ? 55 : 0) +
 				(f.settings.channel_title_top ? 70 : 80);
-		}.property("isSocialColumnEnabled", "ffzMinimizeNavigation"),
+		}.property("ffzMinimizeNavigation"),
 
 		fullSizePlayerDimensions: function() {
 			var h = this.get('windowHeight'),
@@ -321,7 +314,7 @@ FFZ.prototype.setup_layout = function() {
 					if ( this.get('portraitMode') ) {
 						var size = this.get('fullSizePlayerDimensions'),
 							video_below = this.get('portraitVideoBelow'),
-							top_height = this.get('isSocialColumnEnabled') ? this.get('ffzMinimizeNavigation') ? 10 : 50 : 0,
+							top_height = this.get('ffzMinimizeNavigation') ? 10 : 50,
 
 							video_height = size.height + this.get('ffzExtraHeight'),
 							chat_height = window_height - video_height,

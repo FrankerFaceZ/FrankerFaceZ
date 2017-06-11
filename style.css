@@ -1,5 +1,6 @@
 /* Fix Tooltip Opacity */
 
+body[data-page^="ember#"] { overflow: hidden }
 body > div.tipsy { opacity: 1 !important; }
 body > div.tipsy .tipsy-inner { background-color: rgba(0,0,0,0.8); }
 body > div.tipsy .tipsy-arrow { opacity: 0.8; }
@@ -35,6 +36,7 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-thumb-info-on-hover .video.item:hover .card__meta,
 .ffz-hide-thumb-info-on-hover .video.item:hover .progress-bar-wrapper,
 .ffz-hide-thumb-info-on-hover .card-carousel__item:hover .card__boxpin,
+.ffz-hide-thumb-info-on-hover .ffz-directory-preview:hover .card__boxpin,
 
 .player[data-paused="false"] #js-follow-panel,
 body:not(.ffz-theater-basic-stats) .player-userinfo__game,
@@ -111,7 +113,7 @@ body:not(.ffz-show-bits-tags) .bits-tag--container,
 }
 
 .ffz-channel-bar-bottom .subscription-modal__balloon {
-	top: -220px !important;
+	top: -400px !important;
 }
 
 .cn-hosting--bottom .ffz-channel-options .balloon {
@@ -735,6 +737,8 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 	margin: 11px 13px;
 }
 
+.ffz-player-reset svg { padding: 0 3px }
+
 .player-menu__menu,
 .ffz-ui-sub-menu-page,
 .ffz-ui-menu-page { overflow-y: auto; }
@@ -919,39 +923,47 @@ span.ffz-handle:after {
 
 span.ffz-handle:after { left: 8px }
 
-.ffz-ui-popup.ui-moved span.ffz-handle { width: 24px; cursor: pointer; }
+.ui-moved span.ffz-handle { width: 24px; cursor: pointer; }
 
-.ffz-ui-popup.ui-moved span.ffz-handle:before,
-.ffz-ui-popup.ui-moved span.ffz-handle:after {
+.ui-moved span.ffz-handle:before,
+.ui-moved span.ffz-handle:after {
 	left: 11px;
 	border-color: #333;
 }
 
-.ffz-ui-popup.ui-moved span.ffz-handle:before { transform: rotate(45deg); }
-.ffz-ui-popup.ui-moved span.ffz-handle:after { transform: rotate(-45deg); }
+.ui-moved span.ffz-handle:before { transform: rotate(45deg); }
+.ui-moved span.ffz-handle:after { transform: rotate(-45deg); }
+
+.ffz-dark .ffz-recent-expando span.ffz-handle:before,
+.ffz-dark .ffz-recent-expando span.ffz-handle:after,
 
 .app-main.theatre span.ffz-handle:before,
 .chat-container.dark span.ffz-handle:before,
 .ember-chat-container.dark span.ffz-handle:before,
-body.ffz-bttv-dark .ffz-ui-popup span.ffz-handle:before,
+body.ffz-bttv-dark span.ffz-handle:before,
 .app-main.theatre span.ffz-handle:after,
 .chat-container.dark span.ffz-handle:after,
 .ember-chat-container.dark span.ffz-handle:after,
-body.ffz-bttv-dark .ffz-ui-popup span.ffz-handle:after {
+body.ffz-bttv-dark span.ffz-handle:after {
 	border-color: #666;
 }
 
-.app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:before,
-.chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
-.ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
-body.ffz-bttv-dark .ffz-ui-popup.ui-moved span.ffz-handle:before,
-.app-main.theatre .ffz-ui-popup.ui-moved span.ffz-handle:after,
-.chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
-.ember-chat-container.dark .ffz-ui-popup.ui-moved span.ffz-handle:after,
-body.ffz-bttv-dark .ffz-ui-popup.ui-moved span.ffz-handle:after {
+.app-main.theatre .ui-moved span.ffz-handle:before,
+.chat-container.dark .ui-moved span.ffz-handle:before,
+.ember-chat-container.dark .ui-moved span.ffz-handle:before,
+body.ffz-bttv-dark .ui-moved span.ffz-handle:before,
+.app-main.theatre .ui-moved span.ffz-handle:after,
+.chat-container.dark .ui-moved span.ffz-handle:after,
+.ember-chat-container.dark .ui-moved span.ffz-handle:after,
+body.ffz-bttv-dark .ui-moved span.ffz-handle:after {
 	border-color: #d3d3d3;
 }
 
+
+.ffz-recent-expando > span.ffz-handle {
+	float: left;
+	margin: -3px 5px -3px -5px;
+}
 
 .ffz-ui-popup ul.menu li.title > span.ffz-handle {
 	float: left;
@@ -1279,6 +1291,7 @@ body:not(.ffz-bttv) .dropmenu.share { margin-bottom: 0; }
 .theatre .conversation-window .conversation-content::-webkit-scrollbar-thumb,
 .theatre .conversations-list .conversations-list-inner::-webkit-scrollbar-thumb,
 
+.ffz-dark .chat-history::-webkit-scrollbar-thumb,
 .theatre .chat-history::-webkit-scrollbar-thumb,
 .theatre .emoticon-selector-box .all-emotes::-webkit-scrollbar-thumb,
 .theatre .ffz-ui-menu-page::-webkit-scrollbar-thumb,
@@ -1623,8 +1636,10 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	margin: 10px 0;
 }
 
-.ffz-wide-tip hr {
+.tipsy-inner hr {
 	margin: 5px 0;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
 }
 
 .ffz-wide-tip .tipsy-inner {
@@ -1908,7 +1923,7 @@ th.ffz-row-switch {
 }
 
 #ffz-group-tabs .button {
-	height: 18px;
+	height: 30px;
 	padding-bottom: 10px;
 	margin-bottom: -10px;
 	margin-right: 4px;
@@ -2109,6 +2124,11 @@ body.ffz-minimal-chat-input .ember-chat .chat-interface .textarea-contain textar
 	padding: 0;
 	max-height: 320px;
 	overflow-y: auto;
+}
+
+.chat-messages .tse-scroll-content,
+.chat-history {
+	will-change: scroll-position, contents;
 }
 
 .moderation-card .chat-history.live-history {
@@ -2487,8 +2507,9 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 }
 
 
+.ffz-no-blue .theme--dark .sc-collapsed-header,
 .ffz-no-blue .theme--dark .sc-header { box-shadow: 0 -0.1rem 0 #5c5c5c inset }
-.ffz-no-blue .theme--dark .sc-card:hover { box-shadow: -0.1rem 0 0 #414141 inset }
+.ffz-no-blue .theme--dark .js-sc-card:hover { box-shadow: -0.1rem 0 0 #414141 inset }
 .ffz-no-blue .theme--dark .social-column { box-shadow: -0.1rem 0 0 #2b2b2b inset}
 
 .ffz-no-blue .theme--dark .form__input,
@@ -2511,7 +2532,7 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: rgba(25,25,25,.5);
 }
 
-.ffz-no-blue .theme--dark .sc-card:hover,
+.ffz-no-blue .theme--dark .js-sc-card:hover,
 .ffz-no-blue .theme--dark .sc-toggle:hover,
 .ffz-no-blue .warp__item a:not(.warp__logo):hover {
 	background-color: #2b2b2b;
@@ -3865,8 +3886,10 @@ div.metadata-box {
 
 .ban-tip { border-bottom: 1px dotted rgba(102,102,102,0.5); }
 
+.ffz-clickable-mentions .ffz-recent-messages .chat-line .user-token,
 .ffz-clickable-mentions .pinned-cheers .chat-line .user-token,
 .ffz-clickable-mentions .chat-display .chat-line .user-token { font-weight: bold }
+.ffz-clickable-mentions .ffz-recent-messages .chat-line .user-token:hover,
 .ffz-clickable-mentions .pinned-cheers .chat-line .user-token:hover,
 .ffz-clickable-mentions .chat-display .chat-line .user-token:hover {
 	text-decoration: underline;
@@ -4167,6 +4190,100 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 
 .itad-balloon table th:not(:first-child),
 .itad-balloon table td:not(:first-child) { text-align: right }
+
+.ffz-has-recent-messages .resub-wrap {
+	padding-top: 30px;
+}
+
+.chat-messages[data-pinned_height="30"],
+.ffz-has-recent-messages .sticky-message,
+.ffz-has-recent-messages .chat-messages {
+	top: 30px;
+}
+
+.chat-messages[data-pinned_height="76"] { top: 76px }
+.ffz-has-recent-messages .chat-messages[data-pinned_height="30"] { top: 60px }
+.ffz-has-recent-messages .chat-messages[data-pinned_height="76"] { top: 106px }
+
+.ffz-recent-messages {
+	background-color: #efeef1;
+	border-bottom: 1px solid #dad8de;
+	z-index: 1000;
+	overflow: hidden;
+	position: absolute !important;
+	top: 0;
+	left: 0;
+	right: 0;
+	transition: height ease-in-out 100ms;
+	height: 30px;
+	box-shadow: 0 10px 5px -3px rgba(239,238,241,0.5);
+}
+
+.ffz-recent-messages.ui-moved {
+	height: auto;
+	right: auto;
+	width: 340px;
+	border: 1px solid #dad8de;
+}
+
+.ffz-recent-messages.ui-moved .pill {
+	display: none;
+}
+
+.ffz-recent-messages .ffz-recent-expando {
+	background-color: #efeef1;
+	padding: 5px 10px;
+	border-bottom: 1px solid #dad8de;
+	color: #333;
+	cursor: move;
+	position: relative;
+	z-index: 1;
+}
+
+.ffz-recent-expando .pill {
+	float: right;
+	font-size: 100%;
+	margin-top: 3px;
+}
+
+.ffz-recent-messages .chat-history {
+	top: -150px;
+	position: relative;
+	height: 150px;
+	transition: top ease-in-out 75ms;
+}
+
+.ffz-recent-messages:not(.ui-moved):hover {
+	height: 180px;
+}
+
+.ffz-recent-messages.ui-moved .chat-history,
+.ffz-recent-messages:not(.ui-moved):hover .chat-history {
+	top: 0px;
+}
+
+.ffz-recent-messages.ui-moved .chat-history {
+	min-height: 150px;
+	height: auto;
+}
+
+.ffz-dark .ffz-recent-expando,
+.theatre .ffz-recent-expando,
+.dark  .ffz-recent-expando,
+.force-dark  .ffz-recent-expando {
+	background-color: #242424;
+	border-color: #474747;
+	color: #ccc;
+}
+
+.ffz-dark .ffz-recent-messages,
+.theatre .ffz-recent-messages,
+.dark .ffz-recent-messages,
+.force-dark .ffz-recent-messages {
+	background-color: #191919;
+	border-color: #474747;
+	box-shadow: 0 10px 5px -3px rgba(25,25,25,0.5);
+}
 
 
 /*

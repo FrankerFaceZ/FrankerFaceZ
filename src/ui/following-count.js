@@ -224,7 +224,9 @@ FFZ.prototype._build_following_tooltip = function(el) {
 				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + utils.duration_string(uptime) + '</span>' : '') +
 				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
 				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
-				'<span class="playing">' + (stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';
+				'<span class="playing">' +
+				(stream.stream_type === 'watch_party' ? '<span class="pill is-watch-party">Vodcast</span> ' : '') +
+				(stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';
 		}
 
 		if ( filtered )

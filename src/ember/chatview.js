@@ -180,6 +180,18 @@ FFZ.settings_info.remove_filtered = {
 };
 
 
+FFZ.settings_info.remove_filtered_mod = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Filtering",
+	no_bttv: 6,
+
+	name: "Remove Messages from Moderators",
+	help: "Messages with banned words will only be removed if they are not from a moderator, unless this setting is enabled."
+};
+
+
 FFZ.settings_info.remove_deleted = {
 	type: "boolean",
 	value: false,

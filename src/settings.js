@@ -240,7 +240,7 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 				search_input.placeholder = 'Search for Settings';
 				search_input.type = 'text';
 
-				filtered_cont.style.maxHeight = (parseInt(container.style.maxHeight) - 51) + 'px';
+				filtered_cont.style.maxHeight = (parseInt(container.style.maxHeight) - 53) + 'px';
 
 				search_cont.appendChild(search_input);
 				container.appendChild(filtered_cont);

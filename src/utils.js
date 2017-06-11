@@ -1181,6 +1181,7 @@ module.exports = FFZ.utils = {
 		return (loyalty ? '.ffz-no-loyalty ' : '') + '.from-display-preview[data-room="' + room_id + '"] .badge.' + badge_id + (loyalty ? '' : '.version-' + version) +
 				(loyalty ? ',.ffz-no-loyalty ' : ',') + '.chat-line[data-room="' + room_id + '"] .badge.' + badge_id + (loyalty ? '' : '.version-' + version) + '{' +
 			'background-color:transparent;' +
+			WEBKIT + 'mask-image: none;' +
 			'background-image:url("' + img_1x + '");' +
 			'background-image:' + WEBKIT + 'image-set(url("' + img_1x + '") 1x' + (img_2x ? ',url("' + img_2x + '") 2x' : '') + (img_4x ? ',url("' + img_4x + '") 4x' : '') + ')}';
 	},

@@ -178,6 +178,28 @@ FFZ.prototype.setup_room = function() {
 	}
 
 
+	var ChannelSubs = utils.ember_lookup('service:channel-subscriptions');
+	if ( ChannelSubs ) {
+		this.log("Hooking the Ember Channel Subscriptions service.");
+		ChannelSubs.reopen({
+			populateSubNotificationTokens: function() {
+				var Chat = utils.ember_lookup('controller:chat'),
+					tokens = Chat && Chat.get('currentRoom.roomProperties.available_chat_notification_tokens');
+
+				return this._super(tokens);
+			},
+
+			_reloadSubNotificationToken: function(e) {
+				var t = this;
+				return this.get("api").request("get", "/api/channels/" + e + "/chat_properties").then(function(e) {
+					var room = f.rooms && f.rooms[e] && f.rooms[e].room;
+					room && room.set('roomProperties.available_chat_notification_tokens', e.available_chat_notification_tokens);
+					t.isDestroyed || t.populateSubNotificationTokens(e.available_chat_notification_tokens)
+				})
+			},
+		});
+	}
+
 	this.update_views('component:chat/chat-room', this.modify_room_component);
 	this.update_views('component:chat/chat-interface', this.modify_chat_interface);
 
@@ -657,7 +679,8 @@ FFZ.HoverPause = {
 
 FFZ.prototype.modify_room_component = function(component) {
 	var f = this,
-		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers');
+		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers'),
+		ChannelSubs = utils.ember_lookup('service:channel-subscriptions');
 
 	utils.ember_reopen_view(component, _.extend({
 		ffz_init: function() {
@@ -676,8 +699,17 @@ FFZ.prototype.modify_room_component = function(component) {
 					this.ffzUpdateStatus();
 			}
 
-			var actions = this._actions || {},
+			var t = this,
+				actions = this._actions || {},
 				orig_show = actions.showModOverlay;
+
+			actions.accommodatePinnedMessage = function(e) {
+				var el = t.get('element'),
+					chat = el.querySelector('.js-chat-messages');
+
+				if ( chat )
+					chat.dataset.pinned_height = e;
+			};
 
 			actions.showModOverlay = function(e) {
 				var Channel = utils.ember_resolve('model:deprecated-channel'),
@@ -709,6 +741,8 @@ FFZ.prototype.modify_room_component = function(component) {
 					isModeratorOrHigher: this.get("room.isModeratorOrHigher")
 				});
 			}
+
+			this.ffzUpdateRecent();
 		},
 
 		ffz_destroy: function() {
@@ -719,18 +753,181 @@ FFZ.prototype.modify_room_component = function(component) {
 			this.ffzRemoveKeyHook();
 		},
 
+
+		ffzUpdateRecent: function() {
+			var t = this,
+				el = this.get('element'),
+				container = this.get('ffz_recent_el'),
+				con_count = this.get('ffz_recent_count_el'),
+				should_show = f.settings.recent_highlights && ! f.has_bttv;
+
+			if ( ! el )
+				return;
+
+			if ( ! container ) {
+				if ( ! should_show )
+					return;
+
+				container = utils.createElement('ul', 'chat-history');
+				var expander = utils.createElement('div', 'ffz-recent-expando', 'Recent Highlights<span class="pill"></span>'),
+					big_el = utils.createElement('div', 'ffz-recent-messages', expander),
+					btn_handle = utils.createElement('span', 'ffz-handle ffz-close-button'),
+					super_parent = document.body.querySelector('.app-main');
+
+				con_count = expander.querySelector('.pill');
+				container.classList.toggle('dark', f.settings.dark_twitch);
+				expander.insertBefore(btn_handle, expander.firstChild);
+				container.dataset.docked = true;
+
+				big_el.appendChild(container);
+				el.appendChild(big_el);
+				el.classList.add('ffz-has-recent-messages');
+
+				this.set('ffz_recent_el', container);
+				this.set('ffz_recent_count_el', con_count);
+
+				expander.addEventListener('mousemove', function(e) {
+					con_count.textContent = '';
+					t.set('room.ffz_recent_highlights_unread', 0);
+				});
+
+				btn_handle.addEventListener('click', function(e) {
+					if ( ! big_el.classList.contains('ui-moved') || ! e.button === 0 )
+						return;
+
+					big_el.style.top = 0;
+					big_el.style.left = 0;
+					big_el.classList.remove('ui-moved');
+					big_el.parentElement.removeChild(big_el);
+					el.appendChild(big_el);
+					el.classList.add('ffz-has-recent-messages');
+					container.dataset.docked = true;
+				});
+
+				var st;
+				jQuery(big_el).draggable({
+					handle: expander,
+					start: function(e) {
+						st = container.scrollTop;
+						big_el.classList.add('ui-moved');
+						container.dataset.docked = false;
+						el.classList.remove('ffz-has-recent-messages');
+					},
+
+					stop: function(e) {
+						if ( big_el.parentElement !== super_parent ) {
+							var rect = big_el.getBoundingClientRect(),
+								pr = super_parent.getBoundingClientRect();
+
+							big_el.parentElement.removeChild(big_el);
+							super_parent.appendChild(big_el);
+
+							big_el.style.top = (rect.top - pr.top) + "px";
+							big_el.style.left = (rect.left - pr.left) + "px";
+						}
+
+						container.scrollTop = st;
+					}
+				});
+
+				jQuery(container).on('click', '.chat-line', function(e) {
+					if ( ! e.target || e.button !== 0 )
+						return;
+
+					var jq = jQuery(e.target),
+						cl = e.target.classList,
+						line = cl.contains('chat-line') ? e.target : jq.parents('.chat-line')[0],
+						room_id = line && line.dataset.room,
+						room = room_id && f.rooms[room_id] && f.rooms[room_id].room,
+						from = line && line.dataset.sender,
+						msg_id = line && line.dataset.id;
+
+					if ( cl.contains('deleted-word') ) {
+						jq.trigger('mouseout');
+						e.target.outerHTML = e.target.dataset.text;
+
+					} else if ( cl.contains('deleted-link') )
+						return f._deleted_link_click.call(e.target, e);
+
+					else if ( cl.contains('badge') ) {
+						if ( cl.contains('click_action') ) {
+							var badge = f.badges && f.badges[e.target.getAttribute('data-badge-id')];
+							if ( badge.click_action )
+								badge.click_action.call(f, this.get('msgObject'), e);
+
+						} else if ( cl.contains('click_url') )
+							window.open(e.target.dataset.url, "_blank");
+
+						else if ( cl.contains('turbo') )
+							window.open("/products/turbo?ref=chat_badge", "_blank");
+
+						else if ( cl.contains('subscriber') )
+							window.open("/" + room_id + "/subscribe?ref=in_chat_subscriber_link");
+
+					} else if ( f._click_emote(e.target, e) )
+						return;
+
+					else if ( (f.settings.clickable_mentions && cl.contains('user-token')) || cl.contains('from') || e.target.parentElement.classList.contains('from') ) {
+						var target = cl.contains('user-token') ? e.target.dataset.user : from;
+						if ( ! target )
+							return;
+
+						var bounds = line && line.getBoundingClientRect() || document.body.getBoundingClientRect(),
+							x = 0, right;
+
+						if ( bounds.left > 400 )
+							right = bounds.left - 40;
+
+						f._roomv.actions.showModOverlay.call(f._roomv, {
+							left: bounds.left,
+							right: right,
+							top: bounds.top + bounds.height,
+							real_top: bounds.top,
+							sender: target
+						});
+
+					}
+				});
+
+			} else if ( ! should_show ) {
+				jQuery(container.parentElement).remove();
+				this.set('ffz_recent_el', null);
+				this.set('ffz_recent_count_el', null);
+				el.classList.remove('ffz-has-recent-messages');
+				return;
+			}
+
+			var was_at_bottom = container.scrollTop >= (container.scrollHeight - container.clientHeight);
+			container.innerHTML = '';
+			con_count.textContent = container.dataset.docked ? utils.format_unread(this.get('room.ffz_recent_highlights_unread') || 0) : '';
+
+			var messages = this.get('room.ffz_recent_highlights') || [];
+			for(var i=0; i < messages.length; i++)
+				container.appendChild(f._build_mod_card_history(messages[i], null, true));
+
+			if ( was_at_bottom )
+				container.scrollTop = container.scrollHeight;
+
+		}.observes('room'),
+
+
 		ffzUpdateBits: function() {
 			var t = this,
-				channel = this.get('room.channel');
-			if ( ! channel )
+				channel = this.get('room.channel'),
+				bits_room = this.get('bitsRoom');
+			if ( ! channel || ! bits_room )
 				return;
 
 			PinnedCheers && PinnedCheers.dismissLocalMessage();
 
 			if ( ! channel.get('isLoaded') )
-				channel.load().then(function() { t._initializeBits(channel) })
-			else
+				channel.load().then(function() { bits_room.reset(); t._initializeBits(channel) })
+			else {
+				bits_room.reset();
 				this._initializeBits(channel);
+			}
+
+			ChannelSubs && ChannelSubs.populateSubNotificationTokens(this.get('room.roomProperties.available_chat_notification_tokens'));
 
 		}.observes('room'),
 
@@ -1130,7 +1327,7 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	var model = this.rooms[room_id] = this.rooms[room_id] || {};
 
 	for(var key in data)
-		if ( key !== 'users' && key !== 'room' && data.hasOwnProperty(key) )
+		if ( key !== 'user_badges' && key !== 'users' && key !== 'room' && data.hasOwnProperty(key) )
 			model[key] = data[key];
 
 	// Merge the user data.
@@ -1141,6 +1338,21 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 		model.users[user_id] = {
 			sets: _.uniq((original.sets || []).concat(new_data.sets || [])),
 			badges: _.extend(original.badges || {}, new_data.badges || {})
+		}
+	}
+
+	// Merge badge data
+	for(var badge_id in data.user_badges) {
+		var badge = this.badges[badge_id];
+		if ( ! badge )
+			continue;
+
+		for(var l=data.user_badges[badge_id], i=0, j=l.length; i < j; i++) {
+			var user_id = l[i],
+				user = model.users[user_id] = model.users[user_id] || {},
+				badges = user.badges = user.badges || {};
+
+			badges[badge.slot] = {id: badge_id};
 		}
 	}
 
@@ -1192,6 +1404,8 @@ FFZ.prototype._modify_room = function(room) {
 		ffz_banned: false,
 
 		mru_list: [],
+		ffz_recent_highlights: [],
+		ffz_recent_highlights_unread: 0,
 
 		ffzUpdateBadges: function() {
 			if ( this.get('isGroupRoom') )
@@ -1299,7 +1513,7 @@ FFZ.prototype._modify_room = function(room) {
 
 			try {
 				f.add_room(this.id, this);
-				this.set("ffz_chatters", {});
+				this.set("ffz_chatters", []);
 				this.set("ffz_ids", this.get('ffz_ids') || {});
 				this.set("ffz_last_notices", this.get('ffz_last_notices') || {});
 			} catch(err) {
@@ -1789,7 +2003,10 @@ FFZ.prototype._modify_room = function(room) {
 
 		ffzPushMessages: function(messages) {
 			var new_messages = [],
-				new_unread = 0;
+				new_unread = 0,
+
+				highlight_messages = [],
+				highlight_unread = 0;
 
 			for(var i=0; i < messages.length; i++) {
 				var msg = messages[i];
@@ -1797,8 +2014,11 @@ FFZ.prototype._modify_room = function(room) {
 					new_messages.push(msg);
 
 					if ( ! (msg.tags && msg.tags.historical) && msg.style !== "admin" && msg.style !== "whisper" ) {
-						if ( msg.ffz_has_mention )
+						if ( msg.ffz_has_mention ) {
 							this.ffz_last_mention = Date.now();
+							highlight_messages.push(msg);
+							highlight_unread++;
+						}
 
 						new_unread++;
 					}
@@ -1866,6 +2086,39 @@ FFZ.prototype._modify_room = function(room) {
 			if ( new_unread ) {
 				this.incrementProperty("unreadCount", new_unread);
 				this.ffz_last_activity  = Date.now();
+			}
+
+			if ( f.settings.recent_highlights && highlight_unread ) {
+				var old_highlights = this.get('ffz_recent_highlights') || [],
+					raw_remove = old_highlights.length + highlight_messages.length > f.settings.recent_highlight_count ?
+						Math.max(0, old_highlights.length - f.settings.recent_highlight_count) + highlight_messages.length : 0,
+
+					to_remove = raw_remove % 2,
+					trimmed = old_highlights.slice(to_remove, old_highlights.length).concat(highlight_messages),
+					el = f._roomv && f._roomv.get('ffz_recent_el');
+
+				this.set('ffz_recent_highlights', trimmed);
+				this.incrementProperty('ffz_recent_highlights_unread', highlight_unread);
+
+				if ( el && f._roomv.get('room') === this ) {
+					var was_at_bottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
+
+					while( el.childElementCount && to_remove-- )
+						el.removeChild(el.firstElementChild);
+
+					for(var i=0; i < highlight_messages.length; i++)
+						el.appendChild(f._build_mod_card_history(highlight_messages[i], null, true));
+
+					if ( was_at_bottom )
+						el.scrollTop = el.scrollHeight;
+
+					if ( el.dataset.docked ) {
+						el = f._roomv.get('ffz_recent_count_el');
+						if ( el )
+							el.textContent = utils.format_unread(this.get('ffz_recent_highlights_unread'));
+					}
+
+				}
 			}
 		},
 
@@ -2023,7 +2276,7 @@ FFZ.prototype._modify_room = function(room) {
 		ffzProcessMessage: function(msg) {
 			if ( msg ) {
 				var notice_type = msg.tags && msg.tags['msg-id'],
-					is_resub = notice_type === 'resub',
+					is_resub = notice_type === 'resub' || notice_type === 'sub',
 					room_id = this.get('id'),
 					msg_id = msg.tags && msg.tags.id;
 
@@ -2177,10 +2430,6 @@ FFZ.prototype._modify_room = function(room) {
 			f.api_trigger('room-message', msg);
 
 
-			// Also update chatters.
-			if ( ! is_whisper && this.chatters && ! this.chatters[msg.from] && msg.from !== 'twitchnotify' && msg.from !== 'jtv' )
-				this.ffzUpdateChatters(msg.from);
-
 			// We're past the last return, so store the message
 			// now that we know we're keeping it.
 			if ( msg_id ) {
@@ -2195,8 +2444,8 @@ FFZ.prototype._modify_room = function(room) {
 			}
 
 			// Report this message to the dashboard.
-			if ( window !== window.parent && parent.postMessage && msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
-				parent.postMessage({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, "*"); //location.protocol + "//www.twitch.tv/");
+			if ( msg.from && msg.from !== "jtv" && msg.from !== "twitchnotify" )
+				this.ffzSafePM({from_ffz: true, command: 'chat_message', data: {from: msg.from, room: msg.room}}, "*"); //location.protocol + "//www.twitch.tv/");
 
 			// Flagging for review.
 			if ( msg.tags && msg.tags.risk === "high" )
@@ -2330,8 +2579,11 @@ FFZ.prototype._modify_room = function(room) {
 		}.observes('unreadCount'),
 
 		ffzInitChatterCount: function() {
-			if ( ! this.tmiRoom )
+			if ( ! this.tmiRoom || ! f.settings.chatter_count ) {
+				this.set("ffz_chatters", []);
+				this.ffzUpdateChatters();
 				return;
+			}
 
 			if ( this._ffz_chatter_timer ) {
 				clearTimeout(this._ffz_chatter_timer);
@@ -2340,26 +2592,27 @@ FFZ.prototype._modify_room = function(room) {
 
 			var room = this;
 			this.tmiRoom.list().done(function(data) {
-				var chatters = {};
+				var chatters = [];
 				data = data.data.chatters;
 				if ( data && data.admins )
 					for(var i=0; i < data.admins.length; i++)
-						chatters[data.admins[i]] = true;
+						chatters.push(data.admins[i]);
 				if ( data && data.global_mods )
 					for(var i=0; i < data.global_mods.length; i++)
-						chatters[data.global_mods[i]] = true;
+						chatters.push(data.global_mods[i]);
 				if ( data && data.moderators )
 					for(var i=0; i < data.moderators.length; i++)
-						chatters[data.moderators[i]] = true;
+						chatters.push(data.moderators[i]);
 				if ( data && data.staff )
 					for(var i=0; i < data.staff.length; i++)
-						chatters[data.staff[i]] = true;
+						chatters.push(data.staff[i]);
 				if ( data && data.viewers )
 					for(var i=0; i < data.viewers.length; i++)
-						chatters[data.viewers[i]] = true;
+						chatters.push(data.viewers[i]);
 
 				room.set("ffz_chatters", chatters);
 				room.ffzUpdateChatters();
+
 			}).always(function() {
 				room._ffz_chatter_timer = setTimeout(room.ffzInitChatterCount.bind(room), 300000);
 			});
@@ -2367,22 +2620,31 @@ FFZ.prototype._modify_room = function(room) {
 
 
 		ffzUpdateChatters: function(add, remove) {
-			var chatters = this.get("ffz_chatters") || {};
-			if ( add )
-				chatters[add] = true;
-			if ( remove && chatters[remove] )
-				delete chatters[remove];
-
 			if ( ! f.settings.chatter_count )
 				return;
+
+			var chatters = this.get("ffz_chatters") || [];
+			if ( add && chatters.indexOf(add) === -1 )
+				chatters.push(add);
+
+			if ( remove ) {
+				var ind = chatters.indexOf(remove);
+				if ( ind !== -1 )
+					chatters.splice(ind, 1);
+			}
 
 			if ( f._cindex )
 				f._cindex.ffzUpdateMetadata('chatters');
 
-			if ( window !== window.parent && parent.postMessage )
-				parent.postMessage({from_ffz: true, command: 'chatter_count', data: {room: this.get('id'), chatters: Object.keys(this.get('ffz_chatters') || {}).length}}, "*"); //location.protocol + "//www.twitch.tv/");
+			this.ffzSafePM({from_ffz: true, command: 'chatter_count', data: {room: this.get('id'), chatters: (this.get('ffz_chatters') || []).length}}, "*"); //location.protocol + "//www.twitch.tv/");
 		},
 
+		ffzSafePM: function(message, origin) {
+			try {
+				if ( window !== window.parent && parent.postMessage )
+					return parent.postMessage(message, origin);
+			} catch(err) { }
+		},
 
 		ffzPatchTMI: function() {
 			var tmi = this.get('tmiRoom'),

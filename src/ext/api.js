@@ -104,7 +104,7 @@ API.prototype.log = function(msg, data, to_json, log_json) {
 
 
 API.prototype.error = function(msg, error, to_json, log_json) {
-	this.ffz.error('Ext #' + this.id + ' (' + this.name_key + '): ' + msg, data, to_json, log_json);
+	this.ffz.error('Ext #' + this.id + ' (' + this.name_key + '): ' + msg, error, to_json, log_json);
 }
 
 

@@ -883,7 +883,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				// If we're viewing the chat history, update it.
 				var el = this.get('element'),
 					container = el && el.querySelector('.ffz-tab-container'),
-					history = container && container.querySelector('.chat-history.lv-history');
+					history = container && container.querySelector('.ffz-tab-container[data-page="history"] .chat-history.lv-history');
 
 				if ( history ) {
 					var was_at_bottom = history.scrollTop >= (history.scrollHeight - history.clientHeight),

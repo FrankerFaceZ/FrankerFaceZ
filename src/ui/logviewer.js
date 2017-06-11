@@ -770,7 +770,7 @@ FFZ.mod_card_pages.notes = {
 			utils.logviewer.get("comments/" + room_id + "?topic=" + user_id, token)
 					.then(utils.json).then(function(data) {
 
-				f.log("[LV] Comments: " + user_id + " in " + room_id, data);
+				//f.log("[LV] Comments: " + user_id + " in " + room_id, data);
 				history.classList.remove('loading');
 
 				// We want to listen to get new notes for this user.

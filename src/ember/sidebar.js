@@ -382,7 +382,7 @@ FFZ.prototype.modify_social_followed_channel = function(component) {
 		ffz_init: function() {
 			var t = this,
 				el = this.get('element'),
-				card = jQuery('.sc-card', el),
+				card = jQuery('.js-sc-card', el),
 				data = card && card.data('tipsy');
 
 			if ( ! data || ! data.options )
@@ -418,6 +418,7 @@ FFZ.prototype.modify_social_followed_channel = function(component) {
 						'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(data.stream.viewers) + '</span>' +
 						'<b>' + utils.sanitize(channel.display_name || channel.name) + '</b><br>' +
 						'<span class="playing">' +
+							(data.stream.stream_type === 'watch_party' ? '<span class="pill is-watch-party">Vodcast</span> ' : '') +
 							(channel.game === 'Creative' ?
 								'Being Creative' :
 								(channel.game ?
