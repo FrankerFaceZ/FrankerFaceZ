@@ -1298,6 +1298,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .user_list .user .user_stats .followers_count,
 .ffz-dark .mixed_list .user .user_stats .followers_count,
+.ffz-dark .clmgr-meta-special figure,
 .ffz-dark li.video.vods img.video_type {
 	filter: invert(100%);
 	-webkit-filter: invert(100%);
@@ -1672,6 +1673,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: rgba(255,255,255,0.4) !important;
 }
 
+.ffz-dark .c-text { color: #aaa !important }
 .ffz-dark .c-text-alt { color: #999 !important }
 
 .ffz-dark .activity-add-comment__textarea:before {
@@ -2107,4 +2109,13 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .bg--grey {
 	background-color: #242424;
+}
+
+.ffz-dark .clmgr-table__cell-wrapper:nth-child(even) .clmgr-table__cell--collapsed {
+	background-color: rgba(255,255,255,0.1);
+}
+
+.ffz-dark .clmgr-table__cell-wrapper:nth-child(even) .clmgr-table__cell--collapsed:hover,
+.ffz-dark .clmgr-table__cell--collapsed:hover {
+	background-color: rgba(255,255,255,0.2);
 }

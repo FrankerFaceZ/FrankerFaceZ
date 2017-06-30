@@ -1104,10 +1104,10 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			else if ( msg_type === 'purchase' ) {
 				var Intl = utils.ember_lookup('service:intl');
 				out = Intl && ('<p class="purchase-message-title pd-t-0 float-left">' +
-					Intl.tHtml('gameCommerce.purchaseNotifications.message', {
+					Intl.t('gameCommerce.purchaseNotifications.message', {
 						userName: tags['login'],
 						purchaseTitle: tags['msg-param-title']
-					}).string +
+					}) +
 					'</p><div><img class="purchase-notif__box-art float-right mg-t-0 mg-1-1" src="' +
 					utils.quote_san(tags['msg-param-imageURL']) +
 					'"></div>');

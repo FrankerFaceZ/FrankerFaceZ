@@ -614,7 +614,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 		ffzSetPartialWord: function() {
 			var area = this.get('chatTextArea');
 			if ( area && this.get('ffz_suggestions_visible') ) {
-				var text = this.get('textareaValue'),
+				var text = this.get('messageText'),
 					ind = selection_start(area);
 
 				if ( ind === -1 )
@@ -632,7 +632,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				else
 					this.ffzHideSuggestions();
 			}
-		}.observes('textareaValue'),
+		}.observes('messageText'),
 
 
 		ffzFetchNameSuggestions: function() {
@@ -653,7 +653,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			var t = this,
 				ind = this.get('ffz_partial_word_start'),
-				text = this.get('textareaValue'),
+				text = this.get('messageText'),
 
 				first_char = text.charAt(0),
 				is_cmd = (first_char === '/' || first_char === '.') && text.substr(1,3).toLowerCase() !== 'me ',
@@ -677,7 +677,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			prefix += !add_space && trail ? '' : ' ';
 
-			this.set('textareaValue', prefix + trail);
+			this.set('messageText', prefix + trail);
 			this.set('ffz_partial_word', '');
 			this.set('ffz_partial_word_start', -1);
 			if ( item )
@@ -687,7 +687,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				move_selection(area, prefix.length);
 				area.focus();
 
-				/*var text = t.get('textareaValue'),
+				/*var text = t.get('messageText'),
 					ind = text.indexOf(' '),
 					start = ind !== -1 && text.substr(0, ind);
 
@@ -945,7 +945,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 		_setPartialName: function() {
 			if ( f.has_bttv )
 				return this._super();
-		}.observes('textareaValue'),
+		}.observes('messageText'),
 
 		ffz_suggestions: function() {
 			var output = [],
@@ -1176,7 +1176,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 
 		ffz_sorted_suggestions: Ember.computed("ffz_filtered_suggestions.[]", function() {
-			var text = this.get('textareaValue'),
+			var text = this.get('messageText'),
 				now = Date.now(),
 				char = text.charAt(0),
 				is_command = char === '/' || char === '.',
@@ -1234,7 +1234,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 			if ( since > 500 )
 				this.ffzResizeInput();
 
-		}.observes('textareaValue'),
+		}.observes('messageText'),
 
 		ffzResizeInput: function() {
 			this._ffz_last_resize = Date.now();
@@ -1285,7 +1285,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 					if ( ! this.get('ffz_suggestions_visible') ) {
 						var ind = selection_start(this.get('chatTextArea')) - 1;
 						Ember.run.next(function() {
-							if ( ind < 0 || t.get('textareaValue').charAt(ind) === ' ' ) {
+							if ( ind < 0 || t.get('messageText').charAt(ind) === ' ' ) {
 								t.ffzShowSuggestions();
 								t.trackSuggestions("@");
 							}
@@ -1313,7 +1313,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 							ind = selection_start(textarea);
 
 						ind > 0 && Ember.run.next(function() {
-							var text = t.get('textareaValue'),
+							var text = t.get('messageText'),
 								emoji_start = text.lastIndexOf(':', ind - 1);
 
 							if ( emoji_start !== -1 && ind !== -1 && text.charAt(ind) === ':' ) {
@@ -1324,7 +1324,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 								if ( emoji ) {
 									var prefix = text.substr(0, emoji_start) + emoji.raw;
 									t.ffzHideSuggestions();
-									t.set('textareaValue', prefix + text.substr(ind + 1));
+									t.set('messageText', prefix + text.substr(ind + 1));
 									Ember.run.next(function() {
 										move_selection(t.get('chatTextArea'), prefix.length);
 									});
@@ -1366,7 +1366,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 					e.preventDefault();
 
-					var text = this.get('textareaValue');
+					var text = this.get('messageText');
 					if ( text.length === 0 )
 						break;
 
@@ -1494,7 +1494,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 					// TODO: Better support for commands.
 					var sel = selection_start(this.get('chatTextArea'));
 					Ember.run.next(function() {
-						var text = t.get("textareaValue"),
+						var text = t.get("messageText"),
 							ind = text.indexOf(' '),
 							start = ind !== -1 && text.substr(0, ind);
 
@@ -1505,13 +1505,13 @@ FFZ.prototype.modify_chat_input = function(component) {
 							var target = t.get("uniqueWhisperSuggestions.0");
 							if ( target ) {
 								t.set("_currentWhisperTarget", 0);
-								t.set("textareaValue", "/w " + target + t.get("textareaValue").substr(2));
+								t.set("messageText", "/w " + target + t.get("messageText").substr(2));
 
 								Ember.run.next(function() {
 									move_selection(t.get('chatTextArea'), 4 + target.length);
 								});
 							} else {
-								t.set("textareaValue", "/w " + t.get('textareaValue').substr(2));
+								t.set("messageText", "/w " + t.get('messageText').substr(2));
 								Ember.run.next(function() {
 									move_selection(t.get('chatTextArea'), 3);
 									t.ffzFetchNameSuggestions();
@@ -1551,7 +1551,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 
 			var old_val = this.get('ffz_old_mru');
 			if ( old_val === undefined || old_val === null ) {
-				old_val = this.get('textareaValue');
+				old_val = this.get('messageText');
 				this.set('ffz_old_mru', old_val);
 			}
 
@@ -1562,7 +1562,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 			}
 
 			this.set('ffz_mru_index', ind);
-			this.set('textareaValue', new_val);
+			this.set('messageText', new_val);
 		}
 	});
 }

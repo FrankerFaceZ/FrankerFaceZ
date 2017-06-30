@@ -2059,11 +2059,13 @@ th.ffz-row-switch {
 
 /* Minimalistic Chat */
 
-body.ffz-minimal-chat-head .ember-chat > .chat-header,
+body.ffz-minimal-chat-head .ember-chat .chat-header,
 body.ffz-minimal-chat-head .ember-chat #ffz-group-tabs,
 body.ffz-minimal-chat-input .ember-chat .chat-buttons-container {
 	display: none !important;
 }
+
+body.ffz-minimal-chat-head .chatters .chat-header { display: block !important }
 
 /*body.ffz-minimal-chat .ember-chat .chat-messages,
 body.ffz-minimal-chat .ember-chat .chat-interface .emoticon-selector {
@@ -3037,6 +3039,10 @@ body:not(.ffz-bttv) .conversation-window .ignore-cta:not(.hidden) + .conversatio
 
 /* Top Conversations */
 
+.ffz-top-conversations .app-main.theatre .conversations-wrapper {
+	bottom: auto;
+}
+
 body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 	border-bottom: none;
 }
@@ -3067,6 +3073,11 @@ body:not(.ffz-top-conversations) .conversations-list-bottom-bar {
 .ffz-top-conversations .conversations-content .total-unread {
 	top: inherit;
 	bottom: -10px;
+}
+
+body:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .theatre .player-controls-bottom .player-buttons-left,
+body:not(.ffz-theatre-conversations):not(.ffz-top-conversations) .theatre .player-controls-bottom .player-buttons-right {
+	margin-bottom: 40px;
 }
 
 .ffz-theatre-conversations .theatre .player-controls-bottom,
@@ -3244,6 +3255,39 @@ body:not(.ffz-creative-showcase) .ct-spotlight-container { display: none; }
 
 
 /* FFZ Suggestions */
+
+.ember-chat .chat-interface .suggestions.ffz-suggestions {
+	padding: 5px 0;
+	position: absolute;
+	bottom: 43px;
+	left: 6px;
+	width: 278px;
+	background-color: white;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	background-clip: padding-box;
+z-index: 100
+}
+.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion {
+	padding: 0 10px;
+	line-height: 24px;
+	width: 270px;
+	font-size: 12px
+}
+.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.disabled {
+	color: #706a7c;
+font-weight: 400
+}
+.ember-chat .chat-interface .suggestions.ffz-suggestions .suggestion.disabled:hover {
+	background-color: transparent;
+color: #706a7c
+}
+.ember-chat .chat-interface .suggestions.ffz-suggestions .highlighted {
+	color: white;
+	background-color: #6441a4;
+	-webkit-transition: all ease-in-out 0.1s;
+	-webkit-backface-visibility: hidden;
+	transition: all 0.1s ease-in-out
+}
 
 .ffz-dark .ffz-suggestions,
 .theatre .ffz-suggestions,
@@ -4317,4 +4361,12 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 	padding: 0;
 	display: block;
 	max-width: 340px;
+}
+
+.app-main.theatre .player-whispers-padding {
+	margin-bottom: 0;
+}
+
+.app-main.theatre .conversations-wrapper {
+	background: transparent;
 }
