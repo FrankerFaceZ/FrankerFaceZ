@@ -8,12 +8,14 @@
 
 .ffz-bttv-dark .chat-lines .chat-line[data-sender="{user_id}"],
 .theatre .chat-lines .chat-line[data-sender="{user_id}"],
-.dark .chat-lines .chat-line[data-sender="{user_id}"] {
+.dark .chat-lines .chat-line[data-sender="{user_id}"],
+.theme--dark .chat-lines .chat-line[data-sender="{user_id}"] {
 	background-color: rgba(0,63,127, 0.2);
 }
 
 .ffz-bttv-dark .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0),
 .theatre .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0),
-.dark .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0) {
+.dark .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0),
+.theme--dark .chat-lines .chat-line[data-sender="{user_id}"]:nth-child(2n+0) {
 	background-color: rgba(0,63,127, 0.4);
 }

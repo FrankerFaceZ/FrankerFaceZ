@@ -583,6 +583,11 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 
 			el && el.setAttribute('data-room', room_id || "");
 
+			// Fix Twitch being stupid and inconsistent.
+			var parent = el.parentElement;
+			if ( parent && parent.classList.contains('ember-chat-container') )
+				parent.classList.add('chat-container');
+
 			this.$('.textarea-contain').append(f.build_ui_link(this));
 
 			if ( ! f.has_bttv_6 ) {

@@ -2,23 +2,22 @@
 body.ffz-bttv .chat-line .message,
 body.ffz-bttv .chat-line .timestamp,
 
-.chat-container,
-.ember-chat-container {
+.chat-container {
 	color: #000 !important;
 }
 
 /* Dark: High-Contrast Text */
 .theatre .chat-container,
-.theatre .ember-chat-container,
+.theme--dark .chat-container,
 .chat-container.dark,
-.ember-chat-container.dark,
+.chat-container.theme--dark,
 
 body.ffz-bttv-dark .chat-container,
 body.ffz-bttv-dark .chat-line .message,
 body.ffz-bttv-dark .chat-line .timestamp,
 
-.ffz-dark .ember-chat-container.dark .chat-line,
-.ffz-dark .chat-container.dark .chat-line
- {
+.ffz-dark .theme--dark .chat-container .chat-line,
+.ffz-dark .chat-container.dark .chat-line,
+.ffz-dark .chat-container.dark .theme--chat-line {
 	color: #fff !important;
 }

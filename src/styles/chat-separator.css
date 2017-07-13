@@ -14,7 +14,8 @@
 .theatre .conversation-chat-lines > div,
 
 .theatre .chat-line,
-.dark .chat-line {
+.dark .chat-line,
+.theme--dark .chat-line {
 	border-bottom-color: #000;
 }
 

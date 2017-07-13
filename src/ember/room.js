@@ -1147,7 +1147,7 @@ FFZ.prototype._update_room_badge_css = function(room_id) {
 		output = [];
 
 	// For rooms that don't have sub badges set.
-	if ( badges && ! badges.subscriber ) {
+	/*if ( badges && ! badges.subscriber ) {
 		var BadgeService = utils.ember_lookup('service:badges'),
 			global = BadgeService && BadgeService.badgeCollection && BadgeService.badgeCollection.global;
 		badges.subscriber = global.subscriber;
@@ -1155,7 +1155,7 @@ FFZ.prototype._update_room_badge_css = function(room_id) {
 			badges.subscriber.allow_invert = true;
 			badges.subscriber.invert_invert = true;
 		}
-	}
+	}*/
 
 	for(var badge_id in badges) {
 		var versions = badges[badge_id] && badges[badge_id].versions || {};
@@ -1163,6 +1163,7 @@ FFZ.prototype._update_room_badge_css = function(room_id) {
 			output.push(utils.room_badge_css(room_id, badge_id, version, versions[version]));
 	}
 
+	// Loyalty Badges Disabled
 	if ( badges.subscriber ) {
 		var versions = badges.subscriber.versions || {},
 			lowest = versions[0] || versions[1];

@@ -2,8 +2,7 @@
 body.ffz-bttv .chat-container,
 body.ffz-bttv .ember-chat.roomMode,
 body.ffz-bttv .chat-messages,
-.chat-container,
-.ember-chat-container {
+.chat-container {
 	background-color: #fff !important;
 }
 
@@ -14,8 +13,8 @@ body.ffz-bttv-dark .chat-header,
 body.ffz-bttv-dark .chat-interface,
 body.ffz-bttv-dark .ember-chat.roomMode,
 .theatre .chat-container,
-.theatre .ember-chat-container,
 .chat-container.dark,
-.ember-chat-container.dark {
+.chat-container.theme--dark,
+.theme--dark .chat-container {
 	background-color: #000 !important;
 }

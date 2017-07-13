@@ -17,6 +17,8 @@ var FFZ = window.FrankerFaceZ,
 		turbo: { 1: { color: "#6441a5", use_svg: true } },
 		premium: { 1: { color: "#009cdc" } },
 
+		subscriber: { 0: { color: "#6441a4" }, 1: { color: "#6441a4" }},
+
 		bits: {
 			1: { color: "#cbc8d0" },
 			100: { color: "#ca7eff" },
@@ -39,10 +41,10 @@ var FFZ = window.FrankerFaceZ,
 		}
 	},
 
-	NO_INVERT_BADGES = ['subscriber', 'ffz-badge-1'],
+	NO_INVERT_BADGES = ['ssubscriber', 'ffz-badge-1'],
 
 	INVERT_INVERT_BADGES = ['bits'],
-	TRANSPARENT_BADGES = ['subscriber'],
+	TRANSPARENT_BADGES = [], //'subscriber'],
 
 	BTTV_TYPE_REPLACEMENTS = {
 		'global-moderator': 'global_mod'

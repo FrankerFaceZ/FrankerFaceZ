@@ -411,6 +411,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 	color: #fff;
 }
 
+.ffz-dark .button:disabled {
+	background-color: #242424;
+}
+
 .ffz-dark .pl-button--hollow,
 .ffz-dark .button--hollow { box-shadow: inset 0 0 0 1px #4b367c }
 
@@ -1602,6 +1606,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .activity-list-end svg { fill: #474747 }
 
+.ffz-dark .activity-meta {
+	box-shadow: 0 1px 0 #474747;
+}
+
 .ffz-dark .activity-meta-divider:before {
 	background-color: #191919;
 	border-top-color: #474747;
@@ -1630,6 +1638,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .activity-card {
 	border: 1px solid;
+	background-color: #191919;
 }
 
 .ffz-dark .activity-card__reason {
@@ -1655,6 +1664,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .activity-meta__name { color: #ccc }
 
 
+.ffz-dark .activity-reaction__emote-contain {
+	background-color: #101010;
+}
+
+
 .ffz-dark .activity-card__comments {
 	background-color: #121212;
 	box-shadow:inset 0 1px 0 #474747;
@@ -1663,6 +1677,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .activity-create {
 	background-color: #101010;
 	box-shadow: none; /*inset 0 0 0 1px #474747;*/
+}
+
+.ffz-dark .activity-create--card {
+	box-shadow: 0 1px 2px rgba(255,255,255,0.2);
 }
 
 .ffz-dark .c-background { background: #101010 !important }
