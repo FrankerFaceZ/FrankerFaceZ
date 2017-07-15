@@ -1647,6 +1647,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 	box-shadow: none;
 }
 
+.ffz-dark .activity-attach-meta {
+	background-color: #191919;
+	color: #ccc;
+	box-shadow: inset 0 -1px 0 #474747;
+}
+
 .ffz-dark .list-load-more,
 .ffz-dark .activity-card {
 	border-color: #474747;
@@ -1667,7 +1673,6 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .activity-reaction__emote-contain {
 	background-color: #101010;
 }
-
 
 .ffz-dark .activity-card__comments {
 	background-color: #121212;
@@ -1699,6 +1704,10 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-left-color: #474747;
 	border-bottom-color: #474747;
 }
+
+.ffz-dark .activity-comments { border-top: 1px solid #474747; }
+
+.ffz-dark .activity-comment:hover { background-color: #141414; }
 
 .ffz-dark .mod-dashboard__video-title,
 .ffz-dark .activity-card { color: #ccc }
@@ -1757,6 +1766,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 .ffz-dark .vod-chat__header {
 	box-shadow: inset 0 -1px 0 0 #474747;
+}
+
+.ffz-dark .cn-chat-replay-header {
+	background-color: #191919;
+	border-bottom: 1px solid #474747;
+	border-left-color: transparent;
 }
 
 .ffz-dark .vod-message.vod-message--focused .vod-message__reply,
