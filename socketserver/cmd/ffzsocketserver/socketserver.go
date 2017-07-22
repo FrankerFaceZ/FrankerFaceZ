@@ -1,4 +1,4 @@
-package main // import "bitbucket.org/stendec/frankerfacez/socketserver/cmd/ffzsocketserver"
+package main // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/cmd/ffzsocketserver"
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"../../server"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 )
 
 import _ "net/http/pprof"

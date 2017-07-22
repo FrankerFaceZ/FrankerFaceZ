@@ -6,7 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"../../server"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
 	"github.com/abiosoft/ishell"
 	"github.com/gorilla/websocket"
 )
@@ -33,7 +34,7 @@ func commandLineConsole() {
 			Command:   "message",
 			Arguments: args[0],
 		}
-		server.PublishToAll(msg)
+		server.PublishToAll(msg, rate.Unlimited())
 		return "Message sent.", nil
 	})
 
@@ -52,9 +53,9 @@ func commandLineConsole() {
 
 		var count int
 		if target == "_ALL" {
-			count = server.PublishToAll(msg)
+			count = server.PublishToAll(msg, rate.Unlimited())
 		} else {
-			count = server.PublishToChannel(target, msg)
+			count = server.PublishToChannel(target, msg, rate.Unlimited())
 		}
 		return fmt.Sprintf("Published to %d clients", count), nil
 	})
