@@ -1,4 +1,4 @@
-package server // import "bitbucket.org/stendec/frankerfacez/socketserver/server"
+package server // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 
 import (
 	"encoding/json"
@@ -300,8 +300,8 @@ var CloseNonUTF8Data = websocket.CloseError{
 	Text: "Non UTF8 data recieved. Network corruption likely.",
 }
 
-const sendMessageBufferLength = 30
-const sendMessageAbortLength = 20
+const sendMessageBufferLength = 5
+const sendMessageAbortLength = 5
 
 // RunSocketConnection contains the main run loop of a websocket connection.
 //
@@ -350,11 +350,8 @@ func RunSocketConnection(conn *websocket.Conn) {
 	closeConnection(conn, closeReason)
 	// closeConnection(conn, closeReason, &report)
 
-	// Launch message draining goroutine - we aren't out of the pub/sub records
-	go func() {
-		for _ = range _serverMessageChan {
-		}
-	}()
+	// We can just drop serverMessageChan and let it be picked up by GC, because all sends are nonblocking.
+	_serverMessageChan = nil
 
 	// Closes client.MsgChannelIsDone and also stops the reader thread
 	close(stoppedChan)
@@ -364,11 +361,8 @@ func RunSocketConnection(conn *websocket.Conn) {
 
 	// Wait for pending jobs to finish...
 	client.MsgChannelKeepalive.Wait()
-	client.MessageChannel = nil
 
 	// And done.
-	// Close the channel so the draining goroutine can finish, too.
-	close(_serverMessageChan)
 
 	if !StopAcceptingConnections {
 		// Don't perform high contention operations when server is closing

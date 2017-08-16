@@ -81,7 +81,7 @@ func (client *ClientInfo) StartAuthorization(callback AuthCallback) {
 
 	AddPendingAuthorization(client, challenge, callback)
 
-	client.MessageChannel <- ClientMessage{MessageID: -1, Command: AuthorizeCommand, Arguments: challenge}
+	client.Send(ClientMessage{MessageID: -1, Command: AuthorizeCommand, Arguments: challenge})
 }
 
 const AuthChannelName = "frankerfacezauthorizer"

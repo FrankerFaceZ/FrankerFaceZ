@@ -145,7 +145,6 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	uniqueUserChannel <- client.ClientID
 
 	SubscribeGlobal(client)
-	SubscribeDefaults(client)
 
 	jsTime := float64(time.Now().UnixNano()/1000) / 1000
 	return ClientMessage{
@@ -197,7 +196,7 @@ func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 
 	client.MsgChannelKeepalive.Add(1)
 	go func() {
-		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand}
+		client.Send(ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand})
 		SendBacklogForNewClient(client)
 		client.MsgChannelKeepalive.Done()
 	}()
@@ -553,10 +552,7 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 		bsl.Lock()
 		for _, member := range bsl.Members {
 			msg.MessageID = member.MessageID
-			select {
-			case member.Client.MessageChannel <- msg:
-			case <-member.Client.MsgChannelIsDone:
-			}
+			member.Client.Send(msg)
 		}
 		bsl.Unlock()
 	}(br)
@@ -580,7 +576,7 @@ func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo
 	if err == ErrAuthorizationNeeded {
 		if client.TwitchUsername == "" {
 			// Not logged in
-			client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationNeededError}
+			client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationNeededError})
 			client.MsgChannelKeepalive.Done()
 			return
 		}
@@ -588,19 +584,19 @@ func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo
 			if success {
 				doRemoteCommand(conn, msg, client)
 			} else {
-				client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationFailedErrorString}
+				client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationFailedErrorString})
 				client.MsgChannelKeepalive.Done()
 			}
 		})
 		return // without keepalive.Done()
 	} else if bfe, ok := err.(ErrForwardedFromBackend); ok {
-		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: bfe.JSONError}
+		client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: bfe.JSONError})
 	} else if err != nil {
-		client.MessageChannel <- ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()}
+		client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()})
 	} else {
 		msg := ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
 		msg.parseOrigArguments()
-		client.MessageChannel <- msg
+		client.Send(msg)
 	}
 	client.MsgChannelKeepalive.Done()
 }

@@ -116,11 +116,9 @@ func commandLineConsole() {
 			if i >= count {
 				break
 			}
-			select {
-			case cl.MessageChannel <- msg:
-			case <-cl.MsgChannelIsDone:
+			if cl.Send(msg) {
+				kickCount++
 			}
-			kickCount++
 		}
 		return fmt.Sprintf("Kicked %d clients", kickCount), nil
 	})
