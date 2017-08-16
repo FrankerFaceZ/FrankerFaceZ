@@ -47,39 +47,7 @@ var FFZ = window.FrankerFaceZ,
 	],
 
 	// StrimBagZ Support
-	is_android = navigator.userAgent.indexOf('Android') !== -1,
-
-	moderator_css = function(room) {
-		if ( ! room.mod_urls )
-			return "";
-
-		var urls = room.mod_urls,
-			image_set = image = 'url("' + urls[1] + '")';
-
-		if ( urls[2] || urls[4] ) {
-			image_set += ' 1x';
-			if ( urls[2] )
-				image_set += ', url("' + urls[2] + '") 2x';
-			if ( urls[4] )
-				image_set += ', url("' + urls[4] + '") 4x';
-
-			image_set = (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(' + image_set + ')';
-		}
-
-		return '.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored),' +
-			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored) {' +
-				'background-repeat:no-repeat;' +
-				'background-size:initial !important;' +
-				'background-position:center;' +
-				'background-image: url("' + urls[1] + '") !important;' +
-				'background-image:' + image_set + ' !important}' +
-			'.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored,' +
-			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored {' +
-				'-webkit-mask-repeat:no-repeat;' +
-				'-webkit-mask-size:initial !important;' +
-				'-webkit-mask-position:center;' +
-				'-webkit-mask-image:' + image_set + '}';
-	};
+	is_android = navigator.userAgent.indexOf('Android') !== -1;
 
 // --------------------
 // Initialization
@@ -1372,7 +1340,7 @@ FFZ.prototype._load_room_json = function(room_id, callback, data) {
 	this.rooms[room_id] = data;*/
 
 	if ( model.css || model.mod_urls )
-		utils.update_css(this._room_style, room_id, moderator_css(model) + (model.css || ""));
+		utils.update_css(this._room_style, room_id, (this.settings.custom_badge_images ? utils.moderator_css(model) : '') + (model.css || ""));
 
 	if ( ! this.emote_sets.hasOwnProperty(model.set) )
 		this.load_set(model.set, function(success, set) {
@@ -2089,36 +2057,40 @@ FFZ.prototype._modify_room = function(room) {
 				this.ffz_last_activity  = Date.now();
 			}
 
-			if ( f.settings.recent_highlights && highlight_unread ) {
-				var old_highlights = this.get('ffz_recent_highlights') || [],
-					raw_remove = old_highlights.length + highlight_messages.length > f.settings.recent_highlight_count ?
-						Math.max(0, old_highlights.length - f.settings.recent_highlight_count) + highlight_messages.length : 0,
+			if ( highlight_unread ) {
+				// API Stuff
+				f.api_trigger('room-recent-highlights', highlight_messages);
+				if ( f.settings.recent_highlights && highlight_messages.length ) {
+					var old_highlights = this.get('ffz_recent_highlights') || [],
+						raw_remove = old_highlights.length + highlight_messages.length > f.settings.recent_highlight_count ?
+							Math.max(0, old_highlights.length - f.settings.recent_highlight_count) + highlight_messages.length : 0,
 
-					to_remove = raw_remove % 2,
-					trimmed = old_highlights.slice(to_remove, old_highlights.length).concat(highlight_messages),
-					el = f._roomv && f._roomv.get('ffz_recent_el');
+						to_remove = raw_remove % 2,
+						trimmed = old_highlights.slice(to_remove, old_highlights.length).concat(highlight_messages),
+						el = f._roomv && f._roomv.get('ffz_recent_el');
 
-				this.set('ffz_recent_highlights', trimmed);
-				this.incrementProperty('ffz_recent_highlights_unread', highlight_unread);
+					this.set('ffz_recent_highlights', trimmed);
+					this.incrementProperty('ffz_recent_highlights_unread', highlight_messages.length);
 
-				if ( el && f._roomv.get('room') === this ) {
-					var was_at_bottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
+					if ( el && f._roomv.get('room') === this ) {
+						var was_at_bottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
 
-					while( el.childElementCount && to_remove-- )
-						el.removeChild(el.firstElementChild);
+						while( el.childElementCount && to_remove-- )
+							el.removeChild(el.firstElementChild);
 
-					for(var i=0; i < highlight_messages.length; i++)
-						el.appendChild(f._build_mod_card_history(highlight_messages[i], null, true));
+						for(var i=0; i < highlight_messages.length; i++)
+							el.appendChild(f._build_mod_card_history(highlight_messages[i], null, true));
 
-					if ( was_at_bottom )
-						el.scrollTop = el.scrollHeight;
+						if ( was_at_bottom )
+							el.scrollTop = el.scrollHeight;
 
-					if ( el.dataset.docked ) {
-						el = f._roomv.get('ffz_recent_count_el');
-						if ( el )
-							el.textContent = utils.format_unread(this.get('ffz_recent_highlights_unread'));
+						if ( el.dataset.docked ) {
+							el = f._roomv.get('ffz_recent_count_el');
+							if ( el )
+								el.textContent = utils.format_unread(this.get('ffz_recent_highlights_unread'));
+						}
+
 					}
-
 				}
 			}
 		},
@@ -2338,6 +2310,17 @@ FFZ.prototype._modify_room = function(room) {
 				if ( room_id === msg.from )
 					msg.tags.mod = true;
 
+				// Are there no emotes?
+				if ( msg.tags && ! msg.tags.emotes ) {
+					var user = f.get_user(),
+						is_me = user && user.login === msg.from;
+
+					if ( is_me ) {
+						var user_emotes = utils.ember_lookup('service:user-emotes');
+						msg.tags.emotes = tmimotes && user_emotes && tmimotes(user_emotes.tryParseEmotes(msg.message));
+					}
+				}
+
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));
 
@@ -2352,7 +2335,7 @@ FFZ.prototype._modify_room = function(room) {
 						badges = ffz_room && ffz_room.badges || {},
 						sub_version = badges && badges.subscriber && badges.subscriber.versions;
 
-					if ( ! isNaN(msg.ffz_sub_months) ) {
+					if ( sub_version && ! isNaN(msg.ffz_sub_months) ) {
 						var months = msg.ffz_sub_months;
 						msg.tags.badges.subscriber = ( months >= 24 && sub_version[24] ) ? 24 :
 							(months >= 12 && sub_version[12] ) ? 12 :
@@ -2392,6 +2375,12 @@ FFZ.prototype._modify_room = function(room) {
 				return;
 
 
+			// Message Filtering
+			f.api_trigger('room-message', msg);
+			if ( msg.ffz_removed )
+				return;
+
+
 			// Keep the history.
 			if ( ! is_whisper && msg.from && msg.from !== 'jtv' && msg.from !== 'twitchnotify' )
 				this.addUserHistory(msg);
@@ -2425,10 +2414,6 @@ FFZ.prototype._modify_room = function(room) {
 						this.updateWait(this.get('slow'));
 				}
 			}
-
-
-			// Message Filtering
-			f.api_trigger('room-message', msg);
 
 
 			// We're past the last return, so store the message

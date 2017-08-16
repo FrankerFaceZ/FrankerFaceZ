@@ -781,7 +781,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				in_conversation = ConvoInput && this.parentView instanceof ConvoInput,
 				room = ! in_conversation && this.get('parentView.room'),
 				room_id = room && room.get('id'),
-				tmi = in_conversation ? window.TMI && TMI._sessions && TMI._sessions[0] : room && room.tmiSession,
+				user_emotes = utils.ember_lookup('service:user-emotes'),
 
 				set_name, replacement, url, is_inventory, is_sub_set, fav_list,
 				emote_set, emote, emote_id, code, sort_factor, is_fav,
@@ -796,8 +796,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 				return {};
 
 
-			if ( tmi ) {
-				var es = tmi.getEmotes();
+			if ( user_emotes ) {
+				var es = user_emotes.allEmotes;
 				if ( es && es.emoticon_sets ) {
 					for(var set_id in es.emoticon_sets) {
 						emote_set = es.emoticon_sets[set_id];

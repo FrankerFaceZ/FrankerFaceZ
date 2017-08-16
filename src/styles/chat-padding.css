@@ -9,6 +9,10 @@
 	padding: 3px 5px;
 }
 
+.ffz-hide-trending-emotes .chat-room.trending-emotes-enabled .chat-messages .chat-line,
+.ffz-minimal-chat-input .chat-room.trending-emotes-enabled .chat-messages .chat-line {
+	padding-right: 5px;
+}
 
 .ember-chat .chat-messages .chat-line.brick--marked { padding-left: 8px }
 

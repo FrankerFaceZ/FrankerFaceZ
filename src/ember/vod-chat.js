@@ -79,8 +79,10 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 			if ( room_id && ! f.rooms[room_id] ) {
 				// Load the room model.
 				f.log("Loading Room for VOD: " + room_id);
-				var Room = utils.ember_resolve('model:room');
-				Room && Room.findOne(room_id);
+				var Room = utils.ember_resolve('model:room'),
+					room = Room && Room.findOne(room_id);
+				if ( room && App.currentPath === 'user.chat' )
+					room.set('isEmbedChat', true);
 			}
 
 			if ( ! f.has_bttv_6 ) {

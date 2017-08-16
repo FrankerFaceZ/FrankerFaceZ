@@ -699,7 +699,9 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 			var chat = utils.ember_lookup('controller:chat'),
 				room_id = chat && chat.get('currentRoom.id'),
-				user_id = this.get('cardInfo.user.id');
+				user_id = this.get('cardInfo.user.id'),
+				user = f.get_user(),
+				is_me = user && user.login === user_id;
 
 			if (( this._lv_sock_room && this._lv_sock_room !== room_id ) || (this._lv_sock_user && this._lv_sock_user !== user_id) ) {
 				f.lv_ws_unsub('logs-' + this._lv_sock_room + '-' + this._lv_sock_user);
@@ -709,6 +711,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 			if ( f.settings.mod_card_history )
 				this.ffzRenderHistory();
+
+			Ember.run.next(this.ffzFixDefaultActions.bind(this));
 
 			// Highlight this user's chat messages.
 			if ( f.settings.highlight_messages_with_mod_card )
@@ -950,6 +954,334 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			utils.update_css(f._chat_style, 'mod-card-highlight');
 		},
 
+		ffzFixDefaultActions: function() {
+			var el = this.get('element'),
+				t = this,
+				line,
+
+				is_mod = t.get('cardInfo.isModeratorOrHigher'),
+				ban_reasons,
+
+				chat = utils.ember_lookup('controller:chat'),
+				user = f.get_user(),
+				room = chat && chat.get('currentRoom'),
+				room_id = room && room.get('id'),
+				ffz_room = f.rooms && f.rooms[room_id] || {},
+				is_broadcaster = user && room_id === user.login,
+
+				user_id = this.get('cardInfo.user.id'),
+				is_me = user && user.login === user_id,
+				alias = f.aliases[user_id],
+
+				handle_key,
+
+				ban_reason = function() {
+					return ban_reasons && ban_reasons.value ? ' ' + ban_reasons.value : "";
+				},
+
+				alias_btn = utils.createElement('button', 'alias button float-left button--icon-only html-tooltip');
+
+			alias_btn.innerHTML = '<figure class="icon">' + constants.EDIT + '</figure>';
+			alias_btn.title = "Set Alias";
+
+			alias_btn.addEventListener('click', function() {
+				var user = t.get('cardInfo.user.id'),
+					alias = f.aliases[user],
+					results = f.format_display_name(t.get('cardInfo.user.display_name'), user, true);
+
+				utils.prompt(
+					"Alias for <b" + (results[1] ? ' class="html-tooltip" title="' + utils.quote_attr(results[1]) + '">' : '>') + results[0] + "</b>",
+					"Please enter an alias for the user. Leave it blank to remove the alias.",
+					alias,
+					function(new_val) {
+						if ( new_val === null || new_val === undefined )
+							return;
+
+						new_val = new_val.trim();
+						if ( ! new_val )
+							new_val = undefined;
+
+						f.aliases[user] = new_val;
+						f.save_aliases();
+
+						// Update UI
+						f._update_alias(user);
+
+						var name = el.querySelector('h4.name');
+						if ( name ) {
+							name.classList.toggle('ffz-alias', new_val);
+							var results = f.format_display_name(t.get('cardInfo.user.display_name'), user_id);
+
+							name.innerHTML = results[0];
+							name.title = results[1] || '';
+							if ( results[1] )
+								jQuery(name).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+						}
+					});
+			});
+
+			if ( is_me === this._ffz_was_me )
+				return;
+
+			this._ffz_was_me = is_me;
+
+			if ( is_me ) {
+				jQuery('.ffz-extra-controls', el).remove();
+
+				line = utils.createElement('div', 'extra-interface ffz-extra-me-controls moderation-card__actions clearfix');
+				line.appendChild(alias_btn);
+				el.appendChild(line);
+
+				return;
+			} else
+				jQuery('.ffz-extra-me-controls', el).remove();
+
+			// Move the default buttons.
+			var def_actions = el.querySelector('.moderation-card__actions .clearfix');
+			if ( def_actions ) {
+				def_actions = def_actions.parentElement;
+				var def_line = def_actions.querySelector('.clearfix'),
+					bad_line = def_actions.querySelector('.moderation-card__controls');
+
+				if ( def_line && bad_line ) {
+					var children = bad_line.querySelectorAll('button');
+					for(var i=0; i < children.length; i++) {
+						bad_line.removeChild(children[i]);
+						def_line.appendChild(children[i]);
+					}
+
+					bad_line.classList.add('hidden');
+				}
+			}
+
+			// Additional Buttons
+			if ( is_mod ) {
+				el.classList.add('ffz-is-mod');
+
+				if ( f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
+					line = utils.createElement('div', 'extra-interface ffz-extra-controls moderation-card__actions clearfix');
+
+					var build_cmd = function(user, room, cmd) {
+							var lines = utils.replace_cmd_variables(cmd, user, room).split(/\s*<LINE>\s*/g),
+								reason = ban_reason();
+
+							if ( reason ) {
+								for(var i=0; i < lines.length; i++) {
+									var match = TO_REG.exec(lines[i]);
+									if ( match ) {
+										if ( ! match[2] )
+											lines[i] += ' 600';
+										if ( ! match[3] )
+											lines[i] += reason;
+
+										break;
+									} else {
+										match = BAN_REG.exec(lines[i]);
+										if ( match ) {
+											if ( ! match[2] )
+												lines[i] += reason;
+											break;
+										}
+									}
+								}
+							}
+
+							return lines;
+						},
+
+						add_btn_click = function(cmd) {
+							var user = t.get('cardInfo.user'),
+								chat_controller = utils.ember_lookup('controller:chat'),
+								room = chat_controller && chat_controller.get('currentRoom');
+
+							if ( ! room )
+								return;
+
+							var lines = build_cmd(user, room, cmd);
+							for(var i=0; i < lines.length; i++)
+								room.send(lines[i], true);
+						},
+
+						add_btn_make = function(label, cmd) {
+							var btn = utils.createElement('button', 'button ffz-no-bg', utils.sanitize(label));
+
+							jQuery(btn).tipsy({
+								html: true,
+								gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
+								title: function() {
+									var user = t.get('cardInfo.user'),
+										chat_controller = utils.ember_lookup('controller:chat'),
+										room = chat_controller && chat_controller.get('currentRoom');
+
+										lines = build_cmd(user, room, cmd),
+										title = _.map(lines, utils.sanitize).join('<br>');
+
+									return "Custom Command" + (lines.length > 1 ? 's' : '') +
+										"<br>" + title;
+								}
+							});
+
+							btn.addEventListener('click', add_btn_click.bind(this, cmd));
+							return btn;
+						};
+
+
+					for(var i=0; i < f.settings.mod_card_buttons.length; i++) {
+						var label, cmd, pair = f.settings.mod_card_buttons[i];
+						if ( ! Array.isArray(pair) ) {
+							cmd = pair;
+							label = cmd.split(' ', 1)[0];
+						} else {
+							label = pair[0];
+							cmd = pair[1];
+						}
+
+						utils.CMD_VAR_REGEX.lastIndex = 0;
+						if ( ! utils.CMD_VAR_REGEX.test(cmd) ) {
+							var lines = cmd.split(/\s*<LINE>\s*/g);
+							lines[0] += ' {user}';
+							cmd = lines.join("<LINE>");
+						}
+
+						line.appendChild(add_btn_make(label, cmd));
+					}
+
+					el.appendChild(line);
+				}
+
+				var btn_click = function(timeout) {
+					var user_id = t.get('cardInfo.user.id'),
+						room = utils.ember_lookup('controller:chat').get('currentRoom');
+
+						if ( timeout === -1 )
+							room.send("/unban " + user_id, true);
+						else
+							room.send("/timeout " + user_id + " " + timeout + ban_reason(), true);
+					},
+
+				btn_make = function(timeout) {
+						var btn = utils.createElement('button', 'button ffz-no-bg');
+						btn.innerHTML = utils.duration_string(timeout);
+						btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
+
+						if ( f.settings.mod_card_hotkeys && timeout === 600 )
+							btn.title = "(T)" + btn.title.substr(1);
+						else if ( f.settings.mod_card_hotkeys && timeout === 1 )
+							btn.title = "(P)urge - " + btn.title;
+
+						jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+
+						btn.addEventListener('click', btn_click.bind(this, timeout));
+						return btn;
+					};
+
+				if ( f.settings.mod_card_durations && f.settings.mod_card_durations.length ) {
+					// Extra Moderation
+					line = utils.createElement('div', 'extra-interface ffz-extra-controls moderation-card__actions clearfix');
+					line.appendChild(btn_make(1));
+
+					var s = utils.createElement('span', 'right');
+					line.appendChild(s);
+
+					for(var i=0; i < f.settings.mod_card_durations.length; i++)
+						s.appendChild(btn_make(f.settings.mod_card_durations[i]));
+
+					el.appendChild(line);
+
+					// Fix Other Buttons
+					this.$("button.timeout").remove();
+				}
+
+
+				if ( f.settings.mod_card_reasons && f.settings.mod_card_reasons.length ) {
+					// Moderation Reasons
+					line = utils.createElement('div', 'extra-interface ffz-extra-controls moderation-card__actions clearfix');
+					ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban ' + (f.settings.mod_card_hotkeys ? '(R)' : 'R') + 'eason</option>');
+					line.appendChild(ban_reasons);
+
+					for(var i=0; i < f.settings.mod_card_reasons.length; i++) {
+						var opt = utils.createElement('option'), r = f.settings.mod_card_reasons[i];
+						opt.value = r;
+						opt.textContent = (i+1) + ') ' + r;
+						ban_reasons.appendChild(opt);
+					}
+
+					el.appendChild(line);
+				}
+
+
+				var ban_btn = el.querySelector('button.ban');
+				if ( ban_btn ) {
+					if ( f.settings.mod_card_hotkeys )
+						ban_btn.setAttribute('title', '(B)an User');
+
+					// Unban Button
+					var unban_btn = utils.createElement('button', 'unban button button--icon-only light');
+					unban_btn.innerHTML = '<figure class="icon">' + CHECK + '</figure>';
+					unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
+
+					jQuery(unban_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+					unban_btn.addEventListener("click", btn_click.bind(this, -1));
+
+					jQuery(ban_btn).after(unban_btn);
+				}
+			}
+
+
+			// Tooltips for ban and ignore.
+			jQuery("button.ignore, button.ban").tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+
+
+			// More Fixing Other Buttons
+			var op_btn = el.querySelector('button.mod');
+			if ( op_btn ) {
+				var can_op = is_broadcaster || (user && user.is_admin) || (user && user.is_staff);
+
+				if ( ! can_op )
+					op_btn.parentElement.removeChild(op_btn);
+			}
+
+
+			// Follow Button
+			var follow_button = el.querySelector(".follow-button");
+			if ( follow_button )
+				jQuery(follow_button).tipsy({title: function() { return follow_button.classList.contains('is-following') ? "Unfollow" : "Follow"}});
+
+
+			// Whisper and Message Buttons
+			var msg_btn = el.querySelector("button.message-button");
+			if ( msg_btn ) {
+				msg_btn.innerHTML = 'W';
+				msg_btn.classList.remove('button--hollow');
+				msg_btn.classList.add('button--icon-only');
+				msg_btn.classList.add('message');
+
+				msg_btn.title = "Whisper User";
+				jQuery(msg_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+
+
+				var real_msg = utils.createElement('button', 'message-button button float-left button--icon-only message html-tooltip');
+				real_msg.innerHTML = '<figure class="icon">' + MESSAGE + '</figure>';
+				real_msg.title = "Message User";
+
+				real_msg.addEventListener('click', function() {
+					window.open('//www.twitch.tv/message/compose?to=' + t.get('cardInfo.user.id'));
+				})
+
+				msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
+			}
+
+
+			// Add the Alias button
+			if ( msg_btn )
+				msg_btn.parentElement.insertBefore(alias_btn, msg_btn);
+			else {
+				var follow_btn = el.querySelector(".friend-button");
+				if ( follow_btn )
+					follow_btn.parentElement.insertBefore(alias_btn, follow_btn.nextSibling);
+			}
+		},
+
 		ffz_init: function() {
 			if ( f.has_bttv_6 )
 				return;
@@ -976,6 +1308,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				is_broadcaster = user && room_id === user.login,
 
 				user_id = this.get('cardInfo.user.id'),
+				is_me = user && user.login === user_id,
 				alias = f.aliases[user_id],
 
 				handle_key,
@@ -1004,9 +1337,11 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				else
 					t.lvUpdateLevels(ffz_room.logviewer_levels);
 
+
 			// Highlight this user's chat messages.
 			if ( f.settings.highlight_messages_with_mod_card )
 				utils.update_css(f._chat_style, 'mod-card-highlight', styles['chat-user-bg'].replace(/{user_id}/g, user_id));
+
 
 			// Action Override
 			this.set('banAction', function(e) {
@@ -1018,24 +1353,6 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				var room = utils.ember_lookup('controller:chat').get('currentRoom');
 				room.send("/timeout " + e.user + " 600 " + ban_reason(), true);
 			});
-
-
-			// Move the default buttons.
-			var def_actions = el.querySelector('.moderation-card__actions');
-			if ( def_actions ) {
-				var def_line = def_actions.querySelector('.clearfix'),
-					bad_line = def_actions.querySelector('.moderation-card__controls');
-
-				if ( def_line && bad_line ) {
-					var children = bad_line.querySelectorAll('button');
-					for(var i=0; i < children.length; i++) {
-						bad_line.removeChild(children[i]);
-						def_line.appendChild(children[i]);
-					}
-
-					bad_line.classList.add('hidden');
-				}
-			}
 
 
 			// Alias Display
@@ -1052,8 +1369,10 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				}
 			}
 
+
 			// Style it!
 			el.classList.add('ffz-moderation-card');
+
 
 			// Info-tize it!
 			if ( f.settings.mod_card_info ) {
@@ -1064,98 +1383,6 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					after.parentElement.insertBefore(info, after.nextSibling);
 					this.ffzRebuildInfo();
 				}
-			}
-
-			// Additional Buttons
-			if ( is_mod && f.settings.mod_card_buttons && f.settings.mod_card_buttons.length ) {
-				line = utils.createElement('div', 'extra-interface moderation-card__actions clearfix');
-
-				var build_cmd = function(user, room, cmd) {
-						var lines = utils.replace_cmd_variables(cmd, user, room).split(/\s*<LINE>\s*/g),
-							reason = ban_reason();
-
-						if ( reason ) {
-							for(var i=0; i < lines.length; i++) {
-								var match = TO_REG.exec(lines[i]);
-								if ( match ) {
-									if ( ! match[2] )
-										lines[i] += ' 600';
-									if ( ! match[3] )
-										lines[i] += reason;
-
-									break;
-								} else {
-									match = BAN_REG.exec(lines[i]);
-									if ( match ) {
-										if ( ! match[2] )
-											lines[i] += reason;
-										break;
-									}
-								}
-							}
-						}
-
-						return lines;
-					},
-
-					add_btn_click = function(cmd) {
-						var user = t.get('cardInfo.user'),
-							chat_controller = utils.ember_lookup('controller:chat'),
-							room = chat_controller && chat_controller.get('currentRoom');
-
-						if ( ! room )
-							return;
-
-						var lines = build_cmd(user, room, cmd);
-						for(var i=0; i < lines.length; i++)
-							room.send(lines[i], true);
-					},
-
-					add_btn_make = function(label, cmd) {
-						var btn = utils.createElement('button', 'button ffz-no-bg', utils.sanitize(label));
-
-						jQuery(btn).tipsy({
-							html: true,
-							gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
-							title: function() {
-								var user = t.get('cardInfo.user'),
-									chat_controller = utils.ember_lookup('controller:chat'),
-									room = chat_controller && chat_controller.get('currentRoom');
-
-									lines = build_cmd(user, room, cmd),
-									title = _.map(lines, utils.sanitize).join('<br>');
-
-								return "Custom Command" + (lines.length > 1 ? 's' : '') +
-									"<br>" + title;
-							}
-						});
-
-						btn.addEventListener('click', add_btn_click.bind(this, cmd));
-						return btn;
-					};
-
-
-				for(var i=0; i < f.settings.mod_card_buttons.length; i++) {
-					var label, cmd, pair = f.settings.mod_card_buttons[i];
-					if ( ! Array.isArray(pair) ) {
-						cmd = pair;
-						label = cmd.split(' ', 1)[0];
-					} else {
-						label = pair[0];
-						cmd = pair[1];
-					}
-
-					utils.CMD_VAR_REGEX.lastIndex = 0;
-					if ( ! utils.CMD_VAR_REGEX.test(cmd) ) {
-						var lines = cmd.split(/\s*<LINE>\s*/g);
-						lines[0] += ' {user}';
-						cmd = lines.join("<LINE>");
-					}
-
-					line.appendChild(add_btn_make(label, cmd));
-				}
-
-				el.appendChild(line);
 			}
 
 
@@ -1226,179 +1453,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			}
 
 
-			// Only do the big stuff if we're mod.
-			if ( is_mod ) {
-				el.classList.add('ffz-is-mod');
-
-				var btn_click = function(timeout) {
-					var user_id = t.get('cardInfo.user.id'),
-						room = utils.ember_lookup('controller:chat').get('currentRoom');
-
-						if ( timeout === -1 )
-							room.send("/unban " + user_id, true);
-						else
-							room.send("/timeout " + user_id + " " + timeout + ban_reason(), true);
-					},
-
-				btn_make = function(timeout) {
-						var btn = utils.createElement('button', 'button ffz-no-bg');
-						btn.innerHTML = utils.duration_string(timeout);
-						btn.title = "Timeout User for " + utils.number_commas(timeout) + " Second" + (timeout != 1 ? "s" : "");
-
-						if ( f.settings.mod_card_hotkeys && timeout === 600 )
-							btn.title = "(T)" + btn.title.substr(1);
-						else if ( f.settings.mod_card_hotkeys && timeout === 1 )
-							btn.title = "(P)urge - " + btn.title;
-
-						jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-
-						btn.addEventListener('click', btn_click.bind(this, timeout));
-						return btn;
-					};
-
-				if ( f.settings.mod_card_durations && f.settings.mod_card_durations.length ) {
-					// Extra Moderation
-					line = utils.createElement('div', 'extra-interface moderation-card__actions clearfix');
-					line.appendChild(btn_make(1));
-
-					var s = utils.createElement('span', 'right');
-					line.appendChild(s);
-
-					for(var i=0; i < f.settings.mod_card_durations.length; i++)
-						s.appendChild(btn_make(f.settings.mod_card_durations[i]));
-
-					el.appendChild(line);
-
-					// Fix Other Buttons
-					this.$("button.timeout").remove();
-				}
-
-
-				if ( f.settings.mod_card_reasons && f.settings.mod_card_reasons.length ) {
-					// Moderation Reasons
-					line = utils.createElement('div', 'extra-interface moderation-card__actions clearfix');
-					ban_reasons = utils.createElement('select', 'ffz-ban-reasons', '<option value="">Select a Ban ' + (f.settings.mod_card_hotkeys ? '(R)' : 'R') + 'eason</option>');
-					line.appendChild(ban_reasons);
-
-					for(var i=0; i < f.settings.mod_card_reasons.length; i++) {
-						var opt = utils.createElement('option'), r = f.settings.mod_card_reasons[i];
-						opt.value = r;
-						opt.textContent = (i+1) + ') ' + r;
-						ban_reasons.appendChild(opt);
-					}
-
-					el.appendChild(line);
-				}
-
-
-				var ban_btn = el.querySelector('button.ban');
-				if ( f.settings.mod_card_hotkeys )
-					ban_btn.setAttribute('title', '(B)an User');
-
-				// Unban Button
-				var unban_btn = utils.createElement('button', 'unban button button--icon-only light');
-				unban_btn.innerHTML = '<figure class="icon">' + CHECK + '</figure>';
-				unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
-
-				jQuery(unban_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-				unban_btn.addEventListener("click", btn_click.bind(this, -1));
-
-				jQuery(ban_btn).after(unban_btn);
-			}
-
-
-			// Tooltips for ban and ignore.
-			jQuery("button.ignore, button.ban").tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-
-
-			// More Fixing Other Buttons
-			var op_btn = el.querySelector('button.mod');
-			if ( op_btn ) {
-				var can_op = is_broadcaster || (user && user.is_admin) || (user && user.is_staff);
-
-				if ( ! can_op )
-					op_btn.parentElement.removeChild(op_btn);
-			}
-
-
-			// Follow Button
-			var follow_button = el.querySelector(".follow-button");
-			if ( follow_button )
-				jQuery(follow_button).tipsy({title: function() { return follow_button.classList.contains('is-following') ? "Unfollow" : "Follow"}});
-
-
-			// Whisper and Message Buttons
-			var msg_btn = el.querySelector("button.message-button");
-			if ( msg_btn ) {
-				msg_btn.innerHTML = 'W';
-				msg_btn.classList.remove('button--hollow');
-				msg_btn.classList.add('button--icon-only');
-				msg_btn.classList.add('message');
-
-				msg_btn.title = "Whisper User";
-				jQuery(msg_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-
-
-				var real_msg = utils.createElement('button', 'message-button button float-left button--icon-only message html-tooltip');
-				real_msg.innerHTML = '<figure class="icon">' + MESSAGE + '</figure>';
-				real_msg.title = "Message User";
-
-				real_msg.addEventListener('click', function() {
-					window.open('//www.twitch.tv/message/compose?to=' + t.get('cardInfo.user.id'));
-				})
-
-				msg_btn.parentElement.insertBefore(real_msg, msg_btn.nextSibling);
-			}
-
-
-			// Alias Button
-			var alias_btn = utils.createElement('button', 'alias button float-left button--icon-only html-tooltip');
-			alias_btn.innerHTML = '<figure class="icon">' + constants.EDIT + '</figure>';
-			alias_btn.title = "Set Alias";
-
-			alias_btn.addEventListener('click', function() {
-				var user = t.get('cardInfo.user.id'),
-					alias = f.aliases[user],
-					results = f.format_display_name(t.get('cardInfo.user.display_name'), user, true);
-
-				utils.prompt(
-					"Alias for <b" + (results[1] ? ' class="html-tooltip" title="' + utils.quote_attr(results[1]) + '">' : '>') + results[0] + "</b>",
-					"Please enter an alias for the user. Leave it blank to remove the alias.",
-					alias,
-					function(new_val) {
-						if ( new_val === null || new_val === undefined )
-							return;
-
-						new_val = new_val.trim();
-						if ( ! new_val )
-							new_val = undefined;
-
-						f.aliases[user] = new_val;
-						f.save_aliases();
-
-						// Update UI
-						f._update_alias(user);
-
-						var name = el.querySelector('h4.name');
-						if ( name ) {
-							name.classList.toggle('ffz-alias', new_val);
-							var results = f.format_display_name(t.get('cardInfo.user.display_name'), user_id);
-
-							name.innerHTML = results[0];
-							name.title = results[1] || '';
-							if ( results[1] )
-								jQuery(name).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
-						}
-					});
-			});
-
-			if ( msg_btn )
-				msg_btn.parentElement.insertBefore(alias_btn, msg_btn);
-			else {
-				var follow_btn = el.querySelector(".friend-button");
-				if ( follow_btn )
-					follow_btn.parentElement.insertBefore(alias_btn, follow_btn.nextSibling);
-			}
+			// Only do the main controls row if we're not looking at ourselves.
+			this.ffzFixDefaultActions();
 
 
 			// Tabbed Content
@@ -1424,7 +1480,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				}
 			}
 
-			el.insertBefore(tab_container, el.querySelector('.moderation-card__actions'));
+			el.insertBefore(tab_container, el.firstElementChild.nextSibling);
+			//el.insertBefore(tab_container, el.querySelector('.moderation-card__actions'));
 			el.insertBefore(tabs, tab_container);
 
 			el.classList.add('ffz-default-tab');
@@ -1526,7 +1583,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 }
 
 
-FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_click, mod_icons) {
+FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_click, mod_icons, show_ts) {
 	var l_el = utils.createElement('li', 'message-line chat-line clearfix'),
 		out = [],
 		f = this,
@@ -1534,7 +1591,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 		is_notice = msg.style === 'admin' || msg.style === 'notification',
 		style = '', colored = '';
 
-	if ( helpers && helpers.getTime )
+	if ( helpers && helpers.getTime && show_ts !== false )
 		out.push('<span class="timestamp' + (ts_click ? ' ts-action' : '') + '">' + helpers.getTime(msg.date, true) + '</span>');
 
 	var alias = this.aliases[msg.from],
@@ -1572,7 +1629,7 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 				(alias ? ' ffz-alias' : '') +
 				(results[1] ? ' html-tooltip' : '') +
 				(style ? ' has-color' : '') +
-			'" style="' + style + '"' +
+			'" data-user="' + utils.quote_attr(msg.from) + '" style="' + style + '"' +
 			(colors ? ' data-color="' + raw_color + '"' : '') +
 			(results[1] ? ' title="' + utils.quote_attr(results[1]) + '"' : '') + '>'
 			+ results[0] + '</span>');

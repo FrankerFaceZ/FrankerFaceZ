@@ -1211,6 +1211,33 @@ body.ffz-dark:not([data-page="teams#show"]),
 	border-color: rgba(255,255,255,0.2);
 }
 
+.ffz-dark .dash-column { border: none }
+.ffz-dark .js-dashboard-chat-module > div { border-right: none !important }
+
+
+.ffz-dark .vod-vertical-nav {
+	background-color: #191919;
+	border-color: #474747;
+}
+
+
+.ffz-dark .vod-vertical-nav__list-item .active,
+.ffz-dark .vod-vertical-nav__list-item .active:hover,
+.ffz-dark .vod-vertical-nav__list-item .active:active,
+.ffz-dark .vod-vertical-nav__list-item .active:focus {
+	background-color: #6441a5;
+}
+
+.ffz-dark .vod-vertical-nav__link:hover,
+.ffz-dark .vod-vertical-nav__link:active,
+.ffz-dark .vod-vertical-nav__link:focus {
+	background-color: #392e5c;
+}
+
+.ffz-dark .dashboard-page div[style*="background"][style*="#f9f8fc"] {
+	background-color: #191919 !important
+}
+
 
 /* Front Page: Pulse */
 
@@ -1334,6 +1361,11 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 /* Playlist */
+
+.ffz-dark .cn-chat-replay-header {
+	background: transparent;
+	border: none;
+}
 
 .ffz-dark .cn-chat-replay-header,
 .ffz-dark .ember-chat .chat-header {
@@ -1668,6 +1700,14 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #101010;
 }
 
+
+.ffz-dark .activity-comments {
+	border-color: #474747;
+}
+
+.ffz-dark .activity-comment:hover {
+	background-color: rgba(255,255,255,0.2);
+}
 
 .ffz-dark .activity-card__comments {
 	background-color: #121212;

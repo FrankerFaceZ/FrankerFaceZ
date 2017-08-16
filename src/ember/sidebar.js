@@ -393,7 +393,7 @@ FFZ.prototype.modify_social_followed_channel = function(component) {
 			data.options.title = function(el) {
 				var old_text = t.get('tooltipText');
 				if ( ! f.settings.following_count )
-					return utils.sanitize(old_text);
+					return old_text; //utils.sanitize(old_text);
 
 				var tt_id = FFZ._sc_followed_tooltip_id++;
 				utils.api.get("streams/" + t.get('stream.id'), null, {version: 5}).then(function(data) {
@@ -427,7 +427,7 @@ FFZ.prototype.modify_social_followed_channel = function(component) {
 							'</span>';
 				});
 
-				return '<div id="ffz-sc-tooltip-' + tt_id + '">' + utils.sanitize(old_text) + '</div>';
+				return '<div id="ffz-sc-tooltip-' + tt_id + '">' + old_text + '</div>';
 			};
 		}
 	})

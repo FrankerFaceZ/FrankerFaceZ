@@ -100,9 +100,9 @@ FFZ.menu_pages.myemotes = {
 	has_sets: function(view) {
 		var user = this.get_user(),
 			controller = utils.ember_lookup('controller:chat'),
-			tmi = controller && controller.get('currentRoom.tmiSession'),
+			user_emotes = utils.ember_lookup('service:user-emotes'),
+			twitch_sets = (user_emotes && user_emotes.allEmotes || {'emoticon_sets': {}})['emoticon_sets'] || {},
 			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
-			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
 
 			sk = twitch_sets && Object.keys(twitch_sets);
 
@@ -228,8 +228,8 @@ FFZ.menu_pages.myemotes = {
 
 	render_lists: function(view, container, favorites_only) {
 		var controller = utils.ember_lookup('controller:chat'),
-			tmi = controller && controller.get('currentRoom.tmiSession'),
-			twitch_sets = (tmi && tmi.getEmotes() || {'emoticon_sets': {}})['emoticon_sets'],
+			user_emotes = utils.ember_lookup('service:user-emotes'),
+			twitch_sets = (user_emotes && user_emotes.allEmotes || {'emoticon_sets': {}})['emoticon_sets'] || {},
 
 			user = this.get_user(),
 			ffz_sets = this.getEmotes(user && user.login, null),

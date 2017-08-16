@@ -76,8 +76,8 @@ FFZ.prototype.setup_emoticons = function() {
 	this.log("Loading emoji data.");
 	this.load_emoji_data();
 
-	this.log("Watching Twitch emoticon parser to ensure it loads.");
-	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
+	//this.log("Watching Twitch emoticon parser to ensure it loads.");
+	//this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
 
 	this._twitch_inventory_sets = [];
 	this.refresh_twitch_inventory();
@@ -246,7 +246,7 @@ FFZ.prototype._click_emote = function(target, event) {
 // Twitch Emoticon Checker
 // ------------------------
 
-FFZ.prototype.check_twitch_emotes = function() {
+/*FFZ.prototype.check_twitch_emotes = function() {
 	if ( this._twitch_emote_check ) {
 		clearTimeout(this._twitch_emote_check);
 		delete this._twitch_emote_check;
@@ -281,7 +281,7 @@ FFZ.prototype.check_twitch_emotes = function() {
 
 	// Check again in a bit to see if we've got them.
 	this._twitch_emote_check = setTimeout(this.check_twitch_emotes.bind(this), 10000);
-}
+}*/
 
 
 

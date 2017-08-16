@@ -6,7 +6,7 @@ var FFZ = window.FrankerFaceZ,
 	emote_helpers,
 	bits_helpers,
 	bits_service,
-	bits_tags,
+	//bits_tags,
 
 	HOP = Object.prototype.hasOwnProperty,
 
@@ -220,7 +220,7 @@ FFZ.prototype.setup_tokenization = function() {
 	if ( ! bits_service )
 		bits_service = utils.ember_lookup('service:bits-rendering-config');
 
-	bits_tags = utils.ember_lookup('service:bits-tags');
+	//bits_tags = utils.ember_lookup('service:bits-tags');
 
 	try {
 		this.conv_helpers = conv_helpers = window.require && window.require("web-client/helpers/twitch-conversations/conversation-line-helpers");
@@ -705,7 +705,7 @@ FFZ.prototype._tokenize_bits = function(tokens) {
 	if ( bits_helpers && bits_helpers.tokenizeBits )
 		try {
 			return bits_helpers.tokenizeBits(tokens,
-				bits_tags && bits_tags.get('allTagNames'),
+				//bits_tags && bits_tags.get('allTagNames'),
 				bits_service && bits_service.get('regexes'));
 
 		} catch(err) { }

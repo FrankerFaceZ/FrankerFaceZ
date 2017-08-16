@@ -1,6 +1,6 @@
 /* Fix Tooltip Opacity */
 
-body[data-page^="ember#"] { overflow: hidden }
+body[data-page^="ember#"] { overflow: hidden; position: relative }
 body > div.tipsy { opacity: 1 !important; }
 body > div.tipsy .tipsy-inner { background-color: rgba(0,0,0,0.8); }
 body > div.tipsy .tipsy-arrow { opacity: 0.8; }
@@ -38,6 +38,10 @@ body > div.tipsy .tipsy-arrow { opacity: 0.8; }
 .ffz-hide-thumb-info-on-hover .card-carousel__item:hover .card__boxpin,
 .ffz-hide-thumb-info-on-hover .ffz-directory-preview:hover .card__boxpin,
 
+.ffz-minimal-chat-input .trending-emote-feed,
+.ffz-minimal-chat-input .trending-emote-interface,
+.ffz-hide-trending-emotes .trending-emote-feed,
+.ffz-hide-trending-emotes .trending-emote-interface,
 .player[data-paused="false"] #js-follow-panel,
 body:not(.ffz-theater-basic-stats) .player-userinfo__game,
 body:not(.ffz-theater-basic-stats) .player-controls-top,
@@ -135,6 +139,14 @@ body:not(.ffz-show-bits-tags) .bits-tag--container,
 body:not(.ffz-show-bits-tags) .ember-chat .chat-messages.bits-tags__offset {
 	top: 0;
 }
+
+.ffz-hide-trending-emotes .chat-room.trending-emotes-enabled .chat-messages .chat-line,
+.ffz-minimal-chat-input .chat-room.trending-emotes-enabled .chat-messages .chat-line {
+	padding-right: 20px;
+}
+
+.ffz-hide-trending-emotes .chat-room.trending-emotes-enabled .chat-messages { bottom: 111px }
+.ffz-hide-trending-emotes .chat-room.trending-emotes-enabled .chat-interface { height: 111px }
 
 body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + .ffz-ui-toggle svg,
 body:not(.ffz-minimal-chat-input):not(.ffz-menu-replace) .chat-interface .emoticon-selector-toggle + div + .ffz-ui-toggle svg
@@ -4319,7 +4331,7 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 	right: 0;
 	transition: height ease-in-out 100ms;
 	height: 30px;
-	box-shadow: 0 10px 5px -3px rgba(239,238,241,0.5);
+	box-shadow: 0 5px 5px -3px rgba(239,238,241,0.5);
 }
 
 .ffz-recent-messages.ui-moved {
@@ -4387,7 +4399,7 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 .force-dark .ffz-recent-messages {
 	background-color: #191919;
 	border-color: #474747;
-	box-shadow: 0 10px 5px -3px rgba(25,25,25,0.5);
+	box-shadow: 0 5px 5px -3px rgba(25,25,25,0.5);
 }
 
 
@@ -4404,7 +4416,7 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 
 */
 
-#ffz-chat-menu.ui-draggable-dragging {
+/*#ffz-chat-menu.ui-draggable-dragging {
 	height: auto !important;
 	width: auto !important;
 	background: transparent;
@@ -4422,7 +4434,7 @@ body.ffz-sidebar-swap .app-main.theatre #main_col:not(.expandRight) #player[data
 	padding: 0;
 	display: block;
 	max-width: 340px;
-}
+}*/
 
 .app-main.theatre .player-whispers-padding {
 	margin-bottom: 0;

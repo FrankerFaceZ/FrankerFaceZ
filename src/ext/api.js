@@ -289,7 +289,7 @@ API.prototype.load_set = function(set_id, emote_set) {
 
 	// Avoid spamming the console if and when other extensions
 	// spend time constantly updating emote sets.
-	if ( ! already_loaded || constants.DEBUG )
+	if ( this.log_sets )
 		this.log("Loaded Emoticon Set #" + set_id + ": " + emote_set.title + " (" + emote_set.count + " emotes)", emote_set);
 
 	return emote_set;

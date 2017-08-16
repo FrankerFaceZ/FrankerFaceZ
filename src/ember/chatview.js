@@ -45,6 +45,39 @@ FFZ.basic_settings.delayed_chat = {
 };
 
 
+FFZ.settings_info.custom_badge_images = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+	name: "Enable Custom Badge Images",
+	help: "Display custom mod badges for channels that have them set.",
+
+	on_update: function(val) {
+		var rs = this._room_style;
+		if ( ! rs )
+			return;
+
+		for(var room_id in this.rooms) {
+			var room = this.rooms[room_id];
+			room && utils.update_css(rs, room_id, (val ? utils.moderator_css(room) : '') + (room.css || ''));
+		}
+	}
+}
+
+
+FFZ.settings_info.disable_trending_emotes = {
+	type: "boolean",
+	value: false,
+
+	category: "Chat Appearance",
+	name: "Disable Trending Emotes",
+	help: "Disable the trending emotes section above the chat input box on channels where it exists.",
+
+	on_update: utils.toggle_cls('ffz-hide-trending-emotes')
+}
+
+
 FFZ.settings_info.minimal_chat = {
 	type: "select",
 	options: {
@@ -351,8 +384,9 @@ FFZ.prototype.refresh_chat = function() {
 }
 
 FFZ.prototype.setup_chatview = function() {
-	document.body.classList.toggle("ffz-minimal-chat-head", this.settings.minimal_chat === 1 || this.settings.minimal_chat === 3);
-	document.body.classList.toggle("ffz-minimal-chat-input", this.settings.minimal_chat === 2 || this.settings.minimal_chat === 3);
+	utils.toggle_cls('ffz-minimal-chat-head')(this.settings.minimal_chat === 1 || this.settings.minimal_chat === 3);
+	utils.toggle_cls('ffz-minimal-chat-input')(this.settings.minimal_chat === 2 || this.settings.minimal_chat === 3);
+	utils.toggle_cls('ffz-hide-trending-emotes')(this.settings.disable_trending_emotes);
 
 	this.log("Hooking the Ember Chat controller.");
 
@@ -1292,12 +1326,16 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 // ----------------------
 
 FFZ.prototype.connect_extra_chat = function() {
+	this.log("App Path: " + App.currentPath);
+
 	var user = this.get_user();
 	if ( user && user.login ) {
 		// Make sure we're in the user's room.
 		if ( ! this.rooms[user.login] || this.rooms[user.login].room ) {
-			var Room = utils.ember_resolve('model:room');
-			Room && Room.findOne(user.login);
+			var Room = utils.ember_resolve('model:room'),
+				room = Room && Room.findOne(user.login);
+			if ( room && App.currentPath === 'user.chat' )
+				room.set('isEmbedChat', true);
 		}
 	}
 
@@ -1356,8 +1394,10 @@ FFZ.prototype._join_room = function(room_id, no_rebuild) {
 	// Make sure we're not already there.
 	if ( ! this.rooms[room_id] || ! this.rooms[room_id].room ) {
 		// Okay, fine. Get it.
-		var Room = utils.ember_resolve('model:room');
-		Room && Room.findOne(room_id);
+		var Room = utils.ember_resolve('model:room'),
+			room = Room && Room.findOne(room_id);
+		if ( room && App.currentPath === 'user.chat' )
+			room.set('isEmbedChat', true);
 	}
 
 

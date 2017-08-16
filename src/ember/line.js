@@ -939,7 +939,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 		}),
 
 		clickedChanged: Ember.observer("hasClickedFlaggedMessage", function() {
-			if ( f.settings.automod_inline )
+			if ( ! this.get('isAutoModPromptSmaller') && f.settings.automod_inline )
 				this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
 			else
 				this.ffzRender();
@@ -955,7 +955,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 		}.property('msgObject.is_pinned_cheer'),
 
 		ffzUserLevel: function() {
-			if ( this.get('isStaff') )
+			if ( this.get('isStaff') || this.get('msgObject.from') === 'AutoMod' )
 				return 5;
 			else if ( this.get('isAdmin') )
 				return 4;
@@ -1054,7 +1054,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 					}
 				}
 
-			if ( f.settings.automod_inline && is_tb ) {
+			if ( ! this.get('isAutoModPromptSmaller') && f.settings.automod_inline && is_tb ) {
 				var clicked = this.get('hasClickedFlaggedMessage'),
 					inactive = clicked ? ' inactive' : '';
 
@@ -1188,14 +1188,26 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 		buildAutoModHTML: function() {
 			if ( this.get('hasClickedFlaggedMessage') )
-				return '<div class="system-msg">Thank you for your response!</div>';
+				return ' <span class="system-msg">Thank you for your response!</span>';
 
-			return  '<p class="inline-warning">' + TB_TOOLTIP + '</p>' +
-				'<div class="pd-y-1 clearfix">' +
-					'<a class="button button--small button--alert float-left mg-r-1 tb-button" data-action="no">Deny</a>' +
-					'<a class="button button--small float-left mg-r-1 tb-button" data-action="yes">Allow</a>' +
-					'<a class="button button--small button--text float-left tb-button" data-action="not sure">Not Sure</a>' +
-				'</div>';
+			if ( ! this.get('isAutoModPromptSmaller') )
+				return  '<p class="inline-warning">' + TB_TOOLTIP + '</p>' +
+					'<div class="pd-y-1 clearfix">' +
+						'<a class="button button--small button--alert float-left mg-r-1 tb-button" data-action="no">Deny</a>' +
+						'<a class="button button--small float-left mg-r-1 tb-button" data-action="yes">Allow</a>' +
+						'<a class="button button--small button--text float-left tb-button" data-action="not sure">Not Sure</a>' +
+					'</div>';
+
+			var line = f._build_mod_card_history(this.get('msgObject.autoModRejectedMsgObject'), null, true, null, null, false);
+			line.classList.add('mg-y-05');
+
+			return ' <span class="system-msg">Allow will post it to chat.</span>' +
+				'<div class="float-right">' +
+					'<a class="button button--text button--small tb-button" data-action="yes">Allow</a>' +
+					'<a class="button button--text button--small tb-button" data-action="no">Deny</a>' +
+				'</div>' +
+				'<div style="clear:both"></div>' +
+				line.outerHTML;
 		},
 
 		ffzRender: function() {
@@ -1210,7 +1222,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 					this.buildDeletedMessageHTML() : this.buildMessageHTML();
 			}
 
-			if ( ! f.settings.automod_inline && this.get('msgObject.autoModRejected') )
+			if ( (this.get('isAutoModPromptSmaller') || ! f.settings.automod_inline) && this.get('msgObject.autoModRejected') )
 				output += this.buildAutoModHTML();
 
 			el.innerHTML = output;
@@ -1513,11 +1525,10 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 				return;
 
 			else if ( (f.settings.clickable_mentions && cl.contains('user-token')) || cl.contains('from') || cl.contains('to') || e.target.parentElement.classList.contains('from') || e.target.parentElement.classList.contains('to') ) {
-				var target = cl.contains('user-token') ?
-						e.target.getAttribute('data-user') :
-					(cl.contains('from') || e.target.parentElement.classList.contains('from')) ?
+				var target = e.target.getAttribute('data-user') ||
+					((cl.contains('from') || e.target.parentElement.classList.contains('from')) ?
 						from :
-						this.get('msgObject.to');
+						this.get('msgObject.to'));
 
 				if ( ! target )
 					return;
