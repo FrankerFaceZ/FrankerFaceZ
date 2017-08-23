@@ -379,11 +379,22 @@ FFZ._sc_followed_tooltip_id = 0;
 FFZ.prototype.modify_social_followed_channel = function(component) {
 	var f = this;
 	utils.ember_reopen_view(component, {
+		ffzUpdateVisibility: function() {
+			var el = this.get('element'),
+				game = this.get('stream.game'),
+				is_blocked = game ? f.settings.banned_games.indexOf(game.toLowerCase()) !== -1 : false;
+
+			el && el.classList.toggle('hidden', is_blocked);
+
+		}.observes('stream.game'),
+
 		ffz_init: function() {
 			var t = this,
 				el = this.get('element'),
 				card = jQuery('.js-sc-card', el),
 				data = card && card.data('tipsy');
+
+			this.ffzUpdateVisibility();
 
 			if ( ! data || ! data.options )
 				return;

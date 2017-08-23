@@ -116,7 +116,16 @@ FFZ.settings_info.banned_games = {
 
 	on_update: function() {
 		var banned = this.settings.banned_games,
-			els = document.querySelectorAll('.ffz-directory-preview');
+			els = document.querySelectorAll('.ffz-directory-preview'),
+			SidebarThing = utils.ember_resolve('component:social-column/followed-channel'),
+			views = utils.ember_views();
+
+		if ( SidebarThing )
+			for(var key in views)
+				if ( views[key] instanceof SidebarThing )
+					try {
+						views[key].ffzUpdateVisibility();
+					} catch(err) { }
 
 		for(var i=0; i < els.length; i++) {
 			var el = els[i],

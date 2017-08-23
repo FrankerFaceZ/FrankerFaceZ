@@ -401,6 +401,12 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #444;
 }
 
+.ffz-dark .c-background-graph { background-color: #444 !important }
+
+.ffz-dark .shadow-border--bottom-right {
+	box-shadow: 1px 0 0 0 #474747, 0 1px 0 0 #474747;
+}
+
 .ffz-dark .switch,
 .ffz-dark .button,
 .ffz-dark .pl-button--hollow,
@@ -1934,6 +1940,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 
 /* Video Uploads */
 
+.ffz-dark .vod-vertical-nav + div .card > div[style],
 .ffz-dark #video-manager .card > div[style],
 .ffz-dark .videos.uploads .card > div[style] {
 	background-color: #101010 !important;
@@ -1944,6 +1951,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 	background-color: #161616;
 }
 
+.ffz-dark .drop-zone__border,
 .ffz-dark .subscription-modal__right,
 .ffz-dark .subscription-modal__bar {
 	border-color: rgba(255,255,255,0.2);
@@ -2176,4 +2184,24 @@ body.ffz-dark:not([data-page="teams#show"]),
 .ffz-dark .clmgr-table__cell-wrapper:nth-child(even) .clmgr-table__cell--collapsed:hover,
 .ffz-dark .clmgr-table__cell--collapsed:hover {
 	background-color: rgba(255,255,255,0.2);
+}
+
+.ffz-dark .stats-table__header {
+	background-color: #101010;
+}
+
+.ffz-dark .border,
+.ffz-dark .stats-table__cell,
+.ffz-dark .stats-table {
+	border-color: #474747;
+}
+
+.ffz-dark .stats-table__cell { color: #ccc }
+
+.ffz-dark .stats-table__row:nth-child(even) {
+	background-color: #191919;
+}
+
+.ffz-dark .stats-table__row:hover {
+	background-color: #333;
 }
