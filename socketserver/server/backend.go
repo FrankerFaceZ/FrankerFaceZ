@@ -139,7 +139,7 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 
 	if resp.StatusCode == 401 {
 		return "", ErrAuthorizationNeeded
-	} else if resp.StatusCode != 200 {
+	} else if resp.StatusCode < 200 || resp.StatusCode > 299 { // any non-2xx
 		if resp.Header.Get("Content-Type") == "application/json" {
 			var err2 ErrForwardedFromBackend
 			err := json.Unmarshal(respBytes, &err2.JSONError)
