@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 )
@@ -402,7 +403,7 @@ func BenchmarkUserSubscriptionSinglePublish(b *testing.B) {
 	readyWg.Wait()
 
 	fmt.Println("publishing...")
-	if PublishToChannel(TestChannelName, message) != b.N {
+	if PublishToChannel(TestChannelName, message, rate.Unlimited()) != b.N {
 		b.Error("not enough sent")
 		server.CloseClientConnections()
 		panic("halting test instead of waiting")
