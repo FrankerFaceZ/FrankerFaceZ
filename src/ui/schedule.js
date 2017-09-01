@@ -111,7 +111,7 @@ FFZ.channel_metadata.schedule = {
 		if ( current )
 			out.push('Now: ' + format(current));
 
-		if ( next )
+		if ( next && next.starttime )
 			out.push(
 				utils.full_human_time((Date.now() - next.starttime) / 1000).capitalize() + ': ' +
 				format(next));
@@ -174,7 +174,7 @@ FFZ.channel_metadata.schedule = {
 			now = Date.now(),
 			is_current = run.starttime <= now && run.endtime >= now,
 			is_old = run.starttime < now,
-			current_date = run.starttime.toLocaleDateString();
+			current_date = run.starttime && run.starttime.toLocaleDateString();
 
 		if ( current_date !== last_date )
 			container.appendChild(utils.createElement('div', 'ffz-schedule-row ffz-schedule-date', current_date));
@@ -199,7 +199,7 @@ FFZ.channel_metadata.schedule = {
 		el.innerHTML = '<div class="heading">' +
 			'<h2>' + utils.sanitize(run.name) + ' <span>(' + utils.sanitize(run.category).replace(/ +/g, '&nbsp;') + ')</span></h2>' +
 			'</div>' +
-			'<time class="time-start html-tooltip" title="Start' + (is_old ? 'ed ' : 's ') + utils.quote_san(utils.full_human_time((now - run.starttime) / 1000)) + '." datetime="' + utils.quote_san(run.starttime) + '">' + utils.sanitize(TimeFormat.format(run.starttime)) + '</time>' +
+			(run.starttime ? '<time class="time-start html-tooltip" title="Start' + (is_old ? 'ed ' : 's ') + utils.quote_san(utils.full_human_time((now - run.starttime) / 1000)) + '." datetime="' + utils.quote_san(run.starttime) + '">' + utils.sanitize(TimeFormat.format(run.starttime)) + '</time>' : '') +
 			'<div class="meta">' + meta.join(' &mdash; ') + '</div>' +
 			'<div class="runners">Runner' + utils.pluralize(run.runners) + ': ' +
 				utils.human_join(_.map(run.runners, function(x) {

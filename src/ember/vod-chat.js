@@ -63,12 +63,12 @@ FFZ.prototype.modify_vod_chat_display = function(component) {
 			f._vodc = this;
 
 			if ( f.settings.dark_twitch )
-				this.$().parents('.chat-container').addClass('dark');
+				this.$().parents('.chat-container').addClass('dark').addClass('theme--dark');
 
 			this.parentView.addObserver('layout.isTheatreMode', function() {
 				if ( f._vodc && f.settings.dark_twitch )
 					setTimeout(function(){
-						f._vodc.$().parents('.chat-container').addClass('dark');
+						f._vodc.$().parents('.chat-container').addClass('dark').addClass('theme--dark');
 					});
 			});
 
