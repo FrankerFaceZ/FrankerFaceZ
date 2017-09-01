@@ -8,13 +8,13 @@ import (
 
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
-	"github.com/abiosoft/ishell"
+	"gopkg.in/abiosoft/ishell.v1"
 	"github.com/gorilla/websocket"
 )
 
 func commandLineConsole() {
 
-	shell := ishell.NewShell()
+	shell := ishell.New()
 
 	shell.Register("help", func(args ...string) (string, error) {
 		shell.PrintCommands()
