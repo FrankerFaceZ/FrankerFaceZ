@@ -27,6 +27,7 @@ type StatsData struct {
 	}
 
 	CurrentClientCount uint64
+	LiveClientCount uint64
 
 	PubSubChannelCount int
 
@@ -81,7 +82,7 @@ func commandCounter() {
 }
 
 // StatsDataVersion is the version of the StatsData struct.
-const StatsDataVersion = 6
+const StatsDataVersion = 7
 const pageSize = 4096
 
 var cpuUsage struct {
@@ -152,7 +153,7 @@ func updatePeriodicStats() {
 
 		GlobalSubscriptionLock.RLock()
 
-		Statistics.CurrentClientCount = uint64(len(GlobalSubscriptionInfo))
+		Statistics.LiveClientCount = uint64(len(GlobalSubscriptionInfo))
 		versions := make(map[string]uint64)
 		for _, v := range GlobalSubscriptionInfo {
 			versions[v.VersionString]++

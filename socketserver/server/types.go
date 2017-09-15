@@ -89,6 +89,9 @@ type ClientInfo struct {
 
 	Version ClientVersion
 
+	// Set after a successful hello message.
+	HelloOK bool
+
 	// This mutex protects writable data in this struct.
 	// If it seems to be a performance problem, we can split this.
 	Mutex sync.Mutex
