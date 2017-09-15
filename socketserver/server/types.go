@@ -64,6 +64,24 @@ type ClientMessage struct {
 	origArguments string
 }
 
+func (cm ClientMessage) Reply(cmd string, args interface{}) ClientMessage {
+	return ClientMessage{
+		MessageID: cm.MessageID,
+		Command: cmd,
+		Arguments: args,
+	}
+}
+
+func (cm ClientMessage) ReplyJSON(cmd string, argsJSON string) ClientMessage {
+	n := ClientMessage{
+		MessageID: cm.MessageID,
+		Command: cmd,
+		origArguments: argsJSON,
+	}
+	n.parseOrigArguments()
+	return n
+}
+
 type AuthInfo struct {
 	// The client's claimed username on Twitch.
 	TwitchUsername string
