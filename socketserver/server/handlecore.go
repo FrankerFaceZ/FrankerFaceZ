@@ -336,7 +336,9 @@ func RunSocketConnection(conn *websocket.Conn) {
 
 	conn.SetPongHandler(func(pongBody string) error {
 		client.Mutex.Lock()
-		client.pingCount = 0
+		if client.HelloOK { // do not accept PONGs until hello sent
+			client.pingCount = 0
+		}
 		client.Mutex.Unlock()
 		return nil
 	})
