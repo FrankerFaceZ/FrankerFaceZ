@@ -435,7 +435,7 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 	key := fmt.Sprintf("%s:%s", msg.Command, msg.origArguments)
 
 	resultCh := bunchGroup.DoChan(key, func() (interface{}, error) {
-		return Backend.SendRemoteCommandCached(msg.Command, msg.origArguments, AuthInfo{})
+		return Backend.SendRemoteCommandCached(string(msg.Command), msg.origArguments, AuthInfo{})
 	})
 
 	client.MsgChannelKeepalive.Add(1)
