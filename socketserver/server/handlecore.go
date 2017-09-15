@@ -186,7 +186,7 @@ func HTTPSayOK(w http.ResponseWriter, _ *http.Request) {
 
 // SocketUpgrader is the websocket.Upgrader currently in use.
 var SocketUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
+	ReadBufferSize:  160,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		return r.Header.Get("Origin") == "" || OriginRegexp.MatchString(r.Header.Get("Origin"))
