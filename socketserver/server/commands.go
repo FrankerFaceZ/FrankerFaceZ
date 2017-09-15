@@ -461,17 +461,18 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 	client.MsgChannelKeepalive.Add(1)
 	go func() {
 		result := <-resultCh
-		var msg ClientMessage
+		var reply ClientMessage
 		if result.Err != nil {
-			msg.Command = ErrorCommand
-			msg.Arguments = result.Err.Error()
+			reply.Command = ErrorCommand
+			reply.Arguments = result.Err.Error()
 		} else {
-			msg.Command = SuccessCommand
-			msg.origArguments = result.Val.(string)
-			msg.parseOrigArguments()
+			reply.Command = SuccessCommand
+			reply.MessageID = msg.MessageID
+			reply.origArguments = result.Val.(string)
+			reply.parseOrigArguments()
 		}
 
-		client.Send(msg)
+		client.Send(reply)
 		client.MsgChannelKeepalive.Done()
 	}()
 
