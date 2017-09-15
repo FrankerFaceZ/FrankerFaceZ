@@ -67,15 +67,15 @@ type ClientMessage struct {
 func (cm ClientMessage) Reply(cmd string, args interface{}) ClientMessage {
 	return ClientMessage{
 		MessageID: cm.MessageID,
-		Command: cmd,
+		Command:   cmd,
 		Arguments: args,
 	}
 }
 
 func (cm ClientMessage) ReplyJSON(cmd string, argsJSON string) ClientMessage {
 	n := ClientMessage{
-		MessageID: cm.MessageID,
-		Command: cmd,
+		MessageID:     cm.MessageID,
+		Command:       cmd,
 		origArguments: argsJSON,
 	}
 	n.parseOrigArguments()

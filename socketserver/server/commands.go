@@ -2,11 +2,9 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
-	"strconv"
 	"sync"
 	"time"
 
@@ -301,13 +299,13 @@ func C2STrackFollow(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (_
 }
 
 // AggregateEmoteUsage is a map from emoteID to a map from chatroom name to usage count.
-var aggregateEmoteUsage = make(map[int]map[string]int)
+//var aggregateEmoteUsage = make(map[int]map[string]int)
 
 // AggregateEmoteUsageLock is the lock for AggregateEmoteUsage.
-var aggregateEmoteUsageLock sync.Mutex
+//var aggregateEmoteUsageLock sync.Mutex
 
 // ErrNegativeEmoteUsage is emitted when the submitted emote usage is negative.
-var ErrNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
+//var ErrNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
 
 // C2SEmoticonUses implements the `emoticon_uses` C2S Command.
 // msg.Arguments are in the JSON format of [1]map[emoteID]map[ChatroomName]float64.
@@ -329,10 +327,10 @@ func aggregateDataSender_do() {
 	follows := followEvents
 	followEvents = nil
 	followEventsLock.Unlock()
-	aggregateEmoteUsageLock.Lock()
-	emoteUsage := aggregateEmoteUsage
-	aggregateEmoteUsage = make(map[int]map[string]int)
-	aggregateEmoteUsageLock.Unlock()
+	//aggregateEmoteUsageLock.Lock()
+	//emoteUsage := aggregateEmoteUsage
+	//aggregateEmoteUsage = make(map[int]map[string]int)
+	//aggregateEmoteUsageLock.Unlock()
 
 	reportForm := url.Values{}
 
@@ -344,10 +342,10 @@ func aggregateDataSender_do() {
 	}
 
 	strEmoteUsage := make(map[string]map[string]int)
-	for emoteID, usageByChannel := range emoteUsage {
-		strEmoteID := strconv.Itoa(emoteID)
-		strEmoteUsage[strEmoteID] = usageByChannel
-	}
+	//for emoteID, usageByChannel := range emoteUsage {
+	//	strEmoteID := strconv.Itoa(emoteID)
+	//	strEmoteUsage[strEmoteID] = usageByChannel
+	//}
 	emoteJSON, err := json.Marshal(strEmoteUsage)
 	if err != nil {
 		log.Println("error reporting aggregate data:", err)
