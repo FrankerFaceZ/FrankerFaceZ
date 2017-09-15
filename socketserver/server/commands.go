@@ -128,9 +128,6 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 		return
 	}
 
-	client.VersionString = copyString(version)
-	client.Version = VersionFromString(version)
-
 	if clientIDStr, ok := ary[1].(string); ok {
 		client.ClientID = uuid.FromStringOrNil(clientIDStr)
 		if client.ClientID == uuid.Nil {
@@ -146,9 +143,11 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 		return
 	}
 
+	client.VersionString = copyString(version)
+	client.Version = VersionFromString(version)
 	uniqueUserChannel <- client.ClientID
-
 	SubscribeGlobal(client)
+	client.HelloOK = true
 
 	jsTime := float64(time.Now().UnixNano()/1000) / 1000
 	return ClientMessage{

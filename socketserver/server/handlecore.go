@@ -430,7 +430,7 @@ func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan 
 			}
 
 		case msg := <-clientChan:
-			if client.VersionString == "" && msg.Command != HelloCommand {
+			if !client.HelloOK && msg.Command != HelloCommand {
 				return CloseFirstMessageNotHello
 			}
 
