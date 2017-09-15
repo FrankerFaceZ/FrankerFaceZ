@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/naclform"
 	cache "github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -33,8 +34,7 @@ type backendInfo struct {
 	addTopicURL        string
 	announceStartupURL string
 
-	sharedKey [32]byte
-	serverID  int
+	secureForm naclform.ServerInfo
 
 	lastSuccess     map[string]time.Time
 	lastSuccessLock sync.Mutex
@@ -45,7 +45,7 @@ var Backend *backendInfo
 func setupBackend(config *ConfigFile) *backendInfo {
 	b := new(backendInfo)
 	Backend = b
-	b.serverID = config.ServerID
+	b.secureForm.ServerID = config.ServerID
 
 	b.HTTPClient.Timeout = 60 * time.Second
 	b.baseURL = config.BackendURL
@@ -68,7 +68,7 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	copy(theirPublic[:], config.BackendPublicKey)
 	copy(ourPrivate[:], config.OurPrivateKey)
 
-	box.Precompute(&b.sharedKey, &theirPublic, &ourPrivate)
+	box.Precompute(&b.secureForm.SharedKey, &theirPublic, &ourPrivate)
 
 	return b
 }
@@ -119,7 +119,7 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 		formData.Set("authenticated", "0")
 	}
 
-	sealedForm, err := backend.SealRequest(formData)
+	sealedForm, err := backend.secureForm.Seal(formData)
 	if err != nil {
 		return "", err
 	}
@@ -171,7 +171,7 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 
 // SendAggregatedData sends aggregated emote usage and following data to the backend server.
 func (backend *backendInfo) SendAggregatedData(form url.Values) error {
-	sealedForm, err := backend.SealRequest(form)
+	sealedForm, err := backend.secureForm.Seal(form)
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (backend *backendInfo) sendTopicNotice(topic string, added bool) error {
 		formData.Set("added", "f")
 	}
 
-	sealedForm, err := backend.SealRequest(formData)
+	sealedForm, err := backend.secureForm.Seal(formData)
 	if err != nil {
 		return err
 	}

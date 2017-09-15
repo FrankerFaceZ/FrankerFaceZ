@@ -18,14 +18,14 @@ func TestSealRequest(t *testing.T) {
 		"QuickBrownFox": []string{"LazyDog"},
 	}
 
-	sealedValues, err := b.SealRequest(values)
+	sealedValues, err := b.secureForm.Seal(values)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// sealedValues.Encode()
 	// id=0&msg=KKtbng49dOLLyjeuX5AnXiEe6P0uZwgeP_7mMB5vhP-wMAAPZw%3D%3D&nonce=-wRbUnifscisWUvhm3gBEXHN5QzrfzgV
 
-	unsealedValues, err := b.UnsealRequest(sealedValues)
+	unsealedValues, err := b.secureForm.Unseal(sealedValues)
 	if err != nil {
 		t.Fatal(err)
 	}

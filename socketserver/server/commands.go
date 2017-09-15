@@ -184,7 +184,7 @@ func C2SPing(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error)
 func C2SSetUser(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	username, err := msg.ArgumentsAsString()
 	if err != nil {
-		return
+		return ClientMessage{}, err
 	}
 
 	username = copyString(username)
@@ -221,7 +221,7 @@ func C2SReady(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientM
 func C2SSubscribe(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	channel, err := msg.ArgumentsAsString()
 	if err != nil {
-		return
+		return ClientMessage{}, err
 	}
 
 	channel = PubSubChannelPool.Intern(channel)
@@ -248,7 +248,7 @@ func C2SSubscribe(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (Cli
 func C2SUnsubscribe(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	channel, err := msg.ArgumentsAsString()
 	if err != nil {
-		return
+		return ClientMessage{}, err
 	}
 
 	channel = PubSubChannelPool.Intern(channel)
