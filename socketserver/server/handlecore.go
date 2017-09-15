@@ -133,7 +133,6 @@ func startJanitors() {
 
 	go authorizationJanitor()
 	go aggregateDataSender()
-	go bunchCacheJanitor()
 	go cachedMessageJanitor()
 	go commandCounter()
 	go pubsubJanitor()

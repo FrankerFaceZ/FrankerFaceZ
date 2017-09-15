@@ -12,6 +12,7 @@ import (
 
 	"bitbucket.org/stendec/frankerfacez/socketserver/server"
 	"github.com/clarkduvall/hyperloglog"
+	lru "github.com/hashicorp/golang-lru"
 )
 
 type serverFilter struct {
