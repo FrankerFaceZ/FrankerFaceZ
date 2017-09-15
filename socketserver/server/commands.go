@@ -431,7 +431,6 @@ var bunchGroup singleflight.Group
 
 // C2SHandleBunchedCommand handles C2S Commands such as `get_link`.
 // It makes a request to the backend server for the data, but any other requests coming in while the first is pending also get the responses from the first one.
-// Additionally, results are cached.
 func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	key := fmt.Sprintf("%s:%s", msg.Command, msg.origArguments)
 
