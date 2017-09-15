@@ -162,10 +162,10 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	client.ClientID = clientID
 	client.VersionString = copyString(version)
 	client.Version = VersionFromString(version)
-	uniqueUserChannel <- client.ClientID
 	client.HelloOK = true
 	client.Mutex.Unlock()
 
+	uniqueUserChannel <- client.ClientID
 	SubscribeGlobal(client)
 
 	jsTime := float64(time.Now().UnixNano()/1000) / 1000
