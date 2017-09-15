@@ -8,8 +8,8 @@ import (
 
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
-	"gopkg.in/abiosoft/ishell.v1"
 	"github.com/gorilla/websocket"
+	"gopkg.in/abiosoft/ishell.v1"
 )
 
 func commandLineConsole() {
