@@ -27,7 +27,7 @@ type StatsData struct {
 	}
 
 	CurrentClientCount uint64
-	LiveClientCount uint64
+	LiveClientCount    uint64
 
 	PubSubChannelCount int
 
