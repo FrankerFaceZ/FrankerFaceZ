@@ -21,7 +21,8 @@ var FFZ = window.FrankerFaceZ,
 	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=()]*)/g,
 
 	CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+?\/?\w*?)(?:\/edit)?(?:[\?#]|$)/,
-	VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)twitch\.tv\/(?:\w+\/v|videos)\/(\w+)$/,
+	VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)$/,
+	FFZ_EMOTE_URL = /^(?:https?:\/\/)?(?:www\.)?frankerfacez\.com\/emoticon\/(\d+)(?:-\w*)?$/,
 
 	LINK_SPLIT = /^(?:(https?):\/\/)?(?:(.*?)@)?([^\/:]+)(?::(\d+))?(.*?)(?:\?(.*?))?(?:\#(.*?))?$/,
 	YOUTUBE_CHECK = /^(?:https?:\/\/)?(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:v\/|watch\/|.*?(?:embed|watch).*?v=)?([a-zA-Z0-9\-_]+)$/,
@@ -200,7 +201,7 @@ FFZ.prototype.setup_tokenization = function() {
 	this._twitch_set_to_channel = {};
 	this._link_data = {};
 
-	this.load_twitch_emote_data();
+	//this.load_twitch_emote_data();
 	utils.toggle_cls('ffz-clickable-mentions')(this.settings.clickable_mentions);
 
 	try {
@@ -347,7 +348,7 @@ FFZ.prototype.format_display_name = function(display_name, user_id, disable_alia
 // Twitch Emote Data
 // ---------------------
 
-FFZ.prototype.load_twitch_emote_data = function(tries) {
+/*FFZ.prototype.load_twitch_emote_data = function(tries) {
 	var f = this;
 	f._twitch_set_to_channel[0] = "--global--";
 	f._twitch_set_to_channel[33] = "--turbo-faces--";
@@ -355,7 +356,7 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 	f._twitch_set_to_channel[19194] = "--prime--";
 	f._twitch_set_to_channel[19151] = "--curse--";
 
-	this.log("Loading Twitch Emote Data (Try " + (tries || 0) + ")");
+	/*this.log("Loading Twitch Emote Data (Try " + (tries || 0) + ")");
 
 	jQuery.ajax(constants.SERVER + "twitch_emotes.json")
 		.done(function(data) {
@@ -381,7 +382,91 @@ FFZ.prototype.load_twitch_emote_data = function(tries) {
 			tries = (tries || 0) + 1;
 			if ( tries < 10 )
 				setTimeout(f.load_twitch_emote_data.bind(f, tries), 1000);
-		});
+		});*
+}*/
+
+var UNSET = {};
+
+FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
+	if ( typeof emote_id !== "number" )
+		emote_id = parseInt(emote_id);
+
+	if ( isNaN(emote_id) || ! isFinite(emote_id) )
+		return null;
+
+	if ( this._twitch_emote_to_set.hasOwnProperty(emote_id) && this._twitch_emote_to_set[emote_id] !== UNSET )
+		return this._twitch_emote_to_set[emote_id];
+
+	this._twitch_emote_to_set[emote_id] = null;
+	var f = this,
+		use_ss = this._ws_open && Math.random() > .5,
+		cb = function(success, data) {
+			if ( ! success ) {
+				f._twitch_emote_to_set[emote_id] = UNSET;
+				return;
+			}
+
+			var set_id = null;
+			if ( data ) {
+				set_id = data['s_id'];
+				f._twitch_set_to_channel[set_id] = data;
+			}
+
+			f._twitch_emote_to_set[emote_id] = set_id;
+			if ( callback )
+				callback(set_id);
+		};
+
+	if ( use_ss )
+		this.ws_send("get_emote", emote_id, cb);
+	else
+		fetch(constants.API_SERVER = "ed/emote/" + emote_id)
+			.then(function(resp) {
+				if ( ! resp.ok )
+					return cb(false, null);
+				resp.json().then(function(data) {
+					cb(true, data);
+				})
+			});
+}
+
+
+FFZ.prototype.get_twitch_set = function(set_id, callback) {
+	if ( typeof set_id !== "number" )
+		set_id = parseInt(set_id);
+
+	if ( isNaN(set_id) || ! isFinite(set_id) )
+		return null;
+
+	if ( this._twitch_set_to_channel.hasOwnProperty(set_id) && this._twitch_set_to_channel[set_id] !== UNSET )
+		return this._twitch_set_to_channel[set_id];
+
+	this._twitch_set_to_channel[set_id] = null;
+
+	var f = this,
+		use_ss = this._ws_open && Math.random() > .5,
+		cb = function(success, data) {
+			if ( ! success ) {
+				f._twitch_set_to_channel[set_id] = UNSET;
+				return;
+			}
+
+			f._twitch_set_to_channel[set_id] = data || null;
+			if ( callback )
+				callback(data || null);
+		};
+
+	if ( use_ss )
+		this.ws_send("get_emote_set", set_id, cb);
+	else
+		fetch(constants.API_SERVER + "ed/set/" + set_id)
+			.then(function(resp) {
+				if ( ! resp.ok )
+					return cb(false, null);
+				resp.json().then(function(data) {
+					cb(true, data);
+				})
+			});
 }
 
 
@@ -423,6 +508,7 @@ FFZ.prototype.render_tooltip = function(el) {
 					preview_url, width=0, height=0, image, set_id, emote, emote_set,
 					emote_id = this.getAttribute('data-ffz-emote'),
 					modifiers = this.getAttribute('data-modifier-info'),
+					sellout_text = this.getAttribute('data-sellout'),
 					mod_text = '';
 
 				if ( modifiers ) {
@@ -432,6 +518,9 @@ FFZ.prototype.render_tooltip = function(el) {
 						return emote ? f.render_token(true, true, true, emote.token) + ' - ' + (emote.hidden ? '???' : utils.sanitize(emote.name)) : '';
 					}).join('<br>');
 				}
+
+				if ( sellout_text )
+					mod_text = '<hr>' + sellout_text + mod_text;
 
 				if ( emote_id ) {
 					if ( emote_id == "93269" )
@@ -480,7 +569,8 @@ FFZ.prototype.render_tooltip = function(el) {
 				emote_id = this.getAttribute('data-emote');
 				if ( emote_id ) {
 					set_id = f._twitch_emote_to_set[emote_id];
-					emote_set = set_id && f._twitch_set_to_channel[set_id];
+					var set_data = set_id && f.get_twitch_set(set_id);
+					emote_set = set_data && set_data.c_name;
 
 					var set_type = "Channel",
 						favorite_key = 'twitch-' + set_id;
@@ -615,6 +705,11 @@ FFZ.prototype.tokenize_conversation_line = function(message, prevent_notificatio
 	if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
 
+	// Pre-load emote information.
+	if ( emotes )
+		for(var emote_id in emotes)
+			this.get_twitch_set_for(emote_id);
+
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
 
@@ -667,6 +762,11 @@ FFZ.prototype.tokenize_vod_line = function(msgObject, delete_links) {
 	if ( helpers && helpers.emoticonizeMessage && emotes && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
 
+	// Pre-load emote information.
+	if ( emotes )
+		for(var emote_id in emotes)
+			this.get_twitch_set_for(emote_id);
+
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
 
@@ -713,6 +813,185 @@ FFZ.prototype._tokenize_bits = function(tokens) {
 }
 
 
+FFZ.prototype.tokenize_rich_content = function(tokens, content) {
+	'use strict';
+
+	// First, we want to get the indices of all the existing rich content elements.
+	// This should only really be grabbing commerce content.
+	var indices = [];
+	for(var content_type in content) {
+		var cont = content[content_type];
+		for(var i=0; i < cont.length; i++) {
+			var c = cont[i];
+			if ( c.removeOriginal && c.index >= 0 )
+				indices.push(c.index);
+		}
+	}
+
+	// Sanitize tokens.
+	if ( typeof tokens === 'string' )
+		tokens = [{type: 'text', text: tokens}];
+
+	var providers = FFZ.rich_content_providers;
+
+	// Iterate tokens.
+	var idx = 0;
+	for(var i=0; i < tokens.length; i++) {
+		var token = tokens[i];
+		if ( typeof token === 'string' )
+			token = tokens[i] = {type: 'text', text: token};
+
+		// If a token's index matches rich content, then the token is being
+		// expressed as rich content and it should be suppressed when the
+		// message is rendered with rich content.
+		if ( indices.indexOf(idx) !== -1 ) {
+			token.rich_removed = true;
+
+		} else {
+			// However, if it doesn't match existing rich content, then we
+			// should proceed to check it using our rich content providers.
+			for(var pk in providers) {
+				var provider = providers[pk];
+				if ( ! provider.type || token.type === provider.type ) {
+					var cont = provider.extract(token);
+					if ( cont ) {
+						token.rich_removed = provider.remove_token;
+						content[pk] = content[pk] || [];
+						content[pk].push({
+							index: idx,
+							removeOriginal: provider.remove_token,
+							data: cont
+						});
+						break;
+					}
+				}
+			}
+		}
+
+		idx += token.length || (token.text && token.text.length) || 1;
+	}
+
+	return tokens;
+}
+
+
+FFZ.rich_content_providers = {
+	/*ffz_emote: {
+		token_type: 'link',
+		remove_token: true,
+		display_name: 'FFZ emote',
+
+		extract: function(token) {
+			var href = token.link || token.text,
+				match = FFZ_EMOTE_URL.exec(href);
+
+			if ( match )
+				return {
+					url: href,
+					id: match[1]
+				}
+		},
+
+		get_info: function(info) { return new Promise(function(s,f) {
+			fetch("https://api.frankerfacez.com/v1/emote/" + info.id)
+					.then(utils.json).then(function(data) {
+				if ( ! data || ! data.emote )
+					return f();
+
+				var em = data.emote;
+
+				s({
+					image: em.urls[2] || em.urls[1],
+					url: info.url,
+					title: utils.sanitize(em.name) + ' by <span class="user-token" data-user="' + utils.quote_attr(em.owner.name) + '">' + utils.sanitize(em.owner.display_name) + '</span>',
+					by_lines: [
+						(em.public ? 'Public' : 'Private') + ' FFZ Emote'
+					]
+				})
+			})
+		})}
+	},*/
+
+	video: {
+		token_type: 'link',
+		remove_token: true,
+
+		extract: function(token) {
+			var href = token.link || token.text,
+				match = VIDEO_URL.exec(href);
+
+			if ( match )
+				return {
+					url: href,
+					id: match[1]
+				}
+		},
+
+		get_info: function(info) { return new Promise(function(s,f) {
+			utils.api.get("videos/" + info.id, undefined, {version: 5}).then(function(data) {
+				var published = utils.parse_date(data.recorded_at),
+					now = new Date,
+					raw_age = (now - published) / 1000,
+					age = raw_age >= 86400 ? published.toLocaleDateString() : utils.full_human_time(raw_age);
+
+				s({
+					image: data.preview.small,
+					title: utils.sanitize(data.title || 'Untitled Video'),
+					url: info.url,
+					by_lines: [
+						'<span class="user-token" data-user="' + utils.quote_attr(data.channel.name) + '">' + utils.sanitize(data.channel.display_name) + '</span>' +
+							(data.game === 'Creative' ? ' being Creative' : data.game ? ' playing ' + utils.sanitize(data.game) : ''),
+						utils.time_to_string(data.length || 0) +
+							' &mdash; ' + utils.number_commas(data.views) + ' Views' +
+							(published ?
+								' &mdash; <span class="html-tooltip" title="Published: <nobr>' +
+									utils.quote_san(published.toLocaleString()) + '</nobr>">' +
+									utils.sanitize(age) +
+								'</span>' : '')
+					]
+				})
+			}).fail(f)
+		})}
+	},
+
+	clip: {
+		token_type: 'link',
+		remove_token: true,
+
+		get_info: function(info) { return new Promise(function(s,f) {
+			var Clips = utils.ember_lookup('service:clips');
+			if ( ! Clips )
+				return f();
+
+			Clips.fetchClipBySlug(info.slug).then(function(data) {
+				s({
+					image: data.thumbnails.tiny,
+					title: utils.sanitize(data.title || 'Untitled Clip'),
+					url: info.url,
+					by_lines: [
+						'<span class="user-token" data-user="' + utils.quote_attr(data.broadcaster_login) + '">' + utils.sanitize(data.broadcaster_display_name) + '</span>' +
+							(data.game === 'Creative' ? ' being Creative' : data.game ? ' playing ' + utils.sanitize(data.game) : ''),
+						'Clipped by <span class="user-token" data-user="' + utils.quote_attr(data.curator_login) + '">' + utils.sanitize(data.curator_display_name) + '</span> &mdash; ' +
+							utils.number_commas(data.views) + ' View' + utils.pluralize(data.views)
+					]
+				});
+			}).catch(f)
+		})},
+
+		extract: function(token) {
+			var href = token.link || token.text,
+				match = CLIP_URL.exec(href);
+
+			if ( match )
+				return {
+					url: href,
+					slug: match[1]
+				}
+		}
+	}
+}
+
+
 FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, delete_links, disable_cache) {
 	if ( msgObject.cachedTokens && ! disable_cache )
 		return msgObject.cachedTokens;
@@ -748,6 +1027,11 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 
 	if ( helpers && helpers.emoticonizeMessage && this.settings.parse_emoticons )
 		tokens = helpers.emoticonizeMessage(tokens, emotes);
+
+	// Pre-load emote information.
+	if ( emotes )
+		for(var emote_id in emotes)
+			this.get_twitch_set_for(emote_id);
 
 	// FrankerFaceZ Extras
 	tokens = this._remove_banned(tokens);
@@ -898,6 +1182,12 @@ FFZ.prototype.tokenize_chat_line = function(msgObject, prevent_notification, del
 	// Tokenize users last.
 	tokens = this.tokenize_users(tokens);
 
+	// Take care of rich content.
+	if ( ! tags.content )
+		tags.content = {};
+
+	this.tokenize_rich_content(tokens, tags.content);
+
 	if ( ! disable_cache )
 		msgObject.cachedTokens = tokens;
 
@@ -951,6 +1241,11 @@ FFZ.prototype.tokenize_feed_body = function(message, emotes, user_id, room_id) {
 	if ( helpers && helpers.emoticonizeMessage && this.settings.parse_emoticons )
 		message = helpers.emoticonizeMessage(message, emotes);
 
+	// Pre-load emote information.
+	if ( emotes )
+		for(var emote_id in emotes)
+			this.get_twitch_set_for(emote_id);
+
 	// Tokenize Lines
 	var tokens = [], token;
 
@@ -986,7 +1281,7 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 	if ( ! token )
 		return "";
 
-	if ( token.hidden )
+	if ( token.hidden || (this.settings.chat_rich_content && token.rich_removed) )
 		return "";
 
 	else if ( token.type === "raw" )
@@ -1076,16 +1371,15 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 						video_info = VIDEO_URL.exec(href);
 
 					if ( clip_info ) {
-						var clips = utils.ember_lookup('service:store');
-						clips && clips.findRecord && clips.findRecord('clip', clip_info[1]).then(function(data) {
-						//clips && clips.getClipInfo(clip_info[1]).then(function(data) {
+						var Clips = utils.ember_lookup('service:clips');
+						Clips && Clips.fetchClipBySlug(clip_info[1]).then(function(data) {
 							data &&
 							success(true, {
-								image: data.get('scaledPreviewUrl'),
+								image: data.thumbnails.medium,
 								image_iframe: false,
-								html: '<span class="ffz-clip-title">' + utils.sanitize(data.get('title')) + '</span>' +
-									'Channel: ' + utils.sanitize(data.get('broadcasterDisplayName')) +
-									'<br>Game: ' + utils.sanitize(data.get('game'))
+								html: '<span class="ffz-clip-title">' + utils.sanitize(data.title) + '</span>' +
+									'Channel: ' + utils.sanitize(data.broadcaster_display_name) +
+									'<br>Game: ' + utils.sanitize(data.game)
 							});
 						});
 
@@ -1286,8 +1580,24 @@ FFZ.prototype.tokenize_emotes = function(user, room, tokens, do_report) {
 			if ( token.type === "text" )
 				token = token.text;
 			else {
-				if ( ! token.modifiers && token.type === 'emoticon' )
-					token.modifiers = [];
+				if ( token.type === 'emoticon' ) {
+					emote = emotes[token.altText];
+					if ( emote && emote.replaces ) {
+						token = _.extend({}, emote.token);
+						token.modifiers = [];
+						new_tokens.push(token);
+						last_token = token;
+
+						if ( do_report && room )
+							this.add_usage(room, emote);
+
+						continue;
+					}
+
+
+					if ( ! token.modifiers )
+						token.modifiers = [];
+				}
 
 				new_tokens.push(token);
 				last_token = token;

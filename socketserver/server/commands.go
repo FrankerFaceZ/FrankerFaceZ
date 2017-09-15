@@ -37,9 +37,10 @@ var commandHandlers = map[Command]CommandHandler{
 	"twitch_emote":          C2SHandleBunchedCommand,
 	"get_link":              C2SHandleBunchedCommand,
 	"get_display_name":      C2SHandleBunchedCommand,
+	"get_emote":             C2SHandleBunchedCommand,
+	"get_emote_set":         C2SHandleBunchedCommand,
+	"has_logs":              C2SHandleBunchedCommand,
 	"update_follow_buttons": C2SHandleRemoteCommand,
-	"chat_history":          C2SHandleRemoteCommand,
-	"user_history":          C2SHandleRemoteCommand,
 }
 
 func setupInterning() {
@@ -56,12 +57,12 @@ func setupInterning() {
 	CommandPool._Intern_Setup("track_follow")
 	CommandPool._Intern_Setup("emoticon_uses")
 	CommandPool._Intern_Setup("twitch_emote")
+	CommandPool._Intern_Setup("get_emote")
+	CommandPool._Intern_Setup("get_emote_set")
+	CommandPool._Intern_Setup("has_logs")
 	CommandPool._Intern_Setup("get_link")
 	CommandPool._Intern_Setup("get_display_name")
 	CommandPool._Intern_Setup("update_follow_buttons")
-	CommandPool._Intern_Setup("chat_history")
-	CommandPool._Intern_Setup("user_history")
-	CommandPool._Intern_Setup("adjacent_history")
 }
 
 // DispatchC2SCommand handles a C2S Command in the provided ClientMessage.

@@ -1,15 +1,49 @@
 ﻿var FFZ = window.FrankerFaceZ,
 	utils = require("../utils"),
 	constants = require("../constants"),
+	bits_service,
+
+	CLIP_ERROR = constants.TWITCH_BASE + '86/1.0',
+	CLIP_FALLBACK = 'https://clips-media-assets.twitch.tv/404-preview-86x45.jpg',
 
 	TB_TOOLTIP = 'This message was flagged by AutoMod. Should it be allowed?',
 
 	BAN_SPLIT = /[\/\.](?:ban ([^ ]+)|timeout ([^ ]+)(?: (\d+))?|timeout_message ([^ ]+) ([^ ]+)(?: (\d+))?)(?: (.*))?$/;
 
 
+FFZ._fallback_image = function(img) {
+	var src = img.dataset.fallbackUrl;
+	if ( ! src )
+		return;
+
+	img.dataset.fallbackUrl = '';
+	img.src = src;
+}
+
+
 // ---------------------
 // Settings
 // ---------------------
+
+FFZ.settings_info.chat_rich_content = {
+	type: "boolean",
+	value: true,
+
+	category: "Chat Appearance",
+	name: "Rich Content in Chat",
+	help: "Display rich content in chat, such as clip embeds and blocks about people's purchases.",
+
+	on_update: function(val) {
+		var CL = utils.ember_resolve('component:chat/chat-line'),
+			views = CL ? utils.ember_views() : [];
+
+		for(var vid in views) {
+			var view = views[vid];
+			if ( view instanceof CL && view.ffzRender )
+				view.ffzRender();
+		}
+	}
+}
 
 FFZ.settings_info.automod_inline = {
 	type: "boolean",
@@ -809,6 +843,10 @@ FFZ.settings_info.chat_ts_size = {
 // ---------------------
 
 FFZ.prototype.setup_line = function() {
+	bits_service = utils.ember_lookup('service:bits-emotes');
+	if ( ! bits_service )
+		bits_service = utils.ember_lookup('service:bits-rendering-config');
+
 	// Tipsy Handler
 	jQuery(document.body).on("mouseleave", ".tipsy", function() {
 		this.parentElement.removeChild(this);
@@ -934,8 +972,11 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			this.$(".mod-icons").replaceWith(this.buildModIconsHTML());
 			if ( this.get("msgObject.deleted") ) {
 				this.$(".message").replaceWith(this.buildDeletedMessageHTML());
-			} else
+				this.$(".ffz-rich-content").html("");
+			} else {
 				this.$(".deleted,.message").replaceWith(this.buildMessageHTML());
+				this.$(".ffz-rich-content").html(this.buildRichContentHTML());
+			}
 		}),
 
 		clickedChanged: Ember.observer("hasClickedFlaggedMessage", function() {
@@ -1092,31 +1133,228 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			var tags = this.get('msgObject.tags') || {},
 				msg_type = tags['msg-id'],
-				out = '';
+				out;
 
-			if ( msg_type === 'bits-hashtag' )
+			/*if ( msg_type === 'bits-hashtag' )
 				out = f.render_token(true,false,true, {type: "bits", prefix: "Cheer", amount: parseInt(tags['msg-param-total'])}) +
 					utils.sanitize(tags['system-msg'] || '')
 						.replace('{hashtag}', '<strong>#' + utils.sanitize(tags['msg-param-hashtag']) + '</strong>')
-						.replace('{link}', '<a target="_blank" href="' + utils.quote_san(tags['msg-param-link']) + '">' + utils.sanitize(tags['msg-param-linkname']) + '</a>')
+						.replace('{link}', '<a target="_blank" href="' + utils.quote_san(tags['msg-param-link']) + '">' + utils.sanitize(tags['msg-param-linkname']) + '</a>')*/
 
 
-			else if ( msg_type === 'purchase' ) {
-				var Intl = utils.ember_lookup('service:intl');
-				out = Intl && ('<p class="purchase-message-title pd-t-0 float-left">' +
-					Intl.t('gameCommerce.purchaseNotifications.message', {
-						userName: tags['login'],
-						purchaseTitle: tags['msg-param-title']
-					}) +
-					'</p><div><img class="purchase-notif__box-art float-right mg-t-0 mg-1-1" src="' +
-					utils.quote_san(tags['msg-param-imageURL']) +
-					'"></div>');
+			if ( msg_type === 'purchase' ) {
+				var Intl = utils.ember_lookup('service:intl'),
+					commerce = this.get('msgObject.tags.content.commerce.firstObject');
+
+				if ( commerce && Intl )
+					out = '<p class="purchase-message-title">' +
+						Intl.t(
+							commerce.numCrates ?
+								'gameCommerce.purchaseNotifications.plusCrates.systemMessage' :
+								'gameCommerce.purchaseNotifications.systemMessage',
+
+							{
+								userName: tags['login'],
+								purchaseTitle: tags['msg-param-title'],
+								numCrates: commerce.numCrates,
+								htmlSafe: true
+							}) + '</p>';
+
 			}
+
+			else if ( msg_type === 'raid' || msg_type === 'unraid' )
+				// TODO: This.
+				return '';
 
 			else
 				out = utils.sanitize(this.get('systemMsg'));
 
 			return out ? '<div class="system-msg">' + out + '</div>' : '';
+		},
+
+		buildRichContentHTML: function() {
+			if ( ! f.settings.chat_rich_content || this.get('msgObject.deleted') )
+				return '';
+
+			var content = this.get('msgObject.tags.content') || {},
+				out = '';
+
+			for(var pk in content) {
+				if ( pk === 'commerce' )
+					out += this.buildPurchaseContentHTML();
+				else if ( pk in FFZ.rich_content_providers )
+					out += this.buildRichEmbedHTML(this.ffzGetContent(pk));
+			}
+
+			return out;
+		},
+
+		ffzUpdateRichContent: function() {
+			if ( this.get('msgObject.tags.content') )
+				this.$(".ffz-rich-content").html(this.buildRichContentHTML());
+		},
+
+		ffzGetContent: function(provider_key, info) {
+			info = info || this.get('msgObject.tags.content.' + provider_key + '.firstObject')
+			if ( ! info || ! info.data )
+				return {
+					loaded: true,
+					errored: true
+				};
+
+			var t = this,
+				provider = FFZ.rich_content_providers[provider_key],
+
+				content_info = this._ffz_content_info = this._ffz_content_info || {},
+				content = content_info[info.index] = content_info[info.index] || {
+					embed_type: provider.display_name || provider_key,
+					input: info.data
+				};
+
+			if ( ! content._started ) {
+				content._started = true;
+				provider.get_info.call(f, content.input).then(function(data) {
+					content.data = data;
+					content.loaded = true;
+					t.isDestroyed || t.ffzUpdateRichContent();
+				}).catch(function() {
+					content.errored = true;
+					content.loaded = true;
+					t.isDestroyed || t.ffzUpdateRichContent();
+				})
+			}
+
+			return content;
+		},
+
+		buildRichEmbedHTML: function(content) {
+			var data = content.data || {},
+				out = '<div class="chat-chip pd-y-05 mg-t-05">' +
+				'<div class="card card--row card--sm">';
+
+			if ( ! content.loaded || content.errored ) {
+				out += '<div class="card__layout">' +
+					'<figure class="card__img chat-chip-img' + (content.errored ? ' chat-chip-img--error' : '') + '">';
+
+				if ( content.loaded )
+					out += '<img src="' + utils.quote_attr(content.errored ? CLIP_ERROR : data.image) + '" data-fallback-url="' + utils.quote_attr(CLIP_FALLBACK) + '" onerror="FrankerFaceZ._fallback_image(this)">';
+				else
+					out += '<div class="loading-spinner"></div>';
+
+				out += '</figure>' +
+					'<div class="card__body">' +
+						'<h3 class="card__title ellipsis">' +
+							(content.errored ?
+							'Something went wrong' :
+							'Loading ' + content.embed_type + '...') +
+						'</h3>' +
+						'<p class="card__info ellipsis">' +
+							(content.errored ?
+							"We couldn't find that " + content.embed_type + '.' :
+							'...') +
+						'</p>' +
+					'</div>' +
+				'</div>';
+
+			} else {
+				out += '<a class="card__layout" href="' + utils.quote_attr(data.url) + '" target="_blank" rel="noopener noreferrer" class="card__layout">' +
+					'<figure class="card__img chat-chip-img">' +
+						'<img src="' + utils.quote_attr(data.image) + '" data-fallback-url="' + utils.quote_attr(CLIP_FALLBACK) + '" onerror="FrankerFaceZ._fallback_image(this)">' +
+					'</figure>' +
+					'<div class="card__body">' +
+						'<h3 class="card__title ellipsis">' + data.title + '</h3>';
+
+						for(var i=0; i < data.by_lines.length; i++)
+							out += '<p class="card__info ellipsis">' + data.by_lines[i] + '</p>';
+
+					out += '</div>' +
+				'</a>';
+			}
+
+			return out + '</div></div>';
+		},
+
+		buildPurchaseContentHTML: function() {
+			var commerce = this.get('msgObject.tags.content.commerce.firstObject'),
+				out;
+			if ( ! commerce || ! commerce.purchased || ! commerce.purchased.length )
+				return '';
+
+			var purchased = commerce.purchased[0],
+				crated = commerce.crated || [],
+				show_drawer = crated.length > 2,
+				drawer_open = this._ffz_commerce_drawer_open,
+				image_url = purchased.boxart,
+				title = purchased.title,
+				Intl = utils.ember_lookup('service:intl');
+
+			out = '<div class="chat-commerce-rich-content chat-chip flex flex--column full-width mg-t-05 pd-0">' +
+				'<div class="flex flex--nowrap">' +
+				'<div class="flex__item--noShrink flex__item--noGrow mg-05">' +
+					'<img class="chat-commerce-rich-content__image chat-commerce-rich-content__image--xlarge" src="' + utils.quote_attr(image_url) + '">' +
+				'</div>' +
+				'<div class="flex__item--grow mg-05 mg-r-05">' +
+					'<div class="font-size-4">' + utils.sanitize(title) + '</div>';
+
+			if ( Intl && commerce.numCrates > 0 ) {
+				out += '<div class="chat-commerce-rich-content__subtext mg-t-05">' +
+					Intl.t('gameCommerce.purchaseNotifications.plusCrates.richContentMessage', {
+						numCrates: commerce.numCrates,
+						numRewards: crated.length
+					}) +
+					'</div>';
+			}
+
+			out += '</div>';
+
+			if ( crated.length ) {
+				out += '<div class="border-1 pd-05 flex flex--nowrap justify-content-center align-items-center font-size-4 flex__item--noShrink' + (show_drawer ? ' chat-commerce-right-content__pocket--button' : '') + '">';
+
+				if ( show_drawer ) {
+					if ( drawer_open )
+						out += '<div><figure class="icon chat-commerce-rich-content__caret">' + constants.COMMERCE_CARET + '</figure></div>';
+					else
+						out += '<div class="flex flex--nowrap">' +
+							this.buildPurchaseContentItemHTML(crated[0], 'align-self-center') +
+							'<div class="align-self-center pill pill--red flex__item--noShrink">+' +
+							((crated.length||0) - 1) + '</div>' +
+							'</div>';
+				} else
+					for(var i=0; i < crated.length; i++)
+						out += this.buildPurchaseContentItemHTML(crated[i]);
+
+				out += '</div>';
+			}
+
+			out += '</div></div>';
+
+			if ( show_drawer && drawer_open ) {
+				out += '<div class="chat-commerce-rich-content__drawer flex flex--horizontalEnd align-content-center align-items-center pd-05 pd-t-0">';
+				for(var i=0; i < crated.length; i++)
+					out += this.buildPurchaseContentItemHTML(crated[i], 'mg-r-05 mg-t-05');
+				out += '</div>';
+			}
+
+			return out;
+		},
+
+		buildPurchaseContentItemHTML: function(loot, extra_classes) {
+			var loot_type = loot.type,
+				out;
+
+			if ( loot_type === 'emoticon' )
+				out = '<img src="//static-cdn.jtvnw.net/emoticons/v1/' + utils.quote_san(loot.id) + '/2.0">';
+
+			else if ( loot_type === 'bits' ) {
+				var amount = loot.quantity,
+					tier = bits_service.ffz_get_tier('Cheer', amount) || [null, null];
+				if ( tier[1] )
+					out = '<span class="emoticon js-bits-emote-image ffz-bit bit-prefix-Cheer bit-tier-' + tier[0] + ' inventory-bits__image" data-prefix="Cheer" data-amount="' + utils.number_commas(amount) + '"></span>';
+
+			} else if ( loot.img )
+				out = '<img src="' + utils.quote_san(loot.img) + '">';
+
+			return out ? '<div class="chat-commerce-rich-content__' + utils.quote_san(loot_type) + ' chat-commerce-rich-content__image' + (extra_classes ? ' ' + extra_classes : '') + '">' + out + '</div>' : '';
 		},
 
 		buildBadgesHTML: function() {
@@ -1224,6 +1462,9 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			if ( (this.get('isAutoModPromptSmaller') || ! f.settings.automod_inline) && this.get('msgObject.autoModRejected') )
 				output += this.buildAutoModHTML();
+
+			if ( this.get('msgObject.tags.content') )
+				output += '<div class="ffz-rich-content">' + this.buildRichContentHTML() + '</div>';
 
 			el.innerHTML = output;
 		},
@@ -1533,6 +1774,8 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 				if ( ! target )
 					return;
 
+				e.preventDefault();
+
 				var n = this.get('element'),
 					bounds = n && n.getBoundingClientRect() || document.body.getBoundingClientRect(),
 					x = 0, right;
@@ -1551,6 +1794,11 @@ FFZ.prototype._modify_chat_subline = function(component, is_whisper) {
 			} else if ( cl.contains('undelete') ) {
 				e.preventDefault();
 				this.set("msgObject.deleted", false);
+
+			} else if ( cl.contains('chat-commerce-right-content__pocket--button') ) {
+				e.preventDefault();
+				this._ffz_commerce_drawer_open = !this._ffz_commerce_drawer_open;
+				this.ffzUpdateRichContent();
 			}
 		}
 	});
@@ -1697,7 +1945,7 @@ FFZ.get_capitalization = function(name, callback) {
 				try {
 					typeof waiting[i] === "function" && waiting[i](cap_name);
 				} catch(err) { }
-		});
+		}, true);
 	}
 
 	return old_data ? old_data[0] : name;

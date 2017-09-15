@@ -453,16 +453,17 @@ FFZ.menu_pages.channel = {
 					has_product = true;
 					var Ticket = utils.ember_resolve('model:ticket'),
 						tickets = Ticket && Ticket.find('user', {channel: room_id}),
-						is_subscribed = tickets ? tickets.get('content') : false,
+						subbed_products = _.pluck(tickets && tickets.get('content') || [], 'product'),
+						subbed_plans = _.pluck(subbed_products, 'short_name'),
+						subbed_emote_sets = _.uniq(_.flatten(_.map(subbed_products, function(x) { return x.features.emoticon_set_ids }))),
+
+						is_subscribed = subbed_plans.length > 0,
 						is_loaded = tickets ? tickets.get('isLoaded') : false,
-						icon = room.room.get("badgeSet.subscriber.image"),
+						icon,
 
 						grid = document.createElement("div"),
 						header = document.createElement("div"),
 						c = 0;
-
-					// Weird is_subscribed check. Might be more accurate?
-					is_subscribed = is_subscribed && is_subscribed.length > 0;
 
 					// See if we've loaded. If we haven't loaded the ticket yet
 					// then try loading it, and then re-render the menu.
@@ -481,6 +482,10 @@ FFZ.menu_pages.channel = {
 						tickets.load();
 					}
 
+					// Null-conditional try/catch
+					try {
+						icon = room.badges.subscriber.versions[0].image_url_1x;
+					} catch(err) { }
 
 					grid.className = "emoticon-grid top-set";
 					header.className = "heading";
@@ -493,108 +498,168 @@ FFZ.menu_pages.channel = {
 					header.innerHTML = '<span class="right">Twitch</span>Subscriber Emoticons';
 					grid.appendChild(header);
 
-					var known_sets = [];
+					var all_emotes = {},
+						plans = product.get("plans") || [],
+						pwe = 0;
 
-					for(var emotes=product.get("emoticons") || [], i=0; i < emotes.length; i++) {
-						var emote = emotes[i];
-						if ( emote.state !== "active" )
-							continue;
+					if ( ! plans.length ) {
+						// If we have a product with no defined plans, fake a plan with the required
+						// information to keep our script happy.
+						plans.push({
+							name: product.name,
+							product_url: product.product_url,
+							price: product.price,
 
-						var s = document.createElement('span'),
-							can_use = is_subscribed || !emote.subscriber_only,
-							img_set = 'image-set(url("' + constants.TWITCH_BASE + emote.id + '/1.0") 1x, url("' + constants.TWITCH_BASE + emote.id + '/2.0") 2x), url("' + constants.TWITCH_BASE + emote.id + '/3.0") 4x)';
+							emoticon_set_ids: _.uniq(_.pluck(product.emoticons, 'emoticon_set')),
+							emoticons: product.emoticons
+						})
+					}
 
-						s.className = 'emoticon ffz-tooltip ffz-tooltip-no-credit' + (!can_use ? " locked" : "");
+					for(var i=0; i < plans.length; i++) {
+						var plan = plans[i],
+							emotes = plan.emoticons || [],
+							jm = emotes.length;
 
-						if ( known_sets.indexOf(emote.emoticon_set) === -1 )
-							known_sets.push(emote.emoticon_set);
+						if ( jm > 0 )
+							pwe++;
 
-						if ( emote.emoticon_set ) {
-							var favs = this.settings.favorite_emotes["twitch-" + emote.emoticon_set];
-							s.classList.add('ffz-can-favorite');
-							s.classList.toggle('ffz-favorite', favs && favs.indexOf(emote.id) !== -1 || false);
+						for(var j = 0; j < jm; j++) {
+							var emote = emotes[j];
+							if ( emote.state !== "active" )
+								continue;
+
+							var ae = all_emotes[emote.regex] = all_emotes[emote.regex] || [];
+							ae.push([emote, i]);
+						}
+					}
+
+					for(var ek in all_emotes) {
+						var ems = all_emotes[ek];
+						for(var i=0, l = ems.length; i < l; i++) {
+							var emote = ems[i][0],
+								plan_idx = ems[i][1],
+								plan = plans[plan_idx],
+								s = utils.createElement('span', 'emoticon ffz-tooltip ffz-tooltip-no-credit'),
+
+								set_id = emote.emoticon_set,
+								can_use = ! emote.subscriber_only || subbed_emote_sets.indexOf(set_id) !== -1,
+								img_set = utils.build_srcset(emote.id);
+
+							if ( ! can_use ) {
+								s.classList.add('locked');
+								s.dataset.sellout = 'Subscribe for ' + utils.sanitize(plan.price) + ' to unlock <nobr>this emote.</nobr>';
+							}
+
+							if ( set_id ) {
+								var faves = this.settings.favorite_emotes["twitch-" + set_id];
+								s.classList.add('ffz-can-favorite');
+								if ( faves && faves.indexOf(emote.id) !== -1 )
+									s.classList.add('ffz-favorite');
+							}
+
+							s.dataset.plan = plan_idx;
+							s.dataset.emote = emote.id;
+							s.dataset.set = set_id;
+							s.alt = emote.regex;
+
+							s.style.backgroundImage = 'url("' + constants.TWITCH_BASE + emote.id + '/1.0")';
+							s.style.backgroundImage = img_set;
+
+							s.style.width = (10 + emote.width) + "px";
+							s.style.height = (10 + emote.height) + "px";
+
+							s.addEventListener('click', function(can_use, emote_id, code, set_id, plan_idx, e) {
+								e.preventDefault();
+								if ( ( e.shiftKey || e.shiftLeft) && this.settings.clickable_emoticons )
+									window.open("https://twitchemotes.com/emote/" + emote_id);
+								else if ( can_use )
+									this._add_emote(view, code, "twitch-" + set_id, emote_id, e);
+								else {
+									var plan = plans[plan_idx],
+										url = plan && plan.product_url;
+									url && window.open(url);
+								}
+
+							}.bind(this, can_use, emote.id, emote.regex, set_id, plan_idx));
+
+							grid.appendChild(s);
+							c++;
+						}
+					}
+
+					if ( c > 0 ) {
+						inner.appendChild(grid);
+						var msg;
+
+						if ( ! is_loaded ) {
+							msg = 'Loading sub information...';
+
+						} else if ( ! is_subscribed && plans.length ) {
+							var sub_message = utils.createElement('div', null, 'Subscribe to unlock ' + (pwe === 1 ? utils.number_commas(c) : 'some') + ' Sub Emotes'),
+								sub_container = utils.createElement('div', 'mg-l-1 mg-r-1 align-center', sub_message),
+								had_prime = false,
+
+								filter_grid = function(price, sets) {
+									var kids = grid.querySelectorAll('.emoticon'),
+										count = 0;
+									for(var i=0, l = kids.length; i < l; i++) {
+										var emote = kids[i],
+											set_id = parseInt(emote.dataset.set),
+											would_unlock = sets ? sets.indexOf(set_id) !== -1 : false;
+
+										if ( would_unlock )
+											count++;
+
+										emote.classList.toggle('unlocked', would_unlock);
+									}
+
+									sub_message.textContent = price ?
+										'Subscribe for ' + price +
+											' to unlock ' + utils.number_commas(count) + ' Sub Emotes'
+										: sub_message.dataset.original;
+								};
+
+							sub_message.dataset.original = sub_message.textContent;
+
+							for(var i=0; i < plans.length; i++) {
+								var plan = plans[i],
+									btn = utils.createElement('a', 'ffz-sub-button button mg-t-1', utils.sanitize(plan.price));
+
+								sub_container.appendChild(btn);
+
+								btn.href = plan.product_url;
+								btn.target = '_blank';
+								btn.rel = 'noopener noreferrer';
+
+								btn.addEventListener('mouseover', filter_grid.bind(this, plan.price, plan.emoticon_set_ids));
+								btn.addEventListener('mouseout', filter_grid.bind(this, null, null));
+							}
+
+							inner.appendChild(sub_container);
+
+						} else if ( plans.length ) {
+							// We are subscribed. Check to see if the subscription will expire.
+							var content = tickets.get('content.lastObject'),
+								pp = content && content.purchase_profile,
+								ends_at = content && utils.parse_date(content.access_end);
+
+							if ( pp && ends_at ) {
+								var now = Date.now() - (this._ws_server_offset || 0),
+									end_time = ends_at ? Math.floor((ends_at.getTime() - now) / 1000) : null,
+
+									provider = pp.payment_provider,
+									renews = pp.will_renew;
+
+								msg = 'Subscription ' + (renews ? 'renews' : 'expires') +
+									' in ' + utils.time_to_string(end_time, true, true);
+							}
 						}
 
-						s.setAttribute('data-emote', emote.id);
-						s.alt = emote.regex;
+						if ( msg ) {
+							var sub_message = utils.createElement('div', null, msg),
+								sub_container = utils.createElement('div', 'mg-l-1 mg-r-1 align-center', sub_message);
 
-						s.style.backgroundImage = 'url("' + constants.TWITCH_BASE + emote.id + '/1.0")';
-						s.style.backgroundImage = '-webkit-' + img_set;
-						s.style.backgroundImage = '-moz-' + img_set;
-						s.style.backgroundImage = '-ms-' + img_set;
-						s.style.backgroundImage = img_set;
-
-						s.style.width = (10+emote.width) + "px";
-						s.style.height = (10+emote.height) + "px";
-
-						s.addEventListener('click', function(can_use, id, code, emote_set, e) {
-							if ( (e.shiftKey || e.shiftLeft) && f.settings.clickable_emoticons )
-								window.open("https://twitchemotes.com/emote/" + id);
-							else if ( can_use )
-								this._add_emote(view, code, "twitch-" + emote_set, id, e);
-							else
-								return;
-							e.preventDefault();
-						}.bind(this, can_use, emote.id, emote.regex, emote.emoticon_set));
-
-						grid.appendChild(s);
-						c++;
-					}
-
-					if ( reported_sets.indexOf(product.get('id')) === -1 && known_sets.length ) {
-						reported_sets.push(product.get('id'));
-						this.log("Sets for " + product.get('id') + " [" + product.get('ticketProductId') + "]: " + JSON.stringify(known_sets));
-						this.ws_send("report_twitch_set", [product.get('id'), product.get('ticketProductId'), known_sets]);
-					}
-
-
-					if ( c > 0 )
-						inner.appendChild(grid);
-
-					if ( c > 0 && ! is_subscribed ) {
-						var sub_message = document.createElement("div"),
-							nonsub_message = document.createElement("div"),
-							unlock_text = document.createElement("span"),
-							sub_link = document.createElement("a");
-
-						sub_message.className = "subscribe-message";
-						nonsub_message.className = "non-subscriber-message";
-						sub_message.appendChild(nonsub_message);
-
-						unlock_text.className = "unlock-text";
-						unlock_text.innerHTML = "Subscribe to unlock Emoticons";
-						nonsub_message.appendChild(unlock_text);
-
-						sub_link.className = "action js-sub-button subscribe-button button button--purchase";
-						sub_link.href = product.get("product_url");
-						sub_link.innerHTML = '<span class="subscribe-text">Subscribe</span><span class="subscribe-price button__num-block">' + product.get("price") + '</span>';
-						nonsub_message.appendChild(sub_link);
-
-						inner.appendChild(sub_message);
-					} else if ( c > 0 ) {
-						var last_content = tickets.get("content");
-						last_content = last_content.length > 0 ? last_content[last_content.length-1] : undefined;
-						if ( last_content && last_content.purchase_profile && !last_content.purchase_profile.will_renew ) {
-							var ends_at = utils.parse_date(last_content.access_end || ""),
-								provider = last_content.purchase_profile && last_content.purchase_profile.payment_provider,
-								sub_message = document.createElement("div"),
-								nonsub_message = document.createElement("div"),
-								unlock_text = document.createElement("span"),
-								now = Date.now() - (this._ws_server_offset || 0),
-								end_time = ends_at ? Math.floor((ends_at.getTime() - now) / 1000) : null;
-
-							sub_message.className = "subscribe-message";
-							nonsub_message.className = "non-subscriber-message";
-							sub_message.appendChild(nonsub_message);
-
-							unlock_text.className = "unlock-text";
-							unlock_text.innerHTML = "Subscription expires in " + utils.time_to_string(end_time, true, true);
-
-							if ( provider === "samus" )
-								unlock_text.innerHTML += '<br>(Twitch Prime Free Sub)';
-
-							nonsub_message.appendChild(unlock_text);
-							inner.appendChild(sub_message);
+							inner.appendChild(sub_container);
 						}
 					}
 				}

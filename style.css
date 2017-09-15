@@ -564,6 +564,32 @@ body.ffz-bttv-dark .ffz-ui-toggle.blue.live:hover svg.svg-emoticons path { fill:
 
 /* Dark Menu */
 
+.ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon.locked:before {
+	background-color: rgba(255,255,255,0.5);
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	background-position: calc(100% - 2.5px) calc(100% - 2.5px);
+}
+
+.ffz-dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon.locked:before,
+.theatre .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon.locked:before,
+.theme--dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon.locked:before,
+.dark .ffz-ui-popup.emoticon-selector .emoticon-selector-box .emoticon.locked:before {
+	background-color: rgba(16,16,16,0.5);
+}
+
+.ffz-sub-button + .ffz-sub-button { border-left: 1px solid #ffffff }
+
+.ffz-dark .ffz-sub-button + .ffz-sub-button,
+.theatre .ffz-sub-button + .ffz-sub-button,
+.theme--dark .ffz-sub-button + .ffz-sub-button,
+.dark .ffz-sub-button + .ffz-sub-button { border-left-color: #101010 }
+
+.emoticon.locked.unlocked:before { display: none !important }
+
+
 #ffz-chat-menu { background-color: transparent !important; }
 
 .ffz-dark .ember-chat .chat-menu .list-header,
@@ -2660,6 +2686,8 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: #191919;
 }
 
+.ffz-no-blue .theme--dark .chat-chip,
+
 .ffz-no-blue .app-main.theatre .bits-footer,
 .ffz-no-blue .theme--dark .bits-footer,
 .ffz-no-blue .dark .bits-footer,
@@ -2745,8 +2773,21 @@ body:not([data-current-path^="user."]) .ffz-sidebar-swap .ember-chat .chat-inter
 	background-color: #080808;
 }
 
+.ffz-no-blue .theme--dark .chat-commerce-rich-content__drawer,
 .ffz-no-blue .top-nav-drawer {
 	background-color: #101010;
+}
+
+.ffz-no-blue .theme--dark .chat-commerce-right-content__pocket--button:hover {
+	background-color: #171717;
+}
+
+.theme--dark .chat-chip {
+	box-shadow: 0 1px 2px 0 rgba(0,0,0,.85);
+}
+
+.ffz-rich-content p.card__info {
+	line-height: 1.4rem;
 }
 
 /* Following Count */
@@ -2993,6 +3034,7 @@ li[data-name="following"] a {
 
 /* Directory Logos */
 
+.chat-commerce-right-content__pocket--button > *,
 .item .meta .title a a,
 .item .meta .title a img { pointer-events: none }
 
@@ -3713,7 +3755,7 @@ body.ffz-bttv #ffz-feed-tabs .tabs { margin-bottom: 0 }
 	margin: 0 5px;
 }
 
-.ffz-bit:after {
+.ffz-bit:not(.inventory-bits__image):after {
 	content: attr(data-amount);
 }
 

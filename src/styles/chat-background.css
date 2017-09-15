@@ -4,6 +4,9 @@
 	background-color: rgba(0,0,0, 0.1);
 }
 
+.theme--dark .special-message .system-msg,
+.special-message .system-msg { background-color: transparent }
+
 
 /* Dark: Alternating Background */
 .ffz-dark .conversation-chat-lines > div:nth-child(2n+0),

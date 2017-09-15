@@ -1,3 +1,44 @@
+<div class="list-header">3.5.521 <time datetime="2017-09-15">(2017-09-15)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Hopefully a more resilient way of grabbing emote data.</li>
+</ul>
+
+<div class="list-header">3.5.520 <time datetime="2017-09-06">(2017-09-06)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Issue with sub emoticons not being tab-completable without prefixes and showing as having an unknown source.</li>
+</ul>
+
+<div class="list-header">3.5.519 <time datetime="2017-09-05">(2017-09-05)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>The Emote Data Update</li>
+	<li>&nbsp;</li>
+	<li>Changed: Start querying the socket server for emote set associations rather than pre-loading data into the client.</li>
+	<li>Changed: Use an update badges API for the My Emoticons menu.</li>
+	<li>Changed: Support multiple sub tiers with the Channel emoticons menu.</li>
+</ul>
+
+<div class="list-header">3.5.518 <time datetime="2017-09-02">(2017-09-02)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Bug with rich content attached to chat messages not getting removed when a message is timed out.</li>
+</ul>
+
+<div class="list-header">3.5.517 <time datetime="2017-09-02">(2017-09-02)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Dark theme CSS tweak for the directory.</li>
+</ul>
+
+<div class="list-header">3.5.516 <time datetime="2017-09-01">(2017-09-01)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Typo in video url regular expression.</li>
+</ul>
+
+<div class="list-header">3.5.515 <time datetime="2017-09-01">(2017-09-01)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Option to disable rich content in chat.</li>
+	<li>Changed: Add support for rich content in chat. This includes shared purchases, clip information, and video information.</li>
+	<li>API Added: <code>replaces</code> field to emoticons to allow extension emotes to replace Twitch emotes.</li>
+</ul>
+
 <div class="list-header">3.5.514 <time datetime="2017-09-01">(2017-09-01)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Schedule parsing issue with null values.</li>
@@ -23,47 +64,6 @@
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: <code>Chat Appearance > Enable Custom Badge Images</code> setting that can be used to disable custom mod badges for channels.</li>
 	<li>Fixed: Re-sub messages not showing in channels without custom sub badges and with <code>Chat Appearance > Old-Style Subscriber Notices</code> enabled.</li>
-</ul>
-
-<div class="list-header">3.5.509 <time datetime="2017-08-07">(2017-08-07)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>API Changed: Throw the <code>room-recent-highlights</code> event even if the Recent Highlights feature is disabled.</li>
-</ul>
-
-<div class="list-header">3.5.508 <time datetime="2017-08-07">(2017-08-07)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>API Added: <code>room-recent-highlights</code> event for triggering behaviors when new highlighted messages are displayed.</li>
-	<li>API Changed: Allow extensions to repress chat messages by marking them as removed in the <code>room-message</code> API event.</li>
-</ul>
-
-<div class="list-header">3.5.507 <time datetime="2017-08-02">(2017-08-02)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Dark theme for the dashboard.</li>
-	<li>Fixed: Moderation cards not rendering correctly when you start by opening your own mod card.</li>
-</ul>
-
-<div class="list-header">3.5.506 <time datetime="2017-07-26">(2017-07-26)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Setting to hide Trending Emotes in chat.</li>
-	<li>Fixed: Make Minimal Chat input hide the trending emotes stuff too.</li>
-</ul>
-
-<div class="list-header">3.5.505 <time datetime="2017-07-24">(2017-07-24)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Changed: Minor dark theme tweaks.</li>
-	<li>Fixed: A scrollbar would appear at the side of the page at times due to tooltips.</li>
-	<li>Fixed: Don't escape HTML for legacy sidebar tooltips.</li>
-</ul>
-
-<div class="list-header">3.5.504 <time datetime="2017-07-13">(2017-07-13)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Added: Support for the <code>AUTOMOD_SMALLER</code> experiment. In-Line AutoMod is not yet working when you are part of that experiment.</li>
-</ul>
-
-<div class="list-header">3.5.503 <time datetime="2017-07-13">(2017-07-13)</time></div>
-<ul class="chat-menu-content menu-side-padding">
-	<li>Fixed: Emotes parsing in local messages.</li>
-	<li>Fixed: Use the <code>user-emotes</code> service in all places since <code>tmiSession</code>'s emote parser has been removed.</li>
 </ul>
 
 <div class="list-header" id="ffz-old-news-button"><a href="#">View Older</a></div>

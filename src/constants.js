@@ -126,6 +126,7 @@ module.exports = FrankerFaceZ.constants = {
 		//modifier: '262f'
 	},
 
+	COMMERCE_CARET: '<svg version="1.1" x="0" y="0" viewbox="0 0 792 612" enable-background="new 0 0 792 612"><path fill="#D8D8D8" d="M777.1,444.6c19.8,19.8,19.8,49.5,0,69.3c-19.8,19.8-49.5,19.8-69.3,0L361.4,167.4c-19.8-19.8-19.8-49.5,0-69.3c19.8-19.8,49.5-19.8,69.3,0L777.1,444.6z"></path><path fill="#D8D8D8" d="M430.6,98.1c19.8,19.8,19.8,49.5,0,69.3L84.1,513.9c-19.8,19.8-49.5,19.8-69.3,0c-19.8-19.8-19.8-49.5,0-69.3L361.3,98.1C381.1,78.3,410.9,78.3,430.6,98.1z"></path></svg',
 	ZREKNARF: svg('glyph_views svg-zreknarf', 16, 12.5, SVGPATH, '0 0 249 195'),
 	CHAT_BUTTON: svg('emoticons', 24, 18, SVGPATH, '0 0 249 195'),
 	ROOMS: svg('glyph_views svg-roomlist', 16, 16, 'M1,13v-2h14v2H1z M1,5h13v2H1V5z M1,2h10v2H1V2z M12,10H1V8h11V10z'),

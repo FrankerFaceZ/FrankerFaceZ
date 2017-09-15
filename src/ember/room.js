@@ -3,6 +3,11 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 	utils = require('../utils'),
 	tmimotes,
+	commerce,
+
+	CLIP_URL = /\b(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)(?:\/)?(\w+)?(?:\/edit)?\b/,
+	VIDEO_URL = /\b(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)(?:\?[\w\.-=]*)?\b/,
+	FFZ_URL = /\b(?:https?:\/\/)?(?:www\.)?frankerfacez\.com\/emoticon\/(\d+)(?:-\w*)?\b/,
 
 	NOTICE_MAPPING = {
 		'slow': 'slow_on',
@@ -56,6 +61,10 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype.setup_room = function() {
 	try {
 		tmimotes = window.require && window.require("web-client/utilities/tmi-emotes").default;
+	} catch(err) { }
+
+	try {
+		commerce = window.require && window.require("web-client/utils/commerce/chat");
 	} catch(err) { }
 
 	this.log("Creating room style element.");
@@ -2320,6 +2329,55 @@ FFZ.prototype._modify_room = function(room) {
 						msg.tags.emotes = tmimotes && user_emotes && tmimotes(user_emotes.tryParseEmotes(msg.message));
 					}
 				}
+
+				// Handle Rich Content
+				if ( commerce && commerce.addCommerceParamsAsRichContent )
+					commerce.addCommerceParamsAsRichContent(msg);
+
+				/*var first_clip = CLIP_URL.exec(msg.message);
+				if ( first_clip ) {
+					msg.tags.content = msg.tags.content || {};
+					msg.tags.content.clips = msg.tags.content.clips || [];
+					msg.tags.content.clips.push({
+						index: first_clip.index,
+						removeOriginal: true,
+						data: {
+							url: first_clip[0],
+							slug: first_clip[1]
+						}
+					})
+
+				} else {
+					var first_vid = VIDEO_URL.exec(msg.message);
+					if ( first_vid ) {
+						msg.tags.content = msg.tags.content || {};
+						msg.tags.content.clips = msg.tags.content.clips || [];
+						msg.tags.content.clips.push({
+							index: first_vid.index,
+							removeOriginal: true,
+							data: {
+								is_video: true,
+								url: first_vid[0],
+								video: first_vid[1]
+							}
+						})
+
+					} /*else {
+						var first_ffz = FFZ_URL.exec(msg.message);
+						if ( first_ffz ) {
+							msg.tags.content = msg.tags.content || {};
+							msg.tags.content.ffz_emotes = msg.tags.content.ffz_emotes || [];
+							msg.tags.content.ffz_emotes.push({
+								index: first_ffz.index,
+								removeOriginal: true,
+								data: {
+									url: first_ffz[0],
+									id: first_ffz[1]
+								}
+							})
+						}
+					}
+				}*/
 
 				// Tokenization
 				f.tokenize_chat_line(msg, false, this.get('roomProperties.hide_chat_links'));

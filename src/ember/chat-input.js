@@ -783,7 +783,7 @@ FFZ.prototype.modify_chat_input = function(component) {
 				room_id = room && room.get('id'),
 				user_emotes = utils.ember_lookup('service:user-emotes'),
 
-				set_name, replacement, url, is_inventory, is_sub_set, fav_list,
+				set_data, set_name, replacement, url, is_inventory, is_sub_set, fav_list,
 				emote_set, emote, emote_id, code, sort_factor, is_fav,
 				prefix_length, per_pref,
 
@@ -804,7 +804,8 @@ FFZ.prototype.modify_chat_input = function(component) {
 						is_inventory = f._twitch_inventory_sets.indexOf(set_id) !== -1;
 						fav_list = f.settings.favorite_emotes['twitch-' + (is_inventory ? 'inventory' : set_id)] || [];
 						is_sub_set = false;
-						set_name = f._twitch_set_to_channel[set_id];
+						set_data = !is_inventory && f.get_twitch_set(set_id);
+						set_name = set_data && set_data.c_name;
 						if ( ! emote_set )
 							continue;
 

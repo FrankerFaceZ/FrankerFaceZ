@@ -1,3 +1,44 @@
+<div class="list-header">3.5.509 <time datetime="2017-08-07">(2017-08-07)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>API Changed: Throw the <code>room-recent-highlights</code> event even if the Recent Highlights feature is disabled.</li>
+</ul>
+
+<div class="list-header">3.5.508 <time datetime="2017-08-07">(2017-08-07)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>API Added: <code>room-recent-highlights</code> event for triggering behaviors when new highlighted messages are displayed.</li>
+	<li>API Changed: Allow extensions to repress chat messages by marking them as removed in the <code>room-message</code> API event.</li>
+</ul>
+
+<div class="list-header">3.5.507 <time datetime="2017-08-02">(2017-08-02)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Dark theme for the dashboard.</li>
+	<li>Fixed: Moderation cards not rendering correctly when you start by opening your own mod card.</li>
+</ul>
+
+<div class="list-header">3.5.506 <time datetime="2017-07-26">(2017-07-26)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Setting to hide Trending Emotes in chat.</li>
+	<li>Fixed: Make Minimal Chat input hide the trending emotes stuff too.</li>
+</ul>
+
+<div class="list-header">3.5.505 <time datetime="2017-07-24">(2017-07-24)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Minor dark theme tweaks.</li>
+	<li>Fixed: A scrollbar would appear at the side of the page at times due to tooltips.</li>
+	<li>Fixed: Don't escape HTML for legacy sidebar tooltips.</li>
+</ul>
+
+<div class="list-header">3.5.504 <time datetime="2017-07-13">(2017-07-13)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Support for the <code>AUTOMOD_SMALLER</code> experiment. In-Line AutoMod is not yet working when you are part of that experiment.</li>
+</ul>
+
+<div class="list-header">3.5.503 <time datetime="2017-07-13">(2017-07-13)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Emotes parsing in local messages.</li>
+	<li>Fixed: Use the <code>user-emotes</code> service in all places since <code>tmiSession</code>'s emote parser has been removed.</li>
+</ul>
+
 <div class="list-header">3.5.502 <time datetime="2017-07-13">(2017-07-13)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Dark theme for chat.</li>

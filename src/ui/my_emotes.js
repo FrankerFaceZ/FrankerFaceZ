@@ -80,12 +80,39 @@ FFZ.settings_info.favorite_emotes = {
 
 
 FFZ.prototype.setup_my_emotes = function() {
+	var UserEmotes = utils.ember_lookup('service:user-emotes');
+	if ( UserEmotes ) {
+		this.modify_user_emotes(UserEmotes);
+		UserEmotes.ffzUpdateData();
+	}
+
 	this._twitch_badges = {};
 	this._twitch_badges["--inventory--"] = "//cdn.frankerfacez.com/script/inventory_icon.svg";
 	this._twitch_badges["--global--"] = "//cdn.frankerfacez.com/script/twitch_logo.png";
 	this._twitch_badges["--turbo-faces--"] = this._twitch_badges["turbo"] = "//cdn.frankerfacez.com/script/turbo_badge.png";
 	this._twitch_badges["--prime-faces--"] = this._twitch_badges["--prime--"] = "//cdn.frankerfacez.com/badges/twitch/premium/1/1.png";
 	this._twitch_badges["--curse--"] = "//cdn.frankerfacez.com/script/curse_logo.png";
+}
+
+
+FFZ.prototype.modify_user_emotes = function(service) {
+	var f = this;
+	service.reopen({
+		ffzUpdateData: function() {
+			var emotes = (this.get('allEmotes') || {})['emoticon_sets'] || {};
+			for(var set_id in emotes) {
+				f.get_twitch_set(set_id);
+				var es = emotes[set_id] || [],
+					esl = es.length;
+				for(var i=0; i < esl; i++)
+					f._twitch_emote_to_set[es[i].id] = set_id;
+			}
+
+			if ( f._inputv )
+				Ember.propertyDidChange(f._inputv, 'ffz_emoticons');
+
+		}.observes('allEmotes')
+	});
 }
 
 
@@ -101,7 +128,7 @@ FFZ.menu_pages.myemotes = {
 		var user = this.get_user(),
 			controller = utils.ember_lookup('controller:chat'),
 			user_emotes = utils.ember_lookup('service:user-emotes'),
-			twitch_sets = (user_emotes && user_emotes.allEmotes || {'emoticon_sets': {}})['emoticon_sets'] || {},
+			twitch_sets = (user_emotes && user_emotes.allEmotes || {})['emoticon_sets'] || {},
 			ffz_sets = user && this.users[user.login] && this.users[user.login].sets || [],
 
 			sk = twitch_sets && Object.keys(twitch_sets);
@@ -229,7 +256,7 @@ FFZ.menu_pages.myemotes = {
 	render_lists: function(view, container, favorites_only) {
 		var controller = utils.ember_lookup('controller:chat'),
 			user_emotes = utils.ember_lookup('service:user-emotes'),
-			twitch_sets = (user_emotes && user_emotes.allEmotes || {'emoticon_sets': {}})['emoticon_sets'] || {},
+			twitch_sets = (user_emotes && user_emotes.allEmotes || {})['emoticon_sets'] || {},
 
 			user = this.get_user(),
 			ffz_sets = this.getEmotes(user && user.login, null),
@@ -261,7 +288,8 @@ FFZ.menu_pages.myemotes = {
 				continue;
 			}
 
-			var raw_id = this._twitch_set_to_channel[set_id],
+			var raw_data = this.get_twitch_set(set_id),
+				raw_id = raw_data && raw_data.c_name,
 				menu_id = raw_id ? raw_id.toLowerCase() : 'unknown',
 				favorites_list = this.settings.favorite_emotes["twitch-" + set_id];
 
@@ -528,7 +556,8 @@ FFZ.menu_pages.myemotes = {
 			collapsed = ! favorites_only && this.settings.emote_menu_collapsed.indexOf('twitch-' + set_id) === -1,
 			f = this,
 
-			channel_id = set_id === 'inventory' ? '--inventory--' : (this._twitch_set_to_channel[set_id] || 'twitch_unknown'), title,
+			set_data = this.get_twitch_set(set_id),
+			channel_id = set_id === 'inventory' ? '--inventory--' : (set_data && set_data.c_name || 'twitch_unknown'), title,
 			favorites = this.settings.favorite_emotes["twitch-" + set_id] || [],
 			c = 0;
 
@@ -561,16 +590,18 @@ FFZ.menu_pages.myemotes = {
 				heading.style.backgroundImage = 'url("' + icon + '")';
 				if ( icon.indexOf('.svg') !== -1 )
 					heading.style.backgroundSize = "18px";
-			} else {
+			} else if ( set_data ) {
 				var f = this;
-				utils.api.get("chat/" + channel_id + "/badges", null, {version: 3})
-					.done(function(data) {
-						if ( data.subscriber && data.subscriber.image ) {
-							f._twitch_badges[channel_id] = data.subscriber.image;
-							localStorage.ffzTwitchBadges = JSON.stringify(f._twitch_badges);
-							heading.style.backgroundImage = 'url("' + data.subscriber.image + '")';
-						}
-					});
+				fetch("https://badges.twitch.tv/v1/badges/channels/" + set_data.c_id + "/display?language=" + (Twitch.receivedLanguage || "en"), {
+					headers: {
+						'Client-ID': constants.CLIENT_ID
+					}
+				}).then(utils.json).then(function(data) {
+					try {
+						var badge = f._twitch_badges[channel_id] = data.badge_sets.subscriber.versions[0].image_url_1x;
+						heading.style.backgroundImage = 'url("' + badge + '")';
+					} catch(err) { /* Lament JS's lack of null coalescing operators */ }
+				});
 			}
 
 			menu.classList.add('collapsable');
