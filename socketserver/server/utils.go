@@ -161,17 +161,3 @@ func RemoveFromSliceCl(ary *[]*ClientInfo, val *ClientInfo) bool {
 	*ary = slice
 	return true
 }
-
-func AddToSliceB(ary *[]bunchSubscriber, client *ClientInfo, mid int) bool {
-	newSub := bunchSubscriber{Client: client, MessageID: mid}
-	slice := *ary
-	for _, v := range slice {
-		if v == newSub {
-			return false
-		}
-	}
-
-	slice = append(slice, newSub)
-	*ary = slice
-	return true
-}

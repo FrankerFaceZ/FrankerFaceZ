@@ -505,7 +505,7 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 }
 
 // UnmarshalClientMessage unpacks websocket TextMessage into a ClientMessage provided in the `v` parameter.
-func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err error) {
+func UnmarshalClientMessage(data []byte, _ int, v interface{}) (err error) {
 	var spaceIdx int
 
 	out := v.(*ClientMessage)
@@ -550,7 +550,8 @@ func (cm *ClientMessage) parseOrigArguments() error {
 	return nil
 }
 
-func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []byte, err error) {
+// returns payloadType, data, err
+func MarshalClientMessage(clientMessage interface{}) (int, []byte, error) {
 	var msg ClientMessage
 	var ok bool
 	msg, ok = clientMessage.(ClientMessage)
