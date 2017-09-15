@@ -136,7 +136,7 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 		if client.ClientID == uuid.Nil {
 			client.ClientID = uuid.NewV4()
 		}
-	} else if _, ok := ary[1].(bool); ok {
+	} else if _, ok := ary[1].(bool); (ok || ary[1] == nil) {
 		// opt out
 		client.ClientID = AnonymousClientID
 	} else {
