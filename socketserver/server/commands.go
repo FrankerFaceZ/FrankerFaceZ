@@ -425,14 +425,6 @@ type bunchSubscriberList struct {
 	Members []bunchSubscriber
 }
 
-type cacheStatus byte
-
-const (
-	CacheStatusNotFound = iota
-	CacheStatusFound
-	CacheStatusExpired
-)
-
 var bunchGroup singleflight.Group
 
 // C2SHandleBunchedCommand handles C2S Commands such as `get_link`.
@@ -451,7 +443,11 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 		reply.MessageID = msg.MessageID
 		if result.Err != nil {
 			reply.Command = ErrorCommand
-			reply.Arguments = result.Err.Error()
+			if efb, ok := result.Err.(ErrForwardedFromBackend); ok {
+				reply.Arguments = efb.JSONError
+			} else {
+				reply.Arguments = result.Err.Error()
+			}
 		} else {
 			reply.Command = SuccessCommand
 			reply.origArguments = result.Val.(string)
