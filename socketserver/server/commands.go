@@ -448,12 +448,12 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 	go func() {
 		result := <-resultCh
 		var reply ClientMessage
+		reply.MessageID = msg.MessageID
 		if result.Err != nil {
 			reply.Command = ErrorCommand
 			reply.Arguments = result.Err.Error()
 		} else {
 			reply.Command = SuccessCommand
-			reply.MessageID = msg.MessageID
 			reply.origArguments = result.Val.(string)
 			reply.parseOrigArguments()
 		}

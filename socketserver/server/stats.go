@@ -12,6 +12,8 @@ import (
 )
 
 type StatsData struct {
+	updateMu sync.Mutex
+
 	StatsDataVersion int
 
 	StartTime time.Time
@@ -114,6 +116,9 @@ func SetBuildStamp(buildTime, buildHash string) {
 }
 
 func updateStatsIfNeeded() {
+	Statistics.updateMu.Lock()
+	defer Statistics.updateMu.Unlock()
+
 	if time.Now().Add(-2 * time.Second).After(Statistics.CachedStatsLastUpdate) {
 		updatePeriodicStats()
 	}
