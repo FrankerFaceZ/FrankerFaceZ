@@ -110,44 +110,62 @@ func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 	return handler(conn, client, cmsg)
 }
 
+var DebugHello = ""
+
 // C2SHello implements the `hello` C2S Command.
 // It calls SubscribeGlobal() and SubscribeDefaults() with the client, and fills out ClientInfo.Version and ClientInfo.ClientID.
 func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
 	ary, ok := msg.Arguments.([]interface{})
 	if !ok {
+		if DebugHello != "" {
+			fmt.Println("Hello error: was not an array:", ary)
+		}
 		err = ErrExpectedTwoStrings
 		return
 	}
 	if len(ary) != 2 {
+		if DebugHello != "" {
+			fmt.Println("Hello error: array wrong length:", ary)
+		}
 		err = ErrExpectedTwoStrings
 		return
 	}
 	version, ok := ary[0].(string)
 	if !ok {
+		if DebugHello != "" {
+			fmt.Println("Hello error: version not a string:", ary)
+		}
 		err = ErrExpectedTwoStrings
 		return
 	}
 
-	client.VersionString = copyString(version)
-	client.Version = VersionFromString(version)
-
+	var clientID uuid.UUID
 	if clientIDStr, ok := ary[1].(string); ok {
-		client.ClientID = uuid.FromStringOrNil(clientIDStr)
-		if client.ClientID == uuid.Nil {
-			client.ClientID = uuid.NewV4()
+		clientID = uuid.FromStringOrNil(clientIDStr)
+		if clientID == uuid.Nil {
+			clientID = uuid.NewV4()
 		}
 	} else if _, ok := ary[1].(bool); ok {
 		// opt out
-		client.ClientID = AnonymousClientID
+		clientID = AnonymousClientID
 	} else if ary[1] == nil {
-		client.ClientID = uuid.NewV4()
+		clientID = uuid.NewV4()
 	} else {
+		if DebugHello != "" {
+			fmt.Println("Hello error: client id not acceptable:", ary)
+		}
 		err = ErrExpectedTwoStrings
 		return
 	}
 
-	uniqueUserChannel <- client.ClientID
+	client.Mutex.Lock()
+	client.ClientID = clientID
+	client.VersionString = copyString(version)
+	client.Version = VersionFromString(version)
+	client.HelloOK = true
+	client.Mutex.Unlock()
 
+	uniqueUserChannel <- client.ClientID
 	SubscribeGlobal(client)
 
 	jsTime := float64(time.Now().UnixNano()/1000) / 1000

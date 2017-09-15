@@ -336,7 +336,9 @@ func RunSocketConnection(conn *websocket.Conn) {
 
 	conn.SetPongHandler(func(pongBody string) error {
 		client.Mutex.Lock()
-		client.pingCount = 0
+		if client.HelloOK { // do not accept PONGs until hello sent
+			client.pingCount = 0
+		}
 		client.Mutex.Unlock()
 		return nil
 	})
@@ -430,7 +432,7 @@ func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan 
 			}
 
 		case msg := <-clientChan:
-			if client.VersionString == "" && msg.Command != HelloCommand {
+			if !client.HelloOK && msg.Command != HelloCommand {
 				return CloseFirstMessageNotHello
 			}
 
