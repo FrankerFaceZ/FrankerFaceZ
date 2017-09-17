@@ -103,9 +103,11 @@ FFZ.prototype.modify_user_emotes = function(service) {
 			for(var set_id in emotes) {
 				f.get_twitch_set(set_id);
 				var es = emotes[set_id] || [],
-					esl = es.length;
+					esl = es.length,
+					sid = typeof set_id === "number" ? set_id : parseInt(set_id);
+
 				for(var i=0; i < esl; i++)
-					f._twitch_emote_to_set[es[i].id] = set_id;
+					f._twitch_emote_to_set[es[i].id] = sid;
 			}
 
 			if ( f._inputv )

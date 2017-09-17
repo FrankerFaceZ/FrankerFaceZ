@@ -399,8 +399,14 @@ FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
 
 	this._twitch_emote_to_set[emote_id] = null;
 	var f = this,
-		use_ss = this._ws_open && Math.random() > .5,
+		use_ss = this._ws_open,
+		timer = null,
 		cb = function(success, data) {
+			if ( timer ) {
+				clearTimeout(timer);
+				timer = null;
+			}
+
 			if ( ! success ) {
 				f._twitch_emote_to_set[emote_id] = UNSET;
 				return;
@@ -417,9 +423,10 @@ FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
 				callback(set_id);
 		};
 
-	if ( use_ss )
+	if ( use_ss ) {
 		this.ws_send("get_emote", emote_id, cb);
-	else
+		timer = setTimeout(cb.bind(this, false, null), 1000);
+	} else
 		fetch(constants.API_SERVER = "ed/emote/" + emote_id)
 			.then(function(resp) {
 				if ( ! resp.ok )
@@ -428,6 +435,8 @@ FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
 					cb(true, data);
 				})
 			});
+
+	return null;
 }
 
 
@@ -444,8 +453,14 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 	this._twitch_set_to_channel[set_id] = null;
 
 	var f = this,
-		use_ss = this._ws_open && Math.random() > .5,
+		use_ss = this._ws_open,
+		timer = null,
 		cb = function(success, data) {
+			if ( timer ) {
+				clearTimeout(timer);
+				timer = null;
+			}
+
 			if ( ! success ) {
 				f._twitch_set_to_channel[set_id] = UNSET;
 				return;
@@ -456,9 +471,10 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 				callback(data || null);
 		};
 
-	if ( use_ss )
+	if ( use_ss ) {
 		this.ws_send("get_emote_set", set_id, cb);
-	else
+		timer = setTimeout(cb.bind(this, false, null), 1000);
+	} else
 		fetch(constants.API_SERVER + "ed/set/" + set_id)
 			.then(function(resp) {
 				if ( ! resp.ok )
@@ -467,6 +483,8 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 					cb(true, data);
 				})
 			});
+
+	return null;
 }
 
 
@@ -568,8 +586,8 @@ FFZ.prototype.render_tooltip = function(el) {
 
 				emote_id = this.getAttribute('data-emote');
 				if ( emote_id ) {
-					set_id = f._twitch_emote_to_set[emote_id];
-					var set_data = set_id && f.get_twitch_set(set_id);
+					set_id = f.get_twitch_set_for(emote_id);
+					var set_data = set_id !== null && f.get_twitch_set(set_id);
 					emote_set = set_data && set_data.c_name;
 
 					var set_type = "Channel",

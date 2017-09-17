@@ -115,9 +115,35 @@ FFZ.debugging_blocks = {
 			return [
 				['Client ID', localStorage.ffzClientId || '<i>not set</i>'],
 				['Socket Server', this._ws_sock && this._ws_sock.url || '<i>disconnected</i>'],
+				['Authenticated', this._ws_open && this._ws_authenticated],
 				['Server Ping', last_ping || '<i>unknown</i>'],
 				['Time Offset', offset || '<i>unknown</i>']
 			]
+		}
+	},
+
+	socket_servers: {
+		order: 3,
+		title: 'WS Server Status',
+		refresh: 5000,
+		type: 'list',
+
+		render: function() {
+			var f = this;
+			return new Promise(function(succeed, fail) {
+				f.ws_send("get_server_status", null, function(s,data) {
+					if ( ! s )
+						return fail();
+
+					f._ws_authenticated = data['authenticated'];
+					var output = [];
+					for(var key in data)
+						if ( key !== 'authenticated' )
+							output.push([key, data[key]]);
+
+					succeed(output);
+				})
+			});
 		}
 	},
 
