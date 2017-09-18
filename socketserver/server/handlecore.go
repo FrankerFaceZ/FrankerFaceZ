@@ -530,6 +530,10 @@ func UnmarshalClientMessage(data []byte, _ int, v interface{}) (err error) {
 	out := v.(*ClientMessage)
 	dataStr := string(data)
 
+	if len(dataStr) == 0 {
+		out.MessageID = 0
+		return nil // test: ignore empty frames
+	}
 	// Message ID
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
