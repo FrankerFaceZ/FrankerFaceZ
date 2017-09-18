@@ -104,7 +104,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/cached_pub", HTTPBackendCachedPublish)
 	serveMux.HandleFunc("/get_sub_count", HTTPGetSubscriberCount)
 
-	announceForm, err := Backend.SealRequest(url.Values{
+	announceForm, err := Backend.secureForm.Seal(url.Values{
 		"startup": []string{"1"},
 	})
 	if err != nil {
@@ -249,11 +249,21 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type fatalDecodeError string
+
+func (e fatalDecodeError) Error() string {
+	return string(e)
+}
+
+func (e fatalDecodeError) IsFatal() bool {
+	return true
+}
+
 // ErrProtocolGeneric is sent in a ErrorCommand Reply.
-var ErrProtocolGeneric error = errors.New("FFZ Socket protocol error.")
+var ErrProtocolGeneric error = fatalDecodeError("FFZ Socket protocol error.")
 
 // ErrProtocolNegativeMsgID is sent in a ErrorCommand Reply when a negative MessageID is received.
-var ErrProtocolNegativeMsgID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
+var ErrProtocolNegativeMsgID error = fatalDecodeError("FFZ Socket protocol error: negative or zero message ID.")
 
 // ErrExpectedSingleString is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedSingleString = errors.New("Error: Expected single string as arguments.")
@@ -344,7 +354,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 	})
 
 	// All set up, now enter the work loop
-	go runSocketReader(conn, _errorChan, _clientChan, stoppedChan)
+	go runSocketReader(conn, &client, _errorChan, _clientChan)
 	closeReason := runSocketWriter(conn, &client, _errorChan, _clientChan, _serverMessageChan)
 
 	// Exit
@@ -376,11 +386,13 @@ func RunSocketConnection(conn *websocket.Conn) {
 	}
 }
 
-func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
+func runSocketReader(conn *websocket.Conn, client *ClientInfo, errorChan chan<- error, clientChan chan<- ClientMessage) {
 	var msg ClientMessage
 	var messageType int
 	var packet []byte
 	var err error
+
+	stoppedChan := client.MsgChannelIsDone
 
 	defer close(errorChan)
 	defer close(clientChan)
@@ -395,8 +407,15 @@ func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan ch
 			break
 		}
 
-		UnmarshalClientMessage(packet, messageType, &msg)
-		if msg.MessageID == 0 {
+		msg = ClientMessage{}
+		msgErr := UnmarshalClientMessage(packet, messageType, &msg)
+		if _, ok := msgErr.(interface{IsFatal() bool}); ok {
+			errorChan <- msgErr
+			continue
+		} else if msgErr != nil {
+			client.Send(msg.Reply(ErrorCommand, msgErr.Error()))
+			continue
+		} else if msg.MessageID == 0 {
 			continue
 		}
 		select {
@@ -505,7 +524,7 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 }
 
 // UnmarshalClientMessage unpacks websocket TextMessage into a ClientMessage provided in the `v` parameter.
-func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err error) {
+func UnmarshalClientMessage(data []byte, _ int, v interface{}) (err error) {
 	var spaceIdx int
 
 	out := v.(*ClientMessage)
@@ -514,11 +533,11 @@ func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err er
 	// Message ID
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
-		return ErrProtocolGeneric
+		return ErrProtocolGeneric // fatal error
 	}
 	messageID, err := strconv.Atoi(dataStr[:spaceIdx])
 	if messageID < -1 || messageID == 0 {
-		return ErrProtocolNegativeMsgID
+		return ErrProtocolNegativeMsgID // fatal error
 	}
 
 	out.MessageID = messageID
@@ -551,7 +570,8 @@ func (cm *ClientMessage) parseOrigArguments() error {
 	return nil
 }
 
-func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []byte, err error) {
+// returns payloadType, data, err
+func MarshalClientMessage(clientMessage interface{}) (int, []byte, error) {
 	var msg ClientMessage
 	var ok bool
 	msg, ok = clientMessage.(ClientMessage)

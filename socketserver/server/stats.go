@@ -209,7 +209,7 @@ func updateSysMem() {
 }
 
 // HTTPShowStatistics handles the /stats endpoint. It writes out the Statistics object as indented JSON.
-func HTTPShowStatistics(w http.ResponseWriter, r *http.Request) {
+func HTTPShowStatistics(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	updateStatsIfNeeded()

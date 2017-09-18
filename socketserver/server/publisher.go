@@ -123,7 +123,7 @@ func saveLastMessage(cmd Command, channel string, expires time.Time, data string
 
 func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	formData, err := Backend.UnsealRequest(r.Form)
+	formData, err := Backend.secureForm.Unseal(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)
@@ -160,7 +160,7 @@ func rateLimitFromRequest(r *http.Request) (rate.Limiter, error) {
 // If the 'expires' parameter is not specified, the message will not expire (though it is only kept in-memory).
 func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	formData, err := Backend.UnsealRequest(r.Form)
+	formData, err := Backend.secureForm.Unseal(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)
@@ -227,7 +227,7 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 // If "scope" is "global", then "channel" is not used.
 func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	formData, err := Backend.UnsealRequest(r.Form)
+	formData, err := Backend.secureForm.Unseal(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)
@@ -292,7 +292,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 // A "global" option is not available, use fetch(/stats).CurrentClientCount instead.
 func HTTPGetSubscriberCount(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	formData, err := Backend.UnsealRequest(r.Form)
+	formData, err := Backend.secureForm.Unseal(r.Form)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "Error: %v", err)
