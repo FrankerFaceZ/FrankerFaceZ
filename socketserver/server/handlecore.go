@@ -528,6 +528,7 @@ func UnmarshalClientMessage(data []byte, _ int, v interface{}) (err error) {
 	if spaceIdx == -1 {
 		out.Command = CommandPool.InternCommand(dataStr)
 		out.Arguments = nil
+		out.origArguments = ""
 		return nil
 	} else {
 		out.Command = CommandPool.InternCommand(dataStr[:spaceIdx])

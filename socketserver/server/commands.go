@@ -108,31 +108,20 @@ func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 	return handler(conn, client, cmsg)
 }
 
-var DebugHello = ""
-
 // C2SHello implements the `hello` C2S Command.
 // It calls SubscribeGlobal() and SubscribeDefaults() with the client, and fills out ClientInfo.Version and ClientInfo.ClientID.
 func C2SHello(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (_ ClientMessage, err error) {
 	ary, ok := msg.Arguments.([]interface{})
 	if !ok {
-		if DebugHello != "" {
-			fmt.Println("Hello error: was not an array:", ary)
-		}
 		err = ErrExpectedTwoStrings
 		return
 	}
 	if len(ary) != 2 {
-		if DebugHello != "" {
-			fmt.Println("Hello error: array wrong length:", ary)
-		}
 		err = ErrExpectedTwoStrings
 		return
 	}
 	version, ok := ary[0].(string)
 	if !ok {
-		if DebugHello != "" {
-			fmt.Println("Hello error: version not a string:", ary)
-		}
 		err = ErrExpectedTwoStrings
 		return
 	}
@@ -149,9 +138,6 @@ func C2SHello(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (_ Clien
 	} else if ary[1] == nil {
 		clientID = uuid.NewV4()
 	} else {
-		if DebugHello != "" {
-			fmt.Println("Hello error: client id not acceptable:", ary)
-		}
 		err = ErrExpectedTwoStrings
 		return
 	}

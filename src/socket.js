@@ -165,6 +165,7 @@ FFZ.prototype.ws_create = function() {
 
 	ws.onopen = function(e) {
 		f._ws_open = true;
+		f._ws_authenticated = false;
 		f._ws_delay = 0;
 		f.log("Socket Connected.");
 
