@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/rate"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/singleflight"
 )
 
 // LastSavedMessage contains a reply to a command along with an expiration time.
@@ -24,6 +26,8 @@ type LastSavedMessage struct {
 // Not actually cleaned up by reaper goroutine every ~hour.
 var CachedLastMessages = make(map[Command]map[string]LastSavedMessage)
 var CachedLSMLock sync.RWMutex
+
+var singleFlighter singleflight.Group
 
 func cachedMessageJanitor() {
 	for {
@@ -302,4 +306,20 @@ func HTTPGetSubscriberCount(w http.ResponseWriter, r *http.Request) {
 	channel := formData.Get("channel")
 
 	fmt.Fprint(w, CountSubscriptions(strings.Split(channel, ",")))
+}
+
+func HTTPListAllTopics(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	_, err := Backend.secureForm.Unseal(r.Form)
+	if err != nil {
+		//w.WriteHeader(403)
+		//fmt.Fprintf(w, "Error: %v", err)
+		//return
+	}
+
+	topicList, _, _ := singleFlighter.Do("/all_topics", func() (interface{}, error) {
+		return GetAllTopics(), nil
+	})
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(topicList)
 }
