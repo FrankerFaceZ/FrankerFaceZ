@@ -141,9 +141,11 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 		return "", ErrAuthorizationNeeded
 	} else if resp.StatusCode < 200 || resp.StatusCode > 299 { // any non-2xx
 		// If the Content-Type header includes a charset, ignore it.
+		// typeStr, _, _ = mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		// inline the part of the function we care about
 		typeStr := resp.Header.Get("Content-Type")
 		splitIdx := strings.IndexRune(typeStr, ';')
-		if ( splitIdx != -1 ) {
+		if splitIdx != -1 {
 			typeStr = strings.TrimSpace(typeStr[0:splitIdx])
 		}
 

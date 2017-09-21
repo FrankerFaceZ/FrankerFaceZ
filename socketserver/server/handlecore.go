@@ -139,30 +139,21 @@ func startJanitors() {
 	go pubsubJanitor()
 
 	go ircConnection()
-	go shutdownHandler()
 }
 
-// is_init_func
-func shutdownHandler() {
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGUSR1)
-	signal.Notify(ch, syscall.SIGTERM)
-	<-ch
-	log.Println("Shutting down...")
-
-	var wg sync.WaitGroup
+// Shutdown disconnects all clients.
+func Shutdown(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		writeHLL()
-		wg.Done()
 	}()
-
-	StopAcceptingConnections = true
-	close(StopAcceptingConnectionsCh)
-
-	time.Sleep(1 * time.Second)
-	wg.Wait()
-	os.Exit(0)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		close(StopAcceptingConnectionsCh)
+		time.Sleep(2 * time.Second)
+	}()
 }
 
 // is_init_func +test
@@ -200,7 +191,6 @@ var BannerHTML []byte
 
 // StopAcceptingConnectionsCh is closed while the server is shutting down.
 var StopAcceptingConnectionsCh = make(chan struct{})
-var StopAcceptingConnections = false
 
 // HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
 // It either uses the SocketUpgrader or writes out the BannerHTML.
@@ -208,13 +198,6 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		fmt.Println(404)
-		return
-	}
-
-	// racy, but should be ok?
-	if StopAcceptingConnections {
-		w.WriteHeader(503)
-		fmt.Fprint(w, "server is shutting down")
 		return
 	}
 
@@ -376,8 +359,10 @@ func RunSocketConnection(conn *websocket.Conn) {
 
 	// And done.
 
-	if !StopAcceptingConnections {
+	select {
+	case <-StopAcceptingConnectionsCh:
 		// Don't perform high contention operations when server is closing
+	default:
 		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
 		atomic.AddUint64(&Statistics.ClientDisconnectsTotal, 1)
 
@@ -410,7 +395,9 @@ func runSocketReader(conn *websocket.Conn, client *ClientInfo, errorChan chan<- 
 
 		msg = ClientMessage{}
 		msgErr := UnmarshalClientMessage(packet, messageType, &msg)
-		if _, ok := msgErr.(interface{IsFatal() bool}); ok {
+		if _, ok := msgErr.(interface {
+			IsFatal() bool
+		}); ok {
 			errorChan <- msgErr
 			continue
 		} else if msgErr != nil {
