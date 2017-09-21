@@ -103,6 +103,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
 	serveMux.HandleFunc("/cached_pub", HTTPBackendCachedPublish)
 	serveMux.HandleFunc("/get_sub_count", HTTPGetSubscriberCount)
+	serveMux.HandleFunc("/all_topics", HTTPListAllTopics)
 
 	announceForm, err := Backend.secureForm.Seal(url.Values{
 		"startup": []string{"1"},

@@ -47,6 +47,20 @@ func CountSubscriptions(channels []string) int {
 	return count
 }
 
+func GetAllTopics() []string {
+	ChatSubscriptionLock.RLock()
+	defer ChatSubscriptionLock.RUnlock()
+
+	count := len(ChatSubscriptionInfo)
+	list := make([]string, count)
+	i := 0
+	for topicName := range ChatSubscriptionInfo {
+		list[i] = topicName
+		i++
+	}
+	return list
+}
+
 func SubscribeChannel(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
 	_subscribeWhileRlocked(channelName, client)
