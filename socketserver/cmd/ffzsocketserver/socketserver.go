@@ -1,6 +1,7 @@
 package main // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/cmd/ffzsocketserver"
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,6 +9,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 )
@@ -56,17 +61,63 @@ func main() {
 
 	go commandLineConsole()
 
+	var server1, server2 *http.Server
+
+	stopSig := make(chan os.Signal, 3)
+	signal.Notify(stopSig, os.Interrupt)
+	signal.Notify(stopSig, syscall.SIGUSR1)
+	signal.Notify(stopSig, syscall.SIGTERM)
+
 	if conf.UseSSL {
+		server1 = &http.Server{
+			Addr:    conf.SSLListenAddr,
+			Handler: http.DefaultServeMux,
+		}
 		go func() {
-			if err := http.ListenAndServeTLS(conf.SSLListenAddr, conf.SSLCertificateFile, conf.SSLKeyFile, http.DefaultServeMux); err != nil {
-				log.Fatal("ListenAndServeTLS: ", err)
+			if err := server1.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile); err != nil {
+				log.Println("ListenAndServeTLS:", err)
+				stopSig <- os.Interrupt
 			}
 		}()
 	}
 
-	if err = http.ListenAndServe(conf.ListenAddr, http.DefaultServeMux); err != nil {
-		log.Fatal("ListenAndServe: ", err)
+	if true {
+		server2 = &http.Server{
+			Addr:    conf.ListenAddr,
+			Handler: http.DefaultServeMux,
+		}
+		go func() {
+			if err := server2.ListenAndServe(); err != nil {
+				log.Println("ListenAndServe: ", err)
+				stopSig <- os.Interrupt
+			}
+		}()
+
 	}
+
+	<-stopSig
+	log.Println("Shutting down...")
+
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if conf.UseSSL {
+			server1.Shutdown(ctx)
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		server2.Shutdown(ctx)
+	}()
+	server.Shutdown(&wg)
+
+	time.Sleep(1 * time.Second)
+	wg.Wait()
 }
 
 func generateKeys(outputFile string) {
