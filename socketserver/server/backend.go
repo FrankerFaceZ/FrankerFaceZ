@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/naclform"
-	"github.com/karlseguin/ccache"
+	cache "github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/sync/singleflight"
 )
@@ -29,7 +29,7 @@ const bPathOtherCommand = "/cmd/"
 type backendInfo struct {
 	HTTPClient    http.Client
 	baseURL       string
-	responseCache *ccache.Cache
+	responseCache *cache.Cache
 	reloadGroup   singleflight.Group
 
 	postStatisticsURL  string
@@ -52,7 +52,7 @@ func setupBackend(config *ConfigFile) *backendInfo {
 	b.HTTPClient.Timeout = 60 * time.Second
 	b.baseURL = config.BackendURL
 	// size in bytes of string payload
-	b.responseCache = ccache.New(ccache.Configure().MaxSize(250 * 1000 * 1024))
+	b.responseCache = cache.New(60*time.Second, 10*time.Minute)
 
 	b.announceStartupURL = fmt.Sprintf("%s%s", b.baseURL, bPathAnnounceStartup)
 	b.addTopicURL = fmt.Sprintf("%s%s", b.baseURL, bPathAddTopic)
@@ -80,18 +80,6 @@ func getCacheKey(remoteCommand, data string) string {
 	return fmt.Sprintf("%s/%s", remoteCommand, data)
 }
 
-type cachedResponseStr string
-
-// implements ccache.Sized
-func (c cachedResponseStr) Size() int64 {
-	return int64(len(string(c)))
-}
-
-// implements Stringer
-func (c cachedResponseStr) String() string {
-	return string(c)
-}
-
 // ErrForwardedFromBackend is an error returned by the backend server.
 type ErrForwardedFromBackend struct {
 	JSONError interface{}
@@ -114,16 +102,9 @@ var ErrAuthorizationNeeded = errors.New("Must authenticate Twitch username to us
 // and the cache is updated in the background.
 func (backend *backendInfo) SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string, error) {
 	cacheKey := getCacheKey(remoteCommand, data)
-	item := backend.responseCache.Get(cacheKey)
-	if item != nil {
-		if item.Expired() {
-			// reload in background
-			go backend.reloadGroup.Do(cacheKey, func() (interface{}, error) {
-				backend.SendRemoteCommand(remoteCommand, data, auth)
-				return nil, nil
-			})
-		}
-		return item.Value().(cachedResponseStr).String(), nil
+	cached, ok := backend.responseCache.Get(cacheKey)
+	if ok {
+		return cached.(string), nil
 	}
 	return backend.SendRemoteCommand(remoteCommand, data, auth)
 }
@@ -208,7 +189,7 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 		duration := time.Duration(durSecs) * time.Second
 		backend.responseCache.Set(
 			getCacheKey(remoteCommand, data),
-			cachedResponseStr(responseStr),
+			responseStr,
 			duration,
 		)
 	}

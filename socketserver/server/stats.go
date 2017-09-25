@@ -38,7 +38,7 @@ type StatsData struct {
 	MemoryInUseKB uint64
 	MemoryRSSKB   uint64
 
-	ResponseCacheItems uint64
+	ResponseCacheItems int
 	MemPerClientBytes  uint64
 
 	CpuUsagePct float64
@@ -169,6 +169,7 @@ func updatePeriodicStats() {
 
 	{
 		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime).String()
+		Statistics.ResponseCacheItems = Backend.responseCache.ItemCount()
 	}
 
 	{
