@@ -169,7 +169,6 @@ func updatePeriodicStats() {
 
 	{
 		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime).String()
-		Statistics.ResponseCacheItems = Backend.responseCache.ItemCount()
 	}
 
 	{

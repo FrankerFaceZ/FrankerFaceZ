@@ -34,7 +34,7 @@ var commandHandlers = map[Command]CommandHandler{
 	"survey":        C2SSurvey,
 }
 
-var bunchedCommands = []string{
+var bunchedCommands = []Command{
 	"get_display_name",
 	"get_emote",
 	"get_emote_set",

@@ -205,7 +205,6 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 		updateSysMem()
 
 		if Statistics.SysMemFreeKB > 0 && Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
-			atomic.AddUint64(&Statistics.LowMemDroppedConnections, 1)
 			w.WriteHeader(503)
 			fmt.Fprint(w, "error: low memory")
 			return
