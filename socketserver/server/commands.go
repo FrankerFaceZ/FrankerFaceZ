@@ -32,14 +32,17 @@ var commandHandlers = map[Command]CommandHandler{
 	"track_follow":  C2STrackFollow,
 	"emoticon_uses": C2SEmoticonUses,
 	"survey":        C2SSurvey,
+}
 
-	"twitch_emote":          C2SHandleBunchedCommand,
-	"get_link":              C2SHandleBunchedCommand,
-	"get_display_name":      C2SHandleBunchedCommand,
-	"get_emote":             C2SHandleBunchedCommand,
-	"get_emote_set":         C2SHandleBunchedCommand,
-	"has_logs":              C2SHandleBunchedCommand,
-	"update_follow_buttons": C2SHandleRemoteCommand,
+var bunchedCommands = []string{
+	"get_display_name",
+	"get_emote",
+	"get_emote_set",
+	"get_link",
+	"get_itad_plain",
+	"get_itad_prices",
+	"get_name_history",
+	"has_logs",
 }
 
 func setupInterning() {
@@ -71,6 +74,12 @@ func DispatchC2SCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 	handler, ok := commandHandlers[msg.Command]
 	if !ok {
 		handler = C2SHandleRemoteCommand
+
+		for _, v := range bunchedCommands {
+			if msg.Command == v {
+				handler = C2SHandleBunchedCommand
+			}
+		}
 	}
 
 	CommandCounter <- msg.Command
