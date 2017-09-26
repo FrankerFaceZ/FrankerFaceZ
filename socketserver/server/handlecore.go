@@ -586,7 +586,9 @@ func MarshalClientMessage(clientMessage interface{}) (int, []byte, error) {
 		msg.MessageID = -1
 	}
 
-	if msg.Arguments != nil {
+	if msg.origArguments != "" {
+		dataStr = fmt.Sprintf("%d %s %s", msg.MessageID, msg.Command, msg.origArguments)
+	} else if msg.Arguments != nil {
 		argBytes, err := json.Marshal(msg.Arguments)
 		if err != nil {
 			return 0, nil, err
