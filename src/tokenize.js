@@ -10,6 +10,7 @@ var FFZ = window.FrankerFaceZ,
 
 	HOP = Object.prototype.hasOwnProperty,
 
+	TOOLTIP_VERSION = 2,
 	FAV_MARKER = '<span class="ffz-favorite"></span>',
 
 	EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
@@ -20,6 +21,7 @@ var FFZ = window.FrankerFaceZ,
 
 	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=()]*)/g,
 
+	TIME_REPLACER = /<time\s+datetime=(["'])([^>]+?)\1[^>]*>(.*?)<\/time>/i,
 	CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+?\/?\w*?)(?:\/edit)?(?:[\?#]|$)/,
 	VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)$/,
 	FFZ_EMOTE_URL = /^(?:https?:\/\/)?(?:www\.)?frankerfacez\.com\/emoticon\/(\d+)(?:-\w*)?$/,
@@ -51,21 +53,6 @@ var FFZ = window.FrankerFaceZ,
 
 	image_iframe = function(href, extra_class) {
 		return '<iframe class="ffz-image-hover' + (extra_class ? ' ' + extra_class : '') + '" allowtransparency="true" src="' + constants.SERVER + 'script/img-proxy.html#' + utils.quote_attr(href) + '"></iframe>';
-	},
-
-	load_link_data = function(href, success, data) {
-		if ( ! success )
-			return;
-
-		this._link_data[href] = data;
-		//data.unsafe = false;
-
-		if ( ! this.settings.link_info )
-			return;
-
-		// If this link is unsafe, add the unsafe-link class to all instances of the link.
-		if ( data.unsafe )
-			jQuery('a.chat-link[data-url="' + href + '"]').addClass('unsafe-link');
 	};
 
 
@@ -348,43 +335,6 @@ FFZ.prototype.format_display_name = function(display_name, user_id, disable_alia
 // Twitch Emote Data
 // ---------------------
 
-/*FFZ.prototype.load_twitch_emote_data = function(tries) {
-	var f = this;
-	f._twitch_set_to_channel[0] = "--global--";
-	f._twitch_set_to_channel[33] = "--turbo-faces--";
-	f._twitch_set_to_channel[42] = "--turbo-faces--";
-	f._twitch_set_to_channel[19194] = "--prime--";
-	f._twitch_set_to_channel[19151] = "--curse--";
-
-	/*this.log("Loading Twitch Emote Data (Try " + (tries || 0) + ")");
-
-	jQuery.ajax(constants.SERVER + "twitch_emotes.json")
-		.done(function(data) {
-			f.log("Loaded Twitch Emote Data", data);
-			for(var set_id in data) {
-				var set = data[set_id],
-					old_id = f._twitch_set_to_channel[set_id];
-				if ( ! set )
-					continue;
-
-				if ( ! old_id || old_id.indexOf('--') === -1 )
-					f._twitch_set_to_channel[set_id] = set.name;
-
-				for(var i=0, l = set.emotes.length; i < l; i++)
-					f._twitch_emote_to_set[set.emotes[i]] = set_id;
-			}
-
-		}).fail(function(data) {
-			f.log("Error loading Twitch Emote Data", data);
-			if ( data.status === 404 )
-				return;
-
-			tries = (tries || 0) + 1;
-			if ( tries < 10 )
-				setTimeout(f.load_twitch_emote_data.bind(f, tries), 1000);
-		});*
-}*/
-
 var UNSET = {};
 
 FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
@@ -491,6 +441,149 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 // ---------------------
 // Tooltip Rendering
 // ---------------------
+
+FFZ.prototype.clean_link_info = function() {
+	clearTimeout(this._link_info_cleaner);
+
+	var now = Date.now(),
+		obj = {};
+
+	for(var url in this._link_data) {
+		var data = this._link_data[url];
+		if ( data && (! data[1] || now <= data[1] ) )
+			obj[url] = data;
+	}
+
+	this._link_data = obj;
+	this._link_info_cleaner = setTimeout(this.clean_link_info.bind(this), 120000);
+}
+
+
+FFZ.prototype.get_link_info = function(url, no_promises) {
+	var f = this,
+		info = this._link_data[url],
+		expires = info && info[1],
+
+		li = this.settings.link_info;
+
+	if ( ! li || (expires && Date.now() > expires) )
+		info = this._link_data[url] = null;
+
+	if ( ! li )
+		return null;
+
+	if ( info && info[0] )
+		return info[2];
+
+	if ( no_promises )
+		return null;
+
+	else if ( info )
+		return new Promise(function(resolve, reject) {
+			info[2].push([resolve, reject]);
+		});
+
+	return new Promise(function(resolve, reject) {
+		info = f._link_data[url] = [false, null, [[resolve, reject]]];
+
+		var link_timer,
+			resolve = function(success, data) {
+				clearTimeout(link_timer);
+
+				// If it's a failure and we already finished, just quit.
+				if ( ! f.settings.link_info || (info[0] && ! success) )
+					return;
+
+				var callbacks = ! info[0] && info[2];
+				f._link_data[url] = [true, Date.now() + 120000, success ? data : null];
+
+				if ( data && data.unsafe )
+					jQuery('a[data-url="' + url + '"]').addClass('unsafe-link');
+
+				if ( callbacks )
+					for(var i=0; i < callbacks.length; i++)
+						callbacks[i][success ? 0 : 1](data);
+
+				if ( ! f._link_info_cleaner )
+					f.clean_link_info();
+			};
+
+		link_timer = setTimeout(resolve.bind(this, false, 'A request timed out while trying to load information about this link.'), 15000);
+		f.ws_send("get_link", url, resolve, true);
+	});
+}
+
+
+FFZ.prototype.render_link_tooltip = function(data, el) {
+	var version = data.v || 1;
+	if ( version > TOOLTIP_VERSION )
+		return '';
+
+	var content = data.content || data.html || '';
+
+	if ( content )
+		content = content.replace(TIME_REPLACER, function(match, junk, timestamp, old) {
+			var now = Date.now(),
+				posted_at = utils.parse_date(timestamp),
+				time_ago = posted_at && (now - posted_at) / 1000;
+
+			if ( time_ago < 86400 )
+				old = utils.full_human_time(time_ago);
+			else if ( posted_at )
+				old = posted_at.toLocaleString();
+
+			return '<time timestamp="' + utils.sanitize(timestamp) + '">' + utils.sanitize(old) + '</time>';
+		});
+
+
+	if ( data.urls && data.urls.length > 1 ) {
+		var last_url = data.urls[data.urls.length-1];
+		content += (content.length ? '<hr>' : '') + 'Destination: ' + utils.sanitize(last_url[1]);
+	}
+
+	if ( data.unsafe ) {
+		var reasons = _.pluck(data.urls, 2).filter((function(x){return x})).uniq().join(", ");
+		content = "Caution: This URL is on Google's Safe Browsing list for: " +
+			utils.sanitize(reasons.toLowerCase()) + (content.length ? '<hr>' + content : '');
+	}
+
+	if ( el && el.classList.contains('warn-link') )
+		content += (content.length ? '<hr>' : '') + EXPLANATION_WARN;
+
+	var show_image = this.settings.link_image_hover && (data.image_safe || this.settings.image_hover_all_domains);
+
+	if ( show_image ) {
+		if ( data.image )
+			if ( data.image_iframe )
+				content = image_iframe(data.image) + content;
+			else
+				content = '<img class="emoticon ffz-image-hover" src="' + utils.quote_attr(data.image) + '">' + content;
+
+	} else if ( content.length )
+		content = content.replace(/<!--MS-->.*<!--ME-->/g, '');
+
+	return content;
+}
+
+
+FFZ.prototype.render_tooltip_class = function(el) {
+	var f = this,
+		func = function() {
+			if ( this.classList.contains('chat-link') ) {
+				// TODO: A lot of shit. Lookup data.
+				var url = this.getAttribute("data-url"),
+					data = url && f.get_link_info(url, true);
+
+				if ( data )
+					return data.tooltip_class;
+			}
+
+			return this.dataset.tooltipClass;
+		};
+
+	return el ? func(el) : func;
+}
+
 
 FFZ.prototype.render_tooltip = function(el) {
 	var f = this,
@@ -646,39 +739,47 @@ FFZ.prototype.render_tooltip = function(el) {
 
 			} else if ( this.classList.contains('chat-link') ) {
 				// TODO: A lot of shit. Lookup data.
-				var url = this.getAttribute("data-url"),
-					data = url && f._link_data[url],
+				var t = this,
+					url = this.getAttribute("data-url"),
+					data = url && f.get_link_info(url);
 
-					preview_url = null,
-					preview_iframe = true,
-					image = '',
-					text = '';
-
-				if ( ! url )
-					return;
-
-				// Do we have data?
-				if ( data && data !== true ) {
-					text = data.html;
-					preview_url = data.image;
-					preview_iframe = data.image_iframe !== undefined ? data.image_iframe : true;
-				} else
-					preview_url = is_image(url, f.settings.image_hover_all_domains) ? url : null;
-
-				if ( f.settings.link_image_hover && preview_url )
-					if ( preview_iframe )
-						image = image_iframe(url);
-					else
-						image = '<img class="emoticon ffz-image-hover" src="' + utils.quote_attr(preview_url) + '">';
-
-				// If it's not a deleted link, don't waste time showing the URL in the tooltip.
 				if ( this.classList.contains('deleted-link') )
-					text = utils.sanitize(url);
+					return utils.sanitize(url || '');
 
-				if ( this.classList.contains('warn-link') )
-					text += EXPLANATION_WARN;
+				if ( ! url || ! data )
+					return '';
 
-				return image + text; //`${image}${text}`;
+				if ( data instanceof Promise ) {
+					var tt_id = FFZ._sc_followed_tooltip_id++,
+						replacer = function(data, tooltip_class) {
+							var el = document.querySelector('.ffz-async-tooltip[data-id="' + tt_id + '"]'),
+								container = el && el.parentElement.parentElement;
+							if ( ! el )
+								return;
+
+							if ( ! data )
+								jQuery(container).remove();
+
+							if ( tooltip_class )
+								container.classList.add(tooltip_class);
+
+							el.outerHTML = data;
+						};
+
+					data.then(function(data) {
+						if ( data )
+							replacer(f.render_link_tooltip(data, t), data.tooltip_class);
+						else
+							replacer(null);
+
+					}).catch(function(err) {
+						replacer(utils.sanitize(err || ''));
+					});
+
+					return '<div class="ffz-async-tooltip" data-id="' + tt_id + '"></div>';
+
+				} else
+					return f.render_link_tooltip(data, this);
 			}
 
 			f.log("Unable to Build Tooltip For: " + this.className, this);
@@ -1379,43 +1480,9 @@ FFZ.prototype.render_token = function(render_links, warn_links, render_bits, tok
 			// Web Link
 			cls = 'chat-link';
 
-			if ( this.settings.link_info ) {
-				if (!( this._link_data && this._link_data[href] )) {
-					this._link_data = this._link_data || {};
-					this._link_data[href] = true;
-
-					var success = load_link_data.bind(this, href),
-						clip_info = CLIP_URL.exec(href),
-						video_info = VIDEO_URL.exec(href);
-
-					if ( clip_info ) {
-						var Clips = utils.ember_lookup('service:clips');
-						Clips && Clips.fetchClipBySlug(clip_info[1]).then(function(data) {
-							data &&
-							success(true, {
-								image: data.thumbnails.medium,
-								image_iframe: false,
-								html: '<span class="ffz-clip-title">' + utils.sanitize(data.title) + '</span>' +
-									'Channel: ' + utils.sanitize(data.broadcaster_display_name) +
-									'<br>Game: ' + utils.sanitize(data.game)
-							});
-						});
-
-					} else if ( video_info ) {
-						utils.api.get("videos/" + video_info[1], undefined, {version: 5})
-								.then(function(data) {
-							success(true, {
-								image: data.preview.large,
-								image_iframe: false,
-								html: '<span class="ffz-clip-title">' + utils.sanitize(data.title) + ' [' + utils.time_to_string(data.length) + ']</span>' +
-									'Channel: ' + utils.sanitize(data.channel.display_name) +
-									'<br>Game: ' + utils.sanitize(data.game)
-							})});
-
-					} else
-						this.ws_send("get_link", href, success);
-				}
-			}
+			var info = this.get_link_info(href);
+			if ( info && info.unsafe )
+				cls += ' unsafe-link';
 		}
 
 		// Deleted Links

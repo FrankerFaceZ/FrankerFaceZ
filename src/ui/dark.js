@@ -114,6 +114,12 @@ FFZ.settings_info.twitch_chat_dark = {
 	};
 
 
+FFZ.settings_info.twitch_theme = {
+	value: '',
+	visible: false
+};
+
+
 FFZ.settings_info.dark_twitch = {
 	type: "boolean",
 	value: false,
@@ -139,14 +145,25 @@ FFZ.settings_info.dark_twitch = {
 
 			(this.is_clips ? document.querySelector('html') : document.body).classList.toggle("ffz-dark", val);
 
-			var Settings = utils.ember_settings();
+			var Settings = utils.ember_settings(),
+				ThemeManager = utils.ember_lookup('service:theme-manager');
 
 			if ( val ) {
 				this._load_dark_css();
-				Settings && this.settings.set('twitch_chat_dark', Settings.get('darkMode'));
-				Settings && Settings.set('darkMode', true);
-			} else
-				Settings && Settings.set('darkMode', this.settings.twitch_chat_dark);
+				if ( ThemeManager ) {
+					this.settings.set('twitch_theme', ThemeManager.get('themes.activeTheme'));
+					ThemeManager.set('themes.activeTheme', 'theme--dark');
+				}
+				if ( Settings ) {
+					this.settings.set('twitch_chat_dark', Settings.get('darkMode'));
+					Settings.set('darkMode', true);
+				}
+			} else {
+				if ( ThemeManager )
+					ThemeManager.set('themes.activeTheme', this.settings.twitch_theme);
+				if ( Settings )
+					Settings.set('darkMode', this.settings.twitch_chat_dark);
+			}
 
 			// Try coloring chat replay
 			window.jQuery && jQuery('.chatReplay').toggleClass('dark', val || false);
@@ -204,15 +221,13 @@ FFZ.prototype.setup_dark = function() {
 	if ( ! this.settings.dark_twitch )
 		return;
 
-	var Settings = utils.ember_settings();
-	if ( Settings ) {
-		try {
-			Settings.set('darkMode', true);
-		} catch(err) {
-			this.error("Unable to set the darkMode setting because it isn't named what we expect. WTF?");
-		}
-	} else
-		this.error("Unable to load the Ember settings controller.");
+	var Settings = utils.ember_settings(),
+		ThemeManager = utils.ember_lookup('service:theme-manager');
+
+	if ( ThemeManager ) {
+		ThemeManager.set('themes.activeTheme', 'theme--dark');
+	} else if ( Settings )
+		Settings.set('darkMode', true);
 
 	this._load_dark_css();
 }

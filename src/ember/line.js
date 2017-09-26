@@ -399,8 +399,27 @@ FFZ.settings_info.link_info = {
 	no_bttv: 6,
 
 	name: "Link Information <span>Beta</span>",
-	help: "Check links against known bad websites, unshorten URLs, and show YouTube info."
-	};
+	help: "Check links against known bad websites, unshorten URLs, and show YouTube info.",
+
+	on_update: function(val) {
+		// Update every visible chat link and, possibly, wipe the link info cache.
+		if ( ! val ) {
+			this._link_data = {};
+			jQuery('.unsafe-link').removeClass('unsafe-link');
+
+		} else {
+			var links = document.querySelectorAll('.chat-link[data-url]');
+			for(var i=0,l=links.length; i < l; i++) {
+				var link = links[i],
+					url = link.dataset.url,
+					info = this.get_link_info(url);
+
+				if ( info && info.unsafe )
+					link.classList.add('unsafe-link');
+			}
+		}
+	}
+};
 
 
 FFZ.settings_info.link_image_hover = {
@@ -412,8 +431,8 @@ FFZ.settings_info.link_image_hover = {
 	no_mobile: true,
 
 	name: "Image Preview",
-	help: "Display image thumbnails for links to Imgur and YouTube."
-	};
+	help: "Display images associated with links to known services such as YouTube, Imgur, and Twitter."
+};
 
 
 FFZ.settings_info.emote_image_hover = {
@@ -439,9 +458,9 @@ FFZ.settings_info.image_hover_all_domains = {
 	no_bttv: 6,
 	no_mobile: true,
 
-	name: "Image Preview - All Domains",
-	help: "<i>Requires Image Preview.</i> Attempt to show an image preview for any URL ending in the appropriate extension. <b>Warning: This may be used to leak your IP address to malicious users.</b>"
-	};
+	name: "Image Preview - NSFW",
+	help: "<i>Requires Image Preview.</i> Display images from all sources, including images that are tagged as unsafe or without rating information."
+};
 
 
 FFZ.settings_info.chat_rows = {
@@ -949,6 +968,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 	var f = this,
 		Layout = utils.ember_lookup('service:layout'),
 		Chat = utils.ember_lookup('controller:chat'),
+		ThemeManager = utils.ember_lookup('service:theme-manager'),
 		PinnedCheers = utils.ember_lookup('service:bits-pinned-cheers'),
 		Settings = utils.ember_settings();
 
@@ -1114,7 +1134,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 				raw_color = this.get(is_recipient ? 'msgObject.toColor' : 'msgObject.color'),
 
-				is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('darkMode'))),
+				is_dark = (ThemeManager && ThemeManager.get('themes.activeTheme') === 'theme--dark') || (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('darkMode'))),
 				is_replay = this.get('ffz_is_replay'),
 
 				colors = raw_color && f._handle_color(raw_color),
@@ -1402,7 +1422,7 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 				var raw_color = this.get('msgObject.color'),
 					colors = raw_color && f._handle_color(raw_color),
 					is_replay = this.get('ffz_is_replay'),
-					is_dark = (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('darkMode')));
+					is_dark = (ThemeManager && ThemeManager.get('themes.activeTheme') === 'theme--dark') || (Layout && Layout.get('isTheatreMode')) || (is_replay ? f.settings.dark_twitch : (Settings && Settings.get('darkMode')));
 
 				if ( raw_color )
 					output = '<span class="message has-color' + (is_replay ? ' replay-color' : '') + '" style="color:' + (is_dark ? colors[1] : colors[0]) + '" data-color="' + raw_color + '">';

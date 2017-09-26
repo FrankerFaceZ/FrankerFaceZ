@@ -70,6 +70,7 @@ func (backend *backendInfo) UnsealRequest(form url.Values) (url.Values, error) {
 	dec := base64.NewDecoder(base64.URLEncoding, strings.NewReader(nonceString))
 	count, err := dec.Read(nonce[:])
 	if err != nil {
+		fmt.Println("Error reading nonce");
 		Statistics.BackendVerifyFails++
 		return nil, err
 	}

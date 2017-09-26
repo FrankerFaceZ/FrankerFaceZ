@@ -756,6 +756,7 @@ body.ffz-dark:not([data-page="teams#show"]),
 }
 
 /* Hide the chat Dark Mode control */
+.ffz-dark #theme-toggle,
 .ffz-dark .toggle-darkmode { display: none; }
 
 /* Chat Text Contrast */

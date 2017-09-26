@@ -218,7 +218,7 @@ FFZ.settings_info.top_nav_color = {
 			val = color.toCSS();
 		}
 
-		var out = '.top-nav__menu,.top-nav__drawer-anchor,.top-nav__logo{background-color:' + val + '}';
+		var out = '.theme--dark .top-nav__menu,.top-nav__menu,.top-nav__drawer-anchor,.top-nav__logo{background-color:' + val + '}';
 
 		if ( color.luminance() > 0.2 ) {
 			out += '.top-nav__search .form__icon svg,.top-nav .notification-center__icon svg,.top-nav .prime-logo-crown.prime-logo-crown--white svg,.top-nav__logo svg path, .top-nav__overflow svg path{fill: #000}' +

@@ -1616,9 +1616,10 @@ FFZ.prototype._build_mod_card_history = function(msg, modcard, show_from, ts_cli
 			colors = raw_color && this._handle_color(raw_color),
 
 			Layout = utils.ember_lookup('service:layout'),
+			ThemeManager = utils.ember_lookup('service:theme-manager'),
 			Settings = utils.ember_settings(),
 
-			is_dark = (Layout && Layout.get('isTheatreMode')) || this.settings.get_twitch("darkMode");
+			is_dark = (ThemeManager && ThemeManager.get('themes.activeTheme') === 'theme--dark') || (Layout && Layout.get('isTheatreMode')) || this.settings.get_twitch("darkMode");
 
 
 		// Styling

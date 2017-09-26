@@ -10,7 +10,12 @@ var FFZ = window.FrankerFaceZ,
 FFZ.prototype.fix_tooltips = function() {
 	// Add handlers to FFZ's tooltip classes.
 	jQuery(".html-tooltip").tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-	jQuery(".ffz-tooltip").tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
+	jQuery(".ffz-tooltip").tipsy({
+		live: true,
+		html: true,
+		className: this.render_tooltip_class(),
+		title: this.render_tooltip(),
+		gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 
 
 	// First, override the tooltip mixin.
