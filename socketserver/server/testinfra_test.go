@@ -97,7 +97,7 @@ func (er *TExpectedBackendRequest) String() string {
 	if MethodIsPost == "" {
 		return er.Path
 	}
-	return fmt.Sprint("%s %s: %s", MethodIsPost, er.Path, er.PostForm.Encode())
+	return fmt.Sprintf("%s %s: %s", MethodIsPost, er.Path, er.PostForm.Encode())
 }
 
 type TBackendRequestChecker struct {
@@ -123,7 +123,7 @@ func (backend *TBackendRequestChecker) ServeHTTP(w http.ResponseWriter, r *http.
 
 	r.ParseForm()
 
-	unsealedForm, err := Backend.UnsealRequest(r.PostForm)
+	unsealedForm, err := Backend.secureForm.Unseal(r.PostForm)
 	if err != nil {
 		backend.tb.Errorf("Failed to unseal backend request: %v", err)
 	}
@@ -276,7 +276,7 @@ func TSealForSavePubMsg(tb testing.TB, cmd Command, channel string, arguments in
 	}
 	form.Set("time", strconv.FormatInt(time.Now().Unix(), 10))
 
-	sealed, err := Backend.SealRequest(form)
+	sealed, err := Backend.secureForm.Seal(form)
 	if err != nil {
 		tb.Error(err)
 		return nil, err
@@ -300,7 +300,7 @@ func TSealForUncachedPubMsg(tb testing.TB, cmd Command, channel string, argument
 	form.Set("time", time.Now().Format(time.UnixDate))
 	form.Set("scope", scope)
 
-	sealed, err := Backend.SealRequest(form)
+	sealed, err := Backend.secureForm.Seal(form)
 	if err != nil {
 		tb.Error(err)
 		return nil, err

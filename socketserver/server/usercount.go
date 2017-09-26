@@ -46,11 +46,6 @@ var uniqueCtrWritingToken chan usageToken
 
 var CounterLocation *time.Location = time.FixedZone("UTC-5", int((time.Hour*-5)/time.Second))
 
-func TruncateToMidnight(at time.Time) time.Time {
-	year, month, day := at.Date()
-	return time.Date(year, month, day, 0, 0, 0, 0, CounterLocation)
-}
-
 // GetCounterPeriod calculates the start and end timestamps for the HLL measurement period that includes the 'at' timestamp.
 func GetCounterPeriod(at time.Time) (start time.Time, end time.Time) {
 	year, month, day := at.Date()
@@ -132,7 +127,7 @@ func HTTPShowHLL(w http.ResponseWriter, r *http.Request) {
 	hllFileServer.ServeHTTP(w, r)
 }
 
-func HTTPWriteHLL(w http.ResponseWriter, r *http.Request) {
+func HTTPWriteHLL(w http.ResponseWriter, _ *http.Request) {
 	writeHLL()
 	w.WriteHeader(200)
 	w.Write([]byte("ok"))
@@ -150,9 +145,7 @@ func loadUniqueUsers() {
 	now := time.Now().In(CounterLocation)
 	uniqueCounter.Start, uniqueCounter.End = GetCounterPeriod(now)
 	err = loadHLL(now, &uniqueCounter)
-	isIgnorableError := err != nil && (false ||
-		(os.IsNotExist(err)) ||
-		(err == io.EOF))
+	isIgnorableError := err != nil && (os.IsNotExist(err) || err == io.EOF)
 
 	if isIgnorableError {
 		// file didn't finish writing
@@ -227,10 +220,10 @@ func rolloverCounters_do() {
 
 		// Attempt to rescue the data into the log
 		var buf bytes.Buffer
-		bytes, err := uniqueCounter.Counter.GobEncode()
+		by, err := uniqueCounter.Counter.GobEncode()
 		if err == nil {
 			enc := base64.NewEncoder(base64.StdEncoding, &buf)
-			enc.Write(bytes)
+			enc.Write(by)
 			enc.Close()
 			log.Print("data for ", GetHLLFilename(uniqueCounter.Start), ":", buf.String())
 		}

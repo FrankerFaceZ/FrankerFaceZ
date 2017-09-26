@@ -35,11 +35,6 @@ type ConfigFile struct {
 	// Path to key file.
 	SSLKeyFile string
 
-	UseESLogStashing bool
-	ESServer         string
-	ESIndexPrefix    string
-	ESHostName       string
-
 	// Nacl keys
 	OurPrivateKey    []byte
 	OurPublicKey     []byte
@@ -62,6 +57,24 @@ type ClientMessage struct {
 	Arguments interface{} `json:"a"`
 
 	origArguments string
+}
+
+func (cm ClientMessage) Reply(cmd Command, args interface{}) ClientMessage {
+	return ClientMessage{
+		MessageID: cm.MessageID,
+		Command:   cmd,
+		Arguments: args,
+	}
+}
+
+func (cm ClientMessage) ReplyJSON(cmd Command, argsJSON string) ClientMessage {
+	n := ClientMessage{
+		MessageID:     cm.MessageID,
+		Command:       cmd,
+		origArguments: argsJSON,
+	}
+	n.parseOrigArguments()
+	return n
 }
 
 type AuthInfo struct {

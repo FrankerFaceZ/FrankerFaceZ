@@ -47,6 +47,20 @@ func CountSubscriptions(channels []string) int {
 	return count
 }
 
+func GetAllTopics() []string {
+	ChatSubscriptionLock.RLock()
+	defer ChatSubscriptionLock.RUnlock()
+
+	count := len(ChatSubscriptionInfo)
+	list := make([]string, count)
+	i := 0
+	for topicName := range ChatSubscriptionInfo {
+		list[i] = topicName
+		i++
+	}
+	return list
+}
+
 func SubscribeChannel(client *ClientInfo, channelName string) {
 	ChatSubscriptionLock.RLock()
 	_subscribeWhileRlocked(channelName, client)
@@ -142,8 +156,11 @@ func UnsubscribeSingleChat(client *ClientInfo, channelName string) {
 //   - write lock to SubscriptionInfos
 //   - write lock to ClientInfo
 func UnsubscribeAll(client *ClientInfo) {
-	if StopAcceptingConnections {
-		return // no need to remove from a high-contention list when the server is closing
+	select {
+	case <-StopAcceptingConnectionsCh:
+		// Skip high-contention client removal operations while server shutting down
+		return
+	default:
 	}
 
 	GlobalSubscriptionLock.Lock()

@@ -103,8 +103,9 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/uncached_pub", HTTPBackendUncachedPublish)
 	serveMux.HandleFunc("/cached_pub", HTTPBackendCachedPublish)
 	serveMux.HandleFunc("/get_sub_count", HTTPGetSubscriberCount)
+	serveMux.HandleFunc("/all_topics", HTTPListAllTopics)
 
-	announceForm, err := Backend.SealRequest(url.Values{
+	announceForm, err := Backend.secureForm.Seal(url.Values{
 		"startup": []string{"1"},
 	})
 	if err != nil {
@@ -138,30 +139,21 @@ func startJanitors() {
 	go pubsubJanitor()
 
 	go ircConnection()
-	go shutdownHandler()
 }
 
-// is_init_func
-func shutdownHandler() {
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGUSR1)
-	signal.Notify(ch, syscall.SIGTERM)
-	<-ch
-	log.Println("Shutting down...")
-
-	var wg sync.WaitGroup
+// Shutdown disconnects all clients.
+func Shutdown(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		writeHLL()
-		wg.Done()
 	}()
-
-	StopAcceptingConnections = true
-	close(StopAcceptingConnectionsCh)
-
-	time.Sleep(1 * time.Second)
-	wg.Wait()
-	os.Exit(0)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		close(StopAcceptingConnectionsCh)
+		time.Sleep(2 * time.Second)
+	}()
 }
 
 // is_init_func +test
@@ -199,7 +191,6 @@ var BannerHTML []byte
 
 // StopAcceptingConnectionsCh is closed while the server is shutting down.
 var StopAcceptingConnectionsCh = make(chan struct{})
-var StopAcceptingConnections = false
 
 // HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
 // It either uses the SocketUpgrader or writes out the BannerHTML.
@@ -210,18 +201,10 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// racy, but should be ok?
-	if StopAcceptingConnections {
-		w.WriteHeader(503)
-		fmt.Fprint(w, "server is shutting down")
-		return
-	}
-
 	if strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
 		updateSysMem()
 
 		if Statistics.SysMemFreeKB > 0 && Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
-			atomic.AddUint64(&Statistics.LowMemDroppedConnections, 1)
 			w.WriteHeader(503)
 			fmt.Fprint(w, "error: low memory")
 			return
@@ -249,11 +232,21 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type fatalDecodeError string
+
+func (e fatalDecodeError) Error() string {
+	return string(e)
+}
+
+func (e fatalDecodeError) IsFatal() bool {
+	return true
+}
+
 // ErrProtocolGeneric is sent in a ErrorCommand Reply.
-var ErrProtocolGeneric error = errors.New("FFZ Socket protocol error.")
+var ErrProtocolGeneric error = fatalDecodeError("FFZ Socket protocol error.")
 
 // ErrProtocolNegativeMsgID is sent in a ErrorCommand Reply when a negative MessageID is received.
-var ErrProtocolNegativeMsgID error = errors.New("FFZ Socket protocol error: negative or zero message ID.")
+var ErrProtocolNegativeMsgID error = fatalDecodeError("FFZ Socket protocol error: negative or zero message ID.")
 
 // ErrExpectedSingleString is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedSingleString = errors.New("Error: Expected single string as arguments.")
@@ -344,7 +337,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 	})
 
 	// All set up, now enter the work loop
-	go runSocketReader(conn, _errorChan, _clientChan, stoppedChan)
+	go runSocketReader(conn, &client, _errorChan, _clientChan)
 	closeReason := runSocketWriter(conn, &client, _errorChan, _clientChan, _serverMessageChan)
 
 	// Exit
@@ -365,8 +358,10 @@ func RunSocketConnection(conn *websocket.Conn) {
 
 	// And done.
 
-	if !StopAcceptingConnections {
+	select {
+	case <-StopAcceptingConnectionsCh:
 		// Don't perform high contention operations when server is closing
+	default:
 		atomic.AddUint64(&Statistics.CurrentClientCount, NegativeOne)
 		atomic.AddUint64(&Statistics.ClientDisconnectsTotal, 1)
 
@@ -376,11 +371,13 @@ func RunSocketConnection(conn *websocket.Conn) {
 	}
 }
 
-func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan chan<- ClientMessage, stoppedChan <-chan struct{}) {
+func runSocketReader(conn *websocket.Conn, client *ClientInfo, errorChan chan<- error, clientChan chan<- ClientMessage) {
 	var msg ClientMessage
 	var messageType int
 	var packet []byte
 	var err error
+
+	stoppedChan := client.MsgChannelIsDone
 
 	defer close(errorChan)
 	defer close(clientChan)
@@ -395,8 +392,17 @@ func runSocketReader(conn *websocket.Conn, errorChan chan<- error, clientChan ch
 			break
 		}
 
-		UnmarshalClientMessage(packet, messageType, &msg)
-		if msg.MessageID == 0 {
+		msg = ClientMessage{}
+		msgErr := UnmarshalClientMessage(packet, messageType, &msg)
+		if _, ok := msgErr.(interface {
+			IsFatal() bool
+		}); ok {
+			errorChan <- msgErr
+			continue
+		} else if msgErr != nil {
+			client.Send(msg.Reply(ErrorCommand, msgErr.Error()))
+			continue
+		} else if msg.MessageID == 0 {
 			continue
 		}
 		select {
@@ -505,20 +511,24 @@ func SendMessage(conn *websocket.Conn, msg ClientMessage) {
 }
 
 // UnmarshalClientMessage unpacks websocket TextMessage into a ClientMessage provided in the `v` parameter.
-func UnmarshalClientMessage(data []byte, payloadType int, v interface{}) (err error) {
+func UnmarshalClientMessage(data []byte, _ int, v interface{}) (err error) {
 	var spaceIdx int
 
 	out := v.(*ClientMessage)
 	dataStr := string(data)
 
+	if len(dataStr) == 0 {
+		out.MessageID = 0
+		return nil // test: ignore empty frames
+	}
 	// Message ID
 	spaceIdx = strings.IndexRune(dataStr, ' ')
 	if spaceIdx == -1 {
-		return ErrProtocolGeneric
+		return ErrProtocolGeneric // fatal error
 	}
 	messageID, err := strconv.Atoi(dataStr[:spaceIdx])
 	if messageID < -1 || messageID == 0 {
-		return ErrProtocolNegativeMsgID
+		return ErrProtocolNegativeMsgID // fatal error
 	}
 
 	out.MessageID = messageID
@@ -551,7 +561,8 @@ func (cm *ClientMessage) parseOrigArguments() error {
 	return nil
 }
 
-func MarshalClientMessage(clientMessage interface{}) (payloadType int, data []byte, err error) {
+// returns payloadType, data, err
+func MarshalClientMessage(clientMessage interface{}) (int, []byte, error) {
 	var msg ClientMessage
 	var ok bool
 	msg, ok = clientMessage.(ClientMessage)

@@ -2,11 +2,9 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
-	"strconv"
 	"sync"
 	"time"
 
@@ -34,14 +32,17 @@ var commandHandlers = map[Command]CommandHandler{
 	"track_follow":  C2STrackFollow,
 	"emoticon_uses": C2SEmoticonUses,
 	"survey":        C2SSurvey,
+}
 
-	"twitch_emote":          C2SHandleBunchedCommand,
-	"get_link":              C2SHandleBunchedCommand,
-	"get_display_name":      C2SHandleBunchedCommand,
-	"get_emote":             C2SHandleBunchedCommand,
-	"get_emote_set":         C2SHandleBunchedCommand,
-	"has_logs":              C2SHandleBunchedCommand,
-	"update_follow_buttons": C2SHandleRemoteCommand,
+var bunchedCommands = []Command{
+	"get_display_name",
+	"get_emote",
+	"get_emote_set",
+	"get_link",
+	"get_itad_plain",
+	"get_itad_prices",
+	"get_name_history",
+	"has_logs",
 }
 
 func setupInterning() {
@@ -73,6 +74,12 @@ func DispatchC2SCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 	handler, ok := commandHandlers[msg.Command]
 	if !ok {
 		handler = C2SHandleRemoteCommand
+
+		for _, v := range bunchedCommands {
+			if msg.Command == v {
+				handler = C2SHandleBunchedCommand
+			}
+		}
 	}
 
 	CommandCounter <- msg.Command
@@ -96,7 +103,7 @@ func DispatchC2SCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMess
 	}
 }
 
-func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (rmsg ClientMessage, err error) {
+func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInfo, cmsg ClientMessage) (_ ClientMessage, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -112,7 +119,7 @@ func callHandler(handler CommandHandler, conn *websocket.Conn, client *ClientInf
 
 // C2SHello implements the `hello` C2S Command.
 // It calls SubscribeGlobal() and SubscribeDefaults() with the client, and fills out ClientInfo.Version and ClientInfo.ClientID.
-func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SHello(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (_ ClientMessage, err error) {
 	ary, ok := msg.Arguments.([]interface{})
 	if !ok {
 		err = ErrExpectedTwoStrings
@@ -163,16 +170,16 @@ func C2SHello(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg
 	}, nil
 }
 
-func C2SPing(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SPing(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error) {
 	return ClientMessage{
 		Arguments: float64(time.Now().UnixNano()/1000) / 1000,
 	}, nil
 }
 
-func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SSetUser(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	username, err := msg.ArgumentsAsString()
 	if err != nil {
-		return
+		return ClientMessage{}, err
 	}
 
 	username = copyString(username)
@@ -192,29 +199,24 @@ func C2SSetUser(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rm
 	return ResponseSuccess, nil
 }
 
-func C2SReady(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	//	disconnectAt, err := msg.ArgumentsAsInt()
-	//	if err != nil {
-	//		return
-	//	}
-
+func C2SReady(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	client.Mutex.Lock()
 	client.ReadyComplete = true
 	client.Mutex.Unlock()
 
 	client.MsgChannelKeepalive.Add(1)
 	go func() {
-		client.Send(ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand})
+		client.Send(msg.Reply(SuccessCommand, nil))
 		SendBacklogForNewClient(client)
 		client.MsgChannelKeepalive.Done()
 	}()
 	return ClientMessage{Command: AsyncResponseCommand}, nil
 }
 
-func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SSubscribe(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	channel, err := msg.ArgumentsAsString()
 	if err != nil {
-		return
+		return ClientMessage{}, err
 	}
 
 	channel = PubSubChannelPool.Intern(channel)
@@ -238,10 +240,10 @@ func C2SSubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (
 
 // C2SUnsubscribe implements the `unsub` C2S Command.
 // It removes the channel from ClientInfo.CurrentChannels and calls UnsubscribeSingleChat.
-func C2SUnsubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SUnsubscribe(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	channel, err := msg.ArgumentsAsString()
 	if err != nil {
-		return
+		return ClientMessage{}, err
 	}
 
 	channel = PubSubChannelPool.Intern(channel)
@@ -256,9 +258,8 @@ func C2SUnsubscribe(conn *websocket.Conn, client *ClientInfo, msg ClientMessage)
 }
 
 // C2SSurvey implements the survey C2S Command.
-// Surveys are discarded.s
-func C2SSurvey(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	// Discard
+func C2SSurvey(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error) {
+	// Surveys are not collected.
 	return ResponseSuccess, nil
 }
 
@@ -276,7 +277,7 @@ var followEventsLock sync.Mutex
 
 // C2STrackFollow implements the `track_follow` C2S Command.
 // It adds the record to `followEvents`, which is submitted to the backend on a timer.
-func C2STrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2STrackFollow(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (_ ClientMessage, err error) {
 	channel, following, err := msg.ArgumentsAsStringAndBool()
 	if err != nil {
 		return
@@ -293,68 +294,18 @@ func C2STrackFollow(conn *websocket.Conn, client *ClientInfo, msg ClientMessage)
 }
 
 // AggregateEmoteUsage is a map from emoteID to a map from chatroom name to usage count.
-var aggregateEmoteUsage = make(map[int]map[string]int)
+//var aggregateEmoteUsage = make(map[int]map[string]int)
 
 // AggregateEmoteUsageLock is the lock for AggregateEmoteUsage.
-var aggregateEmoteUsageLock sync.Mutex
+//var aggregateEmoteUsageLock sync.Mutex
 
 // ErrNegativeEmoteUsage is emitted when the submitted emote usage is negative.
-var ErrNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
+//var ErrNegativeEmoteUsage = errors.New("Emote usage count cannot be negative")
 
 // C2SEmoticonUses implements the `emoticon_uses` C2S Command.
 // msg.Arguments are in the JSON format of [1]map[emoteID]map[ChatroomName]float64.
-func C2SEmoticonUses(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
-	// if this panics, will be caught by callHandler
-	mapRoot := msg.Arguments.([]interface{})[0].(map[string]interface{})
-
-	// Validate: male suire
-	for strEmote, val1 := range mapRoot {
-		_, err = strconv.Atoi(strEmote)
-		if err != nil {
-			return
-		}
-		mapInner := val1.(map[string]interface{})
-		for _, val2 := range mapInner {
-			var count = int(val2.(float64))
-			if count <= 0 {
-				err = ErrNegativeEmoteUsage
-				return
-			}
-		}
-	}
-
-	aggregateEmoteUsageLock.Lock()
-	defer aggregateEmoteUsageLock.Unlock()
-
-	var total int
-
-	for strEmote, val1 := range mapRoot {
-		var emoteID int
-		emoteID, err = strconv.Atoi(strEmote)
-		if err != nil {
-			return
-		}
-
-		destMapInner, ok := aggregateEmoteUsage[emoteID]
-		if !ok {
-			destMapInner = make(map[string]int)
-			aggregateEmoteUsage[emoteID] = destMapInner
-		}
-
-		mapInner := val1.(map[string]interface{})
-		for roomName, val2 := range mapInner {
-			var count = int(val2.(float64))
-			if count > 200 {
-				count = 200
-			}
-			roomName = TwitchChannelPool.Intern(roomName)
-			destMapInner[roomName] += count
-			total += count
-		}
-	}
-
-	Statistics.EmotesReportedTotal += uint64(total)
-
+func C2SEmoticonUses(*websocket.Conn, *ClientInfo, ClientMessage) (ClientMessage, error) {
+	// We do not collect emote usage data
 	return ResponseSuccess, nil
 }
 
@@ -371,10 +322,10 @@ func aggregateDataSender_do() {
 	follows := followEvents
 	followEvents = nil
 	followEventsLock.Unlock()
-	aggregateEmoteUsageLock.Lock()
-	emoteUsage := aggregateEmoteUsage
-	aggregateEmoteUsage = make(map[int]map[string]int)
-	aggregateEmoteUsageLock.Unlock()
+	//aggregateEmoteUsageLock.Lock()
+	//emoteUsage := aggregateEmoteUsage
+	//aggregateEmoteUsage = make(map[int]map[string]int)
+	//aggregateEmoteUsageLock.Unlock()
 
 	reportForm := url.Values{}
 
@@ -386,10 +337,10 @@ func aggregateDataSender_do() {
 	}
 
 	strEmoteUsage := make(map[string]map[string]int)
-	for emoteID, usageByChannel := range emoteUsage {
-		strEmoteID := strconv.Itoa(emoteID)
-		strEmoteUsage[strEmoteID] = usageByChannel
-	}
+	//for emoteID, usageByChannel := range emoteUsage {
+	//	strEmoteID := strconv.Itoa(emoteID)
+	//	strEmoteUsage[strEmoteID] = usageByChannel
+	//}
 	emoteJSON, err := json.Marshal(strEmoteUsage)
 	if err != nil {
 		log.Println("error reporting aggregate data:", err)
@@ -429,7 +380,7 @@ var bunchGroup singleflight.Group
 
 // C2SHandleBunchedCommand handles C2S Commands such as `get_link`.
 // It makes a request to the backend server for the data, but any other requests coming in while the first is pending also get the responses from the first one.
-func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
+func C2SHandleBunchedCommand(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	key := fmt.Sprintf("%s:%s", msg.Command, msg.origArguments)
 
 	resultCh := bunchGroup.DoChan(key, func() (interface{}, error) {
@@ -439,29 +390,21 @@ func C2SHandleBunchedCommand(conn *websocket.Conn, client *ClientInfo, msg Clien
 	client.MsgChannelKeepalive.Add(1)
 	go func() {
 		result := <-resultCh
-		var reply ClientMessage
-		reply.MessageID = msg.MessageID
-		if result.Err != nil {
-			reply.Command = ErrorCommand
-			if efb, ok := result.Err.(ErrForwardedFromBackend); ok {
-				reply.Arguments = efb.JSONError
-			} else {
-				reply.Arguments = result.Err.Error()
-			}
+		if efb, ok := result.Err.(ErrForwardedFromBackend); ok {
+			client.Send(msg.Reply(ErrorCommand, efb.JSONError))
+		} else if result.Err != nil {
+			client.Send(msg.Reply(ErrorCommand, result.Err.Error()))
 		} else {
-			reply.Command = SuccessCommand
-			reply.origArguments = result.Val.(string)
-			reply.parseOrigArguments()
+			client.Send(msg.ReplyJSON(SuccessCommand, result.Val.(string)))
 		}
 
-		client.Send(reply)
 		client.MsgChannelKeepalive.Done()
 	}()
 
 	return ClientMessage{Command: AsyncResponseCommand}, nil
 }
 
-func C2SHandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (rmsg ClientMessage, err error) {
+func C2SHandleRemoteCommand(conn *websocket.Conn, client *ClientInfo, msg ClientMessage) (ClientMessage, error) {
 	client.MsgChannelKeepalive.Add(1)
 	go doRemoteCommand(conn, msg, client)
 
@@ -477,7 +420,7 @@ func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo
 	if err == ErrAuthorizationNeeded {
 		if client.TwitchUsername == "" {
 			// Not logged in
-			client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationNeededError})
+			client.Send(msg.Reply(ErrorCommand, AuthorizationNeededError))
 			client.MsgChannelKeepalive.Done()
 			return
 		}
@@ -485,19 +428,17 @@ func doRemoteCommand(conn *websocket.Conn, msg ClientMessage, client *ClientInfo
 			if success {
 				doRemoteCommand(conn, msg, client)
 			} else {
-				client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: AuthorizationFailedErrorString})
+				client.Send(msg.Reply(ErrorCommand, AuthorizationFailedErrorString))
 				client.MsgChannelKeepalive.Done()
 			}
 		})
 		return // without keepalive.Done()
 	} else if bfe, ok := err.(ErrForwardedFromBackend); ok {
-		client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: bfe.JSONError})
+		client.Send(msg.Reply(ErrorCommand, bfe.JSONError))
 	} else if err != nil {
-		client.Send(ClientMessage{MessageID: msg.MessageID, Command: ErrorCommand, Arguments: err.Error()})
+		client.Send(msg.Reply(ErrorCommand, err.Error()))
 	} else {
-		msg := ClientMessage{MessageID: msg.MessageID, Command: SuccessCommand, origArguments: resp}
-		msg.parseOrigArguments()
-		client.Send(msg)
+		client.Send(msg.ReplyJSON(SuccessCommand, resp))
 	}
 	client.MsgChannelKeepalive.Done()
 }
