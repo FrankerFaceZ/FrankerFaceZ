@@ -1,3 +1,6 @@
+// Copyright 2016 Michael Stapelberg, BSD-3
+//
+// https://stackoverflow.com/a/40883377/1210278
 package certreloader
 
 import (
