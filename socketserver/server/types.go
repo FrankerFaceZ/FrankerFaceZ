@@ -73,7 +73,6 @@ func (cm ClientMessage) ReplyJSON(cmd Command, argsJSON string) ClientMessage {
 		Command:       cmd,
 		origArguments: argsJSON,
 	}
-	n.parseOrigArguments()
 	return n
 }
 
