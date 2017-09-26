@@ -38,9 +38,8 @@ type StatsData struct {
 	MemoryInUseKB uint64
 	MemoryRSSKB   uint64
 
-	LowMemDroppedConnections uint64
-
-	MemPerClientBytes uint64
+	ResponseCacheItems int
+	MemPerClientBytes  uint64
 
 	CpuUsagePct float64
 
@@ -84,7 +83,7 @@ func commandCounter() {
 }
 
 // StatsDataVersion is the version of the StatsData struct.
-const StatsDataVersion = 7
+const StatsDataVersion = 8
 const pageSize = 4096
 
 var cpuUsage struct {
@@ -170,6 +169,7 @@ func updatePeriodicStats() {
 
 	{
 		Statistics.Uptime = nowUpdate.Sub(Statistics.StartTime).String()
+		Statistics.ResponseCacheItems = Backend.responseCache.ItemCount()
 	}
 
 	{

@@ -18,6 +18,7 @@ import (
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server/naclform"
 	cache "github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/nacl/box"
+	"golang.org/x/sync/singleflight"
 )
 
 const bPathAnnounceStartup = "/startup"
@@ -29,6 +30,7 @@ type backendInfo struct {
 	HTTPClient    http.Client
 	baseURL       string
 	responseCache *cache.Cache
+	reloadGroup   singleflight.Group
 
 	postStatisticsURL  string
 	addTopicURL        string
@@ -49,7 +51,8 @@ func setupBackend(config *ConfigFile) *backendInfo {
 
 	b.HTTPClient.Timeout = 60 * time.Second
 	b.baseURL = config.BackendURL
-	b.responseCache = cache.New(60*time.Second, 120*time.Second)
+	// size in bytes of string payload
+	b.responseCache = cache.New(60*time.Second, 10*time.Minute)
 
 	b.announceStartupURL = fmt.Sprintf("%s%s", b.baseURL, bPathAnnounceStartup)
 	b.addTopicURL = fmt.Sprintf("%s%s", b.baseURL, bPathAddTopic)
@@ -88,12 +91,18 @@ func (bfe ErrForwardedFromBackend) Error() string {
 }
 
 // ErrAuthorizationNeeded is emitted when the backend replies with HTTP 401.
+//
 // Indicates that an attempt to validate `ClientInfo.TwitchUsername` should be attempted.
 var ErrAuthorizationNeeded = errors.New("Must authenticate Twitch username to use this command")
 
-// SendRemoteCommandCached performs a RPC call on the backend, but caches responses.
+// SendRemoteCommandCached performs a RPC call on the backend, checking for a
+// cached response first.
+//
+// If a cached, but expired, response is found, the existing value is returned
+// and the cache is updated in the background.
 func (backend *backendInfo) SendRemoteCommandCached(remoteCommand, data string, auth AuthInfo) (string, error) {
-	cached, ok := backend.responseCache.Get(getCacheKey(remoteCommand, data))
+	cacheKey := getCacheKey(remoteCommand, data)
+	cached, ok := backend.responseCache.Get(cacheKey)
 	if ok {
 		return cached.(string), nil
 	}
@@ -101,9 +110,21 @@ func (backend *backendInfo) SendRemoteCommandCached(remoteCommand, data string, 
 }
 
 // SendRemoteCommand performs a RPC call on the backend by POSTing to `/cmd/$remoteCommand`.
+//
 // The form data is as follows: `clientData` is the JSON in the `data` parameter
-// (should be retrieved from ClientMessage.Arguments), and either `username` or
-// `usernameClaimed` depending on whether AuthInfo.UsernameValidates is true is AuthInfo.TwitchUsername.
+// (should be retrieved from ClientMessage.Arguments), `username` is AuthInfo.TwitchUsername,
+// and `authenticated` is 1 or 0 depending on AuthInfo.UsernameValidated.
+//
+// 401 responses return an ErrAuthorizationNeeded.
+//
+// Non-2xx responses return the response body as an error to the client (application/json
+// responses are sent as-is, non-json are sent as a JSON string).
+//
+// If a 2xx response has the FFZ-Cache header, its value is used as a minimum number of
+// seconds to cache the response for. (Responses may be cached for longer, see
+// SendRemoteCommandCached and the cache implementation.)
+//
+// A successful response updates the Statistics.Health.Backend map.
 func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth AuthInfo) (responseStr string, err error) {
 	destURL := fmt.Sprintf("%s/cmd/%s", backend.baseURL, remoteCommand)
 	healthBucket := fmt.Sprintf("/cmd/%s", remoteCommand)
@@ -166,7 +187,11 @@ func (backend *backendInfo) SendRemoteCommand(remoteCommand, data string, auth A
 			return "", fmt.Errorf("The RPC server returned a non-integer cache duration: %v", err)
 		}
 		duration := time.Duration(durSecs) * time.Second
-		backend.responseCache.Set(getCacheKey(remoteCommand, data), responseStr, duration)
+		backend.responseCache.Set(
+			getCacheKey(remoteCommand, data),
+			responseStr,
+			duration,
+		)
 	}
 
 	now := time.Now().UTC()
