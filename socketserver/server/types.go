@@ -35,11 +35,6 @@ type ConfigFile struct {
 	// Path to key file.
 	SSLKeyFile string
 
-	UseESLogStashing bool
-	ESServer         string
-	ESIndexPrefix    string
-	ESHostName       string
-
 	// Nacl keys
 	OurPrivateKey    []byte
 	OurPublicKey     []byte

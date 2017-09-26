@@ -1,7 +1,10 @@
 package main // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/cmd/ffzsocketserver"
 
+import _ "net/http/pprof"
+
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -14,10 +17,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/certreloader"
 	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 )
-
-import _ "net/http/pprof"
 
 var configFilename = flag.String("config", "config.json", "Configuration file, including the keypairs for the NaCl crypto library, for communicating with the backend.")
 var flagGenerateKeys = flag.Bool("genkeys", false, "Generate NaCl keys instead of serving requests.\nArguments: [int serverId] [base64 backendPublic]\nThe backend public key can either be specified in base64 on the command line, or put in the json file later.")
@@ -69,12 +71,21 @@ func main() {
 	signal.Notify(stopSig, syscall.SIGTERM)
 
 	if conf.UseSSL {
+		reloader, err := certreloader.New(conf.SSLCertificateFile, conf.SSLKeyFile)
+		if err != nil {
+			log.Fatalln("Could not load TLS certificate:", err)
+		}
+		reloader.AutoCheck(syscall.SIGHUP)
+
 		server1 = &http.Server{
 			Addr:    conf.SSLListenAddr,
 			Handler: http.DefaultServeMux,
+			TLSConfig: &tls.Config{
+				GetCertificate: reloader.GetCertificateFunc(),
+			},
 		}
 		go func() {
-			if err := server1.ListenAndServeTLS(conf.SSLCertificateFile, conf.SSLKeyFile); err != nil {
+			if err := server1.ListenAndServeTLS("", ""); err != nil {
 				log.Println("ListenAndServeTLS:", err)
 				stopSig <- os.Interrupt
 			}
