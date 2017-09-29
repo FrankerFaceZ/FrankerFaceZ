@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/signal"
@@ -105,6 +106,10 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.HandleFunc("/get_sub_count", HTTPGetSubscriberCount)
 	serveMux.HandleFunc("/all_topics", HTTPListAllTopics)
 
+	for _, route := range config.ProxyRoutes {
+		serveMux.Handle(route.Route, ProxyHandler(route))
+	}
+
 	announceForm, err := Backend.secureForm.Seal(url.Values{
 		"startup": []string{"1"},
 	})
@@ -167,6 +172,47 @@ func dumpStackOnCtrlZ() {
 		byteCnt := runtime.Stack(buf, true)
 		fmt.Println(string(buf[:byteCnt]))
 	}
+}
+
+// Join two URL segments
+func singleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	return a + b
+}
+
+// ProxyHandler sets up a ReverseProxy for serving content on a route.
+func ProxyHandler(route ProxyRoute) *httputil.ReverseProxy {
+	target, err := url.Parse(route.Server)
+	if err != nil {
+		log.Fatalln("Unable to parse proxy URL:", err)
+	}
+
+	offset := len(route.Route)
+	targetQuery := target.RawQuery
+
+	director := func(req *http.Request) {
+		req.URL.Scheme = target.Scheme
+		req.URL.Host = target.Host
+		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path[offset:len(req.URL.Path)])
+		if targetQuery == "" || req.URL.RawQuery == "" {
+			req.URL.RawQuery = targetQuery + req.URL.RawQuery
+		} else {
+			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
+		}
+		if _, ok := req.Header["User-Agent"]; !ok {
+			// Disable User-Agent
+			req.Header.Set("User-Agent", "")
+		}
+	}
+
+	return &httputil.ReverseProxy{Director: director}
 }
 
 // HTTPSayOK replies with 200 and a body of "ok\n".

@@ -42,7 +42,17 @@ type ConfigFile struct {
 
 	// Request username validation from all new clients.
 	SendAuthToNewClients bool
+
+	// Proxy Routes
+	ProxyRoutes []ProxyRoute
 }
+
+
+type ProxyRoute struct {
+	Route	string
+	Server	string
+}
+
 
 type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
