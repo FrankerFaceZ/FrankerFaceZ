@@ -544,8 +544,6 @@ var is_android = navigator.userAgent.indexOf('Android') !== -1,
 					el.appendChild(label);
 					el.appendChild(help);
 					menu.appendChild(el);
-					//jQuery('.html-tooltip', el).tipsy({html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-					//jQuery('.ffz-tooltip', el).tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 				}
 
 				container.appendChild(menu);

@@ -66,6 +66,7 @@ FFZ.ws_commands.viewers = function(data) {
 		view_count.innerHTML = content;
 
 		parent.appendChild(view_count);
-		jQuery(view_count).tipsy({gravity: this.is_dashboard ? "s" : utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+		jQuery(view_count).zipsy({
+			gravity: this.is_dashboard ? "s" : utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 	}
 }

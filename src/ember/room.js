@@ -956,7 +956,7 @@ FFZ.prototype.modify_room_component = function(component) {
 				if ( ! badge ) {
 					badge = utils.createElement('span', 'ffz room-state stat float-right', (label || info[0]).charAt(0).toUpperCase() + '<span>' + (label || info[0]).substr(1).toUpperCase() + '</span>');
 					badge.id = id;
-					jQuery(badge).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
+					jQuery(badge).zipsy({html: true, gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'se')});
 					container.appendChild(badge);
 				}
 

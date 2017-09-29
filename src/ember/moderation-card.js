@@ -1015,7 +1015,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 							name.innerHTML = results[0];
 							name.title = results[1] || '';
 							if ( results[1] )
-								jQuery(name).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+								jQuery(name).zipsy({html: true, gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 						}
 					});
 			});
@@ -1105,9 +1105,9 @@ FFZ.prototype.modify_moderation_card = function(component) {
 						add_btn_make = function(label, cmd) {
 							var btn = utils.createElement('button', 'button ffz-no-bg', utils.sanitize(label));
 
-							jQuery(btn).tipsy({
+							jQuery(btn).zipsy({
 								html: true,
-								gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
+								gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n'),
 								title: function() {
 									var user = t.get('cardInfo.user'),
 										chat_controller = utils.ember_lookup('controller:chat'),
@@ -1169,7 +1169,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 						else if ( f.settings.mod_card_hotkeys && timeout === 1 )
 							btn.title = "(P)urge - " + btn.title;
 
-						jQuery(btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+						jQuery(btn).zipsy({gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 						btn.addEventListener('click', btn_click.bind(this, timeout));
 						return btn;
@@ -1220,7 +1220,7 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					unban_btn.innerHTML = '<figure class="icon">' + CHECK + '</figure>';
 					unban_btn.title = (f.settings.mod_card_hotkeys ? "(U)" : "U") + "nban User";
 
-					jQuery(unban_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+					jQuery(unban_btn).zipsy({gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 					unban_btn.addEventListener("click", btn_click.bind(this, -1));
 
 					jQuery(ban_btn).after(unban_btn);
@@ -1229,7 +1229,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 
 
 			// Tooltips for ban and ignore.
-			jQuery("button.ignore, button.ban").tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+			jQuery("button.ignore, button.ban").zipsy({
+				gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 
 			// More Fixing Other Buttons
@@ -1245,7 +1246,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 			// Follow Button
 			var follow_button = el.querySelector(".follow-button");
 			if ( follow_button )
-				jQuery(follow_button).tipsy({title: function() { return follow_button.classList.contains('is-following') ? "Unfollow" : "Follow"}});
+				jQuery(follow_button).zipsy({
+					title: function() { return follow_button.classList.contains('is-following') ? "Unfollow" : "Follow"}});
 
 
 			// Whisper and Message Buttons
@@ -1257,7 +1259,8 @@ FFZ.prototype.modify_moderation_card = function(component) {
 				msg_btn.classList.add('message');
 
 				msg_btn.title = "Whisper User";
-				jQuery(msg_btn).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+				jQuery(msg_btn).zipsy({
+					gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 
 				var real_msg = utils.createElement('button', 'message-button button float-left button--icon-only message html-tooltip');
@@ -1365,7 +1368,9 @@ FFZ.prototype.modify_moderation_card = function(component) {
 					name.innerHTML = results[0];
 					name.title = results[1] || '';
 					if ( results[1] )
-						jQuery(name).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+						jQuery(name).zipsy({
+							html: true,
+							gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 				}
 			}
 

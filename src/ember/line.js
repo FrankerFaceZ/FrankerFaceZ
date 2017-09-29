@@ -868,7 +868,8 @@ FFZ.prototype.setup_line = function() {
 
 	// Tipsy Handler
 	jQuery(document.body).on("mouseleave", ".tipsy", function() {
-		this.parentElement.removeChild(this);
+		if ( ! this.classList.contains('zipsy') )
+			this.parentElement.removeChild(this);
 	});
 
 	// Aliases

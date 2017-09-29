@@ -190,7 +190,7 @@ FFZ.prototype.modify_conversation_window = function(component) {
 				header_name.setAttribute('data-color', raw_color);
 			}
 
-			jQuery('.badge', el).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+			jQuery('.badge', el).zipsy({gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
 }

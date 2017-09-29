@@ -585,6 +585,7 @@ module.exports = FFZ.utils = {
 	transition_user: function(username) {
 		var Channel = ember_resolve('model:deprecated-channel');
 		ember_transition('channel.index', Channel.find({id: username}).load());
+		return false;
 	},
 
 	transition_link: function(callback) {
@@ -881,7 +882,7 @@ module.exports = FFZ.utils = {
 
 
 	tooltip_placement: function(margin, prefer) {
-		return function() {
+		return function(box) {
 			var pref = prefer;
 			if ( typeof pref === "function" )
 				pref = pref.call(this);
@@ -908,6 +909,42 @@ module.exports = FFZ.utils = {
 			if ($this.offset().left < boundLeft) dir.ew = 'w';
 			if ($(window).width() + $(document).scrollLeft() - ($this.offset().left + half_width) < margin) dir.ew = 'e';
 			if ($(window).height() + $(document).scrollTop() - ($this.offset().top + half_height) < (2*margin)) dir.ns = 's';
+
+			return (dir.ns ? dir.ns : '') + (dir.ew ? dir.ew : '');
+		}
+	},
+
+	newtip_placement: function(margin, prefer) {
+		return function(box) {
+			var pref = prefer;
+			if ( typeof pref === 'function' )
+				pref = pref.call(this);
+
+			var dir = {},
+
+				win = jQuery(window),
+				t = jQuery(this),
+
+				offset = t.offset(),
+
+				width = box.width,
+				height = box.height,
+
+				d_st = document.body.scrollTop,
+				d_sl = document.body.scrollLeft;
+
+			if ( pref.length > 1 ) {
+				dir.ns = pref[0];
+				dir.ew = pref[1];
+			} else if ( pref[0] === 'e' || pref[0] === 'w' )
+				dir.ew = pref[0];
+			else
+				dir.ns = pref[0];
+
+			if ( offset.top < d_st + margin ) dir.ns = 'n';
+			if ( offset.left < d_sl + margin ) dir.ew = 'w';
+			if ( win.width() + d_sl - (offset.left + width) < margin ) dir.ew = 'e';
+			if ( win.height() + d_st - (offset.top + height) < margin ) dir.ns = 's';
 
 			return (dir.ns ? dir.ns : '') + (dir.ew ? dir.ew : '');
 		}

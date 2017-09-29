@@ -61,7 +61,7 @@ FFZ.channel_metadata = {};
 
 // Version
 var VER = FFZ.version_info = {
-	major: 3, minor: 5, revision: 527,
+	major: 3, minor: 5, revision: 529,
 	toString: function() {
 		return [VER.major, VER.minor, VER.revision].join(".") + (VER.extra || "");
 	}
@@ -322,7 +322,7 @@ FFZ.prototype.initialize = function(increment, delay) {
 	// Twitch ember application is ready.
 
 	// Pages we don't want to interact with at all.
-	if ( ['passport.twitch.tv', 'im.twitch.tv', 'api.twitch.tv', 'chatdepot.twitch.tv', 'spade.twitch.tv'].indexOf(location.hostname) !== -1 || /^\/products\//.test(location.pathname) || /^\/pr\//.test(location.pathname) || /^\/user\/two_factor/.test(location.pathname) ) {
+	if ( ['passport.twitch.tv', 'im.twitch.tv', 'api.twitch.tv', 'chatdepot.twitch.tv', 'spade.twitch.tv'].indexOf(location.hostname) !== -1 || /^\/pr\//.test(location.pathname) || /^\/user\/two_factor/.test(location.pathname) ) {
 		this.log("Found banned sub-domain. Not initializing.");
 		window.FrankerFaceZ = null;
 		return;
@@ -337,12 +337,12 @@ FFZ.prototype.initialize = function(increment, delay) {
 		return this.init_clips(delay);
 
 	// Check for special non-ember pages.
-	if ( /^\/(?:team\/|user\/|p\/|settings|m\/|messages?\/)/.test(location.pathname) )
+	if ( /^\/(?:team\/|user\/|p\/|m\/|settings\/(?:prime|turbo|channel|security|connections)|messages?\/)/.test(location.pathname) )
 		return this.init_normal(delay);
 
 	// Check for the dashboard.
-	if ( window.PP && /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) )
-		return this.init_dashboard(delay);
+	/*if ( window.PP && /\/[^\/]+\/dashboard/.test(location.pathname) && !/bookmarks$/.test(location.pathname) )
+		return this.init_dashboard(delay);*/
 
 	var loaded = FFZ.utils.ember_resolve('model:room');
 	if ( !loaded ) {

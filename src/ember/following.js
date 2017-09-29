@@ -121,7 +121,7 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 			var el = this.get('element');
 
 			el.classList.add('ffz-processed');
-			jQuery('.aspect', el).tipsy();
+			jQuery('.aspect', el).zipsy();
 
 			if ( ! f.settings.enhance_profile_following )
 				return;
@@ -239,7 +239,7 @@ FFZ.prototype.modify_twitch_profile_card = function(component) {
 
 			el.classList.add('ffz-processed');
 
-			jQuery('.aspect', el).tipsy();
+			jQuery('.aspect', el).zipsy();
 
 			if ( ! data )
 				return false;

@@ -495,13 +495,14 @@ FFZ.prototype.modify_navigation = function(component, is_top_nav) {
 		_initTooltips: function() {
 			this._tipsySelector = this.$("#js-warp a, #small_search button, #small_more button");
 			this._tipsySelector.off("mouseenter").off("mouseleave").teardownTipsy();
-			this._tipsySelector.tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'w')});
+			this._tipsySelector.zipsy({
+				gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'w')});
 
-			this.$('a[data-href="following"]').tipsy({
+			this.$('a[data-href="following"]').zipsy({
 				html: true,
 				className: function() { return f.settings.following_count ? 'ffz-wide-tip' : '' },
 				title: function() { return f._build_following_tooltip(this) },
-				gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE * 2, 'w')
+				gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE * 2, 'w')
 			});
 		},
 

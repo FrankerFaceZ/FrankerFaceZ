@@ -951,7 +951,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 				tbl.innerHTML = '<thead><tr><th colspan="2">Channels</th><th class="ffz-row-switch" title="Pinning a channel makes it so you always join that channel\'s chat, no matter where you are on Twitch.">Pin</th></tr></thead><tbody></tbody>';
 				room_list.insertBefore(tbl, room_list.firstChild);
 
-				jQuery('.ffz-row-switch', tbl).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'se')});
+				jQuery('.ffz-row-switch', tbl).zipsy({gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'se')});
 
 				chan_table = this._ffz_chan_table = tbl.querySelector('tbody');
 
@@ -1171,7 +1171,7 @@ FFZ.prototype.modify_chat_room_manager = function(component) {
 			link.title = "Chat Room Management";
 			link.innerHTML = '<figure class="icon">' + constants.ROOMS + '</figure><span class="notifications"></span>';
 
-			jQuery(link).tipsy({gravity: "n", offset: 10});
+			jQuery(link).zipsy({gravity: "n", offset: 10});
 
 			link.addEventListener('click', function() {
 				view.set('isShowingList', !view.get('isShowingList'));

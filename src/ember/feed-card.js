@@ -86,9 +86,6 @@ FFZ.prototype.modify_feed_card = function(component) {
 				output = f.render_tokens(tokens, true, false);
 
 			pbody.innerHTML = '<p>' + output + '</p>';
-
-			//jQuery('.ffz-tooltip', pbody).tipsy({html: true, title: f.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-			//jQuery('.html-tooltip', pbody).tipsy({html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
 		}
 	});
 }

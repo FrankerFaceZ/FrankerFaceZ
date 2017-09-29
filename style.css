@@ -1731,6 +1731,8 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	margin-left: 5px;
 }
 
+.ffz-wide-tip a b { color: #fff }
+
 .ffz-wide-tip b { margin-right: 20px; }
 
 .ffz-wide-tip span.stat svg {
@@ -1786,12 +1788,18 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 .ffz-rich-tip .avatar {
 	float: left;
 	margin-right: 8px;
-	height: 48px;
-	width: 48px;
+	max-height: 48px;
+	max-width: 100px;
 }
 
 .ffz-rich-tip .tweet-heading .avatar {
 	border-radius: 50%;
+}
+
+.ffz-rich-tip .heading .title {
+	font-weight: bold;
+	display: block;
+	text-align: justify;
 }
 
 .ffz-rich-tip .display-name {
@@ -1811,7 +1819,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	font-size: 12px;
 }
 
-.ffz-rich-tip .twitch-heading .badge.verified {
+.ffz-rich-tip .twitch-heading .tip-badge.verified {
 	height: 12px;
 	width: 12px;
 	margin: 2px 0 -1px 5px;
@@ -1820,13 +1828,13 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	display: inline-block;
 }
 
-.ffz-rich-tip .twitch-heading .big-name .badge.verified {
+.ffz-rich-tip .twitch-heading .big-name .tip-badge.verified {
 	height: 18px;
 	width: 18px;
 	margin: 1px 0 0 10px;
 }
 
-.ffz-rich-tip .tweet-heading .badge {
+.ffz-rich-tip .tweet-heading .tip-badge {
 	height: 12px;
 	width: 12px;
 	margin: 2px 0 -1px 5px;
@@ -1834,15 +1842,15 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	display: inline-block;
 }
 
-.ffz-rich-tip .badge.verified {
+.ffz-rich-tip .tip-badge.verified {
 	background-position: 0 -15px;
 }
 
-.ffz-rich-tip .badge.translator {
+.ffz-rich-tip .tip-badge.translator {
 	background-position: -12px -15px;
 }
 
-.ffz-rich-tip .badge.protected {
+.ffz-rich-tip .tip-badge.protected {
 	background-position: -24px -15px;
 	width: 14px;
 }
@@ -1867,11 +1875,13 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 	font-size: 10px;
 }
 
+.ffz-rich-tip .subtitle,
 .ffz-rich-tip .quoted .body,
 .ffz-rich-tip .stats,
 .ffz-rich-tip .username { opacity: 0.6 }
 
 .ffz-rich-tip .stats { display: flex }
+.ffz-rich-tip .stats .wide-stat,
 .ffz-rich-tip time { flex-grow: 1 }
 
 .ffz-rich-tip .tweet-stats .stat:before {
@@ -1894,11 +1904,39 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 
 .ffz-rich-tip .media { position: relative; text-align: center }
 
-.ffz-rich-tip .media:not([data-count="1"]) {
+.ffz-rich-tip .media[data-count]:not([data-count="1"]) {
 	display: flex;
 	margin: 8px -5px -5px 0;
 	flex-flow: column wrap;
 	height: 329px;
+}
+
+.ffz-rich-tip .media .duration {
+	position: absolute;
+	bottom: 0; right: 0;
+	margin: 4px;
+	background: #000;
+	opacity: .8;
+	padding: 2px 4px;
+	border-radius: 2px;
+	z-index: 10;
+	font-weight: 500;
+}
+
+.ffz-rich-tip .sixteen-nine {
+	width: 100%;
+	overflow: hidden;
+	margin: 0;
+	padding-top: 56.25%;
+	position: relative;
+}
+
+.ffz-rich-tip .sixteen-nine img {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 100%;
+	transform: translate(-50%, -50%);
 }
 
 .ffz-rich-tip .media video {
@@ -1911,7 +1949,7 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 .ffz-rich-tip .media[data-count="2"] { height: 164.5px }
 .ffz-rich-tip .media img { max-height: 324px }
 
-.ffz-rich-tip .quoted .media:not([data-count="1"]) { height: 150px }
+.ffz-rich-tip .quoted .media[data-count]:not([data-count="1"]) { height: 150px }
 .ffz-rich-tip .quoted .media[data-count="2"] { height: 150px }
 .ffz-rich-tip .quoted .media video,
 .ffz-rich-tip .quoted .media img { max-height: 150px }

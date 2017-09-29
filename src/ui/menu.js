@@ -175,10 +175,6 @@ FFZ.prototype.build_ui_popup = function(view) {
 	inner.className = 'emoticon-selector-box dropmenu';
 	container.appendChild(inner);
 
-	// Stuff
-	//jQuery(inner).find('.html-tooltip').tipsy({live: true, html: true, gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 's')});
-	//jQuery(inner).find('.ffz-tooltip').tipsy({live: true, html: true, title: this.render_tooltip(), gravity: utils.tooltip_placement(2*constants.TOOLTIP_DISTANCE, 'n')});
-
 	// Menu Container
 	var sub_container = document.createElement('div');
 	sub_container.className = 'ffz-ui-menu-page';
@@ -263,7 +259,7 @@ FFZ.prototype.build_ui_popup = function(view) {
 		link.title = page.name;
 		link.innerHTML = page.icon;
 
-		jQuery(link).tipsy({gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n')});
+		jQuery(link).zipsy({gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n')});
 
 		link.addEventListener("click", this._ui_change_page.bind(this, view, inner, menu, sub_container, key));
 

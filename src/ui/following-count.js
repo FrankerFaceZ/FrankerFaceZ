@@ -218,12 +218,13 @@ FFZ.prototype._build_following_tooltip = function(el) {
 			var up_since = this.settings.stream_uptime && stream.created_at && utils.parse_date(stream.created_at),
 				now = Date.now() - (this._ws_server_offset || 0),
 				uptime = up_since && (Math.floor((now - up_since.getTime()) / 60000) * 60) || 0,
+				channel_name = stream.channel.name,
 				tags = stream.channel.game === 'Creative' && this.tokenize_ctags(stream.channel.status, true);
 
 			tooltip += (c === 1 ? '<hr>' : '') +
 				(uptime > 0 ? '<span class="stat">' + constants.CLOCK + ' ' + utils.duration_string(uptime) + '</span>' : '') +
 				'<span class="stat">' + constants.LIVE + ' ' + utils.number_commas(stream.viewers) + '</span>' +
-				'<b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b><br>' +
+				'<a href="https://www.twitch.tv/' + utils.quote_san(channel_name) + '" onclick="return FrankerFaceZ.utils.transition_user(&quot;' + utils.quote_san(channel_name) + '&quot;)"><b>' + utils.sanitize(stream.channel.display_name || stream.channel.name) + '</b></a><br>' +
 				'<span class="playing">' +
 				(stream.stream_type === 'watch_party' ? '<span class="pill is-watch-party">Vodcast</span> ' : '') +
 				(stream.channel.game === 'Creative' ? 'Being Creative' : (stream.channel.game ? 'Playing ' + utils.sanitize(stream.channel.game) : 'Not Playing')) + (tags ? ' | ' + _.pluck(tags, "text").join(" ") : '') + '</span>';
@@ -269,7 +270,7 @@ FFZ.prototype._build_following_tooltip = function(el) {
 	}*/
 
 	// Reposition the tooltip.
-	setTimeout(function() {
+	/*setTimeout(function() {
 		var tip = document.querySelector('.tipsy');
 		if ( ! tip )
 			return;
@@ -283,7 +284,7 @@ FFZ.prototype._build_following_tooltip = function(el) {
 			tip.style.left = (left - bb.left) + 5 + 'px';
 		else if ( right > document.body.clientWidth - 5 )
 			tip.style.left = (left - (5 + right - document.body.clientWidth)) + 'px';
-	});
+	});*/
 
 	return tooltip;
 }
@@ -293,9 +294,15 @@ FFZ.prototype._install_following_tooltips = function() {
 	var f = this,
 		data = {
 			html: true,
+			delayOut: 100,
 			className: function() { return WIDE_TIP(f, this); },
 			title: function() { return f._build_following_tooltip(this); },
-			gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE * 2, 'w')
+			gravity: function(box) {
+				return (box ?
+					utils.newtip_placement :
+					utils.tooltip_placement)(constants.TOOLTIP_DISTANCE, 'w').call(this, box);
+				//utils.tooltip_placement(constants.TOOLTIP_DISTANCE * 2, 'w')
+			}
 		};
 
 	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
@@ -305,7 +312,7 @@ FFZ.prototype._install_following_tooltips = function() {
 			if ( td && td.options ) {
 				td.options = _.extend(td.options, data);
 			} else
-				following.tipsy(data);
+				following.zipsy(data);
 		}
 	}
 }

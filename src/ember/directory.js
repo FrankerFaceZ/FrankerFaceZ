@@ -476,7 +476,7 @@ FFZ.prototype.modify_game_follow_button = function(component) {
 			spoiler.addEventListener('click', click_button('spoiler_games', update_spoiler));
 			el.appendChild(spoiler);
 
-			jQuery('.tooltip', el).tipsy();
+			jQuery('.tooltip', el).zipsy();
 		}
 	})
 }
@@ -581,7 +581,7 @@ FFZ.prototype.modify_directory_live = function(component, mode) {
 					t_el.appendChild(t_span);
 					t_el.setAttribute('original-title', 'Stream Uptime <nobr>(since ' + up_since.toLocaleString() + ')</nobr>');
 
-					jQuery(t_el).tipsy({html: true, gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 's')});
+					jQuery(t_el).zipsy({html: true, gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 's')});
 					cont.appendChild(t_el);
 				}
 
@@ -780,7 +780,7 @@ FFZ.prototype.modify_directory_host = function(component) {
 				if ( hosts && hosts.length > 1 ) {
 					title.textContent = utils.number_commas(hosts.length) + ' hosting ' + utils.sanitize(target.display_name);
 					title.title = _.sortBy(hosts, "name").mapBy("display_name").join(", ");
-					jQuery(title).tipsy({gravity: 's'});
+					jQuery(title).zipsy({gravity: 's'});
 				}
 			}
 

@@ -63,7 +63,7 @@ FFZ.msg_commands.chatter_count = function(data) {
 		stat.appendChild(el);
 
 		cont.appendChild(stat);
-		jQuery(stat).tipsy({gravity: 's'});
+		jQuery(stat).zipsy({gravity: 's'});
 	}
 
 	el.textContent = utils.number_commas(data.chatters);

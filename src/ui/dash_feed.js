@@ -102,12 +102,12 @@ FFZ.prototype.build_dash_feed = function() {
 				align_btn.insertBefore(chk_share, align_btn.firstChild);
 			}
 		});
-		jQuery(tnc).tipsy();
+		jQuery(tnc).zipsy();
 		align_btn.appendChild(tnc);
 	}
 
 	char_count.title = 'Roughly the first 115 characters of a post will appear in a Tweet.';
-	jQuery(char_count).tipsy();
+	jQuery(char_count).zipsy();
 
 	align_btn.appendChild(btn_submit);
 	align_btn.appendChild(char_count);

@@ -76,7 +76,7 @@ FFZ.prototype._update_subscribers = function() {
 				});
 
 			cont.appendChild(stat);
-			jQuery(stat).tipsy({gravity: 's'});
+			jQuery(stat).zipsy({gravity: 's'});
 		}
 
 		el.textContent = utils.number_commas(sub_count);

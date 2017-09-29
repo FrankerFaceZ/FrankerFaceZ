@@ -10,7 +10,7 @@ var FFZ = window.FrankerFaceZ,
 
 	HOP = Object.prototype.hasOwnProperty,
 
-	TOOLTIP_VERSION = 2,
+	TOOLTIP_VERSION = 3,
 	FAV_MARKER = '<span class="ffz-favorite"></span>',
 
 	EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
@@ -21,7 +21,7 @@ var FFZ = window.FrankerFaceZ,
 
 	LINK = /(?:https?:\/\/)?(?:[-a-zA-Z0-9@:%_\+~#=]+\.)+[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/\/=()]*)/g,
 
-	TIME_REPLACER = /<time\s+datetime=(["'])([^>]+?)\1[^>]*>(.*?)<\/time>/i,
+	TIME_REPLACER = /<time\s+(?:class=(["'])([^>]+?)\1\s+)?datetime=(["'])([^>]+?)\3[^>]*>(.*?)<\/time>/i,
 	CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+?\/?\w*?)(?:\/edit)?(?:[\?#]|$)/,
 	VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)$/,
 	FFZ_EMOTE_URL = /^(?:https?:\/\/)?(?:www\.)?frankerfacez\.com\/emoticon\/(\d+)(?:-\w*)?$/,
@@ -349,7 +349,7 @@ FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
 
 	this._twitch_emote_to_set[emote_id] = null;
 	var f = this,
-		use_ss = this._ws_open,
+		//use_ss = true, //this._ws_open,
 		timer = null,
 		cb = function(success, data) {
 			if ( timer ) {
@@ -373,18 +373,18 @@ FFZ.prototype.get_twitch_set_for = function(emote_id, callback) {
 				callback(set_id);
 		};
 
-	if ( use_ss ) {
-		this.ws_send("get_emote", emote_id, cb);
-		timer = setTimeout(cb.bind(this, false, null), 1000);
-	} else
-		fetch(constants.API_SERVER = "ed/emote/" + emote_id)
+	/*if ( use_ss ) {*/
+		this.ws_send("get_emote", emote_id, cb, true);
+		timer = setTimeout(cb.bind(this, false, null), 5000);
+	/*} else
+		fetch(constants.API_SERVER + "ed/emote/" + emote_id)
 			.then(function(resp) {
 				if ( ! resp.ok )
 					return cb(false, null);
 				resp.json().then(function(data) {
 					cb(true, data);
 				})
-			});
+			});*/
 
 	return null;
 }
@@ -403,7 +403,7 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 	this._twitch_set_to_channel[set_id] = null;
 
 	var f = this,
-		use_ss = this._ws_open,
+		//use_ss = this._ws_open,
 		timer = null,
 		cb = function(success, data) {
 			if ( timer ) {
@@ -421,10 +421,10 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 				callback(data || null);
 		};
 
-	if ( use_ss ) {
-		this.ws_send("get_emote_set", set_id, cb);
-		timer = setTimeout(cb.bind(this, false, null), 1000);
-	} else
+	/*if ( use_ss ) {*/
+		this.ws_send("get_emote_set", set_id, cb, true);
+		timer = setTimeout(cb.bind(this, false, null), 5000);
+	/*} else
 		fetch(constants.API_SERVER + "ed/set/" + set_id)
 			.then(function(resp) {
 				if ( ! resp.ok )
@@ -432,7 +432,7 @@ FFZ.prototype.get_twitch_set = function(set_id, callback) {
 				resp.json().then(function(data) {
 					cb(true, data);
 				})
-			});
+			});*/
 
 	return null;
 }
@@ -465,6 +465,8 @@ FFZ.prototype.get_link_info = function(url, no_promises) {
 		expires = info && info[1],
 
 		li = this.settings.link_info;
+
+	console.log('get_link_info', url, info);
 
 	if ( ! li || (expires && Date.now() > expires) )
 		info = this._link_data[url] = null;
@@ -522,17 +524,19 @@ FFZ.prototype.render_link_tooltip = function(data, el) {
 	var content = data.content || data.html || '';
 
 	if ( content )
-		content = content.replace(TIME_REPLACER, function(match, junk, timestamp, old) {
+		content = content.replace(TIME_REPLACER, function(match, junk_one, cls, junk_two, timestamp, old) {
 			var now = Date.now(),
 				posted_at = utils.parse_date(timestamp),
 				time_ago = posted_at && (now - posted_at) / 1000;
 
-			if ( time_ago < 86400 )
-				old = utils.full_human_time(time_ago);
-			else if ( posted_at )
-				old = posted_at.toLocaleString();
+			if ( cls !== 'keep' ) {
+				if ( cls === 'human' || (cls !== 'ts' && time_ago < 86400) )
+					old = utils.full_human_time(time_ago);
+				else if ( posted_at )
+					old = posted_at.toLocaleString();
+			}
 
-			return '<time timestamp="' + utils.sanitize(timestamp) + '">' + utils.sanitize(old) + '</time>';
+			return '<time class="' + utils.quote_attr(cls||'') + '" timestamp="' + utils.quote_attr(timestamp) + '">' + utils.sanitize(old) + '</time>';
 		});
 
 

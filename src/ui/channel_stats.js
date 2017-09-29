@@ -302,13 +302,13 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 			if ( dynamic_tooltip ) {
 				je = jQuery(btn);
 				je.hover(
-						function() { je.data("hover", true).tipsy("show") },
-						function() { je.data("hover", false).tipsy("hide") })
+						function() { je.data("hover", true).zipsy("show") },
+						function() { je.data("hover", false).zipsy("hide") })
 					.data("hover", false)
-					.tipsy({
+					.zipsy({
 						trigger: "manual",
 						html: true,
-						gravity: utils.tooltip_placement(constants.TOOLTIP_DISTANCE, 'n'),
+						gravity: utils.newtip_placement(constants.TOOLTIP_DISTANCE, 'n'),
 						title: function() {
 							// We can't wait for a promise to resolve now, so hope this hasn't changed.
 							var dat = info.setup ? info.setup.apply(f, basic_info) : basic_info;
@@ -397,7 +397,7 @@ FFZ.prototype.render_metadata = function(key, basic_info, metabar, timers, refre
 
 		stat.innerHTML = label;
 		if ( dynamic_tooltip && je.data('hover') )
-			je.tipsy('hide').tipsy('show');
+			je.zipsy('hide').zipsy('show');
 
 		if ( info.hasOwnProperty('disabled') )
 			el.classList.toggle('disabled', typeof info.disabled === 'function' ? info.disabled.apply(f, data) : info.disabled);
