@@ -1,6 +1,7 @@
 package server // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -619,7 +620,6 @@ func MarshalClientMessage(clientMessage interface{}) (int, []byte, error) {
 		}
 		msg = *pMsg
 	}
-	var dataStr string
 
 	if msg.Command == "" && msg.MessageID == 0 {
 		panic("MarshalClientMessage: attempt to send an empty ClientMessage")
@@ -632,20 +632,25 @@ func MarshalClientMessage(clientMessage interface{}) (int, []byte, error) {
 		msg.MessageID = -1
 	}
 
+	// optimized from fmt.Sprintf("%d %s %s", msg.MessageID, msg.Command, ...)
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, msg.MessageID)
+	buf.WriteByte(' ')
+	buf.WriteString(string(msg.Command))
+
 	if msg.origArguments != "" {
-		dataStr = fmt.Sprintf("%d %s %s", msg.MessageID, msg.Command, msg.origArguments)
+		buf.WriteByte(' ')
+		buf.WriteString(msg.origArguments)
 	} else if msg.Arguments != nil {
 		argBytes, err := json.Marshal(msg.Arguments)
 		if err != nil {
 			return 0, nil, err
 		}
-
-		dataStr = fmt.Sprintf("%d %s %s", msg.MessageID, msg.Command, string(argBytes))
-	} else {
-		dataStr = fmt.Sprintf("%d %s", msg.MessageID, msg.Command)
+		buf.WriteByte(' ')
+		buf.Write(argBytes)
 	}
 
-	return websocket.TextMessage, []byte(dataStr), nil
+	return websocket.TextMessage, buf.Bytes(), nil
 }
 
 // ArgumentsAsString parses the arguments of the ClientMessage as a single string.
