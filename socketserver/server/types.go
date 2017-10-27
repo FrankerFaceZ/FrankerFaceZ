@@ -141,10 +141,6 @@ type ClientInfo struct {
 
 	// Take out an Add() on this during a command if you need to use the MessageChannel later.
 	MsgChannelKeepalive sync.WaitGroup
-
-	// The number of pings sent without a response.
-	// Protected by Mutex
-	pingCount int
 }
 
 func VersionFromString(v string) ClientVersion {
