@@ -18,9 +18,11 @@ var ChatSubscriptionLock sync.RWMutex
 var GlobalSubscriptionInfo []*ClientInfo
 var GlobalSubscriptionLock sync.RWMutex
 
+// Send a message to the client.
+// Drops if buffer is full.
 func (client *ClientInfo) Send(msg ClientMessage) bool {
 	select {
-	case client.MessageChannel <- msg:
+	case client.messageChannel <- msg:
 		return true
 	case <-client.MsgChannelIsDone:
 		return false

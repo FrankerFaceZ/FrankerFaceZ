@@ -366,7 +366,7 @@ func RunSocketConnection(conn *websocket.Conn) {
 	stoppedChan := make(chan struct{})
 
 	var client ClientInfo
-	client.MessageChannel = _serverMessageChan
+	client.messageChannel = _serverMessageChan
 	client.RemoteAddr = conn.RemoteAddr()
 	client.MsgChannelIsDone = stoppedChan
 
