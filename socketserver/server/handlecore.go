@@ -463,7 +463,7 @@ func runSocketReader(conn *websocket.Conn, client *ClientInfo, errorChan chan<- 
 }
 
 func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan error, clientChan <-chan ClientMessage, serverMessageChan <-chan ClientMessage) websocket.CloseError {
-	pingTicker := time.NewTicker(1*time.Minute)
+	pingTicker := time.NewTicker(1 * time.Minute)
 	defer pingTicker.Stop()
 	lastPacket := time.Now()
 
@@ -512,9 +512,9 @@ func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan 
 
 		case <-pingTicker.C:
 			now := time.Now()
-			if lastPacket.Add(5*time.Minute).Before(now) {
+			if lastPacket.Add(5 * time.Minute).Before(now) {
 				return CloseTimedOut
-			} else if lastPacket.Add(1*time.Minute).Before(now) {
+			} else if lastPacket.Add(1 * time.Minute).Before(now) {
 				conn.WriteControl(websocket.PingMessage, []byte(strconv.FormatInt(time.Now().Unix(), 10)), getDeadline())
 			}
 

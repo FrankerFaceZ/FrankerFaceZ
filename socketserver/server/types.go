@@ -47,12 +47,10 @@ type ConfigFile struct {
 	ProxyRoutes []ProxyRoute
 }
 
-
 type ProxyRoute struct {
-	Route	string
-	Server	string
+	Route  string
+	Server string
 }
-
 
 type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
