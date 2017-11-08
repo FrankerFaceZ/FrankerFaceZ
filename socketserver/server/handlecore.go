@@ -480,6 +480,8 @@ func runSocketReader(conn *websocket.Conn, client *ClientInfo, errorChan chan<- 
 	// exit goroutine
 }
 
+var pingPayload = []byte("PING")
+
 func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan error, clientChan <-chan ClientMessage, serverMessageChan <-chan ClientMessage) websocket.CloseError {
 	lastPacket := time.Now()
 
@@ -509,7 +511,7 @@ func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan 
 				}
 				conn.WriteControl(
 					websocket.PingMessage,
-					[]byte(strconv.FormatInt(time.Now().Unix(), 10)),
+					pingPayload,
 					getDeadline(),
 				)
 				continue
@@ -522,7 +524,7 @@ func runSocketWriter(conn *websocket.Conn, client *ClientInfo, errorChan <-chan 
 
 			if msg.Command == "__ping" {
 				// generated for PONG packets
-				// want this to run AFTER lastPacket was set
+				// want to branch AFTER lastPacket is set
 				continue
 			}
 
