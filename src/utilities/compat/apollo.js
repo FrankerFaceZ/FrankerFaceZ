@@ -71,21 +71,36 @@ export default class Apollo extends Module {
 	}
 }`);
 
-		this.registerModifier('GamePage_Game', `query {
-	game {
-		streams {
-			edges {
-				node {
-					createdAt
-					type
-					broadcaster {
-						profileImageURL(width: 70)
+		/*this.registerModifier('GamePage_Game', `query {
+	directory {
+		... on Community {
+			streams {
+				edges {
+					node {
+						createdAt
+						type
+						broadcaster {
+							profileImageURL(width: 70)
+						}
+					}
+				}
+			}
+		}
+		... on Game {
+			streams {
+				edges {
+					node {
+						createdAt
+						type
+						broadcaster {
+							profileImageURL(width: 70)
+						}
 					}
 				}
 			}
 		}
 	}
-}`);
+}`);*/
 
 	}
 
