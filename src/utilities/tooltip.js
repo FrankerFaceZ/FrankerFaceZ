@@ -32,7 +32,7 @@ export const DefaultOptions = {
 // Tooltip Class
 // ============================================================================
 
-export default class Tooltip {
+export class Tooltip {
 	constructor(parent, cls, options) {
 		if ( typeof parent === 'string' )
 			parent = document.querySelector(parent);
@@ -290,6 +290,8 @@ export default class Tooltip {
 		tip.visible = false;
 	}
 }
+
+export default Tooltip;
 
 
 // Function Intentionally Left Blank

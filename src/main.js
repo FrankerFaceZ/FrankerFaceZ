@@ -95,7 +95,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-beta1',
+	major: 4, minor: 0, revision: 0, extra: '-beta1.1',
 	build: __webpack_hash__,
 	toString: () =>
 		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
@@ -105,7 +105,13 @@ const VER = FrankerFaceZ.version_info = {
 FrankerFaceZ.utilities = {
 	dom: require('utilities/dom'),
 	color: require('utilities/color'),
-	events: require('utilities/events')
+	events: require('utilities/events'),
+	module: require('utilities/module'),
+	constants: require('utilities/constants'),
+	logging: require('utilities/logging'),
+	object: require('utilities/object'),
+	time: require('utilities/time'),
+	tooltip: require('utilities/tooltip')
 }
 
 

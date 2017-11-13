@@ -26,7 +26,7 @@ export const State = {
 }
 
 
-export default class Module extends EventEmitter {
+export class Module extends EventEmitter {
 	constructor(name, parent) {
 		if ( ! parent && name instanceof Module ) {
 			parent = name;
@@ -547,6 +547,7 @@ export class SiteModule extends Module {
 	}
 }
 
+export default Module;
 
 
 // ============================================================================

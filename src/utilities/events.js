@@ -210,7 +210,7 @@ export class EventEmitter {
 EventEmitter.Detach = Detach;
 
 
-export default class HierarchicalEventEmitter extends EventEmitter {
+export class HierarchicalEventEmitter extends EventEmitter {
 	constructor(name, parent) {
 		super();
 
@@ -311,3 +311,5 @@ export default class HierarchicalEventEmitter extends EventEmitter {
 		});
 	}
 }
+
+export default HierarchicalEventEmitter;

@@ -9,7 +9,7 @@ import Module from 'utilities/module';
 import {has} from 'utilities/object';
 
 
-export default class Vue extends Module {
+export class Vue extends Module {
 	constructor(...args) {
 		super(...args);
 		this._components = {};
@@ -97,3 +97,5 @@ export default class Vue extends Module {
 		});
 	}
 }
+
+export default Vue;
