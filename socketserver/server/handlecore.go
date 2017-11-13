@@ -2,6 +2,7 @@ package server // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/serv
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -239,6 +240,29 @@ var BannerHTML []byte
 // StopAcceptingConnectionsCh is closed while the server is shutting down.
 var StopAcceptingConnectionsCh = make(chan struct{})
 
+func shouldRejectConnection() bool {
+	memFreeKB := atomic.LoadUint64(&Statistics.SysMemFreeKB)
+	if memFreeKB > 0 && memFreeKB < Configuration.MinMemoryKBytes {
+		return true
+	}
+
+	curClients := atomic.LoadUint64(&Statistics.CurrentClientCount)
+	if Configuration.MaxClientCount != 0 && curClients >= Configuration.MaxClientCount {
+		return true
+	}
+
+	return false
+}
+
+var errEarlyTLSReject = errors.New("over capacity")
+
+func TLSEarlyReject(*tls.ClientHelloInfo) (*tls.Config, error) {
+	if shouldRejectConnection() {
+		return nil, errEarlyTLSReject
+	}
+	return nil, nil
+}
+
 // HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
 // It either uses the SocketUpgrader or writes out the BannerHTML.
 func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
@@ -251,19 +275,10 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
 		updateSysMem()
 
-		if Statistics.SysMemFreeKB > 0 && Statistics.SysMemFreeKB < Configuration.MinMemoryKBytes {
+		if shouldRejectConnection() {
 			w.WriteHeader(503)
-			fmt.Fprint(w, "error: low memory")
+			fmt.Fprint(w, "connection rejected: over capacity")
 			return
-		}
-
-		if Configuration.MaxClientCount != 0 {
-			curClients := atomic.LoadUint64(&Statistics.CurrentClientCount)
-			if curClients >= Configuration.MaxClientCount {
-				w.WriteHeader(503)
-				fmt.Fprint(w, "error: client limit reached")
-				return
-			}
 		}
 
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
