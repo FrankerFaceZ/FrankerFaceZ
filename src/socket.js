@@ -190,21 +190,23 @@ export default class SocketClient extends Module {
 			// This is handled entirely on the socket server and so should be
 			// fast enough to use as a ping.
 			this._ping_time = performance.now();
-			const hello_p = new Promise((resolve) => {
+			const [hello_success, h_data] = await new Promise((resolve) => {
 				this._send(
 					'hello',
 					[`ffz_${window.FrankerFaceZ.version_info}`, this.settings.provider.get('client-id')],
 					(success, data) => resolve([success, data]),
 				);
-			})
-			const [hello_success, h_data] = await hello_p;
+			});
+
 			if ( ! hello_success ) {
 				if ( this._state == State.CONNECTED ) {
 					this.log.warn('Unable to say hello: ', h_data);
 					this.reconnect();
-				} // already got disconnect - this is a rejection
+				}
+				// else: already got disconnect - this is a rejection
 				return;
 			}
+
 			this._on_pong(false, hello_success, h_data);
 			this.settings.provider.set('client-id', h_data[0]);
 			this.log.info('Client ID:', h_data[0]);
