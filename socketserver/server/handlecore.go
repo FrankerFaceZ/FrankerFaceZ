@@ -267,6 +267,7 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
+			w.WriteHeader(400)
 			fmt.Fprintf(w, "error: %v", err)
 			return
 		}
