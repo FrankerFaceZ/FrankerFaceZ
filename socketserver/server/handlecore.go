@@ -2,7 +2,6 @@ package server // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/serv
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -254,15 +253,6 @@ func shouldRejectConnection() bool {
 	return false
 }
 
-var errEarlyTLSReject = errors.New("over capacity")
-
-func TLSEarlyReject(*tls.ClientHelloInfo) (*tls.Config, error) {
-	if shouldRejectConnection() {
-		return nil, errEarlyTLSReject
-	}
-	return nil, nil
-}
-
 // HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
 // It either uses the SocketUpgrader or writes out the BannerHTML.
 func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
@@ -275,15 +265,16 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
 		updateSysMem()
 
-		if shouldRejectConnection() {
-			w.WriteHeader(503)
-			fmt.Fprint(w, "connection rejected: over capacity")
+		conn, err := SocketUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			w.WriteHeader(400)
+			fmt.Fprintf(w, "error: %v", err)
 			return
 		}
 
-		conn, err := SocketUpgrader.Upgrade(w, r, nil)
-		if err != nil {
-			fmt.Fprintf(w, "error: %v", err)
+		if shouldRejectConnection() {
+			conn.WritePreparedMessage(MCloseOverCapacity)
+			conn.Close()
 			return
 		}
 		RunSocketConnection(conn)
@@ -327,6 +318,10 @@ var ErrExpectedStringAndInt = errors.New("Error: Expected array of string, int a
 
 // ErrExpectedStringAndIntGotFloat is sent in a ErrorCommand Reply when the Arguments are of the wrong type.
 var ErrExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
+
+// CloseOverCapacity is sent when the maximum connection limit is reached.
+var MCloseOverCapacity, _ = websocket.NewPreparedMessage(websocket.CloseMessage,
+	websocket.FormatCloseMessage(websocket.CloseGoingAway, "over capacity"))
 
 // CloseGoingAway is sent when the server is restarting.
 var CloseGoingAway = websocket.CloseError{Code: websocket.CloseGoingAway, Text: "server restarting"}

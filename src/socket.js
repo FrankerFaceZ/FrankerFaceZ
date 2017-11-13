@@ -130,7 +130,7 @@ export default class SocketClient extends Module {
 	_reconnect() {
 		if ( ! this._reconnect_timer ) {
 			if ( this._delay < 60000 )
-				this._delay += (Math.floor(Math.random() * 10) + 5) * 1000;
+				this._delay = (this._delay + 1000) * (1 + Math.random());
 			else
 				this._delay = (Math.floor(Math.random() * 60) + 30) * 1000;
 
@@ -165,7 +165,6 @@ export default class SocketClient extends Module {
 		this._state = State.CONNECTING;
 		this._last_id = 1;
 
-		this._delay = 0;
 		this._last_ping = null;
 
 		this.log.info(`Using Server: ${host}`);
@@ -181,7 +180,7 @@ export default class SocketClient extends Module {
 			return;
 		}
 
-		ws.onopen = () => {
+		ws.onopen = async () => {
 			this._state = State.CONNECTED;
 			this._sent_user = false;
 
@@ -191,18 +190,28 @@ export default class SocketClient extends Module {
 			// This is handled entirely on the socket server and so should be
 			// fast enough to use as a ping.
 			this._ping_time = performance.now();
-			this._send(
-				'hello',
-				[`ffz_${window.FrankerFaceZ.version_info}`, this.settings.provider.get('client-id')],
-				(success, data) => {
-					if ( ! success )
-						return this.log.warn('Error Saying Hello', data);
+			const [hello_success, h_data] = await new Promise((resolve) => {
+				this._send(
+					'hello',
+					[`ffz_${window.FrankerFaceZ.version_info}`, this.settings.provider.get('client-id')],
+					(success, data) => resolve([success, data]),
+				);
+			});
 
-					this._on_pong(false, success, data[1]);
-					this.settings.provider.set('client-id', data[0]);
-					this.log.info('Client ID:', data[0]);
-				});
+			if ( ! hello_success ) {
+				if ( this._state == State.CONNECTED ) {
+					this.log.warn('Unable to say hello: ', h_data);
+					this.reconnect();
+				}
+				// else: already got disconnect - this is a rejection
+				return;
+			}
 
+			this._on_pong(false, hello_success, h_data);
+			this.settings.provider.set('client-id', h_data[0]);
+			this.log.info('Client ID:', h_data[0]);
+
+			this._delay = 0;
 
 			// Grab the current user from the site.
 			const site = this.resolve('site'),
@@ -247,7 +256,7 @@ export default class SocketClient extends Module {
 
 		ws.onclose = event => {
 			const old_state = this._state;
-			this.log.info(`Disconnected. (${event.code}:${event.reason})`);
+			this.log.info(`Disconnected. (${event.code}: ${event.reason})`);
 
 			this._state = State.DISCONNECTED;
 
@@ -272,8 +281,8 @@ export default class SocketClient extends Module {
 			if ( ! this._offline_time )
 				this._offline_time = Date.now();
 
-			// Reset the host if we didn't manage to connect.
-			if ( old_state !== State.CONNECTED )
+			// Reset the host if we didn't manage to connect or we got a GOAWAY code.
+			if ( old_state !== State.CONNECTED || event.code === 1001 )
 				this._host = null;
 
 			this._reconnect();
