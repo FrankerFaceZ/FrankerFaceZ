@@ -320,7 +320,7 @@ var ErrExpectedStringAndInt = errors.New("Error: Expected array of string, int a
 var ErrExpectedStringAndIntGotFloat = errors.New("Error: Second argument was a float, expected an integer.")
 
 // CloseOverCapacity is sent when the maximum connection limit is reached.
-var MCloseOverCapacity = websocket.NewPreparedMessage(websocket.CloseFrame,
+var MCloseOverCapacity, _ = websocket.NewPreparedMessage(websocket.CloseMessage,
 	websocket.FormatCloseMessage(websocket.CloseGoingAway, "over capacity"))
 
 // CloseGoingAway is sent when the server is restarting.
