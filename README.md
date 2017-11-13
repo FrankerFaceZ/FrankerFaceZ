@@ -13,7 +13,7 @@ FrankerFaceZ uses node.js to manage development dependencies and to run an HTTP
 server for development. To get everything you need:
 
 1. Install node.js and npm
-2. Run ```npm install`` within the FrankerFaceZ directory.
+2. Run ```npm install``` within the FrankerFaceZ directory.
 
 
 From there, you can use npm to build the extension from source simply by
