@@ -1,0 +1,21 @@
+.channel-info-bar__action-container {
+	& > .flex {
+		& > * {
+			margin-left: 0 !important;
+			margin-right: 1rem !important;
+			order: 50;
+		}
+
+		.c-text-live {
+			order: 1;
+		}
+
+		.tw-tooltip-wrapper {
+			order: 100;
+		}
+	}
+
+	& > .flex:last-child > :last-child {
+		margin-right: 0 !important
+	}
+}

@@ -1,0 +1,33 @@
+.twilight-main { order: 2 }
+.side-nav { order: 3 }
+.right-column { order: 1 }
+
+.side-nav__toggle-visibility {
+	right: unset !important;
+	left: -2.5rem;
+	svg { transform: rotate(180deg) }
+}
+
+.right-column__toggle-visibility {
+	left: unset !important;
+	right: -2.5rem;
+	svg { transform: rotate(180deg) }
+}
+
+.side-nav__theme-wrapper.border-r {
+	border-right: none !important;
+	border-left: 1px solid #dad8de;
+
+	.theme--dark & {
+		border-left-color: #2c2541;
+	}
+}
+
+.chat__pane {
+	border-left: none !important;
+	border-right: 1px solid #dad8de;
+
+	.theme--dark & {
+		border-right-color: #2c2541;
+	}
+}

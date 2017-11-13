@@ -1,4 +1,0 @@
-.chat-line:not(.admin):not(.notification) .from,
-.chat-line:not(.admin):not(.notification) .message {
-	color: inherit !important
-}

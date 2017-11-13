@@ -1,0 +1,50 @@
+.ffz-main-menu {
+	&:not(.maximized) {
+		position: absolute;
+		top: 25%;
+		left: 25%;
+
+		z-index: 99999999;
+
+		height: 50vh;
+		width: 50vw;
+
+		min-width: 640px;
+		min-height: 300px;
+
+		> header {
+			cursor: move;
+		}
+	}
+
+	&.maximized {
+		position: unset !important;
+		width: 100%;
+		height: 100%;
+
+		border: none;
+		border-top: 1px solid transparent;
+
+		> header {
+			cursor: default;
+			padding: 1rem 3rem !important;
+		}
+	}
+
+	.want-ps {
+		overflow-y: auto;
+	}
+
+	> header {
+		user-select: none;
+
+		.tw-search-input {
+			max-width: 40rem
+		}
+	}
+}
+
+
+.ffz-has-menu > :not(.ffz-main-menu) {
+	display: none !important
+}

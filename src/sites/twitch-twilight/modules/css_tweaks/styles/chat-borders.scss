@@ -1,0 +1,17 @@
+.chat-line__message,
+.chat-line__moderation,
+.chat-line__status,
+.chat-line__raid,
+.chat-line__subscribe {
+	padding-bottom: calc(.5rem - 1px) !important;
+
+	border-bottom: 1px solid #dad8de;
+
+	.theme--dark & {
+		border-bottom-color: #2c2541;
+	}
+
+	&:last-child:nth-child(odd) {
+		border-bottom-color: transparent !important;
+	}
+}

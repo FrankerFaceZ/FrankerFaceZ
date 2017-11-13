@@ -1,6 +1,0 @@
-.badges .badge:not(.unknown-badge):not(.transparent) {
-	border-radius: 9px;
-	background-size: 16px;
-	background-repeat: no-repeat;
-	background-position: center;
-}

@@ -1,0 +1,296 @@
+'use strict';
+
+// ============================================================================
+// Dynamic Tooltip Handling
+//
+// Better because you can assign arbitrary content.
+// Better because they are asynchronous with loading indication.
+// Better because they aren't hidden by parents with overflow: hidden;
+// ============================================================================
+
+import {createElement as e, setChildren} from 'utilities/dom';
+import {maybe_call} from 'utilities/object';
+
+import Popper from 'popper.js';
+
+let last_id = 0;
+
+export const DefaultOptions = {
+	html: false,
+	delayShow: 0,
+	delayHide: 0,
+
+	live: true,
+
+	tooltipClass: 'ffz__tooltip',
+	innerClass: 'ffz__tooltip--inner',
+	arrowClass: 'ffz__tooltip--arrow'
+}
+
+
+// ============================================================================
+// Tooltip Class
+// ============================================================================
+
+export default class Tooltip {
+	constructor(parent, cls, options) {
+		if ( typeof parent === 'string' )
+			parent = document.querySelector(parent);
+
+		if (!( parent instanceof Node ))
+			throw new TypeError('invalid parent');
+
+		this.options = Object.assign({}, DefaultOptions, options);
+		this.live = this.options.live;
+
+		this.parent = parent;
+		this.cls = cls;
+
+		if ( ! this.live ) {
+			if ( typeof cls === 'string' )
+				this.elements = parent.querySelectorAll(cls);
+			else if ( Array.isArray(cls) )
+				this.elements = cls;
+			else if ( cls instanceof Node )
+				this.elements = [cls];
+			else
+				throw new TypeError('invalid elements');
+
+			this.elements = new Set(this.elements);
+
+		} else {
+			this.cls = cls;
+			this.elements = new Set;
+		}
+
+		this._accessor = `_ffz_tooltip$${last_id++}`;
+
+		this._onMouseOut = e => this._exit(e.target);
+
+		if ( this.live ) {
+			this._onMouseOver = e => {
+				const target = e.target;
+				if ( target.classList.contains(this.cls) )
+					this._enter(target);
+			};
+
+			parent.addEventListener('mouseover', this._onMouseOver);
+			parent.addEventListener('mouseout', this._onMouseOut);
+
+		} else {
+			this._onMouseOver = e => {
+				const target = e.target;
+				if ( this.elements.has(target) )
+					this._enter(e.target);
+			}
+
+			if ( this.elements.size <= 5 )
+				for(const el of this.elements) {
+					el.addEventListener('mouseenter', this._onMouseOver);
+					el.addEventListener('mouseleave', this._onMouseOut);
+				}
+
+			else {
+				parent.addEventListener('mouseover', this._onMouseOver);
+				parent.addEventListener('mouseout', this._onMouseOut);
+			}
+
+		}
+	}
+
+	destroy() {
+		if ( this.live || this.elements.size > 5 ) {
+			parent.removeEventListener('mouseover', this._onMouseOver);
+			parent.removeEventListener('mouseout', this._onMouseOut);
+		} else
+			for(const el of this.elements) {
+				el.removeEventListener('mouseenter', this._onMouseOver);
+				el.removeEventListener('mouseleave', this._onMouseOut);
+			}
+
+		for(const el of this.elements) {
+			const tip = el[this._accessor];
+			if ( tip && tip.visible )
+				this.hide(tip);
+
+			el[this._accessor] = null;
+		}
+
+		this.elements = null;
+		this._onMouseOut = this._onMouseOver = null;
+		this.parent = null;
+	}
+
+
+	_enter(target) {
+		let tip = target[this._accessor],
+			delay = this.options.delayShow;
+
+		if ( ! tip )
+			tip = target[this._accessor] = {target};
+
+		tip.state = true;
+
+		if ( tip.visible )
+			return;
+
+		if ( delay === 0 )
+			this.show(tip);
+
+		else {
+			if ( tip._show_timer )
+				clearTimeout(tip._show_timer);
+
+			tip._show_timer = setTimeout(() => {
+				tip._show_timer = null;
+				if ( tip.state )
+					this.show(tip);
+			}, delay);
+		}
+	}
+
+	_exit(target) {
+		const tip = target[this._accessor];
+		if ( ! tip || ! tip.visible )
+			return;
+
+		const delay = this.options.delayHide;
+
+		tip.state = false;
+
+		if ( delay === 0 )
+			this.hide(tip);
+
+		else {
+			if ( tip._show_timer )
+				clearTimeout(tip._show_timer);
+
+			tip._show_timer = setTimeout(() => {
+				tip._show_timer = null;
+				if ( ! tip.state )
+					this.hide(tip);
+
+			}, delay);
+		}
+	}
+
+
+	show(tip) {
+		const opts = this.options,
+			target = tip.target;
+
+		this.elements.add(target);
+
+		// Set this early in case content uses it early.
+		tip.update = () => tip._update(); // tip.popper && tip.popper.scheduleUpdate();
+		tip.rerender = () => {
+			if ( tip.visible ) {
+				this.hide(tip);
+				this.show(tip);
+			}
+		}
+
+		let content = maybe_call(opts.content, null, target, tip);
+		if ( content === undefined )
+			content = tip.target.title;
+
+		if ( tip.visible || (! content && ! opts.onShow) )
+			return;
+
+		// Build the DOM.
+		const arrow = e('div', opts.arrowClass),
+			inner = tip.element = e('div', opts.innerClass),
+
+			el = tip.outer = e('div', {
+				className: opts.tooltipClass
+			}, [inner, arrow]);
+
+		arrow.setAttribute('x-arrow', true);
+
+		if ( maybe_call(opts.interactive, null, target, tip) ) {
+			el.classList.add('interactive');
+			el.addEventListener('mouseover', () => this._enter(target));
+			el.addEventListener('mouseout', () => this._exit(target));
+		}
+
+		// Assign our content. If there's a Promise, we'll need
+		// to do this weirdly.
+		const use_html = maybe_call(opts.html, null, target, tip),
+			setter = use_html ? 'innerHTML' : 'textContent';
+
+		const pop_opts = Object.assign({
+			arrowElement: arrow,
+		}, opts.popper);
+
+		tip._update = () => {
+			if ( tip.popper ) {
+				tip.popper.destroy();
+				tip.popper = new Popper(target, el, pop_opts);
+			}
+		}
+
+		if ( content instanceof Promise ) {
+			inner.innerHTML = '<div class="ffz-i-zreknarf loader"></div>';
+			content.then(content => {
+				if ( ! content )
+					return this.hide(tip);
+
+				if ( use_html && (content instanceof Node || Array.isArray(content)) ) {
+					inner.innerHTML = '';
+					setChildren(inner, content, opts.sanitizeChildren);
+				} else
+					inner[setter] = content;
+
+				tip._update();
+
+			}).catch(err => {
+				inner.textContent = `There was an error showing this tooltip.\n${err}`;
+				tip._update();
+			});
+
+		} else if ( content ) {
+			if ( use_html && (content instanceof Node || Array.isArray(content)) )
+				setChildren(inner, content, opts.sanitizeChildren);
+			else
+				inner[setter] = content;
+		}
+
+
+		// Add everything to the DOM and create the Popper instance.
+		this.parent.appendChild(el);
+		tip.popper = new Popper(target, el, pop_opts);
+		tip.visible = true;
+
+		if ( opts.onShow )
+			opts.onShow(target, tip);
+	}
+
+
+	hide(tip) { // eslint-disable-line class-methods-use-this
+		const opts = this.options;
+		if ( opts.onHide )
+			opts.onHide(tip.target, tip);
+
+		if ( tip.popper ) {
+			tip.popper.destroy();
+			tip.popper = null;
+		}
+
+		if ( tip.outer ) {
+			const o = tip.outer;
+			if ( o.parentElement )
+				o.parentElement.removeChild(o);
+
+			tip.outer = null;
+		}
+
+		tip.update = null;
+		tip._update = noop;
+		tip.element = null;
+		tip.visible = false;
+	}
+}
+
+
+// Function Intentionally Left Blank
+function noop() { }

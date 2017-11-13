@@ -1,4 +1,0 @@
-/* Rounded Badges */
-.badges .badge:not(.subscriber):not(.unknown-badge) {
-	border-radius: 2px;
-}

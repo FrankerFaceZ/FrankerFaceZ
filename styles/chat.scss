@@ -1,0 +1,58 @@
+.ffz-cheer {
+	display: inline-block;
+	height: 2.8rem;
+	line-height: 2.8rem;
+	padding-left: 3rem;
+	margin: -.5rem .5rem;
+	background-position: 0;
+	background-repeat: no-repeat;
+
+	&:after {
+		font-weight: bold;
+		content: attr(data-amount)
+	}
+}
+
+.ffz-cheer-preview {
+	height: 11.2rem;
+	width: 11.2rem;
+}
+
+
+.ffz-badge {
+	display: inline-block;
+	min-width: 1.8rem;
+	height: 1.8rem;
+	margin: 0 .3rem .2rem 0;
+	background-position: center;
+	vertical-align: middle;
+}
+
+
+.modified-emote {
+	~ .chat-line__message--emote {
+		position: relative;
+		z-index: 1
+	}
+
+	position: relative;
+	z-index: 0;
+
+	> img {
+		margin: 0 !important
+	}
+
+	span {
+		position: absolute;
+		top: -20px; bottom: -20px; left: -20px; right: -20px;
+		margin: auto;
+		pointer-events: none;
+
+		img {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+	}
+}

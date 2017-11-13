@@ -1,0 +1,64 @@
+.ffz--profile-selector {
+	position: relative;
+
+	.tw-balloon {
+		margin-top: 0 !important
+	}
+
+	.scrollable-area {
+		max-height: 30rem;
+	}
+}
+
+.ffz--profile-row {
+	outline: none;
+	cursor: pointer;
+
+	&.live .ffz--profile-row__icon {
+		color: green;
+	}
+
+	&:not(.live):not(:hover):not(:focus) {
+		opacity: .5;
+		font-variant: italic;
+
+		.theme--dark & {
+			opacity: .25;
+		}
+	}
+
+	.description {
+		opacity: .7;
+	}
+
+	&:first-child {
+		margin-top: 0.5rem;
+	}
+
+	&:last-child {
+		&, .theme--dark & {
+			border-bottom: none !important
+		}
+	}
+
+	&:focus {
+		box-shadow:
+			inset 0 0 0 1px #7d5bbe,
+			0 0 6px -2px #7d5bbe;
+	}
+
+	&:focus,
+	&:hover {
+		background: rgba(100, 65, 164, .05);
+
+		.theme-dark & {
+			background: rgba(100, 65, 164, .2);
+		}
+	}
+}
+
+.ffz--profile-row__icon {
+	position: absolute;
+	top: 0.5rem; right: 0.5rem;
+	font-size: 1.6rem;
+}

@@ -1,32 +1,47 @@
 {
-  "name": "FrankerFaceZ",
-  "author": "Stendec",
-  "version": "3.0.0",
-  "description": "FrankerFaceZ gives Twitch users custom emoticons.",
+  "name": "frankerfacez",
+  "author": "Dan Salvato LLC",
+  "version": "4.0.0",
+  "description": "FrankerFaceZ is a Twitch enhancement suite.",
   "main": "script.js",
+  "scripts": {
+    "start": "webpack-dev-server --config webpack.web.dev.js",
+    "build": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production'",
+    "build:prod": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production'",
+    "build:dev": "webpack --config webpack.web.dev.js"
+  },
   "devDependencies": {
-    "gulp": "^3.9.1",
-    "gulp-browserify": "^0.5.1",
-    "gulp-changed": "^1.3.2",
-    "gulp-clean": "^0.3.2",
-    "gulp-clean-css": "^2.0.12",
-    "gulp-concat": "^2.6.0",
-    "gulp-declare": "^0.3.0",
-    "gulp-filesize": "0.0.6",
-    "gulp-footer": "^1.0.5",
-    "gulp-header": "^1.8.8",
-    "gulp-js-escape": "^1.0.1",
-    "gulp-less": "^3.1.0",
-    "gulp-rename": "^1.2.2",
-    "gulp-sourcemaps": "^1.6.0",
-    "gulp-uglify": "^2.0.0",
-    "gulp-util": "^3.0.7",
-    "gulp-wrap": "^0.13.0",
-    "request": "^2.74.0",
-    "vinyl-ftp": "^0.5.0"
+    "clean-webpack-plugin": "^0.1.17",
+    "copy-webpack-plugin": "^4.1.0",
+    "css-loader": "^0.28.7",
+    "eslint": "^4.9.0",
+    "extract-loader": "^1.0.1",
+    "file-loader": "^1.1.5",
+    "less": "^2.7.2",
+    "node-sass": "^4.5.3",
+    "raw-loader": "^0.5.1",
+    "sass-loader": "^6.0.6",
+    "style-loader": "^0.18.2",
+    "to-string-loader": "^1.1.5",
+    "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
+    "vue-loader": "^13.0.5",
+    "webpack": "^3.6.0",
+    "webpack-dev-middleware": "^1.12.0",
+    "webpack-dev-server": "^2.9.1",
+    "webpack-manifest-plugin": "^1.3.2",
+    "webpack-merge": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://bitbucket.org/stendec/frankerfacez.git"
+    "url": "https://github.com/FrankerFaceZ/FrankerFaceZ.git"
+  },
+  "dependencies": {
+    "displacejs": "^1.2.4",
+    "path-to-regexp": "^2.0.0",
+    "popper.js": "^1.12.6",
+    "sortablejs": "^1.6.1",
+    "vue": "^2.5.2",
+    "vue-clickaway": "^2.1.0",
+    "vue-template-compiler": "^2.5.2"
   }
 }

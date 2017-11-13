@@ -1,0 +1,15 @@
+.ffz-top-nav {
+	.ffz-menu__pill {
+		top: -1rem;
+		right: -.3rem;
+		font-size: 1.2rem;
+	}
+
+	.pd-r-1 + & {
+		margin-left: -.5rem;
+	}
+
+	.loading figure {
+		animation: ffz-rotateplane 1.2s infinite linear;
+	}
+}

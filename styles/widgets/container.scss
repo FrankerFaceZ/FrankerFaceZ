@@ -1,0 +1,73 @@
+$spacing: 1rem;
+$border-light: #dad8de;
+$border-dark: #2c2541;
+
+$bg-light: #faf9fa;
+$bg-dark: #17141f;
+
+.ffz--outer-container {
+	margin-bottom: $spacing * 2;
+
+	&:last-child {
+		margin-bottom: 0
+	}
+}
+
+
+.ffz--inner-container {
+	padding: $spacing;
+}
+
+.ffz--widget {
+	margin-bottom: $spacing;
+
+	label {
+		padding-top: .5rem;
+		padding-bottom: .5rem;
+	}
+
+	&.default, &.inherits {
+		label:before, label:after {
+			opacity: 0.5;
+		}
+
+		input:focus + label {
+			&:before, &:after {
+				opacity: 1
+			}
+		}
+
+		input, textarea, select {
+			opacity: 0.5;
+
+			&:focus {
+				opacity: 1
+			}
+		}
+	}
+
+	&.inherits {
+		label:before, label:after {
+			filter: grayscale(100%);
+		}
+
+		label:hover,
+		input:focus + label {
+			&:before, &:after {
+				filter: none;
+			}
+		}
+
+		input, textarea, select {
+			filter: grayscale(100%);
+
+			&:hover, &:focus {
+				filter: none;
+			}
+		}
+	}
+
+	&:last-child {
+		margin-bottom: 0
+	}
+}

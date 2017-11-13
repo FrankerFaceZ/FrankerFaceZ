@@ -1,0 +1,12 @@
+@import 'icons';
+@import 'tooltips';
+@import 'widgets';
+
+@import 'chat';
+
+@keyframes ffz-rotateplane {
+	0% { transform: rotateY(90deg) rotateX(180deg) }
+	25% { transform: rotateY(0deg) rotateX(180deg) }
+	75% { transform: rotateY(0deg) rotateX(0deg) }
+	100% { transform: rotateY(90deg) rotateX(0deg) }
+}

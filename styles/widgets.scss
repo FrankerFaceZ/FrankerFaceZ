@@ -1,0 +1,162 @@
+@import "./widgets/container.scss";
+
+@import "./widgets/menu-container.scss";
+@import "./widgets/tab-container.scss";
+
+@import "./widgets/menu-tree.scss";
+@import "./widgets/profile-selector.scss";
+
+
+.display-inline { display: inline !important }
+.width-auto { width: auto !important }
+
+.ffz--widget {
+
+	input, select {
+		min-width: 20rem;
+	}
+
+	label {
+		min-width: 15rem;
+	}
+}
+
+
+.ffz--menu-page {
+	padding: 1rem;
+
+	header {
+		a {
+			font-weight: bold;
+			color: inherit;
+		}
+	}
+}
+
+
+.ffz--profile-editor {
+	.tw-button:disabled:not(:hover):not(:focus) {
+		opacity: 0.5;
+	}
+
+	label {
+		width: 10rem;
+	}
+}
+
+
+.ffz--profile-manager {
+	.ffz--profile {
+		outline: none;
+
+		&:focus {
+			box-shadow:
+				inset 0 0 0 1px #7d5bbe,
+				0 0 6px -2px #7d5bbe !important;
+		}
+
+		.handle {
+			opacity: 0.3;
+			margin: -0.5rem 0;
+			font-size: 2rem;
+		}
+
+		.ffz--profile__icon {
+			font-size: 2rem;
+		}
+
+		.ffz-i-ok { color: green }
+	}
+
+	.sortable-ghost {
+		opacity: 0.25
+	}
+}
+
+
+.ffz--filter-editor {
+	.ffz--rule {
+		outline: none;
+
+		&:focus {
+			box-shadow:
+				inset 0 0 0 1px #7d5bbe,
+				0 0 6px -2px #7d5bbe !important;
+		}
+
+		.handle {
+			opacity: 0.3;
+			margin: -0.5rem 0;
+			font-size: 2rem;
+		}
+
+		.ffz--filter__icon {
+			font-size: 2rem;
+		}
+
+		.ffz-i-ok { color: green }
+	}
+
+	.sortable-ghost {
+		opacity: 0.25
+	}
+}
+
+
+.ffz--home {
+	h2, p {
+		margin-bottom: 1rem;
+	}
+
+	ul {
+		list-style-type: disc;
+		margin: 1em 0;
+	}
+
+	.tweet-column {
+		width: 300px;
+	}
+}
+
+
+.ffz--changelog {
+	h2, p {
+		margin-bottom: 1rem;
+	}
+
+	.list-header {
+		margin: 10px 20px 5px;
+		padding: 15px 0 5px;
+		border-top: 1px solid #dad8de;
+		font-size: 16px;
+		text-transform: uppercase;
+
+		.theme--dark & {
+			border-top-color: #2c2541;
+		}
+
+		time {
+			opacity: 0.5;
+		}
+	}
+
+	code {
+		padding: 2px 5px;
+		border-radius: 2px;
+		background-color: rgba(0,0,0,0.1);
+
+		.theme--dark & {
+			background-color: rgba(255,255,255,0.05);
+		}
+	}
+
+	.chat-menu-content {
+		margin: 0 20px 20px;
+	}
+
+	#ffz-old-news-button {
+		text-align: center;
+		text-transform: none;
+		padding-bottom: 15px;
+	}
+}

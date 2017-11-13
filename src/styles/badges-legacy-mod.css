@@ -1,9 +1,0 @@
-.badges .badge.moderator.version-1:not(.colored) {
-	background-color: #068c10;
-	background-image: url('//cdn.frankerfacez.com/script/legacy-mod.png');
-}
-
-.badges .badge.moderator.version-1.colored {
-	background: linear-gradient(#068c10,#068c10);
-	-webkit-mask-image: url('//cdn.frankerfacez.com/script/legacy-mod.png');
-}

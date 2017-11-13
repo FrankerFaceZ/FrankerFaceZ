@@ -1,0 +1,12 @@
+.twilight-root {
+	top: 1rem !important;
+
+	.top-nav {
+		top: -4rem !important;
+		transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
+
+		&:hover {
+			top: 0 !important;
+		}
+	}
+}

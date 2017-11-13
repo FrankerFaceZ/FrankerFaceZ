@@ -1,0 +1,69 @@
+.ffz--menu-tree {
+	position: relative;
+
+	&:focus {
+		outline: none;
+
+		&:after {
+			position: absolute;
+			top: 0; left: 0;
+			height: 100%;
+			width: 100%;
+			content: '';
+			pointer-events: none;
+
+			box-shadow: inset 0 0 0 1px #7d5bbe,
+				0 0 6px -2px #7d5bbe;
+		}
+	}
+
+	.active > div,
+	.active > div:hover,
+	.theme--dark & .active > div:hover {
+		background-color: #6441a4;
+		color: #fff;
+	}
+
+	div:hover {
+		cursor: pointer;
+
+		background-color: #fff;
+
+		.theme--dark & {
+			background-color: #201c2b;
+		}
+	}
+
+	li div {
+		font-size: 1.4rem;
+		margin-top: 0.5rem;
+		padding-left: 0.5rem
+	}
+
+	li:first-child div,
+	li ul div {
+		margin-top: 0rem;
+	}
+
+	li ul div {
+		font-size: inherit;
+	}
+
+	li li div { padding-left: 1rem }
+	li li li div { padding-left: 1.5rem }
+	li li li li div { padding-left: 2rem }
+
+	.pill {
+		font-size: 0.9rem;
+	}
+
+	.arrow {
+		opacity: 0.3;
+		font-size: 1.6rem;
+	}
+}
+
+
+.ffz--invisible {
+	visibility: hidden;
+}
