@@ -272,8 +272,8 @@ export default class SocketClient extends Module {
 			if ( ! this._offline_time )
 				this._offline_time = Date.now();
 
-			// Reset the host if we didn't manage to connect.
-			if ( old_state !== State.CONNECTED )
+			// Reset the host if we didn't manage to connect or we got a GOAWAY code.
+			if ( old_state !== State.CONNECTED || event.code === 1001 )
 				this._host = null;
 
 			this._reconnect();
