@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/stendec/frankerfacez/socketserver/server"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 	"github.com/clarkduvall/hyperloglog"
 )
 
