@@ -47,12 +47,10 @@ type ConfigFile struct {
 	ProxyRoutes []ProxyRoute
 }
 
-
 type ProxyRoute struct {
-	Route	string
-	Server	string
+	Route  string
+	Server string
 }
-
 
 type ClientMessage struct {
 	// Message ID. Increments by 1 for each message sent from the client.
@@ -94,12 +92,6 @@ type AuthInfo struct {
 	UsernameValidated bool
 }
 
-type ClientVersion struct {
-	Major    int
-	Minor    int
-	Revision int
-}
-
 type ClientInfo struct {
 	// The client ID.
 	// This must be written once by the owning goroutine before the struct is passed off to any other goroutines.
@@ -134,17 +126,19 @@ type ClientInfo struct {
 	ReadyComplete bool
 
 	// Server-initiated messages should be sent via the Send() method.
-	MessageChannel chan<- ClientMessage
+	messageChannel chan<- ClientMessage
 
 	// Closed when the client is shutting down.
 	MsgChannelIsDone <-chan struct{}
 
-	// Take out an Add() on this during a command if you need to use the MessageChannel later.
+	// Take out an Add() on this during a command if you need to call Send() later.
 	MsgChannelKeepalive sync.WaitGroup
+}
 
-	// The number of pings sent without a response.
-	// Protected by Mutex
-	pingCount int
+type ClientVersion struct {
+	Major    int
+	Minor    int
+	Revision int
 }
 
 func VersionFromString(v string) ClientVersion {
