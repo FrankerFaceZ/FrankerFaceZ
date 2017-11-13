@@ -361,7 +361,7 @@ FFZ.prototype._ws_on_hello = function(success, data) {
 	if ( ! success )
 		return this.log("Error Saying Hello: " + data);
 
-	this._ws_on_pong(success, data[1]);
+	this._ws_on_pong(false, success, data[1]);
 
 	localStorage.ffzClientId = data[0];
 	this.log("Client ID: " + localStorage.ffzClientId);

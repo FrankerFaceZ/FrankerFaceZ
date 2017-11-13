@@ -3,9 +3,9 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('../constants'),
 
 	FOLLOWING_CONTAINERS = [
-		'.warp__item a[data-href="following"]',
-		'#header_actions #header_following',
-		'.top-nav__nav-link[data-tt_content="directory_following"]'
+		['.warp__item a[data-href="following"]'],
+		['#header_actions #header_following'],
+		['.top-nav__nav-link[data-tt_content="directory_following"]', '.top-nav']
 	],
 
 	WIDE_TIP = function(f, el) {
@@ -306,13 +306,14 @@ FFZ.prototype._install_following_tooltips = function() {
 		};
 
 	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
-		var following = jQuery(FOLLOWING_CONTAINERS[i]);
+		var following = jQuery(FOLLOWING_CONTAINERS[i][0]);
 		if ( following && following.length ) {
+			var dat = _.extend(data, {prependTo: FOLLOWING_CONTAINERS[i][1] || document.body});
 			var td = following.data('tipsy');
 			if ( td && td.options ) {
-				td.options = _.extend(td.options, data);
+				td.options = _.extend(td.options, dat);
 			} else
-				following.zipsy(data);
+				following.zipsy(dat);
 		}
 	}
 }
@@ -327,7 +328,7 @@ FFZ.prototype._draw_following_channels = function(streams, total) {
 FFZ.prototype._draw_following_count = function(count) {
 	count = count ? utils.format_unread(count) : '';
 	for(var i=0; i < FOLLOWING_CONTAINERS.length; i++) {
-		var container = document.querySelector(FOLLOWING_CONTAINERS[i]),
+		var container = document.querySelector(FOLLOWING_CONTAINERS[i][0]),
 			badge = container && container.querySelector('.ffz-follow-count');
 		if ( ! container )
 			continue;

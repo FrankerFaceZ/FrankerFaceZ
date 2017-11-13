@@ -2,6 +2,8 @@ var FFZ = window.FrankerFaceZ,
 	constants = require('./constants'),
 	utils = require('./utils'),
 
+	WEBKIT = constants.IS_WEBKIT ? '-webkit-' : '',
+
 	SPECIAL_BADGES = ['staff', 'admin', 'global_mod'],
 	OTHER_KNOWN = ['turbo', 'bits', 'premium', 'partner'],
 
@@ -251,8 +253,8 @@ FFZ.settings_info.transparent_badges = {
 		2: "Circular",
 		3: "Circular (Color Only)",
 		4: "Circular (Color Only, Small)",
-		5: "Transparent" //,
-		//6: "Transparent (Colored)"
+		5: "Transparent",
+		6: "Transparent (Colored)"
 	},
 
 	value: 0,
@@ -294,10 +296,6 @@ FFZ.settings_info.transparent_badges = {
 		}
 	}
 };
-
-// This requires -webkit-mask-image which isn't working in non-WebKit browsers.
-if ( constants.IS_WEBKIT )
-	FFZ.settings_info.transparent_badges.options[6] = "Transparent (Colored)";
 
 
 // --------------------
@@ -573,15 +571,15 @@ FFZ.prototype.render_badges = function(badges) {
 
 		if ( badge.image )
 			if ( is_colored && setting === 6 )
-				css += (constants.IS_WEBKIT ? '-webkit-' : '') + 'mask-image:url("' + utils.quote_attr(badge.image) + '");';
+				css += WEBKIT + 'mask-image:url("' + utils.quote_attr(badge.image) + '");';
 			else
 				css += 'background-image:url("' + utils.quote_attr(badge.image) + '");';
 
 		if ( badge.srcSet )
 			if ( is_colored && setting === 6 )
-				css += (constants.IS_WEBKIT ? '-webkit-mask-image:-webkit-' : 'mask-image:') + 'image-set(' + badge.srcSet + ');';
+				css += WEBKIT + 'mask-image:' + WEBKIT + 'image-set(' + badge.srcSet + ');';
 			else
-				css += 'background-image:' + (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(' + badge.srcSet + ');';
+				css += 'background-image:' + WEBKIT + 'image-set(' + badge.srcSet + ');';
 
 		if ( badge.color )
 			if ( is_colored && setting === 6 )

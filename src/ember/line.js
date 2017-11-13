@@ -659,8 +659,16 @@ FFZ.settings_info.chat_font_family = {
 
 
 FFZ.settings_info.recent_highlights = {
-	type: "boolean",
-	value: false,
+	type: "select",
+	options: {
+		0: "Disabled",
+		1: "Moderator Promoted",
+		2: "Mentioned",
+		3: "Both"
+	},
+
+	value: 0,
+	process_value: utils.process_int(0, 0, 3),
 
 	category: "Chat Appearance",
 	no_bttv: true,
@@ -1183,11 +1191,33 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 
 			}
 
-			else if ( msg_type === 'raid' || msg_type === 'unraid' )
-				// TODO: This.
-				return '';
+			else if ( msg_type === 'raid' || msg_type === 'unraid' ) {
+				var Intl = utils.ember_lookup('service:intl');
 
-			else
+				if ( Intl ) {
+					if ( msg_type === 'raid' ) {
+						var channel = this.ffzGetChannel(),
+							data = channel.loaded ? channel.data : {display_name: tags['msg-param-login']};
+
+						out = '<span class="flex align-items-center">' +
+							(data.logo ? '<div class="square-3">' +
+								'<img src="' + utils.quote_attr(data.logo) + '" alt="' + utils.quote_san(data.display_name) + '">' +
+							'</div>' : '') +
+							'<div class="mg-l-1">' +
+								Intl.t('chat.raids.incomingRaid', {
+									displayName: data.display_name,
+									viewerCount: tags['msg-param-viewerCount'],
+									htmlSafe: true
+								}) +
+							'</div>' +
+						'</span>';
+
+					} else
+						out = Intl.t('chat.raids.cancelRaid');
+				} else
+					out = utils.sanitize(this.get('systemMsg'));
+
+			} else
 				out = utils.sanitize(this.get('systemMsg'));
 
 			return out ? '<div class="system-msg">' + out + '</div>' : '';
@@ -1210,9 +1240,49 @@ FFZ.prototype._modify_chat_line = function(component, is_vod) {
 			return out;
 		},
 
+		ffzUpdateSystemMessage: function() {
+			var msg = this.buildSystemMessageHTML(),
+				el = this.$('.system-msg')[0];
+
+			if ( el )
+				el.outerHTML = msg;
+			else if ( msg ) {
+				el = this.$('.indicator')[0];
+				el.outerHTML = '<div class="indicator"></div>' + msg;
+			}
+		},
+
 		ffzUpdateRichContent: function() {
 			if ( this.get('msgObject.tags.content') )
 				this.$(".ffz-rich-content").html(this.buildRichContentHTML());
+		},
+
+		ffzGetChannel: function() {
+			var login = this.get('msgObject.tags.msg-param-login');
+			if ( ! login )
+				return {
+					loaded: true,
+					errored: true
+				};
+
+			var t = this,
+				channel_info = this._channel_info = this._channel_info || {};
+
+			if ( ! channel_info._started ) {
+				channel_info._started = true;
+				utils.api.get('channels/' + login, {}, {version: 3})
+					.done(function(data) {
+						channel_info.data = data;
+						channel_info.loaded = true;
+						t.isDestroyed || t.ffzUpdateSystemMessage();
+					}).fail(function(data) {
+						channel_info.loaded = true;
+						channel_info.errored = true;
+						t.isDestroyed || t.ffzUpdateSystemMessage();
+					});
+			}
+
+			return channel_info;
 		},
 
 		ffzGetContent: function(provider_key, info) {

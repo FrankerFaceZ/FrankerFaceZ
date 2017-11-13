@@ -1975,11 +1975,13 @@ body:not(.ffz-bttv) .chat-container:not(.chatReplay) .more-messages-indicator {
 .ffz-rich-tip .profile-stats {
 	display: flex;
 	flex-flow: row;
+	flex-wrap: wrap;
 }
 
 .ffz-rich-tip .profile-stats div {
 	flex-grow: 1;
 	font-size: 16px;
+	margin-right: 10px;
 }
 
 .ffz-rich-tip .profile-stats span {

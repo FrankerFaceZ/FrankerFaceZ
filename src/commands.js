@@ -408,6 +408,27 @@ FFZ.chat_commands.renamegroup.enabled = function(room) {
 
 
 // -----------------
+// Promoted Messages
+// -----------------
+
+FFZ.ffz_commands.promote = function(room, args) {
+	args = args.join(" ").trim();
+	var f = this;
+
+	if ( ! args.length || args.indexOf(' ') !== -1 )
+		return "You must provide only a single message ID. This is easiest to add as a custom in-line moderation action.";
+
+	if ( ! this.ws_send("promote_message", [room.id, args], function(success, data) {
+		if ( ! success ) {
+			f.log("Promotion Error: " + JSON.stringify(data));
+			f.room_message(room, "There was an error promoting the message.");
+		}
+	}) )
+		return "There was an error communicating with the server.";
+}
+
+
+// -----------------
 // Mass Moderation
 // -----------------
 

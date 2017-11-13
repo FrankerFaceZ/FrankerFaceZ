@@ -682,7 +682,7 @@ FFZ.prototype.modify_room_component = function(component) {
 
 			actions.accommodatePinnedMessage = function(e) {
 				var el = t.get('element'),
-					chat = el.querySelector('.js-chat-messages');
+					chat = el && el.querySelector('.js-chat-messages');
 
 				if ( chat )
 					chat.dataset.pinned_height = e;
@@ -2069,40 +2069,120 @@ FFZ.prototype._modify_room = function(room) {
 			if ( highlight_unread ) {
 				// API Stuff
 				f.api_trigger('room-recent-highlights', highlight_messages);
-				if ( f.settings.recent_highlights && highlight_messages.length ) {
-					var old_highlights = this.get('ffz_recent_highlights') || [],
-						raw_remove = old_highlights.length + highlight_messages.length > f.settings.recent_highlight_count ?
-							Math.max(0, old_highlights.length - f.settings.recent_highlight_count) + highlight_messages.length : 0,
+				if ( f.settings.recent_highlights > 1 )
+					this.ffzAddHighlights(highlight_messages);
+			}
+		},
 
-						to_remove = raw_remove % 2,
-						trimmed = old_highlights.slice(to_remove, old_highlights.length).concat(highlight_messages),
-						el = f._roomv && f._roomv.get('ffz_recent_el');
 
-					this.set('ffz_recent_highlights', trimmed);
-					this.incrementProperty('ffz_recent_highlights_unread', highlight_messages.length);
+		ffzAddHighlights: function(messages) {
+			if ( f.settings.recent_highlights && messages.length ) {
+				var old_highlights = this.get('ffz_recent_highlights') || [],
+					raw_remove = old_highlights.length + messages.length > f.settings.recent_highlight_count ?
+						Math.max(0, old_highlights.length - f.settings.recent_highlight_count) + messages.length : 0,
 
-					if ( el && f._roomv.get('room') === this ) {
-						var was_at_bottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
+					to_remove = raw_remove % 2,
+					trimmed = old_highlights.slice(to_remove, old_highlights.length).concat(messages),
+					el = f._roomv && f._roomv.get('ffz_recent_el');
 
-						while( el.childElementCount && to_remove-- )
-							el.removeChild(el.firstElementChild);
+				this.set('ffz_recent_highlights', trimmed);
+				this.incrementProperty('ffz_recent_highlights_unread', messages.length);
 
-						for(var i=0; i < highlight_messages.length; i++)
-							el.appendChild(f._build_mod_card_history(highlight_messages[i], null, true));
+				if ( el && f._roomv.get('room') === this ) {
+					var was_at_bottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
 
-						if ( was_at_bottom )
-							el.scrollTop = el.scrollHeight;
+					while( el.childElementCount && to_remove-- )
+						el.removeChild(el.firstElementChild);
 
-						if ( el.dataset.docked ) {
-							el = f._roomv.get('ffz_recent_count_el');
-							if ( el )
-								el.textContent = utils.format_unread(this.get('ffz_recent_highlights_unread'));
-						}
+					for(var i=0; i < messages.length; i++)
+						el.appendChild(f._build_mod_card_history(messages[i], null, true));
 
+					if ( was_at_bottom )
+						el.scrollTop = el.scrollHeight;
+
+					if ( el.dataset.docked ) {
+						el = f._roomv.get('ffz_recent_count_el');
+						if ( el )
+							el.textContent = utils.format_unread(this.get('ffz_recent_highlights_unread'));
 					}
 				}
 			}
 		},
+
+
+		ffzHighlightMessage: function(msg_id) {
+			var message = this.ffz_ids && this.ffz_ids[msg_id];
+			if ( ! f.settings.recent_highlights || ! message )
+				return;
+
+			var highlights = this.get('ffz_recent_highlights') || [],
+				high_len = highlights.length,
+				posted = message.date,
+				insert_before = -1;
+
+			for(var i=0; i < high_len; i++) {
+				var msg = highlights[i];
+				if ( msg.tags && msg.tags.id === msg_id )
+					return;
+
+				if ( insert_before === -1 && posted <= msg.date )
+					insert_before = i;
+			}
+
+			var raw_remove = high_len + 1 > f.settings.recent_highlight_count ?
+					Math.max(0, high_len - f.settings.recent_highlight_count) + 1 : 0,
+
+				to_remove = raw_remove % 2,
+				el = f._roomv && f._roomv.get('ffz_recent_el');
+
+			console.log('msg', message);
+			console.log('count', high_len);
+			console.log('to_remove', to_remove);
+			console.log('insert_before', insert_before);
+			console.log('msgs', highlights.slice(0));
+
+			// If we're going to add the element only to remove it, leave.
+			if ( to_remove && insert_before === 0 )
+				return;
+
+			if ( to_remove ) {
+				highlights.splice(0, to_remove);
+				insert_before -= to_remove;
+				high_len = highlights.length;
+			}
+
+			if ( insert_before === -1 )
+				highlights.push(message);
+			else
+				highlights.splice(insert_before, 0, message);
+
+			this.set('ffz_recent_highlights', highlights);
+			this.incrementProperty('ffz_recent_highlights_unread', 1);
+
+			if ( ! el || f._roomv.get('room') !== this )
+				return;
+
+			var was_at_bottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
+			while ( el.childElementCount && to_remove-- )
+				el.removeChild(el.firstElementChild);
+
+			var msg_line = f._build_mod_card_history(message, null, true)
+
+			if ( insert_before === -1 )
+				el.appendChild(msg_line);
+			else
+				el.insertBefore(msg_line, el.children[insert_before]);
+
+			if ( was_at_bottom )
+				el.scrollTop = el.scrollHeight;
+
+			if ( el.dataset.docked ) {
+				el = f._roomv.get('ffz_recent_count_el');
+				if ( el )
+					el.textContent = utils.format_unread(this.get('ffz_recent_highlights_unread'));
+			}
+		},
+
 
 		ffzSchedulePendingFlush: function(now) {
 			// Instead of just blindly looping every x seconds, we want to calculate the time until
@@ -2786,4 +2866,22 @@ FFZ.prototype._modify_room = function(room) {
 				this.updateWait(0);
 		}.observes('slowMode')
 	});
+}
+
+
+// ---------------
+// Socket Stuff
+// ---------------
+
+FFZ.ws_commands.promote_message = function(data) {
+	var channel = data[0],
+		user = data[1],
+		msg_id = data[2],
+
+		ffz_room = this.rooms && this.rooms[channel],
+		room = ffz_room && ffz_room.room,
+		setting = this.settings.recent_highlights;
+
+	if ( room && (setting === 1 || setting === 3) )
+		room.ffzHighlightMessage(msg_id, user);
 }

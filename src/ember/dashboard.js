@@ -26,9 +26,23 @@ FFZ.prototype.setup_dashboard = function() {
 	if ( location.search === '?standalone' )
 		utils.toggle_cls('ffz-minimal-dashboard')(true);
 
-	this.update_views('component:dashboards/live-widget', this.modify_dashboard_widget);
+	this.try_modify_dashboard();
+
 	//this.update_views('component:dashboards/live/stream-stats', this.modify_dashboard_stats);
 	//this.update_views('component:dashboards/live/stream-health', this.modify_dashboard_health);
+}
+
+
+FFZ.prototype.try_modify_dashboard = function() {
+	if ( this._dashboard_modified )
+		return;
+
+	var loaded = window.features && window.features.includes('dashboard');
+	if ( ! loaded )
+		return this.log('Dashboard still not loaded.');
+
+	this._dashboard_modified = true;
+	this.update_views('component:dashboards/live-widget', this.modify_dashboard_widget);
 }
 
 

@@ -10,7 +10,7 @@ var FFZ = window.FrankerFaceZ,
 
 	HOP = Object.prototype.hasOwnProperty,
 
-	TOOLTIP_VERSION = 3,
+	TOOLTIP_VERSION = 4,
 	FAV_MARKER = '<span class="ffz-favorite"></span>',
 
 	EXPLANATION_WARN = '<hr>This link has been sent to you via a whisper rather than standard chat, and has not been checked or approved of by any moderators or staff members. Please treat this link with caution and do not visit it if you do not trust the sender.',
@@ -466,8 +466,6 @@ FFZ.prototype.get_link_info = function(url, no_promises) {
 
 		li = this.settings.link_info;
 
-	console.log('get_link_info', url, info);
-
 	if ( ! li || (expires && Date.now() > expires) )
 		info = this._link_data[url] = null;
 
@@ -562,6 +560,12 @@ FFZ.prototype.render_link_tooltip = function(data, el) {
 				content = image_iframe(data.image) + content;
 			else
 				content = '<img class="emoticon ffz-image-hover" src="' + utils.quote_attr(data.image) + '">' + content;
+
+		if ( content.indexOf('<video') !== -1 )
+			setTimeout(function() {
+				var el = document.querySelector('.zipsy video');
+				el && el.play();
+			},0);
 
 	} else if ( content.length )
 		content = content.replace(/<!--MS-->.*<!--ME-->/g, '');
@@ -756,6 +760,15 @@ FFZ.prototype.render_tooltip = function(el) {
 				if ( data instanceof Promise ) {
 					var tt_id = FFZ._sc_followed_tooltip_id++,
 						replacer = function(data, tooltip_class) {
+							var j_el = jQuery(t),
+								zipsy = j_el.data('tipsy');
+
+							if ( zipsy ) {
+								if ( zipsy.hoverState === 'in' )
+									j_el.zipsy('hide').zipsy('show');
+								return;
+							}
+
 							var el = document.querySelector('.ffz-async-tooltip[data-id="' + tt_id + '"]'),
 								container = el && el.parentElement.parentElement;
 							if ( ! el )

@@ -102,29 +102,41 @@ Zipsy.prototype = {
 		if ( this.options.className )
 			$tip.addClass(maybeCall(this.options.className, el));
 
+		var prepend_to = maybeCall(this.options.prependTo, el);
+		if ( typeof prepend_to === 'string' )
+			prepend_to = document.querySelector(prepend_to);
+		else if ( typeof prepend_to === 'object' && !(prepend_to instanceof HTMLElement) )
+			prepend_to = prepend_to[0];
+		else if ( ! prepend_to )
+			prepend_to = document.body;
+
+		if ( ! prepend_to )
+			return;
+
 		$tip.detach().css({
 			top: 0, left: 0,
 			width: '', height: '',
 			visibility: 'hidden',
 			display: 'block'
-		}).prependTo(this.options.prependTo).data('tipsy-pointee', el);
+		}).prependTo(prepend_to).data('tipsy-pointee', el);
 
 		var pos;
 
 		if ( j_el.parents('svg').length > 0 )
 			pos = jQuery.extend({}, j_el.offset(), el.getBBox());
 
-		else if ( this.options.prependTo !== document.body )
-			pos = jQuery.extend(j_el.position(), {
-				width: j_el.width(),
-				height: j_el.height()
-			});
+		else {
+			var el_box = el.getBoundingClientRect(),
+				cont_box = prepend_to.getBoundingClientRect();
 
-		else
-			pos = jQuery.extend({}, j_el.offset(), {
-				width: el.offsetWidth || 0,
-				height: el.offsetHeight || 0
-			});
+			pos = {
+				top: el_box.top - cont_box.top,
+				left: el_box.left - cont_box.left,
+				width: el_box.width,
+				height: el_box.height
+			}
+
+		}
 
 		var bbox = $tip[0].getBoundingClientRect(),
 			actual_width = Math.ceil(bbox.width),
@@ -275,8 +287,8 @@ Zipsy.prototype = {
 	}
 }
 
-jQuery.fn.zipsy = function(options) {
-	jQuery.fn.zipsy.enable();
+var JQ_Zipsy = function(options) {
+	JQ_Zipsy.enable();
 
 	if ( options === true )
 		return this.data('tipsy');
@@ -289,12 +301,12 @@ jQuery.fn.zipsy = function(options) {
 		return this;
 	}
 
-	options = jQuery.extend({}, jQuery.fn.zipsy.defaults, options);
+	options = jQuery.extend({}, JQ_Zipsy.defaults, options);
 
 	function get(el) {
 		var zipsy = jQuery.data(el, 'tipsy');
 		if ( ! zipsy ) {
-			zipsy = new Zipsy(el, jQuery.fn.zipsy.elementOptions(el, options));
+			zipsy = new Zipsy(el, JQ_Zipsy.elementOptions(el, options));
 			jQuery.data(el, 'tipsy', zipsy);
 		}
 
@@ -302,7 +314,7 @@ jQuery.fn.zipsy = function(options) {
 	}
 
 	function enter() {
-		if ( ! jQuery.fn.zipsy.enabled )
+		if ( ! JQ_Zipsy.enabled )
 			return;
 
 		var zipsy = get(this);
@@ -351,7 +363,7 @@ jQuery.fn.zipsy = function(options) {
 	return this;
 }
 
-jQuery.fn.zipsy.defaults = {
+JQ_Zipsy.defaults = {
 	aria: false,
 	className: null,
 	delayIn: 0,
@@ -371,43 +383,46 @@ jQuery.fn.zipsy.defaults = {
 	prependTo: document.body
 };
 
-jQuery.fn.zipsy.revalidate = function() {
+JQ_Zipsy.revalidate = function() {
 	jQuery('.tipsy').each(function() {
 		var t = jQuery.data(this, "tipsy-pointee");
 		(!t || !t[0] || !document.contains(t[0])) && jQuery(this).remove();
 	});
 }
 
-jQuery.fn.zipsy.clear = function() {
+JQ_Zipsy.clear = function() {
 	jQuery('.tipsy').remove();
 }
 
-jQuery.fn.zipsy.enable = function() {
-	jQuery.fn.zipsy.enabled = true;
+JQ_Zipsy.enable = function() {
+	JQ_Zipsy.enabled = true;
 }
 
-jQuery.fn.zipsy.disable = function() {
-	jQuery.fn.zipsy.enabled = false;
+JQ_Zipsy.disable = function() {
+	JQ_Zipsy.enabled = false;
 }
 
-jQuery.fn.zipsy.elementOptions = function(el, options) {
+JQ_Zipsy.elementOptions = function(el, options) {
 	return options;
 }
 
-jQuery.fn.zipsy.autoNS = function() {
+JQ_Zipsy.autoNS = function() {
 	return $(this).offset().top > ($(document).scrollTop() + $(window).height() / 2) ? 's' : 'n';
 }
 
-jQuery.fn.zipsy.autoWE = function() {
+JQ_Zipsy.autoWE = function() {
 	return $(this).offset().left > ($(document).scrollLeft() + $(window).width() / 2) ? 'e' : 'w';
 }
 
-jQuery.fn.zipsy.autoNWNE = function() {
+JQ_Zipsy.autoNWNE = function() {
 	return $(this).offset().left > ($(document).scrollLeft() + $(window).width() / 2) ? 'ne' : 'nw';
 }
 
-jQuery.fn.zipsy.autoSWSE = function() {
+JQ_Zipsy.autoSWSE = function() {
 	return $(this).offset().left > ($(document).scrollLeft() + $(window).width() / 2) ? 'se' : 'sw';
 }
 
-jQuery.fn.zipsy.autoBounds = utils.newtip_placement;
+JQ_Zipsy.autoBounds = utils.newtip_placement;
+
+if ( window.jQuery && jQuery.fn )
+	jQuery.fn.zipsy = JQ_Zipsy;

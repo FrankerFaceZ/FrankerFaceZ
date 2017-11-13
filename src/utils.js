@@ -1182,7 +1182,7 @@ module.exports = FFZ.utils = {
 			if ( urls[4] )
 				image_set += ', url("' + urls[4] + '") 4x';
 
-			image_set = (constants.IS_WEBKIT ? '-webkit-' : '') + 'image-set(' + image_set + ')';
+			image_set = WEBKIT + 'image-set(' + image_set + ')';
 		}
 
 		return '.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement):not(.colored),' +
@@ -1194,10 +1194,11 @@ module.exports = FFZ.utils = {
 				'background-image:' + image_set + ' !important}' +
 			'.from-display-preview[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored,' +
 			'.chat-line[data-room="' + room.id + '"] .badges .moderator:not(.ffz-badge-replacement).colored {' +
-				'-webkit-mask-repeat:no-repeat;' +
-				'-webkit-mask-size:initial !important;' +
-				'-webkit-mask-position:center;' +
-				'-webkit-mask-image:' + image_set + '}';
+				WEBKIT + 'mask-repeat:no-repeat;' +
+				WEBKIT + 'mask-size:initial !important;' +
+				WEBKIT + 'mask-position:center;' +
+				WEBKIT + 'mask-image: url("' + urls[1] + '");' +
+				WEBKIT + 'mask-image:' + image_set + '}';
 	},
 
 	badge_css: function(badge, klass) {

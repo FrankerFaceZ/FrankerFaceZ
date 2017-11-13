@@ -283,7 +283,7 @@ FFZ.prototype.modify_twitch_player = function(player) {
 
 			// Add an option to the menu to recreate the player.
 			var t = this,
-				el = this.$('.player-buttons-right #js-settings')[0],
+				el = this.$('.player-buttons-right .pl-flex')[0],
 				container = el && el.parentElement;
 
 			if ( el && ! container.querySelector('.ffz-player-reset') ) {

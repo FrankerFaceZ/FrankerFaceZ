@@ -26,6 +26,7 @@ FFZ.prototype.setup_router = function() {
 				// If we're coming from a page without app-main, make sure we install the
 				// scroll listener.
 				f.fix_scroll();
+				f.try_modify_dashboard();
 
 				try {
 					document.body.setAttribute('data-current-path', App.get('currentPath'));
