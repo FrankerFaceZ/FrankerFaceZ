@@ -1,3 +1,8 @@
-.chat-author__display-name {
+.chat-author__display-name,
+.chat-author__intl-login {
 	cursor: pointer;
+}
+
+.ffz--freeze-indicator {
+	pointer-events: none;
 }

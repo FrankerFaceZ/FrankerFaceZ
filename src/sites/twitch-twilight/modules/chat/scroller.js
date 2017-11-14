@@ -1,0 +1,331 @@
+'use strict';
+
+// ============================================================================
+// Chat Scroller
+// ============================================================================
+
+import {createElement as e} from 'utilities/dom';
+import Module from 'utilities/module';
+
+export default class Scroller extends Module {
+	constructor(...args) {
+		super(...args);
+
+		this.inject('settings');
+		this.inject('i18n');
+		this.inject('chat');
+		this.inject('site.fine');
+
+		this.ChatScroller = this.fine.define(
+			'chat-scroller',
+			n => n.saveScrollRef && n.handleScrollEvent
+		);
+
+		this.settings.add('chat.scroller.freeze', {
+			default: 0,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Freeze Chat Scrolling',
+				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'On Hover'},
+					{value: 2, title: 'When Ctrl is Held'},
+					{value: 3, title: 'When Meta is Held'},
+					{value: 4, title: 'When Alt is Held'},
+					{value: 5, title: 'When Shift is Held'},
+					{value: 6, title: 'Ctrl or Hover'},
+					{value: 7, title: 'Meta or Hover'},
+					{value: 8, title: 'Alt or Hover'},
+					{value: 9, title: 'Shift or Hover'}
+				]
+			}
+		});
+	}
+
+	onEnable() {
+		this.i18n.on('i18n:update', () => {
+			for(const inst of this.ChatScroller.instances)
+				inst.ffzUpdateText();
+		});
+
+		this.freeze = this.chat.context.get('chat.scroller.freeze');
+		this.chat.context.on('changed:chat.scroller.freeze', val => {
+			const old_freeze = this.freeze;
+			this.freeze = val;
+
+			for(const inst of this.ChatScroller.instances)
+				if ( val === 0 )
+					inst.ffzDisableFreeze();
+				else if ( old_freeze === 0 )
+					inst.ffzEnableFreeze();
+				else
+					inst.ffzUpdateText();
+		});
+
+		this.ChatScroller.ready((cls, instances) => {
+			const t = this;
+
+			cls.prototype.componentDidUpdate = function(props, state) {
+				if ( state.isAutoScrolling &&
+						! state.ffzFrozen &&
+						this.props.messages !== props.messages )
+					this.scrollToBottom();
+			}
+
+			const old_scroll = cls.prototype.scrollToBottom;
+			cls.prototype.scrollToBottom = function() {
+				if ( this.state.ffzFrozen )
+					this.setState({ffzFrozen: false});
+				return old_scroll.call(this);
+			}
+
+			cls.prototype.ffzShouldBeFrozen = function(since) {
+				if ( since === undefined )
+					since = Date.now() - this.ffz_last_move;
+
+				const f = t.freeze;
+
+				return ! this.ffz_outside && (
+					(this.ffz_ctrl  && (f === 2 || f === 6)) ||
+					(this.ffz_meta  && (f === 3 || f === 7)) ||
+					(this.ffz_alt   && (f === 4 || f === 8)) ||
+					(this.ffz_shift && (f === 5 || f === 9)) ||
+					(since < 750    && (f === 1 || f > 5))
+				);
+			}
+
+			cls.prototype.ffzMaybeUnfreeze = function() {
+				if ( this.ffz_frozen )
+					requestAnimationFrame(() => {
+						if ( this.ffz_frozen && ! this.ffzShouldBeFrozen() )
+							this.ffzUnfreeze();
+					});
+			}
+
+			cls.prototype.ffzUpdateText = function() {
+				if ( ! this._ffz_freeze_indicator )
+					return;
+
+				const f = t.freeze,
+					reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
+						f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
+						f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
+						f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
+						f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
+						f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
+						f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
+						f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
+						t.i18n.t('key.mouse', 'Mouse Movement');
+
+				this._ffz_freeze_indicator.firstElementChild.textContent = t.i18n.t(
+					'chat.paused',
+					'(Chat Paused Due to %{reason})',
+					{reason}
+				);
+			}
+
+			cls.prototype.ffzShowFrozen = function() {
+				let el = this._ffz_freeze_indicator;
+				if ( ! el ) {
+					const node = t.fine.getHostNode(this);
+					if ( ! node )
+						return;
+
+					node.classList.add('full-height');
+
+					el = this._ffz_freeze_indicator = e('div', {
+						className: 'ffz--freeze-indicator chat-list__more-messages-placeholder relative mg-x-2'
+					}, e('div', {
+						className: 'chat-list__more-messages bottom-0 full-width align-items-center flex justify-content-center absolute pd-05'
+					}));
+
+					this.ffzUpdateText();
+					node.appendChild(el);
+
+				} else
+					el.classList.remove('hide');
+			}
+
+			cls.prototype.ffzHideFrozen = function() {
+				if ( this._ffz_freeze_indicator )
+					this._ffz_freeze_indicator.classList.add('hide');
+			}
+
+			cls.prototype.ffzFreeze = function() {
+				if ( ! this._ffz_interval )
+					this._ffz_interval = setInterval(() => {
+						if ( ! this.ffzShouldBeFrozen() )
+							requestAnimationFrame(() => {
+								if ( ! this.ffzShouldBeFrozen() )
+									this.ffzUnfreeze();
+							});
+					}, 200);
+
+				this.ffz_frozen = true;
+				this.setState({ffzFrozen: true});
+				this.ffzShowFrozen();
+			}
+
+			cls.prototype.ffzUnfreeze = function() {
+				if ( this._ffz_interval ) {
+					clearInterval(this._ffz_interval);
+					this._ffz_interval = null;
+				}
+
+				this.ffz_frozen = false;
+				this.setState({ffzFrozen: false});
+				if ( this.state.isAutoScrolling )
+					this.scrollToBottom();
+
+				this.ffzHideFrozen();
+			}
+
+
+			cls.prototype.ffzEnableFreeze = function() {
+				const node = t.fine.getHostNode(this);
+				if ( ! node || this.ffz_freeze_enabled )
+					return;
+
+				this.ffz_freeze_enabled = true;
+
+				document.body.addEventListener('keydown',
+					this._ffz_key = this.ffzKey.bind(this));
+
+				document.body.addEventListener('keyup', this._ffz_key);
+
+				node.addEventListener('mousemove',
+					this._ffz_mousemove = this.ffzMouseMove.bind(this));
+
+				node.addEventListener('mouseleave',
+					this._ffz_mouseleave = this.ffzMouseLeave.bind(this));
+			}
+
+
+			cls.prototype.ffzDisableFreeze = function() {
+				this.ffz_freeze_enabled = false;
+
+				if ( this.ffz_frozen )
+					this.ffzUnfreeze();
+
+				if ( this._ffz_outside ) {
+					clearTimeout(this._ffz_outside);
+					this._ffz_outside = null;
+				}
+
+				const node = t.fine.getHostNode(this);
+				if ( ! node )
+					return;
+
+				if ( this._ffz_freeze_indicator ) {
+					node.removeChild(this._ffz_freeze_indicator);
+					this._ffz_freeze_indicator = null;
+				}
+
+				if ( this._ffz_key ) {
+					document.body.removeEventListener('keyup', this._ffz_key);
+					document.body.removeEventListener('keydown', this._ffz_key);
+					this._ffz_key = null;
+				}
+
+				if ( this._ffz_mousemove ) {
+					node.removeEventListener('mousemove', this._ffz_mousemove);
+					this._ffz_mousemove = null;
+				}
+
+				if ( this._ffz_mouseleave ) {
+					node.removeEventListener('mouseleave', this._ffz_mouseleave);
+					this._ffz_mouseleave = null;
+				}
+			}
+
+
+			cls.prototype.ffzKey = function(e) {
+				if (e.altKey === this.ffz_alt &&
+					e.shiftKey === this.ffz_shift &&
+					e.ctrlKey === this.ffz_ctrl &&
+					e.metaKey === this.ffz_meta)
+						return;
+
+				this.ffz_alt = e.altKey;
+				this.ffz_shift = e.shiftKey;
+				this.ffz_ctrl = e.ctrlKey;
+				this.ffz_meta = e.metaKey;
+
+				if ( this.ffz_outside || t.freeze < 2 )
+					return;
+
+				const should_freeze = this.ffzShouldBeFrozen(),
+					changed = should_freeze !== this.ffz_frozen;
+
+				if ( changed )
+					if ( should_freeze )
+						this.ffzFreeze();
+					else
+						this.ffzUnfreeze();
+			}
+
+
+			cls.prototype.ffzMouseMove = function(e) {
+				this.ffz_last_move = Date.now();
+				this.ffz_outside = false;
+				if ( this._ffz_outside ) {
+					clearTimeout(this._ffz_outside);
+					this._ffz_outside = null;
+				}
+
+				// If nothing of interest has happened, stop.
+				if (e.altKey === this.ffz_alt &&
+					e.shiftKey === this.ffz_shift &&
+					e.ctrlKey === this.ffz_ctrl &&
+					e.metaKey === this.ffz_meta &&
+					e.screenY === this.ffz_sy &&
+					e.screenX === this.ffz_sx)
+						return;
+
+				this.ffz_alt = e.altKey;
+				this.ffz_shift = e.shiftKey;
+				this.ffz_ctrl = e.ctrlKey;
+				this.ffz_meta = e.metaKey;
+				this.ffz_sy = e.screenY;
+				this.ffz_sx = e.screenX;
+
+				const should_freeze = this.ffzShouldBeFrozen(),
+					changed = should_freeze !== this.ffz_frozen;
+
+				if ( changed )
+					if ( should_freeze )
+						this.ffzFreeze();
+					else
+						this.ffzUnfreeze();
+			}
+
+
+			cls.prototype.ffzMouseLeave = function(e) {
+				this.ffz_outside = true;
+				if ( this._ffz_outside )
+					clearTimeout(this._ffz_outside);
+
+				this._ffz_outside = setTimeout(() => this.ffzMaybeUnfreeze(), 64);
+			}
+
+
+			for(const inst of instances)
+				this.onMount(inst);
+		});
+
+		this.ChatScroller.on('mount', this.onMount, this);
+		this.ChatScroller.on('unmount', this.onUnmount, this);
+	}
+
+
+	onMount(inst) {
+		if ( this.freeze !== 0 )
+			inst.ffzEnableFreeze();
+	}
+
+	onUnmount(inst) {
+		inst.ffzDisableFreeze();
+	}
+}

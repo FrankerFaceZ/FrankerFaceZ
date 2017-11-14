@@ -10,6 +10,9 @@ import {has} from 'utilities/object';
 
 import Module from 'utilities/module';
 
+import Scroller from './scroller';
+
+
 const EVENTS = [
 	'onJoinedEvent',
 	'onDisconnectedEvent',
@@ -52,6 +55,8 @@ export default class ChatHook extends Module {
 		this.inject('site.css_tweaks');
 
 		this.inject('chat');
+
+		this.inject(Scroller);
 
 
 		this.ChatController = this.fine.define(
@@ -309,7 +314,8 @@ export default class ChatHook extends Module {
 						}, user.userDisplayName),
 						user.isIntl && e('span', {
 							className: 'chat-author__intl-login',
-							style: { color }
+							style: { color },
+							onClick: this.usernameClickHandler
 						}, ` (${user.userLogin})`),
 						e('span', null, is_action ? ' ' : ': '),
 						show ?
