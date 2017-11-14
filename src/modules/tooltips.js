@@ -5,6 +5,7 @@
 // ============================================================================
 
 import {createElement as e} from 'utilities/dom';
+import {has, maybe_call} from 'utilities/object';
 
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
@@ -65,14 +66,47 @@ export default class TooltipProvider extends Module {
 	onEnable() {
 		this.tips = new Tooltip('[data-reactroot]', 'ffz-tooltip', {
 			html: true,
+			delayHide: this.checkDelayHide.bind(this),
+			delayShow: this.checkDelayShow.bind(this),
 			content: this.process.bind(this),
+			interactive: this.checkInteractive.bind(this),
 			popper: {
 				placement: 'top'
 			}
 		});
 	}
 
-	process(target, tip) { //eslint-disable-line class-methods-use-this
+	checkDelayShow(target, tip) {
+		const type = target.dataset.tooltipType,
+			handler = this.types[type];
+
+		if ( has(handler, 'delayShow') )
+			return maybe_call(handler.delayShow, null, target, tip);
+
+		return 0;
+	}
+
+	checkDelayHide(target, tip) {
+		const type = target.dataset.tooltipType,
+			handler = this.types[type];
+
+		if ( has(handler, 'delayHide') )
+			return maybe_call(handler.delayHide, null, target, tip);
+
+		return 0;
+	}
+
+	checkInteractive(target, tip) {
+		const type = target.dataset.tooltipType,
+			handler = this.types[type];
+
+		if ( has(handler, 'interactive') )
+			return maybe_call(handler.interactive, null, target, tip);
+
+		return false;
+	}
+
+	process(target, tip) {
 		const type = target.dataset.tooltipType,
 			handler = this.types[type];
 

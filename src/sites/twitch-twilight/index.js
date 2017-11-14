@@ -51,7 +51,7 @@ export default class Twilight extends BaseSite {
 		this.updateContext();
 
 		this.router.on(':route', (route, match) => {
-			this.log.info('Navigation', route && route.name, match[0]);
+			this.log.info('Navigation', route && route.name, match && match[0]);
 		});
 
 		document.head.appendChild(e('link', {

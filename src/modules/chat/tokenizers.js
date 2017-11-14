@@ -140,6 +140,21 @@ export const Links = {
 	}
 }
 
+Links.tooltip.interactive = function(target, tip) {
+	if ( ! this.context.get('tooltip.rich-links') || ! this.context.get('tooltip.link-interaction') || target.dataset.isMail === 'true' )
+		return false;
+
+	const info = this.get_link_info(target.dataset.url, true);
+	return info && info.interactive;
+};
+
+Links.tooltip.delayHide = function(target, tip) {
+	if ( ! this.context.get('tooltip.rich-links') || ! this.context.get('tooltip.link-interaction') || target.dataset.isMail === 'true' )
+		return 0;
+
+	return 64;
+};
+
 
 // ============================================================================
 // Rich Content

@@ -108,6 +108,15 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('tooltip.link-interaction', {
+			default: true,
+			ui: {
+				path: 'Chat > Tooltips >> Links',
+				title: 'Allow interaction with supported link tooltips.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('tooltip.link-images', {
 			default: true,
 			requires: ['tooltip.images'],
@@ -380,8 +389,13 @@ export default class Chat extends Module {
 		if ( tokenizer.priority == null )
 			tokenizer.priority = 0;
 
-		if ( tokenizer.tooltip )
-			this.tooltips.types[type] = tokenizer.tooltip.bind(this);
+		if ( tokenizer.tooltip ) {
+			const tt = tokenizer.tooltip;
+			const tk = this.tooltips.types[type] = tt.bind(this);
+
+			for(const i of ['interactive', 'delayShow', 'delayHide'])
+				tk[i] = typeof tt[i] === 'function' ? tt[i].bind(this) : tt[i];
+		}
 
 		this.__tokenizers.push(tokenizer);
 		this.__tokenizers.sort((a, b) => {
@@ -450,7 +464,9 @@ export default class Chat extends Module {
 			let res;
 
 			if ( type === 'text' )
-				res = token.text;
+				res = e('span', {
+					'data-a-target': 'chat-message-text'
+				}, token.text);
 
 			else if ( tk )
 				res = tk.render.call(this, token, e);

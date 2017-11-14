@@ -9,7 +9,8 @@ export const WS_CLUSTERS = {
 	Production: [
 		['wss://catbag.frankerfacez.com/', 0.25],
 		['wss://andknuckles.frankerfacez.com/', 1],
-		['wss://tuturu.frankerfacez.com/', 1]
+		['wss://tuturu.frankerfacez.com/', 1],
+		['wss://lilz.frankerfacez.com/', 1]
 	],
 
 	Development: [

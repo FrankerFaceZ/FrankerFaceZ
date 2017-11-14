@@ -160,6 +160,15 @@ export class EventEmitter {
 		}
 	}
 
+	emitSafe(event, ...args) {
+		try {
+			return [this.emit(event, ...args), undefined];
+
+		} catch(err) {
+			return [null, err];
+		}
+	}
+
 	emitAsync(event, ...args) {
 		const list = this.__listeners[event];
 		if ( ! list )

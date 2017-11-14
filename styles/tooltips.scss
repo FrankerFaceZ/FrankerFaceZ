@@ -11,11 +11,9 @@ body {
 	font-size: 1.2rem;
 	line-height: 1;
 	text-align: left;
-	pointer-events: none;
 	white-space: pre-wrap;
 
 	&.html { white-space: normal }
-	&.interactive { pointer-events: all }
 
 
 	.loader {

@@ -36,13 +36,18 @@ export default class Room extends EventEmitter {
 		this.users = [];
 		this.user_ids = [];
 
-		this.load_data();
+		if ( this.login ) {
+			this.manager.socket.subscribe(`room.${login}`);
+			this.load_data();
+		}
 	}
 
 	destroy() {
 		clearTimeout(this._destroy_timer);
 		this._destroy_timer = null;
 		this.destroyed = true;
+
+		this.manager.socket.unsubscribe(`room.${this.login}`);
 
 		this.style.destroy();
 

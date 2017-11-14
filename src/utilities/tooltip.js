@@ -123,55 +123,60 @@ export class Tooltip {
 
 
 	_enter(target) {
-		let tip = target[this._accessor],
-			delay = this.options.delayShow;
-
+		let tip = target[this._accessor];
 		if ( ! tip )
 			tip = target[this._accessor] = {target};
 
 		tip.state = true;
 
+		if ( tip._show_timer ) {
+			clearTimeout(tip._show_timer);
+			tip._show_timer = null;
+		}
+
 		if ( tip.visible )
 			return;
+
+		const delay = maybe_call(this.options.delayShow, null, target, tip);
 
 		if ( delay === 0 )
 			this.show(tip);
 
-		else {
-			if ( tip._show_timer )
-				clearTimeout(tip._show_timer);
-
+		else
 			tip._show_timer = setTimeout(() => {
 				tip._show_timer = null;
 				if ( tip.state )
 					this.show(tip);
 			}, delay);
-		}
 	}
 
 	_exit(target) {
 		const tip = target[this._accessor];
-		if ( ! tip || ! tip.visible )
+		if ( ! tip )
 			return;
 
-		const delay = this.options.delayHide;
+			tip.state = false;
 
-		tip.state = false;
+		if ( tip._show_timer ) {
+			clearTimeout(tip._show_timer);
+			tip._show_timer = null;
+		}
+
+		if ( ! tip.visible )
+			return;
+
+		const delay = maybe_call(this.options.delayHide, null, target, tip);
 
 		if ( delay === 0 )
 			this.hide(tip);
 
-		else {
-			if ( tip._show_timer )
-				clearTimeout(tip._show_timer);
-
+		else
 			tip._show_timer = setTimeout(() => {
 				tip._show_timer = null;
 				if ( ! tip.state )
 					this.hide(tip);
 
 			}, delay);
-		}
 	}
 
 
@@ -207,11 +212,20 @@ export class Tooltip {
 
 		arrow.setAttribute('x-arrow', true);
 
-		if ( maybe_call(opts.interactive, null, target, tip) ) {
-			el.classList.add('interactive');
-			el.addEventListener('mouseover', () => this._enter(target));
-			el.addEventListener('mouseout', () => this._exit(target));
-		}
+		const interactive = maybe_call(opts.interactive, null, target, tip);
+		el.classList.toggle('interactive', interactive || false);
+
+		el.addEventListener('mouseover', () => {
+			if ( ! document.contains(target) )
+				this.hide(tip);
+
+			else if ( maybe_call(opts.interactive, null, target, tip) )
+				this._enter(target);
+			else
+				this._exit(target);
+		});
+
+		el.addEventListener('mouseout', () => this._exit(target));
 
 		// Assign our content. If there's a Promise, we'll need
 		// to do this weirdly.
@@ -219,7 +233,7 @@ export class Tooltip {
 			setter = use_html ? 'innerHTML' : 'textContent';
 
 		const pop_opts = Object.assign({
-			arrowElement: arrow,
+			arrowElement: arrow
 		}, opts.popper);
 
 		tip._update = () => {
