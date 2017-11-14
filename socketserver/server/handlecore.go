@@ -2,7 +2,6 @@ package server // import "github.com/FrankerFaceZ/FrankerFaceZ/socketserver/serv
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -254,15 +253,6 @@ func shouldRejectConnection() bool {
 	return false
 }
 
-var errEarlyTLSReject = errors.New("over capacity")
-
-func TLSEarlyReject(*tls.ClientHelloInfo) (*tls.Config, error) {
-	if shouldRejectConnection() {
-		return nil, errEarlyTLSReject
-	}
-	return nil, nil
-}
-
 // HTTPHandleRootURL is the http.HandleFunc for requests on `/`.
 // It either uses the SocketUpgrader or writes out the BannerHTML.
 func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
@@ -283,6 +273,7 @@ func HTTPHandleRootURL(w http.ResponseWriter, r *http.Request) {
 
 		conn, err := SocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
+			w.WriteHeader(400)
 			fmt.Fprintf(w, "error: %v", err)
 			return
 		}

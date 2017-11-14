@@ -81,8 +81,7 @@ func main() {
 			Addr:    conf.SSLListenAddr,
 			Handler: http.DefaultServeMux,
 			TLSConfig: &tls.Config{
-				GetCertificate:     reloader.GetCertificateFunc(),
-				GetConfigForClient: server.TLSEarlyReject,
+				GetCertificate: reloader.GetCertificateFunc(),
 			},
 		}
 		go func() {

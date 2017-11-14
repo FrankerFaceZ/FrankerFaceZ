@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/stendec/frankerfacez/socketserver/server"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 )
 
 type CalendarData struct {
