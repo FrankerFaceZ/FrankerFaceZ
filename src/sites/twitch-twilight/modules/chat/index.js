@@ -99,6 +99,33 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.font-size', {
+			default: 12,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Font Size',
+				description: 'How large should text in chat be, in pixels.',
+				component: 'setting-text-box',
+				process(val) {
+					val = parseInt(val, 10);
+					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
+						return 12;
+
+					return val;
+				}
+			}
+		});
+
+		this.settings.add('chat.font-family', {
+			default: '',
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Font Family',
+				description: 'Set the font used for displaying chat messages.',
+				component: 'setting-text-box'
+			}
+		});
+
 		this.settings.add('chat.bits.show-pinned', {
 			default: true,
 			ui: {
@@ -167,8 +194,28 @@ export default class ChatHook extends Module {
 	}
 
 
-	updateChatWidth() {
-		const width = this.chat.context.get('chat.width');
+	updateChatCSS() {
+		const width = this.chat.context.get('chat.width'),
+			size = this.chat.context.get('chat.font-size'),
+			font = this.chat.context.get('chat.font-family');
+
+		if ( size === 12 )
+			this.css_tweaks.style.delete('chat-font-size');
+		else {
+			const lh = Math.round((20/12) * size);
+			this.css_tweaks.style.set('chat-font-size',`.chat-list{font-size:${size}px;line-height:${lh}px}`);
+		}
+
+		if ( ! font )
+			this.css_tweaks.style.delete('chat-font-family');
+		else {
+			let val = font;
+			if ( font.indexOf(' ') !== -1 && val.indexOf(',') === -1 && val.indexOf('"') === -1 && val.indexOf("'") === -1 )
+				val = `"${val}"`;
+			this.css_tweaks.style.set('chat-font-family', `.chat-list{font-family:${val}}`);
+		}
+
+
 		if ( width === 340 )
 			this.css_tweaks.style.delete('chat-width');
 		else
@@ -186,7 +233,9 @@ export default class ChatHook extends Module {
 
 
 	onEnable() {
-		this.chat.context.on('changed:chat.width', this.updateChatWidth, this);
+		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.bits.stack', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
@@ -209,7 +258,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));
 		this.css_tweaks.toggle('chat-padding', this.chat.context.get('chat.lines.padding'));
 
-		this.updateChatWidth();
+		this.updateChatCSS();
 		this.updateColors();
 		this.updateLineBorders();
 
@@ -296,7 +345,7 @@ export default class ChatHook extends Module {
 						'data-room-id': this.props.channelID,
 						'data-room': room,
 						'data-user-id': user.userID,
-						'data-user': user.userLogin,
+						'data-user': user.userLogin && user.userLogin.toLowerCase(),
 
 						//onClick: () => this.setState({renderDebug: ((this.state.renderDebug||0) + 1) % 3})
 					}, [
@@ -379,7 +428,7 @@ export default class ChatHook extends Module {
 					const original = this._wrapped;
 					if ( original ) {
 						// Check that the message is relevant to this channel.
-						if ( original.channel && original.channel.slice(1) !== this.channelLogin )
+						if ( original.channel && this.channelLogin && original.channel.slice(1) !== this.channelLogin.toLowerCase() )
 							return;
 
 						const c = e.channel = original.channel;
@@ -433,9 +482,9 @@ export default class ChatHook extends Module {
 			return;
 
 		container.dataset.roomId = inst.props.channelID;
-		container.dataset.room = inst.props.channelLogin;
+		container.dataset.room = inst.props.channelLogin && inst.props.channelLogin.toLowerCase();
 		container.dataset.userId = tc.user.userID;
-		container.dataset.user = tc.user.userLogin;
+		container.dataset.user = tc.user.userLogin && tc.user.userLogin.toLowerCase();
 
 		if ( tc.user.color ) {
 			const user_el = container.querySelector('.chat-author__display-name');
@@ -472,7 +521,7 @@ export default class ChatHook extends Module {
 		if ( ! props.channelID )
 			return null;
 
-		const room = thing._ffz_room = this.chat.getRoom(props.channelID, props.channelLogin, false, true);
+		const room = thing._ffz_room = this.chat.getRoom(props.channelID, props.channelLogin && props.channelLogin.toLowerCase(), false, true);
 		room.ref(thing);
 		return room;
 	}
@@ -521,7 +570,7 @@ export default class ChatHook extends Module {
 
 		this.chat.context.updateContext({
 			moderator: props.isCurrentUserModerator,
-			channel: props.channelLogin,
+			channel: props.channelLogin && props.channelLogin.toLowerCase(),
 			channelID: props.channelID,
 			ui: {
 				theme: props.theme

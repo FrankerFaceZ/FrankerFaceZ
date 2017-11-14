@@ -26,7 +26,7 @@
 			</span>
 		</button>
 	</header>
-	<section class="border-t full-height full-width flex flex--nowrap">
+	<section class="border-t full-height full-width flex flex-nowrap overflow-hidden">
 		<nav class="ffz-vertical-nav c-background-alt-2 border-r full-height flex flex-column flex-shrink-0 flex-nowrap">
 			<header class="border-b pd-1">
 				<profile-selector

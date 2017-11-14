@@ -39,7 +39,6 @@
 
 			<ul class="mg-b-2">
 				<li>Dark Theme (Pls No Purple)</li>
-				<li>Chat Pause on Hover</li>
 				<li>Badge Customization</li>
 				<li>Emoji Rendering</li>
 				<li>Emotes Menu</li>
