@@ -5,6 +5,21 @@ Copyright (c) 2017 Dan Salvato LLC
 
 Licensed under the Apache License, Version 2.0. See LICENSE.
 
+FrankerFaceZ Doesn't Work After Twitch Site Update
+==================================================
+
+Starting around Nov 15 2017, the Twitch "Legacy" site is no longer available.
+FrankerFaceZ does not work with the new Twitch site yet.
+
+Although the changes look small to the casual observer, there have been major
+changes behind the scenes (changed js framework from
+[Ember](https://www.emberjs.com/) to [React](https://reactjs.org/)).
+This makes an entire rewrite of FrankerFaceZ necessary, which is currently work
+in progress.
+
+More information can be found on the issue tracker:
+[#241](https://github.com/FrankerFaceZ/FrankerFaceZ/issues/241).
+
 
 Developing
 ==========
