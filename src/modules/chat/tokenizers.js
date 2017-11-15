@@ -306,6 +306,7 @@ export const CheerEmotes = {
 		if ( ! tokens || ! tokens.length || ! msg.bits )
 			return tokens;
 
+		// TODO: Store the room onto the chat message so we don't need to look this up.
 		const SiteChat = this.resolve('site.chat'),
 			chat = SiteChat && SiteChat.currentChat,
 			bitsConfig = chat && chat.props.bitsConfig;
@@ -634,7 +635,7 @@ export const TwitchEmotes = {
 		if ( ! e_length )
 			return tokens;
 
-		emotes.sort((a,b) => a[1] - b[1]);
+		emotes.sort((a,b) => a[1] !== b[1] ? a[1] - b[1] : b[0] - a[0]);
 
 		let idx = 0,
 			eix = 0;
@@ -673,6 +674,12 @@ export const TwitchEmotes = {
 
 					idx = t_end;
 					break;
+				}
+
+				// If this emote starts before the current index, skip it.
+				if ( e_start < idx ) {
+					eix++;
+					continue;
 				}
 
 				// If there's text at the beginning of the token that
