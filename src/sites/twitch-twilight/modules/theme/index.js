@@ -67,7 +67,6 @@ export default class ThemeEngine extends Module {
 	}
 
 	updateSetting(enable) {
-		console.log('update-setting', enable);
 		this.toggleStyle(enable);
 		document.body.classList.toggle('theme--ffz', enable);
 	}

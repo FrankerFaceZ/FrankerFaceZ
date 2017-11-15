@@ -39,14 +39,14 @@ export default class ChannelBar extends Module {
 		this.ChannelBar.on('mount', this.updateChannelBar, this);
 		this.ChannelBar.on('update', this.updateChannelBar, this);
 
-		this.HostBar.on('mount', inst => {
+		/*this.HostBar.on('mount', inst => {
 			this.log.info('host-mount', inst, this.fine.getHostNode(inst));
 		});
 
 		this.HostBar.ready((cls, instances) => {
 			for(const inst of instances)
 				this.log.info('host-found', inst, this.fine.getHostNode(inst));
-		})
+		})*/
 
 	}
 
