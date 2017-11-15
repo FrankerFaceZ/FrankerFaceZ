@@ -67,7 +67,7 @@ export default class Scroller extends Module {
 				old_scroll = cls.prototype.scrollToBottom;
 
 			cls.prototype.scrollToBottom = function() {
-				if ( ! this.state.ffzFrozen )
+				if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen )
 					return old_scroll.call(this);
 			}
 
@@ -147,10 +147,7 @@ export default class Scroller extends Module {
 				if ( ! this._ffz_interval )
 					this._ffz_interval = setInterval(() => {
 						if ( ! this.ffzShouldBeFrozen() )
-							requestAnimationFrame(() => {
-								if ( ! this.ffzShouldBeFrozen() )
-									this.ffzUnfreeze();
-							});
+							this.ffzMaybeUnfreeze();
 					}, 200);
 
 				this.ffz_frozen = true;
