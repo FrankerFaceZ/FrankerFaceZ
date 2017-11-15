@@ -6,3 +6,7 @@
 .ffz--freeze-indicator {
 	pointer-events: none;
 }
+
+.chat-list__lines .simplebar-scrollbar {
+	will-change: opacity;
+}
