@@ -86,7 +86,8 @@ export default class Twilight extends BaseSite {
 Twilight.KNOWN_MODULES = {
 	simplebar: n => n.globalObserver && n.initDOMLoadedElements,
 	react: n => n.Component && n.createElement,
-	'extension-service': n => n.extensionService
+	'extension-service': n => n.extensionService,
+	'chat-types': n => n.a && n.a.PostWithMention
 }
 
 

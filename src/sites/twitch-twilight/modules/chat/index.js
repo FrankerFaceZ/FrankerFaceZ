@@ -11,6 +11,47 @@ import {has} from 'utilities/object';
 import Module from 'utilities/module';
 
 import Scroller from './scroller';
+import ChatLine from './line';
+
+
+const ChatTypes = (e => {
+	e[e.Post = 0] = "Post",
+	e[e.Action = 1] = "Action",
+	e[e.PostWithMention = 2] = "PostWithMention",
+	e[e.Ban = 3] = "Ban",
+	e[e.Timeout = 4] = "Timeout",
+	e[e.AutoModRejectedPrompt = 5] = "AutoModRejectedPrompt",
+	e[e.AutoModMessageRejected = 6] = "AutoModMessageRejected",
+	e[e.AutoModMessageAllowed = 7] = "AutoModMessageAllowed",
+	e[e.AutoModMessageDenied = 8] = "AutoModMessageDenied",
+	e[e.Connected = 9] = "Connected",
+	e[e.Disconnected = 10] = "Disconnected",
+	e[e.Reconnect = 11] = "Reconnect",
+	e[e.Hosting = 12] = "Hosting",
+	e[e.Unhost = 13] = "Unhost",
+	e[e.Subscription = 14] = "Subscription",
+	e[e.Resubscription = 15] = "Resubscription",
+	e[e.SubGift = 16] = "SubGift",
+	e[e.Clear = 17] = "Clear",
+	e[e.SubscriberOnlyMode = 18] = "SubscriberOnlyMode",
+	e[e.FollowerOnlyMode = 19] = "FollowerOnlyMode",
+	e[e.SlowMode = 20] = "SlowMode",
+	e[e.RoomMods = 21] = "RoomMods",
+	e[e.RoomState = 22] = "RoomState",
+	e[e.Raid = 23] = "Raid",
+	e[e.Unraid = 24] = "Unraid",
+	e[e.Notice = 25] = "Notice",
+	e[e.Info = 26] = "Info",
+	e[e.BadgesUpdated = 27] = "BadgesUpdated",
+	e[e.Purchase = 28] = "Purchase"
+})({});
+
+
+const NULL_TYPES = [
+	'Reconnect',
+	'RoomState',
+	'BadgesUpdated'
+];
 
 
 const EVENTS = [
@@ -57,6 +98,7 @@ export default class ChatHook extends Module {
 		this.inject('chat');
 
 		this.inject(Scroller);
+		this.inject(ChatLine);
 
 
 		this.ChatController = this.fine.define(
@@ -67,11 +109,6 @@ export default class ChatHook extends Module {
 		this.ChatContainer = this.fine.define(
 			'chat-container',
 			n => n.showViewersList && n.onChatInputFocus
-		);
-
-		this.ChatLine = this.fine.define(
-			'chat-line',
-			n => n.renderMessageBody
 		);
 
 		this.PinnedCheer = this.fine.define(
@@ -233,10 +270,12 @@ export default class ChatHook extends Module {
 
 
 	onEnable() {
+		const ct = this.web_munch.getModule('chat-types');
+		this.chatTypes = ct ? ct.a : ChatTypes;
+
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
-		this.chat.context.on('changed:chat.bits.stack', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
 		this.chat.context.on('changed:theme.is-dark', this.updateColors, this);
@@ -272,6 +311,10 @@ export default class ChatHook extends Module {
 				if ( ! service._ffz_was_here )
 					this.wrapChatService(service.constructor);
 
+				const buffer = inst.chatBuffer;
+				if ( ! buffer._ffz_was_here )
+					this.wrapChatBuffer(buffer.constructor);
+
 				service.client.events.removeAll();
 				service.connectHandlers();
 
@@ -297,107 +340,34 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.fixPinnedCheer(inst);
 		});
+	}
 
 
-		const React = this.web_munch.getModule('react');
+	wrapChatBuffer(cls) {
+		const t = this;
 
-		if ( React ) {
-			const t = this,
-				e = React.createElement;
+		cls.prototype._ffz_was_here = true;
 
-			this.ChatLine.ready((cls, instances) => {
-				cls.prototype.shouldComponentUpdate = function(props, state) {
-					const show = state.alwaysShowMessage || ! props.message.deleted,
-						old_show = this._ffz_show;
+		cls.prototype.toArray = function() {
+			const buf = this.buffer,
+				ct = t.chatTypes,
+				target = buf.length - this.maxSize;
 
-					// We can't just compare props.message.deleted to this.props.message.deleted
-					// because the message object is the same object. So, store the old show
-					// state for later reference.
-					this._ffz_show = show;
+			if ( target > 0 ) {
+				let removed = 0, last;
+				for(let i=0; i < target; i++)
+					if ( buf[i] && ! NULL_TYPES.includes(ct[buf[i].type]) ) {
+						removed++;
+						last = i;
+					}
 
-					return show !== old_show ||
-						//state.renderDebug !== this.state.renderDebug ||
-						props.message !== this.props.message ||
-						props.isCurrentUserModerator !== this.props.isCurrentUserModerator ||
-						props.showModerationIcons !== this.props.showModerationIcons ||
-						props.showTimestamps !== this.props.showTimestamps;
-				}
+				this.buffer = buf.slice(removed % 2 === 0 ? target : last);
+			} else
+				// Make a shallow copy of the array because other code expects it to change.
+				this.buffer = Array.from(buf);
 
-				//const old_render = cls.prototype.render;
-
-				cls.prototype.render = function() {
-					const msg = this.props.message,
-						is_action = msg.type === 1,
-						user = msg.user,
-						color = t.colors.process(user.color),
-						room = msg.channel ? msg.channel.slice(1) : undefined,
-
-						show = this.state.alwaysShowMessage || ! this.props.message.deleted;
-
-					if ( ! msg.message && msg.messageParts )
-						detokenizeMessage(msg);
-
-					const tokens = t.chat.tokenizeMessage(msg),
-						fragment = t.chat.renderTokens(tokens, e);
-
-					return e('div', {
-						className: 'chat-line__message',
-						'data-room-id': this.props.channelID,
-						'data-room': room,
-						'data-user-id': user.userID,
-						'data-user': user.userLogin && user.userLogin.toLowerCase(),
-
-						//onClick: () => this.setState({renderDebug: ((this.state.renderDebug||0) + 1) % 3})
-					}, [
-						this.props.showTimestamps && e('span', {
-							className: 'chat-line__timestamp'
-						}, t.chat.formatTime(msg.timestamp)),
-						this.renderModerationIcons(),
-						e('span', {
-							className: 'chat-line__message--badges'
-						}, t.chat.renderBadges(msg, e)),
-						e('a', {
-							className: 'chat-author__display-name',
-							style: { color },
-							onClick: this.usernameClickHandler
-						}, user.userDisplayName),
-						user.isIntl && e('span', {
-							className: 'chat-author__intl-login',
-							style: { color },
-							onClick: this.usernameClickHandler
-						}, ` (${user.userLogin})`),
-						e('span', null, is_action ? ' ' : ': '),
-						show ?
-							e('span', {
-								className:'message',
-								style: is_action ? { color } : null
-							}, fragment)
-							:
-							e('span', {
-								className: 'chat-line__message--deleted',
-							}, e('a', {
-								href: '',
-								onClick: this.alwaysShowMessage
-							}, `<message deleted>`)),
-
-						/*this.state.renderDebug === 2 && e('div', {
-							className: 'border mg-t-05'
-						}, old_render.call(this)),
-
-						this.state.renderDebug === 1 && e('div', {
-							className: 'message--debug',
-							style: {
-								fontFamily: 'monospace',
-								whiteSpace: 'pre-wrap',
-								lineHeight: '1.1em'
-							}
-						}, JSON.stringify([tokens, msg.emotes], null, 2))*/
-					])
-				}
-
-				for(const inst of instances)
-					inst.forceUpdate();
-			});
+			this._isDirty = false;
+			return this.buffer;
 		}
 	}
 
@@ -464,8 +434,7 @@ export default class ChatHook extends Module {
 		for(const inst of this.PinnedCheer.instances)
 			inst.forceUpdate();
 
-		for(const inst of this.ChatLine.instances)
-			inst.forceUpdate();
+		this.chat_line.updateLines();
 	}
 
 
@@ -697,63 +666,4 @@ function extractCheerPrefix(parts) {
 	}
 
 	return null;
-}
-
-
-export function detokenizeMessage(msg) {
-	const out = [],
-		parts = msg.messageParts,
-		l = parts.length,
-		emotes = {};
-
-	let idx = 0, ret, last_type = null;
-
-	for(let i=0; i < l; i++) {
-		const part = parts[i],
-			type = part.type,
-			content = part.content;
-
-		if ( type === 0 )
-			ret = content;
-
-		else if ( type === 1 )
-			ret = `@${content.recipient}`;
-
-		else if ( type === 2 )
-			ret = content.displayText;
-
-		else if ( type === 3 ) {
-			if ( content.cheerAmount ) {
-				ret = `${content.alt}${content.cheerAmount}`;
-
-			} else {
-				const url = (content.images.themed ? content.images.dark : content.images.sources)['1x'],
-					match = /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url),
-					id = match && match[1];
-
-				ret = content.alt;
-
-				if ( id ) {
-					const em = emotes[id] = emotes[id] || [],
-						offset = last_type > 0 ? 1 : 0;
-					em.push({startIndex: idx + offset, endIndex: idx + ret.length - 1});
-				}
-			}
-
-			if ( last_type > 0 )
-				ret = ` ${ret}`;
-
-		} else if ( type === 4 )
-			ret = `https://clips.twitch.tv/${content.slug}`;
-
-		if ( ret ) {
-			idx += ret.length;
-			last_type = type;
-			out.push(ret);
-		}
-	}
-
-	msg.message = out.join('');
-	msg.emotes = emotes;
-	return msg;
 }
