@@ -21,14 +21,17 @@ export default class Fine extends Module {
 	}
 
 
-	async onEnable() {
+	async onEnable(tries=0) {
 		// TODO: Move awaitElement to utilities/dom
 		if ( ! this.root_element )
-			this.root_element = await this.parent.awaitElement(this.selector || '[data-reactroot]');
+			this.root_element = await this.parent.awaitElement(this.selector || '#root [data-reactroot]');
 
 		const accessor = this.accessor = Fine.findAccessor(this.root_element);
-		if ( ! accessor )
-			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
+		if ( ! accessor ) {
+			if ( tries > 500 )
+				throw new Error(`unable to find React after 25 seconds`);
+			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable(tries+1));
+		}
 
 		this.react = this.getReactInstance(this.root_element);
 	}
@@ -446,6 +449,12 @@ export class FineWrapper extends EventEmitter {
 		proto[key] = original;
 		this[k] = undefined;
 		this._wrapped.delete(key);
+	}
+
+
+	forceUpdate() {
+		for(const inst of this.instances)
+			inst.forceUpdate();
 	}
 
 

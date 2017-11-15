@@ -55,30 +55,20 @@ export default class Scroller extends Module {
 			const old_freeze = this.freeze;
 			this.freeze = val;
 
-			for(const inst of this.ChatScroller.instances)
-				if ( val === 0 )
-					inst.ffzDisableFreeze();
-				else if ( old_freeze === 0 )
+			for(const inst of this.ChatScroller.instances) {
+				inst.ffzDisableFreeze();
+				if ( val !== 0 )
 					inst.ffzEnableFreeze();
-				else
-					inst.ffzUpdateText();
+			}
 		});
 
 		this.ChatScroller.ready((cls, instances) => {
-			const t = this;
+			const t = this,
+				old_scroll = cls.prototype.scrollToBottom;
 
-			cls.prototype.componentDidUpdate = function(props, state) {
-				if ( state.isAutoScrolling &&
-						! state.ffzFrozen &&
-						this.props.messages !== props.messages )
-					this.scrollToBottom();
-			}
-
-			const old_scroll = cls.prototype.scrollToBottom;
 			cls.prototype.scrollToBottom = function() {
-				if ( this.state.ffzFrozen )
-					this.setState({ffzFrozen: false});
-				return old_scroll.call(this);
+				if ( ! this.state.ffzFrozen )
+					return old_scroll.call(this);
 			}
 
 			cls.prototype.ffzShouldBeFrozen = function(since) {
@@ -190,10 +180,12 @@ export default class Scroller extends Module {
 
 				this.ffz_freeze_enabled = true;
 
-				document.body.addEventListener('keydown',
-					this._ffz_key = this.ffzKey.bind(this));
+				if ( t.freeze > 1 ) {
+					document.body.addEventListener('keydown',
+						this._ffz_key = this.ffzKey.bind(this));
 
-				document.body.addEventListener('keyup', this._ffz_key);
+					document.body.addEventListener('keyup', this._ffz_key);
+				}
 
 				node.addEventListener('mousemove',
 					this._ffz_mousemove = this.ffzMouseMove.bind(this));
