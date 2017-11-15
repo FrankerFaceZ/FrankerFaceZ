@@ -12,10 +12,11 @@ import Module from 'utilities/module';
 
 import Scroller from './scroller';
 import ChatLine from './line';
+import SettingsMenu from './settings_menu';
 
 
 const ChatTypes = (e => {
-	e[e.Post = 0] = "Post",
+	/*e[e.Post = 0] = "Post",
 	e[e.Action = 1] = "Action",
 	e[e.PostWithMention = 2] = "PostWithMention",
 	e[e.Ban = 3] = "Ban",
@@ -25,9 +26,9 @@ const ChatTypes = (e => {
 	e[e.AutoModMessageAllowed = 7] = "AutoModMessageAllowed",
 	e[e.AutoModMessageDenied = 8] = "AutoModMessageDenied",
 	e[e.Connected = 9] = "Connected",
-	e[e.Disconnected = 10] = "Disconnected",
-	e[e.Reconnect = 11] = "Reconnect",
-	e[e.Hosting = 12] = "Hosting",
+	e[e.Disconnected = 10] = "Disconnected",*/
+	e[e.Reconnect = 11] = "Reconnect";
+	/*e[e.Hosting = 12] = "Hosting",
 	e[e.Unhost = 13] = "Unhost",
 	e[e.Subscription = 14] = "Subscription",
 	e[e.Resubscription = 15] = "Resubscription",
@@ -36,14 +37,14 @@ const ChatTypes = (e => {
 	e[e.SubscriberOnlyMode = 18] = "SubscriberOnlyMode",
 	e[e.FollowerOnlyMode = 19] = "FollowerOnlyMode",
 	e[e.SlowMode = 20] = "SlowMode",
-	e[e.RoomMods = 21] = "RoomMods",
-	e[e.RoomState = 22] = "RoomState",
-	e[e.Raid = 23] = "Raid",
+	e[e.RoomMods = 21] = "RoomMods",*/
+	e[e.RoomState = 22] = "RoomState";
+	/*e[e.Raid = 23] = "Raid",
 	e[e.Unraid = 24] = "Unraid",
 	e[e.Notice = 25] = "Notice",
-	e[e.Info = 26] = "Info",
-	e[e.BadgesUpdated = 27] = "BadgesUpdated",
-	e[e.Purchase = 28] = "Purchase"
+	e[e.Info = 26] = "Info",*/
+	e[e.BadgesUpdated = 27] = "BadgesUpdated";
+	//e[e.Purchase = 28] = "Purchase"
 })({});
 
 
@@ -99,6 +100,7 @@ export default class ChatHook extends Module {
 
 		this.inject(Scroller);
 		this.inject(ChatLine);
+		this.inject(SettingsMenu);
 
 
 		this.ChatController = this.fine.define(
@@ -256,7 +258,7 @@ export default class ChatHook extends Module {
 		if ( width === 340 )
 			this.css_tweaks.style.delete('chat-width');
 		else
-			this.css_tweaks.style.set('chat-width', `.channel-page__right-column{width:${width}px!important}`);
+			this.css_tweaks.style.set('chat-width', `.whispers--theatre-mode.whispers--right-column-expanded{right:${width}px!important}.channel-page__video-player--theatre-mode{width:calc(100% - ${width}px)!important}.channel-page__right-column{width:${width}px!important}`);
 	}
 
 	updateLineBorders() {
