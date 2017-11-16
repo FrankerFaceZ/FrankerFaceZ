@@ -14,17 +14,85 @@ export default class Player extends Module {
 
 		this.should_enable = true;
 
+		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
+		this.inject('site.css_tweaks');
 		this.inject('i18n');
 
 		this.Player = this.fine.define(
 			'twitch-player',
 			n => n.player && n.onPlayerReady
 		);
+
+
+		this.settings.add('player.volume-scroll', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> Volume',
+				title: 'Adjust volume by scrolling with the mouse wheel.',
+				description: '<em>This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.</em>',
+				component: 'setting-check-box'
+			},
+
+			changed: val => {
+				for(const inst of this.Player.instances)
+					this.updateVolumeScroll(inst, val);
+			}
+		});
+
+
+		this.settings.add('player.ext-hide', {
+			default: 0,
+			ui: {
+				path: 'Channel > Player >> Extensions',
+				title: 'Show Overlay Extensions',
+				component: 'setting-select-box',
+				data: [
+					{value: 2, title: 'Never'},
+					{value: 1, title: 'With Controls'},
+					{value: 0, title: 'Always'}
+				]
+			},
+			changed: val => this.updateHideExtensions(val)
+		});
+
+		this.settings.add('player.ext-interaction', {
+			default: true,
+			ui: {
+				path: 'Channel > Player >> Extensions',
+				title: 'Allow mouse interaction with overlay extensions.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.css_tweaks.toggle('player-ext-mouse', !val)
+		})
+
+
+		this.settings.add('player.volume-always-shown', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> Volume',
+				title: 'Keep the volume slider expanded at all times.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.css_tweaks.toggle('player-volume', val)
+		})
+
+	}
+
+	updateHideExtensions(val) {
+		if ( val === undefined )
+			val = this.settings.get('player.ext-hide');
+
+		this.css_tweaks.toggleHide('player-ext-hover', val === 1);
+		this.css_tweaks.toggleHide('player-ext', val === 2);
 	}
 
 	onEnable() {
+		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
+		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
+		this.updateHideExtensions();
+
 		const t = this;
 
 		this.Player.ready((cls, instances) => {
@@ -32,12 +100,12 @@ export default class Player extends Module {
 
 			cls.prototype.initializePlayer = function() {
 				const ret = old_init.call(this);
-				t.addResetButton(this);
+				t.process(this);
 				return ret;
 			}
 
 			for(const inst of instances)
-				this.addResetButton(inst);
+				this.process(inst);
 		});
 
 		this.on('i18n:update', () => {
@@ -45,6 +113,42 @@ export default class Player extends Module {
 				this.addResetButton(inst);
 		});
 	}
+
+
+	process(inst) {
+		this.addResetButton(inst);
+		this.updateVolumeScroll(inst);
+	}
+
+
+	updateVolumeScroll(inst, enabled) {
+		if ( enabled === undefined )
+			enabled = this.settings.get('player.volume-scroll');
+
+		if ( ! inst.playerRef )
+			return;
+
+		if ( ! enabled && inst._ffz_scroll_handler ) {
+			inst.playerRef.removeEventListener('wheel', inst._ffz_scroll_handler);
+			inst._ffz_scroll_handler = null;
+
+		} else if ( enabled && ! inst._ffz_scroll_handler ) {
+			inst.playerRef.addEventListener('wheel', inst._ffz_scroll_handler = e => {
+				const delta = e.wheelDelta || -e.detail,
+					player = inst.player;
+
+				if ( player ) {
+					player.volume = Math.max(0, Math.min(1, player.volume + (delta > 0 ? .1 : -.1)));
+					if ( player.volume !== 0 )
+						player.muted = false;
+				}
+
+				e.preventDefault();
+				return false;
+			});
+		}
+	}
+
 
 
 	addResetButton(inst) {
