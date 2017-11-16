@@ -8,7 +8,7 @@ import {API_SERVER, IS_WEBKIT} from 'utilities/constants';
 
 import {EventEmitter} from 'utilities/events';
 import {createElement as e, ManagedStyle} from 'utilities/dom';
-import {has} from 'utilities/object';
+import {has, SourcedSet} from 'utilities/object';
 
 const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
 
@@ -20,11 +20,8 @@ export default class Room extends EventEmitter {
 		this._destroy_timer = null;
 
 		this.manager = manager;
-		this.id = id;
+		this._id = id;
 		this.login = login;
-
-		if ( login )
-			this.manager.rooms[login] = this;
 
 		if ( id )
 			this.manager.room_ids[id] = this;
@@ -32,30 +29,62 @@ export default class Room extends EventEmitter {
 		this.refs = new Set;
 		this.style = new ManagedStyle(`room--${login}`);
 
-		this.emote_sets = [];
+		this.emote_sets = new SourcedSet;
 		this.users = [];
 		this.user_ids = [];
 
-		if ( this.login ) {
-			this.manager.socket.subscribe(`room.${login}`);
-			this.load_data();
-		}
+		this.manager.emit(':room-add', this);
+		this.load_data();
 	}
+
 
 	destroy() {
 		clearTimeout(this._destroy_timer);
 		this._destroy_timer = null;
+
 		this.destroyed = true;
 
-		this.manager.socket.unsubscribe(`room.${this.login}`);
+		this.manager.emit(':room-remove', this);
 
 		this.style.destroy();
 
+		if ( this._login ) {
+			if ( this.manager.rooms[this._login] === this )
+				this.manager.rooms[this._login] = null;
+
+			this.manager.socket.unsubscribe(`room.${this.login}`);
+		}
+
 		if ( this.manager.room_ids[this.id] === this )
 			this.manager.room_ids[this.id] = null;
+	}
 
-		if ( this.manager.rooms[this.login] === this )
-			this.manager.rooms[this.login] = null;
+
+	get id() {
+		return this._id;
+	}
+
+	get login() {
+		return this._login;
+	}
+
+	set login(val) {
+		if ( this._login === val )
+			return;
+
+		if ( this._login ) {
+			if ( this.manager.rooms[this._login] === this )
+				this.manager.rooms[this._login] = null;
+
+			this.manager.socket.unsubscribe(`room.${this.login}`);
+		}
+
+		this._login = val;
+		if ( ! val )
+			return;
+
+		this.manager.socket.subscribe(`room.${val}`);
+		this.manager.emit(':room-update-login', this, val);
 	}
 
 
@@ -69,7 +98,7 @@ export default class Room extends EventEmitter {
 
 		let response, data;
 		try {
-			response = await fetch(`${API_SERVER}/v1/room/${this.login}`);
+			response = await fetch(`${API_SERVER}/v1/room/${this.id ? `id/${this.id}` : this.login}`);
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
@@ -89,9 +118,26 @@ export default class Room extends EventEmitter {
 			return false;
 		}
 
-		const d = this.data = data.room;
-		if ( d.set && this.emote_sets.indexOf(d) === -1 )
-			this.emote_sets.push(d.set);
+		const d = data.room,
+			id = '' + d.twitch_id;
+
+		if ( ! this._id ) {
+			this._id = id;
+			this.manager.room_ids[id] = this;
+
+		} else if ( this._id !== id ) {
+			this.manager.log.warn(`Received data for ${this.id}:${this.login} with the wrong ID: ${id}`);
+			return false;
+		}
+
+		this.login = d.id;
+		this.data = d;
+
+		if ( d.set )
+			this.emote_sets.set('main', d.set);
+		else
+			this.emote_sets.delete('main');
+
 
 		if ( data.sets )
 			for(const set_id in data.sets)

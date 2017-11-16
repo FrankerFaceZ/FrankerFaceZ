@@ -3,6 +3,7 @@
 export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev');
 export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com';
 
+export const CLIENT_ID = 'a3bc9znoz6vi8ozsoca0inlcr4fcvkl';
 export const API_SERVER = '//api.frankerfacez.com';
 
 export const WS_CLUSTERS = {

@@ -9,7 +9,7 @@ const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has} from 'utilities/object';
+import {timeout, has, SourcedSet} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -283,7 +283,7 @@ export default class Chat extends Module {
 			return null;
 
 		else
-			user = {id, login, badges: [], emote_sets: []};
+			user = {id, login, badges: [], emote_sets: new SourcedSet};
 
 		if ( id && id !== user.id ) {
 			// If the ID isn't what we expected, something is very wrong here.

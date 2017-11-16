@@ -6,8 +6,8 @@
 
 import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
-import {has, timeout} from 'utilities/object';
-import {API_SERVER} from 'utilities/constants';
+import {has, timeout, SourcedSet} from 'utilities/object';
+import {CLIENT_ID, API_SERVER} from 'utilities/constants';
 
 
 const MODIFIERS = {
@@ -61,13 +61,16 @@ export default class Emotes extends Module {
 		this.__twitch_emote_to_set = new Map;
 		this.__twitch_set_to_channel = new Map;
 
-		this.default_sets = new Set;
-		this.global_sets = new Set;
+		this.default_sets = new SourcedSet;
+		this.global_sets = new SourcedSet;
 
 		this.emote_sets = {};
 	}
 
 	onEnable() {
+		// Just in case there's a weird load order going on.
+		this.on('site:enabled', this.refresh_twitch_inventory);
+
 		this.style = new ManagedStyle('emotes');
 
 		if ( Object.keys(this.emote_sets).length ) {
@@ -96,9 +99,9 @@ export default class Emotes extends Module {
 		const room = this.parent.getRoom(room_id, room_login, true),
 			user = this.parent.getUser(user_id, user_login, true);
 
-		return (user ? user.emote_sets : []).concat(
-			room ? room.emote_sets : [],
-			Array.from(this.default_sets)
+		return (user ? user.emote_sets._cache : []).concat(
+			room ? room.emote_sets._cache : [],
+			this.default_sets._cache
 		);
 	}
 
@@ -136,12 +139,11 @@ export default class Emotes extends Module {
 
 		const sets = data.sets || {};
 
-		for(const set_id of data.default_sets)
-			this.default_sets.add(set_id);
+		this.default_sets.extend('ffz-global', ...data.default_sets);
 
 		for(const set_id in sets)
 			if ( has(sets, set_id) ) {
-				this.global_sets.add(set_id);
+				this.global_sets.push('ffz-global', set_id);
 				this.load_set_data(set_id, sets[set_id]);
 			}
 
@@ -160,8 +162,7 @@ export default class Emotes extends Module {
 					const user = this.parent.getUser(undefined, login),
 						sets = user.emote_sets;
 
-					if ( sets.indexOf(set_id) === -1 )
-						sets.push(set_id);
+					sets.push('ffz-global', set_id);
 				}
 
 				this.log.info(`Added "${emote_set ? emote_set.title : set_id}" emote set to ${users.length} users.`);
@@ -279,8 +280,27 @@ export default class Emotes extends Module {
 	// Twitch Data Lookup
 	// ========================================================================
 
-	refresh_twitch_inventory() {
-		this.log.debug('Unimplemented: refresh_twitch_inventory');
+	async refresh_twitch_inventory() {
+		const user = this.resolve('site').getUser();
+		if ( ! user )
+			return;
+
+		let data;
+		try {
+			data = await fetch('https://api.twitch.tv/v5/inventory/emoticons', {
+				headers: {
+					'Client-ID': CLIENT_ID,
+					'Authorization': `OAuth ${user.authToken}`
+				}
+			}).then(r => r.json());
+
+		} catch(err) {
+			this.log.error('Error loading Twitch inventory.', err);
+			return;
+		}
+
+		this.twitch_inventory_sets = data.emoticon_sets ? Object.keys(data.emoticon_sets) : [];
+		this.log.info('Twitch Inventory Sets:', this.twitch_inventory_sets);
 	}
 
 

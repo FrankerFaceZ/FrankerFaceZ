@@ -165,3 +165,75 @@ export function maybe_call(fn, ctx, ...args) {
 
 	return fn;
 }
+
+
+export class SourcedSet {
+	constructor() {
+		this._cache = [];
+	}
+
+	_rebuild() {
+		if ( ! this._sources )
+			return;
+
+		this._cache = [];
+		for(const items of this._sources.values())
+			for(const i of items)
+				if ( ! this._cache.includes(i) )
+					this._cache.push(i);
+	}
+
+	get(key) { return this._sources && this._sources.get(key) }
+	has(key) { return this._sources ? this._sources.has(key) : false }
+
+	delete(key) {
+		if ( this._sources && this._sources.has(key) ) {
+			this._sources.delete(key);
+			this._rebuild();
+		}
+	}
+
+	extend(key, ...items) {
+		if ( ! this._sources )
+			this._sources = new Map;
+
+		const had = this.has(key);
+		this._sources.set(key, [false, items]);
+		if ( had )
+			this._rebuild();
+		else
+			for(const i of items)
+				if ( ! this._cache.includes(i) )
+					this._cache.push(i);
+	}
+
+	set(key, val) {
+		if ( ! this._sources )
+			this._sources = new Map;
+
+		const had = this.has(key);
+		this._sources.set(key, [val]);
+
+		if ( had )
+			this._rebuild();
+
+		else if ( ! this._cache.includes(val) )
+			this._cache.push(val);
+	}
+
+	push(key, val) {
+		if ( ! this._sources )
+			return this.set(key, val);
+
+		const old_val = this._sources.get(key);
+		if ( old_val === undefined )
+			return this.set(key, val);
+
+		else if ( old_val.includes(val) )
+			return;
+
+		old_val.push(val);
+		if ( ! this._cache.includes(val) )
+			this._cache.push(val);
+	}
+}
