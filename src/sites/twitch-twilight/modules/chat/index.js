@@ -13,6 +13,7 @@ import Module from 'utilities/module';
 import Scroller from './scroller';
 import ChatLine from './line';
 import SettingsMenu from './settings_menu';
+//import EmoteMenu from './emote_menu';
 
 
 const ChatTypes = (e => {
@@ -44,7 +45,8 @@ const ChatTypes = (e => {
 	e[e.Notice = 25] = "Notice",
 	e[e.Info = 26] = "Info",*/
 	e[e.BadgesUpdated = 27] = "BadgesUpdated";
-	//e[e.Purchase = 28] = "Purchase"
+	//e[e.Purchase = 28] = "Purchase";
+	return e;
 })({});
 
 
@@ -101,6 +103,7 @@ export default class ChatHook extends Module {
 		this.inject(Scroller);
 		this.inject(ChatLine);
 		this.inject(SettingsMenu);
+		//this.inject(EmoteMenu);
 
 
 		this.ChatController = this.fine.define(
@@ -272,8 +275,13 @@ export default class ChatHook extends Module {
 
 
 	onEnable() {
+		this.on('site.web_munch:loaded', () => {
+			const ct = this.web_munch.getModule('chat-types');
+			this.chatTypes = ct && ct.a || ChatTypes;
+		})
+
 		const ct = this.web_munch.getModule('chat-types');
-		this.chatTypes = ct ? ct.a : ChatTypes;
+		this.chatTypes = ct && ct.a || ChatTypes;
 
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
@@ -352,7 +360,7 @@ export default class ChatHook extends Module {
 
 		cls.prototype.toArray = function() {
 			const buf = this.buffer,
-				ct = t.chatTypes,
+				ct = t.chatTypes || ChatTypes,
 				target = buf.length - this.maxSize;
 
 			if ( target > 0 ) {
@@ -363,10 +371,10 @@ export default class ChatHook extends Module {
 						last = i;
 					}
 
-				this.buffer = buf.slice(removed % 2 === 0 ? target : last);
+				this.buffer = buf.slice(removed % 2 === 0 ? target : Math.max(target - 10, last));
 			} else
 				// Make a shallow copy of the array because other code expects it to change.
-				this.buffer = Array.from(buf);
+				this.buffer = buf.slice(target);
 
 			this._isDirty = false;
 			return this.buffer;
