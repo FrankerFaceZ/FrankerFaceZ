@@ -270,7 +270,7 @@ export default class MainMenu extends Module {
 							parent: token
 						});
 
-						if ( def.default && ! tok.default ) {
+						if ( has(def, 'default') && ! has(tok, 'default') ) {
 							const def_type = typeof def.default;
 							if ( def_type === 'object' ) {
 								// TODO: Better way to deep copy this object.

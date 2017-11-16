@@ -1,6 +1,6 @@
 <template lang="html">
 <div class="ffz-main-menu elevation-3 c-background-alt border flex flex--nowrap flex-column" :class="{ maximized }">
-	<header class="c-background pd-1 pd-l-2 full-width align-items-center flex flex-nowrap" @dblclick="resize">
+	<header class="c-background full-width align-items-center flex flex-nowrap" @dblclick="resize">
 		<h3 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h3>
 		<div class="flex-grow-1 pd-x-2">
 			<!--div class="tw-search-input">
