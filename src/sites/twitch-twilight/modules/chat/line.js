@@ -4,8 +4,8 @@
 // Chat Line
 // ============================================================================
 
-import {createElement as e} from 'utilities/dom';
 import Module from 'utilities/module';
+//import {Color} from 'utilities/color';
 
 export default class ChatLine extends Module {
 	constructor(...args) {
@@ -57,9 +57,12 @@ export default class ChatLine extends Module {
 					is_action = msg.type === 1,
 					user = msg.user,
 					color = t.parent.colors.process(user.color),
+					/*bg_rgb = Color.RGBA.fromHex(user.color),
+					bg_color = bg_rgb.luminance() < .005 ? bg_rgb : bg_rgb.toHSLA().targetLuminance(0.005).toRGBA(),
+					bg_css = bg_color.toCSS(),*/
 					room = msg.channel ? msg.channel.slice(1) : undefined,
 
-					show = this.state.alwaysShowMessage || ! this.props.message.deleted;
+					show = this._ffz_show = this.state.alwaysShowMessage || ! this.props.message.deleted;
 
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
@@ -69,6 +72,7 @@ export default class ChatLine extends Module {
 
 				const out = e('div', {
 					className: 'chat-line__message',
+					//style: { backgroundColor: bg_css },
 					'data-room-id': this.props.channelID,
 					'data-room': room,
 					'data-user-id': user.userID,

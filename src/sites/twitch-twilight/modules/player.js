@@ -41,6 +41,24 @@ export default class Player extends Module {
 			}
 		});
 
+		this.settings.add('player.theatre.no-whispers', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> Theatre Mode',
+				title: 'Hide whispers when Theatre Mode is enabled.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.css_tweaks.toggle('theatre-no-whispers', val)
+		});
+
+		this.settings.add('player.theatre.auto-enter', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> Theatre Mode',
+				title: 'Automatically open Theatre Mode when visiting a channel.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('player.ext-hide', {
 			default: 0,
@@ -91,9 +109,12 @@ export default class Player extends Module {
 	onEnable() {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
+		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
 		this.updateHideExtensions();
 
 		const t = this;
+
+		this.Player.on('mount', this.onMount, this);
 
 		this.Player.ready((cls, instances) => {
 			const old_init = cls.prototype.initializePlayer;
@@ -104,14 +125,22 @@ export default class Player extends Module {
 				return ret;
 			}
 
-			for(const inst of instances)
+			for(const inst of instances) {
+				this.onMount(inst);
 				this.process(inst);
+			}
 		});
 
 		this.on('i18n:update', () => {
 			for(const inst of this.Player.instances)
 				this.addResetButton(inst);
 		});
+	}
+
+
+	onMount(inst) {
+		if ( this.settings.get('player.theatre.auto-enter') && inst.onTheatreChange )
+			inst.onTheatreChange(true);
 	}
 
 

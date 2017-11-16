@@ -261,7 +261,7 @@ export default class ChatHook extends Module {
 		if ( width === 340 )
 			this.css_tweaks.style.delete('chat-width');
 		else
-			this.css_tweaks.style.set('chat-width', `.whispers--theatre-mode.whispers--right-column-expanded{right:${width}px!important}.channel-page__video-player--theatre-mode{width:calc(100% - ${width}px)!important}.channel-page__right-column{width:${width}px!important}`);
+			this.css_tweaks.style.set('chat-width', `.whispers--theatre-mode.whispers--right-column-expanded{right:${width}px!important}.persistent-player--theatre,.channel-page__video-player--theatre-mode{width:calc(100% - ${width}px)!important}.channel-page__right-column{width:${width}px!important}`);
 	}
 
 	updateLineBorders() {
