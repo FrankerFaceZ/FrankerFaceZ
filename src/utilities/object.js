@@ -186,6 +186,10 @@ export class SourcedSet {
 	get(key) { return this._sources && this._sources.get(key) }
 	has(key) { return this._sources ? this._sources.has(key) : false }
 
+	includes(val) {
+		return this._cache.includes(val);
+	}
+
 	delete(key) {
 		if ( this._sources && this._sources.has(key) ) {
 			this._sources.delete(key);
@@ -235,5 +239,19 @@ export class SourcedSet {
 		old_val.push(val);
 		if ( ! this._cache.includes(val) )
 			this._cache.push(val);
+	}
+
+	remove(key, val) {
+		if ( ! this.has(key) )
+			return;
+
+		const old_val = this._sources.get(key),
+			idx = old_val.indexOf(val);
+
+		if ( idx === -1 )
+			return;
+
+		old_val.splice(idx, 1);
+		this._rebuild();
 	}
 }

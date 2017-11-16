@@ -9,6 +9,7 @@ import SettingsManager from './settings/index';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
 import Site from 'site';
+import LegacyAPI from './api';
 import Vue from 'utilities/vue';
 
 class FrankerFaceZ extends Module {
@@ -37,6 +38,8 @@ class FrankerFaceZ extends Module {
 		this.inject('i18n', TranslationManager);
 		this.inject('socket', SocketClient);
 		this.inject('site', Site);
+
+		this.inject('_api', LegacyAPI);
 
 		this.register('vue', Vue);
 
@@ -87,8 +90,8 @@ class FrankerFaceZ extends Module {
 
 
 	/* eslint class-methods-use-this: off */
-	api() {
-		throw new Error('Not Implemented');
+	api(...args) {
+		return this._api.create(...args);
 	}
 }
 
@@ -118,3 +121,12 @@ FrankerFaceZ.utilities = {
 
 window.FrankerFaceZ = FrankerFaceZ;
 window.ffz = new FrankerFaceZ();
+
+// Make FFZ:AP Run
+FrankerFaceZ.chat_commands = {};
+FrankerFaceZ.settings_info = {};
+FrankerFaceZ.utils = {
+	process_int(a,b,c) { return a }
+}
+window.App = true;
+jQuery.noty = {themes: {}};

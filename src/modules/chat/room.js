@@ -73,9 +73,11 @@ export default class Room extends EventEmitter {
 			return;
 
 		if ( this._login ) {
-			if ( this.manager.rooms[this._login] === this )
-				this.manager.rooms[this._login] = null;
+			const old_room = this.manager.rooms[this._login];
+			if ( old_room !== this )
+				old_room.login = null;
 
+			this.manager.rooms[this._login] = null;
 			this.manager.socket.unsubscribe(`room.${this.login}`);
 		}
 
@@ -83,6 +85,11 @@ export default class Room extends EventEmitter {
 		if ( ! val )
 			return;
 
+		const old_room = this.manager.rooms[val];
+		if ( old_room && old_room !== this )
+			old_room.login = null;
+
+		this.manager.rooms[val] = this;
 		this.manager.socket.subscribe(`room.${val}`);
 		this.manager.emit(':room-update-login', this, val);
 	}
