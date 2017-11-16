@@ -1,5 +1,4 @@
 'use strict';
-/* eslint-disable */
 
 import {has} from 'utilities/object';
 
@@ -179,21 +178,21 @@ RGBAColor.fromHex = function(code, alpha = 1) {
 }
 
 RGBAColor.fromHSVA = function(h, s, v, a) {
-	let r, g, b,
+	let r, g, b;
 
-		i = Math.floor(h * 6),
+	const i = Math.floor(h * 6),
 		f = h * 6 - i,
 		p = v * (1 - s),
 		q = v * (1 - f * s),
 		t = v * (1 - (1 - f) * s);
 
 	switch(i % 6) {
-		case 0: r = v, g = t, b = p; break;
-		case 1: r = q, g = v, b = p; break;
-		case 2: r = p, g = v, b = t; break;
-		case 3: r = p, g = q, b = v; break;
-		case 4: r = t, g = p, b = v; break;
-		case 5: r = v, g = p, b = q;
+		case 0: r = v; g = t; b = p; break;
+		case 1: r = q; g = v; b = p; break;
+		case 2: r = p; g = v; b = t; break;
+		case 3: r = p; g = q; b = v; break;
+		case 4: r = t; g = p; b = v; break;
+		case 5: r = v; g = p; b = q;
 	}
 
 	return new RGBAColor(
@@ -237,13 +236,13 @@ RGBAColor.fromHSLA = function(h, s, l, a) {
 
 RGBAColor.prototype.toHSVA = function() { return HSVAColor.fromRGBA(this.r, this.g, this.b, this.a); }
 RGBAColor.prototype.toHSLA = function() { return HSLAColor.fromRGBA(this.r, this.g, this.b, this.a); }
-RGBAColor.prototype.toCSS = function() { return "rgb" + (this.a !== 1 ? "a" : "") + "(" + Math.round(this.r) + "," + Math.round(this.g) + "," + Math.round(this.b) + (this.a !== 1 ? "," + this.a : "") + ")"; }
+RGBAColor.prototype.toCSS = function() { return `rgb${this.a !== 1 ? 'a' : ''}(${Math.round(this.r)},${Math.round(this.g)},${Math.round(this.b)}${this.a !== 1 ? `,${this.a}` : ''})`; }
 RGBAColor.prototype.toXYZA = function() { return XYZAColor.fromRGBA(this.r, this.g, this.b, this.a); }
 RGBAColor.prototype.toLUVA = function() { return this.toXYZA().toLUVA(); }
 
 RGBAColor.prototype.toHex = function() {
-	var rgb = this.b | (this.g << 8) | (this.r << 16);
-	return '#' + (0x1000000 + rgb).toString(16).slice(1);
+	const rgb = this.b | (this.g << 8) | (this.r << 16);
+	return `#${(0x1000000 + rgb).toString(16).slice(1)}`;
 }
 
 
@@ -253,7 +252,7 @@ RGBAColor.prototype.get_Y = function() {
 
 
 RGBAColor.prototype.luminance = function() {
-	var r = bit2linear(this.r / 255),
+	const r = bit2linear(this.r / 255),
 		g = bit2linear(this.g / 255),
 		b = bit2linear(this.b / 255);
 
@@ -262,7 +261,7 @@ RGBAColor.prototype.luminance = function() {
 
 
 RGBAColor.prototype.brighten = function(amount) {
-	amount = typeof amount === "number" ? amount : 1;
+	amount = typeof amount === `number` ? amount : 1;
 	amount = Math.round(255 * (amount / 100));
 
 	return new RGBAColor(
@@ -274,43 +273,47 @@ RGBAColor.prototype.brighten = function(amount) {
 }
 
 
-RGBAColor.prototype.daltonize = function(type, amount) {
-	amount = typeof amount === "number" ? amount : 1.0;
-	var cvd;
-	if ( typeof type === "string" ) {
+RGBAColor.prototype.daltonize = function(type) {
+	let cvd;
+	if ( typeof type === 'string' ) {
 		if ( Color.CVDMatrix.hasOwnProperty(type) )
 			cvd = Color.CVDMatrix[type];
 		else
-			throw "Invalid CVD matrix.";
+			throw new Error('Invalid CVD matrix');
 	} else
 		cvd = type;
 
-	var cvd_a = cvd[0], cvd_b = cvd[1], cvd_c = cvd[2],
+	const cvd_a = cvd[0], cvd_b = cvd[1], cvd_c = cvd[2],
 		cvd_d = cvd[3], cvd_e = cvd[4], cvd_f = cvd[5],
-		cvd_g = cvd[6], cvd_h = cvd[7], cvd_i = cvd[8],
+		cvd_g = cvd[6], cvd_h = cvd[7], cvd_i = cvd[8];
 
-		L, M, S, l, m, s, R, G, B, RR, GG, BB;
+	//let L, M, S, l, m, s, R, G, B, RR, GG, BB;
 
 	// RGB to LMS matrix conversion
-	L = (17.8824 * this.r) + (43.5161 * this.g) + (4.11935 * this.b);
-	M = (3.45565 * this.r) + (27.1554 * this.g) + (3.86714 * this.b);
-	S = (0.0299566 * this.r) + (0.184309 * this.g) + (1.46709 * this.b);
+	const L = (17.8824 * this.r) + (43.5161 * this.g) + (4.11935 * this.b),
+		M = (3.45565 * this.r) + (27.1554 * this.g) + (3.86714 * this.b),
+		S = (0.0299566 * this.r) + (0.184309 * this.g) + (1.46709 * this.b);
+
 	// Simulate color blindness
-	l = (cvd_a * L) + (cvd_b * M) + (cvd_c * S);
-	m = (cvd_d * L) + (cvd_e * M) + (cvd_f * S);
-	s = (cvd_g * L) + (cvd_h * M) + (cvd_i * S);
+	const l = (cvd_a * L) + (cvd_b * M) + (cvd_c * S),
+		m = (cvd_d * L) + (cvd_e * M) + (cvd_f * S),
+		s = (cvd_g * L) + (cvd_h * M) + (cvd_i * S);
+
 	// LMS to RGB matrix conversion
-	R = (0.0809444479 * l) + (-0.130504409 * m) + (0.116721066 * s);
-	G = (-0.0102485335 * l) + (0.0540193266 * m) + (-0.113614708 * s);
-	B = (-0.000365296938 * l) + (-0.00412161469 * m) + (0.693511405 * s);
+	let R = (0.0809444479 * l) + (-0.130504409 * m) + (0.116721066 * s),
+		G = (-0.0102485335 * l) + (0.0540193266 * m) + (-0.113614708 * s),
+		B = (-0.000365296938 * l) + (-0.00412161469 * m) + (0.693511405 * s);
+
 	// Isolate invisible colors to color vision deficiency (calculate error matrix)
 	R = this.r - R;
 	G = this.g - G;
 	B = this.b - B;
+
 	// Shift colors towards visible spectrum (apply error modifications)
-	RR = (0.0 * R) + (0.0 * G) + (0.0 * B);
-	GG = (0.7 * R) + (1.0 * G) + (0.0 * B);
-	BB = (0.7 * R) + (0.0 * G) + (1.0 * B);
+	const RR = (0.0 * R) + (0.0 * G) + (0.0 * B),
+		GG = (0.7 * R) + (1.0 * G) + (0.0 * B),
+		BB = (0.7 * R) + (0.0 * G) + (1.0 * B);
+
 	// Add compensation to original values
 	R = Math.min(Math.max(0, RR + this.r), 255);
 	G = Math.min(Math.max(0, GG + this.g), 255);
@@ -334,11 +337,13 @@ HSLAColor.prototype.eq = function(hsl) {
 HSLAColor.fromRGBA = function(r, g, b, a) {
 	r /= 255; g /= 255; b /= 255;
 
-	var max = Math.max(r,g,b),
+	const max = Math.max(r,g,b),
 		min = Math.min(r,g,b),
 
-		h, s, l = Math.min(Math.max(0, (max+min) / 2), 1),
+		l = Math.min(Math.max(0, (max+min) / 2), 1),
 		d = Math.min(Math.max(0, max - min), 1);
+
+	let h, s;
 
 	if ( d === 0 )
 		h = s = 0;
@@ -361,12 +366,17 @@ HSLAColor.fromRGBA = function(r, g, b, a) {
 }
 
 HSLAColor.prototype.targetLuminance = function (target) {
-	var s = this.s;
+	let s = this.s,
+		min = 0,
+		max = 1;
+
 	s *= Math.pow(this.l > 0.5 ? -this.l : this.l - 1, 7) + 1;
 
-	var min = 0, max = 1, d = (max - min) / 2, mid = min + d;
+	let d = (max - min) / 2,
+		mid = min + d;
+
 	for (; d > 1/65536; d /= 2, mid = min + d) {
-		var luminance = RGBAColor.fromHSLA(this.h, s, mid, 1).luminance()
+		const luminance = RGBAColor.fromHSLA(this.h, s, mid, 1).luminance()
 		if (luminance > target) {
 			max = mid;
 		} else {
@@ -378,7 +388,7 @@ HSLAColor.prototype.targetLuminance = function (target) {
 }
 
 HSLAColor.prototype.toRGBA = function() { return RGBAColor.fromHSLA(this.h, this.s, this.l, this.a); }
-HSLAColor.prototype.toCSS = function() { return "hsl" + (this.a !== 1 ? "a" : "") + "(" + Math.round(this.h*360) + "," + Math.round(this.s*100) + "%," + Math.round(this.l*100) + "%" + (this.a !== 1 ? "," + this.a : "") + ")"; }
+HSLAColor.prototype.toCSS = function() { return `"hsl${this.a !== 1 ? 'a' : ''}(${Math.round(this.h*360)},${Math.round(this.s*100)}%,${Math.round(this.l*100)}%${this.a !== 1 ? `,${this.a}` : ''})`; }
 HSLAColor.prototype.toHSVA = function() { return this.toRGBA().toHSVA(); }
 HSLAColor.prototype.toXYZA = function() { return this.toRGBA().toXYZA(); }
 HSLAColor.prototype.toLUVA = function() { return this.toRGBA().toLUVA(); }
@@ -397,13 +407,14 @@ HSVAColor.prototype.eq = function(hsv) { return hsv.h === this.h && hsv.s === th
 HSVAColor.fromRGBA = function(r, g, b, a) {
 	r /= 255; g /= 255; b /= 255;
 
-	var max = Math.max(r, g, b),
+	const max = Math.max(r, g, b),
 		min = Math.min(r, g, b),
 		d = Math.min(Math.max(0, max - min), 1),
 
-		h,
 		s = max === 0 ? 0 : d / max,
 		v = max;
+
+	let h;
 
 	if ( d === 0 )
 		h = 0;
@@ -442,7 +453,7 @@ HSVAColor.prototype._a = function(a) { return new HSVAColor(this.h, this.s, this
 XYZAColor.prototype.eq = function(xyz) {  return xyz.x === this.x && xyz.y === this.y && xyz.z === this.z; }
 
 XYZAColor.fromRGBA = function(r, g, b, a) {
-	var R = bit2linear(r / 255),
+	const R = bit2linear(r / 255),
 		G = bit2linear(g / 255),
 		B = bit2linear(b / 255);
 
@@ -455,20 +466,19 @@ XYZAColor.fromRGBA = function(r, g, b, a) {
 }
 
 XYZAColor.fromLUVA = function(l, u, v, alpha) {
-	var deltaGammaFactor = 1 / (XYZAColor.WHITE.x + 15 * XYZAColor.WHITE.y + 3 * XYZAColor.WHITE.z);
-	var uDeltaGamma = 4 * XYZAColor.WHITE.x * deltaGammaFactor;
-	var vDeltagamma = 9 * XYZAColor.WHITE.y * deltaGammaFactor;
+	const deltaGammaFactor = 1 / (XYZAColor.WHITE.x + 15 * XYZAColor.WHITE.y + 3 * XYZAColor.WHITE.z),
+		uDeltaGamma = 4 * XYZAColor.WHITE.x * deltaGammaFactor,
+		vDeltagamma = 9 * XYZAColor.WHITE.y * deltaGammaFactor;
 
 	// XYZAColor.EPSILON * XYZAColor.KAPPA = 8
-	var Y = (l > 8) ? Math.pow((l + 16) / 116, 3) : l / XYZAColor.KAPPA;
+	const Y = (l > 8) ? Math.pow((l + 16) / 116, 3) : l / XYZAColor.KAPPA,
+		a = 1/3 * (((52 * l) / (u + 13 * l * uDeltaGamma)) - 1),
+		b = -5 * Y,
+		c = -1/3,
+		d = Y * (((39 * l) / (v + 13 * l * vDeltagamma)) - 5),
 
-	var a = 1/3 * (((52 * l) / (u + 13 * l * uDeltaGamma)) - 1);
-	var b = -5 * Y;
-	var c = -1/3;
-	var d = Y * (((39 * l) / (v + 13 * l * vDeltagamma)) - 5);
-
-	var X = (d - b) / (a - c);
-	var Z = X * a + b;
+		X = (d - b) / (a - c),
+		Z = X * a + b;
 
 	return new XYZAColor(X, Y, Z, alpha === undefined ? 1 : alpha);
 }
@@ -496,25 +506,25 @@ XYZAColor.WHITE = (new RGBAColor(255, 255, 255, 1)).toXYZA();
 LUVAColor.prototype.eq = function(luv) { return luv.l === this.l && luv.u === this.u && luv.v === this.v; }
 
 LUVAColor.fromXYZA = function(X, Y, Z, a) {
-	var deltaGammaFactor = 1 / (XYZAColor.WHITE.x + 15 * XYZAColor.WHITE.y + 3 * XYZAColor.WHITE.z);
-	var uDeltaGamma = 4 * XYZAColor.WHITE.x * deltaGammaFactor;
-	var vDeltagamma = 9 * XYZAColor.WHITE.y * deltaGammaFactor;
+	const deltaGammaFactor = 1 / (XYZAColor.WHITE.x + 15 * XYZAColor.WHITE.y + 3 * XYZAColor.WHITE.z),
+		uDeltaGamma = 4 * XYZAColor.WHITE.x * deltaGammaFactor,
+		vDeltagamma = 9 * XYZAColor.WHITE.y * deltaGammaFactor,
 
-	var yGamma = Y / XYZAColor.WHITE.y;
-	var deltaDivider = (X + 15 * Y + 3 * Z);
+		yGamma = Y / XYZAColor.WHITE.y;
 
+	let deltaDivider = (X + 15 * Y + 3 * Z);
 	if (deltaDivider === 0) {
 		deltaDivider = 1;
 	}
 
-	var deltaFactor = 1 / deltaDivider;
+	const deltaFactor = 1 / deltaDivider,
 
-	var uDelta = 4 * X * deltaFactor;
-	var vDelta = 9 * Y * deltaFactor;
+		uDelta = 4 * X * deltaFactor,
+		vDelta = 9 * Y * deltaFactor,
 
-	var L = (yGamma > XYZAColor.EPSILON) ? 116 * Math.pow(yGamma, 1/3) - 16 : XYZAColor.KAPPA * yGamma;
-	var u = 13 * L * (uDelta - uDeltaGamma);
-	var v = 13 * L * (vDelta - vDeltagamma);
+		L = (yGamma > XYZAColor.EPSILON) ? 116 * Math.pow(yGamma, 1/3) - 16 : XYZAColor.KAPPA * yGamma,
+		u = 13 * L * (uDelta - uDeltaGamma),
+		v = 13 * L * (vDelta - vDeltagamma);
 
 	return new LUVAColor(L, u, v, a === undefined ? 1 : a);
 }
@@ -627,6 +637,17 @@ export class ColorAdjuster {
 					const hsl = rgb.toHSLA();
 					rgb = hsl._l(Math.min(Math.max(0, 0.9 * hsl.l), 1)).toRGBA();
 				}
+
+		} else if ( this._mode === 4 ) {
+			// RGB Loop
+			let i = 0;
+			if ( this._dark )
+				while ( rgb.luminance() < 0.15 && i++ < 127 )
+					rgb = rgb.brighten();
+
+			else
+				while ( rgb.luminance() > 0.3 && i++ < 127 )
+					rgb = rgb.brighten(-1);
 		}
 
 		const out = this._cache[color] = rgb.toHex();

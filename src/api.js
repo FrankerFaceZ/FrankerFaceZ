@@ -20,12 +20,12 @@ export default class ApiModule extends Module {
 
 		if ( ! this._known_apis ) {
 			this._known_apis = {};
-			var stored_val = localStorage.getItem("ffz_known_apis");
+			const stored_val = localStorage.getItem(`ffz_known_apis`);
 			if ( stored_val !== null )
 				try {
 					this._known_apis = JSON.parse(stored_val);
 				} catch(err) {
-					this.error("Error loading Known APIs", err);
+					this.log.error(`Error loading known APIs`, err);
 				}
 		}
 	}
@@ -78,7 +78,7 @@ export class LegacyAPI extends EventEmitter {
 		this.users = {};
 
 		this.name = name || `Extension#${this.id}`;
-		this.name_key = name_key || this.name.replace(/[^A-Z0-9_\-]/g, '').toLowerCase();
+		this.name_key = name_key || this.name.replace(/[^A-Z0-9_-]/g, '').toLowerCase();
 
 		if ( /^[0-9]/.test(this.name_key) )
 			this.name_key = `_${this.name_key}`;
@@ -97,9 +97,9 @@ export class LegacyAPI extends EventEmitter {
 		this.parent.log.error(`Ext #${this.id} (${this.name_key}): ${msg}`, error);
 	}
 
-	register_metadata(key, data) { }
-	unregister_metadata(key, data) { }
-	update_metadata(key, full_update) { }
+	register_metadata(key, data) { } // eslint-disable-line
+	unregister_metadata(key, data) { } // eslint-disable-line
+	update_metadata(key, full_update) { } // eslint-disable-line
 
 
 	_load_set(real_id, set_id, data) {
@@ -119,7 +119,7 @@ export class LegacyAPI extends EventEmitter {
 		});
 
 		this.emote_sets[set_id] = emote_set;
-		this.parent.emotes.load_set_data(real_id, emote_set);
+		this.parent.emotes.loadSetData(real_id, emote_set);
 
 		return emote_set;
 	}
@@ -232,23 +232,23 @@ export class LegacyAPI extends EventEmitter {
 	}
 
 
-	add_badge() { }
-	remove_badge() { }
-	user_add_badge() { }
-	user_remove_badge() { }
-	room_add_user_badge() { }
-	room_remove_user_badge() { }
+	add_badge() { } // eslint-disable-line
+	remove_badge() { } // eslint-disable-line
+	user_add_badge() { } // eslint-disable-line
+	user_remove_badge() { } // eslint-disable-line
+	room_add_user_badge() { } // eslint-disable-line
+	room_remove_user_badge() { } // eslint-disable-line
 
-	user_add_set(username, set_id) {
-
-	}
-
-	user_remove_set(username, set_id) {
+	user_add_set(username, set_id) { // eslint-disable-line
 
 	}
 
+	user_remove_set(username, set_id) { // eslint-disable-line
 
-	retokenize_messages() { }
+	}
+
+
+	retokenize_messages() { } // eslint-disable-line
 
 
 	register_chat_filter(filter) {
@@ -260,20 +260,19 @@ export class LegacyAPI extends EventEmitter {
 	}
 
 
-	iterate_chat_views(func) { }
+	iterate_chat_views(func) { } // eslint-disable-line
 	iterate_rooms(func) {
 		if ( func === undefined )
 			func = this.emit.bind(this, 'room-add');
 
 		const chat = this.parent.resolve('chat');
 		for(const room_id in chat.rooms)
-			func(room_id);
+			if ( has(chat.rooms, room_id) )
+				func(room_id);
 	}
 
 	register_on_room_callback(callback, dont_iterate) {
-		const thing = room_id => {
-			return callback(room_id, this.register_room_set.bind(this, room_id));
-		}
+		const thing = room_id => callback(room_id, this.register_room_set.bind(this, room_id));
 
 		thing.original_func = callback;
 		callback.__wrapped = thing;

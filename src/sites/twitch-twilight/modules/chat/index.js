@@ -17,35 +17,35 @@ import SettingsMenu from './settings_menu';
 
 
 const ChatTypes = (e => {
-	/*e[e.Post = 0] = "Post",
-	e[e.Action = 1] = "Action",
-	e[e.PostWithMention = 2] = "PostWithMention",
-	e[e.Ban = 3] = "Ban",
-	e[e.Timeout = 4] = "Timeout",
-	e[e.AutoModRejectedPrompt = 5] = "AutoModRejectedPrompt",
-	e[e.AutoModMessageRejected = 6] = "AutoModMessageRejected",
-	e[e.AutoModMessageAllowed = 7] = "AutoModMessageAllowed",
-	e[e.AutoModMessageDenied = 8] = "AutoModMessageDenied",
-	e[e.Connected = 9] = "Connected",
-	e[e.Disconnected = 10] = "Disconnected",*/
-	e[e.Reconnect = 11] = "Reconnect";
-	/*e[e.Hosting = 12] = "Hosting",
-	e[e.Unhost = 13] = "Unhost",
-	e[e.Subscription = 14] = "Subscription",
-	e[e.Resubscription = 15] = "Resubscription",
-	e[e.SubGift = 16] = "SubGift",
-	e[e.Clear = 17] = "Clear",
-	e[e.SubscriberOnlyMode = 18] = "SubscriberOnlyMode",
-	e[e.FollowerOnlyMode = 19] = "FollowerOnlyMode",
-	e[e.SlowMode = 20] = "SlowMode",
-	e[e.RoomMods = 21] = "RoomMods",*/
-	e[e.RoomState = 22] = "RoomState";
-	/*e[e.Raid = 23] = "Raid",
-	e[e.Unraid = 24] = "Unraid",
-	e[e.Notice = 25] = "Notice",
-	e[e.Info = 26] = "Info",*/
-	e[e.BadgesUpdated = 27] = "BadgesUpdated";
-	//e[e.Purchase = 28] = "Purchase";
+	/*e[e.Post = 0] = 'Post';
+	e[e.Action = 1] = 'Action';
+	e[e.PostWithMention = 2] = 'PostWithMention';
+	e[e.Ban = 3] = 'Ban';
+	e[e.Timeout = 4] = 'Timeout';
+	e[e.AutoModRejectedPrompt = 5] = 'AutoModRejectedPrompt';
+	e[e.AutoModMessageRejected = 6] = 'AutoModMessageRejected';
+	e[e.AutoModMessageAllowed = 7] = 'AutoModMessageAllowed';
+	e[e.AutoModMessageDenied = 8] = 'AutoModMessageDenied';
+	e[e.Connected = 9] = 'Connected';
+	e[e.Disconnected = 10] = 'Disconnected';*/
+	e[e.Reconnect = 11] = 'Reconnect';
+	/*e[e.Hosting = 12] = 'Hosting';
+	e[e.Unhost = 13] = 'Unhost';
+	e[e.Subscription = 14] = 'Subscription';
+	e[e.Resubscription = 15] = 'Resubscription';
+	e[e.SubGift = 16] = 'SubGift';
+	e[e.Clear = 17] = 'Clear';
+	e[e.SubscriberOnlyMode = 18] = 'SubscriberOnlyMode';
+	e[e.FollowerOnlyMode = 19] = 'FollowerOnlyMode';
+	e[e.SlowMode = 20] = 'SlowMode';
+	e[e.RoomMods = 21] = 'RoomMods';*/
+	e[e.RoomState = 22] = 'RoomState';
+	/*e[e.Raid = 23] = 'Raid';
+	e[e.Unraid = 24] = 'Unraid';
+	e[e.Notice = 25] = 'Notice';
+	e[e.Info = 26] = 'Info';*/
+	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
+	//e[e.Purchase = 28] = 'Purchase';
 	return e;
 })({});
 
@@ -374,7 +374,7 @@ export default class ChatHook extends Module {
 				this.buffer = buf.slice(removed % 2 === 0 ? target : Math.max(target - 10, last));
 			} else
 				// Make a shallow copy of the array because other code expects it to change.
-				this.buffer = buf.slice(target);
+				this.buffer = buf.slice(0);
 
 			this._isDirty = false;
 			return this.buffer;

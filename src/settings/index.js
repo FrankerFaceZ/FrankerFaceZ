@@ -168,18 +168,18 @@ export default class SettingsManager extends Module {
 			// list rather than just getting the keys from the ID map
 			// because the ID map is an object and coerces its strings
 			// to keys.
-			old_ids = new Set(old_profiles.map(x => x.id));
+			old_ids = new Set(old_profiles.map(x => x.id)),
 
-		let changed = false,
 			moved_ids = new Set,
 			new_ids = new Set,
-			changed_ids = new Set;
+			changed_ids = new Set,
 
-		const raw_profiles = this.provider.get('profiles', [
-			SettingsProfile.Moderation,
-			SettingsProfile.Default
-		]);
+			raw_profiles = this.provider.get('profiles', [
+				SettingsProfile.Moderation,
+				SettingsProfile.Default
+			]);
 
+		let changed = false;
 		for(const profile_data of raw_profiles) {
 			const id = profile_data.id,
 				old_profile = old_profile_ids[id],

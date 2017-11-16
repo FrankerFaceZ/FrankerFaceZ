@@ -52,7 +52,6 @@ export default class Scroller extends Module {
 
 		this.freeze = this.chat.context.get('chat.scroller.freeze');
 		this.chat.context.on('changed:chat.scroller.freeze', val => {
-			const old_freeze = this.freeze;
 			this.freeze = val;
 
 			for(const inst of this.ChatScroller.instances) {
@@ -101,13 +100,13 @@ export default class Scroller extends Module {
 				const f = t.freeze,
 					reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
 						f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
-						f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
-						f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
-						f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
-						f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
-						f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
-						f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
-						t.i18n.t('key.mouse', 'Mouse Movement');
+							f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
+								f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
+									f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
+										f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
+											f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
+												f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
+													t.i18n.t('key.mouse', 'Mouse Movement');
 
 				this._ffz_freeze_indicator.firstElementChild.textContent = t.i18n.t(
 					'chat.paused',
@@ -117,6 +116,7 @@ export default class Scroller extends Module {
 			}
 
 			cls.prototype.ffzShowFrozen = function() {
+				this._ffz_freeze_visible = true;
 				let el = this._ffz_freeze_indicator;
 				if ( ! el ) {
 					const node = t.fine.getHostNode(this);
@@ -139,6 +139,7 @@ export default class Scroller extends Module {
 			}
 
 			cls.prototype.ffzHideFrozen = function() {
+				this._ffz_freeze_visible = false;
 				if ( this._ffz_freeze_indicator )
 					this._ffz_freeze_indicator.classList.add('hide');
 			}
@@ -152,7 +153,7 @@ export default class Scroller extends Module {
 
 				this.ffz_frozen = true;
 				this.setState({ffzFrozen: true});
-				this.ffzShowFrozen();
+				//this.ffzShowFrozen();
 			}
 
 			cls.prototype.ffzUnfreeze = function() {
@@ -166,7 +167,30 @@ export default class Scroller extends Module {
 				if ( this.state.isAutoScrolling )
 					this.scrollToBottom();
 
-				this.ffzHideFrozen();
+				//this.ffzHideFrozen();
+			}
+
+
+			cls.prototype.ffzInstallHandler = function() {
+				if ( this._ffz_handleScroll )
+					return;
+
+				this._ffz_handleScroll = this.handleScrollEvent;
+				const t = this;
+				this.handleScrollEvent = function(e) {
+					// If we're frozen because of FFZ, do not allow a mouse click to update
+					// the auto-scrolling state. That just gets annoying.
+					if ( e.type === 'mousedown' && t.ffz_frozen )
+						return;
+
+					return t._ffz_handleScroll(e);
+				}
+
+				const scroller = this.scroll && this.scroll.scrollContent;
+				if ( scroller ) {
+					scroller.removeEventListener('mousedown', this._ffz_handleScroll);
+					scroller.addEventListener('mousedown', this.handleScrollEvent);
+				}
 			}
 
 
@@ -207,6 +231,8 @@ export default class Scroller extends Module {
 				if ( ! node )
 					return;
 
+				this._ffz_freeze_visible = false;
+
 				if ( this._ffz_freeze_indicator ) {
 					node.removeChild(this._ffz_freeze_indicator);
 					this._ffz_freeze_indicator = null;
@@ -232,10 +258,10 @@ export default class Scroller extends Module {
 
 			cls.prototype.ffzKey = function(e) {
 				if (e.altKey === this.ffz_alt &&
-					e.shiftKey === this.ffz_shift &&
-					e.ctrlKey === this.ffz_ctrl &&
-					e.metaKey === this.ffz_meta)
-						return;
+						e.shiftKey === this.ffz_shift &&
+						e.ctrlKey === this.ffz_ctrl &&
+						e.metaKey === this.ffz_meta)
+					return;
 
 				this.ffz_alt = e.altKey;
 				this.ffz_shift = e.shiftKey;
@@ -266,12 +292,12 @@ export default class Scroller extends Module {
 
 				// If nothing of interest has happened, stop.
 				if (e.altKey === this.ffz_alt &&
-					e.shiftKey === this.ffz_shift &&
-					e.ctrlKey === this.ffz_ctrl &&
-					e.metaKey === this.ffz_meta &&
-					e.screenY === this.ffz_sy &&
-					e.screenX === this.ffz_sx)
-						return;
+						e.shiftKey === this.ffz_shift &&
+						e.ctrlKey === this.ffz_ctrl &&
+						e.metaKey === this.ffz_meta &&
+						e.screenY === this.ffz_sy &&
+						e.screenX === this.ffz_sx)
+					return;
 
 				this.ffz_alt = e.altKey;
 				this.ffz_shift = e.shiftKey;
@@ -291,7 +317,7 @@ export default class Scroller extends Module {
 			}
 
 
-			cls.prototype.ffzMouseLeave = function(e) {
+			cls.prototype.ffzMouseLeave = function() {
 				this.ffz_outside = true;
 				if ( this._ffz_outside )
 					clearTimeout(this._ffz_outside);
@@ -306,15 +332,29 @@ export default class Scroller extends Module {
 
 		this.ChatScroller.on('mount', this.onMount, this);
 		this.ChatScroller.on('unmount', this.onUnmount, this);
+
+		this.ChatScroller.on('update', inst => {
+			const should_show = inst.ffz_freeze_enabled && inst.state.ffzFrozen && inst.state.isAutoScrolling,
+				changed = should_show !== inst._ffz_freeze_visible;
+
+			if ( changed )
+				if ( should_show )
+					inst.ffzShowFrozen();
+				else
+					inst.ffzHideFrozen();
+		});
+
 	}
 
 
 	onMount(inst) {
+		inst.ffzInstallHandler();
+
 		if ( this.freeze !== 0 )
 			inst.ffzEnableFreeze();
 	}
 
-	onUnmount(inst) {
+	onUnmount(inst) { // eslint-disable-line class-methods-use-this
 		inst.ffzDisableFreeze();
 	}
 }

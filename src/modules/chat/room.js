@@ -7,7 +7,7 @@
 import {API_SERVER, IS_WEBKIT} from 'utilities/constants';
 
 import {EventEmitter} from 'utilities/events';
-import {createElement as e, ManagedStyle} from 'utilities/dom';
+import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet} from 'utilities/object';
 
 const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
@@ -126,7 +126,7 @@ export default class Room extends EventEmitter {
 		}
 
 		const d = data.room,
-			id = '' + d.twitch_id;
+			id = `${d.twitch_id}`;
 
 		if ( ! this._id ) {
 			this._id = id;
@@ -149,7 +149,7 @@ export default class Room extends EventEmitter {
 		if ( data.sets )
 			for(const set_id in data.sets)
 				if ( has(data.sets, set_id) )
-					this.manager.emotes.load_set_data(set_id, data.sets[set_id]);
+					this.manager.emotes.loadSetData(set_id, data.sets[set_id]);
 
 
 		// TODO: User data.

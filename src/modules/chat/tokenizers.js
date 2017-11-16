@@ -462,8 +462,8 @@ export const AddonEmotes = {
 
 		if ( provider === 'twitch' ) {
 			const emote_id = parseInt(target.dataset.id, 10),
-				set_id = this.emotes.twitch_emote_to_set(emote_id, tip.rerender),
-				emote_set = set_id != null && this.emotes.twitch_set_to_channel(set_id, tip.rerender);
+				set_id = this.emotes.getTwitchEmoteSet(emote_id, tip.rerender),
+				emote_set = set_id != null && this.emotes.getTwitchSetChannel(set_id, tip.rerender);
 
 			preview = `//static-cdn.jtvnw.net/emoticons/v1/${emote_id}/4.0?_=preview`;
 

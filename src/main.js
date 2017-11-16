@@ -126,7 +126,8 @@ window.ffz = new FrankerFaceZ();
 FrankerFaceZ.chat_commands = {};
 FrankerFaceZ.settings_info = {};
 FrankerFaceZ.utils = {
-	process_int(a,b,c) { return a }
+	process_int: a => a
 }
 window.App = true;
-jQuery.noty = {themes: {}};
+if ( window.jQuery )
+	window.jQuery.noty = {themes: {}};

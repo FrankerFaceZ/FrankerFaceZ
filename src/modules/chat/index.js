@@ -156,7 +156,8 @@ export default class Chat extends Module {
 					{value: 0, title: 'Unchanged'},
 					{value: 1, title: 'HSL Luma'},
 					{value: 2, title: 'Luv Luma'},
-					{value: 3, title: 'HSL Loop (BTTV-Like)'}
+					{value: 3, title: 'HSL Loop (BTTV-Like)'},
+					{value: 4, title: 'RGB Loop (Deprecated)'}
 				]
 			}
 		});
@@ -491,8 +492,8 @@ export default class Chat extends Module {
 	// ====
 
 	get_link_info(url, no_promises) {
-		let info = this._link_info[url],
-			expires = info && info[1];
+		let info = this._link_info[url];
+		const expires = info && info[1];
 
 		if ( expires && Date.now() > expires )
 			info = this._link_info[url] = null;

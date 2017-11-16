@@ -69,7 +69,7 @@ export default class Emotes extends Module {
 
 	onEnable() {
 		// Just in case there's a weird load order going on.
-		this.on('site:enabled', this.refresh_twitch_inventory);
+		this.on('site:enabled', this.loadTwitchInventory);
 
 		this.style = new ManagedStyle('emotes');
 
@@ -85,9 +85,9 @@ export default class Emotes extends Module {
 				}
 		}
 
-		this.load_global_sets();
-		this.load_emoji_data();
-		this.refresh_twitch_inventory();
+		this.loadGlobalSets();
+		this.loadEmojiData();
+		this.loadTwitchInventory();
 	}
 
 
@@ -114,14 +114,14 @@ export default class Emotes extends Module {
 	// FFZ Emote Sets
 	// ========================================================================
 
-	async load_global_sets(tries = 0) {
+	async loadGlobalSets(tries = 0) {
 		let response, data;
 		try {
 			response = await fetch(`${API_SERVER}/v1/set/global`)
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
-				return setTimeout(() => this.load_global_sets(tries), 500 * tries);
+				return setTimeout(() => this.loadGlobalSets(tries), 500 * tries);
 
 			this.log.error('Error loading global emote sets.', err);
 			return false;
@@ -144,15 +144,15 @@ export default class Emotes extends Module {
 		for(const set_id in sets)
 			if ( has(sets, set_id) ) {
 				this.global_sets.push('ffz-global', set_id);
-				this.load_set_data(set_id, sets[set_id]);
+				this.loadSetData(set_id, sets[set_id]);
 			}
 
 		if ( data.users )
-			this.load_set_users(data.users);
+			this.loadSetUsers(data.users);
 	}
 
 
-	load_set_users(data) {
+	loadSetUsers(data) {
 		for(const set_id in data)
 			if ( has(data, set_id) ) {
 				const emote_set = this.emote_sets[set_id],
@@ -170,7 +170,7 @@ export default class Emotes extends Module {
 	}
 
 
-	load_set_data(set_id, data) {
+	loadSetData(set_id, data) {
 		const old_set = this.emote_sets[set_id];
 		if ( ! data ) {
 			if ( old_set )
@@ -271,8 +271,8 @@ export default class Emotes extends Module {
 	// Emoji
 	// ========================================================================
 
-	load_emoji_data() {
-		this.log.debug('Unimplemented: load_emoji_data');
+	loadEmojiData() {
+		this.log.debug('Unimplemented: loadEmojiData');
 	}
 
 
@@ -280,7 +280,7 @@ export default class Emotes extends Module {
 	// Twitch Data Lookup
 	// ========================================================================
 
-	async refresh_twitch_inventory() {
+	async loadTwitchInventory() {
 		const user = this.resolve('site').getUser();
 		if ( ! user )
 			return;
@@ -292,19 +292,26 @@ export default class Emotes extends Module {
 					'Client-ID': CLIENT_ID,
 					'Authorization': `OAuth ${user.authToken}`
 				}
-			}).then(r => r.json());
+			}).then(r => {
+				if ( r.ok )
+					return r.json();
+
+				throw r.status;
+			});
 
 		} catch(err) {
 			this.log.error('Error loading Twitch inventory.', err);
 			return;
 		}
 
+
+
 		this.twitch_inventory_sets = data.emoticon_sets ? Object.keys(data.emoticon_sets) : [];
 		this.log.info('Twitch Inventory Sets:', this.twitch_inventory_sets);
 	}
 
 
-	twitch_emote_to_set(emote_id, callback) {
+	getTwitchEmoteSet(emote_id, callback) {
 		const tes = this.__twitch_emote_to_set;
 
 		if ( isNaN(emote_id) || ! isFinite(emote_id) )
@@ -326,7 +333,7 @@ export default class Emotes extends Module {
 	}
 
 
-	twitch_set_to_channel(set_id, callback) {
+	getTwitchSetChannel(set_id, callback) {
 		const tes = this.__twitch_set_to_channel;
 		if ( isNaN(set_id) || ! isFinite(set_id) )
 			return null;
