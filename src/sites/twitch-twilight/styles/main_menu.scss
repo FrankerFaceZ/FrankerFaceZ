@@ -25,12 +25,13 @@
 		width: 100%;
 		height: 100%;
 
-		border: none;
-		border-top: 1px solid transparent;
+		&, .theme--dark & {
+			border: none !important;
+		}
 
 		> header {
 			cursor: default;
-			padding: 1rem 3rem !important;
+			padding: .9rem 3rem;
 		}
 	}
 
@@ -40,6 +41,7 @@
 
 	> header {
 		user-select: none;
+		padding: .9rem 1rem .9rem 2rem;
 
 		.tw-search-input {
 			max-width: 40rem
