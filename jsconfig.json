@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"lib": [
+			"dom",
+			"es2015",
+			"es2016",
+			"es6",
+			"es2017"
+		],
+		"target": "es2017",
+		"module": "es6",
+		"baseUrl": ".",
+		"paths": {
+			"res": ["res"],
+			"styles": ["styles"],
+			"src": ["src"],
+			"utilities": ["src/utilities"],
+			"site": ["src/sites/twitch-twilight"]
+		}
+	}
+}

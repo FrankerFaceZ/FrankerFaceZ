@@ -1,10 +1,9 @@
+/* eslint-disable */
 const path = require('path');
 const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
 
 const CopyPlugin = require('copy-webpack-plugin');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
-const ManifestPlugin = require('webpack-manifest-plugin');
 
 module.exports = merge(common, {
 	devtool: 'inline-source-map',
@@ -41,7 +40,7 @@ module.exports = merge(common, {
 
 		before(app) {
 			// Because the headers config option is broken.
-			app.get("/*", (req, res, next) => {
+			app.get('/*', (req, res, next) => {
 				res.setHeader('Access-Control-Allow-Origin', '*');
 				next();
 			});
