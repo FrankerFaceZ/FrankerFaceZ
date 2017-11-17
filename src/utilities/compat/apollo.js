@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {has, get} from 'utilities/object';
 
 export default class Apollo extends Module {
 	constructor(...args) {
@@ -262,6 +262,65 @@ export default class Apollo extends Module {
 			query = query_map && query_map[query_id];
 
 		return query && query.observableQuery;
+	}
+
+
+	ensureQuery(operation, predicate, delay = 500, retry_wait = 120000) {
+		const query = this.getQuery(operation);
+
+		if ( query ) {
+			const result = query.lastResult;
+			let passed;
+			if ( ! result )
+				passed = false;
+			else if ( result.loading )
+				passed = true;
+			else if ( typeof predicate === 'function' )
+				passed = predicate(result);
+			else
+				passed = get(predicate, result) !== undefined;
+
+			if ( ! passed && Date.now() - (query._ffz_last_retry || 0) >= retry_wait ) {
+				query._ffz_last_retry = Date.now();
+				if ( delay === 0 )
+					query.refetch();
+				else if ( delay > 0 )
+					setTimeout(() => query.refetch(), delay);
+			}
+		}
+
+		return query;
+	}
+
+
+	getFromQuery(operation, predicate, delay = 500, retry_wait = 120000) {
+		const query = this.getQuery(operation),
+			result = query && query.lastResult;
+
+		if ( ! query )
+			return undefined;
+
+		let out;
+
+		if ( result ) {
+			if ( typeof predicate === 'function' )
+				out = predicate(result);
+			else
+				out = get(predicate, result)
+
+			if ( result.loading )
+				return undefined;
+		}
+
+		if ( out === undefined && Date.now() - (query._ffz_last_retry || 0) >= retry_wait ) {
+			query._ffz_last_retry = Date.now();
+			if ( delay === 0 )
+				query.refetch();
+			else if ( delay > 0 )
+				setTimeout(() => query.refetch(), delay);
+		}
+
+		return out;
 	}
 
 }
