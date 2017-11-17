@@ -250,7 +250,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-font-family', font);
 		this.css_tweaks.setVariable('chat-width', `${width}px`);
 
-		this.css_tweaks.toggle('chat-font', size === 12 && ! font);
+		this.css_tweaks.toggle('chat-font', size !== 12 || font);
 		this.css_tweaks.toggle('chat-width', width !== 340);
 	}
 

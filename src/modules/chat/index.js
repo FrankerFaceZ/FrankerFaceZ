@@ -57,7 +57,7 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Behavior >> General',
 				title: 'Scrollback Length',
-				description: 'Keep up to this many lines in chat. Setting this too high will create lage.',
+				description: 'Keep up to this many lines in chat. Setting this too high will create lag.',
 				component: 'setting-text-box',
 				process(val) {
 					val = parseInt(val, 10);
