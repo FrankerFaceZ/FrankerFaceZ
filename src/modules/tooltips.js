@@ -64,7 +64,7 @@ export default class TooltipProvider extends Module {
 	}
 
 	onEnable() {
-		this.tips = new Tooltip('[data-reactroot]', 'ffz-tooltip', {
+		this.tips = new Tooltip('body [data-reactroot]', 'ffz-tooltip', {
 			html: true,
 			delayHide: this.checkDelayHide.bind(this),
 			delayShow: this.checkDelayShow.bind(this),

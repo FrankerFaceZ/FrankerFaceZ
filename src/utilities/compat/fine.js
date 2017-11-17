@@ -24,7 +24,7 @@ export default class Fine extends Module {
 	async onEnable(tries=0) {
 		// TODO: Move awaitElement to utilities/dom
 		if ( ! this.root_element )
-			this.root_element = await this.parent.awaitElement(this.selector || '#root [data-reactroot]');
+			this.root_element = await this.parent.awaitElement(this.selector || 'body [data-reactroot]');
 
 		const accessor = this.accessor = Fine.findAccessor(this.root_element);
 		if ( ! accessor ) {
