@@ -163,7 +163,7 @@ export default class Player extends Module {
 
 		} else if ( enabled && ! inst._ffz_scroll_handler ) {
 			inst.playerRef.addEventListener('wheel', inst._ffz_scroll_handler = e => {
-				const delta = e.wheelDelta || -e.detail,
+				const delta = e.wheelDelta || e.deltaY || -e.detail,
 					player = inst.player;
 
 				if ( player ) {
