@@ -199,6 +199,16 @@ export default class CSSTweaks extends Module {
 	}
 
 
+	set(key, val) { return this.style.set(key, val) }
+	delete(key) { return this.style.delete(key) }
+
+	setVariable(key, val, scope = 'body') {
+		this.style.set(`var--${key}`, `${scope} { --ffz-${key}: ${val}; }`);
+	}
+
+	deleteVariable(key) { this.style.delete(`var--${key}`) }
+
+
 	populate() {
 		if ( this.chunks_loaded )
 			return;

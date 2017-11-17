@@ -3,13 +3,13 @@
 .chat-line__raid,
 .chat-line__subscribe,
 .chat-line__message {
-	background-color: transparent !important;
+	background-color: transparent;
 
 	&:nth-child(2n+0) {
-		background-color: rgba(0,0,0,0.1) !important;
+		background-color: rgba(0,0,0,0.1);
 
 		.theme--dark & {
-			background-color: rgba(255,255,255,0.05) !important;
+			background-color: rgba(255,255,255,0.05);
 		}
 	}
 }

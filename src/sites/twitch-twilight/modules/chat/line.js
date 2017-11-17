@@ -53,8 +53,10 @@ export default class ChatLine extends Module {
 
 
 			cls.prototype.render = function() {
-				const msg = this.props.message,
-					is_action = msg.type === 1,
+				const types = t.chat.chatTypes || {},
+
+					msg = this.props.message,
+					is_action = msg.type === types.Action,
 					user = msg.user,
 					color = t.parent.colors.process(user.color),
 					/*bg_rgb = Color.RGBA.fromHex(user.color),
@@ -67,11 +69,11 @@ export default class ChatLine extends Module {
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
 
-				const tokens = t.chat.tokenizeMessage(msg),
+				const tokens = t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName}),
 					fragment = t.chat.renderTokens(tokens, e);
 
 				const out = e('div', {
-					className: 'chat-line__message',
+					className: `chat-line__message ${msg.mentioned ? 'ffz-mentioned' : ''}`,
 					//style: { backgroundColor: bg_css },
 					'data-room-id': this.props.channelID,
 					'data-room': room,

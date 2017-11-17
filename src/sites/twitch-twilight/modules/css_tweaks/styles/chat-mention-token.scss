@@ -1,0 +1,13 @@
+.ffz--mention-me {
+	border-radius: .5rem;
+	padding: .3rem;
+	font-weight: 700;
+
+	color: #fff;
+	background: rgba(0,0,0,0.5);
+
+	.theme--dark & {
+		color: #000;
+		background-color: rgba(255,255,255,0.5);
+	}
+}

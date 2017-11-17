@@ -201,13 +201,24 @@ export const Mentions = {
 
 	render(token, e) {
 		return e('strong', {
-			className: 'chat-line__message-mention'
-		}, `@${token.recipient}`);
+			className: `chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`
+		}, `${token.text}`);
 	},
 
-	process(tokens, msg) {
+	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
+
+		let regex, login, display;
+		if ( user && user.login ) {
+			login = user.login.toLowerCase();
+			display = user.display && user.display.toLowerCase();
+			if ( display === login )
+				display = null;
+
+			regex = new RegExp(`([^\\w@#%\\-+=:~]|\\b)?(@?(${user.login.toLowerCase()}${display ? `|${display}` : ''})|@([^\\u0000-\\u007F]+|\\w+)+)([^\\w.\\/@#%&()\\-+=:?~]|\\s|\\b|$)`, 'gi');
+		} else
+			regex = MENTION_REGEX;
 
 		const out = [];
 		for(const token of tokens) {
@@ -216,19 +227,27 @@ export const Mentions = {
 				continue;
 			}
 
-			MENTION_REGEX.lastIndex = 0;
+			regex.lastIndex = 0;
 			const text = token.text;
 			let idx = 0, match;
 
-			while((match = MENTION_REGEX.exec(text))) {
-				const nix = match.index + (match[1] ? match[1].length : 0);
+			while((match = regex.exec(text))) {
+				const nix = match.index + (match[1] ? match[1].length : 0),
+					m = match[3] || match[4],
+					ml = m.toLowerCase(),
+					me = ml === login || ml === display;
+
 				if ( idx !== nix )
 					out.push({type: 'text', text: text.slice(idx, nix)});
 
+				if ( me )
+					msg.mentioned = true;
+
 				out.push({
 					type: 'mention',
-					recipient: match[3],
-					length: match[3].length + 1
+					text: match[2],
+					me,
+					recipient: m
 				});
 
 				idx = nix + match[2].length;

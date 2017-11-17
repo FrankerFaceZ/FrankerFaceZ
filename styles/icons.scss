@@ -7,6 +7,7 @@
 	font-style: normal;
 }
 
+//[data-a-target="emote-picker-button"] figure:before,
 [class^="ffz-i-"]:before, [class*=" ffz-i-"]:before {
 	font-family: "ffz-fontello";
 	font-style: normal;
@@ -49,12 +50,30 @@
 	}
 }
 
-
+//[data-a-target="emote-picker-button"] figure:before,
 .ffz-i-zreknarf:before {
 	content: '\e801'; /* '' */
 	width: 1.3em;
 	margin: .5rem .05rem 0;
 }
+
+/*[data-a-target="emote-picker-button"] {
+	.tw-button-icon__icon {
+		padding: .25rem .4rem;
+
+		figure {
+			display: inline;
+
+			&:before {
+				font-size: 14px;
+			}
+
+			svg {
+				display: none
+			}
+		}
+	}
+}*/
 
 
 .ffz-i-cancel:before { content: '\e800'; } /* '' */

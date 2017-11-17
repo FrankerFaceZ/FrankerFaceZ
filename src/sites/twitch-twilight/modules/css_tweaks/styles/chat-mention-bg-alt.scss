@@ -1,0 +1,9 @@
+.chat-line__message.ffz-mentioned {
+	&:nth-child(2n+0) {
+		background-color: rgba(255,127,127,.4);
+
+		.theme--dark & {
+			background-color: rgba(255,0,0,.3);
+		}
+	}
+}

@@ -52,6 +52,41 @@ export default class Chat extends Module {
 		// Settings
 		// ========================================================================
 
+		this.settings.add('chat.scrollback-length', {
+			default: 150,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Scrollback Length',
+				description: 'Keep up to this many lines in chat. Setting this too high will create lage.',
+				component: 'setting-text-box',
+				process(val) {
+					val = parseInt(val, 10);
+					if ( isNaN(val) || ! isFinite(val) || val < 1 )
+						val = 150;
+
+					return val;
+				}
+			}
+		});
+
+		this.settings.add('chat.filtering.highlight-mentions', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Highlight messages that mention you.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.filtering.highlight-tokens', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Highlight matched words in chat.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('tooltip.images', {
 			default: true,
 			ui: {
@@ -417,11 +452,11 @@ export default class Chat extends Module {
 	}
 
 
-	tokenizeMessage(msg) {
+	tokenizeMessage(msg, user) {
 		let tokens = [{type: 'text', text: msg.message}];
 
 		for(const tokenizer of this.__tokenizers)
-			tokens = tokenizer.process.call(this, tokens, msg);
+			tokens = tokenizer.process.call(this, tokens, msg, user);
 
 		return tokens;
 	}

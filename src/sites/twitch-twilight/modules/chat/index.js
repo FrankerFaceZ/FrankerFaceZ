@@ -17,7 +17,7 @@ import SettingsMenu from './settings_menu';
 
 
 const ChatTypes = (e => {
-	/*e[e.Post = 0] = 'Post';
+	e[e.Post = 0] = 'Post';
 	e[e.Action = 1] = 'Action';
 	e[e.PostWithMention = 2] = 'PostWithMention';
 	e[e.Ban = 3] = 'Ban';
@@ -27,9 +27,9 @@ const ChatTypes = (e => {
 	e[e.AutoModMessageAllowed = 7] = 'AutoModMessageAllowed';
 	e[e.AutoModMessageDenied = 8] = 'AutoModMessageDenied';
 	e[e.Connected = 9] = 'Connected';
-	e[e.Disconnected = 10] = 'Disconnected';*/
+	e[e.Disconnected = 10] = 'Disconnected';
 	e[e.Reconnect = 11] = 'Reconnect';
-	/*e[e.Hosting = 12] = 'Hosting';
+	e[e.Hosting = 12] = 'Hosting';
 	e[e.Unhost = 13] = 'Unhost';
 	e[e.Subscription = 14] = 'Subscription';
 	e[e.Resubscription = 15] = 'Resubscription';
@@ -38,14 +38,14 @@ const ChatTypes = (e => {
 	e[e.SubscriberOnlyMode = 18] = 'SubscriberOnlyMode';
 	e[e.FollowerOnlyMode = 19] = 'FollowerOnlyMode';
 	e[e.SlowMode = 20] = 'SlowMode';
-	e[e.RoomMods = 21] = 'RoomMods';*/
+	e[e.RoomMods = 21] = 'RoomMods';
 	e[e.RoomState = 22] = 'RoomState';
-	/*e[e.Raid = 23] = 'Raid';
+	e[e.Raid = 23] = 'Raid';
 	e[e.Unraid = 24] = 'Unraid';
 	e[e.Notice = 25] = 'Notice';
-	e[e.Info = 26] = 'Info';*/
+	e[e.Info = 26] = 'Info';
 	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
-	//e[e.Purchase = 28] = 'Purchase';
+	e[e.Purchase = 28] = 'Purchase';
 	return e;
 })({});
 
@@ -239,29 +239,19 @@ export default class ChatHook extends Module {
 	updateChatCSS() {
 		const width = this.chat.context.get('chat.width'),
 			size = this.chat.context.get('chat.font-size'),
-			font = this.chat.context.get('chat.font-family');
+			lh = Math.round((20/12) * size);
 
-		if ( size === 12 )
-			this.css_tweaks.style.delete('chat-font-size');
-		else {
-			const lh = Math.round((20/12) * size);
-			this.css_tweaks.style.set('chat-font-size',`.chat-list{font-size:${size}px;line-height:${lh}px}`);
-		}
+		let font = this.chat.context.get('chat.font-family') || 'inherit';
+		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
+			font = `"${font}"`;
 
-		if ( ! font )
-			this.css_tweaks.style.delete('chat-font-family');
-		else {
-			let val = font;
-			if ( font.indexOf(' ') !== -1 && val.indexOf(',') === -1 && val.indexOf('"') === -1 && val.indexOf("'") === -1 )
-				val = `"${val}"`;
-			this.css_tweaks.style.set('chat-font-family', `.chat-list{font-family:${val}}`);
-		}
+		this.css_tweaks.setVariable('chat-font-size', `${size}px`);
+		this.css_tweaks.setVariable('chat-line-height', `${lh}px`);
+		this.css_tweaks.setVariable('chat-font-family', font);
+		this.css_tweaks.setVariable('chat-width', `${width}px`);
 
-
-		if ( width === 340 )
-			this.css_tweaks.style.delete('chat-width');
-		else
-			this.css_tweaks.style.set('chat-width', `.whispers--theatre-mode.whispers--right-column-expanded{right:${width}px!important}.persistent-player--theatre,.channel-page__video-player--theatre-mode{width:calc(100% - ${width}px)!important}.channel-page__right-column{width:${width}px!important}`);
+		this.css_tweaks.toggle('chat-font', size === 12 && ! font);
+		this.css_tweaks.toggle('chat-width', width !== 340);
 	}
 
 	updateLineBorders() {
@@ -271,6 +261,13 @@ export default class ChatHook extends Module {
 		this.css_tweaks.toggle('chat-borders-3d', mode === 2);
 		this.css_tweaks.toggle('chat-borders-3d-inset', mode === 3);
 		this.css_tweaks.toggle('chat-borders-wide', mode === 4);
+	}
+
+	updateMentionCSS() {
+		const enabled = this.chat.context.get('chat.filtering.highlight-mentions');
+		this.css_tweaks.toggle('chat-mention-token', this.chat.context.get('chat.filtering.highlight-tokens'));
+		this.css_tweaks.toggle('chat-mention-bg', enabled);
+		this.css_tweaks.toggle('chat-mention-bg-alt', enabled && this.chat.context.get('chat.lines.alternate'));
 	}
 
 
@@ -290,9 +287,13 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
 		this.chat.context.on('changed:theme.is-dark', this.updateColors, this);
 		this.chat.context.on('changed:chat.lines.borders', this.updateLineBorders, this);
+		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
+		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 
-		this.chat.context.on('changed:chat.lines.alternate', val =>
-			this.css_tweaks.toggle('chat-rows', val));
+		this.chat.context.on('changed:chat.lines.alternate', val => {
+			this.css_tweaks.toggle('chat-rows', val);
+			this.updateMentionCSS();
+		});
 
 		this.chat.context.on('changed:chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));
@@ -310,6 +311,7 @@ export default class ChatHook extends Module {
 		this.updateChatCSS();
 		this.updateColors();
 		this.updateLineBorders();
+		this.updateMentionCSS();
 
 		this.ChatController.on('mount', this.chatMounted, this);
 		this.ChatController.on('unmount', this.removeRoom, this);
@@ -360,8 +362,9 @@ export default class ChatHook extends Module {
 
 		cls.prototype.toArray = function() {
 			const buf = this.buffer,
+				size = t.chat.context.get('chat.scrollback-length'),
 				ct = t.chatTypes || ChatTypes,
-				target = buf.length - this.maxSize;
+				target = buf.length - size;
 
 			if ( target > 0 ) {
 				let removed = 0, last;

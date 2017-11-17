@@ -31,3 +31,19 @@
 		border-right-color: #2c2541;
 	}
 }
+
+
+.right-column.right-column--theatre {
+	right: unset !important;
+	left: 0 !important;
+}
+
+.channel-page__video-player--theatre-mode {
+	left: unset !important;
+	right: 0;
+}
+
+body .whispers--theatre-mode.whispers--right-column-expanded {
+	left: var(--ffz-chat-width) !important;
+	right: 0 !important;
+}
