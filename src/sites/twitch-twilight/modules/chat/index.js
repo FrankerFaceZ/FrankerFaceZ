@@ -228,7 +228,8 @@ export default class ChatHook extends Module {
 			c = this.colors;
 
 		// TODO: Get the background color from the theme system.
-		c._base = is_dark ? '#0e0c13' : '#faf9fa';
+		// Updated: Use the lightest/darkest colors from alternating rows for better readibility.
+		c._base = is_dark ? '#191919' : '#e0e0e0'; //#0e0c13' : '#faf9fa';
 		c.mode = mode;
 		c.contrast = contrast;
 

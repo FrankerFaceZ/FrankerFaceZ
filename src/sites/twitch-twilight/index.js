@@ -62,13 +62,18 @@ export default class Twilight extends BaseSite {
 	}
 
 	updateContext() {
-		const state = this.store.getState();
-		this.settings.updateContext({
-			location: state.router.location,
+		try {
+			const state = this.store.getState(),
+				route = this.context.router && this.context.router.route;
 
-			ui: state.ui,
-			session: state.session
-		});
+			this.settings.updateContext({
+				location: route && route.location,
+				ui: state && state.ui,
+				session: state && state.session
+			});
+		} catch(err) {
+			this.log.error('Error updating context.', err);
+		}
 	}
 
 	getSession() {

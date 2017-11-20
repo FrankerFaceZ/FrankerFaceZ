@@ -387,9 +387,6 @@ export default class SocketClient extends Module {
 	// ========================================================================
 
 	_send(command, args, callback) {
-		if ( args.length === 1 )
-			args = args[0];
-
 		if ( ! this.connected )
 			return this.log.warn(`Tried sending command "${command}" while disconnected.`);
 
