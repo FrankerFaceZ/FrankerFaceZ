@@ -86,7 +86,6 @@ export default class Emotes extends Module {
 		}
 
 		this.loadGlobalSets();
-		this.loadEmojiData();
 		this.loadTwitchInventory();
 	}
 
@@ -108,6 +107,17 @@ export default class Emotes extends Module {
 	getSets(user_id, user_login, room_id, room_login) {
 		return this.getSetIDs(user_id, user_login, room_id, room_login)
 			.map(set_id => this.emote_sets[set_id]);
+	}
+
+	getEmotes(user_id, user_login, room_id, room_login) {
+		const emotes = {};
+		for(const emote_set of this.getSets(user_id, user_login, room_id, room_login))
+			if ( emote_set && emote_set.emotes )
+				for(const emote of Object.values(emote_set.emotes) )
+					if ( emote && ! has(emotes, emote.name) )
+						emotes[emote.name] = emote;
+
+		return emotes;
 	}
 
 	// ========================================================================
@@ -268,15 +278,6 @@ export default class Emotes extends Module {
 
 
 	// ========================================================================
-	// Emoji
-	// ========================================================================
-
-	loadEmojiData() {
-		this.log.debug('Unimplemented: loadEmojiData');
-	}
-
-
-	// ========================================================================
 	// Twitch Data Lookup
 	// ========================================================================
 
@@ -303,8 +304,6 @@ export default class Emotes extends Module {
 			this.log.error('Error loading Twitch inventory.', err);
 			return;
 		}
-
-
 
 		this.twitch_inventory_sets = data.emoticon_sets ? Object.keys(data.emoticon_sets) : [];
 		this.log.info('Twitch Inventory Sets:', this.twitch_inventory_sets);

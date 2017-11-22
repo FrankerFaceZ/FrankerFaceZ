@@ -25,7 +25,7 @@ export default class FineRouter extends Module {
 		const root = this.fine.getParent(this.fine.react),
 			ctx = this.context = root && root._context,
 			router = ctx && ctx.router,
-			history = router && router.history;
+			history = this.history = router && router.history;
 
 		if ( ! history )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
@@ -36,6 +36,15 @@ export default class FineRouter extends Module {
 		});
 
 		this._navigateTo(history.location);
+	}
+
+	navigate(route, data, opts) {
+		const r = this.routes[route];
+		if ( ! r )
+			throw new Error(`unable to find route "${route}"`);
+
+		const url = r.url(data, opts);
+		this.history.push(url);
 	}
 
 	_navigateTo(location) {

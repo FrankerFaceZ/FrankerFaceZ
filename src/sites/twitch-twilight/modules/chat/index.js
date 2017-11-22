@@ -16,7 +16,7 @@ import SettingsMenu from './settings_menu';
 //import EmoteMenu from './emote_menu';
 
 
-const ChatTypes = (e => {
+const CHAT_TYPES = (e => {
 	e[e.Post = 0] = 'Post';
 	e[e.Action = 1] = 'Action';
 	e[e.PostWithMention = 2] = 'PostWithMention';
@@ -275,11 +275,11 @@ export default class ChatHook extends Module {
 	onEnable() {
 		this.on('site.web_munch:loaded', () => {
 			const ct = this.web_munch.getModule('chat-types');
-			this.chatTypes = ct && ct.a || ChatTypes;
+			this.chat_types = ct && ct.a || CHAT_TYPES;
 		})
 
 		const ct = this.web_munch.getModule('chat-types');
-		this.chatTypes = ct && ct.a || ChatTypes;
+		this.chat_types = ct && ct.a || CHAT_TYPES;
 
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
@@ -364,7 +364,7 @@ export default class ChatHook extends Module {
 		cls.prototype.toArray = function() {
 			const buf = this.buffer,
 				size = t.chat.context.get('chat.scrollback-length'),
-				ct = t.chatTypes || ChatTypes,
+				ct = t.chat_types || CHAT_TYPES,
 				target = buf.length - size;
 
 			if ( target > 0 ) {

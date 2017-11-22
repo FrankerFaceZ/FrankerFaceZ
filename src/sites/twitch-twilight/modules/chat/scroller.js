@@ -183,6 +183,14 @@ export default class Scroller extends Module {
 					if ( e.type === 'mousedown' && t.ffz_frozen )
 						return;
 
+					if ( t.scroll && e.type === 'touchmove' ) {
+						t.scroll.scrollContent.scrollHeight - t.scroll.scrollContent.scrollTop - t.scroll.scrollContent.offsetHeight <= 10 ? t.setState({
+							isAutoScrolling: !0
+						}) : t.setState({
+							isAutoScrolling: !1
+						})
+					}
+
 					return t._ffz_handleScroll(e);
 				}
 
@@ -190,6 +198,7 @@ export default class Scroller extends Module {
 				if ( scroller ) {
 					scroller.removeEventListener('mousedown', this._ffz_handleScroll);
 					scroller.addEventListener('mousedown', this.handleScrollEvent);
+					scroller.addEventListener('touchmove', this.handleScrollEvent);
 				}
 			}
 

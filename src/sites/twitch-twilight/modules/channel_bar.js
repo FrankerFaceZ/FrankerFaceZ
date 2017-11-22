@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {sanitize, createElement as e} from 'utilities/dom';
+import {deep_copy} from 'utilities/object';
 
 export default class ChannelBar extends Module {
 	constructor(...args) {
@@ -14,7 +14,26 @@ export default class ChannelBar extends Module {
 		this.should_enable = true;
 
 		this.inject('site.fine');
+		this.inject('site.apollo');
 		this.inject('metadata');
+
+
+		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', `query {
+			user {
+				stream {
+					createdAt
+					type
+				}
+			}
+		}`);
+
+		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
+			const u = data && data.data && data.data.user;
+			if ( u ) {
+				const o = u.profileViewCount = new Number(u.profileViewCount || 0);
+				o.data = deep_copy(u);
+			}
+		}, false);
 
 
 		this.ChannelBar = this.fine.define(

@@ -43,6 +43,14 @@ export default class Player extends Module {
 
 		this.settings.add('player.theatre.no-whispers', {
 			default: false,
+			requires: ['whispers.show'],
+			process(ctx, val) {
+				if ( ! ctx.get('whispers.show') )
+					return true;
+
+				return val;
+			},
+
 			ui: {
 				path: 'Channel > Player >> Theatre Mode',
 				title: 'Hide whispers when Theatre Mode is enabled.',

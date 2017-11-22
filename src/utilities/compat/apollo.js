@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has, get, deep_copy} from 'utilities/object';
+import {has, get} from 'utilities/object';
 
 export default class Apollo extends Module {
 	constructor(...args) {
@@ -17,24 +17,6 @@ export default class Apollo extends Module {
 
 		this.inject('..web_munch');
 		this.inject('..fine');
-
-		this.registerModifier('ChannelPage_ChannelInfoBar_User', `query {
-	user {
-		stream {
-			createdAt
-			type
-		}
-	}
-}`);
-
-		this.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
-			const u = data && data.data && data.data.user;
-			if ( u ) {
-				const o = u.profileViewCount = new Number(u.profileViewCount || 0);
-				o.data = deep_copy(u);
-			}
-		}, false);
-
 
 		this.registerModifier('FollowedIndex_CurrentUser', `query {
 	currentUser {

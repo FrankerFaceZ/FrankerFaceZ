@@ -137,7 +137,11 @@ export default class Room extends EventEmitter {
 			return false;
 		}
 
-		this.login = d.id;
+		if ( ! this.login )
+			this.login = d.id;
+		else if ( this.login !== d.id )
+			this.manager.log.warn(`Login mismatch for room ${this.id}:${this.login}. Got "${d.id}" from FFZ's API.`);
+
 		this.data = d;
 
 		if ( d.set )

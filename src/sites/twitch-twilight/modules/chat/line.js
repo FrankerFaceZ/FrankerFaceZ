@@ -53,7 +53,7 @@ export default class ChatLine extends Module {
 
 
 			cls.prototype.render = function() {
-				const types = t.parent.chatTypes || {},
+				const types = t.parent.chat_types || {},
 
 					msg = this.props.message,
 					is_action = msg.type === types.Action,

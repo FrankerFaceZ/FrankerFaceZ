@@ -549,26 +549,16 @@ export const AddonEmotes = {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
-		const applicable_sets = this.emotes.getSets(
+		const emotes = this.emotes.getEmotes(
 				msg.user.userID,
 				msg.user.userLogin,
 				msg.roomID,
 				msg.roomLogin
 			),
-			emotes = {},
 			out = [];
 
-		if ( ! applicable_sets || ! applicable_sets.length )
+		if ( ! emotes )
 			return tokens;
-
-		for(const emote_set of applicable_sets)
-			if ( emote_set && emote_set.emotes )
-				for(const emote_id in emote_set.emotes ) { // eslint-disable-line guard-for-in
-					const emote = emote_set.emotes[emote_id];
-					if ( ! has(emotes, emote.name) )
-						emotes[emote.name] = emote;
-				}
-
 
 		let last_token, emote;
 		for(const token of tokens) {
@@ -600,7 +590,7 @@ export const AddonEmotes = {
 
 					if ( text.length ) {
 						// We have pending text. Join it together, with an extra space.
-						const t = {type: 'text', text: text.join(' ') + ' '};
+						const t = {type: 'text', text: `${text.join(' ')} `};
 						out.push(t);
 						if ( t.text.trim().length )
 							last_token = t;

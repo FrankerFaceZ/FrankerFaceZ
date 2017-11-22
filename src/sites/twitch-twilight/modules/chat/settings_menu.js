@@ -33,7 +33,7 @@ export default class SettingsMenu extends Module {
 
 		const e = React.createElement;
 
-		this.SettingsMenu.ready((cls, instances) => {
+		this.SettingsMenu.ready(cls => {
 			const old_universal = cls.prototype.renderUniversalOptions;
 
 			cls.prototype.renderUniversalOptions = function() {
