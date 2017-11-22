@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has, get} from 'utilities/object';
+import {has, get, deep_copy} from 'utilities/object';
 
 export default class Apollo extends Module {
 	constructor(...args) {
@@ -26,6 +26,15 @@ export default class Apollo extends Module {
 		}
 	}
 }`);
+
+		this.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
+			const u = data && data.data && data.data.user;
+			if ( u ) {
+				const o = u.profileViewCount = new Number(u.profileViewCount || 0);
+				o.data = deep_copy(u);
+			}
+		}, false);
+
 
 		this.registerModifier('FollowedIndex_CurrentUser', `query {
 	currentUser {
@@ -218,8 +227,11 @@ export default class Apollo extends Module {
 	}
 
 
-	registerModifier(operation, modifier) {
+	registerModifier(operation, modifier, pre=true) {
 		if ( typeof modifier !== 'function' ) {
+			if ( ! pre )
+				throw new Error('post modifiers must be functions');
+
 			let parsed;
 			try {
 				parsed = this.graphql ? this.graphql.parse(modifier, {noLocation: true}) : null;
@@ -231,14 +243,20 @@ export default class Apollo extends Module {
 			modifier = [modifier, parsed];
 		}
 
-		const mods = this.modifiers[operation] = this.modifiers[operation] || [];
+		const mods = pre ?
+			(this.modifiers[operation] = this.modifiers[operation] || []) :
+			(this.post_modifiers[operation] = this.post_modifiers[operation] || []);
+
 		mods.push(modifier);
 	}
 
-	unregisterModifier(operation, modifier) {
-		const mods = this.modifiers[operation];
+	unregisterModifier(operation, modifier, pre=true) {
+		const mods = pre ? this.modifiers[operation] : this.post_modifiers[operation];
 		if ( ! mods )
 			return;
+
+		if ( typeof modifier !== 'function' )
+			throw new Error('graphql modifiers cannot be removed');
 
 		for(let i=0; i < mods.length; i++) {
 			const mod = mods[i];

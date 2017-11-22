@@ -337,6 +337,14 @@ export class FineWrapper extends EventEmitter {
 		this._class = null;
 	}
 
+	get first() {
+		return this.toArray()[0];
+	}
+
+	toArray() {
+		return Array.from(this.instances);
+	}
+
 	ready(fn) {
 		if ( this._class )
 			fn(this._class, this.instances);
