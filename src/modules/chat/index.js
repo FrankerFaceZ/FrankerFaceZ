@@ -9,12 +9,13 @@ const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, SourcedSet} from 'utilities/object';
+import {timeout, has} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
 
 import Room from './room';
+import User from './user';
 import * as TOKENIZERS from './tokenizers';
 
 
@@ -308,6 +309,8 @@ export default class Chat extends Module {
 
 	getUser(id, login, no_create, no_login) {
 		let user;
+		if ( id && typeof id === 'number' )
+			id = `${id}`;
 
 		if ( this.user_ids[id] )
 			user = this.user_ids[id];
@@ -319,7 +322,7 @@ export default class Chat extends Module {
 			return null;
 
 		else
-			user = {id, login, badges: [], emote_sets: new SourcedSet};
+			user = new User(this, null, id, login);
 
 		if ( id && id !== user.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
@@ -328,7 +331,7 @@ export default class Chat extends Module {
 				throw new Error('id mismatch');
 
 			// Otherwise, we're just here to set the ID.
-			user.id = id;
+			user._id = id;
 			this.user_ids[id] = user;
 		}
 
@@ -354,6 +357,8 @@ export default class Chat extends Module {
 
 	getRoom(id, login, no_create, no_login) {
 		let room;
+		if ( id && typeof id === 'number' )
+			id = `${id}`;
 
 		if ( this.room_ids[id] )
 			room = this.room_ids[id];
@@ -374,7 +379,7 @@ export default class Chat extends Module {
 				throw new Error('id mismatch');
 
 			// Otherwise, we're just here to set the ID.
-			room.id = id;
+			room._id = id;
 			this.room_ids[id] = room;
 		}
 

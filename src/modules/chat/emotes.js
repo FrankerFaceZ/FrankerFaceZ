@@ -65,6 +65,8 @@ export default class Emotes extends Module {
 		this.global_sets = new SourcedSet;
 
 		this.emote_sets = {};
+		this._set_refs = {};
+		this._set_timers = {};
 	}
 
 	onEnable() {
@@ -121,7 +123,44 @@ export default class Emotes extends Module {
 	}
 
 	// ========================================================================
-	// FFZ Emote Sets
+	// Emote Set Ref Counting
+	// ========================================================================
+
+	addDefaultSet(provider, set_id, data) {
+		if ( ! this.default_sets.sourceIncludes(provider, set_id) ) {
+			this.default_sets.push(provider, set_id);
+			this.refSet(set_id);
+		}
+
+		if ( data )
+			this.loadSetData(set_id, data);
+	}
+
+	removeDefaultSet(provider, set_id) {
+		if ( this.default_sets.sourceIncludes(provider, set_id) ) {
+			this.default_sets.remove(provider, set_id);
+			this.unrefSet(set_id);
+		}
+	}
+
+	refSet(set_id) {
+		this._set_refs[set_id] = (this._set_refs[set_id] || 0) + 1;
+		if ( this._set_timers[set_id] ) {
+			clearTimeout(this._set_timers[set_id]);
+			this._set_timers[set_id] = null;
+		}
+
+	}
+
+	unrefSet(set_id) {
+		const c = this._set_refs[set_id] = (this._set_refs[set_id] || 1) - 1;
+		if ( c <= 0 && ! this._set_timers[set_id] )
+			this._set_timers[set_id] = setTimeout(() => this.unloadSet(set_id), 5000);
+	}
+
+
+	// ========================================================================
+	// Emote Set Loading
 	// ========================================================================
 
 	async loadGlobalSets(tries = 0) {
@@ -149,13 +188,12 @@ export default class Emotes extends Module {
 
 		const sets = data.sets || {};
 
-		this.default_sets.extend('ffz-global', ...data.default_sets);
+		for(const set_id of data.default_sets)
+			this.addDefaultSet('ffz-global', set_id);
 
 		for(const set_id in sets)
-			if ( has(sets, set_id) ) {
-				this.global_sets.push('ffz-global', set_id);
+			if ( has(sets, set_id) )
 				this.loadSetData(set_id, sets[set_id]);
-			}
 
 		if ( data.users )
 			this.loadSetUsers(data.users);
@@ -168,12 +206,9 @@ export default class Emotes extends Module {
 				const emote_set = this.emote_sets[set_id],
 					users = data[set_id];
 
-				for(const login of users) {
-					const user = this.parent.getUser(undefined, login),
-						sets = user.emote_sets;
-
-					sets.push('ffz-global', set_id);
-				}
+				for(const login of users)
+					this.parent.getUser(undefined, login)
+						.addSet('ffz-global', set_id);
 
 				this.log.info(`Added "${emote_set ? emote_set.title : set_id}" emote set to ${users.length} users.`);
 			}
@@ -190,8 +225,6 @@ export default class Emotes extends Module {
 		}
 
 		this.emote_sets[set_id] = data;
-
-		data.users = old_set ? old_set.users : 0;
 
 		let count = 0;
 		const ems = data.emotes || data.emoticons,
@@ -237,8 +270,27 @@ export default class Emotes extends Module {
 		else if ( css.length )
 			data.pending_css = css.join('');
 
-		this.log.info(`Updated emotes for set #${set_id}: ${data.title}`);
+		this.log.info(`Loaded emote set #${set_id}: ${data.title} (${count} emotes)`);
 		this.emit(':loaded', set_id, data);
+	}
+
+
+	unloadSet(set_id, force = false) {
+		const old_set = this.emote_sets[set_id],
+			count = this._set_refs[set_id] || 0;
+
+		if ( ! old_set )
+			return;
+
+		if ( count > 0 ) {
+			if ( ! force )
+				return this.log.warn(`Attempted to unload emote set #${set_id} with ${count} users.`);
+			this.log.warn(`Unloading emote set ${set_id} with ${count} users.`);
+		}
+
+		this.log.info(`Unloaded emote set #${set_id}: ${old_set.title}`);
+		this.emit(':unloaded', set_id, old_set);
+		this.emote_sets[set_id] = null;
 	}
 
 

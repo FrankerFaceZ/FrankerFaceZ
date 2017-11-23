@@ -186,6 +186,11 @@ export class SourcedSet {
 	get(key) { return this._sources && this._sources.get(key) }
 	has(key) { return this._sources ? this._sources.has(key) : false }
 
+	sourceIncludes(key, val) {
+		const src = this._sources && this._sources.get(key);
+		return src && src.includes(val);
+	}
+
 	includes(val) {
 		return this._cache.includes(val);
 	}

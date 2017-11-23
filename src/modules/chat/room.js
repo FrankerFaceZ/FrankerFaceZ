@@ -4,19 +4,18 @@
 // Room
 // ============================================================================
 
+import User from './user';
+
 import {API_SERVER, IS_WEBKIT} from 'utilities/constants';
 
-import {EventEmitter} from 'utilities/events';
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet} from 'utilities/object';
 
 const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
 
 
-export default class Room extends EventEmitter {
+export default class Room {
 	constructor(manager, id, login) {
-		super();
-
 		this._destroy_timer = null;
 
 		this.manager = manager;
@@ -30,8 +29,8 @@ export default class Room extends EventEmitter {
 		this.style = new ManagedStyle(`room--${login}`);
 
 		this.emote_sets = new SourcedSet;
-		this.users = [];
-		this.user_ids = [];
+		this.users = {};
+		this.user_ids = {};
 
 		this.manager.emit(':room-add', this);
 		this.load_data();
@@ -47,6 +46,22 @@ export default class Room extends EventEmitter {
 		this.manager.emit(':room-remove', this);
 
 		this.style.destroy();
+
+		for(const user of Object.values(this.user_ids)) {
+			if ( user )
+				user.destroy();
+		}
+
+		for(const user of Object.values(this.users)) {
+			if ( user )
+				user.destroy();
+		}
+
+		for(const set_id of this.emote_sets._cache)
+			this.manager.emotes.unrefSet(set_id);
+
+		this.emote_sets = null;
+		this.style = null;
 
 		if ( this._login ) {
 			if ( this.manager.rooms[this._login] === this )
@@ -74,11 +89,10 @@ export default class Room extends EventEmitter {
 
 		if ( this._login ) {
 			const old_room = this.manager.rooms[this._login];
-			if ( old_room !== this )
-				old_room.login = null;
-
-			this.manager.rooms[this._login] = null;
-			this.manager.socket.unsubscribe(`room.${this.login}`);
+			if ( old_room === this ) {
+				this.manager.rooms[this._login] = null;
+				this.manager.socket.unsubscribe(`room.${this.login}`);
+			}
 		}
 
 		this._login = val;
@@ -92,6 +106,54 @@ export default class Room extends EventEmitter {
 		this.manager.rooms[val] = this;
 		this.manager.socket.subscribe(`room.${val}`);
 		this.manager.emit(':room-update-login', this, val);
+	}
+
+
+	getUser(id, login, no_create, no_login) {
+		let user;
+		if ( id && typeof id === 'number' )
+			id = `${id}`;
+
+		if ( this.user_ids[id] )
+			user = this.user_ids[id];
+
+		else if ( this.users[login] && ! no_login )
+			user = this.users[login];
+
+		else if ( no_create )
+			return null;
+
+		else
+			user = new User(this.manager, this, id, login);
+
+		if ( id && id !== user.id ) {
+			// If the ID isn't what we expected, something is very wrong here.
+			// Blame name changes.
+			if ( user.id )
+				throw new Error('id mismatch');
+
+			// Otherwise, we're just here to set the ID.
+			user._id = id;
+			this.user_ids[id] = user;
+		}
+
+		if ( login ) {
+			const other = this.users[login];
+			if ( other ) {
+				if ( other !== this && ! no_login ) {
+					// If the other has an ID, something weird happened. Screw it
+					// and just take over.
+					if ( other.id )
+						this.users[login] = user;
+					else {
+						// TODO: Merge Logic~~
+					}
+				}
+			} else
+				this.users[login] = user;
+		}
+
+		return user;
 	}
 
 
@@ -162,6 +224,27 @@ export default class Room extends EventEmitter {
 		return true;
 	}
 
+
+	// ========================================================================
+	// Emote Sets
+	// ========================================================================
+
+	addSet(provider, set_id, data) {
+		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
+			this.emote_sets.push(provider, set_id);
+			this.manager.emotes.refSet(set_id);
+		}
+
+		if ( data )
+			this.manager.emotes.loadSetData(set_id, data);
+	}
+
+	removeSet(provider, set_id) {
+		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
+			this.emote_sets.remove(provider, set_id);
+			this.manager.emotes.unrefSet(set_id);
+		}
+	}
 
 
 	// ========================================================================
