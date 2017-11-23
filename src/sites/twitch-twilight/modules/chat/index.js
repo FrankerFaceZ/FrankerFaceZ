@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has} from 'utilities/object';
+import {has, split_chars} from 'utilities/object';
 
 import Module from 'utilities/module';
 
@@ -70,7 +70,8 @@ const EVENTS = [
 	'onBanEvent',
 	'onModerationEvent',
 	'onSubscriptionEvent',
-	'onResubscriptionEvent',
+	//'onResubscriptionEvent',
+	'onSubscriptionGiftEvent',
 	'onRoomStateEvent',
 	'onSlowModeEvent',
 	'onFollowerOnlyModeEvent',
@@ -408,6 +409,24 @@ export default class ChatHook extends Module {
 						}
 				}
 
+				const old_resub = this.onResubscriptionEvent;
+				this.onResubscriptionEvent = function(e) {
+					try {
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'resub';
+						out.sub_months = e.months;
+						out.sub_plan = e.methods;
+
+						i._wrapped = e;
+						const ret = i.postMessage(out);
+						i._wrapped = null;
+						return ret;
+
+					} catch(err) {
+						return old_resub.call(i, e);
+					}
+				}
+
 				this.postMessage = function(e) {
 					const original = this._wrapped;
 					if ( original ) {
@@ -420,13 +439,20 @@ export default class ChatHook extends Module {
 							e.roomLogin = c.charAt(0) === '#' ? c.slice(1) : c;
 
 						if ( original.message ) {
-							if ( original.action )
-								e.message = original.action;
-							else
-								e.message = original.message.body;
+							const u = original.message.user;
+							if ( u )
+								e.emotes = u.emotes;
 
-							if ( original.message.user )
-								e.emotes = original.message.user.emotes;
+							if ( original.action ) {
+								e.message = original.action;
+
+								// Twitch doesn't generate a proper emote tag for echoed back
+								// actions, so we have to regenerate it. Fun. :D
+								if ( u && u.username === i.userLogin )
+									e.emotes = findEmotes(e.message, i.selfEmotes);
+
+							} else
+								e.message = original.message.body;
 						}
 
 						//e.original = original;
@@ -666,6 +692,30 @@ export function formatBitsConfig(config) {
 				})
 			}
 		}
+
+	return out;
+}
+
+
+export function findEmotes(msg, emotes) {
+	const out = {};
+	let idx = 0;
+
+	for(const part of msg.split(' ')) {
+		const len = split_chars(part).length;
+
+		if ( has(emotes, part) ) {
+			const em = emotes[part],
+				matches = out[em.id] = out[em.id] || [];
+
+			matches.push({
+				startIndex: idx,
+				endIndex: idx + len - 1
+			});
+		}
+
+		idx += len + 1;
+	}
 
 	return out;
 }

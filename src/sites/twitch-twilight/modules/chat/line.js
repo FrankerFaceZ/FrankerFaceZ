@@ -7,6 +7,12 @@
 import Module from 'utilities/module';
 //import {Color} from 'utilities/color';
 
+const SUB_TIERS = {
+	1000: '$4.99',
+	2000: '$9.99',
+	3000: '$24.99'
+};
+
 export default class ChatLine extends Module {
 	constructor(...args) {
 		super(...args);
@@ -72,62 +78,95 @@ export default class ChatLine extends Module {
 				const tokens = t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName}),
 					fragment = t.chat.renderTokens(tokens, e);
 
-				const out = e('div', {
-					className: `chat-line__message ${msg.mentioned ? 'ffz-mentioned' : ''}`,
-					//style: { backgroundColor: bg_css },
+				let cls = 'chat-line__message',
+					out = fragment.length ? [
+						this.props.showTimestamps && e('span', {
+							className: 'chat-line__timestamp'
+						}, t.chat.formatTime(msg.timestamp)),
+						this.renderModerationIcons(),
+						e('span', {
+							className: 'chat-line__message--badges'
+						}, t.chat.renderBadges(msg, e)),
+						e('a', {
+							className: 'chat-author__display-name',
+							style: { color },
+							onClick: this.usernameClickHandler
+						}, user.userDisplayName),
+						user.isIntl && e('span', {
+							className: 'chat-author__intl-login',
+							style: { color },
+							onClick: this.usernameClickHandler
+						}, ` (${user.userLogin})`),
+						e('span', null, is_action ? ' ' : ': '),
+						show ?
+							e('span', {
+								className:'message',
+								style: is_action ? { color } : null
+							}, fragment)
+							:
+							e('span', {
+								className: 'chat-line__message--deleted',
+							}, e('a', {
+								href: '',
+								onClick: this.alwaysShowMessage
+							}, `<message deleted>`)),
+
+						/*this.state.renderDebug === 2 && e('div', {
+							className: 'border mg-t-05'
+						}, old_render.call(this)),
+
+						this.state.renderDebug === 1 && e('div', {
+							className: 'message--debug',
+							style: {
+								fontFamily: 'monospace',
+								whiteSpace: 'pre-wrap',
+								lineHeight: '1.1em'
+							}
+						}, JSON.stringify([tokens, msg.emotes], null, 2))*/
+					] : null;
+
+				if ( msg.ffz_type === 'resub' ) {
+					const plan = msg.sub_plan || {},
+						months = msg.sub_months || 1,
+						tier = SUB_TIERS[plan.plan] || '$4.99';
+
+					cls = 'chat-line__subscribe';
+					out = [
+						e('span', null, [
+							t.i18n.t('chat.sub.main', '%{user} just subscribed with %{plan}!', {
+								user: user.userDisplayName,
+								plan: plan.prime ?
+									t.i18n.t('chat.sub.twitch-prime', 'Twitch Prime') :
+									t.i18n.t('chat.sub.plan', 'a %{tier} sub', {tier})
+							}),
+							months > 1 ?
+								` ${t.i18n.t(
+									'chat.sub.months',
+									'%{user} subscribed for %{count} months in a row!',
+									{
+										user: user.userDisplayName,
+										count: months
+									})}` : null
+						]),
+						out && e('div', {
+							className: 'chat-line__subscribe--message',
+							'data-room-id': this.props.channelID,
+							'data-room': room,
+							'data-user-id': user.userID,
+							'data-user': user.userLogin && user.userLogin.toLowerCase(),
+						}, out)
+					];
+
+				} else if ( ! out )
+					return null;
+
+				return e('div', {
+					className: `${cls}${msg.mentioned ? 'ffz-mentioned' : ''}`,
 					'data-room-id': this.props.channelID,
 					'data-room': room,
 					'data-user-id': user.userID,
 					'data-user': user.userLogin && user.userLogin.toLowerCase(),
-
-					//onClick: () => this.setState({renderDebug: ((this.state.renderDebug||0) + 1) % 3})
-				}, [
-					this.props.showTimestamps && e('span', {
-						className: 'chat-line__timestamp'
-					}, t.chat.formatTime(msg.timestamp)),
-					this.renderModerationIcons(),
-					e('span', {
-						className: 'chat-line__message--badges'
-					}, t.chat.renderBadges(msg, e)),
-					e('a', {
-						className: 'chat-author__display-name',
-						style: { color },
-						onClick: this.usernameClickHandler
-					}, user.userDisplayName),
-					user.isIntl && e('span', {
-						className: 'chat-author__intl-login',
-						style: { color },
-						onClick: this.usernameClickHandler
-					}, ` (${user.userLogin})`),
-					e('span', null, is_action ? ' ' : ': '),
-					show ?
-						e('span', {
-							className:'message',
-							style: is_action ? { color } : null
-						}, fragment)
-						:
-						e('span', {
-							className: 'chat-line__message--deleted',
-						}, e('a', {
-							href: '',
-							onClick: this.alwaysShowMessage
-						}, `<message deleted>`)),
-
-					/*this.state.renderDebug === 2 && e('div', {
-						className: 'border mg-t-05'
-					}, old_render.call(this)),
-
-					this.state.renderDebug === 1 && e('div', {
-						className: 'message--debug',
-						style: {
-							fontFamily: 'monospace',
-							whiteSpace: 'pre-wrap',
-							lineHeight: '1.1em'
-						}
-					}, JSON.stringify([tokens, msg.emotes], null, 2))*/
-				]);
-
-				return out;
+				}, out);
 			}
 
 			for(const inst of instances)

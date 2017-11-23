@@ -5,19 +5,13 @@
 // ============================================================================
 
 import {sanitize, createElement as e} from 'utilities/dom';
-import {has} from 'utilities/object';
+import {has, split_chars} from 'utilities/object';
 
 const EMOTE_CLASS = 'chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w.\/@#%&()\-+=:?~]*)?))([^\w.\/@#%&()\-+=:?~]|\s|$)/g,
 	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w.\/@#%&()\-+=:?~]|\s|$)/g,
-	SPLIT_REGEX = /[^\uD800-\uDFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g,
 
 	TWITCH_BASE = '//static-cdn.jtvnw.net/emoticons/v1/';
-
-
-function split_chars(str) {
-	return str.match(SPLIT_REGEX);
-}
 
 
 // ============================================================================
