@@ -31,8 +31,6 @@
 				<li>Settings cannot be searched.</li>
 				<li>FFZ badges do not display.</li>
 				<li>Oh god everything is missing.</li>
-				<li>FFZ:AP is broken.</li>
-				<li>Uptime breaks occasionally.</li>
 			</ul>
 
 			<p>And the biggest features still under development:</p>

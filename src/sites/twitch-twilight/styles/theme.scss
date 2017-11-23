@@ -1335,17 +1335,18 @@
 	  color: var(--ffz-color-4);
 	}
 	.tw-interactable {
+		color: inherit;
 	  &:hover {
-		background-color: var(--ffz-color-8);
-		color: var(--ffz-color-4);
+			background-color: var(--ffz-color-8);
+			color: var(--ffz-color-4);
 	  }
 	  &:active {
-		background-color: var(--ffz-color-3);
-		color: var(--ffz-color-4);
+			background-color: var(--ffz-color-3);
+			color: var(--ffz-color-4);
 	  }
 	  &:focus {
-		-webkit-box-shadow: 0 0 6px 0 var(--ffz-color-5), inset 0 0 0 1px var(--ffz-color-5);
-		box-shadow: 0 0 6px 0 var(--ffz-color-5), inset 0 0 0 1px var(--ffz-color-5);
+			-webkit-box-shadow: 0 0 6px 0 var(--ffz-color-5), inset 0 0 0 1px var(--ffz-color-5);
+			box-shadow: 0 0 6px 0 var(--ffz-color-5), inset 0 0 0 1px var(--ffz-color-5);
 	  }
 	}
 	.tw-interactable--selected {

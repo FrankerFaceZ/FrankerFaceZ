@@ -161,7 +161,7 @@ export default class ChatLine extends Module {
 					return null;
 
 				return e('div', {
-					className: `${cls}${msg.mentioned ? 'ffz-mentioned' : ''}`,
+					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}`,
 					'data-room-id': this.props.channelID,
 					'data-room': room,
 					'data-user-id': user.userID,
