@@ -167,6 +167,8 @@ export default class Game extends SiteModule {
 
 		const container = this.fine.getHostNode(inst);
 		const card = container && container.querySelector && container.querySelector('.tw-thumbnail-card');
+		
+		if (container === null || card === null) return;
 
 		if (!inst.props.streamNode.viewersCount.createdAt || container === null || card === null) return;
 		

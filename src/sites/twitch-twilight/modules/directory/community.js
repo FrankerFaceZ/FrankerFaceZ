@@ -163,6 +163,8 @@ export default class Community extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		const card = container && container.querySelector && container.querySelector('.tw-card');
 
+		if (container === null || card === null) return;
+
 		if (!inst.props.streamNode.viewersCount.createdAt) return;
 		
 		// Remove old elements

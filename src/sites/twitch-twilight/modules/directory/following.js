@@ -487,6 +487,8 @@ export default class Following extends SiteModule {
 
 		const container = this.fine.getHostNode(inst);
 		const card = container && container.querySelector && container.querySelector('.tw-card');
+		
+		if (container === null || card === null) return;
 
 		const channelCardTitle = card.querySelector('.live-channel-card__title');
 
