@@ -185,13 +185,27 @@ export default class Player extends Module {
 		}
 
 		if ( ! inst.ffzAutoplay ) {
-			inst.ffzAutoplay = () => {
-				console.info('auto-paused player');
-				inst.player.removeEventListener('play', inst.ffzAutoplay);
+			var playListener = () => {
+				this.log.info('Auto-paused player');
 				inst.ffzAutoplay = null;
 				inst.player.pause();
+
+				// timing issues are a pain
+				setTimeout(() => {
+					inst.player.removeEventListener('play', playListener);
+					inst.player.removeEventListener('playing', playListener);
+					inst.player.removeEventListener('contentShowing', playListener);
+				}, 1000);
 			}
+			inst.ffzAutoplay = playListener;
 			inst.player.addEventListener('play', inst.ffzAutoplay);
+			inst.player.addEventListener('playing', inst.ffzAutoplay);
+			inst.player.addEventListener('contentShowing', inst.ffzAutoplay);
+			this.log.info('readystate', inst.player.readyState);
+			if (inst.player.readyState > 0) {
+				// already playing the video (if FFZ script was slow)
+				inst.player.pause();
+			}
 		}
 	}
 
