@@ -99,6 +99,7 @@ Twilight.KNOWN_MODULES = {
 Twilight.ROUTES = {
 	'front-page': '/',
 	'collection': '/collections/:collectionID',
+	'dir': '/directory',
 	'dir-community': '/communities/:communityName',
 	'dir-community-index': '/directory/communities',
 	'dir-creative': '/directory/creative',
