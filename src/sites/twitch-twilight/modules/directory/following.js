@@ -7,6 +7,7 @@
 import {SiteModule} from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 import {get} from 'utilities/object';
+import {duration_to_string} from 'utilities/time';
 
 import Popper from 'popper.js';
 
@@ -31,7 +32,7 @@ export default class Following extends SiteModule {
 				component: 'setting-check-box'
 			},
 
-			changed: () => this.router.current.name === 'dir-category' && this.apollo.getQuery('FollowedIndex_CurrentUser').refetch()
+			changed: () => this.isRouteAcceptable() && this.apollo.getQuery('FollowedIndex_CurrentUser').refetch()
 		});
 
 		this.settings.add('directory.following.uptime', {
@@ -51,7 +52,7 @@ export default class Following extends SiteModule {
 				]
 			},
 
-			changed: () => this.router.current.name === 'dir-category' && this.ChannelCard.forceUpdate()
+			changed: () => this.isRouteAcceptable() && this.ChannelCard.forceUpdate()
 		});
 
 		this.settings.add('directory.following.host-menus', {
@@ -71,7 +72,7 @@ export default class Following extends SiteModule {
 				]
 			},
 
-			changed: () => this.router.current.name === 'dir-category' && this.ChannelCard.forceUpdate()
+			changed: () => this.isRouteAcceptable() && this.ChannelCard.forceUpdate()
 		});
 
 		this.settings.add('directory.following.hide-boxart', {
@@ -94,7 +95,7 @@ export default class Following extends SiteModule {
 			changed: value => {
 				this.css_tweaks.toggleHide('boxart-hide', value === 2);
 				this.css_tweaks.toggleHide('boxart-hover', value === 1);
-				this.router.current.name === 'dir-category' && this.ChannelCard.forceUpdate()
+				if (this.isRouteAcceptable()) this.ChannelCard.forceUpdate()
 			}
 		});
 
@@ -118,7 +119,7 @@ export default class Following extends SiteModule {
 
 			changed: value => {
 				this.css_tweaks.toggleHide('profile-hover-following', value === 2);
-				this.router.current.name === 'dir-category' && this.ChannelCard.forceUpdate();
+				if (this.isRouteAcceptable()) this.ChannelCard.forceUpdate();
 			}
 		});
 
@@ -182,18 +183,24 @@ export default class Following extends SiteModule {
 		);
 
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', res => {
-			if (this.router.current.name === 'dir-category') {
-				this.modifyLiveUsers(res);
-				this.modifyLiveHosts(res);
-			}
+			res = this.modifyLiveUsers(res);
+			res = this.modifyLiveHosts(res);
+			return res;
 		}, false);
 
-		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.router.current.name === 'dir-category' && this.modifyLiveUsers(res), false);
+		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
 
-		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.router.current.name === 'dir-category' && this.modifyLiveHosts(res) , false);
+		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
+	}
+
+	isRouteAcceptable() {
+		return this.router.current.name === 'dir-following-index'
+			|| this.router.current.name === 'dir-category' && this.router.match[1] === 'following';
 	}
 
 	modifyLiveUsers(res) { // eslint-disable-line class-methods-use-this
+		if (!this.isRouteAcceptable()) return res;
+
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
@@ -207,14 +214,16 @@ export default class Following extends SiteModule {
 			s.profileImageURL = node.profileImageURL;
 			s.createdAt = node.stream.createdAt;
 
-			if (hiddenThumbnails.includes(node.stream.game.name)) node.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-			if (!blockedGames.includes(node.stream.game.name)) newLiveNodes.push(node);
+			if (node.stream.game && hiddenThumbnails.includes(node.stream.game.name)) node.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
+			if (!node.stream.game || node.stream.game && !blockedGames.includes(node.stream.game.name)) newLiveNodes.push(node);
 		}
 		res.data.currentUser.followedLiveUsers.nodes = newLiveNodes;
 		return res;
 	}
 
 	modifyLiveHosts(res) { // eslint-disable-line class-methods-use-this
+		if (!this.isRouteAcceptable()) return res;
+		
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
@@ -228,14 +237,18 @@ export default class Following extends SiteModule {
 			const s = node.hosting.stream.viewersCount = new Number(node.hosting.stream.viewersCount || 0);
 			s.profileImageURL = node.hosting.profileImageURL;
 			s.createdAt = node.hosting.stream.createdAt;
+			s.hostData = {
+				channel: node.hosting.login,
+				displayName: node.hosting.displayName
+			};
 
 			if (!this.hosts[node.hosting.displayName]) {
 				this.hosts[node.hosting.displayName] = {
 					nodes: [node],
 					channels: [node.displayName]
 				};
-				if (hiddenThumbnails.includes(node.hosting.stream.game.name)) node.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-				if (!blockedGames.includes(node.hosting.stream.game.name)) newHostNodes.push(node);
+				if (node.hosting.stream.game && hiddenThumbnails.includes(node.hosting.stream.game.name)) node.hosting.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
+				if (!node.hosting.stream.game || node.hosting.stream.game && !blockedGames.includes(node.hosting.stream.game.name)) newHostNodes.push(node);
 			} else {
 				this.hosts[node.hosting.displayName].nodes.push(node);
 				this.hosts[node.hosting.displayName].channels.push(node.displayName);
@@ -289,10 +302,10 @@ export default class Following extends SiteModule {
 	}
 
 	destroyHostMenu(event) {
-		if (event.target.closest('.ffz-channel-selector-outer') === null && Date.now() > this.host_menu_buffer) {
-			this.host_menu_popper && this.host_menu_popper.destroy();
-			this.host_menu && this.host_menu.remove();
-			this.host_menu_popper = this.host_menu = undefined;
+		if (event.target.closest('.ffz-channel-selector-outer') === null && Date.now() > this.hostMenuBuffer) {
+			this.hostMenuPopper && this.hostMenuPopper.destroy();
+			this.hostMenu && this.hostMenu.remove();
+			this.hostMenuPopper = this.hostMenu = undefined;
 		}
 	}
 
@@ -300,19 +313,27 @@ export default class Following extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		const card = container && container.querySelector && container.querySelector('.tw-card .tw-aspect > div');
 
+		// if (container === null || card === null) {
+		// 	if (inst.updateTimer !== undefined) {
+		// 		clearInterval(inst.updateTimer);
+		// 		inst.updateTimer = undefined;
+		// 		return;
+		// 	}
+		// }
+
 		if (this.settings.get('directory.following.uptime') === 0) {
-			if (inst.update_timer !== undefined) {
-				clearInterval(inst.update_timer);
-				inst.update_timer = undefined;
+			if (inst.updateTimer !== undefined) {
+				clearInterval(inst.updateTimer);
+				inst.updateTimer = undefined;
 			}
 
-			if (inst.uptime_element !== undefined) {
-				inst.uptime_element.remove();
-				inst.uptime_element_span = inst.uptime_element = undefined;
+			if (inst.uptimeElement !== undefined) {
+				inst.uptimeElement.remove();
+				inst.uptimeElementSpan = inst.uptimeElement = undefined;
 			}
 		} else {
-			if (inst.update_timer === undefined) {
-				inst.update_timer = setInterval(
+			if (inst.updateTimer === undefined) {
+				inst.updateTimer = setInterval(
 					this.updateUptime.bind(this, inst),
 					1000
 				);
@@ -320,24 +341,24 @@ export default class Following extends SiteModule {
 
 			const up_since = new Date(inst.props.viewerCount.createdAt);
 			const uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
-			const uptimeText = this.timeToString(uptime, false, false, false, this.settings.get('directory.following.uptime') === 1);
+			const uptimeText = duration_to_string(uptime, false, false, false, this.settings.get('directory.following.uptime') === 1);
 	
 			if (uptime > 0) {
-				if (inst.uptime_element === undefined) {
-					inst.uptime_element_span = e('span', 'tw-stat__value ffz-uptime', `${uptimeText}`);
-					inst.uptime_element = e('div', {
+				if (inst.uptimeElement === undefined) {
+					inst.uptimeElementSpan = e('span', 'tw-stat__value ffz-uptime', `${uptimeText}`);
+					inst.uptimeElement = e('div', {
 						className: 'c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
 						style: 'padding-left: 4px; padding-right: 4px;'
 					}, [
 						e('span', 'tw-stat__icon',
 							e('figure', 'ffz-i-clock')
 						),
-						inst.uptime_element_span
+						inst.uptimeElementSpan
 					]);
 	
-					if (card.querySelector('.ffz-uptime') === null) card.appendChild(inst.uptime_element);
+					if (card.querySelector('.ffz-uptime') === null) card.appendChild(inst.uptimeElement);
 				} else {
-					inst.uptime_element_span.textContent = `${uptimeText}`;
+					inst.uptimeElementSpan.textContent = `${uptimeText}`;
 				}
 			}
 		}
@@ -349,9 +370,9 @@ export default class Following extends SiteModule {
 		event.preventDefault();
 		event.stopPropagation();
 
-		this.host_menu_popper && this.host_menu_popper.destroy();
+		this.hostMenuPopper && this.hostMenuPopper.destroy();
 
-		this.host_menu && this.host_menu.remove();
+		this.hostMenu && this.hostMenu.remove();
 
 		const simplebarContentChildren = [];
 
@@ -427,7 +448,7 @@ export default class Following extends SiteModule {
 			);
 		}
 
-		this.host_menu = e('div', 'tw-balloon block',
+		this.hostMenu = e('div', 'tw-balloon block',
 			e('div', 'selectable-filter__balloon pd-y-05',
 				e('div', {
 					className: 'scrollable-area',
@@ -444,9 +465,9 @@ export default class Following extends SiteModule {
 			)
 		);
 
-		document.body.appendChild(this.host_menu);
+		document.body.appendChild(this.hostMenu);
 
-		this.host_menu_popper = new Popper(document.body, this.host_menu, {
+		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {
 			placement: 'bottom-start',
 			modifiers: {
 				flip: {
@@ -458,7 +479,7 @@ export default class Following extends SiteModule {
 			},
 		});
 
-		this.host_menu_buffer = Date.now() + 50;
+		this.hostMenuBuffer = Date.now() + 50;
 	}
 
 	updateChannelCard(inst) {
@@ -470,8 +491,6 @@ export default class Following extends SiteModule {
 		const channelCardTitle = card.querySelector('.live-channel-card__title');
 
 		if (channelCardTitle === null) return;
-
-		const [, , hosting] = channelCardTitle.textContent.split(' ');
 		
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
@@ -479,11 +498,18 @@ export default class Following extends SiteModule {
 		
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
 		if (ffzChannelData !== null) ffzChannelData.remove();
-
+		
 		const channelAvatar = card.querySelector('.channel-avatar');
 		if (channelAvatar !== null) channelAvatar.remove();
-
+		
 		if (inst.props.viewerCount.profileImageURL) {
+			const hosting = inst.props.viewerCount.hostData;
+			let channel, displayName;
+			if (hosting) {
+				channel = inst.props.viewerCount.hostData.channel;
+				displayName = inst.props.viewerCount.hostData.displayName;
+			}
+		
 			const avatarSetting = this.settings.get('directory.following.show-channel-avatar');
 			const cardDiv = card.querySelector('.tw-card-body');
 			const modifiedDiv = e('div', {
@@ -494,30 +520,32 @@ export default class Following extends SiteModule {
 			if (avatarSetting === 1) {
 				avatarDiv = e('a', {
 					className: 'channel-avatar',
-					href: (this.hosts && this.hosts[hosting]
-						? `/${this.hosts[hosting].nodes[0].hosting.login}`
-						: inst.props.linkTo.pathname
-					),
-					style: 'margin-right: 8px; min-width: 4rem;'
+					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
+					style: 'margin-right: 8px; min-width: 4rem; margin-top: 0.5rem;'
 				}, e('img', {
 					title: inst.props.channelName,
 					src: inst.props.viewerCount.profileImageURL,
 					style: 'height: 4rem;'
 				}));
 			} else if (avatarSetting === 2 || avatarSetting === 3) {
-				const avatarElement = e('a', 'channel-avatar',
-					e('div', 'live-channel-card__boxart bottom-0 absolute',
-						e('figure', 'tw-aspect tw-aspect--align-top',
-							e('img', {
-								title: inst.props.channelName,
-								src: inst.props.viewerCount.profileImageURL
-							})
-						)
+				const avatarElement = e('a', {
+					className: 'channel-avatar',
+					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
+					onclick: event => {
+						event.preventDefault();
+						event.stopPropagation();
+		
+						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
+					}
+				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
+					e('figure', 'tw-aspect tw-aspect--align-top',
+						e('img', {
+							title: inst.props.channelName,
+							src: inst.props.viewerCount.profileImageURL
+						})
 					)
+				)
 				);
-				avatarElement.href = inst.props.linkTo.pathname;
-
-				if (this.hosts && this.hosts[hosting]) avatarElement.href = `/${this.hosts[hosting].nodes[0].hosting.login}`;
 
 				const divToAppend = card.querySelector('.tw-aspect > div');
 				if (divToAppend.querySelector('.channel-avatar') === null) divToAppend.appendChild(avatarElement);
@@ -533,45 +561,26 @@ export default class Following extends SiteModule {
 				]);
 				cardDivParent.appendChild(newCardDiv);
 			}
-		}
 
-		if (this.hosts && this.hosts[hosting]) {
-			if (this.settings.get('directory.group-hosts')) {
-				const titleLink = card.querySelector('.ffz-channel-data a[data-a-target="live-channel-card-title-link"]');
-				const thumbnailLink = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]');
-				
-				if (this.hosts[hosting].channels.length > 1) {
-					const textContent = `${this.hosts[hosting].channels.length} hosting ${hosting}`;
-					channelCardTitle.textContent
-						= channelCardTitle.title
-						= textContent;
-
-					if (thumbnailLink !== null) thumbnailLink.title = textContent;
+			if (hosting) {
+				const hostObj = this.hosts[displayName];
+				if (this.settings.get('directory.following.group-hosts')) {
+					const titleLink = card.querySelector('.ffz-channel-data a[data-a-target="live-channel-card-title-link"]');
+					const thumbnailLink = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]');
+					
+					if (hostObj.channels.length > 1) {
+						const textContent = `${hostObj.channels.length} hosting ${displayName}`;
+						channelCardTitle.textContent
+							= channelCardTitle.title
+							= textContent;
+	
+						if (thumbnailLink !== null) thumbnailLink.title = textContent;
+					}
+					
+					if (titleLink !== null) titleLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
+					if (thumbnailLink !== null) thumbnailLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
 				}
-				
-				if (titleLink !== null) titleLink.onclick = this.showHostMenu.bind(this, inst, this.hosts[hosting]);
-				if (thumbnailLink !== null) thumbnailLink.onclick = this.showHostMenu.bind(this, inst, this.hosts[hosting]);
 			}
 		}
-	}
-
-	timeToString(elapsed, separate_days, days_only, no_hours, no_seconds) { // eslint-disable-line class-methods-use-this
-		const seconds = elapsed % 60;
-		let minutes = Math.floor(elapsed / 60);
-		let hours = Math.floor(minutes / 60);
-		let days = null;
-
-		minutes = minutes % 60;
-
-		if ( separate_days ) {
-			days = Math.floor(hours / 24);
-			hours = hours % 24;
-			if ( days_only && days > 0 )
-				return `${days} days`;
-
-			days = ( days > 0 ) ? `${days} days, ` : '';
-		}
-
-		return (days||'') + ((!no_hours || days || hours) ? (`${(days && hours < 10 ? '0' : '') + hours}:`) : '') + (minutes < 10 ? '0' : '') + minutes + (no_seconds ? '' : (`:${(seconds < 10 ? '0' : '') + seconds}`));
 	}
 }

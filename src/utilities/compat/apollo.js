@@ -156,9 +156,9 @@ export default class Apollo extends Module {
 			modifier = [modifier, parsed];
 		}
 
-		const mods = pre ?
-			(this.modifiers[operation] = this.modifiers[operation] || []) :
-			(this.post_modifiers[operation] = this.post_modifiers[operation] || []);
+		const mods = pre
+			? (this.modifiers[operation] = this.modifiers[operation] || [])
+			: (this.post_modifiers[operation] = this.post_modifiers[operation] || []);
 
 		mods.push(modifier);
 	}

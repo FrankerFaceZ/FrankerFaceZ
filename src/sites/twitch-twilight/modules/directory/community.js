@@ -6,6 +6,7 @@
 
 import {SiteModule} from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
+import {duration_to_string} from 'utilities/time';
 
 export default class Community extends SiteModule {
 	constructor(...args) {
@@ -105,19 +106,27 @@ export default class Community extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		const card = container && container.querySelector && container.querySelector('.tw-card');
 
+		if (container === null || card === null) {
+			if (inst.updateTimer !== undefined) {
+				clearInterval(inst.updateTimer);
+				inst.updateTimer = undefined;
+				return;
+			}
+		}
+
 		if (this.settings.get('directory.following.uptime') === 0) {
-			if (inst.update_timer !== undefined) {
-				clearInterval(inst.update_timer);
-				inst.update_timer = undefined;
+			if (inst.updateTimer !== undefined) {
+				clearInterval(inst.updateTimer);
+				inst.updateTimer = undefined;
 			}
 
-			if (inst.uptime_element !== undefined) {
-				inst.uptime_element.remove();
-				inst.uptime_element_span = inst.uptime_element = undefined;
+			if (inst.uptimeElement !== undefined) {
+				inst.uptimeElement.remove();
+				inst.uptimeElementSpan = inst.uptimeElement = undefined;
 			}
 		} else {
-			if (inst.update_timer === undefined) {
-				inst.update_timer = setInterval(
+			if (inst.updateTimer === undefined) {
+				inst.updateTimer = setInterval(
 					this.updateUptime.bind(this, inst),
 					1000
 				);
@@ -125,24 +134,24 @@ export default class Community extends SiteModule {
 
 			const up_since = new Date(inst.props.streamNode.viewersCount.createdAt);
 			const uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
-			const uptimeText = this.timeToString(uptime, false, false, false, this.settings.get('directory.following.uptime') === 1);
+			const uptimeText = duration_to_string(uptime, false, false, false, this.settings.get('directory.following.uptime') === 1);
 	
 			if (uptime > 0) {
-				if (inst.uptime_element === undefined) {
-					inst.uptime_element_span = e('span', 'tw-stat__value ffz-uptime', `${uptimeText}`);
-					inst.uptime_element = e('div', {
+				if (inst.uptimeElement === undefined) {
+					inst.uptimeElementSpan = e('span', 'tw-stat__value ffz-uptime', `${uptimeText}`);
+					inst.uptimeElement = e('div', {
 						className: 'c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
 						style: 'padding-left: 4px; padding-right: 4px;'
 					}, [
 						e('span', 'tw-stat__icon',
 							e('figure', 'ffz-i-clock')
 						),
-						inst.uptime_element_span
+						inst.uptimeElementSpan
 					]);
 	
-					if (card.querySelector('.ffz-uptime') === null) card.appendChild(inst.uptime_element);
+					if (card.querySelector('.ffz-uptime') === null) card.appendChild(inst.uptimeElement);
 				} else {
-					inst.uptime_element_span.textContent = `${uptimeText}`;
+					inst.uptimeElementSpan.textContent = `${uptimeText}`;
 				}
 			}
 		}
@@ -177,7 +186,7 @@ export default class Community extends SiteModule {
 				const avatarDiv = e('a', {
 					className: 'channel-avatar',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
-					style: 'margin-right: 8px; min-width: 4rem;',
+					style: 'margin-right: 8px; min-width: 4rem; margin-top: 0.5rem;',
 					onclick: event => {
 						event.preventDefault();
 						event.stopPropagation();
@@ -224,26 +233,6 @@ export default class Community extends SiteModule {
 				if (divToAppend.querySelector('.channel-avatar') === null) divToAppend.appendChild(avatarElement);
 			}
 		}
-	}
-
-	timeToString(elapsed, separate_days, days_only, no_hours, no_seconds) { // eslint-disable-line class-methods-use-this
-		const seconds = elapsed % 60;
-		let minutes = Math.floor(elapsed / 60);
-		let hours = Math.floor(minutes / 60);
-		let days = null;
-
-		minutes = minutes % 60;
-
-		if ( separate_days ) {
-			days = Math.floor(hours / 24);
-			hours = hours % 24;
-			if ( days_only && days > 0 )
-				return `${days} days`;
-
-			days = ( days > 0 ) ? `${days} days, ` : '';
-		}
-
-		return (days||'') + ((!no_hours || days || hours) ? (`${(days && hours < 10 ? '0' : '') + hours}:`) : '') + (minutes < 10 ? '0' : '') + minutes + (no_seconds ? '' : (`:${(seconds < 10 ? '0' : '') + seconds}`));
 	}
 
 	updateButtons(inst) {

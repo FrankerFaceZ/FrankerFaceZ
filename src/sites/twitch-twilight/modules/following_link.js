@@ -6,6 +6,7 @@
 
 import {SiteModule} from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
+import {duration_to_string} from 'utilities/time';
 
 import Tooltip from 'utilities/tooltip';
 
@@ -91,7 +92,7 @@ export default class FollowingText extends SiteModule {
 	
 				const up_since = new Date(node.stream.createdAt);
 				const uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
-				const uptimeText = this.timeToString(uptime, false, false, false, true);
+				const uptimeText = duration_to_string(uptime, false, false, false, true);
 
 				const div = e('div', {
 					className: 'ffz-following-inner',
@@ -103,8 +104,9 @@ export default class FollowingText extends SiteModule {
 					}, [
 						// Username
 						e('a', {
+							class: 'top-nav__nav-link',
 							textContent: node.displayName,
-							style: 'float: left; font-weight: bold;',
+							style: 'float: left; font-weight: bold; padding: unset; font-size: unset;',
 							href: `/${node.login}`,
 							onclick: event => {
 								event.preventDefault();
@@ -181,8 +183,12 @@ export default class FollowingText extends SiteModule {
 			tip_content: content,
 		});
 
-		const newFollowing = e('div', 'top-nav__nav-link ffz-following-container', [
+		const newFollowing = e('div', {
+			className: 'top-nav__nav-link ffz-following-container',
+			style: 'padding: 1.5rem 1.5rem 0 0;'
+		}, [
 			e('a', {
+				class: 'top-nav__nav-link',
 				href: '/directory/following',
 				textContent: followingText.title,
 				onclick: event => {
@@ -195,7 +201,7 @@ export default class FollowingText extends SiteModule {
 			e('span', {
 				className: 'tw-pill tw-pill--brand',
 				textContent: nodes.length,
-				style: 'margin-left: 0.5rem;'
+				style: 'margin-left: -0.5rem;'
 			}),
 			tipDiv
 		]);
@@ -230,25 +236,5 @@ export default class FollowingText extends SiteModule {
 	async onEnable() {
 		await this.site.awaitElement('.top-nav__nav-link[data-a-target="following-link"]');
 		this.apollo.ensureQuery('FollowedChannels', 'data.currentUser.followedLiveUsers.nodes.0.stream.createdAt');
-	}
-
-	timeToString(elapsed, separate_days, days_only, no_hours, no_seconds) { // eslint-disable-line class-methods-use-this
-		const seconds = elapsed % 60;
-		let minutes = Math.floor(elapsed / 60);
-		let hours = Math.floor(minutes / 60);
-		let days = null;
-
-		minutes = minutes % 60;
-
-		if ( separate_days ) {
-			days = Math.floor(hours / 24);
-			hours = hours % 24;
-			if ( days_only && days > 0 )
-				return `${days} days`;
-
-			days = ( days > 0 ) ? `${days} days, ` : '';
-		}
-
-		return (days||'') + ((!no_hours || days || hours) ? (`${(days && hours < 10 ? '0' : '') + hours}:`) : '') + (minutes < 10 ? '0' : '') + minutes + (no_seconds ? '' : (`:${(seconds < 10 ? '0' : '') + seconds}`));
 	}
 }
