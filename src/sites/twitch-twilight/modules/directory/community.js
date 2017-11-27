@@ -154,8 +154,6 @@ export default class Community extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		const card = container && container.querySelector && container.querySelector('.tw-card');
 
-		// this.log.warn('Memes', inst, card);
-
 		if (!inst.props.streamNode.viewersCount.createdAt) return;
 		
 		// Remove old elements
@@ -179,7 +177,13 @@ export default class Community extends SiteModule {
 				const avatarDiv = e('a', {
 					className: 'channel-avatar',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
-					style: 'margin-right: 8px; min-width: 4rem;'
+					style: 'margin-right: 8px; min-width: 4rem;',
+					onclick: event => {
+						event.preventDefault();
+						event.stopPropagation();
+		
+						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
+					}
 				}, e('img', {
 					title: inst.props.streamNode.broadcaster.displayName,
 					src: inst.props.streamNode.viewersCount.profileImageURL,
@@ -197,17 +201,24 @@ export default class Community extends SiteModule {
 					cardDivParent.appendChild(newCardDiv);
 				}
 			} else if (avatarSetting === 2 || avatarSetting === 3) {
-				const avatarElement = e('a', 'channel-avatar',
-					e('div', 'live-channel-card__boxart bottom-0 absolute',
-						e('figure', 'tw-aspect tw-aspect--align-top',
-							e('img', {
-								title: inst.props.streamNode.broadcaster.displayName,
-								src: inst.props.streamNode.viewersCount.profileImageURL
-							})
-						)
+				const avatarElement = e('a', {
+					className: 'channel-avatar',
+					href: `/${inst.props.streamNode.broadcaster.login}`,
+					onclick: event => {
+						event.preventDefault();
+						event.stopPropagation();
+		
+						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
+					}
+				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
+					e('figure', 'tw-aspect tw-aspect--align-top',
+						e('img', {
+							title: inst.props.streamNode.broadcaster.displayName,
+							src: inst.props.streamNode.viewersCount.profileImageURL
+						})
 					)
+				)
 				);
-				avatarElement.href = `/${inst.props.streamNode.broadcaster.login}`;
 
 				const divToAppend = card.querySelector('figure.tw-aspect');
 				if (divToAppend.querySelector('.channel-avatar') === null) divToAppend.appendChild(avatarElement);
