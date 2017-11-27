@@ -18,6 +18,7 @@ export default class Player extends Module {
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject('site.css_tweaks');
+		this.inject('site.router');
 		this.inject('i18n');
 
 		this.Player = this.fine.define(
@@ -93,6 +94,14 @@ export default class Player extends Module {
 			changed: val => this.css_tweaks.toggle('player-ext-mouse', !val)
 		})
 
+		this.settings.add('player.home.autoplay', {
+			default: true,
+			ui: {
+				path: 'Channel > Player >> Homepage',
+				title: 'Autoplay featured broadcasters on the homepage.',
+				component: 'setting-check-box'
+			},
+		});
 
 		this.settings.add('player.volume-always-shown', {
 			default: false,
@@ -149,6 +158,18 @@ export default class Player extends Module {
 	onMount(inst) {
 		if ( this.settings.get('player.theatre.auto-enter') && inst.onTheatreChange )
 			inst.onTheatreChange(true);
+
+		if ( (!this.settings.get('player.home.autoplay')) && this.router.current.name === 'front-page' ) {
+			if ( inst.player ) {
+				this.disableAutoplay(inst);
+			} else {
+				const wrapped = inst.onPlayerReady;
+				inst.onPlayerReady = () => {
+					wrapped.call(inst);
+					this.disableAutoplay(inst);
+				};
+			}
+		}
 	}
 
 
@@ -157,6 +178,22 @@ export default class Player extends Module {
 		this.updateVolumeScroll(inst);
 	}
 
+	disableAutoplay(inst) {
+		if ( ! inst.player ) {
+			this.log.warn("disableAutoplay() called but Player was not ready");
+			return;
+		}
+
+		if ( ! inst.ffzAutoplay ) {
+			inst.ffzAutoplay = () => {
+				console.info('auto-paused player');
+				inst.player.removeEventListener('play', inst.ffzAutoplay);
+				inst.ffzAutoplay = null;
+				inst.player.pause();
+			}
+			inst.player.addEventListener('play', inst.ffzAutoplay);
+		}
+	}
 
 	updateVolumeScroll(inst, enabled) {
 		if ( enabled === undefined )
