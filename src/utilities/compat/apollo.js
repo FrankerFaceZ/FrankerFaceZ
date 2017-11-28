@@ -18,81 +18,12 @@ export default class Apollo extends Module {
 		this.inject('..web_munch');
 		this.inject('..fine');
 
-		this.registerModifier('FollowedIndex_CurrentUser', `query {
-	currentUser {
-		followedLiveUsers {
-			nodes {
-				profileImageURL(width: 70)
-				stream {
-					createdAt
-				}
-			}
-		}
-		followedHosts {
-			nodes {
-				hosting {
-					profileImageURL(width: 70)
-					stream {
-						createdAt
-						type
-					}
-				}
-			}
-		}
-	}
-}`);
-
-		this.registerModifier('FollowingLive_CurrentUser', `query {
-	currentUser {
-		followedLiveUsers {
-			nodes {
-				profileImageURL(width: 70)
-				stream {
-					createdAt
-				}
-			}
-		}
-	}
-}`);
-
 		this.registerModifier('ViewerCard', `query {
-	targetUser: user {
-		createdAt
-		profileViewCount
-	}
-}`);
-
-		/*this.registerModifier('GamePage_Game', `query {
-	directory {
-		... on Community {
-			streams {
-				edges {
-					node {
-						createdAt
-						type
-						broadcaster {
-							profileImageURL(width: 70)
-						}
-					}
-				}
+			targetUser: user {
+				createdAt
+				profileViewCount
 			}
-		}
-		... on Game {
-			streams {
-				edges {
-					node {
-						createdAt
-						type
-						broadcaster {
-							profileImageURL(width: 70)
-						}
-					}
-				}
-			}
-		}
-	}
-}`);*/
-
+		}`);
 	}
 
 	async onEnable() {
@@ -225,9 +156,9 @@ export default class Apollo extends Module {
 			modifier = [modifier, parsed];
 		}
 
-		const mods = pre ?
-			(this.modifiers[operation] = this.modifiers[operation] || []) :
-			(this.post_modifiers[operation] = this.post_modifiers[operation] || []);
+		const mods = pre
+			? (this.modifiers[operation] = this.modifiers[operation] || [])
+			: (this.post_modifiers[operation] = this.post_modifiers[operation] || []);
 
 		mods.push(modifier);
 	}
@@ -352,12 +283,19 @@ function merge(a, b) {
 	if ( a.selectionSet ) {
 		const s = a.selectionSet.selections,
 			selects = {};
-		for(const sel of b.selectionSet.selections)
-			selects[`${sel.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
+		for(const sel of b.selectionSet.selections) {
+			if (sel.name && sel.name.value) {
+				selects[`${sel.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
+			} else {
+				if (sel.kind === 'InlineFragment') {
+					selects[`${sel.typeCondition.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
+				}
+			}
+		}
 
 		for(let i=0, l = s.length; i < l; i++) {
 			const sel = s[i],
-				name = sel.name.value,
+				name = sel.kind === 'InlineFragment' ? (sel.typeCondition.name ? sel.typeCondition.name.value : null) : (sel.name ? sel.name.value : null),
 				alias = sel.alias ? sel.alias.value : null,
 				key = `${name}:${alias}`,
 				other = selects[key];
