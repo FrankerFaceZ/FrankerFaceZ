@@ -443,16 +443,15 @@ export default class ChatHook extends Module {
 							if ( u )
 								e.emotes = u.emotes;
 
-							if ( original.action ) {
+							if ( original.action )
 								e.message = original.action;
-
-								// Twitch doesn't generate a proper emote tag for echoed back
-								// actions, so we have to regenerate it. Fun. :D
-								if ( u && u.username === i.userLogin )
-									e.emotes = findEmotes(e.message, i.selfEmotes);
-
-							} else
+							else
 								e.message = original.message.body;
+
+							// Twitch doesn't generate a proper emote tag for echoed back
+							// actions, so we have to regenerate it. Fun. :D
+							if ( u && u.username === i.userLogin )
+								e.emotes = findEmotes(e.message, i.selfEmotes);
 						}
 
 						//e.original = original;
@@ -610,7 +609,7 @@ export default class ChatHook extends Module {
 			return;
 
 		if ( props.badgeSets ) {
-			this.chat.updateBadges(props.badgeSets.globalsBySet);
+			this.chat.badges.updateTwitchBadges(props.badgeSets.globalsBySet);
 			this.updateRoomBadges(cont, props.badgeSets.channelsBySet);
 		}
 	}
@@ -637,7 +636,7 @@ export default class ChatHook extends Module {
 			obscl = obs.channelsBySet && obs.channelsBySet.size || 0;
 
 		if ( bsgl !== obsgl )
-			this.chat.updateBadges(bs.globalsBySet);
+			this.chat.badges.updateTwitchBadges(bs.globalsBySet);
 
 		if ( bscl !== obscl )
 			this.updateRoomBadges(cont, bs.channelsBySet);

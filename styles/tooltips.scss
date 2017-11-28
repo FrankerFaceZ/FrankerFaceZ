@@ -80,6 +80,12 @@ body {
 	text-align: center;
 
 	.preview-image {
+		&.ffz-badge {
+			height: 72px;
+			width: 72px;
+			background-repeat: no-repeat;
+		}
+
 		display: block;
 		margin: 3px auto 6px;
 	}

@@ -17,9 +17,6 @@ export default class TooltipProvider extends Module {
 
 		this.should_enable = true;
 
-		this.inject('i18n');
-		this.inject('chat');
-
 		this.types.json = target => {
 			const title = target.dataset.title;
 			return [
@@ -33,34 +30,6 @@ export default class TooltipProvider extends Module {
 				}, target.dataset.data)
 			]
 		}
-
-		this.types.badge = (target, tip) => {
-			const container = target.parentElement.parentElement,
-
-				badge = target.dataset.badge,
-				version = target.dataset.version,
-				room = container.dataset.roomId,
-
-				data = this.chat.getBadge(badge, version, room);
-
-			if ( ! data )
-				return;
-
-			return [
-				this.chat.context.get('tooltip.badge-images') && e('img', {
-					className: 'preview-image',
-					src: data.image4x,
-
-					style: {
-						height: '72px'
-					},
-
-					onLoad: tip.update
-				}),
-
-				data.title
-			]
-		};
 	}
 
 	onEnable() {

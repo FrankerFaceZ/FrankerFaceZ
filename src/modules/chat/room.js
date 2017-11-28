@@ -6,12 +6,10 @@
 
 import User from './user';
 
-import {API_SERVER, IS_WEBKIT} from 'utilities/constants';
+import {API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet} from 'utilities/object';
-
-const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
 
 
 export default class Room {
@@ -270,10 +268,10 @@ export default class Room {
 
 	updateBadges(badges) {
 		this.badges = badges;
-		this.updateBadgeCSS();
+		this.buildBadgeCSS();
 	}
 
-	updateBadgeCSS() {
+	buildBadgeCSS() {
 		if ( ! this.badges )
 			return this.style.delete('badges');
 
@@ -282,7 +280,7 @@ export default class Room {
 
 		for(const [key, versions] of this.badges) {
 			for(const [version, data] of versions) {
-				const rule = `.ffz-badge.badge--${key}.version--${version}`;
+				const rule = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
 				out.push(`[data-room-id="${id}"] ${rule} {
 	background-color: transparent;
@@ -309,17 +307,16 @@ export default class Room {
 
 	updateBitsConfig(config) {
 		this.bitsConfig = config;
-		this.updateBitsCSS();
+		this.buildBitsCSS();
 	}
 
-	updateBitsCSS() {
+	buildBitsCSS() {
 		if ( ! this.bitsConfig )
 			return this.style.delete('bits');
 
 		const animated = this.manager.context.get('chat.bits.animated') ? 'animated' : 'static',
-			is_dark = this.manager.context.get('theme.is-dark'),
-			theme = is_dark ? 'DARK' : 'LIGHT',
-			antitheme = is_dark ? 'LIGHT' : 'DARK',
+			theme = this.manager.context.get('theme.is-dark') ? 'DARK' : 'LIGHT',
+			tt_theme = this.manager.context.get('theme.tooltips-dark') ? 'DARK' : 'LIGHT',
 			out = [];
 
 		for(const key in this.bitsConfig)
@@ -331,7 +328,7 @@ export default class Room {
 
 				for(let i=0; i < l; i++) {
 					const images = tiers[i].images[theme][animated],
-						anti_images = tiers[i].images[antitheme][animated];
+						tt_images = tiers[i].images[tt_theme][animated];
 
 					out.push(`.ffz-cheer[data-prefix="${prefix}"][data-tier="${i}"] {
 	color: ${tiers[i].color};
@@ -343,15 +340,15 @@ export default class Room {
 	);
 }
 .ffz__tooltip .ffz-cheer[data-prefix="${prefix}"][data-tier="${i}"] {
-	background-image: url("${anti_images[1]}");
+	background-image: url("${tt_images[1]}");
 	background-image: ${WEBKIT}image-set(
-		url("${anti_images[1]}") 1x,
-		url("${anti_images[2]}") 2x,
-		url("${anti_images[4]}") 4x
+		url("${tt_images[1]}") 1x,
+		url("${tt_images[2]}") 2x,
+		url("${tt_images[4]}") 4x
 	);
 }
 .ffz-cheer-preview[data-prefix="${prefix}"][data-tier="${i}"] {
-	background-image: url("${anti_images[4]}");
+	background-image: url("${tt_images[4]}");
 }`)
 				}
 			}

@@ -75,34 +75,33 @@ export default class ChatLine extends Module {
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
 
-				const tokens = t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName}),
-					fragment = t.chat.renderTokens(tokens, e);
+				const tokens = msg.ffzTokens = msg.ffzTokens || t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName});
 
 				let cls = 'chat-line__message',
-					out = fragment.length ? [
+					out = tokens.length ? [
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'
 						}, t.chat.formatTime(msg.timestamp)),
 						this.renderModerationIcons(),
 						e('span', {
 							className: 'chat-line__message--badges'
-						}, t.chat.renderBadges(msg, e)),
+						}, t.chat.badges.render(msg, e)),
 						e('a', {
-							className: 'chat-author__display-name',
+							className: 'chat-author__display-name notranslate',
 							style: { color },
 							onClick: this.usernameClickHandler
-						}, user.userDisplayName),
-						user.isIntl && e('span', {
-							className: 'chat-author__intl-login',
-							style: { color },
-							onClick: this.usernameClickHandler
-						}, ` (${user.userLogin})`),
+						}, [
+							user.userDisplayName,
+							user.isIntl && e('span', {
+								className: 'chat-author__intl-login'
+							}, ` (${user.userLogin})`)
+						]),
 						e('span', null, is_action ? ' ' : ': '),
 						show ?
 							e('span', {
 								className:'message',
 								style: is_action ? { color } : null
-							}, fragment)
+							}, t.chat.renderTokens(tokens, e))
 							:
 							e('span', {
 								className: 'chat-line__message--deleted',

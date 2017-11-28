@@ -42,6 +42,13 @@ export default class ThemeEngine extends Module {
 			}
 		});
 
+		this.settings.add('theme.tooltips-dark', {
+			requires: ['theme.is-dark'],
+			process(ctx) {
+				return ! ctx.get('theme.is-dark')
+			}
+		});
+
 		this._style = null;
 	}
 

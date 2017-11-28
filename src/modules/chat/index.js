@@ -4,9 +4,6 @@
 // Chat
 // ============================================================================
 
-import {IS_WEBKIT} from 'utilities/constants';
-const WEBKIT = IS_WEBKIT ? '-webkit-' : '';
-
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {timeout, has} from 'utilities/object';
@@ -242,13 +239,13 @@ export default class Chat extends Module {
 		this.context.on('changed:theme.is-dark', () => {
 			for(const key in this.rooms)
 				if ( this.rooms[key] )
-					this.rooms[key].updateBitsCSS();
+					this.rooms[key].buildBitsCSS();
 		});
 
 		this.context.on('changed:chat.bits.animated', () => {
 			for(const key in this.rooms)
 				if ( this.rooms[key] )
-					this.rooms[key].updateBitsCSS();
+					this.rooms[key].buildBitsCSS();
 		});
 	}
 
@@ -257,53 +254,6 @@ export default class Chat extends Module {
 		for(const key in TOKENIZERS)
 			if ( has(TOKENIZERS, key) )
 				this.addTokenizer(TOKENIZERS[key]);
-	}
-
-
-	getBadge(badge, version, room) {
-		let b;
-		if ( this.room_ids[room] ) {
-			const versions = this.room_ids[room].badges.get(badge);
-			b = versions && versions.get(version);
-		}
-
-		if ( ! b ) {
-			const versions = this.badges.get(badge);
-			b = versions && versions.get(version);
-		}
-
-		return b;
-	}
-
-
-
-	updateBadges(badges) {
-		this.badges = badges;
-		this.updateBadgeCSS();
-	}
-
-
-	updateBadgeCSS() {
-		if ( ! this.badges )
-			this.style.delete('badges');
-
-		const out = [];
-		for(const [key, versions] of this.badges)
-			for(const [version, data] of versions) {
-				out.push(`.ffz-badge.badge--${key}.version--${version} {
-	background-color: transparent;
-	filter: none;
-	${WEBKIT}mask-image: none;
-	background-image: url("${data.image1x}");
-	background-image: ${WEBKIT}image-set(
-		url("${data.image1x}") 1x,
-		url("${data.image2x}") 2x,
-		url("${data.image4x}") 4x
-	);
-}`)
-			}
-
-		this.style.set('badges', out.join('\n'));
 	}
 
 
@@ -404,6 +354,27 @@ export default class Chat extends Module {
 	}
 
 
+	* iterateRooms() {
+		const visited = new Set;
+
+		for(const id in this.room_ids)
+			if ( has(this.room_ids, id) ) {
+				const room = this.room_ids[id];
+				if ( room ) {
+					visited.add(room);
+					yield room;
+				}
+			}
+
+		for(const login in this.rooms)
+			if ( has(this.rooms, login) ) {
+				const room = this.rooms[login];
+				if ( room && ! visited.has(room) )
+					yield room;
+			}
+	}
+
+
 	formatTime(time) {
 		if (!( time instanceof Date ))
 			time = new Date(time);
@@ -464,25 +435,6 @@ export default class Chat extends Module {
 			tokens = tokenizer.process.call(this, tokens, msg, user);
 
 		return tokens;
-	}
-
-
-	renderBadges(msg, e) { // eslint-disable-line class-methods-use-this
-		const out = [],
-			badges = msg.badges || {};
-
-		for(const key in badges)
-			if ( has(badges, key) ) {
-				const version = badges[key];
-				out.push(e('span', {
-					className: `ffz-tooltip ffz-badge badge--${key} version--${version}`,
-					'data-tooltip-type': 'badge',
-					'data-badge': key,
-					'data-version': version
-				}))
-			}
-
-		return out;
 	}
 
 

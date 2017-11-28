@@ -45,7 +45,7 @@ export default class Scroller extends Module {
 	}
 
 	onEnable() {
-		this.i18n.on('i18n:update', () => {
+		this.on('i18n:update', () => {
 			for(const inst of this.ChatScroller.instances)
 				inst.ffzUpdateText();
 		});

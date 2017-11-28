@@ -4,24 +4,409 @@
 // Badge Handling
 // ============================================================================
 
+import {API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+
+import {createElement as e, ManagedStyle} from 'utilities/dom';
+import {has} from 'utilities/object';
 import Module from 'utilities/module';
 
 export const CSS_BADGES = {
-	staff: { 1: { color: '#200f33', use_svg: true } },
-	admin: { 1: { color: '#faaf19', use_svg: true  } },
-	global_mod: { 1: { color: '#0c6f20', use_svg: true } },
-	broadcaster: { 1: { color: '#e71818', use_svg: true } },
-	moderator: { 1: { color: '#34ae0a', use_svg: true } },
+	staff: { 1: { color: '#200f33', svg: true, trans: { color: '#6441a5' } } },
+	admin: { 1: { color: '#faaf19', svg: true  } },
+	global_mod: { 1: { color: '#0c6f20', svg: true } },
+	broadcaster: { 1: { color: '#e71818', svg: true } },
+	moderator: { 1: { color: '#34ae0a', svg: true } },
 	twitchbot: { 1: { color: '#34ae0a' } },
-	partner: { 1: { color: 'transparent', has_trans: true, trans_color: '#6441a5' } },
+	partner: { 1: { color: 'transparent', trans: { image: true, color: '#6441a5' } } },
 
-	turbo: { 1: { color: '#6441a5', use_svg: true } },
+	turbo: { 1: { color: '#6441a5', svg: true } },
 	premium: { 1: { color: '#009cdc' } },
 
 	subscriber: { 0: { color: '#6441a4' }, 1: { color: '#6441a4' }},
 }
 
 
-export default class Badges extends Module {
+const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
+	BASE_IMAGE = 'https://cdn.frankerfacez.com/badges/twitch/',
+	CSS_TEMPLATES = {
+		0: data => `background:${data.image} ${data.color};${data.svg ? `background-size:${data.scale*18}px;` : `background-image:${data.image_set};`}${NO_REPEAT}`,
+		1: data => `${CSS_TEMPLATES[0](data)}border-radius:${data.scale*2}px;`,
+		2: data => `${CSS_TEMPLATES[0](data)}border-radius:${data.scale*9}px;background-size:${data.scale*16}px;`,
+		3: data => `background:${data.color};border-radius:${data.scale*9}px;`,
+		4: data => `${CSS_TEMPLATES[3](data)}height:${data.scale*10}px;min-width:${data.scale*10}px;`,
+		5: data => `background:${data.image};${data.svg ? `background-size:${data.scale*18}px;` : `background-image:${data.image_set};`}${NO_REPEAT}`,
+		6: data => `background:linear-gradient(${data.color},${data.color});${WEBKIT}mask-image:${data.image};${data.svg ? `${WEBKIT}mask-size:${data.scale*18}px ${data.scale*18}px;` : `${WEBKIT}mask-image:${data.image_set};`}`
+	};
 
+
+export function generateBadgeCSS(badge, version, data, style, is_dark, scale = 1) {
+	let color = data.color || 'transparent',
+		base_image = data.image || `${BASE_IMAGE}${badge}${data.svg ? '.svg' : `/${version}/`}`,
+		trans = false,
+		invert = false,
+		svg, image, image_set;
+
+	if ( style > 4 ) {
+		const td = data.trans || {};
+		color = td.color || color;
+
+		if ( td.image ) {
+			trans = true;
+			if ( td.image !== true )
+				base_image = td.image;
+
+		}
+
+		if ( has(td, 'invert') )
+			invert = td.invert && ! is_dark;
+		else
+			invert = style === 5 && ! is_dark;
+	}
+
+	if ( style === 3 || style === 4 ) {
+		if ( color === 'transparent' && data.trans )
+			color = data.trans.color || color;
+
+	} else {
+		if ( style < 5 && color === 'transparent' )
+			style = 0;
+
+		svg = base_image.endsWith('.svg');
+		image = `url("${svg ? base_image : `${base_image}${scale}${trans ? '_trans' : ''}.png`}")`;
+
+		if ( svg && scale < 4 ) {
+			if ( scale === 1 )
+				image_set = `${WEBKIT}image-set(${image} 1x, url("${base_image}2${trans ? '_trans' : ''}.png") 2x, url("${base_image}4${trans ? '_trans' : ''}.png") 4x)`;
+
+			else if ( scale === 2 )
+				image_set = `${WEBKIT}image-set(${image} 1x, url("${base_image}4${trans ? '_trans' : ''}.png") 2x)`;
+
+		} else
+			image_set = svg;
+	}
+
+	return `${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
+		scale,
+		color,
+		image,
+		image_set,
+		svg
+	})}`;
+}
+
+
+export default class Badges extends Module {
+	constructor(...args) {
+		super(...args);
+
+		this.inject('i18n');
+		this.inject('settings');
+		this.inject('socket');
+		this.inject('tooltips');
+
+		this.style = new ManagedStyle('badges');
+		this.badges = {};
+
+		this.twitch_badges = new Map;
+
+		this.settings.add('chat.badges.style', {
+			default: 0,
+			ui: {
+				path: 'Chat > Badges >> Appearance',
+				title: 'Style',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Default'},
+					{value: 1, title: 'Rounded'},
+					{value: 2, title: 'Circular'},
+					{value: 3, title: 'Circular (Color Only)'},
+					{value: 4, title: 'Circular (Color Only, Small)'},
+					{value: 5, title: 'Transparent'},
+					{value: 6, title: 'Transparent (Colored)'}
+				]
+			}
+		});
+	}
+
+
+	onEnable() {
+		this.parent.context.on('changed:chat.badges.style', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:theme.is-dark', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:theme.tooltips-dark', this.rebuildAllCSS, this);
+
+		this.rebuildAllCSS();
+		this.loadGlobalBadges();
+
+		this.tooltips.types.badge = (target, tip) => {
+			const container = target.parentElement.parentElement,
+				provider = target.dataset.provider,
+				badge = target.dataset.badge,
+				version = target.dataset.version,
+				room_id = container.dataset.roomId,
+				room_login = container.dataset.room;
+
+			let preview, title;
+
+			if ( provider === 'twitch' ) {
+				const data = this.getTwitchBadge(badge, version, room_id, room_login);
+				if ( ! data )
+					return;
+
+				preview = data.image4x;
+				title = data.title;
+
+			} else if ( provider === 'ffz' ) {
+				const data = this.badges[badge];
+				if ( ! data )
+					return;
+
+				preview = e('span', {
+					className: 'preview-image ffz-badge',
+					style: {
+						height: '72px',
+						width: '72px',
+						backgroundColor: data.color,
+						backgroundImage: `url("${data.urls[4]}")`
+					}
+				})
+
+				title = this.i18n.t(`badges.${data.name}`, data.title);
+
+			} else
+				title = `Unknown Badge`;
+
+			if ( preview )
+				if ( this.parent.context.get('tooltip.badge-images') ) {
+					if ( typeof preview === 'string' )
+						preview = e('img', {
+							className: 'preview-image ffz-badge',
+							src: preview,
+						});
+
+				} else
+					preview = null;
+
+			return [
+				preview,
+				title
+			];
+		};
+	}
+
+
+	render(msg, e) { // eslint-disable-line class-methods-use-this
+		const out = [],
+			twitch_badges = msg.badges || {};
+
+			/*user = msg.user || {},
+			user_id = user.userID,
+			user_login = user.userLogin,
+			room_id = msg.roomID,
+			room_login = msg.roomLogin,
+
+			badges = this.getBadges(user_id, user_login, room_id, room_login);*/
+
+		for(const badge_id in twitch_badges)
+			if ( has(twitch_badges, badge_id) ) {
+				const version = twitch_badges[badge_id];
+				out.push(e('span', {
+					className: 'ffz-tooltip ffz-badge',
+					'data-tooltip-type': 'badge',
+					'data-provider': 'twitch',
+					'data-badge': badge_id,
+					'data-version': version
+				}));
+			}
+
+		/*for(const badge of badges)
+			if ( badge && badge.id ) {
+				const full_badge = this.badges[badge.id],
+					style = {},
+					props = {
+						className: 'ffz-tooltip ffz-badge',
+						'data-tooltip-type': 'badge',
+						'data-provider': 'ffz',
+						'data-badge': badge.id,
+						style
+					};
+
+				if ( full_badge.image )
+					style.backgroundImage = `url("${full_badge.image}")`;
+
+				if ( full_badge.color )
+					style.backgroundColor = full_badge.color;
+
+				out.push(e('span', props));
+			}*/
+
+		return out;
+	}
+
+
+	rebuildAllCSS() {
+		for(const room of this.parent.iterateRooms())
+			room.buildBadgeCSS();
+
+		this.buildTwitchBadgeCSS();
+		this.buildTwitchCSSBadgeCSS();
+	}
+
+
+	// ========================================================================
+	// Extension Badges
+	// ========================================================================
+
+	getBadges(user_id, user_login, room_id, room_login) {
+		const room = this.parent.getRoom(room_id, room_login, true),
+			global_user = this.parent.getUser(user_id, user_login, true),
+			room_user = room && room.getUser(user_id, user_login, true);
+
+		return (global_user ? global_user.badges._cache : []).concat(
+			room_user ? room_user.badges._cache : []);
+	}
+
+
+	async loadGlobalBadges(tries = 0) {
+		let response, data;
+		try {
+			response = await fetch(`${API_SERVER}/v1/badges`);
+		} catch(err) {
+			tries++;
+			if ( tries < 10 )
+				return setTimeout(() => this.loadGlobalBadges(tries), 500 * tries);
+
+			this.log.error('Error loading global badge data.', err);
+			return false;
+		}
+
+		if ( ! response.ok )
+			return false;
+
+		try {
+			data = await response.json();
+		} catch(err) {
+			this.log.error('Error parsing global badge data.', err);
+			return false;
+		}
+
+		let badges = 0, users = 0;
+
+		if ( data.badges )
+			for(const badge of data.badges)
+				if ( badge && badge.id ) {
+					this.loadBadgeData(badge.id, badge);
+					badges++;
+				}
+
+		if ( data.users )
+			for(const badge_id in data.users)
+				if ( has(data.users, badge_id) ) {
+					const badge = this.badges[badge_id];
+					let c = 0;
+					for(const user_login of data.users[badge_id]) {
+						const user = this.parent.getUser(undefined, user_login);
+						if ( user.addBadge('ffz-global', badge_id) ) {
+							c++;
+							users++;
+						}
+					}
+
+					if ( c > 0 )
+						this.log.info(`Added "${badge ? badge.name : `#${badge_id}`}" to ${c} users.`);
+				}
+
+		this.log.info(`Loaded ${badges} badges and assigned them to ${users} users.`);
+	}
+
+
+	loadBadgeData(badge_id, data) {
+		this.badges[badge_id] = data;
+
+		if ( data.replaces && ! data.replaces_type ) {
+			data.replaces_type = data.replaces;
+			data.replaces = true;
+		}
+
+		if ( data.name === 'developer' || data.name === 'supporter' )
+			data.click_url = 'https://www.frankerfacez.com/donate';
+	}
+
+
+	// ========================================================================
+	// Twitch Badges
+	// ========================================================================
+
+	getTwitchBadge(badge, version, room_id, room_login) {
+		const room = this.parent.getRoom(room_id, room_login, true);
+		let b;
+
+		if ( room ) {
+			const versions = room.badges.get(badge);
+			b = versions && versions.get(version);
+		}
+
+		if ( ! b ) {
+			const versions = this.twitch_badges.get(badge);
+			b = version && versions.get(version);
+		}
+
+		return b;
+	}
+
+	updateTwitchBadges(badges) {
+		this.twitch_badges = badges;
+		this.buildTwitchBadgeCSS();
+	}
+
+
+	buildTwitchCSSBadgeCSS() {
+		const style = this.parent.context.get('chat.badges.style'),
+			is_dark = this.parent.context.get('theme.is-dark');
+
+		const out = [];
+		for(const key in CSS_BADGES)
+			if ( has(CSS_BADGES, key) ) {
+				const data = CSS_BADGES[key];
+				for(const version in data)
+					if ( has(data, version) ) {
+						const d = data[version],
+							selector = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
+
+						out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark)}}`);
+					}
+			}
+
+		this.style.set('css-badges', out.join('\n'));
+	}
+
+
+	buildTwitchBadgeCSS() {
+		if ( ! this.twitch_badges )
+			this.style.delete('twitch-badges');
+
+		const out = [];
+		for(const [key, versions] of this.twitch_badges) {
+			if ( has(CSS_BADGES, key) )
+				continue;
+
+			for(const [version, data] of versions) {
+				out.push(`.ffz-badge[data-badge="${key}"][data-version="${version}"] {
+	background-color: transparent;
+	filter: none;
+	${WEBKIT}mask-image: none;
+	background-image: url("${data.image1x}");
+	background-image: ${WEBKIT}image-set(
+		url("${data.image1x}") 1x,
+		url("${data.image2x}") 2x,
+		url("${data.image4x}") 4x
+	);
+}`)
+			}
+		}
+
+		if ( out.length )
+			this.style.set('twitch-badges', out.join('\n'));
+		else
+			this.style.delete('twitch-badges');
+	}
 }

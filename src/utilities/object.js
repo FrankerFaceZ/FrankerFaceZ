@@ -170,6 +170,9 @@ export function maybe_call(fn, ctx, ...args) {
 const SPLIT_REGEX = /[^\uD800-\uDFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g;
 
 export function split_chars(str) {
+	if ( str === '' )
+		return [];
+
 	return str.match(SPLIT_REGEX);
 }
 

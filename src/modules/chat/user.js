@@ -18,6 +18,7 @@ export default class User {
 			(room || manager).user_ids[id] = this;
 
 		this.emote_sets = new SourcedSet;
+		this.badges = new SourcedSet;
 	}
 
 	destroy() {
@@ -60,17 +61,59 @@ export default class User {
 
 
 	// ========================================================================
+	// Add Badges
+	// ========================================================================
+
+	addBadge(provider, badge_id, data) {
+		if ( data )
+			data.id = badge_id;
+		else
+			data = {id: badge_id};
+
+		if ( this.badges.has(provider) )
+			for(const old_b of this.badges.get(provider))
+				if ( old_b.id == badge_id ) {
+					Object.assign(old_b, data);
+					return false;
+				}
+
+		this.badges.push(provider, data);
+		//this.manager.badges.refBadge(badge_id);
+		return true;
+	}
+
+
+	getBadge(badge_id) {
+		for(const badge of this.badges._cache)
+			if ( badge.id ==  badge_id )
+				return badge;
+	}
+
+
+	removeBadge(provider, badge_id) {
+		if ( ! this.badges.has(provider) )
+			return false;
+
+		for(const old_b of this.badges.get(provider))
+			if ( old_b.id == badge_id ) {
+				this.badges.remove(provider, old_b);
+				//this.manager.badges.unrefBadge(badge_id);
+				return true;
+			}
+	}
+
+
+
+	// ========================================================================
 	// Emote Sets
 	// ========================================================================
 
-	addSet(provider, set_id, data) {
+	addSet(provider, set_id) {
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
 			this.manager.emotes.refSet(set_id);
+			return true;
 		}
-
-		if ( data )
-			this.manager.emotes.loadSetData(set_id, data);
 	}
 
 	removeSet(provider, set_id) {
