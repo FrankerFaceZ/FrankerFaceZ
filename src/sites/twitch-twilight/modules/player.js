@@ -97,8 +97,8 @@ export default class Player extends Module {
 		this.settings.add('player.home.autoplay', {
 			default: true,
 			ui: {
-				path: 'Channel > Player >> Homepage',
-				title: 'Autoplay featured broadcasters on the homepage.',
+				path: 'Channel > Player >> Front Page',
+				title: 'Auto-play featured broadcasters on the front page.',
 				component: 'setting-check-box'
 			},
 		});
