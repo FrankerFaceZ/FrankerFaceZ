@@ -64,7 +64,7 @@ export default class Community extends SiteModule {
 		for (let i = 0; i < edges.length; i++) {
 			const edge = edges[i];
 			const node = edge.node;
-			
+
 			const s = node.viewersCount = new Number(node.viewersCount || 0);
 			s.profileImageURL = node.broadcaster.profileImageURL;
 			s.createdAt = node.createdAt;
@@ -135,7 +135,7 @@ export default class Community extends SiteModule {
 			const up_since = new Date(inst.props.streamNode.viewersCount.createdAt);
 			const uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
 			const uptimeText = duration_to_string(uptime, false, false, false, this.settings.get('directory.following.uptime') === 1);
-	
+
 			if (uptime > 0) {
 				if (inst.uptimeElement === undefined) {
 					inst.uptimeElementSpan = e('span', 'tw-stat__value ffz-uptime', `${uptimeText}`);
@@ -148,7 +148,7 @@ export default class Community extends SiteModule {
 						),
 						inst.uptimeElementSpan
 					]);
-	
+
 					if (card.querySelector('.ffz-uptime') === null) card.appendChild(inst.uptimeElement);
 				} else {
 					inst.uptimeElementSpan.textContent = `${uptimeText}`;
@@ -166,11 +166,11 @@ export default class Community extends SiteModule {
 		if (container === null || card === null) return;
 
 		if (!inst.props.streamNode.viewersCount.createdAt) return;
-		
+
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
 		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('hide');
-		
+
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
 		if (ffzChannelData !== null) ffzChannelData.remove();
 
@@ -192,7 +192,7 @@ export default class Community extends SiteModule {
 					onclick: event => {
 						event.preventDefault();
 						event.stopPropagation();
-		
+
 						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
 					}
 				}, e('img', {
@@ -202,7 +202,7 @@ export default class Community extends SiteModule {
 				}));
 
 				const cardDivParent = cardDiv.parentElement;
-				
+
 				if (cardDivParent.querySelector('.ffz-channel-data') === null) {
 					cardDiv.classList.add('hide');
 
@@ -218,7 +218,7 @@ export default class Community extends SiteModule {
 					onclick: event => {
 						event.preventDefault();
 						event.stopPropagation();
-		
+
 						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
 					}
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
@@ -241,10 +241,10 @@ export default class Community extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		// We can't get the buttons through querySelector('button ...') so this has to do for now...
 		const buttons = container && container.querySelector && container.querySelector('div > div.align-items-center');
-		
+
 		const ffzButtons = buttons.querySelector('.ffz-buttons');
 		if (ffzButtons !== null) ffzButtons.remove();
-		
+
 		if (buttons.querySelector('.ffz-buttons') === null) {
 			// Block / Unblock Games
 			const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];

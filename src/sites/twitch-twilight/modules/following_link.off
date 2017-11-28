@@ -1,7 +1,7 @@
 'use strict';
 
 // ============================================================================
-// Following Button Modification 
+// Following Button Modification
 // ============================================================================
 
 import {SiteModule} from 'utilities/module';
@@ -16,7 +16,6 @@ export default class FollowingText extends SiteModule {
 
 		this.should_enable = true;
 
-		// this.inject('site');
 		this.inject('settings');
 		this.inject('site.router');
 		this.inject('site.apollo');
@@ -71,12 +70,12 @@ export default class FollowingText extends SiteModule {
 
 			for (let i = 0; i < nodes.length; i++) {
 				const node = nodes[i];
-	
+
 				if (blockedGames.includes(node.stream.game.name)) {
 					filtered += 1;
 					continue;
 				}
-	
+
 				c += 1;
 				if (c > max_lines) {
 					const div = e('div', {
@@ -89,7 +88,7 @@ export default class FollowingText extends SiteModule {
 					innerContent.push(div);
 					break;
 				}
-	
+
 				const up_since = new Date(node.stream.createdAt);
 				const uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
 				const uptimeText = duration_to_string(uptime, false, false, false, true);
@@ -100,7 +99,7 @@ export default class FollowingText extends SiteModule {
 				}, [
 					e('div', {
 						className: 'top-stream-info',
-						style: 'padding-bottom: 16px;'	
+						style: 'padding-bottom: 16px;'
 					}, [
 						// Username
 						e('a', {
@@ -111,7 +110,7 @@ export default class FollowingText extends SiteModule {
 							onclick: event => {
 								event.preventDefault();
 								event.stopPropagation();
-				
+
 								this.router.navigate('user', { userName: node.login });
 							}
 						}),
@@ -194,7 +193,7 @@ export default class FollowingText extends SiteModule {
 				onclick: event => {
 					event.preventDefault();
 					event.stopPropagation();
-	
+
 					this.router.navigate('dir-following');
 				}
 			}),
@@ -205,7 +204,7 @@ export default class FollowingText extends SiteModule {
 			}),
 			tipDiv
 		]);
-		
+
 		topNavContainer.insertBefore(newFollowing, followingText);
 		followingText.classList.add('hide');
 

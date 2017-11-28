@@ -160,7 +160,7 @@ export default class Following extends SiteModule {
 				}
 			}
 		}`);
-		
+
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', `query {
 			currentUser {
 				followedHosts {
@@ -223,7 +223,7 @@ export default class Following extends SiteModule {
 
 	modifyLiveHosts(res) { // eslint-disable-line class-methods-use-this
 		if (!this.isRouteAcceptable()) return res;
-		
+
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
@@ -295,8 +295,7 @@ export default class Following extends SiteModule {
 		});
 
 		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
-
-		this.ChannelCard.on('unmount', inst => this.updateUptime(inst), this);
+		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
 
 		document.body.addEventListener('click', this.destroyHostMenu.bind(this));
 	}
@@ -306,61 +305,6 @@ export default class Following extends SiteModule {
 			this.hostMenuPopper && this.hostMenuPopper.destroy();
 			this.hostMenu && this.hostMenu.remove();
 			this.hostMenuPopper = this.hostMenu = undefined;
-		}
-	}
-
-	updateUptime(inst) {
-		const container = this.fine.getHostNode(inst);
-		const card = container && container.querySelector && container.querySelector('.tw-card .tw-aspect > div');
-
-		// if (container === null || card === null) {
-		// 	if (inst.updateTimer !== undefined) {
-		// 		clearInterval(inst.updateTimer);
-		// 		inst.updateTimer = undefined;
-		// 		return;
-		// 	}
-		// }
-
-		if (this.settings.get('directory.following.uptime') === 0) {
-			if (inst.updateTimer !== undefined) {
-				clearInterval(inst.updateTimer);
-				inst.updateTimer = undefined;
-			}
-
-			if (inst.uptimeElement !== undefined) {
-				inst.uptimeElement.remove();
-				inst.uptimeElementSpan = inst.uptimeElement = undefined;
-			}
-		} else {
-			if (inst.updateTimer === undefined) {
-				inst.updateTimer = setInterval(
-					this.updateUptime.bind(this, inst),
-					1000
-				);
-			}
-
-			const up_since = new Date(inst.props.viewerCount.createdAt);
-			const uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
-			const uptimeText = duration_to_string(uptime, false, false, false, this.settings.get('directory.following.uptime') === 1);
-	
-			if (uptime > 0) {
-				if (inst.uptimeElement === undefined) {
-					inst.uptimeElementSpan = e('span', 'tw-stat__value ffz-uptime', `${uptimeText}`);
-					inst.uptimeElement = e('div', {
-						className: 'c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
-						style: 'padding-left: 4px; padding-right: 4px;'
-					}, [
-						e('span', 'tw-stat__icon',
-							e('figure', 'ffz-i-clock')
-						),
-						inst.uptimeElementSpan
-					]);
-	
-					if (card.querySelector('.ffz-uptime') === null) card.appendChild(inst.uptimeElement);
-				} else {
-					inst.uptimeElementSpan.textContent = `${uptimeText}`;
-				}
-			}
 		}
 	}
 
@@ -393,7 +337,7 @@ export default class Following extends SiteModule {
 				onclick: event => {
 					event.preventDefault();
 					event.stopPropagation();
-	
+
 					this.router.navigate('user', { userName: inst.props.linkTo.pathname.substring(1)});
 				}
 			}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
@@ -483,27 +427,29 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		this.updateUptime(inst);
+		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
-		const container = this.fine.getHostNode(inst);
-		const card = container && container.querySelector && container.querySelector('.tw-card');
-		
-		if (container === null || card === null) return;
+		const container = this.fine.getHostNode(inst),
+			card = container && container.querySelector && container.querySelector('.tw-card');
+
+		if ( container === null || card === null )
+			return;
 
 		const channelCardTitle = card.querySelector('.live-channel-card__title');
 
-		if (channelCardTitle === null) return;
-		
+		if ( channelCardTitle === null )
+			return;
+
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
 		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('hide');
-		
+
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
 		if (ffzChannelData !== null) ffzChannelData.remove();
-		
+
 		const channelAvatar = card.querySelector('.channel-avatar');
 		if (channelAvatar !== null) channelAvatar.remove();
-		
+
 		if (inst.props.viewerCount.profileImageURL) {
 			const hosting = inst.props.viewerCount.hostData;
 			let channel, displayName;
@@ -511,13 +457,13 @@ export default class Following extends SiteModule {
 				channel = inst.props.viewerCount.hostData.channel;
 				displayName = inst.props.viewerCount.hostData.displayName;
 			}
-		
+
 			const avatarSetting = this.settings.get('directory.following.show-channel-avatar');
 			const cardDiv = card.querySelector('.tw-card-body');
 			const modifiedDiv = e('div', {
 				innerHTML: cardDiv.innerHTML
 			});
-			
+
 			let avatarDiv;
 			if (avatarSetting === 1) {
 				avatarDiv = e('a', {
@@ -536,7 +482,7 @@ export default class Following extends SiteModule {
 					onclick: event => {
 						event.preventDefault();
 						event.stopPropagation();
-		
+
 						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
 					}
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
@@ -569,16 +515,16 @@ export default class Following extends SiteModule {
 				if (this.settings.get('directory.following.group-hosts')) {
 					const titleLink = card.querySelector('.ffz-channel-data a[data-a-target="live-channel-card-title-link"]');
 					const thumbnailLink = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]');
-					
+
 					if (hostObj.channels.length > 1) {
 						const textContent = `${hostObj.channels.length} hosting ${displayName}`;
 						channelCardTitle.textContent
 							= channelCardTitle.title
 							= textContent;
-	
+
 						if (thumbnailLink !== null) thumbnailLink.title = textContent;
 					}
-					
+
 					if (titleLink !== null) titleLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
 					if (thumbnailLink !== null) thumbnailLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
 				}
