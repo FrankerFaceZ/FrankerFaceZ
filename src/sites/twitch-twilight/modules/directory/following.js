@@ -177,14 +177,13 @@ export default class Following extends SiteModule {
 		}`);
 
 		this.ChannelCard = this.fine.define(
-			'channel-card',
+			'following-channel-card',
 			n => n.renderGameBoxArt && n.renderContentType
 		);
 
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', res => {
-			res = this.modifyLiveUsers(res);
-			res = this.modifyLiveHosts(res);
-			return res;
+			this.modifyLiveUsers(res);
+			this.modifyLiveHosts(res);
 		}, false);
 
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);

@@ -6,7 +6,6 @@
 
 import {SiteModule} from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
-import {duration_to_string} from 'utilities/time';
 
 export default class Game extends SiteModule {
 	constructor(...args) {
@@ -15,7 +14,6 @@ export default class Game extends SiteModule {
 		this.inject('site.fine');
 		this.inject('site.router');
 		this.inject('site.apollo');
-		this.inject('site.css_tweaks');
 
 		this.inject('settings');
 
@@ -41,20 +39,6 @@ export default class Game extends SiteModule {
 				}
 			}
 		}`);
-
-		this.ChannelCard = this.fine.define(
-			'game-channel-card',
-			n => n.props && n.props.streamNode
-		);
-
-		this.apollo.registerModifier('GamePage_Game', res => this.router.current.name === 'dir-game-index' && this.parent.modifyStreams(res), false);
-
-		this.on('settings:changed:directory.following.show-channel-avatar', value => {
-			this.css_tweaks.toggleHide('profile-hover-game', value === 2);
-			this.ChannelCard.forceUpdate();
-		});
-
-		this.on('settings:changed:directory.following.uptime', () => this.ChannelCard.forceUpdate());
 	}
 
 	onEnable() {
@@ -64,7 +48,7 @@ export default class Game extends SiteModule {
 			}
 		});
 
-		this.ChannelCard.ready((cls, instances) => {
+		this.parent.ChannelCard.ready((cls, instances) => {
 			if (this.router.current.name === 'dir-game-index') {
 				this.apollo.ensureQuery(
 					'GamePage_Game',
@@ -75,11 +59,8 @@ export default class Game extends SiteModule {
 			}
 		});
 
-		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
-
-		this.css_tweaks.toggleHide('profile-hover-game', this.settings.get('directory.following.show-channel-avatar') === 2);
+		this.parent.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
+		this.parent.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
 	}
 
 	updateChannelCard(inst) {

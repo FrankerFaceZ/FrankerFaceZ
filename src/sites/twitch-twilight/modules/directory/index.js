@@ -19,14 +19,36 @@ export default class Directory extends SiteModule {
 
 		this.should_enable = true;
 
-		this.inject('i18n');
-		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.router');
+		this.inject('site.apollo');
+		this.inject('site.css_tweaks');
+
+		this.inject('settings');
 
 		this.inject(Following);
 		this.inject(Game);
 		this.inject(Community);
+
+		this.apollo.registerModifier('GamePage_Game', res => this.modifyStreams(res), false);
+
+		this.ChannelCard = this.fine.define(
+			'channel-card',
+			n => n.props && n.props.streamNode
+		);
+
+		this.on('settings:changed:directory.following.show-channel-avatar', value => {
+			this.css_tweaks.toggleHide('profile-hover-game', value === 2);
+			this.ChannelCard.forceUpdate();
+		});
+
+		this.on('settings:changed:directory.following.uptime', () => this.ChannelCard.forceUpdate());
+	}
+
+
+	onEnable() {
+		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
+		this.css_tweaks.toggleHide('profile-hover-game', this.settings.get('directory.following.show-channel-avatar') === 2);
 	}
 
 
