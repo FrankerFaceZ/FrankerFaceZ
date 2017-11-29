@@ -415,8 +415,9 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		if (this.isRouteAcceptable())
-			this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
+		if (!this.isRouteAcceptable()) return;
+		
+		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
