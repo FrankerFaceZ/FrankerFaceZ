@@ -2,11 +2,17 @@
 	top: 1rem !important;
 
 	.top-nav {
+		z-index: 9999;
+
 		top: -4rem !important;
 		transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 
 		&:hover {
 			top: 0 !important;
 		}
+	}
+
+	.channel-header {
+		top: -4rem;
 	}
 }

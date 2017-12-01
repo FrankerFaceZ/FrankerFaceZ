@@ -4,7 +4,7 @@ body .whispers--theatre-mode.whispers--right-column-expanded {
 
 body .persistent-player--theatre,
 body .channel-page__video-player--theatre-mode {
-	width: calc(100% - var(--ffz-chat-width));
+	width: calc(100% - var(--ffz-chat-width)) !important;
 }
 
 body .video-watch-page__right-column,

@@ -1,3 +1,7 @@
+.thread-message__message,
+.thread-message__timestamp,
+.thread-message__warning,
+
 .chat-line__message,
 .chat-line__moderation,
 .chat-line__status,
@@ -15,5 +19,15 @@
 
 	&:first-child {
 		border-top-color: transparent !important;
+	}
+}
+
+.thread-message__message,
+.thread-message__timestamp,
+.thread-message__warning {
+	padding-top: 0 !important;
+
+	& > .pd-y-05 {
+		padding-top: calc(.5rem - 1px) !important;
 	}
 }
