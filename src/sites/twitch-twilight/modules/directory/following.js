@@ -7,7 +7,6 @@
 import {SiteModule} from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 import {get} from 'utilities/object';
-import {duration_to_string} from 'utilities/time';
 
 import Popper from 'popper.js';
 
@@ -178,29 +177,25 @@ export default class Following extends SiteModule {
 		}`);
 
 		this.ChannelCard = this.fine.define(
-			'channel-card',
+			'following-channel-card',
 			n => n.renderGameBoxArt && n.renderContentType
 		);
 
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', res => {
-			res = this.modifyLiveUsers(res);
-			res = this.modifyLiveHosts(res);
-			return res;
+			this.modifyLiveUsers(res);
+			this.modifyLiveHosts(res);
 		}, false);
 
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
-
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
 	}
 
 	isRouteAcceptable() {
-		return this.router.current.name === 'dir-following-index'
+		return this.router.current.name === 'dir-following'
 			|| this.router.current.name === 'dir-category' && this.router.match[1] === 'following';
 	}
 
-	modifyLiveUsers(res) { // eslint-disable-line class-methods-use-this
-		if (!this.isRouteAcceptable()) return res;
-
+	modifyLiveUsers(res) {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
@@ -221,9 +216,7 @@ export default class Following extends SiteModule {
 		return res;
 	}
 
-	modifyLiveHosts(res) { // eslint-disable-line class-methods-use-this
-		if (!this.isRouteAcceptable()) return res;
-
+	modifyLiveHosts(res) {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
@@ -266,8 +259,6 @@ export default class Following extends SiteModule {
 		this.css_tweaks.toggleHide('boxart-hide', this.settings.get('directory.following.hide-boxart') === 2);
 		this.css_tweaks.toggleHide('profile-hover-following', this.settings.get('directory.following.show-channel-avatar') === 2);
 
-		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
-
 		this.ChannelCard.ready((cls, instances) => {
 			if (this.router && this.router.match) {
 				if (this.router.match[1] === 'following') {
@@ -294,6 +285,7 @@ export default class Following extends SiteModule {
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
 
+		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
 		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
 		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
 
@@ -301,7 +293,7 @@ export default class Following extends SiteModule {
 	}
 
 	destroyHostMenu(event) {
-		if (event.target.closest('.ffz-channel-selector-outer') === null && Date.now() > this.hostMenuBuffer) {
+		if (!event || event && event.target && event.target.closest('.ffz-channel-selector-outer') === null && Date.now() > this.hostMenuBuffer) {
 			this.hostMenuPopper && this.hostMenuPopper.destroy();
 			this.hostMenu && this.hostMenu.remove();
 			this.hostMenuPopper = this.hostMenu = undefined;
@@ -332,14 +324,9 @@ export default class Following extends SiteModule {
 		simplebarContentChildren.push(
 			e('a', {
 				className: 'tw-interactable',
-				href: inst.props.linkTo.pathname,
+				href: `/${inst.props.viewerCount.hostData.channel}`,
 				style: 'padding-top: 0.1rem; padding-bottom: 0.1rem;',
-				onclick: event => {
-					event.preventDefault();
-					event.stopPropagation();
-
-					this.router.navigate('user', { userName: inst.props.linkTo.pathname.substring(1)});
-				}
+				onclick: event => this.parent.hijackUserClick(event, inst.props.viewerCount.hostData.channel, this.destroyHostMenu.bind(this))
 			}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
 				[
 					e('div', {
@@ -374,6 +361,7 @@ export default class Following extends SiteModule {
 					className: 'tw-interactable',
 					href: `/${node.login}`,
 					style: 'padding-top: 0.1rem; padding-bottom: 0.1rem;',
+					onclick: event => this.parent.hijackUserClick(event, node.login, this.destroyHostMenu.bind(this))
 				}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
 					[
 						e('div', {
@@ -427,17 +415,14 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
+		if (!this.isRouteAcceptable()) return;
+		
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
 
 		if ( container === null || card === null )
-			return;
-
-		const channelCardTitle = card.querySelector('.live-channel-card__title');
-
-		if ( channelCardTitle === null )
 			return;
 
 		// Remove old elements
@@ -451,7 +436,7 @@ export default class Following extends SiteModule {
 		if (channelAvatar !== null) channelAvatar.remove();
 
 		if (inst.props.viewerCount.profileImageURL) {
-			const hosting = inst.props.viewerCount.hostData;
+			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && inst.props.viewerCount.hostData;
 			let channel, displayName;
 			if (hosting) {
 				channel = inst.props.viewerCount.hostData.channel;
@@ -479,12 +464,7 @@ export default class Following extends SiteModule {
 				const avatarElement = e('a', {
 					className: 'channel-avatar',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
-					onclick: event => {
-						event.preventDefault();
-						event.stopPropagation();
-
-						this.router.navigate('user', { userName: inst.props.streamNode.broadcaster.login});
-					}
+					onclick: event => this.parent.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
@@ -515,15 +495,16 @@ export default class Following extends SiteModule {
 				if (this.settings.get('directory.following.group-hosts')) {
 					const titleLink = card.querySelector('.ffz-channel-data a[data-a-target="live-channel-card-title-link"]');
 					const thumbnailLink = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]');
+					const channelCardTitle = card.querySelector('.ffz-channel-data .live-channel-card__title');
 
-					if (hostObj.channels.length > 1) {
-						const textContent = `${hostObj.channels.length} hosting ${displayName}`;
+					const textContent = hostObj.channels.length > 1 ? `${hostObj.channels.length} hosting ${displayName}` : inst.props.title;
+					if (channelCardTitle !== null) {
 						channelCardTitle.textContent
 							= channelCardTitle.title
 							= textContent;
-
-						if (thumbnailLink !== null) thumbnailLink.title = textContent;
 					}
+
+					if (thumbnailLink !== null) thumbnailLink.title = textContent;
 
 					if (titleLink !== null) titleLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
 					if (thumbnailLink !== null) thumbnailLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
