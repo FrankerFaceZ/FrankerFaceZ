@@ -19,46 +19,30 @@ export default class Following extends SiteModule {
 		this.inject('site.apollo');
 		this.inject('site.css_tweaks');
 
+		this.inject('i18n');
 		this.inject('settings');
 
 		this.settings.add('directory.following.group-hosts', {
 			default: true,
 
 			ui: {
-				path: 'Directory > Following >> Placeholder',
+				path: 'Directory > Following >> Hosts',
 				title: 'Group Hosts',
 				description: 'Only show a given hosted channel once in the directory.',
 				component: 'setting-check-box'
 			},
 
-			changed: () => this.isRouteAcceptable() && this.apollo.getQuery('FollowedIndex_CurrentUser').refetch()
-		});
-
-		this.settings.add('directory.following.uptime', {
-			default: 1,
-
-			ui: {
-				path: 'Directory > Following >> Placeholder',
-				title: 'Stream Uptime',
-				description: 'Display the stream uptime on the channel cards.',
-
-				component: 'setting-select-box',
-
-				data: [
-					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'Enabled'},
-					{value: 2, title: 'Enabled (with Seconds)'}
-				]
-			},
-
-			changed: () => this.isRouteAcceptable() && this.ChannelCard.forceUpdate()
+			changed: () => {
+				this.apollo.maybeRefetch('FollowedIndex_CurrentUser');
+				this.apollo.maybeRefetch('FollowingHosts_CurrentUser');
+			}
 		});
 
 		this.settings.add('directory.following.host-menus', {
 			default: 1,
 
 			ui: {
-				path: 'Directory > Following >> Placeholder',
+				path: 'Directory > Following >> Hosts',
 				title: 'Hosted Channel Menus',
 				description: 'Display a menu to select which channel to visit when clicking a hosted channel in the directory.',
 
@@ -71,55 +55,7 @@ export default class Following extends SiteModule {
 				]
 			},
 
-			changed: () => this.isRouteAcceptable() && this.ChannelCard.forceUpdate()
-		});
-
-		this.settings.add('directory.following.hide-boxart', {
-			default: 0,
-
-			ui: {
-				path: 'Directory > Following >> Placeholder',
-				title: 'Hide Boxart',
-				description: 'Do not display boxart over a stream / video thumbnail.',
-
-				component: 'setting-select-box',
-
-				data: [
-					{value: 0, title: 'Never'},
-					{value: 1, title: 'On Hover'},
-					{value: 2, title: 'Always'}
-				]
-			},
-
-			changed: value => {
-				this.css_tweaks.toggleHide('boxart-hide', value === 2);
-				this.css_tweaks.toggleHide('boxart-hover', value === 1);
-				if (this.isRouteAcceptable()) this.ChannelCard.forceUpdate()
-			}
-		});
-
-		this.settings.add('directory.following.show-channel-avatar', {
-			default: 1,
-
-			ui: {
-				path: 'Directory > Following >> Placeholder',
-				title: 'Show Channel Avatar',
-				description: 'Show channel avatar next or on-top of a stream / video thumbnail.',
-
-				component: 'setting-select-box',
-
-				data: [
-					{value: 0, title: 'Never'},
-					{value: 1, title: 'Next to Stream Name'},
-					{value: 2, title: 'On Thumbnail, Hidden on Hover'},
-					{value: 3, title: 'On Thumbnail'}
-				]
-			},
-
-			changed: value => {
-				this.css_tweaks.toggleHide('profile-hover-following', value === 2);
-				if (this.isRouteAcceptable()) this.ChannelCard.forceUpdate();
-			}
+			changed: () => this.ChannelCard.forceUpdate()
 		});
 
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', `query {
@@ -185,6 +121,10 @@ export default class Following extends SiteModule {
 			this.modifyLiveUsers(res);
 			this.modifyLiveHosts(res);
 		}, false);
+
+		this.on('settings:changed:directory.uptime', () => this.ChannelCard.forceUpdate());
+		this.on('settings:changed:directory.show-channel-avatars', () => this.ChannelCard.forceUpdate());
+		this.on('settings:changed:directory.show-boxart', () => this.ChannelCard.forceUpdate());
 
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
@@ -255,10 +195,6 @@ export default class Following extends SiteModule {
 	}
 
 	onEnable() {
-		this.css_tweaks.toggleHide('boxart-hover', this.settings.get('directory.following.hide-boxart') === 1);
-		this.css_tweaks.toggleHide('boxart-hide', this.settings.get('directory.following.hide-boxart') === 2);
-		this.css_tweaks.toggleHide('profile-hover-following', this.settings.get('directory.following.show-channel-avatar') === 2);
-
 		this.ChannelCard.ready((cls, instances) => {
 			if (this.router && this.router.match) {
 				if (this.router.match[1] === 'following') {
@@ -316,7 +252,7 @@ export default class Following extends SiteModule {
 		simplebarContentChildren.push(
 			e('p', {
 				className: 'pd-t-05 pd-x-1 c-text-alt-2',
-				textContent: 'Hosted Channel'
+				textContent: this.i18n.t('directory.hosted', 'Hosted Channel')
 			})
 		);
 
@@ -325,13 +261,16 @@ export default class Following extends SiteModule {
 			e('a', {
 				className: 'tw-interactable',
 				href: `/${inst.props.viewerCount.hostData.channel}`,
-				style: 'padding-top: 0.1rem; padding-bottom: 0.1rem;',
-				onclick: event => this.parent.hijackUserClick(event, inst.props.viewerCount.hostData.channel, this.destroyHostMenu.bind(this))
+				onclick: event =>
+					this.parent.hijackUserClick(
+						event,
+						inst.props.viewerCount.hostData.channel,
+						this.destroyHostMenu.bind(this)
+					)
 			}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
 				[
 					e('div', {
-						className: 'flex-shrink-0',
-						style: 'overflow: hidden; width: 3rem; height: 3rem;',
+						className: 'ffz-channel-avatar',
 					}, e('img', {
 						src: inst.props.viewerCount.profileImageURL,
 						alt: inst.props.channelName
@@ -348,7 +287,7 @@ export default class Following extends SiteModule {
 		simplebarContentChildren.push(
 			e('p', {
 				className: 'pd-t-05 pd-x-1 c-text-alt-2',
-				textContent: 'Hosting Channels'
+				textContent: this.i18n.t('directory.hosting', 'Hosting Channels')
 			})
 		);
 
@@ -360,13 +299,11 @@ export default class Following extends SiteModule {
 				e('a', {
 					className: 'tw-interactable',
 					href: `/${node.login}`,
-					style: 'padding-top: 0.1rem; padding-bottom: 0.1rem;',
 					onclick: event => this.parent.hijackUserClick(event, node.login, this.destroyHostMenu.bind(this))
 				}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
 					[
 						e('div', {
-							className: 'flex-shrink-0',
-							style: 'overflow: hidden; width: 3rem; height: 3rem;',
+							className: 'ffz-channel-avatar',
 						}, e('img', {
 							src: node.profileImageURL,
 							alt: node.displayName
@@ -380,11 +317,10 @@ export default class Following extends SiteModule {
 			);
 		}
 
-		this.hostMenu = e('div', 'tw-balloon block',
+		this.hostMenu = e('div', 'ffz-host-menu tw-balloon block',
 			e('div', 'selectable-filter__balloon pd-y-05',
 				e('div', {
 					className: 'scrollable-area',
-					style: 'max-height: 20rem;',
 					'data-simplebar': true,
 				}, [
 					e('div', 'simplebar-track vertical',
@@ -415,7 +351,7 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		if (!this.isRouteAcceptable()) return;
+		//if (!this.isRouteAcceptable()) return;
 
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
@@ -443,7 +379,7 @@ export default class Following extends SiteModule {
 				displayName = inst.props.viewerCount.hostData.displayName;
 			}
 
-			const avatarSetting = this.settings.get('directory.following.show-channel-avatar');
+			const avatarSetting = this.settings.get('directory.show-channel-avatars');
 			const cardDiv = card.querySelector('.tw-card-body');
 			const modifiedDiv = e('div', {
 				innerHTML: cardDiv.innerHTML

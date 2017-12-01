@@ -25,3 +25,23 @@
 	&:hover { background: #a94444 !important }
 	&.active { background: #973333 !important }
 }
+
+
+.ffz-host-menu {
+	.scrollable-area {
+		max-height: 25vh;
+	}
+
+	.tw-interactable {
+		padding: .1rem 0;
+	}
+
+	.ffz-channel-avatar {
+		width: 3rem;
+
+		img {
+			width: 3rem;
+			height: 3rem;
+		}
+	}
+}

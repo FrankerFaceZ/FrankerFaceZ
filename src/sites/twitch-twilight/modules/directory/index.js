@@ -38,17 +38,86 @@ export default class Directory extends SiteModule {
 			n => n.props && n.props.streamNode
 		);
 
-		this.on('settings:changed:directory.following.show-channel-avatar', value => {
-			this.css_tweaks.toggleHide('profile-hover-game', value === 2);
-			this.ChannelCard.forceUpdate();
+
+		this.settings.add('directory.uptime', {
+			default: 1,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Stream Uptime',
+				description: 'Display the stream uptime on the channel cards.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Enabled'},
+					{value: 2, title: 'Enabled (with Seconds)'}
+				]
+			},
+
+			changed: () => this.ChannelCard.forceUpdate()
 		});
 
-		this.on('settings:changed:directory.following.uptime', () => this.ChannelCard.forceUpdate());
+
+		this.settings.add('directory.show-channel-avatars', {
+			default: 1,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Channel Avatars',
+				description: 'Show channel avatars next to stream titles or directly on their thumbnails.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'By Title'},
+					{value: 2, title: 'Over Thumbnail (Hidden on Hover)'},
+					{value: 3, title: 'Over Thumbnail'}
+				]
+			},
+
+			changed: value => {
+				this.css_tweaks.toggleHide('profile-hover-following', value === 2);
+				this.css_tweaks.toggleHide('profile-hover-game', value === 2);
+				this.ChannelCard.forceUpdate();
+			}
+		});
+
+
+		this.settings.add('directory.show-boxart', {
+			default: 2,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Show Boxart',
+				description: 'Display boxart over stream and video thumbnails.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Hidden on Hover'},
+					{value: 2, title: 'Always'}
+				]
+			},
+
+			changed: value => {
+				this.css_tweaks.toggleHide('boxart-hide', value === 0);
+				this.css_tweaks.toggleHide('boxart-hover', value === 1);
+				this.ChannelCard.forceUpdate()
+			}
+		});
 	}
 
 
 	onEnable() {
-		this.css_tweaks.toggleHide('profile-hover-game', this.settings.get('directory.following.show-channel-avatar') === 2);
+		const avatars = this.settings.get('directory.show-channel-avatars'),
+			boxart = this.settings.get('directory.show-boxart');
+
+		this.css_tweaks.toggleHide('profile-hover-game', avatars === 2);
+		this.css_tweaks.toggleHide('profile-hover-following', avatars === 2);
+
+		this.css_tweaks.toggleHide('boxart-hide', boxart === 0);
+		this.css_tweaks.toggleHide('boxart-hover', boxart === 1);
 
 		this.ChannelCard.ready((cls, instances) => {
 			this.apollo.ensureQuery(
@@ -127,7 +196,7 @@ export default class Directory extends SiteModule {
 	updateUptime(inst, created_path, selector) {
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
-			setting = this.settings.get('directory.following.uptime'),
+			setting = this.settings.get('directory.uptime'),
 			created_at = get(created_path, inst),
 			up_since = created_at && new Date(created_at),
 			uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
@@ -172,7 +241,7 @@ export default class Directory extends SiteModule {
 	addCardAvatar(inst, selector) {
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
-			setting = this.settings.get('directory.following.show-channel-avatar');
+			setting = this.settings.get('directory.show-channel-avatars');
 
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');

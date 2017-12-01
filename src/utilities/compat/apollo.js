@@ -196,6 +196,15 @@ export default class Apollo extends Module {
 	}
 
 
+	maybeRefetch(operation) {
+		const query = this.getQuery(operation);
+		if ( ! query || ! query.lastResult || query.lastResult.stale )
+			return;
+
+		query.refetch();
+	}
+
+
 	ensureQuery(operation, predicate, delay = 500, retry_wait = 120000) {
 		const query = this.getQuery(operation);
 
