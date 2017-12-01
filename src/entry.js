@@ -2,7 +2,7 @@
 'use strict';
 (() => {
 	// Don't run on certain sub-domains.
-	if ( /^(?:player|im|chatdepot|tmi|api|)\./.test(location.hostname) )
+	if ( /^(?:blog|player|im|chatdepot|tmi|api|)\./.test(location.hostname) )
 		return;
 
 	const DEBUG = localStorage.ffzDebugMode == 'true' && document.body.classList.contains('ffz-dev') && ! window.Ember,
