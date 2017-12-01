@@ -60,7 +60,7 @@ export default class Directory extends SiteModule {
 
 
 		this.settings.add('directory.show-channel-avatars', {
-			default: 1,
+			default: 0,
 
 			ui: {
 				path: 'Directory > Channels >> Appearance',
