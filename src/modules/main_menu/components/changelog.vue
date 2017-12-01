@@ -28,7 +28,7 @@ export default {
 				const btn = container.querySelector('#ffz-old-news-button');
 				if ( btn )
 					btn.addEventListener('click', () => {
-						btn.parentElement.removeChild(btn);
+						btn.remove();
 						const old_news = container.querySelector('#ffz-old-news');
 						if ( old_news )
 							this.fetch(`${SERVER}/script/old_changes.html`, old_news);

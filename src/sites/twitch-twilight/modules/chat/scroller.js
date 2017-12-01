@@ -243,7 +243,7 @@ export default class Scroller extends Module {
 				this._ffz_freeze_visible = false;
 
 				if ( this._ffz_freeze_indicator ) {
-					node.removeChild(this._ffz_freeze_indicator);
+					this._ffz_freeze_indicator.remove();
 					this._ffz_freeze_indicator = null;
 				}
 

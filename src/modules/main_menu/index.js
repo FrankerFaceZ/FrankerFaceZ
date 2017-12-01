@@ -121,7 +121,7 @@ export default class MainMenu extends Module {
 				main.classList.remove('ffz-has-menu');
 
 			if ( this._menu ) {
-				main.removeChild(this._menu);
+				this._menu.remove();
 				this._vue.$destroy();
 				this._menu = this._vue = null;
 			}
@@ -151,7 +151,7 @@ export default class MainMenu extends Module {
 		else
 			old_main.classList.remove('ffz-has-menu');
 
-		old_main.removeChild(this._menu);
+		this._menu.remove();
 		main.appendChild(this._menu);
 
 		this._vue.$children[0].maximized = maximized;

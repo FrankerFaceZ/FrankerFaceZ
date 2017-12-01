@@ -89,7 +89,7 @@ export default {
 			async: true,
 			charset: 'utf-8',
 			src: 'https://platform.twitter.com/widgets.js',
-			onLoad: () => el.parentElement.removeChild(el)
+			onLoad: () => el.remove()
 		}));
 
 	}

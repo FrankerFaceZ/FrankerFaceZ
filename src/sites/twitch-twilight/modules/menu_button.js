@@ -106,7 +106,7 @@ export default class MenuButton extends SiteModule {
 		this.off('i18n:update', this.onTranslate);
 
 		if ( this._el )
-			this._el.parentElement.removeChild(this._el);
+			this._el.remove();
 
 		this._pill = this._tip = this._el = null;
 	}

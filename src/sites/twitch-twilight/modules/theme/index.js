@@ -64,10 +64,8 @@ export default class ThemeEngine extends Module {
 			});
 
 		} else if ( ! enable ) {
-			if ( this._style.parentElement === document.head )
-				document.head.removeChild(this._style);
+			this._style.remove();
 			return;
-
 		}
 
 		document.head.appendChild(this._style);

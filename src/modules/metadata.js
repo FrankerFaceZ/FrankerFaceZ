@@ -240,7 +240,7 @@ export default class Metadata extends Module {
 						el.popper.destroy();
 
 					el.tooltip = el.popper = null;
-					el.parentElement.removeChild(el);
+					el.remove();
 				}
 			};
 

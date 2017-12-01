@@ -291,10 +291,7 @@ export class Tooltip {
 		}
 
 		if ( tip.outer ) {
-			const o = tip.outer;
-			if ( o.parentElement )
-				o.parentElement.removeChild(o);
-
+			tip.outer.remove();
 			tip.outer = null;
 		}
 

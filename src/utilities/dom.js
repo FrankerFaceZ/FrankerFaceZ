@@ -126,7 +126,7 @@ export class ManagedStyle {
 	}
 
 	destroy() {
-		document.head.removeChild(this._style);
+		this._style.remove();
 		this._blocks = null;
 		this._style = null;
 	}
