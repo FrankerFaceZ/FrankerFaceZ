@@ -75,7 +75,7 @@ export default class ChatLine extends Module {
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
 
-				const tokens = msg.ffzTokens = msg.ffzTokens || t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName});
+				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName});
 
 				let cls = 'chat-line__message',
 					out = tokens.length ? [
@@ -175,8 +175,13 @@ export default class ChatLine extends Module {
 
 
 	updateLines() {
-		for(const inst of this.ChatLine.instances)
+		for(const inst of this.ChatLine.instances) {
+			const msg = inst.props.message;
+			if ( msg )
+				msg.ffz_tokens = null;
+
 			inst.forceUpdate();
+		}
 	}
 }
 

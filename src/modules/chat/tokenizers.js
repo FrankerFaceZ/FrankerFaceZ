@@ -328,65 +328,69 @@ export const CheerEmotes = {
 			return tokens;
 
 		const actions = bitsConfig.indexedActions,
-			matcher = new RegExp('\\b(' + Object.keys(actions).join('|') + ')(\\d+)\\b', 'ig');
+			matcher = new RegExp(`^(${Object.keys(actions).join('|')})(\\d+)$`, 'i');
 
 		const out = [],
 			collected = {},
 			collect = this.context.get('chat.bits.stack');
 
 		for(const token of tokens) {
-			if ( token.type !== 'text' ) {
+			if ( ! token || token.type !== 'text' ) {
 				out.push(token);
 				continue;
 			}
 
-			matcher.lastIndex = 0;
-			const text = token.text;
-			let idx = 0, match;
+			let text = [];
+			for(const segment of token.text.split(/ +/)) {
+				const match = matcher.exec(segment);
+				if ( match ) {
+					const prefix = match[1].toLowerCase(),
+						cheer = actions[prefix];
 
-			while((match = matcher.exec(text))) {
-				const prefix = match[1].toLowerCase(),
-					cheer = actions[prefix];
-
-				if ( ! cheer )
-					continue;
-
-				if ( idx !== match.index )
-					out.push({type: 'text', text: text.slice(idx, match.index)});
-
-				const amount = parseInt(match[2], 10),
-					tiers = cheer.orderedTiers;
-
-				let tier, token;
-
-				for(let i=0, l = tiers.length; i < l; i++)
-					if ( amount >= tiers[i].bits ) {
-						tier = i;
-						break;
+					if ( ! cheer ) {
+						text.push(segment);
+						continue;
 					}
 
-				out.push(token = {
-					type: 'cheer',
-					prefix,
-					tier,
-					amount: parseInt(match[2], 10),
-					text: match[0]
-				});
+					const amount = parseInt(match[2], 10),
+						tiers = cheer.orderedTiers;
 
-				if ( collect ) {
-					const pref = collect === 2 ? 'cheer' : prefix,
-						group = collected[pref] = collected[pref] || {total: 0, individuals: []};
+					let tier, token;
+					for(let i=0, l = tiers.length; i < l; i++)
+						if ( amount >= tiers[i].bits ) {
+							tier = i;
+							break;
+						}
 
-					group.total += amount;
-					group.individuals.push([amount, tier, prefix]);
-					token.hidden = true;
-				}
+					if ( text.length ) {
+						// We have pending text. Join it together, with an extra space.
+						out.push({type: 'text', text: `${text.join(' ')} `});
+						text = [];
+					}
 
-				idx = match.index + match[0].length;
+					out.push(token = {
+						type: 'cheer',
+						prefix,
+						tier,
+						amount,
+						text: match[0]
+					});
+
+					if ( collect ) {
+						const pref = collect === 2 ? 'cheer' : prefix,
+							group = collected[pref] = collected[pref] || {total: 0, individuals: []};
+
+						group.total += amount;
+						group.individuals.push([amount, tier, prefix]);
+						token.hidden = true;
+					}
+
+				} else
+					text.push(segment);
 			}
 
-			if ( idx < text.length )
-				out.push({type: 'text', text: text.slice(idx)});
+			if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+				out.push({type: 'text', text: text.join(' ')});
 		}
 
 		if ( collect ) {
