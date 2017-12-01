@@ -44,6 +44,8 @@ export default class Game extends SiteModule {
 		this.GameHeader.ready((cls, instances) => {
 			for(const inst of instances) this.updateButtons(inst);
 		});
+
+		this.GameHeader.on('update', inst => this.updateButtons(inst));
 	}
 
 	updateButtons(inst) {
@@ -54,7 +56,7 @@ export default class Game extends SiteModule {
 		const buttons = container && container.querySelector && container.querySelector('div > div.align-items-center');
 
 		const ffzButtons = buttons.querySelector('.ffz-buttons');
-		if (ffzButtons !== null) ffzButtons.remove();
+		if (ffzButtons !== null) return;
 
 		if (buttons.querySelector('.ffz-buttons') === null) {
 			// Block / Unblock Games
