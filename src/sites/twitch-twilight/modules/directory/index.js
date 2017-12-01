@@ -24,6 +24,7 @@ export default class Directory extends SiteModule {
 		this.inject('site.apollo');
 		this.inject('site.css_tweaks');
 
+		this.inject('i18n');
 		this.inject('settings');
 
 		this.inject(Following);
@@ -48,16 +49,16 @@ export default class Directory extends SiteModule {
 
 	onEnable() {
 		this.css_tweaks.toggleHide('profile-hover-game', this.settings.get('directory.following.show-channel-avatar') === 2);
-		
+
 		this.ChannelCard.ready((cls, instances) => {
 			this.apollo.ensureQuery(
 				'GamePage_Game',
 				'data.directory.streams.edges.0.node.createdAt'
 			);
-			
+
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
-		
+
 		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
 		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
 		this.ChannelCard.on('unmount', inst => this.clearUptime(inst), this);
@@ -74,11 +75,11 @@ export default class Directory extends SiteModule {
 		const type = inst.props.directoryType;
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-		
+
 		const container = this.fine.getHostNode(inst);
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
 		if (img === null) return;
-		
+
 		if (type === 'GAMES' && hiddenThumbnails.includes(inst.props.directoryName) ||
 			type === 'COMMUNITIES' && hiddenThumbnails.includes(inst.props.streamNode.game.name)) {
 			img.src = hiddenPreview;
@@ -118,6 +119,7 @@ export default class Directory extends SiteModule {
 			inst.ffz_uptime_el = null;
 			inst.ffz_uptime_span = null;
 			inst.ffz_uptime_tt = null;
+			inst.ffz_last_created_at = null;
 		}
 	}
 
@@ -135,7 +137,7 @@ export default class Directory extends SiteModule {
 
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);
 
-		if ( ! inst.ffz_uptime_el )
+		if ( ! inst.ffz_uptime_el ) {
 			card.appendChild(inst.ffz_uptime_el = e('div',
 				'video-preview-card__preview-overlay-stat c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
 				e('div', 'tw-tooltip-wrapper inline-flex', [
@@ -145,13 +147,25 @@ export default class Directory extends SiteModule {
 					]),
 					inst.ffz_uptime_tt = e('div', 'tw-tooltip tw-tooltip--down tw-tooltip--align-center')
 				])));
+		}
 
 		if ( ! inst.ffz_update_timer )
 			inst.ffz_update_timer = setInterval(this.updateUptime.bind(this, inst, created_path, selector), 1000);
 
 		inst.ffz_uptime_span.textContent = up_text;
-		inst.ffz_uptime_tt.textContent = up_since.toLocaleString();
 
+		if ( inst.ffz_last_created_at !== created_at ) {
+			inst.ffz_uptime_tt.innerHTML = `${this.i18n.t(
+				'metadata.uptime.tooltip',
+				'Stream Uptime'
+			)}<div class="pd-t-05">${this.i18n.t(
+				'metadata.uptime.since',
+				'(since %{since})',
+				{since: up_since.toLocaleString()}
+			)}</div>`;
+
+			inst.ffz_last_created_at = created_at;
+		}
 	}
 
 
@@ -162,14 +176,17 @@ export default class Directory extends SiteModule {
 
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
-		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('hide');
+		if (hiddenBodyCard !== null)
+			hiddenBodyCard.classList.remove('hide');
 
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
-		if (ffzChannelData !== null) ffzChannelData.remove();
+		if (ffzChannelData !== null)
+			ffzChannelData.remove();
 
-		const channelAvatar = card.querySelector('.channel-avatar');
-		if (channelAvatar !== null) channelAvatar.remove();
-		
+		const channelAvatar = card.querySelector('.ffz-channel-avatar');
+		if (channelAvatar !== null)
+			channelAvatar.remove();
+
 		if ( ! card || setting === 0 )
 			return;
 
@@ -181,14 +198,12 @@ export default class Directory extends SiteModule {
 				});
 
 				const avatarDiv = e('a', {
-					className: 'channel-avatar',
+					className: 'ffz-channel-avatar mg-r-05 mg-t-05',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
-					style: 'margin-right: 8px; min-width: 4rem; margin-top: 0.5rem;',
 					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('img', {
 					title: inst.props.streamNode.broadcaster.displayName,
-					src: inst.props.streamNode.viewersCount.profileImageURL,
-					style: 'height: 4rem;'
+					src: inst.props.streamNode.viewersCount.profileImageURL
 				}));
 
 				const cardDivParent = cardDiv.parentElement;
@@ -203,7 +218,7 @@ export default class Directory extends SiteModule {
 				}
 			} else if (setting === 2 || setting === 3) {
 				const avatarElement = e('a', {
-					className: 'channel-avatar',
+					className: 'ffz-channel-avatar',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
 					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
@@ -213,11 +228,11 @@ export default class Directory extends SiteModule {
 							src: inst.props.streamNode.viewersCount.profileImageURL
 						})
 					)
-				)
-				);
+				));
 
 				const divToAppend = card.querySelector('figure.tw-aspect');
-				if (divToAppend.querySelector('.channel-avatar') === null) divToAppend.appendChild(avatarElement);
+				if (divToAppend.querySelector('.ffz-channel-avatar') === null)
+					divToAppend.appendChild(avatarElement);
 			}
 		}
 	}

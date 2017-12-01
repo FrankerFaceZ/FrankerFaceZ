@@ -1,0 +1,27 @@
+.ffz-channel-avatar {
+	flex-shrink: 0 !important;
+	width: 4rem;
+
+	img {
+		width: 4rem;
+		height: 4rem
+	}
+}
+
+
+// TODO: Color variables
+
+.ffz-directory-toggle-thumbnail {
+	background: #555 !important;
+
+	&:hover { background: #247324 !important }
+	&.active { background: #006700 !important }
+}
+
+
+.ffz-directory-toggle-block {
+	background: #555 !important;
+
+	&:hover { background: #a94444 !important }
+	&.active { background: #973333 !important }
+}

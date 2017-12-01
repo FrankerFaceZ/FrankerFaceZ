@@ -416,7 +416,7 @@ export default class Following extends SiteModule {
 
 	updateChannelCard(inst) {
 		if (!this.isRouteAcceptable()) return;
-		
+
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
 		const container = this.fine.getHostNode(inst),
@@ -432,7 +432,7 @@ export default class Following extends SiteModule {
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
 		if (ffzChannelData !== null) ffzChannelData.remove();
 
-		const channelAvatar = card.querySelector('.channel-avatar');
+		const channelAvatar = card.querySelector('.ffz-channel-avatar');
 		if (channelAvatar !== null) channelAvatar.remove();
 
 		if (inst.props.viewerCount.profileImageURL) {
@@ -452,17 +452,15 @@ export default class Following extends SiteModule {
 			let avatarDiv;
 			if (avatarSetting === 1) {
 				avatarDiv = e('a', {
-					className: 'channel-avatar',
+					className: 'ffz-channel-avatar mg-r-05 mg-t-05',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
-					style: 'margin-right: 8px; min-width: 4rem; margin-top: 0.5rem;'
 				}, e('img', {
 					title: inst.props.channelName,
-					src: inst.props.viewerCount.profileImageURL,
-					style: 'height: 4rem;'
+					src: inst.props.viewerCount.profileImageURL
 				}));
 			} else if (avatarSetting === 2 || avatarSetting === 3) {
 				const avatarElement = e('a', {
-					className: 'channel-avatar',
+					className: 'ffz-channel-avatar',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
 					onclick: event => this.parent.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
@@ -476,7 +474,7 @@ export default class Following extends SiteModule {
 				);
 
 				const divToAppend = card.querySelector('.tw-aspect > div');
-				if (divToAppend.querySelector('.channel-avatar') === null) divToAppend.appendChild(avatarElement);
+				if (divToAppend.querySelector('.ffz-channel-avatar') === null) divToAppend.appendChild(avatarElement);
 			}
 
 			const cardDivParent = cardDiv.parentElement;

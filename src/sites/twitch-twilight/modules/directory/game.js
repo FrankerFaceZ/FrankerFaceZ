@@ -14,6 +14,7 @@ export default class Game extends SiteModule {
 		this.inject('site.fine');
 		this.inject('site.apollo');
 
+		this.inject('i18n');
 		this.inject('settings');
 
 		this.GameHeader = this.fine.define(
@@ -49,72 +50,82 @@ export default class Game extends SiteModule {
 	}
 
 	updateButtons(inst, update = false) {
-		if (inst.props.directoryType !== 'GAMES') return;
-
 		const container = this.fine.getHostNode(inst);
-		// We can't get the buttons through querySelector('button ...') so this has to do for now...
-		const buttons = container && container.querySelector && container.querySelector('div > div.align-items-center');
+		if ( inst.props.directoryType !== 'GAMES' || ! container || ! container.querySelector )
+			return;
 
-		const ffzButtons = buttons.querySelector('.ffz-buttons');
-		if (ffzButtons !== null && !update) return;
-		else if (ffzButtons) ffzButtons.remove();
+		const buttons = container.querySelector('div > div.align-items-center'),
+			ffz_buttons = buttons && buttons.querySelector('.ffz-buttons');
 
-		if (buttons.querySelector('.ffz-buttons') === null) {
-			// Block / Unblock Games
-			const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
-			const gameBlocked = blockedGames.includes(inst.props.directoryName);
+		if ( ! buttons || (ffz_buttons && ! update) )
+			return;
 
-			const blockButton = e('button', {
-				className: 'mg-l-1 tw-button ffz-toggle-game-block',
-				style: `background-color: ${gameBlocked ? '#228B22' : '#B22222'};`
-			}, e('span', {
-				className: 'tw-button__text',
-				textContent: `${gameBlocked ? 'Unblock' : 'Block'}`
-			})
-			);
+		if ( ffz_buttons )
+			ffz_buttons.remove();
 
-			blockButton.addEventListener('click', () => {
-				const gameName = inst.props.directoryName;
-				const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
-				if (blockedGames.includes(gameName)) blockedGames.splice(blockedGames.indexOf(gameName), 1);
-				else blockedGames.push(gameName);
+		// The Block / Unblock Button
+		let block_btn, block_label,
+			hidden_btn, hidden_label;
 
-				this.settings.provider.set('directory.game.blocked-games', blockedGames);
+		const game = inst.props.directoryName,
+			update_block = () => {
+				const blocked_games = this.settings.provider.get('directory.game.blocked-games') || [],
+					blocked = blocked_games.includes(game);
 
-				this.updateButtons(inst, true);
-			});
+				block_btn.classList.toggle('active', blocked);
+				block_label.textContent = blocked ?
+					this.i18n.t('directory.unblock', 'Unblock') :
+					this.i18n.t('directory.block', 'Block');
+			}
 
-			// Hide / Unhide Thumbnails
-			const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
-			const thumbnailBlocked = hiddenThumbnails.includes(inst.props.directoryName);
 
-			const hideThumbnailButton = e('button', {
-				className: 'mg-l-1 tw-button ffz-toggle-thumbnail',
-				style: `background-color: ${thumbnailBlocked ? '#228B22' : '#B22222'};`
-			}, e('span', {
-				className: 'tw-button__text',
-				textContent: `${thumbnailBlocked ? 'Unhide Thumbnails' : 'Hide Thumbnails'}`
-			})
-			);
+		block_btn = e('button', {
+			className: 'mg-l-1 tw-button ffz-directory-toggle-block',
+			onClick: this.generateClickHandler('directory.game.blocked-games', game, update_block)
+		}, block_label = e('span', 'tw-button__text'));
 
-			hideThumbnailButton.addEventListener('click', () => {
-				const gameName = inst.props.directoryName;
-				const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
-				if (hiddenThumbnails.includes(gameName)) hiddenThumbnails.splice(hiddenThumbnails.indexOf(gameName), 1);
-				else hiddenThumbnails.push(gameName);
+		update_block();
 
-				this.settings.provider.set('directory.game.hidden-thumbnails', hiddenThumbnails);
 
-				this.parent.ChannelCard.forceUpdate();
-				this.updateButtons(inst, true);
-			});
+		const update_hidden = () => {
+			const hidden_games = this.settings.provider.get('directory.game.hidden-thumbnails') || [],
+				hidden = hidden_games.includes(game);
 
-			const ffzButtons = e('div', 'ffz-buttons', [
-				blockButton,
-				hideThumbnailButton
-			]);
+			hidden_btn.classList.toggle('active', hidden);
+			hidden_label.textContent = hidden ?
+				this.i18n.t('directory.show-thumbnails', 'Show Thumbnails') :
+				this.i18n.t('directory.hide-thumbnails', 'Hide Thumbnails');
 
-			buttons.appendChild(ffzButtons);
+			this.parent.ChannelCard.forceUpdate();
+		}
+
+		hidden_btn = e('button', {
+			className: 'mg-l-1 tw-button ffz-directory-toggle-thumbnail',
+			onClick: this.generateClickHandler('directory.game.hidden-thumbnails', game, update_hidden)
+		}, hidden_label = e('span', 'tw-button__text'));
+
+		update_hidden();
+
+		buttons.appendChild(e('div', 'ffz-buttons', [
+			block_btn,
+			hidden_btn
+		]));
+	}
+
+	generateClickHandler(setting, game, update_func) {
+		return e => {
+			e.preventDefault();
+			const values = this.settings.provider.get(setting) || [],
+				idx = values.indexOf(game);
+
+			if ( idx === -1 )
+				values.push(game);
+			else
+				values.splice(idx, 1);
+
+			this.settings.provider.set(setting, values);
+			update_func();
 		}
 	}
+
 }
