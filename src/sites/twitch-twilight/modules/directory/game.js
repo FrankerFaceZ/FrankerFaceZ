@@ -12,7 +12,6 @@ export default class Game extends SiteModule {
 		super(...args);
 
 		this.inject('site.fine');
-		this.inject('site.router');
 		this.inject('site.apollo');
 
 		this.inject('settings');
@@ -43,34 +42,13 @@ export default class Game extends SiteModule {
 
 	onEnable() {
 		this.GameHeader.ready((cls, instances) => {
-			if (this.router.current.name === 'dir-game-index') {
-				for(const inst of instances) this.updateButtons(inst);
-			}
+			for(const inst of instances) this.updateButtons(inst);
 		});
-
-		this.parent.ChannelCard.ready((cls, instances) => {
-			if (this.router.current.name === 'dir-game-index') {
-				this.apollo.ensureQuery(
-					'GamePage_Game',
-					'data.directory.streams.edges.0.node.createdAt'
-				);
-
-				for(const inst of instances) this.updateChannelCard(inst);
-			}
-		});
-
-		this.parent.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
-		this.parent.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
-	}
-
-	updateChannelCard(inst) {
-		if (this.router.current.name !== 'dir-game-index') return;
-		
-		this.parent.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', '.tw-thumbnail-card .tw-card-img');
-		this.parent.addCardAvatar(inst, 'props.streamNode.viewersCount.createdAt', '.tw-thumbnail-card');
 	}
 
 	updateButtons(inst) {
+		if (inst.props.directoryType !== 'GAMES') return;
+
 		const container = this.fine.getHostNode(inst);
 		// We can't get the buttons through querySelector('button ...') so this has to do for now...
 		const buttons = container && container.querySelector && container.querySelector('div > div.align-items-center');

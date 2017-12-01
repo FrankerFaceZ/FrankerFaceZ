@@ -47,8 +47,31 @@ export default class Directory extends SiteModule {
 
 
 	onEnable() {
-		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
+		this.ChannelCard.on('unmount', inst => this.clearUptime(inst), this);
 		this.css_tweaks.toggleHide('profile-hover-game', this.settings.get('directory.following.show-channel-avatar') === 2);
+
+		this.ChannelCard.ready((cls, instances) => {
+			this.apollo.ensureQuery(
+				'GamePage_Game',
+				'data.directory.streams.edges.0.node.createdAt'
+			);
+
+			for(const inst of instances) this.updateChannelCard(inst);
+		});
+
+		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
+		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
+	}
+
+
+	updateChannelCard(inst) {
+		const fnData = {
+			uptimeSel: inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card .tw-card-img' : '.tw-card .tw-aspect > div',
+			avatarSel: inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card' : '.tw-card',
+		};
+
+		this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', fnData.uptimeSel);
+		this.addCardAvatar(inst, fnData.avatarSel);
 	}
 
 
@@ -126,7 +149,7 @@ export default class Directory extends SiteModule {
 	}
 
 
-	addCardAvatar(inst, created_path, selector) {
+	addCardAvatar(inst, selector) {
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
 			setting = this.settings.get('directory.following.show-channel-avatar');
@@ -155,7 +178,7 @@ export default class Directory extends SiteModule {
 					className: 'channel-avatar',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
 					style: 'margin-right: 8px; min-width: 4rem; margin-top: 0.5rem;',
-					onclick: event => this.parent.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
+					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('img', {
 					title: inst.props.streamNode.broadcaster.displayName,
 					src: inst.props.streamNode.viewersCount.profileImageURL,
@@ -176,7 +199,7 @@ export default class Directory extends SiteModule {
 				const avatarElement = e('a', {
 					className: 'channel-avatar',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
-					onclick: event => this.parent.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
+					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
