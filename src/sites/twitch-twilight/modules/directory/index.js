@@ -65,21 +65,31 @@ export default class Directory extends SiteModule {
 
 
 	updateChannelCard(inst) {
-		const fnData = {
-			uptimeSel: inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card .tw-card-img' : '.tw-card .tw-aspect > div',
-			avatarSel: inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card' : '.tw-card',
-		};
+		const uptimeSel = inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card .tw-card-img' : '.tw-card .tw-aspect > div';
+		const avatarSel = inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card' : '.tw-card';
 
-		this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', fnData.uptimeSel);
-		this.addCardAvatar(inst, fnData.avatarSel);
+		this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', uptimeSel);
+		this.addCardAvatar(inst, avatarSel);
+
+		const type = inst.props.directoryType;
+		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
+		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
+		
+		const container = this.fine.getHostNode(inst);
+		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
+		if (img === null) return;
+		
+		if (type === 'GAMES' && hiddenThumbnails.includes(inst.props.directoryName) ||
+			type === 'COMMUNITIES' && hiddenThumbnails.includes(inst.props.streamNode.game.name)) {
+			img.src = hiddenPreview;
+		} else {
+			img.src = inst.props.streamNode.previewImageURL;
+		}
 	}
 
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this
-		const nodeType = res.data.directory.__typename;
 		const newStreams = [];
-
-		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 
 		const edges = res.data.directory.streams.edges;
 		for (let i = 0; i < edges.length; i++) {
@@ -89,10 +99,6 @@ export default class Directory extends SiteModule {
 			const s = node.viewersCount = new Number(node.viewersCount || 0);
 			s.profileImageURL = node.broadcaster.profileImageURL;
 			s.createdAt = node.createdAt;
-
-			if (nodeType === 'Game' && hiddenThumbnails.includes(res.data.directory.displayName) ||
-			nodeType === 'Community' && hiddenThumbnails.includes(node.game.name))
-				edge.node.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
 			newStreams.push(edge);
 		}

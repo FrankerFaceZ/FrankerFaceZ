@@ -48,7 +48,7 @@ export default class Game extends SiteModule {
 		this.GameHeader.on('update', inst => this.updateButtons(inst));
 	}
 
-	updateButtons(inst) {
+	updateButtons(inst, update = false) {
 		if (inst.props.directoryType !== 'GAMES') return;
 
 		const container = this.fine.getHostNode(inst);
@@ -56,7 +56,8 @@ export default class Game extends SiteModule {
 		const buttons = container && container.querySelector && container.querySelector('div > div.align-items-center');
 
 		const ffzButtons = buttons.querySelector('.ffz-buttons');
-		if (ffzButtons !== null) return;
+		if (ffzButtons !== null && !update) return;
+		else if (ffzButtons) ffzButtons.remove();
 
 		if (buttons.querySelector('.ffz-buttons') === null) {
 			// Block / Unblock Games
@@ -80,7 +81,7 @@ export default class Game extends SiteModule {
 
 				this.settings.provider.set('directory.game.blocked-games', blockedGames);
 
-				this.updateButtons(inst);
+				this.updateButtons(inst, true);
 			});
 
 			// Hide / Unhide Thumbnails
@@ -104,8 +105,8 @@ export default class Game extends SiteModule {
 
 				this.settings.provider.set('directory.game.hidden-thumbnails', hiddenThumbnails);
 
-				this.updateButtons(inst);
-				this.ChannelCard.forceUpdate();
+				this.parent.ChannelCard.forceUpdate();
+				this.updateButtons(inst, true);
 			});
 
 			const ffzButtons = e('div', 'ffz-buttons', [
