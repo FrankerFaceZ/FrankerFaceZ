@@ -47,20 +47,20 @@ export default class Directory extends SiteModule {
 
 
 	onEnable() {
-		this.ChannelCard.on('unmount', inst => this.clearUptime(inst), this);
 		this.css_tweaks.toggleHide('profile-hover-game', this.settings.get('directory.following.show-channel-avatar') === 2);
-
+		
 		this.ChannelCard.ready((cls, instances) => {
 			this.apollo.ensureQuery(
 				'GamePage_Game',
 				'data.directory.streams.edges.0.node.createdAt'
 			);
-
+			
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
-
+		
 		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
 		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
+		this.ChannelCard.on('unmount', inst => this.clearUptime(inst), this);
 	}
 
 
