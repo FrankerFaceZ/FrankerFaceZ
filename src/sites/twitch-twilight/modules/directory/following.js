@@ -394,7 +394,6 @@ export default class Following extends SiteModule {
 		if (channelAvatar !== null) channelAvatar.remove();
 
 		if (inst.props.viewerCount.profileImageURL) {
-			this.log.warn(inst);
 			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts[inst.props.channelName];
 			let channel, displayName;
 			if (hosting) {
@@ -408,11 +407,26 @@ export default class Following extends SiteModule {
 				innerHTML: cardDiv.innerHTML
 			});
 
+			const broadcasterLogin = inst.props.linkTo.pathname.substring(1);
+			modifiedDiv.querySelector('.live-channel-card__channel').onclick = event => {
+				event.preventDefault();
+				event.stopPropagation();
+
+				this.router.navigate('user', { userName: broadcasterLogin });
+			};
+			modifiedDiv.querySelector('.live-channel-card__videos').onclick = event => {
+				event.preventDefault();
+				event.stopPropagation();
+				
+				this.router.navigate('user-videos', { userName: broadcasterLogin });
+			};
+
 			let avatarDiv;
 			if (avatarSetting === 1) {
 				avatarDiv = e('a', {
 					className: 'ffz-channel-avatar mg-r-05 mg-t-05',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
+					onclick: event => this.parent.hijackUserClick(event, broadcasterLogin)
 				}, e('img', {
 					title: inst.props.channelName,
 					src: inst.props.viewerCount.profileImageURL
@@ -421,7 +435,7 @@ export default class Following extends SiteModule {
 				const avatarElement = e('a', {
 					className: 'ffz-channel-avatar',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
-					onclick: event => this.parent.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
+					onclick: event => this.parent.hijackUserClick(event, broadcasterLogin)
 				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
