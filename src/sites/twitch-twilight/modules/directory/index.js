@@ -206,9 +206,9 @@ export default class Directory extends SiteModule {
 
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);
 
-		if ( ! inst.ffz_uptime_el ) {
+		if ( ! inst.ffz_uptime_el || card.querySelector('.ffz-uptime-element') === undefined ) {
 			card.appendChild(inst.ffz_uptime_el = e('div',
-				'video-preview-card__preview-overlay-stat c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
+				'video-preview-card__preview-overlay-stat c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05 ffz-uptime-element',
 				e('div', 'tw-tooltip-wrapper inline-flex', [
 					e('div', 'tw-stat', [
 						e('span', 'c-text-live tw-stat__icon', e('figure', 'ffz-i-clock')),

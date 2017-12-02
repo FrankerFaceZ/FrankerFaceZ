@@ -112,6 +112,20 @@ export default class Following extends SiteModule {
 			}
 		}`);
 
+		this.apollo.registerModifier('FollowedChannels', `query {
+			currentUser {
+				followedLiveUsers {
+					nodes {
+						profileImageURL(width: 70)
+						stream {
+							type
+							createdAt
+						}
+					}
+				}
+			}
+		}`);
+
 		this.ChannelCard = this.fine.define(
 			'following-channel-card',
 			n => n.renderGameBoxArt && n.renderContentType
@@ -121,11 +135,12 @@ export default class Following extends SiteModule {
 			this.modifyLiveUsers(res);
 			this.modifyLiveHosts(res);
 		}, false);
-
+		
 		this.on('settings:changed:directory.uptime', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-channel-avatars', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-boxart', () => this.ChannelCard.forceUpdate());
-
+		
+		this.apollo.registerModifier('FollowedChannels', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
 	}
@@ -170,13 +185,10 @@ export default class Following extends SiteModule {
 			const s = node.hosting.stream.viewersCount = new Number(node.hosting.stream.viewersCount || 0);
 			s.profileImageURL = node.hosting.profileImageURL;
 			s.createdAt = node.hosting.stream.createdAt;
-			s.hostData = {
-				channel: node.hosting.login,
-				displayName: node.hosting.displayName
-			};
 
 			if (!this.hosts[node.hosting.displayName]) {
 				this.hosts[node.hosting.displayName] = {
+					channel: node.hosting.login,
 					nodes: [node],
 					channels: [node.displayName]
 				};
@@ -194,34 +206,46 @@ export default class Following extends SiteModule {
 		return res;
 	}
 
+	ensureQueries () {
+		if (this.router && this.router.match) {
+			this.apollo.ensureQuery(
+				'FollowedChannels',
+				'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
+			);
+
+			if (this.router.match[1] === 'following') {
+				this.apollo.ensureQuery(
+					'FollowedIndex_CurrentUser',
+					n =>
+						get('data.currentUser.followedLiveUsers.nodes.0.profileImageURL', n) !== undefined
+						||
+						get('data.currentUser.followedHosts.nodes.0.hosting.profileImageURL', n) !== undefined
+				);
+			} else if (this.router.match[1] === 'live') {
+				this.apollo.ensureQuery(
+					'FollowingLive_CurrentUser',
+					'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
+				);
+			} else if (this.router.match[1] === 'hosts') {
+				this.apollo.ensureQuery(
+					'FollowingHosts_CurrentUser',
+					'data.currentUser.followedHosts.nodes.0.hosting.profileImageURL'
+				);
+			}
+		}
+	}
+
 	onEnable() {
 		this.ChannelCard.ready((cls, instances) => {
-			if (this.router && this.router.match) {
-				if (this.router.match[1] === 'following') {
-					this.apollo.ensureQuery(
-						'FollowedIndex_CurrentUser',
-						n =>
-							get('data.currentUser.followedLiveUsers.nodes.0.profileImageURL', n) !== undefined
-							||
-							get('data.currentUser.followedHosts.nodes.0.hosting.profileImageURL', n) !== undefined
-					);
-				} else if (this.router.match[1] === 'live') {
-					this.apollo.ensureQuery(
-						'FollowingLive_CurrentUser',
-						'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
-					);
-				} else if (this.router.match[1] === 'hosts') {
-					this.apollo.ensureQuery(
-						'FollowingHosts_CurrentUser',
-						'data.currentUser.followedHosts.nodes.0.hosting.profileImageURL'
-					);
-				}
-			}
+			this.ensureQueries();
 
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
 
-		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
+		this.ChannelCard.on('update', inst => {
+			this.ensureQueries();
+			this.updateChannelCard(inst)
+		}, this);
 		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
 		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
 
@@ -246,6 +270,7 @@ export default class Following extends SiteModule {
 
 		this.hostMenu && this.hostMenu.remove();
 
+		const hostData = this.hosts[inst.props.channelName];
 		const simplebarContentChildren = [];
 
 		// Hosted Channel Header
@@ -260,11 +285,11 @@ export default class Following extends SiteModule {
 		simplebarContentChildren.push(
 			e('a', {
 				className: 'tw-interactable',
-				href: `/${inst.props.viewerCount.hostData.channel}`,
+				href: `/${hostData.channel}`,
 				onclick: event =>
 					this.parent.hijackUserClick(
 						event,
-						inst.props.viewerCount.hostData.channel,
+						hostData.channel,
 						this.destroyHostMenu.bind(this)
 					)
 			}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
@@ -292,9 +317,8 @@ export default class Following extends SiteModule {
 		);
 
 		// Hosting Channels Content
-		const hosts = this.hosts[inst.props.channelName];
-		for (let i = 0; i < hosts.nodes.length; i++) {
-			const node = hosts.nodes[i];
+		for (let i = 0; i < hostData.nodes.length; i++) {
+			const node = hostData.nodes[i];
 			simplebarContentChildren.push(
 				e('a', {
 					className: 'tw-interactable',
@@ -351,8 +375,6 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		//if (!this.isRouteAcceptable()) return;
-
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
 		const container = this.fine.getHostNode(inst),
@@ -372,11 +394,12 @@ export default class Following extends SiteModule {
 		if (channelAvatar !== null) channelAvatar.remove();
 
 		if (inst.props.viewerCount.profileImageURL) {
-			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && inst.props.viewerCount.hostData;
+			this.log.warn(inst);
+			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts[inst.props.channelName];
 			let channel, displayName;
 			if (hosting) {
-				channel = inst.props.viewerCount.hostData.channel;
-				displayName = inst.props.viewerCount.hostData.displayName;
+				channel = this.hosts[inst.props.channelName].channel;
+				displayName = inst.props.channelName;
 			}
 
 			const avatarSetting = this.settings.get('directory.show-channel-avatars');
