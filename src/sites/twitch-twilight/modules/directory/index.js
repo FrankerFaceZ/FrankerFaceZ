@@ -103,8 +103,22 @@ export default class Directory extends SiteModule {
 			changed: value => {
 				this.css_tweaks.toggleHide('boxart-hide', value === 0);
 				this.css_tweaks.toggleHide('boxart-hover', value === 1);
-				this.ChannelCard.forceUpdate()
+				this.ChannelCard.forceUpdate();
 			}
+		});
+
+
+		this.settings.add('directory.hide-vodcasts', {
+			default: false,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Hide Vodcasts',
+				description: 'Hide vodcasts in the directories.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.ChannelCard.forceUpdate()
 		});
 	}
 
@@ -146,6 +160,13 @@ export default class Directory extends SiteModule {
 		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
 		const container = this.fine.getHostNode(inst);
+
+		if (inst.props.streamNode.type === 'watch_party') {
+			const hideVodcasts = this.settings.get('directory.hide-vodcasts');
+			if (hideVodcasts) container.classList.add('hide');
+			else container.classList.remove('hide');
+		}
+
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
 		if (img === null) return;
 

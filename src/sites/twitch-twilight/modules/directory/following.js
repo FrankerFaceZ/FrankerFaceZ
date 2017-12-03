@@ -139,6 +139,7 @@ export default class Following extends SiteModule {
 		this.on('settings:changed:directory.uptime', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-channel-avatars', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-boxart', () => this.ChannelCard.forceUpdate());
+		this.on('settings:changed:directory.hide-vodcasts', () => this.ChannelCard.forceUpdate());
 		
 		this.apollo.registerModifier('FollowedChannels', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
@@ -377,12 +378,19 @@ export default class Following extends SiteModule {
 	updateChannelCard(inst) {
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
 
+		
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
-
+		
 		if ( container === null || card === null )
 			return;
-
+		
+		if (inst.props.streamType === 'watch_party') {
+			const hideVodcasts = this.settings.get('directory.hide-vodcasts');
+			if (hideVodcasts) container.parentElement.classList.add('hide');
+			else container.parentElement.classList.remove('hide');
+		}
+		
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
 		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('hide');
