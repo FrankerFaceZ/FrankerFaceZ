@@ -42,6 +42,7 @@
     "sortablejs": "^1.6.1",
     "vue": "^2.5.2",
     "vue-clickaway": "^2.1.0",
-    "vue-template-compiler": "^2.5.2"
+    "vue-template-compiler": "^2.5.2",
+    "vuedraggable": "^2.15.0"
   }
 }
