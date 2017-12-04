@@ -22,11 +22,6 @@ export default class HostButton extends Module {
 			'channel-bar',
 			n => n.getTitle && n.getGame && n.renderGame
 		);
-
-		this.ChatController = this.fine.define(
-			'chat-controller',
-			n => n.chatService
-		);
 	}
 	
 	async onLoad() {
@@ -51,8 +46,11 @@ export default class HostButton extends Module {
 		}
 	}
 
-	createSelfChatConnection(inst) {
+	createSelfChatConnection() {
 		if (this._chat_con) return;
+
+		const chat = this.resolve('site.chat'),
+			inst = chat && chat.currentChat;
 
 		const chatServiceClient = inst.chatService.client;
 
@@ -61,7 +59,7 @@ export default class HostButton extends Module {
 		this._chat_con.events.hosting(e => {
 			this._last_hosted_channel = e.target;
 
-			this.updateCurrentChannelHost(e.target);
+			this.updateCurrentChannelHost(inst.props.channelLogin);
 		});
 		this._chat_con.events.unhost(e => {
 			this._last_hosted_channel = null;
@@ -84,9 +82,7 @@ export default class HostButton extends Module {
 		this.ChannelBar.on('mount', this.appendHostButton, this);
 		this.ChannelBar.on('update', this.appendHostButton, this);
 
-		this.ChatController.ready((cls, instances) => {
-			for(const inst of instances) this.createSelfChatConnection(inst);
-		});
+		this.createSelfChatConnection();
 
 		this.fetchAutoHosts();
 		document.body.addEventListener('click', this.destroyHostOptions.bind(this));
@@ -277,6 +273,7 @@ export default class HostButton extends Module {
 
 		this._host_button_span.textContent = this.isChannelHosted(channelLogin) ? 'Unhost' : 'Host';
 		this._host_button_span.parentElement.classList.remove('tw-button--disabled');
+		this._host_button_tooltip.innerHTML = `Currently hosting: ${this._last_hosted_channel}`;
 	}
 
 	isChannelHosted(channelLogin) {
@@ -293,19 +290,28 @@ export default class HostButton extends Module {
 		if (this._host_button_span && this._host_button_span.destroy) this._host_button_span.destroy();
 		this._host_button_span = null;
 
+		if (this._host_button_tooltip && this._host_button_tooltip.destroy) this._host_button_tooltip.destroy();
+		this._host_button_tooltip = null;
+		
 		const hostButton = e('div', 'ffz-host-container mg-x-1', [
-			e('button', {
-				class: `tw-button tw-button--hollow ${this._chat_con ? '' : 'tw-class--disabled'}`,
-				onclick: () => {
-					if (!this._chat_con) return;
+			e('div', 'tw-tooltip-wrapper inline-flex', [
+				e('button', {
+					class: `tw-button tw-button--hollow ${this._chat_con ? '' : 'tw-class--disabled'}`,
+					onclick: () => {
+						if (!this._chat_con) return;
 
-					this._host_button_span.parentElement.classList.add('tw-button--disabled');
-					this.sendHostUnhostCommand(inst.props.channelLogin);
-				}
-			}, this._host_button_span = e('span', {
-				class: 'tw-button__text',
-				textContent: this.isChannelHosted(inst.props.channelLogin) ? 'Unhost' : 'Host'
-			})),
+						this._host_button_span.parentElement.classList.add('tw-button--disabled');
+						this.sendHostUnhostCommand(inst.props.channelLogin);
+					}
+				}, this._host_button_span = e('span', {
+					class: 'tw-button__text',
+					textContent: this.isChannelHosted(inst.props.channelLogin) ? 'Unhost' : 'Host'
+				})),
+				this._host_button_tooltip = e('div', {
+					className: 'tw-tooltip tw-tooltip--up tw-tooltip--align-center',
+					innerHTML: this._last_hosted_channel ? `Currently hosting: ${this._last_hosted_channel}` : undefined
+				})
+			]),
 			e('button', {
 				class: 'tw-button-icon tw-button-icon--hollow',
 				onclick: () => this.showHostOptions(inst, hostButton)
