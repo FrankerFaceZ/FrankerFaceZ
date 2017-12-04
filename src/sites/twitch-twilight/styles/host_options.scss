@@ -1,0 +1,24 @@
+.ffz-host-options {
+	min-width: 300px;
+
+	.scrollable-area {
+		max-height: 25vh;
+	}
+
+	.handle {
+		cursor: move;
+		cursor: -webkit-grabbing;
+	}
+
+	.sortable-ghost {
+		opacity: 0.4;
+	}
+
+	.ffz--host-remove-user {
+		&:hover { background: #a94444 !important }
+	}
+
+	> header {
+		padding: .9rem 1rem .9rem 2rem;
+	}
+}
