@@ -67,7 +67,10 @@ export class Tooltip {
 
 		this._onMouseOut = e => this._exit(e.target);
 
-		if ( this.live ) {
+		if ( this.options.manual ) {
+			// Do nothing~!
+
+		} else if ( this.live ) {
 			this._onMouseOver = e => {
 				const target = e.target;
 				if ( target.classList.contains(this.cls) )
@@ -99,7 +102,9 @@ export class Tooltip {
 	}
 
 	destroy() {
-		if ( this.live || this.elements.size > 5 ) {
+		if ( this.options.manual ) {
+			// Do nothing~!
+		} else if ( this.live || this.elements.size > 5 ) {
 			parent.removeEventListener('mouseover', this._onMouseOver);
 			parent.removeEventListener('mouseout', this._onMouseOut);
 		} else
@@ -215,17 +220,19 @@ export class Tooltip {
 		const interactive = maybe_call(opts.interactive, null, target, tip);
 		el.classList.toggle('interactive', interactive || false);
 
-		el.addEventListener('mouseover', () => {
-			if ( ! document.contains(target) )
-				this.hide(tip);
+		if ( ! opts.manual ) {
+			el.addEventListener('mouseover', () => {
+				if ( ! document.contains(target) )
+					this.hide(tip);
 
-			else if ( maybe_call(opts.interactive, null, target, tip) )
-				this._enter(target);
-			else
-				this._exit(target);
-		});
+				else if ( maybe_call(opts.interactive, null, target, tip) )
+					this._enter(target);
+				else
+					this._exit(target);
+			});
 
-		el.addEventListener('mouseout', () => this._exit(target));
+			el.addEventListener('mouseout', () => this._exit(target));
+		}
 
 		// Assign our content. If there's a Promise, we'll need
 		// to do this weirdly.

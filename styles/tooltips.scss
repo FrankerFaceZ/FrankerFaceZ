@@ -2,6 +2,75 @@ body {
 	overflow-x: hidden
 }
 
+.ffz-metadata-balloon {
+	z-index: 999999999;
+	margin: 6px;
+
+	&[x-placement^="bottom"] > .tw-balloon__tail {
+		top: -3px;
+		box-shadow: -1px -1px 0 #dad8de;
+
+		.theme--dark & {
+			box-shadow: -1px -1px 0 #2c2541;
+		}
+
+		.theme--ffz & {
+			box-shadow: -1px -1px 0 var(--ffz-color-20);
+		}
+	}
+
+	&[x-placement^="top"] > .tw-balloon__tail {
+		bottom: -3px;
+		box-shadow: 1px 1px 0 #dad8de;
+
+		.theme--dark & {
+			box-shadow: 1px 1px 0 #2c2541;
+		}
+
+		.theme--ffz & {
+			box-shadow: 1px 1px 0 var(--ffz-color-20);
+		}
+	}
+
+	&[x-placement^="left"] > .tw-balloon__tail {
+		right: -3px;
+		box-shadow: -1px 1px 0 #dad8de;
+
+		.theme--dark & {
+			box-shadow: -1px 1px 0 #2c2541;
+		}
+
+		.theme--ffz & {
+			box-shadow: -1px 1px 0 var(--ffz-color-20);
+		}
+	}
+
+	&[x-placement^="right"] > .tw-balloon__tail {
+		left: -3px;
+		box-shadow: 1px -1px 0 #dad8de;
+
+		.theme--dark & {
+			box-shadow: 1px -1px 0 #2c2541;
+		}
+
+		.theme--ffz & {
+			box-shadow: 1px -1px 0 var(--ffz-color-20);
+		}
+	}
+}
+
+.ffz-metadata-balloon,
+.ffz__tooltip {
+	.loader {
+		text-align: center;
+		opacity: .5;
+		margin: 1rem;
+		font-size: 3rem;
+		animation: ffz-rotateplane 1.2s infinite linear;
+	}
+}
+
+
 .ffz__tooltip {
 	z-index: 999999999;
 	margin: 6px;
@@ -14,14 +83,6 @@ body {
 	white-space: pre-wrap;
 
 	&.html { white-space: normal }
-
-
-	.loader {
-		opacity: .5;
-		margin: 1rem;
-		font-size: 3rem;
-		animation: ffz-rotateplane 1.2s infinite linear;
-	}
 
 
 	.ffz__tooltip--arrow {
