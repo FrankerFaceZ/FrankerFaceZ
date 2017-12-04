@@ -147,3 +147,25 @@ export class ManagedStyle {
 		}
 	}
 }
+
+
+export class ClickOutside {
+	constructor(element, callback) {
+		this.el = element;
+		this.cb = callback;
+		this._fn = this.handleClick.bind(this);
+		document.documentElement.addEventListener('click', this._fn);
+	}
+
+	destroy() {
+		if ( this._fn )
+			document.documentElement.removeEventListener('click', this._fn);
+
+		this.cb = this.el = this._fn = null;
+	}
+
+	handleClick(e) {
+		if ( ! this.el.contains(e.target) )
+			this.cb(e);
+	}
+}

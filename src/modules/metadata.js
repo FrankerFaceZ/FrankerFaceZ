@@ -4,7 +4,7 @@
 // Channel Metadata
 // ============================================================================
 
-import {createElement as e} from 'utilities/dom';
+import {createElement as e, ClickOutside} from 'utilities/dom';
 import {has, get, maybe_call} from 'utilities/object';
 
 import {duration_to_string} from 'utilities/time';
@@ -273,23 +273,117 @@ export default class Metadata extends Module {
 
 			const tooltip = maybe_call(def.tooltip, this, data),
 				order = maybe_call(def.order, this, data),
-				color = maybe_call(def.color, this, data);
+				color = maybe_call(def.color, this, data) || '';
 
 			if ( ! el ) {
 				let icon = maybe_call(def.icon, this, data);
-				if ( typeof icon === 'string' )
-					icon = e('span', 'tw-stat__icon', e('figure', icon));
 
-				el = e('div', {
-					className: 'ffz-stat tw-stat',
-					'data-key': key,
-					tip_content: tooltip
-				}, [
-					icon,
-					stat = e('span', 'tw-stat__value')
-				]);
+				if ( def.popup || def.click ) {
+					let btn, popup;
+					let cls = maybe_call(def.button, this, data);
+					if ( typeof cls !== 'string' )
+						cls = `tw-button--${cls ? 'hollow' : 'text'}`;
+
+					const fix = cls === 'tw-button--text';
+
+					if ( typeof icon === 'string' )
+						icon = e('span', 'tw-button__icon tw-button__icon--left', e('figure', icon));
+
+					if ( def.popup && def.click ) {
+						el = e('span', {
+							className: `ffz-stat${fix ? ' ffz-fix-padding--left' : ''}`,
+							'data-key': key,
+							tip_content: tooltip
+						}, [
+							btn = e('button', `tw-button ${cls}`, [
+								icon,
+								stat = e('span', 'ffz-stat-text tw-button__text')
+							]),
+							popup = e('button', `tw-button ${cls} ffz-stat-arrow`,
+								e('span', 'tw-button__icon pd-x-0',
+									e('figure', 'ffz-i-down-dir')
+								)
+							)
+						]);
+
+					} else
+						btn = popup = el = e('button', {
+							className: `ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button ${cls}`,
+							'data-key': key,
+							tip_content: tooltip
+						}, [
+							icon,
+							stat = e('span', 'ffz-stat-text tw-button__text'),
+							def.popup && e('span', 'tw-button__icon tw-button__icon--right', e('figure', 'ffz-i-down-dir'))
+						]);
+
+					if ( def.click )
+						btn.addEventListener('click', e => {
+							if ( btn.disabled || btn.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
+								return false;
+
+							def.click.call(this, data, e, () => refresh_fn(key));
+						});
+
+					if ( def.popup )
+						popup.addEventListener('click', e => {
+							if ( popup.disabled || popup.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
+								return false;
+
+							if ( el._ffz_popup )
+								return el._ffz_destroy();
+
+							const destroy = el._ffz_destroy = () => {
+								if ( el._ffz_outside )
+									el._ffz_outside.destroy();
+
+								if ( el._ffz_popup ) {
+									const fp = el._ffz_popup;
+									el._ffz_popup = null;
+									fp.destroy();
+								}
+
+								el._ffz_destroy = el._ffz_outside = null;
+							};
+
+							const tt = el._ffz_popup = new Tooltip(document.body, el, {
+								manual: true,
+								html: true,
+
+								tooltipClass: 'ffz-metadata-balloon tw-balloon block',
+								arrowClass: 'tw-balloon__tail',
+								innerClass: 'pd-1',
+
+								popper: {
+									placement: 'top-end'
+								},
+								content: (t, tip) => def.popup.call(this, data, tip, () => refresh_fn(key)),
+								onShow: (t, tip) =>
+									setTimeout(() => {
+										el._ffz_outside = new ClickOutside(tip.outer, destroy);
+									}),
+								onHide: destroy
+							})
+
+							tt._enter(el);
+						});
+
+				} else {
+					if ( typeof icon === 'string' )
+						icon = e('span', 'tw-stat__icon', e('figure', icon));
+
+					el = e('div', {
+						className: 'ffz-stat tw-stat',
+						'data-key': key,
+						tip_content: tooltip
+					}, [
+						icon,
+						stat = e('span', 'ffz-stat-text tw-stat__value')
+					]);
+				}
 
 				el._ffz_order = order;
+				el._ffz_data = data;
 
 				if ( order != null )
 					el.style.order = order;
@@ -306,7 +400,7 @@ export default class Metadata extends Module {
 					});
 
 			} else {
-				stat = el.querySelector('.tw-stat__value');
+				stat = el.querySelector('.ffz-stat-text');
 				old_color = el.dataset.color || '';
 
 				if ( el._ffz_order !== order )

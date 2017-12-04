@@ -6,6 +6,15 @@
 			order: 50;
 		}
 
+		.ffz-fix-padding {
+			margin-left: -.8rem !important;
+			margin-right: .2rem !important;
+		}
+
+		.ffz-fix-padding--left {
+			margin-left: -.8rem !important;
+		}
+
 		.c-text-live {
 			order: 1;
 		}
@@ -18,4 +27,15 @@
 	& > .flex:last-child > :last-child {
 		margin-right: 0 !important
 	}
+}
+
+.theme--ffz, .theme--ffz.theme--dark, .theme--dark, body {
+	.ffz-stat > .tw-button,
+	.ffz-stat.tw-button {
+		color: inherit;
+	}
+}
+
+.ffz-stat-arrow {
+	border-left: none !important;
 }
