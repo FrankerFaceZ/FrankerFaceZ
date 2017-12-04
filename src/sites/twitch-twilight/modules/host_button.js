@@ -61,12 +61,12 @@ export default class HostButton extends Module {
 		this._chat_con.events.hosting(e => {
 			this._last_hosted_channel = e.target;
 
-			this.updateCurrentChannelHost(inst);
+			this.updateCurrentChannelHost(e.target);
 		});
 		this._chat_con.events.unhost(e => {
 			this._last_hosted_channel = null;
 
-			this.updateCurrentChannelHost(inst);
+			this.updateCurrentChannelHost();
 		});
 		this._chat_con.events.connected(e => {
 			this._chat_con.joinChannel(inst.props.userLogin);
@@ -272,10 +272,10 @@ export default class HostButton extends Module {
 		}
 	}
 
-	updateCurrentChannelHost(inst) {
+	updateCurrentChannelHost(channelLogin) {
 		if (!this._host_button_span) return;
 
-		this._host_button_span.textContent = this.isChannelHosted(inst.props.channelLogin) ? 'Unhost' : 'Host';
+		this._host_button_span.textContent = this.isChannelHosted(channelLogin) ? 'Unhost' : 'Host';
 		this._host_button_span.parentElement.classList.remove('tw-button--disabled');
 	}
 
