@@ -290,12 +290,12 @@ export default class HostButton extends Module {
 
 		if (buttonBar == null || buttonBar && buttonBar.querySelector && buttonBar.querySelector('.ffz-host-container') !== null) return;
 
-		if (this._host_button_span) this._host_button_span.destroy();
+		if (this._host_button_span && this._host_button_span.destroy) this._host_button_span.destroy();
 		this._host_button_span = null;
 
 		const hostButton = e('div', 'ffz-host-container mg-x-1', [
 			e('button', {
-				class: 'tw-button tw-button--hollow tw-button--disabled',
+				class: `tw-button tw-button--hollow ${this._chat_con ? '' : 'tw-class--disabled'}`,
 				onclick: () => {
 					if (!this._chat_con) return;
 
