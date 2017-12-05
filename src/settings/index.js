@@ -13,15 +13,6 @@ import SettingsContext from './context';
 import MigrationManager from './migration';
 
 
-const OVERRIDE_GET = {
-	ffz_enable_highlight_sound: false,
-	ffz_highlight_sound_volume: 0,
-	bttv_channel_emotes: true,
-	bttv_global_emotes: true,
-	bttv_gif_emotes: 1
-}
-
-
 // ============================================================================
 // SettingsManager
 // ============================================================================
@@ -331,12 +322,7 @@ export default class SettingsManager extends Module {
 	// ========================================================================
 
 	context(env) { return this.main_context.context(env) }
-	get(key) {
-		if ( has(OVERRIDE_GET, key) )
-			return OVERRIDE_GET[key];
-
-		return this.main_context.get(key);
-	}
+	get(key) { return this.main_context.get(key); }
 	uses(key) { return this.main_context.uses(key) }
 	update(key) { return this.main_context.update(key) }
 

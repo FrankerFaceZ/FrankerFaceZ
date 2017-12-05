@@ -103,8 +103,22 @@ export default class Directory extends SiteModule {
 			changed: value => {
 				this.css_tweaks.toggleHide('boxart-hide', value === 0);
 				this.css_tweaks.toggleHide('boxart-hover', value === 1);
-				this.ChannelCard.forceUpdate()
+				this.ChannelCard.forceUpdate();
 			}
+		});
+
+
+		this.settings.add('directory.hide-vodcasts', {
+			default: false,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Hide Vodcasts',
+				description: 'Hide vodcasts in the directories.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.ChannelCard.forceUpdate()
 		});
 	}
 
@@ -146,6 +160,13 @@ export default class Directory extends SiteModule {
 		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
 		const container = this.fine.getHostNode(inst);
+
+		if (inst.props.streamNode.type === 'watch_party') {
+			const hideVodcasts = this.settings.get('directory.hide-vodcasts');
+			if (hideVodcasts) container.classList.add('hide');
+			else container.classList.remove('hide');
+		}
+
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
 		if (img === null) return;
 
@@ -206,9 +227,9 @@ export default class Directory extends SiteModule {
 
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);
 
-		if ( ! inst.ffz_uptime_el ) {
+		if ( ! inst.ffz_uptime_el || card.querySelector('.ffz-uptime-element') === undefined ) {
 			card.appendChild(inst.ffz_uptime_el = e('div',
-				'video-preview-card__preview-overlay-stat c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
+				'video-preview-card__preview-overlay-stat c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05 ffz-uptime-element',
 				e('div', 'tw-tooltip-wrapper inline-flex', [
 					e('div', 'tw-stat', [
 						e('span', 'c-text-live tw-stat__icon', e('figure', 'ffz-i-clock')),
