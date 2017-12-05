@@ -360,7 +360,7 @@ export default class Metadata extends Module {
 								popper: {
 									placement: 'top-end'
 								},
-								content: (t, tip) => def.popup.call(this, data, tip, () => refresh_fn(key)),
+								content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key)),
 								onShow: (t, tip) =>
 									setTimeout(() => {
 										el._ffz_outside = new ClickOutside(tip.outer, destroy);
@@ -386,7 +386,6 @@ export default class Metadata extends Module {
 				}
 
 				el._ffz_order = order;
-				el._ffz_data = data;
 
 				if ( order != null )
 					el.style.order = order;
@@ -419,6 +418,7 @@ export default class Metadata extends Module {
 			if ( old_color !== color )
 				el.dataset.color = el.style.color = color;
 
+			el._ffz_data = data;
 			stat.innerHTML = label;
 
 			if ( def.disabled !== undefined )
