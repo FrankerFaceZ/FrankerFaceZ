@@ -239,7 +239,10 @@ export default class Metadata extends Module {
 					if ( el.popper )
 						el.popper.destroy();
 
-					el.tooltip = el.popper = null;
+					if ( el._ffz_destroy )
+						el._ffz_destroy();
+
+					el._ffz_destroy = el.tooltip = el.popper = null;
 					el.remove();
 				}
 			};
@@ -322,7 +325,7 @@ export default class Metadata extends Module {
 							if ( btn.disabled || btn.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
 								return false;
 
-							def.click.call(this, data, e, () => refresh_fn(key));
+							def.click.call(this, el._ffz_data, e, () => refresh_fn(key));
 						});
 
 					if ( def.popup )
