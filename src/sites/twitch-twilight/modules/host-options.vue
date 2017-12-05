@@ -1,7 +1,7 @@
 <template lang="html">
-<div class="ffz-hosting-menu ffz-host-options tw-balloon block">
+<div class="ffz-auto-host-options">
 	<header class="c-background full-width align-items-center flex flex-nowrap">
-		<h4 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ - Auto Host Management</h4>
+		<h4>Auto Host Management</h4>
 	</header>
 	<section class="border-t full-height full-width flex flex-nowrap overflow-hidden">
 		<main class="flex-grow-1 scrollable-area" data-simplebar="init">

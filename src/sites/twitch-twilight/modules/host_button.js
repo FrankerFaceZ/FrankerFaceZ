@@ -7,8 +7,6 @@
 import Module from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 
-import Popper from 'popper.js';
-
 export default class HostButton extends Module {
 	constructor(...args) {
 		super(...args);
@@ -16,41 +14,56 @@ export default class HostButton extends Module {
 		this.should_enable = true;
 
 		this.inject('site.fine');
-		this.inject('vue');
+		this.inject('metadata');
 
-		this.ChannelBar = this.fine.define(
-			'channel-bar',
-			n => n.getTitle && n.getGame && n.renderGame
-		);
-	}
-	
-	async onLoad() {
-		// this.vue.component('host-options', require(/* webpackChunkName: "host-options" */ './host-options.vue'));
-		this.vue.component('host-options',
-			(await import(/* webpackChunkName: "host-options" */ './host-options.vue')).default
-		);
+		this.metadata.definitions.host = {
+			order: 150,
+			button: true,
+			
+			click: data => {
+				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
+			},
+
+			popup: async (data, tip) => {
+				const vue = this.resolve('vue'),
+					_host_options_vue = import(/* webpackChunkName: "host-options" */ './host-options.vue'),
+					_autoHosts = this.fetchAutoHosts();
+				
+				const [, host_options_vue, autoHosts] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts]);
+
+				this._auto_host_tip = tip;
+				tip.element.classList.remove('pd-1');
+				vue.component('host-options', host_options_vue.default);
+				return this.buildAutoHostMenu(vue, autoHosts, data.channel);
+			},
+
+			label: data => {
+				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login)) ? 'Unhost' : 'Host';
+			},
+
+			tooltip: () => {
+				return `Currently hosting: ${this._last_hosted_channel || 'None'}`;
+			}
+		};
 	}
 
-	sendHostUnhostCommand(currentChannel) {
+	sendHostUnhostCommand(channel) {
 		if (!this._chat_con) return;
 
 		const ffz_user = ffz.site.getUser(),
 			userLogin = ffz_user && ffz_user.login;
 
-		const commandData = {channel: userLogin, username: currentChannel};
+		const commandData = {channel: userLogin, username: channel};
 
-		if (this.isChannelHosted(currentChannel)) {
+		if (this.isChannelHosted(channel)) {
 			this._chat_con.commands.unhost.execute(commandData);
 		} else {
 			this._chat_con.commands.host.execute(commandData);
 		}
 	}
 
-	createSelfChatConnection() {
+	createSelfChatConnection(inst) {
 		if (this._chat_con) return;
-
-		const chat = this.resolve('site.chat'),
-			inst = chat && chat.currentChat;
 
 		const chatServiceClient = inst.chatService.client;
 
@@ -59,14 +72,14 @@ export default class HostButton extends Module {
 		this._chat_con.events.hosting(e => {
 			this._last_hosted_channel = e.target;
 
-			this.updateCurrentChannelHost(inst.props.channelLogin);
+			this.metadata.updateMetadata('host');
 		});
-		this._chat_con.events.unhost(e => {
+		this._chat_con.events.unhost(() => {
 			this._last_hosted_channel = null;
 
-			this.updateCurrentChannelHost();
+			this.metadata.updateMetadata('host');
 		});
-		this._chat_con.events.connected(e => {
+		this._chat_con.events.connected(() => {
 			this._chat_con.joinChannel(inst.props.userLogin);
 		});
 		this._chat_con.session.getChannelState = () => {};
@@ -74,83 +87,31 @@ export default class HostButton extends Module {
 	}
 
 	onEnable() {
-		this.ChannelBar.ready((cls, instances) => {
-			for(const inst of instances)
-				this.appendHostButton(inst);
+		this.metadata.updateMetadata('host');
+
+		const chat = this.resolve('site.chat');
+		chat.ChatController.ready((cls, instances) => {
+			for(const inst of instances) {
+				if (inst && inst.chatService) this.createSelfChatConnection(inst);
+			}
 		});
-
-		this.ChannelBar.on('mount', this.appendHostButton, this);
-		this.ChannelBar.on('update', this.appendHostButton, this);
-
-		this.createSelfChatConnection();
-
-		this.fetchAutoHosts();
-		document.body.addEventListener('click', this.destroyHostOptions.bind(this));
 	}
 
-	destroyHostOptions(event) {
-		if (!event || event && event.target && event.target.closest('.ffz-hosting-menu') === null && Date.now() > this.popperBuffer) {
-			this.popper && this.popper.destroy();
-			this.popperEl && this.popperEl.remove();
-			this.popper = this.popperEl = undefined;
-		}
-	}
-
-	createHostOptionsMenu(inst, hostButton) {
-		this.destroyHostOptions();
-
-		if ( this._menu )
-			return;
-
-		this._vue = new this.vue.Vue({
+	buildAutoHostMenu(vue, hosts, data) {
+		this._current_channel_id = data.id;
+		this.vueEl = new vue.Vue({
 			el: e('div'),
 			render: h => h('host-options', {
-				hosts: this.autoHosts,
+				hosts,
 
-				addedToHosts: this.currentRoomInHosts(inst),
-				addToAutoHosts: () => this.addCurrentRoomToHosts(inst),
-				rearrangeHosts: event => this.rearrangeHosts(inst, event.oldIndex, event.newIndex),
-				shuffle: () => this.shuffleHosts(inst),
-				removeFromHosts: event => this.removeUserFromHosts(inst, event)
+				addedToHosts: this.currentRoomInHosts(),
+				addToAutoHosts: () => this.addCurrentRoomToHosts(),
+				rearrangeHosts: event => this.rearrangeHosts(event.oldIndex, event.newIndex),
+				removeFromHosts: event => this.removeUserFromHosts(event)
 			})
 		});
 
-		this.popperEl = this._vue.$el;
-		document.body.appendChild(this.popperEl);
-		
-		this.popper = new Popper(hostButton, this.popperEl, {
-			placement: 'top'
-		});
-
-		this.popperBuffer = Date.now() + 50;
-	}
-
-	showHostOptions(inst, hostButton) {
-		this.popper && this.popper.destroy();
-		
-		this.popperEl && this.popperEl.remove();
-
-		this.popperEl = e('div', 'ffz-hosting-menu tw-balloon block',
-			e('div', 'pd-y-1',
-				e('button', {
-					class: 'tw-interactable',
-					onclick: () => this.createHostOptionsMenu(inst, hostButton)
-				},
-				e('div', {
-					class: 'pd-x-1 pd-y-05',
-					textContent: 'Manage auto hosts'
-				})
-				)
-			)
-		);
-
-		document.body.appendChild(this.popperEl);
-
-		this.popper = new Popper(hostButton, this.popperEl, {
-			placement: 'top'
-		});
-
-		this.popperBuffer = Date.now() + 50;
+		return this.vueEl.$el;
 	}
 
 	async fetchAutoHosts() {
@@ -177,39 +138,39 @@ export default class HostButton extends Module {
 			return;
 		}
 
-		this.autoHosts = data.targets;
+		return this.autoHosts = data.targets;
 	}
 
-	queueHostUpdate(inst, newHosts) {
+	queueHostUpdate(newHosts) {
 		if (this._host_update_timer) clearTimeout(this._host_update_timer);
 		
 		this._host_update_timer = setTimeout(() => {
 			this._host_update_timer = undefined;
-			this.updateAutoHosts(inst, newHosts);
+			this.updateAutoHosts(newHosts);
 		}, 1000);
 	}
 	
-	rearrangeHosts(inst, oldIndex, newIndex) {
+	rearrangeHosts(oldIndex, newIndex) {
 		const newHosts = this.autoHosts.slice(0);
 		
 		const host = newHosts.splice(oldIndex, 1)[0];
 		newHosts.splice(newIndex, 0, host);
 		
-		this.queueHostUpdate(inst, newHosts);
+		this.queueHostUpdate(newHosts);
 	}
 	
-	currentRoomInHosts(inst) {
-		return this.getAutoHostIDs(this.autoHosts).includes(parseInt(inst.props.userData.user.id));
+	currentRoomInHosts() {
+		return this.getAutoHostIDs(this.autoHosts).includes(parseInt(this._current_channel_id, 10));
 	}
 
-	addCurrentRoomToHosts(inst) {
+	addCurrentRoomToHosts() {
 		const newHosts = this.autoHosts.slice(0);
-		newHosts.push({ _id: parseInt(inst.props.userData.user.id)});
+		newHosts.push({ _id: parseInt(this._current_channel_id, 10)});
 
-		this.queueHostUpdate(inst, newHosts);
+		this.updateAutoHosts(newHosts);
 	}
 
-	removeUserFromHosts(inst, event) {
+	removeUserFromHosts(event) {
 		const id = event.target.closest('.ffz--host-user').getAttribute('data-id');
 		
 		const newHosts = [];
@@ -217,10 +178,10 @@ export default class HostButton extends Module {
 			if (`${this.autoHosts[i]._id}` !== id) newHosts.push(this.autoHosts[i]);
 		}
 
-		this.queueHostUpdate(inst, newHosts);
+		this.updateAutoHosts(newHosts);
 	}
 
-	getAutoHostIDs(hosts) {
+	getAutoHostIDs(hosts) { // eslint-disable-line
 		const ids = [];
 		if (hosts) {
 			for (let i = 0; i < hosts.length; i++) {
@@ -230,7 +191,7 @@ export default class HostButton extends Module {
 		return ids;
 	}
 
-	async updateAutoHosts(inst, newHosts) {
+	async updateAutoHosts(newHosts) {
 		const user = this.resolve('site').getUser();
 		if ( ! user )
 			return;
@@ -261,66 +222,14 @@ export default class HostButton extends Module {
 		}
 
 		this.autoHosts = data.targets;
-		if (this._vue) {
-			this._vue.$children[0]._data.hosts = this.autoHosts;
-			this._vue.$children[0]._data.addedToHosts = this.currentRoomInHosts(inst);
-			if (this.popper && this.popper.update) this.popper.update();
+		if (this.vueEl) {
+			this.vueEl.$children[0]._data.hosts = this.autoHosts;
+			this.vueEl.$children[0]._data.addedToHosts = this.currentRoomInHosts();
+			this._auto_host_tip.update();
 		}
-	}
-
-	updateCurrentChannelHost(channelLogin) {
-		if (!this._host_button_span) return;
-
-		this._host_button_span.textContent = this.isChannelHosted(channelLogin) ? 'Unhost' : 'Host';
-		this._host_button_span.parentElement.classList.remove('tw-button--disabled');
-		this._host_button_tooltip.innerHTML = `Currently hosting: ${this._last_hosted_channel}`;
 	}
 
 	isChannelHosted(channelLogin) {
 		return this._last_hosted_channel === channelLogin;
-	}
-
-	appendHostButton(inst) {
-		const container = this.fine.getHostNode(inst),
-			allFlex = container && container.querySelector && container.querySelectorAll('.channel-info-bar__action-container > .flex'),
-			buttonBar = allFlex && allFlex[allFlex.length - 1];
-
-		if (buttonBar == null || buttonBar && buttonBar.querySelector && buttonBar.querySelector('.ffz-host-container') !== null) return;
-
-		if (this._host_button_span && this._host_button_span.destroy) this._host_button_span.destroy();
-		this._host_button_span = null;
-
-		if (this._host_button_tooltip && this._host_button_tooltip.destroy) this._host_button_tooltip.destroy();
-		this._host_button_tooltip = null;
-		
-		const hostButton = e('div', 'ffz-host-container mg-x-1', [
-			e('div', 'tw-tooltip-wrapper inline-flex', [
-				e('button', {
-					class: `tw-button tw-button--hollow ${this._chat_con ? '' : 'tw-class--disabled'}`,
-					onclick: () => {
-						if (!this._chat_con) return;
-
-						this._host_button_span.parentElement.classList.add('tw-button--disabled');
-						this.sendHostUnhostCommand(inst.props.channelLogin);
-					}
-				}, this._host_button_span = e('span', {
-					class: 'tw-button__text',
-					textContent: this.isChannelHosted(inst.props.channelLogin) ? 'Unhost' : 'Host'
-				})),
-				this._host_button_tooltip = e('div', {
-					className: 'tw-tooltip tw-tooltip--up tw-tooltip--align-center',
-					innerHTML: this._last_hosted_channel ? `Currently hosting: ${this._last_hosted_channel}` : undefined
-				})
-			]),
-			e('button', {
-				class: 'tw-button-icon tw-button-icon--hollow',
-				onclick: () => this.showHostOptions(inst, hostButton)
-			}, e('figure', {
-				class: 'ffz-i-down-dir',
-				style: 'padding: .4rem .2rem'
-			}))
-		]);
-
-		buttonBar.insertAdjacentElement('afterbegin', hostButton);
 	}
 }
