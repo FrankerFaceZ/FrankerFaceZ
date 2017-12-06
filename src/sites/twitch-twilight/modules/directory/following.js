@@ -432,13 +432,12 @@ export default class Following extends SiteModule {
 					const channelCardTitle = card.querySelector('.ffz-channel-data .live-channel-card__title');
 
 					const textContent = hostObj.channels.length > 1 ? `${hostObj.channels.length} hosting ${displayName}` : inst.props.title;
-					if (channelCardTitle !== null) {
-						channelCardTitle.textContent
-							= channelCardTitle.title
-							= textContent;
-					}
+					const title = hostObj.channels.length > 1 ? `${hostObj.channels.join(', ')} hosting ${displayName}` : inst.props.title;
 
-					if (thumbnailLink !== null) thumbnailLink.title = textContent;
+					if (channelCardTitle !== null) channelCardTitle.textContent = textContent;
+						
+					if (channelCardTitle !== null) channelCardTitle.title = title;
+					if (thumbnailLink !== null) thumbnailLink.title = title;
 
 					if (titleLink !== null) titleLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
 					if (thumbnailLink !== null) thumbnailLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
