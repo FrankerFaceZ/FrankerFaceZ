@@ -1,5 +1,6 @@
 .ffz-auto-host-options {
 	min-width: 300px;
+	max-width: 400px;
 
 	.scrollable-area {
 		max-height: 25vh;
@@ -20,5 +21,22 @@
 
 	> header {
 		padding: .9rem 1rem .9rem 2rem;
+	}
+
+	.host-options__tabs-container {
+		height: 3rem;
+
+		> .host-options__tab {
+			position: relative;
+			top: -.1rem;
+			cursor: pointer;
+			display: inline-block;
+			line-height: 3rem;
+			margin-right: .5rem;
+
+			&:hover, &.active {
+				border-top: 1px solid #6441a4;
+			}
+		}
 	}
 }

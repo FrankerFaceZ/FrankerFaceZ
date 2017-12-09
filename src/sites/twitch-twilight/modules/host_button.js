@@ -27,14 +27,15 @@ export default class HostButton extends Module {
 			popup: async (data, tip) => {
 				const vue = this.resolve('vue'),
 					_host_options_vue = import(/* webpackChunkName: "host-options" */ './host-options.vue'),
-					_autoHosts = this.fetchAutoHosts();
+					_autoHosts = this.fetchAutoHosts(),
+					_autoHostSettings = this.fetchAutoHostSettings();
 				
-				const [, host_options_vue, autoHosts] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts]);
+				const [, host_options_vue, autoHosts, autoHostSettings] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts, _autoHostSettings]);
 
 				this._auto_host_tip = tip;
 				tip.element.classList.remove('pd-1');
 				vue.component('host-options', host_options_vue.default);
-				return this.buildAutoHostMenu(vue, autoHosts, data.channel);
+				return this.buildAutoHostMenu(vue, autoHosts, autoHostSettings, data.channel);
 			},
 
 			label: data => {
@@ -97,17 +98,33 @@ export default class HostButton extends Module {
 		});
 	}
 
-	buildAutoHostMenu(vue, hosts, data) {
+	buildAutoHostMenu(vue, hosts, autoHostSettings, data) {
 		this._current_channel_id = data.id;
+		this.activeTab = this.activeTab || 'auto-host';
+
 		this.vueEl = new vue.Vue({
 			el: e('div'),
 			render: h => h('host-options', {
 				hosts,
+				autoHostSettings,
+				activeTab: this.activeTab,
 
 				addedToHosts: this.currentRoomInHosts(),
 				addToAutoHosts: () => this.addCurrentRoomToHosts(),
 				rearrangeHosts: event => this.rearrangeHosts(event.oldIndex, event.newIndex),
-				removeFromHosts: event => this.removeUserFromHosts(event)
+				removeFromHosts: event => this.removeUserFromHosts(event),
+				setActiveTab: tab => {
+					this.vueEl.$children[0]._data.activeTab = this.activeTab = tab;
+				},
+				updatePopper: () => {
+					if (this._auto_host_tip) this._auto_host_tip.update();
+				},
+				updateCheckbox: event => {
+					const setting = event.target.getAttribute('setting'),
+						state = event.target.checked;
+
+					this.updateAutoHostSetting(setting, setting === 'strategy' ? (state ? 'random' : 'order') : state);
+				}
 			})
 		});
 
@@ -139,6 +156,33 @@ export default class HostButton extends Module {
 		}
 
 		return this.autoHosts = data.targets;
+	}
+
+	async fetchAutoHostSettings() {
+		const user = this.resolve('site').getUser();
+		if ( ! user )
+			return;
+
+		let data;
+		try {
+			data = await fetch('https://api.twitch.tv/kraken/autohost/settings', {
+				headers: {
+					'Accept': 'application/vnd.twitchtv.v4+json',
+					'Authorization': `OAuth ${user.authToken}`
+				}
+			}).then(r => {
+				if ( r.ok )
+					return r.json();
+
+				throw r.status;
+			});
+
+		} catch(err) {
+			this.log.error('Error loading auto host settings.', err);
+			return;
+		}
+
+		return this.autoHostSettings = data.settings;
 	}
 
 	queueHostUpdate(newHosts) {
@@ -217,7 +261,7 @@ export default class HostButton extends Module {
 			});
 
 		} catch(err) {
-			this.log.error('Error loading auto host list.', err);
+			this.log.error('Error updating auto host list.', err);
 			return;
 		}
 
@@ -225,7 +269,41 @@ export default class HostButton extends Module {
 		if (this.vueEl) {
 			this.vueEl.$children[0]._data.hosts = this.autoHosts;
 			this.vueEl.$children[0]._data.addedToHosts = this.currentRoomInHosts();
-			this._auto_host_tip.update();
+		}
+	}
+
+	async updateAutoHostSetting(setting, newValue) {
+		const user = this.resolve('site').getUser();
+		if ( ! user )
+			return;
+
+		let data;
+		try {
+			const form = new URLSearchParams();
+			form.append(setting, newValue);
+
+			data = await fetch('https://api.twitch.tv/kraken/autohost/settings', {
+				headers: {
+					'Accept': 'application/vnd.twitchtv.v4+json',
+					'Authorization': `OAuth ${user.authToken}`
+				},
+				method: 'PUT',
+				body: form
+			}).then(r => {
+				if ( r.ok )
+					return r.json();
+
+				throw r.status;
+			});
+
+		} catch(err) {
+			this.log.error('Error updating auto host setting.', err);
+			return;
+		}
+
+		this.autoHostSettings = data.settings;
+		if (this.vueEl) {
+			this.vueEl.$children[0]._data.autoHostSettings = this.autoHostSettings;
 		}
 	}
 
