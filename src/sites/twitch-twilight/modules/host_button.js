@@ -120,10 +120,17 @@ export default class HostButton extends Module {
 					if (this._auto_host_tip) this._auto_host_tip.update();
 				},
 				updateCheckbox: event => {
-					const setting = event.target.getAttribute('setting'),
-						state = event.target.checked;
+					const setting = event.target.getAttribute('setting');
+					let state = event.target.checked;
 
-					this.updateAutoHostSetting(setting, setting === 'strategy' ? (state ? 'random' : 'order') : state);
+					if (setting === 'strategy') {
+						state = state ? 'random' : 'ordered';
+					}
+					if (setting === 'deprioritize_vodcast') {
+						state = !state;
+					}
+
+					this.updateAutoHostSetting(setting, state);
 				}
 			})
 		});
