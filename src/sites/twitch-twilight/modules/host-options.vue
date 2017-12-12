@@ -3,8 +3,8 @@
 	<header class="c-background full-width align-items-center flex flex-nowrap">
 		<h4>Auto Host Management</h4>
 	</header>
-	<div class="tab full-height full-width flex overflow-hidden"
-		v-if="activeTab === 'auto-host'"
+	<div class="tab overflow-hidden"
+		v-show="activeTab === 'auto-host'"
 		v-bind:class="{ active: activeTab === 'auto-host'}">
 		<section class="border-t full-width full-height">
 			<main class="flex-grow-1 scrollable-area" data-simplebar="init">
@@ -40,8 +40,8 @@
 			</button>
 		</header>
 	</div>
-	<div class="tab full-height full-width flex overflow-hidden"
-		v-if="activeTab === 'settings'"
+	<div class="tab overflow-hidden"
+		v-show="activeTab === 'settings'"
 		v-bind:class="{ active: activeTab === 'settings'}">
 		<section class="border-t full-width full-height">
 			<main data-simplebar="init" class="flex-grow-1 scrollable-area">
@@ -58,7 +58,7 @@
 								<div class="flex align-items-center">
 									<input type="checkbox" class="tw-checkbox__input"
 										id="autoHostSettings:enabled"
-										setting="enabled"
+										data-setting="enabled"
 										:checked="autoHostSettings.enabled"
 										@change="updateCheckbox">
 									<label for="autoHostSettings:enabled" class="tw-checkbox__label">
@@ -74,7 +74,7 @@
 								<div class="flex align-items-center">
 									<input type="checkbox" class="tw-checkbox__input"
 										id="autoHostSettings:team_host"
-										setting="team_host"
+										data-setting="team_host"
 										:checked="autoHostSettings.team_host"
 										@change="updateCheckbox">
 									<label for="autoHostSettings:team_host" class="tw-checkbox__label">
@@ -90,7 +90,7 @@
 								<div class="flex align-items-center">
 									<input type="checkbox" class="tw-checkbox__input"
 										id="autoHostSettings:vodcast_hosting"
-										setting="deprioritize_vodcast"
+										data-setting="deprioritize_vodcast"
 										:checked="!autoHostSettings.deprioritize_vodcast"
 										@change="updateCheckbox">
 									<label for="autoHostSettings:vodcast_hosting" class="tw-checkbox__label">
@@ -106,7 +106,7 @@
 								<div class="flex align-items-center">
 									<input type="checkbox" class="tw-checkbox__input"
 										id="autoHostSettings:recommended_host"
-										setting="recommended_host"
+										data-setting="recommended_host"
 										:checked="autoHostSettings.recommended_host"
 										@change="updateCheckbox">
 									<label for="autoHostSettings:recommended_host" class="tw-checkbox__label">
@@ -121,7 +121,7 @@
 								<div class="flex align-items-center">
 									<input type="checkbox" class="tw-checkbox__input"
 										id="autoHostSettings:strategy"
-										setting="strategy"
+										data-setting="strategy"
 										:checked="autoHostSettings.strategy === 'random'"
 										@change="updateCheckbox">
 									<label for="autoHostSettings:strategy" class="tw-checkbox__label">

@@ -19,8 +19,12 @@ export default class HostButton extends Module {
 		this.metadata.definitions.host = {
 			order: 150,
 			button: true,
+
+			disabled: () => {
+				return this._host_updating;	
+			},
 			
-			click: data => {
+			click: (data, event) => {
 				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
 			},
 
@@ -34,11 +38,16 @@ export default class HostButton extends Module {
 
 				this._auto_host_tip = tip;
 				tip.element.classList.remove('pd-1');
+				tip.element.classList.add('tw-balloon--lg');
 				vue.component('host-options', host_options_vue.default);
 				return this.buildAutoHostMenu(vue, autoHosts, autoHostSettings, data.channel);
 			},
 
 			label: data => {
+				if (this._host_updating) {
+					return '<figure class="ffz-i-zreknarf loading"/>';
+				}
+
 				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login)) ? 'Unhost' : 'Host';
 			},
 
@@ -55,6 +64,9 @@ export default class HostButton extends Module {
 			userLogin = ffz_user && ffz_user.login;
 
 		const commandData = {channel: userLogin, username: channel};
+
+		this._host_updating = true;
+		this.metadata.updateMetadata('host');
 
 		if (this.isChannelHosted(channel)) {
 			this._chat_con.commands.unhost.execute(commandData);
@@ -73,6 +85,7 @@ export default class HostButton extends Module {
 
 			this._last_hosted_channel = e.target;
 			
+			this._host_updating = false;
 			this.metadata.updateMetadata('host');
 		});
 
@@ -81,6 +94,7 @@ export default class HostButton extends Module {
 			
 			this._last_hosted_channel = null;
 			
+			this._host_updating = false;
 			this.metadata.updateMetadata('host');
 		});
 
@@ -122,17 +136,16 @@ export default class HostButton extends Module {
 				updatePopper: () => {
 					if (this._auto_host_tip) this._auto_host_tip.update();
 				},
-				updateCheckbox: event => {
-					const setting = event.target.getAttribute('setting');
-					let state = event.target.checked;
-
-					if (setting === 'strategy') {
+				updateCheckbox: e => {
+					const t = e.target,
+						setting = t.dataset.setting;
+					let state = t.checked;
+				
+					if ( setting === 'strategy' )
 						state = state ? 'random' : 'ordered';
-					}
-					if (setting === 'deprioritize_vodcast') {
-						state = !state;
-					}
-
+					else if ( setting === 'deprioritize_vodcast' )
+						state = ! state;
+				
 					this.updateAutoHostSetting(setting, state);
 				}
 			})
