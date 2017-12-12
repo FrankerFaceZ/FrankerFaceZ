@@ -427,6 +427,18 @@ export default class ChatHook extends Module {
 					}
 				}
 
+				const old_host = this.onHostingEvent;
+				this.onHostingEvent = function (e, _t) {
+					t.emit('tmi:host', e, _t);
+					return old_host.call(i, e, _t);
+				}
+
+				const old_unhost = this.onUnhostEvent;
+				this.onUnhostEvent = function (e, _t) {
+					t.emit('tmi:unhost', e, _t);
+					return old_unhost.call(i, e, _t);
+				}
+
 				this.postMessage = function(e) {
 					const original = this._wrapped;
 					if ( original ) {

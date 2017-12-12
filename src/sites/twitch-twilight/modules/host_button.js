@@ -63,28 +63,31 @@ export default class HostButton extends Module {
 		}
 	}
 
-	createSelfChatConnection(inst) {
+	hookIntoChatConnection(inst) {
 		if (this._chat_con) return;
+
+		const userLogin = inst.props.userLogin;
+
+		this.on('tmi:host', (e, t) => {
+			if (e.channel.substring(1) !== userLogin) return;
+
+			this._last_hosted_channel = e.target;
+			
+			this.metadata.updateMetadata('host');
+		});
+
+		this.on('tmi:unhost', (e, t) => {
+			if (e.channel.substring(1) !== userLogin) return;
+			
+			this._last_hosted_channel = null;
+			
+			this.metadata.updateMetadata('host');
+		});
 
 		const chatServiceClient = inst.chatService.client;
 
-		this._chat_con = new chatServiceClient.constructor({connection: {secure: true, port: 443, server: 'irc-ws.chat.twitch.tv'}});
-		this._chat_con.updateIdentity({authToken: inst.props.authToken, username: inst.props.userLogin});
-		this._chat_con.events.hosting(e => {
-			this._last_hosted_channel = e.target;
-
-			this.metadata.updateMetadata('host');
-		});
-		this._chat_con.events.unhost(() => {
-			this._last_hosted_channel = null;
-
-			this.metadata.updateMetadata('host');
-		});
-		this._chat_con.events.connected(() => {
-			this._chat_con.joinChannel(inst.props.userLogin);
-		});
-		this._chat_con.session.getChannelState = () => {};
-		this._chat_con.connect();
+		this._chat_con = chatServiceClient;
+		this._chat_con.joinChannel(userLogin);
 	}
 
 	onEnable() {
@@ -93,7 +96,7 @@ export default class HostButton extends Module {
 		const chat = this.resolve('site.chat');
 		chat.ChatController.ready((cls, instances) => {
 			for(const inst of instances) {
-				if (inst && inst.chatService) this.createSelfChatConnection(inst);
+				if (inst && inst.chatService) this.hookIntoChatConnection(inst);
 			}
 		});
 	}
