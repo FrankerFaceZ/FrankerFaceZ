@@ -12,7 +12,7 @@
 	border-top: 1px solid rgba(255,255,255,0.5);
 	border-bottom-color: #aaa;
 
-	.theme--dark & {
+	.tw-theme--dark & {
 		border-top-color: rgba(255,255,255,0.1);
 		border-bottom-color: #000;
 	}
@@ -27,7 +27,7 @@
 .thread-message__warning {
 	padding-top: 0 !important;
 
-	& > .pd-y-05 {
+	& > .tw-pd-y-05 {
 		padding-top: calc(.5rem - 1px) !important;
 	}
 }

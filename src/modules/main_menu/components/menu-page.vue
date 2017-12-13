@@ -1,14 +1,14 @@
 <template lang="html">
 <div class="ffz--menu-page">
-<header class="mg-b-1">
+<header class="tw-mg-b-1">
 	<template v-for="i in breadcrumbs">
 		<a v-if="i !== item" href="#" @click="$emit('change-item', i, false)">{{ t(i.i18n_key, i.title, i) }}</a>
 		<strong v-if="i === item">{{ t(i.i18n_key, i.title, i) }}</strong>
 		<template v-if="i !== item">&raquo; </template>
 	</template>
 </header>
-<section v-if="! context.currentProfile.live && item.profile_warning !== false" class="border-t pd-t-1 pd-b-2">
-	<div class="c-background-accent c-text-overlay pd-1">
+<section v-if="! context.currentProfile.live && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
+	<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
 		<h3 class="ffz-i-attention">
 			{{ t('setting.profiles.inactive', "This profile isn't active.") }}
 		</h3>
@@ -22,13 +22,13 @@
 </section>
 <section
 	v-if="item.description"
-	class="border-t pd-y-1"
+	class="tw-border-t tw-pd-y-1"
 	v-html="t(item.desc_i18n_key || item.i18n_key + '.description', item.description, item)"
 	/>
 </section>
 <template v-if="! item.contents">
-	<ul class="border-t pd-y-1">
-		<li class="pd-x-1" v-for="i in item.items">
+	<ul class="tw-border-t tw-pd-y-1">
+		<li class="tw-pd-x-1" v-for="i in item.items">
 			<a href="#" @click="$emit('change-item', i, false)">
 				{{ t(i.i18n_key, i.title, i) }}
 			</a>

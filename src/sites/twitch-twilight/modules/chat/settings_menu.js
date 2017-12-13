@@ -39,7 +39,7 @@ export default class SettingsMenu extends Module {
 			cls.prototype.renderUniversalOptions = function() {
 				const val = old_universal.call(this);
 				val.props.children.push(e('div', {
-						className: 'mg-t-1'
+						className: 'tw-mg-t-1'
 					}, e('button', {
 						onClick: () => t.click(this)
 					}, t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center'))

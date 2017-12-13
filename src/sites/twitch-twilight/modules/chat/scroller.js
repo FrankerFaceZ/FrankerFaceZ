@@ -123,25 +123,25 @@ export default class Scroller extends Module {
 					if ( ! node )
 						return;
 
-					node.classList.add('full-height');
+					node.classList.add('tw-full-height');
 
 					el = this._ffz_freeze_indicator = e('div', {
-						className: 'ffz--freeze-indicator chat-list__more-messages-placeholder relative mg-x-2'
+						className: 'ffz--freeze-indicator chat-list__more-messages-placeholder tw-relative tw-mg-x-2'
 					}, e('div', {
-						className: 'chat-list__more-messages bottom-0 full-width align-items-center flex justify-content-center absolute pd-05'
+						className: 'chat-list__more-messages tw-bottom-0 tw-full-width tw-align-items-center tw-flex tw-justify-content-center tw-absolute tw-pd-05'
 					}));
 
 					this.ffzUpdateText();
 					node.appendChild(el);
 
 				} else
-					el.classList.remove('hide');
+					el.classList.remove('tw-hide');
 			}
 
 			cls.prototype.ffzHideFrozen = function() {
 				this._ffz_freeze_visible = false;
 				if ( this._ffz_freeze_indicator )
-					this._ffz_freeze_indicator.classList.add('hide');
+					this._ffz_freeze_indicator.classList.add('tw-hide');
 			}
 
 			cls.prototype.ffzFreeze = function() {

@@ -88,7 +88,7 @@ export default class ChannelBar extends Module {
 
 	updateMetadata(inst, keys) {
 		const container = this.fine.getHostNode(inst),
-			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .flex');
+			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex');
 
 		if ( ! inst._ffz_mounted || ! metabar )
 			return;

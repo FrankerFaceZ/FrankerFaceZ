@@ -1,7 +1,7 @@
 <template lang="html">
 <div class="ffz--profile-editor">
-	<div class="flex align-items-center border-t pd-1">
-		<div class="flex-grow-1"></div>
+	<div class="tw-flex tw-align-items-center tw-border-t tw-pd-1">
+		<div class="tw-flex-grow-1"></div>
 		<button
 			class="tw-button tw-button--text"
 			@click="save"
@@ -11,7 +11,7 @@
 			</span>
 		</button>
 		<button
-			class="mg-l-1 tw-button tw-button--text"
+			class="tw-mg-l-1 tw-button tw-button--text"
 			:disabled="item.profile && context.profiles.length < 2"
 			@click="del"
 		>
@@ -19,19 +19,19 @@
 				{{ t('setting.profiles.delete', 'Delete') }}
 			</span>
 		</button>
-		<!--button class="mg-l-1 tw-button tw-button--text">
+		<!--button class="tw-mg-l-1 tw-button tw-button--text">
 			<span class="tw-button__text ffz-i-download">
 				{{ t('setting.profiles.export', 'Export') }}
 			</span>
 		</button-->
 	</div>
 
-	<div class="ffz--menu-container border-t">
+	<div class="ffz--menu-container tw-border-t">
 		<header>
 			{{ t('settings.data_management.profiles.edit.general', 'General') }}
 		</header>
 
-		<div class="ffz--widget flex flex--nowrap">
+		<div class="ffz--widget tw-flex tw-flex-nowrap">
 			<label for="ffz:editor:name">
 				{{ t('settings.data_management.profiles.edit.name', 'Name') }}
 			</label>
@@ -44,7 +44,7 @@
 				/>
 		</div>
 
-		<div class="ffz--widget flex flex--nowrap">
+		<div class="ffz--widget tw-flex tw-flex-nowrap">
 			<label for="ffz:editor:description">
 				{{ t('settings.data_management.profiles.edit.desc', 'Description') }}
 			</label>
@@ -58,11 +58,11 @@
 		</div>
 	</div>
 
-	<div class="ffz--menu-container border-t">
+	<div class="ffz--menu-container tw-border-t">
 		<header>
 			{{ t('settings.data_management.profiles.edit.rules', 'Rules') }}
 		</header>
-		<section class="pd-b-1">
+		<section class="tw-pd-b-1">
 			{{ t(
 				'settings.data_management.profiles.edit.rules.description',
 				'Rules allows you to define a series of conditions under which this profile will be active.'

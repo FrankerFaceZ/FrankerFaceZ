@@ -1,12 +1,12 @@
 <template lang="html">
 <div class="ffz--widget ffz--select-box" :class="{inherits: isInherited, default: isDefault}">
-	<div class="flex align-items-center">
+	<div class="tw-flex tw-align-items-center">
 		<label :for="item.full_key">
 			{{ t(item.i18n_key, item.title, item) }}
 		</label>
 
 		<select
-			class="mg-05 tw-select display-inline width-auto"
+			class="tw-mg-05 tw-select tw-display-inline tw-width-auto"
 			ref="control"
 			:id="item.full_key"
 			@change="onChange"
@@ -18,7 +18,7 @@
 
 		<button
 			v-if="source && source !== profile"
-			class="mg-l-05 tw-button tw-button--text"
+			class="tw-mg-l-05 tw-button tw-button--text"
 			@click="context.currentProfile = source"
 		>
 			<span class="tw-button__text ffz-i-right-dir">
@@ -26,7 +26,7 @@
 			</span>
 		</button>
 
-		<button v-if="has_value" class="mg-l-05 tw-button tw-button--text tw-tooltip-wrapper" @click="clear">
+		<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text tw-tooltip-wrapper" @click="clear">
 			<span class="tw-button__text ffz-i-cancel"></span>
 			<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 				{{ t('setting.reset', 'Reset to Default') }}
@@ -36,7 +36,7 @@
 
 	<section
 		v-if="item.description"
-		class="c-text-alt-2"
+		class="tw-c-text-alt-2"
 		v-html="t(item.desc_i18n_key || item.i18n_key + '.description', item.description, item)"
 		/>
 </div>

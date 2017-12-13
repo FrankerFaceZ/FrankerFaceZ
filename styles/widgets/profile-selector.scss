@@ -2,6 +2,7 @@
 	position: relative;
 
 	.tw-balloon {
+		position: absolute;
 		margin-top: 0 !important
 	}
 
@@ -22,7 +23,7 @@
 		opacity: .5;
 		font-variant: italic;
 
-		.theme--dark & {
+		.tw-theme--dark & {
 			opacity: .25;
 		}
 	}
@@ -36,7 +37,7 @@
 	}
 
 	&:last-child {
-		&, .theme--dark & {
+		&, .tw-theme--dark & {
 			border-bottom: none !important
 		}
 	}
@@ -51,7 +52,7 @@
 	&:hover {
 		background: rgba(100, 65, 164, .05);
 
-		.theme-dark & {
+		.tw-theme-dark & {
 			background: rgba(100, 65, 164, .2);
 		}
 	}

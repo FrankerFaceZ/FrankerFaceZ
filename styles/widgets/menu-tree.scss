@@ -19,7 +19,7 @@
 
 	.active > div,
 	.active > div:hover,
-	.theme--dark & .active > div:hover {
+	.tw-theme--dark & .active > div:hover {
 		background-color: #6441a4;
 		color: #fff;
 	}
@@ -29,7 +29,7 @@
 
 		background-color: #fff;
 
-		.theme--dark & {
+		.tw-theme--dark & {
 			background-color: #201c2b;
 		}
 	}

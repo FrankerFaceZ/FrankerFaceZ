@@ -47,7 +47,7 @@ export default class MenuButton extends SiteModule {
 
 
 		this._el = e('div',
-			'ffz-top-nav align-self-center flex-grow-0 flex-shrink-0 flex-nowrap pd-r-1 pd-l-05',
+			'ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05',
 			this._btn = e('button',
 				{
 					className: 'tw-button-icon tw-button-icon--overlay tw-button-icon--large',

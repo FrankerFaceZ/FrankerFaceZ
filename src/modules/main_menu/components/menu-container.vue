@@ -6,7 +6,7 @@
 	<section
 		v-if="item.description"
 		v-html="t(item.desc_i18n_key, item.description, item)"
-		class="pd-b-1"
+		class="tw-pd-b-1"
 		/>
 	<component
 		v-for="i in item.contents"
@@ -26,7 +26,7 @@ export default {
 		classes() {
 			return [
 				'ffz--menu-container',
-				this.item.full_box ? 'border' : 'border-t'
+				this.item.full_box ? 'tw-border' : 'tw-border-t'
 			]
 		}
 	}

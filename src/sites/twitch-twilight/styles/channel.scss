@@ -1,5 +1,5 @@
 .channel-info-bar__action-container {
-	& > .flex {
+	& > .tw-flex {
 		& > * {
 			margin-left: 0 !important;
 			margin-right: 1rem !important;
@@ -15,7 +15,7 @@
 			margin-left: -.8rem !important;
 		}
 
-		.c-text-live {
+		.tw-c-text-live {
 			order: 1;
 		}
 
@@ -24,12 +24,12 @@
 		}
 	}
 
-	& > .flex:last-child > :last-child {
+	& > .tw-flex:last-child > :last-child {
 		margin-right: 0 !important
 	}
 }
 
-.theme--ffz, .theme--ffz.theme--dark, .theme--dark, body {
+.tw-theme--ffz, .tw-theme--ffz.tw-theme--dark, .tw-theme--dark, body {
 	.ffz-stat > .tw-button,
 	.ffz-stat.tw-button {
 		color: inherit;

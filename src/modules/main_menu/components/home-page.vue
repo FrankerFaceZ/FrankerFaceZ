@@ -1,14 +1,14 @@
 <template lang="html">
-<div class="ffz--home flex flex--nowrap">
-	<div class="flex-grow-1">
-		<div class="align-center">
+<div class="ffz--home tw-flex tw-flex-nowrap">
+	<div class="tw-flex-grow-1">
+		<div class="tw-align-center">
 			<h1 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h1>
-			<span class="c-text-alt">
+			<span class="tw-c-text-alt">
 				{{ t('home.tag-line', 'The Twitch Enhancement Suite') }}
 			</span>
 		</div>
 
-		<section class="pd-t-1 border-t mg-t-1">
+		<section class="tw-pd-t-1 tw-border-t tw-mg-t-1">
 			<h2>Welcome to the v4.0 Beta</h2>
 
 			<p>
@@ -26,7 +26,7 @@
 				now, here are some of the bigger issues:
 			</p>
 
-			<ul class="mg-b-2">
+			<ul class="tw-mg-b-2">
 				<li>Settings from the old version are not being imported.</li>
 				<li>Settings cannot be searched.</li>
 				<li>FFZ badges do not display.</li>
@@ -35,7 +35,7 @@
 
 			<p>And the biggest features still under development:</p>
 
-			<ul class="mg-b-2">
+			<ul class="tw-mg-b-2">
 				<li>Dark Theme (Pls No Purple)</li>
 				<li>Badge Customization</li>
 				<li>Emoji Rendering</li>
@@ -66,7 +66,7 @@
 
 
 	</div>
-	<div class="mg-l-1 flex-shrink-0 tweet-column">
+	<div class="tw-mg-l-1 tw-flex-shrink-0 tweet-column">
 		<a class="twitter-timeline" data-width="300" data-theme="dark" href="https://twitter.com/FrankerFaceZ?ref_src=twsrc%5Etfw">
 			Tweets by FrankerFaceZ
 		</a>
