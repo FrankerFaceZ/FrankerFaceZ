@@ -240,6 +240,11 @@ export class Tooltip {
 			setter = use_html ? 'innerHTML' : 'textContent';
 
 		const pop_opts = Object.assign({
+			modifiers: {
+				flip: {
+					behavior: ['top', 'bottom', 'left', 'right']
+				}
+			},
 			arrowElement: arrow
 		}, opts.popper);
 

@@ -349,7 +349,7 @@ export default class Metadata extends Module {
 								el._ffz_destroy = el._ffz_outside = null;
 							};
 
-							const tt = el._ffz_popup = new Tooltip(document.body, el, {
+							const tt = el._ffz_popup = new Tooltip(document.body.querySelector('.twilight-root') || document.body, el, {
 								manual: true,
 								html: true,
 

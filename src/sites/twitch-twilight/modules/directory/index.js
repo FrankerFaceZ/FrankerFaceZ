@@ -262,7 +262,7 @@ export default class Directory extends SiteModule {
 			setting = this.settings.get('directory.show-channel-avatars');
 
 		// Remove old elements
-		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
+		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
 		if (hiddenBodyCard !== null)
 			hiddenBodyCard.classList.remove('tw-hide');
 

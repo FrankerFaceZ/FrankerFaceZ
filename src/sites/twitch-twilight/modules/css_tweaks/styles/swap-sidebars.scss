@@ -14,21 +14,30 @@
 	svg { transform: rotate(180deg) }
 }
 
-.side-nav__theme-wrapper.border-r {
+.side-nav__theme-wrapper.tw-border-r {
 	border-right: none !important;
 	border-left: 1px solid #dad8de;
 
 	.tw-theme--dark & {
 		border-left-color: #2c2541;
+
+	}
+	.tw-theme--ffz.tw-theme--dark & {
+		border-left-color: var(--ffz-color-20);
 	}
 }
 
-.chat__pane {
+.chat-room__pane {
 	border-left: none !important;
 	border-right: 1px solid #dad8de;
 
 	.tw-theme--dark & {
 		border-right-color: #2c2541;
+	}
+
+
+	.tw-theme--ffz.tw-theme--dark & {
+		border-right-color: var(--ffz-color-20);
 	}
 }
 

@@ -23,9 +23,9 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer',
 	'whispers': '.whispers',
 
-	'boxart-hover': '.tw-card .full-width:hover a[data-a-target="live-channel-card-game-link"]',
+	'boxart-hover': '.tw-card .tw-full-width:hover a[data-a-target="live-channel-card-game-link"]',
 	'boxart-hide': '.tw-card a[data-a-target="live-channel-card-game-link"]',
-	'profile-hover-following': '.tw-card .full-width:hover .ffz-channel-avatar',
+	'profile-hover-following': '.tw-card .tw-full-width:hover .ffz-channel-avatar',
 	'profile-hover-game': '.tw-thumbnail-card .tw-card-img:hover .ffz-channel-avatar',
 };
 

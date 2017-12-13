@@ -353,8 +353,7 @@ export default class Following extends SiteModule {
 			)
 		);
 
-		document.body.querySelector('.twilight-root').appendChild(this.hostMenu);
-		//document.body.appendChild(this.hostMenu);
+		(document.body.querySelector('.twilight-root') || document.body).appendChild(this.hostMenu);
 
 		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {
 			placement: 'bottom-start',
@@ -384,7 +383,7 @@ export default class Following extends SiteModule {
 			container.parentElement.classList.toggle('hide', this.settings.get('directory.hide-vodcasts'));
 		
 		// Remove old elements
-		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
+		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
 		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('tw-hide');
 
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
