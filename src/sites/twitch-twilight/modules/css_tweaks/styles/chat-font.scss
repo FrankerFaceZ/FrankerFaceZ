@@ -3,4 +3,8 @@
 	font-size: var(--ffz-chat-font-size);
 	line-height: var(--ffz-chat-line-height);
 	font-family: var(--ffz-chat-font-family);
+
+	.chat-list__lines {
+		line-height: var(--ffz-chat-line-height);
+	}
 }
