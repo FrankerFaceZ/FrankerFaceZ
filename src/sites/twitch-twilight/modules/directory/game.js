@@ -53,8 +53,8 @@ export default class Game extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		if ( inst.props.directoryType !== 'GAMES' || ! container || ! container.querySelector )
 			return;
-
-		const buttons = container.querySelector('div > div.align-items-center'),
+		
+		const buttons = container.querySelector('div > div.tw-align-items-center'),
 			ffz_buttons = buttons && buttons.querySelector('.ffz-buttons');
 
 		if ( ! buttons || (ffz_buttons && ! update) )
@@ -80,7 +80,7 @@ export default class Game extends SiteModule {
 
 
 		block_btn = e('button', {
-			className: 'mg-l-1 tw-button ffz-directory-toggle-block',
+			className: 'tw-mg-l-1 tw-button ffz-directory-toggle-block',
 			onClick: this.generateClickHandler('directory.game.blocked-games', game, update_block)
 		}, block_label = e('span', 'tw-button__text'));
 
@@ -100,7 +100,7 @@ export default class Game extends SiteModule {
 		}
 
 		hidden_btn = e('button', {
-			className: 'mg-l-1 tw-button ffz-directory-toggle-thumbnail',
+			className: 'tw-mg-l-1 tw-button ffz-directory-toggle-thumbnail',
 			onClick: this.generateClickHandler('directory.game.hidden-thumbnails', game, update_hidden)
 		}, hidden_label = e('span', 'tw-button__text'));
 
