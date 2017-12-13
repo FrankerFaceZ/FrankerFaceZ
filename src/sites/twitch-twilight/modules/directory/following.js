@@ -372,7 +372,6 @@ export default class Following extends SiteModule {
 
 	updateChannelCard(inst) {
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
-
 		
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
@@ -435,8 +434,8 @@ export default class Following extends SiteModule {
 				const avatarElement = e('a', {
 					className: 'ffz-channel-avatar',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
-				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
 					onclick: event => this.parent.hijackUserClick(event, broadcasterLogin)
+				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
 							title: inst.props.channelName,
