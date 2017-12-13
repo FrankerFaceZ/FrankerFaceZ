@@ -16,17 +16,17 @@
 					}" @update="rearrangeHosts">
 					<div v-for="host in hosts" class="border-t ffz--host-user" :key="host._id" :data-id="host._id">
 						<div class="tw-interactable">
-						<div class="align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05">
-							<figure class="ffz-i-ellipsis-vert handle" style="padding: 0 0.4rem 0 0;"></figure>
-							<div class="ffz-channel-avatar">
-								<img :src="host.logo" :alt="host.display_name + '(' + host.name + ')'">
+							<div class="align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05">
+								<figure class="ffz-i-ellipsis-vert handle"></figure>
+								<div class="ffz-channel-avatar">
+									<img :src="host.logo" :alt="host.display_name + '(' + host.name + ')'">
+								</div>
+								<p class="ellipsis flex-grow-1 mg-l-1 font-size-5">{{ host.name }}</p>
+								<div class="flex-grow-1 pd-x-2"></div>
+								<button class="tw-button-icon mg-x-05 ffz--host-remove-user" @click="removeFromHosts">
+									<figure class="ffz-i-trash"></figure>
+								</button>
 							</div>
-							<p class="ellipsis flex-grow-1 mg-l-1 font-size-5">{{ host.name }}</p>
-							<div class="flex-grow-1 pd-x-2"></div>
-							<button class="tw-button-icon mg-x-05 ffz--host-remove-user" @click="removeFromHosts">
-							<figure class="ffz-i-trash" style="padding: 0.4rem 0.2rem;"></figure>
-							</button>
-						</div>
 						</div>
 					</div>
 					</draggable>
@@ -59,7 +59,7 @@
 										{{ t('metadata.host.setting.auto-hosting.title', 'Auto Hosting') }}
 									</label>
 								</div>
-								<section class="c-text-alt-2" style="padding-left: 2.2rem;">
+								<section class="c-text-alt-2 checkbox-description">
 									{{ t('metadata.host.setting.auto-hosting.description', 'Toggle all forms of auto hosting: teammates, host list, and similar channels.') }}<br>
 									<a href="https://blog.twitch.tv/grow-your-community-with-auto-hosting-e80c1460f6e1" target="_blank" rel="noopener">{{ t('metadata.host.setting.auto-hosting.link', 'Learn More') }}</a>
 								</section>
@@ -75,7 +75,7 @@
 										{{ t('metadata.host.setting.team-hosting.title', 'Team Hosting') }}
 									</label>
 								</div>
-								<section class="c-text-alt-2" style="padding-left: 2.2rem;">
+								<section class="c-text-alt-2 checkbox-description">
 									{{ t('metadata.host.setting.team-hosting.description',
 										'Automatically host random channels from your team when you\'re not live. ' +
 										'Team channels will be hosted before any channels in your host list.') }}
@@ -92,7 +92,7 @@
 										{{ t('metadata.host.setting.vodcast-hosting.title', 'Vodcast Hosting') }}
 									</label>
 								</div>
-								<section class="c-text-alt-2" style="padding-left: 2.2rem;">
+								<section class="c-text-alt-2 checkbox-description">
 									{{ t('metadata.host.setting.vodcast-hosting.description', 'Include Vodcasts in auto host.') }}
 									<a href="https://blog.twitch.tv/vodcast-brings-the-twitch-community-experience-to-uploads-54098498715" target="_blank" rel="noopener">{{ t('metadata.host.setting.vodcast-hosting.link', 'Learn about Vodcasts') }}</a>
 								</section>
@@ -108,7 +108,7 @@
 										{{ t('metadata.host.setting.recommended-hosting.title', 'Auto Host Channels Similar To Yours') }}
 									</label>
 								</div>
-								<section class="c-text-alt-2" style="padding-left: 2.2rem;">
+								<section class="c-text-alt-2 checkbox-description">
 									{{ t('metadata.host.setting.recommended-hosting.description', 'Streamers on your primary team &amp; host list will always be hosted first') }}
 								</section>
 							</div>
@@ -123,7 +123,7 @@
 										{{ t('metadata.host.setting.strategy.title', 'Randomize Host Order') }}
 									</label>
 								</div>
-								<section class="c-text-alt-2" style="padding-left: 2.2rem;">
+								<section class="c-text-alt-2 checkbox-description">
 									{{ t('metadata.host.setting.strategy.description',
 										'If enabled, auto-hosts will be picked at random. ' +
 										'Otherwise they\'re picked in order.') }}

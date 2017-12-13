@@ -12,12 +12,26 @@
 		opacity: 0.4;
 	}
 
-	.ffz--host-remove-user {
-		&:hover { background: #a94444 !important }
+	.ffz--host-user {
+		.handle {
+			padding: 0 0.4rem 0 0;
+		}
+
+		.ffz--host-remove-user {
+			> figure {
+				padding: 0.4rem 0.2rem;
+			}
+
+			&:hover { background: #a94444 !important }
+		}
 	}
 
 	> header {
 		padding: .9rem 1rem .9rem 2rem;
+	}
+
+	.checkbox-description {
+		padding-left: 2.2rem;
 	}
 
 	.host-options__tabs-container {
