@@ -103,7 +103,7 @@ export default class Directory extends SiteModule {
 			changed: value => {
 				this.css_tweaks.toggleHide('boxart-hide', value === 0);
 				this.css_tweaks.toggleHide('boxart-hover', value === 1);
-				this.ChannelCard.forceUpdate()
+				this.ChannelCard.forceUpdate();
 			}
 		});
 	}
@@ -128,9 +128,9 @@ export default class Directory extends SiteModule {
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
 
-		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('unmount', inst => this.clearUptime(inst), this);
+		this.ChannelCard.on('update', this.updateChannelCard, this);
+		this.ChannelCard.on('mount', this.updateChannelCard, this);
+		this.ChannelCard.on('unmount', this.clearUptime, this);
 	}
 
 
@@ -206,12 +206,12 @@ export default class Directory extends SiteModule {
 
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);
 
-		if ( ! inst.ffz_uptime_el ) {
+		if ( ! inst.ffz_uptime_el || card.querySelector('.ffz-uptime-element') === undefined ) {
 			card.appendChild(inst.ffz_uptime_el = e('div',
-				'video-preview-card__preview-overlay-stat c-background-overlay c-text-overlay font-size-6 top-0 right-0 z-default inline-flex absolute mg-05',
-				e('div', 'tw-tooltip-wrapper inline-flex', [
+				'video-preview-card__preview-overlay-stat tw-c-background-overlay tw-c-text-overlay tw-font-size-6 tw-top-0 tw-right-0 tw-z-default tw-inline-flex tw-absolute tw-mg-05 ffz-uptime-element',
+				e('div', 'tw-tooltip-wrapper tw-inline-flex', [
 					e('div', 'tw-stat', [
-						e('span', 'c-text-live tw-stat__icon', e('figure', 'ffz-i-clock')),
+						e('span', 'tw-c-text-live tw-stat__icon', e('figure', 'ffz-i-clock')),
 						inst.ffz_uptime_span = e('span', 'tw-stat__value')
 					]),
 					inst.ffz_uptime_tt = e('div', 'tw-tooltip tw-tooltip--down tw-tooltip--align-center')
@@ -246,7 +246,7 @@ export default class Directory extends SiteModule {
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
 		if (hiddenBodyCard !== null)
-			hiddenBodyCard.classList.remove('hide');
+			hiddenBodyCard.classList.remove('tw-hide');
 
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
 		if (ffzChannelData !== null)
@@ -267,7 +267,7 @@ export default class Directory extends SiteModule {
 				});
 
 				const avatarDiv = e('a', {
-					className: 'ffz-channel-avatar mg-r-05 mg-t-05',
+					className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
 					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
 				}, e('img', {
@@ -278,9 +278,9 @@ export default class Directory extends SiteModule {
 				const cardDivParent = cardDiv.parentElement;
 
 				if (cardDivParent.querySelector('.ffz-channel-data') === null) {
-					cardDiv.classList.add('hide');
+					cardDiv.classList.add('tw-hide');
 
-					const newCardDiv = e('div', 'ffz-channel-data flex flex-nowrap', [
+					const newCardDiv = e('div', 'ffz-channel-data tw-flex tw-flex-nowrap', [
 						avatarDiv, modifiedDiv
 					]);
 					cardDivParent.appendChild(newCardDiv);
@@ -290,7 +290,7 @@ export default class Directory extends SiteModule {
 					className: 'ffz-channel-avatar',
 					href: `/${inst.props.streamNode.broadcaster.login}`,
 					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
-				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
+				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
 							title: inst.props.streamNode.broadcaster.displayName,

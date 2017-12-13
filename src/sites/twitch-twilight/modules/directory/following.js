@@ -251,7 +251,7 @@ export default class Following extends SiteModule {
 		// Hosted Channel Header
 		simplebarContentChildren.push(
 			e('p', {
-				className: 'pd-t-05 pd-x-1 c-text-alt-2',
+				className: 'tw-pd-t-05 tw-pd-x-1 tw-c-text-alt-2',
 				textContent: this.i18n.t('directory.hosted', 'Hosted Channel')
 			})
 		);
@@ -267,7 +267,7 @@ export default class Following extends SiteModule {
 						inst.props.viewerCount.hostData.channel,
 						this.destroyHostMenu.bind(this)
 					)
-			}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
+			}, e('div', 'tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05',
 				[
 					e('div', {
 						className: 'ffz-channel-avatar',
@@ -276,7 +276,7 @@ export default class Following extends SiteModule {
 						alt: inst.props.channelName
 					})),
 					e('p', {
-						className: 'ellipsis flex-grow-1 mg-l-1 font-size-5',
+						className: 'tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5',
 						textContent: inst.props.channelName
 					})
 				]
@@ -286,7 +286,7 @@ export default class Following extends SiteModule {
 		// Hosting Channels Header
 		simplebarContentChildren.push(
 			e('p', {
-				className: 'pd-t-05 pd-x-1 c-text-alt-2',
+				className: 'tw-pd-t-05 tw-pd-x-1 tw-c-text-alt-2',
 				textContent: this.i18n.t('directory.hosting', 'Hosting Channels')
 			})
 		);
@@ -300,7 +300,7 @@ export default class Following extends SiteModule {
 					className: 'tw-interactable',
 					href: `/${node.login}`,
 					onclick: event => this.parent.hijackUserClick(event, node.login, this.destroyHostMenu.bind(this))
-				}, e('div', 'align-items-center flex flex-row flex-nowrap mg-x-1 mg-y-05',
+				}, e('div', 'tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05',
 					[
 						e('div', {
 							className: 'ffz-channel-avatar',
@@ -309,7 +309,7 @@ export default class Following extends SiteModule {
 							alt: node.displayName
 						})),
 						e('p', {
-							className: 'ellipsis flex-grow-1 mg-l-1 font-size-5',
+							className: 'tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5',
 							textContent: node.displayName
 						})
 					]
@@ -317,19 +317,14 @@ export default class Following extends SiteModule {
 			);
 		}
 
-		this.hostMenu = e('div', 'ffz-host-menu tw-balloon block',
-			e('div', 'selectable-filter__balloon pd-y-05',
+		this.hostMenu = e('div', 'ffz-host-menu tw-balloon tw-block',
+			e('div', 'tw-selectable-filter__balloon tw-pd-y-05',
 				e('div', {
 					className: 'scrollable-area',
 					'data-simplebar': true,
-				}, [
-					e('div', 'simplebar-track vertical',
-						e('div', 'simplebar-scrollbar')
-					),
-					e('div', 'simplebar-scroll-content',
-						e('div', 'simplebar-content', simplebarContentChildren)
-					)
-				])
+				}, e('div', 'simplebar-scroll-content',
+					e('div', 'simplebar-content', simplebarContentChildren)
+				))
 			)
 		);
 
@@ -363,7 +358,7 @@ export default class Following extends SiteModule {
 
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.hide');
-		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('hide');
+		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('tw-hide');
 
 		const ffzChannelData = card.querySelector('.ffz-channel-data');
 		if (ffzChannelData !== null) ffzChannelData.remove();
@@ -388,7 +383,7 @@ export default class Following extends SiteModule {
 			let avatarDiv;
 			if (avatarSetting === 1) {
 				avatarDiv = e('a', {
-					className: 'ffz-channel-avatar mg-r-05 mg-t-05',
+					className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
 				}, e('img', {
 					title: inst.props.channelName,
@@ -399,7 +394,7 @@ export default class Following extends SiteModule {
 					className: 'ffz-channel-avatar',
 					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
 					onclick: event => this.parent.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
-				}, e('div', 'live-channel-card__boxart bottom-0 absolute',
+				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
 							title: inst.props.channelName,
@@ -416,9 +411,9 @@ export default class Following extends SiteModule {
 			const cardDivParent = cardDiv.parentElement;
 			const ffzChannelData = cardDivParent.querySelector('.ffz-channel-data');
 			if (ffzChannelData === null) {
-				cardDiv.classList.add('hide');
+				cardDiv.classList.add('tw-hide');
 
-				const newCardDiv = e('div', 'ffz-channel-data flex flex-nowrap', [
+				const newCardDiv = e('div', 'ffz-channel-data tw-flex tw-flex-nowrap', [
 					avatarDiv, modifiedDiv
 				]);
 				cardDivParent.appendChild(newCardDiv);
