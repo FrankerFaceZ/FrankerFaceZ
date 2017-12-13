@@ -1,5 +1,5 @@
 <template lang="html">
-<div class="ffz-auto-host-options tw-c-background">
+<div class="ffz-auto-host-options tw-c-background tw-border">
 	<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
 		<h4>{{ t('metadata.host.title', 'Auto Host Management') }}</h4>
 	</header>
@@ -34,7 +34,7 @@
 			</main>
 		</section>
 		<header class="tw-border-t tw-full-width tw-align-items-center tw-flex tw-flex-noxwrap tw-pd-1">
-			<div class="flex-grow-1 tw-pd-x-2"></div>
+			<div class="tw-flex-grow-1 tw-pd-x-2"></div>
 			<button class="tw-button tw-button--hollow tw-mg-x-05" :class="{'tw-button--disabled': addedToHosts}" @click="addToAutoHosts">
 				<span class="tw-button__text">{{ t('metadata.host.add-channel', 'Add To Auto Host') }}</span>
 			</button>
