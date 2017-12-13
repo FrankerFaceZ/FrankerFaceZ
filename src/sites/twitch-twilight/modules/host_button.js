@@ -7,6 +7,17 @@
 import Module from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 
+const HOST_ERRORS = {
+	COMMAND_EXECUTION: {
+		key: 'command-execution',
+		text: 'There was an error executing the host command. Please try again later.',
+	},
+	CHAT_CONNECTION: {
+		key: 'chat-connection',
+		text: 'There was an issue connecting to chat. Please try again later.',
+	}
+};
+
 export default class HostButton extends Module {
 	constructor(...args) {
 		super(...args);
@@ -24,7 +35,7 @@ export default class HostButton extends Module {
 			button: true,
 
 			disabled: () => {
-				return this._host_updating;	
+				return this._host_updating || this._host_error;	
 			},
 			
 			click: data => {
@@ -57,17 +68,27 @@ export default class HostButton extends Module {
 			},
 
 			tooltip: () => {
-				return this.i18n.t('metadata.host.button.tooltip',
-					'Currently hosting: %{channel}',
-				{
-					channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
-				});
+				if (this._host_error) {
+					return this.i18n.t(
+						`metadata.host.button.tooltip.error.${this._host_error.key}`,
+						this._host_error.text);
+				} else {
+					return this.i18n.t('metadata.host.button.tooltip',
+						'Currently hosting: %{channel}',
+					{
+						channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
+					});
+				}
 			}
 		};
 	}
 
 	sendHostUnhostCommand(channel) {
-		if (!this._chat_con) return;
+		if (!this._chat_con) {
+			this._host_error = HOST_ERRORS.CHAT_CONNECTION;
+			this._host_updating = false;
+			return;
+		}
 
 		const ffz_user = this.site.getUser(),
 			userLogin = ffz_user && ffz_user.login;
@@ -76,6 +97,14 @@ export default class HostButton extends Module {
 
 		this._host_updating = true;
 		this.metadata.updateMetadata('host');
+
+		this._host_feedback = setTimeout(() => {
+			if (this._last_hosted_channel === null) {
+				this._host_error = HOST_ERRORS.COMMAND_EXECUTION;
+				this._host_updating = false;
+				this.metadata.updateMetadata('host');
+			}
+		}, 3000);
 
 		if (this.isChannelHosted(channel)) {
 			this._chat_con.commands.unhost.execute(commandData);
@@ -91,7 +120,9 @@ export default class HostButton extends Module {
 
 		this.on('tmi:host', e => {
 			if (e.channel.substring(1) !== userLogin) return;
-
+			
+			clearTimeout(this._host_feedback);
+			this._host_error = false;
 			this._last_hosted_channel = e.target;
 			
 			this._host_updating = false;
@@ -101,6 +132,8 @@ export default class HostButton extends Module {
 		this.on('tmi:unhost', e => {
 			if (e.channel.substring(1) !== userLogin) return;
 			
+			clearTimeout(this._host_feedback);
+			this._host_error = false;
 			this._last_hosted_channel = null;
 			
 			this._host_updating = false;
