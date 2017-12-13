@@ -114,7 +114,7 @@ export default class MainMenu extends Module {
 
 		const maximized = this._maximized,
 			visible = this._visible = !this._visible,
-			main = document.querySelector(maximized ? '.twilight-main' : '.twilight-root > .full-height');
+			main = document.querySelector(maximized ? '.twilight-main' : '.twilight-root > .tw-full-height');
 
 		if ( ! visible ) {
 			if ( maximized )
@@ -143,7 +143,7 @@ export default class MainMenu extends Module {
 			return;
 
 		const maximized = this._maximized = !this._maximized,
-			main = document.querySelector(maximized ? '.twilight-main' : '.twilight-root > .full-height'),
+			main = document.querySelector(maximized ? '.twilight-main' : '.twilight-root > .tw-full-height'),
 			old_main = this._menu.parentElement;
 
 		if ( maximized )

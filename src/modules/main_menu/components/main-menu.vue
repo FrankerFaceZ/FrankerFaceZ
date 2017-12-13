@@ -1,8 +1,8 @@
 <template lang="html">
-<div class="ffz-main-menu elevation-3 c-background-alt border flex flex--nowrap flex-column" :class="{ maximized }">
-	<header class="c-background full-width align-items-center flex flex-nowrap" @dblclick="resize">
+<div class="ffz-main-menu tw-elevation-3 tw-c-background-alt tw-border tw-flex tw-flex-nowrap tw-flex-column" :class="{ maximized }">
+	<header class="tw-c-background tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
 		<h3 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h3>
-		<div class="flex-grow-1 pd-x-2">
+		<div class="tw-flex-grow-1 tw-pd-x-2">
 			<!--div class="tw-search-input">
 				<label for="ffz-main-menu.search" class="hide-accessible">{{ t('main-menu.search', 'Search Settings') }}</label>
 				<div class="relative">
@@ -15,27 +15,27 @@
 				</div>
 			</div-->
 		</div>
-		<button class="tw-button-icon mg-x-05" @click="resize">
+		<button class="tw-button-icon tw-mg-x-05" @click="resize">
 			<span class="tw-button-icon__icon">
 				 <figure :class="{'ffz-i-window-maximize': !maximized, 'ffz-i-window-restore': maximized}" />
 			</span>
 		</button>
-		<button class="tw-button-icon mg-x-05" @click="close">
+		<button class="tw-button-icon tw-mg-x-05" @click="close">
 			<span class="tw-button-icon__icon">
 				<figure class="ffz-i-window-close" />
 			</span>
 		</button>
 	</header>
-	<section class="border-t full-height full-width flex flex-nowrap overflow-hidden">
-		<nav class="ffz-vertical-nav c-background-alt-2 border-r full-height flex flex-column flex-shrink-0 flex-nowrap">
-			<header class="border-b pd-1">
+	<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-flex-nowrap tw-overflow-hidden">
+		<nav class="ffz-vertical-nav tw-c-background-alt-2 tw-border-r tw-full-height tw-flex tw-flex-column tw-flex-shrink-0 tw-flex-nowrap">
+			<header class="tw-border-b tw-pd-1">
 				<profile-selector
 					:context="context"
 					@navigate="navigate"
 					/>
 			</header>
-			<div class="full-width full-height overflow-hidden flex flex-nowrap relative">
-				<div class="ffz-vertical-nav__items full-width flex-grow-1 scrollable-area" data-simplebar>
+			<div class="tw-full-width tw-full-height tw-overflow-hidden tw-flex tw-flex-nowrap tw-relative">
+				<div class="ffz-vertical-nav__items tw-full-width tw-flex-grow-1 scrollable-area" data-simplebar>
 					<div class="simplebar-scroll-content">
 						<div class="simplebar-content">
 							<menu-tree
@@ -48,16 +48,16 @@
 					</div>
 				</div>
 			</div>
-			<footer class="c-text-alt border-t pd-1">
+			<footer class="tw-c-text-alt tw-border-t tw-pd-1">
 				<div>
 					{{ t('main-menu.version', 'Version %{version}', {version: version.toString()}) }}
 				</div>
-				<div class="c-text-alt-2">
+				<div class="tw-c-text-alt-2">
 					{{version.build}}
 				</div>
 			</footer>
 		</nav>
-		<main class="flex-grow-1 scrollable-area" data-simplebar>
+		<main class="tw-flex-grow-1 scrollable-area" data-simplebar>
 			<div class="simplebar-scroll-content">
 				<div class="simplebar-content">
 					<menu-page

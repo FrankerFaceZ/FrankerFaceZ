@@ -318,7 +318,7 @@ export default class Following extends SiteModule {
 		}
 
 		this.hostMenu = e('div', 'ffz-host-menu tw-balloon tw-block',
-			e('div', 'tw-selectable-filter__balloon tw-pd-y-05',
+			e('div', 'tw-border tw-elevation-1 tw-border-radius-small tw-c-background',
 				e('div', {
 					className: 'scrollable-area',
 					'data-simplebar': true,
@@ -328,7 +328,8 @@ export default class Following extends SiteModule {
 			)
 		);
 
-		document.body.appendChild(this.hostMenu);
+		document.body.querySelector('.twilight-root').appendChild(this.hostMenu);
+		//document.body.appendChild(this.hostMenu);
 
 		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {
 			placement: 'bottom-start',

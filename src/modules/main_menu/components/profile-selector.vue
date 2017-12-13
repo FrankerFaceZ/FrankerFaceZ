@@ -15,20 +15,20 @@
 	>
 		{{ t(context.currentProfile.i18n_key, context.currentProfile.title, context.currentProfile) }}
 	</div>
-	<div v-if="opened" v-on-clickaway="hide" class="tw-balloon block tw-balloon--lg tw-balloon--down tw-balloon--left">
+	<div v-if="opened" v-on-clickaway="hide" class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left">
 		<div
-			class="ffz--profile-list elevation-2 c-background-alt"
+			class="ffz--profile-list tw-elevation-2 tw-c-background-alt"
 			@keyup.escape="focusHide"
 			@focusin="focus"
 			@focusout="blur"
 		>
-			<div class="scrollable-area border-b" data-simplebar>
+			<div class="scrollable-area tw-border-b" data-simplebar>
 				<div class="simplebar-scroll-content">
 					<div class="simplebar-content" ref="popup">
 						<div
 							v-for="(p, idx) in context.profiles"
 							tabindex="0"
-							class="ffz--profile-row relative border-b pd-y-05 pd-r-3 pd-l-1"
+							class="ffz--profile-row tw-relative tw-border-b tw-pd-y-05 tw-pd-r-3 tw-pd-l-1"
 							:class="{
 								live: p.live,
 								current: p === context.currentProfile
@@ -48,7 +48,7 @@
 						>
 							<div
 								v-if="p.live"
-								class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok absolute"
+								class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok tw-absolute"
 							>
 								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 									{{ t('setting.profiles.active', 'This profile is active.') }}
@@ -64,7 +64,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="pd-y-05 pd-x-05 align-right">
+			<div class="tw-pd-y-05 tw-pd-x-05 tw-align-right">
 				<button class="tw-button tw-button--text" @click="openConfigure">
 					<span class="tw-button__text ffz-i-cog">
 						{{ t('setting.profiles.configure', 'Configure') }}

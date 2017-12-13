@@ -303,7 +303,7 @@ export default class Metadata extends Module {
 								stat = e('span', 'ffz-stat-text tw-button__text')
 							]),
 							popup = e('button', `tw-button ${cls} ffz-stat-arrow`,
-								e('span', 'tw-button__icon pd-x-0',
+								e('span', 'tw-button__icon tw-pd-x-0',
 									e('figure', 'ffz-i-down-dir')
 								)
 							)
@@ -355,7 +355,7 @@ export default class Metadata extends Module {
 
 								tooltipClass: 'ffz-metadata-balloon tw-balloon block',
 								arrowClass: 'tw-balloon__tail',
-								innerClass: 'pd-1',
+								innerClass: 'tw-pd-1',
 
 								popper: {
 									placement: 'top-end'

@@ -1,6 +1,6 @@
 <template lang="html">
-<div class="ffz--changelog border-t pd-t-1">
-	<div class="align-center">
+<div class="ffz--changelog tw-border-t tw-pd-t-1">
+	<div class="tw-align-center">
 		<h2>{{ t('home.changelog', 'Changelog') }}</h2>
 	</div>
 

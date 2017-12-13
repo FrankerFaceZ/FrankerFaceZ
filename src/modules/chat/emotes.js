@@ -98,9 +98,11 @@ export default class Emotes extends Module {
 
 	getSetIDs(user_id, user_login, room_id, room_login) {
 		const room = this.parent.getRoom(room_id, room_login, true),
+			room_user = room && room.getUser(user_id, user_login, true),
 			user = this.parent.getUser(user_id, user_login, true);
 
 		return (user ? user.emote_sets._cache : []).concat(
+			room_user ? room_user.emote_set._cache : [],
 			room ? room.emote_sets._cache : [],
 			this.default_sets._cache
 		);
@@ -108,6 +110,37 @@ export default class Emotes extends Module {
 
 	getSets(user_id, user_login, room_id, room_login) {
 		return this.getSetIDs(user_id, user_login, room_id, room_login)
+			.map(set_id => this.emote_sets[set_id]);
+	}
+
+	getRoomSetIDs(user_id, user_login, room_id, room_login) {
+		const room = this.parent.getRoom(room_id, room_login, true),
+			room_user = room && room.getUser(user_id, user_login, true);
+
+		if ( ! room )
+			return [];
+
+		if ( ! room_user )
+			return room.emote_sets._cache;
+
+		return room_user.emote_sets._cache.concat(room.emote_sets._cache);
+	}
+
+	getRoomSets(user_id, user_login, room_id, room_login) {
+		return this.getRoomSetIDs(user_id, user_login, room_id, room_login)
+			.map(set_id => this.emote_sets[set_id]);
+	}
+
+	getGlobalSetIDs(user_id, user_login) {
+		const user = this.parent.getUser(user_id, user_login, true);
+		if ( ! user )
+			return this.default_sets._cache;
+
+		return user.emote_sets._cache.concat(this.default_sets._cache);
+	}
+
+	getGlobalSets(user_id, user_login) {
+		return this.getGlobalSetIDs(user_id, user_login)
 			.map(set_id => this.emote_sets[set_id]);
 	}
 

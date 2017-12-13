@@ -6,7 +6,7 @@
 	@keyup.alt.page-down.stop="focusNextTab"
 >
 	<header
-		class="flex"
+		class="tw-flex"
 		tabindex="0"
 		role="tablist"
 		@keyup.home="firstTab"
@@ -24,7 +24,7 @@
 			:id="'tab-for-' + i.full_key"
 			:aria-selected="selected === idx"
 			:aria-controls="'tab-panel-' + i.full_key"
-			class="tab pd-y-05 pd-x-1"
+			class="tab tw-pd-y-05 tw-pd-x-1"
 			:class="[selected === idx ? 'active' : '']"
 			@click="selected = idx"
 		>
@@ -32,14 +32,14 @@
 		</div>
 	</header>
 	<section
-		class="border"
+		class="tw-border"
 		:id="'tab-panel-' + tab.full_key"
 		:aria-labelledby="'tab-for-' + tab.full_key"
 		role="tabpanel"
 		aria-hidden="false"
 		aria-expanded="true"
 	>
-		<section v-if="tab.description" class="pd-b-1">
+		<section v-if="tab.description" class="tw-pd-b-1">
 			{{ t(tab.desc_i18n_key, tab.description, tab) }}
 		</section>
 		<component

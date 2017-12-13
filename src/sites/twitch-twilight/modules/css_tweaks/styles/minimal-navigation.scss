@@ -7,8 +7,17 @@
 		top: -4rem !important;
 		transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 
+		.tw-svg__asset--logotwitch {
+			visibility: hidden;
+		}
+
+		&:focus-within,
 		&:hover {
 			top: 0 !important;
+
+			.tw-svg__asset--logotwitch {
+				visibility: visible;
+			}
 		}
 	}
 

@@ -11,7 +11,23 @@ const EMOTE_CLASS = 'chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w.\/@#%&()\-+=:?~]*)?))([^\w.\/@#%&()\-+=:?~]|\s|$)/g,
 	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w.\/@#%&()\-+=:?~]|\s|$)/g,
 
-	TWITCH_BASE = '//static-cdn.jtvnw.net/emoticons/v1/';
+	TWITCH_BASE = '//static-cdn.jtvnw.net/emoticons/v1/',
+	REPLACEMENT_BASE = '//cdn.frankerfacez.com/script/replacements/',
+	REPLACEMENTS = {
+		15: '15-JKanStyle.png',
+		16: '16-OptimizePrime.png',
+		17: '17-StoneLightning.png',
+		18: '18-TheRinger.png',
+		//19: '19-PazPazowitz.png',
+		//20: '20-EagleEye.png',
+		//21: '21-CougarHunt.png',
+		22: '22-RedCoat.png',
+		26: '26-JonCarnage.png',
+		//27: '27-PicoMause.png',
+		30: '30-BCWarrior.png',
+		33: '33-DansGame.png',
+		36: '36-PJSalt.png'
+	};
 
 
 // ============================================================================
@@ -57,7 +73,7 @@ export const Links = {
 					sanitize(this.i18n.t(
 						'tooltip.link-destination',
 						'Destination: %{url}',
-						{url: data.urls[data.urls.length-1]}
+						{url: data.urls[data.urls.length-1][1]}
 					));
 
 			if ( data.unsafe ) {
@@ -697,12 +713,24 @@ export const TwitchEmotes = {
 						text: text.slice(idx - t_start, e_start - t_start).join('')
 					});
 
+				let src, srcSet;
+
+				const replacement = REPLACEMENTS[e_id];
+				if ( replacement ) {
+					src = `${REPLACEMENT_BASE}${replacement}`;
+					srcSet = '';
+
+				} else {
+					src = `${TWITCH_BASE}${e_id}/1.0`;
+					srcSet = `${TWITCH_BASE}${e_id}/1.0 1x, ${TWITCH_BASE}${e_id}/2.0 2x`;
+				}
+
 				out.push({
 					type: 'emote',
 					id: e_id,
 					provider: 'twitch',
-					src: `${TWITCH_BASE}${e_id}/1.0`,
-					srcSet: `${TWITCH_BASE}${e_id}/1.0 1x, ${TWITCH_BASE}${e_id}/2.0 2x`,
+					src,
+					srcSet,
 					text: text.slice(e_start - t_start, e_end - t_start).join(''),
 					modifiers: []
 				});

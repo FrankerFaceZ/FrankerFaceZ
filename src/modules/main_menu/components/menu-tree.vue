@@ -17,7 +17,7 @@
 		role="presentation"
 	>
 		<div
-			class="flex__item flex flex--nowrap align-items-center pd-y-05 pd-r-05"
+			class="tw-flex__item tw-flex tw-flex-nowrap tw-align-items-center tw-pd-y-05 tw-pd-r-05"
 
 			role="treeitem"
 			:aria-expanded="item.expanded"
@@ -32,7 +32,7 @@
 					item.expanded ? 'ffz-i-down-dir' : 'ffz-i-right-dir'
 				]"
 			/>
-			<span class="flex-grow-1">
+			<span class="tw-flex-grow-1">
 				{{ t(item.i18n_key, item.title, item) }}
 			</span>
 			<span v-if="item.pill" class="pill">
