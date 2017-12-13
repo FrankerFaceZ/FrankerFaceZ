@@ -161,12 +161,8 @@ export default class Directory extends SiteModule {
 
 		const container = this.fine.getHostNode(inst);
 
-		if (inst.props.streamNode.type === 'watch_party') {
-			if (this.settings.get('directory.hide-vodcasts'))
-				container.classList.add('hide');
-			else
-				container.classList.remove('hide');
-		}
+		if (inst.props.streamNode.type === 'watch_party')
+			container.classList.toggle('hide', this.settings.get('directory.hide-vodcasts'));
 
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
 		if (img === null) return;

@@ -46,7 +46,7 @@ export default class Game extends SiteModule {
 			for(const inst of instances) this.updateButtons(inst);
 		});
 
-		this.GameHeader.on('update', this.updateButtons);
+		this.GameHeader.on('update', this.updateButtons, this);
 	}
 
 	updateButtons(inst, update = false) {
