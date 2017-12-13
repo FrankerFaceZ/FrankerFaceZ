@@ -247,8 +247,8 @@ export default class Following extends SiteModule {
 			this.ensureQueries();
 			this.updateChannelCard(inst)
 		}, this);
-		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('unmount', inst => this.parent.clearUptime(inst), this);
+		this.ChannelCard.on('mount', this.updateChannelCard, this);
+		this.ChannelCard.on('unmount', this.parent.clearUptime, this);
 
 		document.body.addEventListener('click', this.destroyHostMenu.bind(this));
 	}
@@ -386,9 +386,10 @@ export default class Following extends SiteModule {
 			return;
 		
 		if (inst.props.streamType === 'watch_party') {
-			const hideVodcasts = this.settings.get('directory.hide-vodcasts');
-			if (hideVodcasts) container.parentElement.classList.add('hide');
-			else container.parentElement.classList.remove('hide');
+			if (this.settings.get('directory.hide-vodcasts'))
+				container.parentElement.classList.add('hide');
+			else
+				container.parentElement.classList.remove('hide');
 		}
 		
 		// Remove old elements

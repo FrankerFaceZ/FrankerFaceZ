@@ -13,7 +13,10 @@ export default class HostButton extends Module {
 
 		this.should_enable = true;
 
+		this.inject('site');
 		this.inject('site.fine');
+		this.inject('site.chat');
+		this.inject('i18n');
 		this.inject('metadata');
 
 		this.metadata.definitions.host = {
@@ -24,7 +27,7 @@ export default class HostButton extends Module {
 				return this._host_updating;	
 			},
 			
-			click: (data, event) => {
+			click: data => {
 				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
 			},
 
@@ -48,11 +51,17 @@ export default class HostButton extends Module {
 					return '<figure class="ffz-i-zreknarf loading"/>';
 				}
 
-				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login)) ? 'Unhost' : 'Host';
+				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login))
+					? this.i18n.t('metadata.host.button.unhost', 'Unhost')
+					: this.i18n.t('metadata.host.button.host', 'Host');
 			},
 
 			tooltip: () => {
-				return `Currently hosting: ${this._last_hosted_channel || 'None'}`;
+				return this.i18n.t('metadata.host.button.tooltip',
+					'Currently hosting: %{channel}',
+				{
+					channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
+				});
 			}
 		};
 	}
@@ -60,7 +69,7 @@ export default class HostButton extends Module {
 	sendHostUnhostCommand(channel) {
 		if (!this._chat_con) return;
 
-		const ffz_user = ffz.site.getUser(),
+		const ffz_user = this.site.getUser(),
 			userLogin = ffz_user && ffz_user.login;
 
 		const commandData = {channel: userLogin, username: channel};
@@ -80,7 +89,7 @@ export default class HostButton extends Module {
 
 		const userLogin = inst.props.userLogin;
 
-		this.on('tmi:host', (e, t) => {
+		this.on('tmi:host', e => {
 			if (e.channel.substring(1) !== userLogin) return;
 
 			this._last_hosted_channel = e.target;
@@ -89,7 +98,7 @@ export default class HostButton extends Module {
 			this.metadata.updateMetadata('host');
 		});
 
-		this.on('tmi:unhost', (e, t) => {
+		this.on('tmi:unhost', e => {
 			if (e.channel.substring(1) !== userLogin) return;
 			
 			this._last_hosted_channel = null;
@@ -107,8 +116,7 @@ export default class HostButton extends Module {
 	onEnable() {
 		this.metadata.updateMetadata('host');
 
-		const chat = this.resolve('site.chat');
-		chat.ChatController.ready((cls, instances) => {
+		this.chat.ChatController.ready((cls, instances) => {
 			for(const inst of instances) {
 				if (inst && inst.chatService) this.hookIntoChatConnection(inst);
 			}
@@ -155,7 +163,7 @@ export default class HostButton extends Module {
 	}
 
 	async fetchAutoHosts() {
-		const user = this.resolve('site').getUser();
+		const user = this.site.getUser();
 		if ( ! user )
 			return;
 
@@ -182,7 +190,7 @@ export default class HostButton extends Module {
 	}
 
 	async fetchAutoHostSettings() {
-		const user = this.resolve('site').getUser();
+		const user = this.site.getUser();
 		if ( ! user )
 			return;
 
@@ -208,22 +216,20 @@ export default class HostButton extends Module {
 		return this.autoHostSettings = data.settings;
 	}
 
-	queueHostUpdate(newHosts) {
+	queueHostUpdate() {
 		if (this._host_update_timer) clearTimeout(this._host_update_timer);
 		
 		this._host_update_timer = setTimeout(() => {
 			this._host_update_timer = undefined;
-			this.updateAutoHosts(newHosts);
+			this.updateAutoHosts(this.autoHosts);
 		}, 1000);
 	}
 	
 	rearrangeHosts(oldIndex, newIndex) {
-		const newHosts = this.autoHosts.slice(0);
-		
-		const host = newHosts.splice(oldIndex, 1)[0];
-		newHosts.splice(newIndex, 0, host);
-		
-		this.queueHostUpdate(newHosts);
+		const host = this.autoHosts.splice(oldIndex, 1)[0];
+		this.autoHosts.splice(newIndex, 0, host);
+
+		this.queueHostUpdate();
 	}
 	
 	currentRoomInHosts() {
@@ -238,17 +244,17 @@ export default class HostButton extends Module {
 	}
 
 	removeUserFromHosts(event) {
-		const id = event.target.closest('.ffz--host-user').getAttribute('data-id');
+		const id = event.target.closest('.ffz--host-user').dataset.id;
 		
 		const newHosts = [];
 		for (let i = 0; i < this.autoHosts.length; i++) {
-			if (`${this.autoHosts[i]._id}` !== id) newHosts.push(this.autoHosts[i]);
+			if (this.autoHosts[i]._id != id) newHosts.push(this.autoHosts[i]);
 		}
 
 		this.updateAutoHosts(newHosts);
 	}
 
-	getAutoHostIDs(hosts) { // eslint-disable-line
+	getAutoHostIDs(hosts) { // eslint-disable-line class-methods-use-this
 		const ids = [];
 		if (hosts) {
 			for (let i = 0; i < hosts.length; i++) {
@@ -259,7 +265,7 @@ export default class HostButton extends Module {
 	}
 
 	async updateAutoHosts(newHosts) {
-		const user = this.resolve('site').getUser();
+		const user = this.site.getUser();
 		if ( ! user )
 			return;
 
@@ -296,7 +302,7 @@ export default class HostButton extends Module {
 	}
 
 	async updateAutoHostSetting(setting, newValue) {
-		const user = this.resolve('site').getUser();
+		const user = this.site.getUser();
 		if ( ! user )
 			return;
 

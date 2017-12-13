@@ -142,9 +142,9 @@ export default class Directory extends SiteModule {
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
 
-		this.ChannelCard.on('update', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('mount', inst => this.updateChannelCard(inst), this);
-		this.ChannelCard.on('unmount', inst => this.clearUptime(inst), this);
+		this.ChannelCard.on('update', this.updateChannelCard, this);
+		this.ChannelCard.on('mount', this.updateChannelCard, this);
+		this.ChannelCard.on('unmount', this.clearUptime, this);
 	}
 
 
@@ -162,9 +162,10 @@ export default class Directory extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 
 		if (inst.props.streamNode.type === 'watch_party') {
-			const hideVodcasts = this.settings.get('directory.hide-vodcasts');
-			if (hideVodcasts) container.classList.add('hide');
-			else container.classList.remove('hide');
+			if (this.settings.get('directory.hide-vodcasts'))
+				container.classList.add('hide');
+			else
+				container.classList.remove('hide');
 		}
 
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
