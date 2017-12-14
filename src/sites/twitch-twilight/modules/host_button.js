@@ -51,7 +51,7 @@ export default class HostButton extends Module {
 				const [, host_options_vue, autoHosts, autoHostSettings] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts, _autoHostSettings]);
 
 				this._auto_host_tip = tip;
-				tip.element.classList.remove('pd-1');
+				tip.element.classList.remove('tw-pd-1');
 				tip.element.classList.add('tw-balloon--lg');
 				vue.component('host-options', host_options_vue.default);
 				return this.buildAutoHostMenu(vue, autoHosts, autoHostSettings, data.channel);

@@ -1,5 +1,5 @@
 <template lang="html">
-<div class="ffz-auto-host-options tw-c-background tw-border">
+<div class="ffz-auto-host-options tw-c-background">
 	<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
 		<h4>{{ t('metadata.host.title', 'Auto Host Management') }}</h4>
 	</header>
