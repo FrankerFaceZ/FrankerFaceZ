@@ -29,6 +29,28 @@ export default class HostButton extends Module {
 		this.inject('site.chat');
 		this.inject('i18n');
 		this.inject('metadata');
+		this.inject('settings');
+
+		this.settings.add('metadata.host-button', {
+			default: true,
+
+			ui: {
+				path: 'Channel > Metadata >> Player',
+				title: 'Host Button',
+				description: 'Show a host button with the current hosted channel in the tooltip.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => {
+				const ffz_user = this.site.getUser(),
+					userLogin = ffz_user && ffz_user.login;
+
+				if (userLogin)
+					this.joinChannel(userLogin);
+					
+				this.metadata.updateMetadata('host');
+			}
+		});
 
 		this.metadata.definitions.host = {
 			order: 150,
@@ -58,6 +80,10 @@ export default class HostButton extends Module {
 			},
 
 			label: data => {
+				if (!this.settings.get('metadata.host-button')) {
+					return '';
+				}
+
 				const ffz_user = this.site.getUser(),
 					userLogin = ffz_user && ffz_user.login;
 					
@@ -124,10 +150,21 @@ export default class HostButton extends Module {
 		}
 	}
 
-	hookIntoChatConnection(inst) {
-		if (this._chat_con) return;
+	joinChannel(channel) {
+		if (this._chat_con) {
+			if (this.settings.get('metadata.host-button') && !this._chat_con.session.channelstate[`#${channel}`]) {
+				this._chat_con.joinChannel(channel);
+			}
+		}
+	}
 
+	hookIntoChatConnection(inst) {
 		const userLogin = inst.props.userLogin;
+
+		if (this._chat_con) {
+			this.joinChannel(userLogin);
+			return;
+		}
 
 		this.on('tmi:host', e => {
 			if (e.channel.substring(1) !== userLogin) return;
@@ -154,7 +191,8 @@ export default class HostButton extends Module {
 		const chatServiceClient = inst.chatService.client;
 
 		this._chat_con = chatServiceClient;
-		this._chat_con.joinChannel(userLogin);
+		if (this.settings.get('metadata.host-button'))
+			this.joinChannel(userLogin);
 	}
 
 	onEnable() {
@@ -165,6 +203,8 @@ export default class HostButton extends Module {
 				if (inst && inst.chatService) this.hookIntoChatConnection(inst);
 			}
 		});
+
+		this.chat.ChatController.on('update', this.hookIntoChatConnection, this);
 	}
 
 	buildAutoHostMenu(vue, hosts, autoHostSettings, data) {
