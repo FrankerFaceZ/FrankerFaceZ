@@ -90,6 +90,10 @@ export default class HostButton extends Module {
 		};
 	}
 
+	isChannelHosted(channelLogin) {
+		return this._last_hosted_channel === channelLogin;
+	}
+
 	sendHostUnhostCommand(channel) {
 		if (!this._chat_con) {
 			this._host_error = HOST_ERRORS.CHAT_CONNECTION;
@@ -374,9 +378,5 @@ export default class HostButton extends Module {
 		if (this.vueEl) {
 			this.vueEl.$children[0]._data.autoHostSettings = this.autoHostSettings;
 		}
-	}
-
-	isChannelHosted(channelLogin) {
-		return this._last_hosted_channel === channelLogin;
 	}
 }
