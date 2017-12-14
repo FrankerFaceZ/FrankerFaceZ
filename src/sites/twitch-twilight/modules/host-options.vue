@@ -10,13 +10,12 @@
 			<main class="tw-flex-grow-1 scrollable-area" data-simplebar="init">
 				<div class="simplebar-scroll-content">
 					<draggable v-model="hosts" class="simplebar-content" :options="{
-						handle: '.handle',
 						draggable: '.ffz--host-user',
 						animation: 150,
 					}" @update="rearrangeHosts">
 					<div v-for="host in hosts" class="tw-border-t ffz--host-user" :key="host._id" :data-id="host._id">
 						<div class="tw-interactable">
-							<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05">
+							<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1">
 								<figure class="ffz-i-ellipsis-vert handle"></figure>
 								<div class="ffz-channel-avatar">
 									<img :src="host.logo" :alt="host.display_name + '(' + host.name + ')'">

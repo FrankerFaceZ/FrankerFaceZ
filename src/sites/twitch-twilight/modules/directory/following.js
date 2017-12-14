@@ -380,7 +380,7 @@ export default class Following extends SiteModule {
 			return;
 		
 		if (inst.props.streamType === 'watch_party')
-			container.parentElement.classList.toggle('hide', this.settings.get('directory.hide-vodcasts'));
+			container.parentElement.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
 		
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
