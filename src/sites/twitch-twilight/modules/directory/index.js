@@ -106,6 +106,20 @@ export default class Directory extends SiteModule {
 				this.ChannelCard.forceUpdate();
 			}
 		});
+
+
+		this.settings.add('directory.hide-vodcasts', {
+			default: false,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Hide Vodcasts',
+				description: 'Hide vodcasts in the directories.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.ChannelCard.forceUpdate()
+		});
 	}
 
 
@@ -146,6 +160,10 @@ export default class Directory extends SiteModule {
 		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
 		const container = this.fine.getHostNode(inst);
+
+		if (inst.props.streamNode.type === 'watch_party')
+			container.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
+
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
 		if (img === null) return;
 
