@@ -716,7 +716,7 @@ export const TwitchEmotes = {
 				let src, srcSet;
 
 				const replacement = REPLACEMENTS[e_id];
-				if ( replacement ) {
+				if ( replacement && this.context.get('chat.fix-bad-emotes') ) {
 					src = `${REPLACEMENT_BASE}${replacement}`;
 					srcSet = '';
 

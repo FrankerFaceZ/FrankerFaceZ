@@ -56,6 +56,7 @@ export default class Emotes extends Module {
 		super(...args);
 
 		this.inject('socket');
+		this.inject('settings');
 
 		this.twitch_inventory_sets = [];
 		this.__twitch_emote_to_set = new Map;
@@ -67,6 +68,16 @@ export default class Emotes extends Module {
 		this.emote_sets = {};
 		this._set_refs = {};
 		this._set_timers = {};
+
+		this.settings.add('chat.fix-bad-emotes', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Emotes',
+				title: 'Fix Bad Twitch Global Emotes',
+				description: 'Clean up the images for bad Twitch global emotes, removing white borders and solid backgrounds.',
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	onEnable() {
