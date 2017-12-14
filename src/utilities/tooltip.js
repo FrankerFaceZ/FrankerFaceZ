@@ -255,7 +255,7 @@ export class Tooltip {
 			}
 		}
 
-		if ( content instanceof Promise ) {
+		if ( content instanceof Promise || (content.then && content.toString() === '[object Promise]') ) {
 			inner.innerHTML = '<div class="ffz-i-zreknarf loader"></div>';
 			content.then(content => {
 				if ( ! content )

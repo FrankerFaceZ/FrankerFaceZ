@@ -30,8 +30,8 @@
 }
 
 .tw-theme--ffz, .tw-theme--ffz.tw-theme--dark, .tw-theme--dark, body {
-	.ffz-stat > .tw-button,
-	.ffz-stat.tw-button {
+	.ffz-stat > .tw-button--text,
+	.ffz-stat.tw-button--text {
 		color: inherit;
 	}
 }
