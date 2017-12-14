@@ -349,24 +349,33 @@ export default class Metadata extends Module {
 								el._ffz_destroy = el._ffz_outside = null;
 							};
 
-							const tt = el._ffz_popup = new Tooltip(document.body.querySelector('.twilight-root') || document.body, el, {
-								manual: true,
-								html: true,
+							const parent = document.body.querySelector('.twilight-root') || document.body,
+								tt = el._ffz_popup = new Tooltip(parent, el, {
+									manual: true,
+									html: true,
 
-								tooltipClass: 'ffz-metadata-balloon tw-balloon block',
-								arrowClass: 'tw-balloon__tail',
-								innerClass: 'tw-pd-1',
+									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background',
+									arrowClass: 'tw-balloon__tail tw-absolute',
+									innerClass: 'tw-pd-1',
 
-								popper: {
-									placement: 'top-end'
-								},
-								content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key)),
-								onShow: (t, tip) =>
-									setTimeout(() => {
-										el._ffz_outside = new ClickOutside(tip.outer, destroy);
-									}),
-								onHide: destroy
-							})
+									popper: {
+										placement: 'top-end',
+										modifiers: {
+											preventOverflow: {
+												boundariesElement: parent
+											},
+											flip: {
+												behavior: ['top', 'bottom', 'left', 'right']
+											}
+										}
+									},
+									content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key)),
+									onShow: (t, tip) =>
+										setTimeout(() => {
+											el._ffz_outside = new ClickOutside(tip.outer, destroy);
+										}),
+									onHide: destroy
+								});
 
 							tt._enter(el);
 						});

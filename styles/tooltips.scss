@@ -32,8 +32,8 @@ body {
 		}
 	}
 
-	&[x-placement^="left"] > .tw-balloon__tail {
-		right: -3px;
+	&[x-placement^="right"] > .tw-balloon__tail {
+		left: -3px;
 		box-shadow: -1px 1px 0 #dad8de;
 
 		.tw-theme--dark & {
@@ -45,8 +45,8 @@ body {
 		}
 	}
 
-	&[x-placement^="right"] > .tw-balloon__tail {
-		left: -3px;
+	&[x-placement^="left"] > .tw-balloon__tail {
+		right: -3px;
 		box-shadow: 1px -1px 0 #dad8de;
 
 		.tw-theme--dark & {
@@ -108,16 +108,16 @@ body {
 		}
 	}
 
-	&[x-placement^="left"] {
+	&[x-placement^="right"] {
 		.ffz__tooltip--arrow {
-			right: -3px;
+			left: -3px;
 			border-radius: 0 2px 0 0;
 		}
 	}
 
-	&[x-placement^="right"] {
+	&[x-placement^="left"] {
 		.ffz__tooltip--arrow {
-			left: -3px;
+			right: -3px;
 			border-radius: 0 0 0 2px;
 		}
 	}
