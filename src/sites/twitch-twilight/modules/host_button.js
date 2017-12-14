@@ -58,6 +58,13 @@ export default class HostButton extends Module {
 			},
 
 			label: data => {
+				const ffz_user = this.site.getUser(),
+					userLogin = ffz_user && ffz_user.login;
+					
+				if (data.channel && data.channel.login === userLogin) {
+					return '';
+				}
+
 				if (this._host_updating) {
 					return '<figure class="ffz-i-zreknarf loading"/>';
 				}
