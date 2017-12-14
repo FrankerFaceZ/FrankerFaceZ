@@ -12,24 +12,24 @@
   },
   "devDependencies": {
     "clean-webpack-plugin": "^0.1.17",
-    "copy-webpack-plugin": "^4.1.0",
+    "copy-webpack-plugin": "^4.3.0",
     "css-loader": "^0.28.7",
-    "eslint": "^4.9.0",
+    "eslint": "^4.13.1",
     "extract-loader": "^1.0.1",
     "file-loader": "^1.1.5",
-    "less": "^2.7.2",
-    "node-sass": "^4.5.3",
+    "less": "^2.7.3",
+    "node-sass": "^4.7.2",
     "raw-loader": "^0.5.1",
     "sass-loader": "^6.0.6",
     "style-loader": "^0.18.2",
     "to-string-loader": "^1.1.5",
-    "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
-    "vue-loader": "^13.0.5",
-    "webpack": "^3.6.0",
-    "webpack-dev-middleware": "^1.12.0",
-    "webpack-dev-server": "^2.9.1",
+    "uglifyjs-webpack-plugin": "^1.1.4",
+    "vue-loader": "^13.5.0",
+    "webpack": "^3.10.0",
+    "webpack-dev-middleware": "^1.12.2",
+    "webpack-dev-server": "^2.9.7",
     "webpack-manifest-plugin": "^1.3.2",
-    "webpack-merge": "^4.1.0"
+    "webpack-merge": "^4.1.1"
   },
   "repository": {
     "type": "git",
@@ -37,12 +37,12 @@
   },
   "dependencies": {
     "displacejs": "^1.2.4",
-    "path-to-regexp": "^2.0.0",
-    "popper.js": "^1.12.6",
-    "sortablejs": "^1.6.1",
-    "vue": "^2.5.2",
+    "path-to-regexp": "^2.1.0",
+    "popper.js": "^1.13.0",
+    "sortablejs": "^1.7.0",
+    "vue": "^2.5.11",
     "vue-clickaway": "^2.1.0",
-    "vue-template-compiler": "^2.5.2",
+    "vue-template-compiler": "^2.5.11",
     "vuedraggable": "^2.15.0"
   }
 }
