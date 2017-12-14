@@ -204,7 +204,7 @@ export default class HostButton extends Module {
 			}
 		});
 
-		this.chat.ChatController.on('update', this.hookIntoChatConnection, this);
+		this.chat.ChatController.on('mount', this.hookIntoChatConnection, this);
 	}
 
 	buildAutoHostMenu(vue, hosts, autoHostSettings, data) {
