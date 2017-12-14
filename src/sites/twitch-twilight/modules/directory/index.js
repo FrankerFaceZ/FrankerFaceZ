@@ -12,6 +12,7 @@ import {get} from 'utilities/object';
 import Following from './following';
 import Game from './game';
 import Community from './community';
+import BrowsePopular from './browse_popular';
 
 export default class Directory extends SiteModule {
 	constructor(...args) {
@@ -30,12 +31,13 @@ export default class Directory extends SiteModule {
 		this.inject(Following);
 		this.inject(Game);
 		this.inject(Community);
+		this.inject(BrowsePopular);
 
 		this.apollo.registerModifier('GamePage_Game', res => this.modifyStreams(res), false);
 
 		this.ChannelCard = this.fine.define(
 			'channel-card',
-			n => n.props && n.props.streamNode
+			n => n.props && (n.props.streamNode || n.props.linkTo && n.props.linkTo.state && n.props.linkTo.state.medium === 'twitch_browse_directory')
 		);
 
 
@@ -134,9 +136,16 @@ export default class Directory extends SiteModule {
 		this.css_tweaks.toggleHide('boxart-hover', boxart === 1);
 
 		this.ChannelCard.ready((cls, instances) => {
+			// Game Directory Channel Cards
 			this.apollo.ensureQuery(
 				'GamePage_Game',
 				'data.directory.streams.edges.0.node.createdAt'
+			);
+
+			// Popular Directory Channel Cards
+			this.apollo.ensureQuery(
+				'BrowsePage_Popular',
+				'data.streams.edges.node.0.createdAt'
 			);
 
 			for(const inst of instances) this.updateChannelCard(inst);
@@ -152,8 +161,13 @@ export default class Directory extends SiteModule {
 		const uptimeSel = inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card .tw-card-img' : '.tw-card .tw-aspect > div';
 		const avatarSel = inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card' : '.tw-card';
 
-		this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', uptimeSel);
-		this.addCardAvatar(inst, avatarSel);
+		if (!inst.props.directoryType) {
+			this.updateUptime(inst, 'props.viewerCount.createdAt', uptimeSel);
+			this.addCardAvatar(inst, 'props.viewerCount', avatarSel);
+		} else {
+			this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', uptimeSel);
+			this.addCardAvatar(inst, 'props.streamNode.viewersCount', avatarSel);
+		}
 
 		const type = inst.props.directoryType;
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
@@ -161,7 +175,7 @@ export default class Directory extends SiteModule {
 
 		const container = this.fine.getHostNode(inst);
 
-		if (inst.props.streamNode.type === 'watch_party')
+		if (get('props.streamNode.type', inst) === 'watch_party' || get('props.type', inst) === 'watch_party')
 			container.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
 
 		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
@@ -171,7 +185,7 @@ export default class Directory extends SiteModule {
 			type === 'COMMUNITIES' && hiddenThumbnails.includes(inst.props.streamNode.game.name)) {
 			img.src = hiddenPreview;
 		} else {
-			img.src = inst.props.streamNode.previewImageURL;
+			img.src = get('props.streamNode.previewImageURL', inst) || get('props.imageSrc', inst);
 		}
 	}
 
@@ -187,6 +201,8 @@ export default class Directory extends SiteModule {
 			const s = node.viewersCount = new Number(node.viewersCount || 0);
 			s.profileImageURL = node.broadcaster.profileImageURL;
 			s.createdAt = node.createdAt;
+			s.login = node.broadcaster.login;
+			s.displayName = node.broadcaster.displayName;
 
 			newStreams.push(edge);
 		}
@@ -256,10 +272,11 @@ export default class Directory extends SiteModule {
 	}
 
 
-	addCardAvatar(inst, selector) {
+	addCardAvatar(inst, created_path, selector) {
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
-			setting = this.settings.get('directory.show-channel-avatars');
+			setting = this.settings.get('directory.show-channel-avatars'),
+			data = get(created_path, inst);
 
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
@@ -277,7 +294,7 @@ export default class Directory extends SiteModule {
 		if ( ! card || setting === 0 )
 			return;
 
-		if (inst.props.streamNode.viewersCount.profileImageURL) {
+		if (data) {
 			if (setting === 1) {
 				const cardDiv = card.querySelector('.tw-card-body');
 				const modifiedDiv = e('div', {
@@ -286,11 +303,11 @@ export default class Directory extends SiteModule {
 
 				const avatarDiv = e('a', {
 					className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
-					href: `/${inst.props.streamNode.broadcaster.login}`,
-					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
+					href: `/${data.login}`,
+					onclick: event => this.hijackUserClick(event, data.login)
 				}, e('img', {
-					title: inst.props.streamNode.broadcaster.displayName,
-					src: inst.props.streamNode.viewersCount.profileImageURL
+					title: data.displayName,
+					src: data.profileImageURL
 				}));
 
 				const cardDivParent = cardDiv.parentElement;
@@ -306,13 +323,13 @@ export default class Directory extends SiteModule {
 			} else if (setting === 2 || setting === 3) {
 				const avatarElement = e('a', {
 					className: 'ffz-channel-avatar',
-					href: `/${inst.props.streamNode.broadcaster.login}`,
-					onclick: event => this.hijackUserClick(event, inst.props.streamNode.broadcaster.login)
+					href: `/${data.login}`,
+					onclick: event => this.hijackUserClick(event, data.login)
 				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
 					e('figure', 'tw-aspect tw-aspect--align-top',
 						e('img', {
-							title: inst.props.streamNode.broadcaster.displayName,
-							src: inst.props.streamNode.viewersCount.profileImageURL
+							title: data.displayName,
+							src: data.profileImageURL
 						})
 					)
 				));
