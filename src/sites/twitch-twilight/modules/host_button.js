@@ -66,7 +66,7 @@ export default class HostButton extends Module {
 				}
 
 				if (this._host_updating) {
-					return '<figure class="ffz-i-zreknarf loading"/>';
+					return 'Updating...';
 				}
 
 				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login))
