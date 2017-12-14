@@ -291,6 +291,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.lines.borders', this.updateLineBorders, this);
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
+		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
