@@ -278,6 +278,9 @@ export default class Directory extends SiteModule {
 			setting = this.settings.get('directory.show-channel-avatars'),
 			data = get(created_path, inst);
 
+		if ( ! card )
+			return;
+
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
 		if (hiddenBodyCard !== null)
@@ -291,7 +294,7 @@ export default class Directory extends SiteModule {
 		if (channelAvatar !== null)
 			channelAvatar.remove();
 
-		if ( ! card || setting === 0 )
+		if ( setting === 0 )
 			return;
 
 		if (data) {
