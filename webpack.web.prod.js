@@ -15,7 +15,8 @@ const config = module.exports = merge(common, {
 			sourceMap: true,
 			uglifyOptions: {
 				compress: {
-					keep_fnames: true
+					keep_fnames: true,
+					keep_classnames: true
 				},
 				mangle: {
 					keep_classnames: true,
