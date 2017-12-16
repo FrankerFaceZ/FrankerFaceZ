@@ -137,12 +137,12 @@ export default class Following extends SiteModule {
 			this.modifyLiveUsers(res);
 			this.modifyLiveHosts(res);
 		}, false);
-		
+
 		this.on('settings:changed:directory.uptime', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-channel-avatars', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-boxart', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.hide-vodcasts', () => this.ChannelCard.forceUpdate());
-		
+
 		this.apollo.registerModifier('FollowedChannels', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
@@ -186,11 +186,12 @@ export default class Following extends SiteModule {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
+		this.hosts = {};
+
 		const followedHosts = get('data.currentUser.followedHosts', res);
 		if (!followedHosts)
 			return res;
 
-		this.hosts = {};
 		const newHostNodes = [];
 
 		const oldMode = !!followedHosts.nodes;
@@ -375,7 +376,7 @@ export default class Following extends SiteModule {
 		const root = (document.body.querySelector('.twilight-root') || document.body);
 		root.appendChild(this.hostMenu);
 
-		this.hostMenuPopper = new Popper(root, this.hostMenu, {
+		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {
 			placement: 'bottom-start',
 			modifiers: {
 				flip: {
@@ -392,16 +393,16 @@ export default class Following extends SiteModule {
 
 	updateChannelCard(inst) {
 		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
-		
+
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
-		
+
 		if ( container === null || card === null )
 			return;
-		
+
 		if (inst.props.streamType === 'watch_party')
 			container.parentElement.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
-		
+
 		// Remove old elements
 		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
 		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('tw-hide');
@@ -436,7 +437,7 @@ export default class Following extends SiteModule {
 			modifiedDiv.querySelector('.live-channel-card__videos').onclick = event => {
 				event.preventDefault();
 				event.stopPropagation();
-				
+
 				this.router.navigate('user-videos', { userName: broadcasterLogin });
 			};
 
