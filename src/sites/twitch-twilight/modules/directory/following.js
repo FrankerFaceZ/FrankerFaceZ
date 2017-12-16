@@ -86,10 +86,12 @@ export default class Following extends SiteModule {
 		this.apollo.registerModifier('FollowingLive_CurrentUser', `query {
 			currentUser {
 				followedLiveUsers {
-					nodes {
-						profileImageURL(width: 70)
-						stream {
-							createdAt
+					edges {
+						node {
+							profileImageURL(width: 70)
+							stream {
+								createdAt
+							}
 						}
 					}
 				}
@@ -155,20 +157,28 @@ export default class Following extends SiteModule {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
-		const newLiveNodes = [];
+		const newStreams = [];
 
-		const nodes = res.data.currentUser.followedLiveUsers.nodes;
-		for (let i = 0; i < nodes.length; i++) {
-			const node = nodes[i];
+		const followedLiveUsers = get('data.currentUser.followedLiveUsers', res);
+		if (!followedLiveUsers)
+			return res;
+
+		const oldMode = !!followedLiveUsers.nodes;
+		const edgesOrNodes = followedLiveUsers.nodes || followedLiveUsers.edges;
+
+		for (let i = 0; i < edgesOrNodes.length; i++) {
+			const edge = edgesOrNodes[i];
+			const node = edge.node || edge;
 
 			const s = node.stream.viewersCount = new Number(node.stream.viewersCount || 0);
 			s.profileImageURL = node.profileImageURL;
 			s.createdAt = node.stream.createdAt;
 
 			if (node.stream.game && hiddenThumbnails.includes(node.stream.game.name)) node.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-			if (!node.stream.game || node.stream.game && !blockedGames.includes(node.stream.game.name)) newLiveNodes.push(node);
+			if (!node.stream.game || node.stream.game && !blockedGames.includes(node.stream.game.name)) newStreams.push(edge);
 		}
-		res.data.currentUser.followedLiveUsers.nodes = newLiveNodes;
+		res.data.currentUser.followedLiveUsers[oldMode ? 'nodes' : 'edges'] = newStreams;
+
 		return res;
 	}
 
@@ -176,12 +186,19 @@ export default class Following extends SiteModule {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
 
-		const nodes = res.data.currentUser.followedHosts.nodes;
+		const followedHosts = get('data.currentUser.followedHosts', res);
+		if (!followedHosts)
+			return res;
+
 		this.hosts = {};
 		const newHostNodes = [];
 
-		for (let i = 0; i < nodes.length; i++) {
-			const node = nodes[i];
+		const oldMode = !!followedHosts.nodes;
+		const edgesOrNodes = followedHosts.nodes || followedHosts.edges;
+
+		for (let i = 0; i < edgesOrNodes.length; i++) {
+			const edge = edgesOrNodes[i];
+			const node = edge.node || edge;
 
 			const s = node.hosting.stream.viewersCount = new Number(node.hosting.stream.viewersCount || 0);
 			s.profileImageURL = node.hosting.profileImageURL;
@@ -194,7 +211,7 @@ export default class Following extends SiteModule {
 					channels: [node.displayName]
 				};
 				if (node.hosting.stream.game && hiddenThumbnails.includes(node.hosting.stream.game.name)) node.hosting.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-				if (!node.hosting.stream.game || node.hosting.stream.game && !blockedGames.includes(node.hosting.stream.game.name)) newHostNodes.push(node);
+				if (!node.hosting.stream.game || node.hosting.stream.game && !blockedGames.includes(node.hosting.stream.game.name)) newHostNodes.push(edge);
 			} else {
 				this.hosts[node.hosting.displayName].nodes.push(node);
 				this.hosts[node.hosting.displayName].channels.push(node.displayName);
@@ -202,7 +219,7 @@ export default class Following extends SiteModule {
 		}
 
 		if (this.settings.get('directory.following.group-hosts')) {
-			res.data.currentUser.followedHosts.nodes = newHostNodes;
+			res.data.currentUser.followedHosts[oldMode ? 'nodes' : 'edges'] = newHostNodes;
 		}
 		return res;
 	}
@@ -220,12 +237,14 @@ export default class Following extends SiteModule {
 					n =>
 						get('data.currentUser.followedLiveUsers.nodes.0.profileImageURL', n) !== undefined
 						||
+						get('data.currentUser.followedLiveUsers.edges.0.node.profileImageURL', n) !== undefined
+						||
 						get('data.currentUser.followedHosts.nodes.0.hosting.profileImageURL', n) !== undefined
 				);
 			} else if (this.router.match[1] === 'live') {
 				this.apollo.ensureQuery(
 					'FollowingLive_CurrentUser',
-					'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
+					'data.currentUser.followedLiveUsers.nodes.0.profileImageURL' || 'data.currentUser.followedLiveUsers.edges.0.node.profileImageURL'
 				);
 			} else if (this.router.match[1] === 'hosts') {
 				this.apollo.ensureQuery(
@@ -353,9 +372,10 @@ export default class Following extends SiteModule {
 			)
 		);
 
-		(document.body.querySelector('.twilight-root') || document.body).appendChild(this.hostMenu);
+		const root = (document.body.querySelector('.twilight-root') || document.body);
+		root.appendChild(this.hostMenu);
 
-		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {
+		this.hostMenuPopper = new Popper(root, this.hostMenu, {
 			placement: 'bottom-start',
 			modifiers: {
 				flip: {
