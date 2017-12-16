@@ -183,7 +183,9 @@ export default class Directory extends SiteModule {
 
 		const newStreams = [];
 
-		const edges = res.data.directory.streams.edges;
+		const edges = get('data.directory.streams.edges', res);
+		if (!edges) return res;
+
 		for (let i = 0; i < edges.length; i++) {
 			const edge = edges[i];
 			const node = edge.node;

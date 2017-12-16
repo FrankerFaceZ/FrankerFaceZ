@@ -5,6 +5,7 @@
 // ============================================================================
 
 import {SiteModule} from 'utilities/module';
+import {get} from 'utilities/object';
 
 export default class BrowsePopular extends SiteModule {
 	constructor(...args) {
@@ -56,7 +57,9 @@ export default class BrowsePopular extends SiteModule {
 
 		const newStreams = [];
 
-		const edges = res.data.streams.edges;
+		const edges = get('data.streams.edges', res);
+		if (!edges) return res;
+
 		for (let i = 0; i < edges.length; i++) {
 			const edge = edges[i];
 			const node = edge.node;
