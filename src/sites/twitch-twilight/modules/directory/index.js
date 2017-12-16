@@ -37,7 +37,7 @@ export default class Directory extends SiteModule {
 
 		this.ChannelCard = this.fine.define(
 			'channel-card',
-			n => n.props && (n.props.streamNode || n.props.linkTo && n.props.linkTo.state && n.props.linkTo.state.medium === 'twitch_browse_directory')
+			n => n.props && n.props.streamNode
 		);
 
 
@@ -142,12 +142,6 @@ export default class Directory extends SiteModule {
 				'data.directory.streams.edges.0.node.createdAt'
 			);
 
-			// Popular Directory Channel Cards
-			this.apollo.ensureQuery(
-				'BrowsePage_Popular',
-				'data.streams.edges.node.0.createdAt'
-			);
-
 			for(const inst of instances) this.updateChannelCard(inst);
 		});
 
@@ -158,31 +152,24 @@ export default class Directory extends SiteModule {
 
 
 	updateChannelCard(inst) {
-		const uptimeSel = inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card .tw-card-img' : '.tw-card .tw-aspect > div';
-		const avatarSel = inst.props.directoryType === 'GAMES' ? '.tw-thumbnail-card' : '.tw-card';
+		const container = this.fine.getHostNode(inst);
+		if (!container) return;
 
-		if (!inst.props.directoryType) {
-			this.updateUptime(inst, 'props.viewerCount.createdAt', uptimeSel);
-			this.addCardAvatar(inst, 'props.viewerCount', avatarSel);
-		} else {
-			this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', uptimeSel);
-			this.addCardAvatar(inst, 'props.streamNode.viewersCount', avatarSel);
-		}
+		this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', '.tw-card-img');
+		this.addCardAvatar(inst, 'props.streamNode.viewersCount', '.tw-card');
 
-		const type = inst.props.directoryType;
+		const type = get('props.directoryType', inst);
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-
-		const container = this.fine.getHostNode(inst);
 
 		if (get('props.streamNode.type', inst) === 'watch_party' || get('props.type', inst) === 'watch_party')
 			container.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
 
-		const img = container && container.querySelector && container.querySelector(`${uptimeSel} img`);
-		if (img === null) return;
+		const img = container.querySelector && container.querySelector('.tw-card-img img');
+		if (img == null) return;
 
-		if (type === 'GAMES' && hiddenThumbnails.includes(inst.props.directoryName) ||
-			type === 'COMMUNITIES' && hiddenThumbnails.includes(inst.props.streamNode.game.name)) {
+		if (type === 'GAMES' && hiddenThumbnails.includes(get('props.directoryName', inst)) ||
+			type === 'COMMUNITIES' && hiddenThumbnails.includes(get('props.streamNode.game.name', inst))) {
 			img.src = hiddenPreview;
 		} else {
 			img.src = get('props.streamNode.previewImageURL', inst) || get('props.imageSrc', inst);
@@ -191,6 +178,9 @@ export default class Directory extends SiteModule {
 
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this
+		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
+		const gamePage = get('data.directory.__typename', res) === 'Game';
+
 		const newStreams = [];
 
 		const edges = res.data.directory.streams.edges;
@@ -204,7 +194,7 @@ export default class Directory extends SiteModule {
 			s.login = node.broadcaster.login;
 			s.displayName = node.broadcaster.displayName;
 
-			newStreams.push(edge);
+			if (gamePage || (!node.game || node.game && !blockedGames.includes(node.game.name))) newStreams.push(edge);
 		}
 		res.data.directory.streams.edges = newStreams;
 		return res;
