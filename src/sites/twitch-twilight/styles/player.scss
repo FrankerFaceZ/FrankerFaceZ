@@ -11,3 +11,7 @@
 	bottom: 4rem;
 	height: auto;
 }
+
+.video-player--fullscreen.video-player--theatre.video-player--logged-in .video-player__container {
+	bottom: 0 !important;
+}

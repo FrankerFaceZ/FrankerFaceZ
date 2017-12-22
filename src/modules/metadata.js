@@ -401,14 +401,27 @@ export default class Metadata extends Module {
 
 				container.appendChild(el);
 
-				if ( def.tooltip )
+				if ( def.tooltip ) {
+					const parent = document.body.querySelector('.twilight-root') || document.body;
 					el.tooltip = new Tooltip(container, el, {
 						live: false,
 						html: true,
 						content: () => el.tip_content,
 						onShow: (t, tip) => el.tip = tip,
-						onHide: () => el.tip = null
+						onHide: () => el.tip = null,
+						popper: {
+							placement: 'bottom',
+							modifiers: {
+								flip: {
+									behavior: ['bottom', 'top']
+								},
+								preventOverflow: {
+									boundariesElement: parent
+								}
+							}
+						}
 					});
+				}
 
 			} else {
 				stat = el.querySelector('.ffz-stat-text');

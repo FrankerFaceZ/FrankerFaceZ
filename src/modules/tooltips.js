@@ -30,9 +30,15 @@ export default class TooltipProvider extends Module {
 				}, target.dataset.data)
 			]
 		}
+
+		this.types.html = target => {
+			return target.dataset.title;
+		}
 	}
 
 	onEnable() {
+		const container = document.body.querySelector('.twilight-root') || document.body;
+
 		this.tips = new Tooltip('body [data-reactroot]', 'ffz-tooltip', {
 			html: true,
 			delayHide: this.checkDelayHide.bind(this),
@@ -40,7 +46,15 @@ export default class TooltipProvider extends Module {
 			content: this.process.bind(this),
 			interactive: this.checkInteractive.bind(this),
 			popper: {
-				placement: 'top'
+				placement: 'top',
+				modifiers: {
+					flip: {
+						behavior: ['top', 'bottom', 'left', 'right']
+					},
+					preventOverflow: {
+						boundariesElement: container
+					}
+				}
 			}
 		});
 	}

@@ -3,7 +3,7 @@
 const HOP = Object.prototype.hasOwnProperty;
 
 export function has(object, key) {
-	return HOP.call(object, key);
+	return object ? HOP.call(object, key) : false;
 }
 
 

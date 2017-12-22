@@ -2,7 +2,7 @@ body .whispers--theatre-mode.whispers--right-column-expanded {
 	right: var(--ffz-chat-width);
 }
 
-body .persistent-player--theatre,
+body .persistent-player--theatre:not([style*="width: 100%"]),
 body .channel-page__video-player--theatre-mode {
 	width: calc(100% - var(--ffz-chat-width)) !important;
 }
