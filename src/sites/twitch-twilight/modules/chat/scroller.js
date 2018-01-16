@@ -62,13 +62,7 @@ export default class Scroller extends Module {
 		});
 
 		this.ChatScroller.ready((cls, instances) => {
-			const t = this,
-				old_scroll = cls.prototype.scrollToBottom;
-
-			cls.prototype.scrollToBottom = function() {
-				if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen )
-					return old_scroll.call(this);
-			}
+			const t = this;
 
 			cls.prototype.ffzShouldBeFrozen = function(since) {
 				if ( since === undefined )
@@ -175,8 +169,14 @@ export default class Scroller extends Module {
 				if ( this._ffz_handleScroll )
 					return;
 
-				this._ffz_handleScroll = this.handleScrollEvent;
 				const t = this;
+				this._old_scroll = this.scrollToBottom;
+				this.scrollToBottom = function() {
+					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen )
+						return this._old_scroll();
+				}
+
+				this._ffz_handleScroll = this.handleScrollEvent;
 				this.handleScrollEvent = function(e) {
 					// If we're frozen because of FFZ, do not allow a mouse click to update
 					// the auto-scrolling state. That just gets annoying.
