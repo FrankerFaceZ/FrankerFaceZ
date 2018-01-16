@@ -130,7 +130,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Appearance >> General @{"sort": -1}',
 				title: 'Width',
-				description: 'How wide chat should be, in pixels.',
+				description: "How wide chat should be, in pixels. This may be affected by your browser's zoom and font size settings.",
 				component: 'setting-text-box',
 				process(val) {
 					val = parseInt(val, 10);
@@ -147,7 +147,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Appearance >> General',
 				title: 'Font Size',
-				description: 'How large should text in chat be, in pixels.',
+				description: "How large should text in chat be, in pixels. This may be affected by your browser's zoom and font size settings.",
 				component: 'setting-text-box',
 				process(val) {
 					val = parseInt(val, 10);
@@ -247,10 +247,10 @@ export default class ChatHook extends Module {
 		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
 			font = `"${font}"`;
 
-		this.css_tweaks.setVariable('chat-font-size', `${size}px`);
-		this.css_tweaks.setVariable('chat-line-height', `${lh}px`);
+		this.css_tweaks.setVariable('chat-font-size', `${size/10}rem`);
+		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
 		this.css_tweaks.setVariable('chat-font-family', font);
-		this.css_tweaks.setVariable('chat-width', `${width}px`);
+		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 
 		this.css_tweaks.toggle('chat-font', size !== 12 || font);
 		this.css_tweaks.toggle('chat-width', width !== 340);

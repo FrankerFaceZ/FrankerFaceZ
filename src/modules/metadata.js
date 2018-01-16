@@ -199,19 +199,6 @@ export default class Metadata extends Module {
 	}
 
 
-	async getData(key) {
-		const def = this.definitions[key];
-		if ( ! def )
-			return {label: null};
-
-		return {
-			icon: maybe_call(def.icon),
-			label: maybe_call(def.label),
-			refresh: maybe_call(def.refresh)
-		}
-	}
-
-
 	updateMetadata(keys) {
 		const bar = this.resolve('site.channel_bar');
 		if ( bar ) {
@@ -329,7 +316,7 @@ export default class Metadata extends Module {
 						});
 
 					if ( def.popup )
-						popup.addEventListener('click', e => {
+						popup.addEventListener('click', () => {
 							if ( popup.disabled || popup.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
 								return false;
 

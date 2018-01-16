@@ -60,6 +60,17 @@ export default class Player extends Module {
 			changed: val => this.css_tweaks.toggle('theatre-no-whispers', val)
 		});
 
+		this.settings.add('player.theatre.metadata', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> Theatre Mode',
+				title: 'Show metadata when mousing over the player.',
+				component: 'setting-check-box'
+			},
+
+			changed: val => this.css_tweaks.toggle('theatre-metadata', val)
+		});
+
 		this.settings.add('player.theatre.auto-enter', {
 			default: false,
 			ui: {
@@ -127,6 +138,7 @@ export default class Player extends Module {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
+		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
 		this.updateHideExtensions();
 
 		const t = this;

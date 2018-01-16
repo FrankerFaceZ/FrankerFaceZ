@@ -286,6 +286,7 @@ export default class Room {
 	background-color: transparent;
 	filter: none;
 	${WEBKIT}mask-image: none;
+	background-size: 1.8rem;
 	background-image: url("${data.image1x}");
 	background-image: ${WEBKIT}image-set(
 		url("${data.image1x}") 1x,

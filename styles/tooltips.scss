@@ -3,7 +3,7 @@ body {
 }
 
 .ffz-metadata-balloon {
-	z-index: 999999999;
+	z-index: 999999999 !important;
 	margin: 6px;
 
 	&[x-placement^="bottom"] > .tw-balloon__tail {

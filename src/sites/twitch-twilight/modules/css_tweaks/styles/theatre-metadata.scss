@@ -1,0 +1,12 @@
+.channel-page-layout__scroll-area--theatre-mode .channel-info-bar {
+	position: fixed;
+	bottom: 100px;
+	left: 50px;
+	right: calc(var(--ffz-chat-width) + 250px);
+	z-index: 3500;
+	opacity: 0;
+}
+
+.channel-page-layout__scroll-area--theatre-mode:hover .channel-info-bar {
+	opacity: 0.75;
+}
