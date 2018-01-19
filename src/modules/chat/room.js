@@ -267,7 +267,20 @@ export default class Room {
 	// ========================================================================
 
 	updateBadges(badges) {
-		this.badges = badges;
+		if ( ! badges )
+			this.badges = badges;
+		else {
+			const b = {};
+			for(const data of badges) {
+				const sid = data.setID,
+					bs = b[sid] = b[sid] || {};
+
+				bs[data.version] = data;
+			}
+
+			this.badges = b;
+		}
+
 		this.buildBadgeCSS();
 	}
 
@@ -278,24 +291,28 @@ export default class Room {
 		const out = [],
 			id = this.id;
 
-		for(const [key, versions] of this.badges) {
-			for(const [version, data] of versions) {
-				const rule = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
+		for(const key in this.badges)
+			if ( has(this.badges, key) ) {
+				const versions = this.badges[key];
+				for(const version in versions)
+					if ( has(versions, version) ) {
+						const data = versions[version],
+							rule = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
-				out.push(`[data-room-id="${id}"] ${rule} {
-	background-color: transparent;
-	filter: none;
-	${WEBKIT}mask-image: none;
-	background-size: 1.8rem;
-	background-image: url("${data.image1x}");
-	background-image: ${WEBKIT}image-set(
-		url("${data.image1x}") 1x,
-		url("${data.image2x}") 2x,
-		url("${data.image4x}") 4x
-	);
-}`);
+						out.push(`[data-room-id="${id}"] ${rule} {
+			background-color: transparent;
+			filter: none;
+			${WEBKIT}mask-image: none;
+			background-size: 1.8rem;
+			background-image: url("${data.image1x}");
+			background-image: ${WEBKIT}image-set(
+				url("${data.image1x}") 1x,
+				url("${data.image2x}") 2x,
+				url("${data.image4x}") 4x
+			);
+		}`);
+					}
 			}
-		}
 
 
 		this.style.set('badges', out.join('\n'));

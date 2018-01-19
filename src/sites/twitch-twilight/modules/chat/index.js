@@ -621,9 +621,9 @@ export default class ChatHook extends Module {
 		if ( ! this.addRoom(cont, props) )
 			return;
 
-		if ( props.badgeSets ) {
-			this.chat.badges.updateTwitchBadges(props.badgeSets.globalsBySet);
-			this.updateRoomBadges(cont, props.badgeSets.channelsBySet);
+		if ( props.data ) {
+			this.chat.badges.updateTwitchBadges(props.data.badges);
+			this.updateRoomBadges(cont, props.data.user && props.data.user.broadcastBadges);
 		}
 	}
 
@@ -639,20 +639,20 @@ export default class ChatHook extends Module {
 		// can't compare the badgeSets property in any reasonable way.
 		// Instead, just check the lengths to see if they've changed
 		// and hope that badge versions will never change separately.
-		const bs = props.badgeSets,
-			obs = cont.props.badgeSets,
+		const data = props.data || {},
+			odata = cont.props.data || {},
 
-			bsgl = bs.globalsBySet && bs.globalsBySet.size || 0,
-			obsgl = obs.globalsBySet && obs.globalsBySet.size || 0,
+			bs = data.badges || [],
+			obs = odata.badges || [],
 
-			bscl = bs.channelsBySet && bs.channelsBySet.size || 0,
-			obscl = obs.channelsBySet && obs.channelsBySet.size || 0;
+			cs = data.user && data.user.broadcastBadges || [],
+			ocs = odata.user && odata.user.broadcastBadges || [];
 
-		if ( bsgl !== obsgl )
-			this.chat.badges.updateTwitchBadges(bs.globalsBySet);
+		if ( bs.length !== obs.length )
+			this.chat.badges.updateTwitchBadges(bs);
 
-		if ( bscl !== obscl )
-			this.updateRoomBadges(cont, bs.channelsBySet);
+		if ( cs.length !== ocs.length )
+			this.updateRoomBadges(cont, cs);
 	}
 
 	updateRoomBadges(cont, badges) { // eslint-disable-line class-methods-use-this

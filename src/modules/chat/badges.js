@@ -439,20 +439,33 @@ export default class Badges extends Module {
 		let b;
 
 		if ( room ) {
-			const versions = room.badges.get(badge);
-			b = versions && versions.get(version);
+			const versions = room.badges && room.badges[badge];
+			b = versions && versions[version];
 		}
 
 		if ( ! b ) {
-			const versions = this.twitch_badges.get(badge);
-			b = version && versions.get(version);
+			const versions = this.twitch_badges && this.twitch_badges[badge];
+			b = versions && versions[version];
 		}
 
 		return b;
 	}
 
 	updateTwitchBadges(badges) {
-		this.twitch_badges = badges;
+		if ( ! badges )
+			this.twitch_badges = badges;
+		else {
+			const b = {};
+			for(const data of badges) {
+				const sid = data.setID,
+					bs = b[sid] = b[sid] || {};
+
+				bs[data.version] = data;
+			}
+
+			this.twitch_badges = b;
+		}
+
 		this.buildTwitchBadgeCSS();
 	}
 
@@ -483,25 +496,30 @@ export default class Badges extends Module {
 			this.style.delete('twitch-badges');
 
 		const out = [];
-		for(const [key, versions] of this.twitch_badges) {
-			if ( has(CSS_BADGES, key) )
-				continue;
+		for(const key in this.twitch_badges)
+			if ( has(this.twitch_badges, key) ) {
+				if ( has(CSS_BADGES, key) )
+					continue;
 
-			for(const [version, data] of versions) {
-				out.push(`.ffz-badge[data-badge="${key}"][data-version="${version}"] {
-	background-color: transparent;
-	filter: none;
-	${WEBKIT}mask-image: none;
-	background-size: 1.8rem;
-	background-image: url("${data.image1x}");
-	background-image: ${WEBKIT}image-set(
-		url("${data.image1x}") 1x,
-		url("${data.image2x}") 2x,
-		url("${data.image4x}") 4x
-	);
-}`)
+				const versions = this.twitch_badges[key];
+				for(const version in versions)
+					if ( has(versions, version) ) {
+						const data = versions[version];
+
+						out.push(`.ffz-badge[data-badge="${key}"][data-version="${version}"] {
+			background-color: transparent;
+			filter: none;
+			${WEBKIT}mask-image: none;
+			background-size: 1.8rem;
+			background-image: url("${data.image1x}");
+			background-image: ${WEBKIT}image-set(
+				url("${data.image1x}") 1x,
+				url("${data.image2x}") 2x,
+				url("${data.image4x}") 4x
+			);
+		}`)
+					}
 			}
-		}
 
 		if ( out.length )
 			this.style.set('twitch-badges', out.join('\n'));
