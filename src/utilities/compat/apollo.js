@@ -7,6 +7,7 @@
 
 import Module from 'utilities/module';
 import {has, get} from 'utilities/object';
+import gql from 'graphql-tag';
 
 export default class Apollo extends Module {
 	constructor(...args) {
@@ -15,10 +16,12 @@ export default class Apollo extends Module {
 		this.modifiers = {};
 		this.post_modifiers = {};
 
+		this.gql = gql;
+
 		this.inject('..web_munch');
 		this.inject('..fine');
 
-		this.registerModifier('ViewerCard', `query {
+		this.registerModifier('ViewerCard', gql`query {
 			targetUser: user {
 				createdAt
 				profileViewCount
@@ -28,8 +31,8 @@ export default class Apollo extends Module {
 
 	async onEnable() {
 		// TODO: Come up with a better way to await something existing.
-		let client = this.client,
-			graphql = this.graphql;
+		let client = this.client;
+			//graphql = this.graphql;
 
 		if ( ! client ) {
 			const root = this.fine.getParent(this.fine.react),
@@ -38,14 +41,14 @@ export default class Apollo extends Module {
 			client = this.client = ctx && ctx.client;
 		}
 
-		if ( ! graphql )
-			graphql = this.graphql = await this.web_munch.findModule('graphql', m => m.parse && m.parseValue);
+		//if ( ! graphql )
+		//	graphql = this.graphql = await this.web_munch.findModule('graphql', m => m.parse && m.parseValue);
 
-		if ( ! client || ! graphql )
+		if ( ! client ) // || ! graphql )
 			return new Promise(s => setTimeout(s,50)).then(() => this.onEnable());
 
 		// Parse the queries for modifiers that were already registered.
-		for(const key in this.modifiers)
+		/*for(const key in this.modifiers)
 			if ( has(this.modifiers, key) ) {
 				const modifiers = this.modifiers[key];
 				if ( modifiers )
@@ -60,7 +63,7 @@ export default class Apollo extends Module {
 							mod[1] = false;
 						}
 					}
-			}
+			}*/
 
 		// Register middleware so that we can intercept requests.
 		this.client.networkInterface.use([{
@@ -145,15 +148,15 @@ export default class Apollo extends Module {
 			if ( ! pre )
 				throw new Error('post modifiers must be functions');
 
-			let parsed;
+			/*let parsed;
 			try {
 				parsed = this.graphql ? this.graphql.parse(modifier, {noLocation: true}) : null;
 			} catch(err) {
 				this.log.error(`Error parsing GraphQL statement for "${operation}" modifier.`, err);
 				parsed = false;
-			}
+			}*/
 
-			modifier = [modifier, parsed];
+			modifier = [modifier, modifier]; // parsed];
 		}
 
 		const mods = pre

@@ -300,6 +300,8 @@ export default class Badges extends Module {
 						style
 					};
 
+				// TODO: Render styles for badges with overrides.
+
 				slotted[slot] = { id: badge.id, props };
 			}
 

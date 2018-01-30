@@ -21,7 +21,7 @@ export default class FollowingText extends SiteModule {
 		this.inject('site.apollo');
 		this.inject('i18n');
 
-		this.apollo.registerModifier('FollowedChannels', `query {
+		this.apollo.registerModifier('FollowedChannels', this.apollo.gql`query {
 			currentUser {
 				followedLiveUsers {
 					nodes {

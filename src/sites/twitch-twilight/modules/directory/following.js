@@ -58,7 +58,7 @@ export default class Following extends SiteModule {
 			changed: () => this.ChannelCard.forceUpdate()
 		});
 
-		this.apollo.registerModifier('FollowedIndex_CurrentUser', `query {
+		this.apollo.registerModifier('FollowedIndex_CurrentUser', this.apollo.gql`query {
 			currentUser {
 				followedLiveUsers {
 					nodes {
@@ -83,7 +83,7 @@ export default class Following extends SiteModule {
 			}
 		}`);
 
-		this.apollo.registerModifier('FollowingLive_CurrentUser', `query {
+		this.apollo.registerModifier('FollowingLive_CurrentUser', this.apollo.gql`query {
 			currentUser {
 				followedLiveUsers {
 					edges {
@@ -98,7 +98,7 @@ export default class Following extends SiteModule {
 			}
 		}`);
 
-		this.apollo.registerModifier('FollowingHosts_CurrentUser', `query {
+		this.apollo.registerModifier('FollowingHosts_CurrentUser', this.apollo.gql`query {
 			currentUser {
 				followedHosts {
 					nodes {
@@ -114,7 +114,7 @@ export default class Following extends SiteModule {
 			}
 		}`);
 
-		this.apollo.registerModifier('FollowedChannels', `query {
+		this.apollo.registerModifier('FollowedChannels', this.apollo.gql`query {
 			currentUser {
 				followedLiveUsers {
 					nodes {

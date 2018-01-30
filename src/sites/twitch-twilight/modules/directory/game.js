@@ -22,7 +22,7 @@ export default class Game extends SiteModule {
 			n => n.renderFollowButton && n.renderGameDetailsTab
 		);
 
-		this.apollo.registerModifier('GamePage_Game', `query {
+		this.apollo.registerModifier('GamePage_Game', this.apollo.gql`query {
 			directory {
 				... on Game {
 					streams {
@@ -53,7 +53,7 @@ export default class Game extends SiteModule {
 		const container = this.fine.getHostNode(inst);
 		if ( inst.props.directoryType !== 'GAMES' || ! container || ! container.querySelector )
 			return;
-		
+
 		const buttons = container.querySelector('div > div.tw-align-items-center'),
 			ffz_buttons = buttons && buttons.querySelector('.ffz-buttons');
 

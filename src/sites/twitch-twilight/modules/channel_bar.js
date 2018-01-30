@@ -18,7 +18,7 @@ export default class ChannelBar extends Module {
 		this.inject('metadata');
 
 
-		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', `query {
+		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', this.apollo.gql`query {
 			user {
 				stream {
 					createdAt

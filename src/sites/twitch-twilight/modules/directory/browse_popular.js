@@ -15,7 +15,7 @@ export default class BrowsePopular extends SiteModule {
 		this.inject('site.fine');
 		this.inject('settings');
 
-		this.apollo.registerModifier('BrowsePage_Popular', `query {
+		this.apollo.registerModifier('BrowsePage_Popular', this.apollo.gql`query {
 			streams {
 				edges {
 					node {

@@ -37,6 +37,8 @@
   },
   "dependencies": {
     "displacejs": "^1.2.4",
+    "graphql": "^0.12.3",
+    "graphql-tag": "^2.6.1",
     "path-to-regexp": "^2.1.0",
     "popper.js": "^1.13.0",
     "sortablejs": "^1.7.0",

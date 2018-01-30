@@ -12,7 +12,7 @@ export default class Community extends SiteModule {
 
 		this.inject('site.apollo');
 
-		this.apollo.registerModifier('GamePage_Game', `query {
+		this.apollo.registerModifier('GamePage_Game', this.apollo.gql`query {
 			directory {
 				... on Community {
 					streams {
