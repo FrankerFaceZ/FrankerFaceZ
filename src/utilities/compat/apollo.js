@@ -66,6 +66,11 @@ export default class Apollo extends Module {
 			}*/
 
 		// Register middleware so that we can intercept requests.
+		if ( ! this.client.networkInterface ) {
+			this.log.error('Apollo does not have NetworkInterface. We are unable to manipulate queries.');
+			return;
+		}
+
 		this.client.networkInterface.use([{
 			applyBatchMiddleware: (req, next) => {
 				if ( this.enabled )
@@ -194,6 +199,11 @@ export default class Apollo extends Module {
 			query_map = qm && qm.observableQueries,
 			query_id = name_map && name_map[operation],
 			query = query_map && query_map[query_id];
+
+		if ( ! query_map && ! this.warn_qm ) {
+			this.log.error('Unable to find the Apollo query map. We cannot access data properly.');
+			this.warn_qm = true;
+		}
 
 		return query && query.observableQuery;
 	}
