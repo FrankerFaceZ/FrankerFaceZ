@@ -32,7 +32,6 @@ export default class Apollo extends Module {
 	async onEnable() {
 		// TODO: Come up with a better way to await something existing.
 		let client = this.client;
-			//graphql = this.graphql;
 
 		if ( ! client ) {
 			const root = this.fine.getParent(this.fine.react),
@@ -41,53 +40,92 @@ export default class Apollo extends Module {
 			client = this.client = ctx && ctx.client;
 		}
 
-		//if ( ! graphql )
-		//	graphql = this.graphql = await this.web_munch.findModule('graphql', m => m.parse && m.parseValue);
+		this.printer = this.web_munch.getModule('gql-printer');
+		this.gql_print = this.printer && this.printer.print;
 
-		if ( ! client ) // || ! graphql )
+		if ( ! client )
 			return new Promise(s => setTimeout(s,50)).then(() => this.onEnable());
 
-		// Parse the queries for modifiers that were already registered.
-		/*for(const key in this.modifiers)
-			if ( has(this.modifiers, key) ) {
-				const modifiers = this.modifiers[key];
-				if ( modifiers )
-					for(const mod of modifiers) {
-						if ( typeof mod === 'function' || mod[1] === false )
-							continue;
-
-						try {
-							mod[1] = graphql.parse(mod[0], {noLocation: true});
-						} catch(err) {
-							this.log.error(`Error parsing GraphQL statement for "${key}" modifier.`, err);
-							mod[1] = false;
-						}
-					}
-			}*/
-
 		// Register middleware so that we can intercept requests.
-		if ( ! this.client.networkInterface ) {
-			this.log.error('Apollo does not have NetworkInterface. We are unable to manipulate queries.');
+		if ( ! this.client.link || ! this.client.queryManager || ! this.client.queryManager.link ) {
+			this.log.error('Apollo does not have a Link. We are unable to manipulate queries.');
 			return;
 		}
 
-		this.client.networkInterface.use([{
-			applyBatchMiddleware: (req, next) => {
-				if ( this.enabled )
-					this.apolloPreFlight(req);
+		this.hooked_query_init = false;
 
-				next();
+		if ( this.client.queryManager.queryStore ) {
+			const old_qm_init = this.client.queryManager.queryStore.initQuery;
+			this.hooked_query_init = true;
+			this.client.queryManager.queryStore.initQuery = function(e) {
+				let t = this.store[e.queryId];
+				if ( t && t.queryString !== e.queryString )
+					t.queryString = e.queryString;
+
+				return old_qm_init.call(this, e);
 			}
-		}]);
+		}
 
-		this.client.networkInterface.useAfter([{
-			applyBatchAfterware: (resp, next) => {
-				if ( this.enabled )
-					this.apolloPostFlight(resp);
+		const ApolloLink = this.ApolloLink = this.client.link.constructor;
 
-				next();
+		this.link = new ApolloLink((operation, forward) => {
+			//this.log.info('Link Start', operation.operationName, operation);
+
+			try {
+				// ONLY do this if we've hooked query init, thus letting us ignore certain issues
+				// that would cause Twitch to show lovely "Error loading data" messages everywhere.
+				if ( this.hooked_query_init )
+					this.apolloPreFlight(operation);
+
+			} catch(err) {
+				this.log.error('Error running Pre-Flight', err, operation);
+				return forward(operation);
 			}
-		}]);
+
+			const out = forward(operation);
+
+			if ( out.subscribe )
+				return new out.constructor(observer => {
+					try {
+						out.subscribe({
+							next: result => {
+								try {
+									this.apolloPostFlight(result);
+								} catch(err) {
+									this.log.error('Error running Post-Flight', err, result);
+								}
+
+								observer.next(result);
+							},
+
+							error: err => {
+								observer.error(err);
+							},
+
+							complete: observer.complete.bind(observer)
+						});
+
+					} catch(err) {
+						this.log.error('Link Error', err);
+						observer.error(err);
+					}
+				});
+
+			else {
+				// We didn't get the sort of output we expected.
+				this.log.info('Unexpected Link Result', out);
+				return out;
+			}
+
+		})
+
+		this.old_link = this.client.link;
+		this.old_qm_link = this.client.queryManager.link;
+		this.old_qm_dedup = this.client.queryManager.deduplicator;
+
+		this.client.link = this.link.concat(this.old_link);
+		this.client.queryManager.link = this.link.concat(this.old_qm_link);
+		this.client.queryManager.deduplicator = this.link.concat(this.old_qm_dedup);
 	}
 
 
@@ -113,33 +151,58 @@ export default class Apollo extends Module {
 
 
 	apolloPreFlight(request) {
-		for(const req of request.requests) {
-			const operation = req.operationName,
-				modifiers = this.modifiers[operation];
+		const operation = request.operationName,
+			qm = this.client.queryManager,
+			id_map = qm && qm.queryIdsByName,
+			query_map = qm && qm.queries,
+			raw_id = id_map && id_map[operation],
+			id = Array.isArray(raw_id) ? raw_id[0] : raw_id,
+			query = query_map && query_map.get(id),
+			modifiers = this.modifiers[operation];
 
-			if ( modifiers )
-				for(const mod of modifiers) {
-					if ( typeof mod === 'function' )
-						mod(req);
-					else if ( mod[1] )
-						this.applyModifier(req, mod[1]);
+		if ( modifiers )
+			for(const mod of modifiers) {
+				if ( typeof mod === 'function' )
+					mod(request);
+				else if ( mod[1] )
+					this.applyModifier(request, mod[1]);
+			}
+
+		this.emit(`:request.${operation}`, request.query, request.variables);
+
+		// Wipe the old query data. This is obviously not optimal, but Apollo will
+		// raise an exception otherwise because the query string doesn't match.
+
+		const q = this.client.queryManager.queryStore.store[id],
+			qs = this.gql_print && this.gql_print(request.query);
+
+		if ( q )
+			if ( qs ) {
+				q.queryString = qs;
+				request.query.loc.source.body = qs;
+				request.query.loc.end = qs.length;
+
+				if ( query ) {
+					query.document = request.query;
+					if ( query.observableQuery && query.observableQuery.options )
+						query.observableQuery.options.query = request.query;
 				}
 
-			this.emit(`:request.${operation}`, req.query, req.variables);
-		}
+			} else {
+				this.log.info('Unable to find GQL Print. Clearing store for query:', operation);
+				this.client.queryManager.queryStore.store[id] = null;
+			}
 	}
 
 	apolloPostFlight(response) {
-		for(const resp of response.responses) {
-			const operation = resp.extensions.operationName,
-				modifiers = this.post_modifiers[operation];
+		const operation = response.extensions.operationName,
+			modifiers = this.post_modifiers[operation];
 
-			if ( modifiers )
-				for(const mod of modifiers)
-					mod(resp);
+		if ( modifiers )
+			for(const mod of modifiers)
+				mod(response);
 
-			this.emit(`:response.${operation}`, resp.data);
-		}
+		this.emit(`:response.${operation}`, response.data);
 	}
 
 
@@ -196,9 +259,9 @@ export default class Apollo extends Module {
 	getQuery(operation) {
 		const qm = this.client.queryManager,
 			name_map = qm && qm.queryIdsByName,
-			query_map = qm && qm.observableQueries,
+			query_map = qm && qm.queries,
 			query_id = name_map && name_map[operation],
-			query = query_map && query_map[query_id];
+			query = query_map && query_id && query_map.get(Array.isArray(query_id) ? query_id[0] : query_id);
 
 		if ( ! query_map && ! this.warn_qm ) {
 			this.log.error('Unable to find the Apollo query map. We cannot access data properly.');

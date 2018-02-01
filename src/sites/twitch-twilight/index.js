@@ -92,7 +92,8 @@ Twilight.KNOWN_MODULES = {
 	simplebar: n => n.globalObserver && n.initDOMLoadedElements,
 	react: n => n.Component && n.createElement,
 	'extension-service': n => n.extensionService,
-	'chat-types': n => n.a && n.a.PostWithMention
+	'chat-types': n => n.a && n.a.PostWithMention,
+	'gql-printer': n => n !== window && n.print
 }
 
 
