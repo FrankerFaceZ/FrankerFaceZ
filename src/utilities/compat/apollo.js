@@ -298,10 +298,18 @@ export default class Apollo extends Module {
 
 			if ( ! passed && Date.now() - (query._ffz_last_retry || 0) >= retry_wait ) {
 				query._ffz_last_retry = Date.now();
+
+				// Make a shallow clone of the query document to avoid hitting the
+				// cache in transformDocument.
+				query.options.query = Object.assign({}, query.options.query);
+
 				if ( delay === 0 )
 					query.refetch();
 				else if ( delay > 0 )
-					setTimeout(() => query.refetch(), delay);
+					setTimeout(() => {
+						//debugger;
+						query.refetch()
+					}, delay);
 			}
 		}
 
@@ -330,6 +338,11 @@ export default class Apollo extends Module {
 
 		if ( out === undefined && Date.now() - (query._ffz_last_retry || 0) >= retry_wait ) {
 			query._ffz_last_retry = Date.now();
+
+			// Make a shallow clone of the query document to avoid hitting the
+			// cache in transformDocument.
+			query.options.query = Object.assign({}, query.options.query);
+
 			if ( delay === 0 )
 				query.refetch();
 			else if ( delay > 0 )
