@@ -137,13 +137,14 @@ body {
 .ffz__tooltip--inner {
 	display: block;
 	max-width: 30rem;
-	padding: 3px 6px;
+	padding: .3rem .6rem;
 	text-align: center;
 
 	.preview-image {
 		&.ffz-badge {
-			height: 72px;
-			width: 72px;
+			height: 7.2rem;
+			width: 7.2rem;
+			background-size: 7.2rem;
 			background-repeat: no-repeat;
 		}
 
@@ -158,6 +159,18 @@ body {
 	.ffz-cheer {
 		margin: 5px;
 	}
+}
+
+
+.ffz__tooltip--badges {
+	display: flex;
+	flex-wrap: wrap;
+	max-width: 20rem;
+	padding: .1rem .2rem;
+}
+
+.ffz-badge-tip {
+	margin: .2rem .4rem;
 }
 
 

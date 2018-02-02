@@ -217,6 +217,11 @@ export class Tooltip {
 
 		arrow.setAttribute('x-arrow', true);
 
+		if ( tip.add_class ) {
+			inner.classList.add(tip.add_class);
+			tip.add_class = undefined;
+		}
+
 		const interactive = maybe_call(opts.interactive, null, target, tip);
 		el.classList.toggle('interactive', interactive || false);
 

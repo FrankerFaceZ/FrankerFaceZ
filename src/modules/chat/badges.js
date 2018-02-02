@@ -175,6 +175,8 @@ export default class Badges extends Module {
 		this.loadGlobalBadges();
 
 		this.tooltips.types.badge = (target, tip) => {
+			tip.add_class = 'ffz__tooltip--badges';
+
 			const show_previews = this.parent.context.get('tooltip.badge-images'),
 				container = target.parentElement.parentElement,
 				room_id = container.dataset.roomId,
@@ -202,9 +204,6 @@ export default class Badges extends Module {
 						show_previews && e('div', {
 							className: 'preview-image ffz-badge',
 							style: {
-								height: '7.2rem',
-								width: '7.2rem',
-								backgroundSize: '7.2rem',
 								backgroundColor: d.color,
 								backgroundImage: `url("${d.image}")`
 							}
@@ -279,6 +278,8 @@ export default class Badges extends Module {
 					slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
 					old_badge = slotted[slot],
 					urls = badge.urls || (badge.image ? {1: badge.image} : null),
+					color = badge.color || full_badge.color || 'transparent',
+					masked = color !== 'transparent' && is_mask,
 
 					bu = (urls || full_badge.urls || {1: full_badge.image}),
 					bd = {
@@ -288,28 +289,35 @@ export default class Badges extends Module {
 						title: badge.title || full_badge.title
 					};
 
+				let style;
+
 				if ( old_badge ) {
+					old_badge.badges.push(bd);
+
 					const replaces = has(badge, 'replaces') ? badge.replaces : full_badge.replaces,
 						replaces_type = badge.replaces_type || full_badge.replaces_type;
 					if ( replaces && (!replaces_type || replaces_type === old_badge.id) )
 						old_badge.replaced = badge.id;
+					else
+						continue;
 
-					old_badge.badges.push(bd);
-					continue;
+					style = old_badge.props.style;
 
 				} else if ( ! slot )
 					continue;
 
-				const style = {},
-					color = badge.color || full_badge.color || 'transparent',
-					masked = color !== 'transparent' && is_mask,
-					props = {
+				else {
+					style = {};
+					const props = {
 						className: 'ffz-tooltip ffz-badge',
 						'data-tooltip-type': 'badge',
 						'data-provider': 'ffz',
 						'data-badge': badge.id,
 						style
 					};
+
+					slotted[slot] = {id: badge.id, props, badges: [bd]}
+				}
 
 				if ( has_image && urls ) {
 					let image_set, image = `url("${urls[1]}")`;
@@ -327,8 +335,6 @@ export default class Badges extends Module {
 					else
 						style.backgroundColor = badge.color;
 				}
-
-				slotted[slot] = { id: badge.id, props, badges: [bd] };
 			}
 
 		for(const slot in slotted)
