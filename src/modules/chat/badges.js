@@ -4,7 +4,7 @@
 // Badge Handling
 // ============================================================================
 
-import {API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement as e, ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
@@ -39,6 +39,8 @@ export const BADGE_POSITIONS = {
 
 const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
 	BASE_IMAGE = 'https://cdn.frankerfacez.com/badges/twitch/',
+	CSS_MASK_IMAGE = IS_WEBKIT ? 'webkitMaskImage' : 'maskImage',
+
 	CSS_TEMPLATES = {
 		0: data => `background:${data.image} ${data.color};background-size:${data.scale*1.8}rem;${data.svg ? '' : `background-image:${data.image_set};`}${NO_REPEAT}`,
 		1: data => `${CSS_TEMPLATES[0](data)}border-radius:${data.scale*.2}rem;`,
@@ -103,7 +105,7 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, scale = 1
 			image = `url("${svg ? base_image : `${base_image}${scale}${trans ? '_trans' : ''}.png`}")`;
 
 		if ( data.urls ) {
-			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[2] ? `, url("${data.urls[2]}") 2x` : ''}${data.urls[4] ? `url("${data.urls[4]}") 4x` : ''})`
+			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[2] ? `, url("${data.urls[2]}") 2x` : ''}${data.urls[4] ? `, url("${data.urls[4]}") 4x` : ''})`
 
 		} else if ( ! svg && scale < 4 ) {
 			if ( scale === 1 )
@@ -169,71 +171,58 @@ export default class Badges extends Module {
 		this.rebuildAllCSS();
 		this.loadGlobalBadges();
 
-		// TODO: Better tooltips. Especially support for custom colors, titles, etc. from
-		// user-specific badges.
-
 		this.tooltips.types.badge = (target, tip) => {
-			const container = target.parentElement.parentElement,
-				provider = target.dataset.provider,
-				replaced = target.dataset.replaced,
-				badge = target.dataset.badge,
-				version = target.dataset.version,
+			const show_previews = this.parent.context.get('tooltip.badge-images'),
+				container = target.parentElement.parentElement,
 				room_id = container.dataset.roomId,
 				room_login = container.dataset.room,
+				data = JSON.parse(target.dataset.badgeData),
+				out = [];
 
-				replaced_data = replaced && this.badges[replaced];
+			for(const d of data) {
+				const p = d.provider;
+				if ( p === 'twitch' ) {
+					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login);
+					if ( ! bd )
+						continue;
 
-			let preview, title;
-
-			if ( provider === 'twitch' ) {
-				const data = this.getTwitchBadge(badge, version, room_id, room_login);
-				if ( ! data )
-					return;
-
-				preview = data.image4x;
-				title = data.title;
-
-			} else if ( provider === 'ffz' ) {
-				const data = this.badges[badge];
-				if ( ! data )
-					return;
-
-				preview = e('span', {
-					className: 'preview-image ffz-badge',
-					style: {
-						height: '7.2rem',
-						width: '7.2rem',
-						backgroundColor: data.color,
-						backgroundImage: `url("${data.urls[4]}")`
-					}
-				})
-
-				title = this.i18n.t(`badges.${data.name}`, data.title);
-
-			} else
-				title = `Unknown Badge`;
-
-			if ( preview )
-				if ( this.parent.context.get('tooltip.badge-images') ) {
-					if ( typeof preview === 'string' )
-						preview = e('img', {
+					out.push(e('div', {className: 'ffz-badge-tip'}, [
+						show_previews && e('img', {
 							className: 'preview-image ffz-badge',
-							src: preview,
-						});
+							src: bd.image4x
+						}),
+						bd.title
+					]));
 
-				} else
-					preview = null;
+				} else if ( p === 'ffz' ) {
+					out.push(e('div', {className: 'ffz-badge-tip'}, [
+						show_previews && e('img', {
+							className: 'preview-image ffz-badge',
+							style: {
+								height: '7.2rem',
+								width: '7.2rem',
+								backgroundSize: '7.2rem',
+								backgroundColor: d.color,
+								backgroundImage: `url("${d.image}")`
+							}
+						}),
+						d.title
+					]));
+				}
+			}
 
-			return [
-				preview,
-				title
-			];
-		};
+			return out;
+		}
 	}
 
 
 	render(msg, e) { // eslint-disable-line class-methods-use-this
 		const hidden_badges = this.parent.context.get('chat.badges.hidden') || [],
+			badge_style = this.parent.context.get('chat.badges.style'),
+			is_mask = badge_style >= 5,
+			is_colored = badge_style !== 5,
+			has_image = badge_style !== 3 && badge_style !== 4,
+
 			out = [],
 			slotted = {},
 			twitch_badges = msg.badges || {},
@@ -261,13 +250,20 @@ export default class Badges extends Module {
 				else
 					slot = last_slot++;
 
+				const badges = [{
+					provider: 'twitch',
+					badge: badge_id,
+					version
+				}];
+
 				slotted[slot] = {
 					id: badge_id,
 					props: {
 						'data-provider': 'twitch',
 						'data-badge': badge_id,
 						'data-version': version
-					}
+					},
+					badges
 				};
 			}
 
@@ -278,7 +274,16 @@ export default class Badges extends Module {
 
 				const full_badge = this.badges[badge.id],
 					slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
-					old_badge = slotted[slot];
+					old_badge = slotted[slot],
+					urls = badge.urls || (badge.image ? {1: badge.image} : null),
+
+					bu = (urls || full_badge.urls || {1: full_badge.image}),
+					bd = {
+						provider: 'ffz',
+						image: bu[4] || bu[2] || bu[1],
+						color: badge.color || full_badge.color,
+						title: badge.title || full_badge.title
+					};
 
 				if ( old_badge ) {
 					const replaces = has(badge, 'replaces') ? badge.replaces : full_badge.replaces,
@@ -286,6 +291,7 @@ export default class Badges extends Module {
 					if ( replaces && (!replaces_type || replaces_type === old_badge.id) )
 						old_badge.replaced = badge.id;
 
+					old_badge.badges.push(bd);
 					continue;
 
 				} else if ( ! slot )
@@ -300,9 +306,24 @@ export default class Badges extends Module {
 						style
 					};
 
-				// TODO: Render styles for badges with overrides.
+				if ( has_image && urls ) {
+					let image_set, image = `url("${urls[1]}")`;
+					if ( urls[2] || urls[4] )
+						image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
-				slotted[slot] = { id: badge.id, props };
+					style[is_mask ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
+					if ( image_set )
+						style[is_mask ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
+				}
+
+				if ( is_colored && badge.color ) {
+					if ( is_mask )
+						style.backgroundImage = `linear-gradient(${badge.color},${badge.color})`;
+					else
+						style.backgroundColor = badge.color;
+				}
+
+				slotted[slot] = { id: badge.id, props, badges: [bd] };
 			}
 
 		for(const slot in slotted)
@@ -312,6 +333,7 @@ export default class Badges extends Module {
 
 				props.className = 'ffz-tooltip ffz-badge';
 				props['data-tooltip-type'] = 'badge';
+				props['data-badge-data'] = JSON.stringify(data.badges);
 
 				if ( data.replaced )
 					props['data-replaced'] = data.replaced;
@@ -375,7 +397,7 @@ export default class Badges extends Module {
 		if ( data.badges )
 			for(const badge of data.badges)
 				if ( badge && badge.id ) {
-					this.loadBadgeData(badge.id, badge);
+					this.loadBadgeData(badge.id, badge, false);
 					badges++;
 				}
 
@@ -401,7 +423,7 @@ export default class Badges extends Module {
 	}
 
 
-	loadBadgeData(badge_id, data) {
+	loadBadgeData(badge_id, data, generate_css = true) {
 		this.badges[badge_id] = data;
 
 		if ( data.replaces && ! data.replaces_type ) {
@@ -411,6 +433,9 @@ export default class Badges extends Module {
 
 		if ( data.name === 'developer' || data.name === 'supporter' )
 			data.click_url = 'https://www.frankerfacez.com/donate';
+
+		if ( generate_css )
+			this.buildBadgeCSS();
 	}
 
 

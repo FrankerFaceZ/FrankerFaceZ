@@ -414,7 +414,7 @@ export default class Following extends SiteModule {
 		if (channelAvatar !== null) channelAvatar.remove();
 
 		if (inst.props.viewerCount.profileImageURL) {
-			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts[inst.props.channelName];
+			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts && this.hosts[inst.props.channelName];
 			let channel, displayName;
 			if (hosting) {
 				channel = this.hosts[inst.props.channelName].channel;
