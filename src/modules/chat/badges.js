@@ -52,9 +52,11 @@ const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
 	};
 
 
-export function generateOverrideCSS(data, style, is_dark) {
-	let image = `url("${data.urls[1]}")`,
-		image_set = `${WEBKIT}image-set(${image} 1x${data.urls[2] ? `, url("${data.urls[2]}") 2x` : ''}${data.urls[4] ? `, url("${data.urls[4]}") 4x` : ''})`;
+export function generateOverrideCSS(data, style) {
+	const urls = data.urls || {1: data.image};
+
+	let image = `url("${urls[1]}")`,
+		image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
 	if ( style === 3 || style === 4 )
 		return '';
