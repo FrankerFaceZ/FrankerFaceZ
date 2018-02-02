@@ -113,7 +113,7 @@ export default class Emotes extends Module {
 			user = this.parent.getUser(user_id, user_login, true);
 
 		return (user ? user.emote_sets._cache : []).concat(
-			room_user ? room_user.emote_set._cache : [],
+			room_user ? room_user.emote_sets._cache : [],
 			room ? room.emote_sets._cache : [],
 			this.default_sets._cache
 		);
@@ -259,7 +259,7 @@ export default class Emotes extends Module {
 	}
 
 
-	loadSetData(set_id, data) {
+	loadSetData(set_id, data, suppress_log = false) {
 		const old_set = this.emote_sets[set_id];
 		if ( ! data ) {
 			if ( old_set )
@@ -314,12 +314,14 @@ export default class Emotes extends Module {
 		else if ( css.length )
 			data.pending_css = css.join('');
 
-		this.log.info(`Loaded emote set #${set_id}: ${data.title} (${count} emotes)`);
+		if ( ! suppress_log )
+			this.log.info(`Loaded emote set #${set_id}: ${data.title} (${count} emotes)`);
+
 		this.emit(':loaded', set_id, data);
 	}
 
 
-	unloadSet(set_id, force = false) {
+	unloadSet(set_id, force = false, suppress_log = false) {
 		const old_set = this.emote_sets[set_id],
 			count = this._set_refs[set_id] || 0;
 
@@ -332,7 +334,9 @@ export default class Emotes extends Module {
 			this.log.warn(`Unloading emote set ${set_id} with ${count} users.`);
 		}
 
-		this.log.info(`Unloaded emote set #${set_id}: ${old_set.title}`);
+		if ( ! suppress_log )
+			this.log.info(`Unloaded emote set #${set_id}: ${old_set.title}`);
+
 		this.emit(':unloaded', set_id, old_set);
 		this.emote_sets[set_id] = null;
 	}
