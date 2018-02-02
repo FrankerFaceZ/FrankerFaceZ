@@ -179,6 +179,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.rituals.show', {
+			default: true,
+			ui: {
+				path: 'Chat > Filtering >> Rituals',
+				title: 'Display ritual messages such as "User is new here! Say Hello!".',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.lines.alternate', {
 			default: false,
 			ui: {
@@ -425,6 +434,23 @@ export default class ChatHook extends Module {
 
 					} catch(err) {
 						return old_resub.call(i, e);
+					}
+				}
+
+				const old_ritual = this.onRitualEvent;
+				this.onRitualEvent = function(e) {
+					try {
+						const out = i.convertMessage(e);
+						out.ffz_type = 'ritual';
+						out.ritual = e.type;
+
+						i._wrapped = e;
+						const ret = i.postMessage(out);
+						i._wrapped = null;
+						return ret;
+
+					} catch(err) {
+						return old_ritual.call(i, e);
 					}
 				}
 

@@ -31,6 +31,8 @@ export default class ChatLine extends Module {
 
 	onEnable() {
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
+		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
+		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
 
 		const t = this,
 			React = this.web_munch.getModule('react');
@@ -156,7 +158,29 @@ export default class ChatLine extends Module {
 						}, out)
 					];
 
-				} else if ( ! out )
+				} else if ( msg.ffz_type === 'ritual' && t.chat.context.get('chat.rituals.show') ) {
+					let system_msg;
+					if ( msg.ritual === 'new_chatter' )
+						system_msg = t.i18n.t('chat.ritual', '%{user} is new here. Say hello!', {
+							user: user.userDisplayName
+						});
+
+					if ( system_msg ) {
+						cls = 'chat-line__ritual';
+						out = [
+							system_msg,
+							out && e('div', {
+								className: 'chat-line__ritual--message',
+								'data-room-id': this.props.channelID,
+								'data-room': room,
+								'data-user-id': user.userID,
+								'data-user': user.userLogin && user.userLogin.toLowerCase(),
+							}, out)
+						];
+					}
+				}
+
+				if ( ! out )
 					return null;
 
 				return e('div', {
