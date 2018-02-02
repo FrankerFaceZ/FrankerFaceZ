@@ -95,11 +95,12 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, scale = 1
 	if ( style === 3 || style === 4 ) {
 		if ( color === 'transparent' && data.trans )
 			color = data.trans.color || color;
+	}
 
-	} else {
-		if ( style < 5 && color === 'transparent' )
-			style = 0;
+	if ( color === 'transparent' )
+		style = 0;
 
+	if ( style !== 3 && style !== 4 ) {
 		svg = base_image.endsWith('.svg');
 		if ( data.urls )
 			image = `url("${data.urls[1]}")`;
@@ -198,7 +199,7 @@ export default class Badges extends Module {
 
 				} else if ( p === 'ffz' ) {
 					out.push(e('div', {className: 'ffz-badge-tip'}, [
-						show_previews && e('img', {
+						show_previews && e('div', {
 							className: 'preview-image ffz-badge',
 							style: {
 								height: '7.2rem',
