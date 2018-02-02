@@ -301,6 +301,8 @@ export default class Badges extends Module {
 					continue;
 
 				const style = {},
+					color = badge.color || full_badge.color || 'transparent',
+					masked = color !== 'transparent' && is_mask,
 					props = {
 						className: 'ffz-tooltip ffz-badge',
 						'data-tooltip-type': 'badge',
@@ -314,13 +316,13 @@ export default class Badges extends Module {
 					if ( urls[2] || urls[4] )
 						image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
-					style[is_mask ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
+					style[masked ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
 					if ( image_set )
-						style[is_mask ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
+						style[masked ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
 				}
 
 				if ( is_colored && badge.color ) {
-					if ( is_mask )
+					if ( masked )
 						style.backgroundImage = `linear-gradient(${badge.color},${badge.color})`;
 					else
 						style.backgroundColor = badge.color;
