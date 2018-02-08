@@ -110,13 +110,24 @@ export default class Directory extends SiteModule {
 		});
 
 
+		this.settings.add('directory.hide-live', {
+			default: false,
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Do not show the Live indicator on channels that are live.',
+				component: 'setting-check-box'
+			},
+
+			changed: value => this.css_tweaks.toggleHide('dir-live-ind', value)
+		});
+
+
 		this.settings.add('directory.hide-vodcasts', {
 			default: false,
 
 			ui: {
 				path: 'Directory > Channels >> Appearance',
-				title: 'Hide Vodcasts',
-				description: 'Hide vodcasts in the directories.',
+				title: 'Do not show reruns in the directory.',
 				component: 'setting-check-box'
 			},
 
@@ -132,6 +143,7 @@ export default class Directory extends SiteModule {
 		this.css_tweaks.toggleHide('profile-hover-game', avatars === 2);
 		this.css_tweaks.toggleHide('profile-hover-following', avatars === 2);
 
+		this.css_tweaks.toggleHide('dir-live-ind', this.settings.get('directory.hide-live'));
 		this.css_tweaks.toggleHide('boxart-hide', boxart === 0);
 		this.css_tweaks.toggleHide('boxart-hover', boxart === 1);
 
@@ -162,7 +174,7 @@ export default class Directory extends SiteModule {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const hiddenPreview = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
 
-		if (get('props.streamNode.type', inst) === 'watch_party' || get('props.type', inst) === 'watch_party')
+		if (get('props.streamNode.type', inst) === 'rerun' || get('props.type', inst) === 'rerun')
 			container.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
 
 		const img = container.querySelector && container.querySelector('.tw-card-img img');
@@ -264,59 +276,50 @@ export default class Directory extends SiteModule {
 	}
 
 
-	addCardAvatar(inst, created_path, selector) {
+	addCardAvatar(inst, created_path, selector, data) {
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
-			setting = this.settings.get('directory.show-channel-avatars'),
+			setting = this.settings.get('directory.show-channel-avatars');
+
+		if ( ! data )
 			data = get(created_path, inst);
 
 		if ( ! card )
 			return;
 
-		// Remove old elements
-		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
-		if (hiddenBodyCard !== null)
-			hiddenBodyCard.classList.remove('tw-hide');
+		// Get the old element.
+		let channel_avatar = card.querySelector('.ffz-channel-avatar');
 
-		const ffzChannelData = card.querySelector('.ffz-channel-data');
-		if (ffzChannelData !== null)
-			ffzChannelData.remove();
+		if ( ! data || ! data.profileImageURL || setting === 0 ) {
+			if ( channel_avatar !== null )
+				channel_avatar.remove();
 
-		const channelAvatar = card.querySelector('.ffz-channel-avatar');
-		if (channelAvatar !== null)
-			channelAvatar.remove();
-
-		if ( setting === 0 )
 			return;
+		}
 
-		if (data) {
-			if (setting === 1) {
-				const cardDiv = card.querySelector('.tw-card-body');
-				const modifiedDiv = e('div', {
-					innerHTML: cardDiv.innerHTML
-				});
+		if ( setting !== inst.ffz_av_setting || data.login !== inst.ffz_av_login || data.profileImageURL !== inst.ffz_av_image ) {
+			if ( channel_avatar )
+				channel_avatar.remove();
 
-				const avatarDiv = e('a', {
-					className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
-					href: `/${data.login}`,
-					onclick: event => this.hijackUserClick(event, data.login)
-				}, e('img', {
-					title: data.displayName,
-					src: data.profileImageURL
-				}));
+			inst.ffz_av_setting = setting;
+			inst.ffz_av_login = data.login;
+			inst.ffz_av_image = data.profileImageURL;
 
-				const cardDivParent = cardDiv.parentElement;
+			if ( setting === 1 ) {
+				const body = card.querySelector('.tw-card-body .tw-flex'),
+					avatar = e('a', {
+						className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
+						href: `/${data.login}`,
+						title: data.displayName,
+						onclick: event => this.hijackUserClick(event, data.login)
+					}, e('img', {
+						src: data.profileImageURL
+					}));
 
-				if (cardDivParent.querySelector('.ffz-channel-data') === null) {
-					cardDiv.classList.add('tw-hide');
+				body.insertBefore(avatar, body.firstElementChild);
 
-					const newCardDiv = e('div', 'ffz-channel-data tw-flex tw-flex-nowrap', [
-						avatarDiv, modifiedDiv
-					]);
-					cardDivParent.appendChild(newCardDiv);
-				}
-			} else if (setting === 2 || setting === 3) {
-				const avatarElement = e('a', {
+			} else if ( setting === 2 || setting === 3 ) {
+				const avatar_el = e('a', {
 					className: 'ffz-channel-avatar',
 					href: `/${data.login}`,
 					onclick: event => this.hijackUserClick(event, data.login)
@@ -325,13 +328,12 @@ export default class Directory extends SiteModule {
 						e('img', {
 							title: data.displayName,
 							src: data.profileImageURL
-						})
-					)
-				));
+						})))
+				);
 
-				const divToAppend = card.querySelector('figure.tw-aspect');
-				if (divToAppend.querySelector('.ffz-channel-avatar') === null)
-					divToAppend.appendChild(avatarElement);
+				const cont = card.querySelector('figure.tw-aspect > div');
+				if ( cont )
+					cont.appendChild(avatar_el);
 			}
 		}
 	}

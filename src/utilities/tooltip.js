@@ -217,6 +217,9 @@ export class Tooltip {
 
 		arrow.setAttribute('x-arrow', true);
 
+		if ( opts.arrowInner )
+			arrow.appendChild(e('div', opts.arrowInner));
+
 		if ( tip.add_class ) {
 			inner.classList.add(tip.add_class);
 			tip.add_class = undefined;

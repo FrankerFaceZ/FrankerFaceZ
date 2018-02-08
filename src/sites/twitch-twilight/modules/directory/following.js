@@ -392,114 +392,47 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
-
 		const container = this.fine.getHostNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
 
-		if ( container === null || card === null )
+		if ( ! card )
 			return;
 
-		if (inst.props.streamType === 'watch_party')
+		const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts && this.hosts[inst.props.channelName],
+			data = {
+				login: hosting ? this.hosts[inst.props.channelName].channel : inst.props.linkTo.pathname.substr(1),
+				displayName: inst.props.channelName,
+				profileImageURL: inst.props.viewerCount && inst.props.viewerCount.profileImageURL
+			};
+
+		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
+		this.parent.addCardAvatar(inst, 'props.viewerCount', '.tw-card', data);
+
+		if (inst.props.streamType === 'rerun')
 			container.parentElement.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
 
-		// Remove old elements
-		const hiddenBodyCard = card.querySelector('.tw-card-body.tw-hide');
-		if (hiddenBodyCard !== null) hiddenBodyCard.classList.remove('tw-hide');
+		if ( hosting && this.settings.get('directory.following.group-hosts') ) {
+			const host_data = this.hosts[data.displayName];
 
-		const ffzChannelData = card.querySelector('.ffz-channel-data');
-		if (ffzChannelData !== null) ffzChannelData.remove();
+			const title_link = card.querySelector('a[data-a-target="live-channel-card-title-link"]'),
+				thumbnail_link = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]'),
+				card_title = card.querySelector('.live-channel-card__title'),
 
-		const channelAvatar = card.querySelector('.ffz-channel-avatar');
-		if (channelAvatar !== null) channelAvatar.remove();
+				text_content = host_data.channels.length !== 1 ?
+					this.i18n.t('host-menu.multiple', '%{count} hosting %{channel}', {
+						count: host_data.channels.length,
+						channel: data.displayName
+					}) : inst.props.title;
 
-		if (inst.props.viewerCount.profileImageURL) {
-			const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts && this.hosts[inst.props.channelName];
-			let channel, displayName;
-			if (hosting) {
-				channel = this.hosts[inst.props.channelName].channel;
-				displayName = inst.props.channelName;
-			}
+			if ( card_title )
+				card_title.textContent = card_title.title = text_content;
 
-			const avatarSetting = this.settings.get('directory.show-channel-avatars');
-			const cardDiv = card.querySelector('.tw-card-body');
-			const modifiedDiv = e('div', {
-				innerHTML: cardDiv.innerHTML
-			});
+			if ( title_link )
+				title_link.addEventListener('click', this.showHostMenu.bind(this, inst, host_data));
 
-			const broadcasterLogin = inst.props.linkTo.pathname.substring(1);
-			modifiedDiv.querySelector('.live-channel-card__channel').onclick = event => {
-				event.preventDefault();
-				event.stopPropagation();
-
-				this.router.navigate('user', { userName: broadcasterLogin });
-			};
-			modifiedDiv.querySelector('.live-channel-card__videos').onclick = event => {
-				event.preventDefault();
-				event.stopPropagation();
-
-				this.router.navigate('user-videos', { userName: broadcasterLogin });
-			};
-
-			let avatarDiv;
-			if (avatarSetting === 1) {
-				avatarDiv = e('a', {
-					className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
-					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
-					onclick: event => this.parent.hijackUserClick(event, broadcasterLogin)
-				}, e('img', {
-					title: inst.props.channelName,
-					src: inst.props.viewerCount.profileImageURL
-				}));
-			} else if (avatarSetting === 2 || avatarSetting === 3) {
-				const avatarElement = e('a', {
-					className: 'ffz-channel-avatar',
-					href: hosting ? `/${channel}` : inst.props.linkTo.pathname,
-					onclick: event => this.parent.hijackUserClick(event, broadcasterLogin)
-				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
-					e('figure', 'tw-aspect tw-aspect--align-top',
-						e('img', {
-							title: inst.props.channelName,
-							src: inst.props.viewerCount.profileImageURL
-						})
-					)
-				)
-				);
-
-				const divToAppend = card.querySelector('.tw-aspect > div');
-				if (divToAppend.querySelector('.ffz-channel-avatar') === null) divToAppend.appendChild(avatarElement);
-			}
-
-			const cardDivParent = cardDiv.parentElement;
-			const ffzChannelData = cardDivParent.querySelector('.ffz-channel-data');
-			if (ffzChannelData === null) {
-				cardDiv.classList.add('tw-hide');
-
-				const newCardDiv = e('div', 'ffz-channel-data tw-flex tw-flex-nowrap', [
-					avatarDiv, modifiedDiv
-				]);
-				cardDivParent.appendChild(newCardDiv);
-			}
-
-			if (hosting) {
-				const hostObj = this.hosts[displayName];
-				if (this.settings.get('directory.following.group-hosts')) {
-					const titleLink = card.querySelector('.ffz-channel-data a[data-a-target="live-channel-card-title-link"]');
-					const thumbnailLink = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]');
-					const channelCardTitle = card.querySelector('.ffz-channel-data .live-channel-card__title');
-
-					const textContent = hostObj.channels.length > 1 ? `${hostObj.channels.length} hosting ${displayName}` : inst.props.title;
-					if (channelCardTitle !== null) {
-						channelCardTitle.textContent
-							= channelCardTitle.title
-							= textContent;
-					}
-
-					if (thumbnailLink !== null) thumbnailLink.title = textContent;
-
-					if (titleLink !== null) titleLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
-					if (thumbnailLink !== null) thumbnailLink.onclick = this.showHostMenu.bind(this, inst, hostObj);
-				}
+			if ( thumbnail_link ) {
+				thumbnail_link.title = text_content;
+				thumbnail_link.addEventListener('click', this.showHostMenu.bind(this, inst, host_data));
 			}
 		}
 	}

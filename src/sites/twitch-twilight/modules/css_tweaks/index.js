@@ -23,6 +23,7 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer',
 	'whispers': '.whispers',
 
+	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live',
 	'boxart-hover': '.tw-card .tw-full-width:hover a[data-a-target="live-channel-card-game-link"]',
 	'boxart-hide': '.tw-card a[data-a-target="live-channel-card-game-link"]',
 	'profile-hover-following': '.tw-card .tw-full-width:hover .ffz-channel-avatar',

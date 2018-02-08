@@ -11,3 +11,12 @@ body .video-watch-page__right-column,
 body .channel-page__right-column {
 	width: var(--ffz-chat-width);
 }
+
+body .video-chat__sync-button {
+	width: calc(var(--ffz-chat-width) - 4rem);
+}
+
+body .video-chat {
+	-ms-flex-preferred-size: var(--ffz-chat-width);
+	flex-basis: var(--ffz-chat-width);
+}
