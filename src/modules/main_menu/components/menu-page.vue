@@ -26,7 +26,7 @@
 	v-html="t(item.desc_i18n_key || item.i18n_key + '.description', item.description, item)"
 	/>
 </section>
-<template v-if="! item.contents">
+<template v-if="! item.contents || ! item.contents.length">
 	<ul class="tw-border-t tw-pd-y-1">
 		<li class="tw-pd-x-1" v-for="i in item.items">
 			<a href="#" @click="$emit('change-item', i, false)">

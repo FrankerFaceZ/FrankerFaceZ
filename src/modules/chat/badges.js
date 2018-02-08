@@ -263,7 +263,8 @@ export default class Badges extends Module {
 					props: {
 						'data-provider': 'twitch',
 						'data-badge': badge_id,
-						'data-version': version
+						'data-version': version,
+						style: {}
 					},
 					badges
 				};
