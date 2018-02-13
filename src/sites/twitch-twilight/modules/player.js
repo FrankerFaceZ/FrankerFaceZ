@@ -208,12 +208,12 @@ export default class Player extends Module {
 
 	disableAutoplay(inst) {
 		if ( ! inst.player ) {
-			this.log.warn("disableAutoplay() called but Player was not ready");
+			this.log.warn('disableAutoplay() called but Player was not ready');
 			return;
 		}
 
 		if ( ! inst.ffzAutoplay ) {
-			var playListener = () => {
+			const playListener = () => {
 				this.log.info('Auto-paused player');
 				inst.ffzAutoplay = null;
 				inst.player.pause();
