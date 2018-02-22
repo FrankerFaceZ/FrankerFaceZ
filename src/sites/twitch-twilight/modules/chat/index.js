@@ -526,7 +526,7 @@ export default class ChatHook extends Module {
 	// ========================================================================
 
 	fixPinnedCheer(inst) {
-		const el = this.fine.getHostNode(inst),
+		const el = this.fine.getChildNode(inst),
 			container = el && el.querySelector && el.querySelector('.pinned-cheer__headline'),
 			tc = inst.props.topCheer;
 

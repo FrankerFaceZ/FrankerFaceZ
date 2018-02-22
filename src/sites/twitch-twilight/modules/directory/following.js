@@ -332,7 +332,7 @@ export default class Following extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		const container = this.fine.getHostNode(inst),
+		const container = this.fine.getChildNode(inst),
 			card = container && container.querySelector && container.querySelector('.tw-card');
 
 		if ( ! card )

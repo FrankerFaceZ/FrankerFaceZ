@@ -162,7 +162,7 @@ export default class Directory extends SiteModule {
 
 
 	updateChannelCard(inst) {
-		const container = this.fine.getHostNode(inst);
+		const container = this.fine.getChildNode(inst);
 		if (!container) return;
 
 		this.updateUptime(inst, 'props.streamNode.viewersCount.createdAt', '.tw-card-img');
@@ -230,7 +230,7 @@ export default class Directory extends SiteModule {
 
 
 	updateUptime(inst, created_path, selector) {
-		const container = this.fine.getHostNode(inst),
+		const container = this.fine.getChildNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
 			setting = this.settings.get('directory.uptime'),
 			created_at = get(created_path, inst),
@@ -275,7 +275,7 @@ export default class Directory extends SiteModule {
 
 
 	addCardAvatar(inst, created_path, selector, data) {
-		const container = this.fine.getHostNode(inst),
+		const container = this.fine.getChildNode(inst),
 			card = container && container.querySelector && container.querySelector(selector),
 			setting = this.settings.get('directory.show-channel-avatars');
 

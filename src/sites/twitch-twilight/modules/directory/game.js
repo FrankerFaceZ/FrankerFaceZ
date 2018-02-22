@@ -36,7 +36,7 @@ export default class Game extends SiteModule {
 	}
 
 	updateButtons(inst, update = false) {
-		const container = this.fine.getHostNode(inst);
+		const container = this.fine.getChildNode(inst);
 		if ( inst.props.directoryType !== 'GAMES' || ! container || ! container.querySelector )
 			return;
 

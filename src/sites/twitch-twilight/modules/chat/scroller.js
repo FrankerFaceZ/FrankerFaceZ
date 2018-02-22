@@ -113,7 +113,7 @@ export default class Scroller extends Module {
 				this._ffz_freeze_visible = true;
 				let el = this._ffz_freeze_indicator;
 				if ( ! el ) {
-					const node = t.fine.getHostNode(this);
+					const node = t.fine.getChildNode(this);
 					if ( ! node )
 						return;
 
@@ -204,7 +204,7 @@ export default class Scroller extends Module {
 
 
 			cls.prototype.ffzEnableFreeze = function() {
-				const node = t.fine.getHostNode(this);
+				const node = t.fine.getChildNode(this);
 				if ( ! node || this.ffz_freeze_enabled )
 					return;
 
@@ -236,7 +236,7 @@ export default class Scroller extends Module {
 					this._ffz_outside = null;
 				}
 
-				const node = t.fine.getHostNode(this);
+				const node = t.fine.getChildNode(this);
 				if ( ! node )
 					return;
 

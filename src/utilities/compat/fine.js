@@ -74,7 +74,7 @@ export default class Fine extends Module {
 		return instance.return;
 	}
 
-	getHostNode(instance) {
+	getParentNode(instance) {
 		if ( instance._reactInternalFiber )
 			instance = instance._reactInternalFiber;
 		else if ( instance instanceof Node )
@@ -85,6 +85,23 @@ export default class Fine extends Module {
 				return instance.stateNode
 			else
 				instance = instance.parent;
+	}
+
+	getChildNode(instance) {
+		if ( instance._reactInternalFiber )
+			instance = instance._reactInternalFiber;
+		else if ( instance instanceof Node )
+			instance = this.getReactInstance(instance);
+
+		while( instance )
+			if ( instance.stateNode instanceof Node )
+				return instance.stateNode
+			else
+				instance = instance.child;
+	}
+
+	getHostNode(instance) {
+		return this.getChildNode(instance);
 	}
 
 	getParent(instance) {
@@ -424,8 +441,9 @@ export class FineWrapper extends EventEmitter {
 		if ( instances )
 			for(const inst of instances) {
 				// How do we check mounted state for fibers?
-				//if ( inst._reactInternalInstance && inst._reactInternalInstance._renderedComponent )
-				//	inst._ffz_mounted = true;
+				if ( this.fine.getChildNode(inst) )
+					inst._ffz_mounted = true;
+
 				_instances.add(inst);
 			}
 

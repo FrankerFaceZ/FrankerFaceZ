@@ -54,12 +54,12 @@ export default class ChannelBar extends Module {
 		this.ChannelBar.on('update', this.updateChannelBar, this);
 
 		/*this.HostBar.on('mount', inst => {
-			this.log.info('host-mount', inst, this.fine.getHostNode(inst));
+			this.log.info('host-mount', inst, this.fine.getChildNode(inst));
 		});
 
 		this.HostBar.ready((cls, instances) => {
 			for(const inst of instances)
-				this.log.info('host-found', inst, this.fine.getHostNode(inst));
+				this.log.info('host-found', inst, this.fine.getChildNode(inst));
 		})*/
 
 	}
@@ -82,7 +82,7 @@ export default class ChannelBar extends Module {
 
 
 	updateMetadata(inst, keys) {
-		const container = this.fine.getHostNode(inst),
+		const container = this.fine.getChildNode(inst),
 			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex');
 
 		if ( ! inst._ffz_mounted || ! metabar )

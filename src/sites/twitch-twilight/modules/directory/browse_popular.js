@@ -68,7 +68,7 @@ export default class BrowsePopular extends SiteModule {
 	}
 
 	updateChannelCard(inst) {
-		const container = this.fine.getHostNode(inst);
+		const container = this.fine.getChildNode(inst);
 		if (!container) return;
 
 		if (container.classList.contains('ffz-modified-channel-card')) return;
