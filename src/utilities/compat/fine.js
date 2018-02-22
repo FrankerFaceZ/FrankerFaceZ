@@ -24,20 +24,21 @@ export default class Fine extends Module {
 	async onEnable(tries=0) {
 		// TODO: Move awaitElement to utilities/dom
 		if ( ! this.root_element )
-			this.root_element = await this.parent.awaitElement(this.selector || 'body [data-reactroot]');
+			this.root_element = await this.parent.awaitElement(this.selector || 'body #root');
 
-		const accessor = this.accessor = Fine.findAccessor(this.root_element);
-		if ( ! accessor ) {
+		if ( ! this.root_element || ! this.root_element._reactRootContainer ) {
 			if ( tries > 500 )
-				throw new Error(`unable to find React after 25 seconds`);
+				throw new Error('Unable to find React after 25 seconds');
+			this.root_element = null;
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable(tries+1));
 		}
 
-		this.react = this.getReactInstance(this.root_element);
+		this.react_root = this.root_element._reactRootContainer;
+		this.react = this.react_root.current.child;
 	}
 
 	onDisable() {
-		this.root_element = this.react = this.accessor = null;
+		this.react_root = this.root_element = this.react = this.accessor = null;
 	}
 
 
@@ -53,60 +54,92 @@ export default class Fine extends Module {
 	// ========================================================================
 
 	getReactInstance(element) {
+		if ( ! this.accessor )
+			this.accessor = Fine.findAccessor(element);
+		if ( ! this.accessor )
+			return;
+
 		return element[this.accessor];
 	}
 
 	getOwner(instance) {
-		if ( instance._reactInternalInstance )
-			instance = instance._reactInternalInstance;
+		if ( instance._reactInternalFiber )
+			instance = instance._reactInternalFiber;
 		else if ( instance instanceof Node )
 			instance = this.getReactInstance(instance);
 
 		if ( ! instance )
 			return null;
 
-		return instance._owner || (instance._currentElement && instance._currentElement._owner);
+		return instance.return;
 	}
 
-	getHostNode(instance) { //eslint-disable-line class-methods-use-this
-		if ( instance._reactInternalInstance )
-			instance = instance._reactInternalInstance;
+	getHostNode(instance) {
+		if ( instance._reactInternalFiber )
+			instance = instance._reactInternalFiber;
 		else if ( instance instanceof Node )
 			instance = this.getReactInstance(instance);
 
 		while( instance )
-			if ( instance._hostNode )
-				return instance._hostNode;
+			if ( instance.stateNode instanceof Node )
+				return instance.stateNode
 			else
-				instance = instance._renderedComponent;
+				instance = instance.parent;
 	}
 
 	getParent(instance) {
-		const owner = this.getOwner(instance);
-		return owner && this.getOwner(owner);
+		return this.getOwner(instance);
+	}
+
+	getFirstChild(node) {
+		if ( node._reactInternalFiber )
+			node = node._reactInternalFiber;
+		else if ( node instanceof Node )
+			node = this.getReactInstance(node);
+
+		if ( ! node )
+			return null;
+
+		return node.child;
+	}
+
+	getChildren(node) {
+		if ( node._reactInternalFiber )
+			node = node._reactInternalFiber;
+		else if ( node instanceof Node )
+			node = this.getReactInstance(node);
+
+		if ( ! node )
+			return null;
+
+		const children = [];
+		let child = node.child;
+		while(child) {
+			children.push(child);
+			child = child.sibling;
+		}
+
+		return children;
 	}
 
 	searchParent(node, criteria, max_depth=15, depth=0) {
-		if ( node._reactInternalInstance )
-			node = node._reactInternalInstance;
+		if ( node._reactInternalFiber )
+			node = node._reactInternalFiber;
 		else if ( node instanceof Node )
 			node = this.getReactInstance(node);
 
 		if ( ! node || depth > max_depth )
 			return null;
 
-		const inst = node._instance;
+		const inst = node.stateNode;
 		if ( inst && criteria(inst) )
 			return inst;
 
-		if ( node._currentElement && node._currentElement._owner ) {
-			const result = this.searchParent(node._currentElement._owner, criteria, max_depth, depth+1);
+		if ( node.return ) {
+			const result = this.searchParent(node.return, criteria, max_depth, depth+1);
 			if ( result )
 				return result;
 		}
-
-		if ( node._hostParent )
-			return this.searchParent(node._hostParent, criteria, max_depth, depth+1);
 
 		return null;
 	}
@@ -114,40 +147,35 @@ export default class Fine extends Module {
 	searchTree(node, criteria, max_depth=15, depth=0) {
 		if ( ! node )
 			node = this.react;
-		else if ( node._reactInternalInstance )
-			node = node._reactInternalInstance;
+		else if ( node._reactInternalFiber )
+			node = node._reactInternalFiber;
 		else if ( node instanceof Node )
 			node = this.getReactInstance(node);
 
 		if ( ! node || depth > max_depth )
 			return null;
 
-		const inst = node._instance;
+		const inst = node.stateNode;
 		if ( inst && criteria(inst) )
 			return inst;
 
-		const children = node._renderedChildren,
-			component = node._renderedComponent;
-
-		if ( children )
-			for(const key in children)
-				if ( has(children, key) ) {
-					const child = children[key];
-					const result = child && this.searchTree(child, criteria, max_depth, depth+1);
-					if ( result )
-						return result;
-				}
-
-		if ( component )
-			return this.searchTree(component, criteria, max_depth, depth+1);
+		if ( node.child ) {
+			let child = node.child;
+			while(child) {
+				const result = this.searchTree(child, criteria, max_depth, depth+1);
+				if ( result )
+					return result;
+				child = child.sibling;
+			}
+		}
 	}
 
 
 	searchAll(node, criterias, max_depth=15, depth=0, data) {
 		if ( ! node )
 			node = this.react;
-		else if ( node._reactInternalInstance )
-			node = node._reactInternalInstance;
+		else if ( node._reactInternalFiber )
+			node = node._reactInternalFiber;
 		else if ( node instanceof Node )
 			node = this.getReactInstance(node);
 
@@ -167,7 +195,7 @@ export default class Fine extends Module {
 		if ( depth > data.max_depth )
 			data.max_depth = depth;
 
-		const inst = node._instance;
+		const inst = node.stateNode;
 		if ( inst ) {
 			const cls = inst.constructor,
 				idx = data.classes.indexOf(cls);
@@ -189,18 +217,13 @@ export default class Fine extends Module {
 			}
 		}
 
-		const children = node._renderedChildren,
-			component = node._renderedComponent;
-
-		if ( children )
-			for(const key in children)
-				if ( has(children, key) ) {
-					const child = children[key];
-					child && this.searchAll(child, criterias, max_depth, depth+1, data);
-				}
-
-		if ( component )
-			this.searchAll(component, criterias, max_depth, depth+1, data);
+		if ( node.child ) {
+			let child = node.child;
+			while(child) {
+				this.searchAll(child, criterias, max_depth, depth+1, data);
+				child = child.sibling;
+			}
+		}
 
 		return data.out;
 	}
@@ -400,8 +423,9 @@ export class FineWrapper extends EventEmitter {
 
 		if ( instances )
 			for(const inst of instances) {
-				if ( inst._reactInternalInstance && inst._reactInternalInstance._renderedComponent )
-					inst._ffz_mounted = true;
+				// How do we check mounted state for fibers?
+				//if ( inst._reactInternalInstance && inst._reactInternalInstance._renderedComponent )
+				//	inst._ffz_mounted = true;
 				_instances.add(inst);
 			}
 

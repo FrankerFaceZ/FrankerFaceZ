@@ -10,6 +10,11 @@ import {get} from 'utilities/object';
 
 import Popper from 'popper.js';
 
+import FOLLOWED_INDEX from './followed_index.gql';
+import FOLLOWED_HOSTS from './followed_hosts.gql';
+import FOLLOWED_CHANNELS from './followed_channels.gql';
+import FOLLOWED_LIVE from './followed_live.gql';
+
 export default class Following extends SiteModule {
 	constructor(...args) {
 		super(...args);
@@ -58,75 +63,10 @@ export default class Following extends SiteModule {
 			changed: () => this.ChannelCard.forceUpdate()
 		});
 
-		this.apollo.registerModifier('FollowedIndex_CurrentUser', this.apollo.gql`query {
-			currentUser {
-				followedLiveUsers {
-					nodes {
-						profileImageURL(width: 70)
-						stream {
-							createdAt
-						}
-					}
-				}
-				followedHosts {
-					nodes {
-						profileImageURL(width: 70)
-						hosting {
-							profileImageURL(width: 70)
-							stream {
-								createdAt
-								type
-							}
-						}
-					}
-				}
-			}
-		}`);
-
-		this.apollo.registerModifier('FollowingLive_CurrentUser', this.apollo.gql`query {
-			currentUser {
-				followedLiveUsers {
-					edges {
-						node {
-							profileImageURL(width: 70)
-							stream {
-								createdAt
-							}
-						}
-					}
-				}
-			}
-		}`);
-
-		this.apollo.registerModifier('FollowingHosts_CurrentUser', this.apollo.gql`query {
-			currentUser {
-				followedHosts {
-					nodes {
-						profileImageURL(width: 70)
-						hosting {
-							profileImageURL(width: 70)
-							stream {
-								createdAt
-							}
-						}
-					}
-				}
-			}
-		}`);
-
-		this.apollo.registerModifier('FollowedChannels', this.apollo.gql`query {
-			currentUser {
-				followedLiveUsers {
-					nodes {
-						profileImageURL(width: 70)
-						stream {
-							type
-							createdAt
-						}
-					}
-				}
-			}
-		}`);
+		this.apollo.registerModifier('FollowedIndex_CurrentUser', FOLLOWED_INDEX);
+		this.apollo.registerModifier('FollowingLive_CurrentUser', FOLLOWED_LIVE);
+		this.apollo.registerModifier('FollowingHosts_CurrentUser', FOLLOWED_HOSTS);
+		this.apollo.registerModifier('FollowedChannels', FOLLOWED_CHANNELS);
 
 		this.ChannelCard = this.fine.define(
 			'following-channel-card',

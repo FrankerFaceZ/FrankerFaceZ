@@ -47,7 +47,7 @@ export default class HostButton extends Module {
 
 				if (userLogin)
 					this.joinChannel(userLogin);
-					
+
 				this.metadata.updateMetadata('host');
 			}
 		});
@@ -57,9 +57,9 @@ export default class HostButton extends Module {
 			button: true,
 
 			disabled: () => {
-				return this._host_updating || this._host_error;	
+				return this._host_updating || this._host_error;
 			},
-			
+
 			click: data => {
 				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
 			},
@@ -69,7 +69,7 @@ export default class HostButton extends Module {
 					_host_options_vue = import(/* webpackChunkName: "host-options" */ './host-options.vue'),
 					_autoHosts = this.fetchAutoHosts(),
 					_autoHostSettings = this.fetchAutoHostSettings();
-				
+
 				const [, host_options_vue, autoHosts, autoHostSettings] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts, _autoHostSettings]);
 
 				this._auto_host_tip = tip;
@@ -86,7 +86,7 @@ export default class HostButton extends Module {
 
 				const ffz_user = this.site.getUser(),
 					userLogin = ffz_user && ffz_user.login;
-					
+
 				if (data.channel && data.channel.login === userLogin) {
 					return '';
 				}
@@ -168,22 +168,22 @@ export default class HostButton extends Module {
 
 		this.on('tmi:host', e => {
 			if (e.channel.substring(1) !== userLogin) return;
-			
+
 			clearTimeout(this._host_feedback);
 			this._host_error = false;
 			this._last_hosted_channel = e.target;
-			
+
 			this._host_updating = false;
 			this.metadata.updateMetadata('host');
 		});
 
 		this.on('tmi:unhost', e => {
 			if (e.channel.substring(1) !== userLogin) return;
-			
+
 			clearTimeout(this._host_feedback);
 			this._host_error = false;
 			this._last_hosted_channel = null;
-			
+
 			this._host_updating = false;
 			this.metadata.updateMetadata('host');
 		});
@@ -232,12 +232,12 @@ export default class HostButton extends Module {
 					const t = e.target,
 						setting = t.dataset.setting;
 					let state = t.checked;
-				
+
 					if ( setting === 'strategy' )
 						state = state ? 'random' : 'ordered';
 					else if ( setting === 'deprioritize_vodcast' )
 						state = ! state;
-				
+
 					this.updateAutoHostSetting(setting, state);
 				}
 			})
@@ -302,20 +302,20 @@ export default class HostButton extends Module {
 
 	queueHostUpdate() {
 		if (this._host_update_timer) clearTimeout(this._host_update_timer);
-		
+
 		this._host_update_timer = setTimeout(() => {
 			this._host_update_timer = undefined;
 			this.updateAutoHosts(this.autoHosts);
 		}, 1000);
 	}
-	
+
 	rearrangeHosts(oldIndex, newIndex) {
 		const host = this.autoHosts.splice(oldIndex, 1)[0];
 		this.autoHosts.splice(newIndex, 0, host);
 
 		this.queueHostUpdate();
 	}
-	
+
 	currentRoomInHosts() {
 		return this.getAutoHostIDs(this.autoHosts).includes(parseInt(this._current_channel_id, 10));
 	}
@@ -329,7 +329,7 @@ export default class HostButton extends Module {
 
 	removeUserFromHosts(event) {
 		const id = event.target.closest('.ffz--host-user').dataset.id;
-		
+
 		const newHosts = [];
 		for (let i = 0; i < this.autoHosts.length; i++) {
 			if (this.autoHosts[i]._id != id) newHosts.push(this.autoHosts[i]);

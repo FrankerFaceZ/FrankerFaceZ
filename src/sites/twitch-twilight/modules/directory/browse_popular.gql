@@ -1,0 +1,12 @@
+query {
+	streams {
+		edges {
+			node {
+				createdAt
+				broadcaster {
+					profileImageURL(width: 70)
+				}
+			}
+		}
+	}
+}

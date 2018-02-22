@@ -7,6 +7,8 @@
 import {SiteModule} from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 
+import GAME_QUERY from './game.gql';
+
 export default class Game extends SiteModule {
 	constructor(...args) {
 		super(...args);
@@ -22,23 +24,7 @@ export default class Game extends SiteModule {
 			n => n.renderFollowButton && n.renderGameDetailsTab
 		);
 
-		this.apollo.registerModifier('GamePage_Game', this.apollo.gql`query {
-			directory {
-				... on Game {
-					streams {
-						edges {
-							node {
-								createdAt
-								type
-								broadcaster {
-									profileImageURL(width: 70)
-								}
-							}
-						}
-					}
-				}
-			}
-		}`);
+		this.apollo.registerModifier('GamePage_Game', GAME_QUERY);
 	}
 
 	onEnable() {

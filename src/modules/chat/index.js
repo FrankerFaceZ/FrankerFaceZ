@@ -429,7 +429,15 @@ export default class Chat extends Module {
 
 
 	tokenizeMessage(msg, user) {
+		if ( msg.content && ! msg.message )
+			msg.message = msg.content.text;
+
+		if ( msg.sender && ! msg.user )
+			msg.user = msg.sender;
+
 		let tokens = [{type: 'text', text: msg.message}];
+		if ( ! tokens[0].text )
+			return tokens;
 
 		for(const tokenizer of this.__tokenizers)
 			tokens = tokenizer.process.call(this, tokens, msg, user);

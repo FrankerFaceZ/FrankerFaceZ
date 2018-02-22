@@ -1,0 +1,72 @@
+'use strict';
+
+// ============================================================================
+// Compatibility Layer
+// Emote Menu for Twitch (BTTV Emote Menu)
+// ============================================================================
+
+import Module from 'utilities/module';
+import {has} from 'utilities/object';
+
+export default class CompatEmoteMenu extends Module {
+	constructor(...args) {
+		super(...args);
+
+		this.should_enable = true;
+
+		this.inject('site.chat');
+		this.inject('chat.emotes');
+	}
+
+	async onEnable() {
+		const em = await this.findEmoteMenu();
+		if ( ! em )
+			return this.log.info('Emote Menu for Twitch was not found after 60 seconds.');
+
+		em.registerEmoteGetter('FrankerFaceZ', () => {
+			// We get literally no information about the current context,
+			// so we need to look up everything.
+			const cont = this.chat.ChatContainer.first,
+				props = cont && cont.props;
+
+			if ( ! props )
+				return;
+
+			const sets = this.emotes.getSets(props.userID, props.currentUserLogin, props.channelID, props.channelLogin),
+				emotes = [];
+
+			for(const set of sets) {
+				if ( ! set || ! set.emotes )
+					continue;
+
+				for(const emote_id in set.emotes)
+					if ( has(set.emotes, emote_id) ) {
+						const emote = set.emotes[emote_id];
+						if ( emote.hidden )
+							continue;
+
+						emotes.push({
+							text: emote.name,
+							url: emote.urls[1],
+							channel: `${set.source || 'FrankerFaceZ'} ${set.title}`,
+							badge: set.icon || '//cdn.frankerfacez.com/script/devicon.png'
+						});
+					}
+			}
+
+			return emotes;
+		});
+	}
+
+	async findEmoteMenu(delay = 0) {
+		if ( window.emoteMenu && emoteMenu.registerEmoteGetter )
+			return emoteMenu;
+
+		if ( delay >= 60000 )
+			return null;
+
+		return new Promise(s => {
+			setTimeout(() => this.findEmoteMenu(delay + 100).then(s), 100)
+		});
+	}
+}

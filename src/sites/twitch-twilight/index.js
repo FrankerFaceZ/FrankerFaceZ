@@ -38,10 +38,8 @@ export default class Twilight extends BaseSite {
 	}
 
 	onEnable() {
-		const root = this.fine.getParent(this.fine.react),
-			ctx = this.context = root && root._context,
-
-			store = this.store = ctx && ctx.store;
+		const thing = this.fine.searchTree(null, n => n.props && n.props.store),
+			store = this.store = thing && thing.props && thing.props.store;
 
 		if ( ! store )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
@@ -64,10 +62,10 @@ export default class Twilight extends BaseSite {
 	updateContext() {
 		try {
 			const state = this.store.getState(),
-				route = this.context.router && this.context.router.route;
+				history = this.router && this.router.history;
 
 			this.settings.updateContext({
-				location: route && route.location,
+				location: history && history.location,
 				ui: state && state.ui,
 				session: state && state.session
 			});

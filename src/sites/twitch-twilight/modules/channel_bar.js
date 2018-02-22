@@ -7,6 +7,9 @@
 import Module from 'utilities/module';
 import {deep_copy} from 'utilities/object';
 
+import CHANNEL_QUERY from './channel_bar_query.gql';
+
+
 export default class ChannelBar extends Module {
 	constructor(...args) {
 		super(...args);
@@ -17,17 +20,9 @@ export default class ChannelBar extends Module {
 		this.inject('site.apollo');
 		this.inject('metadata');
 
-
-		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', this.apollo.gql`query {
-			user {
-				stream {
-					createdAt
-					type
-				}
-			}
-		}`);
-
+		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', CHANNEL_QUERY);
 		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
+			console.log('BOOP BOOP A DOOP', data);
 			const u = data && data.data && data.data.user;
 			if ( u ) {
 				const o = u.profileViewCount = new Number(u.profileViewCount || 0);

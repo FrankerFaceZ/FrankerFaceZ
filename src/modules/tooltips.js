@@ -39,7 +39,7 @@ export default class TooltipProvider extends Module {
 	onEnable() {
 		const container = document.body.querySelector('.twilight-root') || document.body;
 
-		this.tips = new Tooltip('body [data-reactroot]', 'ffz-tooltip', {
+		this.tips = new Tooltip('body #root', 'ffz-tooltip', {
 			html: true,
 			delayHide: this.checkDelayHide.bind(this),
 			delayShow: this.checkDelayShow.bind(this),

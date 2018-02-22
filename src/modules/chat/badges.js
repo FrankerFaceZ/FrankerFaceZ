@@ -18,11 +18,12 @@ export const CSS_BADGES = {
 	moderator: { 1: { color: '#34ae0a', svg: true } },
 	twitchbot: { 1: { color: '#34ae0a' } },
 	partner: { 1: { color: 'transparent', trans: { image: true, color: '#6441a5' } } },
+	'clip-champ': { 1: { color: '#6441a5'} },
 
 	turbo: { 1: { color: '#6441a5', svg: true } },
 	premium: { 1: { color: '#009cdc' } },
 
-	subscriber: { 0: { color: '#6441a4' }, 1: { color: '#6441a4' }},
+	subscriber: { 0: { color: '#6441a5' }, 1: { color: '#6441a5' }},
 }
 
 export const BADGE_POSITIONS = {
@@ -143,13 +144,80 @@ export default class Badges extends Module {
 
 		this.style = new ManagedStyle('badges');
 		this.badges = {};
+		this.twitch_badges = {};
 
-		this.twitch_badges = new Map;
+		this.settings.add('chat.badges.hidden', {
+			default: [],
+			_ui: {
+				path: 'Chat > Badges >> tabs ~> Visibility',
+				component: 'badge-visibility',
+				data: () => {
+					const twitch = [],
+						game = [],
+						ffz = [],
+						addon = [];
+
+					for(const key in this.twitch_badges)
+						if ( has(this.twitch_badges, key) ) {
+							const badge = this.twitch_badges[key],
+								vs = [];
+							let v = badge && (badge[1] || badge[0]);
+
+							for(const key in badge)
+								if ( has(badge, key) ) {
+									const version = badge[key];
+									if ( ! v )
+										v = version;
+
+									if ( version && version.image1x )
+										vs.push({
+											name: version.title,
+											image: version.image1x,
+											styleImage: `url("${version.image1x}")`
+										});
+								}
+
+							if ( v )
+								(badge.__game ? game : twitch).push({
+									id: key,
+									provider: 'twitch',
+									name: v.title,
+									color: 'transparent',
+									image: v.image4x,
+									versions: vs,
+									styleImage: `url("${v.image4x}")`
+								});
+						}
+
+					for(const key in this.badges)
+						if ( has(this.badges, key) ) {
+							const badge = this.badges[key],
+								image = badge.urls ? (badge.urls[4] || badge.urls[2] || badge.urls[1]) : badge.image;
+
+							(/^addon/.test(key) ? addon : ffz).push({
+								id: key,
+								provider: 'ffz',
+								name: badge.title,
+								color: badge.color || 'transparent',
+								image,
+								styleImage: `url("${image}")`
+							});
+						}
+
+					return [
+						{title: 'Twitch', badges: twitch},
+						{title: 'Twitch: Game', badges: game},
+						{title: 'FrankerFaceZ', badges: ffz},
+						{title: 'Add-on', badges: addon}
+					];
+				}
+			}
+		});
 
 		this.settings.add('chat.badges.style', {
 			default: 0,
 			ui: {
-				path: 'Chat > Badges >> Appearance',
+				path: 'Chat > Badges >> tabs ~> Appearance',
 				title: 'Style',
 				component: 'setting-select-box',
 				data: [
@@ -497,7 +565,7 @@ export default class Badges extends Module {
 			const b = {};
 			for(const data of badges) {
 				const sid = data.setID,
-					bs = b[sid] = b[sid] || {};
+					bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
 
 				bs[data.version] = data;
 			}

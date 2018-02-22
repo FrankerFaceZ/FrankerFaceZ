@@ -22,10 +22,8 @@ export default class FineRouter extends Module {
 	}
 
 	onEnable() {
-		const root = this.fine.getParent(this.fine.react),
-			ctx = this.context = root && root._context,
-			router = ctx && ctx.router,
-			history = this.history = router && router.history;
+		const thing = this.fine.searchTree(null, n => n.props && n.props.history),
+			history = this.history = thing && thing.props && thing.props.history;
 
 		if ( ! history )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());

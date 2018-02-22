@@ -160,7 +160,7 @@ export class Tooltip {
 		if ( ! tip )
 			return;
 
-			tip.state = false;
+		tip.state = false;
 
 		if ( tip._show_timer ) {
 			clearTimeout(tip._show_timer);

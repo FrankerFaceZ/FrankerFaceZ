@@ -1,0 +1,30 @@
+query {
+	directory {
+		... on Game {
+			streams {
+				edges {
+					node {
+						createdAt
+						type
+						broadcaster {
+							profileImageURL(width: 70)
+						}
+					}
+				}
+			}
+		}
+		... on Community {
+			streams {
+				edges {
+					node {
+						createdAt
+						type
+						broadcaster {
+							profileImageURL(width: 70)
+						}
+					}
+				}
+			}
+		}
+	}
+}

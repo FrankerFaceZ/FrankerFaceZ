@@ -7,7 +7,6 @@
 
 import Module from 'utilities/module';
 import {has, get} from 'utilities/object';
-import gql from 'graphql-tag';
 
 export default class Apollo extends Module {
 	constructor(...args) {
@@ -16,17 +15,8 @@ export default class Apollo extends Module {
 		this.modifiers = {};
 		this.post_modifiers = {};
 
-		this.gql = gql;
-
 		this.inject('..web_munch');
 		this.inject('..fine');
-
-		this.registerModifier('ViewerCard', gql`query {
-			targetUser: user {
-				createdAt
-				profileViewCount
-			}
-		}`);
 	}
 
 	async onEnable() {
@@ -34,10 +24,10 @@ export default class Apollo extends Module {
 		let client = this.client;
 
 		if ( ! client ) {
-			const root = this.fine.getParent(this.fine.react),
-				ctx = root && root._context;
+			const root = this.fine.react,
+				inst = root && root.stateNode;
 
-			client = this.client = ctx && ctx.client;
+			client = this.client = inst && inst.props && inst.props.client;
 		}
 
 		this.printer = this.web_munch.getModule('gql-printer');

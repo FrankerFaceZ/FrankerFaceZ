@@ -7,6 +7,8 @@
 import {SiteModule} from 'utilities/module';
 import {get} from 'utilities/object';
 
+import BROWSE_POPULAR from './browse_popular.gql';
+
 export default class BrowsePopular extends SiteModule {
 	constructor(...args) {
 		super(...args);
@@ -15,18 +17,7 @@ export default class BrowsePopular extends SiteModule {
 		this.inject('site.fine');
 		this.inject('settings');
 
-		this.apollo.registerModifier('BrowsePage_Popular', this.apollo.gql`query {
-			streams {
-				edges {
-					node {
-						createdAt
-						broadcaster {
-							profileImageURL(width: 70)
-						}
-					}
-				}
-			}
-		}`);
+		this.apollo.registerModifier('BrowsePage_Popular', BROWSE_POPULAR);
 
 		this.ChannelCard = this.fine.define(
 			'browse-all-channel-card',

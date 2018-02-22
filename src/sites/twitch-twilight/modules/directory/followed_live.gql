@@ -1,0 +1,14 @@
+query {
+	currentUser {
+		followedLiveUsers {
+			edges {
+				node {
+					profileImageURL(width: 70)
+					stream {
+						createdAt
+					}
+				}
+			}
+		}
+	}
+}

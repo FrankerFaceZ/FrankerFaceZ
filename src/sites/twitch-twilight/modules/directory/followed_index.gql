@@ -1,0 +1,24 @@
+query {
+	currentUser {
+		followedLiveUsers {
+			nodes {
+				profileImageURL(width: 70)
+				stream {
+					createdAt
+				}
+			}
+		}
+		followedHosts {
+			nodes {
+				profileImageURL(width: 70)
+				hosting {
+					profileImageURL(width: 70)
+					stream {
+						createdAt
+						type
+					}
+				}
+			}
+		}
+	}
+}

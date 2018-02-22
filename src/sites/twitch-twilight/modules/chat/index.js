@@ -61,25 +61,30 @@ const EVENTS = [
 	'onJoinedEvent',
 	'onDisconnectedEvent',
 	'onReconnectingEvent',
+	'onChatMessageEvent',
+	'onChatNoticeEvent',
+	'onChatActionEvent',
+	'onBadgesUpdatedEvent',
 	'onHostingEvent',
 	'onUnhostEvent',
-	'onChatMessageEvent',
-	'onChatActionEvent',
-	'onChatNoticeEvent',
-	'onTimeoutEvent',
-	'onBanEvent',
-	'onModerationEvent',
+	'onPurchaseEvent',
+	'onCrateEvent',
+	//'onRitualEvent',
 	'onSubscriptionEvent',
 	//'onResubscriptionEvent',
 	'onSubscriptionGiftEvent',
-	'onRoomStateEvent',
-	'onSlowModeEvent',
-	'onFollowerOnlyModeEvent',
-	'onSubscriberOnlyModeEvent',
+	'onTimeoutEvent',
+	'onBanEvent',
 	'onClearChatEvent',
 	'onRaidEvent',
 	'onUnraidEvent',
-	'onBadgesUpdatedEvent'
+	'onRoomModsEvent',
+	'onRoomStateEvent',
+	'onFollowerOnlyModeEvent',
+	'onSlowModeEvent',
+	'onSubscriberOnlyModeEvent',
+	'onEmoteOnlyModeEvent',
+	'onBitsCharityEvent'
 ];
 
 
@@ -408,7 +413,7 @@ export default class ChatHook extends Module {
 				const i = this,
 					pm = this.postMessage;
 
-				for(const key of EVENTS) { // eslint-disable-line guard-for-in
+				for(const key of EVENTS) {
 					const original = this[key];
 					if ( original )
 						this[key] = function(e, t) {

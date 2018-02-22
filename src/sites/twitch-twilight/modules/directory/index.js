@@ -11,7 +11,6 @@ import {get} from 'utilities/object';
 
 import Following from './following';
 import Game from './game';
-import Community from './community';
 import BrowsePopular from './browse_popular';
 
 export default class Directory extends SiteModule {
@@ -30,7 +29,6 @@ export default class Directory extends SiteModule {
 
 		this.inject(Following);
 		this.inject(Game);
-		this.inject(Community);
 		this.inject(BrowsePopular);
 
 		this.apollo.registerModifier('GamePage_Game', res => this.modifyStreams(res), false);

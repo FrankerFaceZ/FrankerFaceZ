@@ -25,7 +25,12 @@ export default class ChatLine extends Module {
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
-			n => n.renderMessageBody
+			n => n.renderMessageBody && ! n.getMessageParts
+		);
+
+		this.ChatRoomLine = this.fine.define(
+			'chat-room-line',
+			n => n.renderMessageBody && n.getMessageParts
 		);
 	}
 
@@ -64,8 +69,23 @@ export default class ChatLine extends Module {
 				const types = t.parent.chat_types || {},
 
 					msg = this.props.message,
-					is_action = msg.type === types.Action,
-					user = msg.user,
+					is_action = msg.type === types.Action;
+
+				if ( msg.content && ! msg.message )
+					msg.message = msg.content.text;
+
+				if ( msg.sender && ! msg.user ) {
+					msg.user = msg.sender;
+					msg.user.color = msg.user.color || msg.user.chatColor;
+				}
+
+				if ( ! msg.badges && msg.user.displayBadges ) {
+					const b = msg.badges = {};
+					for(const item of msg.user.displayBadges)
+						b[item.setID] = item.version;
+				}
+
+				const user = msg.user,
 					color = t.parent.colors.process(user.color),
 					/*bg_rgb = Color.RGBA.fromHex(user.color),
 					bg_color = bg_rgb.luminance() < .005 ? bg_rgb : bg_rgb.toHSLA().targetLuminance(0.005).toRGBA(),
