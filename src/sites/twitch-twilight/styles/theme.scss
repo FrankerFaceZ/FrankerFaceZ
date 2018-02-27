@@ -1276,6 +1276,28 @@
 	.whispers-list-item:hover {
 		background-color: var(--ffz-color-27);
 	}
+	.recurly-form {
+		.recurly-hosted-field {
+			border-color: var(--ffz-color-26);
+			background-color: var(--ffz-color-27);
+			color: var(--ffz-color-23);
+		}
+		.recurly-hosted-field-focus {
+			border-color: var(--ffz-color-5);
+			-webkit-box-shadow: 0 0 6px -2px var(--ffz-color-5);
+			box-shadow: 0 0 6px -2px var(--ffz-color-5);
+		}
+		.recurly-error {
+			.recurly-hosted-field {
+				border-color: var(--ffz-color-14);
+			}
+			.recurly-hosted-field-focus {
+				border-color: var(--ffz-color-5);
+				-webkit-box-shadow: 0 0 6px -2px var(--ffz-color-5);
+				box-shadow: 0 0 6px -2px var(--ffz-color-5);
+			}
+		}
+	}
 	.footer__link {
 		color: var(--ffz-color-4);
 		&:hover {
@@ -1330,6 +1352,9 @@
 	}
 	.community-selection-page__progress-container {
 		background-color: var(--ffz-color-27);
+	}
+	.drops-badge__drops-icon:after {
+		background-color: var(--ffz-color-18);
 	}
 	.platform-filter {
 		color: currentColor;
@@ -1516,22 +1541,13 @@
 	.chat-viewers-list__button {
 		color: var(--ffz-color-2);
 	}
-	.chat-viewers__pane {
+	.chat-viewers__pane, .chat-viewers__old-pane {
 		background-color: var(--ffz-color-27);
 		color: var(--ffz-color-24);
 	}
 	.chat-viewers__header {
 		border-bottom-color: var(--ffz-color-20);
 		background-color: var(--ffz-color-21);
-	}
-	.viewer-card__display-name-link {
-		color: var(--ffz-color-23);
-		&:hover {
-			color: var(--ffz-color-23);
-		}
-	}
-	.viewer-card__banner {
-		background-color: var(--ffz-color-25);
 	}
 	.social-button__link--copy:after {
 		color: var(--ffz-color-3);
@@ -1572,11 +1588,45 @@
 	.clips-preview-card__display-name {
 		color: var(--ffz-color-7);
 	}
-	.collection-card__link {
-		color: var(--ffz-color-1);
-		&:hover {
-			color: var(--ffz-color-2);
-		}
+	.esports-notification-card__circle--svg {
+		fill: var(--ffz-color-0);
+	}
+	.esports-hexagon__svg--fill {
+		fill: var(--ffz-color-3);
+		stroke: var(--ffz-color-3);
+	}
+	.esports-hexagon__svg--fill-emote-locked {
+		fill: var(--ffz-color-27);
+		stroke: var(--ffz-color-27);
+	}
+	.esports-hexagon__svg--fill-coming-soon {
+		fill: var(--ffz-color-29);
+		stroke: var(--ffz-color-29);
+	}
+	.esports-hexagon__svg--background {
+		fill: var(--ffz-color-21);
+	}
+	.esports-hexagon__svg--background-coming-soon {
+		fill: var(--ffz-color-27);
+	}
+	.esports-hexagon__svg--question-mark {
+		fill: var(--ffz-color-1);
+	}
+	.esports-ftue__bordered {
+		border-color: var(--ffz-color-3) !important;
+	}
+	.esports-milestone-balloon__redeemed {
+		color: var(--ffz-color-18);
+	}
+	.esports-progress-bar__circle {
+		fill: var(--ffz-color-21);
+		stroke: var(--ffz-color-29);
+	}
+	.esports-progress-bar__circle--bit {
+		fill: var(--ffz-color-5);
+	}
+	.progress-cicle__text {
+		fill: var(--ffz-color-1);
 	}
 	.media-carousel__button--inset, .media-carousel:hover .media-carousel__button {
 		background-color: var(--ffz-color-0);
@@ -1587,12 +1637,75 @@
 	.fuel-bar {
 		background-color: var(--ffz-color-0);
 	}
+	.active-room-button__states {
+		color: var(--ffz-color-7);
+	}
+	.active-room-button:hover .active-room-button__states {
+		color: var(--ffz-color-1);
+	}
+	.invalid-room-view {
+		background-color: var(--ffz-color-6);
+	}
+	.member-list-group__button {
+		color: var(--ffz-color-2);
+	}
+	.member-list__pane {
+		background-color: var(--ffz-color-27);
+		color: var(--ffz-color-24);
+	}
+	.member-list__header {
+		border-bottom-color: var(--ffz-color-20);
+		background-color: var(--ffz-color-21);
+	}
+	.room-message__timestamp, .room-picker-option__muted-icon, .room-picker-option__permission-icon {
+		color: var(--ffz-color-7);
+	}
+	.room-picker-option--hover, .room-picker-option:hover {
+		background-color: var(--ffz-color-8);
+		color: var(--ffz-color-23);
+	}
+	.room-picker-option--hover .room-picker-option__permission-icon, .room-picker-option:hover .room-picker-option__permission-icon {
+		color: inherit;
+	}
+	.room-picker-option--hover .room-picker-option__muted-icon, .room-picker-option:hover .room-picker-option__muted-icon, .room-picker-option--hover .room-picker-option__settings, .room-picker-option:hover .room-picker-option__settings {
+		color: var(--ffz-color-1);
+	}
+	.room-picker-option--active:after {
+		border-left-color: var(--ffz-color-3);
+	}
+	.room-picker-option--disabled {
+		&.room-picker-option--hover, &:hover {
+			color: inherit;
+		}
+		&.room-picker-option--hover {
+			.room-picker-option__muted-icon, .room-picker-option__permission-icon {
+				color: var(--ffz-color-7);
+			}
+		}
+		&:hover {
+			.room-picker-option__muted-icon, .room-picker-option__permission-icon {
+				color: var(--ffz-color-7);
+			}
+		}
+	}
+	.room-upsell {
+		background-color: var(--ffz-color-0);
+		&:after {
+			background-color: var(--ffz-color-21);
+		}
+	}
+	.room-picker__label--active-main:after {
+		border-left-color: var(--ffz-color-3);
+	}
 	.embed-card__overlay {
 		background-color: var(--ffz-color-25);
 		color: var(--ffz-color-23);
 		&:hover .embed-card__play {
 			color: var(--ffz-color-1);
 		}
+	}
+	.drops-campaign-details__drops-success {
+		color: var(--ffz-color-18);
 	}
 	.channel-info-bar {
 		background-color: var(--ffz-color-0);
@@ -1712,6 +1825,31 @@
 		&:hover {
 			color: var(--ffz-color-2);
 		}
+	}
+	.recurly-credit-card {
+		.recurly-hosted-field {
+			border-color: var(--ffz-color-26);
+			background-color: var(--ffz-color-27);
+			color: var(--ffz-color-23);
+		}
+		.recurly-hosted-field-focus {
+			border-color: var(--ffz-color-5);
+			-webkit-box-shadow: 0 0 6px -2px var(--ffz-color-5);
+			box-shadow: 0 0 6px -2px var(--ffz-color-5);
+		}
+		.recurly-error {
+			.recurly-hosted-field {
+				border-color: var(--ffz-color-14);
+			}
+			.recurly-hosted-field-focus {
+				border-color: var(--ffz-color-5);
+				-webkit-box-shadow: 0 0 6px -2px var(--ffz-color-5);
+				box-shadow: 0 0 6px -2px var(--ffz-color-5);
+			}
+		}
+	}
+	.ticket-description__broadcaster-info {
+		background-color: var(--ffz-color-25);
 	}
 	.search-card-row:hover .search-card-row__link {
 		color: var(--ffz-color-4);
@@ -1987,6 +2125,14 @@
 	.mod-comment__unpublished-message {
 		background-color: var(--ffz-color-26);
 	}
+	.autohost-list-item--hovered {
+		background-color: var(--ffz-color-8);
+		color: var(--ffz-color-4);
+	}
+	.autohost-list-item--selected {
+		background-color: var(--ffz-color-3);
+		color: var(--ffz-color-4);
+	}
 	.ach-link {
 		&:active .ach-card, &:focus .ach-card, &:hover .ach-card {
 			background-color: var(--ffz-color-21);
@@ -2019,11 +2165,13 @@
 	.ach-sb {
 		background-color: var(--ffz-color-0);
 	}
-	.ach-sb__text, .sm-cp-card__title {
+	.ach-sb__text {
 		color: var(--ffz-color-1);
 	}
-	.sm-cp-card a:hover .sm-cp-card__title {
-		color: var(--ffz-color-2);
+	.bb-col::-webkit-scrollbar-thumb {
+		background-color: var(--ffz-color-27);
+		-webkit-box-shadow: inset 0 0 1px var(--ffz-color-34);
+		box-shadow: inset 0 0 1px var(--ffz-color-34);
 	}
 	.top-stats-tab {
 		color: "color-text-tab";
