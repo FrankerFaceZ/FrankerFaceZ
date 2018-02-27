@@ -42,6 +42,22 @@ export default class Player extends Module {
 			}
 		});
 
+		this.settings.add('player.volume-scroll-steps', {
+			default: 0.1,
+			ui: {
+				path: 'Channel > Player >> Volume',
+				title: 'Volume scroll amount',
+				description: 'How much the volume level is changed per individual scroll input.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0.1, title: '10%'},
+					{value: 0.05, title: '5%'},
+					{value: 0.02, title: '2%'},
+					{value: 0.01, title: '1%'}
+				]
+			}
+		});
+
 		this.settings.add('player.theatre.no-whispers', {
 			default: false,
 			requires: ['whispers.show'],
@@ -239,7 +255,9 @@ export default class Player extends Module {
 					player = inst.player;
 
 				if ( player ) {
-					player.volume = Math.max(0, Math.min(1, player.volume + (delta > 0 ? .1 : -.1)));
+					const amount = this.settings.get('player.volume-scroll-steps');
+
+					player.volume = Math.max(0, Math.min(1, player.volume + (delta > 0 ? amount : -amount)));
 					if ( player.volume !== 0 )
 						player.muted = false;
 				}
