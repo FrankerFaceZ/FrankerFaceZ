@@ -22,7 +22,6 @@ export default class ChannelBar extends Module {
 
 		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', CHANNEL_QUERY);
 		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
-			console.log('BOOP BOOP A DOOP', data);
 			const u = data && data.data && data.data.user;
 			if ( u ) {
 				const o = u.profileViewCount = new Number(u.profileViewCount || 0);

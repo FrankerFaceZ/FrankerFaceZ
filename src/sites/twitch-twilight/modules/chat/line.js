@@ -69,7 +69,7 @@ export default class ChatLine extends Module {
 				const types = t.parent.chat_types || {},
 
 					msg = this.props.message,
-					is_action = msg.type === types.Action;
+					is_action = msg.messageType === types.Action;
 
 				if ( msg.content && ! msg.message )
 					msg.message = msg.content.text;

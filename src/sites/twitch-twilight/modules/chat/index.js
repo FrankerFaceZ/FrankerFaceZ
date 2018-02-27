@@ -487,7 +487,7 @@ export default class ChatHook extends Module {
 							if ( u )
 								e.emotes = u.emotes;
 
-							if ( original.action )
+							if ( typeof original.action === 'string' )
 								e.message = original.action;
 							else
 								e.message = original.message.body;
