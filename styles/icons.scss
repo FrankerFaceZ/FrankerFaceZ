@@ -75,6 +75,11 @@
 	}
 }*/
 
+.tw-button__icon .ffz-i-crown:before {
+	margin: 0;
+	font-size: 1.6rem;
+	vertical-align: sub;
+}
 
 .ffz-i-cancel:before { content: '\e800'; } /* '' */
 .ffz-i-search:before { content: '\e802'; } /* '' */
@@ -91,6 +96,8 @@
 .ffz-i-download:before { content: '\e80d'; } /* '' */
 .ffz-i-upload:before { content: '\e80e'; } /* '' */
 .ffz-i-floppy:before { content: '\e80f'; } /* '' */
+.ffz-i-crown:before { content: '\e810'; } /* '' */
+.ffz-i-verified:before { content: '\e811'; } /* '' */
 .ffz-i-twitter:before { content: '\f099'; } /* '' */
 .ffz-i-gauge:before { content: '\f0e4'; } /* '' */
 .ffz-i-download-cloud:before { content: '\f0ed'; } /* '' */
