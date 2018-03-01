@@ -7,6 +7,11 @@ export function has(object, key) {
 }
 
 
+export function sleep(delay) {
+	return new Promise(s => setTimeout(s, delay));
+}
+
+
 export function timeout(promise, delay) {
 	return new Promise((resolve, reject) => {
 		let resolved = false;

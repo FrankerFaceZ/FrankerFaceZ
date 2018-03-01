@@ -335,6 +335,22 @@ export default class ChatHook extends Module {
 		this.ChatController.on('receive-props', this.chatUpdated, this);
 
 		this.ChatController.ready((cls, instances) => {
+			const t = this,
+				old_catch = cls.prototype.componentDidCatch;
+			// Try catching errors. With any luck, maybe we can
+			// recover from the error when we re-build?
+			cls.prototype.componentDidCatch = function(err, info) {
+				// Don't log infinitely if stuff gets super screwed up.
+				const errs = this.state.ffz_errors || 0;
+				if ( errs < 100 ) {
+					this.setState({ffz_errors: errs + 1});
+					t.log.info('Error within Chat', err, info, errs);
+				}
+
+				if ( old_catch )
+					return old_catch.call(this, err, info);
+			}
+
 			for(const inst of instances) {
 				const service = inst.chatService;
 				if ( ! service._ffz_was_here )
@@ -357,6 +373,22 @@ export default class ChatHook extends Module {
 		this.ChatContainer.on('receive-props', this.containerUpdated, this);
 
 		this.ChatContainer.ready((cls, instances) => {
+			const t = this,
+				old_catch = cls.prototype.componentDidCatch;
+			// Try catching errors. With any luck, maybe we can
+			// recover from the error when we re-build?
+			cls.prototype.componentDidCatch = function(err, info) {
+				// Don't log infinitely if stuff gets super screwed up.
+				const errs = this.state.ffz_errors || 0;
+				if ( errs < 100 ) {
+					this.setState({ffz_errors: errs + 1});
+					t.log.info('Error within Chat Container', err, info, errs);
+				}
+
+				if ( old_catch )
+					return old_catch.call(this, err, info);
+			}
+
 			for(const inst of instances)
 				this.containerMounted(inst);
 		});

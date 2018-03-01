@@ -64,7 +64,6 @@ export default class ChatLine extends Module {
 					props.showTimestamps !== this.props.showTimestamps;
 			}
 
-
 			cls.prototype.render = function() {
 				const types = t.parent.chat_types || {},
 

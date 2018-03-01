@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {has, sleep} from 'utilities/object';
 
 export default class CompatEmoteMenu extends Module {
 	constructor(...args) {
@@ -18,7 +18,11 @@ export default class CompatEmoteMenu extends Module {
 		this.inject('chat.emotes');
 	}
 
-	async onEnable() {
+	onEnable() {
+		this.hookEmoteMenu();
+	}
+
+	async hookEmoteMenu() {
 		const em = await this.findEmoteMenu();
 		if ( ! em )
 			return this.log.info('Emote Menu for Twitch was not found after 60 seconds.');
@@ -65,8 +69,7 @@ export default class CompatEmoteMenu extends Module {
 		if ( delay >= 60000 )
 			return null;
 
-		return new Promise(s => {
-			setTimeout(() => this.findEmoteMenu(delay + 100).then(s), 100)
-		});
+		await sleep(100);
+		return this.findEmoteMenu(delay + 100);
 	}
 }
