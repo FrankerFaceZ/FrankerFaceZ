@@ -20,7 +20,7 @@ const CLASSES = {
 	'player-ext': '.player-extensions',
 	'player-ext-hover': '.player[data-controls="false"] .player-extensions',
 
-	'pinned-cheer': '.pinned-cheer',
+	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',
 
 	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live',

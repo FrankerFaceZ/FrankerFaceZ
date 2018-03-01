@@ -100,7 +100,7 @@ export default class ChatLine extends Module {
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName});
 
 				let cls = 'chat-line__message',
-					out = tokens.length ? [
+					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'
 						}, t.chat.formatTime(msg.timestamp)),
@@ -212,8 +212,9 @@ export default class ChatLine extends Module {
 				}, out);
 			}
 
-			for(const inst of instances)
-				inst.forceUpdate();
+			// Do this after a short delay to hopefully reduce the chance of React
+			// freaking out on us.
+			setTimeout(() => this.ChatLine.forceUpdate());
 		})
 	}
 
@@ -223,9 +224,9 @@ export default class ChatLine extends Module {
 			const msg = inst.props.message;
 			if ( msg )
 				msg.ffz_tokens = null;
-
-			inst.forceUpdate();
 		}
+
+		this.ChatLine.forceUpdate();
 	}
 }
 

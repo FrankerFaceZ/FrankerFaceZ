@@ -435,6 +435,9 @@ export default class Chat extends Module {
 		if ( msg.sender && ! msg.user )
 			msg.user = msg.sender;
 
+		if ( ! msg.message )
+			return [];
+
 		let tokens = [{type: 'text', text: msg.message}];
 		if ( ! tokens[0].text )
 			return tokens;

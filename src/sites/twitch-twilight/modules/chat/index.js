@@ -177,8 +177,8 @@ export default class ChatHook extends Module {
 		this.settings.add('chat.bits.show-pinned', {
 			default: true,
 			ui: {
-				path: 'Chat > Bits and Cheering >> Pinned Cheers',
-				title: 'Display Pinned Cheer',
+				path: 'Chat > Bits and Cheering >> Appearance',
+				title: 'Display Top Cheerers',
 
 				component: 'setting-check-box'
 			}
@@ -514,9 +514,7 @@ export default class ChatHook extends Module {
 
 
 	updateChatLines() {
-		for(const inst of this.PinnedCheer.instances)
-			inst.forceUpdate();
-
+		this.PinnedCheer.forceUpdate();
 		this.chat_line.updateLines();
 	}
 

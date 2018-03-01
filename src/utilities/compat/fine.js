@@ -504,7 +504,11 @@ export class FineWrapper extends EventEmitter {
 
 	forceUpdate() {
 		for(const inst of this.instances)
-			inst.forceUpdate();
+			try {
+				inst.forceUpdate();
+			} catch(err) {
+				this.fine.log.error(`An error occured when calling forceUpdate on an instance of ${this.name}`, err);
+			}
 	}
 
 
