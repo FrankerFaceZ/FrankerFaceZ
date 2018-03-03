@@ -15,6 +15,7 @@ export default class Scroller extends Module {
 		this.inject('i18n');
 		this.inject('chat');
 		this.inject('site.fine');
+		this.inject('site.web_munch');
 
 		this.ChatScroller = this.fine.define(
 			'chat-scroller',
@@ -62,7 +63,61 @@ export default class Scroller extends Module {
 		});
 
 		this.ChatScroller.ready((cls, instances) => {
-			const t = this;
+			const t = this,
+				old_catch = cls.prototype.componentDidCatch,
+				old_render = cls.prototype.render;
+
+			// Try catching errors. With any luck, maybe we can
+			// recover from the error when we re-build?
+			cls.prototype.componentDidCatch = function(err, info) {
+				// Don't log infinitely if stuff gets super screwed up.
+				const errs = this.state.ffz_errors || 0;
+				if ( errs < 100 ) {
+					this.setState({
+						ffz_errors: errs + 1,
+						ffz_total_errors: (this.state.ffz_total_errors||0) + 1
+					});
+					t.log.info('Error within Chat', err, info, errs);
+				}
+
+				if ( old_catch )
+					return old_catch.call(this, err, info);
+			}
+
+			cls.prototype.ffzZeroErrors = function() {
+				this.setState({ffz_errors: 0});
+			}
+
+			cls.prototype.render = function() {
+				if ( this.state.ffz_errors > 0 ) {
+					let timer;
+					const auto = this.state.ffz_total_errors < 10,
+						React = t.web_munch.getModule('react'),
+						e = React && React.createElement,
+						handler = () => {
+							clearTimeout(timer);
+							this.ffzZeroErrors();
+						}
+
+					if ( auto )
+						timer = setTimeout(handler, 250);
+
+					if ( ! e )
+						return null;
+
+					return e('div', {
+						className: 'tw-border-l tw-c-background-alt-2 tw-c-text tw-full-width tw-full-height tw-align-items-center tw-flex tw-flex-column tw-justify-content-center tw-relative'
+					}, [
+						e('div', {className: 'tw-mg-b-1'}, 'There was an error displaying chat.'),
+						! auto && e('button', {
+							className: 'tw-button',
+							onClick: handler
+						}, e('span', {className: 'tw-button__text'}, 'Try Again'))
+					]);
+
+				} else
+					return old_render.call(this);
+			}
 
 			cls.prototype.ffzShouldBeFrozen = function(since) {
 				if ( since === undefined )

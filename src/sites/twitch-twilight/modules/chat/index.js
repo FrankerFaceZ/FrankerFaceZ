@@ -336,7 +336,9 @@ export default class ChatHook extends Module {
 
 		this.ChatController.ready((cls, instances) => {
 			const t = this,
-				old_catch = cls.prototype.componentDidCatch;
+				old_catch = cls.prototype.componentDidCatch,
+				old_render = cls.prototype.render;
+
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
 			cls.prototype.componentDidCatch = function(err, info) {
@@ -349,6 +351,22 @@ export default class ChatHook extends Module {
 
 				if ( old_catch )
 					return old_catch.call(this, err, info);
+			}
+
+			cls.prototype.render = function() {
+				if ( this.state.ffz_errors > 0 ) {
+					const React = t.web_munch.getModule('react'),
+						e = React && React.createElement;
+
+					if ( ! e )
+						return null;
+
+					return e('div', {
+						className: 'tw-border-l tw-c-background-alt-2 tw-c-text tw-full-width tw-full-height tw-align-items-center tw-flex tw-flex-column tw-justify-content-center tw-relative'
+					}, 'There was an error displaying chat.');
+
+				} else
+					return old_render.call(this);
 			}
 
 			for(const inst of instances) {
@@ -375,6 +393,7 @@ export default class ChatHook extends Module {
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
 				old_catch = cls.prototype.componentDidCatch;
+
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
 			cls.prototype.componentDidCatch = function(err, info) {
