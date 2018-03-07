@@ -29,29 +29,24 @@
 			<ul class="tw-mg-b-2">
 				<li>Settings from the old version are not being imported.</li>
 				<li>Settings cannot be searched.</li>
-				<li>FFZ badges do not display.</li>
-				<li>Oh god everything is missing.</li>
+				<li>Emoji aren't displayed.</li>
+				<li>The emote menu isn't finished.</li>
+				<li>Tab-completion and advanced input isn't available.</li>
 			</ul>
 
 			<p>And the biggest features still under development:</p>
 
 			<ul class="tw-mg-b-2">
-				<li>Dark Theme (Pls No Purple)</li>
-				<li>Badge Customization</li>
 				<li>Emoji Rendering</li>
 				<li>Emotes Menu</li>
 				<li>Chat Filtering (Highlighted Words, etc.)</li>
 				<li>Room Status Indicators</li>
 				<li>Custom Mod Cards</li>
 				<li>Custom Mod Actions</li>
-				<li>Chat Room Tabs</li>
 				<li>Recent Highlights</li>
 				<li>More Channel Metadata</li>
 				<li>Disable Hosting</li>
 				<li>Portrait Mode</li>
-				<li>Hiding stuff in the directory</li>
-				<li>Directory Host Stacking</li>
-				<li>Basically anything to do with the directory</li>
 				<li>Importing and exporting settings</li>
 				<li>User Aliases</li>
 				<li>Rich Content in Chat (aka Clip Embeds)</li>

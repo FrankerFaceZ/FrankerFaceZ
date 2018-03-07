@@ -1,10 +1,14 @@
 .twilight-root {
-	top: 1rem !important;
-
 	.top-nav {
 		z-index: 9999;
 
+		> div {
+			height: 5rem !important;
+		}
+
+		height: 1rem !important;
 		top: -4rem !important;
+
 		transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 
 		.tw-svg__asset--logotwitch {
