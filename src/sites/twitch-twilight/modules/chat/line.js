@@ -8,9 +8,9 @@ import Module from 'utilities/module';
 //import {Color} from 'utilities/color';
 
 const SUB_TIERS = {
-	1000: '$4.99',
-	2000: '$9.99',
-	3000: '$24.99'
+	1000: 1,
+	2000: 2,
+	3000: 3
 };
 
 export default class ChatLine extends Module {
@@ -148,7 +148,7 @@ export default class ChatLine extends Module {
 				if ( msg.ffz_type === 'resub' ) {
 					const plan = msg.sub_plan || {},
 						months = msg.sub_months || 1,
-						tier = SUB_TIERS[plan.plan] || '$4.99';
+						tier = SUB_TIERS[plan.plan] || 1;
 
 					cls = 'chat-line__subscribe';
 					out = [
@@ -157,7 +157,7 @@ export default class ChatLine extends Module {
 								user: user.userDisplayName,
 								plan: plan.prime ?
 									t.i18n.t('chat.sub.twitch-prime', 'Twitch Prime') :
-									t.i18n.t('chat.sub.plan', 'a %{tier} sub', {tier})
+									t.i18n.t('chat.sub.plan', 'a Tier %{tier} sub', {tier})
 							}),
 							months > 1 ?
 								` ${t.i18n.t(

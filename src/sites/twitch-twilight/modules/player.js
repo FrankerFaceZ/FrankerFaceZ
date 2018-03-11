@@ -203,7 +203,34 @@ export default class Player extends Module {
 
 	process(inst) {
 		this.addResetButton(inst);
+		this.addControlVisibility(inst);
 		this.updateVolumeScroll(inst);
+	}
+
+	addControlVisibility(inst) { // eslint-disable-line class-methods-use-this
+		const p = inst.playerRef;
+		if ( ! p )
+			return;
+
+		if ( inst._ffz_visibility_handler ) {
+			p.removeEventListener('mousemove', inst._ffz_visibility_handler);
+			p.removeEventListener('mouseleave', inst._ffz_visibility_handler);
+		}
+
+		let timer;
+
+		const c = () => { p.dataset.controls = false };
+		const f = inst._ffz_visibility_handler = e => {
+			clearTimeout(timer);
+			if ( e.type === 'mouseleave' )
+				return c();
+
+			timer = setTimeout(c, 5000);
+			p.dataset.controls = true;
+		};
+
+		p.addEventListener('mousemove', f);
+		p.addEventListener('mouseleave', f);
 	}
 
 	disableAutoplay(inst) {

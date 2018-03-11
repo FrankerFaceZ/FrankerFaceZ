@@ -1,8 +1,8 @@
 .channel-page-layout__scroll-area--theatre-mode .channel-info-bar {
 	position: fixed;
-	bottom: 100px;
-	left: 50px;
-	right: calc(var(--ffz-chat-width) + 250px);
+	bottom: 10rem;
+	left: 5rem;
+	right: calc(var(--ffz-chat-width) + 25rem);
 	z-index: 3500;
 	opacity: 0;
 }

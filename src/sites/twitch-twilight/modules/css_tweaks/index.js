@@ -17,8 +17,8 @@ const CLASSES = {
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
 
-	'player-ext': '.player-extensions',
-	'player-ext-hover': '.player[data-controls="false"] .player-extensions',
+	'player-ext': '.player .extension-overlay',
+	'player-ext-hover': '.player:not([data-controls="true"]) .extension-overlay',
 
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',

@@ -19,7 +19,7 @@ export default class SettingsMenu extends Module {
 
 		this.SettingsMenu = this.fine.define(
 			'chat-settings',
-			n => n.renderUniversalOptions && n.renderModTools
+			n => n.renderUniversalOptions && n.dismissRaidsTooltip
 		);
 	}
 
@@ -55,10 +55,7 @@ export default class SettingsMenu extends Module {
 	}
 
 	click(inst) {
-		const mb = this.resolve('site.menu_button');
-		if ( mb )
-			mb.emit(':clicked');
-
+		this.emit('site.menu_button:clicked');
 		const parent = this.fine.searchParent(inst, n => n.toggleBalloonId);
 		parent && parent.handleButtonClick();
 	}

@@ -57,3 +57,8 @@ body .whispers--theatre-mode.whispers--right-column-expanded {
 	left: var(--ffz-chat-width) !important;
 	right: 0 !important;
 }
+
+.channel-page-layout__scroll-area--theatre-mode .channel-info-bar {
+	left: calc(var(--ffz-chat-width) + 5rem) !important;
+	right: 25rem !important;
+}
