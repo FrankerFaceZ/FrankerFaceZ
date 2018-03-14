@@ -466,9 +466,8 @@ export class FineWrapper extends EventEmitter {
 		if ( instances )
 			for(const inst of instances) {
 				// How do we check mounted state for fibers?
-				if ( this.fine.getChildNode(inst) )
-					inst._ffz_mounted = true;
-
+				// Just assume they're mounted for now I guess.
+				inst._ffz_mounted = true;
 				_instances.add(inst);
 			}
 
