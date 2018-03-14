@@ -1,0 +1,15 @@
+.ffz-featured-follow {
+	.scrollable-area {
+		max-height: 50vh;
+	}
+
+	.ffz--featured-button-unfollow:hover {
+		figure:before {
+			content: '\e813';
+		}
+	}
+
+	> header {
+		padding: .9rem 1rem .9rem 2rem;
+	}
+}
