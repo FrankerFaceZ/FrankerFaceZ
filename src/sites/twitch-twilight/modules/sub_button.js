@@ -32,7 +32,8 @@ export default class SubButton extends Module {
 
 		this.SubButton = this.fine.define(
 			'sub-button',
-			n => n.reportSubMenuAction && n.isUserDataReady
+			n => n.reportSubMenuAction && n.isUserDataReady,
+			['user', 'video']
 		);
 	}
 

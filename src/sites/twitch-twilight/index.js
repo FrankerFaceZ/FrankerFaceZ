@@ -50,7 +50,11 @@ export default class Twilight extends BaseSite {
 
 		this.router.on(':route', (route, match) => {
 			this.log.info('Navigation', route && route.name, match && match[0]);
+			this.fine.route(route && route.name);
 		});
+
+		const current = this.router.current;
+		this.fine.route(current && current.name);
 
 		document.head.appendChild(e('link', {
 			href: MAIN_URL,
@@ -95,6 +99,19 @@ Twilight.KNOWN_MODULES = {
 }
 
 
+Twilight.CHAT_ROUTES = [
+	'collection',
+	'popout',
+	'video',
+	'user-videos',
+	'user-clips',
+	'user-events',
+	'user-followers',
+	'user-following',
+	'user'
+]
+
+
 Twilight.ROUTES = {
 	'front-page': '/',
 	'collection': '/collections/:collectionID',
@@ -110,10 +127,13 @@ Twilight.ROUTES = {
 	'dir-all': '/directory/all/:filter?',
 	'dir-category': '/directory/:category?',
 	'event': '/event/:eventName',
-	'following': '/following',
-	'popout': '/popout',
+	'popout': '/popout/:userName/chat',
 	'video': '/videos/:videoID',
 	'user-videos': '/:userName/videos/:filter?',
-	'user-clips': '/:userName/manager/clips',
+	'user-clips': '/:userName/clips',
+	'user-collections': '/:userName/collections',
+	'user-events': '/:userName/events',
+	'user-followers': '/:userName/followers',
+	'user-following': '/:userName/following',
 	'user': '/:userName'
 }

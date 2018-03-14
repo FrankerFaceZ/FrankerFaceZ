@@ -17,7 +17,8 @@ export default class Fine extends Module {
 		this._wrappers = new Map;
 		this._known_classes = new Map;
 		this._observer = null;
-		this._waiting = null;
+		this._waiting = [];
+		this._live_waiting = null;
 	}
 
 
@@ -250,14 +251,39 @@ export default class Fine extends Module {
 	// Class Wrapping
 	// ========================================================================
 
-	define(key, criteria) {
+	route(route) {
+		this._route = route;
+		this._updateLiveWaiting();
+	}
+
+
+	_updateLiveWaiting() {
+		const lw = this._live_waiting = [],
+			crt = this._waiting_crit = [],
+			route = this._route;
+
+		if ( this._waiting )
+			for(const waiter of this._waiting)
+				if ( ! route || ! waiter.routes.length || waiter.routes.includes(route) ) {
+					lw.push(waiter);
+					crt.push(waiter.criteria);
+				}
+
+		if ( ! this._live_waiting.length )
+			this._stopWaiting();
+		else if ( ! this._waiting_timer )
+			this._startWaiting();
+	}
+
+
+	define(key, criteria, routes) {
 		if ( this._wrappers.has(key) )
 			return this._wrappers.get(key);
 
 		if ( ! criteria )
 			throw new Error('cannot find definition and no criteria provided');
 
-		const wrapper = new FineWrapper(key, criteria, this);
+		const wrapper = new FineWrapper(key, criteria, routes, this);
 		this._wrappers.set(key, wrapper);
 
 		const data = this.searchAll(this.react, [criteria], 1000)[0];
@@ -266,11 +292,8 @@ export default class Fine extends Module {
 			this._known_classes.set(data.cls, wrapper);
 
 		} else {
-			if ( ! this._waiting )
-				this._startWaiting();
-
 			this._waiting.push(wrapper);
-			this._waiting_crit.push(criteria);
+			this._updateLiveWaiting();
 		}
 
 		return wrapper;
@@ -278,7 +301,7 @@ export default class Fine extends Module {
 
 
 	_checkWaiters(nodes) {
-		if ( ! this._waiting )
+		if ( ! this._live_waiting )
 			return;
 
 		if ( ! Array.isArray(nodes) )
@@ -287,12 +310,12 @@ export default class Fine extends Module {
 		for(let node of nodes) {
 			if ( ! node )
 				node = this.react;
-			else if ( node._reactInternalInstance )
-				node = node._reactInternalInstance;
+			else if ( node._reactInternalFiber )
+				node = node._reactInternalFiber;
 			else if ( node instanceof Node )
 				node = this.getReactInstance(node);
 
-			if ( ! node || ! this._waiting.length )
+			if ( ! node || ! this._live_waiting.length )
 				continue;
 
 			const data = this.searchAll(node, this._waiting_crit, 1000);
@@ -300,26 +323,27 @@ export default class Fine extends Module {
 			while(i-- > 0) {
 				if ( data[i].cls ) {
 					const d = data[i],
-						w = this._waiting.splice(i, 1)[0];
+						w = this._live_waiting.splice(i, 1)[0];
 
 					this._waiting_crit.splice(i, 1);
-					this.log.info(`Found class for "${w.name}" at depth ${d.depth}`, d);
 
+					const idx = this._waiting.indexOf(w);
+					if ( idx !== -1 )
+						this._waiting.splice(idx, 1);
+
+					this.log.info(`Found class for "${w.name}" at depth ${d.depth}`, d);
 					w._set(d.cls, d.instances);
 				}
 			}
 		}
 
-		if ( ! this._waiting.length )
+		if ( ! this._live_waiting.length )
 			this._stopWaiting();
 	}
 
 
 	_startWaiting() {
 		this.log.info('Installing MutationObserver.');
-
-		this._waiting = [];
-		this._waiting_crit = [];
 		this._waiting_timer = setInterval(() => this._checkWaiters(), 500);
 
 		if ( ! this._observer )
@@ -343,7 +367,7 @@ export default class Fine extends Module {
 		if ( this._waiting_timer )
 			clearInterval(this._waiting_timer);
 
-		this._waiting = null;
+		this._live_waiting = null;
 		this._waiting_crit = null;
 		this._waiting_timer = null;
 	}
@@ -364,7 +388,7 @@ const EVENTS = {
 
 
 export class FineWrapper extends EventEmitter {
-	constructor(name, criteria, fine) {
+	constructor(name, criteria, routes, fine) {
 		super();
 
 		this.name = name;
@@ -372,6 +396,7 @@ export class FineWrapper extends EventEmitter {
 		this.fine = fine;
 
 		this.instances = new Set;
+		this.routes = routes || [];
 
 		this._wrapped = new Set;
 		this._class = null;

@@ -21,7 +21,8 @@ export default class Game extends SiteModule {
 
 		this.GameHeader = this.fine.define(
 			'game-header',
-			n => n.renderFollowButton && n.renderGameDetailsTab
+			n => n.renderFollowButton && n.renderGameDetailsTab,
+			['dir-game-index', 'dir-community']
 		);
 
 		this.apollo.registerModifier('GamePage_Game', GAME_QUERY);

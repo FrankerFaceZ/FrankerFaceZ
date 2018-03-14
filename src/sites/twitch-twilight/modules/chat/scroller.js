@@ -5,6 +5,7 @@
 // ============================================================================
 
 import {createElement as e} from 'utilities/dom';
+import Twilight from 'site';
 import Module from 'utilities/module';
 
 export default class Scroller extends Module {
@@ -19,7 +20,8 @@ export default class Scroller extends Module {
 
 		this.ChatScroller = this.fine.define(
 			'chat-scroller',
-			n => n.saveScrollRef && n.handleScrollEvent
+			n => n.saveScrollRef && n.handleScrollEvent,
+			Twilight.CHAT_ROUTES
 		);
 
 		this.settings.add('chat.scroller.freeze', {

@@ -35,7 +35,8 @@ export default class Directory extends SiteModule {
 
 		this.ChannelCard = this.fine.define(
 			'channel-card',
-			n => n.props && n.props.streamNode
+			n => n.props && n.props.streamNode,
+			['dir-community', 'dir-game-index']
 		);
 
 

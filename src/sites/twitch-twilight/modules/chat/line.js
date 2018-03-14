@@ -4,6 +4,7 @@
 // Chat Line
 // ============================================================================
 
+import Twilight from 'site';
 import Module from 'utilities/module';
 //import {Color} from 'utilities/color';
 
@@ -25,12 +26,14 @@ export default class ChatLine extends Module {
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
-			n => n.renderMessageBody && ! n.getMessageParts
+			n => n.renderMessageBody && ! n.getMessageParts,
+			Twilight.CHAT_ROUTES
 		);
 
 		this.ChatRoomLine = this.fine.define(
 			'chat-room-line',
-			n => n.renderMessageBody && n.getMessageParts
+			n => n.renderMessageBody && n.getMessageParts,
+			Twilight.CHAT_ROUTES
 		);
 	}
 
@@ -46,7 +49,7 @@ export default class ChatLine extends Module {
 
 		const e = React.createElement;
 
-		this.ChatLine.ready((cls, instances) => {
+		this.ChatLine.ready(cls => {
 			cls.prototype.shouldComponentUpdate = function(props, state) {
 				const show = state.alwaysShowMessage || ! props.message.deleted,
 					old_show = this._ffz_show;

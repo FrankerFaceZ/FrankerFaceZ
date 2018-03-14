@@ -70,7 +70,8 @@ export default class Following extends SiteModule {
 
 		this.ChannelCard = this.fine.define(
 			'following-channel-card',
-			n => n.renderGameBoxArt && n.renderContentType
+			n => n.renderGameBoxArt && n.renderContentType,
+			['dir-following']
 		);
 
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', res => {

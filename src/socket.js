@@ -43,7 +43,7 @@ export default class SocketClient extends Module {
 
 		this._want_connected = false;
 
-		this._topics = new Set;
+		this._topics = new Map;
 		this._pending = [];
 		this._awaiting = new Map;
 
@@ -426,30 +426,42 @@ export default class SocketClient extends Module {
 	// Topics
 	// ========================================================================
 
-	subscribe(...topics) {
+	subscribe(referrer, ...topics) {
 		const t = this._topics;
 		for(const topic of topics) {
-			if ( this.connected && ! t.has(topic) )
-				this._send('sub', topic);
+			if ( ! t.has(topic) ) {
+				if ( this.connected )
+					this._send('sub', topic);
 
-			t.add(topic);
+				t.set(topic, new Set);
+			}
+
+			const tp = t.get(topic);
+			tp.add(referrer);
 		}
 	}
 
 
-	unsubscribe(...topics) {
+	unsubscribe(referrer, ...topics) {
 		const t = this._topics;
 		for(const topic of topics) {
-			if ( this.connected && t.has(topic) )
-				this._send('unsub', topic);
+			if ( ! t.has(topic) )
+				continue;
 
-			t.delete(topic);
+			const tp = t.get(topic);
+			tp.delete(referrer);
+
+			if ( ! tp.size ) {
+				t.delete(topic);
+				if ( this.connected )
+					this._send('unsub', topic);
+			}
 		}
 	}
 
 
 	get topics() {
-		return Array.from(this._topics);
+		return Array.from(this._topics.keys());
 	}
 
 }

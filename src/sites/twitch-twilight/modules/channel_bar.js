@@ -19,6 +19,7 @@ export default class ChannelBar extends Module {
 		this.inject('site.fine');
 		this.inject('site.apollo');
 		this.inject('metadata');
+		this.inject('socket');
 
 		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', CHANNEL_QUERY);
 		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
@@ -32,39 +33,60 @@ export default class ChannelBar extends Module {
 
 		this.ChannelBar = this.fine.define(
 			'channel-bar',
-			n => n.getTitle && n.getGame && n.renderGame
+			n => n.getTitle && n.getGame && n.renderGame,
+			['user']
 		);
 
 
 		this.HostBar = this.fine.define(
 			'host-container',
-			n => n.handleReportHosterClick
+			n => n.handleReportHosterClick,
+			['user']
 		)
 	}
 
 	onEnable() {
+		this.ChannelBar.on('unmount', this.unmountChannelBar, this);
+		this.ChannelBar.on('mount', this.updateChannelBar, this);
+		this.ChannelBar.on('update', this.updateChannelBar, this);
+
 		this.ChannelBar.ready((cls, instances) => {
 			for(const inst of instances)
 				this.updateChannelBar(inst);
 		});
 
-		this.ChannelBar.on('unmount', this.unmountChannelBar, this);
-		this.ChannelBar.on('mount', this.updateChannelBar, this);
-		this.ChannelBar.on('update', this.updateChannelBar, this);
 
-		/*this.HostBar.on('mount', inst => {
-			this.log.info('host-mount', inst, this.fine.getChildNode(inst));
-		});
+		/*this.HostBar.on('unmount', this.unmountHostBar, this);
+		this.HostBar.on('mount', this.updateHostBar, this);
+		this.HostBar.on('update', this.updateHostBar, this);
 
 		this.HostBar.ready((cls, instances) => {
 			for(const inst of instances)
-				this.log.info('host-found', inst, this.fine.getChildNode(inst));
-		})*/
-
+				this.updateHostBar(inst);
+		});*/
 	}
 
 
-	unmountChannelBar(inst) { // eslint-disable-line class-methods-use-this
+	updateChannelBar(inst) {
+		const login = inst.props.channelLogin;
+		if ( login !== inst._ffz_old_login ) {
+			if ( inst._ffz_old_login )
+				this.socket.unsubscribe(inst, `channel.${inst._ffz_old_login}`);
+
+			if ( login )
+				this.socket.subscribe(inst, `channel.${login}`);
+			inst._ffz_old_login = login;
+		}
+
+		this.updateMetadata(inst);
+	}
+
+	unmountChannelBar(inst) {
+		if ( inst._ffz_old_login ) {
+			this.socket.unsubscribe(inst, `channel.${inst._ffz_old_login}`);
+			inst._ffz_old_login = null;
+		}
+
 		const timers = inst._ffz_meta_timers;
 		if ( timers )
 			for(const key in timers)
@@ -72,11 +94,6 @@ export default class ChannelBar extends Module {
 					clearTimeout(timers[key]);
 
 		inst._ffz_meta_timers = null;
-	}
-
-
-	updateChannelBar(inst) {
-		this.updateMetadata(inst);
 	}
 
 

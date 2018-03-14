@@ -4,7 +4,7 @@
 // Chat Settings Menu
 // ============================================================================
 
-import {createElement as e} from 'utilities/dom';
+import Twilight from 'site';
 import Module from 'utilities/module';
 
 export default class SettingsMenu extends Module {
@@ -19,7 +19,8 @@ export default class SettingsMenu extends Module {
 
 		this.SettingsMenu = this.fine.define(
 			'chat-settings',
-			n => n.renderUniversalOptions && n.dismissRaidsTooltip
+			n => n.renderUniversalOptions && n.dismissRaidsTooltip,
+			Twilight.CHAT_ROUTES
 		);
 	}
 

@@ -21,7 +21,8 @@ export default class BrowsePopular extends SiteModule {
 
 		this.ChannelCard = this.fine.define(
 			'browse-all-channel-card',
-			n => n.props && n.props.channelName && n.props.linkTo && n.props.linkTo.state && n.props.linkTo.state.medium === 'twitch_browse_directory'
+			n => n.props && n.props.channelName && n.props.linkTo && n.props.linkTo.state && n.props.linkTo.state.medium === 'twitch_browse_directory',
+			['dir-all']
 		);
 
 		this.apollo.registerModifier('BrowsePage_Popular', res => this.modifyStreams(res), false);

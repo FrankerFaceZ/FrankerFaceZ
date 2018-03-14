@@ -23,7 +23,8 @@ export default class Player extends Module {
 
 		this.Player = this.fine.define(
 			'twitch-player',
-			n => n.player && n.onPlayerReady
+			n => n.player && n.onPlayerReady,
+			['front-page', 'user', 'video']
 		);
 
 

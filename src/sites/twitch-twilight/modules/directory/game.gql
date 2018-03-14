@@ -1,6 +1,6 @@
 query {
 	directory {
-		... on Game {
+		... on Community {
 			streams {
 				edges {
 					node {
@@ -13,7 +13,7 @@ query {
 				}
 			}
 		}
-		... on Community {
+		... on Game {
 			streams {
 				edges {
 					node {

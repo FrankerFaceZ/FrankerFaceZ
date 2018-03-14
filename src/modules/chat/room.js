@@ -65,7 +65,7 @@ export default class Room {
 			if ( this.manager.rooms[this._login] === this )
 				this.manager.rooms[this._login] = null;
 
-			this.manager.socket.unsubscribe(`room.${this.login}`);
+			this.manager.socket.unsubscribe(this, `room.${this.login}`);
 		}
 
 		if ( this.manager.room_ids[this.id] === this )
@@ -89,7 +89,7 @@ export default class Room {
 			const old_room = this.manager.rooms[this._login];
 			if ( old_room === this ) {
 				this.manager.rooms[this._login] = null;
-				this.manager.socket.unsubscribe(`room.${this.login}`);
+				this.manager.socket.unsubscribe(this, `room.${this.login}`);
 			}
 		}
 
@@ -102,7 +102,7 @@ export default class Room {
 			old_room.login = null;
 
 		this.manager.rooms[val] = this;
-		this.manager.socket.subscribe(`room.${val}`);
+		this.manager.socket.subscribe(this, `room.${val}`);
 		this.manager.emit(':room-update-login', this, val);
 	}
 

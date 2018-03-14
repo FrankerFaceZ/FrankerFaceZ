@@ -10,6 +10,8 @@ import {has, split_chars} from 'utilities/object';
 
 import Module from 'utilities/module';
 
+import Twilight from 'site';
+
 import Scroller from './scroller';
 import ChatLine from './line';
 import SettingsMenu from './settings_menu';
@@ -114,17 +116,20 @@ export default class ChatHook extends Module {
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.chatService
+			n => n.chatService,
+			Twilight.CHAT_ROUTES
 		);
 
 		this.ChatContainer = this.fine.define(
 			'chat-container',
-			n => n.showViewersList && n.onChatInputFocus
+			n => n.showViewersList && n.onChatInputFocus,
+			Twilight.CHAT_ROUTES
 		);
 
 		this.PinnedCheer = this.fine.define(
 			'pinned-cheer',
-			n => n.collapseCheer && n.saveRenderedMessageRef
+			n => n.collapseCheer && n.saveRenderedMessageRef,
+			Twilight.CHAT_ROUTES
 		);
 
 
