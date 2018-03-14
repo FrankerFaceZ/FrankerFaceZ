@@ -223,7 +223,7 @@ export default class SocketClient extends Module {
 
 
 			// Subscribe to Topics
-			for(const topic of this._topics)
+			for(const topic of this._topics.keys())
 				this._send('sub', topic);
 
 
