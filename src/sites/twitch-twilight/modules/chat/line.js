@@ -40,6 +40,7 @@ export default class ChatLine extends Module {
 	onEnable() {
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
+		this.chat.context.on('changed:chat.badges.custom-mod', this.updateLines, this);
 		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
 
 		const t = this,

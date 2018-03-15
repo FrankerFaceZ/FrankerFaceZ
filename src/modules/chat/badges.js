@@ -214,6 +214,15 @@ export default class Badges extends Module {
 			}
 		});
 
+		this.settings.add('chat.badges.custom-mod', {
+			default: true,
+			ui: {
+				path: 'Chat > Badges >> tabs ~> Appearance',
+				title: 'Use custom moderator badges where available.',
+				component: 'setting-check-box'
+			}
+		})
+
 		this.settings.add('chat.badges.style', {
 			default: 0,
 			ui: {
@@ -235,6 +244,7 @@ export default class Badges extends Module {
 
 
 	onEnable() {
+		this.parent.context.on('changed:chat.badges.custom-mod', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.style', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.is-dark', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.tooltips-dark', this.rebuildAllCSS, this);
@@ -289,7 +299,8 @@ export default class Badges extends Module {
 	render(msg, e) { // eslint-disable-line class-methods-use-this
 		const hidden_badges = this.parent.context.get('chat.badges.hidden') || [],
 			badge_style = this.parent.context.get('chat.badges.style'),
-			is_mask = badge_style >= 5,
+			custom_mod = this.parent.context.get('chat.badges.custom-mod'),
+			is_mask = badge_style > 5,
 			is_colored = badge_style !== 5,
 			has_image = badge_style !== 3 && badge_style !== 4,
 
@@ -303,6 +314,7 @@ export default class Badges extends Module {
 			room_id = msg.roomID,
 			room_login = msg.roomLogin,
 
+			room = this.parent.getRoom(room_id, room_login, true),
 			badges = this.getBadges(user_id, user_login, room_id, room_login);
 
 		let last_slot = 50, slot;
@@ -320,11 +332,24 @@ export default class Badges extends Module {
 				else
 					slot = last_slot++;
 
-				const badges = [{
-					provider: 'twitch',
-					badge: badge_id,
-					version
-				}];
+				const urls = badge_id === 'moderator' && custom_mod && room && room.data && room.data.mod_urls,
+					badges = [];
+
+				if ( urls ) {
+					const bd = this.getTwitchBadge(badge_id, version, room_id, room_login);
+					badges.push({
+						provider: 'ffz',
+						image: urls[4] || urls[2] || urls[1],
+						color: '#34ae0a',
+						title: bd ? bd.title : 'Moderator'
+					});
+
+				} else
+					badges.push({
+						provider: 'twitch',
+						badge: badge_id,
+						version
+					});
 
 				slotted[slot] = {
 					id: badge_id,
@@ -426,8 +451,10 @@ export default class Badges extends Module {
 
 
 	rebuildAllCSS() {
-		for(const room of this.parent.iterateRooms())
+		for(const room of this.parent.iterateRooms()) {
 			room.buildBadgeCSS();
+			room.buildModBadgeCSS();
+		}
 
 		this.buildBadgeCSS();
 		this.buildTwitchBadgeCSS();

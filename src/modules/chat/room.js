@@ -216,8 +216,20 @@ export default class Room {
 					this.manager.emotes.loadSetData(set_id, data.sets[set_id]);
 
 
-		// TODO: User data.
-		// TODO: Generate CSS.
+		const badges = data.user_badges;
+		if ( badges )
+			for(const badge_id in badges)
+				if ( has(badges, badge_id) )
+					for(const user of badges[badge_id])
+						this.getUser(undefined, user).addBadge('ffz', badge_id);
+
+
+		if ( data.css )
+			this.style.set('css', data.css);
+		else
+			this.style.delete('css');
+
+		this.buildModBadgeCSS();
 
 		return true;
 	}
@@ -284,6 +296,30 @@ export default class Room {
 		this.buildBadgeCSS();
 	}
 
+	buildModBadgeCSS() {
+		if ( ! this.data || ! this.data.mod_urls || ! this.manager.context.get('chat.badges.custom-mod') )
+			return this.style.delete('mod-badge');
+
+		const style = this.manager.context.get('chat.badges.style'),
+			masked = style > 5 ? `${WEBKIT}mask` : 'background',
+			has_image = style !== 3 && style !== 4;
+
+		if ( ! has_image )
+			return this.style.delete('mod-badge');
+
+		const urls = this.data.mod_urls,
+			image = `url("${urls[1]}")`;
+
+		let image_set;
+		if ( urls[2] || urls[4] )
+			image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`
+
+		this.style.set('mod-badge', `[data-room-id="${this.id}"] .ffz-badge[data-badge="moderator"] {
+			${masked}-image: ${image};
+			${image_set ? `${masked}-image: ${image_set};` : ''}
+		}`);
+	}
+
 	buildBadgeCSS() {
 		if ( ! this.badges )
 			return this.style.delete('badges');
@@ -303,6 +339,8 @@ export default class Room {
 			background-color: transparent;
 			filter: none;
 			${WEBKIT}mask-image: none;
+			height: 1.8rem;
+			width: 1.8rem;
 			background-size: 1.8rem;
 			background-image: url("${data.image1x}");
 			background-image: ${WEBKIT}image-set(

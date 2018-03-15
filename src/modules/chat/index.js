@@ -237,15 +237,13 @@ export default class Chat extends Module {
 		});
 
 		this.context.on('changed:theme.is-dark', () => {
-			for(const key in this.rooms)
-				if ( this.rooms[key] )
-					this.rooms[key].buildBitsCSS();
+			for(const room of this.iterateRooms())
+				room.buildBitsCSS();
 		});
 
 		this.context.on('changed:chat.bits.animated', () => {
-			for(const key in this.rooms)
-				if ( this.rooms[key] )
-					this.rooms[key].buildBitsCSS();
+			for(const room of this.iterateRooms())
+				room.buildBitsCSS();
 		});
 	}
 
