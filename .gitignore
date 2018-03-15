@@ -1,17 +1,10 @@
 node_modules
 npm-debug.log
-build
 dist
 Extension Building
-Old Files
 badges
 cdn
 
 .idea
 *.iml
-script.js
-script.min.js
-*.min.css
 credentials.json
-
-/socketserver/cmd/socketserver/socketserver

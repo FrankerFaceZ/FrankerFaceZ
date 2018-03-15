@@ -1,6 +1,7 @@
 const webpack = require('webpack');
 const path = require('path');
-const CleanPlugin = require('clean-webpack-plugin');
+
+/* global module __dirname */
 
 module.exports = {
 	entry: {
@@ -20,7 +21,6 @@ module.exports = {
 		jsonpFunction: 'ffzWebpackJsonp'
 	},
 	plugins: [
-		new CleanPlugin(['dist']),
 		new webpack.ExtendedAPIPlugin()
 	],
 	module: {

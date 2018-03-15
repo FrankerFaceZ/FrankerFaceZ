@@ -1,8 +1,12 @@
 const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
+const path = require('path');
 
+const CleanPlugin = require('clean-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
+
+/* global module __dirname */
 
 const config = module.exports = merge(common, {
 	devtool: 'source-map',
@@ -11,11 +15,18 @@ const config = module.exports = merge(common, {
 		rules: [{
 			test: /\.js$/,
 			exclude: /node_modules/,
-			loader: 'babel-loader'
+			use: {
+				loader: 'babel-loader',
+				options: {
+					presets: ['env'],
+					plugins: ['transform-runtime']
+				}
+			}
 		}]
 	},
 
 	plugins: [
+		new CleanPlugin(['dist/babel']),
 		new UglifyJSPlugin({
 			sourceMap: true,
 			uglifyOptions: {
@@ -30,9 +41,9 @@ const config = module.exports = merge(common, {
 			}
 		}),
 		new ManifestPlugin({
-			map: (data) => {
+			map: data => {
 				if ( data.name.endsWith('.scss') )
-					data.name = data.name.substr(0,data.name.length - 5) + '.css';
+					data.name = `${data.name.substr(0,data.name.length - 5)}.css`;
 
 				return data;
 			}
@@ -41,6 +52,7 @@ const config = module.exports = merge(common, {
 
 	output: {
 		publicPath: '//cdn.frankerfacez.com/script/babel/',
+		path: path.resolve(__dirname, 'dist/babel'),
 		filename: '[name].[hash].js'
 	}
 });
@@ -56,8 +68,8 @@ const config = module.exports = merge(common, {
 // But it works.
 
 for(const rule of config.module.rules) {
-	if ( rule.use )
+	if ( Array.isArray(rule.use) )
 		for(const use of rule.use)
 			if ( use.options && use.options.name && use.options.name.startsWith('[name].') )
-				use.options.name = '[name].[hash].' + use.options.name.slice(7)
+				use.options.name = `[name].[hash].${use.options.name.slice(7)}`;
 }

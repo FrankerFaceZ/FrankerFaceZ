@@ -7,7 +7,6 @@
 
 import {EventEmitter} from 'utilities/events';
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
 
 
 export default class Fine extends Module {

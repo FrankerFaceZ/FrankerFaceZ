@@ -4,13 +4,17 @@ const common = require('./webpack.web.common.js');
 const CopyPlugin = require('copy-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
+const CleanPlugin = require('clean-webpack-plugin');
 
 const uglify = require('uglify-es');
+
+/* global module Buffer */
 
 const config = module.exports = merge(common, {
 	devtool: 'source-map',
 
 	plugins: [
+		new CleanPlugin(['dist']),
 		new UglifyJSPlugin({
 			sourceMap: true,
 			uglifyOptions: {
@@ -28,7 +32,7 @@ const config = module.exports = merge(common, {
 			{
 				from: './src/entry.js',
 				to: 'script.min.js',
-				transform: (content) => {
+				transform: content => {
 					const text = content.toString('utf8');
 					const minified = uglify.minify(text);
 					return (minified && minified.code) ? Buffer.from(minified.code) : content;
@@ -36,9 +40,9 @@ const config = module.exports = merge(common, {
 			}
 		]),
 		new ManifestPlugin({
-			map: (data) => {
+			map: data => {
 				if ( data.name.endsWith('.scss') )
-					data.name = data.name.substr(0,data.name.length - 5) + '.css';
+					data.name = `${data.name.substr(0,data.name.length - 5)}.css`;
 
 				return data;
 			}
@@ -62,8 +66,8 @@ const config = module.exports = merge(common, {
 // But it works.
 
 for(const rule of config.module.rules) {
-	if ( rule.use )
+	if ( Array.isArray(rule.use) )
 		for(const use of rule.use)
 			if ( use.options && use.options.name && use.options.name.startsWith('[name].') )
-				use.options.name = '[name].[hash].' + use.options.name.slice(7)
+				use.options.name = `[name].[hash].${use.options.name.slice(7)}`;
 }

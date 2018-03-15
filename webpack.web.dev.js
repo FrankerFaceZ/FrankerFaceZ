@@ -5,6 +5,8 @@ const common = require('./webpack.web.common.js');
 
 const CopyPlugin = require('copy-webpack-plugin');
 
+/* global module */
+
 module.exports = merge(common, {
 	devtool: 'inline-source-map',
 
