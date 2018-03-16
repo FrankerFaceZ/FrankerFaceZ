@@ -10,14 +10,20 @@
 					<div v-for="user in follows" class="tw-border-t ffz--featured-user" :key="user.id">
 						<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-t-1 tw-mg-b-1">
 							<div class="ffz-channel-avatar">
-								<img :src="user.avatar" :alt="user.displayName + '(' + user.login + ')'">
+								<a :href="'/' + user.login" @click.prevent="route(user.login)" :title="user.login"><img :src="user.avatar"></a>
 							</div>
-							<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">{{ user.displayName }}</p>
+							<a :href="'/' + user.login" :title="user.login" @click.prevent="route(user.login)"><p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">{{ user.displayName }}</p></a>
 							<div class="tw-flex-grow-1 tw-pd-x-2"></div>
 
 							<button v-if="user.following" class="tw-button tw-button--status tw-button--success ffz--featured-button-unfollow" @click="unfollowUser(user.id)">
 								<span class="tw-button__icon tw-button__icon--status tw-flex">
-									<figure class="ffz-i-heart"></figure>
+									<figure class="ffz-i-heart ffz--featured-button-unfollow-button"></figure>
+								</span>
+							</button>
+							<button v-if="user.following" class="tw-button-icon tw-mg-l-05 ffz--featured-button-notification" @click="updateNotificationStatus(user.id, user.disableNotifications)"
+								:title="(user.disableNotifications ? 'Enable' : 'Disable') + ' Notifications'">
+								<span class="tw-button__icon tw-flex">
+									<figure :class="{ 'ffz-i-bell': !user.disableNotifications, 'ffz-i-bell-off': user.disableNotifications }"></figure>
 								</span>
 							</button>
 							<button v-else class="tw-button" @click="followUser(user.id)">
@@ -42,10 +48,6 @@
 export default {
   	data() {
 		return this.$vnode.data;
-	},
-
-	updated() {
-		this.updatePopper();
 	}
 }
 </script>
