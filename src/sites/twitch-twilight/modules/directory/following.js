@@ -173,7 +173,7 @@ export default class Following extends SiteModule {
 				'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
 			);
 
-			if (this.router.match[1] === 'following') {
+			if (!this.router.match[1] || this.router.match[1] === 'following') {
 				this.apollo.ensureQuery(
 					'FollowedIndex_CurrentUser',
 					n =>
