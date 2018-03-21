@@ -75,8 +75,15 @@ export class LocalStorageProvider extends SettingsProvider {
 
 		this.ready = true;
 
-		this._boundHandleStorage = this.handleStorage.bind(this);
-		window.addEventListener('storage', this._boundHandleStorage);
+		if ( window.BroadcastChannel ) {
+			const bc = this._broadcaster = new BroadcastChannel('ffz-settings');
+			bc.addEventListener('message',
+				this._boundHandleMessage = this.handleMessage.bind(this));
+
+		} else {
+			window.addEventListener('storage',
+				this._boundHandleStorage = this.handleStorage.bind(this));
+		}
 	}
 
 	destroy() {
@@ -87,9 +94,46 @@ export class LocalStorageProvider extends SettingsProvider {
 	disable() {
 		this.disabled = true;
 
+		if ( this._broadcaster ) {
+			this._broadcaster.removeEventListener('message', this._boundHandleMessage);
+			this._broadcaster.close();
+			this._boundHandleMessage = this._broadcaster = null;
+		}
+
 		if ( this._boundHandleStorage ) {
 			window.removeEventListener('storage', this._boundHandleStorage);
 			this._boundHandleStorage = null;
+		}
+	}
+
+
+	broadcast(msg) {
+		if ( this._broadcaster )
+			this._broadcaster.postMessage(msg);
+	}
+
+
+	handleMessage(event) {
+		if ( this.disabled || ! event.isTrusted || ! event.data )
+			return;
+
+		this.manager.log.debug('storage broadcast event', event.data);
+		const {type, key} = event.data;
+
+		if ( type === 'set' ) {
+			const val = JSON.parse(localStorage.getItem(this.prefix + key));
+			this._cached.set(key, val);
+			this.emit('changed', key, val, false);
+
+		} else if ( type === 'delete' ) {
+			this._cached.delete(key);
+			this.emit('changed', key, undefined, true);
+
+		} else if ( type === 'clear' ) {
+			const old_keys = Array.from(this._cached.keys());
+			this._cached.clear();
+			for(const key of old_keys)
+				this.emit('changed', key, undefined, true);
 		}
 	}
 
@@ -129,11 +173,13 @@ export class LocalStorageProvider extends SettingsProvider {
 	set(key, value) {
 		this._cached.set(key, value);
 		localStorage.setItem(this.prefix + key, JSON.stringify(value));
+		this.broadcast({type: 'set', key});
 	}
 
 	delete(key) {
 		this._cached.delete(key);
 		localStorage.removeItem(this.prefix + key);
+		this.broadcast({type: 'delete', key});
 	}
 
 	has(key) {
@@ -149,6 +195,7 @@ export class LocalStorageProvider extends SettingsProvider {
 			localStorage.removeItem(this.prefix + key);
 
 		this._cached.clear();
+		this.broadcast({type: 'clear'});
 	}
 
 	entries() {
