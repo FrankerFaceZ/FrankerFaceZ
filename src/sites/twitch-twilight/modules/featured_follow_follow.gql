@@ -1,0 +1,11 @@
+mutation($targetID: ID!, $disableNotifications: Boolean!) {
+  followUser(input: {
+    disableNotifications: $disableNotifications,
+    targetID: $targetID
+  }) {
+    follow {
+      disableNotifications
+      followedAt
+    }
+  }
+}
