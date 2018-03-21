@@ -56,7 +56,18 @@ export default class SettingsMenu extends Module {
 	}
 
 	click(inst) {
-		this.emit('site.menu_button:clicked');
+		// Pop-out chat check
+		const twMinimalRoot = document.querySelector('.twilight-minimal-root');
+		if (twMinimalRoot) {
+			const win = window.open(
+				'https://twitch.tv/frankerfacez?ffz-settings',
+				'_blank',
+				'resizable=yes,scrollbars=yes,width=800,height=600'
+			);
+			win.focus();
+		} else {
+			this.emit('site.menu_button:clicked');
+		}
 		const parent = this.fine.searchParent(inst, n => n.toggleBalloonId);
 		parent && parent.handleButtonClick();
 	}

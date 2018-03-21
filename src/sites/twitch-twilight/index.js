@@ -61,6 +61,15 @@ export default class Twilight extends BaseSite {
 			rel: 'stylesheet',
 			type: 'text/css'
 		}));
+
+		// Check for ?ffz-settings in page and open the
+		// settings window in exclusive mode.
+		const params = new URL(window.location).searchParams;
+		if (params && params.has('ffz-settings')) {
+			const main_menu = this.resolve('main_menu');
+			main_menu.exclusive = true;
+			main_menu.enable();
+		}
 	}
 
 	updateContext() {
