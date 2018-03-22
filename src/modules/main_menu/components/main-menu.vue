@@ -1,5 +1,5 @@
 <template lang="html">
-<div class="ffz-main-menu tw-elevation-3 tw-c-background-alt tw-border tw-flex tw-flex-nowrap tw-flex-column" :class="{ maximized }">
+<div class="ffz-main-menu tw-elevation-3 tw-c-background-alt tw-border tw-flex tw-flex-nowrap tw-flex-column" :class="{ maximized: maximized || exclusive, exclusive }">
 	<header class="tw-c-background tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
 		<h3 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h3>
 		<div class="tw-flex-grow-1 tw-pd-x-2">
@@ -15,12 +15,12 @@
 				</div>
 			</div-->
 		</div>
-		<button class="tw-button-icon tw-mg-x-05" @click="resize">
+		<button class="tw-button-icon tw-mg-x-05" @click="resize" v-if="!exclusive">
 			<span class="tw-button-icon__icon">
 				 <figure :class="{'ffz-i-window-maximize': !maximized, 'ffz-i-window-restore': maximized}" />
 			</span>
 		</button>
-		<button class="tw-button-icon tw-mg-x-05" @click="close">
+		<button class="tw-button-icon tw-mg-x-05" @click="close" v-if="!exclusive">
 			<span class="tw-button-icon__icon">
 				<figure class="ffz-i-window-close" />
 			</span>
