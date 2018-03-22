@@ -35,6 +35,10 @@
 		}
 	}
 
+	&.exclusive {
+		z-index: 1000;
+	}
+
 	.want-ps {
 		overflow-y: auto;
 	}

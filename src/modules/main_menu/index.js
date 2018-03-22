@@ -32,6 +32,7 @@ export default class MainMenu extends Module {
 		this._menu = null;
 		this._visible = true;
 		this._maximized = false;
+		this.exclusive = false;
 
 
 		this.settings.addUI('profiles', {
@@ -529,9 +530,11 @@ export default class MainMenu extends Module {
 			nav_keys: settings.keys,
 
 			maximized: this._maximized,
-			resize: e => this.toggleSize(e),
-			close: e => this.toggleVisible(e),
-			version: window.FrankerFaceZ.version_info
+			resize: e => !this.exclusive && this.toggleSize(e),
+			close: e => !this.exclusive && this.toggleVisible(e),
+			version: window.FrankerFaceZ.version_info,
+
+			exclusive: this.exclusive
 		}
 	}
 
