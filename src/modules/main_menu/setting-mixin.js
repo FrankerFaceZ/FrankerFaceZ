@@ -1,5 +1,7 @@
 'use strict';
 
+import {deep_copy} from 'utilities/object';
+
 export default {
 	data() {
 		return {
@@ -65,7 +67,7 @@ export default {
 			if ( typeof this.item.default === 'function' )
 				return this.item.default(this.context.context);
 
-			return this.item.default;
+			return deep_copy(this.item.default);
 		},
 
 		isInherited() {
@@ -119,7 +121,7 @@ export default {
 
 			this.has_value = profile.has(setting);
 			this.value = this.has_value ?
-				profile.get(setting) :
+				deep_copy(profile.get(setting)) :
 				this.isInherited ?
 					this.source_value :
 					this.default_value;
@@ -131,7 +133,7 @@ export default {
 
 			this.has_value = deleted !== true;
 			this.value = this.has_value ?
-				value :
+				deep_copy(value) :
 				this.isInherited ?
 					this.source_value :
 					this.default_value;
@@ -141,7 +143,7 @@ export default {
 			if ( key !== this.item.setting )
 				return;
 
-			this.source_value = value;
+			this.source_value = deep_copy(value);
 			if ( this.isInherited )
 				this.value = deleted ? this.default_value : value;
 		},
@@ -150,12 +152,15 @@ export default {
 			if ( this.source )
 				this.source.off('changed', this._source_setting_changed, this);
 
+			// We primarily only care about the main source.
+			uses = uses ? uses[0] : null;
+
 			const source = this.source = this.context.profile_keys[uses],
 				setting = this.item.setting;
 
 			if ( source ) {
 				source.on('changed', this._source_setting_changed, this);
-				this.source_value = source.get(setting);
+				this.source_value = deep_copy(source.get(setting));
 
 			} else
 				this.source_value = undefined;

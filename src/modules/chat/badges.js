@@ -147,8 +147,9 @@ export default class Badges extends Module {
 		this.twitch_badges = {};
 
 		this.settings.add('chat.badges.hidden', {
-			default: [],
-			_ui: {
+			default: {},
+			type: 'object_merge',
+			ui: {
 				path: 'Chat > Badges >> tabs ~> Visibility',
 				component: 'badge-visibility',
 				data: () => {
@@ -297,7 +298,7 @@ export default class Badges extends Module {
 
 
 	render(msg, e) { // eslint-disable-line class-methods-use-this
-		const hidden_badges = this.parent.context.get('chat.badges.hidden') || [],
+		const hidden_badges = this.parent.context.get('chat.badges.hidden') || {},
 			badge_style = this.parent.context.get('chat.badges.style'),
 			custom_mod = this.parent.context.get('chat.badges.custom-mod'),
 			is_mask = badge_style > 5,
@@ -324,7 +325,7 @@ export default class Badges extends Module {
 				const version = twitch_badges[badge_id],
 					is_game = badge_id.endsWith('_1');
 
-				if ( hidden_badges.includes(badge_id) || (is_game && hidden_badges.includes('game')) )
+				if ( hidden_badges[badge_id] || (is_game && hidden_badges.game) )
 					continue;
 
 				if ( has(BADGE_POSITIONS, badge_id) )
@@ -365,7 +366,7 @@ export default class Badges extends Module {
 
 		for(const badge of badges)
 			if ( badge && badge.id ) {
-				if ( hidden_badges.includes(badge.id) )
+				if ( hidden_badges[badge.id] )
 					continue;
 
 				const full_badge = this.badges[badge.id],
