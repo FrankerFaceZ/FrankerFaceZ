@@ -1,14 +1,38 @@
 <template lang="html">
 <div class="ffz--badge-visibility tw-pd-t-05">
+	<div
+		class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1"
+		v-if="source && source !== profile"
+	>
+		<span class="ffz-i-info" />
+		{{ t('setting.badge-inheritence', 'These values are being overridden by another profile and may not take effect.') }}
+	</div>
+
+	<div class="tw-mg-b-2 tw-align-right">
+		<button
+			class="tw-mg-l-05 tw-button tw-button--hollow tw-tooltip-wrapper"
+			@click="clear"
+			:disabled="! has_value"
+		>
+			<span class="tw-button__icon tw-button__icon--left">
+				<figure class="ffz-i-cancel" />
+			</span>
+			<span class="tw-button__text">
+				{{ t('setting.reset-all', 'Reset All to Default') }}
+			</span>
+		</button>
+	</div>
+
 	<section class="ffz--menu-container tw-border-t" v-for="sec in data">
 		<header>{{ sec.title }}</header>
 		<ul class="tw-flex tw-flex-wrap tw-align-content-start">
-			<li v-for="i in sort(sec.badges)" class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex" :class="{default: isDefault}">
+			<li v-for="i in sort(sec.badges)" class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex" :class="{default: badgeDefault(i.id)}">
 				<input
 					type="checkbox"
 					class="tw-checkbox__input"
-					checked="checked"
+					:checked="badgeChecked(i.id)"
 					:id="i.id"
+					@click="onChange(i.id, $event)"
 					>
 
 				<label class="tw-checkbox__label tw-flex" :for="i.id">
@@ -18,12 +42,16 @@
 						<section class="tw-mg-t-05" v-if="i.versions && i.versions.length > 1">
 							<span v-for="v in i.versions" data-tooltip-type="html" class="ffz-badge ffz-tooltip" :title="v.name" :style="{backgroundColor: i.color, backgroundImage: v.styleImage}" />
 						</section>
-						<!--button class="tw-mg-t-05 tw-button tw-button--hollow tw-tooltip-wrapper">
+						<button
+							class="tw-mg-t-05 tw-button tw-button--hollow tw-tooltip-wrapper"
+							@click="reset(i.id)"
+							v-if="! badgeDefault(i.id)"
+							>
 							<span class="tw-button__text">Reset</span>
 							<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 								{{ t('setting.reset', 'Reset to Default') }}
 							</span>
-						</button-->
+						</button>
 					</div>
 				</label>
 			</li>
@@ -35,12 +63,38 @@
 <script>
 
 import SettingMixin from '../setting-mixin';
+import {has} from 'utilities/object';
 
 export default {
 	mixins: [SettingMixin],
 	props: ['item', 'context'],
 
 	methods: {
+		badgeChecked(id) {
+			return ! this.value[id];
+		},
+
+		badgeDefault(id) {
+			return ! has(this.value, id);
+		},
+
+		onChange(id, event) {
+			const control = event.target,
+				new_val = {[id]: ! control.checked};
+
+			this.set(Object.assign({}, this.value, new_val));
+		},
+
+		reset(id) {
+			const val = Object.assign({}, this.value);
+			delete val[id];
+
+			if ( ! Object.keys(val).length )
+				this.clear();
+			else
+				this.set(val);
+		},
+
 		sort(items) {
 			return items.sort((a, b) => {
 				const an = a.name.toLowerCase(),
@@ -50,36 +104,8 @@ export default {
 				if ( an > bn ) return 1;
 				return 0;
 			});
-		},
-
-		onChange() {
-			this.set(this.$refs.control.checked);
 		}
 	}
 }
 
 </script>
-
-<style lang="scss" scoped>
-.ffz--badge-info {
-	&.default {
-		label:before, label:after {
-			opacity: 0.5
-		}
-	}
-
-	.tw-checkbox__input:checked+.tw-checkbox__label:after,
-	label:before, label:after {
-		top: 1.05rem;
-	}
-
-	.ffz-badge.preview-image {
-		width: 7.2rem;
-		height: 7.2rem;
-		background-size: 7.2rem;
-		background-repeat: no-repeat;
-	}
-
-	width: 30rem;
-}
-</style>

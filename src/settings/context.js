@@ -7,6 +7,8 @@
 import {EventEmitter} from 'utilities/events';
 import {has, get as getter, array_equals} from 'utilities/object';
 
+import * as DEFINITIONS from './types';
+
 
 /**
  * The SettingsContext class provides a context through which to read
@@ -128,7 +130,7 @@ export default class SettingsContext extends EventEmitter {
 				this.emit(`changed:${key}`, new_value, old_value);
 			}
 
-			if ( new_uses !== old_uses ) {
+			if ( ! array_equals(new_uses, old_uses) ) {
 				this.emit('uses_changed', key, new_uses, old_uses);
 				this.emit(`uses_changed:${key}`, new_uses, old_uses);
 			}
@@ -190,7 +192,7 @@ export default class SettingsContext extends EventEmitter {
 			old_uses = old_meta ? old_meta.uses : null,
 			new_uses = new_meta ? new_meta.uses : null;
 
-		if ( old_uses !== new_uses ) {
+		if ( ! array_equals(new_uses, old_uses) ) {
 			this.emit('uses_changed', key, new_uses, old_uses);
 			this.emit(`uses_changed:${key}`, new_uses, old_uses);
 		}
@@ -216,9 +218,15 @@ export default class SettingsContext extends EventEmitter {
 		visited.push(key);
 
 		const definition = this.manager.definitions.get(key),
-			raw_value = this._getRaw(key),
+			raw_type = definition && definition.type,
+			type = raw_type ? DEFINITIONS[raw_type] : DEFINITIONS.basic;
+
+		if ( ! type )
+			throw new Error(`non-existent setting type "${raw_type}"`);
+
+		const raw_value = this._getRaw(key, type),
 			meta = {
-				uses: raw_value ? raw_value[1].id : null
+				uses: raw_value ? raw_value[1] : null
 			};
 
 		let value = raw_value ? raw_value[0] : undefined;
@@ -250,11 +258,22 @@ export default class SettingsContext extends EventEmitter {
 	}
 
 
-	_getRaw(key) {
+	*profiles() {
 		for(const profile of this.__profiles)
+			yield profile;
+	}
+
+
+	_getRaw(key, type) {
+		if ( ! type )
+			throw new Error(`non-existent `)
+
+		return type.get(key, this.profiles(), this.manager.log);
+	}
+/*		for(const profile of this.__profiles)
 			if ( profile.has(key) )
 				return [profile.get(key), profile]
-	}
+	}*/
 
 
 	// ========================================================================

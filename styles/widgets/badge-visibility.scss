@@ -1,0 +1,21 @@
+.ffz--badge-info {
+	&.default {
+		label:before, label:after {
+			opacity: 0.5
+		}
+	}
+
+	.tw-checkbox__input:checked+.tw-checkbox__label:after,
+	label:before, label:after {
+		top: 1.05rem;
+	}
+
+	.ffz-badge.preview-image {
+		width: 7.2rem;
+		height: 7.2rem;
+		background-size: 7.2rem;
+		background-repeat: no-repeat;
+	}
+
+	width: 30rem;
+}
