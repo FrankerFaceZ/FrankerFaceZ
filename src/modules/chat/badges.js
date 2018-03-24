@@ -184,16 +184,16 @@ export default class Badges extends Module {
 									provider: 'twitch',
 									name: v.title,
 									color: 'transparent',
-									image: v.image4x,
+									image: v.image2x,
 									versions: vs,
-									styleImage: `url("${v.image4x}")`
+									styleImage: `url("${v.image2x}")`
 								});
 						}
 
 					for(const key in this.badges)
 						if ( has(this.badges, key) ) {
 							const badge = this.badges[key],
-								image = badge.urls ? (badge.urls[4] || badge.urls[2] || badge.urls[1]) : badge.image;
+								image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image;
 
 							(/^addon/.test(key) ? addon : ffz).push({
 								id: key,
@@ -207,7 +207,7 @@ export default class Badges extends Module {
 
 					return [
 						{title: 'Twitch', badges: twitch},
-						{title: 'Twitch: Game', badges: game},
+						{title: 'Twitch: Game', key: 'game', badges: game},
 						{title: 'FrankerFaceZ', badges: ffz},
 						{title: 'Add-on', badges: addon}
 					];

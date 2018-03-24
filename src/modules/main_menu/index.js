@@ -8,6 +8,10 @@ import Module from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 import {has, deep_copy} from 'utilities/object';
 
+import {parse_path} from 'src/settings';
+
+const EXCLUSIVE_CONTAINER = '.twilight-main,.twilight-minimal-root>div';
+
 function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
 }
@@ -91,7 +95,7 @@ export default class MainMenu extends Module {
 
 
 	async onEnable(event) {
-		await this.site.awaitElement('.twilight-root');
+		await this.site.awaitElement(EXCLUSIVE_CONTAINER);
 
 		this.on('site.menu_button:clicked', this.toggleVisible);
 		if ( this._visible ) {
@@ -115,7 +119,7 @@ export default class MainMenu extends Module {
 
 		const maximized = this._maximized,
 			visible = this._visible = !this._visible,
-			main = document.querySelector(maximized ? '.twilight-main' : '.twilight-root > .tw-full-height');
+			main = this.exclusive ? document.querySelector(EXCLUSIVE_CONTAINER) : document.querySelector(maximized ? '.twilight-main' : '.twilight-root>.tw-full-height');
 
 		if ( ! visible ) {
 			if ( maximized )
@@ -144,7 +148,7 @@ export default class MainMenu extends Module {
 			return;
 
 		const maximized = this._maximized = !this._maximized,
-			main = document.querySelector(maximized ? '.twilight-main' : '.twilight-root > .tw-full-height'),
+			main = this.exclusive ? document.querySelector(EXCLUSIVE_CONTAINER) : document.querySelector(maximized ? '.twilight-main' : '.twilight-root>.tw-full-height'),
 			old_main = this._menu.parentElement;
 
 		if ( maximized )
@@ -350,7 +354,7 @@ export default class MainMenu extends Module {
 		for(const token of needs_component) {
 			token.component = token.tabs ? 'tab-container' :
 				token.contents ? 'menu-container' :
-				'setting-check-box';
+					'setting-check-box';
 		}
 
 		for(const list of needs_sort)
@@ -381,7 +385,7 @@ export default class MainMenu extends Module {
 	}
 
 
-	getProfileProxy(profile, context) {
+	getProfileProxy(profile, context) { // eslint-disable-line class-methods-use-this
 		return {
 			id: profile.id,
 
@@ -421,99 +425,99 @@ export default class MainMenu extends Module {
 			context = settings.main_context,
 			[profiles, profile_keys] = this.getProfiles(),
 
-		_c = {
-			profiles,
-			profile_keys,
-			currentProfile: profile_keys[0],
+			_c = {
+				profiles,
+				profile_keys,
+				currentProfile: profile_keys[0],
 
-			createProfile: data => {
-				const profile = settings.createProfile(data);
-				return t.getProfileProxy(profile, context);
-			},
-
-			deleteProfile: profile => settings.deleteProfile(profile),
-
-			context: {
-				_users: 0,
-
-				profiles: context.__profiles.map(profile => profile.id),
-				get: key => context.get(key),
-				uses: key => context.uses(key),
-
-				on: (...args) => context.on(...args),
-				off: (...args) => context.off(...args),
-
-				order: id => context.order.indexOf(id),
-				context: deep_copy(context.context),
-
-				_update_profiles(changed) {
-					const new_list = [],
-						profiles = context.manager.__profiles;
-					for(let i=0; i < profiles.length; i++) {
-						const profile = profile_keys[profiles[i].id];
-						profile.order = i;
-						new_list.push(profile);
-					}
-
-					Vue.set(_c, 'profiles', new_list);
-
-					if ( changed && changed.id === _c.currentProfile.id )
-						_c.currentProfile = profile_keys[changed.id];
+				createProfile: data => {
+					const profile = settings.createProfile(data);
+					return t.getProfileProxy(profile, context);
 				},
 
-				_profile_created(profile) {
-					Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
-					this._update_profiles()
-				},
+				deleteProfile: profile => settings.deleteProfile(profile),
 
-				_profile_changed(profile) {
-					Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
-					this._update_profiles(profile);
-				},
+				context: {
+					_users: 0,
 
-				_profile_deleted(profile) {
-					Vue.delete(profile_keys, profile.id);
-					this._update_profiles();
+					profiles: context.__profiles.map(profile => profile.id),
+					get: key => context.get(key),
+					uses: key => context.uses(key),
 
-					if ( _c.currentProfile.id === profile.id )
-						_c.currentProfile = profile_keys[0]
-				},
+					on: (...args) => context.on(...args),
+					off: (...args) => context.off(...args),
 
-				_context_changed() {
-					this.context = deep_copy(context.context);
-					const ids = this.profiles = context.__profiles.map(profile => profile.id);
-					for(const id in profiles) {
-						const profile = profiles[id];
-						profile.live = this.profiles.includes(profile.id);
-					}
-				},
+					order: id => context.order.indexOf(id),
+					context: deep_copy(context.context),
 
-				_add_user() {
-					this._users++;
-					if ( this._users === 1 ) {
-						settings.on(':profile-created', this._profile_created, this);
-						settings.on(':profile-changed', this._profile_changed, this);
-						settings.on(':profile-deleted', this._profile_deleted, this);
-						settings.on(':profiles-reordered', this._update_profiles, this);
-						context.on('context_changed', this._context_changed, this);
-						context.on('profiles_changed', this._context_changed, this);
-						this.profiles = context.__profiles.map(profile => profile.id);
-					}
-				},
+					_update_profiles(changed) {
+						const new_list = [],
+							profiles = context.manager.__profiles;
+						for(let i=0; i < profiles.length; i++) {
+							const profile = profile_keys[profiles[i].id];
+							profile.order = i;
+							new_list.push(profile);
+						}
 
-				_remove_user() {
-					this._users--;
-					if ( this._users === 0 ) {
-						settings.off(':profile-created', this._profile_created, this);
-						settings.off(':profile-changed', this._profile_changed, this);
-						settings.off(':profile-deleted', this._profile_deleted, this);
-						settings.off(':profiles-reordered', this._update_profiles, this);
-						context.off('context_changed', this._context_changed, this);
-						context.off('profiles_changed', this._context_changed, this);
+						Vue.set(_c, 'profiles', new_list);
+
+						if ( changed && changed.id === _c.currentProfile.id )
+							_c.currentProfile = profile_keys[changed.id];
+					},
+
+					_profile_created(profile) {
+						Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
+						this._update_profiles()
+					},
+
+					_profile_changed(profile) {
+						Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
+						this._update_profiles(profile);
+					},
+
+					_profile_deleted(profile) {
+						Vue.delete(profile_keys, profile.id);
+						this._update_profiles();
+
+						if ( _c.currentProfile.id === profile.id )
+							_c.currentProfile = profile_keys[0]
+					},
+
+					_context_changed() {
+						this.context = deep_copy(context.context);
+						const ids = this.profiles = context.__profiles.map(profile => profile.id);
+						for(const id of ids) {
+							const profile = profiles[id];
+							profile.live = this.profiles.includes(profile.id);
+						}
+					},
+
+					_add_user() {
+						this._users++;
+						if ( this._users === 1 ) {
+							settings.on(':profile-created', this._profile_created, this);
+							settings.on(':profile-changed', this._profile_changed, this);
+							settings.on(':profile-deleted', this._profile_deleted, this);
+							settings.on(':profiles-reordered', this._update_profiles, this);
+							context.on('context_changed', this._context_changed, this);
+							context.on('profiles_changed', this._context_changed, this);
+							this.profiles = context.__profiles.map(profile => profile.id);
+						}
+					},
+
+					_remove_user() {
+						this._users--;
+						if ( this._users === 0 ) {
+							settings.off(':profile-created', this._profile_created, this);
+							settings.off(':profile-changed', this._profile_changed, this);
+							settings.off(':profile-deleted', this._profile_deleted, this);
+							settings.off(':profiles-reordered', this._update_profiles, this);
+							context.off('context_changed', this._context_changed, this);
+							context.off('profiles_changed', this._context_changed, this);
+						}
 					}
 				}
-			}
-		};
+			};
 
 		return _c;
 	}
@@ -550,5 +554,3 @@ export default class MainMenu extends Module {
 		this._menu = this._vue.$el;
 	}
 }
-
-MainMenu.requires = ['site.menu_button'];

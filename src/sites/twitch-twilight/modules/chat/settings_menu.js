@@ -60,9 +60,9 @@ export default class SettingsMenu extends Module {
 		const twMinimalRoot = document.querySelector('.twilight-minimal-root');
 		if (twMinimalRoot) {
 			const win = window.open(
-				'https://twitch.tv/frankerfacez?ffz-settings',
+				'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
 				'_blank',
-				'resizable=yes,scrollbars=yes,width=800,height=600'
+				'resizable=yes,scrollbars=yes,width=850,height=600'
 			);
 			win.focus();
 		} else {

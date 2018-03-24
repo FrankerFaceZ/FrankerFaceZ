@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {createElement as e, ClickOutside} from 'utilities/dom';
-import {has, get, maybe_call} from 'utilities/object';
+import {maybe_call} from 'utilities/object';
 
 import {duration_to_string} from 'utilities/time';
 

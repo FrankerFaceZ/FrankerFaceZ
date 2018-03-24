@@ -45,8 +45,7 @@
 						<button
 							class="tw-mg-t-05 tw-button tw-button--hollow tw-tooltip-wrapper"
 							@click="reset(i.id)"
-							v-if="! badgeDefault(i.id)"
-							>
+						>
 							<span class="tw-button__text">Reset</span>
 							<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 								{{ t('setting.reset', 'Reset to Default') }}

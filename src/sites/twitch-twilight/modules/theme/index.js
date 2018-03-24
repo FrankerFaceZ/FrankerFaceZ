@@ -39,7 +39,8 @@ export default class ThemeEngine extends Module {
 			requires: ['context.ui.theme'],
 			process(ctx) {
 				return ctx.get('context.ui.theme') === 1;
-			}
+			},
+			changed: val => document.body.classList.toggle('tw-theme--dark', val)
 		});
 
 		this.settings.add('theme.tooltips-dark', {
@@ -78,5 +79,6 @@ export default class ThemeEngine extends Module {
 
 	onEnable() {
 		this.updateSetting(this.settings.get('theme.dark'));
+		document.body.classList.toggle('tw-theme--dark', this.settings.get('theme.is-dark'));
 	}
 }
