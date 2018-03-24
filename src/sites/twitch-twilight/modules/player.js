@@ -156,7 +156,7 @@ export default class Player extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => {
-				this.css_tweaks.toggle('player-event-bar', val);
+				this.css_tweaks.toggleHide('player-event-bar', val);
 				this.PersistentPlayer.forceUpdate();
 			}
 		});
@@ -170,7 +170,7 @@ export default class Player extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => {
-				this.css_tweaks.toggle('player-rerun-bar', val);
+				this.css_tweaks.toggleHide('player-rerun-bar', val);
 				this.PersistentPlayer.forceUpdate();
 			}
 		});
@@ -190,8 +190,8 @@ export default class Player extends Module {
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
 		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
-		this.css_tweaks.toggle('player-event-bar', this.settings.get('player.hide-event-bar'));
-		this.css_tweaks.toggle('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
+		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
+		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 		this.updateHideExtensions();
 
 		const t = this;
