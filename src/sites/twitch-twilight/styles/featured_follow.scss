@@ -9,7 +9,16 @@
 		}
 	}
 
+	.ffz--featured-follow-update {
+		animation: ffz--pulse-update 1s infinite ease-in-out alternate;
+	}
+
 	> header {
 		padding: .9rem 1rem .9rem 2rem;
 	}
+}
+
+@keyframes ffz--pulse-update {
+	from { box-shadow: none; }
+	to { box-shadow: 0 0 10px 0 var(--ffz-color-5); }
 }

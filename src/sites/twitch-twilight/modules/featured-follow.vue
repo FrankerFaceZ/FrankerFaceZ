@@ -2,6 +2,16 @@
 <div class="ffz-featured-follow tw-c-background">
 	<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
 		<h4>{{ t('metadata.featured-follow.title', 'Featured Follow') }}</h4>
+
+		<div class="tw-flex-grow-1 tw-pd-x-2"></div>
+		<button class="tw-button tw-button--hollow" @click="refresh" :class="{ 'ffz--featured-follow-update': hasUpdate, 'tw-button--disabled': !hasUpdate }">
+			<span class="tw-button__icon tw-button__icon--left">
+				<figure class="ffz-i-retweet"></figure>
+			</span>
+			<span class="tw-button__text tw-pd-l-0">
+				Refresh
+			</span>
+		</button>
 	</header>
 	<section class="tw-border-t tw-full-width tw-full-height">
 		<main class="tw-flex-grow-1 scrollable-area" data-simplebar="init">
