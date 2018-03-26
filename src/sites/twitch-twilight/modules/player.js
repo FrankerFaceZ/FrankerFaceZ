@@ -27,6 +27,11 @@ export default class Player extends Module {
 			['front-page', 'user', 'video']
 		);
 
+		this.PersistentPlayer = this.fine.define(
+			'twitch-player-persistent',
+			n => n.renderMiniControl && n.renderMiniTitle && n.handleWindowResize,
+			['front-page', 'user', 'video']
+		);
 
 		this.settings.add('player.volume-scroll', {
 			default: false,
@@ -139,7 +144,36 @@ export default class Player extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.css_tweaks.toggle('player-volume', val)
-		})
+		});
+
+		
+		this.settings.add('player.hide-event-bar', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> General',
+				title: 'Hide Event Bar',
+				description: 'Hides the event bar which indicates whether the stream has an ongoing event.',
+				component: 'setting-check-box'
+			},
+			changed: val => {
+				this.css_tweaks.toggleHide('player-event-bar', val);
+				this.PersistentPlayer.forceUpdate();
+			}
+		});
+
+		this.settings.add('player.hide-rerun-bar', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> General',
+				title: 'Hide Rerun Bar',
+				description: 'Hides the rerun bar which indicates whether the stream has a VoD playing.',
+				component: 'setting-check-box'
+			},
+			changed: val => {
+				this.css_tweaks.toggleHide('player-rerun-bar', val);
+				this.PersistentPlayer.forceUpdate();
+			}
+		});
 
 	}
 
@@ -156,6 +190,8 @@ export default class Player extends Module {
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
 		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
+		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
+		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 		this.updateHideExtensions();
 
 		const t = this;

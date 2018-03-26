@@ -20,6 +20,9 @@ const CLASSES = {
 	'player-ext': '.player .extension-overlay',
 	'player-ext-hover': '.player:not([data-controls="true"]) .extension-overlay',
 
+	'player-event-bar': '.channel-page .live-event-banner-ui__header',
+	'player-rerun-bar': '.channel-page div.tw-c-text-overlay',
+
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',
 
