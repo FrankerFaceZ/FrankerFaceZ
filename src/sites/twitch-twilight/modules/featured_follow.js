@@ -86,7 +86,6 @@ export default class FeaturedFollow extends Module {
 		this.featured_emote_sets = {};
 
 		this.socket.on(':command:follow_buttons', data => {
-			this.log.info('Follow Buttons', data);
 			for(const channel_login in data) {
 				if (!data.hasOwnProperty(channel_login)) continue;
 
