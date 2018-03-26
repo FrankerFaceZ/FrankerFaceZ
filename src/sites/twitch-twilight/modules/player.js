@@ -146,13 +146,13 @@ export default class Player extends Module {
 			changed: val => this.css_tweaks.toggle('player-volume', val)
 		});
 
-		
+
 		this.settings.add('player.hide-event-bar', {
 			default: false,
 			ui: {
 				path: 'Channel > Player >> General',
 				title: 'Hide Event Bar',
-				description: 'Hides the event bar which indicates whether the stream has an ongoing event.',
+				description: 'Hide the Event Bar which appears above the player when there is an ongoing event for the current channel.',
 				component: 'setting-check-box'
 			},
 			changed: val => {
@@ -166,7 +166,7 @@ export default class Player extends Module {
 			ui: {
 				path: 'Channel > Player >> General',
 				title: 'Hide Rerun Bar',
-				description: 'Hides the rerun bar which indicates whether the stream has a VoD playing.',
+				description: 'Hide the Rerun Bar which appears above the player when the current channel is playing a video rather than live content.',
 				component: 'setting-check-box'
 			},
 			changed: val => {
