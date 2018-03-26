@@ -393,8 +393,11 @@ export const CheerEmotes = {
 					});
 
 					if ( collect ) {
-						const pref = collect === 2 ? 'cheer' : prefix,
-							group = collected[pref] = collected[pref] || {total: 0, individuals: []};
+						let pref = collect === 2 ? 'cheer' : prefix;
+						if ( ! actions[pref] )
+							pref = prefix;
+
+						const group = collected[pref] = collected[pref] || {total: 0, individuals: []};
 
 						group.total += amount;
 						group.individuals.push([amount, tier, prefix]);
