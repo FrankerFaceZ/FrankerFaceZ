@@ -131,6 +131,12 @@ export default class ChatHook extends Module {
 			n => n.collapseCheer && n.saveRenderedMessageRef,
 			Twilight.CHAT_ROUTES
 		);
+		
+		this.TabComplete = this.fine.define(
+			'tab-complete-emotes',
+			n => n.getMatchedEmotes,
+			Twilight.CHAT_ROUTES
+		);
 
 
 		// Settings
@@ -425,6 +431,59 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.fixPinnedCheer(inst);
 		});
+
+		this.TabComplete.ready((cls, instances) => {
+			for(const inst of instances)
+				this.setupTabCompletion(inst);
+		});
+		this.TabComplete.on('mount', this.setupTabCompletion, this);
+	}
+
+	getResultsForSets(input, userID, channelID, renderEmoteSuggestion) { // eslint-disable-line
+		const search = input.substring(1),
+			results = [],
+			emoteSets = this.chat.emotes.getSets(userID, undefined, channelID);
+
+		for (const set of emoteSets) {
+			for (const i in set.emotes) {
+				if (!set.emotes.hasOwnProperty(i)) continue;
+
+				const emote = set.emotes[i];
+				if (emote.name.toLowerCase().includes(search)) {
+					results.push({
+						current: input,
+						replacement: emote.name,
+						element: renderEmoteSuggestion({
+							token: emote.name,
+							id: `${emote.token.provider}-${emote.id}`,
+							srcSet: emote.srcSet
+						})
+					});
+				}
+			}
+		}
+
+		return results;
+	}
+
+	setupTabCompletion(inst) {
+		const t = this,
+			old_matched = inst._ffz_getMatchedEmotes || inst.getMatchedEmotes;
+
+		if (!inst._ffz_getMatchedEmotes) inst._ffz_getMatchedEmotes = old_matched;
+
+		const channelInfo = this.fine.searchParent(inst, n => n.props && n.props.channelID && !n.props.roomID);
+		if (!channelInfo) return;
+
+		const channelID = channelInfo.props.channelID,
+			userID = channelInfo.props.sessionUser.id;
+
+		inst.getMatchedEmotes = function (input) {
+			const results = old_matched.call(this, input)
+				.concat(t.getResultsForSets(input, userID, channelID, inst.renderEmoteSuggestion))
+
+			return results;
+		};
 	}
 
 

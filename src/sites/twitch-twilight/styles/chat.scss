@@ -10,3 +10,20 @@
 .chat-list__lines .simplebar-scrollbar {
 	will-change: opacity;
 }
+
+.autocomplete-balloon {
+    .autocomplete-balloon__item {
+        > .tw-flex {
+            > div {
+                display: flex;
+                flex-shrink: 0;
+            }
+        }
+        
+        span {
+            overflow-x: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}
