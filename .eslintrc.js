@@ -3,9 +3,13 @@ module.exports = {
         "browser": true,
         "es6": true
     },
-    "extends": "eslint:recommended",
-    "parser": "babel-eslint",
+    "extends": [
+        "eslint:recommended",
+        "plugin:vue/recommended"
+    ],
+    "plugins": ["vue"],
     "parserOptions": {
+        "parser": "babel-eslint",
         "ecmaVersion": 8,
         "sourceType": "module"
     },
@@ -62,6 +66,7 @@ module.exports = {
         "no-useless-constructor": ["error"],
         "no-useless-rename": ["error"],
         "no-var": ["error"],
+        "no-cond-assign": ["warn"],
         "object-shorthand": ["warn"],
         "prefer-arrow-callback": ["warn", {"allowUnboundThis": true}],
         "prefer-const": ["warn", {"ignoreReadBeforeAssign": true}],
@@ -72,7 +77,7 @@ module.exports = {
         "yield-star-spacing": ["warn"],
 
         "indent": [
-            "error",
+            "warn",
             "tab",
             {
                 "SwitchCase": 1
@@ -88,6 +93,20 @@ module.exports = {
             {
                 "avoidEscape": true,
                 "allowTemplateLiterals": true
+            }
+        ],
+        "vue/html-indent": [
+            "warn",
+            "tab"
+        ],
+        "vue/max-attributes-per-line": "off",
+        "vue/require-prop-types": "off",
+        "vue/require-default-prop": "off",
+        "vue/html-closing-bracket-newline": [
+            "error",
+            {
+                "singleline": "never",
+                "multiline": "always"
             }
         ]
     }

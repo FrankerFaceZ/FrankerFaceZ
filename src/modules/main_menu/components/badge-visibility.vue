@@ -1,62 +1,84 @@
 <template lang="html">
-<div class="ffz--badge-visibility tw-pd-t-05">
-	<div
-		class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1"
-		v-if="source && source !== profile"
-	>
-		<span class="ffz-i-info" />
-		{{ t('setting.badge-inheritence', 'These values are being overridden by another profile and may not take effect.') }}
-	</div>
-
-	<div class="tw-mg-b-2 tw-align-right">
-		<button
-			class="tw-mg-l-05 tw-button tw-button--hollow tw-tooltip-wrapper"
-			@click="clear"
-			:disabled="! has_value"
+	<div class="ffz--badge-visibility tw-pd-t-05">
+		<div
+			v-if="source && source !== profile"
+			class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1"
 		>
-			<span class="tw-button__icon tw-button__icon--left">
-				<figure class="ffz-i-cancel" />
-			</span>
-			<span class="tw-button__text">
-				{{ t('setting.reset-all', 'Reset All to Default') }}
-			</span>
-		</button>
-	</div>
+			<span class="ffz-i-info" />
+			{{ t('setting.badge-inheritence', 'These values are being overridden by another profile and may not take effect.') }}
+		</div>
 
-	<section class="ffz--menu-container tw-border-t" v-for="sec in data">
-		<header>{{ sec.title }}</header>
-		<ul class="tw-flex tw-flex-wrap tw-align-content-start">
-			<li v-for="i in sort(sec.badges)" class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex" :class="{default: badgeDefault(i.id)}">
-				<input
-					type="checkbox"
-					class="tw-checkbox__input"
-					:checked="badgeChecked(i.id)"
-					:id="i.id"
-					@click="onChange(i.id, $event)"
+		<div class="tw-mg-b-2 tw-align-right">
+			<button
+				:disabled="! has_value"
+				class="tw-mg-l-05 tw-button tw-button--hollow tw-tooltip-wrapper"
+				@click="clear"
+			>
+				<span class="tw-button__icon tw-button__icon--left">
+					<figure class="ffz-i-cancel" />
+				</span>
+				<span class="tw-button__text">
+					{{ t('setting.reset-all', 'Reset All to Default') }}
+				</span>
+			</button>
+		</div>
+
+		<section
+			v-for="sec in data"
+			:key="sec.title"
+			class="ffz--menu-container tw-border-t"
+		>
+			<header>{{ sec.title }}</header>
+			<ul class="tw-flex tw-flex-wrap tw-align-content-start">
+				<li
+					v-for="i in sort(sec.badges)"
+					:key="i.id"
+					:class="{default: badgeDefault(i.id)}"
+					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex"
+				>
+					<input
+						:checked="badgeChecked(i.id)"
+						:id="i.id"
+						type="checkbox"
+						class="tw-checkbox__input"
+						@click="onChange(i.id, $event)"
 					>
 
-				<label class="tw-checkbox__label tw-flex" :for="i.id">
-					<div class="preview-image ffz-badge tw-mg-r-1 tw-flex-shrink-0" :style="{backgroundColor: i.color, backgroundImage: i.styleImage }" />
-					<div>
-						<h5>{{ i.name }}</h5>
-						<section class="tw-mg-t-05" v-if="i.versions && i.versions.length > 1">
-							<span v-for="v in i.versions" data-tooltip-type="html" class="ffz-badge ffz-tooltip" :title="v.name" :style="{backgroundColor: i.color, backgroundImage: v.styleImage}" />
-						</section>
-						<button
-							class="tw-mg-t-05 tw-button tw-button--hollow tw-tooltip-wrapper"
-							@click="reset(i.id)"
-						>
-							<span class="tw-button__text">Reset</span>
-							<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-								{{ t('setting.reset', 'Reset to Default') }}
-							</span>
-						</button>
-					</div>
-				</label>
-			</li>
-		</ul>
-	</section>
-</div>
+					<label :for="i.id" class="tw-checkbox__label tw-flex">
+						<div
+							:style="{backgroundColor: i.color, backgroundImage: i.styleImage }"
+							class="preview-image ffz-badge tw-mg-r-1 tw-flex-shrink-0"
+						/>
+						<div>
+							<h5>{{ i.name }}</h5>
+							<section
+								v-if="i.versions && i.versions.length > 1"
+								class="tw-mg-t-05"
+							>
+								<span
+									v-for="v in i.versions"
+									:key="v.name"
+									:title="v.name"
+									:style="{backgroundColor: i.color, backgroundImage: v.styleImage}"
+									data-tooltip-type="html"
+									class="ffz-badge ffz-tooltip"
+								/>
+							</section>
+							<button
+								class="tw-mg-t-05 tw-button tw-button--hollow tw-tooltip-wrapper"
+								@click="reset(i.id)"
+							>
+								<span class="tw-button__text">Reset</span>
+								<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+									{{ t('setting.reset', 'Reset to Default') }}
+								</span>
+							</button>
+						</div>
+					</label>
+				</li>
+			</ul>
+		</section>
+	</div>
 </template>
 
 <script>
