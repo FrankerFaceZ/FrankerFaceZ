@@ -437,29 +437,30 @@ export default class ChatHook extends Module {
 				this.setupTabCompletion(inst);
 		});
 		this.TabComplete.on('mount', this.setupTabCompletion, this);
+		this.TabComplete.on('unmount', inst => {
+			inst._ffz_getMatchedEmotes = null;
+			inst._ffz_channelInfo = null;
+		}, this);
 	}
 
-	getResultsForSets(input, userID, channelID, renderEmoteSuggestion) { // eslint-disable-line
-		const search = input.substring(1),
+	getResultsForSets(input, renderEmoteSuggestion) {
+		if (!this._ffz_getMatchedEmotes) return [];
+
+		const search = input.substring(1).toLowerCase(),
 			results = [],
-			emoteSets = this.chat.emotes.getSets(userID, undefined, channelID);
-
-		for (const set of emoteSets) {
-			for (const i in set.emotes) {
-				if (!set.emotes.hasOwnProperty(i)) continue;
-
-				const emote = set.emotes[i];
-				if (emote.name.toLowerCase().includes(search)) {
-					results.push({
-						current: input,
-						replacement: emote.name,
-						element: renderEmoteSuggestion({
-							token: emote.name,
-							id: `${emote.token.provider}-${emote.id}`,
-							srcSet: emote.srcSet
-						})
-					});
-				}
+			emotes = Object.values(this.chat.emotes.getEmotes(this._ffz_channelInfo.props.sessionUser.id, undefined, this._ffz_channelInfo.props.channelID));
+		
+		for (const emote of emotes) {
+			if (emote.name.toLowerCase().includes(search)) {
+				results.push({
+					current: input,
+					replacement: emote.name,
+					element: renderEmoteSuggestion({
+						token: emote.name,
+						id: `${emote.token.provider}-${emote.id}`,
+						srcSet: emote.srcSet
+					})
+				});
 			}
 		}
 
@@ -472,18 +473,29 @@ export default class ChatHook extends Module {
 
 		if (!inst._ffz_getMatchedEmotes) inst._ffz_getMatchedEmotes = old_matched;
 
-		const channelInfo = this.fine.searchParent(inst, n => n.props && n.props.channelID && !n.props.roomID);
-		if (!channelInfo) return;
+		inst._ffz_channelInfo = this.fine.searchParent(inst, n => n.props && n.props.channelID && !n.props.roomID);
+		if (!inst._ffz_channelInfo) return;
 
-		const channelID = channelInfo.props.channelID,
-			userID = channelInfo.props.sessionUser.id;
+		this.log.info(inst);
 
 		inst.getMatchedEmotes = function (input) {
 			const results = old_matched.call(this, input)
-				.concat(t.getResultsForSets(input, userID, channelID, inst.renderEmoteSuggestion))
+				.concat(t.getResultsForSets(input, inst.renderEmoteSuggestion))
 
 			return results;
 		};
+
+		inst.doesEmoteMatchTerm = function (emote, term) {
+			const emote_lower = emote.token.toLowerCase(),
+				term_lower = term.toLowerCase();
+
+			if (emote_lower.startsWith(term_lower))
+				return true;
+
+			const idx = emote.token.indexOf(term.charAt(0).toUpperCase());
+			if (idx !== -1)
+				return emote_lower.slice(idx + 1).startsWith(term_lower.slice(1));
+		}
 	}
 
 
