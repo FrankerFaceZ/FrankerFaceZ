@@ -21,7 +21,7 @@ const CLASSES = {
 	'player-ext-hover': '.player:not([data-controls="true"]) .extension-overlay',
 
 	'player-event-bar': '.channel-page .live-event-banner-ui__header',
-	'player-rerun-bar': '.channel-page div.tw-c-text-overlay',
+	'player-rerun-bar': '.channel-page div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',
