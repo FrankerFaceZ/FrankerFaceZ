@@ -131,7 +131,7 @@ export default class ChatHook extends Module {
 			n => n.collapseCheer && n.saveRenderedMessageRef,
 			Twilight.CHAT_ROUTES
 		);
-		
+
 		this.TabComplete = this.fine.define(
 			'tab-complete-emotes',
 			n => n.getMatchedEmotes,
@@ -235,6 +235,15 @@ export default class ChatHook extends Module {
 					{value: 3, title: '3D Line (2px Groove Inset)'},
 					{value: 4, title: 'Wide Line (2px Solid)'}
 				]
+			}
+		});
+
+		this.settings.add('chat.tab-complete.ffz-emotes', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Allow tab-completion of FrankerFaceZ emotes.',
+				component: 'setting-check-box'
 			}
 		});
 	}
@@ -443,13 +452,14 @@ export default class ChatHook extends Module {
 		}, this);
 	}
 
+
 	getResultsForSets(input, inst) {
 		if (!inst._ffz_channelInfo) return [];
 
 		const search = input.substring(1),
 			results = [],
 			emotes = Object.values(this.chat.emotes.getEmotes(inst._ffz_channelInfo.props.sessionUser.id, undefined, inst._ffz_channelInfo.props.channelID));
-		
+
 		for (const emote of emotes) {
 			if (inst.doesEmoteMatchTerm(emote, search)) {
 				results.push({
@@ -467,18 +477,21 @@ export default class ChatHook extends Module {
 		return results;
 	}
 
+
 	setupTabCompletion(inst) {
 		const t = this,
 			old_matched = inst._ffz_getMatchedEmotes || inst.getMatchedEmotes;
 
 		if (!inst._ffz_getMatchedEmotes) inst._ffz_getMatchedEmotes = old_matched;
 
-		inst._ffz_channelInfo = this.fine.searchParent(inst, n => n.props !== undefined
+		inst._ffz_channelInfo = this.fine.searchParent(inst, n => n.props
 			&& n.props.channelID !== undefined
-			&& !n.props.roomID
+			&& n.props.roomID === undefined
 		);
-		if (!inst._ffz_channelInfo) return;
-		
+
+		if ( ! inst._ffz_channelInfo )
+			return;
+
 		inst.doesEmoteMatchTerm = function (emote, term) {
 			const emote_name = emote.name || emote.token,
 				emote_lower = emote_name.toLowerCase(),
@@ -493,10 +506,11 @@ export default class ChatHook extends Module {
 		};
 
 		inst.getMatchedEmotes = function (input) {
-			const results = old_matched.call(this, input)
-				.concat(t.getResultsForSets(input, this))
+			const results = old_matched.call(this, input);
+			if ( ! t.chat.context.get('chat.tab-complete.ffz-emotes') )
+				return results;
 
-			return results;
+			return results.concat(t.getResultsForSets(input, this));
 		};
 	}
 

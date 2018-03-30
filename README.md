@@ -43,7 +43,7 @@ configure linting support for your editor as well.
 If you're using Visual Studio Code, make sure to install the ESLint extension
 and add the following to your workspace settings:
 
-```json
+```
 {
 	"eslint.validate": [
 		"javascript",
