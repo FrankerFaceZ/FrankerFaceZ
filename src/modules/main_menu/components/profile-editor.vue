@@ -1,83 +1,81 @@
 <template lang="html">
-<div class="ffz--profile-editor">
-	<div class="tw-flex tw-align-items-center tw-border-t tw-pd-1">
-		<div class="tw-flex-grow-1"></div>
-		<button
-			class="tw-button tw-button--text"
-			@click="save"
-		>
-			<span class="tw-button__text ffz-i-floppy">
-				{{ t('settings.profiles.save', 'Save') }}
-			</span>
-		</button>
-		<button
-			class="tw-mg-l-1 tw-button tw-button--text"
-			:disabled="item.profile && context.profiles.length < 2"
-			@click="del"
-		>
-			<span class="tw-button__text ffz-i-trash">
-				{{ t('setting.profiles.delete', 'Delete') }}
-			</span>
-		</button>
-		<!--button class="tw-mg-l-1 tw-button tw-button--text">
-			<span class="tw-button__text ffz-i-download">
-				{{ t('setting.profiles.export', 'Export') }}
-			</span>
-		</button-->
-	</div>
-
-	<div class="ffz--menu-container tw-border-t">
-		<header>
-			{{ t('settings.data_management.profiles.edit.general', 'General') }}
-		</header>
-
-		<div class="ffz--widget tw-flex tw-flex-nowrap">
-			<label for="ffz:editor:name">
-				{{ t('settings.data_management.profiles.edit.name', 'Name') }}
-			</label>
-
-			<input
-				class="tw-input"
-				ref="name"
-				id="ffz:editor:name"
-				v-model="name"
-				/>
+	<div class="ffz--profile-editor">
+		<div class="tw-flex tw-align-items-center tw-border-t tw-pd-1">
+			<div class="tw-flex-grow-1" />
+			<button
+				class="tw-button tw-button--text"
+				@click="save"
+			>
+				<span class="tw-button__text ffz-i-floppy">
+					{{ t('settings.profiles.save', 'Save') }}
+				</span>
+			</button>
+			<button
+				:disabled="item.profile && context.profiles.length < 2"
+				class="tw-mg-l-1 tw-button tw-button--text"
+				@click="del"
+			>
+				<span class="tw-button__text ffz-i-trash">
+					{{ t('setting.profiles.delete', 'Delete') }}
+				</span>
+			</button>
+			<!--button class="tw-mg-l-1 tw-button tw-button--text">
+				<span class="tw-button__text ffz-i-download">
+					{{ t('setting.profiles.export', 'Export') }}
+				</span>
+			</button-->
 		</div>
 
-		<div class="ffz--widget tw-flex tw-flex-nowrap">
-			<label for="ffz:editor:description">
-				{{ t('settings.data_management.profiles.edit.desc', 'Description') }}
-			</label>
+		<div class="ffz--menu-container tw-border-t">
+			<header>
+				{{ t('settings.data_management.profiles.edit.general', 'General') }}
+			</header>
 
-			<textarea
-				class="tw-input"
-				ref="desc"
-				id="ffz:editor:description"
-				v-model="desc"
+			<div class="ffz--widget tw-flex tw-flex-nowrap">
+				<label for="ffz:editor:name">
+					{{ t('settings.data_management.profiles.edit.name', 'Name') }}
+				</label>
+
+				<input
+					id="ffz:editor:name"
+					ref="name"
+					v-model="name"
+					class="tw-input"
+				>
+			</div>
+
+			<div class="ffz--widget tw-flex tw-flex-nowrap">
+				<label for="ffz:editor:description">
+					{{ t('settings.data_management.profiles.edit.desc', 'Description') }}
+				</label>
+
+				<textarea
+					id="ffz:editor:description"
+					ref="desc"
+					v-model="desc"
+					class="tw-input"
 				/>
+			</div>
 		</div>
-	</div>
 
-	<div class="ffz--menu-container tw-border-t">
-		<header>
-			{{ t('settings.data_management.profiles.edit.rules', 'Rules') }}
-		</header>
-		<section class="tw-pd-b-1">
-			{{ t(
-				'settings.data_management.profiles.edit.rules.description',
-				'Rules allows you to define a series of conditions under which this profile will be active.'
-				) }}
-		</section>
+		<div class="ffz--menu-container tw-border-t">
+			<header>
+				{{ t('settings.data_management.profiles.edit.rules', 'Rules') }}
+			</header>
+			<section class="tw-pd-b-1">
+				{{ t('settings.data_management.profiles.edit.rules.description',
+					'Rules allows you to define a series of conditions under which this profile will be active.')
+				}}
+			</section>
 
-		<filter-editor
-			:filters="filters"
-			:rules="rules"
-			:context="test_context"
-			@change="unsaved = true"
+			<filter-editor
+				:filters="filters"
+				:rules="rules"
+				:context="test_context"
+				@change="unsaved = true"
 			/>
-
+		</div>
 	</div>
-</div>
 </template>
 
 <script>
@@ -100,17 +98,6 @@ export default {
 		}
 	},
 
-	created() {
-		this.context.context.on('context_changed', this.updateContext, this);
-		this.updateContext();
-		this.revert();
-	},
-
-	beforeDestroy() {
-		this.context.context.off('context_changed', this.updateContext, this);
-	},
-
-
 	watch: {
 		name() {
 			if ( this.name !== this.old_name )
@@ -123,6 +110,16 @@ export default {
 		}
 	},
 
+	created() {
+		this.context.context.on('context_changed', this.updateContext, this);
+		this.updateContext();
+		this.revert();
+	},
+
+	beforeDestroy() {
+		this.context.context.off('context_changed', this.updateContext, this);
+	},
+
 	methods: {
 		revert() {
 			const profile = this.item.profile;
@@ -131,7 +128,7 @@ export default {
 				profile.i18n_key ?
 					this.t(profile.i18n_key, profile.title, profile) :
 					profile.title :
-				'Unnamed Profile',
+				'Unnamed Profile';
 
 			this.old_desc = this.desc = profile ?
 				profile.desc_i18n_key ?

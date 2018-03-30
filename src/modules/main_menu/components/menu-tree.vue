@@ -1,53 +1,52 @@
 <template lang="html">
-<ul
-	v-if="modal"
-	class="ffz--menu-tree"
-	:role="[root ? 'group' : 'tree']"
-	:tabindex="tabIndex"
-	@keyup.up="prevItem"
-	@keyup.down="nextItem"
-	@keyup.left="prevLevel"
-	@keyup.right="nextLevel"
-	@keyup.*="expandAll"
->
-	<li
-		v-for="item in modal"
-		:key="item.full_key"
-		:class="[currentItem === item ? 'active' : '']"
-		role="presentation"
+	<ul
+		v-if="modal"
+		:role="[root ? 'group' : 'tree']"
+		:tabindex="tabIndex"
+		class="ffz--menu-tree"
+		@keyup.up="prevItem"
+		@keyup.down="nextItem"
+		@keyup.left="prevLevel"
+		@keyup.right="nextLevel"
+		@keyup.*="expandAll"
 	>
-		<div
-			class="tw-flex__item tw-flex tw-flex-nowrap tw-align-items-center tw-pd-y-05 tw-pd-r-05"
-
-			role="treeitem"
-			:aria-expanded="item.expanded"
-			:aria-selected="currentItem === item"
-			@click="clickItem(item)"
+		<li
+			v-for="item in modal"
+			:key="item.full_key"
+			:class="[currentItem === item ? 'active' : '']"
+			role="presentation"
 		>
-			<span
-				role="presentation"
-				class="arrow"
-				:class="[
-					item.items ? '' : 'ffz--invisible',
-					item.expanded ? 'ffz-i-down-dir' : 'ffz-i-right-dir'
-				]"
+			<div
+				:aria-expanded="item.expanded"
+				:aria-selected="currentItem === item"
+				class="tw-flex__item tw-flex tw-flex-nowrap tw-align-items-center tw-pd-y-05 tw-pd-r-05"
+				role="treeitem"
+				@click="clickItem(item)"
+			>
+				<span
+					:class="[
+						item.items ? '' : 'ffz--invisible',
+						item.expanded ? 'ffz-i-down-dir' : 'ffz-i-right-dir'
+					]"
+					role="presentation"
+					class="arrow"
+				/>
+				<span class="tw-flex-grow-1">
+					{{ t(item.i18n_key, item.title, item) }}
+				</span>
+				<span v-if="item.pill" class="pill">
+					{{ item.pill_i18n_key ? t(item.pill_i18n_key, item.pill, item) : item.pill }}
+				</span>
+			</div>
+			<menu-tree
+				v-if="item.items && item.expanded"
+				:root="item"
+				:current-item="currentItem"
+				:modal="item.items"
+				@change-item="i => $emit('change-item', i)"
 			/>
-			<span class="tw-flex-grow-1">
-				{{ t(item.i18n_key, item.title, item) }}
-			</span>
-			<span v-if="item.pill" class="pill">
-				{{ item.pill_i18n_key ? t(item.pill_i18n_key, item.pill, item) : item.pill }}
-			</span>
-		</div>
-		<menu-tree
-			:root="item"
-			:currentItem="currentItem"
-			:modal="item.items"
-			v-if="item.items && item.expanded"
-			@change-item="i => $emit('change-item', i)"
-		/>
-	</li>
-</ul>
+		</li>
+	</ul>
 </template>
 
 <script>
@@ -120,7 +119,7 @@ export default {
 				this.$emit('change-item', i.parent);
 		},
 
-		nextItem(e) {
+		nextItem() {
 			if ( this.root ) return;
 
 			const i = this.currentItem;

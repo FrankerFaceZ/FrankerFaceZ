@@ -1,58 +1,59 @@
 <template lang="html">
-<div
-	v-if="item.tabs"
-	class="ffz--tab-container"
-	@keyup.alt.page-up.stop="focusPrevTab"
-	@keyup.alt.page-down.stop="focusNextTab"
->
-	<header
-		class="tw-flex"
-		tabindex="0"
-		role="tablist"
-		@keyup.home="firstTab"
-		@keyup.end="lastTab"
-		@keyup.page-up="prevTab"
-		@keyup.up="prevTab"
-		@keyup.left="prevTab"
-		@keyup.page-down="nextTab"
-		@keyup.right="nextTab"
-		@keyup.down="nextTab"
+	<div
+		v-if="item.tabs"
+		class="ffz--tab-container"
+		@keyup.alt.page-up.stop="focusPrevTab"
+		@keyup.alt.page-down.stop="focusNextTab"
 	>
-		<div
-			v-for="(i, idx) in item.tabs"
-			role="tab"
-			:id="'tab-for-' + i.full_key"
-			:aria-selected="selected === idx"
-			:aria-controls="'tab-panel-' + i.full_key"
-			class="tab tw-pd-y-05 tw-pd-x-1"
-			:class="[selected === idx ? 'active' : '']"
-			@click="selected = idx"
+		<header
+			class="tw-flex"
+			tabindex="0"
+			role="tablist"
+			@keyup.home="firstTab"
+			@keyup.end="lastTab"
+			@keyup.page-up="prevTab"
+			@keyup.up="prevTab"
+			@keyup.left="prevTab"
+			@keyup.page-down="nextTab"
+			@keyup.right="nextTab"
+			@keyup.down="nextTab"
 		>
-			{{ t(i.i18n_key, i.title, i) }}
-		</div>
-	</header>
-	<section
-		class="tw-border"
-		:id="'tab-panel-' + tab.full_key"
-		:aria-labelledby="'tab-for-' + tab.full_key"
-		role="tabpanel"
-		aria-hidden="false"
-		aria-expanded="true"
-	>
-		<section v-if="tab.description" class="tw-pd-b-1">
-			{{ t(tab.desc_i18n_key, tab.description, tab) }}
-		</section>
-		<component
-			v-for="i in tab.contents"
-			v-bind:is="i.component"
-			:currentProfile="currentProfile"
-			:profiles="profiles"
-			:context="context"
-			:item="i"
-			:key="i.full_key"
+			<div
+				v-for="(i, idx) in item.tabs"
+				:key="i.full_key"
+				:id="'tab-for-' + i.full_key"
+				:aria-selected="selected === idx"
+				:aria-controls="'tab-panel-' + i.full_key"
+				:class="[selected === idx ? 'active' : '']"
+				role="tab"
+				class="tab tw-pd-y-05 tw-pd-x-1"
+				@click="selected = idx"
+			>
+				{{ t(i.i18n_key, i.title, i) }}
+			</div>
+		</header>
+		<section
+			:id="'tab-panel-' + tab.full_key"
+			:aria-labelledby="'tab-for-' + tab.full_key"
+			class="tw-border"
+			role="tabpanel"
+			aria-hidden="false"
+			aria-expanded="true"
+		>
+			<section v-if="tab.description" class="tw-pd-b-1">
+				{{ t(tab.desc_i18n_key, tab.description, tab) }}
+			</section>
+			<component
+				v-for="i in tab.contents"
+				:is="i.component"
+				:current-profile="currentProfile"
+				:profiles="profiles"
+				:context="context"
+				:item="i"
+				:key="i.full_key"
 			/>
-	</section>
-</div>
+		</section>
+	</div>
 </template>
 
 <script>

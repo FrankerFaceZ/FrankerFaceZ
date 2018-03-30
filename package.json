@@ -6,6 +6,7 @@
   "main": "script.js",
   "scripts": {
     "start": "webpack-dev-server --config webpack.web.dev.js",
+    "eslint": "eslint \"src/**/*.{js,vue}\"",
     "build": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production'",
     "build:babel": "webpack --config webpack.web.babel.js --define process.env.NODE_ENV='production'",
     "build:prod": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production'",
@@ -22,6 +23,7 @@
     "copy-webpack-plugin": "^4.5.1",
     "css-loader": "^0.28.10",
     "eslint": "^4.18.2",
+    "eslint-plugin-vue": "^4.4.0",
     "extract-loader": "^1.0.2",
     "file-loader": "^1.1.11",
     "less": "^2.7.3",
