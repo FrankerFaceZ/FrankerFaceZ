@@ -1,79 +1,84 @@
 <template lang="html">
-<div class="ffz--widget ffz--profile-selector">
-	<div
-		tabindex="0"
-		class="tw-select"
-		:class="{active: opened}"
-		ref="button"
-		@keyup.up.stop.prevent="focusShow"
-		@keyup.left.stop.prevent="focusShow"
-		@keyup.down.stop.prevent="focusShow"
-		@keyup.right.stop.prevent="focusShow"
-		@keyup.enter="focusShow"
-		@keyup.space="focusShow"
-		@click="togglePopup"
-	>
-		{{ t(context.currentProfile.i18n_key, context.currentProfile.title, context.currentProfile) }}
-	</div>
-	<div v-if="opened" v-on-clickaway="hide" class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left">
+	<div class="ffz--widget ffz--profile-selector">
 		<div
-			class="ffz--profile-list tw-elevation-2 tw-c-background-alt"
-			@keyup.escape="focusHide"
-			@focusin="focus"
-			@focusout="blur"
+			ref="button"
+			:class="{active: opened}"
+			tabindex="0"
+			class="tw-select"
+			@keyup.up.stop.prevent="focusShow"
+			@keyup.left.stop.prevent="focusShow"
+			@keyup.down.stop.prevent="focusShow"
+			@keyup.right.stop.prevent="focusShow"
+			@keyup.enter="focusShow"
+			@keyup.space="focusShow"
+			@click="togglePopup"
 		>
-			<div class="scrollable-area tw-border-b" data-simplebar>
-				<div class="simplebar-scroll-content">
-					<div class="simplebar-content" ref="popup">
-						<div
-							v-for="(p, idx) in context.profiles"
-							tabindex="0"
-							class="ffz--profile-row tw-relative tw-border-b tw-pd-y-05 tw-pd-r-3 tw-pd-l-1"
-							:class="{
-								live: p.live,
-								current: p === context.currentProfile
-							}"
-							@keydown.up.stop.prevent=""
-							@keydown.down.stop.prevent=""
-							@keydown.page-up.stop.prevent=""
-							@keydown.page-down.stop.prevent=""
-							@keyup.up.stop="prevItem"
-							@keyup.down.stop="nextItem"
-							@keyup.home="firstItem"
-							@keyup.end="lastItem"
-							@keyup.page-up.stop="prevPage"
-							@keyup.page-down.stop="nextPage"
-							@keyup.enter="changeProfile(p)"
-							@click="changeProfile(p)"
-						>
+			{{ t(context.currentProfile.i18n_key, context.currentProfile.title, context.currentProfile) }}
+		</div>
+		<div
+			v-on-clickaway="hide"
+			v-if="opened"
+			class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left"
+		>
+			<div
+				class="ffz--profile-list tw-elevation-2 tw-c-background-alt"
+				@keyup.escape="focusHide"
+				@focusin="focus"
+				@focusout="blur"
+			>
+				<div class="scrollable-area tw-border-b" data-simplebar>
+					<div class="simplebar-scroll-content">
+						<div ref="popup" class="simplebar-content">
 							<div
-								v-if="p.live"
-								class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok tw-absolute"
+								v-for="p in context.profiles"
+								:key="p.id"
+								:class="{
+									live: p.live,
+									current: p === context.currentProfile
+								}"
+								tabindex="0"
+								class="ffz--profile-row tw-relative tw-border-b tw-pd-y-05 tw-pd-r-3 tw-pd-l-1"
+								@keydown.up.stop.prevent=""
+								@keydown.down.stop.prevent=""
+								@keydown.page-up.stop.prevent=""
+								@keydown.page-down.stop.prevent=""
+								@keyup.up.stop="prevItem"
+								@keyup.down.stop="nextItem"
+								@keyup.home="firstItem"
+								@keyup.end="lastItem"
+								@keyup.page-up.stop="prevPage"
+								@keyup.page-down.stop="nextPage"
+								@keyup.enter="changeProfile(p)"
+								@click="changeProfile(p)"
 							>
-								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-									{{ t('setting.profiles.active', 'This profile is active.') }}
+								<div
+									v-if="p.live"
+									class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok tw-absolute"
+								>
+									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+										{{ t('setting.profiles.active', 'This profile is active.') }}
+									</div>
 								</div>
-							</div>
 
 
-							<h4>{{ t(p.i18n_key, p.title, p) }}</h4>
-							<div v-if="p.description" class="description">
-								{{ t(p.desc_i18n_key, p.description, p) }}
+								<h4>{{ t(p.i18n_key, p.title, p) }}</h4>
+								<div v-if="p.description" class="description">
+									{{ t(p.desc_i18n_key, p.description, p) }}
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div class="tw-pd-y-05 tw-pd-x-05 tw-align-right">
-				<button class="tw-button tw-button--text" @click="openConfigure">
-					<span class="tw-button__text ffz-i-cog">
-						{{ t('setting.profiles.configure', 'Configure') }}
-					</span>
-				</button>
+				<div class="tw-pd-y-05 tw-pd-x-05 tw-align-right">
+					<button class="tw-button tw-button--text" @click="openConfigure">
+						<span class="tw-button__text ffz-i-cog">
+							{{ t('setting.profiles.configure', 'Configure') }}
+						</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
-</div>
 </template>
 
 <script>

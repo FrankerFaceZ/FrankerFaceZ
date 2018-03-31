@@ -1,12 +1,11 @@
 <template lang="html">
-<div class="ffz--changelog tw-border-t tw-pd-t-1">
-	<div class="tw-align-center">
-		<h2>{{ t('home.changelog', 'Changelog') }}</h2>
+	<div class="ffz--changelog tw-border-t tw-pd-t-1">
+		<div class="tw-align-center">
+			<h2>{{ t('home.changelog', 'Changelog') }}</h2>
+		</div>
+
+		<div ref="changes" />
 	</div>
-
-	<div ref="changes" />
-
-</div>
 </template>
 
 
@@ -16,6 +15,10 @@ import {SERVER} from 'utilities/constants';
 
 export default {
 	props: ['item', 'context'],
+
+	mounted() {
+		this.fetch(`${SERVER}/script/changelog.html`, this.$refs.changes);
+	},
 
 	methods: {
 		fetch(url, container) {
@@ -38,13 +41,8 @@ export default {
 			fetch(url)
 				.then(resp => resp.ok ? resp.text() : null)
 				.then(done)
-				.catch(err => done(null));
+				.catch(() => done(null));
 		}
-	},
-
-	mounted() {
-		this.fetch(`${SERVER}/script/changelog.html`, this.$refs.changes);
 	}
-
 }
 </script>

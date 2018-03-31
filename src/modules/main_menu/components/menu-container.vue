@@ -1,21 +1,21 @@
 <template lang="html">
-<div v-bind:class="classes" v-if="item.contents">
-	<header v-if="! item.no_header">
-		{{ t(item.i18n_key, item.title, item) }}
-	</header>
-	<section
-		v-if="item.description"
-		v-html="t(item.desc_i18n_key, item.description, item)"
-		class="tw-pd-b-1"
+	<div v-if="item.contents" :class="classes">
+		<header v-if="! item.no_header">
+			{{ t(item.i18n_key, item.title, item) }}
+		</header>
+		<section
+			v-if="item.description"
+			class="tw-pd-b-1"
+			v-html="t(item.desc_i18n_key, item.description, item)"
 		/>
-	<component
-		v-for="i in item.contents"
-		v-bind:is="i.component"
-		:context="context"
-		:item="i"
-		:key="i.full_key"
+		<component
+			v-for="i in item.contents"
+			:is="i.component"
+			:context="context"
+			:item="i"
+			:key="i.full_key"
 		/>
-</div>
+	</div>
 </template>
 
 <script>

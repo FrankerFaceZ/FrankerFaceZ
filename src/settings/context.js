@@ -241,6 +241,9 @@ export default class SettingsContext extends EventEmitter {
 					value = def_default(this);
 				else
 					value = def_default;
+
+				if ( type.default )
+					value = type.default(value);
 			}
 
 			if ( definition.requires )
