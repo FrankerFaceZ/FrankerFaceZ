@@ -521,7 +521,9 @@ export class Module extends EventEmitter {
 		for(const raw_path of ctx.keys()) {
 			const raw_module = ctx(raw_path),
 				module = raw_module.module || raw_module.default,
-				name = raw_path.slice(2, raw_path.length - (raw_path.endsWith('/index.js') ? 9 : 3));
+				name = raw_path.slice(2, raw_path.length - (raw_path.endsWith('/index.jsx') ? 10 : raw_path.endsWith('/index.js') ? 9 : raw_path.endsWith('.jsx') ? 4 : 3));
+
+			// TODO: rewrite the name code to not have like 4 endsWith in it.
 
 			try {
 				added[name] = this.register(name, module);

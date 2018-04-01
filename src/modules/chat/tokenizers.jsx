@@ -4,7 +4,7 @@
 // Default Tokenizers
 // ============================================================================
 
-import {sanitize, createElement as e} from 'utilities/dom';
+import {sanitize, createElement} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
 
 const EMOTE_CLASS = 'chat-line__message--emote',
@@ -40,17 +40,16 @@ export const Links = {
 	type: 'link',
 	priority: 50,
 
-	render(token, e) {
-		return e('a', {
-			className: 'ffz-tooltip',
-			'data-tooltip-type': 'link',
-			'data-url': token.url,
-			'data-is-mail': token.is_mail,
-
-			rel: 'noopener',
-			target: '_blank',
-			href: token.url
-		}, token.text);
+	render(token, createElement) {
+		return (<a
+			class="ffz-tooltip"
+			data-tooltip-type="link"
+			data-url={token.url}
+			data-is-mail={token.is_mail}
+			rel="noopener noreferrer"
+			target="_blank"
+			href={token.url}
+		>{token.text}</a>);
 	},
 
 	tooltip(target, tip) {
@@ -209,10 +208,10 @@ export const Mentions = {
 	type: 'mention',
 	priority: 40,
 
-	render(token, e) {
-		return e('strong', {
-			className: `chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`
-		}, `${token.text}`);
+	render(token, createElement) {
+		return (<strong class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}>
+			{token.text}
+		</strong>);
 	},
 
 	process(tokens, msg, user) {
@@ -279,16 +278,16 @@ export const Mentions = {
 export const CheerEmotes = {
 	type: 'cheer',
 
-	render(token, e) {
-		return e('span', {
-			className: `ffz-cheer ffz-tooltip`,
-			'data-tooltip-type': 'cheer',
-			'data-prefix': token.prefix,
-			'data-amount': this.i18n.formatNumber(token.amount),
-			'data-tier': token.tier,
-			'data-individuals': token.individuals ? JSON.stringify(token.individuals) : 'null',
-			alt: token.text
-		});
+	render(token, createElement) {
+		return (<span
+			class="ffz-cheer ffz-tooltip"
+			data-tooltip-type="cheer"
+			data-prefix={token.prefix}
+			data-amount={this.i18n.formatNumber(token.amount)}
+			data-tier={token.tier}
+			data-individuals={JSON.stringify(token.individuals || null)}
+			alt={token.text}
+		/>);
 	},
 
 	tooltip(target) {
@@ -300,16 +299,16 @@ export const CheerEmotes = {
 			length = individuals && individuals.length;
 
 		const out = [
-			this.context.get('tooltip.emote-images') && e('div', {
-				className: 'preview-image ffz-cheer-preview',
-				'data-prefix': prefix,
-				'data-tier': tier
-			}),
+			this.context.get('tooltip.emote-images') && (<div
+				class="preview-image ffz-cheer-preview"
+				data-prefix={prefix}
+				data-tier={tier}
+			/>),
 			this.i18n.t('tooltip.bits', '%{count|number} Bits', amount),
 		];
 
 		if ( length > 1 ) {
-			out.push(e('br'));
+			out.push(<br />);
 
 			individuals.sort(i => -i[0]);
 
@@ -319,11 +318,11 @@ export const CheerEmotes = {
 					amount,
 					prefix,
 					tier
-				}, e));
+				}, createElement));
 			}
 
 			if ( length > 12 ) {
-				out.push(e('br'));
+				out.push(<br />);
 				out.push(this.i18n.t('tooltip.bits.more', '(and %{count} more)', length-12));
 			}
 		}
@@ -448,33 +447,33 @@ export const CheerEmotes = {
 export const AddonEmotes = {
 	type: 'emote',
 
-	render(token, e) {
+	render(token, createElement) {
 		const mods = token.modifiers || [], ml = mods.length,
-			emote = e('img', {
-				className: `${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : ''}`,
-				src: token.src,
-				srcSet: token.srcSet,
-				alt: token.text,
-				'data-tooltip-type': 'emote',
-				'data-provider': token.provider,
-				'data-id': token.id,
-				'data-set': token.set,
-				'data-modifiers': ml ? mods.map(x => x.id).join(' ') : null,
-				'data-modifier-info': ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null
-			});
+			emote = (<img
+				class={`${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : ''}`}
+				src={token.src}
+				srcSet={token.srcSet}
+				alt={token.text}
+				data-tooltip-type="emote"
+				data-provider={token.provider}
+				data-id={token.id}
+				data-set={token.set}
+				data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
+				data-modifier-info={ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null}
+			/>);
 
 		if ( ! ml )
 			return emote;
 
-		return e('span', {
-			className: `${EMOTE_CLASS} modified-emote`,
-			'data-provider': token.provider,
-			'data-id': token.id,
-			'data-set': token.set
-		}, [
-			emote,
-			mods.map(t => e('span', null, this.tokenizers.emote.render(t, e)))
-		]);
+		return (<span
+			class={`${EMOTE_CLASS} modified-emote`}
+			data-provider={token.provider}
+			data-id={token.id}
+			data-set={token.set}
+		>
+			{emote}
+			{mods.map(t => <span>{this.tokenizers.emote.render(t, createElement)}</span>)}
+		</span>);
 	},
 
 	tooltip(target, tip) {
@@ -489,10 +488,10 @@ export const AddonEmotes = {
 					emote = emote_set && emote_set.emotes[emote_id];
 
 				if ( emote )
-					return e('span', null, [
-						this.tokenizers.emote.render(emote.token, e),
-						` - ${emote.hidden ? '???' : emote.name}`
-					]);
+					return (<span>
+						{this.tokenizers.emote.render(emote.token, createElement)}
+						{` - ${emote.hidden ? '???' : emote.name}`}
+					</span>);
 			})
 		}
 
@@ -540,25 +539,23 @@ export const AddonEmotes = {
 		}
 
 		return [
-			preview && this.context.get('tooltip.emote-images') && e('img', {
-				className: 'preview-image',
-				src: preview,
-				onLoad: tip.update
-			}),
+			preview && this.context.get('tooltip.emote-images') && (<img
+				class="preview-image"
+				src={preview}
+				onLoad={tip.update}
+			/>),
 
 			this.i18n.t('tooltip.emote', 'Emote: %{code}', {code: target.alt}),
 
-			source && this.context.get('tooltip.emote-sources') && e('div', {
-				className: 'pd-t-05',
-			}, source),
+			source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
+				{source}
+			</div>),
 
-			owner && this.context.get('tooltip.emote-sources') && e('div', {
-				className: 'pd-t-05'
-			}, owner),
+			owner && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
+				{owner}
+			</div>),
 
-			mods && e('div', {
-				className: 'pd-t-1'
-			}, mods)
+			mods && (<div class="tw-pd-t-1">{mods}</div>)
 		];
 	},
 

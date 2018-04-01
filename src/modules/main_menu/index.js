@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 import {has, deep_copy} from 'utilities/object';
 
 import {parse_path} from 'src/settings';
@@ -547,7 +547,7 @@ export default class MainMenu extends Module {
 			return;
 
 		this._vue = new this.vue.Vue({
-			el: e('div'),
+			el: createElement('div'),
 			render: h => h('main-menu', this.getData())
 		});
 

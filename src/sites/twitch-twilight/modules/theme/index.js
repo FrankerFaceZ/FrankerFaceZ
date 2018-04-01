@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 import THEME_CSS_URL from 'site/styles/theme.scss';
 
@@ -58,7 +58,7 @@ export default class ThemeEngine extends Module {
 			if ( ! enable )
 				return;
 
-			this._style = e('link', {
+			this._style = createElement('link', {
 				rel: 'stylesheet',
 				type: 'text/css',
 				href: THEME_CSS_URL

@@ -171,6 +171,7 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	addDefaultSet(provider, set_id, data) {
+		const had_set = this.default_sets.includes(set_id);
 		if ( ! this.default_sets.sourceIncludes(provider, set_id) ) {
 			this.default_sets.push(provider, set_id);
 			this.refSet(set_id);
@@ -178,13 +179,20 @@ export default class Emotes extends Module {
 
 		if ( data )
 			this.loadSetData(set_id, data);
+
+		if ( ! had_set )
+			this.emit(':update-default-sets');
 	}
 
 	removeDefaultSet(provider, set_id) {
+		const had_set = this.default_sets.includes(set_id);
 		if ( this.default_sets.sourceIncludes(provider, set_id) ) {
 			this.default_sets.remove(provider, set_id);
 			this.unrefSet(set_id);
 		}
+
+		if ( had_set && ! this.default_sets.includes(set_id) )
+			this.emit(':update-default-sets');
 	}
 
 	refSet(set_id) {

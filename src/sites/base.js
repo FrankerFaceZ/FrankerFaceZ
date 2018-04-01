@@ -16,7 +16,7 @@ export default class BaseSite extends Module {
 	}
 
 	populateModules() {
-		const ctx = require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.js$/);
+		const ctx = require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/);
 		const modules = this.populate(ctx, this.log);
 		this.log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
 	}

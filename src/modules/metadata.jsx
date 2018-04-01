@@ -4,7 +4,7 @@
 // Channel Metadata
 // ============================================================================
 
-import {createElement as e, ClickOutside} from 'utilities/dom';
+import {createElement, ClickOutside} from 'utilities/dom';
 import {maybe_call} from 'utilities/object';
 
 import {duration_to_string} from 'utilities/time';
@@ -277,35 +277,37 @@ export default class Metadata extends Module {
 					const fix = cls === 'tw-button--text';
 
 					if ( typeof icon === 'string' )
-						icon = e('span', 'tw-button__icon tw-button__icon--left', e('figure', icon));
+						icon = (<span class="tw-button__icon tw-button__icon--left"><figure class={icon} /></span>);
 
 					if ( def.popup && def.click ) {
-						el = e('span', {
-							className: `ffz-stat${fix ? ' ffz-fix-padding--left' : ''}`,
-							'data-key': key,
-							tip_content: tooltip
-						}, [
-							btn = e('button', `tw-button ${cls}`, [
-								icon,
-								stat = e('span', 'ffz-stat-text tw-button__text')
-							]),
-							popup = e('button', `tw-button ${cls} ffz-stat-arrow`,
-								e('span', 'tw-button__icon tw-pd-x-0',
-									e('figure', 'ffz-i-down-dir')
-								)
-							)
-						]);
+						el = (<span
+							class={`ffz-stat${fix ? ' ffz-fix-padding--left' : ''}`}
+							data-key={key}
+							tip_content={tooltip}
+						>
+							{btn = (<button class={`tw-button ${cls}`}>
+								{icon}
+								{stat = (<span class="ffz-stat-text tw-button__text" />)}
+							</button>)}
+							{popup = (<button class={`tw-button ${cls} ffz-stat-arrow`}>
+								<span class="tw-button__icon tw-pd-x-0">
+									<figure class="ffz-i-down-dir" />
+								</span>
+							</button>)}
+						</span>);
 
 					} else
-						btn = popup = el = e('button', {
-							className: `ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button ${cls}`,
-							'data-key': key,
-							tip_content: tooltip
-						}, [
-							icon,
-							stat = e('span', 'ffz-stat-text tw-button__text'),
-							def.popup && e('span', 'tw-button__icon tw-button__icon--right', e('figure', 'ffz-i-down-dir'))
-						]);
+						btn = popup = el = (<button
+							class={`ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button ${cls}`}
+							data-key={key}
+							tip_content={tooltip}
+						>
+							{icon}
+							{stat = <span class="ffz-stat-text tw-button__text" />}
+							{def.popup && <span class="tw-button__icon tw-button__icon--right">
+								<figure class="ffz-i-down-dir" />
+							</span>}
+						</button>);
 
 					if ( def.click )
 						btn.addEventListener('click', e => {
@@ -370,16 +372,16 @@ export default class Metadata extends Module {
 
 				} else {
 					if ( typeof icon === 'string' )
-						icon = e('span', 'tw-stat__icon', e('figure', icon));
+						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
-					el = e('div', {
-						className: 'ffz-stat tw-stat',
-						'data-key': key,
-						tip_content: tooltip
-					}, [
-						icon,
-						stat = e('span', 'ffz-stat-text tw-stat__value')
-					]);
+					el = (<div
+						class="ffz-stat tw-stat"
+						data-key={key}
+						tip_content={tooltip}
+					>
+						{icon}
+						{stat = <span class="ffz-stat-text tw-stat__value" />}
+					</div>)
 				}
 
 				el._ffz_order = order;

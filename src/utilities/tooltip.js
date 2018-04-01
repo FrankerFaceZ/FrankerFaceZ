@@ -8,7 +8,7 @@
 // Better because they aren't hidden by parents with overflow: hidden;
 // ============================================================================
 
-import {createElement as e, setChildren} from 'utilities/dom';
+import {createElement, setChildren} from 'utilities/dom';
 import {maybe_call} from 'utilities/object';
 
 import Popper from 'popper.js';
@@ -208,17 +208,17 @@ export class Tooltip {
 			return;
 
 		// Build the DOM.
-		const arrow = e('div', opts.arrowClass),
-			inner = tip.element = e('div', opts.innerClass),
+		const arrow = createElement('div', opts.arrowClass),
+			inner = tip.element = createElement('div', opts.innerClass),
 
-			el = tip.outer = e('div', {
+			el = tip.outer = createElement('div', {
 				className: opts.tooltipClass
 			}, [inner, arrow]);
 
 		arrow.setAttribute('x-arrow', true);
 
 		if ( opts.arrowInner )
-			arrow.appendChild(e('div', opts.arrowInner));
+			arrow.appendChild(createElement('div', opts.arrowInner));
 
 		if ( tip.add_class ) {
 			inner.classList.add(tip.add_class);

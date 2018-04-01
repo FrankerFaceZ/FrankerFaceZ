@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 const HOST_ERRORS = {
 	COMMAND_EXECUTION: {
@@ -212,7 +212,7 @@ export default class HostButton extends Module {
 		this.activeTab = this.activeTab || 'auto-host';
 
 		this.vueEl = new vue.Vue({
-			el: e('div'),
+			el: createElement('div'),
 			render: h => h('host-options', {
 				hosts,
 				autoHostSettings,

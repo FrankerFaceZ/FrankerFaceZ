@@ -8,6 +8,7 @@ module.exports = {
 		avalon: './src/main.js'
 	},
 	resolve: {
+		extensions: ['.js', '.jsx'],
 		alias: {
 			res: path.resolve(__dirname, 'res/'),
 			styles: path.resolve(__dirname, 'styles/'),
@@ -44,6 +45,11 @@ module.exports = {
 					sourceMap: true
 				}
 			}]
+		},
+		{
+			test: /\.jsx$/,
+			exclude: /node_modules/,
+			loader: 'babel-loader'
 		},
 		{
 			test: /\.(graphql|gql)$/,

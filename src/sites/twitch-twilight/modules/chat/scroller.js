@@ -4,7 +4,7 @@
 // Chat Scroller
 // ============================================================================
 
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 import Twilight from 'site';
 import Module from 'utilities/module';
 
@@ -95,7 +95,7 @@ export default class Scroller extends Module {
 					let timer;
 					const auto = this.state.ffz_total_errors < 10,
 						React = t.web_munch.getModule('react'),
-						e = React && React.createElement,
+						createElement = React && React.createElement,
 						handler = () => {
 							clearTimeout(timer);
 							this.ffzZeroErrors();
@@ -104,17 +104,17 @@ export default class Scroller extends Module {
 					if ( auto )
 						timer = setTimeout(handler, 250);
 
-					if ( ! e )
+					if ( ! createElement )
 						return null;
 
-					return e('div', {
+					return createElement('div', {
 						className: 'tw-border-l tw-c-background-alt-2 tw-c-text tw-full-width tw-full-height tw-align-items-center tw-flex tw-flex-column tw-justify-content-center tw-relative'
 					}, [
-						e('div', {className: 'tw-mg-b-1'}, 'There was an error displaying chat.'),
-						! auto && e('button', {
+						createElement('div', {className: 'tw-mg-b-1'}, 'There was an error displaying chat.'),
+						! auto && createElement('button', {
 							className: 'tw-button',
 							onClick: handler
-						}, e('span', {className: 'tw-button__text'}, 'Try Again'))
+						}, createElement('span', {className: 'tw-button__text'}, 'Try Again'))
 					]);
 
 				} else
@@ -176,9 +176,9 @@ export default class Scroller extends Module {
 
 					node.classList.add('tw-full-height');
 
-					el = this._ffz_freeze_indicator = e('div', {
+					el = this._ffz_freeze_indicator = createElement('div', {
 						className: 'ffz--freeze-indicator chat-list__more-messages-placeholder tw-relative tw-mg-x-2'
-					}, e('div', {
+					}, createElement('div', {
 						className: 'chat-list__more-messages tw-bottom-0 tw-full-width tw-align-items-center tw-flex tw-justify-content-center tw-absolute tw-pd-05'
 					}));
 

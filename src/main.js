@@ -66,7 +66,7 @@ class FrankerFaceZ extends Module {
 	// ========================================================================
 
 	discoverModules() {
-		const ctx = require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.js$/),
+		const ctx = require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/),
 			modules = this.populate(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);

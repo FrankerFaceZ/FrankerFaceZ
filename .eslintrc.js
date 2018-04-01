@@ -7,11 +7,22 @@ module.exports = {
         "eslint:recommended",
         "plugin:vue/recommended"
     ],
-    "plugins": ["vue"],
+    "plugins": [
+        "vue",
+        "react"
+    ],
     "parserOptions": {
         "parser": "babel-eslint",
         "ecmaVersion": 8,
-        "sourceType": "module"
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "settings": {
+        "react": {
+            "pragma": "createElement"
+        }
     },
     "globals": {
         "import": false,
@@ -95,6 +106,7 @@ module.exports = {
                 "allowTemplateLiterals": true
             }
         ],
+
         "vue/html-indent": [
             "warn",
             "tab"
@@ -108,6 +120,32 @@ module.exports = {
                 "singleline": "never",
                 "multiline": "always"
             }
-        ]
+        ],
+
+        "jsx-quotes": ["error", "prefer-double"],
+        "react/jsx-boolean-value": "error",
+        "react/jsx-closing-bracket-location": ["error", "line-aligned"],
+        //"react/jsx-closing-tag-location": "error" -- stupid rule that doesn't allow line-aligned
+        "react/jsx-equals-spacing": "error",
+        "react/jsx-filename-extension": "error",
+        "react/jsx-first-prop-new-line": ["error", "multiline-multiprop"],
+        "react/jsx-indent": ["warn", "tab"],
+        "react/jsx-indent-props": ["warn", "tab"],
+        "react/jsx-key": "warn",
+        "react/jsx-no-bind": "error",
+        "react/jsx-no-comment-textnodes": "error",
+        "react/jsx-no-duplicate-props": "error",
+        "react/jsx-no-literals": ["warn"],
+        "react/jsx-no-target-blank": "error",
+        "react/jsx-sort-props": ["error", {
+            "callbacksLast": true,
+            "reservedFirst": true,
+            "noSortAlphabetically": true
+        }],
+        "react/jsx-tag-spacing": ["error", {
+            "beforeClosing": "never"
+        }],
+        "react/jsx-uses-react": "error",
+        "react/jsx-wrap-multilines": "error"
     }
 };
