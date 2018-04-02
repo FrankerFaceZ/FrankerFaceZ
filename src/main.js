@@ -2,6 +2,7 @@
 
 import Logger from 'utilities/logging';
 import Module from 'utilities/module';
+import AddonManager from 'utilities/addon';
 
 import {DEBUG} from 'utilities/constants';
 
@@ -37,6 +38,7 @@ class FrankerFaceZ extends Module {
 		this.inject('i18n', TranslationManager);
 		this.inject('socket', SocketClient);
 		this.inject('site', Site);
+		this.inject('addon_manager', AddonManager);
 
 		this.register('vue', Vue);
 
@@ -103,6 +105,7 @@ const VER = FrankerFaceZ.version_info = {
 
 
 FrankerFaceZ.utilities = {
+	addon: require('utilities/addon'),
 	dom: require('utilities/dom'),
 	color: require('utilities/color'),
 	events: require('utilities/events'),
