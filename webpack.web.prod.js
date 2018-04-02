@@ -50,7 +50,7 @@ const config = module.exports = merge(common, {
 	],
 
 	output: {
-		publicPath: '//cdn.frankerfacez.com/script/',
+		publicPath: '//cdn.frankerfacez.com/static/',
 		filename: '[name].[hash].js'
 	}
 });

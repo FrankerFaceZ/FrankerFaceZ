@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {SiteModule} from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement, setChildren} from 'utilities/dom';
 
 export default class MenuButton extends SiteModule {
 	constructor(...args) {
@@ -29,7 +29,7 @@ export default class MenuButton extends SiteModule {
 	set pill(val) {
 		this._pill_content = val;
 		if ( this._pill )
-			this._pill.innerHTML = this.formatPill();
+			setChildren(this._pill, this.formatPill(), true);
 	}
 
 	formatPill() {
@@ -46,28 +46,26 @@ export default class MenuButton extends SiteModule {
 			user_menu = container.querySelector('.top-nav__nav-items-container:last-child');
 
 
-		this._el = e('div',
-			'ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05',
-			this._btn = e('button',
-				{
-					className: 'tw-button-icon tw-button-icon--overlay tw-button-icon--large',
-					onClick: e => this.emit(':clicked', e)
-				},
-				e('div', 'tw-tooltip-wrapper', [
-					e('span', 'tw-button-icon__icon',
-						e('figure', 'ffz-i-zreknarf')
-					),
+		this._el = (<div class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05">
+			{this._btn = (<button
+				class="tw-button-icon tw-button-icon--overlay tw-button-icon--large"
+				onClick={e => this.emit(':clicked', e)} //eslint-disable-line react/jsx-no-bind
+			>
+				<div class="tw-tooltip-wrapper">
+					<span class="tw-button-icon__icon">
+						<figure class="ffz-i-zreknarf" />
+					</span>
+					<div class="ffz-menu__pill absolute">
+						<div class="tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in">
+							{this._pill = (<div class="tw-pill tw-pill--notification" />)}
+						</div>
+					</div>
+					{this._tip = (<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center" />)}
+				</div>
+			</button>)}
+		</div>);
 
-					e('div', 'ffz-menu__pill absolute',
-						e('div', 'tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in',
-							this._pill = e('span', 'tw-pill tw-pill--notification', this.formatPill(), true)
-						)
-					),
-
-					this._tip = e('div', 'tw-tooltip tw-tooltip--down tw-tooltip--align-center')
-				])
-			)
-		);
+		setChildren(this._pill, this.formatPill(), true);
 
 		this.onTranslate();
 

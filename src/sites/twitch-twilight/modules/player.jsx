@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 
 export default class Player extends Module {
@@ -348,14 +348,13 @@ export default class Player extends Module {
 		let tip = container.querySelector('.ffz--player-reset .player-tip');
 
 		if ( ! tip )
-			container.insertBefore(
-				e('button', {
-					className: 'player-button player-button--reset ffz--player-reset ffz-i-cancel',
-					type: 'button',
-					onDblClick: t.resetPlayer.bind(t, inst)
-				}, tip = e('span', 'player-tip js-control-tip')),
-				el.nextSibling
-			);
+			container.insertBefore(<button
+				class="player-button player-button--reset ffz--player-reset ffz-i-cancel"
+				type="button"
+				onDblClick={t.resetPlayer.bind(t, inst)} // eslint-disable-line react/jsx-no-bind
+			>
+				{tip = <span class="player-tip js-control-tip" />}
+			</button>, el.nextSibling);
 
 		tip.dataset.tip = this.i18n.t('player.reset_button', 'Double-Click to Reset Player');
 	}

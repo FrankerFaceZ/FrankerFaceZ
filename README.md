@@ -47,6 +47,8 @@ and add the following to your workspace settings:
 {
 	"eslint.validate": [
 		"javascript",
+		"javascriptreact",
 		"vue"
 	]
-}```
+}
+```

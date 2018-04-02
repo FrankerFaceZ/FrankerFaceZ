@@ -11,7 +11,7 @@ import Fine from 'utilities/compat/fine';
 import FineRouter from 'utilities/compat/fine-router';
 import Apollo from 'utilities/compat/apollo';
 
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 import MAIN_URL from 'site/styles/main.scss';
 
@@ -56,7 +56,7 @@ export default class Twilight extends BaseSite {
 		const current = this.router.current;
 		this.fine.route(current && current.name);
 
-		document.head.appendChild(e('link', {
+		document.head.appendChild(createElement('link', {
 			href: MAIN_URL,
 			rel: 'stylesheet',
 			type: 'text/css'

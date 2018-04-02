@@ -43,6 +43,15 @@ export const object_merge = {
 
 
 export const array_merge = {
+	default(val) {
+		const values = [];
+		for(const v of val)
+			if ( v.t !== 'inherit' && v.v )
+				values.push(v.v);
+
+		return values;
+	},
+
 	get(key, profiles, log) {
 		const values = [],
 			trailing = [],

@@ -241,6 +241,9 @@ export default class SettingsContext extends EventEmitter {
 					value = def_default(this);
 				else
 					value = def_default;
+
+				if ( type.default )
+					value = type.default(value);
 			}
 
 			if ( definition.requires )
@@ -270,7 +273,7 @@ export default class SettingsContext extends EventEmitter {
 
 		return type.get(key, this.profiles(), this.manager.log);
 	}
-/*		for(const profile of this.__profiles)
+	/*	for(const profile of this.__profiles)
 			if ( profile.has(key) )
 				return [profile.get(key), profile]
 	}*/

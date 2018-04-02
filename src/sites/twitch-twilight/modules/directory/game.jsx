@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {SiteModule} from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 import GAME_QUERY from './game.gql';
 
@@ -66,10 +66,12 @@ export default class Game extends SiteModule {
 			}
 
 
-		block_btn = e('button', {
-			className: 'tw-mg-l-1 tw-button ffz-directory-toggle-block',
-			onClick: this.generateClickHandler('directory.game.blocked-games', game, update_block)
-		}, block_label = e('span', 'tw-button__text'));
+		block_btn = (<button
+			class="tw-mg-l-1 tw-button ffz-directory-toggle-block"
+			onClick={this.generateClickHandler('directory.game.blocked-games', game, update_block)}
+		>
+			{block_label = <span class="tw-button__text" />}
+		</button>);
 
 		update_block();
 
@@ -86,17 +88,19 @@ export default class Game extends SiteModule {
 			this.parent.ChannelCard.forceUpdate();
 		}
 
-		hidden_btn = e('button', {
-			className: 'tw-mg-l-1 tw-button ffz-directory-toggle-thumbnail',
-			onClick: this.generateClickHandler('directory.game.hidden-thumbnails', game, update_hidden)
-		}, hidden_label = e('span', 'tw-button__text'));
+		hidden_btn = (<button
+			class="tw-mg-l-1 tw-button ffz-directory-toggle-thumbnail"
+			onClick={this.generateClickHandler('directory.game.hidden-thumbnails', game, update_hidden)}
+		>
+			{hidden_label = <span class="tw-button__text" />}
+		</button>)
 
 		update_hidden();
 
-		buttons.appendChild(e('div', 'ffz-buttons', [
-			block_btn,
-			hidden_btn
-		]));
+		buttons.appendChild(<div class="ffz-buttons">
+			{block_btn}
+			{hidden_btn}
+		</div>);
 	}
 
 	generateClickHandler(setting, game, update_func) {

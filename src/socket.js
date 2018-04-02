@@ -107,12 +107,13 @@ export default class SocketClient extends Module {
 
 	selectHost() {
 		const cluster_id = this.settings.get('socket.cluster'),
-			cluster = WS_CLUSTERS[cluster_id];
+			cluster = WS_CLUSTERS[cluster_id],
+			l = cluster && cluster.length;
 
-		if ( ! cluster || ! cluster.length )
+		if ( ! l )
 			return null;
 
-		let total = 0, i = cluster.length, l = i;
+		let total = 0, i = l;
 		while(i-- > 0)
 			total += cluster[i][1];
 

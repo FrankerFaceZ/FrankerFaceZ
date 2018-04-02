@@ -1,5 +1,7 @@
 'use strict';
 
+/* global emoteMenu: false */
+
 // ============================================================================
 // Compatibility Layer
 // Emote Menu for Twitch (BTTV Emote Menu)

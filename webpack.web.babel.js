@@ -41,6 +41,8 @@ const config = module.exports = merge(common, {
 			}
 		}),
 		new ManifestPlugin({
+			basePath: 'babel/',
+			publicPath: 'babel/',
 			map: data => {
 				if ( data.name.endsWith('.scss') )
 					data.name = `${data.name.substr(0,data.name.length - 5)}.css`;
@@ -51,7 +53,7 @@ const config = module.exports = merge(common, {
 	],
 
 	output: {
-		publicPath: '//cdn.frankerfacez.com/script/babel/',
+		publicPath: '//cdn.frankerfacez.com/static/babel/',
 		path: path.resolve(__dirname, 'dist/babel'),
 		filename: '[name].[hash].js'
 	}
