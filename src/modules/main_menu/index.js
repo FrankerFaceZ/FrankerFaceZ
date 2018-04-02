@@ -277,10 +277,9 @@ export default class MainMenu extends Module {
 
 						if ( has(def, 'default') && ! has(tok, 'default') ) {
 							const def_type = typeof def.default;
-							if ( def_type === 'object' ) {
-								// TODO: Better way to deep copy this object.
-								tok.default = JSON.parse(JSON.stringify(def.default));
-							} else
+							if ( def_type === 'object' )
+								tok.default = deep_copy(def.default);
+							else
 								tok.default = def.default;
 						}
 
@@ -338,7 +337,7 @@ export default class MainMenu extends Module {
 
 				let p = parent;
 				while(p && p.search_terms) {
-					p.search_terms += '\n' + terms;
+					p.search_terms += `\n${terms}`;
 					p = p.parent;
 				}
 			}

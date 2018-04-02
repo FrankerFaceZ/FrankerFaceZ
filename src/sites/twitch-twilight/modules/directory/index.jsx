@@ -289,7 +289,7 @@ export default class Directory extends SiteModule {
 			return;
 
 		// Get the old element.
-		let channel_avatar = card.querySelector('.ffz-channel-avatar');
+		const channel_avatar = card.querySelector('.ffz-channel-avatar');
 
 		if ( ! data || ! data.profileImageURL || setting === 0 ) {
 			if ( channel_avatar !== null )

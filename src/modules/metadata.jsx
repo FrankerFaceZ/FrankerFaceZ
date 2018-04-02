@@ -115,8 +115,8 @@ export default class Metadata extends Module {
 				if ( ! stats )
 					return {stats};
 
-				let delay = stats.hls_latency_broadcaster / 1000,
-					drift = 0;
+				const delay = stats.hls_latency_broadcaster / 1000;
+				let drift = 0;
 
 				if ( socket && socket.connected )
 					drift = socket._time_drift;

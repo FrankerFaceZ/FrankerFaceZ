@@ -229,7 +229,7 @@ export class Tooltip {
 		el.classList.toggle('interactive', interactive || false);
 
 		if ( ! opts.manual ) {
-			el.addEventListener('mouseover', () => {
+			el.addEventListener('mouseover', el._ffz_over_handler = () => {
 				if ( ! document.contains(target) )
 					this.hide(tip);
 
@@ -239,7 +239,7 @@ export class Tooltip {
 					this._exit(target);
 			});
 
-			el.addEventListener('mouseout', () => this._exit(target));
+			el.addEventListener('mouseout', el._ffz_out_handler = () => this._exit(target));
 		}
 
 		// Assign our content. If there's a Promise, we'll need
@@ -311,13 +311,19 @@ export class Tooltip {
 		}
 
 		if ( tip.outer ) {
-			tip.outer.remove();
-			tip.outer = null;
+			const el = tip.outer;
+			if ( el._ffz_over_handler )
+				el.removeEventListener('mouseover', el._ffz_over_handler);
+
+			if ( el._ffz_out_handler )
+				el.removeEventListener('mouseout', el._ffz_out_handler);
+
+			el.remove();
+			tip.outer = el._ffz_out_handler = el._ffz_over_handler = null;
 		}
 
-		tip.update = null;
 		tip._update = noop;
-		tip.element = null;
+		tip.update = tip.element = null;
 		tip.visible = false;
 	}
 }

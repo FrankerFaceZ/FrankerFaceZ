@@ -76,7 +76,7 @@ export default class SettingsManager extends Module {
 		this.loadProfiles(true);
 
 		// Handle migrations.
-		await this.migrations.process('core');
+		//await this.migrations.process('core');
 
 		// Now we can tell our context(s) about the profiles we have.
 		for(const context of this.__contexts)

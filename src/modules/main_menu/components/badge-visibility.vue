@@ -57,7 +57,7 @@
 							>
 								<span
 									v-for="v in i.versions"
-									:key="v.name"
+									:key="`badge-${i.id}-${v.version}`"
 									:title="v.name"
 									:style="{backgroundColor: i.color, backgroundImage: v.styleImage}"
 									data-tooltip-type="html"

@@ -19,7 +19,7 @@ export default class Apollo extends Module {
 		this.inject('..fine');
 	}
 
-	async onEnable() {
+	onEnable() {
 		// TODO: Come up with a better way to await something existing.
 		let client = this.client;
 
@@ -48,7 +48,7 @@ export default class Apollo extends Module {
 			const old_qm_init = this.client.queryManager.queryStore.initQuery;
 			this.hooked_query_init = true;
 			this.client.queryManager.queryStore.initQuery = function(e) {
-				let t = this.store[e.queryId];
+				const t = this.store[e.queryId];
 				if ( t && t.queryString !== e.queryString )
 					t.queryString = e.queryString;
 
@@ -59,7 +59,8 @@ export default class Apollo extends Module {
 		const ApolloLink = this.ApolloLink = this.client.link.constructor;
 
 		this.link = new ApolloLink((operation, forward) => {
-			//this.log.info('Link Start', operation.operationName, operation);
+			if ( ! this.enabled )
+				return forward(operation);
 
 			try {
 				// ONLY do this if we've hooked query init, thus letting us ignore certain issues
@@ -120,23 +121,8 @@ export default class Apollo extends Module {
 
 
 	onDisable() {
-		// TODO: Remove Apollo middleware.
-
-		// Tear down the parsed queries.
-		for(const key in this.modifiers)
-			if ( has(this.modifiers, key) ) {
-				const modifiers = this.modifiers[key];
-				if ( modifiers )
-					for(const mod of modifiers) {
-						if ( typeof mod === 'function' )
-							continue;
-
-						mod[1] = null;
-					}
-			}
-
-		// And finally, remove our references.
-		this.client = this.graphql = null;
+		// Remove our references to things.
+		this.client = this.printer = this.gql_print = this.old_link = this.old_qm_dedup = this.old_qm_link = null;
 	}
 
 

@@ -54,9 +54,8 @@ const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
 
 
 export function generateOverrideCSS(data, style) {
-	const urls = data.urls || {1: data.image};
-
-	let image = `url("${urls[1]}")`,
+	const urls = data.urls || {1: data.image},
+		image = `url("${urls[1]}")`,
 		image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
 	if ( style === 3 || style === 4 )
@@ -172,6 +171,7 @@ export default class Badges extends Module {
 
 									if ( version && version.image1x )
 										vs.push({
+											version: key,
 											name: version.title,
 											image: version.image1x,
 											styleImage: `url("${version.image1x}")`
@@ -431,7 +431,8 @@ export default class Badges extends Module {
 				}
 
 				if ( has_image && urls ) {
-					let image_set, image = `url("${urls[1]}")`;
+					const image = `url("${urls[1]}")`;
+					let image_set;
 					if ( urls[2] || urls[4] )
 						image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 

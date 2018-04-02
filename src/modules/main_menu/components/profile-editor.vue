@@ -142,7 +142,7 @@ export default {
 
 		del() {
 			if ( this.item.profile || this.unsaved ) {
-				if ( ! confirm(this.t(
+				if ( ! confirm(this.t( // eslint-disable-line no-alert
 					'settings.profiles.warn-delete',
 					'Are you sure you wish to delete this profile? It cannot be undone.'
 				)) )
@@ -189,7 +189,7 @@ export default {
 
 		onBeforeChange() {
 			if ( this.unsaved )
-				return confirm(
+				return confirm( // eslint-disable-line no-alert
 					this.t(
 						'settings.warn-unsaved',
 						'You have unsaved changes. Are you sure you want to leave the editor?'

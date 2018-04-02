@@ -135,7 +135,7 @@ export class ManagedStyle {
 	}
 
 	set(key, value) {
-		let block = this._blocks[key];
+		const block = this._blocks[key];
 		if ( block )
 			block.textContent = value;
 		else

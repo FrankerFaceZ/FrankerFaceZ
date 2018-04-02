@@ -134,7 +134,7 @@ export default {
 
 			this.currentItem = item;
 			let current = item;
-			while(current = current.parent)
+			while(current = current.parent) // eslint-disable-line no-cond-assign
 				current.expanded = true;
 		},
 

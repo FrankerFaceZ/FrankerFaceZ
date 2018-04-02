@@ -8,8 +8,8 @@ import {sanitize, createElement} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
 
 const EMOTE_CLASS = 'chat-line__message--emote',
-	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w.\/@#%&()\-+=:?~]*)?))([^\w.\/@#%&()\-+=:?~]|\s|$)/g,
-	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w.\/@#%&()\-+=:?~]|\s|$)/g,
+	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
+	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g,
 
 	TWITCH_BASE = '//static-cdn.jtvnw.net/emoticons/v1/',
 	REPLACEMENT_BASE = '//cdn.frankerfacez.com/script/replacements/',
@@ -109,7 +109,7 @@ export const Links = {
 		);
 	},
 
-	process(tokens, msg) {
+	process(tokens) {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
@@ -149,7 +149,7 @@ export const Links = {
 	}
 }
 
-Links.tooltip.interactive = function(target, tip) {
+Links.tooltip.interactive = function(target) {
 	if ( ! this.context.get('tooltip.rich-links') || ! this.context.get('tooltip.link-interaction') || target.dataset.isMail === 'true' )
 		return false;
 
@@ -157,7 +157,7 @@ Links.tooltip.interactive = function(target, tip) {
 	return info && info.interactive;
 };
 
-Links.tooltip.delayHide = function(target, tip) {
+Links.tooltip.delayHide = function(target) {
 	if ( ! this.context.get('tooltip.rich-links') || ! this.context.get('tooltip.link-interaction') || target.dataset.isMail === 'true' )
 		return 0;
 
@@ -472,7 +472,7 @@ export const AddonEmotes = {
 			data-set={token.set}
 		>
 			{emote}
-			{mods.map(t => <span>{this.tokenizers.emote.render(t, createElement)}</span>)}
+			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render(t, createElement)}</span>)}
 		</span>);
 	},
 

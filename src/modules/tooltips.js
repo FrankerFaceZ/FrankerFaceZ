@@ -31,9 +31,7 @@ export default class TooltipProvider extends Module {
 			]
 		}
 
-		this.types.html = target => {
-			return target.dataset.title;
-		}
+		this.types.html = target => target.dataset.title;
 	}
 
 	onEnable() {

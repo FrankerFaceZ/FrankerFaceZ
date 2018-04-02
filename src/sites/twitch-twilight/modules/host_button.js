@@ -56,9 +56,7 @@ export default class HostButton extends Module {
 			order: 150,
 			button: true,
 
-			disabled: () => {
-				return this._host_updating || this._host_error;
-			},
+			disabled: () => this._host_updating || this._host_error,
 
 			click: data => {
 				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
@@ -108,9 +106,9 @@ export default class HostButton extends Module {
 				} else {
 					return this.i18n.t('metadata.host.button.tooltip',
 						'Currently hosting: %{channel}',
-					{
-						channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
-					});
+						{
+							channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
+						});
 				}
 			}
 		};
