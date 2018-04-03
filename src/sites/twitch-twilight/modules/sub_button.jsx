@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 export default class SubButton extends Module {
 	constructor(...args) {
@@ -59,16 +59,13 @@ export default class SubButton extends Module {
 			icon = btn.querySelector('.ffz--can-prime');
 
 		if ( should_show && ! icon ) {
-			btn.insertBefore(
-				e('span', 'tw-button__icon tw-button__icon--left ffz--can-prime',
-					e('figure', {
-						className: 'ffz-i-crown ffz-tooltip',
-						'data-tooltip-type': 'html',
-						'data-title': this.i18n.t('sub-button.prime', 'Your free channel sub with Prime is available.')
-					})
-				),
-				btn.firstElementChild
-			);
+			btn.insertBefore(<span class="tw-button__icon tw-button__icon--left ffz--can-prime">
+				<figure
+					class="ffz-i-crown ffz-tooltip"
+					data-tooltip-type="html"
+					data-title={this.i18n.t('sub-button.prime', 'Your free channel sub with Prime is available.')}
+				/>
+			</span>, btn.firstElementChild);
 
 		} else if ( ! should_show && icon )
 			icon.remove();

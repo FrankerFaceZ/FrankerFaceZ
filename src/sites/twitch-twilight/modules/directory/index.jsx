@@ -6,7 +6,7 @@
 
 import {SiteModule} from 'utilities/module';
 import {duration_to_string} from 'utilities/time';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 import {get} from 'utilities/object';
 
 import Following from './following';
@@ -244,15 +244,17 @@ export default class Directory extends SiteModule {
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);
 
 		if ( ! inst.ffz_uptime_el || card.querySelector('.ffz-uptime-element') === undefined ) {
-			card.appendChild(inst.ffz_uptime_el = e('div',
-				'video-preview-card__preview-overlay-stat tw-c-background-overlay tw-c-text-overlay tw-font-size-6 tw-top-0 tw-right-0 tw-z-default tw-inline-flex tw-absolute tw-mg-05 ffz-uptime-element',
-				e('div', 'tw-tooltip-wrapper tw-inline-flex', [
-					e('div', 'tw-stat', [
-						e('span', 'tw-c-text-live tw-stat__icon', e('figure', 'ffz-i-clock')),
-						inst.ffz_uptime_span = e('span', 'tw-stat__value')
-					]),
-					inst.ffz_uptime_tt = e('div', 'tw-tooltip tw-tooltip--down tw-tooltip--align-center')
-				])));
+			card.appendChild(inst.ffz_uptime_el = (<div class="video-preview-card__preview-overlay-stat tw-c-background-overlay tw-c-text-overlay tw-font-size-6 tw-top-0 tw-right-0 tw-z-default tw-inline-flex tw-absolute tw-mg-05 ffz-uptime-element">
+				<div class="tw-tooltip-wrapper tw-inline-flex">
+					<div class="tw-stat">
+						<span class="tw-c-text-live tw-stat__icon">
+							<figure class="ffz-i-clock" />
+						</span>
+						{inst.ffz_uptime_span = <span class="tw-stat__value" />}
+					</div>
+					{inst.ffz_uptime_tt = <div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center" />}
+				</div>
+			</div>));
 		}
 
 		if ( ! inst.ffz_update_timer )
@@ -287,7 +289,7 @@ export default class Directory extends SiteModule {
 			return;
 
 		// Get the old element.
-		let channel_avatar = card.querySelector('.ffz-channel-avatar');
+		const channel_avatar = card.querySelector('.ffz-channel-avatar');
 
 		if ( ! data || ! data.profileImageURL || setting === 0 ) {
 			if ( channel_avatar !== null )
@@ -306,29 +308,29 @@ export default class Directory extends SiteModule {
 
 			if ( setting === 1 ) {
 				const body = card.querySelector('.tw-card-body .tw-flex'),
-					avatar = e('a', {
-						className: 'ffz-channel-avatar tw-mg-r-05 tw-mg-t-05',
-						href: `/${data.login}`,
-						title: data.displayName,
-						onclick: event => this.hijackUserClick(event, data.login)
-					}, e('img', {
-						src: data.profileImageURL
-					}));
+					avatar = (<a
+						class="ffz-channel-avatar tw-mg-r-05 tw-mg-t-05"
+						href={`/${data.login}`}
+						title={data.displayName}
+						onClick={e => this.hijackUserClick(e, data.login)} // eslint-disable-line react/jsx-no-bind
+					>
+						<img src={data.profileImageURL} />
+					</a>);
 
 				body.insertBefore(avatar, body.firstElementChild);
 
 			} else if ( setting === 2 || setting === 3 ) {
-				const avatar_el = e('a', {
-					className: 'ffz-channel-avatar',
-					href: `/${data.login}`,
-					onclick: event => this.hijackUserClick(event, data.login)
-				}, e('div', 'live-channel-card__boxart tw-bottom-0 tw-absolute',
-					e('figure', 'tw-aspect tw-aspect--align-top',
-						e('img', {
-							title: data.displayName,
-							src: data.profileImageURL
-						})))
-				);
+				const avatar_el = (<a
+					class="ffz-channel-avatar"
+					href={`/${data.login}`}
+					onClick={e => this.hijackUserClick(e, data.login)} // eslint-disable-line react/jsx-no-bind
+				>
+					<div class="live-channel-card__boxart tw-bottom-0 tw-absolute">
+						<figure class="tw-aspect tw-aspect--align-top">
+							<img src={data.profileImageURL} title={data.displayName} />
+						</figure>
+					</div>
+				</a>);
 
 				const cont = card.querySelector('figure.tw-aspect > div');
 				if ( cont )

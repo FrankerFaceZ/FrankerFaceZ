@@ -66,7 +66,7 @@ class FrankerFaceZ extends Module {
 	// ========================================================================
 
 	discoverModules() {
-		const ctx = require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.js$/),
+		const ctx = require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/),
 			modules = this.populate(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
@@ -95,7 +95,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-beta1.8',
+	major: 4, minor: 0, revision: 0, extra: '-beta1.9',
 	build: __webpack_hash__,
 	toString: () =>
 		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`

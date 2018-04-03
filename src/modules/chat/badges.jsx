@@ -6,7 +6,7 @@
 
 import {API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
-import {createElement as e, ManagedStyle} from 'utilities/dom';
+import {createElement, ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
 import Module from 'utilities/module';
 
@@ -54,9 +54,8 @@ const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
 
 
 export function generateOverrideCSS(data, style) {
-	const urls = data.urls || {1: data.image};
-
-	let image = `url("${urls[1]}")`,
+	const urls = data.urls || {1: data.image},
+		image = `url("${urls[1]}")`,
 		image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
 	if ( style === 3 || style === 4 )
@@ -172,6 +171,7 @@ export default class Badges extends Module {
 
 									if ( version && version.image1x )
 										vs.push({
+											version: key,
 											name: version.title,
 											image: version.image1x,
 											styleImage: `url("${version.image1x}")`
@@ -270,16 +270,32 @@ export default class Badges extends Module {
 					if ( ! bd )
 						continue;
 
-					out.push(e('div', {className: 'ffz-badge-tip'}, [
+					out.push(<div class="ffz-badge-tip">
+						{show_previews && <img class="preview-image ffz-badge" src={bd.image4x} />}
+						{bd.title}
+					</div>);
+
+					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
 						show_previews && e('img', {
 							className: 'preview-image ffz-badge',
 							src: bd.image4x
 						}),
 						bd.title
-					]));
+					]));*/
 
 				} else if ( p === 'ffz' ) {
-					out.push(e('div', {className: 'ffz-badge-tip'}, [
+					out.push(<div class="ffz-badge-tip">
+						{show_previews && <div
+							class="preview-image ffz-badge"
+							style={{
+								backgroundColor: d.color,
+								backgroundImage: `url("${d.image}")`
+							}}
+						/>}
+						{d.title}
+					</div>);
+
+					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
 						show_previews && e('div', {
 							className: 'preview-image ffz-badge',
 							style: {
@@ -288,7 +304,7 @@ export default class Badges extends Module {
 							}
 						}),
 						d.title
-					]));
+					]));*/
 				}
 			}
 
@@ -297,7 +313,7 @@ export default class Badges extends Module {
 	}
 
 
-	render(msg, e) { // eslint-disable-line class-methods-use-this
+	render(msg, createElement) { // eslint-disable-line class-methods-use-this
 		const hidden_badges = this.parent.context.get('chat.badges.hidden') || {},
 			badge_style = this.parent.context.get('chat.badges.style'),
 			custom_mod = this.parent.context.get('chat.badges.custom-mod'),
@@ -415,7 +431,8 @@ export default class Badges extends Module {
 				}
 
 				if ( has_image && urls ) {
-					let image_set, image = `url("${urls[1]}")`;
+					const image = `url("${urls[1]}")`;
+					let image_set;
 					if ( urls[2] || urls[4] )
 						image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
@@ -444,7 +461,7 @@ export default class Badges extends Module {
 				if ( data.replaced )
 					props['data-replaced'] = data.replaced;
 
-				out.push(e('span', props));
+				out.push(createElement('span', props));
 			}
 
 		return out;

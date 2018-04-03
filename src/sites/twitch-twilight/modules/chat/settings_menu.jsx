@@ -32,26 +32,35 @@ export default class SettingsMenu extends Module {
 		if ( ! React )
 			return;
 
-		const e = React.createElement;
+		const createElement = React.createElement;
 
-		this.SettingsMenu.ready(cls => {
+		this.SettingsMenu.ready((cls, instances) => {
 			const old_universal = cls.prototype.renderUniversalOptions;
 
 			cls.prototype.renderUniversalOptions = function() {
 				const val = old_universal.call(this);
-				val.props.children.push(e('div', {
-						className: 'tw-mg-t-1'
-					}, e('button', {
-						onClick: () => t.click(this)
-					}, t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center'))
-				));
 
-				window.menu = this;
+				val.props.children.push(<div class="tw-mg-t-1">
+					<button onClick={this.ffzSettingsClick}>
+						{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+					</button>
+				</div>);
 
 				return val;
 			}
 
+			for(const inst of instances)
+				inst.ffzSettingsClick = e => t.click(inst, e);
+
 			this.SettingsMenu.forceUpdate();
+		});
+
+		this.SettingsMenu.on('mount', inst => {
+			inst.ffzSettingsClick = e => t.click(inst, e)
+		});
+
+		this.SettingsMenu.on('unmount', inst => {
+			inst.ffzSettingsClick = null;
 		});
 	}
 
@@ -68,6 +77,7 @@ export default class SettingsMenu extends Module {
 		} else {
 			this.emit('site.menu_button:clicked');
 		}
+
 		const parent = this.fine.searchParent(inst, n => n.toggleBalloonId);
 		parent && parent.handleButtonClick();
 	}

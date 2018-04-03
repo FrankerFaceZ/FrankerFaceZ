@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {SiteModule} from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 import {get} from 'utilities/object';
 
 import Popper from 'popper.js';
@@ -236,83 +236,61 @@ export default class Following extends SiteModule {
 		const simplebarContentChildren = [];
 
 		// Hosted Channel Header
-		simplebarContentChildren.push(
-			e('p', {
-				className: 'tw-pd-t-05 tw-pd-x-1 tw-c-text-alt-2',
-				textContent: this.i18n.t('directory.hosted', 'Hosted Channel')
-			})
-		);
+		simplebarContentChildren.push(<p class="tw-pd-t-05 tw-pd-x-1 tw-c-text-alt-2">
+			{this.i18n.t('directory.hosted', 'Hosted Channel')}
+		</p>);
 
 		// Hosted Channel Content
-		simplebarContentChildren.push(
-			e('a', {
-				className: 'tw-interactable',
-				href: `/${hostData.channel}`,
-				onclick: event =>
-					this.parent.hijackUserClick(
-						event,
-						hostData.channel,
-						this.destroyHostMenu.bind(this)
-					)
-			}, e('div', 'tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05',
-				[
-					e('div', {
-						className: 'ffz-channel-avatar',
-					}, e('img', {
-						src: inst.props.viewerCount.profileImageURL,
-						alt: inst.props.channelName
-					})),
-					e('p', {
-						className: 'tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5',
-						textContent: inst.props.channelName
-					})
-				]
-			))
-		);
+		simplebarContentChildren.push(<a
+			class="tw-interactable"
+			href={`/${hostData.channel}`}
+			onClick={e => this.parent.hijackUserClick(e, hostData.channel, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
+		>
+			<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05">
+				<div class="ffz-channel-avatar">
+					<img src={inst.props.viewerCount.profileImageURL} alt={inst.props.channelName} />
+				</div>
+				<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
+					{inst.props.channelName}
+				</p>
+			</div>
+		</a>);
 
 		// Hosting Channels Header
-		simplebarContentChildren.push(
-			e('p', {
-				className: 'tw-pd-t-05 tw-pd-x-1 tw-c-text-alt-2',
-				textContent: this.i18n.t('directory.hosting', 'Hosting Channels')
-			})
-		);
+		simplebarContentChildren.push(<p class="tw-pd-t-05 tw-pd-x-1 tw-c-text-alt-2">
+			{this.i18n.t('directory.hosting', 'Hosting Channels')}
+		</p>);
 
 		// Hosting Channels Content
 		for (let i = 0; i < hostData.nodes.length; i++) {
 			const node = hostData.nodes[i];
-			simplebarContentChildren.push(
-				e('a', {
-					className: 'tw-interactable',
-					href: `/${node.login}`,
-					onclick: event => this.parent.hijackUserClick(event, node.login, this.destroyHostMenu.bind(this))
-				}, e('div', 'tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05',
-					[
-						e('div', {
-							className: 'ffz-channel-avatar',
-						}, e('img', {
-							src: node.profileImageURL,
-							alt: node.displayName
-						})),
-						e('p', {
-							className: 'tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5',
-							textContent: node.displayName
-						})
-					]
-				))
-			);
+			simplebarContentChildren.push(<a
+				class="tw-interactable"
+				href={`/${node.login}`}
+				onClick={e => this.parent.hijackUserClick(e, node.login, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
+			>
+				<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05">
+					<div class="ffz-channel-avatar">
+						<img src={node.profileImageURL} alt={node.displayName} />
+					</div>
+					<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
+						{node.displayName}
+					</p>
+				</div>
+			</a>);
 		}
 
-		this.hostMenu = e('div', 'ffz-host-menu tw-balloon tw-block',
-			e('div', 'tw-border tw-elevation-1 tw-border-radius-small tw-c-background',
-				e('div', {
-					className: 'scrollable-area',
-					'data-simplebar': true,
-				}, e('div', 'simplebar-scroll-content',
-					e('div', 'simplebar-content', simplebarContentChildren)
-				))
-			)
-		);
+		this.hostMenu = (<div class="ffz-host-menu tw-balloon tw-block">
+			<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background">
+				<div class="scrollable-area" data-simplebar>
+					<div class="simplebar-scroll-content">
+						<div class="simplebar-content">
+							{simplebarContentChildren}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>);
 
 		const root = (document.body.querySelector('.twilight-root') || document.body);
 		root.appendChild(this.hostMenu);

@@ -352,7 +352,7 @@ export default class Chat extends Module {
 	}
 
 
-	* iterateRooms() {
+	*iterateRooms() {
 		const visited = new Set;
 
 		for(const id in this.room_ids)
@@ -373,16 +373,15 @@ export default class Chat extends Module {
 	}
 
 
-	formatTime(time) {
+	formatTime(time) { // eslint-disable-line class-methods-use-this
 		if (!( time instanceof Date ))
 			time = new Date(time);
 
 		let hours = time.getHours();
 
-		const minutes = time.getMinutes(),
-			seconds = time.getSeconds(),
-
-			fmt = this.settings.get('chat.timestamp-format');
+		const minutes = time.getMinutes(); //,
+		//	seconds = time.getSeconds(),
+		//	fmt = this.settings.get('chat.timestamp-format');
 
 		if ( hours > 12 )
 			hours -= 12;

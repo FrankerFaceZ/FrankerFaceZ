@@ -10,7 +10,7 @@ export default class MigrationManager {
 		this.provider = manager.provider;
 	}
 
-	process(key) {
-		return false;
+	process() { // eslint-disable-line class-methods-use-this
+		throw new Error('Not Implemented');
 	}
 }

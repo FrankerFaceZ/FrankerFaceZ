@@ -4,7 +4,7 @@
 // Tooltip Handling
 // ============================================================================
 
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 import {has, maybe_call} from 'utilities/object';
 
 import Tooltip from 'utilities/tooltip';
@@ -20,8 +20,8 @@ export default class TooltipProvider extends Module {
 		this.types.json = target => {
 			const title = target.dataset.title;
 			return [
-				title && e('strong', null, title),
-				e('code', {
+				title && createElement('strong', null, title),
+				createElement('code', {
 					className: `block${title ? ' pd-t-05 border-t mg-t-05' : ''}`,
 					style: {
 						fontFamily: 'monospace',
@@ -31,9 +31,7 @@ export default class TooltipProvider extends Module {
 			]
 		}
 
-		this.types.html = target => {
-			return target.dataset.title;
-		}
+		this.types.html = target => target.dataset.title;
 	}
 
 	onEnable() {
@@ -96,8 +94,8 @@ export default class TooltipProvider extends Module {
 
 		if ( ! handler )
 			return [
-				e('strong', null, 'Unhandled Tooltip Type'),
-				e('code', {
+				createElement('strong', null, 'Unhandled Tooltip Type'),
+				createElement('code', {
 					className: 'block pd-t-05 border-t mg-t-05',
 					style: {
 						fontFamily: 'monospace',

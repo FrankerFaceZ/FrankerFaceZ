@@ -30,8 +30,21 @@ function camelCase(name) {
 }
 
 
-export function createElement(tag, props, children, no_sanitize) {
+export function on(obj, ...args) {
+	return obj.addEventListener(...args);
+}
+
+
+export function off(obj, ...args) {
+	return obj.removeEventListener(...args);
+}
+
+
+export function createElement(tag, props, ...children) {
 	const el = document.createElement(tag);
+
+	if ( children.length === 1)
+		children = children[0];
 
 	if ( typeof props === 'string' )
 		el.className = props;
@@ -73,7 +86,7 @@ export function createElement(tag, props, children, no_sanitize) {
 			}
 
 	if ( children )
-		setChildren(el, children, no_sanitize);
+		setChildren(el, children);
 
 	return el;
 }
@@ -132,7 +145,7 @@ export class ManagedStyle {
 	}
 
 	set(key, value) {
-		let block = this._blocks[key];
+		const block = this._blocks[key];
 		if ( block )
 			block.textContent = value;
 		else

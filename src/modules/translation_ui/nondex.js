@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+//import {createElement} from 'utilities/dom';
 
 export default class TranslationUI extends Module {
 	constructor(...args) {
@@ -27,7 +27,7 @@ export default class TranslationUI extends Module {
 		);
 	}
 
-	async onEnable(event) {
+	async onEnable() {
 		await this.site.awaitElement('.twilight-root');
 		this.ps = this.site.web_munch.getModule('ps');
 	}

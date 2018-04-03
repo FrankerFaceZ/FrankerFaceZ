@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 const HOST_ERRORS = {
 	COMMAND_EXECUTION: {
@@ -56,9 +56,7 @@ export default class HostButton extends Module {
 			order: 150,
 			button: true,
 
-			disabled: () => {
-				return this._host_updating || this._host_error;
-			},
+			disabled: () => this._host_updating || this._host_error,
 
 			click: data => {
 				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
@@ -108,9 +106,9 @@ export default class HostButton extends Module {
 				} else {
 					return this.i18n.t('metadata.host.button.tooltip',
 						'Currently hosting: %{channel}',
-					{
-						channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
-					});
+						{
+							channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
+						});
 				}
 			}
 		};
@@ -212,7 +210,7 @@ export default class HostButton extends Module {
 		this.activeTab = this.activeTab || 'auto-host';
 
 		this.vueEl = new vue.Vue({
-			el: e('div'),
+			el: createElement('div'),
 			render: h => h('host-options', {
 				hosts,
 				autoHostSettings,
