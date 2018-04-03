@@ -130,10 +130,19 @@ export default class Player extends Module {
 		this.settings.add('player.home.autoplay', {
 			default: true,
 			ui: {
-				path: 'Channel > Player >> Front Page',
+				path: 'Channel > Player >> Playback',
 				title: 'Auto-play featured broadcasters on the front page.',
 				component: 'setting-check-box'
 			},
+		});
+
+		this.settings.add('player.vod.autoplay', {
+			default: true,
+			ui: {
+				path: 'Channel > Player >> Playback',
+				title: 'Auto-play the next recommended video after a video finishes.',
+				component: 'setting-check-box'
+			}
 		});
 
 		this.settings.add('player.volume-always-shown', {
@@ -197,6 +206,7 @@ export default class Player extends Module {
 		const t = this;
 
 		this.Player.on('mount', this.onMount, this);
+		this.Player.on('unmount', this.onUnmount, this);
 
 		this.Player.ready((cls, instances) => {
 			const old_init = cls.prototype.initializePlayer;
@@ -238,11 +248,68 @@ export default class Player extends Module {
 	}
 
 
+	onUnmount(inst) { // eslint-disable-line class-methods-use-this
+		this.cleanup(inst);
+	}
+
+
 	process(inst) {
 		this.addResetButton(inst);
+		this.addEndedListener(inst);
 		this.addControlVisibility(inst);
 		this.updateVolumeScroll(inst);
 	}
+
+
+	cleanup(inst) { // eslint-disable-line class-methods-use-this
+		const p = inst.player,
+			pr = inst.playerRef,
+			reset = pr && pr.querySelector('.ffz--player-reset');
+
+		if ( reset )
+			reset.remove();
+
+		if ( inst._ffz_on_ended ) {
+			p && p.removeEventListener('ended', inst._ffz_on_ended);
+			inst._ffz_on_ended = null;
+		}
+
+		if ( inst._ffz_visibility_handler ) {
+			if ( pr ) {
+				pr.removeEventListener('mousemove', inst._ffz_visibility_handler);
+				pr.removeEventListener('mouseout', inst._ffz_visibility_handler);
+			}
+
+			inst._ffz_visibility_handler = null;
+		}
+
+		if ( inst._ffz_scroll_handler ) {
+			pr && pr.removeEventListener('wheel', inst._ffz_scroll_handler);
+			inst._ffz_scroll_handler = null;
+		}
+
+
+	}
+
+
+	addEndedListener(inst) {
+		const p = inst.player;
+		if ( ! p )
+			return;
+
+		if ( inst._ffz_on_ended )
+			p.removeEventListener('ended', inst._ffz_on_ended);
+
+		p.addEventListener('ended', inst._ffz_on_ended = async () => {
+			if ( this.settings.get('player.vod.autoplay') )
+				return;
+
+			try {
+				(await this.parent.awaitElement('.pl-rec__cancel', inst.playerRef, 1000)).click();
+			} catch(err) { /* do nothing~ */ }
+		});
+	}
+
 
 	addControlVisibility(inst) { // eslint-disable-line class-methods-use-this
 		const p = inst.playerRef;
@@ -270,10 +337,17 @@ export default class Player extends Module {
 		p.addEventListener('mouseleave', f);
 	}
 
+
 	disableAutoplay(inst) {
 		if ( ! inst.player ) {
 			this.log.warn('disableAutoplay() called but Player was not ready');
 			return;
+		}
+
+		if ( ! inst.ffzVodAutoplay ) {
+			inst.player.addEventListener('ended', inst.ffzVodAutoplay = () => {
+
+			})
 		}
 
 		if ( ! inst.ffzAutoplay ) {
@@ -301,6 +375,7 @@ export default class Player extends Module {
 			}
 		}
 	}
+
 
 	updateVolumeScroll(inst, enabled) {
 		if ( enabled === undefined )
@@ -331,7 +406,6 @@ export default class Player extends Module {
 			});
 		}
 	}
-
 
 
 	addResetButton(inst) {
@@ -369,6 +443,8 @@ export default class Player extends Module {
 		const ES = this.web_munch.getModule('extension-service');
 		if ( ES )
 			ES.extensionService.unregisterPlayer();
+
+		this.cleanup(inst);
 
 		inst.player.destroy();
 		inst.playerRef.innerHTML = '';
