@@ -14,6 +14,7 @@ import Emotes from './emotes';
 import Room from './room';
 import User from './user';
 import * as TOKENIZERS from './tokenizers';
+import * as RICH_PROVIDERS from './rich_providers';
 
 
 export default class Chat extends Module {
@@ -45,10 +46,32 @@ export default class Chat extends Module {
 		this.tokenizers = {};
 		this.__tokenizers = [];
 
+		this.rich_providers = {};
+		this.__rich_providers = [];
+
 
 		// ========================================================================
 		// Settings
 		// ========================================================================
+
+		this.settings.add('chat.rich.enabled', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Display rich content in chat.',
+				description: 'This displays rich content blocks for things like linked clips and videos.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.rich.hide-tokens', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Hide matching links for rich content.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.scrollback-length', {
 			default: 150,
@@ -252,6 +275,10 @@ export default class Chat extends Module {
 		for(const key in TOKENIZERS)
 			if ( has(TOKENIZERS, key) )
 				this.addTokenizer(TOKENIZERS[key]);
+
+		for(const key in RICH_PROVIDERS)
+			if ( has(RICH_PROVIDERS, key) )
+				this.addRichProvider(RICH_PROVIDERS[key]);
 	}
 
 
@@ -410,7 +437,22 @@ export default class Chat extends Module {
 		this.__tokenizers.sort((a, b) => {
 			if ( a.priority > b.priority ) return -1;
 			if ( a.priority < b.priority ) return 1;
-			return a.type < b.sort;
+			return a.type < b.type;
+		});
+	}
+
+
+	addRichProvider(provider) {
+		const type = provider.type;
+		this.rich_providers[type] = provider;
+		if ( provider.priority == null )
+			provider.priority = 0;
+
+		this.__rich_providers.push(provider);
+		this.__rich_providers.sort((a,b) => {
+			if ( a.priority > b.priority ) return -1;
+			if ( a.priority < b.priority ) return 1;
+			return a.type < b.type;
 		});
 	}
 
@@ -422,6 +464,22 @@ export default class Chat extends Module {
 			tokens = tokenizer.process.call(this, tokens, msg);
 
 		return tokens;
+	}
+
+
+	pluckRichContent(tokens) { // eslint-disable-line class-methods-use-this
+		if ( ! this.context.get('chat.rich.enabled') )
+			return;
+
+		const providers = this.__rich_providers;
+
+		for(const token of tokens) {
+			for(const provider of providers)
+				if ( provider.test.call(this, token) ) {
+					token.hidden = this.context.get('chat.rich.hide-tokens') && provider.hide_token;
+					return provider.process.call(this, token);
+				}
+		}
 	}
 
 
