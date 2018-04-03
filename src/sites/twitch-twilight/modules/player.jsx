@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement} from 'utilities/dom';
+import {createElement, on, off} from 'utilities/dom';
 
 
 export default class Player extends Module {
@@ -234,15 +234,16 @@ export default class Player extends Module {
 		if ( this.settings.get('player.theatre.auto-enter') && inst.onTheatreChange )
 			inst.onTheatreChange(true);
 
-		if ( (!this.settings.get('player.home.autoplay')) && this.router.current.name === 'front-page' ) {
-			if ( inst.player ) {
+		if ( ! this.settings.get('player.home.autoplay') && this.router.current.name === 'front-page' ) {
+			if ( inst.player )
 				this.disableAutoplay(inst);
-			} else {
+			else {
 				const wrapped = inst.onPlayerReady;
 				inst.onPlayerReady = () => {
-					wrapped.call(inst);
+					const ret = wrapped.call(inst);
 					this.disableAutoplay(inst);
-				};
+					return ret;
+				}
 			}
 		}
 	}
@@ -270,25 +271,33 @@ export default class Player extends Module {
 			reset.remove();
 
 		if ( inst._ffz_on_ended ) {
-			p && p.removeEventListener('ended', inst._ffz_on_ended);
+			p && off(p, 'ended', inst._ffz_on_ended);
 			inst._ffz_on_ended = null;
 		}
 
 		if ( inst._ffz_visibility_handler ) {
 			if ( pr ) {
-				pr.removeEventListener('mousemove', inst._ffz_visibility_handler);
-				pr.removeEventListener('mouseout', inst._ffz_visibility_handler);
+				off(pr, 'mousemove', inst._ffz_visibility_handler);
+				off(pr, 'mouseleave', inst._ffz_visibility_handler);
 			}
 
 			inst._ffz_visibility_handler = null;
 		}
 
 		if ( inst._ffz_scroll_handler ) {
-			pr && pr.removeEventListener('wheel', inst._ffz_scroll_handler);
+			pr && off(pr, 'wheel', inst._ffz_scroll_handler);
 			inst._ffz_scroll_handler = null;
 		}
 
+		if ( inst._ffz_autoplay_handler ) {
+			if ( p ) {
+				off(p, 'play', inst._ffz_autoplay_handler);
+				off(p, 'playing', inst._ffz_autoplay_handler);
+				off(p, 'contentShowing', inst._ffz_autoplay_handler);
+			}
 
+			inst._ffz_autoplay_handler = null;
+		}
 	}
 
 
@@ -298,9 +307,9 @@ export default class Player extends Module {
 			return;
 
 		if ( inst._ffz_on_ended )
-			p.removeEventListener('ended', inst._ffz_on_ended);
+			off(p, 'ended', inst._ffz_on_ended);
 
-		p.addEventListener('ended', inst._ffz_on_ended = async () => {
+		on(p, 'ended', inst._ffz_on_ended = async () => {
 			if ( this.settings.get('player.vod.autoplay') )
 				return;
 
@@ -317,8 +326,8 @@ export default class Player extends Module {
 			return;
 
 		if ( inst._ffz_visibility_handler ) {
-			p.removeEventListener('mousemove', inst._ffz_visibility_handler);
-			p.removeEventListener('mouseleave', inst._ffz_visibility_handler);
+			off(p, 'mousemove', inst._ffz_visibility_handler);
+			off(p, 'mouseleave', inst._ffz_visibility_handler);
 		}
 
 		let timer;
@@ -333,46 +342,36 @@ export default class Player extends Module {
 			p.dataset.controls = true;
 		};
 
-		p.addEventListener('mousemove', f);
-		p.addEventListener('mouseleave', f);
+		on(p, 'mousemove', f);
+		on(p, 'mouseleave', f);
 	}
 
 
 	disableAutoplay(inst) {
-		if ( ! inst.player ) {
-			this.log.warn('disableAutoplay() called but Player was not ready');
-			return;
+		const p = inst.player;
+		if ( ! p )
+			return this.log.warn('disableAutoplay() called without Player');
+
+		if ( p.readyState > 0 ) {
+			this.log.info('Player already playing. Pausing.');
+			return p.pause();
 		}
 
-		if ( ! inst.ffzVodAutoplay ) {
-			inst.player.addEventListener('ended', inst.ffzVodAutoplay = () => {
+		if ( ! inst._ffz_autoplay_handler ) {
+			const listener = inst._ffz_autoplay_handler = () => {
+				inst._ffz_autoplay_handler = null;
+				p.pause();
 
-			})
-		}
-
-		if ( ! inst.ffzAutoplay ) {
-			const playListener = () => {
-				this.log.info('Auto-paused player');
-				inst.ffzAutoplay = null;
-				inst.player.pause();
-
-				// timing issues are a pain
 				setTimeout(() => {
-					inst.player.removeEventListener('play', playListener);
-					inst.player.removeEventListener('playing', playListener);
-					inst.player.removeEventListener('contentShowing', playListener);
+					off(p, 'play', listener);
+					off(p, 'playing', listener);
+					off(p, 'contentShowing', listener);
 				}, 1000);
 			}
 
-			inst.ffzAutoplay = playListener;
-			inst.player.addEventListener('play', inst.ffzAutoplay);
-			inst.player.addEventListener('playing', inst.ffzAutoplay);
-			inst.player.addEventListener('contentShowing', inst.ffzAutoplay);
-			this.log.info('readystate', inst.player.readyState);
-			if (inst.player.readyState > 0) {
-				// already playing the video (if FFZ script was slow)
-				inst.player.pause();
-			}
+			on(p, 'play', listener);
+			on(p, 'playing', listener);
+			on(p, 'contentShowing', listener);
 		}
 	}
 
@@ -381,15 +380,16 @@ export default class Player extends Module {
 		if ( enabled === undefined )
 			enabled = this.settings.get('player.volume-scroll');
 
-		if ( ! inst.playerRef )
+		const pr = inst.playerRef;
+		if ( ! pr )
 			return;
 
 		if ( ! enabled && inst._ffz_scroll_handler ) {
-			inst.playerRef.removeEventListener('wheel', inst._ffz_scroll_handler);
+			off(pr, 'wheel', inst._ffz_scroll_handler);
 			inst._ffz_scroll_handler = null;
 
 		} else if ( enabled && ! inst._ffz_scroll_handler ) {
-			inst.playerRef.addEventListener('wheel', inst._ffz_scroll_handler = e => {
+			on(pr, 'wheel', inst._ffz_scroll_handler = e => {
 				const delta = e.wheelDelta || -(e.deltaY || e.detail || 0),
 					player = inst.player;
 
@@ -409,15 +409,12 @@ export default class Player extends Module {
 
 
 	addResetButton(inst) {
-		if ( ! inst.playerRef )
-			return this.log.warn('no player ref');
-
 		const t = this,
-			el = inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
+			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
 			container = el && el.parentElement;
 
 		if ( ! container )
-			return;
+			return this.log.warn('Unable to find container element for Reset Button');
 
 		let tip = container.querySelector('.ffz--player-reset .player-tip');
 
