@@ -86,12 +86,6 @@ class FrankerFaceZ extends Module {
 
 		await Promise.all(promises);
 	}
-
-
-	/* eslint class-methods-use-this: off */
-	api(...args) {
-		return this._api.create(...args);
-	}
 }
 
 FrankerFaceZ.Logger = Logger;
