@@ -1,0 +1,18 @@
+query FFZ_GetVideoInfo($id: ID!) {
+	video(id: $id) {
+		id
+		title
+		previewThumbnailURL(width: 86, height: 45)
+		lengthSeconds
+		publishedAt
+		viewCount
+		game {
+			id
+			displayName
+		}
+		owner {
+			id
+			displayName
+		}
+	}
+}
