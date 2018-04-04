@@ -1,0 +1,20 @@
+query FFZ_GetClipInfo($slug: ID!) {
+	clip(slug: $slug) {
+		id
+		curator {
+			id
+			displayName
+		}
+		broadcaster {
+			id
+			displayName
+		}
+		game {
+			id
+			displayName
+		}
+		title
+		thumbnailURL(width: 86, height: 45)
+		viewCount
+	}
+}

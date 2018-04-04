@@ -8,6 +8,8 @@ import Twilight from 'site';
 import Module from 'utilities/module';
 //import {Color} from 'utilities/color';
 
+import RichContent from './rich_content';
+
 const SUB_TIERS = {
 	1000: 1,
 	2000: 2,
@@ -23,6 +25,7 @@ export default class ChatLine extends Module {
 		this.inject('chat');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
+		this.inject(RichContent);
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
@@ -43,13 +46,16 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.badges.hidden', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.custom-mod', this.updateLines, this);
 		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
 
 		const t = this,
 			React = this.web_munch.getModule('react');
 		if ( ! React )
 			return;
 
-		const e = React.createElement;
+		const e = React.createElement,
+			FFZRichContent = this.rich_content && this.rich_content.RichContent;
 
 		this.ChatLine.ready(cls => {
 			cls.prototype.shouldComponentUpdate = function(props, state) {
@@ -101,7 +107,12 @@ export default class ChatLine extends Module {
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
 
-				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, {login: this.props.currentUserLogin, display: this.props.currentUserDisplayName});
+				const u = {
+						login: this.props.currentUserLogin,
+						display: this.props.currentUserDisplayName
+					},
+					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
+					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
 				let cls = 'chat-line__message',
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -135,6 +146,8 @@ export default class ChatLine extends Module {
 								href: '',
 								onClick: this.alwaysShowMessage
 							}, `<message deleted>`)),
+
+						show && rich_content && e(FFZRichContent, rich_content),
 
 						/*this.state.renderDebug === 2 && e('div', {
 							className: 'border mg-t-05'
