@@ -19,11 +19,18 @@
                 flex-shrink: 0;
             }
         }
-        
+
         span {
             overflow-x: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+    }
+}
+
+.ffz--chat-card {
+    .ffz--two-line {
+        .tw-ellipsis { line-height: 1.4rem }
+        .chat-card__title { line-height: 1.5rem }
     }
 }
