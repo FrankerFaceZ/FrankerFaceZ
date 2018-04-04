@@ -38,7 +38,7 @@ class FrankerFaceZ extends Module {
 		this.inject('i18n', TranslationManager);
 		this.inject('socket', SocketClient);
 		this.inject('site', Site);
-		this.inject('addon_manager', AddonManager);
+		this.inject('addons', AddonManager);
 
 		this.register('vue', Vue);
 
