@@ -39,7 +39,7 @@ export class AddonManager extends Module {
 		});
 
 		this.enabledAddons = this.settings.provider.get('addons.enabled') || [];
-		this.log.info('Enabled addons', this.enabledAddons);
+		this.log.info('Enabled addons:', this.enabledAddons.join(', '));
 	}
 
 	async onEnable() {
