@@ -1,12 +1,22 @@
 import Module from 'utilities/module';
 
 export class Addon extends Module {
-	constructor(data) {
-		super(`addon.${data.id}`);
-
-		this.data = data;
+	constructor(...args) {
+		super(...args);
 
 		this.inject('settings');
+	}
+
+	static register(name) {
+		FrankerFaceZ.get().register(`addon.${name}`, this).enable();
+	}
+
+	addSetting(key, definition) {
+		this.settings.add(`${this.name}.${key}`, definition);
+	}
+
+	getSetting(key) {
+		return this.settings.get(`${this.name}.${key}`);
 	}
 }
 
@@ -71,7 +81,6 @@ export class AddonManager extends Module {
 			this.enableAddon(requiredID);
 		}
 
-		// Logic??
 		this.loadAddon(id);
 
 		this.enabledAddons.push(id);
@@ -92,7 +101,6 @@ export class AddonManager extends Module {
 			this.disableAddon(requiredID);
 		}
 
-		// Logic??
 		this.enabledAddons = this.enabledAddons.filter(addonID => addonID !== id);
 		this.settings.provider.set('addons.enabled', this.enabledAddons);
 
