@@ -6,7 +6,11 @@
 			This is where you can enable or disable add-ons for FrankerFaceZ.
 		</p>
 
-		<div v-for="addon in item.getAddons()" :key="addon.id" class="tw-pd-b-1 tw-pd-r-1 ffz--add-on-info">
+		<div v-for="(addon, index) in item.getAddons()"
+			:key="addon.id"
+			:class="`tw-pd-b-${index === (item.getAddons().length-1) ? '2' : '1'}`"
+			class="tw-pd-r-1 ffz--add-on-info"
+		>
 			<div class="tw-border-t tw-border-r tw-border-b tw-border-l tw-c-background tw-flex tw-flex-grow-1 tw-flex-nowrap tw-justify-content-between tw-full-height tw-pd-l-1">
 				<div class="tw-card tw-relative tw-full-width">
 					<div class="tw-align-items-top tw-flex tw-flex-row tw-flex-nowrap">
