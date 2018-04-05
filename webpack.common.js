@@ -16,6 +16,13 @@ module.exports = {
 			utilities: path.resolve(__dirname, 'src/utilities/')
 		}
 	},
+	externals: [
+		function(context, request, callback) {
+			if ( request === 'vue' && ! /utilities/.test(context) )
+				return callback(null, 'root ffzVue');
+			callback();
+		}
+	],
 	output: {
 		chunkFilename: '[name].[chunkhash].js',
 		path: path.resolve(__dirname, 'dist'),
