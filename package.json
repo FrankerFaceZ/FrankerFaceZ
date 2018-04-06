@@ -8,6 +8,7 @@
     "start": "webpack-dev-server --config webpack.web.dev.js",
     "eslint": "eslint \"src/**/*.{js,jsx,vue}\"",
     "build": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production'",
+    "build:stats": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production' --json > stats.json",
     "build:babel": "webpack --config webpack.web.babel.js --define process.env.NODE_ENV='production'",
     "build:prod": "webpack --config webpack.web.prod.js --define process.env.NODE_ENV='production'",
     "build:dev": "webpack --config webpack.web.dev.js"
