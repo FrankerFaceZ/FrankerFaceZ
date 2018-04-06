@@ -17,7 +17,7 @@ export class Vue extends Module {
 	}
 
 	async onLoad() {
-		const Vue = this.Vue = (await import(/* webpackChunkName: "vue" */ 'vue')).default,
+		const Vue = window.ffzVue = this.Vue = (await import(/* webpackChunkName: "vue" */ 'vue')).default,
 			components = this._components;
 
 		this.component((await import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')).default);

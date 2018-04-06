@@ -322,8 +322,10 @@ export class Tooltip {
 			tip.outer = el._ffz_out_handler = el._ffz_over_handler = null;
 		}
 
-		tip._update = noop;
-		tip.update = tip.element = null;
+		this.elements.delete(tip.target);
+
+		tip._update = tip.rerender = tip.update = noop;
+		tip.element = null;
 		tip.visible = false;
 	}
 }
