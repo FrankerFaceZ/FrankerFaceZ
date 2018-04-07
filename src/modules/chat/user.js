@@ -112,6 +112,7 @@ export default class User {
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
 			this.manager.emotes.refSet(set_id);
+			this.manager.emotes.emit(':update-user-sets', this, provider, set_id, true);
 			return true;
 		}
 	}
@@ -120,6 +121,7 @@ export default class User {
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
 			this.manager.emotes.unrefSet(set_id);
+			this.manager.emotes.emit(':update-user-sets', this, provider, set_id, false);
 		}
 	}
 }

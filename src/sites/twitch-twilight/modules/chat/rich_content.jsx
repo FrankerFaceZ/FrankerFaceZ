@@ -144,7 +144,7 @@ export default class RichContent extends Module {
 				return (<a
 					class="chat-card__link"
 					target="_blank"
-					rel="noreferer noopener"
+					rel="noreferrer noopener"
 					href={this.state.url}
 				>
 					{this.renderCard()}

@@ -40,6 +40,39 @@ export function timeout(promise, delay) {
 
 
 /**
+ * Make sure that a given asynchronous function is only called once
+ * at a time.
+ */
+
+export function once(fn) {
+	let waiters;
+
+	return function(...args) {
+		return new Promise(async (s,f) => {
+			if ( waiters )
+				return waiters.push([s,f]);
+
+			waiters = [[s,f]];
+			let result;
+			try {
+				result = await fn.call(this, ...args); // eslint-disable-line no-invalid-this
+			} catch(err) {
+				for(const w of waiters)
+					w[1](err);
+				waiters = null;
+				return;
+			}
+
+			for(const w of waiters)
+				w[0](result);
+
+			waiters = null;
+		})
+	}
+}
+
+
+/**
  * Check that two arrays are the same length and that each array has the same
  * items in the same indices.
  * @param {Array} a The first array
@@ -53,6 +86,18 @@ export function array_equals(a, b) {
 	let i = a.length;
 	while(i--)
 		if ( a[i] !== b[i] )
+			return false;
+
+	return true;
+}
+
+
+export function set_equals(a,b) {
+	if ( !(a instanceof Set) || !(b instanceof Set) || a.size !== b.size )
+		return false;
+
+	for(const v of a)
+		if ( ! b.has(v) )
 			return false;
 
 	return true;

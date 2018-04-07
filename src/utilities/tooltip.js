@@ -193,6 +193,8 @@ export class Tooltip {
 
 		// Set this early in case content uses it early.
 		tip.update = () => tip._update(); // tip.popper && tip.popper.scheduleUpdate();
+		tip.show = () => this.show(tip);
+		tip.hide = () => this.hide(tip);
 		tip.rerender = () => {
 			if ( tip.visible ) {
 				this.hide(tip);
