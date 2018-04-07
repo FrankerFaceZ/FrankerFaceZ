@@ -148,6 +148,17 @@ export default class Fine extends Module {
 		if ( ! node || depth > max_depth )
 			return null;
 
+		if ( typeof criteria === 'string' ) {
+			const wrapper = this._wrappers.get(criteria);
+			if ( ! wrapper )
+				throw new Error('invalid critera');
+
+			if ( ! wrapper._class )
+				return null;
+
+			criteria = n => n && n.constructor === wrapper._class;
+		}
+
 		const inst = node.stateNode;
 		if ( inst && criteria(inst) )
 			return inst;
@@ -171,6 +182,17 @@ export default class Fine extends Module {
 
 		if ( ! node || depth > max_depth )
 			return null;
+
+		if ( typeof criteria === 'string' ) {
+			const wrapper = this._wrappers.get(criteria);
+			if ( ! wrapper )
+				throw new Error('invalid critera');
+
+			if ( ! wrapper._class )
+				return null;
+
+			criteria = n => n && n.constructor === wrapper._class;
+		}
 
 		const inst = node.stateNode;
 		if ( inst && criteria(inst) )
