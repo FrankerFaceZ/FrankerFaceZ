@@ -6,6 +6,33 @@ export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com
 export const CLIENT_ID = 'a3bc9znoz6vi8ozsoca0inlcr4fcvkl';
 export const API_SERVER = '//api.frankerfacez.com';
 
+export const TWITCH_EMOTE_BASE = '//static-cdn.jtvnw.net/emoticons/v1/';
+
+export const KNOWN_CODES = {
+	'#-?[\\\\/]': '#-/',
+	':-?(?:7|L)': ':-7',
+	'\\&lt\\;\\]': '<]',
+	'\\:-?(S|s)': ':-S',
+	'\\:-?\\\\': ':-\\',
+	'\\:\\&gt\\;': ':>',
+	'B-?\\)': 'B-)',
+	'\\:-?[z|Z|\\|]': ':-Z',
+	'\\:-?\\)': ':-)',
+	'\\:-?\\(': ':-(',
+	'\\:-?(p|P)': ':-P',
+	'\\;-?(p|P)': ';-P',
+	'\\&lt\\;3': '<3',
+	'\\:-?[\\\\/]': ':-/',
+	'\\;-?\\)': ';-)',
+	'R-?\\)': 'R-)',
+	'[oO](_|\\.)[oO]': 'O.o',
+	'[o|O](_|\\.)[o|O]': 'O.o',
+	'\\:-?D': ':-D',
+	'\\:-?(o|O)': ':-O',
+	'\\&gt\\;\\(': '>(',
+	'Gr(a|e)yFace': 'GrayFace'
+};
+
 export const WS_CLUSTERS = {
 	Production: [
 		['wss://catbag.frankerfacez.com/', 0.25],

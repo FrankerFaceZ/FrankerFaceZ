@@ -15,7 +15,7 @@ import Twilight from 'site';
 import Scroller from './scroller';
 import ChatLine from './line';
 import SettingsMenu from './settings_menu';
-//import EmoteMenu from './emote_menu';
+import EmoteMenu from './emote_menu';
 
 
 const CHAT_TYPES = (e => {
@@ -111,7 +111,7 @@ export default class ChatHook extends Module {
 		this.inject(Scroller);
 		this.inject(ChatLine);
 		this.inject(SettingsMenu);
-		//this.inject(EmoteMenu);
+		this.inject(EmoteMenu);
 
 
 		this.ChatController = this.fine.define(

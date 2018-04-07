@@ -10,6 +10,8 @@ import {has, timeout, SourcedSet} from 'utilities/object';
 import {CLIENT_ID, API_SERVER} from 'utilities/constants';
 
 
+const EXTRA_INVENTORY = [33563];
+
 const MODIFIERS = {
 	59847: {
 		modifier_offset: '0 15px 15px 0',
@@ -58,12 +60,20 @@ export default class Emotes extends Module {
 		this.inject('socket');
 		this.inject('settings');
 
-		this.twitch_inventory_sets = [];
+		this.twitch_inventory_sets = new Set(EXTRA_INVENTORY);
 		this.__twitch_emote_to_set = new Map;
 		this.__twitch_set_to_channel = new Map;
 
 		this.default_sets = new SourcedSet;
 		this.global_sets = new SourcedSet;
+
+		this.providers = new Map;
+
+		this.providers.set('featured', {
+			name: 'Featured',
+			i18n_key: 'emote-menu.featured',
+			sort_key: 75
+		})
 
 		this.emote_sets = {};
 		this._set_refs = {};
@@ -98,8 +108,37 @@ export default class Emotes extends Module {
 				}
 		}
 
+		this.socket.on(':command:follow_sets', this.updateFollowSets, this);
+
 		this.loadGlobalSets();
 		this.loadTwitchInventory();
+	}
+
+
+	// ========================================================================
+	// Featured Sets
+	// ========================================================================
+
+	updateFollowSets(data) {
+		for(const room_login in data)
+			if ( has(data, room_login) ) {
+				const room = this.parent.getRoom(null, room_login, true),
+					new_sets = data[room_login] || [],
+					emote_sets = room.emote_sets,
+					providers = emote_sets._sources;
+
+				if ( providers && providers.has('featured') )
+					for(const item of providers.get('featured'))
+						if ( ! new_sets.includes(item) )
+							room.removeSet('featured', item);
+
+				for(const set_id of new_sets) {
+					room.addSet('featured', set_id);
+
+					if ( ! this.emote_sets[set_id] )
+						this.loadSet(set_id);
+				}
+			}
 	}
 
 
@@ -124,6 +163,41 @@ export default class Emotes extends Module {
 			.map(set_id => this.emote_sets[set_id]);
 	}
 
+	_withSources(out, seen, emote_sets) { // eslint-disable-line class-methods-use-this
+		if ( ! emote_sets._sources )
+			return;
+
+		for(const [provider, data] of emote_sets._sources)
+			for(const item of data)
+				if ( ! seen.has(item) ) {
+					out.push([item, provider]);
+					seen.add(item);
+				}
+
+		return out;
+	}
+
+	getRoomSetIDsWithSources(user_id, user_login, room_id, room_login) {
+		const room = this.parent.getRoom(room_id, room_login, true),
+			room_user = room && room.getUser(user_id, user_login, true);
+
+		if ( ! room )
+			return [];
+
+		const out = [], seen = new Set;
+
+		this._withSources(out, seen, room.emote_sets);
+		if ( room_user )
+			this._withSources(out, seen, room_user);
+
+		return out;
+	}
+
+	getRoomSetsWithSources(user_id, user_login, room_id, room_login) {
+		return this.getRoomSetIDsWithSources(user_id, user_login, room_id, room_login)
+			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
+	}
+
 	getRoomSetIDs(user_id, user_login, room_id, room_login) {
 		const room = this.parent.getRoom(room_id, room_login, true),
 			room_user = room && room.getUser(user_id, user_login, true);
@@ -140,6 +214,22 @@ export default class Emotes extends Module {
 	getRoomSets(user_id, user_login, room_id, room_login) {
 		return this.getRoomSetIDs(user_id, user_login, room_id, room_login)
 			.map(set_id => this.emote_sets[set_id]);
+	}
+
+	getGlobalSetIDsWithSources(user_id, user_login) {
+		const user = this.parent.getUser(user_id, user_login, true),
+			out = [], seen = new Set;
+
+		this._withSources(out, seen, this.default_sets);
+		if ( user )
+			this._withSources(out, seen, user.emote_sets);
+
+		return out;
+	}
+
+	getGlobalSetsWithSources(user_id, user_login) {
+		return this.getGlobalSetIDsWithSources(user_id, user_login)
+			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
 	}
 
 	getGlobalSetIDs(user_id, user_login) {
@@ -171,28 +261,30 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	addDefaultSet(provider, set_id, data) {
-		const had_set = this.default_sets.includes(set_id);
+		let changed = false;
 		if ( ! this.default_sets.sourceIncludes(provider, set_id) ) {
 			this.default_sets.push(provider, set_id);
 			this.refSet(set_id);
+			changed = true;
 		}
 
 		if ( data )
 			this.loadSetData(set_id, data);
 
-		if ( ! had_set )
-			this.emit(':update-default-sets');
+		if ( changed )
+			this.emit(':update-default-sets', provider, set_id, true);
 	}
 
 	removeDefaultSet(provider, set_id) {
-		const had_set = this.default_sets.includes(set_id);
+		let changed = false;
 		if ( this.default_sets.sourceIncludes(provider, set_id) ) {
 			this.default_sets.remove(provider, set_id);
 			this.unrefSet(set_id);
+			changed = true;
 		}
 
-		if ( had_set && ! this.default_sets.includes(set_id) )
-			this.emit(':update-default-sets');
+		if ( changed )
+			this.emit(':update-default-sets', provider, set_id, false);
 	}
 
 	refSet(set_id) {
@@ -252,7 +344,41 @@ export default class Emotes extends Module {
 	}
 
 
-	loadSetUsers(data) {
+	async loadSet(set_id, suppress_log = false, tries = 0) {
+		let response, data;
+		try {
+			response = await fetch(`${API_SERVER}/v1/set/${set_id}`)
+		} catch(err) {
+			tries++;
+			if ( tries < 10 )
+				return setTimeout(() => this.loadGlobalSets(tries), 500 * tries);
+
+			this.log.error(`Error loading data for set "${set_id}".`, err);
+			return false;
+		}
+
+		if ( ! response.ok )
+			return false;
+
+		try {
+			data = await response.json();
+		} catch(err) {
+			this.log.error(`Error parsing data for set "${set_id}".`, err);
+			return false;
+		}
+
+		const set = data.set;
+		if ( set )
+			this.loadSetData(set.id, set, suppress_log);
+
+		if ( data.users )
+			this.loadSetUsers(data.users);
+
+		return true;
+	}
+
+
+	loadSetUsers(data, suppress_log = false) {
 		for(const set_id in data)
 			if ( has(data, set_id) ) {
 				const emote_set = this.emote_sets[set_id],
@@ -262,7 +388,8 @@ export default class Emotes extends Module {
 					this.parent.getUser(undefined, login)
 						.addSet('ffz-global', set_id);
 
-				this.log.info(`Added "${emote_set ? emote_set.title : set_id}" emote set to ${users.length} users.`);
+				if ( ! suppress_log )
+					this.log.info(`Added "${emote_set ? emote_set.title : set_id}" emote set to ${users.length} users.`);
 			}
 	}
 
@@ -283,6 +410,7 @@ export default class Emotes extends Module {
 			new_ems = data.emotes = {},
 			css = [];
 
+		data.id = set_id;
 		data.emoticons = undefined;
 
 		for(const emote of ems) {
@@ -413,7 +541,11 @@ export default class Emotes extends Module {
 			return;
 		}
 
-		this.twitch_inventory_sets = data.emoticon_sets ? Object.keys(data.emoticon_sets) : [];
+		const sets = this.twitch_inventory_sets = new Set(EXTRA_INVENTORY);
+		for(const set in data.emoticon_sets)
+			if ( has(data.emoticon_sets, set) )
+				sets.add(parseInt(set, 10));
+
 		this.log.info('Twitch Inventory Sets:', this.twitch_inventory_sets);
 	}
 
