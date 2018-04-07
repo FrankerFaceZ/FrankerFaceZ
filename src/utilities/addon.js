@@ -5,6 +5,7 @@ export class Addon extends Module {
 		super(...args);
 
 		this.inject('settings');
+		this.inject('chat');
 	}
 
 	static register(name) {
@@ -15,8 +16,12 @@ export class Addon extends Module {
 		this.settings.add(`${this.name}.${key}`, definition);
 	}
 
-	getSetting(key) {
-		return this.settings.get(`${this.name}.${key}`);
+	getSetting(key, context = false) {
+		return context ? this.chat.context.get(`${this.name}.${key}`) : this.settings.get(`${this.name}.${key}`);
+	}
+
+	onSettingChanged(key, handler) {
+		this.chat.context.on(`changed:${this.name}.${key}`, handler, this);
 	}
 }
 
@@ -55,7 +60,7 @@ export class AddonManager extends Module {
 	}
 
 	async onEnable() {
-		const {cdn_data, local_data} = await Promise.all([
+		const [cdn_data, local_data] = await Promise.all([
 			fetch('https://cors-anywhere.herokuapp.com/https://lordmau5.com/addons.json').then(r => r.ok ? r.json() : null).catch(() => null),
 			this.settings.get('addons.development')
 				? fetch('https://localhost:8001/script/addons/addons.json').then(r => r.ok ? r.json() : null).catch(() => null)
