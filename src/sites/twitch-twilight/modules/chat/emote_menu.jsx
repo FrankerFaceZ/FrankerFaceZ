@@ -795,20 +795,22 @@ export default class EmoteMenu extends Module {
 
 
 				// Finally, emotes added by FrankerFaceZ.
-				const me = t.site.getUser(),
-					ffz_room = t.emotes.getRoomSetsWithSources(me.id, me.login, props.channel_id, null),
-					ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login);
+				const me = t.site.getUser();
+				if ( me ) {
+					const ffz_room = t.emotes.getRoomSetsWithSources(me.id, me.login, props.channel_id, null),
+						ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login);
 
-				for(const [emote_set, provider] of ffz_room) {
-					const section = this.processFFZSet(emote_set, provider);
-					if ( section )
-						channel.push(section);
-				}
+					for(const [emote_set, provider] of ffz_room) {
+						const section = this.processFFZSet(emote_set, provider);
+						if ( section )
+							channel.push(section);
+					}
 
-				for(const [emote_set, provider] of ffz_global) {
-					const section = this.processFFZSet(emote_set, provider);
-					if ( section )
-						all.push(section);
+					for(const [emote_set, provider] of ffz_global) {
+						const section = this.processFFZSet(emote_set, provider);
+						if ( section )
+							all.push(section);
+					}
 				}
 
 
