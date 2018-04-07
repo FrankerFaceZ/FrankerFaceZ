@@ -138,6 +138,15 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.TabCompleteChannelInfo = this.fine.define(
+			'tab-complete-channel-info',
+			n => n.props
+				&& n.props.sessionUser !== undefined
+				&& n.props.channelID !== undefined
+				&& n.props.roomID === undefined,
+			Twilight.CHAT_ROUTES
+		);
+
 
 		// Settings
 
@@ -445,11 +454,19 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.setupTabCompletion(inst);
 		});
-		this.TabComplete.on('mount', this.setupTabCompletion, this);
 		this.TabComplete.on('unmount', inst => {
 			inst._ffz_getMatchedEmotes = null;
 			inst._ffz_channelInfo = null;
 		}, this);
+
+		this.TabCompleteChannelInfo.ready(() => {
+			for (const inst of this.TabComplete.instances)
+				this.setupTabCompletion(inst);
+		});
+		this.TabCompleteChannelInfo.on('mount', () => {
+			for (const inst of this.TabComplete.instances)
+				this.setupTabCompletion(inst);
+		});
 	}
 
 
@@ -484,10 +501,7 @@ export default class ChatHook extends Module {
 
 		if (!inst._ffz_getMatchedEmotes) inst._ffz_getMatchedEmotes = old_matched;
 
-		inst._ffz_channelInfo = this.fine.searchParent(inst, n => n.props
-			&& n.props.channelID !== undefined
-			&& n.props.roomID === undefined
-		);
+		inst._ffz_channelInfo = this.TabCompleteChannelInfo.first;
 
 		if ( ! inst._ffz_channelInfo )
 			return;
