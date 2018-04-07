@@ -26,6 +26,8 @@ export default class User {
 
 		for(const set_id of this.emote_sets._cache)
 			this.manager.emotes.unrefSet(set_id);
+
+		this.emote_sets = null;
 	}
 
 	get id() {
@@ -109,6 +111,9 @@ export default class User {
 	// ========================================================================
 
 	addSet(provider, set_id) {
+		if ( this.destroyed )
+			return;
+
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
 			this.manager.emotes.refSet(set_id);
@@ -118,6 +123,9 @@ export default class User {
 	}
 
 	removeSet(provider, set_id) {
+		if ( this.destroyed )
+			return;
+
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
 			this.manager.emotes.unrefSet(set_id);

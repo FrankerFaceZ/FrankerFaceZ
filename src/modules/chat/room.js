@@ -60,6 +60,8 @@ export default class Room {
 
 		this.emote_sets = null;
 		this.style = null;
+		this.users = null;
+		this.user_ids = null;
 
 		if ( this._login ) {
 			if ( this.manager.rooms[this._login] === this )
@@ -108,6 +110,9 @@ export default class Room {
 
 
 	getUser(id, login, no_create, no_login) {
+		if ( this.destroyed )
+			return null;
+
 		let user;
 		if ( id && typeof id === 'number' )
 			id = `${id}`;
@@ -240,6 +245,9 @@ export default class Room {
 	// ========================================================================
 
 	addSet(provider, set_id, data) {
+		if ( this.destroyed )
+			return;
+
 		let changed = false;
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
@@ -255,6 +263,9 @@ export default class Room {
 	}
 
 	removeSet(provider, set_id) {
+		if ( this.destroyed )
+			return;
+
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
 			this.manager.emotes.unrefSet(set_id);
@@ -305,6 +316,7 @@ export default class Room {
 	buildModBadgeCSS() {
 		if ( this.destroyed )
 			return;
+
 		if ( ! this.data || ! this.data.mod_urls || ! this.manager.context.get('chat.badges.custom-mod') )
 			return this.style.delete('mod-badge');
 
@@ -331,6 +343,7 @@ export default class Room {
 	buildBadgeCSS() {
 		if ( this.destroyed )
 			return;
+
 		if ( ! this.badges )
 			return this.style.delete('badges');
 
@@ -379,6 +392,7 @@ export default class Room {
 	buildBitsCSS() {
 		if ( this.destroyed )
 			return;
+
 		if ( ! this.bitsConfig )
 			return this.style.delete('bits');
 
