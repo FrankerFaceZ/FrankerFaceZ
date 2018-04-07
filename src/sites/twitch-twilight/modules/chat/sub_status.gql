@@ -1,0 +1,37 @@
+query FFZ_EmoteMenu_SubStatus($first: Int, $after: Cursor, $criteria: SubscriptionBenefitCriteriaInput!) {
+	currentUser {
+		id
+		subscriptionBenefits(first: $first, after: $after, criteria: $criteria) {
+			pageInfo {
+				hasNextPage
+			}
+			edges {
+				cursor
+				node {
+					id
+					purchasedWithPrime
+					endsAt
+					renewsAt
+					product {
+						id
+						name
+						displayName
+						emoteSetID
+						type
+						owner {
+							id
+							login
+							displayName
+							broadcastBadges {
+								id
+								setID
+								version
+								imageURL(size: NORMAL)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

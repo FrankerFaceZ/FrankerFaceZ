@@ -240,19 +240,25 @@ export default class Room {
 	// ========================================================================
 
 	addSet(provider, set_id, data) {
+		let changed = false;
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
 			this.manager.emotes.refSet(set_id);
+			changed = true;
 		}
 
 		if ( data )
 			this.manager.emotes.loadSetData(set_id, data);
+
+		if ( changed )
+			this.manager.emotes.emit(':update-room-sets', this, provider, set_id, true);
 	}
 
 	removeSet(provider, set_id) {
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
 			this.manager.emotes.unrefSet(set_id);
+			this.manager.emotes.emit(':update-room-sets', this, provider, set_id, false);
 		}
 	}
 
@@ -297,6 +303,8 @@ export default class Room {
 	}
 
 	buildModBadgeCSS() {
+		if ( this.destroyed )
+			return;
 		if ( ! this.data || ! this.data.mod_urls || ! this.manager.context.get('chat.badges.custom-mod') )
 			return this.style.delete('mod-badge');
 
@@ -321,6 +329,8 @@ export default class Room {
 	}
 
 	buildBadgeCSS() {
+		if ( this.destroyed )
+			return;
 		if ( ! this.badges )
 			return this.style.delete('badges');
 
@@ -367,6 +377,8 @@ export default class Room {
 	}
 
 	buildBitsCSS() {
+		if ( this.destroyed )
+			return;
 		if ( ! this.bitsConfig )
 			return this.style.delete('bits');
 

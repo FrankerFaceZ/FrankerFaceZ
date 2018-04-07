@@ -30,15 +30,13 @@
 					<li>Settings from the old version are not being imported.</li>
 					<li>Settings cannot be searched.</li>
 					<li>Emoji aren't displayed.</li>
-					<li>The emote menu isn't finished.</li>
-					<li>Tab-completion and advanced input isn't available.</li>
+					<li>Advanced input isn't available.</li>
 				</ul>
 
 				<p>And the biggest features still under development:</p>
 
 				<ul class="tw-mg-b-2">
 					<li>Emoji Rendering</li>
-					<li>Emotes Menu</li>
 					<li>Chat Filtering (Highlighted Words, etc.)</li>
 					<li>Room Status Indicators</li>
 					<li>Custom Mod Cards</li>
@@ -49,7 +47,6 @@
 					<li>Portrait Mode</li>
 					<li>Importing and exporting settings</li>
 					<li>User Aliases</li>
-					<li>Rich Content in Chat (aka Clip Embeds)</li>
 				</ul>
 
 				<p>
