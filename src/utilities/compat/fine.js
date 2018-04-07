@@ -299,6 +299,27 @@ export default class Fine extends Module {
 	}
 
 
+	wrap(key, cls) {
+		let wrapper;
+		if ( this._wrappers.has(key) )
+			wrapper = this._wrappers.get(key);
+		else {
+			wrapper = new FineWrapper(key, null, undefined, this);
+			this._wrappers.set(key, wrapper);
+		}
+
+		if ( cls ) {
+			if ( wrapper._class || wrapper.criteria )
+				throw new Error('tried setting a class on an already initialized FineWrapper');
+
+			wrapper._set(cls, new Set);
+			this._known_classes.set(cls, wrapper);
+		}
+
+		return wrapper;
+	}
+
+
 	_checkWaiters(nodes) {
 		if ( ! this._live_waiting )
 			return;

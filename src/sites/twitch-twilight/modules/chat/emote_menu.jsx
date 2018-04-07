@@ -77,17 +77,69 @@ export default class EmoteMenu extends Module {
 			},
 
 			ui: {
-				path: 'Chat > Emote Menu >> General',
+				path: 'Chat > Emote Menu >> Appearance',
 				title: 'Replace the emote menu icon with the FFZ icon for that classic feel.',
 				component: 'setting-check-box'
 			}
-		})
+		});
+
+		this.settings.add('chat.emote-menu.show-heading', {
+			default: 1,
+			ui: {
+				path: 'Chat > Emote Menu >> Appearance',
+				title: 'Show Headers',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Never'},
+					{value: 1, title: 'Always'},
+					{value: 2, title: 'When Not Searching'}
+				]
+			}
+		});
+
+		this.settings.add('chat.emote-menu.show-search', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Menu >> Appearance',
+				title: 'Show the search box.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.emote-menu.reduced-padding', {
+			default: false,
+			ui: {
+				path: 'Chat > Emote Menu >> Appearance',
+				title: 'Use reduced padding.',
+				component: 'setting-check-box'
+			}
+		});
+
+
+		this.settings.add('chat.emote-menu.default-tab', {
+			default: 'channel',
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Default Tab',
+				component: 'setting-select-box',
+				data: [
+					{value: 'channel', title: 'Channel'},
+					{value: 'all', title: 'All'}
+				]
+			}
+		});
+
 
 		this.EmoteMenu = this.fine.define(
 			'chat-emote-menu',
 			n => n.subscriptionProductHasEmotes,
 			Twilight.CHAT_ROUTES
 		)
+
+
+		this.MenuWrapper = this.fine.wrap('ffz-emote-menu');
+		this.MenuSection = this.fine.wrap('ffz-menu-section');
+		this.MenuEmote = this.fine.wrap('ffz-menu-emote');
 	}
 
 	onEnable() {
@@ -95,6 +147,18 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-room-sets', this.maybeUpdate, this);
+
+		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
+			this.EmoteMenu.forceUpdate());
+
+		this.chat.context.on('changed:chat.emote-menu.show-heading', () =>
+			this.MenuWrapper.forceUpdate());
+
+		this.chat.context.on('changed:chat.emote-menu.show-search', () =>
+			this.MenuWrapper.forceUpdate());
+
+		this.chat.context.on('changed:chat.emote-menu.reduced-padding', () =>
+			this.MenuWrapper.forceUpdate());
 
 		this.chat.context.on('changed:chat.emote-menu.icon', val =>
 			this.css_tweaks.toggle('emote-menu', val));
@@ -174,7 +238,7 @@ export default class EmoteMenu extends Module {
 					data-provider={data.provider}
 					data-id={data.id}
 					data-set={data.set_id}
-					data-no-source="true"
+					data-no-source={this.props.source}
 					data-name={data.name}
 					aria-label={data.name}
 					data-locked={data.locked}
@@ -193,6 +257,9 @@ export default class EmoteMenu extends Module {
 				</button>);
 			}
 		}
+
+		this.fine.wrap('ffz-menu-emote', this.MenuEmote);
+
 
 		this.MenuSection = class FFZMenuSection extends React.Component {
 			constructor(props) {
@@ -238,16 +305,24 @@ export default class EmoteMenu extends Module {
 
 			render() {
 				const data = this.props.data,
-					collapsed = ! this.props.filtered && this.state.collapsed;
+					filtered = this.props.filtered;
+
+				let show_heading = t.chat.context.get('chat.emote-menu.show-heading');
+				if ( show_heading === 2 )
+					show_heading = ! filtered;
+				else
+					show_heading = !! show_heading;
+
+				const collapsed = show_heading && ! filtered && this.state.collapsed;
 
 				if ( ! data )
 					return null;
 
 				let image;
 				if ( data.image )
-					image = (<img src={data.image} />);
+					image = (<img class="ffz--menu-badge" src={data.image} srcSet={data.image_set} />);
 				else
-					image = (<figure class={`ffz-i-${data.icon || 'zreknarf'}`} />);
+					image = (<figure class={`ffz--menu-badge ffz-i-${data.icon || 'zreknarf'}`} />);
 
 				let calendar;
 
@@ -275,8 +350,8 @@ export default class EmoteMenu extends Module {
 						}
 				}
 
-				return (<section data-key={data.key} class={this.props.filtered ? 'filtered' : ''}>
-					<heading class="tw-pd-1 tw-border-b tw-flex" onClick={this.clickHeading}>
+				return (<section data-key={data.key} class={filtered ? 'filtered' : ''}>
+					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
 						{image}
 						<div class="tw-pd-l-05">
 							{data.title || t.i18n.t('emote-menu.unknown', 'Unknown Source')}
@@ -289,12 +364,12 @@ export default class EmoteMenu extends Module {
 						<div class="tw-flex-grow-1" />
 						{data.source || 'FrankerFaceZ'}
 						<figure class={`tw-pd-l-05 ffz-i-${collapsed ? 'left' : 'down'}-dir`} />
-					</heading>
-					{collapsed || this.renderBody()}
+					</heading>) : null}
+					{collapsed || this.renderBody(show_heading)}
 				</section>)
 			}
 
-			renderBody() {
+			renderBody(show_sources) {
 				const data = this.props.data,
 					filtered = this.props.filtered,
 					lock = data.locks && data.locks[this.state.unlocked],
@@ -302,6 +377,7 @@ export default class EmoteMenu extends Module {
 						key={emote.id}
 						onClickEmote={this.props.onClickEmote}
 						data={emote}
+						source={show_sources}
 						locked={emote.locked && (! lock || ! lock.emotes.has(emote.id))}
 						all_locked={data.all_locked}
 						lock={data.locks && data.locks[emote.set_id]}
@@ -345,24 +421,34 @@ export default class EmoteMenu extends Module {
 			}
 		}
 
+		this.fine.wrap('ffz-menu-section', this.MenuSection);
+
+
 		this.MenuComponent = class FFZEmoteMenuComponent extends React.Component {
 			constructor(props) {
 				super(props);
 
-				this.state = {page: null}
+				this.state = {tab: null}
 				this.componentWillReceiveProps(props);
 
 				this.clickTab = this.clickTab.bind(this);
 				this.clickRefresh = this.clickRefresh.bind(this);
 				this.handleFilterChange = this.handleFilterChange.bind(this);
 				this.handleKeyDown = this.handleKeyDown.bind(this);
+			}
 
+			componentDidMount() {
 				window.ffz_menu = this;
+			}
+
+			componentWillUnmount() {
+				if ( window.ffz_menu === this )
+					window.ffz_menu = null;
 			}
 
 			clickTab(event) {
 				this.setState({
-					page: event.target.dataset.page
+					tab: event.target.dataset.tab
 				});
 			}
 
@@ -528,7 +614,8 @@ export default class EmoteMenu extends Module {
 						const set_id = parseInt(emote_set.id, 10),
 							set_data = data[set_id] || {},
 							more_data = t.emotes.getTwitchSetChannel(set_id),
-							image = set_data.image;
+							image = set_data.image,
+							image_set = set_data.image_set;
 
 						set_ids.add(set_id);
 
@@ -585,6 +672,7 @@ export default class EmoteMenu extends Module {
 							if ( chan && ! chan.bad && section.bad ) {
 								section.title = title;
 								section.image = image;
+								section.image_set = image_set;
 								section.icon = icon;
 								section.sort_key = sort_key;
 								section.bad = false;
@@ -597,6 +685,7 @@ export default class EmoteMenu extends Module {
 								bad: chan ? chan.bad : true,
 								key,
 								image,
+								image_set,
 								icon,
 								title,
 								source: t.i18n.t('emote-menu.twitch', 'Twitch'),
@@ -640,6 +729,7 @@ export default class EmoteMenu extends Module {
 							sort_key: -10,
 							key: `twitch-${user.id}`,
 							image: badge && badge.image1x,
+							image_set: badge && `${badge.image1x} 1x, ${badge.image2x} 2x, ${badge.image4x} 4x`,
 							icon: 'twitch',
 							title: t.i18n.t('emote-menu.sub-set', 'Subscriber Emotes'),
 							source: t.i18n.t('emote-menu.twitch', 'Twitch'),
@@ -726,7 +816,7 @@ export default class EmoteMenu extends Module {
 				channel.sort(sort_sets);
 				all.sort(sort_sets);
 
-				state.has_channel_page = channel.length > 0;
+				state.has_channel_tab = channel.length > 0;
 
 				return state;
 			}
@@ -795,7 +885,10 @@ export default class EmoteMenu extends Module {
 				return (<div class="tw-align-center tw-pd-1">
 					<div class="tw-mg-b-1">
 						<div class="tw-mg-5">
-							<img src="//cdn.frankerfacez.com/emoticon/26608/2" />
+							<img
+								src="//cdn.frankerfacez.com/emoticon/26608/2"
+								srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
+							/>
 						</div>
 						{t.i18n.t('emote-menu.error', 'There was an error rendering this menu.')}
 					</div>
@@ -810,7 +903,10 @@ export default class EmoteMenu extends Module {
 			renderEmpty() { // eslint-disable-line class-methods-use-this
 				return (<div class="tw-align-center tw-pd-1">
 					<div class="tw-mg-5">
-						<img src="//cdn.frankerfacez.com/emoticon/26608/2" />
+						<img
+							src="//cdn.frankerfacez.com/emoticon/26608/2"
+							srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
+						/>
 					</div>
 					{this.state.filtered ?
 						t.i18n.t('emote-menu.empty-search', 'There are no matching emotes.') :
@@ -829,13 +925,14 @@ export default class EmoteMenu extends Module {
 				if ( ! this.props.visible )
 					return null;
 
-				const loading = this.state.loading || this.props.loading;
+				const loading = this.state.loading || this.props.loading,
+					padding = t.chat.context.get('chat.emote-menu.reduced-padding');
 
-				let page = this.state.page, sets;
-				if ( ! page )
-					page = this.state.has_channel_page ? 'channel' : 'all';
+				let tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab'), sets;
+				if ( tab === 'channel' && ! this.state.has_channel_tab )
+					tab = 'all';
 
-				switch(page) {
+				switch(tab) {
 					case 'channel':
 						sets = this.state.filtered_channel_sets;
 						break;
@@ -846,7 +943,7 @@ export default class EmoteMenu extends Module {
 				}
 
 				return (<div
-					class="tw-balloon tw-balloon--md tw-balloon--up tw-balloon--right tw-block tw-absolute ffz--emote-picker"
+					class={`tw-balloon tw-balloon--md tw-balloon--up tw-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
 					data-a-target="emote-picker"
 				>
 					<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background">
@@ -869,7 +966,7 @@ export default class EmoteMenu extends Module {
 							</div>
 						</div>
 						<div class="emote-picker__controls-container tw-relative">
-							<div class="tw-border-t tw-pd-1">
+							{t.chat.context.get('chat.emote-menu.show-search') && (<div class="tw-border-t tw-pd-1">
 								<div class="tw-relative">
 									<input
 										type="text"
@@ -883,23 +980,23 @@ export default class EmoteMenu extends Module {
 										autoCorrect="off"
 									/>
 								</div>
-							</div>
+							</div>)}
 							<div class="emote-picker__tabs-container tw-flex tw-border-t tw-c-background">
 								{null && (<div class="ffz-tooltip emote-picker__tab tw-pd-x-1" data-tooltip-type="html" data-title="Favorites">
 									<figure class="ffz-i-star" />
 								</div>)}
-								{this.state.has_channel_page && <div
-									class={`emote-picker__tab tw-pd-x-1${page === 'channel' ? ' emote-picker__tab--active' : ''}`}
+								{this.state.has_channel_tab && <div
+									class={`emote-picker__tab tw-pd-x-1${tab === 'channel' ? ' emote-picker__tab--active' : ''}`}
 									id="emote-picker__channel"
-									data-page="channel"
+									data-tab="channel"
 									onClick={this.clickTab}
 								>
 									{t.i18n.t('emote-menu.channel', 'Channel')}
 								</div>}
 								<div
-									class={`emote-picker__tab tw-pd-x-1${page === 'all' ? ' emote-picker__tab--active' : ''}`}
+									class={`emote-picker__tab tw-pd-x-1${tab === 'all' ? ' emote-picker__tab--active' : ''}`}
 									id="emote-picker__all"
-									data-page="all"
+									data-tab="all"
 									onClick={this.clickTab}
 								>
 									{t.i18n.t('emote-menu.all', 'All')}
@@ -919,6 +1016,8 @@ export default class EmoteMenu extends Module {
 				</div>);
 			}
 		}
+
+		this.fine.wrap('ffz-emote-menu', this.MenuComponent);
 	}
 
 
@@ -964,11 +1063,17 @@ export default class EmoteMenu extends Module {
 				const owner = product.owner || {},
 					badges = owner.broadcastBadges;
 
-				let image;
+				let image, image_set;
 				if ( badges )
 					for(const badge of badges)
 						if ( badge.setID === 'subscriber' && badge.version === '0' ) {
 							image = badge.imageURL;
+
+							if ( image.endsWith('/1') ) {
+								const base = image.slice(0, -2);
+								image_set = `${base}/1 1x, ${base}/2 2x, ${base}/4 4x`;
+							}
+
 							break;
 						}
 
@@ -980,6 +1085,7 @@ export default class EmoteMenu extends Module {
 					set_id: parseInt(set_id, 10),
 					type: product.type,
 					image,
+					image_set,
 					user: {
 						id: owner.id,
 						login: owner.login,
