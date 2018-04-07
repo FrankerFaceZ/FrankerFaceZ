@@ -28,8 +28,7 @@ export default class MenuButton extends SiteModule {
 
 	set pill(val) {
 		this._pill_content = val;
-		if ( this._pill )
-			setChildren(this._pill, this.formatPill(), true);
+		this.updatePill();
 	}
 
 	formatPill() {
@@ -37,6 +36,21 @@ export default class MenuButton extends SiteModule {
 		if ( typeof val === 'number' )
 			return val.toLocaleString(this.i18n.locale);
 		return val;
+	}
+
+
+	updatePill() {
+		if ( ! this._pill )
+			return;
+
+		const content = this.formatPill();
+		this._pill.innerHTML = '';
+		if ( content )
+			setChildren(this._pill, (<div class="tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in">
+				<div class="tw-pill tw-pill--notification">
+					{content}
+				</div>
+			</div>));
 	}
 
 
@@ -55,18 +69,13 @@ export default class MenuButton extends SiteModule {
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-zreknarf" />
 					</span>
-					<div class="ffz-menu__pill absolute">
-						<div class="tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in">
-							{this._pill = (<div class="tw-pill tw-pill--notification" />)}
-						</div>
-					</div>
+					{this._pill = (<div class="ffz-menu__pill tw-absolute" />)}
 					{this._tip = (<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center" />)}
 				</div>
 			</button>)}
 		</div>);
 
-		setChildren(this._pill, this.formatPill(), true);
-
+		this.updatePill();
 		this.onTranslate();
 
 		container.insertBefore(this._el, user_menu);

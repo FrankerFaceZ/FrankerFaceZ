@@ -84,6 +84,35 @@ export class TranslationManager extends Module {
 	}
 
 
+	toHumanTime(duration, factor = 1) {
+		// TODO: Make this better. Make all time handling better in fact.
+
+		duration = Math.floor(duration);
+
+		const years = Math.floor((duration * factor) / 31536000) / factor;
+		if ( years >= 1 )
+			return this.t('human-time.years', '%{count} year%{count|en_plural}', years);
+
+		const days = Math.floor((duration %= 31536000) / 86400);
+		if ( days >= 1 )
+			return this.t('human-time.days', '%{count} day%{count|en_plural}', days);
+
+		const hours = Math.floor((duration %= 86400) / 3600);
+		if ( hours >= 1 )
+			return this.t('human-time.hours', '%{count} hour%{count|en_plural}', hours);
+
+		const minutes = Math.floor((duration %= 3600) / 60);
+		if ( minutes >= 1 )
+			return this.t('human-time.minutes', '%{count} minute%{count|en_plural}', minutes);
+
+		const seconds = duration % 60;
+		if ( seconds >= 1 )
+			return this.t('human-time.seconds', '%{count} second%{count|en_plural}', seconds);
+
+		return this.t('human-time.none', 'less than a second');
+	}
+
+
 	async loadLocale(locale) {
 		/*if ( locale === 'en' )
 			return {};

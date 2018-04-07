@@ -30,6 +30,16 @@ function camelCase(name) {
 }
 
 
+export function on(obj, ...args) {
+	return obj.addEventListener(...args);
+}
+
+
+export function off(obj, ...args) {
+	return obj.removeEventListener(...args);
+}
+
+
 export function createElement(tag, props, ...children) {
 	const el = document.createElement(tag);
 

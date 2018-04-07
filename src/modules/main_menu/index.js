@@ -28,6 +28,8 @@ export default class MainMenu extends Module {
 		this.inject('site');
 		this.inject('vue');
 
+		this.load_requires = ['vue'];
+
 		//this.should_enable = true;
 
 		this._settings_tree = null;

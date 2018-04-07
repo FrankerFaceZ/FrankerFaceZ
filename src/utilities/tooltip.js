@@ -193,6 +193,8 @@ export class Tooltip {
 
 		// Set this early in case content uses it early.
 		tip.update = () => tip._update(); // tip.popper && tip.popper.scheduleUpdate();
+		tip.show = () => this.show(tip);
+		tip.hide = () => this.hide(tip);
 		tip.rerender = () => {
 			if ( tip.visible ) {
 				this.hide(tip);
@@ -322,8 +324,10 @@ export class Tooltip {
 			tip.outer = el._ffz_out_handler = el._ffz_over_handler = null;
 		}
 
-		tip._update = noop;
-		tip.update = tip.element = null;
+		this.elements.delete(tip.target);
+
+		tip._update = tip.rerender = tip.update = noop;
+		tip.element = null;
 		tip.visible = false;
 	}
 }

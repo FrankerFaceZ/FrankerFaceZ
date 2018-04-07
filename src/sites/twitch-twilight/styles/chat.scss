@@ -19,11 +19,93 @@
                 flex-shrink: 0;
             }
         }
-        
+
         span {
             overflow-x: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+    }
+}
+
+.ffz--chat-card {
+    .ffz--two-line {
+        .tw-ellipsis { line-height: 1.4rem }
+        .chat-card__title { line-height: 1.5rem }
+    }
+}
+
+
+.ffz--emote-picker {
+    section:not(.filtered) heading {
+        cursor: pointer;
+    }
+
+    .loading {
+        animation: ffz-rotateplane 1.2s infinite linear;
+    }
+
+    .ffz--expiry-info {
+        opacity: 0.5;
+    }
+
+    .emote-picker__tab {
+        border-top: 1px solid transparent;
+    }
+
+    .whispers-thread .emote-picker-and-button & .emote-picker__tab-content {
+        max-height: 30rem;
+    }
+
+    .emote-picker__tab-content {
+        max-height: 50rem;
+    }
+
+    @media only screen and (max-height: 750px) {
+        .emote-picker__tab-content {
+            max-height: calc(100vh - 26rem);
+        }
+    }
+
+    .emote-picker__tab > *,
+    .emote-picker__emote-link > * {
+        pointer-events: none;
+    }
+
+    section:last-of-type {
+        & > div:last-child,
+        & > heading:last-child {
+            border-bottom: none !important;
+        }
+    }
+
+    .emote-picker__emote-link {
+        position: relative;
+        padding: 0.5rem;
+        width: unset;
+        height: unset;
+        min-width: 3.8rem;
+
+        img {
+            vertical-align: middle;
+        }
+
+        &.locked {
+            cursor: not-allowed;
+
+            img {
+                opacity: 0.5;
+            }
+
+            .ffz-i-lock {
+                position: absolute;
+                bottom: 0; right: 0;
+                border-radius: .2rem;
+                font-size: 1rem;
+                background-color: rgba(0,0,0,0.5);
+                color: #fff;
+            }
+
         }
     }
 }

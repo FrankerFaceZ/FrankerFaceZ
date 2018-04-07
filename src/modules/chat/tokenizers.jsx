@@ -477,8 +477,9 @@ export const AddonEmotes = {
 	},
 
 	tooltip(target, tip) {
-		const provider = target.dataset.provider,
-			modifiers = target.dataset.modifierInfo;
+		const ds = target.dataset,
+			provider = ds.provider,
+			modifiers = ds.modifierInfo;
 
 		let preview, source, owner, mods;
 
@@ -496,7 +497,7 @@ export const AddonEmotes = {
 		}
 
 		if ( provider === 'twitch' ) {
-			const emote_id = parseInt(target.dataset.id, 10),
+			const emote_id = parseInt(ds.id, 10),
 				set_id = this.emotes.getTwitchEmoteSet(emote_id, tip.rerender),
 				emote_set = set_id != null && this.emotes.getTwitchSetChannel(set_id, tip.rerender);
 
@@ -519,8 +520,8 @@ export const AddonEmotes = {
 			}
 
 		} else if ( provider === 'ffz' ) {
-			const emote_set = this.emotes.emote_sets[target.dataset.set],
-				emote = emote_set && emote_set.emotes[target.dataset.id];
+			const emote_set = this.emotes.emote_sets[ds.set],
+				emote = emote_set && emote_set.emotes[ds.id];
 
 			if ( emote_set )
 				source = emote_set.source_line || (`${emote_set.source || 'FFZ'} ${emote_set.title || 'Global'}`);
@@ -538,6 +539,9 @@ export const AddonEmotes = {
 			}
 		}
 
+		const name = ds.name || target.alt,
+			hide_source = ds.noSource === 'true';
+
 		return [
 			preview && this.context.get('tooltip.emote-images') && (<img
 				class="preview-image"
@@ -545,15 +549,17 @@ export const AddonEmotes = {
 				onLoad={tip.update}
 			/>),
 
-			this.i18n.t('tooltip.emote', 'Emote: %{code}', {code: target.alt}),
+			(hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: %{code}', {code: ds.name || target.alt}),
 
-			source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
+			! hide_source && source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{source}
 			</div>),
 
 			owner && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{owner}
 			</div>),
+
+			ds.sellout && (<div class="tw-mg-t-05 tw-border-t tw-pd-t-05">{ds.sellout}</div>),
 
 			mods && (<div class="tw-pd-t-1">{mods}</div>)
 		];
