@@ -1,0 +1,11 @@
+.twilight-root {
+	.top-nav {
+		z-index: 9999;
+	}
+
+	.persistent-player--theatre,
+	.right-column--theatre {
+		top: 1rem !important;
+		height: calc(100% - 1rem) !important;
+	}
+}
