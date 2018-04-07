@@ -33,7 +33,7 @@ export class AddonManager extends Module {
 			component: 'add-ons',
 			title: 'Add-Ons',
 			
-			getAddons: () => this.addons,
+			getAddons: () => Object.values(this.addons),
 			isAddonEnabled: id => this.isAddonEnabled(id),
 			enableAddon: id => this.enableAddon(id),
 			disableAddon: id => this.disableAddon(id),
@@ -62,7 +62,7 @@ export class AddonManager extends Module {
 				: null
 		]);
 
-		cdn_data.map(addon => this.addons[addon.id] = addon);
+		cdn_data && cdn_data.map(addon => this.addons[addon.id] = addon);
 		local_data && local_data.map(addon => {
 			addon.dev = true;
 			this.addons[addon.id] = addon;
@@ -87,7 +87,7 @@ export class AddonManager extends Module {
 
 		const script = document.createElement('script');
 		script.type = 'text/javascript';
-		script.src = `https://${addon.dev ? 'localhost:8001' : 'lordmau5.com'}/script/addons/${addon.id}.js`;
+		script.src = `https://${addon.dev ? 'localhost:8001' : 'lordmau5.com'}/script/addons/${addon.id}/script.js`;
 		document.head.appendChild(script);
 	}
 

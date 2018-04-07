@@ -50,7 +50,6 @@
 						<div class="tw-card-body tw-relative">
 							<div class="tw-pd-1">
 								<h4>{{ addon.name }}</h4>
-								<h5>{{ addon.shortname }}</h5>
 								<span class="tw-c-text-alt-2">{{ addon.id }}</span>
 								<p>{{ addon.description }}</p>
 								<div class="tw-inline-block tw-pd-r-05">
@@ -70,10 +69,6 @@
 
 <script>
 export default {
-	props: ['item'],
-
-	mounted() {
-		console.log(this, this.data);
-	}
+	props: ['item']
 }
 </script>
