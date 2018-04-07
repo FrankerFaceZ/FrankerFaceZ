@@ -83,7 +83,6 @@ export default class FeaturedFollow extends Module {
 		};
 
 		this.follow_data = {};
-		this.featured_emote_sets = {};
 
 		this.socket.on(':command:follow_buttons', data => {
 			for(const channel_login in data) {
@@ -97,10 +96,6 @@ export default class FeaturedFollow extends Module {
 			}
 
 			this.metadata.updateMetadata('following');
-		});
-
-		this.socket.on(':command:follow_sets', data => {
-			this.updateFeaturedEmotes(data);
 		});
 
 		// ffz.resolve('site.featured_follow').updateFeaturedChannels({ login: 'lordmau5' }, ['sirstendec','jugachi']);
@@ -124,54 +119,6 @@ export default class FeaturedFollow extends Module {
 			});
 		}
 		return follows;
-	}
-
-	updateFeaturedEmotes(channels) {
-		for (const login in this.featured_emote_sets) {
-			if (!this.featured_emote_sets.hasOwnProperty(login)) continue;
-
-			const room = this.chat.getRoom(undefined, login, true);
-			if (!room) continue;
-			
-			for (const id of this.featured_emote_sets[login]) {
-				room.removeSet('ffz', `ffz-featured-${id}`);				
-			}
-		}
-
-		this.featured_emote_sets = {};
-		for (const channel_login in channels) {
-			if (!channels.hasOwnProperty(channel_login)) continue;
-
-			const _channels = channels[channel_login];
-			for (const id of _channels) {
-				this.loadEmoteSet(channel_login, id);
-
-			}
-			this.featured_emote_sets[channel_login] = _channels;
-		}
-	}
-
-	async loadEmoteSet(login, id) {
-		let response, data;
-		try {
-			response = await fetch(`${API_SERVER}/v1/set/${id}`);
-		} catch(err) {
-			this.manager.log.error(`Error loading room data for ${id}`, err);
-			return false;
-		}
-
-		if ( ! response.ok )
-			return false;
-
-		try {
-			data = await response.json();
-		} catch(err) {
-			this.manager.log.error(`Error parsing room data for ${id}`, err);
-			return false;
-		}
-
-		const room = this.chat.getRoom(undefined, login, true);
-		if (room) room.addSet('ffz', `ffz-featured-${id}`, data.set);
 	}
 
 	buildFeaturedFollowMenu(vue, login, follows) {
