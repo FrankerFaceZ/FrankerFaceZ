@@ -1,0 +1,29 @@
+.tw-button-icon[data-a-target="emote-picker-button"] {
+    .tw-button-icon__icon {
+        padding: .4rem .2rem;
+
+        figure {
+            &:before {
+                display: inline-block;
+                width: 2.4rem;
+                font-size: 1.6rem;
+                font-family: 'ffz-fontello';
+                font-style: normal;
+                font-weight: normal;
+                speak: none;
+
+                font-variant: normal;
+                text-transform: none;
+
+                -webkit-font-smoothing: antialiased;
+	            -moz-osx-font-smoothing: grayscale;
+
+                content: '\e801';
+            }
+
+            svg {
+                display: none
+            }
+        }
+    }
+}

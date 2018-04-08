@@ -45,6 +45,10 @@
         animation: ffz-rotateplane 1.2s infinite linear;
     }
 
+    .ffz--menu-badge {
+        width: 1.8rem; height: 1.8rem;
+    }
+
     .ffz--expiry-info {
         opacity: 0.5;
     }
@@ -63,6 +67,10 @@
 
     @media only screen and (max-height: 750px) {
         .emote-picker__tab-content {
+            .twilight-root & {
+                max-height: calc(100vh - 31rem);
+            }
+
             max-height: calc(100vh - 26rem);
         }
     }
@@ -106,6 +114,12 @@
                 color: #fff;
             }
 
+        }
+    }
+
+    &.reduced-padding {
+       .tw-pd-1 {
+            padding: 0.5rem !important;
         }
     }
 }

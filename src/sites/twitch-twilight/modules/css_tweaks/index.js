@@ -17,6 +17,8 @@ const CLASSES = {
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
 
+	'prime-offers': '.top-nav__prime',
+
 	'player-ext': '.player .extension-overlay',
 	'player-ext-hover': '.player:not([data-controls="true"]) .extension-overlay',
 
@@ -112,7 +114,7 @@ export default class CSSTweaks extends Module {
 		this.settings.add('layout.swap-sidebars', {
 			default: false,
 			ui: {
-				path: 'Appearance > Layout >> General',
+				path: 'Appearance > Layout >> Side Navigation',
 				title: 'Swap Sidebars',
 				description: 'Swap navigation and chat to the opposite sides of the window.',
 
@@ -122,15 +124,44 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.minimal-navigation', {
+			requires: ['layout.theatre-navigation'],
 			default: false,
+			process(ctx, val) {
+				return ctx.get('layout.theatre-navigation') ?
+					true : val;
+			},
 			ui: {
-				path: 'Appearance > Layout >> General',
+				path: 'Appearance > Layout >> Top Navigation',
 				title: 'Minimize Navigation',
 				description: "Slide the site navigation bar up out of view when it isn't in use.",
 
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggle('minimal-navigation', val)
+		});
+
+		this.settings.add('layout.theatre-navigation', {
+			requires: ['context.ui.theatreModeEnabled'],
+			default: false,
+			process(ctx, val) {
+				return ctx.get('context.ui.theatreModeEnabled') ? val : false
+			},
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Show the minimized navigation bar when in theatre mode.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('theatre-nav', val)
+		})
+
+		this.settings.add('layout.prime-offers', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Show Twitch Prime offers.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('prime-offers', !val)
 		});
 
 
@@ -162,9 +193,11 @@ export default class CSSTweaks extends Module {
 	onEnable() {
 		this.toggle('swap-sidebars', this.settings.get('layout.swap-sidebars'));
 		this.toggle('minimal-navigation', this.settings.get('layout.minimal-navigation'));
+		this.toggle('theatre-nav', this.settings.get('layout.theatre-navigation'));
 
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
+		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);

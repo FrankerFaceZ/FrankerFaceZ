@@ -280,6 +280,9 @@ export class Tooltip {
 				tip._update();
 
 			}).catch(err => {
+				if ( this.options.logger )
+					this.options.logger.error('Error rendering tooltip content.', err);
+
 				inner.textContent = `There was an error showing this tooltip.\n${err}`;
 				tip._update();
 			});
@@ -324,7 +327,8 @@ export class Tooltip {
 			tip.outer = el._ffz_out_handler = el._ffz_over_handler = null;
 		}
 
-		this.elements.delete(tip.target);
+		if ( this.live )
+			this.elements.delete(tip.target);
 
 		tip._update = tip.rerender = tip.update = noop;
 		tip.element = null;

@@ -340,6 +340,7 @@ export default class Metadata extends Module {
 
 							const parent = document.body.querySelector('.twilight-root') || document.body,
 								tt = el._ffz_popup = new Tooltip(parent, el, {
+									logger: this.log,
 									manual: true,
 									html: true,
 
@@ -394,6 +395,7 @@ export default class Metadata extends Module {
 				if ( def.tooltip ) {
 					const parent = document.body.querySelector('.twilight-root') || document.body;
 					el.tooltip = new Tooltip(container, el, {
+						logger: this.log,
 						live: false,
 						html: true,
 						content: () => el.tip_content,

@@ -209,9 +209,9 @@ export default class HostButton extends Module {
 		this._current_channel_id = data.id;
 		this.activeTab = this.activeTab || 'auto-host';
 
-		this.vueEl = new vue.Vue({
+		const vueEl = new vue.Vue({
 			el: createElement('div'),
-			render: h => h('host-options', {
+			render: h => this.vueHostMenu = h('host-options', {
 				hosts,
 				autoHostSettings,
 				activeTab: this.activeTab,
@@ -221,7 +221,7 @@ export default class HostButton extends Module {
 				rearrangeHosts: event => this.rearrangeHosts(event.oldIndex, event.newIndex),
 				removeFromHosts: event => this.removeUserFromHosts(event),
 				setActiveTab: tab => {
-					this.vueEl.$children[0]._data.activeTab = this.activeTab = tab;
+					this.vueHostMenu.data.activeTab = this.activeTab = tab;
 				},
 				updatePopper: () => {
 					if (this._auto_host_tip) this._auto_host_tip.update();
@@ -241,7 +241,7 @@ export default class HostButton extends Module {
 			})
 		});
 
-		return this.vueEl.$el;
+		return vueEl.$el;
 	}
 
 	async fetchAutoHosts() {
@@ -377,9 +377,9 @@ export default class HostButton extends Module {
 		}
 
 		this.autoHosts = data.targets;
-		if (this.vueEl) {
-			this.vueEl.$children[0]._data.hosts = this.autoHosts;
-			this.vueEl.$children[0]._data.addedToHosts = this.currentRoomInHosts();
+		if (this.vueHostMenu) {
+			this.vueHostMenu.data.hosts = this.autoHosts;
+			this.vueHostMenu.data.addedToHosts = this.currentRoomInHosts();
 		}
 	}
 
@@ -413,8 +413,8 @@ export default class HostButton extends Module {
 		}
 
 		this.autoHostSettings = data.settings;
-		if (this.vueEl) {
-			this.vueEl.$children[0]._data.autoHostSettings = this.autoHostSettings;
+		if (this.vueHostMenu) {
+			this.vueHostMenu.data.autoHostSettings = this.autoHostSettings;
 		}
 	}
 }
