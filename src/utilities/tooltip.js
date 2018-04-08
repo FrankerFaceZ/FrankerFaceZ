@@ -280,6 +280,9 @@ export class Tooltip {
 				tip._update();
 
 			}).catch(err => {
+				if ( this.options.logger )
+					this.options.logger.error('Error rendering tooltip content.', err);
+
 				inner.textContent = `There was an error showing this tooltip.\n${err}`;
 				tip._update();
 			});
