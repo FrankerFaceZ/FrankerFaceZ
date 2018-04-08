@@ -16,6 +16,7 @@ import Scroller from './scroller';
 import ChatLine from './line';
 import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
+import TabCompletion from './tab_completion';
 
 
 const CHAT_TYPES = (e => {
@@ -112,6 +113,7 @@ export default class ChatHook extends Module {
 		this.inject(ChatLine);
 		this.inject(SettingsMenu);
 		this.inject(EmoteMenu);
+		this.inject(TabCompletion);
 
 
 		this.ChatController = this.fine.define(
@@ -129,12 +131,6 @@ export default class ChatHook extends Module {
 		this.PinnedCheer = this.fine.define(
 			'pinned-cheer',
 			n => n.collapseCheer && n.saveRenderedMessageRef,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.TabComplete = this.fine.define(
-			'tab-complete-emotes',
-			n => n.getMatchedEmotes,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -235,15 +231,6 @@ export default class ChatHook extends Module {
 					{value: 3, title: '3D Line (2px Groove Inset)'},
 					{value: 4, title: 'Wide Line (2px Solid)'}
 				]
-			}
-		});
-
-		this.settings.add('chat.tab-complete.ffz-emotes', {
-			default: true,
-			ui: {
-				path: 'Chat > Input >> Tab Completion',
-				title: 'Allow tab-completion of FrankerFaceZ emotes.',
-				component: 'setting-check-box'
 			}
 		});
 
@@ -461,78 +448,6 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.fixPinnedCheer(inst);
 		});
-
-		this.TabComplete.ready((cls, instances) => {
-			for(const inst of instances)
-				this.setupTabCompletion(inst);
-		});
-		this.TabComplete.on('mount', this.setupTabCompletion, this);
-		this.TabComplete.on('unmount', inst => {
-			inst._ffz_getMatchedEmotes = null;
-			inst._ffz_channelInfo = null;
-		}, this);
-	}
-
-
-	getResultsForSets(input, inst) {
-		if (!inst._ffz_channelInfo) return [];
-
-		const search = input.substring(1),
-			results = [],
-			emotes = Object.values(this.chat.emotes.getEmotes(inst._ffz_channelInfo.props.sessionUser.id, undefined, inst._ffz_channelInfo.props.channelID));
-
-		for (const emote of emotes) {
-			if (inst.doesEmoteMatchTerm(emote, search)) {
-				results.push({
-					current: input,
-					replacement: emote.name,
-					element: inst.renderEmoteSuggestion({
-						token: emote.name,
-						id: `${emote.token.provider}-${emote.id}`,
-						srcSet: emote.srcSet
-					})
-				});
-			}
-		}
-
-		return results;
-	}
-
-
-	setupTabCompletion(inst) {
-		const t = this,
-			old_matched = inst._ffz_getMatchedEmotes || inst.getMatchedEmotes;
-
-		if (!inst._ffz_getMatchedEmotes) inst._ffz_getMatchedEmotes = old_matched;
-
-		inst._ffz_channelInfo = this.fine.searchParent(inst, n => n.props
-			&& n.props.channelID !== undefined
-			&& n.props.roomID === undefined
-		);
-
-		if ( ! inst._ffz_channelInfo )
-			return;
-
-		inst.doesEmoteMatchTerm = function (emote, term) {
-			const emote_name = emote.name || emote.token,
-				emote_lower = emote_name.toLowerCase(),
-				term_lower = term.toLowerCase();
-
-			if (emote_lower.startsWith(term_lower))
-				return true;
-
-			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
-			if (idx !== -1)
-				return emote_lower.slice(idx + 1).startsWith(term_lower.slice(1));
-		};
-
-		inst.getMatchedEmotes = function (input) {
-			const results = old_matched.call(this, input);
-			if ( ! t.chat.context.get('chat.tab-complete.ffz-emotes') )
-				return results;
-
-			return results.concat(t.getResultsForSets(input, this));
-		};
 	}
 
 

@@ -282,7 +282,7 @@ export default class Chat extends Module {
 	}
 
 
-	getUser(id, login, no_create, no_login) {
+	getUser(id, login, no_create, no_login, error = false) {
 		let user;
 		if ( id && typeof id === 'number' )
 			id = `${id}`;
@@ -302,8 +302,15 @@ export default class Chat extends Module {
 		if ( id && id !== user.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
 			// Blame name changes.
-			if ( user.id )
-				throw new Error('id mismatch');
+			if ( user.id ) {
+				this.log.warn(`Data mismatch for user #${id} -- Stored ID: ${user.id} -- Login: ${login} -- Stored Login: ${user.login}`);
+				if ( error )
+					throw new Error('id mismatch');
+
+				// Remove the old reference if we're going with this.
+				if ( this.user_ids[user.id] === user )
+					this.user_ids[user.id] = null;
+			}
 
 			// Otherwise, we're just here to set the ID.
 			user._id = id;
@@ -330,7 +337,7 @@ export default class Chat extends Module {
 	}
 
 
-	getRoom(id, login, no_create, no_login) {
+	getRoom(id, login, no_create, no_login, error = false) {
 		let room;
 		if ( id && typeof id === 'number' )
 			id = `${id}`;
@@ -350,8 +357,15 @@ export default class Chat extends Module {
 		if ( id && id !== room.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
 			// Blame name changes. Or React not being atomic.
-			if ( room.id )
-				throw new Error('id mismatch');
+			if ( room.id ) {
+				this.log.warn(`Data mismatch for room #${id} -- Stored ID: ${room.id} -- Login: ${login} -- Stored Login: ${room.login}`);
+				if ( error )
+					throw new Error('id mismatch');
+
+				// Remove the old reference if we're going with this.
+				if ( this.room_ids[room.id] === room )
+					this.room_ids[room.id] = null;
+			}
 
 			// Otherwise, we're just here to set the ID.
 			room._id = id;

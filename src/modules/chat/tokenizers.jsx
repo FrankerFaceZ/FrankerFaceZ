@@ -206,7 +206,7 @@ Links.tooltip.delayHide = function(target) {
 
 export const Mentions = {
 	type: 'mention',
-	priority: 40,
+	priority: 0,
 
 	render(token, createElement) {
 		return (<strong class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}>
@@ -277,6 +277,7 @@ export const Mentions = {
 
 export const CheerEmotes = {
 	type: 'cheer',
+	priority: 40,
 
 	render(token, createElement) {
 		return (<span
@@ -446,6 +447,7 @@ export const CheerEmotes = {
 
 export const AddonEmotes = {
 	type: 'emote',
+	priority: 10,
 
 	render(token, createElement) {
 		const mods = token.modifiers || [], ml = mods.length,
@@ -643,7 +645,7 @@ export const AddonEmotes = {
 
 export const TwitchEmotes = {
 	type: 'twitch-emote',
-	priority: 10,
+	priority: 20,
 
 	process(tokens, msg) {
 		if ( ! msg.emotes )

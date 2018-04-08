@@ -148,6 +148,17 @@ export default class Fine extends Module {
 		if ( ! node || depth > max_depth )
 			return null;
 
+		if ( typeof criteria === 'string' ) {
+			const wrapper = this._wrappers.get(criteria);
+			if ( ! wrapper )
+				throw new Error('invalid critera');
+
+			if ( ! wrapper._class )
+				return null;
+
+			criteria = n => n && n.constructor === wrapper._class;
+		}
+
 		const inst = node.stateNode;
 		if ( inst && criteria(inst) )
 			return inst;
@@ -171,6 +182,17 @@ export default class Fine extends Module {
 
 		if ( ! node || depth > max_depth )
 			return null;
+
+		if ( typeof criteria === 'string' ) {
+			const wrapper = this._wrappers.get(criteria);
+			if ( ! wrapper )
+				throw new Error('invalid critera');
+
+			if ( ! wrapper._class )
+				return null;
+
+			criteria = n => n && n.constructor === wrapper._class;
+		}
 
 		const inst = node.stateNode;
 		if ( inst && criteria(inst) )
@@ -293,6 +315,27 @@ export default class Fine extends Module {
 		} else {
 			this._waiting.push(wrapper);
 			this._updateLiveWaiting();
+		}
+
+		return wrapper;
+	}
+
+
+	wrap(key, cls) {
+		let wrapper;
+		if ( this._wrappers.has(key) )
+			wrapper = this._wrappers.get(key);
+		else {
+			wrapper = new FineWrapper(key, null, undefined, this);
+			this._wrappers.set(key, wrapper);
+		}
+
+		if ( cls ) {
+			if ( wrapper._class || wrapper.criteria )
+				throw new Error('tried setting a class on an already initialized FineWrapper');
+
+			wrapper._set(cls, new Set);
+			this._known_classes.set(cls, wrapper);
 		}
 
 		return wrapper;

@@ -79,7 +79,11 @@ export default class FineRouter extends Module {
 		}
 
 		const parts = parse(path),
-			score = parts.length,
+			score = parts.reduce((total, val) => total + (
+				typeof val === 'string' ?
+					val.split('/').length - 1 :
+					0
+			), 0),
 			route = this.routes[name] = {
 				name,
 				parts,
@@ -89,6 +93,6 @@ export default class FineRouter extends Module {
 			}
 
 		this.__routes.push(route);
-		this.__routes.sort(r => r.score);
+		this.__routes.sort((a,b) => b.score - a.score);
 	}
 }
