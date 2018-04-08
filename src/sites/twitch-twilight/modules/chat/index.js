@@ -246,6 +246,21 @@ export default class ChatHook extends Module {
 				component: 'setting-check-box'
 			}
 		});
+
+		this.settings.add('chat.lines.emote-alignment', {
+			default: 0,
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Emoticon Alignment',
+				description: 'Change how emotes are aligned and padded in chat, making messages taller but preventing emotes from overlapping.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Standard'},
+					{value: 1, title: 'Padded'},
+					{value: 2, title: 'Baseline (BTTV-Like'}
+				]
+			}
+		});
 	}
 
 
@@ -275,6 +290,7 @@ export default class ChatHook extends Module {
 	updateChatCSS() {
 		const width = this.chat.context.get('chat.width'),
 			size = this.chat.context.get('chat.font-size'),
+			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
 			lh = Math.round((20/12) * size);
 
 		let font = this.chat.context.get('chat.font-family') || 'inherit';
@@ -288,6 +304,9 @@ export default class ChatHook extends Module {
 
 		this.css_tweaks.toggle('chat-font', size !== 12 || font);
 		this.css_tweaks.toggle('chat-width', width !== 340);
+
+		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
+		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
 	}
 
 	updateLineBorders() {
@@ -326,6 +345,8 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
+
+		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
