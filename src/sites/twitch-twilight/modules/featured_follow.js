@@ -6,7 +6,6 @@
 
 import Module from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
-import {API_SERVER} from 'utilities/constants';
 
 import FEATURED_QUERY from './featured_follow_query.gql';
 
