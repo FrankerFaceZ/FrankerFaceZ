@@ -66,8 +66,8 @@ export default class FeaturedFollow extends Module {
 			},
 
 			label: data => {
-				if (!this.settings.get('metadata.featured-follow')) return '';
-				if (!data || !data.channel || !data.channel.login) return '';
+				if (!this.settings.get('metadata.featured-follow') || !data || !data.channel || !data.channel.login)
+					return null;
 
 				const follows = this.follow_data[data.channel.login];
 				if (!follows || !Object.keys(follows).length) {
