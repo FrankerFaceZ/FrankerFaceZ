@@ -4,15 +4,12 @@
 	}
 
 	.ffz--featured-button-unfollow {
-		&:hover &:before {
+		&:hover figure:before {
 			content: '\e813';
-		}
-
-		> * {
-			pointer-events: none;
 		}
 	}
 
+	.ffz--featured-button-unfollow,
 	.ffz--featured-button-notification {
 		> * {
 			pointer-events: none;

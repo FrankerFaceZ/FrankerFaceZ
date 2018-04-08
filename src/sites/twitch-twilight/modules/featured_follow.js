@@ -5,14 +5,14 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement as e} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
+import {has} from 'utilities/object';
 
 import FEATURED_QUERY from './featured_follow_query.gql';
 
 import FEATURED_FOLLOW from './featured_follow_follow.gql';
 import FEATURED_UNFOLLOW from './featured_follow_unfollow.gql';
 
-const TWITCH_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([A-Za-z0-9_]+)/i;
 
 export default class FeaturedFollow extends Module {
 	constructor(...args) {
@@ -84,31 +84,37 @@ export default class FeaturedFollow extends Module {
 		this.follow_data = {};
 
 		this.socket.on(':command:follow_buttons', data => {
-			for(const channel_login in data) {
-				if (!data.hasOwnProperty(channel_login)) continue;
+			for(const channel_login in data)
+				if ( has(data, channel_login) )
+					this.follow_data[channel_login] = data[channel_login];
 
-				this.follow_data[channel_login] = data[channel_login];
-			}
-			
-			if (this.vueFeaturedFollow) {
+			if ( this.vueFeaturedFollow )
 				this.vueFeaturedFollow.data.hasUpdate = true;
-			}
 
 			this.metadata.updateMetadata('following');
 		});
-
-		// ffz.resolve('site.featured_follow').updateFeaturedChannels({ login: 'lordmau5' }, ['sirstendec','jugachi']);
 	}
 
 	async getFollowsForLogin(login) {
 		const follow_data = this.follow_data && this.follow_data[login];
-		if (!follow_data || follow_data.length === 0) return [];
+		if ( ! follow_data || ! follow_data.length )
+			return [];
 
-		const ap_data = await this.apollo.client.query({ query: FEATURED_QUERY, variables: { logins: follow_data }});
+		const ap_data = await this.apollo.client.query({
+				query: FEATURED_QUERY,
+				variables: {
+					logins: follow_data
+				}
+			}),
+			follows = {};
 
-		const follows = {};
 		for (const user of ap_data.data.users) {
+			if ( ! user.id )
+				continue;
+
 			follows[user.id] = {
+				loading: false,
+				error: false,
 				id: user.id,
 				login: user.login,
 				displayName: user.displayName,
@@ -117,12 +123,13 @@ export default class FeaturedFollow extends Module {
 				disableNotifications: user.self.follower.disableNotifications
 			};
 		}
+
 		return follows;
 	}
 
 	buildFeaturedFollowMenu(vue, login, follows) {
 		const vueEl = new vue.Vue({
-			el: e('div'),
+			el: createElement('div'),
 			render: h => this.vueFeaturedFollow = h('featured-follow', {
 				login,
 				follows,
@@ -147,64 +154,79 @@ export default class FeaturedFollow extends Module {
 		return vueEl.$el;
 	}
 
-	updateFeaturedChannels(room, args) {
-		args = args.join(' ').trim().toLowerCase().split(/[ ,]+/);
-
-		const out = [];
-
-		for (let i = 0; i < args.length; i++) {
-			let arg = args[i];
-			const match = arg.match(TWITCH_URL);
-
-			if (match)
-				arg = match[1];
-
-			if (arg !== '' && out.indexOf(arg) === -1)
-				out.push(arg);
-		}
-
-		this.socket.call('update_follow_buttons', room.login, out)
-			.then(() => {
-				// this.log.info('Success!', data);
-			})
-			.catch(() => 'There was an error communicating with the server.');
-		// , (success, data) => {
-		// 	if (!success) {
-		// 		this.log.warn('Not a Success: ', data);
-		// 		// f.room_message(room, data);
-		// 		return;
-		// 	}
-
-		// 	this.log.info('Success!', data);
-
-		// 	// this.room.message(`The following buttons have been ${data ? 'updated' : 'disabled'}.`);
-		// }) )
-		
-	}
-
 	async followUser(follows, id) {
-		const ap_data = await this.apollo.client.mutate({ mutation: FEATURED_FOLLOW, variables: { targetID: id, disableNotifications: false }});
-		
-		const follow = ap_data.data.followUser.follow;
-		
-		follows[id].following = follow.followedAt != null;
-		follows[id].disableNotifications = follow.disableNotifications;
+		const f = follows[id];
+		f.loading = true;
+
+		try {
+			const ap_data = await this.apollo.client.mutate({
+				mutation: FEATURED_FOLLOW,
+				variables: {
+					targetID: id,
+					disableNotifications: false
+				}
+			});
+
+			const update = ap_data.data.followUser.follow;
+
+			f.loading = false;
+			f.following = update.followedAt != null;
+			f.disableNotifications = update.disableNotifications;
+
+		} catch(err) {
+			this.log.warn('There was a problem following.', err);
+			f.error = true;
+		}
 	}
 
 	async updateNotificationStatus(follows, id, oldStatus) {
-		const ap_data = await this.apollo.client.mutate({ mutation: FEATURED_FOLLOW, variables: { targetID: id, disableNotifications: !oldStatus }});
-		
-		const follow = ap_data.data.followUser.follow;
-		
-		follows[id].following = follow.followedAt != null;
-		follows[id].disableNotifications = follow.disableNotifications;
+		const f = follows[id];
+		f.loading = true;
+
+		// Immediate Feedback
+		f.disableNotifications = ! oldStatus;
+
+		try {
+			const ap_data = await this.apollo.client.mutate({
+				mutation: FEATURED_FOLLOW,
+				variables: {
+					targetID: id,
+					disableNotifications: !oldStatus
+				}
+			});
+
+			const update = ap_data.data.followUser.follow;
+
+			f.loading = false;
+			f.following = update.followedAt != null;
+			f.disableNotifications = update.disableNotifications;
+
+		} catch(err) {
+			this.log.warn('There was a problem updating notification status.', err);
+			f.error = true;
+		}
 	}
 
 	async unfollowUser(follows, id) {
-		await this.apollo.client.mutate({ mutation: FEATURED_UNFOLLOW, variables: { targetID: id }});
-		
-		follows[id].following = false;
-		follows[id].disableNotifications = false;
+		const f = follows[id];
+		f.loading = true;
+
+		try {
+			await this.apollo.client.mutate({
+				mutation: FEATURED_UNFOLLOW,
+				variables: {
+					targetID: id
+				}
+			});
+
+			f.loading = false;
+			f.following = false;
+			f.disableNotifications = false;
+
+		} catch(err) {
+			this.log.warn('There was a problem unfollowing.', err);
+			f.error = true;
+		}
 	}
 
 	route(channel) {
