@@ -1,0 +1,14 @@
+query($logins: [String!]) {
+    users(logins: $logins) {
+        id
+		login
+        displayName
+        profileImageURL(width: 70)
+        self {
+            follower {
+                disableNotifications
+                followedAt
+            }
+        }
+    }
+}

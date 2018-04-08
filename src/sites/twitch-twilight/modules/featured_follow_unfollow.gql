@@ -1,0 +1,9 @@
+mutation($targetID: ID!) {
+  unfollowUser(input: {
+    targetID: $targetID
+  }) {
+    follow {
+      followedAt
+    }
+  }
+}
