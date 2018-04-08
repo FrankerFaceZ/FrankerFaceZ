@@ -11,18 +11,6 @@ export class Addon extends Module {
 	static register(name) {
 		FrankerFaceZ.get().register(`addon.${name}`, this).enable();
 	}
-
-	addSetting(key, definition) {
-		this.settings.add(`${this.name}.${key}`, definition);
-	}
-
-	getSetting(key, context = false) {
-		return context ? this.chat.context.get(`${this.name}.${key}`) : this.settings.get(`${this.name}.${key}`);
-	}
-
-	onSettingChanged(key, handler) {
-		this.chat.context.on(`changed:${this.name}.${key}`, handler, this);
-	}
 }
 
 export class AddonManager extends Module {
