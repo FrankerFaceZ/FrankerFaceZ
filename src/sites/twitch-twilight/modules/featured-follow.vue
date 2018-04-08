@@ -68,11 +68,10 @@
 	</div>
 </template>
 
-
 <script>
-// export default {
-// 	data() {
-// 		return this.$vnode.data;
-// 	}
-// }
+export default {
+	data() {
+		return this.$vnode.data;
+	}
+}
 </script>

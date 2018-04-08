@@ -3,9 +3,19 @@
 		max-height: 50vh;
 	}
 
-	.ffz--featured-button-unfollow:hover {
-		.ffz--featured-button-unfollow-button:before {
+	.ffz--featured-button-unfollow {
+		&:hover &:before {
 			content: '\e813';
+		}
+
+		> * {
+			pointer-events: none;
+		}
+	}
+
+	.ffz--featured-button-notification {
+		> * {
+			pointer-events: none;
 		}
 	}
 

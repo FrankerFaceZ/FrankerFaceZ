@@ -106,16 +106,16 @@ export default class FeaturedFollow extends Module {
 
 		const ap_data = await this.apollo.client.query({ query: FEATURED_QUERY, variables: { logins: follow_data }});
 
-		const follows = [];
+		const follows = {};
 		for (const user of ap_data.data.users) {
-			follows.push({
+			follows[user.id] = {
 				id: user.id,
 				login: user.login,
 				displayName: user.displayName,
 				avatar: user.profileImageURL,
 				following: user.self.follower.followedAt != null,
 				disableNotifications: user.self.follower.disableNotifications
-			});
+			};
 		}
 		return follows;
 	}
