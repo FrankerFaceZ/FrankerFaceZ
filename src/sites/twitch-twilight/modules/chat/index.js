@@ -238,13 +238,13 @@ export default class ChatHook extends Module {
 			default: 0,
 			ui: {
 				path: 'Chat > Appearance >> Chat Lines',
-				title: 'Emoticon Alignment',
-				description: 'Change how emotes are aligned and padded in chat, making messages taller but preventing emotes from overlapping.',
+				title: 'Emote Alignment',
+				description: 'Change how emotes are positioned in chat, potentially making messages taller in order to avoid having emotes overlap.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Standard'},
 					{value: 1, title: 'Padded'},
-					{value: 2, title: 'Baseline (BTTV-Like'}
+					{value: 2, title: 'Baseline (BTTV-Like)'}
 				]
 			}
 		});
@@ -325,6 +325,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
 		this.chat.context.on('changed:theme.is-dark', this.updateColors, this);
@@ -332,8 +333,6 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
-
-		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
