@@ -4,7 +4,7 @@
 			<h4>{{ t('metadata.featured-follow.title', 'Featured Follow') }}</h4>
 
 			<div class="tw-flex-grow-1 tw-pd-x-2"/>
-			<button :class="{ 'ffz--featured-follow-update': hasUpdate, 'tw-button--disabled': !hasUpdate }" class="tw-button tw-button--hollow" @click="refresh">
+			<button v-if="hasUpdate" class="tw-button tw-button--hollow ffz--featured-follow-update" @click="refresh">
 				<span class="tw-button__icon tw-button__icon--left">
 					<figure class="ffz-i-arrows-cw"/>
 				</span>
