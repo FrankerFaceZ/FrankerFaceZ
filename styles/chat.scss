@@ -29,6 +29,33 @@
 }
 
 
+.ffz-i-lock {
+	position: absolute;
+	bottom: 0; right: 0;
+	border-radius: .2rem;
+	font-size: 1rem;
+	background-color: rgba(0,0,0,0.5);
+	color: #fff;
+}
+
+
+.ffz--favorite {
+	position: absolute;
+	bottom: 0; right: 0;
+
+	font-size: 1rem;
+	border-radius: .5rem;
+	color: gold;
+
+	background-color: rgba(0,0,0,0.5);
+
+	.ffz__tooltip & {
+		bottom: .1rem; right: .1rem;
+		padding: .2rem 0;
+	}
+}
+
+
 .modified-emote {
 	~ .chat-line__message--emote {
 		position: relative;
