@@ -10,7 +10,7 @@
 	padding-top: calc(.5rem - 1px) !important;
 
 	border-top: 1px solid #aaa;
-	border-bottom-color: rgba(255,255,255,0.5);
+	border-bottom-color: var rgba(255,255,255,0.5);
 
 	.tw-theme--dark & {
 		border-top-color: #000;

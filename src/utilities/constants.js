@@ -33,6 +33,25 @@ export const KNOWN_CODES = {
 	'Gr(a|e)yFace': 'GrayFace'
 };
 
+export const REPLACEMENT_BASE = '//cdn.frankerfacez.com/script/replacements/';
+
+export const REPLACEMENTS = {
+	15: '15-JKanStyle.png',
+	16: '16-OptimizePrime.png',
+	17: '17-StoneLightning.png',
+	18: '18-TheRinger.png',
+	//19: '19-PazPazowitz.png',
+	//20: '20-EagleEye.png',
+	//21: '21-CougarHunt.png',
+	22: '22-RedCoat.png',
+	26: '26-JonCarnage.png',
+	//27: '27-PicoMause.png',
+	30: '30-BCWarrior.png',
+	33: '33-DansGame.png',
+	36: '36-PJSalt.png'
+};
+
+
 export const WS_CLUSTERS = {
 	Production: [
 		['wss://catbag.frankerfacez.com/', 0.25],

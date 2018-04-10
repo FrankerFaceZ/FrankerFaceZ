@@ -6,6 +6,7 @@ import Module from 'utilities/module';
 import {DEBUG} from 'utilities/constants';
 
 import SettingsManager from './settings/index';
+//import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
 import Site from 'site';
@@ -34,6 +35,7 @@ class FrankerFaceZ extends Module {
 		// ========================================================================
 
 		this.inject('settings', SettingsManager);
+		//this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
 		this.inject('socket', SocketClient);
 		this.inject('site', Site);
@@ -95,7 +97,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-beta2.2',
+	major: 4, minor: 0, revision: 0, extra: '-beta2.3',
 	build: __webpack_hash__,
 	toString: () =>
 		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`

@@ -13,8 +13,10 @@ import THEME_CSS_URL from 'site/styles/theme.scss';
 export default class ThemeEngine extends Module {
 	constructor(...args) {
 		super(...args);
-		this.inject('site');
 		this.inject('settings');
+
+		this.inject('site');
+		this.inject('site.css_tweaks');
 
 		this.should_enable = true;
 
@@ -40,7 +42,7 @@ export default class ThemeEngine extends Module {
 			process(ctx) {
 				return ctx.get('context.ui.theme') === 1;
 			},
-			changed: val => document.body.classList.toggle('tw-theme--dark', val)
+			changed: () => this.updateCSS()
 		});
 
 		this.settings.add('theme.tooltips-dark', {
@@ -52,6 +54,18 @@ export default class ThemeEngine extends Module {
 
 		this._style = null;
 	}
+
+
+	updateCSS() {
+		const dark = this.settings.get('theme.is-dark'),
+			gray = this.settings.get('theme.dark');
+
+		document.body.classList.toggle('tw-theme--dark', dark);
+		document.body.classList.toggle('tw-theme--ffz', gray);
+
+		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
+	}
+
 
 	toggleStyle(enable) {
 		if ( ! this._style ) {
@@ -74,11 +88,10 @@ export default class ThemeEngine extends Module {
 
 	updateSetting(enable) {
 		this.toggleStyle(enable);
-		document.body.classList.toggle('tw-theme--ffz', enable);
+		this.updateCSS();
 	}
 
 	onEnable() {
 		this.updateSetting(this.settings.get('theme.dark'));
-		document.body.classList.toggle('tw-theme--dark', this.settings.get('theme.is-dark'));
 	}
 }

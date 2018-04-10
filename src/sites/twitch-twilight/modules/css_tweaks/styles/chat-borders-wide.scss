@@ -8,12 +8,7 @@
 .chat-line__raid,
 .chat-line__subscribe {
 	padding-top: calc(.5rem - 1px) !important;
-
-	border-top: 1px solid #dad8de;
-
-	.tw-theme--dark & {
-		border-top-color: #2c2541;
-	}
+	border-top: 1px solid var(--ffz-border-color);
 
 	&:first-child {
 		border-top-color: transparent !important;

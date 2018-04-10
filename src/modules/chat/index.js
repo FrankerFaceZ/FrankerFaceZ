@@ -259,6 +259,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.click-emotes', {
+			default: true,
+
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Open emote information pages by Shift-Clicking them.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.context.on('changed:theme.is-dark', () => {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
