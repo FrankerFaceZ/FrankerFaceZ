@@ -2,11 +2,11 @@
 .thread-message__timestamp,
 .thread-message__warning,
 
-.chat-line__message,
+.chat-line__message:not(.chat-line--inline),
 .chat-line__moderation,
 .chat-line__status,
 .chat-line__raid,
-.chat-line__subscribe {
+.user-notice-line {
 	padding-top: calc(.5rem - 1px) !important;
 
 	border-top: 1px solid #aaa;

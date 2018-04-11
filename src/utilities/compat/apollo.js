@@ -136,13 +136,14 @@ export default class Apollo extends Module {
 			query = query_map && query_map.get(id),
 			modifiers = this.modifiers[operation];
 
-		if ( modifiers )
+		if ( modifiers ) {
 			for(const mod of modifiers) {
 				if ( typeof mod === 'function' )
 					mod(request);
 				else if ( mod[1] )
 					this.applyModifier(request, mod[1]);
 			}
+		}
 
 		this.emit(`:request.${operation}`, request.query, request.variables);
 
@@ -358,18 +359,23 @@ function merge(a, b) {
 		const s = a.selectionSet.selections,
 			selects = {};
 		for(const sel of b.selectionSet.selections) {
-			if (sel.name && sel.name.value) {
-				selects[`${sel.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
-			} else {
-				if (sel.kind === 'InlineFragment') {
-					selects[`${sel.typeCondition.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
-				}
-			}
+			const name = sel.kind === 'InlineFragment' ?
+					(sel.typeCondition.name ?
+						sel.typeCondition.name.value : null) :
+					(sel.name ? sel.name.value : null),
+				alias = sel.alias ? sel.alias.value : null,
+				key = `${name}:${alias}`;
+
+			if ( name )
+				selects[key] = sel;
 		}
 
 		for(let i=0, l = s.length; i < l; i++) {
 			const sel = s[i],
-				name = sel.kind === 'InlineFragment' ? (sel.typeCondition.name ? sel.typeCondition.name.value : null) : (sel.name ? sel.name.value : null),
+				name = sel.kind === 'InlineFragment' ?
+					(sel.typeCondition.name ?
+						sel.typeCondition.name.value : null) :
+					(sel.name ? sel.name.value : null),
 				alias = sel.alias ? sel.alias.value : null,
 				key = `${name}:${alias}`,
 				other = selects[key];

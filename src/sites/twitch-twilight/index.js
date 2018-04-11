@@ -96,12 +96,28 @@ export default class Twilight extends BaseSite {
 		const session = this.getSession();
 		return session && session.user;
 	}
+
+	getCore() {
+		if ( this._core )
+			return this._core;
+
+		let core = this.web_munch.getModule('core-1');
+		if ( core )
+			return this._core = core.o;
+
+		core = this.web_munch.getModule('core-2');
+		if ( core )
+			return this._core = core.p;
+	}
 }
 
 
 Twilight.KNOWN_MODULES = {
 	simplebar: n => n.globalObserver && n.initDOMLoadedElements,
 	react: n => n.Component && n.createElement,
+	'core-1': n => n.o && n.o.experiments,
+	'core-2': n => n.p && n.p.experiments,
+	cookie: n => n && n.set && n.get && n.getJSON && n.withConverter,
 	'extension-service': n => n.extensionService,
 	'chat-types': n => n.a && n.a.PostWithMention,
 	'gql-printer': n => n !== window && n.print

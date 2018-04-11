@@ -1,0 +1,251 @@
+<template lang="html">
+	<div class="ffz--experiments tw-pd-t-05">
+		<div class="tw-pd-b-1 tw-mg-b-2 tw-border-b">
+			{{ t('settings.experiments.about', 'This feature allows you to override experiment values. Please note that, for most experiments, you may have to refresh the page for your changes to take effect.') }}
+		</div>
+
+		<h3 class="tw-mg-b-1">
+			{{ t('settings.experiments.ffz', 'FrankerFaceZ Experiments') }}
+		</h3>
+
+		<div class="ffz--experiment-list">
+			<section
+				v-for="({key, exp}) of sorted(ffz_data)"
+				:key="key"
+				:data-key="key"
+			>
+				<div class="tw-elevation-1 tw-c-background tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
+
+					<div class="tw-flex-grow-1">
+						<h4>{{ exp.name }}</h4>
+						<div v-if="exp.description" class="description">
+							{{ exp.description }}
+						</div>
+					</div>
+
+					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
+						<select
+							:data-key="key"
+							class="tw-mg-05 tw-select tw-display-line tw-width-auto"
+							@change="onChange($event)"
+						>
+							<option
+								v-for="(i, idx) in exp.groups"
+								:key="idx"
+								:selected="i.value === exp.value"
+							>
+								{{ t('settings.exepriments.entry', '%{value} (weight: %{weight})', i) }}
+							</option>
+						</select>
+
+						<button
+							:disabled="exp.default"
+							:class="{'tw-button--disabled': exp.default}"
+							class="tw-mg-t-05 tw-button tw-button--text tw-tooltip-wrapper"
+							@click="reset(key)"
+						>
+							<span class="tw-button__text ffz-i-cancel" />
+							<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+								{{ t('setting.reset', 'Reset to Default') }}
+							</span>
+						</button>
+					</div>
+				</div>
+			</section>
+			<div v-if="! Object.keys(ffz_data).length">
+				{{ t('settings.experiments.none', 'There are no current experiments.') }}
+			</div>
+		</div>
+
+		<h3 class="tw-mg-t-5 tw-mg-b-1">
+			{{ t('settings.experiments.twitch', 'Twitch Experiments') }}
+		</h3>
+
+		<div class="ffz--experiment-list">
+			<section
+				v-for="({key, exp}) of sorted(twitch_data)"
+				:key="key"
+				:data-key="key"
+			>
+				<div
+					:class="{live: exp.in_use}"
+					class="ffz--experiment-row tw-elevation-1 tw-c-background tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex"
+				>
+					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-border-r tw-mg-r-1 tw-pd-r-1">
+						<div v-if="exp.in_use" class="ffz--profile__icon ffz-i-ok tw-tooltip-wrapper">
+							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+								{{ t('setting.experiments.active', 'This experiment is active.') }}
+							</div>
+						</div>
+						<div v-else class="ffz--profile__icon ffz-i-cancel tw-tooltip-wrapper">
+							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+								{{ t('setting.experiments.inactive', 'This experiment is not active.') }}
+							</div>
+						</div>
+					</div>
+
+					<div class="tw-flex-grow-1">
+						<h4>{{ exp.name }}</h4>
+						<div class="description">
+							{{ exp.remainder }}
+						</div>
+					</div>
+
+					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
+						<select
+							:data-key="key"
+							class="tw-mg-05 tw-select tw-display-line tw-width-auto"
+							@change="onTwitchChange($event)"
+						>
+							<option
+								v-for="(i, idx) in exp.groups"
+								:key="idx"
+								:selected="i.value === exp.value"
+							>
+								{{ i.value }} (weight: {{ i.weight }})
+							</option>
+						</select>
+
+						<button
+							:disabled="exp.default"
+							:class="{'tw-button--disabled': exp.default}"
+							class="tw-mg-t-05 tw-button tw-button--text tw-tooltip-wrapper"
+							@click="resetTwitch(key)"
+						>
+							<span class="tw-button__text ffz-i-cancel" />
+							<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+								{{ t('setting.reset', 'Reset to Default') }}
+							</span>
+						</button>
+					</div>
+				</div>
+			</section>
+			<div v-if="! Object.keys(twitch_data).length">
+				{{ t('settings.experiments.none', 'There are no current experiments.') }}
+			</div>
+		</div>
+	</div>
+</template>
+
+<script>
+
+import {has} from 'utilities/object';
+
+export default {
+	props: ['item'],
+
+	data() {
+		return {
+			ffz_data: this.item.ffz_data(),
+			twitch_data: this.item.twitch_data()
+		}
+	},
+
+	created() {
+		for(const key in this.ffz_data)
+			if ( has(this.ffz_data, key) ) {
+				const exp = this.ffz_data[key];
+				this.$set(exp, 'value', this.item.getAssignment(key));
+				this.$set(exp, 'default', ! this.item.hasOverride(key));
+			}
+
+		for(const key in this.twitch_data)
+			if ( has(this.twitch_data, key) ) {
+				const exp = this.twitch_data[key];
+				this.$set(exp, 'value', this.item.getTwitchAssignment(key));
+				this.$set(exp, 'default', ! this.item.hasTwitchOverride(key));
+
+				exp.in_use = this.item.usingTwitchExperiment(key);
+				exp.remainder = `v: ${exp.v}, t: ${exp.t}`;
+			}
+
+		this.item.on(':changed', this.valueChanged, this);
+		this.item.on(':twitch-changed', this.twitchValueChanged, this);
+	},
+
+	beforeDestroy() {
+		this.item.off(':changed', this.valueChanged, this);
+		this.item.off(':twitch-changed', this.twitchValueChanged, this);
+	},
+
+	methods: {
+		sorted(data) {
+			const out = Object.entries(data).map(x => ({key: x[0], exp: x[1]}));
+
+			out.sort((a,b) => {
+				const a_use = a.exp.in_use,
+					b_use = b.exp.in_use;
+
+				if ( a_use && ! b_use ) return -1;
+				if ( ! a_use && b_use ) return 1;
+
+				const a_n = a.exp.name.toLowerCase(),
+					b_n = b.exp.name.toLowerCase();
+
+				if ( a_n < b_n ) return -1;
+				if ( a_n > b_n ) return 1;
+				return 0;
+			});
+
+			return out;
+		},
+
+		reset(key) {
+			this.item.deleteOverride(key);
+			const exp = this.ffz_data[key];
+			if ( exp )
+				exp.default = ! this.item.hasOverride(key);
+		},
+
+		resetTwitch(key) {
+			this.item.deleteTwitchOverride(key);
+			const exp = this.twitch_data[key];
+			if ( exp )
+				exp.default = ! this.item.hasTwitchOverride(key);
+		},
+
+		onChange(event) {
+			const el = event.target,
+				idx = el.selectedIndex,
+				key = el.dataset.key;
+
+			const exp = this.ffz_data[key],
+				groups = exp && exp.groups,
+				entry = groups && groups[idx];
+
+			if ( entry )
+				this.item.setOverride(key, entry.value);
+		},
+
+		onTwitchChange(event) {
+			const el = event.target,
+				idx = el.selectedIndex,
+				key = el.dataset.key;
+
+			const exp = this.twitch_data[key],
+				groups = exp && exp.groups,
+				entry = groups && groups[idx];
+
+			if ( entry )
+				this.item.setTwitchOverride(key, entry.value);
+		},
+
+		valueChanged(key, value) {
+			const exp = this.ffz_data[key];
+			if ( exp ) {
+				exp.value = value;
+				exp.default = ! this.item.hasOverride(key);
+			}
+		},
+
+		twitchValueChanged(key, value) {
+			const exp = this.twitch_data[key];
+			if ( exp ) {
+				exp.value = value;
+				exp.default = ! this.item.hasTwitchOverride(key);
+			}
+		}
+	}
+}
+
+</script>

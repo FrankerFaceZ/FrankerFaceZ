@@ -1,10 +1,14 @@
 <template lang="html">
 	<div class="ffz-featured-follow tw-c-background">
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
-			<h4>{{ t('metadata.featured-follow.title', 'Featured Follow') }}</h4>
+			<h4>{{ t('metadata.featured-follow.title', 'Featured Channels') }}</h4>
 
 			<div class="tw-flex-grow-1 tw-pd-x-2"/>
-			<button :class="{ 'ffz--featured-follow-update': hasUpdate, 'tw-button--disabled': !hasUpdate }" class="tw-button tw-button--hollow" @click="refresh">
+			<button
+				v-if="hasUpdate"
+				class="ffz--featured-follow-update tw-button tw-button--hollow"
+				@click="refresh"
+			>
 				<span class="tw-button__icon tw-button__icon--left">
 					<figure class="ffz-i-arrows-cw"/>
 				</span>
@@ -32,6 +36,7 @@
 									<button
 										v-if="user.following"
 										:disabled="user.loading"
+										:class="{'tw-button--disabled': user.loading}"
 										:data-title="user.loading ? null : t('featured-follow.button.unfollow', 'Unfollow %{user}', {user: user.displayName})"
 										data-tooltip-type="html"
 										class="tw-button tw-button--status tw-button--success ffz-tooltip ffz--featured-button-unfollow"
@@ -44,6 +49,7 @@
 									<button
 										v-if="user.following"
 										:disabled="user.loading"
+										:class="{'tw-button--disabled': user.loading}"
 										:data-title="notifyTip(user.disableNotifications)"
 										data-tooltip-type="html"
 										class="tw-button-icon tw-mg-l-05 ffz-tooltip ffz--featured-button-notification"
@@ -56,6 +62,7 @@
 									<button
 										v-else
 										:disabled="user.loading"
+										:class="{'tw-button--disabled': user.loading}"
 										class="tw-button"
 										@click="followUser(user.id)"
 									>

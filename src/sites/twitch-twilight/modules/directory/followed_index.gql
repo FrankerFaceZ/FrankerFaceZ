@@ -2,7 +2,7 @@ query {
 	currentUser {
 		followedLiveUsers {
 			nodes {
-				profileImageURL(width: 70)
+				profileImageURL(width: 50)
 				stream {
 					createdAt
 				}
@@ -10,9 +10,9 @@ query {
 		}
 		followedHosts {
 			nodes {
-				profileImageURL(width: 70)
+				profileImageURL(width: 50)
 				hosting {
-					profileImageURL(width: 70)
+					profileImageURL(width: 50)
 					stream {
 						createdAt
 						type

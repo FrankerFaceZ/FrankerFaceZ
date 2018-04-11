@@ -25,7 +25,7 @@ export default class FollowingText extends SiteModule {
 			currentUser {
 				followedLiveUsers {
 					nodes {
-						profileImageURL(width: 70)
+						profileImageURL(width: 50)
 						stream {
 							type
 							createdAt
