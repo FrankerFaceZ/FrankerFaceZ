@@ -31,6 +31,8 @@ export const Clips = {
 			return;
 
 		return {
+			url: token.url,
+
 			getData: async () => {
 				const result = await apollo.client.query({
 					query: GET_CLIP,
@@ -38,6 +40,9 @@ export const Clips = {
 						slug: match[1]
 					}
 				});
+
+				if ( ! result || ! result.data || ! result.data.clip )
+					return null;
 
 				const clip = result.data.clip,
 					user = clip.broadcaster.displayName,

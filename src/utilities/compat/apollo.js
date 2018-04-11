@@ -117,7 +117,7 @@ export default class Apollo extends Module {
 							next: result => {
 								if ( result.errors ) {
 									const name = operation.operationName;
-									if ( name.includes('FFZ') || has(this.modifiers, name) || has(this.post_modifiers, name) ) {
+									if ( name && (name.includes('FFZ') || has(this.modifiers, name) || has(this.post_modifiers, name)) ) {
 										for(const err of result.errors) {
 											if ( skip_error(err) )
 												continue;
