@@ -53,6 +53,9 @@ export default class RichContent extends Module {
 					}, data));
 
 				} catch(err) {
+					if ( err.message !== 'timeout' )
+						t.log.capture(err);
+
 					this.setState({
 						loaded: true,
 						error: true,

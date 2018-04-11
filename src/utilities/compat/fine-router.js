@@ -61,14 +61,14 @@ export default class FineRouter extends Module {
 				this.current = route;
 				this.current_name = route.name;
 				this.match = match;
-				this.emitSafe(':route', route, match);
-				this.emitSafe(`:route:${route.name}`, ...match);
+				this.emit(':route', route, match);
+				this.emit(`:route:${route.name}`, ...match);
 				return;
 			}
 		}
 
 		this.current = this.current_name = this.match = null;
-		this.emitSafe(':route', null, null);
+		this.emit(':route', null, null);
 	}
 
 	route(name, path) {

@@ -6,6 +6,8 @@ export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com
 export const CLIENT_ID = 'a3bc9znoz6vi8ozsoca0inlcr4fcvkl';
 export const API_SERVER = '//api.frankerfacez.com';
 
+export const SENTRY_ID = 'https://18f42c65339d4164b3fdebfc8c8bc99b@sentry.io/1186960';
+
 export const TWITCH_EMOTE_BASE = '//static-cdn.jtvnw.net/emoticons/v1/';
 
 export const KNOWN_CODES = {

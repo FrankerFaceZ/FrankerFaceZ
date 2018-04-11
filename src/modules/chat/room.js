@@ -70,8 +70,8 @@ export default class Room {
 			this.manager.socket.unsubscribe(this, `room.${this.login}`);
 		}
 
-		if ( this.manager.room_ids[this.id] === this )
-			this.manager.room_ids[this.id] = null;
+		if ( this.manager.room_ids[this._id] === this )
+			this.manager.room_ids[this._id] = null;
 	}
 
 

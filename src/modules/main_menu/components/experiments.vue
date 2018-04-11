@@ -1,7 +1,21 @@
 <template lang="html">
 	<div class="ffz--experiments tw-pd-t-05">
-		<div class="tw-pd-b-1 tw-mg-b-2 tw-border-b">
+		<div class="tw-pd-b-1 tw-mg-b-1 tw-border-b">
 			{{ t('settings.experiments.about', 'This feature allows you to override experiment values. Please note that, for most experiments, you may have to refresh the page for your changes to take effect.') }}
+		</div>
+
+		<div class="tw-mg-b-2 tw-flex tw-align-items-center">
+			<div class="tw-flex-grow-1">
+				{{ t('settings.experiments.unique-id', 'Unique ID: %{id}', {id: unique_id}) }}
+			</div>
+			<select
+				ref="sort_select"
+				class="tw-mg-x-05 tw-select tw-display-line tw-width-auto"
+				@change="onSort"
+			>
+				<option :selected="sort_by === 0">{{ t('settings.experiments.sort-name', 'Sort By: Name') }}</option>
+				<option :selected="sort_by === 1">{{ t('settings.experiments.sort-rarity', 'Sort By: Rarity') }}</option>
+			</select>
 		</div>
 
 		<h3 class="tw-mg-b-1">
@@ -34,7 +48,7 @@
 								:key="idx"
 								:selected="i.value === exp.value"
 							>
-								{{ t('settings.exepriments.entry', '%{value} (weight: %{weight})', i) }}
+								{{ t('settings.experiments.entry', '%{value} (weight: %{weight})', i) }}
 							</option>
 						</select>
 
@@ -98,6 +112,12 @@
 							@change="onTwitchChange($event)"
 						>
 							<option
+								v-if="exp.in_use === false"
+								:selected="exp.default"
+							>
+								{{ t('settings.experiments.unset', 'unset') }}
+							</option>
+							<option
 								v-for="(i, idx) in exp.groups"
 								:key="idx"
 								:selected="i.value === exp.value"
@@ -136,6 +156,8 @@ export default {
 
 	data() {
 		return {
+			sort_by: 1,
+			unique_id: this.item.unique_id(),
 			ffz_data: this.item.ffz_data(),
 			twitch_data: this.item.twitch_data()
 		}
@@ -147,6 +169,10 @@ export default {
 				const exp = this.ffz_data[key];
 				this.$set(exp, 'value', this.item.getAssignment(key));
 				this.$set(exp, 'default', ! this.item.hasOverride(key));
+
+				exp.total = exp.groups.reduce((a,b) => a + b.weight, 0);
+				this.calculateRarity(exp);
+
 			}
 
 		for(const key in this.twitch_data)
@@ -157,6 +183,8 @@ export default {
 
 				exp.in_use = this.item.usingTwitchExperiment(key);
 				exp.remainder = `v: ${exp.v}, t: ${exp.t}`;
+				exp.total = exp.groups.reduce((a,b) => a + b.weight, 0);
+				this.calculateRarity(exp);
 			}
 
 		this.item.on(':changed', this.valueChanged, this);
@@ -169,6 +197,17 @@ export default {
 	},
 
 	methods: {
+		calculateRarity(exp) {
+			let rarity;
+			for(const group of exp.groups)
+				if ( group.value === exp.value ) {
+					rarity = group.weight / exp.total;
+					break;
+				}
+
+			this.$set(exp, 'rarity', rarity);
+		},
+
 		sorted(data) {
 			const out = Object.entries(data).map(x => ({key: x[0], exp: x[1]}));
 
@@ -179,11 +218,20 @@ export default {
 				if ( a_use && ! b_use ) return -1;
 				if ( ! a_use && b_use ) return 1;
 
+				if ( this.sort_by === 1 ) {
+					const a_r = a.exp.rarity,
+						b_r = b.exp.rarity;
+
+					if ( a_r < b_r ) return -1;
+					if ( a_r > b_r ) return 1;
+				}
+
 				const a_n = a.exp.name.toLowerCase(),
 					b_n = b.exp.name.toLowerCase();
 
 				if ( a_n < b_n ) return -1;
 				if ( a_n > b_n ) return 1;
+
 				return 0;
 			});
 
@@ -202,6 +250,10 @@ export default {
 			const exp = this.twitch_data[key];
 			if ( exp )
 				exp.default = ! this.item.hasTwitchOverride(key);
+		},
+
+		onSort() {
+			this.sort_by = this.$refs.sort_select.selectedIndex;
 		},
 
 		onChange(event) {
@@ -223,8 +275,9 @@ export default {
 				key = el.dataset.key;
 
 			const exp = this.twitch_data[key],
+				offset = exp.in_use ? 0 : 1,
 				groups = exp && exp.groups,
-				entry = groups && groups[idx];
+				entry = groups && groups[idx - offset];
 
 			if ( entry )
 				this.item.setTwitchOverride(key, entry.value);
@@ -235,6 +288,7 @@ export default {
 			if ( exp ) {
 				exp.value = value;
 				exp.default = ! this.item.hasOverride(key);
+				this.calculateRarity(exp);
 			}
 		},
 
@@ -243,6 +297,7 @@ export default {
 			if ( exp ) {
 				exp.value = value;
 				exp.default = ! this.item.hasTwitchOverride(key);
+				this.calculateRarity(exp);
 			}
 		}
 	}

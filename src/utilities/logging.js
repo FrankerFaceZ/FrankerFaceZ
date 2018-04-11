@@ -1,12 +1,21 @@
 'use strict';
 
+const RAVEN_LEVELS = {
+	1: 'debug',
+	2: 'info',
+	4: 'warn',
+	8: 'error'
+};
+
+
 export default class Logger {
-	constructor(parent, name, level) {
+	constructor(parent, name, level, raven) {
 		this.parent = parent;
 		this.name = name;
 
 		this.enabled = true;
 		this.level = level || (parent && parent.level) || Logger.DEFAULT_LEVEL;
+		this.raven = raven || (parent && parent.raven);
 
 		this.children = {};
 	}
@@ -34,12 +43,36 @@ export default class Logger {
 		return this.invoke(Logger.ERROR, args);
 	}
 
+	crumb(...args) {
+		if ( this.raven )
+			return this.raven.captureBreadcrumb(...args);
+	}
+
+	capture(exc, opts, ...args) {
+		if ( this.raven ) {
+			opts = opts || {};
+			if ( ! opts.logger )
+				opts.logger = this.name;
+
+			this.raven.captureException(exc, opts);
+		}
+
+		if ( args.length )
+			return this.error(...args);
+	}
+
 	/* eslint no-console: "off" */
 	invoke(level, args) {
 		if ( ! this.enabled || level < this.level )
 			return;
 
 		const message = Array.prototype.slice.call(args);
+
+		this.crumb({
+			message: message.join(' '),
+			category: this.name,
+			level: RAVEN_LEVELS[level] || level
+		});
 
 		if ( this.name )
 			message.unshift(`%cFFZ [%c${this.name}%c]:%c`, 'color:#755000; font-weight:bold', '', 'color:#755000; font-weight:bold', '');

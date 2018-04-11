@@ -28,6 +28,14 @@ export default class User {
 			this.manager.emotes.unrefSet(set_id);
 
 		this.emote_sets = null;
+
+		const parent = this.room || this.manager;
+
+		if ( this._login && parent.users[this._login] === this )
+			parent.users[this._login] = null;
+
+		if ( parent.user_ids[this._id] === this )
+			parent.user_ids[this._id] = null;
 	}
 
 	get id() {

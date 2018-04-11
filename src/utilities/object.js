@@ -198,14 +198,14 @@ export function deep_copy(object, seen) {
 	seen.add(object);
 
 	if ( Array.isArray(object) )
-		return object.map(x => deep_copy(x, seen));
+		return object.map(x => deep_copy(x, new Set(seen)));
 
 	const out = {};
 	for(const key in object)
 		if ( HOP.call(object, key) ) {
 			const val = object[key];
 			if ( typeof val === 'object' )
-				out[key] = deep_copy(val, seen);
+				out[key] = deep_copy(val, new Set(seen));
 			else
 				out[key] = val;
 		}

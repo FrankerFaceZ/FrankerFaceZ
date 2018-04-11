@@ -18,6 +18,12 @@ const OVERRIDE_COOKIE = 'experiment_overrides',
 	};
 
 
+// We want to import this so that the file is included in the output.
+// We don't load using this because we might want a newer file from the
+// server.
+import EXPERIMENTS from 'file-loader?name=[name].[hash].[ext]!./experiments.json'; // eslint-disable-line no-unused-vars
+
+
 // ============================================================================
 // Experiment Manager
 // ============================================================================
@@ -31,6 +37,9 @@ export default class ExperimentManager extends Module {
 		this.settings.addUI('experiments', {
 			path: 'Debugging > Experiments',
 			component: 'experiments',
+
+			unique_id: () => this.unique_id,
+
 			ffz_data: () => deep_copy(this.experiments),
 			twitch_data: () => deep_copy(this.getTwitchExperiments()),
 
@@ -66,7 +75,7 @@ export default class ExperimentManager extends Module {
 		let data;
 
 		try {
-			data = await fetch(`${SERVER}/static/experiments.json?_=${Date.now()}`).then(r =>
+			data = await fetch(`${SERVER}/script/experiments.json?_=${Date.now()}`).then(r =>
 				r.ok ? r.json() : null);
 
 		} catch(err) {
@@ -179,12 +188,11 @@ export default class ExperimentManager extends Module {
 
 	_rebuildTwitchKey(key, is_set, new_val) {
 		const core = this.resolve('site').getCore(),
-			exps = core.experiments;
+			exps = core.experiments,
 
-		if ( ! has(exps.assignments, key) )
-			return;
-
-		const old_val = exps.assignments[key];
+			old_val = has(exps.assignments, key) ?
+				exps.assignments[key] :
+				undefined;
 
 		if ( old_val !== new_val ) {
 			const value = is_set ? new_val : old_val;

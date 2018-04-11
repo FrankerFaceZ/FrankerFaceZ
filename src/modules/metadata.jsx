@@ -439,6 +439,11 @@ export default class Metadata extends Module {
 				el.disabled = maybe_call(def.disabled, this, data);
 
 		} catch(err) {
+			this.log.capture(err, {
+				tags: {
+					metadata: key
+				}
+			});
 			this.log.error(`Error rendering metadata for ${key}`, err);
 			return destroy();
 		}

@@ -195,6 +195,35 @@ export default class Emotes extends Module {
 
 		const provider = ds.provider;
 
+		if ( event.shiftKey && this.parent.context.get('chat.click-emotes') ) {
+			let url;
+
+			if ( provider === 'twitch' )
+				url = `https://twitchemotes.com/emotes/${ds.id}`;
+
+			else if ( provider === 'ffz' ) {
+				const emote_set = this.emote_sets[ds.set],
+					emote = emote_set && emote_set.emotes[ds.id];
+
+				if ( ! emote )
+					return;
+
+				if ( emote.click_url )
+					url = emote.click_url;
+
+				else if ( ! emote_set.source )
+					url = `https://www.frankerfacez.com/emoticons/${emote.id}`;
+			}
+
+			if ( url ) {
+				const win = window.open();
+				win.opener = null;
+				win.location = url;
+			}
+
+			return true;
+		}
+
 		if ( event[MOD_KEY] ) {
 			// Favoriting Emotes
 			let source, id;
@@ -221,35 +250,6 @@ export default class Emotes extends Module {
 			if ( tt && tt.visible ) {
 				tt.hide();
 				setTimeout(() => document.contains(target) && tt.show(), 0);
-			}
-
-			return true;
-		}
-
-		if ( event.shiftKey && this.parent.context.get('chat.click-emotes') ) {
-			let url;
-
-			if ( provider === 'twitch' )
-				url = `https://twitchemotes.com/emotes/${ds.id}`;
-
-			else if ( provider === 'ffz' ) {
-				const emote_set = this.emote_sets[ds.set],
-					emote = emote_set && emote_set.emotes[ds.id];
-
-				if ( ! emote )
-					return;
-
-				if ( emote.click_url )
-					url = emote.click_url;
-
-				else if ( ! emote_set.source )
-					url = `https://www.frankerfacez.com/emoticons/${emote.id}`;
-			}
-
-			if ( url ) {
-				const win = window.open();
-				win.opener = null;
-				win.location = url;
 			}
 
 			return true;

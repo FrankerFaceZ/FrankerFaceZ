@@ -303,11 +303,15 @@ export default class Chat extends Module {
 		else if ( this.users[login] && ! no_login )
 			user = this.users[login];
 
-		else if ( no_create )
-			return null;
+		if ( user && user.destroyed )
+			user = null;
 
-		else
-			user = new User(this, null, id, login);
+		if ( ! user ) {
+			if ( no_create )
+				return null;
+			else
+				user = new User(this, null, id, login);
+		}
 
 		if ( id && id !== user.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
@@ -358,11 +362,15 @@ export default class Chat extends Module {
 		else if ( this.rooms[login] && ! no_login )
 			room = this.rooms[login];
 
-		else if ( no_create )
-			return null;
+		if ( room && room.destroyed )
+			room = null;
 
-		else
-			room = new Room(this, id, login);
+		if ( ! room ) {
+			if ( no_create )
+				return null;
+			else
+				room = new Room(this, id, login);
+		}
 
 		if ( id && id !== room.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
