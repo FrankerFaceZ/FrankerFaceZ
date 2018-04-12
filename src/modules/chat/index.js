@@ -10,6 +10,7 @@ import {timeout, has} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
+//import Emoji from './emoji';
 
 import Room from './room';
 import User from './user';
@@ -27,9 +28,11 @@ export default class Chat extends Module {
 		this.inject('i18n');
 		this.inject('tooltips');
 		this.inject('socket');
+		this.inject('experiments');
 
 		this.inject(Badges);
 		this.inject(Emotes);
+		//this.inject(Emoji);
 
 		this._link_info = {};
 
@@ -259,6 +262,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.click-emotes', {
+			default: true,
+
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Open emote information pages by Shift-Clicking them.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.context.on('changed:theme.is-dark', () => {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
@@ -293,11 +306,15 @@ export default class Chat extends Module {
 		else if ( this.users[login] && ! no_login )
 			user = this.users[login];
 
-		else if ( no_create )
-			return null;
+		if ( user && user.destroyed )
+			user = null;
 
-		else
-			user = new User(this, null, id, login);
+		if ( ! user ) {
+			if ( no_create )
+				return null;
+			else
+				user = new User(this, null, id, login);
+		}
 
 		if ( id && id !== user.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
@@ -348,11 +365,15 @@ export default class Chat extends Module {
 		else if ( this.rooms[login] && ! no_login )
 			room = this.rooms[login];
 
-		else if ( no_create )
-			return null;
+		if ( room && room.destroyed )
+			room = null;
 
-		else
-			room = new Room(this, id, login);
+		if ( ! room ) {
+			if ( no_create )
+				return null;
+			else
+				room = new Room(this, id, login);
+		}
 
 		if ( id && id !== room.id ) {
 			// If the ID isn't what we expected, something is very wrong here.

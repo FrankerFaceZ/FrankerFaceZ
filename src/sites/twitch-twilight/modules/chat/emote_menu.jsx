@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {has, get, once, set_equals} from 'utilities/object';
-import {KNOWN_CODES, TWITCH_EMOTE_BASE} from 'utilities/constants';
+import {IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
 
 import Twilight from 'site';
 import Module from 'utilities/module';
@@ -22,6 +22,34 @@ function maybe_date(val) {
 		return null;
 	}
 }
+
+
+const EMOTE_SORTERS = [
+	function id_asc(a, b) {
+		return a.id - b.id;
+	},
+	function id_desc(a, b) {
+		return b.id - a.id;
+	},
+	function name_asc(a, b) {
+		const a_n = a.name.toLowerCase(),
+			b_n = b.name.toLowerCase();
+
+		if ( a_n < b_n ) return -1;
+		if ( a_n > b_n ) return 1;
+
+		return a.id - b.id;
+	},
+	function name_desc(a, b) {
+		const a_n = a.name.toLowerCase(),
+			b_n = b.name.toLowerCase();
+
+		if ( a_n > b_n ) return -1;
+		if ( a_n < b_n ) return 1;
+
+		return b.id - a.id;
+	}
+];
 
 
 function sort_sets(a, b) {
@@ -123,9 +151,35 @@ export default class EmoteMenu extends Module {
 				title: 'Default Tab',
 				component: 'setting-select-box',
 				data: [
+					{value: 'fav', title: 'Favorites'},
 					{value: 'channel', title: 'Channel'},
-					{value: 'all', title: 'All'}
+					{value: 'all', title: 'My Emotes'}
 				]
+			}
+		});
+
+
+		this.settings.add('chat.emote-menu.sort-emotes', {
+			default: 0,
+			ui: {
+				path: 'Chat > Emote Menu >> Sorting',
+				title: 'Sort Emotes By',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Order Added (ID), Ascending'},
+					{value: 1, title: 'Order Added (ID), Descending'},
+					{value: 2, title: 'Name, Ascending'},
+					{value: 3, title: 'Name, Descending'}
+				]
+			}
+		});
+
+		this.settings.add('chat.emote-menu.sort-tiers-last', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Menu >> Sorting',
+				title: 'List emotes from higher sub tiers last.',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -147,18 +201,24 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-room-sets', this.maybeUpdate, this);
+		this.on('chat.emotes:change-favorite', this.maybeUpdate, this);
 
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
 			this.EmoteMenu.forceUpdate());
 
-		this.chat.context.on('changed:chat.emote-menu.show-heading', () =>
-			this.MenuWrapper.forceUpdate());
+		const fup = () => this.MenuWrapper.forceUpdate();
+		const rebuild = () => {
+			for(const inst of this.MenuWrapper.instances)
+				inst.componentWillReceiveProps(inst.props);
+		}
 
-		this.chat.context.on('changed:chat.emote-menu.show-search', () =>
-			this.MenuWrapper.forceUpdate());
+		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
 
-		this.chat.context.on('changed:chat.emote-menu.reduced-padding', () =>
-			this.MenuWrapper.forceUpdate());
+		this.chat.context.on('changed:chat.emote-menu.show-heading', fup);
+		this.chat.context.on('changed:chat.emote-menu.show-search', fup);
+		this.chat.context.on('changed:chat.emote-menu.reduced-padding', fup);
 
 		this.chat.context.on('changed:chat.emote-menu.icon', val =>
 			this.css_tweaks.toggle('emote-menu', val));
@@ -214,17 +274,19 @@ export default class EmoteMenu extends Module {
 		this.MenuEmote = class FFZMenuEmote extends React.Component {
 			constructor(props) {
 				super(props);
-				this.handleClick = props.onClickEmote.bind(this, props.data.name)
+				this.handleClick = this.handleClick.bind(this);
 			}
 
-			componentWillUpdate() {
-				this.handleClick = this.props.onClickEmote.bind(this, this.props.data.name);
+			handleClick(event) {
+				if ( ! t.emotes.handleClick(event) )
+					this.props.onClickEmote(this.props.data.name);
 			}
 
 			render() {
 				const data = this.props.data,
 					lock = this.props.lock,
 					locked = this.props.locked,
+					favorite = data.favorite,
 
 					sellout = lock ?
 						this.props.all_locked ?
@@ -251,8 +313,11 @@ export default class EmoteMenu extends Module {
 							src={data.src}
 							srcSet={data.srcSet}
 							alt={data.name}
+							height={data.height ? `${data.height}px` : null}
+							width={data.width ? `${data.width}px` : null}
 						/>
 					</figure>
+					{favorite && (<figure class="ffz--favorite ffz-i-star" />)}
 					{locked && (<figure class="ffz-i-lock" />)}
 				</button>);
 			}
@@ -307,7 +372,7 @@ export default class EmoteMenu extends Module {
 				const data = this.props.data,
 					filtered = this.props.filtered;
 
-				let show_heading = t.chat.context.get('chat.emote-menu.show-heading');
+				let show_heading = ! data.is_favorites && t.chat.context.get('chat.emote-menu.show-heading');
 				if ( show_heading === 2 )
 					show_heading = ! filtered;
 				else
@@ -541,6 +606,7 @@ export default class EmoteMenu extends Module {
 
 				state.filtered_channel_sets = this.filterSets(input, state.channel_sets);
 				state.filtered_all_sets = this.filterSets(input, state.all_sets);
+				state.filtered_fav_sets = this.filterSets(input, state.fav_sets);
 
 				return state;
 			}
@@ -587,7 +653,8 @@ export default class EmoteMenu extends Module {
 
 					data = state.set_data || {},
 					channel = state.channel_sets = [],
-					all = state.all_sets = [];
+					all = state.all_sets = [],
+					favorites = state.favorites = [];
 
 				// If we're still loading, don't set any data.
 				if ( props.loading || props.error || state.loading )
@@ -598,10 +665,32 @@ export default class EmoteMenu extends Module {
 				if ( state.set_data && this.loadData(false, props, state) )
 					return state;
 
+				// Sorters
+				const sorter = EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')],
+					sort_tiers = t.chat.context.get('chat.emote-menu.sort-tiers-last'),
+					sort_emotes = (a,b) => {
+						if ( a.inventory || b.inventory )
+							return sorter(a,b);
+
+						if ( ! a.locked && b.locked ) return -1;
+						if ( a.locked && ! b.locked ) return 1;
+
+						if ( sort_tiers || a.locked || b.locked ) {
+							if ( a.set_id < b.set_id ) return -1;
+							if ( a.set_id > b.set_id ) return 1;
+						}
+
+						return sorter(a,b);
+					}
+
 				// Start with the All tab. Some data calculated for
 				// all is re-used for the Channel tab.
 
 				const emote_sets = props.emote_data && props.emote_data.emoteSets,
+					emote_map = props.emote_data && props.emote_data.emoteMap,
+					twitch_favorites = t.emotes.getFavorites('twitch'),
+					twitch_seen_favorites = new  Set,
+
 					inventory = t.emotes.twitch_inventory_sets || new Set,
 					grouped_sets = {},
 					set_ids = new Set;
@@ -612,6 +701,7 @@ export default class EmoteMenu extends Module {
 							continue;
 
 						const set_id = parseInt(emote_set.id, 10),
+							is_inventory = inventory.has(set_id),
 							set_data = data[set_id] || {},
 							more_data = t.emotes.getTwitchSetChannel(set_id),
 							image = set_data.image,
@@ -637,7 +727,7 @@ export default class EmoteMenu extends Module {
 							key = `twitch-${chan.id}`;
 
 						else {
-							if ( inventory.has(set_id) ) {
+							if ( is_inventory ) {
 								title = t.i18n.t('emote-menu.inventory', 'Inventory');
 								key = 'twitch-inventory';
 								icon = 'inventory';
@@ -698,21 +788,47 @@ export default class EmoteMenu extends Module {
 
 						for(const emote of emote_set.emotes) {
 							const id = parseInt(emote.id, 10),
-								base = `${TWITCH_EMOTE_BASE}${id}`,
-								name = KNOWN_CODES[emote.token] || emote.token;
+								name = KNOWN_CODES[emote.token] || emote.token,
+								mapped = emote_map && emote_map[name],
+								overridden = mapped && mapped.id != id,
+								replacement = REPLACEMENTS[id],
+								is_fav = twitch_favorites.includes(id);
 
-							emotes.push({
+							let src, srcSet;
+
+							if ( replacement && t.chat.context.get('chat.fix-bad-emotes') )
+								src = `${REPLACEMENT_BASE}${replacement}`;
+							else {
+								const base = `${TWITCH_EMOTE_BASE}${id}`;
+								src = `${base}/1.0`;
+								srcSet = `${src} 1x, ${base}/2.0 2x`
+							}
+
+							const em = {
 								provider: 'twitch',
 								id,
 								set_id,
 								name,
-								src: `${base}/1.0`,
-								srcSet: `${base}/1.0 1x, ${base}/2.0 2x`
-							});
+								src,
+								srcSet,
+								overridden: overridden ? parseInt(mapped.id,10) : null,
+								inventory: is_inventory,
+								favorite: is_fav
+							};
+
+							emotes.push(em);
+							if ( is_fav && ! twitch_seen_favorites.has(id) ) {
+								favorites.push(em);
+								twitch_seen_favorites.add(id);
+							}
 						}
 
-						if ( emotes.length && ! all.includes(section) )
-							all.push(section);
+						if ( emotes.length ) {
+							emotes.sort(sort_emotes);
+
+							if ( ! all.includes(section) )
+								all.push(section);
+						}
 					}
 
 
@@ -772,25 +888,36 @@ export default class EmoteMenu extends Module {
 						for(const emote of product.emotes) {
 							const id = parseInt(emote.id, 10),
 								base = `${TWITCH_EMOTE_BASE}${id}`,
-								name = KNOWN_CODES[emote.token] || emote.token;
+								name = KNOWN_CODES[emote.token] || emote.token,
+								is_fav = twitch_favorites.includes(id);
 
-							emotes.push({
+							const em = {
 								provider: 'twitch',
 								id,
 								set_id,
 								name,
 								locked,
 								src: `${base}/1.0`,
-								srcSet: `${base}/1.0 1x, ${base}/2.0 2x`
-							});
+								srcSet: `${base}/1.0 1x, ${base}/2.0 2x`,
+								favorite: is_fav
+							};
+
+							emotes.push(em);
+
+							if ( ! locked && is_fav && ! twitch_seen_favorites.has(id) ) {
+								favorites.push(em);
+								twitch_seen_favorites.add(id);
+							}
 
 							if ( lock_set )
 								lock_set.add(id);
 						}
 					}
 
-					if ( emotes.length )
+					if ( emotes.length ) {
+						emotes.sort(sort_emotes);
 						channel.push(section);
+					}
 				}
 
 
@@ -798,18 +925,23 @@ export default class EmoteMenu extends Module {
 				const me = t.site.getUser();
 				if ( me ) {
 					const ffz_room = t.emotes.getRoomSetsWithSources(me.id, me.login, props.channel_id, null),
-						ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login);
+						ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login),
+						seen_favorites = {};
 
 					for(const [emote_set, provider] of ffz_room) {
-						const section = this.processFFZSet(emote_set, provider);
-						if ( section )
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites);
+						if ( section ) {
+							section.emotes.sort(sort_emotes);
 							channel.push(section);
+						}
 					}
 
 					for(const [emote_set, provider] of ffz_global) {
-						const section = this.processFFZSet(emote_set, provider);
-						if ( section )
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites);
+						if ( section ) {
+							section.emotes.sort(sort_emotes);
 							all.push(section);
+						}
 					}
 				}
 
@@ -820,13 +952,26 @@ export default class EmoteMenu extends Module {
 
 				state.has_channel_tab = channel.length > 0;
 
+				state.fav_sets = [{
+					key: 'favorites',
+					is_favorites: true,
+					emotes: favorites
+				}];
+
+				// We use this sorter because we don't want things grouped by sets.
+				favorites.sort(sorter);
+
 				return state;
 			}
 
 
-			processFFZSet(emote_set, provider) { // eslint-disable-line class-methods-use-this
+			processFFZSet(emote_set, provider, favorites, seen_favorites) { // eslint-disable-line class-methods-use-this
 				if ( ! emote_set || ! emote_set.emotes )
 					return null;
+
+				const fav_key = emote_set.source || 'ffz',
+					known_favs = t.emotes.getFavorites(fav_key),
+					seen_favs = seen_favorites[fav_key] = seen_favorites[fav_key] || new Set;
 
 				const pdata = t.emotes.providers.get(provider),
 					source = pdata && pdata.name ?
@@ -856,16 +1001,24 @@ export default class EmoteMenu extends Module {
 
 				for(const emote of Object.values(emote_set.emotes))
 					if ( ! emote.hidden ) {
-						const em = {
-							provider: 'ffz',
-							id: emote.id,
-							set_id: emote_set.id,
-							src: emote.urls[1],
-							srcSet: emote.srcSet,
-							name: emote.name
-						};
+						const is_fav = known_favs.includes(emote.id),
+							em = {
+								provider: 'ffz',
+								id: emote.id,
+								set_id: emote_set.id,
+								src: emote.urls[1],
+								srcSet: emote.srcSet,
+								name: emote.name,
+								favorite: is_fav,
+								height: emote.height,
+								width: emote.width
+							};
 
 						emotes.push(em);
+						if ( is_fav && ! seen_favs.has(emote.id) ) {
+							favorites.push(em);
+							seen_favs.add(emote.id);
+						}
 					}
 
 				if ( emotes.length )
@@ -886,7 +1039,7 @@ export default class EmoteMenu extends Module {
 			renderError() {
 				return (<div class="tw-align-center tw-pd-1">
 					<div class="tw-mg-b-1">
-						<div class="tw-mg-5">
+						<div class="tw-mg-2">
 							<img
 								src="//cdn.frankerfacez.com/emoticon/26608/2"
 								srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
@@ -904,7 +1057,7 @@ export default class EmoteMenu extends Module {
 
 			renderEmpty() { // eslint-disable-line class-methods-use-this
 				return (<div class="tw-align-center tw-pd-1">
-					<div class="tw-mg-5">
+					<div class="tw-mg-2">
 						<img
 							src="//cdn.frankerfacez.com/emoticon/26608/2"
 							srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
@@ -912,7 +1065,9 @@ export default class EmoteMenu extends Module {
 					</div>
 					{this.state.filtered ?
 						t.i18n.t('emote-menu.empty-search', 'There are no matching emotes.') :
-						t.i18n.t('emote-menu.empty', "There's nothing here.")}
+						this.state.tab === 'fav' ?
+							t.i18n.t('emote-menu.empty-favs', "You don't have any favorite emotes. To favorite an emote, find it and %{hotkey}-Click it.", {hotkey: IS_OSX ? '⌘' : 'Ctrl'}) :
+							t.i18n.t('emote-menu.empty', "There's nothing here.")}
 				</div>)
 			}
 
@@ -935,6 +1090,9 @@ export default class EmoteMenu extends Module {
 					tab = 'all';
 
 				switch(tab) {
+					case 'fav':
+						sets = this.state.filtered_fav_sets;
+						break;
 					case 'channel':
 						sets = this.state.filtered_channel_sets;
 						break;
@@ -984,9 +1142,16 @@ export default class EmoteMenu extends Module {
 								</div>
 							</div>)}
 							<div class="emote-picker__tabs-container tw-flex tw-border-t tw-c-background">
-								{null && (<div class="ffz-tooltip emote-picker__tab tw-pd-x-1" data-tooltip-type="html" data-title="Favorites">
+								<div
+									class={`ffz-tooltip emote-picker__tab tw-pd-x-1${tab === 'fav' ? ' emote-picker__tab--active' : ''}`}
+									id="emote-picker__fav"
+									data-tab="fav"
+									data-tooltip-type="html"
+									data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
+									onClick={this.clickTab}
+								>
 									<figure class="ffz-i-star" />
-								</div>)}
+								</div>
 								{this.state.has_channel_tab && <div
 									class={`emote-picker__tab tw-pd-x-1${tab === 'channel' ? ' emote-picker__tab--active' : ''}`}
 									id="emote-picker__channel"
@@ -1001,7 +1166,7 @@ export default class EmoteMenu extends Module {
 									data-tab="all"
 									onClick={this.clickTab}
 								>
-									{t.i18n.t('emote-menu.all', 'All')}
+									{t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
 								</div>
 								<div class="tw-flex-grow-1" />
 								{!loading && (<div

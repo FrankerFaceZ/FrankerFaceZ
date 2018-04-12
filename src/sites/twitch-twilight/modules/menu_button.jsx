@@ -100,6 +100,8 @@ export default class MenuButton extends SiteModule {
 			cl.remove('loading');
 
 		}).catch(err => {
+			this.log.capture(err);
+
 			// TODO: Show a proper dialog and not an alert.
 			this.log.error('Error enabling main menu.', err);
 			alert('There was an error displaying the menu.'); // eslint-disable-line no-alert

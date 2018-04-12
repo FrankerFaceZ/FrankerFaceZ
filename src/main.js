@@ -1,5 +1,7 @@
 'use strict';
 
+import RavenLogger from './raven';
+
 import Logger from 'utilities/logging';
 import Module from 'utilities/module';
 import AddonManager from 'utilities/addon';
@@ -7,6 +9,7 @@ import AddonManager from 'utilities/addon';
 import {DEBUG} from 'utilities/constants';
 
 import SettingsManager from './settings/index';
+import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
 import Site from 'site';
@@ -24,7 +27,14 @@ class FrankerFaceZ extends Module {
 		this.__state = 0;
 		this.__modules.core = this;
 
-		this.log = new Logger(this);
+		// ========================================================================
+		// Error Reporting and Logging
+		// ========================================================================
+
+		if ( ! DEBUG )
+			this.inject('raven', RavenLogger);
+
+		this.log = new Logger(null, null, null, this.raven);
 		this.core_log = this.log.get('core');
 
 		this.log.info(`FrankerFaceZ v${VER} (build ${VER.build})`);
@@ -35,6 +45,7 @@ class FrankerFaceZ extends Module {
 		// ========================================================================
 
 		this.inject('settings', SettingsManager);
+		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
 		this.inject('socket', SocketClient);
 		this.inject('site', Site);
@@ -91,7 +102,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-beta2.2',
+	major: 4, minor: 0, revision: 0, extra: '-beta2.14',
 	build: __webpack_hash__,
 	toString: () =>
 		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`

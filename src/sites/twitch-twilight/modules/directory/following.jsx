@@ -89,11 +89,6 @@ export default class Following extends SiteModule {
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
 	}
 
-	isRouteAcceptable() {
-		return this.router.current.name === 'dir-following'
-			|| this.router.current.name === 'dir-category' && this.router.match[1] === 'following';
-	}
-
 	modifyLiveUsers(res) {
 		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
 		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
@@ -108,8 +103,11 @@ export default class Following extends SiteModule {
 		const edgesOrNodes = followedLiveUsers.nodes || followedLiveUsers.edges;
 
 		for (let i = 0; i < edgesOrNodes.length; i++) {
-			const edge = edgesOrNodes[i];
-			const node = edge.node || edge;
+			const edge = edgesOrNodes[i],
+				node = edge.node || edge;
+
+			if ( ! node || ! node.stream )
+				continue;
 
 			const s = node.stream.viewersCount = new Number(node.stream.viewersCount || 0);
 			s.profileImageURL = node.profileImageURL;
@@ -139,8 +137,11 @@ export default class Following extends SiteModule {
 		const edgesOrNodes = followedHosts.nodes || followedHosts.edges;
 
 		for (let i = 0; i < edgesOrNodes.length; i++) {
-			const edge = edgesOrNodes[i];
-			const node = edge.node || edge;
+			const edge = edgesOrNodes[i],
+				node = edge.node || edge;
+
+			if ( ! node || ! node.hosting || ! node.hosting.stream )
+				continue;
 
 			const s = node.hosting.stream.viewersCount = new Number(node.hosting.stream.viewersCount || 0);
 			s.profileImageURL = node.hosting.profileImageURL;
@@ -167,34 +168,35 @@ export default class Following extends SiteModule {
 	}
 
 	ensureQueries () {
-		if (this.router && this.router.match) {
+		this.apollo.ensureQuery(
+			'FollowedChannels',
+			'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
+		);
+
+		if ( this.router.current_name !== 'dir-following' )
+			return;
+
+		const bit = this.router.match[1];
+
+		if ( ! bit )
 			this.apollo.ensureQuery(
-				'FollowedChannels',
-				'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
+				'FollowedIndex_CurrentUser',
+				n =>
+					get('data.currentUser.followedLiveUsers.nodes.0.stream.createdAt', n) !== undefined ||
+					get('data.currentUser.followedHosts.nodes.0.hosting.stream.createdAt', n) !== undefined
 			);
 
-			if (!this.router.match[1] || this.router.match[1] === 'following') {
-				this.apollo.ensureQuery(
-					'FollowedIndex_CurrentUser',
-					n =>
-						get('data.currentUser.followedLiveUsers.nodes.0.profileImageURL', n) !== undefined
-						||
-						get('data.currentUser.followedLiveUsers.edges.0.node.profileImageURL', n) !== undefined
-						||
-						get('data.currentUser.followedHosts.nodes.0.hosting.profileImageURL', n) !== undefined
-				);
-			} else if (this.router.match[1] === 'live') {
-				this.apollo.ensureQuery(
-					'FollowingLive_CurrentUser',
-					'data.currentUser.followedLiveUsers.nodes.0.profileImageURL' || 'data.currentUser.followedLiveUsers.edges.0.node.profileImageURL'
-				);
-			} else if (this.router.match[1] === 'hosts') {
-				this.apollo.ensureQuery(
-					'FollowingHosts_CurrentUser',
-					'data.currentUser.followedHosts.nodes.0.hosting.profileImageURL'
-				);
-			}
-		}
+		else if ( bit === 'live' )
+			this.apollo.ensureQuery(
+				'FollowingLive_CurrentUser',
+				'data.currentUser.followedLiveUsers.nodes.0.stream.createdAt'
+			);
+
+		else if ( bit === 'hosts' )
+			this.apollo.ensureQuery(
+				'FollowingHosts_CurrentUser',
+				'data.currentUser.followedHosts.nodes.0.hosting.stream.createdAt'
+			);
 	}
 
 	onEnable() {

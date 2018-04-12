@@ -1,7 +1,5 @@
 'use strict';
 
-import {has} from 'utilities/object';
-
 export function hue2rgb(p, q, t) {
 	if ( t < 0 ) t += 1;
 	if ( t > 1 ) t -= 1;
@@ -565,7 +563,7 @@ export class ColorAdjuster {
 
 
 	rebuildContrast() {
-		this._cache = {};
+		this._cache = new Map;
 
 		const base = RGBAColor.fromCSS(this._base),
 			lum = base.luminance();
@@ -606,8 +604,8 @@ export class ColorAdjuster {
 		if ( ! color )
 			return null;
 
-		if ( has(this._cache, color) )
-			return this._cache[color];
+		if ( this._cache.has(color) )
+			return this._cache.get(color);
 
 		let rgb = RGBAColor.fromCSS(color);
 
@@ -650,7 +648,8 @@ export class ColorAdjuster {
 					rgb = rgb.brighten(-1);
 		}
 
-		const out = this._cache[color] = rgb.toHex();
+		const out = rgb.toHex();
+		this._cache.set(color, out);
 		return out;
 	}
 }

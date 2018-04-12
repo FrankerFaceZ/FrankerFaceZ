@@ -198,14 +198,17 @@ export default class Directory extends SiteModule {
 		if (!edges) return res;
 
 		for (let i = 0; i < edges.length; i++) {
-			const edge = edges[i];
-			const node = edge.node;
+			const edge = edges[i],
+				node = edge.node || edge;
 
 			const s = node.viewersCount = new Number(node.viewersCount || 0);
-			s.profileImageURL = node.broadcaster.profileImageURL;
 			s.createdAt = node.createdAt;
-			s.login = node.broadcaster.login;
-			s.displayName = node.broadcaster.displayName;
+
+			if ( node.broadcaster ) {
+				s.profileImageURL = node.broadcaster.profileImageURL;
+				s.login = node.broadcaster.login;
+				s.displayName = node.broadcaster.displayName;
+			}
 
 			if (gamePage || (!node.game || node.game && !blockedGames.includes(node.game.name))) newStreams.push(edge);
 		}

@@ -7,8 +7,9 @@
 import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has, timeout, SourcedSet} from 'utilities/object';
-import {CLIENT_ID, API_SERVER} from 'utilities/constants';
+import {CLIENT_ID, NEW_API, API_SERVER, IS_OSX} from 'utilities/constants';
 
+const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
 
 const EXTRA_INVENTORY = [33563];
 
@@ -59,6 +60,7 @@ export default class Emotes extends Module {
 
 		this.inject('socket');
 		this.inject('settings');
+		this.inject('experiments');
 
 		this.twitch_inventory_sets = new Set(EXTRA_INVENTORY);
 		this.__twitch_emote_to_set = new Map;
@@ -88,6 +90,10 @@ export default class Emotes extends Module {
 				component: 'setting-check-box'
 			}
 		});
+
+
+		// Because this may be used elsewhere.
+		this.handleClick = this.handleClick.bind(this);
 	}
 
 	onEnable() {
@@ -128,9 +134,13 @@ export default class Emotes extends Module {
 					providers = emote_sets._sources;
 
 				if ( providers && providers.has('featured') )
-					for(const item of providers.get('featured'))
-						if ( ! new_sets.includes(item) )
+					for(const item of providers.get('featured')) {
+						const idx = new_sets.indexOf(item);
+						if ( idx === -1 )
 							room.removeSet('featured', item);
+						else
+							new_sets.splice(idx, 1);
+					}
 
 				for(const set_id of new_sets) {
 					room.addSet('featured', set_id);
@@ -139,6 +149,116 @@ export default class Emotes extends Module {
 						this.loadSet(set_id);
 				}
 			}
+	}
+
+
+	// ========================================================================
+	// Favorite Checking
+	// ========================================================================
+
+	toggleFavorite(source, id, value = null) {
+		const key = `favorite-emotes.${source}`,
+			p = this.settings.provider,
+			favorites = p.get(key) || [],
+
+			idx = favorites.indexOf(id);
+
+		if ( value === null )
+			value = idx === -1;
+
+		if ( value && idx === -1 )
+			favorites.push(id);
+		else if ( ! value && idx !== -1 )
+			favorites.splice(idx, 1);
+		else
+			return;
+
+		if ( favorites.length )
+			p.set(key, favorites);
+		else
+			p.delete(key);
+
+		this.emit(':change-favorite', source, id, value);
+	}
+
+	isFavorite(source, id) {
+		const favorites = this.settings.provider.get(`favorite-emotes.${source}`);
+		return favorites && favorites.includes(id);
+	}
+
+	getFavorites(source) {
+		return this.settings.provider.get(`favorite-emotes.${source}`) || [];
+	}
+
+
+	handleClick(event) {
+		const target = event.target,
+			ds = target && target.dataset;
+
+		if ( ! ds )
+			return;
+
+		const provider = ds.provider;
+
+		if ( event.shiftKey && this.parent.context.get('chat.click-emotes') ) {
+			let url;
+
+			if ( provider === 'twitch' )
+				url = `https://twitchemotes.com/emotes/${ds.id}`;
+
+			else if ( provider === 'ffz' ) {
+				const emote_set = this.emote_sets[ds.set],
+					emote = emote_set && emote_set.emotes[ds.id];
+
+				if ( ! emote )
+					return;
+
+				if ( emote.click_url )
+					url = emote.click_url;
+
+				else if ( ! emote_set.source )
+					url = `https://www.frankerfacez.com/emoticons/${emote.id}`;
+			}
+
+			if ( url ) {
+				const win = window.open();
+				win.opener = null;
+				win.location = url;
+			}
+
+			return true;
+		}
+
+		if ( event[MOD_KEY] ) {
+			// Favoriting Emotes
+			let source, id;
+
+			if ( provider === 'twitch' ) {
+				source = 'twitch';
+				id = parseInt(ds.id, 10);
+
+			} else if ( provider === 'ffz' ) {
+				const emote_set = this.emote_sets[ds.set],
+					emote = emote_set && emote_set.emotes[ds.id];
+
+				if ( ! emote )
+					return;
+
+				source = emote_set.source || 'ffz';
+				id = emote.id;
+
+			} else
+				return;
+
+			this.toggleFavorite(source, id);
+			const tt = target._ffz_tooltip$0;
+			if ( tt && tt.visible ) {
+				tt.hide();
+				setTimeout(() => document.contains(target) && tt.show(), 0);
+			}
+
+			return true;
+		}
 	}
 
 
@@ -309,6 +429,12 @@ export default class Emotes extends Module {
 
 	async loadGlobalSets(tries = 0) {
 		let response, data;
+
+		if ( this.experiments.getAssignment('api_load') )
+			try {
+				fetch(`${NEW_API}/v1/set/global`).catch(() => {});
+			} catch(err) { /* do nothing */ }
+
 		try {
 			response = await fetch(`${API_SERVER}/v1/set/global`)
 		} catch(err) {
@@ -346,6 +472,12 @@ export default class Emotes extends Module {
 
 	async loadSet(set_id, suppress_log = false, tries = 0) {
 		let response, data;
+
+		if ( this.experiments.getAssignment('api_load') )
+			try {
+				fetch(`${NEW_API}/v1/set/${set_id}`).catch(() => {});
+			} catch(err) { /* do nothing */ }
+
 		try {
 			response = await fetch(`${API_SERVER}/v1/set/${set_id}`)
 		} catch(err) {
@@ -413,7 +545,14 @@ export default class Emotes extends Module {
 		data.id = set_id;
 		data.emoticons = undefined;
 
+		const bad_emotes = [];
+
 		for(const emote of ems) {
+			if ( ! emote.id || ! emote.name || ! emote.urls ) {
+				bad_emotes.push(emote);
+				continue;
+			}
+
 			emote.set_id = set_id;
 			emote.srcSet = `${emote.urls[1]} 1x`;
 			if ( emote.urls[2] )
@@ -442,6 +581,9 @@ export default class Emotes extends Module {
 			count++;
 			new_ems[emote.id] = emote;
 		}
+
+		if ( bad_emotes.length )
+			this.log.warn(`Bad Emote Data for Set #${set_id}`, bad_emotes);
 
 		data.count = count;
 

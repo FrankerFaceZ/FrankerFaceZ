@@ -7,27 +7,12 @@
 import {sanitize, createElement} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
 
+import {TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+
+
 const EMOTE_CLASS = 'chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
-	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g,
-
-	TWITCH_BASE = '//static-cdn.jtvnw.net/emoticons/v1/',
-	REPLACEMENT_BASE = '//cdn.frankerfacez.com/script/replacements/',
-	REPLACEMENTS = {
-		15: '15-JKanStyle.png',
-		16: '16-OptimizePrime.png',
-		17: '17-StoneLightning.png',
-		18: '18-TheRinger.png',
-		//19: '19-PazPazowitz.png',
-		//20: '20-EagleEye.png',
-		//21: '21-CougarHunt.png',
-		22: '22-RedCoat.png',
-		26: '26-JonCarnage.png',
-		//27: '27-PicoMause.png',
-		30: '30-BCWarrior.png',
-		33: '33-DansGame.png',
-		36: '36-PJSalt.png'
-	};
+	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
 
 
 // ============================================================================
@@ -462,6 +447,7 @@ export const AddonEmotes = {
 				data-set={token.set}
 				data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
 				data-modifier-info={ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null}
+				onClick={this.emotes.handleClick}
 			/>);
 
 		if ( ! ml )
@@ -472,6 +458,7 @@ export const AddonEmotes = {
 			data-provider={token.provider}
 			data-id={token.id}
 			data-set={token.set}
+			onClick={this.emotes.handleClick}
 		>
 			{emote}
 			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render(t, createElement)}</span>)}
@@ -483,7 +470,7 @@ export const AddonEmotes = {
 			provider = ds.provider,
 			modifiers = ds.modifierInfo;
 
-		let preview, source, owner, mods;
+		let preview, source, owner, mods, fav_source, emote_id;
 
 		if ( modifiers && modifiers !== 'null' ) {
 			mods = JSON.parse(modifiers).map(([set_id, emote_id]) => {
@@ -499,11 +486,12 @@ export const AddonEmotes = {
 		}
 
 		if ( provider === 'twitch' ) {
-			const emote_id = parseInt(ds.id, 10),
-				set_id = this.emotes.getTwitchEmoteSet(emote_id, tip.rerender),
+			emote_id = parseInt(ds.id, 10);
+			const set_id = this.emotes.getTwitchEmoteSet(emote_id, tip.rerender),
 				emote_set = set_id != null && this.emotes.getTwitchSetChannel(set_id, tip.rerender);
 
 			preview = `//static-cdn.jtvnw.net/emoticons/v1/${emote_id}/4.0?_=preview`;
+			fav_source = 'twitch';
 
 			if ( emote_set ) {
 				source = emote_set.c_name;
@@ -525,10 +513,14 @@ export const AddonEmotes = {
 			const emote_set = this.emotes.emote_sets[ds.set],
 				emote = emote_set && emote_set.emotes[ds.id];
 
-			if ( emote_set )
+			if ( emote_set ) {
 				source = emote_set.source_line || (`${emote_set.source || 'FFZ'} ${emote_set.title || 'Global'}`);
+				fav_source = emote_set.source || 'ffz';
+			}
 
 			if ( emote ) {
+				emote_id = emote.id;
+
 				if ( emote.owner )
 					owner = this.i18n.t(
 						'emote.owner', 'By: %{owner}',
@@ -539,9 +531,12 @@ export const AddonEmotes = {
 				else if ( emote.urls[2] )
 					preview = emote.urls[2];
 			}
-		}
+
+		} else
+			return;
 
 		const name = ds.name || target.alt,
+			favorite = fav_source && this.emotes.isFavorite(fav_source, emote_id),
 			hide_source = ds.noSource === 'true';
 
 		return [
@@ -563,7 +558,9 @@ export const AddonEmotes = {
 
 			ds.sellout && (<div class="tw-mg-t-05 tw-border-t tw-pd-t-05">{ds.sellout}</div>),
 
-			mods && (<div class="tw-pd-t-1">{mods}</div>)
+			mods && (<div class="tw-pd-t-1">{mods}</div>),
+
+			favorite && (<figure class="ffz--favorite ffz-i-star" />)
 		];
 	},
 
@@ -729,8 +726,8 @@ export const TwitchEmotes = {
 					srcSet = '';
 
 				} else {
-					src = `${TWITCH_BASE}${e_id}/1.0`;
-					srcSet = `${TWITCH_BASE}${e_id}/1.0 1x, ${TWITCH_BASE}${e_id}/2.0 2x`;
+					src = `${TWITCH_EMOTE_BASE}${e_id}/1.0`;
+					srcSet = `${TWITCH_EMOTE_BASE}${e_id}/1.0 1x, ${TWITCH_EMOTE_BASE}${e_id}/2.0 2x`;
 				}
 
 				out.push({

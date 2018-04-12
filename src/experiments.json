@@ -1,0 +1,10 @@
+{
+	"api_load": {
+		"name": "New API Stress Testing",
+		"description": "Send duplicate requests to the new API server for load testing.",
+		"groups": [
+			{"value": true, "weight": 0},
+			{"value": false, "weight": 100}
+		]
+	}
+}

@@ -185,19 +185,27 @@ export function get(path, object) {
 }
 
 
-export function deep_copy(object) {
+export function deep_copy(object, seen) {
 	if ( typeof object !== 'object' )
 		return object;
 
+	if ( ! seen )
+		seen = new Set;
+
+	if ( seen.has(object) )
+		throw new Error('recursive structure detected');
+
+	seen.add(object);
+
 	if ( Array.isArray(object) )
-		return object.map(deep_copy);
+		return object.map(x => deep_copy(x, new Set(seen)));
 
 	const out = {};
 	for(const key in object)
 		if ( HOP.call(object, key) ) {
 			const val = object[key];
 			if ( typeof val === 'object' )
-				out[key] = deep_copy(val);
+				out[key] = deep_copy(val, new Set(seen));
 			else
 				out[key] = val;
 		}

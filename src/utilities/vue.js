@@ -18,9 +18,13 @@ export class Vue extends Module {
 
 	async onLoad() {
 		const Vue = window.ffzVue = this.Vue = (await import(/* webpackChunkName: "vue" */ 'vue')).default,
+			RavenVue = await import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
 			components = this._components;
 
 		this.component((await import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')).default);
+
+		if ( this.root.raven )
+			this.root.raven.addPlugin(RavenVue, Vue);
 
 		for(const key in components)
 			if ( has(components, key) )

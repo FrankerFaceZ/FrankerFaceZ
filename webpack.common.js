@@ -12,6 +12,7 @@ module.exports = {
 		alias: {
 			res: path.resolve(__dirname, 'res/'),
 			styles: path.resolve(__dirname, 'styles/'),
+			root: __dirname,
 			src: path.resolve(__dirname, 'src/'),
 			utilities: path.resolve(__dirname, 'src/utilities/')
 		}

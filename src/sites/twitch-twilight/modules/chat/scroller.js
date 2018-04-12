@@ -79,6 +79,8 @@ export default class Scroller extends Module {
 						ffz_errors: errs + 1,
 						ffz_total_errors: (this.state.ffz_total_errors||0) + 1
 					});
+
+					t.log.capture(err, {extra: info});
 					t.log.info('Error within Chat', err, info, errs);
 				}
 

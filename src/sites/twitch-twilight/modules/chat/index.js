@@ -516,6 +516,7 @@ export default class ChatHook extends Module {
 						return ret;
 
 					} catch(err) {
+						t.log.capture(err, {extra: e});
 						return old_resub.call(i, e);
 					}
 				}
@@ -533,6 +534,7 @@ export default class ChatHook extends Module {
 						return ret;
 
 					} catch(err) {
+						t.log.capture(err, {extra: e});
 						return old_ritual.call(i, e);
 					}
 				}

@@ -178,7 +178,7 @@ export class ClickOutside {
 	}
 
 	handleClick(e) {
-		if ( ! this.el.contains(e.target) )
+		if ( this.el && ! this.el.contains(e.target) )
 			this.cb(e);
 	}
 }

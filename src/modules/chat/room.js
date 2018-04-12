@@ -6,7 +6,7 @@
 
 import User from './user';
 
-import {API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet} from 'utilities/object';
@@ -43,25 +43,32 @@ export default class Room {
 
 		this.manager.emit(':room-remove', this);
 
-		this.style.destroy();
-
-		for(const user of Object.values(this.user_ids)) {
-			if ( user )
-				user.destroy();
+		if ( this.users ) {
+			for(const user of Object.values(this.users))
+				if ( user )
+					user.destroy();
 		}
 
-		for(const user of Object.values(this.users)) {
-			if ( user )
-				user.destroy();
+		if ( this.user_ids ) {
+			for(const user of Object.values(this.user_ids))
+				if ( user )
+					user.destroy();
 		}
 
-		for(const set_id of this.emote_sets._cache)
-			this.manager.emotes.unrefSet(set_id);
-
-		this.emote_sets = null;
-		this.style = null;
 		this.users = null;
 		this.user_ids = null;
+
+		if ( this.style ) {
+			this.style.destroy();
+			this.style = null;
+		}
+
+		if ( this.emote_sets ) {
+			for(const set_id of this.emote_sets._cache)
+				this.manager.emotes.unrefSet(set_id);
+
+			this.emote_sets = null;
+		}
 
 		if ( this._login ) {
 			if ( this.manager.rooms[this._login] === this )
@@ -70,8 +77,8 @@ export default class Room {
 			this.manager.socket.unsubscribe(this, `room.${this.login}`);
 		}
 
-		if ( this.manager.room_ids[this.id] === this )
-			this.manager.room_ids[this.id] = null;
+		if ( this.manager.room_ids[this._id] === this )
+			this.manager.room_ids[this._id] = null;
 	}
 
 
@@ -167,6 +174,11 @@ export default class Room {
 	async load_data(tries = 0) {
 		if ( this.destroyed )
 			return;
+
+		if ( this.manager.experiments.getAssignment('api_load') )
+			try {
+				fetch(`${NEW_API}/v1/rooms/${this.id ? `id/${this.id}` : this.login}`).catch(() => {});
+			} catch(err) { /* do nothing */ }
 
 		let response, data;
 		try {

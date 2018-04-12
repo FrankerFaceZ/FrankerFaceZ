@@ -10,7 +10,9 @@ import {has, deep_copy} from 'utilities/object';
 
 import {parse_path} from 'src/settings';
 
-const EXCLUSIVE_CONTAINER = '.twilight-main,.twilight-minimal-root>div';
+const EXCLUSIVE_SELECTOR = '.twilight-main,.twilight-minimal-root>div',
+	MAXIMIZED_SELECTOR = '.twilight-main,.twilight-minimal-root',
+	SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height';
 
 function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
@@ -97,7 +99,7 @@ export default class MainMenu extends Module {
 
 
 	async onEnable(event) {
-		await this.site.awaitElement(EXCLUSIVE_CONTAINER);
+		await this.site.awaitElement(EXCLUSIVE_SELECTOR);
 
 		this.on('site.menu_button:clicked', this.toggleVisible);
 		if ( this._visible ) {
@@ -115,13 +117,23 @@ export default class MainMenu extends Module {
 		this.off('site.menu_button:clicked', this.toggleVisible);
 	}
 
+	getContainer() {
+		if ( this.exclusive )
+			return document.querySelector(EXCLUSIVE_SELECTOR);
+
+		if ( this._maximized )
+			return document.querySelector(MAXIMIZED_SELECTOR);
+
+		return document.querySelector(SELECTOR);
+	}
+
 	toggleVisible(event) {
 		if ( event && event.button !== 0 )
 			return;
 
 		const maximized = this._maximized,
 			visible = this._visible = !this._visible,
-			main = this.exclusive ? document.querySelector(EXCLUSIVE_CONTAINER) : document.querySelector(maximized ? '.twilight-main' : '.twilight-root>.tw-full-height');
+			main = this.getContainer();
 
 		if ( ! visible ) {
 			if ( maximized )
@@ -150,7 +162,7 @@ export default class MainMenu extends Module {
 			return;
 
 		const maximized = this._maximized = !this._maximized,
-			main = this.exclusive ? document.querySelector(EXCLUSIVE_CONTAINER) : document.querySelector(maximized ? '.twilight-main' : '.twilight-root>.tw-full-height'),
+			main = this.getContainer(),
 			old_main = this._menu.parentElement;
 
 		if ( maximized )
@@ -363,7 +375,7 @@ export default class MainMenu extends Module {
 				if ( a.sort < b.sort ) return -1;
 				if ( a.sort > b.sort ) return 1;
 
-				return a.key.localeCompare(b.key);
+				return a.key && a.key.localeCompare(b.key);
 			});
 
 		this.log.info(`Built Tree in ${(performance.now() - started).toFixed(5)}ms with ${Object.keys(tree).length} structure nodes and ${this._settings_count} settings nodes.`);

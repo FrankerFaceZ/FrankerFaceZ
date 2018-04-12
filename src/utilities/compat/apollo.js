@@ -8,6 +8,30 @@
 import Module from 'utilities/module';
 import {has, get} from 'utilities/object';
 
+
+const BAD_ERRORS = [
+	'timeout',
+	'unable to load',
+	'error internal',
+	'Internal Server Error',
+	'http://',
+	'https://'
+];
+
+function skip_error(err) {
+	for(const m of BAD_ERRORS)
+		if ( err.message.includes(m) )
+			return true;
+}
+
+
+export class GQLError extends Error {
+	constructor(err) {
+		super(`${err.message}; Location: ${err.locations}`);
+	}
+}
+
+
 export default class Apollo extends Module {
 	constructor(...args) {
 		super(...args);
@@ -17,6 +41,7 @@ export default class Apollo extends Module {
 
 		this.inject('..web_munch');
 		this.inject('..fine');
+		//this.inject('core');
 	}
 
 	onEnable() {
@@ -62,6 +87,10 @@ export default class Apollo extends Module {
 			if ( ! this.enabled )
 				return forward(operation);
 
+			let vars = operation.variables;
+			if ( ! Object.keys(vars).length )
+				vars = undefined;
+
 			try {
 				// ONLY do this if we've hooked query init, thus letting us ignore certain issues
 				// that would cause Twitch to show lovely "Error loading data" messages everywhere.
@@ -69,6 +98,14 @@ export default class Apollo extends Module {
 					this.apolloPreFlight(operation);
 
 			} catch(err) {
+				this.log.capture(err, {
+					tags: {
+						operation: operation.operationName
+					},
+					extra: {
+						variables: vars
+					}
+				});
 				this.log.error('Error running Pre-Flight', err, operation);
 				return forward(operation);
 			}
@@ -80,9 +117,45 @@ export default class Apollo extends Module {
 					try {
 						out.subscribe({
 							next: result => {
+								if ( result.errors ) {
+									const name = operation.operationName;
+									if ( name && (name.includes('FFZ') || has(this.modifiers, name) || has(this.post_modifiers, name)) ) {
+										for(const err of result.errors) {
+											if ( skip_error(err) )
+												continue;
+
+											this.log.capture(new GQLError(err), {
+												tags: {
+													operation: operation.operationName
+												},
+												extra: {
+													variables: vars
+												}
+											});
+										}
+									}
+								}
+
+								this.log.crumb({
+									level: 'info',
+									category: 'gql',
+									message: `${operation.operationName} [${result.extensions && result.extensions.durationMilliseconds || '??'}ms]`,
+									data: {
+										variables: vars,
+									}
+								});
+
 								try {
 									this.apolloPostFlight(result);
 								} catch(err) {
+									this.log.capture(err, {
+										tags: {
+											operation: operation.operationName
+										},
+										extra: {
+											variables: vars
+										}
+									});
 									this.log.error('Error running Post-Flight', err, result);
 								}
 
@@ -97,6 +170,14 @@ export default class Apollo extends Module {
 						});
 
 					} catch(err) {
+						this.log.capture(err, {
+							tags: {
+								operation: operation.operationName
+							},
+							extra: {
+								variables: vars
+							}
+						});
 						this.log.error('Link Error', err);
 						observer.error(err);
 					}
@@ -136,13 +217,14 @@ export default class Apollo extends Module {
 			query = query_map && query_map.get(id),
 			modifiers = this.modifiers[operation];
 
-		if ( modifiers )
+		if ( modifiers ) {
 			for(const mod of modifiers) {
 				if ( typeof mod === 'function' )
 					mod(request);
 				else if ( mod[1] )
 					this.applyModifier(request, mod[1]);
 			}
+		}
 
 		this.emit(`:request.${operation}`, request.query, request.variables);
 
@@ -358,18 +440,23 @@ function merge(a, b) {
 		const s = a.selectionSet.selections,
 			selects = {};
 		for(const sel of b.selectionSet.selections) {
-			if (sel.name && sel.name.value) {
-				selects[`${sel.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
-			} else {
-				if (sel.kind === 'InlineFragment') {
-					selects[`${sel.typeCondition.name.value}:${sel.alias?sel.alias.value:null}`] = sel;
-				}
-			}
+			const name = sel.kind === 'InlineFragment' ?
+					(sel.typeCondition.name ?
+						sel.typeCondition.name.value : null) :
+					(sel.name ? sel.name.value : null),
+				alias = sel.alias ? sel.alias.value : null,
+				key = `${name}:${alias}`;
+
+			if ( name )
+				selects[key] = sel;
 		}
 
 		for(let i=0, l = s.length; i < l; i++) {
 			const sel = s[i],
-				name = sel.kind === 'InlineFragment' ? (sel.typeCondition.name ? sel.typeCondition.name.value : null) : (sel.name ? sel.name.value : null),
+				name = sel.kind === 'InlineFragment' ?
+					(sel.typeCondition.name ?
+						sel.typeCondition.name.value : null) :
+					(sel.name ? sel.name.value : null),
 				alias = sel.alias ? sel.alias.value : null,
 				key = `${name}:${alias}`,
 				other = selects[key];
