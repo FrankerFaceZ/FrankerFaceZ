@@ -536,6 +536,13 @@ export class Module extends EventEmitter {
 			try {
 				added[name] = this.register(name, module);
 			} catch(err) {
+				log && log.capture(err, {
+					extra: {
+						module: name,
+						path: raw_path
+					}
+				});
+
 				log && log.warn(err, `Skipping ${raw_path}`);
 			}
 		}

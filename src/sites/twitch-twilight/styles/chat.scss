@@ -60,6 +60,11 @@
 
     .emote-picker__tab {
         border-top: 1px solid transparent;
+
+        &.emote-picker__tab--active,
+        &:hover {
+            border-top-color: #6441a4;
+        }
     }
 
     .whispers-thread .emote-picker-and-button & .emote-picker__tab-content {

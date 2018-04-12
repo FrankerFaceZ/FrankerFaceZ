@@ -364,6 +364,7 @@ export class HierarchicalEventEmitter extends EventEmitter {
 	listeners(event) { return super.listeners(this.abs_path(event)) }
 
 	emit(event, ...args) { return super.emit(this.abs_path(event), ...args) }
+	emitUnsafe(event, ...args) { return super.emitUnsafe(this.abs_path(event), ...args) }
 	emitAsync(event, ...args) { return super.emitAsync(this.abs_path(event), ...args) }
 
 	events(include_children) {
