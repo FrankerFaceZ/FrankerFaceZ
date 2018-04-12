@@ -13,13 +13,12 @@ const config = module.exports = merge(common, {
 
 	module: {
 		rules: [{
-			test: /\.js$/,
+			test: /\.jsx?$/,
 			exclude: /node_modules/,
 			use: {
 				loader: 'babel-loader',
 				options: {
-					presets: ['env'],
-					plugins: ['transform-runtime']
+					plugins: ['transform-es2015-classes']
 				}
 			}
 		}]

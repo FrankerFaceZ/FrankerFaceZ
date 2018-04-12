@@ -12,6 +12,7 @@
 		"module": "es6",
 		"baseUrl": ".",
 		"paths": {
+			"root": ["."],
 			"res": ["res"],
 			"styles": ["styles"],
 			"src": ["src"],

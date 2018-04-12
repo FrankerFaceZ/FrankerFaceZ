@@ -119,7 +119,7 @@ export class EventEmitter {
 		return list ? Array.from(list) : [];
 	}
 
-	emit(event, ...args) {
+	emitUnsafe(event, ...args) {
 		const list = this.__listeners[event];
 		if ( ! list )
 			return;
@@ -160,28 +160,25 @@ export class EventEmitter {
 		}
 	}
 
-	emitSafe(event, ...args) {
-		try {
-			return [this.emit(event, ...args), undefined];
-
-		} catch(err) {
-			return [null, err];
-		}
-	}
-
-	emitAsync(event, ...args) {
+	emit(event, ...args) {
 		const list = this.__listeners[event];
 		if ( ! list )
-			return Promise.resolve([]);
+			return;
 
 		// Track removals separately to make iteration over the event list
 		// much, much simpler.
-		const removed = new Set,
-			promises = [];
+		const removed = new Set;
 
 		for(const item of list) {
 			const [fn, ctx, ttl] = item;
-			const ret = fn.apply(ctx, args);
+			let ret;
+			try {
+				ret = fn.apply(ctx, args);
+			} catch(err) {
+				if ( this.log )
+					this.log.capture(err, {tags: {event}, extra:{args}});
+			}
+
 			if ( ret === Detach )
 				removed.add(item);
 			else if ( ttl !== false ) {
@@ -190,9 +187,6 @@ export class EventEmitter {
 				else
 					item[2] = ttl - 1;
 			}
-
-			if ( ret !== Detach )
-				promises.push(ret);
 		}
 
 		if ( removed.size ) {
@@ -211,8 +205,72 @@ export class EventEmitter {
 				}
 			}
 		}
+	}
 
-		return Promise.all(promises);
+	async emitAsync(event, ...args) {
+		const list = this.__listeners[event];
+		if ( ! list )
+			return [];
+
+		// Track removals separately to make iteration over the event list
+		// much, much simpler.
+		const removed = new Set,
+			promises = [];
+
+		for(const item of list) {
+			const [fn, ctx] = item;
+			let ret;
+			try {
+				ret = fn.apply(ctx, args);
+			} catch(err) {
+				if ( this.log )
+					this.log.capture(err, {tags: {event}, extra: {args}});
+			}
+
+			if ( !(ret instanceof Promise) )
+				ret = Promise.resolve(ret);
+
+			promises.push(ret.then(r => {
+				const new_ttl = item[2];
+				if ( r === Detach )
+					removed.add(item);
+				else if ( new_ttl !== false ) {
+					if ( new_ttl <= 1 )
+						removed.add(item);
+					else
+						item[2] = new_ttl - 1;
+				}
+
+				if ( ret !== Detach )
+					return ret;
+			}).catch(err => {
+				if ( this.log )
+					this.log.capture(err, {event, args});
+
+				return null;
+			}));
+		}
+
+		const out = await Promise.all(promises);
+
+		if ( removed.size ) {
+			// Re-grab the list to make sure it wasn't removed mid-iteration.
+			const new_list = this.__listeners[event];
+			if ( new_list ) {
+				for(const item of removed) {
+					const idx = new_list.indexOf(item);
+					if ( idx !== -1 )
+						new_list.splice(idx, 1);
+				}
+
+				if ( ! list.length ) {
+					this.__listeners[event] = null;
+					this.__dead_events++;
+				}
+			}
+		}
+
+		return out;
 	}
 }
 
@@ -306,6 +364,7 @@ export class HierarchicalEventEmitter extends EventEmitter {
 	listeners(event) { return super.listeners(this.abs_path(event)) }
 
 	emit(event, ...args) { return super.emit(this.abs_path(event), ...args) }
+	emitUnsafe(event, ...args) { return super.emitUnsafe(this.abs_path(event), ...args) }
 	emitAsync(event, ...args) { return super.emitAsync(this.abs_path(event), ...args) }
 
 	events(include_children) {

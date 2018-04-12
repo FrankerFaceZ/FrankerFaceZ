@@ -48,14 +48,26 @@ export default class RichContent extends Module {
 							data = await data;
 					}
 
+					if ( ! data )
+						data = {
+							error: true,
+							title: t.i18n.t('card.error', 'An error occured.'),
+							desc_1: t.i18n.t('card.empty', 'No data was returned.')
+						}
+
 					this.setState(Object.assign({
-						loaded: true
+						loaded: true,
+						url: this.props.url
 					}, data));
 
 				} catch(err) {
+					if ( err.message !== 'timeout' )
+						t.log.capture(err);
+
 					this.setState({
 						loaded: true,
 						error: true,
+						url: this.props.url,
 						title: t.i18n.t('card.error', 'An error occured.'),
 						desc_1: String(err)
 					});

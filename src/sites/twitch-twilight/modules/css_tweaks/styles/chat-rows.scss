@@ -5,11 +5,9 @@
 .chat-line__moderation,
 .chat-line__status,
 .chat-list__lines .chat-line__raid,
-.chat-list__lines .chat-line__subscribe,
 .chat-list__lines .chat-line__bits-charity,
-.chat-list__lines .chat-line__ritual,
-.chat-line__subscribe,
-.chat-line__message {
+.user-notice-line,
+.chat-line__message:not(.chat-line--inline) {
 	background-color: transparent !important;
 
 	&:nth-child(2n+0) {

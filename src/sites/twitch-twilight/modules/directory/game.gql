@@ -6,9 +6,6 @@ query {
 					node {
 						createdAt
 						type
-						broadcaster {
-							profileImageURL(width: 70)
-						}
 					}
 				}
 			}
@@ -19,9 +16,6 @@ query {
 					node {
 						createdAt
 						type
-						broadcaster {
-							profileImageURL(width: 70)
-						}
 					}
 				}
 			}

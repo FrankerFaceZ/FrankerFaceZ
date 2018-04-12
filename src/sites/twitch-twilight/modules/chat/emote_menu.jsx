@@ -313,6 +313,8 @@ export default class EmoteMenu extends Module {
 							src={data.src}
 							srcSet={data.srcSet}
 							alt={data.name}
+							height={data.height ? `${data.height}px` : null}
+							width={data.width ? `${data.width}px` : null}
 						/>
 					</figure>
 					{favorite && (<figure class="ffz--favorite ffz-i-star" />)}
@@ -1007,7 +1009,9 @@ export default class EmoteMenu extends Module {
 								src: emote.urls[1],
 								srcSet: emote.srcSet,
 								name: emote.name,
-								favorite: is_fav
+								favorite: is_fav,
+								height: emote.height,
+								width: emote.width
 							};
 
 						emotes.push(em);

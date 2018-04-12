@@ -1,3 +1,60 @@
+<div class="list-header">4.0.0-beta2.13<span>@64fec6b80d1f6a60c263</span> <time datetime="2018-04-12">(2018-04-12)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Issue sorting settings on Edge and Safari.</li>
+	<li>Fixed: Issue processing metadata on game pages when broadcasters aren't defined.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.13<span>@64fec6b80d1f6a60c263</span> <time datetime="2018-04-11">(2018-04-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+		<li>Changed: Only use the ES2015 classes transform for the Edge build as their JS engine seems to get everything else correct.</li>
+	<li>Fixed: Some modules failing to be transpiled for the Edge build causing them to not load.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.12<span>@850fac83181587018cdb</span> <time datetime="2018-04-11">(2018-04-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: The active tab of the FFZ emote menu beeing poorly indicated without dark mode enabled.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.11<span>@850fac83181587018cdb</span> <time datetime="2018-04-11">(2018-04-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Settings for controlling what data the error reporter sends, as well as an option to turn it off and an example of what data is sent.</li>
+	<li>Fixed: The FFZ Control Center not opening on certain pages. (The new sub page, specifically.)</li>
+	<li>Fixed: An issue parsing metadata when streams returned from the live streams query are null.</li>
+	<li>Fixed: The Host menu being visible when not logged in.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.9<span>@665575cf426293ec11da</span> <time datetime="2018-04-11">(2018-04-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Allow clicking on a rich chat embed even if it fails to load.</li>
+	<li>Fixed: Clean up more errors for Sentry logging.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.6<span>@b85fa005ec1f3929cdd8</span> <time datetime="2018-04-11">(2018-04-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Filter a bunch of errors out from Sentry logging.</li>
+	<li>API Added: <code>module.hasModule(name)</code> method to test if a module is already installed.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.5<span>@b3fb24504616675ad2b9</span> <time datetime="2018-04-11">(2018-04-11)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Automatic error reporting using Sentry.</li>
+	<li>Added: Rarity sorting for the Experiments debugging information.</li>
+	<li>Changed: Allow Ctrl-Shift-Clicking emotes to open their information pages.</li>
+	<li>Fixed: <code>deep_copy</code> erroneously thinking some objects were recursive.</li>
+	<li>Fixed: The option to disallow mouse mouse interaction with extensions was not functioning.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.4<span>@b3fb24504616675ad2b9</span> <time datetime="2018-04-10">(2018-04-10)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Debugging > Experiments for viewing active experiment information.</li>
+	<li>Added: Experiments system in case I ever need to A/B something, like the new backend under development.</li>
+	<li>Changed: Cleaned up a lot of instances of buttons that weren't being marked as disabled properly.</li>
+	<li>Changed: Update dark theme for latest Twitch changes.</li>
+	<li>Fixed: Update the render method for chat lines to bring subscription notices and rituals back in line with what Twitch generates.</li>
+	<li>Fixed: Following directory not being properly modified because of changes made to router.</li>
+	<li>Fixed? Made changes to how we modify data requesting profile images to hopefully stop breaking the game directory for people till we can make a more proper fix.</li>
+</ul>
+
 <div class="list-header">4.0.0-beta2.3<span>@a07fb33207e6659acc9f</span> <time datetime="2018-04-09">(2018-04-09)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Added: Favorite emotes by Ctrl-Clicking them! ⌘-Click for Mac users.</li>

@@ -380,6 +380,12 @@ export class Module extends EventEmitter {
 	}
 
 
+	hasModule(name) {
+		const module = this.__modules[this.abs_path(name)];
+		return module instanceof Module;
+	}
+
+
 	__get_requires() {
 		if ( has(this, 'requires') )
 			return this.requires;
@@ -429,6 +435,8 @@ export class Module extends EventEmitter {
 					module[2].push([this.__path, name]);
 				else
 					this.__modules[this.abs_path(full_name)] = [[], [], [[this.__path, name]]]
+
+				requires.push(this.abs_path(full_name));
 
 				return this[name] = null;
 			}
@@ -528,6 +536,13 @@ export class Module extends EventEmitter {
 			try {
 				added[name] = this.register(name, module);
 			} catch(err) {
+				log && log.capture(err, {
+					extra: {
+						module: name,
+						path: raw_path
+					}
+				});
+
 				log && log.warn(err, `Skipping ${raw_path}`);
 			}
 		}

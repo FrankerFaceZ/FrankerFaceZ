@@ -17,7 +17,7 @@ export default {
 	props: ['item', 'context'],
 
 	mounted() {
-		this.fetch(`${SERVER}/script/changelog.html`, this.$refs.changes);
+		this.fetch(`${SERVER}/script/changelog.html?_=${Date.now()}`, this.$refs.changes);
 	},
 
 	methods: {

@@ -1,5 +1,5 @@
-.chat-line__message,
-.chat-line__subscribe {
+.chat-line__message:not(.chat-line--inline),
+.user-notice-line {
 	&.ffz-mentioned:nth-child(2n+0) {
 		background-color: rgba(255,127,127,.4) !important;
 

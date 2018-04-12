@@ -63,3 +63,14 @@
 	top: 0.5rem; right: 0.5rem;
 	font-size: 1.6rem;
 }
+
+
+.ffz--experiment-row {
+	&:not(.live):not(:hover):not(:focus) {
+		opacity: 0.5;
+
+		.tw-theme--dark & {
+			opacity: .25;
+		}
+	}
+}

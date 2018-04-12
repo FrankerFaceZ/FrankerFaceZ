@@ -11,6 +11,7 @@
 		<div class="tw-mg-b-2 tw-align-right">
 			<button
 				:disabled="! has_value"
+				:class="{'tw-button--disabled': ! has_value}"
 				class="tw-mg-l-05 tw-button tw-button--hollow tw-tooltip-wrapper"
 				@click="clear"
 			>

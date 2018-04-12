@@ -168,9 +168,9 @@ export default class ChatLine extends Module {
 						months = msg.sub_months || 1,
 						tier = SUB_TIERS[plan.plan] || 1;
 
-					cls = 'chat-line__subscribe';
+					cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line';
 					out = [
-						e('span', null, [
+						e('div', {className: 'tw-c-text-alt-2'}, [
 							t.i18n.t('chat.sub.main', '%{user} just subscribed with %{plan}!', {
 								user: user.userDisplayName,
 								plan: plan.prime ?
@@ -187,7 +187,7 @@ export default class ChatLine extends Module {
 									})}` : null
 						]),
 						out && e('div', {
-							className: 'chat-line__subscribe--message',
+							className: 'chat-line--inline chat-line__message',
 							'data-room-id': this.props.channelID,
 							'data-room': room,
 							'data-user-id': user.userID,
@@ -198,16 +198,18 @@ export default class ChatLine extends Module {
 				} else if ( msg.ffz_type === 'ritual' && t.chat.context.get('chat.rituals.show') ) {
 					let system_msg;
 					if ( msg.ritual === 'new_chatter' )
-						system_msg = t.i18n.t('chat.ritual', '%{user} is new here. Say hello!', {
-							user: user.userDisplayName
-						});
+						system_msg = e('div', {className: 'tw-c-text-alt-2'}, [
+							t.i18n.t('chat.ritual', '%{user} is new here. Say hello!', {
+								user: user.userDisplayName
+							})
+						]);
 
 					if ( system_msg ) {
-						cls = 'chat-line__ritual';
+						cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line';
 						out = [
 							system_msg,
 							out && e('div', {
-								className: 'chat-line__ritual--message',
+								className: 'chat-line--inline chat-line__message',
 								'data-room-id': this.props.channelID,
 								'data-room': room,
 								'data-user-id': user.userID,

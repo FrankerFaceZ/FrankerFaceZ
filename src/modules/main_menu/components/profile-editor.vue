@@ -12,6 +12,7 @@
 			</button>
 			<button
 				:disabled="item.profile && context.profiles.length < 2"
+				:class="{'tw-button--disabled': item.profile && context.profiles.length < 2}"
 				class="tw-mg-l-1 tw-button tw-button--text"
 				@click="del"
 			>
