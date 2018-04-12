@@ -59,7 +59,8 @@ export default class HostButton extends Module {
 			disabled: () => this._host_updating || this._host_error,
 
 			click: data => {
-				if (data.channel) this.sendHostUnhostCommand(data.channel.login);
+				if ( data.channel )
+					this.sendHostUnhostCommand(data.channel.login);
 			},
 
 			popup: async (data, tip) => {
@@ -78,20 +79,13 @@ export default class HostButton extends Module {
 			},
 
 			label: data => {
-				if (!this.settings.get('metadata.host-button')) {
-					return '';
-				}
+				const ffz_user = this.site.getUser();
 
-				const ffz_user = this.site.getUser(),
-					userLogin = ffz_user && ffz_user.login;
+				if ( ! this.settings.get('metadata.host-button') || ! ffz_user || ! data.channel || data.channel.login === ffz_user.login )
+					return;
 
-				if (data.channel && data.channel.login === userLogin) {
-					return '';
-				}
-
-				if (this._host_updating) {
+				if ( this._host_updating )
 					return 'Updating...';
-				}
 
 				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login))
 					? this.i18n.t('metadata.host.button.unhost', 'Unhost')

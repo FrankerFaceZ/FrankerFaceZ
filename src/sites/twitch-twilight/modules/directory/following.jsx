@@ -103,8 +103,11 @@ export default class Following extends SiteModule {
 		const edgesOrNodes = followedLiveUsers.nodes || followedLiveUsers.edges;
 
 		for (let i = 0; i < edgesOrNodes.length; i++) {
-			const edge = edgesOrNodes[i];
-			const node = edge.node || edge;
+			const edge = edgesOrNodes[i],
+				node = edge.node || edge;
+
+			if ( ! node || ! node.stream )
+				continue;
 
 			const s = node.stream.viewersCount = new Number(node.stream.viewersCount || 0);
 			s.profileImageURL = node.profileImageURL;
@@ -134,8 +137,11 @@ export default class Following extends SiteModule {
 		const edgesOrNodes = followedHosts.nodes || followedHosts.edges;
 
 		for (let i = 0; i < edgesOrNodes.length; i++) {
-			const edge = edgesOrNodes[i];
-			const node = edge.node || edge;
+			const edge = edgesOrNodes[i],
+				node = edge.node || edge;
+
+			if ( ! node || ! node.hosting || ! node.hosting.stream )
+				continue;
 
 			const s = node.hosting.stream.viewersCount = new Number(node.hosting.stream.viewersCount || 0);
 			s.profileImageURL = node.hosting.profileImageURL;

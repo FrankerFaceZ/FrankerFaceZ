@@ -43,25 +43,32 @@ export default class Room {
 
 		this.manager.emit(':room-remove', this);
 
-		this.style.destroy();
-
-		for(const user of Object.values(this.user_ids)) {
-			if ( user )
-				user.destroy();
+		if ( this.users ) {
+			for(const user of Object.values(this.users))
+				if ( user )
+					user.destroy();
 		}
 
-		for(const user of Object.values(this.users)) {
-			if ( user )
-				user.destroy();
+		if ( this.user_ids ) {
+			for(const user of Object.values(this.user_ids))
+				if ( user )
+					user.destroy();
 		}
 
-		for(const set_id of this.emote_sets._cache)
-			this.manager.emotes.unrefSet(set_id);
-
-		this.emote_sets = null;
-		this.style = null;
 		this.users = null;
 		this.user_ids = null;
+
+		if ( this.style ) {
+			this.style.destroy();
+			this.style = null;
+		}
+
+		if ( this.emote_sets ) {
+			for(const set_id of this.emote_sets._cache)
+				this.manager.emotes.unrefSet(set_id);
+
+			this.emote_sets = null;
+		}
 
 		if ( this._login ) {
 			if ( this.manager.rooms[this._login] === this )
