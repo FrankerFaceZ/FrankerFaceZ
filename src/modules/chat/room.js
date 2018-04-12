@@ -6,7 +6,7 @@
 
 import User from './user';
 
-import {API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet} from 'utilities/object';
@@ -174,6 +174,11 @@ export default class Room {
 	async load_data(tries = 0) {
 		if ( this.destroyed )
 			return;
+
+		if ( this.manager.experiments.getAssignment('api_load') )
+			try {
+				fetch(`${NEW_API}/v1/rooms/${this.id ? `id/${this.id}` : this.login}`).catch(() => {});
+			} catch(err) { /* do nothing */ }
 
 		let response, data;
 		try {

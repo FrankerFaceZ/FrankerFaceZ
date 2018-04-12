@@ -13,7 +13,9 @@ const BAD_ERRORS = [
 	'timeout',
 	'unable to load',
 	'error internal',
-	'Internal Server Error'
+	'Internal Server Error',
+	'http://',
+	'https://'
 ];
 
 function skip_error(err) {

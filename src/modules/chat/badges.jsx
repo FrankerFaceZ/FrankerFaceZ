@@ -4,7 +4,7 @@
 // Badge Handling
 // ============================================================================
 
-import {API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
@@ -140,6 +140,7 @@ export default class Badges extends Module {
 		this.inject('settings');
 		this.inject('socket');
 		this.inject('tooltips');
+		this.inject('experiments');
 
 		this.style = new ManagedStyle('badges');
 		this.badges = {};
@@ -496,6 +497,12 @@ export default class Badges extends Module {
 
 	async loadGlobalBadges(tries = 0) {
 		let response, data;
+
+		if ( this.experiments.getAssignment('api_load') )
+			try {
+				fetch(`${NEW_API}/v1/badges`).catch(() => {});
+			} catch(err) { /* do nothing */ }
+
 		try {
 			response = await fetch(`${API_SERVER}/v1/badges`);
 		} catch(err) {

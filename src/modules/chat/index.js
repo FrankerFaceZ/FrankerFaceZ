@@ -10,6 +10,7 @@ import {timeout, has} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
+//import Emoji from './emoji';
 
 import Room from './room';
 import User from './user';
@@ -27,9 +28,11 @@ export default class Chat extends Module {
 		this.inject('i18n');
 		this.inject('tooltips');
 		this.inject('socket');
+		this.inject('experiments');
 
 		this.inject(Badges);
 		this.inject(Emotes);
+		//this.inject(Emoji);
 
 		this._link_info = {};
 

@@ -375,7 +375,7 @@ export default class MainMenu extends Module {
 				if ( a.sort < b.sort ) return -1;
 				if ( a.sort > b.sort ) return 1;
 
-				return a.key.localeCompare(b.key);
+				return a.key && a.key.localeCompare(b.key);
 			});
 
 		this.log.info(`Built Tree in ${(performance.now() - started).toFixed(5)}ms with ${Object.keys(tree).length} structure nodes and ${this._settings_count} settings nodes.`);
