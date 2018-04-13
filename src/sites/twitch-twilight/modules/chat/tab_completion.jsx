@@ -13,6 +13,7 @@ export default class TabCompletion extends Module {
 
 		this.inject('chat');
 		this.inject('chat.emotes');
+		this.inject('chat.emoji');
 		this.inject('i18n');
 		this.inject('settings');
 
@@ -27,6 +28,15 @@ export default class TabCompletion extends Module {
 			ui: {
 				path: 'Chat > Input >> Tab Completion',
 				title: 'Allow tab-completion of FrankerFaceZ emotes.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.tab-complete.emoji', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Allow tab-completion of emoji.',
 				component: 'setting-check-box'
 			}
 		});
@@ -103,12 +113,59 @@ export default class TabCompletion extends Module {
 		}
 
 		inst.getMatchedEmotes = function(input) {
-			const results = old_get_matched.call(this, input);
-			if ( ! t.chat.context.get('chat.tab-complete.ffz-emotes') )
+			let results = old_get_matched.call(this, input);
+
+			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') )
+				results = results.concat(t.getEmoteSuggestions(input, this));
+
+			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
 				return results;
 
-			return results.concat(t.getEmoteSuggestions(input, this));
+			return results.concat(t.getEmojiSuggestions(input, this));
 		}
+
+		const React = this.web_munch.getModule('react'),
+			createElement = React && React.createElement;
+
+		inst.renderFFZEmojiSuggestion = function(data) {
+			return [
+				<div class="tw-pd-r-05">
+					<img
+						class="emote-autocomplete-provider__image ffz-emoji"
+						src={data.src}
+						srcSet={data.srcset}
+					/>
+				</div>,
+				<div>
+					{data.token}
+				</div>
+			]
+		}
+	}
+
+
+	getEmojiSuggestions(input, inst) {
+		const search = input.slice(1).toLowerCase(),
+			style = this.chat.context.get('chat.emoji.style'),
+			results = [];
+
+		for(const name in this.emoji.names)
+			if ( name.startsWith(search) ) {
+				const emoji = this.emoji.emoji[this.emoji.names[name]];
+				if ( emoji && (style === 0 || emoji.has[style]) )
+					results.push({
+						current: input,
+						replacement: emoji.raw,
+						element: inst.renderFFZEmojiSuggestion({
+							token: `:${name}:`,
+							id: `emoji-${emoji.code}`,
+							src: this.emoji.getFullImage(emoji.image, style),
+							srcSet: this.emoji.getFullImageSet(emoji.image, style)
+						})
+					});
+			}
+
+		return results;
 	}
 
 

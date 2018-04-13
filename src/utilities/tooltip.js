@@ -73,7 +73,7 @@ export class Tooltip {
 		} else if ( this.live ) {
 			this._onMouseOver = e => {
 				const target = e.target;
-				if ( target.classList.contains(this.cls) )
+				if ( target && target.classList.contains(this.cls) )
 					this._enter(target);
 			};
 
