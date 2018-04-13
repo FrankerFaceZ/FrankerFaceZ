@@ -1,0 +1,31 @@
+.ffz-mod-card {
+    > header {
+        background-size: cover;
+        background-position: top;
+    }
+
+    > section {
+        .ffz-tooltip {
+            > * {
+                pointer-events: none;
+            }
+        }
+    }
+
+    .mod-cards__tabs-container {
+		height: 3rem;
+
+		> .mod-cards__tab {
+			position: relative;
+			top: -.1rem;
+			cursor: pointer;
+			display: inline-block;
+			line-height: 3rem;
+			margin-right: .5rem;
+
+			&:hover, &.active {
+				border-top: 1px solid #6441a4;
+			}
+		}
+	}
+}

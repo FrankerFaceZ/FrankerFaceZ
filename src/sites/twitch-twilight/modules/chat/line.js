@@ -7,6 +7,9 @@
 import Twilight from 'site';
 import Module from 'utilities/module';
 //import {Color} from 'utilities/color';
+import {createElement} from 'utilities/dom';
+
+import GET_USER_INFO from './get_user_info.gql';
 
 import RichContent from './rich_content';
 
@@ -25,6 +28,7 @@ export default class ChatLine extends Module {
 		this.inject('chat');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
+		this.inject('site.apollo');
 		this.inject(RichContent);
 
 		this.ChatLine = this.fine.define(
@@ -38,6 +42,8 @@ export default class ChatLine extends Module {
 			n => n.renderMessageBody && n.getMessageParts,
 			Twilight.CHAT_ROUTES
 		);
+
+		this.mod_cards = {};
 	}
 
 	onEnable() {
@@ -126,7 +132,7 @@ export default class ChatLine extends Module {
 						e('a', {
 							className: 'chat-author__display-name notranslate',
 							style: { color },
-							onClick: this.usernameClickHandler
+							onClick: t.openCustomModCard.bind(this, t, user)
 						}, [
 							user.userDisplayName,
 							user.isIntl && e('span', {
@@ -235,6 +241,67 @@ export default class ChatLine extends Module {
 			// freaking out on us.
 			setTimeout(() => this.ChatLine.forceUpdate());
 		})
+	}
+
+	async openCustomModCard(t, user, e) {
+		t.log.info(this, user, e);
+		this.usernameClickHandler(e);
+		const posX = Math.min(window.innerWidth - 300, e.clientX),
+			posY = Math.min(window.innerHeight - 300, e.clientY);
+
+		const vue = t.resolve('vue'),
+			_mod_card_vue = import(/* webpackChunkName: "mod-card" */ './mod-card.vue'),
+			_user_info = t.apollo.client.query({
+				query: GET_USER_INFO,
+				variables: {
+					userLogin: user.userLogin
+				}
+			});
+
+		const [, mod_card_vue, user_info] = await Promise.all([vue.enable(), _mod_card_vue, _user_info]);
+
+		vue.component('mod-card', mod_card_vue.default);
+
+		if (t.mod_cards[user.userLogin] && t.mod_cards[user.userLogin].remove) {
+			t.mod_cards[user.userLogin].remove();
+			t.mod_cards[user.userLogin] = null;
+		}
+
+		const mod_card = t.mod_cards[user.userLogin] = t.buildModCard(vue, user.userLogin, user_info.data.user);
+
+		const main = document.querySelector('.twilight-root>.tw-full-height');
+		main.appendChild(mod_card);
+
+		mod_card.style.left = `${posX}px`;
+		mod_card.style.top = `${posY}px`;
+		mod_card.style.zIndex = '99999999';
+		mod_card.style.minWidth = '320px';
+	}
+
+	buildModCard(vue, userLogin, userInfo) { // eslint-disable-line
+		this.log.info(userInfo);
+		const vueEl = new vue.Vue({
+			el: createElement('div'),
+			render: h => {
+				const vueModCard = h('mod-card', {
+					activeTab: 'main',
+					userInfo,
+
+					setActiveTab: tab => vueModCard.data.activeTab = tab,
+
+					close: () => {
+						this.mod_cards[userLogin].remove();
+						this.mod_cards[userLogin] = null;
+					},
+					block: () => {
+						this.log.info('memes');
+					}
+				});
+				return vueModCard;
+			}
+		});
+
+		return vueEl.$el;
 	}
 
 

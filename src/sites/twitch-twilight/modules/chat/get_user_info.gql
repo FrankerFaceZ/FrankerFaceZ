@@ -1,0 +1,9 @@
+query($userLogin: String) {
+    user(login: $userLogin) {
+        bannerImageURL
+        displayName
+        id
+        login
+        profileImageURL(width: 50)
+    }
+}
