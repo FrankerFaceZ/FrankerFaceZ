@@ -247,6 +247,10 @@ export default class Emotes extends Module {
 				source = emote_set.source || 'ffz';
 				id = emote.id;
 
+			} else if ( provider === 'emoji' ) {
+				source = 'emoji';
+				id = ds.code;
+
 			} else
 				return;
 
@@ -467,6 +471,8 @@ export default class Emotes extends Module {
 
 		if ( data.users )
 			this.loadSetUsers(data.users);
+
+		return true;
 	}
 
 

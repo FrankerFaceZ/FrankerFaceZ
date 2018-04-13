@@ -77,6 +77,7 @@ export default class EmoteMenu extends Module {
 		this.inject('chat');
 		this.inject('chat.badges');
 		this.inject('chat.emotes');
+		this.inject('chat.emoji');
 
 		this.inject('site');
 		this.inject('site.fine');
@@ -201,7 +202,8 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-room-sets', this.maybeUpdate, this);
-		this.on('chat.emotes:change-favorite', this.maybeUpdate, this);
+		this.on('chat.emotes:change-favorite', this.updateFavorite, this);
+		this.on('chat.emoji:populated', this.updateEmoji, this);
 
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
 			this.EmoteMenu.forceUpdate());
@@ -264,6 +266,14 @@ export default class EmoteMenu extends Module {
 			this.EmoteMenu.forceUpdate();
 	}
 
+	updateFavorite() {
+		this.maybeUpdate();
+	}
+
+	updateEmoji() {
+		this.maybeUpdate();
+	}
+
 
 	defineClasses() {
 		const t = this,
@@ -300,6 +310,8 @@ export default class EmoteMenu extends Module {
 					data-provider={data.provider}
 					data-id={data.id}
 					data-set={data.set_id}
+					data-code={data.code}
+					data-variant={data.variant}
 					data-no-source={this.props.source}
 					data-name={data.name}
 					aria-label={data.name}
@@ -309,7 +321,7 @@ export default class EmoteMenu extends Module {
 				>
 					<figure class="emote-picker__emote-figure">
 						<img
-							class="emote-picker__emote-image"
+							class={`emote-picker__emote-image${data.emoji ? ' ffz-emoji' : ''}`}
 							src={data.src}
 							srcSet={data.srcSet}
 							alt={data.name}
@@ -343,9 +355,9 @@ export default class EmoteMenu extends Module {
 					return;
 
 				const collapsed = storage.get('emote-menu.collapsed') || [],
+					val = ! this.state.collapsed,
 					key = this.props.data.key,
-					idx = collapsed.indexOf(key),
-					val = ! this.state.collapsed;
+					idx = collapsed.indexOf(key);
 
 				this.setState({collapsed: val});
 
@@ -607,6 +619,7 @@ export default class EmoteMenu extends Module {
 				state.filtered_channel_sets = this.filterSets(input, state.channel_sets);
 				state.filtered_all_sets = this.filterSets(input, state.all_sets);
 				state.filtered_fav_sets = this.filterSets(input, state.fav_sets);
+				state.filtered_emoji_sets = this.filterSets(input, state.emoji_sets);
 
 				return state;
 			}
@@ -633,7 +646,8 @@ export default class EmoteMenu extends Module {
 				if ( ! filter || ! filter.length )
 					return true;
 
-				const emote_lower = emote.name.toLowerCase(),
+				const emote_name = emote.search || emote.name,
+					emote_lower = emote_name.toLowerCase(),
 					term_lower = filter.toLowerCase();
 
 				if ( ! filter.startsWith(':') )
@@ -642,9 +656,70 @@ export default class EmoteMenu extends Module {
 				if ( emote_lower.startsWith(term_lower.slice(1)) )
 					return true;
 
-				const idx = emote.name.indexOf(filter.charAt(1).toUpperCase());
+				const idx = emote_name.indexOf(filter.charAt(1).toUpperCase());
 				if ( idx !== -1 )
 					return emote_lower.slice(idx+1).startsWith(term_lower.slice(2));
+			}
+
+
+			buildEmoji(old_state) { // eslint-disable-line class-methods-use-this
+				return old_state;
+
+				/*const state = Object.assign({}, old_state),
+
+					sets = state.emoji_sets = [],
+					emoji_favorites = t.emotes.getFavorites('emoji'),
+					style = t.chat.context.get('chat.emoji.style') || 'twitter',
+					favorites = state.favorites = state.favorites || [],
+					categories = {};
+
+				for(const emoji of Object.values(t.emoji.emoji)) {
+					if ( ! emoji.has[style] )
+						continue;
+
+					let cat = categories[emoji.category];
+					if ( ! cat ) {
+						cat = categories[emoji.category] = [];
+
+						sets.push({
+							key: `emoji-${emoji.category}`,
+							image: t.emoji.getFullImage(emoji.image),
+							title: emoji.category,
+							source: t.i18n.t('emote-menu.emoji', 'Emoji'),
+							emotes: cat
+						});
+					}
+
+					const is_fav = emoji_favorites.includes(emoji.code),
+						em = {
+							provider: 'emoji',
+							emoji: true,
+							code: emoji.code,
+							name: emoji.raw,
+
+							search: emoji.names[0],
+
+							height: 18,
+							width: 18,
+
+							x: emoji.sheet_x,
+							y: emoji.sheet_y,
+
+							favorite: is_fav,
+
+							src: t.emoji.getFullImage(emoji.image),
+							srcSet: t.emoji.getFullImageSet(emoji.image)
+						};
+
+					cat.push(em);
+
+					if ( is_fav )
+						favorites.push(em);
+				}
+
+				state.has_emoji_tab = sets.length > 0;
+
+				return state;*/
 			}
 
 
@@ -961,7 +1036,7 @@ export default class EmoteMenu extends Module {
 				// We use this sorter because we don't want things grouped by sets.
 				favorites.sort(sorter);
 
-				return state;
+				return this.buildEmoji(state);
 			}
 
 
@@ -1086,7 +1161,7 @@ export default class EmoteMenu extends Module {
 					padding = t.chat.context.get('chat.emote-menu.reduced-padding');
 
 				let tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab'), sets;
-				if ( tab === 'channel' && ! this.state.has_channel_tab )
+				if ( (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
 					tab = 'all';
 
 				switch(tab) {
@@ -1095,6 +1170,9 @@ export default class EmoteMenu extends Module {
 						break;
 					case 'channel':
 						sets = this.state.filtered_channel_sets;
+						break;
+					case 'emoji':
+						sets = this.state.filtered_emoji_sets;
 						break;
 					case 'all':
 					default:
@@ -1168,6 +1246,14 @@ export default class EmoteMenu extends Module {
 								>
 									{t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
 								</div>
+								{this.state.has_emoji_tab && <div
+									class={`emote-picker__tab tw-pd-x-1${tab === 'emoji' ? ' emote-picker__tab--active' : ''}`}
+									id="emote-picker__emoji"
+									data-tab="emoji"
+									onClick={this.clickTab}
+								>
+									{t.i18n.t('emote-menu.emoji', 'Emoji')}
+								</div>}
 								<div class="tw-flex-grow-1" />
 								{!loading && (<div
 									class="ffz-tooltip emote-picker__tab tw-pd-x-1 tw-mg-r-0"

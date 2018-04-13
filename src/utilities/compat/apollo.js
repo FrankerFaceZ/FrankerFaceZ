@@ -13,6 +13,12 @@ const BAD_ERRORS = [
 	'timeout',
 	'unable to load',
 	'error internal',
+	'context deadline exceeded',
+	'500',
+	'501',
+	'502',
+	'503',
+	'504',
 	'Internal Server Error',
 	'http://',
 	'https://'
@@ -41,7 +47,6 @@ export default class Apollo extends Module {
 
 		this.inject('..web_munch');
 		this.inject('..fine');
-		//this.inject('core');
 	}
 
 	onEnable() {

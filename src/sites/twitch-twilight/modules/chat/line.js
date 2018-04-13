@@ -47,6 +47,7 @@ export default class ChatLine extends Module {
 	}
 
 	onEnable() {
+		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.hidden', this.updateLines, this);
