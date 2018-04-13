@@ -343,7 +343,7 @@ export default class EmoteMenu extends Module {
 				super(props);
 
 				const collapsed = storage.get('emote-menu.collapsed') || [];
-				this.state = {collapsed: props.data && (collapsed.includes(props.data.key) !== props.data.collapsed)}
+				this.state = {collapsed: props.data && collapsed.includes(props.data.key)}
 
 				this.clickHeading = this.clickHeading.bind(this);
 				this.onMouseEnter = this.onMouseEnter.bind(this);
@@ -355,14 +355,11 @@ export default class EmoteMenu extends Module {
 					return;
 
 				const collapsed = storage.get('emote-menu.collapsed') || [],
+					val = ! this.state.collapsed,
 					key = this.props.data.key,
 					idx = collapsed.indexOf(key);
 
-				let val = ! this.state.collapsed;
 				this.setState({collapsed: val});
-
-				if ( this.props.data.collapsed )
-					val = ! val;
 
 				if ( val && idx === -1 )
 					collapsed.push(key);
@@ -686,7 +683,6 @@ export default class EmoteMenu extends Module {
 
 						sets.push({
 							key: `emoji-${emoji.category}`,
-							collapsed: true,
 							image: t.emoji.getFullImage(emoji.image),
 							title: emoji.category,
 							source: t.i18n.t('emote-menu.emoji', 'Emoji'),

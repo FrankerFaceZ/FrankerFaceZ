@@ -145,9 +145,12 @@ export default class TabCompletion extends Module {
 
 
 	getEmojiSuggestions(input, inst) {
-		const search = input.slice(1).toLowerCase(),
-			style = this.chat.context.get('chat.emoji.style'),
+		let search = input.slice(1).toLowerCase();
+		const style = this.chat.context.get('chat.emoji.style'),
 			results = [];
+
+		if ( search.endsWith(':') )
+			search = search.slice(0, -1);
 
 		for(const name in this.emoji.names)
 			if ( name.startsWith(search) ) {
