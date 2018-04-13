@@ -152,7 +152,7 @@ export default class RavenLogger extends Module {
 			},
 			shouldSendCallback: data => {
 				if ( this.settings && ! this.settings.get('reports.error.enable') ) {
-					if ( data.tags.example && this.__example_waiter ) {
+					if ( data.tags && data.tags.example && this.__example_waiter ) {
 						this.__example_waiter(null);
 						this.__example_waiter = null;
 					}
@@ -160,12 +160,13 @@ export default class RavenLogger extends Module {
 					return false;
 				}
 
+				const exc = data.exception && data.exception.values[0];
+
 				// We don't want any of Sentry's junk.
-				if ( data.message && data.messages.includes('raven-js/') )
+				if ( data.message && data.messages.includes('raven-js/') || (exc && JSON.stringify(exc).includes('raven-js/')) )
 					return false;
 
 				// We don't want any of Mozilla's junk either.
-				const exc = data.exception && data.exception.values[0];
 				if ( exc && exc.type.startsWith('NS_') )
 					return false;
 
