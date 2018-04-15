@@ -116,7 +116,7 @@ export default class Room {
 	}
 
 
-	getUser(id, login, no_create, no_login) {
+	getUser(id, login, no_create, no_login, error = false) {
 		if ( this.destroyed )
 			return null;
 
@@ -130,17 +130,28 @@ export default class Room {
 		else if ( this.users[login] && ! no_login )
 			user = this.users[login];
 
-		else if ( no_create )
-			return null;
+		if ( user && user.destroyed )
+			user = null;
 
-		else
+		if ( ! user ) {
+			if ( no_create )
+				return null;
+
 			user = new User(this.manager, this, id, login);
+		}
 
 		if ( id && id !== user.id ) {
 			// If the ID isn't what we expected, something is very wrong here.
 			// Blame name changes.
-			if ( user.id )
-				throw new Error('id mismatch');
+			if ( user.id ) {
+				this.manager.log.warn(`Data mismatch for user #${id} -- Stored ID: ${user.id} -- Login: ${login} -- Stored Login: ${user.login}`);
+				if ( error )
+					throw new Error('id mismatch');
+
+				// Remove the old reference if we're going with this.
+				if ( this.user_ids[user.id] === user )
+					this.user_ids[user.id] = null;
+			}
 
 			// Otherwise, we're just here to set the ID.
 			user._id = id;

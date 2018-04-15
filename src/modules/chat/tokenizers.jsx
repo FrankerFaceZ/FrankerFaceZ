@@ -389,6 +389,8 @@ export const CheerEmotes = {
 						token.hidden = true;
 					}
 
+					text.push('');
+
 				} else
 					text.push(segment);
 			}

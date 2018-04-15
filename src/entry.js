@@ -13,6 +13,7 @@
 		script = document.createElement('script');
 
 	script.id = 'ffz-script';
+	script.crossOrigin = 'anonymous';
 	script.src = `${SERVER}/script/${BABEL}${FLAVOR}.js?_=${Date.now()}`;
 	document.head.appendChild(script);
 })();

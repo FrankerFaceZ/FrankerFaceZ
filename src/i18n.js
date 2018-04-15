@@ -7,8 +7,57 @@
 // ============================================================================
 
 import {SERVER} from 'utilities/constants';
-import {has} from 'utilities/object';
+import {pick_random, has} from 'utilities/object';
 import Module from 'utilities/module';
+
+
+const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'UwU', '>w<', '^w^'],
+
+	format_text = (phrase, token_regex, formatter) => {
+		const out = [];
+
+		let i = 0, match;
+		token_regex.lastIndex = 0;
+
+		while((match = token_regex.exec(phrase))) {
+			if ( match.index !== i )
+				out.push(formatter(phrase.slice(i, match.index)))
+
+			out.push(match[0]);
+			i = match.index + match[0].length;
+		}
+
+		if ( i < phrase.length )
+			out.push(formatter(phrase.slice(i)));
+
+		return out.join('')
+	},
+
+	owo = text => text
+		.replace(/(?:r|l)/g, 'w')
+		.replace(/(?:R|L)/g, 'W')
+		.replace(/n([aeiou])/g, 'ny$1')
+		.replace(/N([aeiou])/g, 'Ny$1')
+		.replace(/N([AEIOU])/g, 'NY$1')
+		.replace(/ove/g, 'uv')
+		.replace(/!+/g, ` ${pick_random(FACES)} `),
+
+
+	TRANSFORMATIONS = {
+		double: (key, text) =>
+			`${text} ${text}`,
+
+		upper: (key, text, opts, locale, token_regex) =>
+			format_text(text, token_regex, t => t.toUpperCase()),
+
+		lower: (key, text, opts, locale, token_regex) =>
+			format_text(text, token_regex, t => t.toLowerCase()),
+
+		append_key: (key, text) => `${text} (${key})`,
+
+		owo: (key, text, opts, locale, token_regex) =>
+			format_text(text, token_regex, t => owo(t))
+	};
 
 
 // ============================================================================
@@ -27,6 +76,31 @@ export class TranslationManager extends Module {
 			//de: { name: 'Deutsch' },
 			//ja: { name: '日本語' }
 		}
+
+
+		this.settings.add('i18n.debug.transform', {
+			default: null,
+			ui: {
+				path: 'Debugging > Localization >> General',
+				title: 'Transformation',
+				description: 'Transform all localized strings to test string coverage as well as length.',
+				component: 'setting-select-box',
+				data: [
+					{value: null, title: 'Disabled'},
+					{value: 'upper', title: 'Upper Case'},
+					{value: 'lower', title: 'Lower Case'},
+					{value: 'append_key', title: 'Append Key'},
+					{value: 'double', title: 'Double'},
+					{value: 'owo', title: "owo what's this"}
+				]
+			},
+
+			changed: val => {
+				this._.transformation = TRANSFORMATIONS[val];
+				this.emit(':update')
+			}
+		});
+
 
 		this.settings.add('i18n.locale', {
 			default: -1,
@@ -65,6 +139,7 @@ export class TranslationManager extends Module {
 			awarn: (...args) => this.log.info(...args)
 		});*/
 
+		this._.transformation = TRANSFORMATIONS[this.settings.get('i18n.debug.transform')];
 		this.locale = this.settings.get('i18n.locale');
 	}
 
@@ -311,6 +386,7 @@ export default class TranslationCore {
 		this.extend(options.phrases);
 		this.locale = options.locale || 'en';
 		this.defaultLocale = options.defaultLocale || this.locale;
+		this.transformation = null;
 
 		const allowMissing = options.allowMissing ? transformPhrase : null;
 		this.onMissingKey = typeof options.onMissingKey === 'function' ? options.onMissingKey : allowMissing;
@@ -412,6 +488,9 @@ export default class TranslationCore {
 
 			return key;
 		}
+
+		if ( this.transformation )
+			p = this.transformation(key, p, opts, locale, this.tokenRegex);
 
 		return this.transformPhrase(p, opts, locale, this.tokenRegex, this.formatters);
 	}

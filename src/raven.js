@@ -112,7 +112,7 @@ export default class RavenLogger extends Module {
 						}
 					}));
 				})
-			})
+			});
 		});
 
 		this.raven = Raven;

@@ -351,7 +351,7 @@ export default class EmoteMenu extends Module {
 			}
 
 			clickHeading() {
-				if ( this.props.filter )
+				if ( this.props.filtered )
 					return;
 
 				const collapsed = storage.get('emote-menu.collapsed') || [],
@@ -440,7 +440,7 @@ export default class EmoteMenu extends Module {
 						</div>
 						<div class="tw-flex-grow-1" />
 						{data.source || 'FrankerFaceZ'}
-						<figure class={`tw-pd-l-05 ffz-i-${collapsed ? 'left' : 'down'}-dir`} />
+						{filtered ? '' : <figure class={`tw-pd-l-05 ffz-i-${collapsed ? 'left' : 'down'}-dir`} />}
 					</heading>) : null}
 					{collapsed || this.renderBody(show_heading)}
 				</section>)
