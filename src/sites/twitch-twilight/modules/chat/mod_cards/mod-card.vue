@@ -40,6 +40,16 @@
 		<section class="tw-background-c">
 			<div class="mod-cards__tabs-container tw-border-t">
 				<div
+					v-for="tab in tabs"
+					:key="tab"
+					:id="`mod-cards__${tab}`"
+					:class="{active: activeTab === tab}"
+					class="mod-cards__tab tw-pd-x-1"
+					@click="setActiveTab(tab)"
+				>
+					<span>{{ tab }}</span>
+				</div>
+				<!-- <div
 					id="mod-cards__main"
 					:class="{active: activeTab === 'main'}"
 					class="mod-cards__tab tw-pd-x-1"
@@ -54,10 +64,16 @@
 					@click="setActiveTab('memes')"
 				>
 					<span>Memes</span>
-				</div>
+				</div> -->
 			</div>
 		</section>
-		<section
+		<component
+			v-for="i in tabs"
+			v-if="activeTab === i"
+			:is="`mod-card-${i}`"
+			:key="i"
+		/>
+		<!-- <section
 			v-if="activeTab === 'main'"
 			class="tw-background-c tw-relative"
 		>
@@ -73,13 +89,6 @@
 					<div class="tw-inline-block">
 						<button class="tw-button" data-a-target="usercard-whisper-button" data-test-selector="whisper-button">
 							<span class="tw-button__text" data-a-target="tw-button-text">Whisper</span>
-						</button>
-					</div>
-				</div>
-				<div class="tw-mg-r-05">
-					<div class="tw-inline-block">
-						<button class="tw-button" data-test-selector="gift-subscribe-button">
-							<span class="tw-button__text" data-a-target="tw-button-text">Gift Subscription</span>
 						</button>
 					</div>
 				</div>
@@ -132,7 +141,7 @@
 							@click="close"
 						>
 							<span class="tw-button-icon__icon">
-								<figure class="ffz-i-pin" />
+								<figure class="ffz-i-star" />
 							</span>
 						</button>
 					</div>
@@ -144,7 +153,7 @@
 			class="tw-background-c tw-relative"
 		>
 			<img src="https://thumbs.gfycat.com/IdealisticHighDassie-size_restricted.gif">
-		</section>
+		</section> -->
 	</div>
 </template>
 

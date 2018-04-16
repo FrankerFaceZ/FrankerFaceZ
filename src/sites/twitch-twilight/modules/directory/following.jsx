@@ -79,6 +79,11 @@ export default class Following extends SiteModule {
 			this.modifyLiveHosts(res);
 		}, false);
 
+		this.apollo.registerModifier('LatestVideosFromFollowedCarousel_CurrentUser', res => {
+			// this.log.info(res);
+			// res.data.currentUser.followedVideos.edges = [];
+		}, false);
+
 		this.on('settings:changed:directory.uptime', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-channel-avatars', () => this.ChannelCard.forceUpdate());
 		this.on('settings:changed:directory.show-boxart', () => this.ChannelCard.forceUpdate());
@@ -178,13 +183,20 @@ export default class Following extends SiteModule {
 
 		const bit = this.router.match[1];
 
-		if ( ! bit )
+		if ( ! bit ) {
 			this.apollo.ensureQuery(
 				'FollowedIndex_CurrentUser',
 				n =>
 					get('data.currentUser.followedLiveUsers.nodes.0.stream.createdAt', n) !== undefined ||
 					get('data.currentUser.followedHosts.nodes.0.hosting.stream.createdAt', n) !== undefined
 			);
+
+			this.apollo.ensureQuery(
+				'LatestVideosFromFollowedCarousel_CurrentUser',
+				n =>
+					get('data.currenUser.followedVideos.edges.0.node.id', n) !== undefined
+			);
+		}
 
 		else if ( bit === 'live' )
 			this.apollo.ensureQuery(

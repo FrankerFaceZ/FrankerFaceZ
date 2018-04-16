@@ -1,0 +1,11 @@
+mutation($targetUserID: ID!) {
+    blockUser(input: {
+        reason: "other",
+        sourceContext: "CHAT",
+        targetUserID: $targetUserID
+    }) {
+        targetUser {
+            id
+        }
+    }
+}

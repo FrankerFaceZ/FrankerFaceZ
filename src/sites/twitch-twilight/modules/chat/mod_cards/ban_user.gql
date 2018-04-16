@@ -1,0 +1,11 @@
+mutation($bannedUserLogin: String!, $channelID: ID!, $expiresIn: String!) {
+    banUserFromChatRoom(input: {
+        bannedUserLogin: $login,
+        channelID: $channelID,
+        expiresIn: $expiresIn
+    }) {
+        ban {
+            isPermanent
+        }
+    }
+}

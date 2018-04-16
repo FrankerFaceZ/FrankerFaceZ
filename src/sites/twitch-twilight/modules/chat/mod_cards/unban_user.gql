@@ -1,0 +1,10 @@
+mutation($bannedUserLogin: String!, $channelID: ID!) {
+    unbanUserFromChatRoom(input: {
+        bannedUserLogin: $login,
+        channelID: $channelID
+    }) {
+        ban {
+            isPermanent
+        }
+    }
+}

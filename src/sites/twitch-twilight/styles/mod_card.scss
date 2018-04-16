@@ -1,4 +1,7 @@
 .ffz-mod-card {
+	min-width: 320px;
+	z-index: 99999999;
+
     > header {
         background-size: cover;
         background-position: top;
