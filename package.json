@@ -51,6 +51,7 @@
   "dependencies": {
     "crypto-js": "^3.1.9-1",
     "displacejs": "^1.2.4",
+    "emoji-regex": "^6.5.1",
     "graphql": "^0.13.2",
     "graphql-tag": "^2.8.0",
     "js-cookie": "^2.2.0",

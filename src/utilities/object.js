@@ -235,6 +235,17 @@ export function split_chars(str) {
 }
 
 
+export function pick_random(obj) {
+	if ( ! obj )
+		return null;
+
+	if ( ! Array.isArray(obj) )
+		return obj[pick_random(Object.keys(obj))]
+
+	return obj[Math.floor(Math.random() * obj.length)];
+}
+
+
 export class SourcedSet {
 	constructor() {
 		this._cache = [];

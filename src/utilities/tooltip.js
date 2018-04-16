@@ -73,7 +73,7 @@ export class Tooltip {
 		} else if ( this.live ) {
 			this._onMouseOver = e => {
 				const target = e.target;
-				if ( target.classList.contains(this.cls) )
+				if ( target && target.classList && target.classList.contains(this.cls) )
 					this._enter(target);
 			};
 
@@ -296,8 +296,8 @@ export class Tooltip {
 
 
 		// Add everything to the DOM and create the Popper instance.
-		this.parent.appendChild(el);
 		tip.popper = new Popper(target, el, pop_opts);
+		this.parent.appendChild(el);
 		tip.visible = true;
 
 		if ( opts.onShow )

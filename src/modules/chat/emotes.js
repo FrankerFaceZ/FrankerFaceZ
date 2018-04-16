@@ -128,10 +128,13 @@ export default class Emotes extends Module {
 	updateFollowSets(data) {
 		for(const room_login in data)
 			if ( has(data, room_login) ) {
-				const room = this.parent.getRoom(null, room_login, true),
-					new_sets = data[room_login] || [],
+				const room = this.parent.getRoom(null, room_login, true);
+				if ( ! room || room.destroyed )
+					continue;
+
+				const new_sets = data[room_login] || [],
 					emote_sets = room.emote_sets,
-					providers = emote_sets._sources;
+					providers = emote_sets && emote_sets._sources;
 
 				if ( providers && providers.has('featured') )
 					for(const item of providers.get('featured')) {
@@ -246,6 +249,10 @@ export default class Emotes extends Module {
 
 				source = emote_set.source || 'ffz';
 				id = emote.id;
+
+			} else if ( provider === 'emoji' ) {
+				source = 'emoji';
+				id = ds.code;
 
 			} else
 				return;
@@ -467,6 +474,8 @@ export default class Emotes extends Module {
 
 		if ( data.users )
 			this.loadSetUsers(data.users);
+
+		return true;
 	}
 
 

@@ -389,6 +389,8 @@ export const CheerEmotes = {
 						token.hidden = true;
 					}
 
+					text.push('');
+
 				} else
 					text.push(segment);
 			}
@@ -437,7 +439,7 @@ export const AddonEmotes = {
 	render(token, createElement) {
 		const mods = token.modifiers || [], ml = mods.length,
 			emote = (<img
-				class={`${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : ''}`}
+				class={`${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
 				src={token.src}
 				srcSet={token.srcSet}
 				alt={token.text}
@@ -445,6 +447,8 @@ export const AddonEmotes = {
 				data-provider={token.provider}
 				data-id={token.id}
 				data-set={token.set}
+				data-code={token.code}
+				data-variant={token.variant}
 				data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
 				data-modifier-info={ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null}
 				onClick={this.emotes.handleClick}
@@ -461,7 +465,7 @@ export const AddonEmotes = {
 			onClick={this.emotes.handleClick}
 		>
 			{emote}
-			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render(t, createElement)}</span>)}
+			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement)}</span>)}
 		</span>);
 	},
 
@@ -470,7 +474,9 @@ export const AddonEmotes = {
 			provider = ds.provider,
 			modifiers = ds.modifierInfo;
 
-		let preview, source, owner, mods, fav_source, emote_id;
+		let name, preview, source, owner, mods, fav_source, emote_id,
+			plain_name = false,
+			hide_source = ds.noSource === 'true';
 
 		if ( modifiers && modifiers !== 'null' ) {
 			mods = JSON.parse(modifiers).map(([set_id, emote_id]) => {
@@ -479,7 +485,7 @@ export const AddonEmotes = {
 
 				if ( emote )
 					return (<span>
-						{this.tokenizers.emote.render(emote.token, createElement)}
+						{this.tokenizers.emote.render.call(this, emote.token, createElement)}
 						{` - ${emote.hidden ? '???' : emote.name}`}
 					</span>);
 			})
@@ -532,21 +538,42 @@ export const AddonEmotes = {
 					preview = emote.urls[2];
 			}
 
+		} else if ( provider === 'emoji' ) {
+			const emoji = this.emoji.emoji[ds.code],
+				style = this.context.get('chat.emoji.style'),
+				variant = ds.variant ? emoji.variants[ds.variant] : emoji,
+				vcode = ds.variant ? this.emoji.emoji[ds.variant] : null;
+
+			fav_source = 'emoji';
+			emote_id = ds.code;
+
+			preview = (<img
+				class="preview-image ffz-emoji"
+				src={this.emoji.getFullImage(variant.image, style)}
+				srcSet={this.emoji.getFullImageSet(variant.image, style)}
+				onLoad={tip.update}
+			/>);
+
+			plain_name = true;
+			name = `:${emoji.names[0]}:${vcode ? `:${vcode.names[0]}:` : ''}`;
+			source = this.i18n.t('tooltip.emoji', 'Emoji - %{category}', emoji);
+
 		} else
 			return;
 
-		const name = ds.name || target.alt,
-			favorite = fav_source && this.emotes.isFavorite(fav_source, emote_id),
-			hide_source = ds.noSource === 'true';
+		if ( ! name )
+			name = ds.name || target.alt;
+
+		const favorite = fav_source && this.emotes.isFavorite(fav_source, emote_id);
 
 		return [
-			preview && this.context.get('tooltip.emote-images') && (<img
+			preview && this.context.get('tooltip.emote-images') && (typeof preview === 'string' ? (<img
 				class="preview-image"
 				src={preview}
 				onLoad={tip.update}
-			/>),
+			/>) : preview),
 
-			(hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: %{code}', {code: ds.name || target.alt}),
+			plain_name || (hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: %{name}', {name}),
 
 			! hide_source && source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{source}
@@ -629,6 +656,80 @@ export const AddonEmotes = {
 
 			if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
 				out.push({type: 'text', text: text.join(' ')});
+		}
+
+		return out;
+	}
+}
+
+
+// ============================================================================
+// Emoji
+// ============================================================================
+
+export const Emoji = {
+	type: 'emoji',
+	priority: 15,
+
+	process(tokens) {
+		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		const splitter = this.emoji.splitter,
+			style = this.context.get('chat.emoji.style'),
+			out = [];
+
+		if ( style === 0 )
+			return tokens;
+
+		for(const token of tokens) {
+			if ( ! token )
+				continue;
+
+			if ( token.type !== 'text' ) {
+				out.push(token);
+				continue;
+			}
+
+			const text = token.text;
+
+			splitter.lastIndex = 0;
+			let idx = 0, match;
+
+			while((match = splitter.exec(text))) {
+				const start = match.index,
+					key = this.emoji.chars.get(match[0]);
+
+				if ( ! key )
+					continue;
+
+				const emoji = this.emoji.emoji[key[0]],
+					variant = key[1] ? emoji.variants[key[1]] : emoji,
+					length = split_chars(match[0]).length;
+
+				if ( idx !== start )
+					out.push({type: 'text', text: text.slice(idx, start)});
+
+				out.push({
+					type: 'emote',
+
+					provider: 'emoji',
+					code: key[0],
+					variant: key[1],
+
+					src: this.emoji.getFullImage(variant.image, style),
+					srcSet: this.emoji.getFullImageSet(variant.image, style),
+
+					text: match[0],
+					length,
+					modifiers: []
+				});
+
+				idx = start + match[0].length;
+			}
+
+			if ( idx < text.length )
+				out.push({type: 'text', text: text.slice(idx)});
 		}
 
 		return out;

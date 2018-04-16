@@ -56,7 +56,7 @@
 			</header>
 		</div>
 		<div
-			v-show="activeTab === 'settings'"
+			v-if="activeTab === 'settings'"
 			:class="{ active: activeTab === 'settings'}"
 			class="tab tw-overflow-hidden"
 		>
@@ -178,6 +178,7 @@
 					<span>{{ t('metadata.host.tab.auto-host', 'Auto Host') }}</span>
 				</div>
 				<div
+					v-if="autoHostSettings"
 					id="host-options__settings"
 					:class="{active: activeTab === 'settings'}"
 					class="host-options__tab tw-pd-x-1"

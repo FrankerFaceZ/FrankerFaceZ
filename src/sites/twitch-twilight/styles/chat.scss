@@ -40,6 +40,22 @@
     }
 }
 
+.ffz-emoji {
+    width: calc(var(--ffz-chat-font-size) * 1.5);
+    height: calc(var(--ffz-chat-font-size) * 1.5);
+
+    &.preview-image {
+        width: 7.2rem;
+        height: 7.2rem;
+    }
+
+    &.emote-autocomplete-provider__image {
+        width: 1.8rem;
+        height: 1.8rem;
+        margin: .5rem;
+    }
+}
+
 
 .ffz--emote-picker {
     section:not(.filtered) heading {
@@ -88,6 +104,10 @@
     .emote-picker__tab > *,
     .emote-picker__emote-link > * {
         pointer-events: none;
+    }
+
+    .emote-picker__emote-image {
+        max-height: 3.2rem
     }
 
     section:last-of-type {

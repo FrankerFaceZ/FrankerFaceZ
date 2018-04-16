@@ -1,4 +1,41 @@
-<div class="list-header">4.0.0-beta2.13<span>@64fec6b80d1f6a60c263</span> <time datetime="2018-04-12">(2018-04-12)</time></div>
+<div class="list-header">4.0.0-beta2.18.1<span>@988ba86433ce4bfd636d</span> <time datetime="2018-04-15">(2018-04-15)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Add another filter for what sort of error logs we don't want from Apollo.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.18<span>@c8636911fc387a9f5e0c</span> <time datetime="2018-04-15">(2018-04-15)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Debugging setting for localization to help test UI issues, identify strings, and find strings that aren't localized.</li>
+	<li>Fixed: Issue tokenizing cheers in messages.</li>
+	<li>Fixed: Clean up tab-completion of emoji a bit more.</li>
+	<li>Changed: Start using `crossorigin="anonymous"` when loading scripts from our CDN.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.17<span>@dce1b0c5268bdd3fe086</span> <time datetime="2018-04-13">(2018-04-13)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: An issue in automatic error reporting potentially swallowing errors when error reporting is disabled.</li>
+	<li>Fixed: An issue when receiving featured channels for a channel that is being destroyed.</li>
+	<li>Fixed: An issue rendering the auto-hosting menu when some data has failed to load.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.16<span>@9fac4d6cabd486c45f4e</span> <time datetime="2018-04-12">(2018-04-12)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Emote menu sections always starting as collapsed.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.15<span>@61e6d676fdac89cf0592</span> <time datetime="2018-04-12">(2018-04-12)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Emoji Rendering.</li>
+	<li>Added: Basic emoji tab-completion.</li>
+	<li>&nbsp;</li>
+	<li>Emoji aren't in the emote menu yet due to performance concerns. They'll get there. We just have to refactor the menu a bit.</li>
+	<li>Tab-completion also isn't great for emoji. We need to change how input handling works overall, but it isn't the priority yet.</li>
+	<li>&nbsp;</li>
+	<li>Fixed: Sometimes a tooltip hover method is called with no target.</li>
+	<li>Fixed: More junk logging from Apollo is stripped out.</li>
+</ul>
+
+<div class="list-header">4.0.0-beta2.14<span>@d66f702097d2c0295697</span> <time datetime="2018-04-12">(2018-04-12)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Issue sorting settings on Edge and Safari.</li>
 	<li>Fixed: Issue processing metadata on game pages when broadcasters aren't defined.</li>
