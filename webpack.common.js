@@ -27,7 +27,8 @@ module.exports = {
 	output: {
 		chunkFilename: '[name].[chunkhash].js',
 		path: path.resolve(__dirname, 'dist'),
-		jsonpFunction: 'ffzWebpackJsonp'
+		jsonpFunction: 'ffzWebpackJsonp',
+		crossOriginLoading: 'anonymous'
 	},
 	plugins: [
 		new webpack.ExtendedAPIPlugin()
