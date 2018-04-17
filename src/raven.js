@@ -12,6 +12,8 @@ import Module from 'utilities/module';
 
 import Raven from 'raven-js';
 
+const AVALON_REG = /\/(?:script|static)\/((?:babel\/)?avalon)(\.js)(\?|#|$)/;
+
 const BAD_URLS = [
 	'hls.ttvnw.net',
 	'trowel.twitch.tv',
@@ -193,6 +195,9 @@ export default class RavenLogger extends Module {
 					return false;
 				}
 
+				if ( data.exception && Array.isArray(data.exception.values) )
+					data.exception.values = this.rewriteStack(data.exception.values, data);
+
 				return true;
 			}
 		}).install();
@@ -200,6 +205,19 @@ export default class RavenLogger extends Module {
 
 	onEnable() {
 		this.log.info('Installed error tracking.');
+	}
+
+
+	rewriteStack(errors) { // eslint-disable-line class-methods-use-this
+		for(const err of errors) {
+			if ( ! err || ! err.stacktrace || ! err.stacktrace.frames )
+				continue;
+
+			for(const frame of err.stacktrace.frames)
+				frame.filename = frame.filename.replace(AVALON_REG, `/static/$1.${__webpack_hash__}$2$3`)
+		}
+
+		return errors;
 	}
 
 
