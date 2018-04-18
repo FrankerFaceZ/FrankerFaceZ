@@ -54,9 +54,10 @@
 </template>
 
 <script>
+import TabMixin from '../tab-mixin';
+
 export default {
-	data() {
-		return this.$vnode.data;
-	}
+	mixins: [TabMixin],
+	props: ['tab', 'user', 'room', 'currentUser']
 }
 </script>

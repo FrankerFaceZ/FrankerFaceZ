@@ -1,7 +1,7 @@
 <template>
 	<div class="ffz-mod-card tw-elevation-3 tw-c-background-alt tw-c-text tw-border tw-flex tw-flex-nowrap tw-flex-column">
 		<header
-			:style="`background-image: url('${userInfo.bannerImageURL}');`"
+			:style="`background-image: url('${user.bannerImageURL}');`"
 			class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-relative"
 		>
 			<div class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-pd-1" style="background-color: rgba(0,0,0,.6);">
@@ -9,7 +9,7 @@
 					<figure class="tw-avatar tw-avatar--size-50">
 						<div class="tw-overflow-hidden ">
 							<img 
-								:src="userInfo.profileImageURL"
+								:src="user.profileImageURL"
 								class="tw-image"
 							>
 						</div>
@@ -18,7 +18,7 @@
 				<div class="tw-inline-block">
 					<div class="viewer-card__display-name tw-ellipsis tw-align-items-center tw-mg-1">
 						<h4 class="tw-c-text-overlay ">
-							<a :href="`/${userInfo.login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">{{ userInfo.displayName }}</a>
+							<a :href="`/${user.login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">{{ user.displayName }}</a>
 						</h4>
 					</div>
 				</div>
@@ -40,14 +40,14 @@
 		<section class="tw-background-c">
 			<div class="mod-cards__tabs-container tw-border-t">
 				<div
-					v-for="tab in tabs"
-					:key="tab"
-					:id="`mod-cards__${tab}`"
-					:class="{active: activeTab === tab}"
+					v-for="(data, key) in tabs"
+					:key="key"
+					:id="`mod-cards__${key}`"
+					:class="{active: activeTab === key}"
 					class="mod-cards__tab tw-pd-x-1"
-					@click="setActiveTab(tab)"
+					@click="setActiveTab(key)"
 				>
-					<span>{{ tab }}</span>
+					<span>{{ data.label }}</span>
 				</div>
 				<!-- <div
 					id="mod-cards__main"
@@ -68,10 +68,16 @@
 			</div>
 		</section>
 		<component
-			v-for="i in tabs"
-			v-if="activeTab === i"
-			:is="`mod-card-${i}`"
-			:key="i"
+			v-for="(tab, key) in tabs"
+			v-if="tab.visible && activeTab === key"
+			:is="tab.component"
+			:tab="tab"
+			:user="user"
+			:room="room"
+			:current-user="currentUser"
+			:key="key"
+
+			@close="close"
 		/>
 		<!-- <section
 			v-if="activeTab === 'main'"

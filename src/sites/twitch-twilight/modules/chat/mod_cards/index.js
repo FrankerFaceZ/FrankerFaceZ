@@ -10,33 +10,47 @@ import {createElement} from 'utilities/dom';
 
 import GET_USER_INFO from './get_user_info.gql';
 
-import MainTab from './main';
-import MemesTab from './memes';
-import AlsoMemesTabTab from './also_memes';
-
 export default class ModCards extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.inject('site.apollo');
-		this.inject(MainTab);
-		this.inject(MemesTab);
-		this.inject(AlsoMemesTabTab);
 
 		this.open_mod_cards = {};
-		this.components = [];
+		this.tabs = {};
+
+		this.addTab('main', {
+			visible: () => true,
+
+			label: 'Main',
+			pill: 0,
+
+			data: (user, room) => ({
+				
+			}),
+			component: () => import('./components/main.vue')
+		});
 	}
 
-	addComponent(comp) {
-		if (this.components.some(_c => _c.id === comp.id)) return;
+	addTab(key, data) {
+		if (this.tabs[key]) return;
 
-		this.components.push(comp);
+		this.tabs[key] = data;
 	}
 
 	async openCustomModCard(t, user, e) {
 		t.usernameClickHandler(e);
+		this.log.info(t);
 		const posX = Math.min(window.innerWidth - 300, e.clientX),
-			posY = Math.min(window.innerHeight - 300, e.clientY);
+			posY = Math.min(window.innerHeight - 300, e.clientY),
+			room = {
+				id: t.props.channelID,
+				login: t.props.message.roomLogin
+			},
+			currentUser = {
+				isModerator: t.props.isCurrentUserModerator,
+				isStaff: t.props.isCurrentUserStaff
+			};
 
 		const vue = this.resolve('vue'),
 			_mod_card_vue = import(/* webpackChunkName: "mod-card" */ './mod-card.vue'),
@@ -47,20 +61,16 @@ export default class ModCards extends Module {
 				}
 			});
 
-		const [, mod_card_vue, user_info, ...comps] = await Promise.all([vue.enable(), _mod_card_vue, _user_info].concat(this.components.map(comp => comp.getComponent())));
-		this.log.info(comps);
+		const [, mod_card_vue, user_info] = await Promise.all([vue.enable(), _mod_card_vue, _user_info]);
 
 		vue.component('mod-card', mod_card_vue.default);
-		for (const component of comps) {
-			vue.component(`mod-card-${component.id}`, component.vue.default);
-		}
 
 		if (this.open_mod_cards[user.userLogin] && this.open_mod_cards[user.userLogin].remove) {
 			this.open_mod_cards[user.userLogin].remove();
 			this.open_mod_cards[user.userLogin] = null;
 		}
 
-		const mod_card = this.open_mod_cards[user.userLogin] = this.buildModCard(vue, user.userLogin, user_info.data.user);
+		const mod_card = this.open_mod_cards[user.userLogin] = this.buildModCard(vue, user_info.data.user, room, currentUser);
 
 		const main = document.querySelector('.twilight-root>.tw-full-height');
 		main.appendChild(mod_card);
@@ -69,23 +79,23 @@ export default class ModCards extends Module {
 		mod_card.style.top = `${posY}px`;
 	}
 
-	buildModCard(vue, userLogin, userInfo) { // eslint-disable-line
-		this.log.info(userInfo);
+	buildModCard(vue, user, room, currentUser) { // eslint-disable-line
+		this.log.info(user);
 		const vueEl = new vue.Vue({
 			el: createElement('div'),
 			render: h => {
-				const tabs = this.components.map(comp => comp.id);
-
 				const vueModCard = h('mod-card', {
-					activeTab: tabs[0],
-					tabs,
-					userInfo,
+					activeTab: Object.keys(this.tabs)[0],
+					tabs: this.tabs,
+					user,
+					room,
+					currentUser,
 
 					setActiveTab: tab => vueModCard.data.activeTab = tab,
 
 					close: () => {
-						this.open_mod_cards[userLogin].remove();
-						this.open_mod_cards[userLogin] = null;
+						this.open_mod_cards[user.login].remove();
+						this.open_mod_cards[user.login] = null;
 					},
 					block: () => {
 						this.log.info('memes');
