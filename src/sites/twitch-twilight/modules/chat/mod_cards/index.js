@@ -16,6 +16,7 @@ export default class ModCards extends Module {
 
 		this.inject('site.apollo');
 
+		this.lastZIndex = 9001;
 		this.open_mod_cards = {};
 		this.tabs = {};
 
@@ -30,6 +31,30 @@ export default class ModCards extends Module {
 			}),
 			component: () => import('./components/main.vue')
 		});
+
+		this.addTab('memes', {
+			visible: () => true,
+
+			label: 'Memes',
+			pill: 0,
+
+			data: (user, room) => ({
+				
+			}),
+			component: () => import('./components/memes.vue')
+		});
+
+		this.addTab('also_memes', {
+			visible: () => true,
+
+			label: 'Also Memes',
+			pill: 0,
+
+			data: (user, room) => ({
+				
+			}),
+			component: () => import('./components/also_memes.vue')
+		});
 	}
 
 	addTab(key, data) {
@@ -40,7 +65,7 @@ export default class ModCards extends Module {
 
 	async openCustomModCard(t, user, e) {
 		t.usernameClickHandler(e);
-		this.log.info(t);
+		this.log.info(t, user);
 		const posX = Math.min(window.innerWidth - 300, e.clientX),
 			posY = Math.min(window.innerHeight - 300, e.clientY),
 			room = {
@@ -51,6 +76,11 @@ export default class ModCards extends Module {
 				isModerator: t.props.isCurrentUserModerator,
 				isStaff: t.props.isCurrentUserStaff
 			};
+
+		if (this.open_mod_cards[user.userLogin]) {
+			this.open_mod_cards[user.userLogin].style.zIndex = ++this.lastZIndex;
+			return;
+		}
 
 		const vue = this.resolve('vue'),
 			_mod_card_vue = import(/* webpackChunkName: "mod-card" */ './mod-card.vue'),
@@ -64,11 +94,6 @@ export default class ModCards extends Module {
 		const [, mod_card_vue, user_info] = await Promise.all([vue.enable(), _mod_card_vue, _user_info]);
 
 		vue.component('mod-card', mod_card_vue.default);
-
-		if (this.open_mod_cards[user.userLogin] && this.open_mod_cards[user.userLogin].remove) {
-			this.open_mod_cards[user.userLogin].remove();
-			this.open_mod_cards[user.userLogin] = null;
-		}
 
 		const mod_card = this.open_mod_cards[user.userLogin] = this.buildModCard(vue, user_info.data.user, room, currentUser);
 
@@ -92,6 +117,10 @@ export default class ModCards extends Module {
 					currentUser,
 
 					setActiveTab: tab => vueModCard.data.activeTab = tab,
+
+					focus: el => {
+						el.style.zIndex = ++this.lastZIndex;
+					},
 
 					close: () => {
 						this.open_mod_cards[user.login].remove();
