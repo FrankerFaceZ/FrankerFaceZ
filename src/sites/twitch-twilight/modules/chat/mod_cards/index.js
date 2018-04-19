@@ -32,30 +32,6 @@ export default class ModCards extends Module {
 			}),
 			component: () => import('./components/main.vue')
 		});
-
-		this.addTab('memes', {
-			visible: () => true,
-
-			label: 'Memes',
-			pill: 0,
-
-			data: (user, room) => ({
-				
-			}),
-			component: () => import('./components/memes.vue')
-		});
-
-		this.addTab('also_memes', {
-			visible: () => true,
-
-			label: 'Also Memes',
-			pill: 0,
-
-			data: (user, room) => ({
-				
-			}),
-			component: () => import('./components/also_memes.vue')
-		});
 	}
 
 	addTab(key, data) {
