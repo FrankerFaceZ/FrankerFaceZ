@@ -8,7 +8,7 @@
 			:style="`background-image: url('${user.bannerImageURL}');`"
 			class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-relative"
 		>
-			<div class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-pd-1" style="background-color: rgba(0,0,0,.6);">
+			<div class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-pd-1 ffz--background-dimmer">
 				<div class="tw-inline-block">
 					<figure class="tw-avatar tw-avatar--size-50">
 						<div class="tw-overflow-hidden ">
@@ -19,11 +19,20 @@
 						</div>
 					</figure>
 				</div>
-				<div class="tw-inline-block">
-					<div class="tw-ellipsis tw-align-items-center tw-mg-1">
-						<h4 class="tw-c-text-overlay">
-							<a :href="`/${user.login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">{{ user.displayName }}</a>
+				<div class="tw-ellipsis tw-inline-block">
+					<div class="tw-align-items-center tw-mg-l-1 ffz--info-lines">
+						<h4>
+							<a :href="`/${user.login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">
+								{{ user.displayName }}
+							</a>
 						</h4>
+						<h5
+							v-if="user.displayName && user.displayName.toLowerCase() !== user.login.toLowerCase()"
+						>
+							<a :href="`/${user.login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">
+								{{ user.login }}
+							</a>
+						</h5>
 						<div>
 							<span class="tw-mg-r-05">
 								<figure class="ffz-i-info tw-inline"/>

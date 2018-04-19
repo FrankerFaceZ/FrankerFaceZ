@@ -1,5 +1,5 @@
 .ffz-mod-card {
-	min-width: 320px;
+	width: 340px;
 	z-index: 9001;
 
     > header {
@@ -7,13 +7,19 @@
         background-position: top;
     }
 
-    > section {
-        .ffz-tooltip {
-            > * {
-                pointer-events: none;
-            }
-        }
-    }
+	.ffz-tooltip {
+		> * {
+			pointer-events: none;
+		}
+	}
+	
+	.ffz--background-dimmer {
+		background-color: rgba(0, 0, 0, 0.8);
+	}
+
+	.ffz--info-lines > * {
+		line-height: 1.2;
+	}
 
     .mod-cards__tabs-container {
 		height: 3rem;
