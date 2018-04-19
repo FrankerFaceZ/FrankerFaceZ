@@ -10,8 +10,8 @@ import {has, deep_copy} from 'utilities/object';
 
 import {parse_path} from 'src/settings';
 
-const EXCLUSIVE_SELECTOR = '.twilight-main,.twilight-minimal-root>div',
-	MAXIMIZED_SELECTOR = '.twilight-main,.twilight-minimal-root',
+const EXCLUSIVE_SELECTOR = '.twilight-main,.twilight-minimal-root>div,.twilight-root>.tw-full-height',
+	MAXIMIZED_SELECTOR = '.twilight-main,.twilight-minimal-root,.twilight-root .dashboard-side-nav+.tw-full-height',
 	SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height';
 
 function format_term(term) {

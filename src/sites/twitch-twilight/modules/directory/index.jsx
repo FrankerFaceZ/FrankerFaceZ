@@ -224,7 +224,7 @@ export default class Directory extends SiteModule {
 		}
 
 		if ( inst.ffz_uptime_el ) {
-			inst.ffz_uptime_el.parentElement.removeChild(inst.ffz_uptime_el);
+			inst.ffz_uptime_el.remove();
 			inst.ffz_uptime_el = null;
 			inst.ffz_uptime_span = null;
 			inst.ffz_uptime_tt = null;

@@ -12,6 +12,10 @@ import Module from 'utilities/module';
 
 import Raven from 'raven-js';
 
+const AVALON_REG = /\/(?:script|static)\/((?:babel\/)?avalon)(\.js)(\?|#|$)/,
+	fix_url = url => url.replace(AVALON_REG, `/static/$1.${__webpack_hash__}$2$3`);
+
+
 const BAD_URLS = [
 	'hls.ttvnw.net',
 	'trowel.twitch.tv',
@@ -184,6 +188,12 @@ export default class RavenLogger extends Module {
 				data.extra = Object.assign(this.buildExtra(), data.extra);
 				data.tags = Object.assign(this.buildTags(), data.tags);
 
+				if ( data.exception && Array.isArray(data.exception.values) )
+					data.exception.values = this.rewriteStack(data.exception.values, data);
+
+				if ( data.culprit )
+					data.culprit = fix_url(data.culprit);
+
 				if ( data.tags.example ) {
 					if ( this.__example_waiter ) {
 						this.__example_waiter(data);
@@ -198,8 +208,22 @@ export default class RavenLogger extends Module {
 		}).install();
 	}
 
+
 	onEnable() {
 		this.log.info('Installed error tracking.');
+	}
+
+
+	rewriteStack(errors) { // eslint-disable-line class-methods-use-this
+		for(const err of errors) {
+			if ( ! err || ! err.stacktrace || ! err.stacktrace.frames )
+				continue;
+
+			for(const frame of err.stacktrace.frames)
+				frame.filename = fix_url(frame.filename);
+		}
+
+		return errors;
 	}
 
 

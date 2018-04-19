@@ -155,7 +155,9 @@ export class ManagedStyle {
 	delete(key) {
 		const block = this._blocks[key];
 		if ( block ) {
-			this._style.removeChild(block);
+			if ( this._style.contains(block) )
+				this._style.removeChild(block);
+
 			this._blocks[key] = null;
 		}
 	}
