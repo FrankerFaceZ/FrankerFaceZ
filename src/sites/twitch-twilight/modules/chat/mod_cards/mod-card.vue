@@ -20,10 +20,28 @@
 					</figure>
 				</div>
 				<div class="tw-inline-block">
-					<div class="viewer-card__display-name tw-ellipsis tw-align-items-center tw-mg-1">
-						<h4 class="tw-c-text-overlay ">
+					<div class="tw-ellipsis tw-align-items-center tw-mg-1">
+						<h4 class="tw-c-text-overlay">
 							<a :href="`/${user.login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">{{ user.displayName }}</a>
 						</h4>
+						<div>
+							<span class="tw-mg-r-05">
+								<figure class="ffz-i-info tw-inline"/>
+								{{ user.profileViewCount }}
+							</span>
+							<span class="tw-mg-r-05">
+								<figure class="ffz-i-heart tw-inline"/>
+								{{ user.followers.totalCount }}
+							</span>
+							<span
+								:data-title="rawUserAge"
+								data-tooltip-type="html"
+								class="ffz-tooltip"
+							>
+								<figure class="ffz-i-clock tw-inline"/>
+								{{ userAge }}
+							</span>
+						</div>
 					</div>
 				</div>
 				<div class="tw-flex-grow-1 tw-pd-x-2"/>

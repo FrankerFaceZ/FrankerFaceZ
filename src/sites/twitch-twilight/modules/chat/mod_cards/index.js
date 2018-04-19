@@ -15,6 +15,7 @@ export default class ModCards extends Module {
 		super(...args);
 
 		this.inject('site.apollo');
+		this.inject('i18n');
 
 		this.lastZIndex = 9001;
 		this.open_mod_cards = {};
@@ -64,8 +65,9 @@ export default class ModCards extends Module {
 	}
 
 	async openCustomModCard(t, user, e) {
-		t.usernameClickHandler(e);
-		this.log.info(t, user);
+		// Old mod-card
+		// t.usernameClickHandler(e);
+
 		const posX = Math.min(window.innerWidth - 300, e.clientX),
 			posY = Math.min(window.innerHeight - 300, e.clientY),
 			room = {
@@ -104,7 +106,7 @@ export default class ModCards extends Module {
 		mod_card.style.top = `${posY}px`;
 	}
 
-	buildModCard(vue, user, room, currentUser) { // eslint-disable-line
+	buildModCard(vue, user, room, currentUser) {
 		this.log.info(user);
 		const vueEl = new vue.Vue({
 			el: createElement('div'),
@@ -116,6 +118,9 @@ export default class ModCards extends Module {
 					room,
 					currentUser,
 
+					rawUserAge: this.i18n.toLocaleString(new Date(user.createdAt)),
+					userAge: this.i18n.toHumanTime((new Date() - new Date(user.createdAt)) / 1000),
+
 					setActiveTab: tab => vueModCard.data.activeTab = tab,
 
 					focus: el => {
@@ -125,9 +130,6 @@ export default class ModCards extends Module {
 					close: () => {
 						this.open_mod_cards[user.login].remove();
 						this.open_mod_cards[user.login] = null;
-					},
-					block: () => {
-						this.log.info('memes');
 					}
 				});
 				return vueModCard;
