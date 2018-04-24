@@ -640,7 +640,7 @@ export default class Emotes extends Module {
 		let output = '';
 		if ( emote.modifier && (emote.modifier_offset || emote.margins || emote.extra_width || emote.shrink_to_fit) ) {
 			let margins = emote.modifier_offset || emote.margins || '0';
-			margins = margins.split(/\s+/).map(x => parseInt(x, 10));
+			margins = margins.split(/[\s\n]+/).map(x => parseInt(x, 10));
 			if ( margins.length === 3 )
 				margins.push(margins[1]);
 

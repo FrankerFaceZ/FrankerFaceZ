@@ -342,7 +342,7 @@ export const CheerEmotes = {
 			}
 
 			let text = [];
-			for(const segment of token.text.split(/ +/)) {
+			for(const segment of token.text.split(/[\s\n]+/)) {
 				const match = matcher.exec(segment);
 				if ( match ) {
 					const prefix = match[1].toLowerCase(),
@@ -622,7 +622,7 @@ export const AddonEmotes = {
 
 			let text = [];
 
-			for(const segment of token.text.split(/ +/)) {
+			for(const segment of token.text.split(/[\s\n]+/)) {
 				if ( has(emotes, segment) ) {
 					emote = emotes[segment];
 

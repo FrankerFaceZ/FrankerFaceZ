@@ -822,7 +822,7 @@ export function findEmotes(msg, emotes) {
 	const out = {};
 	let idx = 0;
 
-	for(const part of msg.split(' ')) {
+	for(const part of msg.split(/[\s\n]/)) {
 		const len = split_chars(part).length;
 
 		if ( has(emotes, part) ) {
