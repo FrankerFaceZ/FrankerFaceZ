@@ -1,3 +1,20 @@
+<div class="list-header">4.0.0-rc1<span>@a1a7fb774d62948bacc5</span> <time datetime="2018-04-28">(2018-04-28)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Custom In-Line Chat Actions</li>
+	<li>Added: Option to disable Channel Hosting.</li>
+	<li>Changed: Minor refactoring of how we wrap incoming chat events, since Twitch is now filtering by chat room themselves for most events.</li>
+	<li>Fixed: Grab chat types from React correctly.</li>
+	<li>Fixed: Emoji appearing squashed in chat when using the baseline emote alignment option.</li>
+	<li>Fixed: Strip new lines from outgoing chat messages to ensure we process them correctly, locally.</li>
+	<li>Fixed: Display arrows on balloons for channel metadata.</li>
+	<li>Fixed: Validate the requested emoji style when getting image URLs.</li>
+	<li>Fixed: Do not use default values for settings with merge strategies if profiles are present and empty.</li>
+	<li>Fixed: Display a message in the chat settings menu if we tried opening FFZ settings in a pop-up and failed.</li>
+	<li>Fixed: Wait a bit for webpack's loader to be found if it is not immediately present in window.</li>
+	<li>Fixed: Forcibly close the chat room picker when first loading a channel.</li>
+	<li>Fixed: Vertically align FFZ icon for emote menu with bits icon.</li>
+</ul>
+
 <div class="list-header">4.0.0-beta2.18.2<span>@a1a7fb774d62948bacc5</span> <time datetime="2018-04-16">(2018-04-16)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Rewrite stacktraces for automatic error reporting to use the permanent URL for the current FrankerFaceZ build.</li>

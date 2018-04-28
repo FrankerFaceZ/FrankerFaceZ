@@ -5,59 +5,52 @@ body {
 .ffz-metadata-balloon {
 	z-index: 999999999 !important;
 	margin: 6px;
+}
 
+
+.tw-balloon {
 	&[x-placement^="bottom"] > .tw-balloon__tail {
-		top: -3px;
-		box-shadow: -1px -1px 0 #dad8de;
+		bottom: 100%;
 
-		.tw-theme--dark & {
-			box-shadow: -1px -1px 0 #2c2541;
-		}
-
-		.tw-theme--ffz & {
-			box-shadow: -1px -1px 0 var(--ffz-color-20);
+		.tw-balloon__tail-symbol {
+			top: auto;
+			bottom: -8px;
+			left: 8px;
 		}
 	}
 
 	&[x-placement^="top"] > .tw-balloon__tail {
-		bottom: -3px;
-		box-shadow: 1px 1px 0 #dad8de;
+		top: 100%;
 
-		.tw-theme--dark & {
-			box-shadow: 1px 1px 0 #2c2541;
-		}
-
-		.tw-theme--ffz & {
-			box-shadow: 1px 1px 0 var(--ffz-color-20);
+		.tw-balloon__tail-symbol {
+			top: auto;
+			bottom: 8px;
+			left: 8px;
 		}
 	}
 
 	&[x-placement^="right"] > .tw-balloon__tail {
-		left: -3px;
-		box-shadow: -1px 1px 0 #dad8de;
+		right: 100%;
 
-		.tw-theme--dark & {
-			box-shadow: -1px 1px 0 #2c2541;
-		}
-
-		.tw-theme--ffz & {
-			box-shadow: -1px 1px 0 var(--ffz-color-20);
+		.tw-balloon__tail-symbol {
+			left: auto;
+			right: -8px;
+			top: 8px;
 		}
 	}
 
 	&[x-placement^="left"] > .tw-balloon__tail {
-		right: -3px;
-		box-shadow: 1px -1px 0 #dad8de;
+		left: 100%;
 
-		.tw-theme--dark & {
-			box-shadow: 1px -1px 0 #2c2541;
-		}
-
-		.tw-theme--ffz & {
-			box-shadow: 1px -1px 0 var(--ffz-color-20);
+		.tw-balloon__tail-symbol {
+			left: auto;
+			right: 8px;
+			top: 8px;
 		}
 	}
 }
+
+
 
 .ffz-metadata-balloon,
 .ffz__tooltip {

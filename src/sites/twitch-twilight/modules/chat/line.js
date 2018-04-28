@@ -6,7 +6,6 @@
 
 import Twilight from 'site';
 import Module from 'utilities/module';
-//import {Color} from 'utilities/color';
 
 import RichContent from './rich_content';
 
@@ -23,9 +22,12 @@ export default class ChatLine extends Module {
 		this.inject('settings');
 		this.inject('i18n');
 		this.inject('chat');
+		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject(RichContent);
+
+		this.inject('chat.actions');
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
@@ -49,6 +51,7 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
+		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 
 		const t = this,
 			React = this.web_munch.getModule('react');
@@ -77,7 +80,7 @@ export default class ChatLine extends Module {
 			}
 
 			cls.prototype.render = function() {
-				const types = t.parent.chat_types || {},
+				const types = t.parent.message_types || {},
 
 					msg = this.props.message,
 					is_action = msg.messageType === types.Action;
@@ -98,21 +101,23 @@ export default class ChatLine extends Module {
 
 				const user = msg.user,
 					color = t.parent.colors.process(user.color),
-					/*bg_rgb = Color.RGBA.fromHex(user.color),
-					bg_color = bg_rgb.luminance() < .005 ? bg_rgb : bg_rgb.toHSLA().targetLuminance(0.005).toRGBA(),
-					bg_css = bg_color.toCSS(),*/
-					room = msg.channel ? msg.channel.slice(1) : undefined,
+					bg_css = null, //Math.random() > .7 ? t.parent.inverse_colors.process(user.color) : null,
+					room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
 
 					show = this._ffz_show = this.state.alwaysShowMessage || ! this.props.message.deleted;
 
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
 
-				const u = {
-						login: this.props.currentUserLogin,
-						display: this.props.currentUserDisplayName
-					},
-					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
+				const u = t.site.getUser(),
+					r = {id: this.props.channelID, login: room};
+
+				if ( u ) {
+					u.moderator = this.props.isCurrentUserModerator;
+					u.staff = this.props.isCurrentUserStaff;
+				}
+
+				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
 				let cls = 'chat-line__message',
@@ -120,7 +125,7 @@ export default class ChatLine extends Module {
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'
 						}, t.chat.formatTime(msg.timestamp)),
-						this.renderModerationIcons(),
+						t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
 						e('span', {
 							className: 'chat-line__message--badges'
 						}, t.chat.badges.render(msg, e)),
@@ -225,6 +230,7 @@ export default class ChatLine extends Module {
 
 				return e('div', {
 					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}`,
+					style: {backgroundColor: bg_css},
 					'data-room-id': this.props.channelID,
 					'data-room': room,
 					'data-user-id': user.userID,

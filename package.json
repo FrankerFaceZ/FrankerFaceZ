@@ -61,6 +61,7 @@
     "sortablejs": "^1.7.0",
     "vue": "^2.5.16",
     "vue-clickaway": "^2.1.0",
+    "vue-color": "^2.4.6",
     "vue-template-compiler": "^2.5.16",
     "vuedraggable": "^2.16.0"
   }

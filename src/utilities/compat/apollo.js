@@ -15,6 +15,7 @@ const BAD_ERRORS = [
 	'error internal',
 	'context deadline exceeded',
 	'unexpected service response',
+	'service unavailable',
 	'404',
 	'500',
 	'501',

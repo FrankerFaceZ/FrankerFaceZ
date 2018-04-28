@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {SiteModule} from 'utilities/module';
-import {createElement, setChildren} from 'utilities/dom';
+import {createElement} from 'utilities/dom';
 
 export default class MenuButton extends SiteModule {
 	constructor(...args) {

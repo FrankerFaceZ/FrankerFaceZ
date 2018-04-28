@@ -206,7 +206,7 @@ export const Mentions = {
 		let regex, login, display;
 		if ( user && user.login ) {
 			login = user.login.toLowerCase();
-			display = user.display && user.display.toLowerCase();
+			display = user.displayName && user.displayName.toLowerCase();
 			if ( display === login )
 				display = null;
 

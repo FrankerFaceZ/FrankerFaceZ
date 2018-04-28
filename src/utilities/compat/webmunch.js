@@ -123,13 +123,21 @@ export default class WebMunch extends Module {
 	// Grabbing Require
 	// ========================================================================
 
-	getRequire() {
+	getRequire(limit = 0) {
 		if ( this._require )
 			return Promise.resolve(this._require);
 
 		return new Promise(resolve => {
+			const fn = this._original_loader || window.webpackJsonp;
+			if ( ! fn ) {
+				if ( limit > 100 )
+					throw new Error('unable to find webpackJsonp');
+
+				return setTimeout(() => this.getRequire(limit++).then(resolve), 100);
+			}
+
 			const id = `${this._id}$${this._rid++}`;
-			(this._original_loader || window.webpackJsonp)(
+			fn(
 				[],
 				{
 					[id]: (module, exports, __webpack_require__) => {

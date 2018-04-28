@@ -7,7 +7,7 @@
 // ============================================================================
 
 import {SERVER} from 'utilities/constants';
-import {pick_random, has} from 'utilities/object';
+import {get, pick_random, has} from 'utilities/object';
 import Module from 'utilities/module';
 
 
@@ -519,10 +519,10 @@ export function transformPhrase(phrase, substitutions, locale, token_regex, form
 
 	if ( typeof result === 'string' )
 		result = REPLACE.call(result, token_regex, (expr, arg, fmt) => {
-			if ( ! has(options, arg) )
+			let val = get(arg, options);
+			if ( val == null )
 				return '';
 
-			let val = options[arg];
 			const formatter = formatters[fmt];
 			if ( typeof formatter === 'function' )
 				val = formatter(val, locale, options);

@@ -91,14 +91,25 @@ export function createElement(tag, props, ...children) {
 	return el;
 }
 
-export function setChildren(el, children, no_sanitize) {
+export function setChildren(el, children, no_sanitize, no_empty) {
 	if ( typeof children === 'string' ) {
-		if ( no_sanitize )
-			el.innerHTML = children;
-		else
-			el.textContent = children;
+		if ( no_empty ) {
+			el.appendChild(no_sanitize ?
+				range.createContextualFragment(children) :
+				document.createTextNode(children)
+			)
+
+		} else {
+			if ( no_sanitize )
+				el.innerHTML = children;
+			else
+				el.textContent = children;
+		}
 
 	} else if ( Array.isArray(children) ) {
+		if ( ! no_empty )
+			el.innerHTML = '';
+
 		for(const child of children)
 			if ( typeof child === 'string' )
 				el.appendChild(no_sanitize ?
@@ -106,11 +117,18 @@ export function setChildren(el, children, no_sanitize) {
 					document.createTextNode(child)
 				);
 
+			else if ( Array.isArray(child) )
+				setChildren(el, child, no_sanitize, true);
+
 			else if ( child )
 				el.appendChild(child);
 
-	} else if ( children )
+	} else if ( children ) {
+		if ( ! no_empty )
+			el.innerHTML = '';
+
 		el.appendChild(children);
+	}
 }
 
 

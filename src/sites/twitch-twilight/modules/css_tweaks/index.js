@@ -53,6 +53,17 @@ export default class CSSTweaks extends Module {
 
 		// Layout
 
+		/*this.settings.add('layout.portrait', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Enable Portrait Mode',
+				description: 'In Portrait Mode, chat will be displayed beneath the player when the window is taller than it is wide.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('portrait', val)
+		});*/
+
 		this.settings.add('layout.side-nav.show', {
 			default: true,
 			ui: {
@@ -194,6 +205,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('swap-sidebars', this.settings.get('layout.swap-sidebars'));
 		this.toggle('minimal-navigation', this.settings.get('layout.minimal-navigation'));
 		this.toggle('theatre-nav', this.settings.get('layout.theatre-navigation'));
+		//this.toggle('portrait', this.settings.get('layout.portrait'));
 
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));

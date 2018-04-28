@@ -33,7 +33,7 @@ export const object_merge = {
 				values.unshift(val);
 			}
 
-		if ( values.length )
+		if ( sources.length )
 			return [
 				Object.assign({}, ...values),
 				sources
@@ -57,6 +57,8 @@ export const array_merge = {
 			trailing = [],
 			sources = [];
 
+		let had_value = false;
+
 		for(const profile of profiles)
 			if ( profile.has(key) ) {
 				const value = profile.get(key);
@@ -68,6 +70,7 @@ export const array_merge = {
 				sources.push(profile.id);
 				let is_trailing = false;
 				for(const val of value) {
+					had_value = true;
 					if ( val.t === 'inherit' )
 						is_trailing = true;
 					else if ( is_trailing )
@@ -81,7 +84,7 @@ export const array_merge = {
 					break;
 			}
 
-		if ( values.length || trailing.length )
+		if ( had_value )
 			return [
 				values.concat(trailing),
 				sources

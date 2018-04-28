@@ -1,25 +1,25 @@
 <template lang="html">
 	<div class="ffz--experiments tw-pd-t-05">
 		<div class="tw-pd-b-1 tw-mg-b-1 tw-border-b">
-			{{ t('settings.experiments.about', 'This feature allows you to override experiment values. Please note that, for most experiments, you may have to refresh the page for your changes to take effect.') }}
+			{{ t('setting.experiments.about', 'This feature allows you to override experiment values. Please note that, for most experiments, you may have to refresh the page for your changes to take effect.') }}
 		</div>
 
 		<div class="tw-mg-b-2 tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1">
-				{{ t('settings.experiments.unique-id', 'Unique ID: %{id}', {id: unique_id}) }}
+				{{ t('setting.experiments.unique-id', 'Unique ID: %{id}', {id: unique_id}) }}
 			</div>
 			<select
 				ref="sort_select"
 				class="tw-mg-x-05 tw-select tw-display-line tw-width-auto"
 				@change="onSort"
 			>
-				<option :selected="sort_by === 0">{{ t('settings.experiments.sort-name', 'Sort By: Name') }}</option>
-				<option :selected="sort_by === 1">{{ t('settings.experiments.sort-rarity', 'Sort By: Rarity') }}</option>
+				<option :selected="sort_by === 0">{{ t('setting.experiments.sort-name', 'Sort By: Name') }}</option>
+				<option :selected="sort_by === 1">{{ t('setting.experiments.sort-rarity', 'Sort By: Rarity') }}</option>
 			</select>
 		</div>
 
 		<h3 class="tw-mg-b-1">
-			{{ t('settings.experiments.ffz', 'FrankerFaceZ Experiments') }}
+			{{ t('setting.experiments.ffz', 'FrankerFaceZ Experiments') }}
 		</h3>
 
 		<div class="ffz--experiment-list">
@@ -48,7 +48,7 @@
 								:key="idx"
 								:selected="i.value === exp.value"
 							>
-								{{ t('settings.experiments.entry', '%{value} (weight: %{weight})', i) }}
+								{{ t('setting.experiments.entry', '%{value} (weight: %{weight})', i) }}
 							</option>
 						</select>
 
@@ -67,12 +67,12 @@
 				</div>
 			</section>
 			<div v-if="! Object.keys(ffz_data).length">
-				{{ t('settings.experiments.none', 'There are no current experiments.') }}
+				{{ t('setting.experiments.none', 'There are no current experiments.') }}
 			</div>
 		</div>
 
 		<h3 class="tw-mg-t-5 tw-mg-b-1">
-			{{ t('settings.experiments.twitch', 'Twitch Experiments') }}
+			{{ t('setting.experiments.twitch', 'Twitch Experiments') }}
 		</h3>
 
 		<div class="ffz--experiment-list">
@@ -115,7 +115,7 @@
 								v-if="exp.in_use === false"
 								:selected="exp.default"
 							>
-								{{ t('settings.experiments.unset', 'unset') }}
+								{{ t('setting.experiments.unset', 'unset') }}
 							</option>
 							<option
 								v-for="(i, idx) in exp.groups"
@@ -141,7 +141,7 @@
 				</div>
 			</section>
 			<div v-if="! Object.keys(twitch_data).length">
-				{{ t('settings.experiments.none', 'There are no current experiments.') }}
+				{{ t('setting.experiments.none', 'There are no current experiments.') }}
 			</div>
 		</div>
 	</div>

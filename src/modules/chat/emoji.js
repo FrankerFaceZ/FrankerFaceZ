@@ -6,6 +6,7 @@
 
 import Module from 'utilities/module';
 import {SERVER} from 'utilities/constants';
+import {has} from 'utilities/object';
 
 import splitter from 'emoji-regex/es2015/index';
 
@@ -140,7 +141,7 @@ export default class Emoji extends Module {
 		if ( ! style )
 			style = this.parent.context.get('chat.emoji.style');
 
-		if ( style === 0 )
+		if ( ! has(SIZES, style) )
 			style = 'twitter';
 
 		return `${SERVER}/static/emoji/img-${style}-${SIZES[style][0]}/${image}`;
@@ -150,7 +151,7 @@ export default class Emoji extends Module {
 		if ( ! style )
 			style = this.parent.context.get('chat.emoji.style');
 
-		if ( style === 0 )
+		if ( ! has(SIZES, style) )
 			style = 'twitter';
 
 		return SIZES[style].map(w =>
