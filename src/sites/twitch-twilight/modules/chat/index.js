@@ -519,14 +519,14 @@ export default class ChatHook extends Module {
 		const controller = this.ChatController.first,
 			service = controller && controller.chatService;
 
-		if ( ! service )
+		if ( ! service || ! room )
 			return null;
 
 		if ( room.startsWith('#') )
 			room = room.slice(1);
 
 		if ( room.toLowerCase() !== service.channelLogin.toLowerCase() )
-			return null;
+			return service.client.sendCommand(room, message);
 
 		service.sendMessage(message);
 	}

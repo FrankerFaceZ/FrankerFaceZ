@@ -16,7 +16,8 @@
 			class="ffz-color-preview tw-absolute tw-top-0 tw-bottom-0 tw-right-0 tw-border-l tw-z-default"
 			@click="togglePicker"
 		>
-			<figure v-if="color" :style="`background-color: ${color}`" />
+			<figure v-if="! valid" class="ffz-i-attention tw-c-text-alert" />
+			<figure v-else-if="color" :style="`background-color: ${color}`" />
 			<figure v-else class="ffz-i-eyedropper" />
 		</button>
 		<div v-on-clickaway="closePicker" v-if="open" class="tw-absolute tw-z-default tw-right-0">
@@ -44,19 +45,30 @@ export default {
 		default: {
 			type: String,
 			default: '#000'
+		},
+		validate: {
+			type: Boolean,
+			default: true
 		}
 	},
 
 	data() {
 		return {
 			color: '',
+			valid: false,
 			open: false
 		}
 	},
 
 	computed: {
 		colors() {
-			return Color.RGBA.fromCSS(this.color || this.default)
+			try {
+				return Color.RGBA.fromCSS(this.color || this.default)
+			} catch(err) {
+				return {
+					hex: this.default
+				}
+			}
 		}
 	},
 
@@ -68,6 +80,7 @@ export default {
 
 	mounted() {
 		this.color = this.value;
+		this._validate();
 	},
 
 	methods: {
@@ -93,12 +106,32 @@ export default {
 				this.color = `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
 			}
 
-			if ( old_val !== this.color )
+			if ( old_val !== this.color ) {
+				this._validate();
+				this.emit();
+			}
+		},
+
+		_validate() {
+			this.valid = true;
+			if ( ! this.color || ! this.color.length || ! this.validate )
+				return;
+
+			try {
+				Color.RGBA.fromCSS(this.color);
+			} catch(err) {
+				this.valid = false;
+			}
+		},
+
+		emit() {
+			if ( this.valid )
 				this.$emit('input', this.color);
 		},
 
 		onChange() {
-			this.$emit('input', this.color);
+			this._validate();
+			this.emit();
 		}
 	}
 }

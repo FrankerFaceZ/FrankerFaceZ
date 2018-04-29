@@ -166,7 +166,7 @@ export default class Actions extends Module {
 	renderInline(msg, mod_icons, current_user, current_room, createElement) {
 		const actions = [];
 
-		if ( msg.user && current_user.login === msg.user.userLogin )
+		if ( msg.user && current_user && current_user.login === msg.user.userLogin )
 			return;
 
 		const chat = this.resolve('site.chat');
@@ -182,8 +182,8 @@ export default class Actions extends Module {
 
 			if ( ! def || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== mod_icons) ||
-				(disp.mod != null && disp.mod !== current_user.moderator) ||
-				(disp.staff != null && disp.staff !== current_user.staff) ||
+				(disp.mod != null && disp.mod !== (current_user ? current_user.moderator : false)) ||
+				(disp.staff != null && disp.staff !== (current_user ? current_user.staff : false)) ||
 				(disp.deleted != null && disp.deleted !== msg.deleted) )
 				continue;
 

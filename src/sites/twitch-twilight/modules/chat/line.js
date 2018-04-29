@@ -102,9 +102,15 @@ export default class ChatLine extends Module {
 				const user = msg.user,
 					color = t.parent.colors.process(user.color),
 					bg_css = null, //Math.random() > .7 ? t.parent.inverse_colors.process(user.color) : null,
-					room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
-
 					show = this._ffz_show = this.state.alwaysShowMessage || ! this.props.message.deleted;
+
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
+
+				if ( ! room && this.props.channelID ) {
+					const r = t.chat.getRoom(this.props.channelID, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
 
 				if ( ! msg.message && msg.messageParts )
 					detokenizeMessage(msg);
