@@ -17,6 +17,8 @@ import User from './user';
 import * as TOKENIZERS from './tokenizers';
 import * as RICH_PROVIDERS from './rich_providers';
 
+import Actions from './actions';
+
 
 export default class Chat extends Module {
 	constructor(...args) {
@@ -33,6 +35,7 @@ export default class Chat extends Module {
 		this.inject(Badges);
 		this.inject(Emotes);
 		this.inject(Emoji);
+		this.inject(Actions);
 
 		this._link_info = {};
 

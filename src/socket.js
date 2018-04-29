@@ -190,6 +190,11 @@ export default class SocketClient extends Module {
 		}
 
 		ws.onopen = () => {
+			if ( this._socket !== ws ) {
+				this.log.warn('A socket connected that is not our primary socket.');
+				return ws.close();
+			}
+
 			this._state = State.CONNECTED;
 			this._sent_user = false;
 
@@ -249,11 +254,17 @@ export default class SocketClient extends Module {
 		}
 
 		ws.onerror = () => {
+			if ( ws !== this._socket )
+				return;
+
 			if ( ! this._offline_time )
 				this._offline_time = Date.now();
 		}
 
 		ws.onclose = event => {
+			if ( ws !== this._socket )
+				return;
+
 			const old_state = this._state;
 			this.log.info(`Disconnected. (${event.code}:${event.reason})`);
 
@@ -290,6 +301,9 @@ export default class SocketClient extends Module {
 
 
 		ws.onmessage = event => {
+			if ( ws !== this._socket )
+				return;
+
 			// Format:
 			//    -1 <cmd_name>[ <json_data>]
 			//    <reply-id> <ok/err>[ <json_data>]

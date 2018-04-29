@@ -12,6 +12,7 @@ import FineRouter from 'utilities/compat/fine-router';
 import Apollo from 'utilities/compat/apollo';
 
 import {createElement} from 'utilities/dom';
+import {has} from 'utilities/object';
 
 import MAIN_URL from 'site/styles/main.scss';
 
@@ -59,7 +60,8 @@ export default class Twilight extends BaseSite {
 		document.head.appendChild(createElement('link', {
 			href: MAIN_URL,
 			rel: 'stylesheet',
-			type: 'text/css'
+			type: 'text/css',
+			crossOrigin: 'anonymouse'
 		}));
 
 		// Check for ?ffz-settings in page and open the
@@ -93,8 +95,11 @@ export default class Twilight extends BaseSite {
 	}
 
 	getUser() {
+		if ( this._user )
+			return this._user;
+
 		const session = this.getSession();
-		return session && session.user;
+		return this._user = session && session.user;
 	}
 
 	getCore() {
@@ -119,7 +124,7 @@ Twilight.KNOWN_MODULES = {
 	'core-2': n => n.p && n.p.experiments,
 	cookie: n => n && n.set && n.get && n.getJSON && n.withConverter,
 	'extension-service': n => n.extensionService,
-	'chat-types': n => n.a && n.a.PostWithMention,
+	'chat-types': n => n.b && has(n.b, 'Message') && has(n.b, 'RoomMods'),
 	'gql-printer': n => n !== window && n.print
 }
 

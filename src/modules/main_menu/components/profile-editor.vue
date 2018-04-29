@@ -7,7 +7,7 @@
 				@click="save"
 			>
 				<span class="tw-button__text ffz-i-floppy">
-					{{ t('settings.profiles.save', 'Save') }}
+					{{ t('setting.save', 'Save') }}
 				</span>
 			</button>
 			<button
@@ -17,24 +17,24 @@
 				@click="del"
 			>
 				<span class="tw-button__text ffz-i-trash">
-					{{ t('setting.profiles.delete', 'Delete') }}
+					{{ t('setting.delete', 'Delete') }}
 				</span>
 			</button>
 			<!--button class="tw-mg-l-1 tw-button tw-button--text">
 				<span class="tw-button__text ffz-i-download">
-					{{ t('setting.profiles.export', 'Export') }}
+					{{ t('setting.export', 'Export') }}
 				</span>
 			</button-->
 		</div>
 
 		<div class="ffz--menu-container tw-border-t">
 			<header>
-				{{ t('settings.data_management.profiles.edit.general', 'General') }}
+				{{ t('setting.data_management.profiles.edit.general', 'General') }}
 			</header>
 
 			<div class="ffz--widget tw-flex tw-flex-nowrap">
 				<label for="ffz:editor:name">
-					{{ t('settings.data_management.profiles.edit.name', 'Name') }}
+					{{ t('setting.data_management.profiles.edit.name', 'Name') }}
 				</label>
 
 				<input
@@ -47,7 +47,7 @@
 
 			<div class="ffz--widget tw-flex tw-flex-nowrap">
 				<label for="ffz:editor:description">
-					{{ t('settings.data_management.profiles.edit.desc', 'Description') }}
+					{{ t('setting.data_management.profiles.edit.desc', 'Description') }}
 				</label>
 
 				<textarea
@@ -61,10 +61,10 @@
 
 		<div class="ffz--menu-container tw-border-t">
 			<header>
-				{{ t('settings.data_management.profiles.edit.rules', 'Rules') }}
+				{{ t('setting.data_management.profiles.edit.rules', 'Rules') }}
 			</header>
 			<section class="tw-pd-b-1">
-				{{ t('settings.data_management.profiles.edit.rules.description',
+				{{ t('setting.data_management.profiles.edit.rules.description',
 					'Rules allows you to define a series of conditions under which this profile will be active.')
 				}}
 			</section>
@@ -144,7 +144,7 @@ export default {
 		del() {
 			if ( this.item.profile || this.unsaved ) {
 				if ( ! confirm(this.t( // eslint-disable-line no-alert
-					'settings.profiles.warn-delete',
+					'setting.profiles.warn-delete',
 					'Are you sure you wish to delete this profile? It cannot be undone.'
 				)) )
 					return
@@ -192,7 +192,7 @@ export default {
 			if ( this.unsaved )
 				return confirm( // eslint-disable-line no-alert
 					this.t(
-						'settings.warn-unsaved',
+						'setting.warn-unsaved',
 						'You have unsaved changes. Are you sure you want to leave the editor?'
 					));
 		}

@@ -57,6 +57,55 @@
 }
 
 
+.ffz-mod-icon {
+    text-align: center;
+    display: inline-flex;
+
+    & + .ffz-mod-icon {
+        margin-left: 1px;
+    }
+
+    span, img, figure {
+        pointer-events: none;
+    }
+
+    span, img,
+    figure:before {
+        margin: 0 0.05rem !important
+    }
+
+    span {
+        display: inline-block;
+        min-width: 1.6rem;
+        font-weight: bold;
+    }
+
+    .mod-icon__image img {
+        max-height: 1.6rem;
+    }
+
+    &.colored,
+    .mod-icon__image img {
+        opacity: 0.75;
+    }
+
+    .ffz--action &,
+    .tw-interactable:hover &,
+    &:hover {
+        .tw-theme--dark &, & {
+            &.tw-c-text-alt-2 {
+                color: inherit !important;
+            }
+        }
+
+        &.colored,
+        .mod-icon__image img {
+            opacity: 1;
+        }
+    }
+}
+
+
 .ffz--emote-picker {
     section:not(.filtered) heading {
         cursor: pointer;
