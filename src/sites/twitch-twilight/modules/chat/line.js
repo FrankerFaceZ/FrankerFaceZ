@@ -25,6 +25,7 @@ export default class ChatLine extends Module {
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
+		this.inject('site.apollo');
 		this.inject(RichContent);
 
 		this.inject('chat.actions');
@@ -138,7 +139,7 @@ export default class ChatLine extends Module {
 						e('a', {
 							className: 'chat-author__display-name notranslate',
 							style: { color },
-							onClick: this.usernameClickHandler
+							onClick: t.parent.mod_cards.openCustomModCard.bind(t.parent.mod_cards, this, user)
 						}, [
 							user.userDisplayName,
 							user.isIntl && e('span', {

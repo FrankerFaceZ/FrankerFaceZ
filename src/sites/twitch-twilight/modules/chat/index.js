@@ -17,6 +17,7 @@ import ChatLine from './line';
 import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import TabCompletion from './tab_completion';
+import ModCards from './mod_cards';
 
 
 const MESSAGE_TYPES = ((e = {}) => {
@@ -119,6 +120,8 @@ export default class ChatHook extends Module {
 		this.inject(SettingsMenu);
 		this.inject(EmoteMenu);
 		this.inject(TabCompletion);
+		
+		this.inject(ModCards);
 
 
 		this.ChatController = this.fine.define(

@@ -1,0 +1,25 @@
+query($userLogin: String) {
+    user(login: $userLogin) {
+        bannerImageURL
+        displayName
+        id
+        login
+        profileImageURL(width: 50)
+        createdAt
+        followers {
+            totalCount
+        }
+        profileViewCount
+        self {
+            friendship {
+                ... on FriendEdge {
+                    node {
+                        displayName
+                        id
+                        login
+                    }
+                }
+            }
+        }
+    }
+}
