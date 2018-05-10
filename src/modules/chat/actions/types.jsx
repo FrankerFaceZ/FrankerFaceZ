@@ -24,7 +24,7 @@ export const open_url = {
 		url: 'https://link.example/{{user.login}}'
 	},
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './edit-url.vue'),
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-url.vue'),
 
 	title: 'Open URL',
 	description: '%{options.url}',
@@ -71,7 +71,7 @@ export const chat = {
 	title: 'Chat Command',
 	description: '%{options.command}',
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './edit-chat.vue'),
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-chat.vue'),
 
 	process(data) {
 		return transformPhrase(
@@ -121,7 +121,7 @@ export const ban = {
 		}
 	}],
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './edit-ban.vue'),
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-ban.vue'),
 
 	title: 'Ban User',
 
@@ -152,7 +152,7 @@ export const timeout = {
 		duration: 600
 	},
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './edit-timeout.vue'),
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-timeout.vue'),
 
 	title: 'Timeout User',
 	description: '%{options.duration} second%{options.duration|en_plural}',

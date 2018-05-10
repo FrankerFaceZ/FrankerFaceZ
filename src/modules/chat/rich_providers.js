@@ -27,7 +27,7 @@ export const Clips = {
 		const match = CLIP_URL.exec(token.url),
 			apollo = this.resolve('site.apollo');
 
-		if ( ! apollo || ! match )
+		if ( ! apollo || ! match || match[1] === 'create' )
 			return;
 
 		return {

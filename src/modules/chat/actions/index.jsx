@@ -181,10 +181,10 @@ export default class Actions extends Module {
 				def = this.renderers[ap.type];
 
 			if ( ! def || disp.disabled ||
-				(disp.mod_icons != null && disp.mod_icons !== mod_icons) ||
-				(disp.mod != null && disp.mod !== (current_user ? current_user.moderator : false)) ||
-				(disp.staff != null && disp.staff !== (current_user ? current_user.staff : false)) ||
-				(disp.deleted != null && disp.deleted !== msg.deleted) )
+				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
+				(disp.mod != null && disp.mod !== (current_user ? !!current_user.moderator : false)) ||
+				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
+				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 				continue;
 
 			const has_color = def.colored && ap.color,

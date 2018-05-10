@@ -4,7 +4,7 @@
 // Tooltip Handling
 // ============================================================================
 
-import {createElement} from 'utilities/dom';
+import {createElement, sanitize} from 'utilities/dom';
 import {has, maybe_call} from 'utilities/object';
 
 import Tooltip from 'utilities/tooltip';
@@ -31,6 +31,7 @@ export default class TooltipProvider extends Module {
 			]
 		}
 
+		this.types.text = target => sanitize(target.dataset.title);
 		this.types.html = target => target.dataset.title;
 	}
 
@@ -56,6 +57,12 @@ export default class TooltipProvider extends Module {
 				}
 			}
 		});
+
+		this.on(':cleanup', this.cleanup);
+	}
+
+	cleanup() {
+		this.tips.cleanup();
 	}
 
 	checkDelayShow(target, tip) {
@@ -89,7 +96,7 @@ export default class TooltipProvider extends Module {
 	}
 
 	process(target, tip) {
-		const type = target.dataset.tooltipType,
+		const type = target.dataset.tooltipType || 'text',
 			handler = this.types[type];
 
 		if ( ! handler )

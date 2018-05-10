@@ -184,6 +184,15 @@ export default class Player extends Module {
 			}
 		});
 
+		this.settings.add('player.hide-mouse', {
+			default: true,
+			ui: {
+				path: 'Channel > Player >> General',
+				title: "Hide mouse when controls aren't visible.",
+				component: 'setting-check-box'
+			},
+			changed: val => this.css_tweaks.toggle('player-hide-mouse', val)
+		});
 	}
 
 	updateHideExtensions(val) {
@@ -199,6 +208,7 @@ export default class Player extends Module {
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
 		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
+		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
 		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
 		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 		this.updateHideExtensions();
@@ -257,6 +267,7 @@ export default class Player extends Module {
 	process(inst) {
 		this.addResetButton(inst);
 		this.addEndedListener(inst);
+		this.addStateTags(inst);
 		this.addControlVisibility(inst);
 		this.updateVolumeScroll(inst);
 	}
@@ -297,6 +308,17 @@ export default class Player extends Module {
 			}
 
 			inst._ffz_autoplay_handler = null;
+		}
+
+		if ( inst._ffz_on_state ) {
+			if ( p ) {
+				off(p, 'ended', inst._ffz_on_state);
+				off(p, 'pause', inst._ffz_on_state);
+				off(p, 'playing', inst._ffz_on_state);
+				off(p, 'error', inst._ffz_on_state);
+			}
+
+			inst._ffz_on_state = null;
 		}
 	}
 
@@ -344,6 +366,40 @@ export default class Player extends Module {
 
 		on(p, 'mousemove', f);
 		on(p, 'mouseleave', f);
+	}
+
+
+	addStateTags(inst) {
+		const p = inst.player;
+		if ( ! p )
+			return;
+
+		if ( inst._ffz_on_state ) {
+			off(p, 'ended', inst._ffz_on_state);
+			off(p, 'pause', inst._ffz_on_state);
+			off(p, 'playing', inst._ffz_on_state);
+			off(p, 'error', inst._ffz_on_state);
+		}
+
+		const f = inst._ffz_on_state = () => this.updateStateTags(inst);
+
+		on(p, 'ended', f);
+		on(p, 'pause', f);
+		on(p, 'playing', f);
+		on(p, 'error', f);
+
+		f();
+	}
+
+
+	updateStateTags(inst) { // eslint-disable-line class-methods-use-this
+		const p = inst.playerRef,
+			player = inst.player;
+		if ( ! p || ! player )
+			return;
+
+		p.dataset.ended = player.ended;
+		p.dataset.paused = player.paused;
 	}
 
 

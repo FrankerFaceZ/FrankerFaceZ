@@ -1,3 +1,17 @@
+<div class="list-header">4.0.0-rc1.5<span>@eb1433f63b4667bf9010</span> <time datetime="2018-05-10">(2018-05-10)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Option to hide the mouse cursor over the player. This does not work consistently in some web browser due to browser policies preventing the cursor from being hidden in certain situations.</li>
+	<li>Added: Option to not automatically join raids.</li>
+	<li>Fixed: In-line Actions not rendering when Is Moderator is set to False and the user is not a moderator.</li>
+	<li>Fixed: In-line Actions not appearing correctly in the editor preview line.</li>
+	<li>Fixed: Adapt to changes Twitch has made to pre-tokenized chat message data.</li>
+	<li>Fixed: Do not try showing a rich clip preview for the bad link <code>https://clips.twitch.tv/create</code> that is commonly erroneously posted in chat.</li>
+	<li>Fixed: Tooltips not closing in some situations.</li>
+	<li>Fixed: Chat message types sometimes not being detected, causing messages with <code>/me</code> to not appear correctly.</li>
+	<li>Changed: Improve emote menu performance using functional components.</li>
+	<li>Changed: Stop logging GraphQL errors. Twitch's GraphQL endpoint breaks too often for this to be useful.</li>
+</ul>
+
 <div class="list-header">4.0.0-rc1.4<span>@2009dc29d6bd5e122bd6</span> <time datetime="2018-04-29">(2018-04-29)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Issue with mod actions not working properly on AutoMod messages due to a missing channel mapping.</li>

@@ -404,10 +404,10 @@ export default {
 			if ( disp.mod != null && disp.mod !== this.is_moderator )
 				return false;
 
-			if ( disp.mod_icons != null && disp.mod !== this.with_mod_icons )
+			if ( disp.mod_icons != null && disp.mod_icons !== this.with_mod_icons )
 				return false;
 
-			if ( disp.staff != null && disp.mod !== this.is_staff )
+			if ( disp.staff != null && disp.staff !== this.is_staff )
 				return false;
 
 			if ( disp.deleted != null && disp.deleted !== this.is_deleted )

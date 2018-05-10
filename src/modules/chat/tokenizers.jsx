@@ -25,6 +25,8 @@ export const Links = {
 	type: 'link',
 	priority: 50,
 
+	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-link.vue'),
+
 	render(token, createElement) {
 		return (<a
 			class="ffz-tooltip"
@@ -193,6 +195,8 @@ export const Mentions = {
 	type: 'mention',
 	priority: 0,
 
+	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-mention.vue'),
+
 	render(token, createElement) {
 		return (<strong class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}>
 			{token.text}
@@ -263,6 +267,8 @@ export const Mentions = {
 export const CheerEmotes = {
 	type: 'cheer',
 	priority: 40,
+
+	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-cheer.vue'),
 
 	render(token, createElement) {
 		return (<span
@@ -432,9 +438,49 @@ export const CheerEmotes = {
 // Addon Emotes
 // ============================================================================
 
+const render_emote = (token, createElement) => {
+	const mods = token.modifiers || [], ml = mods.length,
+		emote = createElement('img', {
+			class: `${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
+			attrs: {
+				src: token.src,
+				srcSet: token.srcSet,
+				alt: token.text,
+				'data-tooltip-type': 'emote',
+				'data-provider': token.provider,
+				'data-id': token.id,
+				'data-set': token.set,
+				'data-code': token.code,
+				'data-variant': token.variant,
+				'data-modifiers': ml ? mods.map(x => x.id).join(' ') : null,
+				'data-modifier-info': ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null
+			}
+		});
+
+	if ( ! ml )
+		return emote;
+
+	return createElement('span', {
+		class: `${EMOTE_CLASS} modified-emote`,
+		attrs: {
+			'data-provider': token.provider,
+			'data-id': token.id,
+			'data-set': token.set
+		}
+	}, [emote, mods.map(x => createElement('span', {key: x.text}, render_emote(x, createElement)))])
+}
+
+
 export const AddonEmotes = {
 	type: 'emote',
 	priority: 10,
+
+	component: {
+		functional: true,
+		render(createElement, {props}) {
+			return render_emote(props.token, createElement);
+		}
+	},
 
 	render(token, createElement) {
 		const mods = token.modifiers || [], ml = mods.length,

@@ -156,6 +156,8 @@ Twilight.ROUTES = {
 	'dir-game-index': '/directory/game/:gameName',
 	'dir-all': '/directory/all/:filter?',
 	'dir-category': '/directory/:category?',
+	'dash': '/:userName/dashboard',
+	'dash-automod': '/:userName/dashboard/settings/automod',
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',
 	'video': '/videos/:videoID',

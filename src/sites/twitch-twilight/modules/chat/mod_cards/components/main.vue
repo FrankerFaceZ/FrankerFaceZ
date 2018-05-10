@@ -1,6 +1,6 @@
 <template>
 	<section class="tw-background-c tw-relative">
-		<div class="tw-c-background  tw-full-width tw-flex tw-flex-row tw-pd-r-05 tw-pd-l-1 tw-pd-y-1">
+		<div class="tw-background-c tw-full-width tw-flex tw-flex-row tw-pd-r-05 tw-pd-l-1 tw-pd-y-1">
 			<div class="tw-mg-r-05">
 				<div class="tw-inline-block">
 					<button class="tw-button">

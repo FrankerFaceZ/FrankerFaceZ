@@ -16,6 +16,8 @@ export default class Channel extends Module {
 		this.inject('settings');
 		this.inject('site.fine');
 
+		this.left_raids = new Set;
+
 		this.settings.add('channel.hosting.enable', {
 			default: true,
 			ui: {
@@ -26,9 +28,26 @@ export default class Channel extends Module {
 			changed: val => this.updateChannelHosting(val)
 		});
 
+
+		this.settings.add('channel.raids.no-autojoin', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> Raids',
+				title: 'Do not automatically join raids.',
+				component: 'setting-check-box'
+			}
+		});
+
+
 		this.ChannelPage = this.fine.define(
 			'channel-page',
 			n => n.handleHostingChange,
+			['user']
+		);
+
+		this.RaidController = this.fine.define(
+			'raid-controller',
+			n => n.handleLeaveRaid && n.handleJoinRaid,
 			['user']
 		);
 	}
@@ -36,11 +55,46 @@ export default class Channel extends Module {
 
 	onEnable() {
 		this.ChannelPage.on('mount', this.wrapChannelPage, this);
+		this.RaidController.on('mount', this.noAutoRaids, this);
+		this.RaidController.on('update', this.noAutoRaids, this);
+
+		this.RaidController.ready((cls, instances) => {
+			for(const inst of instances)
+				this.noAutoRaids(inst);
+		});
+
+		this.ChannelPage.on('update', inst => {
+			if ( this.settings.get('channel.hosting.enable') || ! inst.state.isHosting )
+				return;
+
+			// We can't do this immediately because the player state
+			// occasionally screws up if we do.
+			setTimeout(() => {
+				inst.ffzExpectedHost = inst.state.videoPlayerSource;
+				inst.ffzOldHostHandler(null);
+			});
+		});
 
 		this.ChannelPage.ready((cls, instances) => {
 			for(const inst of instances)
 				this.wrapChannelPage(inst);
 		});
+	}
+
+
+	noAutoRaids(inst) {
+		if ( this.settings.get('channel.raids.no-autojoin') )
+			setTimeout(() => {
+				if ( inst.state.raid && inst.hasJoinedCurrentRaid ) {
+					const id = inst.state.raid.id;
+					if ( this.left_raids.has(id) )
+						return;
+
+					this.log.info('Automatically leaving raid:', id);
+					this.left_raids.add(id);
+					inst.handleLeaveRaid();
+				}
+			});
 	}
 
 

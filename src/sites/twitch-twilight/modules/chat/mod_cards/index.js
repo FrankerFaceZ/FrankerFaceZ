@@ -6,6 +6,7 @@
 
 import Module from 'utilities/module';
 
+import {has} from 'utilities/object';
 import {createElement} from 'utilities/dom';
 
 import GET_USER_INFO from './get_user_info.gql';
@@ -14,104 +15,162 @@ export default class ModCards extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.inject('site.apollo');
 		this.inject('i18n');
+		this.inject('settings');
+		this.inject('site.apollo');
 
-		this.lastZIndex = 9001;
-		this.open_mod_cards = {};
 		this.tabs = {};
 
+		this.last_z = 9000;
+		this.open_cards = {};
+		this.unpinned_card = null;
+
 		this.addTab('main', {
-			visible: () => true,
+			visible: true,
 
 			label: 'Main',
-			pill: 0,
+			pill: 3,
 
-			data: (user, room) => ({
-				
-			}),
-			component: () => import('./components/main.vue')
+			component: () => import(/* webpackChunkName: 'viewer-cards' */ './components/main.vue')
+		});
+
+		this.addTab('stats', {
+			label: 'Stats',
+			component: () => import(/* webpackChunkName: 'viewer-cards' */ './components/stats.vue')
+		});
+
+		this.addTab('name-history', {
+			label: 'Name History',
+			component: () => import(/* webpackChunkName: 'viewer-cards' */ './components/name-history.vue')
 		});
 	}
 
 	addTab(key, data) {
-		if (this.tabs[key]) return;
+		if ( this.tabs[key] )
+			return this.log.warn(`Attempted to re-define known tab "${key}"`);
 
 		this.tabs[key] = data;
 	}
 
-	async openCustomModCard(t, user, e) {
-		// Old mod-card
-		// t.usernameClickHandler(e);
 
-		const posX = Math.min(window.innerWidth - 300, e.clientX),
-			posY = Math.min(window.innerHeight - 300, e.clientY),
-			room = {
-				id: t.props.channelID,
-				login: t.props.message.roomLogin
-			},
-			currentUser = {
-				isModerator: t.props.isCurrentUserModerator,
-				isStaff: t.props.isCurrentUserStaff
+	onEnable() {
+		this.vue = this.resolve('vue');
+	}
+
+
+	async loadVue() {
+		if ( this._vue_loaded )
+			return;
+
+		const [, card_component] = await Promise.all([
+			this.vue.enable(),
+			import(/* webpackChunkName: 'viewer-cards' */ './card.vue')
+		]);
+
+		this.vue.component('viewer-card', card_component.default);
+		this._vue_loaded = true;
+	}
+
+
+	async openCard(room, user, event) {
+		if ( user.userLogin && ! user.login )
+			user = {
+				login: user.userLogin,
+				id: user.userID,
+				displayName: user.userDisplayName,
 			};
 
-		if (this.open_mod_cards[user.userLogin]) {
-			this.open_mod_cards[user.userLogin].style.zIndex = ++this.lastZIndex;
+		const old_card = this.open_cards[user.login];
+		if ( old_card ) {
+			old_card.$el.style.zIndex = ++this.last_z;
+			old_card.focus();
 			return;
 		}
 
-		const vue = this.resolve('vue'),
-			_mod_card_vue = import(/* webpackChunkName: "mod-card" */ './mod-card.vue'),
-			_user_info = this.apollo.client.query({
-				query: GET_USER_INFO,
-				variables: {
-					userLogin: user.userLogin
-				}
-			});
+		let pos_x = event ? event.clientX : window.innerWidth / 2,
+			pos_y = event ? event.clientY + 15 : window.innerHeight / 2;
 
-		const [, mod_card_vue, user_info] = await Promise.all([vue.enable(), _mod_card_vue, _user_info]);
+		if ( this.unpinned_card ) {
+			const card = this.unpinned_card;
 
-		vue.component('mod-card', mod_card_vue.default);
+			pos_x = card.$el.offsetLeft;
+			pos_y = card.$el.offsetTop;
 
-		const mod_card = this.open_mod_cards[user.userLogin] = this.buildModCard(vue, user_info.data.user, room, currentUser);
+			card.close();
+		}
 
-		const main = document.querySelector('.twilight-root>.tw-full-height');
-		main.appendChild(mod_card);
-
-		mod_card.style.left = `${posX}px`;
-		mod_card.style.top = `${posY}px`;
-	}
-
-	buildModCard(vue, user, room, currentUser) {
-		this.log.info(user);
-		const vueEl = new vue.Vue({
-			el: createElement('div'),
-			render: h => {
-				const vueModCard = h('mod-card', {
-					activeTab: Object.keys(this.tabs)[0],
-					tabs: this.tabs,
-					user,
-					room,
-					currentUser,
-
-					rawUserAge: this.i18n.toLocaleString(new Date(user.createdAt)),
-					userAge: this.i18n.toHumanTime((new Date() - new Date(user.createdAt)) / 1000),
-
-					setActiveTab: tab => vueModCard.data.activeTab = tab,
-
-					focus: el => {
-						el.style.zIndex = ++this.lastZIndex;
-					},
-
-					close: () => {
-						this.open_mod_cards[user.login].remove();
-						this.open_mod_cards[user.login] = null;
-					}
-				});
-				return vueModCard;
+		// We start this first...
+		const user_info = this.apollo.client.query({
+			query: GET_USER_INFO,
+			variables: {
+				targetLogin: user.login,
+				channelID: room.id
 			}
 		});
 
-		return vueEl.$el;
+		// But we only wait on loading Vue, since we can show a loading indicator.
+		await this.loadVue();
+
+		// Display the card.
+		this.unpinned_card = this.open_cards[user.login] = this.buildCard(
+			room,
+			user,
+			user_info,
+			pos_x,
+			pos_y,
+		);
+	}
+
+
+	buildCard(room, user, data, pos_x, pos_y) {
+		let child;
+		const component = new this.vue.Vue({
+			el: createElement('div'),
+			render: h => h('viewer-card', {
+				props: {
+					tabs: this.tabs,
+					room,
+					raw_user: user,
+					data,
+
+					getFFZ: () => this,
+					getZ: () => ++this.last_z
+				},
+
+				on: {
+					close: () => {
+						const el = component.$el;
+						el.remove();
+						component.$destroy();
+
+						if ( this.unpinned_card === child )
+							this.unpinned_card = null;
+
+						if ( this.open_cards[user.login] === child )
+							this.open_cards[user.login] = null;
+
+						this.emit('tooltips:cleanup');
+					},
+
+					pin: () => {
+						if ( this.unpinned_card === child )
+							this.unpinned_card = null;
+					}
+				}
+			})
+		});
+
+		child = component.$children[0];
+
+		const el = component.$el;
+		el.style.top = `${pos_y}px`;
+		el.style.left = `${pos_x}px`
+
+		const container = document.querySelector('.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height');
+		container.appendChild(el);
+
+		requestAnimationFrame(() => child.constrain());
+
+		return child;
 	}
 }

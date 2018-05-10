@@ -28,6 +28,8 @@ export default class ChatLine extends Module {
 		this.inject('site.apollo');
 		this.inject(RichContent);
 
+		this.inject('site.chat.mod_cards');
+
 		this.inject('chat.actions');
 
 		this.ChatLine = this.fine.define(
@@ -127,6 +129,9 @@ export default class ChatLine extends Module {
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
+				if ( ! this.ffz_user_click_handler )
+					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.mod_cards.openCard(r, user, event);
+
 				let cls = 'chat-line__message',
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
@@ -139,7 +144,7 @@ export default class ChatLine extends Module {
 						e('a', {
 							className: 'chat-author__display-name notranslate',
 							style: { color },
-							onClick: t.parent.mod_cards.openCustomModCard.bind(t.parent.mod_cards, this, user)
+							onClick: this.usernameClickHandler, // this.ffz_user_click_handler
 						}, [
 							user.userDisplayName,
 							user.isIntl && e('span', {
@@ -274,46 +279,47 @@ export function detokenizeMessage(msg) {
 
 	for(let i=0; i < l; i++) {
 		const part = parts[i],
-			type = part.type,
 			content = part.content;
 
-		if ( type === 0 )
+		if ( ! content )
+			continue;
+
+		if ( typeof content === 'string' )
 			ret = content;
 
-		else if ( type === 1 )
+		else if ( content.recipient )
 			ret = `@${content.recipient}`;
 
-		else if ( type === 2 )
-			ret = content.displayText;
+		else if ( content.url )
+			ret = content.url;
 
-		else if ( type === 3 ) {
-			if ( content.cheerAmount ) {
-				ret = `${content.alt}${content.cheerAmount}`;
+		else if ( content.cheerAmount )
+			ret = `${content.alt}${content.cheerAmount}`;
 
-			} else {
-				const url = (content.images.themed ? content.images.dark : content.images.sources)['1x'],
-					match = /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url),
-					id = match && match[1];
+		else if ( content.images ) {
+			const url = (content.images.themed ? content.images.dark : content.images.sources),
+				match = url && /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']),
+				id = match && match[1];
 
-				ret = content.alt;
+			ret = content.alt;
 
-				if ( id ) {
-					const em = emotes[id] = emotes[id] || [],
-						offset = last_type > 0 ? 1 : 0;
-					em.push({startIndex: idx + offset, endIndex: idx + ret.length - 1});
-				}
+			if ( id ) {
+				const em = emotes[id] = emotes[id] || [],
+					offset = last_type > 0 ? 1 : 0;
+
+				em.push({startIndex: idx + offset, endIndex: idx + ret.length - 1});
 			}
 
 			if ( last_type > 0 )
 				ret = ` ${ret}`;
 
-		} else if ( type === 4 )
-			ret = `https://clips.twitch.tv/${content.slug}`;
+		} else
+			continue;
 
 		if ( ret ) {
 			idx += ret.length;
-			last_type = type;
-			out.push(ret);
+			last_type = part.type;
+			out.push(ret)
 		}
 	}
 

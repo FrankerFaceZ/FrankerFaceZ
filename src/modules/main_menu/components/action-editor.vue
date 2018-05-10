@@ -178,6 +178,18 @@
 					</span>
 				</button>
 			</template>
+			<template v-else-if="deleting">
+				<button class="tw-button tw-button--text" @click="$emit('remove', action)">
+					<span class="tw-button__text ffz-i-trash">
+						{{ t('setting.delete', 'Delete') }}
+					</span>
+				</button>
+				<button class="tw-button tw-button--text" @click="deleting = false">
+					<span class="tw-button__text ffz-i-cancel">
+						{{ t('setting.cancel', 'Cancel') }}
+					</span>
+				</button>
+			</template>
 			<template v-else>
 				<button
 					v-if="canEdit"
@@ -188,7 +200,7 @@
 						{{ t('setting.edit', 'Edit') }}
 					</span>
 				</button>
-				<button class="tw-button tw-button--text" @click="$emit('remove', action)">
+				<button class="tw-button tw-button--text" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash">
 						{{ t('setting.delete', 'Delete') }}
 					</span>
@@ -207,6 +219,7 @@ export default {
 
 	data() {
 		return {
+			deleting: false,
 			editing: false,
 			edit_data: null
 		}
@@ -292,9 +305,8 @@ export default {
 			if ( ! this.display || ! this.display.appearance )
 				return;
 
-			const disp = this.display.display, out = [];
-			if ( ! disp )
-				return this.t('setting.actions.visible.always', 'always');
+			const disp = this.display.display || {},
+				out = [];
 
 			if ( disp.disable )
 				return this.t('setting.actions.visible.never', 'never');
@@ -322,6 +334,9 @@ export default {
 
 			else if ( disp.deleted === false )
 				out.push(this.t('setting.actions.visible.undeleted', 'if message not deleted'));
+
+			if ( ! out.length )
+				return this.t('setting.actions.visible.always', 'always');
 
 			return out.join(', ');
 		}

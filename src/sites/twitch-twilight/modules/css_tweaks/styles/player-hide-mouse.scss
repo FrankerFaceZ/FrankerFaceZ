@@ -1,0 +1,3 @@
+.player:hover:not([data-controls="true"]):not([data-paused="true"]):not([data-ended="true"]) {
+	cursor: none;
+}

@@ -10,3 +10,8 @@
 	75% { transform: rotateY(0deg) rotateX(0deg) }
 	100% { transform: rotateY(90deg) rotateX(0deg) }
 }
+
+
+.ffz-i-zreknarf.loading {
+	animation: ffz-rotateplane 1.2s infinite linear;
+}

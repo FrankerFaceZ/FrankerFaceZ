@@ -1,25 +1,50 @@
-query($userLogin: String) {
-    user(login: $userLogin) {
-        bannerImageURL
-        displayName
+query FFZ_ViewerCard($targetLogin: String!, $channelID: ID!) {
+    targetUser: user(login: $targetLogin) {
         id
         login
-        profileImageURL(width: 50)
+        displayName
+        bannerImageURL
+        profileImageURL(width: 70)
         createdAt
+        profileViewCount
         followers {
             totalCount
         }
-        profileViewCount
-        self {
-            friendship {
-                ... on FriendEdge {
-                    node {
-                        displayName
-                        id
-                        login
-                    }
-                }
+        ...friendButtonFragment
+    }
+    channelUser: user(id: $channelID) {
+        id
+        login
+        displayName
+        subscriptionProducts {
+            id
+            price
+            url
+            emoteSetID
+            emotes {
+                id
             }
+        }
+        self {
+            isModerator
+        }
+    }
+    currentUser {
+        id
+        login
+        roles {
+            isSiteAdmin
+            isStaff
+            isGlobalMod
+        }
+    }
+}
+
+fragment friendButtonFragment on User {
+    id
+    self {
+        friendship {
+            __typename
         }
     }
 }

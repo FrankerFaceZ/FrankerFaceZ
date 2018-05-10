@@ -125,7 +125,8 @@ export default class Apollo extends Module {
 					try {
 						out.subscribe({
 							next: result => {
-								if ( result.errors ) {
+								// Logging GQL errors is garbage. Don't do it.
+								/*if ( result.errors ) {
 									const name = operation.operationName;
 									if ( name && (name.includes('FFZ') || has(this.modifiers, name) || has(this.post_modifiers, name)) ) {
 										for(const err of result.errors) {
@@ -142,7 +143,7 @@ export default class Apollo extends Module {
 											});
 										}
 									}
-								}
+								}*/
 
 								this.log.crumb({
 									level: 'info',

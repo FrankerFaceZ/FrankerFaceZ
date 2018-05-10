@@ -4,7 +4,7 @@
 // Chat Hooks
 // ============================================================================
 
-import {ColorAdjuster, Color} from 'utilities/color';
+import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
 
@@ -120,7 +120,7 @@ export default class ChatHook extends Module {
 		this.inject(SettingsMenu);
 		this.inject(EmoteMenu);
 		this.inject(TabCompletion);
-		
+
 		this.inject(ModCards);
 
 
@@ -334,12 +334,11 @@ export default class ChatHook extends Module {
 
 	grabTypes() {
 		const ct = this.web_munch.getModule('chat-types');
-		if ( ct ) {
-			this.automod_types = ct && ct.a || AUTOMOD_TYPES;
-			this.chat_types = ct && ct.b || CHAT_TYPES;
-			this.message_types = ct && ct.c || MESSAGE_TYPES;
-			this.mod_types = ct && ct.e || MOD_TYPES;
-		}
+
+		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
+		this.chat_types = ct && ct.b || CHAT_TYPES;
+		this.message_types = ct && ct.c || MESSAGE_TYPES;
+		this.mod_types = ct && ct.e || MOD_TYPES;
 	}
 
 

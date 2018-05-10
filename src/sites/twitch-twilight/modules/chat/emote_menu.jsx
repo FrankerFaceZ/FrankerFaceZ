@@ -193,8 +193,8 @@ export default class EmoteMenu extends Module {
 
 
 		this.MenuWrapper = this.fine.wrap('ffz-emote-menu');
-		this.MenuSection = this.fine.wrap('ffz-menu-section');
-		this.MenuEmote = this.fine.wrap('ffz-menu-emote');
+		//this.MenuSection = this.fine.wrap('ffz-menu-section');
+		//this.MenuEmote = this.fine.wrap('ffz-menu-emote');
 	}
 
 	onEnable() {
@@ -281,61 +281,47 @@ export default class EmoteMenu extends Module {
 			React = this.web_munch.getModule('react'),
 			createElement = React && React.createElement;
 
-		this.MenuEmote = class FFZMenuEmote extends React.Component {
-			constructor(props) {
-				super(props);
-				this.handleClick = this.handleClick.bind(this);
-			}
+		this.MenuEmote = function({source, data, lock, locked, all_locked, onClickEmote}) {
+			const handle_click = e => {
+				if ( ! t.emotes.handleClick(e) )
+					onClickEmote(data.name);
+			};
 
-			handleClick(event) {
-				if ( ! t.emotes.handleClick(event) )
-					this.props.onClickEmote(this.props.data.name);
-			}
+			const sellout = lock ?
+				all_locked ?
+					t.i18n.t('emote-menu.emote-sub', 'Subscribe for %{price} to unlock this emote.', lock) :
+					t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to %{price} to unlock this emote.', lock)
+				: null;
 
-			render() {
-				const data = this.props.data,
-					lock = this.props.lock,
-					locked = this.props.locked,
-					favorite = data.favorite,
-
-					sellout = lock ?
-						this.props.all_locked ?
-							t.i18n.t('emote-menu.emote-sub', 'Subscribe for %{price} to unlock this emote.', lock) :
-							t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to %{price} to unlock this emote.', lock)
-						: null;
-
-				return (<button
-					class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}`}
-					data-tooltip-type="emote"
-					data-provider={data.provider}
-					data-id={data.id}
-					data-set={data.set_id}
-					data-code={data.code}
-					data-variant={data.variant}
-					data-no-source={this.props.source}
-					data-name={data.name}
-					aria-label={data.name}
-					data-locked={data.locked}
-					data-sellout={sellout}
-					onClick={!data.locked && this.handleClick}
-				>
-					<figure class="emote-picker__emote-figure">
-						<img
-							class={`emote-picker__emote-image${data.emoji ? ' ffz-emoji' : ''}`}
-							src={data.src}
-							srcSet={data.srcSet}
-							alt={data.name}
-							height={data.height ? `${data.height}px` : null}
-							width={data.width ? `${data.width}px` : null}
-						/>
-					</figure>
-					{favorite && (<figure class="ffz--favorite ffz-i-star" />)}
-					{locked && (<figure class="ffz-i-lock" />)}
-				</button>);
-			}
+			return (<button
+				class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}`}
+				data-tooltip-type="emote"
+				data-provider={data.provider}
+				data-id={data.id}
+				data-set={data.set_id}
+				data-code={data.code}
+				data-variant={data.variant}
+				data-no-source={source}
+				data-name={data.name}
+				aria-label={data.name}
+				data-locked={data.locked}
+				data-sellout={sellout}
+				onClick={!data.locked && handle_click}
+			>
+				<figure class="emote-picker__emote-figure">
+					<img
+						class={`emote-picker__emote-image${data.emoji ? ' ffz-emoji' : ''}`}
+						src={data.src}
+						srcSet={data.srcSet}
+						alt={data.name}
+						height={data.height ? `${data.height}px` : null}
+						width={data.width ? `${data.width}px` : null}
+					/>
+				</figure>
+				{data.favorite && (<figure class="ffz--favorite ffz-i-star" />)}
+				{locked && (<figure class="ffz-i-lock" />)}
+			</button>)
 		}
-
-		this.fine.wrap('ffz-menu-emote', this.MenuEmote);
 
 
 		this.MenuSection = class FFZMenuSection extends React.Component {
