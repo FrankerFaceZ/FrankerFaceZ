@@ -170,8 +170,8 @@ export default class Fine extends Module {
 		}
 
 		// Stupid code for traversing up into another React root.
-		if ( traverse_roots && node.containerInfo ) {
-			const parent = node.containerInfo.parentElement,
+		if ( traverse_roots && inst && inst.containerInfo ) {
+			const parent = inst.containerInfo.parentElement,
 				parent_node = parent && this.getReactInstance(parent);
 
 			if ( parent_node ) {
