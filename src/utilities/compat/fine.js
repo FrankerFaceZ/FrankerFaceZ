@@ -59,7 +59,7 @@ export default class Fine extends Module {
 		if ( ! this.accessor )
 			return;
 
-		return element[this.accessor];
+		return element[this.accessor] || (element._reactRootContainer && element._reactRootContainer.current);
 	}
 
 	getOwner(instance) {
@@ -139,7 +139,7 @@ export default class Fine extends Module {
 		return children;
 	}
 
-	searchParent(node, criteria, max_depth=15, depth=0) {
+	searchParent(node, criteria, max_depth=15, depth=0, traverse_roots = true) {
 		if ( node._reactInternalFiber )
 			node = node._reactInternalFiber;
 		else if ( node instanceof Node )
@@ -164,15 +164,27 @@ export default class Fine extends Module {
 			return inst;
 
 		if ( node.return ) {
-			const result = this.searchParent(node.return, criteria, max_depth, depth+1);
+			const result = this.searchParent(node.return, criteria, max_depth, depth+1, traverse_roots);
 			if ( result )
 				return result;
+		}
+
+		// Stupid code for traversing up into another React root.
+		if ( traverse_roots && node.containerInfo ) {
+			const parent = node.containerInfo.parentElement,
+				parent_node = parent && this.getReactInstance(parent);
+
+			if ( parent_node ) {
+				const result = this.searchParent(parent_node, criteria, max_depth, depth+1, traverse_roots);
+				if ( result )
+					return result;
+			}
 		}
 
 		return null;
 	}
 
-	searchTree(node, criteria, max_depth=15, depth=0) {
+	searchTree(node, criteria, max_depth=15, depth=0, traverse_roots = true) {
 		if ( ! node )
 			node = this.react;
 		else if ( node._reactInternalFiber )
@@ -201,16 +213,27 @@ export default class Fine extends Module {
 		if ( node.child ) {
 			let child = node.child;
 			while(child) {
-				const result = this.searchTree(child, criteria, max_depth, depth+1);
+				const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots);
 				if ( result )
 					return result;
+				child = child.sibling;
+			}
+		}
+
+		if ( traverse_roots && inst && inst.props && inst.props.root ) {
+			let child = inst.props.root._reactRootContainer && inst.props.root._reactRootContainer.current;
+			while(child) {
+				const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots);
+				if ( result )
+					return result;
+
 				child = child.sibling;
 			}
 		}
 	}
 
 
-	searchAll(node, criterias, max_depth=15, depth=0, data) {
+	searchAll(node, criterias, max_depth=15, depth=0, data, traverse_roots = true) {
 		if ( ! node )
 			node = this.react;
 		else if ( node._reactInternalFiber )
@@ -259,7 +282,15 @@ export default class Fine extends Module {
 		if ( node.child ) {
 			let child = node.child;
 			while(child) {
-				this.searchAll(child, criterias, max_depth, depth+1, data);
+				this.searchAll(child, criterias, max_depth, depth+1, data, traverse_roots);
+				child = child.sibling;
+			}
+		}
+
+		if ( traverse_roots && inst && inst.props && inst.props.root ) {
+			let child = inst.props.root._reactRootContainer && inst.props.root._reactRootContainer.current;
+			while(child) {
+				this.searchAll(child, criterias, max_depth, depth+1, data, traverse_roots);
 				child = child.sibling;
 			}
 		}
