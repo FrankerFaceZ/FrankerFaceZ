@@ -24,11 +24,11 @@ export default class SettingsMenu extends Module {
 		);
 	}
 
-	onEnable() {
+	async onEnable() {
 		this.on('i18n:update', () => this.SettingsMenu.forceUpdate());
 
 		const t = this,
-			React = this.web_munch.getModule('react');
+			React = await this.web_munch.findModule('react');
 		if ( ! React )
 			return;
 

@@ -197,7 +197,7 @@ export default class EmoteMenu extends Module {
 		//this.MenuEmote = this.fine.wrap('ffz-menu-emote');
 	}
 
-	onEnable() {
+	async onEnable() {
 		this.on('i18n:update', () => this.EmoteMenu.forceUpdate());
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
@@ -228,7 +228,7 @@ export default class EmoteMenu extends Module {
 		this.css_tweaks.toggle('emote-menu', this.chat.context.get('chat.emote-menu.icon'));
 
 		const t = this,
-			React = this.web_munch.getModule('react'),
+			React = await this.web_munch.findModule('react'),
 			createElement = React && React.createElement;
 
 		if ( ! createElement )

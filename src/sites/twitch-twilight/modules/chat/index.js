@@ -329,8 +329,8 @@ export default class ChatHook extends Module {
 	}
 
 
-	grabTypes() {
-		const ct = this.web_munch.getModule('chat-types');
+	async grabTypes() {
+		const ct = await this.web_munch.findModule('chat-types');
 
 		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
 		this.chat_types = ct && ct.b || CHAT_TYPES;

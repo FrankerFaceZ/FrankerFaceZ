@@ -11,6 +11,8 @@ import Fine from 'utilities/compat/fine';
 import FineRouter from 'utilities/compat/fine-router';
 import Apollo from 'utilities/compat/apollo';
 
+import Switchboard from './switchboard';
+
 import {createElement} from 'utilities/dom';
 import {has} from 'utilities/object';
 
@@ -28,7 +30,8 @@ export default class Twilight extends BaseSite {
 		this.inject(WebMunch);
 		this.inject(Fine);
 		this.inject('router', FineRouter);
-		this.inject(Apollo);
+		this.inject(Apollo, false);
+		this.inject(Switchboard);
 	}
 
 	onLoad() {

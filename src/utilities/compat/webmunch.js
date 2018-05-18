@@ -23,7 +23,7 @@ export default class WebMunch extends Module {
 		this._module_names = {};
 		this._mod_cache = {};
 
-		this.v4 = false;
+		this.v4 = null;
 
 		this.hookLoader();
 		this.hookRequire();
@@ -47,7 +47,9 @@ export default class WebMunch extends Module {
 
 		if ( typeof window.webpackJsonp === 'function' ) {
 			// v3
+			this.v4 = false;
 			this._original_loader = window.webpackJsonp;
+
 			try {
 				window.webpackJsonp = this.webpackJsonpv3.bind(this);
 			} catch(err) {
@@ -249,7 +251,7 @@ export default class WebMunch extends Module {
 		const loader = require.e && require.e.toString();
 		let modules;
 		if ( loader && loader.indexOf('Loading chunk') !== -1 ) {
-			const data = /({0:.*?})/.exec(loader);
+			const data = this.v4 ? /assets\/"\+\(({1:.*?})/.exec(loader) : /({0:.*?})/.exec(loader);
 			if ( data )
 				try {
 					modules = JSON.parse(data[1].replace(/(\d+):/g, '"$1":'))

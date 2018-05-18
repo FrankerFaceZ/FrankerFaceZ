@@ -52,7 +52,7 @@ export default class Apollo extends Module {
 		this.inject('..fine');
 	}
 
-	onEnable() {
+	async onEnable() {
 		// TODO: Come up with a better way to await something existing.
 		let client = this.client;
 
@@ -63,11 +63,11 @@ export default class Apollo extends Module {
 			client = this.client = inst && inst.props && inst.props.client;
 		}
 
-		this.printer = this.web_munch.getModule('gql-printer');
-		this.gql_print = this.printer && this.printer.print;
-
 		if ( ! client )
-			return new Promise(s => setTimeout(s,50)).then(() => this.onEnable());
+			return new Promise(() => this.onEnable(), 50);
+
+		this.printer = await this.web_munch.findModule('gql-printer');
+		this.gql_print = this.printer && this.printer.print;
 
 		// Register middleware so that we can intercept requests.
 		if ( ! this.client.link || ! this.client.queryManager || ! this.client.queryManager.link ) {

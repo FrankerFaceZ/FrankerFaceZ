@@ -58,8 +58,8 @@ export default class TabCompletion extends Module {
 		);
 	}
 
-	onEnable() {
-		const React = this.web_munch.getModule('react'),
+	async onEnable() {
+		const React = await this.web_munch.findModule('react'),
 			createElement = React && React.createElement;
 
 		if ( ! createElement )

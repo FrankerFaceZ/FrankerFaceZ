@@ -25,7 +25,6 @@ export default class ChatLine extends Module {
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
-		this.inject('site.apollo');
 		this.inject(RichContent);
 
 		this.inject('viewer_cards');
@@ -45,7 +44,7 @@ export default class ChatLine extends Module {
 		);
 	}
 
-	onEnable() {
+	async onEnable() {
 		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
@@ -57,7 +56,7 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 
 		const t = this,
-			React = this.web_munch.getModule('react');
+			React = await this.web_munch.findModule('react');
 		if ( ! React )
 			return;
 
