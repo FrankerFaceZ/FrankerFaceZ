@@ -438,6 +438,154 @@ export default class Chat extends Module {
 	}
 
 
+	standardizeMessage(msg) { // eslint-disable-line class-methods-use-this
+		if ( ! msg )
+			return msg;
+
+		// Standardize User
+		if ( msg.sender && ! msg.user )
+			msg.user = msg.sender;
+
+		let user = msg.user;
+		if ( ! user )
+			user = msg.user = {};
+
+		user.color = user.color || user.chatColor || null;
+		user.type = user.type || user.userType || null;
+		user.id = user.id || user.userID || null;
+		user.login = user.login || user.userLogin || null;
+		user.displayName = user.displayName || user.userDisplayName || user.login;
+		user.isIntl = user.login && user.displayName && user.displayName.trim().toLowerCase() !== user.login;
+
+		// Standardize Message Content
+		if ( ! msg.message && msg.messageParts )
+			this.detokenizeMessage(msg);
+
+		if ( msg.content && ! msg.message ) {
+			if ( msg.content.fragments )
+				this.detokenizeContent(msg);
+			else
+				msg.message = msg.content.text;
+		}
+
+		// Standardize Badges
+		if ( ! msg.badges && user.displayBadges ) {
+			const b = msg.badges = {};
+			for(const item of msg.user.displayBadges)
+				b[item.setID] = item.version;
+		}
+
+		// Standardize Timestamp
+		if ( ! msg.timestamp && msg.sentAt )
+			msg.timestamp = new Date(msg.sentAt).getTime();
+
+		// Standardize Deletion
+		if ( msg.deletedAt !== undefined )
+			msg.deleted = !!msg.deletedAt;
+
+		return msg;
+	}
+
+
+	detokenizeContent(msg) { // eslint-disable-line class-methods-use-this
+		const out = [],
+			parts = msg.content.fragments,
+			l = parts.length,
+			emotes = {};
+
+		let idx = 0, ret, first = true;
+
+		for(let i=0; i < l; i++) {
+			const part = parts[i],
+				content = part.content,
+				ct = content && content.__typename;
+
+			ret = part.text;
+
+			if ( ct === 'Emote' ) {
+				const id = content.emoteID,
+					em = emotes[id] = emotes[id] || [];
+
+				em.push({startIndex: idx, endIndex: idx + ret.length - 1});
+			}
+
+			if ( ret && ret.length ) {
+				if ( first && ret.startsWith('/me ') ) {
+					msg.is_action = true;
+					ret = ret.slice(4);
+				}
+
+				idx += ret.length;
+				out.push(ret);
+			}
+		}
+
+		msg.message = out.join('');
+		msg.emotes = emotes;
+		return msg;
+	}
+
+
+	detokenizeMessage(msg) { // eslint-disable-line class-methods-use-this
+		const out = [],
+			parts = msg.messageParts,
+			l = parts.length,
+			emotes = {};
+
+		let idx = 0, ret, last_type = null;
+
+		for(let i=0; i < l; i++) {
+			const part = parts[i],
+				content = part.content;
+
+			if ( ! content )
+				continue;
+
+			if ( typeof content === 'string' )
+				ret = content;
+
+			else if ( content.recipient )
+				ret = `@${content.recipient}`;
+
+			else if ( content.url )
+				ret = content.url;
+
+			else if ( content.cheerAmount )
+				ret = `${content.alt}${content.cheerAmount}`;
+
+			else if ( content.images ) {
+				const url = (content.images.themed ? content.images.dark : content.images.sources),
+					match = url && /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']),
+					id = match && match[1];
+
+				ret = content.alt;
+
+				if ( id ) {
+					const em = emotes[id] = emotes[id] || [],
+						offset = last_type > 0 ? 1 : 0;
+
+					em.push({startIndex: idx + offset, endIndex: idx + ret.length - 1});
+				}
+
+				if ( last_type > 0 )
+					ret = ` ${ret}`;
+
+			} else
+				continue;
+
+			if ( ret ) {
+				idx += ret.length;
+				last_type = part.type;
+				out.push(ret)
+			}
+		}
+
+		msg.message = out.join('');
+		msg.emotes = emotes;
+		return msg;
+	}
+
+
 	formatTime(time) { // eslint-disable-line class-methods-use-this
 		if (!( time instanceof Date ))
 			time = new Date(time);

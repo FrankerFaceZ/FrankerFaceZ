@@ -3,7 +3,12 @@
 		<error-tab v-if="errored" />
 		<loading-tab v-else-if="loading" />
 		<template v-else>
-			{{ JSON.stringify(data) }}
+			<ul>
+				<li v-for="entry in data" :key="entry[1]">
+					<span>{{ entry[0] }}</span>
+					{{ entry[1] }}
+				</li>
+			</ul>
 		</template>
 	</div>
 </template>
@@ -40,6 +45,7 @@ export default {
 		socket.call('get_name_history', this.user.login).then(data => {
 			this.loading = false;
 			this.data = data;
+
 		}).catch(err => {
 			console.error(err);
 			this.errored = true;

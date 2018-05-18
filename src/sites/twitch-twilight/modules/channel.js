@@ -64,14 +64,17 @@ export default class Channel extends Module {
 		});
 
 		this.ChannelPage.on('update', inst => {
-			if ( this.settings.get('channel.hosting.enable') || ! inst.state.isHosting )
+			if ( this.settings.get('channel.hosting.enable') )
 				return;
 
 			// We can't do this immediately because the player state
 			// occasionally screws up if we do.
 			setTimeout(() => {
-				inst.ffzExpectedHost = inst.state.videoPlayerSource;
-				inst.ffzOldHostHandler(null);
+				const current_channel = inst.props.data && inst.props.data.variables && inst.props.data.variables.currentChannelLogin;
+				if ( current_channel && current_channel !== inst.state.videoPlayerSource ) {
+					inst.ffzExpectedHost = inst.state.videoPlayerSource;
+					inst.ffzOldHostHandler(null);
+				}
 			});
 		});
 

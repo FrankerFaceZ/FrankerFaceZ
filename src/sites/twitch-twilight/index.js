@@ -138,7 +138,8 @@ Twilight.CHAT_ROUTES = [
 	'user-events',
 	'user-followers',
 	'user-following',
-	'user'
+	'user',
+	'dash'
 ]
 
 
@@ -156,7 +157,7 @@ Twilight.ROUTES = {
 	'dir-game-index': '/directory/game/:gameName',
 	'dir-all': '/directory/all/:filter?',
 	'dir-category': '/directory/:category?',
-	'dash': '/:userName/dashboard',
+	'dash': '/:userName/dashboard/:live?',
 	'dash-automod': '/:userName/dashboard/settings/automod',
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',

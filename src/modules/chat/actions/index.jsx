@@ -166,7 +166,7 @@ export default class Actions extends Module {
 	renderInline(msg, mod_icons, current_user, current_room, createElement) {
 		const actions = [];
 
-		if ( msg.user && current_user && current_user.login === msg.user.userLogin )
+		if ( msg.user && current_user && current_user.login === msg.user.login )
 			return;
 
 		const chat = this.resolve('site.chat');
@@ -209,10 +209,10 @@ export default class Actions extends Module {
 
 		const room = current_room && JSON.stringify(current_room),
 			user = msg.user && JSON.stringify({
-				login: msg.user.userLogin,
-				displayName: msg.user.userDisplayName,
-				id: msg.user.userID,
-				type: msg.user.userType
+				login: msg.user.login,
+				displayName: msg.user.displayName,
+				id: msg.user.id,
+				type: msg.user.type
 			});
 
 		return (<div

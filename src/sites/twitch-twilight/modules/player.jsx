@@ -24,13 +24,13 @@ export default class Player extends Module {
 		this.Player = this.fine.define(
 			'twitch-player',
 			n => n.player && n.onPlayerReady,
-			['front-page', 'user', 'video']
+			['front-page', 'user', 'video', 'dash']
 		);
 
 		this.PersistentPlayer = this.fine.define(
 			'twitch-player-persistent',
 			n => n.renderMiniControl && n.renderMiniTitle && n.handleWindowResize,
-			['front-page', 'user', 'video']
+			['front-page', 'user', 'video', 'dash']
 		);
 
 		this.settings.add('player.volume-scroll', {

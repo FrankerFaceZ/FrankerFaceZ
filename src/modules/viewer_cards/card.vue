@@ -160,11 +160,15 @@ export default {
 	},
 
 	beforeMount() {
+		this.$emit('emit', ':open', this);
+
 		this.data.then(data => {
-			this.loaded = true;
 			this.user = data.data.targetUser;
 			this.channel = data.data.channelUser;
 			this.self = data.data.currentUser;
+			this.loaded = true;
+
+			this.$emit('emit', ':load', this);
 
 		}).catch(err => {
 			console.error(err); // eslint-disable-line no-console
@@ -179,6 +183,7 @@ export default {
 	},
 
 	beforeDestroy() {
+		this.$emit('emit', ':close', this);
 		this.destroyDrag();
 
 		if ( this._on_resize ) {
@@ -222,6 +227,7 @@ export default {
 		pin() {
 			this.pinned = true;
 			this.$emit('pin');
+			this.$emit('emit', ':pin', this);
 		},
 
 		close() {
@@ -251,8 +257,6 @@ export default {
 		},
 
 		onFocus() {
-			console.log('got focus!');
-
 			this.z = this.getZ();
 		},
 

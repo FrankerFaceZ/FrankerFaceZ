@@ -28,19 +28,19 @@ export default class ChatLine extends Module {
 		this.inject('site.apollo');
 		this.inject(RichContent);
 
-		this.inject('site.chat.mod_cards');
+		this.inject('viewer_cards');
 
 		this.inject('chat.actions');
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
-			n => n.renderMessageBody && ! n.getMessageParts,
+			n => n.renderMessageBody && n.props && ! n.props.roomID,
 			Twilight.CHAT_ROUTES
 		);
 
 		this.ChatRoomLine = this.fine.define(
 			'chat-room-line',
-			n => n.renderMessageBody && n.getMessageParts,
+			n => n.renderMessageBody && n.props && n.props.roomID,
 			Twilight.CHAT_ROUTES
 		);
 	}
@@ -64,6 +64,97 @@ export default class ChatLine extends Module {
 		const e = React.createElement,
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
 
+
+		/*this.ChatRoomLine.ready(cls => {
+			cls.prototype.render = function() {
+				const msg = t.chat.standardizeMessage(this.props.message),
+					is_action = msg.is_action,
+					user = msg.user,
+					color = t.parent.colors.process(user.color),
+					bg_css = null,
+					show = this._ffz_show = this.state.shouldShowDeletedBody || ! msg.deletedAt;
+
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : null;
+
+				if ( ! room && this.props.channelID ) {
+					const r = t.chat.getRoom(this.props.channelID, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
+
+				const u = t.site.getUser(),
+					r = {id: this.props.channelID, login: room};
+
+				if ( u ) {
+					u.moderator = this.props.isCurrentUserModerator;
+					u.staff = this.props.isCurrentUserStaff;
+				}
+
+				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
+					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
+
+				if ( ! this.ffz_user_click_handler )
+					this.ffz_user_click_handler = event =>
+						event.ctrlKey ?
+							this.props.onUsernameClick(user.login, null, msg.id, event.currentTarget.getBoundingClientRect().bottom) :
+							t.viewer_cards.openCard(r, user, event);
+
+				let cls = 'chat-line__message',
+					out = (tokens.length || ! msg.ffz_type) ? [
+						this.props.showTimestamps && e('span', {
+							className: 'chat-line__timestamp'
+						}, t.chat.formatTime(msg.timestamp)),
+						t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+						e('span', {
+							className: 'chat-line__message--badges'
+						}, t.chat.badges.render(msg, e)),
+						e('a', {
+							className: 'chat-author__display-name notranslate',
+							style: { color },
+							onClick: this.ffz_user_click_handler
+						}, [
+							user.displayName,
+							user.isIntl && e('span', {
+								className: 'chat-author__intl-login'
+							}, ` (${user.login})`)
+						]),
+						e('span', null, is_action ? ' ' : ': '),
+						show ?
+							e('span', {
+								className: 'message',
+								style: is_action ? { color } : null
+							}, t.chat.renderTokens(tokens, e))
+							:
+							e('span', {
+								className: 'chat-line__message--deleted'
+							}, e('a', {
+								href: '',
+								onClick: this.showDeleted
+							}, t.i18n.t('chat.message-deleted', '<message deleted>'))),
+
+						show && rich_content && e(FFZRichContent, rich_content)
+					] : null;
+
+				if ( ! out )
+					return null;
+
+				return e('div', {
+					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}`,
+					style: {backgroundColor: bg_css},
+					id: msg.id,
+					'data-room-id': this.props.channelID,
+					'data-room': room,
+					'data-user-id': user.id,
+					'data-user': user.login && user.login.toLowerCase()
+				}, out);
+			}
+
+			// Do this after a short delay to hopefully reduce the chance of React
+			// freaking out on us.
+			setTimeout(() => this.ChatRoomLine.forceUpdate());
+		});*/
+
+
 		this.ChatLine.ready(cls => {
 			cls.prototype.shouldComponentUpdate = function(props, state) {
 				const show = state.alwaysShowMessage || ! props.message.deleted,
@@ -85,10 +176,10 @@ export default class ChatLine extends Module {
 			cls.prototype.render = function() {
 				const types = t.parent.message_types || {},
 
-					msg = this.props.message,
+					msg = t.chat.standardizeMessage(this.props.message),
 					is_action = msg.messageType === types.Action;
 
-				if ( msg.content && ! msg.message )
+				/*if ( msg.content && ! msg.message )
 					msg.message = msg.content.text;
 
 				if ( msg.sender && ! msg.user ) {
@@ -100,12 +191,12 @@ export default class ChatLine extends Module {
 					const b = msg.badges = {};
 					for(const item of msg.user.displayBadges)
 						b[item.setID] = item.version;
-				}
+				}*/
 
 				const user = msg.user,
 					color = t.parent.colors.process(user.color),
 					bg_css = null, //Math.random() > .7 ? t.parent.inverse_colors.process(user.color) : null,
-					show = this._ffz_show = this.state.alwaysShowMessage || ! this.props.message.deleted;
+					show = this._ffz_show = this.state.alwaysShowMessage || ! msg.deleted;
 
 				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
 
@@ -115,8 +206,8 @@ export default class ChatLine extends Module {
 						room = msg.roomLogin = r.login;
 				}
 
-				if ( ! msg.message && msg.messageParts )
-					detokenizeMessage(msg);
+				//if ( ! msg.message && msg.messageParts )
+				//	t.chat.detokenizeMessage(msg);
 
 				const u = t.site.getUser(),
 					r = {id: this.props.channelID, login: room};
@@ -130,7 +221,7 @@ export default class ChatLine extends Module {
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
 				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.mod_cards.openCard(r, user, event);
+					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
 				let cls = 'chat-line__message',
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -264,66 +355,13 @@ export default class ChatLine extends Module {
 				msg.ffz_tokens = null;
 		}
 
-		this.ChatLine.forceUpdate();
-	}
-}
-
-
-export function detokenizeMessage(msg) {
-	const out = [],
-		parts = msg.messageParts,
-		l = parts.length,
-		emotes = {};
-
-	let idx = 0, ret, last_type = null;
-
-	for(let i=0; i < l; i++) {
-		const part = parts[i],
-			content = part.content;
-
-		if ( ! content )
-			continue;
-
-		if ( typeof content === 'string' )
-			ret = content;
-
-		else if ( content.recipient )
-			ret = `@${content.recipient}`;
-
-		else if ( content.url )
-			ret = content.url;
-
-		else if ( content.cheerAmount )
-			ret = `${content.alt}${content.cheerAmount}`;
-
-		else if ( content.images ) {
-			const url = (content.images.themed ? content.images.dark : content.images.sources),
-				match = url && /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']),
-				id = match && match[1];
-
-			ret = content.alt;
-
-			if ( id ) {
-				const em = emotes[id] = emotes[id] || [],
-					offset = last_type > 0 ? 1 : 0;
-
-				em.push({startIndex: idx + offset, endIndex: idx + ret.length - 1});
-			}
-
-			if ( last_type > 0 )
-				ret = ` ${ret}`;
-
-		} else
-			continue;
-
-		if ( ret ) {
-			idx += ret.length;
-			last_type = part.type;
-			out.push(ret)
+		for(const inst of this.ChatRoomLine.instances) {
+			const msg = inst.props.message;
+			if ( msg )
+				msg.ffz_tokens = null;
 		}
-	}
 
-	msg.message = out.join('');
-	msg.emotes = emotes;
-	return msg;
+		this.ChatLine.forceUpdate();
+		this.ChatRoomLine.forceUpdate();
+	}
 }

@@ -4,6 +4,7 @@
 // Menu Button Module
 // ============================================================================
 
+import {DEBUG} from 'utilities/constants';
 import {SiteModule} from 'utilities/module';
 import {createElement} from 'utilities/dom';
 
@@ -80,6 +81,11 @@ export default class MenuButton extends SiteModule {
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-zreknarf" />
 					</span>
+					{DEBUG && (<div class="ffz-menu__dev-pill tw-absolute">
+						<div class="tw-pill">
+							{this.i18n.t('site.menu_button.dev', 'dev')}
+						</div>
+					</div>)}
 					{pill && (<div class="ffz-menu__pill tw-absolute">
 						<div class="tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in">
 							<div class="tw-pill tw-pill--notification">
@@ -89,6 +95,9 @@ export default class MenuButton extends SiteModule {
 					</div>)}
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
 						{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+						{DEBUG && (<div class="tw-mg-t-1">
+							{this.i18n.t('site.menu_button.dev-desc', 'You are running a developer build of FrankerFaceZ.')}
+						</div>)}
 					</div>
 				</div>
 			</button>)}

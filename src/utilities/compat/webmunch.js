@@ -45,7 +45,17 @@ export default class WebMunch extends Module {
 		}
 
 		this.log.info(`Found and wrapped webpack's loader after ${(attempts||0)*250}ms.`);
-		window.webpackJsonp = this.webpackJsonp.bind(this);
+
+		try {
+			window.webpackJsonp = this.webpackJsonp.bind(this);
+		} catch(err) {
+			this.log.info('Unable to wrap webpackJsonp normally due to write-protection. Escalating.');
+			try {
+				Object.defineProperty(window, 'webpackJsonp', {value: this.webpackJsonp.bind(this)});
+			} catch(e2) {
+				this.log.info('Unable to wrap webpackJsonp at this time. Some functionality may be broken as a result.');
+			}
+		}
 	}
 
 	webpackJsonp(chunk_ids, modules) {

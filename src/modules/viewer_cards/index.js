@@ -5,13 +5,11 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-
-import {has} from 'utilities/object';
 import {createElement} from 'utilities/dom';
 
 import GET_USER_INFO from './get_user_info.gql';
 
-export default class ModCards extends Module {
+export default class ViewerCards extends Module {
 	constructor(...args) {
 		super(...args);
 
@@ -44,6 +42,7 @@ export default class ModCards extends Module {
 			component: () => import(/* webpackChunkName: 'viewer-cards' */ './components/name-history.vue')
 		});
 	}
+
 
 	addTab(key, data) {
 		if ( this.tabs[key] )
@@ -138,6 +137,8 @@ export default class ModCards extends Module {
 				},
 
 				on: {
+					emit: (event, ...data) => this.emit(event, ...data),
+
 					close: () => {
 						const el = component.$el;
 						el.remove();
