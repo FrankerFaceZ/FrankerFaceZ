@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {has, once} from 'utilities/object';
 
 
 let last_muncher = 0;
@@ -23,6 +23,8 @@ export default class WebMunch extends Module {
 		this._module_names = {};
 		this._mod_cache = {};
 
+		this.v4 = false;
+
 		this.hookLoader();
 		this.hookRequire();
 	}
@@ -32,33 +34,54 @@ export default class WebMunch extends Module {
 	// Loaded Modules
 	// ========================================================================
 
-	hookLoader(attempts) {
+	hookLoader(attempts = 0) {
 		if ( this._original_loader )
 			return this.log.warn('Attempted to call hookLoader twice.');
 
-		this._original_loader = window.webpackJsonp;
-		if ( ! this._original_loader ) {
+		if ( ! window.webpackJsonp ) {
 			if ( attempts > 500 )
 				return this.log.error("Unable to find webpack's loader after two minutes.");
 
-			return setTimeout(this.hookLoader.bind(this, (attempts||0) + 1), 250);
+			return setTimeout(this.hookLoader.bind(this, attempts + 1), 250);
+		}
+
+		if ( typeof window.webpackJsonp === 'function' ) {
+			// v3
+			this._original_loader = window.webpackJsonp;
+			try {
+				window.webpackJsonp = this.webpackJsonpv3.bind(this);
+			} catch(err) {
+				this.log.warn('Unable to wrap webpackJsonp due to write protection.');
+				return;
+			}
+
+		} else if ( Array.isArray(window.webpackJsonp) ) {
+			// v4
+			this.v4 = true;
+			this._original_loader = window.webpackJsonp.push;
+
+			// Wrap all existing modules in case any of them haven't been required yet.
+			for(const chunk of window.webpackJsonp)
+				if ( chunk && chunk[1] )
+					this.processModulesV4(chunk[1]);
+
+			try {
+				window.webpackJsonp.push = this.webpackJsonpv4.bind(this);
+			} catch(err) {
+				this.log.warn('Unable to wrap webpackJsonp (v4) due to write protection.');
+				return;
+			}
+
+		} else {
+			this.log.error('webpackJsonp is of an unknown value. Unable to wrap.');
+			return;
 		}
 
 		this.log.info(`Found and wrapped webpack's loader after ${(attempts||0)*250}ms.`);
-
-		try {
-			window.webpackJsonp = this.webpackJsonp.bind(this);
-		} catch(err) {
-			this.log.info('Unable to wrap webpackJsonp normally due to write-protection. Escalating.');
-			try {
-				Object.defineProperty(window, 'webpackJsonp', {value: this.webpackJsonp.bind(this)});
-			} catch(e2) {
-				this.log.info('Unable to wrap webpackJsonp at this time. Some functionality may be broken as a result.');
-			}
-		}
 	}
 
-	webpackJsonp(chunk_ids, modules) {
+
+	webpackJsonpv3(chunk_ids, modules) {
 		const names = chunk_ids.map(x => this._module_names[x] || x).join(', ');
 		this.log.info(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
 		this.log.debug(`Modules: ${Object.keys(modules)}`);
@@ -67,6 +90,51 @@ export default class WebMunch extends Module {
 
 		this.emit(':loaded', chunk_ids, names, modules);
 
+		return res;
+	}
+
+
+	processModulesV4(modules) {
+		const t = this;
+
+		for(const mod_id in modules)
+			if ( has(modules, mod_id) ) {
+				const original_module = modules[mod_id];
+				modules[mod_id] = function(module, exports, require, ...args) {
+					if ( ! t._require && typeof require === 'function' ) {
+						t.log.info(`require() grabbed from invocation of module ${mod_id}`);
+						t._require = require;
+						if ( t._resolve_require ) {
+							try {
+								for(const fn of t._resolve_require)
+									fn(require);
+							} catch(err) {
+								t.log.error('An error occured running require callbacks.', err);
+							}
+
+							t._resolve_require = null;
+						}
+					}
+
+					return original_module.call(this, module, exports, require, ...args);
+				}
+			}
+	}
+
+
+	webpackJsonpv4(data) {
+		const chunk_ids = data[0],
+			modules = data[1],
+			names = Array.isArray(chunk_ids) && chunk_ids.map(x => this._module_names[x] || x).join(', ');
+
+		this.log.info(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
+		this.log.debug(`Modules: ${Object.keys(modules)}`);
+
+		if ( modules )
+			this.processModulesV4(modules);
+
+		const res = this._original_loader.apply(window.webpackJsonp, arguments); // eslint-disable-line prefer-rest-params
+		this.emit(':loaded', chunk_ids, names, modules);
 		return res;
 	}
 
@@ -137,26 +205,38 @@ export default class WebMunch extends Module {
 		if ( this._require )
 			return Promise.resolve(this._require);
 
-		return new Promise(resolve => {
-			const fn = this._original_loader || window.webpackJsonp;
+		return new Promise((resolve, reject) => {
+			const fn = this._original_loader;
 			if ( ! fn ) {
-				if ( limit > 100 )
-					throw new Error('unable to find webpackJsonp');
+				if ( limit > 500 )
+					reject(new Error('unable to find webpackJsonp'));
 
-				return setTimeout(() => this.getRequire(limit++).then(resolve), 100);
+				return setTimeout(() => this.getRequire(limit++).then(resolve), 250);
 			}
 
-			const id = `${this._id}$${this._rid++}`;
-			fn(
-				[],
-				{
-					[id]: (module, exports, __webpack_require__) => {
-						resolve(this._require = __webpack_require__);
-					}
-				},
-				[id]
-			)
-		});
+			if ( this.v4 ) {
+				// There's currently no good way to grab require from
+				// webpack 4 due to its lazy loading, so we just wait
+				// and hope that a module is imported.
+				if ( this._resolve_require )
+					this._resolve_require.push(resolve);
+				else
+					this._resolve_require = [resolve];
+
+			} else {
+				// Inject a fake module and use that to grab require.
+				const id = `${this._id}$${this._rid++}`;
+				fn(
+					[],
+					{
+						[id]: (module, exports, __webpack_require__) => {
+							resolve(this._require = __webpack_require__);
+						}
+					},
+					[id]
+				)
+			}
+		})
 	}
 
 	async hookRequire() {
