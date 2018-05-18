@@ -14,39 +14,30 @@ export default class Switchboard extends Module {
 
 		this.inject('site.web_munch');
 		this.inject('site.fine');
-
-		this.RootRouter = this.fine.define(
-			'root-router',
-			n => n && n.logger && n.logger.category === 'default-root-router'
-		);
+		this.inject('site.router');
 	}
 
 
 	awaitRouter() {
-		const router = this.RootRouter.first;
+		const router = this.fine.searchTree(null, n => n.logger && n.logger.category === 'default-root-router', 100);
 		if ( router )
 			return Promise.resolve(router);
 
-		return new Promise(resolve => {
-			this.RootRouter.ready(() => resolve(this.RootRouter.first))
-		});
+		return new Promise(r => setTimeout(r, 50)).then(() => this.awaitRouter());
 	}
 
 
-	async onEnable() {
-		const router = await this.awaitRouter(),
-			child = router && this.fine.getFirstChild(router),
-			da_switch = child && child.stateNode;
+	awaitMinimalRouter() {
+		const router = this.fine.searchTree(null, n => n.onHistoryChange && n.reportInteractive);
+		if ( router )
+			return Promise.resolve(router);
 
-		if ( this.web_munch.v4 === false )
-			return;
+		return new Promise(r => setTimeout(r, 50)).then(() => this.awaitMinimalRouter());
+	}
 
-		if ( ! da_switch )
-			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
 
-		const real_context = da_switch.context,
-			on_settings = real_context.router.route.location.pathname.includes('settings');
-
+	hijinx(da_switch, path) {
+		const real_context = da_switch.context;
 		let output;
 
 		try {
@@ -54,11 +45,11 @@ export default class Switchboard extends Module {
 				router: {
 					route: {
 						location: {
-							pathname: on_settings ? '/inventory' : '/settings'
+							pathname: path
 						}
 					}
 				}
-			};
+			}
 
 			output = da_switch.render();
 
@@ -89,5 +80,42 @@ export default class Switchboard extends Module {
 		} catch(err) {
 			this.log.warn('Unexpected result trying to use component loader to force loading of another chunk.', err);
 		}
+	}
+
+
+	async onEnable() {
+		const root = await this.parent.awaitElement('.twilight-minimal-root,.twilight-root'),
+			is_minimal = root && root.classList.contains('twilight-minimal-root');
+
+		if ( this.web_munch._require || this.web_munch.v4 === false )
+			return;
+
+		if ( is_minimal )
+			return this.enableMinimal();
+
+		const router = await this.awaitRouter(),
+			child = router && this.fine.getFirstChild(router),
+			da_switch = child && child.stateNode;
+
+		if ( ! da_switch )
+			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
+
+		const on_settings = da_switch.context.router.route.location.pathname.includes('settings');
+		return this.hijinx(da_switch, on_settings ? '/inventory' : '/settings');
+	}
+
+
+	async enableMinimal() {
+		const router = await this.awaitMinimalRouter(),
+			da_switch = router && this.fine.searchTree(router, n => n.context && n.context.router);
+
+		if ( this.web_munch._require || this.web_munch.v4 === false )
+			return;
+
+		if ( ! da_switch )
+			return new Promise(r => setTimeout(r, 50)).then(() => this.enableMinimal());
+
+		const on_prime = da_switch.context.router.route.location.pathname.includes('prime');
+		return this.hijinx(da_switch, on_prime ? '/subs' : '/prime')
 	}
 }
