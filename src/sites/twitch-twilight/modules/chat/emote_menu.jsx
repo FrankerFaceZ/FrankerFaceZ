@@ -4,7 +4,7 @@
 // Chat Emote Menu
 // ============================================================================
 
-import {has, get, once, set_equals} from 'utilities/object';
+import {has, get, once, maybe_call, set_equals} from 'utilities/object';
 import {IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
 
 import Twilight from 'site';
@@ -26,10 +26,14 @@ function maybe_date(val) {
 
 const EMOTE_SORTERS = [
 	function id_asc(a, b) {
-		return a.id - b.id;
+		if ( a.id < b.id ) return -1;
+		if ( a.id > b.id ) return 1;
+		return 0;
 	},
 	function id_desc(a, b) {
-		return b.id - a.id;
+		if ( a.id > b.id ) return -1;
+		if ( a.id < b.id ) return 1;
+		return 0;
 	},
 	function name_asc(a, b) {
 		const a_n = a.name.toLowerCase(),
@@ -38,7 +42,9 @@ const EMOTE_SORTERS = [
 		if ( a_n < b_n ) return -1;
 		if ( a_n > b_n ) return 1;
 
-		return a.id - b.id;
+		if ( a.id < b.id ) return -1;
+		if ( a.id > b.id ) return 1;
+		return 0;
 	},
 	function name_desc(a, b) {
 		const a_n = a.name.toLowerCase(),
@@ -47,7 +53,9 @@ const EMOTE_SORTERS = [
 		if ( a_n > b_n ) return -1;
 		if ( a_n < b_n ) return 1;
 
-		return b.id - a.id;
+		if ( a.id > b.id ) return -1;
+		if ( a.id < b.id ) return 1;
+		return 0;
 	}
 ];
 
@@ -989,19 +997,30 @@ export default class EmoteMenu extends Module {
 						ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login),
 						seen_favorites = {};
 
+					let grouped_sets = {};
+
 					for(const [emote_set, provider] of ffz_room) {
-						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites);
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
-							channel.push(section);
+
+							if ( ! channel.includes(section) )
+								channel.push(section);
 						}
 					}
 
+					grouped_sets = {};
+
 					for(const [emote_set, provider] of ffz_global) {
-						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites);
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
-							all.push(section);
+
+							if ( ! all.includes(section) )
+								all.push(section);
+
+							if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data.user, me) )
+								channel.push(section);
 						}
 					}
 				}
@@ -1026,7 +1045,7 @@ export default class EmoteMenu extends Module {
 			}
 
 
-			processFFZSet(emote_set, provider, favorites, seen_favorites) { // eslint-disable-line class-methods-use-this
+			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets) { // eslint-disable-line class-methods-use-this
 				if ( ! emote_set || ! emote_set.emotes )
 					return null;
 
@@ -1034,7 +1053,8 @@ export default class EmoteMenu extends Module {
 					known_favs = t.emotes.getFavorites(fav_key),
 					seen_favs = seen_favorites[fav_key] = seen_favorites[fav_key] || new Set;
 
-				const pdata = t.emotes.providers.get(provider),
+				const key = `${emote_set.merge_source || fav_key}-${emote_set.merge_id || emote_set.id}`,
+					pdata = t.emotes.providers.get(provider),
 					source = pdata && pdata.name ?
 						(pdata.i18n_key ?
 							t.i18n.t(pdata.i18n_key, pdata.name, pdata) :
@@ -1049,16 +1069,34 @@ export default class EmoteMenu extends Module {
 				if ( sort_key == null )
 					sort_key = emote_set.title.toLowerCase().includes('global') ? 100 : 0;
 
-				const emotes = [],
-					section = {
+				let section, emotes;
+
+				if ( grouped_sets[key] ) {
+					section = grouped_sets[key];
+					emotes = section.emotes;
+
+					if ( key === `${fav_key}-${emote_set.id}` )
+						Object.assign(section, {
+							sort_key,
+							image: emote_set.icon,
+							title,
+							source,
+							force_global: emote_set.force_global
+						});
+
+				} else {
+					emotes = [];
+					section = grouped_sets[key] = {
 						sort_key,
-						key: `ffz-${emote_set.id}`,
+						key,
 						image: emote_set.icon,
 						icon: 'zreknarf',
 						title,
 						source,
 						emotes,
-					};
+						force_global: emote_set.force_global
+					}
+				}
 
 				for(const emote of Object.values(emote_set.emotes))
 					if ( ! emote.hidden ) {
