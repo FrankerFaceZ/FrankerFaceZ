@@ -29,21 +29,16 @@
 				<ul class="tw-mg-b-2">
 					<li>Settings from the old version are not being imported.</li>
 					<li>Settings cannot be searched.</li>
-					<li>Emoji aren't displayed.</li>
-					<li>Advanced input isn't available.</li>
+					<li>Advanced input (better tab completion, history) isn't available.</li>
 				</ul>
 
 				<p>And the biggest features still under development:</p>
 
 				<ul class="tw-mg-b-2">
-					<li>Emoji Rendering</li>
 					<li>Chat Filtering (Highlighted Words, etc.)</li>
 					<li>Room Status Indicators</li>
 					<li>Custom Mod Cards</li>
-					<li>Custom Mod Actions</li>
 					<li>Recent Highlights</li>
-					<li>More Channel Metadata</li>
-					<li>Disable Hosting</li>
 					<li>Portrait Mode</li>
 					<li>Importing and exporting settings</li>
 					<li>User Aliases</li>

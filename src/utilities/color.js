@@ -592,7 +592,7 @@ export class ColorAdjuster {
 		}
 	}
 
-	process(color) {
+	process(color, throw_errors = false) {
 		if ( this._mode === -1 )
 			return '';
 		else if ( this._mode === 0 )
@@ -607,7 +607,16 @@ export class ColorAdjuster {
 		if ( this._cache.has(color) )
 			return this._cache.get(color);
 
-		let rgb = RGBAColor.fromCSS(color);
+		let rgb;
+
+		try {
+			rgb = RGBAColor.fromCSS(color);
+		} catch(err) {
+			if ( throw_errors )
+				throw err;
+
+			return null;
+		}
 
 		if ( this._mode === 1 ) {
 			// HSL Luma

@@ -13,13 +13,40 @@
 .tw-width-auto { width: auto !important }
 
 .ffz--widget {
-
 	input, select {
 		min-width: 20rem;
 	}
 
 	label {
 		min-width: 15rem;
+	}
+}
+
+
+.ffz--color-widget input,
+.ffz--inline label {
+	min-width: unset;
+}
+
+
+.ffz-color-preview {
+	margin: 1px;
+
+	figure.ffz-i-eyedropper {
+		opacity: 0.5;
+	}
+
+	&:hover, &:focus {
+		figure {
+			opacity: 1
+		}
+	}
+
+	figure {
+		width: 3rem;
+		margin: .4rem;
+
+		height: calc(100% - .8rem);
 	}
 }
 
@@ -68,7 +95,9 @@
 		.ffz--profile__icon {
 			font-size: 2rem;
 		}
+	}
 
+	.ffz--profile {
 		.ffz-i-ok { color: green }
 	}
 

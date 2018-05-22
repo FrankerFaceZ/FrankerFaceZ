@@ -19,6 +19,17 @@
 }
 
 
+.ffz--deleted-message {
+	&:not(:hover) > * {
+		opacity: 0.5;
+	}
+
+	.message {
+		text-decoration: line-through;
+	}
+}
+
+
 .ffz-badge {
 	display: inline-block;
 	min-width: 1.8rem;
@@ -29,7 +40,7 @@
 }
 
 
-.ffz-i-lock {
+.ffz__tooltip .ffz-i-lock {
 	position: absolute;
 	bottom: 0; right: 0;
 	border-radius: .2rem;

@@ -18,7 +18,7 @@
 			</button>
 			<!--button class="tw-mg-l-1 tw-button tw-button--text">
 				<span class="tw-button__text ffz-i-upload">
-					{{ t('setting.profiles.import', 'Import…') }}
+					{{ t('setting.import', 'Import…') }}
 				</span>
 			</button-->
 		</div>
@@ -48,7 +48,7 @@
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center">
 						<button class="tw-button tw-button--text" disabled @notclick="edit(p)">
 							<span class="tw-button__text ffz-i-cog">
-								{{ t('setting.profiles.configure', 'Configure') }}
+								{{ t('setting.configure', 'Configure') }}
 							</span>
 						</button>
 					</div>

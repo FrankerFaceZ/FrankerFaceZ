@@ -5,11 +5,17 @@
 		font-size: 1.2rem;
 	}
 
+	.ffz-menu__dev-pill {
+		bottom: -1rem;
+		right: -.3rem;
+		font-size: 1.2rem;
+	}
+
 	.tw-pd-r-1 + & {
 		margin-left: -.5rem;
 	}
 
-	.loading figure {
+	.loading .ffz-i-zreknarf {
 		animation: ffz-rotateplane 1.2s infinite linear;
 	}
 }

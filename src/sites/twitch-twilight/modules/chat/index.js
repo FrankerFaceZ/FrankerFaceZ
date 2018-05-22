@@ -7,6 +7,7 @@
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
+import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
 
@@ -19,75 +20,79 @@ import EmoteMenu from './emote_menu';
 import TabCompletion from './tab_completion';
 
 
-const CHAT_TYPES = (e => {
+const MESSAGE_TYPES = ((e = {}) => {
 	e[e.Post = 0] = 'Post';
 	e[e.Action = 1] = 'Action';
 	e[e.PostWithMention = 2] = 'PostWithMention';
-	e[e.Ban = 3] = 'Ban';
-	e[e.Timeout = 4] = 'Timeout';
-	e[e.AutoModRejectedPrompt = 5] = 'AutoModRejectedPrompt';
-	e[e.AutoModMessageRejected = 6] = 'AutoModMessageRejected';
-	e[e.AutoModMessageAllowed = 7] = 'AutoModMessageAllowed';
-	e[e.AutoModMessageDenied = 8] = 'AutoModMessageDenied';
-	e[e.Connected = 9] = 'Connected';
-	e[e.Disconnected = 10] = 'Disconnected';
-	e[e.Reconnect = 11] = 'Reconnect';
-	e[e.Hosting = 12] = 'Hosting';
-	e[e.Unhost = 13] = 'Unhost';
-	e[e.Subscription = 14] = 'Subscription';
-	e[e.Resubscription = 15] = 'Resubscription';
-	e[e.SubGift = 16] = 'SubGift';
-	e[e.Clear = 17] = 'Clear';
-	e[e.SubscriberOnlyMode = 18] = 'SubscriberOnlyMode';
-	e[e.FollowerOnlyMode = 19] = 'FollowerOnlyMode';
-	e[e.SlowMode = 20] = 'SlowMode';
-	e[e.RoomMods = 21] = 'RoomMods';
-	e[e.RoomState = 22] = 'RoomState';
-	e[e.Raid = 23] = 'Raid';
-	e[e.Unraid = 24] = 'Unraid';
-	e[e.Notice = 25] = 'Notice';
-	e[e.Info = 26] = 'Info';
-	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
-	e[e.Purchase = 28] = 'Purchase';
 	return e;
-})({});
+})();
+
+
+const MOD_TYPES = ((e = {}) => {
+	e[e.Ban = 0] = 'Ban';
+	e[e.Timeout = 1] = 'Timeout';
+	return e;
+})();
+
+
+const AUTOMOD_TYPES = ((e = {}) => {
+	e[e.MessageRejectedPrompt = 0] = 'MessageRejectedPrompt';
+	e[e.MessageRejected = 1] = 'MessageRejected';
+	e[e.MessageAllowed = 2] = 'MessageAllowed';
+	e[e.MessageDenied = 3] = 'MessageDenied';
+	return e;
+})();
+
+
+const CHAT_TYPES = ((e = {}) => {
+	e[e.Message = 0] = 'Message';
+	e[e.Moderation = 1] = 'Moderation';
+	e[e.ModerationAction = 2] = 'ModerationAction';
+	e[e.TargetedModerationAction = 3] = 'TargetedModerationAction';
+	e[e.AutoMod = 4] = 'AutoMod';
+	e[e.Connected = 5] = 'Connected';
+	e[e.Disconnected = 6] = 'Disconnected';
+	e[e.Reconnect = 7] = 'Reconnect';
+	e[e.Hosting = 8] = 'Hosting';
+	e[e.Unhost = 9] = 'Unhost';
+	e[e.Hosted = 10] = 'Hosted';
+	e[e.Subscription = 11] = 'Subscription';
+	e[e.Resubscription = 12] = 'Resubscription';
+	e[e.SubGift = 13] = 'SubGift';
+	e[e.Clear = 14] = 'Clear';
+	e[e.SubscriberOnlyMode = 15] = 'SubscriberOnlyMode';
+	e[e.FollowerOnlyMode = 16] = 'FollowerOnlyMode';
+	e[e.SlowMode = 17] = 'SlowMode';
+	e[e.EmoteOnlyMode = 18] = 'EmoteOnlyMode';
+	e[e.RoomMods = 19] = 'RoomMods';
+	e[e.RoomState = 20] = 'RoomState';
+	e[e.Raid = 21] = 'Raid';
+	e[e.Unraid = 22] = 'Unraid';
+	e[e.Ritual = 23] = 'Ritual';
+	e[e.Notice = 24] = 'Notice';
+	e[e.Info = 25] = 'Info';
+	e[e.BadgesUpdated = 26] = 'BadgesUpdated';
+	e[e.Purchase = 27] = 'Purchase';
+	e[e.BitsCharity = 28] = 'BitsCharity';
+	e[e.CrateGift = 29] = 'CrateGift'
+	return e;
+})();
 
 
 const NULL_TYPES = [
 	'Reconnect',
 	'RoomState',
-	'BadgesUpdated'
+	'BadgesUpdated',
+	'Clear'
 ];
 
 
-const EVENTS = [
-	'onJoinedEvent',
-	'onDisconnectedEvent',
-	'onReconnectingEvent',
-	'onChatMessageEvent',
-	'onChatNoticeEvent',
-	'onChatActionEvent',
+const MISBEHAVING_EVENTS = [
+	'onBitsCharityEvent',
+	//'onRitualEvent', -- handled by conversion to Message event
 	'onBadgesUpdatedEvent',
-	'onHostingEvent',
-	'onUnhostEvent',
 	'onPurchaseEvent',
-	'onCrateEvent',
-	//'onRitualEvent',
-	'onSubscriptionEvent',
-	//'onResubscriptionEvent',
-	'onSubscriptionGiftEvent',
-	'onTimeoutEvent',
-	'onBanEvent',
-	'onClearChatEvent',
-	'onRaidEvent',
-	'onUnraidEvent',
-	'onRoomModsEvent',
-	'onRoomStateEvent',
-	'onFollowerOnlyModeEvent',
-	'onSlowModeEvent',
-	'onSubscriberOnlyModeEvent',
-	'onEmoteOnlyModeEvent',
-	'onBitsCharityEvent'
+	'onCrateEvent'
 ];
 
 
@@ -98,6 +103,7 @@ export default class ChatHook extends Module {
 		this.should_enable = true;
 
 		this.colors = new ColorAdjuster;
+		this.inverse_colors = new ColorAdjuster;
 
 		this.inject('settings');
 
@@ -131,6 +137,12 @@ export default class ChatHook extends Module {
 		this.PinnedCheer = this.fine.define(
 			'pinned-cheer',
 			n => n.collapseCheer && n.saveRenderedMessageRef,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.RoomPicker = this.fine.define(
+			'chat-picker',
+			n => n.closeRoomPicker && n.handleRoomSelect,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -262,13 +274,18 @@ export default class ChatHook extends Module {
 		const is_dark = this.chat.context.get('theme.is-dark'),
 			mode = this.chat.context.get('chat.adjustment-mode'),
 			contrast = this.chat.context.get('chat.adjustment-contrast'),
-			c = this.colors;
+			c = this.colors,
+			ic = this.inverse_colors;
 
 		// TODO: Get the background color from the theme system.
 		// Updated: Use the lightest/darkest colors from alternating rows for better readibility.
 		c._base = is_dark ? '#191919' : '#e0e0e0'; //#0e0c13' : '#faf9fa';
 		c.mode = mode;
 		c.contrast = contrast;
+
+		ic._base = is_dark ? '#dad8de' : '#19171c';
+		ic.mode = mode;
+		ic.contrast = is_dark ? 13 : 16;
 
 		this.updateChatLines();
 	}
@@ -313,14 +330,19 @@ export default class ChatHook extends Module {
 	}
 
 
-	onEnable() {
-		this.on('site.web_munch:loaded', () => {
-			const ct = this.web_munch.getModule('chat-types');
-			this.chat_types = ct && ct.a || CHAT_TYPES;
-		})
+	async grabTypes() {
+		const ct = await this.web_munch.findModule('chat-types');
 
-		const ct = this.web_munch.getModule('chat-types');
-		this.chat_types = ct && ct.a || CHAT_TYPES;
+		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
+		this.chat_types = ct && ct.b || CHAT_TYPES;
+		this.message_types = ct && ct.c || MESSAGE_TYPES;
+		this.mod_types = ct && ct.e || MOD_TYPES;
+	}
+
+
+	onEnable() {
+		this.on('site.web_munch:loaded', this.grabTypes);
+		this.grabTypes();
 
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
@@ -447,6 +469,19 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.fixPinnedCheer(inst);
 		});
+
+
+		this.RoomPicker.ready((cls, instances) => {
+			for(const inst of instances)
+				this.closeRoomPicker(inst);
+		});
+
+		this.RoomPicker.on('mount', this.closeRoomPicker, this);
+	}
+
+
+	closeRoomPicker(inst) { // eslint-disable-line class-methods-use-this
+		inst.closeRoomPicker();
 	}
 
 
@@ -480,18 +515,62 @@ export default class ChatHook extends Module {
 	}
 
 
+	sendMessage(room, message) {
+		const controller = this.ChatController.first,
+			service = controller && controller.chatService;
+
+		if ( ! service || ! room )
+			return null;
+
+		if ( room.startsWith('#') )
+			room = room.slice(1);
+
+		if ( room.toLowerCase() !== service.channelLogin.toLowerCase() )
+			return service.client.sendCommand(room, message);
+
+		service.sendMessage(message);
+	}
+
+
 	wrapChatService(cls) {
 		const t = this,
-			old_handler = cls.prototype.connectHandlers;
+			old_handler = cls.prototype.connectHandlers,
+			old_send = cls.prototype.sendMessage;
 
 		cls.prototype._ffz_was_here = true;
 
+
+		cls.prototype.sendMessage = function(raw_msg) {
+			const msg = raw_msg.replace(/\n/g, '');
+
+			if ( msg.startsWith('/ffz') ) {
+				this.postMessage({
+					type: t.chat_types.Notice,
+					message: 'The /ffz command is not yet re-implemented.'
+				})
+
+				return false;
+			}
+
+			const event = new FFZEvent({
+				message: msg,
+				channel: this.channelLogin
+			});
+
+			t.emit('chat:pre-send-message', event);
+
+			if ( event.defaultPrevented )
+				return;
+
+			return old_send.call(this, msg);
+		}
+
+
 		cls.prototype.connectHandlers = function(...args) {
 			if ( ! this._ffz_init ) {
-				const i = this,
-					pm = this.postMessage;
+				const i = this;
 
-				for(const key of EVENTS) {
+				for(const key of MISBEHAVING_EVENTS) {
 					const original = this[key];
 					if ( original )
 						this[key] = function(e, t) {
@@ -510,10 +589,7 @@ export default class ChatHook extends Module {
 						out.sub_months = e.months;
 						out.sub_plan = e.methods;
 
-						i._wrapped = e;
-						const ret = i.postMessage(out);
-						i._wrapped = null;
-						return ret;
+						return i.postMessageToCurrentChannel(e, out);
 
 					} catch(err) {
 						t.log.capture(err, {extra: e});
@@ -528,10 +604,7 @@ export default class ChatHook extends Module {
 						out.ffz_type = 'ritual';
 						out.ritual = e.type;
 
-						i._wrapped = e;
-						const ret = i.postMessage(out);
-						i._wrapped = null;
-						return ret;
+						return i.postMessageToCurrentChannel(e, out);
 
 					} catch(err) {
 						t.log.capture(err, {extra: e});
@@ -551,44 +624,52 @@ export default class ChatHook extends Module {
 					return old_unhost.call(i, e, _t);
 				}
 
+				const old_post = this.postMessage;
 				this.postMessage = function(e) {
 					const original = this._wrapped;
-					if ( original ) {
-						// Check that the message is relevant to this channel.
-						if ( original.channel && this.channelLogin && original.channel.slice(1) !== this.channelLogin.toLowerCase() )
-							return;
+					if ( original && ! e._ffz_checked )
+						return this.postMessageToCurrentChannel(original, e);
 
-						const c = e.channel = original.channel;
-						if ( c )
-							e.roomLogin = c.charAt(0) === '#' ? c.slice(1) : c;
-
-						if ( original.message ) {
-							const u = original.message.user;
-							if ( u )
-								e.emotes = u.emotes;
-
-							if ( typeof original.action === 'string' )
-								e.message = original.action;
-							else
-								e.message = original.message.body;
-
-							// Twitch doesn't generate a proper emote tag for echoed back
-							// actions, so we have to regenerate it. Fun. :D
-							if ( u && u.username === i.userLogin )
-								e.emotes = findEmotes(e.message, i.selfEmotes);
-						}
-
-						//e.original = original;
-					}
-
-					//t.log.info('postMessage', e);
-					return pm.call(this, e);
+					return old_post.call(this, e);
 				}
 
 				this._ffz_init = true;
 			}
 
 			return old_handler.apply(this, ...args);
+		}
+
+		cls.prototype.postMessageToCurrentChannel = function(original, message) {
+			message._ffz_checked = true;
+
+			if ( original.channel ) {
+				let chan = message.channel = original.channel.toLowerCase();
+				if ( chan.startsWith('#') )
+					chan = chan.slice(1);
+
+				if ( chan !== this.channelLogin.toLowerCase() )
+					return;
+
+				message.roomLogin = chan;
+			}
+
+			if ( original.message ) {
+				const user = original.message.user;
+				if ( user )
+					message.emotes = user.emotes;
+
+				if ( typeof original.action === 'string' )
+					message.message = original.action;
+				else
+					message.message = original.message.body;
+
+				// Twitch doesn't generate a proper emote tag for echoed back
+				// actions, so we have to regenerate it. Fun. :D
+				if ( user && user.username === this.userLogin )
+					message.emotes = findEmotes(message.message, this.selfEmotes);
+			}
+
+			this.postMessage(message);
 		}
 	}
 

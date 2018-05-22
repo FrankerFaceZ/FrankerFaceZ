@@ -5,10 +5,10 @@
 // ============================================================================
 
 const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)(?:\/)?(\w+)?(?:\/edit)?/;
-//const VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)/;
+const VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)/;
 
 import GET_CLIP from './clip_info.gql';
-//import GET_VIDEO from './video_info.gql';
+import GET_VIDEO from './video_info.gql';
 
 
 // ============================================================================
@@ -27,7 +27,7 @@ export const Clips = {
 		const match = CLIP_URL.exec(token.url),
 			apollo = this.resolve('site.apollo');
 
-		if ( ! apollo || ! match )
+		if ( ! apollo || ! match || match[1] === 'create' )
 			return;
 
 		return {
@@ -41,7 +41,7 @@ export const Clips = {
 					}
 				});
 
-				if ( ! result || ! result.data || ! result.data.clip )
+				if ( ! result || ! result.data || ! result.data.clip || ! result.data.clip.broadcaster )
 					return null;
 
 				const clip = result.data.clip,
@@ -71,7 +71,7 @@ export const Clips = {
 					title: clip.title,
 					desc_1,
 					desc_2: this.i18n.t('clip.desc.2', 'Clipped by %{curator} — %{views|number} View%{views|en_plural}', {
-						curator: clip.curator.displayName,
+						curator: clip.curator ? clip.curator.displayName : this.i18n.t('clip.unknown', 'Unknown'),
 						views: clip.viewCount
 					})
 				}
@@ -81,7 +81,7 @@ export const Clips = {
 }
 
 
-/*export const Videos = {
+export const Videos = {
 	type: 'video',
 	hide_token: true,
 
@@ -104,6 +104,9 @@ export const Clips = {
 						id: match[1]
 					}
 				});
+
+				if ( ! result || ! result.data || ! result.data.video || ! result.data.video.owner )
+					return null;
 
 				const video = result.data.video,
 					user = video.owner.displayName,
@@ -131,13 +134,13 @@ export const Clips = {
 					image: video.previewThumbnailURL,
 					title: video.title,
 					desc_1,
-					/*desc_2: this.i18n.t('video.desc.2', '%{length} — %{views} Views - %{date}', {
+					desc_2: this.i18n.t('video.desc.2', '%{length} — %{views} Views - %{date}', {
 						length: video.lengthSeconds,
 						views: video.viewCount,
 						date: video.publishedAt
-					})/
+					})
 				}
 			}
 		}
 	}
-}*/
+}

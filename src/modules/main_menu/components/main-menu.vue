@@ -38,18 +38,14 @@
 					/>
 				</header>
 				<div class="tw-full-width tw-full-height tw-overflow-hidden tw-flex tw-flex-nowrap tw-relative">
-					<div class="ffz-vertical-nav__items tw-full-width tw-flex-grow-1 scrollable-area" data-simplebar>
-						<div class="simplebar-scroll-content">
-							<div class="simplebar-content">
-								<menu-tree
-									:current-item="currentItem"
-									:modal="nav"
-									@change-item="changeItem"
-									@navigate="navigate"
-								/>
-							</div>
-						</div>
-					</div>
+					<simplebar classes="ffz-vertical-nav__items tw-full-width tw-flex-grow-1">
+						<menu-tree
+							:current-item="currentItem"
+							:modal="nav"
+							@change-item="changeItem"
+							@navigate="navigate"
+						/>
+					</simplebar>
 				</div>
 				<footer class="tw-c-text-alt tw-border-t tw-pd-1">
 					<div>
@@ -60,20 +56,16 @@
 					</div>
 				</footer>
 			</nav>
-			<main class="tw-flex-grow-1 scrollable-area" data-simplebar>
-				<div class="simplebar-scroll-content">
-					<div class="simplebar-content">
-						<menu-page
-							v-if="currentItem"
-							ref="page"
-							:context="context"
-							:item="currentItem"
-							@change-item="changeItem"
-							@navigate="navigate"
-						/>
-					</div>
-				</div>
-			</main>
+			<simplebar classes="tw-flex-grow-1">
+				<menu-page
+					v-if="currentItem"
+					ref="page"
+					:context="context"
+					:item="currentItem"
+					@change-item="changeItem"
+					@navigate="navigate"
+				/>
+			</simplebar>
 		</section>
 	</div>
 </template>

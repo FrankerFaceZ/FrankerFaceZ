@@ -24,11 +24,11 @@ export default class SettingsMenu extends Module {
 		);
 	}
 
-	onEnable() {
+	async onEnable() {
 		this.on('i18n:update', () => this.SettingsMenu.forceUpdate());
 
 		const t = this,
-			React = this.web_munch.getModule('react');
+			React = await this.web_munch.findModule('react');
 		if ( ! React )
 			return;
 
@@ -44,6 +44,11 @@ export default class SettingsMenu extends Module {
 					<button onClick={this.ffzSettingsClick}>
 						{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					</button>
+					{t.cant_window && <div class="tw-mg-t-05 tw-c-text-alt-2">
+						<span class="ffz-i-attention">
+							{t.i18n.t('popup.error', 'We tried opening a pop-up window and could not. Make sure to allow pop-ups from Twitch.')}
+						</span>
+					</div>}
 				</div>);
 
 				return val;
@@ -73,7 +78,14 @@ export default class SettingsMenu extends Module {
 				'_blank',
 				'resizable=yes,scrollbars=yes,width=850,height=600'
 			);
-			win.focus();
+			if ( win )
+				win.focus();
+			else {
+				this.cant_window = true;
+				this.SettingsMenu.forceUpdate();
+				return;
+			}
+
 		} else {
 			this.emit('site.menu_button:clicked');
 		}

@@ -5,7 +5,7 @@
 			class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1"
 		>
 			<span class="ffz-i-info" />
-			{{ t('setting.badge-inheritence', 'These values are being overridden by another profile and may not take effect.') }}
+			{{ t('setting.warn-inheritence', 'These values are being overridden by another profile and may not take effect.') }}
 		</div>
 
 		<div class="tw-mg-b-2 tw-align-right">

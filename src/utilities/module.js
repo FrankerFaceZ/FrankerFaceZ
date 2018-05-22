@@ -402,8 +402,9 @@ export class Module extends EventEmitter {
 	}
 
 
-	inject(name, module) {
+	inject(name, module, require = true) {
 		if ( name instanceof Module || name.prototype instanceof Module ) {
+			require = module != null ? module : true;
 			module = name;
 			name = null;
 		}
@@ -447,7 +448,8 @@ export class Module extends EventEmitter {
 		if ( ! module )
 			throw new Error(`cannot find module ${name} or no module provided`);
 
-		requires.push(module.abs_path('.'));
+		if ( require )
+			requires.push(module.abs_path('.'));
 
 		if ( this.enabled && ! module.enabled )
 			module.enable();

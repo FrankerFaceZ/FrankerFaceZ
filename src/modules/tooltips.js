@@ -4,7 +4,7 @@
 // Tooltip Handling
 // ============================================================================
 
-import {createElement} from 'utilities/dom';
+import {createElement, sanitize} from 'utilities/dom';
 import {has, maybe_call} from 'utilities/object';
 
 import Tooltip from 'utilities/tooltip';
@@ -31,6 +31,7 @@ export default class TooltipProvider extends Module {
 			]
 		}
 
+		this.types.text = target => sanitize(target.dataset.title);
 		this.types.html = target => target.dataset.title;
 	}
 
@@ -38,7 +39,7 @@ export default class TooltipProvider extends Module {
 		const container = document.querySelector('.twilight-root,.twilight-minimal-root') || document.body,
 			is_minimal = container && container.classList.contains('twilight-minimal-root');
 
-		this.tips = new Tooltip(is_minimal ? '.twilight-minimal-root' : 'body #root', 'ffz-tooltip', {
+		this.tips = new Tooltip(is_minimal ? '.twilight-minimal-root,body' : 'body #root,body', 'ffz-tooltip', {
 			html: true,
 			delayHide: this.checkDelayHide.bind(this),
 			delayShow: this.checkDelayShow.bind(this),
@@ -56,6 +57,12 @@ export default class TooltipProvider extends Module {
 				}
 			}
 		});
+
+		this.on(':cleanup', this.cleanup);
+	}
+
+	cleanup() {
+		this.tips.cleanup();
 	}
 
 	checkDelayShow(target, tip) {
@@ -89,7 +96,7 @@ export default class TooltipProvider extends Module {
 	}
 
 	process(target, tip) {
-		const type = target.dataset.tooltipType,
+		const type = target.dataset.tooltipType || 'text',
 			handler = this.types[type];
 
 		if ( ! handler )

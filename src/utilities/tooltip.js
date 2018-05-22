@@ -127,6 +127,18 @@ export class Tooltip {
 	}
 
 
+	cleanup() {
+		for(const el of this.elements) {
+			const tip = el[this._accessor];
+			if ( document.body.contains(el) )
+				continue;
+
+			if ( tip && tip.visible )
+				this.hide(tip);
+		}
+	}
+
+
 	_enter(target) {
 		let tip = target[this._accessor];
 		if ( ! tip )

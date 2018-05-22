@@ -16,19 +16,19 @@ export default class Room {
 	constructor(manager, id, login) {
 		this._destroy_timer = null;
 
-		this.manager = manager;
-		this._id = id;
-		this.login = login;
-
-		if ( id )
-			this.manager.room_ids[id] = this;
-
 		this.refs = new Set;
 		this.style = new ManagedStyle(`room--${login}`);
 
 		this.emote_sets = new SourcedSet;
 		this.users = {};
 		this.user_ids = {};
+
+		this.manager = manager;
+		this._id = id;
+		this.login = login;
+
+		if ( id )
+			this.manager.room_ids[id] = this;
 
 		this.manager.emit(':room-add', this);
 		this.load_data();

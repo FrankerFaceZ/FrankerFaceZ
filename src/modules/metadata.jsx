@@ -346,7 +346,8 @@ export default class Metadata extends Module {
 
 									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background',
 									// Hide the arrow for now, until we re-do our CSS to make it render correctly.
-									arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute tw-hidden',
+									arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
+									arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background  tw-absolute',
 									innerClass: 'tw-pd-1',
 
 									popper: {

@@ -1,3 +1,81 @@
+<div class="list-header">4.0.0-rc1.11<span>@eed9eb9f5eb9acdb58ac</span> <time datetime="2018-05-22">(2018-05-22)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Setting to always display deleted chat messages.</li>
+	<li>Fixed: Issue with the emote menu not loading when navigating to a new channel.</li>
+	<li>API Added: <code>chat:pre-send-message</code> event when sending a chat message to a room.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.10<span>@d27dc686044b45c844e4</span> <time datetime="2018-05-21">(2018-05-21)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Add requested emote data support for merging emote sets and forcing certain emote sets to appear on the Channel tab of the emote menu.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.9<span>@d5a7ef61195e86dc7277</span> <time datetime="2018-05-18">(2018-05-18)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Add support for minimal root pages to the new webpack 4 code. They don't use the same router.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.8<span>@8254abfe4d4c824f58d6</span> <time datetime="2018-05-18">(2018-05-18)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Finish writing support for webpack 4 support.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.7<span>@498c1b079484a762958a</span> <time datetime="2018-05-18">(2018-05-18)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Changed: Rewrite the webpack hooking code to add support for webpack 4.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.6<span>@3d53d461b59654a0ec14</span> <time datetime="2018-05-18">(2018-05-18)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Basic support for rich video cards in chat.</li>
+	<li>Changed: Begin working towards a standard data model for chat lines.</li>
+	<li>Fixed: More robust handling of <code>webpackJsonp</code> wrapping to deal with read-only variables.</li>
+	<li>Fixed: The option to disable channel hosting not always working after the client refreshes data.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.5<span>@eb1433f63b4667bf9010</span> <time datetime="2018-05-10">(2018-05-10)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Option to hide the mouse cursor over the player. This does not work consistently in some web browser due to browser policies preventing the cursor from being hidden in certain situations.</li>
+	<li>Added: Option to not automatically join raids.</li>
+	<li>Fixed: In-line Actions not rendering when Is Moderator is set to False and the user is not a moderator.</li>
+	<li>Fixed: In-line Actions not appearing correctly in the editor preview line.</li>
+	<li>Fixed: Adapt to changes Twitch has made to pre-tokenized chat message data.</li>
+	<li>Fixed: Do not try showing a rich clip preview for the bad link <code>https://clips.twitch.tv/create</code> that is commonly erroneously posted in chat.</li>
+	<li>Fixed: Tooltips not closing in some situations.</li>
+	<li>Fixed: Chat message types sometimes not being detected, causing messages with <code>/me</code> to not appear correctly.</li>
+	<li>Changed: Improve emote menu performance using functional components.</li>
+	<li>Changed: Stop logging GraphQL errors. Twitch's GraphQL endpoint breaks too often for this to be useful.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.4<span>@2009dc29d6bd5e122bd6</span> <time datetime="2018-04-29">(2018-04-29)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Issue with mod actions not working properly on AutoMod messages due to a missing channel mapping.</li>
+	<li>Changed: Update dependencies.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1.3 <time datetime="2018-04-28">(2018-04-28)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Fixed: Color validation issues for custom actions.</li>
+	<li>Fixed: Issues generating custom action DOM when the user is logged out.</li>
+</ul>
+
+<div class="list-header">4.0.0-rc1<span>@4a134ad5179b17981a92</span> <time datetime="2018-04-28">(2018-04-28)</time></div>
+<ul class="chat-menu-content menu-side-padding">
+	<li>Added: Custom In-Line Chat Actions</li>
+	<li>Added: Option to disable Channel Hosting.</li>
+	<li>Changed: Minor refactoring of how we wrap incoming chat events, since Twitch is now filtering by chat room themselves for most events.</li>
+	<li>Fixed: Grab chat types from React correctly.</li>
+	<li>Fixed: Emoji appearing squashed in chat when using the baseline emote alignment option.</li>
+	<li>Fixed: Strip new lines from outgoing chat messages to ensure we process them correctly, locally.</li>
+	<li>Fixed: Display arrows on balloons for channel metadata.</li>
+	<li>Fixed: Validate the requested emoji style when getting image URLs.</li>
+	<li>Fixed: Do not use default values for settings with merge strategies if profiles are present and empty.</li>
+	<li>Fixed: Display a message in the chat settings menu if we tried opening FFZ settings in a pop-up and failed.</li>
+	<li>Fixed: Wait a bit for webpack's loader to be found if it is not immediately present in window.</li>
+	<li>Fixed: Forcibly close the chat room picker when first loading a channel.</li>
+	<li>Fixed: Vertically align FFZ icon for emote menu with bits icon.</li>
+</ul>
+
 <div class="list-header">4.0.0-beta2.18.2<span>@a1a7fb774d62948bacc5</span> <time datetime="2018-04-16">(2018-04-16)</time></div>
 <ul class="chat-menu-content menu-side-padding">
 	<li>Fixed: Rewrite stacktraces for automatic error reporting to use the permanent URL for the current FrankerFaceZ build.</li>

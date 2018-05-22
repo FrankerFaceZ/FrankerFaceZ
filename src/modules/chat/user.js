@@ -11,14 +11,14 @@ export default class User {
 		this.manager = manager;
 		this.room = room;
 
+		this.emote_sets = new SourcedSet;
+		this.badges = new SourcedSet;
+
 		this._id = id;
 		this.login = login;
 
 		if ( id )
 			(room || manager).user_ids[id] = this;
-
-		this.emote_sets = new SourcedSet;
-		this.badges = new SourcedSet;
 	}
 
 	destroy() {

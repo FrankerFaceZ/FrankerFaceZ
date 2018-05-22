@@ -1,0 +1,40 @@
+.ffz-mod-card {
+	width: 340px;
+	z-index: 9001;
+
+    > header {
+        background-size: cover;
+        background-position: top;
+    }
+
+	.ffz-tooltip {
+		> * {
+			pointer-events: none;
+		}
+	}
+	
+	.ffz--background-dimmer {
+		background-color: rgba(0, 0, 0, 0.8);
+	}
+
+	.ffz--info-lines > * {
+		line-height: 1.2;
+	}
+
+    .mod-cards__tabs-container {
+		height: 3rem;
+
+		> .mod-cards__tab {
+			position: relative;
+			top: -.1rem;
+			cursor: pointer;
+			display: inline-block;
+			line-height: 3rem;
+			margin-right: .5rem;
+
+			&:hover, &.active {
+				border-top: 1px solid #6441a4;
+			}
+		}
+	}
+}

@@ -19,9 +19,9 @@ export default class RichContent extends Module {
 		this.RichContent = null;
 	}
 
-	onEnable() {
+	async onEnable() {
 		const t = this,
-			React = this.web_munch.getModule('react');
+			React = await this.web_munch.findModule('react');
 		if ( ! React )
 			return;
 

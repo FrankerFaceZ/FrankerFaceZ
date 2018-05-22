@@ -9,6 +9,11 @@ export const NEW_API = '//api-test.frankerfacez.com';
 
 export const SENTRY_ID = 'https://18f42c65339d4164b3fdebfc8c8bc99b@sentry.io/1186960';
 
+
+export const LV_SERVER = 'https://cbenni.com/api';
+export const LV_SOCKET_SERVER = 'wss://cbenni.com/socket.io/';
+
+
 export const TWITCH_EMOTE_BASE = '//static-cdn.jtvnw.net/emoticons/v1/';
 
 export const KNOWN_CODES = {
