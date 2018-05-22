@@ -7,6 +7,7 @@
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
+import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
 
@@ -550,6 +551,16 @@ export default class ChatHook extends Module {
 
 				return false;
 			}
+
+			const event = new FFZEvent({
+				message: msg,
+				channel: this.channelLogin
+			});
+
+			t.emit('chat:pre-send-message', event);
+
+			if ( event.defaultPrevented )
+				return;
 
 			return old_send.call(this, msg);
 		}

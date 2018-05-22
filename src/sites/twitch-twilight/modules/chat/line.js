@@ -54,6 +54,7 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
 
 		const t = this,
 			React = await this.web_munch.findModule('react');
@@ -195,7 +196,17 @@ export default class ChatLine extends Module {
 				const user = msg.user,
 					color = t.parent.colors.process(user.color),
 					bg_css = null, //Math.random() > .7 ? t.parent.inverse_colors.process(user.color) : null,
-					show = this._ffz_show = this.state.alwaysShowMessage || ! msg.deleted;
+					show_deleted = t.chat.context.get('chat.filtering.show-deleted');
+
+				let show, show_class;
+
+				if ( show_deleted ) {
+					show = true;
+					show_class = msg.deleted;
+				} else {
+					show = this.state.alwaysShowMessage || ! msg.deleted;
+					show_class = false;
+				}
 
 				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
 
@@ -222,7 +233,7 @@ export default class ChatLine extends Module {
 				if ( ! this.ffz_user_click_handler )
 					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
-				let cls = 'chat-line__message',
+				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'

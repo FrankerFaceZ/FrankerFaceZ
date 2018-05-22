@@ -5,7 +5,8 @@
 
 import {has} from 'utilities/object';
 
-const Detach = {};
+const Detach = Symbol('Detach');
+const StopPropagation = Symbol('StopPropagation');
 
 const SNAKE_CAPS = /([a-z])([A-Z])/g,
 	SNAKE_SPACE = /[ \t\W]/g,
@@ -140,6 +141,9 @@ export class EventEmitter {
 				else
 					item[2] = ttl - 1;
 			}
+
+			if ( (args[0] instanceof FFZEvent && args[0].propagationStopped) || ret === StopPropagation )
+				break;
 		}
 
 		if ( removed.size ) {
@@ -187,6 +191,9 @@ export class EventEmitter {
 				else
 					item[2] = ttl - 1;
 			}
+
+			if ( (args[0] instanceof FFZEvent && args[0].propagationStopped) || ret === StopPropagation )
+				break;
 		}
 
 		if ( removed.size ) {
@@ -275,6 +282,26 @@ export class EventEmitter {
 }
 
 EventEmitter.Detach = Detach;
+EventEmitter.StopPropagation = StopPropagation;
+
+
+export class FFZEvent {
+	constructor(data) {
+		this.defaultPrevented = false;
+		this.propagationStopped = false;
+
+		Object.assign(this, data);
+	}
+
+	stopPropagation() {
+		this.propagationStopped = true;
+	}
+
+	preventDefault() {
+		this.defaultPrevented = true;
+	}
+}
+
 
 
 export class HierarchicalEventEmitter extends EventEmitter {

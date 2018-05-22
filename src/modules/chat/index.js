@@ -96,6 +96,18 @@ export default class Chat extends Module {
 			}
 		});
 
+
+		this.settings.add('chat.filtering.show-deleted', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Always display deleted messages.',
+				description: 'Deleted messages will be faded and displayed with a line through the message text.',
+				component: 'setting-check-box'
+			}
+		});
+
+
 		this.settings.add('chat.filtering.highlight-mentions', {
 			default: false,
 			ui: {

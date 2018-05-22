@@ -1019,7 +1019,7 @@ export default class EmoteMenu extends Module {
 							if ( ! all.includes(section) )
 								all.push(section);
 
-							if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data.user, me) )
+							if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
 								channel.push(section);
 						}
 					}
