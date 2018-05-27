@@ -70,7 +70,7 @@ export default class RavenLogger extends Module {
 			});
 
 			this.settings.add('reports.error.include-user', {
-				default: true,
+				default: false,
 				ui: {
 					path: 'Data Management > Reporting >> Error Reports',
 					title: 'Include user IDs in reports.',

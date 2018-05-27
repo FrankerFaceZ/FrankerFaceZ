@@ -6,6 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import pathToRegexp from 'path-to-regexp';
 
 
 export default class Switchboard extends Module {
@@ -19,7 +20,12 @@ export default class Switchboard extends Module {
 
 
 	awaitRouter() {
-		const router = this.fine.searchTree(null, n => n.logger && n.logger.category === 'default-root-router', 100);
+		const router = this.fine.searchTree(null,
+			n => (n.logger && n.logger.category === 'default-root-router') ||
+				(n.onHistoryChange && n.reportInteractive) ||
+				(n.onHistoryChange && n.props && n.props.location),
+			100);
+
 		if ( router )
 			return Promise.resolve(router);
 
@@ -27,95 +33,59 @@ export default class Switchboard extends Module {
 	}
 
 
-	awaitMinimalRouter() {
-		const router = this.fine.searchTree(null, n => n.onHistoryChange && n.reportInteractive);
-		if ( router )
-			return Promise.resolve(router);
-
-		return new Promise(r => setTimeout(r, 50)).then(() => this.awaitMinimalRouter());
-	}
-
-
-	hijinx(da_switch, path) {
-		const real_context = da_switch.context;
-		let output;
-
-		try {
-			da_switch.context = {
-				router: {
-					route: {
-						location: {
-							pathname: path
-						}
-					}
-				}
-			}
-
-			output = da_switch.render();
-
-		} catch(err) {
-			this.log.error('Error forcing router to render another page.', err);
-			da_switch.context = real_context;
-			return;
-		}
-
-		da_switch.context = real_context;
-
-		if ( ! output || ! output.props || ! output.props.component )
-			return this.log.warn('Unexpected output from router render.');
-
-		let component;
-
-		try {
-			component = new output.props.component;
-		} catch(err) {
-			this.log.error('Error instantiating component for forced loading of another chunk.', err);
-			return;
-		}
-
-		try {
-			component.props.children.props.loader().then(() => {
-				this.log.info('Successfully forced a chunk to load.');
-			});
-		} catch(err) {
-			this.log.warn('Unexpected result trying to use component loader to force loading of another chunk.', err);
-		}
-	}
-
-
 	async onEnable() {
-		const root = await this.parent.awaitElement('.twilight-minimal-root,.twilight-root'),
-			is_minimal = root && root.classList.contains('twilight-minimal-root');
-
+		await this.parent.awaitElement('.twilight-minimal-root,.twilight-root');
 		if ( this.web_munch._require || this.web_munch.v4 === false )
 			return;
 
-		if ( is_minimal )
-			return this.enableMinimal();
-
 		const router = await this.awaitRouter(),
-			child = router && this.fine.getFirstChild(router),
-			da_switch = child && child.stateNode;
+			da_switch = router && this.fine.searchTree(router, n => n.context && n.context.router && n.props && n.props.children && n.componentWillMount && n.componentWillMount.toString().includes('Switch'));
 
 		if ( ! da_switch )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
 
-		const on_settings = da_switch.context.router.route.location.pathname.includes('settings');
-		return this.hijinx(da_switch, on_settings ? '/inventory' : '/settings');
-	}
 
+		// Identify Router
+		this.log.info(`Found Router and Switch with ${da_switch.props.children.length} routes.`);
 
-	async enableMinimal() {
-		const router = await this.awaitMinimalRouter(),
-			da_switch = router && this.fine.searchTree(router, n => n.context && n.context.router);
+		const location = da_switch.context.router.route.location.pathname;
 
-		if ( this.web_munch._require || this.web_munch.v4 === false )
-			return;
+		for(const route of da_switch.props.children) {
+			if ( ! route.props || ! route.props.component )
+				continue;
 
-		if ( ! da_switch )
-			return new Promise(r => setTimeout(r, 50)).then(() => this.enableMinimal());
+			try {
+				const reg = pathToRegexp(route.props.path);
+				if ( ! reg.exec || reg.exec(location) )
+					continue;
 
-		const on_prime = da_switch.context.router.route.location.pathname.includes('prime');
-		return this.hijinx(da_switch, on_prime ? '/subs' : '/prime')
+			} catch(err) {
+				continue;
+			}
+
+			this.log.info('Found Non-Matching Route', route.props.path);
+
+			let component;
+
+			try {
+				component = new route.props.component;
+			} catch(err) {
+				this.log.error('Error instantiating component for forced chunk loading.', err);
+				component = null;
+			}
+
+			if ( ! component || ! component.props || ! component.props.children || ! component.props.children.props || ! component.props.children.props.loader )
+				continue;
+
+			try {
+				component.props.children.props.loader().then(() => {
+					this.log.info('Successfully forced a chunk to load using route', route.props.path)
+				});
+			} catch(err) {
+				this.log.warn('Unexpected result trying to use component loader to force loading of another chunk.');
+			}
+
+			break;
+		}
 	}
 }
