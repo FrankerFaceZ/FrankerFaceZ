@@ -97,6 +97,17 @@ export default class Chat extends Module {
 		});
 
 
+		this.settings.add('chat.remove-dropped-messages', {
+			default: false,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Remove local messages exceeding 500 characters.',
+				description: 'This will remove messages locally that exceed the 500 character limit as they are dropped by Twitch anyway.',
+				component: 'setting-check-box'
+			}
+		});
+
+
 		this.settings.add('chat.filtering.show-deleted', {
 			default: false,
 			ui: {
@@ -295,6 +306,20 @@ export default class Chat extends Module {
 		this.context.on('changed:chat.bits.animated', () => {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
+		});
+
+		this.on('chat:pre-send-message', evt => {
+			if (this.context.get('chat.remove-dropped-messages')) {
+				if (evt.message.length > 500) {
+					evt.preventDefault();
+					const site_chat = this.resolve('site.chat');
+					
+					site_chat.ChatController.first.chatService.postMessage({
+						type: site_chat.chat_types['Notice'],
+						message: 'Message was not sent due to exceeding the 500 character limit.'
+					});
+				}
+			}
 		});
 	}
 
