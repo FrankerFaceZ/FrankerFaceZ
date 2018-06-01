@@ -8,13 +8,15 @@
 .chat-list__lines .chat-line__bits-charity,
 .user-notice-line,
 .chat-line__message:not(.chat-line--inline) {
-	background-color: transparent !important;
+	&:not(.ffz-custom-color) {
+		background-color: transparent !important;
 
-	&:nth-child(2n+0) {
-		background-color: rgba(0,0,0,0.1) !important;
+		&:nth-child(2n+0) {
+			background-color: rgba(0,0,0,0.1) !important;
 
-		.tw-theme--dark & {
-			background-color: rgba(255,255,255,0.05) !important;
+			.tw-theme--dark & {
+				background-color: rgba(255,255,255,0.05) !important;
+			}
 		}
 	}
 }

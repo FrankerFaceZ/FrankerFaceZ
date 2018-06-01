@@ -657,7 +657,7 @@ export class ColorAdjuster {
 					rgb = rgb.brighten(-1);
 		}
 
-		const out = rgb.toHex();
+		const out = rgb.toCSS();
 		this._cache.set(color, out);
 		return out;
 	}

@@ -1,27 +1,46 @@
 <template lang="html">
-	<div class="ffz--color-widget tw-relative tw-full-width tw-mg-y-05">
-		<input
-			ref="input"
-			v-bind="$attrs"
-			v-model="color"
-			type="text"
-			class="tw-input tw-pd-r-3"
-			autocapitalize="off"
-			autocorrect="off"
-			autocomplete="off"
-			@input="onChange"
-		>
+	<div class="ffz--color-widget">
+		<div v-if="showInput" class="tw-relative tw-full-width tw-mg-y-05">
+			<input
+				v-if="showInput"
+				ref="input"
+				v-bind="$attrs"
+				v-model="color"
+				type="text"
+				class="tw-input tw-pd-r-3"
+				autocapitalize="off"
+				autocorrect="off"
+				autocomplete="off"
+				@input="onChange"
+			>
 
-		<button
-			class="ffz-color-preview tw-absolute tw-top-0 tw-bottom-0 tw-right-0 tw-border-l tw-z-default"
-			@click="togglePicker"
-		>
-			<figure v-if="! valid" class="ffz-i-attention tw-c-text-alert" />
-			<figure v-else-if="color" :style="`background-color: ${color}`" />
-			<figure v-else class="ffz-i-eyedropper" />
-		</button>
-		<div v-on-clickaway="closePicker" v-if="open" class="tw-absolute tw-z-default tw-right-0">
-			<chrome-picker :value="colors" @input="onPick" />
+			<button
+				class="ffz-color-preview tw-absolute tw-top-0 tw-bottom-0 tw-right-0 tw-border-l tw-z-default"
+				@click="togglePicker"
+			>
+				<figure v-if="! valid" class="ffz-i-attention tw-c-text-alert" />
+				<figure v-else-if="color" :style="`background-color: ${color}`" />
+				<figure v-else class="ffz-i-eyedropper" />
+			</button>
+			<div v-on-clickaway="closePicker" v-if="open" class="tw-absolute tw-z-default tw-right-0">
+				<chrome-picker :value="colors" @input="onPick" />
+			</div>
+		</div>
+		<div v-else class="tw-relative">
+			<button
+				class="tw-button tw-button--hollow ffz-color-preview"
+				@click="togglePicker"
+				@contextmenu.prevent="maybeResetColor"
+			>
+				<figure v-if="! valid" class="ffz-i-attention tw-c-text-alert" />
+				<figure v-else-if="color" :style="`background-color: ${color}`">
+					&nbsp;
+				</figure>
+				<figure v-else class="ffz-i-eyedropper" />
+			</button>
+			<div v-on-clickaway="closePicker" v-if="open" class="tw-absolute tw-z-default tw-right-0">
+				<chrome-picker :value="colors" @input="onPick" />
+			</div>
 		</div>
 	</div>
 </template>
@@ -30,12 +49,12 @@
 
 import {Color} from 'utilities/color';
 
-import {Chrome} from 'vue-color';
+import {Sketch} from 'vue-color';
 import {mixin as clickaway} from 'vue-clickaway';
 
 export default {
 	components: {
-		'chrome-picker': Chrome
+		'chrome-picker': Sketch
 	},
 
 	mixins: [clickaway],
@@ -46,9 +65,17 @@ export default {
 			type: String,
 			default: '#000'
 		},
+		nullable: {
+			type: Boolean,
+			default: false
+		},
 		validate: {
 			type: Boolean,
 			default: true
+		},
+		showInput: {
+			type: Boolean,
+			default: false
 		}
 	},
 
@@ -84,6 +111,17 @@ export default {
 	},
 
 	methods: {
+		maybeResetColor() {
+			if ( this.open )
+				return this.open = false;
+
+			if ( this.nullable ) {
+				this.color = '';
+				this._validate();
+				this.emit();
+			}
+		},
+
 		openPicker() {
 			this.open = true;
 		},

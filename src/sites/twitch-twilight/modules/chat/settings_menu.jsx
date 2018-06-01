@@ -69,15 +69,17 @@ export default class SettingsMenu extends Module {
 		});
 	}
 
-	click(inst) {
-		// Pop-out chat check
-		const twMinimalRoot = document.querySelector('.twilight-minimal-root');
-		if (twMinimalRoot) {
+	click(inst, event) {
+		// If we're on a page with minimal root, we want to open settings
+		// in a popout as we're almost certainly within Popout Chat.
+		const minimal_root = document.querySelector('.twilight-minimal-root');
+		if ( minimal_root || (event && (event.ctrlKey || event.shiftKey)) ) {
 			const win = window.open(
 				'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
 				'_blank',
 				'resizable=yes,scrollbars=yes,width=850,height=600'
 			);
+
 			if ( win )
 				win.focus();
 			else {

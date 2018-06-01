@@ -6,7 +6,7 @@
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has} from 'utilities/object';
+import {timeout, has, glob_to_regex, escape_regex} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -115,6 +115,100 @@ export default class Chat extends Module {
 				title: 'Always display deleted messages.',
 				description: 'Deleted messages will be faded and displayed with a line through the message text.',
 				component: 'setting-check-box'
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-terms', {
+			default: [],
+			type: 'array_merge',
+			ui: {
+				path: 'Chat > Filtering >> Highlight Terms',
+				component: 'basic-terms',
+				colored: true
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-terms--color-regex', {
+			requires: ['chat.filtering.highlight-basic-terms'],
+			process(ctx) {
+				const val = ctx.get('chat.filtering.highlight-basic-terms');
+				if ( ! val || ! val.length )
+					return null;
+
+				const colors = new Map;
+
+				for(const item of val) {
+					let list;
+					const c = item.c || null,
+						t = item.t;
+
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					if ( colors.has(c) )
+						colors.get(c).push(v);
+					else
+						colors.set(c, [v]);
+				}
+
+
+				for(const [key, list] of colors)
+					colors.set(key, new RegExp(`\\b(${list.join('|')})\\b`, 'gi'));
+
+				return colors;
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-blocked', {
+			default: [],
+			type: 'array_merge',
+			ui: {
+				path: 'Chat > Filtering >> Blocked Terms',
+				component: 'basic-terms'
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-blocked--regex', {
+			requires: ['chat.filtering.highlight-basic-blocked'],
+			process(ctx) {
+				const val = ctx.get('chat.filtering.highlight-basic-blocked');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out.push(v);
+				}
+
+				if ( ! out.length )
+					return;
+
+				return new RegExp(`\\b(${out.join('|')})\\b`, 'gi');
 			}
 		});
 
