@@ -22,12 +22,13 @@ export default class SocketClient extends Module {
 
 		this.inject('settings');
 
-		this.settings.add('socket.cluster', {
+		this.settings.add('socket.use-cluster', {
 			default: 'Production',
 
 			ui: {
 				path: 'Debugging @{"expanded": false, "sort": 9999} > Socket >> General',
 				title: 'Server Cluster',
+				description: 'Which server cluster to connect to. Do not change this unless you are actually doing development work on the socket server backend. Doing so will break all features relying on the socket server, including emote information lookups, link tooltips, and live data updates.',
 
 				component: 'setting-select-box',
 
@@ -59,7 +60,7 @@ export default class SocketClient extends Module {
 		this._host_pool = -1;
 
 
-		this.settings.on(':changed:socket.cluster', () => {
+		this.settings.on(':changed:socket.use-cluster', () => {
 			this._host = null;
 			if ( this.disconnected)
 				this.connect();
@@ -113,7 +114,7 @@ export default class SocketClient extends Module {
 	// ========================================================================
 
 	selectHost() {
-		const cluster_id = this.settings.get('socket.cluster'),
+		const cluster_id = this.settings.get('socket.use-cluster'),
 			cluster = WS_CLUSTERS[cluster_id],
 			l = cluster && cluster.length;
 

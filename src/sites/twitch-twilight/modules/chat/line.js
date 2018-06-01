@@ -55,6 +55,8 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.highlight-basic-terms--color-regex', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
 
 		const t = this,
 			React = await this.web_munch.findModule('react');
@@ -195,7 +197,6 @@ export default class ChatLine extends Module {
 
 				const user = msg.user,
 					color = t.parent.colors.process(user.color),
-					bg_css = null, //Math.random() > .7 ? t.parent.inverse_colors.process(user.color) : null,
 					show_deleted = t.chat.context.get('chat.filtering.show-deleted');
 
 				let show, show_class;
@@ -228,7 +229,8 @@ export default class ChatLine extends Module {
 				}
 
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
-					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
+					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
+					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
 				if ( ! this.ffz_user_click_handler )
 					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
@@ -342,7 +344,7 @@ export default class ChatLine extends Module {
 					return null;
 
 				return e('div', {
-					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}`,
+					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
 					style: {backgroundColor: bg_css},
 					'data-room-id': this.props.channelID,
 					'data-room': room,
@@ -361,14 +363,18 @@ export default class ChatLine extends Module {
 	updateLines() {
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.message;
-			if ( msg )
+			if ( msg ) {
 				msg.ffz_tokens = null;
+				msg.mentioned = msg.mention_color = null;
+			}
 		}
 
 		for(const inst of this.ChatRoomLine.instances) {
 			const msg = inst.props.message;
-			if ( msg )
+			if ( msg ) {
 				msg.ffz_tokens = null;
+				msg.mentioned = msg.mention_color = null;
+			}
 		}
 
 		this.ChatLine.forceUpdate();

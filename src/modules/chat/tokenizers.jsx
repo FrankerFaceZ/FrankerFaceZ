@@ -261,6 +261,138 @@ export const Mentions = {
 
 
 // ============================================================================
+// Custom Highlight Terms
+// ============================================================================
+
+export const CustomHighlights = {
+	type: 'highlight',
+	priority: 100,
+
+	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-highlight.vue'),
+
+	render(token, createElement) {
+		return (<strong class="ffz--highlight">{token.text}</strong>);
+	},
+
+	process(tokens, msg) {
+		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		const colors = this.context.get('chat.filtering.highlight-basic-terms--color-regex');
+		if ( ! colors || ! colors.size )
+			return tokens;
+
+		for(const [color, regex] of colors) {
+			const out = [];
+			for(const token of tokens) {
+				if ( token.type !== 'text' ) {
+					out.push(token);
+					continue;
+				}
+
+				regex.lastIndex = 0;
+				const text = token.text;
+				let idx = 0, match;
+
+				while((match = regex.exec(text))) {
+					const nix = match.index;
+
+					if ( idx !== nix )
+						out.push({type: 'text', text: text.slice(idx, nix)});
+
+					msg.mentioned = true;
+					msg.mention_color = color;
+
+					out.push({
+						type: 'highlight',
+						text: match[1]
+					});
+
+					idx = nix + match[1].length;
+				}
+
+				if ( idx < text.length )
+					out.push({type: 'text', text: text.slice(idx)});
+			}
+
+			tokens = out;
+		}
+
+		return tokens;
+	}
+}
+
+
+export const BlockedTerms = {
+	type: 'blocked',
+	priority: 99,
+
+	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-blocked.vue'),
+
+	render(token, createElement) {
+		return (<strong
+			data-text={token.text}
+			data-tooltip-type="blocked"
+			class="ffz-tooltip ffz--blocked"
+		>
+			&times;&times;&times;
+		</strong>);
+	},
+
+	tooltip(target) {
+		const ds = target.dataset;
+		return [
+			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+				this.i18n.t('chat.filtering.blocked-term', 'Blocked Term')
+			}</div>),
+			ds.text
+		]
+	},
+
+	process(tokens) {
+		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		const regex = this.context.get('chat.filtering.highlight-basic-blocked--regex');
+		if ( ! regex )
+			return tokens;
+
+		const out = [];
+		for(const token of tokens) {
+			if ( token.type !== 'text' ) {
+				out.push(token);
+				continue;
+			}
+
+			regex.lastIndex = 0;
+			const text = token.text;
+			let idx = 0, match;
+
+			while((match = regex.exec(text))) {
+				const nix = match.index;
+
+				if ( idx !== nix )
+					out.push({type: 'text', text: text.slice(idx, nix)});
+
+				out.push({
+					type: 'blocked',
+					text: match[1]
+				});
+
+				idx = nix + match[1].length;
+			}
+
+			if ( idx < text.length )
+				out.push({type: 'text', text: text.slice(idx)});
+		}
+
+		return out;
+	}
+}
+
+
+
+// ============================================================================
 // Cheers
 // ============================================================================
 

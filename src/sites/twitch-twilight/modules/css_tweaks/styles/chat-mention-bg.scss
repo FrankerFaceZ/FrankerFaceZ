@@ -1,6 +1,6 @@
 .chat-line__message:not(.chat-line--inline),
 .user-notice-line {
-	&.ffz-mentioned {
+	&.ffz-mentioned:not(.ffz-custom-color) {
 		background-color: rgba(255,127,127,.2) !important;
 
 		.tw-theme--dark & {

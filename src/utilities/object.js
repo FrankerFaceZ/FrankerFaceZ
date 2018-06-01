@@ -251,6 +251,65 @@ export const escape_regex = RegExp.escape || function escape_regex(str) {
 }
 
 
+const CONTROL_CHARS = '/$^+.()=!|';
+
+export function glob_to_regex(input) {
+	if ( typeof input !== 'string' )
+		throw new TypeError('input must be a string');
+
+	let output = '',
+		groups = 0;
+
+	for(let i=0, l=input.length; i<l; i++) {
+		const char = input[i];
+
+		if ( CONTROL_CHARS.includes(char) )
+			output += `\\${char}`;
+
+		else if ( char === '?' )
+			output += '.';
+
+		else if ( char === '[' || char === ']' )
+			output += char;
+
+		else if ( char === '{' ) {
+			output += '(?:';
+			groups++;
+
+		} else if ( char === '}' ) {
+			if ( groups > 0 ) {
+				output += ')';
+				groups--;
+			}
+
+		} else if ( char === ',' && groups > 0 )
+			output += '|';
+
+		else if ( char === '*' ) {
+			let count = 1;
+			while(input[i+1] === '*') {
+				count++;
+				i++;
+			}
+
+			if ( count > 1 )
+				output += '.*?';
+			else
+				output += '[^ ]*?';
+
+		} else
+			output += char;
+	}
+
+	while(groups > 0) {
+		output += ')';
+		groups--;
+	}
+
+	return output;
+}
+
+
 export class SourcedSet {
 	constructor() {
 		this._cache = [];

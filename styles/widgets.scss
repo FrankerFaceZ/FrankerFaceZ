@@ -12,6 +12,12 @@
 .tw-display-inline { display: inline !important }
 .tw-width-auto { width: auto !important }
 
+
+.ffz-monospace {
+	font-family: monospace;
+}
+
+
 .ffz--widget {
 	input, select {
 		min-width: 20rem;
@@ -20,6 +26,11 @@
 	label {
 		min-width: 15rem;
 	}
+}
+
+
+.ffz-min-width-unset {
+	min-width: unset !important;
 }
 
 

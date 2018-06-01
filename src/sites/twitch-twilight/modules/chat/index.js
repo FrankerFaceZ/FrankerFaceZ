@@ -285,7 +285,7 @@ export default class ChatHook extends Module {
 
 		ic._base = is_dark ? '#dad8de' : '#19171c';
 		ic.mode = mode;
-		ic.contrast = is_dark ? 13 : 16;
+		ic.contrast = contrast;
 
 		this.updateChatLines();
 	}
