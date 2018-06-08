@@ -45,6 +45,23 @@ export default class Scroller extends Module {
 				]
 			}
 		});
+
+		this.settings.add('chat.scroller.smooth-scroll', {
+			default: 0,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Smooth Scrolling',
+				description: 'Animates new chat messages into view. Will speed up if necessary to keep up with chat.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Slow'},
+					{value: 2, title: 'Medium'},
+					{value: 3, title: 'Fast'},
+					{value: 4, title: 'Very Fast'}
+				]
+			}
+		});
 	}
 
 	onEnable() {
@@ -61,6 +78,15 @@ export default class Scroller extends Module {
 				inst.ffzDisableFreeze();
 				if ( val !== 0 )
 					inst.ffzEnableFreeze();
+			}
+		});
+
+		this.smoothScroll = this.chat.context.get('chat.scroller.smooth-scroll');
+		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
+			this.smoothScroll = val;
+
+			for(const inst of this.ChatScroller.instances) {
+				inst.ffzSetSmoothScroll(val);
 			}
 		});
 
@@ -223,6 +249,42 @@ export default class Scroller extends Module {
 				//this.ffzHideFrozen();
 			}
 
+			cls.prototype.smoothScrollBottom = function() {
+				if(this.state.ffzSmoothAnimation){
+					clearTimeout(this.state.ffzSmoothAnimation);
+				}
+				this.isScrollingToBottom = true;
+				// Step setting value is # pixels to scroll per 10ms.
+				// 1 is pretty slow, 2 medium, 3 fast, 4 very fast.
+				let step = this.ffz_smooth_scroll;
+				const scrollContent = this.scroll.scrollContent;
+				const targetTop = scrollContent.scrollHeight - scrollContent.clientHeight;
+				const difference = targetTop - scrollContent.scrollTop;
+
+				// If we are falling behind speed us up
+				if (difference > scrollContent.clientHeight) {
+					// we are a full scroll away, just jump there
+					step = difference;
+				} else if (difference > 200) {
+					// we are starting to fall behind, speed it up a bit
+					step += step * parseInt(difference / 200, 10);
+				}
+				const smoothAnimation = () => {
+					if(this.state.ffzFrozen) {
+						this.isScrollingToBottom = false;
+						return;
+					}
+					if (scrollContent.scrollTop < (scrollContent.scrollHeight - scrollContent.clientHeight)) {
+						scrollContent.scrollTop += step;
+						this.state.ffzSmoothAnimation = setTimeout(smoothAnimation, 10);
+					} else {
+						scrollContent.scrollTop = scrollContent.scrollHeight - scrollContent.clientHeight;
+						this.isScrollingToBottom = false;
+					}
+				}
+				smoothAnimation();
+			}
+
 
 			cls.prototype.ffzInstallHandler = function() {
 				if ( this._ffz_handleScroll )
@@ -231,8 +293,13 @@ export default class Scroller extends Module {
 				const t = this;
 				this._old_scroll = this.scrollToBottom;
 				this.scrollToBottom = function() {
-					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen )
-						return this._old_scroll();
+					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen ) {
+						if (this.ffz_smooth_scroll !== 0) {
+							this.smoothScrollBottom();
+						} else {
+							this._old_scroll();
+						}
+					}
 				}
 
 				this._ffz_handleScroll = this.handleScrollEvent;
@@ -394,6 +461,11 @@ export default class Scroller extends Module {
 			}
 
 
+			cls.prototype.ffzSetSmoothScroll = function(value) {
+				this.ffz_smooth_scroll = value;
+			}
+
+
 			for(const inst of instances)
 				this.onMount(inst);
 		});
@@ -420,6 +492,8 @@ export default class Scroller extends Module {
 
 		if ( this.freeze !== 0 )
 			inst.ffzEnableFreeze();
+
+		inst.ffzSetSmoothScroll(this.smoothScroll);
 	}
 
 	onUnmount(inst) { // eslint-disable-line class-methods-use-this
