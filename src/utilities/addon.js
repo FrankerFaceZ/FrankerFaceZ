@@ -1,4 +1,5 @@
 import Module from 'utilities/module';
+import {deep_copy} from 'utilities/object';
 
 export class Addon extends Module {
 	constructor(...args) {
@@ -21,15 +22,18 @@ export class AddonManager extends Module {
 
 		this.inject('settings');
 
+		this.addons = {};
+		this.enabled_addons = this.settings.provider.get('addons.enabled') || [];
+
 		this.settings.addUI('add-ons', {
 			path: 'Add-Ons',
 			component: 'add-ons',
 			title: 'Add-Ons',
+			enabled_addons: this.enabled_addons,
 			
 			getAddons: () => Object.values(this.addons),
-			isAddonEnabled: id => this.isAddonEnabled(id),
 			enableAddon: id => this.enableAddon(id),
-			disableAddon: id => this.disableAddon(id),
+			disableAddon: id => this.disableAddon(id)
 		});
 
 		this.settings.add('addons.development', {
@@ -41,10 +45,6 @@ export class AddonManager extends Module {
 				component: 'setting-check-box'
 			}
 		});
-
-		this.addons = {};
-		this.enabled_addons = this.settings.provider.get('addons.enabled') || [];
-		this.log.info('Enabled addons:', this.enabled_addons.join(', '));
 	}
 
 	async onEnable() {
@@ -67,6 +67,7 @@ export class AddonManager extends Module {
 	}
 
 	isAddonEnabled(id) {
+		this.log.info(`Addon Check for ${id}`);
 		return this.enabled_addons.includes(id);
 	}
 
@@ -78,10 +79,13 @@ export class AddonManager extends Module {
 		const addon = this.getAddon(id);
 		if (!addon) return;
 
-		const script = document.createElement('script');
-		script.type = 'text/javascript';
-		script.src = `https://${addon.dev ? 'localhost:8001' : 'lordmau5.com'}/script/addons/${addon.id}/script.js`;
-		document.head.appendChild(script);
+		if (!window.document.head.querySelector(`#ffz-addon-${addon.id}`)) {
+			const script = document.createElement('script');
+			script.id = addon.id;
+			script.type = 'text/javascript';
+			script.src = `https://${addon.dev ? 'localhost:8001' : 'lordmau5.com'}/script/addons/${addon.id}/script.js`;
+			document.head.appendChild(script);
+		}
 	}
 
 	enableAddon(id) {
@@ -97,9 +101,7 @@ export class AddonManager extends Module {
 		this.loadAddon(id);
 
 		this.enabled_addons.push(id);
-		this.settings.provider.set('addons.enabled', this.enabled_addons);
-
-		this.log.info('Enabled addon', id, this.enabled_addons);
+		this.settings.provider.set('addons.enabled', deep_copy(this.enabled_addons));
 	}
 
 	disableAddon(id) {
@@ -114,10 +116,8 @@ export class AddonManager extends Module {
 			this.disableAddon(required_id);
 		}
 
-		this.enabled_addons = this.enabled_addons.filter(addon_id => addon_id !== id);
-		this.settings.provider.set('addons.enabled', this.enabled_addons);
-
-		this.log.info('Disabled addon', id, this.enabled_addons);
+		this.enabled_addons.splice(this.enabled_addons.indexOf(id), 1);
+		this.settings.provider.set('addons.enabled', deep_copy(this.enabled_addons));
 	}
 }
 

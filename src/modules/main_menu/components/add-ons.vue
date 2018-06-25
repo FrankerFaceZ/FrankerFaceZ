@@ -20,7 +20,7 @@
 									class="tw-image"
 								>
 							</figure>
-							<div v-if="item.isAddonEnabled(addon.id)">
+							<div v-if="item.enabled_addons.includes(addon.id)">
 								<button class="tw-button tw-button--hollow tw-mg-t-1 tw-full-width">
 									<span class="tw-button__icon tw-button__icon--left">
 										<figure class="ffz-i-cog" />
