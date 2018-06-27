@@ -6,7 +6,7 @@
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, glob_to_regex, escape_regex} from 'utilities/object';
+import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -111,6 +111,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.highlight-basic-terms', {
 			default: [],
 			type: 'array_merge',
+			always_inherit: true,
 			ui: {
 				path: 'Chat > Filtering >> Highlight Terms',
 				component: 'basic-terms',
@@ -129,30 +130,44 @@ export default class Chat extends Module {
 				const colors = new Map;
 
 				for(const item of val) {
-					let list;
 					const c = item.c || null,
 						t = item.t;
 
-					let v = item.v;
+					let v = item.v, word = true;
 
 					if ( t === 'glob' )
 						v = glob_to_regex(v);
 
-					else if ( t !== 'raw' )
+					else if ( t === 'raw' )
+						word = false;
+
+					else if ( t !== 'regex' )
 						v = escape_regex(v);
 
 					if ( ! v || ! v.length )
 						continue;
 
+					try {
+						new RegExp(v);
+					} catch(err) {
+						continue;
+					}
+
 					if ( colors.has(c) )
-						colors.get(c).push(v);
-					else
-						colors.set(c, [v]);
+						colors.get(c)[word ? 0 : 1].push(v);
+					else {
+						const vals = [[],[]];
+						colors.set(c, vals);
+						vals[word ? 0 : 1].push(v);
+					}
 				}
 
+				for(const [key, list] of colors) {
+					if ( list[0].length )
+						list[1].push(`\\b(?:${list[0].join('|')})\\b`);
 
-				for(const [key, list] of colors)
-					colors.set(key, new RegExp(`\\b(${list.join('|')})\\b`, 'gi'));
+					colors.set(key, new RegExp(list[1].join('|'), 'gi'));
+				}
 
 				return colors;
 			}
@@ -162,6 +177,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.highlight-basic-blocked', {
 			default: [],
 			type: 'array_merge',
+			always_inherit: true,
 			ui: {
 				path: 'Chat > Filtering >> Blocked Terms',
 				component: 'basic-terms'
@@ -176,28 +192,34 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
-				const out = [];
+				const out = [[], []];
 
 				for(const item of val) {
 					const t = item.t;
-					let v = item.v;
+					let v = item.v, word = true;
 
 					if ( t === 'glob' )
 						v = glob_to_regex(v);
 
-					else if ( t !== 'raw' )
+					else if ( t === 'raw' )
+						word = false;
+
+					else if ( t !== 'regex' )
 						v = escape_regex(v);
 
 					if ( ! v || ! v.length )
 						continue;
 
-					out.push(v);
+					out[word ? 0 : 1].push(v);
 				}
 
-				if ( ! out.length )
+				if ( out[0].length )
+					out[1].push(`\\b(?:${out[0].join('|')})\\b`);
+
+				if ( ! out[1].length )
 					return;
 
-				return new RegExp(`\\b(${out.join('|')})\\b`, 'gi');
+				return new RegExp(out[1].join('|'), 'gi');
 			}
 		});
 
@@ -621,7 +643,7 @@ export default class Chat extends Module {
 					ret = ret.slice(4);
 				}
 
-				idx += ret.length;
+				idx += split_chars(ret).length;
 				out.push(ret);
 			}
 		}

@@ -1,11 +1,12 @@
 .ffz-channel-avatar {
-	flex-shrink: 0 !important;
-	width: 4rem;
-
-	img {
+	.tw-aspect {
 		width: 4rem;
-		height: 4rem
 	}
+}
+
+.ffz-channel-avatar,
+.ffz-uptime-element {
+	pointer-events: all;
 }
 
 
@@ -24,6 +25,25 @@
 
 	&:hover { background: #a94444 !important }
 	&.active { background: #973333 !important }
+}
+
+
+.ffz-hide-thumbnail {
+	.preview-card-thumbnail__image {
+		&:before {
+			content: '';
+			position: absolute;
+			top: 0; left: 0;
+			height: 100%;
+			width: 100%;
+			background: url("https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg") no-repeat;
+			background-size: cover;
+		}
+
+		img {
+			display: none;
+		}
+	}
 }
 
 

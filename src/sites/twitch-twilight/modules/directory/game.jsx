@@ -30,7 +30,8 @@ export default class Game extends SiteModule {
 
 	onEnable() {
 		this.GameHeader.ready((cls, instances) => {
-			for(const inst of instances) this.updateButtons(inst);
+			for(const inst of instances)
+				this.updateButtons(inst);
 		});
 
 		this.GameHeader.on('update', this.updateButtons, this);
@@ -85,7 +86,7 @@ export default class Game extends SiteModule {
 				this.i18n.t('directory.show-thumbnails', 'Show Thumbnails') :
 				this.i18n.t('directory.hide-thumbnails', 'Hide Thumbnails');
 
-			this.parent.ChannelCard.forceUpdate();
+			this.parent.DirectoryCard.forceUpdate();
 		}
 
 		hidden_btn = (<button

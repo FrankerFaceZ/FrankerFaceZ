@@ -305,10 +305,10 @@ export const CustomHighlights = {
 
 					out.push({
 						type: 'highlight',
-						text: match[1]
+						text: match[0]
 					});
 
-					idx = nix + match[1].length;
+					idx = nix + match[0].length;
 				}
 
 				if ( idx < text.length )
@@ -376,10 +376,10 @@ export const BlockedTerms = {
 
 				out.push({
 					type: 'blocked',
-					text: match[1]
+					text: match[0]
 				});
 
-				idx = nix + match[1].length;
+				idx = nix + match[0].length;
 			}
 
 			if ( idx < text.length )

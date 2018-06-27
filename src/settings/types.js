@@ -52,7 +52,7 @@ export const array_merge = {
 		return values;
 	},
 
-	get(key, profiles, log) {
+	get(key, profiles, definition, log) {
 		const values = [],
 			trailing = [],
 			sources = [];
@@ -80,7 +80,7 @@ export const array_merge = {
 				}
 
 				// If we didn't run into an inherit, don't inherit.
-				if ( ! is_trailing )
+				if ( ! is_trailing && ! definition.always_inherit )
 					break;
 			}
 

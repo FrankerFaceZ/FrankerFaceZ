@@ -244,15 +244,17 @@ export default class ChatLine extends Module {
 						e('span', {
 							className: 'chat-line__message--badges'
 						}, t.chat.badges.render(msg, e)),
-						e('a', {
-							className: 'chat-author__display-name notranslate',
+						e('button', {
+							className: 'chat-line__username notranslate',
 							style: { color },
 							onClick: this.usernameClickHandler, // this.ffz_user_click_handler
 						}, [
-							user.userDisplayName,
+							e('span', {
+								className: 'chat-author__display-name'
+							}, user.displayName),
 							user.isIntl && e('span', {
 								className: 'chat-author__intl-login'
-							}, ` (${user.userLogin})`)
+							}, ` (${user.login})`)
 						]),
 						e('span', null, is_action ? ' ' : ': '),
 						show ?

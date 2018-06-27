@@ -566,6 +566,25 @@ export default class ChatHook extends Module {
 		}
 
 
+		cls.prototype.ffzGetEmotes = function() {
+			const emote_sets = this.client && this.client.session && this.client.session.emoteSets;
+			if ( this._ffz_cached_sets === emote_sets )
+				return this._ffz_cached_emotes;
+
+			this._ffz_cached_sets = emote_sets;
+			const emotes = this._ffz_cached_emotes = {};
+
+			if ( emote_sets )
+				for(const set of emote_sets)
+					if ( set && set.emotes )
+						for(const emote of set.emotes)
+							if ( emote )
+								emotes[emote.token] = emote.id;
+
+			return emotes;
+		}
+
+
 		cls.prototype.connectHandlers = function(...args) {
 			if ( ! this._ffz_init ) {
 				const i = this;
@@ -580,6 +599,42 @@ export default class ChatHook extends Module {
 							return ret;
 						}
 				}
+
+				const old_chat = this.onChatMessageEvent;
+				this.onChatMessageEvent = function(e) {
+					if ( e && e.sentByCurrentUser ) {
+						try {
+							e.message.user.emotes = findEmotes(
+								e.message.body,
+								i.ffzGetEmotes()
+							);
+
+						} catch(err) {
+							t.log.capture(err, {extra: e});
+						}
+					}
+
+					return old_chat.call(i, e);
+				}
+
+
+				const old_action = this.onChatActionEvent;
+				this.onChatActionEvent = function(e) {
+					if ( e && e.sentByCurrentUser ) {
+						try {
+							e.message.user.emotes = findEmotes(
+								e.message.body.slice(8, -1),
+								i.ffzGetEmotes()
+							);
+
+						} catch(err) {
+							t.log.capture(err, {extra: e});
+						}
+					}
+
+					return old_action.call(i, e);
+				}
+
 
 				const old_resub = this.onResubscriptionEvent;
 				this.onResubscriptionEvent = function(e) {
@@ -626,11 +681,11 @@ export default class ChatHook extends Module {
 
 				const old_post = this.postMessage;
 				this.postMessage = function(e) {
-					const original = this._wrapped;
+					const original = i._wrapped;
 					if ( original && ! e._ffz_checked )
-						return this.postMessageToCurrentChannel(original, e);
+						return i.postMessageToCurrentChannel(original, e);
 
-					return old_post.call(this, e);
+					return old_post.call(i, e);
 				}
 
 				this._ffz_init = true;
@@ -662,11 +717,6 @@ export default class ChatHook extends Module {
 					message.message = original.action;
 				else
 					message.message = original.message.body;
-
-				// Twitch doesn't generate a proper emote tag for echoed back
-				// actions, so we have to regenerate it. Fun. :D
-				if ( user && user.username === this.userLogin )
-					message.emotes = findEmotes(message.message, this.selfEmotes);
 			}
 
 			this.postMessage(message);
@@ -903,12 +953,14 @@ export function findEmotes(msg, emotes) {
 	const out = {};
 	let idx = 0;
 
+	console.log('findEmotes', msg, emotes);
+
 	for(const part of msg.split(' ')) {
 		const len = split_chars(part).length;
 
 		if ( has(emotes, part) ) {
 			const em = emotes[part],
-				matches = out[em.id] = out[em.id] || [];
+				matches = out[em] = out[em] || [];
 
 			matches.push({
 				startIndex: idx,

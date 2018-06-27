@@ -38,7 +38,12 @@
 				</figure>
 				<figure v-else class="ffz-i-eyedropper" />
 			</button>
-			<div v-on-clickaway="closePicker" v-if="open" class="tw-absolute tw-z-default tw-right-0">
+			<div
+				v-on-clickaway="closePicker"
+				v-if="open"
+				:class="{'ffz-bottom-100': openUp}"
+				class="tw-absolute tw-z-default tw-balloon--up tw-balloon--right"
+			>
 				<chrome-picker :value="colors" @input="onPick" />
 			</div>
 		</div>
@@ -74,6 +79,10 @@ export default {
 			default: true
 		},
 		showInput: {
+			type: Boolean,
+			default: true
+		},
+		openUp: {
 			type: Boolean,
 			default: false
 		}

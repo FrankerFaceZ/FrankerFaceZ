@@ -1,38 +1,15 @@
 <template lang="html">
 	<section class="ffz--widget ffz--basic-terms">
-		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width tw-pd-b-1">
-			<div class="tw-flex-grow-1">
-				<input
-					v-model="new_term"
-					:placeholder="t('setting.terms.add-placeholder', 'Add a new term')"
-					type="text"
-					class="tw-input"
-					autocapitalize="off"
-					autocorrect="off"
-				>
-			</div>
-			<div v-if="item.colored" class="tw-flex-shrink-0 tw-mg-l-05">
-				<color-picker v-model="new_color" :nullable="true" :show-input="false" />
-			</div>
-			<div class="tw-flex-shrink-0 tw-mg-x-05">
-				<select v-model="new_type" class="tw-select ffz-min-width-unset">
-					<option value="text">{{ t('setting.terms.type.text', 'Text') }}</option>
-					<option value="raw">{{ t('setting.terms.type.regex', 'Regex') }}</option>
-					<option value="glob">{{ t('setting.terms.type.glob', 'Glob') }}</option>
-				</select>
-			</div>
-			<div class="tw-flex-shrink-0">
-				<button class="tw-button" @click="add">
-					<span class="tw-button__text">
-						{{ t('setting.terms.add-term', 'Add') }}
-					</span>
-				</button>
-			</div>
-		</div>
-		<div v-if="! val.length || val.length === 1 && hasInheritance" class="tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-c-text-alt-2 tw-pd-05">
+		<term-editor
+			:term="default_term"
+			:colored="item.colored"
+			:adding="true"
+			@save="new_term"
+		/>
+		<div v-if="! val.length || val.length === 1 && hasInheritance" class="tw-mg-t-05 tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-c-text-alt-2 tw-pd-05">
 			{{ t('setting.terms.no-terms', 'no terms are defined in this profile') }}
 		</div>
-		<ul v-else class="ffz--term-list">
+		<ul v-else class="ffz--term-list tw-mg-t-05">
 			<term-editor
 				v-for="term in val"
 				v-if="term.t !== 'inherit'"
@@ -59,9 +36,11 @@ export default {
 
 	data() {
 		return {
-			new_term: '',
-			new_type: 'text',
-			new_color: ''
+			default_term: {
+				v: '',
+				t: 'text',
+				c: ''
+			}
 		}
 	},
 
@@ -84,17 +63,12 @@ export default {
 	},
 
 	methods: {
-		add() {
-			const vals = Array.from(this.val);
-			vals.push({
-				v: {
-					t: this.new_type,
-					v: this.new_term,
-					c: typeof this.new_color === 'string' ? this.new_color : null
-				}
-			});
+		new_term(term) {
+			if ( ! term.v )
+				return;
 
-			this.new_term = '';
+			const vals = Array.from(this.val);
+			vals.push({v: term});
 			this.set(deep_copy(vals));
 		},
 

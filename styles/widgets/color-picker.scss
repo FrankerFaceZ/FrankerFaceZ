@@ -1,0 +1,96 @@
+$color: #dad8de;
+$bg-color: #17141f;
+$border-color: #2c2541;
+
+$input-color: #faf9fa;
+$input-bg: #0e0c13;
+$input-border: #392e5c;
+$input-active-border: #7d5bbe;
+
+
+.tw-theme--dark {
+	.vc-sketch {
+		background: $bg-color;
+		box-shadow: 0 0 0 1px $border-color,
+			0 8px 16px rgba($border-color, .15);
+	}
+
+	.vc-sketch-active-color {
+		box-shadow: inset 0 0 0 1px $border-color,
+			inset 0 0 4px rgba($border-color, .25);
+	}
+
+	.vc-sketch-field {
+		.vc-input__input {
+			background: $input-bg;
+			color: $input-color;
+			box-shadow: inset 0 0 0 1px $input-border;
+
+			&:focus {
+				box-shadow: inset 0 0 0 1px $input-active-border,
+					0 0 6px -2px $input-active-border;
+			}
+		}
+
+		.vc-input__label {
+			color: $color;
+		}
+	}
+
+	.vc-sketch-presets {
+		border-top-color: $border-color;
+	}
+
+	.vc-sketch-presets-color {
+		box-shadow: inset 0 0 0 1px $border-color;
+	}
+}
+
+
+$color: var(--ffz-color-1);
+$bg-color: var(--ffz-color-21);
+$border-color: var(--ffz-color-20);
+
+$input-color: var(--ffz-color-23);
+$input-bg: var(--ffz-color-27);
+$input-border: var(--ffz-color-26);
+$input-active-border: var(--ffz-color-5);
+
+
+.tw-theme--dark.tw-theme--ffz {
+	.vc-sketch {
+		background: $bg-color;
+		box-shadow: 0 0 0 1px $border-color,
+			0 8px 16px var(--ffz-color-37);
+	}
+
+	.vc-sketch-active-color {
+		box-shadow: inset 0 0 0 1px $border-color,
+			inset 0 0 4px var(--ffz-color-37);
+	}
+
+	.vc-sketch-field {
+		.vc-input__input {
+			background: $input-bg;
+			color: $input-color;
+			box-shadow: inset 0 0 0 1px $input-border;
+
+			&:focus {
+				box-shadow: inset 0 0 0 1px $input-active-border,
+					0 0 6px -2px $input-active-border;
+			}
+		}
+
+		.vc-input__label {
+			color: $color;
+		}
+	}
+
+	.vc-sketch-presets {
+		border-top-color: $border-color;
+	}
+
+	.vc-sketch-presets-color {
+		box-shadow: inset 0 0 0 1px $border-color;
+	}
+}

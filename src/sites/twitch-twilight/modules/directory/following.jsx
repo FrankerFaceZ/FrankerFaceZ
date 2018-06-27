@@ -68,21 +68,10 @@ export default class Following extends SiteModule {
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', FOLLOWED_HOSTS);
 		this.apollo.registerModifier('FollowedChannels', FOLLOWED_CHANNELS);
 
-		this.ChannelCard = this.fine.define(
-			'following-channel-card',
-			n => n.renderGameBoxArt && n.renderContentType,
-			['dir-following']
-		);
-
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', res => {
 			this.modifyLiveUsers(res);
 			this.modifyLiveHosts(res);
 		}, false);
-
-		this.on('settings:changed:directory.uptime', () => this.ChannelCard.forceUpdate());
-		this.on('settings:changed:directory.show-channel-avatars', () => this.ChannelCard.forceUpdate());
-		this.on('settings:changed:directory.show-boxart', () => this.ChannelCard.forceUpdate());
-		this.on('settings:changed:directory.hide-vodcasts', () => this.ChannelCard.forceUpdate());
 
 		this.apollo.registerModifier('FollowedChannels', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
@@ -90,80 +79,55 @@ export default class Following extends SiteModule {
 	}
 
 	modifyLiveUsers(res) {
-		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
-		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
-
-		const newStreams = [];
-
-		const followedLiveUsers = get('data.currentUser.followedLiveUsers', res);
-		if (!followedLiveUsers)
+		const edges = get('data.currentUser.followedLiveUsers.nodes', res);
+		if ( ! edges || ! edges.length )
 			return res;
 
-		const oldMode = !!followedLiveUsers.nodes;
-		const edgesOrNodes = followedLiveUsers.nodes || followedLiveUsers.edges;
-
-		for (let i = 0; i < edgesOrNodes.length; i++) {
-			const edge = edgesOrNodes[i],
-				node = edge.node || edge;
-
-			if ( ! node || ! node.stream )
-				continue;
-
-			const s = node.stream.viewersCount = new Number(node.stream.viewersCount || 0);
-			s.profileImageURL = node.profileImageURL;
-			s.createdAt = node.stream.createdAt;
-
-			if (node.stream.game && hiddenThumbnails.includes(node.stream.game.name)) node.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-			if (!node.stream.game || node.stream.game && !blockedGames.includes(node.stream.game.name)) newStreams.push(edge);
-		}
-		res.data.currentUser.followedLiveUsers[oldMode ? 'nodes' : 'edges'] = newStreams;
-
+		res.data.currentUser.followedLiveUsers.nodes = this.parent.processNodes(edges);
 		return res;
 	}
 
 	modifyLiveHosts(res) {
-		const hiddenThumbnails = this.settings.provider.get('directory.game.hidden-thumbnails') || [];
-		const blockedGames = this.settings.provider.get('directory.game.blocked-games') || [];
+		const blocked_games = this.settings.provider.get('directory.game.blocked-games', []),
+			do_grouping = this.settings.get('directory.following.group-hosts'),
+			edges = get('data.currentUser.followedHosts.nodes', res);
 
-		this.hosts = {};
-
-		const followedHosts = get('data.currentUser.followedHosts', res);
-		if (!followedHosts)
+		if ( ! edges || ! edges.length )
 			return res;
 
-		const newHostNodes = [];
+		const hosts = {},
+			out = [];
 
-		const oldMode = !!followedHosts.nodes;
-		const edgesOrNodes = followedHosts.nodes || followedHosts.edges;
+		for(const edge of edges) {
+			const node = edge.node || edge,
+				hosted = node.hosting,
+				stream = hosted && hosted.stream;
 
-		for (let i = 0; i < edgesOrNodes.length; i++) {
-			const edge = edgesOrNodes[i],
-				node = edge.node || edge;
-
-			if ( ! node || ! node.hosting || ! node.hosting.stream )
+			if ( ! stream || stream.game && blocked_games.includes(stream.game.game) )
 				continue;
 
-			const s = node.hosting.stream.viewersCount = new Number(node.hosting.stream.viewersCount || 0);
-			s.profileImageURL = node.hosting.profileImageURL;
-			s.createdAt = node.hosting.stream.createdAt;
+			const store = {}; // stream.viewersCount = new Number(stream.viewersCount || 0);
 
-			if (!this.hosts[node.hosting.displayName]) {
-				this.hosts[node.hosting.displayName] = {
-					channel: node.hosting.login,
-					nodes: [node],
-					channels: [node.displayName]
-				};
-				if (node.hosting.stream.game && hiddenThumbnails.includes(node.hosting.stream.game.name)) node.hosting.stream.previewImageURL = 'https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg';
-				if (!node.hosting.stream.game || node.hosting.stream.game && !blockedGames.includes(node.hosting.stream.game.name)) newHostNodes.push(edge);
-			} else {
-				this.hosts[node.hosting.displayName].nodes.push(node);
-				this.hosts[node.hosting.displayName].channels.push(node.displayName);
-			}
+			store.createdAt = stream.createdAt;
+			store.title = stream.title;
+			store.game = stream.game;
+
+			if ( do_grouping ) {
+				const host_nodes = hosts[hosted.login];
+				if ( host_nodes ) {
+					host_nodes.push(node);
+					store.host_nodes = node._ffz_host_nodes = host_nodes;
+
+				} else {
+					store.host_nodes = node._ffz_host_nodes = hosts[hosted.login] = [node];
+					out.push(edge);
+				}
+
+			} else
+				out.push(edge);
 		}
 
-		if (this.settings.get('directory.following.group-hosts')) {
-			res.data.currentUser.followedHosts[oldMode ? 'nodes' : 'edges'] = newHostNodes;
-		}
+		res.data.currentUser.followedHosts.nodes = out;
 		return res;
 	}
 
@@ -200,18 +164,7 @@ export default class Following extends SiteModule {
 	}
 
 	onEnable() {
-		this.ChannelCard.ready((cls, instances) => {
-			this.ensureQueries();
-
-			for(const inst of instances) this.updateChannelCard(inst);
-		});
-
-		this.ChannelCard.on('update', inst => {
-			this.ensureQueries();
-			this.updateChannelCard(inst)
-		}, this);
-		this.ChannelCard.on('mount', this.updateChannelCard, this);
-		this.ChannelCard.on('unmount', this.parent.clearUptime, this);
+		this.ensureQueries();
 
 		document.body.addEventListener('click', this.destroyHostMenu.bind(this));
 	}

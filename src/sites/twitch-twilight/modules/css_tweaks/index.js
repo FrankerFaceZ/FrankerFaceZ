@@ -19,8 +19,8 @@ const CLASSES = {
 
 	'prime-offers': '.top-nav__prime',
 
-	'player-ext': '.player .extension-overlay',
-	'player-ext-hover': '.player:not([data-controls="true"]) .extension-overlay',
+	'player-ext': '.player .extension-taskbar,.player .extension-container',
+	'player-ext-hover': '.player:not([data-controls="true"]) .extension-container',
 
 	'player-event-bar': '.channel-page .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-page div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
@@ -28,11 +28,8 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',
 
-	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live',
-	'boxart-hover': '.tw-card .tw-full-width:hover a[data-a-target="live-channel-card-game-link"]',
-	'boxart-hide': '.tw-card a[data-a-target="live-channel-card-game-link"]',
-	'profile-hover-following': '.tw-card .tw-full-width:hover .ffz-channel-avatar',
-	'profile-hover-game': '.tw-thumbnail-card .tw-card-img:hover .ffz-channel-avatar',
+	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live',
+	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 };
 
 

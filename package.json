@@ -58,6 +58,7 @@
     "path-to-regexp": "^2.2.1",
     "popper.js": "^1.14.3",
     "raven-js": "^3.24.2",
+    "safe-regex": "^1.1.0",
     "sortablejs": "^1.7.0",
     "vue": "^2.5.16",
     "vue-clickaway": "^2.2.2",
