@@ -251,7 +251,7 @@ export default class Scroller extends Module {
 
 			cls.prototype.smoothScrollBottom = function() {
 				if(this.state.ffzSmoothAnimation){
-					clearTimeout(this.state.ffzSmoothAnimation);
+					cancelAnimationFrame(this.state.ffzSmoothAnimation);
 				}
 				this.isScrollingToBottom = true;
 				// Step setting value is # pixels to scroll per 10ms.
@@ -269,18 +269,32 @@ export default class Scroller extends Module {
 					// we are starting to fall behind, speed it up a bit
 					step += step * parseInt(difference / 200, 10);
 				}
+				let prevTime = Date.now();
 				const smoothAnimation = () => {
 					if(this.state.ffzFrozen) {
 						this.isScrollingToBottom = false;
 						return;
 					}
-					if (scrollContent.scrollTop < (scrollContent.scrollHeight - scrollContent.clientHeight)) {
-						scrollContent.scrollTop += step;
-						this.state.ffzSmoothAnimation = setTimeout(smoothAnimation, 10);
+					// See how much time has passed to get a step based off the delta
+					const currentTime = Date.now();
+					const delta = currentTime - prevTime;
+					const currentStep = step * (delta / 10);
+					// we need to move at least one full pixel for scrollTop to do anything in this delta.
+					if (currentStep >= 1) {
+						prevTime = currentTime;
+						if (scrollContent.scrollTop < (scrollContent.scrollHeight - scrollContent.clientHeight)) {
+							scrollContent.scrollTop += currentStep;
+							this.state.ffzSmoothAnimation = requestAnimationFrame(smoothAnimation);
+						} else {
+							scrollContent.scrollTop = scrollContent.scrollHeight - scrollContent.clientHeight;
+							this.isScrollingToBottom = false;
+						}
 					} else {
-						scrollContent.scrollTop = scrollContent.scrollHeight - scrollContent.clientHeight;
-						this.isScrollingToBottom = false;
+						// the frame happened so quick since last update we didn't move a full pixel yet.
+						// should only be possible if the FPS of a browser went over 60fps.
+						this.state.ffzSmoothAnimation = requestAnimationFrame(smoothAnimation);
 					}
+					
 				}
 				smoothAnimation();
 			}
