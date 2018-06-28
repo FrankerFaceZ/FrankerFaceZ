@@ -20,6 +20,24 @@ import EmoteMenu from './emote_menu';
 import TabCompletion from './tab_completion';
 
 
+const REGEX_EMOTES = {
+	'B-?\\)': ['B)', 'B-)'],
+	'R-?\\)': ['R)', 'R-)'],
+	'[oO](_|\\.)[oO]': ['o_o', 'O_o', 'o_O', 'O_O', 'o.o', 'O.o', 'o.O', 'O.O'],
+	'\\&gt\\;\\(': ['>('],
+	'\\&lt\\;3': ['<3'],
+	'\\:-?(o|O)': [':o', ':O', ':-o', ':-O'],
+	'\\:-?(p|P)': [':p', ':P', ':-p', ':-P'],
+	'\\:-?D': [':D', ':-D'],
+	'\\:-?[\\\\/]': [':/', ':-/', ':\\', ':-\\'],
+	'\\:-?[z|Z|\\|]': [':z', ':Z', ':|', ':-z', ':-Z', ':-|'],
+	'\\:-?\\(': [':(', ':-('],
+	'\\:-?\\)': [':)', ':-)'],
+	'\\;-?(p|P)': [';p', ';P', ';-p', ';-P'],
+	'\\;-?\\)': [';)', ';-)']
+};
+
+
 const MESSAGE_TYPES = ((e = {}) => {
 	e[e.Post = 0] = 'Post';
 	e[e.Action = 1] = 'Action';
@@ -578,8 +596,16 @@ export default class ChatHook extends Module {
 				for(const set of emote_sets)
 					if ( set && set.emotes )
 						for(const emote of set.emotes)
-							if ( emote )
-								emotes[emote.token] = emote.id;
+							if ( emote ) {
+								const token = emote.token;
+								if ( has(REGEX_EMOTES, token) ) {
+									for(const token of REGEX_EMOTES[token] )
+										if ( ! has(emotes, token) )
+											emotes[token] = emote.id;
+
+								} else if ( ! has(emotes, token) )
+									emotes[token] = emote.id;
+							}
 
 			return emotes;
 		}
