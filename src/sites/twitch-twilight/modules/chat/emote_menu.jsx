@@ -809,11 +809,7 @@ export default class EmoteMenu extends Module {
 									title = t.i18n.t('emote-menu.global', 'Global Emotes');
 									sort_key = 100;
 
-								} else if ( title === '--twitch-turbo--' || title === 'turbo' || title === '--turbo-faces--' ) {
-									title = t.i18n.t('emote-menu.turbo', 'Turbo');
-									sort_key = 75;
-
-								} else if ( title === '--prime--' || title === '--prime-faces--' ) {
+								} else if ( title === '--twitch-turbo--' || title === 'turbo' || title === '--turbo-faces--' || title === '--prime--' || title === '--prime-faces--' ) {
 									title = t.i18n.t('emote-menu.prime', 'Prime');
 									icon = 'crown';
 									sort_key = 75;
@@ -1232,7 +1228,7 @@ export default class EmoteMenu extends Module {
 								<div class="tw-relative">
 									<input
 										type="text"
-										class="tw-input"
+										class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
 										onChange={this.handleFilterChange}
 										onKeyDown={this.handleKeyDown}
 										placeholder={t.i18n.t('emote-menu.search', 'Search for Emotes')}

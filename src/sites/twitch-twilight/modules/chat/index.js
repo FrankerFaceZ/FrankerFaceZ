@@ -34,7 +34,12 @@ const REGEX_EMOTES = {
 	'\\:-?\\(': [':(', ':-('],
 	'\\:-?\\)': [':)', ':-)'],
 	'\\;-?(p|P)': [';p', ';P', ';-p', ';-P'],
-	'\\;-?\\)': [';)', ';-)']
+	'\\;-?\\)': [';)', ';-)'],
+	'#-?[\\\\/]': ['#/', '#-/', '#//', '#-//'],
+	':-?(?:7|L)': [':7', ':L', ':-7', ':-L'],
+	'\\&lt\\;\\]': ['<]'],
+	'\\:-?(S|s)': [':s', ':S', ':-s', ':-S'],
+	'\\:\\&gt\\;': [':>']
 };
 
 
@@ -598,12 +603,11 @@ export default class ChatHook extends Module {
 						for(const emote of set.emotes)
 							if ( emote ) {
 								const token = emote.token;
-								if ( has(REGEX_EMOTES, token) ) {
-									for(const token of REGEX_EMOTES[token] )
-										if ( ! has(emotes, token) )
-											emotes[token] = emote.id;
+								if ( Array.isArray(REGEX_EMOTES[token]) ) {
+									for(const tok of REGEX_EMOTES[token] )
+										emotes[tok] = emote.id;
 
-								} else if ( ! has(emotes, token) )
+								} else
 									emotes[token] = emote.id;
 							}
 

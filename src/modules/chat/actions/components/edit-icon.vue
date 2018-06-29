@@ -10,17 +10,15 @@
 					{{ t('setting.actions.icon.search', 'Search for Icon') }}
 				</label>
 				<div class="tw-relative tw-mg-t-05">
-					<div class="tw-input__icon-group tw-top-0 tw-left-0 tw-z-default tw-absolute">
-						<div class="tw-input__icon tw-c-text-alt-2 tw-align-items-center tw-flex tw-justify-content-center">
-							<figure class="ffz-i-search" />
-						</div>
+					<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height tw-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
+						<figure class="ffz-i-search" />
 					</div>
 					<input
 						id="icon-search"
 						:placeholder="t('setting.actions.icon.search', 'Search for Icon')"
 						v-model="search"
 						type="search"
-						class="tw-input tw-pd-l-3"
+						class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
 						autocapitalize="off"
 						autocorrect="off"
 						autocomplete="off"

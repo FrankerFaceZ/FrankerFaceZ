@@ -135,7 +135,7 @@
 									v-else
 									:key="idx"
 									:disabled="preset.disabled"
-									class="tw-interactable"
+									class="tw-interactable tw-full-width"
 									@click="add(preset.value)"
 								>
 									<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">

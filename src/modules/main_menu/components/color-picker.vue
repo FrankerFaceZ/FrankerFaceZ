@@ -7,7 +7,7 @@
 				v-bind="$attrs"
 				v-model="color"
 				type="text"
-				class="tw-input tw-pd-r-3"
+				class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 				autocapitalize="off"
 				autocorrect="off"
 				autocomplete="off"

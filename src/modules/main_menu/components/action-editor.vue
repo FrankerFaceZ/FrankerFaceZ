@@ -23,7 +23,7 @@
 
 						<input
 							v-model="edit_data.appearance.tooltip"
-							class="tw-mg-y-05 tw-input tw-display-inline"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 						>
 					</div>
 
@@ -36,7 +36,7 @@
 							id="renderer_type"
 							ref="renderer_type"
 							v-model="edit_data.appearance.type"
-							class="tw-mg-y-05 tw-select tw-display-inline"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
 								v-for="(r, key) in data.renderers"
@@ -80,7 +80,7 @@
 						<select
 							id="vis_mod"
 							v-model="edit_data.display.mod"
-							class="tw-mg-y-05 tw-select tw-display-inline"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>{{ t('setting.unset', 'Unset') }}</option>
 							<option :value="true">{{ t('setting.true', 'True') }}</option>
@@ -96,7 +96,7 @@
 						<select
 							id="vis_mod_icons"
 							v-model="edit_data.display.mod_icons"
-							class="tw-mg-y-05 tw-select tw-display-inline"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>{{ t('setting.unset', 'Unset') }}</option>
 							<option :value="true">{{ t('setting.visible', 'Visible') }}</option>
@@ -112,7 +112,7 @@
 						<select
 							id="vis_deleted"
 							v-model="edit_data.display.deleted"
-							class="tw-mg-y-05 tw-select tw-display-inline"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>{{ t('setting.unset', 'Unset') }}</option>
 							<option :value="true">{{ t('setting.true', 'True') }}</option>
@@ -132,7 +132,7 @@
 						<select
 							id="action_type"
 							v-model="edit_data.action"
-							class="tw-mg-y-05 tw-select tw-display-inline"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
 								v-for="(a, key) in data.actions"

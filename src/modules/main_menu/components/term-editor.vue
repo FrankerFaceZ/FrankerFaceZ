@@ -22,7 +22,7 @@
 					v-model="edit_data.v"
 					:placeholder="adding ? t('setting.terms.add-placeholder', 'Add a new term') : edit_data.v"
 					type="text"
-					class="tw-input"
+					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 				>
@@ -37,7 +37,11 @@
 			</div>
 			<div class="tw-flex-shrink-0 tw-mg-x-05">
 				<span v-if="! editing">{{ term_type }}</span>
-				<select v-else v-model="edit_data.t" class="tw-select ffz-min-width-unset">
+				<select
+					v-else
+					v-model="edit_data.t"
+					class="tw-block tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
+				>
 					<option value="text">{{ t('setting.terms.type.text', 'Text') }}</option>
 					<option value="glob">{{ t('setting.terms.type.glob', 'Glob') }}</option>
 					<option value="regex">{{ t('setting.terms.type.regex-word', 'Regex (Word)') }}</option>

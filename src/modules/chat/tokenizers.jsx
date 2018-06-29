@@ -683,10 +683,7 @@ export const AddonEmotes = {
 				if ( source === '--global--' || emote_id === 80393 )
 					source = this.i18n.t('emote.global', 'Twitch Global');
 
-				else if ( source === '--twitch-turbo--' || source === 'turbo' || source === '--turbo-faces--' )
-					source = this.i18n.t('emote.turbo', 'Twitch Turbo');
-
-				else if ( source === '--prime--' || source === '--prime-faces--' )
+				else if ( source === '--twitch-turbo--' || source === 'turbo' || source === '--turbo-faces--' || source === '--prime--' || source === '--prime-faces--' )
 					source = this.i18n.t('emote.prime', 'Twitch Prime');
 
 				else
