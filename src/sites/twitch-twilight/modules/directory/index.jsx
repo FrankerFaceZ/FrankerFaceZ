@@ -22,6 +22,8 @@ export const CARD_CONTEXTS = ((e ={}) => {
 })();
 
 
+const CREATIVE_ID = 488191;
+
 const DIR_ROUTES = ['dir', 'dir-community', 'dir-community-index', 'dir-creative', 'dir-following', 'dir-game-index', 'dir-game-clips', 'dir-game-videos', 'dir-all', 'dir-category', 'user-videos', 'user-clips'];
 
 
@@ -44,17 +46,11 @@ export default class Directory extends SiteModule {
 		this.inject(Game);
 		this.inject(BrowsePopular);
 
-		this.apollo.registerModifier('GamePage_Game', res => this.modifyStreams(res), false);
+		this.apollo.registerModifier('GamePage_Game_RENAME2', res => this.modifyStreams(res), false);
 
 		this.DirectoryCard = this.fine.define(
 			'directory-card',
 			n => n.renderTitles && n.renderIconicImage,
-			DIR_ROUTES
-		);
-
-		this.CardWrapper = this.fine.define(
-			'directory-card-wrapper',
-			n => n.renderFallback && n.renderStreamFlag,
 			DIR_ROUTES
 		);
 
@@ -123,8 +119,11 @@ export default class Directory extends SiteModule {
 				component: 'setting-check-box'
 			},
 
-			changed: () => this.CardWrapper.forceUpdate()
+			changed: () => this.DirectoryCard.forceUpdate()
 		});
+
+
+		this.routeClick = this.routeClick.bind(this);
 	}
 
 
@@ -132,27 +131,24 @@ export default class Directory extends SiteModule {
 		this.css_tweaks.toggleHide('profile-hover', this.settings.get('directory.show-channel-avatars') === 2);
 		this.css_tweaks.toggleHide('dir-live-ind', this.settings.get('directory.hide-live'));
 
+		this.on('i18n:update', () => this.DirectoryCard.forceUpdate());
+
 		const t = this,
 			React = await this.web_munch.findModule('react');
 
 		const createElement = React && React.createElement;
 
-		this.CardWrapper.ready(cls => {
-			const old_render = cls.prototype.render;
+		this.DirectoryCard.ready(cls => {
+			const old_render = cls.prototype.render,
+				old_render_iconic = cls.prototype.renderIconicImage,
+				old_render_titles = cls.prototype.renderTitles;
 
 			cls.prototype.render = function() {
-				if ( get('props.streamNode.type', this) === 'rerun' && t.settings.get('directory.hide-vodcasts') )
+				if ( get('props.streamType', this) === 'rerun' && t.settings.get('directory.hide-vodcasts') )
 					return null;
 
 				return old_render.call(this);
 			}
-
-			this.CardWrapper.forceUpdate();
-		});
-
-		this.DirectoryCard.ready(cls => {
-			const old_render_iconic = cls.prototype.renderIconicImage,
-				old_render_titles = cls.prototype.renderTitles;
 
 			cls.prototype.renderIconicImage = function() {
 				if ( this.props.context !== CARD_CONTEXTS.SingleChannelList &&
@@ -163,27 +159,48 @@ export default class Directory extends SiteModule {
 			}
 
 			cls.prototype.renderTitles = function() {
-				const nodes = get('props.currentViewerCount.host_nodes', this);
+				const nodes = t.following.hosts.get(get('props.currentViewerCount', this));
 				if ( this.props.hostedByChannelLogin == null || ! nodes || ! nodes.length )
 					return old_render_titles.call(this);
 
 				const channel = nodes[0].hosting,
-					stream = channel.stream;
+					stream = channel.stream,
+					game = stream && stream.game,
+
+					channel_url = `/${channel.login}`,
+					game_url = game && `/directory/game/${stream.game.name}`,
+
+					user_link = <a href={channel_url} data-href={channel_url} onClick={t.routeClick} class="tw-link tw-link--inherit">{channel.displayName}</a>,
+					game_link = game && <a href={game_url} data-href={game_url} onClick={t.routeClick} class="tw-link tw-link--inherit">{game.name}</a>;
 
 				return (<div>
-					<a class="tw-link tw-link--inherit" data-test-selector="preview-card-titles__primary-link">
+					<a href={channel_url} data-href={channel_url} onClick={t.routeClick} class="tw-link tw-link--inherit" data-test-selector="preview-card-titles__primary-link">
 						<h3 class="tw-ellipsis tw-font-size-5 tw-strong" title={stream.title}>{stream.title}</h3>
 					</a>
 					<div class="preview-card-titles__subtitle-wrapper">
 						<div data-test-selector="preview-card-titles__subtitle">
-							<p class="tw-c-text-alt tw-ellipsis">
-								<a class="tw-link tw-link--inherit">{channel.displayName}</a> playing <a class="tw-link tw-link--inherit">{stream.game.name}</a>
-							</p>
+							<p class="tw-c-text-alt tw-ellipsis">{
+								game ?
+									game.id == CREATIVE_ID ?
+										t.i18n.tList('directory.user-creative', '%{user} being %{game}', {
+											user: user_link,
+											game: game_link
+										}) :
+										t.i18n.tList('directory.user-playing', '%{user} playing %{game}', {
+											user: user_link,
+											game: game_link
+										})
+									: user_link
+							}</p>
 						</div>
 						<div data-test-selector="preview-card-titles__subtitle">
-							<p class="tw-c-text-alt tw-ellipsis">
-								Hosted by {nodes.length > 1 ? `${nodes.length} channels` : nodes[0].displayName}
-							</p>
+							<p class="tw-c-text-alt tw-ellipsis">{
+								nodes.length > 1 ?
+									t.i18n.t('directory.hosted.by-many', 'Hosted by %{count} channel%{count|en_plural}', nodes.length) :
+									t.i18n.tList('directory.hosted.by-one', 'Hosted by %{user}', {
+										user: <a href={`/${nodes[0].login}`} data-href={`/${nodes[0].login}`} onClick={t.routeClick} class="tw-link tw-link--inherit">{nodes[0].displayName}</a>
+									})
+							}</p>
 						</div>
 					</div>
 				</div>);
@@ -194,7 +211,7 @@ export default class Directory extends SiteModule {
 			// Game Directory Channel Cards
 			// TODO: Better query handling.
 			this.apollo.ensureQuery(
-				'GamePage_Game',
+				'GamePage_Game_RENAME2',
 				'data.directory.streams.edges.0.node.createdAt'
 			);
 
@@ -216,9 +233,7 @@ export default class Directory extends SiteModule {
 			return;
 
 		const props = inst.props,
-			game = props.gameTitle || props.playerMetadataGame,
-			is_video = props.durationInSeconds != null,
-			is_host = props.hostedByChannelLogin != null;
+			game = props.gameTitle || props.playerMetadataGame;
 
 		container.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
 
@@ -237,18 +252,22 @@ export default class Directory extends SiteModule {
 	processNodes(edges, is_game_query = false, blocked_games) {
 		const out = [];
 
-		if ( blocked_games === undefined )
+		if ( ! Array.isArray(blocked_games) )
 			blocked_games = this.settings.provider.get('directory.game.blocked-games', []);
 
 		for(const edge of edges) {
 			const node = edge.node || edge,
-				store = {}; // node.viewersCount = new Number(node.viewersCount || 0);
+				stream = node.stream || node;
 
-			store.createdAt = node.createdAt;
-			store.title = node.title;
-			store.game = node.game;
+			if ( stream.viewersCount ) {
+				const store = stream.viewersCount = new Number(stream.viewersCount || 0);
 
-			if ( is_game_query || (! node.game || node.game && ! blocked_games.includes(node.game.game)) )
+				store.createdAt = stream.createdAt;
+				store.title = stream.title;
+				//store.game = stream.game;
+			}
+
+			if ( is_game_query || (! stream.game || stream.game && ! blocked_games.includes(stream.game.name)) )
 				out.push(edge);
 		}
 
@@ -257,8 +276,6 @@ export default class Directory extends SiteModule {
 
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this
-		this.log.info('Modify Streams', res);
-
 		const is_game_query = get('data.directory.__typename', res) === 'Game',
 			edges = get('data.directory.streams.edges', res);
 
@@ -310,7 +327,7 @@ export default class Directory extends SiteModule {
 							</div>
 							{inst.ffz_uptime_span = <p />}
 						</div>
-						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 							{this.i18n.t('metadata.uptime.tooltip', 'Stream Uptime')}
 							{inst.ffz_uptime_tt = <div class="tw-pd-t-05" />}
 						</div>
@@ -366,10 +383,12 @@ export default class Directory extends SiteModule {
 		inst.ffz_av_login = props.channelLogin;
 		inst.ffz_av_src = src;
 
+		const link = props.channelLinkTo && props.channelLinkTo.pathname;
+
 		card.appendChild(<a
 			class="ffz-channel-avatar"
-			href={props.channelLinkTo && props.channelLinkTo.pathname}
-			onClick={e => this.routeClick(e, props.channelLinkTo)} // eslint-disable-line react/jsx-no-bind
+			href={link}
+			onClick={e => this.routeClick(e, link)} // eslint-disable-line react/jsx-no-bind
 		>
 			<div class={`tw-absolute tw-right-0 tw-border-l tw-c-background ${is_video ? 'tw-top-0 tw-border-b' : 'tw-bottom-0 tw-border-t'}`}>
 				<figure class="tw-aspect tw-aspect--align-top">
@@ -380,12 +399,25 @@ export default class Directory extends SiteModule {
 	}
 
 
-	routeClick(event, route) {
+	routeClick(event, url) {
 		event.preventDefault();
 		event.stopPropagation();
 
-		if ( route && route.pathname )
-			this.router.history.push(route.pathname);
+		if ( ! url ) {
+			const target = event.currentTarget;
+
+			if ( target ) {
+				const ds = target.dataset;
+				if ( ds && ds.href )
+					url = ds.href;
+
+				else if ( target.href )
+					url = target.href;
+			}
+		}
+
+		if ( url )
+			this.router.history.push(url);
 	}
 
 

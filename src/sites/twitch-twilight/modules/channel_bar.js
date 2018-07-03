@@ -21,8 +21,8 @@ export default class ChannelBar extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
-		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', CHANNEL_QUERY);
-		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
+		this.apollo.registerModifier('ChannelPage_ChannelHeader', CHANNEL_QUERY);
+		this.apollo.registerModifier('ChannelPage_ChannelHeader', data => {
 			const u = data && data.data && data.data.user;
 			if ( u ) {
 				const o = u.profileViewCount = new Number(u.profileViewCount || 0);

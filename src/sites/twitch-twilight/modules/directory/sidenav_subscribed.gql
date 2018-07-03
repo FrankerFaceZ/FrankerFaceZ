@@ -1,9 +1,10 @@
 query {
 	currentUser {
-		followedLiveUsers {
+		subscribedChannels {
 			edges {
 				node {
 					stream {
+						type
 						createdAt
 					}
 				}

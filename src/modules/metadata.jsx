@@ -61,7 +61,7 @@ export default class Metadata extends Module {
 			setup() {
 				const socket = this.resolve('socket'),
 					apollo = this.resolve('site.apollo'),
-					created_at = apollo.getFromQuery('ChannelPage_ChannelInfoBar_User', 'data.user.stream.createdAt');
+					created_at = apollo.getFromQuery('ChannelPage_ChannelHeader', 'data.user.stream.createdAt');
 
 				if ( ! created_at )
 					return {};

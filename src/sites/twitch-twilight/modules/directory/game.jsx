@@ -25,7 +25,7 @@ export default class Game extends SiteModule {
 			['dir-game-index', 'dir-community']
 		);
 
-		this.apollo.registerModifier('GamePage_Game', GAME_QUERY);
+		this.apollo.registerModifier('GamePage_Game_RENAME2', GAME_QUERY);
 	}
 
 	onEnable() {

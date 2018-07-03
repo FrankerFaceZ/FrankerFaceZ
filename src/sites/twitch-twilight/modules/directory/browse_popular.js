@@ -30,8 +30,6 @@ export default class BrowsePopular extends SiteModule {
 	}
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this
-		this.log.info('Streams', res);
-
 		const edges = get('data.streams.edges', res);
 		if ( ! edges || ! edges.length )
 			return res;

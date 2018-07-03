@@ -51,7 +51,7 @@ export default class Scroller extends Module {
 			ui: {
 				path: 'Chat > Behavior >> General',
 				title: 'Smooth Scrolling',
-				description: 'Animates new chat messages into view. Will speed up if necessary to keep up with chat.',
+				description: 'Smoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
@@ -85,9 +85,8 @@ export default class Scroller extends Module {
 		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
 			this.smoothScroll = val;
 
-			for(const inst of this.ChatScroller.instances) {
+			for(const inst of this.ChatScroller.instances)
 				inst.ffzSetSmoothScroll(val);
-			}
 		});
 
 		this.ChatScroller.ready((cls, instances) => {
@@ -250,52 +249,62 @@ export default class Scroller extends Module {
 			}
 
 			cls.prototype.smoothScrollBottom = function() {
-				if(this.state.ffzSmoothAnimation){
-					cancelAnimationFrame(this.state.ffzSmoothAnimation);
-				}
-				this.isScrollingToBottom = true;
+				if ( this._ffz_smooth_animation )
+					cancelAnimationFrame(this._ffz_smooth_animation);
+
+				this.ffz_is_smooth_scrolling = true;
+
 				// Step setting value is # pixels to scroll per 10ms.
 				// 1 is pretty slow, 2 medium, 3 fast, 4 very fast.
-				let step = this.ffz_smooth_scroll;
-				const scrollContent = this.scroll.scrollContent;
-				const targetTop = scrollContent.scrollHeight - scrollContent.clientHeight;
-				const difference = targetTop - scrollContent.scrollTop;
+				let step = this.ffz_smooth_scroll,
+					old_time = Date.now();
+
+				const scroll_content = this.scroll.scrollContent,
+					target_top = scroll_content.scrollHeight - scroll_content.clientHeight,
+					difference = target_top - scroll_content.scrollTop;
 
 				// If we are falling behind speed us up
-				if (difference > scrollContent.clientHeight) {
+				if ( difference > scroll_content.clientHeight ) {
 					// we are a full scroll away, just jump there
 					step = difference;
-				} else if (difference > 200) {
+
+				} else if ( difference > 200 ) {
 					// we are starting to fall behind, speed it up a bit
-					step += step * parseInt(difference / 200, 10);
+					step += step * Math.floor(difference / 200);
 				}
-				let prevTime = Date.now();
+
 				const smoothAnimation = () => {
-					if(this.state.ffzFrozen) {
-						this.isScrollingToBottom = false;
-						return;
-					}
+					if ( this.state.ffzFrozen )
+						return this.ffz_is_smooth_scrolling = false;
+
 					// See how much time has passed to get a step based off the delta
-					const currentTime = Date.now();
-					const delta = currentTime - prevTime;
-					const currentStep = step * (delta / 10);
+					const current_time = Date.now(),
+						delta = current_time - old_time,
+						current_step = step * (delta / 10);
+
 					// we need to move at least one full pixel for scrollTop to do anything in this delta.
-					if (currentStep >= 1) {
-						prevTime = currentTime;
-						if (scrollContent.scrollTop < (scrollContent.scrollHeight - scrollContent.clientHeight)) {
-							scrollContent.scrollTop += currentStep;
-							this.state.ffzSmoothAnimation = requestAnimationFrame(smoothAnimation);
+					if ( current_step >= 1 ) {
+						const scroll_top = scroll_content.scrollTop,
+							target_top = scroll_content.scrollHeight - scroll_content.clientHeight;
+
+						old_time = current_time;
+						if ( scroll_top < target_top ) {
+							scroll_content.scrollTop = scroll_top + current_step;
+							this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
+
 						} else {
-							scrollContent.scrollTop = scrollContent.scrollHeight - scrollContent.clientHeight;
-							this.isScrollingToBottom = false;
+							// We've reached the bottom.
+							scroll_content.scrollTop = target_top;
+							this.ffz_is_smooth_scrolling = false;
 						}
+
 					} else {
-						// the frame happened so quick since last update we didn't move a full pixel yet.
-						// should only be possible if the FPS of a browser went over 60fps.
-						this.state.ffzSmoothAnimation = requestAnimationFrame(smoothAnimation);
+						// The frame happened so quick since last update that we haven't moved a full pixel.
+						// Just wait.
+						this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
 					}
-					
 				}
+
 				smoothAnimation();
 			}
 
@@ -308,11 +317,10 @@ export default class Scroller extends Module {
 				this._old_scroll = this.scrollToBottom;
 				this.scrollToBottom = function() {
 					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen ) {
-						if (this.ffz_smooth_scroll !== 0) {
+						if ( this.ffz_smooth_scroll )
 							this.smoothScrollBottom();
-						} else {
+						else
 							this._old_scroll();
-						}
 					}
 				}
 

@@ -2,7 +2,6 @@ query {
 	currentUser {
 		followedLiveUsers {
 			nodes {
-				profileImageURL(width: 50)
 				stream {
 					type
 					createdAt

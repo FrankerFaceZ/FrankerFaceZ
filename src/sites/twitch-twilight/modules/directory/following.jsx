@@ -14,6 +14,7 @@ import FOLLOWED_INDEX from './followed_index.gql';
 import FOLLOWED_HOSTS from './followed_hosts.gql';
 import FOLLOWED_CHANNELS from './followed_channels.gql';
 import FOLLOWED_LIVE from './followed_live.gql';
+import SUBSCRIBED_CHANNELS from './sidenav_subscribed.gql';
 
 export default class Following extends SiteModule {
 	constructor(...args) {
@@ -63,27 +64,37 @@ export default class Following extends SiteModule {
 			changed: () => this.ChannelCard.forceUpdate()
 		});
 
+		this.apollo.registerModifier('FollowedChannels_RENAME2', FOLLOWED_CHANNELS);
+		this.apollo.registerModifier('SideNav_SubscribedChannels', SUBSCRIBED_CHANNELS);
+
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', FOLLOWED_INDEX);
 		this.apollo.registerModifier('FollowingLive_CurrentUser', FOLLOWED_LIVE);
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', FOLLOWED_HOSTS);
-		this.apollo.registerModifier('FollowedChannels', FOLLOWED_CHANNELS);
 
+		this.apollo.registerModifier('FollowedChannels_RENAME2', res =>	this.modifyLiveUsers(res), false);
+		this.apollo.registerModifier('SideNav_SubscribedChannels', res => this.modifyLiveUsers(res, 'subscribedChannels'), false);
+
+		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
+		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', res => {
 			this.modifyLiveUsers(res);
 			this.modifyLiveHosts(res);
 		}, false);
 
-		this.apollo.registerModifier('FollowedChannels', res => this.modifyLiveUsers(res), false);
-		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
-		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
+		this.hosts = new WeakMap;
 	}
 
-	modifyLiveUsers(res) {
-		const edges = get('data.currentUser.followedLiveUsers.nodes', res);
-		if ( ! edges || ! edges.length )
-			return res;
+	modifyLiveUsers(res, path = 'followedLiveUsers') {
+		const followed_live = get(`data.currentUser.${path}`, res);
+		if ( ! followed_live )
+			return;
 
-		res.data.currentUser.followedLiveUsers.nodes = this.parent.processNodes(edges);
+		if ( followed_live.nodes )
+			followed_live.nodes = this.parent.processNodes(followed_live.nodes);
+
+		else if ( followed_live.edges )
+			followed_live.edges = this.parent.processNodes(followed_live.edges);
+
 		return res;
 	}
 
@@ -103,23 +114,29 @@ export default class Following extends SiteModule {
 				hosted = node.hosting,
 				stream = hosted && hosted.stream;
 
-			if ( ! stream || stream.game && blocked_games.includes(stream.game.game) )
+			if ( ! stream || stream.game && blocked_games.includes(stream.game.name) )
 				continue;
 
-			const store = {}; // stream.viewersCount = new Number(stream.viewersCount || 0);
+			if ( ! stream.viewersCount ) {
+				if ( ! do_grouping || ! hosts[hosted.login] )
+					out.push(edge);
+				continue;
+			}
+
+			const store = stream.viewersCount = new Number(stream.viewersCount || 0);
 
 			store.createdAt = stream.createdAt;
 			store.title = stream.title;
-			store.game = stream.game;
+			//store.game = stream.game;
 
 			if ( do_grouping ) {
 				const host_nodes = hosts[hosted.login];
 				if ( host_nodes ) {
 					host_nodes.push(node);
-					store.host_nodes = node._ffz_host_nodes = host_nodes;
+					this.hosts.set(store, host_nodes);
 
 				} else {
-					store.host_nodes = node._ffz_host_nodes = hosts[hosted.login] = [node];
+					this.hosts.set(store, hosts[hosted.login] = [node]);
 					out.push(edge);
 				}
 
@@ -133,8 +150,13 @@ export default class Following extends SiteModule {
 
 	ensureQueries () {
 		this.apollo.ensureQuery(
-			'FollowedChannels',
-			'data.currentUser.followedLiveUsers.nodes.0.profileImageURL'
+			'FollowedChannels_RENAME2',
+			'data.currentUser.followedLiveUsers.nodes.0.stream.createdAt'
+		);
+
+		this.apollo.ensureQuery(
+			'SideNav_SubscribedChannels',
+			'data.currentUser.subscribedChannels.edges.0.node.stream.createdAt'
 		);
 
 		if ( this.router.current_name !== 'dir-following' )

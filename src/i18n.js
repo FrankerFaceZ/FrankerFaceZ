@@ -361,6 +361,10 @@ export class TranslationManager extends Module {
 	t(...args) {
 		return this._.t(...args);
 	}
+
+	tList(...args) {
+		return this._.tList(...args);
+	}
 }
 
 
@@ -391,6 +395,7 @@ export default class TranslationCore {
 		const allowMissing = options.allowMissing ? transformPhrase : null;
 		this.onMissingKey = typeof options.onMissingKey === 'function' ? options.onMissingKey : allowMissing;
 		this.transformPhrase = typeof options.transformPhrase === 'function' ? options.transformPhrase : transformPhrase;
+		this.transformList = typeof options.transformList === 'function' ? options.transformList : transformList;
 		this.delimiter = options.delimiter || /\s*\|\|\|\|\s*/;
 		this.tokenRegex = options.tokenRegex || /%\{(.*?)(?:\|(.*?))?\}/g;
 		this.formatters = Object.assign({}, DEFAULT_FORMATTERS, options.formatters || {});
@@ -457,7 +462,7 @@ export default class TranslationCore {
 		this.extend(phrases);
 	}
 
-	t(key, phrase, options, use_default) {
+	preT(key, phrase, options, use_default) {
 		const opts = options == null ? {} : options;
 		let p, locale;
 
@@ -492,7 +497,19 @@ export default class TranslationCore {
 		if ( this.transformation )
 			p = this.transformation(key, p, opts, locale, this.tokenRegex);
 
+		return [p, opts, locale];
+	}
+
+	t(key, phrase, options, use_default) {
+		const [p, opts, locale] = this.preT(key, phrase, options, use_default);
+
 		return this.transformPhrase(p, opts, locale, this.tokenRegex, this.formatters);
+	}
+
+	tList(key, phrase, options, use_default) {
+		const [p, opts, locale] = this.preT(key, phrase, options, use_default);
+
+		return this.transformList(p, opts, locale, this.tokenRegex, this.formatters);
 	}
 }
 
@@ -502,6 +519,55 @@ export default class TranslationCore {
 // ============================================================================
 
 const DOLLAR_REGEX = /\$/g;
+
+export function transformList(phrase, substitutions, locale, token_regex, formatters) {
+	const is_array = Array.isArray(phrase);
+	if ( substitutions == null )
+		return is_array ? phrase[0] : phrase;
+
+	let p = phrase;
+	const options = typeof substitutions === 'number' ? {count: substitutions} : substitutions;
+
+	if ( is_array )
+		p = p[pluralTypeIndex(
+			locale || 'en',
+			has(options, 'count') ? options.count : 1
+		)] || p[0];
+
+	const result = [];
+
+	token_regex.lastIndex = 0;
+	let idx = 0, match;
+
+	while((match = token_regex.exec(p))) {
+		const nix = match.index,
+			arg = match[1],
+			fmt = match[2];
+
+		if ( nix !== idx )
+			result.push(p.slice(idx, nix));
+
+		let val = get(arg, options);
+
+		if ( val != null ) {
+			const formatter = formatters[fmt];
+			if ( typeof formatter === 'function' )
+				val = formatter(val, locale, options);
+			else if ( typeof val === 'string' )
+				val = REPLACE.call(val, DOLLAR_REGEX, '$$');
+
+			result.push(val);
+		}
+
+		idx = nix + match[0].length;
+	}
+
+	if ( idx < p.length )
+		result.push(p.slice(idx));
+
+	return result;
+}
+
 
 export function transformPhrase(phrase, substitutions, locale, token_regex, formatters) {
 	const is_array = Array.isArray(phrase);
