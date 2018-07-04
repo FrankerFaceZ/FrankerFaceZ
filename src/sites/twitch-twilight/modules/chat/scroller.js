@@ -274,7 +274,7 @@ export default class Scroller extends Module {
 				}
 
 				const smoothAnimation = () => {
-					if ( this.state.ffzFrozen )
+					if ( this.state.ffzFrozen || ! this.state.isAutoScrolling )
 						return this.ffz_is_smooth_scrolling = false;
 
 					// See how much time has passed to get a step based off the delta
