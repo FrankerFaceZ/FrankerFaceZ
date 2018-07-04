@@ -119,7 +119,12 @@ export default class Directory extends SiteModule {
 				component: 'setting-check-box'
 			},
 
-			changed: () => this.DirectoryCard.forceUpdate()
+			changed: () => {
+				//this.DirectoryCard.forceUpdate();
+
+				for(const inst of this.DirectoryCard.instances)
+					this.updateCard(inst);
+			}
 		});
 
 
@@ -139,16 +144,16 @@ export default class Directory extends SiteModule {
 		const createElement = React && React.createElement;
 
 		this.DirectoryCard.ready(cls => {
-			const old_render = cls.prototype.render,
-				old_render_iconic = cls.prototype.renderIconicImage,
+			//const old_render = cls.prototype.render,
+			const old_render_iconic = cls.prototype.renderIconicImage,
 				old_render_titles = cls.prototype.renderTitles;
 
-			cls.prototype.render = function() {
+			/*cls.prototype.render = function() {
 				if ( get('props.streamType', this) === 'rerun' && t.settings.get('directory.hide-vodcasts') )
 					return null;
 
 				return old_render.call(this);
-			}
+			}*/
 
 			cls.prototype.renderIconicImage = function() {
 				if ( this.props.context !== CARD_CONTEXTS.SingleChannelList &&
@@ -236,6 +241,20 @@ export default class Directory extends SiteModule {
 			game = props.gameTitle || props.playerMetadataGame;
 
 		container.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
+
+		const should_hide = (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
+			(props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game));
+
+		let hide_container = container.closest('.stream-thumbnail,[style*="order:"]');
+
+		if ( ! hide_container )
+			hide_container = container.closest('.tw-mg-b-2');
+
+		if ( ! hide_container )
+			hide_container = container;
+
+		if ( hide_container.querySelectorAll('.preview-card').length < 2 )
+			hide_container.classList.toggle('tw-hide', should_hide);
 
 		//this.log.info('Card Update', inst.props.channelDisplayName, is_video ? 'Video' : 'Live', is_host ? 'Host' : 'Not-Host', inst);
 
