@@ -8,26 +8,44 @@
 			class="tw-pd-b-1"
 			v-html="t(item.desc_i18n_key, item.description, item)"
 		/>
-		<component
+		<div
 			v-for="i in item.contents"
-			:is="i.component"
-			:context="context"
-			:item="i"
 			:key="i.full_key"
-		/>
+			:class="{'ffz-unmatched-item': showing && ! shouldShow(i)}"
+		>
+			<component
+				:is="i.component"
+				:context="context"
+				:item="i"
+				:filter="filter"
+			/>
+		</div>
 	</div>
 </template>
 
 <script>
 export default {
-	props: ['item', 'context'],
+	props: ['item', 'context', 'filter'],
 
 	computed: {
+		showing() {
+			return this.shouldShow(this.item);
+		},
+
 		classes() {
 			return [
 				'ffz--menu-container',
 				this.item.full_box ? 'tw-border' : 'tw-border-t'
 			]
+		}
+	},
+
+	methods: {
+		shouldShow(item) {
+			if ( ! this.filter || ! this.filter.length || ! item.search_terms )
+				return true;
+
+			return item.search_terms.includes(this.filter);
 		}
 	}
 }

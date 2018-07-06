@@ -65,6 +65,22 @@ export default class MainMenu extends Module {
 
 	}
 
+	openPopout() {
+		const win = window.open(
+			'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
+			'_blank',
+			'resizable=yes,scrollbars=yes,width=850,height=600'
+		);
+
+		if ( win ) {
+			win.focus();
+			return true;
+		} else {
+			this.log.warn('Unable to open popout settings window.');
+			return false;
+		}
+	}
+
 	async onLoad() {
 		this.vue.component(
 			(await import(/* webpackChunkName: "main-menu" */ './components.js')).default
@@ -542,6 +558,9 @@ export default class MainMenu extends Module {
 		return {
 			context,
 
+			query: '',
+			faded: false,
+
 			nav: settings,
 			currentItem: settings.keys['home'], // settings[0],
 			nav_keys: settings.keys,
@@ -549,6 +568,14 @@ export default class MainMenu extends Module {
 			maximized: this._maximized,
 			resize: e => !this.exclusive && this.toggleSize(e),
 			close: e => !this.exclusive && this.toggleVisible(e),
+			popout: e => {
+				if ( this.exclusive )
+					return;
+
+				this.toggleVisible(e);
+				if ( ! this.openPopout() )
+					alert(this.i18n.t('popup.error', 'We tried opening a pop-up window and could not. Make sure to allow pop-ups from Twitch.'));
+			},
 			version: window.FrankerFaceZ.version_info,
 
 			exclusive: this.exclusive

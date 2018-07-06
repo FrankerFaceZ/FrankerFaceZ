@@ -146,6 +146,21 @@ export function filter_match(filter, target) {
 }
 
 
+export function substr_count(str, needle) {
+	let i = 0, idx = 0;
+	while( idx < str.length ) {
+		const x = str.indexOf(needle, idx);
+		if ( x === -1 )
+			break;
+
+		i++;
+		idx = x + 1;
+	}
+
+	return i;
+}
+
+
 /**
  * Get a value from an object at a path.
  * @param {string|Array} path The path to follow, using periods to go down a level.

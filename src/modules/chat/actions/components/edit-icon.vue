@@ -67,7 +67,9 @@ const FFZ_ICONS = [
 	'pin',
 	'block',
 	'ok',
-	'clock'
+	'clock',
+	'eye',
+	'eye-off'
 ];
 
 const FFZ_ALIASES = {

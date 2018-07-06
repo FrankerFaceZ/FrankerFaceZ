@@ -151,6 +151,7 @@ export default class Badges extends Module {
 			type: 'object_merge',
 			ui: {
 				path: 'Chat > Badges >> tabs ~> Visibility',
+				title: 'Visibility',
 				component: 'badge-visibility',
 				data: () => {
 					const twitch = [],

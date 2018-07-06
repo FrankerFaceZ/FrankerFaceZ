@@ -175,8 +175,8 @@ export default class Directory extends SiteModule {
 					channel_url = `/${channel.login}`,
 					game_url = game && `/directory/game/${stream.game.name}`,
 
-					user_link = <a href={channel_url} data-href={channel_url} onClick={t.routeClick} class="tw-link tw-link--inherit">{channel.displayName}</a>,
-					game_link = game && <a href={game_url} data-href={game_url} onClick={t.routeClick} class="tw-link tw-link--inherit">{game.name}</a>;
+					user_link = <a href={channel_url} data-href={channel_url} onClick={t.routeClick} title={channel.displayName} class="tw-link tw-link--inherit">{channel.displayName}</a>,
+					game_link = game && <a href={game_url} data-href={game_url} onClick={t.routeClick} title={game.name} class="tw-link tw-link--inherit">{game.name}</a>;
 
 				return (<div>
 					<a href={channel_url} data-href={channel_url} onClick={t.routeClick} class="tw-link tw-link--inherit" data-test-selector="preview-card-titles__primary-link">
@@ -203,7 +203,7 @@ export default class Directory extends SiteModule {
 								nodes.length > 1 ?
 									t.i18n.t('directory.hosted.by-many', 'Hosted by %{count} channel%{count|en_plural}', nodes.length) :
 									t.i18n.tList('directory.hosted.by-one', 'Hosted by %{user}', {
-										user: <a href={`/${nodes[0].login}`} data-href={`/${nodes[0].login}`} onClick={t.routeClick} class="tw-link tw-link--inherit">{nodes[0].displayName}</a>
+										user: <a href={`/${nodes[0].login}`} data-href={`/${nodes[0].login}`} onClick={t.routeClick} title={nodes[0].displayName} class="tw-link tw-link--inherit">{nodes[0].displayName}</a>
 									})
 							}</p>
 						</div>

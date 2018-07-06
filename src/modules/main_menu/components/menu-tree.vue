@@ -12,6 +12,7 @@
 	>
 		<li
 			v-for="item in modal"
+			v-if="shouldShow(item)"
 			:key="item.full_key"
 			:class="[currentItem === item ? 'active' : '']"
 			role="presentation"
@@ -34,7 +35,7 @@
 				<span class="tw-flex-grow-1">
 					{{ t(item.i18n_key, item.title, item) }}
 				</span>
-				<span v-if="item.pill" class="pill">
+				<span v-if="item.pill" class="tw-pill">
 					{{ item.pill_i18n_key ? t(item.pill_i18n_key, item.pill, item) : item.pill }}
 				</span>
 			</div>
@@ -43,6 +44,7 @@
 				:root="item"
 				:current-item="currentItem"
 				:modal="item.items"
+				:filter="filter"
 				@change-item="i => $emit('change-item', i)"
 			/>
 		</li>
@@ -82,7 +84,7 @@ function recursiveExpand(node) {
 
 
 export default {
-	props: ['root', 'modal', 'currentItem'],
+	props: ['root', 'modal', 'currentItem', 'filter'],
 
 	computed: {
 		tabIndex() {
@@ -91,6 +93,28 @@ export default {
 	},
 
 	methods: {
+		shouldShow(item) {
+			if ( ! this.filter || ! this.filter.length || this.containsCurrent(item) )
+				return true;
+
+			if ( item.search_terms && item.search_terms.includes(this.filter) )
+				return true;
+
+			return false;
+		},
+
+		containsCurrent(item) {
+			let i = this.currentItem;
+			while ( i ) {
+				if ( item === i )
+					return true;
+
+				i = i.parent;
+			}
+
+			return false;
+		},
+
 		clickItem(item) {
 			if ( ! item.expanded )
 				item.expanded = true;

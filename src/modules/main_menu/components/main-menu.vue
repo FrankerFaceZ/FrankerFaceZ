@@ -1,23 +1,44 @@
 <template lang="html">
 	<div
-		:class="{ maximized: maximized || exclusive, exclusive }"
+		:class="{ maximized: maximized || exclusive, exclusive, faded }"
 		class="ffz-main-menu tw-elevation-3 tw-c-background-alt tw-c-text tw-border tw-flex tw-flex-nowrap tw-flex-column"
 	>
 		<header class="tw-c-background tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
 			<h3 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
-				<!--div class="tw-search-input">
-					<label for="ffz-main-menu.search" class="hide-accessible">{{ t('main-menu.search', 'Search Settings') }}</label>
-					<div class="relative">
-						<div class="tw-input__icon-group">
-							<div class="tw-input__icon">
-								<figure class="ffz-i-search" />
-							</div>
+				<div class="tw-search-input">
+					<label for="ffz-main-menu.search" class="tw-hide-accessible">{{ t('main-menu.search', 'Search Settings') }}</label>
+					<div class="tw-relative">
+						<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height tw-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
+							<figure class="ffz-i-search" />
 						</div>
-						<input type="search" class="tw-input tw-input--icon-left" :placeholder="t('main-menu.search', 'Search Settings')" autocapitalize="off" autocorrect="off" autocomplete="off" id="ffz-main-menu.search">
+						<input
+							id="ffz-main-menu.search"
+							v-model="query"
+							:placeholder="t('main-menu.search', 'Search Settings')"
+							type="search"
+							class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
+							autocapitalize="off"
+							autocorrect="off"
+							autocomplete="off"
+							spellcheck="false"
+						>
 					</div>
-				</div-->
+				</div>
 			</div>
+			<button v-if="!maximized && !exclusive" class="tw-button-icon tw-mg-x-05" @click="faded = ! faded">
+				<span class="tw-button-icon__icon">
+					<figure :class="faded ? 'ffz-i-eye-off' : 'ffz-i-eye'" />
+				</span>
+			</button>
+			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-tooltip-wrapper" @click="popout">
+				<span class="tw-button-icon__icon">
+					<figure class="ffz-i-link-ext" />
+				</span>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+					{{ t('main-menu.popout', 'Open Settings in a New Window') }}
+				</div>
+			</button>
 			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05" @click="resize">
 				<span class="tw-button-icon__icon">
 					<figure :class="{'ffz-i-window-maximize': !maximized, 'ffz-i-window-restore': maximized}" />
@@ -42,6 +63,7 @@
 						<menu-tree
 							:current-item="currentItem"
 							:modal="nav"
+							:filter="filter"
 							@change-item="changeItem"
 							@navigate="navigate"
 						/>
@@ -62,6 +84,7 @@
 					ref="page"
 					:context="context"
 					:item="currentItem"
+					:filter="filter"
 					@change-item="changeItem"
 					@navigate="navigate"
 				/>
@@ -77,6 +100,12 @@ import displace from 'displacejs';
 export default {
 	data() {
 		return this.$vnode.data;
+	},
+
+	computed: {
+		filter() {
+			return this.query.toLowerCase()
+		}
 	},
 
 	watch: {

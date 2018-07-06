@@ -51,7 +51,6 @@
 }
 
 .ffz-i-zreknarf:before {
-	content: '\e801'; /* '' */
 	width: 1.3em;
 	margin: .5rem .05rem 0;
 }
@@ -64,6 +63,7 @@
 }
 
 .ffz-i-cancel:before { content: '\e800'; } /* '' */
+.ffz-i-zreknarf:before { content: '\e801'; } /* '' */
 .ffz-i-search:before { content: '\e802'; } /* '' */
 .ffz-i-clock:before { content: '\e803'; } /* '' */
 .ffz-i-star:before { content: '\e804'; } /* '' */
@@ -103,6 +103,8 @@
 .ffz-i-pin-outline:before { content: '\e826'; } /* '' */
 .ffz-i-gift:before { content: '\e827'; } /* '' */
 .ffz-i-views:before { content: '\e828'; } /* '' */
+.ffz-i-eye:before { content: '\e829'; } /* '' */
+.ffz-i-eye-off:before { content: '\e82a'; } /* '' */
 .ffz-i-link-ext:before { content: '\f08e'; } /* '' */
 .ffz-i-twitter:before { content: '\f099'; } /* '' */
 .ffz-i-gauge:before { content: '\f0e4'; } /* '' */

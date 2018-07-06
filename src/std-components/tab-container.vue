@@ -24,7 +24,7 @@
 				:id="'tab-for-' + i.full_key"
 				:aria-selected="selected === idx"
 				:aria-controls="'tab-panel-' + i.full_key"
-				:class="[selected === idx ? 'active' : '']"
+				:class="{'active': selected === idx, 'ffz-unmatched-item': showing && ! shouldShow(i)}"
 				role="tab"
 				class="tab tw-pd-y-05 tw-pd-x-1"
 				@click="selected = idx"
@@ -43,22 +43,27 @@
 			<section v-if="tab.description" class="tw-pd-b-1">
 				{{ t(tab.desc_i18n_key, tab.description, tab) }}
 			</section>
-			<component
+			<div
 				v-for="i in tab.contents"
-				:is="i.component"
-				:current-profile="currentProfile"
-				:profiles="profiles"
-				:context="context"
-				:item="i"
 				:key="i.full_key"
-			/>
+				:class="{'ffz-unmatched-item': showing && ! shouldShow(i)}"
+			>
+				<component
+					:is="i.component"
+					:current-profile="currentProfile"
+					:profiles="profiles"
+					:context="context"
+					:item="i"
+					:filter="filter"
+				/>
+			</div>
 		</section>
 	</div>
 </template>
 
 <script>
 export default {
-	props: ['item', 'profiles', 'currentProfile', 'context'],
+	props: ['item', 'profiles', 'currentProfile', 'context', 'filter'],
 
 	data() {
 		return {
@@ -67,6 +72,10 @@ export default {
 	},
 
 	computed: {
+		showing() {
+			return this.shouldShow(this.item)
+		},
+
 		tab() {
 			return this.item.tabs[this.selected];
 		}
@@ -113,6 +122,13 @@ export default {
 		nextTab() {
 			if ( this.selected + 1 < this.item.tabs.length )
 				this.selected++;
+		},
+
+		shouldShow(item) {
+			if ( ! this.filter || ! this.filter.length || ! item.search_terms )
+				return true;
+
+			return item.search_terms.includes(this.filter);
 		}
 	}
 }
