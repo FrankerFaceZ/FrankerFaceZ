@@ -983,8 +983,6 @@ export function findEmotes(msg, emotes) {
 	const out = {};
 	let idx = 0;
 
-	console.log('findEmotes', msg, emotes);
-
 	for(const part of msg.split(' ')) {
 		const len = split_chars(part).length;
 

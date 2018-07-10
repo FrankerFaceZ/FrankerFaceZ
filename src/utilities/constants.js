@@ -77,5 +77,6 @@ export const WS_CLUSTERS = {
 export const IS_OSX = navigator.platform ? navigator.platform.indexOf('Mac') !== -1 : /OS X/.test(navigator.userAgent);
 export const IS_WIN = navigator.platform ? navigator.platform.indexOf('Win') !== -1 : /Windows/.test(navigator.userAgent);
 export const IS_WEBKIT = navigator.userAgent.indexOf('AppleWebKit/') !== -1 && navigator.userAgent.indexOf('Edge/') === -1;
+export const IS_FIREFOX = navigator.userAgent.indexOf('Firefox/') !== -1;
 
 export const WEBKIT_CSS = IS_WEBKIT ? '-webkit-' : '';

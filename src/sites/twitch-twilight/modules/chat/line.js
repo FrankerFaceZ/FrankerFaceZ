@@ -233,7 +233,7 @@ export default class ChatLine extends Module {
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
 				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
+					this.ffz_user_click_handler = this.usernameClickHandler; // event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -247,7 +247,7 @@ export default class ChatLine extends Module {
 						e('button', {
 							className: 'chat-line__username notranslate',
 							style: { color },
-							onClick: this.usernameClickHandler, // this.ffz_user_click_handler
+							onClick: this.ffz_user_click_handler
 						}, [
 							e('span', {
 								className: 'chat-author__display-name'
@@ -294,8 +294,13 @@ export default class ChatLine extends Module {
 					cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line';
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
-							t.i18n.t('chat.sub.main', '%{user} just subscribed with %{plan}!', {
-								user: user.userDisplayName,
+							t.i18n.tList('chat.sub.main', '%{user} just subscribed with %{plan}!', {
+								user: e('button', {
+									className: 'chatter-name',
+									onClick: this.ffz_user_click_handler //e => this.props.onUsernameClick(user.login, null, msg.id, e.currentTarget.getBoundingClientRect().bottom)
+								}, e('span', {
+									className: 'tw-c-text tw-strong'
+								}, user.userDisplayName)),
 								plan: plan.prime ?
 									t.i18n.t('chat.sub.twitch-prime', 'Twitch Prime') :
 									t.i18n.t('chat.sub.plan', 'a Tier %{tier} sub', {tier})
@@ -322,8 +327,13 @@ export default class ChatLine extends Module {
 					let system_msg;
 					if ( msg.ritual === 'new_chatter' )
 						system_msg = e('div', {className: 'tw-c-text-alt-2'}, [
-							t.i18n.t('chat.ritual', '%{user} is new here. Say hello!', {
-								user: user.userDisplayName
+							t.i18n.tList('chat.ritual', '%{user} is new here. Say hello!', {
+								user: e('button', {
+									className: 'chatter-name',
+									onClick: this.ffz_user_click_handler
+								}, e('span', {
+									className: 'tw-c-text tw-strong'
+								}, user.userDisplayName))
 							})
 						]);
 

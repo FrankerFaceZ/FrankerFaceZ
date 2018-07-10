@@ -458,6 +458,62 @@ export class Module extends EventEmitter {
 	}
 
 
+	injectAs(variable, name, module, require = true) {
+		if ( name instanceof Module || name.prototype instanceof Module ) {
+			require = module != null ? module : true;
+			module = name;
+			name = null;
+		}
+
+		const requires = this.requires = this.__get_requires() || [];
+
+		if ( module instanceof Module ) {
+			// Existing Instance
+			if ( ! name )
+				name = module.constructor.name.toSnakeCase();
+
+		} else if ( module && module.prototype instanceof Module ) {
+			// New Instance
+			if ( ! name )
+				name = module.name.toSnakeCase();
+
+			module = this.register(name, module);
+
+		} else if ( name ) {
+			// Just a Name
+			const full_name = name;
+			name = name.replace(/^(?:[^.]*\.)+/, '');
+			module = this.resolve(full_name);
+
+			// Allow injecting a module that doesn't exist yet?
+
+			if ( ! module || !(module instanceof Module) ) {
+				if ( module )
+					module[2].push([this.__path, variable]);
+				else
+					this.__modules[this.abs_path(full_name)] = [[], [], [[this.__path, variable]]]
+
+				requires.push(this.abs_path(full_name));
+
+				return this[variable] = null;
+			}
+
+		} else
+			throw new TypeError(`must provide a valid module name or class`);
+
+		if ( ! module )
+			throw new Error(`cannot find module ${name} or no module provided`);
+
+		if ( require )
+			requires.push(module.abs_path('.'));
+
+		if ( this.enabled && ! module.enabled )
+			module.enable();
+
+		return this[variable] = module;
+	}
+
+
 	register(name, module, inject_reference) {
 		if ( name.prototype instanceof Module ) {
 			inject_reference = module;

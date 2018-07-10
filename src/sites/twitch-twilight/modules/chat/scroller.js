@@ -7,6 +7,7 @@
 import {createElement} from 'utilities/dom';
 import Twilight from 'site';
 import Module from 'utilities/module';
+import {IS_FIREFOX} from 'utilities/constants';
 
 export default class Scroller extends Module {
 	constructor(...args) {
@@ -27,7 +28,7 @@ export default class Scroller extends Module {
 		this.settings.add('chat.scroller.freeze', {
 			default: 0,
 			ui: {
-				path: 'Chat > Behavior >> General',
+				path: 'Chat > Behavior >> Scrolling @{"description": "Please note that FrankerFaceZ is dependant on Twitch\'s own scrolling code working correctly. There are bugs with Twitch\'s scrolling code that have existed for more than six months. If you are using Firefox, Edge, or other non-Webkit browsers, expect to have issues."}',
 				title: 'Freeze Chat Scrolling',
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
 				component: 'setting-select-box',
@@ -49,7 +50,7 @@ export default class Scroller extends Module {
 		this.settings.add('chat.scroller.smooth-scroll', {
 			default: 0,
 			ui: {
-				path: 'Chat > Behavior >> General',
+				path: 'Chat > Behavior >> Scrolling',
 				title: 'Smooth Scrolling',
 				description: 'Smoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
 				component: 'setting-select-box',

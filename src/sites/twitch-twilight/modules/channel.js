@@ -17,7 +17,7 @@ export default class Channel extends Module {
 		this.inject('settings');
 		this.inject('site.fine');
 
-		this.left_raids = new Set;
+		this.joined_raids = new Set;
 
 		this.settings.add('channel.hosting.enable', {
 			default: true,
@@ -56,12 +56,12 @@ export default class Channel extends Module {
 
 	onEnable() {
 		this.ChannelPage.on('mount', this.wrapChannelPage, this);
-		this.RaidController.on('mount', this.noAutoRaids, this);
+		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);
 
 		this.RaidController.ready((cls, instances) => {
 			for(const inst of instances)
-				this.noAutoRaids(inst);
+				this.wrapRaidController(inst);
 		});
 
 		this.ChannelPage.on('update', inst => {
@@ -85,16 +85,36 @@ export default class Channel extends Module {
 	}
 
 
+	wrapRaidController(inst) {
+		if ( inst._ffz_wrapped )
+			return this.noAutoRaids(inst);
+
+		inst._ffz_wrapped = true;
+
+		const t = this,
+			old_handle_join = inst.handleJoinRaid;
+
+		inst.handleJoinRaid = function(event, ...args) {
+			const raid_id = inst.state && inst.state.raid && inst.state.raid.id;
+			if ( event && event.type && raid_id )
+				t.joined_raids.add(raid_id);
+
+			return old_handle_join.call(this, event, ...args);
+		}
+
+		this.noAutoRaids(inst);
+	}
+
+
 	noAutoRaids(inst) {
 		if ( this.settings.get('channel.raids.no-autojoin') )
 			setTimeout(() => {
-				if ( inst.state.raid && inst.hasJoinedCurrentRaid ) {
+				if ( inst.state.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
 					const id = inst.state.raid.id;
-					if ( this.left_raids.has(id) )
+					if ( this.joined_raids.has(id) )
 						return;
 
 					this.log.info('Automatically leaving raid:', id);
-					this.left_raids.add(id);
 					inst.handleLeaveRaid();
 				}
 			});
