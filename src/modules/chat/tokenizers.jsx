@@ -921,10 +921,10 @@ export const TwitchEmotes = {
 	priority: 20,
 
 	process(tokens, msg) {
-		if ( ! msg.emotes )
+		if ( ! msg.ffz_emotes )
 			return tokens;
 
-		const data = msg.emotes,
+		const data = msg.ffz_emotes,
 			emotes = [];
 
 		for(const emote_id in data)

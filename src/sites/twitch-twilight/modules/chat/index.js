@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, split_chars, shallow_object_equals} from 'utilities/object';
+import {has, split_chars, shallow_object_equals, deep_copy} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -658,7 +658,7 @@ export default class ChatHook extends Module {
 				this.onChatMessageEvent = function(e) {
 					if ( e && e.sentByCurrentUser ) {
 						try {
-							e.message.user.emotes = findEmotes(
+							e.message.ffz_emotes = findEmotes(
 								e.message.body,
 								i.ffzGetEmotes()
 							);
@@ -676,7 +676,7 @@ export default class ChatHook extends Module {
 				this.onChatActionEvent = function(e) {
 					if ( e && e.sentByCurrentUser ) {
 						try {
-							e.message.user.emotes = findEmotes(
+							e.message.ffz_emotes = findEmotes(
 								e.message.body.slice(8, -1),
 								i.ffzGetEmotes()
 							);

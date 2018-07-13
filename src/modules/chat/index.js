@@ -636,6 +636,10 @@ export default class Chat extends Module {
 				msg.message = msg.content.text;
 		}
 
+		// Standardize Emotes
+		if ( ! msg.ffz_emotes )
+			this.standardizeEmotes(msg);
+
 		// Standardize Badges
 		if ( ! msg.badges && user.displayBadges ) {
 			const b = msg.badges = {};
@@ -655,7 +659,39 @@ export default class Chat extends Module {
 	}
 
 
-	detokenizeContent(msg) { // eslint-disable-line class-methods-use-this
+	standardizeEmotes(msg) { // eslint-disable-line class-methods-use-this
+		if ( msg.emotes && msg.message ) {
+			const emotes = {},
+				chars = split_chars(msg.message);
+
+			for(const key in msg.emotes)
+				if ( has(msg.emotes, key) ) {
+					const raw_emote = msg.emotes[key];
+					if ( Array.isArray(raw_emote) )
+						return msg.ffz_emotes = msg.emotes;
+
+					const em = emotes[raw_emote.id] = emotes[raw_emote.id] || [],
+						idx = chars.indexOf(' ', raw_emote.startIndex);
+
+					em.push({
+						startIndex: raw_emote.startIndex,
+						endIndex: (idx === -1 ? chars.length : idx) - 1
+					});
+				}
+
+			msg.ffz_emotes = emotes;
+			return;
+		}
+
+		if ( msg.messageParts )
+			this.detokenizeMessage(msg, true);
+
+		else if ( msg.content && msg.content.fragments )
+			this.detokenizeContent(msg, true);
+	}
+
+
+	detokenizeContent(msg, emotes_only = false) { // eslint-disable-line class-methods-use-this
 		const out = [],
 			parts = msg.content.fragments,
 			l = parts.length,
@@ -688,13 +724,15 @@ export default class Chat extends Module {
 			}
 		}
 
-		msg.message = out.join('');
-		msg.emotes = emotes;
+		if ( ! emotes_only )
+			msg.message = out.join('');
+
+		msg.ffz_emotes = emotes;
 		return msg;
 	}
 
 
-	detokenizeMessage(msg) { // eslint-disable-line class-methods-use-this
+	detokenizeMessage(msg, emotes_only = false) { // eslint-disable-line class-methods-use-this
 		const out = [],
 			parts = msg.messageParts,
 			l = parts.length,
@@ -742,14 +780,16 @@ export default class Chat extends Module {
 				continue;
 
 			if ( ret ) {
-				idx += ret.length;
+				idx += split_chars(ret).length;
 				last_type = part.type;
 				out.push(ret)
 			}
 		}
 
-		msg.message = out.join('');
-		msg.emotes = emotes;
+		if ( ! emotes_only )
+			msg.message = out.join('');
+
+		msg.ffz_emotes = emotes;
 		return msg;
 	}
 
