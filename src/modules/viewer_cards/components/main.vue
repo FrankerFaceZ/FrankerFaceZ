@@ -54,10 +54,12 @@
 </template>
 
 <script>
+
 import TabMixin from '../tab-mixin';
 
 export default {
 	mixins: [TabMixin],
 	props: ['tab', 'user', 'room', 'currentUser']
 }
+
 </script>

@@ -928,7 +928,8 @@ export const TwitchEmotes = {
 			emotes = [];
 
 		for(const emote_id in data)
-			if ( has(data, emote_id) ) {
+			// Disable fix for now so we can see what Twitch is sending for emote data.
+			if ( has(data, emote_id) ) { // && Array.isArray(data[emote_id]) ) {
 				for(const match of data[emote_id])
 					emotes.push([emote_id, match.startIndex, match.endIndex + 1]);
 			}

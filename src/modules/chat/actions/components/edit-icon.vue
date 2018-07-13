@@ -33,7 +33,7 @@
 						:key="i[0]"
 						:aria-checked="value.icon === i[0]"
 						:class="{'tw-interactable--selected': value.icon === i[0]}"
-						class="ffz-icon tw-interactable"
+						class="ffz-icon tw-interactable tw-interactable--inverted"
 						role="radio"
 						tabindex="0"
 						@keydown.space.stop.prevent=""

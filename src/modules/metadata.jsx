@@ -110,7 +110,7 @@ export default class Metadata extends Module {
 				const Player = this.resolve('site.player'),
 					socket = this.resolve('socket'),
 					player = Player.current,
-					stats = player && player.getVideoInfo();
+					stats = player && maybe_call(player.getVideoInfo, player);
 
 				if ( ! stats )
 					return {stats};

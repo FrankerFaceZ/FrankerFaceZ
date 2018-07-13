@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, split_chars} from 'utilities/object';
+import {has, split_chars, shallow_object_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -73,31 +73,33 @@ const CHAT_TYPES = ((e = {}) => {
 	e[e.ModerationAction = 2] = 'ModerationAction';
 	e[e.TargetedModerationAction = 3] = 'TargetedModerationAction';
 	e[e.AutoMod = 4] = 'AutoMod';
-	e[e.Connected = 5] = 'Connected';
-	e[e.Disconnected = 6] = 'Disconnected';
-	e[e.Reconnect = 7] = 'Reconnect';
-	e[e.Hosting = 8] = 'Hosting';
-	e[e.Unhost = 9] = 'Unhost';
-	e[e.Hosted = 10] = 'Hosted';
-	e[e.Subscription = 11] = 'Subscription';
-	e[e.Resubscription = 12] = 'Resubscription';
-	e[e.SubGift = 13] = 'SubGift';
-	e[e.Clear = 14] = 'Clear';
-	e[e.SubscriberOnlyMode = 15] = 'SubscriberOnlyMode';
-	e[e.FollowerOnlyMode = 16] = 'FollowerOnlyMode';
-	e[e.SlowMode = 17] = 'SlowMode';
-	e[e.EmoteOnlyMode = 18] = 'EmoteOnlyMode';
-	e[e.RoomMods = 19] = 'RoomMods';
-	e[e.RoomState = 20] = 'RoomState';
-	e[e.Raid = 21] = 'Raid';
-	e[e.Unraid = 22] = 'Unraid';
-	e[e.Ritual = 23] = 'Ritual';
-	e[e.Notice = 24] = 'Notice';
-	e[e.Info = 25] = 'Info';
-	e[e.BadgesUpdated = 26] = 'BadgesUpdated';
-	e[e.Purchase = 27] = 'Purchase';
-	e[e.BitsCharity = 28] = 'BitsCharity';
-	e[e.CrateGift = 29] = 'CrateGift'
+	e[e.SubscriberOnlyMode = 5] = 'SubscriberOnlyMode';
+	e[e.FollowerOnlyMode = 6] = 'FollowerOnlyMode';
+	e[e.SlowMode = 7] = 'SlowMode';
+	e[e.EmoteOnlyMode = 8] = 'EmoteOnlyMode';
+	e[e.R9KMode = 9] = 'R9KMode';
+	e[e.Connected = 10] = 'Connected';
+	e[e.Disconnected = 11] = 'Disconnected';
+	e[e.Reconnect = 12] = 'Reconnect';
+	e[e.Hosting = 13] = 'Hosting';
+	e[e.Unhost = 14] = 'Unhost';
+	e[e.Hosted = 15] = 'Hosted';
+	e[e.Subscription = 16] = 'Subscription';
+	e[e.Resubscription = 17] = 'Resubscription';
+	e[e.SubGift = 18] = 'SubGift';
+	e[e.Clear = 19] = 'Clear';
+	e[e.RoomMods = 20] = 'RoomMods';
+	e[e.RoomState = 21] = 'RoomState';
+	e[e.Raid = 22] = 'Raid';
+	e[e.Unraid = 23] = 'Unraid';
+	e[e.Ritual = 24] = 'Ritual';
+	e[e.Notice = 25] = 'Notice';
+	e[e.Info = 26] = 'Info';
+	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
+	e[e.Purchase = 28] = 'Purchase';
+	e[e.BitsCharity = 29] = 'BitsCharity';
+	e[e.CrateGift = 30] = 'CrateGift';
+	e[e.RewardGift = 31] = 'RewardGift';
 	return e;
 })();
 
@@ -354,12 +356,34 @@ export default class ChatHook extends Module {
 
 
 	async grabTypes() {
-		const ct = await this.web_munch.findModule('chat-types');
+		const ct = await this.web_munch.findModule('chat-types'),
+			changes = [];
 
-		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
-		this.chat_types = ct && ct.b || CHAT_TYPES;
-		this.message_types = ct && ct.c || MESSAGE_TYPES;
-		this.mod_types = ct && ct.e || MOD_TYPES;
+		if ( ! ct )
+			return;
+
+		if ( ct.a && ! shallow_object_equals(ct.a, AUTOMOD_TYPES) ) {
+			changes.push('AUTOMOD_TYPES');
+			this.automod_types = ct.a;
+		}
+
+		if ( ct.b && ! shallow_object_equals(ct.b, CHAT_TYPES) ) {
+			changes.push('CHAT_TYPES');
+			this.chat_types = ct.b;
+		}
+
+		if ( ct.c && ! shallow_object_equals(ct.c, MESSAGE_TYPES) ) {
+			changes.push('MESSAGE_TYPES');
+			this.message_types = ct.c;
+		}
+
+		if ( ct.e && ! shallow_object_equals(ct.e, MOD_TYPES) ) {
+			changes.push('MOD_TYPES');
+			this.mod_types = ct.e;
+		}
+
+		if ( changes.length )
+			this.log.info('Chat Types have changed from static mappings for categories:', changes.join(' '));
 	}
 
 

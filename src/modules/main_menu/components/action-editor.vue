@@ -254,7 +254,7 @@ export default {
 		},
 
 		canEdit() {
-			return this.action.v != null;
+			return this.action.v != null && ! this.action.v.type;
 		},
 
 		canPreview() {
@@ -267,6 +267,17 @@ export default {
 
 			else if ( ! this.display )
 				return this.t('setting.unknown', 'Unknown Value');
+
+			const type = this.display.type;
+
+			if ( type === 'new-line' )
+				return this.t('setting.new-line', 'New Line');
+
+			else if ( type === 'space-small' )
+				return this.t('setting.space-small', 'Space (Small)');
+
+			else if ( type === 'space' )
+				return this.t('setting.space', 'Space');
 
 			const def = this.data.actions[this.display.action];
 			if ( ! def )
@@ -288,6 +299,17 @@ export default {
 		description() {
 			if ( this.action.t === 'inherit' )
 				return this.t('setting.inheritance.desc', 'Inherit values from lower priority profiles at this position.');
+
+			const type = this.display && this.display.type;
+
+			if ( type === 'new-line' )
+				return this.t('setting.new-line.desc', 'Place all items following this on a new line.');
+
+			else if ( type === 'space-small' )
+				return this.t('setting.space-small.desc', 'Place a small space between the previous item and the next item.');
+
+			else if ( type === 'space' )
+				return this.t('setting.space.desc', 'Place as large a space as possible between the previous item and the next item.');
 
 			const def = this.display && this.data.actions[this.display.action];
 			if ( ! def || ! def.description )

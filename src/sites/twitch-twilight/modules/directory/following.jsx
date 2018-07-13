@@ -61,7 +61,7 @@ export default class Following extends SiteModule {
 				]
 			},
 
-			changed: () => this.ChannelCard.forceUpdate()
+			changed: () => this.parent.DirectoryCard.forceUpdate()
 		});
 
 		this.apollo.registerModifier('FollowedChannels_RENAME2', FOLLOWED_CHANNELS);
@@ -219,7 +219,7 @@ export default class Following extends SiteModule {
 
 		// Hosted Channel Content
 		simplebarContentChildren.push(<a
-			class="tw-interactable"
+			class="tw-interactable tw-interactable--inverted"
 			href={`/${hostData.channel}`}
 			onClick={e => this.parent.hijackUserClick(e, hostData.channel, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
 		>
@@ -242,7 +242,7 @@ export default class Following extends SiteModule {
 		for (let i = 0; i < hostData.nodes.length; i++) {
 			const node = hostData.nodes[i];
 			simplebarContentChildren.push(<a
-				class="tw-interactable"
+				class="tw-interactable tw-interactable--inverted"
 				href={`/${node.login}`}
 				onClick={e => this.parent.hijackUserClick(e, node.login, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
 			>

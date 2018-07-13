@@ -387,7 +387,7 @@ export default class Badges extends Module {
 				if ( hidden_badges[badge.id] )
 					continue;
 
-				const full_badge = this.badges[badge.id],
+				const full_badge = this.badges[badge.id] || {},
 					slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
 					old_badge = slotted[slot],
 					urls = badge.urls || (badge.image ? {1: badge.image} : null),

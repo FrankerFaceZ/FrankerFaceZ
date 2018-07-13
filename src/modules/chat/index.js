@@ -566,6 +566,43 @@ export default class Chat extends Module {
 	}
 
 
+	standardizeWhisper(msg) { // eslint-disable-line class-methods-use-this
+		if ( ! msg )
+			return msg;
+
+		if ( msg._ffz_message )
+			return msg._ffz_message;
+
+		const emotes = {},
+			is_action = msg.content.startsWith('/me '),
+			offset = is_action ? 4 : 0,
+
+			out = msg._ffz_message = {
+				user: msg.from,
+				message: msg.content.slice(offset),
+				is_action,
+				emotes,
+				timestamp: msg.sentAt && msg.sentAt.getTime(),
+				deleted: false
+			};
+
+		out.user.color = out.user.chatColor;
+
+		if ( Array.isArray(msg.emotes) && msg.emotes.length )
+			for(const emote of msg.emotes) {
+				const id = emote.emoteID,
+					em = emotes[id] = emotes[id] || [];
+
+				em.push({
+					startIndex: emote.from - offset,
+					endIndex: emote.to - offset
+				});
+			}
+
+		return out;
+	}
+
+
 	standardizeMessage(msg) { // eslint-disable-line class-methods-use-this
 		if ( ! msg )
 			return msg;
@@ -573,6 +610,9 @@ export default class Chat extends Module {
 		// Standardize User
 		if ( msg.sender && ! msg.user )
 			msg.user = msg.sender;
+
+		if ( msg.from && ! msg.user )
+			msg.user = msg.from;
 
 		let user = msg.user;
 		if ( ! user )

@@ -3,6 +3,8 @@
 	z-index: 9001;
 
     > header {
+		cursor: move;
+
         background-size: cover;
         background-position: top;
     }
@@ -12,7 +14,7 @@
 			pointer-events: none;
 		}
 	}
-	
+
 	.ffz--background-dimmer {
 		background-color: rgba(0, 0, 0, 0.8);
 	}

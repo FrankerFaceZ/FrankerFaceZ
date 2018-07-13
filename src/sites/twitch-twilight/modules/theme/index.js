@@ -9,6 +9,8 @@ import {createElement} from 'utilities/dom';
 
 import THEME_CSS_URL from 'site/styles/theme.scss';
 
+const BAD_ROUTES = ['product'];
+
 
 export default class ThemeEngine extends Module {
 	constructor(...args) {
@@ -17,14 +19,15 @@ export default class ThemeEngine extends Module {
 
 		this.inject('site');
 		this.inject('site.css_tweaks');
+		this.inject('site.router');
 
 		this.should_enable = true;
 
 		this.settings.add('theme.dark', {
-			requires: ['context.ui.theme'],
+			requires: ['theme.is-dark'],
 			default: false,
 			process(ctx, val) {
-				return ctx.get('context.ui.theme') === 1 ? val : false
+				return ctx.get('theme.is-dark') ? val : false
 			},
 
 			ui: {
@@ -37,10 +40,17 @@ export default class ThemeEngine extends Module {
 			changed: val => this.updateSetting(val)
 		});
 
-		this.settings.add('theme.is-dark', {
-			requires: ['context.ui.theme'],
+		this.settings.add('theme.can-dark', {
+			requires: ['context.route.name'],
 			process(ctx) {
-				return ctx.get('context.ui.theme') === 1;
+				return ! BAD_ROUTES.includes(ctx.get('context.route.name'))
+			}
+		});
+
+		this.settings.add('theme.is-dark', {
+			requires: ['theme.can-dark', 'context.ui.theme'],
+			process(ctx) {
+				return ctx.get('theme.can-dark') && ctx.get('context.ui.theme') === 1;
 			},
 			changed: () => this.updateCSS()
 		});

@@ -57,6 +57,42 @@ export default class Actions extends Module {
 			}
 		});
 
+		this.settings.add('chat.actions.viewer-card', {
+			// Filter out actions
+			process: (ctx, val) =>
+				val.filter(x => x.appearance &&
+					this.renderers[x.appearance.type] &&
+					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
+					(! x.action || this.actions[x.action])
+				),
+
+			default: [
+				{v: {action: 'friend'}},
+				{v: {action: 'whisper', appearance: {type: 'text', text: 'Whisper', button: true}}},
+				{v: {type: 'space'}},
+				{v: {action: 'card_menu'}},
+				{v: {type: 'new-line'}},
+				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, display: {mod: true}}},
+				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true}}}
+			],
+
+			type: 'array_merge',
+			_ui: {
+				path: 'Chat > Viewer Cards >> tabs ~> Actions @{"description": "Here, you define what actions are available on viewer cards."}',
+				component: 'chat-actions',
+
+				data: () => {
+					const chat = this.resolve('site.chat');
+
+					return {
+						color: val => chat && chat.colors ? chat.colors.process(val) : val,
+						actions: deep_copy(this.actions),
+						renderers: deep_copy(this.renderers)
+					}
+				}
+			}
+		})
+
 		this.handleClick = this.handleClick.bind(this);
 		this.handleContext = this.handleContext.bind(this);
 	}
@@ -216,7 +252,7 @@ export default class Actions extends Module {
 			});
 
 		return (<div
-			class="ffz--inline-actions tw-inline tw-mg-r-05"
+			class="ffz--inline-actions ffz-action-data tw-inline tw-mg-r-05"
 			data-msg-id={msg.id}
 			data-user={user}
 			data-room={room}
@@ -228,7 +264,7 @@ export default class Actions extends Module {
 
 	getData(element) {
 		const ds = element.dataset,
-			parent = element.parentElement,
+			parent = element.closest('.ffz-action-data'),
 			pds = parent && parent.dataset,
 			action = ds && ds.action,
 			definition = this.actions[action];

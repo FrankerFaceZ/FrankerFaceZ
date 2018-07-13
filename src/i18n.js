@@ -135,9 +135,11 @@ export class TranslationManager extends Module {
 	}
 
 	onEnable() {
-		this._ = new TranslationCore; /*({
-			awarn: (...args) => this.log.info(...args)
-		});*/
+		this._ = new TranslationCore({
+			formatters: {
+				'humanTime': n => this.toHumanTime(n)
+			}
+		});
 
 		this._.transformation = TRANSFORMATIONS[this.settings.get('i18n.debug.transform')];
 		this.locale = this.settings.get('i18n.locale');
@@ -161,6 +163,9 @@ export class TranslationManager extends Module {
 
 	toHumanTime(duration, factor = 1) {
 		// TODO: Make this better. Make all time handling better in fact.
+
+		if ( duration instanceof Date )
+			duration = (Date.now() - duration.getTime()) / 1000;
 
 		duration = Math.floor(duration);
 

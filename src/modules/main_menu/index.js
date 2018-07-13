@@ -220,6 +220,7 @@ export default class MainMenu extends Module {
 			return;
 
 		const tree = this._settings_tree,
+			expanded = this.settings.provider.get('settings-expanded', {}),
 			tokens = def.ui.path_tokens,
 			len = tokens.length;
 
@@ -244,6 +245,10 @@ export default class MainMenu extends Module {
 				};
 
 			Object.assign(token, raw_token);
+
+			if ( has(expanded, key) )
+				token.expanded = expanded[key];
+
 			prefix = key;
 		}
 

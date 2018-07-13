@@ -27,7 +27,7 @@
 					</label>
 				</div>
 
-				<div class="tw-pd-x-1">
+				<div v-if="item.inline" class="tw-pd-x-1">
 					<input
 						id="is_deleted"
 						ref="is_deleted"
@@ -42,7 +42,7 @@
 					</label>
 				</div>
 
-				<div class="tw-pd-x-1">
+				<div v-if="item.inline" class="tw-pd-x-1">
 					<input
 						id="with_mod_icons"
 						ref="with_mod_icons"
@@ -76,25 +76,31 @@
 			<div
 				:data-user="JSON.stringify(sample_user)"
 				:data-room="JSON.stringify(sample_room)"
-				class="tw-flex tw-align-items-center tw-justify-content-center tw-pd-t-1"
+				class="ffz-action-data tw-pd-t-1"
 				data-msg-id="1234-5678"
 			>
 				<div
 					v-if="! display.length"
-					class="tw-c-text-alt-2 tw-pd-05 tw-font-size-4"
+					class="tw-align-center tw-c-text-alt-2 tw-pd-05 tw-font-size-4"
 				>
 					{{ t('setting.actions.no-visible', 'no visible actions') }}
 				</div>
 
-				<action-preview
-					v-for="act in display"
-					:key="act.id"
-					:act="act.v"
-					:color="color(act.v.appearance.color)"
-					:renderers="data.renderers"
-					tooltip="true"
-					pad="true"
-				/>
+				<div
+					v-for="(actions, idx) in display"
+					:key="idx"
+					class="tw-flex tw-align-items-center tw-justify-content-center"
+				>
+					<action-preview
+						v-for="act in actions"
+						:key="act.id"
+						:act="act.v"
+						:color="color(act.v.appearance.color)"
+						:renderers="data.renderers"
+						tooltip="true"
+						pad="true"
+					/>
+				</div>
 			</div>
 		</div>
 
@@ -135,7 +141,7 @@
 									v-else
 									:key="idx"
 									:disabled="preset.disabled"
-									class="tw-interactable tw-full-width"
+									class="tw-interactable tw-interactable--inverted tw-full-width"
 									@click="add(preset.value)"
 								>
 									<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
@@ -299,12 +305,24 @@ export default {
 
 		display() {
 			const out = [];
+			let current = [];
 
 			if ( this.val )
 				for(const val of this.val) {
-					if ( val.v && this.displayAction(val.v) )
-						out.push(val);
+					if ( ! val.v )
+						continue;
+
+					const type = val.v.type;
+					if ( type === 'new-line' ) {
+						out.push(current);
+						current = [];
+
+					} else if ( this.displayAction(val.v) )
+						current.push(val);
 				}
+
+			if ( current.length )
+				out.push(current);
 
 			return out;
 		},
@@ -386,8 +404,8 @@ export default {
 			this.show_all = this.$refs.show_all.checked;
 			this.is_moderator = this.$refs.as_mod.checked;
 			this.is_staff = false; //this.$refs.as_staff.checked;
-			this.with_mod_icons = this.$refs.with_mod_icons.checked;
-			this.is_deleted = this.$refs.is_deleted.checked;
+			this.with_mod_icons = this.item.inline && this.$refs.with_mod_icons.checked;
+			this.is_deleted = this.item.inline && this.$refs.is_deleted.checked;
 		},
 
 		displayAction(action) {

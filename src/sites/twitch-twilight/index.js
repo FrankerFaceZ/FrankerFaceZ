@@ -55,10 +55,18 @@ export default class Twilight extends BaseSite {
 		this.router.on(':route', (route, match) => {
 			this.log.info('Navigation', route && route.name, match && match[0]);
 			this.fine.route(route && route.name);
+			this.settings.updateContext({
+				route,
+				route_data: match
+			});
 		});
 
 		const current = this.router.current;
 		this.fine.route(current && current.name);
+		this.settings.updateContext({
+			route: current,
+			route_data: this.router.match
+		});
 
 		document.head.appendChild(createElement('link', {
 			href: MAIN_URL,
@@ -171,5 +179,6 @@ Twilight.ROUTES = {
 	'user-events': '/:userName/events',
 	'user-followers': '/:userName/followers',
 	'user-following': '/:userName/following',
+	'product': '/products/:productName',
 	'user': '/:userName'
 }

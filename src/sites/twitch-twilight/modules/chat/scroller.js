@@ -260,8 +260,11 @@ export default class Scroller extends Module {
 				let step = this.ffz_smooth_scroll,
 					old_time = Date.now();
 
-				const scroll_content = this.scroll.scrollContent,
-					target_top = scroll_content.scrollHeight - scroll_content.clientHeight,
+				const scroll_content = this.scroll.scrollContent;
+				if ( ! scroll_content )
+					return;
+
+				const target_top = scroll_content.scrollHeight - scroll_content.clientHeight,
 					difference = target_top - scroll_content.scrollTop;
 
 				// If we are falling behind speed us up

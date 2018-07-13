@@ -42,6 +42,11 @@ export default class ChatLine extends Module {
 			n => n.renderMessageBody && n.props && n.props.roomID,
 			Twilight.CHAT_ROUTES
 		);
+
+		this.WhisperLine = this.fine.define(
+			'whisper-line',
+			n => n.props && n.props.message && n.props.reportOutgoingWhisperRendered
+		)
 	}
 
 	async onEnable() {
@@ -157,7 +162,50 @@ export default class ChatLine extends Module {
 		});*/
 
 
+		this.WhisperLine.ready(cls => {
+			const old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				if ( ! this.props.message || ! this.props.message.content )
+					return old_render.call(this);
+
+				const msg = t.chat.standardizeWhisper(this.props.message),
+
+					is_action = msg.is_action,
+					user = msg.user,
+					color = t.parent.colors.process(user.color),
+
+					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null, null),
+					contents = t.chat.renderTokens(tokens, e);
+
+				return e('div', {className: 'thread-message__message'},
+					e('div', {className: 'tw-pd-x-1 tw-pd-y-05'}, [
+						e('span', {
+							className: 'thread-message__message--user-name notranslate',
+							style: {
+								color
+							}
+						}, user.displayName),
+						e('span', null, is_action ? ' ' : ': '),
+						e('span', {
+							className: 'message',
+							style: {
+								color: is_action && color
+							}
+						}, contents)
+					])
+				);
+			}
+
+			// Do this after a short delay to hopefully reduce the chance of React
+			// freaking out on us.
+			setTimeout(() => this.WhisperLine.forceUpdate());
+		});
+
+
 		this.ChatLine.ready(cls => {
+			const old_render = cls.prototype.render;
+
 			cls.prototype.shouldComponentUpdate = function(props, state) {
 				const show = state.alwaysShowMessage || ! props.message.deleted,
 					old_show = this._ffz_show;
@@ -176,6 +224,8 @@ export default class ChatLine extends Module {
 			}
 
 			cls.prototype.render = function() {
+				try {
+
 				const types = t.parent.message_types || {},
 
 					msg = t.chat.standardizeMessage(this.props.message),
@@ -233,7 +283,7 @@ export default class ChatLine extends Module {
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
 				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = this.usernameClickHandler; // event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
+					this.ffz_user_click_handler = this.usernameClickHandler; // event => ! event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -363,6 +413,16 @@ export default class ChatLine extends Module {
 					'data-user-id': user.userID,
 					'data-user': user.userLogin && user.userLogin.toLowerCase(),
 				}, out);
+
+				} catch(err) {
+					t.log.capture(err, {
+						extra: {
+							props: this.props
+						}
+					});
+
+					return old_render.call(this);
+				}
 			}
 
 			// Do this after a short delay to hopefully reduce the chance of React
@@ -389,7 +449,14 @@ export default class ChatLine extends Module {
 			}
 		}
 
+		for(const inst of this.WhisperLine.instances) {
+			const msg = inst.props.message;
+			if ( msg && msg._ffz_message )
+				msg._ffz_message = null;
+		}
+
 		this.ChatLine.forceUpdate();
 		this.ChatRoomLine.forceUpdate();
+		this.WhisperLine.forceUpdate();
 	}
 }
