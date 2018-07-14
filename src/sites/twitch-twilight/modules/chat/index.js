@@ -359,28 +359,25 @@ export default class ChatHook extends Module {
 		const ct = await this.web_munch.findModule('chat-types'),
 			changes = [];
 
+		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
+		this.chat_types = ct && ct.b || CHAT_TYPES;
+		this.message_types = ct && ct.c || MESSAGE_TYPES;
+		this.mod_types = ct && ct.e || MOD_TYPES;
+
 		if ( ! ct )
 			return;
 
-		if ( ct.a && ! shallow_object_equals(ct.a, AUTOMOD_TYPES) ) {
+		if ( ct.a && ! shallow_object_equals(ct.a, AUTOMOD_TYPES) )
 			changes.push('AUTOMOD_TYPES');
-			this.automod_types = ct.a;
-		}
 
-		if ( ct.b && ! shallow_object_equals(ct.b, CHAT_TYPES) ) {
+		if ( ct.b && ! shallow_object_equals(ct.b, CHAT_TYPES) )
 			changes.push('CHAT_TYPES');
-			this.chat_types = ct.b;
-		}
 
-		if ( ct.c && ! shallow_object_equals(ct.c, MESSAGE_TYPES) ) {
+		if ( ct.c && ! shallow_object_equals(ct.c, MESSAGE_TYPES) )
 			changes.push('MESSAGE_TYPES');
-			this.message_types = ct.c;
-		}
 
-		if ( ct.e && ! shallow_object_equals(ct.e, MOD_TYPES) ) {
+		if ( ct.e && ! shallow_object_equals(ct.e, MOD_TYPES) )
 			changes.push('MOD_TYPES');
-			this.mod_types = ct.e;
-		}
 
 		if ( changes.length )
 			this.log.info('Chat Types have changed from static mappings for categories:', changes.join(' '));
