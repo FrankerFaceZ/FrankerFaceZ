@@ -424,7 +424,7 @@ export default class ChatHook extends Module {
 		this.updateMentionCSS();
 
 		this.ChatController.on('mount', this.chatMounted, this);
-		this.ChatController.on('unmount', this.removeRoom, this);
+		this.ChatController.on('unmount', this.chatUmounted, this);
 		this.ChatController.on('receive-props', this.chatUpdated, this);
 
 		this.ChatController.ready((cls, instances) => {
@@ -470,6 +470,9 @@ export default class ChatHook extends Module {
 				const buffer = inst.chatBuffer;
 				if ( ! buffer._ffz_was_here )
 					this.wrapChatBuffer(buffer.constructor);
+
+				buffer.consumeChatEvent = buffer.ffzConsumeChatEvent.bind(buffer);
+				buffer.ffzController = inst;
 
 				service.client.events.removeAll();
 				service.connectHandlers();
@@ -530,9 +533,56 @@ export default class ChatHook extends Module {
 
 
 	wrapChatBuffer(cls) {
-		const t = this;
+		const t = this,
+			old_consume = cls.prototype.consumeChatEvent;
 
 		cls.prototype._ffz_was_here = true;
+
+		cls.prototype.ffzConsumeChatEvent = cls.prototype.consumeChatEvent = function(msg) {
+			if ( msg ) {
+				try {
+					const types = t.chat_types || {};
+
+					if ( msg.type === types.Message ) {
+						const m = t.chat.standardizeMessage(msg),
+							cont = this.ffzController;
+
+						let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin,
+							room_id = cont && cont.props.channelID;
+
+						if ( ! room && room_id ) {
+							const r = t.chat.getRoom(room_id, null, true);
+							if ( r && r.login )
+								room = m.roomLogin = r.login;
+						}
+
+						const u = t.site.getUser(),
+							r = {id: room_id, login: room};
+
+						if ( u && cont ) {
+							u.moderator = cont.props.isCurrentUserModerator;
+							u.staff = cont.props.isStaff;
+						}
+
+						m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, r);
+
+						const event = new FFZEvent({
+							message: m,
+							channel: room
+						});
+
+						t.emit('chat:receive-message', event);
+						if ( event.defaultPrevented || m.ffz_removed )
+							return;
+					}
+
+				} catch(err) {
+					t.log.capture(err, {extra: {msg}})
+				}
+			}
+
+			return old_consume.call(this, msg);
+		}
 
 		cls.prototype.toArray = function() {
 			const buf = this.buffer,
@@ -655,7 +705,7 @@ export default class ChatHook extends Module {
 				this.onChatMessageEvent = function(e) {
 					if ( e && e.sentByCurrentUser ) {
 						try {
-							e.message.ffz_emotes = findEmotes(
+							e.message.user.emotes = findEmotes(
 								e.message.body,
 								i.ffzGetEmotes()
 							);
@@ -673,7 +723,7 @@ export default class ChatHook extends Module {
 				this.onChatActionEvent = function(e) {
 					if ( e && e.sentByCurrentUser ) {
 						try {
-							e.message.ffz_emotes = findEmotes(
+							e.message.user.emotes = findEmotes(
 								e.message.body.slice(8, -1),
 								i.ffzGetEmotes()
 							);
@@ -853,6 +903,9 @@ export default class ChatHook extends Module {
 	// ========================================================================
 
 	chatMounted(chat, props) {
+		if ( chat.chatBuffer )
+			chat.chatBuffer.ffzController = chat;
+
 		if ( ! props )
 			props = chat.props;
 
@@ -863,7 +916,18 @@ export default class ChatHook extends Module {
 	}
 
 
+	chatUmounted(chat) {
+		if ( chat.chatBuffer && chat.chatBuffer.ffzController === this )
+			chat.chatBuffer.ffzController = null;
+
+		this.removeRoom(chat);
+	}
+
+
 	chatUpdated(chat, props) {
+		if ( chat.chatBuffer )
+			chat.chatBuffer.ffzController = chat;
+
 		if ( props.channelID !== chat.props.channelID ) {
 			this.removeRoom(chat);
 			this.chatMounted(chat, props);

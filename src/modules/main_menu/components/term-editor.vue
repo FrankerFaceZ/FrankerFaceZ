@@ -48,6 +48,31 @@
 					<option value="raw">{{ t('setting.terms.type.regex', 'Regex') }}</option>
 				</select>
 			</div>
+			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-tooltip-wrapper">
+				<button
+					v-if="editing"
+					:class="{active: edit_data.remove}"
+					class="tw-button ffz-directory-toggle-block"
+					@click="toggleRemove"
+				>
+					<span
+						:class="edit_data.remove ? 'ffz-i-eye-off' : 'ffz-i-eye'"
+						class="tw-button__text"
+					/>
+				</button>
+				<span
+					v-else-if="term.remove"
+					class="ffz-i-eye-off tw-pd-x-1"
+				/>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<span v-if="display.remove">
+						{{ t('setting.terms.remove.on', 'Remove matching messages from chat.') }}
+					</span>
+					<span v-else>
+						{{ t('setting.terms.remove.off', 'Do not remove matching messages from chat.') }}
+					</span>
+				</div>
+			</div>
 			<div v-if="adding" class="tw-flex-shrink-0">
 				<button class="tw-button" @click="save">
 					<span class="tw-button__text">
@@ -107,10 +132,16 @@ import safety from 'safe-regex';
 
 import {deep_copy, glob_to_regex, escape_regex} from 'utilities/object';
 
+let id = 0;
+
 export default {
 	props: {
 		term: Object,
 		colored: {
+			type: Boolean,
+			default: false
+		},
+		removable: {
 			type: Boolean,
 			default: false
 		},
@@ -123,12 +154,14 @@ export default {
 	data() {
 		if ( this.adding )
 			return {
+				editor_id: id++,
 				deleting: false,
 				editing: true,
 				edit_data: deep_copy(this.term)
 			};
 
 		return {
+			editor_id: id++,
 			deleting: false,
 			editing: false,
 			edit_data: null
@@ -136,8 +169,12 @@ export default {
 	},
 
 	computed: {
+		display() {
+			return this.editing ? this.edit_data : this.term;
+		},
+
 		is_valid() {
-			const data = this.editing ? this.edit_data : this.term,
+			const data = this.display,
 				t = data.t;
 
 			let v = data.v;
@@ -157,7 +194,7 @@ export default {
 		},
 
 		is_safe() {
-			const data = this.editing ? this.edit_data : this.term,
+			const data = this.display,
 				t = data.t;
 
 			let v = data.v;
@@ -193,6 +230,11 @@ export default {
 		edit() {
 			this.editing = true;
 			this.edit_data = deep_copy(this.term);
+		},
+
+		toggleRemove() {
+			if ( this.editing )
+				this.edit_data.remove = ! this.edit_data.remove;
 		},
 
 		cancel() {

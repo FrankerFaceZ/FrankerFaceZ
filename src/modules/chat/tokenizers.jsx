@@ -295,7 +295,9 @@ export const CustomHighlights = {
 				let idx = 0, match;
 
 				while((match = regex.exec(text))) {
-					const nix = match.index;
+					const raw_nix = match.index,
+						offset = match[1] ? match[1].length : 0,
+						nix = raw_nix + offset;
 
 					if ( idx !== nix )
 						out.push({type: 'text', text: text.slice(idx, nix)});
@@ -305,10 +307,10 @@ export const CustomHighlights = {
 
 					out.push({
 						type: 'highlight',
-						text: match[0]
+						text: match[0].slice(offset)
 					});
 
-					idx = nix + match[0].length;
+					idx = raw_nix + match[0].length;
 				}
 
 				if ( idx < text.length )
@@ -320,6 +322,45 @@ export const CustomHighlights = {
 
 		return tokens;
 	}
+}
+
+
+function blocked_process(tokens, msg, regex, do_remove) {
+	const out = [];
+	for(const token of tokens) {
+		if ( token.type !== 'text' ) {
+			out.push(token);
+			continue;
+		}
+
+		regex.lastIndex = 0;
+		const text = token.text;
+		let idx = 0, match;
+
+		while((match = regex.exec(text))) {
+			const raw_nix = match.index,
+				offset = match[1] ? match[1].length : 0,
+				nix = raw_nix + offset;
+
+			if ( idx !== nix )
+				out.push({type: 'text', text: text.slice(idx, nix)});
+
+			out.push({
+				type: 'blocked',
+				text: match[0].slice(offset)
+			});
+
+			if ( do_remove )
+				msg.ffz_removed = true;
+
+			idx = raw_nix + match[0].length;
+		}
+
+		if ( idx < text.length )
+			out.push({type: 'text', text: text.slice(idx)});
+	}
+
+	return out;
 }
 
 
@@ -349,44 +390,21 @@ export const BlockedTerms = {
 		]
 	},
 
-	process(tokens) {
+	process(tokens, msg) {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
-		const regex = this.context.get('chat.filtering.highlight-basic-blocked--regex');
-		if ( ! regex )
+		const regexes = this.context.get('chat.filtering.highlight-basic-blocked--regex');
+		if ( ! regexes )
 			return tokens;
 
-		const out = [];
-		for(const token of tokens) {
-			if ( token.type !== 'text' ) {
-				out.push(token);
-				continue;
-			}
+		if ( regexes[0] )
+			tokens = blocked_process(tokens, msg, regexes[0], false);
 
-			regex.lastIndex = 0;
-			const text = token.text;
-			let idx = 0, match;
+		if ( regexes[1] )
+			tokens = blocked_process(tokens, msg, regexes[1], true);
 
-			while((match = regex.exec(text))) {
-				const nix = match.index;
-
-				if ( idx !== nix )
-					out.push({type: 'text', text: text.slice(idx, nix)});
-
-				out.push({
-					type: 'blocked',
-					text: match[0]
-				});
-
-				idx = nix + match[0].length;
-			}
-
-			if ( idx < text.length )
-				out.push({type: 'text', text: text.slice(idx)});
-		}
-
-		return out;
+		return tokens;
 	}
 }
 

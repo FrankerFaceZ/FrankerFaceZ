@@ -3,6 +3,7 @@
 		<term-editor
 			:term="default_term"
 			:colored="item.colored"
+			:removable="item.removable"
 			:adding="true"
 			@save="new_term"
 		/>
@@ -16,6 +17,7 @@
 				:key="term.id"
 				:term="term.v"
 				:colored="item.colored"
+				:removable="item.removable"
 				@remove="remove(term)"
 				@save="save(term, $event)"
 			/>
@@ -39,7 +41,8 @@ export default {
 			default_term: {
 				v: '',
 				t: 'text',
-				c: ''
+				c: '',
+				remove: false
 			}
 		}
 	},
