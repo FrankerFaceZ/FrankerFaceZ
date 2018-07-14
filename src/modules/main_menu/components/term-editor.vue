@@ -229,7 +229,7 @@ export default {
 	methods: {
 		edit() {
 			this.editing = true;
-			this.edit_data = deep_copy(this.term);
+			this.edit_data = Object.assign({remove: false}, deep_copy(this.term));
 		},
 
 		toggleRemove() {
