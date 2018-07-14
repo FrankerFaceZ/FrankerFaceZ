@@ -165,31 +165,8 @@
 
 
 .ffz--changelog {
-	h2, p {
+	ul, p {
 		margin-bottom: 1rem;
-	}
-
-	.list-header {
-		margin: 10px 20px 5px;
-		padding: 15px 0 5px;
-		border-bottom: 1px solid #dad8de;
-		font-size: 16px;
-		font-variant: small-caps;
-
-		.tw-theme--dark & {
-			border-bottom-color: #2c2541;
-		}
-
-		span {
-			opacity: 0.5;
-			font-size: 10px;
-			font-variant: normal;
-		}
-
-		time {
-			float: right;
-			opacity: 0.5;
-		}
 	}
 
 	code {
@@ -200,15 +177,5 @@
 		.tw-theme--dark & {
 			background-color: rgba(255,255,255,0.05);
 		}
-	}
-
-	.chat-menu-content {
-		margin: 0 20px 20px;
-	}
-
-	#ffz-old-news-button {
-		text-align: center;
-		text-transform: none;
-		padding-bottom: 15px;
 	}
 }

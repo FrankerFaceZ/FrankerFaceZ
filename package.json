@@ -55,6 +55,7 @@
     "graphql": "^0.13.2",
     "graphql-tag": "^2.9.1",
     "js-cookie": "^2.2.0",
+    "markdown-it": "^8.4.1",
     "path-to-regexp": "^2.2.1",
     "popper.js": "^1.14.3",
     "raven-js": "^3.24.2",
