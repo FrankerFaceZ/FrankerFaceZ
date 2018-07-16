@@ -129,7 +129,8 @@ export default class Chat extends Module {
 				data: [
 					{value: 0, title: 'Do Not Remove'},
 					{value: 1, title: 'Remove Unseen (Default)'},
-					{value: 2, title: 'Remove All'}
+					{value: 2, title: 'Remove Unseen as Moderator'},
+					{value: 3, title: 'Remove All'}
 				]
 			}
 		});

@@ -583,8 +583,11 @@ export default class ChatHook extends Module {
 							if ( this.moderatedUsers.has(login) )
 								return;
 
-							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 2,
+							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
 								do_update = m => {
+									if ( m.event )
+										m = m.event;
+
 									if ( m.type === types.Message && m.user && m.user.userLogin === login )
 										m.deleted = true;
 								};
@@ -607,7 +610,7 @@ export default class ChatHook extends Module {
 							if ( t.chat.context.get('chat.filtering.ignore-clear') )
 								msg = {
 									type: types.Notice,
-									message: 'An attempt to clear chat was ignored.'
+									message: t.i18n.t('chat.ignore-clear', 'An attempt to clear chat was ignored.')
 								}
 
 						}
@@ -626,13 +629,13 @@ export default class ChatHook extends Module {
 				raw_delay = t.chat.context.get('chat.delay'),
 				delay = raw_delay === -1 ? this.delayDuration : raw_delay,
 				first = now - delay,
-				do_remove = t.chat.context.get('chat.filtering.remove-deleted') !== 0;
+				do_remove = t.chat.context.get('chat.filtering.remove-deleted');
 
 			let changed = false;
 
 			for(const msg of this.delayedMessageBuffer) {
 				if ( msg.time <= first || ! msg.shouldDelay ) {
-					if ( do_remove && ! this.shouldSeeBlockedAndDeletedMessages && this.isDeletable(msg.event) && msg.event.deleted )
+					if ( do_remove !== 0 && (do_remove > 1 || ! this.shouldSeeBlockedAndDeletedMessages) && this.isDeletable(msg.event) && msg.event.deleted )
 						continue;
 
 					this.buffer.push(msg.event);
