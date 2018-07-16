@@ -252,7 +252,7 @@ export default class Actions extends Module {
 			});
 
 		return (<div
-			class="ffz--inline-actions ffz-action-data tw-inline tw-mg-r-05"
+			class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
 			data-msg-id={msg.id}
 			data-user={user}
 			data-room={room}

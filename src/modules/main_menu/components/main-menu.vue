@@ -74,7 +74,18 @@
 						{{ t('main-menu.version', 'Version %{version}', {version: version.toString()}) }}
 					</div>
 					<div class="tw-c-text-alt-2">
-						{{ version.build }}
+						<a
+							v-if="version.commit"
+							:href="`https://www.github.com/FrankerFaceZ/FrankerFaceZ/commit/${version.commit}`"
+							class="tw-link tw-link--inherit"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							{{ version.commit.slice(0,7) }}
+						</a>
+						<span v-else>
+							{{ version.build }}
+						</span>
 					</div>
 				</footer>
 			</nav>

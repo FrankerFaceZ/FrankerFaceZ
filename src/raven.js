@@ -277,6 +277,7 @@ export default class RavenLogger extends Module {
 			out = {};
 
 		out.build = __webpack_hash__;
+		out.git_commit = __git_commit__;
 
 		if ( core )
 			out.twitch_build = core.config.buildID;

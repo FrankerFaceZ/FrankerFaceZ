@@ -586,7 +586,7 @@ export default class Chat extends Module {
 				user: msg.from,
 				message: msg.content.slice(offset),
 				is_action,
-				emotes,
+				ffz_emotes: emotes,
 				timestamp: msg.sentAt && msg.sentAt.getTime(),
 				deleted: false
 			};
