@@ -471,7 +471,9 @@ export default class ChatHook extends Module {
 				if ( ! buffer._ffz_was_here )
 					this.wrapChatBuffer(buffer.constructor);
 
-				buffer.consumeChatEvent = buffer.ffzConsumeChatEvent.bind(buffer);
+				if ( buffer.ffzConsumeChatEvent )
+					buffer.consumeChatEvent = buffer.ffzConsumeChatEvent.bind(buffer);
+
 				buffer.ffzController = inst;
 
 				service.client.events.removeAll();
@@ -538,50 +540,114 @@ export default class ChatHook extends Module {
 
 		cls.prototype._ffz_was_here = true;
 
-		cls.prototype.ffzConsumeChatEvent = cls.prototype.consumeChatEvent = function(msg) {
-			if ( msg ) {
-				try {
-					const types = t.chat_types || {};
+		if ( old_consume )
+			cls.prototype.ffzConsumeChatEvent = cls.prototype.consumeChatEvent = function(msg) {
+				if ( msg ) {
+					try {
+						const types = t.chat_types || {};
 
-					if ( msg.type === types.Message ) {
-						const m = t.chat.standardizeMessage(msg),
-							cont = this.ffzController;
+						if ( msg.type === types.Message ) {
+							const m = t.chat.standardizeMessage(msg),
+								cont = this.ffzController;
 
-						let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin,
-							room_id = cont && cont.props.channelID;
+							let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin,
+								room_id = cont && cont.props.channelID;
 
-						if ( ! room && room_id ) {
-							const r = t.chat.getRoom(room_id, null, true);
-							if ( r && r.login )
-								room = m.roomLogin = r.login;
-						}
+							if ( ! room && room_id ) {
+								const r = t.chat.getRoom(room_id, null, true);
+								if ( r && r.login )
+									room = m.roomLogin = r.login;
+							}
 
-						const u = t.site.getUser(),
-							r = {id: room_id, login: room};
+							const u = t.site.getUser(),
+								r = {id: room_id, login: room};
 
-						if ( u && cont ) {
-							u.moderator = cont.props.isCurrentUserModerator;
-							u.staff = cont.props.isStaff;
-						}
+							if ( u && cont ) {
+								u.moderator = cont.props.isCurrentUserModerator;
+								u.staff = cont.props.isStaff;
+							}
 
-						m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, r);
+							m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, r);
 
-						const event = new FFZEvent({
-							message: m,
-							channel: room
-						});
+							const event = new FFZEvent({
+								message: m,
+								channel: room
+							});
 
-						t.emit('chat:receive-message', event);
-						if ( event.defaultPrevented || m.ffz_removed )
+							t.emit('chat:receive-message', event);
+							if ( event.defaultPrevented || m.ffz_removed )
+								return;
+
+						} else if ( msg.type === types.Moderation ) {
+							const login = msg.userLogin;
+							if ( this.moderatedUsers.has(login) )
+								return;
+
+							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 2,
+								do_update = m => {
+									if ( m.type === types.Message && m.user && m.user.userLogin === login )
+										m.deleted = true;
+								};
+
+							if ( do_remove ) {
+								this.buffer = this.buffer.filter(m => m.type !== types.Message || ! m.user || m.user.userLogin !== login);
+								this._isDirty = true;
+								this.onBufferUpdate();
+
+							} else
+								this.buffer.forEach(do_update);
+
+							this.delayedMessageBuffer.forEach(do_update);
+
+							this.moderatedUsers.add(login);
+							setTimeout(this.unmoderateUser(login), 1000);
 							return;
-					}
 
-				} catch(err) {
-					t.log.capture(err, {extra: {msg}})
+						} else if ( msg.type === types.Clear ) {
+							if ( t.chat.context.get('chat.filtering.ignore-clear') )
+								msg = {
+									type: types.Notice,
+									message: 'An attempt to clear chat was ignored.'
+								}
+
+						}
+
+					} catch(err) {
+						t.log.capture(err, {extra: {msg}})
+					}
 				}
+
+				return old_consume.call(this, msg);
 			}
 
-			return old_consume.call(this, msg);
+		cls.prototype.flushRawMessages = function() {
+			const out = [],
+				now = Date.now(),
+				raw_delay = t.chat.context.get('chat.delay'),
+				delay = raw_delay === -1 ? this.delayDuration : raw_delay,
+				first = now - delay,
+				do_remove = t.chat.context.get('chat.filtering.remove-deleted') !== 0;
+
+			let changed = false;
+
+			for(const msg of this.delayedMessageBuffer) {
+				if ( msg.time <= first || ! msg.shouldDelay ) {
+					if ( do_remove && ! this.shouldSeeBlockedAndDeletedMessages && this.isDeletable(msg.event) && msg.event.deleted )
+						continue;
+
+					this.buffer.push(msg.event);
+					changed = true;
+
+				} else
+					out.push(msg);
+			}
+
+			this.delayedMessageBuffer = out;
+
+			if ( changed ) {
+				this._isDirty = true;
+				this.onBufferUpdate();
+			}
 		}
 
 		cls.prototype.toArray = function() {

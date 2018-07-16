@@ -102,10 +102,59 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.show-deleted', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Behavior >> Deleted Messages',
 				title: 'Always display deleted messages.',
 				description: 'Deleted messages will be faded and displayed with a line through the message text.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.filtering.ignore-clear', {
+			default: false,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Do not Clear Chat when commanded to.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.filtering.remove-deleted', {
+			default: 1,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Remove deleted messages from chat.',
+				description: 'Deleted messages will be removed from chat entirely. This setting is not recommended for moderators.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'Do Not Remove'},
+					{value: 1, title: 'Remove Unseen (Default)'},
+					{value: 2, title: 'Remove All'}
+				]
+			}
+		});
+
+		this.settings.add('chat.delay', {
+			default: -1,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Artificial Chat Delay',
+				description: 'Delay the appearance of chat messages to allow for moderation before you see them.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: -1, title: 'Default Delay (Room Specific; Non-Mod Only)'},
+					{value: 0, title: 'No Delay'},
+					{value: 300, title: 'Minor (Bot Moderation; 0.3s)'},
+					{value: 1200, title: 'Normal (Human Moderation; 1.2s)'},
+					{value: 5000, title: 'Large (Spoiler Removal / Slow Mods; 5s)'},
+					{value: 10000, title: 'Extra Large (10s)'},
+					{value: 15000, title: 'Extremely Large (15s)'},
+					{value: 20000, title: 'Mods Asleep; Delay Chat (20s)'},
+					{value: 30000, title: 'Half a Minute (30s)'},
+					{value: 60000, title: 'Why??? (1m)'},
+					{value: 788400000000, title: 'The CBenni Option (Literally 25 Years)'}
+				]
 			}
 		});
 
