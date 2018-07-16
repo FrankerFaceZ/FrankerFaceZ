@@ -131,6 +131,7 @@ export default class ChatHook extends Module {
 		this.inverse_colors = new ColorAdjuster;
 
 		this.inject('settings');
+		this.inject('i18n');
 
 		this.inject('site');
 		this.inject('site.router');
