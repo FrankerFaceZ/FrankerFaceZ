@@ -44,7 +44,8 @@ export default class Channel extends Module {
 
 		this.ChannelPage = this.fine.define(
 			'channel-page',
-			n => n.hostModeFromGraphQL,
+			n => n.getHostedChannelLogin && n.handleHostingChange,
+			//n => n.hostModeFromGraphQL,
 			['user']
 		);
 
@@ -73,9 +74,15 @@ export default class Channel extends Module {
 			// We can't do this immediately because the player state
 			// occasionally screws up if we do.
 			setTimeout(() => {
-				if ( inst.state.hostMode ) {
+				/*if ( inst.state.hostMode ) {
 					inst.ffzExpectedHost = inst.state.hostMode;
 					inst.ffzOldSetState({hostMode: null});
+				}*/
+
+				const current_channel = inst.props.data && inst.props.data.variables && inst.props.data.variables.currentChannelLogin;
+				if ( current_channel && current_channel !== inst.state.videoPlayerSource ) {
+					inst.ffzExpectedHost = inst.state.videoPlayerSource;
+					inst.ffzOldHostHandler(null);
 				}
 			});
 		});
@@ -132,13 +139,21 @@ export default class Channel extends Module {
 		inst.ffzOldSetState = inst.setState;
 		inst.setState = function(state, ...args) {
 			try {
-				if ( has(state, 'hostMode') ) {
+				if ( ! t.settings.get('channel.hosting.enable') ) {
+					if ( has(state, 'isHosting') )
+						state.isHosting = false;
+
+					if ( has(state, 'videoPlayerSource') )
+						state.videoPlayerSource = inst.props.match.params.channelName;
+				}
+
+				/*if ( has(state, 'hostMode') ) {
 					inst.ffzExpectedHost = state.hostMode;
 					if ( state.hostMode && ! t.settings.get('channel.hosting.enable') ) {
 						state.hostMode = null;
 						state.videoPlayerSource = inst.props.match.params.channelName;
 					}
-				}
+				}*/
 
 			} catch(err) {
 				t.log.capture(err, {extra: {props: inst.props, state}});
@@ -149,12 +164,34 @@ export default class Channel extends Module {
 
 		inst._ffz_hosting_wrapped = true;
 
-		const hosted = inst.ffzExpectedHost = inst.state.hostMode;
+		inst.ffzOldGetHostedLogin = inst.getHostedChannelLogin;
+		inst.getHostedChannelLogin = function() {
+			return t.settings.get('channel.hosting.enable') ?
+				inst.ffzOldGetHostedLogin() : null;
+		}
+
+		inst.ffzOldHostHandler = inst.handleHostingChange;
+		inst.handleHostingChange = function(channel) {
+			inst.ffzExpectedHost = channel;
+			if ( t.settings.get('channel.hosting.enable') )
+				return inst.ffzOldHostHandler(channel);
+		}
+
+		// Store the current state and disable the current host if needed.
+		inst.ffzExpectedHost = inst.state.isHosting ? inst.state.videoPlayerSource : null;
+		if ( ! this.settings.get('channel.hosting.enable') )
+			inst.ffzOldHostHandler(null);
+
+		// Finally, we force an update so that any child components
+		// receive our updated handler.
+		inst.forceUpdate();
+
+		/*const hosted = inst.ffzExpectedHost = inst.state.hostMode;
 		if ( hosted && ! this.settings.get('channel.hosting.enable') )
 			inst.ffzOldSetState({
 				hostMode: null,
 				videoPlayerSource: inst.props.match.params.channelName
-			});
+			});*/
 	}
 
 
@@ -163,13 +200,15 @@ export default class Channel extends Module {
 			val = this.settings.get('channel.hosting.enable');
 
 		for(const inst of this.ChannelPage.instances) {
-			const host = val ? inst.ffzExpectedHost : null,
+			inst.ffzOldHostHandler(val ? inst.ffzExpectedHost : null);
+
+			/*const host = val ? inst.ffzExpectedHost : null,
 				target = host && host.hostedChannel && host.hostedChannel.login || inst.props.match.params.channelName;
 
 			inst.ffzOldSetState({
 				hostMode: host,
 				videoPlayerSource: target
-			});
+			});*/
 		}
 	}
 }

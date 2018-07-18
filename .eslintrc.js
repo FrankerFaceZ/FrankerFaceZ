@@ -27,7 +27,8 @@ module.exports = {
     "globals": {
         "import": false,
         "require": false,
-        "__webpack_hash__": false
+        "__webpack_hash__": false,
+        "__git_commit__": false
     },
     "rules": {
         "accessor-pairs": ["error"],

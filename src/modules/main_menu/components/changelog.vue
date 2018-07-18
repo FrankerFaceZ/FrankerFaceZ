@@ -7,6 +7,9 @@
 		<ul>
 			<li v-for="commit of display" :key="commit.sha" class="tw-mg-b-2">
 				<div class="tw-flex tw-align-items-center tw-border-b tw-mg-b-05">
+					<div v-if="commit.active" class="tw-pill tw-mg-r-05">
+						{{ t('home.changelog.current', 'Current Version') }}
+					</div>
 					<div class="tw-font-size-4">
 						{{ commit.title }}
 					</div>
@@ -50,6 +53,7 @@ import {get} from 'utilities/object';
 
 const TITLE_MATCH = /^(\d+\.\d+\.\d+(?:\-[^\n]+)?)\n+/;
 
+
 export default {
 	props: ['item', 'context'],
 
@@ -71,7 +75,10 @@ export default {
 				let message = commit.commit.message,
 					title = old_commit;
 
-				const match = TITLE_MATCH.exec(message);
+				const match = TITLE_MATCH.exec(message),
+					date = new Date(commit.commit.author.date),
+					active = commit.sha === window.FrankerFaceZ.version_info.commit;
+
 				if ( match ) {
 					title = match[1];
 					message = message.slice(match[0].length);
@@ -80,10 +87,11 @@ export default {
 				out.push({
 					title,
 					message,
+					active,
 					hash: commit.sha && commit.sha.slice(0,7),
 					link: commit.html_url,
 					sha: commit.sha,
-					date: new Date(commit.commit.author.date)
+					date
 				});
 			}
 

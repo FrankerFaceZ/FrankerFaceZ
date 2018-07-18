@@ -18,7 +18,7 @@ function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
 }
 
-// TODO: Rewrite literally everything about the menu to use vue-router and further
+// TODO: Rewrite literally everything about the menu to use a router and further
 // separate the concept of navigation from visible pages.
 
 export default class MainMenu extends Module {
@@ -41,7 +41,7 @@ export default class MainMenu extends Module {
 		this._visible = true;
 		this._maximized = false;
 		this.exclusive = false;
-
+		this.has_update = false;
 
 		this.settings.addUI('profiles', {
 			path: 'Data Management @{"sort": 1000, "profile_warning": false} > Profiles @{"profile_warning": false}',
@@ -63,6 +63,20 @@ export default class MainMenu extends Module {
 			component: 'changelog'
 		});
 
+		this.on('socket:command:new_version', version => {
+			if ( version === window.FrankerFaceZ.version_info.commit )
+				return;
+
+			this.log.info('New Version Available', version);
+			this.has_update = true;
+
+			const mb = this.resolve('site.menu_button');
+			if ( mb )
+				mb.has_update = true;
+
+			if ( this._vue )
+				this._vue.$children[0].context.has_update = true;
+		});
 	}
 
 	openPopout() {
@@ -464,6 +478,8 @@ export default class MainMenu extends Module {
 				profile_keys,
 				currentProfile: profile_keys[0],
 
+				has_update: this.has_update,
+
 				createProfile: data => {
 					const profile = settings.createProfile(data);
 					return t.getProfileProxy(profile, context);
@@ -567,7 +583,9 @@ export default class MainMenu extends Module {
 			faded: false,
 
 			nav: settings,
-			currentItem: settings.keys['home'], // settings[0],
+			currentItem: this.has_update ?
+				settings.keys['home.changelog'] :
+				settings.keys['home'], // settings[0],
 			nav_keys: settings.keys,
 
 			maximized: this._maximized,
