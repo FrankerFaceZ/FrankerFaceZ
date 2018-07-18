@@ -731,26 +731,24 @@ export default class ChatHook extends Module {
 
 
 		cls.prototype.ffzGetEmotes = function() {
-			const emote_sets = this.client && this.client.session && this.client.session.emoteSets;
-			if ( this._ffz_cached_sets === emote_sets )
+			const emote_map = this.client && this.client.session && this.client.session.emoteMap;
+			if ( this._ffz_cached_map === emote_map )
 				return this._ffz_cached_emotes;
 
-			this._ffz_cached_sets = emote_sets;
+			this._ffz_cached_map = emote_map;
 			const emotes = this._ffz_cached_emotes = {};
 
-			if ( emote_sets )
-				for(const set of emote_sets)
-					if ( set && set.emotes )
-						for(const emote of set.emotes)
-							if ( emote ) {
-								const token = emote.token;
-								if ( Array.isArray(REGEX_EMOTES[token]) ) {
-									for(const tok of REGEX_EMOTES[token] )
-										emotes[tok] = emote.id;
+			if ( emote_map )
+				for(const emote of Object.values(emote_map))
+					if ( emote ) {
+						const token = emote.token;
+						if ( Array.isArray(REGEX_EMOTES[token]) ) {
+							for(const tok of REGEX_EMOTES[token] )
+								emotes[tok] = emote.id;
 
-								} else
-									emotes[token] = emote.id;
-							}
+						} else
+							emotes[token] = emote.id;
+					}
 
 			return emotes;
 		}

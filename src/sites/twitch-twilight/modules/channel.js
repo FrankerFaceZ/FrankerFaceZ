@@ -7,6 +7,8 @@
 import Module from 'utilities/module';
 import { has } from 'utilities/object';
 
+import Twilight from 'site';
+
 
 export default class Channel extends Module {
 	constructor(...args) {
@@ -49,7 +51,7 @@ export default class Channel extends Module {
 		this.RaidController = this.fine.define(
 			'raid-controller',
 			n => n.handleLeaveRaid && n.handleJoinRaid,
-			['user']
+			Twilight.CHAT_ROUTES
 		);
 	}
 
