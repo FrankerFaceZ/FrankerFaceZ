@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {get} from 'utilities/object';
-import {ColorAdjuster, Color} from 'utilities/color';
+import {ColorAdjuster} from 'utilities/color';
 
 import Module from 'utilities/module';
 
@@ -29,6 +29,7 @@ export default class Chat extends Module {
 
 		this.inject('site');
 		this.inject('site.fine');
+		this.inject('site.css_tweaks');
 
 		this.inject(Line);
 
@@ -39,6 +40,9 @@ export default class Chat extends Module {
 	}
 
 	onEnable() {
+		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
 		this.chat.context.on('changed:theme.is-dark', this.updateColors, this);
@@ -53,7 +57,28 @@ export default class Chat extends Module {
 		});
 
 		this.loadBadges();
+		this.updateChatCSS();
 		this.updateColors();
+	}
+
+
+	updateChatCSS() {
+		const size = this.chat.context.get('chat.font-size'),
+			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
+			lh = Math.round((20/12) * size);
+
+		let font = this.chat.context.get('chat.font-family') || 'inherit';
+		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
+			font = `"${font}"`;
+
+		this.css_tweaks.setVariable('chat-font-size', `${size/10}rem`);
+		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
+		this.css_tweaks.setVariable('chat-font-family', font);
+
+		this.css_tweaks.toggle('chat-font', size !== 12 || font);
+
+		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
+		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
 	}
 
 

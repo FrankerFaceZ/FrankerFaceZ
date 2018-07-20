@@ -192,33 +192,6 @@ export default class ChatHook extends Module {
 			}
 		});
 
-		this.settings.add('chat.font-size', {
-			default: 12,
-			ui: {
-				path: 'Chat > Appearance >> General',
-				title: 'Font Size',
-				description: "How large should text in chat be, in pixels. This may be affected by your browser's zoom and font size settings.",
-				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return 12;
-
-					return val;
-				}
-			}
-		});
-
-		this.settings.add('chat.font-family', {
-			default: '',
-			ui: {
-				path: 'Chat > Appearance >> General',
-				title: 'Font Family',
-				description: 'Set the font used for displaying chat messages.',
-				component: 'setting-text-box'
-			}
-		});
-
 		this.settings.add('chat.bits.show-pinned', {
 			default: true,
 			ui: {
@@ -268,21 +241,6 @@ export default class ChatHook extends Module {
 					{value: 2, title: '3D Line (2px Groove)'},
 					{value: 3, title: '3D Line (2px Groove Inset)'},
 					{value: 4, title: 'Wide Line (2px Solid)'}
-				]
-			}
-		});
-
-		this.settings.add('chat.lines.emote-alignment', {
-			default: 0,
-			ui: {
-				path: 'Chat > Appearance >> Chat Lines',
-				title: 'Emote Alignment',
-				description: 'Change how emotes are positioned in chat, potentially making messages taller in order to avoid having emotes overlap.',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Standard'},
-					{value: 1, title: 'Padded'},
-					{value: 2, title: 'Baseline (BTTV-Like)'}
 				]
 			}
 		});
