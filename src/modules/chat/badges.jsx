@@ -328,8 +328,8 @@ export default class Badges extends Module {
 			twitch_badges = msg.badges || {},
 
 			user = msg.user || {},
-			user_id = user.userID,
-			user_login = user.userLogin,
+			user_id = user.id,
+			user_login = user.login,
 			room_id = msg.roomID,
 			room_login = msg.roomLogin,
 
