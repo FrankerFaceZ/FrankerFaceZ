@@ -10,9 +10,9 @@ import {has, deep_copy} from 'utilities/object';
 
 import {parse_path} from 'src/settings';
 
-const EXCLUSIVE_SELECTOR = '.twilight-main,.twilight-minimal-root>div,.twilight-root>.tw-full-height',
-	MAXIMIZED_SELECTOR = '.twilight-main,.twilight-minimal-root,.twilight-root .dashboard-side-nav+.tw-full-height',
-	SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height';
+const EXCLUSIVE_SELECTOR = '.twilight-main,.twilight-minimal-root>div,.twilight-root>.tw-full-height,.clips-root',
+	MAXIMIZED_SELECTOR = '.twilight-main,.twilight-minimal-root,.twilight-root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area',
+	SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
 
 function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();

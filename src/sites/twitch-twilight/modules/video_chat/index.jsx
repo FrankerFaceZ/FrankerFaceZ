@@ -195,8 +195,6 @@ export default class VideoChatHook extends Module {
 					if ( this.state.showReplyForm || ! t.chat.context.get('chat.video-chat.enabled') )
 						return old_render.call(this);
 
-					t.log.info('Video Chat', this);
-
 					const context = this.props.messageContext,
 						msg = t.standardizeMessage(context.comment, context.author),
 						main_message = this.ffzRenderMessage(msg),

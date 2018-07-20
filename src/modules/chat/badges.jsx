@@ -268,13 +268,14 @@ export default class Badges extends Module {
 			for(const d of data) {
 				const p = d.provider;
 				if ( p === 'twitch' ) {
-					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login);
+					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
+						global_badge = this.getTwitchBadge(d.badge, d.version) || {};
 					if ( ! bd )
 						continue;
 
 					out.push(<div class="ffz-badge-tip">
 						{show_previews && <img class="preview-image ffz-badge" src={bd.image4x} />}
-						{bd.title}
+						{bd.title || global_badge.title}
 					</div>);
 
 					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
@@ -457,6 +458,7 @@ export default class Badges extends Module {
 					props = data.props;
 
 				props.className = 'ffz-tooltip ffz-badge';
+				props.key = `${props['data-provider']}-${props['data-badge']}`;
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);
 

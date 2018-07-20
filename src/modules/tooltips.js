@@ -36,7 +36,7 @@ export default class TooltipProvider extends Module {
 	}
 
 	onEnable() {
-		const container = document.querySelector('.twilight-root,.twilight-minimal-root') || document.body,
+		const container = document.querySelector('.twilight-root,.twilight-minimal-root,.clips-root') || document.body,
 			is_minimal = container && container.classList.contains('twilight-minimal-root');
 
 		this.tips = new Tooltip(is_minimal ? '.twilight-minimal-root,body' : 'body #root,body', 'ffz-tooltip', {

@@ -7,9 +7,7 @@
 import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
 
-import THEME_CSS_URL from 'site/styles/theme.scss';
-
-const BAD_ROUTES = ['product', 'prime'];
+//import THEME_CSS_URL from 'site/styles/theme.scss';
 
 
 export default class ThemeEngine extends Module {
@@ -18,8 +16,6 @@ export default class ThemeEngine extends Module {
 		this.inject('settings');
 
 		this.inject('site');
-		this.inject('site.css_tweaks');
-		this.inject('site.router');
 
 		this.should_enable = true;
 
@@ -43,7 +39,7 @@ export default class ThemeEngine extends Module {
 		this.settings.add('theme.can-dark', {
 			requires: ['context.route.name'],
 			process(ctx) {
-				return ! BAD_ROUTES.includes(ctx.get('context.route.name'))
+				return true;
 			}
 		});
 
@@ -73,7 +69,6 @@ export default class ThemeEngine extends Module {
 		document.body.classList.toggle('tw-theme--dark', dark);
 		document.body.classList.toggle('tw-theme--ffz', gray);
 
-		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
 	}
 
 
@@ -85,7 +80,7 @@ export default class ThemeEngine extends Module {
 			this._style = createElement('link', {
 				rel: 'stylesheet',
 				type: 'text/css',
-				href: THEME_CSS_URL
+				//href: THEME_CSS_URL
 			});
 
 		} else if ( ! enable ) {
