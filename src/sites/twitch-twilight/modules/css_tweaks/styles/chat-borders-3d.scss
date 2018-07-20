@@ -22,6 +22,22 @@
 	}
 }
 
+.vod-message {
+	padding-top: calc(.5rem - 1px) !important;
+
+	border-top: 1px solid rgba(255,255,255,0.5);
+	border-bottom-color: #aaa;
+
+	.tw-theme--dark & {
+		border-top-color: rgba(255,255,255,0.1);
+		border-bottom-color: #000;
+	}
+}
+
+.video-chat__message-list-wrapper li:first-child .vod-message {
+	border-top-color: transparent !important;
+}
+
 .thread-message__message,
 .thread-message__timestamp,
 .thread-message__warning {

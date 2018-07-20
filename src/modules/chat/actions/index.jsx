@@ -43,6 +43,7 @@ export default class Actions extends Module {
 			ui: {
 				path: 'Chat > In-Line Actions @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
 				component: 'chat-actions',
+				context: ['user', 'room'],
 				inline: true,
 
 				data: () => {
@@ -60,11 +61,11 @@ export default class Actions extends Module {
 		this.settings.add('chat.actions.viewer-card', {
 			// Filter out actions
 			process: (ctx, val) =>
-				val.filter(x => x.appearance &&
+				val.filter(x => x.type || (x.appearance &&
 					this.renderers[x.appearance.type] &&
 					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
 					(! x.action || this.actions[x.action])
-				),
+				)),
 
 			default: [
 				{v: {action: 'friend'}},
@@ -80,6 +81,7 @@ export default class Actions extends Module {
 			_ui: {
 				path: 'Chat > Viewer Cards >> tabs ~> Actions @{"description": "Here, you define what actions are available on viewer cards."}',
 				component: 'chat-actions',
+				context: ['user', 'room', 'product'],
 
 				data: () => {
 					const chat = this.resolve('site.chat');

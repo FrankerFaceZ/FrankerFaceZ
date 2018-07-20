@@ -15,6 +15,15 @@
 	}
 }
 
+.vod-message {
+	padding-top: calc(.5rem - 1px) !important;
+	border-top: 1px solid var(--ffz-border-color);
+}
+
+.video-chat__message-list-wrapper li:first-child .vod-message {
+	border-top-color: transparent !important;
+}
+
 .thread-message__message,
 .thread-message__timestamp,
 .thread-message__warning {

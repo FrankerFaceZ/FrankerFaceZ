@@ -51,7 +51,7 @@
 
 import {get} from 'utilities/object';
 
-const TITLE_MATCH = /^(\d+\.\d+\.\d+(?:\-[^\n]+)?)\n+/;
+const TITLE_MATCH = /^(\d+\.\d+\.\d+(?:-[^\n]+)?)\n+/;
 
 
 export default {

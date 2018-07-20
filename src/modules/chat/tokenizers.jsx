@@ -789,8 +789,8 @@ export const AddonEmotes = {
 			return tokens;
 
 		const emotes = this.emotes.getEmotes(
-				msg.user.userID,
-				msg.user.userLogin,
+				msg.user.id,
+				msg.user.login,
 				msg.roomID,
 				msg.roomLogin
 			),

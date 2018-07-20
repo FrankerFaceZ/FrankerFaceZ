@@ -64,6 +64,8 @@ export const chat = {
 		}
 	}],
 
+	required_context: ['room'],
+
 	defaults: {
 		command: '@{{user.login}} HeyGuys'
 	},
@@ -121,6 +123,8 @@ export const ban = {
 		}
 	}],
 
+	required_context: ['room', 'user'],
+
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-ban.vue'),
 
 	title: 'Ban User',
@@ -151,6 +155,8 @@ export const timeout = {
 	defaults: {
 		duration: 600
 	},
+
+	required_context: ['room', 'user'],
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-timeout.vue'),
 
@@ -187,6 +193,8 @@ export const unban = {
 		}
 	}],
 
+	required_context: ['room', 'user'],
+
 	title: 'Unban User',
 
 	tooltip(data) {
@@ -212,6 +220,8 @@ export const untimeout = {
 		}
 	}],
 
+	required_context: ['room', 'user'],
+
 	title: 'Untimeout User',
 
 	tooltip(data) {
@@ -235,6 +245,8 @@ export const whisper = {
 			text: 'W'
 		}
 	}],
+
+	required_context: ['user'],
 
 	title: 'Whisper User',
 
@@ -269,13 +281,15 @@ export const whisper = {
 // Gift Subscription
 // ============================================================================
 
-/*export const gift_sub = {
+export const gift_sub = {
 	presets: [{
 		appearance: {
 			type: 'icon',
 			icon: 'ffz-i-gift'
 		}
 	}],
+
+	required_context: ['room', 'user', 'product'],
 
 	title: 'Gift Subscription',
 
@@ -288,4 +302,4 @@ export const whisper = {
 			Woop woop.
 		</div>);
 	}
-}*/
+}

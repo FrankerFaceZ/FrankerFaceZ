@@ -282,7 +282,7 @@ export default class ChatLine extends Module {
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
 				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = this.usernameClickHandler; // event => ! event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
+					this.ffz_user_click_handler = this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -457,5 +457,7 @@ export default class ChatLine extends Module {
 		this.ChatLine.forceUpdate();
 		this.ChatRoomLine.forceUpdate();
 		this.WhisperLine.forceUpdate();
+
+		this.emit('chat:updated-lines');
 	}
 }

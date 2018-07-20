@@ -245,7 +245,8 @@ export default {
 		},
 
 		presets() {
-			const out = [];
+			const out = [],
+				contexts = this.item.context || [];
 
 			out.push({
 				disabled: this.hasInheritance,
@@ -282,7 +283,19 @@ export default {
 
 			for(const key in this.data.actions) { // eslint-disable-line guard-for-in
 				const act = this.data.actions[key];
-				if ( act && act.presets )
+				if ( act && act.presets ) {
+					if ( act.required_context ) {
+						let okay = true;
+						for(const ctx of act.required_context)
+							if ( ! contexts.includes(ctx) ) {
+								okay = false;
+								break;
+							}
+
+						if ( ! okay )
+							continue;
+					}
+
 					for(const preset of act.presets) {
 						if ( typeof act.title !== 'string' && ! preset.title )
 							continue;
@@ -298,6 +311,7 @@ export default {
 							}
 						}, preset));
 					}
+				}
 			}
 
 			return out;
