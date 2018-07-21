@@ -35,6 +35,12 @@ type ConfigFile struct {
 	// Path to key file.
 	SSLKeyFile string
 
+	// Origin Checking
+	UseOriginChecks bool
+
+	// Allowed Origins
+	AllowedOrigins []string
+
 	// Nacl keys
 	OurPrivateKey    []byte
 	OurPublicKey     []byte

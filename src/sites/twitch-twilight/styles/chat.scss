@@ -21,6 +21,10 @@
     margin-bottom: 0 !important;
 }
 
+.chat-settings__content div[data-test-selector="high-contrast-selector"] {
+    display: none;
+}
+
 .autocomplete-balloon {
     .autocomplete-balloon__item {
         > .tw-flex {

@@ -750,7 +750,7 @@ export default class ChatHook extends Module {
 					if ( e && e.sentByCurrentUser ) {
 						try {
 							e.message.user.emotes = findEmotes(
-								e.message.body.slice(8, -1),
+								e.message.body,
 								i.ffzGetEmotes()
 							);
 

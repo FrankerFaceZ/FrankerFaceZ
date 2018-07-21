@@ -36,7 +36,7 @@ class FrankerFaceZ extends Module {
 		this.log = new Logger(null, null, null, this.raven);
 		this.core_log = this.log.get('core');
 
-		this.log.info(`FrankerFaceZ v${VER} (build ${VER.build})`);
+		this.log.info(`FrankerFaceZ v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''})`);
 
 
 		// ========================================================================
@@ -100,7 +100,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-rc8.1',
+	major: 4, minor: 0, revision: 0, extra: '-rc8.2',
 	commit: __git_commit__,
 	build: __webpack_hash__,
 	toString: () =>

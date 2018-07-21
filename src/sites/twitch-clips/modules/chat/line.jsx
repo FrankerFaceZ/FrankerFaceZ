@@ -116,7 +116,7 @@ export default class Line extends Module {
 				id: author.id,
 				login: author.login,
 				displayName: author.displayName,
-				isIntl: author.name && author.displayName && author.displayName.trim().toLowerCase() !== author.name,
+				isIntl: author.login && author.displayName && author.displayName.trim().toLowerCase() !== author.login,
 				type: 'user'
 			},
 			roomLogin: room && room.login,

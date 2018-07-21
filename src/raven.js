@@ -276,6 +276,7 @@ export default class RavenLogger extends Module {
 		const core = this.site.getCore(),
 			out = {};
 
+		out.flavor = this.site.constructor.name;
 		out.build = __webpack_hash__;
 		out.git_commit = __git_commit__;
 
