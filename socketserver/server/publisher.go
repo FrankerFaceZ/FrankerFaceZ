@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -140,14 +141,14 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func rateLimitFromFormData(formData *url.Values) (rate.Limiter, error) {
-	rateCount := formData.get("rateCount")
+func rateLimitFromFormData(formData url.Values) (rate.Limiter, error) {
+	rateCount := formData.Get("rateCount")
 	if rateCount != "" {
 		c, err := strconv.ParseInt(rateCount, 10, 32)
 		if err != nil {
 			return nil, errors.Wrap(err, "rateCount")
 		}
-		d, err := time.ParseDuration(formData.get("rateTime"))
+		d, err := time.ParseDuration(formData.Get("rateTime"))
 		if err != nil {
 			return nil, errors.Wrap(err, "rateTime")
 		}
@@ -254,7 +255,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Error: channel must be specified")
 		return
 	}
-	rl, err := rateLimitFromRequest(r)
+	rl, err := rateLimitFromFormData(formData)
 	if err != nil {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "error parsing ratelimit: %v", err)
