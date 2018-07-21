@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -254,7 +255,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Error: channel must be specified")
 		return
 	}
-	rl, err := rateLimitFromRequest(r)
+	rl, err := rateLimitFromFormData(formData)
 	if err != nil {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "error parsing ratelimit: %v", err)
