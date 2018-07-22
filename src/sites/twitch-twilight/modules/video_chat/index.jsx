@@ -143,7 +143,14 @@ export default class VideoChatHook extends Module {
 					user = msg.user,
 					color = t.site_chat.colors.process(user.color),
 
-					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, user),
+					u = t.site.getUser();
+
+				if ( u ) {
+					u.moderator = this.props.isCurrentUserModerator;
+					u.staff = u.roles && u.roles.isStaff;
+				}
+
+				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
 				return (<div class="tw-align-items-start tw-flex tw-flex-nowrap tw-c-text">

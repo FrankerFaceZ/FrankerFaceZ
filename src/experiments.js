@@ -177,10 +177,20 @@ export default class ExperimentManager extends Module {
 		const core = this.resolve('site').getCore(),
 			exps = core && core.experiments;
 
-		if ( exps && exps.overrides[key] )
+		if ( ! exps )
+			return null;
+
+		if ( ! exps.hasInitialized && exps.initialize )
+			try {
+				exps.initialize();
+			} catch(err) {
+				this.log.warn('Error attempting to initialize Twitch experiments tracker.', err);
+			}
+
+		if ( exps.overrides && exps.overrides[key] )
 			return exps.overrides[key];
 
-		else if ( exps && exps.assignments[key] )
+		else if ( exps.assignments && exps.assignments[key] )
 			return exps.assignments[key];
 
 		return null;

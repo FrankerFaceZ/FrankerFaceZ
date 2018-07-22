@@ -48,7 +48,9 @@ export default class Line extends Module {
 						user = msg.user,
 						color = t.parent.colors.process(user.color),
 
-						tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, user);
+						u = t.site.getUser();
+
+					const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u);
 
 					return (<div class="tw-mg-b-1 tw-font-size-5 tw-c-text-alt clip-chat__message">
 						<div class="tw-animation tw-animation--animate tw-animation--duration-short tw-animation--fill-mode-both tw-animation--slide-in-bottom tw-animation--timing-ease" data-room-id={msg.roomID} data-room={msg.roomLogin} data-user-id={user.id} data-user={user.login}>
