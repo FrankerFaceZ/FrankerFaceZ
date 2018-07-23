@@ -2,3 +2,7 @@
 	border-right: none;
 	border-bottom: none;
 }
+
+.top-nav__menu > div:empty {
+	display: none
+}
