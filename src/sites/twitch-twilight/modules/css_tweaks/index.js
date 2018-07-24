@@ -73,6 +73,16 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggleHide('side-nav', !val)
 		});
 
+		this.settings.add('layout.side-nav.show-avatars', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Side Navigation',
+				title: 'Display Channel Avatars',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('hide-side-nav-avatars', !val)
+		});
+
 		this.settings.add('layout.side-nav.show-rec-channels', {
 			default: 1,
 			ui: {
@@ -204,6 +214,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('theatre-nav', this.settings.get('layout.theatre-navigation'));
 		//this.toggle('portrait', this.settings.get('layout.portrait'));
 
+		this.toggle('hide-side-nav-avatars', ! this.settings.get('layout.side-nav.show-avatars'));
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
