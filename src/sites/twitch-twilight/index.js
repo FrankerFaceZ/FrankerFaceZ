@@ -78,10 +78,18 @@ export default class Twilight extends BaseSite {
 		// Check for ?ffz-settings in page and open the
 		// settings window in exclusive mode.
 		const params = new URL(window.location).searchParams;
-		if (params && params.has('ffz-settings')) {
-			const main_menu = this.resolve('main_menu');
-			main_menu.exclusive = true;
-			main_menu.enable();
+		if ( params ) {
+			if ( params.has('ffz-settings') ) {
+				const main_menu = this.resolve('main_menu');
+				main_menu.dialog.exclusive = true;
+				main_menu.enable();
+			}
+
+			if ( params.has('ffz-translate') ) {
+				const translation = this.resolve('translation_ui');
+				translation.dialog.exclusive = true;
+				translation.enable();
+			}
 		}
 	}
 
@@ -183,3 +191,8 @@ Twilight.ROUTES = {
 	'prime': '/prime',
 	'user': '/:userName'
 }
+
+
+Twilight.DIALOG_EXCLUSIVE = '.twilight-main,.twilight-minimal-root>div,.twilight-root>.tw-full-height,.clips-root';
+Twilight.DIALOG_MAXIMIZED = '.twilight-main,.twilight-minimal-root,.twilight-root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';

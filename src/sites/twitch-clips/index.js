@@ -87,3 +87,8 @@ export default class Clippy extends BaseSite {
 		return this._user = session && session.user;
 	}
 }
+
+
+Clippy.DIALOG_EXCLUSIVE = '.clips-root';
+Clippy.DIALOG_MAXIMIZED = '.clips-root>.tw-full-height .scrollable-area';
+Clippy.DIALOG_SELECTOR = '.clips-root>.tw-full-height .scrollable-area';

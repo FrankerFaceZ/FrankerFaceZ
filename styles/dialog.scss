@@ -1,4 +1,4 @@
-.ffz-main-menu {
+.ffz-dialog {
 	&:not(.maximized) {
 		position: absolute;
 		top: 25%;
@@ -62,6 +62,6 @@
 }
 
 
-.ffz-has-menu > :not(.ffz-main-menu) {
+.ffz-has-dialog > :not(.ffz-dialog) {
 	visibility: hidden;
 }

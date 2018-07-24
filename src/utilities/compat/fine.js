@@ -34,6 +34,9 @@ export default class Fine extends Module {
 		}
 
 		this.react_root = this.root_element._reactRootContainer;
+		if ( this.react_root._internalRoot && this.react_root._internalRoot.current )
+			this.react_root = this.react_root._internalRoot;
+
 		this.react = this.react_root.current.child;
 	}
 
@@ -59,7 +62,7 @@ export default class Fine extends Module {
 		if ( ! this.accessor )
 			return;
 
-		return element[this.accessor] || (element._reactRootContainer && element._reactRootContainer.current);
+		return element[this.accessor] || (element._reactRootContainer && element._reactRootContainer._internalRoot && element._reactRootContainer._internalRoot.current) || (element._reactRootContainer && element._reactRootContainer.current);
 	}
 
 	getOwner(instance) {

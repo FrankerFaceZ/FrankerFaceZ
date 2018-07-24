@@ -7,7 +7,7 @@
 // ============================================================================
 
 import {SERVER} from 'utilities/constants';
-import {get, pick_random, has} from 'utilities/object';
+import {get, pick_random, has, timeout} from 'utilities/object';
 import Module from 'utilities/module';
 
 
@@ -68,6 +68,8 @@ export class TranslationManager extends Module {
 	constructor(...args) {
 		super(...args);
 		this.inject('settings');
+
+		this._seen = new Set;
 
 		this.availableLocales = ['en']; //, 'de', 'ja'];
 
@@ -141,6 +143,12 @@ export class TranslationManager extends Module {
 			}
 		});
 
+		if ( window.BroadcastChannel ) {
+			const bc = this._broadcaster = new BroadcastChannel('ffz-i18n');
+			bc.addEventListener('message',
+				this._boundHandleMessage = this.handleMessage.bind(this));
+		}
+
 		this._.transformation = TRANSFORMATIONS[this.settings.get('i18n.debug.transform')];
 		this.locale = this.settings.get('i18n.locale');
 	}
@@ -151,6 +159,55 @@ export class TranslationManager extends Module {
 
 	set locale(new_locale) {
 		this.setLocale(new_locale);
+	}
+
+
+	handleMessage(event) {
+		const msg = event.data;
+		if ( msg.type === 'seen' )
+			this.see(msg.key, true);
+
+		else if ( msg.type === 'request-keys' ) {
+			this.broadcast({type: 'keys', keys: Array.from(this._seen)})
+		}
+
+		else if ( msg.type === 'keys' )
+			this.emit(':receive-keys', msg.keys);
+	}
+
+
+	async getKeys() {
+		this.broadcast({type: 'request-keys'});
+
+		let data;
+
+		try {
+			data = await timeout(this.waitFor(':receive-keys'), 100);
+		} catch(err) { /* no-op */ }
+
+		if ( data )
+			for(const val of data)
+				this._seen.add(val);
+
+		return this._seen;
+	}
+
+
+	broadcast(msg) {
+		if ( this._broadcaster )
+			this._broadcaster.postMessage(msg)
+	}
+
+
+	see(key, from_broadcast = false) {
+		if ( this._seen.has(key) )
+			return;
+
+		this._seen.add(key);
+		this.emit(':seen', key);
+
+		if ( ! from_broadcast )
+			this.broadcast({type: 'seen', key});
 	}
 
 
@@ -363,12 +420,14 @@ export class TranslationManager extends Module {
 		return this._.formatNumber(...args);
 	}
 
-	t(...args) {
-		return this._.t(...args);
+	t(key, ...args) {
+		this.see(key);
+		return this._.t(key, ...args);
 	}
 
-	tList(...args) {
-		return this._.tList(...args);
+	tList(key, ...args) {
+		this.see(key);
+		return this._.tList(key, ...args);
 	}
 }
 
