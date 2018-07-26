@@ -46,8 +46,10 @@ export const open_url = {
 		const url = process(data.options.url, data, this.i18n.locale);
 
 		const win = window.open();
-		win.opener = null;
-		win.location = url;
+		if ( win ) {
+			win.opener = null;
+			win.location = url;
+		}
 	}
 };
 

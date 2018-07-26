@@ -29,7 +29,7 @@ export default class Player extends Module {
 
 		this.PersistentPlayer = this.fine.define(
 			'twitch-player-persistent',
-			n => n.renderMiniControl && n.renderMiniTitle && n.handleWindowResize,
+			n => n.renderMiniHoverControls && n.togglePause,
 			['front-page', 'user', 'video', 'dash']
 		);
 

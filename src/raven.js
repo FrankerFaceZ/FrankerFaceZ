@@ -130,7 +130,9 @@ export default class RavenLogger extends Module {
 			captureUnhandledRejections: false,
 			ignoreErrors: [
 				'InvalidAccessError',
-				'out of memory'
+				'out of memory',
+				'Access is denied.',
+				'Zugriff verweigert'
 			],
 			whitelistUrls: [
 				/cdn\.frankerfacez\.com/

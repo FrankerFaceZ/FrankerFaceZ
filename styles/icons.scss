@@ -57,9 +57,9 @@
 
 
 .tw-button__icon .ffz-i-crown:before {
-	margin: 0;
 	font-size: 1.6rem;
-	vertical-align: sub;
+	vertical-align: middle;
+	margin-bottom: -.6rem;
 }
 
 .ffz-i-cancel:before { content: '\e800'; } /* '' */

@@ -32,13 +32,16 @@ export default class SubButton extends Module {
 
 		this.SubButton = this.fine.define(
 			'sub-button',
-			n => n.reportSubMenuAction && n.isUserDataReady,
+			n => n.handleSubMenuAction && n.isUserDataReady,
 			['user', 'video']
 		);
 	}
 
 	onEnable() {
-		this.SubButton.ready(() => this.SubButton.forceUpdate());
+		this.SubButton.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updateSubButton(inst);
+		});
 
 		this.SubButton.on('mount', this.updateSubButton, this);
 		this.SubButton.on('update', this.updateSubButton, this);
@@ -47,7 +50,7 @@ export default class SubButton extends Module {
 
 	updateSubButton(inst) {
 		const container = this.fine.getChildNode(inst),
-			btn = container && container.querySelector('button[data-test-selector="subscribe-button__dropdown"]');
+			btn = container && container.querySelector('button.tw-button--dropmenu');
 		if ( ! btn )
 			return;
 
@@ -62,7 +65,6 @@ export default class SubButton extends Module {
 			btn.insertBefore(<span class="tw-button__icon tw-button__icon--left ffz--can-prime">
 				<figure
 					class="ffz-i-crown ffz-tooltip"
-					data-tooltip-type="html"
 					data-title={this.i18n.t('sub-button.prime', 'Your free channel sub with Prime is available.')}
 				/>
 			</span>, btn.firstElementChild);

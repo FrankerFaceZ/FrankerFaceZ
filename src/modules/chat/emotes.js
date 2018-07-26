@@ -225,8 +225,10 @@ export default class Emotes extends Module {
 
 			if ( url ) {
 				const win = window.open();
-				win.opener = null;
-				win.location = url;
+				if ( win ) {
+					win.opener = null;
+					win.location = url;
+				}
 			}
 
 			return true;
@@ -723,13 +725,49 @@ export default class Emotes extends Module {
 	}
 
 
-	getTwitchSetChannel(set_id, callback) {
-		const tes = this.__twitch_set_to_channel;
+	async awaitTwitchSetChannel(set_id, perform_lookup = true) {
+		const tes = this.__twitch_set_to_channel,
+			inv = this.twitch_inventory_sets;
+
 		if ( isNaN(set_id) || ! isFinite(set_id) )
 			return null;
 
 		if ( tes.has(set_id) )
 			return tes.get(set_id);
+
+		if ( inv.has(set_id) )
+			return {s_id: set_id, c_id: null, c_name: 'twitch-inventory'}
+
+		if ( ! perform_lookup )
+			return null;
+
+		tes.set(set_id, null);
+		try {
+			const data = await timeout(this.socket.call('get_emote_set', set_id), 1000);
+			tes.set(set_id, data);
+			return data;
+
+		} catch(err) {
+			tes.delete(set_id);
+		}
+	}
+
+
+	getTwitchSetChannel(set_id, callback, perform_lookup = true) {
+		const tes = this.__twitch_set_to_channel,
+			inv = this.twitch_inventory_sets;
+
+		if ( isNaN(set_id) || ! isFinite(set_id) )
+			return null;
+
+		if ( tes.has(set_id) )
+			return tes.get(set_id);
+
+		if ( inv.has(set_id) )
+			return {s_id: set_id, c_id: null, c_name: 'twitch-inventory'}
+
+		if ( ! perform_lookup )
+			return null;
 
 		tes.set(set_id, null);
 		timeout(this.socket.call('get_emote_set', set_id), 1000).then(data => {

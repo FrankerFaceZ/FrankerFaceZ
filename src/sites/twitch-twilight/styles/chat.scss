@@ -176,6 +176,22 @@
         }
     }
 
+    .ffz--emoji-tone-picker {
+        .tw-balloon {
+            min-width: unset;
+        }
+
+        .tw-button__text {
+            padding: .2rem .4rem;
+            padding-right: .8rem;
+        }
+    }
+
+    .ffz--emoji-tone-picker__emoji {
+        width: 2rem;
+        height: 2rem;
+    }
+
     .emote-picker__emote-link {
         position: relative;
         padding: 0.5rem;
@@ -185,6 +201,15 @@
 
         img {
             vertical-align: middle;
+        }
+
+        &.emote-picker__emoji {
+            min-width: unset;
+
+            .emote-picker__emote-figure {
+                width: 2rem;
+                height: 2rem;
+            }
         }
 
         &.locked {
