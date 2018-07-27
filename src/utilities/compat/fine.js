@@ -224,13 +224,16 @@ export default class Fine extends Module {
 		}
 
 		if ( traverse_roots && inst && inst.props && inst.props.root ) {
-			let child = inst.props.root._reactRootContainer && inst.props.root._reactRootContainer.current;
-			while(child) {
-				const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots);
-				if ( result )
-					return result;
+			const root = inst.props.root._reactRootContainer;
+			if ( root ) {
+				let child = root._internalRoot && root._internalRoot.current || root.current;
+				while(child) {
+					const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots);
+					if ( result )
+						return result;
 
-				child = child.sibling;
+					child = child.sibling;
+				}
 			}
 		}
 	}
@@ -291,10 +294,13 @@ export default class Fine extends Module {
 		}
 
 		if ( traverse_roots && inst && inst.props && inst.props.root ) {
-			let child = inst.props.root._reactRootContainer && inst.props.root._reactRootContainer.current;
-			while(child) {
-				this.searchAll(child, criterias, max_depth, depth+1, data, traverse_roots);
-				child = child.sibling;
+			const root = inst.props.root._reactRootContainer;
+			if ( root ) {
+				let child = root._internalRoot && root._internalRoot.current || root.current;
+				while(child) {
+					this.searchAll(child, criterias, max_depth, depth+1, data, traverse_roots);
+					child = child.sibling;
+				}
 			}
 		}
 

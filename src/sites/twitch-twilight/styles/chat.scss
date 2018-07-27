@@ -150,6 +150,10 @@
         max-height: 50rem;
     }
 
+    .whispers-thread {
+        overflow: visible !important;
+    }
+
     @media only screen and (max-height: 750px) {
         .emote-picker__tab-content {
             .twilight-root & {

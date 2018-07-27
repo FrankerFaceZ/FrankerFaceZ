@@ -221,13 +221,21 @@ export default class Player extends Module {
 		this.Player.ready((cls, instances) => {
 			const old_init = cls.prototype.initializePlayer;
 
-			cls.prototype.initializePlayer = function() {
-				const ret = old_init.call(this);
-				t.process(this);
-				return ret;
+			if ( old_init ) {
+				cls.prototype.initializePlayer = function(...args) {
+					const ret = old_init.call(this, ...args);
+					t.process(this);
+					return ret;
+				}
+
+			} else {
+				this.Player.on('will-mount', this.overrideInitialize, this);
 			}
 
 			for(const inst of instances) {
+				if ( ! old_init )
+					this.overrideInitialize(inst);
+
 				this.onMount(inst);
 				this.process(inst);
 			}
@@ -237,6 +245,18 @@ export default class Player extends Module {
 			for(const inst of this.Player.instances)
 				this.addResetButton(inst);
 		});
+	}
+
+
+	overrideInitialize(inst) {
+		const t = this,
+			old_init = inst.initializePlayer;
+
+		inst.initializePlayer = function(...args) {
+			const ret = old_init.call(inst, ...args);
+			t.process(inst);
+			return ret;
+		}
 	}
 
 
@@ -450,11 +470,12 @@ export default class Player extends Module {
 					player = inst.player;
 
 				if ( player ) {
-					const amount = this.settings.get('player.volume-scroll-steps');
+					const amount = this.settings.get('player.volume-scroll-steps'),
+						volume = Math.max(0, Math.min(1, player.getVolume() + (delta > 0 ? amount : -amount)));
 
-					player.volume = Math.max(0, Math.min(1, player.volume + (delta > 0 ? amount : -amount)));
-					if ( player.volume !== 0 )
-						player.muted = false;
+					player.setVolume(volume);
+					if ( volume !== 0 )
+						player.setMuted(false);
 				}
 
 				e.preventDefault();
@@ -499,10 +520,12 @@ export default class Player extends Module {
 
 		this.cleanup(inst);
 
+		const klass = inst.player.constructor;
+
 		inst.player.destroy();
 		inst.playerRef.innerHTML = '';
 
-		inst.initializePlayer();
+		inst.initializePlayer(klass);
 	}
 
 

@@ -109,13 +109,32 @@ export default class Metadata extends Module {
 			setup() {
 				const Player = this.resolve('site.player'),
 					socket = this.resolve('socket'),
-					player = Player.current,
-					stats = player && maybe_call(player.getVideoInfo, player);
+					player = Player.current;
+
+				let stats;
+
+				if ( typeof player.getPlaybackStats === 'function' ) {
+					stats = player.getPlaybackStats();
+
+				} else if ( typeof player.getVideoInfo === 'function' ) {
+					const temp = player.getVideoInfo();
+					stats = {
+						backendVersion: maybe_call(player.getVersion, player),
+						bufferSize: temp.video_buffer_size,
+						displayResolution: `${temp.vid_display_width}x${temp.vid_display_height}`,
+						fps: temp.current_fps,
+						hlsLatencyBroadcaster: temp.hls_latency_broadcaster / 1000,
+						hlsLatencyEncoder: temp.hls_latency_encoder / 1000,
+						memoryUsage: `${temp.totalMemoryNumber} MB`,
+						playbackRate: temp.current_bitrate,
+						skippedFrames: temp.dropped_frames,
+						videoResolution: `${temp.vid_width}x${temp.vid_height}`
+					}
+				}
 
 				if ( ! stats )
 					return {stats};
 
-				const delay = stats.hls_latency_broadcaster / 1000;
 				let drift = 0;
 
 				if ( socket && socket.connected )
@@ -124,8 +143,8 @@ export default class Metadata extends Module {
 				return {
 					stats,
 					drift,
-					delay,
-					old: delay > 180
+					delay: stats.hlsLatencyBroadcaster,
+					old: stats.hlsLatencyBroadcaster > 180
 				}
 			},
 
@@ -171,7 +190,7 @@ export default class Metadata extends Module {
 				const stats = data.stats,
 					video_info = this.i18n.t(
 						'metadata.player-stats.video-info',
-						'Video: %{vid_width}x%{vid_height}p%{current_fps}\nPlayback Rate: %{current_bitrate|number} Kbps\nDropped Frames:%{dropped_frames|number}',
+						'Video: %{videoResolution}p%{fps}\nPlayback Rate: %{playbackRate|number} Kbps\nDropped Frames:%{skippedFrames|number}',
 						stats
 					);
 
