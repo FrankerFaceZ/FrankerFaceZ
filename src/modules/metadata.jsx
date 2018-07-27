@@ -113,7 +113,10 @@ export default class Metadata extends Module {
 
 				let stats;
 
-				if ( typeof player.getPlaybackStats === 'function' ) {
+				if ( ! player )
+					stats = null;
+
+				else if ( typeof player.getPlaybackStats === 'function' ) {
 					stats = player.getPlaybackStats();
 
 				} else if ( typeof player.getVideoInfo === 'function' ) {
