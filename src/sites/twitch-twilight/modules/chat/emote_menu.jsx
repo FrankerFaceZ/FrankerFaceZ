@@ -564,10 +564,10 @@ export default class EmoteMenu extends Module {
 
 						const locked = emote.locked && (! lock || ! lock.emotes.has(emote.id)),
 							emote_lock = locked && data.locks && data.locks[emote.set_id],
-							sellout = emote_lock && (data.all_locked ?
+							sellout = emote_lock ? (data.all_locked ?
 								t.i18n.t('emote-menu.emote-sub', 'Subscribe for %{price} to unlock this emote.', emote_lock) :
 								t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to %{price} to unlock this emote.', emote_lock)
-							);
+							) : '';
 
 						return this.renderEmote(
 							emote,
