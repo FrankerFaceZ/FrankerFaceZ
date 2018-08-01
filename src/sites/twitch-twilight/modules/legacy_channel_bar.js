@@ -9,7 +9,8 @@ import {deep_copy} from 'utilities/object';
 
 import CHANNEL_QUERY from './channel_bar_query.gql';
 
-export default class ChannelBar extends Module {
+
+export default class LegacyChannelBar extends Module {
 	constructor(...args) {
 		super(...args);
 
@@ -20,19 +21,27 @@ export default class ChannelBar extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
-		this.apollo.registerModifier('ChannelPage_User', CHANNEL_QUERY);
-		/*this.apollo.registerModifier('ChannelPage_User', data => {
+		this.apollo.registerModifier('ChannelPage_ChannelHeader', CHANNEL_QUERY);
+		this.apollo.registerModifier('ChannelPage_ChannelHeader', data => {
 			const u = data && data.data && data.data.user;
 			if ( u ) {
 				const o = u.profileViewCount = new Number(u.profileViewCount || 0);
 				o.data = deep_copy(u);
 			}
-		}, false);*/
+		}, false);
+
 
 		this.ChannelBar = this.fine.define(
-			'channel-bar',
-			n => n.renderChannelMetadata && n.renderTitleInfo,
-			['user', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
+			'legacy-channel-bar',
+			n => n.getTitle && n.getGame && n.renderGame,
+			['user']
+		);
+
+
+		this.HostBar = this.fine.define(
+			'legacy-host-container',
+			n => n.handleReportHosterClick,
+			['user']
 		)
 	}
 
@@ -45,6 +54,16 @@ export default class ChannelBar extends Module {
 			for(const inst of instances)
 				this.updateChannelBar(inst);
 		});
+
+
+		/*this.HostBar.on('unmount', this.unmountHostBar, this);
+		this.HostBar.on('mount', this.updateHostBar, this);
+		this.HostBar.on('update', this.updateHostBar, this);
+
+		this.HostBar.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updateHostBar(inst);
+		});*/
 	}
 
 
@@ -80,12 +99,10 @@ export default class ChannelBar extends Module {
 
 	updateMetadata(inst, keys) {
 		const container = this.fine.getChildNode(inst),
-			wrapper = container && container.querySelector && container.querySelector('.side-nav-channel-info__info-wrapper > .tw-pd-t-05');
+			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex');
 
-		if ( ! inst._ffz_mounted || ! wrapper )
+		if ( ! inst._ffz_mounted || ! metabar )
 			return;
-
-		const metabar = wrapper;
 
 		if ( ! keys )
 			keys = this.metadata.keys;
@@ -95,12 +112,13 @@ export default class ChannelBar extends Module {
 		const timers = inst._ffz_meta_timers = inst._ffz_meta_timers || {},
 			refresh_func = key => this.updateMetadata(inst, key),
 			data = {
-				channel: inst.props.data && inst.props.data.user,
+				channel: inst.props.userData && inst.props.userData.user,
 				hosting: false,
+				legacy: true,
 				_inst: inst
 			}
 
 		for(const key of keys)
-			this.metadata.render(key, data, metabar, timers, refresh_func);
+			this.metadata.renderLegacy(key, data, metabar, timers, refresh_func);
 	}
 }

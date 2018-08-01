@@ -8,7 +8,9 @@ body .channel-page__video-player--theatre-mode {
 }
 
 body .video-watch-page__right-column,
-body .channel-page__right-column {
+body .channel-page__right-column,
+body .right-column,
+body .channel-root__right-column {
 	width: var(--ffz-chat-width);
 }
 
