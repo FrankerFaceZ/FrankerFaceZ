@@ -62,7 +62,7 @@ export default class MainMenu extends Module {
 			if ( version === window.FrankerFaceZ.version_info.commit )
 				return;
 
-			this.log.info('New Version Available', version);
+			this.log.info('New Version:', version);
 			this.has_update = true;
 
 			const mb = this.resolve('site.menu_button');

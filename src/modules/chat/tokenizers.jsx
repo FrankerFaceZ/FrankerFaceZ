@@ -274,8 +274,11 @@ export const CustomHighlights = {
 		return (<strong class="ffz--highlight">{token.text}</strong>);
 	},
 
-	process(tokens, msg) {
+	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
 		const colors = this.context.get('chat.filtering.highlight-basic-terms--color-regex');
@@ -390,8 +393,11 @@ export const BlockedTerms = {
 		]
 	},
 
-	process(tokens, msg) {
+	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
 		const regexes = this.context.get('chat.filtering.highlight-basic-blocked--regex');

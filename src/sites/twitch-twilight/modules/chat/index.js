@@ -372,6 +372,11 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.bits.show-pinned', val =>
 			this.css_tweaks.toggleHide('pinned-cheer', !val));
 
+		this.chat.context.on('changed:chat.filtering.deleted-style', val =>
+			this.css_tweaks.toggle('chat-deleted-strike', val === 1))
+
+		this.css_tweaks.toggle('chat-deleted-strike', this.chat.context.get('chat.filtering.deleted-style') === 1);
+
 		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
 		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
 		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));

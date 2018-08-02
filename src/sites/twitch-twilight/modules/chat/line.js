@@ -60,6 +60,7 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-terms--color-regex', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
 
