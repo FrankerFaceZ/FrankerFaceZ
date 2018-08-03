@@ -33,13 +33,13 @@ export default class VideoChatHook extends Module {
 		this.VideoChatController = this.fine.define(
 			'video-chat-controller',
 			n => n.onMessageScrollAreaMount && n.createReply,
-			['video']
+			['user-video', 'user-clip', 'video']
 		);
 
 		this.VideoChatLine = this.fine.define(
 			'video-chat-line',
 			n => n.onReplyClickHandler && n.shouldFocusMessage,
-			['video']
+			['user-video', 'user-clip', 'video']
 		);
 
 		// Settings

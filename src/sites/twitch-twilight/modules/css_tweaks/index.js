@@ -9,6 +9,8 @@ import {ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
 
 
+const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
+
 const CLASSES = {
 	'side-nav': '.side-nav',
 	'side-rec-channels': '.side-nav .recommended-channels',
@@ -50,16 +52,37 @@ export default class CSSTweaks extends Module {
 
 		// Layout
 
-		/*this.settings.add('layout.portrait', {
+		this.settings.add('layout.portrait', {
 			default: false,
 			ui: {
 				path: 'Appearance > Layout >> Channel',
 				title: 'Enable Portrait Mode',
 				description: 'In Portrait Mode, chat will be displayed beneath the player when the window is taller than it is wide.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('layout.use-portrait', {
+			requires: ['layout.portrait', 'context.ui.rightColumnExpanded', 'context.route.name', 'context.size'],
+			process(ctx) {
+				const size = ctx.get('context.size');
+				return ctx.get('layout.portrait') && ctx.get('context.ui.rightColumnExpanded') && PORTRAIT_ROUTES.includes(ctx.get('context.route.name')) && (size && size.height > size.width)
 			},
 			changed: val => this.toggle('portrait', val)
-		});*/
+		});
+
+		this.settings.add('layout.sidenav-width', {
+			require: ['context.ui.theatreModeEnabled', 'context.ui.sideNavExpanded'],
+			process(ctx) {
+				if ( ctx.get('context.ui.theatreModeEnabled') )
+					return '0';
+
+				return ctx.get('context.ui.sideNavExpanded') ? '24rem' : '5rem'
+			},
+
+			changed: val => this.setVariable('sidenav-width', val)
+		});
+
 
 		this.settings.add('layout.side-nav.show', {
 			default: true,
@@ -212,7 +235,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('swap-sidebars', this.settings.get('layout.swap-sidebars'));
 		this.toggle('minimal-navigation', this.settings.get('layout.minimal-navigation'));
 		this.toggle('theatre-nav', this.settings.get('layout.theatre-navigation'));
-		//this.toggle('portrait', this.settings.get('layout.portrait'));
+		this.toggle('portrait', this.settings.get('layout.use-portrait'));
 
 		this.toggle('hide-side-nav-avatars', ! this.settings.get('layout.side-nav.show-avatars'));
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
@@ -228,8 +251,9 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-closed-friends', friends === 2);
 
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
-	}
 
+		this.setVariable('sidenav-width', this.settings.get('layout.sidenav-width'))
+	}
 
 	toggleHide(key, val) {
 		const k = `hide--${key}`;

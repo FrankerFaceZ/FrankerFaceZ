@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 import {createElement, on, off} from 'utilities/dom';
 
+export const PLAYER_ROUTES = ['front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following', 'dash'];
 
 export default class Player extends Module {
 	constructor(...args) {
@@ -24,13 +25,13 @@ export default class Player extends Module {
 		this.Player = this.fine.define(
 			'twitch-player',
 			n => n.player && n.onPlayerReady,
-			['front-page', 'user', 'video', 'dash']
+			PLAYER_ROUTES
 		);
 
 		this.PersistentPlayer = this.fine.define(
 			'twitch-player-persistent',
 			n => n.renderMiniHoverControls && n.togglePause,
-			['front-page', 'user', 'video', 'dash']
+			PLAYER_ROUTES
 		);
 
 		this.settings.add('player.volume-scroll', {

@@ -32,7 +32,7 @@ export default class ChannelBar extends Module {
 		this.ChannelBar = this.fine.define(
 			'channel-bar',
 			n => n.renderChannelMetadata && n.renderTitleInfo,
-			['user', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
+			['user', 'user-video', 'user-clip', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		)
 	}
 

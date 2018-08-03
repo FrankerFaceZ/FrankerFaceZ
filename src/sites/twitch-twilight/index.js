@@ -48,6 +48,17 @@ export default class Twilight extends BaseSite {
 		if ( ! store )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
 
+		// Window Size
+		const update_size = () => this.settings.updateContext({
+			size: {
+				height: window.innerHeight,
+				width: window.innerWidth
+			}
+		});
+
+		window.addEventListener('resize', update_size);
+		update_size();
+
 		// Share Context
 		store.subscribe(() => this.updateContext());
 		this.updateContext();
@@ -152,6 +163,8 @@ Twilight.CHAT_ROUTES = [
 	'collection',
 	'popout',
 	'video',
+	'user-video',
+	'user-clip',
 	'user-videos',
 	'user-clips',
 	'user-events',
@@ -181,15 +194,17 @@ Twilight.ROUTES = {
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',
 	'video': '/videos/:videoID',
+	'user-video': '/:userName/video/:videoID',
 	'user-videos': '/:userName/videos/:filter?',
 	'user-clips': '/:userName/clips',
+	'user-clip': '/:userName/clip/:clipID',
 	'user-collections': '/:userName/collections',
 	'user-events': '/:userName/events',
 	'user-followers': '/:userName/followers',
 	'user-following': '/:userName/following',
 	'product': '/products/:productName',
 	'prime': '/prime',
-	'user': '/:userName'
+	'user': '/:userName',
 }
 
 
