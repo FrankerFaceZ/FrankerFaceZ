@@ -62,11 +62,32 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
+		this.settings.add('layout.portrait-threshold', {
+			default: 1.25,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Portrait Mode Threshold',
+				description: 'This is the Width to Height ratio at which point Portrait Mode will begin to activate.',
+				component: 'setting-text-box',
+				process(val) {
+					val = parseFloat(val, 10)
+					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
+						return 1.25;
+
+					return val;
+				}
+			}
+		})
+
 		this.settings.add('layout.use-portrait', {
-			requires: ['layout.portrait', 'context.ui.rightColumnExpanded', 'context.route.name', 'context.size'],
+			requires: ['layout.portrait', 'layout.portrait-threshold', 'context.ui.rightColumnExpanded', 'context.route.name', 'context.size'],
 			process(ctx) {
 				const size = ctx.get('context.size');
-				return ctx.get('layout.portrait') && ctx.get('context.ui.rightColumnExpanded') && PORTRAIT_ROUTES.includes(ctx.get('context.route.name')) && (size && size.height > size.width)
+				if ( ! size || ! ctx.get('layout.portrait') || ! ctx.get('context.ui.rightColumnExpanded') || ! PORTRAIT_ROUTES.includes(ctx.get('context.route.name')) )
+					return false;
+
+				const ratio = size.width / size.height;
+				return ratio <= ctx.get('layout.portrait-threshold');
 			},
 			changed: val => this.toggle('portrait', val)
 		});

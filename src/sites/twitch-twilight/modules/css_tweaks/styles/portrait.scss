@@ -26,6 +26,7 @@
 	}
 
 	.right-column {
+		display: unset !important;
 		position: fixed !important;
 		z-index: 10000;
 		bottom: 0;
