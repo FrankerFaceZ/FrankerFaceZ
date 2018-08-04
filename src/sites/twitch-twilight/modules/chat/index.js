@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, split_chars, shallow_object_equals, deep_copy} from 'utilities/object';
+import {has, split_chars, shallow_object_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -100,6 +100,7 @@ const CHAT_TYPES = ((e = {}) => {
 	e[e.BitsCharity = 29] = 'BitsCharity';
 	e[e.CrateGift = 30] = 'CrateGift';
 	e[e.RewardGift = 31] = 'RewardGift';
+	e[e.SubMysteryGift = 32] = 'SubMysteryGift';
 	return e;
 })();
 

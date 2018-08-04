@@ -36,6 +36,11 @@
 	}
 }
 
+.ffz--fade-in {
+	pointer-events: none;
+	animation: ffz-fade-in var(--ffz-fade-duration) 1;
+}
+
 .ffz-sidebar-stats {
 	margin-top: .5rem;
 	margin-right: -1rem;
@@ -69,4 +74,9 @@
 		max-width: 3.2rem;
 		max-height: 3.2rem;
 	}
+}
+
+@keyframes ffz-fade-in {
+	from {opacity: 0}
+	to {opacity: 1}
 }

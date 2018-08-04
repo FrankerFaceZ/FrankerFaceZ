@@ -4,9 +4,9 @@
 // Video Chat Hooks
 // ============================================================================
 
-import {has, get} from 'utilities/object';
+import {get} from 'utilities/object';
 import {print_duration} from 'utilities/time';
-import {ClickOutside} from 'utilities/dom';
+//import {ClickOutside} from 'utilities/dom';
 import {formatBitsConfig} from '../chat';
 
 import Module from 'utilities/module';
@@ -242,7 +242,7 @@ export default class VideoChatHook extends Module {
 									</button>
 								</div>)}
 								<ul>{
-									context.replies.map(reply => (<li class="tw-mg-l-05">
+									context.replies.map(reply => (<li key={reply.comment && reply.comment.id} class="tw-mg-l-05">
 										{ this.ffzRenderMessage(t.standardizeMessage(reply.comment, reply.author)) }
 										{ this.props.isExpandedLayout && this.ffzRenderExpanded(msg) }
 									</li>))
@@ -418,9 +418,4 @@ export default class VideoChatHook extends Module {
 
 		room.updateBitsConfig(formatBitsConfig(config));
 	}
-}
-
-
-function formatDuration(seconds) {
-
 }

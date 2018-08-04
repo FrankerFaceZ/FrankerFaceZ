@@ -92,16 +92,44 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggle('portrait', val)
 		});
 
-		this.settings.add('layout.sidenav-width', {
-			require: ['context.ui.theatreModeEnabled', 'context.ui.sideNavExpanded'],
+		this.settings.add('layout.portrait-extra-height', {
+			requires: ['context.new_channel', 'context.hosting', 'context.ui.theatreModeEnabled', 'player.theatre.no-whispers', 'whispers.show', 'layout.minimal-navigation'],
 			process(ctx) {
-				if ( ctx.get('context.ui.theatreModeEnabled') )
-					return '0';
+				let height = 0;
+				if ( ctx.get('context.ui.theatreModeEnabled') ) {
+					if ( ctx.get('layout.minimal-navigation') )
+						height += 1;
+
+					if ( ctx.get('whispers.show') && ! ctx.get('player.theatre.no-whispers') )
+						height += 4;
+
+				} else {
+					height = ctx.get('layout.minimal-navigation') ? 1 : 5;
+					if ( ctx.get('whispers.show') )
+						height += 4;
+
+					height += ctx.get('context.new_channel') ? 1 : 5;
+
+					if ( ctx.get('context.hosting') )
+						height += 4;
+				}
+
+				return `${height}rem`;
+			},
+
+			changed: val => this.setVariable('portrait-extra-height', val)
+		})
+
+		this.settings.add('layout.portrait-extra-width', {
+			require: ['layout.side-nav.show', 'context.ui.theatreModeEnabled', 'context.ui.sideNavExpanded'],
+			process(ctx) {
+				if ( ! ctx.get('layout.side-nav.show') || ctx.get('context.ui.theatreModeEnabled') )
+					return '0px';
 
 				return ctx.get('context.ui.sideNavExpanded') ? '24rem' : '5rem'
 			},
 
-			changed: val => this.setVariable('sidenav-width', val)
+			changed: val => this.setVariable('portrait-extra-width', val)
 		});
 
 
@@ -273,7 +301,8 @@ export default class CSSTweaks extends Module {
 
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
 
-		this.setVariable('sidenav-width', this.settings.get('layout.sidenav-width'))
+		this.setVariable('portrait-extra-width', this.settings.get('layout.portrait-extra-width'))
+		this.setVariable('portrait-extra-height', this.settings.get('layout.portrait-extra-height'))
 	}
 
 	toggleHide(key, val) {

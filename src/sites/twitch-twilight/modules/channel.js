@@ -151,6 +151,8 @@ export default class Channel extends Module {
 							state.videoPlayerSource = expected;
 						}
 
+						t.settings.updateContext({hosting: !!state.hostMode});
+
 					} else if ( has(state, 'videoPlayerSource') ) {
 						if ( state.videoPlayerSource !== expected && ! t.settings.get('channel.hosting.enable') )
 							state.videoPlayerSource = expected;
@@ -164,6 +166,9 @@ export default class Channel extends Module {
 						if ( has(state, 'videoPlayerSource') )
 							state.videoPlayerSource = inst.ffzGetChannel();
 					}
+
+					if ( has(state, 'isHosting') )
+						t.settings.updateContext({hosting: state.isHosting});
 				}
 
 			} catch(err) {
@@ -177,6 +182,8 @@ export default class Channel extends Module {
 
 		if ( new_style ) {
 			const hosted = inst.ffzExpectedHost = inst.state.hostMode;
+			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && !!inst.state.hostMode});
+
 			if ( hosted && ! this.settings.get('channel.hosting.enable') ) {
 				inst.ffzOldSetState({
 					hostMode: null,
@@ -185,7 +192,7 @@ export default class Channel extends Module {
 			}
 
 		} else {
-			inst.ffzOldGetHostedLogin = inst.getHostedChannelLogin;
+			inst.ffzOldGetHostedLogin = () => get('props.data.user.hosting.login', inst) || null;
 			inst.getHostedChannelLogin = function() {
 				return t.settings.get('channel.hosting.enable') ?
 					inst.ffzOldGetHostedLogin() : null;
@@ -200,15 +207,15 @@ export default class Channel extends Module {
 
 			// Store the current state and disable the current host if needed.
 			inst.ffzExpectedHost = inst.state.isHosting ? inst.state.videoPlayerSource : null;
-			if ( ! this.settings.get('channel.hosting.enable') )
+			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && inst.state.isHosting});
+			if ( ! this.settings.get('channel.hosting.enable') ) {
 				inst.ffzOldHostHandler(null);
+			}
 		}
 
 		// Finally, we force an update so that any child components
 		// receive our updated handler.
 		inst.forceUpdate();
-
-
 	}
 
 
@@ -216,7 +223,12 @@ export default class Channel extends Module {
 		if ( val === undefined )
 			val = this.settings.get('channel.hosting.enable');
 
+		let hosting = val;
+
 		for(const inst of this.ChannelPage.instances) {
+			if ( ! inst.ffzExpectedHost )
+				hosting = false;
+
 			if ( has(inst.state, 'hostMode') ) {
 				const host = val ? inst.ffzExpectedHost : null,
 					target = host && host.hostedChannel && host.hostedChannel.login || inst.ffzGetChannel();
@@ -229,5 +241,7 @@ export default class Channel extends Module {
 			} else
 				inst.ffzOldHostHandler(val ? inst.ffzExpectedHost : null);
 		}
+
+		this.settings.updateContext({hosting});
 	}
 }

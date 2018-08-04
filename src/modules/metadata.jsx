@@ -266,16 +266,35 @@ export default class Metadata extends Module {
 				data = await def.setup.call(this, data);
 
 			// Let's get refresh logic out of the way now.
-			const refresh = maybe_call(def.refresh, this, data);
+			let refresh = maybe_call(def.refresh, this, data);
+			let fade_in = maybe_call(def.fade_in, this, data);
+
+			// Grab the element again in case it changed, somehow.
+			el = container.querySelector(`.ffz-sidebar-stat[data-key="${key}"]`);
+
+			if ( refresh && typeof refresh !== 'number' )
+				refresh = 1000;
+
+			if ( fade_in && typeof fade_in !== 'number' )
+				fade_in = 1500;
+
+			if ( fade_in && el && el._ffz_fading ) {
+				// If we have a fade-in and we're still fading in, make sure to
+				// update the metadata when that completes, if not sooner.
+				const remaining = fade_in - (Date.now() - el._ffz_created);
+				if ( remaining <= 0 ) {
+					el._ffz_fading = false;
+					el.classList.remove('ffz--fade-in');
+
+				} else if ( ! refresh || remaining <= refresh )
+					refresh = remaining;
+			}
+
 			if ( refresh )
 				timers[key] = setTimeout(
 					() => refresh_fn(key),
 					typeof refresh === 'number' ? refresh : 1000
 				);
-
-
-			// Grab the element again in case it changed, somehow.
-			el = container.querySelector(`.ffz-sidebar-stat[data-key="${key}"]`);
 
 			let stat, old_color, sub_el;
 
@@ -335,7 +354,7 @@ export default class Metadata extends Module {
 
 					if ( def.click )
 						btn.addEventListener('click', e => {
-							if ( btn.disabled || btn.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
+							if ( el._ffz_fading || btn.disabled || btn.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
 								return false;
 
 							def.click.call(this, el._ffz_data, e, () => refresh_fn(key));
@@ -343,7 +362,7 @@ export default class Metadata extends Module {
 
 					if ( def.popup )
 						popup.addEventListener('click', () => {
-							if ( popup.disabled || popup.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
+							if ( el._ffz_fading || popup.disabled || popup.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
 								return false;
 
 							if ( el._ffz_popup )
@@ -427,6 +446,14 @@ export default class Metadata extends Module {
 
 				if ( order != null )
 					el.style.order = order;
+
+				el._ffz_created = Date.now();
+
+				if ( fade_in ) {
+					el._ffz_fading = true;
+					el.classList.add('ffz--fade-in');
+					el.style.setProperty('--ffz-fade-duration', `${fade_in/1000}s`);
+				}
 
 				subcontainer.appendChild(el);
 

@@ -196,6 +196,24 @@ export default class ExperimentManager extends Module {
 		return null;
 	}
 
+	getTwitchKeyFromName(name) {
+		const experiments = this.getTwitchExperiments();
+		if ( ! experiments )
+			return undefined;
+
+		name = name.toLowerCase();
+		for(const key in experiments)
+			if ( has(experiments, key) ) {
+				const data = experiments[key];
+				if ( data && data.name && data.name.toLowerCase() === name )
+					return key;
+			}
+	}
+
+	getTwitchAssignmentByName(name) {
+		return this.getTwitchAssignment(this.getTwitchKeyFromName(name));
+	}
+
 	_rebuildTwitchKey(key, is_set, new_val) {
 		const core = this.resolve('site').getCore(),
 			exps = core.experiments,

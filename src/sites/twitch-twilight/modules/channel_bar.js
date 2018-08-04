@@ -5,7 +5,6 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {deep_copy} from 'utilities/object';
 
 import CHANNEL_QUERY from './channel_bar_query.gql';
 
@@ -15,6 +14,7 @@ export default class ChannelBar extends Module {
 
 		this.should_enable = true;
 
+		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.apollo');
 		this.inject('metadata');
@@ -42,6 +42,8 @@ export default class ChannelBar extends Module {
 		this.ChannelBar.on('update', this.updateChannelBar, this);
 
 		this.ChannelBar.ready((cls, instances) => {
+			this.settings.updateContext({new_channel: true});
+
 			for(const inst of instances)
 				this.updateChannelBar(inst);
 		});
