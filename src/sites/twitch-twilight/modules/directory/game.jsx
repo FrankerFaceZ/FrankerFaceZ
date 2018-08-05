@@ -21,7 +21,7 @@ export default class Game extends SiteModule {
 		this.inject('settings');
 
 		this.metadata.definitions.block_game = {
-			directory: true,
+			type: 'directory',
 			button(data) {
 				return `ffz-directory-toggle-block${data.blocked ? ' active' : ''}`
 			},
@@ -54,7 +54,7 @@ export default class Game extends SiteModule {
 		}
 
 		this.metadata.definitions.hide_thumbnails = {
-			directory: true,
+			type: 'directory',
 			button(data) {
 				return `ffz-directory-toggle-thumbnail${data.hidden ? ' active' : ''}`
 			},
@@ -155,6 +155,8 @@ export default class Game extends SiteModule {
 				directory: inst.props.data.directory,
 				type: inst.props.directoryType,
 				name: inst.props.directoryName,
+
+				_mt: 'directory',
 				_inst: inst
 			}
 

@@ -269,7 +269,7 @@ export default class Metadata extends Module {
 				}
 			};
 
-		if ( ! def || !!data.directory !== def.directory )
+		if ( ! def || (data._mt || 'channel') !== (def.type || 'channel') )
 			return destroy();
 
 		try {
@@ -572,7 +572,7 @@ export default class Metadata extends Module {
 				}
 			};
 
-		if ( ! def )
+		if ( ! def || (data._mt || 'channel') !== (def.type || 'channel') )
 			return destroy();
 
 		try {
