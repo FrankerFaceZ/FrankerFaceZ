@@ -231,6 +231,18 @@ export default class Metadata extends Module {
 			for(const inst of bar.ChannelBar.instances)
 				bar.updateMetadata(inst, keys);
 		}
+
+		const legacy_bar = this.resolve('site.legacy_channel_bar');
+		if ( legacy_bar ) {
+			for(const inst of legacy_bar.ChannelBar.instances)
+				legacy_bar.updateMetadata(inst, keys);
+		}
+
+		const game_header = this.resolve('site.directory.game');
+		if ( game_header ) {
+			for(const inst of game_header.GameHeader.instances)
+				game_header.updateMetadata(inst, keys);
+		}
 	}
 
 
@@ -257,7 +269,7 @@ export default class Metadata extends Module {
 				}
 			};
 
-		if ( ! def )
+		if ( ! def || !!data.directory !== def.directory )
 			return destroy();
 
 		try {
@@ -506,6 +518,24 @@ export default class Metadata extends Module {
 
 			if ( def.disabled !== undefined )
 				el.disabled = maybe_call(def.disabled, this, data);
+
+			if ( typeof def.button === 'function' ) {
+				const btn = el.querySelector('button');
+				if ( btn ) {
+					let cls = maybe_call(def.button, this, data);
+					if ( typeof cls !== 'string' )
+						cls = `tw-button--${cls ? 'hollow' : 'text'}`;
+
+					if ( btn._class !== cls ) {
+						btn._class = cls;
+
+						if ( def.popup && def.click )
+							btn.className = `tw-interactive tw-button tw-button--full-width ${cls} ffz-has-stat-arrow`;
+						else
+							btn.className = `tw-interactive tw-button tw-button--full-width ${cls}`;
+					}
+				}
+			}
 
 		} catch(err) {
 			this.log.capture(err, {

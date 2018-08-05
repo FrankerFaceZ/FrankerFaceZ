@@ -38,9 +38,33 @@ export default class SubButton extends Module {
 	}
 
 	onEnable() {
+		this.settings.on(':changed:layout.swap-sidebars', () => this.SubButton.forceUpdate())
+
 		this.SubButton.ready((cls, instances) => {
+			const t = this,
+				old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				try {
+					const old_direction = this.props.balloonDirection;
+					if ( old_direction !== undefined ) {
+						const should_be_left = t.settings.get('layout.swap-sidebars'),
+							is_left = old_direction.includes('--left');
+
+						if ( should_be_left && ! is_left )
+							this.props.balloonDirection = old_direction.replace('--right', '--left');
+						else if ( ! should_be_left && is_left )
+							this.props.balloonDirection = old_direction.replace('--left', '--right');
+					}
+				} catch(err) { /* no-op */ }
+
+				return old_render.call(this);
+			}
+
 			for(const inst of instances)
 				this.updateSubButton(inst);
+
+			this.SubButton.forceUpdate();
 		});
 
 		this.SubButton.on('mount', this.updateSubButton, this);
@@ -50,7 +74,7 @@ export default class SubButton extends Module {
 
 	updateSubButton(inst) {
 		const container = this.fine.getChildNode(inst),
-			btn = container && container.querySelector('button.tw-button--dropmenu');
+			btn = container && container.querySelector('button[data-a-target="subscribe-button"]');
 		if ( ! btn )
 			return;
 
@@ -69,7 +93,13 @@ export default class SubButton extends Module {
 				/>
 			</span>, btn.firstElementChild);
 
-		} else if ( ! should_show && icon )
+			btn.appendChild(<span class="ffz--post-prime" />);
+
+		} else if ( ! should_show && icon ) {
 			icon.remove();
+			const post = btn.querySelector('.ffz--post-prime');
+			if ( post )
+				post.remove();
+		}
 	}
 }
