@@ -34,8 +34,9 @@
 		display: unset !important;
 		position: fixed !important;
 		z-index: 10000;
-		bottom: 0;
-		left: 0; right: 0;
+		bottom: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
 		height: calc(100vh - var(--ffz-player-height)) !important;
 		border-top: 1px solid #dad8de;
 

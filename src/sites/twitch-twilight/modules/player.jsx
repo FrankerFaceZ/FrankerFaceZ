@@ -530,6 +530,20 @@ export default class Player extends Module {
 	}
 
 
+	getInternalPlayer(inst) {
+		if ( ! inst )
+			inst = this.Player.first;
+
+		const node = this.fine.getChildNode(inst),
+			el = node && node.querySelector('.player-ui');
+
+		if ( ! el || ! el._reactRootContainer )
+			return null;
+
+		return this.fine.searchTree(el, n => n.props && n.props.player && n.context && n.context.store);
+	}
+
+
 	get current() {
 		// There should only ever be one player instance, but might change
 		// when they re-add support for the mini player.

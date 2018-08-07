@@ -104,6 +104,8 @@ export default class Metadata extends Module {
 		}
 
 		this.definitions['player-stats'] = {
+			button: false,
+
 			refresh() {
 				return this.settings.get('metadata.player-stats')
 			},
@@ -168,6 +170,22 @@ export default class Metadata extends Module {
 					return `${delayed}${data.delay.toFixed(2)}s old`;
 				else
 					return `${delayed}${data.delay.toFixed(2)}s`;
+			},
+
+			click(data) {
+				const Player = this.resolve('site.player'),
+					internal = Player.getInternalPlayer();
+
+				if ( ! internal )
+					return;
+
+				const store = internal.context.store,
+					state = store.getState();
+
+				store.dispatch({
+					type: 'display stats',
+					displayed: ! (state.stats && state.stats.displayed)
+				});
 			},
 
 			color(data) {
@@ -330,7 +348,7 @@ export default class Metadata extends Module {
 					tip_content={tooltip}
 				/>);
 
-				if ( def.popup || def.click ) {
+				if ( def.button !== false && (def.popup || def.click) ) {
 					button = true;
 
 					let btn, popup;
@@ -431,6 +449,14 @@ export default class Metadata extends Module {
 					el.appendChild(<div class="tw-align-items-center tw-flex tw-justify-content-center tw-font-size-4">
 						{stat = <div class="tw-strong ffz-sidebar-stat--label" />}
 					</div>);
+
+					if ( def.click )
+						el.addEventListener('click', e => {
+							if ( el._ffz_fading || el.disabled || el.classList.contains('disabled') )
+								return false;
+
+							def.click.call(this, el._ffz_data, e, () => refresh_fn(key));
+						});
 				}
 
 				el.appendChild(sub_el = <div class="tw-flex tw-justify-content-center tw-c-text-alt-2 tw-font-size-6 ffz-sidebar-stat--subtitle" />);
