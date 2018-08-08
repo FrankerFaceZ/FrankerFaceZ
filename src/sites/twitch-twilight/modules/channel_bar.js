@@ -5,6 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import { get } from 'utilities/object';
 
 import CHANNEL_QUERY from './channel_bar_query.gql';
 
@@ -51,7 +52,7 @@ export default class ChannelBar extends Module {
 
 
 	updateChannelBar(inst) {
-		const login = inst.props.channelLogin;
+		const login = get('props.data.user.login', inst);
 		if ( login !== inst._ffz_old_login ) {
 			if ( inst._ffz_old_login )
 				this.socket.unsubscribe(inst, `channel.${inst._ffz_old_login}`);
