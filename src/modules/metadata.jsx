@@ -398,7 +398,23 @@ export default class Metadata extends Module {
 							if ( el._ffz_popup )
 								return el._ffz_destroy();
 
+							const listeners = [],
+								add_close_listener = cb => listeners.push(cb);
+
 							const destroy = el._ffz_destroy = () => {
+								for(const cb of listeners) {
+									try {
+										cb();
+									} catch(err) {
+										this.log.capture(err, {
+											tags: {
+												metadata: key
+											}
+										});
+										this.log.error('Error when running a callback for pop-up destruction for metadata:', key, err);
+									}
+								}
+
 								if ( el._ffz_outside )
 									el._ffz_outside.destroy();
 
@@ -434,7 +450,7 @@ export default class Metadata extends Module {
 											}
 										}
 									},
-									content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key)),
+									content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key), add_close_listener),
 									onShow: (t, tip) =>
 										setTimeout(() => {
 											el._ffz_outside = new ClickOutside(tip.outer, destroy);
@@ -690,7 +706,7 @@ export default class Metadata extends Module {
 								return el._ffz_destroy();
 
 							const listeners = [],
-								add_listener = cb => listeners.push(cb);
+								add_close_listener = cb => listeners.push(cb);
 
 							const destroy = el._ffz_destroy = () => {
 								for(const cb of listeners) {
@@ -741,7 +757,7 @@ export default class Metadata extends Module {
 											}
 										}
 									},
-									content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key), add_listener),
+									content: (t, tip) => def.popup.call(this, el._ffz_data, tip, () => refresh_fn(key), add_close_listener),
 									onShow: (t, tip) =>
 										setTimeout(() => {
 											el._ffz_outside = new ClickOutside(tip.outer, destroy);
