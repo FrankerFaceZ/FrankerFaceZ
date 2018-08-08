@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {deep_copy} from 'utilities/object';
+import {get, deep_copy} from 'utilities/object';
 
 import CHANNEL_QUERY from './channel_bar_query.gql';
 
@@ -68,7 +68,7 @@ export default class LegacyChannelBar extends Module {
 
 
 	updateChannelBar(inst) {
-		const login = inst.props.channelLogin;
+		const login = get('props.userData.user.login', inst);
 		if ( login !== inst._ffz_old_login ) {
 			if ( inst._ffz_old_login )
 				this.socket.unsubscribe(inst, `channel.${inst._ffz_old_login}`);
