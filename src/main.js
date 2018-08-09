@@ -100,7 +100,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-rc12.8',
+	major: 4, minor: 0, revision: 0, extra: '-rc12.9',
 	commit: __git_commit__,
 	build: __webpack_hash__,
 	toString: () =>

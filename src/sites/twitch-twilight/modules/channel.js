@@ -44,7 +44,7 @@ export default class Channel extends Module {
 
 		this.ChannelPage = this.fine.define(
 			'channel-page',
-			n => (n.getHostedChannelLogin && n.handleHostingChange) || n.hostModeFromGraphQL,
+			n => (n.getHostedChannelLogin && n.handleHostingChange) || (n.onChatHostingChange && n.state && has(n.state, 'hostMode')),
 			['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		);
 
@@ -129,7 +129,7 @@ export default class Channel extends Module {
 			return;
 
 		const t = this,
-			new_style = !!inst.hostModeFromGraphQL;
+			new_style = ! inst.handleHostingChange || has(inst.state, 'hostMode');
 
 		inst.ffzGetChannel = () => {
 			const params = inst.props.match.params
