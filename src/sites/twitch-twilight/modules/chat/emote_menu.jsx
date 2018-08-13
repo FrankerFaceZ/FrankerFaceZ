@@ -1535,7 +1535,7 @@ export default class EmoteMenu extends Module {
 	}
 
 
-	async getData(sets, force) {
+	async getData(sets, force, cursor = null, nodes = []) {
 		if ( this._data ) {
 			if ( ! force && set_equals(sets, this._data_sets) )
 				return this._data;
@@ -1551,6 +1551,7 @@ export default class EmoteMenu extends Module {
 				query: SUB_STATUS,
 				variables: {
 					first: 100,
+					after: cursor,
 					criteria: {
 						filter: 'ALL'
 					}
@@ -1564,7 +1565,15 @@ export default class EmoteMenu extends Module {
 		}
 
 		const out = {},
-			nodes = get('data.currentUser.subscriptionBenefits.edges.@each.node', data);
+			curr_nodes = get('data.currentUser.subscriptionBenefits.edges.@each.node', data),
+			has_next_page = get('data.currentUser.subscriptionBenefits.pageInfo.hasNextPage', data),
+			curr_cursor = curr_nodes[curr_nodes.length - 1].id;
+
+		nodes = nodes.concat(curr_nodes);
+
+		if (has_next_page) {
+			return this.getData(sets, force, curr_cursor, nodes);
+		}
 
 		if ( nodes && nodes.length )
 			for(const node of nodes) {
