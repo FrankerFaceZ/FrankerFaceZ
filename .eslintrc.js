@@ -28,7 +28,8 @@ module.exports = {
         "import": false,
         "require": false,
         "__webpack_hash__": false,
-        "__git_commit__": false
+        "__git_commit__": false,
+        "FrankerFaceZ": false
     },
     "rules": {
         "accessor-pairs": ["error"],
