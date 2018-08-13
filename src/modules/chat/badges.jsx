@@ -151,6 +151,7 @@ export default class Badges extends Module {
 			type: 'object_merge',
 			ui: {
 				path: 'Chat > Badges >> tabs ~> Visibility',
+				title: 'Visibility',
 				component: 'badge-visibility',
 				data: () => {
 					const twitch = [],
@@ -267,13 +268,14 @@ export default class Badges extends Module {
 			for(const d of data) {
 				const p = d.provider;
 				if ( p === 'twitch' ) {
-					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login);
+					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
+						global_badge = this.getTwitchBadge(d.badge, d.version) || {};
 					if ( ! bd )
 						continue;
 
 					out.push(<div class="ffz-badge-tip">
 						{show_previews && <img class="preview-image ffz-badge" src={bd.image4x} />}
-						{bd.title}
+						{bd.title || global_badge.title}
 					</div>);
 
 					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
@@ -327,8 +329,8 @@ export default class Badges extends Module {
 			twitch_badges = msg.badges || {},
 
 			user = msg.user || {},
-			user_id = user.userID,
-			user_login = user.userLogin,
+			user_id = user.id,
+			user_login = user.login,
 			room_id = msg.roomID,
 			room_login = msg.roomLogin,
 
@@ -386,7 +388,7 @@ export default class Badges extends Module {
 				if ( hidden_badges[badge.id] )
 					continue;
 
-				const full_badge = this.badges[badge.id],
+				const full_badge = this.badges[badge.id] || {},
 					slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
 					old_badge = slotted[slot],
 					urls = badge.urls || (badge.image ? {1: badge.image} : null),
@@ -456,6 +458,7 @@ export default class Badges extends Module {
 					props = data.props;
 
 				props.className = 'ffz-tooltip ffz-badge';
+				props.key = `${props['data-provider']}-${props['data-badge']}`;
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);
 

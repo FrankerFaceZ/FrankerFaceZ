@@ -5,6 +5,12 @@
 	right: calc(var(--ffz-chat-width) + 25rem);
 	z-index: 3500;
 	opacity: 0;
+
+	pointer-events: none;
+
+	.tw-tooltip-wrapper, .tw-stat, .ffz-stat, button, a {
+		pointer-events: all;
+	}
 }
 
 .channel-page-layout__scroll-area--theatre-mode:hover .channel-info-bar {

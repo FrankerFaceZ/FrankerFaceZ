@@ -33,7 +33,7 @@
 								{{ login }}
 							</a>
 						</h5>
-						<div v-if="loaded">
+						<div v-if="loaded" class="tw-pd-t-05">
 							<span
 								:data-title="t('viewer-card.views', 'Views')"
 								class="ffz-tooltip tw-mg-r-05 ffz-i-views"
@@ -47,10 +47,11 @@
 								{{ t(null, '%{followers|number}', {followers: user.followers.totalCount}) }}
 							</span>
 							<span
-								data-title="rawUserAge"
+								v-if="userAge"
+								:data-title="t('viewer-card.age-tip', 'Member Since: %{age}', {age: userAge.toLocaleString()})"
 								class="ffz-tooltip ffz-i-clock"
 							>
-								{ userAge }
+								{{ t('viewer-card.age', '%{age|humanTime}', {age: userAge}) }}
 							</span>
 						</div>
 					</div>
@@ -152,6 +153,13 @@ export default {
 				return this.user.displayName;
 
 			return this.raw_user.displayName || this.raw_user.login;
+		},
+
+		userAge() {
+			if ( this.loaded )
+				return new Date(this.user.createdAt);
+
+			return null
 		},
 
 		current_tab() {

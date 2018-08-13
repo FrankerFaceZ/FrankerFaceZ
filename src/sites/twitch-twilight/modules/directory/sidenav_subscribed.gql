@@ -1,0 +1,14 @@
+query {
+	currentUser {
+		subscribedChannels {
+			edges {
+				node {
+					stream {
+						type
+						createdAt
+					}
+				}
+			}
+		}
+	}
+}

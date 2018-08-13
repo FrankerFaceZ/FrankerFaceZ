@@ -19,6 +19,17 @@
 				}}
 			</div>
 		</section>
+		<section v-if="context.has_update" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
+			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
+				<h3 class="ffz-i-arrows-cw">
+					{{ t('setting.update', 'There is an update available.') }}
+				</h3>
+
+				{{ t('setting.update.description',
+					'Please refresh your page to receive the latest version of FrankerFaceZ.')
+				}}
+			</div>
+		</section>
 		<section
 			v-if="item.description"
 			class="tw-border-t tw-pd-y-1"
@@ -26,30 +37,40 @@
 		/>
 		<template v-if="! item.contents || ! item.contents.length">
 			<ul class="tw-border-t tw-pd-y-1">
-				<li v-for="i in item.items" :key="i.full_key" class="tw-pd-x-1">
+				<li
+					v-for="i in item.items"
+					:key="i.full_key"
+					:class="{'ffz-unmatched-item': ! shouldShow(i)}"
+					class="tw-pd-x-1"
+				>
 					<a href="#" @click="$emit('change-item', i, false)">
 						{{ t(i.i18n_key, i.title, i) }}
 					</a>
 				</li>
 			</ul>
 		</template>
-		<component
+		<div
 			v-for="i in item.contents"
-			ref="children"
-			:is="i.component"
-			:context="context"
-			:item="i"
 			:key="i.full_key"
-			@change-item="changeItem"
-			@navigate="navigate"
-		/>
+			:class="{'ffz-unmatched-item': ! shouldShow(i)}"
+		>
+			<component
+				ref="children"
+				:is="i.component"
+				:context="context"
+				:item="i"
+				:filter="filter"
+				@change-item="changeItem"
+				@navigate="navigate"
+			/>
+		</div>
 	</div>
 </template>
 
 <script>
 
 export default {
-	props: ['item', 'context'],
+	props: ['item', 'context', 'filter'],
 
 	computed: {
 		breadcrumbs() {
@@ -65,6 +86,13 @@ export default {
 	},
 
 	methods: {
+		shouldShow(item) {
+			if ( ! this.filter || ! this.filter.length || ! item.search_terms )
+				return true;
+
+			return item.search_terms.includes(this.filter);
+		},
+
 		changeItem(item) {
 			this.$emit('change-item', item);
 		},

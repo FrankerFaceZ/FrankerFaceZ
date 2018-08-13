@@ -4,6 +4,7 @@ const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
 
 const CopyPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 /* global module */
 
@@ -16,7 +17,10 @@ module.exports = merge(common, {
 				from: './src/entry.js',
 				to: 'script.js'
 			}
-		])
+		]),
+		new webpack.DefinePlugin({
+			__git_commit__: null
+		})
 	],
 
 	devServer: {

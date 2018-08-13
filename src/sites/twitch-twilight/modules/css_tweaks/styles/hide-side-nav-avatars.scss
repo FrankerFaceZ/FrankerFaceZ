@@ -1,0 +1,9 @@
+.side-nav:not(.side-nav--collapsed) {
+	.side-nav-card__avatar {
+		display: none;
+
+		& + .tw-mg-l-1 {
+			margin-left: 0 !important
+		}
+	}
+}

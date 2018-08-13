@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
 const path = require('path');
@@ -5,6 +6,8 @@ const path = require('path');
 const CleanPlugin = require('clean-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
+
+const commit_hash = require('child_process').execSync('git rev-parse HEAD').toString().trim();
 
 /* global module __dirname */
 
@@ -38,6 +41,9 @@ const config = module.exports = merge(common, {
 					keep_fnames: true
 				}
 			}
+		}),
+		new webpack.DefinePlugin({
+			__git_commit__: JSON.stringify(commit_hash)
 		}),
 		new ManifestPlugin({
 			basePath: 'babel/',

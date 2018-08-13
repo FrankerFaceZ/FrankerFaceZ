@@ -7,6 +7,7 @@
 import {createElement} from 'utilities/dom';
 import Twilight from 'site';
 import Module from 'utilities/module';
+import {IS_FIREFOX} from 'utilities/constants';
 
 export default class Scroller extends Module {
 	constructor(...args) {
@@ -27,7 +28,7 @@ export default class Scroller extends Module {
 		this.settings.add('chat.scroller.freeze', {
 			default: 0,
 			ui: {
-				path: 'Chat > Behavior >> General',
+				path: 'Chat > Behavior >> Scrolling @{"description": "Please note that FrankerFaceZ is dependant on Twitch\'s own scrolling code working correctly. There are bugs with Twitch\'s scrolling code that have existed for more than six months. If you are using Firefox, Edge, or other non-Webkit browsers, expect to have issues."}',
 				title: 'Freeze Chat Scrolling',
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
 				component: 'setting-select-box',
@@ -42,6 +43,23 @@ export default class Scroller extends Module {
 					{value: 7, title: 'Meta or Hover'},
 					{value: 8, title: 'Alt or Hover'},
 					{value: 9, title: 'Shift or Hover'}
+				]
+			}
+		});
+
+		this.settings.add('chat.scroller.smooth-scroll', {
+			default: 0,
+			ui: {
+				path: 'Chat > Behavior >> Scrolling',
+				title: 'Smooth Scrolling',
+				description: 'Smoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Slow'},
+					{value: 2, title: 'Medium'},
+					{value: 3, title: 'Fast'},
+					{value: 4, title: 'Very Fast'}
 				]
 			}
 		});
@@ -62,6 +80,14 @@ export default class Scroller extends Module {
 				if ( val !== 0 )
 					inst.ffzEnableFreeze();
 			}
+		});
+
+		this.smoothScroll = this.chat.context.get('chat.scroller.smooth-scroll');
+		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
+			this.smoothScroll = val;
+
+			for(const inst of this.ChatScroller.instances)
+				inst.ffzSetSmoothScroll(val);
 		});
 
 		this.ChatScroller.ready((cls, instances) => {
@@ -223,6 +249,69 @@ export default class Scroller extends Module {
 				//this.ffzHideFrozen();
 			}
 
+			cls.prototype.smoothScrollBottom = function() {
+				if ( this._ffz_smooth_animation )
+					cancelAnimationFrame(this._ffz_smooth_animation);
+
+				this.ffz_is_smooth_scrolling = true;
+
+				// Step setting value is # pixels to scroll per 10ms.
+				// 1 is pretty slow, 2 medium, 3 fast, 4 very fast.
+				let step = this.ffz_smooth_scroll,
+					old_time = Date.now();
+
+				const scroll_content = this.scroll.scrollContent;
+				if ( ! scroll_content )
+					return;
+
+				const target_top = scroll_content.scrollHeight - scroll_content.clientHeight,
+					difference = target_top - scroll_content.scrollTop;
+
+				// If we are falling behind speed us up
+				if ( difference > scroll_content.clientHeight ) {
+					// we are a full scroll away, just jump there
+					step = difference;
+
+				} else if ( difference > 200 ) {
+					// we are starting to fall behind, speed it up a bit
+					step += step * Math.floor(difference / 200);
+				}
+
+				const smoothAnimation = () => {
+					if ( this.state.ffzFrozen || ! this.state.isAutoScrolling )
+						return this.ffz_is_smooth_scrolling = false;
+
+					// See how much time has passed to get a step based off the delta
+					const current_time = Date.now(),
+						delta = current_time - old_time,
+						current_step = step * (delta / 10);
+
+					// we need to move at least one full pixel for scrollTop to do anything in this delta.
+					if ( current_step >= 1 ) {
+						const scroll_top = scroll_content.scrollTop,
+							target_top = scroll_content.scrollHeight - scroll_content.clientHeight;
+
+						old_time = current_time;
+						if ( scroll_top < target_top ) {
+							scroll_content.scrollTop = scroll_top + current_step;
+							this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
+
+						} else {
+							// We've reached the bottom.
+							scroll_content.scrollTop = target_top;
+							this.ffz_is_smooth_scrolling = false;
+						}
+
+					} else {
+						// The frame happened so quick since last update that we haven't moved a full pixel.
+						// Just wait.
+						this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
+					}
+				}
+
+				smoothAnimation();
+			}
+
 
 			cls.prototype.ffzInstallHandler = function() {
 				if ( this._ffz_handleScroll )
@@ -231,8 +320,12 @@ export default class Scroller extends Module {
 				const t = this;
 				this._old_scroll = this.scrollToBottom;
 				this.scrollToBottom = function() {
-					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen )
-						return this._old_scroll();
+					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen ) {
+						if ( this.ffz_smooth_scroll )
+							this.smoothScrollBottom();
+						else
+							this._old_scroll();
+					}
 				}
 
 				this._ffz_handleScroll = this.handleScrollEvent;
@@ -394,6 +487,11 @@ export default class Scroller extends Module {
 			}
 
 
+			cls.prototype.ffzSetSmoothScroll = function(value) {
+				this.ffz_smooth_scroll = value;
+			}
+
+
 			for(const inst of instances)
 				this.onMount(inst);
 		});
@@ -420,6 +518,8 @@ export default class Scroller extends Module {
 
 		if ( this.freeze !== 0 )
 			inst.ffzEnableFreeze();
+
+		inst.ffzSetSmoothScroll(this.smoothScroll);
 	}
 
 	onUnmount(inst) { // eslint-disable-line class-methods-use-this

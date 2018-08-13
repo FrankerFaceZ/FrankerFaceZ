@@ -48,6 +48,17 @@ export default class Twilight extends BaseSite {
 		if ( ! store )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
 
+		// Window Size
+		const update_size = () => this.settings.updateContext({
+			size: {
+				height: window.innerHeight,
+				width: window.innerWidth
+			}
+		});
+
+		window.addEventListener('resize', update_size);
+		update_size();
+
 		// Share Context
 		store.subscribe(() => this.updateContext());
 		this.updateContext();
@@ -55,10 +66,18 @@ export default class Twilight extends BaseSite {
 		this.router.on(':route', (route, match) => {
 			this.log.info('Navigation', route && route.name, match && match[0]);
 			this.fine.route(route && route.name);
+			this.settings.updateContext({
+				route,
+				route_data: match
+			});
 		});
 
 		const current = this.router.current;
 		this.fine.route(current && current.name);
+		this.settings.updateContext({
+			route: current,
+			route_data: this.router.match
+		});
 
 		document.head.appendChild(createElement('link', {
 			href: MAIN_URL,
@@ -70,10 +89,18 @@ export default class Twilight extends BaseSite {
 		// Check for ?ffz-settings in page and open the
 		// settings window in exclusive mode.
 		const params = new URL(window.location).searchParams;
-		if (params && params.has('ffz-settings')) {
-			const main_menu = this.resolve('main_menu');
-			main_menu.exclusive = true;
-			main_menu.enable();
+		if ( params ) {
+			if ( params.has('ffz-settings') ) {
+				const main_menu = this.resolve('main_menu');
+				main_menu.dialog.exclusive = true;
+				main_menu.enable();
+			}
+
+			if ( params.has('ffz-translate') ) {
+				const translation = this.resolve('translation_ui');
+				translation.dialog.exclusive = true;
+				translation.enable();
+			}
 		}
 	}
 
@@ -136,6 +163,8 @@ Twilight.CHAT_ROUTES = [
 	'collection',
 	'popout',
 	'video',
+	'user-video',
+	'user-clip',
 	'user-videos',
 	'user-clips',
 	'user-events',
@@ -165,11 +194,20 @@ Twilight.ROUTES = {
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',
 	'video': '/videos/:videoID',
+	'user-video': '/:userName/video/:videoID',
 	'user-videos': '/:userName/videos/:filter?',
 	'user-clips': '/:userName/clips',
+	'user-clip': '/:userName/clip/:clipID',
 	'user-collections': '/:userName/collections',
 	'user-events': '/:userName/events',
 	'user-followers': '/:userName/followers',
 	'user-following': '/:userName/following',
-	'user': '/:userName'
+	'product': '/products/:productName',
+	'prime': '/prime',
+	'user': '/:userName',
 }
+
+
+Twilight.DIALOG_EXCLUSIVE = '.twilight-main,.twilight-minimal-root>div,.twilight-root>.tw-full-height,.clips-root';
+Twilight.DIALOG_MAXIMIZED = '.twilight-main,.twilight-minimal-root,.twilight-root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';

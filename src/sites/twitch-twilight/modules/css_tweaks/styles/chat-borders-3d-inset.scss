@@ -2,6 +2,8 @@
 .thread-message__timestamp,
 .thread-message__warning,
 
+.vod-message,
+
 .chat-line__message:not(.chat-line--inline),
 .chat-line__moderation,
 .chat-line__status,
@@ -20,6 +22,22 @@
 	&:first-child {
 		border-top-color: transparent !important;
 	}
+}
+
+.vod-message {
+	padding-top: calc(.5rem - 1px) !important;
+
+	border-top: 1px solid #aaa;
+	border-bottom-color: var rgba(255,255,255,0.5);
+
+	.tw-theme--dark & {
+		border-top-color: #000;
+		border-bottom-color: rgba(255,255,255,0.1);
+	}
+}
+
+.video-chat__message-list-wrapper li:first-child .vod-message {
+	border-top-color: transparent !important;
 }
 
 .thread-message__message,

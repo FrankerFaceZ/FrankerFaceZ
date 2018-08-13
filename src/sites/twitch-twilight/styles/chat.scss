@@ -1,3 +1,8 @@
+.chat-line__message--emote {
+    vertical-align: middle;
+    margin: -.5rem 0;
+}
+
 .chat-author__display-name,
 .chat-author__intl-login {
 	cursor: pointer;
@@ -14,6 +19,10 @@
 .user-notice-line.tw-mg-y-05 {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+}
+
+.chat-settings__content div[data-test-selector="high-contrast-selector"] {
+    display: none;
 }
 
 .autocomplete-balloon {
@@ -106,6 +115,11 @@
 }
 
 
+.chat-line__username:hover {
+    text-decoration: underline;
+}
+
+
 .ffz--emote-picker {
     section:not(.filtered) heading {
         cursor: pointer;
@@ -136,6 +150,10 @@
         max-height: 50rem;
     }
 
+    .whispers-thread {
+        overflow: visible !important;
+    }
+
     @media only screen and (max-height: 750px) {
         .emote-picker__tab-content {
             .twilight-root & {
@@ -162,6 +180,22 @@
         }
     }
 
+    .ffz--emoji-tone-picker {
+        .tw-balloon {
+            min-width: unset;
+        }
+
+        .tw-button__text {
+            padding: .2rem .4rem;
+            padding-right: .8rem;
+        }
+    }
+
+    .ffz--emoji-tone-picker__emoji {
+        width: 2rem;
+        height: 2rem;
+    }
+
     .emote-picker__emote-link {
         position: relative;
         padding: 0.5rem;
@@ -171,6 +205,15 @@
 
         img {
             vertical-align: middle;
+        }
+
+        &.emote-picker__emoji {
+            min-width: unset;
+
+            .emote-picker__emote-figure {
+                width: 2rem;
+                height: 2rem;
+            }
         }
 
         &.locked {

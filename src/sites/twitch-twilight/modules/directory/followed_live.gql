@@ -3,7 +3,6 @@ query {
 		followedLiveUsers {
 			edges {
 				node {
-					profileImageURL(width: 50)
 					stream {
 						createdAt
 					}

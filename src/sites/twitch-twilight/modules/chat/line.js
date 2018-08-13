@@ -42,6 +42,11 @@ export default class ChatLine extends Module {
 			n => n.renderMessageBody && n.props && n.props.roomID,
 			Twilight.CHAT_ROUTES
 		);
+
+		this.WhisperLine = this.fine.define(
+			'whisper-line',
+			n => n.props && n.props.message && n.props.reportOutgoingWhisperRendered
+		)
 	}
 
 	async onEnable() {
@@ -55,6 +60,7 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-terms--color-regex', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
 
@@ -157,7 +163,50 @@ export default class ChatLine extends Module {
 		});*/
 
 
+		this.WhisperLine.ready(cls => {
+			const old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				if ( ! this.props.message || ! this.props.message.content )
+					return old_render.call(this);
+
+				const msg = t.chat.standardizeWhisper(this.props.message),
+
+					is_action = msg.is_action,
+					user = msg.user,
+					color = t.parent.colors.process(user.color),
+
+					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null, null),
+					contents = t.chat.renderTokens(tokens, e);
+
+				return e('div', {className: 'thread-message__message'},
+					e('div', {className: 'tw-pd-x-1 tw-pd-y-05'}, [
+						e('span', {
+							className: 'thread-message__message--user-name notranslate',
+							style: {
+								color
+							}
+						}, user.displayName),
+						e('span', null, is_action ? ' ' : ': '),
+						e('span', {
+							className: 'message',
+							style: {
+								color: is_action && color
+							}
+						}, contents)
+					])
+				);
+			}
+
+			// Do this after a short delay to hopefully reduce the chance of React
+			// freaking out on us.
+			setTimeout(() => this.WhisperLine.forceUpdate());
+		});
+
+
 		this.ChatLine.ready(cls => {
+			const old_render = cls.prototype.render;
+
 			cls.prototype.shouldComponentUpdate = function(props, state) {
 				const show = state.alwaysShowMessage || ! props.message.deleted,
 					old_show = this._ffz_show;
@@ -175,7 +224,8 @@ export default class ChatLine extends Module {
 					props.showTimestamps !== this.props.showTimestamps;
 			}
 
-			cls.prototype.render = function() {
+			cls.prototype.render = function() { try {
+
 				const types = t.parent.message_types || {},
 
 					msg = t.chat.standardizeMessage(this.props.message),
@@ -233,7 +283,7 @@ export default class ChatLine extends Module {
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
 				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
+					this.ffz_user_click_handler = this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -244,15 +294,17 @@ export default class ChatLine extends Module {
 						e('span', {
 							className: 'chat-line__message--badges'
 						}, t.chat.badges.render(msg, e)),
-						e('a', {
-							className: 'chat-author__display-name notranslate',
+						e('button', {
+							className: 'chat-line__username notranslate',
 							style: { color },
-							onClick: this.usernameClickHandler, // this.ffz_user_click_handler
+							onClick: this.ffz_user_click_handler
 						}, [
-							user.userDisplayName,
+							e('span', {
+								className: 'chat-author__display-name'
+							}, user.displayName),
 							user.isIntl && e('span', {
 								className: 'chat-author__intl-login'
-							}, ` (${user.userLogin})`)
+							}, ` (${user.login})`)
 						]),
 						e('span', null, is_action ? ' ' : ': '),
 						show ?
@@ -292,8 +344,13 @@ export default class ChatLine extends Module {
 					cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line';
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
-							t.i18n.t('chat.sub.main', '%{user} just subscribed with %{plan}!', {
-								user: user.userDisplayName,
+							t.i18n.tList('chat.sub.main', '%{user} just subscribed with %{plan}!', {
+								user: e('button', {
+									className: 'chatter-name',
+									onClick: this.ffz_user_click_handler //e => this.props.onUsernameClick(user.login, null, msg.id, e.currentTarget.getBoundingClientRect().bottom)
+								}, e('span', {
+									className: 'tw-c-text tw-strong'
+								}, user.userDisplayName)),
 								plan: plan.prime ?
 									t.i18n.t('chat.sub.twitch-prime', 'Twitch Prime') :
 									t.i18n.t('chat.sub.plan', 'a Tier %{tier} sub', {tier})
@@ -320,8 +377,13 @@ export default class ChatLine extends Module {
 					let system_msg;
 					if ( msg.ritual === 'new_chatter' )
 						system_msg = e('div', {className: 'tw-c-text-alt-2'}, [
-							t.i18n.t('chat.ritual', '%{user} is new here. Say hello!', {
-								user: user.userDisplayName
+							t.i18n.tList('chat.ritual', '%{user} is new here. Say hello!', {
+								user: e('button', {
+									className: 'chatter-name',
+									onClick: this.ffz_user_click_handler
+								}, e('span', {
+									className: 'tw-c-text tw-strong'
+								}, user.userDisplayName))
 							})
 						]);
 
@@ -351,6 +413,16 @@ export default class ChatLine extends Module {
 					'data-user-id': user.userID,
 					'data-user': user.userLogin && user.userLogin.toLowerCase(),
 				}, out);
+
+				} catch(err) {
+					t.log.capture(err, {
+						extra: {
+							props: this.props
+						}
+					});
+
+					return old_render.call(this);
+				}
 			}
 
 			// Do this after a short delay to hopefully reduce the chance of React
@@ -377,7 +449,16 @@ export default class ChatLine extends Module {
 			}
 		}
 
+		for(const inst of this.WhisperLine.instances) {
+			const msg = inst.props.message;
+			if ( msg && msg._ffz_message )
+				msg._ffz_message = null;
+		}
+
 		this.ChatLine.forceUpdate();
 		this.ChatRoomLine.forceUpdate();
+		this.WhisperLine.forceUpdate();
+
+		this.emit('chat:updated-lines');
 	}
 }

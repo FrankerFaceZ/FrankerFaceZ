@@ -20,6 +20,7 @@ export default class Room {
 		this.style = new ManagedStyle(`room--${login}`);
 
 		this.emote_sets = new SourcedSet;
+		this.badges = null;
 		this.users = {};
 		this.user_ids = {};
 

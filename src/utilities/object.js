@@ -92,6 +92,18 @@ export function array_equals(a, b) {
 }
 
 
+export function shallow_object_equals(a, b) {
+	if ( typeof a !== 'object' || typeof b !== 'object' || ! array_equals(Object.keys(a), Object.keys(b)) )
+		return false;
+
+	for(const key in a)
+		if ( a[key] !== b[key] )
+			return false;
+
+	return true;
+}
+
+
 export function set_equals(a,b) {
 	if ( !(a instanceof Set) || !(b instanceof Set) || a.size !== b.size )
 		return false;
@@ -143,6 +155,21 @@ export function filter_match(filter, target) {
 	}
 
 	return true;
+}
+
+
+export function substr_count(str, needle) {
+	let i = 0, idx = 0;
+	while( idx < str.length ) {
+		const x = str.indexOf(needle, idx);
+		if ( x === -1 )
+			break;
+
+		i++;
+		idx = x + 1;
+	}
+
+	return i;
 }
 
 

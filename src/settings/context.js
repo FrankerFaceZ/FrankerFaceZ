@@ -243,7 +243,7 @@ export default class SettingsContext extends EventEmitter {
 					value = def_default;
 
 				if ( type.default )
-					value = type.default(value);
+					value = type.default(value, definition, this.manager.log);
 			}
 
 			if ( definition.requires )
@@ -269,9 +269,9 @@ export default class SettingsContext extends EventEmitter {
 
 	_getRaw(key, type) {
 		if ( ! type )
-			throw new Error(`non-existent `)
+			throw new Error(`non-existent type for ${key}`)
 
-		return type.get(key, this.profiles(), this.manager.log);
+		return type.get(key, this.profiles(), this.manager.definitions.get(key), this.manager.log);
 	}
 	/*	for(const profile of this.__profiles)
 			if ( profile.has(key) )

@@ -5,6 +5,9 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import { get, has } from 'utilities/object';
+
+import Twilight from 'site';
 
 
 export default class Channel extends Module {
@@ -16,7 +19,7 @@ export default class Channel extends Module {
 		this.inject('settings');
 		this.inject('site.fine');
 
-		this.left_raids = new Set;
+		this.joined_raids = new Set;
 
 		this.settings.add('channel.hosting.enable', {
 			default: true,
@@ -41,30 +44,30 @@ export default class Channel extends Module {
 
 		this.ChannelPage = this.fine.define(
 			'channel-page',
-			n => n.handleHostingChange,
-			['user']
+			n => (n.getHostedChannelLogin && n.handleHostingChange) || (n.onChatHostingChange && n.state && has(n.state, 'hostMode')),
+			['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		);
 
 		this.RaidController = this.fine.define(
 			'raid-controller',
 			n => n.handleLeaveRaid && n.handleJoinRaid,
-			['user']
+			Twilight.CHAT_ROUTES
 		);
 	}
 
 
 	onEnable() {
 		this.ChannelPage.on('mount', this.wrapChannelPage, this);
-		this.RaidController.on('mount', this.noAutoRaids, this);
+		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);
 
 		this.RaidController.ready((cls, instances) => {
 			for(const inst of instances)
-				this.noAutoRaids(inst);
+				this.wrapRaidController(inst);
 		});
 
 		this.ChannelPage.on('update', inst => {
-			if ( this.settings.get('channel.hosting.enable') )
+			if ( this.settings.get('channel.hosting.enable') || has(inst.state, 'hostMode') )
 				return;
 
 			// We can't do this immediately because the player state
@@ -85,16 +88,36 @@ export default class Channel extends Module {
 	}
 
 
+	wrapRaidController(inst) {
+		if ( inst._ffz_wrapped )
+			return this.noAutoRaids(inst);
+
+		inst._ffz_wrapped = true;
+
+		const t = this,
+			old_handle_join = inst.handleJoinRaid;
+
+		inst.handleJoinRaid = function(event, ...args) {
+			const raid_id = inst.state && inst.state.raid && inst.state.raid.id;
+			if ( event && event.type && raid_id )
+				t.joined_raids.add(raid_id);
+
+			return old_handle_join.call(this, event, ...args);
+		}
+
+		this.noAutoRaids(inst);
+	}
+
+
 	noAutoRaids(inst) {
 		if ( this.settings.get('channel.raids.no-autojoin') )
 			setTimeout(() => {
-				if ( inst.state.raid && inst.hasJoinedCurrentRaid ) {
+				if ( inst.state.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
 					const id = inst.state.raid.id;
-					if ( this.left_raids.has(id) )
+					if ( this.joined_raids.has(id) )
 						return;
 
 					this.log.info('Automatically leaving raid:', id);
-					this.left_raids.add(id);
 					inst.handleLeaveRaid();
 				}
 			});
@@ -105,22 +128,90 @@ export default class Channel extends Module {
 		if ( inst._ffz_hosting_wrapped )
 			return;
 
-		const t = this;
+		const t = this,
+			new_style = ! inst.handleHostingChange || has(inst.state, 'hostMode');
+
+		inst.ffzGetChannel = () => {
+			const params = inst.props.match.params
+			if ( ! params )
+				return get('props.data.variables.currentChannelLogin', inst)
+
+			return params.channelName || params.channelLogin
+		}
+
+		inst.ffzOldSetState = inst.setState;
+		inst.setState = function(state, ...args) {
+			try {
+				if ( new_style ) {
+					const expected = inst.ffzGetChannel();
+					if ( has(state, 'hostMode') ) {
+						inst.ffzExpectedHost = state.hostMode;
+						if ( state.hostMode && ! t.settings.get('channel.hosting.enable') ) {
+							state.hostMode = null;
+							state.videoPlayerSource = expected;
+						}
+
+						t.settings.updateContext({hosting: !!state.hostMode});
+
+					} else if ( has(state, 'videoPlayerSource') ) {
+						if ( state.videoPlayerSource !== expected && ! t.settings.get('channel.hosting.enable') )
+							state.videoPlayerSource = expected;
+					}
+
+				} else {
+					if ( ! t.settings.get('channel.hosting.enable') ) {
+						if ( has(state, 'isHosting') )
+							state.isHosting = false;
+
+						if ( has(state, 'videoPlayerSource') )
+							state.videoPlayerSource = inst.ffzGetChannel();
+					}
+
+					if ( has(state, 'isHosting') )
+						t.settings.updateContext({hosting: state.isHosting});
+				}
+
+			} catch(err) {
+				t.log.capture(err, {extra: {props: inst.props, state}});
+			}
+
+			return inst.ffzOldSetState(state, ...args);
+		}
 
 		inst._ffz_hosting_wrapped = true;
 
-		inst.ffzOldHostHandler = inst.handleHostingChange;
-		inst.handleHostingChange = function(channel) {
-			inst.ffzExpectedHost = channel;
+		if ( new_style ) {
+			const hosted = inst.ffzExpectedHost = inst.state.hostMode;
+			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && !!inst.state.hostMode});
 
-			if ( t.settings.get('channel.hosting.enable') )
-				return inst.ffzOldHostHandler(channel);
+			if ( hosted && ! this.settings.get('channel.hosting.enable') ) {
+				inst.ffzOldSetState({
+					hostMode: null,
+					videoPlayerSource: inst.ffzGetChannel()
+				});
+			}
+
+		} else {
+			inst.ffzOldGetHostedLogin = () => get('props.data.user.hosting.login', inst) || null;
+			inst.getHostedChannelLogin = function() {
+				return t.settings.get('channel.hosting.enable') ?
+					inst.ffzOldGetHostedLogin() : null;
+			}
+
+			inst.ffzOldHostHandler = inst.handleHostingChange;
+			inst.handleHostingChange = function(channel) {
+				inst.ffzExpectedHost = channel;
+				if ( t.settings.get('channel.hosting.enable') )
+					return inst.ffzOldHostHandler(channel);
+			}
+
+			// Store the current state and disable the current host if needed.
+			inst.ffzExpectedHost = inst.state.isHosting ? inst.state.videoPlayerSource : null;
+			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && inst.state.isHosting});
+			if ( ! this.settings.get('channel.hosting.enable') ) {
+				inst.ffzOldHostHandler(null);
+			}
 		}
-
-		// Store the current state and disable the current host if needed.
-		inst.ffzExpectedHost = inst.state.isHosting ? inst.state.videoPlayerSource : null;
-		if ( ! this.settings.get('channel.hosting.enable') )
-			inst.ffzOldHostHandler(null);
 
 		// Finally, we force an update so that any child components
 		// receive our updated handler.
@@ -132,7 +223,25 @@ export default class Channel extends Module {
 		if ( val === undefined )
 			val = this.settings.get('channel.hosting.enable');
 
-		for(const inst of this.ChannelPage.instances)
-			inst.ffzOldHostHandler(val ? inst.ffzExpectedHost : null);
+		let hosting = val;
+
+		for(const inst of this.ChannelPage.instances) {
+			if ( ! inst.ffzExpectedHost )
+				hosting = false;
+
+			if ( has(inst.state, 'hostMode') ) {
+				const host = val ? inst.ffzExpectedHost : null,
+					target = host && host.hostedChannel && host.hostedChannel.login || inst.ffzGetChannel();
+
+				inst.ffzOldSetState({
+					hostMode: host,
+					videoPlayerSource: target
+				});
+
+			} else
+				inst.ffzOldHostHandler(val ? inst.ffzExpectedHost : null);
+		}
+
+		this.settings.updateContext({hosting});
 	}
 }

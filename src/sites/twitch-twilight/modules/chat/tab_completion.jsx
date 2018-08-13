@@ -147,6 +147,7 @@ export default class TabCompletion extends Module {
 	getEmojiSuggestions(input, inst) {
 		let search = input.slice(1).toLowerCase();
 		const style = this.chat.context.get('chat.emoji.style'),
+			tone = this.settings.provider.get('emoji-tone', null),
 			results = [],
 			has_colon = search.endsWith(':');
 
@@ -155,16 +156,19 @@ export default class TabCompletion extends Module {
 
 		for(const name in this.emoji.names)
 			if ( has_colon ? name === search : name.startsWith(search) ) {
-				const emoji = this.emoji.emoji[this.emoji.names[name]];
-				if ( emoji && (style === 0 || emoji.has[style]) )
+				const emoji = this.emoji.emoji[this.emoji.names[name]],
+					toned = emoji.variants && emoji.variants[tone],
+					source = toned || emoji;
+
+				if ( emoji && (style === 0 || source.has[style]) )
 					results.push({
 						current: input,
-						replacement: emoji.raw,
+						replacement: source.raw,
 						element: inst.renderFFZEmojiSuggestion({
 							token: `:${name}:`,
 							id: `emoji-${emoji.code}`,
-							src: this.emoji.getFullImage(emoji.image, style),
-							srcSet: this.emoji.getFullImageSet(emoji.image, style)
+							src: this.emoji.getFullImage(source.image, style),
+							srcSet: this.emoji.getFullImageSet(source.image, style)
 						})
 					});
 			}

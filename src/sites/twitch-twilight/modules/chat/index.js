@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, split_chars} from 'utilities/object';
+import {has, split_chars, shallow_object_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -18,6 +18,29 @@ import ChatLine from './line';
 import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import TabCompletion from './tab_completion';
+
+
+const REGEX_EMOTES = {
+	'B-?\\)': ['B)', 'B-)'],
+	'R-?\\)': ['R)', 'R-)'],
+	'[oO](_|\\.)[oO]': ['o_o', 'O_o', 'o_O', 'O_O', 'o.o', 'O.o', 'o.O', 'O.O'],
+	'\\&gt\\;\\(': ['>('],
+	'\\&lt\\;3': ['<3'],
+	'\\:-?(o|O)': [':o', ':O', ':-o', ':-O'],
+	'\\:-?(p|P)': [':p', ':P', ':-p', ':-P'],
+	'\\:-?D': [':D', ':-D'],
+	'\\:-?[\\\\/]': [':/', ':-/', ':\\', ':-\\'],
+	'\\:-?[z|Z|\\|]': [':z', ':Z', ':|', ':-z', ':-Z', ':-|'],
+	'\\:-?\\(': [':(', ':-('],
+	'\\:-?\\)': [':)', ':-)'],
+	'\\;-?(p|P)': [';p', ';P', ';-p', ';-P'],
+	'\\;-?\\)': [';)', ';-)'],
+	'#-?[\\\\/]': ['#/', '#-/', '#//', '#-//'],
+	':-?(?:7|L)': [':7', ':L', ':-7', ':-L'],
+	'\\&lt\\;\\]': ['<]'],
+	'\\:-?(S|s)': [':s', ':S', ':-s', ':-S'],
+	'\\:\\&gt\\;': [':>']
+};
 
 
 const MESSAGE_TYPES = ((e = {}) => {
@@ -50,31 +73,34 @@ const CHAT_TYPES = ((e = {}) => {
 	e[e.ModerationAction = 2] = 'ModerationAction';
 	e[e.TargetedModerationAction = 3] = 'TargetedModerationAction';
 	e[e.AutoMod = 4] = 'AutoMod';
-	e[e.Connected = 5] = 'Connected';
-	e[e.Disconnected = 6] = 'Disconnected';
-	e[e.Reconnect = 7] = 'Reconnect';
-	e[e.Hosting = 8] = 'Hosting';
-	e[e.Unhost = 9] = 'Unhost';
-	e[e.Hosted = 10] = 'Hosted';
-	e[e.Subscription = 11] = 'Subscription';
-	e[e.Resubscription = 12] = 'Resubscription';
-	e[e.SubGift = 13] = 'SubGift';
-	e[e.Clear = 14] = 'Clear';
-	e[e.SubscriberOnlyMode = 15] = 'SubscriberOnlyMode';
-	e[e.FollowerOnlyMode = 16] = 'FollowerOnlyMode';
-	e[e.SlowMode = 17] = 'SlowMode';
-	e[e.EmoteOnlyMode = 18] = 'EmoteOnlyMode';
-	e[e.RoomMods = 19] = 'RoomMods';
-	e[e.RoomState = 20] = 'RoomState';
-	e[e.Raid = 21] = 'Raid';
-	e[e.Unraid = 22] = 'Unraid';
-	e[e.Ritual = 23] = 'Ritual';
-	e[e.Notice = 24] = 'Notice';
-	e[e.Info = 25] = 'Info';
-	e[e.BadgesUpdated = 26] = 'BadgesUpdated';
-	e[e.Purchase = 27] = 'Purchase';
-	e[e.BitsCharity = 28] = 'BitsCharity';
-	e[e.CrateGift = 29] = 'CrateGift'
+	e[e.SubscriberOnlyMode = 5] = 'SubscriberOnlyMode';
+	e[e.FollowerOnlyMode = 6] = 'FollowerOnlyMode';
+	e[e.SlowMode = 7] = 'SlowMode';
+	e[e.EmoteOnlyMode = 8] = 'EmoteOnlyMode';
+	e[e.R9KMode = 9] = 'R9KMode';
+	e[e.Connected = 10] = 'Connected';
+	e[e.Disconnected = 11] = 'Disconnected';
+	e[e.Reconnect = 12] = 'Reconnect';
+	e[e.Hosting = 13] = 'Hosting';
+	e[e.Unhost = 14] = 'Unhost';
+	e[e.Hosted = 15] = 'Hosted';
+	e[e.Subscription = 16] = 'Subscription';
+	e[e.Resubscription = 17] = 'Resubscription';
+	e[e.SubGift = 18] = 'SubGift';
+	e[e.Clear = 19] = 'Clear';
+	e[e.RoomMods = 20] = 'RoomMods';
+	e[e.RoomState = 21] = 'RoomState';
+	e[e.Raid = 22] = 'Raid';
+	e[e.Unraid = 23] = 'Unraid';
+	e[e.Ritual = 24] = 'Ritual';
+	e[e.Notice = 25] = 'Notice';
+	e[e.Info = 26] = 'Info';
+	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
+	e[e.Purchase = 28] = 'Purchase';
+	e[e.BitsCharity = 29] = 'BitsCharity';
+	e[e.CrateGift = 30] = 'CrateGift';
+	e[e.RewardGift = 31] = 'RewardGift';
+	e[e.SubMysteryGift = 32] = 'SubMysteryGift';
 	return e;
 })();
 
@@ -106,6 +132,7 @@ export default class ChatHook extends Module {
 		this.inverse_colors = new ColorAdjuster;
 
 		this.inject('settings');
+		this.inject('i18n');
 
 		this.inject('site');
 		this.inject('site.router');
@@ -166,33 +193,6 @@ export default class ChatHook extends Module {
 			}
 		});
 
-		this.settings.add('chat.font-size', {
-			default: 12,
-			ui: {
-				path: 'Chat > Appearance >> General',
-				title: 'Font Size',
-				description: "How large should text in chat be, in pixels. This may be affected by your browser's zoom and font size settings.",
-				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return 12;
-
-					return val;
-				}
-			}
-		});
-
-		this.settings.add('chat.font-family', {
-			default: '',
-			ui: {
-				path: 'Chat > Appearance >> General',
-				title: 'Font Family',
-				description: 'Set the font used for displaying chat messages.',
-				component: 'setting-text-box'
-			}
-		});
-
 		this.settings.add('chat.bits.show-pinned', {
 			default: true,
 			ui: {
@@ -242,21 +242,6 @@ export default class ChatHook extends Module {
 					{value: 2, title: '3D Line (2px Groove)'},
 					{value: 3, title: '3D Line (2px Groove Inset)'},
 					{value: 4, title: 'Wide Line (2px Solid)'}
-				]
-			}
-		});
-
-		this.settings.add('chat.lines.emote-alignment', {
-			default: 0,
-			ui: {
-				path: 'Chat > Appearance >> Chat Lines',
-				title: 'Emote Alignment',
-				description: 'Change how emotes are positioned in chat, potentially making messages taller in order to avoid having emotes overlap.',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Standard'},
-					{value: 1, title: 'Padded'},
-					{value: 2, title: 'Baseline (BTTV-Like)'}
 				]
 			}
 		});
@@ -331,12 +316,31 @@ export default class ChatHook extends Module {
 
 
 	async grabTypes() {
-		const ct = await this.web_munch.findModule('chat-types');
+		const ct = await this.web_munch.findModule('chat-types'),
+			changes = [];
 
 		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
 		this.chat_types = ct && ct.b || CHAT_TYPES;
 		this.message_types = ct && ct.c || MESSAGE_TYPES;
 		this.mod_types = ct && ct.e || MOD_TYPES;
+
+		if ( ! ct )
+			return;
+
+		if ( ct.a && ! shallow_object_equals(ct.a, AUTOMOD_TYPES) )
+			changes.push('AUTOMOD_TYPES');
+
+		if ( ct.b && ! shallow_object_equals(ct.b, CHAT_TYPES) )
+			changes.push('CHAT_TYPES');
+
+		if ( ct.c && ! shallow_object_equals(ct.c, MESSAGE_TYPES) )
+			changes.push('MESSAGE_TYPES');
+
+		if ( ct.e && ! shallow_object_equals(ct.e, MOD_TYPES) )
+			changes.push('MOD_TYPES');
+
+		if ( changes.length )
+			this.log.info('Chat Types have changed from static mappings for categories:', changes.join(' '));
 	}
 
 
@@ -369,6 +373,11 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.bits.show-pinned', val =>
 			this.css_tweaks.toggleHide('pinned-cheer', !val));
 
+		this.chat.context.on('changed:chat.filtering.deleted-style', val =>
+			this.css_tweaks.toggle('chat-deleted-strike', val === 1))
+
+		this.css_tweaks.toggle('chat-deleted-strike', this.chat.context.get('chat.filtering.deleted-style') === 1);
+
 		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
 		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
 		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));
@@ -380,7 +389,7 @@ export default class ChatHook extends Module {
 		this.updateMentionCSS();
 
 		this.ChatController.on('mount', this.chatMounted, this);
-		this.ChatController.on('unmount', this.removeRoom, this);
+		this.ChatController.on('unmount', this.chatUmounted, this);
 		this.ChatController.on('receive-props', this.chatUpdated, this);
 
 		this.ChatController.ready((cls, instances) => {
@@ -426,6 +435,11 @@ export default class ChatHook extends Module {
 				const buffer = inst.chatBuffer;
 				if ( ! buffer._ffz_was_here )
 					this.wrapChatBuffer(buffer.constructor);
+
+				if ( buffer.ffzConsumeChatEvent )
+					buffer.consumeChatEvent = buffer.ffzConsumeChatEvent.bind(buffer);
+
+				buffer.ffzController = inst;
 
 				service.client.events.removeAll();
 				service.connectHandlers();
@@ -486,9 +500,123 @@ export default class ChatHook extends Module {
 
 
 	wrapChatBuffer(cls) {
-		const t = this;
+		const t = this,
+			old_consume = cls.prototype.consumeChatEvent;
 
 		cls.prototype._ffz_was_here = true;
+
+		if ( old_consume )
+			cls.prototype.ffzConsumeChatEvent = cls.prototype.consumeChatEvent = function(msg) {
+				if ( msg ) {
+					try {
+						const types = t.chat_types || {};
+
+						if ( msg.type === types.Message ) {
+							const m = t.chat.standardizeMessage(msg),
+								cont = this.ffzController;
+
+							let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin,
+								room_id = cont && cont.props.channelID;
+
+							if ( ! room && room_id ) {
+								const r = t.chat.getRoom(room_id, null, true);
+								if ( r && r.login )
+									room = m.roomLogin = r.login;
+							}
+
+							const u = t.site.getUser(),
+								r = {id: room_id, login: room};
+
+							if ( u && cont ) {
+								u.moderator = cont.props.isCurrentUserModerator;
+								u.staff = cont.props.isStaff;
+							}
+
+							m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, r);
+
+							const event = new FFZEvent({
+								message: m,
+								channel: room
+							});
+
+							t.emit('chat:receive-message', event);
+							if ( event.defaultPrevented || m.ffz_removed )
+								return;
+
+						} else if ( msg.type === types.Moderation ) {
+							const login = msg.userLogin;
+							if ( this.moderatedUsers.has(login) )
+								return;
+
+							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
+								do_update = m => {
+									if ( m.event )
+										m = m.event;
+
+									if ( m.type === types.Message && m.user && m.user.userLogin === login )
+										m.deleted = true;
+								};
+
+							if ( do_remove ) {
+								this.buffer = this.buffer.filter(m => m.type !== types.Message || ! m.user || m.user.userLogin !== login);
+								this._isDirty = true;
+								this.onBufferUpdate();
+
+							} else
+								this.buffer.forEach(do_update);
+
+							this.delayedMessageBuffer.forEach(do_update);
+
+							this.moderatedUsers.add(login);
+							setTimeout(this.unmoderateUser(login), 1000);
+							return;
+
+						} else if ( msg.type === types.Clear ) {
+							if ( t.chat.context.get('chat.filtering.ignore-clear') )
+								msg = {
+									type: types.Notice,
+									message: t.i18n.t('chat.ignore-clear', 'An attempt to clear chat was ignored.')
+								}
+
+						}
+
+					} catch(err) {
+						t.log.capture(err, {extra: {msg}})
+					}
+				}
+
+				return old_consume.call(this, msg);
+			}
+
+		cls.prototype.flushRawMessages = function() {
+			const out = [],
+				now = Date.now(),
+				raw_delay = t.chat.context.get('chat.delay'),
+				delay = raw_delay === -1 ? this.delayDuration : raw_delay,
+				first = now - delay,
+				do_remove = t.chat.context.get('chat.filtering.remove-deleted');
+
+			let changed = false;
+
+			for(const msg of this.delayedMessageBuffer) {
+				if ( msg.time <= first || ! msg.shouldDelay ) {
+					if ( do_remove !== 0 && (do_remove > 1 || ! this.shouldSeeBlockedAndDeletedMessages) && this.isDeletable(msg.event) && msg.event.deleted )
+						continue;
+
+					this.buffer.push(msg.event);
+					changed = true;
+
+				} else
+					out.push(msg);
+			}
+
+			this.delayedMessageBuffer = out;
+
+			if ( changed ) {
+				this._isDirty = true;
+				this.onBufferUpdate();
+			}
+		}
 
 		cls.prototype.toArray = function() {
 			const buf = this.buffer,
@@ -566,6 +694,30 @@ export default class ChatHook extends Module {
 		}
 
 
+		cls.prototype.ffzGetEmotes = function() {
+			const emote_map = this.client && this.client.session && this.client.session.emoteMap;
+			if ( this._ffz_cached_map === emote_map )
+				return this._ffz_cached_emotes;
+
+			this._ffz_cached_map = emote_map;
+			const emotes = this._ffz_cached_emotes = {};
+
+			if ( emote_map )
+				for(const emote of Object.values(emote_map))
+					if ( emote ) {
+						const token = emote.token;
+						if ( Array.isArray(REGEX_EMOTES[token]) ) {
+							for(const tok of REGEX_EMOTES[token] )
+								emotes[tok] = emote.id;
+
+						} else
+							emotes[token] = emote.id;
+					}
+
+			return emotes;
+		}
+
+
 		cls.prototype.connectHandlers = function(...args) {
 			if ( ! this._ffz_init ) {
 				const i = this;
@@ -580,6 +732,42 @@ export default class ChatHook extends Module {
 							return ret;
 						}
 				}
+
+				const old_chat = this.onChatMessageEvent;
+				this.onChatMessageEvent = function(e) {
+					if ( e && e.sentByCurrentUser ) {
+						try {
+							e.message.user.emotes = findEmotes(
+								e.message.body,
+								i.ffzGetEmotes()
+							);
+
+						} catch(err) {
+							t.log.capture(err, {extra: e});
+						}
+					}
+
+					return old_chat.call(i, e);
+				}
+
+
+				const old_action = this.onChatActionEvent;
+				this.onChatActionEvent = function(e) {
+					if ( e && e.sentByCurrentUser ) {
+						try {
+							e.message.user.emotes = findEmotes(
+								e.message.body,
+								i.ffzGetEmotes()
+							);
+
+						} catch(err) {
+							t.log.capture(err, {extra: e});
+						}
+					}
+
+					return old_action.call(i, e);
+				}
+
 
 				const old_resub = this.onResubscriptionEvent;
 				this.onResubscriptionEvent = function(e) {
@@ -626,11 +814,11 @@ export default class ChatHook extends Module {
 
 				const old_post = this.postMessage;
 				this.postMessage = function(e) {
-					const original = this._wrapped;
+					const original = i._wrapped;
 					if ( original && ! e._ffz_checked )
-						return this.postMessageToCurrentChannel(original, e);
+						return i.postMessageToCurrentChannel(original, e);
 
-					return old_post.call(this, e);
+					return old_post.call(i, e);
 				}
 
 				this._ffz_init = true;
@@ -662,11 +850,6 @@ export default class ChatHook extends Module {
 					message.message = original.action;
 				else
 					message.message = original.message.body;
-
-				// Twitch doesn't generate a proper emote tag for echoed back
-				// actions, so we have to regenerate it. Fun. :D
-				if ( user && user.username === this.userLogin )
-					message.emotes = findEmotes(message.message, this.selfEmotes);
 			}
 
 			this.postMessage(message);
@@ -752,6 +935,9 @@ export default class ChatHook extends Module {
 	// ========================================================================
 
 	chatMounted(chat, props) {
+		if ( chat.chatBuffer )
+			chat.chatBuffer.ffzController = chat;
+
 		if ( ! props )
 			props = chat.props;
 
@@ -762,7 +948,18 @@ export default class ChatHook extends Module {
 	}
 
 
+	chatUmounted(chat) {
+		if ( chat.chatBuffer && chat.chatBuffer.ffzController === this )
+			chat.chatBuffer.ffzController = null;
+
+		this.removeRoom(chat);
+	}
+
+
 	chatUpdated(chat, props) {
+		if ( chat.chatBuffer )
+			chat.chatBuffer.ffzController = chat;
+
 		if ( props.channelID !== chat.props.channelID ) {
 			this.removeRoom(chat);
 			this.chatMounted(chat, props);
@@ -908,7 +1105,7 @@ export function findEmotes(msg, emotes) {
 
 		if ( has(emotes, part) ) {
 			const em = emotes[part],
-				matches = out[em.id] = out[em.id] || [];
+				matches = out[em] = out[em] || [];
 
 			matches.push({
 				startIndex: idx,

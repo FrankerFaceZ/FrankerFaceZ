@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
 
@@ -7,6 +8,10 @@ const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanPlugin = require('clean-webpack-plugin');
 
 const uglify = require('uglify-es');
+
+// Get Git info
+
+const commit_hash = require('child_process').execSync('git rev-parse HEAD').toString().trim();
 
 /* global module Buffer */
 
@@ -27,6 +32,9 @@ const config = module.exports = merge(common, {
 					keep_fnames: true
 				}
 			}
+		}),
+		new webpack.DefinePlugin({
+			__git_commit__: JSON.stringify(commit_hash)
 		}),
 		new CopyPlugin([
 			{

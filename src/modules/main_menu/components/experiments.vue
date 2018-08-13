@@ -10,7 +10,7 @@
 			</div>
 			<select
 				ref="sort_select"
-				class="tw-mg-x-05 tw-select tw-display-line tw-width-auto"
+				class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 				@change="onSort"
 			>
 				<option :selected="sort_by === 0">{{ t('setting.experiments.sort-name', 'Sort By: Name') }}</option>
@@ -40,7 +40,7 @@
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
 						<select
 							:data-key="key"
-							class="tw-mg-05 tw-select tw-display-line tw-width-auto"
+							class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 							@change="onChange($event)"
 						>
 							<option
@@ -108,7 +108,7 @@
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
 						<select
 							:data-key="key"
-							class="tw-mg-05 tw-select tw-display-line tw-width-auto"
+							class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 							@change="onTwitchChange($event)"
 						>
 							<option

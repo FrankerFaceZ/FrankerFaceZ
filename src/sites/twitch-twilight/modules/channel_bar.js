@@ -5,10 +5,9 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {deep_copy} from 'utilities/object';
+import { get } from 'utilities/object';
 
 import CHANNEL_QUERY from './channel_bar_query.gql';
-
 
 export default class ChannelBar extends Module {
 	constructor(...args) {
@@ -16,32 +15,25 @@ export default class ChannelBar extends Module {
 
 		this.should_enable = true;
 
+		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.apollo');
 		this.inject('metadata');
 		this.inject('socket');
 
-		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', CHANNEL_QUERY);
-		this.apollo.registerModifier('ChannelPage_ChannelInfoBar_User', data => {
+		this.apollo.registerModifier('ChannelPage_User', CHANNEL_QUERY);
+		/*this.apollo.registerModifier('ChannelPage_User', data => {
 			const u = data && data.data && data.data.user;
 			if ( u ) {
 				const o = u.profileViewCount = new Number(u.profileViewCount || 0);
 				o.data = deep_copy(u);
 			}
-		}, false);
-
+		}, false);*/
 
 		this.ChannelBar = this.fine.define(
 			'channel-bar',
-			n => n.getTitle && n.getGame && n.renderGame,
-			['user']
-		);
-
-
-		this.HostBar = this.fine.define(
-			'host-container',
-			n => n.handleReportHosterClick,
-			['user']
+			n => n.renderChannelMetadata && n.renderTitleInfo,
+			['user', 'user-video', 'user-clip', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		)
 	}
 
@@ -51,24 +43,16 @@ export default class ChannelBar extends Module {
 		this.ChannelBar.on('update', this.updateChannelBar, this);
 
 		this.ChannelBar.ready((cls, instances) => {
+			this.settings.updateContext({new_channel: true});
+
 			for(const inst of instances)
 				this.updateChannelBar(inst);
 		});
-
-
-		/*this.HostBar.on('unmount', this.unmountHostBar, this);
-		this.HostBar.on('mount', this.updateHostBar, this);
-		this.HostBar.on('update', this.updateHostBar, this);
-
-		this.HostBar.ready((cls, instances) => {
-			for(const inst of instances)
-				this.updateHostBar(inst);
-		});*/
 	}
 
 
 	updateChannelBar(inst) {
-		const login = inst.props.channelLogin;
+		const login = get('props.data.user.login', inst);
 		if ( login !== inst._ffz_old_login ) {
 			if ( inst._ffz_old_login )
 				this.socket.unsubscribe(inst, `channel.${inst._ffz_old_login}`);
@@ -99,10 +83,12 @@ export default class ChannelBar extends Module {
 
 	updateMetadata(inst, keys) {
 		const container = this.fine.getChildNode(inst),
-			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex');
+			wrapper = container && container.querySelector && container.querySelector('.side-nav-channel-info__info-wrapper > .tw-pd-t-05');
 
-		if ( ! inst._ffz_mounted || ! metabar )
+		if ( ! inst._ffz_mounted || ! wrapper )
 			return;
+
+		const metabar = wrapper;
 
 		if ( ! keys )
 			keys = this.metadata.keys;
@@ -112,7 +98,7 @@ export default class ChannelBar extends Module {
 		const timers = inst._ffz_meta_timers = inst._ffz_meta_timers || {},
 			refresh_func = key => this.updateMetadata(inst, key),
 			data = {
-				channel: inst.props.userData && inst.props.userData.user,
+				channel: inst.props.data && inst.props.data.user,
 				hosting: false,
 				_inst: inst
 			}

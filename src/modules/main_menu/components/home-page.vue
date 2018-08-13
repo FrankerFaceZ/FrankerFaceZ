@@ -28,7 +28,6 @@
 
 				<ul class="tw-mg-b-2">
 					<li>Settings from the old version are not being imported.</li>
-					<li>Settings cannot be searched.</li>
 					<li>Advanced input (better tab completion, history) isn't available.</li>
 				</ul>
 

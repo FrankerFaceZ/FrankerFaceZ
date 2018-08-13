@@ -8,17 +8,15 @@ import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import {has, deep_copy} from 'utilities/object';
 
-import {parse_path} from 'src/settings';
+import Dialog from 'utilities/dialog';
 
-const EXCLUSIVE_SELECTOR = '.twilight-main,.twilight-minimal-root>div,.twilight-root>.tw-full-height',
-	MAXIMIZED_SELECTOR = '.twilight-main,.twilight-minimal-root,.twilight-root .dashboard-side-nav+.tw-full-height',
-	SELECTOR = '.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height';
+import {parse_path} from 'src/settings';
 
 function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
 }
 
-// TODO: Rewrite literally everything about the menu to use vue-router and further
+// TODO: Rewrite literally everything about the menu to use a router and further
 // separate the concept of navigation from visible pages.
 
 export default class MainMenu extends Module {
@@ -37,11 +35,8 @@ export default class MainMenu extends Module {
 		this._settings_tree = null;
 		this._settings_count = 0;
 
-		this._menu = null;
-		this._visible = true;
-		this._maximized = false;
-		this.exclusive = false;
-
+		this.dialog = new Dialog(() => this.buildDialog());
+		this.has_update = false;
 
 		this.settings.addUI('profiles', {
 			path: 'Data Management @{"sort": 1000, "profile_warning": false} > Profiles @{"profile_warning": false}',
@@ -63,6 +58,36 @@ export default class MainMenu extends Module {
 			component: 'changelog'
 		});
 
+		this.on('socket:command:new_version', version => {
+			if ( version === window.FrankerFaceZ.version_info.commit )
+				return;
+
+			this.log.info('New Version:', version);
+			this.has_update = true;
+
+			const mb = this.resolve('site.menu_button');
+			if ( mb )
+				mb.has_update = true;
+
+			if ( this._vue )
+				this._vue.$children[0].context.has_update = true;
+		});
+	}
+
+	openPopout() {
+		const win = window.open(
+			'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
+			'_blank',
+			'resizable=yes,scrollbars=yes,width=850,height=600'
+		);
+
+		if ( win ) {
+			win.focus();
+			return true;
+		} else {
+			this.log.warn('Unable to open popout settings window.');
+			return false;
+		}
 	}
 
 	async onLoad() {
@@ -71,109 +96,43 @@ export default class MainMenu extends Module {
 		);
 	}
 
-	get maximized() {
-		return this._maximized;
-	}
 
-	set maximized(val) {
-		val = Boolean(val);
-		if ( val === this._maximized )
-			return;
+	async onEnable() {
+		await this.site.awaitElement(Dialog.EXCLUSIVE);
 
-		if ( this.enabled )
-			this.toggleSize();
-	}
+		this.dialog.on('hide', this.destroyDialog, this);
+		this.dialog.on('resize', () => {
+			if ( this._vue )
+				this._vue.$children[0].maximized = this.dialog.maximized
+		});
 
-	get visible() {
-		return this._visible;
-	}
-
-	set visible(val) {
-		val = Boolean(val);
-		if ( val === this._visible )
-			return;
-
-		if ( this.enabled )
-			this.toggleVisible();
-	}
-
-
-	async onEnable(event) {
-		await this.site.awaitElement(EXCLUSIVE_SELECTOR);
-
-		this.on('site.menu_button:clicked', this.toggleVisible);
-		if ( this._visible ) {
-			this._visible = false;
-			this.toggleVisible(event);
-		}
+		this.on('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
+		this.dialog.show();
 	}
 
 	onDisable() {
-		if ( this._visible ) {
-			this.toggleVisible();
-			this._visible = true;
-		}
-
-		this.off('site.menu_button:clicked', this.toggleVisible);
+		this.dialog.hide();
+		this.off('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
 	}
 
-	getContainer() {
-		if ( this.exclusive )
-			return document.querySelector(EXCLUSIVE_SELECTOR);
 
-		if ( this._maximized )
-			return document.querySelector(MAXIMIZED_SELECTOR);
+	buildDialog() {
+		if ( this._menu )
+			return this._menu;
 
-		return document.querySelector(SELECTOR);
+		this._vue = new this.vue.Vue({
+			el: createElement('div'),
+			render: h => h('main-menu', this.getData())
+		});
+
+		return this._menu = this._vue.$el;
 	}
 
-	toggleVisible(event) {
-		if ( event && event.button !== 0 )
-			return;
+	destroyDialog() {
+		if ( this._vue )
+			this._vue.$destroy();
 
-		const maximized = this._maximized,
-			visible = this._visible = !this._visible,
-			main = this.getContainer();
-
-		if ( ! visible ) {
-			if ( maximized )
-				main.classList.remove('ffz-has-menu');
-
-			if ( this._menu ) {
-				this._menu.remove();
-				this._vue.$destroy();
-				this._menu = this._vue = null;
-			}
-
-			return;
-		}
-
-		if ( ! this._menu )
-			this.createMenu();
-
-		if ( maximized )
-			main.classList.add('ffz-has-menu');
-
-		main.appendChild(this._menu);
-	}
-
-	toggleSize(event) {
-		if ( ! this._visible || event && event.button !== 0 )
-			return;
-
-		const maximized = this._maximized = !this._maximized,
-			main = this.getContainer(),
-			old_main = this._menu.parentElement;
-
-		if ( maximized )
-			main.classList.add('ffz-has-menu');
-		else
-			old_main.classList.remove('ffz-has-menu');
-
-		this._menu.remove();
-		main.appendChild(this._menu);
-
-		this._vue.$children[0].maximized = maximized;
+		this._menu = this._vue = null;
 	}
 
 
@@ -204,6 +163,7 @@ export default class MainMenu extends Module {
 			return;
 
 		const tree = this._settings_tree,
+			expanded = this.settings.provider.get('settings-expanded', {}),
 			tokens = def.ui.path_tokens,
 			len = tokens.length;
 
@@ -228,6 +188,10 @@ export default class MainMenu extends Module {
 				};
 
 			Object.assign(token, raw_token);
+
+			if ( has(expanded, key) )
+				token.expanded = expanded[key];
+
 			prefix = key;
 		}
 
@@ -443,6 +407,8 @@ export default class MainMenu extends Module {
 				profile_keys,
 				currentProfile: profile_keys[0],
 
+				has_update: this.has_update,
+
 				createProfile: data => {
 					const profile = settings.createProfile(data);
 					return t.getProfileProxy(profile, context);
@@ -542,28 +508,31 @@ export default class MainMenu extends Module {
 		return {
 			context,
 
+			query: '',
+			faded: false,
+
 			nav: settings,
-			currentItem: settings.keys['home'], // settings[0],
+			currentItem: this.has_update ?
+				settings.keys['home.changelog'] :
+				settings.keys['home'], // settings[0],
 			nav_keys: settings.keys,
 
-			maximized: this._maximized,
-			resize: e => !this.exclusive && this.toggleSize(e),
-			close: e => !this.exclusive && this.toggleVisible(e),
+			maximized: this.dialog.maximized,
+			exclusive: this.dialog.exclusive,
+
+			resize: e => ! this.dialog.exclusive && this.dialog.toggleSize(e),
+			close: e => ! this.dialog.exclusive && this.dialog.toggleVisible(e),
+
+			popout: e => {
+				if ( this.dialog.exclusive )
+					return;
+
+				this.dialog.toggleVisible(e);
+				if ( ! this.openPopout() )
+					alert(this.i18n.t('popup.error', 'We tried opening a pop-up window and could not. Make sure to allow pop-ups from Twitch.')); // eslint-disable-line no-alert
+			},
+
 			version: window.FrankerFaceZ.version_info,
-
-			exclusive: this.exclusive
 		}
-	}
-
-	createMenu() {
-		if ( this._menu )
-			return;
-
-		this._vue = new this.vue.Vue({
-			el: createElement('div'),
-			render: h => h('main-menu', this.getData())
-		});
-
-		this._menu = this._vue.$el;
 	}
 }

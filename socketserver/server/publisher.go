@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -140,13 +141,14 @@ func HTTPBackendDropBacklog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func rateLimitFromRequest(r *http.Request) (rate.Limiter, error) {
-	if r.FormValue("rateCount") != "" {
-		c, err := strconv.ParseInt(r.FormValue("rateCount"), 10, 32)
+func rateLimitFromFormData(formData url.Values) (rate.Limiter, error) {
+	rateCount := formData.Get("rateCount")
+	if rateCount != "" {
+		c, err := strconv.ParseInt(rateCount, 10, 32)
 		if err != nil {
 			return nil, errors.Wrap(err, "rateCount")
 		}
-		d, err := time.ParseDuration(r.FormValue("rateTime"))
+		d, err := time.ParseDuration(formData.Get("rateTime"))
 		if err != nil {
 			return nil, errors.Wrap(err, "rateTime")
 		}
@@ -186,7 +188,7 @@ func HTTPBackendCachedPublish(w http.ResponseWriter, r *http.Request) {
 		}
 		expires = time.Unix(timeNum, 0)
 	}
-	rl, err := rateLimitFromRequest(r)
+	rl, err := rateLimitFromFormData(formData)
 	if err != nil {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "error parsing ratelimit: %v", err)
@@ -253,7 +255,7 @@ func HTTPBackendUncachedPublish(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Error: channel must be specified")
 		return
 	}
-	rl, err := rateLimitFromRequest(r)
+	rl, err := rateLimitFromFormData(formData)
 	if err != nil {
 		w.WriteHeader(422)
 		fmt.Fprintf(w, "error parsing ratelimit: %v", err)

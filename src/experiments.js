@@ -177,13 +177,41 @@ export default class ExperimentManager extends Module {
 		const core = this.resolve('site').getCore(),
 			exps = core && core.experiments;
 
-		if ( exps && exps.overrides[key] )
+		if ( ! exps )
+			return null;
+
+		if ( ! exps.hasInitialized && exps.initialize )
+			try {
+				exps.initialize();
+			} catch(err) {
+				this.log.warn('Error attempting to initialize Twitch experiments tracker.', err);
+			}
+
+		if ( exps.overrides && exps.overrides[key] )
 			return exps.overrides[key];
 
-		else if ( exps && exps.assignments[key] )
+		else if ( exps.assignments && exps.assignments[key] )
 			return exps.assignments[key];
 
 		return null;
+	}
+
+	getTwitchKeyFromName(name) {
+		const experiments = this.getTwitchExperiments();
+		if ( ! experiments )
+			return undefined;
+
+		name = name.toLowerCase();
+		for(const key in experiments)
+			if ( has(experiments, key) ) {
+				const data = experiments[key];
+				if ( data && data.name && data.name.toLowerCase() === name )
+					return key;
+			}
+	}
+
+	getTwitchAssignmentByName(name) {
+		return this.getTwitchAssignment(this.getTwitchKeyFromName(name));
 	}
 
 	_rebuildTwitchKey(key, is_set, new_val) {

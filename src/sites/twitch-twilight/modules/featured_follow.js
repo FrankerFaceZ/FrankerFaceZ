@@ -50,7 +50,7 @@ export default class FeaturedFollow extends Module {
 			order: 150,
 			button: true,
 
-			popup: async (data, tip) => {
+			popup: async (data, tip, refresh_fn, add_callback) => {
 				const vue = this.resolve('vue'),
 					_featured_follow_vue = import(/* webpackChunkName: "featured-follow" */ './featured-follow.vue'),
 					_follows = this.getFollowsForLogin(data.channel.login);
@@ -61,7 +61,7 @@ export default class FeaturedFollow extends Module {
 				tip.element.classList.remove('tw-pd-1');
 				tip.element.classList.add('tw-balloon--lg');
 				vue.component('featured-follow', featured_follows_vue.default);
-				return this.buildFeaturedFollowMenu(vue, data.channel.login, follows);
+				return this.buildFeaturedFollowMenu(vue, data.channel.login, follows, add_callback);
 			},
 
 			label: data => {
@@ -71,7 +71,7 @@ export default class FeaturedFollow extends Module {
 				const follows = this.follow_data[data.channel.login];
 				if (!follows || !Object.keys(follows).length) {
 					if (!this.vueFeaturedFollow || !this.vueFeaturedFollow.data.hasUpdate) {
-						return '';
+						return null;
 					}
 				}
 
@@ -127,7 +127,7 @@ export default class FeaturedFollow extends Module {
 		return follows;
 	}
 
-	buildFeaturedFollowMenu(vue, login, follows) {
+	buildFeaturedFollowMenu(vue, login, follows, add_close_callback) {
 		const vueEl = new vue.Vue({
 			el: createElement('div'),
 			render: h => this.vueFeaturedFollow = h('featured-follow', {
@@ -139,7 +139,8 @@ export default class FeaturedFollow extends Module {
 				unfollowUser: id => this.unfollowUser(follows, id),
 				updateNotificationStatus: (id, oldStatus) => this.updateNotificationStatus(follows, id, oldStatus),
 				refresh: async () => {
-					if (!this.vueFeaturedFollow.data.hasUpdate) return;
+					if ( ! this.vueFeaturedFollow || ! this.vueFeaturedFollow.data.hasUpdate )
+						return;
 
 					this.vueFeaturedFollow.data.follows = await this.getFollowsForLogin(login);
 					this.vueFeaturedFollow.data.hasUpdate = false;
@@ -150,6 +151,10 @@ export default class FeaturedFollow extends Module {
 				route: channel => this.route(channel)
 			}),
 		});
+
+		add_close_callback(() => {
+			this.vueFeaturedFollow = null;
+		})
 
 		return vueEl.$el;
 	}

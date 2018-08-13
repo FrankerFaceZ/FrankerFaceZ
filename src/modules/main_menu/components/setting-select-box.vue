@@ -11,7 +11,7 @@
 			<select
 				ref="control"
 				:id="item.full_key"
-				class="tw-mg-05 tw-select tw-display-inline tw-width-auto"
+				class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-05"
 				@change="onChange"
 			>
 				<option

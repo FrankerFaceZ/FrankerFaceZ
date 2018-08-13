@@ -9,7 +9,7 @@
 				id="edit_duration"
 				v-model.number="value.duration"
 				:placeholder="defaults.duration"
-				class="tw-mg-y-05 tw-input tw-display-inline"
+				class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				type="number"
 				@input="$emit('input', value)"
 			>
@@ -23,7 +23,7 @@
 			<input
 				id="edit_reason"
 				v-model.trim="value.reason"
-				class="tw-mg-y-05 tw-input tw-display-inline"
+				class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				@input="$emit('input', value)"
 			>
 		</div>

@@ -1,0 +1,72 @@
+.twilight-root {
+	--ffz-player-width: calc(100vw - var(--ffz-portrait-extra-width));
+	--ffz-player-height: calc(calc(calc(var(--ffz-player-width) * 0.5625) + var(--ffz-portrait-extra-height)));
+	--ffz-theater-height: calc(calc(100vw * 0.5625) + var(--ffz-portrait-extra-height));
+
+	& > .tw-full-height {
+		height: var(--ffz-player-height) !important;
+	}
+
+	.persistent-player {
+		pointer-events: none;
+		bottom: calc(100vh - var(--ffz-player-height)) !important;
+
+		> * {
+			pointer-events: auto;
+		}
+	}
+
+	.persistent-player.persistent-player--theatre {
+		top: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+		bottom: unset !important;
+		height: var(--ffz-theater-height) !important;
+		width: 100% !important;
+	}
+
+	.whispers--theatre-mode {
+		bottom: 5rem !important;
+		right: 0 !important;
+	}
+
+	.right-column {
+		display: unset !important;
+		position: fixed !important;
+		z-index: 10000;
+		bottom: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+		height: calc(100vh - var(--ffz-player-height)) !important;
+		border-top: 1px solid #dad8de;
+
+		.right-column__toggle-visibility {
+			position: fixed !important;
+			top: 6.5rem;
+			right: .5rem;
+			left: unset !important;
+		}
+
+		.emote-picker__tab-content {
+			max-height: calc(calc(100vh - var(--ffz-player-height)) - 26rem);
+		}
+
+		&.right-column--theatre {
+			top: unset !important;
+			height: calc(100vh - var(--ffz-theater-height)) !important;
+
+			.emote-picker__tab-content {
+				max-height: calc(calc(100vh - var(--ffz-theater-height)) - 26rem);
+			}
+		}
+
+		.tw-theme--dark & {
+			border-top-color: #2a2a2a
+		}
+
+		.channel-root__right-column,
+		.channel-page__right-column {
+			width: 100%;
+		}
+	}
+}

@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -52,13 +51,6 @@ const AuthorizeCommand Command = "do_authorize"
 const AsyncResponseCommand Command = "_async"
 
 const defaultMinMemoryKB = 1024 * 24
-
-// DotTwitchDotTv is the .twitch.tv suffix.
-const DotTwitchDotTv = ".twitch.tv"
-
-const dotCbenniDotCom = ".cbenni.com"
-
-var OriginRegexp = regexp.MustCompile("(" + DotTwitchDotTv + "|" + dotCbenniDotCom + ")" + "$")
 
 // ResponseSuccess is a Reply ClientMessage with the MessageID not yet filled out.
 var ResponseSuccess = ClientMessage{Command: SuccessCommand}
@@ -228,7 +220,18 @@ var SocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  160,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return r.Header.Get("Origin") == "" || OriginRegexp.MatchString(r.Header.Get("Origin"))
+		origin := r.Header.Get("Origin")
+		if origin == "" || ! Configuration.UseOriginChecks {
+			return true
+		}
+
+		for _, allowedOrigin := range Configuration.AllowedOrigins {
+			if strings.Contains(origin, allowedOrigin) {
+				return true
+			}
+		}
+
+		return false
 	},
 }
 

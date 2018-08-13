@@ -71,6 +71,11 @@ export class Vue extends Module {
 						return t.i18n.t(key, phrase, options);
 					},
 
+					tList_(key, phrase, options) {
+						this.locale && this.phrases[key];
+						return t.i18n.tList(key, phrase, options);
+					},
+
 					setLocale(locale) {
 						t.i18n.locale = locale;
 					}
@@ -96,6 +101,9 @@ export class Vue extends Module {
 			methods: {
 				t(key, phrase, options) {
 					return this.$i18n.t_(key, phrase, options);
+				},
+				tList(key, phrase, options) {
+					return this.$i18n.tList_(key, phrase, options);
 				}
 			}
 		});

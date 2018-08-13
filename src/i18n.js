@@ -7,7 +7,7 @@
 // ============================================================================
 
 import {SERVER} from 'utilities/constants';
-import {get, pick_random, has} from 'utilities/object';
+import {get, pick_random, has, timeout} from 'utilities/object';
 import Module from 'utilities/module';
 
 
@@ -68,6 +68,8 @@ export class TranslationManager extends Module {
 	constructor(...args) {
 		super(...args);
 		this.inject('settings');
+
+		this._seen = new Set;
 
 		this.availableLocales = ['en']; //, 'de', 'ja'];
 
@@ -135,9 +137,17 @@ export class TranslationManager extends Module {
 	}
 
 	onEnable() {
-		this._ = new TranslationCore; /*({
-			awarn: (...args) => this.log.info(...args)
-		});*/
+		this._ = new TranslationCore({
+			formatters: {
+				'humanTime': n => this.toHumanTime(n)
+			}
+		});
+
+		if ( window.BroadcastChannel ) {
+			const bc = this._broadcaster = new BroadcastChannel('ffz-i18n');
+			bc.addEventListener('message',
+				this._boundHandleMessage = this.handleMessage.bind(this));
+		}
 
 		this._.transformation = TRANSFORMATIONS[this.settings.get('i18n.debug.transform')];
 		this.locale = this.settings.get('i18n.locale');
@@ -152,6 +162,55 @@ export class TranslationManager extends Module {
 	}
 
 
+	handleMessage(event) {
+		const msg = event.data;
+		if ( msg.type === 'seen' )
+			this.see(msg.key, true);
+
+		else if ( msg.type === 'request-keys' ) {
+			this.broadcast({type: 'keys', keys: Array.from(this._seen)})
+		}
+
+		else if ( msg.type === 'keys' )
+			this.emit(':receive-keys', msg.keys);
+	}
+
+
+	async getKeys() {
+		this.broadcast({type: 'request-keys'});
+
+		let data;
+
+		try {
+			data = await timeout(this.waitFor(':receive-keys'), 100);
+		} catch(err) { /* no-op */ }
+
+		if ( data )
+			for(const val of data)
+				this._seen.add(val);
+
+		return this._seen;
+	}
+
+
+	broadcast(msg) {
+		if ( this._broadcaster )
+			this._broadcaster.postMessage(msg)
+	}
+
+
+	see(key, from_broadcast = false) {
+		if ( this._seen.has(key) )
+			return;
+
+		this._seen.add(key);
+		this.emit(':seen', key);
+
+		if ( ! from_broadcast )
+			this.broadcast({type: 'seen', key});
+	}
+
+
 	toLocaleString(thing) {
 		if ( thing && thing.toLocaleString )
 			return thing.toLocaleString(this._.locale);
@@ -161,6 +220,9 @@ export class TranslationManager extends Module {
 
 	toHumanTime(duration, factor = 1) {
 		// TODO: Make this better. Make all time handling better in fact.
+
+		if ( duration instanceof Date )
+			duration = (Date.now() - duration.getTime()) / 1000;
 
 		duration = Math.floor(duration);
 
@@ -358,8 +420,14 @@ export class TranslationManager extends Module {
 		return this._.formatNumber(...args);
 	}
 
-	t(...args) {
-		return this._.t(...args);
+	t(key, ...args) {
+		this.see(key);
+		return this._.t(key, ...args);
+	}
+
+	tList(key, ...args) {
+		this.see(key);
+		return this._.tList(key, ...args);
 	}
 }
 
@@ -391,6 +459,7 @@ export default class TranslationCore {
 		const allowMissing = options.allowMissing ? transformPhrase : null;
 		this.onMissingKey = typeof options.onMissingKey === 'function' ? options.onMissingKey : allowMissing;
 		this.transformPhrase = typeof options.transformPhrase === 'function' ? options.transformPhrase : transformPhrase;
+		this.transformList = typeof options.transformList === 'function' ? options.transformList : transformList;
 		this.delimiter = options.delimiter || /\s*\|\|\|\|\s*/;
 		this.tokenRegex = options.tokenRegex || /%\{(.*?)(?:\|(.*?))?\}/g;
 		this.formatters = Object.assign({}, DEFAULT_FORMATTERS, options.formatters || {});
@@ -457,7 +526,7 @@ export default class TranslationCore {
 		this.extend(phrases);
 	}
 
-	t(key, phrase, options, use_default) {
+	preT(key, phrase, options, use_default) {
 		const opts = options == null ? {} : options;
 		let p, locale;
 
@@ -492,7 +561,19 @@ export default class TranslationCore {
 		if ( this.transformation )
 			p = this.transformation(key, p, opts, locale, this.tokenRegex);
 
+		return [p, opts, locale];
+	}
+
+	t(key, phrase, options, use_default) {
+		const [p, opts, locale] = this.preT(key, phrase, options, use_default);
+
 		return this.transformPhrase(p, opts, locale, this.tokenRegex, this.formatters);
+	}
+
+	tList(key, phrase, options, use_default) {
+		const [p, opts, locale] = this.preT(key, phrase, options, use_default);
+
+		return this.transformList(p, opts, locale, this.tokenRegex, this.formatters);
 	}
 }
 
@@ -502,6 +583,55 @@ export default class TranslationCore {
 // ============================================================================
 
 const DOLLAR_REGEX = /\$/g;
+
+export function transformList(phrase, substitutions, locale, token_regex, formatters) {
+	const is_array = Array.isArray(phrase);
+	if ( substitutions == null )
+		return is_array ? phrase[0] : phrase;
+
+	let p = phrase;
+	const options = typeof substitutions === 'number' ? {count: substitutions} : substitutions;
+
+	if ( is_array )
+		p = p[pluralTypeIndex(
+			locale || 'en',
+			has(options, 'count') ? options.count : 1
+		)] || p[0];
+
+	const result = [];
+
+	token_regex.lastIndex = 0;
+	let idx = 0, match;
+
+	while((match = token_regex.exec(p))) {
+		const nix = match.index,
+			arg = match[1],
+			fmt = match[2];
+
+		if ( nix !== idx )
+			result.push(p.slice(idx, nix));
+
+		let val = get(arg, options);
+
+		if ( val != null ) {
+			const formatter = formatters[fmt];
+			if ( typeof formatter === 'function' )
+				val = formatter(val, locale, options);
+			else if ( typeof val === 'string' )
+				val = REPLACE.call(val, DOLLAR_REGEX, '$$');
+
+			result.push(val);
+		}
+
+		idx = nix + match[0].length;
+	}
+
+	if ( idx < p.length )
+		result.push(p.slice(idx));
+
+	return result;
+}
+
 
 export function transformPhrase(phrase, substitutions, locale, token_regex, formatters) {
 	const is_array = Array.isArray(phrase);

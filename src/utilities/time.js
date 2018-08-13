@@ -22,3 +22,14 @@ export function duration_to_string(elapsed, separate_days, days_only, no_hours, 
 	}${minutes < 10 ? '0' : ''}${minutes}${
 		no_seconds ? '' : `:${seconds < 10 ? '0' : ''}${seconds}`}`;
 }
+
+
+export function print_duration(seconds) {
+	let minutes = Math.floor(seconds / 60),
+		hours = Math.floor(minutes / 60);
+
+	minutes %= 60;
+	seconds %= 60;
+
+	return `${hours > 0 ? `${hours}:${minutes < 10 ? '0' : ''}` : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+}

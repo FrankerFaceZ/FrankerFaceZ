@@ -6,7 +6,7 @@
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, glob_to_regex, escape_regex} from 'utilities/object';
+import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -18,6 +18,8 @@ import * as TOKENIZERS from './tokenizers';
 import * as RICH_PROVIDERS from './rich_providers';
 
 import Actions from './actions';
+
+export const SEPARATORS = '[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]';
 
 
 export default class Chat extends Module {
@@ -60,6 +62,48 @@ export default class Chat extends Module {
 		// Settings
 		// ========================================================================
 
+		this.settings.add('chat.font-size', {
+			default: 12,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Font Size',
+				description: "How large should text in chat be, in pixels. This may be affected by your browser's zoom and font size settings.",
+				component: 'setting-text-box',
+				process(val) {
+					val = parseInt(val, 10);
+					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
+						return 12;
+
+					return val;
+				}
+			}
+		});
+
+		this.settings.add('chat.font-family', {
+			default: '',
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Font Family',
+				description: 'Set the font used for displaying chat messages.',
+				component: 'setting-text-box'
+			}
+		});
+
+		this.settings.add('chat.lines.emote-alignment', {
+			default: 0,
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Emote Alignment',
+				description: 'Change how emotes are positioned in chat, potentially making messages taller in order to avoid having emotes overlap.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Standard'},
+					{value: 1, title: 'Padded'},
+					{value: 2, title: 'Baseline (BTTV-Like)'}
+				]
+			}
+		});
+
 		this.settings.add('chat.rich.enabled', {
 			default: true,
 			ui: {
@@ -96,14 +140,85 @@ export default class Chat extends Module {
 			}
 		});
 
-
 		this.settings.add('chat.filtering.show-deleted', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Behavior >> Deleted Messages',
 				title: 'Always display deleted messages.',
-				description: 'Deleted messages will be faded and displayed with a line through the message text.',
+				description: 'Deleted messages will be displayed differently for differentiation, but never hidden behind <message deleted>.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.filtering.deleted-style', {
+			default: 1,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Deleted Message Style',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Faded'},
+					{value: 1, title: 'Faded, Line Through'}
+				]
+			}
+		});
+
+		this.settings.add('chat.filtering.process-own', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering >> Behavior',
+				title: 'Filter your own messages.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.filtering.ignore-clear', {
+			default: false,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Do not Clear Chat when commanded to.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.filtering.remove-deleted', {
+			default: 1,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Remove deleted messages from chat.',
+				description: 'Deleted messages will be removed from chat entirely. This setting is not recommended for moderators.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'Do Not Remove'},
+					{value: 1, title: 'Remove Unseen (Default)'},
+					{value: 2, title: 'Remove Unseen as Moderator'},
+					{value: 3, title: 'Remove All'}
+				]
+			}
+		});
+
+		this.settings.add('chat.delay', {
+			default: -1,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Artificial Chat Delay',
+				description: 'Delay the appearance of chat messages to allow for moderation before you see them.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: -1, title: 'Default Delay (Room Specific; Non-Mod Only)'},
+					{value: 0, title: 'No Delay'},
+					{value: 300, title: 'Minor (Bot Moderation; 0.3s)'},
+					{value: 1200, title: 'Normal (Human Moderation; 1.2s)'},
+					{value: 5000, title: 'Large (Spoiler Removal / Slow Mods; 5s)'},
+					{value: 10000, title: 'Extra Large (10s)'},
+					{value: 15000, title: 'Extremely Large (15s)'},
+					{value: 20000, title: 'Mods Asleep; Delay Chat (20s)'},
+					{value: 30000, title: 'Half a Minute (30s)'},
+					{value: 60000, title: 'Why??? (1m)'},
+					{value: 788400000000, title: 'The CBenni Option (Literally 25 Years)'}
+				]
 			}
 		});
 
@@ -111,6 +226,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.highlight-basic-terms', {
 			default: [],
 			type: 'array_merge',
+			always_inherit: true,
 			ui: {
 				path: 'Chat > Filtering >> Highlight Terms',
 				component: 'basic-terms',
@@ -129,30 +245,44 @@ export default class Chat extends Module {
 				const colors = new Map;
 
 				for(const item of val) {
-					let list;
 					const c = item.c || null,
 						t = item.t;
 
-					let v = item.v;
+					let v = item.v, word = true;
 
 					if ( t === 'glob' )
 						v = glob_to_regex(v);
 
-					else if ( t !== 'raw' )
+					else if ( t === 'raw' )
+						word = false;
+
+					else if ( t !== 'regex' )
 						v = escape_regex(v);
 
 					if ( ! v || ! v.length )
 						continue;
 
+					try {
+						new RegExp(v);
+					} catch(err) {
+						continue;
+					}
+
 					if ( colors.has(c) )
-						colors.get(c).push(v);
-					else
-						colors.set(c, [v]);
+						colors.get(c)[word ? 0 : 1].push(v);
+					else {
+						const vals = [[],[]];
+						colors.set(c, vals);
+						vals[word ? 0 : 1].push(v);
+					}
 				}
 
+				for(const [key, list] of colors) {
+					if ( list[0].length )
+						list[1].push(`(^|.*?${SEPARATORS})(?:${list[0].join('|')})(?=$|${SEPARATORS})`);
 
-				for(const [key, list] of colors)
-					colors.set(key, new RegExp(`\\b(${list.join('|')})\\b`, 'gi'));
+					colors.set(key, new RegExp(list[1].join('|'), 'gi'));
+				}
 
 				return colors;
 			}
@@ -162,9 +292,11 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.highlight-basic-blocked', {
 			default: [],
 			type: 'array_merge',
+			always_inherit: true,
 			ui: {
 				path: 'Chat > Filtering >> Blocked Terms',
-				component: 'basic-terms'
+				component: 'basic-terms',
+				removable: true
 			}
 		});
 
@@ -176,28 +308,36 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
-				const out = [];
+				const out = [
+					[[], []],
+					[[], []]
+				];
 
 				for(const item of val) {
 					const t = item.t;
-					let v = item.v;
+					let v = item.v, word = true;
 
 					if ( t === 'glob' )
 						v = glob_to_regex(v);
 
-					else if ( t !== 'raw' )
+					else if ( t === 'raw' )
+						word = false;
+
+					else if ( t !== 'regex' )
 						v = escape_regex(v);
 
 					if ( ! v || ! v.length )
 						continue;
 
-					out.push(v);
+					out[item.remove ? 1 : 0][word ? 0 : 1].push(v);
 				}
 
-				if ( ! out.length )
-					return;
+				return out.map(data => {
+					if ( data[0].length )
+						data[1].push(`(^|.*?${SEPARATORS})(?:${data[0].join('|')})(?=$|${SEPARATORS})`);
 
-				return new RegExp(`\\b(${out.join('|')})\\b`, 'gi');
+					return data[1].length ? new RegExp(data[1].join('|'), 'gi') : null;
+				});
 			}
 		});
 
@@ -544,6 +684,43 @@ export default class Chat extends Module {
 	}
 
 
+	standardizeWhisper(msg) { // eslint-disable-line class-methods-use-this
+		if ( ! msg )
+			return msg;
+
+		if ( msg._ffz_message )
+			return msg._ffz_message;
+
+		const emotes = {},
+			is_action = msg.content.startsWith('/me '),
+			offset = is_action ? 4 : 0,
+
+			out = msg._ffz_message = {
+				user: msg.from,
+				message: msg.content.slice(offset),
+				is_action,
+				ffz_emotes: emotes,
+				timestamp: msg.sentAt && msg.sentAt.getTime(),
+				deleted: false
+			};
+
+		out.user.color = out.user.chatColor;
+
+		if ( Array.isArray(msg.emotes) && msg.emotes.length )
+			for(const emote of msg.emotes) {
+				const id = emote.emoteID,
+					em = emotes[id] = emotes[id] || [];
+
+				em.push({
+					startIndex: emote.from - offset,
+					endIndex: emote.to - offset
+				});
+			}
+
+		return out;
+	}
+
+
 	standardizeMessage(msg) { // eslint-disable-line class-methods-use-this
 		if ( ! msg )
 			return msg;
@@ -551,6 +728,9 @@ export default class Chat extends Module {
 		// Standardize User
 		if ( msg.sender && ! msg.user )
 			msg.user = msg.sender;
+
+		if ( msg.from && ! msg.user )
+			msg.user = msg.from;
 
 		let user = msg.user;
 		if ( ! user )
@@ -574,6 +754,10 @@ export default class Chat extends Module {
 				msg.message = msg.content.text;
 		}
 
+		// Standardize Emotes
+		if ( ! msg.ffz_emotes )
+			this.standardizeEmotes(msg);
+
 		// Standardize Badges
 		if ( ! msg.badges && user.displayBadges ) {
 			const b = msg.badges = {};
@@ -593,7 +777,39 @@ export default class Chat extends Module {
 	}
 
 
-	detokenizeContent(msg) { // eslint-disable-line class-methods-use-this
+	standardizeEmotes(msg) { // eslint-disable-line class-methods-use-this
+		if ( msg.emotes && msg.message ) {
+			const emotes = {},
+				chars = split_chars(msg.message);
+
+			for(const key in msg.emotes)
+				if ( has(msg.emotes, key) ) {
+					const raw_emote = msg.emotes[key];
+					if ( Array.isArray(raw_emote) )
+						return msg.ffz_emotes = msg.emotes;
+
+					const em = emotes[raw_emote.id] = emotes[raw_emote.id] || [],
+						idx = chars.indexOf(' ', raw_emote.startIndex);
+
+					em.push({
+						startIndex: raw_emote.startIndex,
+						endIndex: (idx === -1 ? chars.length : idx) - 1
+					});
+				}
+
+			msg.ffz_emotes = emotes;
+			return;
+		}
+
+		if ( msg.messageParts )
+			this.detokenizeMessage(msg, true);
+
+		else if ( msg.content && msg.content.fragments )
+			this.detokenizeContent(msg, true);
+	}
+
+
+	detokenizeContent(msg, emotes_only = false) { // eslint-disable-line class-methods-use-this
 		const out = [],
 			parts = msg.content.fragments,
 			l = parts.length,
@@ -621,18 +837,20 @@ export default class Chat extends Module {
 					ret = ret.slice(4);
 				}
 
-				idx += ret.length;
+				idx += split_chars(ret).length;
 				out.push(ret);
 			}
 		}
 
-		msg.message = out.join('');
-		msg.emotes = emotes;
+		if ( ! emotes_only )
+			msg.message = out.join('');
+
+		msg.ffz_emotes = emotes;
 		return msg;
 	}
 
 
-	detokenizeMessage(msg) { // eslint-disable-line class-methods-use-this
+	detokenizeMessage(msg, emotes_only = false) { // eslint-disable-line class-methods-use-this
 		const out = [],
 			parts = msg.messageParts,
 			l = parts.length,
@@ -680,14 +898,16 @@ export default class Chat extends Module {
 				continue;
 
 			if ( ret ) {
-				idx += ret.length;
+				idx += split_chars(ret).length;
 				last_type = part.type;
 				out.push(ret)
 			}
 		}
 
-		msg.message = out.join('');
-		msg.emotes = emotes;
+		if ( ! emotes_only )
+			msg.message = out.join('');
+
+		msg.ffz_emotes = emotes;
 		return msg;
 	}
 

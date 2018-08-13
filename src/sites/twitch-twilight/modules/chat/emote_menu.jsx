@@ -5,12 +5,22 @@
 // ============================================================================
 
 import {has, get, once, maybe_call, set_equals} from 'utilities/object';
-import {IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {ClickOutside} from 'utilities/dom';
 
 import Twilight from 'site';
 import Module from 'utilities/module';
 
 import SUB_STATUS from './sub_status.gql';
+
+const TONE_EMOJI = [
+	'the_horns',
+	'raised_back_of_hand',
+	'ok_hand',
+	'+1',
+	'clap',
+	'fist'
+];
 
 function maybe_date(val) {
 	if ( ! val )
@@ -162,7 +172,8 @@ export default class EmoteMenu extends Module {
 				data: [
 					{value: 'fav', title: 'Favorites'},
 					{value: 'channel', title: 'Channel'},
-					{value: 'all', title: 'My Emotes'}
+					{value: 'all', title: 'My Emotes'},
+					{value: 'emoji', title: 'Emoji'}
 				]
 			}
 		});
@@ -230,10 +241,18 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.show-search', fup);
 		this.chat.context.on('changed:chat.emote-menu.reduced-padding', fup);
 
+		this.chat.context.on('changed:chat.emoji.style', this.updateEmojiVariables, this);
+
 		this.chat.context.on('changed:chat.emote-menu.icon', val =>
 			this.css_tweaks.toggle('emote-menu', val));
 
 		this.css_tweaks.toggle('emote-menu', this.chat.context.get('chat.emote-menu.icon'));
+
+		this.updateEmojiVariables();
+
+		this.css_tweaks.setVariable('emoji-menu--sheet', `//cdn.frankerfacez.com/static/emoji/sheet_twitter_32.png`);
+		this.css_tweaks.setVariable('emoji-menu--count', 52);
+		this.css_tweaks.setVariable('emoji-menu--size', 20);
 
 		const t = this,
 			React = await this.web_munch.findModule('react'),
@@ -269,6 +288,28 @@ export default class EmoteMenu extends Module {
 		})
 	}
 
+	updateEmojiVariables() {
+		const style = this.chat.context.get('chat.emoji.style') || 'twitter',
+			base = `//cdn.frankerfacez.com/static/emoji/sheet_${style}_`;
+
+		const emoji_size = this.emoji_size = 20,
+			sheet_count = this.emoji_sheet_count = 52,
+			sheet_size = this.emoji_sheet_size = sheet_count * (emoji_size + 2),
+			sheet_pct = this.emoji_sheet_pct = 100 * sheet_size / emoji_size;
+
+		this.emoji_sheet_remain = sheet_size - emoji_size;
+
+		this.css_tweaks.set('emoji-menu', `.ffz--emoji-tone-picker__emoji,.emote-picker__emoji .emote-picker__emote-figure {
+	background-size: ${sheet_pct}% ${sheet_pct}%;
+	background-image: url("${base}20.png");
+	background-image: ${WEBKIT}image-set(
+		url("${base}20.png") 1x,
+		url("${base}32.png") 1.6x,
+		url("${base}64.png") 3.2x
+	);
+}`);
+	}
+
 	maybeUpdate() {
 		if ( this.chat.context.get('chat.emote-menu.enabled') )
 			this.EmoteMenu.forceUpdate();
@@ -289,48 +330,111 @@ export default class EmoteMenu extends Module {
 			React = this.web_munch.getModule('react'),
 			createElement = React && React.createElement;
 
-		this.MenuEmote = function({source, data, lock, locked, all_locked, onClickEmote}) {
-			const handle_click = e => {
-				if ( ! t.emotes.handleClick(e) )
-					onClickEmote(data.name);
-			};
+		this.EmojiTonePicker = class FFZEmojiTonePicker extends React.Component {
+			constructor(props) {
+				super(props);
 
-			const sellout = lock ?
-				all_locked ?
-					t.i18n.t('emote-menu.emote-sub', 'Subscribe for %{price} to unlock this emote.', lock) :
-					t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to %{price} to unlock this emote.', lock)
-				: null;
+				this.onClick = () => this.setState({open: ! this.state.open});
+				this.onMouseEnter = () => this.state.open || this.setState({emoji: this.pickRandomEmoji()});
+				this.onClickOutside = () => this.state.open && this.setState({open: false});
 
-			return (<button
-				class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}`}
-				data-tooltip-type="emote"
-				data-provider={data.provider}
-				data-id={data.id}
-				data-set={data.set_id}
-				data-code={data.code}
-				data-variant={data.variant}
-				data-no-source={source}
-				data-name={data.name}
-				aria-label={data.name}
-				data-locked={data.locked}
-				data-sellout={sellout}
-				onClick={!data.locked && handle_click}
-			>
-				<figure class="emote-picker__emote-figure">
-					<img
-						class={`emote-picker__emote-image${data.emoji ? ' ffz-emoji' : ''}`}
-						src={data.src}
-						srcSet={data.srcSet}
-						alt={data.name}
-						height={data.height ? `${data.height}px` : null}
-						width={data.width ? `${data.width}px` : null}
-					/>
-				</figure>
-				{data.favorite && (<figure class="ffz--favorite ffz-i-star" />)}
-				{locked && (<figure class="ffz-i-lock" />)}
-			</button>)
+				this.clickTone = event => {
+					this.props.pickTone(event.currentTarget.dataset.tone);
+					this.setState({open: false});
+				}
+
+				this.element = null;
+				this.saveRef = element => this.element = element;
+
+				this.state = {
+					open: false,
+					emoji: this.pickRandomEmoji(),
+					tone: null
+				}
+			}
+
+			componentDidMount() {
+				if ( this.element )
+					this._clicker = new ClickOutside(this.element, this.onClickOutside);
+			}
+
+			componentWillUnmount() {
+				if ( this._clicker ) {
+					this._clicker.destroy();
+					this._clicker = null;
+				}
+			}
+
+			pickRandomEmoji() { // eslint-disable-line class-methods-use-this
+				const possibilities = this.props.choices,
+					pick = Math.floor(Math.random() * possibilities.length);
+
+				return possibilities[pick];
+			}
+
+			renderTone(data, tone) {
+				return (<button
+					key={data.code}
+					data-tone={tone}
+					class="tw-interactive tw-block tw-full-width tw-interactable tw-interactable--inverted tw-pd-y-05 tw-pd-x-2"
+					onClick={this.clickTone}
+				>
+					{this.renderEmoji(data)}
+				</button>)
+			}
+
+			renderToneMenu() {
+				if ( ! this.state.open )
+					return null;
+
+				const emoji = this.state.emoji,
+					tones = Object.entries(emoji.variants).map(([tone, emoji]) => this.renderTone(emoji, tone));
+
+				return (<div class="tw-absolute tw-balloon tw-balloon--up tw-balloon--right tw-balloon tw-block">
+					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background tw-elevation-1">
+						{this.renderTone(emoji, null)}
+						{tones}
+					</div>
+				</div>);
+			}
+
+			renderEmoji(data) { // eslint-disable-line class-methods-use-this
+				const emoji_x = (data.sheet_x * (t.emoji_size + 2)) + 1,
+					emoji_y = (data.sheet_y * (t.emoji_size + 2)) + 1,
+
+					x_pct = 100 * emoji_x / t.emoji_sheet_remain,
+					y_pct = 100 * emoji_y / t.emoji_sheet_remain;
+
+				return (<figure
+					class="ffz--emoji-tone-picker__emoji"
+					style={{
+						backgroundPosition: `${x_pct}% ${y_pct}%`
+					}}
+				/>)
+			}
+
+			render() {
+				const emoji = this.state.emoji,
+					tone = this.props.tone,
+					toned = tone && emoji.variants[tone];
+
+				return (<div ref={this.saveRef} class="ffz--emoji-tone-picker tw-relative tw-mg-l-1">
+					<button
+						class="tw-interactive tw-button tw-button--dropmenu tw-button--hollow"
+						onClick={this.onClick}
+						onMouseEnter={this.onMouseEnter}
+					>
+						<span class="tw-button__text">
+							{this.renderEmoji(toned || emoji)}
+						</span>
+						<span class="tw-button__icon tw-button__icon--right">
+							<figure class="ffz-i-down-dir" />
+						</span>
+					</button>
+					{this.renderToneMenu()}
+				</div>)
+			}
 		}
-
 
 		this.MenuSection = class FFZMenuSection extends React.Component {
 			constructor(props) {
@@ -340,8 +444,17 @@ export default class EmoteMenu extends Module {
 				this.state = {collapsed: props.data && collapsed.includes(props.data.key)}
 
 				this.clickHeading = this.clickHeading.bind(this);
+				this.clickEmote = this.clickEmote.bind(this);
+
 				this.onMouseEnter = this.onMouseEnter.bind(this);
 				this.onMouseLeave = this.onMouseLeave.bind(this);
+			}
+
+			clickEmote(event) {
+				if ( t.emotes.handleClick(event) )
+					return;
+
+				this.props.onClickEmote(event.currentTarget.dataset.name)
 			}
 
 			clickHeading() {
@@ -444,20 +557,62 @@ export default class EmoteMenu extends Module {
 				const data = this.props.data,
 					filtered = this.props.filtered,
 					lock = data.locks && data.locks[this.state.unlocked],
-					emotes = data.filtered_emotes && data.filtered_emotes.map(emote => (! filtered || ! emote.locked) && (<t.MenuEmote
-						key={emote.id}
-						onClickEmote={this.props.onClickEmote}
-						data={emote}
-						source={show_sources}
-						locked={emote.locked && (! lock || ! lock.emotes.has(emote.id))}
-						all_locked={data.all_locked}
-						lock={data.locks && data.locks[emote.set_id]}
-					/>));
+
+					emotes = data.filtered_emotes && data.filtered_emotes.map(emote => {
+						if ( filtered && emote.locked )
+							return;
+
+						const locked = emote.locked && (! lock || ! lock.emotes.has(emote.id)),
+							emote_lock = locked && data.locks && data.locks[emote.set_id],
+							sellout = emote_lock ? (data.all_locked ?
+								t.i18n.t('emote-menu.emote-sub', 'Subscribe for %{price} to unlock this emote.', emote_lock) :
+								t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to %{price} to unlock this emote.', emote_lock)
+							) : '';
+
+						return this.renderEmote(
+							emote,
+							locked,
+							show_sources,
+							sellout
+						);
+					});
 
 				return (<div class="tw-pd-1 tw-border-b tw-c-background-alt tw-align-center">
 					{emotes}
 					{!filtered && this.renderSellout()}
 				</div>)
+			}
+
+			renderEmote(emote, locked, source, sellout) {
+				return (<button
+					key={emote.id}
+					class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}`}
+					data-tooltip-type="emote"
+					data-provider={emote.provider}
+					data-id={emote.id}
+					data-set={emote.set_id}
+					data-code={emote.code}
+					data-variant={emote.variant}
+					data-no-source={source}
+					data-name={emote.name}
+					aria-label={emote.name}
+					data-locked={emote.locked}
+					data-sellout={sellout}
+					onClick={!emote.locked && this.clickEmote}
+				>
+					<figure class="emote-picker__emote-figure">
+						<img
+							class={`emote-picker__emote-image${emote.emoji ? ' ffz-emoji' : ''}`}
+							src={emote.src}
+							srcSet={emote.srcSet}
+							alt={emote.name}
+							height={emote.height ? `${emote.height}px` : null}
+							width={emote.width ? `${emote.width}px` : null}
+						/>
+					</figure>
+					{emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
+					{locked && <figure class="ffz-i-lock" />}
+				</button>)
 			}
 
 			renderSellout() {
@@ -475,7 +630,7 @@ export default class EmoteMenu extends Module {
 					<div class="ffz--sub-buttons tw-mg-t-05">
 						{Object.values(data.locks).map(lock => (<a
 							key={lock.price}
-							class="tw-button"
+							class="tw-button tw-border-radius-none"
 							href={lock.url}
 							target="_blank"
 							rel="noopener noreferrer"
@@ -494,14 +649,55 @@ export default class EmoteMenu extends Module {
 
 		this.fine.wrap('ffz-menu-section', this.MenuSection);
 
+		this.EmojiSection = class FFZMenuEmojiSection extends this.MenuSection {
+			renderEmote(emote, locked, source, sellout) {
+				const emoji_x = (emote.x * (t.emoji_size + 2)) + 1,
+					emoji_y = (emote.y * (t.emoji_size + 2)) + 1,
+
+					x_pct = 100 * emoji_x / t.emoji_sheet_remain,
+					y_pct = 100 * emoji_y / t.emoji_sheet_remain;
+
+				return (<button
+					key={emote.id}
+					class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}${emote.emoji ? ' emote-picker__emoji' : ''}`}
+					data-tooltip-type="emote"
+					data-provider={emote.provider}
+					data-id={emote.id}
+					data-set={emote.set_id}
+					data-code={emote.code}
+					data-variant={emote.variant}
+					data-no-source={source}
+					data-name={emote.name}
+					aria-label={emote.name}
+					data-locked={emote.locked}
+					data-sellout={sellout}
+					onClick={!emote.locked && this.clickEmote}
+				>
+					<figure
+						class="emote-picker__emote-figure"
+						style={{
+							backgroundPosition: `${x_pct}% ${y_pct}%`,
+						}}
+					/>
+					{emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
+					{locked && <figure class="ffz-i-lock" />}
+				</button>)
+			}
+		}
+
 
 		this.MenuComponent = class FFZEmoteMenuComponent extends React.Component {
 			constructor(props) {
 				super(props);
 
-				this.state = {tab: null}
+				this.state = {
+					tab: null,
+					tone: t.settings.provider.get('emoji-tone', null)
+				}
+
 				this.componentWillReceiveProps(props);
 
+				this.pickTone = this.pickTone.bind(this);
 				this.clickTab = this.clickTab.bind(this);
 				this.clickRefresh = this.clickRefresh.bind(this);
 				this.handleFilterChange = this.handleFilterChange.bind(this);
@@ -515,6 +711,17 @@ export default class EmoteMenu extends Module {
 			componentWillUnmount() {
 				if ( window.ffz_menu === this )
 					window.ffz_menu = null;
+			}
+
+			pickTone(tone) {
+				t.settings.provider.set('emoji-tone', tone);
+
+				this.setState(this.filterState(
+					this.state.filter,
+					this.buildEmoji(
+						Object.assign({}, this.state, {tone})
+					)
+				));
 			}
 
 			clickTab(event) {
@@ -583,25 +790,22 @@ export default class EmoteMenu extends Module {
 
 				this.setState({loading: true}, () => {
 					t.getData(sets, force).then(d => {
-						this.setState(this.filterState(this.state.filter, this.buildState(
-							this.props,
-							Object.assign({}, this.state, {set_sets: sets, set_data: d, loading: false})
-						)));
+						const promises = [];
+
+						for(const set_id of sets)
+							if ( ! has(d, set_id) )
+								promises.push(t.emotes.awaitTwitchSetChannel(set_id))
+
+						Promise.all(promises).then(() => {
+							this.setState(this.filterState(this.state.filter, this.buildState(
+								this.props,
+								Object.assign({}, this.state, {set_sets: sets, set_data: d, loading: false})
+							)));
+						});
 					});
 				});
 
 				return true;
-			}
-
-			loadSets(props) { // eslint-disable-line class-methods-use-this
-				const emote_sets = props.emote_data && props.emote_data.emoteSets;
-				if ( ! emote_sets || ! emote_sets.length )
-					return;
-
-				for(const emote_set of emote_sets) {
-					const set_id = parseInt(emote_set.id, 10);
-					t.emotes.getTwitchSetChannel(set_id)
-				}
 			}
 
 			filterState(input, old_state) {
@@ -657,19 +861,28 @@ export default class EmoteMenu extends Module {
 
 
 			buildEmoji(old_state) { // eslint-disable-line class-methods-use-this
-				return old_state;
-
-				/*const state = Object.assign({}, old_state),
+				const state = Object.assign({}, old_state),
 
 					sets = state.emoji_sets = [],
 					emoji_favorites = t.emotes.getFavorites('emoji'),
 					style = t.chat.context.get('chat.emoji.style') || 'twitter',
-					favorites = state.favorites = state.favorites || [],
+					favorites = state.favorites = (state.favorites || []).filter(x => ! x.emoji),
+
+					tone = state.tone = state.tone || null,
+					tone_choices = state.tone_emoji = [],
 					categories = {};
 
 				for(const emoji of Object.values(t.emoji.emoji)) {
-					if ( ! emoji.has[style] )
+					if ( ! emoji.has[style] || emoji.category === 'Skin Tones' )
 						continue;
+
+					if ( emoji.variants ) {
+						for(const name of emoji.names)
+							if ( TONE_EMOJI.includes(name) ) {
+								tone_choices.push(emoji);
+								break;
+							}
+					}
 
 					let cat = categories[emoji.category];
 					if ( ! cat ) {
@@ -677,6 +890,7 @@ export default class EmoteMenu extends Module {
 
 						sets.push({
 							key: `emoji-${emoji.category}`,
+							emoji: true,
 							image: t.emoji.getFullImage(emoji.image),
 							title: emoji.category,
 							source: t.i18n.t('emote-menu.emoji', 'Emoji'),
@@ -685,24 +899,29 @@ export default class EmoteMenu extends Module {
 					}
 
 					const is_fav = emoji_favorites.includes(emoji.code),
+						toned = emoji.variants && emoji.variants[tone],
+						has_tone = toned && toned.has[style],
+						source = has_tone ? toned : emoji,
+
 						em = {
 							provider: 'emoji',
 							emoji: true,
 							code: emoji.code,
-							name: emoji.raw,
+							name: source.raw,
+							variant: has_tone && tone,
 
 							search: emoji.names[0],
 
 							height: 18,
 							width: 18,
 
-							x: emoji.sheet_x,
-							y: emoji.sheet_y,
+							x: source.sheet_x,
+							y: source.sheet_y,
 
 							favorite: is_fav,
 
-							src: t.emoji.getFullImage(emoji.image),
-							srcSet: t.emoji.getFullImageSet(emoji.image)
+							src: t.emoji.getFullImage(source.image),
+							srcSet: t.emoji.getFullImageSet(source.image)
 						};
 
 					cat.push(em);
@@ -713,9 +932,22 @@ export default class EmoteMenu extends Module {
 
 				state.has_emoji_tab = sets.length > 0;
 
-				return state;*/
+				state.fav_sets = [{
+					key: 'favorites',
+					is_favorites: true,
+					emotes: favorites
+				}];
+
+				// We use this sorter because we don't want things grouped by sets.
+				favorites.sort(this.getSorter());
+
+				return state;
 			}
 
+
+			getSorter() { // eslint-disable-line class-methods-use-this
+				return EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')];
+			}
 
 			buildState(props, old_state) {
 				const state = Object.assign({}, old_state),
@@ -735,7 +967,7 @@ export default class EmoteMenu extends Module {
 					return state;
 
 				// Sorters
-				const sorter = EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')],
+				const sorter = this.getSorter(),
 					sort_tiers = t.chat.context.get('chat.emote-menu.sort-tiers-last'),
 					sort_emotes = (a,b) => {
 						if ( a.inventory || b.inventory )
@@ -751,6 +983,7 @@ export default class EmoteMenu extends Module {
 
 						return sorter(a,b);
 					}
+
 
 				// Start with the All tab. Some data calculated for
 				// all is re-used for the Channel tab.
@@ -772,7 +1005,7 @@ export default class EmoteMenu extends Module {
 						const set_id = parseInt(emote_set.id, 10),
 							is_inventory = inventory.has(set_id),
 							set_data = data[set_id] || {},
-							more_data = t.emotes.getTwitchSetChannel(set_id),
+							more_data = t.emotes.getTwitchSetChannel(set_id, null, false),
 							image = set_data.image,
 							image_set = set_data.image_set;
 
@@ -802,6 +1035,11 @@ export default class EmoteMenu extends Module {
 								icon = 'inventory';
 								sort_key = 50;
 
+							} else if ( set_data && set_data.type === 'turbo' ) {
+								title = t.i18n.t('emote-menu.prime', 'Prime');
+								icon = 'crown';
+								sort_key = 75;
+
 							} else if ( more_data ) {
 								title = more_data.c_name;
 
@@ -809,11 +1047,7 @@ export default class EmoteMenu extends Module {
 									title = t.i18n.t('emote-menu.global', 'Global Emotes');
 									sort_key = 100;
 
-								} else if ( title === '--twitch-turbo--' || title === 'turbo' || title === '--turbo-faces--' ) {
-									title = t.i18n.t('emote-menu.turbo', 'Turbo');
-									sort_key = 75;
-
-								} else if ( title === '--prime--' || title === '--prime-faces--' ) {
+								} else if ( title === '--twitch-turbo--' || title === 'turbo' || title === '--turbo-faces--' || title === '--prime--' || title === '--prime-faces--' ) {
 									title = t.i18n.t('emote-menu.prime', 'Prime');
 									icon = 'crown';
 									sort_key = 75;
@@ -1032,15 +1266,6 @@ export default class EmoteMenu extends Module {
 
 				state.has_channel_tab = channel.length > 0;
 
-				state.fav_sets = [{
-					key: 'favorites',
-					is_favorites: true,
-					emotes: favorites
-				}];
-
-				// We use this sorter because we don't want things grouped by sets.
-				favorites.sort(sorter);
-
 				return this.buildEmoji(state);
 			}
 
@@ -1129,8 +1354,6 @@ export default class EmoteMenu extends Module {
 				if ( props.visible )
 					this.loadData();
 
-				this.loadSets(props);
-
 				const state = this.buildState(props, this.state);
 				this.setState(this.filterState(state.filter, state));
 			}
@@ -1188,6 +1411,8 @@ export default class EmoteMenu extends Module {
 				if ( (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
 					tab = 'all';
 
+				const is_emoji = tab === 'emoji';
+
 				switch(tab) {
 					case 'fav':
 						sets = this.state.filtered_fav_sets;
@@ -1217,30 +1442,42 @@ export default class EmoteMenu extends Module {
 							<div class="simplebar-scroll-content">
 								<div class="simplebar-content">
 									{loading && this.renderLoading()}
-									{!loading && sets && sets.map(data => (<t.MenuSection
-										key={data.key}
-										data={data}
-										filtered={this.state.filtered}
-										onClickEmote={this.props.onClickEmote}
-									/>))}
+									{!loading && sets && sets.map(data => createElement(
+										data.emoji ? t.EmojiSection : t.MenuSection,
+										{
+											key: data.key,
+											data,
+											filtered: this.state.filtered,
+											onClickEmote: this.props.onClickEmote
+										}
+									))}
 									{! loading && (! sets || ! sets.length) && this.renderEmpty()}
 								</div>
 							</div>
 						</div>
 						<div class="emote-picker__controls-container tw-relative">
-							{t.chat.context.get('chat.emote-menu.show-search') && (<div class="tw-border-t tw-pd-1">
-								<div class="tw-relative">
+							{(is_emoji || t.chat.context.get('chat.emote-menu.show-search')) && (<div class="tw-border-t tw-pd-1">
+								<div class="tw-flex">
 									<input
 										type="text"
-										class="tw-input"
+										class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
 										onChange={this.handleFilterChange}
 										onKeyDown={this.handleKeyDown}
-										placeholder={t.i18n.t('emote-menu.search', 'Search for Emotes')}
+										placeholder={
+											is_emoji ?
+												t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
+												t.i18n.t('emote-menu.search', 'Search for Emotes')
+										}
 										value={this.state.filter}
 										autoFocus
 										autoCapitalize="off"
 										autoCorrect="off"
 									/>
+									{is_emoji && <t.EmojiTonePicker
+										tone={this.state.tone}
+										choices={this.state.tone_emoji}
+										pickTone={this.pickTone}
+									/>}
 								</div>
 							</div>)}
 							<div class="emote-picker__tabs-container tw-flex tw-border-t tw-c-background">

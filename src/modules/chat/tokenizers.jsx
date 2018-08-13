@@ -274,8 +274,11 @@ export const CustomHighlights = {
 		return (<strong class="ffz--highlight">{token.text}</strong>);
 	},
 
-	process(tokens, msg) {
+	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
 		const colors = this.context.get('chat.filtering.highlight-basic-terms--color-regex');
@@ -295,7 +298,9 @@ export const CustomHighlights = {
 				let idx = 0, match;
 
 				while((match = regex.exec(text))) {
-					const nix = match.index;
+					const raw_nix = match.index,
+						offset = match[1] ? match[1].length : 0,
+						nix = raw_nix + offset;
 
 					if ( idx !== nix )
 						out.push({type: 'text', text: text.slice(idx, nix)});
@@ -305,10 +310,10 @@ export const CustomHighlights = {
 
 					out.push({
 						type: 'highlight',
-						text: match[1]
+						text: match[0].slice(offset)
 					});
 
-					idx = nix + match[1].length;
+					idx = raw_nix + match[0].length;
 				}
 
 				if ( idx < text.length )
@@ -320,6 +325,45 @@ export const CustomHighlights = {
 
 		return tokens;
 	}
+}
+
+
+function blocked_process(tokens, msg, regex, do_remove) {
+	const out = [];
+	for(const token of tokens) {
+		if ( token.type !== 'text' ) {
+			out.push(token);
+			continue;
+		}
+
+		regex.lastIndex = 0;
+		const text = token.text;
+		let idx = 0, match;
+
+		while((match = regex.exec(text))) {
+			const raw_nix = match.index,
+				offset = match[1] ? match[1].length : 0,
+				nix = raw_nix + offset;
+
+			if ( idx !== nix )
+				out.push({type: 'text', text: text.slice(idx, nix)});
+
+			out.push({
+				type: 'blocked',
+				text: match[0].slice(offset)
+			});
+
+			if ( do_remove )
+				msg.ffz_removed = true;
+
+			idx = raw_nix + match[0].length;
+		}
+
+		if ( idx < text.length )
+			out.push({type: 'text', text: text.slice(idx)});
+	}
+
+	return out;
 }
 
 
@@ -349,44 +393,24 @@ export const BlockedTerms = {
 		]
 	},
 
-	process(tokens) {
+	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
-		const regex = this.context.get('chat.filtering.highlight-basic-blocked--regex');
-		if ( ! regex )
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const out = [];
-		for(const token of tokens) {
-			if ( token.type !== 'text' ) {
-				out.push(token);
-				continue;
-			}
+		const regexes = this.context.get('chat.filtering.highlight-basic-blocked--regex');
+		if ( ! regexes )
+			return tokens;
 
-			regex.lastIndex = 0;
-			const text = token.text;
-			let idx = 0, match;
+		if ( regexes[0] )
+			tokens = blocked_process(tokens, msg, regexes[0], false);
 
-			while((match = regex.exec(text))) {
-				const nix = match.index;
+		if ( regexes[1] )
+			tokens = blocked_process(tokens, msg, regexes[1], true);
 
-				if ( idx !== nix )
-					out.push({type: 'text', text: text.slice(idx, nix)});
-
-				out.push({
-					type: 'blocked',
-					text: match[1]
-				});
-
-				idx = nix + match[1].length;
-			}
-
-			if ( idx < text.length )
-				out.push({type: 'text', text: text.slice(idx)});
-		}
-
-		return out;
+		return tokens;
 	}
 }
 
@@ -683,10 +707,7 @@ export const AddonEmotes = {
 				if ( source === '--global--' || emote_id === 80393 )
 					source = this.i18n.t('emote.global', 'Twitch Global');
 
-				else if ( source === '--twitch-turbo--' || source === 'turbo' || source === '--turbo-faces--' )
-					source = this.i18n.t('emote.turbo', 'Twitch Turbo');
-
-				else if ( source === '--prime--' || source === '--prime-faces--' )
+				else if ( source === '--twitch-turbo--' || source === 'turbo' || source === '--turbo-faces--' || source === '--prime--' || source === '--prime-faces--' )
 					source = this.i18n.t('emote.prime', 'Twitch Prime');
 
 				else
@@ -774,8 +795,8 @@ export const AddonEmotes = {
 			return tokens;
 
 		const emotes = this.emotes.getEmotes(
-				msg.user.userID,
-				msg.user.userLogin,
+				msg.user.id,
+				msg.user.login,
 				msg.roomID,
 				msg.roomLogin
 			),
@@ -924,14 +945,15 @@ export const TwitchEmotes = {
 	priority: 20,
 
 	process(tokens, msg) {
-		if ( ! msg.emotes )
+		if ( ! msg.ffz_emotes )
 			return tokens;
 
-		const data = msg.emotes,
+		const data = msg.ffz_emotes,
 			emotes = [];
 
 		for(const emote_id in data)
-			if ( has(data, emote_id) ) {
+			// Disable fix for now so we can see what Twitch is sending for emote data.
+			if ( has(data, emote_id) ) { // && Array.isArray(data[emote_id]) ) {
 				for(const match of data[emote_id])
 					emotes.push([emote_id, match.startIndex, match.endIndex + 1]);
 			}

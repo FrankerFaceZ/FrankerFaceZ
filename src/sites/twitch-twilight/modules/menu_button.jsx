@@ -17,6 +17,8 @@ export default class MenuButton extends SiteModule {
 
 		this.should_enable = true;
 		this._pill_content = null;
+		this._has_update = false;
+		this._important_update = false;
 
 		this.NavBar = this.fine.define(
 			'nav-bar',
@@ -24,6 +26,26 @@ export default class MenuButton extends SiteModule {
 		);
 	}
 
+	get important_update() {
+		return this._important_update;
+	}
+
+	set important_update(val) {
+		this._important_update = false;
+		this.update();
+	}
+
+	get has_update() {
+		return this._has_update;
+	}
+
+	set has_update(val) {
+		if ( val && ! this._has_update )
+			this._important_update = true;
+
+		this._has_update = val;
+		this.update();
+	}
 
 	get pill() {
 		return this._pill_content;
@@ -55,6 +77,8 @@ export default class MenuButton extends SiteModule {
 		this.NavBar.on('mount', this.updateButton, this);
 		this.NavBar.on('update', this.updateButton, this);
 
+		this.on(':clicked', () => this.important_update = false);
+
 		this.once(':clicked', this.loadMenu);
 		this.on('i18n:update', this.update);
 	}
@@ -81,7 +105,12 @@ export default class MenuButton extends SiteModule {
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-zreknarf" />
 					</span>
-					{DEBUG && (<div class="ffz-menu__dev-pill tw-absolute">
+					{this.has_update && (<div class="ffz-menu__extra-pill tw-absolute">
+						<div class={`tw-pill ${this.important_update ? ' tw-pill--notification' : ''}`}>
+							<figure class="ffz-i-arrows-cw" />
+						</div>
+					</div>)}
+					{!this.has_update && DEBUG && (<div class="ffz-menu__extra-pill tw-absolute">
 						<div class="tw-pill">
 							{this.i18n.t('site.menu_button.dev', 'dev')}
 						</div>
@@ -95,6 +124,9 @@ export default class MenuButton extends SiteModule {
 					</div>)}
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
 						{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+						{this.has_update && (<div class="tw-mg-t-1">
+							{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
+						</div>)}
 						{DEBUG && (<div class="tw-mg-t-1">
 							{this.i18n.t('site.menu_button.dev-desc', 'You are running a developer build of FrankerFaceZ.')}
 						</div>)}
