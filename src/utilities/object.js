@@ -201,7 +201,9 @@ export function get(path, object) {
 
 			break;
 
-		} else
+		} else if ( part === '@last' )
+			object = object[object.length - 1];
+		else
 			object = object[path[i]];
 
 		if ( ! object )

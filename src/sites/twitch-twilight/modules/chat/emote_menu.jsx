@@ -1567,7 +1567,7 @@ export default class EmoteMenu extends Module {
 		const out = {},
 			curr_nodes = get('data.currentUser.subscriptionBenefits.edges.@each.node', data),
 			has_next_page = get('data.currentUser.subscriptionBenefits.pageInfo.hasNextPage', data),
-			curr_cursor = curr_nodes[curr_nodes.length - 1].id;
+			curr_cursor = get('data.currentUser.subscriptionBenefits.edges.@last.cursor', data);
 
 		nodes = nodes.concat(curr_nodes);
 
