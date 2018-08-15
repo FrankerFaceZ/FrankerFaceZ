@@ -6,6 +6,7 @@
 
 import Module from 'utilities/module';
 import Twilight from 'site';
+import {has} from 'utilities/object';
 
 export default class TabCompletion extends Module {
 	constructor(...args) {
@@ -97,7 +98,11 @@ export default class TabCompletion extends Module {
 			return;
 
 		const t = this,
-			old_get_matched = inst.getMatchedEmotes;
+			old_get_matched = inst.getMatchedEmotes,
+			compareStrings = (a, b) => {
+				if (a.charAt(0) === ':') return b.charAt(0) === ':' ? a.localeCompare(b) : 1;
+				return b.charAt(0) === ':' ? -1 : a.localeCompare(b);
+			};
 
 		inst.doesEmoteMatchTerm = function(emote, term) {
 			const emote_name = emote.name || emote.token,
@@ -112,6 +117,22 @@ export default class TabCompletion extends Module {
 				return emote_lower.slice(idx + 1).startsWith(term_lower.slice(1));
 		}
 
+		inst.renderEmoteSuggestion = function(emote) {
+			const favorite = emote.favorite || t.emotes.isFavorite('twitch', parseInt(emote.id, 10));
+			return [
+				<div key={`emote-img-${emote.id}`} favorite={favorite} class="tw-relative tw-pd-r-05">
+					<img
+						class="emote-autocomplete-provider__image"
+						srcSet={emote.srcSet}
+					/>
+					{favorite && <figure class="ffz--favorite ffz-i-star" />}
+				</div>,
+				<div key={`emote-token-${emote.id}`}>
+					{emote.token}
+				</div>
+			];
+		}
+
 		inst.getMatchedEmotes = function(input) {
 			let results = old_get_matched.call(this, input);
 
@@ -122,33 +143,24 @@ export default class TabCompletion extends Module {
 				return results;
 
 			results = results.concat(t.getEmojiSuggestions(input, this)).sort((a, b) => {
-				const string_a = a.element[0].key.replace('emote-img-', ''),
-					string_b = b.element[0].key.replace('emote-img-', ''),
+				const a_props = a.element[0].props,
+					b_props = b.element[0].props,
+					
+					a_fav = a_props.favorite,
+					b_fav = b_props.favorite,
 
-					a_provider = string_a.includes('-') ? string_a.substring(0, string_a.indexOf('-')) : 'twitch',
-					b_provider = string_b.includes('-') ? string_b.substring(0, string_b.indexOf('-')) : 'twitch',
-
-					a_id_raw = string_a.includes('-') ? string_a.substring(string_a.indexOf('-') + 1) : string_a,
-					b_id_raw = string_b.includes('-') ? string_b.substring(string_b.indexOf('-') + 1) : string_b,
-
-					a_id = a_provider === 'twitch' ? parseInt(a_id_raw, 10) : a_id_raw,
-					b_id = b_provider === 'twitch' ? parseInt(b_id_raw, 10) : b_id_raw,
-
-					a_fav = t.emotes.isFavorite(a_provider, a_id),
-					b_fav = t.emotes.isFavorite(b_provider, b_id);
+					a_str = a_props.code || a.replacement,
+					b_str = b.element[0].props.code || b.replacement;
 
 				if (a_fav) {
-					return b_fav ? a.replacement.localeCompare(b.replacement) : -1;
+					return b_fav ? compareStrings(a_str, b_str) : -1;
 				} else if (b_fav) {
 					return 1;
 				} else {
-					return a.replacement.localeCompare(b.replacement);
+					return compareStrings(a_str, b_str);
 				}
 			});
 
-			// results = results.concat(t.getEmojiSuggestions(input, this));
-
-			t.log.info(results);
 			return results;
 		}
 
@@ -157,14 +169,15 @@ export default class TabCompletion extends Module {
 
 		inst.renderFFZEmojiSuggestion = function(data) {
 			return [
-				<div key={`emote-img-${data.id}`} class="tw-pd-r-05">
+				<div key={`emote-img-${data.id}`} favorite={data.favorite} code={data.token} class="tw-pd-r-05">
 					<img
 						class="emote-autocomplete-provider__image ffz-emoji"
 						src={data.src}
 						srcSet={data.srcset}
 					/>
+					{data.favorite && <figure class="ffz--favorite ffz-i-star" />}
 				</div>,
-				<div>
+				<div key={`emote-token-${data.id}`}>
 					{data.token}
 				</div>
 			]
@@ -196,7 +209,8 @@ export default class TabCompletion extends Module {
 							token: `:${name}:`,
 							id: `emoji-${emoji.code}`,
 							src: this.emoji.getFullImage(source.image, style),
-							srcSet: this.emoji.getFullImageSet(source.image, style)
+							srcSet: this.emoji.getFullImageSet(source.image, style),
+							favorite: this.emotes.isFavorite('emoji', emoji.code)
 						})
 					});
 			}
@@ -221,24 +235,30 @@ export default class TabCompletion extends Module {
 
 		const search = input.slice(1),
 			results = [],
-			emotes = this.emotes.getEmotes(
+			emoteSets = this.emotes.getSets(
 				user && user.id,
 				user && user.login,
 				channel_id,
 				channel_login
-			);
+			),
+			tempEmotes = {};
 
-		for(const emote of Object.values(emotes))
-			if ( inst.doesEmoteMatchTerm(emote, search) )
-				results.push({
-					current: input,
-					replacement: emote.name,
-					element: inst.renderEmoteSuggestion({
-						token: emote.name,
-						id: `${emote.token.provider}-${emote.id}`,
-						srcSet: emote.srcSet
-					})
-				});
+		for(const set of emoteSets)
+			if ( set && set.emotes )
+				for(const emote of Object.values(set.emotes))
+					if ( emote && ! has(tempEmotes, emote.name) )
+						if ( inst.doesEmoteMatchTerm(emote, search) )
+							results.push(tempEmotes[emote.name] = {
+								current: input,
+								replacement: emote.name,
+								element: inst.renderEmoteSuggestion({
+									token: emote.name,
+									id: `${emote.token.provider}-${emote.id}`,
+									srcSet: emote.srcSet,
+									provider: set.source || 'ffz',
+									favorite: this.emotes.isFavorite(set.source || 'ffz', emote.id)
+								})
+							});
 
 		return results;
 	}
