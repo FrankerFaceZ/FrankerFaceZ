@@ -121,7 +121,35 @@ export default class TabCompletion extends Module {
 			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
 				return results;
 
-			return results.concat(t.getEmojiSuggestions(input, this));
+			results = results.concat(t.getEmojiSuggestions(input, this)).sort((a, b) => {
+				const string_a = a.element[0].key.replace('emote-img-', ''),
+					string_b = b.element[0].key.replace('emote-img-', ''),
+
+					a_provider = string_a.includes('-') ? string_a.substring(0, string_a.indexOf('-')) : 'twitch',
+					b_provider = string_b.includes('-') ? string_b.substring(0, string_b.indexOf('-')) : 'twitch',
+
+					a_id_raw = string_a.includes('-') ? string_a.substring(string_a.indexOf('-') + 1) : string_a,
+					b_id_raw = string_b.includes('-') ? string_b.substring(string_b.indexOf('-') + 1) : string_b,
+
+					a_id = a_provider === 'twitch' ? parseInt(a_id_raw, 10) : a_id_raw,
+					b_id = b_provider === 'twitch' ? parseInt(b_id_raw, 10) : b_id_raw,
+
+					a_fav = t.emotes.isFavorite(a_provider, a_id),
+					b_fav = t.emotes.isFavorite(b_provider, b_id);
+
+				if (a_fav) {
+					return b_fav ? a.replacement.localeCompare(b.replacement) : -1;
+				} else if (b_fav) {
+					return 1;
+				} else {
+					return a.replacement.localeCompare(b.replacement);
+				}
+			});
+
+			// results = results.concat(t.getEmojiSuggestions(input, this));
+
+			t.log.info(results);
+			return results;
 		}
 
 		const React = this.web_munch.getModule('react'),
@@ -129,7 +157,7 @@ export default class TabCompletion extends Module {
 
 		inst.renderFFZEmojiSuggestion = function(data) {
 			return [
-				<div class="tw-pd-r-05">
+				<div key={`emote-img-${data.id}`} class="tw-pd-r-05">
 					<img
 						class="emote-autocomplete-provider__image ffz-emoji"
 						src={data.src}
