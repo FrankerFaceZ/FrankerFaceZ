@@ -459,6 +459,8 @@ export default class EmoteMenu extends Module {
 				this.clickHeading = this.clickHeading.bind(this);
 				this.clickEmote = this.clickEmote.bind(this);
 
+				this.mouseEnter = () => this.state.intersecting || this.setState({intersecting: true});
+
 				this.onMouseEnter = this.onMouseEnter.bind(this);
 				this.onMouseLeave = this.onMouseLeave.bind(this);
 			}
@@ -562,7 +564,7 @@ export default class EmoteMenu extends Module {
 						}
 				}
 
-				return (<section ref={this.saveRef} data-key={data.key} class={filtered ? 'filtered' : ''}>
+				return (<section ref={this.saveRef} onMouseEnter={this.mouseEnter} data-key={data.key} class={filtered ? 'filtered' : ''}>
 					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
 						{image}
 						<div class="tw-pd-l-05">
