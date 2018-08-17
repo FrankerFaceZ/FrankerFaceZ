@@ -550,6 +550,11 @@ export default class EmoteMenu extends Module {
 							icon: 'crown',
 							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in %{time}.', {time})
 						}
+					else if ( data.gift )
+						calendar = {
+							icon: 'gift',
+							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in %{time}.', {time})
+						}
 					else
 						calendar = {
 							icon: 'calendar-empty',
@@ -712,7 +717,7 @@ export default class EmoteMenu extends Module {
 		}
 
 		let timer;
-		const doClear = () => this.emit('tooltips:cleanup'),
+		const doClear = () => requestAnimationFrame(() => this.emit('tooltips:cleanup')),
 			clearTooltips = () => {
 				clearTimeout(timer);
 				setTimeout(doClear, 100);
@@ -768,6 +773,14 @@ export default class EmoteMenu extends Module {
 
 				for(const element of this.observing.keys())
 					this.observer.observe(element);
+
+				this.observeSoon();
+			}
+
+			observeSoon() {
+				requestAnimationFrame(() => {
+					this.handleObserve(this.observer.takeRecords());
+				});
 			}
 
 			destroyObserver() {
@@ -807,6 +820,8 @@ export default class EmoteMenu extends Module {
 				this.observing.set(element, inst);
 				if ( this.observer )
 					this.observer.observe(element);
+
+				this.observeSoon();
 			}
 
 			stopObserving(element) {
@@ -1204,7 +1219,8 @@ export default class EmoteMenu extends Module {
 								emotes,
 								renews: set_data.renews,
 								ends: set_data.ends,
-								prime: set_data.prime
+								prime: set_data.prime,
+								gift: set_data.gift && set_data.gift.isGift
 							}
 						}
 
@@ -1290,6 +1306,7 @@ export default class EmoteMenu extends Module {
 							section.renews = set_data.renews;
 							section.ends = set_data.ends;
 							section.prime = set_data.prime;
+							section.gift = set_data.gift && set_data.gift.isGift;
 						}
 
 						// If the channel is locked, store data about that in the
