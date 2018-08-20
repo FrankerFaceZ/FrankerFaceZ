@@ -1690,7 +1690,7 @@ export default class EmoteMenu extends Module {
 			data = await this.apollo.client.query({
 				query: SUB_STATUS,
 				variables: {
-					first: 100,
+					first: 75,
 					after: cursor,
 					criteria: {
 						filter: 'ALL'
