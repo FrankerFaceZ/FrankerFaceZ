@@ -10,6 +10,11 @@ body .channel-page__video-player--theatre-mode {
 body .video-watch-page__right-column,
 body .channel-page__right-column,
 body .right-column:not(.right-column--collapsed),
+body .channel-videos__right-column,
+body .channel-clips__sidebar,
+body .channel-events__sidebar,
+body .channel-follow-listing__right-column,
+body .channel-follow-listing__right-column,
 body .channel-root__right-column {
 	width: var(--ffz-chat-width);
 }

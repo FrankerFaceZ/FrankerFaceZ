@@ -189,7 +189,7 @@ export default class Room {
 
 		if ( this.manager.experiments.getAssignment('api_load') )
 			try {
-				fetch(`${NEW_API}/v1/rooms/${this.id ? `id/${this.id}` : this.login}`).catch(() => {});
+				fetch(`${NEW_API}/v1/room/${this.id ? `id/${this.id}` : this.login}`).catch(() => {});
 			} catch(err) { /* do nothing */ }
 
 		let response, data;

@@ -133,6 +133,12 @@
         opacity: 0.5;
     }
 
+    .emote-picker__placeholder {
+        display: inline-block;
+        margin: .5rem .5rem 0;
+        min-width: 2.8rem;
+    }
+
     .emote-picker__tab {
         border-top: 1px solid transparent;
 

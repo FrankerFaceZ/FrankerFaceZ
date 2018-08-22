@@ -440,14 +440,39 @@ export default class EmoteMenu extends Module {
 			constructor(props) {
 				super(props);
 
+				this.ref = null;
+				this.saveRef = ref => {
+					if ( this.ref )
+						this.props.stopObserving(this.ref);
+
+					this.ref = ref;
+					if ( ref )
+						this.props.startObserving(this.ref, this);
+				}
+
 				const collapsed = storage.get('emote-menu.collapsed') || [];
-				this.state = {collapsed: props.data && collapsed.includes(props.data.key)}
+				this.state = {
+					collapsed: props.data && collapsed.includes(props.data.key),
+					intersecting: window.IntersectionObserver ? false : true
+				}
 
 				this.clickHeading = this.clickHeading.bind(this);
 				this.clickEmote = this.clickEmote.bind(this);
 
+				this.mouseEnter = () => this.state.intersecting || this.setState({intersecting: true});
+
 				this.onMouseEnter = this.onMouseEnter.bind(this);
 				this.onMouseLeave = this.onMouseLeave.bind(this);
+			}
+
+			componentDidMount() {
+				if ( this.ref )
+					this.props.startObserving(this.ref, this);
+			}
+
+			componentWillUnmount() {
+				if ( this.ref )
+					this.props.stopObserving(this.ref);
 			}
 
 			clickEmote(event) {
@@ -527,6 +552,11 @@ export default class EmoteMenu extends Module {
 							icon: 'crown',
 							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in %{time}.', {time})
 						}
+					else if ( data.gift )
+						calendar = {
+							icon: 'gift',
+							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in %{time}.', {time})
+						}
 					else
 						calendar = {
 							icon: 'calendar-empty',
@@ -534,7 +564,7 @@ export default class EmoteMenu extends Module {
 						}
 				}
 
-				return (<section data-key={data.key} class={filtered ? 'filtered' : ''}>
+				return (<section ref={this.saveRef} onMouseEnter={this.mouseEnter} data-key={data.key} class={filtered ? 'filtered' : ''}>
 					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
 						{image}
 						<div class="tw-pd-l-05">
@@ -584,6 +614,9 @@ export default class EmoteMenu extends Module {
 			}
 
 			renderEmote(emote, locked, source, sellout) {
+				if ( ! this.state.intersecting )
+					return <span key={emote.id} class="emote-picker__placeholder" style={{width: `${emote.width||28}px`, height: `${emote.height||28}px`}} />;
+
 				return (<button
 					key={emote.id}
 					class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}`}
@@ -685,10 +718,22 @@ export default class EmoteMenu extends Module {
 			}
 		}
 
+		let timer;
+		const doClear = () => requestAnimationFrame(() => this.emit('tooltips:cleanup')),
+			clearTooltips = () => {
+				clearTimeout(timer);
+				setTimeout(doClear, 100);
+			};
 
 		this.MenuComponent = class FFZEmoteMenuComponent extends React.Component {
 			constructor(props) {
 				super(props);
+
+				this.ref = null;
+				this.saveScrollRef = ref => {
+					this.ref = ref;
+					this.createObserver();
+				}
 
 				this.state = {
 					tab: null,
@@ -697,6 +742,11 @@ export default class EmoteMenu extends Module {
 
 				this.componentWillReceiveProps(props);
 
+				this.observing = new Map;
+
+				this.startObserving = this.startObserving.bind(this);
+				this.stopObserving = this.stopObserving.bind(this);
+				this.handleObserve = this.handleObserve.bind(this);
 				this.pickTone = this.pickTone.bind(this);
 				this.clickTab = this.clickTab.bind(this);
 				this.clickRefresh = this.clickRefresh.bind(this);
@@ -704,11 +754,97 @@ export default class EmoteMenu extends Module {
 				this.handleKeyDown = this.handleKeyDown.bind(this);
 			}
 
+			createObserver() {
+				if ( this.observer ) {
+					if ( this._observed === this.ref )
+						return;
+
+					this.observer.disconnect();
+					this.observer = this._observed = null;
+				}
+
+				if ( ! this.ref || ! window.IntersectionObserver )
+					return;
+
+				this._observed = this.ref;
+				this.observer = new IntersectionObserver(this.handleObserve, {
+					root: this.ref,
+					rootMargin: '50px 0px',
+					threshold: 0.01
+				});
+
+				for(const element of this.observing.keys())
+					this.observer.observe(element);
+
+				this.observeSoon();
+			}
+
+			observeSoon() {
+				requestAnimationFrame(() => {
+					this.handleObserve(this.observer.takeRecords());
+				});
+			}
+
+			destroyObserver() {
+				if ( ! this.observer )
+					return;
+
+				this.observer.disconnect();
+				this.observer = this._observed = null;
+			}
+
+			handleObserve(event) {
+				let changed = false;
+
+				for(const entry of event) {
+					const inst = this.observing.get(entry.target);
+					if ( ! inst || inst.state.intersecting === entry.isIntersecting )
+						continue;
+
+					changed = true;
+					inst.setState({
+						intersecting: entry.isIntersecting
+					});
+				}
+
+				if ( changed )
+					requestAnimationFrame(clearTooltips);
+			}
+
+			startObserving(element, inst) {
+				const old_inst = this.observing.get(element);
+				if ( inst === old_inst )
+					return;
+
+				if ( old_inst )
+					this.stopObserving(element);
+
+				this.observing.set(element, inst);
+				if ( this.observer )
+					this.observer.observe(element);
+
+				this.observeSoon();
+			}
+
+			stopObserving(element) {
+				if ( ! this.observing.has(element) )
+					return;
+
+				this.observing.delete(element);
+				if ( this.observer )
+					this.observer.unobserve(element);
+			}
+
 			componentDidMount() {
+				if ( this.ref )
+					this.createObserver();
+
 				window.ffz_menu = this;
 			}
 
 			componentWillUnmount() {
+				this.destroyObserver();
+
 				if ( window.ffz_menu === this )
 					window.ffz_menu = null;
 			}
@@ -1085,7 +1221,8 @@ export default class EmoteMenu extends Module {
 								emotes,
 								renews: set_data.renews,
 								ends: set_data.ends,
-								prime: set_data.prime
+								prime: set_data.prime,
+								gift: set_data.gift && set_data.gift.isGift
 							}
 						}
 
@@ -1171,6 +1308,7 @@ export default class EmoteMenu extends Module {
 							section.renews = set_data.renews;
 							section.ends = set_data.ends;
 							section.prime = set_data.prime;
+							section.gift = set_data.gift && set_data.gift.isGift;
 						}
 
 						// If the channel is locked, store data about that in the
@@ -1439,7 +1577,7 @@ export default class EmoteMenu extends Module {
 							data-test-selector="scrollable-area-wrapper"
 							data-simplebar
 						>
-							<div class="simplebar-scroll-content">
+							<div ref={this.saveScrollRef} class="simplebar-scroll-content">
 								<div class="simplebar-content">
 									{loading && this.renderLoading()}
 									{!loading && sets && sets.map(data => createElement(
@@ -1448,7 +1586,9 @@ export default class EmoteMenu extends Module {
 											key: data.key,
 											data,
 											filtered: this.state.filtered,
-											onClickEmote: this.props.onClickEmote
+											onClickEmote: this.props.onClickEmote,
+											startObserving: this.startObserving,
+											stopObserving: this.stopObserving
 										}
 									))}
 									{! loading && (! sets || ! sets.length) && this.renderEmpty()}
@@ -1535,7 +1675,7 @@ export default class EmoteMenu extends Module {
 	}
 
 
-	async getData(sets, force) {
+	async getData(sets, force, cursor = null, nodes = []) {
 		if ( this._data ) {
 			if ( ! force && set_equals(sets, this._data_sets) )
 				return this._data;
@@ -1550,7 +1690,8 @@ export default class EmoteMenu extends Module {
 			data = await this.apollo.client.query({
 				query: SUB_STATUS,
 				variables: {
-					first: 100,
+					first: 75,
+					after: cursor,
 					criteria: {
 						filter: 'ALL'
 					}
@@ -1564,7 +1705,15 @@ export default class EmoteMenu extends Module {
 		}
 
 		const out = {},
-			nodes = get('data.currentUser.subscriptionBenefits.edges.@each.node', data);
+			curr_nodes = get('data.currentUser.subscriptionBenefits.edges.@each.node', data),
+			has_next_page = get('data.currentUser.subscriptionBenefits.pageInfo.hasNextPage', data),
+			curr_cursor = get('data.currentUser.subscriptionBenefits.edges.@last.cursor', data);
+
+		nodes = nodes.concat(curr_nodes);
+
+		if (has_next_page) {
+			return this.getData(sets, force, curr_cursor, nodes);
+		}
 
 		if ( nodes && nodes.length )
 			for(const node of nodes) {

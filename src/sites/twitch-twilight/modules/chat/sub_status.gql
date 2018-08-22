@@ -9,6 +9,9 @@ query FFZ_EmoteMenu_SubStatus($first: Int, $after: Cursor, $criteria: Subscripti
 				cursor
 				node {
 					id
+					gift {
+						isGift
+					}
 					purchasedWithPrime
 					endsAt
 					renewsAt

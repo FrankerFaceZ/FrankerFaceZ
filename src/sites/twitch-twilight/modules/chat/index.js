@@ -945,6 +945,22 @@ export default class ChatHook extends Module {
 			return;
 
 		this.updateRoomBitsConfig(chat, props.bitsConfig);
+
+		// TODO: Check if this is the room for the current channel.
+
+		this.settings.updateContext({
+			moderator: props.isCurrentUserModerator,
+			chatHidden: props.isHidden
+		});
+
+		this.chat.context.updateContext({
+			moderator: props.isCurrentUserModerator,
+			channel: props.channelLogin && props.channelLogin.toLowerCase(),
+			channelID: props.channelID,
+			ui: {
+				theme: props.theme
+			}
+		});
 	}
 
 
