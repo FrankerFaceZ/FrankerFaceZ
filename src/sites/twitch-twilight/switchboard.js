@@ -65,24 +65,47 @@ export default class Switchboard extends Module {
 
 			this.log.info('Found Non-Matching Route', route.props.path);
 
+			const component_class = route.props.component;
+
 			let component;
 
-			try {
-				component = new route.props.component;
-			} catch(err) {
-				this.log.error('Error instantiating component for forced chunk loading.', err);
-				component = null;
-			}
+			if ( component_class.Preload ) {
+				try {
+					component = component_class.Preload();
+				} catch(err) {
+					this.log.error('Error instantiating preloader for forced chunk loading.', err);
+					component = null;
+				}
 
-			if ( ! component || ! component.props || ! component.props.children || ! component.props.children.props || ! component.props.children.props.loader )
-				continue;
+				if ( ! component || ! component.props || ! component.props.loader )
+					continue;
 
-			try {
-				component.props.children.props.loader().then(() => {
-					this.log.info('Successfully forced a chunk to load using route', route.props.path)
-				});
-			} catch(err) {
-				this.log.warn('Unexpected result trying to use component loader to force loading of another chunk.');
+				try {
+					component.props.loader().then(() => {
+						this.log.info('Successfully forced a chunk to load using route', route.props.path)
+					});
+				} catch(err) {
+					this.log.warn('Unexpected result trying to use component pre-loader to force loading of another chunk.');
+				}
+
+			} else {
+				try {
+					component = new route.props.component;
+				} catch(err) {
+					this.log.error('Error instantiating component for forced chunk loading.', err);
+					component = null;
+				}
+
+				if ( ! component || ! component.props || ! component.props.children || ! component.props.children.props || ! component.props.children.props.loader )
+					continue;
+
+				try {
+					component.props.children.props.loader().then(() => {
+						this.log.info('Successfully forced a chunk to load using route', route.props.path)
+					});
+				} catch(err) {
+					this.log.warn('Unexpected result trying to use component loader to force loading of another chunk.');
+				}
 			}
 
 			break;
