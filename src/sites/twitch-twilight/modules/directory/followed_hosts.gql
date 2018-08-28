@@ -4,7 +4,6 @@ query {
 			nodes {
 				profileImageURL(width: 50)
 				hosting {
-					profileImageURL(width: 50)
 					stream {
 						createdAt
 					}

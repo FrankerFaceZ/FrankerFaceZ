@@ -7,17 +7,5 @@ query {
 				}
 			}
 		}
-		followedHosts {
-			nodes {
-				profileImageURL(width: 50)
-				hosting {
-					profileImageURL(width: 50)
-					stream {
-						createdAt
-						type
-					}
-				}
-			}
-		}
 	}
 }
