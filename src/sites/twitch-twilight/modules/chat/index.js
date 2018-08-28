@@ -603,7 +603,7 @@ export default class ChatHook extends Module {
 
 						} else if ( msg.type === types.Moderation ) {
 							const login = msg.userLogin;
-							if ( this.moderatedUsers.has(login) )
+							if ( inst.moderatedUsers.has(login) )
 								return;
 
 							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
@@ -644,11 +644,12 @@ export default class ChatHook extends Module {
 						}
 
 					} catch(err) {
+						t.log.error('Error processing chat event.', err);
 						t.log.capture(err, {extra: {msg}});
 					}
 				}
 
-				return old_handle.call(this, msg);
+				return old_handle.call(inst, msg);
 			}
 
 			inst.getMessages = function() {
