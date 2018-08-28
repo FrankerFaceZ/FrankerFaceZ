@@ -781,8 +781,7 @@ export default class EmoteMenu extends Module {
 
 			observeSoon() {
 				requestAnimationFrame(() => {
-					if ( this.observer )
-						this.handleObserve(this.observer.takeRecords());
+					this.handleObserve(this.observer.takeRecords());
 				});
 			}
 
