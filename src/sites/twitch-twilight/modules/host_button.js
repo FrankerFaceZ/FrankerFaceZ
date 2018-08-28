@@ -152,7 +152,7 @@ export default class HostButton extends Module {
 	}
 
 	hookIntoChatConnection(inst) {
-		const userLogin = inst.props.userLogin;
+		const userLogin = inst.props.currentUserLogin;
 
 		if (this._chat_con) {
 			this.joinChannel(userLogin);
@@ -181,7 +181,7 @@ export default class HostButton extends Module {
 			this.metadata.updateMetadata('host');
 		});
 
-		const chatServiceClient = inst.chatService.client;
+		const chatServiceClient = inst.client;
 
 		this._chat_con = chatServiceClient;
 		if (this.settings.get('metadata.host-button'))
@@ -191,13 +191,12 @@ export default class HostButton extends Module {
 	onEnable() {
 		this.metadata.updateMetadata('host');
 
-		this.chat.ChatController.ready((cls, instances) => {
-			for(const inst of instances) {
-				if (inst && inst.chatService) this.hookIntoChatConnection(inst);
-			}
-		});
+		this.chat.ChatService.ready((cls, instances) => {
+			for(const inst of instances)
+				this.hookIntoChatConnection(inst);
+		})
 
-		this.chat.ChatController.on('mount', this.hookIntoChatConnection, this);
+		this.chat.ChatService.on('mount', this.hookIntoChatConnection, this);
 	}
 
 	buildAutoHostMenu(vue, hosts, autoHostSettings, data) {

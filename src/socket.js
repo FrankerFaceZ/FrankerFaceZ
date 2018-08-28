@@ -75,10 +75,11 @@ export default class SocketClient extends Module {
 			// We don't have our own IRC connection yet, so the site's chat has to do.
 
 			const _chat = this.resolve('site.chat');
-			const chat = _chat && _chat.currentChat;
-			const con = chat.chatService && chat.chatService.client && chat.chatService.client.connection;
+			const chat = _chat && _chat.ChatService.first;
+			const con = chat.client && chat.client.connection;
 
-			if (con && con.send) con.send(`PRIVMSG #frankerfacezauthorizer :AUTH ${challenge}`);
+			if (con && con.send)
+				con.send(`PRIVMSG #frankerfacezauthorizer :AUTH ${challenge}`);
 		});
 
 

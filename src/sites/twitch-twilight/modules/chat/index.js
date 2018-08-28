@@ -148,16 +148,33 @@ export default class ChatHook extends Module {
 		this.inject(EmoteMenu);
 		this.inject(TabCompletion);
 
+		this.ChatService = this.fine.define(
+			'chat-service',
+			n => n.join && n.part && n.connectHandlers,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatBuffer = this.fine.define(
+			'chat-buffer',
+			n => n.updateHandlers && n.delayedMessageBuffer && n.handleMessage,
+			Twilight.CHAT_ROUTES
+		);
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.chatService,
+			n => n.hostingHandler && n.onRoomStateUpdated,
 			Twilight.CHAT_ROUTES
 		);
 
 		this.ChatContainer = this.fine.define(
 			'chat-container',
 			n => n.showViewersList && n.onChatInputFocus,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatBufferConnector = this.fine.define(
+			'chat-buffer-connector',
+			n => n.clearBufferHandle && n.syncBufferedMessages,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -392,6 +409,46 @@ export default class ChatHook extends Module {
 		this.ChatController.on('unmount', this.chatUmounted, this);
 		this.ChatController.on('receive-props', this.chatUpdated, this);
 
+		this.ChatService.ready((cls, instances) => {
+			this.wrapChatService(cls);
+
+			for(const inst of instances) {
+				inst.client.events.removeAll();
+				inst.connectHandlers();
+			}
+		});
+
+		this.ChatBuffer.ready((cls, instances) => {
+			this.wrapChatBuffer(cls);
+
+			for(const inst of instances) {
+				const handler = inst.props.messageHandlerAPI;
+				if ( handler )
+					handler.removeMessageHandler(inst.handleMessage);
+
+				inst._ffzInstall();
+
+				if ( handler )
+					handler.addMessageHandler(inst.handleMessage);
+
+				inst.props.setMessageBufferAPI({
+					addUpdateHandler: inst.addUpdateHandler,
+					removeUpdateHandler: inst.removeUpdateHandler,
+					getMessages: inst.getMessages,
+					_ffz_inst: inst
+				});
+			}
+		});
+
+		this.ChatBufferConnector.on('mount', this.connectorMounted, this);
+		this.ChatBufferConnector.on('receive-props', this.connectorUpdated, this);
+		this.ChatBufferConnector.on('unmount', this.connectorUnmounted, this);
+
+		this.ChatBufferConnector.ready((cls, instances) => {
+			for(const inst of instances)
+				this.connectorMounted(inst);
+		})
+
 		this.ChatController.ready((cls, instances) => {
 			const t = this,
 				old_catch = cls.prototype.componentDidCatch,
@@ -427,25 +484,8 @@ export default class ChatHook extends Module {
 					return old_render.call(this);
 			}
 
-			for(const inst of instances) {
-				const service = inst.chatService;
-				if ( ! service._ffz_was_here )
-					this.wrapChatService(service.constructor);
-
-				const buffer = inst.chatBuffer;
-				if ( ! buffer._ffz_was_here )
-					this.wrapChatBuffer(buffer.constructor);
-
-				if ( buffer.ffzConsumeChatEvent )
-					buffer.consumeChatEvent = buffer.ffzConsumeChatEvent.bind(buffer);
-
-				buffer.ffzController = inst;
-
-				service.client.events.removeAll();
-				service.connectHandlers();
-
+			for(const inst of instances)
 				this.chatMounted(inst);
-			}
 		});
 
 
@@ -500,23 +540,40 @@ export default class ChatHook extends Module {
 
 
 	wrapChatBuffer(cls) {
+		if ( cls.prototype._ffz_was_here )
+			return;
+
 		const t = this,
-			old_consume = cls.prototype.consumeChatEvent;
+			old_mount = cls.prototype.componentDidMount;
 
-		cls.prototype._ffz_was_here = true;
+		cls.prototype._ffzInstall = function() {
+			if ( this._ffz_installed )
+				return;
 
-		if ( old_consume )
-			cls.prototype.ffzConsumeChatEvent = cls.prototype.consumeChatEvent = function(msg) {
+			this._ffz_installed = true;
+
+			const inst = this,
+				old_handle = inst.handleMessage,
+				old_set = inst.props.setMessageBufferAPI;
+
+			inst.props.setMessageBufferAPI = function(api) {
+				if ( api )
+					api._ffz_inst = inst;
+
+				return old_set(api);
+			}
+
+			inst.handleMessage = function(msg) {
 				if ( msg ) {
 					try {
 						const types = t.chat_types || {};
 
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
-								cont = this.ffzController;
-
-							let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin,
+								cont = inst._ffz_connector,
 								room_id = cont && cont.props.channelID;
+
+							let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin;
 
 							if ( ! room && room_id ) {
 								const r = t.chat.getRoom(room_id, null, true);
@@ -536,7 +593,8 @@ export default class ChatHook extends Module {
 
 							const event = new FFZEvent({
 								message: m,
-								channel: room
+								channel: room,
+								channelID: room_id
 							});
 
 							t.emit('chat:receive-message', event);
@@ -553,40 +611,78 @@ export default class ChatHook extends Module {
 									if ( m.event )
 										m = m.event;
 
-									if ( m.type === types.Message && m.user && m.user.userLogin === login )
-										m.deleted = true;
+									if ( m.type === types.Message ) {
+										if ( m.user && m.user.userLogin === login )
+											m.deleted = true;
+									} else if ( m.type === types.Resubscription || m.type === types.Ritual ) {
+										if ( m.message && m.message.user && m.message.user.userLogin === login )
+											m.deleted = true;
+									}
 								};
 
 							if ( do_remove ) {
-								this.buffer = this.buffer.filter(m => m.type !== types.Message || ! m.user || m.user.userLogin !== login);
-								this._isDirty = true;
-								this.onBufferUpdate();
+								const len = inst.buffer.length;
+								inst.buffer = inst.buffer.filter(m => m.type !== types.Message || ! m.user || m.user.userLogin !== login);
+								if ( len !== inst.buffer.length && ! inst.props.isBackground )
+									inst.notifySubscribers();
 
 							} else
-								this.buffer.forEach(do_update);
+								inst.buffer.forEach(do_update);
 
-							this.delayedMessageBuffer.forEach(do_update);
+							inst.delayedMessageBuffer.forEach(do_update);
 
-							this.moderatedUsers.add(login);
-							setTimeout(this.unmoderateUser(login), 1000);
+							inst.moderatedUsers.add(login);
+							setTimeout(inst.unmoderateUser(login), 1000);
 							return;
 
 						} else if ( msg.type === types.Clear ) {
 							if ( t.chat.context.get('chat.filtering.ignore-clear') )
 								msg = {
-									type: types.Notice,
+									types: types.Notice,
 									message: t.i18n.t('chat.ignore-clear', 'An attempt to clear chat was ignored.')
 								}
-
 						}
 
 					} catch(err) {
-						t.log.capture(err, {extra: {msg}})
+						t.log.capture(err, {extra: {msg}});
 					}
 				}
 
-				return old_consume.call(this, msg);
+				return old_handle.call(this, msg);
 			}
+
+			inst.getMessages = function() {
+				const buf = inst.buffer,
+					size = t.chat.context.get('chat.scrollback-length'),
+					ct = t.chat_types || CHAT_TYPES,
+					target = buf.length - size;
+
+				if ( target > 0 ) {
+					let removed = 0, last;
+					for(let i=0; i < target; i++)
+						if ( buf[i] && ! NULL_TYPES.includes(ct[buf[i].type]) ) {
+							removed++;
+							last = i;
+						}
+
+					inst.buffer = buf.slice(removed % 2 === 0 ? target : Math.max(target - 10, last));
+				} else
+					// Make a shallow copy of the array because other code expects it to change.
+					inst.buffer = buf.slice(0);
+
+				return inst.buffer;
+			}
+		}
+
+		cls.prototype.componentDidMount = function() {
+			try {
+				this._ffzInstall();
+			} catch(err) {
+				t.log.error('Error installing FFZ features onto chat buffer.', err);
+			}
+
+			return old_mount.call(this);
+		}
 
 		cls.prototype.flushRawMessages = function() {
 			const out = [],
@@ -611,41 +707,14 @@ export default class ChatHook extends Module {
 			}
 
 			this.delayedMessageBuffer = out;
-
-			if ( changed ) {
-				this._isDirty = true;
-				this.onBufferUpdate();
-			}
-		}
-
-		cls.prototype.toArray = function() {
-			const buf = this.buffer,
-				size = t.chat.context.get('chat.scrollback-length'),
-				ct = t.chat_types || CHAT_TYPES,
-				target = buf.length - size;
-
-			if ( target > 0 ) {
-				let removed = 0, last;
-				for(let i=0; i < target; i++)
-					if ( buf[i] && ! NULL_TYPES.includes(ct[buf[i].type]) ) {
-						removed++;
-						last = i;
-					}
-
-				this.buffer = buf.slice(removed % 2 === 0 ? target : Math.max(target - 10, last));
-			} else
-				// Make a shallow copy of the array because other code expects it to change.
-				this.buffer = buf.slice(0);
-
-			this._isDirty = false;
-			return this.buffer;
+			if ( changed && ! this.props.isBackground )
+				this.notifySubscribers();
 		}
 	}
 
 
 	sendMessage(room, message) {
-		const controller = this.ChatController.first,
-			service = controller && controller.chatService;
+		const service = this.ChatService.first;
 
 		if ( ! service || ! room )
 			return null;
@@ -653,7 +722,7 @@ export default class ChatHook extends Module {
 		if ( room.startsWith('#') )
 			room = room.slice(1);
 
-		if ( room.toLowerCase() !== service.channelLogin.toLowerCase() )
+		if ( room.toLowerCase() !== service.props.channelLogin.toLowerCase() )
 			return service.client.sendCommand(room, message);
 
 		service.sendMessage(message);
@@ -662,37 +731,9 @@ export default class ChatHook extends Module {
 
 	wrapChatService(cls) {
 		const t = this,
-			old_handler = cls.prototype.connectHandlers,
-			old_send = cls.prototype.sendMessage;
+			old_handler = cls.prototype.connectHandlers;
 
 		cls.prototype._ffz_was_here = true;
-
-
-		cls.prototype.sendMessage = function(raw_msg) {
-			const msg = raw_msg.replace(/\n/g, '');
-
-			if ( msg.startsWith('/ffz') ) {
-				this.postMessage({
-					type: t.chat_types.Notice,
-					message: 'The /ffz command is not yet re-implemented.'
-				})
-
-				return false;
-			}
-
-			const event = new FFZEvent({
-				message: msg,
-				channel: this.channelLogin
-			});
-
-			t.emit('chat:pre-send-message', event);
-
-			if ( event.defaultPrevented )
-				return;
-
-			return old_send.call(this, msg);
-		}
-
 
 		cls.prototype.ffzGetEmotes = function() {
 			const emote_map = this.client && this.client.session && this.client.session.emoteMap;
@@ -731,6 +772,32 @@ export default class ChatHook extends Module {
 							i._wrapped = null;
 							return ret;
 						}
+				}
+
+				const old_send = this.sendMessage;
+				this.sendMessage = function(raw_msg) {
+					const msg = raw_msg.replace(/\n/g, '');
+
+					if ( msg.startsWith('/ffz') ) {
+						this.postMessage({
+							type: t.chat_types.Notice,
+							message: 'The /ffz command is not yet re-implemented.'
+						})
+
+						return false;
+					}
+
+					const event = new FFZEvent({
+						message: msg,
+						channel: this.channelLogin
+					});
+
+					t.emit('chat:pre-send-message', event);
+
+					if ( event.defaultPrevented )
+						return;
+
+					return old_send.call(this, msg);
 				}
 
 				const old_chat = this.onChatMessageEvent;
@@ -812,13 +879,13 @@ export default class ChatHook extends Module {
 					return old_unhost.call(i, e, _t);
 				}
 
-				const old_post = this.postMessage;
-				this.postMessage = function(e) {
+				const old_add = this.addMessage;
+				this.addMessage = function(e) {
 					const original = i._wrapped;
 					if ( original && ! e._ffz_checked )
 						return i.postMessageToCurrentChannel(original, e);
 
-					return old_post.call(i, e);
+					return old_add.call(i, e);
 				}
 
 				this._ffz_init = true;
@@ -835,7 +902,7 @@ export default class ChatHook extends Module {
 				if ( chan.startsWith('#') )
 					chan = chan.slice(1);
 
-				if ( chan !== this.channelLogin.toLowerCase() )
+				if ( chan !== this.props.channelLogin.toLowerCase() )
 					return;
 
 				message.roomLogin = chan;
@@ -852,7 +919,7 @@ export default class ChatHook extends Module {
 					message.message = original.message.body;
 			}
 
-			this.postMessage(message);
+			this.addMessage(message);
 		}
 	}
 
@@ -1010,6 +1077,37 @@ export default class ChatHook extends Module {
 
 		room.updateBitsConfig(formatBitsConfig(config));
 		this.updateChatLines();
+	}
+
+
+	// ========================================================================
+	// Chat Buffer Connector
+	// ========================================================================
+
+	connectorMounted(inst) { // eslint-disable-line class-methods-use-this
+		const buffer = inst.props.messageBufferAPI;
+		if ( buffer && buffer._ffz_inst && buffer._ffz_inst._ffz_connector !== inst )
+			buffer._ffz_inst._ffz_connector = inst;
+	}
+
+	connectorUpdated(inst, props) { // eslint-disable-line class-methods-use-this
+		const buffer = inst.props.messageBufferAPI,
+			new_buffer = props.messageBufferAPI;
+
+		if ( buffer === new_buffer )
+			return;
+
+		if ( buffer && buffer._ffz_inst && buffer._ffz_inst._ffz_connector === inst )
+			buffer._ffz_inst._ffz_connector = null;
+
+		if ( new_buffer && new_buffer._ffz_inst && new_buffer._ffz_inst._ffz_connector !== inst )
+			buffer._ffz_inst._ffz_connector = inst;
+	}
+
+	connectorUnmounted(inst) { // eslint-disable-line class-methods-use-this
+		const buffer = inst.props.messageBufferAPI;
+		if ( buffer && buffer._ffz_inst && buffer._ffz_inst._ffz_connector === inst )
+			buffer._ffz_inst._ffz_connector = null;
 	}
 
 
