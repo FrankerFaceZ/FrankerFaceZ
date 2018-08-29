@@ -136,7 +136,7 @@ export const ban = {
 	},
 
 	click(event, data) {
-		this.sendMessage(data.room.login, `/ban ${data.user.login} ${data.reason||''}`);
+		this.sendMessage(data.room.login, `/ban ${data.user.login} ${data.reason||data.options.reason||''}`);
 	}
 }
 
@@ -177,7 +177,7 @@ export const timeout = {
 	},
 
 	click(event, data) {
-		this.sendMessage(data.room.login, `/timeout ${data.user.login} ${data.options.duration} ${data.reason||''}`);
+		this.sendMessage(data.room.login, `/timeout ${data.user.login} ${data.options.duration} ${data.reason||data.options.reason||''}`);
 	}
 }
 
