@@ -15,6 +15,7 @@ import FOLLOWED_HOSTS from './followed_hosts.gql';
 import FOLLOWED_CHANNELS from './followed_channels.gql';
 import FOLLOWED_LIVE from './followed_live.gql';
 import SUBSCRIBED_CHANNELS from './sidenav_subscribed.gql';
+import RECOMMENDED_CHANNELS from './recommended_channels.gql';
 
 export default class Following extends SiteModule {
 	constructor(...args) {
@@ -66,6 +67,7 @@ export default class Following extends SiteModule {
 
 		this.apollo.registerModifier('FollowedChannels_RENAME2', FOLLOWED_CHANNELS);
 		this.apollo.registerModifier('SideNav_SubscribedChannels', SUBSCRIBED_CHANNELS);
+		this.apollo.registerModifier('RecommendedChannels', RECOMMENDED_CHANNELS);
 
 		this.apollo.registerModifier('FollowedIndex_CurrentUser', FOLLOWED_INDEX);
 		this.apollo.registerModifier('FollowingLive_CurrentUser', FOLLOWED_LIVE);
@@ -73,6 +75,7 @@ export default class Following extends SiteModule {
 
 		this.apollo.registerModifier('FollowedChannels_RENAME2', res =>	this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('SideNav_SubscribedChannels', res => this.modifyLiveUsers(res, 'subscribedChannels'), false);
+		this.apollo.registerModifier('RecommendedChannels', res => this.modifyLiveUsers(res, 'recommendations.liveRecommendations'), false);
 
 		this.apollo.registerModifier('FollowingLive_CurrentUser', res => this.modifyLiveUsers(res), false);
 		this.apollo.registerModifier('FollowingHosts_CurrentUser', res => this.modifyLiveHosts(res), false);
@@ -157,6 +160,11 @@ export default class Following extends SiteModule {
 		this.apollo.ensureQuery(
 			'SideNav_SubscribedChannels',
 			'data.currentUser.subscribedChannels.edges.0.node.stream.createdAt'
+		);
+
+		this.apollo.ensureQuery(
+			'RecommendedChannels',
+			'data.currentUser.recommendations.liveRecommendations.nodes.0.createdAt'
 		);
 
 		if ( this.router.current_name !== 'dir-following' )

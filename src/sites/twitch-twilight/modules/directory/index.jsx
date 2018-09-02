@@ -46,7 +46,7 @@ export default class Directory extends SiteModule {
 		this.inject(Game);
 		this.inject(BrowsePopular);
 
-		this.apollo.registerModifier('GamePage_Game_RENAME2', res => this.modifyStreams(res), false);
+		this.apollo.registerModifier('DirectoryPage_Game', res => this.modifyStreams(res), false);
 
 		this.DirectoryCard = this.fine.define(
 			'directory-card',
@@ -216,7 +216,7 @@ export default class Directory extends SiteModule {
 			// Game Directory Channel Cards
 			// TODO: Better query handling.
 			this.apollo.ensureQuery(
-				'GamePage_Game_RENAME2',
+				'DirectoryPage_Game',
 				'data.directory.streams.edges.0.node.createdAt'
 			);
 

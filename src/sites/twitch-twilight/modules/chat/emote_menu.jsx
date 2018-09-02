@@ -13,6 +13,12 @@ import Module from 'utilities/module';
 
 import SUB_STATUS from './sub_status.gql';
 
+const TIERS = {
+	1000: 'Tier 1',
+	2000: 'Tier 2',
+	3000: 'Tier 3'
+};
+
 const TONE_EMOJI = [
 	'the_horns',
 	'raised_back_of_hand',
@@ -1320,7 +1326,7 @@ export default class EmoteMenu extends Module {
 							locks[set_id] = {
 								set_id,
 								id: product.id,
-								price: product.price,
+								price: product.price || TIERS[product.tier],
 								url: product.url,
 								emotes: lock_set = new Set(emotes.map(e => e.id))
 							}

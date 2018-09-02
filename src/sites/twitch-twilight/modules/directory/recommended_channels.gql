@@ -1,0 +1,12 @@
+query {
+	currentUser {
+		recommendations {
+			liveRecommendations {
+				nodes {
+					createdAt
+					type
+				}
+			}
+		}
+	}
+}

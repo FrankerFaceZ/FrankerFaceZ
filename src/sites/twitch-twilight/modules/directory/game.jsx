@@ -97,7 +97,7 @@ export default class Game extends SiteModule {
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
 
-		this.apollo.registerModifier('GamePage_Game_RENAME2', GAME_QUERY);
+		this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
 	}
 
 	onEnable() {
