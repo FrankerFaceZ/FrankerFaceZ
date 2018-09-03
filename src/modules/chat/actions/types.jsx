@@ -125,6 +125,8 @@ export const ban = {
 		}
 	}],
 
+	defaults: {},
+
 	required_context: ['room', 'user'],
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-ban.vue'),
