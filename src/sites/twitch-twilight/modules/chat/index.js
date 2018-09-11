@@ -150,7 +150,7 @@ export default class ChatHook extends Module {
 
 		this.ChatService = this.fine.define(
 			'chat-service',
-			n => n.join && n.part && n.connectHandlers,
+			n => n.join && n.connectHandlers,
 			Twilight.CHAT_ROUTES
 		);
 
