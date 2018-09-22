@@ -77,6 +77,45 @@ export default class Apollo extends Module {
 
 		this.hooked_query_init = false;
 
+		const t = this,
+			proto = this.client.queryManager.constructor.prototype,
+			old_qm_get = proto.getCurrentQueryResult;
+
+		proto.getCurrentQueryResult = function(query, optimistic = true) {
+			const out = old_qm_get.call(this, query, optimistic);
+			if ( out && out.partial )
+				try {
+					try {
+						const prev = query.getLastResult(),
+							opts = query.options;
+						this.dataStore.getCache().read({
+							query: opts.query,
+							variables: opts.variables,
+							previousResult: prev ? prev.data : undefined,
+							optimistic
+						});
+
+					} catch(err) {
+						// If there's a missing field, and we have a lastResult, and lastResult is not loading, and lastResult is not error...
+						if ( err.toString().includes("Can't find field") && query.lastResult && ! query.lastResult.loading && ! query.lastError ) {
+							if ( Date.now() - (query._ffz_last_retry || 0) >= 120000 ) {
+								const raw_name = get('options.query.definitions.0.name', query),
+									name = raw_name && raw_name.kind === 'Name' ? raw_name.value : `#${query.queryId}`;
+
+								t.log.info('Forcing query to refetch due to missing field:', name);
+								query._ffz_last_retry = Date.now();
+								query.refetch();
+							}
+						}
+					}
+
+				} catch(err) {
+					t.log.capture(err);
+				}
+
+			return out;
+		}
+
 		if ( this.client.queryManager.queryStore ) {
 			const old_qm_init = this.client.queryManager.queryStore.initQuery;
 			this.hooked_query_init = true;
@@ -118,86 +157,33 @@ export default class Apollo extends Module {
 				return forward(operation);
 			}
 
-			const out = forward(operation);
+			return forward(operation).map(result => {
+				if ( result.extensions && result.extensions.operationName === operation.operationName )
+					this.log.crumb({
+						level: 'info',
+						category: 'gql',
+						message: `${operation.operationName} [${result.extensions && result.extensions.durationMilliseconds || '??'}ms]`,
+						data: {
+							variables: vars,
+						}
+					});
 
-			if ( out.subscribe )
-				return new out.constructor(observer => {
-					try {
-						out.subscribe({
-							next: result => {
-								// Logging GQL errors is garbage. Don't do it.
-								/*if ( result.errors ) {
-									const name = operation.operationName;
-									if ( name && (name.includes('FFZ') || has(this.modifiers, name) || has(this.post_modifiers, name)) ) {
-										for(const err of result.errors) {
-											if ( skip_error(err) )
-												continue;
+				try {
+					this.apolloPostFlight(result);
+				} catch(err) {
+					this.log.capture(err, {
+						tags: {
+							operation: operation.operationName
+						},
+						extra: {
+							variables: vars
+						}
+					});
+					this.log.error('Error running Post-Flight', err, result);
+				}
 
-											this.log.capture(new GQLError(err), {
-												tags: {
-													operation: operation.operationName
-												},
-												extra: {
-													variables: vars
-												}
-											});
-										}
-									}
-								}*/
-
-								this.log.crumb({
-									level: 'info',
-									category: 'gql',
-									message: `${operation.operationName} [${result.extensions && result.extensions.durationMilliseconds || '??'}ms]`,
-									data: {
-										variables: vars,
-									}
-								});
-
-								try {
-									this.apolloPostFlight(result);
-								} catch(err) {
-									this.log.capture(err, {
-										tags: {
-											operation: operation.operationName
-										},
-										extra: {
-											variables: vars
-										}
-									});
-									this.log.error('Error running Post-Flight', err, result);
-								}
-
-								observer.next(result);
-							},
-
-							error: err => {
-								observer.error(err);
-							},
-
-							complete: observer.complete.bind(observer)
-						});
-
-					} catch(err) {
-						this.log.capture(err, {
-							tags: {
-								operation: operation.operationName
-							},
-							extra: {
-								variables: vars
-							}
-						});
-						this.log.error('Link Error', err);
-						observer.error(err);
-					}
-				});
-
-			else {
-				// We didn't get the sort of output we expected.
-				this.log.info('Unexpected Link Result', out);
-				return out;
-			}
-
+				return result;
+			});
 		})
 
 		this.old_link = this.client.link;

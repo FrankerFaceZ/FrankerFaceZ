@@ -137,6 +137,16 @@ export default class Player extends Module {
 			},
 		});
 
+		this.settings.add('player.no-autoplay', {
+			default: false,
+			ui: {
+				path: 'Channel > Player >> Playback',
+				title: 'Do not automatically start playing videos or streams.',
+				description: 'Note: This feature does not apply when navigating directly from channel to channel.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('player.vod.autoplay', {
 			default: true,
 			ui: {
@@ -265,7 +275,7 @@ export default class Player extends Module {
 		if ( this.settings.get('player.theatre.auto-enter') && inst.onTheatreChange )
 			inst.onTheatreChange(true);
 
-		if ( ! this.settings.get('player.home.autoplay') && this.router.current.name === 'front-page' ) {
+		if ( this.settings.get('player.no-autoplay') || (! this.settings.get('player.home.autoplay') && this.router.current.name === 'front-page') ) {
 			if ( inst.player )
 				this.disableAutoplay(inst);
 			else {

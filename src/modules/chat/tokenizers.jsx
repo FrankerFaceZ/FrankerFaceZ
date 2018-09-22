@@ -482,16 +482,13 @@ export const CheerEmotes = {
 		if ( ! tokens || ! tokens.length || ! msg.bits )
 			return tokens;
 
-		// TODO: Store the room onto the chat message so we don't need to look this up.
-		const SiteChat = this.resolve('site.chat'),
-			chat = SiteChat && SiteChat.currentChat,
-			bitsConfig = chat && chat.props.bitsConfig;
+		const room = this.getRoom(msg.roomID, msg.roomLogin, true),
+			actions = room && room.bitsConfig;
 
-		if ( ! bitsConfig )
+		if ( ! actions )
 			return tokens;
 
-		const actions = bitsConfig.indexedActions,
-			matcher = new RegExp(`^(${Object.keys(actions).join('|')})(\\d+)$`, 'i');
+		const matcher = new RegExp(`^(${Object.keys(actions).join('|')})(\\d+)$`, 'i');
 
 		const out = [],
 			collected = {},
@@ -516,11 +513,11 @@ export const CheerEmotes = {
 					}
 
 					const amount = parseInt(match[2], 10),
-						tiers = cheer.orderedTiers;
+						tiers = cheer.tiers;
 
 					let tier, token;
 					for(let i=0, l = tiers.length; i < l; i++)
-						if ( amount >= tiers[i].bits ) {
+						if ( amount >= tiers[i].amount ) {
 							tier = i;
 							break;
 						}
@@ -566,11 +563,11 @@ export const CheerEmotes = {
 				if ( has(collected, prefix) ) {
 					const cheers = collected[prefix],
 						cheer = actions[prefix],
-						tiers = cheer.orderedTiers;
+						tiers = cheer.tiers;
 
 					let tier = 0;
 					for(let l = tiers.length; tier < l; tier++)
-						if ( cheers.total >= tiers[tier].bits )
+						if ( cheers.total >= tiers[tier].amount )
 							break;
 
 					out.unshift({
