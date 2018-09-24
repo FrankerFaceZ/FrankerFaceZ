@@ -586,13 +586,14 @@ export default class Chat extends Module {
 		if ( login ) {
 			const other = this.users[login];
 			if ( other ) {
-				if ( other !== this && ! no_login ) {
+				if ( other !== user && ! no_login ) {
 					// If the other has an ID, something weird happened. Screw it
 					// and just take over.
 					if ( other.id )
 						this.users[login] = user;
 					else {
-						// TODO: Merge Logic~~
+						user.merge(other);
+						other.destroy(true);
 					}
 				}
 			} else
@@ -645,13 +646,14 @@ export default class Chat extends Module {
 		if ( login ) {
 			const other = this.rooms[login];
 			if ( other ) {
-				if ( other !== this && ! no_login ) {
+				if ( other !== room && ! no_login ) {
 					// If the other has an ID, something weird happened. Screw it
 					// and just take over.
 					if ( other.id )
 						this.rooms[login] = room;
 					else {
-						// TODO: Merge Logic~~
+						room.merge(other);
+						other.destroy(true);
 					}
 				}
 

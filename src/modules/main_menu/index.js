@@ -58,6 +58,11 @@ export default class MainMenu extends Module {
 			component: 'changelog'
 		});
 
+		this.on('settings:added-definition', (key, definition) => {
+			this._addDefinitionToTree(key, definition);
+			this.scheduleUpdate();
+		})
+
 		this.on('socket:command:new_version', version => {
 			if ( version === window.FrankerFaceZ.version_info.commit )
 				return;
@@ -133,6 +138,35 @@ export default class MainMenu extends Module {
 			this._vue.$destroy();
 
 		this._menu = this._vue = null;
+	}
+
+
+	scheduleUpdate() {
+		if ( this._update_timer )
+			return;
+
+		this._update_timer = setTimeout(() => this.updateLiveMenu(), 250);
+	}
+
+
+	updateLiveMenu() {
+		clearTimeout(this._update_timer);
+		this._update_timer = null;
+
+		if ( ! this._vue || ! this._vue.$children || ! this._vue.$children[0] )
+			return;
+
+		const root = this._vue.$children[0],
+			item = root.currentItem,
+			key = item && item.full_key,
+
+			tree = this.getSettingsTree();
+
+		root.nav = tree;
+		root.nav_keys = tree.keys;
+		root.currentItem = tree.keys[key] || (this.has_update ?
+			tree.keys['home.changelog'] :
+			tree.keys['home']);
 	}
 
 

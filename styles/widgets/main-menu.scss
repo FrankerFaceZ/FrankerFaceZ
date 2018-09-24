@@ -1,0 +1,11 @@
+.ffz-main-menu {
+	& > header {
+		* {
+			pointer-events: none;
+		}
+
+		input, button {
+			pointer-events: all;
+		}
+	}
+}

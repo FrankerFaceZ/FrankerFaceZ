@@ -1,4 +1,8 @@
-.channel-info-bar__action-container {
+.channel-info-bar__action-container > .tw-flex {
+	.channel-info-bar__viewers-wrapper > div:first-child {
+		margin-right: 0;
+	}
+
 	& > .tw-flex {
 		& > * {
 			margin-left: 0 !important;

@@ -56,6 +56,7 @@ export default class Room {
 					user.destroy();
 		}
 
+		this.refs = null;
 		this.users = null;
 		this.user_ids = null;
 
@@ -80,6 +81,63 @@ export default class Room {
 
 		if ( this.manager.room_ids[this._id] === this )
 			this.manager.room_ids[this._id] = null;
+	}
+
+
+	merge(other) {
+		if ( ! this.login && other.login )
+			this.login = other.login;
+
+		// We skip a lot of data, assuming that we got valid information from FFZ's API.
+
+		if ( other.refs )
+			for(const ref of other.refs)
+				this.ref(ref);
+
+		if ( other.emote_sets && other.emote_sets._sources ) {
+			for(const [provider, sets] of other.emote_sets._sources.entries()) {
+				for(const set_id of sets)
+					this.addSet(provider, set_id);
+			}
+		}
+
+		if ( other.data && ! this.data ) {
+			this.data = other.data;
+			if ( this.data.css )
+				this.style.set('css', this.data.css);
+			else
+				this.style.delete('css');
+
+			this.buildModBadgeCSS();
+		}
+
+		if ( other.badges && ! this.badges ) {
+			this.badges = other.badges;
+			this.buildBadgeCSS();
+		}
+
+		if ( other.bitsConfig && ! this.bitsConfig ) {
+			this.bitsConfig = other.bitsConfig;
+			this.buildBitsCSS();
+		}
+
+		const handled_users = new Set;
+
+		if ( other.users )
+			for(const user of Object.values(other.users)) {
+				if ( ! user.destroyed && ! handled_users.has(user) ) {
+					this.getUser(user.id, user.login).merge(user);
+					handled_users.add(user);
+				}
+			}
+
+		if ( other.user_ids )
+			for(const user of Object.values(other.user_ids)) {
+				if ( ! user.destroyed && ! handled_users.has(user) ) {
+					this.getUser(user.id, user.login).merge(user);
+					handled_users.add(user);
+				}
+			}
 	}
 
 
@@ -111,6 +169,8 @@ export default class Room {
 		if ( old_room && old_room !== this )
 			old_room.login = null;
 
+		// Make sure we didn't have a funky loop thing happen.
+		this._login = val;
 		this.manager.rooms[val] = this;
 		this.manager.socket.subscribe(this, `room.${val}`);
 		this.manager.emit(':room-update-login', this, val);
@@ -162,13 +222,14 @@ export default class Room {
 		if ( login ) {
 			const other = this.users[login];
 			if ( other ) {
-				if ( other !== this && ! no_login ) {
+				if ( other !== user && ! no_login ) {
 					// If the other has an ID, something weird happened. Screw it
 					// and just take over.
 					if ( other.id )
 						this.users[login] = user;
 					else {
-						// TODO: Merge Logic~~
+						user.merge(other);
+						other.destroy();
 					}
 				}
 			} else

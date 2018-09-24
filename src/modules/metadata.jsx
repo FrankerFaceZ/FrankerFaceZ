@@ -647,8 +647,11 @@ export default class Metadata extends Module {
 
 			if ( ! el ) {
 				let icon = maybe_call(def.icon, this, data);
+				let button = false;
 
-				if ( def.popup || def.click ) {
+				if ( def.button !== false && (def.popup || def.click) ) {
+					button = true;
+
 					let btn, popup;
 					let cls = maybe_call(def.button, this, data);
 					if ( typeof cls !== 'string' )
@@ -691,7 +694,7 @@ export default class Metadata extends Module {
 
 					if ( def.click )
 						btn.addEventListener('click', e => {
-							if ( btn.disabled || btn.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
+							if ( el._ffz_fading || btn.disabled || btn.classList.contains('disabled') || el.disabled || el.classList.contains('disabled') )
 								return false;
 
 							def.click.call(this, el._ffz_data, e, () => refresh_fn(key));
@@ -779,7 +782,15 @@ export default class Metadata extends Module {
 					>
 						{icon}
 						{stat = <span class="ffz-stat-text tw-stat__value" />}
-					</div>)
+					</div>);
+
+					if ( def.click )
+						el.addEventListener('click', e => {
+							if ( el._ffz_fading || el.disabled || el.classList.contains('disabled') )
+								return false;
+
+							def.click.call(this, el._ffz_data, e, () => refresh_fn(key));
+						});
 				}
 
 				el._ffz_order = order;
@@ -787,11 +798,18 @@ export default class Metadata extends Module {
 				if ( order != null )
 					el.style.order = order;
 
-				container.appendChild(el);
+				let subcontainer;
+
+				if ( button )
+					subcontainer = container.querySelector('.tw-flex:last-child') || container;
+				else
+					subcontainer = container.querySelector('.tw-flex:first-child') || container;
+
+				subcontainer.appendChild(el);
 
 				if ( def.tooltip ) {
 					const parent = document.body.querySelector('.twilight-root') || document.body;
-					el.tooltip = new Tooltip(container, el, {
+					el.tooltip = new Tooltip(parent, el, {
 						logger: this.log,
 						live: false,
 						html: true,

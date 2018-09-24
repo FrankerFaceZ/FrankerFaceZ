@@ -42,6 +42,25 @@ export default class User {
 		}
 	}
 
+	merge(other) {
+		if ( ! this.login && other.login )
+			this.login = other.login;
+
+		if ( other.emote_sets && other.emote_sets._sources ) {
+			for(const [provider, sets] of other.emote_sets._sources.entries()) {
+				for(const set_id of sets)
+					this.addSet(provider, set_id);
+			}
+		}
+
+		if ( other.badges && other.badges._sources ) {
+			for(const [provider, badges] of other.badges._sources.entries()) {
+				for(const badge of badges)
+					this.addBadge(provider, badge.id, badge);
+			}
+		}
+	}
+
 	get id() {
 		return this._id;
 	}
@@ -70,6 +89,8 @@ export default class User {
 		if ( old_user && old_user !== this )
 			old_user.login = null;
 
+		// Make sure we didn't have a funky loop thing happen.
+		this._login = val;
 		obj.users[val] = this;
 	}
 
