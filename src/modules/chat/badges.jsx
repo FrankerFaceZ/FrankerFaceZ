@@ -393,6 +393,7 @@ export default class Badges extends Module {
 					old_badge = slotted[slot],
 					urls = badge.urls || (badge.image ? {1: badge.image} : null),
 					color = badge.color || full_badge.color || 'transparent',
+					no_invert = badge.no_invert,
 					masked = color !== 'transparent' && is_mask,
 
 					bu = (urls || full_badge.urls || {1: full_badge.image}),
@@ -433,19 +434,25 @@ export default class Badges extends Module {
 					slotted[slot] = {id: badge.id, props, badges: [bd]}
 				}
 
+				if (no_invert) {
+					style.background = 'unset';
+					style.backgroundSize = 'unset';
+					style[CSS_MASK_IMAGE] = 'unset';
+				}
+
 				if ( has_image && urls ) {
 					const image = `url("${urls[1]}")`;
 					let image_set;
 					if ( urls[2] || urls[4] )
 						image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
 
-					style[masked ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
+					style[masked && !no_invert ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
 					if ( image_set )
-						style[masked ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
+						style[masked && !no_invert ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
 				}
 
 				if ( is_colored && badge.color ) {
-					if ( masked )
+					if ( masked && !no_invert )
 						style.backgroundImage = `linear-gradient(${badge.color},${badge.color})`;
 					else
 						style.backgroundColor = badge.color;
