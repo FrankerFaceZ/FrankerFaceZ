@@ -3,7 +3,7 @@
 		:class="{ maximized: maximized || exclusive, exclusive, faded }"
 		class="ffz-dialog ffz-main-menu tw-elevation-3 tw-c-background-alt tw-c-text tw-border tw-flex tw-flex-nowrap tw-flex-column"
 	>
-		<header class="tw-c-background tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
+		<header ref="header" class="tw-c-background tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="maybeResize($event)">
 			<h3 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
 				<div class="tw-search-input">
@@ -150,6 +150,13 @@ export default {
 	},
 
 	methods: {
+		maybeResize(event) {
+			if ( event.target !== this.$refs.header )
+				return;
+
+			this.resize(event);
+		},
+
 		changeProfile() {
 			const new_id = this.$refs.profiles.value,
 				new_profile = this.context.profiles[new_id];
