@@ -1,5 +1,5 @@
 <template lang="html">
-	<div class="ffz-featured-follow tw-c-background">
+	<div class="ffz-featured-follow tw-c-background-base">
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
 			<h4>{{ t('metadata.featured-follow.title', 'Featured Channels') }}</h4>
 

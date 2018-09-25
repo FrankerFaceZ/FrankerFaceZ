@@ -142,7 +142,7 @@ export default class RichContent extends Module {
 
 			renderCard() {
 				return (<div class="ffz--chat-card tw-elevation-1 tw-mg-t">
-					<div class="tw-c-background tw-flex tw-flex-nowrap tw-pd-05">
+					<div class="tw-c-background-base tw-flex tw-flex-nowrap tw-pd-05">
 						{this.renderCardImage()}
 						{this.renderCardDescription()}
 					</div>

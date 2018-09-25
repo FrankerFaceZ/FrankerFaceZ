@@ -1,9 +1,9 @@
 <template lang="html">
 	<div
 		:class="{ maximized: maximized || exclusive, exclusive, faded }"
-		class="ffz-dialog ffz-main-menu tw-elevation-3 tw-c-background-alt tw-c-text tw-border tw-flex tw-flex-nowrap tw-flex-column"
+		class="ffz-dialog ffz-main-menu tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
 	>
-		<header ref="header" class="tw-c-background tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="maybeResize($event)">
+		<header ref="header" class="tw-c-background-base tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="maybeResize($event)">
 			<h3 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
 				<div class="tw-search-input">

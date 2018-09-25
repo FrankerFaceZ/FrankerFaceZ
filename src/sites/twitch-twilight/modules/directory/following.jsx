@@ -266,7 +266,7 @@ export default class Following extends SiteModule {
 		}
 
 		this.hostMenu = (<div class="ffz-host-menu tw-balloon tw-block">
-			<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background">
+			<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
 				<div class="scrollable-area" data-simplebar>
 					<div class="simplebar-scroll-content">
 						<div class="simplebar-content">

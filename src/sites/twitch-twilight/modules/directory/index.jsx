@@ -409,7 +409,7 @@ export default class Directory extends SiteModule {
 			href={link}
 			onClick={e => this.routeClick(e, link)} // eslint-disable-line react/jsx-no-bind
 		>
-			<div class={`tw-absolute tw-right-0 tw-border-l tw-c-background ${is_video ? 'tw-top-0 tw-border-b' : 'tw-bottom-0 tw-border-t'}`}>
+			<div class={`tw-absolute tw-right-0 tw-border-l tw-c-background-base ${is_video ? 'tw-top-0 tw-border-b' : 'tw-bottom-0 tw-border-t'}`}>
 				<figure class="tw-aspect tw-aspect--align-top">
 					<img src={src} title={props.channelDisplayName} />
 				</figure>

@@ -3,7 +3,7 @@
 		<div ref="list" class="ffz--rule-list">
 			<section v-for="(rule, idx) in rules" :key="`rule-${idx}`">
 				<div
-					class="ffz--rule tw-elevation-1 tw-c-background tw-border tw-mg-b-05 tw-pd-y-05 tw-pd-r-1 tw-flex tw-flex-nowrap tw-align-items-start"
+					class="ffz--rule tw-elevation-1 tw-c-background-base tw-border tw-mg-b-05 tw-pd-y-05 tw-pd-r-1 tw-flex tw-flex-nowrap tw-align-items-start"
 					tabindex="0"
 				>
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-handle tw-pd-x-05 tw-pd-y-1">

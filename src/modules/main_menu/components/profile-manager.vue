@@ -31,7 +31,7 @@
 			>
 				<div
 					:class="{live: p.live}"
-					class="ffz--profile tw-elevation-1 tw-c-background tw-border tw-pd-y-05 tw-pd-r-1 tw-mg-y-05 tw-flex tw-flex-nowrap"
+					class="ffz--profile tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-r-1 tw-mg-y-05 tw-flex tw-flex-nowrap"
 					tabindex="0"
 				>
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center handle tw-pd-x-05 tw-pd-t-1 tw-pd-b-05">
