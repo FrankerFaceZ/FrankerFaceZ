@@ -98,7 +98,7 @@ export default class Channel extends Module {
 			old_handle_join = inst.handleJoinRaid;
 
 		inst.handleJoinRaid = function(event, ...args) {
-			const raid_id = inst.state && inst.state.raid && inst.state.raid.id;
+			const raid_id = inst.props && inst.props.raid && inst.props.raid.id;
 			if ( event && event.type && raid_id )
 				t.joined_raids.add(raid_id);
 
@@ -112,8 +112,8 @@ export default class Channel extends Module {
 	noAutoRaids(inst) {
 		if ( this.settings.get('channel.raids.no-autojoin') )
 			setTimeout(() => {
-				if ( inst.state.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
-					const id = inst.state.raid.id;
+				if ( inst.props && inst.props.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
+					const id = inst.props.raid.id;
 					if ( this.joined_raids.has(id) )
 						return;
 
