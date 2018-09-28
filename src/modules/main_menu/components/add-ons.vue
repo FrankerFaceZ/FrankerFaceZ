@@ -6,10 +6,26 @@
 			This is where you can enable or disable add-ons for FrankerFaceZ.
 		</p>
 
+		<div v-if="item.isReloadRequired()" class="tw-mg-y-1 tw-c-background-accent tw-c-text-overlay tw-pd-1">
+			<h3 class="ffz-i-attention">
+				One or more Add-Ons require a page reload to finish uninstallation.
+			</h3>
+
+			<button 
+				class="tw-button tw-mg-t-1"
+				@click="item.refreshPage()"
+			>
+				<span class="tw-button__icon tw-button__icon--left">
+					<figure class="ffz-i-arrows-cw" />
+				</span>
+				<span class="tw-button__text">Reload Page</span>
+			</button>
+		</div>
+
 		<div v-for="(addon, index) in item.getAddons()"
 			:key="addon.id"
 			:class="`tw-pd-b-${index === (item.getAddons().length-1) ? '2' : '1'}`"
-			class="tw-pd-r-1 ffz--add-on-info"
+			class="ffz--add-on-info"
 		>
 			<div class="tw-border-t tw-border-r tw-border-b tw-border-l tw-c-background tw-flex tw-flex-grow-1 tw-flex-nowrap tw-justify-content-between tw-full-height tw-pd-l-1">
 				<div class="tw-card tw-relative tw-full-width">

@@ -22,6 +22,7 @@ export class AddonManager extends Module {
 
 		this.inject('settings');
 
+		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = this.settings.provider.get('addons.enabled') || [];
 
@@ -33,7 +34,9 @@ export class AddonManager extends Module {
 			
 			getAddons: () => Object.values(this.addons),
 			enableAddon: id => this.enableAddon(id),
-			disableAddon: id => this.disableAddon(id)
+			disableAddon: id => this.disableAddon(id),
+			isReloadRequired: () => this.isReloadRequired(),
+			refreshPage: () => window.location.reload()
 		});
 
 		this.settings.add('addons.development', {
@@ -66,6 +69,10 @@ export class AddonManager extends Module {
 		}
 	}
 
+	isReloadRequired() {
+		return this.reload_required;
+	}
+
 	isAddonEnabled(id) {
 		this.log.info(`Addon Check for ${id}`);
 		return this.enabled_addons.includes(id);
@@ -75,16 +82,22 @@ export class AddonManager extends Module {
 		return this.addons[id];
 	}
 
-	loadAddon(id) {
+	async loadAddon(id) {
 		const addon = this.getAddon(id);
 		if (!addon) return;
 
 		if (!window.document.head.querySelector(`#ffz-addon-${addon.id}`)) {
 			const script = document.createElement('script');
-			script.id = addon.id;
+			script.id = `ffz-addon-${addon.id}`;
 			script.type = 'text/javascript';
 			script.src = `https://${addon.dev ? 'localhost:8001' : 'cdn.ffzap.com'}/script/addons/${addon.id}/script.js`;
 			document.head.appendChild(script);
+		} else { // Add-On is still in memory, just enable it
+			try {
+				await FrankerFaceZ.get().resolve(`addon.${id}`).enable();
+			} catch (error) {
+				// ???
+			}
 		}
 	}
 
@@ -104,7 +117,7 @@ export class AddonManager extends Module {
 		this.settings.provider.set('addons.enabled', deep_copy(this.enabled_addons));
 	}
 
-	disableAddon(id) {
+	async disableAddon(id) {
 		if (!this.enabled_addons.includes(id)) return;
 
 		const requires = this.enabled_addons.filter(addon_id => {
@@ -114,6 +127,12 @@ export class AddonManager extends Module {
 
 		for (const required_id of requires) {
 			this.disableAddon(required_id);
+		}
+
+		try {
+			await FrankerFaceZ.get().resolve(`addon.${id}`).disable();
+		} catch (error) {
+			this.reload_required = true;
 		}
 
 		this.enabled_addons.splice(this.enabled_addons.indexOf(id), 1);
