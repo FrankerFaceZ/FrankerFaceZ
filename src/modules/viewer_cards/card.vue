@@ -1,7 +1,7 @@
 <template>
 	<div
 		:style="{zIndex: z}"
-		class="ffz-mod-card tw-elevation-3 tw-c-background-alt tw-c-text tw-border tw-flex tw-flex-nowrap tw-flex-column"
+		class="ffz-mod-card tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
 		tabindex="0"
 		@focusin="onFocus"
 		@keyup.esc="close"
@@ -80,7 +80,7 @@
 		</header>
 		<error-tab v-if="errored" />
 		<template v-else-if="loaded">
-			<section class="tw-c-background">
+			<section class="tw-c-background-base">
 				<div class="mod-cards__tabs-container tw-border-t">
 					<div
 						v-for="(data, key) in tabs"

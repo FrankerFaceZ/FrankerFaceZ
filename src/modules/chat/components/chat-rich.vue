@@ -1,7 +1,7 @@
 <template>
 	<a :href="url" class="chat-card__link" target="_blank" rel="noreferrer noopener">
 		<div class="ffz--chat-card tw-elevation-1 tw-mg-t">
-			<div class="tw-c-background tw-flex tw-flex-nowrap tw-pd-05">
+			<div class="tw-c-background-base tw-flex tw-flex-nowrap tw-pd-05">
 				<div class="chat-card__preview-img tw-c-background-alt-2 tw-align-items-center tw-flex tw-flex-shrink-0 tw-justify-content-center">
 					<div class="tw-card-img tw-flex-shrink-0 tw-flex tw-justify-content-center">
 						<img

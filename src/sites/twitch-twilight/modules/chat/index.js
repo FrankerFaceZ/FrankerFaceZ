@@ -477,7 +477,7 @@ export default class ChatHook extends Module {
 						return null;
 
 					return createElement('div', {
-						className: 'tw-border-l tw-c-background-alt-2 tw-c-text tw-full-width tw-full-height tw-align-items-center tw-flex tw-flex-column tw-justify-content-center tw-relative'
+						className: 'tw-border-l tw-c-background-alt-2 tw-c-text-base tw-full-width tw-full-height tw-align-items-center tw-flex tw-flex-column tw-justify-content-center tw-relative'
 					}, 'There was an error displaying chat.');
 
 				} else

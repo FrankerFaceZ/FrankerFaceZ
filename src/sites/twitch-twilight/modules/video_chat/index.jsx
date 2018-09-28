@@ -112,9 +112,9 @@ export default class VideoChatHook extends Module {
 						</button>
 						<div class={`tw-absolute tw-balloon tw-balloon--down tw-balloon--right tw-balloon--sm ${is_open ? 'tw-block' : 'tw-hide'}`}>
 							<div class="tw-absolute tw-balloon__tail tw-overflow-hidden">
-								<div class="tw-absolute tw-balloon__tail-symbol tw-border-b tw-border-l tw-border-r tw-border-t tw-c-background" />
+								<div class="tw-absolute tw-balloon__tail-symbol tw-border-b tw-border-l tw-border-r tw-border-t tw-c-background-base" />
 							</div>
-							<div class="tw-border-b tw-border-l tw-border-r tw-border-radius-medium tw-border-t tw-c-background tw-elevation-1 tw-pd-y-1">
+							<div class="tw-border-b tw-border-l tw-border-r tw-border-radius-medium tw-border-t tw-c-background-base tw-elevation-1 tw-pd-y-1">
 								<button class="tw-interactable tw-interactable--inverted tw-full-width tw-pd-y-05 tw-pd-x-1">{
 									t.i18n.t('video-chat.copy-link', 'Copy Link')
 								}</button>
@@ -153,7 +153,7 @@ export default class VideoChatHook extends Module {
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
-				return (<div class="tw-align-items-start tw-flex tw-flex-nowrap tw-c-text">
+				return (<div class="tw-align-items-start tw-flex tw-flex-nowrap tw-c-text-base">
 					<div class="tw-flex-grow-1" data-room-id={msg.roomID} data-room={msg.roomLogin} data-user-id={user.id} data-user={user.login}>
 						<span class="chat-line__message--badges">{
 							t.chat.badges.render(msg, createElement)

@@ -28,7 +28,7 @@
 				:key="key"
 				:data-key="key"
 			>
-				<div class="tw-elevation-1 tw-c-background tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
+				<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
 
 					<div class="tw-flex-grow-1">
 						<h4>{{ exp.name }}</h4>
@@ -83,7 +83,7 @@
 			>
 				<div
 					:class="{live: exp.in_use}"
-					class="ffz--experiment-row tw-elevation-1 tw-c-background tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex"
+					class="ffz--experiment-row tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex"
 				>
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-border-r tw-mg-r-1 tw-pd-r-1">
 						<div v-if="exp.in_use" class="ffz--profile__icon ffz-i-ok tw-tooltip-wrapper">

@@ -397,7 +397,7 @@ export default class EmoteMenu extends Module {
 					tones = Object.entries(emoji.variants).map(([tone, emoji]) => this.renderTone(emoji, tone));
 
 				return (<div class="tw-absolute tw-balloon tw-balloon--up tw-balloon--right tw-balloon tw-block">
-					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background tw-elevation-1">
+					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background-base tw-elevation-1">
 						{this.renderTone(emoji, null)}
 						{tones}
 					</div>
@@ -1578,7 +1578,7 @@ export default class EmoteMenu extends Module {
 					class={`tw-balloon tw-balloon--md tw-balloon--up tw-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
 					data-a-target="emote-picker"
 				>
-					<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background">
+					<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
 						<div
 							class="emote-picker__tab-content scrollable-area"
 							data-test-selector="scrollable-area-wrapper"
@@ -1627,7 +1627,7 @@ export default class EmoteMenu extends Module {
 									/>}
 								</div>
 							</div>)}
-							<div class="emote-picker__tabs-container tw-flex tw-border-t tw-c-background">
+							<div class="emote-picker__tabs-container tw-flex tw-border-t tw-c-background-base">
 								<div
 									class={`ffz-tooltip emote-picker__tab tw-pd-x-1${tab === 'fav' ? ' emote-picker__tab--active' : ''}`}
 									id="emote-picker__fav"

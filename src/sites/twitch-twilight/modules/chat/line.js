@@ -349,7 +349,7 @@ export default class ChatLine extends Module {
 									className: 'chatter-name',
 									onClick: this.ffz_user_click_handler //e => this.props.onUsernameClick(user.login, null, msg.id, e.currentTarget.getBoundingClientRect().bottom)
 								}, e('span', {
-									className: 'tw-c-text tw-strong'
+									className: 'tw-c-text-base tw-strong'
 								}, user.userDisplayName)),
 								plan: plan.prime ?
 									t.i18n.t('chat.sub.twitch-prime', 'Twitch Prime') :
@@ -382,7 +382,7 @@ export default class ChatLine extends Module {
 									className: 'chatter-name',
 									onClick: this.ffz_user_click_handler
 								}, e('span', {
-									className: 'tw-c-text tw-strong'
+									className: 'tw-c-text-base tw-strong'
 								}, user.userDisplayName))
 							})
 						]);

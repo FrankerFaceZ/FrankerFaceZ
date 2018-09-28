@@ -1,5 +1,5 @@
 <template lang="html">
-	<div class="ffz--action tw-elevation-1 tw-c-background tw-border tw-pd-y-05 tw-pd-r-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
+	<div class="ffz--action tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-r-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
 		<div class="tw-flex tw-flex-shrink-0 tw-align-items-start handle tw-pd-x-05 tw-pd-t-1 tw-pd-b-05">
 			<span class="ffz-i-ellipsis-vert" />
 		</div>
