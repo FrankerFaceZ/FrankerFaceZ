@@ -49,7 +49,7 @@ export class AddonManager extends Module {
 
 	async onEnable() {
 		const [cdn_data, local_data] = await Promise.all([
-			fetch('https://cors-anywhere.herokuapp.com/https://lordmau5.com/addons.json').then(r => r.ok ? r.json() : null).catch(() => null),
+			fetch('https://cdn.ffzap.com/script/addons/addons.json').then(r => r.ok ? r.json() : null).catch(() => null),
 			this.settings.get('addons.development')
 				? fetch('https://localhost:8001/script/addons/addons.json').then(r => r.ok ? r.json() : null).catch(() => null)
 				: null
@@ -83,7 +83,7 @@ export class AddonManager extends Module {
 			const script = document.createElement('script');
 			script.id = addon.id;
 			script.type = 'text/javascript';
-			script.src = `https://${addon.dev ? 'localhost:8001' : 'lordmau5.com'}/script/addons/${addon.id}/script.js`;
+			script.src = `https://${addon.dev ? 'localhost:8001' : 'cdn.ffzap.com'}/script/addons/${addon.id}/script.js`;
 			document.head.appendChild(script);
 		}
 	}
