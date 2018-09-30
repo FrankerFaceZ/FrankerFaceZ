@@ -11,7 +11,7 @@ import {get, pick_random, has, timeout} from 'utilities/object';
 import Module from 'utilities/module';
 
 
-const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'UwU', '>w<', '^w^'],
+const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'UwU', '>w<', '^w^', '> w >', 'v.v'],
 
 	format_text = (phrase, token_regex, formatter) => {
 		const out = [];
