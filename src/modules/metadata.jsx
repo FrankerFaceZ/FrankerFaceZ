@@ -256,11 +256,11 @@ export default class Metadata extends Module {
 				legacy_bar.updateMetadata(inst, keys);
 		}
 
-		const game_header = this.resolve('site.directory.game');
+		/*const game_header = this.resolve('site.directory.game');
 		if ( game_header ) {
 			for(const inst of game_header.GameHeader.instances)
 				game_header.updateMetadata(inst, keys);
-		}
+		}*/
 	}
 
 

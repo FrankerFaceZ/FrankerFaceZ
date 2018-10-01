@@ -78,9 +78,13 @@ export const Links = {
 					content = `<img class="preview-image" src="${sanitize(data.image)}">${content}`
 
 				setTimeout(() => {
-					if ( tip.element )
-						for(const el of tip.element.querySelectorAll('video,img'))
-							el.addEventListener('load', tip.update)
+					if ( tip.element ) {
+						for(const el of tip.element.querySelectorAll('img'))
+							el.addEventListener('load', tip.update);
+
+						for(const el of tip.element.querySelectorAll('video'))
+							el.addEventListener('loadedmetadata', tip.update);
+					}
 				});
 
 			} else if ( content.length )

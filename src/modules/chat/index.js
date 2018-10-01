@@ -522,22 +522,27 @@ export default class Chat extends Module {
 			}
 		});
 
+		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
+			default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
+
 		this.settings.add('chat.timestamp-format', {
-			default: 'H:mm',
+			default: default_24 ? 'H:mm' : 'h:mm',
 			ui: {
 				path: 'Chat > Appearance >> Chat Lines',
 				title: 'Timestamp Format',
-				component: 'setting-select-box',
+				component: 'setting-combo-box',
+
+				description: 'Timestamps are formatted using the [Day.js](https://github.com/iamkun/dayjs#readme) library. More details about formatting strings [can be found here](https://github.com/iamkun/dayjs/blob/HEAD/docs/en/API-reference.md#list-of-all-available-formats)',
 
 				data: [
-					{value: 'h:mm', title: 'Default (h:mm)'},
-					{value: 'h:mm:ss', title: 'Default with Seconds (h:mm:ss)'},
-					{value: 'H:mm', title: '24 Hour (H:mm)'},
-					{value: 'H:mm:ss', title: '24 Hour with Seconds (H:mm:ss)'},
-					{value: 'hh:mm', title: 'Padded (hh:mm)'},
-					{value: 'hh:mm:ss', title: 'Padded with Seconds (hh:mm:ss)'},
-					{value: 'HH:mm', title: 'Padded 24 Hour (HH:mm)'},
-					{value: 'HH:mm:ss', title: 'Padded 24 Hour with Seconds (HH:mm:ss)'},
+					{value: 'h:mm', title: '12 Hour'},
+					{value: 'h:mm:ss', title: '12 Hour with Seconds'},
+					{value: 'H:mm', title: '24 Hour'},
+					{value: 'H:mm:ss', title: '24 Hour with Seconds'},
+					{value: 'hh:mm', title: 'Padded'},
+					{value: 'hh:mm:ss', title: 'Padded with Seconds'},
+					{value: 'HH:mm', title: 'Padded 24 Hour'},
+					{value: 'HH:mm:ss', title: 'Padded 24 Hour with Seconds'},
 				]
 			}
 		});
@@ -939,9 +944,8 @@ export default class Chat extends Module {
 		if (!( time instanceof Date ))
 			time = new Date(time);
 
-		const fmt = this.settings.get('chat.timestamp-format');
-
-		return dayjs(time).format(fmt);
+		const fmt = this.context.get('chat.timestamp-format');
+		return dayjs(time).locale(this.i18n.locale).format(fmt);
 	}
 
 

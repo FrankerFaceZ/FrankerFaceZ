@@ -33,7 +33,11 @@ export default class ThemeEngine extends Module {
 			ui: {
 				path: 'Appearance @{"description": "Personalize the appearance of Twitch. Change the color scheme and fonts and tune the layout to optimize your experience."} > Theme >> General',
 				title: 'Gray (no Purple)',
-				description: '<em>Requires Dark Theme to be Enabled.</em><br>I see my website and I want it painted black...<br>This is a very early feature and will change as there is time.',
+				description: `*Requires Dark Theme to be Enabled.*
+
+I see my website and I want it painted black...
+
+This is a very early feature and will change as there is time.`,
 				component: 'setting-check-box'
 			},
 

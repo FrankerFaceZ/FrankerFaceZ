@@ -6,6 +6,7 @@
 
 import {SiteModule} from 'utilities/module';
 import {createElement} from 'utilities/dom';
+import { get } from 'utilities/object';
 
 import GAME_QUERY from './game.gql';
 
@@ -16,11 +17,11 @@ export default class Game extends SiteModule {
 		this.inject('site.fine');
 		this.inject('site.apollo');
 
-		this.inject('metadata');
+		//this.inject('metadata');
 		this.inject('i18n');
 		this.inject('settings');
 
-		this.metadata.definitions.block_game = {
+		/*this.metadata.definitions.block_game = {
 			type: 'directory',
 			button(data) {
 				return `ffz-directory-toggle-block${data.blocked ? ' active' : ''}`
@@ -83,17 +84,11 @@ export default class Game extends SiteModule {
 			},
 
 			click: this.generateClickHandler('directory.game.hidden-thumbnails')
-		}
-
-		this.LegacyGameHeader = this.fine.define(
-			'legacy-game-header',
-			n => n.renderFollowButton && n.renderGameDetailsTab,
-			['dir-game-index', 'dir-community']
-		);
+		}*/
 
 		this.GameHeader = this.fine.define(
 			'game-header',
-			n => n.renderDirectoryMetadata,
+			n => n.props && n.props.data && n.renderDropsAvailable,
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
 
@@ -101,27 +96,99 @@ export default class Game extends SiteModule {
 	}
 
 	onEnable() {
-		this.GameHeader.on('unmount', this.unmountGameHeader, this);
 		this.GameHeader.on('mount', this.updateGameHeader, this);
 		this.GameHeader.on('update', this.updateGameHeader, this);
 
 		this.GameHeader.ready((cls, instances) => {
-			this.settings.updateContext({new_channel: true});
-
 			for(const inst of instances)
 				this.updateGameHeader(inst);
 		});
-
-		this.LegacyGameHeader.ready((cls, instances) => {
-			for(const inst of instances)
-				this.updateButtons(inst);
-		});
-
-		this.LegacyGameHeader.on('update', this.updateButtons, this);
 	}
 
 
-	unmountGameHeader(inst) { // eslint-disable-line class-methods-use-this
+	updateGameHeader(inst) {
+		this.updateButtons(inst);
+	}
+
+
+	updateButtons(inst) {
+		const container = this.fine.getChildNode(inst);
+		if ( get('data.variables.type', inst.props) !== 'GAME' || ! container || ! container.querySelector )
+			return;
+
+		const buttons = container.querySelector('.tw-flex > .tw-inline-flex');
+		if ( ! buttons )
+			return;
+
+		const ffz_buttons = buttons.querySelector('.ffz-buttons');
+		if ( ffz_buttons )
+			ffz_buttons.remove();
+
+		let block_btn, block_label,
+			hidden_btn, hidden_label;
+
+		const game = get('data.directory.name', inst.props),
+			update_block = () => {
+				const blocked_games = this.settings.provider.get('directory.game.blocked-games', []),
+					blocked = blocked_games.includes(game);
+
+				block_btn.classList.toggle('active', blocked);
+				block_label.textContent = blocked ?
+					this.i18n.t('directory.unblock', 'Unblock') :
+					this.i18n.t('directory.block', 'Block');
+			},
+			update_hidden = () => {
+				const hidden_games = this.settings.provider.get('directory.game.hidden-thumbnails', []),
+					hidden = hidden_games.includes(game);
+
+				hidden_btn.classList.toggle('active', hidden);
+				hidden_label.textContent = hidden ?
+					this.i18n.t('directory.show-thumbnails', 'Show Thumbnails') :
+					this.i18n.t('directory.hide-thumbnails', 'Hide Thumbnails');
+			};
+
+		block_btn = (<button
+			class="tw-mg-l-1 tw-button ffz-directory-toggle-block"
+			onClick={this.generateClickHandler('directory.game.blocked-games', game, update_block)}
+		>
+			{block_label = <span class="tw-button__text" />}
+		</button>);
+
+		update_block();
+
+		hidden_btn = (<button
+			class="tw-mg-l-1 tw-button ffz-directory-toggle-thumbnail"
+			onClick={this.generateClickHandler('directory.game.hidden-thumbnails', game, update_hidden)}
+		>
+			{hidden_label = <span class="tw-button__text" />}
+		</button>);
+
+		update_hidden();
+
+		buttons.appendChild(<div class="ffz-buttons">
+			{block_btn}
+			{hidden_btn}
+		</div>);
+	}
+
+	generateClickHandler(setting, game, update_func) {
+		return e => {
+			e.preventDefault();
+			const values = this.settings.provider.get(setting) || [],
+				idx = values.indexOf(game);
+
+			if ( idx === -1 )
+				values.push(game);
+			else
+				values.splice(idx, 1);
+
+			this.settings.provider.set(setting, values);
+			this.parent.DirectoryCard.forceUpdate();
+			update_func();
+		}
+	}
+
+	/*unmountGameHeader(inst) { // eslint-disable-line class-methods-use-this
 		const timers = inst._ffz_meta_timers;
 		if ( timers )
 			for(const key in timers)
@@ -133,7 +200,6 @@ export default class Game extends SiteModule {
 	updateGameHeader(inst) {
 		this.updateMetadata(inst);
 	}
-
 
 	updateMetadata(inst, keys) {
 		const container = this.fine.getChildNode(inst),
@@ -164,90 +230,6 @@ export default class Game extends SiteModule {
 			this.metadata.render(key, data, metabar, timers, refresh_func);
 	}
 
-
-	updateButtons(inst, update = false) {
-		const container = this.fine.getChildNode(inst);
-		if ( inst.props.directoryType !== 'GAMES' || ! container || ! container.querySelector )
-			return;
-
-		const buttons = container.querySelector('div > div.tw-align-items-center'),
-			ffz_buttons = buttons && buttons.querySelector('.ffz-buttons');
-
-		if ( ! buttons || (ffz_buttons && ! update) )
-			return;
-
-		if ( ffz_buttons )
-			ffz_buttons.remove();
-
-		// The Block / Unblock Button
-		let block_btn, block_label,
-			hidden_btn, hidden_label;
-
-		const game = inst.props.directoryName,
-			update_block = () => {
-				const blocked_games = this.settings.provider.get('directory.game.blocked-games') || [],
-					blocked = blocked_games.includes(game);
-
-				block_btn.classList.toggle('active', blocked);
-				block_label.textContent = blocked ?
-					this.i18n.t('directory.unblock', 'Unblock') :
-					this.i18n.t('directory.block', 'Block');
-			}
-
-
-		block_btn = (<button
-			class="tw-mg-l-1 tw-button ffz-directory-toggle-block"
-			onClick={this.generateLegacyClickHandler('directory.game.blocked-games', game, update_block)}
-		>
-			{block_label = <span class="tw-button__text" />}
-		</button>);
-
-		update_block();
-
-
-		const update_hidden = () => {
-			const hidden_games = this.settings.provider.get('directory.game.hidden-thumbnails') || [],
-				hidden = hidden_games.includes(game);
-
-			hidden_btn.classList.toggle('active', hidden);
-			hidden_label.textContent = hidden ?
-				this.i18n.t('directory.show-thumbnails', 'Show Thumbnails') :
-				this.i18n.t('directory.hide-thumbnails', 'Hide Thumbnails');
-
-			this.parent.DirectoryCard.forceUpdate();
-		}
-
-		hidden_btn = (<button
-			class="tw-mg-l-1 tw-button ffz-directory-toggle-thumbnail"
-			onClick={this.generateLegacyClickHandler('directory.game.hidden-thumbnails', game, update_hidden)}
-		>
-			{hidden_label = <span class="tw-button__text" />}
-		</button>)
-
-		update_hidden();
-
-		buttons.appendChild(<div class="ffz-buttons">
-			{block_btn}
-			{hidden_btn}
-		</div>);
-	}
-
-	generateLegacyClickHandler(setting, game, update_func) {
-		return e => {
-			e.preventDefault();
-			const values = this.settings.provider.get(setting) || [],
-				idx = values.indexOf(game);
-
-			if ( idx === -1 )
-				values.push(game);
-			else
-				values.splice(idx, 1);
-
-			this.settings.provider.set(setting, values);
-			update_func();
-		}
-	}
-
 	generateClickHandler(setting) {
 		return (data, event, update_func) => {
 			const values = this.settings.provider.get(setting, []),
@@ -263,5 +245,5 @@ export default class Game extends SiteModule {
 			this.parent.DirectoryCard.forceUpdate();
 			update_func();
 		}
-	}
+	}*/
 }

@@ -44,8 +44,9 @@
 		<section
 			v-if="item.description"
 			class="tw-c-text-alt-2"
-			v-html="t(item.desc_i18n_key || item.i18n_key + '.description', item.description, item)"
-		/>
+		>
+			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
+		</section>
 	</div>
 </template>
 
