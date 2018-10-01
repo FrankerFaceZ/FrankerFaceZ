@@ -3,6 +3,7 @@
 // ============================================================================
 // Chat
 // ============================================================================
+import dayjs from 'dayjs';
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
@@ -521,6 +522,26 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.timestamp-format', {
+			default: 'H:mm',
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Timestamp Format',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 'h:mm', title: 'Default (h:mm)'},
+					{value: 'h:mm:ss', title: 'Default with Seconds (h:mm:ss)'},
+					{value: 'H:mm', title: '24 Hour (H:mm)'},
+					{value: 'H:mm:ss', title: '24 Hour with Seconds (H:mm:ss)'},
+					{value: 'hh:mm', title: 'Padded (hh:mm)'},
+					{value: 'hh:mm:ss', title: 'Padded with Seconds (hh:mm:ss)'},
+					{value: 'HH:mm', title: 'Padded 24 Hour (HH:mm)'},
+					{value: 'HH:mm:ss', title: 'Padded 24 Hour with Seconds (HH:mm:ss)'},
+				]
+			}
+		});
+
 		this.context.on('changed:theme.is-dark', () => {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
@@ -914,22 +935,13 @@ export default class Chat extends Module {
 	}
 
 
-	formatTime(time) { // eslint-disable-line class-methods-use-this
+	formatTime(time) {
 		if (!( time instanceof Date ))
 			time = new Date(time);
 
-		let hours = time.getHours();
+		const fmt = this.settings.get('chat.timestamp-format');
 
-		const minutes = time.getMinutes(); //,
-		//	seconds = time.getSeconds(),
-		//	fmt = this.settings.get('chat.timestamp-format');
-
-		if ( hours > 12 )
-			hours -= 12;
-		else if ( hours === 0 )
-			hours = 12;
-
-		return `${hours}:${minutes < 10 ? '0' : ''}${minutes}`; //:${seconds < 10 ? '0' : ''}${seconds}`;
+		return dayjs(time).format(fmt);
 	}
 
 
