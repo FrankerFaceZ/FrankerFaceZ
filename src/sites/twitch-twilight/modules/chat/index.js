@@ -414,7 +414,15 @@ export default class ChatHook extends Module {
 
 			for(const inst of instances) {
 				inst.client.events.removeAll();
+
+				inst._ffzInstall();
+
 				inst.connectHandlers();
+
+				inst.props.setChatConnectionAPI({
+					sendMessage: inst.sendMessage,
+					_ffz_inst: inst
+				});
 			}
 		});
 
@@ -732,6 +740,7 @@ export default class ChatHook extends Module {
 
 	wrapChatService(cls) {
 		const t = this,
+			old_mount = cls.prototype.componentDidMount,
 			old_handler = cls.prototype.connectHandlers;
 
 		cls.prototype._ffz_was_here = true;
@@ -760,6 +769,53 @@ export default class ChatHook extends Module {
 		}
 
 
+		cls.prototype._ffzInstall = function() {
+			if ( this._ffz_installed )
+				return;
+
+			this._ffz_installed = true;
+
+			const inst = this,
+				old_send = this.sendMessage;
+
+			inst.sendMessage = function(raw_msg) {
+				const msg = raw_msg.replace(/\n/g, '');
+
+				if ( msg.startsWith('/ffz') ) {
+					inst.addMessage({
+						type: t.chat_types.Notice,
+						message: 'The /ffz command is not yet re-implemented.'
+					})
+
+					return false;
+				}
+
+				const event = new FFZEvent({
+					message: msg,
+					channel: inst.props.channelLogin
+				});
+
+				t.emit('chat:pre-send-message', event);
+
+				if ( event.defaultPrevented )
+					return;
+
+				return old_send.call(this, msg);
+			}
+		}
+
+
+		cls.prototype.componentDidMount = function() {
+			try {
+				this._ffzInstall();
+			} catch(err) {
+				t.log.error('Error installing FFZ features onto chat service.', err);
+			}
+
+			return old_mount.call(this);
+		}
+
+
 		cls.prototype.connectHandlers = function(...args) {
 			if ( ! this._ffz_init ) {
 				const i = this;
@@ -773,32 +829,6 @@ export default class ChatHook extends Module {
 							i._wrapped = null;
 							return ret;
 						}
-				}
-
-				const old_send = this.sendMessage;
-				this.sendMessage = function(raw_msg) {
-					const msg = raw_msg.replace(/\n/g, '');
-
-					if ( msg.startsWith('/ffz') ) {
-						this.postMessage({
-							type: t.chat_types.Notice,
-							message: 'The /ffz command is not yet re-implemented.'
-						})
-
-						return false;
-					}
-
-					const event = new FFZEvent({
-						message: msg,
-						channel: this.channelLogin
-					});
-
-					t.emit('chat:pre-send-message', event);
-
-					if ( event.defaultPrevented )
-						return;
-
-					return old_send.call(this, msg);
 				}
 
 				const old_chat = this.onChatMessageEvent;
