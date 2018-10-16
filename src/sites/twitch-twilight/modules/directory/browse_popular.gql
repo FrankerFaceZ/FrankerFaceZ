@@ -1,9 +1,5 @@
-query {
-	streams {
-		edges {
-			node {
-				createdAt
-			}
-		}
+fragment browsePagePopularStreamsWithTagsEdge2 on StreamEdge {
+	node {
+		createdAt
 	}
 }

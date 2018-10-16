@@ -21,71 +21,6 @@ export default class Game extends SiteModule {
 		this.inject('i18n');
 		this.inject('settings');
 
-		/*this.metadata.definitions.block_game = {
-			type: 'directory',
-			button(data) {
-				return `ffz-directory-toggle-block${data.blocked ? ' active' : ''}`
-			},
-
-			setup(data) {
-				if ( data.type !== 'GAMES' )
-					return null;
-
-				const blocked_games = this.settings.provider.get('directory.game.blocked-games', []),
-					blocked = blocked_games.includes(data.name);
-
-				data.blocked = blocked;
-				return data;
-			},
-
-			label(data) {
-				if ( ! data )
-					return null;
-
-				return data.blocked ?
-					this.i18n.t('directory.unblock', 'Unblock') :
-					this.i18n.t('directory.block', 'Block')
-			},
-
-			tooltip() {
-				return this.i18n.t('directory.block-explain', 'This will let you block streams playing this game from showing up in the directory.');
-			},
-
-			click: this.generateClickHandler('directory.game.blocked-games')
-		}
-
-		this.metadata.definitions.hide_thumbnails = {
-			type: 'directory',
-			button(data) {
-				return `ffz-directory-toggle-thumbnail${data.hidden ? ' active' : ''}`
-			},
-
-			setup(data) {
-				if ( data.type !== 'GAMES' )
-					return null;
-
-				const hidden_games = this.settings.provider.get('directory.game.hidden-thumbnails', []);
-
-				data.hidden = hidden_games.includes(data.name);
-				return data;
-			},
-
-			label(data) {
-				if ( ! data )
-					return null;
-
-				return data.hidden ?
-					this.i18n.t('directory.show-thumbnails', 'Show Thumbnails') :
-					this.i18n.t('directory.hide-thumbnails', 'Hide Thumbnails');
-			},
-
-			tooltip() {
-				return this.i18n.t('directory.thumbnails-explain', 'Enabling this will hide thumbnails of this game everywhere in the directory.');
-			},
-
-			click: this.generateClickHandler('directory.game.hidden-thumbnails')
-		}*/
-
 		this.GameHeader = this.fine.define(
 			'game-header',
 			n => n.props && n.props.data && n.renderDropsAvailable,
@@ -93,6 +28,16 @@ export default class Game extends SiteModule {
 		);
 
 		this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
+		this.apollo.registerModifier('DirectoryPage_Game', res => this.modifyStreams(res), false);
+	}
+
+	modifyStreams(res) { // eslint-disable-line class-methods-use-this
+		const edges = get('data.game.streams.edges', res);
+		if ( ! edges || ! edges.length )
+			return res;
+
+		res.data.game.streams.edges = this.parent.processNodes(edges);
+		return res;
 	}
 
 	onEnable() {

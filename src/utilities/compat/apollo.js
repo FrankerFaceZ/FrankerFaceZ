@@ -6,10 +6,11 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has, get} from 'utilities/object';
+import {get, deep_copy} from 'utilities/object';
+import merge from 'utilities/graphql';
 
 
-const BAD_ERRORS = [
+/*const BAD_ERRORS = [
 	'timeout',
 	'unable to load',
 	'error internal',
@@ -31,7 +32,7 @@ function skip_error(err) {
 	for(const m of BAD_ERRORS)
 		if ( err.message.includes(m) )
 			return true;
-}
+}*/
 
 
 export class GQLError extends Error {
@@ -212,6 +213,9 @@ export default class Apollo extends Module {
 			query = query_map && query_map.get(id),
 			modifiers = this.modifiers[operation];
 
+
+		const pre_modification = deep_copy(request.query);
+
 		if ( modifiers ) {
 			for(const mod of modifiers) {
 				if ( typeof mod === 'function' )
@@ -245,6 +249,8 @@ export default class Apollo extends Module {
 				this.log.info('Unable to find GQL Print. Clearing store for query:', operation);
 				this.client.queryManager.queryStore.store[id] = null;
 			}
+
+		this.log.info('Query', operation, pre_modification, request.query, request.variables);
 	}
 
 	apolloPostFlight(response) {
@@ -405,72 +411,4 @@ export default class Apollo extends Module {
 		return out;
 	}
 
-}
-
-
-// ============================================================================
-// Query Merging
-// ============================================================================
-
-function canMerge(a, b) {
-	return a.kind === b.kind &&
-		a.kind !== 'FragmentDefinition' &&
-		(a.selectionSet == null) === (b.selectionSet == null);
-}
-
-
-function merge(a, b) {
-	if ( ! canMerge(a, b) )
-		return a;
-
-	if ( a.definitions ) {
-		const a_def = a.definitions,
-			b_def = b.definitions;
-
-		for(let i=0; i < a_def.length && i < b_def.length; i++)
-			a_def[i] = merge(a_def[i], b_def[i]);
-	}
-
-	if ( a.selectionSet ) {
-		const s = a.selectionSet.selections,
-			selects = {};
-		for(const sel of b.selectionSet.selections) {
-			const name = sel.kind === 'InlineFragment' ?
-					(sel.typeCondition.name ?
-						sel.typeCondition.name.value : null) :
-					(sel.name ? sel.name.value : null),
-				alias = sel.alias ? sel.alias.value : null,
-				key = `${name}:${alias}`;
-
-			if ( name )
-				selects[key] = sel;
-		}
-
-		for(let i=0, l = s.length; i < l; i++) {
-			const sel = s[i],
-				name = sel.kind === 'InlineFragment' ?
-					(sel.typeCondition.name ?
-						sel.typeCondition.name.value : null) :
-					(sel.name ? sel.name.value : null),
-				alias = sel.alias ? sel.alias.value : null,
-				key = `${name}:${alias}`,
-				other = selects[key];
-
-			if ( other ) {
-				s[i] = merge(sel, other);
-				selects[key] = null;
-			}
-		}
-
-		for(const key in selects)
-			if ( has(selects, key) ) {
-				const val = selects[key];
-				if ( val )
-					s.push(val);
-			}
-	}
-
-	// TODO: Variables?
-
-	return a;
 }

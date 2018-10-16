@@ -1,4 +1,4 @@
-query {
+query RecommendedChannels {
 	currentUser {
 		recommendations {
 			liveRecommendations {

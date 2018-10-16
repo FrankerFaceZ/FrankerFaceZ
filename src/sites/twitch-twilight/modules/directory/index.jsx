@@ -46,8 +46,6 @@ export default class Directory extends SiteModule {
 		this.inject(Game);
 		this.inject(BrowsePopular);
 
-		this.apollo.registerModifier('DirectoryPage_Game', res => this.modifyStreams(res), false);
-
 		this.DirectoryCard = this.fine.define(
 			'directory-card',
 			n => n.renderTitles && n.renderIconicImage,
@@ -217,7 +215,7 @@ export default class Directory extends SiteModule {
 			// TODO: Better query handling.
 			this.apollo.ensureQuery(
 				'DirectoryPage_Game',
-				'data.directory.streams.edges.0.node.createdAt'
+				'data.game.streams.edges.0.node.createdAt'
 			);
 
 			//for(const inst of instances)
@@ -291,18 +289,6 @@ export default class Directory extends SiteModule {
 		}
 
 		return out;
-	}
-
-
-	modifyStreams(res) { // eslint-disable-line class-methods-use-this
-		const is_game_query = get('data.directory.__typename', res) === 'Game',
-			edges = get('data.directory.streams.edges', res);
-
-		if ( ! edges || ! edges.length )
-			return res;
-
-		res.data.directory.streams.edges = this.processNodes(edges, is_game_query);
-		return res;
 	}
 
 

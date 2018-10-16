@@ -1,4 +1,4 @@
-query {
+query FollowingHosts_CurrentUser {
 	currentUser {
 		followedHosts {
 			nodes {

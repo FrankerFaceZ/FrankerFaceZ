@@ -1,4 +1,4 @@
-query {
+query FollowedIndex_CurrentUser {
 	currentUser {
 		followedLiveUsers {
 			nodes {
