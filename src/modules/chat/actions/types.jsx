@@ -111,6 +111,34 @@ export const chat = {
 // Timeout
 // ============================================================================
 
+export const msg_delete = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-trash'
+		},
+
+		display: {
+			mod: true,
+			mod_icons: true
+		}
+	}],
+
+	defaults: {},
+	required_context: ['room', 'user', 'message'],
+
+	title: 'Delete Message',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.delete', "Delete %{user.login}'s message", {user: data.user});
+	},
+
+	click(event, data) {
+		this.sendMessage(data.room.login, `/delete ${data.message_id}`);
+	}
+}
+
+
 
 export const ban = {
 	presets: [{

@@ -54,53 +54,59 @@ const MESSAGE_TYPES = ((e = {}) => {
 const MOD_TYPES = ((e = {}) => {
 	e[e.Ban = 0] = 'Ban';
 	e[e.Timeout = 1] = 'Timeout';
+	e[e.Delete = 2] = 'Delete';
 	return e;
 })();
 
 
 const AUTOMOD_TYPES = ((e = {}) => {
 	e[e.MessageRejectedPrompt = 0] = 'MessageRejectedPrompt';
-	e[e.MessageRejected = 1] = 'MessageRejected';
-	e[e.MessageAllowed = 2] = 'MessageAllowed';
-	e[e.MessageDenied = 3] = 'MessageDenied';
+	e[e.CheerMessageRejectedPrompt = 1] = 'CheerMessageRejectedPrompt';
+	e[e.MessageRejected = 2] = 'MessageRejected';
+	e[e.MessageAllowed = 3] = 'MessageAllowed';
+	e[e.MessageDenied = 4] = 'MessageDenied';
+	e[e.CheerMessageDenied = 5] = 'CheerMessageDenied';
+	e[e.CheerMessageTimeout = 6] = 'CheerMessageTimeout';
 	return e;
 })();
 
 
 const CHAT_TYPES = ((e = {}) => {
 	e[e.Message = 0] = 'Message';
-	e[e.Moderation = 1] = 'Moderation';
-	e[e.ModerationAction = 2] = 'ModerationAction';
-	e[e.TargetedModerationAction = 3] = 'TargetedModerationAction';
-	e[e.AutoMod = 4] = 'AutoMod';
-	e[e.SubscriberOnlyMode = 5] = 'SubscriberOnlyMode';
-	e[e.FollowerOnlyMode = 6] = 'FollowerOnlyMode';
-	e[e.SlowMode = 7] = 'SlowMode';
-	e[e.EmoteOnlyMode = 8] = 'EmoteOnlyMode';
-	e[e.R9KMode = 9] = 'R9KMode';
-	e[e.Connected = 10] = 'Connected';
-	e[e.Disconnected = 11] = 'Disconnected';
-	e[e.Reconnect = 12] = 'Reconnect';
-	e[e.Hosting = 13] = 'Hosting';
-	e[e.Unhost = 14] = 'Unhost';
-	e[e.Hosted = 15] = 'Hosted';
-	e[e.Subscription = 16] = 'Subscription';
-	e[e.Resubscription = 17] = 'Resubscription';
-	e[e.SubGift = 18] = 'SubGift';
-	e[e.Clear = 19] = 'Clear';
-	e[e.RoomMods = 20] = 'RoomMods';
-	e[e.RoomState = 21] = 'RoomState';
-	e[e.Raid = 22] = 'Raid';
-	e[e.Unraid = 23] = 'Unraid';
-	e[e.Ritual = 24] = 'Ritual';
-	e[e.Notice = 25] = 'Notice';
-	e[e.Info = 26] = 'Info';
-	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
-	e[e.Purchase = 28] = 'Purchase';
-	e[e.BitsCharity = 29] = 'BitsCharity';
-	e[e.CrateGift = 30] = 'CrateGift';
-	e[e.RewardGift = 31] = 'RewardGift';
-	e[e.SubMysteryGift = 32] = 'SubMysteryGift';
+	e[e.ExtensionMessage = 1] = 'ExtensionMessage';
+	e[e.Moderation = 2] = 'Moderation';
+	e[e.ModerationAction = 3] = 'ModerationAction';
+	e[e.TargetedModerationAction = 4] = 'TargetedModerationAction';
+	e[e.AutoMod = 5] = 'AutoMod';
+	e[e.SubscriberOnlyMode = 6] = 'SubscriberOnlyMode';
+	e[e.FollowerOnlyMode = 7] = 'FollowerOnlyMode';
+	e[e.SlowMode = 8] = 'SlowMode';
+	e[e.EmoteOnlyMode = 9] = 'EmoteOnlyMode';
+	e[e.R9KMode = 10] = 'R9KMode';
+	e[e.Connected = 11] = 'Connected';
+	e[e.Disconnected = 12] = 'Disconnected';
+	e[e.Reconnect = 13] = 'Reconnect';
+	e[e.Hosting = 14] = 'Hosting';
+	e[e.Unhost = 15] = 'Unhost';
+	e[e.Hosted = 16] = 'Hosted';
+	e[e.Subscription = 17] = 'Subscription';
+	e[e.Resubscription = 18] = 'Resubscription';
+	e[e.GiftPaidUpgrade = 19] = 'GiftPaidUpgrade';
+	e[e.SubGift = 20] = 'SubGift';
+	e[e.Clear = 21] = 'Clear';
+	e[e.RoomMods = 22] = 'RoomMods';
+	e[e.RoomState = 23] = 'RoomState';
+	e[e.Raid = 24] = 'Raid';
+	e[e.Unraid = 25] = 'Unraid';
+	e[e.Ritual = 26] = 'Ritual';
+	e[e.Notice = 27] = 'Notice';
+	e[e.Info = 28] = 'Info';
+	e[e.BadgesUpdated = 29] = 'BadgesUpdated';
+	e[e.Purchase = 30] = 'Purchase';
+	e[e.BitsCharity = 31] = 'BitsCharity';
+	e[e.CrateGift = 32] = 'CrateGift';
+	e[e.RewardGift = 33] = 'RewardGift';
+	e[e.SubMysteryGift = 34] = 'SubMysteryGift';
 	return e;
 })();
 
@@ -574,7 +580,8 @@ export default class ChatHook extends Module {
 			inst.handleMessage = function(msg) {
 				if ( msg ) {
 					try {
-						const types = t.chat_types || {};
+						const types = t.chat_types || {},
+							mod_types = t.mod_types || {};
 
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
@@ -615,16 +622,25 @@ export default class ChatHook extends Module {
 								return;
 
 							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
+								is_delete = msg.moderationType === mod_types.Delete,
 								do_update = m => {
 									if ( m.event )
 										m = m.event;
 
-									if ( m.type === types.Message ) {
-										if ( m.user && m.user.userLogin === login )
+									if ( is_delete ) {
+										if ( m.id === msg.targetMessageID )
 											m.deleted = true;
+
+									} else if ( m.type === types.Message ) {
+										if ( m.user && m.user.userLogin === login ) {
+											m.banned = true;
+											m.deleted = true;
+										}
 									} else if ( m.type === types.Resubscription || m.type === types.Ritual ) {
-										if ( m.message && m.message.user && m.message.user.userLogin === login )
+										if ( m.message && m.message.user && m.message.user.userLogin === login ) {
 											m.deleted = true;
+											m.banned = true;
+										}
 									}
 								};
 

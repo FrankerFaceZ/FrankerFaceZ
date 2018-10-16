@@ -69,7 +69,8 @@ const FFZ_ICONS = [
 	'ok',
 	'clock',
 	'eye',
-	'eye-off'
+	'eye-off',
+	'trash'
 ];
 
 const FFZ_ALIASES = {

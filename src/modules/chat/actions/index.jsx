@@ -43,7 +43,7 @@ export default class Actions extends Module {
 			ui: {
 				path: 'Chat > In-Line Actions @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
 				component: 'chat-actions',
-				context: ['user', 'room'],
+				context: ['user', 'room', 'message'],
 				inline: true,
 
 				data: () => {
