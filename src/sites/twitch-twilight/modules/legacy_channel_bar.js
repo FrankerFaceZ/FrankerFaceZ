@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 import {get, deep_copy} from 'utilities/object';
 
-import CHANNEL_QUERY from './channel_bar_query.gql';
+import CHANNEL_QUERY from './channel_header_query.gql';
 
 
 export default class LegacyChannelBar extends Module {

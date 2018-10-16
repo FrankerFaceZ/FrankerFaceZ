@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, split_chars, shallow_object_equals} from 'utilities/object';
+import {has, make_enum, split_chars, shallow_object_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -43,72 +43,67 @@ const REGEX_EMOTES = {
 };
 
 
-const MESSAGE_TYPES = ((e = {}) => {
-	e[e.Post = 0] = 'Post';
-	e[e.Action = 1] = 'Action';
-	e[e.PostWithMention = 2] = 'PostWithMention';
-	return e;
-})();
+const MESSAGE_TYPES = make_enum(
+	'Post',
+	'Action',
+	'PostWithMention'
+);
 
+const MOD_TYPES = make_enum(
+	'Ban',
+	'Timeout',
+	'Delete'
+);
 
-const MOD_TYPES = ((e = {}) => {
-	e[e.Ban = 0] = 'Ban';
-	e[e.Timeout = 1] = 'Timeout';
-	e[e.Delete = 2] = 'Delete';
-	return e;
-})();
+const AUTOMOD_TYPES = make_enum(
+	'MessageRejectedPrompt',
+	'CheerMessageRejectedPrompt',
+	'MessageRejected',
+	'MessageAllowed',
+	'MessageDenied',
+	'CheerMessageDenied',
+	'CheerMessageTimeout',
+	'MessageModApproved',
+	'MessageModDenied'
+);
 
-
-const AUTOMOD_TYPES = ((e = {}) => {
-	e[e.MessageRejectedPrompt = 0] = 'MessageRejectedPrompt';
-	e[e.CheerMessageRejectedPrompt = 1] = 'CheerMessageRejectedPrompt';
-	e[e.MessageRejected = 2] = 'MessageRejected';
-	e[e.MessageAllowed = 3] = 'MessageAllowed';
-	e[e.MessageDenied = 4] = 'MessageDenied';
-	e[e.CheerMessageDenied = 5] = 'CheerMessageDenied';
-	e[e.CheerMessageTimeout = 6] = 'CheerMessageTimeout';
-	return e;
-})();
-
-
-const CHAT_TYPES = ((e = {}) => {
-	e[e.Message = 0] = 'Message';
-	e[e.ExtensionMessage = 1] = 'ExtensionMessage';
-	e[e.Moderation = 2] = 'Moderation';
-	e[e.ModerationAction = 3] = 'ModerationAction';
-	e[e.TargetedModerationAction = 4] = 'TargetedModerationAction';
-	e[e.AutoMod = 5] = 'AutoMod';
-	e[e.SubscriberOnlyMode = 6] = 'SubscriberOnlyMode';
-	e[e.FollowerOnlyMode = 7] = 'FollowerOnlyMode';
-	e[e.SlowMode = 8] = 'SlowMode';
-	e[e.EmoteOnlyMode = 9] = 'EmoteOnlyMode';
-	e[e.R9KMode = 10] = 'R9KMode';
-	e[e.Connected = 11] = 'Connected';
-	e[e.Disconnected = 12] = 'Disconnected';
-	e[e.Reconnect = 13] = 'Reconnect';
-	e[e.Hosting = 14] = 'Hosting';
-	e[e.Unhost = 15] = 'Unhost';
-	e[e.Hosted = 16] = 'Hosted';
-	e[e.Subscription = 17] = 'Subscription';
-	e[e.Resubscription = 18] = 'Resubscription';
-	e[e.GiftPaidUpgrade = 19] = 'GiftPaidUpgrade';
-	e[e.SubGift = 20] = 'SubGift';
-	e[e.Clear = 21] = 'Clear';
-	e[e.RoomMods = 22] = 'RoomMods';
-	e[e.RoomState = 23] = 'RoomState';
-	e[e.Raid = 24] = 'Raid';
-	e[e.Unraid = 25] = 'Unraid';
-	e[e.Ritual = 26] = 'Ritual';
-	e[e.Notice = 27] = 'Notice';
-	e[e.Info = 28] = 'Info';
-	e[e.BadgesUpdated = 29] = 'BadgesUpdated';
-	e[e.Purchase = 30] = 'Purchase';
-	e[e.BitsCharity = 31] = 'BitsCharity';
-	e[e.CrateGift = 32] = 'CrateGift';
-	e[e.RewardGift = 33] = 'RewardGift';
-	e[e.SubMysteryGift = 34] = 'SubMysteryGift';
-	return e;
-})();
+const CHAT_TYPES = make_enum(
+	'Message',
+	'ExtensionMessage',
+	'Moderation',
+	'ModerationAction',
+	'TargetedModerationAction',
+	'AutoMod',
+	'SubscriberOnlyMode',
+	'FollowerOnlyMode',
+	'SlowMode',
+	'EmoteOnlyMode',
+	'R9KMode',
+	'Connected',
+	'Disconnected',
+	'Reconnect',
+	'Hosting',
+	'Unhost',
+	'Hosted',
+	'Subscription',
+	'Resubscription',
+	'GiftPaidUpgrade',
+	'SubGift',
+	'Clear',
+	'RoomMods',
+	'RoomState',
+	'Raid',
+	'Unraid',
+	'Ritual',
+	'Notice',
+	'Info',
+	'BadgesUpdated',
+	'Purchase',
+	'BitsCharity',
+	'CrateGift',
+	'RewardGift',
+	'SubMysteryGift'
+);
 
 
 const NULL_TYPES = [

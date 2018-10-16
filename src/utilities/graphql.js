@@ -1,5 +1,3 @@
-import { deep_copy } from "./object";
-
 'use strict';
 
 // ============================================================================
@@ -77,10 +75,14 @@ export const MERGE_METHODS = {
 
 
 export function mergeList(a, b) {
+	let has_operation = false;
 	const a_names = {};
 	for(const item of a) {
 		if ( ! item || ! item.name || item.name.kind !== 'Name' )
 			continue;
+
+		if ( item.operation )
+			has_operation = true;
 
 		a_names[item.name.value] = item;
 	}
@@ -92,10 +94,20 @@ export function mergeList(a, b) {
 		const name = item.name.value,
 			idx = a_names[name] ? a.indexOf(a_names[name]) : -1;
 
-		if ( idx !== -1 )
+		if ( idx !== -1 ) {
+			if ( a[idx].operation && item.operation && a[idx].operation !== item.operation )
+				continue;
+
 			a[idx] = merge(a[idx], item);
-		else
+			if ( a[idx].operation )
+				has_operation = true;
+
+		} else {
+			if ( has_operation && item.operation )
+				continue;
+
 			a.push(item);
+		}
 	}
 
 	return a;

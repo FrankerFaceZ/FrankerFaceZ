@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {get, deep_copy} from 'utilities/object';
+import {get} from 'utilities/object';
 import merge from 'utilities/graphql';
 
 
@@ -213,9 +213,6 @@ export default class Apollo extends Module {
 			query = query_map && query_map.get(id),
 			modifiers = this.modifiers[operation];
 
-
-		const pre_modification = deep_copy(request.query);
-
 		if ( modifiers ) {
 			for(const mod of modifiers) {
 				if ( typeof mod === 'function' )
@@ -249,8 +246,6 @@ export default class Apollo extends Module {
 				this.log.info('Unable to find GQL Print. Clearing store for query:', operation);
 				this.client.queryManager.queryStore.store[id] = null;
 			}
-
-		this.log.info('Query', operation, pre_modification, request.query, request.variables);
 	}
 
 	apolloPostFlight(response) {

@@ -11,6 +11,18 @@ export function sleep(delay) {
 	return new Promise(s => setTimeout(s, delay));
 }
 
+export function make_enum(...array) {
+	const out = {};
+
+	for(let i=0; i < array.length; i++) {
+		const word = array[i];
+		out[word] = i;
+		out[i] = word;
+	}
+
+	return out;
+}
+
 
 export function timeout(promise, delay) {
 	return new Promise((resolve, reject) => {

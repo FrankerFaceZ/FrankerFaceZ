@@ -1,4 +1,4 @@
-query {
+query ChannelPage_ChannelHeader {
 	user {
 		stream {
 			createdAt
