@@ -19,7 +19,7 @@ export default class SettingsMenu extends Module {
 
 		this.SettingsMenu = this.fine.define(
 			'chat-settings',
-			n => n.renderUniversalOptions && n.dismissRaidsTooltip,
+			n => n.renderUniversalOptions && n.onBadgesChanged,
 			Twilight.CHAT_ROUTES
 		);
 	}

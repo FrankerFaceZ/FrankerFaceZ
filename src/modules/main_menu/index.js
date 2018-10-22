@@ -10,6 +10,8 @@ import {has, deep_copy} from 'utilities/object';
 
 import Dialog from 'utilities/dialog';
 
+import Mixin from './setting-mixin';
+
 import {parse_path} from 'src/settings';
 
 function format_term(term) {
@@ -29,6 +31,8 @@ export default class MainMenu extends Module {
 		this.inject('vue');
 
 		this.load_requires = ['vue'];
+
+		this.Mixin = Mixin;
 
 		//this.should_enable = true;
 

@@ -28,7 +28,15 @@ export default class Game extends SiteModule {
 		);
 
 		this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
-		this.apollo.registerModifier('DirectoryPage_Game', res => this.modifyStreams(res), false);
+		this.apollo.registerModifier('DirectoryPage_Game', res => {
+			setTimeout(() =>
+				this.apollo.ensureQuery(
+					'DirectoryPage_Game',
+					'data.game.streams.edges.0.node.createdAt'
+				), 500);
+
+			this.modifyStreams(res);
+		}, false);
 	}
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this
@@ -36,7 +44,7 @@ export default class Game extends SiteModule {
 		if ( ! edges || ! edges.length )
 			return res;
 
-		res.data.game.streams.edges = this.parent.processNodes(edges);
+		res.data.game.streams.edges = this.parent.processNodes(edges, true);
 		return res;
 	}
 
@@ -53,6 +61,12 @@ export default class Game extends SiteModule {
 
 	updateGameHeader(inst) {
 		this.updateButtons(inst);
+
+		this.apollo.ensureQuery(
+			'DirectoryPage_Game',
+			'data.game.streams.edges.0.node.createdAt'
+		);
+
 	}
 
 

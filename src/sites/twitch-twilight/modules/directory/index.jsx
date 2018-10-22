@@ -236,7 +236,7 @@ export default class Directory extends SiteModule {
 			return;
 
 		const props = inst.props,
-			game = props.gameTitle || props.playerMetadataGame;
+			game = props.gameTitle || props.playerMetadataGame || (props.trackingProps && props.trackingProps.categoryName);
 
 		container.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
 
