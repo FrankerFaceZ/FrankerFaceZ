@@ -88,7 +88,9 @@ const CHAT_TYPES = make_enum(
 	'Subscription',
 	'Resubscription',
 	'GiftPaidUpgrade',
+	'AnonGiftPaidUpgrade',
 	'SubGift',
+	'AnonSubGift',
 	'Clear',
 	'RoomMods',
 	'RoomState',
@@ -102,7 +104,8 @@ const CHAT_TYPES = make_enum(
 	'BitsCharity',
 	'CrateGift',
 	'RewardGift',
-	'SubMysteryGift'
+	'SubMysteryGift',
+	'AnonSubMysteryGift'
 );
 
 

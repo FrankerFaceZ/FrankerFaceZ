@@ -23,7 +23,7 @@
 		opacity: .5;
 		font-variant: italic;
 
-		.tw-theme--dark & {
+		.tw-root--theme-dark & {
 			opacity: .25;
 		}
 	}
@@ -37,7 +37,7 @@
 	}
 
 	&:last-child {
-		&, .tw-theme--dark & {
+		&, .tw-root--theme-dark & {
 			border-bottom: none !important
 		}
 	}
@@ -69,7 +69,7 @@
 	&:not(.live):not(:hover):not(:focus) {
 		opacity: 0.5;
 
-		.tw-theme--dark & {
+		.tw-root--theme-dark & {
 			opacity: .25;
 		}
 	}

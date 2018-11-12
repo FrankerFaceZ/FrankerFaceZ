@@ -72,21 +72,21 @@ export default class Game extends SiteModule {
 
 	updateButtons(inst) {
 		const container = this.fine.getChildNode(inst);
-		if ( get('data.variables.type', inst.props) !== 'GAME' || ! container || ! container.querySelector )
+		if ( get('data.game', inst.props) == null || ! container || ! container.querySelector )
 			return;
 
 		const buttons = container.querySelector('.tw-flex > .tw-inline-flex');
 		if ( ! buttons )
 			return;
 
-		const ffz_buttons = buttons.querySelector('.ffz-buttons');
+		const ffz_buttons = buttons.querySelector('.ffz-directory-buttons');
 		if ( ffz_buttons )
 			ffz_buttons.remove();
 
 		let block_btn, block_label,
 			hidden_btn, hidden_label;
 
-		const game = get('data.directory.name', inst.props),
+		const game = get('data.game.name', inst.props) || inst.props.directoryName,
 			update_block = () => {
 				const blocked_games = this.settings.provider.get('directory.game.blocked-games', []),
 					blocked = blocked_games.includes(game);
@@ -124,7 +124,7 @@ export default class Game extends SiteModule {
 
 		update_hidden();
 
-		buttons.appendChild(<div class="ffz-buttons">
+		buttons.appendChild(<div class="ffz-directory-buttons">
 			{block_btn}
 			{hidden_btn}
 		</div>);

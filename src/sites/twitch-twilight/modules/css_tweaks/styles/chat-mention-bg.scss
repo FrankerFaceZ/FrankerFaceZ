@@ -4,7 +4,7 @@
 	&.ffz-mentioned:not(.ffz-custom-color) {
 		background-color: rgba(255,127,127,.2) !important;
 
-		.tw-theme--dark & {
+		.tw-root--theme-dark & {
 			background-color: rgba(255,0,0,.2) !important;
 		}
 	}

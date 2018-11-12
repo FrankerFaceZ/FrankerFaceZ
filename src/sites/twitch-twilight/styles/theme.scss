@@ -1,4 +1,4 @@
-.tw-theme--ffz {
+.tw-root--theme-ffz {
 	--ffz-color-0: #1d1d1d;
 	--ffz-color-1: #dadada;
 	--ffz-color-2: #a6a6a6;
@@ -78,7 +78,7 @@
 	--ffz-color-74: rgba(125, 125, 125, 0.5);
 }
 
-.tw-theme--ffz, .tw-theme--ffz .tw-theme--dark, .tw-theme--ffz.tw-theme--dark {
+.tw-root--theme-ffz, .tw-root--theme-ffz .tw-root--theme-dark, .tw-root--theme-ffz.tw-root--theme-dark {
 	.modal__backdrop {
 		background-color: var(--ffz-color-25);
 	}

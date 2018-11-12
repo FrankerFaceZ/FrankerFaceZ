@@ -52,9 +52,9 @@ This is a very early feature and will change as there is time.`,
 		});
 
 		this.settings.add('theme.is-dark', {
-			requires: ['theme.can-dark', 'context.ui.theme'],
+			requires: ['theme.can-dark', 'context.ui.theme', 'context.ui.theatreModeEnabled'],
 			process(ctx) {
-				return ctx.get('theme.can-dark') && ctx.get('context.ui.theme') === 1;
+				return ctx.get('context.ui.theatreModeEnabled') || (ctx.get('theme.can-dark') && ctx.get('context.ui.theme') === 1);
 			},
 			changed: () => this.updateCSS()
 		});
@@ -74,8 +74,8 @@ This is a very early feature and will change as there is time.`,
 		const dark = this.settings.get('theme.is-dark'),
 			gray = this.settings.get('theme.dark');
 
-		document.body.classList.toggle('tw-theme--dark', dark);
-		document.body.classList.toggle('tw-theme--ffz', gray);
+		document.body.classList.toggle('tw-root--theme-dark', dark);
+		document.body.classList.toggle('tw-root--theme-ffz', gray);
 
 		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
 	}

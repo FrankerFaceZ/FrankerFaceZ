@@ -3,7 +3,7 @@
 	&.ffz-mentioned:not(.ffz-custom-color):nth-child(2n+0) {
 		background-color: rgba(255,127,127,.4) !important;
 
-		.tw-theme--dark & {
+		.tw-root--theme-dark & {
 			background-color: rgba(255,0,0,.3) !important;
 		}
 	}
@@ -12,7 +12,7 @@
 .video-chat__message-list-wrapper li:nth-child(2n+0) .vod-message.ffz-mentioned:not(.ffz-custom-color) {
 	background-color: rgba(255,127,127,.4) !important;
 
-	.tw-theme--dark & {
+	.tw-root--theme-dark & {
 		background-color: rgba(255,0,0,.3) !important;
 	}
 }

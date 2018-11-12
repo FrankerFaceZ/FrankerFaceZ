@@ -38,6 +38,7 @@
 		left: 0 !important;
 		right: 0 !important;
 		height: calc(100vh - var(--ffz-player-height)) !important;
+		width: unset !important;
 		border-top: 1px solid #dad8de;
 
 		.right-column__toggle-visibility {
@@ -60,7 +61,7 @@
 			}
 		}
 
-		.tw-theme--dark & {
+		.tw-root--theme-dark & {
 			border-top-color: #2a2a2a
 		}
 

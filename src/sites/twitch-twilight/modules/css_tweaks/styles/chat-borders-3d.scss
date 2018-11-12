@@ -12,7 +12,7 @@
 	border-top: 1px solid rgba(255,255,255,0.5);
 	border-bottom-color: #aaa;
 
-	.tw-theme--dark & {
+	.tw-root--theme-dark & {
 		border-top-color: rgba(255,255,255,0.1);
 		border-bottom-color: #000;
 	}
@@ -28,7 +28,7 @@
 	border-top: 1px solid rgba(255,255,255,0.5);
 	border-bottom-color: #aaa;
 
-	.tw-theme--dark & {
+	.tw-root--theme-dark & {
 		border-top-color: rgba(255,255,255,0.1);
 		border-bottom-color: #000;
 	}

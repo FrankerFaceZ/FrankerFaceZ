@@ -435,12 +435,14 @@ export default class Badges extends Module {
 				}
 
 				if (no_invert) {
+					slotted[slot].full_size = true;
+
 					style.background = 'unset';
 					style.backgroundSize = 'unset';
 					style[CSS_MASK_IMAGE] = 'unset';
 				}
 
-				if ( has_image && urls ) {
+				if ( (has_image || color === 'transparent') && urls ) {
 					const image = `url("${urls[1]}")`;
 					let image_set;
 					if ( urls[2] || urls[4] )
@@ -464,7 +466,7 @@ export default class Badges extends Module {
 				const data = slotted[slot],
 					props = data.props;
 
-				props.className = 'ffz-tooltip ffz-badge';
+				props.className = `ffz-tooltip ffz-badge${data.full_size ? ' ffz-full-size' : ''}`;
 				props.key = `${props['data-provider']}-${props['data-badge']}`;
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);

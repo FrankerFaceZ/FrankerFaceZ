@@ -1,4 +1,4 @@
-fragment browsePagePopularStreamsWithTagsEdge2 on StreamEdge {
+fragment browsePagePopularStreamsWithTagsEdge on StreamEdge {
 	node {
 		createdAt
 	}

@@ -25,7 +25,7 @@ export default class BrowsePopular extends SiteModule {
 		// Popular Directory Channel Cards
 		this.apollo.ensureQuery(
 			'BrowsePage_Popular',
-			'data.streams.edges.node.0.createdAt'
+			'data.streams.edges.0.node.createdAt'
 		);
 	}
 
