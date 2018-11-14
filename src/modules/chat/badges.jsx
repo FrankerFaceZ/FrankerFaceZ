@@ -20,6 +20,7 @@ export const CSS_BADGES = {
 	partner: { 1: { color: 'transparent', trans: { image: true, color: '#6441a5' } } },
 	'clip-champ': { 1: { color: '#6441a5'} },
 
+	vip: { 1: { color: '#b33ff0', trans: { color: 'transparent', invert: false}} },
 	turbo: { 1: { color: '#6441a5', svg: true } },
 	premium: { 1: { color: '#009cdc' } },
 
@@ -34,6 +35,7 @@ export const BADGE_POSITIONS = {
 	mod: 1,
 	moderator: 1,
 	twitchbot: 1,
+	vip: 2,
 	subscriber: 25
 };
 
