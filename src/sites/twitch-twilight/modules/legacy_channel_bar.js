@@ -99,7 +99,7 @@ export default class LegacyChannelBar extends Module {
 
 	updateMetadata(inst, keys) {
 		const container = this.fine.getChildNode(inst),
-			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex');
+			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex,.channel-info-bar__content-right > .tw-align-items-start > .tw-flex:last-child');
 
 		if ( ! inst._ffz_mounted || ! metabar )
 			return;

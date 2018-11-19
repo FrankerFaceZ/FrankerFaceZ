@@ -83,7 +83,7 @@ export default class Twilight extends BaseSite {
 			href: MAIN_URL,
 			rel: 'stylesheet',
 			type: 'text/css',
-			crossOrigin: 'anonymouse'
+			crossOrigin: 'anonymous'
 		}));
 
 		// Check for ?ffz-settings in page and open the
