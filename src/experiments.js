@@ -123,6 +123,25 @@ export default class ExperimentManager extends Module {
 	}
 
 
+	generateLog() {
+		const out = [
+			`Unique ID: ${this.unique_id}`,
+			''
+		];
+
+		for(const [key, value] of Object.entries(this.experiments)) {
+			out.push(`FFZ | ${value.name}: ${this.getAssignment(key)}${this.hasOverride(key) ? ' (Overriden)' : ''}`);
+		}
+
+		for(const [key, value] of Object.entries(this.getTwitchExperiments())) {
+			if ( this.usingTwitchExperiment(key) )
+				out.push(`TWITCH | ${value.name}: ${this.getTwitchAssignment(key)}${this.hasTwitchOverride(key) ? ' (Overriden)' : ''}`)
+		}
+
+		return out.join('\n');
+	}
+
+
 	// Twitch Experiments
 
 	getTwitchExperiments() {

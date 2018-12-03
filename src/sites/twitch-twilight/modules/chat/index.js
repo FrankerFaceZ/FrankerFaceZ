@@ -105,7 +105,8 @@ const CHAT_TYPES = make_enum(
 	'CrateGift',
 	'RewardGift',
 	'SubMysteryGift',
-	'AnonSubMysteryGift'
+	'AnonSubMysteryGift',
+	'FirstCheerMessage'
 );
 
 
@@ -267,7 +268,6 @@ export default class ChatHook extends Module {
 			}
 		});
 	}
-
 
 	get currentChat() {
 		for(const inst of this.ChatController.instances)

@@ -267,6 +267,9 @@ export default class Badges extends Module {
 				data = JSON.parse(target.dataset.badgeData),
 				out = [];
 
+			if ( data == null )
+				return out;
+
 			for(const d of data) {
 				const p = d.provider;
 				if ( p === 'twitch' ) {

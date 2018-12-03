@@ -209,7 +209,7 @@ export default class ChatLine extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.shouldComponentUpdate = function(props, state) {
-				const show = state.alwaysShowMessage || ! props.message.deleted,
+				const show = state && state.alwaysShowMessage || ! props.message.deleted,
 					old_show = this._ffz_show;
 
 				// We can't just compare props.message.deleted to this.props.message.deleted
@@ -256,7 +256,7 @@ export default class ChatLine extends Module {
 					show = true;
 					show_class = msg.deleted;
 				} else {
-					show = this.state.alwaysShowMessage || ! msg.deleted;
+					show = this.state && this.state.alwaysShowMessage || ! msg.deleted;
 					show_class = false;
 				}
 

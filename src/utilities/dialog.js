@@ -116,7 +116,7 @@ export default class Dialog extends EventEmitter {
 			visible = this._visible = ! this._visible,
 			container = this.getContainer();
 
-		if ( maximized )
+		if ( maximized && container )
 			container.classList.toggle('ffz-has-dialog', visible);
 
 		if ( ! visible ) {
@@ -128,6 +128,9 @@ export default class Dialog extends EventEmitter {
 
 			return;
 		}
+
+		if ( ! container )
+			return;
 
 		if ( this.factory ) {
 			const el = this.factory();
@@ -163,13 +166,15 @@ export default class Dialog extends EventEmitter {
 		if ( container === old_container )
 			return;
 
-		if ( maximized )
-			container.classList.add('ffz-has-dialog');
-		else
+		if ( maximized ) {
+			if ( container )
+				container.classList.add('ffz-has-dialog');
+		} else if ( old_container )
 			old_container.classList.remove('ffz-has-dialog');
 
 		this._element.remove();
-		container.appendChild(this._element);
+		if ( container )
+			container.appendChild(this._element);
 
 		this.emit('resize');
 	}

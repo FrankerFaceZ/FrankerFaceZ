@@ -64,6 +64,14 @@ export default class SettingsManager extends Module {
 		this.enable();
 	}
 
+	generateLog() {
+		const out = [];
+		for(const [key, value] of this.main_context.__cache.entries())
+			out.push(`${key}: ${JSON.stringify(value)}`);
+
+		return out.join('\n');
+	}
+
 	/**
 	 * Called when the SettingsManager instance should be enabled.
 	 */

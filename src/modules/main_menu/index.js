@@ -57,6 +57,16 @@ export default class MainMenu extends Module {
 			component: 'feedback-page'
 		});
 
+		this.settings.addUI('feedback.log', {
+			path: 'Home > Feedback >> Log @{"sort": 1000}',
+			component: 'async-text',
+			watch: [
+				'reports.error.include-user',
+				'reports.error.include-settings'
+			],
+			data: () => this.resolve('core').generateLog()
+		})
+
 		this.settings.addUI('changelog', {
 			path: 'Home > Changelog',
 			component: 'changelog'

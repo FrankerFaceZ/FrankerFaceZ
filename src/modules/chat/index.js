@@ -3,6 +3,7 @@
 // ============================================================================
 // Chat
 // ============================================================================
+
 import dayjs from 'dayjs';
 
 import Module from 'utilities/module';
@@ -556,6 +557,15 @@ export default class Chat extends Module {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
 		});
+	}
+
+
+	generateLog() {
+		const out = ['chat settings', '-------------------------------------------------------------------------------'];
+		for(const [key, value] of this.context.__cache.entries())
+			out.push(`${key}: ${JSON.stringify(value)}`);
+
+		return out.join('\n');
 	}
 
 

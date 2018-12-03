@@ -619,7 +619,7 @@ export class FineWrapper extends EventEmitter {
 					}
 				});
 
-				this.finelog.error(`An error occured when calling forceUpdate on an instance of ${this.name}`, err);
+				this.fine.log.error(`An error occurred when calling forceUpdate on an instance of ${this.name}`, err);
 			}
 	}
 

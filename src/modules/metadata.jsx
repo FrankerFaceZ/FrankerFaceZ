@@ -832,6 +832,9 @@ export default class Metadata extends Module {
 
 			} else {
 				stat = el.querySelector('.ffz-stat-text');
+				if ( ! stat )
+					return destroy();
+
 				old_color = el.dataset.color || '';
 
 				if ( el._ffz_order !== order )
