@@ -169,10 +169,6 @@ export default class RavenLogger extends Module {
 					return false;
 				}
 
-				// Don't send errors in debug mode.
-				//if ( DEBUG && !(data.tags && data.tags.example) )
-				//	return false;
-
 				const exc = data.exception && data.exception.values[0];
 
 				// We don't want any of Sentry's junk.
@@ -212,14 +208,12 @@ export default class RavenLogger extends Module {
 					return false;
 				}
 
+				if ( DEBUG )
+					return false;
+
 				return true;
 			}
 		};
-
-		if ( ! DEBUG )
-			raven_config.whitelistUrls = [
-				/cdn\.frankerfacez\.com/
-			];
 
 		Raven.config(SENTRY_ID, raven_config).install();
 	}
