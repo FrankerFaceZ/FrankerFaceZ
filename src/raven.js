@@ -215,6 +215,12 @@ export default class RavenLogger extends Module {
 			}
 		};
 
+		if ( ! DEBUG )
+			raven_config.whitelistUrls = [
+				/api\.frankerfacez\.com/,
+				/cdn\.frankerfacez\.com/
+			];
+
 		Raven.config(SENTRY_ID, raven_config).install();
 	}
 
