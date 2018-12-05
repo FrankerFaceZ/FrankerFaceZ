@@ -1158,7 +1158,7 @@ export default class EmoteMenu extends Module {
 
 
 			getSorter() { // eslint-disable-line class-methods-use-this
-				return EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')];
+				return EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')] || EMOTE_SORTERS[0] || (() => 0);
 			}
 
 			buildState(props, old_state) {
