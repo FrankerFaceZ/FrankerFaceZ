@@ -34,6 +34,10 @@
 	background-position: center;
 	vertical-align: middle;
 
+	&.ffz-no-invert {
+		filter:none !important;
+	}
+
 	&.ffz-full-size {
 		min-width: 1.8rem;
 		height: 1.8rem;

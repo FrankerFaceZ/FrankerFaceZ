@@ -9,7 +9,7 @@ import {createElement} from 'utilities/dom';
 
 import THEME_CSS_URL from 'site/styles/theme.scss';
 
-const BAD_ROUTES = ['product', 'prime'];
+const BAD_ROUTES = ['product', 'prime', 'turbo'];
 
 
 export default class ThemeEngine extends Module {

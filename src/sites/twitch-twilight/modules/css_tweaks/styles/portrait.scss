@@ -41,6 +41,10 @@
 		width: unset !important;
 		border-top: 1px solid #dad8de;
 
+		& > .tw-full-height {
+			width: 100% !important;
+		}
+
 		.right-column__toggle-visibility {
 			position: fixed !important;
 			top: 6.5rem;

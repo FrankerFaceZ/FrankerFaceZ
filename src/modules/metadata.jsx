@@ -180,11 +180,12 @@ export default class Metadata extends Module {
 					return;
 
 				const store = internal.context.store,
-					state = store.getState();
+					state = store.getState(),
+					displayed = state && state.stats && state.stats.displayState === 'DISPLAY_VIDEO_STATS';
 
 				store.dispatch({
 					type: 'display stats',
-					displayed: ! (state.stats && state.stats.displayed)
+					displayState: displayed ? 'DISPLAY_NONE' : 'DISPLAY_VIDEO_STATS'
 				});
 			},
 

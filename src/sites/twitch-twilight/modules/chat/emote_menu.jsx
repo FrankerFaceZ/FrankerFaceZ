@@ -1303,6 +1303,11 @@ export default class EmoteMenu extends Module {
 						}
 
 						for(const emote of emote_set.emotes) {
+							// Validate emotes, because apparently Twitch is handing
+							// out bad emote data.
+							if ( ! emote || ! emote.id || ! emote.token )
+								continue;
+
 							const id = parseInt(emote.id, 10),
 								name = KNOWN_CODES[emote.token] || emote.token,
 								mapped = emote_map && emote_map[name],
@@ -1403,6 +1408,11 @@ export default class EmoteMenu extends Module {
 							section.all_locked = false;
 
 						for(const emote of product.emotes) {
+							// Validate emotes, because apparently Twitch is handing
+							// out bad emote data.
+							if ( ! emote || ! emote.id || ! emote.token )
+								continue;
+
 							const id = parseInt(emote.id, 10),
 								base = `${TWITCH_EMOTE_BASE}${id}`,
 								name = KNOWN_CODES[emote.token] || emote.token,

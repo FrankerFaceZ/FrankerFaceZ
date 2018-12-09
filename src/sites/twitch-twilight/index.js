@@ -204,6 +204,7 @@ Twilight.ROUTES = {
 	'user-following': '/:userName/following',
 	'product': '/products/:productName',
 	'prime': '/prime',
+	'turbo': '/turbo',
 	'user': '/:userName',
 }
 

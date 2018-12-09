@@ -441,6 +441,7 @@ export default class Badges extends Module {
 
 				if (no_invert) {
 					slotted[slot].full_size = true;
+					slotted[slot].no_invert = true;
 
 					style.background = 'unset';
 					style.backgroundSize = 'unset';
@@ -471,7 +472,7 @@ export default class Badges extends Module {
 				const data = slotted[slot],
 					props = data.props;
 
-				props.className = `ffz-tooltip ffz-badge${data.full_size ? ' ffz-full-size' : ''}`;
+				props.className = `ffz-tooltip ffz-badge${data.full_size ? ' ffz-full-size' : ''}${data.no_invert ? ' ffz-no-invert' : ''}`;
 				props.key = `${props['data-provider']}-${props['data-badge']}`;
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);
