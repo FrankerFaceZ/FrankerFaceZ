@@ -31,6 +31,7 @@ export const Links = {
 		return {
 			card_tooltip: true,
 			url: token.url,
+			timeout: 0,
 
 			getData: async () => {
 				const data = await this.get_link_info(token.url);

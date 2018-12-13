@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {timeout} from 'utilities/object';
+import {timeout, has} from 'utilities/object';
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 
@@ -41,7 +41,7 @@ export default class RichContent extends Module {
 				try {
 					let data = this.props.getData();
 					if ( data instanceof Promise ) {
-						const to_wait = this.props.timeout || 1000;
+						const to_wait = has(this.props, 'timeout') ? this.props.timeout : 1000;
 						if ( to_wait )
 							data = await timeout(data, to_wait);
 						else
