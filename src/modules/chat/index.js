@@ -125,6 +125,32 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.rich.all-links', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Display rich content embeds for all links.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.rich.minimum-level', {
+			default: 0,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Required User Level',
+				description: 'Only display rich content embeds on messages posted by users with this level or higher.',
+				component: 'setting-select-box',
+				data: [
+					{value: 4, title: 'Broadcaster'},
+					{value: 3, title: 'Moderator'},
+					{value: 2, title: 'VIP'},
+					{value: 1, title: 'Subscriber'},
+					{value: 0, title: 'Everyone'}
+				]
+			}
+		});
+
 		this.settings.add('chat.scrollback-length', {
 			default: 150,
 			ui: {
@@ -759,6 +785,26 @@ export default class Chat extends Module {
 	}
 
 
+	getUserLevel(msg) { // eslint-disable-line class-methods-use-this
+		if ( ! msg || ! msg.user )
+			return 0;
+
+		if ( msg.user.login === msg.roomLogin || msg.badges.broadcaster )
+			return 4;
+
+		if ( msg.badges.moderator )
+			return 3;
+
+		if ( msg.badges.vip )
+			return 2;
+
+		if ( msg.badges.subscriber )
+			return 1;
+
+		return 0;
+	}
+
+
 	standardizeMessage(msg) { // eslint-disable-line class-methods-use-this
 		if ( ! msg )
 			return msg;
@@ -1007,15 +1053,15 @@ export default class Chat extends Module {
 	}
 
 
-	pluckRichContent(tokens) { // eslint-disable-line class-methods-use-this
-		if ( ! this.context.get('chat.rich.enabled') )
+	pluckRichContent(tokens, msg) { // eslint-disable-line class-methods-use-this
+		if ( ! this.context.get('chat.rich.enabled') || this.context.get('chat.rich.minimum-level') > this.getUserLevel(msg) )
 			return;
 
 		const providers = this.__rich_providers;
 
 		for(const token of tokens) {
 			for(const provider of providers)
-				if ( provider.test.call(this, token) ) {
+				if ( provider.test.call(this, token, msg) ) {
 					token.hidden = this.context.get('chat.rich.hide-tokens') && provider.hide_token;
 					return provider.process.call(this, token);
 				}

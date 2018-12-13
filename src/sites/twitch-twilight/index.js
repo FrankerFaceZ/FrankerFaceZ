@@ -206,6 +206,7 @@ Twilight.ROUTES = {
 	'prime': '/prime',
 	'turbo': '/turbo',
 	'user': '/:userName',
+	'embed-chat': '/embed/:userName/chat'
 }
 
 

@@ -52,8 +52,11 @@ This is a very early feature and will change as there is time.`,
 		});
 
 		this.settings.add('theme.is-dark', {
-			requires: ['theme.can-dark', 'context.ui.theme', 'context.ui.theatreModeEnabled'],
+			requires: ['theme.can-dark', 'context.ui.theme', 'context.ui.theatreModeEnabled', 'context.route.name', 'context.location.search'],
 			process(ctx) {
+				if ( ctx.get('context.route.name') === 'embed-chat' )
+					return (ctx.get('context.location.search')||'').includes('dark');
+
 				return ctx.get('context.ui.theatreModeEnabled') || (ctx.get('theme.can-dark') && ctx.get('context.ui.theme') === 1);
 			},
 			changed: () => this.updateCSS()

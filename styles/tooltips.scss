@@ -231,242 +231,241 @@ body {
 	}*/
 }
 
-.ffz-rich-tip .body { line-height: 1.5em }
 
-.ffz-rich-tip .tweet-heading:before {
-	content: '';
-	position: absolute;
-	top: 24px;
-	right: 24px;
-	width: 20px;
-	height: 16px;
-	background: url("//cdn.frankerfacez.com/script/twitter_sprites.png") -38px -15px;
-}
+.ffz--chat-card,
+.ffz-rich-tip {
+	.body { line-height: 1.5em }
 
-.ffz-rich-tip .stats:after,
-.ffz-rich-tip .heading:after {
-	content: '';
-	display: table;
-	clear: both;
-}
+	.tweet-heading:before {
+		content: '';
+		position: absolute;
+		top: 24px;
+		right: 24px;
+		width: 20px;
+		height: 16px;
+		background: url("//cdn.frankerfacez.com/script/twitter_sprites.png") -38px -15px;
+	}
 
-.ffz-rich-tip .avatar {
-	float: left;
-	margin-right: 8px;
-	max-height: 48px;
-	max-width: 100px;
-}
+	.stats:after, .heading:after {
+		content: '';
+		display: table;
+		clear: both;
+	}
+	.avatar {
+		float: left;
+		margin-right: 8px;
+		max-height: 48px;
+		max-width: 100px;
+	}
+	.tweet-heading .avatar {
+		border-radius: 50%;
+	}
+	.heading .title {
+		font-weight: bold;
+		display: block;
+		text-align: justify;
+	}
+	.display-name {
+		padding-top: 3px;
+		font-size: 14px;
+		display: block;
+		&.big-name {
+			font-size: 20px;
+			padding-top: 18px;
+		}
+	}
+	.quoted .display-name {
+		padding: 0 5px 0 0;
+		display: inline;
+		font-size: 12px;
+	}
+	.twitch-heading {
+		.tip-badge.verified {
+			height: 12px;
+			width: 12px;
+			margin: 2px 0 -1px 5px;
+			background: url("https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/1");
+			background-size: contain;
+			display: inline-block;
+		}
+		.big-name .tip-badge.verified {
+			height: 18px;
+			width: 18px;
+			margin: 1px 0 0 10px;
+		}
+	}
+	.tweet-heading .tip-badge {
+		height: 12px;
+		width: 12px;
+		margin: 2px 0 -1px 5px;
+		background: url("//cdn.frankerfacez.com/script/twitter_sprites.png");
+		display: inline-block;
+	}
+	.tip-badge {
+		&.verified {
+			background-position: 0 -15px;
+		}
+		&.translator {
+			background-position: -12px -15px;
+		}
+		&.protected {
+			background-position: -24px -15px;
+			width: 14px;
+		}
+	}
+	.emoji {
+		height: 1em;
+		vertical-align: middle;
+	}
+	.quoted > div:not(:first-child), > div:not(:first-child) {
+		margin-top: 8px;
+	}
+	.quote-heading + .body {
+		margin-top: 0 !important;
+	}
+	.replying {
+		+ .body {
+			margin-top: 0 !important;
+		}
+		opacity: 0.6;
+		font-size: 10px;
+	}
+	.subtitle, .quoted .body, .stats, .username {
+		opacity: 0.6;
+	}
+	.stats {
+		display: flex;
+		.wide-stat {
+			flex-grow: 1;
+		}
+	}
+	time {
+		flex-grow: 1;
+	}
+	.tweet-stats .stat:before {
+		.tw-root--theme-dark & {
+			filter: invert(100%);
+		}
 
-.ffz-rich-tip .tweet-heading .avatar {
-	border-radius: 50%;
-}
-
-.ffz-rich-tip .heading .title {
-	font-weight: bold;
-	display: block;
-	text-align: justify;
-}
-
-.ffz-rich-tip .display-name {
-	padding-top: 3px;
-	font-size: 14px;
-	display: block;
-}
-
-.ffz-rich-tip .display-name.big-name {
-	font-size: 20px;
-	padding-top: 18px;
-}
-
-.ffz-rich-tip .quoted .display-name {
-	padding: 0 5px 0 0;
-	display: inline;
-	font-size: 12px;
-}
-
-.ffz-rich-tip .twitch-heading .tip-badge.verified {
-	height: 12px;
-	width: 12px;
-	margin: 2px 0 -1px 5px;
-	background: url("https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/1");
-	background-size: contain;
-	display: inline-block;
-}
-
-.ffz-rich-tip .twitch-heading .big-name .tip-badge.verified {
-	height: 18px;
-	width: 18px;
-	margin: 1px 0 0 10px;
-}
-
-.ffz-rich-tip .tweet-heading .tip-badge {
-	height: 12px;
-	width: 12px;
-	margin: 2px 0 -1px 5px;
-	background: url("//cdn.frankerfacez.com/script/twitter_sprites.png");
-	display: inline-block;
-}
-
-.ffz-rich-tip .tip-badge.verified {
-	background-position: 0 -15px;
-}
-
-.ffz-rich-tip .tip-badge.translator {
-	background-position: -12px -15px;
-}
-
-.ffz-rich-tip .tip-badge.protected {
-	background-position: -24px -15px;
-	width: 14px;
-}
-
-.ffz-rich-tip .emoji {
-	height: 1em;
-	vertical-align: middle;
-}
-
-.ffz-rich-tip .quoted > div:not(:first-child),
-.ffz-rich-tip > div:not(:first-child) {
-	margin-top: 8px;
-}
-
-.ffz-rich-tip .quote-heading + .body,
-.ffz-rich-tip .replying + .body {
-	margin-top: 0 !important;
-}
-
-.ffz-rich-tip .replying {
-	opacity: 0.6;
-	font-size: 10px;
-}
-
-.ffz-rich-tip .subtitle,
-.ffz-rich-tip .quoted .body,
-.ffz-rich-tip .stats,
-.ffz-rich-tip .username { opacity: 0.6 }
-
-.ffz-rich-tip .stats { display: flex }
-.ffz-rich-tip .stats .wide-stat,
-.ffz-rich-tip time { flex-grow: 1 }
-
-.ffz-rich-tip .tweet-stats .stat:before {
-	content: '';
-	display: inline-block;
-	background: url("//cdn.frankerfacez.com/script/twitter_sprites.png");
-	margin: 0 5px 0 10px;
-}
-
-.ffz-rich-tip .stat.likes:before {
-	width: 17px; height: 14px;
-	margin-bottom: -3px;
-}
-
-.ffz-rich-tip .stat.retweets:before {
-	width: 20px; height: 12px;
-	background-position: -34px 0;
-	margin-bottom: -2px;
-}
-
-.ffz-rich-tip .media { position: relative; text-align: center }
-
-.ffz-rich-tip .media[data-count]:not([data-count="1"]) {
-	display: flex;
-	margin: 8px -5px -5px 0;
-	flex-flow: column wrap;
-	height: 329px;
-}
-
-.ffz-rich-tip .media .duration {
-	position: absolute;
-	bottom: 0; right: 0;
-	margin: 4px;
-	background: #000;
-	color: #fff;
-	opacity: .8;
-	padding: 2px 4px;
-	border-radius: 2px;
-	z-index: 10;
-	font-weight: 500;
-}
-
-.ffz-rich-tip .sixteen-nine {
-	width: 100%;
-	overflow: hidden;
-	margin: 0;
-	padding-top: 56.25%;
-	position: relative;
-}
-
-.ffz-rich-tip .sixteen-nine img {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	width: 100%;
-	transform: translate(-50%, -50%);
-}
-
-.ffz-rich-tip .media video {
-	width: 100%;
-	max-height: 324px;
-}
-
-.ffz-rich-tip .media[data-count="4"] { flex-flow: row wrap }
-
-.ffz-rich-tip .media[data-count="2"] { height: 164.5px }
-.ffz-rich-tip .media img { max-height: 324px }
-
-.ffz-rich-tip .quoted .media[data-count]:not([data-count="1"]) { height: 150px }
-.ffz-rich-tip .quoted .media[data-count="2"] { height: 150px }
-.ffz-rich-tip .quoted .media video,
-.ffz-rich-tip .quoted .media img { max-height: 150px }
-
-.ffz-rich-tip .media span {
-	background: no-repeat center center;
-	background-size: cover;
-}
-
-.ffz-rich-tip .media[data-count="2"] span,
-.ffz-rich-tip .media[data-count="3"] span,
-.ffz-rich-tip .media[data-count="4"] span {
-	width: calc(50% - 5px);
-	height: calc(50% - 5px);
-	margin: 0 5px 5px 0;
-}
-
-.ffz-rich-tip .media[data-count="2"] span,
-.ffz-rich-tip .media[data-count="3"] span:first-of-type {
-	height: 100%;
-}
-
-.ffz-rich-tip .profile-stats {
-	display: flex;
-	flex-flow: row;
-	flex-wrap: wrap;
-}
-
-.ffz-rich-tip .profile-stats div {
-	flex-grow: 1;
-	font-size: 16px;
-	margin-right: 10px;
-}
-
-.ffz-rich-tip .profile-stats span {
-	display: block;
-	font-size: 12px;
-	opacity: 0.7;
-}
-
-.ffz-rich-tip .quoted {
-	border: 1px solid #474747;
-	border-radius: 5px;
-	padding: 8px;
-}
-
-.ffz-rich-tip .media[data-type="video"]:after {
-	position: absolute;
-	content: '';
-	width: 64px; height: 64px;
-	top: calc(50% - 32px);
-	left: calc(50% - 32px);
-	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23FFF' d='M15 10.001c0 .299-.305.514-.305.514l-8.561 5.303C5.51 16.227 5 15.924 5 15.149V4.852c0-.777.51-1.078 1.135-.67l8.561 5.305c-.001 0 .304.215.304.514z'/%3E%3C/svg%3E");
+		content: '';
+		display: inline-block;
+		background: url("//cdn.frankerfacez.com/script/twitter_sprites.png");
+		margin: 0 5px 0 10px;
+	}
+	.stat {
+		&.likes:before {
+			width: 17px;
+			height: 14px;
+			margin-bottom: -3px;
+		}
+		&.retweets:before {
+			width: 20px;
+			height: 12px;
+			background-position: -34px 0;
+			margin-bottom: -2px;
+		}
+	}
+	.media {
+		position: relative;
+		text-align: center;
+		&[data-count]:not([data-count="1"]) {
+			display: flex;
+			margin: 8px -5px -5px 0;
+			flex-flow: column wrap;
+			height: 329px;
+		}
+		.duration {
+			position: absolute;
+			bottom: 0;
+			right: 0;
+			margin: 4px;
+			background: #000;
+			color: #fff;
+			opacity: .8;
+			padding: 2px 4px;
+			border-radius: 2px;
+			z-index: 10;
+			font-weight: 500;
+		}
+	}
+	.sixteen-nine {
+		width: 100%;
+		overflow: hidden;
+		margin: 0;
+		padding-top: 56.25%;
+		position: relative;
+		img {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 100%;
+			transform: translate(-50%, -50%);
+		}
+	}
+	.media {
+		video {
+			width: 100%;
+			max-height: 324px;
+		}
+		&[data-count="4"] {
+			flex-flow: row wrap;
+		}
+		&[data-count="2"] {
+			height: 164.5px;
+		}
+		img {
+			max-height: 324px;
+		}
+	}
+	.quoted .media {
+		&[data-count]:not([data-count="1"]), &[data-count="2"] {
+			height: 150px;
+		}
+		video, img {
+			max-height: 150px;
+		}
+	}
+	.media {
+		span {
+			background: no-repeat center center;
+			background-size: cover;
+		}
+		&[data-count="2"] span, &[data-count="3"] span, &[data-count="4"] span {
+			width: calc(50% - 5px);
+			height: calc(50% - 5px);
+			margin: 0 5px 5px 0;
+		}
+		&[data-count="2"] span, &[data-count="3"] span:first-of-type {
+			height: 100%;
+		}
+	}
+	.profile-stats {
+		display: flex;
+		flex-flow: row;
+		flex-wrap: wrap;
+		div {
+			flex-grow: 1;
+			font-size: 16px;
+			margin-right: 10px;
+		}
+		span {
+			display: block;
+			font-size: 12px;
+			opacity: 0.7;
+		}
+	}
+	.quoted {
+		border: 1px solid #474747;
+		border-radius: 5px;
+		padding: 8px;
+	}
+	.media[data-type="video"]:after {
+		position: absolute;
+		content: '';
+		width: 64px;
+		height: 64px;
+		top: calc(50% - 32px);
+		left: calc(50% - 32px);
+		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23FFF' d='M15 10.001c0 .299-.305.514-.305.514l-8.561 5.303C5.51 16.227 5 15.924 5 15.149V4.852c0-.777.51-1.078 1.135-.67l8.561 5.305c-.001 0 .304.215.304.514z'/%3E%3C/svg%3E");
+	}
 }

@@ -140,11 +140,23 @@ export default class RichContent extends Module {
 				</div>)
 			}
 
+			renderCardBody() {
+				if ( this.props.renderBody )
+					return this.props.renderBody(this.state, this, createElement);
+
+				if ( this.state.html )
+					return <div dangerouslySetInnerHTML={{__html: this.state.html}} />;
+
+				return [
+					this.renderCardImage(),
+					this.renderCardDescription()
+				];
+			}
+
 			renderCard() {
 				return (<div class="ffz--chat-card tw-elevation-1 tw-mg-t">
 					<div class="tw-c-background-base tw-flex tw-flex-nowrap tw-pd-05">
-						{this.renderCardImage()}
-						{this.renderCardDescription()}
+						{this.renderCardBody()}
 					</div>
 				</div>)
 			}
@@ -153,8 +165,13 @@ export default class RichContent extends Module {
 				if ( ! this.state.url )
 					return this.renderCard();
 
+				const tooltip = this.props.card_tooltip;
+
 				return (<a
-					class="chat-card__link"
+					class={`${tooltip ? 'ffz-tooltip ' : ''} chat-card__link`}
+					data-tooltip-type="link"
+					data-url={this.state.url}
+					data-is-mail={false}
 					target="_blank"
 					rel="noreferrer noopener"
 					href={this.state.url}

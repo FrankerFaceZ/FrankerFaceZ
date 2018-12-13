@@ -12,6 +12,43 @@ import GET_VIDEO from './video_info.gql';
 
 
 // ============================================================================
+// General Links
+// ============================================================================
+
+export const Links = {
+	type: 'link',
+	hide_token: false,
+	priority: -10,
+
+	test(token) {
+		if ( ! this.context.get('chat.rich.all-links') )
+			return false;
+
+		return token.type === 'link'
+	},
+
+	process(token) {
+		return {
+			card_tooltip: true,
+			url: token.url,
+
+			getData: async () => {
+				const data = await this.get_link_info(token.url);
+
+				return {
+					url: token.url,
+					image: this.context.get('tooltip.link-images') ? (data.image_safe || this.context.get('tooltip.link-nsfw-images') ) ? data.preview || data.image : null : null,
+					title: data.title,
+					desc_1: data.desc_1,
+					desc_2: data.desc_2
+				}
+			}
+		}
+	}
+}
+
+
+// ============================================================================
 // Clips
 // ============================================================================
 

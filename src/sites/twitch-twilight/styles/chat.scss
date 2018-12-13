@@ -42,7 +42,15 @@
     }
 }
 
+.ffz-tooltip.chat-card__link > * {
+    pointer-events: none;
+}
+
 .ffz--chat-card {
+    .chat-card__title {
+        max-width: unset;
+    }
+
     .ffz--two-line {
         .tw-ellipsis { line-height: 1.4rem }
         .chat-card__title { line-height: 1.5rem }

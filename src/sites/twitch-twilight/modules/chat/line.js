@@ -58,6 +58,10 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.all-links', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.minimum-level', this.updateLines, this);
+		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
+		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
@@ -432,6 +436,11 @@ export default class ChatLine extends Module {
 		})
 	}
 
+
+	maybeUpdateLines() {
+		if ( this.chat.context.get('chat.rich.all-links') )
+			this.updateLines();
+	}
 
 	updateLines() {
 		for(const inst of this.ChatLine.instances) {
