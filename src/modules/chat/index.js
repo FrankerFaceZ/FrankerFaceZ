@@ -130,6 +130,7 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Appearance >> Rich Content',
 				title: 'Display rich content embeds for all links.',
+				description: '*Streamers: Please be aware that this is a potential vector for NSFW imagery via thumbnails, so be mindful when capturing chat with this enabled.*',
 				component: 'setting-check-box'
 			}
 		});
@@ -789,8 +790,11 @@ export default class Chat extends Module {
 		if ( ! msg || ! msg.user )
 			return 0;
 
-		if ( msg.user.login === msg.roomLogin || msg.badges.broadcaster )
+		if ( msg.user.login === msg.roomLogin || (msg.badges && msg.badges.broadcaster) )
 			return 4;
+
+		if ( ! msg.badges )
+			return 0;
 
 		if ( msg.badges.moderator )
 			return 3;
