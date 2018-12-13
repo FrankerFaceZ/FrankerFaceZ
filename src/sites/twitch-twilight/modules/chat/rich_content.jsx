@@ -51,7 +51,7 @@ export default class RichContent extends Module {
 					if ( ! data )
 						data = {
 							error: true,
-							title: t.i18n.t('card.error', 'An error occured.'),
+							title: t.i18n.t('card.error', 'An error occurred.'),
 							desc_1: t.i18n.t('card.empty', 'No data was returned.')
 						}
 
@@ -68,7 +68,7 @@ export default class RichContent extends Module {
 						loaded: true,
 						error: true,
 						url: this.props.url,
-						title: t.i18n.t('card.error', 'An error occured.'),
+						title: t.i18n.t('card.error', 'An error occurred.'),
 						desc_1: String(err)
 					});
 				}

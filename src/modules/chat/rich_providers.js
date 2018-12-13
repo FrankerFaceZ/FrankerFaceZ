@@ -34,7 +34,23 @@ export const Links = {
 			timeout: 0,
 
 			getData: async () => {
-				const data = await this.get_link_info(token.url);
+				let data;
+				try {
+					data = await this.get_link_info(token.url);
+				} catch(err) {
+					return {
+						url: token.url,
+						title: this.i18n.t('card.error', 'An error occurred.'),
+						desc_1: err
+					}
+				}
+
+				if ( ! data )
+					return {
+						url: token.url,
+						title: this.i18n.t('card.error', 'An error occurred.'),
+						desc_1: this.i18n.t('card.empty', 'No data was returned.')
+					}
 
 				return {
 					url: token.url,
