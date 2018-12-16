@@ -1,0 +1,13 @@
+.channel-info-bar__content-right {
+	display: flex;
+	flex-direction: column;
+
+	& > .tw-align-items-start {
+		margin-top: 0 !important;
+		order: -1;
+
+		& > .tw-pd-t-05 {
+			padding-top: 0 !important;
+		}
+	}
+}

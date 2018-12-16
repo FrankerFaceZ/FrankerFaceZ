@@ -6,11 +6,15 @@
 // Raven Logging
 // ============================================================================
 
+import dayjs from 'dayjs';
+
 import {DEBUG, SENTRY_ID} from 'utilities/constants';
 import {has} from 'utilities/object';
 import Module from 'utilities/module';
 
 import Raven from 'raven-js';
+
+const STRIP_URLS = /((?:\?|&)[^?&=]*?(?:oauth|token)[^?&=]*?=)[^?&]*?(&|$)/i;
 
 const AVALON_REG = /\/(?:script|static)\/((?:babel\/)?avalon)(\.js)(\?|#|$)/,
 	fix_url = url => url.replace(AVALON_REG, `/static/$1.${__webpack_hash__}$2$3`);
@@ -90,8 +94,8 @@ export default class RavenLogger extends Module {
 			});
 
 			this.settings.addUI('reports.error.example', {
-				path: 'Data Management > Reporting >> Error Reports',
-				component: 'example-report',
+				path: 'Data Management > Reporting >> Example Report',
+				component: 'async-text',
 
 				watch: [
 					'reports.error.enable',
@@ -101,7 +105,9 @@ export default class RavenLogger extends Module {
 
 				data: () => new Promise(r => {
 					// Why fake an error when we can *make* an error?
-					this.__example_waiter = r;
+					this.__example_waiter = data => {
+						r(JSON.stringify(data, null, 4));
+					};
 
 					// Generate the error in a timeout so that the end user
 					// won't have a huge wall of a fake stack trace wasting
@@ -121,7 +127,7 @@ export default class RavenLogger extends Module {
 
 		this.raven = Raven;
 
-		Raven.config(SENTRY_ID, {
+		const raven_config = {
 			autoBreadcrumbs: {
 				console: false
 			},
@@ -133,9 +139,6 @@ export default class RavenLogger extends Module {
 				'out of memory',
 				'Access is denied.',
 				'Zugriff verweigert'
-			],
-			whitelistUrls: [
-				/cdn\.frankerfacez\.com/
 			],
 			sanitizeKeys: [
 				/Token$/
@@ -205,9 +208,44 @@ export default class RavenLogger extends Module {
 					return false;
 				}
 
+				if ( DEBUG )
+					return false;
+
 				return true;
 			}
-		}).install();
+		};
+
+		if ( ! DEBUG )
+			raven_config.whitelistUrls = [
+				/api\.frankerfacez\.com/,
+				/cdn\.frankerfacez\.com/
+			];
+
+		Raven.config(SENTRY_ID, raven_config).install();
+	}
+
+
+	generateLog() {
+		if ( ! this.raven || ! this.raven._breadcrumbs )
+			return 'No breadcrumbs to log.';
+
+		return this.raven._breadcrumbs.map(crumb => {
+			const time = dayjs(crumb.timestamp).locale('en').format('H:mm:ss');
+			if ( crumb.type == 'http' )
+				return `[${time}] HTTP | ${crumb.category}: ${crumb.data.method} ${crumb.data.url} -> ${crumb.data.status_code}`;
+
+			let cat = 'LOG';
+			if ( crumb.category && crumb.category.includes('ui.') )
+				cat = 'UI';
+
+			return `[${time}] ${cat}${crumb.level ? `:${crumb.level}` : ''} | ${crumb.category}: ${crumb.message}${crumb.data ? `\n    ${JSON.stringify(crumb.data)}` : ''}`;
+
+		}).map(x => {
+			if ( typeof x !== 'string' )
+				x = `${x}`;
+
+			return x.replace(STRIP_URLS, '$1REDACTED$2');
+		}).join('\n');
 	}
 
 

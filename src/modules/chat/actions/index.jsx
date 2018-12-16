@@ -37,13 +37,14 @@ export default class Actions extends Module {
 				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
 				{v: {action: 'unban', appearance: {type: 'icon', icon: 'ffz-i-ok'}, options: {}, display: {mod: true, mod_icons: true, deleted: true}}},
 				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true, mod_icons: true}}},
+				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}}
 			],
 
 			type: 'array_merge',
 			ui: {
 				path: 'Chat > In-Line Actions @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
 				component: 'chat-actions',
-				context: ['user', 'room'],
+				context: ['user', 'room', 'message'],
 				inline: true,
 
 				data: () => {

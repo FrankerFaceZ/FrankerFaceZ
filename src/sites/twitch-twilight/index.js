@@ -83,7 +83,7 @@ export default class Twilight extends BaseSite {
 			href: MAIN_URL,
 			rel: 'stylesheet',
 			type: 'text/css',
-			crossOrigin: 'anonymouse'
+			crossOrigin: 'anonymous'
 		}));
 
 		// Check for ?ffz-settings in page and open the
@@ -171,7 +171,8 @@ Twilight.CHAT_ROUTES = [
 	'user-followers',
 	'user-following',
 	'user',
-	'dash'
+	'dash',
+	'embed-chat'
 ]
 
 
@@ -204,7 +205,9 @@ Twilight.ROUTES = {
 	'user-following': '/:userName/following',
 	'product': '/products/:productName',
 	'prime': '/prime',
+	'turbo': '/turbo',
 	'user': '/:userName',
+	'embed-chat': '/embed/:userName/chat'
 }
 
 

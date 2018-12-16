@@ -8,7 +8,7 @@ $input-border: #392e5c;
 $input-active-border: #7d5bbe;
 
 
-.tw-theme--dark {
+.tw-root--theme-dark {
 	.vc-sketch {
 		background: $bg-color;
 		box-shadow: 0 0 0 1px $border-color,
@@ -57,7 +57,7 @@ $input-border: var(--ffz-color-26);
 $input-active-border: var(--ffz-color-5);
 
 
-.tw-theme--dark.tw-theme--ffz {
+.tw-root--theme-dark.tw-root--theme-ffz {
 	.vc-sketch {
 		background: $bg-color;
 		box-shadow: 0 0 0 1px $border-color,

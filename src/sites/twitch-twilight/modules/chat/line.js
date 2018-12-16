@@ -58,9 +58,14 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.all-links', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.minimum-level', this.updateLines, this);
+		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
+		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
+		this.chat.context.on('changed:chat.timestamp-format', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-terms--color-regex', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
 
@@ -208,7 +213,7 @@ export default class ChatLine extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.shouldComponentUpdate = function(props, state) {
-				const show = state.alwaysShowMessage || ! props.message.deleted,
+				const show = state && state.alwaysShowMessage || ! props.message.deleted,
 					old_show = this._ffz_show;
 
 				// We can't just compare props.message.deleted to this.props.message.deleted
@@ -255,7 +260,7 @@ export default class ChatLine extends Module {
 					show = true;
 					show_class = msg.deleted;
 				} else {
-					show = this.state.alwaysShowMessage || ! msg.deleted;
+					show = this.state && this.state.alwaysShowMessage || ! msg.deleted;
 					show_class = false;
 				}
 
@@ -283,7 +288,7 @@ export default class ChatLine extends Module {
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
 				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
+					this.ffz_user_click_handler = this.openViewerCard || this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
@@ -431,6 +436,11 @@ export default class ChatLine extends Module {
 		})
 	}
 
+
+	maybeUpdateLines() {
+		if ( this.chat.context.get('chat.rich.all-links') )
+			this.updateLines();
+	}
 
 	updateLines() {
 		for(const inst of this.ChatLine.instances) {

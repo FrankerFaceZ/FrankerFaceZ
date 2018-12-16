@@ -1,4 +1,4 @@
-query {
+query FollowingLive_CurrentUser {
 	currentUser {
 		followedLiveUsers {
 			edges {

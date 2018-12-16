@@ -277,17 +277,19 @@ export default class EmoteMenu extends Module {
 				if ( ! this.props || ! has(this.props, 'channelOwnerID') || ! t.chat.context.get('chat.emote-menu.enabled') )
 					return old_render.call(this);
 
-				return (<t.MenuComponent
-					visible={this.props.visible}
-					toggleVisibility={this.props.toggleVisibility}
-					onClickEmote={this.props.onClickEmote}
-					channel_data={this.props.channelData}
-					emote_data={this.props.emoteSetsData}
-					user_id={this.props.currentUserID}
-					channel_id={this.props.channelOwnerID}
-					loading={this.state.gqlLoading}
-					error={this.state.gqlError}
-				/>)
+				return (<t.MenuErrorWrapper visible={this.props.visible}>
+					<t.MenuComponent
+						visible={this.props.visible}
+						toggleVisibility={this.props.toggleVisibility}
+						onClickEmote={this.props.onClickEmote}
+						channel_data={this.props.channelData}
+						emote_data={this.props.emoteSetsData}
+						user_id={this.props.currentUserID}
+						channel_id={this.props.channelOwnerID}
+						loading={this.state.gqlLoading}
+						error={this.state.gqlError}
+					/>
+				</t.MenuErrorWrapper>)
 			}
 
 			this.EmoteMenu.forceUpdate();
@@ -731,6 +733,73 @@ export default class EmoteMenu extends Module {
 				setTimeout(doClear, 100);
 			};
 
+		this.MenuErrorWrapper = class FFZEmoteMenuErrorWrapper extends React.Component {
+			constructor(props) {
+				super(props);
+				this.state = {errored: false, error: null};
+			}
+
+			static getDerivedStateFromError(error) {
+				return {
+					errored: true,
+					error
+				}
+			}
+
+			componentDidCatch(error) { // eslint-disable-line class-methods-use-this
+				t.log.capture(error);
+				t.log.error('Error rendering the FFZ Emote Menu.');
+				this.setState({
+					errored: true,
+					error
+				});
+			}
+
+			render() {
+				if ( this.state.errored ) {
+					if ( ! this.props.visible )
+						return null;
+
+					const padding = t.chat.context.get('chat.emote-menu.reduced-padding');
+
+					return (<div
+						class={`tw-balloon tw-balloon--md tw-balloon--up tw-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+						data-a-target="emote-picker"
+					>
+						<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
+							<div
+								class="emote-picker__tab-content scrollable-area"
+								data-test-selector="scrollable-area-wrapper"
+								data-simplebar
+							>
+								<div class="tw-align-center tw-pd-1">
+									<div class="tw-mg-b-1">
+										<div class="tw-mg-2">
+											<img
+												src="//cdn.frankerfacez.com/emoticon/26608/2"
+												srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
+											/>
+										</div>
+										{t.i18n.t('emote-menu.error', 'There was an error rendering this menu.')}
+										<br />
+										{t.settings.get('reports.error.enable') ?
+											t.i18n.t('emote-menu.error-report', 'An error report has been automatically submitted.')
+											: ''
+										}
+										<div class="tw-mg-t-05 tw-border-t-1 tw-pd-t-05">
+											{t.i18n.t('emote-menu.disable', 'As a temporary workaround, try disabling the FFZ Emote Menu in the FFZ Control Center.') }
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>);
+				}
+
+				return this.props.children;
+			}
+		}
+
 		this.MenuComponent = class FFZEmoteMenuComponent extends React.Component {
 			constructor(props) {
 				super(props);
@@ -1089,7 +1158,7 @@ export default class EmoteMenu extends Module {
 
 
 			getSorter() { // eslint-disable-line class-methods-use-this
-				return EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')];
+				return EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')] || EMOTE_SORTERS[0] || (() => 0);
 			}
 
 			buildState(props, old_state) {
@@ -1234,6 +1303,11 @@ export default class EmoteMenu extends Module {
 						}
 
 						for(const emote of emote_set.emotes) {
+							// Validate emotes, because apparently Twitch is handing
+							// out bad emote data.
+							if ( ! emote || ! emote.id || ! emote.token )
+								continue;
+
 							const id = parseInt(emote.id, 10),
 								name = KNOWN_CODES[emote.token] || emote.token,
 								mapped = emote_map && emote_map[name],
@@ -1334,6 +1408,11 @@ export default class EmoteMenu extends Module {
 							section.all_locked = false;
 
 						for(const emote of product.emotes) {
+							// Validate emotes, because apparently Twitch is handing
+							// out bad emote data.
+							if ( ! emote || ! emote.id || ! emote.token )
+								continue;
+
 							const id = parseInt(emote.id, 10),
 								base = `${TWITCH_EMOTE_BASE}${id}`,
 								name = KNOWN_CODES[emote.token] || emote.token,

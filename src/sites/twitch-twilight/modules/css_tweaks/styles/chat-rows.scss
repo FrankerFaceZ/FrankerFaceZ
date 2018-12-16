@@ -14,7 +14,7 @@
 		&:nth-child(2n+0) {
 			background-color: rgba(0,0,0,0.1) !important;
 
-			.tw-theme--dark & {
+			.tw-root--theme-dark & {
 				background-color: rgba(255,255,255,0.05) !important;
 			}
 		}
@@ -28,7 +28,7 @@
 .video-chat__message-list-wrapper li:nth-child(2n+0) .vod-message:not(.ffz-custom-color) {
 	background-color: rgba(0,0,0,0.1) !important;
 
-	.tw-theme--dark & {
+	.tw-root--theme-dark & {
 		background-color: rgba(255,255,255,0.05) !important;
 	}
 }

@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {timeout} from 'utilities/object';
+import {timeout, has} from 'utilities/object';
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 
@@ -41,7 +41,7 @@ export default class RichContent extends Module {
 				try {
 					let data = this.props.getData();
 					if ( data instanceof Promise ) {
-						const to_wait = this.props.timeout || 1000;
+						const to_wait = has(this.props, 'timeout') ? this.props.timeout : 1000;
 						if ( to_wait )
 							data = await timeout(data, to_wait);
 						else
@@ -51,7 +51,7 @@ export default class RichContent extends Module {
 					if ( ! data )
 						data = {
 							error: true,
-							title: t.i18n.t('card.error', 'An error occured.'),
+							title: t.i18n.t('card.error', 'An error occurred.'),
 							desc_1: t.i18n.t('card.empty', 'No data was returned.')
 						}
 
@@ -68,7 +68,7 @@ export default class RichContent extends Module {
 						loaded: true,
 						error: true,
 						url: this.props.url,
-						title: t.i18n.t('card.error', 'An error occured.'),
+						title: t.i18n.t('card.error', 'An error occurred.'),
 						desc_1: String(err)
 					});
 				}
@@ -140,11 +140,23 @@ export default class RichContent extends Module {
 				</div>)
 			}
 
+			renderCardBody() {
+				if ( this.props.renderBody )
+					return this.props.renderBody(this.state, this, createElement);
+
+				if ( this.state.html )
+					return <div dangerouslySetInnerHTML={{__html: this.state.html}} />;
+
+				return [
+					this.renderCardImage(),
+					this.renderCardDescription()
+				];
+			}
+
 			renderCard() {
 				return (<div class="ffz--chat-card tw-elevation-1 tw-mg-t">
 					<div class="tw-c-background-base tw-flex tw-flex-nowrap tw-pd-05">
-						{this.renderCardImage()}
-						{this.renderCardDescription()}
+						{this.renderCardBody()}
 					</div>
 				</div>)
 			}
@@ -153,8 +165,13 @@ export default class RichContent extends Module {
 				if ( ! this.state.url )
 					return this.renderCard();
 
+				const tooltip = this.props.card_tooltip;
+
 				return (<a
-					class="chat-card__link"
+					class={`${tooltip ? 'ffz-tooltip ' : ''} chat-card__link`}
+					data-tooltip-type="link"
+					data-url={this.state.url}
+					data-is-mail={false}
 					target="_blank"
 					rel="noreferrer noopener"
 					href={this.state.url}

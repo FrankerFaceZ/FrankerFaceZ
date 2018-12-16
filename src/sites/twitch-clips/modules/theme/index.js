@@ -66,8 +66,8 @@ export default class ThemeEngine extends Module {
 		const dark = this.settings.get('theme.is-dark'),
 			gray = this.settings.get('theme.dark');
 
-		document.body.classList.toggle('tw-theme--dark', dark);
-		document.body.classList.toggle('tw-theme--ffz', gray);
+		document.body.classList.toggle('tw-root--theme-dark', dark);
+		document.body.classList.toggle('tw-root--theme-ffz', gray);
 
 	}
 

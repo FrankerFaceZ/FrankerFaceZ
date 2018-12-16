@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, split_chars, shallow_object_equals} from 'utilities/object';
+import {has, make_enum, split_chars, shallow_object_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -43,66 +43,71 @@ const REGEX_EMOTES = {
 };
 
 
-const MESSAGE_TYPES = ((e = {}) => {
-	e[e.Post = 0] = 'Post';
-	e[e.Action = 1] = 'Action';
-	e[e.PostWithMention = 2] = 'PostWithMention';
-	return e;
-})();
+const MESSAGE_TYPES = make_enum(
+	'Post',
+	'Action',
+	'PostWithMention'
+);
 
+const MOD_TYPES = make_enum(
+	'Ban',
+	'Timeout',
+	'Delete'
+);
 
-const MOD_TYPES = ((e = {}) => {
-	e[e.Ban = 0] = 'Ban';
-	e[e.Timeout = 1] = 'Timeout';
-	return e;
-})();
+const AUTOMOD_TYPES = make_enum(
+	'MessageRejectedPrompt',
+	'CheerMessageRejectedPrompt',
+	'MessageRejected',
+	'MessageAllowed',
+	'MessageDenied',
+	'CheerMessageDenied',
+	'CheerMessageTimeout',
+	'MessageModApproved',
+	'MessageModDenied'
+);
 
-
-const AUTOMOD_TYPES = ((e = {}) => {
-	e[e.MessageRejectedPrompt = 0] = 'MessageRejectedPrompt';
-	e[e.MessageRejected = 1] = 'MessageRejected';
-	e[e.MessageAllowed = 2] = 'MessageAllowed';
-	e[e.MessageDenied = 3] = 'MessageDenied';
-	return e;
-})();
-
-
-const CHAT_TYPES = ((e = {}) => {
-	e[e.Message = 0] = 'Message';
-	e[e.Moderation = 1] = 'Moderation';
-	e[e.ModerationAction = 2] = 'ModerationAction';
-	e[e.TargetedModerationAction = 3] = 'TargetedModerationAction';
-	e[e.AutoMod = 4] = 'AutoMod';
-	e[e.SubscriberOnlyMode = 5] = 'SubscriberOnlyMode';
-	e[e.FollowerOnlyMode = 6] = 'FollowerOnlyMode';
-	e[e.SlowMode = 7] = 'SlowMode';
-	e[e.EmoteOnlyMode = 8] = 'EmoteOnlyMode';
-	e[e.R9KMode = 9] = 'R9KMode';
-	e[e.Connected = 10] = 'Connected';
-	e[e.Disconnected = 11] = 'Disconnected';
-	e[e.Reconnect = 12] = 'Reconnect';
-	e[e.Hosting = 13] = 'Hosting';
-	e[e.Unhost = 14] = 'Unhost';
-	e[e.Hosted = 15] = 'Hosted';
-	e[e.Subscription = 16] = 'Subscription';
-	e[e.Resubscription = 17] = 'Resubscription';
-	e[e.SubGift = 18] = 'SubGift';
-	e[e.Clear = 19] = 'Clear';
-	e[e.RoomMods = 20] = 'RoomMods';
-	e[e.RoomState = 21] = 'RoomState';
-	e[e.Raid = 22] = 'Raid';
-	e[e.Unraid = 23] = 'Unraid';
-	e[e.Ritual = 24] = 'Ritual';
-	e[e.Notice = 25] = 'Notice';
-	e[e.Info = 26] = 'Info';
-	e[e.BadgesUpdated = 27] = 'BadgesUpdated';
-	e[e.Purchase = 28] = 'Purchase';
-	e[e.BitsCharity = 29] = 'BitsCharity';
-	e[e.CrateGift = 30] = 'CrateGift';
-	e[e.RewardGift = 31] = 'RewardGift';
-	e[e.SubMysteryGift = 32] = 'SubMysteryGift';
-	return e;
-})();
+const CHAT_TYPES = make_enum(
+	'Message',
+	'ExtensionMessage',
+	'Moderation',
+	'ModerationAction',
+	'TargetedModerationAction',
+	'AutoMod',
+	'SubscriberOnlyMode',
+	'FollowerOnlyMode',
+	'SlowMode',
+	'EmoteOnlyMode',
+	'R9KMode',
+	'Connected',
+	'Disconnected',
+	'Reconnect',
+	'Hosting',
+	'Unhost',
+	'Hosted',
+	'Subscription',
+	'Resubscription',
+	'GiftPaidUpgrade',
+	'AnonGiftPaidUpgrade',
+	'SubGift',
+	'AnonSubGift',
+	'Clear',
+	'RoomMods',
+	'RoomState',
+	'Raid',
+	'Unraid',
+	'Ritual',
+	'Notice',
+	'Info',
+	'BadgesUpdated',
+	'Purchase',
+	'BitsCharity',
+	'CrateGift',
+	'RewardGift',
+	'SubMysteryGift',
+	'AnonSubMysteryGift',
+	'FirstCheerMessage'
+);
 
 
 const NULL_TYPES = [
@@ -264,7 +269,6 @@ export default class ChatHook extends Module {
 		});
 	}
 
-
 	get currentChat() {
 		for(const inst of this.ChatController.instances)
 			if ( inst && inst.chatService )
@@ -414,7 +418,15 @@ export default class ChatHook extends Module {
 
 			for(const inst of instances) {
 				inst.client.events.removeAll();
+
+				inst._ffzInstall();
+
 				inst.connectHandlers();
+
+				inst.props.setChatConnectionAPI({
+					sendMessage: inst.sendMessage,
+					_ffz_inst: inst
+				});
 			}
 		});
 
@@ -566,7 +578,8 @@ export default class ChatHook extends Module {
 			inst.handleMessage = function(msg) {
 				if ( msg ) {
 					try {
-						const types = t.chat_types || {};
+						const types = t.chat_types || {},
+							mod_types = t.mod_types || {};
 
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
@@ -607,16 +620,25 @@ export default class ChatHook extends Module {
 								return;
 
 							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
+								is_delete = msg.moderationType === mod_types.Delete,
 								do_update = m => {
 									if ( m.event )
 										m = m.event;
 
-									if ( m.type === types.Message ) {
-										if ( m.user && m.user.userLogin === login )
+									if ( is_delete ) {
+										if ( m.id === msg.targetMessageID )
 											m.deleted = true;
+
+									} else if ( m.type === types.Message ) {
+										if ( m.user && m.user.userLogin === login ) {
+											m.banned = true;
+											m.deleted = true;
+										}
 									} else if ( m.type === types.Resubscription || m.type === types.Ritual ) {
-										if ( m.message && m.message.user && m.message.user.userLogin === login )
+										if ( m.message && m.message.user && m.message.user.userLogin === login ) {
 											m.deleted = true;
+											m.banned = true;
+										}
 									}
 								};
 
@@ -732,6 +754,7 @@ export default class ChatHook extends Module {
 
 	wrapChatService(cls) {
 		const t = this,
+			old_mount = cls.prototype.componentDidMount,
 			old_handler = cls.prototype.connectHandlers;
 
 		cls.prototype._ffz_was_here = true;
@@ -760,6 +783,53 @@ export default class ChatHook extends Module {
 		}
 
 
+		cls.prototype._ffzInstall = function() {
+			if ( this._ffz_installed )
+				return;
+
+			this._ffz_installed = true;
+
+			const inst = this,
+				old_send = this.sendMessage;
+
+			inst.sendMessage = function(raw_msg) {
+				const msg = raw_msg.replace(/\n/g, '');
+
+				if ( msg.startsWith('/ffz') ) {
+					inst.addMessage({
+						type: t.chat_types.Notice,
+						message: 'The /ffz command is not yet re-implemented.'
+					})
+
+					return false;
+				}
+
+				const event = new FFZEvent({
+					message: msg,
+					channel: inst.props.channelLogin
+				});
+
+				t.emit('chat:pre-send-message', event);
+
+				if ( event.defaultPrevented )
+					return;
+
+				return old_send.call(this, msg);
+			}
+		}
+
+
+		cls.prototype.componentDidMount = function() {
+			try {
+				this._ffzInstall();
+			} catch(err) {
+				t.log.error('Error installing FFZ features onto chat service.', err);
+			}
+
+			return old_mount.call(this);
+		}
+
+
 		cls.prototype.connectHandlers = function(...args) {
 			if ( ! this._ffz_init ) {
 				const i = this;
@@ -773,32 +843,6 @@ export default class ChatHook extends Module {
 							i._wrapped = null;
 							return ret;
 						}
-				}
-
-				const old_send = this.sendMessage;
-				this.sendMessage = function(raw_msg) {
-					const msg = raw_msg.replace(/\n/g, '');
-
-					if ( msg.startsWith('/ffz') ) {
-						this.postMessage({
-							type: t.chat_types.Notice,
-							message: 'The /ffz command is not yet re-implemented.'
-						})
-
-						return false;
-					}
-
-					const event = new FFZEvent({
-						message: msg,
-						channel: this.channelLogin
-					});
-
-					t.emit('chat:pre-send-message', event);
-
-					if ( event.defaultPrevented )
-						return;
-
-					return old_send.call(this, msg);
 				}
 
 				const old_chat = this.onChatMessageEvent;

@@ -39,7 +39,7 @@ export default class Player extends Module {
 			ui: {
 				path: 'Channel > Player >> Volume',
 				title: 'Adjust volume by scrolling with the mouse wheel.',
-				description: '<em>This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.</em>',
+				description: '*This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.*',
 				component: 'setting-check-box'
 			},
 

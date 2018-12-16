@@ -33,6 +33,17 @@
 	margin: 0 .3rem .2rem 0;
 	background-position: center;
 	vertical-align: middle;
+
+	&.ffz-no-invert {
+		filter:none !important;
+	}
+
+	&.ffz-full-size {
+		min-width: 1.8rem;
+		height: 1.8rem;
+		margin: 0 .3rem .2rem 0;
+		border-radius: 0;
+	}
 }
 
 

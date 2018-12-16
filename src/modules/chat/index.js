@@ -4,6 +4,8 @@
 // Chat
 // ============================================================================
 
+import dayjs from 'dayjs';
+
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
@@ -120,6 +122,33 @@ export default class Chat extends Module {
 				path: 'Chat > Appearance >> Rich Content',
 				title: 'Hide matching links for rich content.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.rich.all-links', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Display rich content embeds for all links.',
+				description: '*Streamers: Please be aware that this is a potential vector for NSFW imagery via thumbnails, so be mindful when capturing chat with this enabled.*',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.rich.minimum-level', {
+			default: 0,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Required User Level',
+				description: 'Only display rich content embeds on messages posted by users with this level or higher.',
+				component: 'setting-select-box',
+				data: [
+					{value: 4, title: 'Broadcaster'},
+					{value: 3, title: 'Moderator'},
+					{value: 2, title: 'VIP'},
+					{value: 1, title: 'Subscriber'},
+					{value: 0, title: 'Everyone'}
+				]
 			}
 		});
 
@@ -521,6 +550,31 @@ export default class Chat extends Module {
 			}
 		});
 
+		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
+			default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
+
+		this.settings.add('chat.timestamp-format', {
+			default: default_24 ? 'H:mm' : 'h:mm',
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Timestamp Format',
+				component: 'setting-combo-box',
+
+				description: 'Timestamps are formatted using the [Day.js](https://github.com/iamkun/dayjs#readme) library. More details about formatting strings [can be found here](https://github.com/iamkun/dayjs/blob/HEAD/docs/en/API-reference.md#list-of-all-available-formats)',
+
+				data: [
+					{value: 'h:mm', title: '12 Hour'},
+					{value: 'h:mm:ss', title: '12 Hour with Seconds'},
+					{value: 'H:mm', title: '24 Hour'},
+					{value: 'H:mm:ss', title: '24 Hour with Seconds'},
+					{value: 'hh:mm', title: 'Padded'},
+					{value: 'hh:mm:ss', title: 'Padded with Seconds'},
+					{value: 'HH:mm', title: 'Padded 24 Hour'},
+					{value: 'HH:mm:ss', title: 'Padded 24 Hour with Seconds'},
+				]
+			}
+		});
+
 		this.context.on('changed:theme.is-dark', () => {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
@@ -530,6 +584,15 @@ export default class Chat extends Module {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
 		});
+	}
+
+
+	generateLog() {
+		const out = ['chat settings', '-------------------------------------------------------------------------------'];
+		for(const [key, value] of this.context.__cache.entries())
+			out.push(`${key}: ${JSON.stringify(value)}`);
+
+		return out.join('\n');
 	}
 
 
@@ -720,6 +783,29 @@ export default class Chat extends Module {
 			}
 
 		return out;
+	}
+
+
+	getUserLevel(msg) { // eslint-disable-line class-methods-use-this
+		if ( ! msg || ! msg.user )
+			return 0;
+
+		if ( msg.user.login === msg.roomLogin || (msg.badges && msg.badges.broadcaster) )
+			return 4;
+
+		if ( ! msg.badges )
+			return 0;
+
+		if ( msg.badges.moderator )
+			return 3;
+
+		if ( msg.badges.vip )
+			return 2;
+
+		if ( msg.badges.subscriber )
+			return 1;
+
+		return 0;
 	}
 
 
@@ -914,22 +1000,12 @@ export default class Chat extends Module {
 	}
 
 
-	formatTime(time) { // eslint-disable-line class-methods-use-this
+	formatTime(time) {
 		if (!( time instanceof Date ))
 			time = new Date(time);
 
-		let hours = time.getHours();
-
-		const minutes = time.getMinutes(); //,
-		//	seconds = time.getSeconds(),
-		//	fmt = this.settings.get('chat.timestamp-format');
-
-		if ( hours > 12 )
-			hours -= 12;
-		else if ( hours === 0 )
-			hours = 12;
-
-		return `${hours}:${minutes < 10 ? '0' : ''}${minutes}`; //:${seconds < 10 ? '0' : ''}${seconds}`;
+		const fmt = this.context.get('chat.timestamp-format');
+		return dayjs(time).locale(this.i18n.locale).format(fmt);
 	}
 
 
@@ -981,15 +1057,15 @@ export default class Chat extends Module {
 	}
 
 
-	pluckRichContent(tokens) { // eslint-disable-line class-methods-use-this
-		if ( ! this.context.get('chat.rich.enabled') )
+	pluckRichContent(tokens, msg) { // eslint-disable-line class-methods-use-this
+		if ( ! this.context.get('chat.rich.enabled') || this.context.get('chat.rich.minimum-level') > this.getUserLevel(msg) )
 			return;
 
 		const providers = this.__rich_providers;
 
 		for(const token of tokens) {
 			for(const provider of providers)
-				if ( provider.test.call(this, token) ) {
+				if ( provider.test.call(this, token, msg) ) {
 					token.hidden = this.context.get('chat.rich.hide-tokens') && provider.hide_token;
 					return provider.process.call(this, token);
 				}

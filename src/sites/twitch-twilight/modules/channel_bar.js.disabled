@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 import { get } from 'utilities/object';
 
-import CHANNEL_QUERY from './channel_bar_query.gql';
+import CHANNEL_QUERY from './channel_page_query.gql';
 
 export default class ChannelBar extends Module {
 	constructor(...args) {

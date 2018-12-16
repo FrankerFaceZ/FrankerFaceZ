@@ -33,8 +33,9 @@
 		<section
 			v-if="item.description"
 			class="tw-border-t tw-pd-y-1"
-			v-html="t(item.desc_i18n_key || item.i18n_key + '.description', item.description, item)"
-		/>
+		>
+			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
+		</section>
 		<template v-if="! item.contents || ! item.contents.length">
 			<ul class="tw-border-t tw-pd-y-1">
 				<li

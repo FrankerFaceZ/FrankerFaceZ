@@ -180,11 +180,12 @@ export default class Metadata extends Module {
 					return;
 
 				const store = internal.context.store,
-					state = store.getState();
+					state = store.getState(),
+					displayed = state && state.stats && state.stats.displayState === 'DISPLAY_VIDEO_STATS';
 
 				store.dispatch({
 					type: 'display stats',
-					displayed: ! (state.stats && state.stats.displayed)
+					displayState: displayed ? 'DISPLAY_NONE' : 'DISPLAY_VIDEO_STATS'
 				});
 			},
 
@@ -256,11 +257,11 @@ export default class Metadata extends Module {
 				legacy_bar.updateMetadata(inst, keys);
 		}
 
-		const game_header = this.resolve('site.directory.game');
+		/*const game_header = this.resolve('site.directory.game');
 		if ( game_header ) {
 			for(const inst of game_header.GameHeader.instances)
 				game_header.updateMetadata(inst, keys);
-		}
+		}*/
 	}
 
 
@@ -832,6 +833,9 @@ export default class Metadata extends Module {
 
 			} else {
 				stat = el.querySelector('.ffz-stat-text');
+				if ( ! stat )
+					return destroy();
+
 				old_color = el.dataset.color || '';
 
 				if ( el._ffz_order !== order )

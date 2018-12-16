@@ -12,7 +12,7 @@
 				ref="control"
 				:id="item.full_key"
 				:value="value"
-				class="tw-border-radius-medium tw-font-size-6 tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-05 tw-input"
+				class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-mg-05 tw-input"
 				@change="onChange"
 			>
 
@@ -37,8 +37,9 @@
 		<section
 			v-if="item.description"
 			class="tw-c-text-alt-2"
-			v-html="t(item.desc_i18n_key || item.i18n_key + '.description', item.description, item)"
-		/>
+		>
+			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
+		</section>
 	</div>
 </template>
 

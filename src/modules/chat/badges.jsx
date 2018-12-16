@@ -20,6 +20,7 @@ export const CSS_BADGES = {
 	partner: { 1: { color: 'transparent', trans: { image: true, color: '#6441a5' } } },
 	'clip-champ': { 1: { color: '#6441a5'} },
 
+	vip: { 1: { color: '#b33ff0', trans: { color: 'transparent', invert: false}} },
 	turbo: { 1: { color: '#6441a5', svg: true } },
 	premium: { 1: { color: '#009cdc' } },
 
@@ -34,6 +35,7 @@ export const BADGE_POSITIONS = {
 	mod: 1,
 	moderator: 1,
 	twitchbot: 1,
+	vip: 2,
 	subscriber: 25
 };
 
@@ -265,6 +267,9 @@ export default class Badges extends Module {
 				data = JSON.parse(target.dataset.badgeData),
 				out = [];
 
+			if ( data == null )
+				return out;
+
 			for(const d of data) {
 				const p = d.provider;
 				if ( p === 'twitch' ) {
@@ -435,12 +440,15 @@ export default class Badges extends Module {
 				}
 
 				if (no_invert) {
+					slotted[slot].full_size = true;
+					slotted[slot].no_invert = true;
+
 					style.background = 'unset';
 					style.backgroundSize = 'unset';
 					style[CSS_MASK_IMAGE] = 'unset';
 				}
 
-				if ( has_image && urls ) {
+				if ( (has_image || color === 'transparent') && urls ) {
 					const image = `url("${urls[1]}")`;
 					let image_set;
 					if ( urls[2] || urls[4] )
@@ -464,7 +472,7 @@ export default class Badges extends Module {
 				const data = slotted[slot],
 					props = data.props;
 
-				props.className = 'ffz-tooltip ffz-badge';
+				props.className = `ffz-tooltip ffz-badge${data.full_size ? ' ffz-full-size' : ''}${data.no_invert ? ' ffz-no-invert' : ''}`;
 				props.key = `${props['data-provider']}-${props['data-badge']}`;
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);

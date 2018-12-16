@@ -10,9 +10,14 @@ const RAVEN_LEVELS = {
 
 export default class Logger {
 	constructor(parent, name, level, raven) {
+		this.root = parent ? parent.root : this;
 		this.parent = parent;
 		this.name = name;
 
+		if ( this.root == this )
+			this.captured_init = [];
+
+		this.init = false;
 		this.enabled = true;
 		this.level = level || (parent && parent.level) || Logger.DEFAULT_LEVEL;
 		this.raven = raven || (parent && parent.raven);
@@ -67,6 +72,14 @@ export default class Logger {
 			return;
 
 		const message = Array.prototype.slice.call(args);
+
+		if ( this.root.init )
+			this.root.captured_init.push({
+				time: Date.now(),
+				category: this.name,
+				message: message.join(' '),
+				level: RAVEN_LEVELS[level] || level
+			});
 
 		this.crumb({
 			message: message.join(' '),

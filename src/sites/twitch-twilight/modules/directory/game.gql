@@ -1,24 +1,5 @@
-query {
-	directory {
-		... on Community {
-			streams {
-				edges {
-					node {
-						createdAt
-						type
-					}
-				}
-			}
-		}
-		... on Game {
-			streams {
-				edges {
-					node {
-						createdAt
-						type
-					}
-				}
-			}
-		}
+fragment directoryPageGameStreamWithTagsEdge on StreamEdge {
+	node {
+		createdAt
 	}
 }

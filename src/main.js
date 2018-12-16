@@ -1,5 +1,6 @@
 'use strict';
 
+import dayjs from 'dayjs';
 import RavenLogger from './raven';
 
 import Logger from 'utilities/logging';
@@ -14,6 +15,7 @@ import {TranslationManager} from './i18n';
 import SocketClient from './socket';
 import Site from 'site';
 import Vue from 'utilities/vue';
+import { timeout } from './utilities/object';
 
 class FrankerFaceZ extends Module {
 	constructor() {
@@ -31,10 +33,11 @@ class FrankerFaceZ extends Module {
 		// Error Reporting and Logging
 		// ========================================================================
 
-		if ( ! DEBUG )
-			this.inject('raven', RavenLogger);
+		this.inject('raven', RavenLogger);
 
 		this.log = new Logger(null, null, null, this.raven);
+		this.log.init = true;
+
 		this.core_log = this.log.get('core');
 
 		this.log.info(`FrankerFaceZ v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''})`);
@@ -63,14 +66,60 @@ class FrankerFaceZ extends Module {
 		this.enable().then(() => this.enableInitialModules()).then(() => {
 			const duration = performance.now() - start_time;
 			this.core_log.info(`Initialization complete in ${duration.toFixed(5)}ms.`);
+			this.log.init = false;
 
 		}).catch(err => {
 			this.core_log.error('An error occurred during initialization.', err);
+			this.log.init = false;
 		});
 	}
 
 	static get() {
 		return FrankerFaceZ.instance;
+	}
+
+
+	// ========================================================================
+	// Generate Log
+	// ========================================================================
+
+	async generateLog() {
+		const promises = [];
+		for(const key in this.__modules) {
+			const module = this.__modules[key];
+			if ( module instanceof Module && module.generateLog && module != this )
+				promises.push((async () => {
+					try {
+						return [
+							key,
+							await timeout(Promise.resolve(module.generateLog()), 5000)
+						];
+					} catch(err) {
+						return [
+							key,
+							`Error: ${err}`
+						]
+					}
+				})());
+		}
+
+		const out = await Promise.all(promises);
+
+		if ( this.log.captured_init && this.log.captured_init.length > 0 ) {
+			const logs = [];
+			for(const msg of this.log.captured_init) {
+				const time = dayjs(msg.time).locale('en').format('H:mm:ss');
+				logs.push(`[${time}] ${msg.level} | ${msg.category || 'core'}: ${msg.message}`);
+			}
+
+			out.unshift(['initialization', logs.join('\n')]);
+		}
+
+		return out.map(x => {
+			return `${x[0]}
+-------------------------------------------------------------------------------
+${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`
+		}).join('\n\n');
 	}
 
 
@@ -102,7 +151,7 @@ class FrankerFaceZ extends Module {
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 0, revision: 0, extra: '-rc12.23',
+	major: 4, minor: 0, revision: 0, extra: '-rc13.17',
 	commit: __git_commit__,
 	build: __webpack_hash__,
 	toString: () =>

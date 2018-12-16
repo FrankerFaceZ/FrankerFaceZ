@@ -36,6 +36,10 @@ export default class Line extends Module {
 		this.chat.context.on('changed:chat.badges.custom-mod', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.all-links', this.updateLines, this);
+		this.chat.context.on('changed:chat.rich.minimum-level', this.updateLines, this);
+		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
+		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 
 		this.ChatLine.ready((cls, instances) => {
 			const t = this,
@@ -82,6 +86,12 @@ export default class Line extends Module {
 
 			this.ChatLine.forceUpdate();
 		});
+	}
+
+
+	maybeUpdateLines() {
+		if ( this.chat.context.get('chat.rich.all-links') )
+			this.updateLines();
 	}
 
 

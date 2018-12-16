@@ -7,7 +7,7 @@
 		height: var(--ffz-player-height) !important;
 	}
 
-	.persistent-player {
+	.persistent-player.persistent-player__border--mini {
 		pointer-events: none;
 		bottom: calc(100vh - var(--ffz-player-height)) !important;
 
@@ -38,7 +38,12 @@
 		left: 0 !important;
 		right: 0 !important;
 		height: calc(100vh - var(--ffz-player-height)) !important;
+		width: unset !important;
 		border-top: 1px solid #dad8de;
+
+		& > .tw-full-height {
+			width: 100% !important;
+		}
 
 		.right-column__toggle-visibility {
 			position: fixed !important;
@@ -60,10 +65,21 @@
 			}
 		}
 
-		.tw-theme--dark & {
+		.tw-root--theme-dark & {
 			border-top-color: #2a2a2a
 		}
 
+		.video-chat {
+			flex-basis: unset;
+		}
+
+		.video-watch-page__right-column,
+		.clips-watch-page__right-column,
+		.channel-videos__right-column,
+
+		.channel-clips__sidebar,
+		.channel-events__sidebar,
+		.channel-follow-listing__right-column,
 		.channel-root__right-column,
 		.channel-page__right-column {
 			width: 100%;

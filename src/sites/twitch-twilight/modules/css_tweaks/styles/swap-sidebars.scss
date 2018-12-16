@@ -18,11 +18,11 @@
 	border-right: none !important;
 	border-left: 1px solid #dad8de;
 
-	.tw-theme--dark & {
+	.tw-root--theme-dark & {
 		border-left-color: #2c2541;
 
 	}
-	.tw-theme--ffz.tw-theme--dark & {
+	.tw-root--theme-ffz.tw-root--theme-dark & {
 		border-left-color: var(--ffz-color-20);
 	}
 }
@@ -31,12 +31,12 @@
 	border-left: none !important;
 	border-right: 1px solid #dad8de;
 
-	.tw-theme--dark & {
+	.tw-root--theme-dark & {
 		border-right-color: #2c2541;
 	}
 
 
-	.tw-theme--ffz.tw-theme--dark & {
+	.tw-root--theme-ffz.tw-root--theme-dark & {
 		border-right-color: var(--ffz-color-20);
 	}
 }

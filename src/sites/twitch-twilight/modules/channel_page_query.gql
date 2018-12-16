@@ -1,0 +1,14 @@
+fragment channel on User {
+	stream {
+		createdAt
+	}
+}
+
+fragment hostingChannel on User {
+	hosting {
+		stream {
+			createdAt
+			type
+		}
+	}
+}

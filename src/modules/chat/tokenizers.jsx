@@ -10,7 +10,7 @@ import {has, split_chars} from 'utilities/object';
 import {TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
 
 
-const EMOTE_CLASS = 'chat-line__message--emote',
+const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
 	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
 
@@ -78,9 +78,13 @@ export const Links = {
 					content = `<img class="preview-image" src="${sanitize(data.image)}">${content}`
 
 				setTimeout(() => {
-					if ( tip.element )
-						for(const el of tip.element.querySelectorAll('video,img'))
-							el.addEventListener('load', tip.update)
+					if ( tip.element ) {
+						for(const el of tip.element.querySelectorAll('img'))
+							el.addEventListener('load', tip.update);
+
+						for(const el of tip.element.querySelectorAll('video'))
+							el.addEventListener('loadedmetadata', tip.update);
+					}
 				});
 
 			} else if ( content.length )
@@ -591,7 +595,7 @@ export const CheerEmotes = {
 // Addon Emotes
 // ============================================================================
 
-const render_emote = (token, createElement) => {
+const render_emote = (token, createElement, wrapped) => {
 	const mods = token.modifiers || [], ml = mods.length,
 		emote = createElement('img', {
 			class: `${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
@@ -610,17 +614,26 @@ const render_emote = (token, createElement) => {
 			}
 		});
 
-	if ( ! ml )
-		return emote;
+	if ( ! ml ) {
+		if ( wrapped )
+			return emote;
+
+		return createElement('span', {
+			attrs: {
+				'data-a-target': 'emote-name'
+			}
+		}, [emote]);
+	}
 
 	return createElement('span', {
 		class: `${EMOTE_CLASS} modified-emote`,
 		attrs: {
+			'data-a-target': 'emote-name',
 			'data-provider': token.provider,
 			'data-id': token.id,
 			'data-set': token.set
 		}
-	}, [emote, mods.map(x => createElement('span', {key: x.text}, render_emote(x, createElement)))])
+	}, [emote, mods.map(x => createElement('span', {key: x.text}, render_emote(x, createElement, true)))])
 }
 
 
@@ -635,7 +648,7 @@ export const AddonEmotes = {
 		}
 	},
 
-	render(token, createElement) {
+	render(token, createElement, wrapped) {
 		const mods = token.modifiers || [], ml = mods.length,
 			emote = (<img
 				class={`${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
@@ -653,11 +666,16 @@ export const AddonEmotes = {
 				onClick={this.emotes.handleClick}
 			/>);
 
-		if ( ! ml )
-			return emote;
+		if ( ! ml ) {
+			if ( wrapped )
+				return emote;
+
+			return (<span data-a-target="emote-name">{emote}</span>);
+		}
 
 		return (<span
 			class={`${EMOTE_CLASS} modified-emote`}
+			data-a-target="emote-name"
 			data-provider={token.provider}
 			data-id={token.id}
 			data-set={token.set}

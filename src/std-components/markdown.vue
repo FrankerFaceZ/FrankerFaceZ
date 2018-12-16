@@ -5,6 +5,7 @@
 <script>
 
 import MD from 'markdown-it';
+import MILA from 'markdown-it-link-attributes';
 
 export default {
 	props: {
@@ -13,10 +14,19 @@ export default {
 
 	computed: {
 		md() {
-			return new MD({
+			const md = new MD({
 				html: false,
 				linkify: true
 			});
+
+			md.use(MILA, {
+				attrs: {
+					target: '_blank',
+					rel: 'noopener'
+				}
+			});
+
+			return md;
 		},
 
 		output() {

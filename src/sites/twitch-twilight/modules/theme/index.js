@@ -9,7 +9,7 @@ import {createElement} from 'utilities/dom';
 
 import THEME_CSS_URL from 'site/styles/theme.scss';
 
-const BAD_ROUTES = ['product', 'prime'];
+const BAD_ROUTES = ['product', 'prime', 'turbo'];
 
 
 export default class ThemeEngine extends Module {
@@ -33,7 +33,11 @@ export default class ThemeEngine extends Module {
 			ui: {
 				path: 'Appearance @{"description": "Personalize the appearance of Twitch. Change the color scheme and fonts and tune the layout to optimize your experience."} > Theme >> General',
 				title: 'Gray (no Purple)',
-				description: '<em>Requires Dark Theme to be Enabled.</em><br>I see my website and I want it painted black...<br>This is a very early feature and will change as there is time.',
+				description: `*Requires Dark Theme to be Enabled.*
+
+I see my website and I want it painted black...
+
+This is a very early feature and will change as there is time.`,
 				component: 'setting-check-box'
 			},
 
@@ -48,9 +52,12 @@ export default class ThemeEngine extends Module {
 		});
 
 		this.settings.add('theme.is-dark', {
-			requires: ['theme.can-dark', 'context.ui.theme'],
+			requires: ['theme.can-dark', 'context.ui.theme', 'context.ui.theatreModeEnabled', 'context.route.name', 'context.location.search'],
 			process(ctx) {
-				return ctx.get('theme.can-dark') && ctx.get('context.ui.theme') === 1;
+				if ( ctx.get('context.route.name') === 'embed-chat' )
+					return (ctx.get('context.location.search')||'').includes('dark');
+
+				return ctx.get('context.ui.theatreModeEnabled') || (ctx.get('theme.can-dark') && ctx.get('context.ui.theme') === 1);
 			},
 			changed: () => this.updateCSS()
 		});
@@ -70,8 +77,8 @@ export default class ThemeEngine extends Module {
 		const dark = this.settings.get('theme.is-dark'),
 			gray = this.settings.get('theme.dark');
 
-		document.body.classList.toggle('tw-theme--dark', dark);
-		document.body.classList.toggle('tw-theme--ffz', gray);
+		document.body.classList.toggle('tw-root--theme-dark', dark);
+		document.body.classList.toggle('tw-root--theme-ffz', gray);
 
 		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
 	}

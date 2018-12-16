@@ -7,16 +7,19 @@
 import Module from 'utilities/module';
 import {get, deep_copy} from 'utilities/object';
 
-import CHANNEL_QUERY from './channel_bar_query.gql';
+import CHANNEL_QUERY from './channel_header_query.gql';
 
 
-export default class LegacyChannelBar extends Module {
+export default class ChannelBar extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.should_enable = true;
 
+		this.inject('settings');
+		this.inject('site.css_tweaks');
 		this.inject('site.fine');
+		this.inject('site.web_munch');
 		this.inject('site.apollo');
 		this.inject('metadata');
 		this.inject('socket');
@@ -31,28 +34,89 @@ export default class LegacyChannelBar extends Module {
 		}, false);
 
 
+		this.settings.add('channel.metadata.force-above', {
+			default: false,
+			ui: {
+				path: 'Channel > Metadata >> Appearance',
+				title: 'Force metadata and tags to the top of the channel information bar.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.css_tweaks.toggle('channel-metadata-top', val)
+		});
+
+
 		this.ChannelBar = this.fine.define(
-			'legacy-channel-bar',
+			'channel-bar',
 			n => n.getTitle && n.getGame && n.renderGame,
 			['user']
 		);
 
 
 		this.HostBar = this.fine.define(
-			'legacy-host-container',
+			'host-container',
 			n => n.handleReportHosterClick,
 			['user']
 		)
 	}
 
-	onEnable() {
+	async onEnable() {
+		/*const t = this,
+			React = await this.web_munch.findModule('react');
+
+		if ( ! React )
+			return;
+
+		//const createElement = React.createElement;*/
+
+		this.css_tweaks.toggle('channel-metadata-top', this.settings.get('channel.metadata.force-above'));
+
 		this.ChannelBar.on('unmount', this.unmountChannelBar, this);
 		this.ChannelBar.on('mount', this.updateChannelBar, this);
 		this.ChannelBar.on('update', this.updateChannelBar, this);
 
 		this.ChannelBar.ready((cls, instances) => {
-			for(const inst of instances)
+			/*const old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				if ( this.props.channelIsHosting )
+					return null;
+
+				const title = this.getTitle();
+
+				return (<div
+					data-test-selector="channel-info-bar-wrapper"
+					class="channel-info-bar tw-border-b tw-border-bottom-left-radius-large tw-border-bottom-right-radius-large tw-border-l tw-border-r tw-border-t tw-flex tw-flex-wrap tw-justify-content-between tw-lg-pd-b-0 tw-lg-pd-t-1 tw-lg-pd-x-1 tw-pd-1"
+				>
+					<div class="channel-info-bar__content-container tw-flex tw-full-width tw-justify-content-between tw-mg-b-1">
+						<div class="tw-full-width">
+							<div class="tw-flex">
+								<div class="tw-flex tw-mg-t-05">
+									{this.renderGameBoxArt()}
+								</div>
+								<div class="channel-info-bar__content-right tw-full-width">
+									<div class="tw-flex tw-justify-content-between">
+										<div class="tw-ellipsis tw-mg-b-05 tw-mg-r-2">
+											<span
+												class="tw-font-size-4"
+												data-a-target="stream-title"
+												data-test-selector="channel-info-bar-title-text"
+												title={title}
+											>
+												{title}
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>);
+			}*/
+
+			for(const inst of instances) {
+				//inst.forceUpdate();
 				this.updateChannelBar(inst);
+			}
 		});
 
 
@@ -99,7 +163,7 @@ export default class LegacyChannelBar extends Module {
 
 	updateMetadata(inst, keys) {
 		const container = this.fine.getChildNode(inst),
-			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex');
+			metabar = container && container.querySelector && container.querySelector('.channel-info-bar__action-container > .tw-flex,.channel-info-bar__content-right > .tw-align-items-start > .tw-flex:last-child');
 
 		if ( ! inst._ffz_mounted || ! metabar )
 			return;
