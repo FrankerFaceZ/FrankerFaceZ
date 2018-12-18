@@ -631,7 +631,8 @@ const render_emote = (token, createElement, wrapped) => {
 			'data-a-target': 'emote-name',
 			'data-provider': token.provider,
 			'data-id': token.id,
-			'data-set': token.set
+			'data-set': token.set,
+			'data-modifiers': ml ? mods.map(x => x.id).join(' ') : null
 		}
 	}, [emote, mods.map(x => createElement('span', {key: x.text}, render_emote(x, createElement, true)))])
 }
@@ -679,10 +680,11 @@ export const AddonEmotes = {
 			data-provider={token.provider}
 			data-id={token.id}
 			data-set={token.set}
+			data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
 			onClick={this.emotes.handleClick}
 		>
 			{emote}
-			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement)}</span>)}
+			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement, true)}</span>)}
 		</span>);
 	},
 
@@ -701,7 +703,7 @@ export const AddonEmotes = {
 					emote = emote_set && emote_set.emotes[emote_id];
 
 				if ( emote )
-					return (<span>
+					return (<span class="tw-mg-05">
 						{this.tokenizers.emote.render.call(this, emote.token, createElement)}
 						{` - ${emote.hidden ? '???' : emote.name}`}
 					</span>);

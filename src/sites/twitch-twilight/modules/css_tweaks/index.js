@@ -24,13 +24,13 @@ const CLASSES = {
 	'player-ext': '.player .extension-taskbar,.player .extension-container',
 	'player-ext-hover': '.player:not([data-controls="true"]) .extension-container',
 
-	'player-event-bar': '.channel-page .live-event-banner-ui__header',
-	'player-rerun-bar': '.channel-page div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
+	'player-event-bar': '.channel-root .live-event-banner-ui__header',
+	'player-rerun-bar': '.channel-root div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',
 
-	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live',
+	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 };
 
