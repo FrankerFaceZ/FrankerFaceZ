@@ -1,0 +1,25 @@
+query FFZ_GetEmoteInfo($id: ID!) {
+	emote(id: $id) {
+		id
+		setID
+		text
+		subscriptionProduct {
+			id
+			displayName
+			state
+			owner {
+				id
+				login
+				displayName
+			}
+			tier
+			url
+			self {
+				benefit {
+					id
+					endsAt
+				}
+			}
+		}
+	}
+}

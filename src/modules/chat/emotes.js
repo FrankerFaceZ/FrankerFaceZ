@@ -6,8 +6,10 @@
 
 import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
-import {has, timeout, SourcedSet} from 'utilities/object';
+import {get, has, timeout, SourcedSet} from 'utilities/object';
 import {CLIENT_ID, NEW_API, API_SERVER, IS_OSX} from 'utilities/constants';
+
+import GET_EMOTE from './emote_info.gql';
 
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
 
@@ -201,15 +203,45 @@ export default class Emotes extends Module {
 		if ( ! ds )
 			return;
 
-		const provider = ds.provider;
+		const provider = ds.provider,
+			click_emote = this.parent.context.get('chat.click-emotes'),
+			click_sub = this.parent.context.get('chat.sub-emotes');
 
-		if ( event.shiftKey && this.parent.context.get('chat.click-emotes') ) {
+		if ( event.shiftKey && (click_emote || click_sub) ) {
 			let url;
 
-			if ( provider === 'twitch' )
+			if ( provider === 'twitch' ) {
 				url = `https://twitchemotes.com/emotes/${ds.id}`;
 
-			else if ( provider === 'ffz' ) {
+				if ( click_sub ) {
+					const apollo = this.resolve('site.apollo');
+					if ( apollo ) {
+						apollo.client.query({
+							query: GET_EMOTE,
+							variables: {
+								id: ds.id
+							}
+						}).then(result => {
+							const prod = get('data.emote.subscriptionProduct', result);
+							if ( prod && prod.state === 'ACTIVE' && prod.owner && prod.owner.login )
+								url = `https://www.twitch.tv/subs/${prod.owner.login}`;
+							else if ( ! click_emote )
+								return false;
+
+							if ( url ) {
+								const win = window.open();
+								if ( win ) {
+									win.opener = null;
+									win.location = url;
+								}
+							}
+						});
+
+						return true;
+					}
+				}
+
+			} else if ( provider === 'ffz' ) {
 				const emote_set = this.emote_sets[ds.set],
 					emote = emote_set && emote_set.emotes[ds.id];
 
@@ -222,6 +254,9 @@ export default class Emotes extends Module {
 				else if ( ! emote_set.source )
 					url = `https://www.frankerfacez.com/emoticons/${emote.id}`;
 			}
+
+			if ( ! click_emote )
+				return false;
 
 			if ( url ) {
 				const win = window.open();

@@ -550,6 +550,15 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.click-emotes.sub-pages', {
+			default: true,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Open Twitch subscription pages by Shift-Clicking emotes when relevant.',
+				component: 'setting-check-box'
+			}
+		});
+
 		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
 			default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
 
