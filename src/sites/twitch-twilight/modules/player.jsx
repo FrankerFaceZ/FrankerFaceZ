@@ -355,9 +355,12 @@ export default class Player extends Module {
 
 
 	addEndedListener(inst) {
-		const p = inst.player;
+		let p = inst.player;
 		if ( ! p )
 			return;
+
+		if ( p.player )
+			p = p.player;
 
 		if ( inst._ffz_on_ended )
 			off(p, 'ended', inst._ffz_on_ended);
@@ -401,9 +404,12 @@ export default class Player extends Module {
 
 
 	addStateTags(inst) {
-		const p = inst.player;
+		let p = inst.player;
 		if ( ! p )
 			return;
+
+		if ( p.player )
+			p = p.player;
 
 		if ( inst._ffz_on_state ) {
 			off(p, 'ended', inst._ffz_on_state);
@@ -424,10 +430,13 @@ export default class Player extends Module {
 
 
 	updateStateTags(inst) { // eslint-disable-line class-methods-use-this
-		const p = inst.playerRef,
-			player = inst.player;
+		const p = inst.playerRef;
+		let player = inst.player;
 		if ( ! p || ! player )
 			return;
+
+		if ( player.player )
+			player = player.player;
 
 		p.dataset.ended = player.ended;
 		p.dataset.paused = player.paused;
@@ -435,9 +444,12 @@ export default class Player extends Module {
 
 
 	disableAutoplay(inst) {
-		const p = inst.player;
+		let p = inst.player;
 		if ( ! p )
 			return this.log.warn('disableAutoplay() called without Player');
+
+		if ( p.player )
+			p = p.player;
 
 		if ( p.readyState > 0 ) {
 			this.log.info('Player already playing. Pausing.');
@@ -446,14 +458,17 @@ export default class Player extends Module {
 
 		if ( ! inst._ffz_autoplay_handler ) {
 			const listener = inst._ffz_autoplay_handler = () => {
-				inst._ffz_autoplay_handler = null;
-				p.pause();
-
 				setTimeout(() => {
-					off(p, 'play', listener);
-					off(p, 'playing', listener);
-					off(p, 'contentShowing', listener);
-				}, 1000);
+					this.log.info('Pausing due to playback.');
+					inst._ffz_autoplay_handler = null;
+					p.pause();
+
+					setTimeout(() => {
+						off(p, 'play', listener);
+						off(p, 'playing', listener);
+						off(p, 'contentShowing', listener);
+					}, 250);
+				});
 			}
 
 			on(p, 'play', listener);
@@ -477,8 +492,10 @@ export default class Player extends Module {
 
 		} else if ( enabled && ! inst._ffz_scroll_handler ) {
 			on(pr, 'wheel', inst._ffz_scroll_handler = e => {
-				const delta = e.wheelDelta || -(e.deltaY || e.detail || 0),
-					player = inst.player;
+				const delta = e.wheelDelta || -(e.deltaY || e.detail || 0);
+				let player = inst.player;
+				if ( player.player )
+					player = player.player;
 
 				if ( player ) {
 					const amount = this.settings.get('player.volume-scroll-steps'),
@@ -496,13 +513,17 @@ export default class Player extends Module {
 	}
 
 
-	addResetButton(inst) {
+	addResetButton(inst, tries = 0) {
 		const t = this,
 			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
 			container = el && el.parentElement;
 
-		if ( ! container )
+		if ( ! container ) {
+			if ( tries < 5 )
+				return setTimeout(this.addResetButton.bind(this, inst, (tries||0) + 1), 250);
+
 			return this.log.warn('Unable to find container element for Reset Button');
+		}
 
 		let tip = container.querySelector('.ffz--player-reset .player-tip');
 

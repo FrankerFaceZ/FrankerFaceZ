@@ -1,4 +1,4 @@
-.channel-page-layout__scroll-area--theatre-mode .channel-info-bar {
+.channel-root__scroll-area--theatre-mode .channel-info-bar {
 	position: fixed;
 	bottom: 10rem;
 	left: 5rem;
@@ -13,6 +13,6 @@
 	}
 }
 
-.channel-page-layout__scroll-area--theatre-mode:hover .channel-info-bar {
+.channel-root__scroll-area--theatre-mode:hover .channel-info-bar {
 	opacity: 0.75;
 }
