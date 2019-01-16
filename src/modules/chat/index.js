@@ -550,7 +550,7 @@ export default class Chat extends Module {
 			}
 		});
 
-		this.settings.add('chat.click-emotes.sub-pages', {
+		this.settings.add('chat.sub-emotes', {
 			default: true,
 			ui: {
 				path: 'Chat > Behavior >> General',
