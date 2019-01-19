@@ -954,9 +954,13 @@ export default class ChatHook extends Module {
 			}
 
 			if ( original.message ) {
-				const user = original.message.user;
+				const user = original.message.user,
+					flags = original.message.flags;
 				if ( user )
 					message.emotes = user.emotes;
+
+				if ( flags && this.getFilterFlagOptions )
+					message.flags = this.getFilterFlagOptions(flags);
 
 				if ( typeof original.action === 'string' )
 					message.message = original.action;

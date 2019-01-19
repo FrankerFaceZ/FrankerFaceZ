@@ -143,6 +143,10 @@ export default class Twilight extends BaseSite {
 		core = this.web_munch.getModule('core-2');
 		if ( core )
 			return this._core = core.p;
+
+		core = this.web_munch.getModule('core-3');
+		if ( core )
+			return this._core = core.q;
 	}
 }
 
@@ -152,6 +156,7 @@ Twilight.KNOWN_MODULES = {
 	react: n => n.Component && n.createElement,
 	'core-1': n => n.o && n.o.experiments,
 	'core-2': n => n.p && n.p.experiments,
+	'core-3': n => n.q && n.q.experiments,
 	cookie: n => n && n.set && n.get && n.getJSON && n.withConverter,
 	'extension-service': n => n.extensionService,
 	'chat-types': n => n.b && has(n.b, 'Message') && has(n.b, 'RoomMods'),

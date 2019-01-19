@@ -43,6 +43,9 @@ export default class Chat extends Module {
 
 		this._link_info = {};
 
+		// Bind for JSX stuff
+		this.clickToReveal = this.clickToReveal.bind(this);
+
 		this.style = new ManagedStyle;
 
 		this.context = this.settings.context({});
@@ -166,6 +169,15 @@ export default class Chat extends Module {
 
 					return val;
 				}
+			}
+		});
+
+		this.settings.add('chat.filtering.click-to-reveal', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering >> Behavior',
+				title: 'Click to reveal deleted terms.',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -540,25 +552,6 @@ export default class Chat extends Module {
 			}
 		});
 
-		this.settings.add('chat.click-emotes', {
-			default: true,
-
-			ui: {
-				path: 'Chat > Behavior >> General',
-				title: 'Open emote information pages by Shift-Clicking them.',
-				component: 'setting-check-box'
-			}
-		});
-
-		this.settings.add('chat.sub-emotes', {
-			default: true,
-			ui: {
-				path: 'Chat > Behavior >> General',
-				title: 'Open Twitch subscription pages by Shift-Clicking emotes when relevant.',
-				component: 'setting-check-box'
-			}
-		});
-
 		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
 			default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
 
@@ -755,6 +748,21 @@ export default class Chat extends Module {
 				if ( room && ! visited.has(room) )
 					yield room;
 			}
+	}
+
+
+	clickToReveal(event) {
+		const target = event.target;
+		if ( target ) {
+			if ( target._ffz_visible )
+				target.textContent = '×××';
+			else if ( ! this.context.get('chat.filtering.click-to-reveal') )
+				return;
+			else if ( target.dataset )
+				target.textContent = target.dataset.text;
+
+			target._ffz_visible = ! target._ffz_visible;
+		}
 	}
 
 

@@ -93,6 +93,33 @@ export default class Emotes extends Module {
 			}
 		});
 
+		this.settings.add('chat.click-emotes', {
+			default: true,
+
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Open emote information pages by Shift-Clicking them.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.sub-emotes', {
+			default: true,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Open Twitch subscription pages by Shift-Clicking emotes when relevant.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.emote-dialogs', {
+			default: true,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Open emote information cards for Twitch emotes by clicking them.',
+				component: 'setting-check-box'
+			}
+		});
 
 		// Because this may be used elsewhere.
 		this.handleClick = this.handleClick.bind(this);
@@ -300,6 +327,29 @@ export default class Emotes extends Module {
 				tt.hide();
 				setTimeout(() => document.contains(target) && tt.show(), 0);
 			}
+
+			return true;
+		}
+
+		if ( provider === 'twitch' && this.parent.context.get('chat.emote-dialogs') ) {
+			const fine = this.resolve('site.fine');
+			if ( ! fine )
+				return;
+
+			const chat = fine.searchParent(target, n => n.props && n.props.onEmoteClick);
+			if ( ! chat || ! chat.props || ! chat.props.message )
+				return;
+
+			const props = chat.props;
+			props.onEmoteClick({
+				channelID: props.channelID || '',
+				channelLogin: props.channelLogin || '',
+				emoteID: ds.id,
+				emoteCode: target.alt,
+				sourceID: 'chat',
+				referrerID: '',
+				initialTopOffset: target.getBoundingClientRect().bottom
+			});
 
 			return true;
 		}
