@@ -713,13 +713,14 @@ export default class ChatHook extends Module {
 				raw_delay = t.chat.context.get('chat.delay'),
 				delay = raw_delay === -1 ? this.delayDuration : raw_delay,
 				first = now - delay,
+				see_deleted = this.shouldSeeBlockedAndDeletedMessages || this.props && this.props.shouldSeeBlockedAndDeletedMessages,
 				do_remove = t.chat.context.get('chat.filtering.remove-deleted');
 
 			let changed = false;
 
 			for(const msg of this.delayedMessageBuffer) {
 				if ( msg.time <= first || ! msg.shouldDelay ) {
-					if ( do_remove !== 0 && (do_remove > 1 || ! this.shouldSeeBlockedAndDeletedMessages) && this.isDeletable(msg.event) && msg.event.deleted )
+					if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
 						continue;
 
 					this.buffer.push(msg.event);
@@ -886,8 +887,13 @@ export default class ChatHook extends Module {
 					try {
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
+						out.sub_cumulative = e.cumulativeMonths || 0;
+						out.sub_streak = e.streakMonths || 0;
+						out.sub_share_streak = e.shouldShareStreakTenure;
 						out.sub_months = e.months;
 						out.sub_plan = e.methods;
+
+						//t.log.info('Resub Event', e, out);
 
 						return i.postMessageToCurrentChannel(e, out);
 

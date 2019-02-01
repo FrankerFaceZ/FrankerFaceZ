@@ -5,12 +5,14 @@
 .side-nav__toggle-visibility {
 	right: unset !important;
 	left: -2.5rem;
+	z-index: 10 !important;
 	svg { transform: rotate(180deg) }
 }
 
 .right-column__toggle-visibility {
 	left: unset !important;
 	right: -2.5rem;
+	z-index: 10 !important;
 	svg { transform: rotate(180deg) }
 }
 
