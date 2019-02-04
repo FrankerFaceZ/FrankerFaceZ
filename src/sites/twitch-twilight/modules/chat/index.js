@@ -581,6 +581,15 @@ export default class ChatHook extends Module {
 						const types = t.chat_types || {},
 							mod_types = t.mod_types || {};
 
+						if ( msg.type >= types.Subscription && msg.type <= types.AnonSubGift ) {
+							const u = t.site.getUser(),
+								notif_style = t.chat.context.get('chat.filtering.sub-notification-style'),
+								self_notif = u && ( u.id === msg.user.userID || u.id === msg.recipientID);
+
+							if( notif_style !== 0 && self_notif === false )
+								return;
+						}
+
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
 								cont = inst._ffz_connector,

@@ -401,6 +401,20 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.sub-notification-style', {
+			default: 0,
+			ui: {
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Sub Notifications',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Show notification and user\'s message'},
+					{value: 1, title: 'Show notification only'},
+					{value: 2, title: 'Don\'t show notification or message'}
+				]
+			}
+		});
+
 		this.settings.add('tooltip.images', {
 			default: true,
 			ui: {

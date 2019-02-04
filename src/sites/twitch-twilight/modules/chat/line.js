@@ -357,6 +357,12 @@ export default class ChatLine extends Module {
 					] : null;
 
 				if ( msg.ffz_type === 'resub' ) {
+					const notif_style = t.chat.context.get('chat.filtering.sub-notification-style');
+					const self_notif = u && u.id === user.userID;
+
+					if ( notif_style === 2 && self_notif === false )
+						return null;
+
 					const plan = msg.sub_plan || {},
 						months = msg.sub_cumulative || msg.sub_months,
 						tier = SUB_TIERS[plan.plan] || 1;
@@ -393,17 +399,22 @@ export default class ChatLine extends Module {
 						));
 					}
 
+					if ( notif_style === 1 && self_notif === false )
+						out = null;
+					else
+						out =
+							out && e('div', {
+								className: 'chat-line--inline chat-line__message',
+								'data-room-id': this.props.channelID,
+								'data-room': room,
+								'data-user-id': user.userID,
+								'data-user': user.userLogin && user.userLogin.toLowerCase(),
+							}, out);
 
 					cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line';
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, sub_msg),
-						out && e('div', {
-							className: 'chat-line--inline chat-line__message',
-							'data-room-id': this.props.channelID,
-							'data-room': room,
-							'data-user-id': user.userID,
-							'data-user': user.userLogin && user.userLogin.toLowerCase(),
-						}, out)
+						out
 					];
 
 				} else if ( msg.ffz_type === 'ritual' && t.chat.context.get('chat.rituals.show') ) {
