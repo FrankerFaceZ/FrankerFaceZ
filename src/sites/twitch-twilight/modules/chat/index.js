@@ -106,7 +106,8 @@ const CHAT_TYPES = make_enum(
 	'RewardGift',
 	'SubMysteryGift',
 	'AnonSubMysteryGift',
-	'FirstCheerMessage'
+	'FirstCheerMessage',
+	'BitsBadgeTierMessage'
 );
 
 
@@ -119,11 +120,7 @@ const NULL_TYPES = [
 
 
 const MISBEHAVING_EVENTS = [
-	'onBitsCharityEvent',
-	//'onRitualEvent', -- handled by conversion to Message event
 	'onBadgesUpdatedEvent',
-	'onPurchaseEvent',
-	'onCrateEvent'
 ];
 
 
@@ -231,6 +228,49 @@ export default class ChatHook extends Module {
 				path: 'Chat > Filtering >> Rituals',
 				title: 'Display ritual messages such as "User is new here! Say Hello!".',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.subs.show', {
+			default: 3,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Display Subs in Chat',
+				component: 'setting-select-box',
+				description: '**Note**: Messages sent with re-subs will always be displayed. This only controls the special "X subscribed!" message.',
+				data: [
+					{value: 0, title: 'Do Not Display'},
+					{value: 1, title: 'Re-Subs with Messages Only'},
+					{value: 2, title: 'Re-Subs Only'},
+					{value: 3, title: 'Display All'}
+				]
+			}
+		});
+
+		this.settings.add('chat.subs.compact', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Display subscription notices in a more compact (classic style) form.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.subs.merge-gifts', {
+			default: 1000,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Merge Mass Sub Gifts',
+				component: 'setting-select-box',
+				data: [
+					{value: 1000, title: 'Disabled'},
+					{value: 50, title: 'More than 50'},
+					{value: 20, title: 'More than 20'},
+					{value: 10, title: 'More than 10'},
+					{value: 5, title: 'More than 5'},
+					{value: 0, title: 'Always'}
+				],
+				description: 'Merge mass gift subscriptions into a single message, depending on the quantity.\n**Note:** Only affects newly gifted subs.'
 			}
 		});
 
@@ -882,9 +922,30 @@ export default class ChatHook extends Module {
 				}
 
 
+				const old_sub = this.onSubscriptionEvent;
+				this.onSubscriptionEvent = function(e) {
+					try {
+						if ( t.chat.context.get('chat.subs.show') < 3 )
+							return;
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'resub';
+						out.sub_plan = e.methods;
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_sub.call(i, e);
+					}
+				}
+
 				const old_resub = this.onResubscriptionEvent;
 				this.onResubscriptionEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.subs.show') < 2 && ! e.body )
+							return;
+
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
 						out.sub_cumulative = e.cumulativeMonths || 0;
@@ -900,6 +961,162 @@ export default class ChatHook extends Module {
 					} catch(err) {
 						t.log.capture(err, {extra: e});
 						return old_resub.call(i, e);
+					}
+				}
+
+				const mysteries = this.ffz_mysteries = {};
+
+				const old_subgift = this.onSubscriptionGiftEvent;
+				this.onSubscriptionGiftEvent = function(e) {
+					try {
+						const key = `${e.channel}:${e.user.userID}`,
+							mystery = mysteries[key];
+
+						if ( mystery ) {
+							if ( mystery.expires < Date.now() ) {
+								mysteries[key] = null;
+							} else {
+								mystery.recipients.push({
+									id: e.recipientID,
+									login: e.recipientLogin,
+									displayName: e.recipientName
+								});
+
+								if( mystery.recipients.length >= mystery.size )
+									mysteries[key] = null;
+
+								if ( mystery.line )
+									mystery.line.forceUpdate();
+
+								return;
+							}
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_gift';
+						out.sub_recipient = {
+							id: e.recipientID,
+							login: e.recipientLogin,
+							displayName: e.recipientName
+						};
+						out.sub_plan = e.methods;
+						out.sub_count = e.senderCount;
+
+						//t.log.info('Sub Gift', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_subgift.call(i, e);
+					}
+				}
+
+				const old_anonsubgift = this.onAnonSubscriptionGiftEvent;
+				this.onAnonSubscriptionGiftEvent = function(e) {
+					try {
+						const key = `${e.channel}:ANON`,
+							mystery = mysteries[key];
+
+						if ( mystery ) {
+							if ( mystery.expires < Date.now() )
+								mysteries[key] = null;
+							else {
+								mystery.recipients.push({
+									id: e.recipientID,
+									login: e.recipientLogin,
+									displayName: e.recipientName
+								});
+
+								if( mystery.recipients.length >= mystery.size )
+									mysteries[key] = null;
+
+								if ( mystery.line )
+									mystery.line.forceUpdate();
+
+								return;
+							}
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_gift';
+						out.sub_anon = true;
+						out.sub_recipient = {
+							id: e.recipientID,
+							login: e.recipientLogin,
+							displayName: e.recipientName
+						};
+						out.sub_plan = e.methods;
+						out.sub_count = e.senderCount;
+
+						//t.log.info('Anon Sub Gift', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_anonsubgift.call(i, e);
+					}
+				}
+
+				const old_submystery = this.onSubscriptionMysteryGiftEvent;
+				this.onSubscriptionMysteryGiftEvent = function(e) {
+					try {
+						let mystery = null;
+						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
+							const key = `${e.channel}:${e.user.userID}`;
+							mystery = mysteries[key] = {
+								recipients: [],
+								size: e.massGiftCount,
+								expires: Date.now() + 30000
+							};
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_mystery';
+						out.mystery = mystery;
+						out.sub_plan = e.plan;
+						out.sub_count = e.massGiftCount;
+						out.sub_total = e.senderCount;
+
+						//t.log.info('Sub Mystery', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_submystery.call(i, e);
+					}
+				}
+
+				const old_anonsubmystery = this.onAnonSubscriptionMysteryGiftEvent;
+				this.onAnonSubscriptionMysteryGiftEvent = function(e) {
+					try {
+						let mystery = null;
+						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
+							const key = `${e.channel}:ANON`;
+							mystery = mysteries[key] = {
+								recipients: [],
+								size: e.massGiftCount,
+								expires: Date.now() + 30000
+							};
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_mystery';
+						out.sub_anon = true;
+						out.mystery = mystery;
+						out.sub_plan = e.plan;
+						out.sub_count = e.massGiftCount;
+						out.sub_total = e.senderCount;
+
+						//t.log.info('Anon Sub Mystery', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_anonsubmystery.call(i, e);
 					}
 				}
 

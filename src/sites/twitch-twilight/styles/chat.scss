@@ -12,6 +12,11 @@
 	pointer-events: none;
 }
 
+.ffz--sub-expando {
+    font-size: 150%;
+    margin-right: -.5rem;
+}
+
 .chat-list__lines .simplebar-scrollbar {
 	will-change: opacity;
 }
