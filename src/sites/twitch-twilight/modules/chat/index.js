@@ -1001,7 +1001,7 @@ export default class ChatHook extends Module {
 							displayName: e.recipientName
 						};
 						out.sub_plan = e.methods;
-						out.sub_count = e.senderCount;
+						out.sub_total = e.senderCount;
 
 						//t.log.info('Sub Gift', e, out);
 						return i.postMessageToCurrentChannel(e, out);
@@ -1048,7 +1048,7 @@ export default class ChatHook extends Module {
 							displayName: e.recipientName
 						};
 						out.sub_plan = e.methods;
-						out.sub_count = e.senderCount;
+						out.sub_total = e.senderCount;
 
 						//t.log.info('Anon Sub Gift', e, out);
 						return i.postMessageToCurrentChannel(e, out);

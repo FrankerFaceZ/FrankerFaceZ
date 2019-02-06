@@ -472,7 +472,7 @@ export default class ChatLine extends Module {
 					const plan = msg.sub_plan || {},
 						tier = SUB_TIERS[plan.plan] || 1;
 
-					const sub_msg = t.i18n.tList('chat.sub.mystery', '%{user} gifted a %{plan} Sub to %{recipient}!', {
+					const sub_msg = t.i18n.tList('chat.sub.mystery', '%{user} gifted a %{plan} Sub to %{recipient}! ', {
 						user: (msg.sub_anon || user.username === 'ananonymousgifter') ?
 							t.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
 							e('span', {
