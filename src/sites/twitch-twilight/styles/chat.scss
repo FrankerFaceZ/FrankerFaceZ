@@ -12,11 +12,6 @@
 	pointer-events: none;
 }
 
-.ffz--sub-expando {
-    font-size: 150%;
-    margin-right: -.5rem;
-}
-
 .chat-list__lines .simplebar-scrollbar {
 	will-change: opacity;
 }
@@ -128,7 +123,17 @@
 }
 
 
-.chat-line__username:hover {
+.ffz--giftee-name {
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.chat-line__username:hover,
+.chatter-name:hover {
     text-decoration: underline;
 }
 

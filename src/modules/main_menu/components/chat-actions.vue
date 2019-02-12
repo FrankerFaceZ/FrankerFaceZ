@@ -12,7 +12,7 @@
 			<div class="tw-flex tw-align-items-center ffz--inline">
 				{{ t('setting.actions.preview', 'Preview:') }}
 
-				<div class="tw-pd-x-1">
+				<div class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="as_mod"
 						ref="as_mod"
@@ -27,7 +27,7 @@
 					</label>
 				</div>
 
-				<div v-if="item.inline" class="tw-pd-x-1">
+				<div v-if="item.inline" class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="is_deleted"
 						ref="is_deleted"
@@ -42,7 +42,7 @@
 					</label>
 				</div>
 
-				<div v-if="item.inline" class="tw-pd-x-1">
+				<div v-if="item.inline" class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="with_mod_icons"
 						ref="with_mod_icons"
@@ -57,7 +57,7 @@
 					</label>
 				</div>
 
-				<div class="tw-pd-x-1">
+				<div class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="show_all"
 						ref="show_all"

@@ -115,31 +115,38 @@ export default class TabCompletion extends Module {
 		inst.getMatchedEmotes = function(input) {
 			let results = old_get_matched.call(this, input);
 
-			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') )
-				results = results.concat(t.getEmoteSuggestions(input, this));
+			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
+				const ffz_emotes = t.getEmoteSuggestions(input, this);
+				if ( Array.isArray(ffz_emotes) && ffz_emotes.length )
+					results = Array.isArray(results) ? results.concat(ffz_emotes) : ffz_emotes;
+			}
 
 			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
 				return results;
 
-			return results.concat(t.getEmojiSuggestions(input, this));
+			const emoji = t.getEmojiSuggestions(input, this);
+			if ( Array.isArray(emoji) && emoji.length )
+				results = Array.isArray(results) ? results.concat(emoji) : emoji;
+
+			return results;
 		}
 
 		const React = this.web_munch.getModule('react'),
 			createElement = React && React.createElement;
 
 		inst.renderFFZEmojiSuggestion = function(data) {
-			return [
+			return (<React.Fragment>
 				<div class="tw-pd-r-05">
 					<img
 						class="emote-autocomplete-provider__image ffz-emoji"
 						src={data.src}
 						srcSet={data.srcset}
 					/>
-				</div>,
+				</div>
 				<div>
 					{data.token}
 				</div>
-			]
+			</React.Fragment>);
 		}
 	}
 

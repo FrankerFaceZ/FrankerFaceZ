@@ -40,6 +40,14 @@
 	min-width: unset;
 }
 
+.ffz--reset-button {
+	height: 2.6rem;
+
+	.tw-button__text {
+		padding: 0.1rem 0.4rem !important;
+	}
+}
+
 
 .ffz-color-preview {
 	margin: 1px;
@@ -161,6 +169,48 @@
 
 	.tweet-column {
 		width: 300px;
+	}
+}
+
+.ffz--discord-button {
+	border: 0 !important;
+	background-color: #7289DA !important;
+	color: #fff !important;
+
+	> * {
+		pointer-events: none;
+	}
+
+	&:hover, &:focus {
+		background-color: #546bbf !important;
+	}
+}
+
+.ffz--ffz-button {
+	border: 0 !important;
+	background-color: #463954 !important;
+	color: #fff !important;
+
+	> * {
+		pointer-events: none;
+	}
+
+	&:hover, &:focus {
+		background-color: #594370 !important;
+	}
+}
+
+.ffz--twitter-button {
+	border: 0 !important;
+	background-color: #1da1f2 !important;
+	color: #fff !important;
+
+	> * {
+		pointer-events: none;
+	}
+
+	&:hover, &:focus {
+		background-color: #2b96d9 !important;
 	}
 }
 

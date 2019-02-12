@@ -425,7 +425,7 @@ export default class ChatLine extends Module {
 
 							the_list.push(e('span', {
 								role: 'button',
-								className: 'chatter-name',
+								className: 'ffz--giftee-name',
 								onClick: this.ffz_user_click_handler,
 								'data-user': JSON.stringify(x)
 							}, e('span', {
@@ -453,7 +453,7 @@ export default class ChatLine extends Module {
 								sub_msg
 							]),
 							mystery ? e('div', {
-								className: 'tw-mg-l-05 tw-border-l tw-pd-l-05 ffz--sub-expando'
+								className: 'tw-pd-l-05 tw-font-size-4'
 							}, e('figure', {
 								className: `ffz-i-${this.state.ffz_expanded ? 'down' : 'right'}-dir tw-pd-y-1`
 							})) : null

@@ -17,7 +17,7 @@
 
 	.tw-checkbox__input:checked+.tw-checkbox__label:after,
 	label:before, label:after {
-		top: 1.05rem;
+		top: 1.05rem !important;
 	}
 
 	.ffz-badge.preview-image {
