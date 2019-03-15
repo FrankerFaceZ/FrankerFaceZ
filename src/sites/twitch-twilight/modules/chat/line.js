@@ -416,8 +416,11 @@ export default class ChatLine extends Module {
 							});
 						}
 
+					const expanded = t.chat.context.get('chat.subs.merge-gifts-visibility') ?
+						! this.state.ffz_expanded : this.state.ffz_expanded;
+
 					let sub_list = null;
-					if( this.state.ffz_expanded && mystery && mystery.recipients && mystery.recipients.length > 0 ) {
+					if( expanded && mystery && mystery.recipients && mystery.recipients.length > 0 ) {
 						const the_list = [];
 						for(const x of mystery.recipients) {
 							if ( the_list.length )
@@ -455,7 +458,7 @@ export default class ChatLine extends Module {
 							mystery ? e('div', {
 								className: 'tw-pd-l-05 tw-font-size-4'
 							}, e('figure', {
-								className: `ffz-i-${this.state.ffz_expanded ? 'down' : 'right'}-dir tw-pd-y-1`
+								className: `ffz-i-${expanded ? 'down' : 'right'}-dir tw-pd-y-1`
 							})) : null
 						]),
 						sub_list,

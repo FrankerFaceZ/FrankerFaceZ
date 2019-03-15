@@ -132,6 +132,33 @@ export function setChildren(el, children, no_sanitize, no_empty) {
 }
 
 
+export function openFile(contentType, multiple) {
+	return new Promise(resolve => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = contentType;
+		input.multiple = multiple;
+
+		input.onchange = () => {
+			const files = Array.from(input.files);
+			resolve(multiple ? files : files[0])
+		}
+
+		input.click();
+	})
+}
+
+
+export function readFile(file, encoding = 'utf-8') {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.readAsText(file, encoding);
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = e => reject(e);
+	});
+}
+
+
 const el = createElement('span');
 
 export function sanitize(text) {

@@ -96,6 +96,28 @@ export default class SettingsManager extends Module {
 
 
 	// ========================================================================
+	// Backup and Restore
+	// ========================================================================
+
+	async getFullBackup() {
+		// Before we do anything else, make sure the provider is ready.
+		await this.provider.awaitReady();
+
+		const out = {
+			version: 2,
+			type: 'full',
+			values: {}
+		};
+
+		for(const [k, v] of this.provider.entries())
+			out.values[k] = v;
+
+		return out;
+	}
+
+
+
+	// ========================================================================
 	// Provider Interaction
 	// ========================================================================
 

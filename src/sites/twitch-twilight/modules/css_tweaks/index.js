@@ -12,6 +12,7 @@ import {has} from 'utilities/object';
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 
 const CLASSES = {
+	'top-discover': '.top-nav__nav-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
 	'side-rec-channels': '.side-nav .recommended-channels',
 	'side-rec-friends': '.side-nav .recommended-friends',
@@ -30,7 +31,7 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2',
 	'whispers': '.whispers',
 
-	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live',
+	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 };
 
@@ -242,7 +243,17 @@ export default class CSSTweaks extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggle('theatre-nav', val)
-		})
+		});
+
+		this.settings.add('layout.discover', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Show Discover link.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('top-discover', !val)
+		});
 
 		this.settings.add('layout.prime-offers', {
 			default: true,
@@ -290,6 +301,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
+		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);

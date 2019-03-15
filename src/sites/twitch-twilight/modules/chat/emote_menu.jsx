@@ -938,7 +938,7 @@ export default class EmoteMenu extends Module {
 
 			clickTab(event) {
 				this.setState({
-					tab: event.target.dataset.tab
+					tab: event.currentTarget.dataset.tab
 				});
 			}
 
@@ -1706,49 +1706,75 @@ export default class EmoteMenu extends Module {
 									/>}
 								</div>
 							</div>)}
-							<div class="emote-picker__tabs-container tw-flex tw-border-t tw-c-background-base">
-								<div
-									class={`ffz-tooltip emote-picker__tab tw-pd-x-1${tab === 'fav' ? ' emote-picker__tab--active' : ''}`}
-									id="emote-picker__fav"
-									data-tab="fav"
-									data-tooltip-type="html"
-									data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
-									onClick={this.clickTab}
-								>
-									<figure class="ffz-i-star" />
+							<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
+								<div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+									<button
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										id="emote-picker__fav"
+										data-tab="fav"
+										data-tooltip-type="html"
+										data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
+										onClick={this.clickTab}
+									>
+										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+											<figure class="ffz-i-star" />
+										</div>
+									</button>
 								</div>
-								{this.state.has_channel_tab && <div
-									class={`emote-picker__tab tw-pd-x-1${tab === 'channel' ? ' emote-picker__tab--active' : ''}`}
-									id="emote-picker__channel"
-									data-tab="channel"
-									onClick={this.clickTab}
-								>
-									{t.i18n.t('emote-menu.channel', 'Channel')}
+								{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+									<button
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										id="emote-picker__channel"
+										data-tab="channel"
+										data-tooltip-type="html"
+										data-title={t.i18n.t('emote-menu.channel', 'Channel')}
+										onClick={this.clickTab}
+									>
+										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+											<figure class="ffz-i-camera" />
+										</div>
+									</button>
 								</div>}
-								<div
-									class={`emote-picker__tab tw-pd-x-1${tab === 'all' ? ' emote-picker__tab--active' : ''}`}
-									id="emote-picker__all"
-									data-tab="all"
-									onClick={this.clickTab}
-								>
-									{t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
+								<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+									<button
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										id="emote-picker__all"
+										data-tab="all"
+										data-tooltip-type="html"
+										data-title={t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
+										onClick={this.clickTab}
+									>
+										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+											<figure class="ffz-i-channels" />
+										</div>
+									</button>
 								</div>
-								{this.state.has_emoji_tab && <div
-									class={`emote-picker__tab tw-pd-x-1${tab === 'emoji' ? ' emote-picker__tab--active' : ''}`}
-									id="emote-picker__emoji"
-									data-tab="emoji"
-									onClick={this.clickTab}
-								>
-									{t.i18n.t('emote-menu.emoji', 'Emoji')}
+								{this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+									<button
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										id="emote-picker__emoji"
+										data-tab="emoji"
+										data-tooltip-type="html"
+										data-title={t.i18n.t('emote-menu.emoji', 'Emoji')}
+										onClick={this.clickTab}
+									>
+										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+											<figure class="ffz-i-smile" />
+										</div>
+									</button>
 								</div>}
 								<div class="tw-flex-grow-1" />
-								{!loading && (<div
-									class="ffz-tooltip emote-picker__tab tw-pd-x-1 tw-mg-r-0"
-									data-tooltip-type="html"
-									data-title="Refresh Data"
-									onClick={this.clickRefresh}
-								>
-									<figure class="ffz-i-arrows-cw" />
+								{!loading && (<div class="emote-picker-tab-item tw-relative">
+									<button
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										data-tooltip-type="html"
+										data-title={t.i18n.t('emote-menu.refresh', 'Refresh Data')}
+										onClick={this.clickRefresh}
+									>
+										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+											<figure class="ffz-i-arrows-cw" />
+										</div>
+									</button>
 								</div>)}
 							</div>
 						</div>

@@ -191,10 +191,14 @@ export class LocalStorageProvider extends SettingsProvider {
 	}
 
 	clear() {
-		for(const key of this._cached.keys())
-			localStorage.removeItem(this.prefix + key);
+		const old_cache = this._cached;
+		this._cached = new Map;
 
-		this._cached.clear();
+		for(const key of old_cache.keys()) {
+			localStorage.removeItem(this.prefix + key);
+			this.emit('changed', key, undefined, true);
+		}
+
 		this.broadcast({type: 'clear'});
 	}
 

@@ -212,6 +212,7 @@ Twilight.ROUTES = {
 	'prime': '/prime',
 	'turbo': '/turbo',
 	'user': '/:userName',
+	'squad': '/:userName/squad',
 	'embed-chat': '/embed/:userName/chat'
 }
 

@@ -89,6 +89,7 @@ const CHAT_TYPES = make_enum(
 	'Resubscription',
 	'GiftPaidUpgrade',
 	'AnonGiftPaidUpgrade',
+	'PrimePaidUpgrade',
 	'SubGift',
 	'AnonSubGift',
 	'Clear',
@@ -271,6 +272,15 @@ export default class ChatHook extends Module {
 					{value: 0, title: 'Always'}
 				],
 				description: 'Merge mass gift subscriptions into a single message, depending on the quantity.\n**Note:** Only affects newly gifted subs.'
+			}
+		});
+
+		this.settings.add('chat.subs.merge-gifts-visibility', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Expand merged mass sub gift messages by default.',
+				component: 'setting-check-box'
 			}
 		});
 
