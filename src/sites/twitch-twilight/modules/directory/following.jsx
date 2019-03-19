@@ -84,6 +84,20 @@ export default class Following extends SiteModule {
 			this.modifyLiveHosts(res);
 		}, false);
 
+		this.apollo.registerModifier('Shelves', res => {
+			const shelves = get('data.shelves.edges', res);
+			if ( ! Array.isArray(shelves) )
+				return;
+
+			for(const shelf of shelves) {
+				const edges = get('node.content.edges', shelf);
+				if ( ! Array.isArray(edges) )
+					continue;
+
+				shelf.node.content.edges = this.parent.processNodes(edges);
+			}
+		}, false);
+
 		this.hosts = new WeakMap;
 	}
 
