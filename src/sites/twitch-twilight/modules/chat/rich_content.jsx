@@ -75,24 +75,20 @@ export default class RichContent extends Module {
 			}
 
 			renderCardImage() {
-				return (<div class="chat-card__preview-img tw-c-background-alt-2 tw-align-items-center tw-flex tw-flex-shrink-0 tw-justify-content-center">
-					<div class="tw-card-img tw-flex-shrink-0 tw-flex tw-justify-content-center">
-						{this.state.error ?
-							(<img
-								class="chat-card__error-img"
-								data-test-selector="chat-card-error"
-								src={ERROR_IMAGE}
-							/>) :
-							(<figure class="tw-aspect tw-aspect--16x9 tw-aspect--align-top">
+				return (<div class="chat-card__preview-img tw-align-items-center tw-c-background-alt-2 tw-flex tw-flex-shrink-0 tw-justify-content-center">
+					{this.state.error ?
+						(<img
+							class="chat-card__error-img"
+							src={ERROR_IMAGE}
+						/>)	:
+						(<div class="tw-card-img tw-flex-shrink-0 tw-overflow-hidden">
+							<div class="tw-aspect tw-aspect--align-top">
+								<div class="tw-aspect__spacer" style={{paddingTop: '56.25%'}} />
 								{this.state.loaded && this.state.image ?
-									(<img
-										class="tw-image"
-										src={this.state.image}
-										alt={this.state.title}
-									/>)
+									(<img class="tw-image" src={this.state.image} alt={this.state.title} />)
 									: null}
-							</figure>)}
-					</div>
+							</div>
+						</div>)}
 				</div>)
 			}
 
