@@ -16,6 +16,7 @@ const CLASSES = {
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
+	'side-offline-channels': '.side-nav-card__link[href*="/videos/"]',
 
 	'prime-offers': '.top-nav__prime',
 
@@ -130,6 +131,16 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggle('swap-sidebars', val)
 		});
 
+		this.settings.add('layout.hide-offline-channels', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Side Navigation',
+				title: 'Hide Offline Channels',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('side-offline-channels', val)
+		});
+
 		this.settings.add('layout.minimal-navigation', {
 			requires: ['layout.theatre-navigation'],
 			default: false,
@@ -215,6 +226,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('hide-side-nav-avatars', ! this.settings.get('layout.side-nav.show-avatars'));
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
+		this.toggleHide('side-offline-channels', !this.settings.get('layout.hide-offline-channels'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 
