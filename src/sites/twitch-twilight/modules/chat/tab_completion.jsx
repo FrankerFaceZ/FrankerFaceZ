@@ -82,7 +82,7 @@ export default class TabCompletion extends Module {
 
 	updateEmoteCompletion(inst, child) {
 		if ( ! child )
-			child = this.fine.searchTree(inst, 'tab-emote-suggestions');
+			child = this.fine.searchTree(inst, 'tab-emote-suggestions', 50);
 		if ( ! child )
 			return;
 
@@ -190,7 +190,7 @@ export default class TabCompletion extends Module {
 			channel_login = inst._ffz_channel_login;
 
 		if ( ! channel_login ) {
-			const parent = this.fine.searchParent(inst, 'chat-input');
+			const parent = this.fine.searchParent(inst, 'chat-input', 50);
 			if ( parent )
 				this.updateEmoteCompletion(parent, inst);
 
