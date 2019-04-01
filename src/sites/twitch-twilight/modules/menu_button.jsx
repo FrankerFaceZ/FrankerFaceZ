@@ -122,7 +122,7 @@ export default class MenuButton extends SiteModule {
 							</div>
 						</div>
 					</div>)}
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 						{this.has_update && (<div class="tw-mg-t-1">
 							{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
@@ -139,7 +139,7 @@ export default class MenuButton extends SiteModule {
 		if ( user_menu )
 			container.insertBefore(el, user_menu);
 		else
-			container.insertBefore(el, container.firstElementChild);
+			container.insertBefore(el, container.lastElementChild);
 	}
 
 

@@ -52,6 +52,18 @@ export default class Directory extends SiteModule {
 			DIR_ROUTES
 		);
 
+		this.DirectoryShelf = this.fine.define(
+			'directory-shelf',
+			n => n.onEmptyShelfRender && n.shouldRenderShelf,
+			DIR_ROUTES
+		);
+
+		this.DirectoryVideos = this.fine.define(
+			'directory-videos',
+			n => n.props && n.props.directoryWidth && n.props.data && n.render && n.render.toString().includes('SuggestedVideos'),
+			DIR_ROUTES
+		);
+
 		this.settings.add('directory.uptime', {
 			default: 1,
 
@@ -125,6 +137,27 @@ export default class Directory extends SiteModule {
 			}
 		});
 
+		this.settings.add('directory.hide-recommended', {
+			default: false,
+			ui: {
+				path: 'Directory > Following >> Categories',
+				title: 'Do not show `Recommended Live Channels` in the Following Directory.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.DirectoryShelf.forceUpdate()
+		});
+
+		this.settings.add('directory.hide-viewing-history', {
+			default: false,
+			ui: {
+				path: 'Directory > Following >> Categories',
+				title: 'Do not show `Based on your viewing history` in the Following Directory.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.DirectoryVideos.forceUpdate()
+		});
 
 		this.routeClick = this.routeClick.bind(this);
 	}
@@ -140,6 +173,43 @@ export default class Directory extends SiteModule {
 			React = await this.web_munch.findModule('react');
 
 		const createElement = React && React.createElement;
+
+		this.DirectoryShelf.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					if ( t.settings.get('directory.hide-recommended') ) {
+						const key = get('props.shelf.title.key', this);
+						if ( key === 'live_recs_following' )
+							return null;
+					}
+
+				} catch(err) {
+					t.log.capture(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.DirectoryShelf.forceUpdate();
+		});
+
+		this.DirectoryVideos.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					if ( t.settings.get('directory.hide-viewing-history') )
+						return null;
+
+				} catch(err) {
+					t.log.capture(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.DirectoryVideos.forceUpdate();
+		})
 
 		this.DirectoryCard.ready(cls => {
 			//const old_render = cls.prototype.render,
