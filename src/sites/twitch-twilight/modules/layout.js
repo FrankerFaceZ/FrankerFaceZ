@@ -61,9 +61,24 @@ export default class Layout extends Module {
 				return ratio <= ctx.get('layout.portrait-threshold');
 			},
 			changed: val => {
-				this.css_tweaks.toggle('portrait', val);
 				this.updatePortraitMode();
 			}
+		});
+
+		this.settings.add('layout.inject-portrait', {
+			requires: ['layout.use-portrait', 'context.ui.rightColumnExpanded'],
+			process(ctx) {
+				return ctx.get('layout.use-portrait') && ctx.get('context.ui.rightColumnExpanded');
+			},
+			changed: val => this.css_tweaks.toggle('portrait', val)
+		});
+
+		this.settings.add('layout.use-portrait-swapped', {
+			requires: ['layout.inject-portrait', 'layout.swap-sidebars'],
+			process(ctx) {
+				return ctx.get('layout.inject-portrait') && ctx.get('layout.swap-sidebars')
+			},
+			changed: val => this.css_tweaks.toggle('portrait-swapped', val)
 		});
 
 		this.settings.add('layout.show-portrait-chat', {
@@ -117,7 +132,8 @@ export default class Layout extends Module {
 	}
 
 	onEnable() {
-		this.css_tweaks.toggle('portrait', this.settings.get('layout.use-portrait'));
+		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
+		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
 		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
 

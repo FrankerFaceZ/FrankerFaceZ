@@ -1,6 +1,9 @@
 .twilight-main { order: 2 }
 .side-nav { order: 3 }
-.right-column { order: 1 }
+.right-column {
+	order: 1;
+	z-index: 2;
+}
 
 .side-nav__toggle-visibility {
 	right: unset !important;
