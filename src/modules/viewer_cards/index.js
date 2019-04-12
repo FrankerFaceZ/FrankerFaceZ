@@ -167,7 +167,7 @@ export default class ViewerCards extends Module {
 		el.style.top = `${pos_y}px`;
 		el.style.left = `${pos_x}px`
 
-		const container = document.querySelector('.twilight-root>.tw-full-height,.twilight-minimal-root>.tw-full-height');
+		const container = document.querySelector('#root>div>.tw-full-height,.twilight-minimal-root>.tw-full-height');
 		container.appendChild(el);
 
 		requestAnimationFrame(() => child.constrain());

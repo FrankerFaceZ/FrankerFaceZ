@@ -254,7 +254,7 @@ export default class ChatLine extends Module {
 				this._ffz_show = show;
 
 				return show !== old_show ||
-					state.ffz_expanded !== this.state.ffz_expanded ||
+					(state && this.state && (state.ffz_expanded !== this.state.ffz_expanded)) ||
 					//state.renderDebug !== this.state.renderDebug ||
 					props.message !== this.props.message ||
 					props.isCurrentUserModerator !== this.props.isCurrentUserModerator ||

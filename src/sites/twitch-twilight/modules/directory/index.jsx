@@ -343,6 +343,9 @@ export default class Directory extends SiteModule {
 			blocked_games = this.settings.provider.get('directory.game.blocked-games', []);
 
 		for(const edge of edges) {
+			if ( ! edge )
+				continue;
+
 			const node = edge.node || edge,
 				stream = node.stream || node;
 

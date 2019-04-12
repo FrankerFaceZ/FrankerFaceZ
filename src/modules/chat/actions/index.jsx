@@ -166,7 +166,7 @@ export default class Actions extends Module {
 			target._ffz_destroy = target._ffz_outside = null;
 		}
 
-		const parent = document.body.querySelector('.twilight-root,.twilight-minimal-root') || document.body,
+		const parent = document.body.querySelector('#root>div') || document.body,
 			tt = target._ffz_popup = new Tooltip(parent, target, {
 				logger: this.log,
 				manual: true,

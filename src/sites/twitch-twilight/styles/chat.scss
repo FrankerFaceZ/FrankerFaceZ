@@ -180,7 +180,7 @@
 
     @media only screen and (max-height: 750px) {
         .emote-picker__tab-content {
-            .twilight-root & {
+            #root & {
                 max-height: calc(100vh - 31rem);
             }
 

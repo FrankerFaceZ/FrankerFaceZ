@@ -127,6 +127,9 @@ export default class Following extends SiteModule {
 			out = [];
 
 		for(const edge of edges) {
+			if ( ! edge )
+				continue;
+
 			const node = edge.node || edge,
 				hosted = node.hosting,
 				stream = hosted && hosted.stream;
@@ -291,7 +294,7 @@ export default class Following extends SiteModule {
 			</div>
 		</div>);
 
-		const root = (document.body.querySelector('.twilight-root') || document.body);
+		const root = (document.body.querySelector('#root>div') || document.body);
 		root.appendChild(this.hostMenu);
 
 		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {

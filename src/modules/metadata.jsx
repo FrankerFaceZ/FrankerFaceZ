@@ -738,7 +738,7 @@ export default class Metadata extends Module {
 								el._ffz_destroy = el._ffz_outside = null;
 							};
 
-							const parent = document.body.querySelector('.twilight-root') || document.body,
+							const parent = document.body.querySelector('#root>div') || document.body,
 								tt = el._ffz_popup = new Tooltip(parent, el, {
 									logger: this.log,
 									manual: true,
@@ -809,7 +809,7 @@ export default class Metadata extends Module {
 				subcontainer.appendChild(el);
 
 				if ( def.tooltip ) {
-					const parent = document.body.querySelector('.twilight-root') || document.body;
+					const parent = document.body.querySelector('#root>div') || document.body;
 					el.tooltip = new Tooltip(parent, el, {
 						logger: this.log,
 						live: false,

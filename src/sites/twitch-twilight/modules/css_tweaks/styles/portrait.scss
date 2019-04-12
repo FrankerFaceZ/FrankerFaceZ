@@ -1,4 +1,4 @@
-.twilight-root {
+#root {
 	--ffz-player-width: calc(100vw - var(--ffz-portrait-extra-width));
 	--ffz-player-height: calc(calc(calc(var(--ffz-player-width) * 0.5625) + var(--ffz-portrait-extra-height)));
 	--ffz-theater-height: calc(calc(100vw * 0.5625) + var(--ffz-portrait-extra-height));
