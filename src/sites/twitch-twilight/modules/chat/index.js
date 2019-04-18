@@ -108,7 +108,8 @@ const CHAT_TYPES = make_enum(
 	'SubMysteryGift',
 	'AnonSubMysteryGift',
 	'FirstCheerMessage',
-	'BitsBadgeTierMessage'
+	'BitsBadgeTierMessage',
+	'InlinePrivateCallout'
 );
 
 
@@ -444,10 +445,14 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.bits.show-pinned', val =>
 			this.css_tweaks.toggleHide('pinned-cheer', !val));
 
-		this.chat.context.on('changed:chat.filtering.deleted-style', val =>
-			this.css_tweaks.toggle('chat-deleted-strike', val === 1))
+		this.chat.context.on('changed:chat.filtering.deleted-style', val => {
+			this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
+			this.css_tweaks.toggle('chat-deleted-fade', val < 2);
+		});
 
-		this.css_tweaks.toggle('chat-deleted-strike', this.chat.context.get('chat.filtering.deleted-style') === 1);
+		const val = this.chat.context.get('chat.filtering.deleted-style');
+		this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
+		this.css_tweaks.toggle('chat-deleted-fade', val < 2);
 
 		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
 		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
@@ -664,7 +669,12 @@ export default class ChatHook extends Module {
 							if ( event.defaultPrevented || m.ffz_removed )
 								return;
 
+						/*} else if ( msg.type === types.ModerationAction ) {
+							t.log.info('Moderation Action', msg);
+
 						} else if ( msg.type === types.Moderation ) {
+							t.log.info('Moderation', msg);
+
 							const login = msg.userLogin;
 							if ( inst.moderatedUsers.has(login) )
 								return;
@@ -704,14 +714,13 @@ export default class ChatHook extends Module {
 							inst.delayedMessageBuffer.forEach(do_update);
 
 							inst.moderatedUsers.add(login);
-							setTimeout(inst.unmoderateUser(login), 1000);
-							return;
+							setTimeout(inst.unsetModeratedUser(login), 1000);*/
 
 						} else if ( msg.type === types.Clear ) {
 							if ( t.chat.context.get('chat.filtering.ignore-clear') )
 								msg = {
-									types: types.Notice,
-									message: t.i18n.t('chat.ignore-clear', 'An attempt to clear chat was ignored.')
+									type: types.Info,
+									message: t.i18n.t('chat.ignore-clear', 'An attempt by a moderator to clear chat was ignored.')
 								}
 						}
 

@@ -72,8 +72,8 @@ export default class SettingsMenu extends Module {
 	click(inst, event) {
 		// If we're on a page with minimal root, we want to open settings
 		// in a popout as we're almost certainly within Popout Chat.
-		const minimal_root = document.querySelector('.twilight-minimal-root');
-		if ( minimal_root || (event && (event.ctrlKey || event.shiftKey)) ) {
+		const layout = this.resolve('site.layout');
+		if ( (layout && layout.is_minimal) || (event && (event.ctrlKey || event.shiftKey)) ) {
 			const win = window.open(
 				'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
 				'_blank',

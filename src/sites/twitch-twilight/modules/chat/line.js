@@ -10,6 +10,7 @@ import Module from 'utilities/module';
 import RichContent from './rich_content';
 import { has } from 'utilities/object';
 import { KEYS } from 'utilities/constants';
+import { print_duration } from 'src/utilities/time';
 
 const SUB_TIERS = {
 	1000: 1,
@@ -256,6 +257,8 @@ export default class ChatLine extends Module {
 				return show !== old_show ||
 					(state && this.state && (state.ffz_expanded !== this.state.ffz_expanded)) ||
 					//state.renderDebug !== this.state.renderDebug ||
+					props.deletedMessageDisplay !== this.props.deletedMessageDisplay ||
+					props.deletedCount !== this.props.deletedCount ||
 					props.message !== this.props.message ||
 					props.isCurrentUserModerator !== this.props.isCurrentUserModerator ||
 					props.showModerationIcons !== this.props.showModerationIcons ||
@@ -265,22 +268,70 @@ export default class ChatLine extends Module {
 			cls.prototype.render = function() { try {
 
 				const types = t.parent.message_types || {},
+					mod_mode = this.props.deletedMessageDisplay,
+					deleted_count = this.props.deletedCount,
 
 					msg = t.chat.standardizeMessage(this.props.message),
 					is_action = msg.messageType === types.Action,
 
 					user = msg.user,
-					color = t.parent.colors.process(user.color),
-					show_deleted = t.chat.context.get('chat.filtering.show-deleted');
+					color = t.parent.colors.process(user.color);
 
-				let show, show_class;
+				let show, show_class, mod_action;
 
-				if ( show_deleted ) {
+				if ( mod_mode === 'BRIEF' ) {
+					if ( msg.deleted ) {
+						if ( deleted_count == null )
+							return null;
+
+						return e('div', {
+							className: 'chat-line__status'
+						}, t.i18n.t('chat.deleted-messages', [
+							'%{count} message was deleted by a moderator.',
+							'%{count} messages were deleted by a moderator.'
+						], {
+							count: deleted_count
+						}));
+					}
+
+					show = true;
+					show_class = false;
+					mod_action = null;
+
+				} else if ( mod_mode === 'DETAILED' ) {
 					show = true;
 					show_class = msg.deleted;
+
+					if ( msg.deleted ) {
+						const action = msg.modActionType;
+						if ( action === 'timeout' )
+							mod_action = t.i18n.t('chat.mod-action.timeout',
+								'%{duration} Timeout'
+								, {
+									duration: print_duration(msg.duration || 1)
+								});
+						else if ( action === 'ban' )
+							mod_action = t.i18n.t('chat.mod-action.ban', 'Banned');
+						else if ( action === 'delete' || ! action )
+							mod_action = t.i18n.t('chat.mod-action.delete', 'Deleted');
+
+						if ( mod_action && msg.modLogin )
+							mod_action = t.i18n.t('chat.mod-action.by', '%{action} by %{login}', {
+								login: msg.modLogin,
+								action: mod_action
+							});
+
+						if ( mod_action )
+							mod_action = e('span', {
+								className: 'tw-pd-l-05',
+								'data-test-selector': 'chat-deleted-message-attribution'
+							}, `(${mod_action})`);
+					}
+
 				} else {
 					show = this.state && this.state.alwaysShowMessage || ! msg.deleted;
 					show_class = false;
+					mod_action = null;
 				}
 
 				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
@@ -367,6 +418,8 @@ export default class ChatLine extends Module {
 							}, t.i18n.t('chat.message-deleted', '<message deleted>'))),
 
 						show && rich_content && e(FFZRichContent, rich_content),
+
+						show && mod_action,
 
 						/*this.state.renderDebug === 2 && e('div', {
 							className: 'border mg-t-05'

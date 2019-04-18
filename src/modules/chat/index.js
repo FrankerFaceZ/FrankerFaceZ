@@ -181,16 +181,6 @@ export default class Chat extends Module {
 			}
 		});
 
-		this.settings.add('chat.filtering.show-deleted', {
-			default: false,
-			ui: {
-				path: 'Chat > Behavior >> Deleted Messages',
-				title: 'Always display deleted messages.',
-				description: 'Deleted messages will be displayed differently for differentiation, but never hidden behind <message deleted>.',
-				component: 'setting-check-box'
-			}
-		});
-
 		this.settings.add('chat.filtering.deleted-style', {
 			default: 1,
 			ui: {
@@ -199,7 +189,9 @@ export default class Chat extends Module {
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Faded'},
-					{value: 1, title: 'Faded, Line Through'}
+					{value: 1, title: 'Faded, Line Through'},
+					{value: 2, title: 'Line Through'},
+					{value: 3, title: 'No Change'}
 				]
 			}
 		});

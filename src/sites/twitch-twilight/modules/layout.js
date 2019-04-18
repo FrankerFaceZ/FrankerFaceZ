@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
+const MINIMAL_ROUTES = ['popout', 'embed-chat'];
 
 export default class Layout extends Module {
 	constructor(...args) {
@@ -20,7 +21,7 @@ export default class Layout extends Module {
 
 		this.RightColumn = this.fine.define(
 			'tw-rightcolumn',
-			n => n.hideOnBreakpoint && n.onTheatreMouseMove
+			n => n.hideOnBreakpoint && n.handleToggleVisibility
 		);
 
 		this.settings.add('layout.portrait', {
@@ -129,6 +130,13 @@ export default class Layout extends Module {
 
 			changed: val => this.css_tweaks.setVariable('portrait-extra-width', `${val}rem`)
 		});
+
+		this.settings.add('layout.is-minimal', {
+			require: ['context.route.name'],
+			process(ctx) {
+				return MINIMAL_ROUTES.includes(ctx.get('context.route.name'));
+			}
+		});
 	}
 
 	onEnable() {
@@ -181,6 +189,10 @@ export default class Layout extends Module {
 				inst.hideOnBreakpoint();
 			}
 		});
+	}
+
+	get is_minimal() {
+		return this.settings.get('layout.is-minimal')
 	}
 
 	updatePortraitMode() {
