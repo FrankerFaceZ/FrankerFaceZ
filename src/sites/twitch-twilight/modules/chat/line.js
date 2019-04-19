@@ -268,8 +268,8 @@ export default class ChatLine extends Module {
 			cls.prototype.render = function() { try {
 
 				const types = t.parent.message_types || {},
-					mod_mode = this.props.deletedMessageDisplay,
 					deleted_count = this.props.deletedCount,
+					override_mode = t.chat.context.get('chat.filtering.display-deleted'),
 
 					msg = t.chat.standardizeMessage(this.props.message),
 					is_action = msg.messageType === types.Action,
@@ -277,7 +277,14 @@ export default class ChatLine extends Module {
 					user = msg.user,
 					color = t.parent.colors.process(user.color);
 
-				let show, show_class, mod_action;
+				let mod_mode = this.props.deletedMessageDisplay;
+				let show, show_class, mod_action = null;
+
+				if ( ! this.props.isCurrentUserModerator && mod_mode == 'DETAILED' )
+					mod_mode = 'LEGACY';
+
+				if ( override_mode )
+					mod_mode = override_mode;
 
 				if ( mod_mode === 'BRIEF' ) {
 					if ( msg.deleted ) {
@@ -296,13 +303,19 @@ export default class ChatLine extends Module {
 
 					show = true;
 					show_class = false;
-					mod_action = null;
 
 				} else if ( mod_mode === 'DETAILED' ) {
 					show = true;
 					show_class = msg.deleted;
 
-					if ( msg.deleted ) {
+				} else {
+					show = this.state && this.state.alwaysShowMessage || ! msg.deleted;
+					show_class = false;
+				}
+
+				if ( msg.deleted ) {
+					const show_mode = t.chat.context.get('chat.filtering.display-mod-action');
+					if ( show_mode === 2 || (show_mode === 1 && mod_mode === 'DETAILED') ) {
 						const action = msg.modActionType;
 						if ( action === 'timeout' )
 							mod_action = t.i18n.t('chat.mod-action.timeout',
@@ -327,11 +340,6 @@ export default class ChatLine extends Module {
 								'data-test-selector': 'chat-deleted-message-attribution'
 							}, `(${mod_action})`);
 					}
-
-				} else {
-					show = this.state && this.state.alwaysShowMessage || ! msg.deleted;
-					show_class = false;
-					mod_action = null;
 				}
 
 				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
@@ -419,7 +427,7 @@ export default class ChatLine extends Module {
 
 						show && rich_content && e(FFZRichContent, rich_content),
 
-						show && mod_action,
+						mod_action,
 
 						/*this.state.renderDebug === 2 && e('div', {
 							className: 'border mg-t-05'

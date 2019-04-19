@@ -431,6 +431,8 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
@@ -669,52 +671,94 @@ export default class ChatHook extends Module {
 							if ( event.defaultPrevented || m.ffz_removed )
 								return;
 
-						/*} else if ( msg.type === types.ModerationAction ) {
-							t.log.info('Moderation Action', msg);
-
-						} else if ( msg.type === types.Moderation ) {
-							t.log.info('Moderation', msg);
-
-							const login = msg.userLogin;
-							if ( inst.moderatedUsers.has(login) )
+						} else if ( msg.type === types.ModerationAction ) {
+							//t.log.info('Moderation Action', msg);
+							if ( ! inst.props.isCurrentUserModerator )
 								return;
 
-							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
-								is_delete = msg.moderationType === mod_types.Delete,
-								do_update = m => {
-									if ( m.event )
-										m = m.event;
+							const mod_action = msg.moderationActionType;
+							if ( mod_action === 'ban' || mod_action === 'timeout' || mod_action === 'delete' ) {
+								const user = msg.targetUserLogin;
+								if ( inst.moderatedUsers.has(user) )
+									return;
 
-									if ( is_delete ) {
-										if ( m.id === msg.targetMessageID )
-											m.deleted = true;
+								const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3;
+								if ( do_remove ) {
+									const len = inst.buffer.length,
+										target_id = msg.messageID;
+									inst.buffer = inst.buffer.filter(m =>
+										m.type !== types.Message || ! m.user || m.user.userLogin !== user ||
+										(target_id && m.id !== target_id)
+									);
+									if ( len !== inst.buffer.length && ! inst.props.isBackground )
+										inst.notifySubscribers();
 
-									} else if ( m.type === types.Message ) {
-										if ( m.user && m.user.userLogin === login ) {
-											m.banned = true;
-											m.deleted = true;
-										}
-									} else if ( m.type === types.Resubscription || m.type === types.Ritual ) {
-										if ( m.message && m.message.user && m.message.user.userLogin === login ) {
-											m.deleted = true;
-											m.banned = true;
-										}
-									}
-								};
+									inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
 
+								} else
+									inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
+
+								inst.moderatedUsers.add(user);
+								setTimeout(inst.unsetModeratedUser(user), 1e3);
+
+								inst.delayedMessageBuffer.push({
+									event: msg,
+									time: Date.now(),
+									shouldDelay: false
+								});
+
+								return;
+							}
+
+						} else if ( msg.type === types.Moderation ) {
+							//t.log.info('Moderation', msg);
+							if ( inst.props.isCurrentUserModerator )
+								return;
+
+							const user = msg.userLogin;
+							if ( inst.moderatedUsers.has(user) )
+								return;
+
+							const mod_action = msg.moderationType;
+							let new_action;
+							if ( mod_action === mod_types.Ban )
+								new_action = 'ban';
+							else if ( mod_action === mod_types.Delete )
+								new_action = 'delete';
+							else if ( mod_action === mod_types.Unban )
+								new_action = 'unban';
+							else if ( mod_action === mod_types.Timeout )
+								new_action = 'timeout';
+
+							if ( new_action )
+								msg.moderationActionType = new_action;
+
+							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3;
 							if ( do_remove ) {
-								const len = inst.buffer.length;
-								inst.buffer = inst.buffer.filter(m => m.type !== types.Message || ! m.user || m.user.userLogin !== login);
+								const len = inst.buffer.length,
+									target_id = msg.targetMessageID;
+								inst.buffer = inst.buffer.filter(m =>
+									m.type !== types.Message || ! m.user || m.user.userLogin !== user ||
+									(target_id && m.id !== target_id)
+								);
 								if ( len !== inst.buffer.length && ! inst.props.isBackground )
 									inst.notifySubscribers();
 
+								inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
+
 							} else
-								inst.buffer.forEach(do_update);
+								inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
 
-							inst.delayedMessageBuffer.forEach(do_update);
+							inst.moderatedUsers.add(user);
+							setTimeout(inst.unsetModeratedUser(user), 1e3);
 
-							inst.moderatedUsers.add(login);
-							setTimeout(inst.unsetModeratedUser(login), 1000);*/
+							inst.delayedMessageBuffer.push({
+								event: msg,
+								time: Date.now(),
+								shouldDelay: false
+							});
+
+							return;
 
 						} else if ( msg.type === types.Clear ) {
 							if ( t.chat.context.get('chat.filtering.ignore-clear') )
@@ -732,6 +776,50 @@ export default class ChatHook extends Module {
 
 				return old_handle.call(inst, msg);
 			}
+
+			inst.ffzModerateBuffer = function(buffers, event) {
+				const mod_types = t.mod_types || {},
+					mod_type = event.moderationActionType,
+					user_login = event.targetUserLogin || event.userLogin,
+					mod_login = event.createdByLogin,
+					target_id = event.targetMessageID || event.messageID;
+
+				let deleted_count = 0, last_msg;
+
+				const is_delete = mod_type === mod_types.Delete,
+					updater = m => {
+						if ( m.event )
+							m = m.event;
+
+						if ( target_id && m.id !== target_id )
+							return;
+
+						const msg = inst.markUserEventDeleted(m, user_login);
+						if ( ! msg )
+							return;
+
+						last_msg = msg;
+						deleted_count++;
+
+						msg.modLogin = mod_login;
+						msg.modActionType = mod_type;
+						msg.duration = event.duration;
+
+						if ( is_delete )
+							return true;
+					};
+
+				for(const buffer of buffers)
+					if ( buffer.some(updater) )
+						break;
+
+				//t.log.info('Moderate Buffer', mod_type, user_login, mod_login, target_id, deleted_count, last_msg);
+
+				if ( last_msg )
+					last_msg.deletedCount = deleted_count;
+			}
+
+
 
 			inst.getMessages = function() {
 				const buf = inst.buffer,

@@ -196,6 +196,36 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.display-deleted', {
+			default: false,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Deleted Message Rendering',
+				description: 'This, when set, overrides the mode selected in Twitch Chat settings. We do this to allow non-moderators access to the setting.',
+				component: 'setting-select-box',
+				data: [
+					{value: false, title: 'Do Not Override'},
+					{value: 'BRIEF', title: 'Brief'},
+					{value: 'DETAILED', title: 'Detailed'},
+					{value: 'LEGACY', title: 'Legacy'}
+				]
+			}
+		});
+
+		this.settings.add('chat.filtering.display-mod-action', {
+			default: 1,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Display Deletion Reason',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Never'},
+					{value: 1, title: 'In Detailed Mode'},
+					{value: 2, title: 'Always'}
+				]
+			}
+		});
+
 		this.settings.add('chat.filtering.process-own', {
 			default: false,
 			ui: {

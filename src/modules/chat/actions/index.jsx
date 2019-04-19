@@ -202,11 +202,28 @@ export default class Actions extends Module {
 	}
 
 
+	getUserLevel(room, user) { // eslint-disable-line class-methods-use-this
+		if ( ! room || ! user  )
+			return 0;
+
+		if ( room.id === user.id || room.login === user.login )
+			return 5;
+
+		else if ( user.moderator || user.type === 'mod' || (user.badges && user.badges.moderator) )
+			return 3;
+
+		return 0;
+	}
+
+
 	renderInline(msg, mod_icons, current_user, current_room, createElement) {
 		const actions = [];
 
 		if ( msg.user && current_user && current_user.login === msg.user.login )
 			return;
+
+		const current_level = this.getUserLevel(current_room, current_user),
+			msg_level = this.getUserLevel(current_room, msg.user);
 
 		const chat = this.resolve('site.chat');
 
@@ -221,7 +238,7 @@ export default class Actions extends Module {
 
 			if ( ! def || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
-				(disp.mod != null && disp.mod !== (current_user ? !!current_user.moderator : false)) ||
+				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
 				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 				continue;
