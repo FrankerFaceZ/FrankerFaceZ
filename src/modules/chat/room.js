@@ -185,10 +185,10 @@ export default class Room {
 		if ( id && typeof id === 'number' )
 			id = `${id}`;
 
-		if ( this.user_ids[id] )
+		if ( id && this.user_ids[id] )
 			user = this.user_ids[id];
 
-		else if ( this.users[login] && ! no_login )
+		else if ( login && this.users[login] && ! no_login )
 			user = this.users[login];
 
 		if ( user && user.destroyed )

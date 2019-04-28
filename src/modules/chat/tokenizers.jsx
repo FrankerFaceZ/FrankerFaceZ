@@ -268,6 +268,119 @@ export const Mentions = {
 // Custom Highlight Terms
 // ============================================================================
 
+export const UserHighlights = {
+	type: 'user_highlight',
+	priority: 90,
+
+	process(tokens, msg, user) {
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
+			return tokens;
+
+		const colors = this.context.get('chat.filtering.highlight-basic-users--color-regex');
+		if ( ! colors || ! colors.size )
+			return tokens;
+
+		const u = msg.user;
+		for(const [color, regex] of colors) {
+			if ( regex.test(u.login) || regex.test(u.displayName) ) {
+				msg.mentioned = true;
+				if ( color ) {
+					msg.mention_color = color;
+					return tokens;
+				}
+			}
+		}
+
+		return tokens;
+	}
+}
+
+export const BlockedUsers = {
+	type: 'user_block',
+	priority: 100,
+
+	process(tokens, msg, user) {
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
+			return tokens;
+
+		const u = msg.user,
+			regexes = this.context.get('chat.filtering.highlight-basic-users-blocked--regex');
+		if ( ! regexes )
+			return tokens;
+
+		if ( regexes[1] && (regexes[1].test(u.login) || regexes[1].test(u.displayName)) ) {
+			msg.deleted = true;
+			msg.ffz_removed = true;
+		}
+
+		if ( ! msg.deleted && regexes[0] && (regexes[0].test(u.login) || regexes[0].test(u.displayName)) )
+			msg.deleted = true;
+
+		return tokens;
+	}
+}
+
+export const BadgeHighlights = {
+	type: 'badge_highlight',
+	priority: 80,
+
+	process(tokens, msg, user) {
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
+			return tokens;
+
+		const badges = msg.badges;
+		if ( ! badges )
+			return tokens;
+
+		const colors = this.context.get('chat.filtering.highlight-basic-badges--colors');
+		if ( ! colors || ! colors.size )
+			return tokens;
+
+		for(const badge of Object.keys(badges)) {
+			if ( colors.has(badge) ) {
+				const color = colors.get(badge);
+				msg.mentioned = true;
+				if ( color ) {
+					msg.mention_color = color;
+					return tokens;
+				}
+			}
+		}
+
+		return tokens;
+	}
+}
+
+export const BlockedBadges = {
+	type: 'badge_block',
+	priority: 100,
+	process(tokens, msg, user) {
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
+			return tokens;
+
+		const badges = msg.badges;
+		if ( ! badges )
+			return tokens;
+
+		const list = this.context.get('chat.filtering.highlight-basic-badges-blocked--list');
+		if ( ! list || (! list[0].length && ! list[1].length) )
+			return tokens;
+
+		for(const badge of Object.keys(badges)) {
+			if ( list[1].includes(badge) ) {
+				msg.deleted = true;
+				msg.ffz_removed = true;
+				return tokens;
+			}
+
+			if ( ! msg.deleted && list[0].includes(badge) )
+				msg.deleted = true;
+		}
+
+		return tokens;
+	}
+}
+
 export const CustomHighlights = {
 	type: 'highlight',
 	priority: 100,
@@ -310,7 +423,7 @@ export const CustomHighlights = {
 						out.push({type: 'text', text: text.slice(idx, nix)});
 
 					msg.mentioned = true;
-					msg.mention_color = color;
+					msg.mention_color = color || msg.mention_color;
 
 					out.push({
 						type: 'highlight',

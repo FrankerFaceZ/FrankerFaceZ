@@ -36,13 +36,19 @@ export default class ChatLine extends Module {
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
-			n => n.renderMessageBody && n.props && !has(n.props, 'hasModPermissions'),
+			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && !has(n.props, 'hasModPermissions'),
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ExtensionLine = this.fine.define(
+			'extension-line',
+			n => n.renderMessageBody && n.onExtensionNameClick,
 			Twilight.CHAT_ROUTES
 		);
 
 		this.ChatRoomLine = this.fine.define(
 			'chat-room-line',
-			n => n.renderMessageBody && n.props && has(n.props, 'hasModPermissions'),
+			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && has(n.props, 'hasModPermissions'),
 			Twilight.CHAT_ROUTES
 		);
 
@@ -78,7 +84,11 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
 		this.chat.context.on('changed:chat.timestamp-format', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-terms--color-regex', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.highlight-basic-users--color-regex', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.highlight-basic-badges--colors', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.highlight-basic-users-blocked--regex', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.highlight-basic-badges-blocked--list', this.updateLines, this);
 
 		const t = this,
 			React = await this.web_munch.findModule('react');
@@ -692,6 +702,8 @@ export default class ChatLine extends Module {
 				}, out);
 
 			} catch(err) {
+				t.log.info(err);
+
 				t.log.capture(err, {
 					extra: {
 						props: this.props
@@ -704,6 +716,85 @@ export default class ChatLine extends Module {
 			// Do this after a short delay to hopefully reduce the chance of React
 			// freaking out on us.
 			setTimeout(() => this.ChatLine.forceUpdate());
+		});
+
+		this.ExtensionLine.ready(cls => {
+			const old_render = cls.prototype.render;
+
+			cls.prototype.render = function() { try {
+				if ( ! this.props.installedExtensions )
+					return null;
+
+				const msg = t.chat.standardizeMessage(this.props.message),
+					ext = msg && msg.extension;
+				if( ! ext )
+					return null;
+
+				if ( ! this.props.installedExtensions.some(val => {
+					const e = val.extension;
+					return e && e.clientID === ext.clientID && e.version === ext.version;
+				}) )
+					return null;
+
+				const color = t.parent.colors.process(ext.chatColor);
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
+				if ( ! room && this.props.channelID ) {
+					const r = t.chat.getRoom(this.props.channelID, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
+
+				const u = t.site.getUser(),
+					r = {id: this.props.channelID, login: room},
+
+					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
+					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
+					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
+
+				if ( ! tokens.length )
+					return null;
+
+				return e('div', {
+					className: `chat-line__message${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
+					style: {backgroundColor: bg_css},
+					'data-room-id': r.id,
+					'data-room': r.login,
+					'data-extension': ext.clientID
+				}, [
+					this.props.showTimestamps && e('span', {
+						className: 'chat-line__timestamp'
+					}, t.chat.formatTime(msg.timestamp)),
+					e('span', {
+						className: 'chat-line__message--badges'
+					}, t.chat.badges.render(msg, e)),
+					e('button', {
+						className: 'chat-line__username notranslate',
+						style: { color },
+						onClick: this.onExtensionNameClick
+					}, e('span', {
+						className: 'chat-author__display-name'
+					}, ext.displayName)),
+					e('span', null, ': '),
+					e('span', {
+						className: 'message'
+					}, t.chat.renderTokens(tokens, e)),
+					rich_content && e(FFZRichContent, rich_content)
+				]);
+
+			} catch(err) {
+				t.log.info(err);
+				t.log.capture(err, {
+					extra: {
+						props: this.props
+					}
+				});
+
+				return old_render.call(this);
+			} }
+
+			// Do this after a short delay to hopefully reduce the chance of React
+			// freaking out on us.
+			setTimeout(() => this.ExtensionLine.forceUpdate());
 		})
 	}
 
@@ -715,6 +806,14 @@ export default class ChatLine extends Module {
 
 	updateLines() {
 		for(const inst of this.ChatLine.instances) {
+			const msg = inst.props.message;
+			if ( msg ) {
+				msg.ffz_tokens = null;
+				msg.mentioned = msg.mention_color = null;
+			}
+		}
+
+		for(const inst of this.ExtensionLine.instances) {
 			const msg = inst.props.message;
 			if ( msg ) {
 				msg.ffz_tokens = null;
@@ -737,6 +836,7 @@ export default class ChatLine extends Module {
 		}
 
 		this.ChatLine.forceUpdate();
+		this.ExtensionLine.forceUpdate();
 		this.ChatRoomLine.forceUpdate();
 		this.WhisperLine.forceUpdate();
 

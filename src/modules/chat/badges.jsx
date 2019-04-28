@@ -155,67 +155,7 @@ export default class Badges extends Module {
 				path: 'Chat > Badges >> tabs ~> Visibility',
 				title: 'Visibility',
 				component: 'badge-visibility',
-				data: () => {
-					const twitch = [],
-						game = [],
-						ffz = [],
-						addon = [];
-
-					for(const key in this.twitch_badges)
-						if ( has(this.twitch_badges, key) ) {
-							const badge = this.twitch_badges[key],
-								vs = [];
-							let v = badge && (badge[1] || badge[0]);
-
-							for(const key in badge)
-								if ( has(badge, key) ) {
-									const version = badge[key];
-									if ( ! v )
-										v = version;
-
-									if ( version && version.image1x )
-										vs.push({
-											version: key,
-											name: version.title,
-											image: version.image1x,
-											styleImage: `url("${version.image1x}")`
-										});
-								}
-
-							if ( v )
-								(badge.__game ? game : twitch).push({
-									id: key,
-									provider: 'twitch',
-									name: v.title,
-									color: 'transparent',
-									image: v.image2x,
-									versions: vs,
-									styleImage: `url("${v.image2x}")`
-								});
-						}
-
-					for(const key in this.badges)
-						if ( has(this.badges, key) ) {
-							const badge = this.badges[key],
-								image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image;
-
-							(/^addon/.test(key) ? addon : ffz).push({
-								id: key,
-								provider: 'ffz',
-								name: badge.title,
-								color: badge.color || 'transparent',
-								image,
-								styleImage: `url("${image}")`
-							});
-						}
-
-					return [
-						{title: 'Twitch', badges: twitch},
-						{title: 'Twitch: Game', key: 'game', badges: game},
-						{title: 'FrankerFaceZ', badges: ffz},
-						{title: 'Add-on', badges: addon}
-					];
-				}
+				data: () => this.getSettingsBadges(true)
 			}
 		});
 
@@ -245,6 +185,69 @@ export default class Badges extends Module {
 				]
 			}
 		});
+	}
+
+	getSettingsBadges(include_addons) {
+		const twitch = [],
+			game = [],
+			ffz = [],
+			addon = [];
+
+		for(const key in this.twitch_badges)
+			if ( has(this.twitch_badges, key) ) {
+				const badge = this.twitch_badges[key],
+					vs = [];
+				let v = badge && (badge[1] || badge[0]);
+
+				for(const key in badge)
+					if ( has(badge, key) ) {
+						const version = badge[key];
+						if ( ! v )
+							v = version;
+
+						if ( version && version.image1x )
+							vs.push({
+								version: key,
+								name: version.title,
+								image: version.image1x,
+								styleImage: `url("${version.image1x}")`
+							});
+					}
+
+				if ( v )
+					(badge.__game ? game : twitch).push({
+						id: key,
+						provider: 'twitch',
+						name: v.title,
+						color: 'transparent',
+						image: v.image2x,
+						versions: vs,
+						styleImage: `url("${v.image2x}")`
+					});
+			}
+
+		if ( include_addons )
+			for(const key in this.badges)
+				if ( has(this.badges, key) ) {
+					const badge = this.badges[key],
+						image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image;
+
+					(/^addon/.test(key) ? addon : ffz).push({
+						id: key,
+						provider: 'ffz',
+						name: badge.title,
+						color: badge.color || 'transparent',
+						image,
+						styleImage: `url("${image}")`
+					});
+				}
+
+		return [
+			{title: 'Twitch', badges: twitch},
+			{title: 'Twitch: Game', key: 'game', badges: game},
+			{title: 'FrankerFaceZ', badges: ffz},
+			{title: 'Add-on', badges: addon}
+		];
 	}
 
 
@@ -278,9 +281,19 @@ export default class Badges extends Module {
 					if ( ! bd )
 						continue;
 
+					let title = bd.title || global_badge.title;
+					if ( d.data ) {
+						if ( d.badge === 'subscriber' ) {
+							title = this.i18n.t('badges.subscriber.months', '%{title} (%{count} Month%{count|en_plural})', {
+								title,
+								count: d.data
+							});
+						}
+					}
+
 					out.push(<div class="ffz-badge-tip">
 						{show_previews && <img class="preview-image ffz-badge" src={bd.image4x} />}
-						{bd.title || global_badge.title}
+						{title}
 					</div>);
 
 					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
@@ -332,6 +345,7 @@ export default class Badges extends Module {
 			out = [],
 			slotted = {},
 			twitch_badges = msg.badges || {},
+			dynamic_data = msg.badgeDynamicData || {},
 
 			user = msg.user || {},
 			user_id = user.id,
@@ -357,7 +371,8 @@ export default class Badges extends Module {
 				else
 					slot = last_slot++;
 
-				const urls = badge_id === 'moderator' && custom_mod && room && room.data && room.data.mod_urls,
+				const data = dynamic_data[badge_id],
+					urls = badge_id === 'moderator' && custom_mod && room && room.data && room.data.mod_urls,
 					badges = [];
 
 				if ( urls ) {
@@ -366,14 +381,16 @@ export default class Badges extends Module {
 						provider: 'ffz',
 						image: urls[4] || urls[2] || urls[1],
 						color: '#34ae0a',
-						title: bd ? bd.title : 'Moderator'
+						title: bd ? bd.title : 'Moderator',
+						data
 					});
 
 				} else
 					badges.push({
 						provider: 'twitch',
 						badge: badge_id,
-						version
+						version,
+						data
 					});
 
 				slotted[slot] = {
