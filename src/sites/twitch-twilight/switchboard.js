@@ -34,7 +34,7 @@ export default class Switchboard extends Module {
 
 
 	async onEnable() {
-		await this.parent.awaitElement('.twilight-minimal-root,.twilight-root');
+		await this.parent.awaitElement('.twilight-minimal-root,.twilight-root,#root>div');
 		if ( this.web_munch._require || this.web_munch.v4 === false )
 			return;
 
@@ -43,7 +43,6 @@ export default class Switchboard extends Module {
 
 		if ( ! da_switch )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
-
 
 		// Identify Router
 		this.log.info(`Found Router and Switch with ${da_switch.props.children.length} routes.`);

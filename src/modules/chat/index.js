@@ -43,6 +43,9 @@ export default class Chat extends Module {
 
 		this._link_info = {};
 
+		// Bind for JSX stuff
+		this.clickToReveal = this.clickToReveal.bind(this);
+
 		this.style = new ManagedStyle;
 
 		this.context = this.settings.context({});
@@ -169,12 +172,11 @@ export default class Chat extends Module {
 			}
 		});
 
-		this.settings.add('chat.filtering.show-deleted', {
+		this.settings.add('chat.filtering.click-to-reveal', {
 			default: false,
 			ui: {
-				path: 'Chat > Behavior >> Deleted Messages',
-				title: 'Always display deleted messages.',
-				description: 'Deleted messages will be displayed differently for differentiation, but never hidden behind <message deleted>.',
+				path: 'Chat > Filtering >> Behavior',
+				title: 'Click to reveal deleted terms.',
 				component: 'setting-check-box'
 			}
 		});
@@ -184,10 +186,43 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Behavior >> Deleted Messages',
 				title: 'Deleted Message Style',
+				description: 'This style will be applied to deleted messages showed in Detailed rendering mode to differentiate them from normal chat messages.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Faded'},
-					{value: 1, title: 'Faded, Line Through'}
+					{value: 1, title: 'Faded, Line Through'},
+					{value: 2, title: 'Line Through'},
+					{value: 3, title: 'No Change'}
+				]
+			}
+		});
+
+		this.settings.add('chat.filtering.display-deleted', {
+			default: false,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Rendering Mode',
+				description: 'This, when set, overrides the mode selected in Twitch chat settings. We do this to allow non-moderators access to the setting.',
+				component: 'setting-select-box',
+				data: [
+					{value: false, title: 'Do Not Override'},
+					{value: 'BRIEF', title: 'Brief'},
+					{value: 'DETAILED', title: 'Detailed'},
+					{value: 'LEGACY', title: 'Legacy'}
+				]
+			}
+		});
+
+		this.settings.add('chat.filtering.display-mod-action', {
+			default: 1,
+			ui: {
+				path: 'Chat > Behavior >> Deleted Messages',
+				title: 'Display Reason',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Never'},
+					{value: 1, title: 'In Detailed Mode'},
+					{value: 2, title: 'Always'}
 				]
 			}
 		});
@@ -251,6 +286,177 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.highlight-basic-users', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Chat > Filtering >> Highlight Users',
+				component: 'basic-terms',
+				colored: true,
+				words: false
+			}
+		});
+
+		this.settings.add('chat.filtering.highlight-basic-users--color-regex', {
+			requires: ['chat.filtering.highlight-basic-users'],
+			process(ctx) {
+				const val = ctx.get('chat.filtering.highlight-basic-users');
+				if ( ! val || ! val.length )
+					return null;
+
+				const colors = new Map;
+
+				for(const item of val) {
+					const c = item.c || null,
+						t = item.t;
+
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					try {
+						new RegExp(v);
+					} catch(err) {
+						continue;
+					}
+
+					if ( colors.has(c) )
+						colors.get(c).push(v);
+					else {
+						colors.set(c, [v]);
+					}
+				}
+
+				for(const [key, list] of colors) {
+					colors.set(key, new RegExp(`^${list.join('|')}$`, 'gi'));
+				}
+
+				return colors;
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-users-blocked', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Chat > Filtering >> Blocked Users',
+				component: 'basic-terms',
+				removable: true,
+				words: false
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-users-blocked--regex', {
+			requires: ['chat.filtering.highlight-basic-blocked'],
+			process(ctx) {
+				const val = ctx.get('chat.filtering.highlight-basic-users-blocked');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [[], []];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out[item.remove ? 1 : 0].push(v);
+				}
+
+				return out.map(data => {
+					if ( ! data.length )
+						return null;
+
+					return new RegExp(`^${data.join('|')}$`, 'gi');
+				});
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-badges', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Chat > Filtering >> Highlight Badges',
+				component: 'badge-highlighting',
+				colored: true,
+				data: () => this.badges.getSettingsBadges()
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-badges--colors', {
+			requires: ['chat.filtering.highlight-basic-badges'],
+			process(ctx) {
+				const val = ctx.get('chat.filtering.highlight-basic-badges');
+				if ( ! val || ! val.length )
+					return null;
+
+				const colors = new Map;
+
+				for(const item of val) {
+					const c = item.c || null,
+						v = item.v;
+
+					colors.set(v, c);
+				}
+
+				return colors;
+			}
+		});
+
+
+		this.settings.add('chat.filtering.highlight-basic-badges-blocked', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Chat > Filtering >> Blocked Badges',
+				component: 'badge-highlighting',
+				removable: true,
+				data: () => this.badges.getSettingsBadges()
+			}
+		});
+
+		this.settings.add('chat.filtering.highlight-basic-badges-blocked--list', {
+			requires: ['chat.filtering.highlight-basic-badges-blocked'],
+			process(ctx) {
+				const val = ctx.get('chat.filtering.highlight-basic-badges-blocked');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [[], []];
+				for(const item of val)
+					if ( item.v )
+						out[item.remove ? 1 : 0].push(item.v);
+
+				if ( ! out[0].length && ! out[1].length )
+					return null;
+
+				return out;
+			}
+		});
+
 
 		this.settings.add('chat.filtering.highlight-basic-terms', {
 			default: [],
@@ -262,7 +468,6 @@ export default class Chat extends Module {
 				colored: true
 			}
 		});
-
 
 		this.settings.add('chat.filtering.highlight-basic-terms--color-regex', {
 			requires: ['chat.filtering.highlight-basic-terms'],
@@ -540,16 +745,6 @@ export default class Chat extends Module {
 			}
 		});
 
-		this.settings.add('chat.click-emotes', {
-			default: true,
-
-			ui: {
-				path: 'Chat > Behavior >> General',
-				title: 'Open emote information pages by Shift-Clicking them.',
-				component: 'setting-check-box'
-			}
-		});
-
 		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
 			default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
 
@@ -612,10 +807,10 @@ export default class Chat extends Module {
 		if ( id && typeof id === 'number' )
 			id = `${id}`;
 
-		if ( this.user_ids[id] )
+		if ( id && this.user_ids[id] )
 			user = this.user_ids[id];
 
-		else if ( this.users[login] && ! no_login )
+		else if ( login && this.users[login] && ! no_login )
 			user = this.users[login];
 
 		if ( user && user.destroyed )
@@ -672,10 +867,10 @@ export default class Chat extends Module {
 		if ( id && typeof id === 'number' )
 			id = `${id}`;
 
-		if ( this.room_ids[id] )
+		if ( id && this.room_ids[id] )
 			room = this.room_ids[id];
 
-		else if ( this.rooms[login] && ! no_login )
+		else if ( login && this.rooms[login] && ! no_login )
 			room = this.rooms[login];
 
 		if ( room && room.destroyed )
@@ -746,6 +941,21 @@ export default class Chat extends Module {
 				if ( room && ! visited.has(room) )
 					yield room;
 			}
+	}
+
+
+	clickToReveal(event) {
+		const target = event.target;
+		if ( target ) {
+			if ( target._ffz_visible )
+				target.textContent = '×××';
+			else if ( ! this.context.get('chat.filtering.click-to-reveal') )
+				return;
+			else if ( target.dataset )
+				target.textContent = target.dataset.text;
+
+			target._ffz_visible = ! target._ffz_visible;
+		}
 	}
 
 
@@ -824,7 +1034,9 @@ export default class Chat extends Module {
 		if ( ! user )
 			user = msg.user = {};
 
-		user.color = user.color || user.chatColor || null;
+		const ext = msg.extension || {};
+
+		user.color = user.color || user.chatColor || ext.chatColor || null;
 		user.type = user.type || user.userType || null;
 		user.id = user.id || user.userID || null;
 		user.login = user.login || user.userLogin || null;
@@ -849,7 +1061,13 @@ export default class Chat extends Module {
 		// Standardize Badges
 		if ( ! msg.badges && user.displayBadges ) {
 			const b = msg.badges = {};
-			for(const item of msg.user.displayBadges)
+			for(const item of user.displayBadges)
+				b[item.setID] = item.version;
+		}
+
+		if ( ! msg.badges && ext.displayBadges ) {
+			const b = msg.badges = {};
+			for(const item of ext.displayBadges)
 				b[item.setID] = item.version;
 		}
 

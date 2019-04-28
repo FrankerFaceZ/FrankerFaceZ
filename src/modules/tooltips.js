@@ -36,10 +36,10 @@ export default class TooltipProvider extends Module {
 	}
 
 	onEnable() {
-		const container = document.querySelector('.twilight-root,.twilight-minimal-root,.clips-root') || document.body,
-			is_minimal = container && container.classList.contains('twilight-minimal-root');
+		const container = document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body,
+			is_minimal = false; //container && container.classList.contains('twilight-minimal-root');
 
-		this.tips = new Tooltip(is_minimal ? '.twilight-minimal-root,body' : 'body #root,body', 'ffz-tooltip', {
+		this.tips = new Tooltip(container, 'ffz-tooltip', {
 			html: true,
 			delayHide: this.checkDelayHide.bind(this),
 			delayShow: this.checkDelayShow.bind(this),

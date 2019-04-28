@@ -47,6 +47,12 @@ export default class MainMenu extends Module {
 			component: 'profile-manager'
 		});
 
+		this.settings.addUI('backup', {
+			path: 'Data Management > Backup and Restore @{"profile_warning": false}',
+			component: 'backup-restore',
+			getFFZ: () => this.resolve('core')
+		});
+
 		this.settings.addUI('home', {
 			path: 'Home @{"sort": -1000, "profile_warning": false}',
 			component: 'home-page'

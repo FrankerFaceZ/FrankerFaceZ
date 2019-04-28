@@ -1,9 +1,9 @@
 <template lang="html">
-	<section class="ffz--widget ffz--basic-terms">
-		<term-editor
+	<section class="ffz--widget ffz--badge-highlighting">
+		<badge-term-editor
 			:term="default_term"
+			:badges="data"
 			:colored="item.colored"
-			:words="item.words"
 			:removable="item.removable"
 			:adding="true"
 			@save="new_term"
@@ -12,13 +12,13 @@
 			{{ t('setting.terms.no-terms', 'no terms are defined in this profile') }}
 		</div>
 		<ul v-else class="ffz--term-list tw-mg-t-05">
-			<term-editor
+			<badge-term-editor
 				v-for="term in val"
 				v-if="term.t !== 'inherit'"
 				:key="term.id"
 				:term="term.v"
+				:badges="data"
 				:colored="item.colored"
-				:words="item.words"
 				:removable="item.removable"
 				@remove="remove(term)"
 				@save="save(term, $event)"
@@ -41,8 +41,7 @@ export default {
 	data() {
 		return {
 			default_term: {
-				v: '',
-				t: 'text',
+				v: 'broadcaster',
 				c: '',
 				remove: false
 			}

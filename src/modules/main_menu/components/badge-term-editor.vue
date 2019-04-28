@@ -1,52 +1,46 @@
 <template lang="html">
-	<div class="ffz--term">
+	<div class="ffz--term ffz--badge-term">
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
-			<div v-if="! is_valid" class="tw-tooltip-wrapper tw-mg-r-05">
-				<figure class="tw-c-text-error ffz-i-attention" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
-					{{ t('setting.terms.warn-invalid', 'This highlight term is invalid.') }}
-				</div>
-			</div>
-			<div v-if="! is_safe" class="tw-tooltip-wrapper tw-mg-r-05">
-				<figure class="tw-c-text-hint ffz-i-attention" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
-					{{ t('setting.terms.warn-complex', 'This highlight term is potentially too complex. It may cause client lag.') }}
-				</div>
-			</div>
-			<div class="tw-flex-grow-1">
-				<h4 v-if="! editing" class="ffz-monospace">
-					<pre>{{ term.v }}</pre>
-				</h4>
-				<input
-					v-else
-					v-model="edit_data.v"
-					:placeholder="adding ? t('setting.terms.add-placeholder', 'Add a new term') : edit_data.v"
-					type="text"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
-					autocapitalize="off"
-					autocorrect="off"
+			<div class="tw-mg-r-1">
+				<img
+					v-if="current"
+					:src="current.image"
+					class="ffz--badge-term-image"
 				>
 			</div>
-			<div v-if="colored" class="tw-flex-shrink-0 tw-mg-l-05">
+			<div class="tw-flex-grow-1 tw-mg-r-05">
+				<h4 v-if="! editing && ! current" class="ffz-monospace">
+					<pre>{{ t('setting.terms.invalid-badge', 'unknown/unloaded badge') }}</pre>
+				</h4>
+				<h4 v-if="! editing && current">
+					{{ current.name }}
+				</h4>
+				<select
+					v-if="editing"
+					v-model="edit_data.v"
+					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05">
+					<optgroup
+						v-for="section in badges"
+						:key="section.title"
+						:label="section.title"
+					>
+						<option
+							v-for="badge in section.badges"
+							:key="badge.id"
+							:value="badge.id"
+						>
+							{{ badge.name }}
+						</option>
+					</optgroup>
+				</select>
+			</div>
+			<div v-if="colored" class="tw-flex-shrink-0 tw-mg-r-05">
 				<color-picker v-if="editing" v-model="edit_data.c" :nullable="true" :show-input="false" :open-up="true" />
 				<div v-else-if="term.c" class="ffz-color-preview">
 					<figure :style="`background-color: ${term.c}`">
 						&nbsp;
 					</figure>
 				</div>
-			</div>
-			<div class="tw-flex-shrink-0 tw-mg-x-05">
-				<span v-if="! editing">{{ term_type }}</span>
-				<select
-					v-else
-					v-model="edit_data.t"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
-				>
-					<option value="text">{{ t('setting.terms.type.text', 'Text') }}</option>
-					<option value="glob">{{ t('setting.terms.type.glob', 'Glob') }}</option>
-					<option v-if="words" value="regex">{{ t('setting.terms.type.regex-word', 'Regex (Word)') }}</option>
-					<option value="raw">{{ t('setting.terms.type.regex', 'Regex') }}</option>
-				</select>
 			</div>
 			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-tooltip-wrapper">
 				<button
@@ -128,19 +122,14 @@
 
 <script>
 
-import safety from 'safe-regex';
-
-import {deep_copy, glob_to_regex, escape_regex} from 'utilities/object';
+import {deep_copy} from 'utilities/object';
 
 let id = 0;
 
 export default {
 	props: {
+		badges: Array,
 		term: Object,
-		words: {
-			type: Boolean,
-			default: true
-		},
 		colored: {
 			type: Boolean,
 			default: false
@@ -177,56 +166,20 @@ export default {
 			return this.editing ? this.edit_data : this.term;
 		},
 
-		is_valid() {
-			const data = this.display,
-				t = data.t;
+		current() {
+			if ( ! this.badges || ! this.display || ! this.display.v )
+				return null;
 
-			let v = data.v;
+			const v = this.display.v;
 
-			if ( t === 'text' )
-				v = escape_regex(v);
+			for(const section of this.badges) {
+				if ( ! section || ! section.badges )
+					continue;
 
-			else if ( t === 'glob' )
-				v = glob_to_regex(v);
-
-			try {
-				new RegExp(v);
-				return true;
-			} catch(err) {
-				return false;
+				for(const badge of section.badges)
+					if ( badge.id === v )
+						return badge;
 			}
-		},
-
-		is_safe() {
-			const data = this.display,
-				t = data.t;
-
-			let v = data.v;
-
-			if ( t === 'text' )
-				v = escape_regex(v);
-
-			else if ( t === 'glob' )
-				v = glob_to_regex(v);
-
-			return safety(v);
-		},
-
-		term_type() {
-			const t = this.term && this.term.t;
-			if ( t === 'text' )
-				return this.t('setting.terms.type.text', 'Text');
-
-			else if ( t === 'raw' )
-				return this.t('setting.terms.type.raw', 'Regex');
-
-			else if ( t === 'glob' )
-				return this.t('setting.terms.type.glob', 'Glob');
-
-			else if ( t === 'regex' )
-				return this.t('setting.terms.type.regex-word', 'Regex (Word)');
-
-			return this.t('setting.unknown', 'Unknown Value');
 		}
 	},
 
@@ -242,12 +195,11 @@ export default {
 		},
 
 		cancel() {
-			if ( this.adding ) {
+			if ( this.adding )
 				this.edit_data = deep_copy(this.term);
-
-			} else {
+			else {
 				this.editing = false;
-				this.edit_data = null;
+				this.edit_data = null
 			}
 		},
 

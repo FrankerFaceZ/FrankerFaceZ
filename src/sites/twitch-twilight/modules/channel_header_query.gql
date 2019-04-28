@@ -1,8 +1,11 @@
 query ChannelPage_ChannelHeader {
 	user {
+		id
 		stream {
+			id
 			createdAt
 			type
+			__typename
 		}
 	}
 }

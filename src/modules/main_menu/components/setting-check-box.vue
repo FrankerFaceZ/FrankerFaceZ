@@ -3,7 +3,7 @@
 		:class="{inherits: isInherited, default: isDefault}"
 		class="ffz--widget ffz--checkbox"
 	>
-		<div class="tw-flex tw-align-items-center">
+		<div class="tw-flex tw-align-items-center tw-checkbox">
 			<input
 				ref="control"
 				:id="item.full_key"
@@ -27,12 +27,14 @@
 				</span>
 			</button>
 
-			<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text tw-tooltip-wrapper" @click="clear">
-				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-					{{ t('setting.reset', 'Reset to Default') }}
-				</div>
-			</button>
+			<div class="ffz--reset-button">
+				<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text tw-tooltip-wrapper" @click="clear">
+					<span class="tw-button__text ffz-i-cancel" />
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('setting.reset', 'Reset to Default') }}
+					</div>
+				</button>
+			</div>
 		</div>
 		<section
 			v-if="item.description"

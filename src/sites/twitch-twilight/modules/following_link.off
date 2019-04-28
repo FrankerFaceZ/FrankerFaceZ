@@ -57,7 +57,7 @@ export default class FollowingText extends SiteModule {
 			textContent: 'Following'
 		});
 
-		const height = document.body.querySelector('.twilight-root').clientHeight - 50;
+		const height = document.body.querySelector('#root>div').clientHeight - 50;
 		const max_lines = Math.max(Math.floor(height / 40) - 1, 2);
 
 		let c = 0;

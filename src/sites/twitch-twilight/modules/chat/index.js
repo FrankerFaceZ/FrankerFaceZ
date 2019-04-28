@@ -89,6 +89,7 @@ const CHAT_TYPES = make_enum(
 	'Resubscription',
 	'GiftPaidUpgrade',
 	'AnonGiftPaidUpgrade',
+	'PrimePaidUpgrade',
 	'SubGift',
 	'AnonSubGift',
 	'Clear',
@@ -106,7 +107,9 @@ const CHAT_TYPES = make_enum(
 	'RewardGift',
 	'SubMysteryGift',
 	'AnonSubMysteryGift',
-	'FirstCheerMessage'
+	'FirstCheerMessage',
+	'BitsBadgeTierMessage',
+	'InlinePrivateCallout'
 );
 
 
@@ -119,11 +122,7 @@ const NULL_TYPES = [
 
 
 const MISBEHAVING_EVENTS = [
-	'onBitsCharityEvent',
-	//'onRitualEvent', -- handled by conversion to Message event
 	'onBadgesUpdatedEvent',
-	'onPurchaseEvent',
-	'onCrateEvent'
 ];
 
 
@@ -230,6 +229,58 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering >> Rituals',
 				title: 'Display ritual messages such as "User is new here! Say Hello!".',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.subs.show', {
+			default: 3,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Display Subs in Chat',
+				component: 'setting-select-box',
+				description: '**Note**: Messages sent with re-subs will always be displayed. This only controls the special "X subscribed!" message.',
+				data: [
+					{value: 0, title: 'Do Not Display'},
+					{value: 1, title: 'Re-Subs with Messages Only'},
+					{value: 2, title: 'Re-Subs Only'},
+					{value: 3, title: 'Display All'}
+				]
+			}
+		});
+
+		this.settings.add('chat.subs.compact', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Display subscription notices in a more compact (classic style) form.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.subs.merge-gifts', {
+			default: 1000,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Merge Mass Sub Gifts',
+				component: 'setting-select-box',
+				data: [
+					{value: 1000, title: 'Disabled'},
+					{value: 50, title: 'More than 50'},
+					{value: 20, title: 'More than 20'},
+					{value: 10, title: 'More than 10'},
+					{value: 5, title: 'More than 5'},
+					{value: 0, title: 'Always'}
+				],
+				description: 'Merge mass gift subscriptions into a single message, depending on the quantity.\n**Note:** Only affects newly gifted subs.'
+			}
+		});
+
+		this.settings.add('chat.subs.merge-gifts-visibility', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Expand merged mass sub gift messages by default.',
 				component: 'setting-check-box'
 			}
 		});
@@ -380,6 +431,8 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
@@ -394,10 +447,14 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.bits.show-pinned', val =>
 			this.css_tweaks.toggleHide('pinned-cheer', !val));
 
-		this.chat.context.on('changed:chat.filtering.deleted-style', val =>
-			this.css_tweaks.toggle('chat-deleted-strike', val === 1))
+		this.chat.context.on('changed:chat.filtering.deleted-style', val => {
+			this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
+			this.css_tweaks.toggle('chat-deleted-fade', val < 2);
+		});
 
-		this.css_tweaks.toggle('chat-deleted-strike', this.chat.context.get('chat.filtering.deleted-style') === 1);
+		const val = this.chat.context.get('chat.filtering.deleted-style');
+		this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
+		this.css_tweaks.toggle('chat-deleted-fade', val < 2);
 
 		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
 		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
@@ -614,54 +671,100 @@ export default class ChatHook extends Module {
 							if ( event.defaultPrevented || m.ffz_removed )
 								return;
 
-						} else if ( msg.type === types.Moderation ) {
-							const login = msg.userLogin;
-							if ( inst.moderatedUsers.has(login) )
+						} else if ( msg.type === types.ModerationAction ) {
+							//t.log.info('Moderation Action', msg);
+							if ( ! inst.props.isCurrentUserModerator )
 								return;
 
-							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3,
-								is_delete = msg.moderationType === mod_types.Delete,
-								do_update = m => {
-									if ( m.event )
-										m = m.event;
+							const mod_action = msg.moderationActionType;
+							if ( mod_action === 'ban' || mod_action === 'timeout' || mod_action === 'delete' ) {
+								const user = msg.targetUserLogin;
+								if ( inst.moderatedUsers.has(user) )
+									return;
 
-									if ( is_delete ) {
-										if ( m.id === msg.targetMessageID )
-											m.deleted = true;
+								const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3;
+								if ( do_remove ) {
+									const len = inst.buffer.length,
+										target_id = msg.messageID;
+									inst.buffer = inst.buffer.filter(m =>
+										m.type !== types.Message || ! m.user || m.user.userLogin !== user ||
+										(target_id && m.id !== target_id)
+									);
+									if ( len !== inst.buffer.length && ! inst.props.isBackground )
+										inst.notifySubscribers();
 
-									} else if ( m.type === types.Message ) {
-										if ( m.user && m.user.userLogin === login ) {
-											m.banned = true;
-											m.deleted = true;
-										}
-									} else if ( m.type === types.Resubscription || m.type === types.Ritual ) {
-										if ( m.message && m.message.user && m.message.user.userLogin === login ) {
-											m.deleted = true;
-											m.banned = true;
-										}
-									}
-								};
+									inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
 
+								} else
+									inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
+
+								inst.moderatedUsers.add(user);
+								setTimeout(inst.unsetModeratedUser(user), 1e3);
+
+								inst.delayedMessageBuffer.push({
+									event: msg,
+									time: Date.now(),
+									shouldDelay: false
+								});
+
+								return;
+							}
+
+						} else if ( msg.type === types.Moderation ) {
+							//t.log.info('Moderation', msg);
+							if ( inst.props.isCurrentUserModerator )
+								return;
+
+							const user = msg.userLogin;
+							if ( inst.moderatedUsers.has(user) )
+								return;
+
+							const mod_action = msg.moderationType;
+							let new_action;
+							if ( mod_action === mod_types.Ban )
+								new_action = 'ban';
+							else if ( mod_action === mod_types.Delete )
+								new_action = 'delete';
+							else if ( mod_action === mod_types.Unban )
+								new_action = 'unban';
+							else if ( mod_action === mod_types.Timeout )
+								new_action = 'timeout';
+
+							if ( new_action )
+								msg.moderationActionType = new_action;
+
+							const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3;
 							if ( do_remove ) {
-								const len = inst.buffer.length;
-								inst.buffer = inst.buffer.filter(m => m.type !== types.Message || ! m.user || m.user.userLogin !== login);
+								const len = inst.buffer.length,
+									target_id = msg.targetMessageID;
+								inst.buffer = inst.buffer.filter(m =>
+									m.type !== types.Message || ! m.user || m.user.userLogin !== user ||
+									(target_id && m.id !== target_id)
+								);
 								if ( len !== inst.buffer.length && ! inst.props.isBackground )
 									inst.notifySubscribers();
 
+								inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
+
 							} else
-								inst.buffer.forEach(do_update);
+								inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
 
-							inst.delayedMessageBuffer.forEach(do_update);
+							inst.moderatedUsers.add(user);
+							setTimeout(inst.unsetModeratedUser(user), 1e3);
 
-							inst.moderatedUsers.add(login);
-							setTimeout(inst.unmoderateUser(login), 1000);
+							inst.delayedMessageBuffer.push({
+								event: msg,
+								time: Date.now(),
+								shouldDelay: false
+							});
+
 							return;
 
 						} else if ( msg.type === types.Clear ) {
 							if ( t.chat.context.get('chat.filtering.ignore-clear') )
 								msg = {
-									types: types.Notice,
-									message: t.i18n.t('chat.ignore-clear', 'An attempt to clear chat was ignored.')
+									type: types.Info,
+									message: t.i18n.t('chat.ignore-clear', 'An attempt by a moderator to clear chat was ignored.')
 								}
 						}
 
@@ -673,6 +776,50 @@ export default class ChatHook extends Module {
 
 				return old_handle.call(inst, msg);
 			}
+
+			inst.ffzModerateBuffer = function(buffers, event) {
+				const mod_types = t.mod_types || {},
+					mod_type = event.moderationActionType,
+					user_login = event.targetUserLogin || event.userLogin,
+					mod_login = event.createdByLogin,
+					target_id = event.targetMessageID || event.messageID;
+
+				let deleted_count = 0, last_msg;
+
+				const is_delete = mod_type === mod_types.Delete,
+					updater = m => {
+						if ( m.event )
+							m = m.event;
+
+						if ( target_id && m.id !== target_id )
+							return;
+
+						const msg = inst.markUserEventDeleted(m, user_login);
+						if ( ! msg )
+							return;
+
+						last_msg = msg;
+						deleted_count++;
+
+						msg.modLogin = mod_login;
+						msg.modActionType = mod_type;
+						msg.duration = event.duration;
+
+						if ( is_delete )
+							return true;
+					};
+
+				for(const buffer of buffers)
+					if ( buffer.some(updater) )
+						break;
+
+				//t.log.info('Moderate Buffer', mod_type, user_login, mod_login, target_id, deleted_count, last_msg);
+
+				if ( last_msg )
+					last_msg.deletedCount = deleted_count;
+			}
+
+
 
 			inst.getMessages = function() {
 				const buf = inst.buffer,
@@ -713,13 +860,14 @@ export default class ChatHook extends Module {
 				raw_delay = t.chat.context.get('chat.delay'),
 				delay = raw_delay === -1 ? this.delayDuration : raw_delay,
 				first = now - delay,
+				see_deleted = this.shouldSeeBlockedAndDeletedMessages || this.props && this.props.shouldSeeBlockedAndDeletedMessages,
 				do_remove = t.chat.context.get('chat.filtering.remove-deleted');
 
 			let changed = false;
 
 			for(const msg of this.delayedMessageBuffer) {
 				if ( msg.time <= first || ! msg.shouldDelay ) {
-					if ( do_remove !== 0 && (do_remove > 1 || ! this.shouldSeeBlockedAndDeletedMessages) && this.isDeletable(msg.event) && msg.event.deleted )
+					if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
 						continue;
 
 					this.buffer.push(msg.event);
@@ -881,19 +1029,201 @@ export default class ChatHook extends Module {
 				}
 
 
+				const old_sub = this.onSubscriptionEvent;
+				this.onSubscriptionEvent = function(e) {
+					try {
+						if ( t.chat.context.get('chat.subs.show') < 3 )
+							return;
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'resub';
+						out.sub_plan = e.methods;
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_sub.call(i, e);
+					}
+				}
+
 				const old_resub = this.onResubscriptionEvent;
 				this.onResubscriptionEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.subs.show') < 2 && ! e.body )
+							return;
+
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
+						out.sub_cumulative = e.cumulativeMonths || 0;
+						out.sub_streak = e.streakMonths || 0;
+						out.sub_share_streak = e.shouldShareStreakTenure;
 						out.sub_months = e.months;
 						out.sub_plan = e.methods;
+
+						//t.log.info('Resub Event', e, out);
 
 						return i.postMessageToCurrentChannel(e, out);
 
 					} catch(err) {
 						t.log.capture(err, {extra: e});
 						return old_resub.call(i, e);
+					}
+				}
+
+				const mysteries = this.ffz_mysteries = {};
+
+				const old_subgift = this.onSubscriptionGiftEvent;
+				this.onSubscriptionGiftEvent = function(e) {
+					try {
+						const key = `${e.channel}:${e.user.userID}`,
+							mystery = mysteries[key];
+
+						if ( mystery ) {
+							if ( mystery.expires < Date.now() ) {
+								mysteries[key] = null;
+							} else {
+								mystery.recipients.push({
+									id: e.recipientID,
+									login: e.recipientLogin,
+									displayName: e.recipientName
+								});
+
+								if( mystery.recipients.length >= mystery.size )
+									mysteries[key] = null;
+
+								if ( mystery.line )
+									mystery.line.forceUpdate();
+
+								return;
+							}
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_gift';
+						out.sub_recipient = {
+							id: e.recipientID,
+							login: e.recipientLogin,
+							displayName: e.recipientName
+						};
+						out.sub_plan = e.methods;
+						out.sub_total = e.senderCount;
+
+						//t.log.info('Sub Gift', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_subgift.call(i, e);
+					}
+				}
+
+				const old_anonsubgift = this.onAnonSubscriptionGiftEvent;
+				this.onAnonSubscriptionGiftEvent = function(e) {
+					try {
+						const key = `${e.channel}:ANON`,
+							mystery = mysteries[key];
+
+						if ( mystery ) {
+							if ( mystery.expires < Date.now() )
+								mysteries[key] = null;
+							else {
+								mystery.recipients.push({
+									id: e.recipientID,
+									login: e.recipientLogin,
+									displayName: e.recipientName
+								});
+
+								if( mystery.recipients.length >= mystery.size )
+									mysteries[key] = null;
+
+								if ( mystery.line )
+									mystery.line.forceUpdate();
+
+								return;
+							}
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_gift';
+						out.sub_anon = true;
+						out.sub_recipient = {
+							id: e.recipientID,
+							login: e.recipientLogin,
+							displayName: e.recipientName
+						};
+						out.sub_plan = e.methods;
+						out.sub_total = e.senderCount;
+
+						//t.log.info('Anon Sub Gift', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_anonsubgift.call(i, e);
+					}
+				}
+
+				const old_submystery = this.onSubscriptionMysteryGiftEvent;
+				this.onSubscriptionMysteryGiftEvent = function(e) {
+					try {
+						let mystery = null;
+						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
+							const key = `${e.channel}:${e.user.userID}`;
+							mystery = mysteries[key] = {
+								recipients: [],
+								size: e.massGiftCount,
+								expires: Date.now() + 30000
+							};
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_mystery';
+						out.mystery = mystery;
+						out.sub_plan = e.plan;
+						out.sub_count = e.massGiftCount;
+						out.sub_total = e.senderCount;
+
+						//t.log.info('Sub Mystery', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_submystery.call(i, e);
+					}
+				}
+
+				const old_anonsubmystery = this.onAnonSubscriptionMysteryGiftEvent;
+				this.onAnonSubscriptionMysteryGiftEvent = function(e) {
+					try {
+						let mystery = null;
+						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
+							const key = `${e.channel}:ANON`;
+							mystery = mysteries[key] = {
+								recipients: [],
+								size: e.massGiftCount,
+								expires: Date.now() + 30000
+							};
+						}
+
+						e.body = '';
+						const out = i.convertMessage({message: e});
+						out.ffz_type = 'sub_mystery';
+						out.sub_anon = true;
+						out.mystery = mystery;
+						out.sub_plan = e.plan;
+						out.sub_count = e.massGiftCount;
+						out.sub_total = e.senderCount;
+
+						//t.log.info('Anon Sub Mystery', e, out);
+						return i.postMessageToCurrentChannel(e, out);
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+						return old_anonsubmystery.call(i, e);
 					}
 				}
 
@@ -954,9 +1284,13 @@ export default class ChatHook extends Module {
 			}
 
 			if ( original.message ) {
-				const user = original.message.user;
+				const user = original.message.user,
+					flags = original.message.flags;
 				if ( user )
 					message.emotes = user.emotes;
+
+				if ( flags && this.getFilterFlagOptions )
+					message.flags = this.getFilterFlagOptions(flags);
 
 				if ( typeof original.action === 'string' )
 					message.message = original.action;

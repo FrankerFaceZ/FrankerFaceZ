@@ -19,13 +19,6 @@
 }
 
 
-.ffz--deleted-message {
-	&:not(:hover) > * {
-		opacity: 0.5;
-	}
-}
-
-
 .ffz-badge {
 	display: inline-block;
 	min-width: 1.8rem;

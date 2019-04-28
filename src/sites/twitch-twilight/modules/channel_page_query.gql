@@ -1,14 +1,18 @@
 fragment channel on User {
 	stream {
+		id
 		createdAt
+		__typename
 	}
 }
 
 fragment hostingChannel on User {
 	hosting {
 		stream {
+			id
 			createdAt
 			type
+			__typename
 		}
 	}
 }

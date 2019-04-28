@@ -14,6 +14,13 @@ export const LV_SERVER = 'https://cbenni.com/api';
 export const LV_SOCKET_SERVER = 'wss://cbenni.com/socket.io/';
 
 
+export const KEYS = {
+	Space: 32,
+	Enter: 13,
+	Escape: 27,
+};
+
+
 export const TWITCH_EMOTE_BASE = '//static-cdn.jtvnw.net/emoticons/v1/';
 
 export const KNOWN_CODES = {

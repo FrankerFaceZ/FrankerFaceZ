@@ -123,7 +123,17 @@
 }
 
 
-.chat-line__username:hover {
+.ffz--giftee-name {
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.chat-line__username:hover,
+.chatter-name:hover {
     text-decoration: underline;
 }
 
@@ -170,7 +180,7 @@
 
     @media only screen and (max-height: 750px) {
         .emote-picker__tab-content {
-            .twilight-root & {
+            #root & {
                 max-height: calc(100vh - 31rem);
             }
 
@@ -178,7 +188,7 @@
         }
     }
 
-    .emote-picker__tab > *,
+    .emote-picker-tab-item button > *,
     .emote-picker__emote-link > * {
         pointer-events: none;
     }

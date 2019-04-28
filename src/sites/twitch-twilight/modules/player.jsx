@@ -9,6 +9,8 @@ import {createElement, on, off} from 'utilities/dom';
 
 export const PLAYER_ROUTES = ['front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following', 'dash'];
 
+const STYLE_VALIDATOR = createElement('span');
+
 export default class Player extends Module {
 	constructor(...args) {
 		super(...args);
@@ -37,7 +39,7 @@ export default class Player extends Module {
 		this.settings.add('player.volume-scroll', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> Volume',
+				path: 'Player > General >> Volume',
 				title: 'Adjust volume by scrolling with the mouse wheel.',
 				description: '*This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.*',
 				component: 'setting-check-box'
@@ -52,7 +54,7 @@ export default class Player extends Module {
 		this.settings.add('player.volume-scroll-steps', {
 			default: 0.1,
 			ui: {
-				path: 'Channel > Player >> Volume',
+				path: 'Player > General >> Volume',
 				title: 'Volume scroll amount',
 				description: 'How much the volume level is changed per individual scroll input.',
 				component: 'setting-select-box',
@@ -63,6 +65,82 @@ export default class Player extends Module {
 					{value: 0.01, title: '1%'}
 				]
 			}
+		});
+
+		this.settings.add('player.captions.font-size', {
+			default: '',
+			ui: {
+				path: 'Player > Closed Captioning >> Font',
+				title: 'Font Size',
+				description: 'How large should captions be. This can be a percentage, such as `10%`, or a pixel value, such as `50px`.',
+				component: 'setting-text-box'
+			},
+			changed: () => this.updateCaptionsCSS()
+		});
+
+		this.settings.add('player.captions.font-family', {
+			default: '',
+			ui: {
+				path: 'Player > Closed Captioning >> Font',
+				title: 'Font Family',
+				description: 'Override the font used for displaying Closed Captions.',
+				component: 'setting-text-box'
+			},
+			changed: () => this.updateCaptionsCSS()
+		});
+
+		this.settings.add('player.captions.custom-position', {
+			default: false,
+			ui: {
+				path: 'Player > Closed Captioning >> Position',
+				sort: -1,
+				title: 'Enable overriding the position and alignment of closed captions.',
+				component: 'setting-check-box'
+			},
+			changed: () => this.updateCaptionsCSS()
+		});
+
+		this.settings.add('player.captions.vertical', {
+			default: '10%',
+			ui: {
+				path: 'Player > Closed Captioning >> Position',
+				title: 'Vertical Position',
+				component: 'setting-text-box',
+				description: 'Override the position for Closed Captions. This can be a percentage, such as `10%`, or a pixel value, such as `50px`.'
+			},
+			changed: () => this.updateCaptionsCSS()
+		});
+
+		this.settings.add('player.captions.horizontal', {
+			default: '50%',
+			ui: {
+				path: 'Player > Closed Captioning >> Position',
+				title: 'Horizontal Position',
+				component: 'setting-text-box',
+				description: 'Override the position for Closed Captions. This can be a percentage, such as `10%`, or a pixel value, such as `50px`.'
+			},
+			changed: () => this.updateCaptionsCSS()
+		});
+
+		this.settings.add('player.captions.alignment', {
+			default: 32,
+			ui: {
+				path: 'Player > Closed Captioning >> Position',
+				title: 'Alignment',
+				component: 'setting-select-box',
+				data: [
+					{value: 11, title: 'Top Left'},
+					{value: 12, title: 'Top Center'},
+					{value: 13, title: 'Top Right'},
+					{value: 21, title: 'Middle Left'},
+					{value: 22, title: 'Middle Center'},
+					{value: 23, title: 'Middle Right'},
+					{value: 31, title: 'Bottom Left'},
+					{value: 32, title: 'Bottom Center'},
+					{value: 33, title: 'Bottom Right'}
+				]
+			},
+			changed: () => this.updateCaptionsCSS()
 		});
 
 		this.settings.add('player.theatre.no-whispers', {
@@ -76,7 +154,7 @@ export default class Player extends Module {
 			},
 
 			ui: {
-				path: 'Channel > Player >> Theatre Mode',
+				path: 'Player > General >> Theatre Mode',
 				title: 'Hide whispers when Theatre Mode is enabled.',
 				component: 'setting-check-box'
 			},
@@ -86,7 +164,7 @@ export default class Player extends Module {
 		this.settings.add('player.theatre.metadata', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> Theatre Mode',
+				path: 'Player > General >> Theatre Mode',
 				title: 'Show metadata when mousing over the player.',
 				component: 'setting-check-box'
 			},
@@ -97,7 +175,7 @@ export default class Player extends Module {
 		this.settings.add('player.theatre.auto-enter', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> Theatre Mode',
+				path: 'Player > General >> Theatre Mode',
 				title: 'Automatically open Theatre Mode when visiting a channel.',
 				component: 'setting-check-box'
 			}
@@ -106,7 +184,7 @@ export default class Player extends Module {
 		this.settings.add('player.ext-hide', {
 			default: 0,
 			ui: {
-				path: 'Channel > Player >> Extensions',
+				path: 'Player > General >> Extensions',
 				title: 'Show Overlay Extensions',
 				component: 'setting-select-box',
 				data: [
@@ -121,7 +199,7 @@ export default class Player extends Module {
 		this.settings.add('player.ext-interaction', {
 			default: true,
 			ui: {
-				path: 'Channel > Player >> Extensions',
+				path: 'Player > General >> Extensions',
 				title: 'Allow mouse interaction with overlay extensions.',
 				component: 'setting-check-box'
 			},
@@ -131,7 +209,7 @@ export default class Player extends Module {
 		this.settings.add('player.home.autoplay', {
 			default: true,
 			ui: {
-				path: 'Channel > Player >> Playback',
+				path: 'Player > General >> Playback',
 				title: 'Auto-play featured broadcasters on the front page.',
 				component: 'setting-check-box'
 			},
@@ -140,7 +218,7 @@ export default class Player extends Module {
 		this.settings.add('player.no-autoplay', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> Playback',
+				path: 'Player > General >> Playback',
 				title: 'Do not automatically start playing videos or streams.',
 				description: 'Note: This feature does not apply when navigating directly from channel to channel.',
 				component: 'setting-check-box'
@@ -150,7 +228,7 @@ export default class Player extends Module {
 		this.settings.add('player.vod.autoplay', {
 			default: true,
 			ui: {
-				path: 'Channel > Player >> Playback',
+				path: 'Player > General >> Playback',
 				title: 'Auto-play the next recommended video after a video finishes.',
 				component: 'setting-check-box'
 			}
@@ -159,7 +237,7 @@ export default class Player extends Module {
 		this.settings.add('player.volume-always-shown', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> Volume',
+				path: 'Player > General >> Volume',
 				title: 'Keep the volume slider expanded at all times.',
 				component: 'setting-check-box'
 			},
@@ -170,7 +248,7 @@ export default class Player extends Module {
 		this.settings.add('player.hide-event-bar', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> General',
+				path: 'Player > General >> General',
 				title: 'Hide Event Bar',
 				description: 'Hide the Event Bar which appears above the player when there is an ongoing event for the current channel.',
 				component: 'setting-check-box'
@@ -184,7 +262,7 @@ export default class Player extends Module {
 		this.settings.add('player.hide-rerun-bar', {
 			default: false,
 			ui: {
-				path: 'Channel > Player >> General',
+				path: 'Player > General >> General',
 				title: 'Hide Rerun Bar',
 				description: 'Hide the Rerun Bar which appears above the player when the current channel is playing a video rather than live content.',
 				component: 'setting-check-box'
@@ -198,7 +276,7 @@ export default class Player extends Module {
 		this.settings.add('player.hide-mouse', {
 			default: true,
 			ui: {
-				path: 'Channel > Player >> General',
+				path: 'Player > General >> General',
 				title: "Hide mouse when controls aren't visible.",
 				component: 'setting-check-box'
 			},
@@ -214,6 +292,76 @@ export default class Player extends Module {
 		this.css_tweaks.toggleHide('player-ext', val === 2);
 	}
 
+	updateCaptionsCSS() {
+		// Font
+		const font_size = this.settings.get('player.captions.font-size');
+		let font_family = this.settings.get('player.captions.font-family');
+		if ( font_family.indexOf(' ') !== -1 && font_family.indexOf(',') === -1 && font_family.indexOf('"') === -1 && font_family.indexOf("'") === -1 )
+			font_family = `"${font_family}"`;
+
+		STYLE_VALIDATOR.style.fontSize = '';
+		STYLE_VALIDATOR.style.fontFamily = '';
+
+		STYLE_VALIDATOR.style.fontSize = font_size;
+		STYLE_VALIDATOR.style.fontFamily = font_family;
+
+		const font_out = [];
+		if ( STYLE_VALIDATOR.style.fontFamily )
+			font_out.push(`font-family: ${STYLE_VALIDATOR.style.fontFamily} !important;`);
+		if ( STYLE_VALIDATOR.style.fontSize )
+			font_out.push(`font-size: ${STYLE_VALIDATOR.style.fontSize} !important;`);
+
+		if ( font_out.length )
+			this.css_tweaks.set('captions-font', `.player-captions {
+	${font_out.join('\n\t')}
+}`)
+		else
+			this.css_tweaks.delete('captions-font');
+
+		// Position
+		const enabled = this.settings.get('player.captions.custom-position'),
+			vertical = this.settings.get('player.captions.vertical'),
+			horizontal = this.settings.get('player.captions.horizontal'),
+			alignment = this.settings.get('player.captions.alignment');
+
+		if ( ! enabled ) {
+			this.css_tweaks.delete('captions-position');
+			return;
+		}
+
+		const out = [],
+			align_horizontal = alignment % 10,
+			align_vertical = Math.floor(alignment / 10);
+
+		let custom_top = false,
+			custom_left = false;
+
+		STYLE_VALIDATOR.style.top = '';
+		STYLE_VALIDATOR.style.top = vertical;
+		if ( STYLE_VALIDATOR.style.top ) {
+			out.push(`${align_vertical === 3 ? 'bottom' : 'top'}: ${STYLE_VALIDATOR.style.top} !important;`)
+			out.push(`${align_vertical === 3 ? 'top' : 'bottom'}: unset !important;`);
+			custom_top = true;
+		}
+
+		STYLE_VALIDATOR.style.top = '';
+		STYLE_VALIDATOR.style.top = horizontal;
+		if ( STYLE_VALIDATOR.style.top ) {
+			out.push(`${align_horizontal === 3 ? 'right' : 'left'}: ${STYLE_VALIDATOR.style.top} !important;`);
+			out.push(`${align_horizontal === 3 ? 'left' : 'right'}: unset !important;`);
+			custom_left = true;
+		}
+
+		if ( align_horizontal !== 2 )
+			out.push(`width: unset !important;`);
+
+		out.push(`transform: translate(${(!custom_left || align_horizontal === 2) ? '-50%' : '0'}, ${(!custom_top || align_vertical === 2) ? '-50%' : '0'})`);
+
+		this.css_tweaks.set('captions-position', `.player-captions-container {
+	${out.join('\n\t')};
+}`);
+	}
+
 	onEnable() {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
@@ -223,6 +371,7 @@ export default class Player extends Module {
 		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
 		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 		this.updateHideExtensions();
+		this.updateCaptionsCSS();
 
 		const t = this;
 
@@ -355,9 +504,12 @@ export default class Player extends Module {
 
 
 	addEndedListener(inst) {
-		const p = inst.player;
+		let p = inst.player;
 		if ( ! p )
 			return;
+
+		if ( p.player )
+			p = p.player;
 
 		if ( inst._ffz_on_ended )
 			off(p, 'ended', inst._ffz_on_ended);
@@ -401,9 +553,12 @@ export default class Player extends Module {
 
 
 	addStateTags(inst) {
-		const p = inst.player;
+		let p = inst.player;
 		if ( ! p )
 			return;
+
+		if ( p.player )
+			p = p.player;
 
 		if ( inst._ffz_on_state ) {
 			off(p, 'ended', inst._ffz_on_state);
@@ -424,10 +579,13 @@ export default class Player extends Module {
 
 
 	updateStateTags(inst) { // eslint-disable-line class-methods-use-this
-		const p = inst.playerRef,
-			player = inst.player;
+		const p = inst.playerRef;
+		let player = inst.player;
 		if ( ! p || ! player )
 			return;
+
+		if ( player.player )
+			player = player.player;
 
 		p.dataset.ended = player.ended;
 		p.dataset.paused = player.paused;
@@ -435,9 +593,12 @@ export default class Player extends Module {
 
 
 	disableAutoplay(inst) {
-		const p = inst.player;
+		let p = inst.player;
 		if ( ! p )
 			return this.log.warn('disableAutoplay() called without Player');
+
+		if ( p.player )
+			p = p.player;
 
 		if ( p.readyState > 0 ) {
 			this.log.info('Player already playing. Pausing.');
@@ -446,14 +607,17 @@ export default class Player extends Module {
 
 		if ( ! inst._ffz_autoplay_handler ) {
 			const listener = inst._ffz_autoplay_handler = () => {
-				inst._ffz_autoplay_handler = null;
-				p.pause();
-
 				setTimeout(() => {
-					off(p, 'play', listener);
-					off(p, 'playing', listener);
-					off(p, 'contentShowing', listener);
-				}, 1000);
+					this.log.info('Pausing due to playback.');
+					inst._ffz_autoplay_handler = null;
+					p.pause();
+
+					setTimeout(() => {
+						off(p, 'play', listener);
+						off(p, 'playing', listener);
+						off(p, 'contentShowing', listener);
+					}, 250);
+				});
 			}
 
 			on(p, 'play', listener);
@@ -477,8 +641,10 @@ export default class Player extends Module {
 
 		} else if ( enabled && ! inst._ffz_scroll_handler ) {
 			on(pr, 'wheel', inst._ffz_scroll_handler = e => {
-				const delta = e.wheelDelta || -(e.deltaY || e.detail || 0),
-					player = inst.player;
+				const delta = e.wheelDelta || -(e.deltaY || e.detail || 0);
+				let player = inst.player;
+				if ( player.player )
+					player = player.player;
 
 				if ( player ) {
 					const amount = this.settings.get('player.volume-scroll-steps'),
@@ -496,13 +662,17 @@ export default class Player extends Module {
 	}
 
 
-	addResetButton(inst) {
+	addResetButton(inst, tries = 0) {
 		const t = this,
 			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
 			container = el && el.parentElement;
 
-		if ( ! container )
+		if ( ! container ) {
+			if ( tries < 5 )
+				return setTimeout(this.addResetButton.bind(this, inst, (tries||0) + 1), 250);
+
 			return this.log.warn('Unable to find container element for Reset Button');
+		}
 
 		let tip = container.querySelector('.ffz--player-reset .player-tip');
 

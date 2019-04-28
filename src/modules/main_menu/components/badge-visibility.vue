@@ -35,7 +35,7 @@
 					v-for="i in sort(sec.badges)"
 					:key="i.id"
 					:class="{default: badgeDefault(i.id)}"
-					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex"
+					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex tw-checkbox"
 				>
 					<input
 						:checked="badgeChecked(i.id)"

@@ -8,6 +8,10 @@
 		margin-bottom: $spacing;
 	}
 
+	& > div {
+		margin-top: 0.5rem;
+	}
+
 	& > header {
 		position: absolute;
 		top: 0; left: $spacing - 0.5rem;
@@ -18,10 +22,6 @@
 
 		.tw-root--theme-dark & {
 			background-color: $bg-dark;
-		}
-
-		& + * {
-			margin-top: 0.5rem;
 		}
 	}
 }

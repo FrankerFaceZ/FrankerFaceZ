@@ -132,7 +132,7 @@ export default class ChannelBar extends Module {
 
 
 	updateChannelBar(inst) {
-		const login = get('props.userData.user.login', inst);
+		const login = get('props.channel.login', inst);
 		if ( login !== inst._ffz_old_login ) {
 			if ( inst._ffz_old_login )
 				this.socket.unsubscribe(inst, `channel.${inst._ffz_old_login}`);
@@ -176,7 +176,7 @@ export default class ChannelBar extends Module {
 		const timers = inst._ffz_meta_timers = inst._ffz_meta_timers || {},
 			refresh_func = key => this.updateMetadata(inst, key),
 			data = {
-				channel: inst.props.userData && inst.props.userData.user,
+				channel: inst.props.channel,
 				hosting: false,
 				legacy: true,
 				_inst: inst

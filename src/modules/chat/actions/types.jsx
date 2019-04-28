@@ -312,7 +312,7 @@ export const whisper = {
 // ============================================================================
 // Gift Subscription
 // ============================================================================
-
+/*
 export const gift_sub = {
 	presets: [{
 		appearance: {
@@ -334,4 +334,4 @@ export const gift_sub = {
 			Woop woop.
 		</div>);
 	}
-}
+}*/

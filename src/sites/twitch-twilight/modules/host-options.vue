@@ -66,7 +66,7 @@
 						<div class="simplebar-content">
 							<div class="tw-pd-1">
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center">
+									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:enabled"
 											:checked="autoHostSettings.enabled"
@@ -85,7 +85,7 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center">
+									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:team_host"
 											:checked="autoHostSettings.team_host"
@@ -105,7 +105,7 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center">
+									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:vodcast_hosting"
 											:checked="!autoHostSettings.deprioritize_vodcast"
@@ -124,7 +124,7 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center">
+									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:recommended_host"
 											:checked="autoHostSettings.recommended_host"
@@ -142,7 +142,7 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center">
+									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:strategy"
 											:checked="autoHostSettings.strategy === 'random'"
