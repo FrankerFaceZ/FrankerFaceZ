@@ -199,6 +199,8 @@ export default class VideoChatHook extends Module {
 
 			cls.prototype.render = function() {
 				try {
+					this._ffz_no_scan = true;
+
 					if ( this.state.showReplyForm || ! t.chat.context.get('chat.video-chat.enabled') )
 						return old_render.call(this);
 

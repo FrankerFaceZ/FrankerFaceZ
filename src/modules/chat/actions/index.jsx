@@ -6,12 +6,14 @@
 
 import Module from 'utilities/module';
 import {has, maybe_call, deep_copy} from 'utilities/object';
-import {ClickOutside} from 'utilities/dom';
+import {createElement, ClickOutside} from 'utilities/dom';
 import Tooltip from 'utilities/tooltip';
 
 import * as ACTIONS from './types';
 import * as RENDERERS from './renderers';
+import { transformPhrase } from 'src/i18n';
 
+const VAR_REPLACE = /\{\{(.*?)(?:\|(.*?))?\}\}/g;
 
 export default class Actions extends Module {
 	constructor(...args) {
@@ -23,6 +25,25 @@ export default class Actions extends Module {
 
 		this.actions = {};
 		this.renderers = {};
+
+		this.settings.add('chat.actions.reasons', {
+			default: [
+				{v: {text: 'One-Man Spam', i18n: 'chat.reasons.spam'}},
+				{v: {text: 'Posting Bad Links', i18n: 'chat.reasons.links'}},
+				{v: {text: 'Ban Evasion', i18n: 'chat.reasons.evasion'}},
+				{v: {text: 'Threats / Personal Info', i18n: 'chat.reasons.personal'}},
+				{v: {text: 'Hate / Harassment', i18n: 'chat.reasons.hate'}},
+				{v: {text: 'Ignoring Broadcaster / Moderators', i18n: 'chat.reason.ignore'}}
+			],
+
+			type: 'array_merge',
+			always_inherit: true,
+
+			ui: {
+				path: 'Chat > Actions > Reasons',
+				component: 'chat-reasons',
+			}
+		});
 
 		this.settings.add('chat.actions.inline', {
 			// Filter out actions
@@ -42,7 +63,7 @@ export default class Actions extends Module {
 
 			type: 'array_merge',
 			ui: {
-				path: 'Chat > In-Line Actions @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
+				path: 'Chat > Actions > In-Line @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
 				component: 'chat-actions',
 				context: ['user', 'room', 'message'],
 				inline: true,
@@ -149,6 +170,79 @@ export default class Actions extends Module {
 	}
 
 
+	replaceVariables(text, data) {
+		return transformPhrase(
+			text,
+			data,
+			this.i18n.locale,
+			VAR_REPLACE,
+			{}
+		);
+	}
+
+
+	renderInlineReasons(data, t, tip) {
+		const reasons = this.parent.context.get('chat.actions.reasons'),
+			reason_elements = [],
+			room = this.parent.getRoom(data.room.id, data.room.login, true),
+			rules = room && room.rules;
+
+		if ( ! reasons && ! rules ) {
+			tip.hide();
+			return null;
+		}
+
+		const click_fn = reason => e => {
+			tip.hide();
+			data.definition.click.call(this, e, Object.assign({reason}, data));
+			e.preventDefault();
+			return false;
+		};
+
+		for(const reason of reasons) {
+			const text = this.replaceVariables(reason.i18n ? this.i18n.t(reason.i18n, reason.text) : reason.text, data);
+
+			reason_elements.push(<li class="tw-full-width tw-relative">
+				<a
+					href="#"
+					onClick={click_fn(text)}
+					class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+				>
+					{text}
+				</a>
+			</li>)
+		}
+
+		if ( reasons && reasons.length && rules && rules.length )
+			reason_elements.push(<div class="tw-mg-y-05 tw-border-b"></div>);
+
+		for(const rule of rules) {
+			reason_elements.push(<li class="tw-full-width tw-relative">
+				<a
+					href="#"
+					onClick={click_fn(rule)}
+					class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+				>
+					{rule}
+				</a>
+			</li>);
+		}
+
+		let reason_text;
+		if ( data.definition.reason_text )
+			reason_text = data.definition.reason_text.call(this, data, t, tip);
+		else
+			reason_text = this.i18n.t('chat.actions.select-reason', 'Please select a reason from the list below:');
+
+		return (<div class="ffz--inline-reasons">
+			{reason_text ? <div class="tw-pd-05 tw-border-b">
+				{reason_text}
+			</div> : null}
+			<ul>{reason_elements}</ul>
+		</div>);
+	}
+
+
 	renderInlineContext(target, data) {
 		if ( target._ffz_destroy )
 			return target._ffz_destroy();
@@ -166,16 +260,29 @@ export default class Actions extends Module {
 			target._ffz_destroy = target._ffz_outside = null;
 		}
 
+		const definition = data.definition;
+		let content;
+
+		if ( definition.context )
+			content = (t, tip) => definition.context.call(this, data, t, tip);
+
+		else if ( definition.uses_reason ) {
+			content = (t, tip) => this.renderInlineReasons(data, t, tip);
+
+		} else
+			return;
+
 		const parent = document.body.querySelector('#root>div') || document.body,
 			tt = target._ffz_popup = new Tooltip(parent, target, {
 				logger: this.log,
 				manual: true,
+				live: false,
 				html: true,
 
 				tooltipClass: 'ffz-action-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
 				arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
 				arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
-				innerClass: 'tw-pd-1',
+				innerClass: '',
 
 				popper: {
 					placement: 'bottom',
@@ -189,7 +296,7 @@ export default class Actions extends Module {
 					}
 				},
 
-				content: (t, tip) => data.definition.context.call(this, data, t, tip),
+				content,
 				onShow: (t, tip) =>
 					setTimeout(() => {
 						target._ffz_outside = new ClickOutside(tip.outer, destroy)
@@ -343,11 +450,11 @@ export default class Actions extends Module {
 		if ( ! data )
 			return;
 
-		if ( ! data.definition.context )
-			return;
-
 		if ( target._ffz_tooltip$0 )
 			target._ffz_tooltip$0.hide();
+
+		if ( ! data.definition.context && ! data.definition.uses_reason )
+			return;
 
 		this.renderInlineContext(event.target, data);
 	}

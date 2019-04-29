@@ -339,7 +339,7 @@ export class Tooltip {
 			tip.outer = el._ffz_out_handler = el._ffz_over_handler = null;
 		}
 
-		if ( this.live )
+		if ( this.live && this.elements )
 			this.elements.delete(tip.target);
 
 		tip._update = tip.rerender = tip.update = noop;

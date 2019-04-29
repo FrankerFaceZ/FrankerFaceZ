@@ -1504,6 +1504,7 @@ export default class ChatHook extends Module {
 		if ( props.data ) {
 			this.chat.badges.updateTwitchBadges(props.data.badges);
 			this.updateRoomBadges(cont, props.data.user && props.data.user.broadcastBadges);
+			this.updateRoomRules(cont, props.chatRules);
 		}
 	}
 
@@ -1533,6 +1534,8 @@ export default class ChatHook extends Module {
 
 		if ( cs.length !== ocs.length )
 			this.updateRoomBadges(cont, cs);
+
+		this.updateRoomRules(cont, props.chatRules);
 	}
 
 	updateRoomBadges(cont, badges) { // eslint-disable-line class-methods-use-this
@@ -1542,6 +1545,14 @@ export default class ChatHook extends Module {
 
 		room.updateBadges(badges);
 		this.updateChatLines();
+	}
+
+	updateRoomRules(cont, rules) { // eslint-disable-line class-methods-use-this
+		const room = cont._ffz_room;
+		if ( ! room )
+			return;
+
+		room.rules = rules;
 	}
 }
 

@@ -103,6 +103,8 @@ export default class ChatLine extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() { try {
+				this._ffz_no_scan = true;
+
 				const msg = t.chat.standardizeMessage(this.props.message),
 					is_action = msg.is_action,
 
@@ -215,6 +217,8 @@ export default class ChatLine extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() {
+				this._ffz_no_scan = true;
+
 				if ( ! this.props.message || ! this.props.message.content )
 					return old_render.call(this);
 
@@ -276,6 +280,7 @@ export default class ChatLine extends Module {
 			}
 
 			cls.prototype.render = function() { try {
+				this._ffz_no_scan = true;
 
 				const types = t.parent.message_types || {},
 					deleted_count = this.props.deletedCount,
@@ -722,6 +727,8 @@ export default class ChatLine extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() { try {
+				this._ffz_no_scan = true;
+
 				if ( ! this.props.installedExtensions )
 					return null;
 

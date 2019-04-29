@@ -274,8 +274,12 @@ export default class EmoteMenu extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() {
-				if ( ! this.props || ! has(this.props, 'channelOwnerID') || ! t.chat.context.get('chat.emote-menu.enabled') )
+				if ( ! this.props || ! has(this.props, 'channelOwnerID') || ! t.chat.context.get('chat.emote-menu.enabled') ) {
+					this._ffz_no_scan = false;
 					return old_render.call(this);
+				}
+
+				this._ffz_no_scan = true;
 
 				return (<t.MenuErrorWrapper visible={this.props.visible}>
 					<t.MenuComponent

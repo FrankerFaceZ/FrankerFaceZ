@@ -397,7 +397,7 @@ export default class Fine extends Module {
 			else if ( node instanceof Node )
 				node = this.getReactInstance(node);
 
-			if ( ! node || ! this._live_waiting.length )
+			if ( ! node || node._ffz_no_scan || ! this._live_waiting.length )
 				continue;
 
 			const data = this.searchAll(node, this._waiting_crit, 1000);

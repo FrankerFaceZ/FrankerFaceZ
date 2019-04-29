@@ -433,6 +433,7 @@ export default class Metadata extends Module {
 									logger: this.log,
 									manual: true,
 									html: true,
+									live: false,
 
 									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base tw-c-text-base',
 									// Hide the arrow for now, until we re-do our CSS to make it render correctly.
@@ -742,6 +743,7 @@ export default class Metadata extends Module {
 								tt = el._ffz_popup = new Tooltip(parent, el, {
 									logger: this.log,
 									manual: true,
+									live: false,
 									html: true,
 
 									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',

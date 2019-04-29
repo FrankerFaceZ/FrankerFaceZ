@@ -9,7 +9,7 @@ import User from './user';
 import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
-import {has, SourcedSet} from 'utilities/object';
+import {has, SourcedSet, set_equals} from 'utilities/object';
 
 
 export default class Room {
@@ -469,7 +469,15 @@ export default class Room {
 	// Bits Data
 	// ========================================================================
 
-	updateBitsConfig(config) {
+	updateBitsConfig(config, force) {
+		if ( ! force && this.bitsConfig && config ) {
+			const old_keys = new Set(Object.keys(this.bitsConfig)),
+				new_keys = new Set(Object.keys(config));
+
+			if ( set_equals(old_keys, new_keys) )
+				return;
+		}
+
 		this.bitsConfig = config;
 		this.buildBitsCSS();
 	}
