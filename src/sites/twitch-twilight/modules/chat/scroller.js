@@ -318,14 +318,22 @@ export default class Scroller extends Module {
 					return;
 
 				const t = this;
+
+				this._doScroll = function() {
+					if ( ! t.ffz_freeze_enabled || ! t.state.ffzFrozen ) {
+						if ( t.ffz_smooth_scroll )
+							t.smoothScrollBottom();
+						else
+							t._old_scroll();
+					}
+				}
+
 				this._old_scroll = this.scrollToBottom;
 				this.scrollToBottom = function() {
-					if ( ! this.ffz_freeze_enabled || ! this.state.ffzFrozen ) {
-						if ( this.ffz_smooth_scroll )
-							this.smoothScrollBottom();
-						else
-							this._old_scroll();
-					}
+					if ( this._ffz_animation )
+						cancelAnimationFrame(this._ffz_animation);
+
+					this._ffz_animation = requestAnimationFrame(t._doScroll);
 				}
 
 				this._ffz_handleScroll = this.handleScrollEvent;

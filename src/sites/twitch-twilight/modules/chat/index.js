@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, make_enum, split_chars, shallow_object_equals} from 'utilities/object';
+import {has, make_enum, split_chars, shallow_object_equals, set_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -1453,6 +1453,21 @@ export default class ChatHook extends Module {
 		const room = chat._ffz_room;
 		if ( ! room )
 			return;
+
+		// We have to check that the available cheers haven't changed
+		// to avoid doing too many recalculations.
+		let new_bits = null;
+		if ( config && Array.isArray(config.orderedActions) ) {
+			new_bits = new Set;
+			for(const action of config.orderedActions)
+				if ( action && action.prefix )
+					new_bits.add(action.prefix);
+		}
+
+		if ( (! this._ffz_old_bits && ! new_bits) || set_equals(this._ffz_old_bits, new_bits) )
+			return;
+
+		this._ffz_old_bits = new_bits;
 
 		room.updateBitsConfig(formatBitsConfig(config));
 		this.updateChatLines();

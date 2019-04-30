@@ -116,6 +116,18 @@ export function shallow_object_equals(a, b) {
 }
 
 
+export function map_equals(a, b) {
+	if ( !(a instanceof Map) || !(b instanceof Map) || a.size !== b.size )
+		return false;
+
+	for(const [key, val] of a)
+		if ( ! b.has(key) || b.get(key) !== val )
+			return false;
+
+	return true;
+}
+
+
 export function set_equals(a,b) {
 	if ( !(a instanceof Set) || !(b instanceof Set) || a.size !== b.size )
 		return false;

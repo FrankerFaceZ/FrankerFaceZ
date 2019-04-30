@@ -300,6 +300,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-users--color-regex', {
 			requires: ['chat.filtering.highlight-basic-users'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-users');
 				if ( ! val || ! val.length )
@@ -358,7 +359,8 @@ export default class Chat extends Module {
 
 
 		this.settings.add('chat.filtering.highlight-basic-users-blocked--regex', {
-			requires: ['chat.filtering.highlight-basic-blocked'],
+			requires: ['chat.filtering.highlight-basic-users-blocked'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-users-blocked');
 				if ( ! val || ! val.length )
@@ -407,6 +409,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-badges--colors', {
 			requires: ['chat.filtering.highlight-basic-badges'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-badges');
 				if ( ! val || ! val.length )
@@ -440,6 +443,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-badges-blocked--list', {
 			requires: ['chat.filtering.highlight-basic-badges-blocked'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-badges-blocked');
 				if ( ! val || ! val.length )
@@ -471,6 +475,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-terms--color-regex', {
 			requires: ['chat.filtering.highlight-basic-terms'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-terms');
 				if ( ! val || ! val.length )
@@ -537,6 +542,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-blocked--regex', {
 			requires: ['chat.filtering.highlight-basic-blocked'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-blocked');
 				if ( ! val || ! val.length )
