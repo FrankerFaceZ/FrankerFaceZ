@@ -199,33 +199,37 @@ export default class Actions extends Module {
 			return false;
 		};
 
-		for(const reason of reasons) {
-			const text = this.replaceVariables(reason.i18n ? this.i18n.t(reason.i18n, reason.text) : reason.text, data);
+		if ( reasons && reasons.length ) {
+			for(const reason of reasons) {
+				const text = this.replaceVariables(reason.i18n ? this.i18n.t(reason.i18n, reason.text) : reason.text, data);
 
-			reason_elements.push(<li class="tw-full-width tw-relative">
-				<a
-					href="#"
-					onClick={click_fn(text)}
-					class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
-				>
-					{text}
-				</a>
-			</li>)
+				reason_elements.push(<li class="tw-full-width tw-relative">
+					<a
+						href="#"
+						onClick={click_fn(text)}
+						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+					>
+						{text}
+					</a>
+				</li>)
+			}
 		}
 
-		if ( reasons && reasons.length && rules && rules.length )
-			reason_elements.push(<div class="tw-mg-y-05 tw-border-b"></div>);
+		if ( rules && rules.length ) {
+			if ( reasons && reasons.length )
+				reason_elements.push(<div class="tw-mg-y-05 tw-border-b"></div>);
 
-		for(const rule of rules) {
-			reason_elements.push(<li class="tw-full-width tw-relative">
-				<a
-					href="#"
-					onClick={click_fn(rule)}
-					class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
-				>
-					{rule}
-				</a>
-			</li>);
+			for(const rule of rules) {
+				reason_elements.push(<li class="tw-full-width tw-relative">
+					<a
+						href="#"
+						onClick={click_fn(rule)}
+						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+					>
+						{rule}
+					</a>
+				</li>);
+			}
 		}
 
 		let reason_text;
