@@ -64,8 +64,7 @@ export default {
 	data() {
 		return {
 			default_reason: {
-				text: '',
-				i18n: null
+				text: ''
 			}
 		}
 	},
@@ -101,6 +100,8 @@ export default {
 			if ( ! reason )
 				return;
 
+			delete reason.i18n;
+
 			const vals = Array.from(this.val);
 			vals.push({v: reason});
 			this.set(deep_copy(vals));
@@ -120,12 +121,9 @@ export default {
 		},
 
 		save(val, new_val) {
-			if ( val.v && new_val ) {
-				if ( new_val.i18n && new_val.text !== val.v.text )
-					new_val.i18n = null;
-			}
-
+			delete new_val.i18n;
 			val.v = new_val;
+
 			this.set(deep_copy(this.val));
 		}
 	}

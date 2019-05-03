@@ -14,7 +14,7 @@
 			>
 
 			<div class="tw-c-text-alt-2 tw-mg-b-1">
-				{{ t('setting.actions.variables', 'Available Variables: %{vars}', {vars}) }}
+				{{ t('setting.actions.variables', 'Available Variables: {vars}', {vars}) }}
 			</div>
 		</div>
 	</div>

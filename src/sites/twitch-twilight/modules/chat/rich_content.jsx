@@ -103,7 +103,7 @@ export default class RichContent extends Module {
 					title = '';
 				}
 
-				return (<div class={`tw-overflow-hidden tw-align-items-center tw-flex${desc_2 ? ' ffz--two-line' : ''}`}>
+				return (<div class={`ffz--card-text tw-overflow-hidden tw-align-items-center tw-flex${desc_2 ? ' ffz--two-line' : ''}`}>
 					<div class="tw-full-width tw-pd-l-1">
 						<div class="chat-card__title tw-ellipsis">
 							<span

@@ -1168,7 +1168,7 @@ export default class Chat extends Module {
 			l = parts.length,
 			emotes = {};
 
-		let idx = 0, ret, last_type = null;
+		let idx = 0, ret, last_type = null, bits = 0;
 
 		for(let i=0; i < l; i++) {
 			const part = parts[i],
@@ -1186,10 +1186,11 @@ export default class Chat extends Module {
 			else if ( content.url )
 				ret = content.url;
 
-			else if ( content.cheerAmount )
+			else if ( content.cheerAmount ) {
+				bits += content.cheerAmount;
 				ret = `${content.alt}${content.cheerAmount}`;
 
-			else if ( content.images ) {
+			} else if ( content.images ) {
 				const url = (content.images.themed ? content.images.dark : content.images.sources),
 					match = url && /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']),
 					id = match && match[1];
@@ -1219,6 +1220,7 @@ export default class Chat extends Module {
 		if ( ! emotes_only )
 			msg.message = out.join('');
 
+		msg.bits = bits;
 		msg.ffz_emotes = emotes;
 		return msg;
 	}
@@ -1228,8 +1230,15 @@ export default class Chat extends Module {
 		if (!( time instanceof Date ))
 			time = new Date(time);
 
-		const fmt = this.context.get('chat.timestamp-format');
-		return dayjs(time).locale(this.i18n.locale).format(fmt);
+		const fmt = this.context.get('chat.timestamp-format'),
+			d = dayjs(time);
+
+		try {
+			return d.locale(this.i18n.locale).format(fmt);
+		} catch(err) {
+			// If the locale isn't loaded, this can fail.
+			return d.format(fmt);
+		}
 	}
 
 

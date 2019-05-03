@@ -380,16 +380,23 @@ export default class Room {
 	// Badge Data
 	// ========================================================================
 
+	hasBadges() {
+		return !! this.badges
+	}
+
 	updateBadges(badges) {
-		if ( ! badges )
+		if ( ! Array.isArray(badges) )
 			this.badges = badges;
 		else {
-			const b = {};
-			for(const data of badges) {
-				const sid = data.setID,
-					bs = b[sid] = b[sid] || {};
+			let b = null;
+			if ( badges.length ) {
+				b = {};
+				for(const data of badges) {
+					const sid = data.setID,
+						bs = b[sid] = b[sid] || {};
 
-				bs[data.version] = data;
+					bs[data.version] = data;
+				}
 			}
 
 			this.badges = b;

@@ -9,45 +9,7 @@
 			</div>
 
 			<section class="tw-pd-t-1 tw-border-t tw-mg-t-1">
-				<h2>Welcome to the v4.0 Beta</h2>
-
-				<p>
-					This is the initial, beta release of FrankerFaceZ v4.0 with support
-					for the Twitch website rewrite.
-
-					As you'll notice, this release is <strong>not</strong> complete.
-					There are missing features. There are bugs. If you are a moderator,
-					you will want to just keep opening a Legacy Chat Popout for now.
-				</p>
-
-				<p>
-					FrankerFaceZ v4.0 is still under heavy development and there will
-					be significant changes and improvements in the coming weeks. For
-					now, here are some of the bigger issues:
-				</p>
-
-				<ul class="tw-mg-b-2">
-					<li>Settings from the old version are not being imported.</li>
-					<li>Advanced input (better tab completion, history) isn't available.</li>
-				</ul>
-
-				<p>And the biggest features still under development:</p>
-
-				<ul class="tw-mg-b-2">
-					<li>Chat Filtering (Highlighted Words, etc.)</li>
-					<li>Room Status Indicators</li>
-					<li>Custom Mod Cards</li>
-					<li>Recent Highlights</li>
-					<li>Portrait Mode</li>
-					<li>Importing and exporting settings</li>
-					<li>User Aliases</li>
-				</ul>
-
-				<p>
-					For a possibly more up-to-date list of what I'm working on,
-					please consult <a href="https://trello.com/b/LGcYPFwi/frankerfacez-v4" target="_blank">this Trello board</a>.
-				</p>
-
+				<markdown :source="t('home.about', md)" />
 			</section>
 
 
@@ -90,7 +52,7 @@
 			</div>
 
 			<a class="twitter-timeline" data-width="300" data-theme="dark" href="https://twitter.com/FrankerFaceZ?ref_src=twsrc%5Etfw">
-				Tweets by FrankerFaceZ
+				{{ t('home.tweets', 'Tweets by FrankerFaceZ') }}
 			</a>
 		</div>
 	</div>
@@ -99,10 +61,18 @@
 
 <script>
 
+import HOME_MD from '../home.md';
+
 import {createElement as e} from 'utilities/dom';
 
 export default {
 	props: ['item', 'context'],
+
+	data() {
+		return {
+			md: HOME_MD
+		}
+	},
 
 	mounted() {
 		let el;

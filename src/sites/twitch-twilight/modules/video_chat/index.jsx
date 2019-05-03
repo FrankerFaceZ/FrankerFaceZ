@@ -4,7 +4,7 @@
 // Video Chat Hooks
 // ============================================================================
 
-import {get} from 'utilities/object';
+import {get, has} from 'utilities/object';
 import {print_duration} from 'utilities/time';
 //import {ClickOutside} from 'utilities/dom';
 import {formatBitsConfig} from '../chat';
@@ -33,6 +33,12 @@ export default class VideoChatHook extends Module {
 		this.VideoChatController = this.fine.define(
 			'video-chat-controller',
 			n => n.onMessageScrollAreaMount && n.createReply,
+			['user-video', 'user-clip', 'video']
+		);
+
+		this.VideoChatMenu = this.fine.define(
+			'video-chat-menu',
+			n => n.onToggleMenu && n.getContent && n.props && has(n.props, 'isExpandedLayout'),
 			['user-video', 'user-clip', 'video']
 		);
 
@@ -135,10 +141,63 @@ export default class VideoChatHook extends Module {
 		const createElement = React.createElement,
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
 
+		this.MenuContainer = class FFZMenuContainer extends React.Component {
+			constructor(props) {
+				super(props);
+
+				this.onBanUser = () => {
+					this.props.onBanUserClick({
+						bannedUser: this.props.context.comment.commenter,
+						targetChannel: this.props.context.comment.channelId,
+						comment: this.props.context.comment
+					});
+				}
+
+				this.onDeleteComment = () => {
+					this.props.onDeleteCommentClick(this.props.context.comment);
+				}
+
+				this.onOpen = () => {
+					this.props.onDisableSync();
+					this.setState({
+						force: true
+					});
+				}
+
+				this.onClose = () => {
+					this.setState({
+						force: false
+					})
+				};
+
+				this.state = {
+					force: false
+				}
+			}
+
+			render() {
+				if ( ! t.VideoChatMenu._class )
+					return null;
+
+				return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
+					<t.VideoChatMenu._class
+						context={this.props.context}
+						isCurrentUserModerator={this.props.isCurrentUserModerator}
+						isExpandedLayout={this.props.isExpandedLayout}
+						onBanUserClick={this.onBanUser}
+						onClose={this.onClose}
+						onDeleteCommentClick={this.onDeleteComment}
+						onOpen={this.onOpen}
+						onReplyClick={this.props.onReplyClick}
+					/>
+				</div>);
+			}
+		}
+
 		this.VideoChatLine.ready(cls => {
 			const old_render = cls.prototype.render;
 
-			cls.prototype.ffzRenderMessage = function(msg) {
+			cls.prototype.ffzRenderMessage = function(msg, reply) {
 				const is_action = msg.is_action,
 					user = msg.user,
 					color = t.site_chat.colors.process(user.color),
@@ -175,6 +234,15 @@ export default class VideoChatHook extends Module {
 							{rich_content && createElement(FFZRichContent, rich_content)}
 						</div>
 					</div>
+					{ reply ? (<t.MenuContainer
+						context={reply}
+						isCurrentUserModerator={this.props.isCurrentUserModerator}
+						isExpandedLayout={this.props.isExpandedLayout}
+						onBanUserClick={this.props.onBanUserClick}
+						onDeleteCommentClick={this.props.onDeleteCommentClick}
+						onDisableSync={this.props.onDisableSync}
+						onReplyClick={this.onReplyClickHandler}
+					/>) : null}
 				</div>);
 			}
 
@@ -187,11 +255,11 @@ export default class VideoChatHook extends Module {
 						<span class="tw-button__text tw-pd-0">{ t.i18n.t('video-chat.reply', 'Reply') }</span>
 					</button>
 					<span class="tw-c-text-alt-2 tw-font-size-7 tw-mg-l-05 tw-tooltip-wrapper">
-						• { t.i18n.t('video-chat.time', '%{time|humanTime} ago', {
+						• { t.i18n.t('video-chat.time', '{time,humantime} ago', {
 							time: msg.timestamp
 						}) }
 						<div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" role="tooltip">
-							{ msg.timestamp.toLocaleString() }
+							{ t.i18n.formatDateTime(msg.timestamp, 'full') }
 						</div>
 					</span>
 				</div>)
@@ -206,7 +274,7 @@ export default class VideoChatHook extends Module {
 
 					const context = this.props.messageContext,
 						msg = t.standardizeMessage(context.comment, context.author),
-						main_message = this.ffzRenderMessage(msg),
+						main_message = this.ffzRenderMessage(msg, context),
 
 						bg_css = msg.mentioned && msg.mention_color ? t.site_chat.inverse_colors.process(msg.mention_color) : null;
 
@@ -245,7 +313,7 @@ export default class VideoChatHook extends Module {
 								</div>)}
 								<ul>{
 									context.replies.map(reply => (<li key={reply.comment && reply.comment.id} class="tw-mg-l-05">
-										{ this.ffzRenderMessage(t.standardizeMessage(reply.comment, reply.author)) }
+										{ this.ffzRenderMessage(t.standardizeMessage(reply.comment, reply.author), reply) }
 										{ this.props.isExpandedLayout && this.ffzRenderExpanded(msg) }
 									</li>))
 								}</ul>

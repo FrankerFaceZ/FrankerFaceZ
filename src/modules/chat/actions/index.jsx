@@ -40,7 +40,7 @@ export default class Actions extends Module {
 			always_inherit: true,
 
 			ui: {
-				path: 'Chat > Actions > Reasons',
+				path: 'Chat > Actions > Reasons >> Custom Reasons',
 				component: 'chat-reasons',
 			}
 		});
@@ -77,6 +77,15 @@ export default class Actions extends Module {
 						renderers: deep_copy(this.renderers)
 					}
 				}
+			}
+		});
+
+		this.settings.add('chat.actions.rules-as-reasons', {
+			default: true,
+			ui: {
+				path: 'Chat > Actions > Reasons >> Rules',
+				component: 'setting-check-box',
+				title: "Include the current room's rules in the list of reasons."
 			}
 		});
 
@@ -184,7 +193,7 @@ export default class Actions extends Module {
 	renderInlineReasons(data, t, tip) {
 		const reasons = this.parent.context.get('chat.actions.reasons'),
 			reason_elements = [],
-			room = this.parent.getRoom(data.room.id, data.room.login, true),
+			room = this.parent.context.get('chat.actions.rules-as-reasons') && this.parent.getRoom(data.room.id, data.room.login, true),
 			rules = room && room.rules;
 
 		if ( ! reasons && ! rules ) {
@@ -201,7 +210,7 @@ export default class Actions extends Module {
 
 		if ( reasons && reasons.length ) {
 			for(const reason of reasons) {
-				const text = this.replaceVariables(reason.i18n ? this.i18n.t(reason.i18n, reason.text) : reason.text, data);
+				const text = this.replaceVariables((typeof reason.i18n === 'string') ? this.i18n.t(reason.i18n, reason.text) : reason.text, data);
 
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a

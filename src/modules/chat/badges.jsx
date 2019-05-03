@@ -284,7 +284,7 @@ export default class Badges extends Module {
 					let title = bd.title || global_badge.title;
 					if ( d.data ) {
 						if ( d.badge === 'subscriber' ) {
-							title = this.i18n.t('badges.subscriber.months', '%{title} (%{count} Month%{count|en_plural})', {
+							title = this.i18n.t('badges.subscriber.months', '{title} ({count,number} Month{count,en_plural})', {
 								title,
 								count: d.data
 							});
@@ -645,16 +645,23 @@ export default class Badges extends Module {
 		return b;
 	}
 
+	hasTwitchBadges() {
+		return !! this.twitch_badges
+	}
+
 	updateTwitchBadges(badges) {
-		if ( ! badges )
+		if ( ! Array.isArray(badges) )
 			this.twitch_badges = badges;
 		else {
-			const b = {};
-			for(const data of badges) {
-				const sid = data.setID,
-					bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
+			let b = null;
+			if ( badges.length ) {
+				b = {};
+				for(const data of badges) {
+					const sid = data.setID,
+						bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
 
-				bs[data.version] = data;
+					bs[data.version] = data;
+				}
 			}
 
 			this.twitch_badges = b;

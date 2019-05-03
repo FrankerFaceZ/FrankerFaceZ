@@ -189,7 +189,7 @@ export default class Scroller extends Module {
 
 				this._ffz_freeze_indicator.firstElementChild.textContent = t.i18n.t(
 					'chat.paused',
-					'(Chat Paused Due to %{reason})',
+					'(Chat Paused Due to {reason})',
 					{reason}
 				);
 			}

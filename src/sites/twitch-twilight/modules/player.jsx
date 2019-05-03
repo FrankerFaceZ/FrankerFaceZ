@@ -36,6 +36,12 @@ export default class Player extends Module {
 			PLAYER_ROUTES
 		);
 
+		this.SquadStreamBar = this.fine.define(
+			'squad-stream-bar',
+			n => n.shouldRenderSquadBanner && n.props && n.props.triggerPlayerReposition,
+			PLAYER_ROUTES
+		);
+
 		this.settings.add('player.volume-scroll', {
 			default: false,
 			ui: {
@@ -273,6 +279,16 @@ export default class Player extends Module {
 			}
 		});
 
+		this.settings.add('player.hide-squad-banner', {
+			default: false,
+			ui: {
+				path: 'Player > General >> General',
+				title: 'Hide Squad Streaming Bar',
+				component: 'setting-check-box'
+			},
+			changed: () => this.SquadStreamBar.forceUpdate()
+		});
+
 		this.settings.add('player.hide-mouse', {
 			default: true,
 			ui: {
@@ -374,6 +390,19 @@ export default class Player extends Module {
 		this.updateCaptionsCSS();
 
 		const t = this;
+
+		this.SquadStreamBar.ready(cls => {
+			const old_should_render = cls.prototype.shouldRenderSquadBanner;
+
+			cls.prototype.shouldRenderSquadBanner = function(...args) {
+				if ( t.settings.get('player.hide-squad-banner') )
+					return false;
+
+				return old_should_render.call(this, ...args);
+			}
+
+			this.SquadStreamBar.forceUpdate();
+		})
 
 		this.Player.on('mount', this.onMount, this);
 		this.Player.on('unmount', this.onUnmount, this);

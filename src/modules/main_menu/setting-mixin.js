@@ -103,9 +103,9 @@ export default {
 			};
 
 			if ( this.isInherited )
-				return this.t('setting.inherited-from', 'Inherited From: %{title}', opts);
+				return this.t('setting.inherited-from', 'Inherited From: {title}', opts);
 			else if ( this.isOverridden )
-				return this.t('setting.overridden-by', 'Overridden By: %{title}', opts);
+				return this.t('setting.overridden-by', 'Overridden By: {title}', opts);
 		}
 	},
 

@@ -255,11 +255,11 @@ export default class Directory extends SiteModule {
 							<p class="tw-c-text-alt tw-ellipsis">{
 								game ?
 									game.id == CREATIVE_ID ?
-										t.i18n.tList('directory.user-creative', '%{user} being %{game}', {
+										t.i18n.tList('directory.user-creative', '{user} being {game}', {
 											user: user_link,
 											game: game_link
 										}) :
-										t.i18n.tList('directory.user-playing', '%{user} playing %{game}', {
+										t.i18n.tList('directory.user-playing', '{user} playing {game}', {
 											user: user_link,
 											game: game_link
 										})
@@ -269,8 +269,8 @@ export default class Directory extends SiteModule {
 						<div data-test-selector="preview-card-titles__subtitle">
 							<p class="tw-c-text-alt tw-ellipsis">{
 								nodes.length > 1 ?
-									t.i18n.t('directory.hosted.by-many', 'Hosted by %{count} channel%{count|en_plural}', nodes.length) :
-									t.i18n.tList('directory.hosted.by-one', 'Hosted by %{user}', {
+									t.i18n.t('directory.hosted.by-many', 'Hosted by {count,number} channel{count,en_plural}', nodes.length) :
+									t.i18n.tList('directory.hosted.by-one', 'Hosted by {user}', {
 										user: <a href={`/${nodes[0].login}`} data-href={`/${nodes[0].login}`} onClick={t.routeClick} title={nodes[0].displayName} class="tw-link tw-link--inherit">{nodes[0].displayName}</a>
 									})
 							}</p>
@@ -421,8 +421,8 @@ export default class Directory extends SiteModule {
 		if ( inst.ffz_last_created_at !== created_at ) {
 			inst.ffz_uptime_tt.textContent = this.i18n.t(
 				'metadata.uptime.since',
-				'(since %{since})',
-				{since: up_since.toLocaleString()}
+				'(since {since,datetime})',
+				{since: up_since}
 			);
 
 			inst.ffz_last_created_at = created_at;

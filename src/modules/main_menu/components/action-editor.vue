@@ -9,7 +9,7 @@
 				<h4>{{ title }}</h4>
 				<div class="description">{{ description }}</div>
 				<div v-if="canEdit" class="visibility tw-c-text-alt">
-					{{ t('setting.actions.visible', 'visible: %{list}', {list: visibility}) }}
+					{{ t('setting.actions.visible', 'visible: {list}', {list: visibility}) }}
 				</div>
 			</template>
 			<template v-else>
@@ -281,7 +281,7 @@ export default {
 
 			const def = this.data.actions[this.display.action];
 			if ( ! def )
-				return this.t('setting.actions.unknown', 'Unknown Action Type: %{action}', this.display);
+				return this.t('setting.actions.unknown', 'Unknown Action Type: {action}', this.display);
 
 			if ( def.title ) {
 				const data = this.getData(),
@@ -292,7 +292,7 @@ export default {
 					return this.t(i18n, out, data);
 			}
 
-			return this.t('setting.actions.untitled', 'Action: %{action}', this.display);
+			return this.t('setting.actions.untitled', 'Action: {action}', this.display);
 
 		},
 

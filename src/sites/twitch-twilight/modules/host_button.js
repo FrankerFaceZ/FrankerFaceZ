@@ -86,23 +86,23 @@ export default class HostButton extends Module {
 					return;
 
 				if ( this._host_updating )
-					return 'Updating...';
+					return this.i18n.t('metadata.host-button.updating', 'Updating...');
 
 				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login))
-					? this.i18n.t('metadata.host.button.unhost', 'Unhost')
-					: this.i18n.t('metadata.host.button.host', 'Host');
+					? this.i18n.t('metadata.host-button.unhost', 'Unhost')
+					: this.i18n.t('metadata.host-button.host', 'Host');
 			},
 
 			tooltip: () => {
 				if (this._host_error) {
 					return this.i18n.t(
-						`metadata.host.button.tooltip.error.${this._host_error.key}`,
+						`metadata.host-button.tooltip.error.${this._host_error.key}`,
 						this._host_error.text);
 				} else {
-					return this.i18n.t('metadata.host.button.tooltip',
-						'Currently hosting: %{channel}',
+					return this.i18n.t('metadata.host-button.tooltip',
+						'Currently hosting: {channel}',
 						{
-							channel: this._last_hosted_channel || this.i18n.t('metadata.host.button.tooltip.none', 'None')
+							channel: this._last_hosted_channel || this.i18n.t('metadata.host-button.tooltip.none', 'None')
 						});
 				}
 			}
@@ -189,6 +189,8 @@ export default class HostButton extends Module {
 	}
 
 	onEnable() {
+		this.on('i18n:update', () => this.metadata.updateMetadata('host'));
+
 		this.metadata.updateMetadata('host');
 
 		this.chat.ChatService.ready((cls, instances) => {

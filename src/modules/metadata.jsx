@@ -97,8 +97,8 @@ export default class Metadata extends Module {
 					'Stream Uptime'
 				)}<div class="pd-t-05">${this.i18n.t(
 					'metadata.uptime.since',
-					'(since %{since})',
-					{since: data.created.toLocaleString()}
+					'(since {since,datetime})',
+					{since: data.created}
 				)}</div>`;
 			}
 		}
@@ -205,7 +205,7 @@ export default class Metadata extends Module {
 				const delayed = data.drift > 5000 ?
 					`${this.i18n.t(
 						'metadata.player-stats.delay-warning',
-						'Your local clock seems to be off by roughly %{count} seconds, which could make this inaccurate.',
+						'Your local clock seems to be off by roughly {count,number} seconds, which could make this inaccurate.',
 						Math.round(data.drift / 10) / 100
 					)}<hr>` :
 					'';
@@ -216,7 +216,7 @@ export default class Metadata extends Module {
 				const stats = data.stats,
 					video_info = this.i18n.t(
 						'metadata.player-stats.video-info',
-						'Video: %{videoResolution}p%{fps}\nPlayback Rate: %{playbackRate|number} Kbps\nDropped Frames:%{skippedFrames|number}',
+						'Video: {videoResolution}p{fps}\nPlayback Rate: {playbackRate,number} Kbps\nDropped Frames:{skippedFrames,number}',
 						stats
 					);
 
@@ -226,7 +226,7 @@ export default class Metadata extends Module {
 						'Video Information'
 					)}<div class="pd-t-05">${this.i18n.t(
 						'metadata.player-stats.broadcast-ago',
-						'Broadcast %{count}s Ago',
+						'Broadcast {count,number}s Ago',
 						data.delay
 					)}</div><div class="pd-t-05">${video_info}</div>`;
 

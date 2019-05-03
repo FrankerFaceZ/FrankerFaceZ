@@ -584,9 +584,15 @@ export class FineWrapper extends EventEmitter {
 					return original.apply(this, args);
 				} :
 
-				function(...args) {
-					t.emit(event, this, ...args);
-				};
+				key === 'shouldComponentUpdate' ?
+					function(...args) {
+						t.emit(event, this, ...args);
+						return true;
+					}
+					:
+					function(...args) {
+						t.emit(event, this, ...args);
+					};
 
 		this[`__${key}`] = [fn, original];
 	}

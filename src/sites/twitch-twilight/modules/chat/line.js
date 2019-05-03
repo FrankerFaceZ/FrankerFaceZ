@@ -308,10 +308,10 @@ export default class ChatLine extends Module {
 
 						return e('div', {
 							className: 'chat-line__status'
-						}, t.i18n.t('chat.deleted-messages', [
-							'%{count} message was deleted by a moderator.',
-							'%{count} messages were deleted by a moderator.'
-						], {
+						}, t.i18n.t('chat.deleted-messages', `{count,plural,
+one {One message was deleted by a moderator.}
+other {# messages were deleted by a moderator.}
+}`, {
 							count: deleted_count
 						}));
 					}
@@ -334,7 +334,7 @@ export default class ChatLine extends Module {
 						const action = msg.modActionType;
 						if ( action === 'timeout' )
 							mod_action = t.i18n.t('chat.mod-action.timeout',
-								'%{duration} Timeout'
+								'{duration} Timeout'
 								, {
 									duration: print_duration(msg.duration || 1)
 								});
@@ -344,7 +344,7 @@ export default class ChatLine extends Module {
 							mod_action = t.i18n.t('chat.mod-action.delete', 'Deleted');
 
 						if ( mod_action && msg.modLogin )
-							mod_action = t.i18n.t('chat.mod-action.by', '%{action} by %{login}', {
+							mod_action = t.i18n.t('chat.mod-action.by', '{action} by {login}', {
 								login: msg.modLogin,
 								action: mod_action
 							});
@@ -463,7 +463,7 @@ export default class ChatLine extends Module {
 					if ( mystery )
 						msg.mystery.line = this;
 
-					const sub_msg = t.i18n.tList('chat.sub.gift', "%{user} is gifting %{count} Tier %{tier} Sub%{count|en_plural} to %{channel}'s community! ", {
+					const sub_msg = t.i18n.tList('chat.sub.gift', "{user} is gifting {count,number} Tier {tier} Sub{count,en_plural} to {channel}'s community! ", {
 						user: (msg.sub_anon || user.username === 'ananonymousgifter') ?
 							t.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
 							e('span', {
@@ -481,7 +481,7 @@ export default class ChatLine extends Module {
 					if ( msg.sub_total === 1 )
 						sub_msg.push(t.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));
 					else if ( msg.sub_total > 1 )
-						sub_msg.push(t.i18n.t('chat.sub.gift-total', "They've gifted %{count} Subs in the channel!", {
+						sub_msg.push(t.i18n.t('chat.sub.gift-total', "They've gifted {count} Subs in the channel!", {
 							count: msg.sub_total
 						}));
 
@@ -551,7 +551,7 @@ export default class ChatLine extends Module {
 					const plan = msg.sub_plan || {},
 						tier = SUB_TIERS[plan.plan] || 1;
 
-					const sub_msg = t.i18n.tList('chat.sub.mystery', '%{user} gifted a %{plan} Sub to %{recipient}! ', {
+					const sub_msg = t.i18n.tList('chat.sub.mystery', '{user} gifted a {plan} Sub to {recipient}! ', {
 						user: (msg.sub_anon || user.username === 'ananonymousgifter') ?
 							t.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
 							e('span', {
@@ -562,7 +562,7 @@ export default class ChatLine extends Module {
 								className: 'tw-c-text-base tw-strong'
 							}, user.userDisplayName)),
 						plan: plan.plan === 'custom' ? '' :
-							t.i18n.t('chat.sub.gift-plan', 'Tier %{tier}', {tier}),
+							t.i18n.t('chat.sub.gift-plan', 'Tier {tier}', {tier}),
 						recipient: e('span', {
 							role: 'button',
 							className: 'chatter-name',
@@ -576,7 +576,7 @@ export default class ChatLine extends Module {
 					if ( msg.sub_total === 1 )
 						sub_msg.push(t.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));
 					else if ( msg.sub_total > 1 )
-						sub_msg.push(t.i18n.t('chat.sub.gift-total', "They've gifted %{count} Subs in the channel!", {
+						sub_msg.push(t.i18n.t('chat.sub.gift-total', "They've gifted {count,number} Subs in the channel!", {
 							count: msg.sub_total
 						}));
 
@@ -609,7 +609,7 @@ export default class ChatLine extends Module {
 						const plan = msg.sub_plan || {},
 							tier = SUB_TIERS[plan.plan] || 1;
 
-						const sub_msg = t.i18n.tList('chat.sub.main', '%{user} subscribed %{plan}. ', {
+						const sub_msg = t.i18n.tList('chat.sub.main', '{user} subscribed {plan}. ', {
 							user: e('span', {
 								role: 'button',
 								className: 'chatter-name',
@@ -619,13 +619,13 @@ export default class ChatLine extends Module {
 							}, user.userDisplayName)),
 							plan: plan.prime ?
 								t.i18n.t('chat.sub.twitch-prime', 'with Twitch Prime') :
-								t.i18n.t('chat.sub.plan', 'at Tier %{tier}', {tier})
+								t.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier})
 						});
 
 						if ( msg.sub_share_streak && msg.sub_streak > 1 ) {
 							sub_msg.push(t.i18n.t(
 								'chat.sub.cumulative-months',
-								"They've subscribed for %{cumulative} months, currently on a %{streak} month streak!",
+								"They've subscribed for {cumulative,number} months, currently on a {streak,number} month streak!",
 								{
 									cumulative: msg.sub_cumulative,
 									streak: msg.sub_streak
@@ -635,7 +635,7 @@ export default class ChatLine extends Module {
 						} else if ( months > 1 ) {
 							sub_msg.push(t.i18n.t(
 								'chat.sub.months',
-								"They've subscribed for %{count} months!",
+								"They've subscribed for {count,number} months!",
 								{
 									count: months
 								}
@@ -668,7 +668,7 @@ export default class ChatLine extends Module {
 					let system_msg;
 					if ( msg.ritual === 'new_chatter' )
 						system_msg = e('div', {className: 'tw-c-text-alt-2'}, [
-							t.i18n.tList('chat.ritual', '%{user} is new here. Say hello!', {
+							t.i18n.tList('chat.ritual', '{user} is new here. Say hello!', {
 								user: e('span', {
 									role: 'button',
 									className: 'chatter-name',

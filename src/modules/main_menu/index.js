@@ -58,6 +58,11 @@ export default class MainMenu extends Module {
 			component: 'home-page'
 		});
 
+		this.settings.addUI('faq', {
+			path: 'Home > FAQ',
+			component: 'faq-page'
+		});
+
 		this.settings.addUI('feedback', {
 			path: 'Home > Feedback',
 			component: 'feedback-page'

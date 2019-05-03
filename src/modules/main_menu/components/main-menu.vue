@@ -71,7 +71,7 @@
 				</div>
 				<footer class="tw-c-text-alt tw-border-t tw-pd-1">
 					<div>
-						{{ t('main-menu.version', 'Version %{version}', {version: version.toString()}) }}
+						{{ t('main-menu.version', 'Version {version}', {version: version.toString()}) }}
 					</div>
 					<div class="tw-c-text-alt-2">
 						<a

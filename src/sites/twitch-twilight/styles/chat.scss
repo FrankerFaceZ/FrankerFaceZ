@@ -47,6 +47,12 @@
 }
 
 .ffz--chat-card {
+    .vod-message & {
+        .ffz--card-text {
+            max-width: 18rem;
+        }
+    }
+
     .chat-card__title {
         max-width: unset;
     }

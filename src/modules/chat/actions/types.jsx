@@ -114,7 +114,7 @@ export const msg_delete = {
 	title: 'Delete Message',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.delete', "Delete %{user.login}'s message", {user: data.user});
+		return this.i18n.t('chat.actions.delete', "Delete {user.login}'s message", {user: data.user});
 	},
 
 	click(event, data) {
@@ -147,11 +147,11 @@ export const ban = {
 	title: 'Ban User',
 
 	reason_text(data) {
-		return this.i18n.t('chat.actions.ban-reason', 'Ban %{user.login} for:', {user: data.user});
+		return this.i18n.t('chat.actions.ban-reason', 'Ban {user.login} for:', {user: data.user});
 	},
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.ban', 'Ban %{user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.ban', 'Ban {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -183,11 +183,11 @@ export const timeout = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-timeout.vue'),
 
 	title: 'Timeout User',
-	description: '%{options.duration} second%{options.duration|en_plural}',
+	description: '{options.duration,number} second%{options.duration,en_plural}',
 
 	reason_text(data) {
 		return this.i18n.t('chat.actions.timeout-reason',
-			'Timeout %{user.login} for %{duration} second%{duration|en_plural} for:',
+			'Timeout {user.login} for {duration,number} second{duration,en_plural} for:',
 			{
 				user: data.user,
 				duration: data.options.duration
@@ -198,7 +198,7 @@ export const timeout = {
 	tooltip(data) {
 		return this.i18n.t(
 			'chat.actions.timeout',
-			'Timeout %{user.login} for %{duration} second%{duration|en_plural}',
+			'Timeout {user.login} for {duration,number} second{duration,en_plural}',
 			{
 				user: data.user,
 				duration: data.options.duration
@@ -230,7 +230,7 @@ export const unban = {
 	title: 'Unban User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.unban', 'Unban %{user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.unban', 'Unban {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -257,7 +257,7 @@ export const untimeout = {
 	title: 'Untimeout User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.untimeout', 'Untimeout %{user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.untimeout', 'Untimeout {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -283,7 +283,7 @@ export const whisper = {
 	title: 'Whisper User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.whisper', 'Whisper %{user.login}', data);
+		return this.i18n.t('chat.actions.whisper', 'Whisper {user.login}', data);
 	},
 
 	click(event, data) {
@@ -326,7 +326,7 @@ export const gift_sub = {
 	title: 'Gift Subscription',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.gift_sub', 'Gift a Sub to %{user.login}', data);
+		return this.i18n.t('chat.actions.gift_sub', 'Gift a Sub to {user.login}', data);
 	},
 
 	context() {

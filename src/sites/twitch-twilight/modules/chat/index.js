@@ -560,7 +560,7 @@ export default class ChatHook extends Module {
 
 		this.ChatContainer.on('mount', this.containerMounted, this);
 		this.ChatContainer.on('unmount', this.removeRoom, this);
-		this.ChatContainer.on('receive-props', this.containerUpdated, this);
+		this.ChatContainer.on('update', this.containerUpdated, this);
 
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
@@ -1544,13 +1544,21 @@ export default class ChatHook extends Module {
 			cs = data.user && data.user.broadcastBadges || [],
 			ocs = odata.user && odata.user.broadcastBadges || [];
 
-		if ( bs.length !== obs.length )
+		if ( ! this.chat.badges.hasTwitchBadges() || bs.length !== obs.length )
 			this.chat.badges.updateTwitchBadges(bs);
 
-		if ( cs.length !== ocs.length )
+		if ( ! this.hasRoomBadges(cont) || cs.length !== ocs.length )
 			this.updateRoomBadges(cont, cs);
 
 		this.updateRoomRules(cont, props.chatRules);
+	}
+
+	hasRoomBadges(cont) { // eslint-disable-line class-methods-use-this
+		const room = cont._ffz_room;
+		if ( ! room )
+			return false;
+
+		return room.hasBadges();
 	}
 
 	updateRoomBadges(cont, badges) { // eslint-disable-line class-methods-use-this

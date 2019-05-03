@@ -44,7 +44,7 @@ export const Links = {
 			return '';
 
 		if ( target.dataset.isMail === 'true' )
-			return [this.i18n.t('tooltip.email-link', 'E-Mail %{address}', {address: target.textContent})];
+			return [this.i18n.t('tooltip.email-link', 'E-Mail {address}', {address: target.textContent})];
 
 		return this.get_link_info(target.dataset.url).then(data => {
 			if ( ! data || (data.v || 1) > TOOLTIP_VERSION )
@@ -58,7 +58,7 @@ export const Links = {
 				content += (content.length ? '<hr>' : '') +
 					sanitize(this.i18n.t(
 						'tooltip.link-destination',
-						'Destination: %{url}',
+						'Destination: {url}',
 						{url: data.urls[data.urls.length-1][1]}
 					));
 
@@ -66,7 +66,7 @@ export const Links = {
 				const reasons = Array.from(new Set(data.urls.map(x => x[2]).filter(x => x))).join(', ');
 				content = this.i18n.t(
 					'tooltip.link-unsafe',
-					"Caution: This URL is on Google's Safe Browsing List for: %{reasons}",
+					"Caution: This URL is on Google's Safe Browsing List for: {reasons}",
 					{reasons: sanitize(reasons.toLowerCase())}
 				) + (content.length ? `<hr>${content}` : '');
 			}
@@ -96,7 +96,7 @@ export const Links = {
 			return content;
 
 		}).catch(error =>
-			sanitize(this.i18n.t('tooltip.error', 'An error occurred. (%{error})', {error}))
+			sanitize(this.i18n.t('tooltip.error', 'An error occurred. ({error})', {error}))
 		);
 	},
 
@@ -736,7 +736,7 @@ export const CheerEmotes = {
 				data-prefix={prefix}
 				data-tier={tier}
 			/>),
-			this.i18n.t('tooltip.bits', '%{count|number} Bits', amount),
+			this.i18n.t('tooltip.bits', '{count,number} Bits', amount),
 		];
 
 		if ( length > 1 ) {
@@ -755,7 +755,7 @@ export const CheerEmotes = {
 
 			if ( length > 12 ) {
 				out.push(<br />);
-				out.push(this.i18n.t('tooltip.bits.more', '(and %{count} more)', length-12));
+				out.push(this.i18n.t('tooltip.bits.more', '(and {count} more)', length-12));
 			}
 		}
 
@@ -1008,7 +1008,7 @@ export const AddonEmotes = {
 					source = this.i18n.t('emote.prime', 'Twitch Prime');
 
 				else
-					source = this.i18n.t('tooltip.channel', 'Channel: %{source}', {source});
+					source = this.i18n.t('tooltip.channel', 'Channel: {source}', {source});
 			}
 
 		} else if ( provider === 'ffz' ) {
@@ -1025,7 +1025,7 @@ export const AddonEmotes = {
 
 				if ( emote.owner )
 					owner = this.i18n.t(
-						'emote.owner', 'By: %{owner}',
+						'emote.owner', 'By: {owner}',
 						{owner: emote.owner.display_name});
 
 				if ( emote.urls[4] )
@@ -1052,7 +1052,7 @@ export const AddonEmotes = {
 
 			plain_name = true;
 			name = `:${emoji.names[0]}:${vcode ? `:${vcode.names[0]}:` : ''}`;
-			source = this.i18n.t('tooltip.emoji', 'Emoji - %{category}', emoji);
+			source = this.i18n.t('tooltip.emoji', 'Emoji - {category}', emoji);
 
 		} else
 			return;
@@ -1069,7 +1069,7 @@ export const AddonEmotes = {
 				onLoad={tip.update}
 			/>) : preview),
 
-			plain_name || (hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: %{name}', {name}),
+			plain_name || (hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: {name}', {name}),
 
 			! hide_source && source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{source}

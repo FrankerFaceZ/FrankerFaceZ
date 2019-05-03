@@ -106,7 +106,7 @@ export default {
 		},
 
 		title() {
-			if ( this.display.i18n )
+			if ( typeof this.display.i18n === 'string' )
 				return this.t(this.display.i18n, this.display.text);
 
 			return this.display.text;
