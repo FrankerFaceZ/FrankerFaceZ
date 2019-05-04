@@ -560,11 +560,24 @@ export default class ChatHook extends Module {
 
 		this.ChatContainer.on('mount', this.containerMounted, this);
 		this.ChatContainer.on('unmount', this.removeRoom, this);
-		this.ChatContainer.on('update', this.containerUpdated, this);
+		this.ChatContainer.on('receive-props', this.containerUpdated, this);
 
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
+				old_render = cls.prototype.render,
 				old_catch = cls.prototype.componentDidCatch;
+
+			// This is so stupid. I hate React. Why won't the events just fire
+			// like they should.
+			cls.prototype.render = function() {
+				try {
+					t.containerUpdated(this, this.props);
+				} catch(err) {
+					t.log.error(err);
+				}
+
+				return old_render.call(this);
+			}
 
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
@@ -579,6 +592,7 @@ export default class ChatHook extends Module {
 				if ( old_catch )
 					return old_catch.call(this, err, info);
 			}
+
 
 			for(const inst of instances)
 				this.containerMounted(inst);
@@ -1422,7 +1436,7 @@ export default class ChatHook extends Module {
 		if ( chat.chatBuffer )
 			chat.chatBuffer.ffzController = chat;
 
-		if ( ! chat._ffz_room || props.channelID !== chat.props.channelID ) {
+		if ( ! chat._ffz_room || props.channelID != chat._ffz_room.id ) {
 			this.removeRoom(chat);
 			if ( chat._ffz_mounted )
 				this.chatMounted(chat, props);
@@ -1526,7 +1540,7 @@ export default class ChatHook extends Module {
 
 
 	containerUpdated(cont, props) {
-		if ( ! cont._ffz_room || props.channelID !== cont.props.channelID ) {
+		if ( ! cont._ffz_room || props.channelID != cont._ffz_room.id ) {
 			this.removeRoom(cont);
 			if ( cont._ffz_mounted )
 				this.containerMounted(cont, props);
