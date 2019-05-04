@@ -1422,9 +1422,10 @@ export default class ChatHook extends Module {
 		if ( chat.chatBuffer )
 			chat.chatBuffer.ffzController = chat;
 
-		if ( props.channelID !== chat.props.channelID ) {
+		if ( ! chat._ffz_room || props.channelID !== chat.props.channelID ) {
 			this.removeRoom(chat);
-			this.chatMounted(chat, props);
+			if ( chat._ffz_mounted )
+				this.chatMounted(chat, props);
 			return;
 		}
 
@@ -1525,9 +1526,10 @@ export default class ChatHook extends Module {
 
 
 	containerUpdated(cont, props) {
-		if ( props.channelID !== cont.props.channelID ) {
+		if ( ! cont._ffz_room || props.channelID !== cont.props.channelID ) {
 			this.removeRoom(cont);
-			this.containerMounted(cont, props);
+			if ( cont._ffz_mounted )
+				this.containerMounted(cont, props);
 			return;
 		}
 
