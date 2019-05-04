@@ -65,6 +65,8 @@
 							:modal="nav"
 							:filter="filter"
 							@change-item="changeItem"
+							@mark-seen="markSeen"
+							@mark-expanded="markExpanded"
 							@navigate="navigate"
 						/>
 					</simplebar>
@@ -97,6 +99,7 @@
 					:item="currentItem"
 					:filter="filter"
 					@change-item="changeItem"
+					@mark-seen="markSeen"
 					@navigate="navigate"
 				/>
 			</simplebar>
@@ -170,6 +173,8 @@ export default {
 				if ( this.$refs.page.onBeforeChange(this.currentItem, item) === false )
 					return;
 			}
+
+			this.markSeen(item);
 
 			this.currentItem = item;
 			let current = item;

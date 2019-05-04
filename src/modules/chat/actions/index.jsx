@@ -39,6 +39,16 @@ export default class Actions extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 
+			// Clean up after Vue being stupid.
+			process(ctx, val) {
+				if ( Array.isArray(val) )
+					for(const entry of val)
+						if ( entry.i18n && typeof entry.i18n !== 'string' )
+							delete entry.i18n;
+
+				return val;
+			},
+
 			ui: {
 				path: 'Chat > Actions > Reasons >> Custom Reasons',
 				component: 'chat-reasons',

@@ -27,9 +27,10 @@
 				:class="{'active': selected === idx, 'ffz-unmatched-item': showing && ! shouldShow(i)}"
 				role="tab"
 				class="tab tw-pd-y-05 tw-pd-x-1"
-				@click="selected = idx"
+				@click="select(idx)"
 			>
 				{{ t(i.i18n_key, i.title, i) }}
+				<span v-if="i.unseen > 0" class="tw-pill">{{ i.unseen }}</span>
 			</div>
 		</header>
 		<section
@@ -81,6 +82,10 @@ export default {
 		}
 	},
 
+	mounted() {
+		this.markSeen()
+	},
+
 	methods: {
 		focus() {
 			this.$el.querySelector('header').focus();
@@ -106,22 +111,37 @@ export default {
 			this.lastTab();
 		},
 
+		markSeen() {
+			this.$emit('mark-seen', this.item.tabs[this.selected]);
+		},
+
 		firstTab() {
 			this.selected = 0;
+			this.markSeen();
 		},
 
 		lastTab() {
 			this.selected = this.item.tabs.length - 1;
+			this.markSeen();
 		},
 
 		prevTab() {
-			if ( this.selected > 0 )
+			if ( this.selected > 0 ) {
 				this.selected--;
+				this.markSeen();
+			}
+		},
+
+		select(idx) {
+			this.selected = idx;
+			this.markSeen();
 		},
 
 		nextTab() {
-			if ( this.selected + 1 < this.item.tabs.length )
+			if ( this.selected + 1 < this.item.tabs.length ) {
 				this.selected++;
+				this.markSeen();
+			}
 		},
 
 		shouldShow(item) {

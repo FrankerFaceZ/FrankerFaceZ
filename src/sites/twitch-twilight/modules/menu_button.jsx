@@ -19,11 +19,28 @@ export default class MenuButton extends SiteModule {
 		this._pill_content = null;
 		this._has_update = false;
 		this._important_update = false;
+		this._new_settings = 0;
 
 		this.NavBar = this.fine.define(
 			'nav-bar',
 			n => n.renderOnsiteNotifications && n.renderTwitchPrimeCrown
 		);
+	}
+
+	get new_settings() {
+		return this._new_settings;
+	}
+
+	set new_settings(val) {
+		if ( val === this._new_settings )
+			return;
+
+		this._new_settings = val;
+		this.update();
+	}
+
+	get has_new() {
+		return this._new_settings > 0
 	}
 
 	get important_update() {
@@ -115,6 +132,11 @@ export default class MenuButton extends SiteModule {
 							{this.i18n.t('site.menu_button.dev', 'dev')}
 						</div>
 					</div>)}
+					{this.has_new && ! pill && (<div class="ffz-menu__pill tw-absolute">
+						<div class="tw-pill">
+							{this.i18n.formatNumber(this.new_settings)}
+						</div>
+					</div>)}
 					{pill && (<div class="ffz-menu__pill tw-absolute">
 						<div class="tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in">
 							<div class="tw-pill tw-pill--notification">
@@ -126,6 +148,9 @@ export default class MenuButton extends SiteModule {
 						{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 						{this.has_update && (<div class="tw-mg-t-1">
 							{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
+						</div>)}
+						{this.has_new && (<div class="tw-mg-t-1">
+							{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}
 						</div>)}
 						{DEBUG && (<div class="tw-mg-t-1">
 							{this.i18n.t('site.menu_button.dev-desc', 'You are running a developer build of FrankerFaceZ.')}

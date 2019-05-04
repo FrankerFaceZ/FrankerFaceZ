@@ -2,6 +2,7 @@
 	<div class="tw-input">
 		<header>
 			{{ t(item.i18n_key, item.title, item) }}
+			<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
 		</header>
 		<section
 			v-if="item.description"

@@ -46,6 +46,7 @@
 				>
 					<a href="#" @click="$emit('change-item', i, false)">
 						{{ t(i.i18n_key, i.title, i) }}
+						<span v-if="i.unseen" class="tw-pill">{{ i.unseen }}</span>
 					</a>
 				</li>
 			</ul>
@@ -62,6 +63,7 @@
 				:item="i"
 				:filter="filter"
 				@change-item="changeItem"
+				@mark-seen="markSeen"
 				@navigate="navigate"
 			/>
 		</div>
@@ -92,6 +94,10 @@ export default {
 				return true;
 
 			return item.search_terms.includes(this.filter);
+		},
+
+		markSeen(item) {
+			this.$emit('mark-seen', item);
 		},
 
 		changeItem(item) {

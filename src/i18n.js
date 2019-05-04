@@ -205,7 +205,7 @@ export class TranslationManager extends Module {
 		if ( locale === 'en' )
 			return {};
 
-		if ( locale === 'de' )
+		/*if ( locale === 'de' )
 			return {
 				site: {
 					menu_button: 'FrankerFaceZ Leitstelle'
@@ -272,8 +272,8 @@ export class TranslationManager extends Module {
 						_: 'Erweiterung'
 					},
 
-					'inherited-from': 'Vererbt von: %{title}',
-					'overridden-by': 'Überschrieben von: %{title}'
+					'inherited-from': 'Vererbt von: {title}',
+					'overridden-by': 'Überschrieben von: {title}'
 				},
 
 				'main-menu': {
@@ -306,7 +306,7 @@ export class TranslationManager extends Module {
 
 				'main-menu': {
 					search: '検索設定',
-					version: 'バージョン%{version}',
+					version: 'バージョン{version}',
 
 					about: {
 						_: '約',
@@ -314,7 +314,7 @@ export class TranslationManager extends Module {
 						support: '対応'
 					}
 				}
-			}
+			}*/
 
 		const resp = await fetch(`${SERVER}/script/i18n/${locale}.json`);
 		if ( ! resp.ok ) {

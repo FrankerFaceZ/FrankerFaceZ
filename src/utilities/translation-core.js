@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import Parser from '@ffz/icu-msgparser';
 
 import {get} from 'utilities/object';
+import {duration_to_string} from 'utilities/time';
 
 
 // ============================================================================
@@ -58,11 +59,11 @@ export const DEFAULT_TYPES = {
 		return this.formatDateTime(val, node.f);
 	},
 
-	duration(val, node) {
-
+	duration(val) {
+		return duration_to_string(val);
 	},
 
-	localestring(val, node) {
+	localestring(val) {
 		return this.toLocaleString(val);
 	},
 

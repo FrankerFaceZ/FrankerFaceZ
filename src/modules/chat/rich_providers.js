@@ -175,7 +175,7 @@ export const Videos = {
 					});
 
 				else if ( game )
-					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing %{game}', {
+					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing {game}', {
 						user,
 						game: game_display
 					});

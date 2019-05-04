@@ -21,7 +21,7 @@ export const open_url = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-url.vue'),
 
 	title: 'Open URL',
-	description: '%{options.url}',
+	description: '{options.url}',
 
 	tooltip(data) {
 		const url = this.replaceVariables(data.options.url, data);
@@ -67,7 +67,7 @@ export const chat = {
 	},
 
 	title: 'Chat Command',
-	description: '%{options.command}',
+	description: '{options.command}',
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-chat.vue'),
 
@@ -183,7 +183,7 @@ export const timeout = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-timeout.vue'),
 
 	title: 'Timeout User',
-	description: '{options.duration,number} second%{options.duration,en_plural}',
+	description: '{options.duration,number} second{options.duration,en_plural}',
 
 	reason_text(data) {
 		return this.i18n.t('chat.actions.timeout-reason',

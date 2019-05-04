@@ -48,7 +48,7 @@
 							</span>
 							<span
 								v-if="userAge"
-								:data-title="t('viewer-card.age-tip', 'Member Since: %{age,datetime}', {age: userAge})"
+								:data-title="t('viewer-card.age-tip', 'Member Since: {age,datetime}', {age: userAge})"
 								class="ffz-tooltip ffz-i-clock"
 							>
 								{{ t('viewer-card.age', '{age,humantime}', {age: userAge}) }}
