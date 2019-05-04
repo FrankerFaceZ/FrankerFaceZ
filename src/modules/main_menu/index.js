@@ -36,6 +36,8 @@ export default class MainMenu extends Module {
 
 		//this.should_enable = true;
 
+		this.new_seen = false;
+
 		this._settings_tree = null;
 		this._settings_count = 0;
 
@@ -299,7 +301,9 @@ export default class MainMenu extends Module {
 			this.rebuildSettingsTree();
 
 		const tree = this._settings_tree,
-			settings_seen = this.settings.provider.get('cfg-seen', []),
+			settings_seen = this.new_seen ? null : this.settings.provider.get('cfg-seen'),
+			new_seen = settings_seen ? null : [],
+
 			collapsed = this.settings.provider.get('cfg-collapsed'),
 
 			root = {},
@@ -310,6 +314,8 @@ export default class MainMenu extends Module {
 
 			have_locale = this.i18n.locale !== 'en';
 
+		if ( new_seen )
+			this.new_seen = true;
 
 		for(const key in tree) {
 			if ( ! has(tree, key) )
@@ -373,17 +379,16 @@ export default class MainMenu extends Module {
 
 						tok.search_terms = terms.map(format_term).join('\n');
 
-						if ( ! settings_seen.includes(setting_key)) {
-							// Mark existing settings as unseen for now.
-							// Let users run this for a while to build up their cache.
-							settings_seen.push(setting_key);
-
-							/*let i = tok;
-							while(i) {
-								i.unseen = (i.unseen||0) + 1;
-								i = i.parent;
-							}*/
-						}
+						if ( settings_seen ) {
+							if ( ! settings_seen.includes(setting_key) ) {
+								let i = tok;
+								while(i) {
+									i.unseen = (i.unseen || 0) + 1;
+									i = i.parent;
+								}
+							}
+						} else if ( new_seen )
+							new_seen.push(setting_key);
 
 						list.push(tok);
 					}
@@ -453,7 +458,8 @@ export default class MainMenu extends Module {
 		items.keys = copies;
 
 		// Save for now, since we just want to mark everything as seen.
-		this.settings.provider.set('cfg-seen', settings_seen);
+		if ( new_seen )
+			this.settings.provider.set('cfg-seen', new_seen);
 
 		if ( ! collapsed ) {
 			const new_collapsed = [];
