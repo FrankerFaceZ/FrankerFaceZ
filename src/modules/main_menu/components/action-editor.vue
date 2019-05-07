@@ -104,7 +104,7 @@
 						</select>
 					</div>
 
-					<div class="tw-flex tw-align-items-center">
+					<div v-if="has_message" class="tw-flex tw-align-items-center">
 						<label for="vis_deleted">
 							{{ t('setting.actions.edit-visible.deleted', 'Message Deleted') }}
 						</label>
@@ -215,7 +215,7 @@
 import {has, maybe_call, deep_copy} from 'utilities/object';
 
 export default {
-	props: ['action', 'data', 'inline'],
+	props: ['action', 'data', 'inline', 'context'],
 
 	data() {
 		return {
@@ -233,14 +233,30 @@ export default {
 			return this.action.v;
 		},
 
+		has_message() {
+			return this.context && this.context.includes('message')
+		},
+
 		vars() {
-			const out = ['user.login', 'user.displayName', 'user.id', 'user.type'];
+			const out = [],
+				ctx = this.context || [];
 
-			out.push('room.login')
-			out.push('room.id');
+			if ( ctx.includes('user') ) {
+				out.push('user.login');
+				out.push('user.displayName');
+				out.push('user.id');
+				out.push('user.type');
+			}
 
-			if ( this.inline )
-				out.push('message_id');
+			if ( ctx.includes('room') ) {
+				out.push('room.login');
+				out.push('room.id');
+			}
+
+			if ( ctx.includes('message') ) {
+				out.push('message.id');
+				out.push('message.text');
+			}
 
 			return out.map(x => `{{${x}}}`).join(', ');
 		},

@@ -138,7 +138,9 @@ export default class RavenLogger extends Module {
 				'InvalidAccessError',
 				'out of memory',
 				'Access is denied.',
-				'Zugriff verweigert'
+				'Zugriff verweigert',
+				'freed script',
+				'ffzenhancing'
 			],
 			sanitizeKeys: [
 				/Token$/

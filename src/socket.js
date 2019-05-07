@@ -140,7 +140,7 @@ export default class SocketClient extends Module {
 	_reconnect() {
 		if ( ! this._reconnect_timer ) {
 			if ( this._delay < 60000 )
-				this._delay += (Math.floor(Math.random() * 10) + 5) * 1000;
+				this._delay += (Math.floor(Math.random() * 15) + 5) * 1000;
 			else
 				this._delay = (Math.floor(Math.random() * 60) + 30) * 1000;
 

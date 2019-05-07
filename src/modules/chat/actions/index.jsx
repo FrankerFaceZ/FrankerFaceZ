@@ -90,6 +90,35 @@ export default class Actions extends Module {
 			}
 		});
 
+		this.settings.add('chat.actions.room', {
+			// Filter out actions
+			process: (ctx, val) =>
+				val.filter(x => x.type || (x.appearance &&
+					this.renderers[x.appearance.type] &&
+					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
+					(! x.action || this.actions[x.action])
+				)),
+
+			default: [],
+			type: 'array_merge',
+			ui: {
+				path: 'Chat > Actions > Room @{"description": "Here, you can define custom actions that will appear above the chat input box."}',
+				component: 'chat-actions',
+				context: ['room'],
+				inline: true,
+
+				data: () => {
+					const chat = this.resolve('site.chat');
+
+					return {
+						color: val => chat && chat.colors ? chat.colors.process(val) : val,
+						actions: deep_copy(this.actions),
+						renderers: deep_copy(this.renderers)
+					}
+				}
+			}
+		});
+
 		this.settings.add('chat.actions.rules-as-reasons', {
 			default: true,
 			ui: {
@@ -346,6 +375,56 @@ export default class Actions extends Module {
 	}
 
 
+	renderRoom(mod_icons, current_user, current_room, createElement) {
+		const actions = [],
+			chat = this.resolve('site.chat');
+
+		for(const data of this.parent.context.get('chat.actions.room')) {
+			if ( ! data || ! data.action || ! data.appearance )
+				continue;
+
+			const ap = data.appearance || {},
+				disp = data.display || {},
+
+				def = this.renderers[ap.type];
+
+			if ( ! def || disp.disabled ||
+				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
+				(disp.mod != null && disp.mod !== (current_user ? !!current_user.mod : false)) ||
+				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) )
+				continue;
+
+			const has_color = def.colored && ap.color,
+				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
+				contents = def.render.call(this, ap, createElement, color);
+
+			actions.push(<button
+				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${has_color ? ' colored' : ''}`}
+				data-tooltip-type="action"
+				data-action={data.action}
+				data-options={data.options ? JSON.stringify(data.options) : null}
+				data-tip={ap.tooltip}
+				onClick={this.handleClick}
+				onContextMenu={this.handleContext}
+			>
+				{contents}
+			</button>);
+		}
+
+		if ( ! actions.length )
+			return null;
+
+		const room = current_room && JSON.stringify(current_room);
+
+		return (<div
+			class="ffz--room-actions ffz-action-data tw-pd-y-05 tw-border-t"
+			data-room={room}
+		>
+			{actions}
+		</div>)
+	}
+
+
 	renderInline(msg, mod_icons, current_user, current_room, createElement) {
 		const actions = [];
 
@@ -393,19 +472,17 @@ export default class Actions extends Module {
 		if ( ! actions.length )
 			return null;
 
-		const room = current_room && JSON.stringify(current_room),
+		/*const room = current_room && JSON.stringify(current_room),
 			user = msg.user && JSON.stringify({
 				login: msg.user.login,
 				displayName: msg.user.displayName,
 				id: msg.user.id,
 				type: msg.user.type
-			});
+			});*/
 
 		return (<div
 			class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
-			data-msg-id={msg.id}
-			data-user={user}
-			data-room={room}
+			data-source="line"
 		>
 			{actions}
 		</div>);
@@ -422,19 +499,56 @@ export default class Actions extends Module {
 		if ( ! definition )
 			return null;
 
-		const user = pds && pds.user ? JSON.parse(pds.user) : null,
-			room = pds && pds.room ? JSON.parse(pds.room) : null,
-			message_id = pds && pds.msgId,
+		let user, room, message, loaded = false;
 
-			data = {
-				action,
-				definition,
-				tip: ds.tip,
-				options: ds.options ? JSON.parse(ds.options) : null,
-				user,
-				room,
-				message_id
-			};
+		if ( pds ) {
+			if ( pds.source === 'line' ) {
+				const fine = this.resolve('site.fine'),
+					react = fine && fine.getParent(parent.parentElement),
+					line = react && react.stateNode;
+
+				if ( line && line.props && line.props.message ) {
+					loaded = true;
+
+					const msg = line.props.message;
+
+					user = msg.user ? {
+						color: msg.user.color,
+						id: msg.user.id,
+						login: msg.user.login,
+						displayName: msg.user.displayName,
+						type: msg.user.type
+					} : null;
+
+					room = {
+						login: line.props.channelLogin,
+						id: line.props.channelID
+					}
+
+					message = {
+						id: msg.id,
+						text: msg.message
+					}
+				}
+			}
+
+			if ( ! loaded ) {
+				user = pds.user ? JSON.parse(pds.user) : null;
+				room = pds.room ? JSON.parse(pds.room) : null;
+				message = pds.message ? JSON.parse(pds.message) : pds.msgId ? {id: pds.msgId} : null;
+			}
+		}
+
+		const data = {
+			action,
+			definition,
+			tip: ds.tip,
+			options: ds.options ? JSON.parse(ds.options) : null,
+			user,
+			room,
+			message,
+			message_id: message ? message.id : null
+		};
 
 		if ( definition.defaults )
 			data.options = Object.assign({}, maybe_call(definition.defaults, this, data, element), data.options);

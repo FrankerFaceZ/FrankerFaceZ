@@ -402,7 +402,12 @@ export default class Player extends Module {
 			}
 
 			this.SquadStreamBar.forceUpdate();
-		})
+			this.updateSquadContext();
+		});
+
+		this.SquadStreamBar.on('mount', this.updateSquadContext, this);
+		this.SquadStreamBar.on('update', this.updateSquadContext, this);
+		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);
 
 		this.Player.on('mount', this.onMount, this);
 		this.Player.on('unmount', this.onUnmount, this);
@@ -434,6 +439,19 @@ export default class Player extends Module {
 			for(const inst of this.Player.instances)
 				this.addResetButton(inst);
 		});
+	}
+
+
+	updateSquadContext() {
+		this.settings.updateContext({
+			squad_bar: this.hasSquadBar()
+		});
+	}
+
+
+	hasSquadBar() {
+		const inst = this.SquadStreamBar.first;
+		return inst ? inst.shouldRenderSquadBanner(inst.props) : false
 	}
 
 

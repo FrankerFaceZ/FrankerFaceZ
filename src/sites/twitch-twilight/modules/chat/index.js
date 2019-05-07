@@ -17,7 +17,7 @@ import Scroller from './scroller';
 import ChatLine from './line';
 import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
-import TabCompletion from './tab_completion';
+import Input from './input';
 
 
 const REGEX_EMOTES = {
@@ -150,7 +150,7 @@ export default class ChatHook extends Module {
 		this.inject(ChatLine);
 		this.inject(SettingsMenu);
 		this.inject(EmoteMenu);
-		this.inject(TabCompletion);
+		this.inject(Input);
 
 		this.ChatService = this.fine.define(
 			'chat-service',
@@ -560,24 +560,11 @@ export default class ChatHook extends Module {
 
 		this.ChatContainer.on('mount', this.containerMounted, this);
 		this.ChatContainer.on('unmount', this.removeRoom, this);
-		this.ChatContainer.on('receive-props', this.containerUpdated, this);
+		this.ChatContainer.on('update', this.containerUpdated, this);
 
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
-				old_render = cls.prototype.render,
 				old_catch = cls.prototype.componentDidCatch;
-
-			// This is so stupid. I hate React. Why won't the events just fire
-			// like they should.
-			cls.prototype.render = function() {
-				try {
-					t.containerUpdated(this, this.props);
-				} catch(err) {
-					t.log.error(err);
-				}
-
-				return old_render.call(this);
-			}
 
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
@@ -685,7 +672,7 @@ export default class ChatHook extends Module {
 							if ( event.defaultPrevented || m.ffz_removed )
 								return;
 
-						} else if ( msg.type === types.ModerationAction ) {
+						} else if ( msg.type === types.ModerationAction && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							//t.log.info('Moderation Action', msg);
 							if ( ! inst.props.isCurrentUserModerator )
 								return;
@@ -724,7 +711,7 @@ export default class ChatHook extends Module {
 								return;
 							}
 
-						} else if ( msg.type === types.Moderation ) {
+						} else if ( msg.type === types.Moderation && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							//t.log.info('Moderation', msg);
 							if ( inst.props.isCurrentUserModerator )
 								return;
@@ -1540,6 +1527,8 @@ export default class ChatHook extends Module {
 
 
 	containerUpdated(cont, props) {
+		// If we don't have a room, or if the room ID doesn't match our ID
+		// then we need to just create a new Room because the chat room changed.
 		if ( ! cont._ffz_room || props.channelID != cont._ffz_room.id ) {
 			this.removeRoom(cont);
 			if ( cont._ffz_mounted )

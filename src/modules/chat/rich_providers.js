@@ -41,7 +41,7 @@ export const Links = {
 					return {
 						url: token.url,
 						title: this.i18n.t('card.error', 'An error occurred.'),
-						desc_1: err
+						desc_1: String(err)
 					}
 				}
 

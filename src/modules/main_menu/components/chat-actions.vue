@@ -27,7 +27,7 @@
 					</label>
 				</div>
 
-				<div v-if="item.inline" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="item.inline && has_msg" class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="is_deleted"
 						ref="is_deleted"
@@ -76,6 +76,7 @@
 			<div
 				:data-user="JSON.stringify(sample_user)"
 				:data-room="JSON.stringify(sample_room)"
+				:data-message="JSON.stringify(sample_message)"
 				class="ffz-action-data tw-pd-t-1"
 				data-msg-id="1234-5678"
 			>
@@ -169,7 +170,7 @@
 				</span>
 			</button>
 			<button
-				v-if="! val.length"
+				v-if="! val.length && has_default"
 				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
 				@click="populate"
 			>
@@ -191,6 +192,7 @@
 					:action="act"
 					:data="data"
 					:inline="item.inline"
+					:context="item.context"
 					@remove="remove(act)"
 					@save="save(act, $event)"
 				/>
@@ -222,18 +224,6 @@ export default {
 			show_all: false,
 
 			add_open: false,
-
-			sample_user: {
-				displayName: 'SirStendec',
-				login: 'sirstendec',
-				id: 49399878
-			},
-
-			sample_room: {
-				displayName: 'FrankerFaceZ',
-				login: 'frankerfacez',
-				id: 46622312
-			}
 		}
 	},
 
@@ -242,6 +232,46 @@ export default {
 			for(const val of this.val)
 				if ( val.t === 'inherit' )
 					return true;
+		},
+
+		sample_user() {
+			return this.has_user ? {
+				displayName: 'SirStendec',
+				login: 'sirstendec',
+				id: 49399878,
+				color: '#008000'
+			} : null
+		},
+
+		sample_room() {
+			return this.has_room ? {
+				displayName: 'FrankerFaceZ',
+				login: 'frankerfacez',
+				id: 46622312
+			} : null
+		},
+
+		sample_message() {
+			return this.has_msg ? {
+				id: '46a473ee-a3c4-4556-a5ca-c0f1eac93ec0',
+				text: 'sirstendec: Please do not do that.'
+			} : null
+		},
+
+		has_default() {
+			return this.default_value && this.default_value.length
+		},
+
+		has_user() {
+			return this.item.context && this.item.context.includes('user')
+		},
+
+		has_room() {
+			return this.item.context && this.item.context.includes('room')
+		},
+
+		has_msg() {
+			return this.item.context && this.item.context.includes('message')
 		},
 
 		presets() {
