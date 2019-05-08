@@ -604,6 +604,14 @@ export default class ChatHook extends Module {
 	}
 
 
+	tryUpdateBadges() {
+		this.log.debug('Trying to update badge data from the chat container.');
+		const inst = this.ChatContainer.first;
+		if ( inst )
+			this.containerUpdated(inst, inst.props);
+	}
+
+
 	closeRoomPicker(inst) { // eslint-disable-line class-methods-use-this
 		inst.closeRoomPicker();
 	}

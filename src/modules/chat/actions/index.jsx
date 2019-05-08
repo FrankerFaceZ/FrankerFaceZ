@@ -434,6 +434,9 @@ export default class Actions extends Module {
 		const current_level = this.getUserLevel(current_room, current_user),
 			msg_level = this.getUserLevel(current_room, msg.user);
 
+		if ( current_level < 3 )
+			mod_icons = false;
+
 		const chat = this.resolve('site.chat');
 
 		for(const data of this.parent.context.get('chat.actions.inline')) {

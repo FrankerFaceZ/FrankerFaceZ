@@ -632,6 +632,12 @@ export default class Badges extends Module {
 		const room = this.parent.getRoom(room_id, room_login, true);
 		let b;
 
+		if ( (room && ! room.badges) || ! this.twitch_badges ) {
+			const chat = this.resolve('site.chat');
+			if ( chat && chat.tryUpdateBadges )
+				chat.tryUpdateBadges();
+		}
+
 		if ( room ) {
 			const versions = room.badges && room.badges[badge];
 			b = versions && versions[version];
