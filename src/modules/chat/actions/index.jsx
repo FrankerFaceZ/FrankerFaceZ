@@ -507,8 +507,7 @@ export default class Actions extends Module {
 		if ( pds ) {
 			if ( pds.source === 'line' ) {
 				const fine = this.resolve('site.fine'),
-					react = fine && fine.getParent(parent.parentElement),
-					line = react && react.stateNode;
+					line = fine && fine.searchParent(parent, n => n.props && n.props.message);
 
 				if ( line && line.props && line.props.message ) {
 					loaded = true;
