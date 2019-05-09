@@ -380,23 +380,23 @@ export default class Room {
 	// Badge Data
 	// ========================================================================
 
-	hasBadges() {
-		return !! this.badges
+	badgeCount() {
+		return this.badge_count || 0;
 	}
 
 	updateBadges(badges) {
+		this.badge_count = 0;
 		if ( ! Array.isArray(badges) )
 			this.badges = badges;
 		else {
-			let b = null;
-			if ( badges.length ) {
-				b = {};
-				for(const data of badges) {
-					const sid = data.setID,
-						bs = b[sid] = b[sid] || {};
+			// Rooms can have no badges, so we want to allow that.
+			const b = {};
+			for(const data of badges) {
+				const sid = data.setID,
+					bs = b[sid] = b[sid] || {};
 
-					bs[data.version] = data;
-				}
+				bs[data.version] = data;
+				this.badge_count++;
 			}
 
 			this.badges = b;

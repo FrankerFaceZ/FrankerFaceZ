@@ -605,7 +605,16 @@ export default class ChatHook extends Module {
 
 
 	tryUpdateBadges() {
-		this.log.debug('Trying to update badge data from the chat container.');
+		if ( !this._badge_timer )
+			this._badge_timer = setTimeout(() => this._tryUpdateBadges(), 0);
+	}
+
+	_tryUpdateBadges() {
+		if ( this._badge_timer )
+			clearTimeout(this._badge_timer);
+		this._badge_timer = null;
+
+		this.log.info('Trying to update badge data from the chat container.');
 		const inst = this.ChatContainer.first;
 		if ( inst )
 			this.containerUpdated(inst, inst.props);
@@ -1557,10 +1566,10 @@ export default class ChatHook extends Module {
 			cs = data.user && data.user.broadcastBadges || [],
 			ocs = odata.user && odata.user.broadcastBadges || [];
 
-		if ( ! this.chat.badges.hasTwitchBadges() || bs.length !== obs.length )
+		if ( this.chat.badges.getTwitchBadgeCount() !== bs.length || bs.length !== obs.length )
 			this.chat.badges.updateTwitchBadges(bs);
 
-		if ( ! this.hasRoomBadges(cont) || cs.length !== ocs.length )
+		if ( cont._ffz_room.badgeCount() !== cs.length || cs.length !== ocs.length )
 			this.updateRoomBadges(cont, cs);
 
 		this.updateRoomRules(cont, props.chatRules);

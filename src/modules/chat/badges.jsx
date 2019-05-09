@@ -277,7 +277,7 @@ export default class Badges extends Module {
 				const p = d.provider;
 				if ( p === 'twitch' ) {
 					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
-						global_badge = this.getTwitchBadge(d.badge, d.version) || {};
+						global_badge = this.getTwitchBadge(d.badge, d.version, null, null, true) || {};
 					if ( ! bd )
 						continue;
 
@@ -628,15 +628,9 @@ export default class Badges extends Module {
 	// Twitch Badges
 	// ========================================================================
 
-	getTwitchBadge(badge, version, room_id, room_login) {
+	getTwitchBadge(badge, version, room_id, room_login, retried = false) {
 		const room = this.parent.getRoom(room_id, room_login, true);
 		let b;
-
-		if ( (room && ! room.badges) || ! this.twitch_badges ) {
-			const chat = this.resolve('site.chat');
-			if ( chat && chat.tryUpdateBadges )
-				chat.tryUpdateBadges();
-		}
 
 		if ( room ) {
 			const versions = room.badges && room.badges[badge];
@@ -648,14 +642,21 @@ export default class Badges extends Module {
 			b = versions && versions[version];
 		}
 
+		if ( ! b && ! retried ) {
+			const chat = this.resolve('site.chat');
+			if ( chat && chat.tryUpdateBadges )
+				chat.tryUpdateBadges();
+		}
+
 		return b;
 	}
 
-	hasTwitchBadges() {
-		return !! this.twitch_badges
+	getTwitchBadgeCount() {
+		return this.twitch_badge_count || 0;
 	}
 
 	updateTwitchBadges(badges) {
+		this.twitch_badge_count = 0;
 		if ( ! Array.isArray(badges) )
 			this.twitch_badges = badges;
 		else {
@@ -666,6 +667,7 @@ export default class Badges extends Module {
 					const sid = data.setID,
 						bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
 
+					this.twitch_badge_count++;
 					bs[data.version] = data;
 				}
 			}

@@ -27,7 +27,7 @@
 					</label>
 				</div>
 
-				<div v-if="item.inline && has_msg" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_msg" class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="is_deleted"
 						ref="is_deleted"
@@ -449,7 +449,7 @@ export default {
 			this.is_moderator = this.$refs.as_mod.checked;
 			this.is_staff = false; //this.$refs.as_staff.checked;
 			this.with_mod_icons = this.item.inline && this.$refs.with_mod_icons.checked;
-			this.is_deleted = this.item.inline && this.$refs.is_deleted.checked;
+			this.is_deleted = this.has_msg && this.$refs.is_deleted.checked;
 		},
 
 		displayAction(action) {
