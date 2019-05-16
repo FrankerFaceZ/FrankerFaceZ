@@ -193,6 +193,7 @@
 					:data="data"
 					:inline="item.inline"
 					:context="item.context"
+					:modifiers="item.modifiers"
 					@remove="remove(act)"
 					@save="save(act, $event)"
 				/>

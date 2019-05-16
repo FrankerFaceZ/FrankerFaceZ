@@ -156,8 +156,9 @@ export default class ChatLine extends Module {
 						e('span', {
 							className: 'chat-line__message--badges'
 						}, t.chat.badges.render(msg, e)),
-						e('button', {
+						e('span', {
 							className: 'chat-line__username notranslate',
+							role: 'button',
 							style: { color },
 							onClick: this.ffz_user_click_handler
 						}, [
@@ -414,8 +415,9 @@ other {# messages were deleted by a moderator.}
 						e('span', {
 							className: 'chat-line__message--badges'
 						}, t.chat.badges.render(msg, e)),
-						e('button', {
+						e('span', {
 							className: 'chat-line__username notranslate',
+							role: 'button',
 							style: { color },
 							onClick: this.ffz_user_click_handler
 						}, [
@@ -774,8 +776,9 @@ other {# messages were deleted by a moderator.}
 					e('span', {
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
-					e('button', {
+					e('span', {
 						className: 'chat-line__username notranslate',
+						role: 'button',
 						style: { color },
 						onClick: this.onExtensionNameClick
 					}, e('span', {

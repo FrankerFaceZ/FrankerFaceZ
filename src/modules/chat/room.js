@@ -364,14 +364,20 @@ export default class Room {
 	// ========================================================================
 
 	ref(referrer) {
+		if ( ! this.refs )
+			throw new Error('Attempting to use destroyed Room');
+
 		clearTimeout(this._destroy_timer);
 		this._destroy_timer = null;
 		this.refs.add(referrer);
 	}
 
 	unref(referrer) {
+		if ( ! this.refs )
+			return;
+
 		this.refs.delete(referrer);
-		if ( ! this.users.size && ! this._destroy_timer )
+		if ( ! this.refs.size && ! this._destroy_timer )
 			this._destroy_timer = setTimeout(() => this.destroy(), 5000);
 	}
 

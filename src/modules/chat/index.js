@@ -935,7 +935,7 @@ export default class Chat extends Module {
 		for(const id in this.room_ids)
 			if ( has(this.room_ids, id) ) {
 				const room = this.room_ids[id];
-				if ( room ) {
+				if ( room && ! room.destroyed ) {
 					visited.add(room);
 					yield room;
 				}
@@ -944,7 +944,7 @@ export default class Chat extends Module {
 		for(const login in this.rooms)
 			if ( has(this.rooms, login) ) {
 				const room = this.rooms[login];
-				if ( room && ! visited.has(room) )
+				if ( room && ! room.destroyed && ! visited.has(room) )
 					yield room;
 			}
 	}
@@ -1347,6 +1347,7 @@ export default class Chat extends Module {
 
 			if ( type === 'text' )
 				res = e('span', {
+					className: 'text-fragment',
 					'data-a-target': 'chat-message-text'
 				}, token.text);
 

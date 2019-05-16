@@ -77,6 +77,7 @@ export default class Actions extends Module {
 				component: 'chat-actions',
 				context: ['user', 'room', 'message'],
 				inline: true,
+				modifiers: true,
 
 				data: () => {
 					const chat = this.resolve('site.chat');
@@ -437,7 +438,10 @@ export default class Actions extends Module {
 		if ( current_level < 3 )
 			mod_icons = false;
 
-		const chat = this.resolve('site.chat');
+		const chat = this.resolve('site.chat'),
+			modified = [];
+
+		let had_action = false;
 
 		for(const data of this.parent.context.get('chat.actions.inline')) {
 			if ( ! data.action || ! data.appearance )
@@ -445,6 +449,7 @@ export default class Actions extends Module {
 
 			const ap = data.appearance || {},
 				disp = data.display || {},
+				keys = disp.keys,
 
 				def = this.renderers[ap.type];
 
@@ -459,8 +464,14 @@ export default class Actions extends Module {
 				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 				contents = def.render.call(this, ap, createElement, color);
 
-			actions.push(<button
-				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${has_color ? ' colored' : ''}`}
+			let list = actions;
+
+			if ( keys )
+				list = modified;
+
+			had_action = true;
+			list.push(<button
+				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}`}
 				data-tooltip-type="action"
 				data-action={data.action}
 				data-options={data.options ? JSON.stringify(data.options) : null}
@@ -472,7 +483,7 @@ export default class Actions extends Module {
 			</button>);
 		}
 
-		if ( ! actions.length )
+		if ( ! had_action )
 			return null;
 
 		/*const room = current_room && JSON.stringify(current_room),
@@ -483,12 +494,25 @@ export default class Actions extends Module {
 				type: msg.user.type
 			});*/
 
-		return (<div
+		let out = (<div
 			class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
 			data-source="line"
 		>
 			{actions}
 		</div>);
+
+		if ( modified.length ) {
+			return [out,
+				(<div
+					class="ffz--inline-actions ffz--modifier-actions ffz-action-data"
+					data-source="line"
+				>
+					{modified}
+				</div>)
+			];
+		}
+
+		return out;
 	}
 
 

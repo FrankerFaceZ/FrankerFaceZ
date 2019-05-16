@@ -53,6 +53,55 @@
 	color: #fff;
 }
 
+.chat-line__message {
+	position: relative;
+}
+
+
+.ffz--modifier-actions {
+	position: absolute;
+	top: 0;
+	left: 0;
+	padding: .5rem 0;
+
+	background: rgba(255,255,255,0.5);
+
+	.dark-theme &,
+	.tw-root--theme-dark & {
+		background: rgba(0,0,0,0.5);
+	}
+
+	.ffz-mod-icon {
+		margin: 0 .5rem;
+		display: none;
+	}
+}
+
+.ffz--keys {
+	&[data-ctrl="true"] .ffz-modifier-1,
+	&[data-shift="true"] .ffz-modifier-2,
+	&[data-shift="true"][data-ctrl="true"] .ffz-modifier-3,
+	&[data-alt="true"] .ffz-modifier-4,
+	&[data-alt="true"][data-ctrl="true"] .ffz-modifier-5,
+	&[data-alt="true"][data-shift="true"] .ffz-modifier-6,
+	&[data-alt="true"][data-ctrl="true"][data-shift="true"] .ffz-modifier-7,
+	&[data-meta="true"] .ffz-modifier-8,
+
+	&[data-meta="true"][data-ctrl="true"] .ffz-modifier-9,
+	&[data-meta="true"][data-shift="true"] .ffz-modifier-10,
+	&[data-meta="true"][data-shift="true"][data-ctrl="true"] .ffz-modifier-11,
+	&[data-meta="true"][data-alt="true"] .ffz-modifier-12,
+	&[data-meta="true"][data-alt="true"][data-ctrl="true"] .ffz-modifier-13,
+	&[data-meta="true"][data-alt="true"][data-shift="true"] .ffz-modifier-14,
+	&[data-meta="true"][data-alt="true"][data-ctrl="true"][data-shift="true"] .ffz-modifier-15 {
+		display: inline-flex;
+	}
+}
+
+.ffz--modifier-actions:empty {
+	display: none;
+}
+
 
 .ffz--favorite {
 	position: absolute;

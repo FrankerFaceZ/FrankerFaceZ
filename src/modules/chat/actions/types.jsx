@@ -291,7 +291,7 @@ export const whisper = {
 			me = site && site.getUser(),
 			store = site && site.store;
 
-		if ( ! me || ! store || ! data.user.id || me.id == data.user.id )
+		if ( ! me || ! store || ! data.user || ! data.user.id || me.id == data.user.id )
 			return;
 
 		const id_1 = parseInt(me.id, 10),

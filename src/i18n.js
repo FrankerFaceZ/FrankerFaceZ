@@ -155,6 +155,9 @@ export class TranslationManager extends Module {
 
 	handleMessage(event) {
 		const msg = event.data;
+		if ( ! msg )
+			return;
+
 		if ( msg.type === 'seen' )
 			this.see(msg.key, true);
 

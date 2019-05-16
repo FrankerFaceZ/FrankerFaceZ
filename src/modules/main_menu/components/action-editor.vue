@@ -119,6 +119,76 @@
 							<option :value="false">{{ t('setting.false', 'False') }}</option>
 						</select>
 					</div>
+
+					<div v-if="has_modifiers" class="tw-flex tw-align-items-start">
+						<label for="vis_modifiers">
+							{{ t('setting.actions.edit-visible.modifier', 'Modifiers') }}
+						</label>
+
+						<div>
+							<div class="ffz--inline tw-flex">
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										id="key_ctrl"
+										ref="key_ctrl"
+										:checked="edit_data.display.keys & 1"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label for="key_ctrl" class="tw-checkbox__label">
+										{{ t('setting.key.ctrl', 'Ctrl') }}
+									</label>
+								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										id="key_shift"
+										ref="key_shift"
+										:checked="edit_data.display.keys & 2"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label for="key_shift" class="tw-checkbox__label">
+										{{ t('setting.key.shift', 'Shift') }}
+									</label>
+								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										id="key_alt"
+										ref="key_alt"
+										:checked="edit_data.display.keys & 4"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label for="key_alt" class="tw-checkbox__label">
+										{{ t('setting.key.alt', 'Alt') }}
+									</label>
+								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										id="key_meta"
+										ref="key_meta"
+										:checked="edit_data.display.keys & 8"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label for="key_meta" class="tw-checkbox__label">
+										{{ t('setting.key.meta', 'Meta') }}
+									</label>
+								</div>
+							</div>
+
+							<div class="tw-pd-t-05">
+								Note: This currently requires Chat > Behavior > Freeze Chat Scrolling to be enabled.
+							</div>
+						</div>
+					</div>
 				</section>
 
 				<section class="tw-mg-t-1 tw-border-t tw-pd-t-1">
@@ -215,7 +285,7 @@
 import {has, maybe_call, deep_copy} from 'utilities/object';
 
 export default {
-	props: ['action', 'data', 'inline', 'context'],
+	props: ['action', 'data', 'inline', 'context', 'modifiers'],
 
 	data() {
 		return {
@@ -235,6 +305,10 @@ export default {
 
 		has_message() {
 			return this.context && this.context.includes('message')
+		},
+
+		has_modifiers() {
+			return this.modifiers
 		},
 
 		vars() {
@@ -373,6 +447,24 @@ export default {
 			else if ( disp.deleted === false )
 				out.push(this.t('setting.actions.visible.undeleted', 'if message not deleted'));
 
+			if ( disp.keys ) {
+				const key_out = [];
+				if ( disp.keys & 1 )
+					key_out.push(this.t('setting.key.ctrl', 'Ctrl'));
+				if ( disp.keys & 2 )
+					key_out.push(this.t('setting.key.shift', 'Shift'));
+				if ( disp.keys & 4 )
+					key_out.push(this.t('setting.key.alt', 'Alt'));
+				if ( disp.keys & 8 )
+					key_out.push(this.t('setting.key.meta', 'Meta'));
+
+				if ( key_out.length )
+					out.push(this.t('setting.actions.visible.modifier', 'when {key_list} {keys, plural, one {is} other {are}} held', {
+						key_list: key_out.join(' + '),
+						keys: key_out.length
+					}));
+			}
+
 			if ( ! out.length )
 				return this.t('setting.actions.visible.always', 'always');
 
@@ -390,6 +482,23 @@ export default {
 				}
 
 			this.edit_data.options = val;
+		},
+
+		onChangeKeys() {
+			if ( ! this.editing )
+				return;
+
+			let i = 0;
+			if ( this.$refs.key_ctrl.checked )
+				i |= 1;
+			if ( this.$refs.key_shift.checked )
+				i |= 2;
+			if ( this.$refs.key_alt.checked )
+				i |= 4;
+			if ( this.$refs.key_meta.checked )
+				i |= 8;
+
+			this.edit_data.display.keys = i;
 		},
 
 		edit() {

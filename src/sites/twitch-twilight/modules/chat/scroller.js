@@ -65,6 +65,19 @@ export default class Scroller extends Module {
 		});
 	}
 
+	updateUseKeys() {
+		const old_use = this.use_keys;
+		this.use_keys = false;
+		for(const act of this.chat.context.get('chat.actions.inline'))
+			if ( act && act.display && act.display.keys )
+				this.use_keys = true;
+
+		if ( this.use_keys !== old_use ) {
+			for(const inst of this.ChatScroller.instances)
+				inst && inst.ffzUpdateKeys && inst.ffzUpdateKeys();
+		}
+	}
+
 	onEnable() {
 		this.on('i18n:update', () => {
 			for(const inst of this.ChatScroller.instances)
@@ -81,6 +94,9 @@ export default class Scroller extends Module {
 					inst.ffzEnableFreeze();
 			}
 		});
+
+		this.chat.context.on('changed:chat.actions.inline', this.updateUseKeys, this);
+		this.updateUseKeys();
 
 		this.smoothScroll = this.chat.context.get('chat.scroller.smooth-scroll');
 		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
@@ -437,6 +453,8 @@ export default class Scroller extends Module {
 				this.ffz_ctrl = e.ctrlKey;
 				this.ffz_meta = e.metaKey;
 
+				this.ffzUpdateKeys();
+
 				if ( this.ffz_outside || t.freeze < 2 )
 					return;
 
@@ -451,8 +469,43 @@ export default class Scroller extends Module {
 			}
 
 
+			cls.prototype.ffzUpdateKeys = function() {
+				if ( ! this._ffz_key_update )
+					this._ffz_key_update = requestAnimationFrame(() => this.ffz_updateKeys());
+			}
+
+			cls.prototype.ffz_updateKeys = function() {
+				cancelAnimationFrame(this._ffz_key_update);
+				this._ffz_key_update = null;
+
+				if ( ! t.use_keys && this.ffz_use_keys === t.use_keys )
+					return;
+
+				if ( ! this.scroll || ! this.scroll.root )
+					return;
+
+				this.ffz_use_keys = t.use_keys;
+				this.scroll.root.classList.toggle('ffz--keys', t.use_keys);
+
+				const ds = this.scroll.root.dataset;
+
+				if ( ! t.use_keys ) {
+					delete ds.alt;
+					delete ds.ctrl;
+					delete ds.shift;
+					delete ds.meta;
+
+				} else {
+					ds.alt = ! this.ffz_outside && this.ffz_alt;
+					ds.ctrl = ! this.ffz_outside && this.ffz_ctrl;
+					ds.shift = ! this.ffz_outside && this.ffz_shift;
+					ds.meta = ! this.ffz_outside && this.ffz_meta;
+				}
+			}
+
 			cls.prototype.ffzMouseMove = function(e) {
 				this.ffz_last_move = Date.now();
+				const was_outside = this.ffz_outside;
 				this.ffz_outside = false;
 				if ( this._ffz_outside ) {
 					clearTimeout(this._ffz_outside);
@@ -465,8 +518,13 @@ export default class Scroller extends Module {
 						e.ctrlKey === this.ffz_ctrl &&
 						e.metaKey === this.ffz_meta &&
 						e.screenY === this.ffz_sy &&
-						e.screenX === this.ffz_sx)
+						e.screenX === this.ffz_sx) {
+
+					if ( was_outside )
+						this.ffzUpdateKeys();
+
 					return;
+				}
 
 				this.ffz_alt = e.altKey;
 				this.ffz_shift = e.shiftKey;
@@ -474,6 +532,8 @@ export default class Scroller extends Module {
 				this.ffz_meta = e.metaKey;
 				this.ffz_sy = e.screenY;
 				this.ffz_sx = e.screenX;
+
+				this.ffzUpdateKeys();
 
 				const should_freeze = this.ffzShouldBeFrozen(),
 					changed = should_freeze !== this.ffz_frozen;
@@ -492,6 +552,7 @@ export default class Scroller extends Module {
 					clearTimeout(this._ffz_outside);
 
 				this._ffz_outside = setTimeout(() => this.ffzMaybeUnfreeze(), 64);
+				this.ffzUpdateKeys();
 			}
 
 

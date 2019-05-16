@@ -61,9 +61,7 @@ export default class Layout extends Module {
 				const ratio = size.width / size.height;
 				return ratio <= ctx.get('layout.portrait-threshold');
 			},
-			changed: val => {
-				this.updatePortraitMode();
-			}
+			changed: () => this.updatePortraitMode()
 		});
 
 		this.settings.add('layout.inject-portrait', {

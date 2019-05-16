@@ -214,6 +214,16 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.use-width', {
+			requires: ['chat.width', 'context.ui.rightColumnExpanded'],
+			process(ctx) {
+				if ( ! ctx.get('context.ui.rightColumnExpanded') )
+					return false;
+
+				return ctx.get('chat.width') != 340;
+			}
+		});
+
 		this.settings.add('chat.bits.show-pinned', {
 			default: true,
 			ui: {
@@ -349,6 +359,14 @@ export default class ChatHook extends Module {
 
 
 	updateChatCSS() {
+		if ( ! this._update_chat_css_timer )
+			this._update_chat_css_timer = setTimeout(() => this._updateChatCSS(), 0);
+	}
+
+	_updateChatCSS() {
+		clearTimeout(this._update_chat_css_timer);
+		this._update_chat_css_timer = null;
+
 		const width = this.chat.context.get('chat.width'),
 			size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
@@ -364,7 +382,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 
 		this.css_tweaks.toggle('chat-font', size !== 12 || font);
-		this.css_tweaks.toggle('chat-width', width !== 340);
+		this.css_tweaks.toggle('chat-width', this.chat.context.get('chat.use-width'));
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
@@ -421,6 +439,7 @@ export default class ChatHook extends Module {
 		this.grabTypes();
 
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);

@@ -29,7 +29,7 @@ export const Links = {
 
 	render(token, createElement) {
 		return (<a
-			class="ffz-tooltip"
+			class="ffz-tooltip link-fragment"
 			data-tooltip-type="link"
 			data-url={token.url}
 			data-is-mail={token.is_mail}
