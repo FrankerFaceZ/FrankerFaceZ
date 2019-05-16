@@ -359,13 +359,13 @@ export default class ChatHook extends Module {
 
 
 	updateChatCSS() {
-		if ( ! this._update_chat_css_timer )
-			this._update_chat_css_timer = setTimeout(() => this._updateChatCSS(), 0);
+		if ( ! this._update_css_waiter )
+			this._update_css_waiter = requestAnimationFrame(() => this._updateChatCSS());
 	}
 
 	_updateChatCSS() {
-		clearTimeout(this._update_chat_css_timer);
-		this._update_chat_css_timer = null;
+		cancelAnimationFrame(this._update_css_waiter);
+		this._update_css_waiter = null;
 
 		const width = this.chat.context.get('chat.width'),
 			size = this.chat.context.get('chat.font-size'),
@@ -438,8 +438,8 @@ export default class ChatHook extends Module {
 		this.on('site.web_munch:loaded', this.grabTypes);
 		this.grabTypes();
 
-		this.settings.on('changed:chat.width', this.updateChatCSS, this);
-		this.chat.context.on('changed:chat.use-width', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
+		this.settings.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);
