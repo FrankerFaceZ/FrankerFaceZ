@@ -494,22 +494,26 @@ export default class Actions extends Module {
 				type: msg.user.type
 			});*/
 
-		let out = (<div
-			class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
-			data-source="line"
-		>
-			{actions}
-		</div>);
+		let out = null;
+		if ( actions.length )
+			out = (<div
+				class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
+				data-source="line"
+			>
+				{actions}
+			</div>);
 
 		if ( modified.length ) {
-			return [out,
-				(<div
-					class="ffz--inline-actions ffz--modifier-actions ffz-action-data"
-					data-source="line"
-				>
-					{modified}
-				</div>)
-			];
+			const modified_out = (<div
+				class="ffz--inline-actions ffz--modifier-actions ffz-action-data"
+				data-source="line"
+			>
+				{modified}
+			</div>);
+
+			if ( out )
+				return [out, modified_out];
+			return modified_out;
 		}
 
 		return out;
