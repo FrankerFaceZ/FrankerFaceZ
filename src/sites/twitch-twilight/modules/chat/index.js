@@ -382,7 +382,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 
 		this.css_tweaks.toggle('chat-font', size !== 12 || font);
-		this.css_tweaks.toggle('chat-width', this.chat.context.get('chat.use-width'));
+		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
@@ -438,7 +438,7 @@ export default class ChatHook extends Module {
 		this.on('site.web_munch:loaded', this.grabTypes);
 		this.grabTypes();
 
-		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
+		this.settings.on('changed:chat.width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
