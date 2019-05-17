@@ -129,56 +129,56 @@
 							<div class="ffz--inline tw-flex">
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										id="key_ctrl"
 										ref="key_ctrl"
+										:id="'key_ctrl$' + id"
 										:checked="edit_data.display.keys & 1"
 										type="checkbox"
 										class="tw-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label for="key_ctrl" class="tw-checkbox__label">
+									<label :for="'key_ctrl$' + id" class="tw-checkbox__label">
 										{{ t('setting.key.ctrl', 'Ctrl') }}
 									</label>
 								</div>
 
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										id="key_shift"
 										ref="key_shift"
+										:id="'key_shift$' + id"
 										:checked="edit_data.display.keys & 2"
 										type="checkbox"
 										class="tw-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label for="key_shift" class="tw-checkbox__label">
+									<label :for="'key_shift$' + id" class="tw-checkbox__label">
 										{{ t('setting.key.shift', 'Shift') }}
 									</label>
 								</div>
 
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										id="key_alt"
 										ref="key_alt"
+										:id="'key_alt$' + id"
 										:checked="edit_data.display.keys & 4"
 										type="checkbox"
 										class="tw-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label for="key_alt" class="tw-checkbox__label">
+									<label :for="'key_alt$' + id" class="tw-checkbox__label">
 										{{ t('setting.key.alt', 'Alt') }}
 									</label>
 								</div>
 
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										id="key_meta"
 										ref="key_meta"
+										:id="'key_meta$' + id"
 										:checked="edit_data.display.keys & 8"
 										type="checkbox"
 										class="tw-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label for="key_meta" class="tw-checkbox__label">
+									<label :for="'key_meta$' + id" class="tw-checkbox__label">
 										{{ t('setting.key.meta', 'Meta') }}
 									</label>
 								</div>
@@ -284,11 +284,14 @@
 
 import {has, maybe_call, deep_copy} from 'utilities/object';
 
+let id = 0;
+
 export default {
 	props: ['action', 'data', 'inline', 'context', 'modifiers'],
 
 	data() {
 		return {
+			id: id++,
 			deleting: false,
 			editing: false,
 			edit_data: null

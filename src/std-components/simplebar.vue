@@ -1,10 +1,12 @@
 <template lang="html">
 	<div
+		ref="scroller"
 		:class="classes"
 		:data-simplebar-auto-hide="autoHide"
 		:data-simplebar-scrollbar-min-size="scrollbarMinSize"
 		data-simplebar
 		class="scrollable-area"
+		@scroll="onScroll"
 	>
 		<div class="simplebar-scroll-content">
 			<div class="simplebar-content">
@@ -26,6 +28,18 @@ export default {
 		scrollbarMinSize: {
 			type: Number,
 			default: 10
+		}
+	},
+
+	methods: {
+		onScroll() {
+			// We do this to avoid the scroll position getting screwed up on
+			// an element that should never scroll. Thanks, web browsers.
+			const scroller = this.$refs.scroller;
+			if ( ! scroller || scroller.scrollTop == 0 )
+				return;
+
+			scroller.scrollTop = 0;
 		}
 	}
 }

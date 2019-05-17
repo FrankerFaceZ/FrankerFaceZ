@@ -1,4 +1,8 @@
 .ffz-main-menu {
+	.scrollable-area {
+		overflow-anchor: none;
+	}
+
 	& > header {
 		* {
 			pointer-events: none;
