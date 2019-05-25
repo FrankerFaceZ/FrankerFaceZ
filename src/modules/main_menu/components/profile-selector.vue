@@ -4,7 +4,7 @@
 			ref="button"
 			:class="{active: opened}"
 			tabindex="0"
-			class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+			class="tw-c-background-alt tw-block tw-border tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 			@keyup.up.stop.prevent="focusShow"
 			@keyup.left.stop.prevent="focusShow"
 			@keyup.down.stop.prevent="focusShow"

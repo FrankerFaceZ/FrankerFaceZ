@@ -640,7 +640,9 @@ export default class MainMenu extends Module {
 			for(const child of item.contents)
 				child && this.markSeen(child, seen);
 
-		} else if ( ! item.setting )
+		}
+
+		if ( ! item.setting )
 			return;
 
 		if ( ! seen.includes(item.setting) ) {
@@ -657,12 +659,59 @@ export default class MainMenu extends Module {
 			this.settings.provider.set('cfg-seen', seen);
 	}
 
+	markAllSeen(thing, seen) {
+		let had_seen = true;
+		if ( ! seen ) {
+			had_seen = false;
+			seen = this.settings.provider.get('cfg-seen', []);
+		}
+
+		if ( Array.isArray(thing) )
+			for(const page of thing)
+				if ( page )
+					this.markAllSeen(page, seen);
+
+		if ( Array.isArray(thing.items) )
+			for(const item of thing.items)
+				this.markAllSeen(item, seen);
+
+		if ( Array.isArray(thing.contents) )
+			for(const content of thing.contents)
+				this.markAllSeen(content, seen);
+
+		if ( Array.isArray(thing.tabs) )
+			for(const tab of thing.tabs)
+				this.markAllSeen(tab, seen);
+
+		if ( Array.isArray(thing.settings) )
+			for(const setting of thing.settings)
+				if ( setting )
+					this.markAllSeen(setting[1], seen);
+
+		if ( thing.setting && ! seen.includes(thing.setting) )
+			seen.push(thing.setting);
+
+		if ( thing.unseen )
+			thing.unseen = 0;
+
+		if ( ! had_seen )
+			this.settings.provider.set('cfg-seen', seen);
+	}
+
 	getData() {
 		const settings = this.getSettingsTree(),
 			context = this.getContext(),
 			current = this.has_update ? settings.keys['home.changelog'] : settings.keys['home'];
 
 		this.markSeen(current);
+
+		let has_unseen = false;
+		for(const page of settings)
+			if ( page && page.unseen ) {
+				has_unseen = true;
+				break;
+			}
+
 
 		return {
 			context,
@@ -674,9 +723,12 @@ export default class MainMenu extends Module {
 			currentItem: current,
 			nav_keys: settings.keys,
 
+			has_unseen,
+
 			maximized: this.dialog.maximized,
 			exclusive: this.dialog.exclusive,
 
+			markAllSeen: thing => this.markAllSeen(thing),
 			markSeen: item => this.markSeen(item),
 
 			markExpanded: item => {

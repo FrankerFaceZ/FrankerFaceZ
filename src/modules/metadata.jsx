@@ -779,12 +779,12 @@ export default class Metadata extends Module {
 						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
 					el = (<div
-						class="ffz-stat tw-stat"
+						class="tw-inline-flex tw-align-items-center ffz-stat tw-stat"
 						data-key={key}
 						tip_content={tooltip}
 					>
 						{icon}
-						{stat = <span class="ffz-stat-text tw-stat__value" />}
+						{stat = <span class={`${icon ? 'tw-mg-l-05 ' : ''}ffz-stat-text tw-stat__value`} />}
 					</div>);
 
 					if ( def.click )

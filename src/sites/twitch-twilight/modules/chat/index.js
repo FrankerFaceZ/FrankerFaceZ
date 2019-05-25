@@ -439,7 +439,7 @@ export default class ChatHook extends Module {
 		this.grabTypes();
 
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
-		this.settings.on('changed:chat.use-width', this.updateChatCSS, this);
+		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);

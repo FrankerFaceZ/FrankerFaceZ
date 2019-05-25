@@ -60,6 +60,16 @@
 				</header>
 				<div class="tw-full-width tw-full-height tw-overflow-hidden tw-flex tw-flex-nowrap tw-relative">
 					<simplebar classes="ffz-vertical-nav__items tw-full-width tw-flex-grow-1">
+						<header v-if="has_unseen" class="tw-border-b tw-pd-1">
+							<button
+								class="tw-button tw-button--hollow tw-full-width"
+								@click="allRead"
+							>
+								<span class="tw-button__text">
+									{{ t('main-menu.mark-all-seen', 'Mark All Seen') }}
+								</span>
+							</button>
+						</header>
 						<menu-tree
 							:current-item="currentItem"
 							:modal="nav"
@@ -153,6 +163,11 @@ export default {
 	},
 
 	methods: {
+		allRead() {
+			this.markAllSeen(this.nav);
+			this.has_unseen = false;
+		},
+
 		maybeResize(event) {
 			if ( event.target !== this.$refs.header )
 				return;
