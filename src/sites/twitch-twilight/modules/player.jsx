@@ -36,6 +36,12 @@ export default class Player extends Module {
 			PLAYER_ROUTES
 		);
 
+		this.SquadStreamBar = this.fine.define(
+			'squad-stream-bar',
+			n => n.shouldRenderSquadBanner && n.props && n.props.triggerPlayerReposition,
+			PLAYER_ROUTES
+		);
+
 		this.settings.add('player.volume-scroll', {
 			default: false,
 			ui: {
@@ -249,7 +255,7 @@ export default class Player extends Module {
 			default: false,
 			ui: {
 				path: 'Player > General >> General',
-				title: 'Hide Event Bar',
+				title: 'Hide the Event Bar',
 				description: 'Hide the Event Bar which appears above the player when there is an ongoing event for the current channel.',
 				component: 'setting-check-box'
 			},
@@ -263,7 +269,7 @@ export default class Player extends Module {
 			default: false,
 			ui: {
 				path: 'Player > General >> General',
-				title: 'Hide Rerun Bar',
+				title: 'Hide the Rerun Bar',
 				description: 'Hide the Rerun Bar which appears above the player when the current channel is playing a video rather than live content.',
 				component: 'setting-check-box'
 			},
@@ -271,6 +277,16 @@ export default class Player extends Module {
 				this.css_tweaks.toggleHide('player-rerun-bar', val);
 				this.PersistentPlayer.forceUpdate();
 			}
+		});
+
+		this.settings.add('player.hide-squad-banner', {
+			default: false,
+			ui: {
+				path: 'Player > General >> General',
+				title: 'Hide the Squad Streaming Bar',
+				component: 'setting-check-box'
+			},
+			changed: () => this.SquadStreamBar.forceUpdate()
 		});
 
 		this.settings.add('player.hide-mouse', {
@@ -375,6 +391,24 @@ export default class Player extends Module {
 
 		const t = this;
 
+		this.SquadStreamBar.ready(cls => {
+			const old_should_render = cls.prototype.shouldRenderSquadBanner;
+
+			cls.prototype.shouldRenderSquadBanner = function(...args) {
+				if ( t.settings.get('player.hide-squad-banner') )
+					return false;
+
+				return old_should_render.call(this, ...args);
+			}
+
+			this.SquadStreamBar.forceUpdate();
+			this.updateSquadContext();
+		});
+
+		this.SquadStreamBar.on('mount', this.updateSquadContext, this);
+		this.SquadStreamBar.on('update', this.updateSquadContext, this);
+		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);
+
 		this.Player.on('mount', this.onMount, this);
 		this.Player.on('unmount', this.onUnmount, this);
 
@@ -405,6 +439,19 @@ export default class Player extends Module {
 			for(const inst of this.Player.instances)
 				this.addResetButton(inst);
 		});
+	}
+
+
+	updateSquadContext() {
+		this.settings.updateContext({
+			squad_bar: this.hasSquadBar()
+		});
+	}
+
+
+	hasSquadBar() {
+		const inst = this.SquadStreamBar.first;
+		return inst ? inst.shouldRenderSquadBanner(inst.props) : false
 	}
 
 

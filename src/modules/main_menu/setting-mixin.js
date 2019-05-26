@@ -9,6 +9,7 @@ export default {
 			has_value: false,
 			profile: null,
 
+			_unseen: false,
 			source: null,
 			source_value: undefined,
 		}
@@ -22,6 +23,11 @@ export default {
 
 		this._update_profile();
 		this._uses_changed(ctx.uses(setting));
+
+		if ( this.item.unseen ) {
+			this._unseen = true;
+			this.item.unseen = 0;
+		}
 
 		ctx.on(`uses_changed:${setting}`, this._uses_changed, this);
 	},
@@ -61,6 +67,10 @@ export default {
 				return data(this.profile, this.value);
 
 			return data;
+		},
+
+		unseen() {
+			return this._unseen || this.item.unseen > 0
 		},
 
 		default_value() {
@@ -103,9 +113,9 @@ export default {
 			};
 
 			if ( this.isInherited )
-				return this.t('setting.inherited-from', 'Inherited From: %{title}', opts);
+				return this.t('setting.inherited-from', 'Inherited From: {title}', opts);
 			else if ( this.isOverridden )
-				return this.t('setting.overridden-by', 'Overridden By: %{title}', opts);
+				return this.t('setting.overridden-by', 'Overridden By: {title}', opts);
 		}
 	},
 

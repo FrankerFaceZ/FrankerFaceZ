@@ -120,7 +120,9 @@ export default class Dialog extends EventEmitter {
 			container.classList.toggle('ffz-has-dialog', visible);
 
 		if ( ! visible ) {
-			this._element.remove();
+			if ( this._element )
+				this._element.remove();
+
 			this.emit('hide');
 
 			if ( this.factory )
@@ -154,7 +156,7 @@ export default class Dialog extends EventEmitter {
 	}
 
 	toggleSize(event) {
-		if ( ! this._visible || event && event.button !== 0 )
+		if ( ! this._visible || event && event.button !== 0 || ! this._element )
 			return;
 
 		this._maximized = !this._maximized;

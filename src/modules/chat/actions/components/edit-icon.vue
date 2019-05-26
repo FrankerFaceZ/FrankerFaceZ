@@ -94,8 +94,6 @@ const FFZ_ICONS = [
 	'lock',
 	'lock-open',
 	'arrows-cw',
-	'pin',
-	'pin-outline',
 	'gift',
 	'eyedropper',
 	'github',

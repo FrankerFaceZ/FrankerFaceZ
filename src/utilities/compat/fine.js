@@ -148,7 +148,7 @@ export default class Fine extends Module {
 		else if ( node instanceof Node )
 			node = this.getReactInstance(node);
 
-		if ( ! node || depth > max_depth )
+		if ( ! node || node._ffz_no_scan || depth > max_depth )
 			return null;
 
 		if ( typeof criteria === 'string' ) {
@@ -195,7 +195,7 @@ export default class Fine extends Module {
 		else if ( node instanceof Node )
 			node = this.getReactInstance(node);
 
-		if ( ! node || depth > max_depth )
+		if ( ! node || node._ffz_no_scan || depth > max_depth )
 			return null;
 
 		if ( typeof criteria === 'string' ) {
@@ -257,7 +257,7 @@ export default class Fine extends Module {
 				max_depth: depth
 			};
 
-		if ( ! node || depth > max_depth )
+		if ( ! node || node._ffz_no_scan || depth > max_depth )
 			return data.out;
 
 		if ( depth > data.max_depth )
@@ -397,7 +397,7 @@ export default class Fine extends Module {
 			else if ( node instanceof Node )
 				node = this.getReactInstance(node);
 
-			if ( ! node || ! this._live_waiting.length )
+			if ( ! node || node._ffz_no_scan || ! this._live_waiting.length )
 				continue;
 
 			const data = this.searchAll(node, this._waiting_crit, 1000);
@@ -458,12 +458,12 @@ export default class Fine extends Module {
 
 
 const EVENTS = {
-	'will-mount': 'componentWillMount',
+	'will-mount': 'UNSAFE_componentWillMount',
 	mount: 'componentDidMount',
 	render: 'render',
-	'receive-props': 'componentWillReceiveProps',
+	'receive-props': 'UNSAFE_componentWillReceiveProps',
 	'should-update': 'shouldComponentUpdate',
-	'will-update': 'componentWillUpdate',
+	'will-update': 'UNSAFE_componentWillUpdate',
 	update: 'componentDidUpdate',
 	unmount: 'componentWillUnmount'
 }
@@ -504,16 +504,16 @@ export class FineWrapper extends EventEmitter {
 			throw new Error('already have a class');
 
 		this._class = cls;
-		this._wrapped.add('componentWillMount');
+		this._wrapped.add('UNSAFE_componentWillMount');
 		this._wrapped.add('componentWillUnmount');
 
 		const t = this,
 			_instances = this.instances,
 			proto = cls.prototype,
-			o_mount = proto.componentWillMount,
+			o_mount = proto.UNSAFE_componentWillMount,
 			o_unmount = proto.componentWillUnmount,
 
-			mount = proto.componentWillMount = o_mount ?
+			mount = proto.UNSAFE_componentWillMount = o_mount ?
 				function(...args) {
 					this._ffz_mounted = true;
 					_instances.add(this);
@@ -539,7 +539,7 @@ export class FineWrapper extends EventEmitter {
 					this._ffz_mounted = false;
 				};
 
-		this.__componentWillMount = [mount, o_mount];
+		this.__UNSAFE_componentWillMount = [mount, o_mount];
 		this.__componentWillUnmount = [unmount, o_unmount];
 
 		for(const event of this.events())
@@ -580,13 +580,37 @@ export class FineWrapper extends EventEmitter {
 
 			fn = proto[key] = original ?
 				function(...args) {
+					if ( ! this._ffz_mounted ) {
+						this._ffz_mounted = true;
+						t.instances.add(this);
+						t.emit('late-mount', this);
+					}
+
 					t.emit(event, this, ...args);
 					return original.apply(this, args);
 				} :
 
-				function(...args) {
-					t.emit(event, this, ...args);
-				};
+				key === 'shouldComponentUpdate' ?
+					function(...args) {
+						if ( ! this._ffz_mounted ) {
+							this._ffz_mounted = true;
+							t.instances.add(this);
+							t.emit('late-mount', this);
+						}
+
+						t.emit(event, this, ...args);
+						return true;
+					}
+					:
+					function(...args) {
+						if ( ! this._ffz_mounted ) {
+							this._ffz_mounted = true;
+							t.instances.add(this);
+							t.emit('late-mount', this);
+						}
+
+						t.emit(event, this, ...args);
+					};
 
 		this[`__${key}`] = [fn, original];
 	}

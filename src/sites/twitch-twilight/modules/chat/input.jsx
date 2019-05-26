@@ -7,11 +7,12 @@
 import Module from 'utilities/module';
 import Twilight from 'site';
 
-export default class TabCompletion extends Module {
+export default class Input extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.inject('chat');
+		this.inject('chat.actions');
 		this.inject('chat.emotes');
 		this.inject('chat.emoji');
 		this.inject('i18n');
@@ -59,15 +60,58 @@ export default class TabCompletion extends Module {
 	}
 
 	async onEnable() {
+		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
+
 		const React = await this.web_munch.findModule('react'),
 			createElement = React && React.createElement;
 
 		if ( ! createElement )
 			return this.log.warn('Unable to get React.');
 
+		const t = this;
+
 		this.ChatInput.ready((cls, instances) => {
-			for(const inst of instances)
+			const old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				const out = old_render.call(this);
+				try {
+					if ( ! out || ! out.props || ! Array.isArray(out.props.children) )
+						return out;
+
+					const props = this.props;
+					if ( ! props || ! props.channelID )
+						return out;
+
+					const u = props.sessionUser ? {
+							id: props.sessionUser.id,
+							login: props.sessionUser.login,
+							displayName: props.sessionUser.displayName,
+							mod: props.isCurrentUserModerator,
+							staff: props.isStaff
+						} : null,
+						r = {
+							id: props.channelID,
+							login: props.channelLogin,
+							displayName: props.channelDisplayName
+						}
+
+					const actions = t.actions.renderRoom(t.chat.context.get('context.chat.showModIcons'), u, r, createElement);
+					if ( actions )
+						out.props.children.unshift(actions);
+
+				} catch(err) {
+					t.log.error(err);
+					t.log.capture(err);
+				}
+
+				return out;
+			}
+
+			for(const inst of instances) {
+				inst.forceUpdate();
 				this.updateEmoteCompletion(inst);
+			}
 		});
 
 		this.EmoteSuggestions.ready((cls, instances) => {

@@ -274,8 +274,12 @@ export default class EmoteMenu extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() {
-				if ( ! this.props || ! has(this.props, 'channelOwnerID') || ! t.chat.context.get('chat.emote-menu.enabled') )
+				if ( ! this.props || ! has(this.props, 'channelOwnerID') || ! t.chat.context.get('chat.emote-menu.enabled') ) {
+					this._ffz_no_scan = false;
 					return old_render.call(this);
+				}
+
+				this._ffz_no_scan = true;
 
 				return (<t.MenuErrorWrapper visible={this.props.visible}>
 					<t.MenuComponent
@@ -547,28 +551,27 @@ export default class EmoteMenu extends Module {
 					ends = data.ends && data.ends - new Date;
 
 				if ( renews > 0 ) {
-					const time = t.i18n.toHumanTime(renews / 1000);
 					calendar = {
 						icon: 'calendar',
-						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews in %{time}.', {time})
+						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews in {seconds,humantime}.', {seconds: renews / 1000})
 					}
 
 				} else if ( ends ) {
-					const time = t.i18n.toHumanTime(ends / 1000);
+					const seconds = ends / 1000;
 					if ( data.prime )
 						calendar = {
 							icon: 'crown',
-							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in %{time}.', {time})
+							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in {seconds,humantime}.', {seconds})
 						}
 					else if ( data.gift )
 						calendar = {
 							icon: 'gift',
-							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in %{time}.', {time})
+							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in {seconds,humantime}.', {seconds})
 						}
 					else
 						calendar = {
 							icon: 'calendar-empty',
-							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends in %{time}.', {time})
+							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends in {seconds,humantime}.', {seconds})
 						}
 				}
 
@@ -603,8 +606,8 @@ export default class EmoteMenu extends Module {
 						const locked = emote.locked && (! lock || ! lock.emotes.has(emote.id)),
 							emote_lock = locked && data.locks && data.locks[emote.set_id],
 							sellout = emote_lock ? (data.all_locked ?
-								t.i18n.t('emote-menu.emote-sub', 'Subscribe for %{price} to unlock this emote.', emote_lock) :
-								t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to %{price} to unlock this emote.', emote_lock)
+								t.i18n.t('emote-menu.emote-sub', 'Subscribe for {price} to unlock this emote.', emote_lock) :
+								t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to {price} to unlock this emote.', emote_lock)
 							) : '';
 
 						return this.renderEmote(
@@ -666,7 +669,7 @@ export default class EmoteMenu extends Module {
 
 				return (<div class="tw-mg-1 tw-border-t tw-pd-t-1 tw-mg-b-0">
 					{lock ?
-						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for %{price} to unlock %{count} emote%{count|en_plural}', {price: lock.price, count: lock.emotes.size}) :
+						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count,number} emote{count,en_plural}', {price: lock.price, count: lock.emotes.size}) :
 						t.i18n.t('emote-menu.sub-basic', 'Subscribe to unlock some emotes')}
 					<div class="ffz--sub-buttons tw-mg-t-05">
 						{Object.values(data.locks).map(lock => (<a
@@ -1265,7 +1268,7 @@ export default class EmoteMenu extends Module {
 									sort_key = 75;
 								}
 							} else
-								title = t.i18n.t('emote-menu.unknown-set', 'Set #%{set_id}', {set_id})
+								title = t.i18n.t('emote-menu.unknown-set', 'Set #{set_id}', {set_id})
 						}
 
 						let section, emotes;
@@ -1512,7 +1515,7 @@ export default class EmoteMenu extends Module {
 
 					title = provider === 'main' ?
 						t.i18n.t('emote-menu.main-set', 'Channel Emotes') :
-						(emote_set.title || t.i18n.t('emote-menu.unknown', `Set #${emote_set.id}`));
+						(emote_set.title || t.i18n.t('emote-menu.unknown-set', `Set #{set_id}`, {set_id: emote_set.id}));
 
 				let sort_key = pdata && pdata.sort_key || emote_set.sort;
 				if ( sort_key == null )
@@ -1612,7 +1615,7 @@ export default class EmoteMenu extends Module {
 					{this.state.filtered ?
 						t.i18n.t('emote-menu.empty-search', 'There are no matching emotes.') :
 						this.state.tab === 'fav' ?
-							t.i18n.t('emote-menu.empty-favs', "You don't have any favorite emotes. To favorite an emote, find it and %{hotkey}-Click it.", {hotkey: IS_OSX ? '⌘' : 'Ctrl'}) :
+							t.i18n.t('emote-menu.empty-favs', "You don't have any favorite emotes. To favorite an emote, find it and {hotkey}-Click it.", {hotkey: IS_OSX ? '⌘' : 'Ctrl'}) :
 							t.i18n.t('emote-menu.empty', "There's nothing here.")}
 				</div>)
 			}

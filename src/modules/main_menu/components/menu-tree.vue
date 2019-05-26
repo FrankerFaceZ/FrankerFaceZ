@@ -38,6 +38,9 @@
 				<span v-if="item.pill" class="tw-pill">
 					{{ item.pill_i18n_key ? t(item.pill_i18n_key, item.pill, item) : item.pill }}
 				</span>
+				<span v-else-if="item.unseen" class="tw-pill">
+					{{ item.unseen }}
+				</span>
 			</div>
 			<menu-tree
 				v-if="item.items && item.expanded"
@@ -46,6 +49,8 @@
 				:modal="item.items"
 				:filter="filter"
 				@change-item="i => $emit('change-item', i)"
+				@mark-seen="i => $emit('mark-seen', i)"
+				@mark-expanded="i => $emit('mark-expanded', i)"
 			/>
 		</li>
 	</ul>
@@ -75,11 +80,16 @@ function findNextVisible(node, modal) {
 }
 
 
-function recursiveExpand(node) {
-	node.expanded = true;
+function recursiveExpand(node, vue) {
+	if ( ! node.expanded ) {
+		node.expanded = true;
+		if ( vue )
+			vue.$emit('mark-expanded', node);
+	}
+
 	if ( node.items )
 		for(const item of node.items)
-			recursiveExpand(item);
+			recursiveExpand(item, vue);
 }
 
 
@@ -121,12 +131,13 @@ export default {
 			else if ( this.currentItem === item )
 				item.expanded = false;
 
+			this.$emit('mark-expanded', item);
 			this.$emit('change-item', item);
 		},
 
 		expandAll() {
 			for(const item of this.modal)
-				recursiveExpand(item);
+				recursiveExpand(item, this);
 		},
 
 		prevItem() {
@@ -164,9 +175,10 @@ export default {
 
 			const i = this.currentItem;
 
-			if ( i.expanded && i.items )
+			if ( i.expanded && i.items ) {
 				i.expanded = false;
-			else if ( i.parent )
+				this.$emit('mark-expanded', i);
+			} else if ( i.parent )
 				this.$emit('change-item', i.parent);
 		},
 
@@ -176,11 +188,13 @@ export default {
 			const i = this.currentItem;
 			if ( i.expanded && i.items )
 				this.$emit('change-item', i.items[0]);
-			else
+			else {
 				i.expanded = true;
+				this.$emit('mark-expanded', i);
+			}
 
 			if ( event.ctrlKey )
-				recursiveExpand(this.currentItem);
+				recursiveExpand(this.currentItem, this);
 		}
 	}
 }

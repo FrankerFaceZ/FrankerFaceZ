@@ -5,9 +5,46 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import {has, get as getter, array_equals} from 'utilities/object';
+import {has, get as getter, array_equals, set_equals, map_equals, deep_copy} from 'utilities/object';
 
 import * as DEFINITIONS from './types';
+
+/**
+ * Perform a basic check of a setting's requirements to see if they changed.
+ * @param {Object} definition
+ * @param {Map} cache
+ * @param {Map} old_cache
+ * @returns Whether or not they changed.
+ */
+function compare_requirements(definition, cache, old_cache) {
+	if ( ! definition || ! Array.isArray(definition.requires) )
+		return false;
+
+	for(const req of definition.requires) {
+		const old_value = old_cache.get(req),
+			new_value = cache.get(req);
+
+		if ( typeof old_value !== typeof new_value )
+			return true;
+
+		if ( Array.isArray(old_value) && Array.isArray(new_value) ) {
+			if ( ! array_equals(new_value, old_value) )
+				return true;
+
+		} else if ( new_value instanceof Set && old_value instanceof Set ) {
+			if ( ! set_equals(new_value, old_value) )
+				return true;
+
+		} else if( new_value instanceof Map && old_value instanceof Map ) {
+			if ( ! map_equals(new_value, old_value) )
+				return true;
+
+		} else if ( new_value !== old_value )
+			return true;
+	}
+
+	return false;
+}
 
 
 /**
@@ -33,6 +70,10 @@ export default class SettingsContext extends EventEmitter {
 
 		this.manager.__contexts.push(this);
 		this._context = context || {};
+
+		/*this._context_objects = new Set;
+		if ( context )
+			this._updateContext(context, undefined, undefined, new Set);*/
 
 		this.__cache = new Map;
 		this.__meta = new Map;
@@ -125,7 +166,29 @@ export default class SettingsContext extends EventEmitter {
 				new_uses = new_m ? new_m.uses : null,
 				old_uses = old_m ? old_m.uses : null;
 
-			if ( new_value !== old_value ) {
+			const definition = this.manager.definitions.get(key);
+			let changed = false;
+
+			if ( definition && definition.equals ) {
+				if ( definition.equals === 'requirements' )
+					changed = compare_requirements(definition, this.__cache, old_cache);
+				else if ( typeof definition.equals === 'function' )
+					changed = ! definition.equals(new_value, old_value, this.__cache, old_cache);
+			}
+
+			else if ( Array.isArray(new_value) && Array.isArray(old_value) )
+				changed = ! array_equals(new_value, old_value);
+
+			else if ( new_value instanceof Set && old_value instanceof Set )
+				changed = ! set_equals(new_value, old_value);
+
+			else if ( new_value instanceof Map && old_value instanceof Map )
+				changed = ! map_equals(new_value, old_value);
+
+			else if ( new_value !== old_value )
+				changed = true;
+
+			if ( changed ) {
 				this.emit('changed', key, new_value, old_value);
 				this.emit(`changed:${key}`, new_value, old_value);
 			}
@@ -161,9 +224,68 @@ export default class SettingsContext extends EventEmitter {
 	}
 
 
+	/*_updateContext(context, prefix, keys, changed) {
+		if ( ! context || typeof context !== 'object' )
+			return;
+
+		if ( ! keys )
+			keys = Object.keys(context);
+
+		if ( prefix && this._context_objects.has(prefix) ) {
+			for(const key of Object.keys(this._context) )
+				if ( key.startsWith(prefix) ) {
+					const partial_key = key.substr(prefix.length);
+					if ( ! keys.includes(partial_key) )
+						keys.push(partial_key);
+				}
+		}
+
+		if ( prefix )
+			this._context_objects.add(prefix);
+
+		for(const key of keys) {
+			const full_key = prefix ? `${prefix}${key}` : key,
+				pref = `${full_key}.`,
+				old_value = this._context[full_key],
+				val = context[key];
+
+			const keys = val && (typeof val === 'object') && Object.keys(val);
+			if ( keys && keys.length ) {
+				this._updateContext(val, pref, keys, changed);
+
+			} else if ( this._context_objects.has(pref) ) {
+				this._updateContext({}, pref, [], changed);
+				this._context_objects.delete(pref);
+
+				if ( (val || old_value) && val !== old_value ) {
+					this._context[full_key] = val;
+					changed.add(full_key);
+				}
+
+			} else if ( val !== old_value ) {
+				this._context[full_key] = val;
+				changed.add(full_key);
+			}
+		}
+	}
+
+
+	updateContext(context) {
+		if ( ! context || typeof context !== 'object' )
+			return;
+
+		const changed = new Set;
+		this._updateContext(context, undefined, undefined, changed);
+
+		if ( changed.size )
+			this._rebuildContext();
+	}*/
+
+
 	setContext(context) {
-		this._context = context;
-		this._rebuildContext();
+		this._context_objects = new Set;
+		this._context = {};
+		this.updateContext(context);
 	}
 
 
@@ -289,6 +411,7 @@ export default class SettingsContext extends EventEmitter {
 
 	get(key) {
 		if ( key.startsWith('context.') )
+			//return this.__context[key.slice(8)];
 			return getter(key.slice(8), this.__context);
 
 		if ( this.__cache.has(key) )

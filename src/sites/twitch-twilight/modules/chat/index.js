@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, make_enum, split_chars, shallow_object_equals} from 'utilities/object';
+import {has, make_enum, split_chars, shallow_object_equals, set_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -17,7 +17,7 @@ import Scroller from './scroller';
 import ChatLine from './line';
 import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
-import TabCompletion from './tab_completion';
+import Input from './input';
 
 
 const REGEX_EMOTES = {
@@ -150,7 +150,7 @@ export default class ChatHook extends Module {
 		this.inject(ChatLine);
 		this.inject(SettingsMenu);
 		this.inject(EmoteMenu);
-		this.inject(TabCompletion);
+		this.inject(Input);
 
 		this.ChatService = this.fine.define(
 			'chat-service',
@@ -211,6 +211,16 @@ export default class ChatHook extends Module {
 
 					return val;
 				}
+			}
+		});
+
+		this.settings.add('chat.use-width', {
+			requires: ['chat.width', 'context.ui.rightColumnExpanded'],
+			process(ctx) {
+				if ( ! ctx.get('context.ui.rightColumnExpanded') )
+					return false;
+
+				return ctx.get('chat.width') != 340;
 			}
 		});
 
@@ -349,6 +359,14 @@ export default class ChatHook extends Module {
 
 
 	updateChatCSS() {
+		if ( ! this._update_css_waiter )
+			this._update_css_waiter = requestAnimationFrame(() => this._updateChatCSS());
+	}
+
+	_updateChatCSS() {
+		cancelAnimationFrame(this._update_css_waiter);
+		this._update_css_waiter = null;
+
 		const width = this.chat.context.get('chat.width'),
 			size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
@@ -364,7 +382,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 
 		this.css_tweaks.toggle('chat-font', size !== 12 || font);
-		this.css_tweaks.toggle('chat-width', width !== 340);
+		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
@@ -421,6 +439,7 @@ export default class ChatHook extends Module {
 		this.grabTypes();
 
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
+		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);
@@ -560,7 +579,7 @@ export default class ChatHook extends Module {
 
 		this.ChatContainer.on('mount', this.containerMounted, this);
 		this.ChatContainer.on('unmount', this.removeRoom, this);
-		this.ChatContainer.on('receive-props', this.containerUpdated, this);
+		this.ChatContainer.on('update', this.containerUpdated, this);
 
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
@@ -579,6 +598,7 @@ export default class ChatHook extends Module {
 				if ( old_catch )
 					return old_catch.call(this, err, info);
 			}
+
 
 			for(const inst of instances)
 				this.containerMounted(inst);
@@ -600,6 +620,23 @@ export default class ChatHook extends Module {
 		});
 
 		this.RoomPicker.on('mount', this.closeRoomPicker, this);
+	}
+
+
+	tryUpdateBadges() {
+		if ( !this._badge_timer )
+			this._badge_timer = setTimeout(() => this._tryUpdateBadges(), 0);
+	}
+
+	_tryUpdateBadges() {
+		if ( this._badge_timer )
+			clearTimeout(this._badge_timer);
+		this._badge_timer = null;
+
+		this.log.info('Trying to update badge data from the chat container.');
+		const inst = this.ChatContainer.first;
+		if ( inst )
+			this.containerUpdated(inst, inst.props);
 	}
 
 
@@ -671,7 +708,7 @@ export default class ChatHook extends Module {
 							if ( event.defaultPrevented || m.ffz_removed )
 								return;
 
-						} else if ( msg.type === types.ModerationAction ) {
+						} else if ( msg.type === types.ModerationAction && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							//t.log.info('Moderation Action', msg);
 							if ( ! inst.props.isCurrentUserModerator )
 								return;
@@ -710,7 +747,7 @@ export default class ChatHook extends Module {
 								return;
 							}
 
-						} else if ( msg.type === types.Moderation ) {
+						} else if ( msg.type === types.Moderation && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							//t.log.info('Moderation', msg);
 							if ( inst.props.isCurrentUserModerator )
 								return;
@@ -1422,9 +1459,10 @@ export default class ChatHook extends Module {
 		if ( chat.chatBuffer )
 			chat.chatBuffer.ffzController = chat;
 
-		if ( props.channelID !== chat.props.channelID ) {
+		if ( ! chat._ffz_room || props.channelID != chat._ffz_room.id ) {
 			this.removeRoom(chat);
-			this.chatMounted(chat, props);
+			if ( chat._ffz_mounted )
+				this.chatMounted(chat, props);
 			return;
 		}
 
@@ -1453,6 +1491,21 @@ export default class ChatHook extends Module {
 		const room = chat._ffz_room;
 		if ( ! room )
 			return;
+
+		// We have to check that the available cheers haven't changed
+		// to avoid doing too many recalculations.
+		let new_bits = null;
+		if ( config && Array.isArray(config.orderedActions) ) {
+			new_bits = new Set;
+			for(const action of config.orderedActions)
+				if ( action && action.prefix )
+					new_bits.add(action.prefix);
+		}
+
+		if ( (! this._ffz_old_bits && ! new_bits) || set_equals(this._ffz_old_bits, new_bits) )
+			return;
+
+		this._ffz_old_bits = new_bits;
 
 		room.updateBitsConfig(formatBitsConfig(config));
 		this.updateChatLines();
@@ -1504,14 +1557,18 @@ export default class ChatHook extends Module {
 		if ( props.data ) {
 			this.chat.badges.updateTwitchBadges(props.data.badges);
 			this.updateRoomBadges(cont, props.data.user && props.data.user.broadcastBadges);
+			this.updateRoomRules(cont, props.chatRules);
 		}
 	}
 
 
 	containerUpdated(cont, props) {
-		if ( props.channelID !== cont.props.channelID ) {
+		// If we don't have a room, or if the room ID doesn't match our ID
+		// then we need to just create a new Room because the chat room changed.
+		if ( ! cont._ffz_room || props.channelID != cont._ffz_room.id ) {
 			this.removeRoom(cont);
-			this.containerMounted(cont, props);
+			if ( cont._ffz_mounted )
+				this.containerMounted(cont, props);
 			return;
 		}
 
@@ -1528,11 +1585,21 @@ export default class ChatHook extends Module {
 			cs = data.user && data.user.broadcastBadges || [],
 			ocs = odata.user && odata.user.broadcastBadges || [];
 
-		if ( bs.length !== obs.length )
+		if ( this.chat.badges.getTwitchBadgeCount() !== bs.length || bs.length !== obs.length )
 			this.chat.badges.updateTwitchBadges(bs);
 
-		if ( cs.length !== ocs.length )
+		if ( cont._ffz_room.badgeCount() !== cs.length || cs.length !== ocs.length )
 			this.updateRoomBadges(cont, cs);
+
+		this.updateRoomRules(cont, props.chatRules);
+	}
+
+	hasRoomBadges(cont) { // eslint-disable-line class-methods-use-this
+		const room = cont._ffz_room;
+		if ( ! room )
+			return false;
+
+		return room.hasBadges();
 	}
 
 	updateRoomBadges(cont, badges) { // eslint-disable-line class-methods-use-this
@@ -1542,6 +1609,14 @@ export default class ChatHook extends Module {
 
 		room.updateBadges(badges);
 		this.updateChatLines();
+	}
+
+	updateRoomRules(cont, rules) { // eslint-disable-line class-methods-use-this
+		const room = cont._ffz_room;
+		if ( ! room )
+			return;
+
+		room.rules = rules;
 	}
 }
 

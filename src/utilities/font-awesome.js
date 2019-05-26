@@ -227,10 +227,13 @@ export const load = () => {
 	if ( loaded )
 		return;
 
+	loaded = true;
+
 	document.head.appendChild(createElement('link', {
 		href: FA_URL,
 		rel: 'stylesheet',
 		type: 'text/css',
-		crossOrigin: 'anonymouse'
+		crossOrigin: 'anonymous'
 	}));
 }
+

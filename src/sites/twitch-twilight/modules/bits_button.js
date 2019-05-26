@@ -38,7 +38,7 @@ export default class BitsButton extends Module {
 
 		this.BitsButton = this.fine.define(
 			'bits-button',
-			n => n.renderButton && n.toggleShowTutorial
+			n => n.toggleBalloon && n.toggleShowTutorial
 		);
 	}
 

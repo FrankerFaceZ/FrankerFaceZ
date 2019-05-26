@@ -41,7 +41,7 @@ export const Links = {
 					return {
 						url: token.url,
 						title: this.i18n.t('card.error', 'An error occurred.'),
-						desc_1: err
+						desc_1: String(err)
 					}
 				}
 
@@ -106,25 +106,25 @@ export const Clips = {
 
 				let desc_1;
 				if ( game_name === 'creative' )
-					desc_1 = this.i18n.t('clip.desc.1.creative', '%{user} being Creative', {
+					desc_1 = this.i18n.t('clip.desc.1.creative', '{user} being Creative', {
 						user
 					});
 
 				else if ( game )
-					desc_1 = this.i18n.t('clip.desc.1.playing', '%{user} playing %{game}', {
+					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing {game}', {
 						user,
 						game: game_display
 					});
 
 				else
-					desc_1 = this.i18n.t('clip.desc.1', 'Clip of %{user}', {user});
+					desc_1 = this.i18n.t('clip.desc.1', 'Clip of {user}', {user});
 
 				return {
 					url: token.url,
 					image: clip.thumbnailURL,
 					title: clip.title,
 					desc_1,
-					desc_2: this.i18n.t('clip.desc.2', 'Clipped by %{curator} — %{views|number} View%{views|en_plural}', {
+					desc_2: this.i18n.t('clip.desc.2', 'Clipped by {curator} — {views,number} View{views,en_plural}', {
 						curator: clip.curator ? clip.curator.displayName : this.i18n.t('clip.unknown', 'Unknown'),
 						views: clip.viewCount
 					})
@@ -170,25 +170,25 @@ export const Videos = {
 
 				let desc_1;
 				if ( game_name === 'creative' )
-					desc_1 = this.i18n.t('clip.desc.1.creative', '%{user} being Creative', {
+					desc_1 = this.i18n.t('clip.desc.1.creative', '{user} being Creative', {
 						user
 					});
 
 				else if ( game )
-					desc_1 = this.i18n.t('clip.desc.1.playing', '%{user} playing %{game}', {
+					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing {game}', {
 						user,
 						game: game_display
 					});
 
 				else
-					desc_1 = this.i18n.t('video.desc.1', 'Video of %{user}', {user});
+					desc_1 = this.i18n.t('video.desc.1', 'Video of {user}', {user});
 
 				return {
 					url: token.url,
 					image: video.previewThumbnailURL,
 					title: video.title,
 					desc_1,
-					desc_2: this.i18n.t('video.desc.2', '%{length} — %{views} Views - %{date}', {
+					desc_2: this.i18n.t('video.desc.2', '{length,duration} — {views,number} Views - {date}', {
 						length: video.lengthSeconds,
 						views: video.viewCount,
 						date: video.publishedAt

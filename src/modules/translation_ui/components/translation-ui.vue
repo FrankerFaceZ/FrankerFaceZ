@@ -50,7 +50,7 @@
 				</span>
 			</button>
 		</header>
-		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-flex-nowrap tw-overflow-hidden">
+		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-overflow-hidden">
 			<div v-for="(key, idx) of phrases" :key="idx" class="tw-block tw-mg-1">
 				{{ key }}
 			</div>

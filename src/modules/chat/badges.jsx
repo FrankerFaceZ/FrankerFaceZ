@@ -277,14 +277,14 @@ export default class Badges extends Module {
 				const p = d.provider;
 				if ( p === 'twitch' ) {
 					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
-						global_badge = this.getTwitchBadge(d.badge, d.version) || {};
+						global_badge = this.getTwitchBadge(d.badge, d.version, null, null, true) || {};
 					if ( ! bd )
 						continue;
 
 					let title = bd.title || global_badge.title;
 					if ( d.data ) {
 						if ( d.badge === 'subscriber' ) {
-							title = this.i18n.t('badges.subscriber.months', '%{title} (%{count} Month%{count|en_plural})', {
+							title = this.i18n.t('badges.subscriber.months', '{title} ({count,number} Month{count,en_plural})', {
 								title,
 								count: d.data
 							});
@@ -628,7 +628,7 @@ export default class Badges extends Module {
 	// Twitch Badges
 	// ========================================================================
 
-	getTwitchBadge(badge, version, room_id, room_login) {
+	getTwitchBadge(badge, version, room_id, room_login, retried = false) {
 		const room = this.parent.getRoom(room_id, room_login, true);
 		let b;
 
@@ -642,19 +642,34 @@ export default class Badges extends Module {
 			b = versions && versions[version];
 		}
 
+		if ( ! b && ! retried ) {
+			const chat = this.resolve('site.chat');
+			if ( chat && chat.tryUpdateBadges )
+				chat.tryUpdateBadges();
+		}
+
 		return b;
 	}
 
+	getTwitchBadgeCount() {
+		return this.twitch_badge_count || 0;
+	}
+
 	updateTwitchBadges(badges) {
-		if ( ! badges )
+		this.twitch_badge_count = 0;
+		if ( ! Array.isArray(badges) )
 			this.twitch_badges = badges;
 		else {
-			const b = {};
-			for(const data of badges) {
-				const sid = data.setID,
-					bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
+			let b = null;
+			if ( badges.length ) {
+				b = {};
+				for(const data of badges) {
+					const sid = data.setID,
+						bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
 
-				bs[data.version] = data;
+					this.twitch_badge_count++;
+					bs[data.version] = data;
+				}
 			}
 
 			this.twitch_badges = b;

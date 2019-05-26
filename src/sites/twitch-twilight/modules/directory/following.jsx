@@ -340,7 +340,7 @@ export default class Following extends SiteModule {
 				card_title = card.querySelector('.live-channel-card__title'),
 
 				text_content = host_data.channels.length !== 1 ?
-					this.i18n.t('host-menu.multiple', '%{count} hosting %{channel}', {
+					this.i18n.t('host-menu.multiple', '{count,number} hosting {channel}', {
 						count: host_data.channels.length,
 						channel: data.displayName
 					}) : inst.props.title;

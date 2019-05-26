@@ -47,6 +47,8 @@ export default class Line extends Module {
 
 			cls.prototype.render = function() {
 				try {
+					this._ffz_no_scan = true;
+
 					const msg = t.standardizeMessage(this.props.node, this.props.video),
 						is_action = msg.is_action,
 						user = msg.user,

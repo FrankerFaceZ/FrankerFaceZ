@@ -212,6 +212,36 @@ export class LocalStorageProvider extends SettingsProvider {
 }
 
 
+export class IndexedDBProvider extends SettingsProvider {
+	constructor(manager) {
+		super(manager);
+
+		this._cached = new Map;
+		this.ready = false;
+		this._ready_wait = null;
+	}
+
+	destroy() {
+		this.disable();
+		this._cached.clear();
+	}
+
+	disable() {
+		this.disabled = true;
+	}
+
+	awaitReady() {
+		if ( this.ready )
+			return Promise.resolve();
+
+		return new Promise((resolve, reject) => {
+			const waiters = this._ready_wait = this._ready_wait || [];
+			waiters.push([resolve, reject]);
+		})
+	}
+}
+
+
 export class CloudStorageProvider extends SettingsProvider {
 	constructor(manager) {
 		super(manager);

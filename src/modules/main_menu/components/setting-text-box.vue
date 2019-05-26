@@ -6,6 +6,7 @@
 		<div class="tw-flex tw-align-items-center">
 			<label :for="item.full_key">
 				{{ t(item.i18n_key, item.title, item) }}
+				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
 			</label>
 
 			<input

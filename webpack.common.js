@@ -75,6 +75,10 @@ module.exports = {
 			}]
 		},
 		{
+			test: /\.md$/,
+			loader: 'raw-loader'
+		},
+		{
 			test: /\.svg$/,
 			loader: 'raw-loader'
 		},

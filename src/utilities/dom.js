@@ -189,11 +189,14 @@ export class ManagedStyle {
 		this._style = null;
 	}
 
-	set(key, value) {
+	set(key, value, force) {
 		const block = this._blocks[key];
-		if ( block )
+		if ( block ) {
+			if ( ! force && block.textContent === value )
+				return;
+
 			block.textContent = value;
-		else
+		} else
 			this._style.appendChild(this._blocks[key] = document.createTextNode(value));
 	}
 

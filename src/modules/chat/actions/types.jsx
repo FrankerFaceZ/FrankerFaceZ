@@ -1,12 +1,6 @@
 'use strict';
 
 import {createElement} from 'utilities/dom';
-import {transformPhrase} from 'src/i18n';
-
-const VAR_REPLACE = /\{\{(.*?)(?:\|(.*?))?\}\}/g;
-
-const process = (input, data, locale = 'en') => transformPhrase(input, data, locale, VAR_REPLACE, {});
-
 
 // ============================================================================
 // Open URL
@@ -27,10 +21,10 @@ export const open_url = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-url.vue'),
 
 	title: 'Open URL',
-	description: '%{options.url}',
+	description: '{options.url}',
 
 	tooltip(data) {
-		const url = process(data.options.url, data, this.i18n.locale);
+		const url = this.replaceVariables(data.options.url, data);
 
 		return [
 			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
@@ -43,7 +37,7 @@ export const open_url = {
 	},
 
 	click(event, data) {
-		const url = process(data.options.url, data, this.i18n.locale);
+		const url = this.replaceVariables(data.options.url, data);
 
 		const win = window.open();
 		if ( win ) {
@@ -73,22 +67,12 @@ export const chat = {
 	},
 
 	title: 'Chat Command',
-	description: '%{options.command}',
+	description: '{options.command}',
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-chat.vue'),
 
-	process(data) {
-		return transformPhrase(
-			data.options.command,
-			data,
-			this.i18n.locale,
-			VAR_REPLACE,
-			{}
-		)
-	},
-
 	tooltip(data) {
-		const msg = process(data.options.command, data, this.i18n.locale);
+		const msg = this.replaceVariables(data.options.command, data);
 
 		return [
 			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
@@ -101,7 +85,7 @@ export const chat = {
 	},
 
 	click(event, data) {
-		const msg = data.definition.process.call(this, data);
+		const msg = this.replaceVariables(data.options.command, data);
 		this.sendMessage(data.room.login, msg);
 	}
 }
@@ -130,7 +114,7 @@ export const msg_delete = {
 	title: 'Delete Message',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.delete', "Delete %{user.login}'s message", {user: data.user});
+		return this.i18n.t('chat.actions.delete', "Delete {user.login}'s message", {user: data.user});
 	},
 
 	click(event, data) {
@@ -156,13 +140,18 @@ export const ban = {
 	defaults: {},
 
 	required_context: ['room', 'user'],
+	uses_reason: true,
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-ban.vue'),
 
 	title: 'Ban User',
 
+	reason_text(data) {
+		return this.i18n.t('chat.actions.ban-reason', 'Ban {user.login} for:', {user: data.user});
+	},
+
 	tooltip(data) {
-		return this.i18n.t('chat.actions.ban', 'Ban %{user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.ban', 'Ban {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -189,16 +178,27 @@ export const timeout = {
 	},
 
 	required_context: ['room', 'user'],
+	uses_reason: true,
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-timeout.vue'),
 
 	title: 'Timeout User',
-	description: '%{options.duration} second%{options.duration|en_plural}',
+	description: '{options.duration,number} second{options.duration,en_plural}',
+
+	reason_text(data) {
+		return this.i18n.t('chat.actions.timeout-reason',
+			'Timeout {user.login} for {duration,number} second{duration,en_plural} for:',
+			{
+				user: data.user,
+				duration: data.options.duration
+			}
+		);
+	},
 
 	tooltip(data) {
 		return this.i18n.t(
 			'chat.actions.timeout',
-			'Timeout %{user.login} for %{duration} second%{duration|en_plural}',
+			'Timeout {user.login} for {duration,number} second{duration,en_plural}',
 			{
 				user: data.user,
 				duration: data.options.duration
@@ -230,7 +230,7 @@ export const unban = {
 	title: 'Unban User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.unban', 'Unban %{user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.unban', 'Unban {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -257,7 +257,7 @@ export const untimeout = {
 	title: 'Untimeout User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.untimeout', 'Untimeout %{user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.untimeout', 'Untimeout {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -283,7 +283,7 @@ export const whisper = {
 	title: 'Whisper User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.whisper', 'Whisper %{user.login}', data);
+		return this.i18n.t('chat.actions.whisper', 'Whisper {user.login}', data);
 	},
 
 	click(event, data) {
@@ -291,7 +291,7 @@ export const whisper = {
 			me = site && site.getUser(),
 			store = site && site.store;
 
-		if ( ! me || ! store || ! data.user.id || me.id == data.user.id )
+		if ( ! me || ! store || ! data.user || ! data.user.id || me.id == data.user.id )
 			return;
 
 		const id_1 = parseInt(me.id, 10),
@@ -326,7 +326,7 @@ export const gift_sub = {
 	title: 'Gift Subscription',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.gift_sub', 'Gift a Sub to %{user.login}', data);
+		return this.i18n.t('chat.actions.gift_sub', 'Gift a Sub to {user.login}', data);
 	},
 
 	context() {

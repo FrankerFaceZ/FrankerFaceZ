@@ -9,7 +9,7 @@
 				<h4>{{ title }}</h4>
 				<div class="description">{{ description }}</div>
 				<div v-if="canEdit" class="visibility tw-c-text-alt">
-					{{ t('setting.actions.visible', 'visible: %{list}', {list: visibility}) }}
+					{{ t('setting.actions.visible', 'visible: {list}', {list: visibility}) }}
 				</div>
 			</template>
 			<template v-else>
@@ -104,7 +104,7 @@
 						</select>
 					</div>
 
-					<div class="tw-flex tw-align-items-center">
+					<div v-if="has_message" class="tw-flex tw-align-items-center">
 						<label for="vis_deleted">
 							{{ t('setting.actions.edit-visible.deleted', 'Message Deleted') }}
 						</label>
@@ -118,6 +118,76 @@
 							<option :value="true">{{ t('setting.true', 'True') }}</option>
 							<option :value="false">{{ t('setting.false', 'False') }}</option>
 						</select>
+					</div>
+
+					<div v-if="has_modifiers" class="tw-flex tw-align-items-start">
+						<label for="vis_modifiers">
+							{{ t('setting.actions.edit-visible.modifier', 'Modifiers') }}
+						</label>
+
+						<div>
+							<div class="ffz--inline tw-flex">
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										ref="key_ctrl"
+										:id="'key_ctrl$' + id"
+										:checked="edit_data.display.keys & 1"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label :for="'key_ctrl$' + id" class="tw-checkbox__label">
+										{{ t('setting.key.ctrl', 'Ctrl') }}
+									</label>
+								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										ref="key_shift"
+										:id="'key_shift$' + id"
+										:checked="edit_data.display.keys & 2"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label :for="'key_shift$' + id" class="tw-checkbox__label">
+										{{ t('setting.key.shift', 'Shift') }}
+									</label>
+								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										ref="key_alt"
+										:id="'key_alt$' + id"
+										:checked="edit_data.display.keys & 4"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label :for="'key_alt$' + id" class="tw-checkbox__label">
+										{{ t('setting.key.alt', 'Alt') }}
+									</label>
+								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										ref="key_meta"
+										:id="'key_meta$' + id"
+										:checked="edit_data.display.keys & 8"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label :for="'key_meta$' + id" class="tw-checkbox__label">
+										{{ t('setting.key.meta', 'Meta') }}
+									</label>
+								</div>
+							</div>
+
+							<div class="tw-pd-t-05">
+								Note: This currently requires Chat > Behavior > Freeze Chat Scrolling to be enabled.
+							</div>
+						</div>
 					</div>
 				</section>
 
@@ -214,11 +284,14 @@
 
 import {has, maybe_call, deep_copy} from 'utilities/object';
 
+let id = 0;
+
 export default {
-	props: ['action', 'data', 'inline'],
+	props: ['action', 'data', 'inline', 'context', 'modifiers'],
 
 	data() {
 		return {
+			id: id++,
 			deleting: false,
 			editing: false,
 			edit_data: null
@@ -233,14 +306,34 @@ export default {
 			return this.action.v;
 		},
 
+		has_message() {
+			return this.context && this.context.includes('message')
+		},
+
+		has_modifiers() {
+			return this.modifiers
+		},
+
 		vars() {
-			const out = ['user.login', 'user.displayName', 'user.id', 'user.type'];
+			const out = [],
+				ctx = this.context || [];
 
-			out.push('room.login')
-			out.push('room.id');
+			if ( ctx.includes('user') ) {
+				out.push('user.login');
+				out.push('user.displayName');
+				out.push('user.id');
+				out.push('user.type');
+			}
 
-			if ( this.inline )
-				out.push('message_id');
+			if ( ctx.includes('room') ) {
+				out.push('room.login');
+				out.push('room.id');
+			}
+
+			if ( ctx.includes('message') ) {
+				out.push('message.id');
+				out.push('message.text');
+			}
 
 			return out.map(x => `{{${x}}}`).join(', ');
 		},
@@ -281,7 +374,7 @@ export default {
 
 			const def = this.data.actions[this.display.action];
 			if ( ! def )
-				return this.t('setting.actions.unknown', 'Unknown Action Type: %{action}', this.display);
+				return this.t('setting.actions.unknown', 'Unknown Action Type: {action}', this.display);
 
 			if ( def.title ) {
 				const data = this.getData(),
@@ -292,7 +385,7 @@ export default {
 					return this.t(i18n, out, data);
 			}
 
-			return this.t('setting.actions.untitled', 'Action: %{action}', this.display);
+			return this.t('setting.actions.untitled', 'Action: {action}', this.display);
 
 		},
 
@@ -357,6 +450,24 @@ export default {
 			else if ( disp.deleted === false )
 				out.push(this.t('setting.actions.visible.undeleted', 'if message not deleted'));
 
+			if ( disp.keys ) {
+				const key_out = [];
+				if ( disp.keys & 1 )
+					key_out.push(this.t('setting.key.ctrl', 'Ctrl'));
+				if ( disp.keys & 2 )
+					key_out.push(this.t('setting.key.shift', 'Shift'));
+				if ( disp.keys & 4 )
+					key_out.push(this.t('setting.key.alt', 'Alt'));
+				if ( disp.keys & 8 )
+					key_out.push(this.t('setting.key.meta', 'Meta'));
+
+				if ( key_out.length )
+					out.push(this.t('setting.actions.visible.modifier', 'when {key_list} {keys, plural, one {is} other {are}} held', {
+						key_list: key_out.join(' + '),
+						keys: key_out.length
+					}));
+			}
+
 			if ( ! out.length )
 				return this.t('setting.actions.visible.always', 'always');
 
@@ -374,6 +485,23 @@ export default {
 				}
 
 			this.edit_data.options = val;
+		},
+
+		onChangeKeys() {
+			if ( ! this.editing )
+				return;
+
+			let i = 0;
+			if ( this.$refs.key_ctrl.checked )
+				i |= 1;
+			if ( this.$refs.key_shift.checked )
+				i |= 2;
+			if ( this.$refs.key_alt.checked )
+				i |= 4;
+			if ( this.$refs.key_meta.checked )
+				i |= 8;
+
+			this.edit_data.display.keys = i;
 		},
 
 		edit() {

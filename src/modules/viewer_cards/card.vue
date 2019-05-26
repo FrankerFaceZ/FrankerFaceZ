@@ -38,20 +38,20 @@
 								:data-title="t('viewer-card.views', 'Views')"
 								class="ffz-tooltip tw-mg-r-05 ffz-i-views"
 							>
-								{{ t(null, '%{views|number}', {views: user.profileViewCount}) }}
+								{{ t(null, '{views,number}', {views: user.profileViewCount}) }}
 							</span>
 							<span
 								:data-title="t('viewer-card.followers', 'Followers')"
 								class="ffz-tooltip tw-mg-r-05 ffz-i-heart"
 							>
-								{{ t(null, '%{followers|number}', {followers: user.followers.totalCount}) }}
+								{{ t(null, '{followers,number}', {followers: user.followers.totalCount}) }}
 							</span>
 							<span
 								v-if="userAge"
-								:data-title="t('viewer-card.age-tip', 'Member Since: %{age}', {age: userAge.toLocaleString()})"
+								:data-title="t('viewer-card.age-tip', 'Member Since: {age,datetime}', {age: userAge})"
 								class="ffz-tooltip ffz-i-clock"
 							>
-								{{ t('viewer-card.age', '%{age|humanTime}', {age: userAge}) }}
+								{{ t('viewer-card.age', '{age,humantime}', {age: userAge}) }}
 							</span>
 						</div>
 					</div>

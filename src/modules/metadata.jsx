@@ -97,8 +97,8 @@ export default class Metadata extends Module {
 					'Stream Uptime'
 				)}<div class="pd-t-05">${this.i18n.t(
 					'metadata.uptime.since',
-					'(since %{since})',
-					{since: data.created.toLocaleString()}
+					'(since {since,datetime})',
+					{since: data.created}
 				)}</div>`;
 			}
 		}
@@ -205,7 +205,7 @@ export default class Metadata extends Module {
 				const delayed = data.drift > 5000 ?
 					`${this.i18n.t(
 						'metadata.player-stats.delay-warning',
-						'Your local clock seems to be off by roughly %{count} seconds, which could make this inaccurate.',
+						'Your local clock seems to be off by roughly {count,number} seconds, which could make this inaccurate.',
 						Math.round(data.drift / 10) / 100
 					)}<hr>` :
 					'';
@@ -216,7 +216,7 @@ export default class Metadata extends Module {
 				const stats = data.stats,
 					video_info = this.i18n.t(
 						'metadata.player-stats.video-info',
-						'Video: %{videoResolution}p%{fps}\nPlayback Rate: %{playbackRate|number} Kbps\nDropped Frames:%{skippedFrames|number}',
+						'Video: {videoResolution}p{fps}\nPlayback Rate: {playbackRate,number} Kbps\nDropped Frames:{skippedFrames,number}',
 						stats
 					);
 
@@ -226,7 +226,7 @@ export default class Metadata extends Module {
 						'Video Information'
 					)}<div class="pd-t-05">${this.i18n.t(
 						'metadata.player-stats.broadcast-ago',
-						'Broadcast %{count}s Ago',
+						'Broadcast {count,number}s Ago',
 						data.delay
 					)}</div><div class="pd-t-05">${video_info}</div>`;
 
@@ -433,6 +433,7 @@ export default class Metadata extends Module {
 									logger: this.log,
 									manual: true,
 									html: true,
+									live: false,
 
 									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base tw-c-text-base',
 									// Hide the arrow for now, until we re-do our CSS to make it render correctly.
@@ -742,6 +743,7 @@ export default class Metadata extends Module {
 								tt = el._ffz_popup = new Tooltip(parent, el, {
 									logger: this.log,
 									manual: true,
+									live: false,
 									html: true,
 
 									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
@@ -777,12 +779,12 @@ export default class Metadata extends Module {
 						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
 					el = (<div
-						class="ffz-stat tw-stat"
+						class="tw-inline-flex tw-align-items-center ffz-stat tw-stat"
 						data-key={key}
 						tip_content={tooltip}
 					>
 						{icon}
-						{stat = <span class="ffz-stat-text tw-stat__value" />}
+						{stat = <span class={`${icon ? 'tw-mg-l-05 ' : ''}ffz-stat-text tw-stat__value`} />}
 					</div>);
 
 					if ( def.click )

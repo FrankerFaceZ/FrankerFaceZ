@@ -6,7 +6,7 @@
 
 		<div class="tw-mg-b-2 tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1">
-				{{ t('setting.experiments.unique-id', 'Unique ID: %{id}', {id: unique_id}) }}
+				{{ t('setting.experiments.unique-id', 'Unique ID: {id}', {id: unique_id}) }}
 			</div>
 			<select
 				ref="sort_select"
@@ -48,7 +48,7 @@
 								:key="idx"
 								:selected="i.value === exp.value"
 							>
-								{{ t('setting.experiments.entry', '%{value} (weight: %{weight})', i) }}
+								{{ t('setting.experiments.entry', '{value} (weight: {weight})', i) }}
 							</option>
 						</select>
 

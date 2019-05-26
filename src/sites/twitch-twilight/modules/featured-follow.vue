@@ -37,7 +37,7 @@
 										v-if="user.following"
 										:disabled="user.loading"
 										:class="{'tw-button--disabled': user.loading}"
-										:data-title="user.loading ? null : t('featured-follow.button.unfollow', 'Unfollow %{user}', {user: user.displayName})"
+										:data-title="user.loading ? null : t('featured-follow.button.unfollow', 'Unfollow {user}', {user: user.displayName})"
 										data-tooltip-type="html"
 										class="tw-button tw-button--status tw-button--success ffz-tooltip ffz--featured-button-unfollow"
 										@click="clickWithTip($event, unfollowUser, user.id)"

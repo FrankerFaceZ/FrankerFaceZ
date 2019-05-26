@@ -112,7 +112,8 @@ export default class Twilight extends BaseSite {
 			this.settings.updateContext({
 				location: history && history.location,
 				ui: state && state.ui,
-				session: state && state.session
+				session: state && state.session,
+				chat: state && state.chat
 			});
 		} catch(err) {
 			this.log.error('Error updating context.', err);

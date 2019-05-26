@@ -9,7 +9,7 @@ import User from './user';
 import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
-import {has, SourcedSet} from 'utilities/object';
+import {has, SourcedSet, set_equals} from 'utilities/object';
 
 
 export default class Room {
@@ -364,14 +364,20 @@ export default class Room {
 	// ========================================================================
 
 	ref(referrer) {
+		if ( ! this.refs )
+			throw new Error('Attempting to use destroyed Room');
+
 		clearTimeout(this._destroy_timer);
 		this._destroy_timer = null;
 		this.refs.add(referrer);
 	}
 
 	unref(referrer) {
+		if ( ! this.refs )
+			return;
+
 		this.refs.delete(referrer);
-		if ( ! this.users.size && ! this._destroy_timer )
+		if ( ! this.refs.size && ! this._destroy_timer )
 			this._destroy_timer = setTimeout(() => this.destroy(), 5000);
 	}
 
@@ -380,16 +386,23 @@ export default class Room {
 	// Badge Data
 	// ========================================================================
 
+	badgeCount() {
+		return this.badge_count || 0;
+	}
+
 	updateBadges(badges) {
-		if ( ! badges )
+		this.badge_count = 0;
+		if ( ! Array.isArray(badges) )
 			this.badges = badges;
 		else {
+			// Rooms can have no badges, so we want to allow that.
 			const b = {};
 			for(const data of badges) {
 				const sid = data.setID,
 					bs = b[sid] = b[sid] || {};
 
 				bs[data.version] = data;
+				this.badge_count++;
 			}
 
 			this.badges = b;
@@ -469,7 +482,15 @@ export default class Room {
 	// Bits Data
 	// ========================================================================
 
-	updateBitsConfig(config) {
+	updateBitsConfig(config, force) {
+		if ( ! force && this.bitsConfig && config ) {
+			const old_keys = new Set(Object.keys(this.bitsConfig)),
+				new_keys = new Set(Object.keys(config));
+
+			if ( set_equals(old_keys, new_keys) )
+				return;
+		}
+
 		this.bitsConfig = config;
 		this.buildBitsCSS();
 	}

@@ -132,7 +132,7 @@ export default {
 				i++;
 			}
 
-			this.message = this.t('setting.backup-restore.restored', '%{count} items have been restored. Please refresh this page.', {
+			this.message = this.t('setting.backup-restore.restored', '{count,number} items have been restored. Please refresh this page.', {
 				count: i
 			});
 		}

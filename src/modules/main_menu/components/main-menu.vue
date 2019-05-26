@@ -60,18 +60,30 @@
 				</header>
 				<div class="tw-full-width tw-full-height tw-overflow-hidden tw-flex tw-flex-nowrap tw-relative">
 					<simplebar classes="ffz-vertical-nav__items tw-full-width tw-flex-grow-1">
+						<header v-if="has_unseen" class="tw-border-b tw-pd-1">
+							<button
+								class="tw-button tw-button--hollow tw-full-width"
+								@click="allRead"
+							>
+								<span class="tw-button__text">
+									{{ t('main-menu.mark-all-seen', 'Mark All Seen') }}
+								</span>
+							</button>
+						</header>
 						<menu-tree
 							:current-item="currentItem"
 							:modal="nav"
 							:filter="filter"
 							@change-item="changeItem"
+							@mark-seen="markSeen"
+							@mark-expanded="markExpanded"
 							@navigate="navigate"
 						/>
 					</simplebar>
 				</div>
 				<footer class="tw-c-text-alt tw-border-t tw-pd-1">
 					<div>
-						{{ t('main-menu.version', 'Version %{version}', {version: version.toString()}) }}
+						{{ t('main-menu.version', 'Version {version}', {version: version.toString()}) }}
 					</div>
 					<div class="tw-c-text-alt-2">
 						<a
@@ -97,6 +109,7 @@
 					:item="currentItem"
 					:filter="filter"
 					@change-item="changeItem"
+					@mark-seen="markSeen"
 					@navigate="navigate"
 				/>
 			</simplebar>
@@ -150,6 +163,11 @@ export default {
 	},
 
 	methods: {
+		allRead() {
+			this.markAllSeen(this.nav);
+			this.has_unseen = false;
+		},
+
 		maybeResize(event) {
 			if ( event.target !== this.$refs.header )
 				return;
@@ -170,6 +188,8 @@ export default {
 				if ( this.$refs.page.onBeforeChange(this.currentItem, item) === false )
 					return;
 			}
+
+			this.markSeen(item);
 
 			this.currentItem = item;
 			let current = item;

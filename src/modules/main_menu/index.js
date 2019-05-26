@@ -36,11 +36,14 @@ export default class MainMenu extends Module {
 
 		//this.should_enable = true;
 
+		this.new_seen = false;
+
 		this._settings_tree = null;
 		this._settings_count = 0;
 
 		this.dialog = new Dialog(() => this.buildDialog());
 		this.has_update = false;
+		this.opened = false;
 
 		this.settings.addUI('profiles', {
 			path: 'Data Management @{"sort": 1000, "profile_warning": false} > Profiles @{"profile_warning": false}',
@@ -56,6 +59,11 @@ export default class MainMenu extends Module {
 		this.settings.addUI('home', {
 			path: 'Home @{"sort": -1000, "profile_warning": false}',
 			component: 'home-page'
+		});
+
+		this.settings.addUI('faq', {
+			path: 'Home > FAQ',
+			component: 'faq-page'
 		});
 
 		this.settings.addUI('feedback', {
@@ -97,6 +105,8 @@ export default class MainMenu extends Module {
 			if ( this._vue )
 				this._vue.$children[0].context.has_update = true;
 		});
+
+		this.scheduleUpdate();
 	}
 
 	openPopout() {
@@ -125,7 +135,16 @@ export default class MainMenu extends Module {
 	async onEnable() {
 		await this.site.awaitElement(Dialog.EXCLUSIVE);
 
-		this.dialog.on('hide', this.destroyDialog, this);
+		this.dialog.on('show', () => {
+			this.opened = true;
+			this.updateButtonUnseen();
+			this.emit('show')
+		});
+		this.dialog.on('hide', () => {
+			this.emit('hide');
+			this.destroyDialog();
+		});
+
 		this.dialog.on('resize', () => {
 			if ( this._vue )
 				this._vue.$children[0].maximized = this.dialog.maximized
@@ -138,6 +157,20 @@ export default class MainMenu extends Module {
 	onDisable() {
 		this.dialog.hide();
 		this.off('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
+	}
+
+
+	getUnseen() {
+		const pages = this.getSettingsTree();
+		if ( ! Array.isArray(pages) )
+			return 0;
+
+		let i=0;
+		for(const page of pages)
+			if ( page )
+				i += (page.unseen || 0);
+
+		return i;
 	}
 
 
@@ -169,9 +202,18 @@ export default class MainMenu extends Module {
 	}
 
 
+	updateButtonUnseen() {
+		const mb = this.resolve('site.menu_button');
+		if ( mb )
+			mb.new_settings = this.opened ? 0 : this.getUnseen();
+	}
+
+
 	updateLiveMenu() {
 		clearTimeout(this._update_timer);
 		this._update_timer = null;
+
+		this.updateButtonUnseen();
 
 		if ( ! this._vue || ! this._vue.$children || ! this._vue.$children[0] )
 			return;
@@ -217,7 +259,6 @@ export default class MainMenu extends Module {
 			return;
 
 		const tree = this._settings_tree,
-			expanded = this.settings.provider.get('settings-expanded', {}),
 			tokens = def.ui.path_tokens,
 			len = tokens.length;
 
@@ -236,15 +277,12 @@ export default class MainMenu extends Module {
 					full_key: key,
 					sort: 0,
 					parent: prefix,
-					expanded: prefix === null,
+					expanded: prefix == null,
 					i18n_key: `setting.${key}`,
 					desc_i18n_key: `setting.${key}.description`
 				};
 
 			Object.assign(token, raw_token);
-
-			if ( has(expanded, key) )
-				token.expanded = expanded[key];
 
 			prefix = key;
 		}
@@ -263,6 +301,10 @@ export default class MainMenu extends Module {
 			this.rebuildSettingsTree();
 
 		const tree = this._settings_tree,
+			settings_seen = this.new_seen ? null : this.settings.provider.get('cfg-seen'),
+			new_seen = settings_seen ? null : [],
+
+			collapsed = this.settings.provider.get('cfg-collapsed'),
 
 			root = {},
 			copies = {},
@@ -272,6 +314,8 @@ export default class MainMenu extends Module {
 
 			have_locale = this.i18n.locale !== 'en';
 
+		if ( new_seen )
+			this.new_seen = true;
 
 		for(const key in tree) {
 			if ( ! has(tree, key) )
@@ -285,6 +329,9 @@ export default class MainMenu extends Module {
 
 			token.parent = p_key ? parent : null;
 			token.page = token.page || parent.page;
+
+			if ( collapsed )
+				token.expanded = ! collapsed.includes(token.full_key);
 
 			if ( token.page && ! token.component )
 				needs_component.add(token);
@@ -331,6 +378,17 @@ export default class MainMenu extends Module {
 						}
 
 						tok.search_terms = terms.map(format_term).join('\n');
+
+						if ( settings_seen ) {
+							if ( ! settings_seen.includes(setting_key) ) {
+								let i = tok;
+								while(i) {
+									i.unseen = (i.unseen || 0) + 1;
+									i = i.parent;
+								}
+							}
+						} else if ( new_seen )
+							new_seen.push(setting_key);
 
 						list.push(tok);
 					}
@@ -396,9 +454,25 @@ export default class MainMenu extends Module {
 				return a.key && a.key.localeCompare(b.key);
 			});
 
-		this.log.info(`Built Tree in ${(performance.now() - started).toFixed(5)}ms with ${Object.keys(tree).length} structure nodes and ${this._settings_count} settings nodes.`);
 		const items = root.items || [];
 		items.keys = copies;
+
+		// Save for now, since we just want to mark everything as seen.
+		if ( new_seen )
+			this.settings.provider.set('cfg-seen', new_seen);
+
+		if ( ! collapsed ) {
+			const new_collapsed = [];
+			for(const key of Object.keys(copies)) {
+				const item = copies[key];
+				if ( item && item.items && item.parent )
+					new_collapsed.push(key);
+			}
+
+			this.settings.provider.set('cfg-collapsed', new_collapsed);
+		}
+
+		this.log.info(`Built Tree in ${(performance.now() - started).toFixed(5)}ms with ${Object.keys(tree).length} structure nodes and ${this._settings_count} settings nodes.`);
 		return items;
 	}
 
@@ -555,9 +629,89 @@ export default class MainMenu extends Module {
 		return _c;
 	}
 
+	markSeen(item, seen) {
+		let had_seen = true;
+		if ( ! seen ) {
+			had_seen = false;
+			seen = this.settings.provider.get('cfg-seen', []);
+		}
+
+		if ( Array.isArray(item.contents) ) {
+			for(const child of item.contents)
+				child && this.markSeen(child, seen);
+
+		}
+
+		if ( ! item.setting )
+			return;
+
+		if ( ! seen.includes(item.setting) ) {
+			seen.push(item.setting);
+
+			let i = item.parent;
+			while(i) {
+				i.unseen = (i.unseen || 1) - 1;
+				i = i.parent;
+			}
+		}
+
+		if ( ! had_seen )
+			this.settings.provider.set('cfg-seen', seen);
+	}
+
+	markAllSeen(thing, seen) {
+		let had_seen = true;
+		if ( ! seen ) {
+			had_seen = false;
+			seen = this.settings.provider.get('cfg-seen', []);
+		}
+
+		if ( Array.isArray(thing) )
+			for(const page of thing)
+				if ( page )
+					this.markAllSeen(page, seen);
+
+		if ( Array.isArray(thing.items) )
+			for(const item of thing.items)
+				this.markAllSeen(item, seen);
+
+		if ( Array.isArray(thing.contents) )
+			for(const content of thing.contents)
+				this.markAllSeen(content, seen);
+
+		if ( Array.isArray(thing.tabs) )
+			for(const tab of thing.tabs)
+				this.markAllSeen(tab, seen);
+
+		if ( Array.isArray(thing.settings) )
+			for(const setting of thing.settings)
+				if ( setting )
+					this.markAllSeen(setting[1], seen);
+
+		if ( thing.setting && ! seen.includes(thing.setting) )
+			seen.push(thing.setting);
+
+		if ( thing.unseen )
+			thing.unseen = 0;
+
+		if ( ! had_seen )
+			this.settings.provider.set('cfg-seen', seen);
+	}
+
 	getData() {
 		const settings = this.getSettingsTree(),
-			context = this.getContext();
+			context = this.getContext(),
+			current = this.has_update ? settings.keys['home.changelog'] : settings.keys['home'];
+
+		this.markSeen(current);
+
+		let has_unseen = false;
+		for(const page of settings)
+			if ( page && page.unseen ) {
+				has_unseen = true;
+				break;
+			}
+
 
 		return {
 			context,
@@ -566,13 +720,30 @@ export default class MainMenu extends Module {
 			faded: false,
 
 			nav: settings,
-			currentItem: this.has_update ?
-				settings.keys['home.changelog'] :
-				settings.keys['home'], // settings[0],
+			currentItem: current,
 			nav_keys: settings.keys,
+
+			has_unseen,
 
 			maximized: this.dialog.maximized,
 			exclusive: this.dialog.exclusive,
+
+			markAllSeen: thing => this.markAllSeen(thing),
+			markSeen: item => this.markSeen(item),
+
+			markExpanded: item => {
+				const collapsed = this.settings.provider.get('cfg-collapsed', []),
+					included = collapsed.indexOf(item.full_key);
+
+				if ( item.expanded && included !== -1 )
+					collapsed.splice(included, 1);
+				else if ( ! item.expanded && included === -1 )
+					collapsed.push(item.full_key);
+				else
+					return;
+
+				this.settings.provider.set('cfg-collapsed', collapsed);
+			},
 
 			resize: e => ! this.dialog.exclusive && this.dialog.toggleSize(e),
 			close: e => ! this.dialog.exclusive && this.dialog.toggleVisible(e),

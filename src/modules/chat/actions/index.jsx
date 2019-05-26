@@ -6,12 +6,14 @@
 
 import Module from 'utilities/module';
 import {has, maybe_call, deep_copy} from 'utilities/object';
-import {ClickOutside} from 'utilities/dom';
+import {createElement, ClickOutside} from 'utilities/dom';
 import Tooltip from 'utilities/tooltip';
 
 import * as ACTIONS from './types';
 import * as RENDERERS from './renderers';
+import { transformPhrase } from 'src/i18n';
 
+const VAR_REPLACE = /\{\{(.*?)(?:\|(.*?))?\}\}/g;
 
 export default class Actions extends Module {
 	constructor(...args) {
@@ -23,6 +25,35 @@ export default class Actions extends Module {
 
 		this.actions = {};
 		this.renderers = {};
+
+		this.settings.add('chat.actions.reasons', {
+			default: [
+				{v: {text: 'One-Man Spam', i18n: 'chat.reasons.spam'}},
+				{v: {text: 'Posting Bad Links', i18n: 'chat.reasons.links'}},
+				{v: {text: 'Ban Evasion', i18n: 'chat.reasons.evasion'}},
+				{v: {text: 'Threats / Personal Info', i18n: 'chat.reasons.personal'}},
+				{v: {text: 'Hate / Harassment', i18n: 'chat.reasons.hate'}},
+				{v: {text: 'Ignoring Broadcaster / Moderators', i18n: 'chat.reason.ignore'}}
+			],
+
+			type: 'array_merge',
+			always_inherit: true,
+
+			// Clean up after Vue being stupid.
+			process(ctx, val) {
+				if ( Array.isArray(val) )
+					for(const entry of val)
+						if ( entry.i18n && typeof entry.i18n !== 'string' )
+							delete entry.i18n;
+
+				return val;
+			},
+
+			ui: {
+				path: 'Chat > Actions > Reasons >> Custom Reasons',
+				component: 'chat-reasons',
+			}
+		});
 
 		this.settings.add('chat.actions.inline', {
 			// Filter out actions
@@ -42,9 +73,39 @@ export default class Actions extends Module {
 
 			type: 'array_merge',
 			ui: {
-				path: 'Chat > In-Line Actions @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
+				path: 'Chat > Actions > In-Line @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
 				component: 'chat-actions',
 				context: ['user', 'room', 'message'],
+				inline: true,
+				modifiers: true,
+
+				data: () => {
+					const chat = this.resolve('site.chat');
+
+					return {
+						color: val => chat && chat.colors ? chat.colors.process(val) : val,
+						actions: deep_copy(this.actions),
+						renderers: deep_copy(this.renderers)
+					}
+				}
+			}
+		});
+
+		this.settings.add('chat.actions.room', {
+			// Filter out actions
+			process: (ctx, val) =>
+				val.filter(x => x.type || (x.appearance &&
+					this.renderers[x.appearance.type] &&
+					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
+					(! x.action || this.actions[x.action])
+				)),
+
+			default: [],
+			type: 'array_merge',
+			ui: {
+				path: 'Chat > Actions > Room @{"description": "Here, you can define custom actions that will appear above the chat input box."}',
+				component: 'chat-actions',
+				context: ['room'],
 				inline: true,
 
 				data: () => {
@@ -56,6 +117,15 @@ export default class Actions extends Module {
 						renderers: deep_copy(this.renderers)
 					}
 				}
+			}
+		});
+
+		this.settings.add('chat.actions.rules-as-reasons', {
+			default: true,
+			ui: {
+				path: 'Chat > Actions > Reasons >> Rules',
+				component: 'setting-check-box',
+				title: "Include the current room's rules in the list of reasons."
 			}
 		});
 
@@ -149,6 +219,83 @@ export default class Actions extends Module {
 	}
 
 
+	replaceVariables(text, data) {
+		return transformPhrase(
+			text,
+			data,
+			this.i18n.locale,
+			VAR_REPLACE,
+			{}
+		);
+	}
+
+
+	renderInlineReasons(data, t, tip) {
+		const reasons = this.parent.context.get('chat.actions.reasons'),
+			reason_elements = [],
+			room = this.parent.context.get('chat.actions.rules-as-reasons') && this.parent.getRoom(data.room.id, data.room.login, true),
+			rules = room && room.rules;
+
+		if ( ! reasons && ! rules ) {
+			tip.hide();
+			return null;
+		}
+
+		const click_fn = reason => e => {
+			tip.hide();
+			data.definition.click.call(this, e, Object.assign({reason}, data));
+			e.preventDefault();
+			return false;
+		};
+
+		if ( reasons && reasons.length ) {
+			for(const reason of reasons) {
+				const text = this.replaceVariables((typeof reason.i18n === 'string') ? this.i18n.t(reason.i18n, reason.text) : reason.text, data);
+
+				reason_elements.push(<li class="tw-full-width tw-relative">
+					<a
+						href="#"
+						onClick={click_fn(text)}
+						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+					>
+						{text}
+					</a>
+				</li>)
+			}
+		}
+
+		if ( rules && rules.length ) {
+			if ( reasons && reasons.length )
+				reason_elements.push(<div class="tw-mg-y-05 tw-border-b"></div>);
+
+			for(const rule of rules) {
+				reason_elements.push(<li class="tw-full-width tw-relative">
+					<a
+						href="#"
+						onClick={click_fn(rule)}
+						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+					>
+						{rule}
+					</a>
+				</li>);
+			}
+		}
+
+		let reason_text;
+		if ( data.definition.reason_text )
+			reason_text = data.definition.reason_text.call(this, data, t, tip);
+		else
+			reason_text = this.i18n.t('chat.actions.select-reason', 'Please select a reason from the list below:');
+
+		return (<div class="ffz--inline-reasons">
+			{reason_text ? <div class="tw-pd-05 tw-border-b">
+				{reason_text}
+			</div> : null}
+			<ul>{reason_elements}</ul>
+		</div>);
+	}
+
+
 	renderInlineContext(target, data) {
 		if ( target._ffz_destroy )
 			return target._ffz_destroy();
@@ -166,16 +313,29 @@ export default class Actions extends Module {
 			target._ffz_destroy = target._ffz_outside = null;
 		}
 
+		const definition = data.definition;
+		let content;
+
+		if ( definition.context )
+			content = (t, tip) => definition.context.call(this, data, t, tip);
+
+		else if ( definition.uses_reason ) {
+			content = (t, tip) => this.renderInlineReasons(data, t, tip);
+
+		} else
+			return;
+
 		const parent = document.body.querySelector('#root>div') || document.body,
 			tt = target._ffz_popup = new Tooltip(parent, target, {
 				logger: this.log,
 				manual: true,
+				live: false,
 				html: true,
 
 				tooltipClass: 'ffz-action-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
 				arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
 				arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
-				innerClass: 'tw-pd-1',
+				innerClass: '',
 
 				popper: {
 					placement: 'bottom',
@@ -189,7 +349,7 @@ export default class Actions extends Module {
 					}
 				},
 
-				content: (t, tip) => data.definition.context.call(this, data, t, tip),
+				content,
 				onShow: (t, tip) =>
 					setTimeout(() => {
 						target._ffz_outside = new ClickOutside(tip.outer, destroy)
@@ -216,19 +376,12 @@ export default class Actions extends Module {
 	}
 
 
-	renderInline(msg, mod_icons, current_user, current_room, createElement) {
-		const actions = [];
+	renderRoom(mod_icons, current_user, current_room, createElement) {
+		const actions = [],
+			chat = this.resolve('site.chat');
 
-		if ( msg.user && current_user && current_user.login === msg.user.login )
-			return;
-
-		const current_level = this.getUserLevel(current_room, current_user),
-			msg_level = this.getUserLevel(current_room, msg.user);
-
-		const chat = this.resolve('site.chat');
-
-		for(const data of this.parent.context.get('chat.actions.inline')) {
-			if ( ! data.action || ! data.appearance )
+		for(const data of this.parent.context.get('chat.actions.room')) {
+			if ( ! data || ! data.action || ! data.appearance )
 				continue;
 
 			const ap = data.appearance || {},
@@ -238,9 +391,8 @@ export default class Actions extends Module {
 
 			if ( ! def || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
-				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
-				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
-				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
+				(disp.mod != null && disp.mod !== (current_user ? !!current_user.mod : false)) ||
+				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) )
 				continue;
 
 			const has_color = def.colored && ap.color,
@@ -263,22 +415,108 @@ export default class Actions extends Module {
 		if ( ! actions.length )
 			return null;
 
-		const room = current_room && JSON.stringify(current_room),
+		const room = current_room && JSON.stringify(current_room);
+
+		return (<div
+			class="ffz--room-actions ffz-action-data tw-pd-y-05 tw-border-t"
+			data-room={room}
+		>
+			{actions}
+		</div>)
+	}
+
+
+	renderInline(msg, mod_icons, current_user, current_room, createElement) {
+		const actions = [];
+
+		if ( msg.user && current_user && current_user.login === msg.user.login )
+			return;
+
+		const current_level = this.getUserLevel(current_room, current_user),
+			msg_level = this.getUserLevel(current_room, msg.user);
+
+		if ( current_level < 3 )
+			mod_icons = false;
+
+		const chat = this.resolve('site.chat'),
+			modified = [];
+
+		let had_action = false;
+
+		for(const data of this.parent.context.get('chat.actions.inline')) {
+			if ( ! data.action || ! data.appearance )
+				continue;
+
+			const ap = data.appearance || {},
+				disp = data.display || {},
+				keys = disp.keys,
+
+				def = this.renderers[ap.type];
+
+			if ( ! def || disp.disabled ||
+				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
+				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
+				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
+				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
+				continue;
+
+			const has_color = def.colored && ap.color,
+				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
+				contents = def.render.call(this, ap, createElement, color);
+
+			let list = actions;
+
+			if ( keys )
+				list = modified;
+
+			had_action = true;
+			list.push(<button
+				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}`}
+				data-tooltip-type="action"
+				data-action={data.action}
+				data-options={data.options ? JSON.stringify(data.options) : null}
+				data-tip={ap.tooltip}
+				onClick={this.handleClick}
+				onContextMenu={this.handleContext}
+			>
+				{contents}
+			</button>);
+		}
+
+		if ( ! had_action )
+			return null;
+
+		/*const room = current_room && JSON.stringify(current_room),
 			user = msg.user && JSON.stringify({
 				login: msg.user.login,
 				displayName: msg.user.displayName,
 				id: msg.user.id,
 				type: msg.user.type
-			});
+			});*/
 
-		return (<div
-			class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
-			data-msg-id={msg.id}
-			data-user={user}
-			data-room={room}
-		>
-			{actions}
-		</div>);
+		let out = null;
+		if ( actions.length )
+			out = (<div
+				class="ffz--inline-actions ffz-action-data tw-inline-block tw-mg-r-05"
+				data-source="line"
+			>
+				{actions}
+			</div>);
+
+		if ( modified.length ) {
+			const modified_out = (<div
+				class="ffz--inline-actions ffz--modifier-actions ffz-action-data"
+				data-source="line"
+			>
+				{modified}
+			</div>);
+
+			if ( out )
+				return [out, modified_out];
+			return modified_out;
+		}
+
+		return out;
 	}
 
 
@@ -292,19 +530,55 @@ export default class Actions extends Module {
 		if ( ! definition )
 			return null;
 
-		const user = pds && pds.user ? JSON.parse(pds.user) : null,
-			room = pds && pds.room ? JSON.parse(pds.room) : null,
-			message_id = pds && pds.msgId,
+		let user, room, message, loaded = false;
 
-			data = {
-				action,
-				definition,
-				tip: ds.tip,
-				options: ds.options ? JSON.parse(ds.options) : null,
-				user,
-				room,
-				message_id
-			};
+		if ( pds ) {
+			if ( pds.source === 'line' ) {
+				const fine = this.resolve('site.fine'),
+					line = fine && fine.searchParent(parent, n => n.props && n.props.message);
+
+				if ( line && line.props && line.props.message ) {
+					loaded = true;
+
+					const msg = line.props.message;
+
+					user = msg.user ? {
+						color: msg.user.color,
+						id: msg.user.id,
+						login: msg.user.login,
+						displayName: msg.user.displayName,
+						type: msg.user.type
+					} : null;
+
+					room = {
+						login: line.props.channelLogin,
+						id: line.props.channelID
+					}
+
+					message = {
+						id: msg.id,
+						text: msg.message
+					}
+				}
+			}
+
+			if ( ! loaded ) {
+				user = pds.user ? JSON.parse(pds.user) : null;
+				room = pds.room ? JSON.parse(pds.room) : null;
+				message = pds.message ? JSON.parse(pds.message) : pds.msgId ? {id: pds.msgId} : null;
+			}
+		}
+
+		const data = {
+			action,
+			definition,
+			tip: ds.tip,
+			options: ds.options ? JSON.parse(ds.options) : null,
+			user,
+			room,
+			message,
+			message_id: message ? message.id : null
+		};
 
 		if ( definition.defaults )
 			data.options = Object.assign({}, maybe_call(definition.defaults, this, data, element), data.options);
@@ -343,11 +617,11 @@ export default class Actions extends Module {
 		if ( ! data )
 			return;
 
-		if ( ! data.definition.context )
-			return;
-
 		if ( target._ffz_tooltip$0 )
 			target._ffz_tooltip$0.hide();
+
+		if ( ! data.definition.context && ! data.definition.uses_reason )
+			return;
 
 		this.renderInlineContext(event.target, data);
 	}

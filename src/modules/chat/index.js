@@ -300,6 +300,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-users--color-regex', {
 			requires: ['chat.filtering.highlight-basic-users'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-users');
 				if ( ! val || ! val.length )
@@ -358,7 +359,8 @@ export default class Chat extends Module {
 
 
 		this.settings.add('chat.filtering.highlight-basic-users-blocked--regex', {
-			requires: ['chat.filtering.highlight-basic-blocked'],
+			requires: ['chat.filtering.highlight-basic-users-blocked'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-users-blocked');
 				if ( ! val || ! val.length )
@@ -407,6 +409,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-badges--colors', {
 			requires: ['chat.filtering.highlight-basic-badges'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-badges');
 				if ( ! val || ! val.length )
@@ -440,6 +443,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-badges-blocked--list', {
 			requires: ['chat.filtering.highlight-basic-badges-blocked'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-badges-blocked');
 				if ( ! val || ! val.length )
@@ -471,6 +475,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-terms--color-regex', {
 			requires: ['chat.filtering.highlight-basic-terms'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-terms');
 				if ( ! val || ! val.length )
@@ -537,6 +542,7 @@ export default class Chat extends Module {
 
 		this.settings.add('chat.filtering.highlight-basic-blocked--regex', {
 			requires: ['chat.filtering.highlight-basic-blocked'],
+			equals: 'requirements',
 			process(ctx) {
 				const val = ctx.get('chat.filtering.highlight-basic-blocked');
 				if ( ! val || ! val.length )
@@ -929,7 +935,7 @@ export default class Chat extends Module {
 		for(const id in this.room_ids)
 			if ( has(this.room_ids, id) ) {
 				const room = this.room_ids[id];
-				if ( room ) {
+				if ( room && ! room.destroyed ) {
 					visited.add(room);
 					yield room;
 				}
@@ -938,7 +944,7 @@ export default class Chat extends Module {
 		for(const login in this.rooms)
 			if ( has(this.rooms, login) ) {
 				const room = this.rooms[login];
-				if ( room && ! visited.has(room) )
+				if ( room && ! room.destroyed && ! visited.has(room) )
 					yield room;
 			}
 	}
@@ -1162,7 +1168,7 @@ export default class Chat extends Module {
 			l = parts.length,
 			emotes = {};
 
-		let idx = 0, ret, last_type = null;
+		let idx = 0, ret, last_type = null, bits = 0;
 
 		for(let i=0; i < l; i++) {
 			const part = parts[i],
@@ -1180,10 +1186,11 @@ export default class Chat extends Module {
 			else if ( content.url )
 				ret = content.url;
 
-			else if ( content.cheerAmount )
+			else if ( content.cheerAmount ) {
+				bits += content.cheerAmount;
 				ret = `${content.alt}${content.cheerAmount}`;
 
-			else if ( content.images ) {
+			} else if ( content.images ) {
 				const url = (content.images.themed ? content.images.dark : content.images.sources),
 					match = url && /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']),
 					id = match && match[1];
@@ -1213,6 +1220,7 @@ export default class Chat extends Module {
 		if ( ! emotes_only )
 			msg.message = out.join('');
 
+		msg.bits = bits;
 		msg.ffz_emotes = emotes;
 		return msg;
 	}
@@ -1222,8 +1230,15 @@ export default class Chat extends Module {
 		if (!( time instanceof Date ))
 			time = new Date(time);
 
-		const fmt = this.context.get('chat.timestamp-format');
-		return dayjs(time).locale(this.i18n.locale).format(fmt);
+		const fmt = this.context.get('chat.timestamp-format'),
+			d = dayjs(time);
+
+		try {
+			return d.locale(this.i18n.locale).format(fmt);
+		} catch(err) {
+			// If the locale isn't loaded, this can fail.
+			return d.format(fmt);
+		}
 	}
 
 
@@ -1332,6 +1347,7 @@ export default class Chat extends Module {
 
 			if ( type === 'text' )
 				res = e('span', {
+					className: 'text-fragment',
 					'data-a-target': 'chat-message-text'
 				}, token.text);
 

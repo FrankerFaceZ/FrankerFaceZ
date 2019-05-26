@@ -2,35 +2,32 @@
 
 // ============================================================================
 // Localization
-// This is based on Polyglot, but with some changes to avoid dependencies on
-// additional libraries and with support for Vue.
 // ============================================================================
+
+import Parser from '@ffz/icu-msgparser';
 
 import {SERVER} from 'utilities/constants';
 import {get, pick_random, has, timeout} from 'utilities/object';
 import Module from 'utilities/module';
 
+import NewTransCore from 'utilities/translation-core';
+
 
 const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'UwU', '>w<', '^w^', '> w >', 'v.v'],
 
-	format_text = (phrase, token_regex, formatter) => {
-		const out = [];
+	transformText = (ast, fn) => {
+		return ast.map(node => {
+			if ( typeof node === 'string' )
+				return fn(node);
 
-		let i = 0, match;
-		token_regex.lastIndex = 0;
+			else if ( typeof node === 'object' && node.o ) {
+				const out = Object.assign(node, {o: {}});
+				for(const key of Object.keys(node.o))
+					out.o[key] = transformText(node.o[key], fn)
+			}
 
-		while((match = token_regex.exec(phrase))) {
-			if ( match.index !== i )
-				out.push(formatter(phrase.slice(i, match.index)))
-
-			out.push(match[0]);
-			i = match.index + match[0].length;
-		}
-
-		if ( i < phrase.length )
-			out.push(formatter(phrase.slice(i)));
-
-		return out.join('')
+			return node;
+		})
 	},
 
 	owo = text => text
@@ -44,19 +41,12 @@ const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'Uw
 
 
 	TRANSFORMATIONS = {
-		double: (key, text) =>
-			`${text} ${text}`,
-
-		upper: (key, text, opts, locale, token_regex) =>
-			format_text(text, token_regex, t => t.toUpperCase()),
-
-		lower: (key, text, opts, locale, token_regex) =>
-			format_text(text, token_regex, t => t.toLowerCase()),
-
-		append_key: (key, text) => `${text} (${key})`,
-
-		owo: (key, text, opts, locale, token_regex) =>
-			format_text(text, token_regex, t => owo(t))
+		double: (key, ast) => [...ast, ' ', ...ast],
+		upper: (key, ast) => transformText(ast, n => n.toUpperCase()),
+		lower: (key, ast) => transformText(ast, n => n.toLowerCase()),
+		append_key: (key, ast) => [...ast, ` (${key})`],
+		set_key: (key, ast) => [key],
+		owo: (key, ast) => transformText(ast, owo)
 	};
 
 
@@ -69,14 +59,16 @@ export class TranslationManager extends Module {
 		super(...args);
 		this.inject('settings');
 
+		this.parser = new Parser;
+
 		this._seen = new Set;
 
 		this.availableLocales = ['en']; //, 'de', 'ja'];
 
 		this.localeData = {
-			en: { name: 'English' },
-			//de: { name: 'Deutsch' },
-			//ja: { name: '日本語' }
+			en: { name: 'English' }/*,
+			de: { name: 'Deutsch' },
+			ja: { name: '日本語' }*/
 		}
 
 
@@ -92,6 +84,7 @@ export class TranslationManager extends Module {
 					{value: 'upper', title: 'Upper Case'},
 					{value: 'lower', title: 'Lower Case'},
 					{value: 'append_key', title: 'Append Key'},
+					{value: 'set_key', title: 'Set to Key'},
 					{value: 'double', title: 'Double'},
 					{value: 'owo', title: "owo what's this"}
 				]
@@ -137,10 +130,8 @@ export class TranslationManager extends Module {
 	}
 
 	onEnable() {
-		this._ = new TranslationCore({
-			formatters: {
-				'humanTime': n => this.toHumanTime(n)
-			}
+		this._ = new NewTransCore({ //TranslationCore({
+			warn: (...args) => this.log.warn(...args),
 		});
 
 		if ( window.BroadcastChannel ) {
@@ -164,6 +155,9 @@ export class TranslationManager extends Module {
 
 	handleMessage(event) {
 		const msg = event.data;
+		if ( ! msg )
+			return;
+
 		if ( msg.type === 'seen' )
 			this.see(msg.key, true);
 
@@ -210,51 +204,11 @@ export class TranslationManager extends Module {
 			this.broadcast({type: 'seen', key});
 	}
 
-
-	toLocaleString(thing) {
-		if ( thing && thing.toLocaleString )
-			return thing.toLocaleString(this._.locale);
-		return thing;
-	}
-
-
-	toHumanTime(duration, factor = 1) {
-		// TODO: Make this better. Make all time handling better in fact.
-
-		if ( duration instanceof Date )
-			duration = (Date.now() - duration.getTime()) / 1000;
-
-		duration = Math.floor(duration);
-
-		const years = Math.floor((duration * factor) / 31536000) / factor;
-		if ( years >= 1 )
-			return this.t('human-time.years', '%{count} year%{count|en_plural}', years);
-
-		const days = Math.floor((duration %= 31536000) / 86400);
-		if ( days >= 1 )
-			return this.t('human-time.days', '%{count} day%{count|en_plural}', days);
-
-		const hours = Math.floor((duration %= 86400) / 3600);
-		if ( hours >= 1 )
-			return this.t('human-time.hours', '%{count} hour%{count|en_plural}', hours);
-
-		const minutes = Math.floor((duration %= 3600) / 60);
-		if ( minutes >= 1 )
-			return this.t('human-time.minutes', '%{count} minute%{count|en_plural}', minutes);
-
-		const seconds = duration % 60;
-		if ( seconds >= 1 )
-			return this.t('human-time.seconds', '%{count} second%{count|en_plural}', seconds);
-
-		return this.t('human-time.none', 'less than a second');
-	}
-
-
 	async loadLocale(locale) {
-		/*if ( locale === 'en' )
+		if ( locale === 'en' )
 			return {};
 
-		if ( locale === 'de' )
+		/*if ( locale === 'de' )
 			return {
 				site: {
 					menu_button: 'FrankerFaceZ Leitstelle'
@@ -321,8 +275,8 @@ export class TranslationManager extends Module {
 						_: 'Erweiterung'
 					},
 
-					'inherited-from': 'Vererbt von: %{title}',
-					'overridden-by': 'Überschrieben von: %{title}'
+					'inherited-from': 'Vererbt von: {title}',
+					'overridden-by': 'Überschrieben von: {title}'
 				},
 
 				'main-menu': {
@@ -355,7 +309,7 @@ export class TranslationManager extends Module {
 
 				'main-menu': {
 					search: '検索設定',
-					version: 'バージョン%{version}',
+					version: 'バージョン{version}',
 
 					about: {
 						_: '約',
@@ -383,6 +337,8 @@ export class TranslationManager extends Module {
 		const old_locale = this._.locale;
 		if ( new_locale === old_locale )
 			return [];
+
+		await this.loadDayjsLocale(new_locale);
 
 		this._.locale = new_locale;
 		this._.clear();
@@ -412,12 +368,47 @@ export class TranslationManager extends Module {
 		return added;
 	}
 
+	async loadDayjsLocale(locale) {
+		if ( locale === 'en' )
+			return;
+
+		try {
+			await import(
+				/* webpackMode: 'lazy' */
+				/* webpackChunkName: 'i18n-[index]' */
+				`dayjs/locale/${locale}`
+			);
+		} catch(err) {
+			this.log.warn(`Unable to load day.js locale data for locale "${locale}"`, err);
+		}
+	}
+
 	has(key) {
 		return this._.has(key);
 	}
 
+	toLocaleString(...args) {
+		return this._.toLocaleString(...args);
+	}
+
+	toHumanTime(...args) {
+		return this._.formatHumanTime(...args);
+	}
+
 	formatNumber(...args) {
 		return this._.formatNumber(...args);
+	}
+
+	formatDate(...args) {
+		return this._.formatDate(...args)
+	}
+
+	formatTime(...args) {
+		return this._.formatTime(...args)
+	}
+
+	formatDateTime(...args) {
+		return this._.formatDateTime(...args)
 	}
 
 	t(key, ...args) {
@@ -437,7 +428,7 @@ export class TranslationManager extends Module {
 // TranslationCore
 // ============================================================================
 
-const REPLACE = String.prototype.replace,
+const REPLACE = String.prototype.replace; /*,
 	SPLIT = String.prototype.split;
 
 const DEFAULT_FORMATTERS = {
@@ -460,7 +451,7 @@ export default class TranslationCore {
 		this.onMissingKey = typeof options.onMissingKey === 'function' ? options.onMissingKey : allowMissing;
 		this.transformPhrase = typeof options.transformPhrase === 'function' ? options.transformPhrase : transformPhrase;
 		this.transformList = typeof options.transformList === 'function' ? options.transformList : transformList;
-		this.delimiter = options.delimiter || /\s*\|\|\|\|\s*/;
+		this.delimiter = options.delimiter || /\s*\|\|\|\|\s/;
 		this.tokenRegex = options.tokenRegex || /%\{(.*?)(?:\|(.*?))?\}/g;
 		this.formatters = Object.assign({}, DEFAULT_FORMATTERS, options.formatters || {});
 	}
@@ -575,7 +566,7 @@ export default class TranslationCore {
 
 		return this.transformList(p, opts, locale, this.tokenRegex, this.formatters);
 	}
-}
+}*/
 
 
 // ============================================================================
@@ -593,10 +584,7 @@ export function transformList(phrase, substitutions, locale, token_regex, format
 	const options = typeof substitutions === 'number' ? {count: substitutions} : substitutions;
 
 	if ( is_array )
-		p = p[pluralTypeIndex(
-			locale || 'en',
-			has(options, 'count') ? options.count : 1
-		)] || p[0];
+		p = p[0];
 
 	const result = [];
 
@@ -642,10 +630,7 @@ export function transformPhrase(phrase, substitutions, locale, token_regex, form
 	const options = typeof substitutions === 'number' ? {count: substitutions} : substitutions;
 
 	if ( is_array )
-		result = result[pluralTypeIndex(
-			locale || 'en',
-			has(options, 'count') ? options.count : 1
-		)] || result[0];
+		result = result[0];
 
 	if ( typeof result === 'string' )
 		result = REPLACE.call(result, token_regex, (expr, arg, fmt) => {
@@ -663,65 +648,4 @@ export function transformPhrase(phrase, substitutions, locale, token_regex, form
 		});
 
 	return result;
-}
-
-
-// ============================================================================
-// Plural Nonsense
-// ============================================================================
-
-const PLURAL_TYPE_TO_LANG = {
-	arabic: ['ar'],
-	chinese: ['fa', 'id', 'ja', 'ko', 'lo', 'ms', 'th', 'tr', 'zh'],
-	german: ['da', 'de', 'en', 'es', 'es', 'fi', 'el', 'he', 'hu', 'it', 'nl', 'no', 'pt', 'sv'],
-	french: ['fr', 'tl', 'pt-br'],
-	russian: ['hr', 'ru', 'lt'],
-	czech: ['cs', 'sk'],
-	polish: ['pl'],
-	icelandic: ['is']
-};
-
-const PLURAL_LANG_TO_TYPE = {};
-
-for(const type in PLURAL_TYPE_TO_LANG) // eslint-disable-line guard-for-in
-	for(const lang of PLURAL_TYPE_TO_LANG[type])
-		PLURAL_LANG_TO_TYPE[lang] = type;
-
-const PLURAL_TYPES = {
-	arabic: n => {
-		if ( n < 3 ) return n;
-		const n1 = n % 100;
-		if ( n1 >= 3 && n1 <= 10 ) return 3;
-		return n1 >= 11 ? 4 : 5;
-	},
-	chinese: () => 0,
-	german: n => n !== 1 ? 1 : 0,
-	french: n => n > 1 ? 1 : 0,
-	russian: n => {
-		const n1 = n % 10, n2 = n % 100;
-		if ( n1 === 1 && n2 !== 11 ) return 0;
-		return n1 >= 2 && n1 <= 4 && (n2 < 10 || n2 >= 20) ? 1 : 2;
-	},
-	czech: n => {
-		if ( n === 1 ) return 0;
-		return n >= 2 && n <= 4 ? 1 : 2;
-	},
-	polish: n => {
-		if ( n === 1 ) return 0;
-		const n1 = n % 10, n2 = n % 100;
-		return n1 >= 2 && n1 <= 4 && (n2 < 10 || n2 >= 20) ? 1 : 2;
-	},
-	icelandic: n => n % 10 !== 1 || n % 100 === 11 ? 1 : 0
-};
-
-
-export function pluralTypeIndex(locale, n) {
-	let type = PLURAL_LANG_TO_TYPE[locale];
-	if ( ! type ) {
-		const idx = locale.indexOf('-');
-		if ( idx !== -1 )
-			type = PLURAL_LANG_TO_TYPE[locale.slice(0, idx)]
-	}
-
-	return PLURAL_TYPES[type || 'german'](n);
 }
