@@ -642,16 +642,15 @@ export default class MainMenu extends Module {
 
 		}
 
-		if ( ! item.setting )
-			return;
+		if ( item.setting ) {
+			if ( ! seen.includes(item.setting) ) {
+				seen.push(item.setting);
 
-		if ( ! seen.includes(item.setting) ) {
-			seen.push(item.setting);
-
-			let i = item.parent;
-			while(i) {
-				i.unseen = (i.unseen || 1) - 1;
-				i = i.parent;
+				let i = item.parent;
+				while(i) {
+					i.unseen = (i.unseen || 1) - 1;
+					i = i.parent;
+				}
 			}
 		}
 

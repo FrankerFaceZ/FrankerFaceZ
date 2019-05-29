@@ -54,7 +54,7 @@ export default class Directory extends SiteModule {
 
 		this.DirectoryShelf = this.fine.define(
 			'directory-shelf',
-			n => n.onEmptyShelfRender && n.shouldRenderShelf,
+			n => n.getShelfTitle && n.props && n.props.shelf,
 			DIR_ROUTES
 		);
 

@@ -216,6 +216,18 @@ export default class CSSTweaks extends Module {
 			},
 			changed: val => this.toggle('hide-bits', !val)
 		});
+
+		// Other?
+
+		this.settings.add('channel.round-avatars', {
+			default: true,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Allow avatar images to be rounded.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('square-avatars', !val)
+		});
 	}
 
 	onEnable() {
@@ -229,6 +241,8 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
+
+		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);
