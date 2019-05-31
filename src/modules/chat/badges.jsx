@@ -406,7 +406,7 @@ export default class Badges extends Module {
 			}
 
 		for(const badge of badges)
-			if ( badge && badge.id ) {
+			if ( badge && badge.id != null ) {
 				if ( hidden_badges[badge.id] )
 					continue;
 
@@ -440,7 +440,7 @@ export default class Badges extends Module {
 
 					style = old_badge.props.style;
 
-				} else if ( ! slot )
+				} else if ( slot == null )
 					continue;
 
 				else {

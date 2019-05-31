@@ -101,11 +101,17 @@ export default class MenuButton extends SiteModule {
 	}
 
 	updateButton(inst) {
-		const root = this.fine.getChildNode(inst),
-			container = root && root.querySelector('.top-nav__menu');
+		const root = this.fine.getChildNode(inst);
+		let container = root && root.querySelector('.top-nav__menu');
 
 		if ( ! container )
 			return;
+
+		const user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
+		if ( user_stuff )
+			container = user_stuff;
+		else
+			container = container.lastElementChild;
 
 		let btn, el = container.querySelector('.ffz-top-nav');
 		if ( el )
@@ -160,11 +166,7 @@ export default class MenuButton extends SiteModule {
 			</button>)}
 		</div>);
 
-		const user_menu = container.querySelector('.top-nav__nav-items-container:last-child');
-		if ( user_menu )
-			container.insertBefore(el, user_menu);
-		else
-			container.insertBefore(el, container.lastElementChild);
+		container.insertBefore(el, container.lastElementChild);
 	}
 
 

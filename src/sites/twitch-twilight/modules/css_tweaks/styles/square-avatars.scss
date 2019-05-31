@@ -1,0 +1,7 @@
+.side-nav-card__avatar.tw-border-radius-rounded,
+.tw-avatar .tw-border-radius-rounded {
+	.tw-root--theme-dark &,
+	& {
+		border-radius: 0 !important;
+	}
+}
