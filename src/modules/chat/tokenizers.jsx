@@ -12,7 +12,8 @@ import {TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/const
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
-	MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
+	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
+	MENTION_REGEX = /^(['"*([{<\\/]*)(@?)((?:[^\u0000-\u007F]|[\w-])+)/; // eslint-disable-line no-control-regex
 
 
 // ============================================================================
@@ -201,14 +202,27 @@ export const Mentions = {
 
 	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-mention.vue'),
 
-	render(token, createElement) {
+	oldRender(token, createElement) {
 		return (<strong class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}>
 			{token.text}
 		</strong>);
 	},
 
+	render(token, createElement) {
+		return (<span
+			class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}
+			data-login={token.recipient}
+			onClick={this.handleMentionClick}
+		>
+			{token.text}
+		</span>)
+	},
+
 	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
+			return tokens;
+
+		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
 		let regex, login, display;
@@ -218,7 +232,8 @@ export const Mentions = {
 			if ( display === login )
 				display = null;
 
-			regex = new RegExp(`([^\\w@#%\\-+=:~]|\\b)?(@?(${user.login.toLowerCase()}${display ? `|${display}` : ''})|@([^\\u0000-\\u007F]+|\\w+)+)([^\\w.\\/@#%&()\\-+=:?~]|\\s|\\b|$)`, 'gi');
+			regex = new RegExp(`^(['"*([{<\\/]*)(?:(@?)(${user.login.toLowerCase()}${display ? `|${display}` : ''})|@((?:[^\u0000-\u007F]|[\\w-])+))`, 'i');
+			//regex = new RegExp(`([^\\w@#%\\-+=:~]|\\b)?(@?(${user.login.toLowerCase()}${display ? `|${display}` : ''})|@([^\\u0000-\\u007F]+|\\w+)+)([^\\w.\\/@#%&()\\-+=:?~]|\\s|\\b|$)`, 'gi');
 		} else
 			regex = MENTION_REGEX;
 
@@ -229,34 +244,52 @@ export const Mentions = {
 				continue;
 			}
 
-			regex.lastIndex = 0;
-			const text = token.text;
-			let idx = 0, match;
+			let text = [];
 
-			while((match = regex.exec(text))) {
-				const nix = match.index + (match[1] ? match[1].length : 0),
-					m = match[3] || match[4],
-					ml = m.toLowerCase(),
-					me = ml === login || ml === display;
+			for(const segment of token.text.split(/ +/)) {
+				const match = regex.exec(segment);
+				if ( match ) {
+					// If we have pending text, join it together.
+					if ( text.length || match[1])  {
+						out.push({
+							type: 'text',
+							text: `${text.join(' ')} ${match[1] || ''}`
+						});
+						text = [];
+					}
 
-				if ( idx !== nix )
-					out.push({type: 'text', text: text.slice(idx, nix)});
+					let recipient,
+						mentioned = false,
+						at = match[2];
 
-				if ( me )
-					msg.mentioned = true;
+					if ( match[4] ) {
+						recipient = match[4];
+						at = '@';
 
-				out.push({
-					type: 'mention',
-					text: match[2],
-					me,
-					recipient: m
-				});
+					} else {
+						recipient = match[3];
+						mentioned = true;
+					}
 
-				idx = nix + match[2].length;
+					out.push({
+						type: 'mention',
+						text: `${at}${recipient}`,
+						me: mentioned,
+						recipient
+					});
+
+					if ( mentioned )
+						msg.mentioned = true;
+
+					// Push the remaining text from the token.
+					text.push(segment.substr(match[0].length));
+
+				} else
+					text.push(segment);
 			}
 
-			if ( idx < text.length )
-				out.push({type: 'text', text: text.slice(idx)});
+			if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+				out.push({type: 'text', text: text.join(' ')})
 		}
 
 		return out;

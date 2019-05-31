@@ -7,7 +7,7 @@
 import Parser from '@ffz/icu-msgparser';
 
 import {SERVER} from 'utilities/constants';
-import {get, pick_random, has, timeout} from 'utilities/object';
+import {get, pick_random, timeout} from 'utilities/object';
 import Module from 'utilities/module';
 
 import NewTransCore from 'utilities/translation-core';
@@ -45,7 +45,7 @@ const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'Uw
 		upper: (key, ast) => transformText(ast, n => n.toUpperCase()),
 		lower: (key, ast) => transformText(ast, n => n.toLowerCase()),
 		append_key: (key, ast) => [...ast, ` (${key})`],
-		set_key: (key, ast) => [key],
+		set_key: key => [key],
 		owo: (key, ast) => transformText(ast, owo)
 	};
 

@@ -45,6 +45,7 @@ export default class Chat extends Module {
 
 		// Bind for JSX stuff
 		this.clickToReveal = this.clickToReveal.bind(this);
+		this.handleMentionClick = this.handleMentionClick.bind(this);
 
 		this.style = new ManagedStyle;
 
@@ -582,6 +583,16 @@ export default class Chat extends Module {
 		});
 
 
+		this.settings.add('chat.filtering.clickable-mentions', {
+			default: false,
+			ui: {
+				component: 'setting-check-box',
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Enable opening viewer cards by clicking mentions in chat.'
+			}
+		});
+
+
 		this.settings.add('chat.filtering.highlight-mentions', {
 			default: false,
 			ui: {
@@ -947,6 +958,32 @@ export default class Chat extends Module {
 				if ( room && ! room.destroyed && ! visited.has(room) )
 					yield room;
 			}
+	}
+
+
+	handleMentionClick(event) {
+		if ( ! this.context.get('chat.filtering.clickable-mentions') )
+			return;
+
+		const target = event.target,
+			ds = target && target.dataset;
+
+		if ( ! ds || ! ds.login )
+			return;
+
+		const fine = this.resolve('site.fine');
+		if ( ! fine )
+			return;
+
+		const chat = fine.searchParent(event.target, n => n.props && n.props.onUsernameClick);
+		if ( ! chat )
+			return;
+
+		chat.props.onUsernameClick(
+			ds.login,
+			undefined, undefined,
+			event.currentTarget.getBoundingClientRect().bottom
+		);
 	}
 
 

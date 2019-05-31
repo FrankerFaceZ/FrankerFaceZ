@@ -452,6 +452,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
@@ -474,6 +475,8 @@ export default class ChatHook extends Module {
 		const val = this.chat.context.get('chat.filtering.deleted-style');
 		this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
 		this.css_tweaks.toggle('chat-deleted-fade', val < 2);
+
+		this.css_tweaks.toggle('clickable-mentions', this.chat.context.get('chat.filtering.clickable-mentions'));
 
 		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
 		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
