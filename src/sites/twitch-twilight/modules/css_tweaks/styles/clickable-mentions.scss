@@ -1,0 +1,7 @@
+.chat-line__message-mention {
+	cursor: pointer;
+
+	&:hover, &:focus {
+		text-decoration: underline;
+	}
+}

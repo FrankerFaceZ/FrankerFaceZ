@@ -1,4 +1,7 @@
-.tw-root--theme-dark .tw-avatar .tw-border-radius-rounded,
+.side-nav-card__avatar.tw-border-radius-rounded,
 .tw-avatar .tw-border-radius-rounded {
-	border-radius: 0 !important;
+	.tw-root--theme-dark &,
+	& {
+		border-radius: 0 !important;
+	}
 }
