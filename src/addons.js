@@ -46,6 +46,7 @@ export default class AddonManager extends Module {
 			getAddons: () => Object.values(this.addons),
 			hasAddon: id => this.hasAddon(id),
 			isAddonEnabled: id => this.isAddonEnabled(id),
+			isAddonExternal: id => this.isAddonExternal(id),
 			enableAddon: id => this.enableAddon(id),
 			disableAddon: id => this.disableAddon(id),
 			isReloadRequired: () => this.reload_required,
@@ -112,16 +113,16 @@ export default class AddonManager extends Module {
 
 		if ( Array.isArray(cdn_data) )
 			for(const addon of cdn_data )
-				this._loadAddon(addon, false);
+				this.addAddon(addon, false);
 
 		if ( Array.isArray(local_data) )
 			for(const addon of local_data)
-				this._loadAddon(addon, true);
+				this.addAddon(addon, true);
 
 		this.rebuildAddonSearch();
 	}
 
-	_loadAddon(addon, is_dev = false) {
+	addAddon(addon, is_dev = false) {
 		const old = this.addons[addon.id];
 		this.addons[addon.id] = addon;
 
@@ -181,6 +182,25 @@ export default class AddonManager extends Module {
 		return this.getAddon(id) != null;
 	}
 
+	isAddonExternal(id) {
+		if ( ! this.hasAddon(id) )
+			throw new Error(`Unknown add-on id: ${id}`);
+
+		const module = this.resolve(`addon.${id}`);
+		// If we can't find it, assume it isn't.
+		if ( ! module )
+			return false;
+
+		// Check for one of our script tags. If we didn't load
+		// it ourselves, then it's external.
+		const script = document.head.querySelector(`script#ffz-loaded-addon-${id}`);
+		if ( ! script )
+			return true;
+
+		// Finally, let the module flag itself as external.
+		return module.external || (module.constructor && module.constructor.external);
+	}
+
 	async _enableAddon(id) {
 		const addon = this.getAddon(id);
 		if ( ! addon )
@@ -208,7 +228,7 @@ export default class AddonManager extends Module {
 		}
 
 		document.head.appendChild(createElement('script', {
-			id: `ffz-addon-${addon.id}`,
+			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
 			src: `https://${addon.dev ? 'localhost:8000' : 'cdn.ffzap.com'}/script/addons/${addon.id}/script.js`,
 			crossorigin: 'anonymous'
@@ -261,6 +281,9 @@ export default class AddonManager extends Module {
 		const addon = this.getAddon(id);
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
+
+		if ( this.isAddonExternal(id) )
+			throw new Error(`Cannot disable external add-on with id: ${id}`);
 
 		if ( ! this.isAddonEnabled(id) )
 			return;

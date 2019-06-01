@@ -8,7 +8,13 @@ export class Addon extends Module {
 		this.inject('settings');
 	}
 
-	static register(name) {
-		FrankerFaceZ.get().register(`addon.${name}`, this).enable();
+	static register(id, info) {
+		const ffz = FrankerFaceZ.get();
+		ffz.register(`addon.${id}`, this);
+
+		if ( info ) {
+			info.id = id;
+			ffz.addons.addAddon(info);
+		}
 	}
 }

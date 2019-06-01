@@ -244,6 +244,11 @@
 	}
 }
 
+.ffz--pill-enabled {
+	background-color: #007600 !important;
+	color: #fff !important;
+}
+
 .ffz--button-enable {
 	@include button-colors(#007600, #fff, 6px);
 }

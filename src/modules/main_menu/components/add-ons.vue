@@ -28,8 +28,22 @@
 				:key="addon.id"
 				class="ffz--addon-info tw-elevation-1 tw-c-background-base tw-border tw-pd-1 tw-mg-b-1 tw-flex tw-flex-nowrap"
 			>
-				<div class="tw-card-img--size-6 tw-flex-shrink-0 tw-overflow-hidden tw-mg-r-1 tw-align-center">
-					<img :src="addon.icon" class="tw-image">
+				<div class="tw-flex tw-flex-column tw-align-center tw-flex-shrink-0 tw-mg-r-1">
+					<div class="tw-card-img--size-6 tw-overflow-hidden tw-mg-b-1">
+						<img :src="addon.icon" class="tw-image">
+					</div>
+
+					<div v-if="enabled[addon.id]" class="tw-mg-b-05 tw-pill ffz--pill-enabled">
+						{{ t('addon.enabled', 'Enabled') }}
+					</div>
+
+					<div v-if="addon.dev" class="tw-mg-b-05 tw-pill">
+						{{ t('addon.dev', 'Developer') }}
+					</div>
+
+					<div v-if="item.isAddonExternal(addon.id)" class="tw-mg-b-05 tw-pill">
+						{{ t('addon.external', 'External') }}
+					</div>
 				</div>
 
 				<div class="tw-flex-grow-1">
@@ -49,6 +63,22 @@
 					<div class="tw-mg-t-1 tw-pd-t-1 tw-border-t">
 						<template v-if="enabled[addon.id]">
 							<button
+								v-if="item.isAddonExternal(addon.id)"
+								disabled
+								class="tw-button tw-button--hollow tw-button--disabled tw-tooltip-wrapper tw-mg-r-1"
+							>
+								<span class="tw-button__icon tw-button__icon--left">
+									<figure class="ffz-i-trash" />
+								</span>
+								<span class="tw-button__text">
+									{{ t('addon.disable', 'Disable') }}
+								</span>
+								<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-left">
+									{{ t('addon.external.description', 'This add-on has been loaded by an external script and cannot be disabled here.') }}
+								</div>
+							</button>
+							<button
+								v-else
 								class="tw-button tw-button--hollow ffz--button-disable tw-mg-r-1"
 								@click="item.disableAddon(addon.id)"
 							>
