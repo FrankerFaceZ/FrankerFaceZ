@@ -113,6 +113,7 @@ module.exports = {
             "warn",
             "tab"
         ],
+        "vue/valid-template-root": "off",
         "vue/max-attributes-per-line": "off",
         "vue/require-prop-types": "off",
         "vue/require-default-prop": "off",

@@ -227,8 +227,14 @@ export default {
 				this.displace.reinit();
 		},
 
-		navigate(key) {
-			let item = this.nav_keys[key];
+		navigate(...keys) {
+			let item;
+			for(const key of keys) {
+				item = this.nav_keys[key];
+				if ( item )
+					break;
+			}
+
 			while(item && item.page)
 				item = item.parent;
 

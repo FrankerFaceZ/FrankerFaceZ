@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import { DEBUG, SERVER } from 'utilities/constants';
+import { SERVER } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
 import { timeout, has } from 'utilities/object';
 
@@ -38,7 +38,7 @@ export default class AddonManager extends Module {
 
 		this.settings.addUI('add-ons', {
 			path: 'Add-Ons @{"description": "Add-Ons are additional modules, often written by other people, that can be loaded automatically by FrankerFaceZ to add new capabilities and behaviors to the extension and Twitch."}',
-			component: 'add-ons',
+			component: 'addon-list',
 			title: 'Add-Ons',
 			no_filter: true,
 
@@ -129,7 +129,6 @@ export default class AddonManager extends Module {
 
 		addon.name_i18n = addon.name_i18n || `addon.${addon.id}.name`;
 		addon.short_name_i18n = addon.short_name_i18n || `addon.${addon.id}.short_name`;
-		addon.description_i18n = addon.description_i18n || `addon.${addon.id}.description`;
 		addon.author_i18n = addon.author_i18n || `addon.${addon.id}.author`;
 
 		addon.dev = is_dev;
@@ -173,6 +172,9 @@ export default class AddonManager extends Module {
 	}
 
 	isAddonEnabled(id) {
+		if ( this.isAddonExternal(id) )
+			return true;
+
 		return this.enabled_addons.includes(id);
 	}
 

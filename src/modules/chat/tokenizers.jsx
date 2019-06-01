@@ -209,13 +209,13 @@ export const Mentions = {
 	},
 
 	render(token, createElement) {
-		return (<span
+		return (<strong
 			class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}
 			data-login={token.recipient}
 			onClick={this.handleMentionClick}
 		>
 			{token.text}
-		</span>)
+		</strong>)
 	},
 
 	process(tokens, msg, user) {
@@ -274,7 +274,7 @@ export const Mentions = {
 						type: 'mention',
 						text: `${at}${recipient}`,
 						me: mentioned,
-						recipient
+						recipient: recipient ? recipient.toLowerCase() : ''
 					});
 
 					if ( mentioned )

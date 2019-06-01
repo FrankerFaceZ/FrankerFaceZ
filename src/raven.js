@@ -141,7 +141,8 @@ export default class RavenLogger extends Module {
 				'Zugriff verweigert',
 				'freed script',
 				'ffzenhancing',
-				'dead object'
+				'dead object',
+				'Name Collision for Module'
 			],
 			sanitizeKeys: [
 				/Token$/

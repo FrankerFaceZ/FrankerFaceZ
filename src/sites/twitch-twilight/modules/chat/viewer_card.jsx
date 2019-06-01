@@ -64,6 +64,10 @@ export default class ViewerCards extends Module {
 	}
 
 	updateStyle(login) {
+		// Make sure we're dealing with lower-case logins.
+		if ( typeof login === 'string' )
+			login = login.toLowerCase();
+
 		this.last_login = login;
 		if ( login && this.chat.context.get('chat.viewer-cards.highlight-chat') ) {
 			let color = this.chat.context.get('chat.viewer-cards.color');
