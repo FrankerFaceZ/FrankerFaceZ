@@ -7,6 +7,7 @@
 @import "./widgets/menu-tree.scss";
 @import "./widgets/profile-selector.scss";
 @import "./widgets/badge-visibility.scss";
+@import "./widgets/add-ons.scss";
 
 @import "./widgets/color-picker.scss";
 
@@ -229,4 +230,29 @@
 			background-color: rgba(255,255,255,0.05);
 		}
 	}
+}
+
+@mixin button-colors($color, $text, $shadow) {
+	&:hover, &:focus {
+		background: $color !important;
+		border-color: $color !important;
+		color: $text !important;
+	}
+
+	&:focus {
+		box-shadow: 0 0 $shadow $color !important;
+	}
+}
+
+.ffz--pill-enabled {
+	background-color: #007600 !important;
+	color: #fff !important;
+}
+
+.ffz--button-enable {
+	@include button-colors(#007600, #fff, 6px);
+}
+
+.ffz--button-disable {
+	@include button-colors(#bd0f0f, #fff, 6px);
 }

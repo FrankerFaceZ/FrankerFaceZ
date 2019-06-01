@@ -48,7 +48,7 @@
 								:key="idx"
 								:selected="i.value === exp.value"
 							>
-								{{ t('setting.experiments.entry', '{value} (weight: {weight})', i) }}
+								{{ t('setting.experiments.entry', '{value,tostring} (weight: {weight,tostring})', i) }}
 							</option>
 						</select>
 
@@ -122,7 +122,7 @@
 								:key="idx"
 								:selected="i.value === exp.value"
 							>
-								{{ i.value }} (weight: {{ i.weight }})
+								{{ t('setting.experiments.entry', '{value,tostring} (weight: {weight,tostring})', i) }}
 							</option>
 						</select>
 

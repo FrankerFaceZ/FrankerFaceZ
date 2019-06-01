@@ -93,7 +93,7 @@ export default {
 			if ( ! this.filter || ! this.filter.length || ! item.search_terms )
 				return true;
 
-			return item.search_terms.includes(this.filter);
+			return item.no_filter || item.search_terms.includes(this.filter);
 		},
 
 		markSeen(item) {

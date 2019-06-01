@@ -204,6 +204,8 @@ export class Tooltip {
 		this.elements.add(target);
 
 		// Set this early in case content uses it early.
+		tip._promises = [];
+		tip.waitForDom = () => tip.element ? Promise.resolve() : new Promise(s => {tip._promises.push(s)});
 		tip.update = () => tip._update(); // tip.popper && tip.popper.scheduleUpdate();
 		tip.show = () => this.show(tip);
 		tip.hide = () => this.hide(tip);
@@ -276,6 +278,11 @@ export class Tooltip {
 				tip.popper = new Popper(target, el, pop_opts);
 			}
 		}
+
+		for(const fn of tip._promises)
+			fn();
+
+		tip._promises = null;
 
 		if ( content instanceof Promise || (content.then && content.toString() === '[object Promise]') ) {
 			inner.innerHTML = '<div class="ffz-i-zreknarf loader"></div>';

@@ -4,7 +4,7 @@
 // Experiments
 // ============================================================================
 
-import {SERVER} from 'utilities/constants';
+import {DEBUG, SERVER} from 'utilities/constants';
 import Module from 'utilities/module';
 import {has, deep_copy} from 'utilities/object';
 
@@ -75,7 +75,7 @@ export default class ExperimentManager extends Module {
 		let data;
 
 		try {
-			data = await fetch(`${SERVER}/script/experiments.json?_=${Date.now()}`).then(r =>
+			data = await fetch(DEBUG ? EXPERIMENTS : `${SERVER}/script/experiments.json?_=${Date.now()}`).then(r =>
 				r.ok ? r.json() : null);
 
 		} catch(err) {

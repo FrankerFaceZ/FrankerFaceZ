@@ -140,7 +140,8 @@ export default class RavenLogger extends Module {
 				'Access is denied.',
 				'Zugriff verweigert',
 				'freed script',
-				'ffzenhancing'
+				'ffzenhancing',
+				'dead object'
 			],
 			sanitizeKeys: [
 				/Token$/
