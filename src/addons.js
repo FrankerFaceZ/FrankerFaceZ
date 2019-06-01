@@ -148,7 +148,7 @@ export default class AddonManager extends Module {
 				this.addons[id] = [addon.id];
 		}
 
-		this.emit(':added-addon');
+		this.emit(':added');
 	}
 
 	rebuildAddonSearch() {
@@ -249,7 +249,7 @@ export default class AddonManager extends Module {
 		document.head.appendChild(createElement('script', {
 			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
-			src: addon.src || `https://${addon.dev ? 'localhost:8001' : SERVER}/script/addons/${addon.id}/script.js`,
+			src: addon.src || `${addon.dev ? 'https://localhost:8001' : SERVER}/script/addons/${addon.id}/script.js`,
 			crossorigin: 'anonymous'
 		}));
 
