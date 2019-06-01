@@ -18,6 +18,7 @@ import ChatLine from './line';
 import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import Input from './input';
+import ViewerCards from './viewer_card';
 
 
 const REGEX_EMOTES = {
@@ -151,6 +152,7 @@ export default class ChatHook extends Module {
 		this.inject(SettingsMenu);
 		this.inject(EmoteMenu);
 		this.inject(Input);
+		this.inject(ViewerCards);
 
 		this.ChatService = this.fine.define(
 			'chat-service',
@@ -355,6 +357,7 @@ export default class ChatHook extends Module {
 		ic.contrast = contrast;
 
 		this.updateChatLines();
+		this.emit(':update-colors');
 	}
 
 
