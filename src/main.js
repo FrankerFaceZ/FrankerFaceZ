@@ -5,17 +5,17 @@ import RavenLogger from './raven';
 
 import Logger from 'utilities/logging';
 import Module from 'utilities/module';
-import AddonManager from 'utilities/addon';
+import { timeout } from 'utilities/object';
 
 import {DEBUG} from 'utilities/constants';
 
 import SettingsManager from './settings/index';
+import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
 import Site from 'site';
 import Vue from 'utilities/vue';
-import { timeout } from './utilities/object';
 
 class FrankerFaceZ extends Module {
 	constructor() {

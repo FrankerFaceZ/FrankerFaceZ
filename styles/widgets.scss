@@ -231,3 +231,23 @@
 		}
 	}
 }
+
+@mixin button-colors($color, $text, $shadow) {
+	&:hover, &:focus {
+		background: $color !important;
+		border-color: $color !important;
+		color: $text !important;
+	}
+
+	&:focus {
+		box-shadow: 0 0 $shadow $color !important;
+	}
+}
+
+.ffz--button-enable {
+	@include button-colors(#007600, #fff, 6px);
+}
+
+.ffz--button-disable {
+	@include button-colors(#bd0f0f, #fff, 6px);
+}

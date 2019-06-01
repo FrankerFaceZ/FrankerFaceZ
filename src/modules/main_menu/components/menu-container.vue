@@ -18,6 +18,7 @@
 				:context="context"
 				:item="i"
 				:filter="filter"
+				@navigate="navigate"
 			/>
 		</div>
 	</div>
@@ -41,6 +42,10 @@ export default {
 	},
 
 	methods: {
+		navigate(...args) {
+			this.$emit('navigate', ...args);
+		},
+
 		shouldShow(item) {
 			if ( ! this.filter || ! this.filter.length || ! item.search_terms )
 				return true;

@@ -46,6 +46,8 @@ export class Module extends EventEmitter {
 		this.__load_state = this.onLoad ? State.UNLOADED : State.LOADED;
 		this.__state = this.onLoad || this.onEnable ?
 			State.DISABLED : State.ENABLED;
+
+		this.emit(':registered');
 	}
 
 

@@ -1,0 +1,45 @@
+[
+	{
+		"id": "ffzap-bttv",
+		"requires": ["ffzap-core"],
+
+		"version": "3.1.8",
+		"icon": "https://cdn.betterttv.net/assets/logos/mascot.png",
+
+		"shortname": "FFZ:AP BTTV",
+		"name": "BetterTTV Emotes",
+		"author": "The FrankerFaceZ Add-On Pack",
+		"description": "This is the BetterTTV module of The FrankerFaceZ Add-On Pack. It includes BetterTTV Global Emotes, Channel Emotes and Pro Emotes as well as various other functionality.",
+
+		"website": "https://ffzap.com/",
+		"settings": "add_ons.ffz_ap.better_ttv"
+	},
+	{
+		"id": "ffzap-liriklive",
+		"requires": ["ffzap-core"],
+
+		"version": "3.1.4",
+		"icon": "https://cdn.ffzap.com/liriklive/icon.png",
+
+		"shortname": "FFZ:AP LirikLIVE",
+		"name": "LirikLIVE",
+		"author": "The FrankerFaceZ Add-On Pack",
+		"description": "The LirikLIVE extension!",
+
+		"settings": "add_ons.ffz_ap.lirik_live"
+	},
+	{
+		"id": "ffzap-core",
+		"requires": [],
+
+		"version": "3.1.4",
+		"icon": "https://ffzap.com/img/logo.png",
+
+		"shortname": "FFZ:AP Core",
+		"name": "The FrankerFaceZ Add-On Pack - Core",
+		"author": "The FrankerFaceZ Add-On Pack",
+		"description": "This is the core functionality for The FrankerFaceZ Add-On Pack. It includes FFZ:AP supporter functionality and various other required utilities for the FFZ:AP modules.",
+
+		"website": "https://ffzap.com/"
+	}
+]

@@ -362,7 +362,7 @@ export default class MainMenu extends Module {
 								tok.default = def.default;
 						}
 
-						const terms = [
+						let terms = [
 							setting_key,
 							this.i18n.t(tok.i18n_key, tok.title, tok, true)
 						];
@@ -376,6 +376,9 @@ export default class MainMenu extends Module {
 							if ( have_locale && this.i18n.has(tok.desc_i18n_key) )
 								terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, tok));
 						}
+
+						if ( tok.getExtraTerms )
+							terms = terms.concat(tok.getExtraTerms());
 
 						tok.search_terms = terms.map(format_term).join('\n');
 
@@ -712,7 +715,7 @@ export default class MainMenu extends Module {
 			}
 
 
-		return {
+		const out = {
 			context,
 
 			query: '',
@@ -757,6 +760,8 @@ export default class MainMenu extends Module {
 			},
 
 			version: window.FrankerFaceZ.version_info,
-		}
+		};
+
+		return out;
 	}
 }
