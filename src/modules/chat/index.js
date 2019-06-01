@@ -587,11 +587,10 @@ export default class Chat extends Module {
 			default: false,
 			ui: {
 				component: 'setting-check-box',
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Viewer Cards >> Behavior',
 				title: 'Enable opening viewer cards by clicking mentions in chat.'
 			}
 		});
-
 
 		this.settings.add('chat.filtering.highlight-mentions', {
 			default: false,

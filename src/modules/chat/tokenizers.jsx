@@ -13,7 +13,7 @@ import {TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/const
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
 	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
-	MENTION_REGEX = /^(['"*([{<\\/]*)(@?)((?:[^\u0000-\u007F]|[\w-])+)/; // eslint-disable-line no-control-regex
+	MENTION_REGEX = /^(['"*([{<\\/]*)(@)((?:[^\u0000-\u007F]|[\w-])+)/; // eslint-disable-line no-control-regex
 
 
 // ============================================================================
@@ -222,18 +222,17 @@ export const Mentions = {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
-		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
+		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own');
 
-		let regex, login, display;
-		if ( user && user.login ) {
+		let regex, login, display, mentionable = false;
+		if ( user && user.login && ! can_highlight_user ) {
 			login = user.login.toLowerCase();
 			display = user.displayName && user.displayName.toLowerCase();
 			if ( display === login )
 				display = null;
 
+			mentionable = true;
 			regex = new RegExp(`^(['"*([{<\\/]*)(?:(@?)(${user.login.toLowerCase()}${display ? `|${display}` : ''})|@((?:[^\u0000-\u007F]|[\\w-])+))`, 'i');
-			//regex = new RegExp(`([^\\w@#%\\-+=:~]|\\b)?(@?(${user.login.toLowerCase()}${display ? `|${display}` : ''})|@([^\\u0000-\\u007F]+|\\w+)+)([^\\w.\\/@#%&()\\-+=:?~]|\\s|\\b|$)`, 'gi');
 		} else
 			regex = MENTION_REGEX;
 
@@ -268,7 +267,7 @@ export const Mentions = {
 
 					} else {
 						recipient = match[3];
-						mentioned = true;
+						mentioned = mentionable;
 					}
 
 					out.push({
