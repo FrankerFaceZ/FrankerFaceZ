@@ -23,7 +23,7 @@
 		</div>
 		<div v-else>
 			<div
-				v-for="addon in item.getAddons()"
+				v-for="addon in sorted_addons"
 				v-if="shouldShow(addon)"
 				:key="addon.id"
 				class="ffz--addon-info tw-elevation-1 tw-c-background-base tw-border tw-pd-1 tw-mg-b-1 tw-flex tw-flex-nowrap"
@@ -54,8 +54,8 @@
 								author: t(addon.author_i18n, addon.author)
 							}) }}
 						</span>
-						<span v-if="addon.version" class="tw-c-text-alt">
-							{{ t('addon.version', 'Version {version}', addon) }}
+						<span v-if="item.getVersion(addon.id)" class="tw-c-text-alt">
+							{{ t('addon.version', 'Version {version}', {version: item.getVersion(addon.id)}) }}
 						</span>
 					</div>
 					<markdown :source="t(addon.description_i18n, addon.description)" />
@@ -152,6 +152,26 @@ export default {
 			ready: this.item.isReady(),
 			reload: this.item.isReloadRequired(),
 			enabled
+		}
+	},
+
+	computed: {
+		sorted_addons() {
+			const addons = this.item.getAddons();
+
+			addons.sort((a, b) => {
+				if ( a.sort < b.sort ) return -1;
+				if ( b.sort < a.sort ) return 1;
+
+				const a_n = a.name.toLowerCase(),
+					b_n = b.name.toLowerCase();
+
+				if ( a_n < b_n ) return -1;
+				if ( b_n < a_n ) return 1;
+				return 0;
+			});
+
+			return addons;
 		}
 	},
 

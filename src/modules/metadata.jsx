@@ -243,6 +243,10 @@ export default class Metadata extends Module {
 		return Object.keys(this.definitions);
 	}
 
+	define(key, definition) {
+		this.definitions[key] = definition;
+		this.updateMetadata(key);
+	}
 
 	updateMetadata(keys) {
 		const bar = this.resolve('site.channel_bar');

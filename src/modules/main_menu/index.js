@@ -135,6 +135,9 @@ export default class MainMenu extends Module {
 	async onEnable() {
 		await this.site.awaitElement(Dialog.EXCLUSIVE);
 
+		this.on('addons:added', this.scheduleUpdate, this);
+		this.on('i18n:update', this.scheduleUpdate, this);
+
 		this.dialog.on('show', () => {
 			this.opened = true;
 			this.updateButtonUnseen();

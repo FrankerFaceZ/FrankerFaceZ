@@ -16,6 +16,10 @@ import {duration_to_string} from 'utilities/time';
 // ============================================================================
 
 export const DEFAULT_TYPES = {
+	tostring(val) {
+		return `${val}`
+	},
+
 	select(val, node, locale, out, ast, data) {
 		const sub_ast = node.o && (node.o[val] || node.o.other);
 		if ( ! sub_ast )

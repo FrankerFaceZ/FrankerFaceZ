@@ -7,15 +7,11 @@
 import Module from 'utilities/module';
 import { DEBUG, SERVER } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
-import { timeout } from 'utilities/object';
+import { timeout, has } from 'utilities/object';
 
-const fetchJSON = (...args) => fetch(...args).then(r => r.ok ? r.json() : null).catch(() => null);
-
-// We want to import this so that the file is included in the output.
-// We don't load using this because we might want a newer file from the
-// server. In the future, we'll be loading this from the API rather
-// than from a flat file.
-import ADDONS from 'file-loader?name=[name].[hash].[ext]!./addons.json'; // eslint-disable-line no-unused-vars
+const fetchJSON = (url, options) => {
+	return fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
+}
 
 // ============================================================================
 // AddonManager
@@ -27,12 +23,18 @@ export default class AddonManager extends Module {
 
 		this.should_enable = true;
 
+		this.inject('experiments');
 		this.inject('settings');
 		this.inject('i18n');
 
 		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = [];
+	}
+
+	async onEnable() {
+		if ( ! this.experiments.getAssignment('addons') )
+			return;
 
 		this.settings.addUI('add-ons', {
 			path: 'Add-Ons @{"description": "Add-Ons are additional modules, often written by other people, that can be loaded automatically by FrankerFaceZ to add new capabilities and behaviors to the extension and Twitch."}',
@@ -45,6 +47,7 @@ export default class AddonManager extends Module {
 			isReady: () => this.enabled,
 			getAddons: () => Object.values(this.addons),
 			hasAddon: id => this.hasAddon(id),
+			getVersion: id => this.getVersion(id),
 			isAddonEnabled: id => this.isAddonEnabled(id),
 			isAddonExternal: id => this.isAddonExternal(id),
 			enableAddon: id => this.enableAddon(id),
@@ -65,9 +68,7 @@ export default class AddonManager extends Module {
 				component: 'setting-check-box'
 			}
 		});
-	}
 
-	async onEnable() {
 		this.on('i18n:update', this.rebuildAddonSearch, this);
 
 		this.settings.provider.on('changed', this.onProviderChange, this);
@@ -106,7 +107,7 @@ export default class AddonManager extends Module {
 
 	async loadAddonData() {
 		const [cdn_data, local_data] = await Promise.all([
-			fetchJSON(DEBUG ? ADDONS : `${SERVER}/script/addons.json?_=${FrankerFaceZ.version_info}`),
+			fetchJSON(`${SERVER}/script/addons.json?_=${FrankerFaceZ.version_info}`),
 			this.settings.get('addons.dev.server') ?
 				fetchJSON(`https://localhost:8001/script/addons.json?_=${Date.now()}`) : null
 		]);
@@ -146,6 +147,8 @@ export default class AddonManager extends Module {
 			else
 				this.addons[id] = [addon.id];
 		}
+
+		this.emit(':added-addon');
 	}
 
 	rebuildAddonSearch() {
@@ -180,6 +183,22 @@ export default class AddonManager extends Module {
 
 	hasAddon(id) {
 		return this.getAddon(id) != null;
+	}
+
+	getVersion(id) {
+		const addon = this.getAddon(id);
+		if ( ! addon )
+			throw new Error(`Unknown add-on id: ${id}`);
+
+		const module = this.resolve(`addon.${id}`);
+		if ( module ) {
+			if ( has(module, 'version') )
+				return module.version;
+			else if ( module.constructor && has(module.constructor, 'version') )
+				return module.constructor.version;
+		}
+
+		return addon.version;
 	}
 
 	isAddonExternal(id) {
@@ -230,7 +249,7 @@ export default class AddonManager extends Module {
 		document.head.appendChild(createElement('script', {
 			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
-			src: `https://${addon.dev ? 'localhost:8000' : 'cdn.ffzap.com'}/script/addons/${addon.id}/script.js`,
+			src: addon.src || `https://${addon.dev ? 'localhost:8001' : SERVER}/script/addons/${addon.id}/script.js`,
 			crossorigin: 'anonymous'
 		}));
 
