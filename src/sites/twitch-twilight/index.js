@@ -161,7 +161,8 @@ Twilight.KNOWN_MODULES = {
 	cookie: n => n && n.set && n.get && n.getJSON && n.withConverter,
 	'extension-service': n => n.extensionService,
 	'chat-types': n => n.b && has(n.b, 'Message') && has(n.b, 'RoomMods'),
-	'gql-printer': n => n !== window && n.print
+	'gql-printer': n => n !== window && n.print,
+	mousetrap: n => n.bindGlobal && n.unbind && n.handleKey
 }
 
 

@@ -6,7 +6,7 @@
 
 import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
-import {has, deep_copy} from 'utilities/object';
+import {get, has, deep_copy} from 'utilities/object';
 
 import Dialog from 'utilities/dialog';
 
@@ -44,6 +44,7 @@ export default class MainMenu extends Module {
 		this.dialog = new Dialog(() => this.buildDialog());
 		this.has_update = false;
 		this.opened = false;
+		this.showing = false;
 
 		this.settings.addUI('profiles', {
 			path: 'Data Management @{"sort": 1000, "profile_warning": false} > Profiles @{"profile_warning": false}',
@@ -139,11 +140,13 @@ export default class MainMenu extends Module {
 		this.on('i18n:update', this.scheduleUpdate, this);
 
 		this.dialog.on('show', () => {
+			this.showing = true;
 			this.opened = true;
 			this.updateButtonUnseen();
 			this.emit('show')
 		});
 		this.dialog.on('hide', () => {
+			this.showing = false;
 			this.emit('hide');
 			this.destroyDialog();
 		});
@@ -160,6 +163,15 @@ export default class MainMenu extends Module {
 	onDisable() {
 		this.dialog.hide();
 		this.off('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
+	}
+
+
+	requestPage(page) {
+		const vue = get('_vue.$children.0', this);
+		if ( vue && vue.navigate )
+			vue.navigate(page);
+		else
+			this._wanted_page = page;
 	}
 
 
@@ -229,9 +241,11 @@ export default class MainMenu extends Module {
 
 		root.nav = tree;
 		root.nav_keys = tree.keys;
-		root.currentItem = tree.keys[key] || (this.has_update ?
+		root.currentItem = tree.keys[key] || (this._wanted_page && tree.keys[this._wanted_page]) || (this.has_update ?
 			tree.keys['home.changelog'] :
 			tree.keys['home']);
+
+		this._wanted_page = null;
 	}
 
 
@@ -706,8 +720,9 @@ export default class MainMenu extends Module {
 	getData() {
 		const settings = this.getSettingsTree(),
 			context = this.getContext(),
-			current = this.has_update ? settings.keys['home.changelog'] : settings.keys['home'];
+			current = (this._wanted_page && settings.keys[this._wanted_page]) || (this.has_update ? settings.keys['home.changelog'] : settings.keys['home']);
 
+		this._wanted_page = null;
 		this.markSeen(current);
 
 		let has_unseen = false;

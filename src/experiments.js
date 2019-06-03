@@ -7,6 +7,7 @@
 import {DEBUG, SERVER} from 'utilities/constants';
 import Module from 'utilities/module';
 import {has, deep_copy} from 'utilities/object';
+import { getBuster } from 'utilities/time';
 
 import Cookie from 'js-cookie';
 import SHA1 from 'crypto-js/sha1';
@@ -75,7 +76,7 @@ export default class ExperimentManager extends Module {
 		let data;
 
 		try {
-			data = await fetch(DEBUG ? EXPERIMENTS : `${SERVER}/script/experiments.json?_=${Date.now()}`).then(r =>
+			data = await fetch(DEBUG ? EXPERIMENTS : `${SERVER}/script/experiments.json?_=${getBuster()}`).then(r =>
 				r.ok ? r.json() : null);
 
 		} catch(err) {

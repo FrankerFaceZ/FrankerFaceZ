@@ -529,6 +529,11 @@ export default class ChatHook extends Module {
 					addUpdateHandler: inst.addUpdateHandler,
 					removeUpdateHandler: inst.removeUpdateHandler,
 					getMessages: inst.getMessages,
+					isPaused: inst.isPaused,
+					setPaused: inst.setPaused,
+					hasNewerLeft: inst.hasNewerLeft,
+					loadNewer: inst.loadNewer,
+					loadNewest: inst.loadNewest,
 					_ffz_inst: inst
 				});
 			}
@@ -656,6 +661,8 @@ export default class ChatHook extends Module {
 			return;
 
 		const t = this,
+			old_clear = cls.prototype.clear,
+			old_flush = cls.prototype.flushRawMessages,
 			old_mount = cls.prototype.componentDidMount;
 
 		cls.prototype._ffzInstall = function() {
@@ -862,28 +869,41 @@ export default class ChatHook extends Module {
 					last_msg.deletedCount = deleted_count;
 			}
 
+			inst.setPaused = function(paused) {
+				if ( inst.paused === paused )
+					return;
 
+				inst.paused = paused;
+				if ( ! paused ) {
+					inst.slidingWindowEnd = Math.min(inst.buffer.length, t.chat.context.get('chat.scrollback-length'));
+					if ( ! inst.props.isBackground )
+						inst.notifySubscribers();
+				}
+			}
 
-			inst.getMessages = function() {
-				const buf = inst.buffer,
-					size = t.chat.context.get('chat.scrollback-length'),
-					ct = t.chat_types || CHAT_TYPES,
-					target = buf.length - size;
+			inst.loadNewer = function() {
+				if ( ! inst.hasNewerLeft() )
+					return;
 
-				if ( target > 0 ) {
-					let removed = 0, last;
-					for(let i=0; i < target; i++)
-						if ( buf[i] && ! NULL_TYPES.includes(ct[buf[i].type]) ) {
-							removed++;
-							last = i;
-						}
+				const end = Math.min(inst.buffer.length, inst.slidingWindowEnd + 40),
+					start = Math.max(0, end - t.chat.context.get('chat.scrollback-length'));
 
-					inst.buffer = buf.slice(removed % 2 === 0 ? target : Math.max(target - 10, last));
-				} else
-					// Make a shallow copy of the array because other code expects it to change.
-					inst.buffer = buf.slice(0);
+				inst.clear(inst.buffer.length - start);
+				inst.slidingWindowEnd = end - start;
+				if ( ! inst.props.isBackground )
+					inst.notifySubscribers();
+			}
 
-				return inst.buffer;
+			inst.loadNewest = function() {
+				if ( ! inst.hasNewerLeft() )
+					return;
+
+				const max_size = t.chat.context.get('chat.scrollback-length');
+
+				inst.clear(max_size);
+				inst.slidingWindowEnd = Math.min(max_size, inst.buffer.length);
+				if ( ! inst.props.isBackground )
+					inst.notifySubscribers();
 			}
 		}
 
@@ -897,32 +917,96 @@ export default class ChatHook extends Module {
 			return old_mount.call(this);
 		}
 
-		cls.prototype.flushRawMessages = function() {
-			const out = [],
-				now = Date.now(),
-				raw_delay = t.chat.context.get('chat.delay'),
-				delay = raw_delay === -1 ? this.delayDuration : raw_delay,
-				first = now - delay,
-				see_deleted = this.shouldSeeBlockedAndDeletedMessages || this.props && this.props.shouldSeeBlockedAndDeletedMessages,
-				do_remove = t.chat.context.get('chat.filtering.remove-deleted');
+		cls.prototype.clear = function(count) {
+			try {
+				if ( count == null )
+					count = 0;
 
-			let changed = false;
+				const max_size = t.chat.context.get('chat.scrollback-length');
+				if ( ! this.isPaused() && count > max_size )
+					count = max_size;
 
-			for(const msg of this.delayedMessageBuffer) {
-				if ( msg.time <= first || ! msg.shouldDelay ) {
-					if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
-						continue;
+				if ( count <= 0 ) {
+					this.buffer = [];
+					this.delayedMessageBuffer = [];
+					this.paused = false;
 
-					this.buffer.push(msg.event);
-					changed = true;
+				} else {
+					const buffer = this.buffer,
+						ct = t.chat_types || CHAT_TYPES,
+						target = buffer.length - count;
 
-				} else
-					out.push(msg);
+					if ( target > 0 ) {
+						let removed = 0, last;
+						for(let i=0; i < target; i++)
+							if ( buffer[i] && ! NULL_TYPES.includes(ct[buffer[i].type]) ) {
+								removed++;
+								last = i;
+							}
+
+						this.buffer = buffer.slice(removed % 2 === 0 ? target : Math.max(target - 4, last));
+
+					} else
+						this.buffer = this.buffer.slice(0);
+
+					if ( this.paused && this.buffer.length >= 900 )
+						this.setPaused(false);
+				}
+			} catch(err) {
+				t.log.error('Error running clear', err);
+				return old_clear.call(this, count);
 			}
+		}
 
-			this.delayedMessageBuffer = out;
-			if ( changed && ! this.props.isBackground )
-				this.notifySubscribers();
+		cls.prototype.flushRawMessages = function() {
+			try {
+				const out = [],
+					now = Date.now(),
+					raw_delay = t.chat.context.get('chat.delay'),
+					delay = raw_delay === -1 ? this.delayDuration : raw_delay,
+					first = now - delay,
+					see_deleted = this.shouldSeeBlockedAndDeletedMessages || this.props && this.props.shouldSeeBlockedAndDeletedMessages,
+					has_newer = this.hasNewerLeft(),
+					paused = this.isPaused(),
+					max_size = t.chat.context.get('chat.scrollback-length'),
+					do_remove = t.chat.context.get('chat.filtering.remove-deleted');
+
+				let added = 0,
+					buffered = this.slidingWindowEnd,
+					changed = false;
+
+				for(const msg of this.delayedMessageBuffer) {
+					if ( msg.time <= first || ! msg.shouldDelay ) {
+						if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
+							continue;
+
+						this.buffer.push(msg.event);
+						changed = true;
+
+						if ( ! this.paused ) {
+							if ( this.buffer.length > max_size )
+								added++;
+							else
+								buffered++;
+						}
+
+					} else
+						out.push(msg);
+				}
+
+				this.delayedMessageBuffer = out;
+				if ( changed ) {
+					this.clear(Math.min(900, this.buffer.length - added));
+					if ( !(added === 0 && buffered === this.slidingWindowEnd && has_newer === this.hasNewerLeft() && paused === this.isPaused()) ) {
+						this.slidingWindowEnd = buffered;
+						if ( ! this.props.isBackground )
+							this.notifySubscribers();
+					}
+				}
+			} catch(err) {
+				t.log.error('Error running flush.', err);
+				return old_flush.call(this);
+			}
 		}
 	}
 

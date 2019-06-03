@@ -8,6 +8,7 @@ import Module from 'utilities/module';
 import { SERVER } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
 import { timeout, has } from 'utilities/object';
+import { getBuster } from 'utilities/time';
 
 const fetchJSON = (url, options) => {
 	return fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -23,7 +24,6 @@ export default class AddonManager extends Module {
 
 		this.should_enable = true;
 
-		this.inject('experiments');
 		this.inject('settings');
 		this.inject('i18n');
 
@@ -33,9 +33,6 @@ export default class AddonManager extends Module {
 	}
 
 	async onEnable() {
-		if ( ! this.experiments.getAssignment('addons') )
-			return;
-
 		this.settings.addUI('add-ons', {
 			path: 'Add-Ons @{"description": "Add-Ons are additional modules, often written by other people, that can be loaded automatically by FrankerFaceZ to add new capabilities and behaviors to the extension and Twitch."}',
 			component: 'addon-list',
@@ -107,9 +104,9 @@ export default class AddonManager extends Module {
 
 	async loadAddonData() {
 		const [cdn_data, local_data] = await Promise.all([
-			fetchJSON(`${SERVER}/script/addons.json?_=${FrankerFaceZ.version_info}`),
+			fetchJSON(`${SERVER}/script/addons.json?_=${getBuster(30)}`),
 			this.settings.get('addons.dev.server') ?
-				fetchJSON(`https://localhost:8001/script/addons.json?_=${Date.now()}`) : null
+				fetchJSON(`https://localhost:8001/script/addons.json?_=${getBuster()}`) : null
 		]);
 
 		if ( Array.isArray(cdn_data) )
@@ -251,7 +248,7 @@ export default class AddonManager extends Module {
 		document.head.appendChild(createElement('script', {
 			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
-			src: addon.src || `${addon.dev ? 'https://localhost:8001' : SERVER}/script/addons/${addon.id}/script.js`,
+			src: addon.src || `${addon.dev ? 'https://localhost:8001' : SERVER}/script/addons/${addon.id}/script.js?_=${getBuster(30)}`,
 			crossorigin: 'anonymous'
 		}));
 

@@ -4,10 +4,16 @@
 // Chat Scroller
 // ============================================================================
 
-import {createElement} from 'utilities/dom';
 import Twilight from 'site';
 import Module from 'utilities/module';
-import {IS_FIREFOX} from 'utilities/constants';
+
+const SCROLL_EVENTS = [
+	'touchmove',
+	'scroll',
+	'wheel',
+	'mousewheel',
+	'DOMMouseScroll'
+];
 
 export default class Scroller extends Module {
 	constructor(...args) {
@@ -29,7 +35,7 @@ export default class Scroller extends Module {
 			default: 0,
 			ui: {
 				path: 'Chat > Behavior >> Scrolling @{"description": "Please note that FrankerFaceZ is dependant on Twitch\'s own scrolling code working correctly. There are bugs with Twitch\'s scrolling code that have existed for more than six months. If you are using Firefox, Edge, or other non-Webkit browsers, expect to have issues."}',
-				title: 'Freeze Chat Scrolling',
+				title: 'Pause Chat Scrolling',
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
 				component: 'setting-select-box',
 				data: [
@@ -43,6 +49,33 @@ export default class Scroller extends Module {
 					{value: 7, title: 'Meta or Hover'},
 					{value: 8, title: 'Alt or Hover'},
 					{value: 9, title: 'Shift or Hover'}
+				]
+			}
+		});
+
+		this.settings.add('chat.scroller.freeze-requires-hover', {
+			default: true,
+			ui: {
+				path: 'Chat > Behavior >> Scrolling',
+				title: 'Require the mouse to be over chat to freeze with a hotkey.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.scroller.hover-delay', {
+			default: 750,
+			ui: {
+				path: 'Chat > Behavior >> Scrolling',
+				title: 'Hover Timeout',
+				description: 'Chat will only remain frozen due to mouse hovering for this long after the mouse stops moving.',
+				component: 'setting-combo-box',
+				data: [
+					{value: 250, title: '0.25 Seconds'},
+					{value: 500, title: '0.50 Seconds'},
+					{value: 750, title: '0.75 Seconds'},
+					{value: 1000, title: '1 Second'},
+					{value: 2500, title: '2.5 Seconds'},
+					{value: 5000, title: '5 Seconds'}
 				]
 			}
 		});
@@ -69,8 +102,10 @@ export default class Scroller extends Module {
 		const old_use = this.use_keys;
 		this.use_keys = false;
 		for(const act of this.chat.context.get('chat.actions.inline'))
-			if ( act && act.display && act.display.keys )
+			if ( act && act.display && act.display.keys ) {
 				this.use_keys = true;
+				break;
+			}
 
 		if ( this.use_keys !== old_use ) {
 			for(const inst of this.ChatScroller.instances)
@@ -78,37 +113,53 @@ export default class Scroller extends Module {
 		}
 	}
 
-	onEnable() {
-		this.on('i18n:update', () => {
-			for(const inst of this.ChatScroller.instances)
-				inst.ffzUpdateText();
-		});
-
-		this.freeze = this.chat.context.get('chat.scroller.freeze');
-		this.chat.context.on('changed:chat.scroller.freeze', val => {
-			this.freeze = val;
-
-			for(const inst of this.ChatScroller.instances) {
-				inst.ffzDisableFreeze();
-				if ( val !== 0 )
-					inst.ffzEnableFreeze();
-			}
-		});
+	async onEnable() {
+		this.on('i18n:update', () => this.ChatScroller.forceUpdate());
 
 		this.chat.context.on('changed:chat.actions.inline', this.updateUseKeys, this);
 		this.updateUseKeys();
 
-		this.smoothScroll = this.chat.context.get('chat.scroller.smooth-scroll');
+		this.pause_hover = this.chat.context.get('chat.scroller.freeze-requires-hover');
+		this.chat.context.on('changed:chat.scroller.freeze-requires-hover', val => {
+			this.pause_hover = val;
+
+			for(const inst of this.ChatScroller.instances)
+				inst.ffzMaybeUnpause();
+		})
+
+		this.pause_delay = this.chat.context.get('chat.scroller.hover-delay');
+		this.chat.context.on('changed:chat.scroller.hover-delay', val => {
+			this.pause_delay = val;
+
+			for(const inst of this.ChatScroller.instances)
+				inst.ffzMaybeUnpause();
+		})
+
+		this.pause = this.chat.context.get('chat.scroller.freeze');
+		this.chat.context.on('changed:chat.scroller.freeze', val => {
+			this.pause = val;
+
+			for(const inst of this.ChatScroller.instances)
+				inst.ffzMaybeUnpause();
+		});
+
+		this.smooth_scroll = this.chat.context.get('chat.scroller.smooth-scroll');
 		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
-			this.smoothScroll = val;
+			this.smooth_scroll = val;
 
 			for(const inst of this.ChatScroller.instances)
 				inst.ffzSetSmoothScroll(val);
 		});
 
+		const t = this,
+			React = await this.web_munch.findModule('react'),
+			createElement = React && React.createElement;
+
+		if ( ! createElement )
+			return t.log.warn(`Unable to get React.`);
+
 		this.ChatScroller.ready((cls, instances) => {
-			const t = this,
-				old_catch = cls.prototype.componentDidCatch,
+			const old_catch = cls.prototype.componentDidCatch,
 				old_render = cls.prototype.render;
 
 			// Try catching errors. With any luck, maybe we can
@@ -138,8 +189,6 @@ export default class Scroller extends Module {
 				if ( this.state.ffz_errors > 0 ) {
 					let timer;
 					const auto = this.state.ffz_total_errors < 10,
-						React = t.web_munch.getModule('react'),
-						createElement = React && React.createElement,
 						handler = () => {
 							clearTimeout(timer);
 							this.ffzZeroErrors();
@@ -165,104 +214,335 @@ export default class Scroller extends Module {
 					return old_render.call(this);
 			}
 
-			cls.prototype.ffzShouldBeFrozen = function(since) {
-				if ( since === undefined )
-					since = Date.now() - this.ffz_last_move;
+			cls.prototype.ffzInstallHandler = function() {
+				if ( this._ffz_installed )
+					return;
 
-				const f = t.freeze;
+				this._ffz_installed = true;
+				const inst = this;
 
-				return ! this.ffz_outside && (
-					(this.ffz_ctrl  && (f === 2 || f === 6)) ||
-					(this.ffz_meta  && (f === 3 || f === 7)) ||
-					(this.ffz_alt   && (f === 4 || f === 8)) ||
-					(this.ffz_shift && (f === 5 || f === 9)) ||
-					(since < 750    && (f === 1 || f > 5))
-				);
+				inst.ffz_oldScrollEvent = inst.handleScrollEvent;
+				inst.ffz_oldScroll = inst.scrollToBottom;
+
+				// New Scroll to Bottom
+				inst.ffz_doScroll = function() {
+					inst._ffz_scroll_frame = null;
+					if ( inst.state.isAutoScrolling && ! inst.state.isPaused ) {
+						if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll )
+							inst.smoothScrollBottom();
+						else {
+							inst._ffz_one_fast_scroll = false;
+							inst.ffz_oldScroll();
+						}
+					}
+				}
+
+				inst.scrollToBottom = function() {
+					if ( inst._ffz_scroll_frame || inst.state.isPaused )
+						return;
+
+					this._ffz_scroll_frame = requestAnimationFrame(inst.ffz_doScroll);
+				}
+
+				// New Scroll Event Handling
+				inst.handleScrollEvent = function(event) {
+					if ( ! inst.scroll || ! inst.scroll.scrollContent )
+						return;
+
+					// TODO: Check for mousedown?
+
+					if ( !(event.which > 0 || event.type === 'mousewheel' || event.type === 'wheel' || event.type === 'touchmove') )
+						return;
+
+					// How far are we scrolled up?
+					const scroller = inst.scroll.scrollContent,
+						offset = scroller.scrollHeight - scroller.scrollTop - scroller.offsetHeight;
+
+					// If we're less than 10 pixels from the bottom and we aren't autoscrolling, resume
+					if ( offset <= 10 && ! inst.state.isAutoScrolling )
+						inst.resume();
+
+					// If we are autoscrolling and we're more than 10 pixels up, then
+					// stop autoscrolling without setting paused.
+					else if ( inst.state.isAutoScrolling && offset > 10 ) {
+						// If we're paused, unpause.
+						if ( inst.state.isPaused ) {
+							inst.setState({
+								isPaused: false
+							}, () => {
+								if ( inst.props.setPaused )
+									inst.props.setPaused(false);
+							});
+
+							inst.setLoadMoreEnabled(true);
+						}
+
+						inst.setState({
+							isAutoScrolling: false
+						});
+					}
+				}
+
+				inst.pause = function() {
+					// If we already aren't scrolling, we don't want to further
+					// pause things.
+					if ( ! inst.state.isAutoScrolling )
+						return;
+
+					inst.setState({
+						isPaused: true
+					}, () => {
+						if ( inst.props.setPaused )
+							inst.props.setPaused(true);
+					});
+				}
+
+				const old_resume = inst.resume;
+
+				inst.ffzFastResume = function() {
+					inst._ffz_one_fast_scroll = true;
+					inst.resume();
+				}
+
+				inst.resume = function() {
+					clearInterval(inst._ffz_hover_timer);
+					inst._ffz_hover_timer = null;
+					old_resume.call(inst);
+				}
+
+				// Event Registration
+
+				const Mousetrap = t.web_munch.getModule('mousetrap') || window.Mousetrap;
+				if ( Mousetrap != null ) {
+					Mousetrap.unbind('alt', 'keydown');
+					Mousetrap.unbind('alt', 'keyup');
+				}
+
+				inst.ffzHandleKey = inst.ffzHandleKey.bind(inst);
+
+				Mousetrap.bindGlobal('alt', inst.ffzHandleKey, 'keydown');
+				Mousetrap.bindGlobal('alt', inst.ffzHandleKey, 'keyup');
+
+				Mousetrap.bindGlobal('shift', inst.ffzHandleKey, 'keydown');
+				Mousetrap.bindGlobal('shift', inst.ffzHandleKey, 'keyup');
+
+				Mousetrap.bindGlobal('ctrl', inst.ffzHandleKey, 'keydown');
+				Mousetrap.bindGlobal('ctrl', inst.ffzHandleKey, 'keyup');
+
+				Mousetrap.bindGlobal('command', inst.ffzHandleKey, 'keydown');
+				Mousetrap.bindGlobal('command', inst.ffzHandleKey, 'keyup');
+
+				inst.hoverPause = inst.ffzMouseMove.bind(inst);
+				inst.hoverResume = inst.ffzMouseLeave.bind(inst);
+
+				const node = t.fine.getChildNode(inst);
+				if ( node )
+					node.addEventListener('mousemove', inst.hoverPause);
+
+				const scroller = this.scroll && this.scroll.scrollContent;
+				if ( scroller ) {
+					for(const event of SCROLL_EVENTS) {
+						scroller.removeEventListener(event, inst.ffz_oldScrollEvent);
+						scroller.addEventListener(event, inst.handleScrollEvent);
+					}
+				}
+
+				// We need to refresh the element to make sure it's using the correct
+				// event handlers for mouse enter / leave.
+				inst.forceUpdate();
 			}
 
-			cls.prototype.ffzMaybeUnfreeze = function() {
-				if ( this.ffz_frozen )
-					requestAnimationFrame(() => {
-						if ( this.ffz_frozen && ! this.ffzShouldBeFrozen() )
-							this.ffzUnfreeze();
+			cls.prototype.ffzSetSmoothScroll = function(value) {
+				this.ffz_smooth_scroll = value;
+				this.ffzMaybeUnpause();
+			}
+
+			// Event Handling
+
+			cls.prototype.ffzReadKeysFromEvent = function(event) {
+				if ( event.altKey === this.ffz_alt &&
+						event.shiftKey === this.ffz_shift &&
+						event.ctrlKey === this.ffz_ctrl &&
+						event.metaKey === this.ffz_meta )
+					return false;
+
+				this.ffz_alt = event.altKey;
+				this.ffz_shift = event.shiftKey;
+				this.ffz_ctrl = event.ctrlKey;
+				this.ffz_meta = event.metaKey;
+				return true;
+			}
+
+			cls.prototype.ffzHandleKey = function(event) {
+				if ( ! this.ffzReadKeysFromEvent(event) )
+					return;
+
+				this.ffzUpdateKeyTags();
+
+				if ( (t.pause_hover && this.ffz_outside) || t.pause < 2 )
+					return;
+
+				const should_pause = this.ffzShouldBePaused(),
+					changed = should_pause !== this.state.isPaused;
+
+				if ( changed )
+					if ( should_pause ) {
+						this.pause();
+						this.setLoadMoreEnabled(false);
+					} else
+						this.resume();
+			}
+
+			cls.prototype.ffzInstallHoverTimer = function() {
+				if ( this._ffz_hover_timer )
+					return;
+
+				this._ffz_hover_timer = setInterval(() => {
+					if ( this.state.isPaused && this.ffzShouldBePaused() )
+						return;
+
+					this.ffzMaybeUnpause();
+				}, 50);
+			}
+
+			cls.prototype.ffzMouseMove = function(event) {
+				this.ffz_last_move = Date.now();
+				const was_outside = this.ffz_outside;
+				this.ffz_outside = false;
+
+				if ( this._ffz_outside_timer ) {
+					clearTimeout(this._ffz_outside_timer);
+					this._ffz_outside_timer = null;
+				}
+
+				const keys_updated = this.ffzReadKeysFromEvent(event);
+
+				// If nothing changed, stop processing.
+				if ( ! keys_updated && event.screenX === this.ffz_sx && event.screenY === this.ffz_sy ) {
+					if ( was_outside )
+						this.ffzUpdateKeyTags();
+
+					return;
+				}
+
+				this.ffz_sx = event.screenX;
+				this.ffz_sy = event.screenY;
+
+				if ( keys_updated || was_outside )
+					this.ffzUpdateKeyTags();
+
+				const should_pause = this.ffzShouldBePaused(),
+					changed = should_pause !== this.state.isPaused;
+
+				if ( changed )
+					if ( should_pause ) {
+						this.pause();
+						this.ffzInstallHoverTimer();
+						this.setLoadMoreEnabled(false);
+
+					} else
+						this.resume();
+			}
+
+			cls.prototype.ffzMouseLeave = function() {
+				this.ffz_outside = true;
+				if ( this._ffz_outside_timer )
+					clearTimeout(this._ffz_outside_timer);
+
+				this._ffz_outside_timer = setTimeout(() => this.ffzMaybeUnpause(), 64);
+				this.ffzUpdateKeyTags();
+			}
+
+
+			// Keyboard Stuff
+
+			cls.prototype.ffzUpdateKeyTags = function() {
+				if ( ! this._ffz_key_frame )
+					this._ffz_key_frame = requestAnimationFrame(() => this.ffz_updateKeyTags());
+			}
+
+			cls.prototype.ffz_updateKeyTags = function() {
+				this._ffz_key_frame = null;
+
+				if ( ! t.use_keys && this.ffz_use_keys === t.use_keys )
+					return;
+
+				if ( ! this.scroll || ! this.scroll.root )
+					return;
+
+				this.ffz_use_keys = t.use_keys;
+				this.scroll.root.classList.toggle('ffz--keys', t.use_keys);
+
+				const ds = this.scroll.root.dataset;
+
+				if ( ! t.use_keys ) {
+					delete ds.alt;
+					delete ds.ctrl;
+					delete ds.shift;
+					delete ds.meta;
+
+				} else {
+					ds.alt = ! this.ffz_outside && this.ffz_alt;
+					ds.ctrl = ! this.ffz_outside && this.ffz_ctrl;
+					ds.shift = ! this.ffz_outside && this.ffz_shift;
+					ds.meta = ! this.ffz_outside && this.ffz_meta;
+				}
+			}
+
+
+			// Pause Stuff
+
+			cls.prototype.ffzShouldBePaused = function(since) {
+				if ( since == null )
+					since = Date.now() - this.ffz_last_move;
+
+				const mode = t.pause,
+					require_hover = t.pause_hover;
+
+				return (! require_hover || ! this.ffz_outside) && this.state.isAutoScrolling && (
+					(this.ffz_ctrl  && (mode === 2 || mode === 6)) ||
+					(this.ffz_meta  && (mode === 3 || mode === 7)) ||
+					(this.ffz_alt   && (mode === 4 || mode === 8)) ||
+					(this.ffz_shift && (mode === 5 || mode === 9)) ||
+					(! this.ffz_outside && since < t.pause_delay && (mode === 1 || mode > 5))
+				);
+
+			}
+
+			cls.prototype.ffzMaybeUnpause = function() {
+				if ( this.state.isPaused && ! this._ffz_unpause_frame )
+					this._ffz_unpause_frame = requestAnimationFrame(() => {
+						this._ffz_unpause_frame = null;
+						if ( this.state.isPaused && ! this.ffzShouldBePaused() )
+							this.resume();
 					});
 			}
 
-			cls.prototype.ffzUpdateText = function() {
-				if ( ! this._ffz_freeze_indicator )
-					return;
+			cls.prototype.listFooter = function() {
+				let msg;
+				if ( this.state.isPaused ) {
+					const f = t.pause,
+						reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
+							f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
+								f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
+									f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
+										f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
+											f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
+												f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
+													f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
+														t.i18n.t('key.mouse', 'Mouse Movement');
 
-				const f = t.freeze,
-					reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
-						f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
-							f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
-								f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
-									f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
-										f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
-											f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
-												f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
-													t.i18n.t('key.mouse', 'Mouse Movement');
+					msg = t.i18n.t('chat.paused', '(Chat Paused Due to {reason})', {reason});
 
-				this._ffz_freeze_indicator.firstElementChild.textContent = t.i18n.t(
-					'chat.paused',
-					'(Chat Paused Due to {reason})',
-					{reason}
-				);
-			}
+				} else if ( this.state.isAutoScrolling )
+					return null;
+				else
+					msg = t.i18n.t('chat.messages-below', 'More messages below.');
 
-			cls.prototype.ffzShowFrozen = function() {
-				this._ffz_freeze_visible = true;
-				let el = this._ffz_freeze_indicator;
-				if ( ! el ) {
-					const node = t.fine.getChildNode(this);
-					if ( ! node )
-						return;
-
-					node.classList.add('tw-full-height');
-
-					el = this._ffz_freeze_indicator = createElement('div', {
-						className: 'ffz--freeze-indicator chat-list__more-messages-placeholder tw-relative tw-mg-x-2'
-					}, createElement('div', {
-						className: 'chat-list__more-messages tw-bottom-0 tw-full-width tw-align-items-center tw-flex tw-justify-content-center tw-absolute tw-pd-05'
-					}));
-
-					this.ffzUpdateText();
-					node.appendChild(el);
-
-				} else
-					el.classList.remove('tw-hide');
-			}
-
-			cls.prototype.ffzHideFrozen = function() {
-				this._ffz_freeze_visible = false;
-				if ( this._ffz_freeze_indicator )
-					this._ffz_freeze_indicator.classList.add('tw-hide');
-			}
-
-			cls.prototype.ffzFreeze = function() {
-				if ( ! this._ffz_interval )
-					this._ffz_interval = setInterval(() => {
-						if ( ! this.ffzShouldBeFrozen() )
-							this.ffzMaybeUnfreeze();
-					}, 200);
-
-				this.ffz_frozen = true;
-				this.setState({ffzFrozen: true});
-				//this.ffzShowFrozen();
-			}
-
-			cls.prototype.ffzUnfreeze = function() {
-				if ( this._ffz_interval ) {
-					clearInterval(this._ffz_interval);
-					this._ffz_interval = null;
-				}
-
-				this.ffz_frozen = false;
-				this.setState({ffzFrozen: false});
-				if ( this.state.isAutoScrolling )
-					this.scrollToBottom();
-
-				//this.ffzHideFrozen();
+				return createElement('div', {
+					className: 'chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05',
+					onClick: this.ffzFastResume
+				}, createElement('div', null, msg));
 			}
 
 			cls.prototype.smoothScrollBottom = function() {
@@ -294,7 +574,7 @@ export default class Scroller extends Module {
 				}
 
 				const smoothAnimation = () => {
-					if ( this.state.ffzFrozen || ! this.state.isAutoScrolling )
+					if ( this.state.isPaused || ! this.state.isAutoScrolling )
 						return this.ffz_is_smooth_scrolling = false;
 
 					// See how much time has passed to get a step based off the delta
@@ -328,238 +608,7 @@ export default class Scroller extends Module {
 				smoothAnimation();
 			}
 
-
-			cls.prototype.ffzInstallHandler = function() {
-				if ( this._ffz_handleScroll )
-					return;
-
-				const t = this;
-
-				this._doScroll = function() {
-					if ( ! t.ffz_freeze_enabled || ! t.state.ffzFrozen ) {
-						if ( t.ffz_smooth_scroll )
-							t.smoothScrollBottom();
-						else
-							t._old_scroll();
-					}
-				}
-
-				this._old_scroll = this.scrollToBottom;
-				this.scrollToBottom = function() {
-					if ( this._ffz_animation )
-						cancelAnimationFrame(this._ffz_animation);
-
-					this._ffz_animation = requestAnimationFrame(t._doScroll);
-				}
-
-				this._ffz_handleScroll = this.handleScrollEvent;
-				this.handleScrollEvent = function(e) {
-					// If we're frozen because of FFZ, do not allow a mouse click to update
-					// the auto-scrolling state. That just gets annoying.
-					if ( e.type === 'mousedown' && t.ffz_frozen )
-						return;
-
-					if ( t.scroll && e.type === 'touchmove' ) {
-						t.scroll.scrollContent.scrollHeight - t.scroll.scrollContent.scrollTop - t.scroll.scrollContent.offsetHeight <= 10 ? t.setState({
-							isAutoScrolling: !0
-						}) : t.setState({
-							isAutoScrolling: !1
-						})
-					}
-
-					return t._ffz_handleScroll(e);
-				}
-
-				const scroller = this.scroll && this.scroll.scrollContent;
-				if ( scroller ) {
-					scroller.removeEventListener('mousedown', this._ffz_handleScroll);
-					scroller.addEventListener('mousedown', this.handleScrollEvent);
-					scroller.addEventListener('touchmove', this.handleScrollEvent);
-				}
-			}
-
-
-			cls.prototype.ffzEnableFreeze = function() {
-				const node = t.fine.getChildNode(this);
-				if ( ! node || this.ffz_freeze_enabled )
-					return;
-
-				this.ffz_freeze_enabled = true;
-
-				if ( t.freeze > 1 ) {
-					document.body.addEventListener('keydown',
-						this._ffz_key = this.ffzKey.bind(this));
-
-					document.body.addEventListener('keyup', this._ffz_key);
-				}
-
-				node.addEventListener('mousemove',
-					this._ffz_mousemove = this.ffzMouseMove.bind(this));
-
-				node.addEventListener('mouseleave',
-					this._ffz_mouseleave = this.ffzMouseLeave.bind(this));
-			}
-
-
-			cls.prototype.ffzDisableFreeze = function() {
-				this.ffz_freeze_enabled = false;
-
-				if ( this.ffz_frozen )
-					this.ffzUnfreeze();
-
-				if ( this._ffz_outside ) {
-					clearTimeout(this._ffz_outside);
-					this._ffz_outside = null;
-				}
-
-				const node = t.fine.getChildNode(this);
-				if ( ! node )
-					return;
-
-				this._ffz_freeze_visible = false;
-
-				if ( this._ffz_freeze_indicator ) {
-					this._ffz_freeze_indicator.remove();
-					this._ffz_freeze_indicator = null;
-				}
-
-				if ( this._ffz_key ) {
-					document.body.removeEventListener('keyup', this._ffz_key);
-					document.body.removeEventListener('keydown', this._ffz_key);
-					this._ffz_key = null;
-				}
-
-				if ( this._ffz_mousemove ) {
-					node.removeEventListener('mousemove', this._ffz_mousemove);
-					this._ffz_mousemove = null;
-				}
-
-				if ( this._ffz_mouseleave ) {
-					node.removeEventListener('mouseleave', this._ffz_mouseleave);
-					this._ffz_mouseleave = null;
-				}
-			}
-
-
-			cls.prototype.ffzKey = function(e) {
-				if (e.altKey === this.ffz_alt &&
-						e.shiftKey === this.ffz_shift &&
-						e.ctrlKey === this.ffz_ctrl &&
-						e.metaKey === this.ffz_meta)
-					return;
-
-				this.ffz_alt = e.altKey;
-				this.ffz_shift = e.shiftKey;
-				this.ffz_ctrl = e.ctrlKey;
-				this.ffz_meta = e.metaKey;
-
-				this.ffzUpdateKeys();
-
-				if ( this.ffz_outside || t.freeze < 2 )
-					return;
-
-				const should_freeze = this.ffzShouldBeFrozen(),
-					changed = should_freeze !== this.ffz_frozen;
-
-				if ( changed )
-					if ( should_freeze )
-						this.ffzFreeze();
-					else
-						this.ffzUnfreeze();
-			}
-
-
-			cls.prototype.ffzUpdateKeys = function() {
-				if ( ! this._ffz_key_update )
-					this._ffz_key_update = requestAnimationFrame(() => this.ffz_updateKeys());
-			}
-
-			cls.prototype.ffz_updateKeys = function() {
-				cancelAnimationFrame(this._ffz_key_update);
-				this._ffz_key_update = null;
-
-				if ( ! t.use_keys && this.ffz_use_keys === t.use_keys )
-					return;
-
-				if ( ! this.scroll || ! this.scroll.root )
-					return;
-
-				this.ffz_use_keys = t.use_keys;
-				this.scroll.root.classList.toggle('ffz--keys', t.use_keys);
-
-				const ds = this.scroll.root.dataset;
-
-				if ( ! t.use_keys ) {
-					delete ds.alt;
-					delete ds.ctrl;
-					delete ds.shift;
-					delete ds.meta;
-
-				} else {
-					ds.alt = ! this.ffz_outside && this.ffz_alt;
-					ds.ctrl = ! this.ffz_outside && this.ffz_ctrl;
-					ds.shift = ! this.ffz_outside && this.ffz_shift;
-					ds.meta = ! this.ffz_outside && this.ffz_meta;
-				}
-			}
-
-			cls.prototype.ffzMouseMove = function(e) {
-				this.ffz_last_move = Date.now();
-				const was_outside = this.ffz_outside;
-				this.ffz_outside = false;
-				if ( this._ffz_outside ) {
-					clearTimeout(this._ffz_outside);
-					this._ffz_outside = null;
-				}
-
-				// If nothing of interest has happened, stop.
-				if (e.altKey === this.ffz_alt &&
-						e.shiftKey === this.ffz_shift &&
-						e.ctrlKey === this.ffz_ctrl &&
-						e.metaKey === this.ffz_meta &&
-						e.screenY === this.ffz_sy &&
-						e.screenX === this.ffz_sx) {
-
-					if ( was_outside )
-						this.ffzUpdateKeys();
-
-					return;
-				}
-
-				this.ffz_alt = e.altKey;
-				this.ffz_shift = e.shiftKey;
-				this.ffz_ctrl = e.ctrlKey;
-				this.ffz_meta = e.metaKey;
-				this.ffz_sy = e.screenY;
-				this.ffz_sx = e.screenX;
-
-				this.ffzUpdateKeys();
-
-				const should_freeze = this.ffzShouldBeFrozen(),
-					changed = should_freeze !== this.ffz_frozen;
-
-				if ( changed )
-					if ( should_freeze )
-						this.ffzFreeze();
-					else
-						this.ffzUnfreeze();
-			}
-
-
-			cls.prototype.ffzMouseLeave = function() {
-				this.ffz_outside = true;
-				if ( this._ffz_outside )
-					clearTimeout(this._ffz_outside);
-
-				this._ffz_outside = setTimeout(() => this.ffzMaybeUnfreeze(), 64);
-				this.ffzUpdateKeys();
-			}
-
-
-			cls.prototype.ffzSetSmoothScroll = function(value) {
-				this.ffz_smooth_scroll = value;
-			}
-
+			// Do the thing~
 
 			for(const inst of instances)
 				this.onMount(inst);
@@ -567,31 +616,26 @@ export default class Scroller extends Module {
 
 		this.ChatScroller.on('mount', this.onMount, this);
 		this.ChatScroller.on('unmount', this.onUnmount, this);
-
-		this.ChatScroller.on('update', inst => {
-			const should_show = inst.ffz_freeze_enabled && inst.state.ffzFrozen && inst.state.isAutoScrolling,
-				changed = should_show !== inst._ffz_freeze_visible;
-
-			if ( changed )
-				if ( should_show )
-					inst.ffzShowFrozen();
-				else
-					inst.ffzHideFrozen();
-		});
-
 	}
 
 
 	onMount(inst) {
+		inst.ffzSetSmoothScroll(this.smooth_scroll);
 		inst.ffzInstallHandler();
-
-		if ( this.freeze !== 0 )
-			inst.ffzEnableFreeze();
-
-		inst.ffzSetSmoothScroll(this.smoothScroll);
 	}
 
-	onUnmount(inst) { // eslint-disable-line class-methods-use-this
-		inst.ffzDisableFreeze();
+	onUnmount() { // eslint-disable-line class-methods-use-this
+		const Mousetrap = this.web_munch.getModule('mousetrap') || window.Mousetrap;
+		if ( Mousetrap != null ) {
+			Mousetrap.unbind('alt', 'keydown');
+			Mousetrap.unbind('alt', 'keyup');
+			Mousetrap.unbind('shift', 'keydown');
+			Mousetrap.unbind('shift', 'keyup');
+			Mousetrap.unbind('ctrl', 'keydown');
+			Mousetrap.unbind('ctrl', 'keyup');
+			Mousetrap.unbind('command', 'keydown');
+			Mousetrap.unbind('command', 'keyup');
+		}
+
 	}
 }

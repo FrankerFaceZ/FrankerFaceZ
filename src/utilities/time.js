@@ -1,5 +1,10 @@
 'use strict';
 
+export function getBuster(resolution = 5) {
+	const now = Math.floor(Date.now() / 1000);
+	return now - (now % resolution);
+}
+
 export function duration_to_string(elapsed, separate_days, days_only, no_hours, no_seconds) {
 	const seconds = elapsed % 60;
 	let minutes = Math.floor(elapsed / 60),

@@ -1,12 +1,4 @@
 {
-	"addons": {
-		"name": "Add-Ons Loader",
-		"description": "Enable the new Add-Ons system in development.",
-		"groups": [
-			{"value": true, "weight": 0},
-			{"value": false, "weight": 100}
-		]
-	},
 	"api_load": {
 		"name": "New API Stress Testing",
 		"description": "Send duplicate requests to the new API server for load testing.",

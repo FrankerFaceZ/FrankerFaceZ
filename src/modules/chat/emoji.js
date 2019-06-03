@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 import {SERVER} from 'utilities/constants';
 import {has} from 'utilities/object';
+import { getBuster } from 'utilities/time';
 
 import splitter from 'emoji-regex/es2015/index';
 
@@ -74,7 +75,7 @@ export default class Emoji extends Module {
 	async loadEmojiData(tries = 0) {
 		let data;
 		try {
-			data = await fetch(`${SERVER}/script/emoji/v2-.json?_${Date.now()}`).then(r =>
+			data = await fetch(`${SERVER}/script/emoji/v2-.json?_${getBuster(60)}`).then(r =>
 				r.ok ? r.json() : null
 			);
 
