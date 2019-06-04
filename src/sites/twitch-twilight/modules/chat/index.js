@@ -951,8 +951,8 @@ export default class ChatHook extends Module {
 
 						// When we remove less then expected, we want to keep track
 						// of that so we can return the extra messages from getMessages.
-						this.ffz_extra = target - last;
 						this.buffer = buffer.slice(removed % 2 !== 0 ? Math.max(target - 4, last) : target);
+						this.ffz_extra = buffer.length - count;
 
 					} else {
 						this.ffz_extra = 0;
