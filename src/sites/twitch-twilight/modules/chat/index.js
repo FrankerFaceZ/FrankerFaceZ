@@ -905,6 +905,10 @@ export default class ChatHook extends Module {
 				if ( ! inst.props.isBackground )
 					inst.notifySubscribers();
 			}
+
+			inst.getMessages = function() {
+				return inst.buffer.slice(0, inst.slidingWindowEnd + (inst.ffz_extra || 0));
+			}
 		}
 
 		cls.prototype.componentDidMount = function() {
@@ -927,6 +931,7 @@ export default class ChatHook extends Module {
 					count = max_size;
 
 				if ( count <= 0 ) {
+					this.ffz_extra = 0;
 					this.buffer = [];
 					this.delayedMessageBuffer = [];
 					this.paused = false;
@@ -944,10 +949,15 @@ export default class ChatHook extends Module {
 								last = i;
 							}
 
-						this.buffer = buffer.slice(removed % 2 === 0 ? target : Math.max(target - 4, last));
+						// When we remove less then expected, we want to keep track
+						// of that so we can return the extra messages from getMessages.
+						this.ffz_extra = target - last;
+						this.buffer = buffer.slice(removed % 2 !== 0 ? Math.max(target - 4, last) : target);
 
-					} else
+					} else {
+						this.ffz_extra = 0;
 						this.buffer = this.buffer.slice(0);
+					}
 
 					if ( this.paused && this.buffer.length >= 900 )
 						this.setPaused(false);
