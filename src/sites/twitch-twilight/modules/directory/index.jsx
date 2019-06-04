@@ -385,7 +385,7 @@ export default class Directory extends SiteModule {
 		const container = this.fine.getChildNode(inst),
 			card = container && container.querySelector && container.querySelector('.preview-card-overlay'),
 			setting = this.settings.get('directory.uptime'),
-			created_at = get(created_path, inst),
+			created_at = inst.props && inst.props.createdAt || get(created_path, inst),
 			up_since = created_at && new Date(created_at),
 			uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
 
