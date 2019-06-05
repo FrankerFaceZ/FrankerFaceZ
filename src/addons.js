@@ -82,6 +82,21 @@ export default class AddonManager extends Module {
 		this.emit(':ready');
 	}
 
+	generateLog() {
+		const out = ['Known'];
+		for(const [id, addon] of Object.entries(this.addons))
+			out.push(`${id} | ${this.isAddonEnabled(id) ? 'enabled' : 'disabled'} | ${addon.dev ? 'dev | ' : ''}${this.isAddonExternal(id) ? 'external | ' : ''}${addon.short_name} v${addon.version}`);
+
+		out.push('');
+		out.push('Modules');
+		for(const [key, module] of Object.entries(this.__modules)) {
+			if ( module )
+				out.push(`${module.loaded ? 'loaded  ' : module.loading ? 'loading ' : 'unloaded'} | ${module.enabled ? 'enabled ' : module.enabling ? 'enabling' : 'disabled'} | ${key}`)
+		}
+
+		return out.join('\n');
+	}
+
 	onProviderChange(key, value) {
 		if ( key != 'addons.enabled' )
 			return;

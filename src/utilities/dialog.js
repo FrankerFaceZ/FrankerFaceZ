@@ -8,21 +8,29 @@ import {EventEmitter} from 'utilities/events';
 
 import Site from 'site';
 
-
-export default class Dialog extends EventEmitter {
-	constructor(element) {
+export class Dialog extends EventEmitter {
+	constructor(element, options = {}) {
 		super();
 
+		this.selectors = {
+			exclusive: Dialog.EXCLUSIVE,
+			maximized: Dialog.MAXIMIZED,
+			normal: Dialog.SELECTOR
+		};
+
+		if ( options.selectors )
+			this.selectors = Object.assign(this.selectors, options.selectors);
+
+		this._maximized = options.maximized || false;
+		this._exclusive = options.exclusive || false;
+
 		this._element = null;
+		this._visible = false;
 
 		if ( typeof element === 'function' )
 			this.factory = element;
 		else
 			this.element = element;
-
-		this._visible = false;
-		this._maximized = false;
-		this._exclusive = false;
 	}
 
 	// ========================================================================
@@ -40,6 +48,8 @@ export default class Dialog extends EventEmitter {
 
 		if ( this._visible )
 			this.toggleSize();
+		else
+			this._maximized = val;
 	}
 
 	get visible() {
@@ -102,9 +112,9 @@ export default class Dialog extends EventEmitter {
 
 	getContainer() {
 		return document.querySelector(
-			this._exclusive ? Dialog.EXCLUSIVE :
-				this._maximized ? Dialog.MAXIMIZED :
-					Dialog.SELECTOR
+			this._exclusive ? this.selectors.exclusive :
+				this._maximized ? this.selectors.maximized :
+					this.selectors.normal
 		);
 	}
 
@@ -189,3 +199,6 @@ Dialog.lastZ = 99999999;
 Dialog.EXCLUSIVE = Site.DIALOG_EXCLUSIVE;
 Dialog.MAXIMIZED = Site.DIALOG_MAXIMIZED;
 Dialog.SELECTOR = Site.DIALOG_SELECTOR;
+
+
+export default Dialog;

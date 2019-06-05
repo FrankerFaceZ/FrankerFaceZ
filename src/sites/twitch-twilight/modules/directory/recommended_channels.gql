@@ -1,11 +1,9 @@
 query RecommendedChannels {
-	currentUser {
-		recommendations {
-			liveRecommendations {
-				nodes {
-					createdAt
-					type
-				}
+	recommendedStreams {
+		edges {
+			node {
+				createdAt
+				type
 			}
 		}
 	}
