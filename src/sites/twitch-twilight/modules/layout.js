@@ -5,6 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import {has} from 'utilities/object';
 
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 const MINIMAL_ROUTES = ['popout', 'embed-chat'];
@@ -22,6 +23,11 @@ export default class Layout extends Module {
 		this.RightColumn = this.fine.define(
 			'tw-rightcolumn',
 			n => n.hideOnBreakpoint && n.handleToggleVisibility
+		);
+
+		this.PopularChannels = this.fine.define(
+			'nav-popular',
+			n => n.getPopularChannels && n.props && has(n.props, 'locale')
 		);
 
 		this.settings.add('layout.portrait', {
@@ -146,6 +152,14 @@ export default class Layout extends Module {
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
 		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
 
+		this.PopularChannels.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updatePopular(inst);
+		});
+
+		this.PopularChannels.on('mount', this.updatePopular, this);
+		this.PopularChannels.on('update', this.updatePopular, this);
+
 		const t = this;
 		this.RightColumn.ready((cls, instances) => {
 			cls.prototype.ffzHideOnBreakpoint = function() {
@@ -194,6 +208,12 @@ export default class Layout extends Module {
 
 	get is_minimal() {
 		return this.settings.get('layout.is-minimal')
+	}
+
+	updatePopular(inst) {
+		const node = this.fine.getChildNode(inst);
+		if ( node )
+			node.classList.add('ffz--popular-channels');
 	}
 
 	updatePortraitMode() {
