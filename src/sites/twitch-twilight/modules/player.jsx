@@ -254,7 +254,7 @@ export default class Player extends Module {
 		this.settings.add('player.hide-event-bar', {
 			default: false,
 			ui: {
-				path: 'Player > General >> General',
+				path: 'Channel > General >> General',
 				title: 'Hide the Event Bar',
 				description: 'Hide the Event Bar which appears above the player when there is an ongoing event for the current channel.',
 				component: 'setting-check-box'
@@ -268,7 +268,7 @@ export default class Player extends Module {
 		this.settings.add('player.hide-rerun-bar', {
 			default: false,
 			ui: {
-				path: 'Player > General >> General',
+				path: 'Channel > General >> General',
 				title: 'Hide the Rerun Bar',
 				description: 'Hide the Rerun Bar which appears above the player when the current channel is playing a video rather than live content.',
 				component: 'setting-check-box'
@@ -282,7 +282,7 @@ export default class Player extends Module {
 		this.settings.add('player.hide-squad-banner', {
 			default: false,
 			ui: {
-				path: 'Player > General >> General',
+				path: 'Channel > General >> General',
 				title: 'Hide the Squad Streaming Bar',
 				component: 'setting-check-box'
 			},
