@@ -99,6 +99,16 @@ export class Vue extends Module {
 
 		vue.mixin({
 			methods: {
+				reactNavigate(url, event) {
+					const router = t.resolve('site.router');
+					if ( router && router.history ) {
+						if ( event ) {
+							event.preventDefault();
+							event.stopPropagation();
+						}
+						router.history.push(url);
+					}
+				},
 				t(key, phrase, options) {
 					return this.$i18n.t_(key, phrase, options);
 				},

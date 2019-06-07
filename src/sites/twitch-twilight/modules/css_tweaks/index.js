@@ -11,11 +11,11 @@ import {has} from 'utilities/object';
 const CLASSES = {
 	'top-discover': '.top-nav__nav-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
-	'side-rec-channels': '.side-nav .recommended-channels',
+	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .ffz--popular-channels',
 	'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
-	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
+	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .ffz--popular-channels',
 	'side-offline-channels': '.side-nav-card__link[href*="/videos/"]',
 
 	'prime-offers': '.top-nav__prime',
@@ -77,7 +77,7 @@ export default class CSSTweaks extends Module {
 			default: 1,
 			ui: {
 				path: 'Appearance > Layout >> Side Navigation',
-				title: 'Display Recommended Channels',
+				title: 'Display Recommended / Popular Channels',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Never'},

@@ -33,21 +33,38 @@ export default class Switchboard extends Module {
 	}
 
 
+	awaitRoute(count = 0) {
+		const route = this.fine.searchTree(null,
+			n => n.props && n.props.component && n.props.path,
+			100);
+
+		if ( route )
+			return Promise.resolve(route);
+
+		if ( count > 50 )
+			return Promise.resolve(null);
+
+		return new Promise(r => setTimeout(r, 50)).then(() => this.awaitRoute(count + 1));
+	}
+
+
 	async onEnable() {
 		await this.parent.awaitElement('.twilight-minimal-root,.twilight-root,#root>div');
 		if ( this.web_munch._require || this.web_munch.v4 === false )
 			return;
 
-		const router = await this.awaitRouter(),
-			da_switch = router && this.fine.searchTree(router, n => n.context && n.context.router && n.props && n.props.children && n.componentWillMount && n.componentWillMount.toString().includes('Switch'));
+		// Find the current route.
+		const route = await this.awaitRoute(),
+			da_switch = route && this.fine.searchParent(route, n => n.props && n.props.children);
 
 		if ( ! da_switch )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
 
 		// Identify Router
-		this.log.info(`Found Router and Switch with ${da_switch.props.children.length} routes.`);
+		const router = await this.awaitRouter();
 
-		const location = da_switch.context.router.route.location.pathname;
+		this.log.info(`Found Route and Switch with ${da_switch.props.children.length} routes.`);
+		const location = router.props.location.pathname;
 
 		for(const route of da_switch.props.children) {
 			if ( ! route.props || ! route.props.component )

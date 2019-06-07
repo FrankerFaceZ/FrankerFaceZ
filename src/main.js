@@ -151,7 +151,7 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 2, revision: 3,
+	major: 4, minor: 2, revision: 6,
 	commit: __git_commit__,
 	build: __webpack_hash__,
 	toString: () =>
@@ -161,12 +161,15 @@ const VER = FrankerFaceZ.version_info = {
 
 FrankerFaceZ.utilities = {
 	addon: require('utilities/addon'),
-	dom: require('utilities/dom'),
 	color: require('utilities/color'),
-	events: require('utilities/events'),
-	module: require('utilities/module'),
 	constants: require('utilities/constants'),
+	dialog: require('utilities/dialog'),
+	dom: require('utilities/dom'),
+	events: require('utilities/events'),
+	fontAwesome: require('utilities/font-awesome'),
+	graphql: require('utilities/graphql'),
 	logging: require('utilities/logging'),
+	module: require('utilities/module'),
 	object: require('utilities/object'),
 	time: require('utilities/time'),
 	tooltip: require('utilities/tooltip'),

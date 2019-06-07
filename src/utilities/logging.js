@@ -8,7 +8,7 @@ const RAVEN_LEVELS = {
 };
 
 
-export default class Logger {
+export class Logger {
 	constructor(parent, name, level, raven) {
 		this.root = parent ? parent.root : this;
 		this.parent = parent;
@@ -117,3 +117,5 @@ Logger.INFO = 2;
 Logger.WARN = 4;
 Logger.ERROR = 8;
 Logger.OFF = 99;
+
+export default Logger;
