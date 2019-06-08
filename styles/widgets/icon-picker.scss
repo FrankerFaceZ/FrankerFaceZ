@@ -1,0 +1,12 @@
+.ffz--icon-picker__list {
+	max-height: 15rem;
+	font-size: 1.6rem;
+
+	.ffz-icon {
+		width: auto !important;
+
+		> * {
+			pointer-events: none;
+		}
+	}
+}

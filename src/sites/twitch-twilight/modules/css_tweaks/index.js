@@ -230,14 +230,15 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggle('square-avatars', !val)
 		});
 
-		this.settings.add('channel.not-live-bar', {
+		this.settings.add('channel.hide-not-live-bar', {
 			default: true,
 			ui: {
 				path: 'Channel > Appearance >> General',
-				title: 'Show notification below clips and videos if the streamer is live.',
+				title: 'Hide the "Not Live" bar.',
+				description: 'Hide the bar which appears beneath clips and videos when the streamer is live, telling you they are live.',
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggle('not-live-bar', !val)
+			changed: val => this.toggleHide('not-live-bar', val)
 		});
 	}
 
@@ -254,7 +255,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
-		this.toggleHide('not-live-bar', ! this.settings.get('channel.not-live-bar'));
+		this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);

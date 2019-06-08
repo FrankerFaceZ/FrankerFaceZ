@@ -2,7 +2,7 @@
 	<div class="ffz--icon-picker">
 		<div class="tw-full-width">
 			<div class="tw-search-input">
-				<label for="icon-search" class="tw-hide-accessible">
+				<label :for="'icon-search$' + id" class="tw-hide-accessible">
 					{{ t('setting.icon.search', 'Search for Icon') }}
 				</label>
 				<div class="tw-relative tw-mg-t-05">
@@ -10,7 +10,7 @@
 						<figure class="ffz-i-search" />
 					</div>
 					<input
-						id="icon-search"
+						:id="'icon-search$' + id"
 						:placeholder="t('setting.actions.icon.search', 'Search for Icon')"
 						v-model="search"
 						type="search"
@@ -23,13 +23,14 @@
 			</div>
 
 			<simplebar classes="tw-c-background-alt-2 tw-border-l tw-border-r tw-border-b ffz--icon-picker__list tw-mg-b-05">
-				<div v-if="visible.length" role="radiogroup" class="tw-pd-1 tw-flex tw-flex-wrap" >
+				<div v-if="visible.length" role="radiogroup" class="tw-pd-1 tw-flex tw-flex-wrap tw-justify-content-between" >
 					<div
 						v-for="i of visible"
 						:key="i[0]"
-						:aria-checked="value.icon === i[0]"
-						:class="{'tw-interactable--selected': value.icon === i[0]}"
-						class="ffz-icon tw-interactable tw-interactable--inverted"
+						:aria-checked="value === i[0]"
+						:class="{'tw-interactable--selected': value === i[0]}"
+						:data-title="i[1]"
+						class="ffz-tooltip ffz-icon tw-interactable tw-interactable--inverted"
 						role="radio"
 						tabindex="0"
 						@keydown.space.stop.prevent=""
@@ -50,50 +51,81 @@
 
 <script>
 
+let id = 0;
+
 import {escape_regex, deep_copy} from 'utilities/object';
 import {load, ICONS as FA_ICONS, ALIASES as FA_ALIASES} from 'utilities/font-awesome';
 
 const FFZ_ICONS = [
+	'cancel',
 	'zreknarf',
-	'crown',
-	'verified',
-	'inventory',
-	'ignore',
-	'pin-outline',
-	'pin',
-	'block',
-	'ok',
+	'search',
 	'clock',
-	'eye',
-	'eye-off',
-	'trash',
-	'discord',
 	'star',
 	'star-empty',
-	'twitch',
-	'twitter',
+	'down-dir',
+	'right-dir',
+	'attention',
+	'ok',
+	'cog',
+	'plus',
+	'folder-open',
 	'download',
 	'upload',
-	'download-cloud',
-	'upload-cloud',
+	'floppy',
+	'crown',
+	'verified',
+	'heart',
+	'heart-empty',
 	'tag',
 	'tags',
 	'retweet',
 	'thumbs-up',
 	'thumbs-down',
 	'bell',
-	'bell-off',
 	'pencil',
 	'info',
 	'help',
 	'calendar',
+	'left-dir',
+	'inventory',
 	'lock',
 	'lock-open',
 	'arrows-cw',
+	'ignore',
+	'block',
+	'pin',
+	'pin-outline',
 	'gift',
-	'eyedropper',
+	'discord',
+	'eye',
+	'eye-off',
+	'views',
+	'conversations',
+	'channels',
+	'camera',
+	'cw',
+	'up-dir',
+	'up-big',
+	'link-ext',
+	'twitter',
 	'github',
-	'user-secret'
+	'gauge',
+	'download-cloud',
+	'upload-cloud',
+	'smile',
+	'keyboard',
+	'calendar-empty',
+	'ellipsis-vert',
+	'twitch',
+	'bell-off',
+	'trash',
+	'eyedropper',
+	'user-secret',
+	'window-maximize',
+	'window-minimize',
+	'window-restore',
+	'window-close'
 ];
 
 const FFZ_ALIASES = {
@@ -112,6 +144,7 @@ export default {
 
 	data() {
 		return {
+			id: id++,
 			search: '',
 			icons: deep_copy(ICONS)
 		}
@@ -131,11 +164,19 @@ export default {
 
 	mounted() {
 		load();
+
+		this.$nextTick(() => {
+			if ( this.value ) {
+				const el = this.$el.querySelector('.tw-interactable--selected');
+				if ( el )
+					el.scrollIntoViewIfNeeded();
+			}
+		});
 	},
 
 	methods: {
 		change(val) {
-			this.value.icon = val;
+			this.value = val;
 			this.$emit('input', this.value);
 		}
 	}

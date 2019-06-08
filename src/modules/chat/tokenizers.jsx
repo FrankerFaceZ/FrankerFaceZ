@@ -415,7 +415,7 @@ export const BlockedBadges = {
 
 export const CustomHighlights = {
 	type: 'highlight',
-	priority: 100,
+	priority: 35,
 
 	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-highlight.vue'),
 

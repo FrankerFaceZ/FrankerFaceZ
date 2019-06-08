@@ -7,6 +7,7 @@
 
 import Module from 'utilities/module';
 import {has} from 'utilities/object';
+import {DEBUG} from 'utilities/constants';
 
 
 export class Vue extends Module {
@@ -18,12 +19,15 @@ export class Vue extends Module {
 
 	async onLoad() {
 		const Vue = window.ffzVue = this.Vue = (await import(/* webpackChunkName: "vue" */ 'vue')).default,
+			ObserveVisibility = await import(/* webpackChunkName: "vue" */ 'vue-observe-visibility'),
 			RavenVue = await import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
 			components = this._components;
 
 		this.component((await import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')).default);
 
-		if ( this.root.raven )
+		Vue.use(ObserveVisibility);
+
+		if ( ! DEBUG && this.root.raven )
 			this.root.raven.addPlugin(RavenVue, Vue);
 
 		for(const key in components)
@@ -82,6 +86,11 @@ export class Vue extends Module {
 				}
 			});
 
+			this.on('i18n:transform', () => {
+				this._vue_i18n.locale = this.i18n.locale;
+				this._vue_i18n.phrases = {};
+			});
+
 			this.on('i18n:changed', () => {
 				this._vue_i18n.locale = this.i18n.locale;
 				this._vue_i18n.phrases = {};
@@ -96,6 +105,41 @@ export class Vue extends Module {
 
 			vue.prototype.$i18n = this._vue_i18n;
 		}
+
+		vue.component('t-list', {
+			props: {
+				tag: {
+					required: false
+				},
+				phrase: {
+					type: String,
+					required: true
+				},
+				default: {
+					type: String,
+					required: true
+				},
+				data: {
+					type: Object,
+					required: false
+				}
+			},
+
+			render(createElement) {
+				return createElement(
+					this.tag || 'span',
+					this.$i18n.tList_(
+						this.phrase,
+						this.default,
+						Object.assign({}, this.data, this.$scopedSlots)
+					).map(out => {
+						if ( typeof out === 'function' )
+							return out();
+						return out;
+					})
+				);
+			}
+		})
 
 		vue.mixin({
 			methods: {

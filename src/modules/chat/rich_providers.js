@@ -5,6 +5,7 @@
 // ============================================================================
 
 const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)(?:\/)?(\w+)?(?:\/edit)?/;
+const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/\w+\/clip\/(\w+)/;
 const VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)/;
 
 import GET_CLIP from './clip_info.gql';
@@ -74,13 +75,18 @@ export const Clips = {
 	hide_token: true,
 
 	test(token) {
-		return token.type === 'link' && CLIP_URL.test(token.url)
+		if ( token.type !== 'link' )
+			return false;
+
+		return CLIP_URL.test(token.url) || NEW_CLIP_URL.test(token.url);
 	},
 
 	process(token) {
-		const match = CLIP_URL.exec(token.url),
-			apollo = this.resolve('site.apollo');
+		let match = CLIP_URL.exec(token.url);
+		if ( ! match )
+			match = NEW_CLIP_URL.exec(token.url);
 
+		const apollo = this.resolve('site.apollo');
 		if ( ! apollo || ! match || match[1] === 'create' )
 			return;
 

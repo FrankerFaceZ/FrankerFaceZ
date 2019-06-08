@@ -319,18 +319,8 @@ export default class Scroller extends Module {
 				}
 
 				inst.ffzHandleKey = inst.ffzHandleKey.bind(inst);
-
-				Mousetrap.bindGlobal('alt', inst.ffzHandleKey, 'keydown');
-				Mousetrap.bindGlobal('alt', inst.ffzHandleKey, 'keyup');
-
-				Mousetrap.bindGlobal('shift', inst.ffzHandleKey, 'keydown');
-				Mousetrap.bindGlobal('shift', inst.ffzHandleKey, 'keyup');
-
-				Mousetrap.bindGlobal('ctrl', inst.ffzHandleKey, 'keydown');
-				Mousetrap.bindGlobal('ctrl', inst.ffzHandleKey, 'keyup');
-
-				Mousetrap.bindGlobal('command', inst.ffzHandleKey, 'keydown');
-				Mousetrap.bindGlobal('command', inst.ffzHandleKey, 'keyup');
+				window.addEventListener('keydown', inst.ffzHandleKey);
+				window.addEventListener('keyup', inst.ffzHandleKey);
 
 				inst.hoverPause = inst.ffzMouseMove.bind(inst);
 				inst.hoverResume = inst.ffzMouseLeave.bind(inst);
@@ -624,18 +614,8 @@ export default class Scroller extends Module {
 		inst.ffzInstallHandler();
 	}
 
-	onUnmount() { // eslint-disable-line class-methods-use-this
-		const Mousetrap = this.web_munch.getModule('mousetrap') || window.Mousetrap;
-		if ( Mousetrap != null ) {
-			Mousetrap.unbind('alt', 'keydown');
-			Mousetrap.unbind('alt', 'keyup');
-			Mousetrap.unbind('shift', 'keydown');
-			Mousetrap.unbind('shift', 'keyup');
-			Mousetrap.unbind('ctrl', 'keydown');
-			Mousetrap.unbind('ctrl', 'keyup');
-			Mousetrap.unbind('command', 'keydown');
-			Mousetrap.unbind('command', 'keyup');
-		}
-
+	onUnmount(inst) { // eslint-disable-line class-methods-use-this
+		window.removeEventListener('keydown', inst.ffzHandleKey);
+		window.removeEventListener('keyup', inst.ffzHandleKey);
 	}
 }

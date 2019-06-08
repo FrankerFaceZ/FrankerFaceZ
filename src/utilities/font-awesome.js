@@ -237,3 +237,9 @@ export const load = () => {
 	}));
 }
 
+export const maybeLoad = icon => {
+	if ( loaded || ! String(icon).startsWith('fa-') && ! String(icon).startsWith('ffz-fa') )
+		return;
+
+	load();
+}

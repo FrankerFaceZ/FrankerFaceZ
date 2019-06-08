@@ -151,7 +151,7 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 2, revision: 6,
+	major: 4, minor: 3, revision: 0,
 	commit: __git_commit__,
 	build: __webpack_hash__,
 	toString: () =>
@@ -174,7 +174,8 @@ FrankerFaceZ.utilities = {
 	time: require('utilities/time'),
 	tooltip: require('utilities/tooltip'),
 	i18n: require('utilities/translation-core'),
-	dayjs: require('dayjs')
+	dayjs: require('dayjs'),
+	popper: require('popper.js').default
 }
 
 

@@ -85,26 +85,15 @@ export default class Directory extends SiteModule {
 
 
 		this.settings.add('directory.show-channel-avatars', {
-			default: 1,
+			default: true,
 
 			ui: {
 				path: 'Directory > Channels >> Appearance',
-				title: 'Channel Avatars',
-				description: 'Show channel avatars next to stream titles or directly on their thumbnails.',
-				component: 'setting-select-box',
-
-				data: [
-					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'By Title'},
-					{value: 2, title: 'Over Thumbnail (Hidden on Hover)'},
-					{value: 3, title: 'Over Thumbnail'}
-				]
+				title: 'Display channel avatars.',
+				component: 'setting-check-box'
 			},
 
-			changed: value => {
-				this.css_tweaks.toggleHide('profile-hover', value === 2);
-				this.DirectoryCard.forceUpdate();
-			}
+			changed: () => this.DirectoryCard.forceUpdate()
 		});
 
 
@@ -225,7 +214,7 @@ export default class Directory extends SiteModule {
 
 			cls.prototype.renderIconicImage = function() {
 				if ( this.props.context !== CARD_CONTEXTS.SingleChannelList &&
-					t.settings.get('directory.show-channel-avatars') !== 1 )
+					! t.settings.get('directory.show-channel-avatars') )
 					return;
 
 				return old_render_iconic.call(this);
