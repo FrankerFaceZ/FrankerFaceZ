@@ -31,6 +31,7 @@ const CLASSES = {
 
 	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
+	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 };
 
 
@@ -228,6 +229,16 @@ export default class CSSTweaks extends Module {
 			},
 			changed: val => this.toggle('square-avatars', !val)
 		});
+
+		this.settings.add('channel.not-live-bar', {
+			default: true,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Show notification below clips and videos if the streamer is live.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('not-live-bar', !val)
+		});
 	}
 
 	onEnable() {
@@ -243,6 +254,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
+		this.toggleHide('not-live-bar', ! this.settings.get('channel.not-live-bar'));
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);
