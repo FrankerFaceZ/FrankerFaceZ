@@ -19,13 +19,25 @@ export class Vue extends Module {
 
 	async onLoad() {
 		const Vue = window.ffzVue = this.Vue = (await import(/* webpackChunkName: "vue" */ 'vue')).default,
-			ObserveVisibility = await import(/* webpackChunkName: "vue" */ 'vue-observe-visibility'),
-			RavenVue = await import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
 			components = this._components;
 
-		this.component((await import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')).default);
+		const [
+			ObserveVisibility,
+			Clickaway,
+			RavenVue,
+			Components
+
+		] = await Promise.all([
+			import(/* webpackChunkName: "vue" */ 'vue-observe-visibility'),
+			import(/* webpackChunkName: "vue" */ 'vue-clickaway'),
+			import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
+			import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')
+		]);
+
+		this.component(Components.default);
 
 		Vue.use(ObserveVisibility);
+		Vue.mixin(Clickaway.mixin);
 
 		if ( ! DEBUG && this.root.raven )
 			this.root.raven.addPlugin(RavenVue, Vue);
@@ -78,6 +90,11 @@ export class Vue extends Module {
 					tList_(key, phrase, options) {
 						this.locale && this.phrases[key];
 						return t.i18n.tList(key, phrase, options);
+					},
+
+					tNode_(node, data) {
+						this.locale;
+						return t.i18n.formatNode(node, data);
 					},
 
 					setLocale(locale) {
@@ -158,6 +175,9 @@ export class Vue extends Module {
 				},
 				tList(key, phrase, options) {
 					return this.$i18n.tList_(key, phrase, options);
+				},
+				tNode(node, data) {
+					return this.$i18n.tNode_(node, data);
 				}
 			}
 		});

@@ -92,7 +92,8 @@ export class TranslationManager extends Module {
 
 			changed: val => {
 				this._.transformation = TRANSFORMATIONS[val];
-				this.emit(':update')
+				this.emit(':transform');
+				this.emit(':update');
 			}
 		});
 
@@ -385,6 +386,10 @@ export class TranslationManager extends Module {
 
 	has(key) {
 		return this._.has(key);
+	}
+
+	formatNode(...args) {
+		return this._.formatNode(...args);
 	}
 
 	toLocaleString(...args) {

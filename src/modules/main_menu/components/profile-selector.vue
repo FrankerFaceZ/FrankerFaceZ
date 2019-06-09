@@ -83,12 +83,9 @@
 
 <script>
 
-import { mixin as clickaway} from 'vue-clickaway';
-
 const indexOf = Array.prototype.indexOf;
 
 export default {
-	mixins: [clickaway],
 	props: ['context'],
 
 	data() {

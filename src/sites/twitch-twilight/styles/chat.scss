@@ -42,6 +42,10 @@
     }
 }
 
+.ffz-action-balloon {
+    z-index: 10000 !important;
+}
+
 .ffz-tooltip.chat-card__link > * {
     pointer-events: none;
 }

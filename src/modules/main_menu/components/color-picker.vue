@@ -55,14 +55,11 @@
 import {Color} from 'utilities/color';
 
 import {Sketch} from 'vue-color';
-import {mixin as clickaway} from 'vue-clickaway';
 
 export default {
 	components: {
 		'chrome-picker': Sketch
 	},
-
-	mixins: [clickaway],
 
 	props: {
 		value: String,

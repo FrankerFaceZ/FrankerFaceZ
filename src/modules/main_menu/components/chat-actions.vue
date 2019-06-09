@@ -207,13 +207,12 @@
 import SettingMixin from '../setting-mixin';
 import Sortable from 'sortablejs';
 import {deep_copy} from 'utilities/object';
-import {mixin as clickaway} from 'vue-clickaway';
 
 let last_id = 0;
 
 
 export default {
-	mixins: [clickaway, SettingMixin],
+	mixins: [SettingMixin],
 	props: ['item', 'context'],
 
 	data() {

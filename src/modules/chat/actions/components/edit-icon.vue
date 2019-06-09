@@ -4,7 +4,11 @@
 			{{ t('setting.actions.icon', 'Icon') }}
 		</label>
 
-		<icon-picker :value="value.icon" @input="change" />
+		<icon-picker
+			:value="value.icon"
+			class="tw-full-width"
+			@input="change"
+		/>
 	</div>
 </template>
 

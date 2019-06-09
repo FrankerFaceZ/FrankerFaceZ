@@ -74,6 +74,52 @@ export function timeout(promise, delay) {
 
 
 /**
+ * Return a wrapper for a function that will only execute the function
+ * a period of time after it has stopped being called.
+ * @param {Function} fn The function to wrap.
+ * @param {Integer} delay The time to wait, in milliseconds
+ * @param {Boolean} immediate If immediate is true, trigger the function immediately rather than eventually.
+ * @returns {Function} wrapped function
+ */
+export function debounce(fn, delay, immediate) {
+	let timer;
+	if ( immediate ) {
+		const later = () => timer = null;
+		if ( immediate === 2 )
+			// Special Mode! Run immediately OR later.
+			return function(...args) {
+				if ( timer ) {
+					clearTimeout(timer);
+					timer = setTimeout(() => {
+						timer = null;
+						fn.apply(this, args); // eslint-disable-line no-invalid-this
+					}, delay);
+				} else {
+					fn.apply(this, args); // eslint-disable-line no-invalid-this
+					timer = setTimeout(later, delay);
+				}
+			}
+
+		return function(...args) {
+			if ( ! timer )
+				fn.apply(this, args); // eslint-disable-line no-invalid-this
+			else
+				clearTimeout(timer);
+
+			timer = setTimeout(later, delay);
+		}
+	}
+
+	return function(...args) {
+		if ( timer )
+			clearTimeout(timer);
+
+		timer = setTimeout(fn.bind(this, ...args), delay); // eslint-disable-line no-invalid-this
+	}
+}
+
+
+/**
  * Make sure that a given asynchronous function is only called once
  * at a time.
  */

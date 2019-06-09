@@ -20,6 +20,11 @@
 .ffz-monospace { font-family: monospace }
 .ffz-bottom-100 { bottom: 100% }
 
+.ffz--autocomplete {
+	.scrollable-area {
+		max-height: 20rem;
+	}
+}
 
 .ffz--widget {
 	input, select {

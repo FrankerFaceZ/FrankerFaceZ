@@ -72,7 +72,7 @@ export const DEFAULT_TYPES = {
 	},
 
 	humantime(val, node) {
-		return this.formatHumanTime(val, node.f);
+		return this.formatHumanTime(val, 1, node.f);
 	},
 
 	en_plural: v => v !== 1 ? 's' : ''
@@ -226,26 +226,28 @@ export default class TranslationCore {
 		return thing;
 	}
 
-	formatHumanTime(value, factor) {
+	formatHumanTime(value, factor, round = false) {
 		if ( value instanceof Date )
 			value = (Date.now() - value.getTime()) / 1000;
 
 		value = Math.floor(value);
 		factor = Number(factor) || 1;
 
-		const years = Math.floor((value * factor) / 31536000) / factor;
+		const fn = round ? Math.round : Math.floor;
+
+		const years = fn((value * factor) / 31536000) / factor;
 		if ( years >= 1 )
 			return this.t('human-time.years', '{count,number} year{count,en_plural}', years);
 
-		const days = Math.floor((value %= 31536000) / 86400);
+		const days = fn((value %= 31536000) / 86400);
 		if ( days >= 1 )
 			return this.t('human-time.days', '{count,number} day{count,en_plural}', days);
 
-		const hours = Math.floor((value %= 86400) / 3600);
+		const hours = fn((value %= 86400) / 3600);
 		if ( hours >= 1 )
 			return this.t('human-time.hours', '{count,number} hour{count,en_plural}', hours);
 
-		const minutes = Math.floor((value %= 3600) / 60);
+		const minutes = fn((value %= 3600) / 60);
 		if ( minutes >= 1 )
 			return this.t('human-time.minutes', '{count,number} minute{count,en_plural}', minutes);
 
@@ -436,29 +438,33 @@ export default class TranslationCore {
 		return this._processAST(...this._preTransform(key, phrase, options, use_default));
 	}
 
+	formatNode(node, data, locale = null, out = null, ast = null) {
+		if ( ! node || typeof node !== 'object' )
+			return node;
+
+		if ( locale == null )
+			locale = this.locale;
+
+		let val = get(node.v, data);
+		if ( val == null )
+			return null;
+
+		if ( node.t ) {
+			if ( this.types[node.t] )
+				return this.types[node.t].call(this, val, node, locale, out, ast, data);
+			else if ( this.warn )
+				this.warn(`Encountered unknown type "${node.t}" when formatting node.`);
+		}
+
+		return val;
+	}
+
 	_processAST(ast, data, locale) {
 		const out = [];
 
 		for(const node of ast) {
-			if ( typeof node === 'string' ) {
-				out.push(node);
-				continue;
-
-			} else if ( ! node || typeof node !== 'object' )
-				continue;
-
-			let val = get(node.v, data);
-			if ( val == null )
-				continue;
-
-			if ( node.t ) {
-				if ( this.types[node.t] )
-					val = this.types[node.t].call(this, val, node, locale, out, ast, data);
-				else if ( this.warn )
-					this.warn(`Encountered unknown type "${node.t}" when processing AST.`);
-			}
-
-			if ( val )
+			const val = this.formatNode(node, data, locale, out, ast);
+			if( val != null )
 				out.push(val);
 		}
 
