@@ -45,6 +45,7 @@ export default class TooltipProvider extends Module {
 			delayShow: this.checkDelayShow.bind(this),
 			content: this.process.bind(this),
 			interactive: this.checkInteractive.bind(this),
+			hover_events: this.checkHoverEvents.bind(this),
 			popper: {
 				placement: 'top',
 				modifiers: {
@@ -55,6 +56,14 @@ export default class TooltipProvider extends Module {
 						boundariesElement: container
 					}
 				}
+			},
+
+			onHover: (target, tip, event) => {
+				this.emit(':hover', target, tip, event)
+			},
+
+			onLeave: (target, tip, event) => {
+				this.emit(':leave', target, tip, event);
 			}
 		});
 
@@ -95,6 +104,16 @@ export default class TooltipProvider extends Module {
 		return false;
 	}
 
+	checkHoverEvents(target, tip) {
+		const type = target.dataset.tooltipType,
+			handler = this.types[type];
+
+		if ( has(handler, 'hover_events') )
+			return maybe_call(handler.hover_events, null, target, tip);
+
+		return false;
+	}
+
 	process(target, tip) {
 		const type = target.dataset.tooltipType || 'text',
 			handler = this.types[type];
@@ -103,7 +122,7 @@ export default class TooltipProvider extends Module {
 			return [
 				createElement('strong', null, 'Unhandled Tooltip Type'),
 				createElement('code', {
-					className: 'block pd-t-05 border-t mg-t-05',
+					className: 'tw-block pd-t-05 border-t mg-t-05',
 					style: {
 						fontFamily: 'monospace',
 						textAlign: 'left'

@@ -241,21 +241,39 @@ export class Tooltip {
 			tip.add_class = undefined;
 		}
 
-		const interactive = maybe_call(opts.interactive, null, target, tip);
+		const interactive = maybe_call(opts.interactive, null, target, tip),
+			hover_events = maybe_call(opts.hover_events, null, target, tip);
+
 		el.classList.toggle('interactive', interactive || false);
 
-		if ( ! opts.manual ) {
-			el.addEventListener('mouseover', el._ffz_over_handler = () => {
+		if ( ! opts.manual || (hover_events && (opts.onHover || opts.onLeave || opts.onMove)) ) {
+			if ( hover_events && opts.onMove )
+				el.addEventListener('mousemove', el._ffz_move_handler = event => {
+					opts.onMove(target, tip, event);
+				});
+
+			el.addEventListener('mouseover', el._ffz_over_handler = event => {
 				if ( ! document.contains(target) )
 					this.hide(tip);
 
-				else if ( maybe_call(opts.interactive, null, target, tip) )
+				if ( hover_events && opts.onHover )
+					opts.onHover(target, tip, event);
+
+				if ( opts.manual ) {
+					/* no-op */
+				} else if ( maybe_call(opts.interactive, null, target, tip) )
 					this._enter(target);
 				else
 					this._exit(target);
 			});
 
-			el.addEventListener('mouseout', el._ffz_out_handler = () => this._exit(target));
+			el.addEventListener('mouseout', el._ffz_out_handler = event => {
+				if ( hover_events && opts.onLeave )
+					opts.onLeave(target, tip, event);
+
+				if ( ! opts.manual )
+					this._exit(target);
+			});
 		}
 
 		// Assign our content. If there's a Promise, we'll need
@@ -341,6 +359,9 @@ export class Tooltip {
 
 			if ( el._ffz_out_handler )
 				el.removeEventListener('mouseout', el._ffz_out_handler);
+
+			if ( el._ffz_move_handler )
+				el.removeEventListener('mousemove', el._ffz_move_handler);
 
 			el.remove();
 			tip.outer = el._ffz_out_handler = el._ffz_over_handler = null;

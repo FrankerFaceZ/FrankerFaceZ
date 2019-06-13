@@ -1,13 +1,13 @@
 <template>
 	<div class="ffz--autocomplete tw-relative">
 		<div class="tw-search-input" data-a-target="dropdown-search-input">
-			<label v-if="placeholder" :for="'ffz-autocomplete$' + id" class="tw-hide-accessible">{{ placeholder }}</label>
+			<label v-if="placeholder" :for="_id" class="tw-hide-accessible">{{ placeholder }}</label>
 			<div class="tw-relative">
 				<div v-if="hasIcon" class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height tw-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
 					<figure :class="icon" />
 				</div>
 				<input
-					:id="'ffz-autocomplete$' + id"
+					:id="_id"
 					:placeholder="placeholder"
 					:class="[hasIcon ? 'tw-pd-l-3' : 'tw-pd-l-1']"
 					v-model="search"
@@ -72,6 +72,10 @@ let last_id = 0;
 
 export default {
 	props: {
+		inputId: {
+			type: String,
+			required: false
+		},
 		items: {
 			type: [Array, Function],
 			required: false,
@@ -145,6 +149,13 @@ export default {
 	},
 
 	computed: {
+		_id() {
+			if ( this.inputId && this.inputId.length )
+				return this.inputId;
+
+			return `ffz-autocomplete$${this.id}`;
+		},
+
 		hasIcon() {
 			return this.icon && this.icon.length > 0
 		},
@@ -190,8 +201,8 @@ export default {
 	},
 
 	created() {
-		this.maybeClose = debounce(this.maybeClose, 25);
-		this.updateCache = debounce(this.updateCache, 250, 2);
+		this.maybeClose = debounce(this.maybeClose, 250);
+		this.updateCache = debounce(this.updateCache, 500, 2);
 	},
 
 	methods: {

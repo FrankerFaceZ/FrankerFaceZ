@@ -15,6 +15,8 @@ const SCROLL_EVENTS = [
 	'DOMMouseScroll'
 ];
 
+let last_id = 0;
+
 export default class Scroller extends Module {
 	constructor(...args) {
 		super(...args);
@@ -220,6 +222,11 @@ export default class Scroller extends Module {
 
 				this._ffz_installed = true;
 				const inst = this;
+
+				this._ffz_accessor = `_ffz_contains_${last_id++}`;
+
+				t.on('tooltips:mousemove', this.ffzTooltipHover, this);
+				t.on('tooltips:leave', this.ffzTooltipLeave, this);
 
 				inst.ffz_oldScrollEvent = inst.handleScrollEvent;
 				inst.ffz_oldScroll = inst.scrollToBottom;
@@ -443,6 +450,28 @@ export default class Scroller extends Module {
 				this.ffzUpdateKeyTags();
 			}
 
+			cls.prototype.ffzTooltipHover = function(target, tip, event) {
+				if ( target[this._ffz_accessor] == null ) {
+					const scroller = this.scroll && this.scroll.scrollContent;
+					target[this._ffz_accessor] = scroller ? scroller.contains(target) : false;
+				}
+
+				if ( target[this._ffz_accessor] )
+					this.ffzMouseMove(event);
+			}
+
+			cls.prototype.ffzTooltipLeave = function(target) {
+				if ( this.ffz_outside )
+					return;
+
+				if ( target[this._ffz_accessor] == null ) {
+					const scroller = this.scroll && this.scroll.scrollContent;
+					target[this._ffz_accessor] = scroller ? scroller.contains(target) : false;
+				}
+
+				if ( target[this._ffz_accessor] )
+					this.ffzMouseLeave();
+			}
 
 			// Keyboard Stuff
 
@@ -509,7 +538,7 @@ export default class Scroller extends Module {
 			}
 
 			cls.prototype.listFooter = function() {
-				let msg;
+				let msg, cls = '';
 				if ( this.state.isPaused ) {
 					const f = t.pause,
 						reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
@@ -523,6 +552,7 @@ export default class Scroller extends Module {
 														t.i18n.t('key.mouse', 'Mouse Movement');
 
 					msg = t.i18n.t('chat.paused', '(Chat Paused Due to {reason})', {reason});
+					cls = 'ffz--freeze-indicator';
 
 				} else if ( this.state.isAutoScrolling )
 					return null;
@@ -530,7 +560,7 @@ export default class Scroller extends Module {
 					msg = t.i18n.t('chat.messages-below', 'More messages below.');
 
 				return createElement('div', {
-					className: 'chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05',
+					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05 ${cls}`,
 					onClick: this.ffzFastResume
 				}, createElement('div', null, msg));
 			}
@@ -615,6 +645,9 @@ export default class Scroller extends Module {
 	}
 
 	onUnmount(inst) { // eslint-disable-line class-methods-use-this
+		this.off('tooltips:mousemove', inst.ffzTooltipHover, inst);
+		this.off('tooltips:leave', inst.ffzTooltipLeave, inst);
+
 		window.removeEventListener('keydown', inst.ffzHandleKey);
 		window.removeEventListener('keyup', inst.ffzHandleKey);
 	}

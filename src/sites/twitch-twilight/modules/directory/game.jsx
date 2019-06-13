@@ -23,7 +23,7 @@ export default class Game extends SiteModule {
 
 		this.GameHeader = this.fine.define(
 			'game-header',
-			n => n.props && n.props.data && n.renderDropsAvailable,
+			n => n.props && n.props.data && n.getBannerImage && n.getCategoryDisplayNameAndFollowButton,
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
 
@@ -75,7 +75,7 @@ export default class Game extends SiteModule {
 		if ( get('data.game', inst.props) == null || ! container || ! container.querySelector )
 			return;
 
-		const buttons = container.querySelector('.tw-flex > .tw-inline-flex');
+		const buttons = container.querySelector('.tw-flex > .tw-flex-column');
 		if ( ! buttons )
 			return;
 
@@ -107,7 +107,7 @@ export default class Game extends SiteModule {
 			};
 
 		block_btn = (<button
-			class="tw-mg-l-1 tw-button ffz-directory-toggle-block"
+			class="tw-mg-r-1 tw-button ffz-directory-toggle-block"
 			onClick={this.generateClickHandler('directory.game.blocked-games', game, update_block)}
 		>
 			{block_label = <span class="tw-button__text" />}
@@ -116,7 +116,7 @@ export default class Game extends SiteModule {
 		update_block();
 
 		hidden_btn = (<button
-			class="tw-mg-l-1 tw-button ffz-directory-toggle-thumbnail"
+			class="tw-button ffz-directory-toggle-thumbnail"
 			onClick={this.generateClickHandler('directory.game.hidden-thumbnails', game, update_hidden)}
 		>
 			{hidden_label = <span class="tw-button__text" />}

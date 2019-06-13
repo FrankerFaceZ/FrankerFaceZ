@@ -307,6 +307,11 @@ export function get(path, object) {
 
 
 export function deep_copy(object, seen) {
+	if ( object === null )
+		return null;
+	else if ( object === undefined )
+		return undefined;
+
 	if ( typeof object !== 'object' )
 		return object;
 

@@ -331,6 +331,7 @@ export default class Actions extends Module {
 				manual: true,
 				live: false,
 				html: true,
+				hover_events: true,
 
 				tooltipClass: 'ffz-action-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
 				arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
@@ -350,10 +351,18 @@ export default class Actions extends Module {
 				},
 
 				content,
-				onShow: (t, tip) =>
-					setTimeout(() => {
-						target._ffz_outside = new ClickOutside(tip.outer, destroy)
-					}),
+				onShow: async (t, tip) => {
+					await tip.waitForDom();
+					target._ffz_outside = new ClickOutside(tip.outer, destroy)
+				},
+
+				onMove: (target, tip, event) => {
+					this.emit('tooltips:mousemove', target, tip, event)
+				},
+
+				onLeave: (target, tip, event) => {
+					this.emit('tooltips:leave', target, tip, event);
+				},
 
 				onHide: destroy
 			});
