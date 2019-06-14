@@ -523,12 +523,16 @@ export default class MainMenu extends Module {
 			description: profile.description,
 			desc_i18n_key: profile.desc_i18n_key || profile.i18n_key && `${profile.i18n_key}.description`,
 
+			url: profile.url,
+
 			move: idx => context.manager.moveProfile(profile.id, idx),
 			save: () => profile.save(),
 			update: data => {
 				profile.data = data
 				profile.save()
 			},
+
+			getBackup: () => deep_copy(profile.getBackup()),
 
 			context: deep_copy(profile.context),
 
@@ -575,14 +579,16 @@ export default class MainMenu extends Module {
 					off: (...args) => context.off(...args),
 
 					order: id => context.order.indexOf(id),
-					context: deep_copy(context.context),
+					context: deep_copy(context._context),
 
 					_update_profiles(changed) {
 						const new_list = [],
 							profiles = context.manager.__profiles;
+
 						for(let i=0; i < profiles.length; i++) {
 							const profile = profile_keys[profiles[i].id];
 							profile.order = i;
+
 							new_list.push(profile);
 						}
 
@@ -611,11 +617,15 @@ export default class MainMenu extends Module {
 					},
 
 					_context_changed() {
-						this.context = deep_copy(context.context);
-						const ids = this.profiles = context.__profiles.map(profile => profile.id);
-						for(const id of ids) {
-							const profile = profiles[id];
-							profile.live = this.profiles.includes(profile.id);
+						this.context = deep_copy(context._context);
+						const profiles = context.manager.__profiles,
+							ids = this.profiles = context.__profiles.map(profile => profile.id);
+
+						for(let i=0; i < profiles.length; i++) {
+							const id = profiles[i].id,
+								profile = profile_keys[id];
+
+							profile.live = ids.includes(id);
 						}
 					},
 

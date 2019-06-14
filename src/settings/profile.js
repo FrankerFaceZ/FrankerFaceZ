@@ -5,8 +5,12 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import {has, filter_match} from 'utilities/object';
+import {has} from 'utilities/object';
+import {createTester} from 'utilities/filtering';
 
+const fetchJSON = (url, options) => {
+	return fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
+}
 
 /**
  * Instances of SettingsProfile are used for getting and setting raw settings
@@ -35,6 +39,8 @@ export default class SettingsProfile extends EventEmitter {
 			description: this.description,
 			desc_i18n_key: this.desc_i18n_key,
 
+			url: this.url,
+
 			context: this.context
 		}
 	}
@@ -43,29 +49,63 @@ export default class SettingsProfile extends EventEmitter {
 		if ( typeof val !== 'object' )
 			throw new TypeError('data must be an object');
 
+		this.matcher = null;
+
 		for(const key in val)
 			if ( has(val, key) )
 				this[key] = val[key];
 	}
 
 	matches(context) {
-		// If we don't have any specific context, then we work!
-		if ( ! this.context )
-			return true;
+		if ( ! this.matcher )
+			this.matcher = createTester(this.context, require('./filters'));
 
-		// If we do have context and didn't get any, then we don't!
-		else if ( ! context )
-			return false;
-
-		// Got context? Have context? One-sided deep comparison time.
-		// Let's go for a walk!
-
-		return filter_match(this.context, context);
+		return this.matcher(context);
 	}
 
 
 	save() {
 		this.manager.saveProfile(this.id);
+	}
+
+
+	getBackup() {
+		const out = {
+			version: 2,
+			type: 'profile',
+			profile: this.data,
+			values: {}
+		};
+
+		for(const [k,v] of this.entries())
+			out.values[k] = v;
+
+		return out;
+	}
+
+
+	async checkUpdate() {
+		if ( ! this.url )
+			return false;
+
+		const data = fetchJSON(this.url);
+		if ( ! data || ! data.type === 'profile' || ! data.profile || ! data.values )
+			return false;
+
+		delete data.profile.id;
+		this.data = data.profile;
+
+		const old_keys = new Set(this.keys());
+
+		for(const [key, value] of Object.entries(data.values)) {
+			old_keys.delete(key);
+			this.set(key, value);
+		}
+
+		for(const key of old_keys)
+			this.delete(key);
+
+		return true;
 	}
 
 
@@ -78,6 +118,7 @@ export default class SettingsProfile extends EventEmitter {
 			throw new Error('cannot set context of default profile');
 
 		this.context = Object.assign(this.context || {}, context);
+		this.matcher = null;
 		this.manager._saveProfiles();
 	}
 
@@ -86,6 +127,7 @@ export default class SettingsProfile extends EventEmitter {
 			throw new Error('cannot set context of default profile');
 
 		this.context = context;
+		this.matcher = null;
 		this.manager._saveProfiles();
 	}
 
@@ -172,7 +214,10 @@ SettingsProfile.Moderation = {
 
 	description: 'Settings that apply when you are a moderator of the current channel.',
 
-	context: {
-		moderator: true
-	}
+	context: [
+		{
+			type: 'Moderator',
+			data: true
+		}
+	]
 }

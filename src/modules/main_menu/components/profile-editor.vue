@@ -20,11 +20,67 @@
 					{{ t('setting.delete', 'Delete') }}
 				</span>
 			</button>
-			<!--button class="tw-mg-l-1 tw-button tw-button--text">
+			<button
+				:class="{'tw-button--disabled': ! canExport}"
+				:disabled="! canExport"
+				class="tw-mg-l-1 tw-button tw-button--text"
+				@click="doExport"
+			>
 				<span class="tw-button__text ffz-i-download">
 					{{ t('setting.export', 'Export') }}
 				</span>
-			</button-->
+			</button>
+		</div>
+
+		<div v-if="export_error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
+			<section class="tw-flex-grow-1">
+				<h4 class="ffz-i-attention">
+					{{ t('setting.backup-restore.error', 'There was an error processing this backup.') }}
+				</h4>
+				<div v-if="export_error_message">
+					{{ export_error_message }}
+				</div>
+			</section>
+			<button
+				class="tw-button tw-button--text tw-tooltip-wrapper"
+				@click="resetExport"
+			>
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.close', 'Close') }}
+				</div>
+			</button>
+		</div>
+
+		<div v-if="export_message" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
+			<section class="tw-flex-grow-1">
+				{{ export_message }}
+			</section>
+			<button
+				class="tw-button tw-button--text tw-tooltip-wrapper"
+				@click="resetExport"
+			>
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.close', 'Close') }}
+				</div>
+			</button>
+		</div>
+
+		<div v-if="url" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1">
+			<h5 class="ffz-i-download-cloud">
+				{{ t('setting.profile.updates', 'This profile will update automatically from the following URL:') }}
+			</h5>
+
+			<div>
+				<a
+					:href="url"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					{{ url }}
+				</a>
+			</div>
 		</div>
 
 		<div class="ffz--menu-container tw-border-t">
@@ -41,7 +97,7 @@
 					id="ffz:editor:name"
 					ref="name"
 					v-model="name"
-					class="tw-input"
+					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
 				>
 			</div>
 
@@ -54,7 +110,7 @@
 					id="ffz:editor:description"
 					ref="desc"
 					v-model="desc"
-					class="tw-input"
+					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
 				/>
 			</div>
 		</div>
@@ -71,9 +127,8 @@
 
 			<filter-editor
 				:filters="filters"
-				:rules="rules"
 				:context="test_context"
-				@change="unsaved = true"
+				v-model="rules"
 			/>
 		</div>
 	</div>
@@ -81,21 +136,37 @@
 
 <script>
 
+import {deep_copy, deep_equals} from 'utilities/object';
+import { saveAs } from 'file-saver';
+
 export default {
 	props: ['item', 'context'],
 
 	data() {
 		return {
+			filters: deep_copy(require('src/settings/filters.js')),
+
 			old_name: null,
 			old_desc: null,
+			old_rules: null,
 
 			name: null,
 			desc: null,
+			url: null,
 			unsaved: false,
 
-			filters: null,
 			rules: null,
-			test_context: null
+			test_context: null,
+
+			export_error: false,
+			export_error_message: null,
+			export_message: null
+		}
+	},
+
+	computed: {
+		canExport() {
+			return this.item.profile != null
 		}
 	},
 
@@ -108,6 +179,14 @@ export default {
 		desc() {
 			if ( this.desc !== this.old_desc )
 				this.unsaved = true;
+		},
+
+		rules: {
+			handler() {
+				if ( ! deep_equals(this.rules, this.old_rules) )
+					this.unsaved = true;
+			},
+			deep: true
 		}
 	},
 
@@ -122,6 +201,33 @@ export default {
 	},
 
 	methods: {
+		resetExport() {
+			this.export_error = false;
+			this.export_error_message = null;
+			this.export_message = null;
+		},
+
+		doExport() {
+			this.resetExport();
+
+			let blob;
+			try {
+				const data = this.item.profile.getBackup();
+				blob = new Blob([JSON.stringify(data)], {type: 'application/json;charset=utf-8'});
+			} catch(err) {
+				this.export_error = true;
+				this.export_error_message = this.t('setting.backup-restore.dump-error', 'Unable to export settings data to JSON.');
+				return;
+			}
+
+			try {
+				saveAs(blob, `ffz-profile - ${this.name}.json`);
+			} catch(err) {
+				this.export_error = true;
+				this.export_error_message = this.t('setting.backup-restore.save-error', 'Unable to save.');
+			}
+		},
+
 		revert() {
 			const profile = this.item.profile;
 
@@ -137,7 +243,8 @@ export default {
 					profile.description :
 				'';
 
-			this.rules = profile ? profile.context : {};
+			this.old_rules = this.rules = profile ? deep_copy(profile.context) : [];
+			this.url = profile ? profile.url : null;
 			this.unsaved = ! profile;
 		},
 
@@ -161,13 +268,15 @@ export default {
 			if ( ! this.item.profile ) {
 				this.item.profile = this.context.createProfile({
 					name: this.name,
-					description: this.desc
+					description: this.desc,
+					context: this.rules
 				});
 
 			} else if ( this.unsaved ) {
 				const changes = {
 					name: this.name,
-					description: this.desc
+					description: this.desc,
+					context: this.rules
 				};
 
 				// Disable i18n if required.

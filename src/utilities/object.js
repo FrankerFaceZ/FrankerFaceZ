@@ -172,6 +172,47 @@ export function array_equals(a, b) {
 }
 
 
+export function deep_equals(object, other, ignore_undefined = false, seen, other_seen) {
+	if ( object === other )
+		return true;
+	if ( typeof object !== typeof other )
+		return false;
+	if ( typeof object !== 'object' )
+		return false;
+
+	if ( ! seen )
+		seen = new Set;
+
+	if ( ! other_seen )
+		other_seen = new Set;
+
+	if ( seen.has(object) || other_seen.has(other) )
+		throw new Error('recursive structure detected');
+
+	seen.add(object);
+	other_seen.add(other);
+
+	const source_keys = Object.keys(object),
+		dest_keys = Object.keys(other);
+
+	if ( ! ignore_undefined && ! array_equals(source_keys, dest_keys) )
+		return false;
+
+	for(const key of source_keys)
+		if ( ! deep_equals(object[key], other[key], ignore_undefined, new Set(seen), new Set(other_seen)) )
+			return false;
+
+	if ( ignore_undefined )
+		for(const key of dest_keys)
+			if ( ! source_keys.includes(key) ) {
+				if ( ! deep_equals(object[key], other[key], ignore_undefined, new Set(seen), new Set(other_seen)) )
+					return false;
+			}
+
+	return true;
+}
+
+
 export function shallow_object_equals(a, b) {
 	if ( typeof a !== 'object' || typeof b !== 'object' || ! array_equals(Object.keys(a), Object.keys(b)) )
 		return false;
@@ -311,6 +352,12 @@ export function deep_copy(object, seen) {
 		return null;
 	else if ( object === undefined )
 		return undefined;
+
+	if ( object instanceof Promise )
+		return new Promise((s,f) => object.then(s).catch(f));
+
+	if ( typeof object === 'function' )
+		return function(...args) { return object.apply(this, args); } // eslint-disable-line no-invalid-this
 
 	if ( typeof object !== 'object' )
 		return object;

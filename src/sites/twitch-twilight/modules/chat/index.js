@@ -227,11 +227,37 @@ export default class ChatHook extends Module {
 		});
 
 		this.settings.add('chat.bits.show-pinned', {
-			default: true,
+			requires: ['chat.bits.show'],
+			default: null,
+			process(ctx, val) {
+				if ( val != null )
+					return val;
+
+				return ctx.get('chat.bits.show')
+			},
+
 			ui: {
 				path: 'Chat > Bits and Cheering >> Appearance',
 				title: 'Display Top Cheerers',
+				description: 'By default, this inherits its value from Display Bits.',
+				component: 'setting-check-box'
+			}
+		});
 
+		this.settings.add('chat.bits.show-rewards', {
+			requires: ['chat.bits.show'],
+			default: null,
+			process(ctx, val) {
+				if ( val != null )
+					return val;
+
+				return ctx.get('chat.bits.show')
+			},
+
+			ui: {
+				path: 'Chat > Bits and Cheering >> Behavior',
+				title: 'Display messages when a cheer shares rewards to people in chat.',
+				description: 'By default, this inherits its value from Display Bits. This setting only affects newly arrived messages.',
 				component: 'setting-check-box'
 			}
 		});
@@ -687,6 +713,9 @@ export default class ChatHook extends Module {
 					try {
 						const types = t.chat_types || {},
 							mod_types = t.mod_types || {};
+
+						if ( msg.type === types.RewardGift && ! t.chat.context.get('chat.bits.show-rewards') )
+							return;
 
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
@@ -1540,9 +1569,9 @@ export default class ChatHook extends Module {
 			moderator: props.isCurrentUserModerator,
 			channel: props.channelLogin && props.channelLogin.toLowerCase(),
 			channelID: props.channelID,
-			ui: {
+			/*ui: {
 				theme: props.theme
-			}
+			}*/
 		});
 	}
 
@@ -1580,9 +1609,9 @@ export default class ChatHook extends Module {
 			moderator: props.isCurrentUserModerator,
 			channel: props.channelLogin && props.channelLogin.toLowerCase(),
 			channelID: props.channelID,
-			ui: {
+			/*ui: {
 				theme: props.theme
-			}
+			}*/
 		});
 	}
 

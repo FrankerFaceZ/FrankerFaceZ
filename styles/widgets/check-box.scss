@@ -1,0 +1,23 @@
+.tw-checkbox__input {
+	&:indeterminate + .tw-checkbox__label {
+		&:before {
+			background: #7d5bbe;
+			border: 1px solid #7d5bbe;
+		}
+
+		&:after {
+			content: '';
+			display: block;
+			position: absolute;
+			top: 50%;
+			left: .4rem;
+
+			height: 0;
+			width: .8rem;
+
+			margin-top: -.1rem;
+			border-bottom: 2px solid #fff;
+			border-radius: 1rem;
+		}
+	}
+}

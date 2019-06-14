@@ -12,6 +12,7 @@
 @import "./widgets/color-picker.scss";
 @import "./widgets/icon-picker.scss";
 
+@import "./widgets/check-box.scss";
 
 .tw-display-inline { display: inline !important }
 .tw-width-auto { width: auto !important }
@@ -24,6 +25,10 @@
 	.scrollable-area {
 		max-height: 20rem;
 	}
+}
+
+textarea.tw-input {
+	height: unset;
 }
 
 .ffz--widget {
@@ -125,12 +130,20 @@
 		}
 	}
 
-	.ffz--profile {
-		.ffz-i-ok { color: green }
-	}
-
 	.sortable-ghost {
 		opacity: 0.25
+	}
+}
+
+.ffz--profile__icon {
+	&.ffz-i-ok,
+	.ffz-i-ok {
+		color: green;
+	}
+
+	&.ffz-i-cancel,
+	.ffz-i-cancel {
+		color: red;
 	}
 }
 

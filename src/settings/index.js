@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {deep_equals, has} from 'utilities/object';
 
 import {CloudStorageProvider, LocalStorageProvider} from './providers';
 import SettingsProfile from './profile';
@@ -92,6 +92,8 @@ export default class SettingsManager extends Module {
 
 		const duration = performance.now() - this._start_time;
 		this.log.info(`Initialization complete after ${duration.toFixed(5)}ms -- Values: ${this.provider.size} -- Profiles: ${this.__profiles.length}`)
+
+		this.scheduleUpdates();
 	}
 
 
@@ -115,6 +117,34 @@ export default class SettingsManager extends Module {
 		return out;
 	}
 
+
+	scheduleUpdates() {
+		if ( this._update_timer )
+			clearTimeout(this._update_timer);
+
+		this._update_timer = setTimeout(() => this.checkUpdates(), 5000);
+	}
+
+
+	checkUpdates() {
+		const promises = [];
+		for(const profile of this.__profiles) {
+			if ( ! profile || ! profile.url )
+				continue;
+
+			const out = profile.checkUpdate();
+			promises.push(out instanceof Promise ? out : Promise.resolve(out));
+		}
+
+		Promise.all(promises).then(data => {
+			let success = 0;
+			for(const thing of data)
+				if ( thing )
+					success++;
+
+			this.log.info(`Successfully refreshed ${success} of ${data.length} profiles from remote URLs.`);
+		});
+	}
 
 
 	// ========================================================================
@@ -194,7 +224,6 @@ export default class SettingsManager extends Module {
 			// to keys.
 			old_ids = new Set(old_profiles.map(x => x.id)),
 
-			moved_ids = new Set,
 			new_ids = new Set,
 			changed_ids = new Set,
 
@@ -203,30 +232,38 @@ export default class SettingsManager extends Module {
 				SettingsProfile.Default
 			]);
 
-		let changed = false;
+		let reordered = false,
+			changed = false;
+
 		for(const profile_data of raw_profiles) {
 			const id = profile_data.id,
+				slot_id = profiles.length,
 				old_profile = old_profile_ids[id],
-				old_slot_id = parseInt(old_profiles[profiles.length] || -1, 10);
+				old_slot_id = old_profile ? old_profiles.indexOf(old_profile) : -1;
 
 			old_ids.delete(id);
 
-			if ( old_slot_id !== id ) {
-				moved_ids.add(old_slot_id);
-				moved_ids.add(id);
+			if ( old_slot_id !== slot_id )
+				reordered = true;
+
+			// Monkey patch to the new profile format...
+			if ( profile_data.context && ! Array.isArray(profile_data.context) ) {
+				if ( profile_data.context.moderator )
+					profile_data.context = SettingsProfile.Moderation.context;
+				else
+					profile_data.context = null;
 			}
 
-			// TODO: Better method for checking if the profile data has changed.
-			if ( old_profile && JSON.stringify(old_profile.data) === JSON.stringify(profile_data) ) {
+			if ( old_profile && deep_equals(old_profile.data, profile_data, true) ) {
 				// Did the order change?
-				if ( old_profiles[profiles.length] !== old_profile )
+				if ( old_slot_id !== slot_id )
 					changed = true;
 
 				profiles.push(profile_ids[id] = old_profile);
 				continue;
 			}
 
-			const new_profile = profiles.push(profile_ids[id] = new SettingsProfile(this, profile_data));
+			const new_profile = profile_ids[id] = new SettingsProfile(this, profile_data);
 			if ( old_profile ) {
 				// Move all the listeners over.
 				new_profile.__listeners = old_profile.__listeners;
@@ -237,6 +274,7 @@ export default class SettingsManager extends Module {
 			} else
 				new_ids.add(id);
 
+			profiles.push(new_profile);
 			changed = true;
 		}
 
@@ -252,7 +290,7 @@ export default class SettingsManager extends Module {
 		for(const id of changed_ids)
 			this.emit(':profile-changed', profile_ids[id]);
 
-		if ( moved_ids.size )
+		if ( reordered )
 			this.emit(':profiles-reordered');
 	}
 

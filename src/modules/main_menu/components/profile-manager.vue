@@ -1,26 +1,126 @@
 <template lang="html">
 	<div class="ffz--widget ffz--profile-manager tw-border-t tw-pd-y-1">
-		<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
-			<h3 class="ffz-i-attention">
-				This feature is not yet finished.
-			</h3>
-
-			Creating and editing profiles is disabled until the rule editor is finished.
-		</div>
 		<div class="tw-flex tw-align-items-center tw-pd-b-05">
 			<div class="tw-flex-grow-1">
 				{{ t('setting.profiles.drag', 'Drag profiles to change their priority.') }}
 			</div>
-			<button class="tw-mg-l-1 tw-button tw-button--text" disabled @notclick="edit()">
+			<button
+				class="tw-mg-l-1 tw-button tw-button--text"
+				@click="edit()"
+			>
 				<span class="tw-button__text ffz-i-plus">
 					{{ t('setting.profiles.new', 'New Profile') }}
 				</span>
 			</button>
-			<!--button class="tw-mg-l-1 tw-button tw-button--text">
+			<button
+				class="tw-mg-l-1 tw-button tw-button--text"
+				@click="doImport"
+			>
 				<span class="tw-button__text ffz-i-upload">
 					{{ t('setting.import', 'Import…') }}
 				</span>
-			</button-->
+			</button>
+		</div>
+
+		<div v-if="import_error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
+			<section class="tw-flex-grow-1">
+				<h4 class="ffz-i-attention">
+					{{ t('setting.backup-restore.error', 'There was an error processing this backup.') }}
+				</h4>
+				<div v-if="import_error_message">
+					{{ import_error_message }}
+				</div>
+			</section>
+			<button
+				class="tw-button tw-button--text tw-tooltip-wrapper"
+				@click="resetImport"
+			>
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.close', 'Close') }}
+				</div>
+			</button>
+		</div>
+
+		<div v-if="import_message" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
+			<section class="tw-flex-grow-1">
+				{{ import_message }}
+			</section>
+			<button
+				class="tw-button tw-button--text tw-tooltip-wrapper"
+				@click="resetImport"
+			>
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.close', 'Close') }}
+				</div>
+			</button>
+		</div>
+
+		<div v-if="import_profiles" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
+			<section class="tw-flex-grow-1">
+				<h4 class="ffz-i-upload">
+					{{ t('setting.backup-restore.pick-profile', 'Please select a profile to import.') }}
+				</h4>
+
+				<button
+					v-for="(profile, idx) in import_profiles"
+					:key="idx"
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow tw-tooltip-wrapper"
+					@click="importProfile(profile)"
+				>
+					<span class="tw-button__text">
+						{{ profile.i18n_key ? t(profile.i18n_key, profile.name) : profile.name }}
+					</span>
+					<div v-if="profile.description" class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+						{{ profile.desc_i18n_key ? t(profile.desc_i18n_key, profile.description) : profile.description }}
+					</div>
+				</button>
+			</section>
+			<button
+				class="tw-button tw-button--text tw-tooltip-wrapper"
+				@click="resetImport"
+			>
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.close', 'Close') }}
+				</div>
+			</button>
+		</div>
+
+		<div v-if="import_profile" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
+			<section class="tw-flex-grow-1">
+				<h4 class="ffz-i-help">
+					{{ t('setting.backup-restore.confirm-updates', 'The profile you are importing has an automatic update URL. Do you want the profile to keep itself up to date?') }}
+				</h4>
+
+				<button
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow"
+					@click="confirmImport(true)"
+				>
+					<span class="tw-button__text ffz-i-ok">
+						{{ t('setting.backup-restore.enable-auto', 'Yes, allow automatic updates.') }}
+					</span>
+				</button>
+
+				<button
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow"
+					@click="confirmImport(false)"
+				>
+					<span class="tw-button__text ffz-i-cancel">
+						{{ t('setting.backup-restore.disable-auto', 'No, prevent automatic updates.') }}
+					</span>
+				</button>
+			</section>
+			<button
+				class="tw-button tw-button--text tw-tooltip-wrapper"
+				@click="resetImport"
+			>
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.close', 'Close') }}
+				</div>
+			</button>
 		</div>
 
 		<div ref="list" class="ffz--profile-list">
@@ -38,15 +138,25 @@
 						<span class="ffz-i-ellipsis-vert" />
 					</div>
 
+					<div v-if="p.url" class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-tooltip-wrapper tw-font-size-4">
+						<span class="ffz-i-download-cloud" />
+						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+							<div class="tw-mg-b-05">
+								{{ t('setting.profile.updates', 'This profile will update automatically from the following URL:') }}
+							</div>
+							{{ p.url }}
+						</div>
+					</div>
+
 					<div class="tw-flex-grow-1">
-						<h4>{{ t(p.i18n_key, p.title, p) }}</h4>
+						<h4>{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
 						<div v-if="p.description" class="description">
-							{{ t(p.desc_i18n_key, p.description, p) }}
+							{{ p.desc_i18n_key ? t(p.desc_i18n_key, p.description, p) : p.description }}
 						</div>
 					</div>
 
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center">
-						<button class="tw-button tw-button--text" disabled @notclick="edit(p)">
+						<button class="tw-button tw-button--text" @click="edit(p)">
 							<span class="tw-button__text ffz-i-cog">
 								{{ t('setting.configure', 'Configure') }}
 							</span>
@@ -75,8 +185,22 @@
 
 import Sortable from 'sortablejs';
 
+import {openFile, readFile} from 'utilities/dom';
+import {deep_copy} from 'utilities/object';
+import SettingsProfile from 'src/settings/profile';
+
 export default {
 	props: ['item', 'context'],
+
+	data() {
+		return {
+			import_error: false,
+			import_error_message: null,
+			import_message: null,
+			import_profiles: null,
+			import_profile: null
+		}
+	},
 
 	mounted() {
 		this._sortable = Sortable.create(this.$refs.list, {
@@ -121,6 +245,114 @@ export default {
 
 			item.contents[0].parent = item;
 			this.$emit('change-item', item);
+		},
+
+		resetImport() {
+			this.import_error = false;
+			this.import_error_message = null;
+			this.import_message = null;
+			this.import_profiles = null;
+			this.import_profile = null;
+			this.import_profile_data = null;
+			this.import_data = null;
+		},
+
+		async doImport() {
+			this.resetImport();
+
+			let contents;
+			try {
+				contents = await readFile(await openFile('application/json'));
+			} catch(err) {
+				this.import_error = true;
+				this.import_error_message = this.t('setting.backup-restore.read-error', 'Unable to read file.');
+				return;
+			}
+
+			let data;
+			try {
+				data = JSON.parse(contents);
+			} catch(err) {
+				this.import_error = true;
+				this.import_error_message = this.t('setting.backup-restore.json-error', 'Unable to parse file as JSON.');
+				return;
+			}
+
+			if ( data && data.type === 'full' ) {
+				let profiles = data.values && data.values.profiles;
+				if ( profiles === undefined )
+					profiles = [
+						SettingsProfile.Moderation,
+						SettingsProfile.Default
+					];
+
+				if ( Array.isArray(profiles) ) {
+					this.import_data = data;
+					this.import_profiles = deep_copy(profiles);
+					return;
+
+				} else {
+					this.import_message = Object.keys(data.values);
+				}
+
+			} else if ( data && data.type === 'profile' ) {
+				if ( data.profile && data.values ) {
+					this.importProfile(data.profile, data.values);
+					return;
+				}
+			}
+
+			this.import_error = true;
+			this.import_error_message = this.t('setting.backup-restore.non-supported', 'This file is not recognized as a supported backup format.');
+		},
+
+		importProfile(profile_data, data) {
+			if ( profile_data.url ) {
+				this.import_profile = profile_data;
+				this.import_profile_data = data;
+				return;
+			}
+
+			this.confirmImport(false);
+		},
+
+		confirmImport(allow_update = false) {
+			const profile_data = this.import_profile,
+				data = this.import_profile_data;
+
+			const id = profile_data.id;
+			delete profile_data.id;
+			if ( ! allow_update )
+				delete profile_data.url;
+
+			const prof = this.context.createProfile(profile_data);
+
+			let i = 0;
+
+			if ( ! data ) {
+				const values = this.import_data && this.import_data.values,
+					prefix = `p:${id}:`;
+
+				if ( values )
+					for(const [key, value] of Object.entries(values)) {
+						if ( key.startsWith(prefix) ) {
+							prof.set(key.substr(prefix.length), value);
+							i++;
+						}
+					}
+
+			} else
+				for(const [key, value] of Object.entries(data)) {
+					prof.set(key, value);
+					i++;
+				}
+
+			this.resetImport();
+
+			this.import_message = this.t('setting.backup-restore.imported', 'The profile "{name}" has been successfully imported with {count,number} setting{count,en_plural}.', {
+				name: prof.i18n_key ? this.t(prof.i18n_key, prof.title) : prof.title,
+				count: i
+			});
 		}
 	}
 }

@@ -132,6 +132,20 @@ export function setChildren(el, children, no_sanitize, no_empty) {
 }
 
 
+export function findSharedParent(element, other, selector) {
+	while(element) {
+		if ( element.contains(other) )
+			return true;
+
+		element = element.parentElement;
+		if ( selector )
+			element = element && element.closest(selector);
+	}
+
+	return false;
+}
+
+
 export function openFile(contentType, multiple) {
 	return new Promise(resolve => {
 		const input = document.createElement('input');

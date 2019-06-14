@@ -185,6 +185,14 @@ export default class SettingsMenu extends Module {
 		});
 	}
 
+	closeMenu(inst) {
+		const super_parent = this.fine.searchParent(inst, n => n.setChatInputRef && n.setAutocompleteInputRef, 100),
+			parent = super_parent && this.fine.searchTree(super_parent, n => n.props && n.props.isSettingsOpen && n.onClickSettings);
+
+		if ( parent )
+			parent.onClickSettings();
+	}
+
 	click(inst, event) {
 		// If we're on a page with minimal root, we want to open settings
 		// in a popout as we're almost certainly within Popout Chat.
@@ -219,7 +227,6 @@ export default class SettingsMenu extends Module {
 			this.emit('site.menu_button:clicked');
 		}
 
-		const parent = this.fine.searchParent(inst, n => n.toggleBalloonId);
-		parent && parent.handleButtonClick();
+		this.closeMenu(inst);
 	}
 }

@@ -15,7 +15,9 @@ export default class FineRouter extends Module {
 		this.inject('..fine');
 
 		this.__routes = [];
+
 		this.routes = {};
+		this.route_names = {};
 		this.current = null;
 		this.current_name = null;
 		this.match = null;
@@ -71,12 +73,45 @@ export default class FineRouter extends Module {
 		this.emit(':route', null, null);
 	}
 
-	route(name, path) {
+	getRoute(name) {
+		return this.routes[name];
+	}
+
+	getRoutes() {
+		return this.routes;
+	}
+
+	getRouteNames() {
+		return this.route_names;
+	}
+
+	getRouteName(route) {
+		if ( ! this.route_names[route] )
+			this.route_names[route] = route.replace(/(^|-)([a-z])/g, (_, spacer, letter) => `${spacer ? ' ' : ''}${letter.toLocaleUpperCase()}`);
+
+		return this.route_names[route];
+	}
+
+	routeName(route, name) {
+		if ( typeof route === 'object' ) {
+			for(const key in route)
+				if ( has(route, key) )
+					this.routeName(key, route[key]);
+
+			return;
+		}
+
+		this.route_names[route] = name;
+	}
+
+	route(name, path, sort = true) {
 		if ( typeof name === 'object' ) {
 			for(const key in name)
 				if ( has(name, key) )
-					this.route(key, name[key]);
+					this.route(key, name[key], false);
 
+			if ( sort )
+				this.__routes.sort((a,b) => b.score - a.score);
 			return;
 		}
 
@@ -95,6 +130,7 @@ export default class FineRouter extends Module {
 			}
 
 		this.__routes.push(route);
-		this.__routes.sort((a,b) => b.score - a.score);
+		if ( sort )
+			this.__routes.sort((a,b) => b.score - a.score);
 	}
 }

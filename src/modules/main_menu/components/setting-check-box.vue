@@ -55,6 +55,18 @@ export default {
 	mixins: [SettingMixin],
 	props: ['item', 'context'],
 
+	watch: {
+		value() {
+			if ( this.$refs.control )
+				this.$refs.control.indeterminate = this.value == null;
+		}
+	},
+
+	mounted() {
+		if ( this.$refs.control )
+			this.$refs.control.indeterminate = this.value == null;
+	},
+
 	methods: {
 		onChange() {
 			this.set(this.$refs.control.checked);

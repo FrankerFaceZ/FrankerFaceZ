@@ -39,6 +39,7 @@ export default class Twilight extends BaseSite {
 
 		this.web_munch.known(Twilight.KNOWN_MODULES);
 		this.router.route(Twilight.ROUTES);
+		this.router.routeName(Twilight.ROUTE_NAMES);
 	}
 
 	onEnable() {
@@ -181,25 +182,35 @@ Twilight.CHAT_ROUTES = [
 	'user',
 	'dash',
 	'embed-chat'
-]
+];
+
+
+Twilight.ROUTE_NAMES = {
+	'dir': 'Browse',
+	'dir-following': 'Following',
+	'dir-all': 'Browse Live Channels',
+	'dash': 'Dashboard',
+	'popout': 'Popout Chat',
+	'user-video': 'Channel Video'
+};
 
 
 Twilight.ROUTES = {
 	'front-page': '/',
 	'collection': '/collections/:collectionID',
 	'dir': '/directory',
-	'dir-community': '/communities/:communityName',
-	'dir-community-index': '/directory/communities',
-	'dir-creative': '/directory/creative',
+	//'dir-community': '/communities/:communityName',
+	//'dir-community-index': '/directory/communities',
+	//'dir-creative': '/directory/creative',
 	'dir-following': '/directory/following/:category?',
-	'dir-game-clips': '/directory/game/:gameName/clips',
-	'dir-game-details': '/directory/game/:gameName/details',
-	'dir-game-videos': '/directory/game/:gameName/videos/:filter',
 	'dir-game-index': '/directory/game/:gameName',
+	'dir-game-clips': '/directory/game/:gameName/clips',
+	'dir-game-videos': '/directory/game/:gameName/videos/:filter',
+	//'dir-game-details': '/directory/game/:gameName/details',
 	'dir-all': '/directory/all/:filter?',
-	'dir-category': '/directory/:category?',
+	//'dir-category': '/directory/:category?',
 	'dash': '/:userName/dashboard/:live?',
-	'dash-automod': '/:userName/dashboard/settings/automod',
+	//'dash-automod': '/:userName/dashboard/settings/automod',
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',
 	'video': '/videos/:videoID',
@@ -217,7 +228,7 @@ Twilight.ROUTES = {
 	'user': '/:userName',
 	'squad': '/:userName/squad',
 	'embed-chat': '/embed/:userName/chat'
-}
+};
 
 
 Twilight.DIALOG_EXCLUSIVE = '.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root';

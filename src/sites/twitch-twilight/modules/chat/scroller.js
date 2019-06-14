@@ -36,7 +36,7 @@ export default class Scroller extends Module {
 		this.settings.add('chat.scroller.freeze', {
 			default: 0,
 			ui: {
-				path: 'Chat > Behavior >> Scrolling @{"description": "Please note that FrankerFaceZ is dependant on Twitch\'s own scrolling code working correctly. There are bugs with Twitch\'s scrolling code that have existed for more than six months. If you are using Firefox, Edge, or other non-Webkit browsers, expect to have issues."}',
+				path: 'Chat > Behavior >> Scrolling @{"description": "Please note that FrankerFaceZ is dependent on Twitch\'s own scrolling code working correctly. There are bugs with Twitch\'s scrolling code that have existed for more than six months. If you are using Firefox, Edge, or other non-Webkit browsers, expect to have issues."}',
 				title: 'Pause Chat Scrolling',
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
 				component: 'setting-select-box',
@@ -223,7 +223,8 @@ export default class Scroller extends Module {
 				this._ffz_installed = true;
 				const inst = this;
 
-				this._ffz_accessor = `_ffz_contains_${last_id++}`;
+				inst.ffz_outside = true;
+				inst._ffz_accessor = `_ffz_contains_${last_id++}`;
 
 				t.on('tooltips:mousemove', this.ffzTooltipHover, this);
 				t.on('tooltips:leave', this.ffzTooltipLeave, this);
