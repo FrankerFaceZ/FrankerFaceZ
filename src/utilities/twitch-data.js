@@ -18,10 +18,14 @@ export default class TwitchData extends Module {
 		this.inject('site.apollo');
 		this.inject('site.web_munch');
 
+		this._waiting_stream_ids = new Map;
+		this._waiting_stream_logins = new Map;
+
 		this.tag_cache = new Map;
 		this._waiting_tags = new Map;
 
-		this._loadTags = debounce(this._loadTags.bind(this), 50);
+		this._loadTags = debounce(this._loadTags, 50);
+		this._loadStreams = debounce(this._loadStreams, 50);
 	}
 
 	queryApollo(query, variables, options) {
@@ -56,7 +60,7 @@ export default class TwitchData extends Module {
 			return this._search;
 
 		const apollo = this.apollo.client,
-			core = this.listeners.getCore(),
+			core = this.site.getCore(),
 
 			search_module = this.web_munch.getModule('algolia-search'),
 			SearchClient = search_module && search_module.a;
@@ -122,54 +126,219 @@ export default class TwitchData extends Module {
 
 
 	// ========================================================================
+	// Stream Up-Type (Uptime and Type, for Directory Purposes)
+	// ========================================================================
+
+	getStreamMeta(id, login) {
+		return new Promise(async (s, f) => {
+			if ( id ) {
+				if ( this._waiting_stream_ids.has(id) )
+					this._waiting_stream_ids.get(id).push([s, f]);
+				else
+					this._waiting_stream_ids.set(id, [[s, f]]);
+			} else if ( login ) {
+				if ( this._waiting_stream_logins.has(login) )
+					this._waiting_stream_logins.get(login).push([s, f]);
+				else
+					this._waiting_stream_logins.set(login, [[s, f]]);
+			} else
+				f('id and login cannot both be null');
+
+			if ( ! this._loading_streams )
+				this._loadStreams();
+		})
+	}
+
+	async _loadStreams() {
+		if ( this._loading_streams )
+			return;
+
+		this._loading_streams = true;
+
+		// Get the first 50... things.
+		const ids = [...this._waiting_stream_ids.keys()].slice(0, 50),
+			remaining = 50 - ids.length,
+			logins = remaining > 0 ? [...this._waiting_stream_logins.keys()].slice(0, remaining) : [];
+
+		let nodes;
+
+		try {
+			const data = await this.queryApollo({
+				query: require('./data/stream-fetch.gql'),
+				variables: {
+					ids: ids.length ? ids : null,
+					logins: logins.length ? logins : null
+				}
+			});
+
+			nodes = get('data.users', data);
+
+		} catch(err) {
+			for(const id of ids) {
+				const promises = this._waiting_stream_ids.get(id);
+				this._waiting_stream_ids.delete(id);
+
+				for(const pair of promises)
+					pair[1](err);
+			}
+
+			for(const login of logins) {
+				const promises = this._waiting_stream_logins.get(login);
+				this._waiting_stream_logins.delete(login);
+
+				for(const pair of promises)
+					pair[1](err);
+			}
+
+			return;
+		}
+
+		const id_set = new Set(ids),
+			login_set = new Set(logins);
+
+		if ( Array.isArray(nodes) )
+			for(const node of nodes) {
+				if ( ! node || ! node.id )
+					continue;
+
+				id_set.delete(node.id);
+				login_set.delete(node.login);
+
+				let promises = this._waiting_stream_ids.get(node.id);
+				if ( promises ) {
+					this._waiting_stream_ids.delete(node.id);
+					for(const pair of promises)
+						pair[0](node.stream);
+				}
+
+				promises = this._waiting_stream_logins.get(node.login);
+				if ( promises ) {
+					this._waiting_stream_logins.delete(node.login);
+					for(const pair of promises)
+						pair[0](node.stream);
+				}
+			}
+
+		for(const id of id_set) {
+			const promises = this._waiting_stream_ids.get(id);
+			if ( promises ) {
+				this._waiting_stream_ids.delete(id);
+				for(const pair of promises)
+					pair[0](null);
+			}
+		}
+
+		for(const login of login_set) {
+			const promises = this._waiting_stream_logins.get(login);
+			if ( promises ) {
+				this._waiting_stream_logins.delete(login);
+				for(const pair of promises)
+					pair[0](null);
+			}
+		}
+
+		this._loading_streams = false;
+
+		if ( this._waiting_stream_ids.size || this._waiting_stream_logins.size )
+			this._loadStreams();
+	}
+
+
+	// ========================================================================
 	// Tags
 	// ========================================================================
+
+	memorizeTag(node, dispatch = true) {
+		// We want properly formed tags.
+		if ( ! node || ! node.id || ! node.tagName || ! node.localizedName )
+			return;
+
+		let old = null;
+		if ( this.tag_cache.has(node.id) )
+			old = this.tag_cache.get(old);
+
+		const match = node.isLanguageTag && LANGUAGE_MATCHER.exec(node.tagName),
+			lang = match && match[1] || null;
+
+		const new_tag = {
+			id: node.id,
+			value: node.id,
+			is_language: node.isLanguageTag,
+			language: lang,
+			name: node.tagName,
+			label: node.localizedName
+		};
+
+		if ( node.localizedDescription )
+			new_tag.description = node.localizedDescription;
+
+		const tag = old ? Object.assign(old, new_tag) : new_tag;
+		this.tag_cache.set(tag.id, tag);
+
+		if ( dispatch && tag.description && this._waiting_tags.has(tag.id) ) {
+			const promises = this._waiting_tags.get(tag.id);
+			this._waiting_tags.delete(tag.id);
+			for(const pair of promises)
+				pair[0](tag);
+		}
+
+		return tag;
+	}
 
 	async _loadTags() {
 		if ( this._loading_tags )
 			return;
 
 		this._loading_tags = true;
-		const processing = this._waiting_tags;
-		this._waiting_tags = new Map;
+
+		// Get the first 50 tags.
+		const ids = [...this._waiting_tags.keys()].slice(0, 50);
+
+		let nodes
 
 		try {
 			const data = await this.queryApollo(
 				require('./data/tags-fetch.gql'),
 				{
-					ids: [...processing.keys()]
+					ids
 				}
 			);
 
-			const nodes = get('data.contentTags', data);
-			if ( Array.isArray(nodes) )
-				for(const node of nodes) {
-					const tag = {
-						id: node.id,
-						value: node.id,
-						is_language: node.isLanguageTag,
-						name: node.tagName,
-						label: node.localizedName,
-						description: node.localizedDescription
-					};
-
-					this.tag_cache.set(tag.id, tag);
-					const promises = processing.get(tag.id);
-					if ( promises )
-						for(const pair of promises)
-							pair[0](tag);
-
-					promises.delete(tag.id);
-				}
-
-			for(const promises of processing.values())
-				for(const pair of promises)
-					pair[0](null);
+			nodes = get('data.contentTags', data);
 
 		} catch(err) {
-			for(const promises of processing.values())
+			for(const id of ids) {
+				const promises = this._waiting_tags.get(id);
+				this._waiting_tags.delete(id);
+
 				for(const pair of promises)
 					pair[1](err);
+			}
+
+			return;
+		}
+
+		const id_set = new Set(ids);
+
+		if ( Array.isArray(nodes) )
+			for(const node of nodes) {
+				const tag = this.memorizeTag(node, false),
+					promises = this._waiting_tags.get(tag.id);
+
+				this._waiting_tags.delete(tag.id);
+				id_set.delete(tag.id);
+
+				if ( promises )
+					for(const pair of promises)
+						pair[0](tag);
+			}
+
+		for(const id of id_set) {
+			const promises = this._waiting_tags.get(id);
+			this._waiting_tags.delete(id);
+
+			for(const pair of promises)
+				pair[0](null);
 		}
 
 		this._loading_tags = false;
@@ -179,6 +348,10 @@ export default class TwitchData extends Module {
 	}
 
 	getTag(id, want_description = false) {
+		// Make sure we weren't accidentally handed a tag object.
+		if ( id && id.id )
+			id = id.id;
+
 		if ( this.tag_cache.has(id) ) {
 			const out = this.tag_cache.get(id);
 			if ( out && (out.description || ! want_description) )
@@ -197,6 +370,10 @@ export default class TwitchData extends Module {
 	}
 
 	getTagImmediate(id, callback, want_description = false) {
+		// Make sure we weren't accidentally handed a tag object.
+		if ( id && id.id )
+			id = id.id;
+
 		let out = null;
 		if ( this.tag_cache.has(id) )
 			out = this.tag_cache.get(id);
@@ -223,17 +400,7 @@ export default class TwitchData extends Module {
 				continue;
 
 			seen.add(node.id);
-			const tag = {
-				id: node.id,
-				value: node.id,
-				is_language: node.isLanguageTag,
-				name: node.tagName,
-				label: node.localizedName,
-				description: node.localizedDescription
-			};
-
-			this.tag_cache.set(tag.id, tag);
-			out.push(tag);
+			out.push(this.memorizeTag(node));
 		}
 
 		return out;
@@ -258,46 +425,89 @@ export default class TwitchData extends Module {
 		return out;
 	}
 
-	async getMatchingTags(query, locale) {
+	async getMatchingTags(query, locale, category = null) {
 		if ( ! locale )
 			locale = this.locale;
 
-		const data = await this.searchClient.queryForType(
-			'tag', query, generateUUID(), {
-				hitsPerPage: 100,
-				facetFilters: [
+		locale = locale.toLowerCase();
 
-				],
-				restrictSearchableAttributes: [
-					`localizations.${locale}`,
-					'tag_name'
-				]
-			}
-		);
+		let nodes;
 
-		const nodes = get('streamTags.hits', data);
+		if ( category ) {
+			const data = await this.searchClient.queryForType(
+				'stream_tag', query, generateUUID(), {
+					hitsPerPage: 100,
+					faceFilters: [
+						`category_id:${category}`
+					],
+					restrictSearchableAttributes: [
+						`localizations.${locale}`,
+						'tag_name'
+					]
+				}
+			);
+
+			nodes = get('streamTags.hits', data);
+
+		} else {
+			const data = await this.searchClient.queryForType(
+				'tag', query, generateUUID(), {
+					hitsPerPage: 100,
+					facetFilters: [
+						['tag_scope:SCOPE_ALL', 'tag_scope:SCOPE_CATEGORY']
+					],
+					restrictSearchableAttributes: [
+						`localizations.${locale}`,
+						'tag_name'
+					]
+				}
+			);
+
+			nodes = get('tags.hits', data);
+		}
+
 		if ( ! Array.isArray(nodes) )
 			return [];
 
 		const out = [], seen = new Set;
 		for(const node of nodes) {
-			if ( ! node || seen.has(node.tag_id) )
+			const tag_id = node.tag_id || node.objectID;
+			if ( ! node || seen.has(tag_id) )
 				continue;
 
-			seen.add(node.tag_id);
-			if ( ! this.tag_cache.has(node.tag_id) ) {
+			seen.add(tag_id);
+			if ( ! this.tag_cache.has(tag_id) ) {
+				const match = node.tag_name && LANGUAGE_MATCHER.exec(node.tag_name),
+					lang = match && match[1] || null;
+
 				const tag = {
-					id: node.tag_id,
-					value: node.tag_id,
-					is_language: node.tag_name && LANGUAGE_MATCHER.test(node.tag_name),
+					id: tag_id,
+					value: tag_id,
+					is_language: lang != null,
+					language: lang,
 					label: node.localizations && (node.localizations[locale] || node.localizations['en-us']) || node.tag_name
 				};
 
-				this.tag_cache.set(tag.id);
+				if ( node.description_localizations ) {
+					const desc = node.description_localizations[locale] || node.description_localizations['en-us'];
+					if ( desc )
+						tag.description = desc;
+				}
+
+				this.tag_cache.set(tag.id, tag);
 				out.push(tag);
 
 			} else {
-				out.push(this.tag_cache.get(node.tag_id));
+				const tag = this.tag_cache.get(tag_id);
+				if ( ! tag.description && node.description_localizations ) {
+					const desc = node.description_localizations[locale] || node.description_localizations['en-us'];
+					if ( desc ) {
+						tag.description = desc;
+						this.tag_cache.set(tag.id, tag);
+					}
+				}
+
+				out.push(tag);
 			}
 		}
 

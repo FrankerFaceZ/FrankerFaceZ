@@ -29,11 +29,11 @@ export default class Game extends SiteModule {
 
 		this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
 		this.apollo.registerModifier('DirectoryPage_Game', res => {
-			setTimeout(() =>
+			/*setTimeout(() =>
 				this.apollo.ensureQuery(
 					'DirectoryPage_Game',
 					'data.game.streams.edges.0.node.createdAt'
-				), 500);
+				), 500);*/
 
 			this.modifyStreams(res);
 		}, false);
@@ -62,10 +62,10 @@ export default class Game extends SiteModule {
 	updateGameHeader(inst) {
 		this.updateButtons(inst);
 
-		this.apollo.ensureQuery(
+		/*this.apollo.ensureQuery(
 			'DirectoryPage_Game',
 			'data.game.streams.edges.0.node.createdAt'
-		);
+		);*/
 
 	}
 

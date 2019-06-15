@@ -169,7 +169,7 @@ export default class Following extends SiteModule {
 	}
 
 	ensureQueries () {
-		this.apollo.ensureQuery(
+		/*this.apollo.ensureQuery(
 			'FollowedChannels_RENAME2',
 			'data.currentUser.followedLiveUsers.nodes.0.stream.createdAt'
 		);
@@ -182,7 +182,7 @@ export default class Following extends SiteModule {
 		this.apollo.ensureQuery(
 			'RecommendedChannels',
 			'data.currentUser.recommendations.liveRecommendations.nodes.0.createdAt'
-		);
+		);*/
 
 		if ( this.router.current_name !== 'dir-following' )
 			return;
@@ -197,11 +197,11 @@ export default class Following extends SiteModule {
 					get('data.currentUser.followedHosts.nodes.0.hosting.stream.createdAt', n) !== undefined
 			);
 
-		else if ( bit === 'live' )
+		/*else if ( bit === 'live' )
 			this.apollo.ensureQuery(
 				'FollowingLive_CurrentUser',
 				'data.currentUser.followedLiveUsers.nodes.0.stream.createdAt'
-			);
+			);*/
 
 		else if ( bit === 'hosts' )
 			this.apollo.ensureQuery(
@@ -217,7 +217,7 @@ export default class Following extends SiteModule {
 	}
 
 	destroyHostMenu(event) {
-		if (!event || event && event.target && event.target.closest('.ffz-channel-selector-outer') === null && Date.now() > this.hostMenuBuffer) {
+		if (!event || ! this.hostMenu || event && event.target && event.target.closest('.ffz-channel-selector-outer') === null && Date.now() > this.hostMenuBuffer) {
 			this.hostMenuPopper && this.hostMenuPopper.destroy();
 			this.hostMenu && this.hostMenu.remove();
 			this.hostMenuPopper = this.hostMenu = undefined;

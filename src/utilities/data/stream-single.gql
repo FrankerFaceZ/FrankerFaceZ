@@ -1,0 +1,9 @@
+query FFZ_SingleStream($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+		id
+		stream {
+			id
+			createdAt
+		}
+	}
+}

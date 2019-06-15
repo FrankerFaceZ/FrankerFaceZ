@@ -38,6 +38,7 @@ export default class Directory extends SiteModule {
 		this.inject('site.apollo');
 		this.inject('site.css_tweaks');
 		this.inject('site.web_munch');
+		this.inject('site.twitch_data');
 
 		this.inject('i18n');
 		this.inject('settings');
@@ -200,7 +201,7 @@ export default class Directory extends SiteModule {
 			this.DirectoryVideos.forceUpdate();
 		})
 
-		this.DirectoryCard.ready(cls => {
+		this.DirectoryCard.ready((cls, instances) => {
 			//const old_render = cls.prototype.render,
 			const old_render_iconic = cls.prototype.renderIconicImage,
 				old_render_titles = cls.prototype.renderTitles;
@@ -272,13 +273,13 @@ export default class Directory extends SiteModule {
 
 			// Game Directory Channel Cards
 			// TODO: Better query handling.
-			this.apollo.ensureQuery(
+			/*this.apollo.ensureQuery(
 				'DirectoryPage_Game',
 				'data.game.streams.edges.0.node.createdAt'
-			);
+			);*/
 
-			//for(const inst of instances)
-			//	this.updateCard(inst);
+			for(const inst of instances)
+				this.updateCard(inst);
 		});
 
 		this.DirectoryCard.on('update', this.updateCard, this);
@@ -373,12 +374,33 @@ export default class Directory extends SiteModule {
 	updateUptime(inst, created_path) {
 		const container = this.fine.getChildNode(inst),
 			card = container && container.querySelector && container.querySelector('.preview-card-overlay'),
-			setting = this.settings.get('directory.uptime'),
-			created_at = inst.props && inst.props.createdAt || get(created_path, inst),
-			up_since = created_at && new Date(created_at),
+			setting = this.settings.get('directory.uptime');
+
+		if ( ! card || setting === 0 || ! inst.props || inst.props.viewCount || inst.props.animatedImageProps )
+			return this.clearUptime(inst);
+
+		let created_at = inst.props.createdAt || get(created_path, inst);
+
+		if ( ! created_at ) {
+			if ( inst.ffz_stream_meta === undefined ) {
+				inst.ffz_stream_meta = null;
+				this.twitch_data.getStreamMeta(inst.props.channelId, inst.props.channelLogin).then(data => {
+					inst.ffz_stream_meta = data;
+					this.updateUptime(inst, created_path);
+				});
+			}
+
+			if ( inst.ffz_stream_meta )
+				created_at = inst.ffz_stream_meta.createdAt;
+		}
+
+		if ( ! created_at )
+			return this.clearUptime(inst);
+
+		const up_since = created_at && new Date(created_at),
 			uptime = up_since && Math.floor((Date.now() - up_since) / 1000) || 0;
 
-		if ( ! card || setting === 0 || uptime < 1 )
+		if ( uptime < 1 )
 			return this.clearUptime(inst);
 
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);

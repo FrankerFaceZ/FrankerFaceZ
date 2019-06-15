@@ -23,10 +23,10 @@ export default class BrowsePopular extends SiteModule {
 
 	onEnable() {
 		// Popular Directory Channel Cards
-		this.apollo.ensureQuery(
+		/*this.apollo.ensureQuery(
 			'BrowsePage_Popular',
 			'data.streams.edges.0.node.createdAt'
-		);
+		);*/
 	}
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this

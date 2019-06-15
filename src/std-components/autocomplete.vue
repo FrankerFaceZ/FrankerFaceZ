@@ -305,6 +305,9 @@ export default {
 		},
 
 		onHome(event) {
+			if ( event.ctrlKey || event.shiftKey || event.altKey )
+				return;
+
 			if ( ! this.open )
 				return;
 
@@ -316,6 +319,9 @@ export default {
 		},
 
 		onEnd(event) {
+			if ( event.ctrlKey || event.shiftKey || event.altKey )
+				return;
+
 			if ( ! this.open )
 				return;
 
@@ -327,6 +333,9 @@ export default {
 		},
 
 		onUp(event) {
+			if ( event.ctrlKey || event.shiftKey || event.altKey )
+				return;
+
 			if ( ! this.open )
 				return;
 
@@ -341,6 +350,9 @@ export default {
 		},
 
 		onDown(event) {
+			if ( event.ctrlKey || event.shiftKey || event.altKey )
+				return;
+
 			if ( ! this.open )
 				return;
 
@@ -363,6 +375,9 @@ export default {
 		},
 
 		onEnter(event) {
+			if ( event.ctrlKey || event.shiftKey || event.altKey )
+				return;
+
 			if ( ! this.open )
 				return;
 

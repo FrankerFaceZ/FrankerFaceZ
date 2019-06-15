@@ -179,6 +179,8 @@ export function deep_equals(object, other, ignore_undefined = false, seen, other
 		return false;
 	if ( typeof object !== 'object' )
 		return false;
+	if ( (object === null) !== (other === null) )
+		return false;
 
 	if ( ! seen )
 		seen = new Set;

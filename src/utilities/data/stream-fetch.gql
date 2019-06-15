@@ -1,0 +1,10 @@
+query FFZ_StreamFetch($ids: [ID!], $logins: [String!]) {
+	users(ids: $ids, logins: $logins) {
+		id
+		login
+		stream {
+			id
+			createdAt
+		}
+	}
+}
