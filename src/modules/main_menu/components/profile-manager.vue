@@ -69,7 +69,7 @@
 					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow tw-tooltip-wrapper"
 					@click="importProfile(profile)"
 				>
-					<span class="tw-button__text">
+					<span class="tw-button__text tw-c-text-overlay">
 						{{ profile.i18n_key ? t(profile.i18n_key, profile.name) : profile.name }}
 					</span>
 					<div v-if="profile.description" class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
@@ -98,7 +98,7 @@
 					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow"
 					@click="confirmImport(true)"
 				>
-					<span class="tw-button__text ffz-i-ok">
+					<span class="tw-button__text tw-c-text-overlay ffz-i-ok">
 						{{ t('setting.backup-restore.enable-auto', 'Yes, allow automatic updates.') }}
 					</span>
 				</button>
@@ -107,7 +107,7 @@
 					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow"
 					@click="confirmImport(false)"
 				>
-					<span class="tw-button__text ffz-i-cancel">
+					<span class="tw-button__text tw-c-text-overlay ffz-i-cancel">
 						{{ t('setting.backup-restore.disable-auto', 'No, prevent automatic updates.') }}
 					</span>
 				</button>

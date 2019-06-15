@@ -1,0 +1,11 @@
+query FFZ_FetchUser($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+		id
+		login
+		displayName
+		profileImageURL(width: 50)
+		roles {
+			isPartner
+		}
+	}
+}

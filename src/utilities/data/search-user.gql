@@ -1,0 +1,16 @@
+query FFZ_SearchUser($query: String!, $first: Int, $after: String) {
+	searchFor(userQuery: $query, platform: "web", target: {index: USER, cursor: $after, limit: $first}) {
+		users {
+			cursor
+			pageInfo {
+				hasNextPage
+			}
+			items {
+				id
+				login
+				displayName
+				profileImageURL(width: 50)
+			}
+		}
+	}
+}

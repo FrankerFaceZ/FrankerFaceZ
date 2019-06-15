@@ -109,8 +109,9 @@ export const Page = {
 				let i = 1;
 				for(const part of route.parts) {
 					if ( typeof part === 'object' ) {
-						if ( config.values[part.name] != null )
-							parts.push([i, config.values[part.name]]);
+						const val = config.values[part.name];
+						if ( val && val.length )
+							parts.push([i, val]);
 
 						i++;
 					}
@@ -141,4 +142,22 @@ export const Page = {
 		values: {}
 	}),
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/page.vue')
+};
+
+export const Channel = {
+	createTest(config = {}) {
+		const login =  config.login,
+			id = config.id;
+
+		return ctx => ctx.channelID === id || (ctx.channelID == null && ctx.channelLogin === login);
+	},
+
+	title: 'Current Channel',
+	i18n: 'settings.filter.channel',
+
+	default: () => ({
+		login: null,
+		id: null
+	}),
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/channel.vue')
 };

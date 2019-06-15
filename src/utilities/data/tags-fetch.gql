@@ -1,0 +1,9 @@
+query FFZ_FetchTags($ids: [ID!]) {
+	contentTags(ids: $ids) {
+		id
+		isLanguageTag
+		tagName
+		localizedName
+		localizedDescription
+	}
+}

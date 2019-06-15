@@ -528,7 +528,7 @@ export default class MainMenu extends Module {
 			move: idx => context.manager.moveProfile(profile.id, idx),
 			save: () => profile.save(),
 			update: data => {
-				profile.data = data
+				profile.data = deep_copy(data)
 				profile.save()
 			},
 

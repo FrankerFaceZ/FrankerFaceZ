@@ -10,6 +10,7 @@ import WebMunch from 'utilities/compat/webmunch';
 import Fine from 'utilities/compat/fine';
 import FineRouter from 'utilities/compat/fine-router';
 import Apollo from 'utilities/compat/apollo';
+import TwitchData from 'utilities/twitch-data';
 
 import Switchboard from './switchboard';
 
@@ -31,6 +32,7 @@ export default class Twilight extends BaseSite {
 		this.inject(Fine);
 		this.inject('router', FineRouter);
 		this.inject(Apollo, false);
+		this.inject(TwitchData);
 		this.inject(Switchboard);
 	}
 

@@ -40,12 +40,7 @@ export default class FineRouter extends Module {
 	}
 
 	navigate(route, data, opts) {
-		const r = this.routes[route];
-		if ( ! r )
-			throw new Error(`unable to find route "${route}"`);
-
-		const url = r.url(data, opts);
-		this.history.push(url);
+		this.history.push(this.getURL(route, data, opts));
 	}
 
 	_navigateTo(location) {
@@ -55,6 +50,11 @@ export default class FineRouter extends Module {
 			return;
 
 		this.location = path;
+		this._pickRoute();
+	}
+
+	_pickRoute() {
+		const path = this.location;
 
 		for(const route of this.__routes) {
 			const match = route.regex.exec(path);
@@ -71,6 +71,14 @@ export default class FineRouter extends Module {
 
 		this.current = this.current_name = this.match = null;
 		this.emit(':route', null, null);
+	}
+
+	getURL(route, data, opts) {
+		const r = this.routes[route];
+		if ( ! r )
+			throw new Error(`unable to find route "${route}"`);
+
+		return r.url(data, opts);
 	}
 
 	getRoute(name) {
@@ -92,26 +100,35 @@ export default class FineRouter extends Module {
 		return this.route_names[route];
 	}
 
-	routeName(route, name) {
+	routeName(route, name, process = true) {
 		if ( typeof route === 'object' ) {
 			for(const key in route)
 				if ( has(route, key) )
-					this.routeName(key, route[key]);
+					this.routeName(key, route[key], false);
 
+			if ( process )
+				this.emit(':updated-route-names');
 			return;
 		}
 
 		this.route_names[route] = name;
+
+		if ( process )
+			this.emit(':updated-route-names');
 	}
 
-	route(name, path, sort = true) {
+	route(name, path, process = true) {
 		if ( typeof name === 'object' ) {
 			for(const key in name)
 				if ( has(name, key) )
 					this.route(key, name[key], false);
 
-			if ( sort )
+			if ( process ) {
 				this.__routes.sort((a,b) => b.score - a.score);
+				if ( this.location )
+					this._pickRoute();
+				this.emit(':updated-routes');
+			}
 			return;
 		}
 
@@ -130,7 +147,11 @@ export default class FineRouter extends Module {
 			}
 
 		this.__routes.push(route);
-		if ( sort )
+		if ( process ) {
 			this.__routes.sort((a,b) => b.score - a.score);
+			if ( this.location )
+				this._pickRoute();
+			this.emit(':updated-routes');
+		}
 	}
 }

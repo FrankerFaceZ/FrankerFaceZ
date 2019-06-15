@@ -1,0 +1,16 @@
+query FFZ_SearchCategory($query: String!, $first: Int, $after: String) {
+	searchFor(userQuery: $query, platform: "web", target: {index: GAME, cursor: $after, limit: $first}) {
+		games {
+			cursor
+			pageInfo {
+				hasNextPage
+			}
+			items {
+				id
+				name
+				displayName
+				boxArtURL(width: 40, height: 56)
+			}
+		}
+	}
+}

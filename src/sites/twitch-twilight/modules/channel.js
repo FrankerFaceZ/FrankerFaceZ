@@ -66,7 +66,26 @@ export default class Channel extends Module {
 				this.wrapRaidController(inst);
 		});
 
+		this.ChannelPage.on('mount', inst => {
+			this.settings.updateContext({
+				channel: get('state.channel.login', inst),
+				channelID: get('state.channel.id', inst)
+			});
+		});
+
+		this.ChannelPage.on('unmount', () => {
+			this.settings.updateContext({
+				channel: null,
+				channelID: null
+			});
+		});
+
 		this.ChannelPage.on('update', inst => {
+			this.settings.updateContext({
+				channel: get('state.channel.login', inst),
+				channelID: get('state.channel.id', inst)
+			});
+
 			if ( this.settings.get('channel.hosting.enable') || has(inst.state, 'hostMode') || has(inst.state, 'hostedChannel') )
 				return;
 

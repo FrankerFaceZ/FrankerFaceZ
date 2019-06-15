@@ -8,7 +8,7 @@
 			<select
 				:id="'page$' + id"
 				v-model="value.data.route"
-				class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-select"
+				class="tw-flex-grow-1 tw-mg-l-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-select"
 			>
 				<option
 					v-for="(route, key) in routes"
@@ -21,10 +21,18 @@
 			</select>
 		</div>
 
-		<div
-			v-if="parts && parts.length"
-			class="tw-border-t tw-mg-t-05"
-		>
+		<div class="tw-border-t tw-mg-t-05">
+			<div class="tw-pd-y-05">
+				<t-list
+					phrase="setting.filter.page.url"
+					default="URL: {url}"
+				>
+					<template #url>
+						<span class="tw-c-text-alt">{{ url }}</span>
+					</template>
+				</t-list>
+			</div>
+
 			<div
 				v-for="part in parts"
 				:key="part.key"
@@ -37,7 +45,7 @@
 				<input
 					:id="'page$' + id + '$part-' + part.key"
 					v-model="value.data.values[part.key]"
-					class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+					class="tw-mg-l-1 tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
 				>
 			</div>
 		</div>
@@ -66,6 +74,25 @@ export default {
 			return this.routes[this.value.data.route];
 		},
 
+		url() {
+			if ( ! this.route )
+				return null;
+
+			const parts = {};
+
+			for(const part of this.parts) {
+				const value = this.value.data.values[part.key];
+				parts[part.key] = value || `<${part.key}${part.optional ? '*' : ''}>`;
+			}
+
+			try {
+				return decodeURI(new URL(this.route.url(parts), location));
+			} catch(err) {
+				console.error(err);
+				return null;
+			}
+		},
+
 		parts() {
 			const out = [];
 			if ( ! this.route || ! this.route.parts )
@@ -78,7 +105,8 @@ export default {
 					out.push({
 						key: part.name,
 						i18n: `settings.filter.page.route.${this.route.name}.${part.name}`,
-						title: name[0].toLocaleUpperCase() + name.substr(1)
+						title: name[0].toLocaleUpperCase() + name.substr(1),
+						optional: part.optional
 					});
 				}
 			}

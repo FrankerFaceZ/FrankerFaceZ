@@ -149,6 +149,11 @@ textarea.tw-input {
 
 
 .ffz--filter-editor {
+	label {
+		width: auto;
+		min-width: unset;
+	}
+
 	.ffz--rule {
 		outline: none;
 

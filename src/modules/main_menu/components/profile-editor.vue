@@ -77,6 +77,7 @@
 					:href="url"
 					target="_blank"
 					rel="noopener noreferrer"
+					class="tw-link tw-c-text-overlay"
 				>
 					{{ url }}
 				</a>

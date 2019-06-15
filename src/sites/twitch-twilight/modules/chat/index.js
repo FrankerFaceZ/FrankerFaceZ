@@ -110,7 +110,8 @@ const CHAT_TYPES = make_enum(
 	'AnonSubMysteryGift',
 	'FirstCheerMessage',
 	'BitsBadgeTierMessage',
-	'InlinePrivateCallout'
+	'InlinePrivateCallout',
+	'ChannelPointsReward'
 );
 
 
@@ -518,7 +519,7 @@ export default class ChatHook extends Module {
 		this.updateMentionCSS();
 
 		this.ChatController.on('mount', this.chatMounted, this);
-		this.ChatController.on('unmount', this.chatUmounted, this);
+		this.ChatController.on('unmount', this.chatUnmounted, this);
 		this.ChatController.on('receive-props', this.chatUpdated, this);
 
 		this.ChatService.ready((cls, instances) => {
@@ -1565,6 +1566,12 @@ export default class ChatHook extends Module {
 			chatHidden: props.isHidden
 		});
 
+		if ( props.isEmbedded || props.isPopout )
+			this.settings.updateContext({
+				channel: props.channelLogin && props.channelLogin.toLowerCase(),
+				channelID: props.channelID
+			});
+
 		this.chat.context.updateContext({
 			moderator: props.isCurrentUserModerator,
 			channel: props.channelLogin && props.channelLogin.toLowerCase(),
@@ -1576,9 +1583,21 @@ export default class ChatHook extends Module {
 	}
 
 
-	chatUmounted(chat) {
+	chatUnmounted(chat) {
 		if ( chat.chatBuffer && chat.chatBuffer.ffzController === this )
 			chat.chatBuffer.ffzController = null;
+
+		if ( chat.props.isEmbedded || chat.props.isPopout )
+			this.settings.updateContext({
+				channel: null,
+				channelID: null
+			});
+
+		this.chat.context.updateContext({
+			moderator: false,
+			channel: null,
+			channelID: null
+		});
 
 		this.removeRoom(chat);
 	}
@@ -1599,6 +1618,12 @@ export default class ChatHook extends Module {
 			this.updateRoomBitsConfig(chat, props.bitsConfig);
 
 		// TODO: Check if this is the room for the current channel.
+
+		if ( props.isEmbedded || props.isPopout )
+			this.settings.updateContext({
+				channel: props.channelLogin && props.channelLogin.toLowerCase(),
+				channelID: props.channelID
+			});
 
 		this.settings.updateContext({
 			moderator: props.isCurrentUserModerator,

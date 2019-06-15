@@ -1,0 +1,9 @@
+query FFZ_TopTags($limit: Int) {
+	topTags(limit: $limit) {
+		id
+		isLanguageTag
+		tagName
+		localizedName
+		localizedDescription
+	}
+}

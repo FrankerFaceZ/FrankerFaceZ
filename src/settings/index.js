@@ -79,6 +79,10 @@ export default class SettingsManager extends Module {
 		// Before we do anything else, make sure the provider is ready.
 		await this.provider.awaitReady();
 
+		// When the router updates we additional routes, make sure to
+		// trigger a rebuild of profile context and re-select profiles.
+		this.on('site.router:updated-routes', this.updateRoutes, this);
+
 		// Load profiles, but don't run any events because we haven't done
 		// migrations yet.
 		this.loadProfiles(true);
@@ -197,6 +201,17 @@ export default class SettingsManager extends Module {
 	// ========================================================================
 	// Profile Management
 	// ========================================================================
+
+	updateRoutes() {
+		// Clear the existing matchers.
+		for(const profile of this.__profiles)
+			profile.matcher = null;
+
+		// And then re-select the active profiles.
+		for(const context of this.__contexts)
+			context.selectProfiles();
+	}
+
 
 	/**
 	 * Get an existing {@link SettingsProfile} instance.

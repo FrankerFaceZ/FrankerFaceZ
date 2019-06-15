@@ -379,12 +379,12 @@ export default {
 					this.open = false;
 
 			} else {
-				this.search = item.label || item.name || item.value;
+				this.search = item.displayName || item.label || item.name || item.value;
 				this.open = false;
 			}
 
 			this.$emit('input', this.search);
-			this.$emit('selected', objectHas(item, 'value') ? item.value : objectHas(item, 'name') ? item.name : (item.label || item.displayName));
+			this.$emit('selected', item);
 		}
 	}
 }
