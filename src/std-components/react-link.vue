@@ -13,7 +13,7 @@ export default {
 		onClick(event) {
 			this.$emit('click', event);
 
-			if ( ! event.defaultPrevented )
+			if ( ! event.defaultPrevented && ! this.href.includes('//') )
 				this.reactNavigate(this.href, event);
 		}
 	}

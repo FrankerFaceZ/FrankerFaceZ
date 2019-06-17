@@ -40,6 +40,16 @@ export default class Layout extends Module {
 			}
 		});
 
+		this.settings.add('layout.portrait-invert', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'When in portrait mode, place chat at the top.',
+				component: 'setting-check-box'
+			},
+			changed: val => document.body.classList.toggle('ffz--portrait-invert', val)
+		});
+
 		this.settings.add('layout.portrait-threshold', {
 			default: 1.25,
 			ui: {
@@ -147,6 +157,8 @@ export default class Layout extends Module {
 	}
 
 	onEnable() {
+		document.body.classList.toggle('ffz--portrait-invert', this.settings.get('layout.portrait-invert'));
+
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
 		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);

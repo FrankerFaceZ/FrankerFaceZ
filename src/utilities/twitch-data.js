@@ -378,8 +378,11 @@ export default class TwitchData extends Module {
 		if ( this.tag_cache.has(id) )
 			out = this.tag_cache.get(id);
 
-		if ( ! out || (want_description && ! out.description) )
-			this.getTag(id, want_description).then(tag => callback(id, tag)).catch(err => callback(id, null, err));
+		if ( (want_description && (! out || ! out.description)) || (! out && callback) ) {
+			const promise = this.getTag(id, want_description);
+			if ( callback )
+				promise.then(tag => callback(id, tag)).catch(err => callback(id, null, err));
+		}
 
 		return out;
 	}

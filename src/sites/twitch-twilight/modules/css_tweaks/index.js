@@ -32,6 +32,7 @@ const CLASSES = {
 	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
+	'channel-live-ind': 'div[data-target="channel-header__live-indicator"]'
 };
 
 
@@ -220,6 +221,20 @@ export default class CSSTweaks extends Module {
 
 		// Other?
 
+		this.settings.add('channel.hide-live-indicator', {
+			requires: ['context.route.name'],
+			process(ctx, val) {
+				return ctx.get('context.route.name') === 'user' ? val : false
+			},
+			default: false,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Hide the "LIVE" indicator on live channel pages.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('channel-live-ind', val)
+		});
+
 		this.settings.add('channel.round-avatars', {
 			default: true,
 			ui: {
@@ -231,7 +246,7 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('channel.hide-not-live-bar', {
-			default: true,
+			default: false,
 			ui: {
 				path: 'Channel > Appearance >> General',
 				title: 'Hide the "Not Live" bar.',
@@ -256,6 +271,7 @@ export default class CSSTweaks extends Module {
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 		this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
+		this.toggleHide('channel-live-ind', this.settings.get('channel.hide-live-indicator'));
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);

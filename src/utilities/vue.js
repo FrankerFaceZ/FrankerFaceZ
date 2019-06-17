@@ -170,6 +170,10 @@ export class Vue extends Module {
 						router.history.push(url);
 					}
 				},
+				getReactURL(route, data, opts, ...args) {
+					const router = t.resolve('site.router');
+					return router.getURL(route, data, opts, ...args);
+				},
 				t(key, phrase, options) {
 					return this.$i18n.t_(key, phrase, options);
 				},

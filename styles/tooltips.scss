@@ -8,6 +8,18 @@ body {
 }
 
 
+.ffz-tooltip.ffz-tooltip--no-mouse {
+	> * {
+		pointer-events: none;
+	}
+}
+
+
+.ffz-tooltip-child {
+	display: none !important;
+}
+
+
 .tw-balloon {
 	&[x-placement^="bottom"] > .tw-balloon__tail {
 		bottom: 100%;

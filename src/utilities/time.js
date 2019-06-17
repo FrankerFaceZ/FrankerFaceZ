@@ -22,9 +22,11 @@ export function duration_to_string(elapsed, separate_days, days_only, no_hours, 
 		days = days > 0 ? `${days} days, ` : '';
 	}
 
+	const show_hours = (!no_hours || days || hours);
+
 	return `${days}${
-		(!no_hours || days || hours) ? `${days && hours < 10 ? '0' : ''}${hours}:` : ''
-	}${minutes < 10 ? '0' : ''}${minutes}${
+		show_hours ? `${days && hours < 10 ? '0' : ''}${hours}:` : ''
+	}${show_hours && minutes < 10 ? '0' : ''}${minutes}${
 		no_seconds ? '' : `:${seconds < 10 ? '0' : ''}${seconds}`}`;
 }
 

@@ -2,14 +2,22 @@
 	--ffz-player-width: calc(100vw - var(--ffz-portrait-extra-width));
 	--ffz-player-height: calc(calc(calc(var(--ffz-player-width) * 0.5625) + var(--ffz-portrait-extra-height)));
 	--ffz-theater-height: calc(calc(100vw * 0.5625) + var(--ffz-portrait-extra-height));
+	--ffz-chat-height: calc(100vh - var(--ffz-player-height));
 
-	& > .tw-full-height {
+	& > .tw-flex-column {
+		.ffz--portrait-invert & {
+			top: var(--ffz-chat-height) !important;
+		}
+
 		height: var(--ffz-player-height) !important;
 	}
 
 	.persistent-player.persistent-player__border--mini {
 		pointer-events: none;
-		bottom: calc(100vh - var(--ffz-player-height)) !important;
+
+		body:not(.ffz--portrait-invert) & {
+			bottom: var(--ffz-chat-height) !important;
+		}
 
 		> * {
 			pointer-events: auto;
@@ -17,10 +25,18 @@
 	}
 
 	.persistent-player.persistent-player--theatre {
-		top: 0 !important;
+		.ffz--portrait-invert & {
+			top: unset !important;
+			bottom: 0 !important;
+		}
+
+		body:not(.ffz--portrait-invert) & {
+			top: 0 !important;
+			bottom: unset !important;
+		}
+
 		left: 0 !important;
 		right: 0 !important;
-		bottom: unset !important;
 		height: var(--ffz-theater-height) !important;
 		width: 100% !important;
 	}
@@ -37,9 +53,28 @@
 		bottom: 0 !important;
 		left: 0 !important;
 		right: 0 !important;
-		height: calc(100vh - var(--ffz-player-height)) !important;
+		height: var(--ffz-chat-height) !important;
 		width: unset !important;
-		border-top: 1px solid #dad8de;
+
+		body:not(.ffz--portrait-invert) & {
+			top: unset !important;
+			bottom: 0 !important;
+			border-top: 1px solid #dad8de;
+
+			.tw-root--theme-dark & {
+				border-top-color: #2a2a2a;
+			}
+		}
+
+		.ffz--portrait-invert & {
+			top: 0 !important;
+			bottom: unset !important;
+			border-bottom: 1px solid #dad8de;
+
+			.tw-root--theme-dark & {
+				border-bottom-color: #2a2a2a;
+			}
+		}
 
 		& > .tw-full-height {
 			width: 100% !important;
@@ -47,27 +82,38 @@
 
 		.right-column__toggle-visibility {
 			position: fixed !important;
-			top: 6.5rem;
+
+			body:not(.ffz--portrait-invert) & {
+				top: 6.5rem;
+			}
+
+			.ffz--portrait-invert & {
+				top: calc(var(--ffz-chat-height) + 6.5rem);
+			}
+
 			right: .5rem;
 			left: unset !important;
 			transform: rotate(90deg);
 		}
 
 		.emote-picker__tab-content {
-			max-height: calc(calc(100vh - var(--ffz-player-height)) - 26rem);
+			max-height: calc(var(--ffz-chat-height) - 26rem);
 		}
 
 		&.right-column--theatre {
-			top: unset !important;
+			.ffz--portrait-invert & {
+				bottom: unset !important;
+			}
+
+			body:not(.ffz--portrait-invert) & {
+				top: unset !important;
+			}
+
 			height: calc(100vh - var(--ffz-theater-height)) !important;
 
 			.emote-picker__tab-content {
 				max-height: calc(calc(100vh - var(--ffz-theater-height)) - 26rem);
 			}
-		}
-
-		.tw-root--theme-dark & {
-			border-top-color: #2a2a2a
 		}
 
 		.video-chat {

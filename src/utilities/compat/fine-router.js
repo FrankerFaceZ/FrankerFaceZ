@@ -73,10 +73,25 @@ export default class FineRouter extends Module {
 		this.emit(':route', null, null);
 	}
 
-	getURL(route, data, opts) {
+	getURL(route, data, opts, ...args) {
 		const r = this.routes[route];
 		if ( ! r )
 			throw new Error(`unable to find route "${route}"`);
+
+		if ( typeof data !== 'object' ) {
+			const parts = [data, opts, ...args];
+			data = {};
+
+			let i = 0;
+			for(const part of r.parts) {
+				if ( part && part.name ) {
+					data[part.name] = parts[i];
+					i++;
+					if ( i >= parts.length )
+						break;
+				}
+			}
+		}
 
 		return r.url(data, opts);
 	}
