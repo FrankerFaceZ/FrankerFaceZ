@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {has, make_enum, split_chars, shallow_object_equals, set_equals} from 'utilities/object';
+import {get, has, make_enum, split_chars, shallow_object_equals, set_equals} from 'utilities/object';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -197,8 +197,28 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.InlineCallout = this.fine.define(
+			'inline-callout',
+			n => n.showCTA && n.toggleContextMenu && n.actionClick,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PinnedCallout = this.fine.define(
+			'pinned-callout',
+			n => n.getCalloutTitle && n.buildCalloutProps && n.pin,
+			Twilight.CHAT_ROUTES
+		);
 
 		// Settings
+
+		this.settings.add('chat.pin-resubs', {
+			default: false,
+			ui: {
+				path: 'Chat > Behavior >> General',
+				title: 'Automatically pin re-subscription messages in chat.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.width', {
 			default: 340,
@@ -483,6 +503,12 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
+		this.chat.context.on('changed:chat.pin-resubs', val => {
+			if ( val ) {
+				this.updateInlineCallouts();
+				this.updatePinnedCallouts();
+			}
+		}, this);
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
@@ -517,6 +543,14 @@ export default class ChatHook extends Module {
 		this.updateColors();
 		this.updateLineBorders();
 		this.updateMentionCSS();
+
+		this.InlineCallout.on('mount', this.onInlineCallout, this);
+		this.InlineCallout.on('update', this.onInlineCallout, this);
+		this.InlineCallout.ready(() => this.updateInlineCallouts());
+
+		this.PinnedCallout.on('mount', this.onPinnedCallout, this);
+		this.PinnedCallout.on('update', this.onPinnedCallout, this);
+		this.PinnedCallout.ready(() => this.updatePinnedCallouts());
 
 		this.ChatController.on('mount', this.chatMounted, this);
 		this.ChatController.on('unmount', this.chatUnmounted, this);
@@ -658,6 +692,52 @@ export default class ChatHook extends Module {
 		});
 
 		this.RoomPicker.on('mount', this.closeRoomPicker, this);
+	}
+
+
+	updatePinnedCallouts() {
+		for(const inst of this.PinnedCallout.instances)
+			this.onPinnedCallout(inst);
+	}
+
+	onPinnedCallout(inst) {
+		if ( ! this.chat.context.get('chat.pin-resubs') || inst._ffz_pinned )
+			return;
+
+		const props = inst.props,
+			event = props && props.event;
+		if ( props.pinned || ! event || event.type !== 'share-resub' )
+			return;
+
+		this.log.info('Automatically pinning re-sub notice.');
+		inst._ffz_pinned = true;
+		inst.pin();
+	}
+
+	updateInlineCallouts() {
+		for(const inst of this.InlineCallout.instances)
+			this.onInlineCallout(inst);
+	}
+
+	onInlineCallout(inst) {
+		if ( ! this.chat.context.get('chat.pin-resubs') || inst._ffz_pinned )
+			return;
+
+		const event = get('props.event.callout', inst);
+		if ( ! event || event.cta !== 'Share' )
+			return;
+
+		const onPin = get('contextMenuProps.onPin', event);
+		if ( ! onPin )
+			return;
+
+		this.log.info('Automatically pinning re-sub notice.');
+		inst._ffz_pinned = true;
+
+		if ( inst.hideOnContextMenuAction )
+			inst.hideOnContextMenuAction(onPin)();
+		else
+			onPin();
 	}
 
 

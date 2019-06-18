@@ -41,6 +41,15 @@ export default class Channel extends Module {
 			}
 		});
 
+		this.settings.add('channel.squads.no-autojoin', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> Squads',
+				title: 'Do not automatically redirect to Squad Streams.',
+				component: 'setting-check-box'
+			}
+		});
+
 
 		this.ChannelPage = this.fine.define(
 			'channel-page',
@@ -53,6 +62,12 @@ export default class Channel extends Module {
 			n => n.handleLeaveRaid && n.handleJoinRaid,
 			Twilight.CHAT_ROUTES
 		);
+
+		this.SquadController = this.fine.define(
+			'squad-controller',
+			n => n.onSquadPage && n.isValidSquad && n.handleLeaveSquad,
+			Twilight.CHAT_ROUTES
+		);
 	}
 
 
@@ -60,6 +75,9 @@ export default class Channel extends Module {
 		this.ChannelPage.on('mount', this.wrapChannelPage, this);
 		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);
+
+		this.SquadController.on('mount', this.noAutoSquads, this);
+		this.SquadController.on('update', this.noAutoSquads, this);
 
 		this.RaidController.ready((cls, instances) => {
 			for(const inst of instances)
@@ -125,6 +143,17 @@ export default class Channel extends Module {
 		}
 
 		this.noAutoRaids(inst);
+	}
+
+
+	noAutoSquads(inst) {
+		if ( this.settings.get('channel.squads.no-autojoin') )
+			setTimeout(() => {
+				if ( inst.isValidSquad() && inst.state && inst.state.hasJoined ) {
+					this.log.info('Automatically opting out of Squad Stream.');
+					inst.handleLeaveSquad();
+				}
+			});
 	}
 
 
