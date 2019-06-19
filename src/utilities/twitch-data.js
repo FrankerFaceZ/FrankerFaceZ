@@ -10,6 +10,49 @@ import {get, debounce, generateUUID} from 'utilities/object';
 
 const LANGUAGE_MATCHER = /^auto___lang_(\w+)$/;
 
+const ALGOLIA_LANGUAGES = {
+	bg: 'bg-bg',
+	cs: 'cs-cz',
+	da: 'da-dk',
+	de: 'de-de',
+	el: 'el-gr',
+	en: 'en-us',
+	es: 'es-es',
+	'es-mx': 'es-mx',
+	fi: 'fi-fi',
+	fr: 'fr-fr',
+	hu: 'hu-hu',
+	it: 'it-it',
+	ja: 'ja-jp',
+	ko: 'ko-kr',
+	nl: 'nl-nl',
+	no: 'no-no',
+	pl: 'pl-pl',
+	'pt-br': 'pt-br',
+	pt: 'pt-pt',
+	ro: 'ro-ro',
+	ru: 'ru-ru',
+	sk: 'sk-sk',
+	sv: 'sv-se',
+	th: 'th-th',
+	tr: 'tr-tr',
+	vi: 'vi-vn',
+	'zh-cn': 'zh-cn',
+	'zh-tw': 'zh-tw'
+};
+
+function getAlgoliaLanguage(locale) {
+	if ( ! locale )
+		return ALGOLIA_LANGUAGES.en;
+
+	locale = locale.toLowerCase();
+	if ( ALGOLIA_LANGUAGES[locale] )
+		return ALGOLIA_LANGUAGES[locale];
+
+	locale = locale.split('-')[0];
+	return ALGOLIA_LANGUAGES[locale] || ALGOLIA_LANGUAGES.en;
+}
+
 export default class TwitchData extends Module {
 	constructor(...args) {
 		super(...args);
@@ -432,7 +475,7 @@ export default class TwitchData extends Module {
 		if ( ! locale )
 			locale = this.locale;
 
-		locale = locale.toLowerCase();
+		locale = getAlgoliaLanguage(locale);
 
 		let nodes;
 

@@ -13,6 +13,7 @@ export default class MenuButton extends SiteModule {
 		super(...args);
 
 		this.inject('i18n');
+		this.inject('settings');
 		this.inject('site.fine');
 
 		this.should_enable = true;
@@ -20,6 +21,16 @@ export default class MenuButton extends SiteModule {
 		this._has_update = false;
 		this._important_update = false;
 		this._new_settings = 0;
+
+		this.settings.add('ffz.show-new-settings', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Display an indicator on the FFZ Control Center button whenever there are new settings added to FrankerFaceZ.',
+				component: 'setting-check-box'
+			},
+			changed: () => this.update()
+		});
 
 		this.NavBar = this.fine.define(
 			'nav-bar',
@@ -40,7 +51,7 @@ export default class MenuButton extends SiteModule {
 	}
 
 	get has_new() {
-		return this._new_settings > 0
+		return this.settings.get('ffz.show-new-settings') && this._new_settings > 0;
 	}
 
 	get important_update() {
