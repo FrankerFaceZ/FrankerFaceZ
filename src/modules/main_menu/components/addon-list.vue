@@ -32,6 +32,53 @@
 				@navigate="navigate"
 			/>
 		</div>
+
+		<div class="tw-flex tw-align-items-center">
+			<div class="tw-flex-grow-1" />
+			<div
+				v-on-clickaway="closeUnlisted"
+				class="tw-relative"
+			>
+				<button
+					class="tw-mg-l-1 tw-button tw-button--text"
+					@click="toggleUnlisted"
+				>
+					<span class="tw-button__text ffz-i-help">
+						{{ t('addon.unlisted.add', 'Add Unlisted...') }}
+					</span>
+				</button>
+				<balloon
+					v-if="unlisted_open"
+					color="background-alt-2"
+					dir="up-right"
+					size="md"
+				>
+					<div class="tw-pd-1">
+						<div class="tw-pd-b-1">
+							{{ t('addon.unlisted.explain', "Unlisted Add-Ons are add-ons that have undergone approval but have opted to avoid being listed in the main listing. This could be due to the add-on being specialized for certain users, or due to the add-on being still under development. If you know an unlisted add-on's ID, enter it here for it to be displayed.") }}
+						</div>
+
+						<div class="tw-flex tw-align-items-center">
+							<input
+								ref="unlisted"
+								:placeholder="t('addon.unlisted.id', 'add-on id')"
+								class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+								@keydown.enter="addUnlisted"
+							>
+							<button
+								class="tw-mg-l-05 tw-button tw-tooltip-wrapper"
+								@click="addUnlisted"
+							>
+								<span class="tw-button__text ffz-i-plus" />
+								<div class="tw-tooltip">
+									{{ t('setting.add', 'Add') }}
+								</div>
+							</button>
+						</div>
+					</div>
+				</balloon>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -43,7 +90,9 @@ export default {
 	data() {
 		return {
 			ready: this.item.isReady(),
-			reload: this.item.isReloadRequired()
+			reload: this.item.isReloadRequired(),
+			unlisted: [],
+			unlisted_open: false
 		}
 	},
 
@@ -80,7 +129,35 @@ export default {
 	},
 
 	methods: {
+		addUnlisted() {
+			let value = this.$refs.unlisted.value;
+			if ( value )
+				value = value.trim().toLowerCase();
+
+			if ( value && value.length )
+				for(const addon of this.item.getAddons())
+					if ( addon.unlisted && addon.id === value ) {
+						this.unlisted.push(value);
+						break;
+					}
+
+			this.$refs.unlisted.value = '';
+			this.closeUnlisted();
+		},
+
+		closeUnlisted() {
+			this.unlisted_open = false;
+		},
+
+		toggleUnlisted() {
+			this.unlisted_open = ! this.unlisted_open;
+		},
+
 		shouldShow(addon) {
+			// If an add-on is unlisted, don't list it.
+			if ( addon.unlisted && ! this.item.isAddonEnabled(addon.id) && ! this.unlisted.includes(addon.id) )
+				return false;
+
 			if ( ! this.filter || ! this.filter.length )
 				return true;
 

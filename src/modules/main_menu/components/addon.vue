@@ -17,6 +17,9 @@
 				{{ t('addon.dev', 'Developer') }}
 			</div>
 
+			<div v-if="addon.unlisted" class="tw-mg-b-05 tw-pill">
+				{{ t('addon.unlisted', 'Unlisted') }}
+			</div>
 		</div>
 
 		<div class="tw-flex-grow-1">
