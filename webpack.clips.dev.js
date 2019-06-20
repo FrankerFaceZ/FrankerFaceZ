@@ -57,6 +57,11 @@ module.exports = merge(common, {
 				next();
 			});
 
+			app.get('/script/bridge.js', (req, res, next) => {
+				req.url = req.url.replace(/^\/script/, '/script/clips');
+				next();
+			});
+
 			app.get('/dev_server', (req, res) => {
 				res.json({
 					path: process.cwd(),

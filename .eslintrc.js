@@ -29,6 +29,10 @@ module.exports = {
         "require": false,
         "__webpack_hash__": false,
         "__git_commit__": false,
+        "__version_major__": false,
+        "__version_minor__": false,
+        "__version_patch__": false,
+        "__version_prerelease__": false,
         "FrankerFaceZ": false
     },
     "rules": {

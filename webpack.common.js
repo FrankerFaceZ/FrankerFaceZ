@@ -1,14 +1,17 @@
 const webpack = require('webpack');
 const path = require('path');
+const semver = require('semver');
 
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 /* global process module __dirname */
 
+const VERSION = semver.parse(require('./package.json').version);
 const PRODUCTION = process.env.NODE_ENV === 'production';
 
 module.exports = {
 	entry: {
+		bridge: './src/bridge.js',
 		avalon: './src/main.js'
 	},
 	resolve: {
@@ -43,7 +46,13 @@ module.exports = {
 	},
 	plugins: [
 		new VueLoaderPlugin(),
-		new webpack.ExtendedAPIPlugin()
+		new webpack.ExtendedAPIPlugin(),
+		new webpack.DefinePlugin({
+			__version_major__: VERSION.major,
+			__version_minor__: VERSION.minor,
+			__version_patch__: VERSION.patch,
+			__version_prerelease__: VERSION.prerelease
+		}),
 	],
 	module: {
 		rules: [{

@@ -149,7 +149,10 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 FrankerFaceZ.Logger = Logger;
 
 const VER = FrankerFaceZ.version_info = {
-	major: 4, minor: 5, revision: 4,
+	major: __version_major__,
+	minor: __version_minor__,
+	revision: __version_patch__,
+	extra: __version_prerelease__?.length && __version_prerelease__[0],
 	commit: __git_commit__,
 	build: __webpack_hash__,
 	toString: () =>

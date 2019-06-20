@@ -98,7 +98,7 @@ export const Page = {
 			parts = [];
 
 		if ( Object.keys(config.values).length ) {
-			const ffz = FrankerFaceZ.get(),
+			const ffz = window.FrankerFaceZ?.get(),
 				router = ffz && ffz.resolve('site.router');
 
 			if ( router ) {

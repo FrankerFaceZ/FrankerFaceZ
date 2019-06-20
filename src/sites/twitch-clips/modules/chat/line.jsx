@@ -116,7 +116,7 @@ export default class Line extends Module {
 			return msg._ffz_message;
 
 		const room = this.chat.getRoom(video.owner.id, null, true, true),
-			author = msg.commenter,
+			author = msg.commenter || {},
 			badges = {};
 
 		if ( msg.message.userBadges )

@@ -1,7 +1,7 @@
 'use strict';
 
 // ============================================================================
-// CSS Tweaks for Twitch Twilight
+// CSS Tweaks for Twitch Clips
 // ============================================================================
 
 import Module from 'utilities/module';
@@ -21,7 +21,6 @@ export default class CSSTweaks extends Module {
 		this.should_enable = true;
 
 		this.inject('settings');
-		this.inject('site.chat');
 		this.inject('site.theme');
 
 		this.style = new ManagedStyle;

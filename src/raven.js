@@ -58,8 +58,6 @@ export default class RavenLogger extends Module {
 		super(...args);
 
 		this.inject('settings');
-		this.inject('site');
-		this.inject('experiments');
 
 		// Do these in an event handler because we're initialized before
 		// settings are even ready.
@@ -131,7 +129,7 @@ export default class RavenLogger extends Module {
 			autoBreadcrumbs: {
 				console: false
 			},
-			release: FrankerFaceZ.version_info.toString(),
+			release: (window.FrankerFaceZ || window.FFZBridge).version_info.toString(),
 			environment: DEBUG ? 'development' : 'production',
 			captureUnhandledRejections: false,
 			ignoreErrors: [
@@ -189,7 +187,7 @@ export default class RavenLogger extends Module {
 					return false;
 
 				if ( this.settings && this.settings.get('reports.error.include-user') ) {
-					const user = this.site && this.site.getUser();
+					const user = this.resolve('site')?.getUser();
 					if ( user )
 						data.user = {id: user.id, username: user.login}
 				}
@@ -305,22 +303,25 @@ export default class RavenLogger extends Module {
 					chat_settings[key] = value;
 		}
 
-		for(const [key, value] of Object.entries(this.experiments.getTwitchExperiments()))
-			if ( this.experiments.usingTwitchExperiment(key) )
-				twitch_experiments[value.name] = this.experiments.getTwitchAssignment(key);
+		const exp = this.resolve('experiments');
+		if ( exp ) {
+			for(const [key, value] of Object.entries(exp.getTwitchExperiments()))
+				if ( exp.usingTwitchExperiment(key) )
+					twitch_experiments[value.name] = exp.getTwitchAssignment(key);
 
-		for(const key of Object.keys(this.experiments.experiments))
-			experiments[key] = this.experiments.getAssignment(key);
+			for(const key of Object.keys(exp.experiments))
+				experiments[key] = exp.getAssignment(key);
+		}
 
 		return out;
 	}
 
 
 	buildTags() {
-		const core = this.site.getCore(),
+		const core = this.resolve('site')?.getCore(),
 			out = {};
 
-		out.flavor = this.site.constructor.name;
+		out.flavor = this.site?.constructor.name;
 		out.build = __webpack_hash__;
 		out.git_commit = __git_commit__;
 
