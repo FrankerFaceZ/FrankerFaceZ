@@ -29,7 +29,7 @@ export default class Clippy extends BaseSite {
 		this.inject(Fine);
 		this.inject(Apollo, false);
 
-		this.inject(Switchboard);
+		//this.inject(Switchboard);
 	}
 
 	onLoad() {

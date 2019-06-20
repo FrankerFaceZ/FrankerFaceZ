@@ -22,7 +22,7 @@ const OVERRIDE_COOKIE = 'experiment_overrides',
 // We want to import this so that the file is included in the output.
 // We don't load using this because we might want a newer file from the
 // server.
-import EXPERIMENTS from 'file-loader?name=[name].[hash].[ext]!./experiments.json'; // eslint-disable-line no-unused-vars
+import EXPERIMENTS from './experiments.json'; // eslint-disable-line no-unused-vars
 
 
 // ============================================================================

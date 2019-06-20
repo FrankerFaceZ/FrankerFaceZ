@@ -121,25 +121,3 @@ export default {
 }
 
 </script>
-
-<style lang="scss" scoped>
-.ffz--example-report {
-	div {
-		max-height: 30rem;
-		overflow-y: auto;
-
-		code {
-			font-family: monospace;
-			white-space: pre-wrap;
-			word-break: break-all;
-		}
-	}
-}
-
-.ffz--report-upload {
-	z-index: 1;
-	position: absolute;
-	top: 1rem;
-	right: 3rem;
-}
-</style>

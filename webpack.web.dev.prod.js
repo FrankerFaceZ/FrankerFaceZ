@@ -1,17 +1,14 @@
 /* eslint-disable */
 const path = require('path');
 const merge = require('webpack-merge');
-const common = require('./webpack.web.common.js');
+const prod = require('./webpack.web.prod.js');
 
 const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 /* global module */
 
-module.exports = merge(common, {
-	mode: 'development',
-	devtool: 'inline-source-map',
-
+module.exports = merge(prod, {
 	plugins: [
 		new CopyPlugin([
 			{

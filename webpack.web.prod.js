@@ -3,11 +3,11 @@ const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
 
 const CopyPlugin = require('copy-webpack-plugin');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
-const CleanPlugin = require('clean-webpack-plugin');
+const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
-const uglify = require('uglify-es');
+const Terser = require('terser');
 
 // Get Git info
 
@@ -15,24 +15,25 @@ const commit_hash = require('child_process').execSync('git rev-parse HEAD').toSt
 
 /* global module Buffer */
 
-const config = module.exports = merge(common, {
+module.exports = merge(common, {
+	mode: 'production',
 	devtool: 'source-map',
 
-	plugins: [
-		new CleanPlugin(['dist']),
-		new UglifyJSPlugin({
-			sourceMap: true,
-			uglifyOptions: {
-				compress: {
-					keep_fnames: true,
-					keep_classnames: true
-				},
-				mangle: {
+	optimization: {
+		concatenateModules: false,
+		minimizer: [
+			new TerserPlugin({
+				sourceMap: true,
+				terserOptions: {
 					keep_classnames: true,
 					keep_fnames: true
 				}
-			}
-		}),
+			})
+		]
+	},
+
+	plugins: [
+		new CleanWebpackPlugin(),
 		new webpack.DefinePlugin({
 			__git_commit__: JSON.stringify(commit_hash)
 		}),
@@ -42,7 +43,7 @@ const config = module.exports = merge(common, {
 				to: 'script.min.js',
 				transform: content => {
 					const text = content.toString('utf8');
-					const minified = uglify.minify(text);
+					const minified = Terser.minify(text);
 					return (minified && minified.code) ? Buffer.from(minified.code) : content;
 				}
 			}
@@ -62,20 +63,3 @@ const config = module.exports = merge(common, {
 		filename: '[name].[hash].js'
 	}
 });
-
-
-// This is why we can't have nice things.
-// Why can't I just access process.env.NODE_ENV from
-// one of these files when I set it with webpack's
-// CLI? So stupid.
-//
-// So here we go.
-// This is crap.
-// But it works.
-
-for(const rule of config.module.rules) {
-	if ( Array.isArray(rule.use) )
-		for(const use of rule.use)
-			if ( use.options && use.options.name && use.options.name.startsWith('[name].') )
-				use.options.name = `[name].[hash].${use.options.name.slice(7)}`;
-}

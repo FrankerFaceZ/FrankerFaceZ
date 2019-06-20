@@ -1,8 +1,7 @@
 {
 	"plugins": [
-		"syntax-dynamic-import",
-		["transform-react-jsx", {
-			"pragma": "createElement"
-		}]
+		"@babel/plugin-syntax-dynamic-import",
+		"@babel/plugin-proposal-optional-chaining",
+		"@babel/plugin-proposal-nullish-coalescing-operator"
 	]
 }

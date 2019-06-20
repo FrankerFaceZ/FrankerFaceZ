@@ -32,8 +32,8 @@ export function duration_to_string(elapsed, separate_days, days_only, no_hours, 
 
 
 export function print_duration(seconds) {
-	let minutes = Math.floor(seconds / 60),
-		hours = Math.floor(minutes / 60);
+	let minutes = Math.floor(seconds / 60);
+	const hours = Math.floor(minutes / 60);
 
 	minutes %= 60;
 	seconds %= 60;

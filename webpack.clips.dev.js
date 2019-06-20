@@ -9,6 +9,7 @@ const webpack = require('webpack');
 /* global module */
 
 module.exports = merge(common, {
+	mode: 'development',
 	devtool: 'inline-source-map',
 
 	plugins: [
@@ -39,7 +40,7 @@ module.exports = merge(common, {
 
 		proxy: {
 			'**': {
-				target: 'http://cdn.frankerfacez.com/',
+				target: 'https://cdn.frankerfacez.com/',
 				changeOrigin: true
 			}
 		},
@@ -68,6 +69,7 @@ module.exports = merge(common, {
 	output: {
 		publicPath: '//localhost:8000/script/clips/',
 		filename: '[name].js',
-		jsonpFunction: 'ffzWebpackJsonp'
+		jsonpFunction: 'ffzWebpackJsonp',
+		crossOriginLoading: 'anonymous'
 	}
 })

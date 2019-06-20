@@ -49,6 +49,7 @@ export default class Chat extends Module {
 
 		this.ChatController.on('mount', this.chatMounted, this);
 		this.ChatController.on('unmount', this.chatMounted, this);
+		this.ChatController.on('update', this.chatUpdated, this);
 		this.ChatController.on('receive-props', this.chatUpdated, this);
 
 		this.ChatController.ready((cls, instances) => {
@@ -167,7 +168,7 @@ export default class Chat extends Module {
 
 
 	chatUpdated(chat, props) {
-		if ( get('data.clip.broadcaster.id', props) !== get('data.clip.broadcaster.id', chat.props) ) {
+		if ( ! chat._ffz_room || props?.data?.clip?.broadcaster?.id !== chat._ffz_room.id ) {
 			this.chatUmounted(chat);
 			this.chatMounted(chat, props);
 			return;

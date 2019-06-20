@@ -176,7 +176,7 @@ export default class RavenLogger extends Module {
 				const exc = data.exception && data.exception.values[0];
 
 				// We don't want any of Sentry's junk.
-				if ( data.message && data.messages.includes('raven-js/') || (exc && JSON.stringify(exc).includes('raven-js/')) )
+				if ( data.message && data.message.includes('raven-js/') || (exc && JSON.stringify(exc).includes('raven-js/')) )
 					return false;
 
 				// We don't want any of Mozilla's junk either.

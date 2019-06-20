@@ -82,7 +82,7 @@ export default class CSSTweaks extends Module {
 			const raw = (await import(/* webpackChunkName: "site-css-tweaks" */ './styles.js')).default;
 			for(const key of raw.keys()) {
 				const k = key.slice(2, key.length - (key.endsWith('.scss') ? 5 : 4));
-				this.chunks[k] = raw(key);
+				this.chunks[k] = raw(key).default;
 			}
 
 			this.chunks_loaded = true;

@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has, once} from 'utilities/object';
+import {has} from 'utilities/object';
 
 
 let last_muncher = 0;

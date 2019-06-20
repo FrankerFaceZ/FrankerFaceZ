@@ -445,7 +445,7 @@ export default class TranslationCore {
 		if ( locale == null )
 			locale = this.locale;
 
-		let val = get(node.v, data);
+		const val = get(node.v, data);
 		if ( val == null )
 			return null;
 

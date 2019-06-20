@@ -118,7 +118,11 @@ export default class MenuButton extends SiteModule {
 		if ( ! container )
 			return;
 
-		const user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
+		let user_stuff = null;
+		try {
+			user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
+		} catch(err) { /* dumb browsers with no :scope are dumb */ }
+
 		if ( user_stuff )
 			container = user_stuff;
 		else

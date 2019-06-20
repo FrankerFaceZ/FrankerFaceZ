@@ -7,8 +7,8 @@
 					<figure :class="[(isOpen || ! val || ! val.length) ? 'ffz-i-search' : val]" />
 				</div>
 				<input
-					ref="input"
 					:id="'icon-search$' + id"
+					ref="input"
 					:placeholder="('setting.icon.search', 'Search for Icon')"
 					:value="isOpen ? search : val"
 					:class="[clearable ? 'tw-pd-r-5' : 'tw-pd-r-1']"
@@ -41,7 +41,7 @@
 		<balloon v-if="open" :dir="direction" color="background-base">
 			<div ref="list">
 				<simplebar classes="scrollable-area--suppress-scroll-x ffz--icon-picker__list">
-					<div v-if="visible.length" role="radiogroup" class="tw-pd-1 tw-flex tw-flex-wrap tw-justify-content-between" >
+					<div v-if="visible.length" role="radiogroup" class="tw-pd-1 tw-flex tw-flex-wrap tw-justify-content-between">
 						<div
 							v-for="i of visible"
 							:key="i[0]"
@@ -205,7 +205,7 @@ export default {
 				return this.icons;
 
 			const search = this.search.toLowerCase().replace(' ', '-'),
-				reg = new RegExp('(?:^|-| )' + escape_regex(search), 'i');
+				reg = new RegExp(`(?:^|-| )${escape_regex(search)}`, 'i');
 
 			return this.icons.filter(x => reg.test(x[1]));
 		},

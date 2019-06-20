@@ -1,7 +1,11 @@
 const webpack = require('webpack');
 const path = require('path');
 
-/* global module __dirname */
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
+
+/* global process module __dirname */
+
+const PRODUCTION = process.env.NODE_ENV === 'production';
 
 module.exports = {
 	entry: {
@@ -30,7 +34,15 @@ module.exports = {
 		jsonpFunction: 'ffzWebpackJsonp',
 		crossOriginLoading: 'anonymous'
 	},
+	optimization: {
+		splitChunks: {
+			cacheGroups: {
+				vendors: false
+			}
+		}
+	},
 	plugins: [
+		new VueLoaderPlugin(),
 		new webpack.ExtendedAPIPlugin()
 	],
 	module: {
@@ -39,7 +51,7 @@ module.exports = {
 			use: [{
 				loader: 'file-loader',
 				options: {
-					name: '[name].css'
+					name: PRODUCTION ? '[name].[hash].css' : '[name].css'
 				}
 			}, {
 				loader: 'extract-loader'
@@ -56,9 +68,34 @@ module.exports = {
 			}]
 		},
 		{
+			test: /\.json$/,
+			include: /src/,
+			type: 'javascript/auto',
+			loader: 'file-loader',
+			options: {
+				name: PRODUCTION ? '[name].[hash].json' : '[name].json'
+			}
+		},
+		{
+			test: /\.js$/,
+			exclude: /node_modules/,
+			loader: 'babel-loader',
+			options: {
+				cacheDirectory: true
+			}
+		},
+		{
 			test: /\.jsx$/,
 			exclude: /node_modules/,
-			loader: 'babel-loader'
+			loader: 'babel-loader',
+			options: {
+				cacheDirectory: true,
+				plugins: [
+					['@babel/plugin-transform-react-jsx', {
+						pragma: 'createElement'
+					}]
+				]
+			}
 		},
 		{
 			test: /\.(graphql|gql)$/,
@@ -70,7 +107,7 @@ module.exports = {
 			use: [{
 				loader: 'file-loader',
 				options: {
-					name: '[name].[ext]'
+					name: PRODUCTION ? '[name].[hash].[ext]' : '[name].[ext]'
 				}
 			}]
 		},

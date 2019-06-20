@@ -173,7 +173,7 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	getStreamMeta(id, login) {
-		return new Promise(async (s, f) => {
+		return new Promise((s, f) => {
 			if ( id ) {
 				if ( this._waiting_stream_ids.has(id) )
 					this._waiting_stream_ids.get(id).push([s, f]);
