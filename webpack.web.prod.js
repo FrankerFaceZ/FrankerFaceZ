@@ -49,6 +49,7 @@ module.exports = merge(common, {
 			}
 		]),
 		new ManifestPlugin({
+			publicPath: '',
 			map: data => {
 				if ( data.name.endsWith('.scss') )
 					data.name = `${data.name.substr(0,data.name.length - 5)}.css`;

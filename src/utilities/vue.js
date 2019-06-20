@@ -24,13 +24,13 @@ export class Vue extends Module {
 		const [
 			ObserveVisibility,
 			Clickaway,
-			RavenVue,
+			//RavenVue,
 			Components
 
 		] = await Promise.all([
 			import(/* webpackChunkName: "vue" */ 'vue-observe-visibility'),
 			import(/* webpackChunkName: "vue" */ 'vue-clickaway'),
-			import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
+			//import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
 			import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')
 		]);
 
@@ -39,8 +39,8 @@ export class Vue extends Module {
 		Vue.use(ObserveVisibility);
 		Vue.mixin(Clickaway.mixin);
 
-		if ( ! DEBUG && this.root.raven )
-			this.root.raven.addPlugin(RavenVue, Vue);
+		/*if ( ! DEBUG && this.root.raven )
+			this.root.raven.addPlugin(RavenVue, Vue);*/
 
 		for(const key in components)
 			if ( has(components, key) )
