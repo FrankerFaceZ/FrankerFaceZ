@@ -39,8 +39,7 @@
 		</div>
 		<ul v-else class="ffz--term-list tw-mg-t-05">
 			<reason-editor
-				v-for="reason in val"
-				v-if="reason.t !== 'inherit'"
+				v-for="reason in reasons"
 				:key="reason.id"
 				:reason="reason.v"
 				@remove="remove(reason)"
@@ -74,10 +73,22 @@ export default {
 			return ! this.val.length || this.val.length === 1 && this.hasInheritance;
 		},
 
+		reasons() {
+			const out = [];
+			if ( Array.isArray(this.val) )
+				for(const reason of this.val)
+					if ( reason.t !== 'inherit' )
+						out.push(reason);
+
+			return out;
+		},
+
 		hasInheritance() {
 			for(const val of this.val)
 				if ( val.t === 'inherit' )
 					return true;
+
+			return false;
 		},
 
 		val() {

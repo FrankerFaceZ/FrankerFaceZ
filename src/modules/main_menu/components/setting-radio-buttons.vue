@@ -12,8 +12,8 @@
 		</section>
 		<div v-for="(i, idx) in data" :key="idx" class="tw-mg-l-1">
 			<input
-				:name="item.full_key"
 				:id="item.full_key + idx"
+				:name="item.full_key"
 				:value="i.value"
 				type="radio"
 				class="tw-radio__input"

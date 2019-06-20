@@ -255,8 +255,8 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						onClick={click_fn(text)}
 						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+						onClick={click_fn(text)}
 					>
 						{text}
 					</a>
@@ -272,8 +272,8 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						onClick={click_fn(rule)}
 						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+						onClick={click_fn(rule)}
 					>
 						{rule}
 					</a>

@@ -14,20 +14,18 @@ import NewTransCore from 'utilities/translation-core';
 
 const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'UwU', '>w<', '^w^', '> w >', 'v.v'],
 
-	transformText = (ast, fn) => {
-		return ast.map(node => {
-			if ( typeof node === 'string' )
-				return fn(node);
+	transformText = (ast, fn) => ast.map(node => {
+		if ( typeof node === 'string' )
+			return fn(node);
 
-			else if ( typeof node === 'object' && node.o ) {
-				const out = Object.assign(node, {o: {}});
-				for(const key of Object.keys(node.o))
-					out.o[key] = transformText(node.o[key], fn)
-			}
+		else if ( typeof node === 'object' && node.o ) {
+			const out = Object.assign(node, {o: {}});
+			for(const key of Object.keys(node.o))
+				out.o[key] = transformText(node.o[key], fn)
+		}
 
-			return node;
-		})
-	},
+		return node;
+	}),
 
 	owo = text => text
 		.replace(/(?:r|l)/g, 'w')

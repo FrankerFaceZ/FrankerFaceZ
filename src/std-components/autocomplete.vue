@@ -8,9 +8,9 @@
 				</div>
 				<input
 					:id="_id"
+					v-model="search"
 					:placeholder="placeholder"
 					:class="[hasIcon ? 'tw-pd-l-3' : 'tw-pd-l-1']"
-					v-model="search"
 					type="search"
 					class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-r-1 tw-pd-y-05"
 					autocapitalize="off"
@@ -43,8 +43,8 @@
 					</div>
 					<button
 						v-for="(item, idx) of filteredItems"
-						:key="has(item, 'id') ? item.id : idx"
 						:id="'ffz-autocomplete-item-' + id + '-' + idx"
+						:key="has(item, 'id') ? item.id : idx"
 						:class="{'tw-interactable--hover' : idx === index}"
 						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
 						tabindex="-1"
@@ -125,6 +125,10 @@ export default {
 			type: String,
 			required: false,
 			default: 'down'
+		},
+		logger: {
+			type: Object,
+			required: false
 		}
 	},
 
@@ -227,7 +231,10 @@ export default {
 			try {
 				result = this.items(this.search);
 			} catch(err) {
-				console.error(err);
+				if ( this.logger )
+					this.logger.capture(err);
+				else
+					console.error(err); // eslint-disable-line no-console
 			}
 
 			if ( result instanceof Promise ) {
@@ -236,7 +243,11 @@ export default {
 					this.loading = false;
 					this.cachedItems = items;
 				}).catch(err => {
-					console.error(err);
+					if ( this.logger )
+						this.logger.capture(err);
+					else
+						console.error(err); // eslint-disable-line no-console
+
 					this.loading = false;
 					this.errored = true;
 					this.cachedItems = [];

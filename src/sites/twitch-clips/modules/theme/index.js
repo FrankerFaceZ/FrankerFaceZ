@@ -38,7 +38,7 @@ export default class ThemeEngine extends Module {
 
 		this.settings.add('theme.can-dark', {
 			requires: ['context.route.name'],
-			process(ctx) {
+			process() {
 				return true;
 			}
 		});

@@ -21,13 +21,13 @@ export default class BrowsePopular extends SiteModule {
 		this.apollo.registerModifier('BrowsePage_Popular', res => this.modifyStreams(res), false);
 	}
 
-	onEnable() {
+	/*onEnable() {
 		// Popular Directory Channel Cards
-		/*this.apollo.ensureQuery(
+		this.apollo.ensureQuery(
 			'BrowsePage_Popular',
 			'data.streams.edges.0.node.createdAt'
-		);*/
-	}
+		);
+	}*/
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this
 		const edges = get('data.streams.edges', res);

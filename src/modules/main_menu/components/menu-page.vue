@@ -57,8 +57,8 @@
 			:class="{'ffz-unmatched-item': ! shouldShow(i)}"
 		>
 			<component
-				ref="children"
 				:is="i.component"
+				ref="children"
 				:context="context"
 				:item="i"
 				:filter="filter"

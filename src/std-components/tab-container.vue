@@ -20,8 +20,8 @@
 		>
 			<div
 				v-for="(i, idx) in item.tabs"
-				:key="i.full_key"
 				:id="'tab-for-' + i.full_key"
+				:key="i.full_key"
 				:aria-selected="selected === idx"
 				:aria-controls="'tab-panel-' + i.full_key"
 				:class="{'active': selected === idx, 'ffz-unmatched-item': showing && ! shouldShow(i)}"

@@ -10,8 +10,8 @@
 			</label>
 
 			<input
-				ref="control"
 				:id="item.full_key"
+				ref="control"
 				:value="value"
 				class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-mg-05 tw-input"
 				@change="onChange"

@@ -23,10 +23,9 @@
 		</div>
 		<div v-else>
 			<addon
-				v-for="addon in sorted_addons"
-				v-if="shouldShow(addon)"
-				:key="addon.id"
+				v-for="addon in visible_addons"
 				:id="addon.id"
+				:key="addon.id"
 				:addon="addon"
 				:item="item"
 				@navigate="navigate"
@@ -97,6 +96,10 @@ export default {
 	},
 
 	computed: {
+		visible_addons() {
+			return this.sorted_addons.filter(addon => this.shouldShow(addon));
+		},
+
 		sorted_addons() {
 			const addons = this.item.getAddons();
 

@@ -38,8 +38,8 @@
 					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex tw-checkbox"
 				>
 					<input
-						:checked="badgeChecked(i.id)"
 						:id="i.id"
+						:checked="badgeChecked(i.id)"
 						type="checkbox"
 						class="tw-checkbox__input"
 						@click="onChange(i.id, $event)"

@@ -13,8 +13,7 @@
 		</div>
 		<ul v-else class="ffz--term-list tw-mg-t-05">
 			<badge-term-editor
-				v-for="term in val"
-				v-if="term.t !== 'inherit'"
+				v-for="term in terms"
 				:key="term.id"
 				:term="term.v"
 				:badges="data"
@@ -53,6 +52,19 @@ export default {
 			for(const val of this.val)
 				if ( val.t === 'inherit' )
 					return true;
+
+			return false;
+		},
+
+		terms() {
+			const out = [];
+
+			if ( Array.isArray(this.val) )
+				for(const term of this.val)
+					if ( term && term.t !== 'inherit' )
+						out.push(term);
+
+			return out;
 		},
 
 		val() {

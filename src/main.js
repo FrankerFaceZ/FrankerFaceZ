@@ -115,11 +115,9 @@ class FrankerFaceZ extends Module {
 			out.unshift(['initialization', logs.join('\n')]);
 		}
 
-		return out.map(x => {
-			return `${x[0]}
+		return out.map(x => `${x[0]}
 -------------------------------------------------------------------------------
-${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`
-		}).join('\n\n');
+${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n');
 	}
 
 

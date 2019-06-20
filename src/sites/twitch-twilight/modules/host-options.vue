@@ -32,7 +32,9 @@
 										<div class="ffz-channel-avatar">
 											<img :src="host.logo" :alt="host.display_name + '(' + host.name + ')'">
 										</div>
-										<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">{{ host.name }}</p>
+										<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
+											{{ host.name }}
+										</p>
 										<div class="tw-flex-grow-1 tw-pd-x-2" />
 										<button class="tw-button-icon tw-mg-x-05 ffz--host-remove-user" @click="removeFromHosts">
 											<figure class="ffz-i-trash" />
@@ -101,7 +103,7 @@
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
 										{{ t('metadata.host.setting.team-hosting.description',
 											"Automatically host random channels from your team when you're not live. " +
-										'Team channels will be hosted before any channels in your host list.') }}
+												'Team channels will be hosted before any channels in your host list.') }}
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
@@ -158,7 +160,7 @@
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
 										{{ t('metadata.host.setting.strategy.description',
 											'If enabled, auto-hosts will be picked at random. ' +
-										"Otherwise they're picked in order.") }}
+												"Otherwise they're picked in order.") }}
 									</section>
 								</div>
 							</div>

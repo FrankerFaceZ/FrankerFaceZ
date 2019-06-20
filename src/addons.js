@@ -10,9 +10,7 @@ import { createElement } from 'utilities/dom';
 import { timeout, has } from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
-const fetchJSON = (url, options) => {
-	return fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
-}
+const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
 
 // ============================================================================
 // AddonManager

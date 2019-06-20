@@ -383,6 +383,8 @@ export default class ChatHook extends Module {
 		for(const inst of this.ChatController.instances)
 			if ( inst && inst.chatService )
 				return inst;
+
+		return null;
 	}
 
 

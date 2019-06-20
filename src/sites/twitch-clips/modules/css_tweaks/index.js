@@ -29,10 +29,6 @@ export default class CSSTweaks extends Module {
 		this.chunks_loaded = false;
 	}
 
-	onEnable() {
-
-	}
-
 
 	toggleHide(key, val) {
 		const k = `hide--${key}`;

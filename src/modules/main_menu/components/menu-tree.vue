@@ -11,8 +11,7 @@
 		@keyup.*="expandAll"
 	>
 		<li
-			v-for="item in modal"
-			v-if="shouldShow(item)"
+			v-for="item in displayed"
 			:key="item.full_key"
 			:class="[currentItem === item ? 'active' : '']"
 			role="presentation"
@@ -99,6 +98,10 @@ export default {
 	computed: {
 		tabIndex() {
 			return this.root ? undefined : 0;
+		},
+
+		displayed() {
+			return this.modal.filter(item => this.shouldShow(item));
 		}
 	},
 

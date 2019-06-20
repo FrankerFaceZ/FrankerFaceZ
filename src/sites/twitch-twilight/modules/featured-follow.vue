@@ -3,14 +3,14 @@
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
 			<h4>{{ t('metadata.featured-follow.title', 'Featured Channels') }}</h4>
 
-			<div class="tw-flex-grow-1 tw-pd-x-2"/>
+			<div class="tw-flex-grow-1 tw-pd-x-2" />
 			<button
 				v-if="hasUpdate"
 				class="ffz--featured-follow-update tw-button tw-button--hollow"
 				@click="refresh"
 			>
 				<span class="tw-button__icon tw-button__icon--left">
-					<figure class="ffz-i-arrows-cw"/>
+					<figure class="ffz-i-arrows-cw" />
 				</span>
 				<span class="tw-button__text tw-pd-l-0">
 					Refresh
@@ -27,7 +27,7 @@
 									<a :href="'/' + user.login" :title="user.login" @click.prevent="route(user.login)"><img :src="user.avatar"></a>
 								</div>
 								<a :href="'/' + user.login" :title="user.login" @click.prevent="route(user.login)"><p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">{{ user.displayName }}</p></a>
-								<div class="tw-flex-grow-1 tw-pd-x-2"/>
+								<div class="tw-flex-grow-1 tw-pd-x-2" />
 
 								<div v-if="user.error">
 									{{ t('featured-follow.error', 'An error occured.') }}
@@ -43,7 +43,7 @@
 										@click="clickWithTip($event, unfollowUser, user.id)"
 									>
 										<span class="tw-button__icon tw-button__icon--status tw-flex">
-											<figure class="ffz-i-heart ffz--featured-button-unfollow-button"/>
+											<figure class="ffz-i-heart ffz--featured-button-unfollow-button" />
 										</span>
 									</button>
 									<button
@@ -56,7 +56,7 @@
 										@click="clickWithTip($event, updateNotificationStatus, user.id, user.disableNotifications)"
 									>
 										<span class="tw-button__icon tw-flex">
-											<figure :class="{ 'ffz-i-bell': !user.disableNotifications, 'ffz-i-bell-off': user.disableNotifications }"/>
+											<figure :class="{ 'ffz-i-bell': !user.disableNotifications, 'ffz-i-bell-off': user.disableNotifications }" />
 										</span>
 									</button>
 									<button
@@ -67,7 +67,7 @@
 										@click="followUser(user.id)"
 									>
 										<span class="tw-button__icon tw-button__icon--left">
-											<figure class="ffz-i-heart"/>
+											<figure class="ffz-i-heart" />
 										</span>
 										<span class="tw-button__text">
 											{{ t('featured-follow.button.follow', 'Follow') }}

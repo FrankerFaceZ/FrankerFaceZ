@@ -172,7 +172,7 @@ export default class Metadata extends Module {
 					return `${delayed}${data.delay.toFixed(2)}s`;
 			},
 
-			click(data) {
+			click() {
 				const Player = this.resolve('site.player'),
 					internal = Player.getInternalPlayer();
 

@@ -13,8 +13,12 @@
 				class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 				@change="onSort"
 			>
-				<option :selected="sort_by === 0">{{ t('setting.experiments.sort-name', 'Sort By: Name') }}</option>
-				<option :selected="sort_by === 1">{{ t('setting.experiments.sort-rarity', 'Sort By: Rarity') }}</option>
+				<option :selected="sort_by === 0">
+					{{ t('setting.experiments.sort-name', 'Sort By: Name') }}
+				</option>
+				<option :selected="sort_by === 1">
+					{{ t('setting.experiments.sort-rarity', 'Sort By: Rarity') }}
+				</option>
 			</select>
 		</div>
 
@@ -29,7 +33,6 @@
 				:data-key="key"
 			>
 				<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
-
 					<div class="tw-flex-grow-1">
 						<h4>{{ exp.name }}</h4>
 						<div v-if="exp.description" class="description">

@@ -1,9 +1,8 @@
 <template lang="html">
 	<div class="ffz--widget ffz--hotkey-input">
-		<label
-			:for="item.full_key"
-			v-html="t(item.i18n_key, item.title, item)"
-		/>
+		<label :for="item.full_key">
+			{{ t(item.i18n_key, item.title, item) }}
+		</label>
 		<div class="tw-relative">
 			<div class="tw-input__icon-group tw-input__icon-group--right">
 				<div class="tw-input__icon">
@@ -11,8 +10,8 @@
 				</div>
 			</div>
 			<div
-				ref="display"
 				:id="item.full_key"
+				ref="display"
 				type="text"
 				class="tw-mg-05 tw-input tw-input--icon-right"
 				tabindex="0"

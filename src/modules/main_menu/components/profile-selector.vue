@@ -16,8 +16,8 @@
 			{{ t(context.currentProfile.i18n_key, context.currentProfile.title, context.currentProfile) }}
 		</div>
 		<div
-			v-on-clickaway="hide"
 			v-if="opened"
+			v-on-clickaway="hide"
 			class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left"
 		>
 			<div

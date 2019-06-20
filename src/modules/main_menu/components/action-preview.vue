@@ -8,8 +8,8 @@
 		class="ffz-mod-icon mod-icon tw-c-text-alt-2 tw-font-size-4"
 	>
 		<component
-			v-if="renderer && renderer.component"
 			:is="renderer.component"
+			v-if="renderer && renderer.component"
 			:data="act.appearance"
 			:color="color"
 		/>

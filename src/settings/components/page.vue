@@ -11,7 +11,7 @@
 				class="tw-flex-grow-1 tw-mg-l-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-select"
 			>
 				<option
-					v-for="(route, key) in routes"
+					v-for="(_, key) in routes"
 					v-once
 					:key="key"
 					:value="key"
@@ -88,8 +88,7 @@ export default {
 			try {
 				return decodeURI(new URL(this.route.url(parts), location));
 			} catch(err) {
-				console.error(err);
-				return null;
+				return '(unable to render url)';
 			}
 		},
 

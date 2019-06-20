@@ -41,7 +41,9 @@
 								</aspect>
 							</div>
 							<div class="tw-card-body tw-overflow-hidden tw-relative">
-								<p class="tw-pd-x-1">{{ slot.item.displayName }}</p>
+								<p class="tw-pd-x-1">
+									{{ slot.item.displayName }}
+								</p>
 							</div>
 						</div>
 					</div>

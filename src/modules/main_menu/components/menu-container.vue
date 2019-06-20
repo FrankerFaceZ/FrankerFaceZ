@@ -6,8 +6,9 @@
 		<section
 			v-if="item.description"
 			class="tw-pd-b-1"
-			v-html="t(item.desc_i18n_key, item.description, item)"
-		/>
+		>
+			<markdown :source="t(item.desc_i18n_key, item.description, item)" />
+		</section>
 		<div
 			v-for="i in item.contents"
 			:key="i.full_key"

@@ -5,10 +5,10 @@
 		</header>
 
 		<filter-editor
+			v-model="value.data"
 			:filters="filters"
 			:context="context"
 			:max-rules="type.maxRules"
-			v-model="value.data"
 		/>
 	</section>
 </template>

@@ -4,8 +4,8 @@
 			<input
 				v-if="showInput"
 				ref="input"
-				v-bind="$attrs"
 				v-model="color"
+				v-bind="$attrs"
 				type="text"
 				class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 				autocapitalize="off"
@@ -22,7 +22,7 @@
 				<figure v-else-if="color" :style="`background-color: ${color}`" />
 				<figure v-else class="ffz-i-eyedropper" />
 			</button>
-			<div v-on-clickaway="closePicker" v-if="open" class="tw-absolute tw-z-default tw-right-0">
+			<div v-if="open" v-on-clickaway="closePicker" class="tw-absolute tw-z-default tw-right-0">
 				<chrome-picker :value="colors" @input="onPick" />
 			</div>
 		</div>
@@ -39,8 +39,8 @@
 				<figure v-else class="ffz-i-eyedropper" />
 			</button>
 			<div
-				v-on-clickaway="closePicker"
 				v-if="open"
+				v-on-clickaway="closePicker"
 				:class="{'ffz-bottom-100': openUp}"
 				class="tw-absolute tw-z-default tw-balloon--up tw-balloon--right"
 			>

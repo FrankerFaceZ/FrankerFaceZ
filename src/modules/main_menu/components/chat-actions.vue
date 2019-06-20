@@ -232,6 +232,8 @@ export default {
 			for(const val of this.val)
 				if ( val.t === 'inherit' )
 					return true;
+
+			return false;
 		},
 
 		sample_user() {

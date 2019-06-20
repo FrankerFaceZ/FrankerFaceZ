@@ -8,9 +8,7 @@ import {EventEmitter} from 'utilities/events';
 import {has} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
 
-const fetchJSON = (url, options) => {
-	return fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
-}
+const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
 
 /**
  * Instances of SettingsProfile are used for getting and setting raw settings
@@ -88,7 +86,7 @@ export default class SettingsProfile extends EventEmitter {
 		if ( ! this.url )
 			return false;
 
-		const data = fetchJSON(this.url);
+		const data = await fetchJSON(this.url);
 		if ( ! data || ! data.type === 'profile' || ! data.profile || ! data.values )
 			return false;
 

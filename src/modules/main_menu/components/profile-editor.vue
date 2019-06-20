@@ -127,9 +127,9 @@
 			</section>
 
 			<filter-editor
+				v-model="rules"
 				:filters="filters"
 				:context="test_context"
-				v-model="rules"
 			/>
 		</div>
 	</div>

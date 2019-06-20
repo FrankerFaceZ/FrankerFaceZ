@@ -27,6 +27,8 @@ export default class Logviewer extends Module {
 		const token = this._token;
 		if ( token && token.token && token.expires > ((Date.now() / 1000) + 300) )
 			return token.token;
+
+		return null;
 	}
 
 

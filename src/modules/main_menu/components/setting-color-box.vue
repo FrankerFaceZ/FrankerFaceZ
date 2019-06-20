@@ -10,8 +10,8 @@
 			</label>
 
 			<color-picker
-				ref="control"
 				:id="item.full_key"
+				ref="control"
 				:nullable="true"
 				:value="color"
 				@input="onInput"

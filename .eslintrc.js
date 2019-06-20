@@ -138,7 +138,6 @@ module.exports = {
         "react/jsx-no-bind": "error",
         "react/jsx-no-comment-textnodes": "error",
         "react/jsx-no-duplicate-props": "error",
-        "react/jsx-no-literals": ["warn"],
         "react/jsx-no-target-blank": "error",
         "react/jsx-sort-props": ["error", {
             "callbacksLast": true,

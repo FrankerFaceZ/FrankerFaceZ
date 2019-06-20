@@ -6,10 +6,10 @@
 
 		<component
 			:is="component"
+			v-model="editing"
 			:type="type"
 			:filters="filters"
 			:context="context"
-			v-model="editing"
 		/>
 
 		<div

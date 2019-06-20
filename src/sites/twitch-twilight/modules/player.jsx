@@ -777,5 +777,7 @@ export default class Player extends Module {
 		for(const inst of this.Player.instances)
 			if ( inst && inst.player )
 				return inst.player;
+
+		return null;
 	}
 }

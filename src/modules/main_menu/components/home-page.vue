@@ -2,7 +2,9 @@
 	<div class="ffz--home tw-flex tw-flex-nowrap">
 		<div class="tw-flex-grow-1">
 			<div class="tw-align-center">
-				<h1 class="ffz-i-zreknarf ffz-i-pd-1">FrankerFaceZ</h1>
+				<h1 class="ffz-i-zreknarf ffz-i-pd-1">
+					FrankerFaceZ
+				</h1>
 				<span class="tw-c-text-alt">
 					{{ t('home.tag-line', 'The Twitch Enhancement Suite') }}
 				</span>
@@ -11,8 +13,6 @@
 			<section class="tw-pd-t-1 tw-border-t tw-mg-t-1">
 				<markdown :source="t('home.about', md)" />
 			</section>
-
-
 		</div>
 		<div class="tw-mg-l-1 tw-flex-shrink-0 tweet-column">
 			<div class="tw-flex tw-mg-b-1">

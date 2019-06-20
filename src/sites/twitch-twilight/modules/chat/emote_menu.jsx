@@ -285,13 +285,13 @@ export default class EmoteMenu extends Module {
 					<t.MenuComponent
 						visible={this.props.visible}
 						toggleVisibility={this.props.toggleVisibility}
-						onClickEmote={this.props.onClickEmote}
 						channel_data={this.props.channelData}
 						emote_data={this.props.emoteSetsData}
 						user_id={this.props.currentUserID}
 						channel_id={this.props.channelOwnerID}
 						loading={this.state.gqlLoading}
 						error={this.state.gqlError}
+						onClickEmote={this.props.onClickEmote}
 					/>
 				</t.MenuErrorWrapper>)
 			}
@@ -575,7 +575,7 @@ export default class EmoteMenu extends Module {
 						}
 				}
 
-				return (<section ref={this.saveRef} onMouseEnter={this.mouseEnter} data-key={data.key} class={filtered ? 'filtered' : ''}>
+				return (<section ref={this.saveRef} data-key={data.key} class={filtered ? 'filtered' : ''} onMouseEnter={this.mouseEnter}>
 					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
 						{image}
 						<div class="tw-pd-l-05">
@@ -1690,8 +1690,6 @@ export default class EmoteMenu extends Module {
 									<input
 										type="text"
 										class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
-										onChange={this.handleFilterChange}
-										onKeyDown={this.handleKeyDown}
 										placeholder={
 											is_emoji ?
 												t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
@@ -1701,6 +1699,8 @@ export default class EmoteMenu extends Module {
 										autoFocus
 										autoCapitalize="off"
 										autoCorrect="off"
+										onChange={this.handleFilterChange}
+										onKeyDown={this.handleKeyDown}
 									/>
 									{is_emoji && <t.EmojiTonePicker
 										tone={this.state.tone}

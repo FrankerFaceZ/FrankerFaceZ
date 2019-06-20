@@ -146,7 +146,7 @@ export default class ChatLine extends Module {
 				if ( ! this.ffz_user_click_handler )
 					this.ffz_user_click_handler = this.props.onUsernameClick;
 
-				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
+				const cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'

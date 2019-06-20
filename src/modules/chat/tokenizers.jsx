@@ -1006,8 +1006,9 @@ export const AddonEmotes = {
 			modifiers = ds.modifierInfo;
 
 		let name, preview, source, owner, mods, fav_source, emote_id,
-			plain_name = false,
-			hide_source = ds.noSource === 'true';
+			plain_name = false;
+
+		const hide_source = ds.noSource === 'true';
 
 		if ( modifiers && modifiers !== 'null' ) {
 			mods = JSON.parse(modifiers).map(([set_id, emote_id]) => {

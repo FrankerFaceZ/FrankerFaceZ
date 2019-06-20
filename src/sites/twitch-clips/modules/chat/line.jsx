@@ -41,7 +41,7 @@ export default class Line extends Module {
 		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
 		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 
-		this.ChatLine.ready((cls, instances) => {
+		this.ChatLine.ready(cls => {
 			const t = this,
 				old_render = cls.prototype.render;
 

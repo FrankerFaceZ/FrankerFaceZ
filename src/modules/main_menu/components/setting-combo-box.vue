@@ -11,8 +11,8 @@
 
 			<div class="tw-flex tw-flex-column tw-mg-05">
 				<select
-					ref="control"
 					:id="item.full_key"
+					ref="control"
 					class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 					@change="onChange"
 				>

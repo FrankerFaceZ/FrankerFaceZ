@@ -59,15 +59,7 @@ export default class ChannelBar extends Module {
 		)
 	}
 
-	async onEnable() {
-		/*const t = this,
-			React = await this.web_munch.findModule('react');
-
-		if ( ! React )
-			return;
-
-		//const createElement = React.createElement;*/
-
+	onEnable() {
 		this.css_tweaks.toggle('channel-metadata-top', this.settings.get('channel.metadata.force-above'));
 
 		this.ChannelBar.on('unmount', this.unmountChannelBar, this);
@@ -75,59 +67,9 @@ export default class ChannelBar extends Module {
 		this.ChannelBar.on('update', this.updateChannelBar, this);
 
 		this.ChannelBar.ready((cls, instances) => {
-			/*const old_render = cls.prototype.render;
-
-			cls.prototype.render = function() {
-				if ( this.props.channelIsHosting )
-					return null;
-
-				const title = this.getTitle();
-
-				return (<div
-					data-test-selector="channel-info-bar-wrapper"
-					class="channel-info-bar tw-border-b tw-border-bottom-left-radius-large tw-border-bottom-right-radius-large tw-border-l tw-border-r tw-border-t tw-flex tw-flex-wrap tw-justify-content-between tw-lg-pd-b-0 tw-lg-pd-t-1 tw-lg-pd-x-1 tw-pd-1"
-				>
-					<div class="channel-info-bar__content-container tw-flex tw-full-width tw-justify-content-between tw-mg-b-1">
-						<div class="tw-full-width">
-							<div class="tw-flex">
-								<div class="tw-flex tw-mg-t-05">
-									{this.renderGameBoxArt()}
-								</div>
-								<div class="channel-info-bar__content-right tw-full-width">
-									<div class="tw-flex tw-justify-content-between">
-										<div class="tw-ellipsis tw-mg-b-05 tw-mg-r-2">
-											<span
-												class="tw-font-size-4"
-												data-a-target="stream-title"
-												data-test-selector="channel-info-bar-title-text"
-												title={title}
-											>
-												{title}
-											</span>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>);
-			}*/
-
-			for(const inst of instances) {
-				//inst.forceUpdate();
-				this.updateChannelBar(inst);
-			}
-		});
-
-
-		/*this.HostBar.on('unmount', this.unmountHostBar, this);
-		this.HostBar.on('mount', this.updateHostBar, this);
-		this.HostBar.on('update', this.updateHostBar, this);
-
-		this.HostBar.ready((cls, instances) => {
 			for(const inst of instances)
-				this.updateHostBar(inst);
-		});*/
+				this.updateChannelBar(inst);
+		});
 	}
 
 

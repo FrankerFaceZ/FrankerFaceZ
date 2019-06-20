@@ -5,8 +5,8 @@
 	>
 		<div class="tw-flex tw-align-items-center tw-checkbox">
 			<input
-				ref="control"
 				:id="item.full_key"
+				ref="control"
 				:checked="value"
 				type="checkbox"
 				class="tw-checkbox__input"

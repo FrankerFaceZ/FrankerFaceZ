@@ -1188,6 +1188,8 @@ export default class Chat extends Module {
 				idx += split_chars(ret).length;
 				out.push(ret);
 			}
+
+			first = false;
 		}
 
 		if ( ! emotes_only )

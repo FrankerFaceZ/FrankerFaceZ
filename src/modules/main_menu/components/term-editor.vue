@@ -42,10 +42,18 @@
 					v-model="edit_data.t"
 					class="tw-block tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
 				>
-					<option value="text">{{ t('setting.terms.type.text', 'Text') }}</option>
-					<option value="glob">{{ t('setting.terms.type.glob', 'Glob') }}</option>
-					<option v-if="words" value="regex">{{ t('setting.terms.type.regex-word', 'Regex (Word)') }}</option>
-					<option value="raw">{{ t('setting.terms.type.regex', 'Regex') }}</option>
+					<option value="text">
+						{{ t('setting.terms.type.text', 'Text') }}
+					</option>
+					<option value="glob">
+						{{ t('setting.terms.type.glob', 'Glob') }}
+					</option>
+					<option v-if="words" value="regex">
+						{{ t('setting.terms.type.regex-word', 'Regex (Word)') }}
+					</option>
+					<option value="raw">
+						{{ t('setting.terms.type.regex', 'Regex') }}
+					</option>
 				</select>
 			</div>
 			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-tooltip-wrapper">

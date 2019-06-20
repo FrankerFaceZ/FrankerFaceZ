@@ -7,7 +7,9 @@
 		<div class="tw-flex-grow-1">
 			<template v-if="! editing">
 				<h4>{{ title }}</h4>
-				<div class="description">{{ description }}</div>
+				<div class="description">
+					{{ description }}
+				</div>
 				<div v-if="canEdit" class="visibility tw-c-text-alt">
 					{{ t('setting.actions.visible', 'visible: {list}', {list: visibility}) }}
 				</div>
@@ -63,8 +65,8 @@
 					</div>
 
 					<component
-						v-if="renderer"
 						:is="renderer.editor"
+						v-if="renderer"
 						v-model="edit_data.appearance"
 					/>
 				</section>
@@ -82,9 +84,15 @@
 							v-model="edit_data.display.mod"
 							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
-							<option :value="undefined" selected>{{ t('setting.unset', 'Unset') }}</option>
-							<option :value="true">{{ t('setting.true', 'True') }}</option>
-							<option :value="false">{{ t('setting.false', 'False') }}</option>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
 						</select>
 					</div>
 
@@ -98,9 +106,15 @@
 							v-model="edit_data.display.mod_icons"
 							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
-							<option :value="undefined" selected>{{ t('setting.unset', 'Unset') }}</option>
-							<option :value="true">{{ t('setting.visible', 'Visible') }}</option>
-							<option :value="false">{{ t('setting.hidden', 'Hidden') }}</option>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.visible', 'Visible') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.hidden', 'Hidden') }}
+							</option>
 						</select>
 					</div>
 
@@ -114,9 +128,15 @@
 							v-model="edit_data.display.deleted"
 							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
-							<option :value="undefined" selected>{{ t('setting.unset', 'Unset') }}</option>
-							<option :value="true">{{ t('setting.true', 'True') }}</option>
-							<option :value="false">{{ t('setting.false', 'False') }}</option>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
 						</select>
 					</div>
 
@@ -129,8 +149,8 @@
 							<div class="ffz--inline tw-flex">
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										ref="key_ctrl"
 										:id="'key_ctrl$' + id"
+										ref="key_ctrl"
 										:checked="edit_data.display.keys & 1"
 										type="checkbox"
 										class="tw-checkbox__input"
@@ -143,8 +163,8 @@
 
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										ref="key_shift"
 										:id="'key_shift$' + id"
+										ref="key_shift"
 										:checked="edit_data.display.keys & 2"
 										type="checkbox"
 										class="tw-checkbox__input"
@@ -157,8 +177,8 @@
 
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										ref="key_alt"
 										:id="'key_alt$' + id"
+										ref="key_alt"
 										:checked="edit_data.display.keys & 4"
 										type="checkbox"
 										class="tw-checkbox__input"
@@ -171,8 +191,8 @@
 
 								<div class="tw-pd-r-1 tw-checkbox">
 									<input
-										ref="key_meta"
 										:id="'key_meta$' + id"
+										ref="key_meta"
 										:checked="edit_data.display.keys & 8"
 										type="checkbox"
 										class="tw-checkbox__input"
@@ -182,10 +202,6 @@
 										{{ t('setting.key.meta', 'Meta') }}
 									</label>
 								</div>
-							</div>
-
-							<div class="tw-pd-t-05">
-								Note: This currently requires Chat > Behavior > Freeze Chat Scrolling to be enabled.
 							</div>
 						</div>
 					</div>
@@ -215,14 +231,13 @@
 					</div>
 
 					<component
-						v-if="action_def && action_def.editor"
 						:is="action_def.editor"
+						v-if="action_def && action_def.editor"
 						:value="edit_data.options"
 						:defaults="action_def.defaults"
 						:vars="vars"
 						@input="onChangeAction($event)"
 					/>
-
 				</section>
 			</template>
 		</div>
@@ -406,7 +421,7 @@ export default {
 
 			const def = this.display && this.data.actions[this.display.action];
 			if ( ! def || ! def.description )
-				return;
+				return null;
 
 			const data = this.getData(),
 				out = maybe_call(def.description, this, data, def),
@@ -414,6 +429,8 @@ export default {
 
 			if ( out )
 				return this.t(i18n, out, data);
+
+			return null;
 		},
 
 		visibility() {
