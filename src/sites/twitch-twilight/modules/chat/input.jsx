@@ -42,6 +42,15 @@ export default class Input extends Module {
 			}
 		});
 
+		this.settings.add('chat.tab-complete.emotes-without-colon', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Allow tab-completion of emotes / emoji without the need of the colon.',
+				component: 'setting-check-box'
+			}
+		});
+
 
 		// Components
 
@@ -57,10 +66,24 @@ export default class Input extends Module {
 			n => n && n.getMatchedEmotes,
 			Twilight.CHAT_ROUTES
 		);
+
+
+		this.MentionSuggestions = this.fine.define(
+			'tab-mention-suggestions',
+			n => n && n.getMentions && n.renderMention,
+			Twilight.CHAT_ROUTES
+		);
 	}
 
 	async onEnable() {
 		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
+		this.chat.context.on('changed:chat.tab-complete.emotes-without-colon', enabled => {
+			for (const inst of this.EmoteSuggestions.instances)
+				inst.canBeTriggeredByTab = enabled;
+
+			for (const inst of this.MentionSuggestions.instances)
+				inst.canBeTriggeredByTab = !enabled;
+		});
 
 		const React = await this.web_munch.findModule('react'),
 			createElement = React && React.createElement;
@@ -119,8 +142,14 @@ export default class Input extends Module {
 				this.overrideEmoteMatcher(inst);
 		});
 
+		this.MentionSuggestions.ready((cls, instances) => {
+			for(const inst of instances)
+				this.overrideMentionMatcher(inst);
+		});
+
 		this.ChatInput.on('update', this.updateEmoteCompletion, this);
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
+		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 	}
 
 
@@ -136,12 +165,28 @@ export default class Input extends Module {
 	}
 
 
+	// eslint-disable-next-line class-methods-use-this
+	overrideMentionMatcher(inst) {
+		if ( inst._ffz_override )
+			return;
+
+		inst.canBeTriggeredByTab = !this.chat.context.get('chat.tab-complete.emotes-without-colon');
+	}
+
+
 	overrideEmoteMatcher(inst) {
 		if ( inst._ffz_override )
 			return;
 
-		const t = this,
-			old_get_matched = inst.getMatchedEmotes;
+		const t = this;
+
+		inst.canBeTriggeredByTab = this.chat.context.get('chat.tab-complete.emotes-without-colon');
+
+		inst.getMatches = function(input, pressedTab) {
+			return pressedTab
+				? input.length < 3 ? null : inst.getMatchedEmotes(input)
+				: input.startsWith(':') ? input.length < 3 ? null : inst.getMatchedEmotes(input) : null;
+		}
 
 		inst.doesEmoteMatchTerm = function(emote, term) {
 			const emote_name = emote.name || emote.token,
@@ -157,7 +202,7 @@ export default class Input extends Module {
 		}
 
 		inst.getMatchedEmotes = function(input) {
-			let results = old_get_matched.call(this, input);
+			let results = t.getTwitchEmoteSuggestions(input, this);
 
 			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
 				const ffz_emotes = t.getEmoteSuggestions(input, this);
@@ -194,9 +239,28 @@ export default class Input extends Module {
 		}
 	}
 
+	
+	// eslint-disable-next-line class-methods-use-this
+	getTwitchEmoteSuggestions(input, inst) {
+		const results = [];
+		const search = input.startsWith(':') ? input.substring(1) : input;
+		for (const set of inst.hydrateEmotes(inst.props.emotes)) {
+			for (const emote of set.emotes) {
+				if (inst.doesEmoteMatchTerm(emote, search)) {
+					results.push({
+						current: input,
+						replacement: emote.token,
+						element: inst.renderEmoteSuggestion(emote)
+					});
+				}
+			}
+		}
+		return results;
+	}
+
 
 	getEmojiSuggestions(input, inst) {
-		let search = input.slice(1).toLowerCase();
+		let search = (input.startsWith(':') ? input.substring(1) : input).toLowerCase();
 		const style = this.chat.context.get('chat.emoji.style'),
 			tone = this.settings.provider.get('emoji-tone', null),
 			results = [],
@@ -242,7 +306,7 @@ export default class Input extends Module {
 				return [];
 		}
 
-		const search = input.slice(1),
+		const search = input.startsWith(':') ? input.substring(1) : input,
 			results = [],
 			emotes = this.emotes.getEmotes(
 				user && user.id,
