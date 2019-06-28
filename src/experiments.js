@@ -149,13 +149,13 @@ export default class ExperimentManager extends Module {
 		if ( window.__twilightSettings )
 			return window.__twilightSettings.experiments;
 
-		const core = this.resolve('site').getCore();
+		const core = this.resolve('site')?.getCore();
 		return core && core.experiments.experiments;
 	}
 
 
 	usingTwitchExperiment(key) {
-		const core = this.resolve('site').getCore();
+		const core = this.resolve('site')?.getCore();
 		return core && has(core.experiments.assignments, key)
 	}
 
@@ -165,7 +165,7 @@ export default class ExperimentManager extends Module {
 		overrides[key] = value;
 		Cookie.set(OVERRIDE_COOKIE, overrides, COOKIE_OPTIONS);
 
-		const core = this.resolve('site').getCore();
+		const core = this.resolve('site')?.getCore();
 		if ( core )
 			core.experiments.overrides[key] = value;
 
@@ -181,7 +181,7 @@ export default class ExperimentManager extends Module {
 		delete overrides[key];
 		Cookie.set(OVERRIDE_COOKIE, overrides, COOKIE_OPTIONS);
 
-		const core = this.resolve('site').getCore();
+		const core = this.resolve('site')?.getCore();
 		if ( core )
 			delete core.experiments.overrides[key];
 
@@ -194,7 +194,7 @@ export default class ExperimentManager extends Module {
 	}
 
 	getTwitchAssignment(key) {
-		const core = this.resolve('site').getCore(),
+		const core = this.resolve('site')?.getCore(),
 			exps = core && core.experiments;
 
 		if ( ! exps )
@@ -235,7 +235,7 @@ export default class ExperimentManager extends Module {
 	}
 
 	_rebuildTwitchKey(key, is_set, new_val) {
-		const core = this.resolve('site').getCore(),
+		const core = this.resolve('site')?.getCore(),
 			exps = core.experiments,
 
 			old_val = has(exps.assignments, key) ?

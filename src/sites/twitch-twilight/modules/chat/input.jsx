@@ -251,7 +251,7 @@ export default class Input extends Module {
 		}
 	}
 
-	
+
 	// eslint-disable-next-line class-methods-use-this
 	getTwitchEmoteSuggestions(input, inst) {
 		const hydratedEmotes = inst.hydrateEmotes(inst.props.emotes);
@@ -351,5 +351,21 @@ export default class Input extends Module {
 				});
 
 		return results;
+	}
+
+	pasteMessage(room, message) {
+		for(const inst of this.ChatInput.instances) {
+			if ( inst?.props?.channelLogin !== room )
+				continue;
+
+			if ( ! inst.autocompleteInputRef || ! inst.state )
+				return;
+
+			if ( inst.state.value )
+				message = `${inst.state.value} ${message}`;
+
+			inst.autocompleteInputRef.setValue(message);
+			inst.autocompleteInputRef.componentRef?.focus?.();
+		}
 	}
 }

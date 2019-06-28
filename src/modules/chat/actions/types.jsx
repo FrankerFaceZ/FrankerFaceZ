@@ -63,7 +63,8 @@ export const chat = {
 	required_context: ['room'],
 
 	defaults: {
-		command: '@{{user.login}} HeyGuys'
+		command: '@{{user.login}} HeyGuys',
+		paste: false
 	},
 
 	title: 'Chat Command',
@@ -86,7 +87,10 @@ export const chat = {
 
 	click(event, data) {
 		const msg = this.replaceVariables(data.options.command, data);
-		this.sendMessage(data.room.login, msg);
+		if ( data.options.paste )
+			this.pasteMessage(data.room.login, msg);
+		else
+			this.sendMessage(data.room.login, msg);
 	}
 }
 

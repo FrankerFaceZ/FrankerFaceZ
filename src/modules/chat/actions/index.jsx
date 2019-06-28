@@ -636,6 +636,11 @@ export default class Actions extends Module {
 	}
 
 
+	pasteMessage(room, message) {
+		return this.resolve('site.chat.input').pasteMessage(room, message);
+	}
+
+
 	sendMessage(room, message) {
 		return this.resolve('site.chat').sendMessage(room, message);
 	}
