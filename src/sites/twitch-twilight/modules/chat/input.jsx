@@ -46,7 +46,17 @@ export default class Input extends Module {
 			default: false,
 			ui: {
 				path: 'Chat > Input >> Tab Completion',
-				title: 'Allow tab-completion of emotes / emoji without the need of the colon.',
+				title: 'Allow tab-completion of emotes without typing a colon. (:)',
+				description: 'This will prevent the tab-completion of usernames without the @ prefix.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.tab-complete.limit-results', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Limit tab-completion results to 25.',
 				component: 'setting-check-box'
 			}
 		});
@@ -184,7 +194,7 @@ export default class Input extends Module {
 
 		inst.getMatches = function(input, pressedTab) {
 			return pressedTab
-				? input.length < 3 ? null : inst.getMatchedEmotes(input)
+				? input.length < 2 ? null : inst.getMatchedEmotes(input)
 				: input.startsWith(':') ? input.length < 3 ? null : inst.getMatchedEmotes(input) : null;
 		}
 
@@ -202,6 +212,8 @@ export default class Input extends Module {
 		}
 
 		inst.getMatchedEmotes = function(input) {
+			const limitResults = t.chat.context.get('chat.tab-complete.limit-results');
+
 			let results = t.getTwitchEmoteSuggestions(input, this);
 
 			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
@@ -211,13 +223,13 @@ export default class Input extends Module {
 			}
 
 			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
-				return results;
+				return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 
 			const emoji = t.getEmojiSuggestions(input, this);
 			if ( Array.isArray(emoji) && emoji.length )
 				results = Array.isArray(results) ? results.concat(emoji) : emoji;
 
-			return results;
+			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
 		const React = this.web_munch.getModule('react'),
@@ -242,16 +254,23 @@ export default class Input extends Module {
 	
 	// eslint-disable-next-line class-methods-use-this
 	getTwitchEmoteSuggestions(input, inst) {
+		const hydratedEmotes = inst.hydrateEmotes(inst.props.emotes);
+		if (!Array.isArray(hydratedEmotes)) {
+			return [];
+		}
+
 		const results = [];
-		const search = input.startsWith(':') ? input.substring(1) : input;
-		for (const set of inst.hydrateEmotes(inst.props.emotes)) {
-			for (const emote of set.emotes) {
-				if (inst.doesEmoteMatchTerm(emote, search)) {
-					results.push({
-						current: input,
-						replacement: emote.token,
-						element: inst.renderEmoteSuggestion(emote)
-					});
+		const search = input.startsWith(':') ? input.slice(1) : input;
+		for (const set of hydratedEmotes) {
+			if (set && Array.isArray(set.emotes)) {
+				for (const emote of set.emotes) {
+					if (inst.doesEmoteMatchTerm(emote, search)) {
+						results.push({
+							current: input,
+							replacement: emote.token,
+							element: inst.renderEmoteSuggestion(emote)
+						});
+					}
 				}
 			}
 		}
@@ -260,7 +279,11 @@ export default class Input extends Module {
 
 
 	getEmojiSuggestions(input, inst) {
-		let search = (input.startsWith(':') ? input.substring(1) : input).toLowerCase();
+		if (!input.startsWith(':')) {
+			return [];
+		}
+
+		let search = input.slice(1).toLowerCase();
 		const style = this.chat.context.get('chat.emoji.style'),
 			tone = this.settings.provider.get('emoji-tone', null),
 			results = [],
@@ -306,7 +329,7 @@ export default class Input extends Module {
 				return [];
 		}
 
-		const search = input.startsWith(':') ? input.substring(1) : input,
+		const search = input.startsWith(':') ? input.slice(1) : input,
 			results = [],
 			emotes = this.emotes.getEmotes(
 				user && user.id,
