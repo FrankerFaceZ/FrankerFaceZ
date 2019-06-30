@@ -212,17 +212,21 @@ export default class Input extends Module {
 
 		inst.getMatchedEmotes = function(input) {
 			const limitResults = t.chat.context.get('chat.tab-complete.limit-results');
-
 			let results = t.getTwitchEmoteSuggestions(input, this);
+			if ( limitResults && results.length >= 25 )
+				return results.slice(0, 25);
 
 			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
 				const ffz_emotes = t.getEmoteSuggestions(input, this);
 				if ( Array.isArray(ffz_emotes) && ffz_emotes.length )
-					results = Array.isArray(results) ? results.concat(ffz_emotes) : ffz_emotes;
+					results = results.concat(ffz_emotes);
 			}
 
+			if ( limitResults && results.length >= 25 )
+				return results.slice(0, 25);
+
 			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
-				return limitResults && results.length > 25 ? results.slice(0, 25) : results;
+				return results;
 
 			const emoji = t.getEmojiSuggestions(input, this);
 			if ( Array.isArray(emoji) && emoji.length )
