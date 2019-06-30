@@ -175,7 +175,6 @@ export default class Input extends Module {
 	}
 
 
-	// eslint-disable-next-line class-methods-use-this
 	overrideMentionMatcher(inst) {
 		if ( inst._ffz_override )
 			return;
@@ -259,22 +258,33 @@ export default class Input extends Module {
 			return [];
 		}
 
-		const results = [];
+		const startingResults = [], otherResults = [];
 		const search = input.startsWith(':') ? input.slice(1) : input;
 		for (const set of hydratedEmotes) {
 			if (set && Array.isArray(set.emotes)) {
 				for (const emote of set.emotes) {
 					if (inst.doesEmoteMatchTerm(emote, search)) {
-						results.push({
+						const element = {
 							current: input,
 							replacement: emote.token,
 							element: inst.renderEmoteSuggestion(emote)
-						});
+						};
+
+						if (emote.token.toLowerCase().startsWith(search)) {
+							startingResults.push(element);
+						}
+						else {
+							otherResults.push(element);
+						}
 					}
 				}
 			}
 		}
-		return results;
+
+		startingResults.sort((a, b) => a.replacement < b.replacement ? -1 : a.replacement > b.replacement ? 1 : 0);
+		otherResults.sort((a, b) => a.replacement < b.replacement ? -1 : a.replacement > b.replacement ? 1 : 0);
+
+		return startingResults.concat(otherResults);
 	}
 
 
