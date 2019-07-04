@@ -61,6 +61,15 @@ export default class Input extends Module {
 			}
 		});
 
+		this.settings.add('chat.tab-complete.prioritize-favorites', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Prioritize favorite emotes at the top.',
+				component: 'setting-check-box'
+			}
+		});
+
 
 		// Components
 
@@ -83,6 +92,34 @@ export default class Input extends Module {
 			n => n && n.getMentions && n.renderMention,
 			Twilight.CHAT_ROUTES
 		);
+
+
+		// Implement Twitch's unfinished emote usage object for prioritizing sorting
+		this.EmoteUsageCount = {
+			TriHard: 196568036,
+			Kappa: 192158118,
+			'4Head': 155758710,
+			PogChamp: 151485090,
+			cmonBruh: 146352878,
+			BibleThump: 56472964,
+			WutFace: 45069031,
+			Kreygasm: 41387580,
+			DansGame: 38097659,
+			SMOrc: 34734484,
+			KappaPride: 34262839,
+			VoHiYo: 27886434,
+			SwiftRage: 24561900,
+			ResidentSleeper: 24438298,
+			EleGiggle: 19891526,
+			FailFish: 19118343,
+			NotLikeThis: 18802905,
+			Keepo: 18351415,
+			BabyRage: 18220906,
+			MingLee: 18026207,
+			HeyGuys: 14851569,
+			ANELE: 14648986,
+			PJSalt: 14438861
+		};
 	}
 
 	async onEnable() {
@@ -214,7 +251,7 @@ export default class Input extends Module {
 			const limitResults = t.chat.context.get('chat.tab-complete.limit-results');
 			let results = t.getTwitchEmoteSuggestions(input, this);
 			if ( limitResults && results.length >= 25 )
-				return results.slice(0, 25);
+				return t.sortFavorites(results).slice(0, 25);
 
 			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
 				const ffz_emotes = t.getEmoteSuggestions(input, this);
@@ -223,7 +260,7 @@ export default class Input extends Module {
 			}
 
 			if ( limitResults && results.length >= 25 )
-				return results.slice(0, 25);
+				return t.sortFavorites(results).slice(0, 25);
 
 			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
 				return results;
@@ -232,6 +269,7 @@ export default class Input extends Module {
 			if ( Array.isArray(emoji) && emoji.length )
 				results = Array.isArray(results) ? results.concat(emoji) : emoji;
 
+			t.sortFavorites(results);
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
@@ -240,18 +278,57 @@ export default class Input extends Module {
 
 		inst.renderFFZEmojiSuggestion = function(data) {
 			return (<React.Fragment>
-				<div class="tw-pd-r-05">
+				<div class="tw-pd-r-05" favorite={data.favorite}>
 					<img
 						class="emote-autocomplete-provider__image ffz-emoji"
 						src={data.src}
 						srcSet={data.srcset}
 					/>
+					{data.favorite && <figure class="ffz--favorite ffz-i-star" />}
 				</div>
 				<div>
 					{data.token}
 				</div>
 			</React.Fragment>);
 		}
+
+		inst.renderEmoteSuggestion = function(emote) {
+			const favorite = emote.favorite;
+			return (<React.Fragment>
+				<div favorite={favorite} class="tw-relative tw-pd-r-05">
+					<img
+						class="emote-autocomplete-provider__image"
+						srcSet={emote.srcSet}
+					/>
+					{favorite && <figure class="ffz--favorite ffz-i-star" />}
+				</div>
+				<div>
+					{emote.token}
+				</div>
+			</React.Fragment>);
+		}
+	}
+
+
+	// eslint-disable-next-line class-methods-use-this
+	sortFavorites(results) {
+		if (!this.chat.context.get('chat.tab-complete.prioritize-favorites')) {
+			return results;
+		}
+
+		return results.sort((a, b) => {
+			const a_fav = a.favorite;
+			const b_fav = b.favorite;
+			if (a_fav) {
+				return b_fav ? a.replacement.localeCompare(b.replacement) : -1;
+			}
+			else if (b_fav) {
+				return 1;
+			}
+			else {
+				a.replacement.localeCompare(b.replacement)
+			}
+		});
 	}
 
 
@@ -262,19 +339,27 @@ export default class Input extends Module {
 			return [];
 		}
 
-		const startingResults = [], otherResults = [];
+		const usageResults = [], startingResults = [], otherResults = [];
 		const search = input.startsWith(':') ? input.slice(1) : input;
 		for (const set of hydratedEmotes) {
 			if (set && Array.isArray(set.emotes)) {
 				for (const emote of set.emotes) {
 					if (inst.doesEmoteMatchTerm(emote, search)) {
+						const favorite = this.emotes.isFavorite('twitch', parseInt(emote.id, 10));
 						const element = {
 							current: input,
 							replacement: emote.token,
-							element: inst.renderEmoteSuggestion(emote)
+							element: inst.renderEmoteSuggestion({
+								...emote,
+								favorite
+							}),
+							favorite
 						};
 
-						if (emote.token.toLowerCase().startsWith(search)) {
+						if (this.EmoteUsageCount[emote.token]) {
+							usageResults.push(element);
+						}
+						else if (emote.token.toLowerCase().startsWith(search)) {
 							startingResults.push(element);
 						}
 						else {
@@ -285,10 +370,11 @@ export default class Input extends Module {
 			}
 		}
 
-		startingResults.sort((a, b) => a.replacement < b.replacement ? -1 : a.replacement > b.replacement ? 1 : 0);
-		otherResults.sort((a, b) => a.replacement < b.replacement ? -1 : a.replacement > b.replacement ? 1 : 0);
+		usageResults.sort((a, b) => this.EmoteUsageCount[b.replacement] - this.EmoteUsageCount[a.replacement]);
+		startingResults.sort((a, b) => a.replacement.localeCompare(b.replacement));
+		otherResults.sort((a, b) => a.replacement.localeCompare(b.replacement));
 
-		return startingResults.concat(otherResults);
+		return usageResults.concat(startingResults).concat(otherResults);
 	}
 
 
@@ -312,7 +398,8 @@ export default class Input extends Module {
 					toned = emoji.variants && emoji.variants[tone],
 					source = toned || emoji;
 
-				if ( emoji && (style === 0 || source.has[style]) )
+				if ( emoji && (style === 0 || source.has[style]) ) {
+					const favorite = this.emotes.isFavorite('emoji', emoji.code);
 					results.push({
 						current: input,
 						replacement: source.raw,
@@ -320,9 +407,12 @@ export default class Input extends Module {
 							token: `:${name}:`,
 							id: `emoji-${emoji.code}`,
 							src: this.emoji.getFullImage(source.image, style),
-							srcSet: this.emoji.getFullImageSet(source.image, style)
-						})
+							srcSet: this.emoji.getFullImageSet(source.image, style),
+							favorite
+						}),
+						favorite
 					});
+				}
 			}
 
 		return results;
@@ -353,16 +443,20 @@ export default class Input extends Module {
 			);
 
 		for(const emote of Object.values(emotes))
-			if ( inst.doesEmoteMatchTerm(emote, search) )
+			if ( inst.doesEmoteMatchTerm(emote, search) ) {
+				const favorite = this.emotes.isFavorite(emote.token.provider, emote.id);
 				results.push({
 					current: input,
 					replacement: emote.name,
 					element: inst.renderEmoteSuggestion({
 						token: emote.name,
 						id: `${emote.token.provider}-${emote.id}`,
-						srcSet: emote.srcSet
-					})
+						srcSet: emote.srcSet,
+						favorite
+					}),
+					favorite
 				});
+			}
 
 		return results;
 	}
