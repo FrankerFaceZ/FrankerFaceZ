@@ -56,9 +56,13 @@ export default class SettingsMenu extends Module {
 				if ( ! this.ffzPauseClick )
 					this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
-				val.props.children.push(<div class="tw-mg-t-1">
-					<button onClick={this.ffzSettingsClick}>
-						{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+				val.props.children.push(<div class="tw-full-width tw-relative">
+					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--inverted tw-interactive" onClick={this.ffzSettingsClick}>
+						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
+							<div class="tw-flex-grow-1">
+								{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+							</div>
+						</div>
 					</button>
 					{t.cant_window && <div class="tw-mg-t-05 tw-c-text-alt-2">
 						<span class="ffz-i-attention">
