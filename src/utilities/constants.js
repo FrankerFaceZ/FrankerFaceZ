@@ -7,7 +7,7 @@ export const CLIENT_ID = 'a3bc9znoz6vi8ozsoca0inlcr4fcvkl';
 export const API_SERVER = '//api.frankerfacez.com';
 export const NEW_API = '//api-test.frankerfacez.com';
 
-export const SENTRY_ID = 'https://18f42c65339d4164b3fdebfc8c8bc99b@sentry.io/1186960';
+export const SENTRY_ID = 'https://1c3b56f127254d3ba1bd1d6ad8805eee@sentry.io/1186960';
 
 
 export const LV_SERVER = 'https://cbenni.com/api';

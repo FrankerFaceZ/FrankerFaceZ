@@ -338,7 +338,7 @@ export default class Chat extends Module {
 				}
 
 				for(const [key, list] of colors) {
-					colors.set(key, new RegExp(`^${list.join('|')}$`, 'gi'));
+					colors.set(key, new RegExp(`^(?:${list.join('|')})$`, 'gi'));
 				}
 
 				return colors;
@@ -389,7 +389,7 @@ export default class Chat extends Module {
 					if ( ! data.length )
 						return null;
 
-					return new RegExp(`^${data.join('|')}$`, 'gi');
+					return new RegExp(`^(?:${data.join('|')})$`, 'gi');
 				});
 			}
 		});
