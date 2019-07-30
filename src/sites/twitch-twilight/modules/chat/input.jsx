@@ -83,6 +83,10 @@ export default class Input extends Module {
 			n => n && n.getMentions && n.renderMention,
 			Twilight.CHAT_ROUTES
 		);
+
+
+		this.messageHistory = [];
+		this.messageHistoryPos = 0;
 	}
 
 	async onEnable() {
@@ -144,6 +148,7 @@ export default class Input extends Module {
 			for(const inst of instances) {
 				inst.forceUpdate();
 				this.updateEmoteCompletion(inst);
+				this.overrideChatInput(inst);
 			}
 		});
 
@@ -158,6 +163,7 @@ export default class Input extends Module {
 		});
 
 		this.ChatInput.on('update', this.updateEmoteCompletion, this);
+		this.ChatInput.on('mount', this.overrideChatInput, this);
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 	}
@@ -172,6 +178,58 @@ export default class Input extends Module {
 		child._ffz_user = inst.props.sessionUser;
 		child._ffz_channel_id = inst.props.channelID;
 		child._ffz_channel_login = inst.props.channelLogin;
+	}
+    
+
+	overrideChatInput(inst) {
+		if ( inst._ffz_override )
+			return;
+            
+		const t = this;
+
+		const originalOnKeyDown = inst.onKeyDown,
+			originalOnMessageSend = inst.onMessageSend;
+
+		inst.onKeyDown = function(event) {
+			const code = event.charCode || event.keyCode;
+            
+			if (code === 38) { // Arrow up
+				if (inst.chatInputRef.selectionStart === 0) {
+					if (!t.messageHistory.length) {
+						return;
+					}
+					
+					if (t.messageHistoryPos > 0) {
+						t.messageHistoryPos--;
+					}
+					
+					inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
+				}
+			}
+			else if (code === 40) { // Arrow down
+				if (inst.chatInputRef.selectionStart == inst.chatInputRef.value.length) {
+					if (!t.messageHistory.length) {
+						return;
+					}
+
+					if (t.messageHistoryPos < t.messageHistory.length - 1) {
+						t.messageHistoryPos++;
+					}
+
+					inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
+				}
+			}
+			else {
+				originalOnKeyDown.call(this, event);
+			}
+		}
+
+		inst.onMessageSend = function(event) {
+			t.messageHistory.push(inst.chatInputRef.value);
+			t.messageHistoryPos = t.messageHistory.length;
+
+			originalOnMessageSend.call(this, event);
+		}
 	}
 
 
