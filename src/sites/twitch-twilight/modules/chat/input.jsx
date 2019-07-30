@@ -87,6 +87,7 @@ export default class Input extends Module {
 
 		this.messageHistory = [];
 		this.messageHistoryPos = 0;
+		this.tempInput = '';
 	}
 
 	async onEnable() {
@@ -198,9 +199,13 @@ export default class Input extends Module {
 					if (!t.messageHistory.length) {
 						return;
 					}
+
+					if (inst.chatInputRef.value && t.messageHistoryPos === -1) {
+						t.tempInput = inst.chatInputRef.value;
+					}
 					
-					if (t.messageHistoryPos > 0) {
-						t.messageHistoryPos--;
+					if (t.messageHistoryPos < t.messageHistory.length - 1) {
+						t.messageHistoryPos++;
 					}
 					
 					inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
@@ -212,11 +217,14 @@ export default class Input extends Module {
 						return;
 					}
 
-					if (t.messageHistoryPos < t.messageHistory.length - 1) {
-						t.messageHistoryPos++;
+					if (t.messageHistoryPos > 0) {
+						t.messageHistoryPos--;
+						inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
 					}
-
-					inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
+					else if (t.messageHistoryPos === 0) {
+						inst.chatInputRef.value = t.tempInput;
+						t.messageHistoryPos = -1;
+					}
 				}
 			}
 			else {
@@ -225,8 +233,12 @@ export default class Input extends Module {
 		}
 
 		inst.onMessageSend = function(event) {
-			t.messageHistory.push(inst.chatInputRef.value);
-			t.messageHistoryPos = t.messageHistory.length;
+			if (!t.messageHistory.length || t.messageHistory[0] !== inst.chatInputRef.value) {
+				t.messageHistory.unshift(inst.chatInputRef.value);
+				t.messageHistory = t.messageHistory.slice(0, 20);
+			}
+			t.messageHistoryPos = -1;
+			t.tempInput = '';
 
 			originalOnMessageSend.call(this, event);
 		}
