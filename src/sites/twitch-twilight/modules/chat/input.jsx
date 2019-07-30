@@ -339,13 +339,17 @@ export default class Input extends Module {
 			return [];
 		}
 
-		const usageResults = [], startingResults = [], otherResults = [];
-		const search = input.startsWith(':') ? input.slice(1) : input;
+		const usageResults = [],
+			startingResults = [],
+			otherResults = [],
+			favorites = this.emotes.getFavorites('twitch'),
+			search = input.startsWith(':') ? input.slice(1) : input;
+
 		for (const set of hydratedEmotes) {
 			if (set && Array.isArray(set.emotes)) {
 				for (const emote of set.emotes) {
 					if (inst.doesEmoteMatchTerm(emote, search)) {
-						const favorite = this.emotes.isFavorite('twitch', parseInt(emote.id, 10));
+						const favorite = favorites.includes(parseInt(emote.id, 10));
 						const element = {
 							current: input,
 							replacement: emote.token,
@@ -386,6 +390,7 @@ export default class Input extends Module {
 		let search = input.slice(1).toLowerCase();
 		const style = this.chat.context.get('chat.emoji.style'),
 			tone = this.settings.provider.get('emoji-tone', null),
+			favorites = this.emotes.getFavorites('emoji'),
 			results = [],
 			has_colon = search.endsWith(':');
 
@@ -399,7 +404,7 @@ export default class Input extends Module {
 					source = toned || emoji;
 
 				if ( emoji && (style === 0 || source.has[style]) ) {
-					const favorite = this.emotes.isFavorite('emoji', emoji.code);
+					const favorite = favorites.includes(emoji.code);
 					results.push({
 						current: input,
 						replacement: source.raw,
