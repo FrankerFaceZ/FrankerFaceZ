@@ -140,7 +140,10 @@ export default class RavenLogger extends Module {
 				'freed script',
 				'ffzenhancing',
 				'dead object',
-				'Name Collision for Module'
+				'Name Collision for Module',
+				'SourceBuffer',
+				'ChunkLoadError',
+				'QuotaExceededError'
 			],
 			sanitizeKeys: [
 				/Token$/

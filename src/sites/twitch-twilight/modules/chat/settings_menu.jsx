@@ -56,9 +56,13 @@ export default class SettingsMenu extends Module {
 				if ( ! this.ffzPauseClick )
 					this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
-				val.props.children.push(<div class="tw-mg-t-1">
-					<button onClick={this.ffzSettingsClick}>
-						{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+				val.props.children.push(<div class="tw-full-width tw-relative">
+					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--inverted tw-interactive" onClick={this.ffzSettingsClick}>
+						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
+							<div class="tw-flex-grow-1">
+								{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+							</div>
+						</div>
 					</button>
 					{t.cant_window && <div class="tw-mg-t-05 tw-c-text-alt-2">
 						<span class="ffz-i-attention">
@@ -78,7 +82,23 @@ export default class SettingsMenu extends Module {
 												f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
 													t.i18n.t('key.hover', 'Hover');
 
-				val.props.children.push(<div class="tw-mg-t-1">
+
+				val.props.children.push(<div class="tw-full-width tw-relative">
+					<button
+						class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+						onClick={this.ffzPauseClick}
+					>
+						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
+							<div class="tw-flex-grow-1">
+								{t.i18n.t('chat.settings.pause', 'Pause Chat')}
+							</div>
+							<div class="tw-mg-l-1 tw-pd-x-05">{reason}</div>
+							<figure class="tw-svg ffz-i-right-dir" />
+						</div>
+					</button>
+				</div>);
+
+				/*val.props.children.push(<div class="tw-mg-t-1">
 					<button
 						class="tw-block tw-full-width tw-interactable tw-interactable--base tw-interactive"
 						onClick={this.ffzPauseClick}
@@ -91,7 +111,7 @@ export default class SettingsMenu extends Module {
 							</div>
 						</div>
 					</button>
-				</div>)
+				</div>)*/
 
 				return val;
 			}
