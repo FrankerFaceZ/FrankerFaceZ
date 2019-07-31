@@ -45,6 +45,8 @@
 </template>
 
 <script>
+import {debounce} from 'utilities/object';
+
 import SettingMixin from '../setting-mixin';
 
 export default {
@@ -58,6 +60,12 @@ export default {
 
 			return this.value;
 		}
+	},
+
+	created() {
+		// Don't do this too often. It can happen if
+		// people are dragging sliders in the pop-up.
+		this.onInput = debounce(this.onInput, 100);
 	},
 
 	methods: {

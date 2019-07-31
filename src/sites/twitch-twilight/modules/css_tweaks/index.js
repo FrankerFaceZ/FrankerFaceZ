@@ -20,8 +20,8 @@ const CLASSES = {
 
 	'prime-offers': '.top-nav__prime',
 
-	'player-ext': '.player .extension-taskbar,.player .extension-container',
-	'player-ext-hover': '.player:not([data-controls="true"]) .extension-container',
+	'player-ext': '.player .extension-taskbar,.player .extension-container,.player .extensions-dock__layout,.player .extensions-notifications',
+	'player-ext-hover': '.player:not([data-controls="true"]) .extension-container,.player:not([data-controls="true"]) .extensions-dock__layout,.player:not([data-controls="true"]) .extensions-notifications',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player_container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',

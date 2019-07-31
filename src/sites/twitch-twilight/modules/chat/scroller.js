@@ -29,7 +29,7 @@ export default class Scroller extends Module {
 
 		this.ChatScroller = this.fine.define(
 			'chat-scroller',
-			n => n.saveScrollRef && n.handleScrollEvent,
+			n => n.saveScrollRef && n.handleScrollEvent && ! n.renderLines,
 			Twilight.CHAT_ROUTES
 		);
 

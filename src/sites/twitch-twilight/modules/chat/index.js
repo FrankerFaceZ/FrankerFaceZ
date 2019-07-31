@@ -406,6 +406,7 @@ export default class ChatHook extends Module {
 		ic.contrast = contrast;
 
 		this.updateChatLines();
+		this.updateMentionCSS();
 		this.emit(':update-colors');
 	}
 
@@ -452,8 +453,20 @@ export default class ChatHook extends Module {
 	updateMentionCSS() {
 		const enabled = this.chat.context.get('chat.filtering.highlight-mentions');
 		this.css_tweaks.toggle('chat-mention-token', this.chat.context.get('chat.filtering.highlight-tokens'));
-		this.css_tweaks.toggle('chat-mention-bg', enabled);
-		this.css_tweaks.toggle('chat-mention-bg-alt', enabled && this.chat.context.get('chat.lines.alternate'));
+
+		const raw_color = this.chat.context.get('chat.filtering.mention-color');
+		if ( raw_color ) {
+			this.css_tweaks.toggle('chat-mention-bg', false);
+			this.css_tweaks.toggle('chat-mention-bg-alt', false);
+
+			this.css_tweaks.toggle('chat-mention-bg-custom', true);
+			this.css_tweaks.setVariable('chat-mention-color', this.inverse_colors.process(raw_color));
+
+		} else {
+			this.css_tweaks.toggle('chat-mention-bg-custom', false);
+			this.css_tweaks.toggle('chat-mention-bg', enabled);
+			this.css_tweaks.toggle('chat-mention-bg-alt', enabled && this.chat.context.get('chat.lines.alternate'));
+		}
 	}
 
 
@@ -501,6 +514,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.lines.borders', this.updateLineBorders, this);
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
+		this.chat.context.on('changed:chat.filtering.mention-color', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);

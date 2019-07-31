@@ -24,6 +24,15 @@ export default class Input extends Module {
 
 		// Settings
 
+		this.settings.add('chat.mru.enabled', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Recent Messages',
+				title: 'Allow pressing up and down to recall previously sent chat messages.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.tab-complete.ffz-emotes', {
 			default: true,
 			ui: {
@@ -92,10 +101,6 @@ export default class Input extends Module {
 			n => n && n.getMentions && n.renderMention,
 			Twilight.CHAT_ROUTES
 		);
-
-		this.messageHistory = [];
-		this.messageHistoryPos = 0;
-		this.tempInput = '';
 
 		// Implement Twitch's unfinished emote usage object for prioritizing sorting
 		this.EmoteUsageCount = {
@@ -215,65 +220,81 @@ export default class Input extends Module {
 		child._ffz_channel_id = inst.props.channelID;
 		child._ffz_channel_login = inst.props.channelLogin;
 	}
-    
 
 	overrideChatInput(inst) {
 		if ( inst._ffz_override )
 			return;
-            
+
 		const t = this;
 
 		const originalOnKeyDown = inst.onKeyDown,
 			originalOnMessageSend = inst.onMessageSend;
 
+		inst.messageHistory = [];
+		inst.tempInput = '';
+		inst.messageHistoryPos = -1;
+
 		inst.onKeyDown = function(event) {
-			const code = event.charCode || event.keyCode;
-            
-			if (code === 38) { // Arrow up
-				if (inst.chatInputRef.selectionStart === 0) {
-					if (!t.messageHistory.length) {
+			try {
+				if ( inst.autocompleteInputRef && t.chat.context.get('chat.mru.enabled') && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
+					const code = event.charCode || event.keyCode;
+
+					// Arrow Up
+					if ( code === 38 && inst.chatInputRef.selectionStart === 0 ) {
+						if ( ! inst.messageHistory.length )
+							return;
+
+						if ( inst.chatInputRef.value && inst.messageHistoryPos === -1 )
+							inst.tempInput = inst.chatInputRef.value;
+
+						if ( inst.messageHistoryPos < inst.messageHistory.length - 1 ) {
+							inst.messageHistoryPos++;
+							inst.autocompleteInputRef.setValue(inst.messageHistory[inst.messageHistoryPos]);
+						}
+
+						return;
+
+					// Arrow Down
+					} else if ( code === 40 && inst.chatInputRef.selectionStart == inst.chatInputRef.value.length ) {
+						if ( ! inst.messageHistory.length )
+							return;
+
+						if ( inst.messageHistoryPos > 0 ) {
+							inst.messageHistoryPos--;
+							inst.autocompleteInputRef.setValue(inst.messageHistory[inst.messageHistoryPos]);
+
+						} else if ( inst.messageHistoryPos === 0 ) {
+							inst.autocompleteInputRef.setValue(inst.tempInput);
+							inst.messageHistoryPos = -1;
+						}
+
 						return;
 					}
-
-					if (inst.chatInputRef.value && t.messageHistoryPos === -1) {
-						t.tempInput = inst.chatInputRef.value;
-					}
-					
-					if (t.messageHistoryPos < t.messageHistory.length - 1) {
-						t.messageHistoryPos++;
-					}
-					
-					inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
 				}
-			}
-			else if (code === 40) { // Arrow down
-				if (inst.chatInputRef.selectionStart == inst.chatInputRef.value.length) {
-					if (!t.messageHistory.length) {
-						return;
-					}
 
-					if (t.messageHistoryPos > 0) {
-						t.messageHistoryPos--;
-						inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
-					}
-					else if (t.messageHistoryPos === 0) {
-						inst.chatInputRef.value = t.tempInput;
-						t.messageHistoryPos = -1;
-					}
-				}
+			} catch(err) {
+				t.log.capture(err);
+				t.log.error(err);
 			}
-			else {
-				originalOnKeyDown.call(this, event);
-			}
+
+			originalOnKeyDown.call(this, event);
 		}
 
 		inst.onMessageSend = function(event) {
-			if (!t.messageHistory.length || t.messageHistory[0] !== inst.chatInputRef.value) {
-				t.messageHistory.unshift(inst.chatInputRef.value);
-				t.messageHistory = t.messageHistory.slice(0, 20);
+			try {
+				if ( t.chat.context.get('chat.mru.enabled') ) {
+					if (! inst.messageHistory.length || inst.messageHistory[0] !== inst.chatInputRef.value) {
+						inst.messageHistory.unshift(inst.chatInputRef.value);
+						inst.messageHistory = inst.messageHistory.slice(0, 20);
+					}
+					inst.messageHistoryPos = -1;
+					inst.tempInput = '';
+				}
+
+			} catch(err) {
+				t.log.capture(err);
+				t.log.error(err);
 			}
-			t.messageHistoryPos = -1;
-			t.tempInput = '';
 
 			originalOnMessageSend.call(this, event);
 		}

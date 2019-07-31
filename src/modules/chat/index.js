@@ -592,6 +592,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.mention-color', {
+			default: '',
+			ui: {
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Custom Highlight Color',
+				component: 'setting-color-box',
+				description: 'If this is set, highlighted messages with no default color set will use this color rather than red.'
+			}
+		});
+
 		this.settings.add('chat.filtering.highlight-mentions', {
 			default: false,
 			ui: {
