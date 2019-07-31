@@ -269,7 +269,7 @@ export default class Input extends Module {
 			if ( Array.isArray(emoji) && emoji.length )
 				results = Array.isArray(results) ? results.concat(emoji) : emoji;
 
-			t.sortFavorites(results);
+			results = t.sortFavorites(results);
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
@@ -278,7 +278,7 @@ export default class Input extends Module {
 
 		inst.renderFFZEmojiSuggestion = function(data) {
 			return (<React.Fragment>
-				<div class="tw-pd-r-05" favorite={data.favorite}>
+				<div class="tw-relative tw-flex-shrink-0 tw-pd-r-05" title={data.token} favorite={data.favorite}>
 					<img
 						class="emote-autocomplete-provider__image ffz-emoji"
 						src={data.src}
@@ -286,23 +286,22 @@ export default class Input extends Module {
 					/>
 					{data.favorite && <figure class="ffz--favorite ffz-i-star" />}
 				</div>
-				<div>
+				<div class="tw-ellipsis" title={data.token}>
 					{data.token}
 				</div>
 			</React.Fragment>);
 		}
 
 		inst.renderEmoteSuggestion = function(emote) {
-			const favorite = emote.favorite;
 			return (<React.Fragment>
-				<div favorite={favorite} class="tw-relative tw-pd-r-05">
+				<div class="tw-relative tw-flex-shrink-0 tw-pd-r-05" title={emote.token} favorite={emote.favorite}>
 					<img
 						class="emote-autocomplete-provider__image"
 						srcSet={emote.srcSet}
 					/>
-					{favorite && <figure class="ffz--favorite ffz-i-star" />}
+					{emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
 				</div>
-				<div>
+				<div class="tw-ellipsis" title={emote.token}>
 					{emote.token}
 				</div>
 			</React.Fragment>);
