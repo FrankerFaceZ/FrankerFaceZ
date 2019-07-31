@@ -93,6 +93,9 @@ export default class Input extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.messageHistory = [];
+		this.messageHistoryPos = 0;
+		this.tempInput = '';
 
 		// Implement Twitch's unfinished emote usage object for prioritizing sorting
 		this.EmoteUsageCount = {
@@ -181,6 +184,7 @@ export default class Input extends Module {
 			for(const inst of instances) {
 				inst.forceUpdate();
 				this.updateEmoteCompletion(inst);
+				this.overrideChatInput(inst);
 			}
 		});
 
@@ -195,6 +199,7 @@ export default class Input extends Module {
 		});
 
 		this.ChatInput.on('update', this.updateEmoteCompletion, this);
+		this.ChatInput.on('mount', this.overrideChatInput, this);
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 	}
@@ -209,6 +214,69 @@ export default class Input extends Module {
 		child._ffz_user = inst.props.sessionUser;
 		child._ffz_channel_id = inst.props.channelID;
 		child._ffz_channel_login = inst.props.channelLogin;
+	}
+    
+
+	overrideChatInput(inst) {
+		if ( inst._ffz_override )
+			return;
+            
+		const t = this;
+
+		const originalOnKeyDown = inst.onKeyDown,
+			originalOnMessageSend = inst.onMessageSend;
+
+		inst.onKeyDown = function(event) {
+			const code = event.charCode || event.keyCode;
+            
+			if (code === 38) { // Arrow up
+				if (inst.chatInputRef.selectionStart === 0) {
+					if (!t.messageHistory.length) {
+						return;
+					}
+
+					if (inst.chatInputRef.value && t.messageHistoryPos === -1) {
+						t.tempInput = inst.chatInputRef.value;
+					}
+					
+					if (t.messageHistoryPos < t.messageHistory.length - 1) {
+						t.messageHistoryPos++;
+					}
+					
+					inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
+				}
+			}
+			else if (code === 40) { // Arrow down
+				if (inst.chatInputRef.selectionStart == inst.chatInputRef.value.length) {
+					if (!t.messageHistory.length) {
+						return;
+					}
+
+					if (t.messageHistoryPos > 0) {
+						t.messageHistoryPos--;
+						inst.chatInputRef.value = t.messageHistory[t.messageHistoryPos];
+					}
+					else if (t.messageHistoryPos === 0) {
+						inst.chatInputRef.value = t.tempInput;
+						t.messageHistoryPos = -1;
+					}
+				}
+			}
+			else {
+				originalOnKeyDown.call(this, event);
+			}
+		}
+
+		inst.onMessageSend = function(event) {
+			if (!t.messageHistory.length || t.messageHistory[0] !== inst.chatInputRef.value) {
+				t.messageHistory.unshift(inst.chatInputRef.value);
+				t.messageHistory = t.messageHistory.slice(0, 20);
+			}
+			t.messageHistoryPos = -1;
+			t.tempInput = '';
+
+			originalOnMessageSend.call(this, event);
+		}
 	}
 
 
