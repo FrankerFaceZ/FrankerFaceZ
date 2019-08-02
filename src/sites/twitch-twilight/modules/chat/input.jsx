@@ -367,7 +367,7 @@ export default class Input extends Module {
 
 		inst.renderFFZEmojiSuggestion = function(data) {
 			return (<React.Fragment>
-				<div class="tw-flex-shrink-0 tw-pd-05" title={data.token} favorite={data.favorite}>
+				<div class="tw-relative tw-flex-shrink-0 tw-pd-05" title={data.token} favorite={data.favorite}>
 					<img
 						class="emote-autocomplete-provider__image ffz-emoji"
 						src={data.src}
@@ -383,7 +383,7 @@ export default class Input extends Module {
 
 		inst.renderEmoteSuggestion = function(emote) {
 			return (<React.Fragment>
-				<div class="tw-flex-shrink-0 tw-pd-05" title={emote.token} favorite={emote.favorite}>
+				<div class="tw-relative tw-flex-shrink-0 tw-pd-05" title={emote.token} favorite={emote.favorite}>
 					<img
 						class="emote-autocomplete-provider__image"
 						srcSet={emote.srcSet}
