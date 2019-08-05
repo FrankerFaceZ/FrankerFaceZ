@@ -32,7 +32,7 @@ const CLASSES = {
 	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
-	'channel-live-ind': 'div[data-target="channel-header__live-indicator"]'
+	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator'
 };
 
 

@@ -61,9 +61,9 @@
 								</div>
 
 
-								<h4>{{ t(p.i18n_key, p.title, p) }}</h4>
+								<h4>{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
 								<div v-if="p.description" class="description">
-									{{ t(p.desc_i18n_key, p.description, p) }}
+									{{ p.desc_i18n_key ? t(p.desc_i18n_key, p.description, p) : p.description }}
 								</div>
 							</div>
 						</div>

@@ -15,6 +15,9 @@
 	outline: none;
 	cursor: pointer;
 
+	border-left: 4px solid;
+	border-left-color: transparent;
+
 	&.live .ffz--profile-row__icon {
 		color: green;
 	}
@@ -26,6 +29,10 @@
 		.tw-root--theme-dark & {
 			opacity: .25;
 		}
+	}
+
+	&.current {
+		border-left-color: #6441a4;
 	}
 
 	.description {

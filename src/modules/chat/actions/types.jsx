@@ -118,7 +118,7 @@ export const msg_delete = {
 	title: 'Delete Message',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.delete', "Delete {user.login}'s message", {user: data.user});
+		return this.i18n.t('chat.actions.delete.tooltip', "Delete {user.login}'s message", {user: data.user});
 	},
 
 	click(event, data) {
@@ -155,7 +155,7 @@ export const ban = {
 	},
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.ban', 'Ban {user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.ban.tooltip', 'Ban {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -201,7 +201,7 @@ export const timeout = {
 
 	tooltip(data) {
 		return this.i18n.t(
-			'chat.actions.timeout',
+			'chat.actions.timeout.tooltip',
 			'Timeout {user.login} for {duration,number} second{duration,en_plural}',
 			{
 				user: data.user,
@@ -261,7 +261,7 @@ export const untimeout = {
 	title: 'Untimeout User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.untimeout', 'Untimeout {user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.untimeout.tooltip', 'Untimeout {user.login}', {user: data.user});
 	},
 
 	click(event, data) {
@@ -287,7 +287,7 @@ export const whisper = {
 	title: 'Whisper User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.whisper', 'Whisper {user.login}', data);
+		return this.i18n.t('chat.actions.whisper.tooltip', 'Whisper {user.login}', data);
 	},
 
 	click(event, data) {

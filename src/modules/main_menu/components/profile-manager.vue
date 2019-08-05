@@ -307,8 +307,9 @@ export default {
 		},
 
 		importProfile(profile_data, data) {
+			this.import_profile = profile_data;
+
 			if ( profile_data.url ) {
-				this.import_profile = profile_data;
 				this.import_profile_data = data;
 				return;
 			}
@@ -326,6 +327,12 @@ export default {
 				delete profile_data.url;
 
 			const prof = this.context.createProfile(profile_data);
+
+			prof.update({
+				i18n_key: undefined,
+				desc_i18n_key: undefined,
+				description: `${prof.description ? prof.description + '\n' : ''}${this.t('setting.backup-restore.imported-at', 'Imported at {now,datetime}.', {now: new Date})}`
+			});
 
 			let i = 0;
 

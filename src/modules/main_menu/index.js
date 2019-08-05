@@ -63,12 +63,12 @@ export default class MainMenu extends Module {
 		});
 
 		this.settings.addUI('faq', {
-			path: 'Home > FAQ',
+			path: 'Home > FAQ @{"profile_warning": false}',
 			component: 'faq-page'
 		});
 
 		this.settings.addUI('feedback', {
-			path: 'Home > Feedback',
+			path: 'Home > Feedback @{"profile_warning": false}',
 			component: 'feedback-page'
 		});
 
@@ -83,7 +83,7 @@ export default class MainMenu extends Module {
 		})
 
 		this.settings.addUI('changelog', {
-			path: 'Home > Changelog',
+			path: 'Home > Changelog @{"profile_warning": false}',
 			component: 'changelog'
 		});
 
