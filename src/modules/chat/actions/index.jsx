@@ -91,6 +91,34 @@ export default class Actions extends Module {
 			}
 		});
 
+		this.settings.add('chat.actions.user-context', {
+			// Filter out actions
+			process: (ctx, val) =>
+				val.filter(x => x.type || (x.appearance &&
+					this.renderers[x.appearance.type] &&
+					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
+					(! x.action || this.actions[x.action])
+				)),
+
+			default: [],
+			type: 'array_merge',
+			ui: {
+				path: 'Chat > Actions > User Context @{"description": "Here, you can define custom actions that will appear in a context menu when you right-click a username in chat."}',
+				component: 'chat-actions',
+				context: ['user', 'room', 'message'],
+				mod_icons: true,
+
+				data: () => {
+					const chat = this.resolve('site.chat');
+					return {
+						color: val => chat && chat.colors ? chat.colors.process(val) : val,
+						actions: deep_copy(this.actions),
+						renderers: deep_copy(this.renderers)
+					}
+				}
+			}
+		})
+
 		this.settings.add('chat.actions.room', {
 			// Filter out actions
 			process: (ctx, val) =>
@@ -168,6 +196,7 @@ export default class Actions extends Module {
 
 		this.handleClick = this.handleClick.bind(this);
 		this.handleContext = this.handleContext.bind(this);
+		this.handleUserContext = this.handleUserContext.bind(this);
 	}
 
 
@@ -297,6 +326,23 @@ export default class Actions extends Module {
 
 
 	renderInlineContext(target, data) {
+		const definition = data.definition;
+		let content;
+
+		if ( definition.context )
+			content = (t, tip) => definition.context.call(this, data, t, tip);
+
+		else if ( definition.uses_reason ) {
+			content = (t, tip) => this.renderInlineReasons(data, t, tip);
+
+		} else
+			return;
+
+		return this.renderPopup(target, content);
+	}
+
+
+	renderPopup(target, content) {
 		if ( target._ffz_destroy )
 			return target._ffz_destroy();
 
@@ -312,18 +358,6 @@ export default class Actions extends Module {
 
 			target._ffz_destroy = target._ffz_outside = null;
 		}
-
-		const definition = data.definition;
-		let content;
-
-		if ( definition.context )
-			content = (t, tip) => definition.context.call(this, data, t, tip);
-
-		else if ( definition.uses_reason ) {
-			content = (t, tip) => this.renderInlineReasons(data, t, tip);
-
-		} else
-			return;
 
 		const parent = document.body.querySelector('#root>div') || document.body,
 			tt = target._ffz_popup = new Tooltip(parent, target, {
@@ -435,6 +469,131 @@ export default class Actions extends Module {
 	}
 
 
+	renderUserContext(target, actions) {
+		const fine = this.resolve('site.fine'),
+			site = this.resolve('site'),
+			chat = this.resolve('site.chat'),
+			line = fine && fine.searchParent(target, n => n.props && n.props.message);
+
+		const msg = line?.props?.message;
+		if ( ! msg || ! site || ! chat )
+			return;
+
+		let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
+		if ( ! room && line.props.channelID ) {
+			const r = this.parent.getRoom(line.props.channelID, null, true);
+			if ( r && r.login )
+				room = msg.roomLogin = r.login;
+		}
+
+		const u = site.getUser(),
+			r = {id: line.props.channelID, login: room};
+
+		msg.roomId = r.id;
+
+		if ( u ) {
+			u.moderator = line.props.isCurrentUserModerator;
+			u.staff = line.props.isCurrentUserStaff;
+		}
+
+		const current_level = this.getUserLevel(r, u),
+			msg_level = this.getUserLevel(r, msg.user);
+
+		let mod_icons = line.props.showModerationIcons;
+		if ( current_level < 3 )
+			mod_icons = false;
+
+		return this.renderPopup(target, (t, tip) => {
+			const lines = [];
+			let line = null;
+
+			const handle_click = event => {
+				tip.hide();
+				this.handleClick(event);
+			};
+
+			for(const data of actions) {
+				if ( ! data )
+					continue;
+
+				if ( data.type === 'new-line' ) {
+					line = null;
+					continue;
+
+				} else if ( data.type === 'space-small' ) {
+					if ( ! line )
+						lines.push(line = []);
+
+					line.push(<div class="tw-pd-x-1" />);
+					continue;
+
+				} else if ( data.type === 'space' ) {
+					if ( ! line )
+						lines.push(line = []);
+
+					line.push(<div class="tw-flex-grow-1" />);
+					continue;
+
+				} else if ( ! data.action || ! data.appearance )
+					continue;
+
+				const ap = data.appearance || {},
+					disp = data.display || {},
+
+					def = this.renderers[ap.type];
+
+				if ( ! def || disp.disabled ||
+					(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
+					(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
+					(disp.staff != null && disp.staff !== (u ? !!u.staff : false)) )
+					continue;
+
+				const has_color = def.colored && ap.color,
+					color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
+					contents = def.render.call(this, ap, createElement, color);
+
+				if ( ! line )
+					lines.push(line = []);
+
+				const btn = (<button
+					class="ffz-tooltip ffz-tooltip--no-mouse tw-button tw-button--text"
+					data-tooltip-type="action"
+					data-action={data.action}
+					data-options={data.options ? JSON.stringify(data.options) : null}
+					onClick={handle_click}
+					onContextMenu={this.handleContext}
+				>
+					<span class="tw-button__text">
+						{contents}
+					</span>
+				</button>);
+
+				if ( ap.tooltip )
+					btn.dataset.tip = ap.tooltip;
+
+				line.push(btn);
+			}
+
+			const out = (<div class="ffz-action-data tw-pd-05" data-source="msg">
+				<div class="tw-pd-b-05 tw-border-b">
+					<strong>{ msg.user.displayName || msg.user.login }</strong>...
+				</div>
+				{lines.map(line => {
+					if ( ! line || ! line.length )
+						return null;
+
+					return (<div class="tw-flex tw-flex-no-wrap">
+						{line}
+					</div>);
+				})}
+			</div>);
+
+			out.ffz_message = msg;
+			return out;
+		});
+	}
+
+
 	renderInline(msg, mod_icons, current_user, current_room, createElement) {
 		const actions = [];
 
@@ -542,7 +701,29 @@ export default class Actions extends Module {
 		let user, room, message, loaded = false;
 
 		if ( pds ) {
-			if ( pds.source === 'line' ) {
+			if ( pds.source === 'msg' && parent.ffz_message ) {
+				const msg = parent.ffz_message;
+
+				loaded = true;
+				user = msg.user ? {
+					color: msg.user.color,
+					id: msg.user.id,
+					login: msg.user.login,
+					displayName: msg.user.displayName,
+					type: msg.user.type
+				} : null;
+
+				room = {
+					login: msg.roomLogin,
+					id: msg.roomId
+				};
+
+				message = {
+					id: msg.id,
+					text: msg.message
+				};
+
+			} else if ( pds.source === 'line' ) {
 				const fine = this.resolve('site.fine'),
 					line = fine && fine.searchParent(parent, n => n.props && n.props.message);
 
@@ -632,9 +813,25 @@ export default class Actions extends Module {
 		if ( ! data.definition.context && ! data.definition.uses_reason )
 			return;
 
-		this.renderInlineContext(event.target, data);
+		this.renderInlineContext(target, data);
 	}
 
+	handleUserContext(event) {
+		if ( event.shiftKey )
+			return;
+
+		const actions = this.parent.context.get('chat.actions.user-context');
+		if ( ! Array.isArray(actions) || ! actions.length )
+			return;
+
+		event.preventDefault();
+
+		const target = event.target;
+		if ( target._ffz_tooltip$0 )
+			target._ffz_tooltip$0.hide();
+
+		this.renderUserContext(target, actions);
+	}
 
 	pasteMessage(room, message) {
 		return this.resolve('site.chat.input').pasteMessage(room, message);

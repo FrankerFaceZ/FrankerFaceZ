@@ -96,7 +96,7 @@
 						</select>
 					</div>
 
-					<div class="tw-flex tw-align-items-center">
+					<div v-if="mod_icons" class="tw-flex tw-align-items-center">
 						<label for="vis_mod_icons">
 							{{ t('setting.actions.edit-visible.mod-icons', 'Mod Icons') }}
 						</label>
@@ -302,7 +302,7 @@ import {has, maybe_call, deep_copy} from 'utilities/object';
 let id = 0;
 
 export default {
-	props: ['action', 'data', 'inline', 'context', 'modifiers'],
+	props: ['action', 'data', 'inline', 'mod_icons', 'context', 'modifiers'],
 
 	data() {
 		return {

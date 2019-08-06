@@ -256,7 +256,6 @@ export default class ChatLine extends Module {
 			setTimeout(() => this.WhisperLine.forceUpdate());
 		});
 
-
 		this.ChatLine.ready(cls => {
 			const old_render = cls.prototype.render;
 
@@ -419,7 +418,8 @@ other {# messages were deleted by a moderator.}
 							className: 'chat-line__username notranslate',
 							role: 'button',
 							style: { color },
-							onClick: this.ffz_user_click_handler
+							onClick: this.ffz_user_click_handler,
+							onContextMenu: t.actions.handleUserContext
 						}, [
 							e('span', {
 								className: 'chat-author__display-name'

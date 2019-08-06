@@ -42,7 +42,7 @@
 					</label>
 				</div>
 
-				<div v-if="item.inline" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_icons" class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="with_mod_icons"
 						ref="with_mod_icons"
@@ -147,7 +147,7 @@
 								>
 									<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
 										<div class="tw-flex-grow-1 tw-mg-r-1">
-											{{ t(preset.title_i18n, preset.title, preset) }}
+											{{ preset.title_i18n ? t(preset.title_i18n, preset.title, preset) : preset.title }}
 										</div>
 										<action-preview v-if="preset.appearance" :act="preset" :renderers="data.renderers" />
 									</div>
@@ -192,6 +192,7 @@
 					:action="act"
 					:data="data"
 					:inline="item.inline"
+					:mod_icons="has_icons"
 					:context="item.context"
 					:modifiers="item.modifiers"
 					@remove="remove(act)"
@@ -258,6 +259,10 @@ export default {
 				id: '46a473ee-a3c4-4556-a5ca-c0f1eac93ec0',
 				text: 'sirstendec: Please do not do that.'
 			} : null
+		},
+
+		has_icons() {
+			return this.item.mod_icons || this.item.inline
 		},
 
 		has_default() {
@@ -450,7 +455,7 @@ export default {
 			this.show_all = this.$refs.show_all.checked;
 			this.is_moderator = this.$refs.as_mod.checked;
 			this.is_staff = false; //this.$refs.as_staff.checked;
-			this.with_mod_icons = this.item.inline && this.$refs.with_mod_icons.checked;
+			this.with_mod_icons = this.has_icons && this.$refs.with_mod_icons.checked;
 			this.is_deleted = this.has_msg && this.$refs.is_deleted.checked;
 		},
 
