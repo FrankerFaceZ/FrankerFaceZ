@@ -95,6 +95,9 @@ var ServerNames = []string{
 	"catbag",
 	"andknuckles",
 	"tuturu",
+	"lilz",
+	"yoohoo",
+	"pog"
 }
 
 var httpClient http.Client
