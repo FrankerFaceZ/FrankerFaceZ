@@ -366,6 +366,7 @@ export default class Actions extends Module {
 				live: false,
 				html: true,
 				hover_events: true,
+				no_update: true,
 
 				tooltipClass: 'ffz-action-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
 				arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',

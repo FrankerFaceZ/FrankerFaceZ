@@ -17,7 +17,7 @@ var SERVERS = []string{
 	"https://tuturu.frankerfacez.com",
 	"https://yoohoo.frankerfacez.com",
 	"https://lilz.frankerfacez.com",
-	"https://pog.frankerfacez.com"
+	"https://pog.frankerfacez.com",
 }
 
 const folderPrefix = "/hll/"

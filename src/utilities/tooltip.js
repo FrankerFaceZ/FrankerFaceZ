@@ -9,7 +9,7 @@
 // ============================================================================
 
 import {createElement, setChildren} from 'utilities/dom';
-import {maybe_call} from 'utilities/object';
+import {maybe_call, debounce} from 'utilities/object';
 
 import Popper from 'popper.js';
 
@@ -253,7 +253,7 @@ export class Tooltip {
 				});
 
 			el.addEventListener('mouseover', el._ffz_over_handler = event => {
-				if ( ! document.contains(target) )
+				if ( ! opts.no_auto_remove && ! document.contains(target) )
 					this.hide(tip);
 
 				if ( hover_events && opts.onHover )
@@ -290,10 +290,19 @@ export class Tooltip {
 			arrowElement: arrow
 		}, opts.popper);
 
+		pop_opts.onUpdate = tip._on_update = debounce(() => {
+			if ( ! opts.no_auto_remove && ! document.contains(tip.target) )
+				this.hide(tip);
+		}, 250);
+
+		let popper_target = target;
+		if ( opts.no_update )
+			popper_target = makeReference(target);
+
 		tip._update = () => {
 			if ( tip.popper ) {
 				tip.popper.destroy();
-				tip.popper = new Popper(target, el, pop_opts);
+				tip.popper = new Popper(popper_target, el, pop_opts);
 			}
 		}
 
@@ -333,7 +342,7 @@ export class Tooltip {
 
 
 		// Add everything to the DOM and create the Popper instance.
-		tip.popper = new Popper(target, el, pop_opts);
+		tip.popper = new Popper(popper_target, el, pop_opts);
 		this.parent.appendChild(el);
 		tip.visible = true;
 
@@ -377,6 +386,35 @@ export class Tooltip {
 }
 
 export default Tooltip;
+
+
+export function makeReference(x, y, height=0, width=0) {
+	if ( x instanceof Node ) {
+		const rect = x.getBoundingClientRect();
+		x = rect.x;
+		y = rect.y;
+		height = rect.height;
+		width = rect.width;
+	}
+
+	const out = {
+		getBoundingClientRect: () => ({
+			top: y,
+			bottom: y + height,
+			y,
+			left: x,
+			right: x + width,
+			x,
+			height,
+			width
+		}),
+		clientWidth: width,
+		clientHeight: height
+	};
+
+	console.log('makeReference', out);
+	return out;
+}
 
 
 // Function Intentionally Left Blank
