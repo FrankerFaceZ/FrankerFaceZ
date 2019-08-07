@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"../../server"
+	"github.com/FrankerFaceZ/FrankerFaceZ/socketserver/server"
 	"github.com/clarkduvall/hyperloglog"
 )
 
