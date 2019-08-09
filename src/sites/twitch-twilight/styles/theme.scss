@@ -154,26 +154,27 @@
 			box-shadow: 0 0 6px 0 var(--ffz-color-5);
 		}
 	}
+	.ffz-button--hollow,
 	.tw-button--hollow {
-		border-color: var(--ffz-color-8);
-		background-color: transparent;
-		color: var(--ffz-color-1);
+		border-color: var(--ffz-color-8) !important;
+		background-color: transparent !important;
+		color: var(--ffz-color-1) !important;
 		&:hover {
-			border-color: var(--ffz-color-11);
-			background-color: var(--ffz-color-9);
-			color: var(--ffz-color-10);
+			border-color: var(--ffz-color-11) !important;
+			background-color: var(--ffz-color-9) !important;
+			color: var(--ffz-color-10) !important;
 		}
 		&:focus {
-			border-color: var(--ffz-color-11);
-			background-color: var(--ffz-color-9);
-			color: var(--ffz-color-10);
-			box-shadow: 0 0 6px 0 var(--ffz-color-5);
+			border-color: var(--ffz-color-11) !important;
+			background-color: var(--ffz-color-9) !important;
+			color: var(--ffz-color-10) !important;
+			box-shadow: 0 0 6px 0 var(--ffz-color-5) !important;
 		}
 		&:active {
-			border-color: var(--ffz-color-13);
-			background-color: var(--ffz-color-12);
-			color: var(--ffz-color-10);
-			box-shadow: 0 0 6px 0 var(--ffz-color-5);
+			border-color: var(--ffz-color-13) !important;
+			background-color: var(--ffz-color-12) !important;
+			color: var(--ffz-color-10) !important;
+			box-shadow: 0 0 6px 0 var(--ffz-color-5) !important;
 		}
 	}
 	.tw-button--alert {

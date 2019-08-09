@@ -57,7 +57,7 @@ export default class SettingsMenu extends Module {
 					this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
 				val.props.children.push(<div class="tw-full-width tw-relative">
-					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--inverted tw-interactive" onClick={this.ffzSettingsClick}>
+					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive" onClick={this.ffzSettingsClick}>
 						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
 							<div class="tw-flex-grow-1">
 								{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
@@ -85,7 +85,7 @@ export default class SettingsMenu extends Module {
 
 				val.props.children.push(<div class="tw-full-width tw-relative">
 					<button
-						class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+						class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 						onClick={this.ffzPauseClick}
 					>
 						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
@@ -97,21 +97,6 @@ export default class SettingsMenu extends Module {
 						</div>
 					</button>
 				</div>);
-
-				/*val.props.children.push(<div class="tw-mg-t-1">
-					<button
-						class="tw-block tw-full-width tw-interactable tw-interactable--base tw-interactive"
-						onClick={this.ffzPauseClick}
-					>
-						<div class="tw-flex tw-justify-content-between tw-pd-y-05">
-							{t.i18n.t('chat.settings.pause', 'Pause Chat')}
-							<div>
-								{reason}
-								<figure class="tw-svg ffz-i-right-dir" />
-							</div>
-						</div>
-					</button>
-				</div>)*/
 
 				return val;
 			}

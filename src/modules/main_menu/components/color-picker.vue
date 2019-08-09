@@ -28,7 +28,7 @@
 		</div>
 		<div v-else class="tw-relative">
 			<button
-				class="tw-button tw-button--hollow ffz-color-preview"
+				class="tw-button tw-button--text ffz-color-preview"
 				@click="togglePicker"
 				@contextmenu.prevent="maybeResetColor"
 			>

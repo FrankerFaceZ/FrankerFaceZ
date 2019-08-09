@@ -6,7 +6,7 @@
 			</h4>
 
 			<button
-				class="tw-button tw-button--hollow tw-mg-t-05"
+				class="tw-button ffz-button--hollow tw-c-text-overlay tw-mg-t-05"
 				@click="item.refresh()"
 			>
 				<span class="tw-button__icon tw-button__icon--left">
@@ -65,13 +65,12 @@
 								@keydown.enter="addUnlisted"
 							>
 							<button
-								class="tw-mg-l-05 tw-button tw-tooltip-wrapper"
+								class="tw-mg-l-05 tw-button"
 								@click="addUnlisted"
 							>
-								<span class="tw-button__text ffz-i-plus" />
-								<div class="tw-tooltip">
+								<span class="tw-button__text ffz-i-plus">
 									{{ t('setting.add', 'Add') }}
-								</div>
+								</span>
 							</button>
 						</div>
 					</div>

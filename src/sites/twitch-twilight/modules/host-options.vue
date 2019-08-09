@@ -50,7 +50,7 @@
 				<div class="tw-flex-grow-1 tw-pd-x-2" />
 				<button
 					:class="{'tw-button--disabled': addedToHosts}"
-					class="tw-button tw-button--hollow tw-mg-x-05"
+					class="tw-button ffz-button--hollow tw-mg-x-05"
 					@click="addToAutoHosts"
 				>
 					<span class="tw-button__text">{{ t('metadata.host.add-channel', 'Add To Auto Host') }}</span>

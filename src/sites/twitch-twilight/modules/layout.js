@@ -8,7 +8,7 @@ import Module from 'utilities/module';
 import {has} from 'utilities/object';
 
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
-const MINIMAL_ROUTES = ['popout', 'embed-chat'];
+const MINIMAL_ROUTES = ['popout', 'embed-chat', 'dash-chat'];
 
 export default class Layout extends Module {
 	constructor(...args) {

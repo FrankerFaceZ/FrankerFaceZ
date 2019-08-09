@@ -66,7 +66,7 @@
 				<button
 					v-for="(profile, idx) in import_profiles"
 					:key="idx"
-					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow tw-tooltip-wrapper"
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay tw-tooltip-wrapper"
 					@click="importProfile(profile)"
 				>
 					<span class="tw-button__text tw-c-text-overlay">
@@ -95,7 +95,7 @@
 				</h4>
 
 				<button
-					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow"
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay"
 					@click="confirmImport(true)"
 				>
 					<span class="tw-button__text tw-c-text-overlay ffz-i-ok">
@@ -104,7 +104,7 @@
 				</button>
 
 				<button
-					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button tw-button--hollow"
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay"
 					@click="confirmImport(false)"
 				>
 					<span class="tw-button__text tw-c-text-overlay ffz-i-cancel">

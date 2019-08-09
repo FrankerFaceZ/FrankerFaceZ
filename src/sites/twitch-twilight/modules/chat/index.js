@@ -91,6 +91,7 @@ const CHAT_TYPES = make_enum(
 	'GiftPaidUpgrade',
 	'AnonGiftPaidUpgrade',
 	'PrimePaidUpgrade',
+	'ExtendSubscription',
 	'SubGift',
 	'AnonSubGift',
 	'Clear',

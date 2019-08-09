@@ -171,6 +171,12 @@ export class LocalStorageProvider extends SettingsProvider {
 	}
 
 	set(key, value) {
+		if ( value === undefined ) {
+			if ( this.has(key) )
+				this.delete(key);
+			return;
+		}
+
 		this._cached.set(key, value);
 		localStorage.setItem(this.prefix + key, JSON.stringify(value));
 		this.broadcast({type: 'set', key});

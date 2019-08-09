@@ -388,7 +388,7 @@ export default class EmoteMenu extends Module {
 				return (<button
 					key={data.code}
 					data-tone={tone}
-					class="tw-interactive tw-block tw-full-width tw-interactable tw-interactable--inverted tw-pd-y-05 tw-pd-x-2"
+					class="tw-interactive tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-pd-y-05 tw-pd-x-2"
 					onClick={this.clickTone}
 				>
 					{this.renderEmoji(data)}
@@ -432,7 +432,7 @@ export default class EmoteMenu extends Module {
 
 				return (<div ref={this.saveRef} class="ffz--emoji-tone-picker tw-relative tw-mg-l-1">
 					<button
-						class="tw-interactive tw-button tw-button--dropmenu tw-button--hollow"
+						class="tw-interactive tw-button tw-button--dropmenu ffz-button--hollow"
 						onClick={this.onClick}
 						onMouseEnter={this.onMouseEnter}
 					>
@@ -929,6 +929,7 @@ export default class EmoteMenu extends Module {
 			}
 
 			pickTone(tone) {
+				tone = tone || null;
 				t.settings.provider.set('emoji-tone', tone);
 
 				this.setState(this.filterState(
@@ -1712,7 +1713,7 @@ export default class EmoteMenu extends Module {
 							<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
 								<div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 										id="emote-picker__fav"
 										data-tab="fav"
 										data-tooltip-type="html"
@@ -1726,7 +1727,7 @@ export default class EmoteMenu extends Module {
 								</div>
 								{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 										id="emote-picker__channel"
 										data-tab="channel"
 										data-tooltip-type="html"
@@ -1740,7 +1741,7 @@ export default class EmoteMenu extends Module {
 								</div>}
 								<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										class="ffz-tooltip tw-block tw-full-width ttw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 										id="emote-picker__all"
 										data-tab="all"
 										data-tooltip-type="html"
@@ -1754,7 +1755,7 @@ export default class EmoteMenu extends Module {
 								</div>
 								{this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 										id="emote-picker__emoji"
 										data-tab="emoji"
 										data-tooltip-type="html"
@@ -1769,7 +1770,7 @@ export default class EmoteMenu extends Module {
 								<div class="tw-flex-grow-1" />
 								{!loading && (<div class="emote-picker-tab-item tw-relative">
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive"
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 										data-tooltip-type="html"
 										data-title={t.i18n.t('emote-menu.refresh', 'Refresh Data')}
 										onClick={this.clickRefresh}

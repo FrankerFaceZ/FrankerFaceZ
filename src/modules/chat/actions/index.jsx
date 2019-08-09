@@ -284,7 +284,7 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-pd-05"
 						onClick={click_fn(text)}
 					>
 						{text}
@@ -301,7 +301,7 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						class="tw-block tw-full-width tw-interactable tw-interactable--inverted tw-interactive tw-pd-05"
+						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-pd-05"
 						onClick={click_fn(rule)}
 					>
 						{rule}
@@ -546,7 +546,8 @@ export default class Actions extends Module {
 				if ( ! def || disp.disabled ||
 					(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
 					(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
-					(disp.staff != null && disp.staff !== (u ? !!u.staff : false)) )
+					(disp.staff != null && disp.staff !== (u ? !!u.staff : false)) ||
+					(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 					continue;
 
 				const has_color = def.colored && ap.color,
@@ -561,7 +562,7 @@ export default class Actions extends Module {
 					data-tooltip-type="action"
 					data-action={data.action}
 					data-options={data.options ? JSON.stringify(data.options) : null}
-					onClick={handle_click}
+					onClick={handle_click} // eslint-disable-line react/jsx-no-bind
 					onContextMenu={this.handleContext}
 				>
 					<span class="tw-button__text">

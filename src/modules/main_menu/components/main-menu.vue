@@ -64,7 +64,7 @@
 					<simplebar classes="ffz-vertical-nav__items tw-full-width tw-flex-grow-1">
 						<header v-if="has_unseen" class="tw-border-b tw-pd-1">
 							<button
-								class="tw-button tw-button--hollow tw-full-width"
+								class="tw-button ffz-button--hollow tw-full-width"
 								@click="allRead"
 							>
 								<span class="tw-button__text">

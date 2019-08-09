@@ -256,14 +256,14 @@ textarea.tw-input {
 	}
 }
 
-@mixin button-colors($color, $text, $shadow) {
-	&:hover, &:focus {
+@mixin button-colors($color, $border, $text, $shadow) {
+	&:hover, &:focus, &:active {
 		background: $color !important;
-		border-color: $color !important;
+		border-color: $border !important;
 		color: $text !important;
 	}
 
-	&:focus {
+	&:focus, &:active {
 		box-shadow: 0 0 $shadow $color !important;
 	}
 }
@@ -273,12 +273,28 @@ textarea.tw-input {
 	color: #fff !important;
 }
 
+.ffz-button--hollow {
+	border-color: #dad8de !important;
+	background-color: transparent !important;
+	color: #000 !important;
+
+	@include button-colors(#6441a4, #9a7fcc, #fff, #7d5bbc);
+
+	.tw-root--theme-dark & {
+		border-color: #424242 !important;
+		color: #dadada !important;
+
+		@include button-colors(#7d5bbe, #9a7fcc, #eeeeee, #7d5bbe)
+	}
+
+}
+
 .ffz--button-enable {
-	@include button-colors(#007600, #fff, 6px);
+	@include button-colors(#007600, #007600, #fff, 6px);
 }
 
 .ffz--button-disable {
-	@include button-colors(#bd0f0f, #fff, 6px);
+	@include button-colors(#bd0f0f, #bd0f0f, #fff, 6px);
 }
 
 .ffz--example-report {
@@ -299,4 +315,9 @@ textarea.tw-input {
 	position: absolute;
 	top: 1rem;
 	right: 3rem;
+}
+
+
+.ffz-mh-30 {
+	max-height: 30rem;
 }

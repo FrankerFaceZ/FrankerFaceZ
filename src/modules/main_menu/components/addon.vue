@@ -50,7 +50,7 @@
 					<button
 						v-if="external"
 						disabled
-						class="tw-button tw-button--hollow tw-button--disabled tw-tooltip-wrapper tw-mg-r-1"
+						class="tw-button ffz-button--hollow tw-button--disabled tw-tooltip-wrapper tw-mg-r-1"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
 							<figure class="ffz-i-trash" />
@@ -64,7 +64,7 @@
 					</button>
 					<button
 						v-else
-						class="tw-button tw-button--hollow ffz--button-disable tw-mg-r-1"
+						class="tw-button ffz-button--hollow ffz--button-disable tw-mg-r-1"
 						@click="item.disableAddon(id)"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
@@ -76,7 +76,7 @@
 					</button>
 					<button
 						v-if="addon.settings"
-						class="tw-button tw-button--hollow tw-mg-r-1"
+						class="tw-button ffz-button--hollow tw-mg-r-1"
 						@click="openSettings()"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
@@ -89,7 +89,7 @@
 				</template>
 				<template v-else>
 					<button
-						class="tw-button tw-button--hollow ffz--button-enable tw-mg-r-1"
+						class="tw-button ffz-button--hollow ffz--button-enable tw-mg-r-1"
 						@click="item.enableAddon(id)"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
@@ -104,7 +104,7 @@
 					v-if="addon.website"
 					:href="addon.website"
 					:title="addon.website"
-					class="tw-button tw-button--hollow tw-mg-r-1"
+					class="tw-button ffz-button--hollow tw-mg-r-1"
 					target="_blank"
 					rel="noopener"
 				>

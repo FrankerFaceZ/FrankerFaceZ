@@ -59,7 +59,7 @@
 	&:hover {
 		background: rgba(100, 65, 164, .05);
 
-		.tw-theme-dark & {
+		.tw-root--theme-dark & {
 			background: rgba(100, 65, 164, .2);
 		}
 	}

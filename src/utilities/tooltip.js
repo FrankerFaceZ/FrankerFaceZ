@@ -412,7 +412,6 @@ export function makeReference(x, y, height=0, width=0) {
 		clientHeight: height
 	};
 
-	console.log('makeReference', out);
 	return out;
 }
 

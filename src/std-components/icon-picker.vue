@@ -48,7 +48,7 @@
 							:aria-checked="val === i[0]"
 							:class="{'tw-interactable--selected': val === i[0]}"
 							:data-title="i[1]"
-							class="ffz-tooltip ffz-icon tw-interactable tw-interactable--inverted"
+							class="ffz-tooltip ffz-icon tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 							role="radio"
 							tabindex="0"
 							@keydown.space.stop.prevent=""

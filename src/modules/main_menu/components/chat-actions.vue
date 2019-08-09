@@ -110,6 +110,7 @@
 				{{ t('setting.actions.drag', 'Drag actions to re-order them.') }}
 			</div>
 			<div
+				v-if="! maybe_clear"
 				v-on-clickaway="closeAdd"
 				class="tw-relative"
 			>
@@ -130,7 +131,7 @@
 					dir="down-right"
 					size="sm"
 				>
-					<simplebar classes="language-select-menu__balloon">
+					<simplebar classes="ffz-mh-30">
 						<div class="tw-pd-y-1">
 							<template v-for="(preset, idx) in presets">
 								<div
@@ -142,7 +143,7 @@
 									v-else
 									:key="idx"
 									:disabled="preset.disabled"
-									class="tw-interactable tw-interactable--inverted tw-full-width"
+									class="tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-full-width"
 									@click="add(preset.value)"
 								>
 									<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
@@ -158,15 +159,36 @@
 				</balloon>
 			</div>
 			<button
-				v-if="val.length"
+				v-if="! maybe_clear && val.length"
 				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
-				@click="clear"
+				@click="maybe_clear = true"
 			>
 				<span class="tw-button__text ffz-i-trash">
 					{{ t('setting.delete-all', 'Delete All') }}
 				</span>
 				<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 					{{ t('setting.actions.delete-all', "Delete all of this profile's actions.") }}
+				</span>
+			</button>
+			<button
+				v-if="maybe_clear"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				@click="doClear"
+			>
+				<span class="tw-button__text ffz-i-trash">
+					{{ t('setting.delete-all', 'Delete All') }}
+				</span>
+				<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.actions.delete-all', "Delete all of this profile's actions.") }}
+				</span>
+			</button>
+			<button
+				v-if="maybe_clear"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				@click="maybe_clear = false"
+			>
+				<span class="tw-button__text ffz-i-cancel">
+					{{ t('setting.cancel', 'Cancel') }}
 				</span>
 			</button>
 			<button
@@ -224,6 +246,7 @@ export default {
 			is_deleted: false,
 			show_all: false,
 
+			maybe_clear: false,
 			add_open: false,
 		}
 	},
@@ -414,6 +437,11 @@ export default {
 	},
 
 	methods: {
+		doClear() {
+			this.maybe_clear = false;
+			this.clear();
+		},
+
 		closeAdd() {
 			this.add_open = false;
 		},

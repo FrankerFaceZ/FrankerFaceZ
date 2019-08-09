@@ -57,7 +57,8 @@ export default class TwitchData extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.inject('site');
+		this.site = this.parent;
+
 		this.inject('site.apollo');
 		this.inject('site.web_munch');
 

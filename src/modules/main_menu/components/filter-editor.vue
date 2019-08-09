@@ -40,7 +40,7 @@
 		</div>
 		<button
 			v-else-if="canAddRule"
-			class="tw-button tw-button--hollow tw-mg-y-1 tw-full-width"
+			class="tw-button ffz-button--hollow tw-mg-y-1 tw-full-width"
 			@click="adding = true"
 		>
 			<span class="tw-button__text ffz-i-plus">

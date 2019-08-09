@@ -173,6 +173,7 @@ Twilight.KNOWN_MODULES = {
 Twilight.CHAT_ROUTES = [
 	'collection',
 	'popout',
+	'dash-chat',
 	'video',
 	'user-video',
 	'user-clip',
@@ -193,6 +194,7 @@ Twilight.ROUTE_NAMES = {
 	'dir-all': 'Browse Live Channels',
 	'dash': 'Dashboard',
 	'popout': 'Popout Chat',
+	'dash-chat': 'Dashboard Popout Chat',
 	'user-video': 'Channel Video'
 };
 
@@ -215,6 +217,7 @@ Twilight.ROUTES = {
 	//'dash-automod': '/:userName/dashboard/settings/automod',
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',
+	'dash-chat': '/popout/:userName/dashboard/live/chat',
 	'video': '/videos/:videoID',
 	'user-video': '/:userName/video/:videoID',
 	'user-videos': '/:userName/videos/:filter?',

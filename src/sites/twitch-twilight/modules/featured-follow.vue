@@ -6,7 +6,7 @@
 			<div class="tw-flex-grow-1 tw-pd-x-2" />
 			<button
 				v-if="hasUpdate"
-				class="ffz--featured-follow-update tw-button tw-button--hollow"
+				class="ffz--featured-follow-update tw-button ffz-button--hollow"
 				@click="refresh"
 			>
 				<span class="tw-button__icon tw-button__icon--left">

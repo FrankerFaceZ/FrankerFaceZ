@@ -359,7 +359,7 @@ export default class Metadata extends Module {
 					let btn, popup;
 					let cls = maybe_call(def.button, this, data);
 					if ( typeof cls !== 'string' )
-						cls = `tw-button--${cls ? 'hollow' : 'text'}`;
+						cls = cls ? 'ffz-button--hollow' : 'tw-button--text';
 
 					if ( typeof icon === 'string' )
 						icon = (<span class="tw-button__icon tw-button__icon--left"><figure class={icon} /></span>);
@@ -572,7 +572,7 @@ export default class Metadata extends Module {
 				if ( btn ) {
 					let cls = maybe_call(def.button, this, data);
 					if ( typeof cls !== 'string' )
-						cls = `tw-button--${cls ? 'hollow' : 'text'}`;
+						cls = cls ? 'ffz-button--hollow' : 'tw-button--text';
 
 					if ( btn._class !== cls ) {
 						btn._class = cls;
@@ -661,7 +661,7 @@ export default class Metadata extends Module {
 					let btn, popup;
 					let cls = maybe_call(def.button, this, data);
 					if ( typeof cls !== 'string' )
-						cls = `tw-button--${cls ? 'hollow' : 'text'}`;
+						cls = cls ? 'ffz-button--hollow' : 'tw-button--text';
 
 					const fix = cls === 'tw-button--text';
 
@@ -674,7 +674,7 @@ export default class Metadata extends Module {
 							data-key={key}
 							tip_content={tooltip}
 						>
-							{btn = (<button class={`tw-button ${cls}`}>
+							{btn = (<button class={`tw-button ${cls} ffz-has-stat-arrow`}>
 								{icon}
 								{stat = (<span class="ffz-stat-text tw-button__text" />)}
 							</button>)}
