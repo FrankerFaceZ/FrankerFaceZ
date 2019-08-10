@@ -9,6 +9,7 @@ import {createElement} from 'utilities/dom';
 import {get} from 'utilities/object';
 
 import Popper from 'popper.js';
+import {makeReference} from 'utilities/tooltip';
 
 import FOLLOWED_INDEX from './followed_index.gql';
 import FOLLOWED_HOSTS from './followed_hosts.gql';
@@ -123,8 +124,8 @@ export default class Following extends SiteModule {
 		if ( ! edges || ! edges.length )
 			return res;
 
-		const hosts = {},
-			out = [];
+		this.hosts = new WeakMap();
+		const out = [];
 
 		for(const edge of edges) {
 			if ( ! edge )
@@ -138,7 +139,7 @@ export default class Following extends SiteModule {
 				continue;
 
 			if ( ! stream.viewersCount ) {
-				if ( ! do_grouping || ! hosts[hosted.login] )
+				if ( ! do_grouping || ! this.hosts[hosted.login] )
 					out.push(edge);
 				continue;
 			}
@@ -150,13 +151,13 @@ export default class Following extends SiteModule {
 			//store.game = stream.game;
 
 			if ( do_grouping ) {
-				const host_nodes = hosts[hosted.login];
+				const host_nodes = this.hosts[hosted.login];
 				if ( host_nodes ) {
 					host_nodes.push(node);
 					this.hosts.set(store, host_nodes);
 
 				} else {
-					this.hosts.set(store, hosts[hosted.login] = [node]);
+					this.hosts.set(store, this.hosts[hosted.login] = [node]);
 					out.push(edge);
 				}
 
@@ -224,7 +225,7 @@ export default class Following extends SiteModule {
 		}
 	}
 
-	showHostMenu(inst, { channels }, event) {
+	showHostMenu(inst, channels, event) {
 		if (this.settings.get('directory.following.host-menus') === 0 || this.settings.get('directory.following.host-menus') === 1 && channels.length < 2) return;
 
 		event.preventDefault();
@@ -234,7 +235,6 @@ export default class Following extends SiteModule {
 
 		this.hostMenu && this.hostMenu.remove();
 
-		const hostData = this.hosts[inst.props.channelName];
 		const simplebarContentChildren = [];
 
 		// Hosted Channel Header
@@ -244,16 +244,16 @@ export default class Following extends SiteModule {
 
 		// Hosted Channel Content
 		simplebarContentChildren.push(<a
-			class="tw-interactable tw-interactable--inverted"
-			href={`/${hostData.channel}`}
-			onClick={e => this.parent.hijackUserClick(e, hostData.channel, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
+			class="tw-block tw-border-radius-small tw-full-width tw-interactable tw-interactable--alpha tw-interactive"
+			href={`/${inst.props.channelLogin}`}
+			onClick={e => this.parent.hijackUserClick(e, inst.props.channelLogin, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
 		>
 			<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05">
 				<div class="ffz-channel-avatar">
-					<img src={inst.props.viewerCount.profileImageURL} alt={inst.props.channelName} />
+					<img src={inst.props.channelImageProps.src} alt={inst.props.channelDisplayName} />
 				</div>
 				<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
-					{inst.props.channelName}
+					{inst.props.channelDisplayName}
 				</p>
 			</div>
 		</a>);
@@ -264,32 +264,27 @@ export default class Following extends SiteModule {
 		</p>);
 
 		// Hosting Channels Content
-		for (let i = 0; i < hostData.nodes.length; i++) {
-			const node = hostData.nodes[i];
+		for (const channel of channels) {
 			simplebarContentChildren.push(<a
-				class="tw-interactable tw-interactable--inverted"
-				href={`/${node.login}`}
-				onClick={e => this.parent.hijackUserClick(e, node.login, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
+				class="tw-block tw-border-radius-small tw-full-width tw-interactable tw-interactable--alpha tw-interactive"
+				href={`/${channel.login}`}
+				onClick={e => this.parent.hijackUserClick(e, channel.login, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
 			>
 				<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1 tw-mg-y-05">
 					<div class="ffz-channel-avatar">
-						<img src={node.profileImageURL} alt={node.displayName} />
+						<img src={channel.profileImageURL} alt={channel.displayName} />
 					</div>
 					<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
-						{node.displayName}
+						{channel.displayName}
 					</p>
 				</div>
 			</a>);
 		}
 
 		this.hostMenu = (<div class="ffz-host-menu tw-balloon tw-block">
-			<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
+			<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base tw-pd-05">
 				<div class="scrollable-area" data-simplebar>
-					<div class="simplebar-scroll-content">
-						<div class="simplebar-content">
-							{simplebarContentChildren}
-						</div>
-					</div>
+					{simplebarContentChildren}
 				</div>
 			</div>
 		</div>);
@@ -297,64 +292,42 @@ export default class Following extends SiteModule {
 		const root = (document.body.querySelector('#root>div') || document.body);
 		root.appendChild(this.hostMenu);
 
-		this.hostMenuPopper = new Popper(document.body, this.hostMenu, {
-			placement: 'bottom-start',
-			modifiers: {
-				flip: {
-					enabled: false
-				},
-				offset: {
-					offset: `${event.clientX - 60}, ${event.clientY - 60}`
+		this.hostMenuPopper = new Popper(
+			makeReference(event.clientX - 60, event.clientY - 60),
+			this.hostMenu,
+			{
+				placement: 'bottom-start',
+				modifiers: {
+					flip: {
+						enabled: false
+					}
 				}
-			},
-		});
+			}
+		);
 
 		this.hostMenuBuffer = Date.now() + 50;
 	}
 
 	updateChannelCard(inst) {
-		const container = this.fine.getChildNode(inst),
-			card = container && container.querySelector && container.querySelector('.tw-card');
+		const card = this.fine.getChildNode(inst);
 
 		if ( ! card )
 			return;
 
-		const hosting = inst.props.channelNameLinkTo.state.content === 'live_host' && this.hosts && this.hosts[inst.props.channelName],
-			data = {
-				login: hosting ? this.hosts[inst.props.channelName].channel : inst.props.linkTo.pathname.substr(1),
-				displayName: inst.props.channelName,
-				profileImageURL: inst.props.viewerCount && inst.props.viewerCount.profileImageURL
-			};
-
-		this.parent.updateUptime(inst, 'props.viewerCount.createdAt', '.tw-card .tw-aspect > div');
-		this.parent.addCardAvatar(inst, 'props.viewerCount', '.tw-card', data);
-
-		if (inst.props.streamType === 'rerun')
-			container.parentElement.classList.toggle('tw-hide', this.settings.get('directory.hide-vodcasts'));
+		const login = inst.props.channelLogin,
+			hosting = inst.props.channelLinkTo && inst.props.channelLinkTo.state.content === 'live_host' && this.hosts && this.hosts[login];
 
 		if ( hosting && this.settings.get('directory.following.group-hosts') ) {
-			const host_data = this.hosts[data.displayName];
+			const host_data = this.hosts[login];
 
-			const title_link = card.querySelector('a[data-a-target="live-channel-card-title-link"]'),
-				thumbnail_link = card.querySelector('a[data-a-target="live-channel-card-thumbnail-link"]'),
-				card_title = card.querySelector('.live-channel-card__title'),
-
-				text_content = host_data.channels.length !== 1 ?
-					this.i18n.t('host-menu.multiple', '{count,number} hosting {channel}', {
-						count: host_data.channels.length,
-						channel: data.displayName
-					}) : inst.props.title;
-
-			if ( card_title )
-				card_title.textContent = card_title.title = text_content;
+			const title_link = card.querySelector('a[data-test-selector="preview-card-titles__primary-link"]'),
+				thumbnail_link = card.querySelector('a[data-a-target="preview-card-image-link"]');
 
 			if ( title_link )
 				title_link.addEventListener('click', this.showHostMenu.bind(this, inst, host_data));
 
-			if ( thumbnail_link ) {
-				thumbnail_link.title = text_content;
+			if ( thumbnail_link )
 				thumbnail_link.addEventListener('click', this.showHostMenu.bind(this, inst, host_data));
-			}
 		}
 	}
 }
