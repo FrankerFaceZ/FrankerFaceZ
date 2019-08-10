@@ -59,9 +59,15 @@ export default class Directory extends SiteModule {
 			DIR_ROUTES
 		);
 
-		this.DirectoryVideos = this.fine.define(
-			'directory-videos',
+		this.DirectorySuggestedVideos = this.fine.define(
+			'directory-suggested-videos',
 			n => n.props && n.props.directoryWidth && n.props.data && n.render && n.render.toString().includes('SuggestedVideos'),
+			DIR_ROUTES
+		);
+
+		this.DirectoryLatestVideos = this.fine.define(
+			'directory-latest-videos',
+			n => n.props && n.props.component === 'LatestVideosFromFollowedCarousel',
 			DIR_ROUTES
 		);
 
@@ -146,7 +152,18 @@ export default class Directory extends SiteModule {
 				component: 'setting-check-box'
 			},
 
-			changed: () => this.DirectoryVideos.forceUpdate()
+			changed: () => this.DirectorySuggestedVideos.forceUpdate()
+		});
+
+		this.settings.add('directory.hide-latest-videos', {
+			default: false,
+			ui: {
+				path: 'Directory > Following >> Categories',
+				title: 'Do not show `Latest Videos` in the Following Directory.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.DirectoryLatestVideos.forceUpdate()
 		});
 
 		this.routeClick = this.routeClick.bind(this);
@@ -184,7 +201,7 @@ export default class Directory extends SiteModule {
 			this.DirectoryShelf.forceUpdate();
 		});
 
-		this.DirectoryVideos.ready(cls => {
+		this.DirectorySuggestedVideos.ready(cls => {
 			const old_render = cls.prototype.render;
 			cls.prototype.render = function() {
 				try {
@@ -198,7 +215,24 @@ export default class Directory extends SiteModule {
 				return old_render.call(this);
 			}
 
-			this.DirectoryVideos.forceUpdate();
+			this.DirectorySuggestedVideos.forceUpdate();
+		});
+
+		this.DirectoryLatestVideos.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					if ( t.settings.get('directory.hide-latest-videos') )
+						return null;
+
+				} catch(err) {
+					t.log.capture(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.DirectoryLatestVideos.forceUpdate();
 		})
 
 		this.DirectoryCard.ready((cls, instances) => {
