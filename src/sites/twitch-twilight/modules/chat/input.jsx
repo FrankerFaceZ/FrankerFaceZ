@@ -339,8 +339,6 @@ export default class Input extends Module {
 		inst.getMatchedEmotes = function(input) {
 			const limitResults = t.chat.context.get('chat.tab-complete.limit-results');
 			let results = t.getTwitchEmoteSuggestions(input, this);
-			if ( limitResults && results.length >= 25 )
-				return t.sortFavorites(results).slice(0, 25);
 
 			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
 				const ffz_emotes = t.getEmoteSuggestions(input, this);
@@ -348,15 +346,11 @@ export default class Input extends Module {
 					results = results.concat(ffz_emotes);
 			}
 
-			if ( limitResults && results.length >= 25 )
-				return t.sortFavorites(results).slice(0, 25);
-
-			if ( ! t.chat.context.get('chat.tab-complete.emoji') )
-				return results;
-
-			const emoji = t.getEmojiSuggestions(input, this);
-			if ( Array.isArray(emoji) && emoji.length )
-				results = Array.isArray(results) ? results.concat(emoji) : emoji;
+			if ( t.chat.context.get('chat.tab-complete.emoji') ) {
+				const emoji = t.getEmojiSuggestions(input, this);
+				if ( Array.isArray(emoji) && emoji.length )
+					results = Array.isArray(results) ? results.concat(emoji) : emoji;
+			}
 
 			results = t.sortFavorites(results);
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
@@ -405,12 +399,10 @@ export default class Input extends Module {
 		}
 
 		return results.sort((a, b) => {
-			const a_fav = a.favorite;
-			const b_fav = b.favorite;
-			if (a_fav) {
-				return b_fav ? a.replacement.localeCompare(b.replacement) : -1;
+			if (a.favorite) {
+				return b.favorite ? a.replacement.localeCompare(b.replacement) : -1;
 			}
-			else if (b_fav) {
+			else if (b.favorite) {
 				return 1;
 			}
 			else {
@@ -528,28 +520,29 @@ export default class Input extends Module {
 
 		const search = input.startsWith(':') ? input.slice(1) : input,
 			results = [],
-			emotes = this.emotes.getEmotes(
+			sets = this.emotes.getSets(
 				user && user.id,
 				user && user.login,
 				channel_id,
 				channel_login
 			);
 
-		for(const emote of Object.values(emotes))
-			if ( inst.doesEmoteMatchTerm(emote, search) ) {
-				const favorite = this.emotes.isFavorite(emote.token.provider, emote.id);
-				results.push({
-					current: input,
-					replacement: emote.name,
-					element: inst.renderEmoteSuggestion({
-						token: emote.name,
-						id: `${emote.token.provider}-${emote.id}`,
-						srcSet: emote.srcSet,
+		for(const set of sets)
+			for(const emote of Object.values(set.emotes))
+				if ( inst.doesEmoteMatchTerm(emote, search) ) {
+					const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
+					results.push({
+						current: input,
+						replacement: emote.name,
+						element: inst.renderEmoteSuggestion({
+							token: emote.name,
+							id: `${set.source}-${emote.id}`,
+							srcSet: emote.srcSet,
+							favorite
+						}),
 						favorite
-					}),
-					favorite
-				});
-			}
+					});
+				}
 
 		return results;
 	}
