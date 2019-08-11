@@ -35,6 +35,25 @@ export default class Metadata extends Module {
 			changed: () => this.updateMetadata('player-stats')
 		});
 
+		this.settings.add('metadata.stream-delay-warning', {
+			default: 0,
+
+			ui: {
+				path: 'Channel > Metadata >> Player',
+				title: 'Stream Delay Warning',
+				description: 'Define a maximum delay in seconds after which the indicator will be shown in warning colors. (0 for no warning colors)',
+
+				component: 'setting-text-box',
+				process(val) {
+					val = parseInt(val, 10);
+					if ( isNaN(val) || ! isFinite(val) || val < 0 )
+						return 0;
+
+					return val;
+				},
+			}
+		});
+
 		this.settings.add('metadata.uptime', {
 			default: 1,
 
@@ -190,8 +209,8 @@ export default class Metadata extends Module {
 			},
 
 			color(data) {
-				const setting = this.settings.get('some.thing');
-				if ( setting == null || ! data.delay || data.old )
+				const setting = this.settings.get('metadata.stream-delay-warning');
+				if ( setting === 0 || ! data.delay || data.old )
 					return;
 
 				if ( data.delay > (setting * 2) )
