@@ -16,7 +16,7 @@ const CLASSES = {
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .ffz--popular-channels',
-	'side-offline-channels': '.side-nav-card__link[href*="/videos/"]',
+	'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
 
 	'prime-offers': '.top-nav__prime',
 
