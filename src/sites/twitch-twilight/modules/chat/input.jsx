@@ -171,12 +171,24 @@ export default class Input extends Module {
 						r = {
 							id: props.channelID,
 							login: props.channelLogin,
-							displayName: props.channelDisplayName
+							displayName: props.channelDisplayName,
+							emoteOnly: props.emoteOnlyMode,
+							slowMode: props.slowMode,
+							slowDuration: props.slowModeDuration,
+							subsMode: props.subsOnlyMode
 						}
 
 					const actions = t.actions.renderRoom(t.chat.context.get('context.chat.showModIcons'), u, r, createElement);
+
+					// TODO: Instead of putting actions above the chat input,
+					// put them next to the settings menu. This involves going
+					// exploring in the React render output, which is a mess.
+					//t.log.info('chat-input-render', out);
+
 					if ( actions )
 						out.props.children.unshift(actions);
+					else
+						out.props.children.unshift(null);
 
 				} catch(err) {
 					t.log.error(err);
@@ -527,22 +539,24 @@ export default class Input extends Module {
 				channel_login
 			);
 
-		for(const set of sets)
-			for(const emote of Object.values(set.emotes))
-				if ( inst.doesEmoteMatchTerm(emote, search) ) {
-					const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
-					results.push({
-						current: input,
-						replacement: emote.name,
-						element: inst.renderEmoteSuggestion({
-							token: emote.name,
-							id: `${set.source}-${emote.id}`,
-							srcSet: emote.srcSet,
+		for(const set of sets) {
+			if ( set && set.emotes )
+				for(const emote of Object.values(set.emotes))
+					if ( inst.doesEmoteMatchTerm(emote, search) ) {
+						const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
+						results.push({
+							current: input,
+							replacement: emote.name,
+							element: inst.renderEmoteSuggestion({
+								token: emote.name,
+								id: `${set.source}-${emote.id}`,
+								srcSet: emote.srcSet,
+								favorite
+							}),
 							favorite
-						}),
-						favorite
-					});
-				}
+						});
+					}
+		}
 
 		return results;
 	}

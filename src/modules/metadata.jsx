@@ -41,7 +41,7 @@ export default class Metadata extends Module {
 			ui: {
 				path: 'Channel > Metadata >> Player',
 				title: 'Stream Delay Warning',
-				description: 'Define a maximum delay in seconds after which the indicator will be shown in warning colors. (0 for no warning colors)',
+				description: 'When the current stream delay exceeds this number of seconds, display the stream delay in a warning color to draw attention to the large delay. Set to zero to disable.',
 
 				component: 'setting-text-box',
 				process(val) {

@@ -798,6 +798,41 @@ export default class Emotes extends Module {
 			return tes.get(emote_id);
 
 		tes.set(emote_id, null);
+
+		/*const apollo = this.resolve('site.apollo');
+		if ( apollo?.client ) {
+			timeout(apollo.client.query({
+				query: GET_EMOTE,
+				variables: {
+					id: `${emote_id}`
+				}
+			}), 1000).then(result => {
+				const emote = result?.data?.emote;
+
+				if ( ! emote ) {
+					tes.delete(emote_id);
+					return;
+				}
+
+				const set_id = parseInt(emote.setID, 10),
+					channel = emote?.subscriptionProduct?.owner;
+
+				this.__twitch_set_to_channel.set(set_id, {
+					s_id: set_id,
+					c_id: channel ? channel.id : null,
+					c_name: channel ? channel.login : null,
+					c_title: channel ? channel.displayName : null
+				});
+
+				tes.set(emote_id, set_id);
+				if ( callback )
+					callback(set_id);
+
+			}).catch(() => tes.delete(emote_id));
+
+			return;
+		}*/
+
 		timeout(this.socket.call('get_emote', emote_id), 1000).then(data => {
 			const set_id = data['s_id'];
 			tes.set(emote_id, set_id);
@@ -827,6 +862,7 @@ export default class Emotes extends Module {
 			return null;
 
 		tes.set(set_id, null);
+
 		try {
 			const data = await timeout(this.socket.call('get_emote_set', set_id), 1000);
 			tes.set(set_id, data);

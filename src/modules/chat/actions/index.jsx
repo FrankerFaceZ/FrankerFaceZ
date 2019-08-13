@@ -133,7 +133,7 @@ export default class Actions extends Module {
 			ui: {
 				path: 'Chat > Actions > Room @{"description": "Here, you can define custom actions that will appear above the chat input box."}',
 				component: 'chat-actions',
-				context: ['room'],
+				context: ['room', 'room-mode'],
 				inline: true,
 
 				data: () => {
@@ -436,7 +436,10 @@ export default class Actions extends Module {
 			if ( ! def || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
 				(disp.mod != null && disp.mod !== (current_user ? !!current_user.mod : false)) ||
-				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) )
+				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
+				(disp.emoteOnly != null && disp.emoteOnly !== current_room.emoteOnly) ||
+				(disp.slowMode != null && disp.slowMode !== current_room.slowMode) ||
+				(disp.subsMode != null && disp.subsMode !== current_room.subsMode) )
 				continue;
 
 			const has_color = def.colored && ap.color,

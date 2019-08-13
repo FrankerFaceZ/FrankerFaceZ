@@ -57,6 +57,51 @@
 					</label>
 				</div>
 
+				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+					<input
+						id="with_slow"
+						ref="with_slow"
+						:checked="with_slow"
+						type="checkbox"
+						class="tw-checkbox__input"
+						@change="onPreview"
+					>
+
+					<label for="with_slow" class="tw-checkbox__label">
+						{{ t('setting.actions.preview.slow', 'Slow Mode') }}
+					</label>
+				</div>
+
+				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+					<input
+						id="with_emote"
+						ref="with_emote"
+						:checked="with_emote"
+						type="checkbox"
+						class="tw-checkbox__input"
+						@change="onPreview"
+					>
+
+					<label for="with_emote" class="tw-checkbox__label">
+						{{ t('setting.actions.preview.emote-only', 'Emote-Only') }}
+					</label>
+				</div>
+
+				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+					<input
+						id="with_subs"
+						ref="with_subs"
+						:checked="with_subs"
+						type="checkbox"
+						class="tw-checkbox__input"
+						@change="onPreview"
+					>
+
+					<label for="with_subs" class="tw-checkbox__label">
+						{{ t('setting.actions.preview.subs', 'Subs Only') }}
+					</label>
+				</div>
+
 				<div class="tw-pd-x-1 tw-checkbox">
 					<input
 						id="show_all"
@@ -242,6 +287,11 @@ export default {
 		return {
 			is_moderator: true,
 			with_mod_icons: true,
+
+			with_emote: false,
+			with_subs: false,
+			with_slow: false,
+
 			is_staff: false,
 			is_deleted: false,
 			show_all: false,
@@ -298,6 +348,10 @@ export default {
 
 		has_room() {
 			return this.item.context && this.item.context.includes('room')
+		},
+
+		has_mode() {
+			return this.item.context && this.item.context.includes('room-mode')
 		},
 
 		has_msg() {
@@ -485,6 +539,10 @@ export default {
 			this.is_staff = false; //this.$refs.as_staff.checked;
 			this.with_mod_icons = this.has_icons && this.$refs.with_mod_icons.checked;
 			this.is_deleted = this.has_msg && this.$refs.is_deleted.checked;
+
+			this.with_emote = this.has_mode && this.$refs.with_emote.checked;
+			this.with_subs = this.has_mode && this.$refs.with_subs.checked;
+			this.with_slow = this.has_mode && this.$refs.with_slow.checked;
 		},
 
 		displayAction(action) {
@@ -509,6 +567,17 @@ export default {
 
 			if ( disp.deleted != null && disp.deleted !== this.is_deleted )
 				return false;
+
+			if ( this.has_mode ) {
+				if ( disp.emoteOnly != null && disp.emoteOnly !== this.with_emote )
+					return false;
+
+				if ( disp.slowMode != null && disp.slowMode !== this.with_slow )
+					return false;
+
+				if ( disp.subsMode != null && disp.subsMode !== this.with_subs )
+					return false;
+			}
 
 			return true;
 		},

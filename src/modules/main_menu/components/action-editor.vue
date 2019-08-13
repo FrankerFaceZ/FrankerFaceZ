@@ -140,6 +140,72 @@
 						</select>
 					</div>
 
+					<div v-if="has_mode" class="tw-flex tw-align-items-center">
+						<label for="vis_emote">
+							{{ t('setting.actions.edit-visible.emote-only', 'Emote-Only Mode') }}
+						</label>
+
+						<select
+							id="vis_emote"
+							v-model="edit_data.display.emoteOnly"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+						>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
+						</select>
+					</div>
+
+					<div v-if="has_mode" class="tw-flex tw-align-items-center">
+						<label for="vis_slow">
+							{{ t('setting.actions.edit-visible.slow', 'Slow Mode') }}
+						</label>
+
+						<select
+							id="vis_slow"
+							v-model="edit_data.display.slowMode"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+						>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
+						</select>
+					</div>
+
+					<div v-if="has_mode" class="tw-flex tw-align-items-center">
+						<label for="vis_subs">
+							{{ t('setting.actions.edit-visible.subs', 'Subs Mode') }}
+						</label>
+
+						<select
+							id="vis_subs"
+							v-model="edit_data.display.subsMode"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+						>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
+						</select>
+					</div>
+
 					<div v-if="has_modifiers" class="tw-flex tw-align-items-start">
 						<label for="vis_modifiers">
 							{{ t('setting.actions.edit-visible.modifier', 'Modifiers') }}
@@ -325,6 +391,10 @@ export default {
 			return this.context && this.context.includes('message')
 		},
 
+		has_mode() {
+			return this.context && this.context.includes('room-mode')
+		},
+
 		has_modifiers() {
 			return this.modifiers
 		},
@@ -466,6 +536,23 @@ export default {
 
 			else if ( disp.deleted === false )
 				out.push(this.t('setting.actions.visible.undeleted', 'if message not deleted'));
+
+			if ( this.has_mode ) {
+				if ( disp.emoteOnly === true )
+					out.push(this.t('setting.actions.visible.emote-only', 'when emote-only mode'));
+				else if ( disp.emoteOnly === false )
+					out.push(this.t('setting.actions.visible.no-emote', 'when not emote-only mode'));
+
+				if ( disp.slowMode === true )
+					out.push(this.t('setting.actions.visible.slow', 'when slow mode'));
+				else if ( disp.slowMode === false )
+					out.push(this.t('setting.actions.visible.no-slow', 'when not slow mode'));
+
+				if ( disp.subsMode === true )
+					out.push(this.t('setting.actions.visible.subs', 'when subs mode'));
+				else if ( disp.subsMode === false )
+					out.push(this.t('setting.actions.visible.no-subs', 'when not subs mode'));
+			}
 
 			if ( disp.keys ) {
 				const key_out = [];
