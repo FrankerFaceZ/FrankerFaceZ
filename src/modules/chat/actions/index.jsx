@@ -148,6 +148,15 @@ export default class Actions extends Module {
 			}
 		});
 
+		this.settings.add('chat.actions.room-above', {
+			default: false,
+			ui: {
+				path: 'Chat > Actions > Room >> General',
+				component: 'setting-check-box',
+				title: 'Display Room Actions above the chat input box.'
+			}
+		});
+
 		this.settings.add('chat.actions.rules-as-reasons', {
 			default: true,
 			ui: {
@@ -420,7 +429,7 @@ export default class Actions extends Module {
 	}
 
 
-	renderRoom(mod_icons, current_user, current_room, createElement) {
+	renderRoom(mod_icons, current_user, current_room, is_above, createElement) {
 		const actions = [],
 			chat = this.resolve('site.chat');
 
@@ -465,7 +474,7 @@ export default class Actions extends Module {
 		const room = current_room && JSON.stringify(current_room);
 
 		return (<div
-			class="ffz--room-actions ffz-action-data tw-flex tw-flex-grow-1 tw-mg-x-05 tw-align-items-center"
+			class={`ffz--room-actions ffz-action-data tw-flex tw-flex-grow-1 tw-align-items-center ${is_above ? 'tw-pd-y-05 tw-border-t' : 'tw-mg-x-05'}`}
 			data-room={room}
 		>
 			{actions}
