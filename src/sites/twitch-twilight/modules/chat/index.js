@@ -441,8 +441,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
 
-		for (const chat_input of this.resolve('site.chat.input').ChatInput.instances)
-			chat_input.resizeInput();
+		this.emit(':update-chat-css');
 	}
 
 	updateLineBorders() {
