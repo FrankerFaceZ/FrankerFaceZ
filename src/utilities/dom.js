@@ -40,6 +40,42 @@ export function off(obj, ...args) {
 }
 
 
+export function findReactFragment(frag, criteria, depth = 25, current = 0, visited = null) {
+	if ( ! visited )
+		visited = new Set;
+	else if ( visited.has(frag) )
+		return null;
+
+	if ( criteria(frag) )
+		return frag;
+
+	if ( current >= depth )
+		return null;
+
+	visited.add(frag);
+
+	if ( frag && frag.props && Array.isArray(frag.props.children) )
+		for(const child of frag.props.children) {
+			if ( ! child )
+				continue;
+
+			if ( Array.isArray(child) ) {
+				for(const f of child) {
+					const out = findReactFragment(f, criteria, depth, current + 1, visited);
+					if ( out )
+						return out;
+				}
+			} else {
+				const out = findReactFragment(child, criteria, depth, current + 1, visited);
+				if ( out )
+					return out;
+			}
+		}
+
+	return null;
+}
+
+
 export function createElement(tag, props, ...children) {
 	const el = document.createElement(tag);
 
