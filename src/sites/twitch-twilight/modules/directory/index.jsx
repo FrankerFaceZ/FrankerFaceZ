@@ -221,6 +221,9 @@ export default class Directory extends SiteModule {
 		this.DirectoryLatestVideos.ready(cls => {
 			const old_render = cls.prototype.render;
 			cls.prototype.render = function() {
+				if ( ! this.props || this.props.component !== 'LatestVideosFromFollowedCarousel' )
+					return old_render.call(this);
+
 				try {
 					if ( t.settings.get('directory.hide-latest-videos') )
 						return null;
@@ -233,7 +236,7 @@ export default class Directory extends SiteModule {
 			}
 
 			this.DirectoryLatestVideos.forceUpdate();
-		})
+		});
 
 		this.DirectoryCard.ready((cls, instances) => {
 			//const old_render = cls.prototype.render,
