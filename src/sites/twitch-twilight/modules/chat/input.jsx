@@ -5,6 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import { findReactFragment } from 'utilities/dom';
 import Twilight from 'site';
 
 export default class Input extends Module {
@@ -132,6 +133,7 @@ export default class Input extends Module {
 
 	async onEnable() {
 		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
+		this.chat.context.on('changed:chat.actions.room-above', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.tab-complete.emotes-without-colon', enabled => {
 			for (const inst of this.EmoteSuggestions.instances)
 				inst.canBeTriggeredByTab = enabled;
@@ -154,7 +156,9 @@ export default class Input extends Module {
 			cls.prototype.render = function() {
 				const out = old_render.call(this);
 				try {
-					if ( ! out || ! out.props || ! Array.isArray(out.props.children) )
+					const above = t.chat.context.get('chat.actions.room-above'),
+						container = above ? out : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');
+					if ( ! container || ! container.props || ! container.props.children )
 						return out;
 
 					const props = this.props;
@@ -178,17 +182,11 @@ export default class Input extends Module {
 							subsMode: props.subsOnlyMode
 						}
 
-					const actions = t.actions.renderRoom(t.chat.context.get('context.chat.showModIcons'), u, r, createElement);
-
-					// TODO: Instead of putting actions above the chat input,
-					// put them next to the settings menu. This involves going
-					// exploring in the React render output, which is a mess.
-					//t.log.info('chat-input-render', out);
-
-					if ( actions )
-						out.props.children.unshift(actions);
+					const actions = t.actions.renderRoom(t.chat.context.get('context.chat.showModIcons'), u, r, above, createElement);
+					if ( above )
+						container.props.children.unshift(actions || null);
 					else
-						out.props.children.unshift(null);
+						container.props.children.splice(1, 0, actions || null);
 
 				} catch(err) {
 					t.log.error(err);
