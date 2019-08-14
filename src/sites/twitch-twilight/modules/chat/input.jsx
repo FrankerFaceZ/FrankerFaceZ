@@ -218,7 +218,7 @@ export default class Input extends Module {
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 
-		this.on(':update-chat-css', () => {
+		this.on('site.css_tweaks:update-chat-css', () => {
 			for (const chat_input of this.ChatInput.instances)
 				chat_input.resizeInput();
 		}, this);
