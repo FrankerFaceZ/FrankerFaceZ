@@ -9,3 +9,8 @@
 		line-height: var(--ffz-chat-line-height);
 	}
 }
+
+textarea[data-a-target="chat-input"],
+textarea[data-a-target="video-chat-input"] {
+	font-size: var(--ffz-chat-font-size) !important;
+}
