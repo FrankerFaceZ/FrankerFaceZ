@@ -1536,7 +1536,13 @@ export default class ChatHook extends Module {
 		}
 
 		cls.prototype.postMessageToCurrentChannel = function(original, message) {
+			const original_msg = message;
 			message._ffz_checked = true;
+
+			// For certain message types, the message is contained within
+			// a message sub-object.
+			if ( message.type === t.chat_types.ChannelPointsReward )
+				message = message.message;
 
 			if ( original.channel ) {
 				let chan = message.channel = original.channel.toLowerCase();
@@ -1564,7 +1570,7 @@ export default class ChatHook extends Module {
 					message.message = original.message.body;
 			}
 
-			this.addMessage(message);
+			this.addMessage(original_msg);
 		}
 	}
 

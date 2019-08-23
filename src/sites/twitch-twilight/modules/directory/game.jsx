@@ -23,7 +23,7 @@ export default class Game extends SiteModule {
 
 		this.GameHeader = this.fine.define(
 			'game-header',
-			n => n.props && n.props.data && n.getBannerImage && n.getCategoryDisplayNameAndFollowButton,
+			n => n.props && n.props.data && n.getBannerImage && n.getFollowButton,
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
 
@@ -124,7 +124,7 @@ export default class Game extends SiteModule {
 
 		update_hidden();
 
-		buttons.appendChild(<div class="ffz-directory-buttons">
+		buttons.appendChild(<div class="tw-mg-t-1 ffz-directory-buttons">
 			{block_btn}
 			{hidden_btn}
 		</div>);

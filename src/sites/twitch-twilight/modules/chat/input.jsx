@@ -218,10 +218,20 @@ export default class Input extends Module {
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 
-		this.on('site.css_tweaks:update-chat-css', () => {
-			for (const chat_input of this.ChatInput.instances)
-				chat_input.resizeInput();
-		}, this);
+		this.on('site.css_tweaks:update-chat-css', this.resizeInput, this);
+	}
+
+	resizeInput() {
+		if ( this._resize_waiter )
+			cancelAnimationFrame(this._resize_waiter);
+
+		this._resize_waiter = requestAnimationFrame(() => this._resizeInput())
+	}
+
+	_resizeInput() {
+		this._resize_waiter = null;
+		for (const chat_input of this.ChatInput.instances)
+			chat_input.resizeInput();
 	}
 
 
