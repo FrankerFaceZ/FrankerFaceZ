@@ -259,7 +259,7 @@ export default class Directory extends SiteModule {
 			}
 
 			cls.prototype.renderTitles = function() {
-				const nodes = t.following.hosts.get(get('props.currentViewerCount', this));
+				const nodes = get(get('props.channelLogin', this), t.following.hosts);
 				if ( this.props.hostedByChannelLogin == null || ! nodes || ! nodes.length )
 					return old_render_titles.call(this);
 
@@ -355,6 +355,7 @@ export default class Directory extends SiteModule {
 
 		this.updateUptime(inst, 'props.currentViewerCount.createdAt');
 		this.updateAvatar(inst);
+		this.following.updateChannelCard(inst);
 	}
 
 
