@@ -219,7 +219,7 @@ export default class Actions extends Module {
 				return `Error: The "${data.action}" action provider does not have tooltip support.`;
 
 			if ( data.tip && data.tip.length )
-				return data.tip;
+				return this.replaceVariables(data.tip, data);
 
 			return maybe_call(data.definition.tooltip, this, data, target, tip);
 		}
@@ -448,7 +448,9 @@ export default class Actions extends Module {
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
 				(disp.emoteOnly != null && disp.emoteOnly !== current_room.emoteOnly) ||
 				(disp.slowMode != null && disp.slowMode !== current_room.slowMode) ||
-				(disp.subsMode != null && disp.subsMode !== current_room.subsMode) )
+				(disp.subsMode != null && disp.subsMode !== current_room.subsMode) ||
+				(disp.r9kMode != null && disp.r9kMode !== current_room.r9kMode) ||
+				(disp.followersOnly != null && disp.followersOnly !== current_room.followersOnly) )
 				continue;
 
 			const has_color = def.colored && ap.color,
@@ -474,7 +476,7 @@ export default class Actions extends Module {
 		const room = current_room && JSON.stringify(current_room);
 
 		return (<div
-			class={`ffz--room-actions ffz-action-data tw-flex tw-flex-grow-1 tw-align-items-center ${is_above ? 'tw-pd-y-05 tw-border-t' : 'tw-mg-x-05'}`}
+			class={`ffz--room-actions ffz-action-data tw-flex tw-flex-grow-1 tw-flex-wrap tw-align-items-center ${is_above ? 'tw-pd-y-05 tw-border-t' : 'tw-mg-x-05'}`}
 			data-room={room}
 		>
 			{actions}

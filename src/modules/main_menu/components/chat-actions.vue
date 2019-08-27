@@ -9,7 +9,7 @@
 		</div>
 
 		<div class="tw-pd-b-1 tw-border-b tw-mg-b-1">
-			<div class="tw-flex tw-align-items-center ffz--inline">
+			<div class="tw-flex tw-flex-wrap tw-align-items-center ffz--inline">
 				{{ t('setting.actions.preview', 'Preview:') }}
 
 				<div class="tw-pd-x-1 tw-checkbox">
@@ -99,6 +99,36 @@
 
 					<label for="with_subs" class="tw-checkbox__label">
 						{{ t('setting.actions.preview.subs', 'Subs Only') }}
+					</label>
+				</div>
+
+				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+					<input
+						id="with_followers"
+						ref="with_followers"
+						:checked="with_followers"
+						type="checkbox"
+						class="tw-checkbox__input"
+						@change="onPreview"
+					>
+
+					<label for="with_followers" class="tw-checkbox__label">
+						{{ t('setting.actions.preview.followers', 'Followers-Only') }}
+					</label>
+				</div>
+
+				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+					<input
+						id="with_r9k"
+						ref="with_r9k"
+						:checked="with_r9k"
+						type="checkbox"
+						class="tw-checkbox__input"
+						@change="onPreview"
+					>
+
+					<label for="with_r9k" class="tw-checkbox__label">
+						{{ t('setting.actions.preview.r9k', 'R9k Mode') }}
 					</label>
 				</div>
 
@@ -291,6 +321,8 @@ export default {
 			with_emote: false,
 			with_subs: false,
 			with_slow: false,
+			with_followers: false,
+			with_r9k: false,
 
 			is_staff: false,
 			is_deleted: false,
@@ -543,6 +575,8 @@ export default {
 			this.with_emote = this.has_mode && this.$refs.with_emote.checked;
 			this.with_subs = this.has_mode && this.$refs.with_subs.checked;
 			this.with_slow = this.has_mode && this.$refs.with_slow.checked;
+			this.with_followers = this.has_mode && this.$refs.with_followers.checked;
+			this.with_r9k = this.has_mode && this.$refs.with_r9k.checked;
 		},
 
 		displayAction(action) {
@@ -576,6 +610,12 @@ export default {
 					return false;
 
 				if ( disp.subsMode != null && disp.subsMode !== this.with_subs )
+					return false;
+
+				if ( disp.r9kMode != null && disp.r9kMode !== this.with_r9k )
+					return false;
+
+				if ( disp.followersOnly != null && disp.followersOnly !== this.with_followers )
 					return false;
 			}
 

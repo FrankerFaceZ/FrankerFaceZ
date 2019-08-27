@@ -605,6 +605,21 @@ export default class ChatHook extends Module {
 				if ( handler )
 					handler.addMessageHandler(inst.handleMessage);
 
+				if ( Array.isArray(inst.buffer) ) {
+					let i = inst.buffer.length;
+					const ct = this.chat_types || CHAT_TYPES;
+
+					while(i--) {
+						const msg = inst.buffer[i];
+						if ( msg && msg.type === ct.RoomState && msg.state ) {
+							this.chat.context.updateContext({
+								chat_state: msg.state
+							});
+							break;
+						}
+					}
+				}
+
 				inst.props.setMessageBufferAPI({
 					addUpdateHandler: inst.addUpdateHandler,
 					removeUpdateHandler: inst.removeUpdateHandler,
@@ -1311,6 +1326,24 @@ export default class ChatHook extends Module {
 						t.log.capture(err, {extra: e});
 						return old_sub.call(i, e);
 					}
+				}
+
+				const old_state = this.onRoomStateEvent;
+				this.onRoomStateEvent = function(e) {
+					try {
+						const channel = e.channel,
+							current = t.chat.context.get('context.channel');
+
+						if ( channel && (channel === current || channel === `#${current}`) )
+							t.chat.context.updateContext({
+								chat_state: e.state
+							});
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+					}
+
+					return old_state.call(i, e);
 				}
 
 				const old_resub = this.onResubscriptionEvent;

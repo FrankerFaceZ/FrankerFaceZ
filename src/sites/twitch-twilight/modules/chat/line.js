@@ -741,7 +741,7 @@ other {# messages were deleted by a moderator.}
 
 				if ( ! this.props.installedExtensions.some(val => {
 					const e = val.extension;
-					return e && e.clientID === ext.clientID && e.version === ext.version;
+					return e && (e.clientId || e.clientID) === (ext.clientId || ext.clientID) && e.version === ext.version;
 				}) )
 					return null;
 

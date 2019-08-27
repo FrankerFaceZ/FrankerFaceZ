@@ -159,7 +159,11 @@ export const ban = {
 	},
 
 	click(event, data) {
-		this.sendMessage(data.room.login, `/ban ${data.user.login} ${data.reason||data.options.reason||''}`);
+		let reason = data.reason || data.options.reason || '';
+		if ( reason.length )
+			reason = this.replaceVariables(reason, data);
+
+		this.sendMessage(data.room.login, `/ban ${data.user.login} ${reason}`);
 	}
 }
 
@@ -211,7 +215,11 @@ export const timeout = {
 	},
 
 	click(event, data) {
-		this.sendMessage(data.room.login, `/timeout ${data.user.login} ${data.options.duration} ${data.reason||data.options.reason||''}`);
+		let reason = data.reason || data.options.reason || '';
+		if ( reason.length )
+			reason = this.replaceVariables(reason, data);
+
+		this.sendMessage(data.room.login, `/timeout ${data.user.login} ${data.options.duration} ${reason}`);
 	}
 }
 

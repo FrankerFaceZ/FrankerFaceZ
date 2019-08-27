@@ -185,6 +185,28 @@
 					</div>
 
 					<div v-if="has_mode" class="tw-flex tw-align-items-center">
+						<label for="vis_follows">
+							{{ t('setting.actions.edit-visible.follows', 'Follower-Only Mode') }}
+						</label>
+
+						<select
+							id="vis_subs"
+							v-model="edit_data.display.followersOnly"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+						>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
+						</select>
+					</div>
+
+					<div v-if="has_mode" class="tw-flex tw-align-items-center">
 						<label for="vis_subs">
 							{{ t('setting.actions.edit-visible.subs', 'Subs Mode') }}
 						</label>
@@ -192,6 +214,28 @@
 						<select
 							id="vis_subs"
 							v-model="edit_data.display.subsMode"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+						>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
+							</option>
+						</select>
+					</div>
+
+					<div v-if="has_mode" class="tw-flex tw-align-items-center">
+						<label for="vis_r9k">
+							{{ t('setting.actions.edit-visible.r9k', 'R9k Mode') }}
+						</label>
+
+						<select
+							id="vis_r9k"
+							v-model="edit_data.display.r9kMode"
 							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
@@ -552,6 +596,16 @@ export default {
 					out.push(this.t('setting.actions.visible.subs', 'when subs mode'));
 				else if ( disp.subsMode === false )
 					out.push(this.t('setting.actions.visible.no-subs', 'when not subs mode'));
+
+				if ( disp.r9kMode === true )
+					out.push(this.t('setting.actions.visible.r9k', 'when r9k mode'));
+				else if ( disp.r9kMode === false )
+					out.push(this.t('setting.actions.visible.no-r9k', 'when not r9k mode'));
+
+				if ( disp.followersOnly === true )
+					out.push(this.t('setting.actions.visible.followers', 'when followers-only mode'));
+				else if ( disp.followersOnly === false )
+					out.push(this.t('setting.actions.visible.no-followers', 'when not followers-only mode'));
 			}
 
 			if ( disp.keys ) {

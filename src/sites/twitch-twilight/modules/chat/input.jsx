@@ -157,6 +157,7 @@ export default class Input extends Module {
 				const out = old_render.call(this);
 				try {
 					const above = t.chat.context.get('chat.actions.room-above'),
+						state = t.chat.context.get('context.chat_state') || {},
 						container = above ? out : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');
 					if ( ! container || ! container.props || ! container.props.children )
 						return out;
@@ -179,7 +180,10 @@ export default class Input extends Module {
 							emoteOnly: props.emoteOnlyMode,
 							slowMode: props.slowMode,
 							slowDuration: props.slowModeDuration,
-							subsMode: props.subsOnlyMode
+							subsMode: props.subsOnlyMode,
+							r9kMode: state.r9k,
+							followersOnly: state.followersOnly,
+							followersDuration: state.followersOnlyRequirement
 						}
 
 					const actions = t.actions.renderRoom(t.chat.context.get('context.chat.showModIcons'), u, r, above, createElement);
