@@ -119,8 +119,8 @@ export default class FeaturedFollow extends Module {
 				login: user.login,
 				displayName: user.displayName,
 				avatar: user.profileImageURL,
-				following: user.self.follower.followedAt != null,
-				disableNotifications: user.self.follower.disableNotifications
+				following: user.self.follower?.followedAt != null,
+				disableNotifications: user.self.follower?.disableNotifications
 			};
 		}
 
