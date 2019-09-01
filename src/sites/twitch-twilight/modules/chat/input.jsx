@@ -554,12 +554,13 @@ export default class Input extends Module {
 				user && user.login,
 				channel_id,
 				channel_login
-			);
+			),
+			added_emotes = new Set();
 
 		for(const set of sets) {
 			if ( set && set.emotes )
 				for(const emote of Object.values(set.emotes))
-					if ( inst.doesEmoteMatchTerm(emote, search) ) {
+					if ( inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name) ) {
 						const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
 						results.push({
 							current: input,
@@ -572,6 +573,7 @@ export default class Input extends Module {
 							}),
 							favorite
 						});
+						added_emotes.add(emote.name);
 					}
 		}
 
