@@ -1846,6 +1846,8 @@ export default class ChatHook extends Module {
 		if ( ! this.addRoom(cont, props) )
 			return;
 
+		this.updateRoomBitsConfig(cont, props.bitsConfig);
+
 		if ( props.data ) {
 			this.chat.badges.updateTwitchBadges(props.data.badges);
 			this.updateRoomBadges(cont, props.data.user && props.data.user.broadcastBadges);
@@ -1863,6 +1865,9 @@ export default class ChatHook extends Module {
 				this.containerMounted(cont, props);
 			return;
 		}
+
+		if ( props.bitsConfig !== cont.props.bitsConfig )
+			this.updateRoomBitsConfig(cont, props.bitsConfig);
 
 		// Twitch, React, and Apollo are the trifecta of terror so we
 		// can't compare the badgeSets property in any reasonable way.

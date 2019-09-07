@@ -29,7 +29,7 @@ export default class Scroller extends Module {
 
 		this.ChatScroller = this.fine.define(
 			'chat-scroller',
-			n => n.saveScrollRef && n.handleScrollEvent && ! n.renderLines,
+			n => n.saveScrollRef && n.handleScrollEvent && ! n.renderLines && n.resume,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -162,7 +162,22 @@ export default class Scroller extends Module {
 
 		this.ChatScroller.ready((cls, instances) => {
 			const old_catch = cls.prototype.componentDidCatch,
+				old_snapshot = cls.prototype.getSnapshotBeforeUpdate,
 				old_render = cls.prototype.render;
+
+			if ( old_snapshot )
+				cls.prototype.getSnapshotBeforeUpdate = function() {
+					let auto_state;
+					if ( this.state ) {
+						auto_state = this.state.isAutoScrolling;
+						this.state.isAutoScrolling = false;
+					}
+					const out = old_snapshot.call(this);
+					if ( this.state )
+						this.state.isAutoScrolling = auto_state;
+					this._ffz_snapshot = out;
+					return out;
+				}
 
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
@@ -240,13 +255,23 @@ export default class Scroller extends Module {
 							inst.smoothScrollBottom();
 						else {
 							inst._ffz_one_fast_scroll = false;
+							inst._ffz_snapshot = null;
 							inst.ffz_oldScroll();
 						}
 					}
 				}
 
 				inst.scrollToBottom = function() {
-					if ( inst._ffz_scroll_frame || inst.state.isPaused )
+					// WIP: Trying to fix the scroll position changing so that we can
+					// smooth scroll from the previous position.
+					if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll && inst._ffz_snapshot ) {
+						const adjustment = inst._ffz_snapshot && inst._ffz_snapshot.lastLine ? inst._ffz_snapshot.offsetTop - inst._ffz_snapshot.lastLine.offsetTop : 0;
+						if ( inst.scroll && inst.scroll.scrollContent && adjustment > 0 )
+							inst.scroll.scrollContent.scrollTop -= adjustment;
+					}
+
+					inst._ffz_snapshot = null;
+					if ( inst.state.isPaused || inst._ffz_scroll_frame )
 						return;
 
 					this._ffz_scroll_frame = requestAnimationFrame(inst.ffz_doScroll);
@@ -592,7 +617,7 @@ export default class Scroller extends Module {
 				} else if ( difference > 200 ) {
 					// we are starting to fall behind, speed it up a bit
 					step += step * Math.floor(difference / 200);
-				}
+					}
 
 				const smoothAnimation = () => {
 					if ( this.state.isPaused || ! this.state.isAutoScrolling )

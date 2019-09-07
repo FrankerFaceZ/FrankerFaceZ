@@ -57,6 +57,35 @@ export default class Player extends Module {
 			}
 		});
 
+		this.settings.add('player.button.reset', {
+			default: true,
+			ui: {
+				path: 'Player > General >> General',
+				title: 'Add a `Reset Player` button to the player controls.',
+				description: "Double-clicking the Reset Player button destroys and recreates Twitch's player, potentially fixing playback issues without a full page refresh.",
+				component: 'setting-check-box'
+			},
+			changed: () => {
+				for(const inst of this.Player.instances)
+					this.addResetButton(inst);
+			}
+		});
+
+		if ( document.pictureInPictureEnabled )
+			this.settings.add('player.button.pip', {
+				default: true,
+				ui: {
+					path: 'Player > General >> General',
+					title: 'Add a `Picture-in-Picture` button to the player controls.',
+					description: "Clicking the PiP button attempts to toggle Picture-in-Picture mode for the player's video.",
+					component: 'setting-check-box'
+				},
+				changed: () => {
+					for(const inst of this.Player.instances)
+						this.addPiPButton(inst);
+				}
+			});
+
 		this.settings.add('player.volume-scroll-steps', {
 			default: 0.1,
 			ui: {
@@ -436,8 +465,10 @@ export default class Player extends Module {
 		});
 
 		this.on('i18n:update', () => {
-			for(const inst of this.Player.instances)
+			for(const inst of this.Player.instances) {
+				this.addPiPButton(inst);
 				this.addResetButton(inst);
+			}
 		});
 	}
 
@@ -493,6 +524,7 @@ export default class Player extends Module {
 
 	process(inst) {
 		this.addResetButton(inst);
+		this.addPiPButton(inst);
 		this.addEndedListener(inst);
 		this.addStateTags(inst);
 		this.addControlVisibility(inst);
@@ -503,10 +535,22 @@ export default class Player extends Module {
 	cleanup(inst) { // eslint-disable-line class-methods-use-this
 		const p = inst.player,
 			pr = inst.playerRef,
-			reset = pr && pr.querySelector('.ffz--player-reset');
+			video = pr && pr.querySelector('video'),
+			reset = pr && pr.querySelector('.ffz--player-reset'),
+			pip = pr && pr.querySelector('.ffz--player-pip');
 
 		if ( reset )
 			reset.remove();
+
+		if ( pip )
+			pip.remove();
+
+		if ( video && video._ffz_pip_enter ) {
+			video.removeEventListener('enterpictureinpicture', video._ffz_pip_enter);
+			video.removeEventListener('leavepictureinpicture', video._ffz_pip_exit);
+			video._ffz_pip_enter = null;
+			video._ffz_pip_exit = null;
+		}
 
 		if ( inst._ffz_on_ended ) {
 			p && off(p, 'ended', inst._ffz_on_ended);
@@ -709,10 +753,87 @@ export default class Player extends Module {
 	}
 
 
+	addPiPButton(inst, tries = 0) {
+		const t = this,
+			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
+			container = el && el.parentElement,
+			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
+
+		if ( ! container ) {
+			if ( ! has_pip )
+				return;
+
+			if ( tries < 5 )
+				return setTimeout(this.addPiPButton.bind(this, inst, (tries||0) + 1), 250);
+
+			return this.log.warn('Unable to find container element for PiP Button');
+		}
+
+		let tip, btn = container.querySelector('.ffz--player-pip');
+		if ( ! has_pip ) {
+			if ( btn )
+				btn.remove();
+			return;
+		}
+
+		if ( ! btn ) {
+			btn = (<button
+				class="player-button player-button--pip ffz--player-pip ffz-i-window-restore"
+				type="button"
+				onClick={t.pipPlayer.bind(t, inst)} // eslint-disable-line react/jsx-no-bind
+			>
+				{tip = <span class="player-tip js-control-tip" />}
+			</button>);
+
+			container.insertBefore(btn, el.nextSibling);
+
+		} else
+			tip = btn.querySelector('.player-tip');
+
+		const pip_active = !!document.pictureInPictureElement
+
+		btn.classList.toggle('ffz-i-window-restore', ! pip_active);
+		btn.classList.toggle('ffz-i-window-maximize', pip_active);
+
+		tip.dataset.tip = this.i18n.t('player.pip_button', 'Click to Toggle Picture-in-Picture');
+	}
+
+	pipPlayer(inst) {
+		const video = inst.playerRef && inst.playerRef.querySelector('video');
+		if ( ! video || ! document.pictureInPictureEnabled )
+			return;
+
+		if ( ! video._ffz_pip_enter ) {
+			video.addEventListener('enterpictureinpicture', video._ffz_pip_enter = () => {
+				this.addPiPButton(inst);
+			});
+
+			video.addEventListener('leavepictureinpicture', video._ffz_pip_exit = () => {
+				this.addPiPButton(inst);
+			});
+		}
+
+		if ( document.pictureInPictureElement )
+			document.exitPictureInPicture();
+		else
+			video.requestPictureInPicture();
+	}
+
+
 	addResetButton(inst, tries = 0) {
 		const t = this,
 			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
 			container = el && el.parentElement;
+
+		if ( ! this.settings.get('player.button.reset') ) {
+			if ( container ) {
+				const btn = container.querySelector('.ffz--player-reset');
+				if ( btn )
+					btn.remove();
+			}
+
+			return;
+		}
 
 		if ( ! container ) {
 			if ( tries < 5 )

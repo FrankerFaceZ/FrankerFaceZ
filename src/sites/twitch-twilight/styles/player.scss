@@ -1,10 +1,13 @@
-.ffz--player-reset:hover:before {
-	color: #a991d4;
-}
+.ffz--player-pip,
+.ffz--player-reset {
+	&:before {
+		font-size: 2rem;
+		margin-top: .7rem;
+	}
 
-.ffz--player-reset:before {
-	font-size: 2rem;
-	margin-top: .7rem;
+	&:hover:before {
+		color: #a991d4;
+	}
 }
 
 .player-controls-bottom .player-tip {
