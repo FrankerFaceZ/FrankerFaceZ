@@ -1,6 +1,6 @@
 <template>
-	<div>
-		<div class="tw-c-text-alt tw-mg-b-05">
+	<div v-if="data">
+		<div class="tw-c-text-alt-2 tw-mg-b-05">
 			{{ t('setting.example', 'Example:') }}
 		</div>
 		<chat-rich
@@ -30,6 +30,7 @@ export default {
 		const url = VIDEOS[Math.floor(Math.random() * VIDEOS.length)],
 			token = {
 				type: 'link',
+				force_rich: true,
 				is_mail: false,
 				url,
 				text: url

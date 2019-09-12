@@ -22,7 +22,7 @@ export const Links = {
 	priority: -10,
 
 	test(token) {
-		if ( ! this.context.get('chat.rich.all-links') )
+		if ( ! this.context.get('chat.rich.all-links') && ! token.force_rich )
 			return false;
 
 		return token.type === 'link'
