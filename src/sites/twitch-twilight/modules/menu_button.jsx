@@ -15,6 +15,7 @@ export default class MenuButton extends SiteModule {
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('site.fine');
+		this.inject('addons');
 
 		this.should_enable = true;
 		this._pill_content = null;
@@ -108,7 +109,9 @@ export default class MenuButton extends SiteModule {
 		this.on(':clicked', () => this.important_update = false);
 
 		this.once(':clicked', this.loadMenu);
+
 		this.on('i18n:update', this.update);
+		this.on('addons:data-loaded', this.update);
 	}
 
 	updateButton(inst) {
@@ -148,9 +151,19 @@ export default class MenuButton extends SiteModule {
 							<figure class="ffz-i-arrows-cw" />
 						</div>
 					</div>)}
-					{!this.has_update && DEBUG && (<div class="ffz-menu__extra-pill tw-absolute">
+					{!this.has_update && DEBUG && this.addons.has_dev && (<div class="ffz-menu__extra-pill tw-absolute">
 						<div class="tw-pill">
 							{this.i18n.t('site.menu_button.dev', 'dev')}
+						</div>
+					</div>)}
+					{!this.has_update && DEBUG && ! this.addons.has_dev && (<div class="ffz-menu__extra-pill tw-absolute">
+						<div class="tw-pill">
+							{this.i18n.t('site.menu_button.main-dev', 'm-dev')}
+						</div>
+					</div>)}
+					{!this.has_update && ! DEBUG && this.addons.has_dev && (<div class="ffz-menu__extra-pill tw-absolute">
+						<div class="tw-pill">
+							{this.i18n.t('site.menu_button.addon-dev', 'a-dev')}
 						</div>
 					</div>)}
 					{this.has_new && ! pill && (<div class="ffz-menu__pill tw-absolute">
@@ -174,7 +187,10 @@ export default class MenuButton extends SiteModule {
 							{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}
 						</div>)}
 						{DEBUG && (<div class="tw-mg-t-1">
-							{this.i18n.t('site.menu_button.dev-desc', 'You are running a developer build of FrankerFaceZ.')}
+							{this.i18n.t('site.menu_button.main-dev-desc', 'You are running a developer build of FrankerFaceZ.')}
+						</div>)}
+						{this.addons.has_dev && (<div class="tw-mg-t-1">
+							{this.i18n.t('site.menu_button.addon-dev-desc', 'You have loaded add-on data from a local development server.')}
 						</div>)}
 					</div>
 				</div>

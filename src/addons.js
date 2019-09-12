@@ -25,6 +25,7 @@ export default class AddonManager extends Module {
 		this.inject('settings');
 		this.inject('i18n');
 
+		this.has_dev = false;
 		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = [];
@@ -126,11 +127,14 @@ export default class AddonManager extends Module {
 			for(const addon of cdn_data )
 				this.addAddon(addon, false);
 
-		if ( Array.isArray(local_data) )
+		if ( Array.isArray(local_data) ) {
+			this.has_dev = true;
 			for(const addon of local_data)
 				this.addAddon(addon, true);
+		}
 
 		this.rebuildAddonSearch();
+		this.emit(':data-loaded');
 	}
 
 	addAddon(addon, is_dev = false) {

@@ -303,13 +303,13 @@ export class Module extends EventEmitter {
 			return this.onDisable(...args);
 
 		})().then(ret => {
-			this.__state = State.ENABLED;
+			this.__state = State.DISABLED;
 			this.__state_promise = null;
 			this.emit(':disabled', this);
 			return ret;
 
 		}).catch(err => {
-			this.__state = State.DISABLED;
+			this.__state = State.ENABLED;
 			this.__state_promise = null;
 			throw err;
 		});
