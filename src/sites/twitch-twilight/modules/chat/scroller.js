@@ -36,7 +36,7 @@ export default class Scroller extends Module {
 		this.settings.add('chat.scroller.freeze', {
 			default: 0,
 			ui: {
-				path: 'Chat > Behavior >> Scrolling @{"description": "Please note that FrankerFaceZ is dependent on Twitch\'s own scrolling code working correctly. There are bugs with Twitch\'s scrolling code that have existed for more than six months. If you are using Firefox, Edge, or other non-Webkit browsers, expect to have issues."}',
+				path: 'Chat > Behavior >> Scrolling',
 				title: 'Pause Chat Scrolling',
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
 				component: 'setting-select-box',
@@ -87,7 +87,7 @@ export default class Scroller extends Module {
 			ui: {
 				path: 'Chat > Behavior >> Scrolling',
 				title: 'Smooth Scrolling',
-				description: 'Smoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
+				description: '**Note:** This setting has been disabled until such time as someone is able to fix major bugs with it.\n\nSmoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
@@ -145,8 +145,9 @@ export default class Scroller extends Module {
 				inst.ffzMaybeUnpause();
 		});
 
-		this.smooth_scroll = this.chat.context.get('chat.scroller.smooth-scroll');
+		this.smooth_scroll = 0; // this.chat.context.get('chat.scroller.smooth-scroll');
 		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
+			val = 0;
 			this.smooth_scroll = val;
 
 			for(const inst of this.ChatScroller.instances)
@@ -167,15 +168,11 @@ export default class Scroller extends Module {
 
 			if ( old_snapshot )
 				cls.prototype.getSnapshotBeforeUpdate = function() {
-					let auto_state;
-					if ( this.state ) {
-						auto_state = this.state.isAutoScrolling;
-						this.state.isAutoScrolling = false;
-					}
 					const out = old_snapshot.call(this);
-					if ( this.state )
-						this.state.isAutoScrolling = auto_state;
-					this._ffz_snapshot = out;
+					this._ffz_snapshot = out || (this.lastLine && {
+						lastLine: this.lastLine,
+						offsetTop: this.lastLine.offsetTop
+					}) || null;
 					return out;
 				}
 
@@ -265,16 +262,20 @@ export default class Scroller extends Module {
 					// WIP: Trying to fix the scroll position changing so that we can
 					// smooth scroll from the previous position.
 					if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll && inst._ffz_snapshot ) {
-						const adjustment = inst._ffz_snapshot && inst._ffz_snapshot.lastLine ? inst._ffz_snapshot.offsetTop - inst._ffz_snapshot.lastLine.offsetTop : 0;
-						if ( inst.scroll && inst.scroll.scrollContent && adjustment > 0 )
-							inst.scroll.scrollContent.scrollTop -= adjustment;
+						const adjustment = inst._ffz_snapshot && inst._ffz_snapshot.lastLine ? inst._ffz_snapshot.lastLine.offsetTop - inst._ffz_snapshot.offsetTop: 0;
+						if ( inst.scroll && inst.scroll.scrollContent && adjustment != 0 )
+							inst.scroll.scrollContent.scrollTop += adjustment;
 					}
 
 					inst._ffz_snapshot = null;
-					if ( inst.state.isPaused || inst._ffz_scroll_frame )
-						return;
-
-					this._ffz_scroll_frame = requestAnimationFrame(inst.ffz_doScroll);
+					if ( inst.state.isAutoScrolling && ! inst.state.isPaused ) {
+						if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll )
+							inst.smoothScrollBottom();
+						else {
+							inst._ffz_one_fast_scroll = false;
+							inst.ffz_oldScroll();
+						}
+					}
 				}
 
 				// New Scroll Event Handling
@@ -617,7 +618,7 @@ export default class Scroller extends Module {
 				} else if ( difference > 200 ) {
 					// we are starting to fall behind, speed it up a bit
 					step += step * Math.floor(difference / 200);
-					}
+				}
 
 				const smoothAnimation = () => {
 					if ( this.state.isPaused || ! this.state.isAutoScrolling )
@@ -631,10 +632,11 @@ export default class Scroller extends Module {
 					// we need to move at least one full pixel for scrollTop to do anything in this delta.
 					if ( current_step >= 1 ) {
 						const scroll_top = scroll_content.scrollTop,
+							next_top = scroll_top + current_step,
 							target_top = scroll_content.scrollHeight - scroll_content.clientHeight;
 
 						old_time = current_time;
-						if ( scroll_top < target_top ) {
+						if ( next_top < target_top ) {
 							scroll_content.scrollTop = scroll_top + current_step;
 							this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
 

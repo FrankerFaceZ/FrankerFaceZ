@@ -2,34 +2,41 @@
 	<a :href="url" class="chat-card__link" target="_blank" rel="noreferrer noopener">
 		<div class="ffz--chat-card tw-elevation-1 tw-mg-t">
 			<div class="tw-c-background-base tw-flex tw-flex-nowrap tw-pd-05">
-				<div class="chat-card__preview-img tw-c-background-alt-2 tw-align-items-center tw-flex tw-flex-shrink-0 tw-justify-content-center">
-					<div class="tw-card-img tw-flex-shrink-0 tw-flex tw-justify-content-center">
-						<img
-							v-if="error"
-							class="chat-card__error-img"
-							src=""
-							data-test-selector="chat-card-error"
-						>
-						<figure
-							v-else
-							class="tw-aspect tw-aspect--16x9 tw-aspect--align-top"
-						>
+				<div class="chat-card__preview-img tw-align-items-center tw-c-background-alt-2 tw-flex tw-flex-shrink-0 tw-justify-content-center">
+					<img
+						v-if="error"
+						class="chat-card__error-img"
+						src=""
+					>
+					<div
+						v-else
+						class="tw-card-img tw-flex-shrink-0 tw-overflow-hidden"
+					>
+						<aspect :ratio="16/9">
 							<img
 								v-if="loaded && image"
 								:src="image"
 								:alt="title"
 								class="tw-image"
 							>
-						</figure>
+						</aspect>
 					</div>
 				</div>
 				<div
 					:class="{'ffz--two-line': desc_2}"
-					class="tw-overflow-hidden tw-align-items-center tw-flex"
+					class="ffz--card-text tw-overflow-hidden tw-align-items-center tw-flex"
 				>
 					<div class="tw-full-width tw-pd-l-1">
 						<div class="chat-card__title tw-ellipsis">
 							<span
+								v-if="! loaded"
+								class="tw-font-size-5"
+								data-test-selector="chat-card-title"
+							>
+								{{ t('card.loading', 'Loading...') }}
+							</span>
+							<span
+								v-else
 								:title="title"
 								class="tw-font-size-5"
 								data-test-selector="chat-card-title"
@@ -37,7 +44,7 @@
 								{{ title }}
 							</span>
 						</div>
-						<div class="tw-ellipsis">
+						<div v-if="loaded" class="tw-ellipsis">
 							<span
 								:title="desc_1"
 								class="tw-c-text-alt-2 tw-font-size-6"
@@ -46,7 +53,7 @@
 								{{ desc_1 }}
 							</span>
 						</div>
-						<div v-if="desc_2" class="tw-ellipsis">
+						<div v-if="loaded && desc_2" class="tw-ellipsis">
 							<span
 								:title="desc_2"
 								class="tw-c-text-alt-2 tw-font-size-6"

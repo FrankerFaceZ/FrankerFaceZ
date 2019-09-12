@@ -10,6 +10,9 @@
 		>
 			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
 		</section>
+		<section v-if="item.extra">
+			<component :is="item.extra.component" :context="context" :item="item" />
+		</section>
 		<div v-for="(i, idx) in data" :key="idx" class="tw-mg-l-1">
 			<input
 				:id="item.full_key + idx"

@@ -135,7 +135,11 @@ export default class Chat extends Module {
 				path: 'Chat > Appearance >> Rich Content',
 				title: 'Display rich content embeds for all links.',
 				description: '*Streamers: Please be aware that this is a potential vector for NSFW imagery via thumbnails, so be mindful when capturing chat with this enabled.*',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				extra: {
+					component: 'chat-rich-example',
+					getChat: () => this
+				}
 			}
 		});
 
@@ -672,7 +676,10 @@ export default class Chat extends Module {
 				sort: -1,
 				path: 'Chat > Tooltips >> Links',
 				title: 'Display rich tooltips for links.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				extra: {
+					component: 'chat-tooltip-example'
+				}
 			}
 		});
 

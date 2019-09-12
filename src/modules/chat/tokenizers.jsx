@@ -41,7 +41,7 @@ export const Links = {
 	},
 
 	tooltip(target, tip) {
-		if ( ! this.context.get('tooltip.rich-links') )
+		if ( ! this.context.get('tooltip.rich-links') && ! target.dataset.forceTooltip )
 			return '';
 
 		if ( target.dataset.isMail === 'true' )

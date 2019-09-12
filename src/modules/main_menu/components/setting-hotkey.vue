@@ -26,6 +26,9 @@
 		>
 			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
 		</section>
+		<section v-if="item.extra">
+			<component :is="item.extra.component" :context="context" :item="item" />
+		</section>
 	</div>
 </template>
 
