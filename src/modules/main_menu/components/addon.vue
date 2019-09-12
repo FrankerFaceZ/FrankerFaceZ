@@ -64,7 +64,7 @@
 					</button>
 					<button
 						v-else
-						class="tw-button ffz-button--hollow ffz--button-disable tw-mg-r-1"
+						class="tw-button ffz--button-disable tw-mg-r-1"
 						@click="item.disableAddon(id)"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
@@ -89,7 +89,7 @@
 				</template>
 				<template v-else>
 					<button
-						class="tw-button ffz-button--hollow ffz--button-enable tw-mg-r-1"
+						class="tw-button ffz--button-enable tw-mg-r-1"
 						@click="item.enableAddon(id)"
 					>
 						<span class="tw-button__icon tw-button__icon--left">

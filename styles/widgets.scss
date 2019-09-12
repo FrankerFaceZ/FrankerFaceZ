@@ -290,15 +290,30 @@ textarea.tw-input {
 
 		@include button-colors(#7d5bbe, #9a7fcc, #eeeeee, #7d5bbe)
 	}
+}
 
+.ffz--button-enable,
+.ffz--button-disable {
+	border-color: #dad8de !important;
+	background-color: transparent !important;
+	color: #000 !important;
+
+	.tw-root--theme-dark & {
+		border-color: #424242 !important;
+		color: #dadada !important;
+	}
 }
 
 .ffz--button-enable {
-	@include button-colors(#007600, #007600, #fff, 6px);
+	&, .tw-root--theme-dark & {
+		@include button-colors(#007600, #007600, #fff, 6px);
+	}
 }
 
 .ffz--button-disable {
-	@include button-colors(#bd0f0f, #bd0f0f, #fff, 6px);
+	&, .tw-root--theme-dark & {
+		@include button-colors(#bd0f0f, #bd0f0f, #fff, 6px);
+	}
 }
 
 .ffz--example-report {

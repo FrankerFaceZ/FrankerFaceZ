@@ -87,6 +87,12 @@ export default class MainMenu extends Module {
 			component: 'changelog'
 		});
 
+		this.settings.addUI('legal', {
+			path: 'Home > Legal @{"sort": 1000}',
+			component: 'legal-page',
+			force_seen: true
+		});
+
 		this.on('settings:added-definition', (key, definition) => {
 			this._addDefinitionToTree(key, definition);
 			this.scheduleUpdate();
@@ -400,7 +406,7 @@ export default class MainMenu extends Module {
 						tok.search_terms = terms.map(format_term).join('\n');
 
 						if ( settings_seen ) {
-							if ( ! settings_seen.includes(setting_key) ) {
+							if ( ! settings_seen.includes(setting_key) && ! tok.force_seen ) {
 								let i = tok;
 								while(i) {
 									i.unseen = (i.unseen || 0) + 1;
