@@ -91,6 +91,7 @@ const CHAT_TYPES = make_enum(
 	'GiftPaidUpgrade',
 	'AnonGiftPaidUpgrade',
 	'PrimePaidUpgrade',
+	'PrimeCommunityGiftReceivedEvent',
 	'ExtendSubscription',
 	'SubGift',
 	'AnonSubGift',
@@ -210,7 +211,52 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.CalloutSelector = this.fine.define(
+			'callout-selector',
+			n => n.selectCalloutComponent && n.props && n.props.callouts,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PointsButton = this.fine.define(
+			'points-button',
+			n => n.renderIcon && n.renderFlame && n.handleIconAnimationComplete,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PointsClaimButton = this.fine.define(
+			'points-claim-button',
+			n => n.getClaim && n.onClick && n.props && n.props.claimCommunityPoints,
+			Twilight.CHAT_ROUTES
+		);
+
 		// Settings
+
+		this.settings.add('chat.points.show-callouts', {
+			default: true,
+			ui: {
+				path: 'Chat > Channel Points >> General',
+				title: 'Display messages in chat about Channel Points rewards.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.points.show-button', {
+			default: true,
+			ui: {
+				path: 'Chat > Channel Points >> General',
+				title: 'Display Channel Points button beneath chat.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.points.show-rewards', {
+			default: true,
+			ui: {
+				path: 'Chat > Channel Points >> Behavior',
+				title: 'Allow available rewards to appear next to the Channel Points button.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.pin-resubs', {
 			default: false,
@@ -506,6 +552,16 @@ export default class ChatHook extends Module {
 		this.on('site.web_munch:loaded', this.grabTypes);
 		this.grabTypes();
 
+		this.chat.context.on('changed:chat.points.show-callouts', () => {
+			this.InlineCallout.forceUpdate();
+			this.CalloutSelector.forceUpdate();
+		});
+		this.chat.context.on('changed:chat.points.show-button', () => this.PointsButton.forceUpdate());
+		this.chat.context.on('changed:chat.points.show-rewards', () => {
+			this.PointsButton.forceUpdate();
+			this.PointsClaimButton.forceUpdate();
+		});
+
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
@@ -570,6 +626,100 @@ export default class ChatHook extends Module {
 		this.PinnedCallout.on('mount', this.onPinnedCallout, this);
 		this.PinnedCallout.on('update', this.onPinnedCallout, this);
 		this.PinnedCallout.ready(() => this.updatePinnedCallouts());
+
+		const t = this;
+
+		this.InlineCallout.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					const callout = this.props?.event?.callout;
+					if ( callout?.trackingType === 'community_points_reward' && ! t.chat.context.get('chat.points.show-callouts') )
+						return null;
+
+				} catch(err) {
+					t.log.capture(err);
+					t.log.error(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.InlineCallout.forceUpdate();
+		})
+
+		this.CalloutSelector.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					const callout = this.props.callouts[0] || this.props.pinnedCallout,
+						ctype = callout?.event?.type;
+
+					if ( ctype === 'community-points-rewards' && ! t.chat.context.get('chat.points.show-callouts') )
+						return null;
+
+				} catch(err) {
+					t.log.capture(err);
+					t.log.error(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.CalloutSelector.forceUpdate();
+		});
+
+		this.PointsButton.ready(cls => {
+			const old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				try {
+					if ( ! t.chat.context.get('chat.points.show-button') )
+						return null;
+
+					if ( ! t.chat.context.get('chat.points.show-rewards') ) {
+						const aq = this.state.animationQueue;
+						this.state.animationQueue = [];
+						const out = old_render.call(this);
+						this.state.animationQueue = aq;
+						return out;
+					}
+
+				} catch(err) {
+					t.log.capture(err);
+					t.log.error(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.PointsButton.forceUpdate();
+		});
+
+		this.PointsClaimButton.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					if ( ! this._ffz_timer && t.chat.context.get('chat.points.auto-rewards') )
+						this._ffz_timer = setTimeout(() => {
+							this._ffz_timer = null;
+							if ( this.onClick )
+								this.onClick();
+						}, 1000 + Math.floor(Math.random() * 5000));
+
+					if ( ! t.chat.context.get('chat.points.show-rewards') )
+						return null;
+
+				} catch(err) {
+					t.log.capture(err);
+					t.log.error(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.PointsClaimButton.forceUpdate();
+		});
 
 		this.ChatController.on('mount', this.chatMounted, this);
 		this.ChatController.on('unmount', this.chatUnmounted, this);
