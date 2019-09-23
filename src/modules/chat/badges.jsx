@@ -665,7 +665,7 @@ export default class Badges extends Module {
 				b = {};
 				for(const data of badges) {
 					const sid = data.setID,
-						bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid)};
+						bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid) && ! sid.includes('overwatch') };
 
 					this.twitch_badge_count++;
 					bs[data.version] = data;

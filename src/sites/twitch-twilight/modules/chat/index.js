@@ -229,7 +229,22 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.CommunityChestBanner = this.fine.define(
+			'community-chest-banner',
+			n => n.getLastGifterText && n.getBannerText && has(n, 'finalCount'),
+			Twilight.CHAT_ROUTES
+		);
+
 		// Settings
+
+		this.settings.add('chat.community-chest.show', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community Chest',
+				title: 'Display the Community Gift Chest banner.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.points.show-callouts', {
 			default: true,
@@ -585,6 +600,12 @@ export default class ChatHook extends Module {
 			}
 		}, this);
 
+		this.chat.context.on('changed:chat.community-chest.show', () => {
+			this.CommunityChestBanner.forceUpdate();
+			this.CalloutSelector.forceUpdate();
+		}, this);
+
+
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
 			this.updateMentionCSS();
@@ -629,12 +650,32 @@ export default class ChatHook extends Module {
 
 		const t = this;
 
+		this.CommunityChestBanner.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				try {
+					if ( ! t.chat.context.get('chat.community-chest.show') )
+						return null;
+				} catch(err) {
+					t.log.capture(err);
+					t.log.error(err);
+				}
+
+				return old_render.call(this);
+			};
+
+			this.CommunityChestBanner.forceUpdate();
+		});
+
 		this.InlineCallout.ready(cls => {
 			const old_render = cls.prototype.render;
 			cls.prototype.render = function() {
 				try {
 					const callout = this.props?.event?.callout;
 					if ( callout?.trackingType === 'community_points_reward' && ! t.chat.context.get('chat.points.show-callouts') )
+						return null;
+
+					if ( callout?.trackingType === 'prime_gift_bomb' && ! t.chat.context.get('chat.community-chest.show') )
 						return null;
 
 				} catch(err) {
@@ -646,7 +687,7 @@ export default class ChatHook extends Module {
 			}
 
 			this.InlineCallout.forceUpdate();
-		})
+		});
 
 		this.CalloutSelector.ready(cls => {
 			const old_render = cls.prototype.render;
@@ -654,6 +695,9 @@ export default class ChatHook extends Module {
 				try {
 					const callout = this.props.callouts[0] || this.props.pinnedCallout,
 						ctype = callout?.event?.type;
+
+					if ( ctype === 'prime-gift-bomb-gifter' && ! t.chat.context.get('chat.community-chest.show') )
+						return null;
 
 					if ( ctype === 'community-points-rewards' && ! t.chat.context.get('chat.points.show-callouts') )
 						return null;
@@ -1016,42 +1060,44 @@ export default class ChatHook extends Module {
 								return;
 
 						} else if ( msg.type === types.ModerationAction && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
-							//t.log.info('Moderation Action', msg);
-							if ( ! inst.props.isCurrentUserModerator )
-								return;
-
-							const mod_action = msg.moderationActionType;
-							if ( mod_action === 'ban' || mod_action === 'timeout' || mod_action === 'delete' ) {
-								const user = msg.targetUserLogin;
-								if ( inst.moderatedUsers.has(user) )
+							if ( !((! msg.level || ! msg.level.length) && msg.targetUserLogin && msg.targetUserLogin === inst.props.currentUserLogin) ) {
+								//t.log.info('Moderation Action', msg);
+								if ( ! inst.props.isCurrentUserModerator )
 									return;
 
-								const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3;
-								if ( do_remove ) {
-									const len = inst.buffer.length,
-										target_id = msg.messageID;
-									inst.buffer = inst.buffer.filter(m =>
-										m.type !== types.Message || ! m.user || m.user.userLogin !== user ||
-										(target_id && m.id !== target_id)
-									);
-									if ( len !== inst.buffer.length && ! inst.props.isBackground )
-										inst.notifySubscribers();
+								const mod_action = msg.moderationActionType;
+								if ( mod_action === 'ban' || mod_action === 'timeout' || mod_action === 'delete' ) {
+									const user = msg.targetUserLogin;
+									if ( inst.moderatedUsers.has(user) )
+										return;
 
-									inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
+									const do_remove = t.chat.context.get('chat.filtering.remove-deleted') === 3;
+									if ( do_remove ) {
+										const len = inst.buffer.length,
+											target_id = msg.messageID;
+										inst.buffer = inst.buffer.filter(m =>
+											m.type !== types.Message || ! m.user || m.user.userLogin !== user ||
+											(target_id && m.id !== target_id)
+										);
+										if ( len !== inst.buffer.length && ! inst.props.isBackground )
+											inst.notifySubscribers();
 
-								} else
-									inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
+										inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
 
-								inst.moderatedUsers.add(user);
-								setTimeout(inst.unsetModeratedUser(user), 1e3);
+									} else
+										inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
 
-								inst.delayedMessageBuffer.push({
-									event: msg,
-									time: Date.now(),
-									shouldDelay: false
-								});
+									inst.moderatedUsers.add(user);
+									setTimeout(inst.unsetModeratedUser(user), 1e3);
 
-								return;
+									inst.delayedMessageBuffer.push({
+										event: msg,
+										time: Date.now(),
+										shouldDelay: false
+									});
+
+									return;
+								}
 							}
 
 						} else if ( msg.type === types.Moderation && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
