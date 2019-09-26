@@ -689,7 +689,7 @@ export default class Metadata extends Module {
 
 					if ( def.popup && def.click ) {
 						el = (<span
-							class={`ffz-stat${fix ? ' ffz-fix-padding--left' : ''}`}
+							class={`ffz-stat${fix ? ' ffz-fix-padding--left' : ''} tw-inline-flex tw-align-items-center`}
 							data-key={key}
 							tip_content={tooltip}
 						>
@@ -706,7 +706,7 @@ export default class Metadata extends Module {
 
 					} else
 						btn = popup = el = (<button
-							class={`ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button ${cls}`}
+							class={`ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button tw-inline-flex tw-align-items-center ${cls}`}
 							data-key={key}
 							tip_content={tooltip}
 						>
