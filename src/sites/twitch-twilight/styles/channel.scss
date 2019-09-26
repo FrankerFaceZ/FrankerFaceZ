@@ -39,10 +39,15 @@
 	.ffz-stat.tw-button--text {
 		color: inherit;
 	}
+}
 
-	.ffz-stat {
-		margin-left: 1rem;
-	}
+.ffz-stat--fix-padding {
+	margin-top: -.7rem !important;
+	margin-bottom: -.7rem !important;
+}
+
+.ffz-stat {
+	font-variant-numeric: tabular-nums;
 }
 
 .ffz--fade-in {

@@ -81,9 +81,9 @@
 		}
 
 		.right-column__toggle-visibility {
-			position: fixed !important;
+			//position: fixed !important;
 
-			body:not(.ffz--portrait-invert) & {
+			/*body:not(.ffz--portrait-invert) & {
 				top: 6.5rem;
 			}
 
@@ -92,7 +92,7 @@
 			}
 
 			right: .5rem;
-			left: unset !important;
+			left: unset !important;*/
 			transform: rotate(90deg);
 		}
 

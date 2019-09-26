@@ -54,6 +54,7 @@ export default class HostButton extends Module {
 
 		this.metadata.definitions.host = {
 			order: 150,
+			border: true,
 			button: true,
 			fade_in: true,
 

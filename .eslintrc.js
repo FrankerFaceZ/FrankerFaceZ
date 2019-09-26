@@ -36,6 +36,7 @@ module.exports = {
         "FrankerFaceZ": false
     },
     "rules": {
+        "require-atomic-updates": "off",
         "accessor-pairs": ["error"],
         "block-scoped-var": ["error"],
         "class-methods-use-this": ["error"],

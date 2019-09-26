@@ -21,6 +21,7 @@ export default class ChannelBar extends Module {
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject('site.apollo');
+		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
 
@@ -84,6 +85,7 @@ export default class ChannelBar extends Module {
 			inst._ffz_old_login = login;
 		}
 
+		this.updateUptime(inst);
 		this.updateMetadata(inst);
 	}
 
@@ -103,6 +105,34 @@ export default class ChannelBar extends Module {
 	}
 
 
+	async updateUptime(inst) {
+		const current_id = inst?.props?.channel?.id;
+		if ( current_id === inst._ffz_uptime_id ) {
+			if ( Date.now() - inst._ffz_uptime_saved < 60000 )
+				return;
+		}
+
+		if ( inst._ffz_uptime_updating )
+			return;
+
+		inst._ffz_uptime_updating = true;
+		inst._ffz_uptime_id = current_id;
+
+		try {
+			inst._ffz_meta = await this.twitch_data.getStreamMeta(current_id, inst?.props?.channel?.login);
+		} catch(err) {
+			this.log.capture(err);
+			this.log.error('Error fetching uptime:', err);
+			inst._ffz_meta = null;
+		}
+
+		inst._ffz_uptime_saved = Date.now();
+		inst._ffz_uptime_updating = false;
+
+		this.updateMetadata(inst);
+	}
+
+
 	updateMetadata(inst, keys) {
 		const container = this.fine.getChildNode(inst),
 			metabar = container?.querySelector?.('.channel-info-bar__viewers-count-wrapper > .tw-flex:last-child');
@@ -119,6 +149,7 @@ export default class ChannelBar extends Module {
 			refresh_func = key => this.updateMetadata(inst, key),
 			data = {
 				channel: inst.props.channel,
+				meta: inst._ffz_meta,
 				hosting: false,
 				legacy: true,
 				_inst: inst

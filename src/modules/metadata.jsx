@@ -79,8 +79,7 @@ export default class Metadata extends Module {
 
 			setup(data) {
 				const socket = this.resolve('socket'),
-					apollo = this.resolve('site.apollo'),
-					created_at = apollo.getFromQuery(data.legacy ? 'ChannelPage_ChannelHeader' : 'ChannelPage_User', 'data.user.stream.createdAt');
+					created_at = data?.meta?.createdAt;
 
 				if ( ! created_at )
 					return {};
@@ -288,7 +287,7 @@ export default class Metadata extends Module {
 	}
 
 
-	async render(key, data, container, timers, refresh_fn) {
+	/*async render(key, data, container, timers, refresh_fn) {
 		if ( timers[key] )
 			clearTimeout(timers[key]);
 
@@ -613,7 +612,7 @@ export default class Metadata extends Module {
 			this.log.error(`Error rendering metadata for ${key}`, err);
 			return destroy();
 		}
-	}
+	}*/
 
 
 	async renderLegacy(key, data, container, timers, refresh_fn) {
@@ -678,17 +677,25 @@ export default class Metadata extends Module {
 					button = true;
 
 					let btn, popup;
-					let cls = maybe_call(def.button, this, data);
+					const border = maybe_call(def.border, this, data);
+
+					/* let cls = maybe_call(def.button, this, data);
+
+					if ( typeof cls !== 'string' )
+					cls = cls ? 'tw-border-t tw-border-l tw-border-b '
+
 					if ( typeof cls !== 'string' )
 						cls = cls ? 'ffz-button--hollow' : 'tw-button--text';
 
-					const fix = cls === 'tw-button--text';
+					const fix = cls === 'tw-button--text';*/
 
 					if ( typeof icon === 'string' )
-						icon = (<span class="tw-button__icon tw-button__icon--left"><figure class={icon} /></span>);
+						icon = (<span class="tw-mg-r-05">
+							<figure class={icon} />
+						</span>);
 
 					if ( def.popup && def.click ) {
-						el = (<span
+						/*el = (<span
 							class={`ffz-stat${fix ? ' ffz-fix-padding--left' : ''} tw-inline-flex tw-align-items-center`}
 							data-key={key}
 							tip_content={tooltip}
@@ -702,10 +709,48 @@ export default class Metadata extends Module {
 									<figure class="ffz-i-down-dir" />
 								</span>
 							</button>)}
-						</span>);
+						</span>);*/
+
+						el = (<div
+							class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-l-1 ffz-stat--fix-padding"
+							data-key={key}
+							tip_content={tooltip}
+						>
+							{btn = (<button
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text tw-c-text-base tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${border ? ' tw-border-l tw-border-t tw-border-b' : ''}`}
+							>
+								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
+									{icon}
+									{stat = (<span class="ffz-stat-text" />)}
+								</div>
+							</button>)}
+							{popup = (<button
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text tw-c-text-base tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${border ? ' tw-border' : ''}`}
+							>
+								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
+									<span>
+										<figure class="ffz-i-down-dir" />
+									</span>
+								</div>
+							</button>)}
+						</div>);
 
 					} else
 						btn = popup = el = (<button
+							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text tw-c-text-base tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-mg-l-1 tw-pd-x-05 ffz-stat--fix-padding${border ? ' tw-border' : ''}`}
+							data-key={key}
+							tip_content={tooltip}
+						>
+							<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
+								{icon}
+								{stat = (<span class="ffz-stat-text" />)}
+								{def.popup && <span class="tw-mg-l-05">
+									<figure class="ffz-i-down-dir" />
+								</span>}
+							</div>
+						</button>);
+
+						/*btn = popup = el = (<button
 							class={`ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button tw-inline-flex tw-align-items-center ${cls}`}
 							data-key={key}
 							tip_content={tooltip}
@@ -715,7 +760,7 @@ export default class Metadata extends Module {
 							{def.popup && <span class="tw-button__icon tw-button__icon--right">
 								<figure class="ffz-i-down-dir" />
 							</span>}
-						</button>);
+						</button>);*/
 
 					if ( def.click )
 						btn.addEventListener('click', e => {
@@ -802,7 +847,7 @@ export default class Metadata extends Module {
 						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
 					el = (<div
-						class="tw-inline-flex tw-align-items-center ffz-stat tw-stat"
+						class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-l-1"
 						data-key={key}
 						tip_content={tooltip}
 					>
@@ -824,12 +869,12 @@ export default class Metadata extends Module {
 				if ( order != null )
 					el.style.order = order;
 
-				let subcontainer;
+				let subcontainer = container;
 
-				if ( button )
+				/*if ( button )
 					subcontainer = container.querySelector('.tw-flex:last-child') || container;
 				else
-					subcontainer = container.querySelector('.tw-flex:first-child') || container;
+					subcontainer = container.querySelector('.tw-flex:first-child') || container;*/
 
 				subcontainer.appendChild(el);
 

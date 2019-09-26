@@ -13,10 +13,24 @@
 }
 
 .right-column__toggle-visibility {
-	left: unset !important;
-	right: -2.5rem;
-	z-index: 10 !important;
+	//left: unset !important;
+	//right: -2.5rem;
+	//z-index: 10 !important;
 	svg { transform: rotate(180deg) }
+
+	.right-column--collapsed & {
+		left: unset !important;
+		right: -4rem !important;
+	}
+}
+
+.channel-header {
+	padding-left: 4rem !important;
+
+	.tw-sm-pd-r-4 {
+		padding-right: 1rem !important;
+	}
+
 }
 
 .side-nav__theme-wrapper.tw-border-r {

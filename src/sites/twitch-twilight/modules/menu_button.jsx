@@ -137,7 +137,42 @@ export default class MenuButton extends SiteModule {
 
 		const pill = this.formatPill();
 
-		el = (<div class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05">
+		// TODO: Pill.
+
+		el = (<div
+			class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-mg-x-05 tw-relative"
+		>
+			<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+				{btn = (<button
+					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					onClick={e => this.emit(':clicked', e, btn)} // eslint-disable-line react/jsx-no-bind
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<span class="tw-button-icon__icon">
+							<figure class="ffz-i-zreknarf" />
+						</span>
+					</div>
+				</button>)}
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
+					{this.has_update && (<div class="tw-mg-t-1">
+						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
+					</div>)}
+					{this.has_new && (<div class="tw-mg-t-1">
+						{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}
+					</div>)}
+					{DEBUG && (<div class="tw-mg-t-1">
+						{this.i18n.t('site.menu_button.main-dev-desc', 'You are running a developer build of FrankerFaceZ.')}
+					</div>)}
+					{this.addons.has_dev && (<div class="tw-mg-t-1">
+						{this.i18n.t('site.menu_button.addon-dev-desc', 'You have loaded add-on data from a local development server.')}
+					</div>)}
+				</div>
+			</div>
+
+		</div>)
+
+		/*el = (<div class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05">
 			{btn = (<button
 				class="tw-button-icon tw-button-icon--overlay tw-button-icon--large"
 				onClick={e => this.emit(':clicked', e, btn)} //eslint-disable-line react/jsx-no-bind
@@ -195,7 +230,7 @@ export default class MenuButton extends SiteModule {
 					</div>
 				</div>
 			</button>)}
-		</div>);
+		</div>);*/
 
 		container.insertBefore(el, container.lastElementChild);
 	}

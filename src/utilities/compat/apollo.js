@@ -189,11 +189,26 @@ export default class Apollo extends Module {
 
 		this.old_link = this.client.link;
 		this.old_qm_link = this.client.queryManager.link;
-		this.old_qm_dedup = this.client.queryManager.deduplicator;
+		//this.old_qm_dedup = this.client.queryManager.deduplicator;
 
-		this.client.link = this.link.concat(this.old_link);
+		this.client.link = ApolloLink.from([
+			this.link,
+			this.old_link
+		]);
+
+		this.client.queryManager.link = ApolloLink.from([
+			this.link,
+			this.old_qm_link
+		]);
+
+		/*this.client.queryManager.deduplicator = ApolloLink.from([
+			this.link,
+			this.old_qm_dedup
+		]);*/
+
+		/*this.client.link = this.link.concat(this.old_link);
 		this.client.queryManager.link = this.link.concat(this.old_qm_link);
-		this.client.queryManager.deduplicator = this.link.concat(this.old_qm_dedup);
+		this.client.queryManager.deduplicator = this.link.concat(this.old_qm_dedup);*/
 	}
 
 

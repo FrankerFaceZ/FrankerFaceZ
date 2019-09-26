@@ -2,9 +2,9 @@
 	<div class="ffz--home tw-flex tw-flex-nowrap">
 		<div class="tw-flex-grow-1">
 			<div class="tw-align-center">
-				<h1 class="ffz-i-zreknarf ffz-i-pd-1">
+				<h2 class="ffz-i-zreknarf ffz-i-pd-1">
 					FrankerFaceZ
-				</h1>
+				</h2>
 				<span class="tw-c-text-alt">
 					{{ t('home.tag-line', 'The Twitch Enhancement Suite') }}
 				</span>
