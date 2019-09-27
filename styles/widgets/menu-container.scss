@@ -18,10 +18,6 @@
 		transform: translateY(-50%);
 		padding: 0 0.5rem;
 
-		background-color: $bg-light;
-
-		.tw-root--theme-dark & {
-			background-color: $bg-dark;
-		}
+		background-color: var(--color-background-alt);
 	}
 }

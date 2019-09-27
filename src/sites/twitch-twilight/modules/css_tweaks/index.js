@@ -8,6 +8,8 @@ import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
 
+const STYLE_VALIDATOR = document.createElement('span');
+
 const CLASSES = {
 	'top-discover': '.top-nav__nav-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
@@ -221,6 +223,17 @@ export default class CSSTweaks extends Module {
 
 		// Other?
 
+		this.settings.add('layout.theme.global-font', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Fonts',
+				title: 'Font Family',
+				description: 'Override the font used for the entire Twitch website.',
+				component: 'setting-text-box'
+			},
+			changed: () => this.updateFont()
+		});
+
 		this.settings.add('channel.hide-live-indicator', {
 			requires: ['context.route.name'],
 			process(ctx, val) {
@@ -282,6 +295,28 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-closed-friends', friends === 2);
 
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
+
+		this.updateFont();
+	}
+
+	updateFont() {
+		let font = this.settings.get('layout.theme.global-font');
+		if ( font && font.length ) {
+			if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
+				font = `"${font}"`;
+
+			STYLE_VALIDATOR.style.fontFamily = '';
+			STYLE_VALIDATOR.style.fontFamily = font;
+
+			if ( STYLE_VALIDATOR.style.fontFamily ) {
+				this.setVariable('global-font', font);
+				this.toggle('global-font', true);
+				return;
+			}
+		}
+
+		this.toggle('global-font', false);
+		this.deleteVariable('global-font');
 	}
 
 	toggleHide(key, val) {

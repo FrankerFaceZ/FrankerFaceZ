@@ -2,12 +2,12 @@
 	width: 340px;
 	z-index: 9001;
 
-    > header {
+	> header {
 		cursor: move;
 
-        background-size: cover;
-        background-position: top;
-    }
+		background-size: cover;
+		background-position: top;
+	}
 
 	.ffz-tooltip {
 		> * {
@@ -23,7 +23,7 @@
 		line-height: 1.2;
 	}
 
-    .mod-cards__tabs-container {
+	.mod-cards__tabs-container {
 		height: 3rem;
 
 		> .mod-cards__tab {

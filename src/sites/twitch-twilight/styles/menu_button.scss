@@ -1,14 +1,17 @@
 .ffz-top-nav {
+	.tw-pill {
+		padding: .4rem;
+	}
+
 	.ffz-menu__pill {
-		top: -1rem;
-		right: -.3rem;
-		font-size: 1.2rem;
+		top: -.5rem;
+		right: 0;
 	}
 
 	.ffz-menu__extra-pill {
-		bottom: -0.2rem;
-		right: 5.2rem;
-		font-size: 1.2rem;
+		bottom: -.5rem;
+		right: 0;
+		pointer-events: none;
 	}
 
 	.tw-pd-r-1 + & {

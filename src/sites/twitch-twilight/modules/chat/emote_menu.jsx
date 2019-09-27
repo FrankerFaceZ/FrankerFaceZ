@@ -1713,7 +1713,7 @@ export default class EmoteMenu extends Module {
 							<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
 								<div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'fav' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__fav"
 										data-tab="fav"
 										data-tooltip-type="html"
@@ -1727,7 +1727,7 @@ export default class EmoteMenu extends Module {
 								</div>
 								{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'channel' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__channel"
 										data-tab="channel"
 										data-tooltip-type="html"
@@ -1741,7 +1741,7 @@ export default class EmoteMenu extends Module {
 								</div>}
 								<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width ttw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'all' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__all"
 										data-tab="all"
 										data-tooltip-type="html"
@@ -1755,7 +1755,7 @@ export default class EmoteMenu extends Module {
 								</div>
 								{this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'emoji' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__emoji"
 										data-tab="emoji"
 										data-tooltip-type="html"

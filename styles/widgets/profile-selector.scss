@@ -19,7 +19,7 @@
 	border-left-color: transparent;
 
 	&.live .ffz--profile-row__icon {
-		color: green;
+		color: var(--color-green-darker);
 	}
 
 	&:not(.live):not(:hover):not(:focus) {
@@ -32,7 +32,7 @@
 	}
 
 	&.current {
-		border-left-color: #6441a4;
+		border-left-color: var(--color-twitch-purple-8);
 	}
 
 	.description {
@@ -51,16 +51,16 @@
 
 	&:focus {
 		box-shadow:
-			inset 0 0 0 1px #7d5bbe,
-			0 0 6px -2px #7d5bbe;
+			inset 0 0 0 1px var(--color-twitch-purple-8),
+			0 0 6px -2px var(--color-twitch-purple-8);
 	}
 
 	&:focus,
 	&:hover {
-		background: rgba(100, 65, 164, .05);
+		background: var(--color-opac-p-1);
 
 		.tw-root--theme-dark & {
-			background: rgba(100, 65, 164, .2);
+			background: var(--color-opac-p-4);
 		}
 	}
 }

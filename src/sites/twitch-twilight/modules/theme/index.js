@@ -6,8 +6,10 @@
 
 import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
+import {Color} from 'utilities/color';
 
-import THEME_CSS_URL from 'site/styles/theme.scss';
+import THEME_CSS from 'site/styles/theme.scss';
+import NORMALIZER_CSS_URL from 'site/styles/color_normalizer.scss';
 
 const BAD_ROUTES = ['product', 'prime', 'turbo'];
 
@@ -22,6 +24,28 @@ export default class ThemeEngine extends Module {
 		this.inject('site.router');
 
 		this.should_enable = true;
+
+		// Colors
+
+		this.settings.add('theme.color.background', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Colors @{"description": "This is a quick preview of a new system coming soon to FrankerFaceZ. Expect heavy changes here, including separate Basic and Advanced modes, and better color selection."}',
+				title: 'Background',
+				component: 'setting-color-box'
+			},
+			changed: () => this.updateCSS()
+		});
+
+		this.settings.add('theme.color.text', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Colors',
+				title: 'Text',
+				component: 'setting-color-box'
+			},
+			changed: () => this.updateCSS()
+		});
 
 		this.settings.add('theme.dark', {
 			requires: ['theme.is-dark'],
@@ -70,19 +94,78 @@ This is a very early feature and will change as there is time.`,
 		});
 
 		this._style = null;
+		this._normalizer = null;
 	}
 
-
-	updateCSS() {
+	updateOldCSS() {
 		const dark = this.settings.get('theme.is-dark'),
 			gray = this.settings.get('theme.dark');
 
-		document.body.classList.toggle('tw-root--theme-dark', dark);
+		//document.body.classList.toggle('tw-root--theme-dark', dark);
 		document.body.classList.toggle('tw-root--theme-ffz', gray);
 
 		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
 	}
 
+	updateCSS() {
+		this.updateOldCSS();
+
+		let dark = this.settings.get('theme.is-dark');
+		const bits = [];
+
+		const background = Color.RGBA.fromCSS(this.settings.get('theme.color.background'));
+		if ( background ) {
+			bits.push(`--color-background-body: ${background.toCSS()};`);
+
+			const hsla = background.toHSLA(),
+				luma = hsla.l;
+			dark = luma < 0.5;
+
+			bits.push(`--color-background-base: ${hsla._l(luma + (dark ? .05 : -.05)).toCSS()};`);
+			bits.push(`--color-background-alt: ${hsla._l(luma + (dark ? .1 : -.1)).toCSS()};`);
+			bits.push(`--color-background-alt-2: ${hsla._l(luma + (dark ? .15 : -.15)).toCSS()};`);
+		}
+
+		let text = Color.RGBA.fromCSS(this.settings.get('theme.color.text'));
+		if ( ! text && background ) {
+			text = Color.RGBA.fromCSS(dark ? '#FFF' : '#000');
+		}
+
+		if ( text ) {
+			bits.push(`--color-text-base: ${text.toCSS()};`);
+
+			const hsla = text.toHSLA(),
+				luma = hsla.l;
+
+			bits.push(`--color-text-alt: ${hsla._l(luma + (dark ? -.1 : .1)).toRGBA().toCSS()};`);
+			bits.push(`--color-text-alt-2: ${hsla._l(luma + (dark ? -.2 : .2)).toRGBA().toCSS()};`);
+		}
+
+
+		if ( bits.length )
+			this.css_tweaks.set('colors', `body {${bits.join('\n')}}`);
+		else
+			this.css_tweaks.delete('colors');
+	}
+
+	toggleNormalizer(enable) {
+		if ( ! this._normalizer ) {
+			if ( ! enable )
+				return;
+
+			this._normalizer = createElement('link', {
+				rel: 'stylesheet',
+				type: 'text/css',
+				href: NORMALIZER_CSS_URL
+			});
+		} else if ( ! enable ) {
+			this._normalizer.remove();
+			return;
+		}
+
+		if ( ! document.head.contains(this._normalizer) )
+			document.head.appendChild(this._normalizer)
+	}
 
 	toggleStyle(enable) {
 		if ( ! this._style ) {
@@ -92,7 +175,7 @@ This is a very early feature and will change as there is time.`,
 			this._style = createElement('link', {
 				rel: 'stylesheet',
 				type: 'text/css',
-				href: THEME_CSS_URL
+				href: THEME_CSS
 			});
 
 		} else if ( ! enable ) {
@@ -110,5 +193,7 @@ This is a very early feature and will change as there is time.`,
 
 	onEnable() {
 		this.updateSetting(this.settings.get('theme.dark'));
+		this.toggleNormalizer(true);
+		this.updateCSS();
 	}
 }

@@ -1,0 +1,45 @@
+body {
+	background-color: var(--color-background-body) !important;
+}
+
+.tw-root--theme-dark .channel-root__right-column,
+.channel-root__right-column {
+	background-color: var(--color-background-body) !important;
+}
+
+.tw-root--theme-dark .chat-room,
+.chat-room {
+	background-color: var(--color-background-body) !important;
+}
+
+.tw-root--theme-dark .carousel-player-nav-arrow__container,
+.carousel-player-nav-arrow__container {
+	background-color: var(--color-background-body) !important;
+}
+
+.tw-root--theme-dark .side-nav__overlay-wrapper,
+.side-nav__overlay-wrapper {
+	background-color: var(--color-background-alt) !important;
+}
+
+.tw-root--theme-dark .side-nav-card__link:hover,
+.side-nav-card__link:hover {
+	background-color: var(--color-background-alt-2) !important;
+}
+
+.tw-root--theme-dark .channel-header,
+.channel-header {
+	background-color: var(--color-background-body) !important;
+}
+
+.tw-root--theme-dark .channel-header__user,
+.channel-header__user {
+	color: var(--color-text-base) !important;
+}
+
+.tw-root--theme-dark .chat-line__moderation,
+.tw-root--theme-dark .chat-line__status,
+.chat-line__moderation,
+.chat-line__status {
+	color: var(--color-text-alt-2) !important;
+}

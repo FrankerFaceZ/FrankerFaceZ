@@ -386,7 +386,7 @@ HSLAColor.prototype.targetLuminance = function (target) {
 }
 
 HSLAColor.prototype.toRGBA = function() { return RGBAColor.fromHSLA(this.h, this.s, this.l, this.a); }
-HSLAColor.prototype.toCSS = function() { return `"hsl${this.a !== 1 ? 'a' : ''}(${Math.round(this.h*360)},${Math.round(this.s*100)}%,${Math.round(this.l*100)}%${this.a !== 1 ? `,${this.a}` : ''})`; }
+HSLAColor.prototype.toCSS = function() { return `hsl${this.a !== 1 ? 'a' : ''}(${Math.round(this.h*360)},${Math.round(this.s*100)}%,${Math.round(this.l*100)}%${this.a !== 1 ? `,${this.a}` : ''})`; }
 HSLAColor.prototype.toHSVA = function() { return this.toRGBA().toHSVA(); }
 HSLAColor.prototype.toXYZA = function() { return this.toRGBA().toXYZA(); }
 HSLAColor.prototype.toLUVA = function() { return this.toRGBA().toLUVA(); }

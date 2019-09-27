@@ -1,6 +1,6 @@
 .chat-line__message--emote {
-    vertical-align: middle;
-    margin: -.5rem 0;
+	vertical-align: middle;
+	margin: -.5rem 0;
 }
 
 .chat-author__display-name,
@@ -17,262 +17,262 @@
 }
 
 .user-notice-line.tw-mg-y-05 {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
 }
 
 .chat-settings__content div[data-test-selector="high-contrast-selector"] {
-    display: none;
+	display: none;
 }
 
 .autocomplete-balloon {
-    .autocomplete-balloon__item {
-        > .tw-flex {
-            > div {
-                display: flex;
-                flex-shrink: 0;
-            }
-        }
+	.autocomplete-balloon__item {
+		> .tw-flex {
+			> div {
+				display: flex;
+				flex-shrink: 0;
+			}
+		}
 
-        span {
-            overflow-x: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    }
+		span {
+			overflow-x: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+	}
 }
 
 .ffz-action-balloon {
-    z-index: 10000 !important;
+	z-index: 10000 !important;
 }
 
 .ffz-tooltip.chat-card__link > * {
-    pointer-events: none;
+	pointer-events: none;
 }
 
 .ffz--chat-card {
-    .vod-message & {
-        .ffz--card-text {
-            max-width: 18rem;
-        }
-    }
+	.vod-message & {
+		.ffz--card-text {
+			max-width: 18rem;
+		}
+	}
 
-    .chat-card__title {
-        max-width: unset;
-    }
+	.chat-card__title {
+		max-width: unset;
+	}
 
-    .ffz--two-line {
-        .tw-ellipsis { line-height: 1.4rem }
-        .chat-card__title { line-height: 1.5rem }
-    }
+	.ffz--two-line {
+		.tw-ellipsis { line-height: 1.4rem }
+		.chat-card__title { line-height: 1.5rem }
+	}
 }
 
 .ffz-emoji {
-    width: calc(var(--ffz-chat-font-size) * 1.5);
-    height: calc(var(--ffz-chat-font-size) * 1.5);
+	width: calc(var(--ffz-chat-font-size) * 1.5);
+	height: calc(var(--ffz-chat-font-size) * 1.5);
 
-    &.preview-image {
-        width: 7.2rem;
-        height: 7.2rem;
-    }
+	&.preview-image {
+		width: 7.2rem;
+		height: 7.2rem;
+	}
 
-    &.emote-autocomplete-provider__image {
-        width: 1.8rem;
-        height: 1.8rem;
-        margin: .5rem;
-    }
+	&.emote-autocomplete-provider__image {
+		width: 1.8rem;
+		height: 1.8rem;
+		margin: .5rem;
+	}
 }
 
 
 .ffz-mod-icon {
-    text-align: center;
-    display: inline-flex;
+	text-align: center;
+	display: inline-flex;
 
-    & + .ffz-mod-icon {
-        margin-left: 1px;
-    }
+	& + .ffz-mod-icon {
+		margin-left: 1px;
+	}
 
-    span, img, figure {
-        pointer-events: none;
-    }
+	span, img, figure {
+		pointer-events: none;
+	}
 
-    span, img,
-    figure:before {
-        margin: 0 0.05rem !important
-    }
+	span, img,
+	figure:before {
+		margin: 0 0.05rem !important
+	}
 
-    span {
-        display: inline-block;
-        min-width: 1.6rem;
-        font-weight: bold;
-    }
+	span {
+		display: inline-block;
+		min-width: 1.6rem;
+		font-weight: bold;
+	}
 
-    .mod-icon__image img {
-        max-height: 1.6rem;
-    }
+	.mod-icon__image img {
+		max-height: 1.6rem;
+	}
 
-    &.colored,
-    .mod-icon__image img {
-        opacity: 0.75;
-    }
+	&.colored,
+	.mod-icon__image img {
+		opacity: 0.75;
+	}
 
-    .ffz--action &,
-    .tw-interactable:hover &,
-    &:hover {
-        .tw-root--theme-dark &, & {
-            &.tw-c-text-alt-2 {
-                color: inherit !important;
-            }
-        }
+	.ffz--action &,
+	.tw-interactable:hover &,
+	&:hover {
+		.tw-root--theme-dark &, & {
+			&.tw-c-text-alt-2 {
+				color: inherit !important;
+			}
+		}
 
-        &.colored,
-        .mod-icon__image img {
-            opacity: 1;
-        }
-    }
+		&.colored,
+		.mod-icon__image img {
+			opacity: 1;
+		}
+	}
 }
 
 
 .ffz--giftee-name {
-    cursor: pointer;
-    outline: none;
+	cursor: pointer;
+	outline: none;
 
-    &:hover {
-        text-decoration: underline;
-    }
+	&:hover {
+		text-decoration: underline;
+	}
 }
 
 .chat-line__username:hover,
 .chatter-name:hover {
-    text-decoration: underline;
+	text-decoration: underline;
 }
 
 
 .ffz--emote-picker {
-    section:not(.filtered) heading {
-        cursor: pointer;
-    }
+	section:not(.filtered) heading {
+		cursor: pointer;
+	}
 
-    .ffz--menu-badge {
-        width: 1.8rem; height: 1.8rem;
-    }
+	.ffz--menu-badge {
+		width: 1.8rem; height: 1.8rem;
+	}
 
-    .ffz--expiry-info {
-        opacity: 0.5;
-    }
+	.ffz--expiry-info {
+		opacity: 0.5;
+	}
 
-    .emote-picker__placeholder {
-        display: inline-block;
-        margin: .5rem .5rem 0;
-        min-width: 2.8rem;
-    }
+	.emote-picker__placeholder {
+		display: inline-block;
+		margin: .5rem .5rem 0;
+		min-width: 2.8rem;
+	}
 
-    .emote-picker__tab {
-        border-top: 1px solid transparent;
+	/*.emote-picker__tab {
+		border-top: 1px solid transparent;
 
-        &.emote-picker__tab--active,
-        &:hover {
-            border-top-color: #6441a4;
-        }
-    }
+		&.emote-picker__tab--active,
+		&:hover {
+			border-top-color: #6441a4;
+		}
+	}*/
 
-    .whispers-thread .emote-picker-and-button & .emote-picker__tab-content {
-        max-height: 30rem;
-    }
+	.whispers-thread .emote-picker-and-button & .emote-picker__tab-content {
+		max-height: 30rem;
+	}
 
-    .emote-picker__tab-content {
-        height: unset !important;
-        max-height: 50rem;
-    }
+	.emote-picker__tab-content {
+		height: unset !important;
+		max-height: 50rem;
+	}
 
-    .whispers-thread {
-        overflow: visible !important;
-    }
+	.whispers-thread {
+		overflow: visible !important;
+	}
 
-    @media only screen and (max-height: 750px) {
-        .emote-picker__tab-content {
-            #root & {
-                max-height: calc(100vh - 31rem);
-            }
+	@media only screen and (max-height: 750px) {
+		.emote-picker__tab-content {
+			#root & {
+				max-height: calc(100vh - 31rem);
+			}
 
-            max-height: calc(100vh - 26rem);
-        }
-    }
+			max-height: calc(100vh - 26rem);
+		}
+	}
 
-    .emote-picker-tab-item button > *,
-    .emote-picker__emote-link > * {
-        pointer-events: none;
-    }
+	.emote-picker-tab-item button > *,
+	.emote-picker__emote-link > * {
+		pointer-events: none;
+	}
 
-    .emote-picker__emote-image {
-        max-height: 3.2rem
-    }
+	.emote-picker__emote-image {
+		max-height: 3.2rem
+	}
 
-    section:last-of-type {
-        & > div:last-child,
-        & > heading:last-child {
-            border-bottom: none !important;
-        }
-    }
+	section:last-of-type {
+		& > div:last-child,
+		& > heading:last-child {
+			border-bottom: none !important;
+		}
+	}
 
-    .ffz--emoji-tone-picker {
-        .tw-balloon {
-            min-width: unset;
-        }
+	.ffz--emoji-tone-picker {
+		.tw-balloon {
+			min-width: unset;
+		}
 
-        .tw-button__text {
-            padding: .2rem .4rem;
-            padding-right: .8rem;
-        }
-    }
+		.tw-button__text {
+			padding: .2rem .4rem;
+			padding-right: .8rem;
+		}
+	}
 
-    .ffz--emoji-tone-picker__emoji {
-        width: 2rem;
-        height: 2rem;
-    }
+	.ffz--emoji-tone-picker__emoji {
+		width: 2rem;
+		height: 2rem;
+	}
 
-    .emote-picker__emote-link {
-        position: relative;
-        padding: 0.5rem;
-        width: unset;
-        height: unset;
-        min-width: 3.8rem;
+	.emote-picker__emote-link {
+		position: relative;
+		padding: 0.5rem;
+		width: unset;
+		height: unset;
+		min-width: 3.8rem;
 
-        img {
-            vertical-align: middle;
-        }
+		img {
+			vertical-align: middle;
+		}
 
-        &.emote-picker__emoji {
-            min-width: unset;
+		&.emote-picker__emoji {
+			min-width: unset;
 
-            .emote-picker__emote-figure {
-                width: 2rem;
-                height: 2rem;
-            }
-        }
+			.emote-picker__emote-figure {
+				width: 2rem;
+				height: 2rem;
+			}
+		}
 
-        &.locked {
-            cursor: not-allowed;
+		&.locked {
+			cursor: not-allowed;
 
-            img {
-                opacity: 0.5;
-            }
+			img {
+				opacity: 0.5;
+			}
 
-            .ffz-i-lock {
-                position: absolute;
-                bottom: 0; right: 0;
-                border-radius: .2rem;
-                font-size: 1rem;
-                background-color: rgba(0,0,0,0.5);
-                color: #fff;
-            }
+			.ffz-i-lock {
+				position: absolute;
+				bottom: 0; right: 0;
+				border-radius: .2rem;
+				font-size: 1rem;
+				background-color: rgba(0,0,0,0.5);
+				color: #fff;
+			}
 
-        }
-    }
+		}
+	}
 
-    &.reduced-padding {
-       .tw-pd-1 {
-            padding: 0.5rem !important;
-        }
-    }
+	&.reduced-padding {
+		.tw-pd-1 {
+			padding: 0.5rem !important;
+		}
+	}
 }

@@ -80,8 +80,8 @@ body {
 	z-index: 999999999;
 	margin: 6px;
 	border-radius: 2px;
-	background: #0e0c13;
-	color: #fff;
+	background: var(--color-background-tooltip);
+	color: var(--color-text-tooltip);
 	font-size: 1.2rem;
 	line-height: 1;
 	text-align: left;
@@ -96,7 +96,7 @@ body {
 		transform: rotate(45deg);
 		z-index: -1;
 
-		background: #0e0c13;
+		background: var(--color-background-tooltip);
 	}
 
 	&[x-placement^="bottom"] {
@@ -124,16 +124,6 @@ body {
 		.ffz__tooltip--arrow {
 			right: -3px;
 			border-radius: 0 0 0 2px;
-		}
-	}
-
-
-	.tw-root--theme-dark & {
-		background: #fff;
-		color: #0e0c13;
-
-		.ffz__tooltip--arrow {
-			background: #fff;
 		}
 	}
 }

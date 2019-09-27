@@ -93,6 +93,21 @@ export default class MenuButton extends SiteModule {
 		return val;
 	}
 
+	formatExtraPill() {
+		if ( this.has_update )
+			return null;
+
+		if ( DEBUG && this.addons.has_dev )
+			return this.i18n.t('site.menu_button.dev', 'dev');
+
+		if ( DEBUG && ! this.addons.has_dev )
+			return this.i18n.t('site.menu_button.main-dev', 'm-dev');
+
+		if ( ! DEBUG && this.addons.has_dev )
+			return this.i18n.t('site.menu_button.addon-dev', 'a-dev');
+
+		return null;
+	}
 
 	update() {
 		for(const inst of this.NavBar.instances)
@@ -135,7 +150,8 @@ export default class MenuButton extends SiteModule {
 		if ( el )
 			el.remove();
 
-		const pill = this.formatPill();
+		const pill = this.formatPill(),
+			extra_pill = this.formatExtraPill();
 
 		// TODO: Pill.
 
@@ -169,7 +185,21 @@ export default class MenuButton extends SiteModule {
 					</div>)}
 				</div>
 			</div>
-
+			{this.has_update && (<div class="ffz-menu__extra-pill tw-absolute">
+				<div class={`tw-pill ${this.important_update ? 'tw-pill--notification' : ''}`}>
+					<figure class="ffz-i-arrows-cw" />
+				</div>
+			</div>)}
+			{extra_pill && (<div class="ffz-menu__extra-pill tw-absolute">
+				<div class="tw-pill">
+					{extra_pill}
+				</div>
+			</div>)}
+			{pill && (<div class="ffz-menu__pill tw-absolute">
+				<div class="tw-pill">
+					{pill}
+				</div>
+			</div>)}
 		</div>)
 
 		/*el = (<div class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05">

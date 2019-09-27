@@ -22,7 +22,7 @@
 				<figure v-else-if="color" :style="`background-color: ${color}`" />
 				<figure v-else class="ffz-i-eyedropper" />
 			</button>
-			<div v-if="open" v-on-clickaway="closePicker" class="tw-absolute tw-z-default tw-right-0">
+			<div v-if="open" v-on-clickaway="closePicker" class="tw-absolute tw-z-above tw-right-0">
 				<chrome-picker :value="colors" @input="onPick" />
 			</div>
 		</div>
@@ -42,7 +42,7 @@
 				v-if="open"
 				v-on-clickaway="closePicker"
 				:class="{'ffz-bottom-100': openUp}"
-				class="tw-absolute tw-z-default tw-balloon--up tw-balloon--right"
+				class="tw-absolute tw-z-above tw-balloon--up tw-balloon--right"
 			>
 				<chrome-picker :value="colors" @input="onPick" />
 			</div>

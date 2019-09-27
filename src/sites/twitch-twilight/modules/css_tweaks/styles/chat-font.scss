@@ -12,5 +12,6 @@
 
 textarea[data-a-target="chat-input"],
 textarea[data-a-target="video-chat-input"] {
+	font-family: var(--ffz-chat-font-family) !important;
 	font-size: var(--ffz-chat-font-size) !important;
 }

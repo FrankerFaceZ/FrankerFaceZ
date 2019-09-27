@@ -1,8 +1,8 @@
 .tw-checkbox__input {
 	&:indeterminate + .tw-checkbox__label {
 		&:before {
-			background: #7d5bbe;
-			border: 1px solid #7d5bbe;
+			background: var(--color-twitch-purple-8);
+			border: 1px solid var(--color-twitch-purple-8);
 		}
 
 		&:after {

@@ -118,12 +118,16 @@ export default class ChannelBar extends Module {
 		inst._ffz_uptime_updating = true;
 		inst._ffz_uptime_id = current_id;
 
-		try {
-			inst._ffz_meta = await this.twitch_data.getStreamMeta(current_id, inst?.props?.channel?.login);
-		} catch(err) {
-			this.log.capture(err);
-			this.log.error('Error fetching uptime:', err);
+		if ( ! current_id )
 			inst._ffz_meta = null;
+		else {
+			try {
+				inst._ffz_meta = await this.twitch_data.getStreamMeta(current_id, inst?.props?.channel?.login);
+			} catch(err) {
+				this.log.capture(err);
+				this.log.error('Error fetching uptime:', err);
+				inst._ffz_meta = null;
+			}
 		}
 
 		inst._ffz_uptime_saved = Date.now();

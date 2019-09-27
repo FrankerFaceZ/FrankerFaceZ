@@ -12,26 +12,21 @@
 			content: '';
 			pointer-events: none;
 
-			box-shadow: inset 0 0 0 1px #7d5bbe,
-				0 0 6px -2px #7d5bbe;
+			box-shadow: inset 0 0 0 1px var(--color-twitch-purple-8),
+				0 0 6px -2px var(--color-twitch-purple-8);
 		}
 	}
 
 	.active > div,
 	.active > div:hover,
 	.tw-root--theme-dark & .active > div:hover {
-		background-color: #6441a4;
-		color: #fff;
+		background-color: var(--color-background-button-primary-hover);
+		color: var(--color-text-button-primary);
 	}
 
 	div:hover {
 		cursor: pointer;
-
-		background-color: #fff;
-
-		.tw-root--theme-dark & {
-			background-color: #201c2b;
-		}
+		background-color: var(--color-background-button-text-hover);
 	}
 
 	li div {
