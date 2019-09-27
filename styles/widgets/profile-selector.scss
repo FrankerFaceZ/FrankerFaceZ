@@ -32,7 +32,7 @@
 	}
 
 	&.current {
-		border-left-color: var(--color-twitch-purple-8);
+		border-left-color: var(--color-border-button-active);
 	}
 
 	.description {
@@ -57,11 +57,7 @@
 
 	&:focus,
 	&:hover {
-		background: var(--color-opac-p-1);
-
-		.tw-root--theme-dark & {
-			background: var(--color-opac-p-4);
-		}
+		background-color: var(--color-background-alt-2);
 	}
 }
 

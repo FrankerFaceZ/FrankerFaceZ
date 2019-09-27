@@ -1,4 +1,4 @@
-$color: #dad8de;
+/*$color: #dad8de;
 $bg-color: #17141f;
 $border-color: #2c2541;
 
@@ -6,6 +6,7 @@ $input-color: #faf9fa;
 $input-bg: #0e0c13;
 $input-border: #392e5c;
 $input-active-border: #7d5bbe;
+
 
 
 .tw-root--theme-dark {
@@ -93,4 +94,38 @@ $input-active-border: var(--ffz-color-5);
 	.vc-sketch-presets-color {
 		box-shadow: inset 0 0 0 1px $border-color;
 	}
+}*/
+
+.vc-sketch {
+	background-color: var(--color-background-body) !important;
+	box-shadow: 0 0 0 1px var(--color-border-base) !important;
+}
+
+.vc-sketch-active-color {
+	box-shadow: inset 0 0 0 1px var(--color-border-base) !important;
+}
+
+.vc-sketch-field {
+	.vc-input__input {
+		background-color: var(--color-background-input) !important;
+		color: var(--color-text-input) !important;
+		box-shadow: inset 0 0 0 1px var(--color-border-input) !important;
+
+		&:focus {
+			box-shadow: inset 0 0 0 1px var(--color-border-input-focus),
+				0 0 6px -2px var(--color-border-input-focus) !important;
+		}
+	}
+
+	.vc-input__label {
+		color: var(--color-text-label) !important;
+	}
+}
+
+.vc-sketch-presets {
+	border-top-color: var(--color-border-base) !important;
+}
+
+.vc-sketch-presets-color {
+	box-shadow: inset 0 0 0 1px var(--color-border-base) !important;
 }

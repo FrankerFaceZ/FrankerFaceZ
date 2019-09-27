@@ -1,5 +1,5 @@
 <template functional>
-	<div class="tw-tooltip-wrapper">
+	<div class="tw-relative tw-tooltip-wrapper">
 		<slot />
 		<div
 			:class="`tw-tooltip--align-${props.align||'center'} tw-tooltip--${props.above ? 'up' : 'down'}`"

@@ -248,8 +248,12 @@ textarea.tw-input {
 	p {
 		white-space: pre-line;
 	}
+}
 
+.ffz--changelog,
+.ffz--widget {
 	code {
+		user-select: all;
 		padding: 2px 5px;
 		border-radius: 2px;
 		background-color: rgba(0,0,0,0.1);

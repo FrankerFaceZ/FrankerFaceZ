@@ -20,10 +20,13 @@ export default class ThemeEngine extends Module {
 		this.inject('settings');
 
 		this.inject('site');
+		this.inject('site.fine');
 		this.inject('site.css_tweaks');
 		this.inject('site.router');
 
 		this.should_enable = true;
+
+		// Font
 
 		// Colors
 
@@ -32,7 +35,9 @@ export default class ThemeEngine extends Module {
 			ui: {
 				path: 'Appearance > Theme >> Colors @{"description": "This is a quick preview of a new system coming soon to FrankerFaceZ. Expect heavy changes here, including separate Basic and Advanced modes, and better color selection."}',
 				title: 'Background',
-				component: 'setting-color-box'
+				description: 'Try `#0E0C13` for something close to the old dark theme, or `#0E0E0E` for a nice dark gray. Transparent colors not allowed.',
+				component: 'setting-color-box',
+				alpha: false
 			},
 			changed: () => this.updateCSS()
 		});
@@ -42,6 +47,7 @@ export default class ThemeEngine extends Module {
 			ui: {
 				path: 'Appearance > Theme >> Colors',
 				title: 'Text',
+				description: 'If not set, this will automatically be set to white or black based on the brightness of the background.',
 				component: 'setting-color-box'
 			},
 			changed: () => this.updateCSS()
@@ -55,13 +61,12 @@ export default class ThemeEngine extends Module {
 			},
 
 			ui: {
-				path: 'Appearance @{"description": "Personalize the appearance of Twitch. Change the color scheme and fonts and tune the layout to optimize your experience."} > Theme >> General',
+				path: 'Appearance @{"description": "Personalize the appearance of Twitch. Change the color scheme and fonts and tune the layout to optimize your experience."} > Theme >> Legacy',
 				title: 'Gray (no Purple)',
 				description: `*Requires Dark Theme to be Enabled.*
 
-I see my website and I want it painted black...
-
-This is a very early feature and will change as there is time.`,
+This setting will be going away very soon, as the new theme system matures.
+The CSS loaded by this setting is far too heavy and can cause performance issues.`,
 				component: 'setting-check-box'
 			},
 
@@ -115,12 +120,32 @@ This is a very early feature and will change as there is time.`,
 
 		const background = Color.RGBA.fromCSS(this.settings.get('theme.color.background'));
 		if ( background ) {
+			background.a = 1;
 			bits.push(`--color-background-body: ${background.toCSS()};`);
 
 			const hsla = background.toHSLA(),
 				luma = hsla.l;
 			dark = luma < 0.5;
 
+			if ( dark && ! this.settings.get('theme.can-dark') )
+				return this.css_tweaks.delete('colors');
+
+			// Make sure the Twitch theme is set correctly.
+			try {
+				const store = this.resolve('site').store,
+					theme = store.getState().ui.theme,
+					wanted_theme = dark ? 1 : 0;
+
+				if( theme !== wanted_theme )
+					store.dispatch({
+						type: 'core.ui.THEME_CHANGED',
+						theme: wanted_theme
+					});
+			} catch(err) {
+				this.log.warning('Unable to automatically set the Twitch Dark Theme state.', err);
+			}
+
+			bits.push(`--color-background-input-focus: ${background.toCSS()};`);
 			bits.push(`--color-background-base: ${hsla._l(luma + (dark ? .05 : -.05)).toCSS()};`);
 			bits.push(`--color-background-alt: ${hsla._l(luma + (dark ? .1 : -.1)).toCSS()};`);
 			bits.push(`--color-background-alt-2: ${hsla._l(luma + (dark ? .15 : -.15)).toCSS()};`);
@@ -135,10 +160,13 @@ This is a very early feature and will change as there is time.`,
 			bits.push(`--color-text-base: ${text.toCSS()};`);
 
 			const hsla = text.toHSLA(),
-				luma = hsla.l;
+				alpha = hsla.a;
 
-			bits.push(`--color-text-alt: ${hsla._l(luma + (dark ? -.1 : .1)).toRGBA().toCSS()};`);
-			bits.push(`--color-text-alt-2: ${hsla._l(luma + (dark ? -.2 : .2)).toRGBA().toCSS()};`);
+			bits.push(`--color-text-label: ${text.toCSS()};`);
+			bits.push(`--color-text-label-optional: ${hsla._a(alpha - 0.4).toCSS()};`);
+
+			bits.push(`--color-text-alt: ${hsla._a(alpha - 0.2).toCSS()};`);
+			bits.push(`--color-text-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
 		}
 
 

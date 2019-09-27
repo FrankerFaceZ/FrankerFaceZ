@@ -11,7 +11,7 @@ import {has} from 'utilities/object';
 const STYLE_VALIDATOR = document.createElement('span');
 
 const CLASSES = {
-	'top-discover': '.top-nav__nav-link[data-a-target="discover-link"]',
+	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .ffz--popular-channels',
 	'side-rec-friends': '.side-nav .recommended-friends',
@@ -31,7 +31,7 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard',
 	'whispers': 'body .whispers',
 
-	'dir-live-ind': '.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
+	'dir-live-ind': '.preview-card[data-ffz-type="live"] .tw-channel-status-text-indicator,.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator'
@@ -228,7 +228,7 @@ export default class CSSTweaks extends Module {
 			ui: {
 				path: 'Appearance > Theme >> Fonts',
 				title: 'Font Family',
-				description: 'Override the font used for the entire Twitch website.',
+				description: 'Override the font used for the entire Twitch website. The old default font was: `"Helvetica Neue",Helvetica,Arial,sans-serif`',
 				component: 'setting-text-box'
 			},
 			changed: () => this.updateFont()

@@ -12,6 +12,7 @@
 			<color-picker
 				:id="item.full_key"
 				ref="control"
+				:alpha="alpha"
 				:nullable="true"
 				:value="color"
 				@input="onInput"
@@ -62,6 +63,13 @@ export default {
 				return '';
 
 			return this.value;
+		},
+
+		alpha() {
+			if ( this.item.alpha != null )
+				return this.item.alpha;
+
+			return true;
 		}
 	},
 

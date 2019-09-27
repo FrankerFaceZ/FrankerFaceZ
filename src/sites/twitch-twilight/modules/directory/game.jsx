@@ -8,7 +8,7 @@ import {SiteModule} from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import { get } from 'utilities/object';
 
-import GAME_QUERY from './game.gql';
+//import GAME_QUERY from './game.gql';
 
 export default class Game extends SiteModule {
 	constructor(...args) {
@@ -27,16 +27,16 @@ export default class Game extends SiteModule {
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
 
-		this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
+		/*this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
 		this.apollo.registerModifier('DirectoryPage_Game', res => {
 			/*setTimeout(() =>
 				this.apollo.ensureQuery(
 					'DirectoryPage_Game',
 					'data.game.streams.edges.0.node.createdAt'
-				), 500);*/
+				), 500);* /
 
 			this.modifyStreams(res);
-		}, false);
+		}, false);*/
 	}
 
 	modifyStreams(res) { // eslint-disable-line class-methods-use-this

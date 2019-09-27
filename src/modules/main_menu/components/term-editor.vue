@@ -1,13 +1,13 @@
 <template lang="html">
 	<div class="ffz--term">
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
-			<div v-if="! is_valid" class="tw-tooltip-wrapper tw-mg-r-05">
+			<div v-if="! is_valid" class="tw-relative tw-tooltip-wrapper tw-mg-r-05">
 				<figure class="tw-c-text-error ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 					{{ t('setting.terms.warn-invalid', 'This highlight term is invalid.') }}
 				</div>
 			</div>
-			<div v-if="! is_safe" class="tw-tooltip-wrapper tw-mg-r-05">
+			<div v-if="! is_safe" class="tw-relative tw-tooltip-wrapper tw-mg-r-05">
 				<figure class="tw-c-text-hint ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 					{{ t('setting.terms.warn-complex', 'This highlight term is potentially too complex. It may cause client lag.') }}
@@ -56,7 +56,7 @@
 					</option>
 				</select>
 			</div>
-			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-tooltip-wrapper">
+			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip-wrapper">
 				<button
 					v-if="editing"
 					:class="{active: edit_data.remove}"

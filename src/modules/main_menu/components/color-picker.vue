@@ -23,7 +23,7 @@
 				<figure v-else class="ffz-i-eyedropper" />
 			</button>
 			<div v-if="open" v-on-clickaway="closePicker" class="tw-absolute tw-z-above tw-right-0">
-				<chrome-picker :value="colors" @input="onPick" />
+				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>
 		</div>
 		<div v-else class="tw-relative">
@@ -44,7 +44,7 @@
 				:class="{'ffz-bottom-100': openUp}"
 				class="tw-absolute tw-z-above tw-balloon--up tw-balloon--right"
 			>
-				<chrome-picker :value="colors" @input="onPick" />
+				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>
 		</div>
 	</div>
@@ -63,6 +63,10 @@ export default {
 
 	props: {
 		value: String,
+		alpha: {
+			type: Boolean,
+			default: true
+		},
 		default: {
 			type: String,
 			default: '#000'

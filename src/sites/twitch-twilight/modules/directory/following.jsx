@@ -11,12 +11,12 @@ import {get} from 'utilities/object';
 import Popper from 'popper.js';
 import {makeReference} from 'utilities/tooltip';
 
-import FOLLOWED_INDEX from './followed_index.gql';
+/*import FOLLOWED_INDEX from './followed_index.gql';
 import FOLLOWED_HOSTS from './followed_hosts.gql';
 import FOLLOWED_CHANNELS from './followed_channels.gql';
 import FOLLOWED_LIVE from './followed_live.gql';
 import SUBSCRIBED_CHANNELS from './sidenav_subscribed.gql';
-import RECOMMENDED_CHANNELS from './recommended_channels.gql';
+import RECOMMENDED_CHANNELS from './recommended_channels.gql';*/
 
 export default class Following extends SiteModule {
 	constructor(...args) {
@@ -66,7 +66,7 @@ export default class Following extends SiteModule {
 			changed: () => this.parent.DirectoryCard.forceUpdate()
 		});
 
-		this.apollo.registerModifier('FollowedChannels_RENAME2', FOLLOWED_CHANNELS);
+		/*this.apollo.registerModifier('FollowedChannels_RENAME2', FOLLOWED_CHANNELS);
 		this.apollo.registerModifier('SideNav_SubscribedChannels', SUBSCRIBED_CHANNELS);
 		this.apollo.registerModifier('RecommendedChannels', RECOMMENDED_CHANNELS);
 
@@ -97,7 +97,7 @@ export default class Following extends SiteModule {
 
 				shelf.node.content.edges = this.parent.processNodes(edges);
 			}
-		}, false);
+		}, false);*/
 
 		this.hosts = new WeakMap;
 	}
@@ -185,7 +185,7 @@ export default class Following extends SiteModule {
 			'data.currentUser.recommendations.liveRecommendations.nodes.0.createdAt'
 		);*/
 
-		if ( this.router.current_name !== 'dir-following' )
+		/*if ( this.router.current_name !== 'dir-following' )
 			return;
 
 		const bit = this.router.match[1];
@@ -204,11 +204,11 @@ export default class Following extends SiteModule {
 				'data.currentUser.followedLiveUsers.nodes.0.stream.createdAt'
 			);*/
 
-		else if ( bit === 'hosts' )
+		/*else if ( bit === 'hosts' )
 			this.apollo.ensureQuery(
 				'FollowingHosts_CurrentUser',
 				'data.currentUser.followedHosts.nodes.0.hosting.stream.createdAt'
-			);
+			);*/
 	}
 
 	onEnable() {

@@ -11,7 +11,7 @@ import {get} from 'utilities/object';
 
 import Following from './following';
 import Game from './game';
-import BrowsePopular from './browse_popular';
+//import BrowsePopular from './browse_popular';
 
 
 export const CARD_CONTEXTS = ((e ={}) => {
@@ -45,7 +45,7 @@ export default class Directory extends SiteModule {
 
 		this.inject(Following);
 		this.inject(Game);
-		this.inject(BrowsePopular);
+		//this.inject(BrowsePopular);
 
 		this.DirectoryCard = this.fine.define(
 			'directory-card',
@@ -336,6 +336,7 @@ export default class Directory extends SiteModule {
 			game = props.gameTitle || props.playerMetadataGame || (props.trackingProps && props.trackingProps.categoryName);
 
 		container.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
+		container.dataset.ffzType = props.streamType;
 
 		const should_hide = (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
 			(props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game));
@@ -447,7 +448,7 @@ export default class Directory extends SiteModule {
 			inst.ffz_uptime_el = card.querySelector('.ffz-uptime-element');
 			if ( ! inst.ffz_uptime_el )
 				card.appendChild(inst.ffz_uptime_el = (<div class="ffz-uptime-element tw-absolute tw-right-0 tw-top-0 tw-mg-1">
-					<div class="tw-tooltip-wrapper">
+					<div class="tw-relative tw-tooltip-wrapper">
 						<div class="preview-card-stat tw-align-items-center tw-border-radi-us-small tw-c-background-overlay tw-c-text-overlay tw-flex tw-font-size-6 tw-justify-content-center">
 							<div class="tw-flex tw-c-text-live">
 								<figure class="ffz-i-clock" />

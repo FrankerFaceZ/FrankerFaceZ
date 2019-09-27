@@ -43,7 +43,7 @@
 					</figure>
 				</div>
 			</div>
-			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-tooltip-wrapper">
+			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip-wrapper">
 				<button
 					v-if="editing"
 					:class="{active: edit_data.remove}"

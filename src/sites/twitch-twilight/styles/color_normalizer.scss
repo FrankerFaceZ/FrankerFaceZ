@@ -1,45 +1,37 @@
-body {
-	background-color: var(--color-background-body) !important;
-}
+.tw-root--theme-dark, html {
+	body,
+	.channel-header,
+	.channel-root__right-column,
+	.chat-room,
+	.carousel-player-nav-arrow__container {
+		background-color: var(--color-background-body) !important;
+	}
 
-.tw-root--theme-dark .channel-root__right-column,
-.channel-root__right-column {
-	background-color: var(--color-background-body) !important;
-}
+	.clmgr-table__row,
+	.room-upsell,
+	.video-card {
+		background-color: var(--color-background-base) !important;
+	}
 
-.tw-root--theme-dark .chat-room,
-.chat-room {
-	background-color: var(--color-background-body) !important;
-}
+	.side-nav__overlay-wrapper,
+	.thread-header__title-bar-container--focused {
+		background-color: var(--color-background-alt) !important;
+	}
 
-.tw-root--theme-dark .carousel-player-nav-arrow__container,
-.carousel-player-nav-arrow__container {
-	background-color: var(--color-background-body) !important;
-}
+	.clmgr-table__row:hover,
+	.thread-header__title-bar-container,
+	.whispers-list-item:hover,
+	.side-nav-card__link:hover {
+		background-color: var(--color-background-alt-2) !important;
+	}
 
-.tw-root--theme-dark .side-nav__overlay-wrapper,
-.side-nav__overlay-wrapper {
-	background-color: var(--color-background-alt) !important;
-}
+	.channel-header__user {
+		color: var(--color-text-base) !important;
+	}
 
-.tw-root--theme-dark .side-nav-card__link:hover,
-.side-nav-card__link:hover {
-	background-color: var(--color-background-alt-2) !important;
-}
-
-.tw-root--theme-dark .channel-header,
-.channel-header {
-	background-color: var(--color-background-body) !important;
-}
-
-.tw-root--theme-dark .channel-header__user,
-.channel-header__user {
-	color: var(--color-text-base) !important;
-}
-
-.tw-root--theme-dark .chat-line__moderation,
-.tw-root--theme-dark .chat-line__status,
-.chat-line__moderation,
-.chat-line__status {
-	color: var(--color-text-alt-2) !important;
+	.chat-line__timestamp,
+	.chat-line__moderation,
+	.chat-line__status {
+		color: var(--color-text-alt-2) !important;
+	}
 }

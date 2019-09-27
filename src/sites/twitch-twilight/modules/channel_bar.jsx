@@ -5,9 +5,9 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {get, deep_copy} from 'utilities/object';
+import {get} from 'utilities/object';
 
-import CHANNEL_QUERY from './channel_header_query.gql';
+//import CHANNEL_QUERY from './channel_header_query.gql';
 
 
 export default class ChannelBar extends Module {
@@ -25,14 +25,14 @@ export default class ChannelBar extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
-		this.apollo.registerModifier('ChannelPage_ChannelHeader', CHANNEL_QUERY);
+		/*this.apollo.registerModifier('ChannelPage_ChannelHeader', CHANNEL_QUERY);
 		this.apollo.registerModifier('ChannelPage_ChannelHeader', data => {
 			const u = data && data.data && data.data.user;
 			if ( u ) {
 				const o = u.profileViewCount = new Number(u.profileViewCount || 0);
 				o.data = deep_copy(u);
 			}
-		}, false);
+		}, false);*/
 
 
 		this.settings.add('channel.metadata.force-above', {
