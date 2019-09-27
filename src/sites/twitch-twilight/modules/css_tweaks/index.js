@@ -11,7 +11,7 @@ import {has} from 'utilities/object';
 const STYLE_VALIDATOR = document.createElement('span');
 
 const CLASSES = {
-	'top-discover': '.top-nav__nav-link[data-a-target="discover-link"]',
+	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .ffz--popular-channels',
 	'side-rec-friends': '.side-nav .recommended-friends',
