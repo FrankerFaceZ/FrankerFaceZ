@@ -183,7 +183,10 @@ export default class CSSTweaks extends Module {
 				title: 'Show Discover link.',
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggleHide('top-discover', !val)
+			changed: val => {
+				this.toggleHide('top-discover', !val);
+				this.updateTopNav();
+			}
 		});
 
 		this.settings.add('layout.prime-offers', {
@@ -297,6 +300,11 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
 
 		this.updateFont();
+		this.updateTopNav();
+	}
+
+	updateTopNav() {
+		requestAnimationFrame(() => this.emit('site.layout:update-nav'));
 	}
 
 	updateFont() {

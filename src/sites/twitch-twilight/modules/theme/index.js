@@ -115,6 +115,12 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 	updateCSS() {
 		this.updateOldCSS();
 
+		if ( ! this.settings.get('theme.can-dark') ) {
+			this.toggleNormalizer(false);
+			this.css_tweaks.delete('colors');
+			return;
+		}
+
 		let dark = this.settings.get('theme.is-dark');
 		const bits = [];
 
@@ -126,9 +132,6 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			const hsla = background.toHSLA(),
 				luma = hsla.l;
 			dark = luma < 0.5;
-
-			if ( dark && ! this.settings.get('theme.can-dark') )
-				return this.css_tweaks.delete('colors');
 
 			// Make sure the Twitch theme is set correctly.
 			try {
@@ -170,10 +173,13 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		}
 
 
-		if ( bits.length )
+		if ( bits.length ) {
 			this.css_tweaks.set('colors', `body {${bits.join('\n')}}`);
-		else
+			this.toggleNormalizer(true);
+		} else {
 			this.css_tweaks.delete('colors');
+			this.toggleNormalizer(false);
+		}
 	}
 
 	toggleNormalizer(enable) {
@@ -221,7 +227,6 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 
 	onEnable() {
 		this.updateSetting(this.settings.get('theme.dark'));
-		this.toggleNormalizer(true);
 		this.updateCSS();
 	}
 }

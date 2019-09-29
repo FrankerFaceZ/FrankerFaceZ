@@ -20,6 +20,11 @@ export default class Layout extends Module {
 		this.inject('site.fine');
 		this.inject('site.css_tweaks');
 
+		this.TopNav = this.fine.define(
+			'top-nav',
+			n => n.computeStyles && n.navigationLinkSize
+		);
+
 		this.RightColumn = this.fine.define(
 			'tw-rightcolumn',
 			n => n.hideOnBreakpoint && n.handleToggleVisibility
@@ -159,6 +164,8 @@ export default class Layout extends Module {
 	onEnable() {
 		document.body.classList.toggle('ffz--portrait-invert', this.settings.get('layout.portrait-invert'));
 
+		this.on(':update-nav', this.updateNavLinks, this);
+
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
 		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
@@ -220,6 +227,13 @@ export default class Layout extends Module {
 
 	get is_minimal() {
 		return this.settings.get('layout.is-minimal')
+	}
+
+	updateNavLinks() {
+		for(const inst of this.TopNav.instances)
+			try {
+				inst.computeStyles();
+			} catch(err) { /* no-op */ }
 	}
 
 	updatePopular(inst) {

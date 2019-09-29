@@ -417,6 +417,7 @@ export default class Player extends Module {
 		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 		this.updateHideExtensions();
 		this.updateCaptionsCSS();
+		this.installVisibilityHook();
 
 		const t = this;
 
@@ -470,6 +471,30 @@ export default class Player extends Module {
 				this.addResetButton(inst);
 			}
 		});
+	}
+
+	installVisibilityHook() {
+		if ( ! document.pictureInPictureEnabled ) {
+			this.log.info('Skipping visibility hook. Picture-in-Picture is not available.');
+			return;
+		}
+
+		try {
+			Object.defineProperty(document, 'hidden', {
+				configurable: true,
+				get() {
+					// If Picture in Picture is active, then we should not
+					// drop quality. Therefore, we need to trick Twitch
+					// into thinking the document is still active.
+					if ( document.pictureInPictureElement != null )
+						return false;
+
+					return document.visibilityState === 'hidden';
+				}
+			});
+		} catch(err) {
+			this.log.warning('Unable to install document visibility hook.', err);
+		}
 	}
 
 
