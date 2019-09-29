@@ -17,7 +17,11 @@
     "build:clips:dev": "npm run clean && webpack --config webpack.clips.dev.js",
     "build:stats": "cross-env NODE_ENV=production webpack --config webpack.web.prod.js --json > stats.json",
     "build:prod": "cross-env NODE_ENV=production webpack --config webpack.web.prod.js",
-    "build:dev": "npm run clean && webpack --config webpack.web.dev.js"
+    "build:dev": "npm run clean && webpack --config webpack.web.dev.js",
+    "font": "npm run font:edit",
+    "font:edit": "fontello-cli --cli-config fontello.client.json edit",
+    "font:save": "fontello-cli --cli-config fontello.client.json save && npm run font:update",
+    "font:update": "node bin/update_fonts"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
@@ -26,6 +30,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.2.0",
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "@ffz/fontello-cli": "^1.0.3",
     "babel-eslint": "^10.0.2",
     "babel-loader": "^8.0.6",
     "clean-webpack-plugin": "^3.0.0",

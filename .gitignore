@@ -9,3 +9,4 @@ stats.json
 .idea
 *.iml
 credentials.json
+.fontello-session

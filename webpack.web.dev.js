@@ -3,6 +3,8 @@ const path = require('path');
 const merge = require('webpack-merge');
 const common = require('./webpack.web.common.js');
 
+const {exec} = require('child_process');
+
 const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
@@ -50,6 +52,23 @@ module.exports = merge(common, {
 			app.get('/*', (req, res, next) => {
 				res.setHeader('Access-Control-Allow-Origin', '*');
 				next();
+			});
+
+			app.get('/update_font', (req, res) => {
+				const proc = exec('npm run font:save');
+
+				proc.stdout.on('data', data => {
+					console.log('FONT>>', data);
+				});
+
+				proc.stderr.on('data', data => {
+					console.error('FONT>>', data);
+				});
+
+				proc.on('close', code => {
+					console.log('FONT>> Exited with code', code);
+					res.redirect(req.headers.referer);
+				});
 			});
 
 			app.get('/dev_server', (req, res) => {

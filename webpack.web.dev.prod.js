@@ -49,6 +49,23 @@ module.exports = merge(prod, {
 				next();
 			});
 
+			app.get('/update_font', (req, res) => {
+				const proc = exec('npm run font:save');
+
+				proc.stdout.on('data', data => {
+					console.log('FONT>>', data);
+				});
+
+				proc.stderr.on('data', data => {
+					console.error('FONT>>', data);
+				});
+
+				proc.on('close', code => {
+					console.log('FONT>> Exited with code', code);
+					res.redirect(req.headers.referer);
+				});
+			});
+
 			app.get('/dev_server', (req, res) => {
 				res.json({
 					path: process.cwd(),

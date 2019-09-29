@@ -1,0 +1,6 @@
+{
+	"config": "./fontello.config.json",
+	"download": "https://localhost:8000/update_font",
+	"css": "./styles/fontello",
+	"font": "./res/font"
+}
