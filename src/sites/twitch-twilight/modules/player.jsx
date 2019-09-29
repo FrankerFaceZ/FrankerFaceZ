@@ -493,7 +493,7 @@ export default class Player extends Module {
 				}
 			});
 		} catch(err) {
-			this.log.warning('Unable to install document visibility hook.', err);
+			this.log.warn('Unable to install document visibility hook.', err);
 		}
 	}
 

@@ -89,7 +89,7 @@ export default class Switchboard extends Module {
 				try {
 					component = component_class.Preload();
 				} catch(err) {
-					this.log.error('Error instantiating preloader for forced chunk loading.', err);
+					this.log.warn('Error instantiating preloader for forced chunk loading.', err);
 					component = null;
 				}
 
@@ -108,7 +108,7 @@ export default class Switchboard extends Module {
 				try {
 					component = new route.props.component;
 				} catch(err) {
-					this.log.error('Error instantiating component for forced chunk loading.', err);
+					this.log.warn('Error instantiating component for forced chunk loading.', err);
 					component = null;
 				}
 

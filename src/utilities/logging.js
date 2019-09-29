@@ -44,6 +44,10 @@ export class Logger {
 		return this.invoke(Logger.WARN, args);
 	}
 
+	warning(...args) {
+		return this.invoke(Logger.WARN, args);
+	}
+
 	error(...args) {
 		return this.invoke(Logger.ERROR, args);
 	}
@@ -115,6 +119,7 @@ Logger.DEFAULT_LEVEL = 2;
 Logger.DEBUG = 1;
 Logger.INFO = 2;
 Logger.WARN = 4;
+Logger.WARNING = 4;
 Logger.ERROR = 8;
 Logger.OFF = 99;
 
