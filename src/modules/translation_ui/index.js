@@ -70,15 +70,13 @@ export default class TranslationUI extends Module {
 	}
 
 
-	async buildDialog() {
+	buildDialog() {
 		if ( this._dialog )
 			return this._dialog;
 
-		const data = await this.getData();
-
 		this._vue = new this.vue.Vue({
 			el: createElement('div'),
-			render: h => h('translation-ui', data)
+			render: h => h('translation-ui', this.getData())
 		});
 
 		return this._dialog = this._vue.$el;
@@ -92,15 +90,21 @@ export default class TranslationUI extends Module {
 	}
 
 
-	async getData() {
+	getData() {
 		return {
+			phrases: this.i18n.getKeys(),
 			query: '',
 
 			faded: false,
 			maximized: this.dialog.maximized,
 			exclusive: this.dialog.exclusive,
 
-			phrases: Array.from(await this.i18n.getKeys()),
+			getKeys: () => this.i18n.getKeys(),
+			requestKeys: () => this.i18n.requestKeys(),
+			updatePhrase: (key, phrase) => this.i18n.updatePhrase(key, phrase),
+
+			listen: (event, fn, ctx) => this.on(event, fn, ctx),
+			unlisten: (event, fn, ctx) => this.off(event, fn, ctx),
 
 			resize: e => ! this.dialog.exclusive && this.dialog.toggleSize(e),
 			close: e => ! this.dialog.exclusive && this.dialog.toggleVisible(e),

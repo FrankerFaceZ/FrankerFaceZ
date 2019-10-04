@@ -6,11 +6,26 @@
 
 import Parser from '@ffz/icu-msgparser';
 
-import {SERVER} from 'utilities/constants';
-import {get, pick_random, timeout} from 'utilities/object';
+import {SERVER, DEBUG} from 'utilities/constants';
+import {get, pick_random, shallow_copy, deep_copy} from 'utilities/object';
 import Module from 'utilities/module';
 
 import NewTransCore from 'utilities/translation-core';
+
+const STACK_SPLITTER = /\s*at\s+(.+?)\s+\((.+)\)$/,
+	SOURCE_SPLITTER = /^(.+):\/\/(.+?):(\d+:\d+)$/;
+
+const MAP_OPTIONS = {
+	filter(line) {
+		return line.includes('.frankerfacez.com') || line.includes('localhost');
+	},
+	cacheGlobally: true
+};
+
+const BAD_FRAMES = [
+	'/src/i18n.js',
+	'/src/utilities/vue.js'
+]
 
 const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'UwU', '>w<', '^w^', '> w >', 'v.v'],
 
@@ -68,6 +83,33 @@ export class TranslationManager extends Module {
 			ja: { name: '日本語' }*/
 		}
 
+		this.capturing = false;
+		this.captured = new Map;
+
+		this.settings.addUI('i18n.debug.open', {
+			path: 'Debugging > Localization >> Editing',
+			component: 'i18n-open',
+			force_seen: true
+		});
+
+		this.settings.add('i18n.debug.capture', {
+			default: null,
+			process(ctx, val) {
+				if ( val === null )
+					return DEBUG;
+				return val;
+			},
+			ui: {
+				path: 'Debugging > Localization >> General',
+				title: 'Enable message capture.',
+				description: 'Capture all localized strings, including variables and call locations, for the purpose of reporting them to the backend. This is used to add new strings to the translation project. By default, message capture is enabled when running in development mode.',
+				component: 'setting-check-box',
+				force_seen: true
+			},
+			changed: val => {
+				this.capturing = val;
+			}
+		});
 
 		this.settings.add('i18n.debug.transform', {
 			default: null,
@@ -128,6 +170,8 @@ export class TranslationManager extends Module {
 	}
 
 	onEnable() {
+		this.capturing = this.settings.get('i18n.debug.capture');
+
 		this._ = new NewTransCore({ //TranslationCore({
 			warn: (...args) => this.log.warn(...args),
 		});
@@ -142,6 +186,79 @@ export class TranslationManager extends Module {
 		this.locale = this.settings.get('i18n.locale');
 	}
 
+	broadcast(msg) {
+		if ( this._broadcaster )
+			this._broadcaster.postMessage(msg);
+	}
+
+	getKeys() {
+		return deep_copy(Array.from(this.captured.values()));
+	}
+
+	requestKeys() {
+		this.broadcast({type: 'request-keys'});
+	}
+
+	updatePhrase(key, phrase) {
+		this.broadcast({
+			type: 'update-key',
+			key,
+			phrase
+		});
+
+		this._.extend({
+			[key]: phrase
+		});
+
+		this.emit(':loaded', [key]);
+		this.emit(':update');
+	}
+
+	handleMessage(event) {
+		const msg = event.data;
+		if ( ! msg )
+			return;
+
+		if ( msg.type === 'update-key' ) {
+			this._.extend({
+				[msg.key]: msg.phrase
+			});
+
+			this.emit(':loaded', [msg.key]);
+			this.emit(':update');
+
+		} else if ( msg.type === 'request-keys' )
+			this.broadcast({
+				type: 'keys',
+				data: Array.from(this.captured.values())
+			});
+
+		else if ( msg.type === 'keys' && Array.isArray(msg.data) ) {
+			for(const entry of msg.data) {
+				// TODO: Merging logic.
+				this.captured.set(entry.key, entry);
+			}
+
+			this.emit(':got-keys');
+		}
+	}
+
+
+	openUI(popout = true) {
+		// Override the capturing state when we open the UI.
+		if ( ! this.capturing ) {
+			this.capturing = true;
+			this.emit(':update');
+		}
+
+		const mod = this.resolve('translation_ui');
+		if ( popout )
+			mod.openPopout();
+		else
+			mod.enable();
+	}
+
+
 	get locale() {
 		return this._.locale;
 	}
@@ -151,56 +268,91 @@ export class TranslationManager extends Module {
 	}
 
 
-	handleMessage(event) {
-		const msg = event.data;
-		if ( ! msg )
+	see(key, phrase, options) {
+		if ( ! this.capturing )
 			return;
 
-		if ( msg.type === 'seen' )
-			this.see(msg.key, true);
-
-		else if ( msg.type === 'request-keys' ) {
-			this.broadcast({type: 'keys', keys: Array.from(this._seen)})
+		let stack;
+		try {
+			stack = new Error().stack;
+		} catch(err) {
+			/* :thinking: */
+			try {
+				stack = err.stack;
+			} catch(err_again) { /* aww */ }
 		}
 
-		else if ( msg.type === 'keys' )
-			this.emit(':receive-keys', msg.keys);
+		let store = this.captured.get(key);
+		if ( ! store )
+			this.captured.set(key, store = {key, phrase, hits: 0, calls: []});
+
+
+		store.options = this.pluckVariables(key, options);
+		store.hits++;
+
+		if ( stack ) {
+			if ( this.mapStackTrace )
+				this.mapStackTrace(stack, result => this.recordCall(store, result), MAP_OPTIONS);
+			else
+				import(/* webpackChunkName: 'translation-ui' */ 'sourcemapped-stacktrace').then(mod => {
+					this.mapStackTrace = mod.mapStackTrace;
+					this.mapStackTrace(stack, result => this.recordCall(store, result), MAP_OPTIONS);
+				});
+		}
 	}
 
 
-	async getKeys() {
-		this.broadcast({type: 'request-keys'});
+	pluckVariables(key, options) {
+		const ast = this._.cache.get(key);
+		if ( ! ast )
+			return null;
 
-		let data;
+		const out = {};
+		this._doPluck(ast, options, out);
+		if ( Object.keys(out).length )
+			return out;
 
-		try {
-			data = await timeout(this.waitFor(':receive-keys'), 100);
-		} catch(err) { /* no-op */ }
+		return null;
+	}
 
-		if ( data )
-			for(const val of data)
-				this._seen.add(val);
+	_doPluck(ast, options, out) {
+		if ( Array.isArray(ast) ) {
+			for(const val of ast)
+				this._doPluck(val, options, out);
 
-		return this._seen;
+			return;
+		}
+
+		if ( typeof ast === 'object' && ast.v )
+			out[ast.v] = shallow_copy(get(ast.v, options));
 	}
 
 
-	broadcast(msg) {
-		if ( this._broadcaster )
-			this._broadcaster.postMessage(msg)
-	}
-
-
-	see(key, from_broadcast = false) {
-		if ( this._seen.has(key) )
+	recordCall(store, stack) { // eslint-disable-line class-methods-use-this
+		if ( ! Array.isArray(stack) )
 			return;
 
-		this._seen.add(key);
-		this.emit(':seen', key);
+		for(const line of stack) {
+			const match = STACK_SPLITTER.exec(line);
+			if ( ! match )
+				continue;
 
-		if ( ! from_broadcast )
-			this.broadcast({type: 'seen', key});
+			const location = SOURCE_SPLITTER.exec(match[2]);
+			if ( ! location || location[1] !== 'webpack' )
+				continue;
+
+			const file = location[2];
+			if ( file.includes('/node_modules/') || BAD_FRAMES.includes(file) )
+				continue;
+
+			const out = `${match[1]} (${location[2]}:${location[3]})`;
+			if ( ! store.calls.includes(out) )
+				store.calls.push(out);
+
+			return;
+		}
 	}
+
 
 	async loadLocale(locale) {
 		if ( locale === 'en' )
@@ -414,12 +566,12 @@ export class TranslationManager extends Module {
 	}
 
 	t(key, ...args) {
-		this.see(key);
+		this.see(key, ...args);
 		return this._.t(key, ...args);
 	}
 
 	tList(key, ...args) {
-		this.see(key);
+		this.see(key, ...args);
 		return this._.tList(key, ...args);
 	}
 }

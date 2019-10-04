@@ -27,6 +27,20 @@
 	}
 }
 
+.ffz--i18n-entry {
+	&:nth-child(2n+1) {
+		background-color: var(--color-background-alt-2);
+	}
+
+	.ffz--i18n-sub-entry {
+		width: 33%;
+	}
+
+	code {
+		white-space: pre-wrap;
+	}
+}
+
 textarea.tw-input {
 	height: unset;
 }

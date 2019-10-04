@@ -1,14 +1,14 @@
 <template lang="html">
 	<div class="tw-input">
 		<header>
-			{{ t(item.i18n_key, item.title, item) }}
+			{{ t(item.i18n_key, item.title) }}
 			<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
 		</header>
 		<section
 			v-if="item.description"
 			class="tw-c-text-alt-2"
 		>
-			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
+			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description)" />
 		</section>
 		<section v-if="item.extra">
 			<component :is="item.extra.component" :context="context" :item="item" />

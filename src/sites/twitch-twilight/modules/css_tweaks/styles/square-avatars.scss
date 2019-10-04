@@ -1,5 +1,10 @@
+.search-result-card,
 .tw-avatar {
 	--border-radius-rounded: 0 !important;
+}
+
+.player-streaminfo__picture img[src] {
+	border-radius: 0 !important;
 }
 
 .bits-leaderboard-medal .tw-avatar {

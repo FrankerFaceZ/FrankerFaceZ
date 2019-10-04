@@ -454,6 +454,9 @@ export default class SettingsManager extends Module {
 					parse_path(ui.path) :
 					undefined;
 
+			if ( ! ui.key && key )
+				ui.key = key;
+
 			if ( ! ui.key && ui.title )
 				ui.key = ui.title.toSnakeCase();
 		}

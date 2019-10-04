@@ -14,7 +14,7 @@
 			>
 
 			<label :for="item.full_key" class="tw-checkbox__label">
-				{{ t(item.i18n_key, item.title, item) }}
+				{{ t(item.i18n_key, item.title) }}
 				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
 			</label>
 
@@ -42,7 +42,7 @@
 			class="tw-c-text-alt-2"
 			style="padding-left:2.2rem"
 		>
-			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description, item)" />
+			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description)" />
 		</section>
 		<section
 			v-if="item.extra"

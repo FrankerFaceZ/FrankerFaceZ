@@ -4,7 +4,7 @@
 		class="ffz-dialog tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
 	>
 		<header class="tw-c-background-base tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
-			<h3 class="ffz-i-zreknarf ffz-i-pd-1">{{ t('i18n.ui.title', 'Translation Editor') }}</h3>
+			<h3 class="ffz-i-zreknarf ffz-i-pd-1">{{ t('i18n.ui.title', 'Translation Tester') }}</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
 				<div class="tw-search-input">
 					<label for="ffz-main-menu.search" class="tw-hide-accessible">{{ t('i18n.ui.search', 'Search Strings') }}</label>
@@ -26,6 +26,14 @@
 					</div>
 				</div>
 			</div>
+			<button class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip-wrapper" @click="requestKeys">
+				<span class="tw-button-icon__icon">
+					<figure class="ffz-i-arrows-cw" />
+				</span>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('i18n.ui.refresh', 'Refresh Strings') }}
+				</div>
+			</button>
 			<button v-if="!maximized && !exclusive" class="tw-button-icon tw-mg-x-05" @click="faded = ! faded">
 				<span class="tw-button-icon__icon">
 					<figure :class="faded ? 'ffz-i-eye-off' : 'ffz-i-eye'" />
@@ -51,9 +59,14 @@
 			</button>
 		</header>
 		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-overflow-hidden">
-			<div v-for="(key, idx) of phrases" :key="idx" class="tw-block tw-mg-1">
-				{{ key }}
-			</div>
+			<simplebar classes="tw-flex-grow-1">
+				<i18n-entry
+					v-for="phrase in filtered"
+					:key="phrase.key"
+					:entry="phrase"
+					@update="update(phrase.key, $event)"
+				/>
+			</simplebar>
 		</section>
 	</div>
 </template>
@@ -70,6 +83,21 @@ export default {
 	computed: {
 		filter() {
 			return this.query.toLowerCase()
+		},
+
+		filtered() {
+			if ( ! this.query || ! this.query.length )
+				return this.phrases;
+
+			return this.phrases.filter(entry => {
+				if ( entry.key.toLowerCase().includes(this.query) )
+					return true;
+
+				if ( entry.phrase.toLowerCase().includes(this.query) )
+					return true;
+
+				return false;
+			})
 		}
 	},
 
@@ -77,6 +105,13 @@ export default {
 		maximized() {
 			this.updateDrag();
 		}
+	},
+
+	created() {
+		this.requestKeys();
+		this.grabKeys();
+
+		this.listen('i18n:got-keys', this.grabKeys, this);
 	},
 
 	mounted() {
@@ -93,9 +128,22 @@ export default {
 			window.removeEventListener('resize', this._on_resize);
 			this._on_resize = null;
 		}
+
+		this.unlisten('i18n:got-keys', this.grabKeys, this);
 	},
 
 	methods: {
+		grabKeys() {
+			this.phrases = this.getKeys();
+			this.phrases.sort((a, b) => {
+				return a.key.localeCompare(b.key)
+			});
+		},
+
+		update(key, phrase) {
+			this.updatePhrase(key, phrase);
+		},
+
 		updateDrag() {
 			if ( this.maximized )
 				this.destroyDrag();

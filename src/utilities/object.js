@@ -349,6 +349,58 @@ export function get(path, object) {
 }
 
 
+/**
+ * Copy an object so that it can be safely serialized. If an object
+ * is not serializable, such as a promise, returns null.
+ *
+ * @export
+ * @param {*} object The thing to copy.
+ * @param {Number} [depth=2] The maximum depth to explore the object.
+ * @param {Set} [seen=null] A Set of seen objects. Internal use only.
+ * @returns {Object} The copy to safely store or use.
+ */
+export function shallow_copy(object, depth = 2, seen = null) {
+	if ( object == null )
+		return object;
+
+	if ( object instanceof Promise || typeof object === 'function' )
+		return null;
+
+	if ( typeof object !== 'object' )
+		return object;
+
+	if ( depth === 0 )
+		return null;
+
+	if ( ! seen )
+		seen = new Set;
+
+	seen.add(object);
+
+	if ( Array.isArray(object) ) {
+		const out = [];
+		for(const val of object) {
+			if ( seen.has(val) )
+				continue;
+
+			out.push(shallow_copy(val, depth - 1, new Set(seen)));
+		}
+
+		return out;
+	}
+
+	const out = {};
+	for(const [key, val] of Object.entries(object) ) {
+		if ( seen.has(val) )
+			continue;
+
+		out[key] = shallow_copy(val, depth - 1, new Set(seen));
+	}
+
+	return out;
+}
+
+
 export function deep_copy(object, seen) {
 	if ( object === null )
 		return null;

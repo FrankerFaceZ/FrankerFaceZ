@@ -1,13 +1,13 @@
 <template lang="html">
 	<div v-if="item.contents" :class="classes">
 		<header v-if="! item.no_header">
-			{{ t(item.i18n_key, item.title, item) }}
+			{{ t(item.i18n_key, item.title) }}
 		</header>
 		<section
 			v-if="item.description"
 			class="tw-pd-b-1"
 		>
-			<markdown :source="t(item.desc_i18n_key, item.description, item)" />
+			<markdown :source="t(item.desc_i18n_key, item.description)" />
 		</section>
 		<div
 			v-for="i in item.contents"

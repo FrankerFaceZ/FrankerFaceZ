@@ -29,7 +29,7 @@
 				class="tab tw-pd-y-05 tw-pd-x-1"
 				@click="select(idx)"
 			>
-				{{ t(i.i18n_key, i.title, i) }}
+				{{ t(i.i18n_key, i.title) }}
 				<span v-if="i.unseen > 0" class="tw-pill">{{ i.unseen }}</span>
 			</div>
 		</header>
@@ -42,7 +42,7 @@
 			aria-expanded="true"
 		>
 			<section v-if="tab.description" class="tw-pd-b-1">
-				{{ t(tab.desc_i18n_key, tab.description, tab) }}
+				{{ t(tab.desc_i18n_key, tab.description) }}
 			</section>
 			<div
 				v-for="i in tab.contents"

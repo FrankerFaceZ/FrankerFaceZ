@@ -364,7 +364,7 @@ export default class MainMenu extends Module {
 
 				for(const [setting_key, def] of token.settings)
 					if ( def.ui ) { //} && def.ui.title ) {
-						const i18n_key = `${token.i18n_key}.${def.ui.key}`
+						const i18n_key = def.ui.i18n_key ? def.ui.i18n_key : setting_key ? `setting.entry.${setting_key}` : def.ui.key ? `${token.i18n_key}.${def.ui.key}` : token.i18n_key;
 						const tok = Object.assign({
 							i18n_key,
 							desc_i18n_key: `${i18n_key}.description`,
@@ -387,17 +387,17 @@ export default class MainMenu extends Module {
 
 						let terms = [
 							setting_key,
-							this.i18n.t(tok.i18n_key, tok.title, tok, true)
+							this.i18n.t(tok.i18n_key, tok.title, null, true)
 						];
 
 						if ( have_locale && this.i18n.has(tok.i18n_key) )
-							terms.push(this.i18n.t(tok.i18n_key, tok.title, tok));
+							terms.push(this.i18n.t(tok.i18n_key, tok.title, null));
 
 						if ( tok.description ) {
-							terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, tok, true));
+							terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, null, true));
 
 							if ( have_locale && this.i18n.has(tok.desc_i18n_key) )
-								terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, tok));
+								terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, null));
 						}
 
 						if ( tok.getExtraTerms )
@@ -425,20 +425,20 @@ export default class MainMenu extends Module {
 			}
 
 			if ( ! token.search_terms ) {
-				const formatted = this.i18n.t(token.i18n_key, token.title, token, true);
+				const formatted = this.i18n.t(token.i18n_key, token.title, null, true);
 				let terms = [token.key];
 
 				if ( formatted && formatted.localeCompare(token.key, undefined, {sensitivity: 'base'}) )
 					terms.push(formatted);
 
 				if ( have_locale && this.i18n.has(token.i18n_key) )
-					terms.push(this.i18n.t(token.i18n_key, token.title, token));
+					terms.push(this.i18n.t(token.i18n_key, token.title, null));
 
 				if ( token.description ) {
-					terms.push(this.i18n.t(token.desc_i18n_key, token.description, token, true));
+					terms.push(this.i18n.t(token.desc_i18n_key, token.description, null, true));
 
 					if ( have_locale && this.i18n.has(token.desc_i18n_key) )
-						terms.push(this.i18n.t(token.desc_i18n_key, token.description, token));
+						terms.push(this.i18n.t(token.desc_i18n_key, token.description, null));
 				}
 
 				terms = terms.map(format_term);
