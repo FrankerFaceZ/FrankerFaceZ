@@ -45,7 +45,7 @@ export default {
 
 	data() {
 		return {
-			value: this.entry.phrase,
+			value: this.entry.translation,
 			valid: true,
 			error: null
 		}

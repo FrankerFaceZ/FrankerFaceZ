@@ -192,7 +192,14 @@ export class TranslationManager extends Module {
 	}
 
 	getKeys() {
-		return deep_copy(Array.from(this.captured.values()));
+		const out = [];
+		for(const entry of this.captured.values()) {
+			const thing = deep_copy(entry);
+			thing.translation = this._.phrases.get(thing.key) || thing.phrase;
+			out.push(thing);
+		}
+
+		return out;
 	}
 
 	requestKeys() {

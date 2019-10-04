@@ -64,7 +64,7 @@
 					v-for="phrase in filtered"
 					:key="phrase.key"
 					:entry="phrase"
-					@update="update(phrase.key, $event)"
+					@update="update(phrase, $event)"
 				/>
 			</simplebar>
 		</section>
@@ -94,6 +94,9 @@ export default {
 					return true;
 
 				if ( entry.phrase.toLowerCase().includes(this.query) )
+					return true;
+
+				if ( entry.translation.toLowerCase().includes(this.query) )
 					return true;
 
 				return false;
@@ -140,8 +143,9 @@ export default {
 			});
 		},
 
-		update(key, phrase) {
-			this.updatePhrase(key, phrase);
+		update(entry, phrase) {
+			entry.translation = phrase;
+			this.updatePhrase(entry.key, phrase);
 		},
 
 		updateDrag() {

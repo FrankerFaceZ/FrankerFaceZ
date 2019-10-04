@@ -92,7 +92,7 @@ export default class TranslationUI extends Module {
 
 	getData() {
 		return {
-			phrases: this.i18n.getKeys(),
+			phrases: [],
 			query: '',
 
 			faded: false,
