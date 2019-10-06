@@ -488,6 +488,7 @@ function listToString(list) {
 
 const CARDINAL_TO_LANG = {
 	arabic: ['ar'],
+	czech: ['cs'],
 	danish: ['da'],
 	german: ['de', 'el', 'en', 'es', 'fi', 'hu', 'it', 'nl', 'no', 'nb', 'tr', 'sv'],
 	hebrew: ['he'],
@@ -506,6 +507,13 @@ const CARDINAL_TYPES = {
 		const n1 = n % 1000;
 		if ( n1 >= 3 && n1 <= 10 ) return 3;
 		return n1 >= 11 ? 4 : 5;
+	},
+
+	czech: (n,i,v) => {
+		if ( v !== 0 ) return 4;
+		if ( i === 1 ) return 1;
+		if ( i >= 2 && i <= 4 ) return 3;
+		return 5;
 	},
 
 	danish: (n,i,v,t) => (n === 1 || (t !== 0 && (i === 0 || i === 1))) ? 1 : 5,

@@ -30,6 +30,8 @@ export default class Player extends Module {
 			PLAYER_ROUTES
 		);
 
+
+		// TODO: Better way to reposition player on demand.
 		this.PersistentPlayer = this.fine.define(
 			'twitch-player-persistent',
 			n => n.renderMiniHoverControls && n.togglePause,

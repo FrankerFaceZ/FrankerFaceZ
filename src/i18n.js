@@ -75,13 +75,13 @@ export class TranslationManager extends Module {
 
 		this._seen = new Set;
 
-		this.availableLocales = ['en']; //, 'de', 'ja'];
+		this.availableLocales = ['en'];
 
 		this.localeData = {
-			en: { name: 'English' }/*,
-			de: { name: 'Deutsch' },
-			ja: { name: '日本語' }*/
+			en: { name: 'English' }
 		}
+
+		this.loadLocales();
 
 		this.capturing = false;
 		this.captured = new Map;
@@ -140,28 +140,59 @@ export class TranslationManager extends Module {
 		this.settings.add('i18n.locale', {
 			default: -1,
 			process: (ctx, val) => {
-				if ( val === -1 )
-					val = ctx.get('context.session.languageCode');
+				if ( val === -1 || typeof val !== 'string' )
+					val = ctx.get('context.session.languageCode') || 'en';
 
+				if ( this.availableLocales.includes(val) )
+					return val;
+
+				const idx = val.indexOf('-');
+				if ( idx === -1 )
+					return 'en';
+
+				val = val.slice(0, idx);
 				return this.availableLocales.includes(val) ? val : 'en'
 			},
 
-			_ui: {
+			ui: {
 				path: 'Appearance > Localization >> General',
 				title: 'Language',
-				// description: '',
+				description: `FrankerFaceZ is lovingly translated by volunteers from our community. Thank you. If you're interested in helping to translate FrankerFaceZ, please [join our Discord](https://discord.gg/UrAkGhT) and ask about localization.`,
 
 				component: 'setting-select-box',
-				data: (profile, val) => [{
-					selected: val === -1,
-					value: -1,
-					i18n_key: 'setting.appearance.localization.general.language.twitch',
-					title: "Use Twitch's Language"
-				}].concat(this.availableLocales.map(l => ({
-					selected: val === l,
-					value: l,
-					title: this.localeData[l].name
-				})))
+				data: (profile, val) => {
+					const out = this.availableLocales.map(l => {
+						const data = this.localeData[l];
+						let title = data?.native_name;
+						if ( ! title )
+							title = data?.name || l;
+
+						if ( data?.coverage != null && data?.coverage < 100 )
+							title = this.t('i18n.locale-coverage', '{name} ({coverage,number,percent} Complete)', {
+								name: title,
+								coverage: data.coverage / 100
+							});
+
+						return {
+							selected: val === l,
+							value: l,
+							title
+						};
+					});
+
+					out.sort((a, b) => {
+						return a.title.localeCompare(b.title)
+					});
+
+					out.unshift({
+						selected: val === -1,
+						value: -1,
+						i18n_key: 'setting.appearance.localization.general.language.twitch',
+						title: "Use Twitch's Language"
+					});
+
+					return out;
+				}
 			},
 
 			changed: val => this.locale = val
@@ -361,122 +392,40 @@ export class TranslationManager extends Module {
 	}
 
 
+	async loadLocales() {
+		const resp = await fetch(`https://api-test.frankerfacez.com/v2/i18n/locales`);
+		if ( ! resp.ok ) {
+			this.log.warn(`Error Populating Locales -- Status: ${resp.status}`);
+			throw new Error(`http error ${resp.status} loading locales`)
+		}
+
+		let data = await resp.json();
+		if ( ! Array.isArray(data) || ! data.length )
+			data = [{
+				id: 'en',
+				name: 'English',
+				coverage: 100,
+				rtl: false
+			}];
+
+		this.localeData = {};
+		this.availableLocales = [];
+
+		for(const locale of data) {
+			const key = locale.id.toLowerCase();
+			this.localeData[key] = locale;
+			this.availableLocales.push(key);
+		}
+
+		this.emit(':locales-loaded');
+	}
+
+
 	async loadLocale(locale) {
 		if ( locale === 'en' )
 			return {};
 
-		/*if ( locale === 'de' )
-			return {
-				site: {
-					menu_button: 'FrankerFaceZ Leitstelle'
-				},
-
-				player: {
-					reset_button: 'Doppelklicken, um den Player zurückzusetzen'
-				},
-
-				setting: {
-					reset: 'Zurücksetzen',
-
-					appearance: {
-						_: 'Aussehen',
-						description: 'Personalisieren Sie das Aussehen von Twitch. Ändern Sie das Farbschema und die Schriften und stimmen Sie das Layout so ab, dass Sie ein optimales Erlebnis erleben.<br><br>(Yes, this is Google Translate still.)',
-						localization: {
-							_: 'Lokalisierung',
-
-							general: {
-								language: {
-									_: 'Sprache',
-									twitch: "Verwenden Sie Twitch's Sprache"
-								}
-							},
-
-
-							dates_and_times: {
-								_: 'Termine und Zeiten',
-								allow_relative_times: {
-									_: 'Relative Zeiten zulassen',
-									description: 'Wenn dies aktiviert ist, zeigt FrankerFaceZ einige Male in einem relativen Format an. <br>Beispiel: vor 3 Stunden'
-								}
-							}
-
-
-						},
-						layout: 'Layout',
-						theme: 'Thema'
-					},
-
-					profiles: {
-						_: 'Profile',
-
-						active: 'Dieses Profil ist aktiv.',
-						inactive: {
-							_: 'Dieses Profil ist nicht aktiv.',
-							description: 'Dieses Profil stimmt nicht mit dem aktuellen Kontext überein und ist momentan nicht aktiv, so dass Sie keine Änderungen sehen, die Sie hier bei Twitch vorgenommen haben.'
-						},
-
-						configure: 'Konfigurieren',
-
-						default: {
-							_: 'Standard Profil',
-							description: 'Einstellungen, die überall auf Twitch angewendet werden.'
-						},
-
-						moderation: {
-							_: 'Mäßigung',
-							description: 'Einstellungen, die gelten, wenn Sie ein Moderator des aktuellen Kanals sind.'
-						}
-					},
-
-					add_ons: {
-						_: 'Erweiterung'
-					},
-
-					'inherited-from': 'Vererbt von: {title}',
-					'overridden-by': 'Überschrieben von: {title}'
-				},
-
-				'main-menu': {
-					search: 'Sucheinstellungen',
-
-					about: {
-						_: 'Über',
-						news: 'Nachrichten',
-						support: 'Unterstützung'
-					}
-				}
-			}
-
-		if ( locale === 'ja' )
-			return {
-				greeting: 'こんにちは',
-
-				site: {
-					menu_button: 'FrankerFaceZコントロールセンター'
-				},
-
-				setting: {
-					appearance: {
-						_: '外観',
-						localization: '局地化',
-						layout: '設計',
-						theme: '題材'
-					}
-				},
-
-				'main-menu': {
-					search: '検索設定',
-					version: 'バージョン{version}',
-
-					about: {
-						_: '約',
-						news: '便り',
-						support: '対応'
-					}
-				}
-			}*/
-
-		const resp = await fetch(`${SERVER}/script/i18n/${locale}.json`);
+		const resp = await fetch(`https://api-test.frankerfacez.com/v2/i18n/locale/${locale}`);
 		if ( ! resp.ok ) {
 			if ( resp.status === 404 ) {
 				this.log.info(`Cannot Load Locale: ${locale}`);
@@ -487,7 +436,8 @@ export class TranslationManager extends Module {
 			throw new Error(`http error ${resp.status} loading phrases`);
 		}
 
-		return resp.json();
+		const data = await resp.json();
+		return data?.phrases;
 	}
 
 	async setLocale(new_locale) {
@@ -510,7 +460,8 @@ export class TranslationManager extends Module {
 			return [];
 		}
 
-		const phrases = await this.loadLocale(new_locale);
+		const data = this.localeData[new_locale];
+		const phrases = await this.loadLocale(data?.id || new_locale);
 
 		if ( this._.locale !== new_locale )
 			throw new Error('locale has changed since we started loading');
