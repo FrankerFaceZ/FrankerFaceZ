@@ -175,10 +175,17 @@ export default class AddonManager extends Module {
 			]);
 
 			if ( this.i18n.locale !== 'en' ) {
-				terms.add(this.i18n.t(addon.name_i18n, addon.name));
-				terms.add(this.i18n.t(addon.short_name_i18n, addon.short_name));
-				terms.add(this.i18n.t(addon.author_i18n, addon.author));
-				terms.add(this.i18n.t(addon.description_i18n, addon.description));
+				if ( addon.name_i18n )
+					terms.add(this.i18n.t(addon.name_i18n, addon.name));
+
+				if ( addon.short_name_i18n )
+					terms.add(this.i18n.t(addon.short_name_i18n, addon.short_name));
+
+				if ( addon.author_i18n )
+					terms.add(this.i18n.t(addon.author_i18n, addon.author));
+
+				if ( addon.description_i18n )
+					terms.add(this.i18n.t(addon.description_i18n, addon.description));
 			}
 
 			addon.search_terms = [...terms].map(term => term ? term.toLocaleLowerCase() : '').join('\n');

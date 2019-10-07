@@ -332,6 +332,7 @@ export default {
 
 		this.listen('i18n:got-keys', this.grabKeys, this);
 		this.listen('i18n:loaded', this.grabKeys, this);
+		this.listen('i18n:strings-loaded', this.grabKeys, this);
 	},
 
 	mounted() {
@@ -351,6 +352,7 @@ export default {
 
 		this.unlisten('i18n:got-keys', this.grabKeys, this);
 		this.unlisten('i18n:loaded', this.grabKeys, this);
+		this.unlisten('i18n:strings-loaded', this.grabKeys, this);
 	},
 
 	methods: {

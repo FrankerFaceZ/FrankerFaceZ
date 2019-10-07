@@ -22,6 +22,7 @@ export default class MenuButton extends SiteModule {
 		this._has_update = false;
 		this._important_update = false;
 		this._new_settings = 0;
+		this._error = null;
 
 		this.settings.add('ffz.show-new-settings', {
 			default: true,
@@ -37,6 +38,22 @@ export default class MenuButton extends SiteModule {
 			'nav-bar',
 			n => n.renderOnsiteNotifications && n.renderTwitchPrimeCrown
 		);
+	}
+
+	get has_error() {
+		return this._error != null;
+	}
+
+	get error() {
+		return this._error;
+	}
+
+	set error(val) {
+		if ( val === this._error )
+			return;
+
+		this._error = val;
+		this.update();
 	}
 
 	get new_settings() {
@@ -117,6 +134,10 @@ export default class MenuButton extends SiteModule {
 	}
 
 	update() {
+		requestAnimationFrame(() => this._update());
+	}
+
+	_update() {
 		for(const inst of this.NavBar.instances)
 			this.updateButton(inst);
 	}
@@ -170,7 +191,7 @@ export default class MenuButton extends SiteModule {
 			<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
 				{btn = (<button
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-					onClick={e => this.emit(':clicked', e, btn)} // eslint-disable-line react/jsx-no-bind
+					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<span class="tw-button-icon__icon">
@@ -178,7 +199,24 @@ export default class MenuButton extends SiteModule {
 						</span>
 					</div>
 				</button>)}
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				{this.has_error && (<div class="tw-absolute tw-balloon tw-balloon--down tw-balloon--lg tw-balloon--right tw-block">
+					<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4 tw-pd-1">
+						<div class="tw-flex tw-align-items-center">
+							<div class="tw-flex-grow-1">
+								{ this.error.i18n ? this.i18n.t(this.error.i18n, this.error.text) : this.error.text }
+							</div>
+							<button
+								class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip-wrapper"
+								onClick={() => this.error = null} // eslint-disable-line react/jsx-no-bind
+							>
+								<span class="tw-button-icon__icon">
+									<figure class="ffz-i-cancel" />
+								</span>
+							</button>
+						</div>
+					</div>
+				</div>)}
+				{! this.has_error && (<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
@@ -198,7 +236,7 @@ export default class MenuButton extends SiteModule {
 					{this.addons.has_dev && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.addon-dev-desc', 'You have loaded add-on data from a local development server.')}
 					</div>)}
-				</div>
+				</div>)}
 			</div>
 			{this.has_update && (<div class="ffz-menu__extra-pill tw-absolute">
 				<div class={`tw-pill ${this.important_update ? 'tw-pill--notification' : ''}`}>
@@ -215,69 +253,20 @@ export default class MenuButton extends SiteModule {
 					{pill}
 				</div>
 			</div>)}
-		</div>)
-
-		/*el = (<div class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-shrink-0 tw-flex-nowrap tw-pd-r-1 tw-pd-l-05">
-			{btn = (<button
-				class="tw-button-icon tw-button-icon--overlay tw-button-icon--large"
-				onClick={e => this.emit(':clicked', e, btn)} //eslint-disable-line react/jsx-no-bind
-			>
-				<div class="tw-tooltip-wrapper">
-					<span class="tw-button-icon__icon">
-						<figure class="ffz-i-zreknarf" />
-					</span>
-					{this.has_update && (<div class="ffz-menu__extra-pill tw-absolute">
-						<div class={`tw-pill ${this.important_update ? ' tw-pill--notification' : ''}`}>
-							<figure class="ffz-i-arrows-cw" />
-						</div>
-					</div>)}
-					{!this.has_update && DEBUG && this.addons.has_dev && (<div class="ffz-menu__extra-pill tw-absolute">
-						<div class="tw-pill">
-							{this.i18n.t('site.menu_button.dev', 'dev')}
-						</div>
-					</div>)}
-					{!this.has_update && DEBUG && ! this.addons.has_dev && (<div class="ffz-menu__extra-pill tw-absolute">
-						<div class="tw-pill">
-							{this.i18n.t('site.menu_button.main-dev', 'm-dev')}
-						</div>
-					</div>)}
-					{!this.has_update && ! DEBUG && this.addons.has_dev && (<div class="ffz-menu__extra-pill tw-absolute">
-						<div class="tw-pill">
-							{this.i18n.t('site.menu_button.addon-dev', 'a-dev')}
-						</div>
-					</div>)}
-					{this.has_new && ! pill && (<div class="ffz-menu__pill tw-absolute">
-						<div class="tw-pill">
-							{this.i18n.formatNumber(this.new_settings)}
-						</div>
-					</div>)}
-					{pill && (<div class="ffz-menu__pill tw-absolute">
-						<div class="tw-animation tw-animation--animate tw-animation--duration-medium tw-animation--timing-ease-in tw-animation--bounce-in">
-							<div class="tw-pill tw-pill--notification">
-								{pill}
-							</div>
-						</div>
-					</div>)}
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-						{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
-						{this.has_update && (<div class="tw-mg-t-1">
-							{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
-						</div>)}
-						{this.has_new && (<div class="tw-mg-t-1">
-							{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}
-						</div>)}
-						{DEBUG && (<div class="tw-mg-t-1">
-							{this.i18n.t('site.menu_button.main-dev-desc', 'You are running a developer build of FrankerFaceZ.')}
-						</div>)}
-						{this.addons.has_dev && (<div class="tw-mg-t-1">
-							{this.i18n.t('site.menu_button.addon-dev-desc', 'You have loaded add-on data from a local development server.')}
-						</div>)}
-					</div>
-				</div>
-			</button>)}
-		</div>);*/
+		</div>);
 
 		container.insertBefore(el, container.lastElementChild);
+	}
+
+	handleClick(event, btn) {
+		if ( event.shiftKey ) {
+			if ( DEBUG && event.ctrlKey )
+				return requestAnimationFrame(() => this.i18n.openUI());
+
+			return this.resolve('main_menu').openPopout();
+		}
+
+		this.emit(':clicked', event, btn);
 	}
 
 
@@ -292,10 +281,12 @@ export default class MenuButton extends SiteModule {
 
 		}).catch(err => {
 			this.log.capture(err);
-
-			// TODO: Show a proper dialog and not an alert.
 			this.log.error('Error enabling main menu.', err);
-			alert('There was an error displaying the menu.'); // eslint-disable-line no-alert
+
+			this.error = {
+				i18n: 'site.menu_button.error',
+				text: 'There was an error loading the FFZ Control Center. Please refresh and try again.'
+			};
 
 			if ( cl )
 				cl.remove('loading');

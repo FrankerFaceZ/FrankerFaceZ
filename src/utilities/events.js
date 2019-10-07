@@ -25,6 +25,7 @@ String.prototype.toSnakeCase = function() {
 export class EventEmitter {
 	constructor() {
 		this.__listeners = {};
+		this.__running = new Set;
 		this.__dead_events = 0;
 	}
 
@@ -93,6 +94,9 @@ export class EventEmitter {
 	}
 
 	off(event, fn, ctx) {
+		if ( this.__running.has(event) )
+			throw new Error(`concurrent modification: tried removing event listener while event is running`);
+
 		let list = this.__listeners[event];
 		if ( ! list )
 			return;
@@ -121,13 +125,22 @@ export class EventEmitter {
 	}
 
 	emitUnsafe(event, ...args) {
-		const list = this.__listeners[event];
+		let list = this.__listeners[event];
 		if ( ! list )
 			return;
+
+		if ( this.__running.has(event) )
+			throw new Error(`concurrent access: tried to emit event while event is running`);
 
 		// Track removals separately to make iteration over the event list
 		// much, much simpler.
 		const removed = new Set;
+
+		// Set the current list of listeners to null because we don't want
+		// to enter some kind of loop if a new listener is added as the result
+		// of an existing listener.
+		this.__listeners[event] = null;
+		this.__running.add(event);
 
 		for(const item of list) {
 			const [fn, ctx, ttl] = item,
@@ -146,32 +159,49 @@ export class EventEmitter {
 				break;
 		}
 
+		// Remove any dead listeners from the list.
 		if ( removed.size ) {
-			// Re-grab the list to make sure it wasn't removed mid-iteration.
-			const new_list = this.__listeners[event];
-			if ( new_list ) {
-				for(const item of removed) {
-					const idx = new_list.indexOf(item);
-					if ( idx !== -1 )
-						new_list.splice(idx, 1);
-				}
-
-				if ( ! list.length ) {
-					this.__listeners[event] = null;
-					this.__dead_events++;
-				}
+			for(const item of removed) {
+				const idx = list.indexOf(item);
+				if ( idx !== -1 )
+					list.splice(idx, 1);
 			}
 		}
+
+		// Were more listeners added while we were running? Just combine
+		// the two lists if so.
+		if ( this.__listeners[event] )
+			list = list.concat(this.__listeners[event]);
+
+		// If we have items, store the list back. Otherwise, mark that we
+		// have a dead listener.
+		if ( list.length )
+			this.__listeners[event] = list;
+		else {
+			this.__listeners[event] = null;
+			this.__dead_events++;
+		}
+
+		this.__running.delete(event);
 	}
 
 	emit(event, ...args) {
-		const list = this.__listeners[event];
+		let list = this.__listeners[event];
 		if ( ! list )
 			return;
+
+		if ( this.__running.has(event) )
+			throw new Error(`concurrent access: tried to emit event while event is running`);
 
 		// Track removals separately to make iteration over the event list
 		// much, much simpler.
 		const removed = new Set;
+
+		// Set the current list of listeners to null because we don't want
+		// to enter some kind of loop if a new listener is added as the result
+		// of an existing listener.
+		this.__listeners[event] = null;
+		this.__running.add(event);
 
 		for(const item of list) {
 			const [fn, ctx, ttl] = item;
@@ -196,33 +226,50 @@ export class EventEmitter {
 				break;
 		}
 
+		// Remove any dead listeners from the list.
 		if ( removed.size ) {
-			// Re-grab the list to make sure it wasn't removed mid-iteration.
-			const new_list = this.__listeners[event];
-			if ( new_list ) {
-				for(const item of removed) {
-					const idx = new_list.indexOf(item);
-					if ( idx !== -1 )
-						new_list.splice(idx, 1);
-				}
-
-				if ( ! list.length ) {
-					this.__listeners[event] = null;
-					this.__dead_events++;
-				}
+			for(const item of removed) {
+				const idx = list.indexOf(item);
+				if ( idx !== -1 )
+					list.splice(idx, 1);
 			}
 		}
+
+		// Were more listeners added while we were running? Just combine
+		// the two lists if so.
+		if ( this.__listeners[event] )
+			list = list.concat(this.__listeners[event]);
+
+		// If we have items, store the list back. Otherwise, mark that we
+		// have a dead listener.
+		if ( list.length )
+			this.__listeners[event] = list;
+		else {
+			this.__listeners[event] = null;
+			this.__dead_events++;
+		}
+
+		this.__running.delete(event);
 	}
 
 	async emitAsync(event, ...args) {
-		const list = this.__listeners[event];
+		let list = this.__listeners[event];
 		if ( ! list )
 			return [];
+
+		if ( this.__running.has(event) )
+			throw new Error(`concurrent access: tried to emit event while event is running`);
 
 		// Track removals separately to make iteration over the event list
 		// much, much simpler.
 		const removed = new Set,
 			promises = [];
+
+		// Set the current list of listeners to null because we don't want
+		// to enter some kind of loop if a new listener is added as the result
+		// of an existing listener.
+		this.__listeners[event] = null;
+		this.__running.add(event);
 
 		for(const item of list) {
 			const [fn, ctx] = item;
@@ -260,22 +307,30 @@ export class EventEmitter {
 
 		const out = await Promise.all(promises);
 
+		// Remove any dead listeners from the list.
 		if ( removed.size ) {
-			// Re-grab the list to make sure it wasn't removed mid-iteration.
-			const new_list = this.__listeners[event];
-			if ( new_list ) {
-				for(const item of removed) {
-					const idx = new_list.indexOf(item);
-					if ( idx !== -1 )
-						new_list.splice(idx, 1);
-				}
-
-				if ( ! list.length ) {
-					this.__listeners[event] = null;
-					this.__dead_events++;
-				}
+			for(const item of removed) {
+				const idx = list.indexOf(item);
+				if ( idx !== -1 )
+					list.splice(idx, 1);
 			}
 		}
+
+		// Were more listeners added while we were running? Just combine
+		// the two lists if so.
+		if ( this.__listeners[event] )
+			list = list.concat(this.__listeners[event]);
+
+		// If we have items, store the list back. Otherwise, mark that we
+		// have a dead listener.
+		if ( list.length )
+			this.__listeners[event] = list;
+		else {
+			this.__listeners[event] = null;
+			this.__dead_events++;
+		}
+
+		this.__running.delete(event);
 
 		return out;
 	}

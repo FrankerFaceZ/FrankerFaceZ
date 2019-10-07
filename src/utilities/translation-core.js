@@ -488,7 +488,7 @@ const CARDINAL_TO_LANG = {
 	hebrew: ['he'],
 	persian: ['fa'],
 	french: ['fr', 'pt'],
-	russian: ['ru']
+	russian: ['ru','uk']
 }
 
 const CARDINAL_TYPES = {
@@ -536,7 +536,8 @@ const ORDINAL_TO_LANG = {
 	hungarian: ['hu'],
 	italian: ['it'],
 	one: ['fr', 'lo', 'ms'],
-	swedish: ['sv']
+	swedish: ['sv'],
+	ukranian: ['uk']
 };
 
 const ORDINAL_TYPES = {
@@ -547,6 +548,12 @@ const ORDINAL_TYPES = {
 		const n1 = n % 10, n2 = n % 100;
 		if ( n1 === 1 && n2 !== 11 ) return 1;
 		if ( n1 === 2 && n2 !== 12 ) return 2;
+		if ( n1 === 3 && n2 !== 13 ) return 3;
+		return 5;
+	},
+
+	ukranian(n) {
+		const n1 = n % 10, n2 = n % 100;
 		if ( n1 === 3 && n2 !== 13 ) return 3;
 		return 5;
 	},

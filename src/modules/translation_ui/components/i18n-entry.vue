@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--i18n-entry tw-pd-x-1 tw-pd-y-05 tw-border-b">
 		<div class="tw-flex tw-full-width">
-			<div class="ffz--i18n-sub-entry tw-mg-r-05 tw-flex-grow-1 tw-c-text-alt tw-mg-b-2">
+			<div class="ffz--i18n-sub-entry tw-mg-r-05 tw-c-text-alt tw-mg-b-2">
 				<div class="tw-font-size-7 tw-c-text-alt-2 tw-pd-b-05 tw-strong tw-upcase tw-ellipsis" :title="entry.key">
 					{{ entry.key }}
 				</div>
@@ -54,7 +54,7 @@
 			v-if="open"
 			class="tw-flex tw-full-width tw-mg-t-05"
 		>
-			<div class="ffz--i18n-sub-entry tw-mg-r-05 tw-flex-grow-1 tw-c-text-alt tw-mg-b-2">
+			<div class="ffz--i18n-sub-entry tw-mg-r-05 tw-c-text-alt tw-mg-b-2">
 				<div class="tw-font-size-7 tw-c-text-alt-2 tw-pd-b-05 tw-strong tw-upcase tw-ellipsis">
 					{{ t('i18n.ui.preview', 'Preview') }}
 				</div>
