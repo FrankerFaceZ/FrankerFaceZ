@@ -5,6 +5,11 @@
 // ============================================================================
 
 import dayjs from 'dayjs';
+import RelativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(RelativeTime);
+
+
 import Parser from '@ffz/icu-msgparser';
 
 import {get} from 'utilities/object';
@@ -71,8 +76,12 @@ export const DEFAULT_TYPES = {
 		return this.toLocaleString(val);
 	},
 
+	relativetime(val, node) {
+		return this.formatRelativeTime(val, node.f);
+	},
+
 	humantime(val, node) {
-		return this.formatHumanTime(val, 1, node.f);
+		return this.formatRelativeTime(val, node.f);
 	},
 
 	en_plural: v => v !== 1 ? 's' : ''
@@ -226,36 +235,16 @@ export default class TranslationCore {
 		return thing;
 	}
 
-	formatHumanTime(value, factor, round = false) {
-		if ( value instanceof Date )
-			value = (Date.now() - value.getTime()) / 1000;
+	formatRelativeTime(value) { // eslint-disable-line class-methods-use-this
+		if ( !(value instanceof Date) )
+			value = new Date(Date.now() + value * 1000);
 
-		value = Math.floor(value);
-		factor = Number(factor) || 1;
-
-		const fn = round ? Math.round : Math.floor;
-
-		const years = fn((value * factor) / 31536000) / factor;
-		if ( years >= 1 )
-			return this.t('human-time.years', '{count,number} year{count,en_plural}', years);
-
-		const days = fn((value %= 31536000) / 86400);
-		if ( days >= 1 )
-			return this.t('human-time.days', '{count,number} day{count,en_plural}', days);
-
-		const hours = fn((value %= 86400) / 3600);
-		if ( hours >= 1 )
-			return this.t('human-time.hours', '{count,number} hour{count,en_plural}', hours);
-
-		const minutes = fn((value %= 3600) / 60);
-		if ( minutes >= 1 )
-			return this.t('human-time.minutes', '{count,number} minute{count,en_plural}', minutes);
-
-		const seconds = value % 60;
-		if ( seconds >= 1 )
-			return this.t('human-time.seconds', '{count,number} second{count,en_plural}', seconds);
-
-		return this.t('human-time.none', 'less than a second');
+		const d = dayjs(value);
+		try {
+			return d.locale(this._locale).fromNow(true);
+		} catch(err) {
+			return d.fromNow(true);
+		}
 	}
 
 	formatNumber(value, format) {
@@ -388,16 +377,16 @@ export default class TranslationCore {
 		this.extend(phrases);
 	}
 
-	_preTransform(key, phrase, options) {
+	_preTransform(key, phrase, options, settings = {}) {
 		let ast, locale, data = options == null ? {} : options;
 		if ( typeof data === 'number' )
 			data = {count: data};
 
-		if ( this.phrases.has(key) ) {
+		if ( ! settings.noCache && this.phrases.has(key) ) {
 			ast = this.cache.get(key);
 			locale = this.locale;
 
-		} else if ( this.cache.has(key) ) {
+		} else if ( ! settings.noCache && this.cache.has(key) ) {
 			ast = this.cache.get(key);
 			locale = this.defaultLocale;
 
@@ -406,7 +395,10 @@ export default class TranslationCore {
 			try {
 				parsed = this.parser.parse(phrase);
 			} catch(err) {
-				if ( this.warn )
+				if ( settings.throwParse )
+					throw err;
+
+				if ( ! settings.noWarn && this.warn )
 					this.warn(`Error parsing i18n phrase for key "${key}": ${phrase}`, err);
 
 				ast = ['parsing error'];
@@ -417,10 +409,12 @@ export default class TranslationCore {
 				ast = parsed;
 				locale = this.locale;
 
-				if ( this.locale === this.defaultLocale )
-					this.phrases.set(key, phrase);
+				if ( ! settings.noCache ) {
+					if ( this.locale === this.defaultLocale )
+						this.phrases.set(key, phrase);
 
-				this.cache.set(key, parsed);
+					this.cache.set(key, parsed);
+				}
 			}
 		}
 
@@ -430,12 +424,12 @@ export default class TranslationCore {
 		return [ast, data, locale];
 	}
 
-	t(key, phrase, options, use_default) {
-		return listToString(this.tList(key, phrase, options, use_default));
+	t(key, phrase, options, settings) {
+		return listToString(this.tList(key, phrase, options, settings));
 	}
 
-	tList(key, phrase, options, use_default) {
-		return this._processAST(...this._preTransform(key, phrase, options, use_default));
+	tList(key, phrase, options, settings) {
+		return this._processAST(...this._preTransform(key, phrase, options, settings));
 	}
 
 	formatNode(node, data, locale = null, out = null, ast = null) {

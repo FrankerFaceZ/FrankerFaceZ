@@ -24,10 +24,10 @@
 
 		<div class="tw-flex-grow-1">
 			<div class="tw-border-b tw-mg-b-05">
-				<h4>{{ t(addon.name_i18n, addon.name) }} <span class="tw-c-text-alt-2 tw-font-size-6">({{ addon.id }})</span></h4>
+				<h4>{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }} <span class="tw-c-text-alt-2 tw-font-size-6">({{ addon.id }})</span></h4>
 				<span class="tw-c-text-alt tw-mg-r-1">
 					{{ t('addon.author', 'By: {author}', {
-						author: t(addon.author_i18n, addon.author)
+						author: addon.author_i18n ? t(addon.author_i18n, addon.author) : addon.author
 					}) }}
 				</span>
 				<span v-if="version" class="tw-c-text-alt">
@@ -126,18 +126,7 @@ export default {
 	props: ['id', 'addon', 'item'],
 
 	data() {
-		let description;
-		if ( this.addon.description_i18n )
-			description = this.t(this.addon.description_i18n, this.addon.description);
-		else
-			description = this.addon.description;
-
-		const lines = description.split(/\n/);
-
 		return {
-			description,
-			multi_line: lines.length > 1,
-			first_line: lines[0],
 			enabled: this.item.isAddonEnabled(this.id),
 			external: this.item.isAddonExternal(this.id),
 			version: this.item.getVersion(this.id),
@@ -148,6 +137,25 @@ export default {
 	computed: {
 		icon() {
 			return this.addon.icon || 'https://cdn.frankerfacez.com/badge/2/4/solid'
+		},
+
+		description() {
+			if ( this.addon.description_i18n )
+				return this.t(this.addon.description_i18n, this.addon.description);
+
+			return this.addon.description;
+		},
+
+		lines() {
+			return this.description.split(/\n/);
+		},
+
+		multi_line() {
+			return this.lines.length > 1
+		},
+
+		first_line() {
+			return this.lines[0]
 		},
 
 		show_description() {

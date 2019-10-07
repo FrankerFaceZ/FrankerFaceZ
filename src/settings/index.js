@@ -459,6 +459,14 @@ export default class SettingsManager extends Module {
 
 			if ( ! ui.key && ui.title )
 				ui.key = ui.title.toSnakeCase();
+
+			if ( ui.component === 'setting-select-box' && Array.isArray(ui.data) ) {
+				const i18n_base = `${ui.i18n_key || `setting.entry.${key}`}.values`;
+				for(const value of ui.data) {
+					if ( value.i18n_key === undefined && value.value )
+						value.i18n_key = `${i18n_base}.${value.value}`;
+				}
+			}
 		}
 
 		if ( definition.changed )

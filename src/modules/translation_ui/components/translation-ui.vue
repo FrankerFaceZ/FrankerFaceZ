@@ -26,6 +26,14 @@
 					</div>
 				</div>
 			</div>
+			<button class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip-wrapper" @click="saveBlob">
+				<span class="tw-button-icon__icon">
+					<figure class="ffz-i-floppy" />
+				</span>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('i18n.ui.save', 'Generate Change Blob') }}
+				</div>
+			</button>
 			<button class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip-wrapper" @click="requestKeys">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-arrows-cw" />
@@ -58,13 +66,150 @@
 				</span>
 			</button>
 		</header>
-		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-overflow-hidden">
+		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-flex-column tw-overflow-hidden">
+			<header class="tw-border-b tw-pd-05 tw-c-background-base tw-flex tw-align-items-center">
+				<button class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper" @click="prevPage">
+					<span class="tw-button-icon__icon">
+						<figure class="ffz-i-left-dir" />
+					</span>
+					<div class="tw-tooltip tw-tooltip--down">
+						{{ t('page.previous', 'Previous Page') }}
+					</div>
+				</button>
+				<button
+					v-if="! page_open"
+					class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-core-button--text tw-c-text-base tw-interactive"
+					@click="openPage"
+				>
+					{{ t('i18n.ui.pages', 'Page {current,number} of {total,number}', {
+						current: page,
+						total: pages
+					}) }}
+				</button>
+				<input
+					v-if="page_open"
+					ref="pager"
+					:value="page"
+					:max="pages"
+					class="tw-block tw-border-radius-medium tw-font-size-6 tw-input tw-pd-x-1 tw-pd-y-05"
+					type="number"
+					min="1"
+					@keydown.enter="closePage"
+					@blur="closePage"
+				>
+				<button class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper" @click="nextPage">
+					<span class="tw-button-icon__icon">
+						<figure class="ffz-i-right-dir" />
+					</span>
+					<div class="tw-tooltip tw-tooltip--down">
+						{{ t('page.next', 'Next Page') }}
+					</div>
+				</button>
+				<div class="tw-flex-grow-1" />
+				<button
+					class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper"
+					:class="[mode === 0 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					@click="mode = 0"
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<figure class="ffz-i-search" />
+						<div class="tw-mg-l-05">
+							{{ total }}
+						</div>
+					</div>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('i18n.ui.all', 'All Strings') }}
+					</div>
+				</button>
+				<button
+					v-if="existing != total"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper"
+					:class="[mode === 1 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					@click="mode = 1"
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<figure class="ffz-i-star-empty" />
+						<div class="tw-mg-l-05">
+							{{ existing }}
+						</div>
+					</div>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('i18n.ui.existing', 'Existing Strings') }}
+					</div>
+				</button>
+				<button
+					v-if="added"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper"
+					:class="[mode === 2 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					@click="mode = 2"
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<figure class="ffz-i-star" />
+						<div class="tw-mg-l-05">
+							{{ added }}
+						</div>
+					</div>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('i18n.ui.added', 'New Strings') }}
+					</div>
+				</button>
+				<button
+					v-if="changed"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper"
+					:class="[mode === 3 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					@click="mode = 3"
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<figure class="ffz-i-floppy" />
+						<div class="tw-mg-l-05">
+							{{ changed }}
+						</div>
+					</div>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('i18n.ui.changed', 'Changed Strings') }}
+					</div>
+				</button>
+				<button
+					v-if="pending"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper"
+					:class="[mode === 4 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					@click="mode = 4"
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<figure class="ffz-i-upload-cloud" />
+						<div class="tw-mg-l-05">
+							{{ pending }}
+						</div>
+					</div>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('i18n.ui.pending', 'Pending Strings') }}
+					</div>
+				</button>
+				<button
+					v-if="invalid"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip-wrapper"
+					:class="[mode === 5 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					@click="mode = 5"
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<figure class="ffz-i-attention" />
+						<div class="tw-mg-l-05">
+							{{ invalid }}
+						</div>
+					</div>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('i18n.ui.invalid', 'Invalid Strings') }}
+					</div>
+				</button>
+			</header>
 			<simplebar classes="tw-flex-grow-1">
 				<i18n-entry
-					v-for="phrase in filtered"
+					v-for="phrase in paged"
 					:key="phrase.key"
 					:entry="phrase"
+					:get-i18n="getI18n"
 					@update="update(phrase, $event)"
+					@update-context="updateContext(phrase, $event)"
 				/>
 			</simplebar>
 		</section>
@@ -74,10 +219,24 @@
 <script>
 
 import displace from 'displacejs';
+import Parser from '@ffz/icu-msgparser';
+import { saveAs } from 'file-saver';
+
+import { deep_equals, deep_copy } from 'utilities/object';
+
+const parser = new Parser();
+const PER_PAGE = 20;
 
 export default {
 	data() {
-		return this.$vnode.data;
+		const data = this.$vnode.data;
+
+		data.mode = 0;
+
+		data.page = 1;
+		data.page_open = false;
+
+		return data;
 	},
 
 	computed: {
@@ -86,25 +245,82 @@ export default {
 		},
 
 		filtered() {
-			if ( ! this.query || ! this.query.length )
+			const mode = this.mode,
+				query = this.query,
+				has_query = query?.length > 0;
+
+			if ( mode === 0 && ! has_query )
 				return this.phrases;
 
 			return this.phrases.filter(entry => {
-				if ( entry.key.toLowerCase().includes(this.query) )
-					return true;
+				if ( has_query ) {
+					if (! (entry.key && entry.key.toLowerCase().includes(query)) &&
+						! (entry.phrase && entry.phrase.toLowerCase().includes(query)) &&
+						! (entry.translation && entry.translation.toLowerCase().includes(query)) )
+						return false;
+				}
 
-				if ( entry.phrase.toLowerCase().includes(this.query) )
-					return true;
+				if ( mode === 1 )
+					return entry.known && ! entry.different;
 
-				if ( entry.translation.toLowerCase().includes(this.query) )
-					return true;
+				if ( mode === 2 )
+					return ! entry.known;
 
-				return false;
+				if ( mode === 3 )
+					return entry.different;
+
+				if ( mode === 4 )
+					return ! entry.known || entry.different || entry.context_changed;
+
+				if ( mode === 5 )
+					return ! entry.valid;
+
+				return true;
 			})
+		},
+
+		total() {
+			return this.phrases.length;
+		},
+
+		invalid() {
+			return this.phrases.filter(entry => ! entry.valid).length;
+		},
+
+		existing() {
+			return this.total - (this.added + this.changed);
+		},
+
+		added() {
+			return this.phrases.filter(entry => ! entry.known).length;
+		},
+
+		changed() {
+			return this.phrases.filter(entry => entry.different).length;
+		},
+
+		pending() {
+			return this.phrases.filter(entry => ! entry.known || entry.different || entry.context_changed).length;
+		},
+
+		pages() {
+			return Math.ceil(this.filtered.length / PER_PAGE);
+		},
+
+		paged() {
+			const offset = (this.page - 1) * PER_PAGE;
+			return this.filtered.slice(offset, offset + PER_PAGE);
 		}
 	},
 
 	watch: {
+		pages() {
+			if ( this.pages == 0 )
+				this.page = 1;
+			else if ( this.page > this.pages )
+				this.page = this.pages;
+		},
+
 		maximized() {
 			this.updateDrag();
 		}
@@ -115,6 +331,7 @@ export default {
 		this.grabKeys();
 
 		this.listen('i18n:got-keys', this.grabKeys, this);
+		this.listen('i18n:loaded', this.grabKeys, this);
 	},
 
 	mounted() {
@@ -133,19 +350,103 @@ export default {
 		}
 
 		this.unlisten('i18n:got-keys', this.grabKeys, this);
+		this.unlisten('i18n:loaded', this.grabKeys, this);
 	},
 
 	methods: {
-		grabKeys() {
-			this.phrases = this.getKeys();
-			this.phrases.sort((a, b) => {
-				return a.key.localeCompare(b.key)
+		saveBlob() {
+			const out = [];
+
+			for(const entry of this.phrases) {
+				if ( entry.known && ! entry.different && ! entry.context_changed )
+					continue;
+
+				out.push({
+					key: entry.key,
+					calls: entry.calls,
+					options: entry.options,
+					phrase: entry.translation
+				});
+			}
+
+			try {
+				const blob = new Blob([JSON.stringify(out, null, '\t')], {type: 'application/json;charset=utf-8'});
+				saveAs(blob, 'ffz-strings.json');
+			} catch(err) {
+				alert('Unable to save: ' + err); // eslint-disable-line
+			}
+		},
+
+		openPage() {
+			this.page_open = true;
+			this.$nextTick(() => {
+				this.$refs.pager.focus();
+				this.$refs.pager.select();
 			});
+		},
+
+		closePage() {
+			if ( ! this.page_open )
+				return;
+
+			try {
+				this.page = parseInt(this.$refs.pager.value, 10);
+				if ( this.page < 1 )
+					this.page = 1;
+				else if ( this.page > this.pages )
+					this.page = this.pages;
+			} catch(err) { /* no-op */ }
+
+			this.page_open = false;
+		},
+
+		prevPage() {
+			if ( this.page > 1 )
+				this.page--;
+		},
+
+		nextPage() {
+			if ( this.page < this.pages )
+				this.page++;
+		},
+
+		grabKeys() {
+			this.phrases = [];
+			for(const phrase of this.getKeys()) {
+				try {
+					parser.parse(phrase.translation);
+					phrase.valid = true;
+				} catch(err) {
+					phrase.valid = false;
+				}
+
+				phrase.original_opts = deep_copy(phrase.options);
+				phrase.context_changed = false;
+
+				this.phrases.push(phrase);
+			}
+
+			this.phrases.sort((a, b) => a.key.localeCompare(b.key));
 		},
 
 		update(entry, phrase) {
 			entry.translation = phrase;
+			try {
+				parser.parse(phrase);
+				entry.valid = true;
+			} catch(err) {
+				entry.valid = false;
+			}
+
 			this.updatePhrase(entry.key, phrase);
+		},
+
+		updateContext(entry, context) {
+			if ( context && Object.keys(context).length === 0 )
+				context = null;
+
+			entry.options = context;
+			entry.context_changed = ! deep_equals(entry.options, entry.original_opts);
 		},
 
 		updateDrag() {

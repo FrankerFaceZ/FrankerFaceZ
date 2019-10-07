@@ -369,7 +369,7 @@ export default class MainMenu extends Module {
 							i18n_key,
 							desc_i18n_key: `${i18n_key}.description`,
 							sort: 0,
-							title: setting_key
+							//title: setting_key
 						}, def.ui, {
 							full_key: `setting:${setting_key}`,
 							setting: setting_key,
@@ -386,12 +386,15 @@ export default class MainMenu extends Module {
 						}
 
 						let terms = [
-							setting_key,
-							this.i18n.t(tok.i18n_key, tok.title, null, true)
+							setting_key
 						];
 
-						if ( have_locale && this.i18n.has(tok.i18n_key) )
-							terms.push(this.i18n.t(tok.i18n_key, tok.title, null));
+						if ( tok.title ) {
+							terms.push(this.i18n.t(tok.i18n_key, tok.title, null, true));
+
+							if ( have_locale && this.i18n.has(tok.i18n_key) )
+								terms.push(this.i18n.t(tok.i18n_key, tok.title, null));
+						}
 
 						if ( tok.description ) {
 							terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, null, true));
@@ -425,7 +428,7 @@ export default class MainMenu extends Module {
 			}
 
 			if ( ! token.search_terms ) {
-				const formatted = this.i18n.t(token.i18n_key, token.title, null, true);
+				const formatted = token.title && this.i18n.t(token.i18n_key, token.title, null, true);
 				let terms = [token.key];
 
 				if ( formatted && formatted.localeCompare(token.key, undefined, {sensitivity: 'base'}) )

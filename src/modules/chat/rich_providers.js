@@ -194,7 +194,7 @@ export const Videos = {
 					image: video.previewThumbnailURL,
 					title: video.title,
 					desc_1,
-					desc_2: this.i18n.t('video.desc.2', '{length,duration} — {views,number} Views - {date}', {
+					desc_2: this.i18n.t('video.desc.2', '{length,duration} — {views,number} Views - {date,datetime}', {
 						length: video.lengthSeconds,
 						views: video.viewCount,
 						date: video.publishedAt

@@ -99,6 +99,7 @@ export default class TranslationUI extends Module {
 			maximized: this.dialog.maximized,
 			exclusive: this.dialog.exclusive,
 
+			getI18n: () => this.i18n,
 			getKeys: () => this.i18n.getKeys(),
 			requestKeys: () => this.i18n.requestKeys(),
 			updatePhrase: (key, phrase) => this.i18n.updatePhrase(key, phrase),

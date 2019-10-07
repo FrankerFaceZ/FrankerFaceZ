@@ -315,6 +315,9 @@ export function substr_count(str, needle) {
  * @returns {*} The value at that point in the path, or undefined if part of the path doesn't exist.
  */
 export function get(path, object) {
+	if ( HOP.call(object, path) )
+		return object[path];
+
 	if ( typeof path === 'string' )
 		path = path.split('.');
 

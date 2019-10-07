@@ -12,8 +12,10 @@ import Module from 'utilities/module';
 
 import NewTransCore from 'utilities/translation-core';
 
+const API_SERVER = 'https://api-test.frankerfacez.com';
+
 const STACK_SPLITTER = /\s*at\s+(.+?)\s+\((.+)\)$/,
-	SOURCE_SPLITTER = /^(.+):\/\/(.+?):(\d+:\d+)$/;
+	SOURCE_SPLITTER = /^(.+):\/\/(.+?)(?:\?[a-zA-Z0-9]+)?:(\d+:\d+)$/;
 
 const MAP_OPTIONS = {
 	filter(line) {
@@ -83,6 +85,9 @@ export class TranslationManager extends Module {
 
 		this.loadLocales();
 
+		this.strings_loaded = false;
+		this.new_strings = 0;
+		this.changed_strings = 0;
 		this.capturing = false;
 		this.captured = new Map;
 
@@ -160,48 +165,54 @@ export class TranslationManager extends Module {
 				description: `FrankerFaceZ is lovingly translated by volunteers from our community. Thank you. If you're interested in helping to translate FrankerFaceZ, please [join our Discord](https://discord.gg/UrAkGhT) and ask about localization.`,
 
 				component: 'setting-select-box',
-				data: (profile, val) => {
-					const out = this.availableLocales.map(l => {
-						const data = this.localeData[l];
-						let title = data?.native_name;
-						if ( ! title )
-							title = data?.name || l;
-
-						if ( data?.coverage != null && data?.coverage < 100 )
-							title = this.t('i18n.locale-coverage', '{name} ({coverage,number,percent} Complete)', {
-								name: title,
-								coverage: data.coverage / 100
-							});
-
-						return {
-							selected: val === l,
-							value: l,
-							title
-						};
-					});
-
-					out.sort((a, b) => {
-						return a.title.localeCompare(b.title)
-					});
-
-					out.unshift({
-						selected: val === -1,
-						value: -1,
-						i18n_key: 'setting.appearance.localization.general.language.twitch',
-						title: "Use Twitch's Language"
-					});
-
-					return out;
-				}
+				data: (profile, val) => this.getLocaleOptions(val)
 			},
 
 			changed: val => this.locale = val
 		});
+	}
 
+	getLocaleOptions(val) {
+		if( val === undefined )
+			val = this.settings.get('i18n.locale');
+
+		const out = this.availableLocales.map(l => {
+			const data = this.localeData[l];
+			let title = data?.native_name;
+			if ( ! title )
+				title = data?.name || l;
+
+			if ( data?.coverage != null && data?.coverage < 100 )
+				title = this.t('i18n.locale-coverage', '{name} ({coverage,number,percent} Complete)', {
+					name: title,
+					coverage: data.coverage / 100
+				});
+
+			return {
+				selected: val === l,
+				value: l,
+				title
+			};
+		});
+
+		out.sort((a, b) => {
+			return a.title.localeCompare(b.title)
+		});
+
+		out.unshift({
+			selected: val === -1,
+			value: -1,
+			i18n_key: 'setting.appearance.localization.general.language.twitch',
+			title: "Use Twitch's Language"
+		});
+
+		return out;
 	}
 
 	onEnable() {
 		this.capturing = this.settings.get('i18n.debug.capture');
+		if ( this.capturing )
+			this.loadStrings();
 
 		this._ = new NewTransCore({ //TranslationCore({
 			warn: (...args) => this.log.warn(...args),
@@ -306,6 +317,80 @@ export class TranslationManager extends Module {
 	}
 
 
+	async loadStrings() {
+		if ( this.strings_loaded )
+			return;
+
+		if ( this.strings_loading )
+			return;
+
+		this.strings_loading = true;
+
+		const loadPage = async page => {
+			const resp = await fetch(`${API_SERVER}/v2/i18n/strings?page=${page}`);
+			if ( ! resp.ok ) {
+				this.log.warn(`Error Loading Strings -- Status: ${resp.status}`);
+				return {
+					next: false,
+					strings: []
+				};
+			}
+
+			const data = await resp.json();
+			return {
+				next: data?.pages > page,
+				strings: data?.strings || []
+			}
+		}
+
+		let page = 1;
+		let next = true;
+		let strings = [];
+
+		while(next) {
+			const data = await loadPage(page++); // eslint-disable-line no-await-in-loop
+			strings = strings.concat(data.strings);
+			next = data.next;
+		}
+
+		for(const str of strings) {
+			const key = str.id;
+			let store = this.captured.get(key);
+			if ( ! store ) {
+				this.captured.set(key, store = {key, phrase: str.default, hits: 0, calls: []});
+				if ( str.source?.length )
+					store.calls.push(str.source);
+			}
+
+			if ( ! store.options && str.context?.length )
+				try {
+					store.options = JSON.parse(str.context);
+				} catch(err) { /* no-op */ }
+
+			store.known = str.default;
+			store.different = str.default !== store.phrase;
+		}
+
+		this.new_strings = 0;
+		this.changed_strings = 0;
+
+		for(const entry of this.captured.values()) {
+			if ( ! entry.known )
+				this.new_strings++;
+			if ( entry.different )
+				this.changed_strings++;
+		}
+
+		this.strings_loaded = true;
+		this.strings_loading = false;
+
+		this.log.info(`Loaded ${strings.length} strings from the server.`);
+		this.emit(':strings-loaded');
+		this.emit(':new-strings', this.new_strings);
+		this.emit(':changed-strings', this.changed_strings);
+	}
+
+
 	see(key, phrase, options) {
 		if ( ! this.capturing )
 			return;
@@ -321,9 +406,22 @@ export class TranslationManager extends Module {
 		}
 
 		let store = this.captured.get(key);
-		if ( ! store )
+		if ( ! store ) {
 			this.captured.set(key, store = {key, phrase, hits: 0, calls: []});
+			if ( this.strings_loaded ) {
+				this.new_strings++;
+				this.emit(':new-strings', this.new_strings);
+			}
+		}
 
+		if ( phrase !== store.phrase ) {
+			store.phrase = phrase;
+			if ( store.known && phrase !== store.known && ! store.different ) {
+				store.different = true;
+				this.changed_strings++;
+				this.emit(':changed-strings', this.changed_strings);
+			}
+		}
 
 		store.options = this.pluckVariables(key, options);
 		store.hits++;
@@ -383,7 +481,17 @@ export class TranslationManager extends Module {
 			if ( file.includes('/node_modules/') || BAD_FRAMES.includes(file) )
 				continue;
 
-			const out = `${match[1]} (${location[2]}:${location[3]})`;
+			let out;
+			if ( match[1] === 'MainMenu.getSettingsTree' )
+				out = 'FFZ Control Center';
+			else {
+				let label = match[1];
+				if ( label === 'Proxy.render' && location[2].includes('.vue') )
+					label = 'Vue Component';
+
+				out = `${label} (${location[2]}:${location[3]})`;
+			}
+
 			if ( ! store.calls.includes(out) )
 				store.calls.push(out);
 
@@ -393,7 +501,7 @@ export class TranslationManager extends Module {
 
 
 	async loadLocales() {
-		const resp = await fetch(`https://api-test.frankerfacez.com/v2/i18n/locales`);
+		const resp = await fetch(`${API_SERVER}/v2/i18n/locales`);
 		if ( ! resp.ok ) {
 			this.log.warn(`Error Populating Locales -- Status: ${resp.status}`);
 			throw new Error(`http error ${resp.status} loading locales`)
@@ -425,7 +533,7 @@ export class TranslationManager extends Module {
 		if ( locale === 'en' )
 			return {};
 
-		const resp = await fetch(`https://api-test.frankerfacez.com/v2/i18n/locale/${locale}`);
+		const resp = await fetch(`${API_SERVER}/v2/i18n/locale/${locale}`);
 		if ( ! resp.ok ) {
 			if ( resp.status === 404 ) {
 				this.log.info(`Cannot Load Locale: ${locale}`);
@@ -503,8 +611,8 @@ export class TranslationManager extends Module {
 		return this._.toLocaleString(...args);
 	}
 
-	toHumanTime(...args) {
-		return this._.formatHumanTime(...args);
+	toRelativeTime(...args) {
+		return this._.formatRelativeTime(...args);
 	}
 
 	formatNumber(...args) {

@@ -68,6 +68,10 @@ export default class MenuButton extends SiteModule {
 		return this._has_update;
 	}
 
+	get has_strings() {
+		return this.i18n.new_strings > 0 || this.i18n.changed_strings > 0;
+	}
+
 	set has_update(val) {
 		if ( val && ! this._has_update )
 			this._important_update = true;
@@ -97,6 +101,9 @@ export default class MenuButton extends SiteModule {
 		if ( this.has_update )
 			return null;
 
+		if ( this.has_strings )
+			return this.i18n.formatNumber(this.i18n.new_strings + this.i18n.changed_strings);
+
 		if ( DEBUG && this.addons.has_dev )
 			return this.i18n.t('site.menu_button.dev', 'dev');
 
@@ -125,6 +132,8 @@ export default class MenuButton extends SiteModule {
 
 		this.once(':clicked', this.loadMenu);
 
+		this.on('i18n:new-strings', this.update);
+		this.on('i18n:changed-strings', this.update);
 		this.on('i18n:update', this.update);
 		this.on('addons:data-loaded', this.update);
 	}
@@ -176,6 +185,12 @@ export default class MenuButton extends SiteModule {
 					</div>)}
 					{this.has_new && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}
+					</div>)}
+					{this.has_strings && (<div class="tw-mg-t-1">
+						{this.i18n.t('site.menu_button.strings', 'There {added,plural,one {is # new string} other {are # new strings}} and {changed,plural,one {# changed string} other {# changed strings}}.', {
+							added: this.i18n.new_strings,
+							changed: this.i18n.changed_strings
+						})}
 					</div>)}
 					{DEBUG && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.main-dev-desc', 'You are running a developer build of FrankerFaceZ.')}

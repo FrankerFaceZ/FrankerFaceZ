@@ -242,7 +242,7 @@ export const unban = {
 	title: 'Unban User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.unban', 'Unban {user.login}', {user: data.user});
+		return this.i18n.t('chat.actions.unban.tooltip', 'Unban {user.login}', {user: data.user});
 	},
 
 	click(event, data) {

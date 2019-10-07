@@ -141,9 +141,9 @@ export default class AddonManager extends Module {
 		const old = this.addons[addon.id];
 		this.addons[addon.id] = addon;
 
-		addon.name_i18n = addon.name_i18n || `addon.${addon.id}.name`;
+		/*addon.name_i18n = addon.name_i18n || `addon.${addon.id}.name`;
 		addon.short_name_i18n = addon.short_name_i18n || `addon.${addon.id}.short_name`;
-		addon.author_i18n = addon.author_i18n || `addon.${addon.id}.author`;
+		addon.author_i18n = addon.author_i18n || `addon.${addon.id}.author`;*/
 
 		addon.dev = is_dev;
 		addon.requires = addon.requires || [];
