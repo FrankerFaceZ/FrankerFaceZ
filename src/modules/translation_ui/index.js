@@ -91,6 +91,8 @@ export default class TranslationUI extends Module {
 
 
 	getData() {
+		this.i18n.loadStrings();
+
 		return {
 			phrases: [],
 			query: '',
