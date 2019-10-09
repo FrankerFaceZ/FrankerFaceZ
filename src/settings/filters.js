@@ -90,7 +90,7 @@ export const Time = {
 			const d = new Date,
 				v = d.getHours() * 60 + d.getMinutes();
 
-			return v <= start || v >= end;
+			return v >= start || v <= end;
 		}
 	},
 
