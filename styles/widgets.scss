@@ -149,10 +149,16 @@ textarea.tw-input {
 	}
 }
 
+.ffz--profile-row__icon,
 .ffz--profile__icon {
 	&.ffz-i-ok,
 	.ffz-i-ok {
 		color: var(--color-green-darker);
+	}
+
+	&.ffz-i-minus,
+	.ffz-i-minus {
+		color: var(--color-text-alt-2);
 	}
 
 	&.ffz-i-cancel,

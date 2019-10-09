@@ -42,6 +42,74 @@ export const Or = {
 
 // Context Stuff
 
+function parseTime(time) {
+	if ( typeof time !== 'string' || ! time.length )
+		return null;
+
+	const idx = time.indexOf(':');
+	if ( idx === -1 )
+		return null;
+
+	let hours, minutes;
+	try {
+		hours = parseInt(time.slice(0, idx), 10);
+		minutes = parseInt(time.slice(idx + 1), 10);
+
+	} catch(err) {
+		return null;
+	}
+
+	return hours * 60 + minutes;
+}
+
+export const Time = {
+	_captured: new Set,
+
+	createTest(config) {
+		const start = parseTime(config[0]),
+			end = parseTime(config[1]);
+
+		if ( start == null || end == null )
+			return () => false;
+
+		if ( start <= end )
+			return () => {
+				Time._captured.add(start);
+				Time._captured.add(end + 1);
+
+				const d = new Date,
+					v = d.getHours() * 60 + d.getMinutes();
+
+				return v >= start && v <= end;
+			}
+
+		return () => {
+			Time._captured.add(start + 1);
+			Time._captured.add(end);
+
+			const d = new Date,
+				v = d.getHours() * 60 + d.getMinutes();
+
+			return v <= start || v >= end;
+		}
+	},
+
+	captured: () => {
+		const out = Array.from(Time._captured);
+		Time._captured = new Set;
+		out.sort((a, b) => a - b);
+		return out;
+	},
+
+	title: 'Time of Day',
+	i18n: 'settings.filter.time',
+
+	default: ['08:00', '18:00'],
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/time.vue')
+}
+
+
 export const TheaterMode = {
 	createTest(config) {
 		return ctx => ctx.ui && ctx.ui.theatreModeEnabled === config;

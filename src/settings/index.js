@@ -46,7 +46,6 @@ export default class SettingsManager extends Module {
 
 		this.migrations = new MigrationManager(this);
 
-
 		// Also create the main context as early as possible.
 		this.main_context = new SettingsContext(this);
 
@@ -98,6 +97,42 @@ export default class SettingsManager extends Module {
 		this.log.info(`Initialization complete after ${duration.toFixed(5)}ms -- Values: ${this.provider.size} -- Profiles: ${this.__profiles.length}`)
 
 		this.scheduleUpdates();
+		this.updateClock();
+	}
+
+
+	updateClock() {
+		const captured = require('./filters').Time.captured();
+		if ( ! captured?.length )
+			return;
+
+		if ( this._time_timer )
+			clearTimeout(this._time_timer);
+
+		const d = new Date,
+			now = d.getHours() * 60 + d.getMinutes();
+
+		let next = this._time_next != null ? this._time_next : null;
+		for(const value of captured) {
+			if ( value <= now )
+				continue;
+
+			if ( next == null || value < next )
+				next = value;
+		}
+
+		// There's no time waiting for today. Skip to the next day.
+		if ( next == null )
+			next = captured[0] + 1440;
+
+		// Determine how long it'll take to reach the next time period.
+		const delta = (next - now) * 60 * 1000 - 59750 + (60000 - Date.now() % 60000);
+		this._time_timer = setTimeout(() => {
+			for(const context of this.__contexts)
+				context.selectProfiles();
+
+			this.updateClock();
+		}, delta);
 	}
 
 
@@ -186,6 +221,8 @@ export default class SettingsManager extends Module {
 		// Look up the profile it belongs to and emit a changed event from
 		// that profile, thus notifying any contexts or UI instances.
 		key = key.substr(2);
+
+		// Is it a value?
 		const idx = key.indexOf(':');
 		if ( idx === -1 )
 			return;
@@ -193,8 +230,12 @@ export default class SettingsManager extends Module {
 		const profile = this.__profile_ids[key.slice(0, idx)],
 			s_key = key.slice(idx + 1);
 
-		if ( profile )
-			profile.emit('changed', s_key, new_value, deleted);
+		if ( profile ) {
+			if ( s_key === ':enabled' )
+				profile.emit('toggled', profile, deleted ? true : new_value);
+			else
+				profile.emit('changed', s_key, new_value, deleted);
+		}
 	}
 
 
@@ -210,6 +251,17 @@ export default class SettingsManager extends Module {
 		// And then re-select the active profiles.
 		for(const context of this.__contexts)
 			context.selectProfiles();
+
+		this.updateClock();
+	}
+
+
+	_onProfileToggled(profile, val) {
+		for(const context of this.__contexts)
+			context.selectProfiles();
+
+		this.updateClock();
+		this.emit(':profile-toggled', profile, val);
 	}
 
 
@@ -249,6 +301,9 @@ export default class SettingsManager extends Module {
 
 		let reordered = false,
 			changed = false;
+
+		for(const profile of old_profiles)
+			profile.off('toggled', this._onProfileToggled, this);
 
 		for(const profile_data of raw_profiles) {
 			const id = profile_data.id,
@@ -293,11 +348,16 @@ export default class SettingsManager extends Module {
 			changed = true;
 		}
 
+		for(const profile of profiles)
+			profile.on('toggled', this._onProfileToggled, this);
+
 		if ( ! changed && ! old_ids.size || suppress_events )
 			return;
 
 		for(const context of this.__contexts)
 			context.selectProfiles();
+
+		this.updateClock();
 
 		for(const id of new_ids)
 			this.emit(':profile-created', profile_ids[id]);
@@ -327,8 +387,9 @@ export default class SettingsManager extends Module {
 			options.name = `Unnamed Profile ${i}`;
 
 		const profile = this.__profile_ids[i] = new SettingsProfile(this, options);
-
 		this.__profiles.unshift(profile);
+
+		profile.on('toggled', this._onProfileToggled, this);
 
 		this._saveProfiles();
 		this.emit(':profile-created', profile);
@@ -351,6 +412,7 @@ export default class SettingsManager extends Module {
 		if ( profile.id === 0 )
 			throw new Error('cannot delete default profile');
 
+		profile.off('toggled', this._onProfileToggled, this);
 		profile.clear();
 		this.__profile_ids[id] = null;
 
@@ -400,6 +462,8 @@ export default class SettingsManager extends Module {
 		this.provider.set('profiles', this.__profiles.map(prof => prof.data));
 		for(const context of this.__contexts)
 			context.selectProfiles();
+
+		this.updateClock();
 	}
 
 

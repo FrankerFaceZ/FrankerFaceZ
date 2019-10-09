@@ -7,16 +7,24 @@
 				<template v-if="i !== item">&raquo; </template>
 			</span>
 		</header>
-		<section v-if="! context.currentProfile.live && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
+		<section v-if="(! context.currentProfile.live || ! context.currentProfile.toggled) && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
 				<h3 class="ffz-i-attention">
-					{{ t('setting.profiles.inactive', "This profile isn't active.") }}
+					{{ t('setting.profiles.inactive', "This profile is not active.") }}
 				</h3>
 
-				{{ t('setting.profiles.inactive.description',
-					"This profile's rules don't match the current context and it therefore isn't currently active, so you " +
-						"won't see changes you make here reflected on Twitch.")
-				}}
+				<span v-if="! context.currentProfile.toggled">
+					{{ t('setting.profiles.disabled.description',
+						"This profile has been disabled, so you won't see changes you make here reflected on Twitch.")
+					}}
+				</span>
+
+				<span v-else>
+					{{ t('setting.profiles.inactive.description',
+						"This profile's rules don't match the current context and it therefore isn't currently active, so you " +
+							"won't see changes you make here reflected on Twitch.")
+					}}
+				</span>
 			</div>
 		</section>
 		<section v-if="context.has_update" class="tw-border-t tw-pd-t-1 tw-pd-b-2">

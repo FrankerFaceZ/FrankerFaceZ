@@ -6,7 +6,7 @@
 
 import {DEBUG} from 'utilities/constants';
 import {SiteModule} from 'utilities/module';
-import {createElement} from 'utilities/dom';
+import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 
 export default class MenuButton extends SiteModule {
 	constructor(...args) {
@@ -192,6 +192,7 @@ export default class MenuButton extends SiteModule {
 				{btn = (<button
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
+					onContextMenu={e => this.renderContext(e, btn)} // eslint-disable-line react/jsx-no-bind
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<span class="tw-button-icon__icon">
@@ -256,6 +257,9 @@ export default class MenuButton extends SiteModule {
 		</div>);
 
 		container.insertBefore(el, container.lastElementChild);
+
+		if ( this._ctx_open )
+			this.renderContext(null, btn);
 	}
 
 	handleClick(event, btn) {
@@ -269,13 +273,160 @@ export default class MenuButton extends SiteModule {
 		this.emit(':clicked', event, btn);
 	}
 
+	renderButtonIcon(profile) {
+		const live = this.settings.main_context.hasProfile(profile);
+		return (<figure class={`ffz--profile__icon ${live ? 'ffz-i-ok' : profile.toggled ? 'ffz-i-minus' : 'ffz-i-cancel'}`} />);
+	}
 
-	loadMenu(event, btn) {
+	renderButtonTip(profile) {
+		if ( ! profile.toggled )
+			return this.i18n.t('setting.profiles.disabled', 'This profile is disabled.');
+
+		if ( this.settings.main_context.hasProfile(profile) )
+			return this.i18n.t('setting.profiles.active', 'This profile is enabled and active.');
+
+		return this.i18n.t('setting.profiles.disabled.rules', 'This profile is enabled, but inactive due to its rules.');
+	}
+
+	renderContext(event, btn) {
+		if ( event ) {
+			if ( event.shiftKey || event.ctrlKey )
+				return;
+
+			event.preventDefault();
+		}
+
+		const container = btn.parentElement.parentElement;
+		let ctx = container.querySelector('.ffz--menu-context');
+		if ( ctx ) {
+			if ( ctx._ffz_destroy )
+				ctx._ffz_destroy();
+			else
+				return;
+		}
+
+		const destroy = () => {
+			this._ctx_open = false;
+
+			if ( ctx._ffz_outside )
+				ctx._ffz_outside.destroy();
+
+			ctx.remove();
+		}
+
+		const profiles = [];
+
+		for(const profile of this.settings.__profiles) {
+			const toggle = (<button
+				class="tw-flex-shrink-0 tw-mg-r-1 tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-relative ffz-tooltip ffz-tooltip--no-mouse"
+				data-title={this.renderButtonTip(profile)}
+				onClick={e => {  // eslint-disable-line react/jsx-no-bind
+					profile.toggled = ! profile.toggled;
+
+					setChildren(toggle, this.renderButtonIcon(profile));
+					toggle.dataset.title = this.renderButtonTip(profile);
+
+					if ( toggle['_ffz_tooltip$0']?.rerender )
+						toggle['_ffz_tooltip$0'].rerender();
+
+					this.emit('tooltips:cleanup');
+
+					e.preventDefault();
+					e.stopPropagation();
+				}}
+			>
+				{ this.renderButtonIcon(profile) }
+			</button>)
+
+			profiles.push(<div class="tw-relative tw-border-b tw-pd-y-05 tw-pd-l-1 tw-flex">
+				{toggle}
+				<div>
+					<h4>{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }</h4>
+					{profile.description && (<div class="description">
+						{ profile.desc_i18n_key ? this.i18n.t(profile.desc_i18n_key, profile.description, profile) : profile.description }
+					</div>)}
+				</div>
+			</div>);
+		}
+
+
+		ctx = (<div class="tw-absolute tw-balloon tw-balloon--down tw-balloon--lg tw-balloon--right tw-block ffz--menu-context">
+			<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
+				<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
+					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left" />
+					<div class="tw-align-items-center tw-flex tw-flex-column tw-flex-grow-1 tw-justify-content-center">
+						<h5 class="tw-align-center tw-c-text-alt tw-semibold">
+							{ this.i18n.t('site.menu_button.profiles', 'Profiles') }
+						</h5>
+					</div>
+					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
+						<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+							<button
+								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
+								onClick={e => this.openSettings(e)} // eslint-disable-line react/jsx-no-bind
+							>
+								<span class="tw-button-icon__icon">
+									<figure class="ffz-i-cog" />
+								</span>
+							</button>
+							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+								{ this.i18n.t('setting.profiles.configure', 'Configure') }
+							</div>
+						</div>
+					</div>
+					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
+						<button
+							class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+							onClick={destroy} // eslint-disable-line react/jsx-no-bind
+						>
+							<span class="tw-button-icon__icon">
+								<figure class="ffz-i-cancel" />
+							</span>
+						</button>
+					</div>
+				</div>
+				<div class="center-window__long-scrollable-area scrollable-area scrollable-area--suppress-scroll-x" data-simplebar>
+					{profiles}
+				</div>
+			</div>
+		</div>);
+
+		ctx._ffz_destroy = destroy;
+		ctx._ffz_outside = new ClickOutside(ctx, destroy);
+		container.appendChild(ctx);
+
+		this._ctx_open = true;
+	}
+
+
+	openSettings() {
+		const menu = this.resolve('main_menu');
+		if ( ! menu )
+			return;
+
+		menu.requestPage('data_management.profiles');
+		if ( menu.showing )
+			return;
+
+		this.emit(':clicked');
+	}
+
+
+	loadMenu(event, btn, page) {
+		const menu = this.resolve('main_menu');
+		if ( ! menu )
+			return;
+
 		const cl = btn && btn.classList;
 		if ( cl )
 			cl.add('loading');
 
-		this.resolve('main_menu').enable(event).then(() => {
+		if ( page )
+			menu.requestPage(page);
+		if ( menu.showing )
+			return;
+
+		menu.enable(event).then(() => {
 			if ( cl )
 				cl.remove('loading');
 

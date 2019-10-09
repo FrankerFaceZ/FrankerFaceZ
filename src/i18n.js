@@ -486,7 +486,7 @@ export class TranslationManager extends Module {
 				out = 'FFZ Control Center';
 			else {
 				let label = match[1];
-				if ( label === 'Proxy.render' && location[2].includes('.vue') )
+				if ( (label === 'Proxy.render' || label.startsWith('Proxy.push')) && location[2].includes('.vue') )
 					label = 'Vue Component';
 
 				out = `${label} (${location[2]}:${location[3]})`;

@@ -487,6 +487,8 @@ const CARDINAL_TO_LANG = {
 	german: ['de', 'el', 'en', 'es', 'fi', 'hu', 'it', 'nl', 'no', 'nb', 'tr', 'sv'],
 	hebrew: ['he'],
 	persian: ['fa'],
+	polish: ['pl'],
+	serbian: ['sr'],
 	french: ['fr', 'pt'],
 	russian: ['ru','uk']
 }
@@ -521,6 +523,28 @@ const CARDINAL_TYPES = {
 	},
 
 	persian: (n, i) => (i === 0 || n === 1) ? 1 : 5,
+
+	serbian(n, i, v, t) {
+		if ( v !== 0 ) return 5;
+		const i1 = i % 10, i2 = i % 100;
+		const t1 = t % 10, t2 = t % 100;
+		if ( i1 === 1 && i2 !== 11 ) return 1;
+		if ( t1 === 1 && t2 !== 11 ) return 1;
+		if ( i1 >= 2 && i1 <= 4 && !(i2 >= 12 && i2 <= 14) ) return 3;
+		if ( t1 >= 2 && t1 <= 4 && !(t2 >= 12 && t2 <= 14) ) return 3;
+		return 5;
+	},
+
+	polish(n, i, v) {
+		if ( v !== 0 ) return 5;
+		if ( n === 1 ) return 1;
+		const n1 = n % 10, n2 = n % 100;
+		if ( n1 >= 2 && n1 <= 4 && !(n2 >= 12 && n2 <= 14) ) return 3;
+		if ( i !== 1 && (n1 === 0 || n1 === 1) ) return 4;
+		if ( n1 >= 5 && n1 <= 9 ) return 4;
+		if ( n2 >= 12 && n2 <= 14 ) return 4;
+		return 5;
+	},
 
 	russian(n,i,v) {
 		const n1 = n % 10, n2 = n % 100;

@@ -18,9 +18,9 @@
 	border-left: 4px solid;
 	border-left-color: transparent;
 
-	&.live .ffz--profile-row__icon {
+	/*&.live .ffz--profile-row__icon {
 		color: var(--color-green-darker);
-	}
+	}*/
 
 	&:not(.live):not(:hover):not(:focus) {
 		opacity: .5;

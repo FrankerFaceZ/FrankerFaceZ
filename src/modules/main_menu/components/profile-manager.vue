@@ -164,16 +164,28 @@
 					</div>
 
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-border-l tw-mg-l-1 tw-pd-l-1">
-						<div v-if="p.live" class="ffz--profile__icon ffz-i-ok tw-relative tw-tooltip-wrapper">
-							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-								{{ t('setting.profiles.active', 'This profile is active.') }}
+						<button class="tw-button tw-button--text" @click="toggle(p)">
+							<div
+								:class="{
+									'ffz-i-ok': p.live,
+									'ffz-i-cancel': ! p.toggled,
+									'ffz-i-minus': p.toggled && ! p.live
+								}"
+								class="ffz--profile__icon tw-relative tw-tooltip-wrapper"
+							>
+								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+									<span v-if="p.live">
+										{{ t('setting.profiles.active', 'This profile is enabled and active.') }}
+									</span>
+									<span v-if="! p.toggled">
+										{{ t('setting.profiles.disabled', 'This profile is disabled.') }}
+									</span>
+									<span v-if="p.toggled && ! p.live">
+										{{ t('setting.profiles.disabled.rules', 'This profile is enabled, but inactive due to its rules.') }}
+									</span>
+								</div>
 							</div>
-						</div>
-						<div v-if="! p.live" class="ffz--profile__icon ffz-i-cancel tw-relative tw-tooltip-wrapper">
-							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-								{{ t('setting.profiles.inactive', 'This profile is not active.') }}
-							</div>
-						</div>
+						</button>
 					</div>
 				</div>
 			</section>
@@ -245,6 +257,10 @@ export default {
 
 			item.contents[0].parent = item;
 			this.$emit('change-item', item);
+		},
+
+		toggle(profile) {
+			profile.toggle();
 		},
 
 		resetImport() {

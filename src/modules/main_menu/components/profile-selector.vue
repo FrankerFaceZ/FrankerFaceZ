@@ -13,7 +13,7 @@
 			@keyup.space="focusShow"
 			@click="togglePopup"
 		>
-			{{ t(context.currentProfile.i18n_key, context.currentProfile.title, context.currentProfile) }}
+			{{ context.currentProfile.i18n_key ? t(context.currentProfile.i18n_key, context.currentProfile.title, context.currentProfile) : context.currentProfile.title }}
 		</div>
 		<div
 			v-if="opened"
@@ -51,6 +51,14 @@
 								@keyup.enter="changeProfile(p)"
 								@click="changeProfile(p)"
 							>
+								<div
+									v-if="! p.toggled"
+									class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-cancel tw-absolute"
+								>
+									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+										{{ t('setting.profiles.disabled', 'This profile is disabled.') }}
+									</div>
+								</div>
 								<div
 									v-if="p.live"
 									class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok tw-absolute"

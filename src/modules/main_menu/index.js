@@ -526,6 +526,8 @@ export default class MainMenu extends Module {
 			order: context.manager.__profiles.indexOf(profile),
 			live: context.__profiles.includes(profile),
 
+			toggled: profile.toggled,
+
 			title: profile.name,
 			i18n_key: profile.i18n_key,
 
@@ -541,6 +543,7 @@ export default class MainMenu extends Module {
 				profile.save()
 			},
 
+			toggle: () => profile.toggled = ! profile.toggled,
 			getBackup: () => deep_copy(profile.getBackup()),
 
 			context: deep_copy(profile.context),
@@ -617,6 +620,11 @@ export default class MainMenu extends Module {
 						this._update_profiles(profile);
 					},
 
+					_profile_toggled(profile, val) {
+						Vue.set(profile_keys[profile.id], 'toggled', val);
+						this._update_profiles(profile);
+					},
+
 					_profile_deleted(profile) {
 						Vue.delete(profile_keys, profile.id);
 						this._update_profiles();
@@ -641,6 +649,7 @@ export default class MainMenu extends Module {
 					_add_user() {
 						this._users++;
 						if ( this._users === 1 ) {
+							settings.on(':profile-toggled', this._profile_toggled, this);
 							settings.on(':profile-created', this._profile_created, this);
 							settings.on(':profile-changed', this._profile_changed, this);
 							settings.on(':profile-deleted', this._profile_deleted, this);
@@ -654,6 +663,7 @@ export default class MainMenu extends Module {
 					_remove_user() {
 						this._users--;
 						if ( this._users === 0 ) {
+							settings.off(':profile-toggled', this._profile_toggled, this);
 							settings.off(':profile-created', this._profile_created, this);
 							settings.off(':profile-changed', this._profile_changed, this);
 							settings.off(':profile-deleted', this._profile_deleted, this);

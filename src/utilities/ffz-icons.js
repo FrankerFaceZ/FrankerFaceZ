@@ -80,5 +80,6 @@ export default [
 	"sort-alt-down",
 	"user",
 	"clip",
-	"youtube-play"
+	"youtube-play",
+	"minus"
 ];

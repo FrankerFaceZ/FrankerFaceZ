@@ -236,6 +236,6 @@ Twilight.ROUTES = {
 };
 
 
-Twilight.DIALOG_EXCLUSIVE = '.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root';
-Twilight.DIALOG_MAXIMIZED = '.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
-Twilight.DIALOG_SELECTOR = '#root>div>.tw-full-height,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_EXCLUSIVE = '.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root';
+Twilight.DIALOG_MAXIMIZED = '.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_SELECTOR = '.sunlight-root,#root,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';

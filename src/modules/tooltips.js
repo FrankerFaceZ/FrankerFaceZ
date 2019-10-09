@@ -60,7 +60,8 @@ export default class TooltipProvider extends Module {
 	}
 
 	onEnable() {
-		const container = document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
+		const container = document.querySelector('.sunlight-root') || document.querySelector('#root>.tw-absolute:not(.tw-flex)') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
+
 		//	is_minimal = false; //container && container.classList.contains('twilight-minimal-root');
 
 		this.tips = new Tooltip(container, 'ffz-tooltip', {

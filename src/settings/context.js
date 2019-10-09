@@ -118,8 +118,9 @@ export default class SettingsContext extends EventEmitter {
 	selectProfiles() {
 		const new_profiles = [],
 			order = this.order = [];
+
 		for(const profile of this.manager.__profiles)
-			if ( profile.matches(this.__context) ) {
+			if ( profile.toggled && profile.matches(this.__context) ) {
 				new_profiles.push(profile);
 				order.push(profile.id);
 			}
@@ -386,6 +387,16 @@ export default class SettingsContext extends EventEmitter {
 	*profiles() {
 		for(const profile of this.__profiles)
 			yield profile;
+	}
+
+
+	hasProfile(profile) {
+		if ( typeof profile === 'number' )
+			for(const prof of this.__profiles)
+				if ( prof.id === profile )
+					return true;
+
+		return this.__profiles.includes(profile);
 	}
 
 

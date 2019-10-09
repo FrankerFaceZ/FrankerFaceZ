@@ -61,7 +61,10 @@
 	}
 }
 
+.ffz-has-dialog {
+	position: relative;
 
-.ffz-has-dialog > :not(.ffz-dialog) {
-	visibility: hidden;
+	& > :not(.ffz-dialog) {
+		visibility: hidden;
+	}
 }

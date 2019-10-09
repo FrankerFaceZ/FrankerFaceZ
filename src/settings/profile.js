@@ -24,6 +24,7 @@ export default class SettingsProfile extends EventEmitter {
 
 		this.data = data;
 		this.prefix = `p:${this.id}:`;
+		this.enabled_key = `${this.prefix}:enabled`;
 	}
 
 	get data() {
@@ -38,6 +39,7 @@ export default class SettingsProfile extends EventEmitter {
 			desc_i18n_key: this.desc_i18n_key,
 
 			url: this.url,
+			show_toggle: this.show_toggle,
 
 			context: this.context
 		}
@@ -72,6 +74,7 @@ export default class SettingsProfile extends EventEmitter {
 			version: 2,
 			type: 'profile',
 			profile: this.data,
+			toggled: this.toggled,
 			values: {}
 		};
 
@@ -104,6 +107,23 @@ export default class SettingsProfile extends EventEmitter {
 			this.delete(key);
 
 		return true;
+	}
+
+
+	// ========================================================================
+	// Toggled
+	// ========================================================================
+
+	get toggled() {
+		return this.provider.get(this.enabled_key, true);
+	}
+
+	set toggled(val) {
+		if ( val === this.toggleState )
+			return;
+
+		this.provider.set(this.enabled_key, val);
+		this.emit('toggled', this, val);
 	}
 
 
@@ -158,7 +178,7 @@ export default class SettingsProfile extends EventEmitter {
 			len = p.length;
 
 		for(const key of this.provider.keys())
-			if ( key.startsWith(p) )
+			if ( key.startsWith(p) && key !== this.enabled_key )
 				out.push(key.slice(len));
 
 		return out;
@@ -168,7 +188,7 @@ export default class SettingsProfile extends EventEmitter {
 		const p = this.prefix,
 			len = p.length;
 		for(const key of this.provider.keys())
-			if ( key.startsWith(p) ) {
+			if ( key.startsWith(p) && key !== this.enabled_key ) {
 				this.provider.delete(key);
 				this.emit('changed', key.slice(len), undefined, true);
 			}
@@ -179,7 +199,7 @@ export default class SettingsProfile extends EventEmitter {
 			len = p.length;
 
 		for(const key of this.provider.keys())
-			if ( key.startsWith(p) )
+			if ( key.startsWith(p) && key !== this.enabled_key )
 				yield [key.slice(len), this.provider.get(key)];
 	}
 
@@ -188,7 +208,7 @@ export default class SettingsProfile extends EventEmitter {
 		let count = 0;
 
 		for(const key of this.provider.keys())
-			if ( key.startsWith(p) )
+			if ( key.startsWith(p) && key !== this.enabled_key )
 				count++;
 
 		return count;

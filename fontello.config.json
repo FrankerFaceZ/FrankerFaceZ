@@ -561,6 +561,12 @@
       "css": "youtube-play",
       "code": 61802,
       "src": "fontawesome"
+    },
+    {
+      "uid": "861ab06e455e2de3232ebef67d60d708",
+      "css": "minus",
+      "code": 59445,
+      "src": "fontawesome"
     }
   ]
 }
