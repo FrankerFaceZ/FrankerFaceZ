@@ -317,8 +317,8 @@ export class TranslationManager extends Module {
 	}
 
 
-	async loadStrings() {
-		if ( this.strings_loaded )
+	async loadStrings(ignore_loaded = false) {
+		if ( this.strings_loaded && ! ignore_loaded )
 			return;
 
 		if ( this.strings_loading )

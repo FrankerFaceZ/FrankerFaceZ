@@ -647,6 +647,17 @@ export const AutomoddedTerms = {
 		let idx = 0,
 			fix = 0;
 
+		const remove = this.context.get('chat.automod.remove-messages');
+		const del = this.context.get('chat.automod.delete-messages');
+
+		if ( del )
+			msg.deleted = true;
+
+		if ( remove ) {
+			msg.ffz_removed = true;
+			return tokens;
+		}
+
 		for(const token of tokens) {
 			const length = token.length || (token.text && split_chars(token.text).length) || 0,
 				t_start = idx,
@@ -1085,7 +1096,9 @@ export const AddonEmotes = {
 
 			plain_name = true;
 			name = `:${emoji.names[0]}:${vcode ? `:${vcode.names[0]}:` : ''}`;
-			source = this.i18n.t('tooltip.emoji', 'Emoji - {category}', emoji);
+
+			const category = emoji.category ? this.i18n.t(`emoji.category.${emoji.category.toSnakeCase()}`, emoji.category) : null;
+			source = this.i18n.t('tooltip.emoji', 'Emoji - {category}', {category});
 
 		} else
 			return;

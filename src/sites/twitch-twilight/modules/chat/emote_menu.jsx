@@ -579,7 +579,7 @@ export default class EmoteMenu extends Module {
 					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
 						{image}
 						<div class="tw-pd-l-05">
-							{data.title || t.i18n.t('emote-menu.unknown', 'Unknown Source')}
+							{(data.i18n ? t.i18n.t(data.i18n, data.title) : data.title) || t.i18n.t('emote-menu.unknown', 'Unknown Source')}
 							{calendar && (<span
 								class={`tw-mg-x-05 ffz--expiry-info ffz-tooltip ffz-i-${calendar.icon}`}
 								data-tooltip-type="html"
@@ -587,7 +587,7 @@ export default class EmoteMenu extends Module {
 							/>)}
 						</div>
 						<div class="tw-flex-grow-1" />
-						{data.source || 'FrankerFaceZ'}
+						{(data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source) || 'FrankerFaceZ'}
 						{filtered ? '' : <figure class={`tw-pd-l-05 ffz-i-${collapsed ? 'left' : 'down'}-dir`} />}
 					</heading>) : null}
 					{collapsed || this.renderBody(show_heading)}
@@ -1108,8 +1108,10 @@ export default class EmoteMenu extends Module {
 							key: `emoji-${emoji.category}`,
 							emoji: true,
 							image: t.emoji.getFullImage(emoji.image),
+							i18n: `emoji.category.${emoji.category.toSnakeCase()}`,
 							title: emoji.category,
-							source: t.i18n.t('emote-menu.emoji', 'Emoji'),
+							source: 'Emoji',
+							source_i18n: 'emote-menu.emoji',
 							emotes: cat
 						});
 					}

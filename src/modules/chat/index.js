@@ -232,6 +232,34 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.automod.delete-messages', {
+			default: true,
+			ui: {
+				path: 'Chat > Filtering >> AutoMod Filters @{"description": "Extra configuration for Twitch\'s native `Chat Filters`."}',
+				title: 'Mark messages as deleted if they contain filtered phrases.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.automod.remove-messages', {
+			default: true,
+			ui: {
+				path: 'Chat > Filtering >> AutoMod Filters',
+				title: 'Remove messages entirely if they contain filtered phrases.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.automod.run-as-mod', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering >> AutoMod Filters',
+				title: 'Use Chat Filters as a moderator.',
+				description: 'By default, Twitch\'s Chat Filters feature does not function for moderators. This overrides that behavior.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.filtering.process-own', {
 			default: false,
 			ui: {

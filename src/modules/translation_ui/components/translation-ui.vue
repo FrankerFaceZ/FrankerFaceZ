@@ -34,6 +34,14 @@
 					{{ t('i18n.ui.save', 'Generate Change Blob') }}
 				</div>
 			</button>
+			<button v-if="can_upload" class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip-wrapper" @click="uploadBlob">
+				<span class="tw-button-icon__icon">
+					<figure class="ffz-i-upload-cloud" />
+				</span>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('i18n.ui.upload', 'Upload Changes') }}
+				</div>
+			</button>
 			<button class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip-wrapper" @click="requestKeys">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-arrows-cw" />
@@ -222,7 +230,7 @@ import displace from 'displacejs';
 import Parser from '@ffz/icu-msgparser';
 import { saveAs } from 'file-saver';
 
-import { deep_equals, deep_copy } from 'utilities/object';
+import { deep_equals, deep_copy, sleep } from 'utilities/object';
 
 const parser = new Parser();
 const PER_PAGE = 20;
@@ -235,6 +243,9 @@ export default {
 
 		data.page = 1;
 		data.page_open = false;
+
+		data.can_upload = false;
+		data.uploading = false;
 
 		return data;
 	},
@@ -327,6 +338,7 @@ export default {
 	},
 
 	created() {
+		this.checkUpload();
 		this.requestKeys();
 		this.grabKeys();
 
@@ -356,7 +368,7 @@ export default {
 	},
 
 	methods: {
-		saveBlob() {
+		getBlob() {
 			const out = [];
 
 			for(const entry of this.phrases) {
@@ -371,12 +383,67 @@ export default {
 				});
 			}
 
+			return out;
+		},
+
+		saveBlob() {
+			const out = this.getBlob();
+
 			try {
 				const blob = new Blob([JSON.stringify(out, null, '\t')], {type: 'application/json;charset=utf-8'});
 				saveAs(blob, 'ffz-strings.json');
 			} catch(err) {
 				alert('Unable to save: ' + err); // eslint-disable-line
 			}
+		},
+
+		async uploadBlob() {
+			if ( this.uploading || ! this.can_upload )
+				return;
+
+			const blob = JSON.stringify(this.getBlob());
+			const socket = this.getI18n().resolve('socket');
+			if ( ! socket )
+				return;
+
+			this.uploading = true;
+			const token = await socket.getAPIToken();
+			if ( ! token?.token )
+				return;
+
+			const data = await fetch(`https://api-test.frankerfacez.com/v2/i18n/strings`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token.token}`
+				},
+				body: blob
+			}).then(r => r.json());
+
+			alert(`Uploaded ${data?.added || 0} new strings and ${data?.changed || 0} changed strings.`); // eslint-disable-line no-alert
+			this.uploading = false;
+			this.getI18n().loadStrings(true);
+		},
+
+		async checkUpload() {
+			this.can_upload = false;
+			const socket = this.getI18n().resolve('socket');
+			if ( ! socket )
+				return;
+
+			const token = await socket.getAPIToken();
+			if ( ! token?.token )
+				return;
+
+			const data = await fetch(`https://api-test.frankerfacez.com/v2/user/${token.id}/role/strings_upload`, {
+				headers: {
+					Authorization: `Bearer ${token.token}`
+				}
+			}).then(r => r.json());
+			if ( ! data?.has_role )
+				return;
+
+			this.can_upload = true;
 		},
 
 		openPage() {

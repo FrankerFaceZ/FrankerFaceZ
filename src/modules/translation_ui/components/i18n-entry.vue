@@ -22,7 +22,7 @@
 					ref="editor"
 					v-model="value"
 					:class="{'tw-textarea--error': ! valid}"
-					class="tw-block tw-font-size-6 tw-full-width tw-full-height tw-textarea"
+					class="tw-block tw-font-size-6 tw-full-width tw-textarea"
 					@input="onInput"
 					@blur="onBlur"
 					@focus="open = true"
@@ -38,10 +38,15 @@
 					<div
 						v-for="(line, idx) in source"
 						:key="idx"
-						:title="line"
+						:title="Array.isArray(line) ? `${line[0]} (${line[1]})` : line"
 						class="tw-font-size-7 tw-c-text-alt-2 tw-ellipsis tw-full-width"
 					>
-						{{ line }}
+						<span v-if="Array.isArray(line)">
+							{{ line[0] }} (<a :href="line[2]" rel="noopener noreferrer" target="_blank">{{ line[1] }}</a>)
+						</span>
+						<span v-else>
+							{{ line }}
+						</span>
 					</div>
 				</div>
 				<div v-if="context_str && ! open">
@@ -187,7 +192,22 @@ export default {
 			if ( ! Array.isArray(calls) || ! calls.length )
 				return null;
 
-			return calls.join('\n').split(/\n/);
+			const lines = calls.join('\n').split(/\n/),
+				out = [];
+
+			for(const line of lines) {
+				const match = /^(?:(.*?) \()?(\/[^:\)]+):(\d+):(\d+)\)?$/.exec(line);
+				if ( match )
+					out.push([
+						match[1] || '???',
+						`${match[2]}:${match[3]}:${match[4]}`,
+						`https://www.github.com/FrankerFaceZ/FrankerFaceZ/blob/master${match[2]}#L${match[3]}`
+					]);
+				else
+					out.push(line);
+			}
+
+			return out;
 		},
 
 		preview() {

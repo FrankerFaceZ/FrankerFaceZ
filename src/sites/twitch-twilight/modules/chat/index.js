@@ -1790,8 +1790,14 @@ export default class ChatHook extends Module {
 				if ( user )
 					message.emotes = user.emotes;
 
-				if ( flags && this.getFilterFlagOptions )
+				if ( flags && this.getFilterFlagOptions ) {
+					const clear_mod = this.props.isCurrentUserModerator && t.chat.context.get('chat.automod.run-as-mod');
+					if ( clear_mod )
+						this.props.isCurrentUserModerator = false;
 					message.flags = this.getFilterFlagOptions(flags);
+					if ( clear_mod )
+						this.props.isCurrentUserModerator = true;
+				}
 
 				if ( typeof original.action === 'string' )
 					message.message = original.action;

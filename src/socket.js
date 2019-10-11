@@ -111,6 +111,50 @@ export default class SocketClient extends Module {
 
 
 	// ========================================================================
+	// FFZ API Helpers
+	// ========================================================================
+
+	getAPIToken() {
+		if ( this._cached_token ) {
+			if ( this._cached_token.expires > (Date.now() + 15000) )
+				return Promise.resolve(this._cached_token);
+		}
+
+		if ( this._token_waiters )
+			return new Promise((s, f) => this._token_waiters.push([s, f]));
+
+		this._token_waiters = [];
+
+		return new Promise((s, f) => {
+			this._token_waiters.push([s, f]);
+
+			this.call('get_api_token').then(token => {
+				token.expires = (new Date(token.expires)).getTime();
+				this._cached_token = token;
+
+				const waiters = this._token_waiters;
+				this._token_waiters = null;
+
+				for(const pair of waiters)
+					pair[0](token);
+
+			}).catch(err => {
+				this.log.error('Unable to get API token.', err);
+				const waiters = this._token_waiters;
+				this._token_waiters = null;
+
+				for(const pair of waiters)
+					pair[1](err);
+			});
+		});
+	}
+
+	async getBareAPIToken() {
+		return (await this.getAPIToken())?.token;
+	}
+
+
+	// ========================================================================
 	// Connection Logic
 	// ========================================================================
 
