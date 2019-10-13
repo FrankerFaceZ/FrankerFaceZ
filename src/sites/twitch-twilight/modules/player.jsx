@@ -805,7 +805,7 @@ export default class Player extends Module {
 
 		if ( ! btn ) {
 			btn = (<button
-				class="player-button player-button--pip ffz--player-pip ffz-i-window-restore"
+				class="player-button player-button--pip ffz--player-pip ffz-i-t-pip-inactive"
 				type="button"
 				onClick={t.pipPlayer.bind(t, inst)} // eslint-disable-line react/jsx-no-bind
 			>
@@ -819,10 +819,10 @@ export default class Player extends Module {
 
 		const pip_active = !!document.pictureInPictureElement
 
-		btn.classList.toggle('ffz-i-window-restore', ! pip_active);
-		btn.classList.toggle('ffz-i-window-maximize', pip_active);
+		btn.classList.toggle('ffz-i-t-pip-inactive', ! pip_active);
+		btn.classList.toggle('ffz-i-t-pip-active', pip_active);
 
-		tip.dataset.tip = this.i18n.t('player.pip_button', 'Click to Toggle Picture-in-Picture');
+		tip.dataset.tip = this.i18n.t('player.pip_button', 'Picture-in-Picture');
 	}
 
 	pipPlayer(inst) {
@@ -873,14 +873,14 @@ export default class Player extends Module {
 
 		if ( ! tip )
 			container.insertBefore(<button
-				class="player-button player-button--reset ffz--player-reset ffz-i-cancel"
+				class="player-button player-button--reset ffz--player-reset ffz-i-t-reset"
 				type="button"
 				onDblClick={t.resetPlayer.bind(t, inst)} // eslint-disable-line react/jsx-no-bind
 			>
 				{tip = <span class="player-tip js-control-tip" />}
 			</button>, el.nextSibling);
 
-		tip.dataset.tip = this.i18n.t('player.reset_button', 'Double-Click to Reset Player');
+		tip.dataset.tip = this.i18n.t('player.reset_button', 'Reset Player (Double-Click)');
 	}
 
 

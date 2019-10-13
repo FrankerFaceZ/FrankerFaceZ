@@ -81,5 +81,9 @@ export default [
 	"user",
 	"clip",
 	"youtube-play",
-	"minus"
+	"minus",
+	"t-pip-active",
+	"t-pip-inactive",
+	"t-reset",
+	"t-reset-clicked"
 ];
