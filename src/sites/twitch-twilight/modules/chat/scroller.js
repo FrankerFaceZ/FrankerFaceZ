@@ -374,6 +374,7 @@ export default class Scroller extends Module {
 				// We need to refresh the element to make sure it's using the correct
 				// event handlers for mouse enter / leave.
 				inst.forceUpdate();
+				t.emit('site:dom-update', 'chat-scroller', inst);
 			}
 
 			cls.prototype.ffzSetSmoothScroll = function(value) {

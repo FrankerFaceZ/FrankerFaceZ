@@ -90,7 +90,7 @@ export default class Fine extends Module {
 				instance = instance.parent;
 	}
 
-	getChildNode(instance) {
+	getChildNode(instance, max_depth = 100) {
 		if ( instance._reactInternalFiber )
 			instance = instance._reactInternalFiber;
 		else if ( instance instanceof Node )
@@ -99,12 +99,16 @@ export default class Fine extends Module {
 		while( instance )
 			if ( instance.stateNode instanceof Node )
 				return instance.stateNode
-			else
+			else {
+				max_depth--;
+				if ( max_depth < 0 )
+					return null;
 				instance = instance.child;
+			}
 	}
 
-	getHostNode(instance) {
-		return this.getChildNode(instance);
+	getHostNode(instance, max_depth = 100) {
+		return this.getChildNode(instance, max_depth);
 	}
 
 	getParent(instance) {
@@ -285,12 +289,10 @@ export default class Fine extends Module {
 			}
 		}
 
-		if ( node.child ) {
-			let child = node.child;
-			while(child) {
-				this.searchAll(child, criterias, max_depth, depth+1, data, traverse_roots);
-				child = child.sibling;
-			}
+		let child = node.child;
+		while(child) {
+			this.searchAll(child, criterias, max_depth, depth+1, data, traverse_roots);
+			child = child.sibling;
 		}
 
 		if ( traverse_roots && inst && inst.props && inst.props.root ) {
@@ -636,6 +638,8 @@ export class FineWrapper extends EventEmitter {
 		for(const inst of this.instances)
 			try {
 				inst.forceUpdate();
+				this.fine.emit('site:dom-update', this.name, inst);
+
 			} catch(err) {
 				this.fine.log.capture(err, {
 					tags: {

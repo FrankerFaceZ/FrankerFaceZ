@@ -202,6 +202,7 @@ export default class Input extends Module {
 
 			for(const inst of instances) {
 				inst.forceUpdate();
+				this.emit('site:dom-update', 'chat-input', inst);
 				this.updateEmoteCompletion(inst);
 				this.overrideChatInput(inst);
 			}

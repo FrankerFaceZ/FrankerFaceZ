@@ -34,6 +34,8 @@ export default class Twilight extends BaseSite {
 		this.inject(Apollo, false);
 		this.inject(TwitchData);
 		this.inject(Switchboard);
+
+		this._dom_updates = [];
 	}
 
 	onLoad() {
@@ -50,6 +52,23 @@ export default class Twilight extends BaseSite {
 
 		if ( ! store )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
+
+		// Event Bridge
+		this.on(':dom-update', (...args) => {
+			this._dom_updates.push(args);
+			if ( ! this._dom_frame )
+				this._dom_frame = requestAnimationFrame(() => {
+					const updates = this._dom_updates,
+						core = this.resolve('core');
+					this._dom_updates = [];
+					this._dom_frame = null;
+
+					for(const [key, inst] of updates) {
+						const node = this.fine.getChildNode(inst);
+						core.emit('core:dom-update', key, node, inst);
+					}
+				})
+		});
 
 		// Window Size
 		const update_size = () => this.settings.updateContext({

@@ -293,6 +293,7 @@ export default class Channel extends Module {
 		// Finally, we force an update so that any child components
 		// receive our updated handler.
 		inst.forceUpdate();
+		this.emit('site:dom-update', 'channel-page', inst);
 	}
 
 
