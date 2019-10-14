@@ -671,11 +671,16 @@ export default class ChatHook extends Module {
 			const old_render = cls.prototype.render;
 			cls.prototype.render = function() {
 				try {
-					const callout = this.props?.event?.callout;
-					if ( callout?.trackingType === 'community_points_reward' && ! t.chat.context.get('chat.points.show-callouts') )
+					const callout = this.props?.event?.callout,
+						ctype = callout?.trackingType;
+
+					if ( ctype === 'community_points_reward' && ! t.chat.context.get('chat.points.show-callouts') )
 						return null;
 
-					if ( callout?.trackingType === 'prime_gift_bomb' && ! t.chat.context.get('chat.community-chest.show') )
+					if ( ctype === 'prime_gift_bomb' && ! t.chat.context.get('chat.community-chest.show') )
+						return null;
+
+					if ( ctype === 'megacheer_emote_recipient' && ! t.chat.context.get('chat.bits.show-rewards') )
 						return null;
 
 				} catch(err) {
@@ -700,6 +705,9 @@ export default class ChatHook extends Module {
 						return null;
 
 					if ( ctype === 'community-points-rewards' && ! t.chat.context.get('chat.points.show-callouts') )
+						return null;
+
+					if ( (ctype === 'mega-recipient-rewards' || ctype === 'mega-benefactor-rewards') && ! t.chat.context.get('chat.bits.show-rewards') )
 						return null;
 
 				} catch(err) {

@@ -64,7 +64,7 @@
 									class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok tw-absolute"
 								>
 									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-										{{ t('setting.profiles.active', 'This profile is active.') }}
+										{{ t('setting.profiles.active', 'This profile is enabled and active.') }}
 									</div>
 								</div>
 

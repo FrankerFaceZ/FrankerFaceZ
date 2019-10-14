@@ -7,6 +7,7 @@
 import {DEBUG} from 'utilities/constants';
 import {SiteModule} from 'utilities/module';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
+import { timeout, sleep } from 'src/utilities/object';
 
 export default class MenuButton extends SiteModule {
 	constructor(...args) {
@@ -23,6 +24,7 @@ export default class MenuButton extends SiteModule {
 		this._important_update = false;
 		this._new_settings = 0;
 		this._error = null;
+		this._loading = false;
 
 		this.settings.add('ffz.show-new-settings', {
 			default: true,
@@ -38,6 +40,18 @@ export default class MenuButton extends SiteModule {
 			'nav-bar',
 			n => n.renderOnsiteNotifications && n.renderTwitchPrimeCrown
 		);
+	}
+
+	get loading() {
+		return this._loading;
+	}
+
+	set loading(val) {
+		if ( val === this._loading )
+			return;
+
+		this._loading = val;
+		this.update();
 	}
 
 	get has_error() {
@@ -183,14 +197,12 @@ export default class MenuButton extends SiteModule {
 		const pill = this.formatPill(),
 			extra_pill = this.formatExtraPill();
 
-		// TODO: Pill.
-
 		el = (<div
 			class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-mg-x-05 tw-relative"
 		>
 			<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
 				{btn = (<button
-					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.loading ? ' loading' : ''}`}
 					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
 					onContextMenu={e => this.renderContext(e, btn)} // eslint-disable-line react/jsx-no-bind
 				>
@@ -363,7 +375,7 @@ export default class MenuButton extends SiteModule {
 						<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
 							<button
 								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
-								onClick={e => this.openSettings(e)} // eslint-disable-line react/jsx-no-bind
+								onClick={e => {this.openSettings(e, btn); destroy()}} // eslint-disable-line react/jsx-no-bind
 							>
 								<span class="tw-button-icon__icon">
 									<figure class="ffz-i-cog" />
@@ -399,7 +411,7 @@ export default class MenuButton extends SiteModule {
 	}
 
 
-	openSettings() {
+	openSettings(event, btn) {
 		const menu = this.resolve('main_menu');
 		if ( ! menu )
 			return;
@@ -408,7 +420,7 @@ export default class MenuButton extends SiteModule {
 		if ( menu.showing )
 			return;
 
-		this.emit(':clicked');
+		this.emit(':clicked', event, btn);
 	}
 
 
@@ -417,18 +429,15 @@ export default class MenuButton extends SiteModule {
 		if ( ! menu )
 			return;
 
-		const cl = btn && btn.classList;
-		if ( cl )
-			cl.add('loading');
-
 		if ( page )
 			menu.requestPage(page);
 		if ( menu.showing )
 			return;
 
+		this.loading = true;
+
 		menu.enable(event).then(() => {
-			if ( cl )
-				cl.remove('loading');
+			this.loading = false;
 
 		}).catch(err => {
 			this.log.capture(err);
@@ -439,11 +448,9 @@ export default class MenuButton extends SiteModule {
 				text: 'There was an error loading the FFZ Control Center. Please refresh and try again.'
 			};
 
-			if ( cl )
-				cl.remove('loading');
-
+			this.loading = false;
 			this.once(':clicked', this.loadMenu);
-		})
+		});
 	}
 
 	onDisable() {

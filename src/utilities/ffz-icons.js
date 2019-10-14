@@ -81,5 +81,6 @@ export default [
 	"user",
 	"clip",
 	"youtube-play",
-	"minus"
+	"minus",
+	"left-open"
 ];

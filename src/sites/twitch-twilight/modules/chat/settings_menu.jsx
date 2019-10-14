@@ -57,7 +57,7 @@ export default class SettingsMenu extends Module {
 					this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
 				val.props.children.push(<div class="tw-full-width tw-relative">
-					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive" onClick={this.ffzSettingsClick}>
+					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--alpha tw-interactive" onClick={this.ffzSettingsClick}>
 						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
 							<div class="tw-flex-grow-1">
 								{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
@@ -85,7 +85,7 @@ export default class SettingsMenu extends Module {
 
 				val.props.children.push(<div class="tw-full-width tw-relative">
 					<button
-						class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+						class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--alpha tw-interactive"
 						onClick={this.ffzPauseClick}
 					>
 						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
@@ -110,41 +110,50 @@ export default class SettingsMenu extends Module {
 						if ( ! this.ffzPauseClick )
 							this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
-						return (<div class="tw-absolute tw-balloon tw-balloon--up tw-block">
-							<div class="tw-border tw-border-radius-medium tw-c-background-base tw-elevation-1">
-								<div class="chat-settings scrollable-area scrollable-area--suppress-scroll-x" data-simplebar>
-									<div class="chat-settings__content tw-c-background-base tw-c-text-base tw-pd-2">
-										<button
-											class="tw-interactive tw-link tw-link--button tw-link--hover-underline-none"
-											onClick={this.ffzPauseClick}
-										>
-											<span class="tw-c-text-link ffz-i-left-dir">
-												{t.i18n.t('chat.settings.back', 'Back')}
-											</span>
-										</button>
-										<div class="tw-mg-b-1 tw-mg-t-2">
-											<p class="tw-c-text-alt-2 tw-upcase">
-												{t.i18n.t('chat.settings.pause', 'Pause Chat')}
+						return (<div class="tw-absolute tw-balloon tw-balloon--auto tw-balloon--up tw-block" data-a-target="chat-settings-balloon">
+							<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
+								<div class="chat-settings__popover">
+									<div class="chat-settings__header tw-align-items-center tw-c-background-base tw-flex tw-pd-x-1 tw-relative">
+										<div class="chat-settings__back-icon-container tw-left-0 tw-mg-r-05">
+											<button
+												class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+												data-test-selector="chat-settings-back-button"
+												aria-label={t.i18n.t('chat.settings.back', 'Back')}
+												onClick={this.ffzPauseClick}
+											>
+												<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+													<span class="tw-button-icon__icon">
+														<figure class="ffz-i-left-open" />
+													</span>
+												</div>
+											</button>
+										</div>
+										<div class="tw-align-center tw-align-items-center tw-flex tw-flex-grow-1 tw-justify-content-center">
+											<p class="tw-c-text-alt tw-font-size-5 tw-semibold">
+												{ t.i18n.t('chat.settings.pause', 'Pause Chat') }
 											</p>
 										</div>
-										<p>
-											{t.i18n.t('chat.settings.pause-explain', 'FrankerFaceZ overrides the behavior of Pause Chat entirely. Please use FFZ\'s Scrolling settings within the FFZ Control Center under Chat > Behavior.')}
-										</p>
-										<div class="tw-mg-t-1">
-											<button
-												class="tw-button tw-full-width"
-												data-page="chat.behavior"
-												onClick={this.ffzSettingsClick}
-											>
-												<span class="tw-button__text">
-													{t.i18n.t('chat.settings.open-settings', 'Open Control Center')}
-												</span>
-											</button>
-											{t.cant_window && <div class="tw-mg-t-05 tw-c-text-alt-2">
-												<span class="ffz-i-attention">
-													{t.i18n.t('popup.error', 'We tried opening a pop-up window and could not. Make sure to allow pop-ups from Twitch.')}
-												</span>
-											</div>}
+									</div>
+									<div class="chat-settings scrollable-area scrollable-area--suppress-scroll-x" data-simplebar>
+										<div class="chat-settings__content tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-c-background-base tw-c-text-base tw-pd-1">
+											<div class="tw-pd-x-05">
+												<div class="tw-border-b tw-mg-b-1 tw-pd-b-1">
+													<p class="tw-c-text-alt-2">
+														{ t.i18n.t('chat.settings.pause-explain', 'FrankerFaceZ overrides the behavior of Pause Chat entirely. Please use FFZ\'s Scrolling settings within the FFZ Control Center under Chat > Behavior.') }
+													</p>
+												</div>
+												<button
+													class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--alpha tw-interactive"
+													data-page="chat.behavior"
+													onClick={this.ffzSettingsClick}
+												>
+													<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
+														<div class="tw-flex-grow-1">
+															{t.i18n.t('chat.settings.open-settings', 'Open Control Center')}
+														</div>
+													</div>
+												</button>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -166,14 +175,15 @@ export default class SettingsMenu extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() {
-				const out = old_render.call(this);
+				const out = old_render.call(this),
+					children = out?.props?.children?.[0]?.props?.children;
 
-				if ( out.props && Array.isArray(out.props.children) ) {
-					let i = out.props.children.length;
+				if ( Array.isArray(children) ) {
+					let i = children.length;
 					while(i--) {
-						const thing = out.props.children[i];
+						const thing = children[i];
 						if ( thing && thing.props && has(thing.props, 'chatPauseSetting') ) {
-							out.props.children.splice(i, 1);
+							children.splice(i, 1);
 							break;
 						}
 					}
