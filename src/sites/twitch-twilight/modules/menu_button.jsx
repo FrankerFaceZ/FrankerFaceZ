@@ -350,12 +350,14 @@ export default class MenuButton extends SiteModule {
 				{ this.renderButtonIcon(profile) }
 			</button>)
 
+			const desc_key = profile.desc_i18n_key || profile.i18n_key && `${profile.i18n_key}.description`;
+
 			profiles.push(<div class="tw-relative tw-border-b tw-pd-y-05 tw-pd-l-1 tw-flex">
 				{toggle}
 				<div>
 					<h4>{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }</h4>
 					{profile.description && (<div class="description">
-						{ profile.desc_i18n_key ? this.i18n.t(profile.desc_i18n_key, profile.description, profile) : profile.description }
+						{ desc_key ? this.i18n.t(desc_key, profile.description, profile) : profile.description }
 					</div>)}
 				</div>
 			</div>);
