@@ -77,8 +77,8 @@ export default class Fine extends Module {
 		return instance.return;
 	}
 
-	getParentNode(instance) {
-		if ( instance._reactInternalFiber )
+	getParentNode(instance, max_depth = 100, traverse_roots = false) {
+		/*if ( instance._reactInternalFiber )
 			instance = instance._reactInternalFiber;
 		else if ( instance instanceof Node )
 			instance = this.getReactInstance(instance);
@@ -87,11 +87,13 @@ export default class Fine extends Module {
 			if ( instance.stateNode instanceof Node )
 				return instance.stateNode
 			else
-				instance = instance.parent;
+				instance = instance.parent;*/
+
+		return this.searchParent(instance, n => n instanceof Node, max_depth, 0, traverse_roots);
 	}
 
-	getChildNode(instance, max_depth = 100) {
-		if ( instance._reactInternalFiber )
+	getChildNode(instance, max_depth = 100, traverse_roots = false) {
+		/*if ( instance._reactInternalFiber )
 			instance = instance._reactInternalFiber;
 		else if ( instance instanceof Node )
 			instance = this.getReactInstance(instance);
@@ -104,7 +106,9 @@ export default class Fine extends Module {
 				if ( max_depth < 0 )
 					return null;
 				instance = instance.child;
-			}
+			}*/
+
+		return this.searchTree(instance, n => n instanceof Node, max_depth, 0, traverse_roots);
 	}
 
 	getHostNode(instance, max_depth = 100) {
@@ -240,6 +244,25 @@ export default class Fine extends Module {
 				}
 			}
 		}
+	}
+
+
+	findAllMatching(node, criteria, max_depth=15, parents=false, depth=0, traverse_roots=true) {
+		const matches = new Set,
+			crit = n => ! matches.has(n) && criteria(n);
+
+		while(true) {
+			const match = parents ?
+				this.searchParent(node, crit, max_depth, depth, traverse_roots) :
+				this.searchTree(node, crit, max_depth, depth, traverse_roots);
+
+			if ( ! match )
+				break;
+
+			matches.add(match);
+		}
+
+		return matches;
 	}
 
 

@@ -17,32 +17,40 @@ export default class Player extends Module {
 
 		this.should_enable = true;
 
+
+		// Dependency Injection
+
+		this.inject('i18n');
 		this.inject('settings');
+
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject('site.css_tweaks');
 		this.inject('site.router');
-		this.inject('i18n');
-
-		this.Player = this.fine.define(
-			'twitch-player',
-			n => n.player && n.onPlayerReady,
-			PLAYER_ROUTES
-		);
 
 
-		// TODO: Better way to reposition player on demand.
-		this.PersistentPlayer = this.fine.define(
-			'twitch-player-persistent',
-			n => n.renderMiniHoverControls && n.togglePause,
-			PLAYER_ROUTES
-		);
+		// React Components
 
 		this.SquadStreamBar = this.fine.define(
 			'squad-stream-bar',
 			n => n.shouldRenderSquadBanner && n.props && n.props.triggerPlayerReposition,
 			PLAYER_ROUTES
 		);
+
+		this.Player = this.fine.define(
+			'highwind-player',
+			n => n.setPlayerActive && n.props?.playerEvents && n.props?.mediaPlayerInstance,
+			PLAYER_ROUTES
+		);
+
+		this.TheatreHost = this.fine.define(
+			'theatre-host',
+			n => n.toggleTheatreMode && n.props && n.props.onTheatreModeEnabled,
+			['user', 'video', 'user-video', 'user-clip']
+		);
+
+
+		// Settings
 
 		this.settings.add('player.volume-scroll', {
 			default: false,
@@ -59,7 +67,7 @@ export default class Player extends Module {
 			}
 		});
 
-		this.settings.add('player.button.reset', {
+		/*this.settings.add('player.button.reset', {
 			default: true,
 			ui: {
 				path: 'Player > General >> General',
@@ -71,7 +79,7 @@ export default class Player extends Module {
 				for(const inst of this.Player.instances)
 					this.addResetButton(inst);
 			}
-		});
+		});*/
 
 		if ( document.pictureInPictureEnabled )
 			this.settings.add('player.button.pip', {
@@ -126,7 +134,7 @@ export default class Player extends Module {
 			changed: () => this.updateCaptionsCSS()
 		});
 
-		this.settings.add('player.captions.custom-position', {
+		/*this.settings.add('player.captions.custom-position', {
 			default: false,
 			ui: {
 				path: 'Player > Closed Captioning >> Position',
@@ -178,7 +186,7 @@ export default class Player extends Module {
 				]
 			},
 			changed: () => this.updateCaptionsCSS()
-		});
+		});*/
 
 		this.settings.add('player.theatre.no-whispers', {
 			default: false,
@@ -292,7 +300,7 @@ export default class Player extends Module {
 			},
 			changed: val => {
 				this.css_tweaks.toggleHide('player-event-bar', val);
-				this.PersistentPlayer.forceUpdate();
+				this.repositionPlayer();
 			}
 		});
 
@@ -306,7 +314,7 @@ export default class Player extends Module {
 			},
 			changed: val => {
 				this.css_tweaks.toggleHide('player-rerun-bar', val);
-				this.PersistentPlayer.forceUpdate();
+				this.repositionPlayer();
 			}
 		});
 
@@ -331,6 +339,264 @@ export default class Player extends Module {
 		});
 	}
 
+	onEnable() {
+		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
+		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
+		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
+		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
+		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
+		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
+		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
+
+		this.updateCaptionsCSS();
+		this.updateHideExtensions();
+		this.installVisibilityHook();
+
+		const t = this;
+
+
+		this.SquadStreamBar.ready(cls => {
+			const old_should_render = cls.prototype.shouldRenderSquadBanner;
+
+			cls.prototype.shouldRenderSquadBanner = function(...args) {
+				if ( t.settings.get('player.hide-squad-banner') )
+					return false;
+
+				return old_should_render.call(this, ...args);
+			}
+
+			this.SquadStreamBar.forceUpdate();
+			this.updateSquadContext();
+		});
+
+		this.SquadStreamBar.on('mount', this.updateSquadContext, this);
+		this.SquadStreamBar.on('update', this.updateSquadContext, this);
+		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);
+
+
+		this.Player.ready((cls, instances) => {
+			const old_attach = cls.prototype.maybeAttachDomEventListeners;
+
+			cls.prototype.ffzInstall = function() {
+				if ( this._ffz_installed )
+					return;
+
+				this._ffz_installed = true;
+
+				if ( ! this._ffzUpdateState )
+					this._ffzUpdateState = this.ffzUpdateState.bind(this);
+
+				const inst = this,
+					old_active = this.setPlayerActive,
+					old_inactive = this.setPlayerInactive;
+
+				this.setPlayerActive = function() {
+					inst.ffzScheduleState();
+					return old_active.call(inst);
+				}
+
+				this.setPlayerInactive = function() {
+					inst.ffzScheduleState();
+					return old_inactive.call(inst);
+				}
+
+				this.ffzOnEnded = () => {
+					if ( t.settings.get('player.vod.autoplay') )
+						return;
+
+					t.parent.awaitElement(
+						'.autoplay-vod__content-container button',
+						this.props.containerRef || t.fine.getChildNode(this),
+						1000
+					).then(el => el.click());
+				}
+
+				const events = this.props.playerEvents;
+				if ( events ) {
+					on(events, 'Playing', this._ffzUpdateState);
+					on(events, 'PlayerError', this._ffzUpdateState);
+					on(events, 'Ended', this._ffzUpdateState);
+					on(events, 'Ended', this.ffzOnEnded);
+					on(events, 'Idle', this._ffzUpdateState);
+				}
+
+				this.ffzStopAutoplay();
+			}
+
+			cls.prototype.ffzUninstall = function() {
+				if ( this._ffz_state_raf )
+					cancelAnimationFrame(this._ffz_state_raf);
+
+				const events = this.props.playerEvents;
+				if ( events && this._ffzUpdateState ) {
+					off(events, 'Playing', this._ffzUpdateState);
+					off(events, 'PlayerError', this._ffzUpdateState);
+					off(events, 'Ended', this._ffzUpdateState);
+					off(events, 'Ended', this.ffzOnEnded);
+					off(events, 'Idle', this._ffzUpdateState);
+				}
+
+				this.ffzRemoveListeners();
+
+				this._ffz_state_raf = null;
+				this._ffzUpdateState = null;
+				this.ffzOnEnded = null;
+			}
+
+			cls.prototype.ffzStopAutoplay = function() {
+				if ( t.settings.get('player.no-autoplay') || (! t.settings.get('player.home.autoplay') && t.router.current.name === 'front-page') ) {
+					const player = this.props.mediaPlayerInstance,
+						events = this.props.playerEvents;
+
+					if ( player && player.pause )
+						player.pause();
+					else if ( events ) {
+						const immediatePause = () => {
+							if ( this.props.mediaPlayerInstance?.pause ) {
+								this.props.mediaPlayerInstance.pause();
+								off(events, 'Playing', immediatePause);
+							}
+						}
+
+						t.log.info('Unable to immediately pause. Listening for playing event.');
+						on(events, 'Playing', immediatePause);
+					}
+				}
+			}
+
+			cls.prototype.ffzScheduleState = function() {
+				if ( ! this._ffzUpdateState )
+					this._ffzUpdateState = this.ffzUpdateState.bind(this);
+
+				if ( ! this._ffz_state_raf )
+					this._ffz_state_raf = requestAnimationFrame(this._ffzUpdateState);
+			}
+
+			cls.prototype.ffzUpdateState = function() {
+				this._ffz_state_raf = null;
+				const cont = this.props.containerRef,
+					player = this.props.mediaPlayerInstance;
+				if ( ! cont )
+					return;
+
+				const ds = cont.dataset;
+				ds.controls = this.state?.active || false;
+
+				ds.ended = player?.state?.playerState === 'Ended';
+				ds.paused = player?.state?.playerState === 'Idle';
+			}
+
+			cls.prototype.ffzAttachListeners = function() {
+				const cont = this.props.containerRef;
+				if ( ! cont || this._ffz_listeners )
+					return;
+
+				this._ffz_listeners = true;
+				if ( ! this._ffz_scroll_handler )
+					this._ffz_scroll_handler = this.ffzScrollHandler.bind(this);
+				on(cont, 'wheel', this._ffz_scroll_handler);
+			}
+
+			cls.prototype.ffzRemoveListeners = function() {
+				const cont = this.props.containerRef;
+				if ( ! cont || ! this._ffz_listeners )
+					return;
+
+				if ( this._ffz_scroll_handler ) {
+					off(cont, 'wheel', this._ffz_scroll_handler);
+					this._ffz_scroll_handler = null;
+				}
+
+				this._ffz_listeners = false;
+			}
+
+			cls.prototype.ffzScrollHandler = function(event) {
+				if ( ! t.settings.get('player.volume-scroll') )
+					return;
+
+				const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
+					player = this.props?.mediaPlayerInstance;
+
+				if ( ! player?.getVolume )
+					return;
+
+				const amount = t.settings.get('player.volume-scroll-steps'),
+					volume = Math.max(0, Math.min(1, player.getVolume() + (delta > 0 ? amount : -amount)));
+
+				player.setVolume(volume);
+				if ( volume !== 0 )
+					player.setMuted(false);
+
+				event.preventDefault();
+				return false;
+			}
+
+			cls.prototype.ffzMaybeRemoveNativeListeners = function() {
+				const cont = this.props.containerRef;
+				if ( cont && this.listenersAttached ) {
+					off(cont, 'mouseleave', this.setPlayerInactive);
+					off(cont, 'mouseenter', this.setPlayerActive);
+					off(cont, 'mousemove', this.onMouseMove);
+					this.listenersAttached = false;
+				}
+			}
+
+			cls.prototype.maybeAttachDomEventListeners = function() {
+				try {
+					this.ffzInstall();
+					this.ffzAttachListeners();
+				} catch(err) {
+					t.log.error('Error attaching event listener.', err);
+				}
+
+				return old_attach.call(this);
+			}
+
+
+			for(const inst of instances) {
+				const events = inst.props?.playerEvents;
+				if ( events ) {
+					off(events, 'Playing', inst.setPlayerActive);
+					off(events, 'PlayerSeekCompleted', inst.setPlayerActive);
+				}
+
+				inst.ffzMaybeRemoveNativeListeners();
+				inst.maybeAttachDomEventListeners();
+				inst.ffzScheduleState();
+
+				if ( events ) {
+					on(events, 'Playing', inst.setPlayerActive);
+					on(events, 'PlayerSeekCompleted', inst.setPlayerActive);
+				}
+
+				this.updateGUI(inst);
+			}
+		});
+
+		this.Player.on('mount', inst => {
+			this.updateGUI(inst);
+		});
+
+		this.Player.on('unmount', inst => {
+			inst.ffzUninstall();
+		});
+
+
+		this.TheatreHost.on('mount', this.tryTheatreMode, this);
+		this.TheatreHost.ready((cls, instances) => {
+			for(const inst of instances)
+				this.tryTheatreMode(inst);
+		});
+
+
+		this.on('i18n:update', () => {
+			for(const inst of this.Player.instances) {
+				this.updateGUI(inst);
+			}
+		})
+	}
+
+
 	updateHideExtensions(val) {
 		if ( val === undefined )
 			val = this.settings.get('player.ext-hide');
@@ -338,6 +604,7 @@ export default class Player extends Module {
 		this.css_tweaks.toggleHide('player-ext-hover', val === 1);
 		this.css_tweaks.toggleHide('player-ext', val === 2);
 	}
+
 
 	updateCaptionsCSS() {
 		// Font
@@ -359,14 +626,14 @@ export default class Player extends Module {
 			font_out.push(`font-size: ${STYLE_VALIDATOR.style.fontSize} !important;`);
 
 		if ( font_out.length )
-			this.css_tweaks.set('captions-font', `.player-captions {
+			this.css_tweaks.set('captions-font', `.player-captions-container__caption-line {
 	${font_out.join('\n\t')}
 }`)
 		else
 			this.css_tweaks.delete('captions-font');
 
 		// Position
-		const enabled = this.settings.get('player.captions.custom-position'),
+		/*const enabled = this.settings.get('player.captions.custom-position'),
 			vertical = this.settings.get('player.captions.vertical'),
 			horizontal = this.settings.get('player.captions.horizontal'),
 			alignment = this.settings.get('player.captions.alignment');
@@ -376,7 +643,7 @@ export default class Player extends Module {
 			return;
 		}
 
-		const out = [],
+		const out = [], align_out = [],
 			align_horizontal = alignment % 10,
 			align_vertical = Math.floor(alignment / 10);
 
@@ -394,6 +661,11 @@ export default class Player extends Module {
 		STYLE_VALIDATOR.style.top = '';
 		STYLE_VALIDATOR.style.top = horizontal;
 		if ( STYLE_VALIDATOR.style.top ) {
+			if ( align_horizontal === 1 )
+				align_out.push(`align-items: flex-start !important;`);
+			else if ( align_horizontal === 3 )
+				align_out.push(`align-items: flex-end !important;`);
+
 			out.push(`${align_horizontal === 3 ? 'right' : 'left'}: ${STYLE_VALIDATOR.style.top} !important;`);
 			out.push(`${align_horizontal === 3 ? 'left' : 'right'}: unset !important;`);
 			custom_left = true;
@@ -406,74 +678,11 @@ export default class Player extends Module {
 
 		this.css_tweaks.set('captions-position', `.player-captions-container {
 	${out.join('\n\t')};
-}`);
+}${align_out.length ? `.player-captions-container__caption-window {
+	${align_out.join('\n\t')}
+}` : ''}`);*/
 	}
 
-	onEnable() {
-		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
-		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
-		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
-		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
-		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
-		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
-		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
-		this.updateHideExtensions();
-		this.updateCaptionsCSS();
-		this.installVisibilityHook();
-
-		const t = this;
-
-		this.SquadStreamBar.ready(cls => {
-			const old_should_render = cls.prototype.shouldRenderSquadBanner;
-
-			cls.prototype.shouldRenderSquadBanner = function(...args) {
-				if ( t.settings.get('player.hide-squad-banner') )
-					return false;
-
-				return old_should_render.call(this, ...args);
-			}
-
-			this.SquadStreamBar.forceUpdate();
-			this.updateSquadContext();
-		});
-
-		this.SquadStreamBar.on('mount', this.updateSquadContext, this);
-		this.SquadStreamBar.on('update', this.updateSquadContext, this);
-		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);
-
-		this.Player.on('mount', this.onMount, this);
-		this.Player.on('unmount', this.onUnmount, this);
-
-		this.Player.ready((cls, instances) => {
-			const old_init = cls.prototype.initializePlayer;
-
-			if ( old_init ) {
-				cls.prototype.initializePlayer = function(...args) {
-					const ret = old_init.call(this, ...args);
-					t.process(this);
-					return ret;
-				}
-
-			} else {
-				this.Player.on('will-mount', this.overrideInitialize, this);
-			}
-
-			for(const inst of instances) {
-				if ( ! old_init )
-					this.overrideInitialize(inst);
-
-				this.onMount(inst);
-				this.process(inst);
-			}
-		});
-
-		this.on('i18n:update', () => {
-			for(const inst of this.Player.instances) {
-				this.addPiPButton(inst);
-				this.addResetButton(inst);
-			}
-		});
-	}
 
 	installVisibilityHook() {
 		if ( ! document.pictureInPictureEnabled ) {
@@ -500,290 +709,14 @@ export default class Player extends Module {
 	}
 
 
-	updateSquadContext() {
-		this.settings.updateContext({
-			squad_bar: this.hasSquadBar()
-		});
-	}
-
-
-	hasSquadBar() {
-		const inst = this.SquadStreamBar.first;
-		return inst ? inst.shouldRenderSquadBanner(inst.props) : false
-	}
-
-
-	overrideInitialize(inst) {
-		const t = this,
-			old_init = inst.initializePlayer;
-
-		inst.initializePlayer = function(...args) {
-			const ret = old_init.call(inst, ...args);
-			t.process(inst);
-			return ret;
-		}
-	}
-
-
-	onMount(inst) {
-		if ( this.settings.get('player.theatre.auto-enter') && inst.onTheatreChange )
-			inst.onTheatreChange(true);
-
-		if ( this.settings.get('player.no-autoplay') || (! this.settings.get('player.home.autoplay') && this.router.current.name === 'front-page') ) {
-			if ( inst.player )
-				this.disableAutoplay(inst);
-			else {
-				const wrapped = inst.onPlayerReady;
-				inst.onPlayerReady = () => {
-					const ret = wrapped.call(inst);
-					this.disableAutoplay(inst);
-					return ret;
-				}
-			}
-		}
-	}
-
-
-	onUnmount(inst) { // eslint-disable-line class-methods-use-this
-		this.cleanup(inst);
-	}
-
-
-	process(inst) {
-		this.addResetButton(inst);
+	updateGUI(inst) {
 		this.addPiPButton(inst);
-		this.addEndedListener(inst);
-		this.addStateTags(inst);
-		this.addControlVisibility(inst);
-		this.updateVolumeScroll(inst);
-	}
-
-
-	cleanup(inst) { // eslint-disable-line class-methods-use-this
-		const p = inst.player,
-			pr = inst.playerRef,
-			video = pr && pr.querySelector('video'),
-			reset = pr && pr.querySelector('.ffz--player-reset'),
-			pip = pr && pr.querySelector('.ffz--player-pip');
-
-		if ( reset )
-			reset.remove();
-
-		if ( pip )
-			pip.remove();
-
-		if ( video && video._ffz_pip_enter ) {
-			video.removeEventListener('enterpictureinpicture', video._ffz_pip_enter);
-			video.removeEventListener('leavepictureinpicture', video._ffz_pip_exit);
-			video._ffz_pip_enter = null;
-			video._ffz_pip_exit = null;
-		}
-
-		if ( inst._ffz_on_ended ) {
-			p && off(p, 'ended', inst._ffz_on_ended);
-			inst._ffz_on_ended = null;
-		}
-
-		if ( inst._ffz_visibility_handler ) {
-			if ( pr ) {
-				off(pr, 'mousemove', inst._ffz_visibility_handler);
-				off(pr, 'mouseleave', inst._ffz_visibility_handler);
-			}
-
-			inst._ffz_visibility_handler = null;
-		}
-
-		if ( inst._ffz_scroll_handler ) {
-			pr && off(pr, 'wheel', inst._ffz_scroll_handler);
-			inst._ffz_scroll_handler = null;
-		}
-
-		if ( inst._ffz_autoplay_handler ) {
-			if ( p ) {
-				off(p, 'play', inst._ffz_autoplay_handler);
-				off(p, 'playing', inst._ffz_autoplay_handler);
-				off(p, 'contentShowing', inst._ffz_autoplay_handler);
-			}
-
-			inst._ffz_autoplay_handler = null;
-		}
-
-		if ( inst._ffz_on_state ) {
-			if ( p ) {
-				off(p, 'ended', inst._ffz_on_state);
-				off(p, 'pause', inst._ffz_on_state);
-				off(p, 'playing', inst._ffz_on_state);
-				off(p, 'error', inst._ffz_on_state);
-			}
-
-			inst._ffz_on_state = null;
-		}
-	}
-
-
-	addEndedListener(inst) {
-		let p = inst.player;
-		if ( ! p )
-			return;
-
-		if ( p.player )
-			p = p.player;
-
-		if ( inst._ffz_on_ended )
-			off(p, 'ended', inst._ffz_on_ended);
-
-		on(p, 'ended', inst._ffz_on_ended = async () => {
-			if ( this.settings.get('player.vod.autoplay') )
-				return;
-
-			try {
-				(await this.parent.awaitElement('.pl-rec__cancel', inst.playerRef, 1000)).click();
-			} catch(err) { /* do nothing~ */ }
-		});
-	}
-
-
-	addControlVisibility(inst) { // eslint-disable-line class-methods-use-this
-		const p = inst.playerRef;
-		if ( ! p )
-			return;
-
-		if ( inst._ffz_visibility_handler ) {
-			off(p, 'mousemove', inst._ffz_visibility_handler);
-			off(p, 'mouseleave', inst._ffz_visibility_handler);
-		}
-
-		let timer;
-
-		const c = () => { p.dataset.controls = false };
-		const f = inst._ffz_visibility_handler = e => {
-			clearTimeout(timer);
-			if ( e.type === 'mouseleave' )
-				return c();
-
-			timer = setTimeout(c, 5000);
-			p.dataset.controls = true;
-		};
-
-		on(p, 'mousemove', f);
-		on(p, 'mouseleave', f);
-	}
-
-
-	addStateTags(inst) {
-		let p = inst.player;
-		if ( ! p )
-			return;
-
-		if ( p.player )
-			p = p.player;
-
-		if ( inst._ffz_on_state ) {
-			off(p, 'ended', inst._ffz_on_state);
-			off(p, 'pause', inst._ffz_on_state);
-			off(p, 'playing', inst._ffz_on_state);
-			off(p, 'error', inst._ffz_on_state);
-		}
-
-		const f = inst._ffz_on_state = () => this.updateStateTags(inst);
-
-		on(p, 'ended', f);
-		on(p, 'pause', f);
-		on(p, 'playing', f);
-		on(p, 'error', f);
-
-		f();
-	}
-
-
-	updateStateTags(inst) { // eslint-disable-line class-methods-use-this
-		const p = inst.playerRef;
-		let player = inst.player;
-		if ( ! p || ! player )
-			return;
-
-		if ( player.player )
-			player = player.player;
-
-		p.dataset.ended = player.ended;
-		p.dataset.paused = player.paused;
-	}
-
-
-	disableAutoplay(inst) {
-		let p = inst.player;
-		if ( ! p )
-			return this.log.warn('disableAutoplay() called without Player');
-
-		if ( p.player )
-			p = p.player;
-
-		if ( p.readyState > 0 ) {
-			this.log.info('Player already playing. Pausing.');
-			return p.pause();
-		}
-
-		if ( ! inst._ffz_autoplay_handler ) {
-			const listener = inst._ffz_autoplay_handler = () => {
-				setTimeout(() => {
-					this.log.info('Pausing due to playback.');
-					inst._ffz_autoplay_handler = null;
-					p.pause();
-
-					setTimeout(() => {
-						off(p, 'play', listener);
-						off(p, 'playing', listener);
-						off(p, 'contentShowing', listener);
-					}, 250);
-				});
-			}
-
-			on(p, 'play', listener);
-			on(p, 'playing', listener);
-			on(p, 'contentShowing', listener);
-		}
-	}
-
-
-	updateVolumeScroll(inst, enabled) {
-		if ( enabled === undefined )
-			enabled = this.settings.get('player.volume-scroll');
-
-		const pr = inst.playerRef;
-		if ( ! pr )
-			return;
-
-		if ( ! enabled && inst._ffz_scroll_handler ) {
-			off(pr, 'wheel', inst._ffz_scroll_handler);
-			inst._ffz_scroll_handler = null;
-
-		} else if ( enabled && ! inst._ffz_scroll_handler ) {
-			on(pr, 'wheel', inst._ffz_scroll_handler = e => {
-				const delta = e.wheelDelta || -(e.deltaY || e.detail || 0);
-				let player = inst.player;
-				if ( player.player )
-					player = player.player;
-
-				if ( player ) {
-					const amount = this.settings.get('player.volume-scroll-steps'),
-						volume = Math.max(0, Math.min(1, player.getVolume() + (delta > 0 ? amount : -amount)));
-
-					player.setVolume(volume);
-					if ( volume !== 0 )
-						player.setMuted(false);
-				}
-
-				e.preventDefault();
-				return false;
-			});
-		}
 	}
 
 
 	addPiPButton(inst, tries = 0) {
-		const t = this,
-			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
-			container = el && el.parentElement,
+		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			container = outer && outer.querySelector('.player-controls__right-control-group'),
 			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
 
 		if ( ! container ) {
@@ -791,42 +724,54 @@ export default class Player extends Module {
 				return;
 
 			if ( tries < 5 )
-				return setTimeout(this.addPiPButton.bind(this, inst, (tries||0) + 1), 250);
+				return setTimeout(this.addPiPButton.bind(this, inst, (tries || 0) + 1), 250);
 
-			return this.log.warn('Unable to find container element for PiP Button');
+			return this.log.warn('Unable to find container element for PiP button.');
 		}
 
-		let tip, btn = container.querySelector('.ffz--player-pip');
+		let icon, tip, btn, cont = container.querySelector('.ffz--player-pip');
 		if ( ! has_pip ) {
-			if ( btn )
-				btn.remove();
+			if ( cont )
+				cont.remove();
 			return;
 		}
 
-		if ( ! btn ) {
-			btn = (<button
-				class="player-button player-button--pip ffz--player-pip ffz-i-window-restore"
-				type="button"
-				onClick={t.pipPlayer.bind(t, inst)} // eslint-disable-line react/jsx-no-bind
-			>
-				{tip = <span class="player-tip js-control-tip" />}
-			</button>);
+		if ( ! cont ) {
+			cont = (<div class="ffz--player-pip tw-inline-flex tw-relative tw-tooltip-wrapper">
+				{btn = (<button
+					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--border tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					type="button"
+					data-a-target="ffz-player-pip-button"
+					onClick={this.pipPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<div class="tw-button-icon__icon">
+							{icon = (<figure />)}
+						</div>
+					</div>
+				</button>)}
+				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+			</div>);
 
-			container.insertBefore(btn, el.nextSibling);
+			container.appendChild(cont);
 
-		} else
-			tip = btn.querySelector('.player-tip');
+		} else {
+			icon = cont.querySelector('figure');
+			btn = cont.querySelector('button');
+			tip = cont.querySelector('.tw-tooltip');
+		}
 
 		const pip_active = !!document.pictureInPictureElement
 
-		btn.classList.toggle('ffz-i-window-restore', ! pip_active);
-		btn.classList.toggle('ffz-i-window-maximize', pip_active);
+		icon.classList.toggle('ffz-i-window-restore', ! pip_active);
+		icon.classList.toggle('ffz-i-window-maximize', pip_active);
 
-		tip.dataset.tip = this.i18n.t('player.pip_button', 'Click to Toggle Picture-in-Picture');
+		btn.setAttribute('aria-label', tip.textContent = this.i18n.t('player.pip_button', 'Click to Toggle Picture-in-Picture'));
 	}
 
+
 	pipPlayer(inst) {
-		const video = inst.playerRef && inst.playerRef.querySelector('video');
+		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
 		if ( ! video || ! document.pictureInPictureEnabled )
 			return;
 
@@ -847,84 +792,51 @@ export default class Player extends Module {
 	}
 
 
-	addResetButton(inst, tries = 0) {
-		const t = this,
-			el = inst.playerRef && inst.playerRef.querySelector('.player-buttons-right .pl-flex'),
-			container = el && el.parentElement;
-
-		if ( ! this.settings.get('player.button.reset') ) {
-			if ( container ) {
-				const btn = container.querySelector('.ffz--player-reset');
-				if ( btn )
-					btn.remove();
-			}
-
+	tryTheatreMode(inst) {
+		if ( ! this.settings.get('player.theatre.auto-enter') )
 			return;
+
+		if ( inst?.props?.onTheatreModeEnabled )
+			inst.props.onTheatreModeEnabled();
+	}
+
+
+	/**
+	 * Tries to reposition the player, using a method exposed on the
+	 * Squad Streaming bar.
+	 *
+	 * @memberof Player
+	 * @returns {void}
+	 */
+	repositionPlayer() {
+		for(const inst of this.SquadStreamBar.instances) {
+			if ( inst?.props?.triggerPlayerReposition ) {
+				inst.props.triggerPlayerReposition();
+				return;
+			}
 		}
-
-		if ( ! container ) {
-			if ( tries < 5 )
-				return setTimeout(this.addResetButton.bind(this, inst, (tries||0) + 1), 250);
-
-			return this.log.warn('Unable to find container element for Reset Button');
-		}
-
-		let tip = container.querySelector('.ffz--player-reset .player-tip');
-
-		if ( ! tip )
-			container.insertBefore(<button
-				class="player-button player-button--reset ffz--player-reset ffz-i-cancel"
-				type="button"
-				onDblClick={t.resetPlayer.bind(t, inst)} // eslint-disable-line react/jsx-no-bind
-			>
-				{tip = <span class="player-tip js-control-tip" />}
-			</button>, el.nextSibling);
-
-		tip.dataset.tip = this.i18n.t('player.reset_button', 'Double-Click to Reset Player');
 	}
 
-
-	resetPlayer(inst) {
-		// Player shutdown logic copied from componentWillUnmount
-		inst.checkPlayerDependencyAnimationFrame && cancelAnimationFrame(inst.checkPlayerDependencyAnimationFrame);
-		inst.checkPlayerDependencyAnimationFrame = null;
-		inst.maybeDetachFromWindow();
-
-		const ES = this.web_munch.getModule('extension-service');
-		if ( ES )
-			ES.extensionService.unregisterPlayer();
-
-		this.cleanup(inst);
-
-		const klass = inst.player.constructor;
-
-		inst.player.destroy();
-		inst.playerRef.innerHTML = '';
-
-		inst.initializePlayer(klass);
+	updateSquadContext() {
+		this.settings.updateContext({
+			squad_bar: this.hasSquadBar
+		});
 	}
 
-
-	getInternalPlayer(inst) {
-		if ( ! inst )
-			inst = this.Player.first;
-
-		const node = this.fine.getChildNode(inst),
-			el = node && node.querySelector('.player-ui');
-
-		if ( ! el || ! el._reactRootContainer )
-			return null;
-
-		return this.fine.searchTree(el, n => n.props && n.props.player && n.context && n.context.store);
+	get hasSquadBar() {
+		const inst = this.SquadStreamBar.first;
+		return inst ? inst.shouldRenderSquadBanner(inst.props) : false
 	}
 
+	get playerUI() {
+		const container = this.fine.searchTree(this.Player.first, n => n.props && n.props.uiContext, 150);
+		return container?.props?.uiContext;
+	}
 
 	get current() {
-		// There should only ever be one player instance, but might change
-		// when they re-add support for the mini player.
 		for(const inst of this.Player.instances)
-			if ( inst && inst.player )
-				return inst.player;
+			if ( inst?.props?.mediaPlayerInstance )
+				return inst.props.mediaPlayerInstance;
 
 		return null;
 	}

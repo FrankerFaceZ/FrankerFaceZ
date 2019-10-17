@@ -22,8 +22,8 @@ const CLASSES = {
 
 	'prime-offers': '.top-nav__prime',
 
-	'player-ext': '.player .extension-taskbar,.player .extension-container,.player .extensions-dock__layout,.player .extensions-notifications,.player .extensions-video-overlay-size-container',
-	'player-ext-hover': '.player:not([data-controls="true"]) .extension-container,.player:not([data-controls="true"]) .extensions-dock__layout,.player:not([data-controls="true"]) .extensions-notifications,.player:not([data-controls="true"]) .extensions-video-overlay-size-container',
+	'player-ext': '.highwind-video-player .extension-taskbar,.highwind-video-player .extension-container,.highwind-video-player .extensions-dock__layout,.highwind-video-player .extensions-notifications,.highwind-video-player .extensions-video-overlay-size-container',
+	'player-ext-hover': '.highwind-video-player__overlay[data-controls="false"] .extension-taskbar,.highwind-video-player__overlay[data-controls="false"] .extension-container,.highwind-video-player__overlay[data-controls="false"] .extensions-dock__layout,.highwind-video-player__overlay[data-controls="false"] .extensions-notifications,.highwind-video-player__overlay[data-controls="false"] .extensions-video-overlay-size-container',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',

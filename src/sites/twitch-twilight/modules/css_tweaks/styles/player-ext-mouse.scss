@@ -1,4 +1,7 @@
 .player .extension-overlay__iframe,
-.player .extension-overlay {
+.player .extension-overlay,
+.highwind-video-player .extension-overlay__iframe,
+.highwind-video-player .extension-overlay,
+.highwind-video-player .extension-view__iframe {
 	pointer-events: none !important;
 }

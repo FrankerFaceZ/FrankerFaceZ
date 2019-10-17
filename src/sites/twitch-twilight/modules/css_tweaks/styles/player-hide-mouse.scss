@@ -1,3 +1,4 @@
+.highwind-video-player__overlay[data-controls="false"][data-paused="false"][data-ended="false"],
 .player:hover:not([data-controls="true"]):not([data-paused="true"]):not([data-ended="true"]) {
 	cursor: none;
 }

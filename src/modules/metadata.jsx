@@ -155,6 +155,27 @@ export default class Metadata extends Module {
 						skippedFrames: temp.dropped_frames,
 						videoResolution: `${temp.vid_width}x${temp.vid_height}`
 					}
+				} else if ( player.stats ) {
+					const videoHeight = maybe_call(player.getVideoHeight, player) || 0,
+						videoWidth = maybe_call(player.getVideoWidth, player) || 0,
+						displayHeight = maybe_call(player.getDisplayHeight, player) || 0,
+						displayWidth = maybe_call(player.getDisplayWidth, player) || 0;
+
+					stats = {
+						backendVersion: maybe_call(player.getVersion, player),
+						bufferSize: maybe_call(player.getBufferDuration, player),
+						displayResolution: `${displayWidth}x${displayHeight}`,
+						videoResolution: `${videoWidth}x${videoHeight}`,
+						videoHeight,
+						videoWidth,
+						displayHeight,
+						displayWidth,
+						fps: (maybe_call(player.getVideoFrameRate, player) || 0).toFixed(2),
+						hlsLatencyBroadcaster: player.stats?.broadcasterLatency,
+						hlsLatencyEncoder: player.stats?.transcoderLatency,
+						playbackRate: (maybe_call(player.getVideoBitRate, player) || 0) / 1000,
+						skippedFrames: maybe_call(player.getDroppedFrames, player),
+					}
 				}
 
 				if ( ! stats || stats.hlsLatencyBroadcaster < -100 )
@@ -192,19 +213,12 @@ export default class Metadata extends Module {
 
 			click() {
 				const Player = this.resolve('site.player'),
-					internal = Player.getInternalPlayer();
+					ui = Player.playerUI;
 
-				if ( ! internal )
+				if ( ! ui )
 					return;
 
-				const store = internal.context.store,
-					state = store.getState(),
-					displayed = state && state.stats && state.stats.displayState === 'DISPLAY_VIDEO_STATS';
-
-				store.dispatch({
-					type: 'display stats',
-					displayState: displayed ? 'DISPLAY_NONE' : 'DISPLAY_VIDEO_STATS'
-				});
+				ui.setStatsOverlay(ui.statsOverlay === 1 ? 0 : 1);
 			},
 
 			color(data) {
