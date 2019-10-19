@@ -373,6 +373,8 @@ export default class Player extends Module {
 		this.updateHideExtensions();
 		this.installVisibilityHook();
 
+		this.on(':reset', () => this.resetPlayer());
+
 		const t = this;
 
 
@@ -775,7 +777,7 @@ export default class Player extends Module {
 			if ( tries < 5 )
 				return setTimeout(this.addPiPButton.bind(this, inst, (tries || 0) + 1), 250);
 
-			return this.log.warn('Unable to find container element for PiP button.');
+			return; // this.log.warn('Unable to find container element for PiP button.');
 		}
 
 		let icon, tip, btn, cont = container.querySelector('.ffz--player-pip');
@@ -864,7 +866,7 @@ export default class Player extends Module {
 			if ( tries < 5 )
 				return setTimeout(this.addResetButton.bind(this, inst, (tries || 0) + 1), 250);
 
-			return this.log.warn('Unable to find container element for Reset button.');
+			return; // this.log.warn('Unable to find container element for Reset button.');
 		}
 
 		let tip, btn, cont = container.querySelector('.ffz--player-reset');

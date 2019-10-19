@@ -794,7 +794,16 @@ export default class MainMenu extends Module {
 				this.settings.provider.set('cfg-collapsed', collapsed);
 			},
 
-			resize: e => ! this.dialog.exclusive && this.dialog.toggleSize(e),
+			resize: e => {
+				if ( this.dialog.exclusive || this.site?.router?.current_name === 'squad' )
+					return;
+
+				if ( this.settings.get('context.ui.theatreModeEnabled') )
+					return;
+
+				this.dialog.toggleSize(e);
+			},
+
 			close: e => ! this.dialog.exclusive && this.dialog.toggleVisible(e),
 
 			popout: e => {

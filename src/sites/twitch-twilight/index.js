@@ -203,7 +203,8 @@ Twilight.CHAT_ROUTES = [
 	'user-following',
 	'user',
 	'dash',
-	'embed-chat'
+	'embed-chat',
+	'squad'
 ];
 
 

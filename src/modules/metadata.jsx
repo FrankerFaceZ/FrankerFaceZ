@@ -126,7 +126,7 @@ export default class Metadata extends Module {
 
 			async popup(data, tip) {
 				const [permission, broadcast_id] = await Promise.all([
-					navigator.permissions.query({name: 'clipboard-write'}),
+					navigator.permissions.query({name: 'clipboard-write'}).then(perm => perm?.state).catch(() => null),
 					data.getBroadcastID()
 				]);
 				if ( ! broadcast_id )
@@ -135,7 +135,7 @@ export default class Metadata extends Module {
 					</div>);
 
 				const url = `https://www.twitch.tv/videos/${broadcast_id}${data.uptime > 0 ? `?t=${durationForURL(data.uptime)}` : ''}`,
-					can_copy = permission?.state === 'granted' || permission?.state === 'prompt';
+					can_copy = permission === 'granted' || permission === 'prompt';
 
 				const copy = can_copy ? e => {
 					navigator.clipboard.writeText(url);
@@ -954,8 +954,10 @@ export default class Metadata extends Module {
 				}
 			}
 
-			if ( old_color !== color )
-				el.dataset.color = el.style.color = color;
+			if ( old_color !== color ) {
+				el.dataset.color = color;
+				el.style.setProperty('color', color, 'important');
+			}
 
 			el._ffz_data = data;
 			stat.innerHTML = label;

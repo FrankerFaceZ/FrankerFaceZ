@@ -7,7 +7,6 @@
 import {DEBUG} from 'utilities/constants';
 import {SiteModule} from 'utilities/module';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
-import { timeout, sleep } from 'src/utilities/object';
 
 export default class MenuButton extends SiteModule {
 	constructor(...args) {
@@ -39,6 +38,12 @@ export default class MenuButton extends SiteModule {
 		this.NavBar = this.fine.define(
 			'nav-bar',
 			n => n.renderOnsiteNotifications && n.renderTwitchPrimeCrown
+		);
+
+		this.SquadBar = this.fine.define(
+			'squad-nav-bar',
+			n => n.exitSquadMode && n.props && n.props.squadID,
+			['squad']
 		);
 	}
 
@@ -154,6 +159,9 @@ export default class MenuButton extends SiteModule {
 	_update() {
 		for(const inst of this.NavBar.instances)
 			this.updateButton(inst);
+
+		for(const inst of this.SquadBar.instances)
+			this.updateButton(inst);
 	}
 
 
@@ -162,6 +170,10 @@ export default class MenuButton extends SiteModule {
 
 		this.NavBar.on('mount', this.updateButton, this);
 		this.NavBar.on('update', this.updateButton, this);
+
+		this.SquadBar.ready(() => this.update());
+		this.SquadBar.on('mount', this.updateButton, this);
+		this.SquadBar.on('update', this.updateButton, this);
 
 		this.on(':clicked', () => this.important_update = false);
 
@@ -175,20 +187,33 @@ export default class MenuButton extends SiteModule {
 
 	updateButton(inst) {
 		const root = this.fine.getChildNode(inst);
-		let container = root && root.querySelector('.top-nav__menu');
+		let is_squad = false,
+			container = root && root.querySelector('.top-nav__menu');
+
+		if ( ! container ) {
+			if ( root && root.classList.contains('squad-stream-top-bar__container') )
+				container = root;
+			else
+				container = root && root.querySelector('.squad-stream-top-bar__container');
+
+			if ( container )
+				is_squad = true;
+		}
 
 		if ( ! container )
 			return;
 
-		let user_stuff = null;
-		try {
-			user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
-		} catch(err) { /* dumb browsers with no :scope are dumb */ }
+		if ( ! is_squad ) {
+			let user_stuff = null;
+			try {
+				user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
+			} catch(err) { /* dumb browsers with no :scope are dumb */ }
 
-		if ( user_stuff )
-			container = user_stuff;
-		else
-			container = container.lastElementChild;
+			if ( user_stuff )
+				container = user_stuff;
+			else
+				container = container.lastElementChild;
+		}
 
 		let btn, el = container.querySelector('.ffz-top-nav');
 		if ( el )
@@ -367,7 +392,21 @@ export default class MenuButton extends SiteModule {
 		ctx = (<div class="tw-absolute tw-balloon tw-balloon--down tw-balloon--lg tw-balloon--right tw-block ffz--menu-context">
 			<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
 				<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
-					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left" />
+					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">
+						<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+							<button
+								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
+								onDblClick={() => {this.emit('site.player:reset'); destroy()}} // eslint-disable-line react/jsx-no-bind
+							>
+								<span class="tw-button-icon__icon">
+									<figure class="ffz-i-t-reset" />
+								</span>
+							</button>
+							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+								{ this.i18n.t('player.reset_button.all', 'Reset All Players (Double-Click)') }
+							</div>
+						</div>
+					</div>
 					<div class="tw-align-items-center tw-flex tw-flex-column tw-flex-grow-1 tw-justify-content-center">
 						<h5 class="tw-align-center tw-c-text-alt tw-semibold">
 							{ this.i18n.t('site.menu_button.profiles', 'Profiles') }
