@@ -84,5 +84,6 @@ export default [
 	"minus",
 	"left-open",
 	"t-pip-active",
-	"t-pip-inactive"
+	"t-pip-inactive",
+	"docs"
 ];
