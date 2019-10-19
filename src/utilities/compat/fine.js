@@ -247,9 +247,9 @@ export default class Fine extends Module {
 	}
 
 
-	findAllMatching(node, criteria, max_depth=15, parents=false, depth=0, traverse_roots=true) {
-		const matches = new Set,
-			crit = n => ! matches.has(n) && criteria(n);
+	findAllMatching(node, criteria, max_depth=15, single_class = true, parents=false, depth=0, traverse_roots=true) {
+		const matches = new Set;
+		let crit = n => ! matches.has(n) && criteria(n);
 
 		while(true) {
 			const match = parents ?
@@ -258,6 +258,11 @@ export default class Fine extends Module {
 
 			if ( ! match )
 				break;
+
+			if ( single_class && ! matches.size ) {
+				const klass = match.constructor;
+				crit = n => ! matches.has(n) && (n instanceof klass) && criteria(n);
+			}
 
 			matches.add(match);
 		}
@@ -377,7 +382,7 @@ export default class Fine extends Module {
 			wrapper._set(data.cls, data.instances);
 			this._known_classes.set(data.cls, wrapper);
 
-		} else {
+		} else if ( routes !== false ) {
 			this._waiting.push(wrapper);
 			this._updateLiveWaiting();
 		}
@@ -515,6 +520,17 @@ export class FineWrapper extends EventEmitter {
 
 	toArray() {
 		return Array.from(this.instances);
+	}
+
+	check(node = null, max_depth = 1000) {
+		if ( this._class )
+			return;
+
+		const instances = this.fine.findAllMatching(node, this.criteria, max_depth);
+		if ( instances.size ) {
+			const insts = Array.from(instances);
+			this._set(insts[0].constructor, insts);
+		}
 	}
 
 	ready(fn) {

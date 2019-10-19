@@ -170,6 +170,23 @@ export default class TwitchData extends Module {
 
 
 	// ========================================================================
+	// Broadcast ID
+	// ========================================================================
+
+	async getBroadcastID(id, login) {
+		const data = await this.queryApollo({
+			query: require('./data/broadcast-id.gql'),
+			variables: {
+				id,
+				login
+			}
+		});
+
+		return get('data.user.stream.archiveVideo.id', data);
+	}
+
+
+	// ========================================================================
 	// Stream Up-Type (Uptime and Type, for Directory Purposes)
 	// ========================================================================
 
