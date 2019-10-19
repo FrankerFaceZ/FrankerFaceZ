@@ -607,6 +607,34 @@
       "css": "docs",
       "code": 61637,
       "src": "fontawesome"
+    },
+    {
+      "uid": "0a277ae87adce035efd1b07fe62cbd1c",
+      "css": "t-reset-clicked",
+      "code": 59449,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M214.6 435.4L29.3 250 214.6 64.6 285.4 135.4 220.7 200H650A100 100 0 0 1 750 300V500H650V300H220.7L285.4 364.6ZM585.4 564.6L514.6 635.4 579.3 700H150V500H50V700A100 100 0 0 0 150 800H579.3L514.6 864.6 585.4 935.4 770.7 750Z",
+        "width": 800
+      },
+      "search": [
+        "reset player clicked"
+      ]
+    },
+    {
+      "uid": "da98b2090e1c8cb693c9a12c629c407d",
+      "css": "t-reset",
+      "code": 59450,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M650 200A100 100 0 0 1 750 300V800H650V300H470.7L535.4 364.6 464.6 435.4 279.3 250 464.6 64.6 535.4 135.4 470.7 200ZM264.6 635.4L329.3 700H150V200H50V700A100 100 0 0 0 150 800H329.3L264.6 864.6 335.4 935.4 520.7 750 335.4 564.6Z",
+        "width": 800
+      },
+      "search": [
+        "reset player unclicked"
+      ]
     }
   ]
 }

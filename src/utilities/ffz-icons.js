@@ -85,5 +85,7 @@ export default [
 	"left-open",
 	"t-pip-active",
 	"t-pip-inactive",
-	"docs"
+	"docs",
+	"t-reset-clicked",
+	"t-reset"
 ];

@@ -840,7 +840,7 @@ export default class Player extends Module {
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
-							<figure class="ffz-i-cancel" />
+							<figure class="ffz-i-t-reset" />
 						</div>
 					</div>
 				</button>)}
@@ -861,7 +861,7 @@ export default class Player extends Module {
 		btn.setAttribute('aria-label',
 			tip.textContent = this.i18n.t(
 				'player.reset_button',
-				'Double-Click to Reset Player'
+				'Reset Player (Double-Click)'
 			));
 	}
 
