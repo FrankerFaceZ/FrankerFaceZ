@@ -763,10 +763,10 @@ export default class Player extends Module {
 
 		const pip_active = !!document.pictureInPictureElement
 
-		icon.classList.toggle('ffz-i-window-restore', ! pip_active);
-		icon.classList.toggle('ffz-i-window-maximize', pip_active);
+		icon.classList.toggle('ffz-i-t-pip-inactive', ! pip_active);
+		icon.classList.toggle('ffz-i-t-pip-active', pip_active);
 
-		btn.setAttribute('aria-label', tip.textContent = this.i18n.t('player.pip_button', 'Click to Toggle Picture-in-Picture'));
+		btn.setAttribute('aria-label', tip.textContent = this.i18n.t('player.pip_button', 'Picture-in-Picture'));
 	}
 
 

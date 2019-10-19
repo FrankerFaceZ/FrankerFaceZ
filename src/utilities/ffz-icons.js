@@ -82,5 +82,7 @@ export default [
 	"clip",
 	"youtube-play",
 	"minus",
-	"left-open"
+	"left-open",
+	"t-pip-active",
+	"t-pip-inactive"
 ];

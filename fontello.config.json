@@ -573,6 +573,34 @@
       "css": "left-open",
       "code": 59446,
       "src": "fontawesome"
+    },
+    {
+      "uid": "83ef41f6581f1249dad29440dcc98c7d",
+      "css": "t-pip-active",
+      "code": 59447,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M450 450H800V250A100 100 0 0 0 700 150H100A100 100 0 0 0 0 250V750A100 100 0 0 0 100 850H350V550A100 100 0 0 1 450 450ZM450 550V850H700A100 100 0 0 0 800 750V550Z",
+        "width": 800
+      },
+      "search": [
+        "picture-in-picture active"
+      ]
+    },
+    {
+      "uid": "27e2008f5a55874ebec555ab5a8bc955",
+      "css": "t-pip-inactive",
+      "code": 59448,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M700 150H100A100 100 0 0 0 0 250V750A100 100 0 0 0 100 850H700A100 100 0 0 0 800 750V250A100 100 0 0 0 700 150ZM100 250H700V450H450A100 100 0 0 0 350 550V750H100ZM450 750V550H700V750Z",
+        "width": 800
+      },
+      "search": [
+        "picture-in-picture inactive"
+      ]
     }
   ]
 }
