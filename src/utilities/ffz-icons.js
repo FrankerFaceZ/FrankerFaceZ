@@ -83,5 +83,9 @@ export default [
 	"youtube-play",
 	"minus",
 	"left-open",
-	"docs"
+	"t-pip-active",
+	"t-pip-inactive",
+	"docs",
+	"t-reset-clicked",
+	"t-reset"
 ];

@@ -575,10 +575,66 @@
       "src": "fontawesome"
     },
     {
+      "uid": "83ef41f6581f1249dad29440dcc98c7d",
+      "css": "t-pip-active",
+      "code": 59447,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M450 450H800V250A100 100 0 0 0 700 150H100A100 100 0 0 0 0 250V750A100 100 0 0 0 100 850H350V550A100 100 0 0 1 450 450ZM450 550V850H700A100 100 0 0 0 800 750V550Z",
+        "width": 800
+      },
+      "search": [
+        "picture-in-picture active"
+      ]
+    },
+    {
+      "uid": "27e2008f5a55874ebec555ab5a8bc955",
+      "css": "t-pip-inactive",
+      "code": 59448,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M700 150H100A100 100 0 0 0 0 250V750A100 100 0 0 0 100 850H700A100 100 0 0 0 800 750V250A100 100 0 0 0 700 150ZM100 250H700V450H450A100 100 0 0 0 350 550V750H100ZM450 750V550H700V750Z",
+        "width": 800
+      },
+      "search": [
+        "picture-in-picture inactive"
+      ]
+    },
+    {
       "uid": "c8585e1e5b0467f28b70bce765d5840c",
       "css": "docs",
       "code": 61637,
       "src": "fontawesome"
+    },
+    {
+      "uid": "0a277ae87adce035efd1b07fe62cbd1c",
+      "css": "t-reset-clicked",
+      "code": 59449,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M214.6 435.4L29.3 250 214.6 64.6 285.4 135.4 220.7 200H650A100 100 0 0 1 750 300V500H650V300H220.7L285.4 364.6ZM585.4 564.6L514.6 635.4 579.3 700H150V500H50V700A100 100 0 0 0 150 800H579.3L514.6 864.6 585.4 935.4 770.7 750Z",
+        "width": 800
+      },
+      "search": [
+        "reset player clicked"
+      ]
+    },
+    {
+      "uid": "da98b2090e1c8cb693c9a12c629c407d",
+      "css": "t-reset",
+      "code": 59450,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M650 200A100 100 0 0 1 750 300V800H650V300H470.7L535.4 364.6 464.6 435.4 279.3 250 464.6 64.6 535.4 135.4 470.7 200ZM264.6 635.4L329.3 700H150V200H50V700A100 100 0 0 0 150 800H329.3L264.6 864.6 335.4 935.4 520.7 750 335.4 564.6Z",
+        "width": 800
+      },
+      "search": [
+        "reset player unclicked"
+      ]
     }
   ]
 }
