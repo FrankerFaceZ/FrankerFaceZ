@@ -40,3 +40,14 @@ export function print_duration(seconds) {
 
 	return `${hours > 0 ? `${hours}:${minutes < 10 ? '0' : ''}` : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
+
+
+export function durationForURL(elapsed) {
+	const seconds = elapsed % 60;
+	let minutes = Math.floor(elapsed / 60);
+	const hours = Math.floor(minutes / 60);
+
+	minutes = minutes % 60;
+
+	return `${hours > 0 ? `${hours}h` : ''}${minutes > 0 ? `${minutes}m` : ''}${seconds > 0 ? `${seconds}s` : ''}`;
+}

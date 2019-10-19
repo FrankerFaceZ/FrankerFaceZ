@@ -324,11 +324,10 @@ export default {
 
 		importProfile(profile_data, data) {
 			this.import_profile = profile_data;
+			this.import_profile_data = data;
 
-			if ( profile_data.url ) {
-				this.import_profile_data = data;
+			if ( profile_data.url )
 				return;
-			}
 
 			this.confirmImport(false);
 		},
@@ -341,6 +340,8 @@ export default {
 			delete profile_data.id;
 			if ( ! allow_update )
 				delete profile_data.url;
+
+			console.log('Importing', profile_data, data, this.import_data);
 
 			const prof = this.context.createProfile(profile_data);
 

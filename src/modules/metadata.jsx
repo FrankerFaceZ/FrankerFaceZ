@@ -7,7 +7,7 @@
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 import {maybe_call} from 'utilities/object';
 
-import {duration_to_string} from 'utilities/time';
+import {duration_to_string, durationForURL} from 'utilities/time';
 
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
@@ -75,6 +75,9 @@ export default class Metadata extends Module {
 
 
 		this.definitions.uptime = {
+			inherit: true,
+			no_arrow: true,
+
 			refresh() { return this.settings.get('metadata.uptime') > 0 },
 
 			setup(data) {
@@ -89,7 +92,8 @@ export default class Metadata extends Module {
 
 				return {
 					created,
-					uptime: created ? Math.floor((now - created.getTime()) / 1000) : -1
+					uptime: created ? Math.floor((now - created.getTime()) / 1000) : -1,
+					getBroadcastID: data.getBroadcastID
 				}
 			},
 
@@ -118,11 +122,66 @@ export default class Metadata extends Module {
 					'(since {since,datetime})',
 					{since: data.created}
 				)}</div>`;
+			},
+
+			async popup(data, tip) {
+				const [permission, broadcast_id] = await Promise.all([
+					navigator.permissions.query({name: 'clipboard-write'}),
+					data.getBroadcastID()
+				]);
+				if ( ! broadcast_id )
+					return (<div>
+						{ this.i18n.t('metadata.uptime-no-id', 'Sorry, we couldn\'t find an archived video for the current broadcast.') }
+					</div>);
+
+				const url = `https://www.twitch.tv/videos/${broadcast_id}${data.uptime > 0 ? `?t=${durationForURL(data.uptime)}` : ''}`,
+					can_copy = permission?.state === 'granted' || permission?.state === 'prompt';
+
+				const copy = can_copy ? e => {
+					navigator.clipboard.writeText(url);
+					e.preventDefault();
+					return false;
+				} : null;
+
+				tip.element.classList.add('tw-balloon--lg');
+
+				return (<div>
+					<div class="tw-pd-b-1 tw-mg-b-1 tw-border-b tw-semibold">
+						{ this.i18n.t('metadata.uptime.link-to', 'Link to {time}', {
+							time: duration_to_string(data.uptime, false, false, false, false)
+						}) }
+					</div>
+					<div class="tw-flex tw-align-items-center">
+						<input
+							class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input tw-full-width"
+							type="text"
+							value={url}
+							onFocus={e => e.target.select()}
+						/>
+						{can_copy && <div class="tw-relative tw-tooltip-wrapper tw-mg-l-1">
+							<button
+								class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+								aria-label={ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
+								onClick={copy}
+							>
+								<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+									<span class="tw-button-icon__icon">
+										<figure class="ffz-i-docs" />
+									</span>
+								</div>
+							</button>
+							<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up">
+								{ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
+							</div>
+						</div>}
+					</div>
+				</div>);
 			}
 		}
 
 		this.definitions['player-stats'] = {
-			button: false,
+			button: true,
+			inherit: true,
 
 			refresh() {
 				return this.settings.get('metadata.player-stats')
@@ -170,10 +229,10 @@ export default class Metadata extends Module {
 						videoWidth,
 						displayHeight,
 						displayWidth,
-						fps: (maybe_call(player.getVideoFrameRate, player) || 0).toFixed(2),
+						fps: Math.floor(maybe_call(player.getVideoFrameRate, player) || 0),
 						hlsLatencyBroadcaster: player.stats?.broadcasterLatency,
 						hlsLatencyEncoder: player.stats?.transcoderLatency,
-						playbackRate: (maybe_call(player.getVideoBitRate, player) || 0) / 1000,
+						playbackRate: Math.floor((maybe_call(player.getVideoBitRate, player) || 0) / 1000),
 						skippedFrames: maybe_call(player.getDroppedFrames, player),
 					}
 				}
@@ -691,17 +750,8 @@ export default class Metadata extends Module {
 					button = true;
 
 					let btn, popup;
-					const border = maybe_call(def.border, this, data);
-
-					/* let cls = maybe_call(def.button, this, data);
-
-					if ( typeof cls !== 'string' )
-					cls = cls ? 'tw-border-t tw-border-l tw-border-b '
-
-					if ( typeof cls !== 'string' )
-						cls = cls ? 'ffz-button--hollow' : 'tw-button--text';
-
-					const fix = cls === 'tw-button--text';*/
+					const border = maybe_call(def.border, this, data),
+						inherit = maybe_call(def.inherit, this, data);
 
 					if ( typeof icon === 'string' )
 						icon = (<span class="tw-mg-r-05">
@@ -709,29 +759,13 @@ export default class Metadata extends Module {
 						</span>);
 
 					if ( def.popup && def.click ) {
-						/*el = (<span
-							class={`ffz-stat${fix ? ' ffz-fix-padding--left' : ''} tw-inline-flex tw-align-items-center`}
-							data-key={key}
-							tip_content={tooltip}
-						>
-							{btn = (<button class={`tw-button ${cls} ffz-has-stat-arrow`}>
-								{icon}
-								{stat = (<span class="ffz-stat-text tw-button__text" />)}
-							</button>)}
-							{popup = (<button class={`tw-button ${cls} ffz-stat-arrow`}>
-								<span class="tw-button__icon tw-pd-x-0">
-									<figure class="ffz-i-down-dir" />
-								</span>
-							</button>)}
-						</span>);*/
-
 						el = (<div
-							class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-l-1 ffz-stat--fix-padding"
+							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-l-1' : 'tw-mg-l-05 ffz-mg-r--05'}`}
 							data-key={key}
 							tip_content={tooltip}
 						>
 							{btn = (<button
-								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text tw-c-text-base tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${border ? ' tw-border-l tw-border-t tw-border-b' : ''}`}
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border-l tw-border-t tw-border-b' : 'tw-font-size-5 tw-regular'}`}
 							>
 								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
 									{icon}
@@ -739,7 +773,7 @@ export default class Metadata extends Module {
 								</div>
 							</button>)}
 							{popup = (<button
-								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text tw-c-text-base tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${border ? ' tw-border' : ''}`}
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border' : 'tw-font-size-5 tw-regular'}`}
 							>
 								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
 									<span>
@@ -751,30 +785,18 @@ export default class Metadata extends Module {
 
 					} else
 						btn = popup = el = (<button
-							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text tw-c-text-base tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-mg-l-1 tw-pd-x-05 ffz-stat--fix-padding${border ? ' tw-border' : ''}`}
+							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-l-1' : 'tw-font-size-5 tw-regular tw-mg-l-05 ffz-mg-r--05'}`}
 							data-key={key}
 							tip_content={tooltip}
 						>
 							<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
 								{icon}
 								{stat = (<span class="ffz-stat-text" />)}
-								{def.popup && <span class="tw-mg-l-05">
+								{def.popup && ! def.no_arrow && <span class="tw-mg-l-05">
 									<figure class="ffz-i-down-dir" />
 								</span>}
 							</div>
 						</button>);
-
-						/*btn = popup = el = (<button
-							class={`ffz-stat${fix ? ' ffz-fix-padding' : ''} tw-button tw-inline-flex tw-align-items-center ${cls}`}
-							data-key={key}
-							tip_content={tooltip}
-						>
-							{icon}
-							{stat = <span class="ffz-stat-text tw-button__text" />}
-							{def.popup && <span class="tw-button__icon tw-button__icon--right">
-								<figure class="ffz-i-down-dir" />
-							</span>}
-						</button>);*/
 
 					if ( def.click )
 						btn.addEventListener('click', e => {
@@ -831,7 +853,7 @@ export default class Metadata extends Module {
 									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
 									// Hide the arrow for now, until we re-do our CSS to make it render correctly.
 									arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
-									arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
+									arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base tw-absolute',
 									innerClass: 'tw-pd-1',
 
 									popper: {

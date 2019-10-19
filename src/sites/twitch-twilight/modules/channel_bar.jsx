@@ -105,6 +105,58 @@ export default class ChannelBar extends Module {
 	}
 
 
+	getBroadcastID(inst) {
+		const current_id = inst.props?.channel?.stream?.id;
+		if ( current_id === inst._ffz_stream_id ) {
+			if ( Date.now() - inst._ffz_broadcast_saved < 60000 )
+				return Promise.resolve(inst._ffz_broadcast_id);
+		}
+
+		return new Promise(async (s, f) => {
+			if ( inst._ffz_broadcast_updating )
+				return inst._ffz_broadcast_updating.push([s, f]);
+
+			inst._ffz_broadcast_updating = [[s, f]];
+
+			let id, err;
+
+			try {
+				id = await this.twitch_data.getBroadcastID(inst.props.channel.id);
+			} catch(error) {
+				id = null;
+				err = error;
+			}
+
+			const waiters = inst._ffz_broadcast_updating;
+			inst._ffz_broadcast_updating = null;
+
+			if ( current_id !== inst.props?.channel?.stream?.id ) {
+				err = new Error('Outdated');
+				inst._ffz_stream_id = null;
+				inst._ffz_broadcast_saved = 0;
+				inst._ffz_broadcast_id = null;
+
+				for(const pair of waiters)
+					pair[1](err);
+
+				return;
+			}
+
+			inst._ffz_broadcast_id = id;
+			inst._ffz_broadcast_saved = Date.now();
+			inst._ffz_stream_id = current_id;
+
+			if ( err ) {
+				for(const pair of waiters)
+					pair[1](err);
+			} else {
+				for(const pair of waiters)
+					pair[0](id);
+			}
+		});
+	}
+
+
 	async updateUptime(inst) {
 		const current_id = inst?.props?.channel?.id;
 		if ( current_id === inst._ffz_uptime_id ) {
@@ -156,7 +208,8 @@ export default class ChannelBar extends Module {
 				meta: inst._ffz_meta,
 				hosting: false,
 				legacy: true,
-				_inst: inst
+				_inst: inst,
+				getBroadcastID: () => this.getBroadcastID(inst)
 			}
 
 		for(const key of keys)

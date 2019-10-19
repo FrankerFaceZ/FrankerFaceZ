@@ -49,6 +49,12 @@ export default class Player extends Module {
 			['user', 'video', 'user-video', 'user-clip']
 		);
 
+		this.PlayerSource = this.fine.define(
+			'player-source',
+			n => n.setSrc && n.setInitialPlaybackSettings,
+			false
+		);
+
 
 		// Settings
 
@@ -67,19 +73,19 @@ export default class Player extends Module {
 			}
 		});
 
-		/*this.settings.add('player.button.reset', {
+		this.settings.add('player.button.reset', {
 			default: true,
 			ui: {
 				path: 'Player > General >> General',
 				title: 'Add a `Reset Player` button to the player controls.',
-				description: "Double-clicking the Reset Player button destroys and recreates Twitch's player, potentially fixing playback issues without a full page refresh.",
+				description: "Double-clicking the Reset Player button attempts to reset the Twitch player's internal state, fixing playback issues without a full page refresh.",
 				component: 'setting-check-box'
 			},
 			changed: () => {
 				for(const inst of this.Player.instances)
 					this.addResetButton(inst);
 			}
-		});*/
+		});
 
 		if ( document.pictureInPictureEnabled )
 			this.settings.add('player.button.pip', {
@@ -386,6 +392,9 @@ export default class Player extends Module {
 				if ( ! this._ffzUpdateState )
 					this._ffzUpdateState = this.ffzUpdateState.bind(this);
 
+				if ( ! this._ffzErrorReset )
+					this._ffzErrorReset = t.addErrorResetButton.bind(t, this);
+
 				const inst = this,
 					old_active = this.setPlayerActive,
 					old_inactive = this.setPlayerInactive;
@@ -415,6 +424,7 @@ export default class Player extends Module {
 				if ( events ) {
 					on(events, 'Playing', this._ffzUpdateState);
 					on(events, 'PlayerError', this._ffzUpdateState);
+					on(events, 'PlayerError', this._ffzErrorReset);
 					on(events, 'Ended', this._ffzUpdateState);
 					on(events, 'Ended', this.ffzOnEnded);
 					on(events, 'Idle', this._ffzUpdateState);
@@ -431,6 +441,7 @@ export default class Player extends Module {
 				if ( events && this._ffzUpdateState ) {
 					off(events, 'Playing', this._ffzUpdateState);
 					off(events, 'PlayerError', this._ffzUpdateState);
+					off(events, 'PlayerError', this._ffzErrorReset);
 					off(events, 'Ended', this._ffzUpdateState);
 					off(events, 'Ended', this.ffzOnEnded);
 					off(events, 'Idle', this._ffzUpdateState);
@@ -440,6 +451,7 @@ export default class Player extends Module {
 
 				this._ffz_state_raf = null;
 				this._ffzUpdateState = null;
+				this._ffzErrorReset = null;
 				this.ffzOnEnded = null;
 			}
 
@@ -573,9 +585,8 @@ export default class Player extends Module {
 			}
 		});
 
-		this.Player.on('mount', inst => {
-			this.updateGUI(inst);
-		});
+		this.Player.on('mount', this.updateGUI, this);
+		this.Player.on('update', this.updateGUI, this);
 
 		this.Player.on('unmount', inst => {
 			inst.ffzUninstall();
@@ -711,6 +722,7 @@ export default class Player extends Module {
 
 	updateGUI(inst) {
 		this.addPiPButton(inst);
+		this.addResetButton(inst);
 	}
 
 
@@ -753,7 +765,11 @@ export default class Player extends Module {
 				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			container.appendChild(cont);
+			const thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]');
+			if ( thing ) {
+				container.insertBefore(cont, thing.parentElement);
+			} else
+				container.appendChild(cont);
 
 		} else {
 			icon = cont.querySelector('figure');
@@ -789,6 +805,138 @@ export default class Player extends Module {
 			document.exitPictureInPicture();
 		else
 			video.requestPictureInPicture();
+	}
+
+
+	addResetButton(inst, tries = 0) {
+		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			container = outer && outer.querySelector('.player-controls__right-control-group'),
+			has_reset = this.settings.get('player.button.reset');
+
+		if ( ! container ) {
+			if ( ! has_reset )
+				return;
+
+			if ( tries < 5 )
+				return setTimeout(this.addResetButton.bind(this, inst, (tries || 0) + 1), 250);
+
+			return this.log.warn('Unable to find container element for Reset button.');
+		}
+
+		let tip, btn, cont = container.querySelector('.ffz--player-reset');
+		if ( ! has_reset ) {
+			if ( cont )
+				cont.remove();
+			return;
+		}
+
+		if ( ! cont ) {
+			cont = (<div class="ffz--player-reset tw-inline-flex tw-relative tw-tooltip-wrapper">
+				{btn = (<button
+					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--border tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					type="button"
+					data-a-target="ffz-player-reset-button"
+					onDblClick={this.resetPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<div class="tw-button-icon__icon">
+							<figure class="ffz-i-cancel" />
+						</div>
+					</div>
+				</button>)}
+				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+			</div>);
+
+			const thing = container.querySelector('.ffz--player-pip button') || container.querySelector('button[data-a-target="player-theatre-mode-button"]');
+			if ( thing ) {
+				container.insertBefore(cont, thing.parentElement);
+			} else
+				container.appendChild(cont);
+
+		} else {
+			btn = cont.querySelector('button');
+			tip = cont.querySelector('.tw-tooltip');
+		}
+
+		btn.setAttribute('aria-label',
+			tip.textContent = this.i18n.t(
+				'player.reset_button',
+				'Double-Click to Reset Player'
+			));
+	}
+
+
+	addErrorResetButton(inst, tries = 0) {
+		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			container = outer && outer.querySelector('.content-overlay-gate'),
+			has_reset = this.settings.get('player.button.reset');
+
+		if ( ! container ) {
+			if ( ! has_reset )
+				return;
+
+			if ( tries < 2 )
+				this.parent.awaitElement(
+					'.autoplay-vod__content-container button',
+					this.props.containerRef || t.fine.getChildNode(this),
+					1000
+				).then(() => {
+					this.addErrorResetButton(inst, (tries || 0) + 1);
+
+				}).catch(() => {
+					this.log.warn('Unable to find container element for Error Reset button.');
+				});
+
+			return;
+		}
+
+		let tip, btn, cont = container.querySelector('.ffz--player-reset');
+		if ( ! has_reset ) {
+			if ( cont )
+				cont.remove();
+			return;
+		}
+
+		if ( ! cont ) {
+			cont = (<div class="ffz--player-reset tw-absolute tw-bottom-0 tw-right-0 tw-tooltip-wrapper tw-mg-1">
+				{btn = (<button
+					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--border tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					type="button"
+					data-a-target="ffz-player-reset-button"
+					onDblClick={this.resetPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<div class="tw-button-icon__icon">
+							<figure class="ffz-i-cancel" />
+						</div>
+					</div>
+				</button>)}
+				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+			</div>);
+
+			container.appendChild(cont);
+
+		} else {
+			btn = cont.querySelector('button');
+			tip = cont.querySelector('.tw-tooltip');
+		}
+
+		btn.setAttribute('aria-label',
+			tip.textContent = this.i18n.t(
+				'player.reset_button',
+				'Double-Click to Reset Player'
+			));
+	}
+
+
+	resetPlayer(inst) {
+		const player = inst ? (inst.mediaSinkManager ? inst : inst?.props?.mediaPlayerInstance) : null;
+
+		this.PlayerSource.check();
+		for(const inst of this.PlayerSource.instances) {
+			if ( ! player || player === inst.props?.mediaPlayerInstance )
+				inst.setSrc({isNewMediaPlayerInstance: false});
+		}
 	}
 
 
