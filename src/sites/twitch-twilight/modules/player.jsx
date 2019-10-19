@@ -11,6 +11,21 @@ export const PLAYER_ROUTES = ['front-page', 'user', 'video', 'user-video', 'user
 
 const STYLE_VALIDATOR = createElement('span');
 
+function rotateButton(event) {
+	const target = event.currentTarget,
+		icon = target && target.querySelector('figure');
+	if ( ! icon || icon.classList.contains('ffz-i-t-reset-clicked') )
+		return;
+
+	icon.classList.toggle('ffz-i-t-reset', false);
+	icon.classList.toggle('ffz-i-t-reset-clicked', true);
+
+	setTimeout(() => {
+		icon.classList.toggle('ffz-i-t-reset', true);
+		icon.classList.toggle('ffz-i-t-reset-clicked', false);
+	}, 500);
+}
+
 export default class Player extends Module {
 	constructor(...args) {
 		super(...args);
@@ -395,6 +410,9 @@ export default class Player extends Module {
 				if ( ! this._ffzErrorReset )
 					this._ffzErrorReset = t.addErrorResetButton.bind(t, this);
 
+				if ( ! this._ffzReady )
+					this._ffzReady = this.ffzReady.bind(this);
+
 				const inst = this,
 					old_active = this.setPlayerActive,
 					old_inactive = this.setPlayerInactive;
@@ -427,6 +445,7 @@ export default class Player extends Module {
 					on(events, 'PlayerError', this._ffzErrorReset);
 					on(events, 'Ended', this._ffzUpdateState);
 					on(events, 'Ended', this.ffzOnEnded);
+					on(events, 'Ready', this._ffzReady);
 					on(events, 'Idle', this._ffzUpdateState);
 				}
 
@@ -444,6 +463,7 @@ export default class Player extends Module {
 					off(events, 'PlayerError', this._ffzErrorReset);
 					off(events, 'Ended', this._ffzUpdateState);
 					off(events, 'Ended', this.ffzOnEnded);
+					off(events, 'Ready', this._ffzReady);
 					off(events, 'Idle', this._ffzUpdateState);
 				}
 
@@ -452,7 +472,24 @@ export default class Player extends Module {
 				this._ffz_state_raf = null;
 				this._ffzUpdateState = null;
 				this._ffzErrorReset = null;
+				this._ffzReady = null;
 				this.ffzOnEnded = null;
+			}
+
+			cls.prototype.ffzReady = function() {
+				const cont = this.props.containerRef;
+				if ( ! cont )
+					return;
+
+				requestAnimationFrame(() => {
+					const icons = cont.querySelectorAll('.ffz--player-reset figure');
+					for(const icon of icons) {
+						if ( icon._ffz_unspin )
+							clearTimeout(icon._ffz_unspin);
+
+						icon.classList.toggle('loading', false);
+					}
+				});
 			}
 
 			cls.prototype.ffzStopAutoplay = function() {
@@ -758,7 +795,7 @@ export default class Player extends Module {
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
-							{icon = (<figure />)}
+							{icon = (<figure class="ffz-player-icon" />)}
 						</div>
 					</div>
 				</button>)}
@@ -777,19 +814,26 @@ export default class Player extends Module {
 			tip = cont.querySelector('.tw-tooltip');
 		}
 
-		const pip_active = !!document.pictureInPictureElement
+		const pip_active = !!document.pictureInPictureElement,
+			label = pip_active ?
+				this.i18n.t('player.pip_button.off', 'Exit Picture-in-Picture') :
+				this.i18n.t('player.pip_button', 'Picture-in-Picture');
 
 		icon.classList.toggle('ffz-i-t-pip-inactive', ! pip_active);
 		icon.classList.toggle('ffz-i-t-pip-active', pip_active);
 
-		btn.setAttribute('aria-label', tip.textContent = this.i18n.t('player.pip_button', 'Picture-in-Picture'));
+		btn.setAttribute('aria-label', label);
+		tip.textContent = label;
 	}
 
 
-	pipPlayer(inst) {
+	pipPlayer(inst, e) {
 		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
 		if ( ! video || ! document.pictureInPictureEnabled )
 			return;
+
+		if ( e )
+			e.preventDefault();
 
 		if ( ! video._ffz_pip_enter ) {
 			video.addEventListener('enterpictureinpicture', video._ffz_pip_enter = () => {
@@ -836,11 +880,12 @@ export default class Player extends Module {
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--border tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
 					data-a-target="ffz-player-reset-button"
+					onClick={rotateButton}
 					onDblClick={this.resetPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
-							<figure class="ffz-i-t-reset" />
+							<figure class="ffz-player-icon ffz-i-t-reset" />
 						</div>
 					</div>
 				</button>)}
@@ -903,11 +948,12 @@ export default class Player extends Module {
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--border tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
 					data-a-target="ffz-player-reset-button"
+					onClick={rotateButton}
 					onDblClick={this.resetPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
-							<figure class="ffz-i-cancel" />
+							<figure class="ffz-player-icon ffz-i-t-reset" />
 						</div>
 					</div>
 				</button>)}
@@ -929,8 +975,28 @@ export default class Player extends Module {
 	}
 
 
-	resetPlayer(inst) {
+	resetPlayer(inst, e) {
 		const player = inst ? (inst.mediaSinkManager ? inst : inst?.props?.mediaPlayerInstance) : null;
+
+		if ( e ) {
+			e.preventDefault();
+			const target = e.currentTarget,
+				icon = target && target.querySelector('figure');
+
+			if ( icon ) {
+				if ( icon.classList.contains('loading') )
+					return;
+
+				icon.classList.toggle('ffz-i-t-reset', true);
+				icon.classList.toggle('ffz-i-t-reset-clicked', false);
+
+				icon.classList.toggle('loading', true);
+				icon._ffz_unspin = setTimeout(() => {
+					icon._ffz_unspin = null;
+					icon.classList.toggle('loading', false);
+				}, 10000);
+			}
+		}
 
 		this.PlayerSource.check();
 		for(const inst of this.PlayerSource.instances) {
