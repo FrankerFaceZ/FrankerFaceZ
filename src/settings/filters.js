@@ -39,6 +39,39 @@ export const Or = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
 };
 
+export const If = {
+	createTest(config, rule_types) {
+		const cond = createTester(config[0], rule_types),
+			if_true = createTester(config[1], rule_types),
+			if_false = createTester(config[2], rule_types);
+
+		return ctx => cond(ctx) ? if_true(ctx) : if_false(ctx)
+	},
+
+	childRules: true,
+	tall: true,
+	title: 'If',
+	i18n: 'settings.filter.if',
+
+	default: () => [[], [], []],
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/if.vue')
+};
+
+export const Constant = {
+	createTest(config) {
+		if ( config )
+			return () => true;
+		return () => false;
+	},
+
+	title: 'True or False',
+	i18n: 'settings.filter.true_false',
+
+	default: true,
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+}
+
 
 // Context Stuff
 
@@ -104,7 +137,7 @@ export const Time = {
 	title: 'Time of Day',
 	i18n: 'settings.filter.time',
 
-	default: ['08:00', '18:00'],
+	default: () => ['08:00', '18:00'],
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/time.vue')
 }
