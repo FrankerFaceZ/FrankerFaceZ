@@ -1127,7 +1127,7 @@ export default class Chat extends Module {
 		user.type = user.type || user.userType || null;
 		user.id = user.id || user.userID || null;
 		user.login = user.login || user.userLogin || null;
-		user.displayName = user.displayName || user.userDisplayName || user.login;
+		user.displayName = user.displayName || user.userDisplayName || user.login || ext.displayName;
 		user.isIntl = user.login && user.displayName && user.displayName.trim().toLowerCase() !== user.login;
 
 		// Standardize Message Content
