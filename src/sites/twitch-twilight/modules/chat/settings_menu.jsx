@@ -110,7 +110,7 @@ export default class SettingsMenu extends Module {
 						if ( ! this.ffzPauseClick )
 							this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
-						return (<div class="tw-absolute tw-balloon tw-balloon--auto tw-balloon--up tw-block" data-a-target="chat-settings-balloon">
+						return (<div class="tw-absolute tw-balloon tw-balloon--auto tw-balloon--right tw-balloon--up tw-block" data-a-target="chat-settings-balloon" style={{marginRight: '-5.3rem'}}>
 							<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
 								<div class="chat-settings__popover">
 									<div class="chat-settings__header tw-align-items-center tw-c-background-base tw-flex tw-pd-x-1 tw-relative">

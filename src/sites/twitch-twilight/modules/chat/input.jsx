@@ -85,7 +85,7 @@ export default class Input extends Module {
 
 		this.ChatInput = this.fine.define(
 			'chat-input',
-			n => n && n.setChatInputRef && n.setLocalAutocompleteInputRef,
+			n => n && n.setLocalChatInputRef && n.setLocalAutocompleteInputRef,
 			Twilight.CHAT_ROUTES
 		);
 

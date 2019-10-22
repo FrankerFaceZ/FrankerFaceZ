@@ -142,7 +142,6 @@ export const Time = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/time.vue')
 }
 
-
 export const TheaterMode = {
 	createTest(config) {
 		return ctx => ctx.ui && ctx.ui.theatreModeEnabled === config;
@@ -262,3 +261,25 @@ export const Channel = {
 	}),
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/channel.vue')
 };
+
+export const Category = {
+	createTest(config = {}) {
+		const name = config.name,
+			id = config.id;
+
+		if ( ! id || ! name )
+			return () => false;
+
+		return ctx => ctx.categoryID === id || (ctx.categoryID == null && ctx.category === name);
+	},
+
+	title: 'Current Category',
+	i18n: 'settings.filter.category',
+
+	default: () => ({
+		name: null,
+		id: null
+	}),
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/category.vue')
+}

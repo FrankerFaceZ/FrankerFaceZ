@@ -110,6 +110,8 @@ const CHAT_TYPES = make_enum(
 	'RewardGift',
 	'SubMysteryGift',
 	'AnonSubMysteryGift',
+	'StandardPayForward',
+	'CommunityPayForward',
 	'FirstCheerMessage',
 	'BitsBadgeTierMessage',
 	'InlinePrivateCallout',

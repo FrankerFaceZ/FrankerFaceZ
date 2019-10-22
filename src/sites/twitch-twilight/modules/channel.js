@@ -85,23 +85,36 @@ export default class Channel extends Module {
 		});
 
 		this.ChannelPage.on('mount', inst => {
+			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
+
 			this.settings.updateContext({
 				channel: get('state.channel.login', inst),
-				channelID: get('state.channel.id', inst)
+				channelID: get('state.channel.id', inst),
+				channelColor: get('state.primaryColorHex', inst),
+				category: category?.name,
+				categoryID: category?.id
 			});
 		});
 
 		this.ChannelPage.on('unmount', () => {
 			this.settings.updateContext({
 				channel: null,
-				channelID: null
+				channelID: null,
+				channelColor: null,
+				category: null,
+				categoryID: null
 			});
 		});
 
 		this.ChannelPage.on('update', inst => {
+			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
+
 			this.settings.updateContext({
 				channel: get('state.channel.login', inst),
-				channelID: get('state.channel.id', inst)
+				channelID: get('state.channel.id', inst),
+				channelColor: get('state.primaryColorHex', inst),
+				category: category?.name,
+				categoryID: category?.id
 			});
 
 			if ( this.settings.get('channel.hosting.enable') || has(inst.state, 'hostMode') || has(inst.state, 'hostedChannel') )

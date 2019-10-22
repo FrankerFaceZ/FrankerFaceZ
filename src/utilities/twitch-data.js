@@ -141,6 +141,15 @@ export default class TwitchData extends Module {
 		};
 	}
 
+	async getCategory(id, name) {
+		const data = await this.queryApollo(
+			require('./data/category-fetch.gql'),
+			{ id, name }
+		);
+
+		return get('data.game', data);
+	}
+
 
 	// ========================================================================
 	// Users
