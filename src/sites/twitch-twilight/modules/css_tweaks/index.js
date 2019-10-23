@@ -19,6 +19,7 @@ const CLASSES = {
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .ffz--popular-channels',
 	'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
+	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 
 	'prime-offers': '.top-nav__prime',
 
@@ -131,6 +132,16 @@ export default class CSSTweaks extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('side-offline-channels', val)
+		});
+
+		this.settings.add('layout.side-nav.hide-reruns', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Side Navigation',
+				title: 'Hide Reruns',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('side-rerun-channels', val)
 		});
 
 		this.settings.add('layout.swap-sidebars', {
@@ -282,6 +293,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
+		this.toggleHide('side-rerun-channels', this.settings.get('layout.side-nav.hide-reruns'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 

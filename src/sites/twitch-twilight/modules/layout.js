@@ -35,6 +35,11 @@ export default class Layout extends Module {
 			n => n.getPopularChannels && n.props && has(n.props, 'locale')
 		);
 
+		this.SideBarChannels = this.fine.define(
+			'nav-cards',
+			t => t.getCardSlideInContent && t.props && has(t.props, 'tooltipContent')
+		);
+
 		this.settings.add('layout.portrait', {
 			default: false,
 			ui: {
@@ -179,6 +184,14 @@ export default class Layout extends Module {
 		this.PopularChannels.on('mount', this.updatePopular, this);
 		this.PopularChannels.on('update', this.updatePopular, this);
 
+		this.SideBarChannels.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updateCardClass(inst);
+		});
+
+		this.SideBarChannels.on('mount', this.updateCardClass, this);
+		this.SideBarChannels.on('update', this.updateCardClass, this);
+
 		const t = this;
 		this.RightColumn.ready((cls, instances) => {
 			cls.prototype.ffzHideOnBreakpoint = function() {
@@ -227,6 +240,15 @@ export default class Layout extends Module {
 
 	get is_minimal() {
 		return this.settings.get('layout.is-minimal')
+	}
+
+	updateCardClass(inst) {
+		const node = this.fine.getChildNode(inst);
+
+		if ( node )
+			node.classList.toggle('ffz--side-nav-card-rerun',
+				inst.props?.tooltipContent?.props?.streamType === 'rerun'
+			);
 	}
 
 	updateNavLinks() {
