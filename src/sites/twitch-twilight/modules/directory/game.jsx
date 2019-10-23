@@ -51,6 +51,12 @@ export default class Game extends SiteModule {
 	onEnable() {
 		this.GameHeader.on('mount', this.updateGameHeader, this);
 		this.GameHeader.on('update', this.updateGameHeader, this);
+		this.GameHeader.on('unmount', () => {
+			this.settings.updateContext({
+				category: null,
+				categoryID: null
+			})
+		});
 
 		this.GameHeader.ready((cls, instances) => {
 			for(const inst of instances)
@@ -62,11 +68,12 @@ export default class Game extends SiteModule {
 	updateGameHeader(inst) {
 		this.updateButtons(inst);
 
-		/*this.apollo.ensureQuery(
-			'DirectoryPage_Game',
-			'data.game.streams.edges.0.node.createdAt'
-		);*/
+		const category = inst?.props?.data?.game;
 
+		this.settings.updateContext({
+			category: category?.name,
+			categoryID: category?.id
+		});
 	}
 
 

@@ -134,14 +134,22 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggleHide('side-offline-channels', val)
 		});
 
-		this.settings.add('layout.side-nav.hide-reruns', {
-			default: false,
+		this.settings.add('layout.side-nav.rerun-style', {
+			default: 1,
 			ui: {
 				path: 'Appearance > Layout >> Side Navigation',
-				title: 'Hide Reruns',
-				component: 'setting-check-box'
+				title: 'Display Reruns',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Do Not Display'},
+					{value: 1, title: 'Normally'},
+					{value: 2, title: 'Faded (33% Opacity)'}
+				]
 			},
-			changed: val => this.toggleHide('side-rerun-channels', val)
+			changed: val => {
+				this.toggleHide('side-rerun-channels', val === 0);
+				this.toggle('side-rerun-opacity', val === 2);
+			}
 		});
 
 		this.settings.add('layout.swap-sidebars', {
@@ -293,13 +301,16 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
-		this.toggleHide('side-rerun-channels', this.settings.get('layout.side-nav.hide-reruns'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 		this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
 		this.toggleHide('channel-live-ind', this.settings.get('channel.hide-live-indicator'));
+
+		const reruns = this.settings.get('layout.side-nav.rerun-style');
+		this.toggleHide('side-rerun-channels', reruns === 0);
+		this.toggle('side-rerun-opacity', reruns === 2);
 
 		const recs = this.settings.get('layout.side-nav.show-rec-channels');
 		this.toggleHide('side-rec-channels', recs === 0);

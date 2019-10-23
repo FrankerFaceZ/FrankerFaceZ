@@ -15,6 +15,8 @@ export default class TooltipProvider extends Module {
 		super(...args);
 		this.types = {};
 
+		this.inject('i18n');
+
 		this.should_enable = true;
 
 		this.types.json = target => {
@@ -66,6 +68,8 @@ export default class TooltipProvider extends Module {
 
 		this.tips = new Tooltip(container, 'ffz-tooltip', {
 			html: true,
+			i18n: this.i18n,
+
 			delayHide: this.checkDelayHide.bind(this),
 			delayShow: this.checkDelayShow.bind(this),
 			content: this.process.bind(this),

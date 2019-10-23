@@ -329,7 +329,10 @@ export class Tooltip {
 				if ( this.options.logger )
 					this.options.logger.error('Error rendering tooltip content.', err);
 
-				inner.textContent = `There was an error showing this tooltip.\n${err}`;
+				if ( this.options.i18n )
+					inner.textContent = this.options.i18n.t('tooltip.render-error', 'There was an error rendering this tooltip.\n{err}', {err});
+				else
+					inner.textContent = `There was an error rendering this tooltip.\n${err}`;
 				tip._update();
 			});
 

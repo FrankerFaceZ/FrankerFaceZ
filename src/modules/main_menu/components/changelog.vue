@@ -4,6 +4,27 @@
 			<h2>{{ t('home.changelog', 'Changelog') }}</h2>
 		</div>
 
+		<div class="tw-mg-b-1 tw-flex tw-align-items-center">
+			<div class="tw-flex-grow-1" />
+			<div class="tw-checkbox tw-relative tw-tooltip-wrapper">
+				<input
+					id="nonversioned"
+					ref="nonversioned"
+					v-model="nonversioned"
+					type="checkbox"
+					class="tw-checkbox__input"
+				>
+
+				<label for="nonversioned" class="tw-checkbox__label">
+					{{ t('home.changelog.show-nonversioned', 'Include non-versioned commits.') }}
+				</label>
+
+				<div class="tw-tooltip tw-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-right">
+					{{ t('home.changelog.about-nonversioned', 'Non-versioned commits are commits to the FrankerFaceZ repository not associated with a release build. They typically represent maintenance or contributions from the community that will be included in a subsequent release.') }}
+				</div>
+			</div>
+		</div>
+
 		<ul>
 			<li v-for="commit of display" :key="commit.sha" class="tw-mg-b-2">
 				<div class="tw-flex tw-align-items-center tw-border-b tw-mg-b-05">
@@ -60,6 +81,7 @@ export default {
 	data() {
 		return {
 			error: false,
+			nonversioned: false,
 			loading: false,
 			more: true,
 			commits: []
@@ -75,14 +97,16 @@ export default {
 				let message = commit.commit.message,
 					title = old_commit;
 
-				const match = TITLE_MATCH.exec(message),
-					date = new Date(commit.commit.author.date),
-					active = commit.sha === window.FrankerFaceZ.version_info.commit;
+				const match = TITLE_MATCH.exec(message);
 
 				if ( match ) {
 					title = match[1];
 					message = message.slice(match[0].length);
-				}
+				} else if ( ! this.nonversioned )
+					continue;
+
+				const date = new Date(commit.commit.author.date),
+					active = commit.sha === window.FrankerFaceZ.version_info.commit;
 
 				out.push({
 					title,
