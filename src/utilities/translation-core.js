@@ -490,7 +490,8 @@ const CARDINAL_TO_LANG = {
 	polish: ['pl'],
 	serbian: ['sr'],
 	french: ['fr', 'pt'],
-	russian: ['ru','uk']
+	russian: ['ru','uk'],
+	slov: ['sl']
 }
 
 const CARDINAL_TYPES = {
@@ -523,6 +524,15 @@ const CARDINAL_TYPES = {
 	},
 
 	persian: (n, i) => (i === 0 || n === 1) ? 1 : 5,
+
+	slov(n, i, v) {
+		if ( v !== 0 ) return 3;
+		const n1 = n % 100;
+		if ( n1 === 1 ) return 1;
+		if ( n1 === 2 ) return 2;
+		if ( n1 === 3 || n1 === 4 ) return 3;
+		return 5;
+	},
 
 	serbian(n, i, v, t) {
 		if ( v !== 0 ) return 5;
