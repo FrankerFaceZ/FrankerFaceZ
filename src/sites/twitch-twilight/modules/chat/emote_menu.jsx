@@ -1236,8 +1236,6 @@ export default class EmoteMenu extends Module {
 							chan = is_points ? null : owner,
 							set_data = data[set_id];
 
-						console.log('set', set_id, owner);
-
 						if ( chan )
 							t.emotes.setTwitchSetChannel(set_id, {
 								s_id: set_id,
