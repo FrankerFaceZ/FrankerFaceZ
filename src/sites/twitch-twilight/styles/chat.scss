@@ -288,6 +288,11 @@
 	}
 
 	&.reduced-padding {
+		.emote-picker-tab-item button > div {
+			padding: 0.25rem 0.5rem !important;
+			font-size: 1.6rem !important;
+		}
+
 		.tw-pd-1 {
 			padding: 0.5rem !important;
 		}

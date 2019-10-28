@@ -5,13 +5,12 @@ query FFZ_GetEmoteInfo($id: ID!) {
 		text
 		subscriptionProduct {
 			id
+			state
 			owner {
 				id
 				login
 				displayName
 			}
-			tier
-			url
 		}
 	}
 }

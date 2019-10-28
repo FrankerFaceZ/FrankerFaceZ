@@ -1,5 +1,8 @@
 'use strict';
 
+import {make_enum} from 'utilities/object';
+
+
 export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev');
 export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com';
 
@@ -88,3 +91,19 @@ export const IS_WEBKIT = navigator.userAgent.indexOf('AppleWebKit/') !== -1 && n
 export const IS_FIREFOX = navigator.userAgent.indexOf('Firefox/') !== -1;
 
 export const WEBKIT_CSS = IS_WEBKIT ? '-webkit-' : '';
+
+
+export const TWITCH_GLOBAL_SETS = [0, 33, 42];
+export const TWITCH_POINTS_SETS = [300238151];
+export const TWITCH_PRIME_SETS = [457, 793, 19151, 19194];
+
+export const EmoteTypes = make_enum(
+	'Unknown',
+	'Prime',
+	'Turbo',
+	'LimitedTime',
+	'ChannelPoints',
+	'Unavailable',
+	'Subscription',
+	'Global'
+);

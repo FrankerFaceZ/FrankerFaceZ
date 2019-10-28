@@ -7,13 +7,12 @@
 import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {get, has, timeout, SourcedSet} from 'utilities/object';
-import {CLIENT_ID, NEW_API, API_SERVER, IS_OSX} from 'utilities/constants';
+import {NEW_API, API_SERVER, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS} from 'utilities/constants';
 
 import GET_EMOTE from './emote_info.gql';
+import GET_EMOTE_SET from './emote_set_info.gql';
 
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
-
-//const EXTRA_INVENTORY = [33563];
 
 const MODIFIERS = {
 	59847: {
@@ -59,6 +58,8 @@ const MODIFIERS = {
 export default class Emotes extends Module {
 	constructor(...args) {
 		super(...args);
+
+		this.EmoteTypes = EmoteTypes;
 
 		this.inject('socket');
 		this.inject('settings');
@@ -126,9 +127,6 @@ export default class Emotes extends Module {
 	}
 
 	onEnable() {
-		// Just in case there's a weird load order going on.
-		// this.on('site:enabled', this.loadTwitchInventory);
-
 		this.style = new ManagedStyle('emotes');
 
 		if ( Object.keys(this.emote_sets).length ) {
@@ -146,7 +144,6 @@ export default class Emotes extends Module {
 		this.socket.on(':command:follow_sets', this.updateFollowSets, this);
 
 		this.loadGlobalSets();
-		//this.loadTwitchInventory();
 	}
 
 
@@ -755,39 +752,6 @@ export default class Emotes extends Module {
 	// Twitch Data Lookup
 	// ========================================================================
 
-	async loadTwitchInventory() {
-		const user = this.resolve('site').getUser();
-		if ( ! user )
-			return;
-
-		let data;
-		try {
-			data = await fetch('https://api.twitch.tv/v5/inventory/emoticons', {
-				headers: {
-					'Client-ID': CLIENT_ID,
-					'Authorization': `OAuth ${user.authToken}`
-				}
-			}).then(r => {
-				if ( r.ok )
-					return r.json();
-
-				throw r.status;
-			});
-
-		} catch(err) {
-			this.log.error('Error loading Twitch inventory.', err);
-			return;
-		}
-
-		const sets = this.twitch_inventory_sets = new Set(EXTRA_INVENTORY);
-		for(const set in data.emoticon_sets)
-			if ( has(data.emoticon_sets, set) )
-				sets.add(parseInt(set, 10));
-
-		this.log.info('Twitch Inventory Sets:', this.twitch_inventory_sets);
-	}
-
-
 	setTwitchEmoteSet(emote_id, set_id) {
 		if ( isNaN(emote_id) || ! isFinite(emote_id) )
 			return;
@@ -802,127 +766,201 @@ export default class Emotes extends Module {
 		this.__twitch_set_to_channel.set(set_id, channel);
 	}
 
-
-	getTwitchEmoteSet(emote_id, callback) {
-		const tes = this.__twitch_emote_to_set;
+	_getTwitchEmoteSet(emote_id) {
+		const tes = this.__twitch_emote_to_set,
+			tsc = this.__twitch_set_to_channel;
 
 		if ( isNaN(emote_id) || ! isFinite(emote_id) )
-			return null;
+			return Promise.resolve(null);
 
-		if ( tes.has(emote_id) )
-			return tes.get(emote_id);
+		if ( tes.has(emote_id) ) {
+			const val = tes.get(emote_id);
+			if ( Array.isArray(val) )
+				return new Promise(s => val.push(s));
+			else
+				return Promise.resolve(val);
+		}
 
-		tes.set(emote_id, null);
+		const apollo = this.resolve('site.apollo');
+		if ( ! apollo?.client )
+			return Promise.resolve(null);
 
-		/*const apollo = this.resolve('site.apollo');
-		if ( apollo?.client ) {
+		return new Promise(s => {
+			const promises = [s];
+			tes.set(emote_id, promises);
+
 			timeout(apollo.client.query({
 				query: GET_EMOTE,
 				variables: {
 					id: `${emote_id}`
 				}
-			}), 1000).then(result => {
-				const emote = result?.data?.emote;
+			}), 2000).then(data => {
+				const emote = data?.data?.emote;
+				let set_id = null;
 
-				if ( ! emote ) {
-					tes.delete(emote_id);
-					return;
+				if ( emote ) {
+					set_id = parseInt(emote.setID, 10);
+
+					if ( set_id && ! tsc.has(set_id) ) {
+						const type = determineEmoteType(emote);
+
+						tsc.set(set_id, {
+							id: set_id,
+							type,
+							owner: emote?.subscriptionProduct?.owner
+						});
+					}
 				}
 
-				const set_id = parseInt(emote.setID, 10),
-					channel = emote?.subscriptionProduct?.owner;
-
-				this.__twitch_set_to_channel.set(set_id, {
-					s_id: set_id,
-					c_id: channel ? channel.id : null,
-					c_name: channel ? channel.login : null,
-					c_title: channel ? channel.displayName : null
-				});
-
 				tes.set(emote_id, set_id);
-				if ( callback )
-					callback(set_id);
+				for(const fn of promises)
+					fn(set_id);
 
-			}).catch(() => tes.delete(emote_id));
+			}).catch(() => {
+				tes.set(emote_id, null);
+				for(const fn of promises)
+					fn(null);
+			});
+		});
+	}
 
-			return;
-		}*/
-
-		timeout(this.socket.call('get_emote', emote_id), 1000).then(data => {
-			const set_id = data['s_id'];
-			tes.set(emote_id, set_id);
-			this.__twitch_set_to_channel.set(set_id, data);
-
-			if ( callback )
-				callback(data['s_id']);
-
-		}).catch(() => tes.delete(emote_id));
+	getTwitchEmoteSet(emote_id, callback) {
+		const promise = this._getTwitchEmoteSet(emote_id);
+		if ( callback )
+			promise.then(callback);
+		else
+			return promise;
 	}
 
 
-	async awaitTwitchSetChannel(set_id, perform_lookup = true) {
-		const tes = this.__twitch_set_to_channel,
-			inv = this.twitch_inventory_sets;
+	_getTwitchSetChannel(set_id) {
+		const tsc = this.__twitch_set_to_channel;
 
 		if ( isNaN(set_id) || ! isFinite(set_id) )
-			return null;
+			return Promise.resolve(null);
 
-		if ( tes.has(set_id) )
-			return tes.get(set_id);
+		if ( tsc.has(set_id) ) {
+			const val = tsc.get(set_id);
+			if ( Array.isArray(val) )
+				return new Promise(s => val.push(s));
+			else
+				return Promise.resolve(val);
+		}
 
-		if ( inv.has(set_id) )
-			return {s_id: set_id, c_id: null, c_name: 'twitch-inventory'}
+		const apollo = this.resolve('site.apollo');
+		if ( ! apollo?.client )
+			return Promise.resolve(null);
 
-		if ( ! perform_lookup )
-			return null;
+		return new Promise(s => {
+			const promises = [s];
+			tsc.set(set_id, promises);
 
-		tes.set(set_id, null);
+			timeout(apollo.client.query({
+				query: GET_EMOTE_SET,
+				variables: {
+					id: `${set_id}`
+				}
+			}), 2000).then(data => {
+				const set = data?.data?.emoteSet;
+				let result = null;
 
-		try {
-			const data = await timeout(this.socket.call('get_emote_set', set_id), 1000);
-			tes.set(set_id, data);
-			return data;
+				if ( set ) {
+					result = {
+						id: set_id,
+						type: determineSetType(set),
+						owner: set.owner ? {
+							id: set.owner.id,
+							login: set.owner.login,
+							displayName: set.owner.displayName
+						} : null
+					};
+				}
 
-		} catch(err) {
-			if ( err === 'No known Twitch emote set with that ID.' )
-				return null;
+				tsc.set(set_id, result);
+				for(const fn of promises)
+					fn(result);
 
-			tes.delete(set_id);
+			}).catch(() => {
+				tsc.set(set_id, null);
+				for(const fn of promises)
+					fn(null);
+			});
+		});
+	}
+
+
+	getTwitchSetChannel(set_id, callback) {
+		const promise = this._getTwitchSetChannel(set_id);
+		if ( callback )
+			promise.then(callback);
+		else
+			return promise;
+	}
+}
+
+
+function determineEmoteType(emote) {
+	const product = emote.subscriptionProduct;
+	if ( product ) {
+		if ( product.id == 12658 )
+			return EmoteTypes.Prime;
+		else if ( product.id == 324 )
+			return EmoteTypes.Turbo;
+
+		// TODO: Care about Overwatch League
+
+		const owner = product.owner;
+		if ( owner ) {
+			if ( owner.id == 139075904 || product.state === 'INACTIVE' )
+				return EmoteTypes.LimitedTime;
+
+			return EmoteTypes.Subscription;
 		}
 	}
 
+	if ( emote.setID == 300238151 )
+		return EmoteTypes.ChannelPoints;
 
-	getTwitchSetChannel(set_id, callback, perform_lookup = true) {
-		const tes = this.__twitch_set_to_channel,
-			inv = this.twitch_inventory_sets;
+	return EmoteTypes.Global;
+}
 
-		if ( isNaN(set_id) || ! isFinite(set_id) )
-			return null;
 
-		if ( tes.has(set_id) )
-			return tes.get(set_id);
+function determineSetType(set) {
+	const id = parseInt(set.id, 10);
 
-		if ( inv.has(set_id) )
-			return {s_id: set_id, c_id: null, c_name: 'twitch-inventory'}
+	if ( TWITCH_GLOBAL_SETS.includes(id) )
+		return EmoteTypes.Global;
 
-		if ( ! perform_lookup )
-			return null;
+	if ( TWITCH_POINTS_SETS.includes(id) )
+		return EmoteTypes.ChannelPoints;
 
-		tes.set(set_id, null);
-		timeout(this.socket.call('get_emote_set', set_id), 1000).then(data => {
-			tes.set(set_id, data);
-			if ( callback )
-				callback(data);
+	if ( TWITCH_PRIME_SETS.includes(id) )
+		return EmoteTypes.Prime;
 
-		}).catch(err => {
-			if ( err === 'No known Twitch emote set with that ID.' ) {
-				if ( callback )
-					callback(null);
+	const owner = set.owner;
+	if ( owner ) {
+		if ( owner.id == 139075904 )
+			return EmoteTypes.LimitedTime;
 
-				return;
-			}
+		let product;
+		if ( Array.isArray(owner.subscriptionProducts) )
+			for(const prod of owner.subscriptionProducts)
+				if ( set.id == prod.emoteSetID ) {
+					product = prod;
+					break;
+				}
 
-			tes.delete(set_id)
-		});
+		if ( product ) {
+			if ( product.id == 12658 )
+				return EmoteTypes.Prime;
+			else if ( product.id == 324 )
+				return EmoteTypes.Turbo;
+			else if ( product.state === 'INACTIVE' )
+				return EmoteTypes.LimitedTime;
+		}
+
+		return EmoteTypes.Subscription;
 	}
+
+	return EmoteTypes.Global;
 }

@@ -5,30 +5,13 @@
 // ============================================================================
 
 import {has, get, once, maybe_call, set_equals} from 'utilities/object';
-import {WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
 import {ClickOutside} from 'utilities/dom';
 
 import Twilight from 'site';
 import Module from 'utilities/module';
 
 import SUB_STATUS from './sub_status.gql';
-
-const GLOBAL_SETS = [
-	0,
-	33,
-	42
-];
-
-const POINTS_SETS = [
-	300238151
-];
-
-const PRIME_SETS = [
-	457,
-	793,
-	19151,
-	19194
-];
 
 const TIERS = {
 	1000: 'Tier 1',
@@ -202,6 +185,16 @@ export default class EmoteMenu extends Module {
 		});
 
 
+		this.settings.add('chat.emote-menu.combine-tabs', {
+			default: false,
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Display all emotes on one tab.',
+				component: 'setting-check-box'
+			}
+		});
+
+
 		this.settings.add('chat.emote-menu.sort-emotes', {
 			default: 0,
 			ui: {
@@ -263,6 +256,7 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.show-heading', fup);
 		this.chat.context.on('changed:chat.emote-menu.show-search', fup);
 		this.chat.context.on('changed:chat.emote-menu.reduced-padding', fup);
+		this.chat.context.on('changed:chat.emote-menu.combine-tabs', fup);
 
 		this.chat.context.on('changed:chat.emoji.style', this.updateEmojiVariables, this);
 
@@ -545,7 +539,7 @@ export default class EmoteMenu extends Module {
 				const data = this.props.data,
 					filtered = this.props.filtered;
 
-				let show_heading = ! data.is_favorites && t.chat.context.get('chat.emote-menu.show-heading');
+				let show_heading = ! (data.is_favorites && ! t.chat.context.get('chat.emote-menu.combine-tabs')) && t.chat.context.get('chat.emote-menu.show-heading');
 				if ( show_heading === 2 )
 					show_heading = ! filtered;
 				else
@@ -592,6 +586,10 @@ export default class EmoteMenu extends Module {
 						}
 				}
 
+				let source = data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source;
+				if ( source == null )
+					source = 'FrankerFaceZ';
+
 				return (<section ref={this.saveRef} data-key={data.key} class={filtered ? 'filtered' : ''} onMouseEnter={this.mouseEnter}>
 					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
 						{image}
@@ -604,7 +602,7 @@ export default class EmoteMenu extends Module {
 							/>)}
 						</div>
 						<div class="tw-flex-grow-1" />
-						{(data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source) || 'FrankerFaceZ'}
+						{source}
 						{filtered ? '' : <figure class={`tw-pd-l-05 ffz-i-${collapsed ? 'left' : 'down'}-dir`} />}
 					</heading>) : null}
 					{collapsed || this.renderBody(show_heading)}
@@ -958,9 +956,62 @@ export default class EmoteMenu extends Module {
 			}
 
 			clickTab(event) {
+				const tab = event.currentTarget.dataset.tab;
+				if ( t.chat.context.get('chat.emote-menu.combine-tabs') ) {
+					let sets;
+					switch(tab) {
+						case 'fav':
+							sets = this.state.filtered_fav_sets;
+							break;
+						case 'channel':
+							sets = this.state.filtered_channel_sets;
+							break;
+						case 'emoji':
+							sets = this.state.filtered_emoji_sets;
+							break;
+						case 'all':
+						default:
+							sets = this.state.filtered_all_sets;
+							break;
+					}
+
+					const set = sets && sets[0],
+						el = set && this.ref?.querySelector?.(`section[data-key="${set.key}"]`);
+
+					if ( el )
+						el.scrollIntoView();
+
+					return;
+				}
+
 				this.setState({
-					tab: event.currentTarget.dataset.tab
+					tab
 				});
+			}
+
+			clickSettings(event) { // eslint-disable-line class-methods-use-this
+				const layout = t.resolve('site.layout');
+				if ( (layout && layout.is_minimal) || (event && (event.ctrlKey || event.shiftKey)) ) {
+					const win = window.open(
+						'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
+						'_blank',
+						'resizable=yes,scrollbars=yes,width=850,height=600'
+					);
+
+					if ( win )
+						win.focus();
+
+				} else {
+					const menu = t.resolve('main_menu');
+
+					if ( menu ) {
+						menu.requestPage('chat.emote_menu');
+						if ( menu.showing )
+							return;
+					}
+
+					t.emit('site.menu_button:clicked');
+				}
 			}
 
 			/*clickRefresh(event) {
@@ -1109,6 +1160,11 @@ export default class EmoteMenu extends Module {
 							}
 					}
 
+					const is_fav = emoji_favorites.includes(emoji.code),
+						toned = emoji.variants && emoji.variants[tone],
+						has_tone = toned && toned.has[style],
+						source = has_tone ? toned : emoji;
+
 					let cat = categories[emoji.category];
 					if ( ! cat ) {
 						cat = categories[emoji.category] = [];
@@ -1116,7 +1172,7 @@ export default class EmoteMenu extends Module {
 						sets.push({
 							key: `emoji-${emoji.category}`,
 							emoji: true,
-							image: t.emoji.getFullImage(emoji.image),
+							image: t.emoji.getFullImage(source.image),
 							i18n: `emoji.category.${emoji.category.toSnakeCase()}`,
 							title: emoji.category,
 							source: 'Emoji',
@@ -1125,31 +1181,26 @@ export default class EmoteMenu extends Module {
 						});
 					}
 
-					const is_fav = emoji_favorites.includes(emoji.code),
-						toned = emoji.variants && emoji.variants[tone],
-						has_tone = toned && toned.has[style],
-						source = has_tone ? toned : emoji,
+					const em = {
+						provider: 'emoji',
+						emoji: true,
+						code: emoji.code,
+						name: source.raw,
+						variant: has_tone && tone,
 
-						em = {
-							provider: 'emoji',
-							emoji: true,
-							code: emoji.code,
-							name: source.raw,
-							variant: has_tone && tone,
+						search: emoji.names[0],
 
-							search: emoji.names[0],
+						height: 18,
+						width: 18,
 
-							height: 18,
-							width: 18,
+						x: source.sheet_x,
+						y: source.sheet_y,
 
-							x: source.sheet_x,
-							y: source.sheet_y,
+						favorite: is_fav,
 
-							favorite: is_fav,
-
-							src: t.emoji.getFullImage(source.image),
-							srcSet: t.emoji.getFullImageSet(source.image)
-						};
+						src: t.emoji.getFullImage(source.image),
+						srcSet: t.emoji.getFullImageSet(source.image)
+					};
 
 					cat.push(em);
 
@@ -1161,6 +1212,12 @@ export default class EmoteMenu extends Module {
 
 				state.fav_sets = [{
 					key: 'favorites',
+
+					title: 'Favorites',
+					i18n: 'emote-menu.favorites',
+					icon: 'star',
+					source: '',
+
 					is_favorites: true,
 					emotes: favorites
 				}];
@@ -1232,7 +1289,7 @@ export default class EmoteMenu extends Module {
 
 						const set_id = parseInt(emote_set.id, 10),
 							owner = emote_set.owner,
-							is_points = owner?.login === 'channel_points',
+							is_points = TWITCH_POINTS_SETS.includes(set_id) || owner?.login === 'channel_points',
 							chan = is_points ? null : owner,
 							set_data = data[set_id];
 
@@ -1251,26 +1308,53 @@ export default class EmoteMenu extends Module {
 							icon = 'twitch',
 							title = chan && (chan.displayName || chan.login);
 
-						if ( title )
+						if ( title ) {
 							key = `twitch-${chan?.id}`;
+							t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.Subscription,
+								owner: {
+									id: chan.id,
+									login: chan.login,
+									displayName: chan.displayName
+								}
+							});
 
-						else if ( ! chan ) {
-							if ( is_points || POINTS_SETS.includes(set_id) ) {
+						} else if ( ! chan ) {
+							if ( is_points ) {
 								title = t.i18n.t('emote-menu.points', 'Unlocked with Points');
 								key = 'twitch-points';
 								icon = 'channel-points';
 								sort_key = 45;
 
-							} else if ( GLOBAL_SETS.includes(set_id) ) {
+								/*t.emotes.setTwitchSetChannel(set_id, {
+									id: set_id,
+									type: EmoteTypes.ChannelPoints,
+									owner: null
+								});*/
+
+							} else if ( TWITCH_GLOBAL_SETS.includes(set_id) ) {
 								title = t.i18n.t('emote-menu.global', 'Global Emotes');
 								key = 'twitch-global';
 								sort_key = 100;
 
-							} else if ( PRIME_SETS.includes(set_id) ) {
+								t.emotes.setTwitchSetChannel(set_id, {
+									id: set_id,
+									type: EmoteTypes.Global,
+									owner: null
+								});
+
+							} else if ( TWITCH_PRIME_SETS.includes(set_id) ) {
 								title = t.i18n.t('emote_menu.prime', 'Prime');
 								key = 'twitch-prime';
 								icon = 'crown';
 								sort_key = 75;
+
+								t.emotes.setTwitchSetChannel(set_id, {
+									id: set_id,
+									type: EmoteTypes.Prime,
+									owner: null
+								});
 
 							} else {
 								title = t.i18n.t('emote-menu.misc', 'Miscellaneous');
@@ -1352,7 +1436,9 @@ export default class EmoteMenu extends Module {
 								favorite: is_fav
 							};
 
-							t.emotes.setTwitchEmoteSet(id, set_id);
+							if ( ! is_points )
+								t.emotes.setTwitchEmoteSet(id, set_id);
+
 							emotes.push(em);
 
 							if ( is_fav && ! twitch_seen.has(id) )
@@ -1381,7 +1467,7 @@ export default class EmoteMenu extends Module {
 						locks = {},
 						section = {
 							sort_key: -10,
-							key: `twitch-${user.id}`,
+							key: `twitch-current-channel`,
 							image: badge && badge.image1x,
 							image_set: badge && `${badge.image1x} 1x, ${badge.image2x} 2x, ${badge.image4x} 4x`,
 							icon: 'twitch',
@@ -1647,28 +1733,41 @@ export default class EmoteMenu extends Module {
 					return null;
 
 				const loading = this.state.loading || this.props.loading,
-					padding = t.chat.context.get('chat.emote-menu.reduced-padding');
+					padding = t.chat.context.get('chat.emote-menu.reduced-padding'),
+					no_tabs = t.chat.context.get('chat.emote-menu.combine-tabs');
 
-				let tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab'), sets;
-				if ( (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
-					tab = 'all';
+				let tab, sets, is_emoji;
 
-				const is_emoji = tab === 'emoji';
+				if ( no_tabs ) {
+					sets = [
+						this.state.filtered_fav_sets,
+						this.state.filtered_channel_sets,
+						this.state.filtered_all_sets,
+						this.state.filtered_emoji_sets
+					].flat();
 
-				switch(tab) {
-					case 'fav':
-						sets = this.state.filtered_fav_sets;
-						break;
-					case 'channel':
-						sets = this.state.filtered_channel_sets;
-						break;
-					case 'emoji':
-						sets = this.state.filtered_emoji_sets;
-						break;
-					case 'all':
-					default:
-						sets = this.state.filtered_all_sets;
-						break;
+				} else {
+					tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab');
+					if ( (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
+						tab = 'all';
+
+					is_emoji = tab === 'emoji';
+
+					switch(tab) {
+						case 'fav':
+							sets = this.state.filtered_fav_sets;
+							break;
+						case 'channel':
+							sets = this.state.filtered_channel_sets;
+							break;
+						case 'emoji':
+							sets = this.state.filtered_emoji_sets;
+							break;
+						case 'all':
+						default:
+							sets = this.state.filtered_all_sets;
+							break;
+					}
 				}
 
 				return (<div
@@ -1684,7 +1783,7 @@ export default class EmoteMenu extends Module {
 							<div ref={this.saveScrollRef} class="simplebar-scroll-content">
 								<div class="simplebar-content">
 									{loading && this.renderLoading()}
-									{!loading && sets && sets.map(data => createElement(
+									{!loading && sets && sets.map(data => data && createElement(
 										data.emoji ? t.EmojiSection : t.MenuSection,
 										{
 											key: data.key,
@@ -1717,7 +1816,7 @@ export default class EmoteMenu extends Module {
 										onChange={this.handleFilterChange}
 										onKeyDown={this.handleKeyDown}
 									/>
-									{is_emoji && <t.EmojiTonePicker
+									{(no_tabs || is_emoji) && <t.EmojiTonePicker
 										tone={this.state.tone}
 										choices={this.state.tone_emoji}
 										pickTone={this.pickTone}
@@ -1781,19 +1880,19 @@ export default class EmoteMenu extends Module {
 										</div>
 									</button>
 								</div>}
-								{/*<div class="tw-flex-grow-1" />
-								{!loading && (<div class="emote-picker-tab-item tw-relative">
+								<div class="tw-flex-grow-1" />
+								<div class="emote-picker-tab-item tw-relative">
 									<button
 										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
 										data-tooltip-type="html"
-										data-title={t.i18n.t('emote-menu.refresh', 'Refresh Data')}
-										onClick={this.clickRefresh}
+										data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
+										onClick={this.clickSettings}
 									>
 										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
-											<figure class="ffz-i-arrows-cw" />
+											<figure class="ffz-i-cog" />
 										</div>
 									</button>
-									</div>)*/}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -1861,39 +1960,6 @@ export default class EmoteMenu extends Module {
 					type: product.type,
 					gift: node.gift?.isGift
 				};
-
-				/*const owner = product.owner || {},
-					badges = owner.broadcastBadges;
-
-				let image, image_set;
-				if ( badges )
-					for(const badge of badges)
-						if ( badge.setID === 'subscriber' && badge.version === '0' ) {
-							image = badge.imageURL;
-
-							if ( image.endsWith('/1') ) {
-								const base = image.slice(0, -2);
-								image_set = `${base}/1 1x, ${base}/2 2x, ${base}/3 4x`;
-							}
-
-							break;
-						}
-
-				out[set_id] = {
-					ends: maybe_date(node.endsAt),
-					renews: maybe_date(node.renewsAt),
-					prime: node.purchasedWithPrime,
-
-					set_id: parseInt(set_id, 10),
-					type: product.type,
-					image,
-					image_set,
-					user: {
-						id: owner.id,
-						login: owner.login,
-						display_name: owner.displayName
-					}
-				}*/
 			}
 
 		this._data_sets = sets;

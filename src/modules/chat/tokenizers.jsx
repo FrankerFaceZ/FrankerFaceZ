@@ -7,7 +7,7 @@
 import {sanitize, createElement} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
 
-import {TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {TWITCH_EMOTE_BASE, EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
 
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
@@ -1011,7 +1011,7 @@ export const AddonEmotes = {
 		</span>);
 	},
 
-	tooltip(target, tip) {
+	async tooltip(target, tip) {
 		const ds = target.dataset,
 			provider = ds.provider,
 			modifiers = ds.modifierInfo;
@@ -1036,23 +1036,30 @@ export const AddonEmotes = {
 
 		if ( provider === 'twitch' ) {
 			emote_id = parseInt(ds.id, 10);
-			const set_id = this.emotes.getTwitchEmoteSet(emote_id, tip.rerender),
-				emote_set = set_id != null && this.emotes.getTwitchSetChannel(set_id, tip.rerender);
+			const set_id = hide_source ? null : await this.emotes.getTwitchEmoteSet(emote_id),
+				emote_set = set_id != null && await this.emotes.getTwitchSetChannel(set_id);
 
-			preview = `//static-cdn.jtvnw.net/emoticons/v1/${ds.id}/3.0?_=preview`;
+			preview = `${TWITCH_EMOTE_BASE}${ds.id}/3.0?_=preview`;
 			fav_source = 'twitch';
 
 			if ( emote_set ) {
-				source = emote_set.c_name;
-
-				if ( source === '--global--' || emote_id === 80393 )
+				const type = emote_set.type;
+				if ( type === EmoteTypes.Global )
 					source = this.i18n.t('emote.global', 'Twitch Global');
 
-				else if ( source === '--twitch-turbo--' || source === 'turbo' || source === '--turbo-faces--' || source === '--prime--' || source === '--prime-faces--' )
+				else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
 					source = this.i18n.t('emote.prime', 'Twitch Prime');
 
-				else
-					source = this.i18n.t('tooltip.channel', 'Channel: {source}', {source});
+				else if ( type === EmoteTypes.LimitedTime )
+					source = this.i18n.t('emote.limited', 'Limited-Time Only Emote');
+
+				else if ( type === EmoteTypes.ChannelPoints )
+					source = this.i18n.t('emote.points', 'Channel Points Emote');
+
+				else if ( type === EmoteTypes.Subscription && emote_set.owner?.login )
+					source = this.i18n.t('tooltip.channel', 'Channel: {source}', {
+						source: emote_set.owner.displayName || emote_set.owner.login
+					});
 			}
 
 		} else if ( provider === 'ffz' ) {

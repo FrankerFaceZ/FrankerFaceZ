@@ -1,0 +1,15 @@
+query FFZ_GetEmoteSetInfo($id: ID!) {
+	emoteSet(id: $id) {
+		id
+		owner {
+			id
+			login
+			displayName
+			subscriptionProducts {
+				id
+				emoteSetID
+				state
+			}
+		}
+	}
+}
