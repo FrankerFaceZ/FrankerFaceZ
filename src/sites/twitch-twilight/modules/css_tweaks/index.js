@@ -13,11 +13,11 @@ const STYLE_VALIDATOR = document.createElement('span');
 const CLASSES = {
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
-	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .ffz--popular-channels',
+	'side-rec-channels': '.side-nav .recommended-channels',
 	'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
-	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .ffz--popular-channels',
+	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
 	'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 

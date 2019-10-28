@@ -59,7 +59,7 @@ export default class Logviewer extends Module {
 		if ( ! card.channel || ! card.user )
 			return;
 
-		card.lv_topic = `logs-${card.channel.login}-${card.channel.user}`;
+		card.lv_topic = `logs-${card.channel.login}-${card.user.login}`;
 		this.lv_socket.subscribe(card, card.lv_topic);
 	}
 

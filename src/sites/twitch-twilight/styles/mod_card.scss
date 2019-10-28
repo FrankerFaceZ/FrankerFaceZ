@@ -1,12 +1,14 @@
-.ffz-mod-card {
-	width: 340px;
+.ffz-viewer-card {
+	width: 34rem;
 	z-index: 9001;
 
-	> header {
-		cursor: move;
+	&:focus {
+		outline: none;
+		box-shadow: var(--shadow-button-focus);
+	}
 
-		background-size: cover;
-		background-position: top;
+	> div:first-child {
+		cursor: move;
 	}
 
 	.ffz-tooltip {
@@ -15,18 +17,14 @@
 		}
 	}
 
-	.ffz--background-dimmer {
-		background-color: rgba(0, 0, 0, 0.8);
-	}
-
 	.ffz--info-lines > * {
 		line-height: 1.2;
 	}
 
-	.mod-cards__tabs-container {
+	.viewer-card__tabs-container {
 		height: 3rem;
 
-		> .mod-cards__tab {
+		> .viewer-card__tab {
 			position: relative;
 			top: -.1rem;
 			cursor: pointer;
@@ -39,4 +37,9 @@
 			}
 		}
 	}
+}
+
+.viewer-card__background {
+	background-position: top;
+	background-size: cover
 }

@@ -259,6 +259,15 @@ export default class Scroller extends Module {
 				}
 
 				inst.scrollToBottom = function() {
+					if ( inst._ffz_scroll_request )
+						return;
+
+					inst._ffz_scroll_request = requestAnimationFrame(inst._scrollToBottom);
+				}
+
+				inst._scrollToBottom = function() {
+					inst._ffz_scroll_request = null;
+
 					// WIP: Trying to fix the scroll position changing so that we can
 					// smooth scroll from the previous position.
 					if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll && inst._ffz_snapshot ) {

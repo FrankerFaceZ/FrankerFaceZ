@@ -397,7 +397,7 @@ other {# messages were deleted by a moderator.}
 							}
 
 							/*if ( event.ctrlKey )
-								t.viewer_cards.openCard(r, target_user, event);
+								t.viewer_cards.openCard(r, target_user, msg, event);
 							else*/
 								this.props.onUsernameClick(target_user.login, 'chat_message', msg.id, target.getBoundingClientRect().bottom);
 						}

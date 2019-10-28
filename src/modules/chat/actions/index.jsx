@@ -177,7 +177,7 @@ export default class Actions extends Module {
 
 			default: [
 				{v: {action: 'friend'}},
-				{v: {action: 'whisper', appearance: {type: 'text', text: 'Whisper', button: true}}},
+				{v: {action: 'whisper', appearance: {type: 'combo', icon: '', text: 'Whisper', button: true}}},
 				{v: {type: 'space'}},
 				{v: {action: 'card_menu'}},
 				{v: {type: 'new-line'}},

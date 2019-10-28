@@ -288,6 +288,11 @@ export default class Badges extends Module {
 								title,
 								count: d.data
 							});
+						} else if ( d.badge === 'founder' ) {
+							title = this.i18n.t('badges.founder.months', '{title}\n(Subscribed for {count,number} Month{count,en_plural})', {
+								title,
+								count: d.data
+							});
 						}
 					}
 
@@ -371,7 +376,7 @@ export default class Badges extends Module {
 				else
 					slot = last_slot++;
 
-				const data = dynamic_data[badge_id],
+				const data = dynamic_data[badge_id] || (badge_id === 'founder' && dynamic_data['subscriber']),
 					urls = badge_id === 'moderator' && custom_mod && room && room.data && room.data.mod_urls,
 					badges = [];
 

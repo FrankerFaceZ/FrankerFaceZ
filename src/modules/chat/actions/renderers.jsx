@@ -49,6 +49,34 @@ export const icon = {
 
 
 // ============================================================================
+// Text + Icon
+// ============================================================================
+
+export const combo = {
+	title: 'Text and Icon',
+	title_i18n: 'setting.actions.appearance.combo',
+
+	colored: true,
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-combo.vue'),
+
+	load(data) {
+		if ( data.icon && data.icon.startsWith('ffz-fa') )
+			loadFontAwesome();
+
+		return true;
+	},
+
+	component: () => import(/* webpackChunkName: 'main-menu' */ './components/preview-combo.vue'),
+
+	render(data, createElement, color) {
+		return (<span style={{color}} class={data.icon}>
+			{data.text}
+		</span>)
+	}
+}
+
+
+// ============================================================================
 // Image
 // ============================================================================
 

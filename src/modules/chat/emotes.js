@@ -13,7 +13,7 @@ import GET_EMOTE from './emote_info.gql';
 
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
 
-const EXTRA_INVENTORY = [33563];
+//const EXTRA_INVENTORY = [33563];
 
 const MODIFIERS = {
 	59847: {
@@ -64,7 +64,7 @@ export default class Emotes extends Module {
 		this.inject('settings');
 		this.inject('experiments');
 
-		this.twitch_inventory_sets = new Set(EXTRA_INVENTORY);
+		this.twitch_inventory_sets = new Set; //(EXTRA_INVENTORY);
 		this.__twitch_emote_to_set = new Map;
 		this.__twitch_set_to_channel = new Map;
 
@@ -127,7 +127,7 @@ export default class Emotes extends Module {
 
 	onEnable() {
 		// Just in case there's a weird load order going on.
-		this.on('site:enabled', this.loadTwitchInventory);
+		// this.on('site:enabled', this.loadTwitchInventory);
 
 		this.style = new ManagedStyle('emotes');
 
@@ -146,7 +146,7 @@ export default class Emotes extends Module {
 		this.socket.on(':command:follow_sets', this.updateFollowSets, this);
 
 		this.loadGlobalSets();
-		this.loadTwitchInventory();
+		//this.loadTwitchInventory();
 	}
 
 
@@ -788,6 +788,21 @@ export default class Emotes extends Module {
 	}
 
 
+	setTwitchEmoteSet(emote_id, set_id) {
+		if ( isNaN(emote_id) || ! isFinite(emote_id) )
+			return;
+
+		this.__twitch_emote_to_set.set(emote_id, set_id);
+	}
+
+	setTwitchSetChannel(set_id, channel) {
+		if ( isNaN(set_id) || ! isFinite(set_id) )
+			return;
+
+		this.__twitch_set_to_channel.set(set_id, channel);
+	}
+
+
 	getTwitchEmoteSet(emote_id, callback) {
 		const tes = this.__twitch_emote_to_set;
 
@@ -869,6 +884,9 @@ export default class Emotes extends Module {
 			return data;
 
 		} catch(err) {
+			if ( err === 'No known Twitch emote set with that ID.' )
+				return null;
+
 			tes.delete(set_id);
 		}
 	}
@@ -896,6 +914,15 @@ export default class Emotes extends Module {
 			if ( callback )
 				callback(data);
 
-		}).catch(() => tes.delete(set_id));
+		}).catch(err => {
+			if ( err === 'No known Twitch emote set with that ID.' ) {
+				if ( callback )
+					callback(null);
+
+				return;
+			}
+
+			tes.delete(set_id)
+		});
 	}
 }

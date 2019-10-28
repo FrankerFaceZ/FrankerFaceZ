@@ -101,6 +101,14 @@
 		margin: 0 0.05rem !important
 	}
 
+	span:before {
+		margin: 0 0.2rem 0 0 !important;
+	}
+
+	span:empty:before {
+		margin: 0 !important;
+	}
+
 	span {
 		display: inline-block;
 		min-width: 1.6rem;
@@ -267,6 +275,15 @@
 				color: #fff;
 			}
 
+		}
+	}
+
+	&:not(.reduced-padding) {
+		.ffz--menu-badge__large {
+			width: 2.8rem;
+			height: 2.8rem;
+
+			margin: -.5rem .5rem -.5rem -.5rem;
 		}
 	}
 

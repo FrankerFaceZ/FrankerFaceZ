@@ -1,0 +1,12 @@
+query FFZ_BanStatus($channelID: ID!, $targetUserID: ID!) {
+	chatRoomBanStatus(channelID: $channelID, userID: $targetUserID) {
+		createdAt
+		expiresAt
+		isPermanent
+		moderator {
+			id
+			login
+			displayName
+		}
+	}
+}

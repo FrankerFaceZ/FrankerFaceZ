@@ -87,5 +87,8 @@ export default [
 	"t-pip-inactive",
 	"docs",
 	"t-reset-clicked",
-	"t-reset"
+	"t-reset",
+	"whispers",
+	"cake",
+	"channel-points"
 ];

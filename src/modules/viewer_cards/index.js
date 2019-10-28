@@ -7,7 +7,8 @@
 import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
 
-import GET_USER_INFO from './get_user_info.gql';
+import GET_CARD_VIEWER from './get_card_viewer.gql';
+import GET_BAN_STATUS from './get_ban_status.gql';
 
 export default class ViewerCards extends Module {
 	constructor(...args) {
@@ -16,6 +17,7 @@ export default class ViewerCards extends Module {
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('site.apollo');
+		this.inject('site.twitch_data');
 
 		this.tabs = {};
 
@@ -71,13 +73,35 @@ export default class ViewerCards extends Module {
 	}
 
 
-	async openCard(room, user, event) {
+	async openCard(room, user, msg, event) {
+		if ( typeof room === 'number' )
+			room = await this.twitch_data.getUser(room);
+		else if ( typeof room === 'string' )
+			room = await this.twitch_data.getUser(undefined, room);
+
+		if ( typeof user === 'number' )
+			user = await this.twitch_data.getUser(user);
+		else if ( typeof user === 'string' )
+			user = await this.twitch_data.getUser(undefined, user);
+
 		if ( user.userLogin && ! user.login )
 			user = {
 				login: user.userLogin,
 				id: user.userID,
 				displayName: user.userDisplayName,
 			};
+
+		if ( ! room || (! room.id && ! room.login) )
+			return;
+
+		if ( ! user || (! user.id && ! user.login) )
+			return;
+
+		if ( ! user.id || ! user.login )
+			user = await this.twitch_data.getUser(user.id, user.login);
+
+		if ( ! room.id || ! room.login )
+			room = await this.twitch_data.getUser(room.id, room.login);
 
 		const old_card = this.open_cards[user.login];
 		if ( old_card ) {
@@ -100,9 +124,17 @@ export default class ViewerCards extends Module {
 
 		// We start this first...
 		const user_info = this.apollo.client.query({
-			query: GET_USER_INFO,
+			query: GET_CARD_VIEWER,
 			variables: {
 				targetLogin: user.login,
+				channelID: room.id
+			}
+		});
+
+		const ban_info = this.apollo.client.query({
+			query: GET_BAN_STATUS,
+			variables: {
+				targetUserID: user.id,
 				channelID: room.id
 			}
 		});
@@ -115,13 +147,14 @@ export default class ViewerCards extends Module {
 			room,
 			user,
 			user_info,
+			ban_info,
 			pos_x,
 			pos_y,
 		);
 	}
 
 
-	buildCard(room, user, data, pos_x, pos_y) {
+	buildCard(room, user, data, ban_info, pos_x, pos_y) {
 		let child;
 		const component = new this.vue.Vue({
 			el: createElement('div'),
@@ -131,6 +164,7 @@ export default class ViewerCards extends Module {
 					room,
 					raw_user: user,
 					data,
+					ban_info,
 
 					getFFZ: () => this,
 					getZ: () => ++this.last_z

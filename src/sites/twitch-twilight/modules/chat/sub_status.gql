@@ -17,21 +17,7 @@ query FFZ_EmoteMenu_SubStatus($first: Int, $after: Cursor, $criteria: Subscripti
 					renewsAt
 					product {
 						id
-						name
-						displayName
 						emoteSetID
-						type
-						owner {
-							id
-							login
-							displayName
-							broadcastBadges {
-								id
-								setID
-								version
-								imageURL(size: NORMAL)
-							}
-						}
 					}
 				}
 			}

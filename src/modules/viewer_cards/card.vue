@@ -1,96 +1,115 @@
 <template>
 	<div
 		:style="{zIndex: z}"
-		class="ffz-mod-card tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
+		class="ffz-viewer-card tw-border-radius-medium tw-c-background-base tw-c-text-base tw-elevation-2 tw-flex tw-flex-column viewer-card"
 		tabindex="0"
 		@focusin="onFocus"
 		@keyup.esc="close"
 	>
-		<header
+		<div
 			:style="loaded && `background-image: url('${user.bannerImageURL}');`"
-			class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-relative"
+			class="ffz-viewer-card__header tw-c-background-accent-alt tw-flex-grow-0 tw-flex-shrink-0 viewer-card__background tw-relative"
 		>
-			<div class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap tw-pd-1 ffz--background-dimmer">
-				<figure class="tw-avatar tw-avatar--size-50">
-					<div v-if="loaded" class="tw-overflow-hidden ">
-						<img
-							:src="user.profileImageURL"
-							class="tw-image"
-						>
+			<div class="tw-flex tw-flex-column tw-full-height tw-full-width viewer-card__overlay">
+				<div class="tw-align-center tw-align-items-start tw-c-background-overlay tw-c-text-overlay tw-flex tw-flex-grow-1 tw-flex-row tw-full-width tw-justify-content-start tw-pd-05 tw-relative viewer-card__banner">
+					<div class="tw-mg-l-05 tw-mg-y-05 tw-inline-flex viewer-card-drag-cancel">
+						<figure class="tw-avatar tw-avatar--size-50">
+							<img
+								v-if="loaded"
+								:src="user.profileImageURL"
+								:alt="displayName"
+								class="tw-block tw-border-radius-rounded tw-image tw-image-avatar"
+							>
+						</figure>
 					</div>
-				</figure>
-				<div class="tw-ellipsis tw-inline-block">
-					<div class="tw-align-items-center tw-mg-l-1 ffz--info-lines">
-						<h4>
-							<a :href="`/${login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">
-								{{ displayName }}
-							</a>
-						</h4>
-						<h5
-							v-if="displayName && displayName.toLowerCase() !== login"
-						>
-							<a :href="`/${login}`" class="tw-link tw-link--hover-underline-none tw-link--inherit" target="_blank">
-								{{ login }}
-							</a>
-						</h5>
+					<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-x-1 tw-mg-y-05 viewer-card__display-name">
+						<div class="tw-inline-flex">
+							<h4 class="viewer-card-drag-cancel">
+								<a
+									:href="`/${login}`"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="tw-interactive tw-link tw-link--hover-color-inherit tw-link--inherit"
+								>
+									{{ displayName }}
+								</a>
+							</h4>
+						</div>
 						<div v-if="loaded" class="tw-pd-t-05">
-							<span
+							<!--span
 								:data-title="t('viewer-card.views', 'Views')"
-								class="ffz-tooltip tw-mg-r-05 ffz-i-views"
+								class="ffz-tooltip tw-mg-r-05 ffz-i-views viewer-card-drag-cancel"
 							>
-								{{ t(null, '{views,number}', {views: user.profileViewCount}) }}
-							</span>
-							<span
+								{{ t('viewer-card.views.number', '{views,number}', {views: user.profileViewCount}) }}
+							</span-->
+							<!--span
 								:data-title="t('viewer-card.followers', 'Followers')"
-								class="ffz-tooltip tw-mg-r-05 ffz-i-heart"
+								class="ffz-tooltip tw-mg-r-05 ffz-i-heart viewer-card-drag-cancel"
 							>
-								{{ t(null, '{followers,number}', {followers: user.followers.totalCount}) }}
-							</span>
+								{{ t('viewer-card.followers.number', '{followers,number}', {followers: user.followers.totalCount}) }}
+							</span-->
 							<span
 								v-if="userAge"
-								:data-title="t('viewer-card.age-tip', 'Member Since: {age,datetime}', {age: userAge})"
-								class="ffz-tooltip ffz-i-clock"
+								:data-title="t('viewer-card.age-tip', 'Account Created at: {created,datetime}', {created: userAge})"
+								class="ffz-tooltip ffz-i-cake viewer-card-drag-cancel"
 							>
-								{{ t('viewer-card.age', '{age,humantime}', {age: userAge}) }}
+								{{ t('viewer-card.age', '{created,humantime}', {created: userAge}) }}
+							</span>
+							<span
+								v-if="followAge"
+								:data-title="t('viewer-card.follow-tip', 'Followed at: {followed,datetime}', {followed: followAge})"
+								class="ffz-tooltip ffz-i-heart viewer-card-drag-cancel"
+							>
+								{{ t('viewer-card.follow', '{followed,humantime}', {followed: followAge}) }}
+							</span>
+							<span
+								v-if="subscription"
+								:data-title="t('viewer-card.months-tip', 'Subscribed for {months,number} month{months,en_plural}', {months: subscription.months})"
+								class="ffz-tooltip ffz-i-star viewer-card-drag-cancel"
+							>
+								{{ t('viewer-card.months', '{months,number} month{months,en_plural}', {months: subscription.months}) }}
 							</span>
 						</div>
 					</div>
+					<div class="tw-flex tw-flex-column">
+						<button
+							:data-title="t('viewer-card.close', 'Close')"
+							:aria-label="t('viewer-card.close', 'Close')"
+							class="viewer-card-drag-cancel tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
+							@click="close"
+						>
+							<span class="tw-button-icon__icon">
+								<figure class="ffz-i-cancel" />
+							</span>
+						</button>
+						<button
+							v-if="! pinned"
+							:data-title="t('viewer-card.pin', 'Pin')"
+							:aria-label="t('viewer-card.pin', 'Pin')"
+							class="viewer-card-drag-cancel tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
+							@click="pin"
+						>
+							<span class="tw-button-icon__icon">
+								<figure class="ffz-i-pin" />
+							</span>
+						</button>
+					</div>
 				</div>
-				<div class="tw-flex-grow-1 tw-pd-x-2" />
-				<button
-					:data-title="t('viewer-card.close', 'Close')"
-					class="ffz-tooltip tw-button-icon tw-absolute tw-right-0 tw-top-0 tw-mg-t-05 tw-mg-r-05"
-					@click="close"
-				>
-					<span class="tw-button-icon__icon">
-						<figure class="ffz-i-cancel" />
-					</span>
-				</button>
-				<button
-					v-show="! pinned"
-					:data-title="t('viewer-card.pin', 'Pin')"
-					class="ffz-tooltip tw-button-icon tw-absolute tw-right-0 tw-bottom-0 tw-mg-b-05 tw-mg-r-05"
-					@click="pin"
-				>
-					<span class="tw-button-icon__icon">
-						<figure class="ffz-i-pin" />
-					</span>
-				</button>
 			</div>
-		</header>
+		</div>
 		<error-tab v-if="errored" />
 		<template v-else-if="loaded">
 			<section class="tw-c-background-base">
-				<div class="mod-cards__tabs-container tw-border-t">
+				<div class="viewer-card__tabs-container tw-border-t">
 					<div
-						v-for="(data, key) in tabs"
+						v-for="(d, key) in tabs"
+						:id="`viewer-card__${key}`"
 						:key="key"
-						:id="`mod-cards__${key}`"
 						:class="{active: active_tab === key}"
-						class="mod-cards__tab tw-pd-x-1"
+						class="viewer-card__tab tw-pd-x-1"
 						@click="active_tab = key"
 					>
-						<span>{{ data.label }}</span>
+						<span>{{ d.label }}</span>
 					</div>
 				</div>
 			</section>
@@ -115,6 +134,8 @@
 import LoadingTab from './components/loading-tab.vue';
 import ErrorTab from './components/error-tab.vue';
 
+import {deep_copy} from 'utilities/object';
+
 import displace from 'displacejs';
 
 export default {
@@ -123,7 +144,7 @@ export default {
 		'loading-tab': LoadingTab
 	},
 
-	props: ['tabs', 'room', 'raw_user', 'pos_x', 'pos_y', 'data', 'getZ', 'getFFZ'],
+	props: ['tabs', 'room', 'raw_user', 'pos_x', 'pos_y', 'data', 'ban_info', 'getZ', 'getFFZ'],
 
 	data() {
 		return {
@@ -133,10 +154,12 @@ export default {
 			loaded: false,
 			errored: false,
 			pinned: false,
+			twitch_banned: false,
 
 			user: null,
 			channel: null,
-			self: null
+			self: null,
+			ban: null
 		}
 	},
 
@@ -155,11 +178,23 @@ export default {
 			return this.raw_user.displayName || this.raw_user.login;
 		},
 
+		subscription() {
+			if ( this.loaded )
+				return this.user.relationship?.cumulativeTenure;
+
+			return null;
+		},
+
 		userAge() {
 			if ( this.loaded )
 				return new Date(this.user.createdAt);
 
 			return null
+		},
+
+		followAge() {
+			const age = this.loaded && this.user?.relationship?.followedAt;
+			return age ? new Date(age) : null;
 		},
 
 		current_tab() {
@@ -171,9 +206,10 @@ export default {
 		this.$emit('emit', ':open', this);
 
 		this.data.then(data => {
-			this.user = data.data.targetUser;
-			this.channel = data.data.channelUser;
-			this.self = data.data.currentUser;
+			this.twitch_banned = data?.data?.activeTargetUser?.id !== data?.data?.targetUser?.id;
+			this.user = deep_copy(data?.data?.targetUser);
+			this.channel = deep_copy(data?.data?.channelUser);
+			this.self = deep_copy(data?.data?.currentUser);
 			this.loaded = true;
 
 			this.$emit('emit', ':load', this);
@@ -181,6 +217,14 @@ export default {
 		}).catch(err => {
 			console.error(err); // eslint-disable-line no-console
 			this.errored = true;
+		});
+
+		this.ban_info.then(data => {
+			this.ban = deep_copy(data?.data?.chatRoomBanStatus);
+
+		}).catch(err => {
+			console.error(err);
+			this.ban = null;
 		});
 	},
 
@@ -236,6 +280,14 @@ export default {
 			this.pinned = true;
 			this.$emit('pin');
 			this.$emit('emit', ':pin', this);
+
+			this.cleanTips();
+		},
+
+		cleanTips() {
+			this.$nextTick(() => {
+				this.getFFZ().emit('tooltips:cleanup');
+			});
 		},
 
 		close() {
@@ -245,9 +297,10 @@ export default {
 		createDrag() {
 			this.$nextTick(() => {
 				this.displace = displace(this.$el, {
-					handle: this.$el.querySelector('header'),
+					handle: this.$el.querySelector('.ffz-viewer-card__header'),
 					highlightInputs: true,
-					constrain: true
+					constrain: true,
+					ignoreFn: e => e.target.closest('.viewer-card-drag-cancel') != null
 				});
 			})
 		},

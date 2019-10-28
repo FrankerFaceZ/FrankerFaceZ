@@ -51,13 +51,6 @@ export default class ChannelBar extends Module {
 			n => n.getTitle && n.getGame && n.renderGame,
 			['user']
 		);
-
-
-		this.HostBar = this.fine.define(
-			'host-container',
-			n => n.handleReportHosterClick,
-			['user']
-		)
 	}
 
 	onEnable() {

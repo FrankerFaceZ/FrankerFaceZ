@@ -25,15 +25,10 @@ export default class Layout extends Module {
 			n => n.computeStyles && n.navigationLinkSize
 		);
 
-		this.RightColumn = this.fine.define(
+		/*this.RightColumn = this.fine.define(
 			'tw-rightcolumn',
 			n => n.hideOnBreakpoint && n.handleToggleVisibility
-		);
-
-		this.PopularChannels = this.fine.define(
-			'nav-popular',
-			n => n.getPopularChannels && n.props && has(n.props, 'locale')
-		);
+		);*/
 
 		this.SideBarChannels = this.fine.define(
 			'nav-cards',
@@ -176,14 +171,6 @@ export default class Layout extends Module {
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
 		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
 
-		this.PopularChannels.ready((cls, instances) => {
-			for(const inst of instances)
-				this.updatePopular(inst);
-		});
-
-		this.PopularChannels.on('mount', this.updatePopular, this);
-		this.PopularChannels.on('update', this.updatePopular, this);
-
 		this.SideBarChannels.ready((cls, instances) => {
 			for(const inst of instances)
 				this.updateCardClass(inst);
@@ -192,7 +179,7 @@ export default class Layout extends Module {
 		this.SideBarChannels.on('mount', this.updateCardClass, this);
 		this.SideBarChannels.on('update', this.updateCardClass, this);
 
-		const t = this;
+		/*const t = this;
 		this.RightColumn.ready((cls, instances) => {
 			cls.prototype.ffzHideOnBreakpoint = function() {
 				try {
@@ -235,7 +222,7 @@ export default class Layout extends Module {
 				window.addEventListener('resize', inst.hideOnBreakpoint);
 				inst.hideOnBreakpoint();
 			}
-		});
+		});*/
 	}
 
 	get is_minimal() {
@@ -256,12 +243,6 @@ export default class Layout extends Module {
 			try {
 				inst.computeStyles();
 			} catch(err) { /* no-op */ }
-	}
-
-	updatePopular(inst) {
-		const node = this.fine.getChildNode(inst);
-		if ( node )
-			node.classList.add('ffz--popular-channels');
 	}
 
 	updatePortraitMode() {

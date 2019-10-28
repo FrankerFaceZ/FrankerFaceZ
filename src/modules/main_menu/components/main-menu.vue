@@ -219,7 +219,10 @@ export default {
 					this.displace = displace(this.$el, {
 						handle: this.$el.querySelector('header'),
 						highlightInputs: true,
-						constrain: true
+						constrain: true,
+						ignoreFn(event) {
+							return event.target.closest('button') != null
+						}
 					});
 			})
 		},
