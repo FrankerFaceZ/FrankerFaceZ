@@ -61,7 +61,9 @@ export default class Apollo extends Module {
 			const root = this.fine.react,
 				inst = root && root.stateNode;
 
-			client = this.client = inst && inst.props && inst.props.client;
+			client = this.client = inst?.props?.client || root?.memoizedProps?.client;
+			if ( root && ! client )
+				client = this.fine.searchTree(null, n => n.props?.client?.queryManager, 500);
 		}
 
 		if ( ! client )
