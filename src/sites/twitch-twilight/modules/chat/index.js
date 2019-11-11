@@ -299,6 +299,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.points.auto-rewards', {
+			default: false,
+			ui: {
+				path: 'Chat > Channel Points >> General',
+				title: 'Claim bonus Channel Points automatically.',
+				component: 'setting-check-box',
+			}
+		});
+
 		this.settings.add('chat.points.show-rewards', {
 			default: true,
 			ui: {
