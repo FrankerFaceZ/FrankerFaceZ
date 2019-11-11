@@ -341,8 +341,6 @@ export default {
 			if ( ! allow_update )
 				delete profile_data.url;
 
-			console.log('Importing', profile_data, data, this.import_data);
-
 			const prof = this.context.createProfile(profile_data);
 
 			prof.update({

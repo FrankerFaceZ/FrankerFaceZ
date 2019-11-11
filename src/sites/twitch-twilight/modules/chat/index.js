@@ -7,6 +7,7 @@
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
 import {get, has, make_enum, split_chars, shallow_object_equals, set_equals} from 'utilities/object';
+import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -19,6 +20,7 @@ import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import Input from './input';
 import ViewerCards from './viewer_card';
+import { isHighlightedReward } from './points';
 
 
 const REGEX_EMOTES = {
@@ -237,13 +239,44 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.PointsInfo = this.fine.define(
+			'points-info',
+			n => n.pointIcon !== undefined && n.pointName !== undefined,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.GiftBanner = this.fine.define(
+			'gift-banner',
+			n => n.getBannerText && n.handleCountdownEnd && n.getRemainingTime,
+			Twilight.CHAT_ROUTES
+		);
+
 		// Settings
+
+		this.settings.add('chat.subs.gift-banner', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Display a banner at the top of chat when a mass gift sub happens.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.community-chest.show', {
 			default: true,
 			ui: {
 				path: 'Chat > Appearance >> Community Chest',
 				title: 'Display the Community Gift Chest banner.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.points.custom-rendering', {
+			default: true,
+			ui: {
+				path: 'Chat > Channel Points >> Appearance',
+				title: 'Use custom rendering for channel points reward messages in chat.',
+				description: 'Custom rendering applies a background color to highlighted messages, which some users may not appreciate.',
 				component: 'setting-check-box'
 			}
 		});
@@ -536,6 +569,25 @@ export default class ChatHook extends Module {
 	}
 
 
+	updatePointsInfo(inst) {
+		const icon = inst?.pointIcon,
+			name = inst?.pointName;
+
+		if ( icon ) {
+			this.css_tweaks.set('points-icon', `.ffz--points-icon:before { display: none }
+.ffz--points-icon:after {
+	display: inline-block;
+	margin: 0 0.5rem -0.6rem;
+	background-image: url("${icon.url}");
+	background-image: ${WEBKIT}image-set(url("${icon.url}") 1x, url("${icon.url2x}") 2x, url("${icon.url4x}") 4x);
+}`);
+		} else
+			this.css_tweaks.delete('points-icon');
+
+		this.point_name = name || null;
+	}
+
+
 	async grabTypes() {
 		const ct = await this.web_munch.findModule('chat-types'),
 			changes = [];
@@ -579,6 +631,7 @@ export default class ChatHook extends Module {
 			this.PointsClaimButton.forceUpdate();
 		});
 
+		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
@@ -651,6 +704,23 @@ export default class ChatHook extends Module {
 		this.PinnedCallout.ready(() => this.updatePinnedCallouts());
 
 		const t = this;
+
+		this.PointsInfo.on('mount', this.updatePointsInfo, this);
+		this.PointsInfo.on('update', this.updatePointsInfo, this);
+		this.PointsInfo.on('unmount', () => this.updatePointsInfo(null));
+		this.PointsInfo.ready(() => this.updatePointsInfo(this.PointsInfo.first));
+
+		this.GiftBanner.ready(cls => {
+			const old_render = cls.prototype.render;
+			cls.prototype.render = function() {
+				if ( ! t.chat.context.get('chat.subs.gift-banner') )
+					return null;
+
+				return old_render.call(this);
+			}
+
+			this.GiftBanner.forceUpdate();
+		});
 
 		this.CommunityChestBanner.ready(cls => {
 			const old_render = cls.prototype.render;
@@ -751,13 +821,17 @@ export default class ChatHook extends Module {
 		});
 
 		this.PointsClaimButton.ready(cls => {
+			cls.prototype.ffzHasOffer = function() {
+				return ! this.props.hidden && ! this.state?.error && this.getClaim() != null;
+			};
+
 			const old_render = cls.prototype.render;
 			cls.prototype.render = function() {
 				try {
-					if ( ! this._ffz_timer && t.chat.context.get('chat.points.auto-rewards') )
+					if ( this.ffzHasOffer() && ! this._ffz_timer && t.chat.context.get('chat.points.auto-rewards') )
 						this._ffz_timer = setTimeout(() => {
 							this._ffz_timer = null;
-							if ( this.onClick )
+							if ( this.onClick && this.ffzHasOffer() )
 								this.onClick();
 						}, 1000 + Math.floor(Math.random() * 5000));
 
@@ -777,7 +851,8 @@ export default class ChatHook extends Module {
 
 		this.ChatController.on('mount', this.chatMounted, this);
 		this.ChatController.on('unmount', this.chatUnmounted, this);
-		this.ChatController.on('receive-props', this.chatUpdated, this);
+		//this.ChatController.on('receive-props', this.chatUpdated, this);
+		this.ChatController.on('update', this.chatUpdated, this);
 
 		this.ChatService.ready((cls, instances) => {
 			this.wrapChatService(cls);
@@ -839,7 +914,7 @@ export default class ChatHook extends Module {
 		});
 
 		this.ChatBufferConnector.on('mount', this.connectorMounted, this);
-		this.ChatBufferConnector.on('receive-props', this.connectorUpdated, this);
+		this.ChatBufferConnector.on('update', this.connectorUpdated, this);
 		this.ChatBufferConnector.on('unmount', this.connectorUnmounted, this);
 
 		this.ChatBufferConnector.ready((cls, instances) => {
@@ -1747,6 +1822,29 @@ export default class ChatHook extends Module {
 					}
 				}
 
+				const old_points = this.onChannelPointsRewardEvent;
+				this.onChannelPointsRewardEvent = function(e) {
+					try {
+						if ( t.chat.context.get('chat.points.custom-rendering') ) {
+							const reward = e.rewardID && get(e.rewardID, i.props.rewardMap);
+							if ( reward ) {
+								const out = i.convertMessage(e);
+
+								out.ffz_type = 'points';
+								out.ffz_reward = reward;
+
+								return i.postMessageToCurrentChannel(e, out);
+							}
+						}
+
+					} catch(err) {
+						t.log.error(err);
+						t.log.capture(err, {extra: e});
+					}
+
+					return old_points.call(i, e);
+				}
+
 				const old_host = this.onHostingEvent;
 				this.onHostingEvent = function (e, _t) {
 					t.emit('tmi:host', e, _t);
@@ -1943,6 +2041,11 @@ export default class ChatHook extends Module {
 				channelID: null
 			});
 
+		this.settings.updateContext({
+			moderator: false,
+			chatHidden: false
+		});
+
 		this.chat.context.updateContext({
 			moderator: false,
 			channel: null,
@@ -1960,30 +2063,34 @@ export default class ChatHook extends Module {
 		if ( ! chat._ffz_room || props.channelID != chat._ffz_room.id ) {
 			this.removeRoom(chat);
 			if ( chat._ffz_mounted )
-				this.chatMounted(chat, props);
+				this.chatMounted(chat);
 			return;
 		}
 
 		if ( props.bitsConfig !== chat.props.bitsConfig )
-			this.updateRoomBitsConfig(chat, props.bitsConfig);
+			this.updateRoomBitsConfig(chat, chat.props.bitsConfig);
 
 		// TODO: Check if this is the room for the current channel.
 
-		if ( props.isEmbedded || props.isPopout )
+		let login = chat.props.channelLogin;
+		if ( login )
+			login = login.toLowerCase();
+
+		if ( chat.props.isEmbedded || chat.props.isPopout )
 			this.settings.updateContext({
-				channel: props.channelLogin && props.channelLogin.toLowerCase(),
-				channelID: props.channelID
+				channel: login,
+				channelID: chat.props.channelID
 			});
 
 		this.settings.updateContext({
-			moderator: props.isCurrentUserModerator,
-			chatHidden: props.isHidden
+			moderator: chat.props.isCurrentUserModerator,
+			chatHidden: chat.props.isHidden
 		});
 
 		this.chat.context.updateContext({
-			moderator: props.isCurrentUserModerator,
-			channel: props.channelLogin && props.channelLogin.toLowerCase(),
-			channelID: props.channelID,
+			moderator: chat.props.isCurrentUserModerator,
+			channel: login,
+			channelID: chat.props.channelID,
 			/*ui: {
 				theme: props.theme
 			}*/
@@ -2027,8 +2134,8 @@ export default class ChatHook extends Module {
 	}
 
 	connectorUpdated(inst, props) { // eslint-disable-line class-methods-use-this
-		const buffer = inst.props.messageBufferAPI,
-			new_buffer = props.messageBufferAPI;
+		const buffer = props.messageBufferAPI,
+			new_buffer = inst.props.messageBufferAPI;
 
 		if ( buffer === new_buffer )
 			return;

@@ -32,3 +32,7 @@
 		background-color: rgba(255,255,255,0.05) !important;
 	}
 }
+
+.ffz--points-highlight:nth-child(2n+0) {
+	background-color: var(--ffz-channel-color-30);
+}

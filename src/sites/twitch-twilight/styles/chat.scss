@@ -155,6 +155,40 @@
 	text-decoration: underline;
 }
 
+.ffz--points-highlight {
+	background-color: var(--ffz-channel-color-20);
+}
+
+.ffz--points-line {
+	border-left: 4px solid var(--ffz-channel-color);
+
+	.ffz--points-reward,
+	.ffz--points-cost {
+		font-weight: 600;
+	}
+
+	.ffz--points-reward {
+		word-wrap: break-word;
+	}
+}
+
+.ffz--points-icon {
+	&:before {
+		content: '\e83c';
+		font-family: 'ffz-fontello';
+		font-size: 1.6rem;
+		font-weight: normal;
+		font-variant: normal;
+		margin: 0 0.5rem;
+	}
+
+	&:after {
+		content: '';
+		height: 2rem;
+		width: 2rem;
+		background-size: cover;
+	}
+}
 
 .ffz--emote-picker {
 	section:not(.filtered) heading {

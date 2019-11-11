@@ -204,7 +204,8 @@ Twilight.CHAT_ROUTES = [
 	'user',
 	'dash',
 	'embed-chat',
-	'squad'
+	'squad',
+	'command-center'
 ];
 
 
@@ -252,6 +253,7 @@ Twilight.ROUTES = {
 	'turbo': '/turbo',
 	'user': '/:userName',
 	'squad': '/:userName/squad',
+	'command-center': '/:userName/commandcenter',
 	'embed-chat': '/embed/:userName/chat'
 };
 

@@ -8,6 +8,7 @@ import Module from 'utilities/module';
 import { get, has } from 'utilities/object';
 
 import Twilight from 'site';
+import { Color } from 'src/utilities/color';
 
 
 export default class Channel extends Module {
@@ -18,6 +19,7 @@ export default class Channel extends Module {
 
 		this.inject('settings');
 		this.inject('site.fine');
+		this.inject('site.css_tweaks');
 
 		this.joined_raids = new Set;
 
@@ -71,6 +73,20 @@ export default class Channel extends Module {
 	}
 
 
+	updateChannelColor(color) {
+		const parsed = color && Color.RGBA.fromHex(color);
+		if ( parsed ) {
+			this.css_tweaks.setVariable('channel-color', parsed.toCSS());
+			this.css_tweaks.setVariable('channel-color-20', parsed._a(0.2).toCSS());
+			this.css_tweaks.setVariable('channel-color-30', parsed._a(0.3).toCSS());
+		} else {
+			this.css_tweaks.deleteVariable('channel-color');
+			this.css_tweaks.deleteVariable('channel-color-20');
+			this.css_tweaks.deleteVariable('channel-color-30');
+		}
+	}
+
+
 	onEnable() {
 		this.ChannelPage.on('mount', this.wrapChannelPage, this);
 		this.RaidController.on('mount', this.wrapRaidController, this);
@@ -84,19 +100,11 @@ export default class Channel extends Module {
 				this.wrapRaidController(inst);
 		});
 
-		this.ChannelPage.on('mount', inst => {
-			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
-
-			this.settings.updateContext({
-				channel: get('state.channel.login', inst),
-				channelID: get('state.channel.id', inst),
-				channelColor: get('state.primaryColorHex', inst),
-				category: category?.name,
-				categoryID: category?.id
-			});
-		});
+		this.ChannelPage.on('mount', this.onChannelMounted, this);
 
 		this.ChannelPage.on('unmount', () => {
+			this.updateChannelColor(null);
+
 			this.settings.updateContext({
 				channel: null,
 				channelID: null,
@@ -109,10 +117,13 @@ export default class Channel extends Module {
 		this.ChannelPage.on('update', inst => {
 			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
 
+			const color = get('state.primaryColorHex', inst);
+			this.updateChannelColor(color);
+
 			this.settings.updateContext({
 				channel: get('state.channel.login', inst),
 				channelID: get('state.channel.id', inst),
-				channelColor: get('state.primaryColorHex', inst),
+				channelColor: color,
 				category: category?.name,
 				categoryID: category?.id
 			});
@@ -133,7 +144,24 @@ export default class Channel extends Module {
 
 		this.ChannelPage.ready((cls, instances) => {
 			for(const inst of instances)
-				this.wrapChannelPage(inst);
+				this.onChannelMounted(inst);
+		});
+	}
+
+	onChannelMounted(inst) {
+		this.wrapChannelPage(inst);
+
+		const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
+
+		const color = get('state.primaryColorHex', inst);
+		this.updateChannelColor(color);
+
+		this.settings.updateContext({
+			channel: get('state.channel.login', inst),
+			channelID: get('state.channel.id', inst),
+			channelColor: color,
+			category: category?.name,
+			categoryID: category?.id
 		});
 	}
 

@@ -499,7 +499,7 @@ export default class Player extends Module {
 					const player = this.props.mediaPlayerInstance,
 						events = this.props.playerEvents;
 
-					if ( player && player.pause )
+					if ( player && player.pause && player.getPlayerState?.() === 'Playing' )
 						player.pause();
 					else if ( events ) {
 						const immediatePause = () => {

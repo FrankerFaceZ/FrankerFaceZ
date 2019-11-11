@@ -795,7 +795,7 @@ export default class MainMenu extends Module {
 			},
 
 			resize: e => {
-				if ( this.dialog.exclusive || this.site?.router?.current_name === 'squad' )
+				if ( this.dialog.exclusive || this.site?.router?.current_name === 'squad' || this.site?.router?.current_name === 'command-center' )
 					return;
 
 				if ( this.settings.get('context.ui.theatreModeEnabled') )

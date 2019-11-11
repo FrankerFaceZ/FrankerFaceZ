@@ -45,6 +45,12 @@ export default class MenuButton extends SiteModule {
 			n => n.exitSquadMode && n.props && n.props.squadID,
 			['squad']
 		);
+
+		this.MultiController = this.fine.define(
+			'multi-controller',
+			n => n.handleAddStream && n.handleRemoveStream && n.getInitialStreamLayout,
+			['command-center']
+		);
 	}
 
 	get loading() {
@@ -162,6 +168,9 @@ export default class MenuButton extends SiteModule {
 
 		for(const inst of this.SquadBar.instances)
 			this.updateButton(inst);
+
+		for(const inst of this.MultiController.instances)
+			this.updateButton(inst);
 	}
 
 
@@ -174,6 +183,10 @@ export default class MenuButton extends SiteModule {
 		this.SquadBar.ready(() => this.update());
 		this.SquadBar.on('mount', this.updateButton, this);
 		this.SquadBar.on('update', this.updateButton, this);
+
+		this.MultiController.ready(() => this.update());
+		this.MultiController.on('mount', this.updateButton, this);
+		this.MultiController.on('update', this.updateButton, this);
 
 		this.on(':clicked', () => this.important_update = false);
 
@@ -196,6 +209,12 @@ export default class MenuButton extends SiteModule {
 			else
 				container = root && root.querySelector('.squad-stream-top-bar__container');
 
+			if ( container )
+				is_squad = true;
+		}
+
+		if ( ! container && inst.handleAddStream ) {
+			container = this.fine.searchTree(inst, n => n.classList && n.classList.contains('multiview-stream-page__header'));
 			if ( container )
 				is_squad = true;
 		}

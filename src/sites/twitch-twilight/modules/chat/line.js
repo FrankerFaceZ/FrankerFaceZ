@@ -11,6 +11,7 @@ import RichContent from './rich_content';
 import { has } from 'utilities/object';
 import { KEYS } from 'utilities/constants';
 import { print_duration } from 'src/utilities/time';
+import { getRewardTitle, getRewardCost, isHighlightedReward } from './points';
 
 const SUB_TIERS = {
 	1000: 1,
@@ -357,19 +358,26 @@ other {# messages were deleted by a moderator.}
 					}
 				}
 
-				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined;
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
+					room_id = msg.roomId ? msg.roomId : this.props.channelID;
 
-				if ( ! room && this.props.channelID ) {
-					const r = t.chat.getRoom(this.props.channelID, null, true);
+				if ( ! room && room_id ) {
+					const r = t.chat.getRoom(room_id, null, true);
 					if ( r && r.login )
 						room = msg.roomLogin = r.login;
+				}
+
+				if ( ! room_id && room ) {
+					const r = t.chat.getRoom(null, room_id, true);
+					if ( r && r.id )
+						room_id = msg.roomId = r.id;
 				}
 
 				//if ( ! msg.message && msg.messageParts )
 				//	t.chat.detokenizeMessage(msg);
 
 				const u = t.site.getUser(),
-					r = {id: this.props.channelID, login: room};
+					r = {id: room_id, login: room};
 
 				if ( u ) {
 					u.moderator = this.props.isCurrentUserModerator;
@@ -542,7 +550,7 @@ other {# messages were deleted by a moderator.}
 						sub_list,
 						out && e('div', {
 							className: 'chat-line--inline chat-line__message',
-							'data-room-id': this.props.channelID,
+							'data-room-id': room_id,
 							'data-room': room,
 							'data-user-id': user.userID,
 							'data-user': user.userLogin && user.userLogin.toLowerCase(),
@@ -596,7 +604,7 @@ other {# messages were deleted by a moderator.}
 						]),
 						out && e('div', {
 							className: 'chat-line--inline chat-line__message',
-							'data-room-id': this.props.channelID,
+							'data-room-id': room_id,
 							'data-room': room,
 							'data-user-id': user.userID,
 							'data-user': user.userLogin && user.userLogin.toLowerCase(),
@@ -658,7 +666,7 @@ other {# messages were deleted by a moderator.}
 							]),
 							out && e('div', {
 								className: 'chat-line--inline chat-line__message',
-								'data-room-id': this.props.channelID,
+								'data-room-id': room_id,
 								'data-room': room,
 								'data-user-id': user.userID,
 								'data-user': user.userLogin && user.userLogin.toLowerCase(),
@@ -687,13 +695,46 @@ other {# messages were deleted by a moderator.}
 							system_msg,
 							out && e('div', {
 								className: 'chat-line--inline chat-line__message',
-								'data-room-id': this.props.channelID,
+								'data-room-id': room_id,
 								'data-room': room,
 								'data-user-id': user.userID,
 								'data-user': user.userLogin && user.userLogin.toLowerCase(),
 							}, out)
 						];
 					}
+
+				} else if ( msg.ffz_type === 'points' && msg.ffz_reward ) {
+					const reward = e('span', {className: 'ffz--points-reward'}, getRewardTitle(msg.ffz_reward, t.i18n)),
+						cost = e('span', {className: 'ffz--points-cost'}, [
+							e('span', {className: 'ffz--points-icon'}),
+							t.i18n.formatNumber(getRewardCost(msg.ffz_reward))
+						]);
+
+					cls = `ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${isHighlightedReward(msg.ffz_reward) ? ' ffz--points-highlight' : ''}`;
+					out = [
+						e('div', {className: 'tw-c-text-alt-2'}, [
+							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+							out ?
+								t.i18n.tList('chat.points.redeemed', 'Redeemed {reward} {cost}', {reward, cost}) :
+								t.i18n.tList('chat.points.user-redeemed', '{user} redeemed {reward} {cost}', {
+									reward, cost,
+									user: e('span', {
+										role: 'button',
+										className: 'chatter-name',
+										onClick: this.ffz_user_click_handler
+									}, e('span', {
+										className: 'tw-c-text-base tw-strong'
+									}, user.userDisplayName))
+								})
+						]),
+						out && e('div', {
+							className: 'chat-line--inline chat-line__message',
+							'data-room-id': room_id,
+							'data-room': room,
+							'data-user-id': user.userID,
+							'data-user': user.userLogin && user.userLogin.toLowerCase()
+						}, out)
+					]
 				}
 
 				if ( ! out )
@@ -702,7 +743,7 @@ other {# messages were deleted by a moderator.}
 				return e('div', {
 					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
 					style: {backgroundColor: bg_css},
-					'data-room-id': this.props.channelID,
+					'data-room-id': room_id,
 					'data-room': room,
 					'data-user-id': user.userID,
 					'data-user': user.userLogin && user.userLogin.toLowerCase(),
