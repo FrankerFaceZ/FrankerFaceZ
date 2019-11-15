@@ -47,11 +47,11 @@ export default class ChatLine extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		this.ChatRoomLine = this.fine.define(
+		/*this.ChatRoomLine = this.fine.define(
 			'chat-room-line',
 			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && has(n.props, 'hasModPermissions'),
 			Twilight.CHAT_ROUTES
-		);
+		);*/
 
 		/*this.ChatRoomContainer = this.fine.define(
 			'chat-room-container',
@@ -100,7 +100,7 @@ export default class ChatLine extends Module {
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
 
 
-		this.ChatRoomLine.ready(cls => {
+		/*this.ChatRoomLine.ready(cls => {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() { try {
@@ -212,7 +212,7 @@ export default class ChatLine extends Module {
 			// Do this after a short delay to hopefully reduce the chance of React
 			// freaking out on us.
 			setTimeout(() => this.ChatRoomLine.forceUpdate());
-		});
+		});*/
 
 
 		this.WhisperLine.ready(cls => {
@@ -527,7 +527,7 @@ other {# messages were deleted by a moderator.}
 						}, the_list);
 					}
 
-					cls = 'user-notice-line tw-pd-y-05 ffz--subscribe-line';
+					cls = `user-notice-line tw-pd-y-05 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {
 							className: 'tw-flex tw-c-text-alt-2',
@@ -590,7 +590,7 @@ other {# messages were deleted by a moderator.}
 							count: msg.sub_total
 						}));
 
-					cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line';
+					cls = `user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {className: 'tw-flex tw-c-text-alt-2'}, [
 							t.chat.context.get('chat.subs.compact') ? null :
@@ -652,7 +652,7 @@ other {# messages were deleted by a moderator.}
 							));
 						}
 
-						cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line';
+						cls = `user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
 						out = [
 							e('div', {className: 'tw-flex tw-c-text-alt-2'}, [
 								t.chat.context.get('chat.subs.compact') ? null :
@@ -690,7 +690,7 @@ other {# messages were deleted by a moderator.}
 						]);
 
 					if ( system_msg ) {
-						cls = 'user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line';
+						cls = `user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line${show_class ? ' ffz--deleted-message' : ''}`;
 						out = [
 							system_msg,
 							out && e('div', {
@@ -710,7 +710,7 @@ other {# messages were deleted by a moderator.}
 							t.i18n.formatNumber(getRewardCost(msg.ffz_reward))
 						]);
 
-					cls = `ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${isHighlightedReward(msg.ffz_reward) ? ' ffz--points-highlight' : ''}`;
+					cls = `ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${isHighlightedReward(msg.ffz_reward) ? ' ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
 							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
@@ -872,13 +872,13 @@ other {# messages were deleted by a moderator.}
 			}
 		}
 
-		for(const inst of this.ChatRoomLine.instances) {
+		/*for(const inst of this.ChatRoomLine.instances) {
 			const msg = inst.props.message;
 			if ( msg ) {
 				msg.ffz_tokens = null;
 				msg.mentioned = msg.mention_color = null;
 			}
-		}
+		}*/
 
 		for(const inst of this.WhisperLine.instances) {
 			const msg = inst.props.message;
@@ -888,7 +888,7 @@ other {# messages were deleted by a moderator.}
 
 		this.ChatLine.forceUpdate();
 		this.ExtensionLine.forceUpdate();
-		this.ChatRoomLine.forceUpdate();
+		//this.ChatRoomLine.forceUpdate();
 		this.WhisperLine.forceUpdate();
 
 		this.emit('chat:updated-lines');

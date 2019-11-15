@@ -90,5 +90,6 @@ export default [
 	"t-reset",
 	"whispers",
 	"cake",
-	"channel-points"
+	"channel-points",
+	"fast-fw"
 ];

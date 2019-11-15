@@ -139,7 +139,7 @@ module.exports = {
         "react/jsx-first-prop-new-line": ["error", "multiline-multiprop"],
         "react/jsx-indent": ["warn", "tab"],
         "react/jsx-indent-props": ["warn", "tab"],
-        "react/jsx-key": "warn",
+        //"react/jsx-key": "warn",
         "react/jsx-no-bind": "error",
         "react/jsx-no-comment-textnodes": "error",
         "react/jsx-no-duplicate-props": "error",

@@ -87,6 +87,13 @@ export default class MainMenu extends Module {
 			component: 'changelog'
 		});
 
+		this.settings.addUI('addon-changelog', {
+			path: 'Add-Ons > Changelog @{"sort": -1000, "profile_warning": false}',
+			component: 'changelog',
+			force_seen: true,
+			addons: true
+		});
+
 		this.settings.addUI('legal', {
 			path: 'Home > Legal @{"sort": 1000}',
 			component: 'legal-page',

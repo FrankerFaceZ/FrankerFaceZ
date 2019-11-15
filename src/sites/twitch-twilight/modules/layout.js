@@ -20,10 +20,10 @@ export default class Layout extends Module {
 		this.inject('site.fine');
 		this.inject('site.css_tweaks');
 
-		this.TopNav = this.fine.define(
+		/*this.TopNav = this.fine.define(
 			'top-nav',
 			n => n.computeStyles && n.navigationLinkSize
-		);
+		);*/
 
 		/*this.RightColumn = this.fine.define(
 			'tw-rightcolumn',
@@ -239,10 +239,7 @@ export default class Layout extends Module {
 	}
 
 	updateNavLinks() {
-		for(const inst of this.TopNav.instances)
-			try {
-				inst.computeStyles();
-			} catch(err) { /* no-op */ }
+
 	}
 
 	updatePortraitMode() {

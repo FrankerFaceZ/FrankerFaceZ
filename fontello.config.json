@@ -669,6 +669,12 @@
       "search": [
         "channel-points"
       ]
+    },
+    {
+      "uid": "4e511190b60f329d08301eb6869c5130",
+      "css": "fast-fw",
+      "code": 59453,
+      "src": "fontawesome"
     }
   ]
 }

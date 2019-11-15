@@ -1,10 +1,15 @@
 <template lang="html">
 	<div class="ffz--changelog tw-border-t tw-pd-t-1">
 		<div class="tw-align-center">
-			<h2>{{ t('home.changelog', 'Changelog') }}</h2>
+			<h2 v-if="addons">
+				{{ t('setting.add_ons.changelog.title', 'Add-Ons Changelog') }}
+			</h2>
+			<h2 v-else>
+				{{ t('home.changelog', 'Changelog') }}
+			</h2>
 		</div>
 
-		<div class="tw-mg-b-1 tw-flex tw-align-items-center">
+		<div v-if=" ! addons" class="tw-mg-b-1 tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1" />
 			<div class="tw-checkbox tw-relative tw-tooltip-wrapper">
 				<input
@@ -28,11 +33,42 @@
 		<ul>
 			<li v-for="commit of display" :key="commit.sha" class="tw-mg-b-2">
 				<div class="tw-flex tw-align-items-center tw-border-b tw-mg-b-05">
-					<div v-if="commit.active" class="tw-pill tw-mg-r-05">
+					<div v-if="! addons && commit.active" class="tw-pill tw-mg-r-05">
 						{{ t('home.changelog.current', 'Current Version') }}
 					</div>
-					<div class="tw-font-size-4">
+					<div v-if="commit.title" class="tw-font-size-4">
 						{{ commit.title }}
+					</div>
+					<div v-if="commit.author">
+						<t-list
+							phrase="home.changelog.by-line"
+							default="By: {user}"
+							class="tw-inline-flex tw-align-items-center"
+						>
+							<template #user>
+								<a
+									v-if="commit.author.html_url"
+									:href="commit.author.html_url"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="tw-inline-flex tw-align-items-center tw-link tw-link--inherit tw-mg-x-05"
+								>
+									<figure
+										v-if="commit.author.avatar_url"
+										class="tw-avatar tw-avatar--size-20 tw-mg-r-05"
+									>
+										<img
+											:src="commit.author.avatar_url"
+											class="tw-block tw-border-radius-rounded tw-image tw-image-avatar"
+										>
+									</figure>
+									{{ commit.author.login }}
+								</a>
+								<strong v-else class="tw-mg-x-05">
+									{{ commit.author.login || commit.author.name }}
+								</strong>
+							</template>
+						</t-list>
 					</div>
 					<div
 						v-if="commit.hash"
@@ -81,6 +117,7 @@ export default {
 	data() {
 		return {
 			error: false,
+			addons: this.item.addons,
 			nonversioned: false,
 			loading: false,
 			more: true,
@@ -95,21 +132,29 @@ export default {
 
 			for(const commit of this.commits) {
 				let message = commit.commit.message,
+					author = null,
 					title = old_commit;
 
-				const match = TITLE_MATCH.exec(message);
+				if ( this.addons ) {
+					title = null;
+					author = commit.author;
 
-				if ( match ) {
-					title = match[1];
-					message = message.slice(match[0].length);
-				} else if ( ! this.nonversioned )
-					continue;
+				} else {
+					const match = TITLE_MATCH.exec(message);
+
+					if ( match ) {
+						title = match[1];
+						message = message.slice(match[0].length);
+					} else if ( ! this.nonversioned )
+						continue;
+				}
 
 				const date = new Date(commit.commit.author.date),
 					active = commit.sha === window.FrankerFaceZ.version_info.commit;
 
 				out.push({
 					title,
+					author,
 					message,
 					active,
 					hash: commit.sha && commit.sha.slice(0,7),
@@ -150,7 +195,7 @@ export default {
 			this.loading = true;
 
 			try {
-				const resp = await fetch(`https://api.github.com/repos/frankerfacez/frankerfacez/commits${until ? `?until=${until}` : ''}`),
+				const resp = await fetch(`https://api.github.com/repos/frankerfacez/${this.addons ? 'add-ons' : 'frankerfacez'}/commits${until ? `?until=${until}` : ''}`),
 					data = resp.ok ? await resp.json() : null;
 
 				if ( ! data || ! Array.isArray(data) ) {
@@ -158,13 +203,19 @@ export default {
 					return;
 				}
 
+				let added = false;
+
 				for(const commit of data) {
 					if ( this.commit_ids.has(commit.sha) )
 						continue;
 
 					this.commit_ids.add(commit.sha)
 					this.commits.push(commit);
+					added = true;
 				}
+
+				if ( ! added )
+					this.more = false;
 
 				this.loading = false;
 

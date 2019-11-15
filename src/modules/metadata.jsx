@@ -1,4 +1,4 @@
-'use strict';
+	'use strict';
 
 // ============================================================================
 // Channel Metadata
@@ -114,14 +114,19 @@ export default class Metadata extends Module {
 				if ( ! data.created )
 					return null;
 
-				return `${this.i18n.t(
-					'metadata.uptime.tooltip',
-					'Stream Uptime'
-				)}<div class="pd-t-05">${this.i18n.t(
-					'metadata.uptime.since',
-					'(since {since,datetime})',
-					{since: data.created}
-				)}</div>`;
+				return [
+					this.i18n.t(
+						'metadata.uptime.tooltip',
+						'Stream Uptime'
+					),
+					<div class="tw-pd-t-05">
+						{this.i18n.t(
+							'metadata.uptime.since',
+							'(since {since,datetime})',
+							{since: data.created}
+						)}
+					</div>
+				];
 			},
 
 			async popup(data, tip) {
@@ -210,6 +215,7 @@ export default class Metadata extends Module {
 						hlsLatencyBroadcaster: temp.hls_latency_broadcaster / 1000,
 						hlsLatencyEncoder: temp.hls_latency_encoder / 1000,
 						memoryUsage: `${temp.totalMemoryNumber} MB`,
+						rate: maybe_call(player.getPlaybackRate, player) || 1,
 						playbackRate: temp.current_bitrate,
 						skippedFrames: temp.dropped_frames,
 						videoResolution: `${temp.vid_width}x${temp.vid_height}`
@@ -229,6 +235,7 @@ export default class Metadata extends Module {
 						videoWidth,
 						displayHeight,
 						displayWidth,
+						rate: maybe_call(player.getPlaybackRate, player),
 						fps: Math.floor(maybe_call(player.getVideoFrameRate, player) || 0),
 						hlsLatencyBroadcaster: player.stats?.broadcasterLatency,
 						hlsLatencyEncoder: player.stats?.transcoderLatency,
@@ -248,13 +255,20 @@ export default class Metadata extends Module {
 				return {
 					stats,
 					drift,
+					rate: stats.rate == null ? 1 : stats.rate,
 					delay: stats.hlsLatencyBroadcaster,
 					old: stats.hlsLatencyBroadcaster > 180
 				}
 			},
 
 			order: 3,
-			icon: 'ffz-i-gauge',
+
+			icon(data) {
+				if ( data.rate > 1 )
+					return 'ffz-i-fast-fw';
+
+				return 'ffz-i-gauge'
+			},
 
 			subtitle: () => this.i18n.t('metadata.player-stats.subtitle', 'Latency'),
 
@@ -293,16 +307,28 @@ export default class Metadata extends Module {
 			},
 
 			tooltip(data) {
-				const delayed = data.drift > 5000 ?
-					`${this.i18n.t(
+				const delayed = data.drift > 5000 && (<div class="tw-border-b tw-mg-b-05 tw-pd-b-05">
+					{this.i18n.t(
 						'metadata.player-stats.delay-warning',
 						'Your local clock seems to be off by roughly {count,number} seconds, which could make this inaccurate.',
 						Math.round(data.drift / 10) / 100
-					)}<hr>` :
-					'';
+					)}
+				</div>);
+
+				const ff = data.rate > 1 && (<div class="tw-border-b tw-mg-b-05 tw-pd-b-05">
+					{this.i18n.t(
+						'metadata.player-stats.rate-warning',
+						'Playing at {rate,number}x speed to reduce delay.',
+						{rate: data.rate.toFixed(2)}
+					)}
+				</div>);
 
 				if ( ! data.stats || ! data.delay )
-					return delayed + this.i18n.t('metadata.player-stats.latency-tip', 'Stream Latency');
+					return [
+						delayed,
+						ff,
+						this.i18n.t('metadata.player-stats.latency-tip', 'Stream Latency')
+					];
 
 				const stats = data.stats,
 					video_info = this.i18n.t(
@@ -312,19 +338,34 @@ export default class Metadata extends Module {
 					);
 
 				if ( data.old )
-					return `${delayed}${this.i18n.t(
-						'metadata.player-stats.video-tip',
-						'Video Information'
-					)}<div class="pd-t-05">${this.i18n.t(
-						'metadata.player-stats.broadcast-ago',
-						'Broadcast {count,number}s Ago',
-						data.delay
-					)}</div><div class="pd-t-05">${video_info}</div>`;
+					return [
+						delayed,
+						this.i18n.t(
+							'metadata.player-stats.video-tip',
+							'Video Information'
+						),
+						<div class="tw-pd-t-05">
+							{this.i18n.t(
+								'metadata.player-stats.broadcast-ago',
+								'Broadcast {count,number}s Ago',
+								data.delay
+							)}
+						</div>,
+						<div class="tw-pd-t-05">
+							{video_info}
+						</div>
+					];
 
-				return `${delayed}${this.i18n.t(
-					'metadata.player-stats.latency-tip',
-					'Stream Latency'
-				)}<div class="pd-t-05">${video_info}</div>`;
+				return [
+					delayed, ff,
+					this.i18n.t(
+						'metadata.player-stats.latency-tip',
+						'Stream Latency'
+					),
+					<div class="tw-pd-t-05">
+						{video_info}
+					</div>
+				];
 			}
 		}
 	}
@@ -396,7 +437,7 @@ export default class Metadata extends Module {
 			// Grab the element again in case it changed, somehow.
 			el = container.querySelector(`.ffz-stat[data-key="${key}"]`);
 
-			let stat, old_color;
+			let stat, old_color, old_icon;
 
 			const label = maybe_call(def.label, this, data);
 
@@ -408,7 +449,7 @@ export default class Metadata extends Module {
 				color = maybe_call(def.color, this, data) || '';
 
 			if ( ! el ) {
-				let icon = maybe_call(def.icon, this, data);
+				let icon = old_icon = maybe_call(def.icon, this, data);
 				let button = false;
 
 				if ( def.button !== false && (def.popup || def.click) ) {
@@ -608,6 +649,7 @@ export default class Metadata extends Module {
 				if ( ! stat )
 					return destroy();
 
+				old_icon = el.dataset.icon || '';
 				old_color = el.dataset.color || '';
 
 				if ( el._ffz_order !== order )
@@ -616,7 +658,17 @@ export default class Metadata extends Module {
 				if ( el.tip_content !== tooltip ) {
 					el.tip_content = tooltip;
 					if ( el.tip )
-						el.tip.element.innerHTML = tooltip;
+						setChildren(el.tip.element, tooltip);
+				}
+			}
+
+			if ( typeof def.icon === 'function' ) {
+				const icon = maybe_call(def.icon, this, data);
+				if ( typeof icon === 'string' && icon !== old_icon ) {
+					el.dataset.icon = icon;
+					const figure = el.querySelector('figure');
+					if ( figure )
+						figure.className = icon;
 				}
 			}
 

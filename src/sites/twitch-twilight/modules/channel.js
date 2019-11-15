@@ -65,6 +65,12 @@ export default class Channel extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.ChannelContext = this.fine.define(
+			'channel-context',
+			n => n.resetPrivateVariables && n.fetchChannel && n.clearBroadcastSettingsUpdateInterval,
+			['popout', 'embed-chat']
+		);
+
 		/*this.SquadController = this.fine.define(
 			'squad-controller',
 			n => n.onSquadPage && n.isValidSquad && n.handleLeaveSquad,
@@ -74,7 +80,10 @@ export default class Channel extends Module {
 
 
 	updateChannelColor(color) {
-		const parsed = color && Color.RGBA.fromHex(color);
+		let parsed = color && Color.RGBA.fromHex(color);
+		if ( ! parsed )
+			parsed = Color.RGBA.fromHex('9147FF');
+
 		if ( parsed ) {
 			this.css_tweaks.setVariable('channel-color', parsed.toCSS());
 			this.css_tweaks.setVariable('channel-color-20', parsed._a(0.2).toCSS());
@@ -94,6 +103,14 @@ export default class Channel extends Module {
 
 		//this.SquadController.on('mount', this.noAutoSquads, this);
 		//this.SquadController.on('update', this.noAutoSquads, this);
+
+		this.ChannelContext.on('mount', this.onChannelContext, this);
+		this.ChannelContext.on('update', this.onChannelContext, this);
+		this.ChannelContext.on('unmount', this.offChannelContext, this);
+		this.ChannelContext.ready((cls, instances) => {
+			for(const inst of instances)
+				this.onChannelContext(inst);
+		});
 
 		this.RaidController.ready((cls, instances) => {
 			for(const inst of instances)
@@ -147,6 +164,41 @@ export default class Channel extends Module {
 				this.onChannelMounted(inst);
 		});
 	}
+
+
+	onChannelContext(inst) {
+		if ( ! inst.state || inst.state.loading )
+			return;
+
+		const channel = inst.state.channel,
+			clip = inst.state.clip,
+			video = inst.state.video,
+
+			category = video?.game || clip?.game || channel?.stream?.game || channel?.broadcastSettings?.game;
+
+		const color = inst.state?.primaryColorHex;
+		this.updateChannelColor(color);
+
+		this.settings.updateContext({
+			channel: inst.state.channel?.login,
+			channelID: inst.state.channel?.id,
+			channelColor: color,
+			category: category?.name,
+			categoryID: category?.id
+		});
+	}
+
+	offChannelContext() {
+		this.updateChannelColor(null);
+		this.settings.updateContext({
+			channel: null,
+			channelID: null,
+			category: null,
+			categoryID: null,
+			channelColor: null
+		});
+	}
+
 
 	onChannelMounted(inst) {
 		this.wrapChannelPage(inst);

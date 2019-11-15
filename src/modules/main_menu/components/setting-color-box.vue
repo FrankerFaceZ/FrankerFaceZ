@@ -18,6 +18,14 @@
 				@input="onInput"
 			/>
 
+			<component
+				:is="item.buttons"
+				v-if="item.buttons"
+				:context="context"
+				:item="item"
+				:value="value"
+			/>
+
 			<button
 				v-if="source && source !== profile"
 				class="tw-mg-l-05 tw-button tw-button--text"

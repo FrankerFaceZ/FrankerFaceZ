@@ -73,6 +73,21 @@ export default class Player extends Module {
 
 		// Settings
 
+		this.settings.add('player.allow-catchup', {
+			default: true,
+			ui: {
+				path: 'Player > General >> General',
+				title: 'Allow the player to speed up to reduce delay.',
+				description: 'Twitch, by default, will apply a minor speed up to live video when you have a large delay to the broadcaster in order to catch back up with the live broadcast. This may result in audio distortion. Disable this to prevent the automatic speed changes.',
+				component: 'setting-check-box'
+			},
+
+			changed: val => {
+				for(const inst of this.Player.instances)
+					this.updateAutoPlaybackRate(inst, val);
+			}
+		});
+
 		this.settings.add('player.volume-scroll', {
 			default: false,
 			ui: {
@@ -80,11 +95,6 @@ export default class Player extends Module {
 				title: 'Adjust volume by scrolling with the mouse wheel.',
 				description: '*This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.*',
 				component: 'setting-check-box'
-			},
-
-			changed: val => {
-				for(const inst of this.Player.instances)
-					this.updateVolumeScroll(inst, val);
 			}
 		});
 
@@ -647,6 +657,19 @@ export default class Player extends Module {
 	}
 
 
+	updateAutoPlaybackRate(inst, val) {
+		const player = inst.props?.mediaPlayerInstance;
+		if ( ! player )
+			return;
+
+		if ( val == null )
+			val = this.settings.get('player.allow-catchup');
+
+		if ( player.setLiveSpeedUpRate )
+			player.setLiveSpeedUpRate(val ? 1.05 : 1);
+	}
+
+
 	updateHideExtensions(val) {
 		if ( val === undefined )
 			val = this.settings.get('player.ext-hide');
@@ -762,6 +785,12 @@ export default class Player extends Module {
 	updateGUI(inst) {
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
+
+		const player = inst?.props?.mediaPlayerInstance;
+		if ( player && ! this.settings.get('player.allow-catchup') ) {
+			if ( player.setLiveSpeedUpRate )
+				player.setLiveSpeedUpRate(1);
+		}
 	}
 
 

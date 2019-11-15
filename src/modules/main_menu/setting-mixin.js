@@ -184,10 +184,16 @@ export default {
 				value = this.item.process(value);
 
 			this.profile.set(this.item.setting, value);
+
+			if ( this.item.onUIChange )
+				this.item.onUIChange(value);
 		},
 
 		clear() {
 			this.profile.delete(this.item.setting);
+
+			if ( this.item.onUIChange )
+				this.item.onUIChange(this.value);
 		}
 	}
 }
