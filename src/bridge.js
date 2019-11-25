@@ -82,13 +82,26 @@ class FFZBridge extends Module {
 				ffz_type: 'loaded',
 				data: out
 			});
-		}
+
+		} else if ( msg.ffz_type === 'change' )
+			this.onChange(msg);
 	}
 
 	send(msg) { // eslint-disable-line class-methods-use-this
 		try {
 			window.parent.postMessage(msg, '*')
 		} catch(err) { this.log.error('send error', err); /* no-op */ }
+	}
+
+	onChange(msg) {
+		const key = msg.key,
+			value = msg.value,
+			deleted = msg.deleted;
+
+		if ( deleted )
+			this.settings.provider.delete(key);
+		else
+			this.settings.provider.set(key, value);
 	}
 
 	onProviderChange(key, value, deleted) {

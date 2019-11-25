@@ -111,6 +111,8 @@ export default class Metadata extends Module {
 			subtitle: () => this.i18n.t('metadata.uptime.subtitle', 'Uptime'),
 
 			tooltip(data) {
+				console.log('tool-tip');
+
 				if ( ! data.created )
 					return null;
 
@@ -444,8 +446,7 @@ export default class Metadata extends Module {
 			if ( ! label )
 				return destroy();
 
-			const tooltip = maybe_call(def.tooltip, this, data),
-				order = maybe_call(def.order, this, data),
+			const order = maybe_call(def.order, this, data),
 				color = maybe_call(def.color, this, data) || '';
 
 			if ( ! el ) {
@@ -468,7 +469,7 @@ export default class Metadata extends Module {
 						el = (<div
 							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-l-1' : 'tw-mg-l-05 ffz-mg-r--05'}`}
 							data-key={key}
-							tip_content={tooltip}
+							tip_content={null}
 						>
 							{btn = (<button
 								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border-l tw-border-t tw-border-b' : 'tw-font-size-5 tw-regular'}`}
@@ -493,7 +494,7 @@ export default class Metadata extends Module {
 						btn = popup = el = (<button
 							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-l-1' : 'tw-font-size-5 tw-regular tw-mg-l-05 ffz-mg-r--05'}`}
 							data-key={key}
-							tip_content={tooltip}
+							tip_content={null}
 						>
 							<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
 								{icon}
@@ -592,7 +593,7 @@ export default class Metadata extends Module {
 					el = (<div
 						class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-l-1"
 						data-key={key}
-						tip_content={tooltip}
+						tip_content={null}
 					>
 						{icon}
 						{stat = <span class={`${icon ? 'tw-mg-l-05 ' : ''}ffz-stat-text tw-stat__value`} />}
@@ -627,9 +628,12 @@ export default class Metadata extends Module {
 						logger: this.log,
 						live: false,
 						html: true,
-						content: () => el.tip_content,
+						content: () => maybe_call(def.tooltip, this, el._ffz_data),
 						onShow: (t, tip) => el.tip = tip,
-						onHide: () => el.tip = null,
+						onHide: () => {
+							el.tip = null;
+							el.tip_content = null;
+						},
 						popper: {
 							placement: 'bottom',
 							modifiers: {
@@ -655,10 +659,12 @@ export default class Metadata extends Module {
 				if ( el._ffz_order !== order )
 					el.style.order = el._ffz_order = order;
 
-				if ( el.tip_content !== tooltip ) {
-					el.tip_content = tooltip;
-					if ( el.tip )
+				if ( el.tip ) {
+					const tooltip = maybe_call(def.tooltip, this, data);
+					if ( el.tip_content !== tooltip ) {
+						el.tip_content = tooltip;
 						setChildren(el.tip.element, tooltip);
+					}
 				}
 			}
 

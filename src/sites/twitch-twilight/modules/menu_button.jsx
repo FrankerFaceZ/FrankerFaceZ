@@ -8,6 +8,9 @@ import {DEBUG} from 'utilities/constants';
 import {SiteModule} from 'utilities/module';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 
+import Twilight from 'site';
+
+
 export default class MenuButton extends SiteModule {
 	constructor(...args) {
 		super(...args);
@@ -34,6 +37,12 @@ export default class MenuButton extends SiteModule {
 			},
 			changed: () => this.update()
 		});
+
+		this.SunlightDash = this.fine.define(
+			'sunlight-dash',
+			n => n.getIsChannelEditor && n.getIsChannelModerator && n.getIsAdsEnabled && n.getIsSquadStreamsEnabled,
+			Twilight.SUNLIGHT_ROUTES
+		);
 
 		this.NavBar = this.fine.define(
 			'nav-bar',
@@ -171,12 +180,14 @@ export default class MenuButton extends SiteModule {
 
 		for(const inst of this.MultiController.instances)
 			this.updateButton(inst);
+
+		for(const inst of this.SunlightDash.instances)
+			this.updateButton(inst);
 	}
 
 
 	onEnable() {
 		this.NavBar.ready(() => this.update());
-
 		this.NavBar.on('mount', this.updateButton, this);
 		this.NavBar.on('update', this.updateButton, this);
 
@@ -187,6 +198,10 @@ export default class MenuButton extends SiteModule {
 		this.MultiController.ready(() => this.update());
 		this.MultiController.on('mount', this.updateButton, this);
 		this.MultiController.on('update', this.updateButton, this);
+
+		this.SunlightDash.ready(() => this.update());
+		this.SunlightDash.on('mount', this.updateButton, this);
+		this.SunlightDash.on('update', this.updateButton, this);
 
 		this.on(':clicked', () => this.important_update = false);
 
@@ -201,6 +216,7 @@ export default class MenuButton extends SiteModule {
 	updateButton(inst) {
 		const root = this.fine.getChildNode(inst);
 		let is_squad = false,
+			is_sunlight = false,
 			container = root && root.querySelector('.top-nav__menu');
 
 		if ( ! container ) {
@@ -217,6 +233,12 @@ export default class MenuButton extends SiteModule {
 			container = this.fine.searchTree(inst, n => n.classList && n.classList.contains('multiview-stream-page__header'));
 			if ( container )
 				is_squad = true;
+		}
+
+		if ( ! container && inst.getIsAdsEnabled ) {
+			container = root && root.querySelector('.sunlight-top-nav > .tw-flex');
+			if ( container )
+				is_sunlight = true;
 		}
 
 		if ( ! container )
@@ -242,7 +264,7 @@ export default class MenuButton extends SiteModule {
 			extra_pill = this.formatExtraPill();
 
 		el = (<div
-			class="ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-mg-x-05 tw-relative"
+			class={`ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-relative ${is_sunlight ? 'tw-mg-l-05 tw-mg-r-2' : 'tw-mg-x-05'}`}
 		>
 			<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
 				{btn = (<button

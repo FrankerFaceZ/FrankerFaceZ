@@ -88,6 +88,11 @@
 	text-align: center;
 	display: inline-flex;
 
+	&.disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
 	& + .ffz-mod-icon {
 		margin-left: 1px;
 	}
@@ -125,8 +130,8 @@
 	}
 
 	.ffz--action &,
-	.tw-interactable:hover &,
-	&:hover {
+	.tw-interactable:hover &:not(.disabled),
+	&:not(.disabled):hover {
 		.tw-root--theme-dark &, & {
 			&.tw-c-text-alt-2 {
 				color: inherit !important;

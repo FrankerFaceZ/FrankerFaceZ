@@ -45,18 +45,25 @@ export default class FineRouter extends Module {
 
 	_navigateTo(location) {
 		this.log.debug('New Location', location);
-		const path = location.pathname;
-		if ( path === this.location )
+		const host = window.location.host,
+			path = location.pathname;
+
+		if ( path === this.location && host === this.domain )
 			return;
 
 		this.location = path;
+		this.domain = host;
 		this._pickRoute();
 	}
 
 	_pickRoute() {
-		const path = this.location;
+		const path = this.location,
+			host = this.domain;
 
 		for(const route of this.__routes) {
+			if ( route.domain && route.domain !== host )
+				continue;
+
 			const match = route.regex.exec(path);
 			if ( match ) {
 				this.log.debug('Matching Route', route, match);
@@ -105,12 +112,19 @@ export default class FineRouter extends Module {
 	}
 
 	getRouteNames() {
+		for(const route of Object.keys(this.getRoutes()))
+			this.getRouteName(route);
+
 		return this.route_names;
 	}
 
 	getRouteName(route) {
 		if ( ! this.route_names[route] )
-			this.route_names[route] = route.replace(/(^|-)([a-z])/g, (_, spacer, letter) => `${spacer ? ' ' : ''}${letter.toLocaleUpperCase()}`);
+			this.route_names[route] = route
+				.replace(/^dash-([a-z])/, (_, letter) =>
+					`Dashboard: ${letter.toLocaleUpperCase()}`)
+				.replace(/(^|-)([a-z])/g, (_, spacer, letter) =>
+					`${spacer ? ' ' : ''}${letter.toLocaleUpperCase()}`);
 
 		return this.route_names[route];
 	}
@@ -132,11 +146,12 @@ export default class FineRouter extends Module {
 			this.emit(':updated-route-names');
 	}
 
-	route(name, path, process = true) {
+	route(name, path, domain = null, process = true) {
 		if ( typeof name === 'object' ) {
+			domain = path;
 			for(const key in name)
 				if ( has(name, key) )
-					this.route(key, name[key], false);
+					this.route(key, name[key], domain, false);
 
 			if ( process ) {
 				this.__routes.sort((a,b) => b.score - a.score);
@@ -157,6 +172,7 @@ export default class FineRouter extends Module {
 				name,
 				parts,
 				score,
+				domain,
 				regex: tokensToRegExp(parts),
 				url: tokensToFunction(parts)
 			}

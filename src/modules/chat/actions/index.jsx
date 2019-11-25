@@ -437,12 +437,11 @@ export default class Actions extends Module {
 			if ( ! data || ! data.action || ! data.appearance )
 				continue;
 
-			const ap = data.appearance || {},
-				disp = data.display || {},
+			let ap = data.appearance || {};
+			const disp = data.display || {},
+				act = this.actions[data.action];
 
-				def = this.renderers[ap.type];
-
-			if ( ! def || disp.disabled ||
+			if ( ! act || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
 				(disp.mod != null && disp.mod !== (current_user ? !!current_user.mod : false)) ||
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
@@ -453,12 +452,23 @@ export default class Actions extends Module {
 				(disp.followersOnly != null && disp.followersOnly !== current_room.followersOnly) )
 				continue;
 
+			if ( act.override_appearance ) {
+				const out = act.override_appearance.call(this, Object.assign({}, ap), data, null, current_room, current_user, mod_icons);
+				if ( out )
+					ap = out;
+			}
+
+			const def = this.renderers[ap.type];
+			if ( ! def )
+				continue;
+
 			const has_color = def.colored && ap.color,
+				disabled = maybe_call(act.disabled, this, data, null, current_room, current_user, mod_icons) || false,
 				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 				contents = def.render.call(this, ap, createElement, color);
 
 			actions.push(<button
-				class={`ffz-tooltip tw-pd-x-05 ffz-mod-icon mod-icon tw-c-text-alt-2${has_color ? ' colored' : ''}`}
+				class={`ffz-tooltip tw-pd-x-05 ffz-mod-icon mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}`}
 				data-tooltip-type="action"
 				data-action={data.action}
 				data-options={data.options ? JSON.stringify(data.options) : null}
@@ -552,19 +562,29 @@ export default class Actions extends Module {
 				} else if ( ! data.action || ! data.appearance )
 					continue;
 
-				const ap = data.appearance || {},
-					disp = data.display || {},
+				let ap = data.appearance || {};
+				const disp = data.display || {},
+					act = this.actions[data.action];
 
-					def = this.renderers[ap.type];
-
-				if ( ! def || disp.disabled ||
+				if ( ! act || disp.disabled ||
 					(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
 					(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
 					(disp.staff != null && disp.staff !== (u ? !!u.staff : false)) ||
 					(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 					continue;
 
+				if ( act.override_appearance ) {
+					const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons);
+					if ( out )
+						ap = out;
+				}
+
+				const def = this.renderers[ap.type];
+				if ( ! def )
+					continue;
+
 				const has_color = def.colored && ap.color,
+					disabled = maybe_call(act.disabled, this, data, msg, r, u, mod_icons) || false,
 					color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 					contents = def.render.call(this, ap, createElement, color);
 
@@ -572,7 +592,8 @@ export default class Actions extends Module {
 					lines.push(line = []);
 
 				const btn = (<button
-					class="ffz-tooltip ffz-tooltip--no-mouse tw-button tw-button--text"
+					class={`ffz-tooltip ffz-tooltip--no-mouse tw-button tw-button--text${disabled ? ' tw-button--disabled disabled' : ''}`}
+					disabled={disabled}
 					data-tooltip-type="action"
 					data-action={data.action}
 					data-options={data.options ? JSON.stringify(data.options) : null}
@@ -631,20 +652,30 @@ export default class Actions extends Module {
 			if ( ! data.action || ! data.appearance )
 				continue;
 
-			const ap = data.appearance || {},
-				disp = data.display || {},
+			let ap = data.appearance || {};
+			const disp = data.display || {},
 				keys = disp.keys,
+				act = this.actions[data.action];
 
-				def = this.renderers[ap.type];
-
-			if ( ! def || disp.disabled ||
+			if ( ! act || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
 				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
 				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 				continue;
 
+			if ( act.override_appearance ) {
+				const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons);
+				if ( out )
+					ap = out;
+			}
+
+			const def = this.renderers[ap.type];
+			if ( ! def )
+				continue;
+
 			const has_color = def.colored && ap.color,
+				disabled = maybe_call(act.disabled, this, data, msg, current_room, current_user, mod_icons) || false,
 				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 				contents = def.render.call(this, ap, createElement, color);
 
@@ -655,7 +686,8 @@ export default class Actions extends Module {
 
 			had_action = true;
 			list.push(<button
-				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}`}
+				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}`}
+				disabled={disabled}
 				data-tooltip-type="action"
 				data-action={data.action}
 				data-options={data.options ? JSON.stringify(data.options) : null}
@@ -799,6 +831,9 @@ export default class Actions extends Module {
 		if ( ! data )
 			return;
 
+		if ( target.classList.contains('disabled') )
+			return;
+
 		if ( ! data.definition.click ) {
 			if ( data.definition.context )
 				return this.handleContext(event);
@@ -821,6 +856,9 @@ export default class Actions extends Module {
 		const target = event.target,
 			data = this.getData(event.target);
 		if ( ! data )
+			return;
+
+		if ( target.classList.contains('disabled') )
 			return;
 
 		if ( target._ffz_tooltip$0 )

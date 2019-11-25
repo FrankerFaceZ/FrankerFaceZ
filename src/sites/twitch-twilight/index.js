@@ -42,8 +42,11 @@ export default class Twilight extends BaseSite {
 		this.populateModules();
 
 		this.web_munch.known(Twilight.KNOWN_MODULES);
+
 		this.router.route(Twilight.ROUTES);
 		this.router.routeName(Twilight.ROUTE_NAMES);
+
+		this.router.route(Twilight.DASH_ROUTES, 'dashboard.twitch.tv');
 	}
 
 	onEnable() {
@@ -205,7 +208,8 @@ Twilight.CHAT_ROUTES = [
 	'dash',
 	'embed-chat',
 	'squad',
-	'command-center'
+	'command-center',
+	'dash-stream-manager'
 ];
 
 
@@ -219,6 +223,47 @@ Twilight.ROUTE_NAMES = {
 	'user-video': 'Channel Video'
 };
 
+
+Twilight.SUNLIGHT_ROUTES = [
+	'dash-stream-manager',
+	'dash-channel-analytics',
+	'dash-stream-summary',
+	'dash-achievements',
+	'dash-roles',
+	'dash-activity',
+	'dash-channel-points',
+	'dash-video-producer',
+	'dash-edit-video',
+	'dash-collections',
+	'dash-edit-collection',
+	'dash-clips',
+	'dash-settings-moderation',
+	'dash-settings-channel',
+	'dash-settings-revenue',
+	'dash-extensions',
+	'dash-streaming-tools'
+];
+
+
+Twilight.DASH_ROUTES = {
+	'dash-stream-manager': '/u/:userName/stream-manager',
+	'dash-channel-analytics': '/u/:userName/channel-analytics',
+	'dash-stream-summary': '/u/:userName/stream-summary',
+	'dash-achievements': '/u/:userName/achievements',
+	'dash-roles': '/u/:userName/community/roles',
+	'dash-activity': '/u/:userName/community/activity',
+	'dash-channel-points': '/u/:userName/community/channel-points',
+	'dash-video-producer': '/u/:userName/content/video-producer',
+	'dash-edit-video': '/u/:userName/content/video-producer/edit/:videoID',
+	'dash-collections': '/u/:userName/content/collections',
+	'dash-edit-collection': '/u/:userName/content/collections/:collectionID',
+	'dash-clips': '/u/:userName/content/clips',
+	'dash-settings-moderation': '/u/:userName/settings/moderation',
+	'dash-settings-channel': '/u/:userName/settings/channel',
+	'dash-settings-revenue': '/u/:userName/settings/revenue',
+	'dash-extensions': '/u/:userName/extensions',
+	'dash-streaming-tools': '/u/:userName/broadcast',
+};
 
 Twilight.ROUTES = {
 	'front-page': '/',

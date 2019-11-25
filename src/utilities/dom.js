@@ -8,7 +8,7 @@ const ATTRS = [
 	'challenge', 'charset', 'checked', 'cite', 'class', 'code', 'codebase',
 	'color', 'cols', 'colspan', 'content', 'contenteditable', 'contextmenu',
 	'controls', 'coords', 'crossorigin', 'data', 'data-*', 'datetime',
-	'default', 'defer', 'dir', 'dirname', 'disabled', 'download', 'draggable',
+	'default', 'defer', 'dir', 'dirname', 'download', 'draggable',
 	'dropzone', 'enctype', 'for', 'form', 'formaction', 'headers', 'height',
 	'hidden', 'high', 'href', 'hreflang', 'http-equiv', 'icon', 'id',
 	'integrity', 'ismap', 'itemprop', 'keytype', 'kind', 'label', 'lang',

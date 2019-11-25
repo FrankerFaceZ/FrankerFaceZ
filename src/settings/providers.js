@@ -180,12 +180,14 @@ export class LocalStorageProvider extends SettingsProvider {
 		this._cached.set(key, value);
 		localStorage.setItem(this.prefix + key, JSON.stringify(value));
 		this.broadcast({type: 'set', key});
+		this.emit('set', key, value, false);
 	}
 
 	delete(key) {
 		this._cached.delete(key);
 		localStorage.removeItem(this.prefix + key);
 		this.broadcast({type: 'delete', key});
+		this.emit('set', key, undefined, true);
 	}
 
 	has(key) {

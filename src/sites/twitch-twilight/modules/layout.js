@@ -101,6 +101,22 @@ export default class Layout extends Module {
 			changed: val => this.css_tweaks.toggle('portrait-swapped', val)
 		});
 
+		this.settings.add('layout.use-portrait-meta', {
+			requires: ['layout.inject-portrait', 'player.theatre.metadata'],
+			process(ctx) {
+				return ctx.get('layout.inject-portrait') && ctx.get('player.theatre.metadata')
+			},
+			changed: val => this.css_tweaks.toggle('portrait-metadata', val)
+		});
+
+		this.settings.add('layout.use-portrait-meta-top', {
+			requires: ['layout.use-portrait-meta', 'layout.portrait-invert'],
+			process(ctx) {
+				return ctx.get('layout.use-portrait-meta') && ! ctx.get('layout.portrait-invert')
+			},
+			changed: val => this.css_tweaks.toggle('portrait-metadata-top', val)
+		});
+
 		this.settings.add('layout.show-portrait-chat', {
 			requires: ['layout.use-portrait', 'layout.portrait-extra-height', 'layout.portrait-extra-width'],
 			process() {
@@ -168,6 +184,8 @@ export default class Layout extends Module {
 
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
 		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
+		this.css_tweaks.toggle('portrait-metadata', this.settings.get('layout.use-portrait-meta'));
+		this.css_tweaks.toggle('portrait-metadata-top', this.settings.get('layout.use-portrait-meta-top'));
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
 		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
 
