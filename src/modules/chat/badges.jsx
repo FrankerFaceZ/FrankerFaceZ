@@ -31,18 +31,18 @@ const CSS_BADGES = {
 
 	2: {
 		staff: { 1: { color: '#000' } },
-		admin: { 1: { color: '#FFCA5F' } },
+		admin: { 1: { color: '#DB7600' } },
 		broadcaster: { 1: { color: '#E91916' } },
-		moderator: { 1: { color: '#00FA05' } },
+		moderator: { 1: { color: '#00AD03' } },
 		global_mod: { 1: { color: '#006441' } },
-		twitchbot: { 1: { color: '#00FA05' } },
+		twitchbot: { 1: { color: '#00AD03' } },
 		partner: { 1: { color: '#9146FF' } },
 
 		subscriber: { 0: { color: '#8205B4'}, 1: { color: '#8205B4' } },
 
-		vip: { 1: { color: '#FA1ED2' } },
+		vip: { 1: { color: '#E005B9' } },
 		turbo: { 1: { color: '#59399A' } },
-		premium: { 1: { color: '#00A8E1' } },
+		premium: { 1: { color: '#00A0D6' } },
 		'anonymous-cheerer': { 1: { color: '#4B367C' } },
 		'clip-champ': { 1: { color: '#9146FF' } }
 	}

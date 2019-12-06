@@ -10,7 +10,8 @@ import Module from 'utilities/module';
 import RichContent from './rich_content';
 import { has } from 'utilities/object';
 import { KEYS } from 'utilities/constants';
-import { print_duration } from 'src/utilities/time';
+import { print_duration } from 'utilities/time';
+import { FFZEvent } from 'utilities/events';
 import { getRewardTitle, getRewardCost, isHighlightedReward } from './points';
 
 const SUB_TIERS = {
@@ -30,8 +31,6 @@ export default class ChatLine extends Module {
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject(RichContent);
-
-		this.inject('viewer_cards');
 
 		this.inject('chat.actions');
 
@@ -404,10 +403,20 @@ other {# messages were deleted by a moderator.}
 								} catch(err) { /* nothing~! */ }
 							}
 
-							/*if ( event.ctrlKey )
-								t.viewer_cards.openCard(r, target_user, msg, event);
-							else*/
-								this.props.onUsernameClick(target_user.login, 'chat_message', msg.id, target.getBoundingClientRect().bottom);
+							const fe = new FFZEvent({
+								inst: this,
+								event,
+								message: msg,
+								user: target_user,
+								room: r
+							});
+
+							t.emit('chat:user-click', fe);
+
+							if ( fe.defaultPrevented )
+								return;
+
+							this.props.onUsernameClick(target_user.login, 'chat_message', msg.id, target.getBoundingClientRect().bottom);
 						}
 					else
 						this.ffz_user_click_handler = this.openViewerCard || this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);

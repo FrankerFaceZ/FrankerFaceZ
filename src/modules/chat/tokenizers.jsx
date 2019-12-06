@@ -941,17 +941,18 @@ const render_emote = (token, createElement, wrapped) => {
 		if ( wrapped )
 			return emote;
 
-		return createElement('span', {
+		return createElement('div', {
+			className: 'ffz--inline',
 			attrs: {
-				'data-a-target': 'emote-name'
+				'data-test-selector': 'emote-button'
 			}
 		}, [emote]);
 	}
 
-	return createElement('span', {
-		class: `${EMOTE_CLASS} modified-emote`,
+	return createElement('div', {
+		class: 'ffz--inline modified-emote',
 		attrs: {
-			'data-a-target': 'emote-name',
+			'data-test-selector': 'emote-button',
 			'data-provider': token.provider,
 			'data-id': token.id,
 			'data-set': token.set,
@@ -994,12 +995,12 @@ export const AddonEmotes = {
 			if ( wrapped )
 				return emote;
 
-			return (<span data-a-target="emote-name">{emote}</span>);
+			return (<div class="ffz--inline" data-test-selector="emote-button">{emote}</div>);
 		}
 
-		return (<span
-			class={`${EMOTE_CLASS} modified-emote`}
-			data-a-target="emote-name"
+		return (<div
+			class="ffz--inline modified-emote"
+			data-test-selector="emote-button"
 			data-provider={token.provider}
 			data-id={token.id}
 			data-set={token.set}
@@ -1008,7 +1009,7 @@ export const AddonEmotes = {
 		>
 			{emote}
 			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement, true)}</span>)}
-		</span>);
+		</div>);
 	},
 
 	async tooltip(target, tip) {
