@@ -177,6 +177,14 @@ export default class TwitchData extends Module {
 		return get('data.user', data);
 	}
 
+	async getLastBroadcast(id, login) {
+		const data = await this.queryApollo(
+			require('./data/last-broadcast.gql'),
+			{ id, login }
+		);
+
+		return get('data.user.lastBroadcast', data);
+	}
 
 	// ========================================================================
 	// Broadcast ID

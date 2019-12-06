@@ -20,7 +20,6 @@ import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import Input from './input';
 import ViewerCards from './viewer_card';
-import { isHighlightedReward } from './points';
 
 
 const REGEX_EMOTES = {

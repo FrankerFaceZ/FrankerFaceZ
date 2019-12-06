@@ -23,8 +23,8 @@ const CLASSES = {
 
 	'prime-offers': '.top-nav__prime',
 
-	'player-ext': '.highwind-video-player .extension-taskbar,.highwind-video-player .extension-container,.highwind-video-player .extensions-dock__layout,.highwind-video-player .extensions-notifications,.highwind-video-player .extensions-video-overlay-size-container',
-	'player-ext-hover': '.highwind-video-player__overlay[data-controls="false"] .extension-taskbar,.highwind-video-player__overlay[data-controls="false"] .extension-container,.highwind-video-player__overlay[data-controls="false"] .extensions-dock__layout,.highwind-video-player__overlay[data-controls="false"] .extensions-notifications,.highwind-video-player__overlay[data-controls="false"] .extensions-video-overlay-size-container',
+	'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
+	'player-ext-hover': '.video-player__overlay[data-controls="false"] .extension-taskbar,.video-player__overlay[data-controls="false"] .extension-container,.video-player__overlay[data-controls="false"] .extensions-dock__layout,.video-player__overlay[data-controls="false"] .extensions-notifications,.video-player__overlay[data-controls="false"] .extensions-video-overlay-size-container',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
@@ -65,7 +65,7 @@ export default class CSSTweaks extends Module {
 
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggleHide('side-nav', !val)
+			changed: val => this.toggle('hide-side-nav', !val)
 		});
 
 		this.settings.add('layout.side-nav.show-avatars', {
@@ -298,7 +298,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('theatre-nav', this.settings.get('layout.theatre-navigation'));
 
 		this.toggle('hide-side-nav-avatars', ! this.settings.get('layout.side-nav.show-avatars'));
-		this.toggleHide('side-nav', !this.settings.get('layout.side-nav.show'));
+		this.toggle('hide-side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));

@@ -527,7 +527,7 @@ other {# messages were deleted by a moderator.}
 						}, the_list);
 					}
 
-					cls = `user-notice-line tw-pd-y-05 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
+					cls = `ffz-notice-line user-notice-line tw-pd-y-05 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {
 							className: 'tw-flex tw-c-text-alt-2',
@@ -590,7 +590,7 @@ other {# messages were deleted by a moderator.}
 							count: msg.sub_total
 						}));
 
-					cls = `user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
+					cls = `ffz-notice-line user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {className: 'tw-flex tw-c-text-alt-2'}, [
 							t.chat.context.get('chat.subs.compact') ? null :
@@ -652,7 +652,7 @@ other {# messages were deleted by a moderator.}
 							));
 						}
 
-						cls = `user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
+						cls = `ffz-notice-line user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--subscribe-line${show_class ? ' ffz--deleted-message' : ''}`;
 						out = [
 							e('div', {className: 'tw-flex tw-c-text-alt-2'}, [
 								t.chat.context.get('chat.subs.compact') ? null :
@@ -690,7 +690,7 @@ other {# messages were deleted by a moderator.}
 						]);
 
 					if ( system_msg ) {
-						cls = `user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line${show_class ? ' ffz--deleted-message' : ''}`;
+						cls = `ffz-notice-line user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line${show_class ? ' ffz--deleted-message' : ''}`;
 						out = [
 							system_msg,
 							out && e('div', {
@@ -710,7 +710,7 @@ other {# messages were deleted by a moderator.}
 							t.i18n.formatNumber(getRewardCost(msg.ffz_reward))
 						]);
 
-					cls = `ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${isHighlightedReward(msg.ffz_reward) ? ' ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}`;
+					cls = `ffz-notice-line ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${isHighlightedReward(msg.ffz_reward) ? ' ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
 							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),

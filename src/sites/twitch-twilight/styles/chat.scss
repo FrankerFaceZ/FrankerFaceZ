@@ -164,9 +164,11 @@
 	background-color: var(--ffz-channel-color-20);
 }
 
-.ffz--points-line {
-	border-left: 4px solid var(--ffz-channel-color);
+.ffz-notice-line {
+	border-left: 4px solid var(--ffz-channel-color) !important;
+}
 
+.ffz--points-line {
 	.ffz--points-reward,
 	.ffz--points-cost {
 		font-weight: 600;

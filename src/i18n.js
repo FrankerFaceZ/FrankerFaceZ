@@ -6,7 +6,7 @@
 
 import Parser from '@ffz/icu-msgparser';
 
-import {SERVER, DEBUG} from 'utilities/constants';
+import {DEBUG} from 'utilities/constants';
 import {get, pick_random, shallow_copy, deep_copy} from 'utilities/object';
 import Module from 'utilities/module';
 

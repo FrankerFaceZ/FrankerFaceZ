@@ -4,27 +4,48 @@
 // Badge Handling
 // ============================================================================
 
-import {NEW_API, API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, SERVER, API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
 import Module from 'utilities/module';
+import { ColorAdjuster } from 'src/utilities/color';
 
-export const CSS_BADGES = {
-	staff: { 1: { color: '#200f33', svg: true, trans: { color: '#6441a5' } } },
-	admin: { 1: { color: '#faaf19', svg: true  } },
-	global_mod: { 1: { color: '#0c6f20', svg: true } },
-	broadcaster: { 1: { color: '#e71818', svg: true } },
-	moderator: { 1: { color: '#34ae0a', svg: true } },
-	twitchbot: { 1: { color: '#34ae0a' } },
-	partner: { 1: { color: 'transparent', trans: { image: true, color: '#6441a5' } } },
-	'clip-champ': { 1: { color: '#6441a5'} },
+const CSS_BADGES = {
+	1: {
+		staff: { 1: { color: '#200f33', svg: true, trans: { color: '#6441a5' } } },
+		admin: { 1: { color: '#faaf19', svg: true  } },
+		global_mod: { 1: { color: '#0c6f20', svg: true } },
+		broadcaster: { 1: { color: '#e71818', svg: true } },
+		moderator: { 1: { color: '#34ae0a', svg: true } },
+		twitchbot: { 1: { color: '#34ae0a' } },
+		partner: { 1: { color: 'transparent', trans: { image: true, color: '#6441a5' } } },
+		'clip-champ': { 1: { color: '#6441a5'} },
 
-	vip: { 1: { color: '#b33ff0', trans: { color: 'transparent', invert: false}} },
-	turbo: { 1: { color: '#6441a5', svg: true } },
-	premium: { 1: { color: '#009cdc' } },
+		vip: { 1: { color: '#b33ff0', trans: { color: 'transparent', invert: false}} },
+		turbo: { 1: { color: '#6441a5', svg: true } },
+		premium: { 1: { color: '#009cdc' } },
 
-	subscriber: { 0: { color: '#6441a5' }, 1: { color: '#6441a5' }},
+		subscriber: { 0: { color: '#6441a5' }, 1: { color: '#6441a5' }},
+	},
+
+	2: {
+		staff: { 1: { color: '#000' } },
+		admin: { 1: { color: '#FFCA5F' } },
+		broadcaster: { 1: { color: '#E91916' } },
+		moderator: { 1: { color: '#00FA05' } },
+		global_mod: { 1: { color: '#006441' } },
+		twitchbot: { 1: { color: '#00FA05' } },
+		partner: { 1: { color: '#9146FF' } },
+
+		subscriber: { 0: { color: '#8205B4'}, 1: { color: '#8205B4' } },
+
+		vip: { 1: { color: '#FA1ED2' } },
+		turbo: { 1: { color: '#59399A' } },
+		premium: { 1: { color: '#00A8E1' } },
+		'anonymous-cheerer': { 1: { color: '#4B367C' } },
+		'clip-champ': { 1: { color: '#9146FF' } }
+	}
 }
 
 export const BADGE_POSITIONS = {
@@ -41,7 +62,7 @@ export const BADGE_POSITIONS = {
 
 
 const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
-	BASE_IMAGE = 'https://cdn.frankerfacez.com/badges/twitch/',
+	BASE_IMAGE = `${SERVER}/static/badges/twitch/`,
 	CSS_MASK_IMAGE = IS_WEBKIT ? 'webkitMaskImage' : 'maskImage',
 
 	CSS_TEMPLATES = {
@@ -70,9 +91,9 @@ export function generateOverrideCSS(data, style) {
 }
 
 
-export function generateBadgeCSS(badge, version, data, style, is_dark, scale = 1) {
+export function generateBadgeCSS(badge, version, data, style, is_dark, badge_version = 2, color_fixer, scale = 1) {
 	let color = data.color || 'transparent',
-		base_image = data.image || `${BASE_IMAGE}${badge}${data.svg ? '.svg' : `/${version}/`}`,
+		base_image = data.image || `${BASE_IMAGE}${badge_version}/${badge}${data.svg ? '.svg' : `/${version}/`}`,
 		trans = false,
 		invert = false,
 		svg, image, image_set;
@@ -123,6 +144,9 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, scale = 1
 			image_set = svg;
 	}
 
+	if ( color_fixer && color && color !== 'transparent' )
+		color = color_fixer.process(color) || color;
+
 	// TODO: Fix the click_url name once we actually support badge clicking.
 	return `${data.__click_url ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
 		scale,
@@ -148,6 +172,29 @@ export default class Badges extends Module {
 		this.badges = {};
 		this.twitch_badges = {};
 
+		this.settings.add('chat.badges.version', {
+			default: 2,
+			ui: {
+				path: 'Chat > Badges >> tabs ~> Appearance',
+				title: 'Version',
+				component: 'setting-select-box',
+				data: [
+					{value: 1, title: '1 (Pre December 2019)'},
+					{value: 2, title: '2 (Current)'}
+				]
+			}
+		});
+
+		this.settings.add('chat.badges.fix-colors', {
+			default: true,
+			ui: {
+				path: 'Chat > Badges >> tabs ~> Appearance',
+				title: 'Adjust badge colors for visibility.',
+				description: 'Ensures that badges are visible against the current background.\n\n**Note:** Only affects badges with custom rendering. Subscriber badges, bit badges, etc. are not affected.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.badges.hidden', {
 			default: {},
 			type: 'object_merge',
@@ -169,13 +216,13 @@ export default class Badges extends Module {
 		})
 
 		this.settings.add('chat.badges.style', {
-			default: 0,
+			default: 1,
 			ui: {
 				path: 'Chat > Badges >> tabs ~> Appearance',
 				title: 'Style',
 				component: 'setting-select-box',
 				data: [
-					{value: 0, title: 'Default'},
+					{value: 0, title: 'Square'},
 					{value: 1, title: 'Rounded'},
 					{value: 2, title: 'Circular'},
 					{value: 3, title: 'Circular (Color Only)'},
@@ -256,6 +303,8 @@ export default class Badges extends Module {
 		this.parent.context.on('changed:chat.badges.style', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.is-dark', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.tooltips-dark', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:chat.badges.version', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:chat.badges.fix-colors', this.rebuildColoredBadges, this);
 
 		this.rebuildAllCSS();
 		this.loadGlobalBadges();
@@ -509,7 +558,29 @@ export default class Badges extends Module {
 	}
 
 
+	rebuildColor() {
+		if ( this.parent.context.get('chat.badges.fix-colors') ) {
+			this.color_fixer = new ColorAdjuster(
+				this.parent.context.get('theme.is-dark') ? '#181818' : '#FFFFFF',
+				1,
+				2.5
+			);
+		} else
+			this.color_fixer = null;
+	}
+
+
+	rebuildColoredBadges() {
+		this.rebuildColor();
+
+		this.buildBadgeCSS();
+		this.buildTwitchCSSBadgeCSS();
+	}
+
+
 	rebuildAllCSS() {
+		this.rebuildColor();
+
 		for(const room of this.parent.iterateRooms()) {
 			room.buildBadgeCSS();
 			room.buildModBadgeCSS();
@@ -621,7 +692,7 @@ export default class Badges extends Module {
 				const data = this.badges[key],
 					selector = `.ffz-badge[data-badge="${key}"]`;
 
-				out.push(`${selector}{${generateBadgeCSS(key, 0, data, style, is_dark)}}`);
+				out.push(`${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer)}}`);
 				out.push(`.ffz-badge[data-replaced="${key}"]{${generateOverrideCSS(data, style, is_dark)}}`);
 			}
 
@@ -686,18 +757,21 @@ export default class Badges extends Module {
 
 	buildTwitchCSSBadgeCSS() {
 		const style = this.parent.context.get('chat.badges.style'),
-			is_dark = this.parent.context.get('theme.is-dark');
+			is_dark = this.parent.context.get('theme.is-dark'),
+
+			badge_version = this.parent.context.get('chat.badges.version'),
+			versioned = CSS_BADGES[badge_version] || {};
 
 		const out = [];
-		for(const key in CSS_BADGES)
-			if ( has(CSS_BADGES, key) ) {
-				const data = CSS_BADGES[key];
+		for(const key in versioned)
+			if ( has(versioned, key) ) {
+				const data = versioned[key];
 				for(const version in data)
 					if ( has(data, version) ) {
 						const d = data[version],
 							selector = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
-						out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark)}}`);
+						out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer)}}`);
 					}
 			}
 
@@ -709,10 +783,13 @@ export default class Badges extends Module {
 		if ( ! this.twitch_badges )
 			this.style.delete('twitch-badges');
 
+		const badge_version = this.parent.context.get('chat.badges.version'),
+			versioned = CSS_BADGES[badge_version] || {};
+
 		const out = [];
 		for(const key in this.twitch_badges)
 			if ( has(this.twitch_badges, key) ) {
-				if ( has(CSS_BADGES, key) )
+				if ( has(versioned, key) )
 					continue;
 
 				const versions = this.twitch_badges[key];
