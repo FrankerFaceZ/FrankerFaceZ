@@ -1468,7 +1468,7 @@ export default class ChatHook extends Module {
 
 		cls.prototype._ffz_was_here = true;
 
-		cls.prototype.ffzGetEmotes = function() {
+		/*cls.prototype.ffzGetEmotes = function() {
 			const emote_map = this.client && this.client.session && this.client.session.emoteMap;
 			if ( this._ffz_cached_map === emote_map )
 				return this._ffz_cached_emotes;
@@ -1489,7 +1489,7 @@ export default class ChatHook extends Module {
 					}
 
 			return emotes;
-		}
+		}*/
 
 
 		cls.prototype._ffzInstall = function() {
@@ -1501,8 +1501,8 @@ export default class ChatHook extends Module {
 			const inst = this,
 				old_send = this.sendMessage;
 
-			inst.sendMessage = function(raw_msg) {
-				const msg = raw_msg.replace(/\n/g, '');
+			inst.sendMessage = function(msg) {
+				msg = msg.replace(/\s+/g, ' ');
 
 				if ( msg.startsWith('/ffz') ) {
 					inst.addMessage({
@@ -1523,7 +1523,7 @@ export default class ChatHook extends Module {
 				if ( event.defaultPrevented )
 					return;
 
-				return old_send.call(this, msg);
+				return old_send.call(this, event.message);
 			}
 		}
 
@@ -1556,7 +1556,7 @@ export default class ChatHook extends Module {
 
 				const old_chat = this.onChatMessageEvent;
 				this.onChatMessageEvent = function(e) {
-					if ( e && e.sentByCurrentUser ) {
+					/*if ( e && e.sentByCurrentUser ) {
 						try {
 							e.message.user.emotes = findEmotes(
 								e.message.body,
@@ -1566,7 +1566,7 @@ export default class ChatHook extends Module {
 						} catch(err) {
 							t.log.capture(err, {extra: e});
 						}
-					}
+					}*/
 
 					return old_chat.call(i, e);
 				}
@@ -1574,7 +1574,7 @@ export default class ChatHook extends Module {
 
 				const old_action = this.onChatActionEvent;
 				this.onChatActionEvent = function(e) {
-					if ( e && e.sentByCurrentUser ) {
+					/*if ( e && e.sentByCurrentUser ) {
 						try {
 							e.message.user.emotes = findEmotes(
 								e.message.body,
@@ -1584,7 +1584,7 @@ export default class ChatHook extends Module {
 						} catch(err) {
 							t.log.capture(err, {extra: e});
 						}
-					}
+					}*/
 
 					return old_action.call(i, e);
 				}
@@ -2279,7 +2279,7 @@ export function formatBitsConfig(config) {
 }
 
 
-export function findEmotes(msg, emotes) {
+/*export function findEmotes(msg, emotes) {
 	const out = {};
 	let idx = 0;
 
@@ -2300,7 +2300,7 @@ export function findEmotes(msg, emotes) {
 	}
 
 	return out;
-}
+}*/
 
 
 function extractCheerPrefix(parts) {
