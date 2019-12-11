@@ -16,6 +16,7 @@ export default class ChannelBar extends Module {
 
 		this.should_enable = true;
 
+		this.inject('i18n');
 		this.inject('settings');
 		this.inject('site.css_tweaks');
 		this.inject('site.fine');
@@ -45,6 +46,11 @@ export default class ChannelBar extends Module {
 			changed: val => this.css_tweaks.toggle('channel-metadata-top', val)
 		});
 
+		this.VideoBar = this.fine.define(
+			'video-bar',
+			n => n.props && n.props.getLastVideoOffset && n.renderTrackedHighlightButton,
+			['video', 'user-video']
+		);
 
 		this.ChannelBar = this.fine.define(
 			'channel-bar',
@@ -56,6 +62,11 @@ export default class ChannelBar extends Module {
 	onEnable() {
 		this.css_tweaks.toggle('channel-metadata-top', this.settings.get('channel.metadata.force-above'));
 
+		this.on('i18n:update', () => {
+			for(const bar of this.VideoBar.instances)
+				this.updateVideoBar(bar);
+		});
+
 		this.ChannelBar.on('unmount', this.unmountChannelBar, this);
 		this.ChannelBar.on('mount', this.updateChannelBar, this);
 		this.ChannelBar.on('update', this.updateChannelBar, this);
@@ -64,6 +75,35 @@ export default class ChannelBar extends Module {
 			for(const inst of instances)
 				this.updateChannelBar(inst);
 		});
+
+
+		//this.VideoBar.on('unmount', this.unmountVideoBar, this);
+		this.VideoBar.on('mount', this.updateVideoBar, this);
+		this.VideoBar.on('update', this.updateVideoBar, this);
+
+		this.VideoBar.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updateVideoBar(inst);
+		});
+
+	}
+
+
+	updateVideoBar(inst) {
+		const container = this.fine.getChildNode(inst),
+			timestamp = container && container.querySelector('[data-test-selector="date"]');
+
+		if ( ! timestamp )
+			return;
+
+		const published = get('props.video.publishedAt', inst);
+
+		if ( ! published )
+			timestamp.classList.toggle('ffz-tooltip', false);
+		else {
+			timestamp.classList.toggle('ffz-tooltip', true);
+			timestamp.dataset.title = this.i18n.t('video.published-on', 'Published on: {date,date}', {date: published});
+		}
 	}
 
 

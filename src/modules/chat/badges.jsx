@@ -4,7 +4,7 @@
 // Badge Handling
 // ============================================================================
 
-import {NEW_API, SERVER, API_SERVER, IS_WEBKIT, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, SERVER, API_SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
@@ -126,11 +126,11 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 	if ( style !== 3 && style !== 4 ) {
 		svg = base_image.endsWith('.svg');
 		if ( data.urls )
-			image = `url("${data.urls[1]}")`;
+			image = `url("${data.urls[scale]}")`;
 		else
 			image = `url("${svg ? base_image : `${base_image}${scale}${trans ? '_trans' : ''}.png`}")`;
 
-		if ( data.urls ) {
+		if ( data.urls && scale === 1 ) {
 			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[2] ? `, url("${data.urls[2]}") 2x` : ''}${data.urls[4] ? `, url("${data.urls[4]}") 4x` : ''})`
 
 		} else if ( ! svg && scale < 4 ) {
@@ -141,7 +141,7 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 				image_set = `${WEBKIT}image-set(${image} 1x, url("${base_image}4${trans ? '_trans' : ''}.png") 2x)`;
 
 		} else
-			image_set = svg;
+			image_set = image;
 	}
 
 	if ( color_fixer && color && color !== 'transparent' )
@@ -149,7 +149,7 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 
 	// TODO: Fix the click_url name once we actually support badge clicking.
 	return `${data.__click_url ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
-		scale,
+		scale: 1,
 		color,
 		image,
 		image_set,
@@ -171,6 +171,17 @@ export default class Badges extends Module {
 		this.style = new ManagedStyle('badges');
 		this.badges = {};
 		this.twitch_badges = {};
+
+		if ( IS_FIREFOX )
+			this.settings.add('chat.badges.media-queries', {
+				default: true,
+				ui: {
+					path: 'Chat > Badges >> tabs ~> Appearance',
+					title: 'Use @media queries to support High-DPI Badge images in Mozilla Firefox.',
+					description: 'This is required to see high-DPI badges on Firefox because Firefox still has yet to support `image-set()` after more than five years. It may be less reliable.',
+					component: 'setting-check-box'
+				}
+			});
 
 		this.settings.add('chat.badges.version', {
 			default: 2,
@@ -304,6 +315,7 @@ export default class Badges extends Module {
 		this.parent.context.on('changed:theme.is-dark', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.tooltips-dark', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.version', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:chat.badges.media-queries', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.fix-colors', this.rebuildColoredBadges, this);
 
 		this.rebuildAllCSS();
@@ -684,7 +696,8 @@ export default class Badges extends Module {
 
 	buildBadgeCSS() {
 		const style = this.parent.context.get('chat.badges.style'),
-			is_dark = this.parent.context.get('theme.is-dark');
+			is_dark = this.parent.context.get('theme.is-dark'),
+			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries');
 
 		const out = [];
 		for(const key in this.badges)
@@ -692,8 +705,14 @@ export default class Badges extends Module {
 				const data = this.badges[key],
 					selector = `.ffz-badge[data-badge="${key}"]`;
 
-				out.push(`${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer)}}`);
 				out.push(`.ffz-badge[data-replaced="${key}"]{${generateOverrideCSS(data, style, is_dark)}}`);
+
+				if ( use_media ) {
+					out.push(`@media (max-resolution: 99dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 1)}}}`);
+					out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 2)}}}`);
+					out.push(`@media (min-resolution: 200dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 4)}}}`);
+				} else
+					out.push(`${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer)}}`);
 			}
 
 		this.style.set('ext-badges', out.join('\n'));
@@ -758,6 +777,7 @@ export default class Badges extends Module {
 	buildTwitchCSSBadgeCSS() {
 		const style = this.parent.context.get('chat.badges.style'),
 			is_dark = this.parent.context.get('theme.is-dark'),
+			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries'),
 
 			badge_version = this.parent.context.get('chat.badges.version'),
 			versioned = CSS_BADGES[badge_version] || {};
@@ -771,7 +791,12 @@ export default class Badges extends Module {
 						const d = data[version],
 							selector = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
-						out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer)}}`);
+						if ( use_media ) {
+							out.push(`@media (max-resolution: 99dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 1)}}}`);
+							out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 2)}}}`);
+							out.push(`@media (min-resolution: 200dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 4)}}}`);
+						} else
+							out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer)}}`);
 					}
 			}
 
@@ -784,6 +809,7 @@ export default class Badges extends Module {
 			this.style.delete('twitch-badges');
 
 		const badge_version = this.parent.context.get('chat.badges.version'),
+			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries'),
 			versioned = CSS_BADGES[badge_version] || {};
 
 		const out = [];
@@ -795,9 +821,10 @@ export default class Badges extends Module {
 				const versions = this.twitch_badges[key];
 				for(const version in versions)
 					if ( has(versions, version) ) {
-						const data = versions[version];
+						const data = versions[version],
+							selector = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
-						out.push(`.ffz-badge[data-badge="${key}"][data-version="${version}"] {
+						out.push(`${selector} {
 			background-color: transparent;
 			filter: none;
 			${WEBKIT}mask-image: none;
@@ -808,7 +835,16 @@ export default class Badges extends Module {
 				url("${data.image2x}") 2x,
 				url("${data.image4x}") 4x
 			);
-		}`)
+		}`);
+
+						if ( use_media ) {
+							out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) { ${selector} {
+								background-image: url("${data.image2x});
+							}}`);
+							out.push(`@media (min-resolution: 200dpi) { ${selector} {
+								background-image: url("${data.image4x});
+							}}`);
+						}
 					}
 			}
 

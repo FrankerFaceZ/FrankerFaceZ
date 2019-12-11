@@ -6,6 +6,10 @@
 
 	& > .tw-flex-column > .tw-full-height {
 		.ffz--portrait-invert & {
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 0;
 			top: var(--ffz-chat-height) !important;
 		}
 

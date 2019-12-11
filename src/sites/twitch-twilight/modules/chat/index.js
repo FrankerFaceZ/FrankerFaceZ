@@ -252,10 +252,20 @@ export default class ChatHook extends Module {
 
 		// Settings
 
+		this.settings.add('chat.hide-community-highlights', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Hide all Community Highlights from the top of chat.',
+				component: 'setting-check-box',
+				description: 'Community Highlights are polls, community gift subs, etc. that float over the top of chat temporarily with no way to close them.'
+			}
+		});
+
 		this.settings.add('chat.subs.gift-banner', {
 			default: true,
 			ui: {
-				path: 'Chat > Appearance >> Subscriptions',
+				path: 'Chat > Appearance >> Community',
 				title: 'Display a banner at the top of chat when a mass gift sub happens.',
 				component: 'setting-check-box'
 			}
@@ -264,7 +274,7 @@ export default class ChatHook extends Module {
 		this.settings.add('chat.community-chest.show', {
 			default: true,
 			ui: {
-				path: 'Chat > Appearance >> Community Chest',
+				path: 'Chat > Appearance >> Community',
 				title: 'Display the Community Gift Chest banner.',
 				component: 'setting-check-box'
 			}
@@ -684,6 +694,9 @@ export default class ChatHook extends Module {
 
 		this.css_tweaks.toggle('clickable-mentions', this.chat.context.get('chat.filtering.clickable-mentions'));
 
+		this.chat.context.on('changed:chat.hide-community-highlights', val => this.css_tweaks.toggleHide('community-highlights', val));
+
+		this.css_tweaks.toggleHide('community-highlights', this.chat.context.get('chat.hide-community-highlights'));
 		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
 		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
 		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));

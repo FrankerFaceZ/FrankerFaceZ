@@ -21,6 +21,8 @@ const CLASSES = {
 	'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 
+	'community-highlights': '.community-highlight-stack__card',
+
 	'prime-offers': '.top-nav__prime',
 
 	'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',

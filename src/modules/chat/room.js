@@ -6,7 +6,7 @@
 
 import User from './user';
 
-import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet, set_equals} from 'utilities/object';
@@ -445,7 +445,8 @@ export default class Room {
 		if ( ! this.badges )
 			return this.style.delete('badges');
 
-		const out = [],
+		const use_media = IS_FIREFOX && this.manager.context.get('chat.badges.media-queries'),
+			out = [],
 			id = this.id;
 
 		for(const key in this.badges)
@@ -454,9 +455,9 @@ export default class Room {
 				for(const version in versions)
 					if ( has(versions, version) ) {
 						const data = versions[version],
-							rule = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
+							selector = `[data-room-id="${id}"] .ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
-						out.push(`[data-room-id="${id}"] ${rule} {
+						out.push(`${selector} {
 			background-color: transparent;
 			filter: none;
 			${WEBKIT}mask-image: none;
@@ -470,6 +471,15 @@ export default class Room {
 				url("${data.image4x}") 4x
 			);
 		}`);
+
+						if ( use_media ) {
+							out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) { ${selector} {
+								background-image: url("${data.image2x}");
+							}}`);
+							out.push(`@media (min-resolution: 200dpi) { ${selector} {
+								background-image: url("${data.image4x}");
+							}}`);
+						}
 					}
 			}
 
