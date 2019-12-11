@@ -839,10 +839,10 @@ export default class Badges extends Module {
 
 						if ( use_media ) {
 							out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) { ${selector} {
-								background-image: url("${data.image2x});
+								background-image: url("${data.image2x}");
 							}}`);
 							out.push(`@media (min-resolution: 200dpi) { ${selector} {
-								background-image: url("${data.image4x});
+								background-image: url("${data.image4x}");
 							}}`);
 						}
 					}
