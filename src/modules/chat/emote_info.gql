@@ -1,6 +1,11 @@
 query FFZ_GetEmoteInfo($id: ID!) {
 	emote(id: $id) {
 		id
+		owner {
+			id
+			login
+			displayName
+		}
 		setID
 		text
 		subscriptionProduct {

@@ -66,8 +66,8 @@ export default class Emotes extends Module {
 		this.inject('experiments');
 
 		this.twitch_inventory_sets = new Set; //(EXTRA_INVENTORY);
-		this.__twitch_emote_to_set = new Map;
-		this.__twitch_set_to_channel = new Map;
+		this.__twitch_emote_to_set = {};
+		this.__twitch_set_to_channel = {};
 
 		this.default_sets = new SourcedSet;
 		this.global_sets = new SourcedSet;
@@ -128,6 +128,19 @@ export default class Emotes extends Module {
 
 	onEnable() {
 		this.style = new ManagedStyle('emotes');
+
+		// Fix numeric Twitch favorite IDs.
+		const favs = this.getFavorites('twitch');
+		let changed = false;
+		for(let i=0; i < favs.length; i++) {
+			if ( typeof favs[i] === 'number' ) {
+				changed = true;
+				favs[i] = `${favs[i]}`;
+			}
+		}
+
+		if ( changed )
+			this.setFavorites('twitch', favs);
 
 		if ( Object.keys(this.emote_sets).length ) {
 			this.log.info('Generating CSS for existing emote sets.');
@@ -219,6 +232,14 @@ export default class Emotes extends Module {
 		return this.settings.provider.get(`favorite-emotes.${source}`) || [];
 	}
 
+	setFavorites(source, favs) {
+		const key = `favorite-emotes.${source}`;
+		if ( ! Array.isArray(favs) || ! favs.length )
+			this.settings.provider.delete(key);
+		else
+			this.settings.provider.set(key, favs);
+	}
+
 
 	handleClick(event) {
 		const target = event.target,
@@ -299,7 +320,7 @@ export default class Emotes extends Module {
 
 			if ( provider === 'twitch' ) {
 				source = 'twitch';
-				id = parseInt(ds.id, 10);
+				id = ds.id;
 
 			} else if ( provider === 'ffz' ) {
 				const emote_set = this.emote_sets[ds.set],
@@ -753,28 +774,45 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	setTwitchEmoteSet(emote_id, set_id) {
-		if ( isNaN(emote_id) || ! isFinite(emote_id) )
-			return;
+		if ( typeof emote_id === 'number' ) {
+			if ( isNaN(emote_id) || ! isFinite(emote_id) )
+				return;
+			emote_id = `${emote_id}`;
+		}
 
-		this.__twitch_emote_to_set.set(emote_id, set_id);
+		if ( typeof set_id === 'number' ) {
+			if ( isNaN(set_id) || ! isFinite(set_id) )
+				return;
+			set_id = `${set_id}`;
+		}
+
+		this.__twitch_emote_to_set[emote_id] = set_id;
 	}
 
 	setTwitchSetChannel(set_id, channel) {
-		if ( isNaN(set_id) || ! isFinite(set_id) )
-			return;
+		if ( typeof set_id === 'number' ) {
+			if ( isNaN(set_id) || ! isFinite(set_id) )
+				return;
 
-		this.__twitch_set_to_channel.set(set_id, channel);
+			set_id = `${set_id}`;
+		}
+
+		this.__twitch_set_to_channel[set_id] = channel;
 	}
 
 	_getTwitchEmoteSet(emote_id) {
 		const tes = this.__twitch_emote_to_set,
 			tsc = this.__twitch_set_to_channel;
 
-		if ( isNaN(emote_id) || ! isFinite(emote_id) )
-			return Promise.resolve(null);
+		if ( typeof emote_id === 'number' ) {
+			if ( isNaN(emote_id) || ! isFinite(emote_id) )
+				return Promise.resolve(null);
 
-		if ( tes.has(emote_id) ) {
-			const val = tes.get(emote_id);
+			emote_id = `${emote_id}`;
+		}
+
+		if ( has(tes, emote_id) ) {
+			const val = tes[emote_id];
 			if ( Array.isArray(val) )
 				return new Promise(s => val.push(s));
 			else
@@ -787,7 +825,7 @@ export default class Emotes extends Module {
 
 		return new Promise(s => {
 			const promises = [s];
-			tes.set(emote_id, promises);
+			tes[emote_id] = promises;
 
 			timeout(apollo.client.query({
 				query: GET_EMOTE,
@@ -799,25 +837,25 @@ export default class Emotes extends Module {
 				let set_id = null;
 
 				if ( emote ) {
-					set_id = parseInt(emote.setID, 10);
+					set_id = emote.setID;
 
-					if ( set_id && ! tsc.has(set_id) ) {
+					if ( set_id && ! has(tsc, set_id) ) {
 						const type = determineEmoteType(emote);
 
-						tsc.set(set_id, {
+						tsc[set_id] = {
 							id: set_id,
 							type,
-							owner: emote?.subscriptionProduct?.owner
-						});
+							owner: emote?.subscriptionProduct?.owner || emote?.owner
+						};
 					}
 				}
 
-				tes.set(emote_id, set_id);
+				tes[emote_id] = set_id;
 				for(const fn of promises)
 					fn(set_id);
 
 			}).catch(() => {
-				tes.set(emote_id, null);
+				tes[emote_id] = null;
 				for(const fn of promises)
 					fn(null);
 			});
@@ -836,11 +874,15 @@ export default class Emotes extends Module {
 	_getTwitchSetChannel(set_id) {
 		const tsc = this.__twitch_set_to_channel;
 
-		if ( isNaN(set_id) || ! isFinite(set_id) )
-			return Promise.resolve(null);
+		if ( typeof set_id === 'number' ) {
+			if ( isNaN(set_id) || ! isFinite(set_id) )
+				return Promise.resolve(null);
 
-		if ( tsc.has(set_id) ) {
-			const val = tsc.get(set_id);
+			set_id = `${set_id}`;
+		}
+
+		if ( has(tsc, set_id) ) {
+			const val = tsc[set_id];
 			if ( Array.isArray(val) )
 				return new Promise(s => val.push(s));
 			else
@@ -853,7 +895,7 @@ export default class Emotes extends Module {
 
 		return new Promise(s => {
 			const promises = [s];
-			tsc.set(set_id, promises);
+			tsc[set_id] = promises;
 
 			timeout(apollo.client.query({
 				query: GET_EMOTE_SET,
@@ -876,12 +918,12 @@ export default class Emotes extends Module {
 					};
 				}
 
-				tsc.set(set_id, result);
+				tsc[set_id] = result;
 				for(const fn of promises)
 					fn(result);
 
 			}).catch(() => {
-				tsc.set(set_id, null);
+				tsc[set_id] = null;
 				for(const fn of promises)
 					fn(null);
 			});
@@ -920,6 +962,10 @@ function determineEmoteType(emote) {
 
 	if ( emote.setID == 300238151 )
 		return EmoteTypes.ChannelPoints;
+
+	const id = parseInt(emote.setID, 10);
+	if ( ! isNaN(id) && isFinite(id) && id >= 5e8 )
+		return EmoteTypes.BitsTier;
 
 	return EmoteTypes.Global;
 }
@@ -961,6 +1007,9 @@ function determineSetType(set) {
 
 		return EmoteTypes.Subscription;
 	}
+
+	if ( id >= 5e8 )
+		return EmoteTypes.BitsTier;
 
 	return EmoteTypes.Global;
 }

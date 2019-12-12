@@ -105,5 +105,6 @@ export const EmoteTypes = make_enum(
 	'ChannelPoints',
 	'Unavailable',
 	'Subscription',
+	'BitsTier',
 	'Global'
 );

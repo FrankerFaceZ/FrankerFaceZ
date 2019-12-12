@@ -1036,7 +1036,7 @@ export const AddonEmotes = {
 		}
 
 		if ( provider === 'twitch' ) {
-			emote_id = parseInt(ds.id, 10);
+			emote_id = ds.id;
 			const set_id = hide_source ? null : await this.emotes.getTwitchEmoteSet(emote_id),
 				emote_set = set_id != null && await this.emotes.getTwitchSetChannel(set_id);
 
@@ -1048,7 +1048,15 @@ export const AddonEmotes = {
 				if ( type === EmoteTypes.Global )
 					source = this.i18n.t('emote.global', 'Twitch Global');
 
-				else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
+				else if ( type === EmoteTypes.BitsTier ) {
+					source = this.i18n.t('emote.bits', 'Twitch Bits Reward');
+					if ( emote_set.owner?.login )
+						source = this.i18n.t('emote.bits-owner', '{source}\nChannel: {channel}', {
+							source,
+							channel: emote_set.owner.displayName || emote_set.owner.login
+						});
+
+				} else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
 					source = this.i18n.t('emote.prime', 'Twitch Prime');
 
 				else if ( type === EmoteTypes.LimitedTime )

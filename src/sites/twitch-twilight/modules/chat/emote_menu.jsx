@@ -527,7 +527,7 @@ export default class EmoteMenu extends Module {
 			}
 
 			onMouseEnter(event) {
-				const set_id = parseInt(event.currentTarget.dataset.setId,10);
+				const set_id = event.currentTarget.dataset.setId;
 				this.setState({unlocked: set_id});
 			}
 
@@ -833,7 +833,7 @@ export default class EmoteMenu extends Module {
 					tone: t.settings.provider.get('emoji-tone', null)
 				}
 
-				this.componentWillReceiveProps(props);
+				this.componentDidUpdate({});
 
 				this.observing = new Map;
 
@@ -1065,7 +1065,7 @@ export default class EmoteMenu extends Module {
 				props = props || this.props;
 
 				const emote_sets = props.emote_data && props.emote_data.emoteSets,
-					sets = Array.isArray(emote_sets) ? new Set(emote_sets.map(x => parseInt(x.id, 10))) : new Set;
+					sets = Array.isArray(emote_sets) ? new Set(emote_sets.map(x => x.id)) : new Set;
 
 				force = force || (state.set_data && ! set_equals(state.set_sets, sets));
 
@@ -1287,19 +1287,20 @@ export default class EmoteMenu extends Module {
 						if ( ! emote_set || ! Array.isArray(emote_set.emotes) )
 							continue;
 
-						const set_id = parseInt(emote_set.id, 10),
+						const set_id = emote_set.id,
 							owner = emote_set.owner,
+							is_bits = parseInt(emote_set.id, 10) > 5e8,
 							is_points = TWITCH_POINTS_SETS.includes(set_id) || owner?.login === 'channel_points',
 							chan = is_points ? null : owner,
 							set_data = data[set_id];
 
-						if ( chan )
+						/*if ( chan )
 							t.emotes.setTwitchSetChannel(set_id, {
 								s_id: set_id,
 								c_id: chan.id,
 								c_name: chan.login,
 								c_title: chan.displayName
-							});
+							});*/
 
 						set_ids.add(set_id);
 
@@ -1310,15 +1311,27 @@ export default class EmoteMenu extends Module {
 
 						if ( title ) {
 							key = `twitch-${chan?.id}`;
-							t.emotes.setTwitchSetChannel(set_id, {
-								id: set_id,
-								type: EmoteTypes.Subscription,
-								owner: {
-									id: chan.id,
-									login: chan.login,
-									displayName: chan.displayName
-								}
-							});
+
+							if ( is_bits )
+								t.emotes.setTwitchSetChannel(set_id, {
+									id: set_id,
+									type: EmoteTypes.BitsTier,
+									owner: {
+										id: chan.id,
+										login: chan.login,
+										displayName: chan.displayName
+									}
+								});
+							else
+								t.emotes.setTwitchSetChannel(set_id, {
+									id: set_id,
+									type: EmoteTypes.Subscription,
+									owner: {
+										id: chan.id,
+										login: chan.login,
+										displayName: chan.displayName
+									}
+								});
 
 						} else if ( ! chan ) {
 							if ( is_points ) {
@@ -1407,7 +1420,7 @@ export default class EmoteMenu extends Module {
 							if ( ! emote || ! emote.id || ! emote.token )
 								continue;
 
-							const id = parseInt(emote.id, 10),
+							const id = emote.id,
 								name = KNOWN_CODES[emote.token] || emote.token,
 								mapped = emote_map && emote_map[name],
 								overridden = mapped && mapped.id != id,
@@ -1431,7 +1444,7 @@ export default class EmoteMenu extends Module {
 								name,
 								src,
 								srcSet,
-								overridden: overridden ? parseInt(mapped.id,10) : null,
+								overridden: overridden ? mapped.id : null,
 								misc: ! chan,
 								favorite: is_fav
 							};
@@ -1482,7 +1495,7 @@ export default class EmoteMenu extends Module {
 						if ( ! product || ! Array.isArray(product.emotes) )
 							continue;
 
-						const set_id = parseInt(product.emoteSetID, 10),
+						const set_id = product.emoteSetID,
 							set_data = data[set_id],
 							locked = ! set_ids.has(set_id);
 
@@ -1516,7 +1529,7 @@ export default class EmoteMenu extends Module {
 							if ( ! emote || ! emote.id || ! emote.token )
 								continue;
 
-							const id = parseInt(emote.id, 10),
+							const id = emote.id,
 								base = `${TWITCH_EMOTE_BASE}${id}`,
 								name = KNOWN_CODES[emote.token] || emote.token,
 								seen = twitch_seen.has(id),
@@ -1678,12 +1691,20 @@ export default class EmoteMenu extends Module {
 			}
 
 
-			componentWillReceiveProps(props) {
-				if ( props.visible )
+			componentDidUpdate(old_props) {
+				if ( this.props.visible && ! old_props.visible )
 					this.loadData();
 
-				const state = this.buildState(props, this.state);
-				this.setState(this.filterState(state.filter, state));
+				if ( this.props.channel_data !== old_props.channel_data ||
+						this.props.emote_data !== old_props.emote_data ||
+						this.props.user_id !== old_props.user_id ||
+						this.props.channel_id !== old_props.channel_id ||
+						this.props.loading !== old_props.loading ||
+						this.props.error !== old_props.error ) {
+
+					const state = this.buildState(this.props, this.state);
+					this.setState(this.filterState(state.filter, state));
+				}
 			}
 
 			renderError() {
@@ -1956,7 +1977,7 @@ export default class EmoteMenu extends Module {
 					ends: maybe_date(node.endsAt),
 					renews: maybe_date(node.renewsAt),
 					prime: node.purchasedWithPrime,
-					set_id: parseInt(set_id, 10),
+					set_id,
 					type: product.type,
 					gift: node.gift?.isGift
 				};
