@@ -459,7 +459,7 @@ export default class Input extends Module {
 			if (set && Array.isArray(set.emotes)) {
 				for (const emote of set.emotes) {
 					if (inst.doesEmoteMatchTerm(emote, search)) {
-						const favorite = favorites.includes(parseInt(emote.id, 10));
+						const favorite = favorites.includes(emote.id);
 						const element = {
 							current: input,
 							replacement: emote.token,

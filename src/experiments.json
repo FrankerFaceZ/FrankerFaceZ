@@ -3,8 +3,8 @@
 		"name": "New API Stress Testing",
 		"description": "Send duplicate requests to the new API server for load testing.",
 		"groups": [
-			{"value": true, "weight": 50},
-			{"value": false, "weight": 50}
+			{"value": true, "weight": 75},
+			{"value": false, "weight": 25}
 		]
 	}
 }

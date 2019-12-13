@@ -237,7 +237,6 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-room-sets', this.maybeUpdate, this);
-		this.on('chat.emotes:change-favorite', this.updateFavorite, this);
 		this.on('chat.emoji:populated', this.updateEmoji, this);
 
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
@@ -933,14 +932,23 @@ export default class EmoteMenu extends Module {
 				if ( this.ref )
 					this.createObserver();
 
+				t.on('chat.emotes:change-favorite', this.updateFavorites, this);
+
 				window.ffz_menu = this;
 			}
 
 			componentWillUnmount() {
 				this.destroyObserver();
 
+				t.off('chat.emotes:change-favorite', this.updateFavorites, this);
+
 				if ( window.ffz_menu === this )
 					window.ffz_menu = null;
+			}
+
+			updateFavorites() {
+				const state = this.buildState(this.props, this.state);
+				this.setState(this.filterState(state.filter, state));
 			}
 
 			pickTone(tone) {
