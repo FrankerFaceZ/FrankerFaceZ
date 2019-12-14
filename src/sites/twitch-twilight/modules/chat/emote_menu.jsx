@@ -237,7 +237,8 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-room-sets', this.maybeUpdate, this);
-		this.on('chat.emoji:populated', this.updateEmoji, this);
+		this.on('chat.emotes:change-favorite', this.maybeUpdate, this);
+		this.on('chat.emoji:populated', this.maybeUpdate, this);
 
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
 			this.EmoteMenu.forceUpdate());
@@ -245,13 +246,12 @@ export default class EmoteMenu extends Module {
 		const fup = () => this.MenuWrapper.forceUpdate();
 		const rebuild = () => {
 			for(const inst of this.MenuWrapper.instances)
-				inst.componentWillReceiveProps(inst.props);
+				inst.rebuildData();
 		}
 
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
-
 		this.chat.context.on('changed:chat.emote-menu.show-heading', fup);
 		this.chat.context.on('changed:chat.emote-menu.show-search', fup);
 		this.chat.context.on('changed:chat.emote-menu.reduced-padding', fup);
@@ -333,16 +333,11 @@ export default class EmoteMenu extends Module {
 	}
 
 	maybeUpdate() {
-		if ( this.chat.context.get('chat.emote-menu.enabled') )
-			this.EmoteMenu.forceUpdate();
-	}
+		if ( ! this.chat.context.get('chat.emote-menu.enabled') )
+			return;
 
-	updateFavorite() {
-		this.maybeUpdate();
-	}
-
-	updateEmoji() {
-		this.maybeUpdate();
+		for(const inst of this.MenuWrapper.instances)
+			inst.rebuildData();
 	}
 
 
@@ -395,6 +390,9 @@ export default class EmoteMenu extends Module {
 			}
 
 			renderTone(data, tone) {
+				if ( ! data )
+					return null;
+
 				return (<button
 					key={data.code}
 					data-tone={tone}
@@ -409,8 +407,11 @@ export default class EmoteMenu extends Module {
 				if ( ! this.state.open )
 					return null;
 
-				const emoji = this.state.emoji,
-					tones = Object.entries(emoji.variants).map(([tone, emoji]) => this.renderTone(emoji, tone));
+				const emoji = this.state.emoji;
+				if ( ! emoji || ! emoji.variants )
+					return null;
+
+				const tones = Object.entries(emoji.variants).map(([tone, emoji]) => this.renderTone(emoji, tone));
 
 				return (<div class="tw-absolute tw-balloon tw-balloon--up tw-balloon--right tw-balloon tw-block">
 					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background-base tw-elevation-1">
@@ -421,6 +422,9 @@ export default class EmoteMenu extends Module {
 			}
 
 			renderEmoji(data) { // eslint-disable-line class-methods-use-this
+				if ( ! data )
+					return null;
+
 				const emoji_x = (data.sheet_x * (t.emoji_size + 2)) + 1,
 					emoji_y = (data.sheet_y * (t.emoji_size + 2)) + 1,
 
@@ -832,7 +836,10 @@ export default class EmoteMenu extends Module {
 					tone: t.settings.provider.get('emoji-tone', null)
 				}
 
-				this.componentDidUpdate({});
+				if ( props.visible )
+					this.loadData();
+
+				this.rebuildData();
 
 				this.observing = new Map;
 
@@ -932,23 +939,14 @@ export default class EmoteMenu extends Module {
 				if ( this.ref )
 					this.createObserver();
 
-				t.on('chat.emotes:change-favorite', this.updateFavorites, this);
-
 				window.ffz_menu = this;
 			}
 
 			componentWillUnmount() {
 				this.destroyObserver();
 
-				t.off('chat.emotes:change-favorite', this.updateFavorites, this);
-
 				if ( window.ffz_menu === this )
 					window.ffz_menu = null;
-			}
-
-			updateFavorites() {
-				const state = this.buildState(this.props, this.state);
-				this.setState(this.filterState(state.filter, state));
 			}
 
 			pickTone(tone) {
@@ -1157,7 +1155,7 @@ export default class EmoteMenu extends Module {
 					categories = {};
 
 				for(const emoji of Object.values(t.emoji.emoji)) {
-					if ( ! emoji.has[style] || emoji.category === 'Skin Tones' )
+					if ( ! emoji || ! emoji.has[style] || emoji.category === 'Skin Tones' )
 						continue;
 
 					if ( emoji.variants ) {
@@ -1296,9 +1294,10 @@ export default class EmoteMenu extends Module {
 							continue;
 
 						const set_id = emote_set.id,
+							int_id = parseInt(set_id, 10),
 							owner = emote_set.owner,
 							is_bits = parseInt(emote_set.id, 10) > 5e8,
-							is_points = TWITCH_POINTS_SETS.includes(set_id) || owner?.login === 'channel_points',
+							is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
 							chan = is_points ? null : owner,
 							set_data = data[set_id];
 
@@ -1354,7 +1353,7 @@ export default class EmoteMenu extends Module {
 									owner: null
 								});*/
 
-							} else if ( TWITCH_GLOBAL_SETS.includes(set_id) ) {
+							} else if ( TWITCH_GLOBAL_SETS.includes(int_id) ) {
 								title = t.i18n.t('emote-menu.global', 'Global Emotes');
 								key = 'twitch-global';
 								sort_key = 100;
@@ -1365,7 +1364,7 @@ export default class EmoteMenu extends Module {
 									owner: null
 								});
 
-							} else if ( TWITCH_PRIME_SETS.includes(set_id) ) {
+							} else if ( TWITCH_PRIME_SETS.includes(int_id) ) {
 								title = t.i18n.t('emote_menu.prime', 'Prime');
 								key = 'twitch-prime';
 								icon = 'crown';
@@ -1699,6 +1698,12 @@ export default class EmoteMenu extends Module {
 			}
 
 
+			rebuildData() {
+				const state = this.buildState(this.props, this.state);
+				this.setState(this.filterState(state.filter, state));
+			}
+
+
 			componentDidUpdate(old_props) {
 				if ( this.props.visible && ! old_props.visible )
 					this.loadData();
@@ -1708,11 +1713,8 @@ export default class EmoteMenu extends Module {
 						this.props.user_id !== old_props.user_id ||
 						this.props.channel_id !== old_props.channel_id ||
 						this.props.loading !== old_props.loading ||
-						this.props.error !== old_props.error ) {
-
-					const state = this.buildState(this.props, this.state);
-					this.setState(this.filterState(state.filter, state));
-				}
+						this.props.error !== old_props.error )
+					this.rebuildData();
 			}
 
 			renderError() {
@@ -1845,7 +1847,7 @@ export default class EmoteMenu extends Module {
 										onChange={this.handleFilterChange}
 										onKeyDown={this.handleKeyDown}
 									/>
-									{(no_tabs || is_emoji) && <t.EmojiTonePicker
+									{(no_tabs || is_emoji) && this.state.has_emoji_tab && <t.EmojiTonePicker
 										tone={this.state.tone}
 										choices={this.state.tone_emoji}
 										pickTone={this.pickTone}

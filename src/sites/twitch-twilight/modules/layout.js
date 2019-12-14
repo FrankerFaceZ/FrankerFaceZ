@@ -261,7 +261,6 @@ export default class Layout extends Module {
 	}
 
 	updatePortraitMode() {
-		for(const inst of this.RightColumn.instances)
-			inst.hideOnBreakpoint();
+
 	}
 }

@@ -216,6 +216,9 @@ export default class RavenLogger extends Module {
 				if ( DEBUG )
 					return false;
 
+				if ( this.resolve('addons')?.has_dev )
+					return false;
+
 				return true;
 			}
 		};
