@@ -123,6 +123,28 @@ export default class RavenLogger extends Module {
 			});
 		});
 
+		// Twitch is greedy and preventDefault()s on errors... we don't like that.
+		this.twitch_logger = null;
+
+		this.once('site:enabled', () => {
+			const munch = this.resolve('site.web_munch');
+			if ( munch )
+				munch.getRequire().then(() => {
+					const site = this.resolve('site'),
+						core = site.getCore(),
+						logger = core?.logger;
+
+					if ( logger && ! logger.rootLogger ) {
+						this.twitch_logger = logger;
+						if ( logger.windowErrorListenerAdded ) {
+							// Move their event listener to the end, so Raven runs.
+							window.removeEventListener('error', logger.onWindowError);
+							window.addEventListener('error', logger.onWindowError);
+						}
+					}
+				})
+		});
+
 		this.raven = Raven;
 
 		const raven_config = {
@@ -133,6 +155,7 @@ export default class RavenLogger extends Module {
 			environment: DEBUG ? 'development' : 'production',
 			captureUnhandledRejections: false,
 			ignoreErrors: [
+				'InvalidStateError',
 				'InvalidAccessError',
 				'out of memory',
 				'Access is denied.',
