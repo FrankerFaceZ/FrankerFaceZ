@@ -29,7 +29,31 @@
 			:key="sec.title"
 			class="ffz--menu-container tw-border-t"
 		>
-			<header>{{ sec.title }}</header>
+			<header
+				v-if="sec.id"
+				:class="{default: badgeDefault(sec.id)}"
+				class="tw-flex tw-checkbox"
+			>
+				<input
+					:id="sec.id"
+					:checked="badgeChecked(sec.id)"
+					type="checkbox"
+					class="tw-checkbox__input"
+					@click="onChange(sec.id, $event)"
+					@contextmenu.prevent="reset(sec.id)"
+				>
+				<label
+					:for="sec.id"
+					:title="t('setting.right-click-reset', 'Right-Click to Reset')"
+					class="tw-checkbox__label"
+					@contextmenu.prevent="reset(sec.id)"
+				>
+					{{ sec.title }}
+				</label>
+			</header>
+			<header v-else>
+				{{ sec.title }}
+			</header>
 			<ul class="tw-flex tw-flex-wrap tw-align-content-start">
 				<li
 					v-for="i in sort(sec.badges)"

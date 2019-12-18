@@ -290,7 +290,7 @@ export default class Badges extends Module {
 					const badge = this.badges[key],
 						image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image;
 
-					(/^addon/.test(key) ? addon : ffz).push({
+					(badge.addon ? addon : ffz).push({
 						id: key,
 						provider: 'ffz',
 						name: badge.title,
@@ -301,10 +301,10 @@ export default class Badges extends Module {
 				}
 
 		return [
-			{title: 'Twitch', badges: twitch},
-			{title: 'Twitch: Game', key: 'game', badges: game},
-			{title: 'FrankerFaceZ', badges: ffz},
-			{title: 'Add-on', badges: addon}
+			{title: 'Twitch', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game},
+			{title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz},
+			{title: 'Add-on', id: 'm-addon', badges: addon}
 		];
 	}
 
@@ -408,6 +408,11 @@ export default class Badges extends Module {
 			is_colored = badge_style !== 5,
 			has_image = badge_style !== 3 && badge_style !== 4,
 
+			twitch_hidden = hidden_badges['m-twitch'],
+			game_hidden = hidden_badges['m-game'],
+			ffz_hidden = hidden_badges['m-ffz'],
+			addon_hidden = hidden_badges['m-addon'],
+
 			out = [],
 			slotted = {},
 			twitch_badges = msg.badges || {},
@@ -427,9 +432,10 @@ export default class Badges extends Module {
 		for(const badge_id in twitch_badges)
 			if ( has(twitch_badges, badge_id) ) {
 				const version = twitch_badges[badge_id],
+					is_hidden = hidden_badges[badge_id],
 					is_game = badge_id.endsWith('_1');
 
-				if ( hidden_badges[badge_id] || (is_game && hidden_badges.game) )
+				if ( is_hidden || (is_hidden == null && (is_game ? game_hidden : twitch_hidden)))
 					continue;
 
 				if ( has(BADGE_POSITIONS, badge_id) )
@@ -473,11 +479,13 @@ export default class Badges extends Module {
 
 		for(const badge of badges)
 			if ( badge && badge.id != null ) {
-				if ( hidden_badges[badge.id] )
+				const full_badge = this.badges[badge.id] || {},
+					is_hidden = hidden_badges[badge.id];
+
+				if ( is_hidden || (is_hidden == null && (full_badge.addon ? addon_hidden : ffz_hidden)) )
 					continue;
 
-				const full_badge = this.badges[badge.id] || {},
-					slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
+				const slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
 					old_badge = slotted[slot],
 					urls = badge.urls || (badge.image ? {1: badge.image} : null),
 					color = badge.color || full_badge.color || 'transparent',
@@ -680,6 +688,9 @@ export default class Badges extends Module {
 
 	loadBadgeData(badge_id, data, generate_css = true) {
 		this.badges[badge_id] = data;
+
+		if ( data.addon === undefined )
+			data.addon =/^addon/.test(badge_id);
 
 		if ( data.replaces && ! data.replaces_type ) {
 			data.replaces_type = data.replaces;

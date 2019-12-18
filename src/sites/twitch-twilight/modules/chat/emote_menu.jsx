@@ -40,13 +40,22 @@ function maybe_date(val) {
 }
 
 
+const COLLATOR = window?.Intl?.Collator && new Intl.Collator(undefined, {numeric: true});
+
+
 const EMOTE_SORTERS = [
 	function id_asc(a, b) {
+		if ( COLLATOR )
+			return COLLATOR.compare(a.id, b.id);
+
 		if ( a.id < b.id ) return -1;
 		if ( a.id > b.id ) return 1;
 		return 0;
 	},
 	function id_desc(a, b) {
+		if ( COLLATOR )
+			return COLLATOR.compare(b.id, a.id);
+
 		if ( a.id > b.id ) return -1;
 		if ( a.id < b.id ) return 1;
 		return 0;
@@ -58,6 +67,9 @@ const EMOTE_SORTERS = [
 		if ( a_n < b_n ) return -1;
 		if ( a_n > b_n ) return 1;
 
+		if ( COLLATOR )
+			return COLLATOR.compare(a.id, b.id);
+
 		if ( a.id < b.id ) return -1;
 		if ( a.id > b.id ) return 1;
 		return 0;
@@ -68,6 +80,9 @@ const EMOTE_SORTERS = [
 
 		if ( a_n > b_n ) return -1;
 		if ( a_n < b_n ) return 1;
+
+		if ( COLLATOR )
+			return COLLATOR.compare(b.id, a.id);
 
 		if ( a.id > b.id ) return -1;
 		if ( a.id < b.id ) return 1;

@@ -166,7 +166,9 @@ export default class RavenLogger extends Module {
 				'Name Collision for Module',
 				'SourceBuffer',
 				'ChunkLoadError',
-				'QuotaExceededError'
+				'SecurityError',
+				'QuotaExceededError',
+				'DataCloneError'
 			],
 			sanitizeKeys: [
 				/Token$/
@@ -300,12 +302,14 @@ export default class RavenLogger extends Module {
 
 	buildExtra() {
 		const modules = {},
+			addons = {},
 			experiments = {},
 			twitch_experiments = {},
 			out = {
 				experiments,
 				twitch_experiments,
-				modules
+				modules,
+				addons
 			};
 
 		for(const key in this.__modules)
@@ -332,6 +336,15 @@ export default class RavenLogger extends Module {
 					chat_settings[key] = value;
 		}
 
+		const add = this.resolve('addons');
+		if ( add && Array.isArray(add.enabled_addons) && add.addons ) {
+			for(const key of add.enabled_addons) {
+				const addon = add.addons[key];
+				if ( addon )
+					addons[key] = `${addon.version || 'unknown'}${addon.dev ? '-dev' : ''}`;
+			}
+		}
+
 		const exp = this.resolve('experiments');
 		if ( exp ) {
 			for(const [key, value] of Object.entries(exp.getTwitchExperiments()))
@@ -353,6 +366,9 @@ export default class RavenLogger extends Module {
 		out.flavor = this.site?.constructor.name;
 		out.build = __webpack_hash__;
 		out.git_commit = __git_commit__;
+
+		if ( window.BetterTTV )
+			out.bttv_version = window.BetterTTV?.version;
 
 		if ( core )
 			out.twitch_build = core.config.buildID;

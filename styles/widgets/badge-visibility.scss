@@ -1,31 +1,47 @@
-.ffz--badge-info {
-	&.default {
-		label:before, label:after {
-			opacity: 0.5
-		}
+.ffz--badge-visibility {
+	header {
+		&.default {
+			label:before, label:after {
+				opacity: 0.5
+			}
 
-		input:focus + label {
-			&:before, &:after {
-				opacity: 1
+			input:focus + label {
+				&:before, &:after {
+					opacity: 1
+				}
+			}
+		}
+	}
+
+	.ffz--badge-info {
+		&.default {
+			label:before, label:after {
+				opacity: 0.5
+			}
+
+			input:focus + label {
+				&:before, &:after {
+					opacity: 1
+				}
+			}
+
+			button:not(:focus) {
+				visibility: hidden;
 			}
 		}
 
-		button:not(:focus) {
-			visibility: hidden;
+		.tw-checkbox__input:checked+.tw-checkbox__label:after,
+		label:before, label:after {
+			top: 1.05rem !important;
 		}
-	}
 
-	.tw-checkbox__input:checked+.tw-checkbox__label:after,
-	label:before, label:after {
-		top: 1.05rem !important;
-	}
+		.ffz-badge.preview-image {
+			width: 3.6rem;
+			height: 3.6rem;
+			background-size: 3.6rem;
+			background-repeat: no-repeat;
+		}
 
-	.ffz-badge.preview-image {
-		width: 3.6rem;
-		height: 3.6rem;
-		background-size: 3.6rem;
-		background-repeat: no-repeat;
+		width: 22rem;
 	}
-
-	width: 22rem;
 }
