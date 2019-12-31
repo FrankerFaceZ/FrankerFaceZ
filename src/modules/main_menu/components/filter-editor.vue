@@ -204,11 +204,13 @@ export default {
 			if ( ! key )
 				return;
 
-			this.editing.push({
+			const out = {
 				id: generateUUID(),
 				type: key,
 				data: maybe_call(type.default, type)
-			});
+			};
+
+			this.editing.push(out);
 		},
 
 		updateRule(id, data) {

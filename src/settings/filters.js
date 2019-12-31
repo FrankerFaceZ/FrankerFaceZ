@@ -4,7 +4,11 @@
 // Profile Filters for Settings
 // ============================================================================
 
+import safety from 'safe-regex';
+
+import {glob_to_regex, escape_regex} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
+
 
 // Logical Components
 
@@ -283,3 +287,43 @@ export const Category = {
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/category.vue')
 }
+
+export const Title = {
+	createTest(config = {}) {
+		const mode = config.mode;
+		let title = config.title;
+
+		if ( ! title || ! mode )
+			return () => false;
+
+		if ( mode === 'text' )
+			title = escape_regex(title);
+		else if ( mode === 'glob' )
+			title = glob_to_regex(title);
+		else if ( mode !== 'raw' )
+			return () => false;
+
+		if ( ! safety(title) )
+			return () => false;
+
+		let regex;
+		try {
+			regex = new RegExp(title, `g${config.sensitive ? '' : 'i'}`);
+		} catch(err) {
+			return () => false;
+		}
+
+		return ctx => ctx.title && regex.test(ctx.title)
+	},
+
+	title: 'Current Title',
+	i18n: 'settings.filter.title',
+
+	default: () => ({
+		title: '',
+		mode: 'text',
+		sensitive: false
+	}),
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/title.vue')
+};

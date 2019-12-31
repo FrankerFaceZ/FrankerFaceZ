@@ -1,0 +1,25 @@
+query FFZ_FetchPoll($id: ID!) {
+	poll(id: $id) {
+		id
+		status
+		title
+		ownedBy {
+			id
+			login
+			displayName
+		}
+		endedAt
+		startedAt
+		totalVoters
+		choices {
+			id
+			title
+			votes {
+				id
+				base
+				bits
+				total
+			}
+		}
+	}
+}

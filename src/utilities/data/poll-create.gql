@@ -1,0 +1,12 @@
+mutation FFZ_CreatePoll($input: CreatePollInput!) {
+	createPoll(input: $input) {
+		poll {
+			id
+			status
+			choices {
+				id
+				title
+			}
+		}
+	}
+}

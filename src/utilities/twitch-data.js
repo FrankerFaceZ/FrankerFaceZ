@@ -89,6 +89,23 @@ export default class TwitchData extends Module {
 		return this.apollo.client.query(thing);
 	}
 
+	mutate(mutation, variables, options) {
+		let thing;
+		if ( ! variables && ! options && mutation.mutation )
+			thing = mutation;
+		else {
+			thing = {
+				mutation,
+				variables
+			};
+
+			if ( options )
+				thing = Object.assign(thing, options);
+		}
+
+		return this.apollo.client.mutate(thing);
+	}
+
 	get languageCode() {
 		const session = this.site.getSession();
 		return session && session.languageCode || 'en'
@@ -130,7 +147,7 @@ export default class TwitchData extends Module {
 
 	async getMatchingCategories(query) {
 		const data = await this.queryApollo(
-			require('./data/search-category.gql'),
+			await import(/* webpackChunkName: 'queries' */ './data/search-category.gql'),
 			{ query }
 		);
 
@@ -143,7 +160,7 @@ export default class TwitchData extends Module {
 
 	async getCategory(id, name) {
 		const data = await this.queryApollo(
-			require('./data/category-fetch.gql'),
+			await import(/* webpackChunkName: 'queries' */ './data/category-fetch.gql'),
 			{ id, name }
 		);
 
@@ -157,7 +174,7 @@ export default class TwitchData extends Module {
 
 	async getMatchingUsers(query) {
 		const data = await this.queryApollo(
-			require('./data/search-user.gql'),
+			await import(/* webpackChunkName: 'queries' */ './data/search-user.gql'),
 			{ query }
 		);
 
@@ -170,7 +187,7 @@ export default class TwitchData extends Module {
 
 	async getUser(id, login) {
 		const data = await this.queryApollo(
-			require('./data/user-fetch.gql'),
+			await import(/* webpackChunkName: 'queries' */ './data/user-fetch.gql'),
 			{ id, login }
 		);
 
@@ -179,7 +196,7 @@ export default class TwitchData extends Module {
 
 	async getLastBroadcast(id, login) {
 		const data = await this.queryApollo(
-			require('./data/last-broadcast.gql'),
+			await import(/* webpackChunkName: 'queries' */ './data/last-broadcast.gql'),
 			{ id, login }
 		);
 
@@ -192,7 +209,7 @@ export default class TwitchData extends Module {
 
 	async getBroadcastID(id, login) {
 		const data = await this.queryApollo({
-			query: require('./data/broadcast-id.gql'),
+			query: await import(/* webpackChunkName: 'queries' */ './data/broadcast-id.gql'),
 			variables: {
 				id,
 				login
@@ -200,6 +217,77 @@ export default class TwitchData extends Module {
 		});
 
 		return get('data.user.stream.archiveVideo.id', data);
+	}
+
+
+	// ========================================================================
+	// Polls
+	// ========================================================================
+
+	async getPoll(poll_id) {
+		const data = await this.queryApollo({
+			query: await import(/* webpackChunkName: 'queries' */ './data/poll-get.gql'),
+			variables: {
+				id: poll_id
+			}
+		});
+
+		return get('data.poll', data);
+	}
+
+	async createPoll(channel_id, title, choices, options = {}) {
+		if ( typeof title !== 'string' )
+			throw new TypeError('title must be string');
+
+		if ( ! Array.isArray(choices) || choices.some(x => typeof x !== 'string') )
+			throw new TypeError('choices must be array of strings');
+
+		let bits = options.bits || 0,
+			duration = options.duration || 60;
+		if ( typeof bits !== 'number' || bits < 0 )
+			bits = 0;
+		if ( typeof duration !== 'number' || duration < 0 )
+			duration = 60;
+
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/poll-create.gql'),
+			variables: {
+				input: {
+					bitsCost: bits,
+					bitsVoting: bits > 0,
+					choices: choices.map(x => ({title: x})),
+					durationSeconds: duration,
+					ownedBy: `${channel_id}`,
+					subscriberMultiplier: options.subscriberMultiplier || false,
+					subscriberOnly: options.subscriberOnly || false,
+					title
+				}
+			}
+		});
+
+		return get('data.createPoll.poll', data);
+	}
+
+	async archivePoll(poll_id) {
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/poll-archive.gql'),
+			variables: {
+				id: poll_id
+			}
+		});
+
+		return get('data.archivePoll.poll', data);
+	}
+
+	async terminatePoll(poll_id) {
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/poll-terminate.gql'),
+			variables: {
+				id: poll_id
+			}
+		});
+
+		return get('data.terminatePoll.poll', data);
 	}
 
 
@@ -242,7 +330,7 @@ export default class TwitchData extends Module {
 
 		try {
 			const data = await this.queryApollo({
-				query: require('./data/stream-fetch.gql'),
+				query: await import(/* webpackChunkName: 'queries' */ './data/stream-fetch.gql'),
 				variables: {
 					ids: ids.length ? ids : null,
 					logins: logins.length ? logins : null
@@ -376,7 +464,7 @@ export default class TwitchData extends Module {
 
 		try {
 			const data = await this.queryApollo(
-				require('./data/tags-fetch.gql'),
+				await import(/* webpackChunkName: 'queries' */ './data/tags-fetch.gql'),
 				{
 					ids
 				}
@@ -467,7 +555,7 @@ export default class TwitchData extends Module {
 
 	async getTopTags(limit = 50) {
 		const data = await this.queryApollo(
-			require('./data/tags-top.gql'),
+			await import(/* webpackChunkName: 'queries' */ './data/tags-top.gql'),
 			{limit}
 		);
 

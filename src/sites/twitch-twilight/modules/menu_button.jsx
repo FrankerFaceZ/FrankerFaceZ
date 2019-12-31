@@ -145,6 +145,9 @@ export default class MenuButton extends SiteModule {
 		if ( typeof val === 'number' )
 			return this.i18n.formatNumber(val);
 
+		if ( val == null && this.has_new )
+			return this.i18n.formatNumber(this._new_settings);
+
 		return val;
 	}
 
@@ -300,7 +303,7 @@ export default class MenuButton extends SiteModule {
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
 					</div>)}
-					{this.has_new && (<div class="tw-mg-t-1">
+					{this._new_settings > 0 && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}
 					</div>)}
 					{this.has_strings && (<div class="tw-mg-t-1">

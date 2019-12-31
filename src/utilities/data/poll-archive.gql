@@ -1,0 +1,8 @@
+mutation FFZ_ArchivePoll($id: ID!) {
+	archivePoll(input: {pollID: $id}) {
+		poll {
+			id
+			status
+		}
+	}
+}

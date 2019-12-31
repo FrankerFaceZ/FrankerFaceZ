@@ -111,8 +111,6 @@ export default class Metadata extends Module {
 			subtitle: () => this.i18n.t('metadata.uptime.subtitle', 'Uptime'),
 
 			tooltip(data) {
-				console.log('tool-tip');
-
 				if ( ! data.created )
 					return null;
 

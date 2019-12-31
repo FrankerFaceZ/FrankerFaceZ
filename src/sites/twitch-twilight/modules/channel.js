@@ -127,12 +127,14 @@ export default class Channel extends Module {
 				channelID: null,
 				channelColor: null,
 				category: null,
-				categoryID: null
+				categoryID: null,
+				title: null
 			});
 		});
 
 		this.ChannelPage.on('update', inst => {
-			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
+			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.stream.game', inst) || get('state.channel.broadcastSettings.game', inst),
+				title = get('state.video.title', inst) || get('state.clip.title', inst) || get('state.channel.stream.title', inst) || get('state.channel.broadcastSettings.title', inst);
 
 			const color = get('state.primaryColorHex', inst);
 			this.updateChannelColor(color);
@@ -142,7 +144,8 @@ export default class Channel extends Module {
 				channelID: get('state.channel.id', inst),
 				channelColor: color,
 				category: category?.name,
-				categoryID: category?.id
+				categoryID: category?.id,
+				title
 			});
 
 			if ( this.settings.get('channel.hosting.enable') || has(inst.state, 'hostMode') || has(inst.state, 'hostedChannel') )
@@ -174,7 +177,8 @@ export default class Channel extends Module {
 			clip = inst.state.clip,
 			video = inst.state.video,
 
-			category = video?.game || clip?.game || channel?.stream?.game || channel?.broadcastSettings?.game;
+			category = video?.game || clip?.game || channel?.stream?.game || channel?.broadcastSettings?.game,
+			title = video?.title || clip?.title || channel?.stream?.title || channel?.broadcastSettings?.title || null;
 
 		const color = inst.state?.primaryColorHex;
 		this.updateChannelColor(color);
@@ -184,7 +188,8 @@ export default class Channel extends Module {
 			channelID: inst.state.channel?.id,
 			channelColor: color,
 			category: category?.name,
-			categoryID: category?.id
+			categoryID: category?.id,
+			title
 		});
 	}
 
@@ -195,7 +200,8 @@ export default class Channel extends Module {
 			channelID: null,
 			category: null,
 			categoryID: null,
-			channelColor: null
+			channelColor: null,
+			title: null
 		});
 	}
 
@@ -203,7 +209,8 @@ export default class Channel extends Module {
 	onChannelMounted(inst) {
 		this.wrapChannelPage(inst);
 
-		const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.broadcastSettings.game', inst);
+		const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.stream.game', inst) || get('state.channel.broadcastSettings.game', inst),
+			title = get('state.video.title', inst) || get('state.clip.title', inst) || get('state.channel.stream.title', inst) || get('state.channel.broadcastSettings.title', inst) || null;
 
 		const color = get('state.primaryColorHex', inst);
 		this.updateChannelColor(color);
@@ -213,7 +220,8 @@ export default class Channel extends Module {
 			channelID: get('state.channel.id', inst),
 			channelColor: color,
 			category: category?.name,
-			categoryID: category?.id
+			categoryID: category?.id,
+			title
 		});
 	}
 
