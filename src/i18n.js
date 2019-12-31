@@ -592,7 +592,7 @@ export class TranslationManager extends Module {
 			await import(
 				/* webpackMode: 'lazy' */
 				/* webpackChunkName: 'i18n-[index]' */
-				`dayjs/locale/${locale}`
+				`dayjs/locale/${locale}.js`
 			);
 		} catch(err) {
 			this.log.warn(`Unable to load day.js locale data for locale "${locale}"`, err);
