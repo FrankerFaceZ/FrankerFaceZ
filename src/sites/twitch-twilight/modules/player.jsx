@@ -112,7 +112,7 @@ export default class Player extends Module {
 			}
 		});
 
-		if ( document.pictureInPictureEnabled )
+		if ( document.pictureInPictureEnabled || !!window.safari )
 			this.settings.add('player.button.pip', {
 				default: true,
 				ui: {
@@ -758,7 +758,7 @@ export default class Player extends Module {
 
 
 	installVisibilityHook() {
-		if ( ! document.pictureInPictureEnabled ) {
+		if ( !document.pictureInPictureEnabled && !window.safari ) {
 			this.log.info('Skipping visibility hook. Picture-in-Picture is not available.');
 			return;
 		}
@@ -793,11 +793,16 @@ export default class Player extends Module {
 		}
 	}
 
+	// isPiPAvailable() {
+	// 	return document.pictureInPictureEnabled
+	// }
 
 	addPiPButton(inst, tries = 0) {
+
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video,
 			container = outer && outer.querySelector('.player-controls__right-control-group'),
-			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
+			has_pip = (document.pictureInPictureEnabled || !!window.safari) && this.settings.get('player.button.pip');
 
 		if ( ! container ) {
 			if ( ! has_pip )
@@ -845,7 +850,7 @@ export default class Player extends Module {
 			tip = cont.querySelector('.tw-tooltip');
 		}
 
-		const pip_active = !!document.pictureInPictureElement,
+		const pip_active = !!document.pictureInPictureElemen || video?.webkitPresentationMode === 'picture-in-picture',
 			label = pip_active ?
 				this.i18n.t('player.pip_button.off', 'Exit Picture-in-Picture') :
 				this.i18n.t('player.pip_button', 'Picture-in-Picture');
@@ -860,11 +865,10 @@ export default class Player extends Module {
 
 	pipPlayer(inst, e) {
 		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
-		if ( ! video || ! document.pictureInPictureEnabled )
+		if ( ! video || ( ! document.pictureInPictureEnabled && ! window.safari ) )
 			return;
 
-		if ( e )
-			e.preventDefault();
+		e?.preventDefault?.();
 
 		if ( ! video._ffz_pip_enter ) {
 			video.addEventListener('enterpictureinpicture', video._ffz_pip_enter = () => {
@@ -874,6 +878,15 @@ export default class Player extends Module {
 			video.addEventListener('leavepictureinpicture', video._ffz_pip_exit = () => {
 				this.addPiPButton(inst);
 			});
+		}
+
+		if ( window.safari ) {
+			const targetMode = video.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture';
+			video.webkitSetPresentationMode(targetMode);
+
+			setTimeout(() => this.addPiPButton(inst));
+			
+			return;
 		}
 
 		if ( document.pictureInPictureElement )
