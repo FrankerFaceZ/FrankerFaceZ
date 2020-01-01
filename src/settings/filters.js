@@ -313,7 +313,10 @@ export const Title = {
 			return () => false;
 		}
 
-		return ctx => ctx.title && regex.test(ctx.title)
+		return ctx => {
+			regex.lastIndex = 0;
+			return ctx.title && regex.test(ctx.title);
+		}
 	},
 
 	title: 'Current Title',

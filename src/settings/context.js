@@ -104,7 +104,7 @@ export default class SettingsContext extends EventEmitter {
 
 	_rebuildContext() {
 		this.__context = this.parent ?
-			Object.assign({}, this.parent._context, this._context) :
+			Object.assign({}, this.parent.__context || this.parent._context, this._context) :
 			this._context;
 
 		// Make sure we re-build the cache. Dependency hell.
