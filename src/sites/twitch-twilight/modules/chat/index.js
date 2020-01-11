@@ -246,7 +246,7 @@ export default class ChatHook extends Module {
 
 		this.GiftBanner = this.fine.define(
 			'gift-banner',
-			n => n.getBannerText && n.handleCountdownEnd && n.getRemainingTime,
+			n => n.getBannerText && n.onGiftMoreClick,
 			Twilight.CHAT_ROUTES
 		);
 

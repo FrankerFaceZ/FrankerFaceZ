@@ -33,6 +33,7 @@ export default class ChatLine extends Module {
 		this.inject(RichContent);
 
 		this.inject('chat.actions');
+		this.inject('chat.overrides');
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
@@ -46,18 +47,6 @@ export default class ChatLine extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		/*this.ChatRoomLine = this.fine.define(
-			'chat-room-line',
-			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && has(n.props, 'hasModPermissions'),
-			Twilight.CHAT_ROUTES
-		);*/
-
-		/*this.ChatRoomContainer = this.fine.define(
-			'chat-room-container',
-			n => n.renderPlaceholders && n.sendRoomMessage && n.props && n.props.channel,
-			Twilight.CHAT_ROUTES
-		);*/
-
 		this.WhisperLine = this.fine.define(
 			'whisper-line',
 			n => n.props && n.props.message && n.props.reportOutgoingWhisperRendered
@@ -65,6 +54,8 @@ export default class ChatLine extends Module {
 	}
 
 	async onEnable() {
+		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
+
 		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
@@ -99,121 +90,6 @@ export default class ChatLine extends Module {
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
 
 
-		/*this.ChatRoomLine.ready(cls => {
-			const old_render = cls.prototype.render;
-
-			cls.prototype.render = function() { try {
-				this._ffz_no_scan = true;
-
-				const msg = t.chat.standardizeMessage(this.props.message),
-					is_action = msg.is_action,
-
-					user = msg.user,
-					color = t.parent.colors.process(user.color),
-					show_deleted = t.chat.context.get('chat.filtering.show-deleted');
-
-				let show, show_class;
-
-				if ( show_deleted ) {
-					show = true;
-					show_class = msg.deleted;
-				} else {
-					show = this.state && this.state.shouldShowDeletedBody || ! msg.deleted;
-					show_class = false;
-				}
-
-				const u = t.site.getUser(),
-					r = {id: null, login: null};
-
-				if ( u ) {
-					u.moderator = this.props.hasModPermissions;
-				}
-
-				// Find the parent element.
-				const parent = this._ffz_parent = this._ffz_parent || t.fine.searchParent(this,
-					n => (n.props && n.props.banStatusData && n.props.channelID) ||
-					(n.renderPlaceholders && n.sendRoomMessage && n.props && n.props.channel), 50);
-
-				if ( parent != null ) {
-					r.id = parent.props.channelID;
-					r.login = parent.props.channelLogin;
-				}
-
-				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
-					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
-					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
-
-				if ( ! this.ffz_user_click_handler )
-					this.ffz_user_click_handler = this.props.onUsernameClick;
-
-				const cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
-					out = (tokens.length || ! msg.ffz_type) ? [
-						this.props.showTimestamps && e('span', {
-							className: 'chat-line__timestamp'
-						}, t.chat.formatTime(msg.timestamp)),
-						this.renderModerationIcons(),
-						//t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
-						e('span', {
-							className: 'chat-line__message--badges'
-						}, t.chat.badges.render(msg, e)),
-						e('span', {
-							className: 'chat-line__username notranslate',
-							role: 'button',
-							style: { color },
-							onClick: this.ffz_user_click_handler
-						}, [
-							e('span', {
-								className: 'chat-author__display-name'
-							}, user.displayName),
-							user.isIntl && e('span', {
-								className: 'chat-author__intl-login'
-							}, ` (${user.login})`)
-						]),
-						e('span', null, is_action ? ' ' : ': '),
-						show ?
-							e('span', {
-								className: 'message',
-								style: is_action ? { color } : null
-							}, t.chat.renderTokens(tokens, e))
-							:
-							e('span', {
-								className: 'chat-line__message--deleted'
-							}, e('a', {
-								href: '',
-								onClick: this.showDeleted
-							}, t.i18n.t('chat.message-deleted', '<message deleted>'))),
-
-						show && rich_content && e(FFZRichContent, rich_content)
-					] : null;
-
-				if ( ! out )
-					return null;
-
-				return e('div', {
-					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
-					style: {backgroundColor: bg_css},
-					'data-room-id': r.id,
-					'data-room': r.login,
-					'data-user-id': user.id,
-					'data-user': user.login && user.login.toLowerCase()
-				}, out);
-
-			} catch(err) {
-				t.log.capture(err, {
-					extra: {
-						props: this.props
-					}
-				});
-
-				return old_render.call(this);
-			} };
-
-			// Do this after a short delay to hopefully reduce the chance of React
-			// freaking out on us.
-			setTimeout(() => this.ChatRoomLine.forceUpdate());
-		});*/
-
-
 		this.WhisperLine.ready(cls => {
 			const old_render = cls.prototype.render;
 
@@ -227,19 +103,22 @@ export default class ChatLine extends Module {
 
 					is_action = msg.is_action,
 					user = msg.user,
-					color = t.parent.colors.process(user.color),
+					raw_color = t.overrides.getColor(user.id) || user.color,
+					color = t.parent.colors.process(raw_color),
 
 					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null, null),
-					contents = t.chat.renderTokens(tokens, e);
+					contents = t.chat.renderTokens(tokens, e),
+
+					override_name = t.overrides.getName(user.id);
 
 				return e('div', {className: 'thread-message__message'},
 					e('div', {className: 'tw-pd-x-1 tw-pd-y-05'}, [
 						e('span', {
-							className: 'thread-message__message--user-name notranslate',
+							className: `thread-message__message--user-name notranslate${override_name ? ' ffz--name-override' : ''}`,
 							style: {
 								color
 							}
-						}, user.displayName),
+						}, override_name || user.displayName),
 						e('span', null, is_action ? ' ' : ': '),
 						e('span', {
 							className: 'message',
@@ -290,7 +169,9 @@ export default class ChatLine extends Module {
 					is_action = msg.messageType === types.Action,
 
 					user = msg.user,
-					color = t.parent.colors.process(user.color);
+					raw_color = t.overrides.getColor(user.id) || user.color,
+
+					color = t.parent.colors.process(raw_color);
 
 				let mod_mode = this.props.deletedMessageDisplay;
 				let show, show_class, mod_action = null;
@@ -422,6 +303,19 @@ other {# messages were deleted by a moderator.}
 						this.ffz_user_click_handler = this.openViewerCard || this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 				}
 
+
+				const user_block = [
+					e('span', {
+						className: 'chat-author__display-name'
+					}, user.displayName),
+					user.isIntl && e('span', {
+						className: 'chat-author__intl-login'
+					}, ` (${user.login})`)
+				];
+
+				const override_name = t.overrides.getName(user.id);
+
+
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
@@ -432,19 +326,19 @@ other {# messages were deleted by a moderator.}
 							className: 'chat-line__message--badges'
 						}, t.chat.badges.render(msg, e)),
 						e('span', {
-							className: 'chat-line__username notranslate',
+							className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip-wrapper' : ''}`,
 							role: 'button',
 							style: { color },
 							onClick: this.ffz_user_click_handler,
 							onContextMenu: t.actions.handleUserContext
-						}, [
+						}, override_name ? [
 							e('span', {
-								className: 'chat-author__display-name'
-							}, user.displayName),
-							user.isIntl && e('span', {
-								className: 'chat-author__intl-login'
-							}, ` (${user.login})`)
-						]),
+								className: 'chat-author__display_name'
+							}, override_name),
+							e('div', {
+								className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'
+							}, user_block)
+						] : user_block),
 						e('span', null, is_action ? ' ' : ': '),
 						show ?
 							e('span', {
@@ -859,6 +753,23 @@ other {# messages were deleted by a moderator.}
 	}
 
 
+	updateLinesByUser(id, login) {
+		for(const inst of this.ChatLine.instances) {
+			const msg = inst.props.message,
+				user = msg?.user;
+			if ( user && (id && id == user.id) || (login && login == user.login) )
+				inst.forceUpdate();
+		}
+
+		for(const inst of this.WhisperLine.instances) {
+			const msg = inst.props.message?._ffz_message,
+				user = msg?.user;
+			if ( user && (id && id == user.id) || (login && login == user.login) )
+				inst.forceUpdate();
+		}
+	}
+
+
 	maybeUpdateLines() {
 		if ( this.chat.context.get('chat.rich.all-links') )
 			this.updateLines();
@@ -881,14 +792,6 @@ other {# messages were deleted by a moderator.}
 			}
 		}
 
-		/*for(const inst of this.ChatRoomLine.instances) {
-			const msg = inst.props.message;
-			if ( msg ) {
-				msg.ffz_tokens = null;
-				msg.mentioned = msg.mention_color = null;
-			}
-		}*/
-
 		for(const inst of this.WhisperLine.instances) {
 			const msg = inst.props.message;
 			if ( msg && msg._ffz_message )
@@ -897,7 +800,6 @@ other {# messages were deleted by a moderator.}
 
 		this.ChatLine.forceUpdate();
 		this.ExtensionLine.forceUpdate();
-		//this.ChatRoomLine.forceUpdate();
 		this.WhisperLine.forceUpdate();
 
 		this.emit('chat:updated-lines');

@@ -194,6 +194,15 @@ export default class TwitchData extends Module {
 		return get('data.user', data);
 	}
 
+	async getUserSelf(id, login) {
+		const data = await this.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './data/user-self.gql'),
+			{ id, login }
+		);
+
+		return get('data.user.self', data);
+	}
+
 	async getLastBroadcast(id, login) {
 		const data = await this.queryApollo(
 			await import(/* webpackChunkName: 'queries' */ './data/last-broadcast.gql'),

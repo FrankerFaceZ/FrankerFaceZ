@@ -109,7 +109,7 @@ export default class FeaturedFollow extends Module {
 			follows = {};
 
 		for (const user of ap_data.data.users) {
-			if ( ! user.id )
+			if ( ! user || ! user.id )
 				continue;
 
 			follows[user.id] = {

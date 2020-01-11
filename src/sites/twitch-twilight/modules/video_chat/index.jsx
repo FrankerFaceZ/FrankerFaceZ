@@ -283,13 +283,13 @@ export default class VideoChatHook extends Module {
 
 					return (<div
 						data-test-selector="message-layout"
-						class={`tw-align-items-start tw-flex tw-flex-nowrap tw-full-width tw-pd-l-05 tw-pd-y-05 vod-message${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`}
+						class={`tw-align-items-start tw-flex tw-flex-nowrap tw-full-width tw-pd-l-05 tw-pd-y-05 vod-message${msg.highlight ? ' ffz-notice-line ffz--points-line ffz--points-highlight ffz-custom-color' : ''}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`}
 						style={{backgroundColor: bg_css}}
 					>
 						{this.props.hideTimestamp || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
 							<div class="tw-mg-r-05">
 								<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
-									<button class="tw-block tw-full-width tw-interactable tw-interactable--inverted" onClick={this.onTimestampClickHandler}>
+									<button class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive" onClick={this.onTimestampClickHandler}>
 										<div class="tw-pd-x-05">
 											<p class="tw-font-size-7">{print_duration(context.comment.contentOffset)}</p>
 										</div>
@@ -377,7 +377,8 @@ export default class VideoChatHook extends Module {
 			messageParts: comment.message.tokens,
 			is_action: comment.message.isAction,
 			more_replies: comment.moreReplies,
-			timestamp: comment.createdAt
+			timestamp: comment.createdAt,
+			highlight: comment.message.userNoticeParams?.['msg-id'] === 'highlighted-message'
 		};
 
 		this.chat.detokenizeMessage(out);

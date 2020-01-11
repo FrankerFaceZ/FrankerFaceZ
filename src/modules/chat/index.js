@@ -13,6 +13,7 @@ import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/
 import Badges from './badges';
 import Emotes from './emotes';
 import Emoji from './emoji';
+import Overrides from './overrides';
 
 import Room from './room';
 import User from './user';
@@ -40,6 +41,7 @@ export default class Chat extends Module {
 		this.inject(Emotes);
 		this.inject(Emoji);
 		this.inject(Actions);
+		this.inject(Overrides);
 
 		this._link_info = {};
 

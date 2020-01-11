@@ -64,12 +64,21 @@ export default class MainMenu extends Module {
 
 		this.settings.addUI('faq', {
 			path: 'Home > FAQ @{"profile_warning": false}',
-			component: 'faq-page'
+			component: 'md-page',
+			key: 'faq'
 		});
+
+		/*this.settings.addUI('privacy', {
+			path: 'Home > Privacy @{"profile_warning": false}',
+			component: 'md-page',
+			key: 'privacy',
+			force_seen: true
+		});*/
 
 		this.settings.addUI('feedback', {
 			path: 'Home > Feedback @{"profile_warning": false}',
-			component: 'feedback-page'
+			component: 'md-page',
+			key: 'feedback'
 		});
 
 		this.settings.addUI('feedback.log', {
@@ -96,7 +105,8 @@ export default class MainMenu extends Module {
 
 		this.settings.addUI('legal', {
 			path: 'Home > Legal @{"sort": 1000}',
-			component: 'legal-page',
+			component: 'md-page',
+			key: 'legal',
 			force_seen: true
 		});
 

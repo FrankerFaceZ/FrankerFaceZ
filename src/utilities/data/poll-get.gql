@@ -8,6 +8,7 @@ query FFZ_FetchPoll($id: ID!) {
 			login
 			displayName
 		}
+		durationSeconds
 		endedAt
 		startedAt
 		totalVoters

@@ -1,0 +1,9 @@
+query FFZ_UserSelf($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+		id
+		self {
+			isEditor
+			isModerator
+		}
+	}
+}

@@ -5,7 +5,9 @@ query FFZ_FetchUser($id: ID, $login: String) {
 		displayName
 		profileImageURL(width: 50)
 		roles {
+			isAffiliate
 			isPartner
+			isStaff
 		}
 	}
 }

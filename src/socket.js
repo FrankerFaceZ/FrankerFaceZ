@@ -16,6 +16,9 @@ export const State = {
 }
 
 
+const ANONYMOUS_ID = '683b45e4-f853-4c45-bf96-7d799cc93e34';
+
+
 export default class SocketClient extends Module {
 	constructor(...args) {
 		super(...args);
@@ -62,7 +65,7 @@ export default class SocketClient extends Module {
 
 		this.settings.on(':changed:socket.use-cluster', () => {
 			this._host = null;
-			if ( this.disconnected)
+			if ( this.disconnected )
 				this.connect();
 			else
 				this.reconnect();
@@ -252,14 +255,18 @@ export default class SocketClient extends Module {
 			this._ping_time = performance.now();
 			this._send(
 				'hello',
-				[`ffz_${window.FrankerFaceZ.version_info}`, this.settings.provider.get('client-id')],
+				[`ffz_${window.FrankerFaceZ.version_info}`, ANONYMOUS_ID],
 				(success, data) => {
 					if ( ! success )
 						return this.log.warn('Error Saying Hello', data);
 
 					this._on_pong(false, success, data[1]);
-					this.settings.provider.set('client-id', data[0]);
-					this.log.info('Client ID:', data[0]);
+					/*if ( data[0] === ANONYMOUS_ID )
+						this.log.info('Client ID: <Anonymous>');
+					else {
+						this.settings.provider.set('client-id', data[0]);
+						this.log.info('Client ID:', data[0]);
+					}*/
 				});
 
 

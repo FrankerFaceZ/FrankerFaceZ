@@ -18,7 +18,7 @@ export default class MenuButton extends SiteModule {
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('site.fine');
-		this.inject('addons');
+		//this.inject('addons');
 
 		this.should_enable = true;
 		this._pill_content = null;
@@ -158,13 +158,15 @@ export default class MenuButton extends SiteModule {
 		if ( this.has_strings )
 			return this.i18n.formatNumber(this.i18n.new_strings + this.i18n.changed_strings);
 
-		if ( DEBUG && this.addons.has_dev )
+		const addons = this.resolve('addons');
+
+		if ( DEBUG && addons.has_dev )
 			return this.i18n.t('site.menu_button.dev', 'dev');
 
-		if ( DEBUG && ! this.addons.has_dev )
+		if ( DEBUG && ! addons.has_dev )
 			return this.i18n.t('site.menu_button.main-dev', 'm-dev');
 
-		if ( ! DEBUG && this.addons.has_dev )
+		if ( ! DEBUG && addons.has_dev )
 			return this.i18n.t('site.menu_button.addon-dev', 'a-dev');
 
 		return null;
@@ -263,7 +265,8 @@ export default class MenuButton extends SiteModule {
 		if ( el )
 			el.remove();
 
-		const pill = this.formatPill(),
+		const addons = this.resolve('addons'),
+			pill = this.formatPill(),
 			extra_pill = this.formatExtraPill();
 
 		el = (<div
@@ -315,7 +318,7 @@ export default class MenuButton extends SiteModule {
 					{DEBUG && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.main-dev-desc', 'You are running a developer build of FrankerFaceZ.')}
 					</div>)}
-					{this.addons.has_dev && (<div class="tw-mg-t-1">
+					{addons.has_dev && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.addon-dev-desc', 'You have loaded add-on data from a local development server.')}
 					</div>)}
 				</div>)}
