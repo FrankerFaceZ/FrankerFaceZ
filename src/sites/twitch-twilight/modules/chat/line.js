@@ -613,7 +613,10 @@ other {# messages were deleted by a moderator.}
 							t.i18n.formatNumber(getRewardCost(msg.ffz_reward))
 						]);
 
-					cls = `ffz-notice-line ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${isHighlightedReward(msg.ffz_reward) ? ' ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}`;
+					const can_highlight = t.chat.context.get('chat.points.allow-highlight'),
+						highlight = can_highlight && isHighlightedReward(msg.ffz_reward);
+
+					cls = `ffz-notice-line ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${highlight ? ' ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}`;
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
 							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),

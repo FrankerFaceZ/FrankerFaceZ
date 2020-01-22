@@ -180,7 +180,7 @@ export default class ChatHook extends Module {
 
 		this.ChatContainer = this.fine.define(
 			'chat-container',
-			n => n.showViewersList && n.onChatInputFocus,
+			n => n.closeViewersList && n.onChatInputFocus,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -190,17 +190,11 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		this.PinnedCheer = this.fine.define(
+		/*this.PinnedCheer = this.fine.define(
 			'pinned-cheer',
 			n => n.collapseCheer && n.saveRenderedMessageRef,
 			Twilight.CHAT_ROUTES
-		);
-
-		this.RoomPicker = this.fine.define(
-			'chat-picker',
-			n => n.closeRoomPicker && n.handleRoomSelect,
-			Twilight.CHAT_ROUTES
-		);
+		);*/
 
 		this.InlineCallout = this.fine.define(
 			'inline-callout',
@@ -280,12 +274,11 @@ export default class ChatHook extends Module {
 			}
 		});
 
-		this.settings.add('chat.points.custom-rendering', {
+		this.settings.add('chat.points.allow-highlight', {
 			default: true,
 			ui: {
 				path: 'Chat > Channel Points >> Appearance',
-				title: 'Use custom rendering for channel points reward messages in chat.',
-				description: 'Custom rendering applies a background color to highlighted messages, which some users may not appreciate.',
+				title: 'Highlight the message in chat when someone redeems Highlight My Message.',
 				component: 'setting-check-box'
 			}
 		});
@@ -654,6 +647,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.mention-color', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.points.allow-highlight', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
@@ -1002,21 +996,13 @@ export default class ChatHook extends Module {
 		});
 
 
-		this.PinnedCheer.on('mount', this.fixPinnedCheer, this);
+		/*this.PinnedCheer.on('mount', this.fixPinnedCheer, this);
 		this.PinnedCheer.on('update', this.fixPinnedCheer, this);
 
 		this.PinnedCheer.ready((cls, instances) => {
 			for(const inst of instances)
 				this.fixPinnedCheer(inst);
-		});
-
-
-		this.RoomPicker.ready((cls, instances) => {
-			for(const inst of instances)
-				this.closeRoomPicker(inst);
-		});
-
-		this.RoomPicker.on('mount', this.closeRoomPicker, this);
+		});*/
 	}
 
 
@@ -1080,11 +1066,6 @@ export default class ChatHook extends Module {
 		const inst = this.ChatContainer.first;
 		if ( inst )
 			this.containerUpdated(inst, inst.props);
-	}
-
-
-	closeRoomPicker(inst) { // eslint-disable-line class-methods-use-this
-		inst.closeRoomPicker();
 	}
 
 
@@ -1837,16 +1818,14 @@ export default class ChatHook extends Module {
 				const old_points = this.onChannelPointsRewardEvent;
 				this.onChannelPointsRewardEvent = function(e) {
 					try {
-						if ( t.chat.context.get('chat.points.custom-rendering') ) {
-							const reward = e.rewardID && get(e.rewardID, i.props.rewardMap);
-							if ( reward ) {
-								const out = i.convertMessage(e);
+						const reward = e.rewardID && get(e.rewardID, i.props.rewardMap);
+						if ( reward ) {
+							const out = i.convertMessage(e);
 
-								out.ffz_type = 'points';
-								out.ffz_reward = reward;
+							out.ffz_type = 'points';
+							out.ffz_reward = reward;
 
-								return i.postMessageToCurrentChannel(e, out);
-							}
+							return i.postMessageToCurrentChannel(e, out);
 						}
 
 					} catch(err) {
@@ -1931,7 +1910,7 @@ export default class ChatHook extends Module {
 
 
 	updateChatLines() {
-		this.PinnedCheer.forceUpdate();
+		//this.PinnedCheer.forceUpdate();
 		this.chat_line.updateLines();
 	}
 
@@ -1940,7 +1919,7 @@ export default class ChatHook extends Module {
 	// Pinned Cheers
 	// ========================================================================
 
-	fixPinnedCheer(inst) {
+	/*fixPinnedCheer(inst) {
 		const el = this.fine.getChildNode(inst),
 			container = el && el.querySelector && el.querySelector('.pinned-cheer__headline'),
 			tc = inst.props.topCheer;
@@ -1974,7 +1953,7 @@ export default class ChatHook extends Module {
 			cont.innerHTML = '';
 			setChildren(cont, this.chat.renderTokens(tokens));
 		}
-	}
+	}*/
 
 
 	// ========================================================================

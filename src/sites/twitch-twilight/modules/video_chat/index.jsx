@@ -281,9 +281,11 @@ export default class VideoChatHook extends Module {
 					if ( msg.ffz_removed )
 						return null;
 
+					const highlight = ! bg_css && msg.highlight && t.chat.context.get('chat.points.allow-highlight');
+
 					return (<div
 						data-test-selector="message-layout"
-						class={`tw-align-items-start tw-flex tw-flex-nowrap tw-full-width tw-pd-l-05 tw-pd-y-05 vod-message${msg.highlight ? ' ffz-notice-line ffz--points-line ffz--points-highlight ffz-custom-color' : ''}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`}
+						class={`tw-align-items-start tw-flex tw-flex-nowrap tw-full-width tw-pd-l-05 tw-pd-y-05 vod-message${msg.is_sub ? ' ffz-notice-line ffz--subscribe-line' : ''}${msg.highlight ? ' ffz-notice-line ffz--points-line' : ''}${highlight ? ' ffz--points-highlight ffz-custom-color' : ''}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`}
 						style={{backgroundColor: bg_css}}
 					>
 						{this.props.hideTimestamp || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
@@ -360,7 +362,9 @@ export default class VideoChatHook extends Module {
 		if ( comment._ffz_message )
 			return comment._ffz_message;
 
-		const room = this.chat.getRoom(comment.channelId, null, true, true);
+		const room = this.chat.getRoom(comment.channelId, null, true, true),
+			params = comment.message.userNoticeParams,
+			msg_id = params && params['msg-id'];
 
 		const out = comment._ffz_message = {
 			user: {
@@ -378,8 +382,12 @@ export default class VideoChatHook extends Module {
 			is_action: comment.message.isAction,
 			more_replies: comment.moreReplies,
 			timestamp: comment.createdAt,
-			highlight: comment.message.userNoticeParams?.['msg-id'] === 'highlighted-message'
+			is_sub: msg_id === 'sub' || msg_id === 'resub',
+			highlight: msg_id === 'highlighted-message'
 		};
+
+		// TODO: We need to strip the sub message from chat messages
+		// because Twitch is dumb.
 
 		this.chat.detokenizeMessage(out);
 
