@@ -759,9 +759,21 @@ export default class Player extends Module {
 
 	installVisibilityHook() {
 		if ( ! document.pictureInPictureEnabled ) {
-			this.log.info('Skipping visibility hook. Picture-in-Picture is not available.');
+			this.log.info('Skipping visibility hooks. Picture-in-Picture is not available.');
 			return;
 		}
+
+		document.addEventListener('fullscreenchange', () => {
+			const fs = document.fullscreenElement,
+				pip = document.pictureInPictureElement;
+
+			if ( fs && pip && (fs === pip || fs.contains(pip)) )
+				document.exitPictureInPicture();
+
+			// Update the UI since we can't enter PiP from Fullscreen
+			for(const inst of this.Player.instances)
+				this.addPiPButton(inst);
+		});
 
 		try {
 			Object.defineProperty(document, 'hidden', {
@@ -796,6 +808,8 @@ export default class Player extends Module {
 
 	addPiPButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video,
+			is_fs = video && document.fullscreenElement && document.fullscreenElement.contains(video),
 			container = outer && outer.querySelector('.player-controls__right-control-group'),
 			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
 
@@ -846,12 +860,17 @@ export default class Player extends Module {
 		}
 
 		const pip_active = !!document.pictureInPictureElement,
-			label = pip_active ?
-				this.i18n.t('player.pip_button.off', 'Exit Picture-in-Picture') :
-				this.i18n.t('player.pip_button', 'Picture-in-Picture');
+			pip_swap = false, //pip_active && document.pictureInPictureElement !== video,
+			label = is_fs ?
+				this.i18n.t('player.pip_button.fs', 'Cannot use Picture-in-Picture when Fullscreen')
+				: pip_swap ?
+					this.i18n.t('player.pip_button.swap', 'Switch Picture-in-Picture')
+					: pip_active ?
+						this.i18n.t('player.pip_button.off', 'Exit Picture-in-Picture')
+						: this.i18n.t('player.pip_button', 'Picture-in-Picture');
 
-		icon.classList.toggle('ffz-i-t-pip-inactive', ! pip_active);
-		icon.classList.toggle('ffz-i-t-pip-active', pip_active);
+		icon.classList.toggle('ffz-i-t-pip-inactive', ! pip_active || pip_swap);
+		icon.classList.toggle('ffz-i-t-pip-active', pip_active && ! pip_swap);
 
 		btn.setAttribute('aria-label', label);
 		tip.textContent = label;
@@ -866,6 +885,9 @@ export default class Player extends Module {
 		if ( e )
 			e.preventDefault();
 
+		if ( document.fullscreenElement && document.fullscreenElement.contains(video) )
+			return;
+
 		if ( ! video._ffz_pip_enter ) {
 			video.addEventListener('enterpictureinpicture', video._ffz_pip_enter = () => {
 				this.addPiPButton(inst);
@@ -876,9 +898,11 @@ export default class Player extends Module {
 			});
 		}
 
+		//const is_this = document.pictureInPictureElement === video;
 		if ( document.pictureInPictureElement )
 			document.exitPictureInPicture();
 		else
+		//if ( ! is_this )
 			video.requestPictureInPicture();
 	}
 

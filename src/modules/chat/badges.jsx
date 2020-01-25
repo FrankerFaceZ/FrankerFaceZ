@@ -247,6 +247,8 @@ export default class Badges extends Module {
 
 	getSettingsBadges(include_addons) {
 		const twitch = [],
+			owl = [],
+			tcon = [],
 			game = [],
 			ffz = [],
 			addon = [];
@@ -258,7 +260,7 @@ export default class Badges extends Module {
 				let v = badge && (badge[1] || badge[0]);
 
 				for(const key in badge)
-					if ( has(badge, key) ) {
+					if ( key !== '__cat' && has(badge, key) ) {
 						const version = badge[key];
 						if ( ! v )
 							v = version;
@@ -272,8 +274,18 @@ export default class Badges extends Module {
 							});
 					}
 
-				if ( v )
-					(badge.__game ? game : twitch).push({
+				if ( v ) {
+					let cat;
+					if ( badge.__cat === 'm-owl' )
+						cat = owl;
+					else if ( badge.__cat === 'm-tcon' )
+						cat = tcon;
+					else if ( badge.__cat === 'm-game' )
+						cat = game;
+					else
+						cat = twitch;
+
+					cat.push({
 						id: key,
 						provider: 'twitch',
 						name: v.title,
@@ -282,6 +294,7 @@ export default class Badges extends Module {
 						versions: vs,
 						styleImage: `url("${v.image2x}")`
 					});
+				}
 			}
 
 		if ( include_addons )
@@ -302,6 +315,8 @@ export default class Badges extends Module {
 
 		return [
 			{title: 'Twitch', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
+			{title: 'Twitch: Overwatch League', id: 'm-owl', badges: owl},
 			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game},
 			{title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz},
 			{title: 'Add-on', id: 'm-addon', badges: addon}
@@ -408,10 +423,10 @@ export default class Badges extends Module {
 			is_colored = badge_style !== 5,
 			has_image = badge_style !== 3 && badge_style !== 4,
 
-			twitch_hidden = hidden_badges['m-twitch'],
-			game_hidden = hidden_badges['m-game'],
 			ffz_hidden = hidden_badges['m-ffz'],
 			addon_hidden = hidden_badges['m-addon'],
+
+			tb = this.twitch_badges,
 
 			out = [],
 			slotted = {},
@@ -433,9 +448,10 @@ export default class Badges extends Module {
 			if ( has(twitch_badges, badge_id) ) {
 				const version = twitch_badges[badge_id],
 					is_hidden = hidden_badges[badge_id],
-					is_game = badge_id.endsWith('_1');
+					bdata = tb && tb[badge_id],
+					cat = bdata && bdata.__cat || 'm-twitch';
 
-				if ( is_hidden || (is_hidden == null && (is_game ? game_hidden : twitch_hidden)))
+				if ( is_hidden || (is_hidden == null && hidden_badges[cat]) )
 					continue;
 
 				if ( has(BADGE_POSITIONS, badge_id) )
@@ -771,7 +787,9 @@ export default class Badges extends Module {
 				b = {};
 				for(const data of badges) {
 					const sid = data.setID,
-						bs = b[sid] = b[sid] || {__game: /_\d+$/.test(sid) && ! sid.includes('overwatch') };
+						bs = b[sid] = b[sid] || {
+							__cat: getBadgeCategory(sid)
+						};
 
 					this.twitch_badge_count++;
 					bs[data.version] = data;
@@ -864,4 +882,16 @@ export default class Badges extends Module {
 		else
 			this.style.delete('twitch-badges');
 	}
+}
+
+
+function getBadgeCategory(key) {
+	if ( key.startsWith('overwatch-league') )
+		return 'm-owl';
+	else if ( key.startsWith('twitchcon') )
+		return 'm-tcon';
+	else if ( /_\d+$/.test(key) )
+		return 'm-game';
+
+	return 'm-twitch';
 }

@@ -50,6 +50,15 @@ export default class VideoChatHook extends Module {
 
 		// Settings
 
+		this.settings.add('chat.video-chat.timestamps', {
+			default: true,
+			ui: {
+				path: 'Chat > Chat on Videos >> Appearance',
+				title: 'Display timestamps alongside chat messages.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.video-chat.enabled', {
 			default: true,
 			ui: {
@@ -64,6 +73,7 @@ export default class VideoChatHook extends Module {
 
 	async onEnable() {
 		this.chat.context.on('changed:chat.video-chat.enabled', this.updateLines, this);
+		this.chat.context.on('changed:chat.video-chat.timestamps', this.updateLines, this);
 		this.on('chat:updated-lines', this.updateLines, this);
 
 		this.VideoChatController.on('mount', this.chatMounted, this);
@@ -275,6 +285,7 @@ export default class VideoChatHook extends Module {
 					const context = this.props.messageContext,
 						msg = t.standardizeMessage(context.comment, context.author),
 						main_message = this.ffzRenderMessage(msg, context),
+						hide_timestamps = this.props.hideTimestamp || ! t.chat.context.get('chat.video-chat.timestamps'),
 
 						bg_css = msg.mentioned && msg.mention_color ? t.site_chat.inverse_colors.process(msg.mention_color) : null;
 
@@ -288,7 +299,7 @@ export default class VideoChatHook extends Module {
 						class={`tw-align-items-start tw-flex tw-flex-nowrap tw-full-width tw-pd-l-05 tw-pd-y-05 vod-message${msg.is_sub ? ' ffz-notice-line ffz--subscribe-line' : ''}${msg.highlight ? ' ffz-notice-line ffz--points-line' : ''}${highlight ? ' ffz--points-highlight ffz-custom-color' : ''}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`}
 						style={{backgroundColor: bg_css}}
 					>
-						{this.props.hideTimestamp || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
+						{hide_timestamps || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
 							<div class="tw-mg-r-05">
 								<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
 									<button class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive" onClick={this.onTimestampClickHandler}>
