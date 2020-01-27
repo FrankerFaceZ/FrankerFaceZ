@@ -32,7 +32,7 @@ const CLASSES = {
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard',
-	'whispers': 'body .whispers',
+	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"]',
 
 	'dir-live-ind': '.preview-card[data-ffz-type="live"] .tw-channel-status-text-indicator,.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',

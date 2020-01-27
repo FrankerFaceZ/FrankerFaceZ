@@ -82,7 +82,7 @@ export default class Player extends Module {
 			this.settings.add('player.compressor.enable', {
 				default: true,
 				ui: {
-					path: 'Player > Compressor @{"description": "These settings control optional dynamic range compression for the player, a form of audio processing that reduces the volume of loud sounds and amplifies quiet sounds, thus normalizing or compressing the volume."} >> General',
+					path: 'Player > Compressor @{"description": "These settings control optional dynamic range compression for the player, a form of audio processing that reduces the volume of loud sounds and amplifies quiet sounds, thus normalizing or compressing the volume. This uses a [DynamicsCompressorNode](https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode) from the Web Audio API behind the scenes if you want to learn more."} >> General',
 					title: 'Enable the audio compressor and add an `Audio Compressor` button to the player controls.',
 					sort: -1000,
 					component: 'setting-check-box'
@@ -114,7 +114,7 @@ export default class Player extends Module {
 					path: 'Player > Compressor >> Advanced @{"sort": 1000}',
 					title: 'Threshold',
 					sort: 0,
-					description: 'Range: -100 ~ 0',
+					description: '**Range:** -100 ~ 0\n\nThe decibel value above which the compression will start taking effect.',
 					component: 'setting-text-box',
 					process(val) {
 						val = parseInt(val, 10);
@@ -134,7 +134,7 @@ export default class Player extends Module {
 					path: 'Player > Compressor >> Advanced',
 					title: 'Knee',
 					sort: 5,
-					description: 'Range: 0 ~ 40',
+					description: '**Range:** 0 ~ 40\n\nA decibel value representing the range above the threshold where the curve smoothly transitions to the compressed portion.',
 					component: 'setting-text-box',
 					process(val) {
 						val = parseInt(val, 10);
@@ -154,7 +154,7 @@ export default class Player extends Module {
 					path: 'Player > Compressor >> Advanced',
 					title: 'Ratio',
 					sort: 10,
-					description: 'Range: 0 ~ 20',
+					description: '**Range:** 0 ~ 20\n\nThe amount of change, in dB, needed in the input for a 1 dB change in the output.',
 					component: 'setting-text-box',
 					process(val) {
 						val = parseInt(val, 10);
@@ -174,7 +174,7 @@ export default class Player extends Module {
 					path: 'Player > Compressor >> Advanced',
 					title: 'Attack',
 					sort: 15,
-					description: 'Range: 0 ~ 1',
+					description: '**Range:** 0 ~ 1\n\nThe amount of time, in seconds, required to reduce the gain by 10 dB.',
 					component: 'setting-text-box',
 					process(val) {
 						val = parseFloat(val);
@@ -194,7 +194,7 @@ export default class Player extends Module {
 					path: 'Player > Compressor >> Advanced',
 					title: 'Release',
 					sort: 20,
-					description: 'Range: 0 ~ 1',
+					description: '**Range:** 0 ~ 1\nThe amount of time, in seconds, required to increase the gain by 10 dB.',
 					component: 'setting-text-box',
 					process(val) {
 						val = parseFloat(val);
@@ -212,7 +212,7 @@ export default class Player extends Module {
 		this.settings.add('player.allow-catchup', {
 			default: true,
 			ui: {
-				path: 'Player > General >> General',
+				path: 'Player > General @{"sort": -1000} >> General',
 				title: 'Allow the player to speed up to reduce delay.',
 				description: 'Twitch, by default, will apply a minor speed up to live video when you have a large delay to the broadcaster in order to catch back up with the live broadcast. This may result in audio distortion. Disable this to prevent the automatic speed changes.',
 				component: 'setting-check-box'
@@ -940,7 +940,7 @@ export default class Player extends Module {
 	updateGUI(inst) {
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
-		this.addCompressorButton(inst);
+		this.addCompressorButton(inst, true);
 
 		const player = inst?.props?.mediaPlayerInstance;
 		if ( player && ! this.settings.get('player.allow-catchup') ) {
@@ -950,7 +950,7 @@ export default class Player extends Module {
 	}
 
 
-	addCompressorButton(inst, tries = 0) {
+	addCompressorButton(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video,
 			container = outer && outer.querySelector('.player-controls__left-control-group'),
@@ -961,12 +961,12 @@ export default class Player extends Module {
 				return;
 
 			if ( tries < 5 )
-				return setTimeout(this.addCompressorButton.bind(this, inst, (tries || 0) + 1), 250);
+				return setTimeout(this.addCompressorButton.bind(this, inst, visible_only, (tries || 0) + 1), 250);
 
 			return;
 		}
 
-		let icon, tip, btn, cont = container.querySelector('.ffz--player-comp');
+		let icon, tip, extra, btn, cont = container.querySelector('.ffz--player-comp');
 		if ( ! has_comp ) {
 			if ( cont )
 				cont.remove();
@@ -987,23 +987,37 @@ export default class Player extends Module {
 						</div>
 					</div>
 				</button>)}
-				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+				<div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" role="tooltip">
+					<div>
+						{tip = (<div class="ffz--p-tip" />)}
+						{extra = (<div class="ffz--p-extra tw-pd-t-05" />)}
+					</div>
+				</div>
 			</div>);
 
 			container.appendChild(cont);
-		} else {
+		} else if ( visible_only )
+			return;
+		else {
 			icon = cont.querySelector('figure');
 			btn = cont.querySelector('button');
-			tip = cont.querySelector('.tw-tooltip');
+			tip = cont.querySelector('.tw-tooltip .ffz--p-tip');
+			extra = cont.querySelector('.tw-tooltip .ffz--p-extra');
 		}
 
 		const comp_active = video._ffz_compressed,
-			label = comp_active ?
-				this.i18n.t('player.comp_button.off', 'Disable Audio Compressor') :
-				this.i18n.t('player.comp_button.on', 'Enable Audio Compressor');
+			can_apply = this.canCompress(inst),
+			label = can_apply ?
+				comp_active ?
+					this.i18n.t('player.comp_button.off', 'Disable Audio Compressor') :
+					this.i18n.t('player.comp_button.on', 'Enable Audio Compressor')
+				: this.i18n.t('player.comp_button.disabled', 'Audio Compressor cannot be enabled when viewing Clips.');
+
+		extra.textContent = this.i18n.t('player.comp_button.help', 'See the FFZ Control Center for details. If audio breaks, please reset the player.');
 
 		icon.classList.toggle('ffz-i-comp-on', comp_active);
 		icon.classList.toggle('ffz-i-comp-off', ! comp_active);
+		btn.disabled = ! can_apply;
 
 		btn.setAttribute('aria-label', label);
 		tip.textContent = label;
@@ -1017,21 +1031,25 @@ export default class Player extends Module {
 		const compressed = video._ffz_compressed || false;
 		let wanted = this.settings.get('player.compressor.default');
 		if ( e != null ) {
-			video._ffz_toggled = true;
 			e.preventDefault();
+			video._ffz_toggled = true;
 			wanted = ! video._ffz_compressed;
-		} else if ( video._ffz_toggled )
-			return;
-
-		if ( wanted == compressed )
-			return;
+		}
 
 		if ( ! video._ffz_compressor ) {
 			if ( ! wanted )
 				return;
 
-			this.createCompressor(video);
+			this.createCompressor(inst, video);
+
+		} else if ( ! video._ffz_comp_reset && ! this.canCompress(inst) ) {
+			video._ffz_comp_reset = true;
+			this.resetPlayer(inst);
+			return;
 		}
+
+		if ( wanted == compressed )
+			return;
 
 		const ctx = video._ffz_context,
 			comp = video._ffz_compressor,
@@ -1054,8 +1072,36 @@ export default class Player extends Module {
 		this.addCompressorButton(inst);
 	}
 
-	createCompressor(video) {
+	canCompress(inst) { // eslint-disable-line class-methods-use-this
 		if ( ! HAS_COMPRESSOR )
+			return false;
+
+		const player = inst.props?.mediaPlayerInstance;
+		if ( player == null )
+			return false;
+
+		const video = player.mediaSinkManager?.video;
+		if ( ! video )
+			return false;
+
+		if ( video.src ) {
+			const url = new URL(video.src);
+			if ( url.protocol !== 'blob:' )
+				return false;
+		}
+
+		/*this.PlayerSource.check();
+		for(const si of this.PlayerSource.instances) {
+			if ( player === si.props?.mediaPlayerInstance ) {
+				return si.props?.playerType !== 'clips-watch' && si.props?.content?.type !== 'clip';
+			}
+		}*/
+
+		return true;
+	}
+
+	createCompressor(inst, video) {
+		if ( ! this.canCompress(inst) )
 			return;
 
 		let comp = video._ffz_compressor;
@@ -1339,6 +1385,14 @@ export default class Player extends Module {
 					icon.classList.toggle('loading', false);
 				}, 10000);
 			}
+		}
+
+		const video = player.mediaSinkManager?.video;
+		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
+			const new_vid = createElement('video');
+			new_vid.playsInline = true;
+			video.replaceWith(new_vid);
+			player.attachHTMLVideoElement(new_vid);
 		}
 
 		this.PlayerSource.check();
