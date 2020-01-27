@@ -91,5 +91,7 @@ export default [
 	"whispers",
 	"cake",
 	"channel-points",
-	"fast-fw"
+	"fast-fw",
+	"comp-on",
+	"comp-off"
 ];

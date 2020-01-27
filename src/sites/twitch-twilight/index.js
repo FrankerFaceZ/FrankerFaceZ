@@ -261,7 +261,7 @@ Twilight.DASH_ROUTES = {
 	'dash-settings-moderation': '/u/:userName/settings/moderation',
 	'dash-settings-channel': '/u/:userName/settings/channel',
 	'dash-settings-revenue': '/u/:userName/settings/revenue',
-	'dash-extensions': '/u/:userName/extensions',
+		'dash-extensions': '/u/:userName/extensions',
 	'dash-streaming-tools': '/u/:userName/broadcast',
 };
 

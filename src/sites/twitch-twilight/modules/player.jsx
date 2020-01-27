@@ -7,7 +7,12 @@
 import Module from 'utilities/module';
 import {createElement, on, off} from 'utilities/dom';
 
-export const PLAYER_ROUTES = ['front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following', 'dash'];
+export const PLAYER_ROUTES = [
+	'front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos',
+	'user-clips', 'user-collections', 'user-events', 'user-followers',
+	'user-following', 'dash', 'squad', 'command-center', 'dash-stream-manager'];
+
+const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null;
 
 const STYLE_VALIDATOR = createElement('span');
 
@@ -72,6 +77,137 @@ export default class Player extends Module {
 
 
 		// Settings
+
+		if ( HAS_COMPRESSOR ) {
+			this.settings.add('player.compressor.enable', {
+				default: true,
+				ui: {
+					path: 'Player > Compressor @{"description": "These settings control optional dynamic range compression for the player, a form of audio processing that reduces the volume of loud sounds and amplifies quiet sounds, thus normalizing or compressing the volume."} >> General',
+					title: 'Enable the audio compressor and add an `Audio Compressor` button to the player controls.',
+					sort: -1000,
+					component: 'setting-check-box'
+				},
+
+				changed: () => {
+					for(const inst of this.Player.instances)
+						this.addCompressorButton(inst);
+				}
+			});
+
+			this.settings.add('player.compressor.default', {
+				default: false,
+				ui: {
+					path: 'Player > Compressor >> General',
+					title: 'Enable the compressor by default.',
+					component: 'setting-check-box'
+				},
+
+				changed: () => {
+					for(const inst of this.Player.instances)
+						this.compressPlayer(inst);
+				}
+			});
+
+			this.settings.add('player.compressor.threshold', {
+				default: -50,
+				ui: {
+					path: 'Player > Compressor >> Advanced @{"sort": 1000}',
+					title: 'Threshold',
+					sort: 0,
+					description: 'Range: -100 ~ 0',
+					component: 'setting-text-box',
+					process(val) {
+						val = parseInt(val, 10);
+						if ( isNaN(val) || ! isFinite(val) || val > 0 || val < -100 )
+							return -50;
+
+						return val;
+					}
+				},
+
+				changed: () => this.updateCompressors()
+			});
+
+			this.settings.add('player.compressor.knee', {
+				default: 40,
+				ui: {
+					path: 'Player > Compressor >> Advanced',
+					title: 'Knee',
+					sort: 5,
+					description: 'Range: 0 ~ 40',
+					component: 'setting-text-box',
+					process(val) {
+						val = parseInt(val, 10);
+						if ( isNaN(val) || ! isFinite(val) || val < 0 || val > 40 )
+							return 40;
+
+						return val;
+					}
+				},
+
+				changed: () => this.updateCompressors()
+			});
+
+			this.settings.add('player.compressor.ratio', {
+				default: 12,
+				ui: {
+					path: 'Player > Compressor >> Advanced',
+					title: 'Ratio',
+					sort: 10,
+					description: 'Range: 0 ~ 20',
+					component: 'setting-text-box',
+					process(val) {
+						val = parseInt(val, 10);
+						if ( isNaN(val) || ! isFinite(val) || val < 1 || val > 20 )
+							return 12;
+
+						return val;
+					}
+				},
+
+				changed: () => this.updateCompressors()
+			});
+
+			this.settings.add('player.compressor.attack', {
+				default: 0,
+				ui: {
+					path: 'Player > Compressor >> Advanced',
+					title: 'Attack',
+					sort: 15,
+					description: 'Range: 0 ~ 1',
+					component: 'setting-text-box',
+					process(val) {
+						val = parseFloat(val);
+						if ( isNaN(val) || ! isFinite(val) || val < 0 || val > 1 )
+							return 0;
+
+						return val;
+					}
+				},
+
+				changed: () => this.updateCompressors()
+			});
+
+			this.settings.add('player.compressor.release', {
+				default: 0.25,
+				ui: {
+					path: 'Player > Compressor >> Advanced',
+					title: 'Release',
+					sort: 20,
+					description: 'Range: 0 ~ 1',
+					component: 'setting-text-box',
+					process(val) {
+						val = parseFloat(val);
+						if ( isNaN(val) || ! isFinite(val) || val < 0 || val > 1 )
+							return 0.25;
+
+						return val;
+					}
+				},
+
+				changed: () => this.updateCompressors()
+			});
+		}
 
 		this.settings.add('player.allow-catchup', {
 			default: true,
@@ -631,11 +767,18 @@ export default class Player extends Module {
 				}
 
 				this.updateGUI(inst);
+				this.compressPlayer(inst);
 			}
 		});
 
-		this.Player.on('mount', this.updateGUI, this);
-		this.Player.on('update', this.updateGUI, this);
+		this.Player.on('mount', inst => {
+			this.updateGUI(inst);
+			this.compressPlayer(inst);
+		});
+		this.Player.on('update', inst => {
+			this.updateGUI(inst);
+			this.compressPlayer(inst);
+		});
 
 		this.Player.on('unmount', inst => {
 			inst.ffzUninstall();
@@ -797,12 +940,157 @@ export default class Player extends Module {
 	updateGUI(inst) {
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
+		this.addCompressorButton(inst);
 
 		const player = inst?.props?.mediaPlayerInstance;
 		if ( player && ! this.settings.get('player.allow-catchup') ) {
 			if ( player.setLiveSpeedUpRate )
 				player.setLiveSpeedUpRate(1);
 		}
+	}
+
+
+	addCompressorButton(inst, tries = 0) {
+		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video,
+			container = outer && outer.querySelector('.player-controls__left-control-group'),
+			has_comp = HAS_COMPRESSOR && video != null && this.settings.get('player.compressor.enable');
+
+		if ( ! container ) {
+			if ( ! has_comp )
+				return;
+
+			if ( tries < 5 )
+				return setTimeout(this.addCompressorButton.bind(this, inst, (tries || 0) + 1), 250);
+
+			return;
+		}
+
+		let icon, tip, btn, cont = container.querySelector('.ffz--player-comp');
+		if ( ! has_comp ) {
+			if ( cont )
+				cont.remove();
+			return;
+		}
+
+		if ( ! cont ) {
+			cont = (<div class="ffz--player-comp tw-inline-flex tw-relative tw-tooltip-wrapper">
+				{btn = (<button
+					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--border tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					type="button"
+					data-a-target="ffz-player-comp-button"
+					onClick={this.compressPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<div class="tw-button-icon__icon">
+							{icon = (<figure class="ffz-player-icon" />)}
+						</div>
+					</div>
+				</button>)}
+				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+			</div>);
+
+			container.appendChild(cont);
+		} else {
+			icon = cont.querySelector('figure');
+			btn = cont.querySelector('button');
+			tip = cont.querySelector('.tw-tooltip');
+		}
+
+		const comp_active = video._ffz_compressed,
+			label = comp_active ?
+				this.i18n.t('player.comp_button.off', 'Disable Audio Compressor') :
+				this.i18n.t('player.comp_button.on', 'Enable Audio Compressor');
+
+		icon.classList.toggle('ffz-i-comp-on', comp_active);
+		icon.classList.toggle('ffz-i-comp-off', ! comp_active);
+
+		btn.setAttribute('aria-label', label);
+		tip.textContent = label;
+	}
+
+	compressPlayer(inst, e) {
+		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
+		if ( ! video || ! HAS_COMPRESSOR )
+			return;
+
+		const compressed = video._ffz_compressed || false;
+		let wanted = this.settings.get('player.compressor.default');
+		if ( e != null ) {
+			video._ffz_toggled = true;
+			e.preventDefault();
+			wanted = ! video._ffz_compressed;
+		} else if ( video._ffz_toggled )
+			return;
+
+		if ( wanted == compressed )
+			return;
+
+		if ( ! video._ffz_compressor ) {
+			if ( ! wanted )
+				return;
+
+			this.createCompressor(video);
+		}
+
+		const ctx = video._ffz_context,
+			comp = video._ffz_compressor,
+			src = video._ffz_source;
+
+		if ( ! ctx || ! comp || ! src )
+			return;
+
+		if ( wanted ) {
+			src.disconnect(ctx.destination);
+			src.connect(comp);
+			comp.connect(ctx.destination);
+		} else {
+			src.disconnect(comp);
+			comp.disconnect(ctx.destination);
+			src.connect(ctx.destination);
+		}
+
+		video._ffz_compressed = wanted;
+		this.addCompressorButton(inst);
+	}
+
+	createCompressor(video) {
+		if ( ! HAS_COMPRESSOR )
+			return;
+
+		let comp = video._ffz_compressor;
+		if ( ! comp ) {
+			const ctx = video._ffz_context = new AudioContext(),
+				src = video._ffz_source = ctx.createMediaElementSource(video);
+
+			src.connect(ctx.destination);
+
+			comp = video._ffz_compressor = ctx.createDynamicsCompressor();
+			video._ffz_compressed = false;
+		}
+
+		this.updateCompressor(null, comp);
+	}
+
+	updateCompressors() {
+		for(const inst of this.Player.instances)
+			this.updateCompressor(inst);
+	}
+
+	updateCompressor(inst, comp) {
+		if ( comp == null ) {
+			const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
+			comp = video?._ffz_compressor;
+		}
+
+		if ( ! comp )
+			return;
+
+		comp.threshold.value = this.settings.get('player.compressor.threshold');
+		comp.knee.value = this.settings.get('player.compressor.knee');
+		comp.ratio.value = this.settings.get('player.compressor.ratio');
+		comp.attack.value = this.settings.get('player.compressor.attack');
+		comp.release.value = this.settings.get('player.compressor.release');
 	}
 
 

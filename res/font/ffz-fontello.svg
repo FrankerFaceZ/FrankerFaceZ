@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg xmlns="http://www.w3.org/2000/svg">
-<metadata>Copyright (C) 2019 by original authors @ fontello.com</metadata>
+<metadata>Copyright (C) 2020 by original authors @ fontello.com</metadata>
 <defs>
 <font id="ffz-fontello" horiz-adv-x="1000" >
 <font-face font-family="ffz-fontello" font-weight="400" font-stretch="normal" units-per-em="1000" ascent="850" descent="-150" />
@@ -129,6 +129,10 @@
 <glyph glyph-name="channel-points" unicode="&#xe83c;" d="M500 550a200 200 0 0 0 200-200h-100a100 100 0 0 1-100 100z m12 200a400 400 0 0 1-412-400 400 400 0 0 1 800 0 400 400 0 0 1-388 400z m-3-100a300 300 0 0 0 291-300 300 300 0 0 0-600 0 300 300 0 0 0 309 300z" horiz-adv-x="1000" />
 
 <glyph glyph-name="fast-fw" unicode="&#xe83d;" d="M25-71q-10-11-18-8t-7 18v822q0 14 7 18t18-8l396-396q5-5 8-10v396q0 14 7 18t18-8l396-396q11-10 11-25t-11-25l-396-396q-11-11-18-8t-7 18v397q-3-6-8-11z" horiz-adv-x="928.6" />
+
+<glyph glyph-name="comp-on" unicode="&#xe83e;" d="M850 650c28 0 50-22 50-50v-500c0-28-22-50-50-50s-50 22-50 50v500c0 28 22 50 50 50z m-280-50c28 0 50-22 50-50v-400c0-28-22-50-50-50s-50 22-50 50v400c0 28 22 50 50 50z m140 25c28 0 50-22 50-50v-450c0-28-22-50-50-50s-50 22-50 50v450c0 28 22 50 50 50z m-280-25c28 0 50-22 50-50v-400c0-28-22-50-50-50s-50 22-50 50v400c0 28 22 50 50 50z m-140 25c28 0 50-22 50-50v-450c0-28-22-50-50-50s-50 22-50 50v450c0 28 22 50 50 50z m-140 25c28 0 50-22 50-50v-500c0-28-22-50-50-50s-50 22-50 50v500c0 28 22 50 50 50z" horiz-adv-x="1000" />
+
+<glyph glyph-name="comp-off" unicode="&#xe83f;" d="M850 648c28 0 50-23 50-50v-493c0-28-22-50-50-50s-50 22-50 50v493c0 27 22 50 50 50z m-280 34c28 0 50-22 50-50v-562c0-28-22-50-50-50s-50 22-50 50v562c0 28 22 50 50 50z m140-96c28 0 50-23 50-50v-369c0-28-22-50-50-50s-50 22-50 50v369c0 27 22 50 50 50z m-280 166c28 0 50-22 50-50v-702c0-27-22-50-50-50s-50 23-50 50v702c0 28 22 50 50 50z m-140-119c28 0 50-22 50-50v-463c0-28-22-50-50-50s-50 22-50 50v463c0 28 22 50 50 50z m-140-83c28 0 50-22 50-50v-298c0-28-22-50-50-50s-50 22-50 50v298c0 28 22 50 50 50z" horiz-adv-x="1000" />
 
 <glyph glyph-name="link-ext" unicode="&#xf08e;" d="M786 332v-178q0-67-47-114t-114-47h-464q-67 0-114 47t-47 114v464q0 66 47 113t114 48h393q7 0 12-5t5-13v-36q0-8-5-13t-12-5h-393q-37 0-63-26t-27-63v-464q0-37 27-63t63-27h464q37 0 63 27t26 63v178q0 8 5 13t13 5h36q8 0 13-5t5-13z m214 482v-285q0-15-11-25t-25-11-25 11l-98 98-364-364q-5-6-13-6t-12 6l-64 64q-6 5-6 12t6 13l364 364-98 98q-11 11-11 25t11 25 25 11h285q15 0 25-11t11-25z" horiz-adv-x="1000" />
 
