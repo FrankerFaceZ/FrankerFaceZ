@@ -1048,7 +1048,7 @@ export default class Player extends Module {
 			return;
 		}
 
-		if ( wanted == compressed )
+		if ( wanted == compressed || (e == null && video._ffz_toggled) )
 			return;
 
 		const ctx = video._ffz_context,
