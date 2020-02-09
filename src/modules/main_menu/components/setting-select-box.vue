@@ -15,13 +15,29 @@
 				class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-05"
 				@change="onChange"
 			>
-				<option
-					v-for="i in data"
-					:key="i.value"
-					:selected="i.value === value"
-				>
-					{{ i.i18n_key ? t(i.i18n_key, i.title, i) : i.title }}
-				</option>
+				<template v-for="i in nested_data">
+					<optgroup
+						v-if="i.entries"
+						:key="i.key"
+						:disabled="i.disabled"
+						:label="i.i18n_key ? t(i.i18n_key, i.title, i) : i.title"
+					>
+						<option
+							v-for="j in i.entries"
+							:key="j.value"
+							:selected="j.value === value"
+						>
+							{{ j.i18n_key ? t(j.i18n_key, j.title, j) : j.title }}
+						</option>
+					</optgroup>
+					<option
+						v-else
+						:key="i.value"
+						:selected="i.value === value"
+					>
+						{{ i.i18n_key ? t(i.i18n_key, i.title, i) : i.title }}
+					</option>
+				</template>
 			</select>
 
 			<component
@@ -68,6 +84,36 @@ import SettingMixin from '../setting-mixin';
 export default {
 	mixins: [SettingMixin],
 	props: ['item', 'context'],
+
+	computed: {
+		nested_data() {
+			const out = [];
+			let current_group = null;
+			let i = 0;
+
+			for(const entry of this.data) {
+				if ( entry.separator ) {
+					current_group = {
+						key: entry.key ?? i,
+						entries: [],
+						i18n_key: entry.i18n_key,
+						title: entry.title,
+						disabled: entry.disabled
+					};
+
+					out.push(current_group);
+
+				} else if ( current_group != null )
+					current_group.entries.push(entry);
+				else
+					out.push(entry);
+
+				i++;
+			}
+
+			return out;
+		}
+	},
 
 	methods: {
 		onChange() {

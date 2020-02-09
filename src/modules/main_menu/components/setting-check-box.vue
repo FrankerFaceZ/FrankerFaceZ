@@ -14,8 +14,10 @@
 			>
 
 			<label :for="item.full_key" class="tw-checkbox__label">
-				{{ t(item.i18n_key, item.title) }}
-				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+				<span class="tw-mg-l-1">
+					{{ t(item.i18n_key, item.title) }}
+					<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+				</span>
 			</label>
 
 			<component

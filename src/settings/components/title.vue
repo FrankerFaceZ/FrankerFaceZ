@@ -51,10 +51,12 @@
 					class="ffz-min-width-unset tw-checkbox__input"
 				>
 				<label :for="'sensitive$' + id" class="tw-checkbox__label tw-relative tw-tooltip-wrapper">
-					Aa
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-						{{ t('settings.filter.title.sensitive', 'Case Sensitive') }}
-					</div>
+					<span class="tw-mg-l-05">
+						Aa
+						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+							{{ t('settings.filter.title.sensitive', 'Case Sensitive') }}
+						</div>
+					</span>
 				</label>
 			</div>
 		</div>

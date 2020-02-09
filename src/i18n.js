@@ -176,11 +176,12 @@ export class TranslationManager extends Module {
 		if( val === undefined )
 			val = this.settings.get('i18n.locale');
 
-		const out = this.availableLocales.map(l => {
-			const data = this.localeData[l];
-			let title = data?.native_name;
-			if ( ! title )
-				title = data?.name || l;
+		const normal_out = [],
+			joke_out = [];
+
+		for(const locale of this.availableLocales) {
+			const data = this.localeData[locale];
+			let title = data?.native_name || data?.name || locale;
 
 			if ( data?.coverage != null && data?.coverage < 100 )
 				title = this.t('i18n.locale-coverage', '{name} ({coverage,number,percent} Complete)', {
@@ -188,23 +189,47 @@ export class TranslationManager extends Module {
 					coverage: data.coverage / 100
 				});
 
-			return {
-				selected: val === l,
-				value: l,
+			const entry = {
+				selected: val === locale,
+				value: locale,
 				title
 			};
-		});
 
-		out.sort((a, b) => {
-			return a.title.localeCompare(b.title)
-		});
+			if ( data?.joke )
+				joke_out.push(entry);
+			else
+				normal_out.push(entry);
+		}
 
-		out.unshift({
+		normal_out.sort((a, b) => a.title.localeCompare(b.title));
+		joke_out.sort((a, b) => a.title.localeCompare(b.title));
+
+		let out = [{
 			selected: val === -1,
 			value: -1,
 			i18n_key: 'setting.appearance.localization.general.language.twitch',
 			title: "Use Twitch's Language"
-		});
+		}];
+
+		if ( normal_out.length ) {
+			out.push({
+				separator: true,
+				i18n_key: 'setting.appearance.localization.general.language.languages',
+				title: 'Supported Languages'
+			});
+
+			out = out.concat(normal_out);
+		}
+
+		if ( joke_out.length ) {
+			out.push({
+				separator: true,
+				i18n_key: 'setting.appearance.localization.general.language.joke',
+				title: 'Joke Languages'
+			});
+
+			out = out.concat(joke_out);
+		}
 
 		return out;
 	}

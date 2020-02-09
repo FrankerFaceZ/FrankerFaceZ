@@ -23,7 +23,9 @@
 					>
 
 					<label for="as_mod" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.mod', 'As Moderator') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.mod', 'As Moderator') }}
+						</span>
 					</label>
 				</div>
 
@@ -38,7 +40,9 @@
 					>
 
 					<label for="is_deleted" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.deleted', 'Deleted Message') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.deleted', 'Deleted Message') }}
+						</span>
 					</label>
 				</div>
 
@@ -53,7 +57,9 @@
 					>
 
 					<label for="with_mod_icons" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.mod_icons', 'With Mod Icons') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.mod_icons', 'With Mod Icons') }}
+						</span>
 					</label>
 				</div>
 
@@ -68,7 +74,9 @@
 					>
 
 					<label for="with_slow" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.slow', 'Slow Mode') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.slow', 'Slow Mode') }}
+						</span>
 					</label>
 				</div>
 
@@ -83,7 +91,9 @@
 					>
 
 					<label for="with_emote" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.emote-only', 'Emote-Only') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.emote-only', 'Emote-Only') }}
+						</span>
 					</label>
 				</div>
 
@@ -98,7 +108,9 @@
 					>
 
 					<label for="with_subs" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.subs', 'Subs Only') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.subs', 'Subs Only') }}
+						</span>
 					</label>
 				</div>
 
@@ -113,7 +125,9 @@
 					>
 
 					<label for="with_followers" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.followers', 'Followers-Only') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.followers', 'Followers-Only') }}
+						</span>
 					</label>
 				</div>
 
@@ -128,7 +142,9 @@
 					>
 
 					<label for="with_r9k" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.r9k', 'R9k Mode') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.r9k', 'R9k Mode') }}
+						</span>
 					</label>
 				</div>
 
@@ -143,7 +159,9 @@
 					>
 
 					<label for="show_all" class="tw-checkbox__label">
-						{{ t('setting.actions.preview.all', 'Show All') }}
+						<span class="tw-mg-l-1">
+							{{ t('setting.actions.preview.all', 'Show All') }}
+						</span>
 					</label>
 				</div>
 			</div>

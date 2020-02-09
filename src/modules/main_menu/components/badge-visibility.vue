@@ -48,7 +48,9 @@
 					class="tw-checkbox__label"
 					@contextmenu.prevent="reset(sec.id)"
 				>
-					{{ sec.title }}
+					<span class="tw-mg-l-1">
+						{{ sec.title }}
+					</span>
 				</label>
 			</header>
 			<header v-else>
@@ -69,35 +71,37 @@
 						@click="onChange(i.id, $event)"
 					>
 
-					<label :for="i.id" class="tw-checkbox__label tw-flex">
-						<div
-							:style="{backgroundColor: i.color, backgroundImage: i.styleImage }"
-							class="preview-image ffz-badge tw-mg-r-1 tw-flex-shrink-0"
-						/>
-						<div>
-							<h5>{{ i.name }}</h5>
-							<section
-								v-if="i.versions && i.versions.length > 1"
-								class="tw-mg-t-05"
-							>
-								<span
-									v-for="v in i.versions"
-									:key="`badge-${i.id}-${v.version}`"
-									:title="v.name"
-									:style="{backgroundColor: i.color, backgroundImage: v.styleImage}"
-									data-tooltip-type="html"
-									class="ffz-badge ffz-tooltip"
-								/>
-							</section>
-							<button
-								class="tw-mg-t-05 tw-button ffz-button--hollow tw-tooltip-wrapper"
-								@click="reset(i.id)"
-							>
-								<span class="tw-button__text">Reset</span>
-								<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-									{{ t('setting.reset', 'Reset to Default') }}
-								</span>
-							</button>
+					<label :for="i.id" class="tw-checkbox__label">
+						<div class="tw-mg-l-1 tw-flex">
+							<div
+								:style="{backgroundColor: i.color, backgroundImage: i.styleImage }"
+								class="preview-image ffz-badge tw-mg-r-1 tw-flex-shrink-0"
+							/>
+							<div>
+								<h5>{{ i.name }}</h5>
+								<section
+									v-if="i.versions && i.versions.length > 1"
+									class="tw-mg-t-05"
+								>
+									<span
+										v-for="v in i.versions"
+										:key="`badge-${i.id}-${v.version}`"
+										:title="v.name"
+										:style="{backgroundColor: i.color, backgroundImage: v.styleImage}"
+										data-tooltip-type="html"
+										class="ffz-badge ffz-tooltip"
+									/>
+								</section>
+								<button
+									class="tw-mg-t-05 tw-button ffz-button--hollow tw-tooltip-wrapper"
+									@click="reset(i.id)"
+								>
+									<span class="tw-button__text">Reset</span>
+									<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+										{{ t('setting.reset', 'Reset to Default') }}
+									</span>
+								</button>
+							</div>
 						</div>
 					</label>
 				</li>

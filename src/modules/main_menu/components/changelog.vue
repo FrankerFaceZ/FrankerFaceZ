@@ -21,7 +21,9 @@
 				>
 
 				<label for="nonversioned" class="tw-checkbox__label">
-					{{ t('home.changelog.show-nonversioned', 'Include non-versioned commits.') }}
+					<span class="tw-mg-l-1">
+						{{ t('home.changelog.show-nonversioned', 'Include non-versioned commits.') }}
+					</span>
 				</label>
 
 				<div class="tw-tooltip tw-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-right">

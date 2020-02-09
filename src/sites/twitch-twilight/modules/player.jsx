@@ -519,7 +519,7 @@ export default class Player extends Module {
 		this.updateHideExtensions();
 		this.installVisibilityHook();
 
-		this.on(':reset', () => this.resetPlayer());
+		this.on(':reset', this.resetAllPlayers, this);
 
 		const t = this;
 
@@ -940,7 +940,7 @@ export default class Player extends Module {
 	updateGUI(inst) {
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
-		this.addCompressorButton(inst, true);
+		this.addCompressorButton(inst, false);
 
 		const player = inst?.props?.mediaPlayerInstance;
 		if ( player && ! this.settings.get('player.allow-catchup') ) {
@@ -1010,7 +1010,7 @@ export default class Player extends Module {
 			label = can_apply ?
 				comp_active ?
 					this.i18n.t('player.comp_button.off', 'Disable Audio Compressor') :
-					this.i18n.t('player.comp_button.on', 'Enable Audio Compressor')
+					this.i18n.t('player.comp_button.on', 'Audio Compressor')
 				: this.i18n.t('player.comp_button.disabled', 'Audio Compressor cannot be enabled when viewing Clips.');
 
 		extra.textContent = this.i18n.t('player.comp_button.help', 'See the FFZ Control Center for details. If audio breaks, please reset the player.');
@@ -1364,6 +1364,12 @@ export default class Player extends Module {
 	}
 
 
+	resetAllPlayers() {
+		for(const inst of this.Player.instances)
+			this.resetPlayer(inst);
+	}
+
+
 	resetPlayer(inst, e) {
 		const player = inst ? (inst.mediaSinkManager ? inst : inst?.props?.mediaPlayerInstance) : null;
 
@@ -1390,6 +1396,7 @@ export default class Player extends Module {
 		const video = player.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
 			const new_vid = createElement('video');
+			new_vid.volume = player.getVolume();
 			new_vid.playsInline = true;
 			video.replaceWith(new_vid);
 			player.attachHTMLVideoElement(new_vid);

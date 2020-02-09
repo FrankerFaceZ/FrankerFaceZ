@@ -267,7 +267,9 @@
 										@change="onChangeKeys"
 									>
 									<label :for="'key_ctrl$' + id" class="tw-checkbox__label">
-										{{ t('setting.key.ctrl', 'Ctrl') }}
+										<span class="tw-mg-l-1">
+											{{ t('setting.key.ctrl', 'Ctrl') }}
+										</span>
 									</label>
 								</div>
 
@@ -281,7 +283,9 @@
 										@change="onChangeKeys"
 									>
 									<label :for="'key_shift$' + id" class="tw-checkbox__label">
-										{{ t('setting.key.shift', 'Shift') }}
+										<span class="tw-mg-l-1">
+											{{ t('setting.key.shift', 'Shift') }}
+										</span>
 									</label>
 								</div>
 
@@ -295,7 +299,9 @@
 										@change="onChangeKeys"
 									>
 									<label :for="'key_alt$' + id" class="tw-checkbox__label">
-										{{ t('setting.key.alt', 'Alt') }}
+										<span class="tw-mg-l-1">
+											{{ t('setting.key.alt', 'Alt') }}
+										</span>
 									</label>
 								</div>
 
@@ -309,7 +315,9 @@
 										@change="onChangeKeys"
 									>
 									<label :for="'key_meta$' + id" class="tw-checkbox__label">
-										{{ t('setting.key.meta', 'Meta') }}
+										<span class="tw-mg-l-1">
+											{{ t('setting.key.meta', 'Meta') }}
+										</span>
 									</label>
 								</div>
 							</div>

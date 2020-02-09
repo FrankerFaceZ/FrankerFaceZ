@@ -78,7 +78,9 @@
 											@change="updateCheckbox"
 										>
 										<label for="autoHostSettings:enabled" class="tw-checkbox__label">
-											{{ t('metadata.host.setting.auto-hosting.title', 'Auto Hosting') }}
+											<span class="tw-mg-l-1">
+												{{ t('metadata.host.setting.auto-hosting.title', 'Auto Hosting') }}
+											</span>
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
@@ -97,7 +99,9 @@
 											@change="updateCheckbox"
 										>
 										<label for="autoHostSettings:team_host" class="tw-checkbox__label">
-											{{ t('metadata.host.setting.team-hosting.title', 'Team Hosting') }}
+											<span class="tw-mg-l-1">
+												{{ t('metadata.host.setting.team-hosting.title', 'Team Hosting') }}
+											</span>
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
@@ -117,7 +121,9 @@
 											@change="updateCheckbox"
 										>
 										<label for="autoHostSettings:vodcast_hosting" class="tw-checkbox__label">
-											{{ t('metadata.host.setting.vodcast-hosting.title', 'Vodcast Hosting') }}
+											<span class="tw-mg-l-1">
+												{{ t('metadata.host.setting.vodcast-hosting.title', 'Vodcast Hosting') }}
+											</span>
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
@@ -136,7 +142,9 @@
 											@change="updateCheckbox"
 										>
 										<label for="autoHostSettings:recommended_host" class="tw-checkbox__label">
-											{{ t('metadata.host.setting.recommended-hosting.title', 'Auto Host Channels Similar To Yours') }}
+											<span class="tw-mg-l-1">
+												{{ t('metadata.host.setting.recommended-hosting.title', 'Auto Host Channels Similar To Yours') }}
+											</span>
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
@@ -154,7 +162,9 @@
 											@change="updateCheckbox"
 										>
 										<label for="autoHostSettings:strategy" class="tw-checkbox__label">
-											{{ t('metadata.host.setting.strategy.title', 'Randomize Host Order') }}
+											<span class="tw-mg-l-1">
+												{{ t('metadata.host.setting.strategy.title', 'Randomize Host Order') }}
+											</span>
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">

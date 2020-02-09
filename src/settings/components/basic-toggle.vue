@@ -8,7 +8,9 @@
 				class="tw-checkbox__input"
 			>
 			<label :for="'enabled$' + value.id" class="tw-checkbox__label">
-				{{ t(type.i18n, type.title) }}
+				<span class="tw-mg-l-1">
+					{{ t(type.i18n, type.title) }}
+				</span>
 			</label>
 		</div>
 	</section>

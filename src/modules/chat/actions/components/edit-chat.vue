@@ -27,7 +27,9 @@
 				>
 
 				<label :for="'chat-paste$' + id" class="tw-checkbox__label">
-					{{ t('setting.actions.set-chat', 'Paste this message into chat rather than sending it directly.') }}
+					<span class="tw-mg-l-1">
+						{{ t('setting.actions.set-chat', 'Paste this message into chat rather than sending it directly.') }}
+					</span>
 				</label>
 			</div>
 		</div>
