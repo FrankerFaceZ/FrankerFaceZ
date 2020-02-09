@@ -26,6 +26,7 @@
 							v-for="j in i.entries"
 							:key="j.value"
 							:selected="j.value === value"
+							:value="j.v"
 						>
 							{{ j.i18n_key ? t(j.i18n_key, j.title, j) : j.title }}
 						</option>
@@ -34,6 +35,7 @@
 						v-else
 						:key="i.value"
 						:selected="i.value === value"
+						:value="i.v"
 					>
 						{{ i.i18n_key ? t(i.i18n_key, i.title, i) : i.title }}
 					</option>
@@ -104,9 +106,9 @@ export default {
 					out.push(current_group);
 
 				} else if ( current_group != null )
-					current_group.entries.push(entry);
+					current_group.entries.push(Object.assign({v: i}, entry));
 				else
-					out.push(entry);
+					out.push(Object.assign({v: i}, entry));
 
 				i++;
 			}
@@ -117,7 +119,7 @@ export default {
 
 	methods: {
 		onChange() {
-			const idx = this.$refs.control.selectedIndex,
+			const idx = this.$refs.control.value,
 				raw_value = this.data[idx];
 
 			if ( raw_value )
