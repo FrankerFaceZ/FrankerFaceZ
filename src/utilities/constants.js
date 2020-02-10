@@ -75,10 +75,11 @@ export const WS_CLUSTERS = {
 	Production: [
 		['wss://catbag.frankerfacez.com/', 0.25],
 		['wss://andknuckles.frankerfacez.com/', 0.8],
-		['wss://tuturu.frankerfacez.com/', 1],
+		['wss://tuturu.frankerfacez.com/', 0.7],
 		['wss://lilz.frankerfacez.com/', 1],
 		['wss://yoohoo.frankerfacez.com/', 1],
-		['wss://pog.frankerfacez.com/', 1]
+		['wss://pog.frankerfacez.com/', 1],
+		['wss://ayaya.frankerfacez.com/', 1]
 	],
 
 	Development: [
