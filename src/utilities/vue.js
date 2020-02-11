@@ -82,6 +82,26 @@ export class Vue extends Module {
 				},
 
 				methods: {
+					tNumber_(val, format) {
+						this.locale;
+						return t.i18n.formatNumber(val, format);
+					},
+
+					tDate_(val, format) {
+						this.locale;
+						return t.i18n.formatDate(val, format);
+					},
+
+					tTime_(val, format) {
+						this.locale;
+						return t.i18n.formatTime(val, format);
+					},
+
+					tDateTime_(val, format) {
+						this.locale;
+						return t.i18n.formatDateTime(val, format);
+					},
+
 					t_(key, phrase, options) {
 						this.locale && this.phrases[key];
 						return t.i18n.t(key, phrase, options);
@@ -182,6 +202,18 @@ export class Vue extends Module {
 				},
 				tNode(node, data) {
 					return this.$i18n.tNode_(node, data);
+				},
+				tNumber(val, format) {
+					return this.$i18n.tNumber_(val, format);
+				},
+				tDate(val, format) {
+					return this.$i18n.tDate_(val, format);
+				},
+				tTime(val, format) {
+					return this.$i18n.tTime_(val, format);
+				},
+				tDateTime(val, format) {
+					return this.$i18n.tDateTime_(val, format);
 				}
 			}
 		});

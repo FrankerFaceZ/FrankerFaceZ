@@ -122,7 +122,7 @@
 			</header>
 			<section class="tw-pd-b-1">
 				{{ t('setting.data_management.profiles.edit.rules.description',
-					'Rules allows you to define a series of conditions under which this profile will be active.')
+					'Rules allows you to define a series of conditions under which this profile will be active. When there are multiple rules, they must all match for the profile to activate. Please use an `Or` rule to create a profile that activates by matching one of several rules.')
 				}}
 			</section>
 

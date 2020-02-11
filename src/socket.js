@@ -25,6 +25,15 @@ export default class SocketClient extends Module {
 
 		this.inject('settings');
 
+		this.settings.addUI('socket.info', {
+			path: 'Debugging > Socket >> Info @{"sort": -1000}',
+			force_seen: true,
+			no_filter: true,
+			component: 'socket-info',
+
+			getSocket: () => this,
+		});
+
 		this.settings.add('socket.use-cluster', {
 			default: 'Production',
 
@@ -412,6 +421,7 @@ export default class SocketClient extends Module {
 
 		this._socket = null;
 		this._state = State.DISCONNECTED;
+		this.emit(':disconnected');
 	}
 
 
@@ -445,6 +455,8 @@ export default class SocketClient extends Module {
 					this.log.warn('Local time differs from server time by more than 5 minutes.');
 			}
 		}
+
+		this.emit(':pong');
 	}
 
 
@@ -476,6 +488,8 @@ export default class SocketClient extends Module {
 	send(command, ...args) {
 		if ( args.length === 1 )
 			args = args[0];
+		else if ( ! args.length )
+			args = undefined;
 
 		if ( ! this.connected )
 			this._pending.push([command, args]);
@@ -487,6 +501,8 @@ export default class SocketClient extends Module {
 	call(command, ...args) {
 		if ( args.length === 1 )
 			args = args[0];
+		else if ( ! args.length )
+			args = undefined;
 
 		return new Promise((resolve, reject) => {
 			if ( ! this.connected )
@@ -503,22 +519,28 @@ export default class SocketClient extends Module {
 
 	subscribe(referrer, ...topics) {
 		const t = this._topics;
+		let changed = false;
 		for(const topic of topics) {
 			if ( ! t.has(topic) ) {
 				if ( this.connected )
 					this._send('sub', topic);
 
 				t.set(topic, new Set);
+				changed = true;
 			}
 
 			const tp = t.get(topic);
 			tp.add(referrer);
 		}
+
+		if ( changed )
+			this.emit(':sub-change');
 	}
 
 
 	unsubscribe(referrer, ...topics) {
 		const t = this._topics;
+		let changed = false;
 		for(const topic of topics) {
 			if ( ! t.has(topic) )
 				continue;
@@ -527,11 +549,15 @@ export default class SocketClient extends Module {
 			tp.delete(referrer);
 
 			if ( ! tp.size ) {
+				changed = true;
 				t.delete(topic);
 				if ( this.connected )
 					this._send('unsub', topic);
 			}
 		}
+
+		if ( changed )
+			this.emit(':sub-change');
 	}
 
 
