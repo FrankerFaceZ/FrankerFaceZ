@@ -980,7 +980,7 @@ export default class ChatHook extends Module {
 				old_catch = cls.prototype.componentDidCatch;
 
 			cls.prototype.render = function() {
-				//try {
+				try {
 					if ( t.CommunityStackHandler ) {
 						const React = t.web_munch.getModule('react'),
 							out = old_render.call(this),
@@ -992,9 +992,9 @@ export default class ChatHook extends Module {
 						return out;
 					}
 
-				/*} catch(err) {
+				} catch(err) {
 					// No op
-				}*/
+				}
 
 				return old_render.call(this);
 			}
