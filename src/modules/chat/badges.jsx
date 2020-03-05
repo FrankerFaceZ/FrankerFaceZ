@@ -645,7 +645,7 @@ export default class Badges extends Module {
 	async loadGlobalBadges(tries = 0) {
 		let response, data;
 
-		if ( this.experiments.getAssignment('api_load') )
+		if ( this.experiments.getAssignment('api_load') && tries < 1 )
 			try {
 				fetch(`${NEW_API}/v1/badges`).catch(() => {});
 			} catch(err) { /* do nothing */ }

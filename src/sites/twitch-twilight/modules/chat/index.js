@@ -621,7 +621,9 @@ export default class ChatHook extends Module {
 
 	onEnable() {
 		this.on('site.web_munch:loaded', this.grabTypes);
+		this.on('site.web_munch:loaded', this.defineClasses);
 		this.grabTypes();
+		this.defineClasses();
 
 		this.chat.context.on('changed:chat.points.show-callouts', () => {
 			this.InlineCallout.forceUpdate();
@@ -974,7 +976,28 @@ export default class ChatHook extends Module {
 
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
+				old_render = cls.prototype.render,
 				old_catch = cls.prototype.componentDidCatch;
+
+			cls.prototype.render = function() {
+				//try {
+					if ( t.CommunityStackHandler ) {
+						const React = t.web_munch.getModule('react'),
+							out = old_render.call(this),
+							thing = out?.props?.children?.props?.children;
+
+						if ( React && Array.isArray(thing) )
+							thing.push(React.createElement(t.CommunityStackHandler));
+
+						return out;
+					}
+
+				/*} catch(err) {
+					// No op
+				}*/
+
+				return old_render.call(this);
+			}
 
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
@@ -1003,6 +1026,32 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.fixPinnedCheer(inst);
 		});*/
+	}
+
+
+	defineClasses() {
+		if ( this.CommunityStackHandler )
+			return true;
+
+		const t = this,
+			React = this.web_munch.getModule('react'),
+			Stack = this.web_munch.getModule('highlightstack'),
+			createElement = React && React.createElement;
+
+		if ( ! createElement || ! Stack || ! Stack.b )
+			return false;
+
+		this.CommunityStackHandler = function() {
+			const stack = React.useContext(Stack.b),
+				dispatch = React.useContext(Stack.c);
+
+			t.community_stack = stack;
+			t.community_dispatch = dispatch;
+
+			return null;
+		}
+
+		this.ChatContainer.forceUpdate();
 	}
 
 

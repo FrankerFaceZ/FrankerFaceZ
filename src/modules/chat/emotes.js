@@ -542,7 +542,7 @@ export default class Emotes extends Module {
 	async loadGlobalSets(tries = 0) {
 		let response, data;
 
-		if ( this.experiments.getAssignment('api_load') )
+		if ( this.experiments.getAssignment('api_load') && tries < 1 )
 			try {
 				fetch(`${NEW_API}/v1/set/global`).catch(() => {});
 			} catch(err) { /* do nothing */ }

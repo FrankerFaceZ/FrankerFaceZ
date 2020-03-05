@@ -188,7 +188,8 @@ Twilight.KNOWN_MODULES = {
 	'chat-types': n => n.b && has(n.b, 'Message') && has(n.b, 'RoomMods'),
 	'gql-printer': n => n !== window && n.print,
 	mousetrap: n => n.bindGlobal && n.unbind && n.handleKey,
-	'algolia-search': n => n.a && n.a.prototype && n.a.prototype.queryTopResults && n.a.prototype.queryForType
+	'algolia-search': n => n.a && n.a.prototype && n.a.prototype.queryTopResults && n.a.prototype.queryForType,
+	highlightstack: n => n.b && has(n.b, '_calculateChangedBits') && n.c && has(n.c, '_calculateChangedBits')
 }
 
 

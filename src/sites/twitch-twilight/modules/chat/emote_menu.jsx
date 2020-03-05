@@ -316,7 +316,7 @@ export default class EmoteMenu extends Module {
 						channel_id={this.props.channelOwnerID}
 						loading={this.state.gqlLoading}
 						error={this.state.gqlError}
-						onClickEmote={this.props.onClickEmote}
+						onClickToken={this.props.onClickToken}
 					/>
 				</t.MenuErrorWrapper>)
 			}
@@ -520,7 +520,7 @@ export default class EmoteMenu extends Module {
 				if ( t.emotes.handleClick(event) )
 					return;
 
-				this.props.onClickEmote(event.currentTarget.dataset.name)
+				this.props.onClickToken(event.currentTarget.dataset.name)
 			}
 
 			clickHeading() {
@@ -1835,7 +1835,7 @@ export default class EmoteMenu extends Module {
 											key: data.key,
 											data,
 											filtered: this.state.filtered,
-											onClickEmote: this.props.onClickEmote,
+											onClickToken: this.props.onClickToken,
 											startObserving: this.startObserving,
 											stopObserving: this.stopObserving
 										}
