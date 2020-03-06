@@ -343,7 +343,7 @@
 								:key="key"
 								:value="key"
 							>
-								{{ a.title_i18n ? t(a.title_i18n, a.title, a) : a.title }}
+								{{ t(a.title_i18n || `chat.actions.${key}`, a.title, a) }}
 							</option>
 						</select>
 					</div>

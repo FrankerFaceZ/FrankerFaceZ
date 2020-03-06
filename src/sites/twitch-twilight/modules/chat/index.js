@@ -265,6 +265,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.hype-train', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow the Hype Train to be displayed in chat.',
+				component: 'setting-check-box',
+			}
+		});
+
 		this.settings.add('chat.community-chest.show', {
 			default: true,
 			ui: {
@@ -634,6 +643,10 @@ export default class ChatHook extends Module {
 			this.PointsButton.forceUpdate();
 			this.PointsClaimButton.forceUpdate();
 		});
+
+		this.chat.context.on('changed:chat.banners.hype-train', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.subs.gift-banner', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
@@ -1029,6 +1042,32 @@ export default class ChatHook extends Module {
 	}
 
 
+	cleanHighlights() {
+		const types = {
+			'community_sub_gift': this.chat.context.get('chat.subs.gift-banner'),
+			'megacheer': this.chat.context.get('chat.bits.show'),
+			'hype_train': this.chat.context.get('chat.banners.hype-train'),
+			'poll': this.chat.context.get('chat.banners.polls')
+		};
+
+		const highlights = this.community_stack?.highlights;
+		if ( ! Array.isArray(highlights) )
+			return;
+
+		for(const entry of highlights) {
+			if ( ! entry || ! entry.event || ! entry.id )
+				continue;
+
+			const type = entry.event.type;
+			if ( type && has(types, type) && ! types[type] )
+				this.community_dispatch({
+					type: 'remove-highlight',
+					id: entry.id
+				});
+		}
+	}
+
+
 	defineClasses() {
 		if ( this.CommunityStackHandler )
 			return true;
@@ -1047,6 +1086,8 @@ export default class ChatHook extends Module {
 
 			t.community_stack = stack;
 			t.community_dispatch = dispatch;
+
+			t.cleanHighlights();
 
 			return null;
 		}
