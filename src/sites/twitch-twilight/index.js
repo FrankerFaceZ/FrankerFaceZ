@@ -50,8 +50,8 @@ export default class Twilight extends BaseSite {
 	}
 
 	onEnable() {
-		const thing = this.fine.searchTree(null, n => n.props && n.props.store),
-			store = this.store = thing && thing.props && thing.props.store;
+		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
+			store = this.store = thing?.pendingProps?.store;
 
 		if ( ! store )
 			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());

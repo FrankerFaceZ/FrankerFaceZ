@@ -195,6 +195,57 @@ export default class Fine extends Module {
 		return null;
 	}
 
+	searchNode(node, criteria, max_depth=15, depth=0, traverse_roots = true) {
+		if ( ! node )
+			node = this.react;
+		else if ( node._reactInternalFiber )
+			node = node._reactInternalFiber;
+		else if ( node instanceof Node )
+			node = this.getReactInstance(node);
+
+		if ( ! node || node._ffz_no_scan || depth > max_depth )
+			return null;
+
+		if ( typeof criteria === 'string' ) {
+			const wrapper = this._wrappers.get(criteria);
+			if ( ! wrapper )
+				throw new Error('invalid critera');
+
+			if ( ! wrapper._class )
+				return null;
+
+			criteria = n => n && n.constructor === wrapper._class;
+		}
+
+		if ( node && criteria(node) )
+			return node;
+
+		if ( node.child ) {
+			let child = node.child;
+			while(child) {
+				const result = this.searchNode(child, criteria, max_depth, depth+1, traverse_roots);
+				if ( result )
+					return result;
+				child = child.sibling;
+			}
+		}
+
+		const inst = node.stateNode;
+		if ( traverse_roots && inst && inst.props && inst.props.root ) {
+			const root = inst.props.root._reactRootContainer;
+			if ( root ) {
+				let child = root._internalRoot && root._internalRoot.current || root.current;
+				while(child) {
+					const result = this.searchNode(child, criteria, max_depth, depth+1, traverse_roots);
+					if ( result )
+						return result;
+
+					child = child.sibling;
+				}
+			}
+		}
+	}
+
 	searchTree(node, criteria, max_depth=15, depth=0, traverse_roots = true) {
 		if ( ! node )
 			node = this.react;
@@ -218,7 +269,7 @@ export default class Fine extends Module {
 		}
 
 		const inst = node.stateNode;
-		if ( inst && criteria(inst) )
+		if ( inst && criteria(inst, node) )
 			return inst;
 
 		if ( node.child ) {
