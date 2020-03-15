@@ -79,7 +79,8 @@ export const WS_CLUSTERS = {
 		['wss://lilz.frankerfacez.com/', 1],
 		['wss://yoohoo.frankerfacez.com/', 1],
 		['wss://pog.frankerfacez.com/', 1],
-		['wss://ayaya.frankerfacez.com/', 1]
+		['wss://ayaya.frankerfacez.com/', 1],
+		['wss://champ.frankerfacez.com/', 1]
 	],
 
 	Development: [
