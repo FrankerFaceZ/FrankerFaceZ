@@ -2336,7 +2336,12 @@ export function formatBitsConfig(config) {
 		return;
 
 	const out = {},
-		actions = config.indexedActions;
+		actions = config.indexedActions,
+		tier_colors = {};
+
+	if ( Array.isArray(config.tiers) )
+		for(const tier of config.tiers)
+			tier_colors[tier.bits] = tier.color;
 
 	for(const key in actions)
 		if ( has(actions, key) ) {
@@ -2347,22 +2352,51 @@ export function formatBitsConfig(config) {
 					tiers: []
 				};
 
-			for(const tier of action.orderedTiers) {
-				const images = {};
-				for(const im of tier.images) {
-					const themed = images[im.theme] = images[im.theme] || [],
-						ak = im.isAnimated ? 'animated' : 'static',
-						anim = themed[ak] = themed[ak] || {};
+			if ( config?.getImage ) {
+				for(const tier of action.orderedTiers) {
+					const images = {};
 
-					anim[im.dpiScale] = im.url;
+					for(const theme of ['light', 'dark']) {
+						const themed = images[theme] = images[theme] || {},
+							stat = themed.static = themed.static || {},
+							animated = themed.animated = themed.animated || {};
+
+						for(const scale of [1, 2, 4]) {
+							// Static Images
+							stat[scale] = config.getImage(action.prefix, theme, 'static', tier.bits, scale, 'png');
+
+							// Animated Images
+							animated[scale] = config.getImage(action.prefix, theme, 'animated', tier.bits, scale, 'gif');
+						}
+					}
+
+					new_act.tiers.push({
+						amount: tier.bits,
+						color: tier.color || tier_colors[tier.bits] || 'inherit',
+						id: tier.id,
+						images
+					});
 				}
 
-				new_act.tiers.push({
-					amount: tier.bits,
-					color: tier.color,
-					id: tier.id,
-					images
-				})
+			} else if ( action.orderedTiers[0]?.images ) {
+				for(const tier of action.orderedTiers) {
+					const images = {};
+
+					for(const im of tier.images) {
+						const themed = images[im.theme] = images[im.theme] || [],
+							ak = im.isAnimated ? 'animated' : 'static',
+							anim = themed[ak] = themed[ak] || {};
+
+						anim[im.dpiScale] = im.url;
+					}
+
+					new_act.tiers.push({
+						amount: tier.bits,
+						color: tier.color || tier_colors[tier.bits] || 'inherit',
+						id: tier.id,
+						images
+					})
+				}
 			}
 		}
 

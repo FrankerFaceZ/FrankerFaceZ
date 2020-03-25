@@ -513,8 +513,8 @@ export default class Room {
 			return this.style.delete('bits');
 
 		const animated = this.manager.context.get('chat.bits.animated') ? 'animated' : 'static',
-			theme = this.manager.context.get('theme.is-dark') ? 'DARK' : 'LIGHT',
-			tt_theme = this.manager.context.get('theme.tooltips-dark') ? 'DARK' : 'LIGHT',
+			theme = this.manager.context.get('theme.is-dark') ? 'dark' : 'light',
+			tt_theme = this.manager.context.get('theme.tooltips-dark') ? 'dark' : 'light',
 			out = [];
 
 		for(const key in this.bitsConfig)
@@ -529,7 +529,7 @@ export default class Room {
 						tt_images = tiers[i].images[tt_theme][animated];
 
 					out.push(`.ffz-cheer[data-prefix="${prefix}"][data-tier="${i}"] {
-	color: ${tiers[i].color};
+	color: ${tiers[i].color || 'inherit'};
 	background-image: url("${images[1]}");
 	background-image: ${WEBKIT}image-set(
 		url("${images[1]}") 1x,
