@@ -38,6 +38,12 @@ export default class MenuButton extends SiteModule {
 			changed: () => this.update()
 		});
 
+		this.ModBar = this.fine.define(
+			'mod-view-bar',
+			n => n.actions && n.updateRoot && n.childContext,
+			['mod-view']
+		);
+
 		this.SunlightDash = this.fine.define(
 			'sunlight-dash',
 			n => n.getIsChannelEditor && n.getIsChannelModerator && n.getIsAdsEnabled && n.getIsSquadStreamsEnabled,
@@ -188,6 +194,9 @@ export default class MenuButton extends SiteModule {
 
 		for(const inst of this.SunlightDash.instances)
 			this.updateButton(inst);
+
+		for(const inst of this.ModBar.instances)
+			this.updateButton(inst);
 	}
 
 
@@ -208,6 +217,10 @@ export default class MenuButton extends SiteModule {
 		this.SunlightDash.on('mount', this.updateButton, this);
 		this.SunlightDash.on('update', this.updateButton, this);
 
+		this.ModBar.ready(() => this.update());
+		this.ModBar.on('mount', this.updateButton, this);
+		this.ModBar.on('update', this.updateButton, this);
+
 		this.on(':clicked', () => this.important_update = false);
 
 		this.once(':clicked', this.loadMenu);
@@ -222,6 +235,7 @@ export default class MenuButton extends SiteModule {
 		const root = this.fine.getChildNode(inst);
 		let is_squad = false,
 			is_sunlight = false,
+			is_mod = false,
 			container = root && root.querySelector('.top-nav__menu');
 
 		if ( ! container ) {
@@ -246,10 +260,16 @@ export default class MenuButton extends SiteModule {
 				is_sunlight = true;
 		}
 
+		if ( ! container && inst.childContext ) {
+			container = root && root.querySelector('.modview-dock > div:last-child');
+			if ( container )
+				is_mod = true;
+		}
+
 		if ( ! container )
 			return;
 
-		if ( ! is_squad ) {
+		if ( ! is_squad && ! is_mod ) {
 			let user_stuff = null;
 			try {
 				user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
@@ -270,7 +290,7 @@ export default class MenuButton extends SiteModule {
 			extra_pill = this.formatExtraPill();
 
 		el = (<div
-			class={`ffz-top-nav tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-relative ${is_sunlight ? 'tw-mg-l-05 tw-mg-r-2' : 'tw-mg-x-05'}`}
+			class={`ffz-top-nav ${is_mod ? 'ffz-mod-view-button tw-relative tw-mg-b-1' : `tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-relative ${is_sunlight ? 'tw-mg-l-05 tw-mg-r-2' : 'tw-mg-x-05'}`}`}
 		>
 			<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
 				{btn = (<button
@@ -284,7 +304,7 @@ export default class MenuButton extends SiteModule {
 						</span>
 					</div>
 				</button>)}
-				{this.has_error && (<div class="tw-absolute tw-balloon tw-balloon--down tw-balloon--lg tw-balloon--right tw-block">
+				{this.has_error && (<div class={`tw-absolute tw-balloon tw-balloon--lg tw-block ${is_mod ? 'tw-balloon--up tw-balloon--left' : 'tw-balloon--down tw-balloon--right'}`}>
 					<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4 tw-pd-1">
 						<div class="tw-flex tw-align-items-center">
 							<div class="tw-flex-grow-1">
@@ -301,7 +321,7 @@ export default class MenuButton extends SiteModule {
 						</div>
 					</div>
 				</div>)}
-				{! this.has_error && (<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				{! this.has_error && (<div class={`tw-tooltip ${is_mod ? 'tw-balloon--up tw-balloon--left' : 'tw-balloon--down tw-balloon--right'}`}>
 					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
@@ -340,7 +360,10 @@ export default class MenuButton extends SiteModule {
 			</div>)}
 		</div>);
 
-		container.insertBefore(el, container.lastElementChild);
+		if ( is_mod )
+			container.insertBefore(el, container.firstElementChild);
+		else
+			container.insertBefore(el, container.lastElementChild);
 
 		if ( this._ctx_open )
 			this.renderContext(null, btn);
@@ -380,7 +403,8 @@ export default class MenuButton extends SiteModule {
 			event.preventDefault();
 		}
 
-		const container = btn.parentElement.parentElement;
+		const container = btn.parentElement.parentElement,
+			is_mod = container.classList.contains('ffz-mod-view-button');
 		let ctx = container.querySelector('.ffz--menu-context');
 		if ( ctx ) {
 			if ( ctx._ffz_destroy )
@@ -436,7 +460,7 @@ export default class MenuButton extends SiteModule {
 		}
 
 
-		ctx = (<div class="tw-absolute tw-balloon tw-balloon--down tw-balloon--lg tw-balloon--right tw-block ffz--menu-context">
+		ctx = (<div class={`tw-absolute tw-balloon tw-balloon--lg ${is_mod ? 'tw-balloon--up tw-balloon--left' : 'tw-balloon--down tw-balloon--right'} tw-block ffz--menu-context`}>
 			<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
 				<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
 					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">

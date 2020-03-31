@@ -10,7 +10,9 @@ import {createElement, on, off} from 'utilities/dom';
 export const PLAYER_ROUTES = [
 	'front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos',
 	'user-clips', 'user-collections', 'user-events', 'user-followers',
-	'user-following', 'dash', 'squad', 'command-center', 'dash-stream-manager'];
+	'user-following', 'dash', 'squad', 'command-center', 'dash-stream-manager',
+	'mod-view'
+];
 
 const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null;
 

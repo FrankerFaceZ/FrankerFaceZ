@@ -226,6 +226,15 @@ export default class Input extends Module {
 		this.on('site.css_tweaks:update-chat-css', this.resizeInput, this);
 	}
 
+	updateInput() {
+		for(const inst of this.ChatInput.instances) {
+			if ( inst ) {
+				inst.forceUpdate();
+				this.emit('site:dom-update', 'chat-input', inst);
+			}
+		}
+	}
+
 	resizeInput() {
 		if ( this._resize_waiter )
 			cancelAnimationFrame(this._resize_waiter);

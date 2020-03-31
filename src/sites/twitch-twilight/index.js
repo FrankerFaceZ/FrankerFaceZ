@@ -210,7 +210,8 @@ Twilight.CHAT_ROUTES = [
 	'embed-chat',
 	'squad',
 	'command-center',
-	'dash-stream-manager'
+	'dash-stream-manager',
+	'mod-view'
 ];
 
 
@@ -262,7 +263,7 @@ Twilight.DASH_ROUTES = {
 	'dash-settings-moderation': '/u/:userName/settings/moderation',
 	'dash-settings-channel': '/u/:userName/settings/channel',
 	'dash-settings-revenue': '/u/:userName/settings/revenue',
-		'dash-extensions': '/u/:userName/extensions',
+	'dash-extensions': '/u/:userName/extensions',
 	'dash-streaming-tools': '/u/:userName/broadcast',
 };
 
@@ -300,10 +301,11 @@ Twilight.ROUTES = {
 	'user': '/:userName',
 	'squad': '/:userName/squad',
 	'command-center': '/:userName/commandcenter',
-	'embed-chat': '/embed/:userName/chat'
+	'embed-chat': '/embed/:userName/chat',
+	'mod-view': '/moderator/:userName'
 };
 
 
-Twilight.DIALOG_EXCLUSIVE = '.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root';
-Twilight.DIALOG_MAXIMIZED = '.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
-Twilight.DIALOG_SELECTOR = '.sunlight-root,#root>div,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_EXCLUSIVE = '.moderation-root,.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root';
+Twilight.DIALOG_MAXIMIZED = '.moderation-view-page > div[data-highlight-selector="main-grid"],.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_SELECTOR = '.moderation-root,.sunlight-root,#root>div,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';

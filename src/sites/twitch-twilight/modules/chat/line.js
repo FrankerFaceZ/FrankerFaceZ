@@ -49,7 +49,7 @@ export default class ChatLine extends Module {
 
 		this.WhisperLine = this.fine.define(
 			'whisper-line',
-			n => n.props && n.props.message && n.props.reportOutgoingWhisperRendered
+			n => n.props && n.props.message && has(n.props, 'reportOutgoingWhisperRendered')
 		)
 	}
 

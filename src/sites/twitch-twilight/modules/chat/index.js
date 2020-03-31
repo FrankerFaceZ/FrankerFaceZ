@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {setChildren} from 'utilities/dom';
-import {get, has, make_enum, split_chars, shallow_object_equals, set_equals} from 'utilities/object';
+import {get, has, make_enum, split_chars, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
 
@@ -892,6 +892,12 @@ export default class ChatHook extends Module {
 
 				inst._ffzInstall();
 
+				const channel = inst.joinedChannel,
+					state = inst.client?.session?.channelstate?.[`#${channel}`]?.roomState;
+
+				if ( state )
+					this.updateChatState(state);
+
 				inst.connectHandlers();
 
 				inst.props.setChatConnectionAPI({
@@ -914,20 +920,19 @@ export default class ChatHook extends Module {
 				if ( handler )
 					handler.addMessageHandler(inst.handleMessage);
 
-				if ( Array.isArray(inst.buffer) ) {
+				// We grab this from the chat client now.
+				/*if ( Array.isArray(inst.buffer) ) {
 					let i = inst.buffer.length;
 					const ct = this.chat_types || CHAT_TYPES;
 
 					while(i--) {
 						const msg = inst.buffer[i];
 						if ( msg && msg.type === ct.RoomState && msg.state ) {
-							this.chat.context.updateContext({
-								chat_state: msg.state
-							});
+							this.updateChatState(msg.state);
 							break;
 						}
 					}
-				}
+				}*/
 
 				inst.props.setMessageBufferAPI({
 					addUpdateHandler: inst.addUpdateHandler,
@@ -1102,6 +1107,19 @@ export default class ChatHook extends Module {
 		}
 
 		this.ChatContainer.forceUpdate();
+	}
+
+
+	updateChatState(state) {
+		const old_state = this.chat.context.get('context.chat_state') || {};
+		if ( deep_equals(state, old_state) )
+			return;
+
+		this.chat.context.updateContext({
+			chat_state: state
+		});
+
+		this.input.updateInput();
 	}
 
 
@@ -1708,9 +1726,7 @@ export default class ChatHook extends Module {
 							current = t.chat.context.get('context.channel');
 
 						if ( channel && (channel === current || channel === `#${current}`) )
-							t.chat.context.updateContext({
-								chat_state: e.state
-							});
+							t.updateChatState(e.state);
 
 					} catch(err) {
 						t.log.capture(err, {extra: e});
