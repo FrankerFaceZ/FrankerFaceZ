@@ -637,11 +637,17 @@ export default class EmoteMenu extends Module {
 							return;
 
 						const locked = emote.locked && (! lock || ! lock.emotes.has(emote.id)),
-							emote_lock = locked && data.locks && data.locks[emote.set_id],
-							sellout = emote_lock ? (data.all_locked ?
-								t.i18n.t('emote-menu.emote-sub', 'Subscribe for {price} to unlock this emote.', emote_lock) :
-								t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to {price} to unlock this emote.', emote_lock)
-							) : '';
+							emote_lock = locked && data.locks && data.locks[emote.set_id];
+						let sellout = '';
+
+						if ( emote_lock ) {
+							if ( emote_lock.id === 'cheer' ) {
+								sellout = t.i18n.t('emote-menu.emote-cheer', 'Cheer an additional {bits_remaining,number} bit{bits_remaining,en_plural} to unlock this emote.', emote_lock);
+							} else if ( data.all_locked )
+								sellout = t.i18n.t('emote-menu.emote-sub', 'Subscribe for {price} to unlock this emote.', emote_lock);
+							else
+								sellout = t.i18n.t('emote-menu.emote-up', 'Upgrade your sub to {price} to unlock this emote.', emote_lock);
+						}
 
 						return this.renderEmote(
 							emote,
@@ -698,14 +704,18 @@ export default class EmoteMenu extends Module {
 				if ( ! data.all_locked || ! data.locks )
 					return null;
 
-				const lock = data.locks[this.state.unlocked];
+				const lock = data.locks[this.state.unlocked],
+					locks = Object.values(data.locks).filter(x => x.id !== 'cheer');
+
+				if ( ! locks.length )
+					return null;
 
 				return (<div class="tw-mg-1 tw-border-t tw-pd-t-1 tw-mg-b-0">
 					{lock ?
 						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count,number} emote{count,en_plural}', {price: lock.price, count: lock.emotes.size}) :
 						t.i18n.t('emote-menu.sub-basic', 'Subscribe to unlock some emotes')}
 					<div class="ffz--sub-buttons tw-mg-t-05">
-						{Object.values(data.locks).map(lock => (<a
+						{locks.map(lock => (<a
 							key={lock.price}
 							class="tw-button tw-border-radius-none"
 							href={lock.url}
@@ -1282,8 +1292,14 @@ export default class EmoteMenu extends Module {
 						if ( a.locked && ! b.locked ) return 1;
 
 						if ( sort_tiers || a.locked || b.locked ) {
-							if ( a.set_id < b.set_id ) return -1;
-							if ( a.set_id > b.set_id ) return 1;
+							if ( COLLATOR ) {
+								const result = COLLATOR.compare(a.set_id, b.set_id);
+								if ( result != 0 )
+									return result;
+							} else {
+								if ( a.set_id < b.set_id ) return -1;
+								if ( a.set_id > b.set_id ) return 1;
+							}
 						}
 
 						return sorter(a,b);
@@ -1494,9 +1510,10 @@ export default class EmoteMenu extends Module {
 				// Now we handle the current Channel's emotes.
 
 				const user = props.channel_data && props.channel_data.user,
-					products = user && user.subscriptionProducts;
+					products = user && user.subscriptionProducts,
+					bits = user?.cheer?.badgeTierEmotes;
 
-				if ( Array.isArray(products) ) {
+				if ( Array.isArray(products) || Array.isArray(bits) ) {
 					const badge = t.badges.getTwitchBadge('subscriber', '0', user.id, user.login),
 						emotes = [],
 						locks = {},
@@ -1506,63 +1523,114 @@ export default class EmoteMenu extends Module {
 							image: badge && badge.image1x,
 							image_set: badge && `${badge.image1x} 1x, ${badge.image2x} 2x, ${badge.image4x} 4x`,
 							icon: 'twitch',
-							title: t.i18n.t('emote-menu.sub-set', 'Subscriber Emotes'),
+							title: t.i18n.t('emote-menu.main-set', 'Channel Emotes'),
 							source: t.i18n.t('emote-menu.twitch', 'Twitch'),
 							emotes,
 							locks,
 							all_locked: true
 						};
 
-					for(const product of products) {
-						if ( ! product || ! Array.isArray(product.emotes) )
-							continue;
+					if ( Array.isArray(products) ) {
+						for(const product of products) {
+							if ( ! product || ! Array.isArray(product.emotes) )
+								continue;
 
-						const set_id = product.emoteSetID,
-							set_data = data[set_id],
-							locked = ! set_ids.has(set_id);
+							const set_id = product.emoteSetID,
+								set_data = data[set_id],
+								locked = ! set_ids.has(set_id);
 
-						let lock_set;
+							let lock_set;
 
-						if ( set_data ) {
-							section.renews = set_data.renews;
-							section.ends = set_data.ends;
-							section.prime = set_data.prime;
-							section.gift = set_data.gift && set_data.gift.isGift;
-						}
-
-						// If the channel is locked, store data about that in the
-						// section so we can show appropriate UI to let people
-						// subscribe. Also include all the already known emotes
-						// in the list of emotes this product unlocks.
-						if ( locked )
-							locks[set_id] = {
-								set_id,
-								id: product.id,
-								price: product.price || TIERS[product.tier],
-								url: product.url,
-								emotes: lock_set = new Set(emotes.map(e => e.id))
+							if ( set_data ) {
+								section.renews = set_data.renews;
+								section.ends = set_data.ends;
+								section.prime = set_data.prime;
+								section.gift = set_data.gift && set_data.gift.isGift;
 							}
-						else
-							section.all_locked = false;
 
-						for(const emote of product.emotes) {
-							// Validate emotes, because apparently Twitch is handing
-							// out bad emote data.
-							if ( ! emote || ! emote.id || ! emote.token )
+							// If the channel is locked, store data about that in the
+							// section so we can show appropriate UI to let people
+							// subscribe. Also include all the already known emotes
+							// in the list of emotes this product unlocks.
+							if ( locked )
+								locks[set_id] = {
+									set_id,
+									id: product.id,
+									price: product.price || TIERS[product.tier],
+									url: product.url,
+									emotes: lock_set = new Set(emotes.map(e => e.id))
+								}
+							else
+								section.all_locked = false;
+
+							for(const emote of product.emotes) {
+								// Validate emotes, because apparently Twitch is handing
+								// out bad emote data.
+								if ( ! emote || ! emote.id || ! emote.token )
+									continue;
+
+								const id = emote.id,
+									base = `${TWITCH_EMOTE_BASE}${id}`,
+									name = KNOWN_CODES[emote.token] || emote.token,
+									seen = twitch_seen.has(id),
+									is_fav = twitch_favorites.includes(id);
+
+								const em = {
+									provider: 'twitch',
+									id,
+									set_id,
+									name,
+									locked: locked && ! seen,
+									src: `${base}/1.0`,
+									srcSet: `${base}/1.0 1x, ${base}/2.0 2x`,
+									favorite: is_fav
+								};
+
+								emotes.push(em);
+
+								if ( ! locked && is_fav && ! seen )
+									favorites.push(em);
+
+								twitch_seen.add(id);
+
+								if ( lock_set )
+									lock_set.add(id);
+							}
+						}
+					}
+
+					if ( Array.isArray(bits) ) {
+						for(const emote of bits) {
+							if ( ! emote || ! emote.id || ! emote.bitsBadgeTierSummary )
 								continue;
 
 							const id = emote.id,
-								base = `${TWITCH_EMOTE_BASE}${id}`,
-								name = KNOWN_CODES[emote.token] || emote.token,
-								seen = twitch_seen.has(id),
+								set_id = emote.setID,
+								summary = emote.bitsBadgeTierSummary,
+								locked = ! twitch_seen.has(id) && ! summary.self?.isUnlocked;
+
+							// If the emote isn't unlocked, store data about that in the
+							// section so we can show appropriate UI to let people know
+							// that the emote isn't unlocked.
+							if ( locked )
+								locks[set_id] = {
+									set_id,
+									id: 'cheer',
+									price: null,
+									bits: summary.threshold,
+									bits_remaining: summary.self?.numberOfBitsUntilUnlock ?? summary.threshold,
+									emotes: new Set([emote.id])
+								}
+
+							const base = `${TWITCH_EMOTE_BASE}${id}`,
 								is_fav = twitch_favorites.includes(id);
 
 							const em = {
 								provider: 'twitch',
 								id,
 								set_id,
-								name,
-								locked: locked && ! seen,
+								name: emote.token,
+								locked,
 								src: `${base}/1.0`,
 								srcSet: `${base}/1.0 1x, ${base}/2.0 2x`,
 								favorite: is_fav
@@ -1570,13 +1638,10 @@ export default class EmoteMenu extends Module {
 
 							emotes.push(em);
 
-							if ( ! locked && is_fav && ! seen )
+							if ( ! locked && is_fav )
 								favorites.push(em);
 
 							twitch_seen.add(id);
-
-							if ( lock_set )
-								lock_set.add(id);
 						}
 					}
 

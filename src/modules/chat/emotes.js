@@ -963,6 +963,9 @@ function determineEmoteType(emote) {
 	if ( emote.setID == 300238151 )
 		return EmoteTypes.ChannelPoints;
 
+	if ( emote.setID == 300374282 )
+		return EmoteTypes.TwoFactor;
+
 	const id = parseInt(emote.setID, 10);
 	if ( ! isNaN(id) && isFinite(id) && id >= 5e8 )
 		return EmoteTypes.BitsTier;
@@ -982,6 +985,9 @@ function determineSetType(set) {
 
 	if ( TWITCH_PRIME_SETS.includes(id) )
 		return EmoteTypes.Prime;
+
+	if ( id == 300374282 )
+		return EmoteTypes.TwoFactor;
 
 	const owner = set.owner;
 	if ( owner ) {

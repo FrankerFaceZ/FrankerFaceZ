@@ -1059,6 +1059,9 @@ export const AddonEmotes = {
 				} else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
 					source = this.i18n.t('emote.prime', 'Twitch Prime');
 
+				else if ( type === EmoteTypes.TwoFactor )
+					source = this.i18n.t('emote.2fa', 'Twitch 2FA Emote');
+
 				else if ( type === EmoteTypes.LimitedTime )
 					source = this.i18n.t('emote.limited', 'Limited-Time Only Emote');
 

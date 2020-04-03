@@ -85,7 +85,7 @@ export default class WebMunch extends Module {
 
 	webpackJsonpv3(chunk_ids, modules) {
 		const names = chunk_ids.map(x => this._module_names[x] || x).join(', ');
-		this.log.info(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
+		this.log.debug(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
 		this.log.debug(`Modules: ${Object.keys(modules)}`);
 
 		const res = this._original_loader.apply(window, arguments); // eslint-disable-line prefer-rest-params
@@ -129,7 +129,7 @@ export default class WebMunch extends Module {
 			modules = data[1],
 			names = Array.isArray(chunk_ids) && chunk_ids.map(x => this._module_names[x] || x).join(', ');
 
-		this.log.info(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
+		this.log.debug(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
 		this.log.debug(`Modules: ${Object.keys(modules)}`);
 
 		if ( modules )

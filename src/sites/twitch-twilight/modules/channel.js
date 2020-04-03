@@ -56,7 +56,7 @@ export default class Channel extends Module {
 		this.ChannelPage = this.fine.define(
 			'channel-page',
 			n => (n.updateHost && n.updateChannel && n.state && has(n.state, 'hostedChannel')) || (n.getHostedChannelLogin && n.handleHostingChange) || (n.onChatHostingChange && n.state && has(n.state, 'hostMode')),
-			['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
+			['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following', 'mod-view']
 		);
 
 		this.RaidController = this.fine.define(

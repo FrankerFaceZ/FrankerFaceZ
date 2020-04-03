@@ -6,6 +6,7 @@
 
 import Module from 'utilities/module';
 import {get} from 'utilities/object';
+import {createElement} from 'utilities/dom';
 
 //import CHANNEL_QUERY from './channel_header_query.gql';
 
@@ -57,6 +58,12 @@ export default class ChannelBar extends Module {
 			n => n.getTitle && n.getGame && n.renderGame,
 			['user']
 		);
+
+		this.ModWidget = this.fine.define(
+			'mod-widget',
+			n => n.renderToolbar && n.getToolbarControls && n.childContext,
+			['mod-view']
+		);
 	}
 
 	onEnable() {
@@ -77,6 +84,15 @@ export default class ChannelBar extends Module {
 		});
 
 
+		/*this.ModWidget.on('mount', this.updateModWidget, this);
+		this.ModWidget.on('update', this.updateModWidget, this);
+
+		this.ModWidget.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updateModWidget(inst);
+		});*/
+
+
 		//this.VideoBar.on('unmount', this.unmountVideoBar, this);
 		this.VideoBar.on('mount', this.updateVideoBar, this);
 		this.VideoBar.on('update', this.updateVideoBar, this);
@@ -87,6 +103,30 @@ export default class ChannelBar extends Module {
 		});
 
 	}
+
+
+	/*updateModWidget(inst) {
+		const container = this.fine.getChildNode(inst);
+		if ( ! container || ! container.querySelector('.video-player-hosting-ui__container') )
+			return;
+
+		const header = container.querySelector('.mod-view-panel-header');
+		if ( ! header )
+			return;
+
+		let cont = header.querySelector('.ffz--stat-container');
+
+		if ( ! cont ) {
+			cont = <div class="ffz--stat-container tw-pd-l-05"></div>;
+			const contcont = header.querySelector(':scope > div:first-child > div');
+			if ( ! contcont )
+				return;
+
+			contcont.appendChild(cont);
+		}
+
+		this.log.info('mod-widget', inst, cont);
+	}*/
 
 
 	updateVideoBar(inst) {

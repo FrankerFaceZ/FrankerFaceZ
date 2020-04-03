@@ -13,6 +13,7 @@
 				:id="item.full_key"
 				ref="control"
 				:alpha="alpha"
+				:open-up="openUp"
 				:nullable="true"
 				:value="color"
 				@input="onInput"
@@ -71,6 +72,13 @@ export default {
 				return '';
 
 			return this.value;
+		},
+
+		openUp() {
+			if ( this.item.openUp != null )
+				return this.item.openUp;
+
+			return false;
 		},
 
 		alpha() {

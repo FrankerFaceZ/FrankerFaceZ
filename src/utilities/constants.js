@@ -109,5 +109,6 @@ export const EmoteTypes = make_enum(
 	'Unavailable',
 	'Subscription',
 	'BitsTier',
-	'Global'
+	'Global',
+	'TwoFactor'
 );

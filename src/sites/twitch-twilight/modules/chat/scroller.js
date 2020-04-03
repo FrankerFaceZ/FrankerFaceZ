@@ -588,18 +588,23 @@ export default class Scroller extends Module {
 													f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
 														t.i18n.t('key.mouse', 'Mouse Movement');
 
-					msg = t.i18n.t('chat.paused', '(Chat Paused Due to {reason})', {reason});
+					msg = t.i18n.t('chat.paused', 'Chat Paused Due to {reason}', {reason});
 					cls = 'ffz--freeze-indicator';
 
 				} else if ( this.state.isAutoScrolling )
 					return null;
 				else
-					msg = t.i18n.t('chat.messages-below', 'More messages below.');
+					msg = t.i18n.t('chat.messages-below', 'Chat Paused Due to Scroll');
 
 				return createElement('div', {
-					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05 ${cls}`,
+					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-justify-content-center tw-mg-b-1 tw-pd-x-2 tw-pd-y-05 ${cls}`,
 					onClick: this.ffzFastResume
 				}, createElement('div', null, msg));
+
+				/*return createElement('div', {
+					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05 ${cls}`,
+					onClick: this.ffzFastResume
+				}, createElement('div', null, msg));*/
 			}
 
 			cls.prototype.smoothScrollBottom = function() {

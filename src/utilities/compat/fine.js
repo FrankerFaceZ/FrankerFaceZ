@@ -494,7 +494,7 @@ export default class Fine extends Module {
 					if ( idx !== -1 )
 						this._waiting.splice(idx, 1);
 
-					this.log.info(`Found class for "${w.name}" at depth ${d.depth}`);
+					this.log.debug(`Found class for "${w.name}" at depth ${d.depth}`);
 					w._set(d.cls, d.instances);
 				}
 			}
