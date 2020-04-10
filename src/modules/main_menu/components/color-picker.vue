@@ -22,7 +22,12 @@
 				<figure v-else-if="color" :style="`background-color: ${color}`" />
 				<figure v-else class="ffz-i-eyedropper" />
 			</button>
-			<div v-if="open" v-on-clickaway="closePicker" class="tw-absolute tw-z-above tw-right-0">
+			<div
+				v-if="open"
+				v-on-clickaway="closePicker"
+				:class="{'ffz-bottom-100': openUp}"
+				class="tw-absolute tw-z-above tw-right-0"
+			>
 				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>
 		</div>
