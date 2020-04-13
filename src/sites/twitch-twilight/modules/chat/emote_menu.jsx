@@ -1314,6 +1314,8 @@ export default class EmoteMenu extends Module {
 					twitch_favorites = t.emotes.getFavorites('twitch'),
 					twitch_seen = new Set,
 
+					bits_unlocked = [],
+
 					//twitch_seen_favorites = new Set,
 
 					grouped_sets = {},
@@ -1492,6 +1494,9 @@ export default class EmoteMenu extends Module {
 
 							emotes.push(em);
 
+							if ( is_bits )
+								bits_unlocked.push(em);
+
 							if ( is_fav && ! twitch_seen.has(id) )
 								favorites.push(em);
 
@@ -1599,6 +1604,8 @@ export default class EmoteMenu extends Module {
 						}
 					}
 
+					const seen_bits = new Set;
+
 					if ( Array.isArray(bits) ) {
 						for(const emote of bits) {
 							if ( ! emote || ! emote.id || ! emote.bitsBadgeTierSummary )
@@ -1638,10 +1645,20 @@ export default class EmoteMenu extends Module {
 
 							emotes.push(em);
 
-							if ( ! locked && is_fav )
+							if ( ! locked && is_fav && ! twitch_seen.has(id) )
 								favorites.push(em);
 
+							seen_bits.add(id);
 							twitch_seen.add(id);
+						}
+					}
+
+					if ( bits_unlocked.length ) {
+						for(const emote of bits_unlocked) {
+							if ( seen_bits.has(emote.id) )
+								continue;
+
+							emotes.push(emote);
 						}
 					}
 

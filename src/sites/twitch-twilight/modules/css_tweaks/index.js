@@ -37,7 +37,8 @@ const CLASSES = {
 	'dir-live-ind': '.preview-card[data-ffz-type="live"] .tw-channel-status-text-indicator,.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
-	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator'
+	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator',
+	'celebration': 'body .celebration__overlay'
 };
 
 
@@ -247,6 +248,17 @@ export default class CSSTweaks extends Module {
 
 		// Other?
 
+		this.settings.add('channel.show-celebrations', {
+			default: true,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Allow Celebrations to appear.',
+				description: 'Celebrations are animations that cover the entire Twitch page.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('celebration', ! val)
+		});
+
 		this.settings.add('layout.theme.global-font', {
 			default: '',
 			ui: {
@@ -323,6 +335,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-closed-friends', friends === 2);
 
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
+		this.toggleHide('celebration', ! this.settings.get('channel.show-celebrations'));
 
 		this.updateFont();
 		this.updateTopNav();
