@@ -1397,11 +1397,17 @@ export default class Player extends Module {
 
 		const video = player.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
-			const new_vid = createElement('video');
-			new_vid.volume = player.getVolume();
+			const new_vid = createElement('video'),
+				vol = player.getVolume(),
+				muted = player.isMuted();
+			new_vid.volume = muted ? 0 : vol;
 			new_vid.playsInline = true;
 			video.replaceWith(new_vid);
 			player.attachHTMLVideoElement(new_vid);
+			setTimeout(() => {
+				player.setVolume(vol);
+				player.setMuted(muted);
+			}, 0);
 		}
 
 		this.PlayerSource.check();

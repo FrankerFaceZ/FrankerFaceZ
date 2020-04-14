@@ -1292,13 +1292,32 @@ export default class EmoteMenu extends Module {
 						if ( a.locked && ! b.locked ) return 1;
 
 						if ( sort_tiers || a.locked || b.locked ) {
-							if ( COLLATOR ) {
-								const result = COLLATOR.compare(a.set_id, b.set_id);
-								if ( result != 0 )
-									return result;
+							if ( a.bits || b.bits ) {
+								if ( ! b.bits )
+									return 1;
+								else if ( ! a.bits )
+									return -1;
+
+								const a_val = a.bit_value || 0,
+									b_val = b.bit_value || 0;
+
+								if ( COLLATOR ) {
+									const result = COLLATOR.compare(a_val, b_val);
+									if ( result != 0 )
+										return result;
+								} else {
+									if ( a_val < b_val ) return -1;
+									if ( a_val > b_val ) return 1;
+								}
 							} else {
-								if ( a.set_id < b.set_id ) return -1;
-								if ( a.set_id > b.set_id ) return 1;
+								if ( COLLATOR ) {
+									const result = COLLATOR.compare(a.set_id, b.set_id);
+									if ( result != 0 )
+										return result;
+								} else {
+									if ( a.set_id < b.set_id ) return -1;
+									if ( a.set_id > b.set_id ) return 1;
+								}
 							}
 						}
 
@@ -1332,7 +1351,8 @@ export default class EmoteMenu extends Module {
 							is_bits = parseInt(emote_set.id, 10) > 5e8,
 							is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
 							chan = is_points ? null : owner,
-							set_data = data[set_id];
+							set_data = data[set_id],
+							is_current_bits = is_bits && owner && owner.id == props?.channel_data?.user?.id;
 
 						/*if ( chan )
 							t.emotes.setTwitchSetChannel(set_id, {
@@ -1486,6 +1506,7 @@ export default class EmoteMenu extends Module {
 								srcSet,
 								overridden: overridden ? mapped.id : null,
 								misc: ! chan,
+								bits: is_bits,
 								favorite: is_fav
 							};
 
@@ -1494,7 +1515,7 @@ export default class EmoteMenu extends Module {
 
 							emotes.push(em);
 
-							if ( is_bits )
+							if ( is_current_bits )
 								bits_unlocked.push(em);
 
 							if ( is_fav && ! twitch_seen.has(id) )
@@ -1640,6 +1661,8 @@ export default class EmoteMenu extends Module {
 								locked,
 								src: `${base}/1.0`,
 								srcSet: `${base}/1.0 1x, ${base}/2.0 2x`,
+								bits: true,
+								bit_value: summary.threshold,
 								favorite: is_fav
 							};
 
