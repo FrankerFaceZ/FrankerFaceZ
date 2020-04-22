@@ -267,7 +267,27 @@ export default class Input extends Module {
 		const t = this;
 
 		const originalOnKeyDown = inst.onKeyDown,
-			originalOnMessageSend = inst.onMessageSend;
+			originalOnMessageSend = inst.onMessageSend,
+			old_resize = inst.resizeInput;
+
+		inst.resizeInput = function(msg) {
+			if ( msg ) {
+				if ( inst.chatInputRef ) {
+					const style = getComputedStyle(inst.chatInputRef),
+						height = style && parseFloat(style.lineHeight || 18) || 18,
+						t = height * 1 + 20,
+						i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
+						a = Math.min(1 + i, 4);
+
+					inst.setState({
+						numInputRows: a
+					});
+				}
+			} else
+				inst.setState({
+					numInputRows: 1
+				});
+		}
 
 		inst.messageHistory = [];
 		inst.tempInput = '';

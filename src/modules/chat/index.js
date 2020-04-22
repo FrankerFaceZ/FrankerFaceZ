@@ -192,7 +192,7 @@ export default class Chat extends Module {
 			default: 1,
 			ui: {
 				path: 'Chat > Behavior >> Deleted Messages',
-				title: 'Deleted Message Style',
+				title: 'Detailed Message Style',
 				description: 'This style will be applied to deleted messages showed in Detailed rendering mode to differentiate them from normal chat messages.',
 				component: 'setting-select-box',
 				data: [
@@ -208,8 +208,9 @@ export default class Chat extends Module {
 			default: false,
 			ui: {
 				path: 'Chat > Behavior >> Deleted Messages',
+				sort: -1,
 				title: 'Rendering Mode',
-				description: 'This, when set, overrides the mode selected in Twitch chat settings. We do this to allow non-moderators access to the setting.',
+				description: 'This, when set, overrides the `Deleted Messages` mode selected in Twitch chat settings, which is normally only accessible for moderators. Brief hides messages entirely and shows a notice in chat that a number of messages were hidden. Detailed shows the contents of the message. Legacy shows `<message deleted>` with click to reveal.',
 				component: 'setting-select-box',
 				data: [
 					{value: false, title: 'Do Not Override'},

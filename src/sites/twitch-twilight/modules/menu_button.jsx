@@ -304,7 +304,7 @@ export default class MenuButton extends SiteModule {
 						</span>
 					</div>
 				</button>)}
-				{this.has_error && (<div class={`tw-absolute tw-balloon tw-balloon--lg tw-block ${is_mod ? 'tw-balloon--up tw-balloon--left' : 'tw-balloon--down tw-balloon--right'}`}>
+				{this.has_error && (<div class={`tw-absolute tw-balloon tw-balloon--lg tw-block ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
 					<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4 tw-pd-1">
 						<div class="tw-flex tw-align-items-center">
 							<div class="tw-flex-grow-1">
@@ -321,7 +321,7 @@ export default class MenuButton extends SiteModule {
 						</div>
 					</div>
 				</div>)}
-				{! this.has_error && (<div class={`tw-tooltip ${is_mod ? 'tw-balloon--up tw-balloon--left' : 'tw-balloon--down tw-balloon--right'}`}>
+				{! this.has_error && (<div class={`tw-tooltip ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
 					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}

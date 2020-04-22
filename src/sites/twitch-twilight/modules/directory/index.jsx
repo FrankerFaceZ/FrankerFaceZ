@@ -75,7 +75,7 @@ export default class Directory extends SiteModule {
 			default: 1,
 
 			ui: {
-				path: 'Directory > Channels >> Appearance',
+				path: 'Directory > Channels @{"description": "**Note:** These settings do not currently work due to changes made by Twitch to how the directory works."} >> Appearance',
 				title: 'Stream Uptime',
 				description: 'Display the stream uptime on the channel cards.',
 				component: 'setting-select-box',

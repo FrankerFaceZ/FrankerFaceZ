@@ -34,7 +34,7 @@ export default class Following extends SiteModule {
 			default: true,
 
 			ui: {
-				path: 'Directory > Following >> Hosts',
+				path: 'Directory > Following @{"description": "**Note:** These settings do not currently work due to changes made by Twitch to how the directory works."} >> Hosts',
 				title: 'Group Hosts',
 				description: 'Only show a given hosted channel once in the directory.',
 				component: 'setting-check-box'

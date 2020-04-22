@@ -45,7 +45,7 @@ export default class ViewerCards extends Module {
 
 		this.ViewerCard = this.fine.define(
 			'chat-viewer-card',
-			n => n.toggleGiftPage && n.onWhisperButtonClick
+			n => n.trackViewerCardOpen && n.onWhisperButtonClick
 		);
 	}
 

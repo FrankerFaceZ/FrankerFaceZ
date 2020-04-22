@@ -714,17 +714,23 @@ export default class Player extends Module {
 					return;
 
 				const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
-					player = this.props?.mediaPlayerInstance;
+					player = this.props?.mediaPlayerInstance,
+					video = player?.mediaSinkManager?.video;
 
 				if ( ! player?.getVolume )
 					return;
 
 				const amount = t.settings.get('player.volume-scroll-steps'),
-					volume = Math.max(0, Math.min(1, player.getVolume() + (delta > 0 ? amount : -amount)));
+					old_volume = video?.volume ?? player.getVolume(),
+					volume = Math.max(0, Math.min(1, old_volume + (delta > 0 ? amount : -amount)));
 
 				player.setVolume(volume);
-				if ( volume !== 0 )
+				localStorage.volume = volume;
+
+				if ( volume !== 0 ) {
 					player.setMuted(false);
+					localStorage.setItem('video-muted', JSON.stringify({default: false}));
+				}
 
 				event.preventDefault();
 				return false;
@@ -1183,7 +1189,10 @@ export default class Player extends Module {
 				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			const thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]');
+			let thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]');
+			if ( ! thing )
+					thing = container.querySelector('button[data-a-target="player-fullscreen-button"]');
+
 			if ( thing ) {
 				container.insertBefore(cont, thing.parentElement);
 			} else
@@ -1283,7 +1292,7 @@ export default class Player extends Module {
 				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			const thing = container.querySelector('.ffz--player-pip button') || container.querySelector('button[data-a-target="player-theatre-mode-button"]');
+			const thing = container.querySelector('.ffz--player-pip button') || container.querySelector('button[data-a-target="player-theatre-mode-button"]') || container.querySelector('button[data-a-target="player-fullscreen-button"]');
 			if ( thing ) {
 				container.insertBefore(cont, thing.parentElement);
 			} else
@@ -1407,6 +1416,9 @@ export default class Player extends Module {
 			setTimeout(() => {
 				player.setVolume(vol);
 				player.setMuted(muted);
+
+				//localStorage.volume = vol;
+				//localStorage.setItem('video-muted', JSON.stringify({default: muted}));
 			}, 0);
 		}
 

@@ -38,7 +38,7 @@ export default class Scroller extends Module {
 			ui: {
 				path: 'Chat > Behavior >> Scrolling',
 				title: 'Pause Chat Scrolling',
-				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.',
+				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.\n\n**Note:** Scrolling up in chat will always prevent automatic scrolling, regardless of this setting.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
