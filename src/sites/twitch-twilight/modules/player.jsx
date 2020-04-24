@@ -715,7 +715,7 @@ export default class Player extends Module {
 
 				const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
 					player = this.props?.mediaPlayerInstance,
-					video = player?.mediaSinkManager?.video;
+					video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video;
 
 				if ( ! player?.getVolume )
 					return;
@@ -960,7 +960,7 @@ export default class Player extends Module {
 
 	addCompressorButton(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video,
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
 			container = outer && outer.querySelector('.player-controls__left-control-group'),
 			has_comp = HAS_COMPRESSOR && video != null && this.settings.get('player.compressor.enable');
 
@@ -1032,7 +1032,8 @@ export default class Player extends Module {
 	}
 
 	compressPlayer(inst, e) {
-		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
+		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
+			inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
 		if ( ! video || ! HAS_COMPRESSOR )
 			return;
 
@@ -1088,7 +1089,7 @@ export default class Player extends Module {
 		if ( player == null )
 			return false;
 
-		const video = player.mediaSinkManager?.video;
+		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( ! video )
 			return false;
 
@@ -1133,7 +1134,8 @@ export default class Player extends Module {
 
 	updateCompressor(inst, comp) {
 		if ( comp == null ) {
-			const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
+			const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
+				inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
 			comp = video?._ffz_compressor;
 		}
 
@@ -1150,7 +1152,7 @@ export default class Player extends Module {
 
 	addPiPButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video,
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
 			is_fs = video && document.fullscreenElement && document.fullscreenElement.contains(video),
 			container = outer && outer.querySelector('.player-controls__right-control-group'),
 			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
@@ -1223,7 +1225,8 @@ export default class Player extends Module {
 
 
 	pipPlayer(inst, e) {
-		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video;
+		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
+			inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
 		if ( ! video || ! document.pictureInPictureEnabled )
 			return;
 
@@ -1382,7 +1385,7 @@ export default class Player extends Module {
 
 
 	resetPlayer(inst, e) {
-		const player = inst ? (inst.mediaSinkManager ? inst : inst?.props?.mediaPlayerInstance) : null;
+		const player = inst ? ((inst.mediaSinkManager || inst.core?.mediaSinkManager) ? inst : inst?.props?.mediaPlayerInstance) : null;
 
 		if ( e ) {
 			e.preventDefault();
@@ -1404,7 +1407,7 @@ export default class Player extends Module {
 			}
 		}
 
-		const video = player.mediaSinkManager?.video;
+		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
 			const new_vid = createElement('video'),
 				vol = player.getVolume(),

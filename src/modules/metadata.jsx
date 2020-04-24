@@ -220,7 +220,7 @@ export default class Metadata extends Module {
 						skippedFrames: temp.dropped_frames,
 						videoResolution: `${temp.vid_width}x${temp.vid_height}`
 					}
-				} else if ( player.stats ) {
+				} else if ( player.stats || player.core?.stats ) {
 					const videoHeight = maybe_call(player.getVideoHeight, player) || 0,
 						videoWidth = maybe_call(player.getVideoWidth, player) || 0,
 						displayHeight = maybe_call(player.getDisplayHeight, player) || 0,
@@ -237,8 +237,8 @@ export default class Metadata extends Module {
 						displayWidth,
 						rate: maybe_call(player.getPlaybackRate, player),
 						fps: Math.floor(maybe_call(player.getVideoFrameRate, player) || 0),
-						hlsLatencyBroadcaster: player.stats?.broadcasterLatency,
-						hlsLatencyEncoder: player.stats?.transcoderLatency,
+						hlsLatencyBroadcaster: player.stats?.broadcasterLatency || player.core?.stats?.broadcasterLatency,
+						hlsLatencyEncoder: player.stats?.transcoderLatency || player.core?.stats?.transcoderLatency,
 						playbackRate: Math.floor((maybe_call(player.getVideoBitRate, player) || 0) / 1000),
 						skippedFrames: maybe_call(player.getDroppedFrames, player),
 					}
