@@ -309,7 +309,7 @@ export default class CSSTweaks extends Module {
 			default: false,
 			ui: {
 				path: 'Channel > Appearance >> General',
-				title: 'Hide the "Not Live" bar.',
+				title: 'Hide the "Now Live" bar.',
 				description: 'Hide the bar which appears beneath clips and videos when the streamer is live, telling you they are live.',
 				component: 'setting-check-box'
 			},
