@@ -28,7 +28,7 @@
 
 		<div class="ffz--experiment-list">
 			<section
-				v-for="({key, exp}) of sorted(ffz_data)"
+				v-for="({key, exp}) of visible_ffz"
 				:key="key"
 				:data-key="key"
 			>
@@ -72,6 +72,9 @@
 			<div v-if="! Object.keys(ffz_data).length">
 				{{ t('setting.experiments.none', 'There are no current experiments.') }}
 			</div>
+			<div v-else-if="! visible_ffz.length">
+				{{ t('setting.experiments.none-filter', 'There are no matching experiments.') }}
+			</div>
 		</div>
 
 		<h3 class="tw-mg-t-5 tw-mg-b-1">
@@ -80,7 +83,7 @@
 
 		<div class="ffz--experiment-list">
 			<section
-				v-for="({key, exp}) of sorted(twitch_data)"
+				v-for="({key, exp}) of visible_twitch"
 				:key="key"
 				:data-key="key"
 			>
@@ -146,6 +149,9 @@
 			<div v-if="! Object.keys(twitch_data).length">
 				{{ t('setting.experiments.none', 'There are no current experiments.') }}
 			</div>
+			<div v-else-if="! visible_twitch.length">
+				{{ t('setting.experiments.none-filter', 'There are no matching experiments.') }}
+			</div>
 		</div>
 	</div>
 </template>
@@ -154,8 +160,16 @@
 
 import {has} from 'utilities/object';
 
+function matches(exp, filter) {
+	return (exp.key && exp.key.toLowerCase().includes(filter)) ||
+			(exp.exp && (
+				(exp.exp.name && exp.exp.name.toLowerCase().includes(filter)) ||
+				(exp.exp.description && exp.exp.description.toLowerCase().includes(filter))
+			));
+}
+
 export default {
-	props: ['item'],
+	props: ['item', 'filter'],
 
 	data() {
 		return {
@@ -163,6 +177,34 @@ export default {
 			unique_id: this.item.unique_id(),
 			ffz_data: this.item.ffz_data(),
 			twitch_data: this.item.twitch_data()
+		}
+	},
+
+	computed: {
+		sorted_ffz() {
+			return this.sorted(this.ffz_data);
+		},
+
+		visible_ffz() {
+			const items = this.sorted_ffz,
+				f = this.filter && this.filter.toLowerCase();
+			if ( ! f )
+				return items;
+
+			return items.filter(x => matches(x, f));
+		},
+
+		sorted_twitch() {
+			return this.sorted(this.twitch_data);
+		},
+
+		visible_twitch() {
+			const items = this.sorted_twitch,
+				f = this.filter && this.filter.toLowerCase();
+			if ( ! f )
+				return items;
+
+			return items.filter(x => matches(x, f));
 		}
 	},
 

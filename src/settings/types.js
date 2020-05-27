@@ -54,14 +54,15 @@ export const array_merge = {
 
 	get(key, profiles, definition, log) {
 		const values = [],
-			trailing = [],
 			sources = [];
-
+		let trailing = [];
 		let had_value = false;
 
 		for(const profile of profiles)
 			if ( profile.has(key) ) {
-				const value = profile.get(key);
+				const value = profile.get(key),
+					trail = [];
+
 				if ( ! Array.isArray(value) ) {
 					log.warn(`Profile #${profile.id} has an invalid value for "${key}" of type ${typeof value}. Skipping.`);
 					continue;
@@ -74,10 +75,12 @@ export const array_merge = {
 					if ( val.t === 'inherit' )
 						is_trailing = true;
 					else if ( is_trailing )
-						trailing.unshift(val.v);
+						trail.push(val.v);
 					else
 						values.push(val.v);
 				}
+
+				trailing = trail.concat(trailing);
 
 				// If we didn't run into an inherit, don't inherit.
 				if ( ! is_trailing && ! definition.always_inherit )

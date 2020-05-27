@@ -59,6 +59,11 @@ export default class Player extends Module {
 			PLAYER_ROUTES
 		);
 
+		this.PersistentPlayer = this.fine.define(
+			'persistent-player',
+			n => n.state && n.state.playerStyles
+		);
+
 		this.Player = this.fine.define(
 			'highwind-player',
 			n => n.setPlayerActive && n.props?.playerEvents && n.props?.mediaPlayerInstance,
@@ -522,9 +527,9 @@ export default class Player extends Module {
 		this.installVisibilityHook();
 
 		this.on(':reset', this.resetAllPlayers, this);
+		this.on(':fix-player', () => this.PersistentPlayer.forceUpdate(), this);
 
 		const t = this;
-
 
 		this.SquadStreamBar.ready(cls => {
 			const old_should_render = cls.prototype.shouldRenderSquadBanner;
@@ -1097,7 +1102,8 @@ export default class Player extends Module {
 			const url = new URL(video.src);
 			if ( url.protocol !== 'blob:' )
 				return false;
-		}
+		} else
+			return false;
 
 		/*this.PlayerSource.check();
 		for(const si of this.PlayerSource.instances) {

@@ -222,10 +222,38 @@
 					v-if="add_open"
 					color="background-alt-2"
 					dir="down-right"
-					size="sm"
+					:size="add_pasting ? 'md' : 'sm'"
 				>
 					<simplebar classes="ffz-mh-30">
-						<div class="tw-pd-y-1">
+						<div v-if="add_pasting" class="tw-pd-1">
+							<div class="tw-flex tw-align-items-center">
+								<input
+									ref="paste"
+									:placeholder="t('setting.paste-json.json', '[json]')"
+									class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+									@keydown.enter="addFromJSON"
+								>
+								<button
+									class="tw-mg-l-05 tw-button"
+									@click="addFromJSON"
+								>
+									<span class="tw-button__text ffz-i-plus">
+										{{ t('setting.add', 'Add') }}
+									</span>
+								</button>
+							</div>
+						</div>
+						<div v-else class="tw-pd-y-1">
+							<button
+								class="tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-full-width"
+								@click="add_pasting = true"
+							>
+								<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
+									<div class="tw-flex-grow-1 tw-mg-r-1">
+										{{ t('setting.paste-json', 'Paste JSON') }}
+									</div>
+								</div>
+							</button>
 							<template v-for="(preset, idx) in presets">
 								<div
 									v-if="preset.divider"
@@ -348,6 +376,7 @@ export default {
 
 			maybe_clear: false,
 			add_open: false,
+			add_pasting: false
 		}
 	},
 
@@ -548,10 +577,46 @@ export default {
 
 		closeAdd() {
 			this.add_open = false;
+			this.add_pasting = false;
 		},
 
 		toggleAdd() {
 			this.add_open = ! this.add_open;
+			this.add_pasting = false;
+		},
+
+		addFromJSON() {
+			let value = this.$refs.paste.value;
+			this.closeAdd();
+
+			if ( value ) {
+				try {
+					value = JSON.parse(value);
+				} catch(err) {
+					alert(err); // eslint-disable-line no-alert
+					return;
+				}
+
+				if ( ! value.appearance )
+					value.appearance = {};
+
+				if ( ! value.appearance.type )
+					value.appearance.type = 'text';
+
+				if ( value.appearance.type === 'text' && ! value.appearance.text )
+					value.appearance.text = 'C';
+
+				if ( value.appearance.type === 'icon' && ! value.appearance.icon )
+					value.appearance.icon = 'ffz-i-ok';
+
+				if ( ! value.display )
+					value.display = {};
+
+				if ( ! value.action )
+					value.action = 'chat';
+
+				this.add({v: value});
+			}
 		},
 
 		populate() {

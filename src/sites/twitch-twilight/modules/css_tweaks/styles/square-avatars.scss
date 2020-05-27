@@ -1,3 +1,4 @@
+.user-avatar-animated,
 .search-result-card,
 .tw-avatar {
 	--border-radius-rounded: 0 !important;
@@ -9,4 +10,8 @@
 
 .bits-leaderboard-medal .tw-avatar {
 	--border-radius-rounded: 9000px !important;
+}
+
+.user-avatar-animated .user-avatar-animated__halo {
+	visibility: hidden;
 }

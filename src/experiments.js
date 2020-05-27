@@ -38,6 +38,27 @@ export default class ExperimentManager extends Module {
 		this.settings.addUI('experiments', {
 			path: 'Debugging > Experiments',
 			component: 'experiments',
+			no_filter: true,
+
+			getExtraTerms: () => {
+				const values = [];
+
+				for(const [key,val] of Object.entries(this.experiments)) {
+					values.push(key);
+					if ( val.name )
+						values.push(val.name);
+					if ( val.description )
+						values.push(val.description);
+				}
+
+				for(const [key, val] of Object.entries(this.getTwitchExperiments())) {
+					values.push(key);
+					if ( val.name )
+						values.push(val.name);
+				}
+
+				return values;
+			},
 
 			unique_id: () => this.unique_id,
 
@@ -103,6 +124,7 @@ export default class ExperimentManager extends Module {
 		}
 
 		this.log.info(`Loaded information on ${Object.keys(data).length} experiments.${changed > 0 ? ` ${changed} values updated.` : ''}`);
+		//this.emit(':loaded');
 	}
 
 

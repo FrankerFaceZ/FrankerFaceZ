@@ -18,7 +18,7 @@ const CLASSES = {
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
-	'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
+	//'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 
 	'community-highlights': '.community-highlight-stack__card',
@@ -58,6 +58,17 @@ export default class CSSTweaks extends Module {
 
 
 		// Layout
+
+		this.settings.add('layout.use-chat-fix', {
+			requires: ['layout.swap-sidebars', 'layout.use-portrait', 'chat.use-width'],
+			process(ctx) {
+				return ctx.get('layout.swap-sidebars') || ctx.get('layout.use-portrait') || ctx.get('chat.use-width')
+			},
+			changed: val => {
+				this.toggle('chat-fix', val);
+				this.emit('site.player:fix-player');
+			}
+		});
 
 		this.settings.add('layout.side-nav.show', {
 			default: true,
@@ -127,7 +138,7 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggleHide('side-rec-friends', !val)
 		});
 
-		this.settings.add('layout.side-nav.hide-offline', {
+		/*this.settings.add('layout.side-nav.hide-offline', {
 			default: false,
 			ui: {
 				path: 'Appearance > Layout >> Side Navigation',
@@ -135,7 +146,7 @@ export default class CSSTweaks extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('side-offline-channels', val)
-		});
+		});*/
 
 		this.settings.add('layout.side-nav.rerun-style', {
 			default: 1,
@@ -307,6 +318,7 @@ export default class CSSTweaks extends Module {
 	}
 
 	onEnable() {
+		this.toggle('chat-fix', this.settings.get('layout.use-chat-fix'));
 		this.toggle('swap-sidebars', this.settings.get('layout.swap-sidebars'));
 		this.toggle('minimal-navigation', this.settings.get('layout.minimal-navigation'));
 		this.toggle('theatre-nav', this.settings.get('layout.theatre-navigation'));
@@ -314,7 +326,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('hide-side-nav-avatars', ! this.settings.get('layout.side-nav.show-avatars'));
 		this.toggle('hide-side-nav', !this.settings.get('layout.side-nav.show'));
 		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
-		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
+		//this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 
@@ -339,6 +351,8 @@ export default class CSSTweaks extends Module {
 
 		this.updateFont();
 		this.updateTopNav();
+
+		this.emit('site.player:fix-player');
 	}
 
 	updateTopNav() {

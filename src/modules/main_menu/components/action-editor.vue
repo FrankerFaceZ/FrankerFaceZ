@@ -14,6 +14,15 @@
 					{{ t('setting.actions.visible', 'visible: {list}', {list: visibility}) }}
 				</div>
 			</template>
+			<template v-else-if="copying">
+				<textarea
+					ref="json"
+					v-model="json"
+					readonly
+					class="tw-full-width tw-full-height tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+					@focus="$event.target.select()"
+				/>
+			</template>
 			<template v-else>
 				<section>
 					<h5>{{ t('setting.actions.appearance', 'Appearance') }}</h5>
@@ -369,7 +378,14 @@
 		</div>
 
 		<div class="tw-mg-l-1 tw-border-l tw-pd-l-1 tw-flex tw-flex-wrap tw-flex-column tw-justify-content-start tw-align-items-start">
-			<template v-if="editing">
+			<template v-if="copying">
+				<button class="tw-button tw-button--text" @click="copying = false">
+					<span class="tw-button__text ffz-i-cancel">
+						{{ t('setting.cancel', 'Cancel') }}
+					</span>
+				</button>
+			</template>
+			<template v-if="editing && ! copying">
 				<button class="tw-button tw-button--text" @click="save">
 					<span class="tw-button__text ffz-i-floppy">
 						{{ t('setting.save', 'Save') }}
@@ -380,8 +396,13 @@
 						{{ t('setting.cancel', 'Cancel') }}
 					</span>
 				</button>
+				<button class="tw-button tw-button--text" @click="prepareCopy">
+					<span class="tw-button__text ffz-i-docs">
+						{{ t('setting.copy-json', 'Copy') }}
+					</span>
+				</button>
 			</template>
-			<template v-else-if="deleting">
+			<template v-else-if="deleting && ! copying">
 				<button class="tw-button tw-button--text" @click="$emit('remove', action)">
 					<span class="tw-button__text ffz-i-trash">
 						{{ t('setting.delete', 'Delete') }}
@@ -393,7 +414,7 @@
 					</span>
 				</button>
 			</template>
-			<template v-else>
+			<template v-else-if="! copying">
 				<button
 					v-if="canEdit"
 					class="tw-button tw-button--text"
@@ -425,6 +446,7 @@ export default {
 	data() {
 		return {
 			id: id++,
+			copying: false,
 			deleting: false,
 			editing: false,
 			edit_data: null
@@ -432,6 +454,10 @@ export default {
 	},
 
 	computed: {
+		json() {
+			return JSON.stringify(this.display)
+		},
+
 		display() {
 			if ( this.editing )
 				return this.edit_data;
@@ -692,7 +718,15 @@ export default {
 			this.cancel();
 		},
 
+		prepareCopy() {
+			this.copying = true;
+			requestAnimationFrame(() => {
+				this.$refs.json.focus();
+			});
+		},
+
 		cancel() {
+			this.copying = false;
 			this.editing = false;
 			this.edit_data = null;
 		},

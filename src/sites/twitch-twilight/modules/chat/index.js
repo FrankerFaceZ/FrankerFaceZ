@@ -375,9 +375,9 @@ export default class ChatHook extends Module {
 			},
 
 			ui: {
-				path: 'Chat > Bits and Cheering >> Appearance',
-				title: 'Display Top Cheerers',
-				description: 'By default, this inherits its value from Display Bits.',
+				path: 'Chat > Appearance >> Community',
+				title: 'Display Leaderboard',
+				description: 'The leaderboard shows the top cheerers and sub gifters in a channel.\n\nBy default due to a previous implementation, this inherits its value from Chat > Bits and Cheering > Display Bits.',
 				component: 'setting-check-box'
 			}
 		});
@@ -550,6 +550,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
 		this.css_tweaks.setVariable('chat-font-family', font);
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
+		this.css_tweaks.setVariable('negative-chat-width', `${-width/10}rem`);
 
 		this.css_tweaks.toggle('chat-font', size !== 12 || font);
 		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
@@ -558,6 +559,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
 
 		this.emit(':update-chat-css');
+		this.emit('site.player:fix-player');
 	}
 
 	updateLineBorders() {

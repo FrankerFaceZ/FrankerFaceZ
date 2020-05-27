@@ -50,6 +50,10 @@
 		right: 0 !important;
 	}
 
+	.channel-root__right-column--expanded {
+		min-height: unset !important;
+	}
+
 	.right-column {
 		display: unset !important;
 		position: fixed !important;
