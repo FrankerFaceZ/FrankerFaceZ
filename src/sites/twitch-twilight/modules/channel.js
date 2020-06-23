@@ -97,6 +97,8 @@ export default class Channel extends Module {
 
 
 	onEnable() {
+		this.updateChannelColor();
+
 		this.ChannelPage.on('mount', this.wrapChannelPage, this);
 		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);

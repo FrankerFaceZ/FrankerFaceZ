@@ -1,0 +1,6 @@
+query FFZ_UserColor($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+		id
+		primaryColorHex
+	}
+}

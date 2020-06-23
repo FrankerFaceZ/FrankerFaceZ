@@ -677,6 +677,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
+		this.chat.context.on('changed:chat.filtering.bold-mentions', val => this.css_tweaks.toggle('chat-mention-no-bold', ! val));
 		this.chat.context.on('changed:chat.pin-resubs', val => {
 			if ( val ) {
 				this.updateInlineCallouts();
@@ -713,6 +714,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.toggle('chat-deleted-fade', val < 2);
 
 		this.css_tweaks.toggle('clickable-mentions', this.chat.context.get('chat.filtering.clickable-mentions'));
+		this.css_tweaks.toggle('chat-mention-no-bold', ! this.chat.context.get('chat.filtering.bold-mentions'));
 
 		this.chat.context.on('changed:chat.hide-community-highlights', val => this.css_tweaks.toggleHide('community-highlights', val));
 

@@ -305,14 +305,14 @@
 			}
 		}
 
-		&.locked {
-			cursor: not-allowed;
-
+		&.locked,
+		&.hidden {
 			img {
 				opacity: 0.5;
 			}
 
-			.ffz-i-lock {
+			.ffz-i-lock,
+			.ffz-i-eye-off {
 				position: absolute;
 				bottom: 0; right: 0;
 				border-radius: .2rem;
@@ -320,7 +320,10 @@
 				background-color: rgba(0,0,0,0.5);
 				color: #fff;
 			}
+		}
 
+		&.locked {
+			cursor: not-allowed;
 		}
 	}
 

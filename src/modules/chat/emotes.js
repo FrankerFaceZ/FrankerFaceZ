@@ -195,6 +195,52 @@ export default class Emotes extends Module {
 
 
 	// ========================================================================
+	// Hidden Checking
+	// ========================================================================
+
+	toggleHidden(source, id, value = null) {
+		const key = `hidden-emotes.${source}`,
+			p = this.settings.provider,
+			hidden = p.get(key, []),
+
+			idx = hidden.indexOf(id);
+
+		if ( value === null )
+			value = idx === -1;
+
+		if ( value && idx === -1 )
+			hidden.push(id);
+		else if ( ! value && idx !== -1 )
+			hidden.splice(idx, 1);
+		else
+			return;
+
+		if ( hidden.length )
+			p.set(key, hidden);
+		else
+			p.delete(key);
+
+		this.emit(':change-hidden', source, id, value);
+	}
+
+	isHidden(source, id) {
+		return this.getHidden(source).includes(id);
+	}
+
+	getHidden(source) {
+		return this.settings.provider.get(`hidden-emotes.${source}`, []);
+	}
+
+	setHidden(source, list) {
+		const key = `hidden-emotes.${source}`;
+		if ( ! Array.isArray(list) || ! list.length )
+			this.settings.provider.delete(key);
+		else
+			this.settings.provider.set(key, list);
+	}
+
+
+	// ========================================================================
 	// Favorite Checking
 	// ========================================================================
 

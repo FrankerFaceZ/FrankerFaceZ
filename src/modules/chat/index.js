@@ -628,6 +628,15 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.bold-mentions', {
+			default: true,
+			ui: {
+				component: 'setting-check-box',
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Display mentions in chat with a bold font.'
+			}
+		});
+
 		this.settings.add('chat.filtering.mention-color', {
 			default: '',
 			ui: {

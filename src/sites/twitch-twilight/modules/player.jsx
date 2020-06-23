@@ -6,6 +6,7 @@
 
 import Module from 'utilities/module';
 import {createElement, on, off} from 'utilities/dom';
+import {debounce} from 'utilities/object';
 
 export const PLAYER_ROUTES = [
 	'front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos',
@@ -228,6 +229,15 @@ export default class Player extends Module {
 			changed: val => {
 				for(const inst of this.Player.instances)
 					this.updateAutoPlaybackRate(inst, val);
+			}
+		});
+
+		this.settings.add('player.mute-click', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Volume',
+				title: 'Mute or unmute the player by middle-clicking.',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -559,6 +569,9 @@ export default class Player extends Module {
 
 				this._ffz_installed = true;
 
+				if ( ! this._ffzUpdateVolume )
+					this._ffzUpdateVolume = debounce(this.ffzUpdateVolume.bind(this));
+
 				if ( ! this._ffzUpdateState )
 					this._ffzUpdateState = this.ffzUpdateState.bind(this);
 
@@ -605,6 +618,16 @@ export default class Player extends Module {
 				}
 
 				this.ffzStopAutoplay();
+			}
+
+			cls.prototype.ffzUpdateVolume = function() {
+				const player = this.props.mediaPlayerInstance,
+					video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video;
+				if ( video ) {
+					const volume = video.volume;
+					if ( ! player.isMuted() && ! video.muted && player.getVolume() !== volume )
+						player.setVolume(volume);
+				}
 			}
 
 			cls.prototype.ffzUninstall = function() {
@@ -698,7 +721,12 @@ export default class Player extends Module {
 				this._ffz_listeners = true;
 				if ( ! this._ffz_scroll_handler )
 					this._ffz_scroll_handler = this.ffzScrollHandler.bind(this);
+
+				if ( ! this._ffz_click_handler )
+					this._ffz_click_handler = this.ffzClickHandler.bind(this);
+
 				on(cont, 'wheel', this._ffz_scroll_handler);
+				on(cont, 'mousedown', this._ffz_click_handler);
 			}
 
 			cls.prototype.ffzRemoveListeners = function() {
@@ -711,7 +739,25 @@ export default class Player extends Module {
 					this._ffz_scroll_handler = null;
 				}
 
+				if ( this._ffz_click_handler ) {
+					off(cont, 'mousedown', this._ffz_click_handler);
+					this._ffz_click_handler = null;
+				}
+
 				this._ffz_listeners = false;
+			}
+
+			cls.prototype.ffzClickHandler = function(event) {
+				if ( ! t.settings.get('player.mute-click') || ! event || event.button !== 1 )
+					return;
+
+				const player = this.props?.mediaPlayerInstance;
+				if ( ! player?.isMuted )
+					return;
+
+				player.setMuted(! player.isMuted());
+				event.preventDefault();
+				return false;
 			}
 
 			cls.prototype.ffzScrollHandler = function(event) {
@@ -956,10 +1002,11 @@ export default class Player extends Module {
 		this.addCompressorButton(inst, false);
 
 		const player = inst?.props?.mediaPlayerInstance;
-		if ( player && ! this.settings.get('player.allow-catchup') ) {
-			if ( player.setLiveSpeedUpRate )
-				player.setLiveSpeedUpRate(1);
-		}
+		if ( player && ! this.settings.get('player.allow-catchup') && player.setLiveSpeedUpRate )
+			player.setLiveSpeedUpRate(1);
+
+		if ( inst._ffzUpdateVolume )
+			inst._ffzUpdateVolume();
 	}
 
 
@@ -1003,7 +1050,7 @@ export default class Player extends Module {
 				<div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" role="tooltip">
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
-						{extra = (<div class="ffz--p-extra tw-pd-t-05" />)}
+						{extra = (<div class="ffz--p-extra tw-pd-t-05 ffz--tooltip-explain" />)}
 					</div>
 				</div>
 			</div>);
@@ -1199,7 +1246,7 @@ export default class Player extends Module {
 
 			let thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]');
 			if ( ! thing )
-					thing = container.querySelector('button[data-a-target="player-fullscreen-button"]');
+				thing = container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
 			if ( thing ) {
 				container.insertBefore(cont, thing.parentElement);
@@ -1416,7 +1463,7 @@ export default class Player extends Module {
 		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
 			const new_vid = createElement('video'),
-				vol = player.getVolume(),
+				vol = video?.volume ?? player.getVolume(),
 				muted = player.isMuted();
 			new_vid.volume = muted ? 0 : vol;
 			new_vid.playsInline = true;

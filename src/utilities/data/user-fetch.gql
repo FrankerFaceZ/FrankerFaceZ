@@ -4,6 +4,7 @@ query FFZ_FetchUser($id: ID, $login: String) {
 		login
 		displayName
 		profileImageURL(width: 50)
+		primaryColorHex
 		roles {
 			isAffiliate
 			isPartner

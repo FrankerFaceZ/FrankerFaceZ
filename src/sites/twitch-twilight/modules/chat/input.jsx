@@ -482,12 +482,13 @@ export default class Input extends Module {
 			startingResults = [],
 			otherResults = [],
 			favorites = this.emotes.getFavorites('twitch'),
+			hidden = this.emotes.getHidden('twitch'),
 			search = input.startsWith(':') ? input.slice(1) : input;
 
 		for (const set of hydratedEmotes) {
 			if (set && Array.isArray(set.emotes)) {
 				for (const emote of set.emotes) {
-					if (inst.doesEmoteMatchTerm(emote, search)) {
+					if (inst.doesEmoteMatchTerm(emote, search) && ! hidden.includes(emote.id)) {
 						const favorite = favorites.includes(emote.id);
 						const element = {
 							current: input,
@@ -590,7 +591,7 @@ export default class Input extends Module {
 		for(const set of sets) {
 			if ( set && set.emotes )
 				for(const emote of Object.values(set.emotes))
-					if ( inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name) ) {
+					if ( inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name) && ! this.emotes.isHidden(set.source || 'ffz', emote.id) ) {
 						const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
 						results.push({
 							current: input,
