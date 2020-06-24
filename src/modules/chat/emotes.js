@@ -227,6 +227,10 @@ export default class Emotes extends Module {
 		return this.getHidden(source).includes(id);
 	}
 
+	isSetHidden(source, id) {
+		return this.settings.provider.get('emote-menu.hidden-sets').includes(`${source}-${id}`);
+	}
+
 	getHidden(source) {
 		return this.settings.provider.get(`hidden-emotes.${source}`, []);
 	}

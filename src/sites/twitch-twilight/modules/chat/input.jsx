@@ -478,6 +478,13 @@ export default class Input extends Module {
 			return [];
 		}
 
+		for (let i = 0; i < hydratedEmotes.length; i++) {
+			const owner = inst.props.emotes[i].owner;
+			if (owner) {
+				hydratedEmotes[i].owner = owner;
+			}
+		}
+
 		const usageResults = [],
 			startingResults = [],
 			otherResults = [],
@@ -487,27 +494,29 @@ export default class Input extends Module {
 
 		for (const set of hydratedEmotes) {
 			if (set && Array.isArray(set.emotes)) {
-				for (const emote of set.emotes) {
-					if (inst.doesEmoteMatchTerm(emote, search) && ! hidden.includes(emote.id)) {
-						const favorite = favorites.includes(emote.id);
-						const element = {
-							current: input,
-							replacement: emote.token,
-							element: inst.renderEmoteSuggestion({
-								...emote,
+				if ( ! this.emotes.isSetHidden('twitch', set.owner?.id)) {
+					for (const emote of set.emotes) {
+						if (inst.doesEmoteMatchTerm(emote, search) && ! hidden.includes(emote.id)) {
+							const favorite = favorites.includes(emote.id);
+							const element = {
+								current: input,
+								replacement: emote.token,
+								element: inst.renderEmoteSuggestion({
+									...emote,
+									favorite
+								}),
 								favorite
-							}),
-							favorite
-						};
+							};
 
-						if (this.EmoteUsageCount[emote.token]) {
-							usageResults.push(element);
-						}
-						else if (emote.token.toLowerCase().startsWith(search)) {
-							startingResults.push(element);
-						}
-						else {
-							otherResults.push(element);
+							if (this.EmoteUsageCount[emote.token]) {
+								usageResults.push(element);
+							}
+							else if (emote.token.toLowerCase().startsWith(search)) {
+								startingResults.push(element);
+							}
+							else {
+								otherResults.push(element);
+							}
 						}
 					}
 				}
@@ -590,22 +599,23 @@ export default class Input extends Module {
 
 		for(const set of sets) {
 			if ( set && set.emotes )
-				for(const emote of Object.values(set.emotes))
-					if ( inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name) && ! this.emotes.isHidden(set.source || 'ffz', emote.id) ) {
-						const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
-						results.push({
-							current: input,
-							replacement: emote.name,
-							element: inst.renderEmoteSuggestion({
-								token: emote.name,
-								id: `${set.source}-${emote.id}`,
-								srcSet: emote.srcSet,
+				if ( ! this.emotes.isSetHidden(set.source || 'ffz', set.id))
+					for(const emote of Object.values(set.emotes))
+						if ( inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name) && ! this.emotes.isHidden(set.source || 'ffz', emote.id) ) {
+							const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
+							results.push({
+								current: input,
+								replacement: emote.name,
+								element: inst.renderEmoteSuggestion({
+									token: emote.name,
+									id: `${set.source}-${emote.id}`,
+									srcSet: emote.srcSet,
+									favorite
+								}),
 								favorite
-							}),
-							favorite
-						});
-						added_emotes.add(emote.name);
-					}
+							});
+							added_emotes.add(emote.name);
+						}
 		}
 
 		return results;
