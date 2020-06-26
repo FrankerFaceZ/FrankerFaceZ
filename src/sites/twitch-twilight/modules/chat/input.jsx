@@ -129,6 +129,12 @@ export default class Input extends Module {
 			ANELE: 14648986,
 			PJSalt: 14438861
 		};
+
+		this.tabCompleteHydrationCache = [];
+		this.tabCompleteHydrationCacheLength = -1;
+		
+		this.tabCompleteFFZHydrationCache = [];
+		this.tabCompleteFFZHydrationCacheLength = -1;
 	}
 
 	async onEnable() {
@@ -224,6 +230,14 @@ export default class Input extends Module {
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 
 		this.on('site.css_tweaks:update-chat-css', this.resizeInput, this);
+		this.on('chat.emotes:change-hidden', () => {
+			this.tabCompleteHydrationCacheLength = -1;
+			this.tabCompleteFFZHydrationCacheLength = -1;
+		}, this);
+		this.on('site.chat.emote_menu:change-hidden-set', () => {
+			this.tabCompleteHydrationCacheLength = -1;
+			this.tabCompleteFFZHydrationCacheLength = -1;
+		}, this);
 	}
 
 	updateInput() {
@@ -470,53 +484,86 @@ export default class Input extends Module {
 		});
 	}
 
+	getHydratedEmoteSets(inst) {
+		if(this.tabCompleteHydrationCacheLength !== inst.props.emotes.length) {
+			this.tabCompleteHydrationCache = [];
+
+			const hidden = this.emotes.getHidden('twitch');
+
+			const hydratedEmoteSets = inst.hydrateEmotes(inst.props.emotes);
+
+			if (Array.isArray(hydratedEmoteSets)) {
+				const filteredEmoteSets = [];
+
+				for (let i = 0; i < hydratedEmoteSets.length; i++) {
+					const set = hydratedEmoteSets[i];
+
+					const filteredSet = { ...set, emotes: [] };
+
+					const owner = inst.props.emotes[i].owner;
+					if (owner && this.emotes.isSetHidden('twitch', owner.id)) {
+						continue;
+
+						// // In case we do still need the owner information
+						// filteredSet.owner = owner;
+						
+						// if (this.emotes.isSetHidden('twitch', owner.id)) {
+						// 	continue;
+						// }
+					}
+
+					for (let i = 0; i < set.emotes.length; i++) {
+						const emote = set.emotes[i];
+
+						if (!hidden.includes(emote.id)) {
+							filteredSet.emotes.push(emote);
+						}
+					}
+
+					filteredEmoteSets.push(filteredSet);
+				}
+
+				this.tabCompleteHydrationCache = filteredEmoteSets;
+				this.tabCompleteHydrationCacheLength = inst.props.emotes.length;
+			}
+		}
+
+		return this.tabCompleteHydrationCache;
+	}
 
 	// eslint-disable-next-line class-methods-use-this
 	getTwitchEmoteSuggestions(input, inst) {
-		const hydratedEmotes = inst.hydrateEmotes(inst.props.emotes);
-		if (!Array.isArray(hydratedEmotes)) {
-			return [];
-		}
-
-		for (let i = 0; i < hydratedEmotes.length; i++) {
-			const owner = inst.props.emotes[i].owner;
-			if (owner) {
-				hydratedEmotes[i].owner = owner;
-			}
-		}
+		const hydratedEmoteSets = this.getHydratedEmoteSets(inst);
 
 		const usageResults = [],
 			startingResults = [],
 			otherResults = [],
 			favorites = this.emotes.getFavorites('twitch'),
-			hidden = this.emotes.getHidden('twitch'),
 			search = input.startsWith(':') ? input.slice(1) : input;
 
-		for (const set of hydratedEmotes) {
+		for (const set of hydratedEmoteSets) {
 			if (set && Array.isArray(set.emotes)) {
-				if ( ! this.emotes.isSetHidden('twitch', set.owner?.id)) {
-					for (const emote of set.emotes) {
-						if (inst.doesEmoteMatchTerm(emote, search) && ! hidden.includes(emote.id)) {
-							const favorite = favorites.includes(emote.id);
-							const element = {
-								current: input,
-								replacement: emote.token,
-								element: inst.renderEmoteSuggestion({
-									...emote,
-									favorite
-								}),
+				for (const emote of set.emotes) {
+					if (inst.doesEmoteMatchTerm(emote, search)) {
+						const favorite = favorites.includes(emote.id);
+						const element = {
+							current: input,
+							replacement: emote.token,
+							element: inst.renderEmoteSuggestion({
+								...emote,
 								favorite
-							};
+							}),
+							favorite
+						};
 
-							if (this.EmoteUsageCount[emote.token]) {
-								usageResults.push(element);
-							}
-							else if (emote.token.toLowerCase().startsWith(search)) {
-								startingResults.push(element);
-							}
-							else {
-								otherResults.push(element);
-							}
+						if (this.EmoteUsageCount[emote.token]) {
+							usageResults.push(element);
+						}
+						else if (emote.token.toLowerCase().startsWith(search)) {
+							startingResults.push(element);
+						}
+						else {
+							otherResults.push(element);
 						}
 					}
 				}
@@ -572,6 +619,45 @@ export default class Input extends Module {
 		return results;
 	}
 
+	getFFZEmoteSuggestionsCache(user_id, user_login, room_id, room_login) {
+		const sets = this.emotes.getSets(
+			user_id,
+			user_login,
+			room_id,
+			room_login
+		);
+
+		if(this.tabCompleteFFZHydrationCacheLength !== sets.length) {
+			this.tabCompleteFFZHydrationCache = [];
+
+			if (Array.isArray(sets)) {
+				const filteredEmoteSets = [];
+
+				for (let i = 0; i < sets.length; i++) {
+					const set = sets[i];
+
+					if (this.emotes.isSetHidden(set.source || 'ffz', set.id)) {
+						continue;
+					}
+
+					const filteredSet = { ...set, emotes: [] };
+
+					for(const emote of Object.values(set.emotes)) {
+						if (!this.emotes.isHidden(set.source || 'ffz', emote.id)) {
+							filteredSet.emotes.push(emote);
+						}
+					}
+
+					filteredEmoteSets.push(filteredSet);
+				}
+
+				this.tabCompleteFFZHydrationCache = filteredEmoteSets;
+				this.tabCompleteFFZHydrationCacheLength = sets.length;
+			}
+		}
+
+		return this.tabCompleteFFZHydrationCache;
+	}
 
 	getEmoteSuggestions(input, inst) {
 		const user = inst._ffz_user,
@@ -589,7 +675,7 @@ export default class Input extends Module {
 
 		const search = input.startsWith(':') ? input.slice(1) : input,
 			results = [],
-			sets = this.emotes.getSets(
+			sets = this.getFFZEmoteSuggestionsCache(
 				user && user.id,
 				user && user.login,
 				channel_id,
@@ -599,23 +685,22 @@ export default class Input extends Module {
 
 		for(const set of sets) {
 			if ( set && set.emotes )
-				if ( ! this.emotes.isSetHidden(set.source || 'ffz', set.id))
-					for(const emote of Object.values(set.emotes))
-						if ( inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name) && ! this.emotes.isHidden(set.source || 'ffz', emote.id) ) {
-							const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
-							results.push({
-								current: input,
-								replacement: emote.name,
-								element: inst.renderEmoteSuggestion({
-									token: emote.name,
-									id: `${set.source}-${emote.id}`,
-									srcSet: emote.srcSet,
-									favorite
-								}),
+				for(const emote of Object.values(set.emotes))
+					if (inst.doesEmoteMatchTerm(emote, search) && !added_emotes.has(emote.name)) {
+						const favorite = this.emotes.isFavorite(set.source || 'ffz', emote.id);
+						results.push({
+							current: input,
+							replacement: emote.name,
+							element: inst.renderEmoteSuggestion({
+								token: emote.name,
+								id: `${set.source}-${emote.id}`,
+								srcSet: emote.srcSet,
 								favorite
-							});
-							added_emotes.add(emote.name);
-						}
+							}),
+							favorite
+						});
+						added_emotes.add(emote.name);
+					}
 		}
 
 		return results;
