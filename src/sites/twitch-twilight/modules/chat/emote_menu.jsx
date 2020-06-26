@@ -562,9 +562,11 @@ export default class EmoteMenu extends Module {
 					if ( idx === -1 ) {
 						hidden.push(key);
 						this.setState({hidden: true});
+						t.emit(':change-hidden-set', key, true);
 					} else {
 						hidden.splice(idx, 1);
 						this.setState({hidden: false});
+						t.emit(':change-hidden-set', key, false);
 					}
 
 					storage.set('emote-menu.hidden-sets', hidden);
