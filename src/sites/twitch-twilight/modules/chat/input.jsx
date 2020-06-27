@@ -503,13 +503,6 @@ export default class Input extends Module {
 					const owner = inst.props.emotes[i].owner;
 					if (owner && this.emotes.isSetHidden('twitch', owner.id)) {
 						continue;
-
-						// // In case we do still need the owner information
-						// filteredSet.owner = owner;
-						
-						// if (this.emotes.isSetHidden('twitch', owner.id)) {
-						// 	continue;
-						// }
 					}
 
 					for (let i = 0; i < set.emotes.length; i++) {
