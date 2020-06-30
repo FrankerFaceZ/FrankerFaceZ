@@ -358,12 +358,21 @@ export default class Badges extends Module {
 						continue;
 
 					let title = bd.title || global_badge.title;
+					const tier = bd.tier || global_badge.tier;
+
 					if ( d.data ) {
 						if ( d.badge === 'subscriber' ) {
-							title = this.i18n.t('badges.subscriber.months', '{title} ({count,number} Month{count,en_plural})', {
-								title,
-								count: d.data
-							});
+							if ( tier > 0 )
+								title = this.i18n.t('badges.subscriber.tier-months', '{title}\n(Tier {tier}, {months,number} Month{months,en_plural})', {
+									title,
+									tier,
+									months: d.data
+								});
+							else
+								title = this.i18n.t('badges.subscriber.months', '{title}\n({count,number} Month{count,en_plural})', {
+									title,
+									count: d.data
+								});
 						} else if ( d.badge === 'founder' ) {
 							title = this.i18n.t('badges.founder.months', '{title}\n(Subscribed for {count,number} Month{count,en_plural})', {
 								title,

@@ -591,6 +591,11 @@ export class FineWrapper extends EventEmitter {
 			this.once('set', fn);
 	}
 
+	each(fn) {
+		for(const inst of this.instances)
+			fn(inst);
+	}
+
 	_set(cls, instances) {
 		if ( this._class )
 			throw new Error('already have a class');

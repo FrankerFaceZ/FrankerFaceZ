@@ -401,6 +401,16 @@ export default class Room {
 				const sid = data.setID,
 					bs = b[sid] = b[sid] || {};
 
+				if ( sid === 'subscriber' ) {
+					const id = parseInt(data.version, 10);
+					if ( ! isNaN(id) && isFinite(id) ) {
+						data.tier = (id - (id % 1000)) / 1000;
+						if ( data.tier < 0 )
+							data.tier = 0;
+					} else
+						data.tier = 0;
+				}
+
 				bs[data.version] = data;
 				this.badge_count++;
 			}

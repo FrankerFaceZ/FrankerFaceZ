@@ -5,8 +5,7 @@
 // ============================================================================
 
 import {ColorAdjuster} from 'utilities/color';
-import {setChildren} from 'utilities/dom';
-import {get, has, make_enum, split_chars, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
+import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
 
@@ -22,7 +21,7 @@ import Input from './input';
 import ViewerCards from './viewer_card';
 
 
-const REGEX_EMOTES = {
+/*const REGEX_EMOTES = {
 	'B-?\\)': ['B)', 'B-)'],
 	'R-?\\)': ['R)', 'R-)'],
 	'[oO](_|\\.)[oO]': ['o_o', 'O_o', 'o_O', 'O_O', 'o.o', 'O.o', 'o.O', 'O.O'],
@@ -42,7 +41,7 @@ const REGEX_EMOTES = {
 	'\\&lt\\;\\]': ['<]'],
 	'\\:-?(S|s)': [':s', ':S', ':-s', ':-S'],
 	'\\:\\&gt\\;': [':>']
-};
+};*/
 
 
 const MESSAGE_TYPES = make_enum(
@@ -190,11 +189,13 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		/*this.PinnedCheer = this.fine.define(
-			'pinned-cheer',
-			n => n.collapseCheer && n.saveRenderedMessageRef,
+		this.joined_raids = new Set;
+
+		this.RaidController = this.fine.define(
+			'raid-controller',
+			n => n.handleLeaveRaid && n.handleJoinRaid,
 			Twilight.CHAT_ROUTES
-		);*/
+		);
 
 		this.InlineCallout = this.fine.define(
 			'inline-callout',
@@ -245,6 +246,15 @@ export default class ChatHook extends Module {
 		);
 
 		// Settings
+
+		this.settings.add('channel.raids.no-autojoin', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> Raids',
+				title: 'Do not automatically join raids.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.hide-community-highlights', {
 			default: false,
@@ -729,6 +739,13 @@ export default class ChatHook extends Module {
 		this.updateLineBorders();
 		this.updateMentionCSS();
 
+		this.RaidController.on('mount', this.wrapRaidController, this);
+		this.RaidController.on('update', this.noAutoRaids, this);
+		this.RaidController.ready((cls, instances) => {
+			for(const inst of instances)
+				this.wrapRaidController(inst);
+		});
+
 		this.InlineCallout.on('mount', this.onInlineCallout, this);
 		this.InlineCallout.on('update', this.onInlineCallout, this);
 		this.InlineCallout.ready(() => this.updateInlineCallouts());
@@ -1002,7 +1019,7 @@ export default class ChatHook extends Module {
 
 
 		this.ChatContainer.on('mount', this.containerMounted, this);
-		this.ChatContainer.on('unmount', this.removeRoom, this);
+		this.ChatContainer.on('unmount', this.containerUnmounted, this); //removeRoom, this);
 		this.ChatContainer.on('update', this.containerUpdated, this);
 
 		this.ChatContainer.ready((cls, instances) => {
@@ -1048,15 +1065,41 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.containerMounted(inst);
 		});
+	}
 
 
-		/*this.PinnedCheer.on('mount', this.fixPinnedCheer, this);
-		this.PinnedCheer.on('update', this.fixPinnedCheer, this);
+	wrapRaidController(inst) {
+		if ( inst._ffz_wrapped )
+			return this.noAutoRaids(inst);
 
-		this.PinnedCheer.ready((cls, instances) => {
-			for(const inst of instances)
-				this.fixPinnedCheer(inst);
-		});*/
+		inst._ffz_wrapped = true;
+
+		const t = this,
+			old_handle_join = inst.handleJoinRaid;
+
+		inst.handleJoinRaid = function(event, ...args) {
+			const raid_id = inst.props && inst.props.raid && inst.props.raid.id;
+			if ( event && event.type && raid_id )
+				t.joined_raids.add(raid_id);
+
+			return old_handle_join.call(this, event, ...args);
+		}
+
+		this.noAutoRaids(inst);
+	}
+
+	noAutoRaids(inst) {
+		if ( this.settings.get('channel.raids.no-autojoin') )
+			setTimeout(() => {
+				if ( inst.props && inst.props.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
+					const id = inst.props.raid.id;
+					if ( this.joined_raids.has(id) )
+						return;
+
+					this.log.info('Automatically leaving raid:', id);
+					inst.handleLeaveRaid();
+				}
+			});
 	}
 
 
@@ -1583,30 +1626,6 @@ export default class ChatHook extends Module {
 
 		cls.prototype._ffz_was_here = true;
 
-		/*cls.prototype.ffzGetEmotes = function() {
-			const emote_map = this.client && this.client.session && this.client.session.emoteMap;
-			if ( this._ffz_cached_map === emote_map )
-				return this._ffz_cached_emotes;
-
-			this._ffz_cached_map = emote_map;
-			const emotes = this._ffz_cached_emotes = {};
-
-			if ( emote_map )
-				for(const emote of Object.values(emote_map))
-					if ( emote ) {
-						const token = emote.token;
-						if ( Array.isArray(REGEX_EMOTES[token]) ) {
-							for(const tok of REGEX_EMOTES[token] )
-								emotes[tok] = emote.id;
-
-						} else
-							emotes[token] = emote.id;
-					}
-
-			return emotes;
-		}*/
-
-
 		cls.prototype._ffzInstall = function() {
 			if ( this._ffz_installed )
 				return;
@@ -2029,50 +2048,8 @@ export default class ChatHook extends Module {
 
 
 	updateChatLines() {
-		//this.PinnedCheer.forceUpdate();
 		this.chat_line.updateLines();
 	}
-
-
-	// ========================================================================
-	// Pinned Cheers
-	// ========================================================================
-
-	/*fixPinnedCheer(inst) {
-		const el = this.fine.getChildNode(inst),
-			container = el && el.querySelector && el.querySelector('.pinned-cheer__headline'),
-			tc = inst.props.topCheer;
-
-		if ( ! container || ! tc )
-			return;
-
-		container.dataset.roomId = inst.props.channelID;
-		container.dataset.room = inst.props.channelLogin && inst.props.channelLogin.toLowerCase();
-		container.dataset.userId = tc.user.userID;
-		container.dataset.user = tc.user.userLogin && tc.user.userLogin.toLowerCase();
-
-		if ( tc.user.color ) {
-			const user_el = container.querySelector('.chat-author__display-name');
-			if ( user_el )
-				user_el.style.color = this.colors.process(tc.user.color);
-
-			const login_el = container.querySelector('.chat-author__intl-login');
-			if ( login_el )
-				login_el.style.color = this.colors.process(tc.user.color);
-		}
-
-		const bit_el = container.querySelector('.chat-line__message--emote'),
-			cont = bit_el ? bit_el.parentElement.parentElement : container.querySelector('.ffz--pinned-top-emote'),
-			prefix = extractCheerPrefix(tc.messageParts);
-
-		if ( cont && prefix ) {
-			const tokens = this.chat.tokenizeString(`${prefix}${tc.bits}`, tc);
-
-			cont.classList.add('ffz--pinned-top-emote');
-			cont.innerHTML = '';
-			setChildren(cont, this.chat.renderTokens(tokens));
-		}
-	}*/
 
 
 	// ========================================================================
@@ -2278,10 +2255,36 @@ export default class ChatHook extends Module {
 		this.updateRoomBitsConfig(cont, props.bitsConfig);
 
 		if ( props.data ) {
+			if ( Twilight.POPOUT_ROUTES.includes(this.router.current_name) ) {
+				const color = props.data.user?.primaryColorHex;
+				this.resolve('site.channel').updateChannelColor(color);
+
+				this.settings.updateContext({
+					channel: props.channelLogin,
+					channelID: props.channelID,
+					channelColor: color
+				});
+			}
+
 			this.chat.badges.updateTwitchBadges(props.data.badges);
 			this.updateRoomBadges(cont, props.data.user && props.data.user.broadcastBadges);
 			this.updateRoomRules(cont, props.chatRules);
 		}
+	}
+
+
+	containerUnmounted(cont) {
+		if ( Twilight.POPOUT_ROUTES.includes(this.router.current_name) ) {
+			this.resolve('site.channel').updateChannelColor();
+
+			this.settings.updateContext({
+				channel: null,
+				channelID: null,
+				channelColor: null
+			});
+		}
+
+		this.removeRoom(cont);
 	}
 
 
@@ -2297,6 +2300,17 @@ export default class ChatHook extends Module {
 
 		if ( props.bitsConfig !== cont.props.bitsConfig )
 			this.updateRoomBitsConfig(cont, props.bitsConfig);
+
+		if ( props.data && Twilight.POPOUT_ROUTES.includes(this.router.current_name) ) {
+			const color = props.data.user?.primaryColorHex;
+			this.resolve('site.channel').updateChannelColor(color);
+
+			this.settings.updateContext({
+				channel: props.channelLogin,
+				channelID: props.channelID,
+				channelColor: color
+			});
+		}
 
 		// Twitch, React, and Apollo are the trifecta of terror so we
 		// can't compare the badgeSets property in any reasonable way.
@@ -2421,40 +2435,4 @@ export function formatBitsConfig(config) {
 		}
 
 	return out;
-}
-
-
-/*export function findEmotes(msg, emotes) {
-	const out = {};
-	let idx = 0;
-
-	for(const part of msg.split(' ')) {
-		const len = split_chars(part).length;
-
-		if ( has(emotes, part) ) {
-			const em = emotes[part],
-				matches = out[em] = out[em] || [];
-
-			matches.push({
-				startIndex: idx,
-				endIndex: idx + len - 1
-			});
-		}
-
-		idx += len + 1;
-	}
-
-	return out;
-}*/
-
-
-function extractCheerPrefix(parts) {
-	for(const part of parts) {
-		if ( part.type !== 3 || ! part.content.cheerAmount )
-			continue;
-
-		return part.content.alt;
-	}
-
-	return null;
 }

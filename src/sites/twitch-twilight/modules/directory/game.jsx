@@ -39,14 +39,14 @@ export default class Game extends SiteModule {
 		}, false);*/
 	}
 
-	modifyStreams(res) { // eslint-disable-line class-methods-use-this
+	/*modifyStreams(res) { // eslint-disable-line class-methods-use-this
 		const edges = get('data.game.streams.edges', res);
 		if ( ! edges || ! edges.length )
 			return res;
 
 		res.data.game.streams.edges = this.parent.processNodes(edges, true);
 		return res;
-	}
+	}*/
 
 	onEnable() {
 		this.GameHeader.on('mount', this.updateGameHeader, this);

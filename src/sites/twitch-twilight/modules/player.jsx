@@ -54,11 +54,11 @@ export default class Player extends Module {
 
 		// React Components
 
-		this.SquadStreamBar = this.fine.define(
+		/*this.SquadStreamBar = this.fine.define(
 			'squad-stream-bar',
 			n => n.shouldRenderSquadBanner && n.props && n.props.triggerPlayerReposition,
 			PLAYER_ROUTES
-		);
+		);*/
 
 		this.PersistentPlayer = this.fine.define(
 			'persistent-player',
@@ -502,7 +502,7 @@ export default class Player extends Module {
 			}
 		});
 
-		this.settings.add('player.hide-squad-banner', {
+		/*this.settings.add('player.hide-squad-banner', {
 			default: false,
 			ui: {
 				path: 'Channel > Appearance >> General',
@@ -510,7 +510,7 @@ export default class Player extends Module {
 				component: 'setting-check-box'
 			},
 			changed: () => this.SquadStreamBar.forceUpdate()
-		});
+		});*/
 
 		this.settings.add('player.hide-mouse', {
 			default: true,
@@ -541,7 +541,7 @@ export default class Player extends Module {
 
 		const t = this;
 
-		this.SquadStreamBar.ready(cls => {
+		/*this.SquadStreamBar.ready(cls => {
 			const old_should_render = cls.prototype.shouldRenderSquadBanner;
 
 			cls.prototype.shouldRenderSquadBanner = function(...args) {
@@ -557,7 +557,7 @@ export default class Player extends Module {
 
 		this.SquadStreamBar.on('mount', this.updateSquadContext, this);
 		this.SquadStreamBar.on('update', this.updateSquadContext, this);
-		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);
+		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);*/
 
 
 		this.Player.ready((cls, instances) => {
@@ -621,12 +621,18 @@ export default class Player extends Module {
 			}
 
 			cls.prototype.ffzUpdateVolume = function() {
+				if ( document.hidden )
+					return;
+
 				const player = this.props.mediaPlayerInstance,
 					video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video;
 				if ( video ) {
-					const volume = video.volume;
-					if ( ! player.isMuted() && ! video.muted && player.getVolume() !== volume )
+					const volume = video.volume,
+						muted = player.isMuted();
+					if ( ! video.muted && player.getVolume() !== volume ) {
 						player.setVolume(volume);
+						player.setMuted(muted);
+					}
 				}
 			}
 
@@ -755,7 +761,9 @@ export default class Player extends Module {
 				if ( ! player?.isMuted )
 					return;
 
-				player.setMuted(! player.isMuted());
+				const muted = ! player.isMuted();
+				player.setMuted(muted);
+				localStorage.setItem('video-muted', JSON.stringify({default: muted}));
 				event.preventDefault();
 				return false;
 			}
@@ -1503,12 +1511,12 @@ export default class Player extends Module {
 	 * @returns {void}
 	 */
 	repositionPlayer() {
-		for(const inst of this.SquadStreamBar.instances) {
+		/*for(const inst of this.SquadStreamBar.instances) {
 			if ( inst?.props?.triggerPlayerReposition ) {
 				inst.props.triggerPlayerReposition();
 				return;
 			}
-		}
+		}*/
 	}
 
 	updateSquadContext() {
@@ -1518,8 +1526,9 @@ export default class Player extends Module {
 	}
 
 	get hasSquadBar() {
-		const inst = this.SquadStreamBar.first;
-		return inst ? inst.shouldRenderSquadBanner(inst.props) : false
+		return false;
+		/*const inst = this.SquadStreamBar.first;
+		return inst ? inst.shouldRenderSquadBanner(inst.props) : false*/
 	}
 
 	get playerUI() {

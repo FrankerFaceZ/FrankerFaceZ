@@ -81,14 +81,17 @@ export default class Metadata extends Module {
 			refresh() { return this.settings.get('metadata.uptime') > 0 },
 
 			setup(data) {
-				const socket = this.resolve('socket'),
-					created_at = data?.meta?.createdAt;
+				const socket = this.resolve('socket');
+				let created = data?.channel?.live_since;
+				if ( ! created ) {
+					const created_at = data?.meta?.createdAt;
+					if ( ! created_at )
+						return {};
 
-				if ( ! created_at )
-					return {};
+					created = new Date(created_at);
+				}
 
-				const created = new Date(created_at),
-					now = Date.now() - socket._time_drift;
+				const now = Date.now() - socket._time_drift;
 
 				return {
 					created,
@@ -381,7 +384,12 @@ export default class Metadata extends Module {
 	}
 
 	updateMetadata(keys) {
-		const bar = this.resolve('site.channel_bar');
+		const channel = this.resolve('site.channel');
+		if ( channel )
+			for(const el of channel.InfoBar.instances)
+				channel.updateMetadata(el, keys);
+
+		/*const bar = this.resolve('site.channel_bar');
 		if ( bar ) {
 			for(const inst of bar.ChannelBar.instances)
 				bar.updateMetadata(inst, keys);
@@ -391,7 +399,7 @@ export default class Metadata extends Module {
 		if ( legacy_bar ) {
 			for(const inst of legacy_bar.ChannelBar.instances)
 				legacy_bar.updateMetadata(inst, keys);
-		}
+		}*/
 	}
 
 	async renderLegacy(key, data, container, timers, refresh_fn) {
@@ -465,7 +473,7 @@ export default class Metadata extends Module {
 
 					if ( def.popup && def.click ) {
 						el = (<div
-							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-l-1' : 'tw-mg-l-05 ffz-mg-r--05'}`}
+							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-r-1' : 'tw-mg-r-05 ffz-mg-l--05'}`}
 							data-key={key}
 							tip_content={null}
 						>
@@ -490,7 +498,7 @@ export default class Metadata extends Module {
 
 					} else
 						btn = popup = el = (<button
-							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-l-1' : 'tw-font-size-5 tw-regular tw-mg-l-05 ffz-mg-r--05'}`}
+							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-font-size-5 tw-regular tw-mg-r-05 ffz-mg-l--05'}`}
 							data-key={key}
 							tip_content={null}
 						>
@@ -589,7 +597,7 @@ export default class Metadata extends Module {
 						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
 					el = (<div
-						class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-l-1"
+						class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-r-1"
 						data-key={key}
 						tip_content={null}
 					>

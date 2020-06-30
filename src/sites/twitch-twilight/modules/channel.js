@@ -5,79 +5,188 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import { get, has } from 'utilities/object';
+import { Color } from 'utilities/color';
+import {debounce} from 'utilities/object';
 
-import Twilight from 'site';
-import { Color } from 'src/utilities/color';
 
+const USER_PAGES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 
 export default class Channel extends Module {
+
 	constructor(...args) {
 		super(...args);
 
 		this.should_enable = true;
 
+		this.inject('i18n');
 		this.inject('settings');
-		this.inject('site.fine');
 		this.inject('site.css_tweaks');
+		this.inject('site.fine');
+		this.inject('site.elemental');
+		this.inject('site.twitch_data');
+		this.inject('metadata');
+		this.inject('socket');
 
-		this.joined_raids = new Set;
-
-		this.settings.add('channel.hosting.enable', {
-			default: true,
-			ui: {
-				path: 'Channel > Behavior >> Hosting',
-				title: 'Enable Channel Hosting',
-				component: 'setting-check-box'
-			},
-			changed: val => this.updateChannelHosting(val)
-		});
-
-
-		this.settings.add('channel.raids.no-autojoin', {
-			default: false,
-			ui: {
-				path: 'Channel > Behavior >> Raids',
-				title: 'Do not automatically join raids.',
-				component: 'setting-check-box'
-			}
-		});
-
-		/*this.settings.add('channel.squads.no-autojoin', {
-			default: false,
-			ui: {
-				path: 'Channel > Behavior >> Squads',
-				title: 'Do not automatically redirect to Squad Streams.',
-				component: 'setting-check-box'
-			}
-		});*/
-
-
-		this.ChannelPage = this.fine.define(
-			'channel-page',
-			n => (n.updateHost && n.updateChannel && n.state && has(n.state, 'hostedChannel')) || (n.getHostedChannelLogin && n.handleHostingChange) || (n.onChatHostingChange && n.state && has(n.state, 'hostMode')),
-			['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following', 'mod-view']
+		this.ChannelRoot = this.elemental.define(
+			'channel-root', '.channel-root',
+			USER_PAGES,
+			{attributes: true}, 1
 		);
 
-		this.RaidController = this.fine.define(
-			'raid-controller',
-			n => n.handleLeaveRaid && n.handleJoinRaid,
-			Twilight.CHAT_ROUTES
+		this.InfoBar = this.elemental.define(
+			'channel-info-bar', '.channel-info-content',
+			USER_PAGES,
+			{childNodes: true, subtree: true}, 1
 		);
-
-		this.ChannelContext = this.fine.define(
-			'channel-context',
-			n => n.resetPrivateVariables && n.fetchChannel && n.clearBroadcastSettingsUpdateInterval,
-			['popout', 'embed-chat']
-		);
-
-		/*this.SquadController = this.fine.define(
-			'squad-controller',
-			n => n.onSquadPage && n.isValidSquad && n.handleLeaveSquad,
-			Twilight.CHAT_ROUTES
-		);*/
 	}
 
+	onEnable() {
+		this.updateChannelColor();
+
+		this.ChannelRoot.on('mount', this.updateRoot, this);
+		this.ChannelRoot.on('mutate', this.updateRoot, this);
+		this.ChannelRoot.on('unmount', this.removeRoot, this);
+		this.ChannelRoot.each(el => this.updateRoot(el));
+
+		this.InfoBar.on('mount', this.updateBar, this);
+		this.InfoBar.on('mutate', this.updateBar, this);
+		this.InfoBar.on('unmount', this.removeBar, this);
+		this.InfoBar.each(el => this.updateBar(el));
+	}
+
+	updateSubscription(login) {
+		if ( this._subbed_login === login )
+			return;
+
+		if ( this._subbed_login ) {
+			this.socket.unsubscribe(this, `channel.${this._subbed_login}`);
+			this._subbed_login = null;
+		}
+
+		if ( login ) {
+			this.socket.subscribe(this, `channel.${login}`);
+			this._subbed_login = login;
+		}
+	}
+
+	updateBar(el) {
+		// TODO: Run a data check to abort early if nothing has changed before updating metadata
+		// thus avoiding a potential loop from mutations.
+		if ( ! el._ffz_update )
+			el._ffz_update = debounce(() => requestAnimationFrame(() => this._updateBar(el)), 1000, 2);
+
+		el._ffz_update();
+	}
+
+	_updateBar(el) {
+		if ( el._ffz_cont && ! el.contains(el._ffz_cont) ) {
+			el._ffz_cont.classList.remove('ffz--meta-tray');
+			el._ffz_cont = null;
+		}
+
+		if ( ! el._ffz_cont ) {
+			const report = el.querySelector('.report-button'),
+				cont = report && report.closest('.tw-flex-wrap.tw-justify-content-end');
+
+			if ( cont && el.contains(cont) ) {
+				el._ffz_cont = cont;
+				cont.classList.add('ffz--meta-tray');
+
+			} else
+				el._ffz_cont = null;
+		}
+
+		const react = this.fine.getReactInstance(el),
+			props = react?.memoizedProps?.children?.props;
+
+		if ( ! el._ffz_cont || ! props?.channelID ) {
+			this.updateSubscription(null);
+			return;
+		}
+
+		this.updateSubscription(props.channelLogin);
+		this.updateMetadata(el);
+	}
+
+	removeBar(el) {
+		this.updateSubscription(null);
+
+		if ( el._ffz_cont )
+			el._ffz_cont.classList.remove('ffz--meta-tray');
+
+		el._ffz_cont = null;
+		if ( el._ffz_meta_timers ) {
+			for(const val of Object.values(el._ffz_meta_timers))
+				clearTimeout(val);
+
+			el._ffz_meta_timers = null;
+		}
+
+		el._ffz_update = null;
+	}
+
+	updateMetadata(el, keys) {
+		const cont = el._ffz_cont,
+			react = this.fine.getReactInstance(el),
+			props = react?.memoizedProps?.children?.props;
+
+		if ( ! cont || ! el.contains(cont) || ! props || ! props.channelID )
+			return;
+
+		if ( ! keys )
+			keys = this.metadata.keys;
+		else if ( ! Array.isArray(keys) )
+			keys = [keys];
+
+		const timers = el._ffz_meta_timers = el._ffz_meta_timers || {},
+			refresh_fn = key => this.updateMetadata(el, key),
+			data = {
+				channel: {
+					id: props.channelID,
+					login: props.channelLogin,
+					display_name: props.displayName,
+					live: props.isLive,
+					live_since: props.liveSince
+				},
+				props,
+				hosted: {
+					login: props.hostLogin,
+					display_name: props.hostDisplayName
+				},
+				el,
+				getBroadcastID: () => this.getBroadcastID(el, props.channelID)
+			};
+
+		for(const key of keys)
+			this.metadata.renderLegacy(key, data, cont, timers, refresh_fn);
+	}
+
+
+	updateRoot(el) {
+		const root = this.fine.getReactInstance(el),
+			channel = root?.return?.memoizedState?.next?.memoizedState?.current?.previousData?.result?.data?.user;
+
+		if ( channel && channel.id ) {
+			this.updateChannelColor(channel.primaryColorHex);
+
+			this.settings.updateContext({
+				channel: channel.login,
+				channelID: channel.id,
+				channelColor: channel.primaryColorHex
+			});
+
+		} else
+			this.removeRoot();
+	}
+
+	removeRoot() {
+		this.updateChannelColor();
+		this.settings.updateContext({
+			channel: null,
+			channelID: null,
+			channelColor: null
+		});
+	}
 
 	updateChannelColor(color) {
 		let parsed = color && Color.RGBA.fromHex(color);
@@ -95,343 +204,49 @@ export default class Channel extends Module {
 		}
 	}
 
-
-	onEnable() {
-		this.updateChannelColor();
-
-		this.ChannelPage.on('mount', this.wrapChannelPage, this);
-		this.RaidController.on('mount', this.wrapRaidController, this);
-		this.RaidController.on('update', this.noAutoRaids, this);
-
-		//this.SquadController.on('mount', this.noAutoSquads, this);
-		//this.SquadController.on('update', this.noAutoSquads, this);
-
-		this.ChannelContext.on('mount', this.onChannelContext, this);
-		this.ChannelContext.on('update', this.onChannelContext, this);
-		this.ChannelContext.on('unmount', this.offChannelContext, this);
-		this.ChannelContext.ready((cls, instances) => {
-			for(const inst of instances)
-				this.onChannelContext(inst);
-		});
-
-		this.RaidController.ready((cls, instances) => {
-			for(const inst of instances)
-				this.wrapRaidController(inst);
-		});
-
-		this.ChannelPage.on('mount', this.onChannelMounted, this);
-
-		this.ChannelPage.on('unmount', () => {
-			this.updateChannelColor(null);
-
-			this.settings.updateContext({
-				channel: null,
-				channelID: null,
-				channelColor: null,
-				category: null,
-				categoryID: null,
-				title: null
-			});
-		});
-
-		this.ChannelPage.on('update', inst => {
-			const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.stream.game', inst) || get('state.channel.broadcastSettings.game', inst),
-				title = get('state.video.title', inst) || get('state.clip.title', inst) || get('state.channel.stream.title', inst) || get('state.channel.broadcastSettings.title', inst);
-
-			const color = get('state.primaryColorHex', inst);
-			this.updateChannelColor(color);
-
-			this.settings.updateContext({
-				channel: get('state.channel.login', inst),
-				channelID: get('state.channel.id', inst),
-				channelColor: color,
-				category: category?.name,
-				categoryID: category?.id,
-				title
-			});
-
-			if ( this.settings.get('channel.hosting.enable') || has(inst.state, 'hostMode') || has(inst.state, 'hostedChannel') )
-				return;
-
-			// We can't do this immediately because the player state
-			// occasionally screws up if we do.
-			setTimeout(() => {
-				const current_channel = inst.props.data && inst.props.data.variables && inst.props.data.variables.currentChannelLogin;
-				if ( current_channel && current_channel !== inst.state.videoPlayerSource ) {
-					inst.ffzExpectedHost = inst.state.videoPlayerSource;
-					inst.ffzOldHostHandler(null);
-				}
-			});
-		});
-
-		this.ChannelPage.ready((cls, instances) => {
-			for(const inst of instances)
-				this.onChannelMounted(inst);
-		});
-	}
-
-
-	onChannelContext(inst) {
-		if ( ! inst.state || inst.state.loading )
-			return;
-
-		const channel = inst.state.channel,
-			clip = inst.state.clip,
-			video = inst.state.video,
-
-			category = video?.game || clip?.game || channel?.stream?.game || channel?.broadcastSettings?.game,
-			title = video?.title || clip?.title || channel?.stream?.title || channel?.broadcastSettings?.title || null;
-
-		const color = inst.state?.primaryColorHex;
-		this.updateChannelColor(color);
-
-		this.settings.updateContext({
-			channel: inst.state.channel?.login,
-			channelID: inst.state.channel?.id,
-			channelColor: color,
-			category: category?.name,
-			categoryID: category?.id,
-			title
-		});
-	}
-
-	offChannelContext() {
-		this.updateChannelColor(null);
-		this.settings.updateContext({
-			channel: null,
-			channelID: null,
-			category: null,
-			categoryID: null,
-			channelColor: null,
-			title: null
-		});
-	}
-
-
-	onChannelMounted(inst) {
-		this.wrapChannelPage(inst);
-
-		const category = get('state.video.game', inst) || get('state.clip.game', inst) || get('state.channel.stream.game', inst) || get('state.channel.broadcastSettings.game', inst),
-			title = get('state.video.title', inst) || get('state.clip.title', inst) || get('state.channel.stream.title', inst) || get('state.channel.broadcastSettings.title', inst) || null;
-
-		const color = get('state.primaryColorHex', inst);
-		this.updateChannelColor(color);
-
-		this.settings.updateContext({
-			channel: get('state.channel.login', inst),
-			channelID: get('state.channel.id', inst),
-			channelColor: color,
-			category: category?.name,
-			categoryID: category?.id,
-			title
-		});
-	}
-
-
-	wrapRaidController(inst) {
-		if ( inst._ffz_wrapped )
-			return this.noAutoRaids(inst);
-
-		inst._ffz_wrapped = true;
-
-		const t = this,
-			old_handle_join = inst.handleJoinRaid;
-
-		inst.handleJoinRaid = function(event, ...args) {
-			const raid_id = inst.props && inst.props.raid && inst.props.raid.id;
-			if ( event && event.type && raid_id )
-				t.joined_raids.add(raid_id);
-
-			return old_handle_join.call(this, event, ...args);
+	getBroadcastID(el, channel_id) {
+		const cache = el._ffz_bcast_cache = el._ffz_bcast_cache || {};
+		if ( channel_id === cache.channel_id ) {
+			if ( Date.now() - cache.saved < 60000 )
+				return Promise.resolve(cache.broadcast_id);
 		}
 
-		this.noAutoRaids(inst);
-	}
+		return new Promise(async (s, f) => {
+			if ( cache.updating ) {
+				cache.updating.push([s, f]);
+				return ;
+			}
 
+			cache.channel_id = channel_id;
+			cache.updating = [[s,f]];
+			let id, err;
 
-	noAutoSquads(inst) {
-		if ( this.settings.get('channel.squads.no-autojoin') )
-			setTimeout(() => {
-				if ( inst.isValidSquad() && inst.state && inst.state.hasJoined ) {
-					this.log.info('Automatically opting out of Squad Stream.');
-					inst.handleLeaveSquad();
-				}
-			});
-	}
-
-
-	noAutoRaids(inst) {
-		if ( this.settings.get('channel.raids.no-autojoin') )
-			setTimeout(() => {
-				if ( inst.props && inst.props.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
-					const id = inst.props.raid.id;
-					if ( this.joined_raids.has(id) )
-						return;
-
-					this.log.info('Automatically leaving raid:', id);
-					inst.handleLeaveRaid();
-				}
-			});
-	}
-
-
-	wrapChannelPage(inst) {
-		if ( inst._ffz_hosting_wrapped )
-			return;
-
-		const t = this,
-			new_new_style = inst.updateChannel && has(inst.state, 'hostedChannel'),
-			new_style = ! new_new_style && ! inst.handleHostingChange || has(inst.state, 'hostMode');
-
-		inst.ffzGetChannel = () => {
-			const params = inst.props.match.params
-			if ( ! params )
-				return get('props.data.variables.currentChannelLogin', inst)
-
-			return params.channelName || params.channelLogin
-		}
-
-		inst.ffzOldSetState = inst.setState;
-		inst.setState = function(state, ...args) {
 			try {
-				if ( new_new_style ) {
-					const expected = inst.ffzGetChannel();
-					if ( has(state, 'hostedChannel') ) {
-						inst.ffzExpectedHost = state.hostedChannel;
-						if ( state.hostedChannel && ! t.settings.get('channel.hosting.enable') ) {
-							state.hostedChannel = null;
-							state.videoPlayerSource = expected;
-						}
-
-						t.settings.updateContext({hosting: !!state.hostedChannel});
-
-					} else if ( has(state, 'videoPlayerSource') ) {
-						if ( state.videoPlayerSource !== expected && ! t.settings.get('channel.hosting.enable') ) {
-							state.videoPlayerSource = expected;
-						}
-					}
-
-				} else if ( new_style ) {
-					const expected = inst.ffzGetChannel();
-					if ( has(state, 'hostMode') ) {
-						inst.ffzExpectedHost = state.hostMode;
-						if ( state.hostMode && ! t.settings.get('channel.hosting.enable') ) {
-							state.hostMode = null;
-							state.videoPlayerSource = expected;
-						}
-
-						t.settings.updateContext({hosting: !!state.hostMode});
-
-					} else if ( has(state, 'videoPlayerSource') ) {
-						if ( state.videoPlayerSource !== expected && ! t.settings.get('channel.hosting.enable') )
-							state.videoPlayerSource = expected;
-					}
-
-				} else {
-					if ( ! t.settings.get('channel.hosting.enable') ) {
-						if ( has(state, 'isHosting') )
-							state.isHosting = false;
-
-						if ( has(state, 'videoPlayerSource') )
-							state.videoPlayerSource = inst.ffzGetChannel();
-					}
-
-					if ( has(state, 'isHosting') )
-						t.settings.updateContext({hosting: state.isHosting});
-				}
-
-			} catch(err) {
-				t.log.capture(err, {extra: {props: inst.props, state}});
+				id = await this.twitch_data.getBroadcastID(channel_id);
+			} catch(error) {
+				id = null;
+				err = error;
 			}
 
-			return inst.ffzOldSetState(state, ...args);
-		}
+			const waiters = cache.updating;
+			cache.updating = null;
 
-		inst._ffz_hosting_wrapped = true;
+			if ( cache.channel_id !== channel_id ) {
+				err = new Error('Outdated');
+				cache.channel_id = null;
+				cache.broadcast_id = null;
+				cache.saved = 0;
+				for(const pair of waiters)
+					pair[1](err);
 
-		if ( new_new_style ) {
-			const hosted = inst.ffzExpectedHost = inst.state.hostedChannel;
-			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && !!hosted});
-
-			if ( hosted && ! this.settings.get('channel.hosting.enable') ) {
-				inst.ffzOldSetState({
-					hostedChannel: null,
-					videoPlayerSource: inst.ffzGetChannel()
-				});
+				return;
 			}
 
-		} else if ( new_style ) {
-			const hosted = inst.ffzExpectedHost = inst.state.hostMode;
-			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && !!inst.state.hostMode});
+			cache.broadcast_id = id;
+			cache.saved = Date.now();
 
-			if ( hosted && ! this.settings.get('channel.hosting.enable') ) {
-				inst.ffzOldSetState({
-					hostMode: null,
-					videoPlayerSource: inst.ffzGetChannel()
-				});
-			}
-
-		} else {
-			inst.ffzOldGetHostedLogin = () => get('props.data.user.hosting.login', inst) || null;
-			inst.getHostedChannelLogin = function() {
-				return t.settings.get('channel.hosting.enable') ?
-					inst.ffzOldGetHostedLogin() : null;
-			}
-
-			inst.ffzOldHostHandler = inst.handleHostingChange;
-			inst.handleHostingChange = function(channel) {
-				inst.ffzExpectedHost = channel;
-				if ( t.settings.get('channel.hosting.enable') )
-					return inst.ffzOldHostHandler(channel);
-			}
-
-			// Store the current state and disable the current host if needed.
-			inst.ffzExpectedHost = inst.state.isHosting ? inst.state.videoPlayerSource : null;
-			this.settings.updateContext({hosting: this.settings.get('channel.hosting.enable') && inst.state.isHosting});
-			if ( ! this.settings.get('channel.hosting.enable') ) {
-				inst.ffzOldHostHandler(null);
-			}
-		}
-
-		// Finally, we force an update so that any child components
-		// receive our updated handler.
-		inst.forceUpdate();
-		this.emit('site:dom-update', 'channel-page', inst);
-	}
-
-
-	updateChannelHosting(val) {
-		if ( val === undefined )
-			val = this.settings.get('channel.hosting.enable');
-
-		let hosting = val;
-
-		for(const inst of this.ChannelPage.instances) {
-			if ( ! inst.ffzExpectedHost )
-				hosting = false;
-
-			if ( has(inst.state, 'hostedChannel') ) {
-				const host = val ? inst.ffzExpectedHost : null,
-					target = host && host.login || inst.ffzGetChannel();
-
-				inst.ffzOldSetState({
-					hostedChannel: host,
-					videoPlayerSource: target
-				});
-
-			} else if ( has(inst.state, 'hostMode') ) {
-				const host = val ? inst.ffzExpectedHost : null,
-					target = host && host.hostedChannel && host.hostedChannel.login || inst.ffzGetChannel();
-
-				inst.ffzOldSetState({
-					hostMode: host,
-					videoPlayerSource: target
-				});
-
-			} else
-				inst.ffzOldHostHandler(val ? inst.ffzExpectedHost : null);
-		}
-
-		this.settings.updateContext({hosting});
+			for(const pair of waiters)
+				err ? pair[1](err) : pair[0](id);
+		});
 	}
 }

@@ -41,9 +41,24 @@
 	}
 }
 
+.ffz-stat-text {
+	font-size: 1.2rem;
+	font-variant-numeric: tabular-nums;
+}
+
 .ffz-stat--fix-padding {
 	margin-top: -.7rem !important;
 	margin-bottom: -.7rem !important;
+}
+
+.ffz--meta-tray {
+	& > :first-child {
+		order: 1;
+	}
+
+	& > :nth-child(0n+2) {
+		order: 500;
+	}
 }
 
 .ffz-stat {

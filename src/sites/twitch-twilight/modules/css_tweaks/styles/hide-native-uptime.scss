@@ -1,0 +1,9 @@
+.ffz--meta-tray {
+	.live-time {
+		display: none !important;
+	}
+
+	& > :first-child > :last-child {
+		margin-right: 0 !important;
+	}
+}

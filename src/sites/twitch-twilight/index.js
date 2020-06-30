@@ -7,6 +7,7 @@
 import BaseSite from '../base';
 
 import WebMunch from 'utilities/compat/webmunch';
+import Elemental from 'utilities/compat/elemental';
 import Fine from 'utilities/compat/fine';
 import FineRouter from 'utilities/compat/fine-router';
 import Apollo from 'utilities/compat/apollo';
@@ -30,6 +31,7 @@ export default class Twilight extends BaseSite {
 
 		this.inject(WebMunch);
 		this.inject(Fine);
+		this.inject(Elemental);
 		this.inject('router', FineRouter);
 		this.inject(Apollo, false);
 		this.inject(TwitchData);
@@ -91,6 +93,7 @@ export default class Twilight extends BaseSite {
 		this.router.on(':route', (route, match) => {
 			this.log.info('Navigation', route && route.name, match && match[0]);
 			this.fine.route(route && route.name);
+			this.elemental.route(route && route.name);
 			this.settings.updateContext({
 				route,
 				route_data: match
@@ -99,6 +102,7 @@ export default class Twilight extends BaseSite {
 
 		const current = this.router.current;
 		this.fine.route(current && current.name);
+		this.elemental.route(current && current.name);
 		this.settings.updateContext({
 			route: current,
 			route_data: this.router.match
@@ -191,6 +195,12 @@ Twilight.KNOWN_MODULES = {
 	'algolia-search': n => n.a && n.a.prototype && n.a.prototype.queryTopResults && n.a.prototype.queryForType,
 	highlightstack: n => n.b && has(n.b, '_calculateChangedBits') && n.c && has(n.c, '_calculateChangedBits')
 }
+
+
+Twilight.POPOUT_ROUTES = [
+	'embed-chat',
+	'popout'
+];
 
 
 Twilight.CHAT_ROUTES = [

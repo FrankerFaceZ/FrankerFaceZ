@@ -59,6 +59,21 @@ export default class CSSTweaks extends Module {
 
 		// Layout
 
+		this.settings.add('metadata.uptime.no-native', {
+			requires: ['metadata.uptime'],
+			default: null,
+			process(ctx, val) {
+				return val == null ? ctx.get('metadata.uptime') !== 0 : val
+			},
+			changed: val => this.toggle('hide-native-uptime', val),
+			ui: {
+				path: 'Channel > Metadata >> Player',
+				title: "Hide Twitch's native Stream Uptime.",
+				description: "By default, this is enabled whenever FFZ's own Stream Uptime display is enabled to avoid redundant information.",
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('layout.use-chat-fix', {
 			requires: ['layout.swap-sidebars', 'layout.use-portrait', 'chat.use-width'],
 			process(ctx) {
@@ -318,6 +333,7 @@ export default class CSSTweaks extends Module {
 	}
 
 	onEnable() {
+		this.toggle('hide-native-uptime', this.settings.get('metadata.uptime.no-native'));
 		this.toggle('chat-fix', this.settings.get('layout.use-chat-fix'));
 		this.toggle('swap-sidebars', this.settings.get('layout.swap-sidebars'));
 		this.toggle('minimal-navigation', this.settings.get('layout.minimal-navigation'));
