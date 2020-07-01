@@ -84,8 +84,7 @@
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
-										{{ t('metadata.host.setting.auto-hosting.description', 'Toggle all forms of auto hosting: teammates, host list, and similar channels.') }}<br>
-										<a href="https://blog.twitch.tv/grow-your-community-with-auto-hosting-e80c1460f6e1" target="_blank" rel="noopener">{{ t('metadata.host.setting.auto-hosting.link', 'Learn More') }}</a>
+										{{ t('metadata.host.setting.auto-hosting.description', 'Automatically host channels from your host list when you\'re offline.') }}
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
@@ -105,16 +104,14 @@
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
-										{{ t('metadata.host.setting.team-hosting.description',
-											"Automatically host random channels from your team when you're not live. " +
-												'Team channels will be hosted before any channels in your host list.') }}
+										{{ t('metadata.host.setting.team-hosting.description', "Include team channels in your host list.") }}
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
 									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:deprioritizeVodcast"
-											:checked="!autoHostSettings.deprioritizeVodcast"
+											:checked="autoHostSettings.deprioritizeVodcast"
 											type="checkbox"
 											class="tw-checkbox__input"
 											data-setting="deprioritizeVodcast"
@@ -122,20 +119,19 @@
 										>
 										<label for="autoHostSettings:deprioritizeVodcast" class="tw-checkbox__label">
 											<span class="tw-mg-l-1">
-												{{ t('metadata.host.setting.vodcast-hosting.title', 'Vodcast Hosting') }}
+												{{ t('metadata.host.setting.vodcast-hosting.title', 'Host pre-recorded videos') }}
 											</span>
 										</label>
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
-										{{ t('metadata.host.setting.vodcast-hosting.description', 'Include Vodcasts in auto host.') }}
-										<a href="https://blog.twitch.tv/vodcast-brings-the-twitch-community-experience-to-uploads-54098498715" target="_blank" rel="noopener">{{ t('metadata.host.setting.vodcast-hosting.link', 'Learn about Vodcasts') }}</a>
+										{{ t('metadata.host.setting.vodcast-hosting.description', 'Include channels streaming pre-recorded video, like Premieres or Reruns') }}
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
 									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
 											id="autoHostSettings:strategy"
-											:checked="autoHostSettings.strategy === 'random'"
+											:checked="autoHostSettings.strategy === 'RANDOM'"
 											type="checkbox"
 											class="tw-checkbox__input"
 											data-setting="strategy"
@@ -149,8 +145,7 @@
 									</div>
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
 										{{ t('metadata.host.setting.strategy.description',
-											'If enabled, auto-hosts will be picked at random. ' +
-												"Otherwise they're picked in order.") }}
+											'When enabled, host channels are chosen randomly from the list.') }}
 									</section>
 								</div>
 							</div>

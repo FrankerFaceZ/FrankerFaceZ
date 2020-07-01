@@ -27,6 +27,12 @@ export default class Channel extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
+		/*this.SideNav = this.elemental.define(
+			'side-nav', '.side-bar-contents .side-nav-section:first-child',
+			null,
+			{childNodes: true, subtree: true}, 1
+		);*/
+
 		this.ChannelRoot = this.elemental.define(
 			'channel-root', '.channel-root',
 			USER_PAGES,
@@ -43,6 +49,9 @@ export default class Channel extends Module {
 	onEnable() {
 		this.updateChannelColor();
 
+		//this.SideNav.on('mount', this.updateHidden, this);
+		//this.SideNav.on('mutate', this.updateHidden, this);
+
 		this.ChannelRoot.on('mount', this.updateRoot, this);
 		this.ChannelRoot.on('mutate', this.updateRoot, this);
 		this.ChannelRoot.on('unmount', this.removeRoot, this);
@@ -53,6 +62,19 @@ export default class Channel extends Module {
 		this.InfoBar.on('unmount', this.removeBar, this);
 		this.InfoBar.each(el => this.updateBar(el));
 	}
+
+	/*updateHidden(el) { // eslint-disable-line class-methods-use-this
+		if ( ! el._ffz_raf )
+			el._ffz_raf = requestAnimationFrame(() => {
+				el._ffz_raf = null;
+				const nodes = el.querySelectorAll('.side-nav-card__avatar--offline');
+				for(const node of nodes) {
+					const par = node.closest('.tw-transition');
+					if ( par && el.contains(par) )
+						par.classList.add('tw-hide');
+				}
+			});
+	}*/
 
 	updateSubscription(login) {
 		if ( this._subbed_login === login )

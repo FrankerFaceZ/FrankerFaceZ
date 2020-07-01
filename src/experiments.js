@@ -60,6 +60,9 @@ export default class ExperimentManager extends Module {
 				return values;
 			},
 
+			is_locked: () => this.getControlsLocked(),
+			unlock: () => this.unlockControls(),
+
 			unique_id: () => this.unique_id,
 
 			ffz_data: () => deep_copy(this.experiments),
@@ -86,6 +89,21 @@ export default class ExperimentManager extends Module {
 
 		this.experiments = {};
 		this.cache = new Map;
+	}
+
+	getControlsLocked() {
+		if ( DEBUG )
+			return false;
+
+		const ts = this.settings.provider.get('exp-lock', 0);
+		if ( isNaN(ts) || ! isFinite(ts) )
+			return true;
+
+		return Date.now() - ts >= 86400000;
+	}
+
+	unlockControls() {
+		this.settings.provider.set('exp-lock', Date.now());
 	}
 
 	async onLoad() {

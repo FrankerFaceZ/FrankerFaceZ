@@ -235,10 +235,9 @@ export default class HostButton extends Module {
 					else if ( setting === 'teamHost' )
 						setting = 'willAutohostTeam';
 					else if ( setting === 'strategy' )
-						state = state ? 'random' : 'ordered';
+						state = state ? 'RANDOM' : 'ORDERED';
 					else if ( setting === 'deprioritizeVodcast' ) {
 						setting = 'willPrioritizeAutohost';
-						state = ! state;
 					}
 
 					this.updateAutoHostSetting(setting, state);
@@ -255,7 +254,7 @@ export default class HostButton extends Module {
 			return;
 
 		const result = await this.twitch_data.queryApollo(
-			await import(/* webpackChunkName: 'queries' */ './autohost_list.gql'),
+			await import(/* webpackChunkName: 'host-options' */ './autohost_list.gql'),
 			{
 				id: user.id
 			},
@@ -273,7 +272,7 @@ export default class HostButton extends Module {
 			return;
 
 		const result = await this.twitch_data.queryApollo(
-			await import(/* webpackChunkName: 'queries' */ './autohost_settings.gql'),
+			await import(/* webpackChunkName: 'host-options' */ './autohost_settings.gql'),
 			{
 				id: user.id
 			},
@@ -341,7 +340,7 @@ export default class HostButton extends Module {
 		const autoHosts = this.getAutoHostIDs(newHosts);
 
 		const result = await this.twitch_data.mutate({
-			mutation: await import(/* webpackChunkName: 'queries' */ './autohost_list_mutate.gql'),
+			mutation: await import(/* webpackChunkName: 'host-options' */ './autohost_list_mutate.gql'),
 			variables: {
 				userID: user.id,
 				channelIDs: autoHosts
@@ -361,7 +360,7 @@ export default class HostButton extends Module {
 			return;
 
 		const result = await this.twitch_data.mutate({
-			mutation: await import(/* webpackChunkName: 'queries' */ './autohost_settings_mutate.gql'),
+			mutation: await import(/* webpackChunkName: 'host-options' */ './autohost_settings_mutate.gql'),
 			variables: {
 				userID: user.id,
 				[setting]: newValue

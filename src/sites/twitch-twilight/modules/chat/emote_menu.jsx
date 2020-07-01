@@ -126,6 +126,16 @@ export default class EmoteMenu extends Module {
 
 		this.SUB_STATUS = SUB_STATUS;
 
+		this.settings.add('chat.emote-menu.shortcut', {
+			default: false,
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Use Ctrl+E to open the Emote Menu.',
+				description: 'When enabled and you press Ctrl+E with the chat input focused, the emote menu will open.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.emote-menu.enabled', {
 			default: true,
 			ui: {
@@ -568,6 +578,7 @@ export default class EmoteMenu extends Module {
 					}
 
 					storage.set('emote-menu.hidden-sets', hidden);
+					t.emit('chat.emotes:change-set-hidden', key);
 					return;
 				}
 
