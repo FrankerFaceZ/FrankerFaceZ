@@ -1,0 +1,17 @@
+mutation FFZ_AutoHostListUpdate($userID: ID!, $channelIDs: [ID!]!) {
+  setAutohostChannels(input: {
+    userID: $userID,
+    channelIDs: $channelIDs
+  }) {
+    user {
+      autohostChannels {
+        nodes {
+          id
+          login
+          displayName
+          profileImageURL(width: 50)
+        }
+      }
+    }
+  }
+}

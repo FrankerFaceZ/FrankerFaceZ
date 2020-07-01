@@ -1,0 +1,24 @@
+mutation FFZ_AutoHostSettingsUpdate(
+  $userID: ID!,
+  $isEnabled: Boolean,
+  $strategy: AutohostSettingsStrategy,
+  $willAutohostTeam: Boolean,
+  $willPrioritizeAutohost: Boolean
+) {
+  updateAutohostSettings(input: {
+    userID: $userID,
+    isEnabled: $isEnabled,
+    strategy: $strategy,
+    willAutohostTeam: $willAutohostTeam,
+    willPrioritizeAutohost: $willPrioritizeAutohost,
+  }) {
+    user {
+      autohostSettings {
+        deprioritizeVodcast,
+        enabled,
+        strategy,
+        teamHost
+      }
+    }
+  }
+}

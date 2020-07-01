@@ -22,18 +22,18 @@
 						>
 							<div
 								v-for="host in hosts"
-								:key="host._id"
-								:data-id="host._id"
+								:key="host.id"
+								:data-id="host.id"
 								class="tw-border-t ffz--host-user"
 							>
 								<div class="tw-interactable tw-interactable--inverted">
 									<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1">
 										<figure class="ffz-i-ellipsis-vert handle" />
 										<div class="ffz-channel-avatar">
-											<img :src="host.logo" :alt="host.display_name + '(' + host.name + ')'">
+											<img :src="host.profileImageURL" :alt="host.displayName + '(' + host.login + ')'">
 										</div>
 										<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
-											{{ host.name }}
+											{{ host.login }}
 										</p>
 										<div class="tw-flex-grow-1 tw-pd-x-2" />
 										<button class="tw-button-icon tw-mg-x-05 ffz--host-remove-user" @click="removeFromHosts">
@@ -91,14 +91,14 @@
 								<div class="ffz--widget ffz--checkbox">
 									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
-											id="autoHostSettings:team_host"
-											:checked="autoHostSettings.team_host"
+											id="autoHostSettings:teamHost"
+											:checked="autoHostSettings.teamHost"
 											type="checkbox"
 											class="tw-checkbox__input"
-											data-setting="team_host"
+											data-setting="teamHost"
 											@change="updateCheckbox"
 										>
-										<label for="autoHostSettings:team_host" class="tw-checkbox__label">
+										<label for="autoHostSettings:teamHost" class="tw-checkbox__label">
 											<span class="tw-mg-l-1">
 												{{ t('metadata.host.setting.team-hosting.title', 'Team Hosting') }}
 											</span>
@@ -113,14 +113,14 @@
 								<div class="ffz--widget ffz--checkbox">
 									<div class="tw-flex tw-align-items-center tw-checkbox">
 										<input
-											id="autoHostSettings:vodcast_hosting"
-											:checked="!autoHostSettings.deprioritize_vodcast"
+											id="autoHostSettings:deprioritizeVodcast"
+											:checked="!autoHostSettings.deprioritizeVodcast"
 											type="checkbox"
 											class="tw-checkbox__input"
-											data-setting="deprioritize_vodcast"
+											data-setting="deprioritizeVodcast"
 											@change="updateCheckbox"
 										>
-										<label for="autoHostSettings:vodcast_hosting" class="tw-checkbox__label">
+										<label for="autoHostSettings:deprioritizeVodcast" class="tw-checkbox__label">
 											<span class="tw-mg-l-1">
 												{{ t('metadata.host.setting.vodcast-hosting.title', 'Vodcast Hosting') }}
 											</span>
@@ -129,26 +129,6 @@
 									<section class="tw-c-text-alt-2 ffz-checkbox-description">
 										{{ t('metadata.host.setting.vodcast-hosting.description', 'Include Vodcasts in auto host.') }}
 										<a href="https://blog.twitch.tv/vodcast-brings-the-twitch-community-experience-to-uploads-54098498715" target="_blank" rel="noopener">{{ t('metadata.host.setting.vodcast-hosting.link', 'Learn about Vodcasts') }}</a>
-									</section>
-								</div>
-								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center tw-checkbox">
-										<input
-											id="autoHostSettings:recommended_host"
-											:checked="autoHostSettings.recommended_host"
-											type="checkbox"
-											class="tw-checkbox__input"
-											data-setting="recommended_host"
-											@change="updateCheckbox"
-										>
-										<label for="autoHostSettings:recommended_host" class="tw-checkbox__label">
-											<span class="tw-mg-l-1">
-												{{ t('metadata.host.setting.recommended-hosting.title', 'Auto Host Channels Similar To Yours') }}
-											</span>
-										</label>
-									</div>
-									<section class="tw-c-text-alt-2 ffz-checkbox-description">
-										{{ t('metadata.host.setting.recommended-hosting.description', 'Streamers on your primary team &amp; host list will always be hosted first') }}
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
