@@ -1,0 +1,11 @@
+query FFZ_AutoHostSettings($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+        id,
+		autohostSettings {
+            deprioritizeVodcast,
+            enabled,
+            strategy,
+            teamHost
+        }
+	}
+}

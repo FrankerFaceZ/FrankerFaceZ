@@ -5,6 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import {get} from 'utilities/object';
 import {createElement} from 'utilities/dom';
 
 const HOST_ERRORS = {
@@ -27,6 +28,7 @@ export default class HostButton extends Module {
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.chat');
+		this.inject('site.twitch_data');
 		this.inject('i18n');
 		this.inject('metadata');
 		this.inject('settings');
@@ -224,14 +226,20 @@ export default class HostButton extends Module {
 					if (this._auto_host_tip) this._auto_host_tip.update();
 				},
 				updateCheckbox: e => {
-					const t = e.target,
-						setting = t.dataset.setting;
-					let state = t.checked;
+					const t = e.target;
+					let setting = t.dataset.setting,
+						state = t.checked;
 
-					if ( setting === 'strategy' )
+					if ( setting === 'enabled' )
+						setting = 'isEnabled';
+					else if ( setting === 'teamHost' )
+						setting = 'willAutohostTeam';
+					else if ( setting === 'strategy' )
 						state = state ? 'random' : 'ordered';
-					else if ( setting === 'deprioritize_vodcast' )
+					else if ( setting === 'deprioritizeVodcast' ) {
+						setting = 'willPrioritizeAutohost';
 						state = ! state;
+					}
 
 					this.updateAutoHostSetting(setting, state);
 				}
@@ -246,26 +254,17 @@ export default class HostButton extends Module {
 		if ( ! user )
 			return;
 
-		let data;
-		try {
-			data = await fetch('https://api.twitch.tv/kraken/autohost/list', {
-				headers: {
-					'Accept': 'application/vnd.twitchtv.v4+json',
-					'Authorization': `OAuth ${user.authToken}`
-				}
-			}).then(r => {
-				if ( r.ok )
-					return r.json();
+		const result = await this.twitch_data.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './autohost_list.gql'),
+			{
+				id: user.id
+			},
+			{
+				fetchPolicy: 'network-only'
+			}
+		);
 
-				throw r.status;
-			});
-
-		} catch(err) {
-			this.log.error('Error loading auto host list.', err);
-			return;
-		}
-
-		return this.autoHosts = data.targets;
+		return this.autoHosts = get('data.user.autohostChannels.nodes', result);
 	}
 
 	async fetchAutoHostSettings() {
@@ -273,26 +272,17 @@ export default class HostButton extends Module {
 		if ( ! user )
 			return;
 
-		let data;
-		try {
-			data = await fetch('https://api.twitch.tv/kraken/autohost/settings', {
-				headers: {
-					'Accept': 'application/vnd.twitchtv.v4+json',
-					'Authorization': `OAuth ${user.authToken}`
-				}
-			}).then(r => {
-				if ( r.ok )
-					return r.json();
+		const result = await this.twitch_data.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './autohost_settings.gql'),
+			{
+				id: user.id
+			},
+			{
+				fetchPolicy: 'network-only'
+			}
+		);
 
-				throw r.status;
-			});
-
-		} catch(err) {
-			this.log.error('Error loading auto host settings.', err);
-			return;
-		}
-
-		return this.autoHostSettings = data.settings;
+		return this.autoHostSettings = get('data.user.autohostSettings', result);
 	}
 
 	queueHostUpdate() {
@@ -312,12 +302,12 @@ export default class HostButton extends Module {
 	}
 
 	currentRoomInHosts() {
-		return this.getAutoHostIDs(this.autoHosts).includes(parseInt(this._current_channel_id, 10));
+		return this.getAutoHostIDs(this.autoHosts).includes(this._current_channel_id);
 	}
 
 	addCurrentRoomToHosts() {
 		const newHosts = this.autoHosts.slice(0);
-		newHosts.push({ _id: parseInt(this._current_channel_id, 10)});
+		newHosts.push({ id: this._current_channel_id});
 
 		this.updateAutoHosts(newHosts);
 	}
@@ -327,7 +317,7 @@ export default class HostButton extends Module {
 
 		const newHosts = [];
 		for (let i = 0; i < this.autoHosts.length; i++) {
-			if (this.autoHosts[i]._id != id) newHosts.push(this.autoHosts[i]);
+			if (this.autoHosts[i].id != id) newHosts.push(this.autoHosts[i]);
 		}
 
 		this.updateAutoHosts(newHosts);
@@ -337,7 +327,7 @@ export default class HostButton extends Module {
 		const ids = [];
 		if (hosts) {
 			for (let i = 0; i < hosts.length; i++) {
-				ids.push(hosts[i]._id);
+				ids.push(hosts[i].id);
 			}
 		}
 		return ids;
@@ -348,32 +338,17 @@ export default class HostButton extends Module {
 		if ( ! user )
 			return;
 
-		let data;
-		try {
-			const form = new URLSearchParams();
-			const autoHosts = this.getAutoHostIDs(newHosts);
-			form.append('targets', autoHosts.join(','));
+		const autoHosts = this.getAutoHostIDs(newHosts);
 
-			data = await fetch('https://api.twitch.tv/kraken/autohost/list', {
-				headers: {
-					'Accept': 'application/vnd.twitchtv.v4+json',
-					'Authorization': `OAuth ${user.authToken}`
-				},
-				method: autoHosts.length ? 'PUT' : 'DELETE',
-				body: autoHosts.length ? form : undefined
-			}).then(r => {
-				if ( r.ok )
-					return r.json();
+		const result = await this.twitch_data.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './autohost_list_mutate.gql'),
+			variables: {
+				userID: user.id,
+				channelIDs: autoHosts
+			}
+		});
 
-				throw r.status;
-			});
-
-		} catch(err) {
-			this.log.error('Error updating auto host list.', err);
-			return;
-		}
-
-		this.autoHosts = data.targets;
+		this.autoHosts = get('data.setAutohostChannels.user.autohostChannels.nodes', result);
 		if (this.vueHostMenu) {
 			this.vueHostMenu.data.hosts = this.autoHosts;
 			this.vueHostMenu.data.addedToHosts = this.currentRoomInHosts();
@@ -385,31 +360,15 @@ export default class HostButton extends Module {
 		if ( ! user )
 			return;
 
-		let data;
-		try {
-			const form = new URLSearchParams();
-			form.append(setting, newValue);
+		const result = await this.twitch_data.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './autohost_settings_mutate.gql'),
+			variables: {
+				userID: user.id,
+				[setting]: newValue
+			}
+		});
 
-			data = await fetch('https://api.twitch.tv/kraken/autohost/settings', {
-				headers: {
-					'Accept': 'application/vnd.twitchtv.v4+json',
-					'Authorization': `OAuth ${user.authToken}`
-				},
-				method: 'PUT',
-				body: form
-			}).then(r => {
-				if ( r.ok )
-					return r.json();
-
-				throw r.status;
-			});
-
-		} catch(err) {
-			this.log.error('Error updating auto host setting.', err);
-			return;
-		}
-
-		this.autoHostSettings = data.settings;
+		this.autoHostSettings = get('data.updateAutohostSettings.user.autohostSettings', result);
 		if (this.vueHostMenu) {
 			this.vueHostMenu.data.autoHostSettings = this.autoHostSettings;
 		}

@@ -1,0 +1,13 @@
+query FFZ_AutoHostList($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+        id,
+		autohostChannels {
+            nodes {
+                id
+                login
+                displayName
+                profileImageURL(width: 50)
+            }
+        }
+	}
+}
