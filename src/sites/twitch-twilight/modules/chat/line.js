@@ -462,9 +462,13 @@ other {# messages were deleted by a moderator.}
 
 				} else if ( msg.ffz_type === 'sub_gift' ) {
 					const plan = msg.sub_plan || {},
+						months = msg.sub_months || 1,
 						tier = SUB_TIERS[plan.plan] || 1;
 
-					const sub_msg = t.i18n.tList('chat.sub.mystery', '{user} gifted a {plan} Sub to {recipient}! ', {
+					let sub_msg;
+
+					const bits = {
+						months,
 						user: (msg.sub_anon || user.username === 'ananonymousgifter') ?
 							t.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
 							e('span', {
@@ -484,7 +488,13 @@ other {# messages were deleted by a moderator.}
 						}, e('span', {
 							className: 'tw-c-text-base tw-strong'
 						}, msg.sub_recipient.displayName))
-					});
+					};
+
+
+					if ( months <= 1 )
+						sub_msg = t.i18n.tList('chat.sub.mystery', '{user} gifted a {plan} Sub to {recipient}! ', bits);
+					else
+						sub_msg = t.i18n.tList('chat.sub.gift-months', '{user} gifted {months,number} month{months,en_plural} of {plan} Sub to {recipient}!', bits);
 
 					if ( msg.sub_total === 1 )
 						sub_msg.push(t.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));

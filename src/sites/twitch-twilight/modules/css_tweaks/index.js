@@ -75,11 +75,20 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.use-chat-fix', {
-			requires: ['layout.swap-sidebars', 'layout.use-portrait', 'chat.use-width'],
+			requires: ['context.force_chat_fix', 'layout.swap-sidebars', 'layout.use-portrait', 'chat.use-width'],
 			process(ctx) {
-				return ctx.get('layout.swap-sidebars') || ctx.get('layout.use-portrait') || ctx.get('chat.use-width')
+				return ctx.get('context.force_chat_fix') || ctx.get('layout.swap-sidebars') || ctx.get('layout.use-portrait') || ctx.get('chat.use-width')
 			},
 			changed: val => {
+				if ( val )
+					this.toggle('chat-no-animate', true);
+				else if ( ! val && ! this._no_anim_timer )
+					this._no_anim_timer = requestAnimationFrame(() => {
+						this._no_anim_timer = null;
+						if ( ! this.settings.get('layout.use-chat-fix') )
+							this.toggle('chat-no-animate', false);
+					});
+
 				this.toggle('chat-fix', val);
 				this.emit('site.player:fix-player');
 			}

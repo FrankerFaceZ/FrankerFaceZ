@@ -1,20 +1,29 @@
-.channel-root__scroll-area--theatre-mode .channel-info-bar {
-	position: fixed;
-	bottom: 10rem;
-	left: 5rem;
-	right: calc(var(--ffz-chat-width) + 25rem);
-	z-index: 3500;
-	opacity: 0;
-	width: unset !important;
+.channel-root__scroll-area--theatre-mode {
+	.channel-info-content > div:first-child,
+	.channel-info-bar {
+		position: fixed;
+		bottom: 10rem;
+		left: 5rem;
+		right: calc(var(--ffz-chat-width) + 40rem);
+		z-index: 3500;
+		opacity: 0;
+		width: unset !important;
 
-	pointer-events: none;
+		border: 1px solid var(--color-background-alt);
+		border-radius: 1rem;
 
-	.tw-tooltip-wrapper, .tw-stat, .ffz-stat, button, a {
-		pointer-events: all;
+		pointer-events: none;
+
+		.tw-tooltip-wrapper, .tw-stat, .ffz-stat, button, a {
+			pointer-events: all;
+		}
 	}
-}
 
-.channel-root__scroll-area--theatre-mode:hover .channel-info-bar {
-	background-color: var(--color-background-base);
-	opacity: 0.75;
+	&:hover {
+		.channel-info-content > div:first-child,
+		.channel-info-bar {
+			background-color: var(--color-background-base);
+			opacity: 0.75;
+		}
+	}
 }

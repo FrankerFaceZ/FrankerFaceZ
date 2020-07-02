@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {has, get, once, maybe_call, set_equals} from 'utilities/object';
-import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS, KEYS} from 'utilities/constants';
 import {ClickOutside} from 'utilities/dom';
 
 import Twilight from 'site';
@@ -506,11 +506,14 @@ export default class EmoteMenu extends Module {
 					hidden = storage.get('emote-menu.hidden-sets');
 
 				this.state = {
+					active: false,
+					activeEmote: -1,
 					hidden: hidden && props.data && hidden.includes(props.data.hide_key || props.data.key),
 					collapsed: collapsed && props.data && collapsed.includes(props.data.key),
 					intersecting: window.IntersectionObserver ? false : true
 				}
 
+				this.keyHeading = this.keyHeading.bind(this);
 				this.clickHeading = this.clickHeading.bind(this);
 				this.clickEmote = this.clickEmote.bind(this);
 
@@ -521,13 +524,21 @@ export default class EmoteMenu extends Module {
 			}
 
 			componentDidMount() {
+				this.props.addSection(this);
+
 				if ( this.ref )
 					this.props.startObserving(this.ref, this);
 			}
 
 			componentWillUnmount() {
+				this.props.removeSection(this);
+
 				if ( this.ref )
 					this.props.stopObserving(this.ref);
+			}
+
+			keyInteract(code) {
+
 			}
 
 			clickEmote(event) {
@@ -558,6 +569,11 @@ export default class EmoteMenu extends Module {
 					return;
 
 				this.props.onClickToken(event.currentTarget.dataset.name)
+			}
+
+			keyHeading(event) {
+				if ( event.keyCode === KEYS.Enter || event.keyCode === KEYS.Space )
+					this.clickHeading();
 			}
 
 			clickHeading() {
@@ -672,7 +688,7 @@ export default class EmoteMenu extends Module {
 					source = 'FrankerFaceZ';
 
 				return (<section ref={this.saveRef} data-key={data.key} class={filtered ? 'filtered' : ''} onMouseEnter={this.mouseEnter}>
-					{show_heading ? (<heading class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onClick={this.clickHeading}>
+					{show_heading ? (<heading tabindex="0" class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onKeyDown={this.keyHeading} onClick={this.clickHeading}>
 						{image}
 						<div class="tw-pd-l-05">
 							{(data.i18n ? t.i18n.t(data.i18n, data.title) : data.title) || t.i18n.t('emote-menu.unknown', 'Unknown Source')}
@@ -928,6 +944,9 @@ export default class EmoteMenu extends Module {
 					this.createObserver();
 				}
 
+				this.sections = [];
+				this.activeSection = -1;
+
 				this.state = {
 					tab: null,
 					tone: t.settings.provider.get('emoji-tone', null)
@@ -939,6 +958,22 @@ export default class EmoteMenu extends Module {
 				this.rebuildData();
 
 				this.observing = new Map;
+
+				this.addSection = inst => {
+					if ( ! this.sections.includes(inst) )
+						this.sections.push(inst);
+				}
+
+				this.removeSection = inst => {
+					const idx = this.sections.indexOf(inst);
+					if ( idx !== -1 ) {
+						this.sections.splice(idx);
+						if ( idx === this.activeSection )
+							this.activeSection = -1;
+						else if ( idx < this.activeSection )
+							this.activeSection--;
+					}
+				}
 
 				this.startObserving = this.startObserving.bind(this);
 				this.stopObserving = this.stopObserving.bind(this);
@@ -1161,8 +1196,13 @@ export default class EmoteMenu extends Module {
 			}
 
 			handleKeyDown(event) {
-				if ( event.keyCode === 27 )
+				const code = event.keyCode;
+				if ( code === KEYS.Escape )
 					this.props.toggleVisibility();
+				else
+					return;
+
+				event.preventDefault();
 			}
 
 			loadData(force = false, props, state) {
@@ -2042,6 +2082,8 @@ export default class EmoteMenu extends Module {
 											filtered: this.state.filtered,
 											visibility_control: visibility,
 											onClickToken: this.props.onClickToken,
+											addSection: this.addSection,
+											removeSection: this.removeSection,
 											startObserving: this.startObserving,
 											stopObserving: this.stopObserving
 										}

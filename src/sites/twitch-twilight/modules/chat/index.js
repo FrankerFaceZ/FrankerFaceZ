@@ -1818,6 +1818,7 @@ export default class ChatHook extends Module {
 							login: e.recipientLogin,
 							displayName: e.recipientName
 						};
+						out.sub_months = e.giftMonths;
 						out.sub_plan = e.methods;
 						out.sub_total = e.senderCount;
 
@@ -1865,6 +1866,7 @@ export default class ChatHook extends Module {
 							login: e.recipientLogin,
 							displayName: e.recipientName
 						};
+						out.sub_months = e.giftMonths;
 						out.sub_plan = e.methods;
 						out.sub_total = e.senderCount;
 

@@ -164,18 +164,27 @@ export default class MainMenu extends Module {
 		this.on('i18n:update', this.scheduleUpdate, this);
 
 		this.dialog.on('show', () => {
+			if ( this.dialog.maximized )
+				this.runFix(1);
+
 			this.showing = true;
 			this.opened = true;
 			this.updateButtonUnseen();
 			this.emit('show')
 		});
 		this.dialog.on('hide', () => {
+			if ( this.dialog.maximized )
+				this.runFix(-1);
+
 			this.showing = false;
 			this.emit('hide');
 			this.destroyDialog();
 		});
 
 		this.dialog.on('resize', () => {
+			if ( this.dialog.visible )
+				this.runFix(this.dialog.maximized ? 1 : -1);
+
 			if ( this._vue )
 				this._vue.$children[0].maximized = this.dialog.maximized
 		});
@@ -187,6 +196,12 @@ export default class MainMenu extends Module {
 	onDisable() {
 		this.dialog.hide();
 		this.off('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
+	}
+
+	runFix(amount) {
+		this.settings.updateContext({
+			force_chat_fix: (this.settings.get('context.force_chat_fix') || 0) + amount
+		});
 	}
 
 

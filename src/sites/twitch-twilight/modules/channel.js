@@ -21,11 +21,21 @@ export default class Channel extends Module {
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('site.css_tweaks');
-		this.inject('site.fine');
 		this.inject('site.elemental');
+		this.inject('site.fine');
+		this.inject('site.router');
 		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
+
+		this.settings.add('channel.auto-click-chat', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> General',
+				title: 'Automatically open chat when opening an offline channel page.',
+				component: 'setting-check-box'
+			}
+		});
 
 		/*this.SideNav = this.elemental.define(
 			'side-nav', '.side-bar-contents .side-nav-section:first-child',
@@ -61,6 +71,20 @@ export default class Channel extends Module {
 		this.InfoBar.on('mutate', this.updateBar, this);
 		this.InfoBar.on('unmount', this.removeBar, this);
 		this.InfoBar.each(el => this.updateBar(el));
+
+		this.router.on(':route', route => {
+			if ( route?.name === 'user' )
+				setTimeout(this.maybeClickChat.bind(this), 1000);
+		}, this);
+		this.maybeClickChat();
+	}
+
+	maybeClickChat() {
+		if ( this.settings.get('channel.auto-click-chat') && this.router.current_name === 'user' ) {
+			const el = document.querySelector('a[data-a-target="channel-home-tab-Chat"]');
+			if ( el )
+				el.click();
+		}
 	}
 
 	/*updateHidden(el) { // eslint-disable-line class-methods-use-this
