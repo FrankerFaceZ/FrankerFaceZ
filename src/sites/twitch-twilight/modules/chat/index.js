@@ -504,6 +504,15 @@ export default class ChatHook extends Module {
 				]
 			}
 		});
+
+		this.settings.add('chat.input.show-mod-view', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Display the Mod View button in relevant channels.',
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	get currentChat() {
@@ -700,6 +709,8 @@ export default class ChatHook extends Module {
 			this.CalloutSelector.forceUpdate();
 		}, this);
 
+		this.chat.context.on('changed:chat.input.show-mod-view', val => this.css_tweaks.toggleHide('mod-view', ! val));
+		this.css_tweaks.toggleHide('mod-view', ! this.chat.context.get('chat.input.show-mod-view'));
 
 		this.chat.context.on('changed:chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);

@@ -3,4 +3,4 @@
 	bottom: 0 !important;
 }
 
-.whispers-open-threads.whispers--theatre-mode { display: none !important }
+.channel-root__scroll-area--theatre-mode + div + .whispers-open-threads.whispers--theatre-mode { display: none !important }

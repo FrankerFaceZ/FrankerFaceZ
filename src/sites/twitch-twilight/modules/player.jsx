@@ -1015,6 +1015,8 @@ export default class Player extends Module {
 
 		if ( inst._ffzUpdateVolume )
 			inst._ffzUpdateVolume();
+
+		this.emit(':update-gui', inst);
 	}
 
 
@@ -1468,6 +1470,13 @@ export default class Player extends Module {
 			}
 		}
 
+		// Are we dealing with a VOD?
+		const duration = player.getDuration?.() ?? Infinity;
+		let position = -1;
+
+		if ( isFinite(duration) && ! isNaN(duration) && duration > 0 )
+			position = player.getPosition();
+
 		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
 			const new_vid = createElement('video'),
@@ -1491,6 +1500,9 @@ export default class Player extends Module {
 			if ( ! player || player === inst.props?.mediaPlayerInstance )
 				inst.setSrc({isNewMediaPlayerInstance: false});
 		}
+
+		if ( position > 0 )
+			setTimeout(() => player.seekTo(position), 250);
 	}
 
 

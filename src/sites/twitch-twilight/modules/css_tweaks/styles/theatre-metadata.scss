@@ -19,6 +19,10 @@
 		}
 	}
 
+	.channel-root > div > div {
+		transform: none !important;
+	}
+
 	&:hover {
 		.channel-info-content > div:first-child,
 		.channel-info-bar {

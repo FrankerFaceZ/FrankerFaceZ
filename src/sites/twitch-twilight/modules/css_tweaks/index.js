@@ -38,7 +38,8 @@ const CLASSES = {
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator',
-	'celebration': 'body .celebration__overlay'
+	'celebration': 'body .celebration__overlay',
+	'mod-view': '.chat-input__buttons-container .tw-core-button[href*="/moderator"]'
 };
 
 
