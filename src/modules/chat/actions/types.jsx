@@ -1,6 +1,32 @@
 'use strict';
 
-import {createElement} from 'utilities/dom';
+// ============================================================================
+// Edit Overrides
+// ============================================================================
+
+export const edit_overrides = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-pencil'
+		}
+	}],
+
+	required_context: ['user'],
+
+	title: 'Change Name & Color',
+	description: 'Allows you to set local overrides for a user\'s name and color in chat.',
+
+	tooltip() {
+		return this.i18n.t('chat.actions.edit_overrides', 'Change Name & Color')
+	},
+
+	click(event, data) {
+		//const ref = makeReference(event.clientX, event.clientY);
+		this.resolve('chat.overrides').renderUserEditor(data.user, event.target);
+	}
+}
+
 
 // ============================================================================
 // Open URL

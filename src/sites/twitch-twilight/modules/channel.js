@@ -37,11 +37,11 @@ export default class Channel extends Module {
 			}
 		});
 
-		/*this.SideNav = this.elemental.define(
+		this.SideNav = this.elemental.define(
 			'side-nav', '.side-bar-contents .side-nav-section:first-child',
 			null,
 			{childNodes: true, subtree: true}, 1
-		);*/
+		);
 
 		this.ChannelRoot = this.elemental.define(
 			'channel-root', '.channel-root',
@@ -59,8 +59,9 @@ export default class Channel extends Module {
 	onEnable() {
 		this.updateChannelColor();
 
-		//this.SideNav.on('mount', this.updateHidden, this);
-		//this.SideNav.on('mutate', this.updateHidden, this);
+		this.SideNav.on('mount', this.updateHidden, this);
+		this.SideNav.on('mutate', this.updateHidden, this);
+		this.SideNav.each(el => this.updateHidden(el));
 
 		this.ChannelRoot.on('mount', this.updateRoot, this);
 		this.ChannelRoot.on('mutate', this.updateRoot, this);
@@ -87,18 +88,21 @@ export default class Channel extends Module {
 		}
 	}
 
-	/*updateHidden(el) { // eslint-disable-line class-methods-use-this
+	updateHidden(el) { // eslint-disable-line class-methods-use-this
 		if ( ! el._ffz_raf )
 			el._ffz_raf = requestAnimationFrame(() => {
 				el._ffz_raf = null;
-				const nodes = el.querySelectorAll('.side-nav-card__avatar--offline');
+				const nodes = el.querySelectorAll('.side-nav-card');
 				for(const node of nodes) {
-					const par = node.closest('.tw-transition');
-					if ( par && el.contains(par) )
-						par.classList.add('tw-hide');
+					const react = this.fine.getReactInstance(node),
+						props = react?.return?.return?.return?.memoizedProps;
+
+					const offline = props?.offline ?? node.querySelector('.side-nav-card__avatar--offline') != null;
+					node.classList.toggle('ffz--offline-side-nav', offline);
+
 				}
 			});
-	}*/
+	}
 
 	updateSubscription(login) {
 		if ( this._subbed_login === login )

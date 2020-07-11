@@ -13,12 +13,12 @@ const STYLE_VALIDATOR = document.createElement('span');
 const CLASSES = {
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
-	'side-rec-channels': '.side-nav .recommended-channels',
-	'side-rec-friends': '.side-nav .recommended-friends',
+	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section',
+	//'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
-	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels',
-	//'side-offline-channels': '.side-nav-card__link[href*="/videos/"],.side-nav-card[href*="/videos/"]',
+	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section',
+	'side-offline-channels': '.side-nav-card.ffz--offline-side-nav',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 
 	'community-highlights': '.community-highlight-stack__card',
@@ -37,7 +37,7 @@ const CLASSES = {
 	'dir-live-ind': '.preview-card[data-ffz-type="live"] .tw-channel-status-text-indicator,.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
-	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator',
+	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .user-avatar-animated__live',
 	'celebration': 'body .celebration__overlay',
 	'mod-view': '.chat-input__buttons-container .tw-core-button[href*="/moderator"]'
 };
@@ -153,7 +153,7 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
-		this.settings.add('layout.side-nav.show-rec-friends', {
+		/*this.settings.add('layout.side-nav.show-rec-friends', {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Side Navigation',
@@ -161,9 +161,9 @@ export default class CSSTweaks extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('side-rec-friends', !val)
-		});
+		});*/
 
-		/*this.settings.add('layout.side-nav.hide-offline', {
+		this.settings.add('layout.side-nav.hide-offline', {
 			default: false,
 			ui: {
 				path: 'Appearance > Layout >> Side Navigation',
@@ -171,7 +171,7 @@ export default class CSSTweaks extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('side-offline-channels', val)
-		});*/
+		});
 
 		this.settings.add('layout.side-nav.rerun-style', {
 			default: 1,
@@ -351,8 +351,8 @@ export default class CSSTweaks extends Module {
 
 		this.toggle('hide-side-nav-avatars', ! this.settings.get('layout.side-nav.show-avatars'));
 		this.toggle('hide-side-nav', !this.settings.get('layout.side-nav.show'));
-		this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
-		//this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
+		//this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
+		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 

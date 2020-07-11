@@ -375,6 +375,16 @@ textarea.tw-input {
 	}
 }
 
+.ffz-override-editor {
+	label {
+		min-width: 5rem;
+	}
+
+	.ffz--color-widget {
+		flex-grow: 1;
+	}
+}
+
 .ffz--report-upload {
 	z-index: 1;
 	position: absolute;

@@ -333,7 +333,7 @@ other {# messages were deleted by a moderator.}
 							onContextMenu: t.actions.handleUserContext
 						}, override_name ? [
 							e('span', {
-								className: 'chat-author__display_name'
+								className: 'chat-author__display-name'
 							}, override_name),
 							e('div', {
 								className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'

@@ -128,6 +128,9 @@ export class Tooltip {
 
 
 	cleanup() {
+		if ( this.options.manual )
+			return;
+
 		for(const el of this.elements) {
 			const tip = el[this._accessor];
 			if ( document.body.contains(el) )

@@ -613,6 +613,8 @@ export default class MainMenu extends Module {
 
 				deleteProfile: profile => settings.deleteProfile(profile),
 
+				getFFZ: () => t.resolve('core'),
+
 				context: {
 					_users: 0,
 

@@ -328,7 +328,10 @@ export default class Actions extends Module {
 				fp.destroy();
 			}
 
-			target._ffz_destroy = target._ffz_outside = null;
+			if ( target._ffz_on_destroy )
+				target._ffz_on_destroy();
+
+			target._ffz_destroy = target._ffz_outside = target._ffz_on_destroy = null;
 		}
 
 		const parent = document.body.querySelector('#root>div') || document.body,
@@ -496,8 +499,8 @@ export default class Actions extends Module {
 			let line = null;
 
 			const handle_click = event => {
-				tip.hide();
 				this.handleClick(event);
+				tip.hide();
 			};
 
 			for(const data of actions) {

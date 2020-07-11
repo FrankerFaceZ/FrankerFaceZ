@@ -1,21 +1,24 @@
 .twilight-main { order: 2 }
+#sideNav,
 .side-nav { order: 3 }
 .right-column {
 	order: 1;
 	z-index: 2;
 }
 
-.side-nav__toggle-visibility {
-	right: unset !important;
-	left: -2.5rem;
-	z-index: 10 !important;
-	svg { transform: rotate(180deg) }
+#sideNav .collapse-toggle {
+	svg {
+		transform: rotate(180deg);
+	}
 }
 
 .right-column__toggle-visibility {
-	//left: unset !important;
-	//right: -2.5rem;
-	//z-index: 10 !important;
+	.tw-tooltip--left {
+		left: 100% !important;
+		right: auto !important;
+		margin-left: 6px;
+	}
+
 	svg { transform: rotate(180deg) }
 
 	.right-column--collapsed & {
@@ -24,14 +27,6 @@
 	}
 }
 
-.channel-header {
-	padding-left: 4rem !important;
-
-	.tw-sm-pd-r-4 {
-		padding-right: 1rem !important;
-	}
-
-}
 
 .side-nav__theme-wrapper.tw-border-r {
 	border-right: none !important;

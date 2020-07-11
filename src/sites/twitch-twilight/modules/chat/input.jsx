@@ -405,16 +405,23 @@ export default class Input extends Module {
 		}
 
 		inst.doesEmoteMatchTerm = function(emote, term) {
-			const emote_name = emote.name || emote.token,
-				emote_lower = emote_name.toLowerCase(),
-				term_lower = term.toLowerCase();
+			const emote_name = emote.name || emote.token;
+			if ( ! emote_name )
+				return false;
 
+			let emote_lower = emote.tokenLower;
+			if ( ! emote_lower )
+				emote_lower = emote_name.toLowerCase();
+
+			const term_lower = term.toLowerCase();
 			if (emote_lower.startsWith(term_lower))
 				return true;
 
 			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
 			if (idx !== -1)
 				return emote_lower.slice(idx + 1).startsWith(term_lower.slice(1));
+
+			return false;
 		}
 
 		inst.getMatchedEmotes = function(input) {
@@ -532,8 +539,12 @@ export default class Input extends Module {
 					continue;
 
 				const id = emote.id,
-					replacement = REPLACEMENTS[id];
+					token = KNOWN_CODES[emote.token] || emote.token;
 
+				if ( ! token )
+					continue;
+
+				const replacement = REPLACEMENTS[id];
 				let src, srcSet;
 
 				if ( replacement && this.chat.context.get('chat.fix-bad-emotes') ) {
@@ -548,7 +559,8 @@ export default class Input extends Module {
 				out.push({
 					id,
 					setID: set.id,
-					token: KNOWN_CODES[emote.token] || emote.token,
+					token,
+					tokenLower: token.toLowerCase(),
 					srcSet,
 					favorite: favorites.includes(id)
 				});
@@ -653,7 +665,8 @@ export default class Input extends Module {
 
 		const out = [],
 			hidden_sets = this.settings.provider.get('emote-menu.hidden-sets'),
-			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0;
+			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0,
+			added_emotes = new Set;
 
 		for(const set of sets) {
 			if ( ! set || ! set.emotes )
@@ -669,12 +682,18 @@ export default class Input extends Module {
 				favorites = this.emotes.getFavorites(source);
 
 			for(const emote of Object.values(set.emotes)) {
-				if ( ! emote || ! emote.id || hidden_emotes.includes(emote.id) )
+				if ( ! emote || ! emote.id || emote.hidden || hidden_emotes.includes(emote.id) || added_emotes.has(emote.name) )
 					continue;
+
+				if ( ! emote.name )
+					continue;
+
+				added_emotes.add(emote.name);
 
 				out.push({
 					id: `${source}-${emote.id}`,
 					token: emote.name,
+					tokenLower: emote.name.toLowerCase(),
 					srcSet: emote.srcSet,
 					favorite: favorites.includes(emote.id)
 				});
@@ -711,11 +730,10 @@ export default class Input extends Module {
 			return [];
 
 		const search = input.startsWith(':') ? input.slice(1) : input,
-			results = [],
-			added_emotes = new Set();
+			results = [];
 
 		for(const emote of emotes) {
-			if ( inst.doesEmoteMatchTerm(emote, search) && ! added_emotes.has(emote.name) ) {
+			if ( inst.doesEmoteMatchTerm(emote, search) )
 				results.push({
 					current: input,
 					replacement: emote.token,
@@ -723,7 +741,6 @@ export default class Input extends Module {
 					favorite: emote.favorite,
 					count: 0 // TODO: Count stuff?
 				});
-			}
 		}
 
 		return results;
