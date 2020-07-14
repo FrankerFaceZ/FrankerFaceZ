@@ -73,6 +73,46 @@ export default class Metadata extends Module {
 			changed: () => this.updateMetadata('uptime')
 		});
 
+		this.settings.add('metadata.viewers', {
+			default: false,
+
+			ui: {
+				path: 'Channel > Metadata >> Player',
+				title: 'Alternative Viewer Count',
+				description: "This displays the current channel's viewer count without an animation when it changes.",
+
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.updateMetadata('viewers')
+		});
+
+
+		this.definitions.viewers = {
+
+			refresh() { return this.settings.get('metadata.viewers') },
+
+			setup(data) {
+				return data.getViewerCount();
+			},
+
+			order: 1,
+			icon: 'ffz-i-viewers',
+
+			label(data) {
+				if ( ! this.settings.get('metadata.viewers') )
+					return null;
+
+				return this.i18n.formatNumber(data)
+			},
+
+			tooltip() {
+				return this.i18n.t('metadata.viewers', 'Viewer Count');
+			},
+
+			color: 'var(--color-text-live)'
+		};
+
 
 		this.definitions.uptime = {
 			inherit: true,

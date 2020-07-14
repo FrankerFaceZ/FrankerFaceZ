@@ -224,8 +224,19 @@ export default class Scroller extends Module {
 						}, createElement('span', {className: 'tw-button__text'}, 'Try Again'))
 					]);
 
-				} else
-					return old_render.call(this);
+				} else {
+					const out = old_render.call(this);
+
+					try {
+						const children = out?.props?.children?.props?.children,
+							child = children?.[2];
+
+						if ( child?.type?.displayName === 'ChatScrollFooter' )
+							children[2] = this.ffzRenderFooter();
+					} catch(err) { /* no-op */ }
+
+					return out;
+				}
 			}
 
 			cls.prototype.ffzInstallHandler = function() {
@@ -574,7 +585,7 @@ export default class Scroller extends Module {
 					});
 			}
 
-			cls.prototype.listFooter = function() {
+			cls.prototype.ffzRenderFooter = function() {
 				let msg, cls = '';
 				if ( this.state.isPaused ) {
 					const f = t.pause,
@@ -592,14 +603,30 @@ export default class Scroller extends Module {
 					cls = 'ffz--freeze-indicator';
 
 				} else if ( this.state.isAutoScrolling )
-					return null;
+					return createElement('div', {
+						className: `chat-scroll-footer__placeholder tw-flex tw-justify-content-center tw-relative ${cls}`
+					}, null);
 				else
 					msg = t.i18n.t('chat.messages-below', 'Chat Paused Due to Scroll');
 
 				return createElement('div', {
+					className: `chat-scroll-footer__placeholder tw-flex tw-justify-content-center tw-relative ${cls}`
+				}, createElement('div', {
+					className: 'tw-absolute tw-border-radius-medium tw-bottom-0 tw-c-background-overlay tw-c-text-overlay tw-mg-b-1'
+				}, createElement('button', {
+					className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--overlay tw-core-button--text tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative',
+					'data-a-target': 'chat-list-footer',
+					onClick: this.ffzFastResume
+				}, createElement('div', {
+					className: 'tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0'
+				}, createElement('div', {
+					className: 'tw-flex-grow-0'
+				}, msg)))));
+
+				/*return createElement('div', {
 					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-justify-content-center tw-mg-b-1 tw-pd-x-2 tw-pd-y-05 ${cls}`,
 					onClick: this.ffzFastResume
-				}, createElement('div', null, msg));
+				}, createElement('div', null, msg));*/
 
 				/*return createElement('div', {
 					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05 ${cls}`,

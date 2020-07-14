@@ -13,11 +13,11 @@ const STYLE_VALIDATOR = document.createElement('span');
 const CLASSES = {
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
-	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section',
+	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends)',
 	//'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
-	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section',
+	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section:not(.online-friends)',
 	'side-offline-channels': '.side-nav-card.ffz--offline-side-nav',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 
@@ -59,6 +59,21 @@ export default class CSSTweaks extends Module {
 
 
 		// Layout
+
+		this.settings.add('metadata.viewers.no-native', {
+			requires: ['metadata.viewers'],
+			default: null,
+			process(ctx, val) {
+				return val == null ? ctx.get('metadata.viewers') : val
+			},
+			changed: val => this.toggle('hide-native-viewers', val),
+			ui: {
+				path: 'Channel > Metadata >> Player',
+				title: "Hide Twitch's native Viewer Count.",
+				description: "By default, this is enabled whenever FFZ's own Viewer Count display is enabled to avoid redundant information.",
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('metadata.uptime.no-native', {
 			requires: ['metadata.uptime'],
@@ -344,6 +359,7 @@ export default class CSSTweaks extends Module {
 
 	onEnable() {
 		this.toggle('hide-native-uptime', this.settings.get('metadata.uptime.no-native'));
+		this.toggle('hide-native-viewers', this.settings.get('metadata.viewers.no-native'));
 		this.toggle('chat-fix', this.settings.get('layout.use-chat-fix'));
 		this.toggle('swap-sidebars', this.settings.get('layout.swap-sidebars'));
 		this.toggle('minimal-navigation', this.settings.get('layout.minimal-navigation'));

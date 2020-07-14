@@ -93,5 +93,6 @@ export default [
 	"channel-points",
 	"fast-fw",
 	"comp-on",
-	"comp-off"
+	"comp-off",
+	"viewers"
 ];

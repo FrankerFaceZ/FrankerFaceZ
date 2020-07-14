@@ -204,6 +204,16 @@ export default class Channel extends Module {
 					display_name: props.hostDisplayName
 				},
 				el,
+				getViewerCount: () => {
+					const thing = el.querySelector('p[data-a-target="animated-channel-viewers-count"]'),
+						r = thing && this.fine.getReactInstance(thing),
+						p = r?.memoizedProps?.children?.props;
+
+					if ( p && p.value != null )
+						return p.value;
+
+					return 0;
+				},
 				getBroadcastID: () => this.getBroadcastID(el, props.channelID)
 			};
 
