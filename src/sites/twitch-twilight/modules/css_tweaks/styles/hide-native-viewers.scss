@@ -1,0 +1,6 @@
+.ffz--meta-tray {
+	& > :first-child > :first-child {
+		display: none !important;
+		margin-right: 0 !important;
+	}
+}

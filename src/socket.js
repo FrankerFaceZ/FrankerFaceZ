@@ -7,6 +7,7 @@
 
 import Module from 'utilities/module';
 import {DEBUG, WS_CLUSTERS} from 'utilities/constants';
+import { on } from 'utilities/dom';
 
 
 export const State = {
@@ -140,7 +141,80 @@ export default class SocketClient extends Module {
 		return new Promise((s, f) => {
 			this._token_waiters.push([s, f]);
 
-			this.call('get_api_token').then(token => {
+			let done = false, timer = null;
+
+			const fail = err => {
+				if ( done )
+					return;
+
+				clearTimeout(timer);
+				done = true;
+				this.log.error('Unable to get API token.', err);
+				const waiters = this._token_waiters;
+				this._token_waiters = null;
+
+				for(const pair of waiters)
+					pair[1](err);
+			}
+
+			const user = this.resolve('site')?.getUser?.();
+			if ( ! user || ! user.id )
+				return fail(new Error('Unable to get current user or not logged in.'));
+
+			const es = new EventSource(`https://api-test.frankerfacez.com/auth/ext_verify/${user.id}`);
+
+			on(es, 'challenge', event => {
+				const conn = this.resolve('site.chat')?.ChatService?.first?.client?.connection;
+				if ( conn && conn.send )
+					conn.send(`PRIVMSG #frankerfacezauthorizer :AUTH ${event.data}`);
+			});
+
+			on(es, 'token', event => {
+				if ( done )
+					return;
+
+				clearTimeout(timer);
+
+				let token = null;
+				try {
+					token = JSON.parse(event.data);
+				} catch(err) {
+					fail(err);
+					return;
+				}
+
+				if ( ! token || ! token.token ) {
+					fail(new Error('Received empty token from server.'));
+					return;
+				}
+
+				token.expires = (new Date(token.expires)).getTime();
+				this._cached_token = token;
+
+				done = true;
+
+				const waiters = this._token_waiters;
+				this._token_waiters = null;
+
+				for(const pair of waiters)
+					pair[0](token);
+			});
+
+			on(es, 'error', err => {
+				fail(err);
+			});
+
+			on(es, 'close', () => {
+				es.close();
+				if ( ! done )
+					fail(new Error('Connection closed unexpectedly.'));
+			});
+
+			timer = setTimeout(() => {
+				fail(new Error('timeout'));
+			}, 5000);
+
+			/*this.call('get_api_token').then(token => {
 				token.expires = (new Date(token.expires)).getTime();
 				this._cached_token = token;
 
@@ -157,7 +231,7 @@ export default class SocketClient extends Module {
 
 				for(const pair of waiters)
 					pair[1](err);
-			});
+			});*/
 		});
 	}
 

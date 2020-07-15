@@ -169,6 +169,13 @@ export default class Badges extends Module {
 		this.inject('experiments');
 
 		this.style = new ManagedStyle('badges');
+
+		// Special data structure for supporters to greatly reduce
+		// memory usage and speed things up for people who only have
+		// a supporter badge.
+		this.supporter_id = null;
+		this.supporters = new Set;
+
 		this.badges = {};
 		this.twitch_badges = {};
 
@@ -646,8 +653,13 @@ export default class Badges extends Module {
 			global_user = this.parent.getUser(user_id, user_login, true),
 			room_user = room && room.getUser(user_id, user_login, true);
 
-		return (global_user ? global_user.badges._cache : []).concat(
+		const out = (global_user ? global_user.badges._cache : []).concat(
 			room_user ? room_user.badges._cache : []);
+
+		if ( this.supporter_id && this.supporters.has(`${user_id}`) )
+			out.push({id: this.supporter_id});
+
+		return out;
 	}
 
 
@@ -656,11 +668,11 @@ export default class Badges extends Module {
 
 		if ( this.experiments.getAssignment('api_load') && tries < 1 )
 			try {
-				fetch(`${NEW_API}/v1/badges`).catch(() => {});
+				fetch(`${NEW_API}/v2/badges`).catch(() => {});
 			} catch(err) { /* do nothing */ }
 
 		try {
-			response = await fetch(`${API_SERVER}/v1/badges`);
+			response = await fetch(`${API_SERVER}/v1/badges/ids`);
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
@@ -694,13 +706,21 @@ export default class Badges extends Module {
 				if ( has(data.users, badge_id) ) {
 					const badge = this.badges[badge_id];
 					let c = 0;
-					for(const user_login of data.users[badge_id]) {
-						const user = this.parent.getUser(undefined, user_login);
-						if ( user.addBadge('ffz-global', badge_id) ) {
-							c++;
-							users++;
+
+					if ( badge?.name === 'supporter' ) {
+						this.supporter_id = badge_id;
+						for(const user_id of data.users[badge_id])
+							this.supporters.add(`${user_id}`);
+
+						c = this.supporters.size;
+					} else
+						for(const user_id of data.users[badge_id]) {
+							const user = this.parent.getUser(user_id, undefined);
+							if ( user.addBadge('ffz-global', badge_id) ) {
+								c++;
+								users++;
+							}
 						}
-					}
 
 					if ( c > 0 )
 						this.log.info(`Added "${badge ? badge.name : `#${badge_id}`}" to ${c} users.`);
