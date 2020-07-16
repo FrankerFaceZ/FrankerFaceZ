@@ -1,5 +1,0 @@
-fragment browsePagePopularStreamsWithTagsEdge on StreamEdge {
-	node {
-		createdAt
-	}
-}

@@ -1,0 +1,17 @@
+.ffz-hide-thumbnail:hover {
+	.tw-aspect:before {
+		transition: opacity 0.2s;
+		transition-delay: 1s;
+		opacity: 0 !important;
+	}
+
+	img {
+		opacity: 1 !important;
+	}
+
+	img,h3 {
+		transition: opacity 0.2s, filter 0.2s;
+		transition-delay: 1s;
+		filter: blur(0) !important;
+	}
+}

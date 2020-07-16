@@ -27,20 +27,10 @@
 }
 
 
-.ffz-hide-thumbnail {
-	.preview-card-thumbnail__image {
-		&:before {
-			content: '';
-			position: absolute;
-			top: 0; left: 0;
-			height: 100%;
-			width: 100%;
-			background: url("https://static-cdn.jtvnw.net/ttv-static/404_preview-320x180.jpg") no-repeat;
-			background-size: cover;
-		}
-
+.ffz-hide-thumbnail a[data-a-target="preview-card-image-link"] {
+	.tw-aspect {
 		img {
-			display: none;
+			filter: blur(2.5rem);
 		}
 	}
 }

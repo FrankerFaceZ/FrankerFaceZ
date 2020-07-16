@@ -189,6 +189,11 @@ export default class Layout extends Module {
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
 		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
 
+		this.on('site.directory:update-cards', () => {
+			for(const inst of this.SideBarChannels.instances)
+				this.updateCardClass(inst);
+		});
+
 		this.SideBarChannels.ready((cls, instances) => {
 			for(const inst of instances)
 				this.updateCardClass(inst);
@@ -250,10 +255,17 @@ export default class Layout extends Module {
 	updateCardClass(inst) {
 		const node = this.fine.getChildNode(inst);
 
-		if ( node )
+		if ( node ) {
 			node.classList.toggle('ffz--side-nav-card-rerun',
 				inst.props?.tooltipContent?.props?.streamType === 'rerun'
 			);
+			node.classList.toggle('ffz--side-nav-card-offline',
+				inst.props?.offline === true
+			);
+
+			const game = inst.props?.tooltipContent?.props?.gameName || inst.props?.metadataLeft?.props?.activity?.stream?.game?.name || inst.props?.metadataLeft;
+			node.classList.toggle('tw-hide', this.settings.provider.get('directory.game.blocked-games', []).includes(game));
+		}
 	}
 
 	updateNavLinks() {

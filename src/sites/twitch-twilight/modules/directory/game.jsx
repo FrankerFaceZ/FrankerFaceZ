@@ -8,7 +8,6 @@ import {SiteModule} from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import { get } from 'utilities/object';
 
-//import GAME_QUERY from './game.gql';
 
 export default class Game extends SiteModule {
 	constructor(...args) {
@@ -17,7 +16,6 @@ export default class Game extends SiteModule {
 		this.inject('site.fine');
 		this.inject('site.apollo');
 
-		//this.inject('metadata');
 		this.inject('i18n');
 		this.inject('settings');
 
@@ -26,27 +24,7 @@ export default class Game extends SiteModule {
 			n => n.props && n.props.data && n.getBannerImage && n.getFollowButton,
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
-
-		/*this.apollo.registerModifier('DirectoryPage_Game', GAME_QUERY);
-		this.apollo.registerModifier('DirectoryPage_Game', res => {
-			/*setTimeout(() =>
-				this.apollo.ensureQuery(
-					'DirectoryPage_Game',
-					'data.game.streams.edges.0.node.createdAt'
-				), 500);* /
-
-			this.modifyStreams(res);
-		}, false);*/
 	}
-
-	/*modifyStreams(res) { // eslint-disable-line class-methods-use-this
-		const edges = get('data.game.streams.edges', res);
-		if ( ! edges || ! edges.length )
-			return res;
-
-		res.data.game.streams.edges = this.parent.processNodes(edges, true);
-		return res;
-	}*/
 
 	onEnable() {
 		this.GameHeader.on('mount', this.updateGameHeader, this);
@@ -149,67 +127,8 @@ export default class Game extends SiteModule {
 				values.splice(idx, 1);
 
 			this.settings.provider.set(setting, values);
-			this.parent.DirectoryCard.forceUpdate();
+			this.parent.updateCards();
 			update_func();
 		}
 	}
-
-	/*unmountGameHeader(inst) { // eslint-disable-line class-methods-use-this
-		const timers = inst._ffz_meta_timers;
-		if ( timers )
-			for(const key in timers)
-				if ( timers[key] )
-					clearTimeout(timers[key]);
-	}
-
-
-	updateGameHeader(inst) {
-		this.updateMetadata(inst);
-	}
-
-	updateMetadata(inst, keys) {
-		const container = this.fine.getChildNode(inst),
-			wrapper = container && container.querySelector && container.querySelector('.side-nav-directory-info__info-wrapper > div + div');
-
-		if ( ! inst._ffz_mounted || ! wrapper )
-			return;
-
-		const metabar = wrapper;
-
-		if ( ! keys )
-			keys = this.metadata.keys;
-		else if ( ! Array.isArray(keys) )
-			keys = [keys];
-
-		const timers = inst._ffz_meta_timers = inst._ffz_meta_timers || {},
-			refresh_func = key => this.updateMetadata(inst, key),
-			data = {
-				directory: inst.props.data.directory,
-				type: inst.props.directoryType,
-				name: inst.props.directoryName,
-
-				_mt: 'directory',
-				_inst: inst
-			}
-
-		for(const key of keys)
-			this.metadata.render(key, data, metabar, timers, refresh_func);
-	}
-
-	generateClickHandler(setting) {
-		return (data, event, update_func) => {
-			const values = this.settings.provider.get(setting, []),
-				game = data.name,
-				idx = values.indexOf(game);
-
-			if ( idx === -1 )
-				values.push(game)
-			else
-				values.splice(idx, 1);
-
-			this.settings.provider.set(setting, values);
-			this.parent.DirectoryCard.forceUpdate();
-			update_func();
-		}
-	}*/
 }

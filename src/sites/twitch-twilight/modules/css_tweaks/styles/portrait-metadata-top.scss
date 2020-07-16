@@ -1,3 +1,6 @@
-.channel-root__scroll-area--theatre-mode .channel-info-bar {
-	bottom: calc(10rem + var(--ffz-chat-height)) !important;
+.channel-root__scroll-area--theatre-mode {
+	.channel-info-content > div:first-child {
+		right: 40rem !important;
+		bottom: calc(10rem + var(--ffz-chat-height)) !important;
+	}
 }

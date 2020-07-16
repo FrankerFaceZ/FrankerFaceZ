@@ -27,14 +27,14 @@ export default class Elemental extends Module {
 	}
 
 
-	define(key, selector, routes, opts = null, limit = 0, timeout = 5000) {
+	define(key, selector, routes, opts = null, limit = 0, timeout = 5000, remove = true) {
 		if ( this._wrappers.has(key) )
 			return this._wrappers.get(key);
 
 		if ( ! selector || typeof selector !== 'string' || ! selector.length )
 			throw new Error('cannot find definition and no selector provided');
 
-		const wrapper = new ElementalWrapper(key, selector, routes, opts, limit, timeout, this);
+		const wrapper = new ElementalWrapper(key, selector, routes, opts, limit, timeout, remove, this);
 		this._wrappers.set(key, wrapper);
 
 		return wrapper;
@@ -46,6 +46,19 @@ export default class Elemental extends Module {
 		this._timer = Date.now();
 		this._updateLiveWatching();
 		this.checkAll();
+		this.cleanAll();
+	}
+
+
+	cleanAll() {
+		if ( this._clean_all )
+			cancelAnimationFrame(this._clean_all);
+
+		this._clean_all = requestAnimationFrame(() => {
+			this._clean_all = null;
+			for(const wrapper of this._wrappers.values())
+				wrapper.clean();
+		});
 	}
 
 
@@ -160,7 +173,7 @@ export default class Elemental extends Module {
 let elemental_id = 0;
 
 export class ElementalWrapper extends EventEmitter {
-	constructor(name, selector, routes, opts, limit, timeout, elemental) {
+	constructor(name, selector, routes, opts, limit, timeout, remove, elemental) {
 		super();
 
 		this.id = elemental_id++;
@@ -176,6 +189,7 @@ export class ElementalWrapper extends EventEmitter {
 		this.opts = opts;
 		this.limit = limit;
 		this.timeout = timeout;
+		this.check_removal = remove;
 
 		if ( this.opts && ! this.opts.childList && ! this.opts.attributes && ! this.opts.characterData )
 			this.opts.attributes = true;
@@ -191,6 +205,14 @@ export class ElementalWrapper extends EventEmitter {
 
 	get atLimit() {
 		return this.limit > 0 && this.count >= this.limit;
+	}
+
+	clean() {
+		const instances = Array.from(this.instances);
+		for(const el of instances) {
+			if ( ! document.contains(el) )
+				this.remove(el);
+		}
 	}
 
 	schedule() {
@@ -251,15 +273,17 @@ export class ElementalWrapper extends EventEmitter {
 		this.instances.add(el);
 		this.count++;
 
-		const remove_check = new MutationObserver(() => {
-			requestAnimationFrame(() => {
-				if ( ! document.contains(el) )
-					this.remove(el);
+		if ( this.check_removal ) {
+			const remove_check = new MutationObserver(() => {
+				requestAnimationFrame(() => {
+					if ( ! document.contains(el) )
+						this.remove(el);
+				});
 			});
-		});
 
-		remove_check.observe(el.parentNode, {childList: true});
-		el[this.remove_param] = remove_check;
+			remove_check.observe(el.parentNode, {childList: true});
+			el[this.remove_param] = remove_check;
+		}
 
 		if ( this.opts ) {
 			const observer = new MutationObserver(muts => {

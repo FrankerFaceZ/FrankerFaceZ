@@ -18,7 +18,7 @@ const CLASSES = {
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section:not(.online-friends)',
-	'side-offline-channels': '.side-nav-card.ffz--offline-side-nav',
+	'side-offline-channels': '.ffz--side-nav-card-offline',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 
 	'community-highlights': '.community-highlight-stack__card',
@@ -34,7 +34,7 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard',
 	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"]',
 
-	'dir-live-ind': '.preview-card[data-ffz-type="live"] .tw-channel-status-text-indicator,.live-channel-card:not([data-a-target*="host"]) .stream-type-indicator.stream-type-indicator--live,.stream-thumbnail__card .stream-type-indicator.stream-type-indicator--live,.preview-card .stream-type-indicator.stream-type-indicator--live,.preview-card .preview-card-stat.preview-card-stat--live',
+	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .user-avatar-animated__live',
@@ -111,14 +111,28 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.side-nav.show', {
-			default: true,
+			default: 1,
+			requires: ['layout.use-portrait'],
+			process(ctx, val) {
+				if ( val === 2 )
+					return ! ctx.get('layout.use-portrait');
+
+				return val;
+			},
+
 			ui: {
 				sort: -1,
 				path: 'Appearance > Layout >> Side Navigation',
 				title: 'Display Side Navigation',
 
-				component: 'setting-check-box'
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Never'},
+					{value: 1, title: 'Always'},
+					{value: 2, title: 'Hide in Portrait'}
+				]
 			},
+
 			changed: val => this.toggle('hide-side-nav', !val)
 		});
 
