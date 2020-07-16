@@ -151,12 +151,15 @@ export class TranslationManager extends Module {
 				if ( this.availableLocales.includes(val) )
 					return val;
 
+				if ( val === 'no' && this.availableLocales.includes('nb') )
+					return 'nb';
+
 				const idx = val.indexOf('-');
 				if ( idx === -1 )
 					return 'en';
 
 				val = val.slice(0, idx);
-				return this.availableLocales.includes(val) ? val : 'en'
+				return this.availableLocales.includes(val) ? val : 'en';
 			},
 
 			ui: {

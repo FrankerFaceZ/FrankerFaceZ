@@ -43,7 +43,7 @@ export default class Directory extends SiteModule {
 		this.inject(Game);
 
 		this.DirectoryCard = this.elemental.define(
-			'directory-card', '.live-channel-card,article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article',
+			'directory-card', '.live-channel-card,article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article',
 			DIR_ROUTES, null, 0, 0
 		);
 
