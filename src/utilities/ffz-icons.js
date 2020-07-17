@@ -94,5 +94,8 @@ export default [
 	"fast-fw",
 	"comp-on",
 	"comp-off",
-	"viewers"
+	"viewers",
+	"move",
+	"chat-empty",
+	"chat"
 ];

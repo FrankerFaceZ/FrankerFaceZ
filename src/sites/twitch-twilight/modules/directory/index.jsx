@@ -43,7 +43,7 @@ export default class Directory extends SiteModule {
 		this.inject(Game);
 
 		this.DirectoryCard = this.elemental.define(
-			'directory-card', '.live-channel-card,article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article',
+			'directory-card', 'article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article',
 			DIR_ROUTES, null, 0, 0
 		);
 
@@ -398,6 +398,16 @@ export default class Directory extends SiteModule {
 					</div>
 				</div>));
 		}
+
+		if ( ! el.ffz_uptime_span )
+			el.ffz_uptime_span = el.ffz_uptime_el.querySelector('p');
+		if ( ! el.ffz_uptime_span )
+			return this.clearUptime(el);
+
+		if ( ! el.ffz_uptime_tt )
+			el.ffz_uptime_tt = el.ffz_uptime_el.querySelector('.tw-tooltip > div');
+		if ( ! el.ffz_uptime_tt )
+			return this.clearUptime(el);
 
 		if ( ! el.ffz_update_timer )
 			el.ffz_update_timer = setInterval(this.updateUptime.bind(this, el, props), 1000);

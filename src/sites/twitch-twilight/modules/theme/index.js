@@ -81,8 +81,12 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		});
 
 		this.settings.add('theme.is-dark', {
-			requires: ['theme.can-dark', 'context.ui.theme', 'context.ui.theatreModeEnabled', 'context.route.name', 'context.location.search'],
+			requires: ['context.force-dark', 'theme.can-dark', 'context.ui.theme', 'context.ui.theatreModeEnabled', 'context.route.name', 'context.location.search'],
 			process(ctx) {
+				const force = ctx.get('context.force-theme');
+				if ( force != null )
+					return force;
+
 				if ( ctx.get('context.route.name') === 'embed-chat' )
 					return (ctx.get('context.location.search')||'').includes('dark');
 
