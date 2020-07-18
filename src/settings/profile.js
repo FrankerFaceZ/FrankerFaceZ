@@ -58,7 +58,7 @@ export default class SettingsProfile extends EventEmitter {
 
 	matches(context) {
 		if ( ! this.matcher )
-			this.matcher = createTester(this.context, require('./filters'));
+			this.matcher = createTester(this.context, this.manager.filters);
 
 		return this.matcher(context);
 	}

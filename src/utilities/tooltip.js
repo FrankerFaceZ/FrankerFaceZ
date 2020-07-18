@@ -105,8 +105,8 @@ export class Tooltip {
 		if ( this.options.manual ) {
 			// Do nothing~!
 		} else if ( this.live || this.elements.size > 5 ) {
-			parent.removeEventListener('mouseover', this._onMouseOver);
-			parent.removeEventListener('mouseout', this._onMouseOut);
+			this.parent.removeEventListener('mouseover', this._onMouseOver);
+			this.parent.removeEventListener('mouseout', this._onMouseOut);
 		} else
 			for(const el of this.elements) {
 				el.removeEventListener('mouseenter', this._onMouseOver);
@@ -119,6 +119,7 @@ export class Tooltip {
 				this.hide(tip);
 
 			el[this._accessor] = null;
+			el._ffz_tooltip = null;
 		}
 
 		this.elements = null;
@@ -205,12 +206,18 @@ export class Tooltip {
 			target = tip.target;
 
 		this.elements.add(target);
+		target._ffz_tooltip = tip;
 
 		// Set this early in case content uses it early.
 		tip._promises = [];
 		tip.waitForDom = () => tip.element ? Promise.resolve() : new Promise(s => {tip._promises.push(s)});
 		tip.update = () => tip._update(); // tip.popper && tip.popper.scheduleUpdate();
-		tip.show = () => this.show(tip);
+		tip.show = () => {
+			let tip = target[this._accessor];
+			if ( ! tip )
+				tip = target[this._accessor] = {target};
+			this.show(tip);
+		};
 		tip.hide = () => this.hide(tip);
 		tip.rerender = () => {
 			if ( tip.visible ) {
@@ -385,6 +392,10 @@ export class Tooltip {
 		if ( this.live && this.elements )
 			this.elements.delete(tip.target);
 
+		if ( tip.target._ffz_tooltip === tip )
+			tip.target._ffz_tooltip = null;
+
+		tip.target[this._accessor] = null;
 		tip._update = tip.rerender = tip.update = noop;
 		tip.element = null;
 		tip.visible = false;

@@ -92,7 +92,7 @@ export default {
 	methods: {
 		clickWithTip(event, fn, ...args) {
 			const el = event.target,
-				tip = el && el._ffz_tooltip$0,
+				tip = el && el._ffz_tooltip,
 				visible = tip && tip.visible;
 
 			visible && tip.hide();

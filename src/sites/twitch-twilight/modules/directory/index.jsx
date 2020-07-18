@@ -19,9 +19,9 @@ export const CARD_CONTEXTS = ((e ={}) => {
 })();
 
 
-const CREATIVE_ID = 488191;
+//const CREATIVE_ID = 488191;
 
-const DIR_ROUTES = ['dir', 'dir-community', 'dir-community-index', 'dir-creative', 'dir-following', 'dir-game-index', 'dir-game-clips', 'dir-game-videos', 'dir-all', 'dir-category', 'user-videos', 'user-clips'];
+const DIR_ROUTES = ['front-page', 'dir', 'dir-community', 'dir-community-index', 'dir-creative', 'dir-following', 'dir-game-index', 'dir-game-clips', 'dir-game-videos', 'dir-all', 'dir-category', 'user-videos', 'user-clips'];
 
 
 export default class Directory extends SiteModule {
@@ -52,7 +52,6 @@ export default class Directory extends SiteModule {
 			n => n.shouldRenderNode && n.props && n.props.shelf,
 			DIR_ROUTES
 		);
-
 
 		this.settings.add('directory.hidden.style', {
 			default: 2,
@@ -131,6 +130,18 @@ export default class Directory extends SiteModule {
 			},
 
 			changed: value => this.css_tweaks.toggleHide('dir-live-ind', value)
+		});
+
+		this.settings.add('directory.hide-promoted', {
+			default: false,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Do not show Promoted streams in the directory.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.updateCards()
 		});
 
 
@@ -324,7 +335,8 @@ export default class Directory extends SiteModule {
 		el.dataset.ffzType = props.streamType;
 
 		const should_hide = (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
-			(props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game));
+			(props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game)) ||
+			(props.sourceType === 'PROMOTION' && this.settings.get('directory.hide-promoted'));
 
 		let hide_container = el.closest('.tw-tower > div');
 		if ( ! hide_container )

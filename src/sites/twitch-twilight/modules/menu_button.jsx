@@ -434,8 +434,8 @@ export default class MenuButton extends SiteModule {
 					setChildren(toggle, this.renderButtonIcon(profile));
 					toggle.dataset.title = this.renderButtonTip(profile);
 
-					if ( toggle['_ffz_tooltip$0']?.rerender )
-						toggle['_ffz_tooltip$0'].rerender();
+					if ( toggle['_ffz_tooltip']?.rerender )
+						toggle['_ffz_tooltip'].rerender();
 
 					this.emit('tooltips:cleanup');
 

@@ -12,6 +12,8 @@ import SettingsProfile from './profile';
 import SettingsContext from './context';
 import MigrationManager from './migration';
 
+import * as FILTERS from './filters';
+
 
 // ============================================================================
 // SettingsManager
@@ -38,11 +40,18 @@ export default class SettingsManager extends Module {
 		this.ui_structures = new Map;
 		this.definitions = new Map;
 
+		// Filters
+		this.filters = {};
+
+		for(const key in FILTERS)
+			if ( has(FILTERS, key) )
+				this.filters[key] = FILTERS[key];
+
+
 		// Create our provider as early as possible.
 		const provider = this.provider = this._createProvider();
 		this.log.info(`Using Provider: ${provider.constructor.name}`);
 		provider.on('changed', this._onProviderChange, this);
-
 
 		this.migrations = new MigrationManager(this);
 
@@ -62,6 +71,20 @@ export default class SettingsManager extends Module {
 		this._start_time = performance.now();
 		this.enable();
 	}
+
+
+	addFilter(key, data) {
+		if ( this.filters[key] )
+			return this.log.warn('Tried to add already existing filter', key);
+
+		this.filters[key] = data;
+		this.updateRoutes();
+	}
+
+	getFilterBasicEditor() { // eslint-disable-line class-methods-use-this
+		return () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	}
+
 
 	generateLog() {
 		const out = [];

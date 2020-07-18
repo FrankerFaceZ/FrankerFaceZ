@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 import { Color } from 'utilities/color';
 import {debounce} from 'utilities/object';
+import { valueToNode } from 'C:/Users/Stendec/AppData/Local/Microsoft/TypeScript/3.8/node_modules/@babel/types/lib/index';
 
 
 const USER_PAGES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
@@ -22,6 +23,7 @@ export default class Channel extends Module {
 		this.inject('settings');
 		this.inject('site.css_tweaks');
 		this.inject('site.elemental');
+		this.inject('site.subpump');
 		this.inject('site.fine');
 		this.inject('site.router');
 		this.inject('site.twitch_data');
@@ -37,11 +39,16 @@ export default class Channel extends Module {
 			}
 		});
 
-		/*this.SideNav = this.elemental.define(
-			'side-nav', '.side-bar-contents .side-nav-section:first-child',
-			null,
-			{childNodes: true, subtree: true}, 1
-		);*/
+		this.settings.add('channel.hosting.enable', {
+			default: true,
+			ui: {
+				path: 'Channel > Behavior >> Hosting',
+				title: 'Enable Channel Hosting',
+				component: 'setting-check-box'
+			},
+			changed: val => ! val && this.InfoBar.each(el => this.updateBar(el))
+		});
+
 
 		this.ChannelRoot = this.elemental.define(
 			'channel-root', '.channel-root',
@@ -59,10 +66,6 @@ export default class Channel extends Module {
 	onEnable() {
 		this.updateChannelColor();
 
-		//this.SideNav.on('mount', this.updateHidden, this);
-		//this.SideNav.on('mutate', this.updateHidden, this);
-		//this.SideNav.each(el => this.updateHidden(el));
-
 		this.ChannelRoot.on('mount', this.updateRoot, this);
 		this.ChannelRoot.on('mutate', this.updateRoot, this);
 		this.ChannelRoot.on('unmount', this.removeRoot, this);
@@ -73,10 +76,13 @@ export default class Channel extends Module {
 		this.InfoBar.on('unmount', this.removeBar, this);
 		this.InfoBar.each(el => this.updateBar(el));
 
+		this.subpump.on(':pubsub-message', this.onPubSub, this);
+
 		this.router.on(':route', route => {
 			if ( route?.name === 'user' )
 				setTimeout(this.maybeClickChat.bind(this), 1000);
 		}, this);
+
 		this.maybeClickChat();
 	}
 
@@ -88,21 +94,50 @@ export default class Channel extends Module {
 		}
 	}
 
-	/*updateHidden(el) { // eslint-disable-line class-methods-use-this
-		if ( ! el._ffz_raf )
-			el._ffz_raf = requestAnimationFrame(() => {
-				el._ffz_raf = null;
-				const nodes = el.querySelectorAll('.side-nav-card');
-				for(const node of nodes) {
-					const react = this.fine.getReactInstance(node),
-						props = react?.return?.return?.return?.memoizedProps;
+	setHost(channel_id, channel_login, target_id, target_login) {
+		const topic = `stream-chat-room-v1.${channel_id}`;
 
-					const offline = props?.offline ?? node.querySelector('.side-nav-card__avatar--offline') != null;
-					node.classList.toggle('ffz--offline-side-nav', offline);
+		this.subpump.inject(topic, {
+			type: 'host_target_change',
+			data: {
+				channel_id,
+				channel_login,
+				target_channel_id: target_id || null,
+				target_channel_login: target_login || null,
+				previous_target_channel_id: null,
+				num_viewers: 0
+			}
+		});
 
-				}
-			});
-	}*/
+		this.subpump.inject(topic, {
+			type: 'host_target_change_v2',
+			data: {
+				channel_id,
+				channel_login,
+				target_channel_id: target_id || null,
+				target_channel_login: target_login || null,
+				previous_target_channel_id: null,
+				num_viewers: 0
+			}
+		});
+	}
+
+
+	onPubSub(event) {
+		if ( event.prefix !== 'stream-chat-room-v1' || this.settings.get('channel.hosting.enable') )
+			return;
+
+		const type = event.message.type;
+		if ( type === 'host_target_change' || type === 'host_target_change_v2' ) {
+			this.log.info('Nulling Host Target Change', type);
+			event.message.data.target_channel_id = null;
+			event.message.data.target_channel_login = null;
+			event.message.data.previous_target_channel_id = null;
+			event.message.data.num_viewers = 0;
+			event.markChanged();
+		}
+	}
+
 
 	updateSubscription(login) {
 		if ( this._subbed_login === login )
@@ -153,6 +188,9 @@ export default class Channel extends Module {
 			this.updateSubscription(null);
 			return;
 		}
+
+		if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
+			this.setHost(props.channelID, props.channelLogin, null, null);
 
 		this.updateSubscription(props.channelLogin);
 		this.updateMetadata(el);

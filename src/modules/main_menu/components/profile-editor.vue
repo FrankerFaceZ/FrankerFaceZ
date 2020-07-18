@@ -144,8 +144,10 @@ export default {
 	props: ['item', 'context'],
 
 	data() {
+		const settings = this.context.getFFZ().resolve('settings');
+
 		return {
-			filters: deep_copy(require('src/settings/filters.js')),
+			filters: deep_copy(settings.filters),
 
 			old_name: null,
 			old_desc: null,

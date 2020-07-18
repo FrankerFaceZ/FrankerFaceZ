@@ -59,16 +59,30 @@ export default class TooltipProvider extends Module {
 
 		this.types.text = target => sanitize(target.dataset.title);
 		this.types.html = target => target.dataset.title;
+
+		this.onFSChange = this.onFSChange.bind(this);
 	}
 
 	onEnable() {
 		const container = document.querySelector('.sunlight-root') || document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
 
+		window.addEventListener('fullscreenchange', this.onFSChange);
+
 		//	is_minimal = false; //container && container.classList.contains('twilight-minimal-root');
 
-		this.tips = new Tooltip(container, 'ffz-tooltip', {
+		this.container = container;
+		this.tip_element = container;
+		this.tips = this._createInstance(container);
+
+		this.on(':cleanup', this.cleanup);
+	}
+
+
+	_createInstance(container) {
+		return new Tooltip(container, 'ffz-tooltip', {
 			html: true,
 			i18n: this.i18n,
+			live: true,
 
 			delayHide: this.checkDelayHide.bind(this),
 			delayShow: this.checkDelayShow.bind(this),
@@ -99,9 +113,19 @@ export default class TooltipProvider extends Module {
 				this.emit(':leave', target, tip, event);
 			}
 		});
-
-		this.on(':cleanup', this.cleanup);
 	}
+
+
+
+	onFSChange() {
+		const tip_element = document.fullscreenElement || this.container;
+		if ( tip_element !== this.tip_element ) {
+			this.tips.destroy();
+			this.tip_element = tip_element;
+			this.tips = this._createInstance(tip_element);
+		}
+	}
+
 
 	cleanup() {
 		this.tips.cleanup();

@@ -1155,7 +1155,7 @@ export default class EmoteMenu extends Module {
 
 			/*clickRefresh(event) {
 				const target = event.currentTarget,
-					tt = target && target._ffz_tooltip$0;
+					tt = target && target._ffz_tooltip;
 
 				if ( tt && tt.hide )
 					tt.hide();

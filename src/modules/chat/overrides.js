@@ -56,7 +56,7 @@ export default class Overrides extends Module {
 				v.$destroy();
 		}
 
-		const parent = document.body.querySelector('#root>div') || document.body;
+		const parent = document.fullscreenElement || document.body.querySelector('#root>div') || document.body;
 
 		popup = new Tooltip(parent, [], {
 			logger: this.log,

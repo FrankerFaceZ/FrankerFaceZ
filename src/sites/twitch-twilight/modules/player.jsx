@@ -502,16 +502,6 @@ export default class Player extends Module {
 			}
 		});
 
-		/*this.settings.add('player.hide-squad-banner', {
-			default: false,
-			ui: {
-				path: 'Channel > Appearance >> General',
-				title: 'Hide the Squad Streaming Bar',
-				component: 'setting-check-box'
-			},
-			changed: () => this.SquadStreamBar.forceUpdate()
-		});*/
-
 		this.settings.add('player.hide-mouse', {
 			default: true,
 			ui: {
@@ -540,25 +530,6 @@ export default class Player extends Module {
 		this.on(':fix-player', () => this.PersistentPlayer.forceUpdate(), this);
 
 		const t = this;
-
-		/*this.SquadStreamBar.ready(cls => {
-			const old_should_render = cls.prototype.shouldRenderSquadBanner;
-
-			cls.prototype.shouldRenderSquadBanner = function(...args) {
-				if ( t.settings.get('player.hide-squad-banner') )
-					return false;
-
-				return old_should_render.call(this, ...args);
-			}
-
-			this.SquadStreamBar.forceUpdate();
-			this.updateSquadContext();
-		});
-
-		this.SquadStreamBar.on('mount', this.updateSquadContext, this);
-		this.SquadStreamBar.on('update', this.updateSquadContext, this);
-		this.SquadStreamBar.on('unmount', this.updateSquadContext, this);*/
-
 
 		this.Player.ready((cls, instances) => {
 			const old_attach = cls.prototype.maybeAttachDomEventListeners;
@@ -677,24 +648,8 @@ export default class Player extends Module {
 			}
 
 			cls.prototype.ffzStopAutoplay = function() {
-				if ( t.settings.get('player.no-autoplay') || (! t.settings.get('player.home.autoplay') && t.router.current.name === 'front-page') ) {
-					const player = this.props.mediaPlayerInstance,
-						events = this.props.playerEvents;
-
-					if ( player && player.pause && player.getPlayerState?.() === 'Playing' )
-						player.pause();
-					else if ( events ) {
-						const immediatePause = () => {
-							if ( this.props.mediaPlayerInstance?.pause ) {
-								this.props.mediaPlayerInstance.pause();
-								off(events, 'Playing', immediatePause);
-							}
-						}
-
-						t.log.info('Unable to immediately pause. Listening for playing event.');
-						on(events, 'Playing', immediatePause);
-					}
-				}
+				if ( t.settings.get('player.no-autoplay') || (! t.settings.get('player.home.autoplay') && t.router.current.name === 'front-page') )
+					this.stopPlayer(this.props.mediaPlayerInstance, this.props.playerEvents, this);
 			}
 
 			cls.prototype.ffzScheduleState = function() {
@@ -858,12 +813,54 @@ export default class Player extends Module {
 				this.tryTheatreMode(inst);
 		});
 
+		this.PlayerSource.on('mount', this.checkCarousel, this);
+		this.PlayerSource.on('update', this.checkCarousel, this);
 
 		this.on('i18n:update', () => {
 			for(const inst of this.Player.instances) {
 				this.updateGUI(inst);
 			}
 		})
+	}
+
+
+	stopPlayer(player, events, inst) {
+		if ( player && player.pause && (player.getPlayerState?.() || player.core?.getPlayerState?.()) === 'Playing' )
+			player.pause();
+		else if ( events && ! events._ffz_stopping ) {
+			events._ffz_stopping = true;
+
+			const immediatePause = () => {
+				if ( inst.props.mediaPlayerInstance?.pause ) {
+					inst.props.mediaPlayerInstance.pause();
+					off(events, 'Playing', immediatePause);
+					events._ffz_stopping = false;
+				}
+			}
+
+			this.log.info('Unable to immediately pause. Listening for playing event.');
+			on(events, 'Playing', immediatePause);
+		}
+	}
+
+
+	checkCarousel(inst) {
+		if ( this.settings.get('channel.hosting.enable') )
+			return;
+
+		if ( inst.props?.playerType === 'channel_home_carousel' ) {
+			if ( inst.props.content?.hostChannel === inst._ffz_cached_login )
+				return;
+
+			inst._ffz_cached_login = inst.props.content?.hostChannel;
+			if ( ! inst._ffz_cached_login )
+				return;
+
+			const player = inst.props.mediaPlayerInstance,
+				events = inst.props.playerEvents;
+
+			this.stopPlayer(player, events, inst);
+		}
 	}
 
 

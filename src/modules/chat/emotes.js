@@ -386,7 +386,7 @@ export default class Emotes extends Module {
 				return;
 
 			this.toggleFavorite(source, id);
-			const tt = target._ffz_tooltip$0;
+			const tt = target._ffz_tooltip;
 			if ( tt && tt.visible ) {
 				tt.hide();
 				setTimeout(() => document.contains(target) && tt.show(), 0);

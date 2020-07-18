@@ -12,6 +12,7 @@ import Fine from 'utilities/compat/fine';
 import FineRouter from 'utilities/compat/fine-router';
 import Apollo from 'utilities/compat/apollo';
 import TwitchData from 'utilities/twitch-data';
+import Subpump from 'utilities/compat/subpump';
 
 import Switchboard from './switchboard';
 
@@ -36,6 +37,7 @@ export default class Twilight extends BaseSite {
 		this.inject(Apollo, false);
 		this.inject(TwitchData);
 		this.inject(Switchboard);
+		this.inject(Subpump);
 
 		this._dom_updates = [];
 	}

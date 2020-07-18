@@ -334,7 +334,7 @@ export default class Actions extends Module {
 			target._ffz_destroy = target._ffz_outside = target._ffz_on_destroy = null;
 		}
 
-		const parent = document.body.querySelector('#root>div') || document.body,
+		const parent = document.fullscreenElement || document.body.querySelector('#root>div') || document.body,
 			tt = target._ffz_popup = new Tooltip(parent, target, {
 				logger: this.log,
 				manual: true,
@@ -807,8 +807,8 @@ export default class Actions extends Module {
 			return this.log.warn(`No click handler for action provider "${data.action}"`);
 		}
 
-		if ( target._ffz_tooltip$0 )
-			target._ffz_tooltip$0.hide();
+		if ( target._ffz_tooltip )
+			target._ffz_tooltip.hide();
 
 		return data.definition.click.call(this, event, data);
 	}
@@ -827,8 +827,8 @@ export default class Actions extends Module {
 		if ( target.classList.contains('disabled') )
 			return;
 
-		if ( target._ffz_tooltip$0 )
-			target._ffz_tooltip$0.hide();
+		if ( target._ffz_tooltip )
+			target._ffz_tooltip.hide();
 
 		if ( ! data.definition.context && ! data.definition.uses_reason )
 			return;
@@ -847,8 +847,8 @@ export default class Actions extends Module {
 		event.preventDefault();
 
 		const target = event.target;
-		if ( target._ffz_tooltip$0 )
-			target._ffz_tooltip$0.hide();
+		if ( target._ffz_tooltip )
+			target._ffz_tooltip.hide();
 
 		this.renderUserContext(target, actions);
 	}
