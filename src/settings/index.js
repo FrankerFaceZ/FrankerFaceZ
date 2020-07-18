@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {deep_equals, has} from 'utilities/object';
+import {deep_equals, has, debounce} from 'utilities/object';
 
 import {CloudStorageProvider, LocalStorageProvider} from './providers';
 import SettingsProfile from './profile';
@@ -31,6 +31,8 @@ export default class SettingsManager extends Module {
 	 */
 	constructor(...args) {
 		super(...args);
+
+		this.updateSoon = debounce(() => this.updateRoutes(), 50, false);
 
 		// State
 		this.__contexts = [];

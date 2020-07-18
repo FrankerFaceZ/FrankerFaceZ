@@ -7,7 +7,6 @@
 import Module from 'utilities/module';
 import { Color } from 'utilities/color';
 import {debounce} from 'utilities/object';
-import { valueToNode } from 'C:/Users/Stendec/AppData/Local/Microsoft/TypeScript/3.8/node_modules/@babel/types/lib/index';
 
 
 const USER_PAGES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
@@ -182,11 +181,21 @@ export default class Channel extends Module {
 		}
 
 		const react = this.fine.getReactInstance(el),
-			props = react?.memoizedProps?.children?.props;
+			props = react?.child?.memoizedProps;
 
 		if ( ! el._ffz_cont || ! props?.channelID ) {
 			this.updateSubscription(null);
 			return;
+		}
+
+		const other_props = react.child.child?.child?.child?.child?.child?.child?.child?.child?.memoizedProps,
+			title = other_props?.title;
+
+		if ( title !== el._ffz_title_cache ) {
+			el._ffz_title_cache = title;
+			this.settings.updateContext({
+				title
+			});
 		}
 
 		if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )

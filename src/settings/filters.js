@@ -4,17 +4,25 @@
 // Profile Filters for Settings
 // ============================================================================
 
-import safety from 'safe-regex';
-
 import {glob_to_regex, escape_regex} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
+
+let safety = null;
+
+function loadSafety(cb) {
+	import(/* webpackChunkName: 'regex' */ 'safe-regex').then(thing => {
+		safety = thing.default;
+		if ( cb )
+			cb();
+	})
+}
 
 
 // Logical Components
 
 export const Invert = {
-	createTest(config, rule_types) {
-		return createTester(config, rule_types, true)
+	createTest(config, rule_types, rebuild) {
+		return createTester(config, rule_types, true, false, rebuild)
 	},
 
 	maxRules: 1,
@@ -29,8 +37,8 @@ export const Invert = {
 };
 
 export const Or = {
-	createTest(config, rule_types) {
-		return createTester(config, rule_types, false, true);
+	createTest(config, rule_types, rebuild) {
+		return createTester(config, rule_types, false, true, rebuild);
 	},
 
 	childRules: true,
@@ -44,10 +52,10 @@ export const Or = {
 };
 
 export const If = {
-	createTest(config, rule_types) {
-		const cond = createTester(config[0], rule_types),
-			if_true = createTester(config[1], rule_types),
-			if_false = createTester(config[2], rule_types);
+	createTest(config, rule_types, rebuild) {
+		const cond = createTester(config[0], rule_types, false, false, rebuild),
+			if_true = createTester(config[1], rule_types, false, false, rebuild),
+			if_false = createTester(config[2], rule_types, false, false, rebuild);
 
 		return ctx => cond(ctx) ? if_true(ctx) : if_false(ctx)
 	},
@@ -289,19 +297,29 @@ export const Category = {
 }
 
 export const Title = {
-	createTest(config = {}) {
+	createTest(config = {}, _, reload) {
 		const mode = config.mode;
-		let title = config.title;
+		let title = config.title,
+			need_safety = true;
 
 		if ( ! title || ! mode )
 			return () => false;
 
-		if ( mode === 'text' )
+		if ( mode === 'text' ) {
 			title = escape_regex(title);
-		else if ( mode === 'glob' )
+			need_safety = false;
+		} else if ( mode === 'glob' )
 			title = glob_to_regex(title);
 		else if ( mode !== 'raw' )
 			return () => false;
+
+		if ( need_safety ) {
+			if ( ! safety )
+				loadSafety(reload);
+
+			if ( ! safety || ! safety(title) )
+				return () => false;
+		}
 
 		if ( ! safety(title) )
 			return () => false;

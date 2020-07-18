@@ -4,7 +4,7 @@
 // Advanced Filter System
 // ============================================================================
 
-export function createTester(rules, filter_types, inverted = false, or = false) {
+export function createTester(rules, filter_types, inverted = false, or = false, rebuild) {
 	if ( ! Array.isArray(rules) || ! filter_types )
 		return inverted ? () => false : () => true;
 
@@ -21,7 +21,7 @@ export function createTester(rules, filter_types, inverted = false, or = false) 
 			continue;
 
 		i++;
-		tests.push(type.createTest(rule.data, filter_types));
+		tests.push(type.createTest(rule.data, filter_types, rebuild));
 		names.push(`f${i}`);
 	}
 
