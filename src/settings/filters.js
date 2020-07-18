@@ -321,9 +321,6 @@ export const Title = {
 				return () => false;
 		}
 
-		if ( ! safety(title) )
-			return () => false;
-
 		let regex;
 		try {
 			regex = new RegExp(title, `g${config.sensitive ? '' : 'i'}`);
