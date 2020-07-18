@@ -649,7 +649,7 @@ export default class Player extends Module {
 
 			cls.prototype.ffzStopAutoplay = function() {
 				if ( t.settings.get('player.no-autoplay') || (! t.settings.get('player.home.autoplay') && t.router.current.name === 'front-page') )
-					this.stopPlayer(this.props.mediaPlayerInstance, this.props.playerEvents, this);
+					t.stopPlayer(this.props.mediaPlayerInstance, this.props.playerEvents, this);
 			}
 
 			cls.prototype.ffzScheduleState = function() {
@@ -806,11 +806,17 @@ export default class Player extends Module {
 			inst.ffzUninstall();
 		});
 
-
-		this.TheatreHost.on('mount', this.tryTheatreMode, this);
+		this.TheatreHost.on('mount', inst => {
+			inst._ffz_theater_start = Date.now();
+			this.tryTheatreMode(inst);
+		});
+		this.TheatreHost.on('update', this.tryTheatreMode, this);
 		this.TheatreHost.ready((cls, instances) => {
-			for(const inst of instances)
+			const now = Date.now();
+			for(const inst of instances) {
+				inst._ffz_theater_start = now;
 				this.tryTheatreMode(inst);
+			}
 		});
 
 		this.PlayerSource.on('mount', this.checkCarousel, this);
@@ -1505,18 +1511,21 @@ export default class Player extends Module {
 
 	tryTheatreMode(inst) {
 		if ( ! inst._ffz_theater_timer )
-			inst._ffz_theater_timer = setTimeout(() => {
+			inst._ffz_theater_timer = requestAnimationFrame(() => {
 				inst._ffz_theater_timer = null;
 
 				if ( ! this.settings.get('player.theatre.auto-enter') || ! inst._ffz_mounted )
 					return;
 
-				if ( inst.props.channelHomeLive || inst.props.channelHomeCarousel )
+				if ( inst.props.channelHomeLive || inst.props.channelHomeCarousel || inst.props.theatreModeEnabled )
 					return;
 
-				if ( inst?.props?.onTheatreModeEnabled )
+				if ( Date.now() - (inst._ffz_theater_start ||0) > 2000 )
+					return;
+
+				if ( inst.props.onTheatreModeEnabled )
 					inst.props.onTheatreModeEnabled();
-			}, 250);
+			});
 	}
 
 

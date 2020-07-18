@@ -336,7 +336,7 @@ export default class Directory extends SiteModule {
 
 		const should_hide = (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
 			(props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game)) ||
-			(props.sourceType === 'PROMOTION' && this.settings.get('directory.hide-promoted'));
+			((props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted'));
 
 		let hide_container = el.closest('.tw-tower > div');
 		if ( ! hide_container )
