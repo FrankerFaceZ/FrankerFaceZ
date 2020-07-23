@@ -83,6 +83,9 @@ export default class HostButton extends Module {
 			},
 
 			label: data => {
+				if ( ! data.channel.live )
+					return;
+
 				const ffz_user = this.site.getUser();
 
 				if ( ! this.settings.get('metadata.host-button') || ! ffz_user || ! data.channel || data.channel.login === ffz_user.login )

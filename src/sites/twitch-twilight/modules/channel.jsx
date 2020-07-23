@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 import { Color } from 'utilities/color';
 import {debounce} from 'utilities/object';
+import { createElement, setChildren } from 'utilities/dom';
 
 
 const USER_PAGES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
@@ -38,6 +39,16 @@ export default class Channel extends Module {
 			}
 		});
 
+		this.settings.add('channel.extra-links', {
+			default: true,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Add extra links to live channel pages, next to the streamer\'s name.',
+				component: 'setting-check-box'
+			},
+			changed: () => this.updateLinks()
+		});
+
 		this.settings.add('channel.hosting.enable', {
 			default: true,
 			ui: {
@@ -65,6 +76,8 @@ export default class Channel extends Module {
 	onEnable() {
 		this.updateChannelColor();
 
+		this.on('i18n:update', this.updateLinks, this);
+
 		this.ChannelRoot.on('mount', this.updateRoot, this);
 		this.ChannelRoot.on('mutate', this.updateRoot, this);
 		this.ChannelRoot.on('unmount', this.removeRoot, this);
@@ -83,6 +96,13 @@ export default class Channel extends Module {
 		}, this);
 
 		this.maybeClickChat();
+	}
+
+	updateLinks() {
+		for(const el of this.InfoBar.instances) {
+			el._ffz_link_login = null;
+			this.updateBar(el);
+		}
 	}
 
 	maybeClickChat() {
@@ -168,9 +188,17 @@ export default class Channel extends Module {
 			el._ffz_cont = null;
 		}
 
+		const want_links = this.settings.get('channel.extra-links');
+
+		if ( el._ffz_links && (! document.contains(el._ffz_links) || ! want_links)) {
+			el._ffz_links.remove();
+			el._ffz_links = null;
+			el._ffz_link_login = null;
+		}
+
 		if ( ! el._ffz_cont ) {
-			const report = el.querySelector('.report-button'),
-				cont = report && report.closest('.tw-flex-wrap.tw-justify-content-end');
+			const report = el.querySelector('.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"]'),
+				cont = report && (report.closest('.tw-flex-wrap.tw-justify-content-end') || report.closest('.tw-justify-content-end'));
 
 			if ( cont && el.contains(cont) ) {
 				el._ffz_cont = cont;
@@ -180,8 +208,47 @@ export default class Channel extends Module {
 				el._ffz_cont = null;
 		}
 
+		if ( ! el._ffz_links && want_links ) {
+			const link = el.querySelector('a .tw-line-height-heading'),
+				cont = link && link.closest('.tw-flex');
+
+			if ( cont && el.contains(cont) ) {
+				el._ffz_links = <div class="ffz--links tw-mg-l-1"></div>;
+				cont.appendChild(el._ffz_links);
+			}
+		}
+
 		const react = this.fine.getReactInstance(el),
 			props = react?.child?.memoizedProps;
+
+		if ( el._ffz_links && props.channelLogin !== el._ffz_link_login  ) {
+			const login = el._ffz_link_login = props.channelLogin;
+			if ( login ) {
+				const make_link = (link, text) => {
+					const a = <a href={link} class="tw-c-text-inherit tw-interactive tw-pd-x-1 tw-font-size-5">{text}</a>;
+					a.addEventListener('click', event => {
+						if ( event.ctrlKey || event.shiftKey || event.altKey )
+							return;
+
+						const history = this.router.history;
+						if ( history ) {
+							event.preventDefault();
+							history.push(link);
+						}
+					});
+
+					return a;
+				}
+
+				setChildren(el._ffz_links, [
+					make_link(`/${login}/schedule`, this.i18n.t('channel.links.schedule', 'Schedule')),
+					make_link(`/${login}/videos`, this.i18n.t('channel.links.videos', 'Videos')),
+					make_link(`/${login}/clips`, this.i18n.t('channel.links.clips', 'Clips'))
+				]);
+
+			} else
+				el._ffz_links.innerHTML = '';
+		}
 
 		if ( ! el._ffz_cont || ! props?.channelID ) {
 			this.updateSubscription(null);
@@ -242,7 +309,7 @@ export default class Channel extends Module {
 					id: props.channelID,
 					login: props.channelLogin,
 					display_name: props.displayName,
-					live: props.isLive,
+					live: props.isLive && ! props.videoID && ! props.clipSlug,
 					live_since: props.liveSince
 				},
 				props,
@@ -261,6 +328,16 @@ export default class Channel extends Module {
 
 					return 0;
 				},
+				getUserSelfImmediate: cb => {
+					const ret = this.getUserSelf(el, props.channelID, true);
+					if ( ret && ret.then ) {
+						ret.then(cb);
+						return null;
+					}
+
+					return ret;
+				},
+				getUserSelf: () => this.getUserSelf(el, props.channelID),
 				getBroadcastID: () => this.getBroadcastID(el, props.channelID)
 			};
 
@@ -315,6 +392,55 @@ export default class Channel extends Module {
 			this.css_tweaks.deleteVariable('channel-color-20');
 			this.css_tweaks.deleteVariable('channel-color-30');
 		}
+	}
+
+	getUserSelf(el, channel_id, no_promise) {
+		const cache = el._ffz_self_cache = el._ffz_self_cache || {};
+		if ( channel_id === cache.channel_id ) {
+			if ( Date.now() - cache.saved < 60000 ) {
+				if ( no_promise )
+					return cache.data;
+				return Promise.resolve(cache.data);
+			}
+		}
+
+		return new Promise(async (s, f) => {
+			if ( cache.updating ) {
+				cache.updating.push([s, f]);
+				return ;
+			}
+
+			cache.channel_id = channel_id;
+			cache.updating = [[s,f]];
+			let data, err;
+
+			try {
+				data = await this.twitch_data.getUserSelf(channel_id);
+			} catch(error) {
+				data = null;
+				err = error;
+			}
+
+			const waiters = cache.updating;
+			cache.updating = null;
+
+			if ( cache.channel_id !== channel_id ) {
+				err = new Error('Outdated');
+				cache.channel_id = null;
+				cache.data = null;
+				cache.saved = 0;
+				for(const pair of waiters)
+					pair[1](err);
+
+				return;
+			}
+
+			cache.data = data;
+			cache.saved = Date.now();
+
+			for(const pair of waiters)
+				err ? pair[1](err) : pair[0](data);
+		});
 	}
 
 	getBroadcastID(el, channel_id) {

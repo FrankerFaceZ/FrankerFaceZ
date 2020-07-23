@@ -12,6 +12,8 @@ import {duration_to_string, durationForURL} from 'utilities/time';
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
 
+const CLIP_URL = /^https:\/\/[^/]+\.twitch\.tv\/.+?\.mp4$/;
+
 export default class Metadata extends Module {
 	constructor(...args) {
 		super(...args);
@@ -22,6 +24,19 @@ export default class Metadata extends Module {
 
 		this.should_enable = true;
 		this.definitions = {};
+
+		this.settings.add('metadata.clip-download', {
+			default: true,
+
+			ui: {
+				path: 'Channel > Metadata >> Clips',
+				title: 'Add a Download button for editors to clip pages.',
+				description: 'This adds a download button beneath the player on clip pages (the main site, not on `clips.twitch.tv`) for broadcasters and their editors.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.updateMetadata('clip-download')
+		});
 
 		this.settings.add('metadata.player-stats', {
 			default: false,
@@ -225,6 +240,45 @@ export default class Metadata extends Module {
 						</div>}
 					</div>
 				</div>);
+			}
+		}
+
+		this.definitions['clip-download'] = {
+			button: true,
+			inherit: true,
+
+			setup(data) {
+				if ( ! this.settings.get('metadata.clip-download') )
+					return;
+
+				const Player = this.resolve('site.player'),
+					player = Player.current;
+				if ( ! player )
+					return;
+
+				const sink = player.mediaSinkManager || player.core?.mediaSinkManager,
+					src = sink?.video?.src;
+
+				if ( ! src || ! CLIP_URL.test(src) )
+					return;
+
+				const user = this.resolve('site').getUser?.(),
+					is_self = user?.id == data.channel.id;
+
+				if ( is_self || data.getUserSelfImmediate(data.refresh)?.isEditor )
+					return src;
+			},
+
+			label(src) {
+				if ( src )
+					return this.i18n.t('metadata.clip-download', 'Download');
+			},
+
+			icon: 'ffz-i-download',
+
+			click(src) {
+				const link = createElement('a', {target: '_blank', href: src});
+				link.click();
 			}
 		}
 
@@ -507,6 +561,12 @@ export default class Metadata extends Module {
 			return destroy();
 
 		try {
+			const ref_fn = () => refresh_fn(key);
+			data = {
+				...data,
+				refresh: ref_fn
+			};
+
 			// Process the data if a setup method is defined.
 			if ( def.setup )
 				data = await def.setup.call(this, data);
@@ -515,7 +575,7 @@ export default class Metadata extends Module {
 			const refresh = maybe_call(def.refresh, this, data);
 			if ( refresh )
 				timers[key] = setTimeout(
-					() => refresh_fn(key),
+					ref_fn,
 					typeof refresh === 'number' ? refresh : 1000
 				);
 

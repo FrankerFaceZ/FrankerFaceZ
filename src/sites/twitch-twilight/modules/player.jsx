@@ -488,7 +488,7 @@ export default class Player extends Module {
 			}
 		});
 
-		this.settings.add('player.hide-rerun-bar', {
+		/*this.settings.add('player.hide-rerun-bar', {
 			default: false,
 			ui: {
 				path: 'Channel > Appearance >> General',
@@ -500,7 +500,7 @@ export default class Player extends Module {
 				this.css_tweaks.toggleHide('player-rerun-bar', val);
 				this.repositionPlayer();
 			}
-		});
+		});*/
 
 		this.settings.add('player.hide-mouse', {
 			default: true,
@@ -520,7 +520,7 @@ export default class Player extends Module {
 		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
 		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
 		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
-		this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
+		//this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 
 		this.updateCaptionsCSS();
 		this.updateHideExtensions();

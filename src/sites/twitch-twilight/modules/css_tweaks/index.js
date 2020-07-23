@@ -11,6 +11,7 @@ import {has} from 'utilities/object';
 const STYLE_VALIDATOR = document.createElement('span');
 
 const CLASSES = {
+	'unfollow': '.follow-btn__follow-btn--following',
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends)',
@@ -335,6 +336,16 @@ export default class CSSTweaks extends Module {
 			changed: () => this.updateFont()
 		});
 
+		this.settings.add('channel.hide-unfollow', {
+			default: false,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Hide the Unfollow button.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('unfollow', val)
+		});
+
 		this.settings.add('channel.hide-live-indicator', {
 			requires: ['context.route.name'],
 			process(ctx, val) {
@@ -359,7 +370,7 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggle('square-avatars', !val)
 		});
 
-		this.settings.add('channel.hide-not-live-bar', {
+		/*this.settings.add('channel.hide-not-live-bar', {
 			default: false,
 			ui: {
 				path: 'Channel > Appearance >> General',
@@ -368,7 +379,7 @@ export default class CSSTweaks extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('not-live-bar', val)
-		});
+		});*/
 	}
 
 	onEnable() {
@@ -385,9 +396,10 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
+		this.toggleHide('unfollow', this.settings.get('channel.hide-unfollow'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
-		this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
+		//this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
 		this.toggleHide('channel-live-ind', this.settings.get('channel.hide-live-indicator'));
 
 		const reruns = this.settings.get('layout.side-nav.rerun-style');
