@@ -16,6 +16,7 @@ import {TranslationManager} from './i18n';
 import SocketClient from './socket';
 import Site from 'site';
 import Vue from 'utilities/vue';
+//import Timing from 'utilities/timing';
 
 class FrankerFaceZ extends Module {
 	constructor() {
@@ -28,6 +29,10 @@ class FrankerFaceZ extends Module {
 		this.name = 'frankerfacez';
 		this.__state = 0;
 		this.__modules.core = this;
+
+		// Timing
+		//this.inject('timing', Timing);
+		this.__time('instance');
 
 		// ========================================================================
 		// Error Reporting and Logging

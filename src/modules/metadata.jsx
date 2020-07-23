@@ -18,6 +18,7 @@ export default class Metadata extends Module {
 
 		this.inject('settings');
 		this.inject('i18n');
+		this.inject('tooltips');
 
 		this.should_enable = true;
 		this.definitions = {};
@@ -413,6 +414,43 @@ export default class Metadata extends Module {
 		}
 	}
 
+	onEnable() {
+		const md = this.tooltips.types.metadata = target => {
+			let el = target;
+			if ( el._ffz_stat )
+				el = el._ffz_stat;
+			else if ( ! el.classList.contains('ffz-stat') ) {
+				el = target.closest('.ffz-stat');
+				target._ffz_stat = el;
+			}
+
+			if ( ! el )
+				return;
+
+			const key = el.dataset.key,
+				def = this.definitions[key];
+
+			return maybe_call(def.tooltip, this, el._ffz_data)
+		};
+
+		md.onShow = (target, tip) => {
+			const el = target._ffz_stat || target;
+			el.tip = tip;
+		};
+
+		md.onHide = target => {
+			const el = target._ffz_stat || target;
+			el.tip = null;
+			el.tip_content = null;
+		}
+
+		md.popperConfig = (target, tip, opts) => {
+			opts.placement = 'bottom';
+			opts.modifiers.flip = {behavior: ['bottom','top']};
+			return opts;
+		}
+	}
+
 
 	get keys() {
 		return Object.keys(this.definitions);
@@ -518,7 +556,8 @@ export default class Metadata extends Module {
 							tip_content={null}
 						>
 							{btn = (<button
-								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border-l tw-border-t tw-border-b' : 'tw-font-size-5 tw-regular'}`}
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border-l tw-border-t tw-border-b' : 'tw-font-size-5 tw-regular'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+								data-tooltip-type="metadata"
 							>
 								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center tw-pd-x-1">
 									{icon}
@@ -526,7 +565,8 @@ export default class Metadata extends Module {
 								</div>
 							</button>)}
 							{popup = (<button
-								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border' : 'tw-font-size-5 tw-regular'}`}
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border' : 'tw-font-size-5 tw-regular'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+								data-tooltip-type="metadata"
 							>
 								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
 									<span>
@@ -538,7 +578,8 @@ export default class Metadata extends Module {
 
 					} else
 						btn = popup = el = (<button
-							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-font-size-5 tw-regular tw-mg-r-05 ffz-mg-l--05'}`}
+							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-font-size-5 tw-regular tw-mg-r-05 ffz-mg-l--05'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+							data-tooltip-type="metadata"
 							data-key={key}
 							tip_content={null}
 						>
@@ -596,7 +637,7 @@ export default class Metadata extends Module {
 								el._ffz_destroy = el._ffz_outside = null;
 							};
 
-							const parent = document.body.querySelector('#root>div') || document.body,
+							const parent = document.fullscreenElement || document.body.querySelector('#root>div') || document.body,
 								tt = el._ffz_popup = new Tooltip(parent, el, {
 									logger: this.log,
 									i18n: this.i18n,
@@ -637,7 +678,8 @@ export default class Metadata extends Module {
 						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
 					el = (<div
-						class="tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-r-1"
+						class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-r-1${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+						data-tooltip-type="metadata"
 						data-key={key}
 						tip_content={null}
 					>
@@ -668,7 +710,7 @@ export default class Metadata extends Module {
 
 				subcontainer.appendChild(el);
 
-				if ( def.tooltip ) {
+				/*if ( def.tooltip ) {
 					const parent = document.body.querySelector('#root>div') || document.body;
 					el.tooltip = new Tooltip(parent, el, {
 						logger: this.log,
@@ -692,7 +734,7 @@ export default class Metadata extends Module {
 							}
 						}
 					});
-				}
+				}*/
 
 			} else {
 				stat = el.querySelector('.ffz-stat-text');

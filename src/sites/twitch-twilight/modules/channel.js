@@ -163,7 +163,7 @@ export default class Channel extends Module {
 	}
 
 	_updateBar(el) {
-		if ( el._ffz_cont && ! el.contains(el._ffz_cont) ) {
+		if ( el._ffz_cont && ! document.contains(el._ffz_cont) ) {
 			el._ffz_cont.classList.remove('ffz--meta-tray');
 			el._ffz_cont = null;
 		}
@@ -227,7 +227,7 @@ export default class Channel extends Module {
 			react = this.fine.getReactInstance(el),
 			props = react?.memoizedProps?.children?.props;
 
-		if ( ! cont || ! el.contains(cont) || ! props || ! props.channelID )
+		if ( ! cont || ! document.contains(cont) || ! props || ! props.channelID )
 			return;
 
 		if ( ! keys )

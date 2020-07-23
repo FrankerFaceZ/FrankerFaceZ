@@ -93,6 +93,7 @@ export default class TooltipProvider extends Module {
 			onShow: this.delegateOnShow.bind(this),
 			onHide: this.delegateOnHide.bind(this),
 
+			popperConfig: this.delegatePopperConfig.bind(this),
 			popper: {
 				placement: 'top',
 				modifiers: {
@@ -129,6 +130,16 @@ export default class TooltipProvider extends Module {
 
 	cleanup() {
 		this.tips.cleanup();
+	}
+
+	delegatePopperConfig(target, tip, pop_opts) {
+		const type = target.dataset.tooltipType,
+			handler = this.types[type];
+
+		if ( handler && handler.popperConfig )
+			return handler.popperConfig(target, tip, pop_opts);
+
+		return pop_opts;
 	}
 
 	delegateOnShow(target, tip) {

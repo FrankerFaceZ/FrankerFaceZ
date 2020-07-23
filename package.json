@@ -1,7 +1,7 @@
 {
   "name": "frankerfacez",
   "author": "Dan Salvato LLC",
-  "version": "4.20.15",
+  "version": "4.20.16",
   "description": "FrankerFaceZ is a Twitch enhancement suite.",
   "license": "Apache-2.0",
   "scripts": {
@@ -65,6 +65,9 @@
   },
   "dependencies": {
     "@ffz/icu-msgparser": "^1.0.2",
+    "chartjs": "^0.3.24",
+    "chartjs-plugin-waterfall": "^1.0.3",
+    "chartjs-plugin-zoom": "^0.7.7",
     "crypto-js": "^3.1.9-1",
     "dayjs": "^1.8.29",
     "displacejs": "^1.4.1",

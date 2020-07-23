@@ -291,7 +291,7 @@ export class Tooltip {
 		const use_html = maybe_call(opts.html, null, target, tip),
 			setter = use_html ? 'innerHTML' : 'textContent';
 
-		const pop_opts = Object.assign({
+		let pop_opts = Object.assign({
 			modifiers: {
 				flip: {
 					behavior: ['top', 'bottom', 'left', 'right']
@@ -299,6 +299,9 @@ export class Tooltip {
 			},
 			arrowElement: arrow
 		}, opts.popper);
+
+		if ( opts.popperConfig )
+			pop_opts = opts.popperConfig(target, tip, pop_opts) ?? pop_opts;
 
 		pop_opts.onUpdate = tip._on_update = debounce(() => {
 			if ( ! opts.no_auto_remove && ! document.contains(tip.target) )
