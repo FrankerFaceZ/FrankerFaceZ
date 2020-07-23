@@ -97,7 +97,7 @@ export class Logger {
 			message.unshift('%cFFZ:%c', 'color:#755000; font-weight:bold', '');
 
 		if ( level === Logger.DEBUG )
-			console.info(...message);
+			console.debug(...message);
 
 		else if ( level === Logger.INFO )
 			console.info(...message);

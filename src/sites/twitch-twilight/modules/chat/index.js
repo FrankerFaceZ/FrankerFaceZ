@@ -143,12 +143,14 @@ export default class ChatHook extends Module {
 
 		this.inject('settings');
 		this.inject('i18n');
+		this.inject('experiments');
 
 		this.inject('site');
 		this.inject('site.router');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject('site.css_tweaks');
+		this.inject('site.subpump');
 
 		this.inject('chat');
 
@@ -1075,6 +1077,38 @@ export default class ChatHook extends Module {
 
 			for(const inst of instances)
 				this.containerMounted(inst);
+		});
+
+		this.subpump.on(':pubsub-message', event => {
+			if ( event.prefix !== 'community-points-channel-v1' || ! this.experiments.getAssignment('all_points') )
+				return;
+
+			const service = this.ChatService.first,
+				message = event.message,
+				data = message?.data?.redemption;
+			if ( ! message || ! service || message.type !== 'reward-redeemed' || service.props.channelID != data?.channel_id )
+				return;
+
+			const reward = data.reward?.id && get(data.reward.id, service.props.rewardMap);
+			if ( ! reward )
+				return;
+
+			const msg = {
+				id: data.id,
+				type: this.chat_types.Message,
+				ffz_type: 'points',
+				ffz_reward: reward,
+				messageParts: [],
+				user: {
+					id: data.user.id,
+					login: data.user.login,
+					displayName: data.user.display_name
+				},
+				timestamp: new Date(message.data.timestamp || data.redeemed_at).getTime()
+			};
+
+			service.postMessageToCurrentChannel({}, msg);
+			event.preventDefault();
 		});
 	}
 

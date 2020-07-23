@@ -25,10 +25,16 @@ export default class AddonManager extends Module {
 		this.inject('settings');
 		this.inject('i18n');
 
+		this.load_requires = ['settings'];
+
 		this.has_dev = false;
 		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = [];
+	}
+
+	onLoad() {
+		this._loader = this.loadAddonData();
 	}
 
 	async onEnable() {
@@ -69,16 +75,17 @@ export default class AddonManager extends Module {
 
 		this.settings.provider.on('changed', this.onProviderChange, this);
 
-		await this.loadAddonData();
-		this.enabled_addons = this.settings.provider.get('addons.enabled', []);
+		this._loader.then(() => {
+			this.enabled_addons = this.settings.provider.get('addons.enabled', []);
 
-		// We do not await enabling add-ons because that would delay the
-		// main script's execution.
-		for(const id of this.enabled_addons)
-			if ( this.hasAddon(id) )
-				this._enableAddon(id);
+			// We do not await enabling add-ons because that would delay the
+			// main script's execution.
+			for(const id of this.enabled_addons)
+				if ( this.hasAddon(id) )
+					this._enableAddon(id);
 
-		this.emit(':ready');
+			this.emit(':ready');
+		});
 	}
 
 	generateLog() {

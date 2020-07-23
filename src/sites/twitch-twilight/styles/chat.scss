@@ -1,3 +1,8 @@
+// Fix: Unable to move emote/user cards out of chat
+.channel-root__right-column > div.tw-overflow-hidden {
+	overflow: unset !important;
+}
+
 .chat-line__message--emote {
 	vertical-align: middle;
 	margin: -.5rem 0;

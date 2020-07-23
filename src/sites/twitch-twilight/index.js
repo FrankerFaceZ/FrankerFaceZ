@@ -54,6 +54,8 @@ export default class Twilight extends BaseSite {
 	}
 
 	onEnable() {
+		this.settings = this.resolve('settings');
+
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
 

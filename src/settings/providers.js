@@ -7,6 +7,8 @@
 import {EventEmitter} from 'utilities/events';
 import {has} from 'utilities/object';
 
+const DB_VERSION = 1;
+
 
 // ============================================================================
 // SettingsProvider
@@ -48,6 +50,9 @@ export class SettingsProvider extends EventEmitter {
 	keys() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
 	entries() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
 	get size() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
+
+	get supportsBlobs() { return false; } // eslint-disable-line class-methods-use-this
+
 }
 
 
@@ -224,147 +229,133 @@ export class IndexedDBProvider extends SettingsProvider {
 	constructor(manager) {
 		super(manager);
 
-		this._cached = new Map;
-		this.ready = false;
-		this._ready_wait = null;
-	}
-
-	destroy() {
-		this.disable();
-		this._cached.clear();
-	}
-
-	disable() {
-		this.disabled = true;
-	}
-
-	awaitReady() {
-		if ( this.ready )
-			return Promise.resolve();
-
-		return new Promise((resolve, reject) => {
-			const waiters = this._ready_wait = this._ready_wait || [];
-			waiters.push([resolve, reject]);
-		})
-	}
-}
-
-
-export class CloudStorageProvider extends SettingsProvider {
-	constructor(manager) {
-		super(manager);
+		this._start_time = performance.now();
 
 		this._cached = new Map;
 		this.ready = false;
 		this._ready_wait = null;
 
-		this._boundHandleStorage = this.handleStorage.bind(this);
-		window.addEventListener('message', this._boundHandleStorage);
-		this._send('get_all');
-	}
-
-	destroy() {
-		this.disable();
-		this._cached.clear();
-	}
-
-	disable() {
-		this.disabled = true;
-
-		if ( this._boundHandleStorage ) {
-			window.removeEventListener('message', this._boundHandleStorage)
-			this._boundHandleStorage = null;
-		}
-	}
-
-
-	awaitReady() {
-		if ( this.ready )
-			return Promise.resolve();
-
-		return new Promise((resolve, reject) => {
-			const waiters = this._ready_wait = this._ready_wait || [];
-			waiters.push([resolve, reject]);
-		})
-	}
-
-
-	// ========================================================================
-	// Communication
-	// ========================================================================
-
-	handleStorage(event) {
-		if ( event.source !== window || ! event.data || ! event.data.ffz )
-			return;
-
-		const cmd = event.data.cmd,
-			data = event.data.data;
-
-		if ( cmd === 'all_values' ) {
-			const old_keys = new Set(this._cached.keys());
-
-			for(const key in data)
-				if ( has(data, key) ) {
-					const val = data[key];
-					old_keys.delete(key);
-					this._cached.set(key, val);
-					if ( this.ready )
-						this.emit('changed', key, val);
-				}
-
-			for(const key of old_keys) {
-				this._cached.delete(key);
-				if ( this.ready )
-					this.emit('changed', key, undefined, true);
-			}
-
-			this.ready = true;
-			if ( this._ready_wait ) {
-				for(const resolve of this._ready_wait)
-					resolve();
-				this._ready_wait = null;
-			}
-
-		} else if ( cmd === 'changed' ) {
-			this._cached.set(data.key, data.value);
-			this.emit('changed', data.key, data.value);
-
-		} else if ( cmd === 'deleted' ) {
-			this._cached.delete(data);
-			this.emit('changed', data, undefined, true);
+		if ( window.BroadcastChannel ) {
+			const bc = this._broadcaster = new BroadcastChannel('ffz-settings');
+			bc.addEventListener('message',
+				this._boundHandleMessage = this.handleMessage.bind(this));
 
 		} else {
-			this.manager.log.info('unknown storage event', event);
+			window.addEventListener('storage',
+				this._boundHandleStorage = this.handleStorage.bind(this));
+		}
+
+		this.loadSettings()
+			.then(() => this._resolveReady(true))
+			.catch(err => this._resolveReady(false, err));
+	}
+
+	_resolveReady(success, data) {
+		this.manager.log.info(`IDB ready in ${(performance.now() - this._start_time).toFixed(5)}ms`);
+		this.ready = success;
+		const waiters = this._ready_wait;
+		this._ready_wait = null;
+		if ( waiters )
+			for(const pair of waiters)
+				pair[success ? 0 : 1](data);
+	}
+
+	static supported() {
+		return window.indexedDB != null;
+	}
+
+	get supportsBlobs() { return true; } // eslint-disable-line class-methods-use-this
+
+	destroy() {
+		this.disable();
+		this._cached.clear();
+	}
+
+	disable() {
+		this.disabled = true;
+
+		if ( this.db ) {
+			this.db.close();
+			this.db = null;
+		}
+
+		if ( this._broadcaster ) {
+			this._broadcaster.removeEventListener('message', this._boundHandleMessage);
+			this._broadcaster.close();
+			this._boundHandleMessage = this._broadcaster = null;
 		}
 	}
 
-	_send(cmd, data) { // eslint-disable-line class-methods-use-this
-		window.postMessage({
-			ffz: true,
-			cmd,
-			data
-		}, location.origin);
+	broadcast(msg) {
+		if ( this._broadcaster )
+			this._broadcaster.postMessage(msg);
 	}
 
 
-	// ========================================================================
-	// Data Access
-	// ========================================================================
+	handleMessage(event) {
+		if ( this.disabled || ! event.isTrusted || ! event.data )
+			return;
+
+		this.manager.log.debug('storage broadcast event', event.data);
+		const {type, key} = event.data;
+
+		if ( type === 'set' ) {
+			const val = JSON.parse(localStorage.getItem(this.prefix + key));
+			this._cached.set(key, val);
+			this.emit('changed', key, val, false);
+
+		} else if ( type === 'delete' ) {
+			this._cached.delete(key);
+			this.emit('changed', key, undefined, true);
+
+		} else if ( type === 'clear' ) {
+			const old_keys = Array.from(this._cached.keys());
+			this._cached.clear();
+			for(const key of old_keys)
+				this.emit('changed', key, undefined, true);
+		}
+	}
+
+
+	awaitReady() {
+		if ( this.ready )
+			return Promise.resolve();
+
+		return new Promise((resolve, reject) => {
+			const waiters = this._ready_wait = this._ready_wait || [];
+			waiters.push([resolve, reject]);
+		})
+	}
+
+
+	// Synchronous Methods
 
 	get(key, default_value) {
-		return this._cached.has(key) ?
-			this._cached.get(key) :
-			default_value;
+		return this._cached.has(key) ? this._cached.get(key) : default_value;
 	}
 
 	set(key, value) {
+		if ( value === undefined ) {
+			if ( this.has(key) )
+				this.delete(key);
+			return;
+		}
+
 		this._cached.set(key, value);
-		this._send('set', {key, value});
+		this._set(key, value)
+			.catch(err => this.manager.log.error(`Error saving setting "${key}" to database`, err))
+			.then(() => this.broadcast({type: 'set', key}));
+
+		this.emit('set', key, value, false);
 	}
 
 	delete(key) {
 		this._cached.delete(key);
-		this._send('delete', key);
+		this._delete(key)
+			.catch(err => this.manager.log.error(`Error deleting setting "${key}" from database`, err))
+			.then(() => this.broadcast({type: 'delete', key}));
+
+		this.emit('set', key, undefined, true);
 	}
 
 	has(key) {
@@ -376,8 +367,15 @@ export class CloudStorageProvider extends SettingsProvider {
 	}
 
 	clear() {
-		this._cached.clear();
-		this._send('clear');
+		const old_cache = this._cached;
+		this._cached = new Map;
+
+		for(const key of old_cache.keys())
+			this.emit('changed', key, undefined, true);
+
+		this._clear()
+			.catch(err => this.manager.log.error(`Error clearing database`, err))
+			.then(() => this.broadcast({type: 'clear'}));
 	}
 
 	entries() {
@@ -387,4 +385,135 @@ export class CloudStorageProvider extends SettingsProvider {
 	get size() {
 		return this._cached.size;
 	}
+
+
+	// IDB Interaction
+
+	getDB() {
+		if ( this.db )
+			return Promise.resolve(this.db);
+
+		if ( this._listeners )
+			return new Promise((s,f) => this._listeners.push([s,f]));
+
+		return new Promise((s,f) => {
+			const listeners = this._listeners = [[s,f]],
+				done = (success, data) => {
+					if ( this._listeners === listeners ) {
+						this._listeners = null;
+						for(const pair of listeners)
+							pair[success ? 0 : 1](data);
+					}
+				}
+
+			const request = window.indexedDB.open('FFZ', DB_VERSION);
+			request.onerror = e => {
+				this.manager.log.error('Error opening database.', e);
+				done(false, e);
+			}
+
+			request.onupgradeneeded = e => {
+				this.manager.log.info(`Upgrading database from version ${e.oldVersion} to ${DB_VERSION}`);
+
+				const db = request.result;
+
+				db.createObjectStore('settings', {keyPath: 'k'});
+				db.createObjectStore('blobs');
+			}
+
+			request.onsuccess = () => {
+				this.manager.log.info(`Database opened. (After: ${(performance.now() - this._start_time).toFixed(5)}ms)`);
+				this.db = request.result;
+				done(true, this.db);
+			}
+		});
+	}
+
+
+	async loadSettings() {
+		const db = await this.getDB(),
+			trx = db.transaction(['settings'], 'readonly'),
+			store = trx.objectStore('settings');
+
+		return new Promise((s,f) => {
+			const request = store.getAll();
+
+			request.onsuccess = () => {
+				for(const entry of request.result)
+					this._cached.set(entry.k, entry.v);
+
+				s();
+			}
+
+			request.onerror = err => {
+				this.manager.log.error('Error reading settings from database.', err);
+				f();
+			}
+		});
+
+		/*cursor = store.openCursor();
+
+		return new Promise((s,f) => {
+			cursor.onsuccess = e => {
+				const entry = e.target.result;
+				if ( entry ) {
+					this._cached.set(entry.key, entry.value);
+					entry.continue();
+				} else {
+					// We're done~!
+					s();
+				}
+			};
+
+			cursor.onerror = e => {
+				this.manager.log.error('Error reading settings from database.', e);
+				f(e);
+			}
+		});*/
+	}
+
+
+	async _set(key, value) {
+		const db = await this.getDB(),
+			trx = db.transaction(['settings'], 'readwrite'),
+			store = trx.objectStore('settings');
+
+		return new Promise((s,f) => {
+			store.onerror = f;
+			store.onsuccess = s;
+
+			store.put({k: key, v: value});
+		});
+	}
+
+
+	async _delete(key) {
+		const db = await this.getDB(),
+			trx = db.transaction(['settings'], 'readwrite'),
+			store = trx.objectStore('settings');
+
+		return new Promise((s,f) => {
+			store.onerror = f;
+			store.onsuccess = s;
+
+			store.delete(key);
+		});
+	}
+
+
+	async _clear() {
+		const db = await this.getDB(),
+			trx = db.transaction(['settings'], 'readwrite'),
+			store = trx.objectStore('settings');
+
+		return new Promise((s,f) => {
+			store.onerror = f;
+			store.onsuccess = s;
+
+			store.clear();
+		});
+	}
+
+
+
 }

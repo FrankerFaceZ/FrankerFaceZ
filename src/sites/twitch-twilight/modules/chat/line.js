@@ -385,7 +385,7 @@ other {# messages were deleted by a moderator.}
 								onClick: this.ffz_user_click_handler
 							}, e('span', {
 								className: 'tw-c-text-base tw-strong'
-							}, user.userDisplayName)),
+							}, user.displayName)),
 						count: msg.sub_count,
 						tier: SUB_TIERS[msg.sub_plan] || 1,
 						channel: msg.roomLogin
@@ -477,7 +477,7 @@ other {# messages were deleted by a moderator.}
 								onClick: this.ffz_user_click_handler
 							}, e('span', {
 								className: 'tw-c-text-base tw-strong'
-							}, user.userDisplayName)),
+							}, user.displayName)),
 						plan: plan.plan === 'custom' ? '' :
 							t.i18n.t('chat.sub.gift-plan', 'Tier {tier}', {tier}),
 						recipient: e('span', {
@@ -539,7 +539,7 @@ other {# messages were deleted by a moderator.}
 								onClick: this.ffz_user_click_handler
 							}, e('span', {
 								className: 'tw-c-text-base tw-strong'
-							}, user.userDisplayName)),
+							}, user.displayName)),
 							plan: plan.prime ?
 								t.i18n.t('chat.sub.twitch-prime', 'with Twitch Prime') :
 								t.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier})
@@ -598,7 +598,7 @@ other {# messages were deleted by a moderator.}
 									onClick: this.ffz_user_click_handler
 								}, e('span', {
 									className: 'tw-c-text-base tw-strong'
-								}, user.userDisplayName))
+								}, user.displayName))
 							})
 						]);
 
@@ -640,7 +640,7 @@ other {# messages were deleted by a moderator.}
 										onClick: this.ffz_user_click_handler
 									}, e('span', {
 										className: 'tw-c-text-base tw-strong'
-									}, user.userDisplayName))
+									}, user.displayName))
 								})
 						]),
 						out && e('div', {
@@ -793,7 +793,7 @@ other {# messages were deleted by a moderator.}
 			const msg = inst.props.message;
 			if ( msg ) {
 				msg.ffz_tokens = null;
-				msg.mentioned = msg.mention_color = null;
+				msg.highlights = msg.mentioned = msg.mention_color = null;
 			}
 		}
 
@@ -801,7 +801,7 @@ other {# messages were deleted by a moderator.}
 			const msg = inst.props.message;
 			if ( msg ) {
 				msg.ffz_tokens = null;
-				msg.mentioned = msg.mention_color = null;
+				msg.highlights = msg.mentioned = msg.mention_color = null;
 			}
 		}
 

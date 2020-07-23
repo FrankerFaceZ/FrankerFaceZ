@@ -277,8 +277,10 @@ export const Mentions = {
 						recipient: recipient ? recipient.toLowerCase() : ''
 					});
 
-					if ( mentioned )
+					if ( mentioned ) {
+						(msg.highlights = (msg.highlights || new Set())).add('mention');
 						msg.mentioned = true;
+					}
 
 					// Push the remaining text from the token.
 					text.push(segment.substr(match[0].length));
@@ -315,6 +317,7 @@ export const UserHighlights = {
 		const u = msg.user;
 		for(const [color, regex] of colors) {
 			if ( regex.test(u.login) || regex.test(u.displayName) ) {
+				(msg.highlights = (msg.highlights || new Set())).add('user');
 				msg.mentioned = true;
 				if ( color ) {
 					msg.mention_color = color;
@@ -371,6 +374,7 @@ export const BadgeHighlights = {
 		for(const badge of Object.keys(badges)) {
 			if ( colors.has(badge) ) {
 				const color = colors.get(badge);
+				(msg.highlights = (msg.highlights || new Set())).add('badge');
 				msg.mentioned = true;
 				if ( color ) {
 					msg.mention_color = color;
@@ -454,6 +458,7 @@ export const CustomHighlights = {
 					if ( idx !== nix )
 						out.push({type: 'text', text: text.slice(idx, nix)});
 
+					(msg.highlights = (msg.highlights || new Set())).add('term');
 					msg.mentioned = true;
 					msg.mention_color = color || msg.mention_color;
 

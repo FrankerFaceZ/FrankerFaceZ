@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 import {deep_equals, has, debounce} from 'utilities/object';
 
-import {CloudStorageProvider, LocalStorageProvider} from './providers';
+import {IndexedDBProvider, LocalStorageProvider} from './providers';
 import SettingsProfile from './profile';
 import SettingsContext from './context';
 import MigrationManager from './migration';
@@ -218,11 +218,15 @@ export default class SettingsManager extends Module {
 	/**
 	 * Evaluate the environment that FFZ is running in and then decide which
 	 * provider should be used to retrieve and store settings.
+	 *
+	 * @returns {SettingsProvider} The provider to store everything.
 	 */
 	_createProvider() {
-		// If the loader has reported support for cloud settings...
-		if ( document.body.classList.contains('ffz-cloud-storage') )
-			return new CloudStorageProvider(this);
+		// Prefer IndexedDB if it's available because it's more persistent
+		// and can store more data. Plus, we don't have to faff around with
+		// JSON conversion all the time.
+		if ( IndexedDBProvider.supported() && localStorage.ffzIDB )
+			return this._idb = new IndexedDBProvider(this);
 
 		// Fallback
 		return new LocalStorageProvider(this);
@@ -427,15 +431,18 @@ export default class SettingsManager extends Module {
 	 * @param {number|SettingsProfile} id - The profile to delete
 	 */
 	deleteProfile(id) {
-		if ( typeof id === 'object' && id.id )
+		if ( typeof id === 'object' && id.id != null )
 			id = id.id;
 
 		const profile = this.__profile_ids[id];
 		if ( ! profile )
 			return;
 
-		if ( profile.id === 0 )
-			throw new Error('cannot delete default profile');
+		if ( this.__profiles.length === 1 )
+			throw new Error('cannot delete only profile');
+
+		/*if ( profile.id === 0 )
+			throw new Error('cannot delete default profile');*/
 
 		profile.off('toggled', this._onProfileToggled, this);
 		profile.clear();

@@ -252,7 +252,10 @@ export default class MainMenu extends Module {
 		if ( this._update_timer )
 			return;
 
-		this._update_timer = setTimeout(() => this.updateLiveMenu(), 250);
+		this._update_timer = setTimeout(() => {
+			// Make sure i18n is loaded before we try this.
+			this.i18n.enable().then(() => this.updateLiveMenu());
+		}, 250);
 	}
 
 
@@ -597,118 +600,144 @@ export default class MainMenu extends Module {
 			Vue = this.vue.Vue,
 			settings = this.settings,
 			context = settings.main_context,
-			[profiles, profile_keys] = this.getProfiles(),
+			[profiles, profile_keys] = this.getProfiles();
 
-			_c = {
-				profiles,
-				profile_keys,
-				currentProfile: profile_keys[0],
+		let currentProfile = profile_keys[0];
+		if ( ! currentProfile ) {
+			for(let i=profiles.length - 1; i >= 0; i--) {
+				if ( profiles[i].live ) {
+					currentProfile = profiles[i];
+					break;
+				}
+			}
 
-				has_update: this.has_update,
+			if ( ! currentProfile )
+				currentProfile = profiles[0];
+		}
 
-				createProfile: data => {
-					const profile = settings.createProfile(data);
-					return t.getProfileProxy(profile, context);
-				},
+		const _c = {
+			profiles,
+			profile_keys,
+			currentProfile: profile_keys[0] || profiles[0],
 
-				deleteProfile: profile => settings.deleteProfile(profile),
+			has_update: this.has_update,
 
-				getFFZ: () => t.resolve('core'),
+			createProfile: data => {
+				const profile = settings.createProfile(data);
+				return t.getProfileProxy(profile, context);
+			},
 
-				context: {
-					_users: 0,
+			deleteProfile: profile => settings.deleteProfile(profile),
 
-					profiles: context.__profiles.map(profile => profile.id),
-					get: key => context.get(key),
-					uses: key => context.uses(key),
+			getFFZ: () => t.resolve('core'),
 
-					on: (...args) => context.on(...args),
-					off: (...args) => context.off(...args),
+			context: {
+				_users: 0,
 
-					order: id => context.order.indexOf(id),
-					context: deep_copy(context._context),
+				profiles: context.__profiles.map(profile => profile.id),
+				get: key => context.get(key),
+				uses: key => context.uses(key),
 
-					_update_profiles(changed) {
-						const new_list = [],
-							profiles = context.manager.__profiles;
+				on: (...args) => context.on(...args),
+				off: (...args) => context.off(...args),
 
-						for(let i=0; i < profiles.length; i++) {
-							const profile = profile_keys[profiles[i].id];
+				order: id => context.order.indexOf(id),
+				context: deep_copy(context._context),
+
+				_update_profiles(changed) {
+					const new_list = [],
+						profiles = context.manager.__profiles;
+
+					for(let i=0; i < profiles.length; i++) {
+						const profile = profile_keys[profiles[i].id];
+						if ( profile ) {
 							profile.order = i;
-
 							new_list.push(profile);
 						}
+					}
 
-						Vue.set(_c, 'profiles', new_list);
+					Vue.set(_c, 'profiles', new_list);
 
-						if ( changed && changed.id === _c.currentProfile.id )
-							_c.currentProfile = profile_keys[changed.id];
-					},
+					if ( changed && changed.id === _c.currentProfile.id )
+						_c.currentProfile = profile_keys[changed.id];
+				},
 
-					_profile_created(profile) {
-						Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
-						this._update_profiles()
-					},
+				_profile_created(profile) {
+					Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
+					this._update_profiles()
+				},
 
-					_profile_changed(profile) {
-						Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
-						this._update_profiles(profile);
-					},
+				_profile_changed(profile) {
+					Vue.set(profile_keys, profile.id, t.getProfileProxy(profile, context));
+					this._update_profiles(profile);
+				},
 
-					_profile_toggled(profile, val) {
-						Vue.set(profile_keys[profile.id], 'toggled', val);
-						this._update_profiles(profile);
-					},
+				_profile_toggled(profile, val) {
+					Vue.set(profile_keys[profile.id], 'toggled', val);
+					this._update_profiles(profile);
+				},
 
-					_profile_deleted(profile) {
-						Vue.delete(profile_keys, profile.id);
-						this._update_profiles();
+				_profile_deleted(profile) {
+					Vue.delete(profile_keys, profile.id);
+					this._update_profiles();
 
-						if ( _c.currentProfile.id === profile.id )
-							_c.currentProfile = profile_keys[0]
-					},
+					if ( _c.currentProfile.id === profile.id ) {
+						_c.currentProfile = profile_keys[0];
+						if ( ! _c.currentProfile ) {
+							for(let i=_c.profiles.length - 1; i >= 0; i--) {
+								if ( _c.profiles[i].live ) {
+									_c.currentProfile = _c.profiles[i];
+									break;
+								}
+							}
 
-					_context_changed() {
-						this.context = deep_copy(context._context);
-						const profiles = context.manager.__profiles,
-							ids = this.profiles = context.__profiles.map(profile => profile.id);
-
-						for(let i=0; i < profiles.length; i++) {
-							const id = profiles[i].id,
-								profile = profile_keys[id];
-
-							profile.live = ids.includes(id);
-						}
-					},
-
-					_add_user() {
-						this._users++;
-						if ( this._users === 1 ) {
-							settings.on(':profile-toggled', this._profile_toggled, this);
-							settings.on(':profile-created', this._profile_created, this);
-							settings.on(':profile-changed', this._profile_changed, this);
-							settings.on(':profile-deleted', this._profile_deleted, this);
-							settings.on(':profiles-reordered', this._update_profiles, this);
-							context.on('context_changed', this._context_changed, this);
-							context.on('profiles_changed', this._context_changed, this);
-							this.profiles = context.__profiles.map(profile => profile.id);
-						}
-					},
-
-					_remove_user() {
-						this._users--;
-						if ( this._users === 0 ) {
-							settings.off(':profile-toggled', this._profile_toggled, this);
-							settings.off(':profile-created', this._profile_created, this);
-							settings.off(':profile-changed', this._profile_changed, this);
-							settings.off(':profile-deleted', this._profile_deleted, this);
-							settings.off(':profiles-reordered', this._update_profiles, this);
-							context.off('context_changed', this._context_changed, this);
-							context.off('profiles_changed', this._context_changed, this);
+							if ( ! _c.currentProfile )
+								_c.currentProfile = _c.profiles[0];
 						}
 					}
+				},
+
+				_context_changed() {
+					this.context = deep_copy(context._context);
+					const profiles = context.manager.__profiles,
+						ids = this.profiles = context.__profiles.map(profile => profile.id);
+
+					for(let i=0; i < profiles.length; i++) {
+						const id = profiles[i].id,
+							profile = profile_keys[id];
+
+						profile.live = ids.includes(id);
+					}
+				},
+
+				_add_user() {
+					this._users++;
+					if ( this._users === 1 ) {
+						settings.on(':profile-toggled', this._profile_toggled, this);
+						settings.on(':profile-created', this._profile_created, this);
+						settings.on(':profile-changed', this._profile_changed, this);
+						settings.on(':profile-deleted', this._profile_deleted, this);
+						settings.on(':profiles-reordered', this._update_profiles, this);
+						context.on('context_changed', this._context_changed, this);
+						context.on('profiles_changed', this._context_changed, this);
+						this.profiles = context.__profiles.map(profile => profile.id);
+					}
+				},
+
+				_remove_user() {
+					this._users--;
+					if ( this._users === 0 ) {
+						settings.off(':profile-toggled', this._profile_toggled, this);
+						settings.off(':profile-created', this._profile_created, this);
+						settings.off(':profile-changed', this._profile_changed, this);
+						settings.off(':profile-deleted', this._profile_deleted, this);
+						settings.off(':profiles-reordered', this._update_profiles, this);
+						context.off('context_changed', this._context_changed, this);
+						context.off('profiles_changed', this._context_changed, this);
+					}
 				}
-			};
+			}
+		};
 
 		return _c;
 	}

@@ -337,7 +337,7 @@ export class TranslationManager extends Module {
 
 
 	get locale() {
-		return this._.locale;
+		return this._ && this._.locale;
 	}
 
 	set locale(new_locale) {

@@ -270,8 +270,14 @@ export default class Channel extends Module {
 
 
 	updateRoot(el) {
-		const root = this.fine.getReactInstance(el),
-			channel = root?.return?.memoizedState?.next?.memoizedState?.current?.previousData?.result?.data?.user;
+		const root = this.fine.getReactInstance(el);
+
+		let channel = null, state = root?.return?.memoizedState, i = 0;
+		while(state != null && channel == null && i < 50 ) {
+			state = state?.next;
+			channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
+			i++;
+		}
 
 		if ( channel && channel.id ) {
 			this.updateChannelColor(channel.primaryColorHex);

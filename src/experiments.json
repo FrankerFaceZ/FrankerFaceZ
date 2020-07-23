@@ -6,5 +6,13 @@
 			{"value": true, "weight": 0},
 			{"value": false, "weight": 100}
 		]
+	},
+	"all_points": {
+		"name": "Override Channel Points Rendering",
+		"description": "Override rendering for all channel points messages, even when no message is present.",
+		"groups": [
+			{"value": true, "weight": 50},
+			{"value": false, "weight": 50}
+		]
 	}
 }
