@@ -40,7 +40,7 @@ export default class Channel extends Module {
 		});
 
 		this.settings.add('channel.extra-links', {
-			default: true,
+			default: false,
 			ui: {
 				path: 'Channel > Appearance >> General',
 				title: 'Add extra links to live channel pages, next to the streamer\'s name.',
