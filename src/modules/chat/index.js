@@ -628,6 +628,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.color-mentions', {
+			default: false,
+			ui: {
+				component: 'setting-check-box',
+				path: 'Chat > Filtering >> Appearance',
+				title: 'Display mentions in chat with username colors.',
+				description: '**Note:** Not compatible with color overrides as mentions do not include user IDs.'
+			}
+		});
+
 		this.settings.add('chat.filtering.bold-mentions', {
 			default: true,
 			ui: {
@@ -853,6 +863,21 @@ export default class Chat extends Module {
 			for(const room of this.iterateRooms())
 				room.buildBitsCSS();
 		});
+
+		this.context.on('changed:chat.filtering.color-mentions', async val => {
+			if ( val )
+				await this.createColorCache();
+			else
+				this.color_cache = null;
+
+			this.emit(':update-lines');
+		});
+	}
+
+
+	async createColorCache() {
+		const LRUCache = await require(/* webpackChunkName: 'utils' */ 'mnemonist/lru-cache');
+		this.color_cache = new LRUCache(150);
 	}
 
 
@@ -866,6 +891,9 @@ export default class Chat extends Module {
 
 
 	onEnable() {
+		if ( this.context.get('chat.filtering.color-mentions') )
+			this.createColorCache().then(() => this.emit(':update-lines'));
+
 		for(const key in TOKENIZERS)
 			if ( has(TOKENIZERS, key) )
 				this.addTokenizer(TOKENIZERS[key]);
@@ -1142,6 +1170,9 @@ export default class Chat extends Module {
 		user.login = user.login || user.userLogin || null;
 		user.displayName = user.displayName || user.userDisplayName || user.login || ext.displayName;
 		user.isIntl = user.login && user.displayName && user.displayName.trim().toLowerCase() !== user.login;
+
+		if ( this.color_cache && user.color )
+			this.color_cache.set(user.login, user.color);
 
 		// Standardize Message Content
 		if ( ! msg.message && msg.messageParts )

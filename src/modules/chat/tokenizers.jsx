@@ -209,8 +209,15 @@ export const Mentions = {
 	},
 
 	render(token, createElement) {
+		let color = token.color;
+		if ( color ) {
+			const chat = this.resolve('site.chat');
+			color = chat ? chat.colors.process(color) : color;
+		}
+
 		return (<strong
 			class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}
+			style={{color}}
 			data-login={token.recipient}
 			onClick={this.handleMentionClick}
 		>
@@ -270,11 +277,15 @@ export const Mentions = {
 						mentioned = mentionable;
 					}
 
+					const rlower = recipient ? recipient.toLowerCase() : '',
+						color = this.color_cache ? this.color_cache.get(rlower) : null;
+
 					out.push({
 						type: 'mention',
 						text: `${at}${recipient}`,
 						me: mentioned,
-						recipient: recipient ? recipient.toLowerCase() : ''
+						color,
+						recipient: rlower
 					});
 
 					if ( mentioned ) {

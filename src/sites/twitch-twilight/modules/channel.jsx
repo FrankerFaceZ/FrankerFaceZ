@@ -21,6 +21,7 @@ export default class Channel extends Module {
 
 		this.inject('i18n');
 		this.inject('settings');
+		this.inject('site.apollo');
 		this.inject('site.css_tweaks');
 		this.inject('site.elemental');
 		this.inject('site.subpump');
@@ -71,6 +72,18 @@ export default class Channel extends Module {
 			USER_PAGES,
 			{childNodes: true, subtree: true}, 1
 		);
+
+		const strip_host = resp => {
+			if ( this.settings.get('channel.hosting.enable') )
+				return;
+
+			const user = resp?.data?.user;
+			if ( user )
+				user.hosting = null;
+		};
+
+		this.apollo.registerModifier('UseHosting', strip_host, false);
+		this.apollo.registerModifier('PlayerTrackingContextQuery', strip_host, false);
 	}
 
 	onEnable() {
@@ -210,7 +223,8 @@ export default class Channel extends Module {
 
 		if ( ! el._ffz_links && want_links ) {
 			const link = el.querySelector('a .tw-line-height-heading'),
-				cont = link && link.closest('.tw-flex');
+				anchor = link && link.closest('a'),
+				cont = anchor && anchor.closest('.tw-flex');
 
 			if ( cont && el.contains(cont) ) {
 				el._ffz_links = <div class="ffz--links tw-mg-l-1"></div>;
@@ -225,7 +239,7 @@ export default class Channel extends Module {
 			const login = el._ffz_link_login = props.channelLogin;
 			if ( login ) {
 				const make_link = (link, text) => {
-					const a = <a href={link} class="tw-c-text-inherit tw-interactive tw-pd-x-1 tw-font-size-5">{text}</a>;
+					const a = <a href={link} class="tw-c-text-alt-2 tw-interactive tw-pd-x-1 tw-font-size-5">{text}</a>;
 					a.addEventListener('click', event => {
 						if ( event.ctrlKey || event.shiftKey || event.altKey )
 							return;
@@ -240,11 +254,14 @@ export default class Channel extends Module {
 					return a;
 				}
 
-				setChildren(el._ffz_links, [
-					make_link(`/${login}/schedule`, this.i18n.t('channel.links.schedule', 'Schedule')),
-					make_link(`/${login}/videos`, this.i18n.t('channel.links.videos', 'Videos')),
-					make_link(`/${login}/clips`, this.i18n.t('channel.links.clips', 'Clips'))
-				]);
+				if ( el._ffz_links.closest('.home-header-sticky') )
+					el._ffz_links.innerHTML = '';
+				else
+					setChildren(el._ffz_links, [
+						make_link(`/${login}/schedule`, this.i18n.t('channel.links.schedule', 'Schedule')),
+						make_link(`/${login}/videos`, this.i18n.t('channel.links.videos', 'Videos')),
+						make_link(`/${login}/clips`, this.i18n.t('channel.links.clips', 'Clips'))
+					]);
 
 			} else
 				el._ffz_links.innerHTML = '';
@@ -310,6 +327,7 @@ export default class Channel extends Module {
 					login: props.channelLogin,
 					display_name: props.displayName,
 					live: props.isLive && ! props.videoID && ! props.clipSlug,
+					video: !!(props.videoID || props.clipSlug),
 					live_since: props.liveSince
 				},
 				props,
@@ -319,7 +337,7 @@ export default class Channel extends Module {
 				},
 				el,
 				getViewerCount: () => {
-					const thing = el.querySelector('p[data-a-target="animated-channel-viewers-count"]'),
+					const thing = cont.querySelector('p[data-a-target="animated-channel-viewers-count"]'),
 						r = thing && this.fine.getReactInstance(thing),
 						p = r?.memoizedProps?.children?.props;
 

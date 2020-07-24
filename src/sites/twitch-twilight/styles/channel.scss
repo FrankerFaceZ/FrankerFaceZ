@@ -41,6 +41,15 @@
 	}
 }
 
+.ffz-stat[data-key="viewers"] figure {
+	font-size: 1.6rem;
+
+	&:before {
+		margin: 0 !important;
+	}
+
+}
+
 .ffz-stat-text {
 	font-size: 1.2rem;
 	font-variant-numeric: tabular-nums;
