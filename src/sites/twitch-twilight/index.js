@@ -50,6 +50,9 @@ export default class Twilight extends BaseSite {
 		this.router.route(Twilight.ROUTES);
 		this.router.routeName(Twilight.ROUTE_NAMES);
 
+		this.router.route('user', '/:userName', null, state => state?.channelView !== 'Home');
+		this.router.route('user-home', '/:userName', null, state => state?.channelView === 'Home');
+
 		this.router.route(Twilight.DASH_ROUTES, 'dashboard.twitch.tv');
 	}
 
@@ -213,6 +216,7 @@ Twilight.CHAT_ROUTES = [
 	'dash-chat',
 	'video',
 	'user-video',
+	'user-home',
 	'user-clip',
 	'user-videos',
 	'user-clips',
@@ -312,7 +316,7 @@ Twilight.ROUTES = {
 	'product': '/products/:productName',
 	'prime': '/prime',
 	'turbo': '/turbo',
-	'user': '/:userName',
+	//'user': '/:userName',
 	'squad': '/:userName/squad',
 	'command-center': '/:userName/commandcenter',
 	'embed-chat': '/embed/:userName/chat',

@@ -109,17 +109,20 @@ export default class Metadata extends Module {
 			refresh() { return this.settings.get('metadata.viewers') },
 
 			setup(data) {
-				return data.getViewerCount();
+				return {
+					live: data.channel?.live_since != null,
+					count: data.getViewerCount()
+				}
 			},
 
 			order: 1,
 			icon: 'ffz-i-viewers',
 
 			label(data) {
-				if ( ! this.settings.get('metadata.viewers') )
+				if ( ! this.settings.get('metadata.viewers') || ! data.live )
 					return null;
 
-				return this.i18n.formatNumber(data)
+				return this.i18n.formatNumber(data.count)
 			},
 
 			tooltip() {

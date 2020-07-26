@@ -6,7 +6,7 @@
 
 import {parse, tokensToRegExp, tokensToFunction} from 'path-to-regexp';
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {has, deep_equals} from 'utilities/object';
 
 
 export default class FineRouter extends Module {
@@ -39,20 +39,27 @@ export default class FineRouter extends Module {
 		this._navigateTo(history.location);
 	}
 
-	navigate(route, data, opts) {
-		this.history.push(this.getURL(route, data, opts));
+	navigate(route, data, opts, state) {
+		this.history.push(this.getURL(route, data, opts), state);
 	}
 
 	_navigateTo(location) {
 		this.log.debug('New Location', location);
 		const host = window.location.host,
-			path = location.pathname;
+			path = location.pathname,
+			state = location.state;
 
-		if ( path === this.location && host === this.domain )
+		if ( path === this.location && host === this.domain && deep_equals(state, this.current_state) )
 			return;
+
+		this.old_location = this.location;
+		this.old_domain = this.domain;
+		this.old_state = this.current_state;
 
 		this.location = path;
 		this.domain = host;
+		this.current_state = state;
+
 		this._pickRoute();
 	}
 
@@ -60,12 +67,16 @@ export default class FineRouter extends Module {
 		const path = this.location,
 			host = this.domain;
 
+		this.old_route = this.current;
+		this.old_name = this.current_name;
+		this.old_match = this.match;
+
 		for(const route of this.__routes) {
 			if ( route.domain && route.domain !== host )
 				continue;
 
 			const match = route.regex.exec(path);
-			if ( match ) {
+			if ( match && (! route.state_fn || route.state_fn(this.current_state)) ) {
 				this.log.debug('Matching Route', route, match);
 				this.current = route;
 				this.current_name = route.name;
@@ -146,12 +157,12 @@ export default class FineRouter extends Module {
 			this.emit(':updated-route-names');
 	}
 
-	route(name, path, domain = null, process = true) {
+	route(name, path, domain = null, state_fn = null, process = true) {
 		if ( typeof name === 'object' ) {
 			domain = path;
 			for(const key in name)
 				if ( has(name, key) )
-					this.route(key, name[key], domain, false);
+					this.route(key, name[key], domain, state_fn, false);
 
 			if ( process ) {
 				this.__routes.sort((a,b) => b.score - a.score);
@@ -173,6 +184,7 @@ export default class FineRouter extends Module {
 				parts,
 				score,
 				domain,
+				state_fn,
 				regex: tokensToRegExp(parts),
 				url: tokensToFunction(parts)
 			}

@@ -4,7 +4,21 @@ query FFZ_FetchUser($id: ID, $login: String) {
 		login
 		displayName
 		profileImageURL(width: 50)
+		profileViewCount
 		primaryColorHex
+		broadcastSettings {
+			id
+			game {
+				id
+				displayName
+			}
+		}
+		stream {
+			id
+		}
+		followers {
+			totalCount
+		}
 		roles {
 			isAffiliate
 			isPartner

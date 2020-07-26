@@ -349,7 +349,7 @@ export default class CSSTweaks extends Module {
 		this.settings.add('channel.hide-live-indicator', {
 			requires: ['context.route.name'],
 			process(ctx, val) {
-				return ctx.get('context.route.name') === 'user' ? val : false
+				return (ctx.get('context.route.name') === 'user' || ctx.get('context.route.name') === 'user-home') ? val : false
 			},
 			default: false,
 			ui: {

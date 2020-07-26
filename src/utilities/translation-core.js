@@ -69,7 +69,7 @@ export const DEFAULT_TYPES = {
 	},
 
 	duration(val) {
-		return duration_to_string(val);
+		return this.formatDuration(val);
 	},
 
 	localestring(val) {
@@ -255,6 +255,10 @@ export default class TranslationCore {
 		}
 
 		return formatter.format(value);
+	}
+
+	formatDuration(value) { // eslint-disable-line class-methods-use-this
+		return duration_to_string(value);
 	}
 
 	formatDate(value, format) {

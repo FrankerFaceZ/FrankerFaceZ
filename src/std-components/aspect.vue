@@ -4,7 +4,7 @@
 		class="tw-aspect"
 	>
 		<div
-			:style="{paddingBottom: (props.padding ? props.padding : (100 * (1 / (props.ratio || 1)))) + '%'}"
+			:style="{paddingTop: (props.padding ? props.padding : (100 * (1 / (props.ratio || 1)))) + '%'}"
 			class="tw-aspect__spacer"
 		/>
 		<slot />

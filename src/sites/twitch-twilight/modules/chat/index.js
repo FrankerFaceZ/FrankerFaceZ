@@ -115,7 +115,8 @@ const CHAT_TYPES = make_enum(
 	'FirstCheerMessage',
 	'BitsBadgeTierMessage',
 	'InlinePrivateCallout',
-	'ChannelPointsReward'
+	'ChannelPointsReward',
+	'CommunityChallengeContribution'
 );
 
 
@@ -1087,6 +1088,9 @@ export default class ChatHook extends Module {
 				message = event.message,
 				data = message?.data?.redemption;
 			if ( ! message || ! service || message.type !== 'reward-redeemed' || service.props.channelID != data?.channel_id )
+				return;
+
+			if ( data.user_input )
 				return;
 
 			const reward = data.reward?.id && get(data.reward.id, service.props.rewardMap);

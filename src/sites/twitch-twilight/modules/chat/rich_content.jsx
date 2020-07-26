@@ -75,7 +75,7 @@ export default class RichContent extends Module {
 			}
 
 			renderCardImage() {
-				return (<div class="chat-card__preview-img tw-align-items-center tw-c-background-alt-2 tw-flex tw-flex-shrink-0 tw-justify-content-center">
+				return (<div class={`chat-card__preview-img tw-align-items-center tw-c-background-alt-2 tw-flex tw-flex-shrink-0 tw-justify-content-center${this.state.image_square ? ' square' : ''}`}>
 					{this.state.error ?
 						(<img
 							class="chat-card__error-img"
@@ -85,58 +85,84 @@ export default class RichContent extends Module {
 							<div class="tw-aspect tw-aspect--align-top">
 								<div class="tw-aspect__spacer" style={{paddingTop: '56.25%'}} />
 								{this.state.loaded && this.state.image ?
-									(<img class="tw-image" src={this.state.image} alt={this.state.title} />)
+									(<img class="tw-image" src={this.state.image} alt={this.state.image_title ?? this.state.title} />)
 									: null}
 							</div>
 						</div>)}
 				</div>)
 			}
 
+			renderTokens(tokens) {
+				let out = [];
+				if ( ! Array.isArray(tokens) )
+					tokens = [tokens];
+
+				for(const token of tokens) {
+					if ( Array.isArray(token) )
+						out = out.concat(this.renderTokens(token));
+
+					else if ( typeof token !== 'object' )
+						out.push(token);
+
+					else {
+						const el = createElement(token.tag || 'span', {
+							className: token.class
+						}, this.renderTokens(token.content));
+
+						out.push(el);
+					}
+				}
+
+				return out;
+			}
+
 			renderCardDescription() {
 				let title = this.state.title,
+					title_tokens = this.state.title_tokens,
 					desc_1 = this.state.desc_1,
-					desc_2 = this.state.desc_2;
+					desc_1_tokens = this.state.desc_1_tokens,
+					desc_2 = this.state.desc_2,
+					desc_2_tokens = this.state.desc_2_tokens;
 
 				if ( ! this.state.loaded ) {
 					desc_1 = t.i18n.t('card.loading', 'Loading...');
-					desc_2 = '';
-					title = '';
+					desc_1_tokens = desc_2 = desc_2_tokens = title = title_tokens = null;
 				}
 
 				return (<div class={`ffz--card-text tw-overflow-hidden tw-align-items-center tw-flex${desc_2 ? ' ffz--two-line' : ''}`}>
 					<div class="tw-full-width tw-pd-l-1">
 						<div class="chat-card__title tw-ellipsis">
 							<span
-								class="tw-font-size-5"
+								class="tw-strong"
 								data-test-selector="chat-card-title"
 								title={title}
 							>
-								{title}
+								{title_tokens ? this.renderTokens(title_tokens) : title}
 							</span>
 						</div>
 						<div class="tw-ellipsis">
 							<span
-								class="tw-c-text-alt-2 tw-font-size-6"
+								class="tw-c-text-alt-2"
 								data-test-selector="chat-card-description"
 								title={desc_1}
 							>
-								{desc_1}
+								{desc_1_tokens ? this.renderTokens(desc_1_tokens) : desc_1}
 							</span>
 						</div>
-						{desc_2 && (<div class="tw-ellipsis">
+						{(desc_2_tokens || desc_2) && (<div class="tw-ellipsis">
 							<span
-								class="tw-c-text-alt-2 tw-font-size-6"
+								class="tw-c-text-alt-2"
 								data-test-selector="chat-card-description"
 								title={desc_2}
 							>
-								{desc_2}
+								{desc_2_tokens ? this.renderTokens(desc_2_tokens) : desc_2}
 							</span>
 						</div>)}
 					</div>
 				</div>)
 			}
 
-			renderCardBody() {
+			renderCard() {
 				if ( this.props.renderBody )
 					return this.props.renderBody(this.state, this, createElement);
 
@@ -149,31 +175,31 @@ export default class RichContent extends Module {
 				];
 			}
 
-			renderCard() {
-				return (<div class="ffz--chat-card tw-elevation-1 tw-mg-t">
-					<div class="tw-c-background-base tw-flex tw-flex-nowrap tw-pd-05">
-						{this.renderCardBody()}
-					</div>
-				</div>)
-			}
-
 			render() {
-				if ( ! this.state.url )
-					return this.renderCard();
+				let content = <div class="tw-flex tw-flex-nowrap tw-pd-05">{this.renderCard()}</div>;
+				if ( this.state.url ) {
+					const tooltip = this.props.card_tooltip;
+					content = (<a
+						class={`${tooltip ? 'ffz-tooltip ' : ''}${this.state.accent ? 'ffz-accent-card ' : ''} tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--alpha tw-interactable--hover-enabled tw-interactive`}
+						data-tooltip-type="link"
+						data-url={this.state.url}
+						data-is-mail={false}
+						target="_blank"
+						rel="noreferrer noopener"
+						href={this.state.url}
+					>
+						{content}
+					</a>);
+				}
 
-				const tooltip = this.props.card_tooltip;
-
-				return (<a
-					class={`${tooltip ? 'ffz-tooltip ' : ''} chat-card__link`}
-					data-tooltip-type="link"
-					data-url={this.state.url}
-					data-is-mail={false}
-					target="_blank"
-					rel="noreferrer noopener"
-					href={this.state.url}
+				return (<div
+					class="tw-border-radius-medium tw-elevation-1 ffz--chat-card"
+					style={{'--ffz-color-accent': this.state.accent || null}}
 				>
-					{this.renderCard()}
-				</a>);
+					<div class="tw-border-radius-medium tw-c-background-base tw-flex tw-full-width">
+						{content}
+					</div>
+				</div>);
 			}
 		}
 	}

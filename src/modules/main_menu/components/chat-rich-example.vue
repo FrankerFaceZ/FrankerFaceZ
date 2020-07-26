@@ -13,7 +13,9 @@
 <script>
 
 const VIDEOS = [
-	'https://www.youtube.com/watch?v=BFSWlDpA6C4'
+	'https://www.twitch.tv/dansalvato',
+	'https://www.twitch.tv/sirstendec',
+	//'https://www.youtube.com/watch?v=BFSWlDpA6C4'
 ];
 
 export default {

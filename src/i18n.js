@@ -647,6 +647,10 @@ export class TranslationManager extends Module {
 		return this._.formatNumber(...args);
 	}
 
+	formatDuration(...args) {
+		return this._.formatDuration(...args);
+	}
+
 	formatDate(...args) {
 		return this._.formatDate(...args)
 	}

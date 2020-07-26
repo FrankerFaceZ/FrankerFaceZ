@@ -10,7 +10,7 @@ import {debounce} from 'utilities/object';
 import { createElement, setChildren } from 'utilities/dom';
 
 
-const USER_PAGES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
+const USER_PAGES = ['user', 'user-home', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 
 export default class Channel extends Module {
 
@@ -103,26 +103,24 @@ export default class Channel extends Module {
 
 		this.subpump.on(':pubsub-message', this.onPubSub, this);
 
-		this.router.on(':route', route => {
-			if ( route?.name === 'user' )
-				setTimeout(this.maybeClickChat.bind(this), 1000);
-		}, this);
+		this.router.on(':route', this.checkNavigation, this);
+		this.checkNavigation();
+	}
 
-		this.maybeClickChat();
+	checkNavigation() {
+		if ( ! this.settings.get('channel.auto-click-chat') || this.router.current_name !== 'user-home' )
+			return;
+
+		if ( this.router.old_location === this.router.location )
+			return;
+
+		this.router.history.replace(this.router.location, {channelView: 'Watch'});
 	}
 
 	updateLinks() {
 		for(const el of this.InfoBar.instances) {
 			el._ffz_link_login = null;
 			this.updateBar(el);
-		}
-	}
-
-	maybeClickChat() {
-		if ( this.settings.get('channel.auto-click-chat') && this.router.current_name === 'user' ) {
-			const el = document.querySelector('a[data-a-target="channel-home-tab-Chat"]');
-			if ( el )
-				el.click();
 		}
 	}
 

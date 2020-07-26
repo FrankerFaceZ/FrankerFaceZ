@@ -12,7 +12,7 @@ export const PLAYER_ROUTES = [
 	'front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos',
 	'user-clips', 'user-collections', 'user-events', 'user-followers',
 	'user-following', 'dash', 'squad', 'command-center', 'dash-stream-manager',
-	'mod-view'
+	'mod-view', 'user-home'
 ];
 
 const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null;
@@ -74,13 +74,13 @@ export default class Player extends Module {
 		this.TheatreHost = this.fine.define(
 			'theatre-host',
 			n => n.toggleTheatreMode && n.props && n.props.onTheatreModeEnabled,
-			['user', 'video', 'user-video', 'user-clip']
+			['user', 'user-home', 'video', 'user-video', 'user-clip']
 		);
 
 		this.PlayerSource = this.fine.define(
 			'player-source',
 			n => n.setSrc && n.setInitialPlaybackSettings,
-			false
+			PLAYER_ROUTES
 		);
 
 
@@ -648,7 +648,7 @@ export default class Player extends Module {
 			}
 
 			cls.prototype.ffzStopAutoplay = function() {
-				if ( t.settings.get('player.no-autoplay') || (! t.settings.get('player.home.autoplay') && t.router.current.name === 'front-page') )
+				if ( t.settings.get('player.no-autoplay') || (! t.settings.get('player.home.autoplay') && t.router.current?.name === 'front-page') )
 					t.stopPlayer(this.props.mediaPlayerInstance, this.props.playerEvents, this);
 			}
 
