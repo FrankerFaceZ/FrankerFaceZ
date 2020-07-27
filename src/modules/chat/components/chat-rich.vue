@@ -1,6 +1,7 @@
 <script>
 
 import {has, timeout} from 'utilities/object';
+import {ALLOWED_ATTRIBUTES, ALLOWED_TAGS} from 'utilities/constants';
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 
@@ -95,9 +96,34 @@ export default {
 				else if ( typeof token !== 'object' )
 					out.push(token);
 
-				else {
-					const el = h(token.tag || 'span', {
+				else if ( token.type === 't') {
+					const content = {};
+					if ( token.content )
+						for(const [key,val] of Object.entries(token.content))
+							content[key] = this.renderTokens(val, h);
+
+					out = out.concat(this.tList(token.key, token.phrase, content));
+
+				} else {
+					const tag = token.tag || 'span';
+					if ( ! ALLOWED_TAGS.includes(tag) ) {
+						console.log('Skipping disallowed tag', tag);
+						continue;
+					}
+
+					const attrs = {};
+					if ( token.attrs ) {
+						for(const [key,val] of Object.entries(token.attrs)) {
+							if ( ! ALLOWED_ATTRIBUTES.includes(key) && ! key.startsWith('data-') )
+								console.log('Skipping disallowed attribute', key);
+							else
+								attrs[key] = val;
+						}
+					}
+
+					const el = h(tag, {
 						class: token.class,
+						attrs
 					}, this.renderTokens(token.content, h));
 
 					out.push(el);

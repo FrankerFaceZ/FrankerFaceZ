@@ -143,6 +143,16 @@ export const Users = {
 					];
 				}
 
+				if ( user.roles?.isPartner ) {
+					if ( ! title_tokens )
+						title_tokens = [title];
+
+					title_tokens = {tag: 'div', class: 'tw-flex tw-align-items-center', content: [
+						{tag: 'div', content: title_tokens},
+						{tag: 'figure', class: 'tw-mg-l-05 ffz-i-verified tw-c-text-link', content: []}
+					]};
+				}
+
 				return {
 					url: token.url,
 					accent: user.primaryColorHex ? `#${user.primaryColorHex}` : null,

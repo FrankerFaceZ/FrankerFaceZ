@@ -18,6 +18,15 @@ export const LV_SERVER = 'https://cbenni.com/api';
 export const LV_SOCKET_SERVER = 'wss://cbenni.com/socket.io/';
 
 
+export const ALLOWED_TAGS = [
+	'strong', 'em', 'i', 'b', 'time', 'br', 'hr', 'div', 'span', 'img', 'figure', 'p', 'a', 'video', 'audio', 'blockquote', 'heading', 'section', 'nav', 'footer', 'aside', 'article', 'source', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+];
+
+export const ALLOWED_ATTRIBUTES = [
+	'datetime', 'src', 'href', 'style', 'alt', 'title', 'height', 'width', 'srcset', 'autoplay', 'volume', 'muted', 'loop', 'poster', 'type'
+];
+
+
 export const KEYS = {
 	Enter: 13,
 	Escape: 27,

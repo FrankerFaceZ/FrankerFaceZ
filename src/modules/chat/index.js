@@ -1536,10 +1536,15 @@ export default class Chat extends Module {
 						cbs[success ? 0 : 1](data);
 			}
 
+			if ( this.experiments.getAssignment('api_links') )
+				timeout(fetch(`https://api-test.frankerfacez.com/v2/link?url=${encodeURIComponent(url)}`).then(r => r.json()), 15000)
+					.then(data => handle(true, data))
+					.catch(err => handle(false, err));
 
-			timeout(this.socket.call('get_link', url), 15000)
-				.then(data => handle(true, data))
-				.catch(err => handle(false, err));
+			else
+				timeout(this.socket.call('get_link', url), 15000)
+					.then(data => handle(true, data))
+					.catch(err => handle(false, err));
 		});
 	}
 }
