@@ -6,13 +6,12 @@ import {ALLOWED_ATTRIBUTES, ALLOWED_TAGS} from 'utilities/constants';
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 
 export default {
-	props: ['data', 'url'],
+	props: ['data', 'url', 'events'],
 
 	data() {
 		return {
 			loaded: false,
-			error: false,
-			html: null,
+			error: null,
 			title: this.t('card.loading', 'Loading...'),
 			title_tokens: null,
 			desc_1: null,
@@ -26,57 +25,95 @@ export default {
 		}
 	},
 
-	async mounted() {
-		let data;
-		try {
-			data = this.data.getData();
-			if ( data instanceof Promise ) {
-				const to_wait = has(this.data, 'timeout') ? this.data.timeout : 1000;
-				if ( to_wait )
-					data = await timeout(data, to_wait);
-				else
-					data = await data;
-			}
+	watch: {
+		data() {
+			this.reset();
+			this.load();
+		}
+	},
 
-			if ( ! data )
-				data = {
-					error: true,
-					title: this.t('card.error', 'An error occured.'),
-					desc_1: this.t('card.empty', 'No data was returned.')
-				}
-		} catch(err) {
-			data = {
-				error: true,
-				title: this.t('card.error', 'An error occured.'),
-				desc_1: String(err)
-			}
+	created() {
+		if ( this.events ) {
+			this._events = this.events;
+			this._events.on('chat:update-link-resolver', this.checkRefresh, this);
 		}
 
-		this.loaded = true;
-		this.error = data.error;
-		this.html = data.html;
-		this.title = data.title;
-		this.title_tokens = data.title_tokens;
-		this.desc_1 = data.desc_1;
-		this.desc_1_tokens = data.desc_1_tokens;
-		this.desc_2 = data.desc_2;
-		this.desc_2_tokens = data.desc_2_tokens;
-		this.image = data.image;
-		this.image_square = data.image_square;
-		this.image_title = data.image_title;
+		this.load();
+	},
+
+	beforeDestroy() {
+		if ( this._events ) {
+			this._events.off('chat:update-link-resolver', this.checkRefresh, this);
+			this._events = null;
+		}
 	},
 
 	methods: {
+		checkRefresh(url) {
+			if ( ! url || (url && url === this.url) ) {
+				this.reset();
+				this.load();
+			}
+		},
+
+		reset() {
+			this.loaded = false;
+			this.error = null;
+			this.title = this.t('card.loading', 'Loading...');
+			this.title_tokens = null;
+			this.desc_1 = null;
+			this.desc_1_tokens = null;
+			this.desc_2 = null;
+			this.desc_2_tokens = null;
+			this.image = null;
+			this.image_title = null;
+			this.image_square = null;
+			this.accent = null;
+		},
+
+		async load() {
+			let data;
+			try {
+				data = this.data.getData();
+				if ( data instanceof Promise ) {
+					const to_wait = has(this.data, 'timeout') ? this.data.timeout : 1000;
+					if ( to_wait )
+						data = await timeout(data, to_wait);
+					else
+						data = await data;
+				}
+
+				if ( ! data )
+					data = {
+						error: true,
+						title: this.t('card.error', 'An error occured.'),
+						desc_1: this.t('card.empty', 'No data was returned.')
+					}
+			} catch(err) {
+				data = {
+					error: true,
+					title: this.t('card.error', 'An error occured.'),
+					desc_1: String(err)
+				}
+			}
+
+			this.loaded = true;
+			this.error = data.error;
+			this.title = data.title;
+			this.title_tokens = data.title_tokens;
+			this.desc_1 = data.desc_1;
+			this.desc_1_tokens = data.desc_1_tokens;
+			this.desc_2 = data.desc_2;
+			this.desc_2_tokens = data.desc_2_tokens;
+			this.image = data.image;
+			this.image_square = data.image_square;
+			this.image_title = data.image_title;
+			this.accent = data.accent;
+		},
+
 		renderCard(h) {
 			if ( this.data.renderBody )
 				return [this.data.renderBody(h)];
-
-			if ( this.html )
-				return [h('div', {
-					domProps: {
-						innerHTML: this.html
-					}
-				})];
 
 			return [
 				this.renderImage(h),

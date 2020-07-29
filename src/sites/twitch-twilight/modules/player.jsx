@@ -1511,7 +1511,7 @@ export default class Player extends Module {
 
 	tryTheatreMode(inst) {
 		if ( ! inst._ffz_theater_timer )
-			inst._ffz_theater_timer = requestAnimationFrame(() => {
+			inst._ffz_theater_timer = setTimeout(() => {
 				inst._ffz_theater_timer = null;
 
 				if ( ! this.settings.get('player.theatre.auto-enter') || ! inst._ffz_mounted )
@@ -1525,7 +1525,7 @@ export default class Player extends Module {
 
 				if ( inst.props.onTheatreModeEnabled )
 					inst.props.onTheatreModeEnabled();
-			});
+			}, 250);
 	}
 
 

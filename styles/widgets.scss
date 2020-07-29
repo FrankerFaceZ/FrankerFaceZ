@@ -59,6 +59,16 @@ textarea.tw-input {
 	}
 }
 
+.ffz--link-tester {
+	code {
+		tab-size: 4;
+	}
+
+	label {
+		min-width: 15rem;
+	}
+}
+
 
 .ffz-min-width-unset {
 	min-width: unset !important;

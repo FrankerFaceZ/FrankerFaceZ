@@ -38,7 +38,7 @@ export default class RichContent extends Module {
 				}
 			}
 
-			async componentDidMount() {
+			async load() {
 				try {
 					let data = this.props.getData();
 					if ( data instanceof Promise ) {
@@ -73,6 +73,28 @@ export default class RichContent extends Module {
 						desc_1: String(err)
 					});
 				}
+			}
+
+			checkReload(url) {
+				if ( ! url || (url && this.props.url === url) )
+					this.reload();
+			}
+
+			reload() {
+				this.setState({
+					loaded: false,
+					error: false
+				}, () => this.load());
+			}
+
+			componentDidMount() {
+				t.on('chat:update-link-resolver', this.checkReload, this);
+
+				this.load();
+			}
+
+			componentWillUnmount() {
+				t.off('chat:update-link-resolver', this.checkReload, this);
 			}
 
 			renderCardImage() {

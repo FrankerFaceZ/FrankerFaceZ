@@ -47,7 +47,9 @@ export const Links = {
 		if ( target.dataset.isMail === 'true' )
 			return [this.i18n.t('tooltip.email-link', 'E-Mail {address}', {address: target.textContent})];
 
-		return this.get_link_info(target.dataset.url).then(data => {
+		const url = target.dataset.url || target.href;
+
+		return this.get_link_info(url).then(data => {
 			if ( ! data || (data.v || 1) > TOOLTIP_VERSION )
 				return '';
 

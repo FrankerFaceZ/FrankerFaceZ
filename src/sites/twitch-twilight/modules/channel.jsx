@@ -10,7 +10,7 @@ import {debounce} from 'utilities/object';
 import { createElement, setChildren } from 'utilities/dom';
 
 
-const USER_PAGES = ['user', 'user-home', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
+const USER_PAGES = ['user', 'user-home', 'user-about', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 
 export default class Channel extends Module {
 
@@ -30,6 +30,17 @@ export default class Channel extends Module {
 		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
+
+		this.settings.add('channel.panel-tips', {
+			default: true,
+			ui: {
+				path: 'Channel > Behavior >> Panels',
+				title: 'Display rich tool-tips for links in channel panels.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => this.updatePanelTips()
+		});
 
 		this.settings.add('channel.auto-click-chat', {
 			default: false,
@@ -59,6 +70,13 @@ export default class Channel extends Module {
 			},
 			changed: val => ! val && this.InfoBar.each(el => this.updateBar(el))
 		});
+
+
+		this.ChannelPanels = this.fine.define(
+			'channel-panels',
+			n => n.layoutMasonry && n.updatePanelOrder && n.onExtensionPoppedOut,
+			USER_PAGES
+		);
 
 
 		this.ChannelRoot = this.elemental.define(
@@ -91,6 +109,14 @@ export default class Channel extends Module {
 
 		this.on('i18n:update', this.updateLinks, this);
 
+		this.ChannelPanels.on('mount', this.updatePanelTips, this);
+		this.ChannelPanels.on('update', this.updatePanelTips, this);
+		this.ChannelPanels.on('unmount', this.removePanelTips, this);
+		this.ChannelPanels.ready((cls, instances) => {
+			for(const inst of instances)
+				this.updatePanelTips(inst);
+		});
+
 		this.ChannelRoot.on('mount', this.updateRoot, this);
 		this.ChannelRoot.on('mutate', this.updateRoot, this);
 		this.ChannelRoot.on('unmount', this.removeRoot, this);
@@ -105,6 +131,35 @@ export default class Channel extends Module {
 
 		this.router.on(':route', this.checkNavigation, this);
 		this.checkNavigation();
+	}
+
+	updatePanelTips(inst) {
+		if ( ! inst ) {
+			for(const inst of this.ChannelPanels.instances) {
+				if ( inst )
+					this.updatePanelTips(inst);
+			}
+		}
+
+		const el = this.fine.getChildNode(inst);
+		if ( ! el || ! this.settings.get('channel.panel-tips') )
+			return this.removePanelTips(inst);
+
+		if ( inst._ffz_tips && inst._ffz_tip_el !== el )
+			this.removePanelTips(inst);
+
+		if ( ! inst._ffz_tips ) {
+			inst._ffz_tips = this.resolve('tooltips')._createInstance(el, 'tw-link', 'link');
+			inst._ffz_tip_el = el;
+		}
+	}
+
+	removePanelTips(inst) { // eslint-disable-line class-methods-use-this
+		if ( inst._ffz_tips ) {
+			inst._ffz_tips.destroy();
+			inst._ffz_tips = null;
+			inst._ffz_tip_el = null;
+		}
 	}
 
 	checkNavigation() {

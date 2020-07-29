@@ -63,10 +63,14 @@ export const Links = {
 					url: token.url,
 					accent: data.accent,
 					image: this.context.get('tooltip.link-images') ? (data.image_safe || this.context.get('tooltip.link-nsfw-images') ) ? data.preview || data.image : null : null,
+					image_title: data.image_title,
 					image_square: data.image_square,
 					title: data.title,
+					title_tokens: data.title_tokens,
 					desc_1: data.desc_1,
-					desc_2: data.desc_2
+					desc_1_tokens: data.desc_1_tokens,
+					desc_2: data.desc_2,
+					desc_2_tokens: data.desc_2_tokens
 				}
 			}
 		}
@@ -227,7 +231,7 @@ export const Clips = {
 				} else if ( game ) {
 					desc_1_tokens = this.i18n.tList('clip.desc.1.playing', '{user} playing {game}', {
 						user: {class: 'tw-semibold', content: user},
-						game: {class: 'tw-semibold', game_display}
+						game: {class: 'tw-semibold', content: game_display}
 					});
 					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing {game}', {
 						user,

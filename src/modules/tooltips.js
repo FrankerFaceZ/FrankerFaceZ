@@ -78,22 +78,22 @@ export default class TooltipProvider extends Module {
 	}
 
 
-	_createInstance(container) {
-		return new Tooltip(container, 'ffz-tooltip', {
+	_createInstance(container, klass = 'ffz-tooltip', default_type) {
+		return new Tooltip(container, klass, {
 			html: true,
 			i18n: this.i18n,
 			live: true,
 
-			delayHide: this.checkDelayHide.bind(this),
-			delayShow: this.checkDelayShow.bind(this),
-			content: this.process.bind(this),
-			interactive: this.checkInteractive.bind(this),
-			hover_events: this.checkHoverEvents.bind(this),
+			delayHide: this.checkDelayHide.bind(this, default_type),
+			delayShow: this.checkDelayShow.bind(this, default_type),
+			content: this.process.bind(this, default_type),
+			interactive: this.checkInteractive.bind(this, default_type),
+			hover_events: this.checkHoverEvents.bind(this, default_type),
 
-			onShow: this.delegateOnShow.bind(this),
-			onHide: this.delegateOnHide.bind(this),
+			onShow: this.delegateOnShow.bind(this, default_type),
+			onHide: this.delegateOnHide.bind(this, default_type),
 
-			popperConfig: this.delegatePopperConfig.bind(this),
+			popperConfig: this.delegatePopperConfig.bind(this, default_type),
 			popper: {
 				placement: 'top',
 				modifiers: {
@@ -132,8 +132,8 @@ export default class TooltipProvider extends Module {
 		this.tips.cleanup();
 	}
 
-	delegatePopperConfig(target, tip, pop_opts) {
-		const type = target.dataset.tooltipType,
+	delegatePopperConfig(default_type, target, tip, pop_opts) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( handler && handler.popperConfig )
@@ -142,24 +142,24 @@ export default class TooltipProvider extends Module {
 		return pop_opts;
 	}
 
-	delegateOnShow(target, tip) {
-		const type = target.dataset.tooltipType,
+	delegateOnShow(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( handler && handler.onShow )
 			handler.onShow(target, tip);
 	}
 
-	delegateOnHide(target, tip) {
-		const type = target.dataset.tooltipType,
+	delegateOnHide(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( handler && handler.onHide )
 			handler.onHide(target, tip);
 	}
 
-	checkDelayShow(target, tip) {
-		const type = target.dataset.tooltipType,
+	checkDelayShow(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( has(handler, 'delayShow') )
@@ -168,8 +168,8 @@ export default class TooltipProvider extends Module {
 		return 0;
 	}
 
-	checkDelayHide(target, tip) {
-		const type = target.dataset.tooltipType,
+	checkDelayHide(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( has(handler, 'delayHide') )
@@ -178,8 +178,8 @@ export default class TooltipProvider extends Module {
 		return 0;
 	}
 
-	checkInteractive(target, tip) {
-		const type = target.dataset.tooltipType,
+	checkInteractive(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( has(handler, 'interactive') )
@@ -188,8 +188,8 @@ export default class TooltipProvider extends Module {
 		return false;
 	}
 
-	checkHoverEvents(target, tip) {
-		const type = target.dataset.tooltipType,
+	checkHoverEvents(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
 
 		if ( has(handler, 'hover_events') )
@@ -198,8 +198,8 @@ export default class TooltipProvider extends Module {
 		return false;
 	}
 
-	process(target, tip) {
-		const type = target.dataset.tooltipType || 'text',
+	process(default_type, target, tip) {
+		const type = target.dataset.tooltipType || default_type || 'text',
 			handler = this.types[type];
 
 		if ( ! handler )

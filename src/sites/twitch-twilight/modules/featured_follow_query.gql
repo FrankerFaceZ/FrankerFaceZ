@@ -1,4 +1,4 @@
-query($logins: [String!]) {
+query FFZ_FollowsList($logins: [String!]) {
     users(logins: $logins) {
         id
 		login

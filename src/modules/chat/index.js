@@ -71,6 +71,32 @@ export default class Chat extends Module {
 		// Settings
 		// ========================================================================
 
+		this.settings.add('debug.link-resolver.source', {
+			default: null,
+			ui: {
+				path: 'Debugging > Data Sources >> Links',
+				title: 'Link Resolver',
+				component: 'setting-select-box',
+				force_seen: true,
+				data: [
+					{value: null, title: 'Automatic'},
+					{value: 'dev', title: 'localhost'},
+					{value: 'test', title: 'API Test'},
+					{value: 'prod', title: 'API Production' },
+					{value: 'socket', title: 'Socket Cluster (Deprecated)'}
+				]
+			},
+
+			changed: () => this.clearLinkCache()
+		});
+
+		this.settings.addUI('debug.link-resolver.test', {
+			path: 'Debugging > Data Sources >> Links',
+			component: 'link-tester',
+			getChat: () => this,
+			force_seen: true
+		});
+
 		this.settings.add('chat.font-size', {
 			default: 12,
 			ui: {
@@ -1506,6 +1532,33 @@ export default class Chat extends Module {
 	// Twitch Crap
 	// ====
 
+	clearLinkCache(url) {
+		if ( url ) {
+			const info = this._link_info[url];
+			if ( ! info[0] ) {
+				for(const pair of info[2])
+					pair[1]();
+			}
+
+			this._link_info[url] = null;
+			this.emit(':update-link-resolver', url);
+			return;
+		}
+
+		const old = this._link_info;
+		this._link_info = {};
+
+		for(const info of Object.values(old)) {
+			if ( ! info[0] ) {
+				for(const pair of info[2])
+					pair[1]();
+			}
+		}
+
+		this.emit(':update-link-resolver');
+	}
+
+
 	get_link_info(url, no_promises) {
 		let info = this._link_info[url];
 		const expires = info && info[1];
@@ -1536,15 +1589,23 @@ export default class Chat extends Module {
 						cbs[success ? 0 : 1](data);
 			}
 
-			if ( this.experiments.getAssignment('api_links') )
-				timeout(fetch(`https://api-test.frankerfacez.com/v2/link?url=${encodeURIComponent(url)}`).then(r => r.json()), 15000)
-					.then(data => handle(true, data))
-					.catch(err => handle(false, err));
+			let provider = this.settings.get('debug.link-resolver.source');
+			if ( provider == null )
+				provider = this.experiments.getAssignment('api_links') ? 'test' : 'socket';
 
-			else
+			if ( provider === 'socket' ) {
 				timeout(this.socket.call('get_link', url), 15000)
 					.then(data => handle(true, data))
 					.catch(err => handle(false, err));
+			} else {
+				const host = provider === 'dev' ? 'https://localhost:8002/' :
+					provider === 'test' ? 'https://api-test.frankerfacez.com/v2/link' :
+						'https://api.frankerfacez.com/v2/link';
+
+				timeout(fetch(`${host}?url=${encodeURIComponent(url)}`).then(r => r.json()), 15000)
+					.then(data => handle(true, data))
+					.catch(err => handle(false, err));
+			}
 		});
 	}
 }
