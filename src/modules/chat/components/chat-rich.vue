@@ -1,27 +1,39 @@
 <script>
 
 import {has, timeout} from 'utilities/object';
-import {ALLOWED_ATTRIBUTES, ALLOWED_TAGS} from 'utilities/constants';
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 
+let tokenizer;
+
+
 export default {
-	props: ['data', 'url', 'events'],
+	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia'],
 
 	data() {
 		return {
+			has_tokenizer: false,
 			loaded: false,
 			error: null,
-			title: this.t('card.loading', 'Loading...'),
-			title_tokens: null,
-			desc_1: null,
-			desc_1_tokens: null,
-			desc_2: null,
-			desc_2_tokens: null,
-			image: null,
-			image_title: null,
-			image_square: false,
-			accent: null
+			accent: null,
+			short: null,
+			full: null,
+			unsafe: false,
+			urls: null,
+			allow_media: false,
+			allow_unsafe: false
+		}
+	},
+
+	computed: {
+		has_full() {
+			if ( this.full == null )
+				return false;
+
+			if ( this.full?.type === 'media' && ! this.allow_media )
+				return false;
+
+			return true;
 		}
 	},
 
@@ -29,26 +41,50 @@ export default {
 		data() {
 			this.reset();
 			this.load();
+		},
+
+		events() {
+			this.listen();
 		}
 	},
 
 	created() {
-		if ( this.events ) {
-			this._events = this.events;
-			this._events.on('chat:update-link-resolver', this.checkRefresh, this);
-		}
+		this.loadTokenizer();
 
+		this.listen();
 		this.load();
 	},
 
 	beforeDestroy() {
-		if ( this._events ) {
-			this._events.off('chat:update-link-resolver', this.checkRefresh, this);
-			this._events = null;
-		}
+		this.unlisten();
 	},
 
 	methods: {
+		async loadTokenizer() {
+			if ( tokenizer )
+				this.has_tokenizer = true;
+			else {
+				tokenizer = await import(/* webpack-chunk-name: 'rich_tokens' */ 'utilities/rich_tokens');
+				this.has_tokenizer = true;
+			}
+		},
+
+		listen() {
+			this.unlisten();
+
+			if ( this.events?.on ) {
+				this._es = this.events;
+				this._es.on('chat:update-link-resolver', this.checkRefresh, this);
+			}
+		},
+
+		unlisten() {
+			if ( this._es?.off ) {
+				this._es.off('chat:update-link-resolver', this.checkRefresh, this);
+				this._es = null;
+			}
+		},
+
 		checkRefresh(url) {
 			if ( ! url || (url && url === this.url) ) {
 				this.reset();
@@ -59,16 +95,13 @@ export default {
 		reset() {
 			this.loaded = false;
 			this.error = null;
-			this.title = this.t('card.loading', 'Loading...');
-			this.title_tokens = null;
-			this.desc_1 = null;
-			this.desc_1_tokens = null;
-			this.desc_2 = null;
-			this.desc_2_tokens = null;
-			this.image = null;
-			this.image_title = null;
-			this.image_square = null;
 			this.accent = null;
+			this.short = null;
+			this.full = null;
+			this.unsafe = false;
+			this.urls = null;
+			this.allow_media = false;
+			this.allow_unsafe = false;
 		},
 
 		async load() {
@@ -83,152 +116,130 @@ export default {
 						data = await data;
 				}
 
-				if ( ! data )
-					data = {
-						error: true,
-						title: this.t('card.error', 'An error occured.'),
-						desc_1: this.t('card.empty', 'No data was returned.')
-					}
 			} catch(err) {
 				data = {
-					error: true,
-					title: this.t('card.error', 'An error occured.'),
-					desc_1: String(err)
-				}
+					error: String(err)
+				};
 			}
+
+			if ( ! data )
+				data = {
+					error: {type: 'i18n', key: 'card.empty', phrase: 'No data was returned.'}
+				};
+
+			if ( data.error )
+				data = {
+					short: {
+						type: 'header',
+						logo: {type: 'image', url: ERROR_IMAGE},
+						title: {type: 'i18n', key: 'card.error', phrase: 'An error occurred.'},
+						subtitle: data.error
+					}
+				}
 
 			this.loaded = true;
 			this.error = data.error;
-			this.title = data.title;
-			this.title_tokens = data.title_tokens;
-			this.desc_1 = data.desc_1;
-			this.desc_1_tokens = data.desc_1_tokens;
-			this.desc_2 = data.desc_2;
-			this.desc_2_tokens = data.desc_2_tokens;
-			this.image = data.image;
-			this.image_square = data.image_square;
-			this.image_title = data.image_title;
 			this.accent = data.accent;
+			this.short = data.short;
+			this.full = data.full;
+			this.unsafe = data.unsafe;
+			this.urls = data.urls;
+			this.allow_media = data.allow_media;
+			this.allow_unsafe = data.allow_unsafe;
 		},
+
+		// Rendering
 
 		renderCard(h) {
-			if ( this.data.renderBody )
-				return [this.data.renderBody(h)];
+			if ( this.data.renderBody ) {
+				const out = this.data.renderBody(h);
+				return Array.isArray(out) ? out : [out];
+			}
 
 			return [
-				this.renderImage(h),
-				this.renderDescription(h)
-			];
+				this.renderUnsafe(h),
+				//this.forceFull ? null : this.renderImage(h),
+				this.renderBody(h)
+			]
 		},
 
-		renderTokens(tokens, h) {
-			let out = [];
-			if ( ! Array.isArray(tokens) )
-				tokens = [tokens];
+		renderUnsafe(h) {
+			if ( ! this.unsafe )
+				return null;
 
-			for(const token of tokens) {
-				if ( Array.isArray(token) )
-					out = out.concat(this.renderTokens(token, h));
+			const reasons = Array.from(new Set(this.urls.map(url => url.flags).flat())).join(', ');
 
-				else if ( typeof token !== 'object' )
-					out.push(token);
-
-				else if ( token.type === 't') {
-					const content = {};
-					if ( token.content )
-						for(const [key,val] of Object.entries(token.content))
-							content[key] = this.renderTokens(val, h);
-
-					out = out.concat(this.tList(token.key, token.phrase, content));
-
-				} else {
-					const tag = token.tag || 'span';
-					if ( ! ALLOWED_TAGS.includes(tag) ) {
-						console.log('Skipping disallowed tag', tag);
-						continue;
-					}
-
-					const attrs = {};
-					if ( token.attrs ) {
-						for(const [key,val] of Object.entries(token.attrs)) {
-							if ( ! ALLOWED_ATTRIBUTES.includes(key) && ! key.startsWith('data-') )
-								console.log('Skipping disallowed attribute', key);
-							else
-								attrs[key] = val;
+			return h('div', {
+				class: 'ffz--corner-flag ffz--corner-flag__warn ffz-tooltip ffz-tooltip--no-mouse',
+				attrs: {
+					'data-title': this.t(
+						'tooltip.link-unsafe',
+						"Caution: This URL is on Google's Safe Browsing List for: {reasons}",
+						{
+							reasons: reasons.toLowerCase()
 						}
-					}
-
-					const el = h(tag, {
-						class: token.class,
-						attrs
-					}, this.renderTokens(token.content, h));
-
-					out.push(el);
+					)
 				}
-			}
-
-			return out;
+			}, [
+				h('figure', {
+					class: 'ffz-i-attention'
+				})
+			]);
 		},
 
-		renderDescription(h) {
-			let title = this.title,
-				title_tokens = this.title_tokens,
-				desc_1 = this.desc_1,
-				desc_1_tokens = this.desc_1_tokens,
-				desc_2 = this.desc_2,
-				desc_2_tokens = this.desc_2_tokens;
+		renderBody(h) {
+			if ( this.has_tokenizer && this.loaded && (this.forceFull ? this.full : this.short) ) {
+				return h('div', {
+					class: 'ffz--card-rich tw-full-width tw-overflow-hidden tw-flex tw-flex-column'
+				}, tokenizer.renderTokens(this.forceFull ? this.full : this.short, h, {
+					vue: true,
+					tList: (...args) => this.tList(...args),
+					i18n: this.getI18n(),
 
-			if ( ! this.loaded ) {
-				desc_1 = this.t('card.loading', 'Loading...');
-				desc_1_tokens = desc_2 = desc_2_tokens = title = title_tokens = null;
-			}
-
-			return h('div', {
-				class: [
-					'ffz--card-text tw-overflow-hidden tw-align-items-center tw-flex',
-					desc_2 && 'ffz--two-line'
-				]
-			}, [h('div', {class: 'tw-full-width tw-pd-l-1'}, [
-				h('div', {class: 'chat-card__title tw-ellipsis'},
-					[h('span', {class: 'tw-strong', attrs: {title}}, title_tokens ? this.renderTokens(title_tokens, h) : title)]),
-				h('div', {class: 'tw-ellipsis'},
-					[h('span', {class: 'tw-c-text-alt-2', attrs: {title: desc_1}}, desc_1_tokens ? this.renderTokens(desc_1_tokens, h) : desc_1)]),
-				desc_2 && h('div', {class: 'tw-ellipsis'},
-					[h('span', {class: 'tw-c-text-alt-2', attrs: {title: desc_2}}, desc_2_tokens ? this.renderTokens(desc_2_tokens, h) : desc_2)])
-			])]);
+					allow_media: this.forceMedia ?? this.allow_media,
+					allow_unsafe: this.forceUnsafe ?? this.allow_unsafe
+				}));
+			} else
+				return this.renderBasic(h);
 		},
 
-		renderImage(h) {
-			let content;
-			if ( this.error )
-				content = h('img', {
-					class: 'chat-card__error-img',
-					attrs: {
-						src: ERROR_IMAGE
-					}
-				});
-			else {
-				content = h('div', {
-					class: 'tw-card-img tw-flex-shrink-0 tw-overflow-hidden'
-				}, [h('aspect', {
-					props: {
-						ratio: 16/9
-					}
-				}, [this.loaded && this.image && h('img', {
-					class: 'tw-image',
-					attrs: {
-						src: this.image,
-						alt: this.image_title ?? this.title
-					}
-				})])]);
+		renderBasic(h) {
+			let title, description;
+			if ( this.loaded && this.forceFull && ! this.full ) {
+				description = 'null';
+
+			} else if ( this.error ) {
+				title = this.t('card.error', 'An error occurred.');
+				description = this.error;
+
+			} else if ( this.loaded && this.has_tokenizer ) {
+				title = this.title;
+				description = this.description;
+			} else {
+				description = this.t('card.loading', 'Loading...');
 			}
 
-			return h('div', {
-				class: [
-					'chat-card__preview-img tw-align-items-center tw-c-background-alt-2 tw-flex tw-flex-shrink-0 tw-justify-content-center',
-					this.image_square && 'square'
-				]
-			}, [content])
+			if ( ! title && ! description )
+				description = this.t('card.empty', 'No data was returned.');
+
+			description = description ? description.split(/\n+/).slice(0,2).map(desc =>
+				h('div', {
+					class: 'tw-c-text-alt-2 tw-ellipsis tw-mg-x-05',
+					attrs:{title: desc}
+				}, [desc])
+			) : [];
+
+			return [
+				h('div', {class: 'ffz--header-image'}),
+				h('div', {
+					class: 'ffz--card-text tw-full-width tw-overflow-hidden tw-flex tw-flex-column tw-justify-content-center'
+				}, [
+					title ? h('div', {class: 'chat-card__title tw-ellipsis tw-mg-x-05'}, [
+						h('span', {class: 'tw-strong', attrs:{title}}, [title])
+					]) : null,
+					...description
+				])
+			];
 		}
 	},
 
@@ -237,8 +248,9 @@ export default {
 			class: 'tw-flex tw-flex-nowrap tw-pd-05'
 		}, this.renderCard(h));
 
-		if ( this.url ) {
-			const tooltip = this.data.card_tooltip;
+		const tooltip = this.has_full && ! this.forceFull;
+
+		if ( this.url )
 			content = h('a', {
 				class: [
 					tooltip && 'ffz-tooltip',
@@ -255,10 +267,21 @@ export default {
 					href: this.url
 				}
 			}, [content]);
-		}
+		else if ( tooltip )
+			content = h('div', {
+				class: 'ffz-tooltip tw-block tw-border-radius-medium tw-full-width',
+				attrs: {
+					'data-tooltip-type': 'link',
+					'data-url': this.url,
+					'data-is-mail': false,
+				}
+			}, [content]);
 
 		return h('div', {
-			class: 'tw-border-radius-medium tw-elevation-1 ffz--chat-card',
+			class: [
+				'tw-border-radius-medium tw-elevation-1 ffz--chat-card tw-relative',
+				this.unsafe ? 'ffz--unsafe' : ''
+			],
 			style: {
 				'--ffz-color-accent': this.accent
 			}
@@ -266,7 +289,6 @@ export default {
 			class: 'tw-border-radius-medium tw-c-background-base tw-flex tw-full-width'
 		}, [content])]);
 	}
-
 }
 
 </script>

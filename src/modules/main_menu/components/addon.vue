@@ -104,7 +104,8 @@
 					v-if="addon.website"
 					:href="addon.website"
 					:title="addon.website"
-					class="tw-button ffz-button--hollow tw-mg-r-1"
+					class="tw-button ffz-button--hollow tw-mg-r-1 ffz-tooltip ffz-tooltip--no-mouse"
+					data-tooltip-type="link"
 					target="_blank"
 					rel="noopener"
 				>

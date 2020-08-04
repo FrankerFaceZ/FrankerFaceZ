@@ -77,12 +77,12 @@ export default class TooltipProvider extends Module {
 		this.on(':cleanup', this.cleanup);
 	}
 
-
 	_createInstance(container, klass = 'ffz-tooltip', default_type) {
 		return new Tooltip(container, klass, {
 			html: true,
 			i18n: this.i18n,
 			live: true,
+			check_modifiers: true,
 
 			delayHide: this.checkDelayHide.bind(this, default_type),
 			delayShow: this.checkDelayShow.bind(this, default_type),
@@ -117,7 +117,6 @@ export default class TooltipProvider extends Module {
 	}
 
 
-
 	onFSChange() {
 		const tip_element = document.fullscreenElement || this.container;
 		if ( tip_element !== this.tip_element ) {
@@ -131,6 +130,7 @@ export default class TooltipProvider extends Module {
 	cleanup() {
 		this.tips.cleanup();
 	}
+
 
 	delegatePopperConfig(default_type, target, tip, pop_opts) {
 		const type = target.dataset.tooltipType || default_type,

@@ -1,0 +1,11 @@
+.channel-panels {
+	.default-panel {
+		& > .tw-link {
+			display: block;
+
+			& > * {
+				pointer-events: none;
+			}
+		}
+	}
+}

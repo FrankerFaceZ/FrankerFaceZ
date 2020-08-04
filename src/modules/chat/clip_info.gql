@@ -3,10 +3,12 @@ query FFZ_GetClipInfo($slug: ID!) {
 		id
 		curator {
 			id
+			login
 			displayName
 		}
 		broadcaster {
 			id
+			login
 			displayName
 		}
 		game {

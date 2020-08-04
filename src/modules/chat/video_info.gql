@@ -12,6 +12,7 @@ query FFZ_GetVideoInfo($id: ID!) {
 		}
 		owner {
 			id
+			login
 			displayName
 		}
 	}

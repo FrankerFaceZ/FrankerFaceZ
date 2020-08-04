@@ -26,15 +26,51 @@
 					</select>
 					<input
 						ref="text"
-						v-model="raw_url"
 						:disabled="! isCustomURL"
 						class="ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+						@blur="updateText"
+						@input="onTextChange"
 					>
 				</div>
 			</div>
 		</div>
 		<div class="tw-flex tw-mg-b-1">
 			<div class="tw-flex-grow-1" />
+
+			<div class="tw-pd-x-1 tw-checkbox">
+				<input
+					id="force_media"
+					ref="force_media"
+					:checked="force_media"
+					type="checkbox"
+					class="tw-checkbox__input"
+					@change="onCheck"
+				>
+
+				<label for="force_media" class="tw-checkbox__label">
+					<span class="tw-mg-l-1">
+						{{ t('debug.link-provider.allow.media', 'Allow Media') }}
+					</span>
+				</label>
+			</div>
+
+			<div class="tw-pd-x-1 tw-checkbox">
+				<input
+					id="force_unsafe"
+					ref="force_unsafe"
+					:checked="force_unsafe"
+					type="checkbox"
+					class="tw-checkbox__input"
+					@change="onCheck"
+				>
+
+				<label for="force_unsafe" class="tw-checkbox__label">
+					<span class="tw-mg-l-1">
+						{{ t('debug.link-provider.allow.unsafe', 'Allow NSFW') }}
+					</span>
+				</label>
+			</div>
+
 			<button
 				class="tw-mg-l-1 tw-button tw-button--text"
 				@click="refresh"
@@ -46,6 +82,47 @@
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
 			<label>
+				{{ t('debug.link-provider.link', 'Chat Link') }}
+			</label>
+			<div class="tw-full-width tw-overflow-hidden">
+				<a
+					v-if="url"
+					ref="link"
+					:href="url"
+					:data-url="url"
+					class="ffz-tooltip"
+					data-tooltip-type="link"
+					data-force-tooltip="true"
+					:data-force-open="force_tooltip ? 'true' : 'false'"
+					:data-force-media="force_media ? 'true' : 'false'"
+					:data-force-unsafe="force_unsafe ? 'true' : 'false'"
+					data-is-mail="false"
+					rel="noopener noreferrer"
+					target="_blank"
+				>
+					{{ url }}
+				</a>
+			</div>
+
+			<div class="tw-pd-x-1 tw-checkbox">
+				<input
+					id="force_tooltip"
+					ref="force_tooltip"
+					:checked="force_tooltip"
+					type="checkbox"
+					class="tw-checkbox__input"
+					@change="onTooltip"
+				>
+
+				<label for="force_tooltip" class="tw-checkbox__label">
+					<span class="tw-mg-l-1">
+						{{ t('debug.link-provider.force-tooltip', 'Force Tooltip') }}
+					</span>
+				</label>
+			</div>
+		</div>
+		<div class="tw-flex tw-mg-b-1 tw-full-width">
+			<label>
 				{{ t('debug.link-provider.embed', 'Rich Embed') }}
 			</label>
 			<div class="tw-full-width tw-overflow-hidden">
@@ -53,28 +130,26 @@
 					v-if="rich_data"
 					:data="rich_data"
 					:url="url"
+					:force-media="force_media"
+					:force-unsafe="force_unsafe"
 					:events="events"
 				/>
 			</div>
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
 			<label>
-				{{ t('debug.link-provider.link', 'Chat Link') }}
+				{{ t('debug.link-provider.full-embed', 'Full Embed') }}
 			</label>
 			<div class="tw-full-width tw-overflow-hidden">
-				<a
-					v-if="url"
-					:href="url"
-					:data-url="url"
-					class="ffz-tooltip"
-					data-tooltip-type="link"
-					data-force-tooltip="true"
-					data-is-mail="false"
-					rel="noopener noreferrer"
-					target="_blank"
-				>
-					{{ url }}
-				</a>
+				<chat-rich
+					v-if="rich_data"
+					:data="rich_data"
+					:url="url"
+					:force-full="true"
+					:force-media="force_media"
+					:force-unsafe="force_unsafe"
+					:events="events"
+				/>
 			</div>
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
@@ -99,12 +174,19 @@ import { debounce } from '../../../utilities/object';
 
 const STOCK_URLS = [
 	'https://www.twitch.tv/sirstendec',
+	'https://www.twitch.tv/videos/42968068',
+	'https://www.twitch.tv/sirstendec/clip/HedonisticMagnificentSoymilkChocolateRain',
+	'https://clips.twitch.tv/HedonisticMagnificentSoymilkChocolateRain',
 	'https://discord.gg/UrAkGhT',
 	'https://www.youtube.com/watch?v=CAL4WMpBNs0',
 	'https://xkcd.com/221/',
 	'https://github.com/FrankerFaceZ/FrankerFaceZ',
 	'https://twitter.com/frankerfacez',
-	'https://twitter.com/FrankerFaceZ/status/1240717057630625792'
+	'https://twitter.com/FrankerFaceZ/status/1240717057630625792',
+	'http://testsafebrowsing.appspot.com/apiv4/ANY_PLATFORM/MALWARE/URL/',
+	'https://en.wikipedia.org/wiki/Emoji',
+	'https://en.wikipedia.org/wiki/Naginata',
+	'https://www.smbc-comics.com/comic/punishment'
 ]
 
 export default {
@@ -118,13 +200,26 @@ export default {
 	props: ['item', 'context'],
 
 	data() {
+		const state = window.history.state;
+		let url = state?.ffz_lt_url,
+			is_custom = false;
+		if ( url )
+			is_custom = ! STOCK_URLS.includes(url);
+		else
+			url = STOCK_URLS[Math.floor(Math.random() * STOCK_URLS.length)];
+
 		return {
 			stock_urls: deep_copy(STOCK_URLS),
-			raw_url: STOCK_URLS[Math.floor(Math.random() * STOCK_URLS.length)],
+			raw_url: url,
+			isCustomURL: is_custom,
 			rich_data: null,
-			isCustomURL: false,
 			raw_loading: false,
 			raw_data: null,
+
+			force_media: state.ffz_lt_media ?? true,
+			force_unsafe: state.ffz_lt_unsafe ?? false,
+			force_tooltip: state.ffz_lt_tip ?? false,
+
 			events: {
 				on: (...args) => this.item.getChat().on(...args),
 				off: (...args) => this.item.getChat().off(...args)
@@ -143,24 +238,75 @@ export default {
 	},
 
 	watch: {
+		raw_url() {
+			if ( ! this.isCustomURL )
+				this.$refs.text.value = this.raw_url;
+		},
+
 		url() {
 			this.rebuildData();
+			this.saveState();
+
+			if ( this.force_tooltip ) {
+				const link = this.$refs.link;
+				if ( ! link || ! this.chat )
+					return;
+
+				const tips = this.chat.resolve('tooltips')?.tips;
+				if ( ! tips )
+					return;
+
+				tips._exit(link);
+				setTimeout(() => tips._enter(link), 250);
+			}
 		},
 
 		rich_data() {
 			this.refreshRaw();
+		},
+
+		force_tooltip() {
+			const link = this.$refs.link;
+			if ( ! link || ! this.chat )
+				return;
+
+			const tips = this.chat.resolve('tooltips')?.tips;
+			if ( ! tips )
+				return;
+
+			if ( this.force_tooltip )
+				tips._enter(link);
+			else
+				tips._exit(link);
+
 		}
 	},
 
 	created() {
 		this.rebuildData = debounce(this.rebuildData, 250);
 		this.refreshRaw = debounce(this.refreshRaw, 250);
+		this.onTextChange = debounce(this.onTextChange, 500);
 	},
 
 	mounted() {
 		this.chat = this.item.getChat();
 		this.chat.on('chat:update-link-resolver', this.checkRefreshRaw, this);
 		this.rebuildData();
+
+		this.$refs.text.value = this.raw_url;
+
+
+		if ( this.force_tooltip ) {
+			const link = this.$refs.link;
+			if ( ! link || ! this.chat )
+				return;
+
+			const tips = this.chat.resolve('tooltips')?.tips;
+			if ( ! tips )
+				return;
+
+			tips._enter(link);
+		}
 	},
 
 	beforeDestroy() {
@@ -169,6 +315,21 @@ export default {
 	},
 
 	methods: {
+		saveState() {
+			try {
+				window.history.replaceState({
+					...window.history.state,
+					ffz_lt_url: this.raw_url,
+					ffz_lt_media: this.force_media,
+					ffz_lt_unsafe: this.force_unsafe,
+					ffz_lt_tip: this.force_tooltip
+				}, document.title);
+
+			} catch(err) {
+				/* no-op */
+			}
+		},
+
 		checkRefreshRaw(url) {
 			if ( ! url || (url && url === this.url) )
 				this.refreshRaw();
@@ -220,8 +381,26 @@ export default {
 				this.isCustomURL = true;
 		},
 
+		updateText() {
+			if ( this.isCustomURL )
+				this.raw_url = this.$refs.text.value;
+		},
+
 		onTextChange() {
-			this.raw_url = this.$refs.text
+			this.updateText();
+		},
+
+		onCheck() {
+			this.force_media = this.$refs.force_media.checked;
+			this.force_unsafe = this.$refs.force_unsafe.checked;
+
+			this.saveState();
+		},
+
+		onTooltip() {
+			this.force_tooltip = this.$refs.force_tooltip.checked;
+
+			this.saveState();
 		}
 	}
 

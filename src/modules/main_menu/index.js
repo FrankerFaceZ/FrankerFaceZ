@@ -36,6 +36,7 @@ export default class MainMenu extends Module {
 
 		//this.should_enable = true;
 
+		this.exclusive = false;
 		this.new_seen = false;
 
 		this._settings_tree = null;
@@ -198,6 +199,12 @@ export default class MainMenu extends Module {
 		this.off('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
 	}
 
+	openExclusive() {
+		this.exclusive = true;
+		this.dialog.exclusive = true;
+		this.enable().then(() => this.dialog.show());
+	}
+
 	runFix(amount) {
 		this.settings.updateContext({
 			force_chat_fix: (this.settings.get('context.force_chat_fix') || 0) + amount
@@ -278,14 +285,41 @@ export default class MainMenu extends Module {
 		const root = this._vue.$children[0],
 			item = root.currentItem,
 			key = item && item.full_key,
+			wants_old = ! root.restoredItem,
+			state = window.history.state,
 
 			tree = this.getSettingsTree();
 
 		root.nav = tree;
 		root.nav_keys = tree.keys;
-		root.currentItem = tree.keys[key] || (this._wanted_page && tree.keys[this._wanted_page]) || (this.has_update ?
-			tree.keys['home.changelog'] :
-			tree.keys['home']);
+
+		let current, restored = true;
+
+		if ( this._wanted_page )
+			current = tree.keys[this._wanted_page];
+
+		if ( ! current && wants_old ) {
+			if ( state?.ffzcc )
+				current = tree.keys[state.ffzcc];
+			if ( ! current ) {
+				const params = new URL(window.location).searchParams,
+					key = params?.get?.('ffz-settings');
+				current = key && tree.keys[key];
+			}
+			if ( ! current )
+				restored = false;
+		}
+
+		if ( ! current )
+			current = tree.keys[key];
+
+		if ( ! current )
+			current = this.has_update ?
+				tree.keys['home.changelog'] :
+				tree.keys['home'];
+
+		root.currentItem = current;
+		root.restoredItem = restored;
 
 		this._wanted_page = null;
 	}
@@ -813,7 +847,26 @@ export default class MainMenu extends Module {
 	getData() {
 		const settings = this.getSettingsTree(),
 			context = this.getContext(),
-			current = (this._wanted_page && settings.keys[this._wanted_page]) || (this.has_update ? settings.keys['home.changelog'] : settings.keys['home']);
+			state = window.history.state;
+
+		let current, restored = true;
+		if ( this._wanted_page )
+			current = settings.keys[this._wanted_page];
+		if ( ! current && state?.ffzcc ) {
+			current = settings.keys[state.ffzcc];
+			if ( ! current )
+				restored = false;
+		} if ( ! current ) {
+			const params = new URL(window.location).searchParams,
+				key = params?.get?.('ffz-settings');
+			current = key && settings.keys[key];
+			if ( ! current )
+				restored = false;
+		}
+		if ( ! current )
+			current = this.has_update ?
+				settings.keys['home.changelog'] :
+				settings.keys['home'];
 
 		this._wanted_page = null;
 		this.markSeen(current);
@@ -834,6 +887,7 @@ export default class MainMenu extends Module {
 
 			nav: settings,
 			currentItem: current,
+			restoredItem: true, // restored, -- Look into making this smoother later.
 			nav_keys: settings.keys,
 
 			has_unseen,

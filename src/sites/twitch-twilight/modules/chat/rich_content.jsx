@@ -6,7 +6,6 @@
 
 import Module from 'utilities/module';
 import {timeout, has} from 'utilities/object';
-import {ALLOWED_ATTRIBUTES, ALLOWED_TAGS} from 'utilities/constants';
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 
@@ -14,10 +13,21 @@ export default class RichContent extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.inject('chat');
 		this.inject('i18n');
 		this.inject('site.web_munch');
 
 		this.RichContent = null;
+		this.has_tokenizer = false;
+	}
+
+	async loadTokenizer() {
+		if ( this.has_tokenizer )
+			return;
+
+		this.tokenizer = await import(/* webpack-chunk-name: 'rich_tokens' */ 'utilities/rich_tokens');
+		this.has_tokenizer = true;
+		return this.tokenizer;
 	}
 
 	async onEnable() {
@@ -34,8 +44,12 @@ export default class RichContent extends Module {
 
 				this.state = {
 					loaded: false,
-					error: false
+					error: false,
+					has_tokenizer: t.has_tokenizer
 				}
+
+				if ( ! t.has_tokenizer )
+					t.loadTokenizer().then(() => this.setState({...this.state, has_tokenizer: true}));
 			}
 
 			async load() {
@@ -49,16 +63,26 @@ export default class RichContent extends Module {
 							data = await data;
 					}
 
+					console.log('data', data);
+
 					if ( ! data )
 						data = {
-							error: true,
-							title: t.i18n.t('card.error', 'An error occurred.'),
-							desc_1: t.i18n.t('card.empty', 'No data was returned.')
+							error: {type: 'i18n', key: 'card.empty', phrase: 'No data was returned.'}
 						}
+
+					if ( data.error )
+						data = {
+							short: {
+								type: 'header',
+								image: {type: 'image', url: ERROR_IMAGE},
+								title: {type: 'i18n', key: 'card.error', phrase: 'An error occurred.'},
+								subtitle: data.error
+							}
+						};
 
 					this.setState(Object.assign({
 						loaded: true,
-						url: this.props.url
+						url: this.props.url,
 					}, data));
 
 				} catch(err) {
@@ -66,11 +90,15 @@ export default class RichContent extends Module {
 						t.log.capture(err);
 
 					this.setState({
+						has_tokenizer: t.has_tokenizer,
 						loaded: true,
-						error: true,
 						url: this.props.url,
-						title: t.i18n.t('card.error', 'An error occurred.'),
-						desc_1: String(err)
+						short: {
+							type: 'header',
+							image: {type: 'image', url: ERROR_IMAGE},
+							title: {type: 'i18n', key: 'card.error', phrase: 'An error occurred.'},
+							subtitle: String(err)
+						}
 					});
 				}
 			}
@@ -83,7 +111,8 @@ export default class RichContent extends Module {
 			reload() {
 				this.setState({
 					loaded: false,
-					error: false
+					error: false,
+					has_tokenizer: t.has_tokenizer
 				}, () => this.load());
 			}
 
@@ -97,138 +126,83 @@ export default class RichContent extends Module {
 				t.off('chat:update-link-resolver', this.checkReload, this);
 			}
 
-			renderCardImage() {
-				return (<div class={`chat-card__preview-img tw-align-items-center tw-c-background-alt-2 tw-flex tw-flex-shrink-0 tw-justify-content-center${this.state.image_square ? ' square' : ''}`}>
-					{this.state.error ?
-						(<img
-							class="chat-card__error-img"
-							src={ERROR_IMAGE}
-						/>)	:
-						(<div class="tw-card-img tw-flex-shrink-0 tw-overflow-hidden">
-							<div class="tw-aspect tw-aspect--align-top">
-								<div class="tw-aspect__spacer" style={{paddingTop: '56.25%'}} />
-								{this.state.loaded && this.state.image ?
-									(<img class="tw-image" src={this.state.image} alt={this.state.image_title ?? this.state.title} />)
-									: null}
-							</div>
-						</div>)}
-				</div>)
-			}
-
-			renderTokens(tokens) {
-				let out = [];
-				if ( ! Array.isArray(tokens) )
-					tokens = [tokens];
-
-				for(const token of tokens) {
-					if ( Array.isArray(token) )
-						out = out.concat(this.renderTokens(token));
-
-					else if ( typeof token !== 'object' )
-						out.push(token);
-
-					else if ( token.type === 't' ) {
-						const content = {};
-						if ( token.content )
-							for(const [key,val] of Object.entries(token.content))
-								content[key] = this.renderTokens(val);
-
-						out = out.concat(t.i18n.tList(token.key, token.phrase, content));
-
-					} else {
-						const tag = token.tag || 'span';
-						if ( ! ALLOWED_TAGS.includes(tag) ) {
-							console.log('Skipping disallowed tag', tag);
-							continue;
-						}
-
-						const attrs = {};
-						if ( token.attrs ) {
-							for(const [key,val] of Object.entries(token.attrs)) {
-								if ( ! ALLOWED_ATTRIBUTES.includes(key) && ! key.startsWith('data-') )
-									console.log('Skipping disallowed attribute', key);
-								else
-									attrs[key] = val;
-							}
-						}
-
-						const el = createElement(tag, {
-							className: token.class,
-							...attrs
-						}, this.renderTokens(token.content));
-
-						out.push(el);
-					}
-				}
-
-				return out;
-			}
-
-			renderCardDescription() {
-				let title = this.state.title,
-					title_tokens = this.state.title_tokens,
-					desc_1 = this.state.desc_1,
-					desc_1_tokens = this.state.desc_1_tokens,
-					desc_2 = this.state.desc_2,
-					desc_2_tokens = this.state.desc_2_tokens;
-
-				if ( ! this.state.loaded ) {
-					desc_1 = t.i18n.t('card.loading', 'Loading...');
-					desc_1_tokens = desc_2 = desc_2_tokens = title = title_tokens = null;
-				}
-
-				return (<div class={`ffz--card-text tw-overflow-hidden tw-align-items-center tw-flex${desc_2 ? ' ffz--two-line' : ''}`}>
-					<div class="tw-full-width tw-pd-l-1">
-						<div class="chat-card__title tw-ellipsis">
-							<span
-								class="tw-strong"
-								data-test-selector="chat-card-title"
-								title={title}
-							>
-								{title_tokens ? this.renderTokens(title_tokens) : title}
-							</span>
-						</div>
-						<div class="tw-ellipsis">
-							<span
-								class="tw-c-text-alt-2"
-								data-test-selector="chat-card-description"
-								title={desc_1}
-							>
-								{desc_1_tokens ? this.renderTokens(desc_1_tokens) : desc_1}
-							</span>
-						</div>
-						{(desc_2_tokens || desc_2) && (<div class="tw-ellipsis">
-							<span
-								class="tw-c-text-alt-2"
-								data-test-selector="chat-card-description"
-								title={desc_2}
-							>
-								{desc_2_tokens ? this.renderTokens(desc_2_tokens) : desc_2}
-							</span>
-						</div>)}
-					</div>
-				</div>)
-			}
-
 			renderCard() {
 				if ( this.props.renderBody )
 					return this.props.renderBody(this.state, this, createElement);
 
-				if ( this.state.html )
-					return <div dangerouslySetInnerHTML={{__html: this.state.html}} />;
+				return [
+					this.renderUnsafe(),
+					this.renderBody()
+				];
+			}
+
+			renderUnsafe() {
+				if ( ! this.state.unsafe )
+					return null;
+
+				const reasons = Array.from(new Set(this.state.urls.map(url => url.flags).flat())).join(', ').toLowerCase();
+
+				return (<div
+					class="ffz--corner-flag ffz--corner-flag__warn ffz-tooltip ffz-tooltip--no-mouse"
+					data-title={t.i18n.t('tooltip.link-unsafe', "Caution: This URL is on Google's Safe Browsing List for: {reasons}", {reasons})}
+				>
+					<figure class="ffz-i-attention" />
+				</div>);
+			}
+
+			renderBody() {
+				const doc = this.props.force_full ? this.state.full : this.state.short;
+				if ( t.has_tokenizer && this.state.loaded && doc ) {
+					return (<div class="ffz-card-rich tw-full-width tw-overflow-hidden tw-flex tw-flex-column">
+						{t.tokenizer.renderTokens(doc, createElement, {
+							vue: false,
+							tList: (...args) => t.i18n.tList(...args),
+							i18n: t.i18n,
+
+							allow_media: t.chat.context.get('tooltip.link-images'),
+							allow_unsafe: t.chat.context.get('tooltip.link-nsfw-images')
+						})}
+					</div>);
+
+				} else
+					return this.renderBasic();
+			}
+
+			renderBasic() {
+				let title, description;
+				if ( this.state.error ) {
+					title = t.i18n.t('card.error', 'An error occured.');
+					description = this.state.error;
+
+				} else if ( this.state.loaded && this.state.has_tokenizer ) {
+					title = this.state.title;
+					description = this.state.description;
+				} else {
+					description = t.i18n.t('card.loading', 'Loading...');
+				}
+
+				if ( ! title && ! description )
+					description = t.i18n.t('card.empty', 'No data was returned.');
+
+				description = description ? description.split(/\n+/).slice(0,2).map(desc =>
+					<div class="tw-c-text-alt-2 tw-ellipsis tw-mg-x-05" title={desc}>{desc}</div>
+				) : [];
 
 				return [
-					this.renderCardImage(),
-					this.renderCardDescription()
+					<div class="ffz--header-image" />,
+					(<div class="ffz--card-text tw-full-width tw-overflow-hidden tw-flex tw-flex-column tw-justify-content-center">
+						{title && <div class="chat-card__title tw-ellipsis tw-mg-x-05"><span class="tw-strong" title={title}>{title}</span></div>}
+						{description}
+					</div>)
 				];
 			}
 
 			render() {
 				let content = <div class="tw-flex tw-flex-nowrap tw-pd-05">{this.renderCard()}</div>;
+				const tooltip = this.props.card_tooltip && this.state.full && ! this.props.force_full;
 				if ( this.state.url ) {
-					const tooltip = this.props.card_tooltip;
 					content = (<a
-						class={`${tooltip ? 'ffz-tooltip ' : ''}${this.state.accent ? 'ffz-accent-card ' : ''} tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--alpha tw-interactable--hover-enabled tw-interactive`}
+						class={`${tooltip ? 'ffz-tooltip ' : ''}${this.state.accent ? 'ffz-accent-card ' : ''}${this.state.error ? 'tw-interactable--hover-enabled ': ''} tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--alpha tw-interactive`}
 						data-tooltip-type="link"
 						data-url={this.state.url}
 						data-is-mail={false}
@@ -241,7 +215,7 @@ export default class RichContent extends Module {
 				}
 
 				return (<div
-					class="tw-border-radius-medium tw-elevation-1 ffz--chat-card"
+					class={`tw-border-radius-medium tw-elevation-1 ffz--chat-card tw-relative${this.state.unsafe ? ' ffz--unsafe' : ''}`}
 					style={{'--ffz-color-accent': this.state.accent || null}}
 				>
 					<div class="tw-border-radius-medium tw-c-background-base tw-flex tw-full-width">

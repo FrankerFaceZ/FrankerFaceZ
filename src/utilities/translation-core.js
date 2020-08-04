@@ -50,8 +50,15 @@ export const DEFAULT_TYPES = {
 	},
 
 	number(val, node) {
-		if ( typeof val !== 'number' )
-			return val;
+		if ( typeof val !== 'number' ) {
+			let new_val = parseInt(val, 10);
+			if ( isNaN(new_val) || ! isFinite(new_val) )
+				new_val = parseFloat(val);
+			if ( isNaN(new_val) || ! isFinite(new_val) )
+				return val;
+
+			val = new_val;
+		}
 
 		return this.formatNumber(val, node.f);
 	},
@@ -105,6 +112,14 @@ export const DEFAULT_FORMATS = {
 			year: '2-digit'
 		},
 
+		default: {},
+
+		medium: {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		},
+
 		long: {
 			month: 'long',
 			day: 'numeric',
@@ -131,13 +146,6 @@ export const DEFAULT_FORMATS = {
 			second: 'numeric'
 		},
 
-		long: {
-			hour: 'numeric',
-			minute: 'numeric',
-			second: 'numeric',
-			timeZoneName: 'short'
-		},
-
 		full: {
 			hour: 'numeric',
 			minute: 'numeric',
@@ -155,14 +163,7 @@ export const DEFAULT_FORMATS = {
 			minute: 'numeric'
 		},
 
-		medium: {
-			month: 'numeric',
-			day: 'numeric',
-			year: '2-digit',
-			hour: 'numeric',
-			minute: 'numeric',
-			second: 'numeric'
-		},
+		medium: {},
 
 		long: {
 			month: 'long',
@@ -201,6 +202,10 @@ export default class TranslationCore {
 		this.defaultLocale = options.defaultLocale || this._locale;
 		this.transformation = null;
 
+		this.defaultDateFormat = options.defaultDateFormat;
+		this.defaultTimeFormat = options.defaultTimeFormat;
+		this.defaultDateTimeFormat = options.defaultDateTimeFormat;
+
 		this.phrases = new Map;
 		this.cache = new Map;
 
@@ -235,15 +240,14 @@ export default class TranslationCore {
 		return thing;
 	}
 
-	formatRelativeTime(value) { // eslint-disable-line class-methods-use-this
-		if ( !(value instanceof Date) )
-			value = new Date(Date.now() + value * 1000);
+	formatRelativeTime(value, f) { // eslint-disable-line class-methods-use-this
+		const d = dayjs(value),
+			without_suffix = f === 'plain';
 
-		const d = dayjs(value);
 		try {
-			return d.locale(this._locale).fromNow(true);
+			return d.locale(this._locale).fromNow(without_suffix);
 		} catch(err) {
-			return d.fromNow(true);
+			return d.fromNow(without_suffix);
 		}
 	}
 
@@ -262,13 +266,15 @@ export default class TranslationCore {
 	}
 
 	formatDate(value, format) {
-		if ( typeof format === 'string' && format.startsWith('::') ) {
-			const f = format.substr(2),
-				d = dayjs(value);
+		if ( ! format )
+			format = this.defaultDateFormat;
+
+		if ( format && ! this.formats.date[format] ) {
+			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(f);
+				return d.locale(this._locale).format(format);
 			} catch(err) {
-				return d.format(f);
+				return d.format(format);
 			}
 		}
 
@@ -279,13 +285,15 @@ export default class TranslationCore {
 	}
 
 	formatTime(value, format) {
-		if ( typeof format === 'string' && format.startsWith('::') ) {
-			const f = format.substr(2),
-				d = dayjs(value);
+		if ( ! format )
+			format = this.defaultTimeFormat;
+
+		if ( format && ! this.formats.time[format] ) {
+			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(f);
+				return d.locale(this._locale).format(format);
 			} catch(err) {
-				return d.format(f);
+				return d.format(format);
 			}
 		}
 
@@ -296,13 +304,15 @@ export default class TranslationCore {
 	}
 
 	formatDateTime(value, format) {
-		if ( typeof format === 'string' && format.startsWith('::') ) {
-			const f = format.substr(2),
-				d = dayjs(value);
+		if ( ! format )
+			format = this.defaultDateTimeFormat;
+
+		if ( format && ! this.formats.datetime[format] ) {
+			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(f);
+				return d.locale(this._locale).format(format);
 			} catch(err) {
-				return d.format(f);
+				return d.format(format);
 			}
 		}
 

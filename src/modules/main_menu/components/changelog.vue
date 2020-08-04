@@ -53,7 +53,8 @@
 									:href="commit.author.html_url"
 									target="_blank"
 									rel="noopener noreferrer"
-									class="tw-inline-flex tw-align-items-center tw-link tw-link--inherit tw-mg-x-05"
+									class="tw-inline-flex tw-align-items-center tw-link tw-link--inherit tw-mg-x-05 ffz-tooltip"
+									data-tooltip-type="link"
 								>
 									<figure
 										v-if="commit.author.avatar_url"
@@ -76,7 +77,7 @@
 						v-if="commit.hash"
 						class="tw-font-size-8 tw-c-text-alt-2"
 					>
-						@<a :href="commit.link" target="_blank" rel="noopener noreferrer" class="tw-link tw-link--inherit">{{ commit.hash }}</a>
+						@<a :href="commit.link" target="_blank" rel="noopener noreferrer" class="tw-link tw-link--inherit ffz-tooltip" data-tooltip-type="link">{{ commit.hash }}</a>
 					</div>
 					<time
 						v-if="commit.date"

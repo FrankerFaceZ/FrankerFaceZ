@@ -13,13 +13,17 @@ const ATTRS = [
 	'hidden', 'high', 'href', 'hreflang', 'http-equiv', 'icon', 'id',
 	'integrity', 'ismap', 'itemprop', 'keytype', 'kind', 'label', 'lang',
 	'language', 'list', 'loop', 'low', 'manifest', 'max', 'maxlength',
-	'minlength', 'media', 'method', 'min', 'multiple', 'muted', 'name',
+	'minlength', 'media', 'method', 'min', 'multiple', 'name',
 	'novalidate', 'open', 'optimum', 'pattern', 'ping', 'placeholder', 'poster',
 	'preload', 'radiogroup', 'readonly', 'rel', 'required', 'reversed', 'rows',
 	'rowspan', 'sandbox', 'scope', 'scoped', 'seamless', 'selected', 'shape',
 	'size', 'sizes', 'slot', 'span', 'spellcheck', 'src', 'srcdoc', 'srclang',
 	'srcset', 'start', 'step', 'style', 'summary', 'tabindex', 'target',
 	'title', 'type', 'usemap', 'value', 'width', 'wrap'
+];
+
+const BOOLEAN_ATTRS = [
+	'controls', 'autoplay', 'loop'
 ];
 
 
@@ -95,8 +99,12 @@ export function createElement(tag, props, ...children) {
 						el.style.cssText = prop;
 					else
 						for(const k in prop)
-							if ( has(prop, k) )
-								el.style[k] = prop[k];
+							if ( has(prop, k) ) {
+								if ( has(el.style, k) )
+									el.style[k] = prop[k];
+								else
+									el.style.setProperty(k, prop[k]);
+							}
 
 				} else if ( lk === 'dataset' ) {
 					for(const k in prop)
@@ -114,11 +122,16 @@ export function createElement(tag, props, ...children) {
 				else if ( lk.startsWith('data-') )
 					el.dataset[camelCase(lk.slice(5))] = prop;
 
-				else if ( lk.startsWith('aria-') || ATTRS.includes(lk) )
+				else if ( BOOLEAN_ATTRS.includes(lk) ) {
+					if ( prop && prop !== 'false' )
+						el.setAttribute(key, prop);
+					console.log('bool-attr', key, prop);
+
+				} else if ( lk.startsWith('aria-') || ATTRS.includes(lk) )
 					el.setAttribute(key, prop);
 
 				else
-					el[key] = props[key];
+					el[key] = prop;
 			}
 
 	if ( children )

@@ -97,5 +97,8 @@ export default [
 	"viewers",
 	"move",
 	"chat-empty",
-	"chat"
+	"chat",
+	"location",
+	"link",
+	"volume-off"
 ];

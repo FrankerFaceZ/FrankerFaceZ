@@ -17,6 +17,8 @@ const BAD_USERS = [
 import GET_CLIP from './clip_info.gql';
 import GET_VIDEO from './video_info.gql';
 
+import {truncate} from 'utilities/object';
+
 
 // ============================================================================
 // General Links
@@ -47,31 +49,20 @@ export const Links = {
 				} catch(err) {
 					return {
 						url: token.url,
-						title: this.i18n.t('card.error', 'An error occurred.'),
-						desc_1: String(err)
+						error: String(err)
 					}
 				}
 
 				if ( ! data )
 					return {
-						url: token.url,
-						title: this.i18n.t('card.error', 'An error occurred.'),
-						desc_1: this.i18n.t('card.empty', 'No data was returned.')
+						url: token.url
 					}
 
 				return {
-					url: token.url,
-					accent: data.accent,
-					image: this.context.get('tooltip.link-images') ? (data.image_safe || this.context.get('tooltip.link-nsfw-images') ) ? data.preview || data.image : null : null,
-					image_title: data.image_title,
-					image_square: data.image_square,
-					title: data.title,
-					title_tokens: data.title_tokens,
-					desc_1: data.desc_1,
-					desc_1_tokens: data.desc_1_tokens,
-					desc_2: data.desc_2,
-					desc_2_tokens: data.desc_2_tokens
-				}
+					...data,
+					allow_media: this.context.get('tooltip.link-images'),
+					allow_unsafe: this.context.get('tooltip.link-nsfw-images')
+				};
 			}
 		}
 	}
@@ -108,66 +99,82 @@ export const Users = {
 				if ( ! user || ! user.id )
 					return null;
 
-				const game = user.broadcastSettings?.game?.displayName;
+				const game = user.broadcastSettings?.game?.displayName,
+					stream_id = user.stream?.id;
 
-				let desc_1 = null, desc_2 = null, desc_1_tokens = null, desc_2_tokens = null;
-				if ( user.stream?.id && game ) {
-					desc_1_tokens = this.i18n.tList('cards.user.streaming', 'streaming {game}', {
-						game: {class: 'tw-semibold', content: [game]}
+				let subtitle
+				if ( stream_id && game )
+					subtitle = {
+						type: 'i18n',
+						key: 'cards.user.streaming', phrase: 'streaming {game}', content: {
+							game: {type: 'style', weight: 'semibold', content: game}
+						}
+					};
+
+				const extra = truncate(user.description);
+				const title = [user.displayName];
+
+				if ( user.displayName.trim().toLowerCase() !== user.login )
+					title.push({
+						type: 'style', color: 'alt-2',
+						content: [' (', user.login, ')']
 					});
-					desc_1 = this.i18n.t('cards.user.streaming', 'streaming {game}', {
-						game
-					});
-				}
 
-				const bits_tokens = this.i18n.tList('cards.user.stats', 'Views: {views,number} • Followers: {followers,number}', {
-						views: {class: 'tw-semibold', content: [this.i18n.formatNumber(user.profileViewCount || 0)]},
-						followers: {class: 'tw-semibold', content: [this.i18n.formatNumber(user.followers?.totalCount || 0)]}
-					}),
-					bits = this.i18n.t('cards.user.stats', 'Views: {views,number} • Followers: {followers,number}', {
-						views: user.profileViewCount || 0,
-						followers: user.followers?.totalCount || 0
+				if ( user.roles?.isPartner )
+					title.push({
+						type: 'style', color: 'link',
+						content: {type: 'icon', name: 'verified'}
 					});
 
-				if ( desc_1 ) {
-					desc_2 = bits;
-					desc_2_tokens = bits_tokens;
-				} else {
-					desc_1 = bits;
-					desc_1_tokens = bits_tokens;
-				}
+				/*const full = [{
+					type: 'header',
+					image: {type: 'image', url: user.profileImageURL, rounding: -1, aspect: 1},
+					title,
+					subtitle,
+					extra: stream_id ? extra : null
+				}];
 
-				const has_i18n = user.displayName.trim().toLowerCase() !== user.login;
-				let title = user.displayName, title_tokens = null;
-				if ( has_i18n ) {
-					title = `${user.displayName} (${user.login})`;
-					title_tokens = [
-						user.displayName,
-						{class: 'chat-author__intl-login', content: ` (${user.login})`}
-					];
-				}
+				if ( stream_id ) {
+					full.push({type: 'box', 'mg-y': 'small', lines: 1, content: user.broadcastSettings.title});
+					full.push({type: 'conditional', content: {
+						type: 'gallery', items: [{
+							type: 'image', aspect: 16/9, sfw: false, url: user.stream.previewImageURL
+						}]
+					}});
+				} else
+					full.push({type: 'box', 'mg-y': 'small', wrap: 'pre-wrap', lines: 5, content: truncate(user.description, 1000, undefined, undefined, false)})
 
-				if ( user.roles?.isPartner ) {
-					if ( ! title_tokens )
-						title_tokens = [title];
+				full.push({
+					type: 'fieldset',
+					fields: [
+						{
+							name: {type: 'i18n', key: 'embed.twitch.views', phrase: 'Views'},
+							value: {type: 'format', format: 'number', value: user.profileViewCount},
+							inline: true
+						},
+						{
+							name: {type: 'i18n', key: 'embed.twitch.followers', phrase: 'Followers'},
+							value: {type: 'format', format: 'number', value: user.followers?.totalCount},
+							inline: true
+						}
+					]
+				});
 
-					title_tokens = {tag: 'div', class: 'tw-flex tw-align-items-center', content: [
-						{tag: 'div', content: title_tokens},
-						{tag: 'figure', class: 'tw-mg-l-05 ffz-i-verified tw-c-text-link', content: []}
-					]};
-				}
+				full.push({
+					type: 'header',
+					subtitle: [{type: 'icon', name: 'twitch'}, ' Twitch']
+				});*/
 
 				return {
 					url: token.url,
 					accent: user.primaryColorHex ? `#${user.primaryColorHex}` : null,
-					image: user.profileImageURL,
-					image_square: true,
-					title,
-					title_tokens,
-					desc_1,
-					desc_1_tokens,
-					desc_2,
-					desc_2_tokens
+					short: {
+						type: 'header',
+						image: {type: 'image', url: user.profileImageURL, rounding: -1, aspect: 1},
+						title,
+						subtitle,
+						extra
+					}
 				}
 			}
 		}
@@ -214,53 +221,51 @@ export const Clips = {
 					return null;
 
 				const clip = result.data.clip,
-					user = clip.broadcaster.displayName,
 					game = clip.game,
-					game_name = game && game.name,
 					game_display = game && game.displayName;
 
-				let desc_1, desc_1_tokens;
-				if ( game_name === 'creative' ) {
-					desc_1_tokens = this.i18n.tList('clip.desc.1.creative', '{user} being Creative', {
-						user: {class: 'tw-semibold', content: user}
-					});
-					desc_1 = this.i18n.t('clip.desc.1.creative', '{user} being Creative', {
-						user
-					});
+				const user = {
+					type: 'link', url: `https://www.twitch.tv/${clip.broadcaster.login}`,
+					content: {
+						type: 'style', weight: 'semibold', color: 'alt-2',
+						content: clip.broadcaster.displayName
+					}
+				};
 
-				} else if ( game ) {
-					desc_1_tokens = this.i18n.tList('clip.desc.1.playing', '{user} playing {game}', {
-						user: {class: 'tw-semibold', content: user},
-						game: {class: 'tw-semibold', content: game_display}
-					});
-					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing {game}', {
+				const subtitle = game_display ? {
+					type: 'i18n', key: 'clip.desc.1.playing', phrase: '{user} playing {game}', content: {
 						user,
-						game: game_display
-					});
+						game: {type: 'style', weight: 'semibold', content: game_display}
+					}
+				} : {type: 'i18n', key: 'clip.desc.1', phrase: 'Clip of {user}', content: {user}};
 
-				} else {
-					desc_1_tokens = this.i18n.tList('clip.desc.1', 'Clip of {user}', {
-						user: {class: 'tw-semibold', content: user}
-					});
-					desc_1 = this.i18n.t('clip.desc.1', 'Clip of {user}', {user});
-				}
+				const curator = clip.curator ? {
+					type: 'link', url: `https://www.twitch.tv/${clip.curator.login}`,
+					content: {
+						type: 'style', color: 'alt-2',
+						content: clip.curator.displayName
+					}
+				} : {type: 'i18n', key: 'clip.unknown', phrase: 'Unknown'};
 
-				const curator = clip.curator ? clip.curator.displayName : this.i18n.t('clip.unknown', 'Unknown');
+				const extra = {
+					type: 'i18n', key: 'clip.desc.2',
+					phrase: 'Clipped by {curator} — {views,number} View{views,en_plural}',
+					content: {
+						curator,
+						views: clip.viewCount
+					}
+				};
 
 				return {
 					url: token.url,
-					image: clip.thumbnailURL,
-					title: clip.title,
-					desc_1,
-					desc_1_tokens,
-					desc_2: this.i18n.t('clip.desc.2', 'Clipped by {curator} — {views,number} View{views,en_plural}', {
-						curator,
-						views: clip.viewCount
-					}),
-					desc_2_tokens: this.i18n.tList('clip.desc.2', 'Clipped by {curator} — {views,number} View{views,en_plural}', {
-						curator: clip.curator ? {class: 'tw-semibold', content: curator} : curator,
-						views: {class: 'tw-semibold', content: this.i18n.formatNumber(clip.viewCount)}
-					})
+
+					short: {
+						type: 'header',
+						image: {type: 'image', url: clip.thumbnailURL, sfw: false, aspect: 16/9},
+						title: clip.title,
+						subtitle,
+						extra
+					}
 				}
 			}
 		}
@@ -296,49 +301,43 @@ export const Videos = {
 					return null;
 
 				const video = result.data.video,
-					user = video.owner.displayName,
 					game = video.game,
-					game_name = game && game.name,
 					game_display = game && game.displayName;
 
-				let desc_1, desc_1_tokens;
-				if ( game_name === 'creative' ) {
-					desc_1_tokens = this.i18n.tList('clip.desc.1.creative', '{user} being Creative', {
-						user: {class: 'tw-semibold', content: user}
-					});
-					desc_1 = this.i18n.t('clip.desc.1.creative', '{user} being Creative', {
-						user
-					});
+				const user = {
+					type: 'link', url: `https://www.twitch.tv/${video.owner.login}`,
+					content: {
+						type: 'style', weight: 'semibold', color: 'alt-2',
+						content: video.owner.displayName
+					}
+				};
 
-				} else if ( game ) {
-					desc_1_tokens = this.i18n.tList('clip.desc.1.playing', '{user} playing {game}', {
-						user: {class: 'tw-semibold', content: user},
-						game: {class: 'tw-semibold', content: game_display}
-					});
-					desc_1 = this.i18n.t('clip.desc.1.playing', '{user} playing {game}', {
+				const subtitle = game_display ? {
+					type: 'i18n', key: 'clip.desc.1.playing', phrase: '{user} playing {game}', content: {
 						user,
-						game: game_display
-					});
+						game: {type: 'style', weight: 'semibold', content: game_display}
+					}
+				} : {type: 'i18n', key: 'video.desc.1', phrase: 'Video of {user}', content: {user}};
 
-				} else {
-					desc_1_tokens = this.i18n.tList('video.desc.1', 'Video of {user}', {
-						user: {class: 'tw-semibold', content: user}
-					});
-					desc_1 = this.i18n.t('video.desc.1', 'Video of {user}', {user});
-				}
-
-				return {
-					url: token.url,
-					image: video.previewThumbnailURL,
-					title: video.title,
-					desc_1,
-					desc_1_tokens,
-					desc_2: this.i18n.t('video.desc.2', '{length,duration} — {views,number} Views - {date,datetime}', {
+				const extra = {
+					type: 'i18n', key: 'video.desc.2',
+					phrase: '{length,duration} — {views,number} Views — {date,datetime}', content: {
 						length: video.lengthSeconds,
 						views: video.viewCount,
 						date: video.publishedAt
-					})
-				}
+					}
+				};
+
+				return {
+					url: token.url,
+					short: {
+						type: 'header',
+						image: {type: 'image', url: video.previewThumbnailURL, sfw: false, aspect: 16/9},
+						title: video.title,
+						subtitle,
+						extra
+					}
+				};
 			}
 		}
 	}

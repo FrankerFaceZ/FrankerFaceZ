@@ -735,6 +735,24 @@
       "css": "chat",
       "code": 59457,
       "src": "fontawesome"
+    },
+    {
+      "uid": "0d08dbb1dd648a43bdea81b7e6c9e036",
+      "css": "location",
+      "code": 59458,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "0ddd3e8201ccc7d41f7b7c9d27eca6c1",
+      "css": "link",
+      "code": 59459,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "8489d61496923b1159b01d8a0a7b2df0",
+      "css": "volume-off",
+      "code": 59461,
+      "src": "elusive"
     }
   ]
 }

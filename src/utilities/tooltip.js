@@ -42,9 +42,13 @@ export class Tooltip {
 
 		this.options = Object.assign({}, DefaultOptions, options);
 		this.live = this.options.live;
+		this.check_modifiers = this.options.check_modifiers;
 
 		this.parent = parent;
 		this.cls = cls;
+
+		if ( this.check_modifiers )
+			this.installModifiers();
 
 		if ( ! this.live ) {
 			if ( typeof cls === 'string' )
@@ -65,16 +69,18 @@ export class Tooltip {
 
 		this._accessor = `_ffz_tooltip$${last_id++}`;
 
-		this._onMouseOut = e => this._exit(e.target);
+		this._onMouseOut = e => e.target  && e.target.dataset.forceOpen !== 'true' && this._exit(e.target);
 
 		if ( this.options.manual ) {
 			// Do nothing~!
 
 		} else if ( this.live ) {
 			this._onMouseOver = e => {
+				this.updateShift(e.shiftKey);
 				const target = e.target;
-				if ( target && target.classList && target.classList.contains(this.cls) )
+				if ( target && target.classList && target.classList.contains(this.cls) && target.dataset.forceOpen !== 'true' ) {
 					this._enter(target);
+				}
 			};
 
 			parent.addEventListener('mouseover', this._onMouseOver);
@@ -82,9 +88,11 @@ export class Tooltip {
 
 		} else {
 			this._onMouseOver = e => {
+				this.updateShift(e.shiftKey);
 				const target = e.target;
-				if ( this.elements.has(target) )
+				if ( this.elements.has(target)  && target.dataset.forceOpen !== 'true' ) {
 					this._enter(e.target);
+				}
 			}
 
 			if ( this.elements.size <= 5 )
@@ -102,6 +110,8 @@ export class Tooltip {
 	}
 
 	destroy() {
+		this.removeModifiers();
+
 		if ( this.options.manual ) {
 			// Do nothing~!
 		} else if ( this.live || this.elements.size > 5 ) {
@@ -125,6 +135,43 @@ export class Tooltip {
 		this.elements = null;
 		this._onMouseOut = this._onMouseOver = null;
 		this.parent = null;
+	}
+
+
+	installModifiers() {
+		if ( this._keyUpdate )
+			return;
+
+		this._keyUpdate = e => this.updateShift(e.shiftKey);
+		window.addEventListener('keydown', this._keyUpdate);
+		window.addEventListener('keyup', this._keyUpdate);
+	}
+
+	removeModifiers() {
+		if ( ! this._keyUpdate )
+			return;
+
+		window.removeEventListener('keydown', this._keyUpdate);
+		window.removeEventListener('keyup', this._keyUpdate);
+		this._keyUpdate = null;
+	}
+
+	updateShift(state) {
+		if ( state === this.shift_state )
+			return;
+
+		this.shift_state = state;
+		if ( ! this._shift_af )
+			this._shift_af = requestAnimationFrame(() => {
+				this._shift_af = null;
+				for(const el of this.elements) {
+					const tip = el[this._accessor];
+					if ( tip && tip.outer ) {
+						tip.outer.dataset.shift = this.shift_state;
+						tip.update();
+					}
+				}
+			});
 	}
 
 
@@ -238,7 +285,8 @@ export class Tooltip {
 			inner = tip.element = createElement('div', opts.innerClass),
 
 			el = tip.outer = createElement('div', {
-				className: opts.tooltipClass
+				className: opts.tooltipClass,
+				'data-shift': this.shift_state
 			}, [inner, arrow]);
 
 		arrow.setAttribute('x-arrow', true);
@@ -259,6 +307,7 @@ export class Tooltip {
 		if ( ! opts.manual || (hover_events && (opts.onHover || opts.onLeave || opts.onMove)) ) {
 			if ( hover_events && opts.onMove )
 				el.addEventListener('mousemove', el._ffz_move_handler = event => {
+					this.updateShift(event.shiftKey);
 					opts.onMove(target, tip, event);
 				});
 
@@ -273,7 +322,7 @@ export class Tooltip {
 					/* no-op */
 				} else if ( maybe_call(opts.interactive, null, target, tip) )
 					this._enter(target);
-				else
+				else if ( target.dataset.forceOpen !== 'true' )
 					this._exit(target);
 			});
 
@@ -281,7 +330,7 @@ export class Tooltip {
 				if ( hover_events && opts.onLeave )
 					opts.onLeave(target, tip, event);
 
-				if ( ! opts.manual )
+				if ( ! opts.manual && target.dataset.forceOpen !== 'true' )
 					this._exit(target);
 			});
 		}

@@ -56,6 +56,7 @@ export default class ChatLine extends Module {
 	async onEnable() {
 		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
 		this.on('chat:update-lines', this.updateLines, this);
+		this.on('i18n:update', this.updateLines, this);
 
 		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);

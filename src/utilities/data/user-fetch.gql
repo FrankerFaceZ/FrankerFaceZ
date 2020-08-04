@@ -3,11 +3,13 @@ query FFZ_FetchUser($id: ID, $login: String) {
 		id
 		login
 		displayName
+		description
 		profileImageURL(width: 50)
 		profileViewCount
 		primaryColorHex
 		broadcastSettings {
 			id
+			title
 			game {
 				id
 				displayName
@@ -15,6 +17,7 @@ query FFZ_FetchUser($id: ID, $login: String) {
 		}
 		stream {
 			id
+			previewImageURL
 		}
 		followers {
 			totalCount

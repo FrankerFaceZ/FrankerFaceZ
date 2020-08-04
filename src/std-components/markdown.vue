@@ -22,8 +22,10 @@ export default {
 
 			md.use(MILA, {
 				attrs: {
+					class: 'ffz-tooltip',
 					target: '_blank',
-					rel: 'noopener'
+					rel: 'noopener',
+					'data-tooltip-type': 'link'
 				}
 			});
 

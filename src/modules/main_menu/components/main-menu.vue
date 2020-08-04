@@ -194,6 +194,17 @@ export default {
 			this.markSeen(item);
 
 			this.currentItem = item;
+			this.restoredItem = true;
+
+			try {
+				window.history.replaceState({
+					...window.history.state,
+					ffzcc: item.full_key
+				}, document.title)
+			} catch(err) {
+				/* no-op */
+			}
+
 			let current = item;
 			while(current = current.parent) // eslint-disable-line no-cond-assign
 				current.expanded = true;

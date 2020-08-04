@@ -194,6 +194,9 @@ export class Vue extends Module {
 					const router = t.resolve('site.router');
 					return router.getURL(route, data, opts, ...args);
 				},
+				getI18n() {
+					return t.i18n;
+				},
 				t(key, phrase, options) {
 					return this.$i18n.t_(key, phrase, options);
 				},

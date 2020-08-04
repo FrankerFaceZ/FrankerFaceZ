@@ -20,7 +20,11 @@ const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 // Links
 // ============================================================================
 
-const TOOLTIP_VERSION = 4;
+function datasetBool(value) {
+	return value == null ? null : value === 'true';
+}
+
+const TOOLTIP_VERSION = 5;
 
 export const Links = {
 	type: 'link',
@@ -47,60 +51,94 @@ export const Links = {
 		if ( target.dataset.isMail === 'true' )
 			return [this.i18n.t('tooltip.email-link', 'E-Mail {address}', {address: target.textContent})];
 
-		const url = target.dataset.url || target.href;
+		const url = target.dataset.url || target.href,
+			show_images = datasetBool(target.dataset.forceMedia) ?? this.context.get('tooltip.link-images'),
+			show_unsafe = datasetBool(target.dataset.forceUnsafe) ?? this.context.get('tooltip.link-nsfw-images');
 
-		return this.get_link_info(url).then(data => {
+		return Promise.all([
+			import(/* webpack-chunk-name: 'rich_tokens' */ 'utilities/rich_tokens'),
+			this.get_link_info(url)
+		]).then(([rich_tokens, data]) => {
 			if ( ! data || (data.v || 1) > TOOLTIP_VERSION )
 				return '';
 
-			let content = data.content || data.html || '';
+			const ctx = {
+				tList: (...args) => this.i18n.tList(...args),
+				i18n: this.i18n,
+				allow_media: show_images,
+				allow_unsafe: show_unsafe,
+				onload: tip.update
+			};
 
-			// TODO: Replace timestamps.
-
-			if ( data.urls && data.urls.length > 1 )
-				content += (content.length ? '<hr>' : '') +
-					sanitize(this.i18n.t(
-						'tooltip.link-destination',
-						'Destination: {url}',
-						{url: data.urls[data.urls.length-1][1]}
-					));
-
-			if ( data.unsafe ) {
-				const reasons = Array.from(new Set(data.urls.map(x => x[2]).filter(x => x))).join(', ');
-				content = this.i18n.t(
-					'tooltip.link-unsafe',
-					"Caution: This URL is on Google's Safe Browsing List for: {reasons}",
-					{reasons: sanitize(reasons.toLowerCase())}
-				) + (content.length ? `<hr>${content}` : '');
+			let content;
+			if ( tip.element ) {
+				tip.element.classList.add('ffz-rich-tip');
+				tip.element.classList.add('tw-align-left');
 			}
 
-			const show_image = this.context.get('tooltip.link-images') && (data.image_safe || this.context.get('tooltip.link-nsfw-images'));
+			if ( data.full ) {
+				content = rich_tokens.renderTokens(data.full, createElement, ctx);
 
-			if ( show_image ) {
-				if ( data.image && ! data.image_iframe )
-					content = `<img class="preview-image" src="${sanitize(data.image)}">${content}`
+			} else {
+				if ( data.short ) {
+					content = rich_tokens.renderTokens(data.short, createElement, ctx);
+				} else
+					content = this.i18n.t('card.empty', 'No data was returned.');
+			}
 
-				setTimeout(() => {
-					if ( tip.element ) {
-						for(const el of tip.element.querySelectorAll('img'))
-							el.addEventListener('load', tip.update);
+			if ( ! data.urls )
+				return content;
 
-						for(const el of tip.element.querySelectorAll('video'))
-							el.addEventListener('loadedmetadata', tip.update);
-					}
+			const url_table = [];
+			for(let i=0; i < data.urls.length; i++) {
+				const url = data.urls[i];
+
+				url_table.push(<tr>
+					<td>{this.i18n.formatNumber(i + 1)}.</td>
+					<td class="tw-c-text-alt-2 tw-pd-x-05 tw-word-break-all">{url.url}</td>
+					<td>{url.flags ? url.flags.map(flag => <span class="tw-pill">{flag.toLowerCase()}</span>) : null}</td>
+				</tr>);
+			}
+
+			let url_notice;
+			if ( data.unsafe ) {
+				const reasons = Array.from(new Set(data.urls.map(url => url.flags).flat())).join(', ');
+				url_notice = (<div class="ffz-i-attention">
+					{this.i18n.tList(
+						'tooltip.link-unsafe',
+						"Caution: This URL is on Google's Safe Browsing List for: {reasons}",
+						{reasons: reasons.toLowerCase()}
+					)}
+				</div>);
+			} else if ( data.urls.length > 1 )
+				url_notice = this.i18n.t('tooltip.link-destination', 'Destination: {url}', {
+					url: data.urls[data.urls.length-1].url
 				});
 
-			} else if ( content.length )
-				content = content.replace(/<!--MS-->.*<!--ME-->/g, '');
-
-			if ( data.tooltip_class )
-				tip.element.classList.add(data.tooltip_class);
+			content = (<div>
+				<div class="ffz--shift-hide">
+					{content}
+					{url_notice ? <div class="tw-mg-t-05 tw-border-t tw-pd-t-05 tw-align-center">
+						{url_notice}
+						<div class=" tw-font-size-8">
+							{this.i18n.t('tooltip.shift-detail', '(Shift for Details)')}
+						</div>
+					</div> : null}
+				</div>
+				<div class="ffz--shift-show tw-align-left">
+					<div class="tw-semibold tw-mg-b-05 tw-align-center">
+						{this.i18n.t('tooltip.link.urls', 'Visited URLs')}
+					</div>
+					<table>{url_table}</table>
+				</div>
+			</div>);
 
 			return content;
 
-		}).catch(error =>
-			sanitize(this.i18n.t('tooltip.error', 'An error occurred. ({error})', {error}))
-		);
+		}).catch(error => {
+			console.error(error);
+			return sanitize(this.i18n.t('tooltip.error', 'An error occurred. ({error})', {error}))
+		});
 	},
 
 	process(tokens) {

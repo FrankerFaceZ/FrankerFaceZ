@@ -72,7 +72,9 @@ body .whispers--theatre-mode.whispers--right-column-expanded-beside {
 	right: 0 !important;
 }
 
-.channel-root__scroll-area--theatre-mode .channel-info-bar {
-	left: calc(var(--ffz-chat-width) + 5rem) !important;
-	right: 25rem !important;
+.channel-root__scroll-area--theatre-mode {
+	.channel-info-content > div:first-child, .channel-info-bar {
+		left: calc(var(--ffz-chat-width) + 5rem) !important;
+		right: 40rem !important;
+	}
 }

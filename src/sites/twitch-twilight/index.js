@@ -126,11 +126,8 @@ export default class Twilight extends BaseSite {
 		// settings window in exclusive mode.
 		const params = new URL(window.location).searchParams;
 		if ( params ) {
-			if ( params.has('ffz-settings') ) {
-				const main_menu = this.resolve('main_menu');
-				main_menu.dialog.exclusive = true;
-				main_menu.enable();
-			}
+			if ( params.has('ffz-settings') )
+				this.resolve('main_menu').openExclusive();
 
 			if ( params.has('ffz-translate') ) {
 				const translation = this.resolve('translation_ui');

@@ -53,6 +53,28 @@ export default class ThemeEngine extends Module {
 			changed: () => this.updateCSS()
 		});
 
+		this.settings.add('theme.color.tooltip.background', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Colors',
+				title: 'Tooltip Background',
+				description: 'If not set, the tooltip settings will be automatically adjusted based on the brightness of the background.',
+				component: 'setting-color-box',
+				alpha: true
+			},
+			changed: () => this.updateCSS()
+		});
+
+		this.settings.add('theme.color.tooltip.text', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Colors',
+				title: 'Tooltip Text',
+				component: 'setting-color-box'
+			},
+			changed: () => this.updateCSS()
+		});
+
 		this.settings.add('theme.dark', {
 			requires: ['theme.is-dark'],
 			default: false,
@@ -176,6 +198,37 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			bits.push(`--color-text-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
 		}
 
+		// Tooltips
+		let tooltip_bg = Color.RGBA.fromCSS(this.settings.get('theme.color.tooltip.background')),
+			tooltip_dark;
+		if ( ! tooltip_bg && background )
+			tooltip_bg = Color.RGBA.fromCSS(dark ? '#FFF' : '#000');
+
+		if ( tooltip_bg ) {
+			bits.push(`--color-background-tooltip: ${tooltip_bg.toCSS()};`);
+
+			const hsla = tooltip_bg.toHSLA(),
+				luma = hsla.l;
+
+			tooltip_dark = luma < 0.5;
+		} else
+			tooltip_dark = ! dark;
+
+		let tooltip_text = Color.RGBA.fromCSS(this.settings.get('theme.color.tooltip.text'));
+		const has_tt_text = tooltip_text || tooltip_bg;
+		if ( ! tooltip_text )
+			tooltip_text = Color.RGBA.fromCSS(tooltip_dark ? '#FFF' : '#000');
+
+		if ( tooltip_text ) {
+			if ( has_tt_text )
+				bits.push(`--color-text-tooltip: ${tooltip_text.toCSS()};`);
+
+			const hsla = tooltip_text.toHSLA(),
+				alpha = hsla.a;
+
+			bits.push(`--color-text-tooltip-alt: ${hsla._a(alpha - 0.2).toCSS()};`);
+			bits.push(`--color-text-tooltip-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
+		}
 
 		if ( bits.length ) {
 			this.css_tweaks.set('colors', `body {${bits.join('\n')}}`);

@@ -31,6 +31,7 @@ export default class Channel extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
+
 		this.settings.add('channel.panel-tips', {
 			default: true,
 			ui: {
@@ -39,7 +40,10 @@ export default class Channel extends Module {
 				component: 'setting-check-box'
 			},
 
-			changed: () => this.updatePanelTips()
+			changed: val => {
+				this.updatePanelTips();
+				this.css_tweaks.toggle('panel-links', val);
+			}
 		});
 
 		this.settings.add('channel.auto-click-chat', {
@@ -106,6 +110,8 @@ export default class Channel extends Module {
 
 	onEnable() {
 		this.updateChannelColor();
+
+		this.css_tweaks.toggle('panel-links', this.settings.get('channel.panel-tips'));
 
 		this.on('i18n:update', this.updateLinks, this);
 

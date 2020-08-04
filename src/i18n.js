@@ -163,7 +163,7 @@ export class TranslationManager extends Module {
 			},
 
 			ui: {
-				path: 'Appearance > Localization >> General',
+				path: 'Appearance > Localization >> General @{"sort":-100}',
 				title: 'Language',
 				description: `FrankerFaceZ is lovingly translated by volunteers from our community. Thank you. If you're interested in helping to translate FrankerFaceZ, please [join our Discord](https://discord.gg/UrAkGhT) and ask about localization.`,
 
@@ -172,6 +172,82 @@ export class TranslationManager extends Module {
 			},
 
 			changed: val => this.locale = val
+		});
+
+
+		this.settings.add('i18n.format.date', {
+			default: 'default',
+			ui: {
+				path: 'Appearance > Localization >> Formatting',
+				title: 'Date Format',
+				description: 'The default date format. Custom date formats are formated using the [Day.js](https://github.com/iamkun/dayjs#readme) library.',
+				component: 'setting-combo-box',
+				data: () => {
+					const out = [], now = new Date;
+					for (const [key,fmt] of Object.entries(this._.formats.date)) {
+						out.push({
+							value: key, title: `${this.formatDate(now, key)} (${key})`
+						})
+					}
+
+					return out;
+				}
+			},
+
+			changed: val => {
+				this._.defaultDateFormat = val;
+				this.emit(':update')
+			}
+		});
+
+		this.settings.add('i18n.format.time', {
+			default: 'short',
+			ui: {
+				path: 'Appearance > Localization >> Formatting',
+				title: 'Time Format',
+				description: 'The default time format. Custom time formats are formated using the [Day.js](https://github.com/iamkun/dayjs#readme) library.',
+				component: 'setting-combo-box',
+				data: () => {
+					const out = [], now = new Date;
+					for (const [key,fmt] of Object.entries(this._.formats.time)) {
+						out.push({
+							value: key, title: `${this.formatTime(now, key)} (${key})`
+						})
+					}
+
+					return out;
+				}
+			},
+
+			changed: val => {
+				this._.defaultTimeFormat = val;
+				this.emit(':update')
+			}
+		});
+
+		this.settings.add('i18n.format.datetime', {
+			default: 'medium',
+			ui: {
+				path: 'Appearance > Localization >> Formatting',
+				title: 'Date-Time Format',
+				description: 'The default combined date-time format. Custom time formats are formated using the [Day.js](https://github.com/iamkun/dayjs#readme) library.',
+				component: 'setting-combo-box',
+				data: () => {
+					const out = [], now = new Date;
+					for (const [key,fmt] of Object.entries(this._.formats.datetime)) {
+						out.push({
+							value: key, title: `${this.formatDateTime(now, key)} (${key})`
+						})
+					}
+
+					return out;
+				}
+			},
+
+			changed: val => {
+				this._.defaultDateTimeFormat = val;
+				this.emit(':update')
+			}
 		});
 	}
 
@@ -244,6 +320,9 @@ export class TranslationManager extends Module {
 
 		this._ = new NewTransCore({ //TranslationCore({
 			warn: (...args) => this.log.warn(...args),
+			defaultDateFormat: this.settings.get('i18n.format.date'),
+			defaultTimeFormat: this.settings.get('i18n.format.time'),
+			defaultDateTimeFormat: this.settings.get('i18n.format.datetime')
 		});
 
 		if ( window.BroadcastChannel ) {

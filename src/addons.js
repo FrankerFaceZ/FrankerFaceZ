@@ -37,7 +37,7 @@ export default class AddonManager extends Module {
 		this._loader = this.loadAddonData();
 	}
 
-	async onEnable() {
+	onEnable() {
 		this.settings.addUI('add-ons', {
 			path: 'Add-Ons @{"description": "Add-Ons are additional modules, often written by other people, that can be loaded automatically by FrankerFaceZ to add new capabilities and behaviors to the extension and Twitch.", "profile_warning": false}',
 			component: 'addon-list',
