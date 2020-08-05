@@ -8,10 +8,23 @@ import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import {Color} from 'utilities/color';
 
-import THEME_CSS from 'site/styles/theme.scss';
+//import THEME_CSS from 'site/styles/theme.scss';
 import NORMALIZER_CSS_URL from 'site/styles/color_normalizer.scss';
 
 const BAD_ROUTES = ['product', 'prime', 'turbo'];
+
+const COLORS = [
+	-.4, -.35, -.3, -.25, -.2, -.15, -.1, -.05, // 1-8
+	0, // 9
+	.05, .1, .15, .2, .25, .3 // 10-15
+];
+
+const ACCENT_COLORS = {
+	dark: {'c':{'accent': 9,'background-accent':8,'background-accent-alt':7,'background-accent-alt-2':6,'background-button':7,'background-button-active':7,'background-button-focus':8,'background-button-hover':8,'background-button-primary-active':7,'background-button-primary-default':9,'background-button-primary-hover':8,'background-graph':2,'background-graph-fill':8,'background-input-checkbox-checked':9,'background-input-checked':8,'background-interactable-active':9,'background-interactable-hover':8,'background-progress-countdown-status':9,'background-progress-status':9,'background-range-fill':9,'background-subscriber-stream-tag-active':4,'background-subscriber-stream-tag-default':4,'background-subscriber-stream-tag-hover':3,'background-toggle-checked':9,/*'background-tooltip':1,*/'background-top-nav':6,'border-brand':9,'border-button':7,'border-button-active':8,'border-button-focus':9,'border-button-hover':8,'border-input-checkbox-checked':9,'border-input-checkbox-focus':9,'border-input-focus':9,'border-interactable-selected':10,'border-subscriber-stream-tag':5,'border-tab-active':11,'border-tab-focus':11,'border-tab-hover':11,'border-toggle-focus':7,'border-toggle-hover':7,'border-whisper-incoming':10/*,'fill-brand':9*/,'text-button-text':8,'text-button-text-focus':'o1','text-button-text-hover':'o1','text-link':10,'text-link-active':10,'text-link-focus':10,'text-link-hover':10,'text-link-visited':10,'text-overlay-link-active':13,'text-overlay-link-focus':13,'text-overlay-link-hover':13,'text-tab-active':11,'background-chat':1,'background-chat-alt':3,'background-chat-header':2,'background-modal':3,'text-button-text-active':'o2'/*,'text-tooltip':1*/},'s':{'button-active':[8,'0 0 6px 0',''],'button-focus':[8,'0 0 6px 0',''],'input-focus':[8,'0 0 10px -2px',''],'interactable-focus':[8,'0 0 6px 0',''],'tab-focus':[11,'0 4px 6px -4px',''],'input':[5,'inset 0 0 0 1px','']}},
+	light: {'c':{'accent': 9,'background-accent':8,'background-accent-alt':7,'background-accent-alt-2':6,'background-button':7,'background-button-active':7,'background-button-focus':8,'background-button-hover':8,'background-button-primary-active':7,'background-button-primary-default':9,'background-button-primary-hover':8,'background-graph':15,'background-graph-fill':9,'background-input-checkbox-checked':9,'background-input-checked':8,'background-interactable-active':9,'background-interactable-hover':8,'background-progress-countdown-status':8,'background-progress-status':8,'background-range-fill':9,'background-subscriber-stream-tag-active':13,'background-subscriber-stream-tag-default':13,'background-subscriber-stream-tag-hover':14,'background-toggle-checked':9,/*'background-tooltip':1,*/'background-top-nav':7,'border-brand':9,'border-button':7,'border-button-active':8,'border-button-focus':9,'border-button-hover':8,'border-input-checkbox-checked':9,'border-input-checkbox-focus':9,'border-input-focus':9,'border-interactable-selected':9,'border-subscriber-stream-tag':10,'border-tab-active':8,'border-tab-focus':8,'border-tab-hover':8,'border-toggle-focus':8,'border-toggle-hover':8,'border-whisper-incoming':10/*,'fill-brand':9*/,'text-button-text':8,'text-button-text-focus':'o1','text-button-text-hover':'o1','text-link':8,'text-link-active':9,'text-link-focus':9,'text-link-hover':9,'text-link-visited':9,'text-overlay-link-active':13,'text-overlay-link-focus':13,'text-overlay-link-hover':13,'text-tab-active':8},'s':{'button-active':[8,'0 0 6px 0',''],'button-focus':[8,'0 0 6px 0',''],'input-focus':[10,'0 0 10px -2px',''],'interactable-focus':[8,'0 0 6px 1px',''],'tab-focus':[8,'0 4px 6px -4px','']}},
+	accent_dark: {'c':{'accent-hover':10,'accent':9,'accent-primary-1':1,'accent-primary-2':5,'accent-primary-3':6,'accent-primary-4':7,'accent-primary-5':8},'s':{}},
+	accent_light: {'c':{'accent-hover':10,'accent':9,'accent-primary-1':1,'accent-primary-2':5,'accent-primary-3':6,'accent-primary-4':7,'accent-primary-5':8},'s':{}}
+};
 
 
 export default class ThemeEngine extends Module {
@@ -37,6 +50,7 @@ export default class ThemeEngine extends Module {
 				title: 'Background',
 				description: 'Try `#0E0C13` for something close to the old dark theme, or `#0E0E0E` for a nice dark gray. Transparent colors not allowed.',
 				component: 'setting-color-box',
+				sort: 0,
 				alpha: false
 			},
 			changed: () => this.updateCSS()
@@ -48,7 +62,21 @@ export default class ThemeEngine extends Module {
 				path: 'Appearance > Theme >> Colors',
 				title: 'Text',
 				description: 'If not set, this will automatically be set to white or black based on the brightness of the background.',
-				component: 'setting-color-box'
+				component: 'setting-color-box',
+				sort: 1
+			},
+			changed: () => this.updateCSS()
+		});
+
+		this.settings.add('theme.color.accent', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Colors',
+				title: 'Accent',
+				description: 'The accent color is used for buttons, links, etc.',
+				component: 'setting-color-box',
+				alpha: false,
+				sort: 2
 			},
 			changed: () => this.updateCSS()
 		});
@@ -60,7 +88,8 @@ export default class ThemeEngine extends Module {
 				title: 'Tooltip Background',
 				description: 'If not set, the tooltip settings will be automatically adjusted based on the brightness of the background.',
 				component: 'setting-color-box',
-				alpha: true
+				alpha: true,
+				sort: 10
 			},
 			changed: () => this.updateCSS()
 		});
@@ -70,12 +99,13 @@ export default class ThemeEngine extends Module {
 			ui: {
 				path: 'Appearance > Theme >> Colors',
 				title: 'Tooltip Text',
-				component: 'setting-color-box'
+				component: 'setting-color-box',
+				sort: 11
 			},
 			changed: () => this.updateCSS()
 		});
 
-		this.settings.add('theme.dark', {
+		/*this.settings.add('theme.dark', {
 			requires: ['theme.is-dark'],
 			default: false,
 			process(ctx, val) {
@@ -93,7 +123,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			},
 
 			changed: val => this.updateSetting(val)
-		});
+		});*/
 
 		this.settings.add('theme.can-dark', {
 			requires: ['context.route.name'],
@@ -128,7 +158,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		this._normalizer = null;
 	}
 
-	updateOldCSS() {
+	/*updateOldCSS() {
 		const dark = this.settings.get('theme.is-dark'),
 			gray = this.settings.get('theme.dark');
 
@@ -136,19 +166,22 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		document.body.classList.toggle('tw-root--theme-ffz', gray);
 
 		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
-	}
+	}*/
 
 	updateCSS() {
-		this.updateOldCSS();
+		//this.updateOldCSS();
+
+		this.css_tweaks.setVariable('border-color', 'var(--color-border-base)');
 
 		if ( ! this.settings.get('theme.can-dark') ) {
 			this.toggleNormalizer(false);
+			this.toggleAccentNormal(true);
 			this.css_tweaks.delete('colors');
 			return;
 		}
 
 		let dark = this.settings.get('theme.is-dark');
-		const bits = [];
+		const bits = [], accent_bits = [];
 
 		const background = Color.RGBA.fromCSS(this.settings.get('theme.color.background'));
 		if ( background ) {
@@ -198,6 +231,46 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			bits.push(`--color-text-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
 		}
 
+		// Accent
+		const accent = Color.RGBA.fromCSS(this.settings.get('theme.color.accent'));
+		this.toggleAccentNormal(! accent);
+		if ( accent ) {
+			accent.a = 1;
+
+			const hsla = accent.toHSLA(),
+				luma = hsla.l;
+
+			const colors = COLORS.map(x => {
+				if ( x === 0 )
+					return accent.toCSS();
+
+				return hsla._l(luma + x).toCSS()
+			});
+
+			for(let i=0; i < colors.length; i++) {
+				bits.push(`--ffz-color-accent-${i+1}:${colors[i]};`);
+			}
+
+			let source = dark ? ACCENT_COLORS.dark : ACCENT_COLORS.light;
+
+			for(const [key,val] of Object.entries(source.c)) {
+				if ( typeof val !== 'number' )
+					continue;
+
+				bits.push(`--color-${key}:${colors[val-1]};`);
+			}
+
+			source = dark ? ACCENT_COLORS.accent_dark : ACCENT_COLORS.accent_light;
+
+			for(const [key,val] of Object.entries(source.c)) {
+				if ( typeof val !== 'number' )
+					continue;
+
+				accent_bits.push(`--color-${key}:${colors[val-1]} !important;`);
+			}
+		}
+
+
 		// Tooltips
 		let tooltip_bg = Color.RGBA.fromCSS(this.settings.get('theme.color.tooltip.background')),
 			tooltip_dark;
@@ -231,12 +304,23 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		}
 
 		if ( bits.length ) {
-			this.css_tweaks.set('colors', `body {${bits.join('\n')}}`);
+			this.css_tweaks.set('colors', `body {${bits.join('\n')}}.channel-info-content .tw-accent-region{${accent_bits.join('\n')}}`);
 			this.toggleNormalizer(true);
 		} else {
 			this.css_tweaks.delete('colors');
 			this.toggleNormalizer(false);
 		}
+	}
+
+	toggleAccentNormal(enable) {
+		if ( enable ) {
+			const bits = [];
+			for(let i=0; i < 15; i++)
+				bits.push(`--ffz-color-accent-${i+1}:var(--color-twitch-purple-${i+1});`);
+
+			this.css_tweaks.set('accent-normal', `body {${bits.join('\n')}}`);
+		} else
+			this.css_tweaks.delete('accent-normal');
 	}
 
 	toggleNormalizer(enable) {
@@ -258,7 +342,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			document.head.appendChild(this._normalizer)
 	}
 
-	toggleStyle(enable) {
+	/*toggleStyle(enable) {
 		if ( ! this._style ) {
 			if ( ! enable )
 				return;
@@ -280,10 +364,10 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 	updateSetting(enable) {
 		this.toggleStyle(enable);
 		this.updateCSS();
-	}
+	}*/
 
 	onEnable() {
-		this.updateSetting(this.settings.get('theme.dark'));
+		//this.updateSetting(this.settings.get('theme.dark'));
 		this.updateCSS();
 	}
 }

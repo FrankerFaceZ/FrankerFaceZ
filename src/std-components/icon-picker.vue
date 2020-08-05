@@ -9,7 +9,7 @@
 				<input
 					:id="'icon-search$' + id"
 					ref="input"
-					:placeholder="('setting.icon.search', 'Search for Icon')"
+					:placeholder="t('setting.icon.search', 'Search for Icon')"
 					:value="isOpen ? search : val"
 					:class="[clearable ? 'tw-pd-r-5' : 'tw-pd-r-1']"
 					type="text"

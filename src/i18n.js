@@ -180,8 +180,13 @@ export class TranslationManager extends Module {
 			ui: {
 				path: 'Appearance > Localization >> Formatting',
 				title: 'Date Format',
-				description: 'The default date format. Custom date formats are formated using the [Day.js](https://github.com/iamkun/dayjs#readme) library.',
+				description: 'The default date format. Custom date formats are formated using the [Day.js](https://day.js.org/docs/en/display/format) library.',
 				component: 'setting-combo-box',
+				extra: {
+					before: true,
+					mode: 'date',
+					component: 'format-preview'
+				},
 				data: () => {
 					const out = [], now = new Date;
 					for (const [key,fmt] of Object.entries(this._.formats.date)) {
@@ -205,8 +210,13 @@ export class TranslationManager extends Module {
 			ui: {
 				path: 'Appearance > Localization >> Formatting',
 				title: 'Time Format',
-				description: 'The default time format. Custom time formats are formated using the [Day.js](https://github.com/iamkun/dayjs#readme) library.',
+				description: 'The default time format. Custom time formats are formated using the [Day.js](https://day.js.org/docs/en/display/format) library.',
 				component: 'setting-combo-box',
+				extra: {
+					before: true,
+					mode: 'time',
+					component: 'format-preview'
+				},
 				data: () => {
 					const out = [], now = new Date;
 					for (const [key,fmt] of Object.entries(this._.formats.time)) {
@@ -230,8 +240,13 @@ export class TranslationManager extends Module {
 			ui: {
 				path: 'Appearance > Localization >> Formatting',
 				title: 'Date-Time Format',
-				description: 'The default combined date-time format. Custom time formats are formated using the [Day.js](https://github.com/iamkun/dayjs#readme) library.',
+				description: 'The default combined date-time format. Custom time formats are formated using the [Day.js](https://day.js.org/docs/en/display/format) library.',
 				component: 'setting-combo-box',
+				extra: {
+					before: true,
+					mode: 'datetime',
+					component: 'format-preview'
+				},
 				data: () => {
 					const out = [], now = new Date;
 					for (const [key,fmt] of Object.entries(this._.formats.datetime)) {

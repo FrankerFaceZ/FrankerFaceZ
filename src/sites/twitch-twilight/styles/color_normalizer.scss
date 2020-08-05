@@ -36,3 +36,33 @@
 		color: var(--color-text-alt-2) !important;
 	}
 }
+
+html {
+	.navigation-link.active, .navigation-link:hover {
+		color: var(--ffz-color-accent-9) !important;
+	}
+
+	.search-result-verified-badge,
+	.search-item__history {
+		color: var(--ffz-color-accent-8) !important;
+	}
+
+	.navigation-link__active-indicator {
+		background-color: var(--ffz-color-accent-8) !important;
+	}
+}
+
+.tw-root--theme-dark, .dark-theme {
+	.navigation-link.active, .navigation-link:hover {
+		color: var(--ffz-color-accent-10) !important;
+	}
+
+	.search-result-verified-badge,
+	.search-item__history {
+		color: var(--ffz-color-accent-10) !important;
+	}
+
+	.navigation-link__active-indicator {
+		color: var(--ffz-color-accent-10) !important;
+	}
+}

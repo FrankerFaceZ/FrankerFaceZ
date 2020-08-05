@@ -186,9 +186,9 @@ export default {
 				is_today = date.toDateString() === today.toDateString();
 
 			if ( is_today )
-				return date.toLocaleTimeString();
+				return this.tTime(date);
 
-			return date.toLocaleDateString();
+			return this.tDate(date);
 		},
 
 		async fetchMore() {

@@ -261,7 +261,7 @@ export const Clips = {
 
 					short: {
 						type: 'header',
-						image: {type: 'image', url: clip.thumbnailURL, sfw: false, aspect: 16/9},
+						image: {type: 'image', url: clip.thumbnailURL, sfw: true, aspect: 16/9},
 						title: clip.title,
 						subtitle,
 						extra
@@ -332,7 +332,7 @@ export const Videos = {
 					url: token.url,
 					short: {
 						type: 'header',
-						image: {type: 'image', url: video.previewThumbnailURL, sfw: false, aspect: 16/9},
+						image: {type: 'image', url: video.previewThumbnailURL, sfw: true, aspect: 16/9},
 						title: video.title,
 						subtitle,
 						extra

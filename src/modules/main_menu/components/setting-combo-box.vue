@@ -62,14 +62,18 @@
 			</button>
 		</div>
 
+		<section v-if="item.extra && item.extra.component && item.extra.before">
+			<component :is="item.extra.component" :context="context" :item="item" :value="value" />
+		</section>
+
 		<section
 			v-if="item.description"
 			class="tw-c-text-alt-2"
 		>
 			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description)" />
 		</section>
-		<section v-if="item.extra">
-			<component :is="item.extra.component" :context="context" :item="item" />
+		<section v-if="item.extra && item.extra.component && ! item.extra.before">
+			<component :is="item.extra.component" :context="context" :item="item" :value="value" />
 		</section>
 	</div>
 </template>
