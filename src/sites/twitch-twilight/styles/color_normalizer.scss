@@ -3,22 +3,30 @@
 	.channel-header,
 	.channel-root__right-column,
 	.chat-room,
+	.chat-viewers__pane,
+	.sunlight-tile,
 	.multi-stream-player-layout,
 	.carousel-player-nav-arrow__container {
 		background-color: var(--color-background-body) !important;
 	}
 
 	.clmgr-table__row,
+	.stream-manager--page-view .mosaic-window-body,
 	.room-upsell,
 	.video-card {
 		background-color: var(--color-background-base) !important;
 	}
 
+	.whispers-list-item__archive,
+	.whispers-list-item .whispers-list-item__archive-button,
+	.top-stats-tab:hover,
+	.whispers-list-item--selected,
 	.side-nav__overlay-wrapper,
 	.thread-header__title-bar-container--focused {
 		background-color: var(--color-background-alt) !important;
 	}
 
+	.whispers-list-item:hover .whispers-list-item__archive-button:hover,
 	.clmgr-table__row:hover,
 	.thread-header__title-bar-container,
 	.whispers-list-item:hover,
@@ -26,6 +34,11 @@
 		background-color: var(--color-background-alt-2) !important;
 	}
 
+	.emote-picker__emote-link:hover {
+		background-color: var(--color-background-button-active) !important;
+	}
+
+	.top-stats-tab,
 	.channel-header__user {
 		color: var(--color-text-base) !important;
 	}
@@ -34,6 +47,20 @@
 	.chat-line__moderation,
 	.chat-line__status {
 		color: var(--color-text-alt-2) !important;
+	}
+
+	.chat-viewers-list__button {
+		color: var(--color-text-link) !important;
+	}
+
+	.edit-stream-info-buttons {
+		box-shadow: 0 -2rem 1.5rem var(--color-background-base) !important;
+	}
+
+	.quick-action__not-edit-mode:not([disabled]) {
+		&:focus, &:hover {
+			background-color: var(--ffz-color-accent-8) !important;
+		}
 	}
 }
 
