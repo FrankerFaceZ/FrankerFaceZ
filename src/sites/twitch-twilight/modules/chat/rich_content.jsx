@@ -63,8 +63,6 @@ export default class RichContent extends Module {
 							data = await data;
 					}
 
-					console.log('data', data);
-
 					if ( ! data )
 						data = {
 							error: {type: 'i18n', key: 'card.empty', phrase: 'No data was returned.'}

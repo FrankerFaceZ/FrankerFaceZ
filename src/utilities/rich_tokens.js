@@ -5,6 +5,8 @@
 // ============================================================================
 
 import {has} from 'utilities/object';
+import Markdown from 'markdown-it';
+import MILA from 'markdown-it-link-attributes';
 
 export const TOKEN_TYPES = {};
 
@@ -21,6 +23,26 @@ const VALID_WEIGHTS = ['regular', 'bold', 'semibold'],
 		large: 'large',
 		huge: 'huge'
 	};
+
+
+// ============================================================================
+// Markdown
+// ============================================================================
+
+const md = new Markdown({
+	html: false,
+	linkify: true
+}).disable('image');
+
+md.use(MILA, {
+	attrs: {
+		class: 'ffz-tooltip',
+		target: '_blank',
+		rel: 'noopener',
+		'data-tooltip-type': 'link'
+	}
+});
+
 
 // ============================================================================
 // Render Tokens
@@ -127,9 +149,12 @@ export function getRoundClass(value) {
 }*/
 
 
-export function renderWithCapture(tokens, createElement, ctx) {
-	const old_capture = ctx.text_capture;
+export function renderWithCapture(tokens, createElement, ctx, markdown) {
+	const old_capture = ctx.text_capture, old_markdown = ctx.markdown;
 	ctx.text_capture = [];
+
+	if ( markdown )
+		ctx.markdown = true;
 
 	const content = renderTokens(tokens, createElement, ctx);
 
@@ -138,16 +163,21 @@ export function renderWithCapture(tokens, createElement, ctx) {
 		title = null;
 
 	ctx.text_capture = old_capture;
+	ctx.markdown = old_markdown;
+
 	return {
 		content,
 		title
 	}
 }
 
-
-export function renderTokens(tokens, createElement, ctx) {
+export function renderTokens(tokens, createElement, ctx, markdown) {
 	if ( tokens == null )
 		return null;
+
+	const old_markdown = ctx.markdown;
+	if ( markdown )
+		ctx.markdown = true;
 
 	let out = [];
 	if ( ! Array.isArray(tokens) )
@@ -164,7 +194,26 @@ export function renderTokens(tokens, createElement, ctx) {
 			const val = String(token);
 			if ( ctx.text_capture )
 				ctx.text_capture.push(val);
-			out.push(val);
+
+			if ( ctx.markdown ) {
+				const content = md.render(val);
+				if ( content === val )
+					out.push(val);
+				else if ( ctx.vue )
+					out.push(createElement('span', {
+						domProps: {
+							innerHTML: content
+						}
+					}));
+				else
+					out.push(createElement('span', {
+						dangerouslySetInnerHTML: {
+							__html: content
+						}
+					}));
+
+			} else
+				out.push(val);
 		}
 
 		else {
@@ -184,6 +233,7 @@ export function renderTokens(tokens, createElement, ctx) {
 		}
 	}
 
+	ctx.markdown = old_markdown;
 	if ( ! out.length )
 		return null;
 
@@ -214,14 +264,15 @@ TOKEN_TYPES.box = function(token, createElement, ctx) {
 	applySpacing('pd', token, classes, style);
 	applySpacing('mg', token, classes, style);
 
-	const capture = token.ellipsis || token.lines;
+	const capture = token.ellipsis || token.lines,
+		markdown = token.markdown;
 	let content, title = null;
 
 	if ( capture ) {
-		const out = renderWithCapture(token.content, createElement, ctx);
+		const out = renderWithCapture(token.content, createElement, ctx, markdown);
 		content = out.content; title = out.title;
 	} else
-		content = renderTokens(token.content, createElement, ctx);
+		content = renderTokens(token.content, createElement, ctx, markdown);
 
 	if ( ctx.vue )
 		return createElement('div', {class: classes, style, attrs: {title}}, content);
@@ -264,8 +315,9 @@ TOKEN_TYPES.fieldset = function(token, createElement, ctx) {
 		if ( ! field )
 			continue;
 
-		const name = renderTokens(field.name, createElement, ctx),
-			value = renderTokens(field.value, createElement, ctx);
+
+		const name = renderTokens(field.name, createElement, ctx, token.markdown),
+			value = renderTokens(field.value, createElement, ctx, token.markdown);
 
 		if ( name == null || value == null )
 			continue;
@@ -352,7 +404,7 @@ TOKEN_TYPES.flex = function(token, createElement, ctx) {
 	applySpacing('pd', token, classes, style);
 	applySpacing('mg', token, classes, style);
 
-	const content = renderTokens(token.content, createElement, ctx);
+	const content = renderTokens(token.content, createElement, ctx, token.markdown);
 	if ( ctx.vue )
 		return createElement('div', {class: classes, style}, content);
 
@@ -460,7 +512,7 @@ function header_vue(token, h, ctx) {
 	let content = [];
 
 	if ( token.title ) {
-		const out = renderWithCapture(token.title, h, ctx);
+		const out = renderWithCapture(token.title, h, ctx, token.markdown);
 		content.push(h('div', {
 			class: 'tw-ellipsis tw-semibold tw-mg-x-05',
 			attrs: {
@@ -470,7 +522,7 @@ function header_vue(token, h, ctx) {
 	}
 
 	if ( token.subtitle ) {
-		const out = renderWithCapture(token.subtitle, h, ctx);
+		const out = renderWithCapture(token.subtitle, h, ctx, token.markdown);
 		content.push(h('div', {
 			class: 'tw-ellipsis tw-c-text-alt-2 tw-mg-x-05',
 			attrs: {
@@ -480,7 +532,7 @@ function header_vue(token, h, ctx) {
 	}
 
 	if ( token.extra ) {
-		const out = renderWithCapture(token.extra, h, ctx);
+		const out = renderWithCapture(token.extra, h, ctx, token.markdown);
 		content.push(h('div', {
 			class: 'tw-ellipsis tw-c-text-alt-2 tw-mg-x-05',
 			attrs: {
@@ -555,7 +607,7 @@ function header_normal(token, createElement, ctx) {
 	let content = [];
 
 	if ( token.title ) {
-		const out = renderWithCapture(token.title, createElement, ctx);
+		const out = renderWithCapture(token.title, createElement, ctx, token.markdown);
 		content.push(createElement('div', {
 			className: `tw-ellipsis tw-semibold ${token.compact ? 'tw-mg-r-1' : ''}`,
 			title: out.title
@@ -563,7 +615,7 @@ function header_normal(token, createElement, ctx) {
 	}
 
 	if ( token.subtitle ) {
-		const out = renderWithCapture(token.subtitle, createElement, ctx);
+		const out = renderWithCapture(token.subtitle, createElement, ctx, token.markdown);
 		content.push(createElement('div', {
 			className: `tw-ellipsis tw-c-text-alt-2`,
 			title: out.title
@@ -571,7 +623,7 @@ function header_normal(token, createElement, ctx) {
 	}
 
 	if ( token.extra ) {
-		const out = renderWithCapture(token.extra, createElement, ctx);
+		const out = renderWithCapture(token.extra, createElement, ctx, token.markdown);
 		content.push(createElement('div', {
 			className: 'tw-ellipsis tw-c-text-alt-2',
 			title: out.title
@@ -749,7 +801,8 @@ TOKEN_TYPES.i18n = function(token, createElement, ctx) {
 	return renderTokens(
 		ctx.i18n.tList(token.key, token.phrase, token.content),
 		createElement,
-		ctx
+		ctx,
+		token.markdown
 	);
 }
 
@@ -759,7 +812,7 @@ TOKEN_TYPES.i18n = function(token, createElement, ctx) {
 // ============================================================================
 
 TOKEN_TYPES.link = function(token, createElement, ctx) {
-	const content = renderTokens(token.content, createElement, ctx);
+	const content = renderTokens(token.content, createElement, ctx, token.markdown);
 
 	const klass = [];
 	if ( token.interactive )
@@ -800,13 +853,13 @@ TOKEN_TYPES.link = function(token, createElement, ctx) {
 // ============================================================================
 
 TOKEN_TYPES.overlay = function(token, createElement, ctx) {
-	const content = renderTokens(token.content, createElement, ctx);
+	const content = renderTokens(token.content, createElement, ctx, token.markdown);
 	if ( ! content )
 		return null;
 
 	const corners = [];
 	for(const corner of ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right']) {
-		const stuff = renderTokens(token[corner], createElement, ctx);
+		const stuff = renderTokens(token[corner], createElement, ctx, token.markdown);
 		if ( stuff )
 			corners.push(ctx.vue ?
 				createElement('div', {class: `ffz--overlay__bit`, attrs:{'data-side':corner}}, stuff) :
@@ -883,10 +936,10 @@ TOKEN_TYPES.style = function(token, createElement, ctx) {
 	let content, title = null;
 
 	if ( capture ) {
-		const out = renderWithCapture(token.content, createElement, ctx);
+		const out = renderWithCapture(token.content, createElement, ctx, token.markdown);
 		content = out.content; title = out.title;
 	} else
-		content = renderTokens(token.content, createElement, ctx);
+		content = renderTokens(token.content, createElement, ctx, token.markdown);
 
 	if ( ctx.vue )
 		return createElement('span', {class: classes, style, attrs: {title}}, content);
@@ -957,7 +1010,7 @@ TOKEN_TYPES.tag = function(token, createElement, ctx) {
 	if ( tag === 'video' || tag === 'audio' )
 		attrs.loadedmetadata = ctx.onload;
 
-	const content = renderTokens(token.content, createElement, ctx);
+	const content = renderTokens(token.content, createElement, ctx, token.markdown);
 
 	if ( ctx.vue )
 		return createElement(tag, {

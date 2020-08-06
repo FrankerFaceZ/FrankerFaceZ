@@ -83,7 +83,9 @@ export function findReactFragment(frag, criteria, depth = 25, current = 0, visit
 export function createElement(tag, props, ...children) {
 	const el = document.createElement(tag);
 
-	if ( children.length === 1)
+	if ( children.length === 0)
+		children = null;
+	else if ( children.length === 1)
 		children = children[0];
 
 	if ( typeof props === 'string' )
