@@ -531,8 +531,22 @@ function header_vue(token, h, ctx) {
 					right ? null : content
 				])
 			}
-		}
-	}
+
+		} else if ( ! token.compact )
+			content = h('div', {
+				class: 'tw-flex ffz--rich-header'
+			}, [
+				h('div', {class: 'ffz--header-image tw-mg-x-05'}),
+				content
+			]);
+
+	} else if ( ! token.compact )
+		content = h('div', {
+			class: 'tw-flex ffz--rich-header'
+		}, [
+			h('div', {class: 'ffz--header-image tw-mg-x-05'}),
+			content
+		]);
 
 	return content;
 }
@@ -603,8 +617,21 @@ function header_normal(token, createElement, ctx) {
 					className: 'tw-flex ffz--rich-header'
 				}, [right ? content : null, image, right ? null : content])
 			}
-		}
-	}
+		} else if ( ! token.compact )
+			content = createElement('div', {
+				className: 'tw-flex ffz--rich-header'
+			}, [
+				createElement('div', {className: 'ffz--header-image tw-mg-x-05'}),
+				content
+			]);
+
+	} else if ( ! token.compact )
+		content = createElement('div', {
+			className: 'tw-flex ffz--rich-header'
+		}, [
+			createElement('div', {className: 'ffz--header-image tw-mg-x-05'}),
+			content
+		]);
 
 	return content;
 

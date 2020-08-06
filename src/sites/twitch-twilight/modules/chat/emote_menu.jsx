@@ -655,31 +655,30 @@ export default class EmoteMenu extends Module {
 
 				let calendar;
 
-				const renews = data.renews && data.renews - new Date,
-					ends = data.ends && data.ends - new Date;
+				const renews = data.renews && data.renews.getTime(),
+					ends = data.ends && data.ends.getTime();
 
 				if ( renews > 0 ) {
 					calendar = {
 						icon: 'calendar',
-						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews in {seconds,humantime}.', {seconds: renews / 1000})
+						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews in {seconds,humantime}.', {seconds: renews})
 					}
 
 				} else if ( ends ) {
-					const seconds = ends / 1000;
 					if ( data.prime )
 						calendar = {
 							icon: 'crown',
-							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in {seconds,humantime}.', {seconds})
+							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in {seconds,humantime}.', {seconds: ends})
 						}
 					else if ( data.gift )
 						calendar = {
 							icon: 'gift',
-							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in {seconds,humantime}.', {seconds})
+							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in {seconds,humantime}.', {seconds: ends})
 						}
 					else
 						calendar = {
 							icon: 'calendar-empty',
-							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends in {seconds,humantime}.', {seconds})
+							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends in {seconds,humantime}.', {seconds: ends})
 						}
 				}
 
