@@ -25,7 +25,7 @@ export default class RichContent extends Module {
 		if ( this.has_tokenizer )
 			return;
 
-		this.tokenizer = await import(/* webpack-chunk-name: 'rich_tokens' */ 'utilities/rich_tokens');
+		this.tokenizer = await import(/* webpackChunkName: 'rich_tokens' */ 'utilities/rich_tokens');
 		this.has_tokenizer = true;
 		return this.tokenizer;
 	}
@@ -52,9 +52,11 @@ export default class RichContent extends Module {
 					t.loadTokenizer().then(() => this.setState({...this.state, has_tokenizer: true}));
 			}
 
-			async load() {
+			async load(refresh = false) {
+				this.clearRefresh();
+
 				try {
-					let data = this.props.getData();
+					let data = this.props.getData(refresh);
 					if ( data instanceof Promise ) {
 						const to_wait = has(this.props, 'timeout') ? this.props.timeout : 1000;
 						if ( to_wait )
@@ -77,6 +79,21 @@ export default class RichContent extends Module {
 								subtitle: data.error
 							}
 						};
+
+					if ( data.refresh ) {
+						try {
+							this.clearRefresh();
+
+							const then = new Date(data.refresh).getTime(),
+								delta = then - Date.now();
+
+							if ( delta > 0 )
+								this._refresh_timer = setTimeout(() => this.load(true), delta + (100 * Math.floor(Math.random() * 100)));
+
+						} catch(err) {
+							/* no op */
+						}
+					}
 
 					this.setState(Object.assign({
 						loaded: true,
@@ -101,17 +118,26 @@ export default class RichContent extends Module {
 				}
 			}
 
+			clearRefresh() {
+				if ( this._refresh_timer ) {
+					clearTimeout(this._refresh_timer);
+					this._refresh_timer = null;
+				}
+			}
+
 			checkReload(url) {
 				if ( ! url || (url && this.props.url === url) )
 					this.reload();
 			}
 
-			reload() {
+			reload(refresh = false) {
+				this.clearRefresh();
+
 				this.setState({
 					loaded: false,
 					error: false,
 					has_tokenizer: t.has_tokenizer
-				}, () => this.load());
+				}, () => this.load(refresh));
 			}
 
 			componentDidMount() {
@@ -122,6 +148,7 @@ export default class RichContent extends Module {
 
 			componentWillUnmount() {
 				t.off('chat:update-link-resolver', this.checkReload, this);
+				this.clearRefresh();
 			}
 
 			renderCard() {

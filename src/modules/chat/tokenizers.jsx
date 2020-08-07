@@ -56,7 +56,7 @@ export const Links = {
 			show_unsafe = datasetBool(target.dataset.forceUnsafe) ?? this.context.get('tooltip.link-nsfw-images');
 
 		return Promise.all([
-			import(/* webpack-chunk-name: 'rich_tokens' */ 'utilities/rich_tokens'),
+			import(/* webpackChunkName: 'rich_tokens' */ 'utilities/rich_tokens'),
 			this.get_link_info(url)
 		]).then(([rich_tokens, data]) => {
 			if ( ! data || (data.v || 1) > TOOLTIP_VERSION )

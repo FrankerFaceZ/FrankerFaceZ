@@ -1560,11 +1560,11 @@ export default class Chat extends Module {
 	}
 
 
-	get_link_info(url, no_promises) {
+	get_link_info(url, no_promises, refresh = false) {
 		let info = this._link_info[url];
 		const expires = info && info[1];
 
-		if ( expires && Date.now() > expires )
+		if ( (info && info[0] && refresh) || (expires && Date.now() > expires) )
 			info = this._link_info[url] = null;
 
 		if ( info && info[0] )

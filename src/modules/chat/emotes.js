@@ -400,14 +400,15 @@ export default class Emotes extends Module {
 			if ( ! fine )
 				return;
 
-			const chat = fine.searchParent(target, n => n.props && n.props.onEmoteClick);
-			if ( ! chat || ! chat.props || ! chat.props.message )
+			const line = fine.searchParent(target, n => n.props && n.props.message),
+				opener = fine.searchParent(target, n => n.onShowEmoteCard, 200);
+
+			if ( ! line || ! opener )
 				return;
 
-			const props = chat.props;
-			props.onEmoteClick({
-				channelID: props.channelID || '',
-				channelLogin: props.channelLogin || '',
+			opener.onShowEmoteCard({
+				channelID: line.props.channelID || '',
+				channelLogin: line.props.channelLogin || '',
 				emoteID: ds.id,
 				emoteCode: target.alt,
 				sourceID: 'chat',

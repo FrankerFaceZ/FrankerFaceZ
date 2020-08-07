@@ -40,7 +40,6 @@ export default {
 	watch: {
 		data() {
 			this.reset();
-			this.load();
 		},
 
 		events() {
@@ -57,6 +56,7 @@ export default {
 
 	beforeDestroy() {
 		this.unlisten();
+		this.clearRefresh();
 	},
 
 	methods: {
@@ -64,7 +64,7 @@ export default {
 			if ( tokenizer )
 				this.has_tokenizer = true;
 			else {
-				tokenizer = await import(/* webpack-chunk-name: 'rich_tokens' */ 'utilities/rich_tokens');
+				tokenizer = await import(/* webpackChunkName: 'rich_tokens' */ 'utilities/rich_tokens');
 				this.has_tokenizer = true;
 			}
 		},
@@ -74,25 +74,33 @@ export default {
 
 			if ( this.events?.on ) {
 				this._es = this.events;
-				this._es.on('chat:update-link-resolver', this.checkRefresh, this);
+				this._es.on('chat:update-link-resolver', this.checkReset, this);
 			}
 		},
 
 		unlisten() {
 			if ( this._es?.off ) {
-				this._es.off('chat:update-link-resolver', this.checkRefresh, this);
+				this._es.off('chat:update-link-resolver', this.checkReset, this);
 				this._es = null;
 			}
 		},
 
-		checkRefresh(url) {
+		checkReset(url) {
 			if ( ! url || (url && url === this.url) ) {
 				this.reset();
-				this.load();
 			}
 		},
 
-		reset() {
+		clearRefresh() {
+			if ( this._refresh_timer ) {
+				clearTimeout(this._refresh_timer);
+				this._refresh_timer = null;
+			}
+		},
+
+		reset(refresh = false) {
+			this.clearRefresh();
+
 			this.loaded = false;
 			this.error = null;
 			this.accent = null;
@@ -102,12 +110,15 @@ export default {
 			this.urls = null;
 			this.allow_media = false;
 			this.allow_unsafe = false;
+			this.load(refresh);
 		},
 
-		async load() {
+		async load(refresh = false) {
+			this.clearRefresh();
+
 			let data;
 			try {
-				data = this.data.getData();
+				data = this.data.getData(refresh);
 				if ( data instanceof Promise ) {
 					const to_wait = has(this.data, 'timeout') ? this.data.timeout : 1000;
 					if ( to_wait )
@@ -136,6 +147,21 @@ export default {
 						subtitle: data.error
 					}
 				}
+
+			if ( data.refresh ) {
+				try {
+					this.clearRefresh();
+
+					const then = new Date(data.refresh).getTime(),
+						delta = then - Date.now();
+
+					if ( delta > 0 )
+						this._refresh_timer = setTimeout(() => this.load(true), delta + (100 * Math.floor(Math.random() * 100)));
+
+				} catch(err) {
+					/* no op */
+				}
+			}
 
 			this.loaded = true;
 			this.error = data.error;

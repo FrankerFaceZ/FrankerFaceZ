@@ -42,10 +42,10 @@ export const Links = {
 			url: token.url,
 			timeout: 0,
 
-			getData: async () => {
+			getData: async (refresh = false) => {
 				let data;
 				try {
-					data = await this.get_link_info(token.url);
+					data = await this.get_link_info(token.url, false, refresh);
 				} catch(err) {
 					return {
 						url: token.url,
