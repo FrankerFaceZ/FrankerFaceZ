@@ -4,6 +4,8 @@
 // Settings Types
 // ============================================================================
 
+const DEFAULT = Symbol('default');
+
 export const basic = {
 	get(key, profiles) {
 		for(const profile of profiles)
@@ -52,40 +54,54 @@ export const array_merge = {
 		return values;
 	},
 
-	get(key, profiles, definition, log) {
+	get(key, profiles, definition, log, ctx) {
 		const values = [],
 			sources = [];
 		let trailing = [];
 		let had_value = false;
 
-		for(const profile of profiles)
-			if ( profile.has(key) ) {
-				const value = profile.get(key),
-					trail = [];
+		const profs = [...profiles, DEFAULT];
 
-				if ( ! Array.isArray(value) ) {
+		for(const profile of profs) {
+			let value;
+			if ( profile === DEFAULT ) {
+				value = definition.default;
+				if ( typeof value === 'function' )
+					value = value(ctx);
+
+			} else if ( profile.has(key) )
+				value = profile.get(key);
+			else
+				continue;
+
+			if ( ! Array.isArray(value) ) {
+				if ( profile !== DEFAULT )
 					log.warn(`Profile #${profile.id} has an invalid value for "${key}" of type ${typeof value}. Skipping.`);
-					continue;
-				}
-
-				sources.push(profile.id);
-				let is_trailing = false;
-				for(const val of value) {
-					had_value = true;
-					if ( val.t === 'inherit' )
-						is_trailing = true;
-					else if ( is_trailing )
-						trail.push(val.v);
-					else
-						values.push(val.v);
-				}
-
-				trailing = trail.concat(trailing);
-
-				// If we didn't run into an inherit, don't inherit.
-				if ( ! is_trailing && ! definition.always_inherit )
-					break;
+				continue;
 			}
+
+			const trail = [];
+
+			if ( profile !== DEFAULT )
+				sources.push(profile.id);
+
+			let is_trailing = false;
+			for(const val of value) {
+				had_value = true;
+				if ( val.t === 'inherit' )
+					is_trailing = true;
+				else if ( is_trailing )
+					trail.push(val.v);
+				else
+					values.push(val.v);
+			}
+
+			trailing = trail.concat(trailing);
+
+			// If we didn't run into an inherit, don't inherit.
+			if ( ! is_trailing && ! definition.always_inherit )
+				break;
+		}
 
 		if ( had_value )
 			return [

@@ -65,11 +65,11 @@ export default class Actions extends Module {
 				),
 
 			default: [
-				{v: {action: 'reply', appearance: {type: 'icon', icon: 'ffz-i-reply'}, options: {}, display: {}}},
 				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
 				{v: {action: 'unban', appearance: {type: 'icon', icon: 'ffz-i-ok'}, options: {}, display: {mod: true, mod_icons: true, deleted: true}}},
 				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true, mod_icons: true}}},
-				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}}
+				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}},
+				{v: {action: 'reply', appearance: {type: 'icon', icon: 'ffz-i-reply'}, options: {}, display: {}}}
 			],
 
 			type: 'array_merge',
@@ -498,12 +498,14 @@ export default class Actions extends Module {
 		if ( current_level < 3 )
 			mod_icons = false;
 
+		const chat_line = line;
+
 		return this.renderPopup(target, (t, tip) => {
 			const lines = [];
 			let line = null;
 
 			const handle_click = event => {
-				this.handleClick(event);
+				this.handleClick(event, line);
 				tip.hide();
 			};
 
@@ -599,6 +601,7 @@ export default class Actions extends Module {
 			</div>);
 
 			out.ffz_message = msg;
+			out.ffz_line = chat_line;
 			return out;
 		});
 	}
@@ -723,11 +726,12 @@ export default class Actions extends Module {
 		if ( ! definition )
 			return null;
 
-		let user, room, message, loaded = false;
+		let user, room, message, loaded = false, line;
 
 		if ( pds ) {
 			if ( pds.source === 'msg' && parent.ffz_message ) {
 				const msg = parent.ffz_message;
+				line = parent.ffz_line;
 
 				loaded = true;
 				user = msg.user ? {
@@ -749,8 +753,8 @@ export default class Actions extends Module {
 				};
 
 			} else if ( pds.source === 'line' ) {
-				const fine = this.resolve('site.fine'),
-					line = fine && fine.searchParent(parent, n => n.props && n.props.message);
+				const fine = this.resolve('site.fine');
+				line = fine && fine.searchParent(parent, n => n.props && n.props.message);
 
 				if ( line && line.props && line.props.message ) {
 					loaded = true;
@@ -792,7 +796,8 @@ export default class Actions extends Module {
 			user,
 			room,
 			message,
-			message_id: message ? message.id : null
+			message_id: message ? message.id : null,
+			line
 		};
 
 		if ( definition.defaults )

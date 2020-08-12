@@ -36,15 +36,17 @@ export const reply = {
 			return true;
 	},
 
-	click(event) {
-		const fine = this.resolve('site.fine'),
+	click(event, data) {
+		let line = data.line;
+		if ( ! line ) {
+			const fine = this.resolve('site.fine');
 			line = fine ? fine.searchParent(event.target, n => n.setMessageTray && n.props && n.props.message) : null;
+		}
 
 		if ( ! line )
 			return;
 
 		line.ffzOpenReply();
-		//line.setMessageTray(line.props.message, line.props.message.message);
 	}
 }
 

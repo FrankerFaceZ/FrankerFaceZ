@@ -58,6 +58,7 @@
 .ffz--reply-mention {
 	padding: 0.25rem 0.5rem;
 	border-radius: 1rem;
+	white-space: nowrap;
 
 	&:before {
 		font-size: 0.8em;

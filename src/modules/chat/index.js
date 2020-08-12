@@ -1279,6 +1279,10 @@ export default class Chat extends Module {
 			const emotes = {},
 				chars = split_chars(msg.message);
 
+			let offset = 0;
+			if ( msg.message && msg.messageBody && msg.message !== msg.messageBody )
+				offset = chars.length - split_chars(msg.messageBody).length;
+
 			for(const key in msg.emotes)
 				if ( has(msg.emotes, key) ) {
 					const raw_emote = msg.emotes[key];
@@ -1286,7 +1290,7 @@ export default class Chat extends Module {
 						return msg.ffz_emotes = msg.emotes;
 
 					const em = emotes[raw_emote.id] = emotes[raw_emote.id] || [];
-					let idx = raw_emote.startIndex + 1;
+					let idx = raw_emote.startIndex + 1 + offset;
 					while(idx < chars.length) {
 						if ( EMOTE_CHARS.test(chars[idx]) )
 							break;
@@ -1295,7 +1299,7 @@ export default class Chat extends Module {
 					}
 
 					em.push({
-						startIndex: raw_emote.startIndex,
+						startIndex: raw_emote.startIndex + offset,
 						endIndex: idx - 1
 					});
 				}
