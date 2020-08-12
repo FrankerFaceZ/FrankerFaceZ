@@ -31,6 +31,7 @@ export default class ChatLine extends Module {
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject(RichContent);
+		this.inject('experiments');
 
 		this.inject('chat.actions');
 		this.inject('chat.overrides');
@@ -82,6 +83,85 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-users-blocked--regex', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.highlight-basic-badges-blocked--list', this.updateLines, this);
+
+		this.on('chat:get-tab-commands', e => {
+			if ( this.experiments.getTwitchAssignmentByName('chat_replies') === 'control' )
+				return;
+
+			e.commands.push({
+				name: 'reply',
+				description: 'Reply to a user\'s last message.',
+				permissionLevel: 0,
+				ffz_group: 'FrankerFaceZ',
+				commandArgs: [
+					{name: 'username', isRequired: true},
+					{name: 'message', isRequired: false}
+				]
+			})
+		});
+
+		this.on('chat:pre-send-message', e => {
+			if ( this.experiments.getTwitchAssignmentByName('chat_replies') === 'control' )
+				return;
+
+			const msg = e.message,
+				types = this.parent.chat_types || {};
+
+			let user, message;
+			if ( /^\/reply ?/i.test(msg) )
+				user = msg.slice(7).trim();
+			else
+				return;
+
+			e.preventDefault();
+
+			const idx = user.indexOf(' ');
+			if ( idx !== -1 ) {
+				message = user.slice(idx + 1);
+				user = user.slice(0, idx);
+			}
+
+			if ( user.startsWith('@') )
+				user = user.slice(1);
+
+			if ( user && user.length ) {
+				user = user.toLowerCase();
+
+				const lines = Array.from(this.ChatLine.instances);
+				let i = lines.length;
+				while(i--) {
+					const line = lines[i],
+						msg = line?.props?.message,
+						u = msg?.user;
+
+					if ( ! u )
+						continue;
+
+					if ( u.login === user || u.displayName?.toLowerCase?.() === user ) {
+						if ( message ) {
+							e.sendMessage(message, {
+								reply: {
+									parentDeleted: msg.deleted || false,
+									parentDisplayName: u.displayName,
+									parentMessageBody: msg.message,
+									parentMsgId: msg.id,
+									parentUid: u.id,
+									parentUserLogin: u.login
+								}
+							});
+						} else
+							requestAnimationFrame(() => line.ffzOpenReply());
+
+						return;
+					}
+				}
+			}
+
+			e.addMessage({
+				type: types.Notice,
+				message: this.i18n.t('chat.reply.bad-user', 'Invalid user or no known message to reply to.')
+			});
+		});
 
 		const t = this,
 			React = await this.web_munch.findModule('react');
@@ -160,6 +240,78 @@ export default class ChatLine extends Module {
 					props.showTimestamps !== this.props.showTimestamps;
 			}
 
+			cls.prototype.ffzOpenReply = function() {
+				const old_render_author = this.renderMessageAuthor;
+				this.renderMessageAuthor = () => this.ffzReplyAuthor();
+
+				const tokens = this.props.message?.ffz_tokens;
+				if ( ! tokens )
+					return;
+
+				this.setMessageTray(this.props.message, t.chat.renderTokens(tokens, e));
+
+				this.renderMessageAuthor = old_render_author;
+			}
+
+			cls.prototype.ffzReplyAuthor = function() {
+				const msg = t.chat.standardizeMessage(this.props.message),
+					user = msg.user,
+					raw_color = t.overrides.getColor(user.id) || user.color,
+					color = t.parent.colors.process(raw_color);
+
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
+					room_id = msg.roomId ? msg.roomId : this.props.channelID;
+
+				if ( ! room && room_id ) {
+					const r = t.chat.getRoom(room_id, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
+
+				if ( ! room_id && room ) {
+					const r = t.chat.getRoom(null, room_id, true);
+					if ( r && r.id )
+						room_id = msg.roomId = r.id;
+				}
+
+				const user_block = [
+					e('span', {
+						className: 'chat-author__display-name'
+					}, user.displayName),
+					user.isIntl && e('span', {
+						className: 'chat-author__intl-login'
+					}, ` (${user.login})`)
+				];
+
+				const override_name = t.overrides.getName(user.id);
+
+				return e('span', {
+					'data-room-id': room_id,
+					'data-room': room,
+					'data-user-id': user.userID,
+					'data-user': user.userLogin && user.userLogin.toLowerCase()
+				}, [
+					//t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+					e('span', {
+						className: 'chat-line__message--badges'
+					}, t.chat.badges.render(msg, e)),
+					e('span', {
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip-wrapper' : ''}`,
+						role: 'button',
+						style: { color },
+						onClick: this.ffz_user_click_handler,
+						onContextMenu: t.actions.handleUserContext
+					}, override_name ? [
+						e('span', {
+							className: 'chat-author__display-name'
+						}, override_name),
+						e('div', {
+							className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'
+						}, user_block)
+					] : user_block)
+				]);
+			}
+
 			cls.prototype.render = function() { try {
 				this._ffz_no_scan = true;
 
@@ -168,6 +320,7 @@ export default class ChatLine extends Module {
 					override_mode = t.chat.context.get('chat.filtering.display-deleted'),
 
 					msg = t.chat.standardizeMessage(this.props.message),
+					reply_tokens = msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply),
 					is_action = msg.messageType === types.Action,
 
 					user = msg.user,
@@ -258,12 +411,15 @@ other {# messages were deleted by a moderator.}
 				//if ( ! msg.message && msg.messageParts )
 				//	t.chat.detokenizeMessage(msg);
 
+				const has_replies = this.chatRepliesTreatment ? this.chatRepliesTreatment !== 'control' : false;
+
 				const u = t.site.getUser(),
 					r = {id: room_id, login: room};
 
 				if ( u ) {
 					u.moderator = this.props.isCurrentUserModerator;
 					u.staff = this.props.isCurrentUserStaff;
+					u.can_reply = has_replies && u.login !== msg.user?.login && ! msg.deleted && ! this.props.disableReplyClick
 				}
 
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
@@ -317,7 +473,6 @@ other {# messages were deleted by a moderator.}
 
 				const override_name = t.overrides.getName(user.id);
 
-
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
@@ -342,11 +497,14 @@ other {# messages were deleted by a moderator.}
 							}, user_block)
 						] : user_block),
 						e('span', null, is_action ? ' ' : ': '),
+						show && has_replies && reply_tokens ?
+							t.chat.renderTokens(reply_tokens, e)
+							: null,
 						show ?
 							e('span', {
 								className:'message',
 								style: is_action ? { color } : null
-							}, t.chat.renderTokens(tokens, e))
+							}, t.chat.renderTokens(tokens, e, has_replies ? this.props.reply : null))
 							:
 							e('span', {
 								className: 'chat-line__message--deleted',

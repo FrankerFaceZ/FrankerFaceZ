@@ -1,11 +1,11 @@
 <template functional>
 	<div
-		:class="`tw-aspect--align-${props.align||'top'}`"
-		class="tw-aspect"
+		:class="`ffz-aspect--align-${props.align||'top'}`"
+		class="ffz-aspect"
 	>
 		<div
 			:style="{paddingTop: (props.padding ? props.padding : (100 * (1 / (props.ratio || 1)))) + '%'}"
-			class="tw-aspect__spacer"
+			class="ffz-aspect__spacer"
 		/>
 		<slot />
 	</div>

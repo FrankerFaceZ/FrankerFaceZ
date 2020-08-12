@@ -46,6 +46,20 @@ export default class Channel extends Module {
 			}
 		});
 
+		this.settings.add('channel.auto-skip-trailer', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> General',
+				title: 'Automatically skip channel trailers.',
+				component: 'setting-check-box'
+			},
+
+			changed: val => {
+				if ( val )
+					this.ChannelTrailer.each(el => this.maybeSkipTrailer(el));
+			}
+		})
+
 		this.settings.add('channel.auto-click-chat', {
 			default: false,
 			ui: {
@@ -83,6 +97,13 @@ export default class Channel extends Module {
 		);
 
 
+		this.ChannelTrailer = this.elemental.define(
+			'channel-trailer', '.channel-trailer-player__wrapper',
+			USER_PAGES,
+			{attributes: true}, 1
+		);
+
+
 		this.ChannelRoot = this.elemental.define(
 			'channel-root', '.channel-root',
 			USER_PAGES,
@@ -115,6 +136,10 @@ export default class Channel extends Module {
 
 		this.on('i18n:update', this.updateLinks, this);
 
+		this.ChannelTrailer.on('mount', this.maybeSkipTrailer, this);
+		this.ChannelTrailer.on('update', this.maybeSkipTrailer, this);
+		this.ChannelTrailer.each(el => this.maybeSkipTrailer(el));
+
 		this.ChannelPanels.on('mount', this.updatePanelTips, this);
 		this.ChannelPanels.on('update', this.updatePanelTips, this);
 		this.ChannelPanels.on('unmount', this.removePanelTips, this);
@@ -137,6 +162,17 @@ export default class Channel extends Module {
 
 		this.router.on(':route', this.checkNavigation, this);
 		this.checkNavigation();
+	}
+
+	maybeSkipTrailer(el) {
+		if ( ! this.settings.get('channel.auto-skip-trailer') )
+			return;
+
+		const inst = this.fine.searchParent(el, n => n.props && n.props.onDismiss);
+		if ( inst ) {
+			this.log.info('Automatically skipping channel trailer.');
+			inst.props.onDismiss();
+		}
 	}
 
 	updatePanelTips(inst) {

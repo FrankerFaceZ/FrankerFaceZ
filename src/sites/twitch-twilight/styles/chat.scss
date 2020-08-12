@@ -55,6 +55,27 @@
 	pointer-events: none;
 }
 
+.ffz--reply-mention {
+	padding: 0.25rem 0.5rem;
+	border-radius: 1rem;
+
+	&:before {
+		font-size: 0.8em;
+	}
+
+	background-color: rgba(0,0,0,0.15);
+
+	.tw-root--theme-dark & {
+		background-color: rgba(255,255,255,0.15);
+	}
+
+	&:hover, &:focus {
+		text-decoration: none;
+		background-color: var(--color-background-button-hover);
+		color: var(--color-text-button-hover) !important;
+	}
+}
+
 .ffz--chat-card {
 	.vod-message & {
 		.ffz--card-text {

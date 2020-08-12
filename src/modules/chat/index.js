@@ -50,6 +50,7 @@ export default class Chat extends Module {
 		// Bind for JSX stuff
 		this.clickToReveal = this.clickToReveal.bind(this);
 		this.handleMentionClick = this.handleMentionClick.bind(this);
+		this.handleReplyClick = this.handleReplyClick.bind(this);
 
 		this.style = new ManagedStyle;
 
@@ -1073,6 +1074,19 @@ export default class Chat extends Module {
 	}
 
 
+	handleReplyClick(event) {
+		const target = event.target,
+			fine = this.resolve('site.fine');
+
+		if ( ! target || ! fine )
+			return;
+
+		const chat = fine.searchParent(target, n => n.props && n.props.reply && n.setOPCardTray);
+		if ( chat )
+			chat.setOPCardTray(chat.props.reply);
+	}
+
+
 	handleMentionClick(event) {
 		if ( ! this.context.get('chat.filtering.clickable-mentions') )
 			return;
@@ -1087,7 +1101,7 @@ export default class Chat extends Module {
 		if ( ! fine )
 			return;
 
-		const chat = fine.searchParent(event.target, n => n.props && n.props.onUsernameClick);
+		const chat = fine.searchParent(target, n => n.props && n.props.onUsernameClick);
 		if ( ! chat )
 			return;
 
@@ -1171,6 +1185,25 @@ export default class Chat extends Module {
 			return 1;
 
 		return 0;
+	}
+
+
+	tokenizeReply(reply) {
+		if ( ! reply )
+			return null;
+
+		return [
+			{
+				type: 'reply',
+				text: reply.parentDisplayName,
+				color: this.color_cache ? this.color_cache.get(reply.parentUserLogin) : null,
+				recipient: reply.parentUserLogin
+			},
+			{
+				type: 'text',
+				text: ' '
+			}
+		];
 	}
 
 
@@ -1487,7 +1520,7 @@ export default class Chat extends Module {
 	}
 
 
-	renderTokens(tokens, e) {
+	renderTokens(tokens, e, reply) {
 		if ( ! e )
 			e = createElement;
 
@@ -1505,6 +1538,10 @@ export default class Chat extends Module {
 
 			let res;
 
+			// If we have a reply, skip the initial mention.
+			if ( reply && i === 0 && type === 'mention' && token.recipient && token.recipient === reply.parentUserLogin )
+				continue;
+
 			if ( type === 'text' )
 				res = e('span', {
 					className: 'text-fragment',
@@ -1512,7 +1549,7 @@ export default class Chat extends Module {
 				}, token.text);
 
 			else if ( tk )
-				res = tk.render.call(this, token, e);
+				res = tk.render.call(this, token, e, reply);
 
 			else
 				res = e('em', {

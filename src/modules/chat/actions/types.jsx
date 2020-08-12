@@ -1,5 +1,54 @@
 'use strict';
 
+
+// ============================================================================
+// Send Reply
+// ============================================================================
+
+export const reply = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-reply'
+		}
+	}],
+
+	required_context: ['message'],
+
+	title: 'Reply to Message',
+	description: 'Allows you to directly reply to another user\'s message.',
+
+	can_self: true,
+
+	tooltip() {
+		return this.i18n.t('chat.actions.reply', 'Reply to Message')
+	},
+
+	hidden(data, message, current_room, current_user) {
+		const id = message?.id;
+		if ( typeof id !== 'string' || ! /^[0-9a-f]+-[0-9a-f]+/.test(id) )
+			return true;
+
+		if ( ! message.message || message.deleted || (current_user && current_user.login === message.user?.login) || ! current_user?.can_reply )
+			return true;
+
+		if ( message?.reply )
+			return true;
+	},
+
+	click(event) {
+		const fine = this.resolve('site.fine'),
+			line = fine ? fine.searchParent(event.target, n => n.setMessageTray && n.props && n.props.message) : null;
+
+		if ( ! line )
+			return;
+
+		line.ffzOpenReply();
+		//line.setMessageTray(line.props.message, line.props.message.message);
+	}
+}
+
+
 // ============================================================================
 // Edit Overrides
 // ============================================================================

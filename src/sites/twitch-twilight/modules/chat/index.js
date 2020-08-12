@@ -1682,9 +1682,11 @@ export default class ChatHook extends Module {
 			this._ffz_installed = true;
 
 			const inst = this,
-				old_send = this.sendMessage;
+				old_send = this.sendMessage,
+				addMessage = (...args) => inst.addMessage(...args),
+				sendMessage = (msg, extra) => inst.sendMessage(msg, extra);
 
-			inst.sendMessage = function(msg) {
+			inst.sendMessage = function(msg, extra) {
 				msg = msg.replace(/\s+/g, ' ');
 
 				if ( msg.startsWith('/ffz') ) {
@@ -1698,7 +1700,10 @@ export default class ChatHook extends Module {
 
 				const event = new FFZEvent({
 					message: msg,
-					channel: inst.props.channelLogin
+					extra,
+					channel: inst.props.channelLogin,
+					addMessage,
+					sendMessage
 				});
 
 				t.emit('chat:pre-send-message', event);
@@ -1706,7 +1711,7 @@ export default class ChatHook extends Module {
 				if ( event.defaultPrevented )
 					return;
 
-				return old_send.call(this, event.message);
+				return old_send.call(this, event.message, event.extra);
 			}
 		}
 

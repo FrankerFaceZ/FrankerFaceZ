@@ -14,6 +14,7 @@ import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
+//import PubSubClient from './pubsub';
 import Site from 'site';
 import Vue from 'utilities/vue';
 //import Timing from 'utilities/timing';
@@ -56,6 +57,7 @@ class FrankerFaceZ extends Module {
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
 		this.inject('socket', SocketClient);
+		//this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
 

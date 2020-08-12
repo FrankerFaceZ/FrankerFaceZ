@@ -65,6 +65,7 @@ export default class Actions extends Module {
 				),
 
 			default: [
+				{v: {action: 'reply', appearance: {type: 'icon', icon: 'ffz-i-reply'}, options: {}, display: {}}},
 				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
 				{v: {action: 'unban', appearance: {type: 'icon', icon: 'ffz-i-ok'}, options: {}, display: {mod: true, mod_icons: true, deleted: true}}},
 				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true, mod_icons: true}}},
@@ -418,6 +419,9 @@ export default class Actions extends Module {
 				(disp.followersOnly != null && disp.followersOnly !== current_room.followersOnly) )
 				continue;
 
+			if ( maybe_call(act.hidden, this, data, null, current_room, current_user, mod_icons) )
+				continue;
+
 			if ( act.override_appearance ) {
 				const out = act.override_appearance.call(this, Object.assign({}, ap), data, null, current_room, current_user, mod_icons);
 				if ( out )
@@ -539,6 +543,9 @@ export default class Actions extends Module {
 					(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 					continue;
 
+				if ( maybe_call(act.hidden, this, data, msg, r, u, mod_icons) )
+					continue;
+
 				if ( act.override_appearance ) {
 					const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons);
 					if ( out )
@@ -600,11 +607,9 @@ export default class Actions extends Module {
 	renderInline(msg, mod_icons, current_user, current_room, createElement) {
 		const actions = [];
 
-		if ( msg.user && current_user && current_user.login === msg.user.login )
-			return;
-
 		const current_level = this.getUserLevel(current_room, current_user),
-			msg_level = this.getUserLevel(current_room, msg.user);
+			msg_level = this.getUserLevel(current_room, msg.user),
+			is_self = msg.user && current_user && current_user.login === msg.user.login;
 
 		if ( current_level < 3 )
 			mod_icons = false;
@@ -628,6 +633,12 @@ export default class Actions extends Module {
 				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
 				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
+				continue;
+
+			if ( is_self && ! act.can_self )
+				continue;
+
+			if ( maybe_call(act.hidden, this, data, msg, current_room, current_user, mod_icons) )
 				continue;
 
 			if ( act.override_appearance ) {

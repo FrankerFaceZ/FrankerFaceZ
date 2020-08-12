@@ -773,10 +773,10 @@ function render_image(token, createElement, ctx) {
 		return image;
 
 	return createElement('div', {
-		className: 'tw-aspect tw-aspect--align-center'
+		className: 'ffz-aspect ffz-aspect--align-center'
 	}, [
 		createElement('div', {
-			className: 'tw-aspect__spacer',
+			className: 'ffz-aspect__spacer',
 			style: {
 				paddingTop: `${100 * (1 / (aspect || 1))}%`
 			}

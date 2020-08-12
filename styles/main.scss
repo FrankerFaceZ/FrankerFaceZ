@@ -38,3 +38,33 @@
 .ffz--links {
 	order: 10;
 }
+
+.ffz-aspect {
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+
+	> :not(.ffz-aspect__spacer) {
+		position: absolute;
+		left: 0;
+		min-height: 100%;
+		width: 100%;
+	}
+}
+
+.ffz-aspect--overflow {
+	overflow: visible
+}
+
+.ffz-aspect--align-top > :not(.ffz-aspect__spacer) {
+	top: 0;
+}
+
+.ffz-aspect--align-center > :not(.ffz-aspect__spacer) {
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.ffz-aspect--align-bottom > :not(.ffz-aspect__spacer) {
+	bottom: 0;
+}

@@ -6,9 +6,10 @@
 
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
-import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, TWITCH_EMOTE_BASE } from 'utilities/constants';
+import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, TWITCH_EMOTE_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
+import { FFZEvent } from 'src/utilities/events';
 
 export default class Input extends Module {
 	constructor(...args) {
@@ -102,6 +103,12 @@ export default class Input extends Module {
 		this.MentionSuggestions = this.fine.define(
 			'tab-mention-suggestions',
 			n => n && n.getMentions && n.renderMention,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.CommandSuggestions = this.fine.define(
+			'tab-cmd-suggestions',
+			n => n && n.getMatches && n.doesCommandMatchTerm,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -220,10 +227,16 @@ export default class Input extends Module {
 				this.overrideMentionMatcher(inst);
 		});
 
+		this.CommandSuggestions.ready((cls, instances) => {
+			for(const inst of instances)
+				this.overrideCommandMatcher(inst);
+		});
+
 		this.ChatInput.on('update', this.updateEmoteCompletion, this);
 		this.ChatInput.on('mount', this.overrideChatInput, this);
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
+		this.CommandSuggestions.on('mount', this.overrideCommandMatcher, this);
 
 		this.on('chat.emotes:change-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-set-hidden', this.uncacheTabCompletion, this);
@@ -311,6 +324,8 @@ export default class Input extends Module {
 
 		inst.onKeyDown = function(event) {
 			try {
+				const code = event.charCode || event.keyCode;
+
 				if ( inst.onEmotePickerToggle && t.chat.context.get('chat.emote-menu.shortcut') && event.key === 'e' && event.ctrlKey && ! event.altKey && ! event.shiftKey ) {
 					inst.onEmotePickerToggle();
 					event.preventDefault();
@@ -318,8 +333,6 @@ export default class Input extends Module {
 				}
 
 				if ( inst.autocompleteInputRef && t.chat.context.get('chat.mru.enabled') && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
-					const code = event.charCode || event.keyCode;
-
 					// Arrow Up
 					if ( code === 38 && inst.chatInputRef.selectionStart === 0 ) {
 						if ( ! inst.messageHistory.length )
@@ -353,6 +366,14 @@ export default class Input extends Module {
 					}
 				}
 
+				// Let users close stuff with Escape.
+				if ( code === KEYS.Escape && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
+					if ( inst.props.isShowingEmotePicker )
+						inst.props.closeEmotePicker();
+					else if ( inst.props.tray && (! inst.state.value || ! inst.state.value.length) )
+						inst.closeTray();
+				}
+
 			} catch(err) {
 				t.log.capture(err);
 				t.log.error(err);
@@ -383,10 +404,64 @@ export default class Input extends Module {
 
 
 	overrideMentionMatcher(inst) {
+		inst.canBeTriggeredByTab = !this.chat.context.get('chat.tab-complete.emotes-without-colon');
+	}
+
+
+	overrideCommandMatcher(inst) {
 		if ( inst._ffz_override )
 			return;
 
-		inst.canBeTriggeredByTab = !this.chat.context.get('chat.tab-complete.emotes-without-colon');
+		inst._ffz_override = true;
+		inst.oldCommands = inst.getCommands;
+
+		const t = this;
+
+		inst.getCommands = function(input) { try {
+			const commands = inst.props.getCommands(inst.props.permissionLevel, {
+				isEditor: inst.props.isCurrentUserEditor
+			});
+
+			const event = new FFZEvent({
+				input,
+				permissionLevel: inst.props.permissionLevel,
+				isEditor: inst.props.isCurrentUserEditor,
+				commands
+			});
+
+			t.emit('chat:get-tab-commands', event);
+
+			if ( ! commands || ! commands.length )
+				return null;
+
+			// Trim off the starting /
+			const i = input.slice(1);
+
+			const sorted = commands.filter(cmd => inst.doesCommandMatchTerm(cmd, i)).sort(inst.sortCommands);
+			const out = [];
+			for(const cmd of sorted) {
+				const arg = cmd.commandArgs?.[0];
+				let selection;
+				if ( arg?.isRequired )
+					selection = `[${arg.name}]`;
+
+				out.push({
+					current: input,
+					replacement: inst.determineReplacement(cmd),
+					element: inst.renderCommandSuggestion(cmd, i),
+					group: cmd.ffz_group ?
+						(Array.isArray(cmd.ffz_group) ? t.i18n.t(...cmd.ffz_group) : cmd.ffz_group)
+						: inst.determineGroup(cmd),
+					selection
+				});
+			}
+
+			return out;
+
+		} catch(err) {
+			console.error(err);
+			return inst.oldCommands(input);
+		}}
 	}
 
 

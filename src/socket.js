@@ -72,7 +72,6 @@ export default class SocketClient extends Module {
 		this._host_idx = -1;
 		this._host_pool = -1;
 
-
 		this.settings.on(':changed:socket.use-cluster', () => {
 			this._host = null;
 			if ( this.disconnected )

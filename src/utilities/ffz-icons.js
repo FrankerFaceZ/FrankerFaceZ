@@ -100,5 +100,6 @@ export default [
 	"chat",
 	"location",
 	"link",
-	"volume-off"
+	"volume-off",
+	"reply"
 ];
