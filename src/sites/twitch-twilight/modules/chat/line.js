@@ -241,6 +241,11 @@ export default class ChatLine extends Module {
 			}
 
 			cls.prototype.ffzOpenReply = function() {
+				if ( this.props.reply ) {
+					this.setOPCardTray(this.props.reply);
+					return;
+				}
+
 				const old_render_author = this.renderMessageAuthor;
 				this.renderMessageAuthor = () => this.ffzReplyAuthor();
 
@@ -317,10 +322,11 @@ export default class ChatLine extends Module {
 
 				const types = t.parent.message_types || {},
 					deleted_count = this.props.deletedCount,
+					reply_mode = t.chat.context.get('chat.replies.style'),
 					override_mode = t.chat.context.get('chat.filtering.display-deleted'),
 
 					msg = t.chat.standardizeMessage(this.props.message),
-					reply_tokens = msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply),
+					reply_tokens = reply_mode === 2 ? ( msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply) ) : null,
 					is_action = msg.messageType === types.Action,
 
 					user = msg.user,
@@ -411,20 +417,26 @@ other {# messages were deleted by a moderator.}
 				//if ( ! msg.message && msg.messageParts )
 				//	t.chat.detokenizeMessage(msg);
 
-				const has_replies = this.chatRepliesTreatment ? this.chatRepliesTreatment !== 'control' : false;
-
 				const u = t.site.getUser(),
 					r = {id: room_id, login: room};
+
+				const has_replies = this.chatRepliesTreatment ? this.chatRepliesTreatment !== 'control' : false,
+					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
+					can_reply = can_replies && u.login !== msg.user?.login && ! msg.reply,
+					twitch_clickable = reply_mode === 1 && can_replies && (!!msg.reply || can_reply);
 
 				if ( u ) {
 					u.moderator = this.props.isCurrentUserModerator;
 					u.staff = this.props.isCurrentUserStaff;
-					u.can_reply = has_replies && u.login !== msg.user?.login && ! msg.deleted && ! this.props.disableReplyClick
+					u.can_reply = reply_mode === 2 && can_reply;
 				}
 
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
+
+				if ( ! this.ffz_open_reply )
+					this.ffz_open_reply = this.ffzOpenReply.bind(this);
 
 				if ( ! this.ffz_user_click_handler ) {
 					if ( this.props.onUsernameClick )
@@ -473,30 +485,36 @@ other {# messages were deleted by a moderator.}
 
 				const override_name = t.overrides.getName(user.id);
 
-				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}`,
+				const user_bits = [
+					t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+					e('span', {
+						className: 'chat-line__message--badges'
+					}, t.chat.badges.render(msg, e)),
+					e('span', {
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip-wrapper' : ''}`,
+						role: 'button',
+						style: { color },
+						onClick: this.ffz_user_click_handler,
+						onContextMenu: t.actions.handleUserContext
+					}, override_name ? [
+						e('span', {
+							className: 'chat-author__display-name'
+						}, override_name),
+						e('div', {
+							className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'
+						}, user_block)
+					] : user_block)
+				];
+
+				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}${twitch_clickable && can_reply ? ' tw-pd-r-3' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'
 						}, t.chat.formatTime(msg.timestamp)),
-						t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
-						e('span', {
-							className: 'chat-line__message--badges'
-						}, t.chat.badges.render(msg, e)),
-						e('span', {
-							className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip-wrapper' : ''}`,
-							role: 'button',
-							style: { color },
-							onClick: this.ffz_user_click_handler,
-							onContextMenu: t.actions.handleUserContext
-						}, override_name ? [
-							e('span', {
-								className: 'chat-author__display-name'
-							}, override_name),
-							e('div', {
-								className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'
-							}, user_block)
-						] : user_block),
-						e('span', null, is_action ? ' ' : ': '),
+						twitch_clickable ?
+							e('div', {className: 'chat-line__username-container tw-inline-block'}, user_bits)
+							: user_bits,
+						e('span', {'aria-hidden': true}, is_action ? ' ' : ': '),
 						show && has_replies && reply_tokens ?
 							t.chat.renderTokens(reply_tokens, e)
 							: null,
@@ -504,7 +522,7 @@ other {# messages were deleted by a moderator.}
 							e('span', {
 								className:'message',
 								style: is_action ? { color } : null
-							}, t.chat.renderTokens(tokens, e, has_replies ? this.props.reply : null))
+							}, t.chat.renderTokens(tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null))
 							:
 							e('span', {
 								className: 'chat-line__message--deleted',
@@ -530,6 +548,33 @@ other {# messages were deleted by a moderator.}
 							}
 						}, JSON.stringify([tokens, msg.emotes], null, 2))*/
 					] : null;
+
+				if ( twitch_clickable ) {
+					let btn = null;
+					if ( can_reply )
+						btn = e('div', {
+							className: 'chat-line__reply-icon tw-absolute tw-c-text-alt-2 tw-right-0 tw-top-0 ffz-tooltip ffz-tooltip--no-mouse',
+							'data-title': t.i18n.t('chat.actions.reply', 'Reply to Message')
+						}, [
+							e('div', {
+								className: 'chat-line__reply-icon-background tw-border-bottom-left-radius-medium tw-border-top-right-radius-medium tw-c-background-alt-2'
+							}),
+							e('figure', {className: 'ffz-i-reply'})
+						]);
+
+					out = [
+						e('button', {
+							className: 'ffz--reply-container chat-line__reply-button-container tw-interactive tw-link tw-link--button',
+							'data-test-selector': 'chat-reply-button',
+							onClick: this.ffz_open_reply
+						}, e('div', {className: 'chat-line__reply-button'}, btn)),
+
+						e('div', {className: 'chat-line__message-container tw-relative'}, [
+							this.renderReplyLine(),
+							out
+						])
+					];
+				}
 
 				if ( msg.ffz_type === 'sub_mystery' ) {
 					const mystery = msg.mystery;

@@ -334,6 +334,11 @@
 		margin: 0 .5rem;
 		display: none;
 	}
+
+
+	.chat-line__message:hover & .ffz-hover {
+		display: inline-flex;
+	}
 }
 
 .ffz--keys {

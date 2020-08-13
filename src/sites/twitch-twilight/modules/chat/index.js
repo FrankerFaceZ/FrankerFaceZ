@@ -250,6 +250,21 @@ export default class ChatHook extends Module {
 
 		// Settings
 
+		this.settings.add('chat.replies.style', {
+			default: 2,
+			ui: {
+				path: 'Chat > Appearance >> Replies',
+				title: 'Style',
+				description: `Twitch's default style makes entire messages clickable and adds a button to the right. FrankerFaceZ uses an In-Line Chat Action and does not make messages clickable.`,
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Vanilla Twitch'},
+					{value: 2, title: 'FrankerFaceZ'}
+				]
+			}
+		});
+
 		this.settings.add('channel.raids.no-autojoin', {
 			default: false,
 			ui: {
@@ -698,6 +713,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.points.allow-highlight', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
+		this.chat.context.on('changed:chat.replies.style', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
 		this.chat.context.on('changed:chat.filtering.bold-mentions', val => this.css_tweaks.toggle('chat-mention-no-bold', ! val));
 		this.chat.context.on('changed:chat.pin-resubs', val => {

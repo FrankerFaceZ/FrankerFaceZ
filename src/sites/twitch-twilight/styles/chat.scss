@@ -13,6 +13,10 @@
 	cursor: pointer;
 }
 
+.ffz--pointer-events {
+	pointer-events: all;
+}
+
 .ffz--freeze-indicator {
 	pointer-events: none;
 }
@@ -53,6 +57,24 @@
 
 .ffz-tooltip.chat-card__link > * {
 	pointer-events: none;
+}
+
+.ffz--reply-container {
+	height: 100% !important;
+	width: 100% !important;
+	left: 0 !important;
+	right: 0 !important;
+
+	.chat-line__reply-icon {
+		padding: 0;
+
+		figure {
+			position: absolute;
+			z-index: 1;
+			top: 0.25rem;
+			right: 0.25rem;
+		}
+	}
 }
 
 .ffz--reply-mention {

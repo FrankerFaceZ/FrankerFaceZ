@@ -484,11 +484,16 @@ export default class Actions extends Module {
 		const u = site.getUser(),
 			r = {id: line.props.channelID, login: room};
 
+		const has_replies = line.chatRepliesTreatment ? line.chatRepliesTreatment !== 'control' : false,
+			can_replies = has_replies && ! msg.deleted && ! line.props.disableReplyClick,
+			can_reply = can_replies && u.login !== msg.user?.login && ! msg.reply;
+
 		msg.roomId = r.id;
 
 		if ( u ) {
 			u.moderator = line.props.isCurrentUserModerator;
 			u.staff = line.props.isCurrentUserStaff;
+			u.can_reply = this.parent.context.get('chat.replies.style') === 2 && can_reply;
 		}
 
 		const current_level = this.getUserLevel(r, u),
@@ -629,6 +634,7 @@ export default class Actions extends Module {
 			let ap = data.appearance || {};
 			const disp = data.display || {},
 				keys = disp.keys,
+				hover = disp.hover,
 				act = this.actions[data.action];
 
 			if ( ! act || disp.disabled ||
@@ -661,12 +667,12 @@ export default class Actions extends Module {
 
 			let list = actions;
 
-			if ( keys )
+			if ( keys || hover )
 				list = modified;
 
 			had_action = true;
 			list.push(<button
-				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}`}
+				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}${hover ? ' ffz-hover' : ''}`}
 				disabled={disabled}
 				data-tooltip-type="action"
 				data-action={data.action}

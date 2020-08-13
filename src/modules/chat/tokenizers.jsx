@@ -250,7 +250,7 @@ export const Replies = {
 		}
 
 		return (<strong
-			class={`chat-line__message-mention ffz-tooltip ffz--reply-mention ffz-i-reply${token.me ? ' ffz--mention-me' : ''}`}
+			class={`chat-line__message-mention ffz--pointer-events ffz-tooltip ffz--reply-mention ffz-i-reply${token.me ? ' ffz--mention-me' : ''}`}
 			style={{color}}
 			data-tooltip-type="reply"
 			data-login={token.recipient}
@@ -311,7 +311,7 @@ export const Mentions = {
 		}
 
 		return (<strong
-			class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}
+			class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''} ffz--pointer-events`}
 			style={{color}}
 			data-login={token.recipient}
 			onClick={this.handleMentionClick}
@@ -637,7 +637,7 @@ export const BlockedTerms = {
 		return (<strong
 			data-text={token.text}
 			data-tooltip-type="blocked"
-			class="ffz-tooltip ffz--blocked"
+			class="ffz-tooltip ffz--blocked ffz--pointer-events"
 			onClick={this.clickToReveal}
 		>
 			&times;&times;&times;
@@ -698,7 +698,7 @@ export const AutomoddedTerms = {
 			data-text={token.text}
 			data-categories={JSON.stringify(token.categories)}
 			data-tooltip-type="amterm"
-			class="ffz-tooltip ffz--blocked"
+			class="ffz-tooltip ffz--blocked ffz--pointer-events"
 			onClick={this.clickToReveal}
 		>
 			&times;&times;&times;
@@ -866,7 +866,7 @@ export const CheerEmotes = {
 
 	render(token, createElement) {
 		return (<span
-			class="ffz-cheer ffz-tooltip"
+			class="ffz-cheer ffz-tooltip ffz--pointer-events"
 			data-tooltip-type="cheer"
 			data-prefix={token.prefix}
 			data-amount={this.i18n.formatNumber(token.amount)}
@@ -1087,7 +1087,7 @@ export const AddonEmotes = {
 	render(token, createElement, wrapped) {
 		const mods = token.modifiers || [], ml = mods.length,
 			emote = (<img
-				class={`${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
+				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
 				src={token.src}
 				srcSet={token.srcSet}
 				alt={token.text}
@@ -1110,7 +1110,7 @@ export const AddonEmotes = {
 		}
 
 		return (<div
-			class="ffz--inline modified-emote"
+			class="ffz--inline ffz--pointer-events modified-emote"
 			data-test-selector="emote-button"
 			data-provider={token.provider}
 			data-id={token.id}

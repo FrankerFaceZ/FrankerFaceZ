@@ -1514,8 +1514,6 @@ export default class Chat extends Module {
 			return [];
 
 		let tokens = [{type: 'text', text: msg.message}];
-		if ( ! tokens[0].text )
-			return tokens;
 
 		for(const tokenizer of this.__tokenizers)
 			tokens = tokenizer.process.call(this, tokens, msg, user);

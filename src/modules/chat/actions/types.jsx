@@ -16,7 +16,7 @@ export const reply = {
 	required_context: ['message'],
 
 	title: 'Reply to Message',
-	description: 'Allows you to directly reply to another user\'s message.',
+	description: 'Allows you to directly reply to another user\'s message. Only functions when the Chat Replies Style is "FrankerFaceZ".',
 
 	can_self: true,
 

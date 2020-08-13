@@ -329,6 +329,22 @@
 										</span>
 									</label>
 								</div>
+
+								<div class="tw-pd-r-1 tw-checkbox">
+									<input
+										:id="'key_hover$' + id"
+										ref="key_hover"
+										:checked="edit_data.display.hover"
+										type="checkbox"
+										class="tw-checkbox__input"
+										@change="onChangeKeys"
+									>
+									<label :for="'key_hover$' + id" class="tw-checkbox__label">
+										<span class="tw-mg-l-1">
+											{{ t('setting.key.hover', 'Hover') }}
+										</span>
+									</label>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -660,6 +676,9 @@ export default {
 					}));
 			}
 
+			if ( disp.hover )
+				out.push(this.t('setting.actions.visible.hover', 'when hovering'));
+
 			if ( ! out.length )
 				return this.t('setting.actions.visible.always', 'always');
 
@@ -693,6 +712,7 @@ export default {
 			if ( this.$refs.key_meta.checked )
 				i |= 8;
 
+			this.edit_data.display.hover = this.$refs.key_hover.checked;
 			this.edit_data.display.keys = i;
 		},
 

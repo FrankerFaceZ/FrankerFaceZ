@@ -404,7 +404,7 @@ export default class SettingsContext extends EventEmitter {
 		if ( ! type )
 			throw new Error(`non-existent type for ${key}`)
 
-		return type.get(key, this.profiles(), this.manager.definitions.get(key), this.manager.log);
+		return type.get(key, this.profiles(), this.manager.definitions.get(key), this.manager.log, this);
 	}
 	/*	for(const profile of this.__profiles)
 			if ( profile.has(key) )
