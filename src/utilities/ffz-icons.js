@@ -101,5 +101,6 @@ export default [
 	"location",
 	"link",
 	"volume-off",
-	"reply"
+	"reply",
+	"threads"
 ];

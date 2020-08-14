@@ -346,9 +346,12 @@ export default class Badges extends Module {
 		this.tooltips.types.badge = (target, tip) => {
 			tip.add_class = 'ffz__tooltip--badges';
 
-			const show_previews = this.parent.context.get('tooltip.badge-images'),
-				container = target.parentElement.parentElement,
-				room_id = container.dataset.roomId,
+			const show_previews = this.parent.context.get('tooltip.badge-images');
+			let container = target.parentElement.parentElement;
+			if ( ! container.dataset.roomId )
+				container = target.closest('[data-room-id]');
+
+			const room_id = container.dataset.roomId,
 				room_login = container.dataset.room,
 				data = JSON.parse(target.dataset.badgeData),
 				out = [];

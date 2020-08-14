@@ -1,5 +1,5 @@
 .ffz--meta-tray {
-	& > :first-child > :first-child {
+	& > :first-child > :first-child:not(.tw-core-button) {
 		display: none !important;
 		margin-right: 0 !important;
 	}

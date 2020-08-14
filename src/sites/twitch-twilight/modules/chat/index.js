@@ -251,15 +251,15 @@ export default class ChatHook extends Module {
 		// Settings
 
 		this.settings.add('chat.replies.style', {
-			default: 2,
+			default: 1,
 			ui: {
 				path: 'Chat > Appearance >> Replies',
 				title: 'Style',
-				description: `Twitch's default style makes entire messages clickable and adds a button to the right. FrankerFaceZ uses an In-Line Chat Action and does not make messages clickable.`,
+				description: `Twitch's default style makes adds a floating button to the right and displays a notice above messages that are replies. FrankerFaceZ uses an In-Line Chat Action (that can be removed in Chat > Actions > In-Line) and uses an in-line mention to denote replies.`,
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'Vanilla Twitch'},
+					{value: 1, title: 'Twitch (Default)'},
 					{value: 2, title: 'FrankerFaceZ'}
 				]
 			}

@@ -110,7 +110,7 @@ export default class Metadata extends Module {
 
 			setup(data) {
 				return {
-					live: data.channel?.live_since != null,
+					live: data.channel?.live && data.channel?.live_since != null,
 					count: data.getViewerCount()
 				}
 			},

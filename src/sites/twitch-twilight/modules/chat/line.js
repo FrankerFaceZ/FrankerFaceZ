@@ -506,7 +506,7 @@ other {# messages were deleted by a moderator.}
 					] : user_block)
 				];
 
-				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}${twitch_clickable && can_reply ? ' tw-pd-r-3' : ''}`,
+				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						this.props.showTimestamps && e('span', {
 							className: 'chat-line__timestamp'
@@ -550,29 +550,37 @@ other {# messages were deleted by a moderator.}
 					] : null;
 
 				if ( twitch_clickable ) {
-					let btn = null;
-					if ( can_reply )
-						btn = e('div', {
-							className: 'chat-line__reply-icon tw-absolute tw-c-text-alt-2 tw-right-0 tw-top-0 ffz-tooltip ffz-tooltip--no-mouse',
-							'data-title': t.i18n.t('chat.actions.reply', 'Reply to Message')
-						}, [
-							e('div', {
-								className: 'chat-line__reply-icon-background tw-border-bottom-left-radius-medium tw-border-top-right-radius-medium tw-c-background-alt-2'
-							}),
-							e('figure', {className: 'ffz-i-reply'})
-						]);
+					let icon, title;
+					if ( can_reply ) {
+						icon = e('figure', {className: 'ffz-i-reply'});
+						title = t.i18n.t('chat.actions.reply', 'Reply to Message');
+					} else {
+						icon = e('figure', {className: 'ffz-i-threads'});
+						title = t.i18n.t('chat.actions.reply.thread', 'Open Thread');
+					}
 
 					out = [
-						e('button', {
-							className: 'ffz--reply-container chat-line__reply-button-container tw-interactive tw-link tw-link--button',
-							'data-test-selector': 'chat-reply-button',
-							onClick: this.ffz_open_reply
-						}, e('div', {className: 'chat-line__reply-button'}, btn)),
-
-						e('div', {className: 'chat-line__message-container tw-relative'}, [
+						e('div', {
+							className: 'chat-line__message-highlight tw-absolute tw-border-radius-medium tw-top-0 tw-bottom-0 tw-right-0 tw-left-0',
+							'data-test-selector': 'chat-message-highlight'
+						}),
+						e('div', {
+							className: 'chat-line__message-container tw-relative'
+						}, [
 							this.renderReplyLine(),
 							out
-						])
+						]),
+						e('div', {
+							className: 'chat-line__reply-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
+						}, e('button', {
+							className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
+							'data-test-selector': 'chat-reply-button',
+							'aria-label': title,
+							'data-title': title,
+							onClick: this.ffz_open_reply
+						}, e('span', {
+							className: 'tw-button-icon__icon'
+						}, icon)))
 					];
 				}
 

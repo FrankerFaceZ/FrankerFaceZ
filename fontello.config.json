@@ -759,6 +759,20 @@
       "css": "reply",
       "code": 61714,
       "src": "fontawesome"
+    },
+    {
+      "uid": "d4413cf47ed064b48fcd5bf727826be1",
+      "css": "threads",
+      "code": 59460,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M550 400H650V500H550V400ZM450 400H350V500H450V400ZM500 900L350 750H250A100 100 0 0 1 150 650V250A100 100 0 0 1 250 150H750A100 100 0 0 1 850 250V650A100 100 0 0 1 750 750H650L500 900ZM391.4 650L500 758.6 608.6 650H750V250H250V650H391.4Z",
+        "width": 1000
+      },
+      "search": [
+        "threads"
+      ]
     }
   ]
 }
