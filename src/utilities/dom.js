@@ -102,7 +102,7 @@ export function createElement(tag, props, ...children) {
 					else
 						for(const k in prop)
 							if ( has(prop, k) ) {
-								if ( has(el.style, k) )
+								if ( has(el.style, k) || has(Object.getPrototypeOf(el.style), k) )
 									el.style[k] = prop[k];
 								else
 									el.style.setProperty(k, prop[k]);

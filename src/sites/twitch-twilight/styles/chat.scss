@@ -34,6 +34,25 @@
 	display: none;
 }
 
+.chat-line__message-highlight {
+	pointer-events: none;
+}
+
+.ffz-notice-line {
+	&:focus-within,
+	&:hover,
+	&:focus {
+		.chat-line__message-highlight {
+			background-color: var(--color-background-interactable-alpha-hover);
+		}
+
+		.chat-line__reply-icon {
+			display: block;
+		}
+	}
+}
+
+
 .autocomplete-balloon {
 	.autocomplete-balloon__item {
 		> .tw-flex {

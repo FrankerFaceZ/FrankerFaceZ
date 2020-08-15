@@ -8,6 +8,7 @@ import {sanitize, createElement} from 'utilities/dom';
 import {has, split_chars} from 'utilities/object';
 
 import {TWITCH_EMOTE_BASE, EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {CATEGORIES} from './emoji';
 
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
@@ -1227,7 +1228,7 @@ export const AddonEmotes = {
 			plain_name = true;
 			name = `:${emoji.names[0]}:${vcode ? `:${vcode.names[0]}:` : ''}`;
 
-			const category = emoji.category ? this.i18n.t(`emoji.category.${emoji.category.toSnakeCase()}`, emoji.category) : null;
+			const category = emoji.category ? this.i18n.t(`emoji.category.${emoji.category.toSnakeCase()}`, CATEGORIES[emoji.category] || emoji.category) : null;
 			source = this.i18n.t('tooltip.emoji', 'Emoji - {category}', {category});
 
 		} else

@@ -255,7 +255,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Appearance >> Replies',
 				title: 'Style',
-				description: `Twitch's default style makes adds a floating button to the right and displays a notice above messages that are replies. FrankerFaceZ uses an In-Line Chat Action (that can be removed in Chat > Actions > In-Line) and uses an in-line mention to denote replies.`,
+				description: `Twitch's default style adds a floating button to the right and displays a notice above messages that are replies. FrankerFaceZ uses an In-Line Chat Action (that can be removed in Chat > Actions > In-Line) and uses an in-line mention to denote replies.`,
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
@@ -1366,7 +1366,7 @@ export default class ChatHook extends Module {
 							if ( event.defaultPrevented || m.ffz_removed )
 								return;
 
-						} else if ( msg.type === types.ModerationAction && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
+						} else if ( msg.type === types.ModerationAction && false && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							if ( !((! msg.level || ! msg.level.length) && msg.targetUserLogin && msg.targetUserLogin === inst.props.currentUserLogin) ) {
 								//t.log.info('Moderation Action', msg);
 								if ( ! inst.props.isCurrentUserModerator )
@@ -1389,13 +1389,15 @@ export default class ChatHook extends Module {
 										if ( len !== inst.buffer.length && ! inst.props.isBackground )
 											inst.notifySubscribers();
 
-										inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
+										inst.moderateBuffers([
+											inst.delayedMessageBuffer.map(e => e.event)
+										], user, msg);
 
 									} else
-										inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
-
-									inst.moderatedUsers.add(user);
-									setTimeout(inst.unsetModeratedUser(user), 1e3);
+										inst.moderateBuffers([
+											inst.buffer,
+											inst.delayedMessageBuffer.map(e => e.event)
+										], user, msg);
 
 									inst.delayedMessageBuffer.push({
 										event: msg,
@@ -1407,7 +1409,7 @@ export default class ChatHook extends Module {
 								}
 							}
 
-						} else if ( msg.type === types.Moderation && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
+						} else if ( msg.type === types.Moderation && false && inst.unsetModeratedUser ) {
 							//t.log.info('Moderation', msg);
 							if ( inst.props.isCurrentUserModerator )
 								return;
@@ -1441,13 +1443,15 @@ export default class ChatHook extends Module {
 								if ( len !== inst.buffer.length && ! inst.props.isBackground )
 									inst.notifySubscribers();
 
-								inst.ffzModerateBuffer([inst.delayedMessageBuffer], msg);
+								inst.moderateBuffers([
+									inst.delayedMessageBuffer.map(e => e.event)
+								], user, msg);
 
 							} else
-								inst.ffzModerateBuffer([inst.buffer, inst.delayedMessageBuffer], msg);
-
-							inst.moderatedUsers.add(user);
-							setTimeout(inst.unsetModeratedUser(user), 1e3);
+								inst.moderateBuffers([
+									inst.buffer,
+									inst.delayedMessageBuffer.map(e => e.event)
+								], user, msg);
 
 							inst.delayedMessageBuffer.push({
 								event: msg,
@@ -1474,8 +1478,9 @@ export default class ChatHook extends Module {
 				return old_handle.call(inst, msg);
 			}
 
-			inst.ffzModerateBuffer = function(buffers, event) {
+			/*inst.ffzModerateBuffer = function(buffers, event) {
 				const mod_types = t.mod_types || {},
+					ctypes = t.chat_types || {},
 					mod_type = event.moderationActionType,
 					user_login = event.targetUserLogin || event.userLogin,
 					mod_login = event.createdByLogin,
@@ -1488,22 +1493,35 @@ export default class ChatHook extends Module {
 						if ( m.event )
 							m = m.event;
 
+						/*if ( m.message && m.type in [ctypes.ChannelPointsReward, ctypes.Resubscription, ctypes.Ritual] )
+							m = m.message;/
+
+						if ( m.reply ) {
+							if ( target_id ? target_id === m.reply.parentMsgId : (user_login && user_login === m.reply.parentUserLogin) )
+								m.reply = {
+									...m.reply,
+									parentDeleted: true
+								}
+						}
+
+						if ( ! user_login || ! m.user || user_login !== m.user.userLogin || ! m.messageParts )
+							return;
+
+						if ( ! m || m.deleted )
+							return;
+
 						if ( target_id && m.id !== target_id )
 							return;
 
-						const msg = inst.markUserEventDeleted(m, user_login);
-						if ( ! msg )
-							return;
+						m.deleted = true;
+						m.banned = mod_type === mod_types.Ban;
 
-						last_msg = msg;
+						last_msg = m;
 						deleted_count++;
 
-						msg.modLogin = mod_login;
-						msg.modActionType = mod_type;
-						msg.duration = event.duration;
-
-						if ( is_delete )
-							return true;
+						m.modLogin = mod_login;
+						m.modActionType = mod_type;
+						m.duration = event.duration;
 					};
 
 				for(const buffer of buffers)
@@ -1514,7 +1532,7 @@ export default class ChatHook extends Module {
 
 				if ( last_msg )
 					last_msg.deletedCount = deleted_count;
-			}
+			}*/
 
 			inst.setPaused = function(paused) {
 				if ( inst.paused === paused )

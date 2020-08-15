@@ -6,6 +6,7 @@
 
 import {has, get, once, maybe_call, set_equals} from 'utilities/object';
 import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS, KEYS} from 'utilities/constants';
+import {HIDDEN_CATEGORIES, CATEGORIES, CATEGORY_SORT, IMAGE_PATHS} from 'src/modules/chat/emoji';
 import {ClickOutside} from 'utilities/dom';
 
 import Twilight from 'site';
@@ -25,7 +26,12 @@ const TONE_EMOJI = [
 	'ok_hand',
 	'+1',
 	'clap',
-	'fist'
+	'fist',
+	'pinched_fingers',
+	'wave',
+	'pinch',
+	'victory',
+	'love_you_gesture'
 ];
 
 function maybe_date(val) {
@@ -292,9 +298,9 @@ export default class EmoteMenu extends Module {
 
 		this.updateEmojiVariables();
 
-		this.css_tweaks.setVariable('emoji-menu--sheet', `//cdn.frankerfacez.com/static/emoji/sheet_twitter_32.png`);
-		this.css_tweaks.setVariable('emoji-menu--count', 52);
-		this.css_tweaks.setVariable('emoji-menu--size', 20);
+		this.css_tweaks.setVariable('emoji-menu--sheet', `//cdn.frankerfacez.com/static/emoji/images/sheet-twemoji-36.png`);
+		this.css_tweaks.setVariable('emoji-menu--count', 58);
+		this.css_tweaks.setVariable('emoji-menu--size', 36);
 
 		const t = this,
 			React = await this.web_munch.findModule('react'),
@@ -337,11 +343,12 @@ export default class EmoteMenu extends Module {
 	}
 
 	updateEmojiVariables() {
-		const style = this.chat.context.get('chat.emoji.style') || 'twitter',
-			base = `//cdn.frankerfacez.com/static/emoji/sheet_${style}_`;
 
-		const emoji_size = this.emoji_size = 20,
-			sheet_count = this.emoji_sheet_count = 52,
+		const style = this.chat.context.get('chat.emoji.style') || 'twitter',
+			base = `//cdn.frankerfacez.com/static/emoji/images/sheet-${IMAGE_PATHS[style] || 'twemoji'}-`;
+
+		const emoji_size = this.emoji_size = 36,
+			sheet_count = this.emoji_sheet_count = 58,
 			sheet_size = this.emoji_sheet_size = sheet_count * (emoji_size + 2),
 			sheet_pct = this.emoji_sheet_pct = 100 * sheet_size / emoji_size;
 
@@ -349,11 +356,11 @@ export default class EmoteMenu extends Module {
 
 		this.css_tweaks.set('emoji-menu', `.ffz--emoji-tone-picker__emoji,.emote-picker__emoji .emote-picker__emote-figure {
 	background-size: ${sheet_pct}% ${sheet_pct}%;
-	background-image: url("${base}20.png");
+	background-image: url("${base}36.png");
 	background-image: ${WEBKIT}image-set(
-		url("${base}20.png") 1x,
-		url("${base}32.png") 1.6x,
-		url("${base}64.png") 3.2x
+		url("${base}18.png") 0.5x,
+		url("${base}36.png") 1x,
+		url("${base}72.png") 2x
 	);
 }`);
 	}
@@ -422,7 +429,7 @@ export default class EmoteMenu extends Module {
 				return (<button
 					key={data.code}
 					data-tone={tone}
-					class="tw-interactive tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-pd-y-05 tw-pd-x-2"
+					class="tw-interactive tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-pd-y-05 tw-pd-x-2"
 					onClick={this.clickTone}
 				>
 					{this.renderEmoji(data)}
@@ -1282,17 +1289,31 @@ export default class EmoteMenu extends Module {
 
 				const emote_name = emote.search || emote.name,
 					emote_lower = emote_name.toLowerCase(),
-					term_lower = filter.toLowerCase();
+					term_lower = filter.toLowerCase(),
+					has_colon = filter.startsWith(':'),
+					term_trail = term_lower.slice(1);
 
-				if ( ! filter.startsWith(':') )
+				if ( Array.isArray(emote.extra) ) {
+					let i = emote.extra.length;
+					while(i--) {
+						if ( ! has_colon && emote.extra[i].includes(term_lower) )
+							return true;
+						else if ( has_colon && emote.extra[i].startsWith(term_trail) )
+							return true;
+					}
+				}
+
+				if ( ! has_colon )
 					return emote_lower.includes(term_lower);
 
-				if ( emote_lower.startsWith(term_lower.slice(1)) )
+				if ( emote_lower.startsWith(term_trail) )
 					return true;
 
 				const idx = emote_name.indexOf(filter.charAt(1).toUpperCase());
 				if ( idx !== -1 )
 					return emote_lower.slice(idx+1).startsWith(term_lower.slice(2));
+
+				return false;
 			}
 
 
@@ -1301,15 +1322,18 @@ export default class EmoteMenu extends Module {
 
 					sets = state.emoji_sets = [],
 					emoji_favorites = t.emotes.getFavorites('emoji'),
-					style = t.chat.context.get('chat.emoji.style') || 'twitter',
 					favorites = state.favorites = (state.favorites || []).filter(x => ! x.emoji),
 
 					tone = state.tone = state.tone || null,
 					tone_choices = state.tone_emoji = [],
 					categories = {};
 
+				let style = t.chat.context.get('chat.emoji.style') || 'twitter';
+				if ( ! IMAGE_PATHS[style] )
+					style = 'twitter';
+
 				for(const emoji of Object.values(t.emoji.emoji)) {
-					if ( ! emoji || ! emoji.has[style] || emoji.category === 'Skin Tones' )
+					if ( ! emoji || ! emoji.has[style] || HIDDEN_CATEGORIES.includes(emoji.category) )
 						continue;
 
 					if ( emoji.variants ) {
@@ -1331,10 +1355,11 @@ export default class EmoteMenu extends Module {
 
 						sets.push({
 							key: `emoji-${emoji.category}`,
+							sort_key: CATEGORY_SORT.indexOf(emoji.category),
 							emoji: true,
 							image: t.emoji.getFullImage(source.image),
 							i18n: `emoji.category.${emoji.category.toSnakeCase()}`,
-							title: emoji.category,
+							title: CATEGORIES[emoji.category] || emoji.category,
 							src: 'emoji',
 							source: 'Emoji',
 							source_i18n: 'emote-menu.emoji',
@@ -1344,12 +1369,15 @@ export default class EmoteMenu extends Module {
 
 					const em = {
 						provider: 'emoji',
+						id: emoji.sort,
 						emoji: true,
 						code: emoji.code,
 						name: source.raw,
 						variant: has_tone && tone,
+						hidden: emoji.hidden,
 
 						search: emoji.names[0],
+						extra: emoji.names.length > 1 ? emoji.names.map(x => x.toLowerCase()) : null,
 
 						height: 18,
 						width: 18,
@@ -1385,6 +1413,7 @@ export default class EmoteMenu extends Module {
 
 				// We use this sorter because we don't want things grouped by sets.
 				favorites.sort(this.getSorter());
+				sets.sort(sort_sets);
 
 				return state;
 			}
@@ -2138,7 +2167,7 @@ export default class EmoteMenu extends Module {
 							<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
 								{! visibility && <div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'fav' ? ' tw-interactable--selected' : ''}`}
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'fav' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__fav"
 										data-tab="fav"
 										data-tooltip-type="html"
@@ -2152,7 +2181,7 @@ export default class EmoteMenu extends Module {
 								</div>}
 								{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'channel' ? ' tw-interactable--selected' : ''}`}
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'channel' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__channel"
 										data-tab="channel"
 										data-tooltip-type="html"
@@ -2166,7 +2195,7 @@ export default class EmoteMenu extends Module {
 								</div>}
 								<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'all' ? ' tw-interactable--selected' : ''}`}
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'all' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__all"
 										data-tab="all"
 										data-tooltip-type="html"
@@ -2180,7 +2209,7 @@ export default class EmoteMenu extends Module {
 								</div>
 								{! visibility && this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive${tab === 'emoji' ? ' tw-interactable--selected' : ''}`}
+										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'emoji' ? ' tw-interactable--selected' : ''}`}
 										id="emote-picker__emoji"
 										data-tab="emoji"
 										data-tooltip-type="html"
@@ -2195,7 +2224,7 @@ export default class EmoteMenu extends Module {
 								<div class="tw-flex-grow-1" />
 								<div class="emote-picker-tab-item tw-relative">
 									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
 										data-tooltip-type="html"
 										data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
 										onClick={this.clickSettings}

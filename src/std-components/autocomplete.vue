@@ -46,7 +46,7 @@
 						:id="'ffz-autocomplete-item-' + id + '-' + idx"
 						:key="has(item, 'id') ? item.id : idx"
 						:class="{'tw-interactable--hover' : idx === index}"
-						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive"
+						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
 						tabindex="-1"
 						data-selectable="true"
 						@mouseenter="index = idx"

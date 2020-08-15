@@ -257,7 +257,7 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-pd-05"
+						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-pd-05"
 						onClick={click_fn(text)}
 					>
 						{text}
@@ -274,7 +274,7 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-pd-05"
+						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-pd-05"
 						onClick={click_fn(rule)}
 					>
 						{rule}

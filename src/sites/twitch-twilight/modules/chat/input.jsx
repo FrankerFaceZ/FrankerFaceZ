@@ -706,13 +706,16 @@ export default class Input extends Module {
 		if ( has_colon )
 			search = search.slice(0,-1);
 
+		const included = new Set;
+
 		for(const name in this.emoji.names)
 			if ( has_colon ? name === search : name.startsWith(search) ) {
 				const emoji = this.emoji.emoji[this.emoji.names[name]],
 					toned = emoji.variants && emoji.variants[tone],
 					source = toned || emoji;
 
-				if ( emoji && (style === 0 || source.has[style]) ) {
+				if ( emoji && (style === 0 || source.has[style]) && ! included.has(source.raw) ) {
+					included.add(source.raw);
 					const favorite = favorites.includes(emoji.code);
 					results.push({
 						current: input,

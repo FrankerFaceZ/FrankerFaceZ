@@ -302,7 +302,7 @@ export default class VideoChatHook extends Module {
 						{hide_timestamps || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
 							<div class="tw-mg-r-05">
 								<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
-									<button class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive" onClick={this.onTimestampClickHandler}>
+									<button class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive" onClick={this.onTimestampClickHandler}>
 										<div class="tw-pd-x-05">
 											<p class="tw-font-size-7">{print_duration(context.comment.contentOffset)}</p>
 										</div>

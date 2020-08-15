@@ -245,7 +245,7 @@
 						</div>
 						<div v-else class="tw-pd-y-1">
 							<button
-								class="tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-full-width"
+								class="tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-full-width"
 								@click="add_pasting = true"
 							>
 								<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
@@ -264,7 +264,7 @@
 									v-else
 									:key="idx"
 									:disabled="preset.disabled"
-									class="tw-interactable tw-interactable--hover-enabled tw-interactable--inverted tw-interactive tw-full-width"
+									class="tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-full-width"
 									@click="add(preset.value)"
 								>
 									<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">

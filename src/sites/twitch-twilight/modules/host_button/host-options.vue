@@ -26,7 +26,7 @@
 								:data-id="host.id"
 								class="tw-border-t ffz--host-user"
 							>
-								<div class="tw-interactable tw-interactable--inverted">
+								<div class="tw-interactable tw-interactable--default">
 									<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1">
 										<figure class="ffz-i-ellipsis-vert handle" />
 										<div class="ffz-channel-avatar">
