@@ -73,6 +73,8 @@ export default class Actions extends Module {
 			],
 
 			type: 'array_merge',
+			inherit_default: true,
+
 			ui: {
 				path: 'Chat > Actions > In-Line @{"description": "Here, you can define custom actions that will appear along messages in chat. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
 				component: 'chat-actions',
@@ -103,6 +105,8 @@ export default class Actions extends Module {
 
 			default: [],
 			type: 'array_merge',
+			inherit_default: true,
+
 			ui: {
 				path: 'Chat > Actions > User Context @{"description": "Here, you can define custom actions that will appear in a context menu when you right-click a username in chat."}',
 				component: 'chat-actions',
@@ -131,6 +135,8 @@ export default class Actions extends Module {
 
 			default: [],
 			type: 'array_merge',
+			inherit_default: true,
+
 			ui: {
 				path: 'Chat > Actions > Room @{"description": "Here, you can define custom actions that will appear above the chat input box."}',
 				component: 'chat-actions',

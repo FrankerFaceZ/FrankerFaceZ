@@ -91,7 +91,7 @@ export function generateOverrideCSS(data, style) {
 }
 
 
-export function generateBadgeCSS(badge, version, data, style, is_dark, badge_version = 2, color_fixer, scale = 1) {
+export function generateBadgeCSS(badge, version, data, style, is_dark, badge_version = 2, color_fixer, scale = 1, clickable = false) {
 	let color = data.color || 'transparent',
 		base_image = data.image || `${BASE_IMAGE}${badge_version}/${badge}${data.svg ? '.svg' : `/${version}/`}`,
 		trans = false,
@@ -148,7 +148,7 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 		color = color_fixer.process(color) || color;
 
 	// TODO: Fix the click_url name once we actually support badge clicking.
-	return `${data.__click_url ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
+	return `${clickable && (data.click_url || data.click_action) ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
 		scale: 1,
 		color,
 		image,
@@ -203,6 +203,16 @@ export default class Badges extends Module {
 			}
 		});
 
+		this.settings.add('chat.badges.clickable', {
+			default: true,
+			ui: {
+				path: 'Chat > Badges >> Behavior',
+				title: 'Allow clicking badges.',
+				description: 'Certain badges, such as Prime Gaming, act as links when this is enabled.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.badges.fix-colors', {
 			default: true,
 			ui: {
@@ -250,6 +260,8 @@ export default class Badges extends Module {
 				]
 			}
 		});
+
+		this.handleClick = this.handleClick.bind(this);
 	}
 
 	getSettingsBadges(include_addons) {
@@ -339,6 +351,7 @@ export default class Badges extends Module {
 		this.parent.context.on('changed:chat.badges.version', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.media-queries', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.fix-colors', this.rebuildColoredBadges, this);
+		this.parent.context.on('changed:chat.badges.clickable', this.rebuildAllCSS, this);
 
 		this.rebuildAllCSS();
 		this.loadGlobalBadges();
@@ -431,6 +444,67 @@ export default class Badges extends Module {
 
 			return out;
 		}
+	}
+
+
+	handleClick(event) {
+		if ( ! this.parent.context.get('chat.badges.clickable') )
+			return;
+
+		const target = event.target;
+		let container = target.parentElement.parentElement;
+		if ( ! container.dataset.roomId )
+			container = target.closest('[data-room-id]');
+
+		const room_id = container.dataset.roomId,
+			room_login = container.dataset.room,
+			data = JSON.parse(target.dataset.badgeData);
+
+		if ( data == null )
+			return;
+
+		let url = null;
+
+		for(const d of data) {
+			const p = d.provider;
+			if ( p === 'twitch' ) {
+				const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
+					global_badge = this.getTwitchBadge(d.badge, d.version, null, null, true) || {};
+				if ( ! bd )
+					continue;
+
+				if ( bd.click_url )
+					url = bd.click_url;
+				else if ( global_badge.click_url )
+					url = global_badge.click_url;
+				else if ( (bd.click_action === 'sub' || global_badge.click_action === 'sub') && room_login )
+					url = `https://www.twitch.tv/subs/${room_login}`;
+				else
+					continue;
+
+				break;
+
+			} else if ( p === 'ffz' ) {
+				const badge = this.badges[target.dataset.badge];
+				if ( badge?.click_url ) {
+					url = badge.click_url;
+					break;
+				}
+			}
+		}
+
+		this.log.info('badge-click', event.target);
+
+		if ( url ) {
+			const link = createElement('a', {
+				target: '_blank',
+				rel: 'noopener noreferrer',
+				href: url
+			});
+			link.click();
+		}
+
+		event.preventDefault();
 	}
 
 
@@ -603,6 +677,8 @@ export default class Badges extends Module {
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);
 
+				props.onClick = this.handleClick;
+
 				if ( data.replaced )
 					props['data-replaced'] = data.replaced;
 
@@ -756,6 +832,7 @@ export default class Badges extends Module {
 	buildBadgeCSS() {
 		const style = this.parent.context.get('chat.badges.style'),
 			is_dark = this.parent.context.get('theme.is-dark'),
+			can_click = this.parent.context.get('chat.badges.clickable'),
 			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries');
 
 		const out = [];
@@ -767,11 +844,11 @@ export default class Badges extends Module {
 				out.push(`.ffz-badge[data-replaced="${key}"]{${generateOverrideCSS(data, style, is_dark)}}`);
 
 				if ( use_media ) {
-					out.push(`@media (max-resolution: 99dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 1)}}}`);
-					out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 2)}}}`);
-					out.push(`@media (min-resolution: 200dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 4)}}}`);
+					out.push(`@media (max-resolution: 99dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 1, can_click)}}}`);
+					out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 2, can_click)}}}`);
+					out.push(`@media (min-resolution: 200dpi) {${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, 4, can_click)}}}`);
 				} else
-					out.push(`${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer)}}`);
+					out.push(`${selector}{${generateBadgeCSS(key, 0, data, style, is_dark, 0, this.color_fixer, undefined, can_click)}}`);
 			}
 
 		this.style.set('ext-badges', out.join('\n'));
@@ -823,6 +900,8 @@ export default class Badges extends Module {
 							__cat: getBadgeCategory(sid)
 						};
 
+					fixBadgeData(data);
+
 					this.twitch_badge_count++;
 					bs[data.version] = data;
 				}
@@ -832,32 +911,42 @@ export default class Badges extends Module {
 		}
 
 		this.buildTwitchBadgeCSS();
+		this.buildTwitchCSSBadgeCSS();
 	}
 
 
 	buildTwitchCSSBadgeCSS() {
 		const style = this.parent.context.get('chat.badges.style'),
 			is_dark = this.parent.context.get('theme.is-dark'),
+			can_click = this.parent.context.get('chat.badges.clickable'),
 			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries'),
 
 			badge_version = this.parent.context.get('chat.badges.version'),
-			versioned = CSS_BADGES[badge_version] || {};
+			versioned = CSS_BADGES[badge_version] || {},
+			twitch_data = this.twitch_badges || {};
 
 		const out = [];
 		for(const key in versioned)
 			if ( has(versioned, key) ) {
-				const data = versioned[key];
+				const data = versioned[key],
+					twitch = twitch_data[key];
 				for(const version in data)
 					if ( has(data, version) ) {
 						const d = data[version],
+							td = twitch?.[version],
 							selector = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
+						if ( td && td.click_url )
+							d.click_url = td.click_url;
+						if ( td && td.click_action )
+							d.click_action = td.click_action;
+
 						if ( use_media ) {
-							out.push(`@media (max-resolution: 99dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 1)}}}`);
-							out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 2)}}}`);
-							out.push(`@media (min-resolution: 200dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 4)}}}`);
+							out.push(`@media (max-resolution: 99dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 1, can_click)}}}`);
+							out.push(`@media (min-resolution: 100dpi) and (max-resolution:199dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 2, can_click)}}}`);
+							out.push(`@media (min-resolution: 200dpi) {${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, 4, can_click)}}}`);
 						} else
-							out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer)}}`);
+							out.push(`${selector}{${generateBadgeCSS(key, version, d, style, is_dark, badge_version, this.color_fixer, undefined, can_click)}}`);
 					}
 			}
 
@@ -871,6 +960,7 @@ export default class Badges extends Module {
 
 		const badge_version = this.parent.context.get('chat.badges.version'),
 			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries'),
+			can_click = this.parent.context.get('chat.badges.clickable'),
 			versioned = CSS_BADGES[badge_version] || {};
 
 		const out = [];
@@ -886,6 +976,7 @@ export default class Badges extends Module {
 							selector = `.ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
 						out.push(`${selector} {
+			${can_click && (data.click_action || data.click_url) ? 'cursor:pointer;' : ''}
 			background-color: transparent;
 			filter: none;
 			${WEBKIT}mask-image: none;
@@ -917,7 +1008,7 @@ export default class Badges extends Module {
 }
 
 
-function getBadgeCategory(key) {
+export function getBadgeCategory(key) {
 	if ( key.startsWith('overwatch-league') )
 		return 'm-owl';
 	else if ( key.startsWith('twitchcon') )
@@ -926,4 +1017,34 @@ function getBadgeCategory(key) {
 		return 'm-game';
 
 	return 'm-twitch';
+}
+
+export function fixBadgeData(badge) {
+	if ( ! badge )
+		return badge;
+
+	// Click Behavior
+	if ( badge.clickAction === 'VISIT_URL' && badge.clickURL )
+		badge.click_url = badge.clickURL;
+
+	if ( badge.clickAction === 'TURBO' )
+		badge.click_url = 'https://www.twitch.tv/products/turbo?ref=chat_badge';
+
+	if ( badge.clickAction === 'SUBSCRIBE' && badge.channelName )
+		badge.click_url = `https://www.twitch.tv/subs/${badge.channelName}`;
+	else if ( badge.clickAction )
+		badge.click_action = 'sub';
+
+	// Subscriber Tier
+	if ( badge.setID === 'subscriber' ) {
+		const id = parseInt(badge.version, 10);
+		if ( ! isNaN(id) && isFinite(id) ) {
+			badge.tier = (id - (id % 1000)) / 1000;
+			if ( badge.tier < 0 )
+				badge.tier = 0;
+		} else
+			badge.tier = 0;
+	}
+
+	return badge;
 }

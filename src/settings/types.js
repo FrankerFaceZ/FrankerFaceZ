@@ -60,7 +60,9 @@ export const array_merge = {
 		let trailing = [];
 		let had_value = false;
 
-		const profs = [...profiles, DEFAULT];
+		let profs = profiles;
+		if ( definition.inherit_default )
+			profs = [...profiles, DEFAULT];
 
 		for(const profile of profs) {
 			let value;

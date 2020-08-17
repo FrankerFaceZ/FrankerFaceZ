@@ -10,6 +10,7 @@ import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/c
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet, set_equals} from 'utilities/object';
+import { getBadgeCategory, fixBadgeData } from './badges';
 
 
 export default class Room {
@@ -399,17 +400,11 @@ export default class Room {
 			const b = {};
 			for(const data of badges) {
 				const sid = data.setID,
-					bs = b[sid] = b[sid] || {};
+					bs = b[sid] = b[sid] || {
+						__cat: getBadgeCategory(sid)
+					};
 
-				if ( sid === 'subscriber' ) {
-					const id = parseInt(data.version, 10);
-					if ( ! isNaN(id) && isFinite(id) ) {
-						data.tier = (id - (id % 1000)) / 1000;
-						if ( data.tier < 0 )
-							data.tier = 0;
-					} else
-						data.tier = 0;
-				}
+				fixBadgeData(data);
 
 				bs[data.version] = data;
 				this.badge_count++;
@@ -456,6 +451,7 @@ export default class Room {
 			return this.style.delete('badges');
 
 		const use_media = IS_FIREFOX && this.manager.context.get('chat.badges.media-queries'),
+			can_click = this.manager.context.get('chat.badges.clickable'),
 			out = [],
 			id = this.id;
 
@@ -468,6 +464,7 @@ export default class Room {
 							selector = `[data-room-id="${id}"] .ffz-badge[data-badge="${key}"][data-version="${version}"]`;
 
 						out.push(`${selector} {
+			${can_click && (data.click_action || data.click_url) ? 'cursor:pointer;' : ''}
 			background-color: transparent;
 			filter: none;
 			${WEBKIT}mask-image: none;

@@ -209,8 +209,10 @@ export class EventEmitter {
 			try {
 				ret = fn.apply(ctx, args);
 			} catch(err) {
-				if ( this.log )
+				if ( this.log ) {
 					this.log.capture(err, {tags: {event}, extra:{args}});
+					this.log.error(err);
+				}
 			}
 
 			if ( ret === Detach )

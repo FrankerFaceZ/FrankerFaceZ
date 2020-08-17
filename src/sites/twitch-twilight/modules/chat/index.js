@@ -68,6 +68,26 @@ const AUTOMOD_TYPES = make_enum(
 	'MessageModDenied'
 );
 
+const UNBLOCKABLE_TYPES = [
+	'Message',
+	'Notice',
+	'Moderation',
+	'ModerationAction',
+	'TargetedModerationAction',
+	'AutoMod',
+	'SubscriberOnlyMode',
+	'FollowerOnlyMode',
+	'SlowMode',
+	'EmoteOnlyMode',
+	'R9KMode',
+	'Connected',
+	'Disconnected',
+	'Reconnect',
+	'RoomMods',
+	'RoomState',
+	'BadgesUpdated'
+]
+
 const CHAT_TYPES = make_enum(
 	'Message',
 	'ExtensionMessage',
@@ -249,6 +269,28 @@ export default class ChatHook extends Module {
 		);
 
 		// Settings
+
+		this.settings.add('chat.filtering.blocked-types', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			process(ctx, val) {
+				const out = new Set;
+				for(const v of val)
+					if ( v?.v || ! UNBLOCKABLE_TYPES.includes(v.v) )
+						out.add(v.v);
+
+				return out;
+			},
+
+			ui: {
+				path: 'Chat > Filtering >> Blocked Message Types @{"description":"This filter allows you to remove all messages of a certain type from Twitch chat. It can be used to filter system messages, such as Hosts or Raids. Some types, such as moderation actions, cannot be blocked to prevent chat functionality from breaking."}',
+				component: 'blocked-types',
+				data: () => Object
+					.keys(this.chat_types)
+					.filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key))
+			}
+		});
 
 		this.settings.add('chat.replies.style', {
 			default: 1,
@@ -1113,21 +1155,24 @@ export default class ChatHook extends Module {
 			if ( ! reward )
 				return;
 
-			const msg = {
-				id: data.id,
-				type: this.chat_types.Message,
-				ffz_type: 'points',
-				ffz_reward: reward,
-				messageParts: [],
-				user: {
-					id: data.user.id,
-					login: data.user.login,
-					displayName: data.user.display_name
-				},
-				timestamp: new Date(message.data.timestamp || data.redeemed_at).getTime()
-			};
+			if ( ! this.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') ) {
+				const msg = {
+					id: data.id,
+					type: this.chat_types.Message,
+					ffz_type: 'points',
+					ffz_reward: reward,
+					messageParts: [],
+					user: {
+						id: data.user.id,
+						login: data.user.login,
+						displayName: data.user.display_name
+					},
+					timestamp: new Date(message.data.timestamp || data.redeemed_at).getTime()
+				};
 
-			service.postMessageToCurrentChannel({}, msg);
+				service.postMessageToCurrentChannel({}, msg);
+			}
+
 			event.preventDefault();
 		});
 	}
@@ -1328,7 +1373,11 @@ export default class ChatHook extends Module {
 				if ( msg ) {
 					try {
 						const types = t.chat_types || {},
-							mod_types = t.mod_types || {};
+							mod_types = t.mod_types || {},
+							blocked_types = t.chat.context.get('chat.filtering.blocked-types');
+
+						if ( blocked_types.has(types[msg.type]) )
+							return;
 
 						if ( msg.type === types.RewardGift && ! t.chat.context.get('chat.bits.show-rewards') )
 							return;
@@ -1776,7 +1825,7 @@ export default class ChatHook extends Module {
 						}
 				}
 
-				const old_chat = this.onChatMessageEvent;
+				/*const old_chat = this.onChatMessageEvent;
 				this.onChatMessageEvent = function(e) {
 					/*if ( e && e.sentByCurrentUser ) {
 						try {
@@ -1788,7 +1837,7 @@ export default class ChatHook extends Module {
 						} catch(err) {
 							t.log.capture(err, {extra: e});
 						}
-					}*/
+					}* /
 
 					return old_chat.call(i, e);
 				}
@@ -1806,15 +1855,18 @@ export default class ChatHook extends Module {
 						} catch(err) {
 							t.log.capture(err, {extra: e});
 						}
-					}*/
+					}* /
 
 					return old_action.call(i, e);
-				}
+				}*/
 
 
 				const old_sub = this.onSubscriptionEvent;
 				this.onSubscriptionEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('Subscription') )
+							return;
+
 						if ( t.chat.context.get('chat.subs.show') < 3 )
 							return;
 
@@ -1849,6 +1901,9 @@ export default class ChatHook extends Module {
 				const old_resub = this.onResubscriptionEvent;
 				this.onResubscriptionEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('Resubscription') )
+							return;
+
 						if ( t.chat.context.get('chat.subs.show') < 2 && ! e.body )
 							return;
 
@@ -1875,6 +1930,9 @@ export default class ChatHook extends Module {
 				const old_subgift = this.onSubscriptionGiftEvent;
 				this.onSubscriptionGiftEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('SubGift') )
+							return;
+
 						const key = `${e.channel}:${e.user.userID}`,
 							mystery = mysteries[key];
 
@@ -1922,6 +1980,9 @@ export default class ChatHook extends Module {
 				const old_anonsubgift = this.onAnonSubscriptionGiftEvent;
 				this.onAnonSubscriptionGiftEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('AnonSubGift') )
+							return;
+
 						const key = `${e.channel}:ANON`,
 							mystery = mysteries[key];
 
@@ -1970,6 +2031,9 @@ export default class ChatHook extends Module {
 				const old_submystery = this.onSubscriptionMysteryGiftEvent;
 				this.onSubscriptionMysteryGiftEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('SubMysteryGift') )
+							return;
+
 						let mystery = null;
 						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
 							const key = `${e.channel}:${e.user.userID}`;
@@ -2000,6 +2064,9 @@ export default class ChatHook extends Module {
 				const old_anonsubmystery = this.onAnonSubscriptionMysteryGiftEvent;
 				this.onAnonSubscriptionMysteryGiftEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('AnonSubMysteryGift') )
+							return;
+
 						let mystery = null;
 						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
 							const key = `${e.channel}:ANON`;
@@ -2031,6 +2098,9 @@ export default class ChatHook extends Module {
 				const old_ritual = this.onRitualEvent;
 				this.onRitualEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('Ritual') )
+							return;
+
 						const out = i.convertMessage(e);
 						out.ffz_type = 'ritual';
 						out.ritual = e.type;
@@ -2046,6 +2116,9 @@ export default class ChatHook extends Module {
 				const old_points = this.onChannelPointsRewardEvent;
 				this.onChannelPointsRewardEvent = function(e) {
 					try {
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') )
+							return;
+
 						const reward = e.rewardID && get(e.rewardID, i.props.rewardMap);
 						if ( reward ) {
 							const out = i.convertMessage(e);

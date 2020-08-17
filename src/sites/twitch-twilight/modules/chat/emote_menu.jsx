@@ -2287,7 +2287,7 @@ export default class EmoteMenu extends Module {
 
 		if ( nodes && nodes.length )
 			for(const node of nodes) {
-				const product = node.product,
+				const product = node && node.product,
 					set_id = product && product.emoteSetID;
 
 				if ( ! set_id )
