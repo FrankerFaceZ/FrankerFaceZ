@@ -327,8 +327,10 @@ export default class Channel extends Module {
 			}
 		}
 
-		const react = this.fine.getReactInstance(el),
-			props = react?.child?.memoizedProps;
+		const react = this.fine.getReactInstance(el);
+		let props = react?.child?.memoizedProps;
+		if ( ! props?.channelLogin )
+			props = props?.children?.props;
 
 		if ( el._ffz_links && props.channelLogin !== el._ffz_link_login  ) {
 			const login = el._ffz_link_login = props.channelLogin;
@@ -367,7 +369,7 @@ export default class Channel extends Module {
 			return;
 		}
 
-		const other_props = react.child.child?.child?.child?.child?.child?.child?.child?.child?.memoizedProps,
+		const other_props = react.child.child?.child?.child?.child?.child?.child?.child?.child?.child?.memoizedProps,
 			title = other_props?.title;
 
 		if ( title !== el._ffz_title_cache ) {
@@ -403,8 +405,10 @@ export default class Channel extends Module {
 
 	updateMetadata(el, keys) {
 		const cont = el._ffz_cont,
-			react = this.fine.getReactInstance(el),
-			props = react?.memoizedProps?.children?.props;
+			react = this.fine.getReactInstance(el);
+		let props = react?.memoizedProps?.children?.props;
+		if ( props && ! props.channelID )
+			props = props.children?.props;
 
 		if ( ! cont || ! document.contains(cont) || ! props || ! props.channelID )
 			return;
