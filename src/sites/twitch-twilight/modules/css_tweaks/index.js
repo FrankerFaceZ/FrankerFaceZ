@@ -13,7 +13,7 @@ const STYLE_VALIDATOR = document.createElement('span');
 const CLASSES = {
 	'unfollow': '.follow-btn__follow-btn--following,.follow-btn--following',
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
-	'side-nav': '.side-nav',
+	'side-nav': '.side-nav,#sideNav',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends)',
 	//'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',

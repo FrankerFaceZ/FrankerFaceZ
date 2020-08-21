@@ -55,6 +55,19 @@
 	}
 }
 
+.side-nav--hover-exp:not(.side-nav--expanded) {
+	transform: translateX(0) !important;
+
+	.side-nav-content {
+		transform: none !important;
+	}
+
+	&:hover {
+		transform: translateX(-19rem) !important;
+	}
+
+}
+
 
 .right-column.right-column--theatre {
 	right: unset !important;

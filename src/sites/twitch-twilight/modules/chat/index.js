@@ -1139,7 +1139,7 @@ export default class ChatHook extends Module {
 		});
 
 		this.subpump.on(':pubsub-message', event => {
-			if ( event.prefix !== 'community-points-channel-v1' || ! this.experiments.getAssignment('all_points') )
+			if ( event.prefix !== 'community-points-channel-v1' )
 				return;
 
 			const service = this.ChatService.first,

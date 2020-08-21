@@ -19,9 +19,9 @@ const VALID_WEIGHTS = ['regular', 'bold', 'semibold'],
 
 	VALID_PADDING = {
 		small: '05',
-		normal: 'normal',
-		large: 'large',
-		huge: 'huge'
+		normal: '1',
+		large: '2',
+		huge: '3'
 	};
 
 
@@ -867,13 +867,36 @@ TOKEN_TYPES.overlay = function(token, createElement, ctx) {
 			);
 	}
 
+	const classes = ['ffz--overlay'];
+	const style = {};
+
+	if ( token.background ) {
+		if ( VALID_COLORS.includes(token.background) )
+			classes.push(`tw-c-background-${token.background}`);
+		else
+			style.backgroundColor = token.background;
+	}
+
+	if ( token.color ) {
+		if ( VALID_COLORS.includes(token.color) )
+			classes.push(`tw-c-text-${token.color}`);
+		else
+			style.color = token.color;
+	}
+
 	if ( ctx.vue )
-		return createElement('div', {class: 'ffz--overlay'}, [
+		return createElement('div', {
+			class: classes,
+			style
+		}, [
 			createElement('div', {class: 'ffz--overlay__content'}, content),
 			...corners
 		]);
 
-	return createElement('div', {className: 'ffz--overlay'}, [
+	return createElement('div', {
+		className: classes.join(' '),
+		style
+	}, [
 		createElement('div', {className: 'ffz--overlay__content'}, content),
 		...corners
 	]);
