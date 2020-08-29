@@ -25,6 +25,21 @@ const OVERRIDE_COOKIE = 'experiment_overrides',
 import EXPERIMENTS from './experiments.json'; // eslint-disable-line no-unused-vars
 
 
+function sortExperimentLog(a,b) {
+	if ( a.rarity < b.rarity )
+		return -1;
+	else if ( a.rarity > b.rarity )
+		return 1;
+
+	if ( a.name < b.name )
+		return -1;
+	else if ( a.name > b.name )
+		return 1;
+
+	return 0;
+}
+
+
 // ============================================================================
 // Experiment Manager
 // ============================================================================
@@ -70,6 +85,7 @@ export default class ExperimentManager extends Module {
 
 			usingTwitchExperiment: key => this.usingTwitchExperiment(key),
 			getTwitchAssignment: key => this.getTwitchAssignment(key),
+			getTwitchType: type => this.getTwitchType(type),
 			hasTwitchOverride: key => this.hasTwitchOverride(key),
 			setTwitchOverride: (key, val) => this.setTwitchOverride(key, val),
 			deleteTwitchOverride: key => this.deleteTwitchOverride(key),
@@ -170,20 +186,104 @@ export default class ExperimentManager extends Module {
 			''
 		];
 
+		const ffz_assignments = [];
 		for(const [key, value] of Object.entries(this.experiments)) {
-			out.push(`FFZ | ${value.name}: ${this.getAssignment(key)}${this.hasOverride(key) ? ' (Overriden)' : ''}`);
+			const assignment = this.getAssignment(key),
+				override = this.hasOverride(key);
+
+			let weight = 0, total = 0;
+			for(const group of value.groups) {
+				if ( group.value === assignment )
+					weight = group.weight;
+				total += group.weight;
+			}
+
+			if ( ! override && weight === total )
+				continue;
+
+			ffz_assignments.push({
+				key,
+				name: value.name,
+				value: assignment,
+				override,
+				rarity: weight / total
+			});
+
+			//out.push(`FFZ | ${value.name}: ${this.getAssignment(key)}${this.hasOverride(key) ? ' (Overriden)' : ''}`);
 		}
 
+		ffz_assignments.sort(sortExperimentLog);
+
+		for(const entry of ffz_assignments)
+			out.push(`FFZ | ${entry.name}: ${entry.value}${entry.override ? ' (Override)' : ''} (r:${entry.rarity})`);
+
+		const twitch_assignments = [],
+			channel = this.settings.get('context.channel');
+
 		for(const [key, value] of Object.entries(this.getTwitchExperiments())) {
-			if ( this.usingTwitchExperiment(key) )
-				out.push(`TWITCH | ${value.name}: ${this.getTwitchAssignment(key)}${this.hasTwitchOverride(key) ? ' (Overriden)' : ''}`)
+			if ( ! this.usingTwitchExperiment(key) )
+				continue;
+
+			const assignment = this.getTwitchAssignment(key),
+				override = this.hasTwitchOverride(key);
+
+			let weight = 0, total = 0;
+			for(const group of value.groups) {
+				if ( group.value === assignment )
+					weight = group.weight;
+				total += group.weight;
+			}
+
+			if ( ! override && weight === total )
+				continue;
+
+			twitch_assignments.push({
+				key,
+				name: value.name,
+				value: assignment,
+				override,
+				type: this.getTwitchTypeByKey(key),
+				rarity: weight / total
+			});
+
+			//out.push(`TWITCH | ${value.name}: ${this.getTwitchAssignment(key)}${this.hasTwitchOverride(key) ? ' (Overriden)' : ''}`)
 		}
+
+		twitch_assignments.sort(sortExperimentLog);
+
+		for(const entry of twitch_assignments)
+			out.push(`Twitch | ${entry.name}: ${entry.value}${entry.override ? ' (Override)' : ''} (r:${entry.rarity}, t:${entry.type}${entry.type === 'channel_id' ? `, c:${channel}`: ''})`);
 
 		return out.join('\n');
 	}
 
 
 	// Twitch Experiments
+
+	getTwitchType(type) {
+		const core = this.resolve('site')?.getCore();
+		if ( core?.experiments?.getExperimentType )
+			return core.experiments.getExperimentType(type);
+
+		if ( type === 1 )
+			return 'device_id';
+		else if ( type === 2 )
+			return 'user_id';
+		else if ( type === 3 )
+			return 'channel_id';
+		return type;
+	}
+
+	getTwitchTypeByKey(key) {
+		const core = this.resolve('site')?.getCore(),
+			exps = core && core.experiments,
+			exp = exps?.experiments?.[key];
+
+		if ( exp?.t )
+			return this.getTwitchType(exp.t);
+
+		return null;
+	}
 
 	getTwitchExperiments() {
 		if ( window.__twilightSettings )
@@ -233,7 +333,7 @@ export default class ExperimentManager extends Module {
 		return overrides && has(overrides, key);
 	}
 
-	getTwitchAssignment(key) {
+	getTwitchAssignment(key, channel = null) {
 		const core = this.resolve('site')?.getCore(),
 			exps = core && core.experiments;
 
@@ -246,6 +346,9 @@ export default class ExperimentManager extends Module {
 			} catch(err) {
 				this.log.warn('Error attempting to initialize Twitch experiments tracker.', err);
 			}
+
+		if ( channel || this.getTwitchType(exps.experiments[key]?.t) === 'channel_id' )
+			return exps.getAssignmentById(key, {channel: channel ?? this.settings.get('context.channel')});
 
 		if ( exps.overrides && exps.overrides[key] )
 			return exps.overrides[key];
@@ -270,8 +373,8 @@ export default class ExperimentManager extends Module {
 			}
 	}
 
-	getTwitchAssignmentByName(name) {
-		return this.getTwitchAssignment(this.getTwitchKeyFromName(name));
+	getTwitchAssignmentByName(name, channel = null) {
+		return this.getTwitchAssignment(this.getTwitchKeyFromName(name), channel);
 	}
 
 	_rebuildTwitchKey(key, is_set, new_val) {

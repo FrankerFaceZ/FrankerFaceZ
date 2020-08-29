@@ -364,8 +364,8 @@ export default class Badges extends Module {
 			if ( ! container.dataset.roomId )
 				container = target.closest('[data-room-id]');
 
-			const room_id = container.dataset.roomId,
-				room_login = container.dataset.room,
+			const room_id = container?.dataset?.roomId,
+				room_login = container?.dataset?.room,
 				data = JSON.parse(target.dataset.badgeData),
 				out = [];
 
@@ -456,8 +456,8 @@ export default class Badges extends Module {
 		if ( ! container.dataset.roomId )
 			container = target.closest('[data-room-id]');
 
-		const room_id = container.dataset.roomId,
-			room_login = container.dataset.room,
+		const room_id = container?.dataset?.roomId,
+			room_login = container?.dataset?.room,
 			data = JSON.parse(target.dataset.badgeData);
 
 		if ( data == null )

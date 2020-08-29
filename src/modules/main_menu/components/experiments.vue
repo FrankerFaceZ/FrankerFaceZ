@@ -285,7 +285,7 @@ export default {
 				this.$set(exp, 'default', ! this.item.hasTwitchOverride(key));
 
 				exp.in_use = this.item.usingTwitchExperiment(key);
-				exp.remainder = `v: ${exp.v}, t: ${exp.t}`;
+				exp.remainder = `v: ${exp.v}, type: ${this.item.getTwitchType(exp.t)}`;
 				exp.total = exp.groups.reduce((a,b) => a + b.weight, 0);
 				this.calculateRarity(exp);
 			}
