@@ -41,7 +41,7 @@ export default class Scroller extends Module {
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.\n\n**Note:** Scrolling up in chat will always prevent automatic scrolling, regardless of this setting.',
 				component: 'setting-select-box',
 				data: [
-					{value: 0, title: 'Disabled'},
+					{value: 0, title: 'Use Twitch Setting'},
 					{value: 1, title: 'On Hover'},
 					{value: 2, title: 'When Ctrl is Held'},
 					{value: 3, title: 'When Meta is Held'},
@@ -163,18 +163,7 @@ export default class Scroller extends Module {
 
 		this.ChatScroller.ready((cls, instances) => {
 			const old_catch = cls.prototype.componentDidCatch,
-				old_snapshot = cls.prototype.getSnapshotBeforeUpdate,
 				old_render = cls.prototype.render;
-
-			if ( old_snapshot )
-				cls.prototype.getSnapshotBeforeUpdate = function() {
-					const out = old_snapshot.call(this);
-					this._ffz_snapshot = out || (this.lastLine && {
-						lastLine: this.lastLine,
-						offsetTop: this.lastLine.offsetTop
-					}) || null;
-					return out;
-				}
 
 			// Try catching errors. With any luck, maybe we can
 			// recover from the error when we re-build?
@@ -231,7 +220,7 @@ export default class Scroller extends Module {
 						const children = out?.props?.children?.props?.children,
 							child = children?.[2];
 
-						if ( child?.type?.displayName === 'ChatScrollFooter' )
+						if ( child?.type?.displayName === 'ChatPausedFooter' )
 							children[2] = this.ffzRenderFooter();
 					} catch(err) { /* no-op */ }
 
@@ -246,109 +235,37 @@ export default class Scroller extends Module {
 				this._ffz_installed = true;
 				const inst = this;
 
+				inst.ffz_oldScrollEvent = inst.handleScrollEvent;
+				inst.ffz_oldScroll = inst.scrollToBottom;
+
 				inst.ffz_outside = true;
 				inst._ffz_accessor = `_ffz_contains_${last_id++}`;
 
 				t.on('tooltips:mousemove', this.ffzTooltipHover, this);
 				t.on('tooltips:leave', this.ffzTooltipLeave, this);
 
-				inst.ffz_oldScrollEvent = inst.handleScrollEvent;
-				inst.ffz_oldScroll = inst.scrollToBottom;
-
-				// New Scroll to Bottom
-				inst.ffz_doScroll = function() {
-					inst._ffz_scroll_frame = null;
-					if ( inst.state.isAutoScrolling && ! inst.state.isPaused ) {
-						if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll )
-							inst.smoothScrollBottom();
-						else {
-							inst._ffz_one_fast_scroll = false;
-							inst._ffz_snapshot = null;
-							inst.ffz_oldScroll();
-						}
-					}
-				}
-
-				inst.scrollToBottom = function() {
-					if ( inst._ffz_scroll_request )
-						return;
-
-					inst._ffz_scroll_request = requestAnimationFrame(inst._scrollToBottom);
-				}
-
-				inst._scrollToBottom = function() {
-					inst._ffz_scroll_request = null;
-
-					// WIP: Trying to fix the scroll position changing so that we can
-					// smooth scroll from the previous position.
-					if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll && inst._ffz_snapshot ) {
-						const adjustment = inst._ffz_snapshot && inst._ffz_snapshot.lastLine ? inst._ffz_snapshot.lastLine.offsetTop - inst._ffz_snapshot.offsetTop: 0;
-						if ( inst.scroll && inst.scroll.scrollContent && adjustment != 0 )
-							inst.scroll.scrollContent.scrollTop += adjustment;
-					}
-
-					inst._ffz_snapshot = null;
-					if ( inst.state.isAutoScrolling && ! inst.state.isPaused ) {
-						if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll )
-							inst.smoothScrollBottom();
-						else {
-							inst._ffz_one_fast_scroll = false;
-							inst.ffz_oldScroll();
-						}
-					}
-				}
-
-				// New Scroll Event Handling
 				inst.handleScrollEvent = function(event) {
-					if ( ! inst.scroll || ! inst.scroll.scrollContent )
+					if ( ! inst.scrollRef?.scrollContent )
 						return;
-
-					// TODO: Check for mousedown?
 
 					if ( !(event.which > 0 || event.type === 'mousewheel' || event.type === 'wheel' || event.type === 'touchmove') )
 						return;
 
 					// How far are we scrolled up?
-					const scroller = inst.scroll.scrollContent,
-						offset = scroller.scrollHeight - scroller.scrollTop - scroller.offsetHeight;
+					const scroller = inst.scrollRef.scrollContent,
+						offset = scroller.scrollHeight - scroller.scrollTop - scroller.offsetHeight,
+						scrolled_up = offset > 10;
 
-					// If we're less than 10 pixels from the bottom and we aren't autoscrolling, resume
-					if ( offset <= 10 && ! inst.state.isAutoScrolling )
-						inst.resume();
+					if ( scrolled_up !== inst.state.ffz_scrolled_up )
+						inst.setState({ffz_scrolled_up: scrolled_up});
 
-					// If we are autoscrolling and we're more than 10 pixels up, then
-					// stop autoscrolling without setting paused.
-					else if ( inst.state.isAutoScrolling && offset > 10 ) {
-						// If we're paused, unpause.
-						if ( inst.state.isPaused ) {
-							inst.setState({
-								isPaused: false
-							}, () => {
-								if ( inst.props.setPaused )
-									inst.props.setPaused(false);
-							});
+					if ( inst.state.isPaused && scrolled_up )
+						inst.setLoadMoreEnabled(true);
 
-							inst.setLoadMoreEnabled(true);
-						}
-
-						inst.setState({
-							isAutoScrolling: false
-						});
-					}
-				}
-
-				inst.pause = function() {
-					// If we already aren't scrolling, we don't want to further
-					// pause things.
-					if ( ! inst.state.isAutoScrolling )
-						return;
-
-					inst.setState({
-						isPaused: true
-					}, () => {
-						if ( inst.props.setPaused )
-							inst.props.setPaused(true);
-					});
+					if ( inst.state.isPaused && ! scrolled_up )
+						inst.ffzMaybeUnpause();
+					else if ( ! inst.state.isPaused && scrolled_up )
+						inst.pause();
 				}
 
 				const old_resume = inst.resume;
@@ -359,9 +276,8 @@ export default class Scroller extends Module {
 				}
 
 				inst.resume = function() {
-					clearInterval(inst._ffz_hover_timer);
-					inst._ffz_hover_timer = null;
-					old_resume.call(inst);
+					inst.setState({ffz_scrolled_up: false});
+					old_resume.call(this);
 				}
 
 				// Event Registration
@@ -383,7 +299,7 @@ export default class Scroller extends Module {
 				if ( node )
 					node.addEventListener('mousemove', inst.hoverPause);
 
-				const scroller = this.scroll && this.scroll.scrollContent;
+				const scroller = this.scrollRef?.scrollContent;
 				if ( scroller ) {
 					for(const event of SCROLL_EVENTS) {
 						scroller.removeEventListener(event, inst.ffz_oldScrollEvent);
@@ -424,7 +340,7 @@ export default class Scroller extends Module {
 
 				this.ffzUpdateKeyTags();
 
-				if ( (t.pause_hover && this.ffz_outside) || t.pause < 2 )
+				if ( (t.pause_hover && this.ffz_outside) || this.ffzGetMode() < 2 )
 					return;
 
 				const should_pause = this.ffzShouldBePaused(),
@@ -433,7 +349,8 @@ export default class Scroller extends Module {
 				if ( changed )
 					if ( should_pause ) {
 						this.pause();
-						this.setLoadMoreEnabled(false);
+						if ( ! this.state.ffz_scrolled_up )
+							this.setLoadMoreEnabled(false);
 					} else
 						this.resume();
 			}
@@ -483,7 +400,8 @@ export default class Scroller extends Module {
 					if ( should_pause ) {
 						this.pause();
 						this.ffzInstallHoverTimer();
-						this.setLoadMoreEnabled(false);
+						if ( ! this.state.ffz_scrolled_up )
+							this.setLoadMoreEnabled(false);
 
 					} else
 						this.resume();
@@ -500,7 +418,7 @@ export default class Scroller extends Module {
 
 			cls.prototype.ffzTooltipHover = function(target, tip, event) {
 				if ( target[this._ffz_accessor] == null ) {
-					const scroller = this.scroll && this.scroll.scrollContent;
+					const scroller = this.scrollRef?.scrollContent;
 					target[this._ffz_accessor] = scroller ? scroller.contains(target) : false;
 				}
 
@@ -513,7 +431,7 @@ export default class Scroller extends Module {
 					return;
 
 				if ( target[this._ffz_accessor] == null ) {
-					const scroller = this.scroll && this.scroll.scrollContent;
+					const scroller = this.scrollRef?.scrollContent;
 					target[this._ffz_accessor] = scroller ? scroller.contains(target) : false;
 				}
 
@@ -534,13 +452,13 @@ export default class Scroller extends Module {
 				if ( ! t.use_keys && this.ffz_use_keys === t.use_keys )
 					return;
 
-				if ( ! this.scroll || ! this.scroll.root )
+				if ( ! this.scrollRef?.root )
 					return;
 
 				this.ffz_use_keys = t.use_keys;
-				this.scroll.root.classList.toggle('ffz--keys', t.use_keys);
+				this.scrollRef.root.classList.toggle('ffz--keys', t.use_keys);
 
-				const ds = this.scroll.root.dataset;
+				const ds = this.scrollRef.root.dataset;
 
 				if ( ! t.use_keys ) {
 					delete ds.alt;
@@ -563,17 +481,34 @@ export default class Scroller extends Module {
 				if ( since == null )
 					since = Date.now() - this.ffz_last_move;
 
-				const mode = t.pause,
+				if ( this.state.ffz_scrolled_up )
+					return true;
+
+				const mode = this.ffzGetMode(),
 					require_hover = t.pause_hover;
 
-				return (! require_hover || ! this.ffz_outside) && this.state.isAutoScrolling && (
+				return (! require_hover || ! this.ffz_outside) && (
 					(this.ffz_ctrl  && (mode === 2 || mode === 6)) ||
 					(this.ffz_meta  && (mode === 3 || mode === 7)) ||
 					(this.ffz_alt   && (mode === 4 || mode === 8)) ||
 					(this.ffz_shift && (mode === 5 || mode === 9)) ||
 					(! this.ffz_outside && since < t.pause_delay && (mode === 1 || mode > 5))
 				);
+			}
 
+			cls.prototype.ffzGetMode = function() {
+				let mode = t.pause;
+				if ( mode === 0 && ! this.props.mouseoverPausingDisabled ) {
+					const setting = this.props.pauseSetting;
+					if ( setting === 'MOUSEOVER_ALTKEY' )
+						mode = 8;
+					else if ( setting === 'MOUSEOVER' )
+						mode = 1;
+					else if ( setting === 'ALTKEY' )
+						mode = 4;
+				}
+
+				return mode;
 			}
 
 			cls.prototype.ffzMaybeUnpause = function() {
@@ -587,8 +522,10 @@ export default class Scroller extends Module {
 
 			cls.prototype.ffzRenderFooter = function() {
 				let msg, cls = '';
-				if ( this.state.isPaused ) {
-					const f = t.pause,
+				if ( this.state.ffz_scrolled_up )
+					msg = t.i18n.t('chat.messages-below', 'Chat Paused Due to Scroll');
+				else if ( this.state.isPaused ) {
+					const f = this.ffzGetMode(),
 						reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
 							f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
 								f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
@@ -602,12 +539,10 @@ export default class Scroller extends Module {
 					msg = t.i18n.t('chat.paused', 'Chat Paused Due to {reason}', {reason});
 					cls = 'ffz--freeze-indicator';
 
-				} else if ( this.state.isAutoScrolling )
+				} else
 					return createElement('div', {
 						className: `chat-scroll-footer__placeholder tw-flex tw-justify-content-center tw-relative ${cls}`
 					}, null);
-				else
-					msg = t.i18n.t('chat.messages-below', 'Chat Paused Due to Scroll');
 
 				return createElement('div', {
 					className: `chat-scroll-footer__placeholder tw-flex tw-justify-content-center tw-relative ${cls}`
@@ -622,80 +557,6 @@ export default class Scroller extends Module {
 				}, createElement('div', {
 					className: 'tw-flex-grow-0'
 				}, msg)))));
-
-				/*return createElement('div', {
-					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-justify-content-center tw-mg-b-1 tw-pd-x-2 tw-pd-y-05 ${cls}`,
-					onClick: this.ffzFastResume
-				}, createElement('div', null, msg));*/
-
-				/*return createElement('div', {
-					className: `chat-list__list-footer tw-absolute tw-align-items-center tw-border-radius-medium tw-bottom-0 tw-flex tw-full-width tw-justify-content-center tw-pd-05 ${cls}`,
-					onClick: this.ffzFastResume
-				}, createElement('div', null, msg));*/
-			}
-
-			cls.prototype.smoothScrollBottom = function() {
-				if ( this._ffz_smooth_animation )
-					cancelAnimationFrame(this._ffz_smooth_animation);
-
-				this.ffz_is_smooth_scrolling = true;
-
-				// Step setting value is # pixels to scroll per 10ms.
-				// 1 is pretty slow, 2 medium, 3 fast, 4 very fast.
-				let step = this.ffz_smooth_scroll,
-					old_time = Date.now();
-
-				const scroll_content = this.scroll.scrollContent;
-				if ( ! scroll_content )
-					return;
-
-				const target_top = scroll_content.scrollHeight - scroll_content.clientHeight,
-					difference = target_top - scroll_content.scrollTop;
-
-				// If we are falling behind speed us up
-				if ( difference > scroll_content.clientHeight ) {
-					// we are a full scroll away, just jump there
-					step = difference;
-
-				} else if ( difference > 200 ) {
-					// we are starting to fall behind, speed it up a bit
-					step += step * Math.floor(difference / 200);
-				}
-
-				const smoothAnimation = () => {
-					if ( this.state.isPaused || ! this.state.isAutoScrolling )
-						return this.ffz_is_smooth_scrolling = false;
-
-					// See how much time has passed to get a step based off the delta
-					const current_time = Date.now(),
-						delta = current_time - old_time,
-						current_step = step * (delta / 10);
-
-					// we need to move at least one full pixel for scrollTop to do anything in this delta.
-					if ( current_step >= 1 ) {
-						const scroll_top = scroll_content.scrollTop,
-							next_top = scroll_top + current_step,
-							target_top = scroll_content.scrollHeight - scroll_content.clientHeight;
-
-						old_time = current_time;
-						if ( next_top < target_top ) {
-							scroll_content.scrollTop = scroll_top + current_step;
-							this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
-
-						} else {
-							// We've reached the bottom.
-							scroll_content.scrollTop = target_top;
-							this.ffz_is_smooth_scrolling = false;
-						}
-
-					} else {
-						// The frame happened so quick since last update that we haven't moved a full pixel.
-						// Just wait.
-						this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
-					}
-				}
-
-				smoothAnimation();
 			}
 
 			// Do the thing~
