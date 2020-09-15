@@ -369,6 +369,24 @@ export default class Channel extends Module {
 			return;
 		}
 
+		// TODO: See if we can read this data directly from Apollo's cache.
+		// Also, test how it works with videos and clips.
+		/*const raw_game = el.querySelector('a[data-a-target="stream-game-link"]')?.textContent;
+		if ( ! el._ffz_game_cache_updating && el._ffz_game_cache !== raw_game ) {
+			el._ffz_game_cache_updating = true;
+			el._ffz_game_cache = raw_game;
+
+			this.twitch_data.getUserGame(props.channelID, props.channelLogin).then(game => {
+				el._ffz_game_cache_updating = false;
+				this.settings.updateContext({
+					category: game?.displayName,
+					categoryID: game?.id
+				})
+			}).catch(() => {
+				el._ffz_game_cache_updating = false;
+			});
+		}*/
+
 		const other_props = react.child.child?.child?.child?.child?.child?.child?.child?.child?.child?.memoizedProps,
 			title = other_props?.title;
 
@@ -438,8 +456,19 @@ export default class Channel extends Module {
 				getViewerCount: () => {
 					const thing = cont.querySelector('p[data-a-target="animated-channel-viewers-count"]'),
 						r = thing && this.fine.getReactInstance(thing),
-						p = r?.memoizedProps?.children?.props;
+						c = r?.memoizedProps?.children;
 
+					// Sometimes, on early loads, the animated element
+					// is actually a static string.
+					if ( typeof c === 'string' && /^[0-9,.]+$/.test(c) ) {
+						try {
+							const val = parseInt(c.replace(/,/, ''), 10);
+							if ( ! isNaN(val) && isFinite(val) && val > 0 )
+								return val;
+						} catch(err) { /* no-op */ }
+					}
+
+					const p = c?.props;
 					if ( p && p.value != null )
 						return p.value;
 

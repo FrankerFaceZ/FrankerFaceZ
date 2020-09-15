@@ -51,9 +51,9 @@ export const DEFAULT_TYPES = {
 
 	number(val, node) {
 		if ( typeof val !== 'number' ) {
-			let new_val = parseInt(val, 10);
+			let new_val = parseFloat(val);
 			if ( isNaN(new_val) || ! isFinite(new_val) )
-				new_val = parseFloat(val);
+				new_val = parseInt(val, 10);
 			if ( isNaN(new_val) || ! isFinite(new_val) )
 				return val;
 
@@ -254,7 +254,16 @@ export default class TranslationCore {
 	formatNumber(value, format) {
 		let formatter = this.numberFormats.get(format);
 		if ( ! formatter ) {
-			formatter = new Intl.NumberFormat(this.locale, this.formats.number[format]);
+			if ( this.formats.number[format] )
+				formatter = new Intl.NumberFormat(this.locale, this.formats.number[format]);
+			else if ( typeof format === 'number' )
+				formatter = new Intl.NumberFormat(this.locale, {
+					minimumFractionDigits: format,
+					maximumFractionDigits: format
+				});
+			else
+				formatter = new Intl.NumberFormat(this.locale);
+
 			this.numberFormats.set(format, formatter);
 		}
 

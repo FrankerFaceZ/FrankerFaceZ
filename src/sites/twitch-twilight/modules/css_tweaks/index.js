@@ -33,7 +33,7 @@ const CLASSES = {
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard',
-	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"]',
+	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"],.whispers__pill',
 
 	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',

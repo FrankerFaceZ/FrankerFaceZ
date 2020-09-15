@@ -1388,9 +1388,15 @@ export default class Chat extends Module {
 				ret = `${content.alt}${content.cheerAmount}`;
 
 			} else if ( content.images ) {
-				const url = (content.images.themed ? content.images.dark : content.images.sources),
-					match = url && /\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']),
+				const url = (content.images.themed ? content.images.dark : content.images.sources);
+				let id = content.emoteID;
+				if ( ! id ) {
+					const match = url && (
+						/\/emoticons\/v1\/(\d+)\/[\d.]+$/.exec(url['1x']) ||
+						/\/emoticons\/v2\/(\d+)\//.exec(url['1x'])
+					);
 					id = match && match[1];
+				}
 
 				ret = content.alt;
 

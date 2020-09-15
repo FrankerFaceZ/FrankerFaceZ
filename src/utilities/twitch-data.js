@@ -266,6 +266,29 @@ export default class TwitchData extends Module {
 	}
 
 	/**
+	 * Queries Apollo for the user's current game, details given the user id or name. One of (id, login) MUST be specified
+	 * @function getUserGame
+	 * @memberof TwitchData
+	 * @async
+	 *
+	 * @param {int|string|null|undefined} id - the user id number (can be an integer string)
+	 * @param {string|null|undefined} login - the username
+	 * @returns {Object} information about the requested user
+	 *
+	 * @example
+	 *
+	 *  console.log(this.twitch_data.getUserGame(19571641, null));
+	 */
+	async getUserGame(id, login) {
+		const data = await this.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './data/user-game.gql'),
+			{ id, login }
+		);
+
+		return get('data.user.broadcastSettings.game', data);
+	}
+
+	/**
 	 * Queries Apollo for the logged in user's relationship to the channel with given the id or name. One of (id, login) MUST be specified
 	 * @function getUserSelf
 	 * @memberof TwitchData

@@ -25,11 +25,11 @@ export default class SettingsMenu extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		this.ModSettingsMenu = this.fine.define(
+		/*this.ModSettingsMenu = this.fine.define(
 			'chat-mod-settings',
 			n => n.renderModerationSettingsLink && n.onChatClear,
 			Twilight.CHAT_ROUTES
-		);
+		);*/
 	}
 
 	async onEnable() {
@@ -71,7 +71,7 @@ export default class SettingsMenu extends Module {
 					</div>}
 				</div>);
 
-				const f = t.chat.context.get('chat.scroller.freeze'),
+				/*const f = t.chat.context.get('chat.scroller.freeze'),
 					reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
 						f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
 							f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
@@ -96,7 +96,7 @@ export default class SettingsMenu extends Module {
 							<figure class="tw-svg ffz-i-right-dir" />
 						</div>
 					</button>
-				</div>);
+				</div>);*/
 
 				return val;
 			}
@@ -171,7 +171,7 @@ export default class SettingsMenu extends Module {
 			this.SettingsMenu.forceUpdate();
 		});
 
-		this.ModSettingsMenu.ready(cls => {
+		/*this.ModSettingsMenu.ready(cls => {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() {
@@ -193,7 +193,7 @@ export default class SettingsMenu extends Module {
 			}
 
 			this.ModSettingsMenu.forceUpdate();
-		})
+		})*/
 
 		this.SettingsMenu.on('unmount', inst => {
 			inst.ffzSettingsClick = null;

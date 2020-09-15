@@ -1,0 +1,12 @@
+query FFZ_UserGame($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+		id
+		broadcastSettings {
+			id
+			game {
+				id
+				displayName
+			}
+		}
+	}
+}
