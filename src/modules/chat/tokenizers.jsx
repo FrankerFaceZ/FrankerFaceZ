@@ -433,6 +433,13 @@ export const UserHighlights = {
 			}
 		}
 
+		if(this.context.manager.provider.get('chat.filtering.highlight-temp')?.includes(msg.user.userID))
+		{
+			(msg.highlights = (msg.highlights || new Set())).add('user');
+			msg.mentioned = true;
+			return tokens;
+		}
+
 		return tokens;
 	}
 }

@@ -69,7 +69,8 @@ export default class Actions extends Module {
 				{v: {action: 'unban', appearance: {type: 'icon', icon: 'ffz-i-ok'}, options: {}, display: {mod: true, mod_icons: true, deleted: true}}},
 				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true, mod_icons: true}}},
 				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}},
-				{v: {action: 'reply', appearance: {type: 'icon', icon: 'ffz-i-reply'}, options: {}, display: {}}}
+				{v: {action: 'reply', appearance: {type: 'icon', icon: 'ffz-i-reply'}, options: {}, display: {}}},
+				{v: {action: 'highlight', appearance: {type: 'icon', icon: 'ffz-i-eye'}, options: {}, display: {}}}
 			],
 
 			type: 'array_merge',

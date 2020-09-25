@@ -354,6 +354,39 @@ export const untimeout = {
 	}
 }
 
+export const highlight = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-eye'
+		},
+	}],
+
+	defaults: {},
+
+	required_context: ['user'],
+
+	title: 'Highlight User',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.highlight.tooltip', 'Highlight {user.login}', {user: data});
+	},
+
+	click(event, data) {
+		let key = 'chat.filtering.highlight-temp'
+		let val = this.settings.provider.get(key)
+		if(!val)
+			val = []
+		if(val.includes(data.user.id))
+			val = val.filter(value => value !== data.user.id);
+		else
+			val.push(data.user.id)
+		this.settings.provider.set(key, val)
+	}
+}
+
+
+
 
 // ============================================================================
 // Whisper
