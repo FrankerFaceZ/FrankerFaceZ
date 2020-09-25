@@ -178,7 +178,7 @@ export default class ChatLine extends Module {
 			cls.prototype.render = function() {
 				this._ffz_no_scan = true;
 
-				if ( ! this.props.message || ! this.props.message.content )
+				if ( ! this.props.message || ! this.props.message.content || ! this.props.message.from )
 					return old_render.call(this);
 
 				const msg = t.chat.standardizeWhisper(this.props.message),
