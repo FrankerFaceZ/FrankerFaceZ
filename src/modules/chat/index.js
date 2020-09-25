@@ -480,14 +480,14 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
+				const colorWithHighestPriority = val[0]
+
 				const colors = new Map;
 
-				for(const item of val) {
-					const c = item.c || null,
-						v = item.v;
+				const c = colorWithHighestPriority.c || null,
+					v = colorWithHighestPriority.v;
 
-					colors.set(v, c);
-				}
+				colors.set(v, c);
 
 				return colors;
 			}
