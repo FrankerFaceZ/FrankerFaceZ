@@ -382,6 +382,7 @@ export const highlight = {
 		else
 			val.push(data.user.id)
 		this.settings.provider.set(key, val)
+		this.resolve('chat').emit('chat:update-lines')
 	}
 }
 
