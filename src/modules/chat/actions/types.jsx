@@ -369,7 +369,7 @@ export const highlight = {
 	title: 'Highlight User',
 
 	tooltip(data) {
-		return this.i18n.t('chat.actions.highlight.tooltip', 'Highlight {user.login}', {user: data});
+		return this.i18n.t('chat.actions.highlight.tooltip', `Highlight ${data.user.login}`);
 	},
 
 	click(event, data) {
