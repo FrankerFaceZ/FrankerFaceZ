@@ -363,6 +363,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.highlight-basic-users-temp', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Chat > Filtering >> Temporary User Highlights',
+				component: 'temp-highlights',
+			}
+		});
+
 		this.settings.add('chat.filtering.highlight-basic-users--color-regex', {
 			requires: ['chat.filtering.highlight-basic-users'],
 			equals: 'requirements',
