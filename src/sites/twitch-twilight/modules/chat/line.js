@@ -178,38 +178,50 @@ export default class ChatLine extends Module {
 			cls.prototype.render = function() {
 				this._ffz_no_scan = true;
 
-				if ( ! this.props.message || ! this.props.message.content )
+				if ( ! this.props.message || ! this.props.message.content || ! this.props.message.from )
 					return old_render.call(this);
 
-				const msg = t.chat.standardizeWhisper(this.props.message),
+				try {
+					const msg = t.chat.standardizeWhisper(this.props.message),
 
-					is_action = msg.is_action,
-					user = msg.user,
-					raw_color = t.overrides.getColor(user.id) || user.color,
-					color = t.parent.colors.process(raw_color),
+						is_action = msg.is_action,
+						user = msg.user,
+						raw_color = t.overrides.getColor(user.id) || user.color,
+						color = t.parent.colors.process(raw_color),
 
-					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null, null),
-					contents = t.chat.renderTokens(tokens, e),
+						tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null, null),
+						contents = t.chat.renderTokens(tokens, e),
 
-					override_name = t.overrides.getName(user.id);
+						override_name = t.overrides.getName(user.id);
 
-				return e('div', {className: 'thread-message__message'},
-					e('div', {className: 'tw-pd-x-1 tw-pd-y-05'}, [
-						e('span', {
-							className: `thread-message__message--user-name notranslate${override_name ? ' ffz--name-override' : ''}`,
-							style: {
-								color
-							}
-						}, override_name || user.displayName),
-						e('span', null, is_action ? ' ' : ': '),
-						e('span', {
-							className: 'message',
-							style: {
-								color: is_action && color
-							}
-						}, contents)
-					])
-				);
+					return e('div', {className: 'thread-message__message'},
+						e('div', {className: 'tw-pd-x-1 tw-pd-y-05'}, [
+							e('span', {
+								className: `thread-message__message--user-name notranslate${override_name ? ' ffz--name-override' : ''}`,
+								style: {
+									color
+								}
+							}, override_name || user.displayName),
+							e('span', null, is_action ? ' ' : ': '),
+							e('span', {
+								className: 'message',
+								style: {
+									color: is_action && color
+								}
+							}, contents)
+						])
+					);
+
+				} catch(err) {
+					t.log.error(err);
+					t.log.capture(err, {
+						extra: {
+							props: this.props
+						}
+					});
+
+					return old_render.call(this);
+				}
 			}
 
 			// Do this after a short delay to hopefully reduce the chance of React

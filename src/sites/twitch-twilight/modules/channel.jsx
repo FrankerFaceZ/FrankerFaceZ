@@ -332,6 +332,11 @@ export default class Channel extends Module {
 		if ( ! props?.channelLogin )
 			props = props?.children?.props;
 
+		const watching = props?.watchPartyProps?.isShowingWatchPartyInMain;
+		this.settings.updateContext({
+			isWatchParty: watching
+		});
+
 		if ( el._ffz_links && props.channelLogin !== el._ffz_link_login  ) {
 			const login = el._ffz_link_login = props.channelLogin;
 			if ( login ) {

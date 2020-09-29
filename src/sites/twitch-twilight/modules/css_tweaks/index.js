@@ -92,8 +92,11 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.use-chat-fix', {
-			requires: ['context.force_chat_fix', 'layout.swap-sidebars', 'layout.use-portrait', 'chat.use-width'],
+			requires: ['context.force_chat_fix', 'layout.swap-sidebars', 'layout.use-portrait', 'chat.use-width', 'context.isWatchParty'],
 			process(ctx) {
+				if ( ctx.get('context.isWatchParty') )
+					return false;
+
 				return ctx.get('context.force_chat_fix') || ctx.get('layout.swap-sidebars') || ctx.get('layout.use-portrait') || ctx.get('chat.use-width')
 			},
 			changed: val => {
@@ -223,6 +226,10 @@ export default class CSSTweaks extends Module {
 
 		this.settings.add('layout.swap-sidebars', {
 			default: false,
+			requires: ['context.isWatchParty'],
+			process(ctx, val) {
+				return ctx.get('context.isWatchParty') ? false : val;
+			},
 			ui: {
 				path: 'Appearance > Layout >> Side Navigation',
 				title: 'Swap Sidebars',

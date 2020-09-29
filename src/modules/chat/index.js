@@ -486,7 +486,8 @@ export default class Chat extends Module {
 					const c = item.c || null,
 						v = item.v;
 
-					colors.set(v, c);
+					if ( ! colors.has(v) )
+						colors.set(v, c);
 				}
 
 				return colors;

@@ -73,8 +73,11 @@ export default class Layout extends Module {
 		})
 
 		this.settings.add('layout.use-portrait', {
-			requires: ['layout.portrait', 'layout.portrait-threshold', 'context.route.name', 'context.size'],
+			requires: ['layout.portrait', 'layout.portrait-threshold', 'context.route.name', 'context.size', 'context.isWatchParty'],
 			process(ctx) {
+				if ( ctx.get('context.isWatchParty') )
+					return false;
+
 				const size = ctx.get('context.size');
 				if ( ! size || ! ctx.get('layout.portrait') || ! PORTRAIT_ROUTES.includes(ctx.get('context.route.name')) )
 					return false;
