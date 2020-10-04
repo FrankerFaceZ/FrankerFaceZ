@@ -7,6 +7,7 @@
 import {get} from 'utilities/object';
 import {ColorAdjuster} from 'utilities/color';
 
+import {CHAT_FONT_SIZE} from 'utilities/constants';
 import Module from 'utilities/module';
 
 import Line from './line';
@@ -66,7 +67,7 @@ export default class Chat extends Module {
 	updateChatCSS() {
 		const size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
-			lh = Math.round((20/12) * size);
+			lh = Math.round((20/CHAT_FONT_SIZE) * size);
 
 		let font = this.chat.context.get('chat.font-family') || 'inherit';
 		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
@@ -76,7 +77,7 @@ export default class Chat extends Module {
 		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
 		this.css_tweaks.setVariable('chat-font-family', font);
 
-		this.css_tweaks.toggle('chat-font', size !== 12 || font);
+		this.css_tweaks.toggle('chat-font', size !== CHAT_FONT_SIZE || font);
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);
