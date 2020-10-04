@@ -125,3 +125,5 @@ export const EmoteTypes = make_enum(
 	'Global',
 	'TwoFactor'
 );
+
+export const CHAT_FONT_SIZE = 13;

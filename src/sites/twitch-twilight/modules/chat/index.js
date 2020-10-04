@@ -6,7 +6,7 @@
 
 import {ColorAdjuster} from 'utilities/color';
 import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
-import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {WEBKIT_CSS as WEBKIT, CHAT_FONT_SIZE} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
 
 import Module from 'utilities/module';
@@ -619,7 +619,7 @@ export default class ChatHook extends Module {
 		const width = this.chat.context.get('chat.width'),
 			size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
-			lh = Math.round((20/12) * size);
+			lh = Math.round((20/CHAT_FONT_SIZE) * size);
 
 		let font = this.chat.context.get('chat.font-family') || 'inherit';
 		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
@@ -631,7 +631,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 		this.css_tweaks.setVariable('negative-chat-width', `${-width/10}rem`);
 
-		this.css_tweaks.toggle('chat-font', size !== 12 || font !== 'inherit');
+		this.css_tweaks.toggle('chat-font', size !== CHAT_FONT_SIZE || font !== 'inherit');
 		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
