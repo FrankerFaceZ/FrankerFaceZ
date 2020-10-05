@@ -38,6 +38,10 @@
 	pointer-events: none;
 }
 
+.chat-line__timestamp {
+	font-variant-numeric: tabular-nums;
+}
+
 .ffz-notice-line {
 	&:focus-within,
 	&:hover,

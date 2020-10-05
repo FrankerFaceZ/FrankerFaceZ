@@ -631,7 +631,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 		this.css_tweaks.setVariable('negative-chat-width', `${-width/10}rem`);
 
-		this.css_tweaks.toggle('chat-font', size !== 12 || font !== 'inherit');
+		this.css_tweaks.toggle('chat-font', size !== 13 || font !== 'inherit');
 		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);

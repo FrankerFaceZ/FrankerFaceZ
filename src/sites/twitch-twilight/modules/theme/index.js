@@ -44,6 +44,18 @@ export default class ThemeEngine extends Module {
 
 		// Font
 
+		this.settings.add('theme.font.size', {
+			default: 13,
+			ui: {
+				path: 'Appearance > Theme >> Fonts',
+				title: 'Font Size',
+				description: 'How large should normal text be, in pixels. This may be affected by your browser\'s zoom and font settings. The old default was: `12`',
+				component: 'setting-text-box'
+			},
+			changed: () => this.updateFont()
+		});
+
+
 		// Colors
 
 		this.settings.add('theme.color.background', {
@@ -170,6 +182,34 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 
 		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
 	}*/
+
+	updateFont() {
+		let size = this.settings.get('theme.font.size');
+		if ( typeof size === 'string' && /^[0-9.]+$/.test(size) )
+			size = parseFloat(size);
+		else
+			size = null;
+
+		if ( ! size || isNaN(size) || ! isFinite(size) || size < 1 || size === 13 ) {
+			this.css_tweaks.delete('font-size');
+			return;
+		}
+
+		size = size / 10;
+
+		this.css_tweaks.set('font-size', `html body {
+	--font-size-1: ${(54/13) * size}rem;
+	--font-size-2: ${(36/13) * size}rem;
+	--font-size-3: ${(24/13) * size}rem;
+	--font-size-4: ${(18/13) * size}rem;
+	--font-size-5: ${(14/13) * size}rem;
+	--font-size-6: ${size}rem;
+	--font-size-7: ${(12/13) * size}rem;
+	--font-size-8: ${(12/13) * size}rem;
+	--font-size-base: ${size}rem;
+}
+`);
+	}
 
 	updateCSS() {
 		//this.updateOldCSS();
@@ -372,5 +412,6 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 	onEnable() {
 		//this.updateSetting(this.settings.get('theme.dark'));
 		this.updateCSS();
+		this.updateFont();
 	}
 }
