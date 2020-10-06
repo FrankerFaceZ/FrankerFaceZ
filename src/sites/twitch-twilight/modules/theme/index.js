@@ -46,11 +46,23 @@ export default class ThemeEngine extends Module {
 
 		this.settings.add('theme.font.size', {
 			default: 13,
+			process(ctx, val) {
+				if ( typeof val !== 'number' )
+					try {
+						val = parseFloat(val);
+					} catch(err) { val = null; }
+
+				if ( ! val || val < 1 || isNaN(val) || ! isFinite(val) || val > 25 )
+					val = 13;
+
+				return val;
+			},
 			ui: {
 				path: 'Appearance > Theme >> Fonts',
 				title: 'Font Size',
-				description: 'How large should normal text be, in pixels. This may be affected by your browser\'s zoom and font settings. The old default was: `12`',
-				component: 'setting-text-box'
+				description: '**Minimum:** `1`, **Maximum:** `25`, *Old Default:* `12`\n\nHow large should normal text be, in pixels. This may be affected by your browser\'s zoom and font settings.',
+				component: 'setting-text-box',
+				type: 'number'
 			},
 			changed: () => this.updateFont()
 		});
@@ -187,7 +199,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		let size = this.settings.get('theme.font.size');
 		if ( typeof size === 'string' && /^[0-9.]+$/.test(size) )
 			size = parseFloat(size);
-		else
+		else if ( typeof size !== 'number' )
 			size = null;
 
 		if ( ! size || isNaN(size) || ! isFinite(size) || size < 1 || size === 13 ) {

@@ -119,11 +119,13 @@ export default class SettingsContext extends EventEmitter {
 		const new_profiles = [],
 			order = this.order = [];
 
-		for(const profile of this.manager.__profiles)
-			if ( profile.toggled && profile.matches(this.__context) ) {
-				new_profiles.push(profile);
-				order.push(profile.id);
-			}
+		if ( ! this.manager.disable_profiles ) {
+			for(const profile of this.manager.__profiles)
+				if ( profile.toggled && profile.matches(this.__context) ) {
+					new_profiles.push(profile);
+					order.push(profile.id);
+				}
+		}
 
 		if ( array_equals(this.__profiles, new_profiles) )
 			return false;

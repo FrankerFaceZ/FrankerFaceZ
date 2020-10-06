@@ -12,6 +12,8 @@
 			<input
 				:id="item.full_key"
 				ref="control"
+				:type="type"
+				:placeholder="placeholder"
 				:value="value"
 				class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-mg-05 tw-input"
 				@change="onChange"
@@ -61,6 +63,16 @@ import SettingMixin from '../setting-mixin';
 export default {
 	mixins: [SettingMixin],
 	props: ['item', 'context'],
+
+	computed: {
+		type() {
+			return this.item.type || 'text';
+		},
+
+		placeholder() {
+			return this.item.placeholder || this.default_value;
+		}
+	},
 
 	methods: {
 		onChange() {

@@ -161,6 +161,9 @@ export default class MenuButton extends SiteModule {
 		if ( this.has_update )
 			return null;
 
+		if ( this.settings.disable_profiles )
+			return <figure class="ffz-i-cog" />;
+
 		if ( this.has_strings )
 			return this.i18n.formatNumber(this.i18n.new_strings + this.i18n.changed_strings);
 
@@ -325,6 +328,11 @@ export default class MenuButton extends SiteModule {
 					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
+					</div>)}
+					{this.settings.disable_profiles && (<div class="tw-mg-t-1">
+						{this.i18n.tList('site.menu_button.no-settings', 'Settings are disabled in this tab due to the inclusion of "{param}" in the URL.', {
+							param: <code class="ffz-monospace">?ffz-no-settings</code>
+						})}
 					</div>)}
 					{this._new_settings > 0 && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.new-desc', 'There {count,plural,one {is one new setting} other {are # new settings}}.', {count: this._new_settings})}

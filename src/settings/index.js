@@ -34,6 +34,15 @@ export default class SettingsManager extends Module {
 
 		this.updateSoon = debounce(() => this.updateRoutes(), 50, false);
 
+		// Do we want to not enable any profiles?
+		try {
+			const params = new URL(window.location).searchParams;
+			if ( params ) {
+				if ( params.has('ffz-no-settings') )
+					this.disable_profiles = true;
+			}
+		} catch(err) { /* no-op */ }
+
 		// State
 		this.__contexts = [];
 		this.__profiles = [];
