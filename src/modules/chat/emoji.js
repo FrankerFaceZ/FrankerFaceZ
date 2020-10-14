@@ -78,6 +78,11 @@ export default class Emoji extends Module {
 
 		this.settings.add('chat.emoji.style', {
 			default: 'twitter',
+			process(ctx, val) {
+				if ( val != 0 && ! IMAGE_PATHS[val] )
+					return 'twitter';
+				return val;
+			},
 			ui: {
 				path: 'Chat > Appearance >> Emoji',
 				title: 'Emoji Style',

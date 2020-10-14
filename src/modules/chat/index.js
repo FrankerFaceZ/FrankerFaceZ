@@ -1665,12 +1665,12 @@ export default class Chat extends Module {
 		if ( data.error )
 			data = {
 				v: 5,
-				title: this.i18n.t('card.error', 'An error occured.'),
+				title: this.i18n.t('card.error', 'An error occurred.'),
 				description: data.error,
 				short: {
 					type: 'header',
 					image: {type: 'image', url: ERROR_IMAGE},
-					title: {type: 'i18n', key: 'card.error', phrase: 'An error occured.'},
+					title: {type: 'i18n', key: 'card.error', phrase: 'An error occurred.'},
 					subtitle: data.error
 				}
 			}

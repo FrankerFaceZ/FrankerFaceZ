@@ -57,9 +57,10 @@ export default class Directory extends SiteModule {
 			default: 2,
 
 			ui: {
-				path: 'Directory > Channels >> Blocked and Hidden Categories',
+				path: 'Directory > Categories >> Hidden Thumbnail Style @{"sort": 100}',
 				title: 'Hidden Style',
 				component: 'setting-select-box',
+				sort: 100,
 
 				data: [
 					{value: 0, title: 'Replace Image'},
@@ -79,9 +80,10 @@ export default class Directory extends SiteModule {
 			default: false,
 
 			ui: {
-				path: 'Directory > Channels >> Blocked and Hidden Categories',
+				path: 'Directory > Categories >> Hidden Thumbnail Style',
 				title: 'Reveal hidden entries on mouse hover.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				sort: 101
 			},
 
 			changed: val => this.css_tweaks.toggle('dir-reveal', val)
@@ -329,7 +331,7 @@ export default class Directory extends SiteModule {
 		if ( ! props?.channelLogin )
 			return;
 
-		const game = props.gameTitle || props.trackingProps?.categoryName;
+		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category;
 
 		el.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
 		el.dataset.ffzType = props.streamType;

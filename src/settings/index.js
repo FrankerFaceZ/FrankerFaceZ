@@ -565,7 +565,8 @@ export default class SettingsManager extends Module {
 			if ( ! ui.key && ui.title )
 				ui.key = ui.title.toSnakeCase();
 
-			if ( (ui.component === 'setting-select-box' || ui.component === 'setting-combo-box') && Array.isArray(ui.data) ) {
+			if ( (ui.component === 'setting-select-box' || ui.component === 'setting-combo-box') && Array.isArray(ui.data) && ! ui.no_i18n
+					&& key !== 'ffzap.core.highlight_sound' ) { // TODO: Remove workaround.
 				const i18n_base = `${ui.i18n_key || `setting.entry.${key}`}.values`;
 				for(const value of ui.data) {
 					if ( value.i18n_key === undefined && value.value !== undefined )

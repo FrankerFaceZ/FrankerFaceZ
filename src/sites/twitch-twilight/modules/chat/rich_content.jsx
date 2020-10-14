@@ -196,7 +196,7 @@ export default class RichContent extends Module {
 			renderBasic() {
 				let title, description;
 				if ( this.state.error ) {
-					title = t.i18n.t('card.error', 'An error occured.');
+					title = t.i18n.t('card.error', 'An error occurred.');
 					description = this.state.error;
 
 				} else if ( this.state.loaded && this.state.has_tokenizer ) {

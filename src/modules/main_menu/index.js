@@ -10,7 +10,8 @@ import {get, has, deep_copy} from 'utilities/object';
 
 import Dialog from 'utilities/dialog';
 
-import Mixin from './setting-mixin';
+import SettingMixin from './setting-mixin';
+import ProviderMixin from './provider-mixin';
 
 import {parse_path} from 'src/settings';
 
@@ -32,7 +33,8 @@ export default class MainMenu extends Module {
 
 		this.load_requires = ['vue'];
 
-		this.Mixin = Mixin;
+		this.Mixin = this.SettingMixin = SettingMixin;
+		this.ProviderMixin = ProviderMixin;
 
 		//this.should_enable = true;
 
@@ -134,9 +136,9 @@ export default class MainMenu extends Module {
 		this.scheduleUpdate();
 	}
 
-	openPopout() {
+	openPopout(item) {
 		const win = window.open(
-			'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
+			`https://twitch.tv/popout/frankerfacez/chat?ffz-settings${item ? `=${encodeURIComponent(item)}` : ''}`,
 			'_blank',
 			'resizable=yes,scrollbars=yes,width=850,height=600'
 		);
@@ -633,6 +635,7 @@ export default class MainMenu extends Module {
 		const t = this,
 			Vue = this.vue.Vue,
 			settings = this.settings,
+			provider = settings.provider,
 			context = settings.main_context,
 			[profiles, profile_keys] = this.getProfiles();
 
@@ -664,6 +667,16 @@ export default class MainMenu extends Module {
 			deleteProfile: profile => settings.deleteProfile(profile),
 
 			getFFZ: () => t.resolve('core'),
+
+			provider: {
+				unwrap: () => provider,
+				get: (...args) => provider.get(...args),
+				set: (...args) => provider.set(...args),
+				delete: (...args) => provider.delete(...args),
+				has: (...args) => provider.has(...args),
+				on: (...args) => provider.on(...args),
+				off: (...args) => provider.off(...args)
+			},
 
 			context: {
 				_users: 0,
@@ -924,17 +937,17 @@ export default class MainMenu extends Module {
 
 			close: e => ! this.dialog.exclusive && this.dialog.toggleVisible(e),
 
-			popout: e => {
-				if ( this.dialog.exclusive )
-					return;
-
-				this.dialog.toggleVisible(e);
-				if ( ! this.openPopout() )
-					alert(this.i18n.t('popup.error', 'We tried opening a pop-up window and could not. Make sure to allow pop-ups from Twitch.')); // eslint-disable-line no-alert
-			},
-
 			version: window.FrankerFaceZ.version_info,
 		};
+
+		out.popout = e => {
+			if ( this.dialog.exclusive )
+				return;
+
+			this.dialog.toggleVisible(e);
+			if ( ! this.openPopout(out.currentItem?.full_key) )
+				alert(this.i18n.t('popup.error', 'We tried opening a pop-up window and could not. Make sure to allow pop-ups from Twitch.')); // eslint-disable-line no-alert
+		}
 
 		return out;
 	}

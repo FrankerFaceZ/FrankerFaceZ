@@ -100,7 +100,7 @@ export default {
 
 			if ( ! response.ok ) {
 				this.uploading = false;
-				this.url = 'An error occured.';
+				this.url = 'An error occurred.';
 			}
 
 			this.url = await response.text();

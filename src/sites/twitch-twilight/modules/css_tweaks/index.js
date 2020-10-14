@@ -241,9 +241,12 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.minimal-navigation', {
-			requires: ['layout.theatre-navigation'],
+			requires: ['layout.theatre-navigation', 'context.isWatchParty'],
 			default: false,
 			process(ctx, val) {
+				if ( ctx.get('context.isWatchParty') )
+					return false;
+
 				return ctx.get('layout.theatre-navigation') ?
 					true : val;
 			},
@@ -288,7 +291,7 @@ export default class CSSTweaks extends Module {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
-				title: 'Show Twitch Prime offers.',
+				title: 'Show Prime Gaming Loot.',
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('prime-offers', !val)

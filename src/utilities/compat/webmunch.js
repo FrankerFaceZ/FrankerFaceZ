@@ -111,7 +111,7 @@ export default class WebMunch extends Module {
 								for(const fn of t._resolve_require)
 									fn(require);
 							} catch(err) {
-								t.log.error('An error occured running require callbacks.', err);
+								t.log.error('An error occurred running require callbacks.', err);
 							}
 
 							t._resolve_require = null;

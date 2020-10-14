@@ -21,9 +21,23 @@ export default class Game extends SiteModule {
 
 		this.GameHeader = this.fine.define(
 			'game-header',
-			n => n.props && n.props.data && n.getBannerImage && n.getFollowButton,
+			n => n.props && n.props.data && n.getBannerImage && n.getDirectoryCountAndTags,
 			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
 		);
+
+		this.settings.addUI('directory.game.blocked-games', {
+			path: 'Directory > Categories @{"description": "Please note that due to limitations in Twitch\'s website, names here must be formatted exactly as displayed in your client. For best results, you can block or unblock categories directly from directory pages."} >> Blocked',
+			component: 'game-list-editor',
+			default: [],
+			onUIChange: () => this.parent.updateCards()
+		});
+
+		this.settings.addUI('directory.game.hidden-thumbnails', {
+			path: 'Directory > Categories >> Hidden Thumbnails',
+			component: 'game-list-editor',
+			default: [],
+			onUIChange: () => this.parent.updateCards()
+		});
 	}
 
 	onEnable() {
@@ -34,6 +48,15 @@ export default class Game extends SiteModule {
 				category: null,
 				categoryID: null
 			})
+		});
+
+		this.settings.provider.on('changed', key => {
+			if ( key === 'directory.game.blocked-games' || key === 'directory.game.hidden-thumbnails' ) {
+				this.parent.updateCards();
+
+				for(const inst of this.GameHeader.instances)
+					this.updateGameHeader(inst);
+			}
 		});
 
 		this.GameHeader.ready((cls, instances) => {

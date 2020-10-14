@@ -30,7 +30,7 @@
 								<div class="tw-flex-grow-1 tw-pd-x-2" />
 
 								<div v-if="user.error">
-									{{ t('featured-follow.error', 'An error occured.') }}
+									{{ t('featured-follow.error', 'An error occurred.') }}
 								</div>
 								<template v-else>
 									<button

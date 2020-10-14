@@ -91,7 +91,7 @@
 
 		<div class="tw-align-center tw-pd-1">
 			<div v-if="error">
-				{{ t('home.changelog.error', 'An error occured loading changes from GitHub.') }}
+				{{ t('home.changelog.error', 'An error occurred loading changes from GitHub.') }}
 			</div>
 			<h1 v-else-if="loading" class="tw-mg-5 ffz-i-zreknarf loading" />
 			<div v-else-if="! more">

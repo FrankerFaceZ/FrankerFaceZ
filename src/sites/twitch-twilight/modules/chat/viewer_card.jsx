@@ -78,7 +78,7 @@ export default class ViewerCards extends Module {
 			else
 				color = 'rgba(128,170,255,0.2)';
 
-			this.css_tweaks.set('viewer-card-highlight', `body .chat-list .chat-line__message:not(.chat-line--inline):nth-child(1n+0)[data-user="${login}"] {
+			this.css_tweaks.set('viewer-card-highlight', `body .chat-room .chat-line__message:not(.chat-line--inline):nth-child(1n+0)[data-user="${login}"] {
 	background-color: ${color} !important;
 }`);
 		} else
