@@ -639,6 +639,7 @@ export default class ChatHook extends Module {
 
 		this.emit(':update-chat-css');
 		this.emit('site.player:fix-player');
+		this.emit('site.layout:resize');
 	}
 
 	updateLineBorders() {

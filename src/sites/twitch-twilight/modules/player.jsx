@@ -60,10 +60,10 @@ export default class Player extends Module {
 			PLAYER_ROUTES
 		);*/
 
-		this.PersistentPlayer = this.fine.define(
+		/*this.PersistentPlayer = this.fine.define(
 			'persistent-player',
 			n => n.state && n.state.playerStyles
-		);
+		);*/
 
 		this.Player = this.fine.define(
 			'highwind-player',
@@ -527,7 +527,7 @@ export default class Player extends Module {
 		this.installVisibilityHook();
 
 		this.on(':reset', this.resetAllPlayers, this);
-		this.on(':fix-player', () => this.PersistentPlayer.forceUpdate(), this);
+		//this.on(':fix-player', () => this.PersistentPlayer.forceUpdate(), this);
 
 		const t = this;
 

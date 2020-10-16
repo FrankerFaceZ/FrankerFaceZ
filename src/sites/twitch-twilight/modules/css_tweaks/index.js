@@ -111,6 +111,7 @@ export default class CSSTweaks extends Module {
 
 				this.toggle('chat-fix', val);
 				this.emit('site.player:fix-player');
+				this.emit('site.layout:resize');
 			}
 		});
 
@@ -237,7 +238,10 @@ export default class CSSTweaks extends Module {
 
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggle('swap-sidebars', val)
+			changed: val => {
+				this.toggle('swap-sidebars', val);
+				this.emit('site.layout:resize');
+			}
 		});
 
 		this.settings.add('layout.minimal-navigation', {
@@ -257,7 +261,10 @@ export default class CSSTweaks extends Module {
 
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggle('minimal-navigation', val)
+			changed: val => {
+				this.toggle('minimal-navigation', val);
+				this.emit('site.layout:resize');
+			}
 		});
 
 		this.settings.add('layout.theatre-navigation', {
@@ -271,7 +278,10 @@ export default class CSSTweaks extends Module {
 				title: 'Show the minimized navigation bar when in theatre mode.',
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggle('theatre-nav', val)
+			changed: val => {
+				this.toggle('theatre-nav', val);
+				this.emit('site.layout:resize');
+			}
 		});
 
 		this.settings.add('layout.discover', {
@@ -307,7 +317,10 @@ export default class CSSTweaks extends Module {
 				title: 'Display Whispers',
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggleHide('whispers', !val)
+			changed: val => {
+				this.toggleHide('whispers', !val);
+				this.emit('site.layout:resize');
+			}
 		});
 
 		this.settings.add('chat.bits.show', {
@@ -431,6 +444,7 @@ export default class CSSTweaks extends Module {
 		this.updateTopNav();
 
 		this.emit('site.player:fix-player');
+		this.emit('site.layout:resize');
 	}
 
 	updateTopNav() {

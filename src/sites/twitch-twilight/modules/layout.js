@@ -30,6 +30,11 @@ export default class Layout extends Module {
 			n => n.hideOnBreakpoint && n.handleToggleVisibility
 		);*/
 
+		this.ResizeDetector = this.fine.define(
+			'resize-detector',
+			n => n.maybeDebounceOnScroll && n.setGrowDivRef && n.props.onResize
+		);
+
 		this.SideBarChannels = this.fine.define(
 			'nav-cards',
 			t => t.getCardSlideInContent && t.props && has(t.props, 'tooltipContent')
@@ -184,6 +189,7 @@ export default class Layout extends Module {
 		document.body.classList.toggle('ffz--portrait-invert', this.settings.get('layout.portrait-invert'));
 
 		this.on(':update-nav', this.updateNavLinks, this);
+		this.on(':resize', this.handleResize, this);
 
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
 		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
@@ -249,6 +255,22 @@ export default class Layout extends Module {
 				inst.hideOnBreakpoint();
 			}
 		});*/
+	}
+
+	handleResize() {
+		if ( this._resize_timer )
+			return;
+
+		this._resize_timer = requestAnimationFrame(() => this._handleResize());
+	}
+
+	_handleResize() {
+		cancelAnimationFrame(this._resize_timer);
+		this._resize_timer = null;
+
+		for(const inst of this.ResizeDetector.instances) {
+			inst?.props?.onResize?.();
+		}
 	}
 
 	get is_minimal() {
