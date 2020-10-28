@@ -146,10 +146,6 @@ export default {
 				return [];
 
 			return deep_copy(data.items);
-		},
-
-		onSelected(...args) {
-			console.log('selected', args);
 		}
 	}
 }

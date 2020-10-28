@@ -87,7 +87,7 @@ export default class Switchboard extends Module {
 
 			if ( component_class.Preload ) {
 				try {
-					component = component_class.Preload();
+					component = component_class.Preload({priority: 1});
 				} catch(err) {
 					this.log.warn('Error instantiating preloader for forced chunk loading.', err);
 					component = null;

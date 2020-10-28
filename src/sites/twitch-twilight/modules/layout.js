@@ -261,7 +261,7 @@ export default class Layout extends Module {
 		if ( this._resize_timer )
 			return;
 
-		this._resize_timer = requestAnimationFrame(() => this._handleResize());
+		this._resize_timer = setTimeout(() => this._handleResize(), 50);
 	}
 
 	_handleResize() {

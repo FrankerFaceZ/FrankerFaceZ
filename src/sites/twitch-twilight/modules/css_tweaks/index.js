@@ -522,6 +522,8 @@ export default class CSSTweaks extends Module {
 				this.chunks[k] = raw(key).default;
 			}
 
+			this.emit('site.layout:resize');
+
 			this.chunks_loaded = true;
 			r();
 		})

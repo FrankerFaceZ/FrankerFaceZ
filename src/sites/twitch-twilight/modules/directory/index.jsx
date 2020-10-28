@@ -331,12 +331,27 @@ export default class Directory extends SiteModule {
 		if ( ! props?.channelLogin )
 			return;
 
-		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category;
+		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category,
+			tags = props.tagListProps?.tags;
+
+		let bad_tag = false;
 
 		el.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
 		el.dataset.ffzType = props.streamType;
 
-		const should_hide = (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
+		if ( Array.isArray(tags) ) {
+			const bad_tags = this.settings.provider.get('directory.game.hidden-tags', []);
+			if ( bad_tags.length ) {
+				for(const tag of tags) {
+					if ( tag?.id && bad_tags.includes(tag.id) ) {
+						bad_tag = true;
+						break;
+					}
+				}
+			}
+		}
+
+		const should_hide = bad_tag || (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
 			(props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game)) ||
 			((props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted'));
 

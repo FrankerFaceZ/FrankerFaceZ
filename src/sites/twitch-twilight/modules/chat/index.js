@@ -136,7 +136,8 @@ const CHAT_TYPES = make_enum(
 	'BitsBadgeTierMessage',
 	'InlinePrivateCallout',
 	'ChannelPointsReward',
-	'CommunityChallengeContribution'
+	'CommunityChallengeContribution',
+	'CelebrationPurchase'
 );
 
 
