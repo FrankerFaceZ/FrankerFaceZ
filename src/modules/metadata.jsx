@@ -346,6 +346,16 @@ export default class Metadata extends Module {
 					}
 				}
 
+				let tampered = false;
+				try {
+					const url = player.core.state.path;
+					if ( url.includes('/api/channel/hls/') ) {
+						const data = JSON.parse(new URL(url).searchParams.get('token'));
+						tampered = data && data.player_type && data.player_type !== 'site' ? data.player_type : false;
+					}
+				} catch(err) { /* no op */ }
+
+
 				if ( ! stats || stats.hlsLatencyBroadcaster < -100 )
 					return {stats};
 
@@ -359,7 +369,8 @@ export default class Metadata extends Module {
 					drift,
 					rate: stats.rate == null ? 1 : stats.rate,
 					delay: stats.hlsLatencyBroadcaster,
-					old: stats.hlsLatencyBroadcaster > 180
+					old: stats.hlsLatencyBroadcaster > 180,
+					tampered
 				}
 			},
 
@@ -409,6 +420,16 @@ export default class Metadata extends Module {
 			},
 
 			tooltip(data) {
+				const tampered = data.tampered ? (<div class="tw-border-t tw-mg-t-05 tw-pd-t-05">
+					{this.i18n.t(
+						'metadata.player-stats.tampered',
+						'Your player has an unexpected player type ({type}), which may affect your viewing experience.',
+						{
+							type: data.tampered
+						}
+					)}
+				</div>) : null;
+
 				const delayed = data.drift > 5000 && (<div class="tw-border-b tw-mg-b-05 tw-pd-b-05">
 					{this.i18n.t(
 						'metadata.player-stats.delay-warning',
@@ -429,7 +450,8 @@ export default class Metadata extends Module {
 					return [
 						delayed,
 						ff,
-						this.i18n.t('metadata.player-stats.latency-tip', 'Stream Latency')
+						this.i18n.t('metadata.player-stats.latency-tip', 'Stream Latency'),
+						tampered
 					];
 
 				const stats = data.stats,
@@ -455,7 +477,8 @@ export default class Metadata extends Module {
 						</div>,
 						<div class="tw-pd-t-05">
 							{video_info}
-						</div>
+						</div>,
+						tampered
 					];
 
 				return [
@@ -466,7 +489,8 @@ export default class Metadata extends Module {
 					),
 					<div class="tw-pd-t-05">
 						{video_info}
-					</div>
+					</div>,
+					tampered
 				];
 			}
 		}
