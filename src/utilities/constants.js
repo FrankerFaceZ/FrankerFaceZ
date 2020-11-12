@@ -8,7 +8,7 @@ export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com
 
 export const CLIENT_ID = 'a3bc9znoz6vi8ozsoca0inlcr4fcvkl';
 export const API_SERVER = '//api.frankerfacez.com';
-export const NEW_API = '//api-test.frankerfacez.com';
+export const NEW_API = '//api2.frankerfacez.com';
 
 //export const SENTRY_ID = 'https://1c3b56f127254d3ba1bd1d6ad8805eee@sentry.io/1186960';
 export const SENTRY_ID = 'https://07ded545d3224ca59825daee02dc7745@catbag.frankerfacez.com:444/2';
@@ -65,7 +65,7 @@ export const KNOWN_CODES = {
 	'Gr(a|e)yFace': 'GrayFace'
 };
 
-export const REPLACEMENT_BASE = '//cdn.frankerfacez.com/script/replacements/';
+export const REPLACEMENT_BASE = `${SERVER}/static/replacements/`;
 
 export const REPLACEMENTS = {
 	15: '15-JKanStyle.png',

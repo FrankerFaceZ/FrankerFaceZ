@@ -747,7 +747,7 @@ export default class Badges extends Module {
 
 		if ( this.experiments.getAssignment('api_load') && tries < 1 )
 			try {
-				fetch(`${NEW_API}/v2/badges`).catch(() => {});
+				fetch(`${NEW_API}/v1/badges/ids`).catch(() => {});
 			} catch(err) { /* do nothing */ }
 
 		try {
