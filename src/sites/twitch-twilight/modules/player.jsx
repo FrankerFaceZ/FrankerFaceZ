@@ -217,6 +217,9 @@ export default class Player extends Module {
 			});
 		}
 
+		/*
+		// This is currently broken due to changes Twitch has made in the player
+		// backend. Removing it for now to avoid user confusion.
 		this.settings.add('player.allow-catchup', {
 			default: true,
 			ui: {
@@ -230,7 +233,7 @@ export default class Player extends Module {
 				for(const inst of this.Player.instances)
 					this.updateAutoPlaybackRate(inst, val);
 			}
-		});
+		});*/
 
 		this.settings.add('player.mute-click', {
 			default: false,
@@ -870,7 +873,7 @@ export default class Player extends Module {
 	}
 
 
-	updateAutoPlaybackRate(inst, val) {
+	/*updateAutoPlaybackRate(inst, val) {
 		const player = inst.props?.mediaPlayerInstance;
 		if ( ! player )
 			return;
@@ -880,7 +883,7 @@ export default class Player extends Module {
 
 		if ( player.setLiveSpeedUpRate )
 			player.setLiveSpeedUpRate(val ? 1.05 : 1);
-	}
+	}*/
 
 
 	updateHideExtensions(val) {
@@ -1012,9 +1015,9 @@ export default class Player extends Module {
 		this.addResetButton(inst);
 		this.addCompressorButton(inst, false);
 
-		const player = inst?.props?.mediaPlayerInstance;
+		/*const player = inst?.props?.mediaPlayerInstance;
 		if ( player && ! this.settings.get('player.allow-catchup') && player.setLiveSpeedUpRate )
-			player.setLiveSpeedUpRate(1);
+			player.setLiveSpeedUpRate(1);*/
 
 		if ( inst._ffzUpdateVolume )
 			inst._ffzUpdateVolume();

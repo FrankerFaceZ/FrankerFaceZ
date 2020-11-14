@@ -11,7 +11,8 @@ export const API_SERVER = '//api.frankerfacez.com';
 export const NEW_API = '//api2.frankerfacez.com';
 
 //export const SENTRY_ID = 'https://1c3b56f127254d3ba1bd1d6ad8805eee@sentry.io/1186960';
-export const SENTRY_ID = 'https://07ded545d3224ca59825daee02dc7745@catbag.frankerfacez.com:444/2';
+//export const SENTRY_ID = 'https://07ded545d3224ca59825daee02dc7745@catbag.frankerfacez.com:444/2';
+export const SENTRY_ID = 'https://74b46b3894114f399d51949c6d237489@sentry.frankerfacez.com/2';
 
 
 export const LV_SERVER = 'https://cbenni.com/api';

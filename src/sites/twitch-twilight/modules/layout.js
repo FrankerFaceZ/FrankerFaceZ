@@ -203,6 +203,13 @@ export default class Layout extends Module {
 				this.updateCardClass(inst);
 		});
 
+		this.ResizeDetector.ready(() => {
+			if ( this._needs_resize ) {
+				this._needs_resize = false;
+				this.handleResize();
+			}
+		});
+
 		this.SideBarChannels.ready((cls, instances) => {
 			for(const inst of instances)
 				this.updateCardClass(inst);
@@ -261,16 +268,19 @@ export default class Layout extends Module {
 		if ( this._resize_timer )
 			return;
 
-		this._resize_timer = setTimeout(() => this._handleResize(), 50);
+		this._resize_timer = setTimeout(() => this._handleResize(), 100);
 	}
 
 	_handleResize() {
-		cancelAnimationFrame(this._resize_timer);
+		clearTimeout(this._resize_timer);
 		this._resize_timer = null;
 
-		for(const inst of this.ResizeDetector.instances) {
-			inst?.props?.onResize?.();
-		}
+		if ( ! this.ResizeDetector.instances.size )
+			this._needs_resize = true;
+		else
+			for(const inst of this.ResizeDetector.instances) {
+				inst?.props?.onResize?.();
+			}
 	}
 
 	get is_minimal() {

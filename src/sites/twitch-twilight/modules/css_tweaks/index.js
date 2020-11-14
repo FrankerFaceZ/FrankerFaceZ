@@ -138,7 +138,10 @@ export default class CSSTweaks extends Module {
 				]
 			},
 
-			changed: val => this.toggle('hide-side-nav', !val)
+			changed: val => {
+				this.toggle('hide-side-nav', !val);
+				this.emit('site.layout:resize');
+			}
 		});
 
 		this.settings.add('layout.side-nav.show-avatars', {
