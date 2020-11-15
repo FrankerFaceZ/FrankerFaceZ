@@ -69,7 +69,7 @@ export class Tooltip {
 
 		this._accessor = `_ffz_tooltip$${last_id++}`;
 
-		this._onMouseOut = e => e.target  && e.target.dataset.forceOpen !== 'true' && this._exit(e.target);
+		this._onMouseOut = e => e.target && e.target?.dataset?.forceOpen !== 'true' && this._exit(e.target);
 
 		if ( this.options.manual ) {
 			// Do nothing~!
@@ -164,19 +164,20 @@ export class Tooltip {
 		if ( ! this._shift_af )
 			this._shift_af = requestAnimationFrame(() => {
 				this._shift_af = null;
-				for(const el of this.elements) {
-					const tip = el[this._accessor];
-					if ( tip && tip.outer ) {
-						tip.outer.dataset.shift = this.shift_state;
-						tip.update();
+				if ( this.elements )
+					for(const el of this.elements) {
+						const tip = el[this._accessor];
+						if ( tip && tip.outer ) {
+							tip.outer.dataset.shift = this.shift_state;
+							tip.update();
+						}
 					}
-				}
 			});
 	}
 
 
 	cleanup() {
-		if ( this.options.manual )
+		if ( this.options.manual || ! this.elements )
 			return;
 
 		for(const el of this.elements) {

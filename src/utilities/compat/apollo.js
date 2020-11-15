@@ -266,6 +266,9 @@ export default class Apollo extends Module {
 	}
 
 	apolloPostFlight(response) {
+		if ( ! response.extensions )
+			return;
+
 		const operation = response.extensions.operationName,
 			modifiers = this.post_modifiers[operation];
 

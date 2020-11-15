@@ -516,6 +516,22 @@ export default class Player extends Module {
 		});
 	}
 
+
+	repositionPlayer() {
+		if ( ! this._mover ) {
+			const el = document.querySelector('.channel-root__player');
+			this._mover = this.fine.searchNode(
+				el,
+				n => n.memoizedProps?.triggerPlayerReposition,
+				50
+			);
+		}
+
+		if ( this._mover )
+			this._mover.memoizedProps.triggerPlayerReposition();
+	}
+
+
 	onEnable() {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
@@ -530,7 +546,7 @@ export default class Player extends Module {
 		this.installVisibilityHook();
 
 		this.on(':reset', this.resetAllPlayers, this);
-		//this.on(':fix-player', () => this.PersistentPlayer.forceUpdate(), this);
+		this.on(':fix-player', this.repositionPlayer, this);
 
 		const t = this;
 

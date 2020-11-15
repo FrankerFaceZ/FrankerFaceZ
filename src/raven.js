@@ -168,7 +168,8 @@ export default class RavenLogger extends Module {
 				'ChunkLoadError',
 				'SecurityError',
 				'QuotaExceededError',
-				'DataCloneError'
+				'DataCloneError',
+				'SyntaxError'
 			],
 			sanitizeKeys: [
 				/Token$/
@@ -190,6 +191,7 @@ export default class RavenLogger extends Module {
 				return true;
 			},
 			shouldSendCallback: data => {
+				debugger;
 				if ( this.settings && ! this.settings.get('reports.error.enable') ) {
 					if ( data.tags && data.tags.example && this.__example_waiter ) {
 						this.__example_waiter(null);
@@ -225,6 +227,22 @@ export default class RavenLogger extends Module {
 
 				if ( data.exception && Array.isArray(data.exception.values) )
 					data.exception.values = this.rewriteStack(data.exception.values, data);
+
+				if ( Array.isArray(data.stacktrace?.frames) ) {
+					let has_good = false;
+					for(const frame of data.stacktrace.frames) {
+						if ( frame.filename )
+							frame.filename = fix_url(frame.filename);
+
+						// If a stacktrace is nothing but wrapped/captured/anonymous
+						// then it's not very useful to us.
+						if ( frame.function && ! frame.function.includes('captureMessage') && ! frame.function.includes('captureException') && ! frame.function.includes('wrapped') && ! frame.function.includes('<anonymous>') )
+							has_good = true;
+					}
+
+					if ( ! has_good )
+						return false;
+				}
 
 				if ( data.culprit )
 					data.culprit = fix_url(data.culprit);
@@ -287,13 +305,16 @@ export default class RavenLogger extends Module {
 	}
 
 
+	rewriteFrames(frames) { // eslint-disable-line class-methods-use-this
+		for(const frame of frames)
+			frame.filename = fix_url(frame.filename);
+	}
+
+
 	rewriteStack(errors) { // eslint-disable-line class-methods-use-this
 		for(const err of errors) {
-			if ( ! err || ! err.stacktrace || ! err.stacktrace.frames )
-				continue;
-
-			for(const frame of err.stacktrace.frames)
-				frame.filename = fix_url(frame.filename);
+			if ( Array.isArray(err?.stacktrace?.frames) )
+				this.rewriteFrames(err.stacktrace.frames);
 		}
 
 		return errors;

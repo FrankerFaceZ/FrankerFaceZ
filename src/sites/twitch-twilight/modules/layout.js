@@ -1,5 +1,6 @@
 'use strict';
 
+import { IS_FIREFOX } from 'src/utilities/constants';
 // ============================================================================
 // Layout Overrides for Twitch Twilight
 // ============================================================================
@@ -268,7 +269,7 @@ export default class Layout extends Module {
 		if ( this._resize_timer )
 			return;
 
-		this._resize_timer = setTimeout(() => this._handleResize(), 100);
+		this._resize_timer = setTimeout(() => this._handleResize(), IS_FIREFOX ? 500 : 100);
 	}
 
 	_handleResize() {
@@ -277,10 +278,13 @@ export default class Layout extends Module {
 
 		if ( ! this.ResizeDetector.instances.size )
 			this._needs_resize = true;
-		else
+		else {
 			for(const inst of this.ResizeDetector.instances) {
 				inst?.props?.onResize?.();
 			}
+
+			this.emit('site.player:fix-player');
+		}
 	}
 
 	get is_minimal() {
