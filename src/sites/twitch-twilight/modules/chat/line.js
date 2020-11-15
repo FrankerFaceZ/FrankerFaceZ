@@ -731,7 +731,7 @@ other {# messages were deleted by a moderator.}
 								className: 'tw-c-text-base tw-strong'
 							}, user.displayName)),
 							plan: plan.prime ?
-								t.i18n.t('chat.sub.twitch-prime', 'with Twitch Prime') :
+								t.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
 								t.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier})
 						});
 

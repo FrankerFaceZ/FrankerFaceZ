@@ -675,7 +675,7 @@ export default class EmoteMenu extends Module {
 					if ( data.prime )
 						calendar = {
 							icon: 'crown',
-							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Twitch Prime.\nIt ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime Gaming.\nIt ends in {seconds,humantime}.', {seconds: ends})
 						}
 					else if ( data.gift )
 						calendar = {
@@ -1263,7 +1263,7 @@ export default class EmoteMenu extends Module {
 					return out;
 
 				const filtering = input && input.length > 0 && input !== ':',
-					hidden_sets = storage.get('emote-menu.hidden-sets', []);
+					hidden_sets = storage.get('emote-menu.hidden-sets') || [];
 
 				for(const emote_set of sets) {
 					if ( ! visibility_control && hidden_sets.includes(emote_set.key) )

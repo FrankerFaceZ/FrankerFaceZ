@@ -1169,7 +1169,7 @@ export const AddonEmotes = {
 						});
 
 				} else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
-					source = this.i18n.t('emote.prime', 'Twitch Prime');
+					source = this.i18n.t('emote.prime', 'Prime Gaming');
 
 				else if ( type === EmoteTypes.TwoFactor )
 					source = this.i18n.t('emote.2fa', 'Twitch 2FA Emote');

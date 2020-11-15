@@ -181,6 +181,8 @@ export default class Channel extends Module {
 				if ( inst )
 					this.updatePanelTips(inst);
 			}
+
+			return;
 		}
 
 		const el = this.fine.getChildNode(inst);
@@ -337,6 +339,11 @@ export default class Channel extends Module {
 			isWatchParty: watching
 		});
 
+		if ( ! el._ffz_cont || ! props?.channelID ) {
+			this.updateSubscription(null);
+			return;
+		}
+
 		if ( el._ffz_links && props.channelLogin !== el._ffz_link_login  ) {
 			const login = el._ffz_link_login = props.channelLogin;
 			if ( login ) {
@@ -367,11 +374,6 @@ export default class Channel extends Module {
 
 			} else
 				el._ffz_links.innerHTML = '';
-		}
-
-		if ( ! el._ffz_cont || ! props?.channelID ) {
-			this.updateSubscription(null);
-			return;
 		}
 
 		// TODO: See if we can read this data directly from Apollo's cache.
