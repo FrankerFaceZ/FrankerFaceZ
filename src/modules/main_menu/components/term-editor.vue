@@ -35,7 +35,7 @@
 					</figure>
 				</div>
 			</div>
-			<div v-if="! text_only" class="tw-flex-shrink-0 tw-mg-x-05">
+			<div v-if="! textOnly" class="tw-flex-shrink-0 tw-mg-x-05">
 				<span v-if="! editing">{{ term_type }}</span>
 				<select
 					v-else
@@ -162,7 +162,7 @@ export default {
 			type: Boolean,
 			default: false
 		},
-		text_only: {
+		textOnly: {
 			type: Boolean,
 			default: false
 		}

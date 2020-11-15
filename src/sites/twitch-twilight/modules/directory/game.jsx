@@ -43,7 +43,7 @@ export default class Game extends SiteModule {
 			ui: {
 				path: 'Directory > Categories >> Filtered Text',
 				component: 'basic-terms',
-				text_only: true,
+				textOnly: true,
 				onUIChange: () => this.parent.updateCards()
 			},
 			default: [],

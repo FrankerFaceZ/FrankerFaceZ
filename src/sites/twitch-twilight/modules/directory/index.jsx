@@ -343,7 +343,7 @@ export default class Directory extends SiteModule {
 				if (game.includes(text)) {
 					const matchingElement = document.evaluate(`.//*[text()="${game}"]`, el, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 					if (matchingElement) {
-						matchingElement.innerText = game.replaceAll(text, "");;
+						matchingElement.innerText = game.replaceAll(text, '');
 					}
 				}
 			});
