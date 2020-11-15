@@ -35,7 +35,7 @@
 					</figure>
 				</div>
 			</div>
-			<div class="tw-flex-shrink-0 tw-mg-x-05">
+			<div v-if="! text_only" class="tw-flex-shrink-0 tw-mg-x-05">
 				<span v-if="! editing">{{ term_type }}</span>
 				<select
 					v-else
@@ -56,6 +56,7 @@
 					</option>
 				</select>
 			</div>
+			<div v-else class="tw-mg-r-1" />
 			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip-wrapper">
 				<button
 					v-if="editing"
@@ -158,6 +159,10 @@ export default {
 			default: false
 		},
 		adding: {
+			type: Boolean,
+			default: false
+		},
+		text_only: {
 			type: Boolean,
 			default: false
 		}

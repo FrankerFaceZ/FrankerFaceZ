@@ -336,6 +336,19 @@ export default class Directory extends SiteModule {
 
 		let bad_tag = false;
 
+		if (typeof game === 'string' || game instanceof String) {
+			const filtered_text = this.settings.profile(0).get('directory.game.filtered-text', []);
+			filtered_text.forEach(text => {
+				text = text.v.v;
+				if (game.includes(text)) {
+					const matchingElement = document.evaluate(`.//*[text()="${game}"]`, el, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+					if (matchingElement) {
+						matchingElement.innerText = game.replaceAll(text, "");;
+					}
+				}
+			});
+		}
+
 		el.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
 		el.dataset.ffzType = props.streamType;
 
