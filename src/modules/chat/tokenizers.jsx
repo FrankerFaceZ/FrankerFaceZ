@@ -251,7 +251,7 @@ export const Replies = {
 		}
 
 		return (<strong
-			class={`chat-line__message-mention ffz--pointer-events ffz-tooltip ffz--reply-mention ffz-i-reply${token.me ? ' ffz--mention-me' : ''}`}
+			class={`chat-line__message-mention ffz--pointer-events ffz-tooltip ffz--reply-mention ffz-i-threads${token.me ? ' ffz--mention-me' : ''}`}
 			style={{color}}
 			data-tooltip-type="reply"
 			data-login={token.recipient}

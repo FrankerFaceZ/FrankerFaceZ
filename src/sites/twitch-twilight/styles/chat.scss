@@ -93,7 +93,9 @@
 	white-space: nowrap;
 
 	&:before {
-		font-size: 0.8em;
+		font-size: 1.2em;
+		vertical-align: middle;
+		color: var(--color-text-base);
 	}
 
 	background-color: rgba(0,0,0,0.15);

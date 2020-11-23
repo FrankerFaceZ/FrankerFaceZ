@@ -4,7 +4,7 @@
 // Chat Hooks
 // ============================================================================
 
-import {ColorAdjuster} from 'utilities/color';
+import {Color, ColorAdjuster} from 'utilities/color';
 import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
@@ -46,8 +46,7 @@ import ViewerCards from './viewer_card';
 
 const MESSAGE_TYPES = make_enum(
 	'Post',
-	'Action',
-	'PostWithMention'
+	'Action'
 );
 
 const MOD_TYPES = make_enum(
@@ -137,7 +136,8 @@ const CHAT_TYPES = make_enum(
 	'InlinePrivateCallout',
 	'ChannelPointsReward',
 	'CommunityChallengeContribution',
-	'CelebrationPurchase'
+	'CelebrationPurchase',
+	'LiveMessageSeparator'
 );
 
 
@@ -592,13 +592,25 @@ export default class ChatHook extends Module {
 			c = this.colors,
 			ic = this.inverse_colors;
 
+		let chat_color = this.chat.context.get('theme.color.chat-background') ||
+			this.chat.context.get('theme.color.background');
+
+		if ( ! Color.RGBA.fromCSS(chat_color) )
+			chat_color = is_dark ? '#191919' : '#E0E0E0';
+
+		let chat_text = this.chat.context.get('theme.color.chat-text') ||
+			this.chat.context.get('theme.color.text');
+
+		if ( ! Color.RGBA.fromCSS(chat_text) )
+			chat_text = is_dark ? '#dad8de' : '#19171c';
+
 		// TODO: Get the background color from the theme system.
 		// Updated: Use the lightest/darkest colors from alternating rows for better readibility.
-		c._base = is_dark ? '#191919' : '#e0e0e0'; //#0e0c13' : '#faf9fa';
+		c._base = chat_color; // is_dark ? '#191919' : '#e0e0e0'; //#0e0c13' : '#faf9fa';
 		c.mode = mode;
 		c.contrast = contrast;
 
-		ic._base = is_dark ? '#dad8de' : '#19171c';
+		ic._base = chat_text; // is_dark ? '#dad8de' : '#19171c';
 		ic.mode = mode;
 		ic.contrast = contrast;
 
@@ -749,6 +761,10 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
 		this.chat.context.on('changed:theme.is-dark', this.updateColors, this);
+		this.chat.context.on('changed:theme.color.background', this.updateColors, this);
+		this.chat.context.on('changed:theme.color.chat-background', this.updateColors, this);
+		this.chat.context.on('changed:theme.color.text', this.updateColors, this);
+		this.chat.context.on('changed:theme.color.chat-text', this.updateColors, this);
 		this.chat.context.on('changed:chat.lines.borders', this.updateLineBorders, this);
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
@@ -1687,6 +1703,7 @@ export default class ChatHook extends Module {
 		cls.prototype.flushRawMessages = function() {
 			try {
 				const out = [],
+					ct = t.chat_types || CHAT_TYPES,
 					now = Date.now(),
 					raw_delay = t.chat.context.get('chat.delay'),
 					delay = raw_delay === -1 ? this.delayDuration : raw_delay,
@@ -1705,6 +1722,18 @@ export default class ChatHook extends Module {
 					if ( msg.time <= first || ! msg.shouldDelay ) {
 						if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
 							continue;
+
+						const last = this.buffer[this.buffer.length - 1],
+							type = last?.type;
+
+						if ( type === ct.Connected ) {
+							const non_null = this.buffer.filter(x => x && ct[x.type] && ! NULL_TYPES.includes(ct[x.type]));
+							if ( non_null.length > 1 )
+								this.buffer.push({
+									type: ct.LiveMessageSeparator,
+									id: 'live-message-separator'
+								});
+						}
 
 						this.buffer.push(msg.event);
 						changed = true;

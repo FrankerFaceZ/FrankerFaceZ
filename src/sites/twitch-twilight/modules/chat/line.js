@@ -338,7 +338,7 @@ export default class ChatLine extends Module {
 					override_mode = t.chat.context.get('chat.filtering.display-deleted'),
 
 					msg = t.chat.standardizeMessage(this.props.message),
-					reply_tokens = reply_mode === 2 ? ( msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply) ) : null,
+					reply_tokens = (reply_mode === 2 || (reply_mode === 1 && this.props.repliesAppearancePreference !== 'expanded')) ? ( msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply) ) : null,
 					is_action = msg.messageType === types.Action,
 
 					user = msg.user,
@@ -520,7 +520,7 @@ other {# messages were deleted by a moderator.}
 
 				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
-						this.props.showTimestamps && e('span', {
+						(this.props.showTimestamps || this.props.isHistorical) && e('span', {
 							className: 'chat-line__timestamp'
 						}, t.chat.formatTime(msg.timestamp)),
 						//twitch_clickable ?
@@ -864,7 +864,7 @@ other {# messages were deleted by a moderator.}
 						e('div', {
 							className: 'chat-line__message-container'
 						}, [
-							this.renderReplyLine(),
+							this.props.repliesAppearancePreference === 'expanded' ? this.renderReplyLine() : null,
 							out
 						]),
 						e('div', {

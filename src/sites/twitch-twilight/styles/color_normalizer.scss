@@ -2,7 +2,6 @@
 	body,
 	.channel-header,
 	.channel-root__right-column,
-	.chat-room,
 	.chat-viewers__pane,
 	.sunlight-tile,
 	.multi-stream-player-layout,
@@ -13,6 +12,8 @@
 	.clmgr-table__row,
 	.stream-manager--page-view .mosaic-window-body,
 	.room-upsell,
+	.chat-room,
+	.qa-vod-chat,
 	.video-card {
 		background-color: var(--color-background-base) !important;
 	}

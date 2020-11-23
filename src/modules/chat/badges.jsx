@@ -508,8 +508,8 @@ export default class Badges extends Module {
 	}
 
 
-	render(msg, createElement) { // eslint-disable-line class-methods-use-this
-		const hidden_badges = this.parent.context.get('chat.badges.hidden') || {},
+	render(msg, createElement, skip_hide = false) { // eslint-disable-line class-methods-use-this
+		const hidden_badges = skip_hide ? {} : (this.parent.context.get('chat.badges.hidden') || {}),
 			badge_style = this.parent.context.get('chat.badges.style'),
 			custom_mod = this.parent.context.get('chat.badges.custom-mod'),
 			is_mask = badge_style > 5,

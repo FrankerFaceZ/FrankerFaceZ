@@ -58,7 +58,7 @@ export default class ThemeEngine extends Module {
 				return val;
 			},
 			ui: {
-				path: 'Appearance > Theme >> Fonts',
+				path: 'Appearance > Theme >> Fonts @{"sort": 2}',
 				title: 'Font Size',
 				description: '**Minimum:** `1`, **Maximum:** `25`, *Old Default:* `12`\n\nHow large should normal text be, in pixels. This may be affected by your browser\'s zoom and font settings.',
 				component: 'setting-text-box',
@@ -73,7 +73,7 @@ export default class ThemeEngine extends Module {
 		this.settings.add('theme.color.background', {
 			default: '',
 			ui: {
-				path: 'Appearance > Theme >> Colors @{"description": "This is a quick preview of a new system coming soon to FrankerFaceZ. Expect heavy changes here, including separate Basic and Advanced modes, and better color selection."}',
+				path: 'Appearance > Theme >> Colors @{"sort": 0, "description": "This is a quick preview of a new system coming soon to FrankerFaceZ. Expect heavy changes here, including separate Basic and Advanced modes, and better color selection."}',
 				title: 'Background',
 				description: 'Try `#0E0C13` for something close to the old dark theme, or `#0E0E0E` for a nice dark gray. Transparent colors not allowed.',
 				component: 'setting-color-box',
@@ -131,6 +131,45 @@ export default class ThemeEngine extends Module {
 			},
 			changed: () => this.updateCSS()
 		});
+
+
+		this.settings.add('theme.color.chat-background', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Chat Colors @{"sort":1}',
+				title: 'Background',
+				component: 'setting-color-box',
+				sort: 0,
+				alpha: false
+			},
+			changed: () => this.updateCSS()
+		});
+
+		this.settings.add('theme.color.chat-text', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Chat Colors',
+				title: 'Text',
+				description: 'If not set, this will automatically be set to white or black based on the brightness of the background.',
+				component: 'setting-color-box',
+				sort: 1
+			},
+			changed: () => this.updateCSS()
+		});
+
+		this.settings.add('theme.color.chat-accent', {
+			default: '',
+			ui: {
+				path: 'Appearance > Theme >> Chat Colors',
+				title: 'Accent',
+				description: 'The accent color is used for buttons, links, etc.',
+				component: 'setting-color-box',
+				alpha: false,
+				sort: 2
+			},
+			changed: () => this.updateCSS()
+		});
+
 
 		/*this.settings.add('theme.dark', {
 			requires: ['theme.is-dark'],
@@ -275,6 +314,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 
 		if ( text ) {
 			bits.push(`--color-text-base: ${text.toCSS()};`);
+			bits.push(`--color-text-input: ${text.toCSS()};`);
 
 			const hsla = text.toHSLA(),
 				alpha = hsla.a;
@@ -325,7 +365,6 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			}
 		}
 
-
 		// Tooltips
 		let tooltip_bg = Color.RGBA.fromCSS(this.settings.get('theme.color.tooltip.background')),
 			tooltip_dark;
@@ -358,13 +397,95 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			bits.push(`--color-text-tooltip-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
 		}
 
-		if ( bits.length ) {
-			this.css_tweaks.set('colors', `body {${bits.join('\n')}}.channel-info-content .tw-accent-region{${accent_bits.join('\n')}}`);
-			this.toggleNormalizer(true);
-		} else {
-			this.css_tweaks.delete('colors');
-			this.toggleNormalizer(false);
+
+		// Chat
+		const chat_bits = [],
+			chat_background = Color.RGBA.fromCSS(this.settings.get('theme.color.chat-background'));
+		let chat_dark = dark;
+		if ( chat_background ) {
+			chat_background.a = 1;
+			chat_bits.push(`--color-background-body: ${chat_background.toCSS()};`);
+
+			const hsla = chat_background.toHSLA(),
+				luma = hsla.l;
+			chat_dark = luma < 0.5;
+
+			chat_bits.push(`--color-background-input-focus: ${chat_background.toCSS()};`);
+			chat_bits.push(`--color-background-base: ${hsla._l(luma + (chat_dark ? .05 : -.05)).toCSS()};`);
+			chat_bits.push(`--color-background-alt: ${hsla._l(luma + (chat_dark ? .1 : -.1)).toCSS()};`);
+			chat_bits.push(`--color-background-alt-2: ${hsla._l(luma + (chat_dark ? .15 : -.15)).toCSS()};`);
 		}
+
+		let chat_text = Color.RGBA.fromCSS(this.settings.get('theme.color.chat-text'));
+		if ( ! chat_text && chat_background ) {
+			chat_text = Color.RGBA.fromCSS(chat_dark ? '#FFF' : '#000');
+		}
+
+		if ( chat_text ) {
+			chat_bits.push(`--color-text-base: ${chat_text.toCSS()};`);
+			chat_bits.push(`--color-text-input: ${chat_text.toCSS()};`);
+
+			const hsla = chat_text.toHSLA(),
+				alpha = hsla.a;
+
+			chat_bits.push(`--color-text-label: ${chat_text.toCSS()};`);
+			chat_bits.push(`--color-text-label-optional: ${hsla._a(alpha - 0.4).toCSS()};`);
+
+			chat_bits.push(`--color-text-alt: ${hsla._a(alpha - 0.2).toCSS()};`);
+			chat_bits.push(`--color-text-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
+		}
+
+		// Accent
+		const chat_accent = Color.RGBA.fromCSS(this.settings.get('theme.color.chat-accent')),
+			chat_accent_bits = [];
+		//this.toggleAccentNormal(! accent);
+		if ( chat_accent ) {
+			chat_accent.a = 1;
+
+			const hsla = chat_accent.toHSLA(),
+				luma = hsla.l;
+
+			const colors = COLORS.map(x => {
+				if ( x === 0 )
+					return chat_accent.toCSS();
+
+				return hsla._l(luma + x).toCSS()
+			});
+
+			for(let i=0; i < colors.length; i++) {
+				chat_bits.push(`--ffz-color-accent-${i+1}:${colors[i]};`);
+			}
+
+			let source = chat_dark ? ACCENT_COLORS.dark : ACCENT_COLORS.light;
+
+			for(const [key,val] of Object.entries(source.c)) {
+				if ( typeof val !== 'number' )
+					continue;
+
+				chat_bits.push(`--color-${key}:${colors[val-1]};`);
+			}
+
+			source = chat_dark ? ACCENT_COLORS.accent_dark : ACCENT_COLORS.accent_light;
+
+			for(const [key,val] of Object.entries(source.c)) {
+				if ( typeof val !== 'number' )
+					continue;
+
+				chat_accent_bits.push(`--color-${key}:${colors[val-1]} !important;`);
+			}
+		}
+
+		if ( chat_bits.length )
+			this.css_tweaks.set('chat-colors', `.chat-shell {${chat_bits.join('\n')}}.chat-shell .tw-accent-region{${chat_accent_bits.join('\n')}}`);
+		else
+			this.css_tweaks.delete('chat-colors');
+
+		this.toggleNormalizer(chat_bits.length || bits.length);
+
+		if ( bits.length )
+			this.css_tweaks.set('colors', `body {${bits.join('\n')}}.channel-info-content .tw-accent-region{${accent_bits.join('\n')}}`);
+		else
+			this.css_tweaks.delete('colors');
 	}
 
 	toggleAccentNormal(enable) {

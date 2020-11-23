@@ -243,7 +243,7 @@ export default class RichContent extends Module {
 					class={`tw-border-radius-medium tw-elevation-1 ffz--chat-card tw-relative${this.state.unsafe ? ' ffz--unsafe' : ''}`}
 					style={{'--ffz-color-accent': this.state.accent || null}}
 				>
-					<div class="tw-border-radius-medium tw-c-background-base tw-flex tw-full-width">
+					<div class="tw-border-radius-medium tw-c-background-alt tw-flex tw-full-width">
 						{content}
 					</div>
 				</div>);
