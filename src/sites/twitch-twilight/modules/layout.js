@@ -76,6 +76,24 @@ export default class Layout extends Module {
 					return val;
 				}
 			}
+		});
+
+		this.settings.add('layout.portrait-min-chat', {
+			default: false,
+			requires: ['layout.use-portrait'],
+			process(ctx, val) {
+				if ( ! ctx.get('layout.use-portrait') )
+					return false;
+
+				return val;
+			},
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Use compact chat in Portrait Mode.',
+				description: 'When enabled, this minimizes the chat header and places the chat input box in line with the chat buttons in order to present a more compact chat able to display more lines with limited vertical space.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.css_tweaks.toggle('portrait-chat', val)
 		})
 
 		this.settings.add('layout.use-portrait', {
@@ -192,6 +210,7 @@ export default class Layout extends Module {
 		this.on(':update-nav', this.updateNavLinks, this);
 		this.on(':resize', this.handleResize, this);
 
+		this.css_tweaks.toggle('portrait-chat', this.settings.get('layout.portrait-min-chat'));
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
 		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
 		this.css_tweaks.toggle('portrait-metadata', this.settings.get('layout.use-portrait-meta'));

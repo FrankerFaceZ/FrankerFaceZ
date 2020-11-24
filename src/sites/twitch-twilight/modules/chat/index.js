@@ -392,6 +392,13 @@ export default class ChatHook extends Module {
 
 		this.settings.add('chat.points.show-rewards', {
 			default: true,
+			requires: ['layout.portrait-min-chat'],
+			process(ctx, val) {
+				if ( ctx.get('layout.portrait-min-chat') )
+					return false;
+
+				return val;
+			},
 			ui: {
 				path: 'Chat > Channel Points >> Behavior',
 				title: 'Allow available rewards to appear next to the Channel Points button.',

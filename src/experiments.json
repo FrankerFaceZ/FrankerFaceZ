@@ -11,8 +11,8 @@
 		"name": "API-Based Link Lookups",
 		"description": "Use the new API to look up links instead of the socket cluster.",
 		"groups": [
-			{"value": true, "weight": 75},
-			{"value": false, "weight": 25}
+			{"value": true, "weight": 50},
+			{"value": false, "weight": 50}
 		]
 	}
 }

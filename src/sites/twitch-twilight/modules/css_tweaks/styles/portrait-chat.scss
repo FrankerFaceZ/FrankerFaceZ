@@ -1,0 +1,26 @@
+.chat-input > div:last-child {
+	display: flex;
+
+	& > div {
+		flex-grow: 3;
+		align-self: flex-end;
+	}
+
+	.chat-input__buttons-container {
+		flex-grow: 1;
+		margin-top: 0 !important;
+		margin-bottom: 0.5rem;
+		margin-left: 1rem;
+	}
+}
+
+.right-column:not(.right-column--collapsed) {
+	.right-column__toggle-visibility {
+		top: 0;
+	}
+}
+
+.chat-viewers__header,
+.stream-chat-header {
+	height: 3rem !important;
+}

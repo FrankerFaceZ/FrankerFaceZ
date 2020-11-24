@@ -28,6 +28,15 @@
 		}
 	}
 
+	.picture-by-picture-player {
+		position: absolute;
+		z-index: 100;
+		top: 0;
+		right: 5rem;
+		height: 20vh;
+		width: calc(20vh * calc(16 / 9)) !important;
+	}
+
 	.persistent-player.persistent-player--theatre {
 		.ffz--portrait-invert & {
 			top: unset !important;
