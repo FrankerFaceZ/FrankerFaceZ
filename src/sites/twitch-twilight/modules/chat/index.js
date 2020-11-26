@@ -619,7 +619,7 @@ export default class ChatHook extends Module {
 		if ( chat_text )
 			text_dark = chat_text.luminance() < 0.5;
 
-		chat_text = text_dark ? '#dad8de' : '#19171c';
+		chat_text = text_dark ? '#19171c' : '#dad8de';
 
 		// TODO: Get the background color from the theme system.
 		// Updated: Use the lightest/darkest colors from alternating rows for better readibility.
