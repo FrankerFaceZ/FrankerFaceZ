@@ -307,7 +307,7 @@ export default class Room {
 					this.manager.emotes.loadSetData(set_id, data.sets[set_id]);
 
 
-		const badges = data.user_badges;
+		const badges = d.user_badges;
 		if ( badges )
 			for(const badge_id in badges)
 				if ( has(badges, badge_id) )
@@ -315,8 +315,8 @@ export default class Room {
 						this.getUser(undefined, user).addBadge('ffz', badge_id);
 
 
-		if ( data.css )
-			this.style.set('css', data.css);
+		if ( d.css )
+			this.style.set('css', d.css);
 		else
 			this.style.delete('css');
 

@@ -599,17 +599,27 @@ export default class ChatHook extends Module {
 			c = this.colors,
 			ic = this.inverse_colors;
 
-		let chat_color = this.chat.context.get('theme.color.chat-background') ||
-			this.chat.context.get('theme.color.background');
+		let chat_dark = is_dark,
+			chat_color = Color.RGBA.fromCSS(
+				this.chat.context.get('theme.color.chat-background') ||
+				this.chat.context.get('theme.color.background')
+			);
 
-		if ( ! Color.RGBA.fromCSS(chat_color) )
-			chat_color = is_dark ? '#191919' : '#E0E0E0';
+		if ( chat_color )
+			chat_dark = chat_color.luminance() < 0.5;
 
-		let chat_text = this.chat.context.get('theme.color.chat-text') ||
-			this.chat.context.get('theme.color.text');
+		chat_color = chat_dark ? '#191919' : '#E0E0E0';
 
-		if ( ! Color.RGBA.fromCSS(chat_text) )
-			chat_text = is_dark ? '#dad8de' : '#19171c';
+		let text_dark = ! chat_dark,
+			chat_text = Color.RGBA.fromCSS(
+				this.chat.context.get('theme.color.chat-text') ||
+				this.chat.context.get('theme.color.text')
+			);
+
+		if ( chat_text )
+			text_dark = chat_text.luminance() < 0.5;
+
+		chat_text = text_dark ? '#dad8de' : '#19171c';
 
 		// TODO: Get the background color from the theme system.
 		// Updated: Use the lightest/darkest colors from alternating rows for better readibility.

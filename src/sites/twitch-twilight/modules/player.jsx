@@ -1536,7 +1536,7 @@ export default class Player extends Module {
 				if ( ! this.settings.get('player.theatre.auto-enter') || ! inst._ffz_mounted )
 					return;
 
-				if ( this.router.current_name === 'user-home' )
+				if ( this.router.current_name !== 'user' )
 					return;
 
 				if ( inst.props.channelHomeLive || inst.props.channelHomeCarousel || inst.props.theatreModeEnabled )
