@@ -585,6 +585,18 @@ export function truncate(str, target = 100, overage = 15, ellipsis = '…', brea
 
 
 
+function decimalToHex(number) {
+	return number.toString(16).padStart(2, '0')
+}
+
+
+export function generateHex(length = 40) {
+	const arr = new Uint8Array(length / 2);
+	window.crypto.getRandomValues(arr);
+	return Array.from(arr, decimalToHex).join('')
+}
+
+
 export class SourcedSet {
 	constructor() {
 		this._cache = [];

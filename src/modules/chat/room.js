@@ -276,6 +276,13 @@ export default class Room {
 			return false;
 		}
 
+		const old_badges = this.data?.user_badge_ids;
+		if ( old_badges )
+			for(const badge_id in old_badges )
+				if ( has(old_badges, badge_id) )
+					for(const user of old_badges[badge_id])
+						this.getUser(user, undefined).removeBadge('ffz', badge_id);
+
 		const d = data.room,
 			id = `${d.twitch_id}`;
 
@@ -306,14 +313,12 @@ export default class Room {
 				if ( has(data.sets, set_id) )
 					this.manager.emotes.loadSetData(set_id, data.sets[set_id]);
 
-
-		const badges = d.user_badges;
+		const badges = d.user_badge_ids;
 		if ( badges )
 			for(const badge_id in badges)
 				if ( has(badges, badge_id) )
 					for(const user of badges[badge_id])
-						this.getUser(undefined, user).addBadge('ffz', badge_id);
-
+						this.getUser(user, undefined).addBadge('ffz', badge_id);
 
 		if ( d.css )
 			this.style.set('css', d.css);

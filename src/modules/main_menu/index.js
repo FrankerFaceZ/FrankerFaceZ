@@ -60,6 +60,12 @@ export default class MainMenu extends Module {
 			getFFZ: () => this.resolve('core')
 		});
 
+		this.settings.addUI('clear', {
+			path: 'Data Management > Storage @{"profile_warning": false} >> tabs ~> Clear',
+			component: 'clear-settings',
+			force_seen: true
+		});
+
 		this.settings.addUI('home', {
 			path: 'Home @{"sort": -1000, "profile_warning": false}',
 			component: 'home-page'

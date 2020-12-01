@@ -338,7 +338,7 @@ export default class ChatLine extends Module {
 					override_mode = t.chat.context.get('chat.filtering.display-deleted'),
 
 					msg = t.chat.standardizeMessage(this.props.message),
-					reply_tokens = (reply_mode === 2 || (reply_mode === 1 && this.props.repliesAppearancePreference !== 'expanded')) ? ( msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply) ) : null,
+					reply_tokens = (reply_mode === 2 || (reply_mode === 1 && this.props.repliesAppearancePreference && this.props.repliesAppearancePreference !== 'expanded')) ? ( msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply) ) : null,
 					is_action = msg.messageType === types.Action,
 
 					user = msg.user,
@@ -864,7 +864,7 @@ other {# messages were deleted by a moderator.}
 						e('div', {
 							className: 'chat-line__message-container'
 						}, [
-							this.props.repliesAppearancePreference === 'expanded' ? this.renderReplyLine() : null,
+							this.props.repliesAppearancePreference && this.props.repliesAppearancePreference === 'expanded' ? this.renderReplyLine() : null,
 							out
 						]),
 						e('div', {

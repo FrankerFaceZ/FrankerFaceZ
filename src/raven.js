@@ -191,7 +191,6 @@ export default class RavenLogger extends Module {
 				return true;
 			},
 			shouldSendCallback: data => {
-				debugger;
 				if ( this.settings && ! this.settings.get('reports.error.enable') ) {
 					if ( data.tags && data.tags.example && this.__example_waiter ) {
 						this.__example_waiter(null);

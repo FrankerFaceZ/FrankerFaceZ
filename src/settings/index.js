@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {deep_equals, has, debounce} from 'utilities/object';
+import {deep_equals, has, debounce, deep_copy} from 'utilities/object';
 
 import {IndexedDBProvider, LocalStorageProvider} from './providers';
 import SettingsProfile from './profile';
@@ -13,6 +13,7 @@ import SettingsContext from './context';
 import MigrationManager from './migration';
 
 import * as FILTERS from './filters';
+import * as CLEARABLES from './clearables';
 
 
 // ============================================================================
@@ -50,6 +51,13 @@ export default class SettingsManager extends Module {
 
 		this.ui_structures = new Map;
 		this.definitions = new Map;
+
+		// Clearable Data Rules
+		this.clearables = {};
+
+		for(const key in CLEARABLES)
+			if ( has(CLEARABLES, key) )
+				this.clearables[key] = CLEARABLES[key];
 
 		// Filters
 		this.filters = {};
@@ -606,6 +614,22 @@ export default class SettingsManager extends Module {
 
 		this.ui_structures.set(key, definition);
 		this.emit(':added-definition', key, definition);
+	}
+
+
+	addClearable(key, definition) {
+		if ( typeof key === 'object' ) {
+			for(const k in key)
+				if ( has(key, k) )
+					this.addClearable(k, key[k]);
+			return;
+		}
+
+		this.clearables[key] = definition;
+	}
+
+	getClearables() {
+		return deep_copy(this.clearables);
 	}
 }
 

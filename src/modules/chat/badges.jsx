@@ -493,8 +493,6 @@ export default class Badges extends Module {
 			}
 		}
 
-		this.log.info('badge-click', event.target);
-
 		if ( url ) {
 			const link = createElement('a', {
 				target: '_blank',
@@ -586,8 +584,15 @@ export default class Badges extends Module {
 				};
 			}
 
+		const handled_ids = new Set;
+
 		for(const badge of badges)
 			if ( badge && badge.id != null ) {
+				if ( handled_ids.has(badge.id) )
+					continue;
+
+				handled_ids.add(badge.id);
+
 				const full_badge = this.badges[badge.id] || {},
 					is_hidden = hidden_badges[badge.id];
 
@@ -608,6 +613,12 @@ export default class Badges extends Module {
 						color: badge.color || full_badge.color,
 						title: badge.title || full_badge.title
 					};
+
+				// Hacky nonsense.
+				if ( ! full_badge.addon ) {
+					bd.image = `//cdn.frankerfacez.com/badge/${badge.id}/4/rounded`;
+					bd.color = null;
+				}
 
 				let style;
 
@@ -821,7 +832,7 @@ export default class Badges extends Module {
 			data.replaces = true;
 		}
 
-		if ( data.name === 'developer' || data.name === 'supporter' )
+		if ( ! data.addon && (data.name === 'developer' || data.name === 'supporter') )
 			data.click_url = 'https://www.frankerfacez.com/donate';
 
 		if ( generate_css )

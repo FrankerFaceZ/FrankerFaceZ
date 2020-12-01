@@ -300,9 +300,10 @@ export class IndexedDBProvider extends SettingsProvider {
 		const {type, key} = event.data;
 
 		if ( type === 'set' ) {
-			const val = JSON.parse(localStorage.getItem(this.prefix + key));
-			this._cached.set(key, val);
-			this.emit('changed', key, val, false);
+			this._get(key).then(val => {
+				this._cached.set(key, val);
+				this.emit('changed', key, val, false);
+			}).catch(err => this.manager.log.error(`Error getting setting "${key}" from database`, err));
 
 		} else if ( type === 'delete' ) {
 			this._cached.delete(key);
@@ -343,8 +344,8 @@ export class IndexedDBProvider extends SettingsProvider {
 
 		this._cached.set(key, value);
 		this._set(key, value)
-			.catch(err => this.manager.log.error(`Error saving setting "${key}" to database`, err))
-			.then(() => this.broadcast({type: 'set', key}));
+			.then(() => this.broadcast({type: 'set', key}))
+			.catch(err => this.manager.log.error(`Error saving setting "${key}" to database`, err));
 
 		this.emit('set', key, value, false);
 	}
@@ -473,6 +474,23 @@ export class IndexedDBProvider extends SettingsProvider {
 	}
 
 
+	async _get(key) {
+		const db = await this.getDB(),
+			trx = db.transaction(['settings'], 'readonly'),
+			store = trx.objectStore('settings');
+
+		return new Promise((s,f) => {
+			store.onerror = f;
+
+			const req = store.get(key);
+			req.onerror = f;
+			req.onsuccess = () => {
+				s(req.result.v);
+			}
+		});
+	}
+
+
 	async _set(key, value) {
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readwrite'),
@@ -480,9 +498,10 @@ export class IndexedDBProvider extends SettingsProvider {
 
 		return new Promise((s,f) => {
 			store.onerror = f;
-			store.onsuccess = s;
 
-			store.put({k: key, v: value});
+			const req = store.put({k: key, v: value});
+			req.onerror = f;
+			req.onsuccess = s;
 		});
 	}
 
@@ -494,9 +513,10 @@ export class IndexedDBProvider extends SettingsProvider {
 
 		return new Promise((s,f) => {
 			store.onerror = f;
-			store.onsuccess = s;
 
-			store.delete(key);
+			const req = store.delete(key);
+			req.onerror = f;
+			req.onsuccess = s;
 		});
 	}
 
@@ -508,9 +528,10 @@ export class IndexedDBProvider extends SettingsProvider {
 
 		return new Promise((s,f) => {
 			store.onerror = f;
-			store.onsuccess = s;
 
-			store.clear();
+			const req = store.clear();
+			req.onerror = f;
+			req.onsuccess = s;
 		});
 	}
 

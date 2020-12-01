@@ -606,7 +606,7 @@ export default class ChatHook extends Module {
 			);
 
 		if ( chat_color )
-			chat_dark = chat_color.luminance() < 0.5;
+			chat_dark = chat_color.toHSLA().l < 0.5;
 
 		chat_color = chat_dark ? '#191919' : '#E0E0E0';
 
@@ -617,7 +617,7 @@ export default class ChatHook extends Module {
 			);
 
 		if ( chat_text )
-			text_dark = chat_text.luminance() < 0.5;
+			text_dark = chat_text.toHSLA().l < 0.5;
 
 		chat_text = text_dark ? '#19171c' : '#dad8de';
 

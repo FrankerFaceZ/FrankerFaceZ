@@ -762,7 +762,7 @@ export default class EmoteMenu extends Module {
 
 				return (<button
 					key={emote.id}
-					class={`ffz-tooltip emote-picker__emote-link${!visibility && locked ? ' locked' : ''}${hidden ? ' hidden' : ''}`}
+					class={`ffz-tooltip emote-picker__emote-link${!visibility && locked ? ' locked' : ''}${hidden ? ' emote-hidden' : ''}`}
 					data-tooltip-type="emote"
 					data-provider={emote.provider}
 					data-id={emote.id}
