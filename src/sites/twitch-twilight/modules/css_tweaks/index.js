@@ -11,7 +11,7 @@ import {has} from 'utilities/object';
 const STYLE_VALIDATOR = document.createElement('span');
 
 const CLASSES = {
-	'unfollow': '.follow-btn__follow-btn--following,.follow-btn--following',
+	//'unfollow': '.follow-btn__follow-btn--following,.follow-btn--following',
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav,#sideNav',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends)',

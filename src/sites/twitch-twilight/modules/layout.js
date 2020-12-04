@@ -6,7 +6,7 @@ import { IS_FIREFOX } from 'src/utilities/constants';
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {debounce, has} from 'utilities/object';
 
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 const MINIMAL_ROUTES = ['popout', 'embed-chat', 'dash-chat'];
@@ -20,6 +20,7 @@ export default class Layout extends Module {
 		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.css_tweaks');
+		this.inject('site.elemental');
 
 		/*this.TopNav = this.fine.define(
 			'top-nav',
@@ -36,10 +37,17 @@ export default class Layout extends Module {
 			n => n.maybeDebounceOnScroll && n.setGrowDivRef && n.props.onResize
 		);
 
-		this.SideBarChannels = this.fine.define(
+		this.SideBar = this.elemental.define(
+			'sidebar',
+			'.side-bar-contents',
+			null,
+			{childNodes: true, subtree: true}, 1
+		);
+
+		/*this.SideBarChannels = this.fine.define(
 			'nav-cards',
 			t => t.getCardSlideInContent && t.props && has(t.props, 'tooltipContent')
-		);
+		);*/
 
 		this.settings.add('layout.portrait', {
 			default: false,
@@ -219,8 +227,9 @@ export default class Layout extends Module {
 		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
 
 		this.on('site.directory:update-cards', () => {
-			for(const inst of this.SideBarChannels.instances)
-				this.updateCardClass(inst);
+			this.SideBar.each(el => this._updateSidebar(el));
+			//for(const inst of this.SideBarChannels.instances)
+			//	this.updateCardClass(inst);
 		});
 
 		this.ResizeDetector.ready(() => {
@@ -230,13 +239,17 @@ export default class Layout extends Module {
 			}
 		});
 
-		this.SideBarChannels.ready((cls, instances) => {
+		this.SideBar.on('mount', this.updateSidebar, this);
+		this.SideBar.on('mutate', this.updateSidebar, this);
+		this.SideBar.each(el => this.updateSidebar(el));
+
+		/*this.SideBarChannels.ready((cls, instances) => {
 			for(const inst of instances)
 				this.updateCardClass(inst);
 		});
 
 		this.SideBarChannels.on('mount', this.updateCardClass, this);
-		this.SideBarChannels.on('update', this.updateCardClass, this);
+		this.SideBarChannels.on('update', this.updateCardClass, this);*/
 
 		/*const t = this;
 		this.RightColumn.ready((cls, instances) => {
@@ -310,7 +323,38 @@ export default class Layout extends Module {
 		return this.settings.get('layout.is-minimal')
 	}
 
-	updateCardClass(inst) {
+	updateSidebar(el) {
+		if ( ! el )
+			return;
+
+		if ( ! el._ffz_update )
+			el._ffz_update = debounce(() => requestAnimationFrame(() => this._updateSidebar(el)), 1000, 2);
+
+		el._ffz_update();
+	}
+
+	_updateSidebar(el) {
+		if ( ! el )
+			return;
+
+		const cards = el.querySelectorAll('.side-nav-card'),
+			blocked_games = this.settings.provider.get('directory.game.blocked-games', []);
+
+		for(const card of cards) {
+			const react = this.fine.getReactInstance(card),
+				props = react?.return?.return?.memoizedProps,
+				stream = props?.metadataRight?.props?.stream,
+				rerun = stream?.type === 'rerun' ?? false,
+				game = stream?.game?.displayName,
+				offline = props?.offline ?? false;
+
+			card.classList.toggle('ffz--side-nav-card-rerun', rerun);
+			card.classList.toggle('ffz--side-nav-card-offline', offline);
+			card.classList.toggle('tw-hide', game ? blocked_games.includes(game) : false);
+		}
+	}
+
+	/*updateCardClass(inst) {
 		const node = this.fine.getChildNode(inst);
 
 		if ( node ) {
@@ -324,7 +368,7 @@ export default class Layout extends Module {
 			const game = inst.props?.tooltipContent?.props?.gameName || inst.props?.metadataLeft?.props?.activity?.stream?.game?.name || inst.props?.metadataLeft;
 			node.classList.toggle('tw-hide', this.settings.provider.get('directory.game.blocked-games', []).includes(game));
 		}
-	}
+	}*/
 
 	updateNavLinks() {
 
