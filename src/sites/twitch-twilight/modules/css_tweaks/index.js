@@ -369,7 +369,7 @@ export default class CSSTweaks extends Module {
 				title: 'Hide the Unfollow button.',
 				component: 'setting-check-box'
 			},
-			changed: val => this.toggleHide('unfollow', val)
+			changed: val => this.toggle('hide-unfollow-button', val)
 		});
 
 		this.settings.add('channel.hide-live-indicator', {
@@ -422,7 +422,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
-		this.toggleHide('unfollow', this.settings.get('channel.hide-unfollow'));
+		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 		//this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
