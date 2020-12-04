@@ -220,7 +220,7 @@ export default class Layout extends Module {
 
 		this.on('site.directory:update-cards', () => {
 			for(const inst of this.SideBarChannels.instances)
-				this.updateCardClass(inst);
+				this.updateCard(inst);
 		});
 
 		this.ResizeDetector.ready(() => {
@@ -232,11 +232,11 @@ export default class Layout extends Module {
 
 		this.SideBarChannels.ready((cls, instances) => {
 			for(const inst of instances)
-				this.updateCardClass(inst);
+				this.updateCard(inst);
 		});
 
-		this.SideBarChannels.on('mount', this.updateCardClass, this);
-		this.SideBarChannels.on('update', this.updateCardClass, this);
+		this.SideBarChannels.on('mount', this.updateCard, this);
+		this.SideBarChannels.on('update', this.updateCard, this);
 
 		/*const t = this;
 		this.RightColumn.ready((cls, instances) => {
@@ -310,7 +310,7 @@ export default class Layout extends Module {
 		return this.settings.get('layout.is-minimal')
 	}
 
-	updateCardClass(inst) {
+	updateCard(inst) {
 		const node = this.fine.getChildNode(inst);
 
 		if ( node ) {
@@ -323,6 +323,19 @@ export default class Layout extends Module {
 
 			const game = inst.props?.tooltipContent?.props?.gameName || inst.props?.metadataLeft?.props?.activity?.stream?.game?.name || inst.props?.metadataLeft;
 			node.classList.toggle('tw-hide', this.settings.provider.get('directory.game.blocked-games', []).includes(game));
+
+			if (typeof game === 'string' || game instanceof String) {
+				const filtered_text = this.settings.profile(0).get('directory.game.filtered-text', []);
+				filtered_text.forEach(text => {
+					text = text.v.v;
+					if (game.includes(text)) {
+						const matchingElement = document.evaluate(`.//*[text()="${game}"]`, node, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+						if (matchingElement) {
+							matchingElement.innerText = game.replaceAll(text, '');
+						}
+					}
+				});
+			}
 		}
 	}
 

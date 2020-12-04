@@ -6,6 +6,7 @@
 			:words="item.words"
 			:removable="item.removable"
 			:adding="true"
+			:text-only="item.textOnly"
 			@save="new_term"
 		/>
 		<div v-if="! val.length || val.length === 1 && hasInheritance" class="tw-mg-t-05 tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-c-text-alt-2 tw-pd-05">
@@ -19,6 +20,7 @@
 				:colored="item.colored"
 				:words="item.words"
 				:removable="item.removable"
+				:text-only="item.textOnly"
 				@remove="remove(term)"
 				@save="save(term, $event)"
 			/>
@@ -35,7 +37,14 @@ let last_id = 0;
 
 export default {
 	mixins: [SettingMixin],
-	props: ['item', 'context'],
+	props: {
+		item: Object,
+		context: Object,
+		textOnly: {
+			type: Boolean,
+			default: false
+		}
+	},
 
 	data() {
 		return {

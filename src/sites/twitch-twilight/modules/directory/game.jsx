@@ -38,6 +38,16 @@ export default class Game extends SiteModule {
 			default: [],
 			onUIChange: () => this.parent.updateCards()
 		});
+
+		this.settings.addUI('directory.game.filtered-text', {
+			ui: {
+				path: 'Directory > Categories >> Filtered Text',
+				component: 'basic-terms',
+				textOnly: true,
+				onUIChange: () => this.parent.updateCards()
+			},
+			default: [],
+		});
 	}
 
 	onEnable() {
@@ -51,7 +61,7 @@ export default class Game extends SiteModule {
 		});
 
 		this.settings.provider.on('changed', key => {
-			if ( key === 'directory.game.blocked-games' || key === 'directory.game.hidden-thumbnails' ) {
+			if ( key === 'directory.game.blocked-games' || key === 'directory.game.hidden-thumbnails' || key === 'directory.game.filtered-text' ) {
 				this.parent.updateCards();
 
 				for(const inst of this.GameHeader.instances)
