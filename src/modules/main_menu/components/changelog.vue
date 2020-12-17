@@ -11,7 +11,7 @@
 
 		<div v-if=" ! addons" class="tw-mg-b-1 tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1" />
-			<div class="tw-checkbox tw-relative tw-tooltip-wrapper">
+			<div class="tw-checkbox tw-relative tw-tooltip__container">
 				<input
 					id="nonversioned"
 					ref="nonversioned"

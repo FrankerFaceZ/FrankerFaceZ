@@ -33,7 +33,7 @@
 					<figure :class="faded ? 'ffz-i-eye-off' : 'ffz-i-eye'" />
 				</span>
 			</button>
-			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip-wrapper" @click="popout">
+			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip__container" @click="popout">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-link-ext" />
 				</span>

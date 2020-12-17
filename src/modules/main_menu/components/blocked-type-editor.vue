@@ -27,13 +27,13 @@
 				</button>
 			</div>
 			<div v-else-if="deleting" class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="$emit('remove', term)">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="$emit('remove', term)">
 					<span class="tw-button__text ffz-i-trash" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="deleting = false">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
@@ -41,7 +41,7 @@
 				</button>
 			</div>
 			<div v-else class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="deleting = true">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}

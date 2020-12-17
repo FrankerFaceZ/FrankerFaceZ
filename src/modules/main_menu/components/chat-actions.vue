@@ -281,7 +281,7 @@
 			</div>
 			<button
 				v-if="! maybe_clear && val.length"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
 				@click="maybe_clear = true"
 			>
 				<span class="tw-button__text ffz-i-trash">
@@ -293,7 +293,7 @@
 			</button>
 			<button
 				v-if="maybe_clear"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
 				@click="doClear"
 			>
 				<span class="tw-button__text ffz-i-trash">
@@ -305,7 +305,7 @@
 			</button>
 			<button
 				v-if="maybe_clear"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
 				@click="maybe_clear = false"
 			>
 				<span class="tw-button__text ffz-i-cancel">
@@ -314,7 +314,7 @@
 			</button>
 			<button
 				v-if="! val.length && has_default"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
 				@click="populate"
 			>
 				<span class="tw-button__text ffz-i-trash">

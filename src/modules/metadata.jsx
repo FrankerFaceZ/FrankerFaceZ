@@ -225,7 +225,7 @@ export default class Metadata extends Module {
 							value={url}
 							onFocus={e => e.target.select()}
 						/>
-						{can_copy && <div class="tw-relative tw-tooltip-wrapper tw-mg-l-1">
+						{can_copy && <div class="tw-relative tw-tooltip__container tw-mg-l-1">
 							<button
 								class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 								aria-label={ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
@@ -639,7 +639,7 @@ export default class Metadata extends Module {
 
 					if ( def.popup && def.click ) {
 						el = (<div
-							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-r-1' : 'tw-mg-r-05 ffz-mg-l--05'}`}
+							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip__container ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-r-1' : 'tw-mg-r-05 ffz-mg-l--05'}`}
 							data-key={key}
 							tip_content={null}
 						>
@@ -766,7 +766,7 @@ export default class Metadata extends Module {
 						icon = (<span class="tw-stat__icon"><figure class={icon} /></span>);
 
 					el = (<div
-						class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip-wrapper ffz-stat tw-stat tw-mg-r-1${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+						class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip__container ffz-stat tw-stat tw-mg-r-1${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
 						data-tooltip-type="metadata"
 						data-key={key}
 						tip_content={null}

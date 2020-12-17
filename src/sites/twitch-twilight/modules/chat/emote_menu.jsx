@@ -2089,150 +2089,155 @@ export default class EmoteMenu extends Module {
 
 				const visibility = this.state.visibility_control;
 
-				return (<div
-					class={`tw-balloon tw-balloon--md tw-balloon--up tw-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
-					data-a-target="emote-picker"
-				>
-					<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
+				return (<div class="tw-block">
+					<div class="tw-absolute tw-attached tw-attached--right tw-attached--up">
 						<div
-							class="emote-picker__tab-content scrollable-area"
-							data-test-selector="scrollable-area-wrapper"
-							data-simplebar
+							class={`tw-balloon tw-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+							data-a-target="emote-picker"
+							role="dialog"
 						>
-							<div ref={this.saveScrollRef} class="simplebar-scroll-content">
-								<div class="simplebar-content">
-									{loading && this.renderLoading()}
-									{!loading && sets && sets.map(data => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
-										data.emoji ? t.EmojiSection : t.MenuSection,
-										{
-											key: data.key,
-											data,
-											filtered: this.state.filtered,
-											visibility_control: visibility,
-											onClickToken: this.props.onClickToken,
-											addSection: this.addSection,
-											removeSection: this.removeSection,
-											startObserving: this.startObserving,
-											stopObserving: this.stopObserving
-										}
-									))}
-									{! loading && (! sets || ! sets.length) && this.renderEmpty()}
+							<div class="emote-picker">
+								<div
+									class="emote-picker__tab-content scrollable-area"
+									data-test-selector="scrollable-area-wrapper"
+									data-simplebar
+								>
+									<div ref={this.saveScrollRef} class="simplebar-scroll-content">
+										<div class="simplebar-content">
+											{loading && this.renderLoading()}
+											{!loading && sets && sets.map(data => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
+												data.emoji ? t.EmojiSection : t.MenuSection,
+												{
+													key: data.key,
+													data,
+													filtered: this.state.filtered,
+													visibility_control: visibility,
+													onClickToken: this.props.onClickToken,
+													addSection: this.addSection,
+													removeSection: this.removeSection,
+													startObserving: this.startObserving,
+													stopObserving: this.stopObserving
+												}
+											))}
+											{! loading && (! sets || ! sets.length) && this.renderEmpty()}
+										</div>
+									</div>
 								</div>
-							</div>
-						</div>
-						<div class="emote-picker__controls-container tw-relative">
-							{(is_emoji || t.chat.context.get('chat.emote-menu.show-search')) && (<div class="tw-border-t tw-pd-1">
-								<div class="tw-flex">
-									<input
-										type="text"
-										class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
-										placeholder={
-											is_emoji ?
-												t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
-												t.i18n.t('emote-menu.search', 'Search for Emotes')
-										}
-										value={this.state.filter}
-										autoFocus
-										autoCapitalize="off"
-										autoCorrect="off"
-										onChange={this.handleFilterChange}
-										onKeyDown={this.handleKeyDown}
-									/>
-									{(no_tabs || ! is_emoji) && <div class="tw-relative tw-tooltip-wrapper tw-mg-l-1">
-										<button
-											class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon--primary tw-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.state.visibility_control ? ' tw-core-button--primary' : ' tw-button-icon'}`}
-											onClick={this.toggleVisibilityControl}
-										>
-											<span class="tw-button-icon__icon tw-mg-x-05">
-												<figure class={this.state.visibility_control ? 'ffz-i-eye-off' : 'ffz-i-eye'} />
-											</span>
-										</button>
-										<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
-											{this.state.visibility_control ?
-												t.i18n.t('emote-menu.toggle-hide.on', 'Exit Emote Visibility Control') :
-												t.i18n.t('emote-menu.toggle-hide.off', 'Emote Visibility Control')
-											}
-											<div class="tw-mg-t-1 ffz--tooltip-explain">
-												{t.i18n.t('emote-menu.toggle-hide.info', 'Emote Visibility Control allows you to hide emotes from your emote menu, either individually or by set. With Emote Visibility Control enabled, just click an emote to hide or unhide it. Please note that you will still see the emotes in chat if someone uses them, but they won\'t appear in your emote menu.')}
-											</div>
+								<div class="emote-picker__controls-container tw-relative">
+									{(is_emoji || t.chat.context.get('chat.emote-menu.show-search')) && (<div class="tw-border-t tw-pd-1">
+										<div class="tw-flex">
+											<input
+												type="text"
+												class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
+												placeholder={
+													is_emoji ?
+														t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
+														t.i18n.t('emote-menu.search', 'Search for Emotes')
+												}
+												value={this.state.filter}
+												autoFocus
+												autoCapitalize="off"
+												autoCorrect="off"
+												onChange={this.handleFilterChange}
+												onKeyDown={this.handleKeyDown}
+											/>
+											{(no_tabs || ! is_emoji) && <div class="tw-relative tw-tooltip__container tw-mg-l-1">
+												<button
+													class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon--primary tw-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.state.visibility_control ? ' tw-core-button--primary' : ' tw-button-icon'}`}
+													onClick={this.toggleVisibilityControl}
+												>
+													<span class="tw-button-icon__icon tw-mg-x-05">
+														<figure class={this.state.visibility_control ? 'ffz-i-eye-off' : 'ffz-i-eye'} />
+													</span>
+												</button>
+												<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
+													{this.state.visibility_control ?
+														t.i18n.t('emote-menu.toggle-hide.on', 'Exit Emote Visibility Control') :
+														t.i18n.t('emote-menu.toggle-hide.off', 'Emote Visibility Control')
+													}
+													<div class="tw-mg-t-1 ffz--tooltip-explain">
+														{t.i18n.t('emote-menu.toggle-hide.info', 'Emote Visibility Control allows you to hide emotes from your emote menu, either individually or by set. With Emote Visibility Control enabled, just click an emote to hide or unhide it. Please note that you will still see the emotes in chat if someone uses them, but they won\'t appear in your emote menu.')}
+													</div>
+												</div>
+											</div>}
+											{(no_tabs || is_emoji) && ! visibility && this.state.has_emoji_tab && <t.EmojiTonePicker
+												tone={this.state.tone}
+												choices={this.state.tone_emoji}
+												pickTone={this.pickTone}
+											/>}
 										</div>
-									</div>}
-									{(no_tabs || is_emoji) && ! visibility && this.state.has_emoji_tab && <t.EmojiTonePicker
-										tone={this.state.tone}
-										choices={this.state.tone_emoji}
-										pickTone={this.pickTone}
-									/>}
-								</div>
-							</div>)}
-							<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
-								{! visibility && <div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
-									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'fav' ? ' tw-interactable--selected' : ''}`}
-										id="emote-picker__fav"
-										data-tab="fav"
-										data-tooltip-type="html"
-										data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
-										onClick={this.clickTab}
-									>
-										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
-											<figure class="ffz-i-star" />
+									</div>)}
+									<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
+										{! visibility && <div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+											<button
+												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'fav' ? ' tw-interactable--selected' : ''}`}
+												id="emote-picker__fav"
+												data-tab="fav"
+												data-tooltip-type="html"
+												data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
+												onClick={this.clickTab}
+											>
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+													<figure class="ffz-i-star" />
+												</div>
+											</button>
+										</div>}
+										{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+											<button
+												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'channel' ? ' tw-interactable--selected' : ''}`}
+												id="emote-picker__channel"
+												data-tab="channel"
+												data-tooltip-type="html"
+												data-title={t.i18n.t('emote-menu.channel', 'Channel')}
+												onClick={this.clickTab}
+											>
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+													<figure class="ffz-i-camera" />
+												</div>
+											</button>
+										</div>}
+										<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+											<button
+												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'all' ? ' tw-interactable--selected' : ''}`}
+												id="emote-picker__all"
+												data-tab="all"
+												data-tooltip-type="html"
+												data-title={t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
+												onClick={this.clickTab}
+											>
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+													<figure class="ffz-i-channels" />
+												</div>
+											</button>
 										</div>
-									</button>
-								</div>}
-								{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
-									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'channel' ? ' tw-interactable--selected' : ''}`}
-										id="emote-picker__channel"
-										data-tab="channel"
-										data-tooltip-type="html"
-										data-title={t.i18n.t('emote-menu.channel', 'Channel')}
-										onClick={this.clickTab}
-									>
-										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
-											<figure class="ffz-i-camera" />
+										{! visibility && this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+											<button
+												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'emoji' ? ' tw-interactable--selected' : ''}`}
+												id="emote-picker__emoji"
+												data-tab="emoji"
+												data-tooltip-type="html"
+												data-title={t.i18n.t('emote-menu.emoji', 'Emoji')}
+												onClick={this.clickTab}
+											>
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+													<figure class="ffz-i-smile" />
+												</div>
+											</button>
+										</div>}
+										<div class="tw-flex-grow-1" />
+										<div class="emote-picker-tab-item tw-relative">
+											<button
+												class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
+												data-tooltip-type="html"
+												data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
+												onClick={this.clickSettings}
+											>
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+													<figure class="ffz-i-cog" />
+												</div>
+											</button>
 										</div>
-									</button>
-								</div>}
-								<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
-									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'all' ? ' tw-interactable--selected' : ''}`}
-										id="emote-picker__all"
-										data-tab="all"
-										data-tooltip-type="html"
-										data-title={t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
-										onClick={this.clickTab}
-									>
-										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
-											<figure class="ffz-i-channels" />
-										</div>
-									</button>
-								</div>
-								{! visibility && this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
-									<button
-										class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'emoji' ? ' tw-interactable--selected' : ''}`}
-										id="emote-picker__emoji"
-										data-tab="emoji"
-										data-tooltip-type="html"
-										data-title={t.i18n.t('emote-menu.emoji', 'Emoji')}
-										onClick={this.clickTab}
-									>
-										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
-											<figure class="ffz-i-smile" />
-										</div>
-									</button>
-								</div>}
-								<div class="tw-flex-grow-1" />
-								<div class="emote-picker-tab-item tw-relative">
-									<button
-										class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
-										data-tooltip-type="html"
-										data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
-										onClick={this.clickSettings}
-									>
-										<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
-											<figure class="ffz-i-cog" />
-										</div>
-									</button>
+									</div>
 								</div>
 							</div>
 						</div>

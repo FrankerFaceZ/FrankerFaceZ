@@ -1,13 +1,13 @@
 <template lang="html">
 	<div class="ffz--term">
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
-			<div v-if="! is_valid" class="tw-relative tw-tooltip-wrapper tw-mg-r-05">
+			<div v-if="! is_valid" class="tw-relative tw-tooltip__container tw-mg-r-05">
 				<figure class="tw-c-text-error ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 					{{ t('setting.terms.warn-invalid', 'This highlight term is invalid.') }}
 				</div>
 			</div>
-			<div v-if="! is_safe" class="tw-relative tw-tooltip-wrapper tw-mg-r-05">
+			<div v-if="! is_safe" class="tw-relative tw-tooltip__container tw-mg-r-05">
 				<figure class="tw-c-text-hint ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 					{{ t('setting.terms.warn-complex', 'This highlight term is potentially too complex. It may cause client lag.') }}
@@ -56,7 +56,7 @@
 					</option>
 				</select>
 			</div>
-			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip-wrapper">
+			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip__container">
 				<button
 					v-if="editing"
 					:class="{active: edit_data.remove}"
@@ -89,13 +89,13 @@
 				</button>
 			</div>
 			<div v-else-if="editing" class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="save">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="save">
 					<span class="tw-button__text ffz-i-floppy" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.save', 'Save') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="cancel">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="cancel">
 					<span class="tw-button__text ffz-i-cancel" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
@@ -103,13 +103,13 @@
 				</button>
 			</div>
 			<div v-else-if="deleting" class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="$emit('remove', term)">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="$emit('remove', term)">
 					<span class="tw-button__text ffz-i-trash" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="deleting = false">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
@@ -117,13 +117,13 @@
 				</button>
 			</div>
 			<div v-else class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="edit">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="edit">
 					<span class="tw-button__text ffz-i-cog" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.edit', 'Edit') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip-wrapper" @click="deleting = true">
+				<button class="tw-button tw-button--text tw-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}

@@ -295,7 +295,7 @@ export default class MenuButton extends SiteModule {
 		el = (<div
 			class={`ffz-top-nav ${is_mod ? 'ffz-mod-view-button tw-relative tw-mg-b-1' : `tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-relative ${is_sunlight ? 'tw-mg-l-05 tw-mg-r-2' : 'tw-mg-x-05'}`}`}
 		>
-			<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+			<div class="tw-inline-flex tw-relative tw-tooltip__container">
 				{btn = (<button
 					class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.loading ? ' loading' : ''}`}
 					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
@@ -314,7 +314,7 @@ export default class MenuButton extends SiteModule {
 								{ this.error.i18n ? this.i18n.t(this.error.i18n, this.error.text) : this.error.text }
 							</div>
 							<button
-								class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip-wrapper"
+								class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip__container"
 								onClick={() => this.error = null} // eslint-disable-line react/jsx-no-bind
 							>
 								<span class="tw-button-icon__icon">
@@ -468,57 +468,59 @@ export default class MenuButton extends SiteModule {
 		}
 
 
-		ctx = (<div class={`tw-absolute tw-balloon tw-balloon--lg ${is_mod ? 'tw-balloon--up tw-balloon--left' : 'tw-balloon--down tw-balloon--right'} tw-block ffz--menu-context`}>
-			<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
-				<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
-					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">
-						<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
-							<button
-								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
-								onDblClick={() => {this.emit('site.player:reset'); destroy()}} // eslint-disable-line react/jsx-no-bind
-							>
-								<span class="tw-button-icon__icon">
-									<figure class="ffz-i-t-reset" />
-								</span>
-							</button>
-							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
-								{ this.i18n.t('player.reset_button.all', 'Reset All Players (Double-Click)') }
+		ctx = (<div class={`tw-absolute tw-attached ${is_mod ? 'tw-attached--up tw-attached--left' : 'tw-attached--down tw-attached--right'}`}>
+			<div class={`tw-balloon tw-balloon--lg tw-block ffz--menu-context`}>
+				<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
+					<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
+						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">
+							<div class="tw-inline-flex tw-relative tw-tooltip__container">
+								<button
+									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
+									onDblClick={() => {this.emit('site.player:reset'); destroy()}} // eslint-disable-line react/jsx-no-bind
+								>
+									<span class="tw-button-icon__icon">
+										<figure class="ffz-i-t-reset" />
+									</span>
+								</button>
+								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+									{ this.i18n.t('player.reset_button.all', 'Reset All Players (Double-Click)') }
+								</div>
 							</div>
 						</div>
-					</div>
-					<div class="tw-align-items-center tw-flex tw-flex-column tw-flex-grow-1 tw-justify-content-center">
-						<h5 class="tw-align-center tw-c-text-alt tw-semibold">
-							{ this.i18n.t('site.menu_button.profiles', 'Profiles') }
-						</h5>
-					</div>
-					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
-						<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
-							<button
-								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
-								onClick={e => {this.openSettings(e, btn); destroy()}} // eslint-disable-line react/jsx-no-bind
-							>
-								<span class="tw-button-icon__icon">
-									<figure class="ffz-i-cog" />
-								</span>
-							</button>
-							<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
-								{ this.i18n.t('setting.profiles.configure', 'Configure') }
+						<div class="tw-align-items-center tw-flex tw-flex-column tw-flex-grow-1 tw-justify-content-center">
+							<h5 class="tw-align-center tw-c-text-alt tw-semibold">
+								{ this.i18n.t('site.menu_button.profiles', 'Profiles') }
+							</h5>
+						</div>
+						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
+							<div class="tw-inline-flex tw-relative tw-tooltip__container">
+								<button
+									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
+									onClick={e => {this.openSettings(e, btn); destroy()}} // eslint-disable-line react/jsx-no-bind
+								>
+									<span class="tw-button-icon__icon">
+										<figure class="ffz-i-cog" />
+									</span>
+								</button>
+								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+									{ this.i18n.t('setting.profiles.configure', 'Configure') }
+								</div>
 							</div>
 						</div>
+						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
+							<button
+								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+								onClick={destroy} // eslint-disable-line react/jsx-no-bind
+							>
+								<span class="tw-button-icon__icon">
+									<figure class="ffz-i-cancel" />
+								</span>
+							</button>
+						</div>
 					</div>
-					<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
-						<button
-							class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-							onClick={destroy} // eslint-disable-line react/jsx-no-bind
-						>
-							<span class="tw-button-icon__icon">
-								<figure class="ffz-i-cancel" />
-							</span>
-						</button>
+					<div class="center-window__long-scrollable-area scrollable-area scrollable-area--suppress-scroll-x" data-simplebar>
+						{profiles}
 					</div>
-				</div>
-				<div class="center-window__long-scrollable-area scrollable-area scrollable-area--suppress-scroll-x" data-simplebar>
-					{profiles}
 				</div>
 			</div>
 		</div>);

@@ -313,7 +313,7 @@ export default class ChatLine extends Module {
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
 					e('span', {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip-wrapper' : ''}`,
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip__container' : ''}`,
 						role: 'button',
 						style: { color },
 						onClick: this.ffz_user_click_handler,
@@ -503,7 +503,7 @@ other {# messages were deleted by a moderator.}
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
 					e('span', {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip-wrapper' : ''}`,
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip__container' : ''}`,
 						role: 'button',
 						style: { color },
 						onClick: this.ffz_user_click_handler,

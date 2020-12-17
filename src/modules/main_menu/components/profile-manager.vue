@@ -32,7 +32,7 @@
 				</div>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip-wrapper"
+				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
@@ -47,7 +47,7 @@
 				{{ import_message }}
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip-wrapper"
+				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
@@ -66,7 +66,7 @@
 				<button
 					v-for="(profile, idx) in import_profiles"
 					:key="idx"
-					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay tw-relative tw-tooltip-wrapper"
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay tw-relative tw-tooltip__container"
 					@click="importProfile(profile)"
 				>
 					<span class="tw-button__text tw-c-text-overlay">
@@ -78,7 +78,7 @@
 				</button>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip-wrapper"
+				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
@@ -113,7 +113,7 @@
 				</button>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip-wrapper"
+				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
@@ -138,7 +138,7 @@
 						<span class="ffz-i-ellipsis-vert" />
 					</div>
 
-					<div v-if="p.url" class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative tw-tooltip-wrapper tw-font-size-4">
+					<div v-if="p.url" class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative tw-tooltip__container tw-font-size-4">
 						<span class="ffz-i-download-cloud" />
 						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 							<div class="tw-mg-b-05">
@@ -171,7 +171,7 @@
 									'ffz-i-cancel': ! p.toggled,
 									'ffz-i-minus': p.toggled && ! p.live
 								}"
-								class="ffz--profile__icon tw-relative tw-tooltip-wrapper"
+								class="ffz--profile__icon tw-relative tw-tooltip__container"
 							>
 								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 									<span v-if="p.live">

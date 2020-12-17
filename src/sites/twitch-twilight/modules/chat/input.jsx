@@ -308,6 +308,13 @@ export default class Input extends Module {
 						i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
 						a = Math.min(1 + i, 4);
 
+					window._style = style;
+					window._height = height;
+					window.t = t;
+					window.i = i;
+					window.a = a;
+					console.log('resize', height, t, i, a)
+
 					inst.setState({
 						numInputRows: a
 					});

@@ -413,7 +413,7 @@ export default class Directory extends SiteModule {
 			el.ffz_uptime_el = container.querySelector('.ffz-uptime-element');
 			if ( ! el.ffz_uptime_el )
 				container.appendChild(el.ffz_uptime_el = (<div class="ffz-uptime-element tw-absolute tw-right-0 tw-top-0 tw-mg-1">
-					<div class="tw-relative tw-tooltip-wrapper">
+					<div class="tw-relative tw-tooltip__container">
 						<div class="tw-border-radius-small tw-c-background-overlay tw-c-text-overlay tw-flex tw-pd-x-05">
 							<div class="tw-flex tw-c-text-live">
 								<figure class="ffz-i-clock" />

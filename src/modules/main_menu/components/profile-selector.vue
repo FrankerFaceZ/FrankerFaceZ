@@ -18,7 +18,7 @@
 		<div
 			v-if="opened"
 			v-on-clickaway="hide"
-			class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left"
+			class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left tw-z-above"
 		>
 			<div
 				class="ffz--profile-list tw-elevation-2 tw-c-background-alt"
@@ -53,7 +53,7 @@
 							>
 								<div
 									v-if="! p.toggled"
-									class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-cancel tw-absolute"
+									class="tw-tooltip__container ffz--profile-row__icon ffz-i-cancel tw-absolute"
 								>
 									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 										{{ t('setting.profiles.disabled', 'This profile is disabled.') }}
@@ -61,7 +61,7 @@
 								</div>
 								<div
 									v-if="p.live"
-									class="tw-tooltip-wrapper ffz--profile-row__icon ffz-i-ok tw-absolute"
+									class="tw-tooltip__container ffz--profile-row__icon ffz-i-ok tw-absolute"
 								>
 									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 										{{ t('setting.profiles.active', 'This profile is enabled and active.') }}

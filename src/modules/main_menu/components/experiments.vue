@@ -105,7 +105,7 @@
 							<button
 								:disabled="exp.default"
 								:class="{'tw-button--disabled': exp.default}"
-								class="tw-mg-t-05 tw-button tw-button--text tw-tooltip-wrapper"
+								class="tw-mg-t-05 tw-button tw-button--text tw-tooltip__container"
 								@click="reset(key)"
 							>
 								<span class="tw-button__text ffz-i-cancel" />
@@ -147,12 +147,12 @@
 						class="ffz--experiment-row tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex"
 					>
 						<div v-if="unused" class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-border-r tw-mg-r-1 tw-pd-r-1">
-							<div v-if="exp.in_use" class="ffz--profile__icon ffz-i-ok tw-tooltip-wrapper">
+							<div v-if="exp.in_use" class="ffz--profile__icon ffz-i-ok tw-tooltip__container">
 								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 									{{ t('setting.experiments.active', 'This experiment is active.') }}
 								</div>
 							</div>
-							<div v-else class="ffz--profile__icon ffz-i-cancel tw-tooltip-wrapper">
+							<div v-else class="ffz--profile__icon ffz-i-cancel tw-tooltip__container">
 								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 									{{ t('setting.experiments.inactive', 'This experiment is not active.') }}
 								</div>
@@ -190,7 +190,7 @@
 							<button
 								:disabled="exp.default"
 								:class="{'tw-button--disabled': exp.default}"
-								class="tw-mg-t-05 tw-button tw-button--text tw-tooltip-wrapper"
+								class="tw-mg-t-05 tw-button tw-button--text tw-tooltip__container"
 								@click="resetTwitch(key)"
 							>
 								<span class="tw-button__text ffz-i-cancel" />

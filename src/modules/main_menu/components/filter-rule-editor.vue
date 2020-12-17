@@ -14,7 +14,7 @@
 
 		<div
 			v-if="isShort"
-			class="tw-mg-l-1 tw-pd-x-1 tw-border-l tw-flex tw-align-items-center ffz--profile__icon tw-relative tw-tooltip-wrapper"
+			class="tw-mg-l-1 tw-pd-x-1 tw-border-l tw-flex tw-align-items-center ffz--profile__icon tw-relative tw-tooltip__container"
 		>
 			<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
 			<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
@@ -31,7 +31,7 @@
 			:class="[isShort ? '' : 'tw-mg-l-1']"
 			class="tw-border-l tw-pd-l-1 tw-flex tw-flex-column tw-flex-wrap tw-justify-content-start tw-align-items-start"
 		>
-			<div v-if="! isShort" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative tw-tooltip-wrapper">
+			<div v-if="! isShort" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative tw-tooltip__container">
 				<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
 				<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
 					<span v-if="passes">
@@ -44,13 +44,13 @@
 			</div>
 
 			<template v-if="deleting">
-				<button class="tw-button tw-button--text tw-relative tw-tooltip-wrapper" @click="$emit('delete')">
+				<button class="tw-button tw-button--text tw-relative tw-tooltip__container" @click="$emit('delete')">
 					<span class="tw-button__text ffz-i-trash" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-relative tw-tooltip-wrapper" @click="deleting = false">
+				<button class="tw-button tw-button--text tw-relative tw-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
@@ -58,7 +58,7 @@
 				</button>
 			</template>
 			<template v-else>
-				<button class="tw-button tw-button--text tw-relative tw-tooltip-wrapper" @click="deleting = true">
+				<button class="tw-button tw-button--text tw-relative tw-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}

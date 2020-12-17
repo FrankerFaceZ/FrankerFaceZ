@@ -42,7 +42,7 @@
 				</div>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip-wrapper"
+				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetExport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
@@ -57,7 +57,7 @@
 				{{ export_message }}
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip-wrapper"
+				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetExport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />

@@ -50,7 +50,7 @@
 					<button
 						v-if="external"
 						disabled
-						class="tw-button ffz-button--hollow tw-button--disabled tw-tooltip-wrapper tw-mg-r-1"
+						class="tw-button ffz-button--hollow tw-button--disabled tw-tooltip__container tw-mg-r-1"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
 							<figure class="ffz-i-trash" />

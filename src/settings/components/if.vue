@@ -16,7 +16,7 @@
 
 		<div class="tw-border-t tw-mg-t-05 tw-pd-t-05">
 			<header class="tw-flex tw-align-items-center">
-				<div class="ffz--profile__icon tw-pd-r-05 tw-pd-y-05 tw-relative tw-tooltip-wrapper">
+				<div class="ffz--profile__icon tw-pd-r-05 tw-pd-y-05 tw-relative tw-tooltip__container">
 					<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 						<span v-if="passes">
@@ -43,7 +43,7 @@
 
 		<div class="tw-border-t tw-mg-t-05 tw-pd-t-05">
 			<header class="tw-flex tw-align-items-center">
-				<div class="ffz--profile__icon tw-pd-r-05 tw-pd-y-05 tw-relative tw-tooltip-wrapper">
+				<div class="ffz--profile__icon tw-pd-r-05 tw-pd-y-05 tw-relative tw-tooltip__container">
 					<figure :class="[passes ? 'ffz-i-cancel' : 'ffz-i-ok']" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 						<span v-if="passes">

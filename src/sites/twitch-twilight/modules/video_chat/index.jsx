@@ -264,7 +264,7 @@ export default class VideoChatHook extends Module {
 					<button class="tw-button tw-button--text" data-test-selector="parent-reply-button" onClick={msg._reply_handler}>
 						<span class="tw-button__text tw-pd-0">{ t.i18n.t('video-chat.reply', 'Reply') }</span>
 					</button>
-					<span class="tw-c-text-alt-2 tw-font-size-7 tw-mg-l-05 tw-relative tw-tooltip-wrapper">
+					<span class="tw-c-text-alt-2 tw-font-size-7 tw-mg-l-05 tw-relative tw-tooltip__container">
 						• { t.i18n.t('video-chat.time', '{time,humantime} ago', {
 							time: msg.timestamp
 						}) }
@@ -301,7 +301,7 @@ export default class VideoChatHook extends Module {
 					>
 						{hide_timestamps || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
 							<div class="tw-mg-r-05">
-								<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+								<div class="tw-inline-flex tw-relative tw-tooltip__container">
 									<button class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive" onClick={this.onTimestampClickHandler}>
 										<div class="tw-pd-x-05">
 											<p class="tw-font-size-7">{print_duration(context.comment.contentOffset)}</p>

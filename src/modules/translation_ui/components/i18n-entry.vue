@@ -93,7 +93,7 @@
 			</div>
 
 			<button
-				class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip-wrapper"
+				class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip__container"
 				@click="open = false"
 			>
 				<span class="tw-button-icon__icon">

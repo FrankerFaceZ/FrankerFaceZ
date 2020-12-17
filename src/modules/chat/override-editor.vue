@@ -26,7 +26,7 @@
 			>
 
 			<button
-				class="tw-mg-l-05 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-05 tw-button tw-button--text tw-tooltip__container"
 				:class="{'tw-button--disabled': name == null}"
 				@click="clearName"
 			>
@@ -52,7 +52,7 @@
 			/>
 
 			<button
-				class="tw-mg-l-05 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-05 tw-button tw-button--text tw-tooltip__container"
 				:class="{'tw-button--disabled': color == null}"
 				@click="clearColor"
 			>

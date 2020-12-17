@@ -5,13 +5,13 @@
 				{{ t(type.i18n, type.title) }}
 			</div>
 
-			<div v-if="! is_valid" class="tw-relative tw-tooltip-wrapper tw-mg-r-05">
+			<div v-if="! is_valid" class="tw-relative tw-tooltip__container tw-mg-r-05">
 				<figure class="tw-c-text-error ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 					{{ t('settings.filter.title.warn-invalid', 'This pattern is invalid.') }}
 				</div>
 			</div>
-			<div v-else-if="! is_safe" class="tw-relative tw-tooltip-wrapper tw-mg-r-05">
+			<div v-else-if="! is_safe" class="tw-relative tw-tooltip__container tw-mg-r-05">
 				<figure class="tw-c-text-error ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 					{{ t('settings.filter.title.warn-complex', 'This pattern is potentially too complex. It will be disabled to avoid client lag or freezing.') }}
@@ -50,7 +50,7 @@
 					type="checkbox"
 					class="ffz-min-width-unset tw-checkbox__input"
 				>
-				<label :for="'sensitive$' + id" class="tw-checkbox__label tw-relative tw-tooltip-wrapper">
+				<label :for="'sensitive$' + id" class="tw-checkbox__label tw-relative tw-tooltip__container">
 					<span class="tw-mg-l-05">
 						Aa
 						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">

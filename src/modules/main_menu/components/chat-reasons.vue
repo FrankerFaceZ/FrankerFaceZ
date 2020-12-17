@@ -6,7 +6,7 @@
 			</div>
 			<button
 				v-if="! empty"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
 				@click="clear"
 			>
 				<span class="tw-button__text ffz-i-trash">
@@ -18,7 +18,7 @@
 			</button>
 			<button
 				v-if="empty"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip-wrapper"
+				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
 				@click="populate"
 			>
 				<span class="tw-button__text ffz-i-trash">

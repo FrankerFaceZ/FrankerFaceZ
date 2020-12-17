@@ -25,7 +25,7 @@
 				>
 				<button
 					v-if="clearable"
-					class="tw-absolute tw-right-0 tw-top-0 tw-button tw-button--text tw-tooltip-wrapper"
+					class="tw-absolute tw-right-0 tw-top-0 tw-button tw-button--text tw-tooltip__container"
 					@click="change('', false)"
 					@keydown.escape="open = false"
 					@focus="onFocus(false)"
