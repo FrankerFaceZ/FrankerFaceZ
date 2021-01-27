@@ -364,11 +364,16 @@ export default class ChatHook extends Module {
 		});
 
 		this.settings.add('chat.points.allow-highlight', {
-			default: true,
+			default: 2,
 			ui: {
 				path: 'Chat > Channel Points >> Appearance',
 				title: 'Highlight the message in chat when someone redeems Highlight My Message.',
-				component: 'setting-check-box'
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Twitch Style'},
+					{value: 2, title: 'FFZ Style'}
+				]
 			}
 		});
 

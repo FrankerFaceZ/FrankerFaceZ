@@ -12,7 +12,7 @@ import {duration_to_string, durationForURL} from 'utilities/time';
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
 
-const CLIP_URL = /^https:\/\/[^/]+\.twitch\.tv\/.+?\.mp4$/;
+const CLIP_URL = /^https:\/\/[^/]+\.(?:twitch\.tv|twitchcdn\.net)\/.+?\.mp4(?:\?.*)?$/;
 
 export default class Metadata extends Module {
 	constructor(...args) {
@@ -264,6 +264,9 @@ export default class Metadata extends Module {
 
 				if ( ! src || ! CLIP_URL.test(src) )
 					return;
+
+				if ( this.settings.get('metadata.clip-download.force') )
+					return src;
 
 				const user = this.resolve('site').getUser?.(),
 					is_self = user?.id == data.channel.id;

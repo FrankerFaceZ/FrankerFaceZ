@@ -14,6 +14,7 @@ const CLASSES = {
 	//'unfollow': '.follow-btn__follow-btn--following,.follow-btn--following',
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav,#sideNav',
+	'side-nav-viewers': '.side-nav-card__live-status',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends)',
 	//'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',
@@ -142,6 +143,16 @@ export default class CSSTweaks extends Module {
 				this.toggle('hide-side-nav', !val);
 				this.emit('site.layout:resize');
 			}
+		});
+
+		this.settings.add('layout.side-nav.hide-viewers', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Side Navigation',
+				title: 'Hide Channel View Counts',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('side-nav-viewers', val)
 		});
 
 		this.settings.add('layout.side-nav.show-avatars', {
@@ -409,6 +420,7 @@ export default class CSSTweaks extends Module {
 	}
 
 	onEnable() {
+		this.toggleHide('side-nav-viewers', this.settings.get('layout.side-nav.hide-viewers'));
 		this.toggle('hide-native-uptime', this.settings.get('metadata.uptime.no-native'));
 		this.toggle('hide-native-viewers', this.settings.get('metadata.viewers.no-native'));
 		this.toggle('chat-fix', this.settings.get('layout.use-chat-fix'));

@@ -24,6 +24,12 @@ export default class SettingsMenu extends Module {
 			n => n.renderUniversalOptions && n.onBadgesChanged,
 			Twilight.CHAT_ROUTES
 		);
+
+		/*this.ChatIdentityContainer = this.fine.define(
+			'chat-identity-container',
+			n => n.hideChatIdentityMenu && n.toggleBalloonRef,
+			Twilight.CHAT_ROUTES
+		);*/
 	}
 
 	async onEnable() {

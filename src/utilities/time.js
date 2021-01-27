@@ -42,6 +42,19 @@ export function print_duration(seconds) {
 }
 
 
+export function durationForChat(elapsed) {
+	const seconds = elapsed % 60;
+	let minutes = Math.floor(elapsed / 60);
+	let hours = Math.floor(minutes / 60);
+	const days = Math.floor(hours / 24);
+
+	minutes = minutes % 60;
+	hours = hours % 24;
+
+	return `${days > 0 ? `${days}d` : ''}${hours > 0 ? `${hours}h` : ''}${minutes > 0 ? `${minutes}m` : ''}${seconds > 0 ? `${seconds}s` : ''}`;
+}
+
+
 export function durationForURL(elapsed) {
 	const seconds = elapsed % 60;
 	let minutes = Math.floor(elapsed / 60);

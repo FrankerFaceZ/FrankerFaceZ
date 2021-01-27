@@ -1,6 +1,7 @@
 'use strict';
 
 import {createElement} from 'utilities/dom';
+import {durationForChat} from 'utilities/time';
 
 
 // ============================================================================

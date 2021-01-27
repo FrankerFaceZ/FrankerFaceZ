@@ -92,7 +92,6 @@ export default class Input extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-
 		this.EmoteSuggestions = this.fine.define(
 			'tab-emote-suggestions',
 			n => n && n.getMatchedEmotes,
@@ -296,8 +295,8 @@ export default class Input extends Module {
 		const t = this;
 
 		const originalOnKeyDown = inst.onKeyDown,
-			originalOnMessageSend = inst.onMessageSend,
-			old_resize = inst.resizeInput;
+			originalOnMessageSend = inst.onMessageSend;
+			//old_resize = inst.resizeInput;
 
 		inst.resizeInput = function(msg) {
 			if ( msg ) {
@@ -307,13 +306,6 @@ export default class Input extends Module {
 						t = height * 1 + 20,
 						i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
 						a = Math.min(1 + i, 4);
-
-					window._style = style;
-					window._height = height;
-					window.t = t;
-					window.i = i;
-					window.a = a;
-					console.log('resize', height, t, i, a)
 
 					inst.setState({
 						numInputRows: a

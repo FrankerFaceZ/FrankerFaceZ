@@ -50,6 +50,15 @@ textarea.tw-input {
 }
 
 .ffz--widget {
+	.tw-pill {
+		border-radius: 1000px;
+		padding: 0.3rem 0.8em;
+		font-size: 75%;
+		background-color: var(--color-background-pill);
+		color: var(--color-text-overlay);
+		white-space: nowrap;
+	}
+
 	input, select {
 		min-width: 20rem;
 	}

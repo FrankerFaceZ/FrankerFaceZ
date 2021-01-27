@@ -349,6 +349,11 @@ export default class ChatLine extends Module {
 				let mod_mode = this.props.deletedMessageDisplay;
 				let show, show_class, mod_action = null;
 
+				const highlight_mode = t.chat.context.get('chat.points.allow-highlight'),
+					highlight = highlight_mode > 0 && msg.ffz_type === 'points' && msg.ffz_reward && isHighlightedReward(msg.ffz_reward),
+					twitch_highlight = highlight && highlight_mode == 1,
+					ffz_highlight = highlight && highlight_mode == 2;
+
 				if ( ! this.props.isCurrentUserModerator && mod_mode == 'DETAILED' )
 					mod_mode = 'LEGACY';
 
@@ -532,7 +537,7 @@ other {# messages were deleted by a moderator.}
 							: null,
 						show ?
 							e('span', {
-								className:'message',
+								className:`message ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
 								style: is_action ? { color } : null
 							}, t.chat.renderTokens(tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null))
 							:
@@ -813,10 +818,7 @@ other {# messages were deleted by a moderator.}
 							t.i18n.formatNumber(getRewardCost(msg.ffz_reward))
 						]);
 
-					const can_highlight = t.chat.context.get('chat.points.allow-highlight'),
-						highlight = can_highlight && isHighlightedReward(msg.ffz_reward);
-
-					cls = `ffz-notice-line ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${highlight ? ' ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`;
+					cls = `ffz-notice-line ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${ffz_highlight ? ' ffz-custom-color ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`;
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
 							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),

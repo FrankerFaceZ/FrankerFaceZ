@@ -1,17 +1,22 @@
 .ffz-top-nav {
 	.tw-pill {
-		padding: .4rem;
+		border-radius: 1000px;
+		padding: 0.3rem 0.8em;
+		font-size: 75%;
+		background-color: var(--color-background-pill);
+		color: var(--color-text-overlay);
+		white-space: nowrap;
 	}
 
 	.ffz-menu__pill {
 		top: -.5rem;
-		right: 0;
+		right: -.5rem;
 		pointer-events: none;
 	}
 
 	.ffz-menu__extra-pill {
-		bottom: -.5rem;
-		right: 0;
+		bottom: -.75rem;
+		right: -.5rem;
 		pointer-events: none;
 	}
 
