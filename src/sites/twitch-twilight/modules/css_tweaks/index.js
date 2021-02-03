@@ -22,6 +22,7 @@ const CLASSES = {
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section:not(.online-friends)',
 	'side-offline-channels': '.ffz--side-nav-card-offline',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
+	'modview-hide-info': '.tw-flex.modview-player-widget__hide-stream-info',
 
 	'community-highlights': '.community-highlight-stack__card',
 
@@ -61,6 +62,16 @@ export default class CSSTweaks extends Module {
 
 
 		// Layout
+
+		this.settings.add('metadata.modview.hide-info', {
+			default: false,
+			ui: {
+				path: 'Channel > Metadata >> Mod View',
+				title: 'Hide "Hide Stream Info Stripe" button.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('modview-hide-info', val)
+		});
 
 		this.settings.add('metadata.viewers.no-native', {
 			requires: ['metadata.viewers'],
@@ -420,6 +431,7 @@ export default class CSSTweaks extends Module {
 	}
 
 	onEnable() {
+		this.toggleHide('modview-hide-info', this.settings.get('metadata.modview.hide-info'));
 		this.toggleHide('side-nav-viewers', this.settings.get('layout.side-nav.hide-viewers'));
 		this.toggle('hide-native-uptime', this.settings.get('metadata.uptime.no-native'));
 		this.toggle('hide-native-viewers', this.settings.get('metadata.viewers.no-native'));

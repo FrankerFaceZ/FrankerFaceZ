@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 import {createElement, on, off} from 'utilities/dom';
 import {debounce} from 'utilities/object';
+import { IS_FIREFOX } from 'src/utilities/constants';
 
 export const PLAYER_ROUTES = [
 	'front-page', 'user', 'video', 'user-video', 'user-clip', 'user-videos',
@@ -14,6 +15,11 @@ export const PLAYER_ROUTES = [
 	'user-following', 'dash', 'squad', 'command-center', 'dash-stream-manager',
 	'mod-view', 'user-home'
 ];
+
+const HAS_PITCH = (() => {
+	const el = createElement('video');
+	return el.preservesPitch != null || el.mozPreservesPitch != null
+})();
 
 const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null;
 
@@ -217,9 +223,6 @@ export default class Player extends Module {
 			});
 		}
 
-		/*
-		// This is currently broken due to changes Twitch has made in the player
-		// backend. Removing it for now to avoid user confusion.
 		this.settings.add('player.allow-catchup', {
 			default: true,
 			ui: {
@@ -229,11 +232,8 @@ export default class Player extends Module {
 				component: 'setting-check-box'
 			},
 
-			changed: val => {
-				for(const inst of this.Player.instances)
-					this.updateAutoPlaybackRate(inst, val);
-			}
-		});*/
+			changed: () => this.updatePlaybackRates()
+		});
 
 		this.settings.add('player.mute-click', {
 			default: false,
@@ -809,16 +809,19 @@ export default class Player extends Module {
 
 				this.updateGUI(inst);
 				this.compressPlayer(inst);
+				this.updatePlaybackRate(inst);
 			}
 		});
 
 		this.Player.on('mount', inst => {
 			this.updateGUI(inst);
 			this.compressPlayer(inst);
+			this.updatePlaybackRate(inst);
 		});
 		this.Player.on('update', inst => {
 			this.updateGUI(inst);
 			this.compressPlayer(inst);
+			this.updatePlaybackRate(inst);
 		});
 
 		this.Player.on('unmount', inst => {
@@ -1058,7 +1061,7 @@ export default class Player extends Module {
 			return;
 		}
 
-		let icon, tip, extra, btn, cont = container.querySelector('.ffz--player-comp');
+		let icon, tip, extra, ff_el, btn, cont = container.querySelector('.ffz--player-comp');
 		if ( ! has_comp ) {
 			if ( cont )
 				cont.remove();
@@ -1083,6 +1086,7 @@ export default class Player extends Module {
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="ffz--p-extra tw-pd-t-05 ffz--tooltip-explain" />)}
+						{ff_el = IS_FIREFOX ? (<div class="ffz--p-ff tw-pd-t-05 ffz--tooltip-explain" />) : null}
 					</div>
 				</div>
 			</div>);
@@ -1106,6 +1110,9 @@ export default class Player extends Module {
 				: this.i18n.t('player.comp_button.disabled', 'Audio Compressor cannot be enabled when viewing Clips.');
 
 		extra.textContent = this.i18n.t('player.comp_button.help', 'See the FFZ Control Center for details. If audio breaks, please reset the player.');
+
+		if ( ff_el )
+			ff_el.textContent += `\n${this.i18n.t('player.comp_button.firefox', 'Playback Speed controls will not function for Firefox users when the Compressor has been enabled.')}`;
 
 		icon.classList.toggle('ffz-i-comp-on', comp_active);
 		icon.classList.toggle('ffz-i-comp-off', ! comp_active);
@@ -1232,6 +1239,52 @@ export default class Player extends Module {
 		comp.ratio.value = this.settings.get('player.compressor.ratio');
 		comp.attack.value = this.settings.get('player.compressor.attack');
 		comp.release.value = this.settings.get('player.compressor.release');
+	}
+
+	updatePlaybackRates() {
+		for(const inst of this.Player.instances)
+			this.updatePlaybackRate(inst);
+	}
+
+	updatePlaybackRate(inst) {
+		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
+			inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+
+		if ( ! video.setFFZPlaybackRate )
+			this.installPlaybackRate(video);
+
+		video.setFFZPlaybackRate(video.playbackRate);
+	}
+
+	installPlaybackRate(video) {
+		if ( video.setFFZPlaybackRate )
+			return;
+
+		let pbrate = video.playbackRate;
+
+		const t = this,
+			installProperty = () => {
+				if ( t.settings.get('player.allow-catchup') )
+					return;
+
+				Object.defineProperty(video, 'playbackRate', {
+					configurable: true,
+					get() {
+						return pbrate;
+					},
+					set(val) {
+						if ( val === 1 || val < 1 || val >= 1.1 )
+							video.setFFZPlaybackRate(val);
+					}
+				});
+			}
+
+		video.setFFZPlaybackRate = rate => {
+			delete video.playbackRate;
+			pbrate = rate;
+			video.playbackRate = rate;
+			installProperty();
+		};
 	}
 
 
@@ -1506,6 +1559,7 @@ export default class Player extends Module {
 				muted = player.isMuted();
 			new_vid.volume = muted ? 0 : vol;
 			new_vid.playsInline = true;
+			this.installPlaybackRate(new_vid);
 			video.replaceWith(new_vid);
 			player.attachHTMLVideoElement(new_vid);
 			setTimeout(() => {

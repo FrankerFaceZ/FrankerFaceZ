@@ -49,6 +49,7 @@ export default class FeaturedFollow extends Module {
 		this.metadata.definitions.following = {
 			order: 150,
 			button: true,
+			modview: true,
 
 			popup: async (data, tip, refresh_fn, add_callback) => {
 				const vue = this.resolve('vue'),

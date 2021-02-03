@@ -5,9 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import { Color } from 'utilities/color';
 import {debounce} from 'utilities/object';
-import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 
 
 export default class ModView extends Module {
@@ -28,6 +26,7 @@ export default class ModView extends Module {
 		this.should_enable = true;
 
 		this._cached_channel = null;
+		this._cached_id = null;
 
 		this.Root = this.elemental.define(
 			'mod-view-root', '.moderation-view-page',
@@ -38,10 +37,11 @@ export default class ModView extends Module {
 		this.ModInfoBar = this.elemental.define(
 			'mod-info-bar', '.modview-player-widget__stream-info .simplebar-content',
 			['mod-view'],
-			{childNodes: true, subtree: true}, 1
+			{childNodes: true, subtree: true}, 1, 30000, false
 		);
 
 		this.checkRoot = debounce(this.checkRoot, 250);
+		this.checkBar = debounce(this.checkBar, 250);
 	}
 
 	onEnable() {
@@ -81,6 +81,10 @@ export default class ModView extends Module {
 		}
 	}
 
+	checkBar() {
+		this.ModInfoBar.clean();
+	}
+
 	checkRoot() {
 		this.Root.each(el => this.updateRoot(el));
 	}
@@ -95,8 +99,9 @@ export default class ModView extends Module {
 			i++;
 		}
 
-		if ( channel?.id && this._cached_channel != channel.id ) {
-			this._cached_channel = channel.id;
+		if ( channel?.id && this._cached_id != channel.id ) {
+			this._cached_id = channel.id;
+			this._cached_channel = channel;
 			this.updateSubscription(channel.login);
 
 			this.getChannelColor(el, channel.id).then(color => {
@@ -171,6 +176,7 @@ export default class ModView extends Module {
 	}
 
 	removeRoot() {
+		this._cached_id = null;
 		this._cached_channel = null;
 		this.updateSubscription();
 		this.channel.updateChannelColor();
@@ -196,7 +202,7 @@ export default class ModView extends Module {
 			title = bcast?.title,
 			game = bcast?.game;
 
-		if ( channel?.id && channel.id != this._cached_channel )
+		if ( channel?.id && channel.id != this._cached_id )
 			this.checkRoot();
 
 		if ( title != el._cached_title || game?.id != el._cached_game ) {
@@ -209,6 +215,16 @@ export default class ModView extends Module {
 				title
 			});
 		}
+
+		if ( container ) {
+			if ( ! container._ffz_cont ) {
+				const e = container._ffz_cont = container.querySelector('.modview-player-widget__viewcount');
+				if ( e )
+					e.classList.add('ffz--mod-tray');
+			}
+
+			this.updateMetadata(container);
+		}
 	}
 
 	removeBar(el) {
@@ -218,18 +234,68 @@ export default class ModView extends Module {
 			title: null
 		});
 
-		if ( el._ffz_cont )
-			el._ffz_cont.classList.remove('ffz--meta-tray');
+		const container = el.closest('.modview-player-widget__stream-info');
+		if ( ! container )
+			return;
 
-		el._ffz_cont = null;
-		if ( el._ffz_meta_timers ) {
-			for(const val of Object.values(el._ffz_meta_timers))
+		if ( container._ffz_cont )
+			container._ffz_cont.classList.remove('ffz--mod-tray');
+
+		container._ffz_cont = null;
+		if ( container._ffz_meta_timers ) {
+			for(const val of Object.values(container._ffz_meta_timers))
 				clearTimeout(val);
 
-			el._ffz_meta_timers = null;
+			container._ffz_meta_timers = null;
 		}
 
-		el._ffz_update = null;
+		container._ffz_update = null;
+	}
+
+	updateMetadata(el, keys) {
+		const cont = el._ffz_cont,
+			channel = this._cached_channel;
+			//root = this.fine.getReactInstance(el);
+
+		/*let channel = null, state = root?.return?.memoizedState, i = 0;
+		while(state != null && channel == null && i < 50 ) {
+			state = state?.next;
+			channel = state?.memoizedState?.current?.previousData?.result?.data?.channel;
+			i++;
+		}*/
+
+		if ( ! cont || ! document.contains(cont) ) {
+			this.checkBar();
+			return;
+		}
+
+		if ( ! channel?.id )
+			return;
+
+		if ( ! keys )
+			keys = this.metadata.keys;
+		else if ( ! Array.isArray(keys) )
+			keys = [keys];
+
+		const timers = el._ffz_meta_timers = el._ffz_meta_timers || {},
+			refresh_fn = key => this.updateMetadata(el, key),
+			data = {
+				channel: {
+					id: channel.id,
+					login: channel.login,
+					display_name: channel.displayName
+				},
+				el,
+				getViewerCount: () => 0,
+				getUserSelfImmediate: () => null,
+				getUserSelf: () => null,
+				getBroadcastID: () => null
+			};
+
+		for(const key of keys)
+			if ( this.metadata.definitions[key].modview )
+				this.metadata.renderLegacy(key, data, cont, timers, refresh_fn);
+
 	}
 
 }

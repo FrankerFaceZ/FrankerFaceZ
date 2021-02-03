@@ -59,6 +59,7 @@ export default class HostButton extends Module {
 			border: true,
 			button: true,
 			fade_in: true,
+			modview: true,
 
 			disabled: () => this._host_updating || this._host_error,
 

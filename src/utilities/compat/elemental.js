@@ -152,9 +152,12 @@ export default class Elemental extends Module {
 	}
 
 
-	listen(inst) {
+	listen(inst, ensure_live = true) {
 		if ( this._watching.has(inst) )
 			return;
+
+		if ( ensure_live )
+			this._timer = Date.now();
 
 		this._watching.add(inst);
 		this._updateLiveWatching();

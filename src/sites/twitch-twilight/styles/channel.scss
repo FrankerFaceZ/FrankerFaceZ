@@ -60,6 +60,16 @@
 	margin-bottom: -.7rem !important;
 }
 
+.ffz--mod-tray {
+	margin-right: -1rem;
+
+	& > :not(.ffz-stat) {
+		order: 1;
+		margin-right: 1rem;
+	}
+}
+
+
 .ffz--meta-tray:not(.tw-flex-wrap) {
 	& > *:not(.ffz-stat) {
 		order: 500;

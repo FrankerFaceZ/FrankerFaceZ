@@ -291,6 +291,7 @@ export default class Metadata extends Module {
 		this.definitions['player-stats'] = {
 			button: true,
 			inherit: true,
+			modview: true,
 
 			refresh() {
 				return this.settings.get('metadata.player-stats')
