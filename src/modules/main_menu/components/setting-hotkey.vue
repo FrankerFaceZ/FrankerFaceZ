@@ -1,25 +1,47 @@
 <template lang="html">
-	<div class="ffz--widget ffz--hotkey-input">
-		<label :for="item.full_key">
-			{{ t(item.i18n_key, item.title) }}
-		</label>
-		<div class="tw-relative">
-			<div class="tw-input__icon-group tw-input__icon-group--right">
-				<div class="tw-input__icon">
-					<figure class="ffz-i-keyboard" />
-				</div>
-			</div>
-			<div
+	<div
+		:class="{inherits: isInherited, default: isDefault}"
+		class="ffz--widget ffz--hotkey-input"
+	>
+		<div class="tw-flex tw-align-items-center">
+			<label :for="item.full_key">
+				{{ t(item.i18n_key, item.title) }}
+				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+			</label>
+
+			<key-picker
 				:id="item.full_key"
-				ref="display"
-				type="text"
-				class="tw-mg-05 tw-input tw-input--icon-right"
-				tabindex="0"
-				@keyup="onKey"
+				ref="control"
+				:value="value"
+				@input="onInput"
+			/>
+
+			<component
+				:is="item.buttons"
+				v-if="item.buttons"
+				:context="context"
+				:item="item"
+				:value="value"
+			/>
+
+			<button
+				v-if="source && source !== profile"
+				class="tw-mg-l-05 tw-button tw-button--text"
+				@click="context.currentProfile = source"
 			>
-				&nbsp;
-			</div>
+				<span class="tw-button__text ffz-i-right-dir">
+					{{ sourceDisplay }}
+				</span>
+			</button>
+
+			<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text tw-tooltip__container" @click="clear">
+				<span class="tw-button__text ffz-i-cancel" />
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.reset', 'Reset to Default') }}
+				</div>
+			</button>
 		</div>
+
 		<section
 			v-if="item.description"
 			class="tw-c-text-alt-2"
@@ -34,13 +56,15 @@
 
 <script>
 
+import SettingMixin from '../setting-mixin';
+
 export default {
+	mixins: [SettingMixin],
 	props: ['item', 'context'],
 
 	methods: {
-		onKey(e) {
-			const name = `${e.ctrlKey ? 'Ctrl-' : ''}${e.shiftKey ? 'Shift-' : ''}${e.altKey ? 'Alt-' : ''}${e.code}`;
-			this.$refs.display.innerText = name;
+		onInput(value) {
+			this.set(value);
 		}
 	}
 }

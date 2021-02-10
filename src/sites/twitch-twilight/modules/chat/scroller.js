@@ -238,6 +238,7 @@ export default class Scroller extends Module {
 				inst.ffz_oldScrollEvent = inst.handleScrollEvent;
 				inst.ffz_oldScroll = inst.scrollToBottom;
 
+				inst.ffz_acting = false;
 				inst.ffz_outside = true;
 				inst._ffz_accessor = `_ffz_contains_${last_id++}`;
 
@@ -441,6 +442,20 @@ export default class Scroller extends Module {
 
 			// Keyboard Stuff
 
+			cls.prototype.ffzUpdateActing = function() {
+				if ( ! this._ffz_key_frame_acting )
+					this._ffz_key_frame_acting = requestAnimationFrame(() => this.ffz_updateActing());
+			}
+
+			cls.prototype.ffz_updateActing = function() {
+				this._ffz_key_frame_acting = null;
+
+				if ( ! this.scrollRef?.root )
+					return;
+
+				this.scrollRef.root.dataset.acting = this.ffz_acting;
+			}
+
 			cls.prototype.ffzUpdateKeyTags = function() {
 				if ( ! this._ffz_key_frame )
 					this._ffz_key_frame = requestAnimationFrame(() => this.ffz_updateKeyTags());
@@ -488,6 +503,7 @@ export default class Scroller extends Module {
 					require_hover = t.pause_hover;
 
 				return (! require_hover || ! this.ffz_outside) && (
+					(this.ffz_acting) ||
 					(this.ffz_ctrl  && (mode === 2 || mode === 6)) ||
 					(this.ffz_meta  && (mode === 3 || mode === 7)) ||
 					(this.ffz_alt   && (mode === 4 || mode === 8)) ||
@@ -526,15 +542,16 @@ export default class Scroller extends Module {
 					msg = t.i18n.t('chat.messages-below', 'Chat Paused Due to Scroll');
 				else if ( this.state.isPaused ) {
 					const f = this.ffzGetMode(),
-						reason = f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
-							f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
-								f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
-									f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
-										f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
-											f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
-												f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
-													f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
-														t.i18n.t('key.mouse', 'Mouse Movement');
+						reason = this.ffz_acting ? t.i18n.t('chat.acting', 'Taking Action') :
+							f === 2 ? t.i18n.t('key.ctrl', 'Ctrl Key') :
+								f === 3 ? t.i18n.t('key.meta', 'Meta Key') :
+									f === 4 ? t.i18n.t('key.alt', 'Alt Key') :
+										f === 5 ? t.i18n.t('key.shift', 'Shift Key') :
+											f === 6 ? t.i18n.t('key.ctrl_mouse', 'Ctrl or Mouse') :
+												f === 7 ? t.i18n.t('key.meta_mouse', 'Meta or Mouse') :
+													f === 8 ? t.i18n.t('key.alt_mouse', 'Alt or Mouse') :
+														f === 9 ? t.i18n.t('key.shift_mouse', 'Shift or Mouse') :
+															t.i18n.t('key.mouse', 'Mouse Movement');
 
 					msg = t.i18n.t('chat.paused', 'Chat Paused Due to {reason}', {reason});
 					cls = 'ffz--freeze-indicator';

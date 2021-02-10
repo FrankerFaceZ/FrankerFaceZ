@@ -90,7 +90,7 @@ export default {
 			this.value = deep_copy(value);
 
 			if ( this.item.onUIChange )
-				this.item.onUIChange(this.value);
+				this.item.onUIChange(this.value, this);
 		},
 
 		clear() {
@@ -102,7 +102,7 @@ export default {
 			this.has_value = false;
 
 			if ( this.item.onUIChange )
-				this.item.onUIChange(this.value);
+				this.item.onUIChange(this.value, this);
 		}
 	}
 }

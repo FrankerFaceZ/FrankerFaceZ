@@ -66,11 +66,11 @@ export default {
 			this.error = false;
 			this.message = null;
 
-			let blob;
+			let file;
 			try {
-				const settings = this.item.getFFZ().resolve('settings'),
-					data = await settings.getFullBackup();
-				blob = new Blob([JSON.stringify(data)], {type: 'application/json;charset=utf-8'});
+				const settings = this.item.getFFZ().resolve('settings');
+				file = await settings.generateBackupFile();
+
 			} catch(err) {
 				this.error_desc = this.t('setting.backup-restore.dump-error', 'Unable to export settings data to JSON.');
 				this.error = true;
@@ -78,7 +78,7 @@ export default {
 			}
 
 			try {
-				saveAs(blob, 'ffz-settings.json');
+				saveAs(file, file.name);
 			} catch(err) {
 				this.error_desc = this.t('setting.backup-restore.save-error', 'Unable to save.');
 			}
@@ -88,9 +88,22 @@ export default {
 			this.error = false;
 			this.message = null;
 
+			let file;
+			try {
+				file = await openFile('application/json,application/zip');
+			} catch(err) {
+				this.error_desc = this.t('setting.backup-restore.read-error', 'Unable to read file.');
+				this.error = true;
+				return;
+			}
+
+			// We might get a different MIME than expected, roll with it.
+			if ( file.type.toLowerCase().includes('zip') )
+				return this.restoreZip(file);
+
 			let contents;
 			try {
-				contents = await readFile(await openFile('application/json'));
+				contents = await readFile(file);
 			} catch(err) {
 				this.error_desc = this.t('setting.backup-restore.read-error', 'Unable to read file.');
 				this.error = true;
@@ -134,6 +147,101 @@ export default {
 
 			this.message = this.t('setting.backup-restore.restored', '{count,number} items have been restored. Please refresh this page.', {
 				count: i
+			});
+		},
+
+		async restoreZip(file) {
+			const JSZip = (await import(/* webpackChunkName: "zip" */ 'jszip')).default;
+			let input, blobs, data;
+
+			try {
+				input = await (new JSZip().loadAsync(file));
+
+				blobs = await input.file('blobs.json').async('text');
+				data = await input.file('settings.json').async('text');
+
+			} catch(err) {
+				this.error_desc = this.t('setting.backup-restore.zip-error', 'Unable to parse ZIP archive.');
+				this.error = true;
+			}
+
+			try {
+				blobs = JSON.parse(blobs);
+				data = JSON.parse(data);
+			} catch(err) {
+				this.error_desc = this.t('setting.backup-restore.json-error', 'Unable to parse file as JSON.');
+				this.error = true;
+				return;
+			}
+
+			if ( ! data || data.version !== 2 ) {
+				this.error_desc = this.t('setting.backup-restore.old-file', 'This file is invalid or was created in another version of FrankerFaceZ and cannot be loaded.');
+				this.error = true;
+				return;
+			}
+
+			if ( data.type !== 'full' ) {
+				this.error_desc = this.t('setting.backup-restore.non-full', 'This file is not a full backup and cannot be restored with this tool.');
+				this.error = true;
+				return;
+			}
+
+			const settings = this.item.getFFZ().resolve('settings');
+			await settings.awaitProvider();
+			const provider = settings.provider;
+			await provider.awaitReady();
+
+			if ( Object.keys(blobs).length && ! provider.supportsBlobs ) {
+				this.error_desc = this.t('setting.backup-restore.blob-error', 'This backup contains binary data not supported by the current storage provider. Please change your storage provider in Data Management > Storage >> Provider.');
+				this.error = true;
+				return;
+			}
+
+			// Attempt to load all the blobs, to make sure they're all valid.
+			const loaded_blobs = {};
+
+			for(const [safe_key, data] of Object.entries(blobs)) {
+				let blob;
+				if ( data.type === 'file' ) {
+					blob = await input.file(`blobs/${safe_key}`).async('blob'); // eslint-disable-line no-await-in-loop
+					blob = new File([blob], data.name, {lastModified: data.modified, type: data.mime});
+				} else if ( data.type === 'blob' )
+					blob = await input.file(`blobs/${safe_key}`).async('blob'); // eslint-disable-line no-await-in-loop
+				else if ( data.type === 'ab' )
+					blob = await input.file(`blobs/${safe_key}`).async('arraybuffer'); // eslint-disable-line no-await-in-loop
+				else if ( data.type === 'ui8' )
+					blob = await input.file(`blobs/${safe_key}`).async('uint8array'); // eslint-disable-line no-await-in-loop
+				else {
+					this.error_desc = this.t('setting.backup-restore.invalid-blob', 'This file contains a binary blob with an invalid type: {type}', data);
+					this.error = true;
+				}
+
+				loaded_blobs[data.key] = blob;
+			}
+
+			// We've loaded all data, let's get this installed.
+			// Blobs first.
+			let b = 0;
+			await provider.clearBlobs();
+
+			for(const [key, blob] of Object.entries(loaded_blobs)) {
+				await provider.setBlob(key, blob); // eslint-disable-line no-await-in-loop
+				b++;
+			}
+
+			// Settings second.
+			provider.clear();
+			let i = 0;
+			for(const key of Object.keys(data.values)) {
+				const val = data.values[key];
+				provider.set(key, val);
+				provider.emit('changed', key, val, false);
+				i++;
+			}
+
+			this.message = this.t('setting.backup-restore.zip-restored', '{count,number} items and {blobs,number} binary blobs have been restored. Please refresh this page.', {
+				count: i,
+				blobs: b
 			});
 		}
 	}

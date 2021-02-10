@@ -276,9 +276,20 @@ export default {
 		async doImport() {
 			this.resetImport();
 
-			let contents;
+			let file, contents;
 			try {
-				contents = await readFile(await openFile('application/json'));
+				file = await openFile('application/json,application/zip');
+
+				// We might get a different MIME than expected, roll with it.
+				if ( file.type.toLowerCase().includes('zip') ) {
+					const JSZip = (await import(/* webpackChunkName: "zip" */ 'jszip')).default,
+						zip = await (new JSZip().loadAsync(file));
+
+					contents = await zip.file('settings.json').async('text');
+
+				} else
+					contents = await readFile(file);
+
 			} catch(err) {
 				this.import_error = true;
 				this.import_error_message = this.t('setting.backup-restore.read-error', 'Unable to read file.');

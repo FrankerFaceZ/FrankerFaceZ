@@ -38,6 +38,9 @@
 							<span v-if="val.has_data" class="tw-mg-l-1 tw-c-text-alt">
 								{{ t('setting.provider.has-data', '(Has Data)') }}
 							</span>
+							<span v-if="val.has_blobs" class="tw-mg-l-1 tw-c-text-alt">
+								{{ t('setting.provider.has-blobs', '(Supports Binary Data)') }}
+							</span>
 						</div>
 						<section v-if="val.description" class="tw-c-text-alt-2">
 							<markdown :source="t(val.desc_i18n_key, val.description)" />
@@ -100,6 +103,7 @@ export default {
 			const prov = {
 				key,
 				has_data: null,
+				has_blobs: val.supportsBlobs,
 				i18n_key: `setting.provider.${key}.title`,
 				title: val.title || key,
 				desc_i18n_key: val.description ? `setting.provider.${key}.desc` : null,

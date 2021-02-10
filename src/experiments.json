@@ -1,4 +1,12 @@
 {
+	"new_links": {
+		"name": "New Link Tokenization",
+		"description": "Update to Twitch's latest link regex. Experiment while this is checked for bugs.",
+		"groups": [
+			{"value": true, "weight": 50},
+			{"value": false, "weight": 50}
+		]
+	},
 	"api_load": {
 		"name": "New API Stress Testing",
 		"description": "Send duplicate requests to the new API server for load testing.",

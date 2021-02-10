@@ -20,6 +20,7 @@ export const LV_SOCKET_SERVER = 'wss://cbenni.com/socket.io/';
 
 
 export const KEYS = {
+	Tab: 9,
 	Enter: 13,
 	Shift: 16,
 	Control: 17,

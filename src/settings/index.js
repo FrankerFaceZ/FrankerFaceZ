@@ -215,8 +215,86 @@ export default class SettingsManager extends Module {
 	// Backup and Restore
 	// ========================================================================
 
-	async getFullBackup() {
+	async generateBackupFile() {
+		if ( await this._needsZipBackup() ) {
+			const blob = await this._getZipBackup();
+			return new File([blob], 'ffz-settings.zip', {type: 'application/zip'});
+		}
+
+		const settings = await this.getSettingsDump();
+		return new File([JSON.stringify(settings)], 'ffz-settings.json', {type: 'application/json;charset=utf-8'});
+	}
+
+
+	async _needsZipBackup() {
 		// Before we do anything else, make sure the provider is ready.
+		await this.awaitProvider();
+		await this.provider.awaitReady();
+
+		if ( ! this.provider.supportsBlobs )
+			return false;
+
+		const keys = await this.provider.blobKeys();
+		return Array.isArray(keys) ? keys.length > 0 : false;
+	}
+
+
+	async _getZipBackup() {
+		// Before we do anything else, make sure the provider is ready.
+		await this.awaitProvider();
+		await this.provider.awaitReady();
+
+		// Create our ZIP file.
+		const JSZip = (await import(/* webpackChunkName: "zip" */ 'jszip')).default,
+			out = new JSZip();
+
+		// Normal Settings
+		const settings = await this.getSettingsDump();
+		out.file('settings.json', JSON.stringify(settings));
+
+		// Blob Settings
+		const metadata = {};
+
+		if ( this.provider.supportsBlobs ) {
+			const keys = await this.provider.blobKeys();
+			for(const key of keys) {
+				const safe_key = encodeURIComponent(key),
+					blob = await this.provider.getBlob(key); // eslint-disable-line no-await-in-loop
+				if ( ! blob )
+					continue;
+
+				const md = {key};
+
+				if ( blob instanceof File ) {
+					md.type = 'file';
+					md.name = blob.name;
+					md.modified = blob.lastModified;
+					md.mime = blob.type;
+
+				} else if ( blob instanceof Blob ) {
+					md.type = 'blob';
+
+				} else if ( blob instanceof ArrayBuffer ) {
+					md.type = 'ab';
+				} else if ( blob instanceof Uint8Array ) {
+					md.type = 'ui8';
+				} else
+					continue;
+
+				metadata[safe_key] = md;
+				out.file(`blobs/${safe_key}`, blob);
+			}
+		}
+
+		out.file('blobs.json', JSON.stringify(metadata));
+
+		return out.generateAsync({type: 'blob'});
+	}
+
+
+	async getSettingsDump() {
+		// Before we do anything else, make sure the provider is ready.
+		await this.awaitProvider();
 		await this.provider.awaitReady();
 
 		const out = {

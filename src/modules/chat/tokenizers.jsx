@@ -13,6 +13,7 @@ import {CATEGORIES} from './emoji';
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
+	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
 	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
 	MENTION_REGEX = /^(['"*([{<\\/]*)(@)((?:[^\u0000-\u007F]|[\w-])+)(?:\b|$)/; // eslint-disable-line no-control-regex
 
@@ -146,6 +147,8 @@ export const Links = {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
+		const use_new = this.experiments.getAssignment('new_links');
+
 		const out = [];
 		for(const token of tokens) {
 			if ( token.type !== 'text' ) {
@@ -154,24 +157,43 @@ export const Links = {
 			}
 
 			LINK_REGEX.lastIndex = 0;
+			NEW_LINK_REGEX.lastIndex = 0;
 			const text = token.text;
 			let idx = 0, match;
 
-			while((match = LINK_REGEX.exec(text))) {
-				const nix = match.index + (match[1] ? match[1].length : 0);
-				if ( idx !== nix )
-					out.push({type: 'text', text: text.slice(idx, nix)});
+			if ( use_new ) {
+				while((match = NEW_LINK_REGEX.exec(text))) {
+					const nix = match.index;
+					if ( idx !== nix )
+						out.push({type: 'text', text: text.slice(idx, nix)});
 
-				const is_mail = ! match[3] && match[2].indexOf('/') === -1 && match[2].indexOf('@') !== -1;
+					out.push({
+						type: 'link',
+						url: `${match[1] ? '' : 'https://'}${match[0]}`,
+						is_mail: false,
+						text: match[0]
+					});
 
-				out.push({
-					type: 'link',
-					url: (match[3] ? '' : is_mail ? 'mailto:' : 'https://') + match[2],
-					is_mail,
-					text: match[2]
-				});
+					idx = nix + match[0].length;
+				}
 
-				idx = nix + match[2].length;
+			} else {
+				while((match = LINK_REGEX.exec(text))) {
+					const nix = match.index + (match[1] ? match[1].length : 0);
+					if ( idx !== nix )
+						out.push({type: 'text', text: text.slice(idx, nix)});
+
+					const is_mail = ! match[3] && match[2].indexOf('/') === -1 && match[2].indexOf('@') !== -1;
+
+					out.push({
+						type: 'link',
+						url: (match[3] ? '' : is_mail ? 'mailto:' : 'https://') + match[2],
+						is_mail,
+						text: match[2]
+					});
+
+					idx = nix + match[2].length;
+				}
 			}
 
 			if ( idx < text.length )

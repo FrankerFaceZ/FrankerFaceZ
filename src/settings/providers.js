@@ -10,6 +10,11 @@ import {has} from 'utilities/object';
 const DB_VERSION = 1;
 
 
+export function isValidBlob(blob) {
+	return blob instanceof Blob || blob instanceof File || blob instanceof ArrayBuffer || blob instanceof Uint8Array;
+}
+
+
 // ============================================================================
 // SettingsProvider
 // ============================================================================
@@ -37,6 +42,8 @@ export class SettingsProvider extends EventEmitter {
 		return false;
 	}
 
+	static supportsBlobs = false;
+
 	awaitReady() {
 		if ( this.ready )
 			return Promise.resolve();
@@ -60,7 +67,9 @@ export class SettingsProvider extends EventEmitter {
 	entries() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
 	get size() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
 
-	get supportsBlobs() { return false; } // eslint-disable-line class-methods-use-this
+	get supportsBlobs() { return this.constructor.supportsBlobs; } // eslint-disable-line class-methods-use-this
+
+	isValidBlob(blob) { return this.supportsBlobs && isValidBlob(blob) }
 
 	async getBlob(key) { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this, no-unused-vars, require-await
 	async setBlob(key, value) { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this, no-unused-vars, require-await
@@ -384,7 +393,9 @@ export class IndexedDBProvider extends SettingsProvider {
 	static title = 'IndexedDB';
 	static description = '[IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) is available on most platforms, and has a slightly slower initialization time than Local Storage. IndexedDB has a higher storage capacity and is less likely to be cleared unexpectedly.';
 
-	get supportsBlobs() { return true; } // eslint-disable-line class-methods-use-this
+	static supportsBlobs = true;
+
+	//get supportsBlobs() { return true; } // eslint-disable-line class-methods-use-this
 
 	destroy() {
 		this.disable();
@@ -811,6 +822,9 @@ export class IndexedDBProvider extends SettingsProvider {
 	async setBlob(key, value) {
 		if ( this.disabled )
 			return;
+
+		if ( ! this.isValidBlob(value) )
+			throw new Error('Invalid blob type');
 
 		const db = await this.getDB(),
 			trx = db.transaction(['blobs'], 'readwrite'),

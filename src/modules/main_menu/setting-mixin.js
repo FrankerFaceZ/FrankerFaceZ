@@ -92,6 +92,13 @@ export default {
 			return this.source && this.sourceOrder < this.profileOrder;
 		},
 
+		isValid() {
+			if ( typeof this.item.validator === 'function' )
+				return this.item.validator(this.value, this);
+
+			return true;
+		},
+
 		sourceOrder() {
 			return this.source ? this.source.order : Infinity
 		},
@@ -186,14 +193,14 @@ export default {
 			this.profile.set(this.item.setting, value);
 
 			if ( this.item.onUIChange )
-				this.item.onUIChange(value);
+				this.item.onUIChange(value, this);
 		},
 
 		clear() {
 			this.profile.delete(this.item.setting);
 
 			if ( this.item.onUIChange )
-				this.item.onUIChange(this.value);
+				this.item.onUIChange(this.value, this);
 		}
 	}
 }
