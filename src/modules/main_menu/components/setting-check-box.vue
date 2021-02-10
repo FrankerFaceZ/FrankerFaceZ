@@ -50,13 +50,13 @@
 		<section
 			v-if="item.description"
 			class="tw-c-text-alt-2"
-			style="padding-left:2.2rem"
+			style="padding-left:2.5rem"
 		>
 			<markdown :source="t(item.desc_i18n_key || `${item.i18n_key}.description`, item.description)" />
 		</section>
 		<section
 			v-if="item.extra"
-			style="padding-left:2.2rem"
+			style="padding-left:2.5rem"
 		>
 			<component :is="item.extra.component" :context="context" :item="item" />
 		</section>

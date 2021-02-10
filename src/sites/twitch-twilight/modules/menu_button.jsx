@@ -232,6 +232,13 @@ export default class MenuButton extends SiteModule {
 		this.on('i18n:changed-strings', this.update);
 		this.on('i18n:update', this.update);
 		this.on('addons:data-loaded', this.update);
+		this.on('settings:change-provider', () => {
+			this.error = {
+				i18n: 'site.menu_button.changed',
+				text: 'The FrankerFaceZ settings provider has changed. Please refresh this tab to avoid strange behavior.'
+			};
+			this.update()
+		});
 	}
 
 	updateButton(inst) {
@@ -313,14 +320,14 @@ export default class MenuButton extends SiteModule {
 							<div class="tw-flex-grow-1">
 								{ this.error.i18n ? this.i18n.t(this.error.i18n, this.error.text) : this.error.text }
 							</div>
-							<button
+							{this.error.permanent ? null : (<button
 								class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip__container"
 								onClick={() => this.error = null} // eslint-disable-line react/jsx-no-bind
 							>
 								<span class="tw-button-icon__icon">
 									<figure class="ffz-i-cancel" />
 								</span>
-							</button>
+							</button>)}
 						</div>
 					</div>
 				</div>)}

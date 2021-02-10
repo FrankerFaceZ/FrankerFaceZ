@@ -66,6 +66,12 @@ export default class MainMenu extends Module {
 			force_seen: true
 		});
 
+		this.settings.addUI('provider', {
+			path: 'Data Management > Storage >> tabs ~> Provider',
+			component: 'provider',
+			force_seen: true
+		});
+
 		this.settings.addUI('home', {
 			path: 'Home @{"sort": -1000, "profile_warning": false}',
 			component: 'home-page'

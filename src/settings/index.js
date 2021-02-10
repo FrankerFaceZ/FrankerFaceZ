@@ -7,11 +7,11 @@
 import Module from 'utilities/module';
 import {deep_equals, has, debounce, deep_copy} from 'utilities/object';
 
-import {IndexedDBProvider, LocalStorageProvider} from './providers';
 import SettingsProfile from './profile';
 import SettingsContext from './context';
 import MigrationManager from './migration';
 
+import * as PROVIDERS from './providers';
 import * as FILTERS from './filters';
 import * as CLEARABLES from './clearables';
 
@@ -32,6 +32,18 @@ export default class SettingsManager extends Module {
 	 */
 	constructor(...args) {
 		super(...args);
+
+		this.providers = {};
+		for(const key in PROVIDERS)
+			if ( has(PROVIDERS, key) ) {
+				const provider = PROVIDERS[key];
+				if ( provider.key && provider.supported() )
+					this.providers[provider.key] = provider;
+			}
+
+		// This cannot be modified at a future time, as providers NEED
+		// to be ready very early in FFZ intitialization. Seal it.
+		Object.seal(this.providers);
 
 		this.updateSoon = debounce(() => this.updateRoutes(), 50, false);
 
@@ -68,9 +80,19 @@ export default class SettingsManager extends Module {
 
 
 		// Create our provider as early as possible.
-		const provider = this.provider = this._createProvider();
-		this.log.info(`Using Provider: ${provider.constructor.name}`);
-		provider.on('changed', this._onProviderChange, this);
+		this._provider_waiters = [];
+
+		this._createProvider().then(provider => {
+			this.provider = provider;
+			this.log.info(`Using Provider: ${provider.constructor.name}`);
+			provider.on('changed', this._onProviderChange, this);
+			provider.on('change-provider', () => {
+				this.emit(':change-provider');
+			});
+
+			for(const waiter of this._provider_waiters)
+				waiter(provider);
+		});
 
 		this.migrations = new MigrationManager(this);
 
@@ -113,11 +135,22 @@ export default class SettingsManager extends Module {
 		return out.join('\n');
 	}
 
+	awaitProvider() {
+		if ( this.provider )
+			return Promise.resolve(this.provider);
+
+		return new Promise(s => {
+			this._provider_waiters.push(s);
+		});
+	}
+
+
 	/**
 	 * Called when the SettingsManager instance should be enabled.
 	 */
 	async onEnable() {
 		// Before we do anything else, make sure the provider is ready.
+		await this.awaitProvider();
 		await this.provider.awaitReady();
 
 		// When the router updates we additional routes, make sure to
@@ -233,20 +266,126 @@ export default class SettingsManager extends Module {
 	// ========================================================================
 
 	/**
+	 * Return an object with all the known, supported providers.
+	 * @returns {Object} The object.
+	 */
+	getProviders() {
+		return this.providers;
+	}
+
+	/**
+	 * Return the key of the active provider.
+	 * @returns {String} The key for the active provider
+	 */
+	getActiveProvider() {
+		return this._active_provider;
+	}
+
+	/**
 	 * Evaluate the environment that FFZ is running in and then decide which
 	 * provider should be used to retrieve and store settings.
 	 *
 	 * @returns {SettingsProvider} The provider to store everything.
 	 */
-	_createProvider() {
-		// Prefer IndexedDB if it's available because it's more persistent
-		// and can store more data. Plus, we don't have to faff around with
-		// JSON conversion all the time.
-		if ( IndexedDBProvider.supported() && localStorage.ffzIDB )
-			return this._idb = new IndexedDBProvider(this);
+	async _createProvider() {
+		let wanted = localStorage.ffzProvider;
+		if ( wanted == null )
+			wanted = localStorage.ffzProvider = await this.sniffProvider();
 
-		// Fallback
-		return new LocalStorageProvider(this);
+		if ( this.providers[wanted] ) {
+			const provider = new this.providers[wanted](this);
+			if ( wanted === 'idb' )
+				this._idb = provider;
+
+			this._active_provider = wanted;
+			return provider;
+		}
+
+		// Fallback to localStorage if nothing else was wanted and available.
+		this._active_provider = 'local';
+		return new this.providers.local(this);
+	}
+
+
+	/**
+	 * Evaluate the environment and attempt to guess which provider we should
+	 * use for storing settings. This is necessary in case localStorage is
+	 * cleared while we have settings stored in IndexedDB.
+	 *
+	 * In the future, this may default to IndexedDB for new users.
+	 *
+	 * @returns {String} The key for which provider we should use.
+	 */
+	async sniffProvider() {
+		const providers = Object.values(this.providers);
+		providers.sort((a,b) => b.priority - a.priority);
+
+		for(const provider of providers) {
+			if ( provider.supported() && provider.hasContent && await provider.hasContent() ) // eslint-disable-line no-await-in-loop
+				return provider.key;
+		}
+
+		// Fallback to local if no provider indicated present settings.
+		return 'local';
+	}
+
+	/**
+	 * Change to a new settings provider. This immediately prevents changes
+	 * to the old provider, and will reload the page when settings have
+	 * been transfered over.
+	 *
+	 * @param {String} key The key of the new provider to swap to.
+	 * @param {Boolean} transfer Whether or not settings should be transferred
+	 * from the current provider.
+	 */
+	async changeProvider(key, transfer) {
+		if ( ! this.providers[key] || ! this.providers[key].supported() )
+			throw new Error(`Invalid provider: ${key}`);
+
+		// If we're changing to the current provider... well, that doesn't make
+		// a lot of sense, does it? Abort!
+		if ( key === this._active_provider )
+			return;
+
+		const old_provider = this.provider;
+		this.provider = null;
+
+		// Let all other tabs know what's up.
+		old_provider.broadcastTransfer();
+
+		// Are we transfering settings?
+		if ( transfer ) {
+			const new_provider = new this.providers[key](this);
+
+			old_provider.disableEvents();
+
+			// When transfering, we clear all existing settings.
+			await new_provider.clear();
+			if ( new_provider.supportsBlobs )
+				await new_provider.clearBlobs();
+
+			for(const [key,val] of old_provider.entries())
+				new_provider.set(key, val);
+
+			if ( old_provider.supportsBlobs && new_provider.supportsBlobs ) {
+				for(const key of await old_provider.blobKeys() ) {
+					const blob = await old_provider.getBlob(key); // eslint-disable-line no-await-in-loop
+					if ( blob )
+						await new_provider.setBlob(key, blob); // eslint-disable-line no-await-in-loop
+				}
+
+				await old_provider.clearBlobs();
+			}
+
+			old_provider.clear();
+
+			await old_provider.flush();
+			await new_provider.flush();
+		}
+
+		// Change over.
+		localStorage.ffzProvider = key;
+		location.reload();
 	}
 
 
@@ -587,7 +726,11 @@ export default class SettingsManager extends Module {
 			this.on(`:changed:${key}`, definition.changed);
 
 		this.definitions.set(key, definition);
-		this.emit(':added-definition', key, definition);
+
+		// Do not re-emit `added-definition` when re-adding an existing
+		// setting. Prevents the settings UI from goofing up.
+		if ( ! old_definition || Array.isArray(old_definition) )
+			this.emit(':added-definition', key, definition);
 	}
 
 
@@ -612,8 +755,13 @@ export default class SettingsManager extends Module {
 		if ( ! ui.key && ui.title )
 			ui.key = ui.title.toSnakeCase();
 
+		const old_definition = this.ui_structures.get(key);
 		this.ui_structures.set(key, definition);
-		this.emit(':added-definition', key, definition);
+
+		// Do not re-emit `added-definition` when re-adding an existing
+		// setting. Prevents the settings UI from goofing up.
+		if ( ! old_definition )
+			this.emit(':added-definition', key, definition);
 	}
 
 

@@ -63,6 +63,9 @@ export const Everything = {
 	label: 'Absolutely Everything',
 	clear(provider, settings) {
 		provider.clear();
+		if ( provider.supportsBlobs() )
+			provider.clearBlobs();
+
 		settings.loadProfiles();
 	}
 };

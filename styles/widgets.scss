@@ -27,6 +27,13 @@
 	}
 }
 
+.ffz-radio-top {
+	.tw-radio__input:checked+.tw-radio__label:after,
+	.tw-radio__label:before {
+		top: 1rem;
+	}
+}
+
 .ffz--i18n-entry {
 	&:nth-child(2n+1) {
 		background-color: var(--color-background-alt-2);
