@@ -16,10 +16,10 @@ export const PLAYER_ROUTES = [
 	'mod-view', 'user-home'
 ];
 
-const HAS_PITCH = (() => {
+/*const HAS_PITCH = (() => {
 	const el = createElement('video');
 	return el.preservesPitch != null || el.mozPreservesPitch != null
-})();
+})();*/
 
 const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null;
 
@@ -1216,7 +1216,7 @@ export default class Player extends Module {
 		let comp = video._ffz_compressor;
 		if ( ! comp ) {
 			const ctx = new AudioContext();
-			if ( ctx.state === 'suspended' ) {
+			if ( ! IS_FIREFOX && ctx.state === 'suspended' ) {
 				this.log.info('Aborting due to browser auto-play policy.');
 				return;
 			}

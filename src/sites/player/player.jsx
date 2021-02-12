@@ -907,7 +907,7 @@ export default class Player extends Module {
 		let comp = video._ffz_compressor;
 		if ( ! comp ) {
 			const ctx = new AudioContext();
-			if ( ctx.state === 'suspended' ) {
+			if ( ! IS_FIREFOX && ctx.state === 'suspended' ) {
 				this.log.info('Aborting due to browser auto-play policy.');
 				return;
 			}
