@@ -67,9 +67,9 @@ export default class Overrides extends Module {
 			no_update: true,
 			no_auto_remove: true,
 
-			tooltipClass: 'ffz-action-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
-			arrowClass: '', //tw-balloon__tail tw-overflow-hidden tw-absolute',
-			arrowInner: '', //tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
+			tooltipClass: 'ffz-action-balloon ffz-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
+			arrowClass: '', //ffz-balloon__tail tw-overflow-hidden tw-absolute',
+			arrowInner: '', //ffz-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
 			innerClass: '',
 
 			popper: {

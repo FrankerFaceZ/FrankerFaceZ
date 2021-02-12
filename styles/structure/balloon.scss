@@ -1,0 +1,23 @@
+.ffz-balloon {
+	max-width: 90vw;
+	min-width: 16rem;
+
+	&--auto {
+		min-width: 0;
+		white-space: nowrap;
+	}
+
+	&--xs {
+		min-width: 10rem;
+		width: 10rem;
+	}
+
+	&--sm { width: 20rem }
+	&--md { width: 30rem }
+	&--lg { width: 40rem }
+	&--xl { width: 50rem }
+}
+
+.ffz-balloon--overlay-border {
+	border: 2px solid var(--color-border-balloon-overlay);
+}

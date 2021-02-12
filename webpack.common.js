@@ -12,6 +12,7 @@ const PRODUCTION = process.env.NODE_ENV === 'production';
 module.exports = {
 	entry: {
 		bridge: './src/bridge.js',
+		player: './src/player.js',
 		avalon: './src/main.js'
 	},
 	resolve: {
@@ -39,6 +40,9 @@ module.exports = {
 	},
 	optimization: {
 		splitChunks: {
+			chunks(chunk) {
+				return chunk.name !== 'avalon' && chunk.name !== 'bridge' && chunk.name !== 'player'
+			},
 			cacheGroups: {
 				vendors: false
 			}

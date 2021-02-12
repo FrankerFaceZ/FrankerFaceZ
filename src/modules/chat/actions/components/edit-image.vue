@@ -7,7 +7,7 @@
 		<input
 			id="edit_image"
 			v-model="value.image"
-			class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+			class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 			@input="$emit('input', value)"
 		>
 	</div>

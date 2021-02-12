@@ -98,7 +98,7 @@
 					id="ffz:editor:name"
 					ref="name"
 					v-model="name"
-					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				>
 			</div>
 
@@ -111,7 +111,7 @@
 					id="ffz:editor:description"
 					ref="desc"
 					v-model="desc"
-					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				/>
 			</div>
 		</div>

@@ -14,8 +14,10 @@ export class Logger {
 		this.parent = parent;
 		this.name = name;
 
-		if ( this.root == this )
+		if ( this.root == this ) {
 			this.captured_init = [];
+			this.label = 'FFZ';
+		}
 
 		this.init = false;
 		this.enabled = true;
@@ -92,9 +94,9 @@ export class Logger {
 		});
 
 		if ( this.name )
-			message.unshift(`%cFFZ [%c${this.name}%c]:%c`, 'color:#755000; font-weight:bold', '', 'color:#755000; font-weight:bold', '');
+			message.unshift(`%c${this.root.label} [%c${this.name}%c]:%c`, 'color:#755000; font-weight:bold', '', 'color:#755000; font-weight:bold', '');
 		else
-			message.unshift('%cFFZ:%c', 'color:#755000; font-weight:bold', '');
+			message.unshift(`%c${this.root.label}:%c`, 'color:#755000; font-weight:bold', '');
 
 		if ( level === Logger.DEBUG )
 			console.debug(...message);

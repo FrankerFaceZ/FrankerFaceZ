@@ -12,153 +12,153 @@
 			<div class="tw-flex tw-flex-wrap tw-align-items-center ffz--inline">
 				{{ t('setting.actions.preview', 'Preview:') }}
 
-				<div class="tw-pd-x-1 tw-checkbox">
+				<div class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="as_mod"
 						ref="as_mod"
 						:checked="is_moderator"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="as_mod" class="tw-checkbox__label">
+					<label for="as_mod" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.mod', 'As Moderator') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_msg" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_msg" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="is_deleted"
 						ref="is_deleted"
 						:checked="is_deleted"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="is_deleted" class="tw-checkbox__label">
+					<label for="is_deleted" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.deleted', 'Deleted Message') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_icons" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_icons" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="with_mod_icons"
 						ref="with_mod_icons"
 						:checked="with_mod_icons"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="with_mod_icons" class="tw-checkbox__label">
+					<label for="with_mod_icons" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.mod_icons', 'With Mod Icons') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_mode" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="with_slow"
 						ref="with_slow"
 						:checked="with_slow"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="with_slow" class="tw-checkbox__label">
+					<label for="with_slow" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.slow', 'Slow Mode') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_mode" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="with_emote"
 						ref="with_emote"
 						:checked="with_emote"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="with_emote" class="tw-checkbox__label">
+					<label for="with_emote" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.emote-only', 'Emote-Only') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_mode" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="with_subs"
 						ref="with_subs"
 						:checked="with_subs"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="with_subs" class="tw-checkbox__label">
+					<label for="with_subs" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.subs', 'Subs Only') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_mode" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="with_followers"
 						ref="with_followers"
 						:checked="with_followers"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="with_followers" class="tw-checkbox__label">
+					<label for="with_followers" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.followers', 'Followers-Only') }}
 						</span>
 					</label>
 				</div>
 
-				<div v-if="has_mode" class="tw-pd-x-1 tw-checkbox">
+				<div v-if="has_mode" class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="with_r9k"
 						ref="with_r9k"
 						:checked="with_r9k"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="with_r9k" class="tw-checkbox__label">
+					<label for="with_r9k" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.r9k', 'R9k Mode') }}
 						</span>
 					</label>
 				</div>
 
-				<div class="tw-pd-x-1 tw-checkbox">
+				<div class="tw-pd-x-1 ffz-checkbox">
 					<input
 						id="show_all"
 						ref="show_all"
 						:checked="show_all"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@change="onPreview"
 					>
 
-					<label for="show_all" class="tw-checkbox__label">
+					<label for="show_all" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.actions.preview.all', 'Show All') }}
 						</span>
@@ -230,7 +230,7 @@
 								<input
 									ref="paste"
 									:placeholder="t('setting.paste-json.json', '[json]')"
-									class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+									class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 									@keydown.enter="addFromJSON"
 								>
 								<button
@@ -245,7 +245,7 @@
 						</div>
 						<div v-else class="tw-pd-y-1">
 							<button
-								class="tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-full-width"
+								class="ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-full-width"
 								@click="add_pasting = true"
 							>
 								<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
@@ -264,7 +264,7 @@
 									v-else
 									:key="idx"
 									:disabled="preset.disabled"
-									class="tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-full-width"
+									class="ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-full-width"
 									@click="add(preset.value)"
 								>
 									<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">

@@ -29,8 +29,8 @@
 }
 
 .ffz-radio-top {
-	.tw-radio__input:checked+.tw-radio__label:after,
-	.tw-radio__label:before {
+	.ffz-radio__input:checked+.ffz-radio__label:after,
+	.ffz-radio__label:before {
 		top: 1rem;
 	}
 }
@@ -53,7 +53,7 @@
 	}
 }
 
-textarea.tw-input {
+textarea.ffz-input {
 	height: unset;
 }
 

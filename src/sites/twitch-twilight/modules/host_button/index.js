@@ -53,67 +53,6 @@ export default class HostButton extends Module {
 				this.metadata.updateMetadata('host');
 			}
 		});
-
-		this.metadata.definitions.host = {
-			order: 150,
-			border: true,
-			button: true,
-			fade_in: true,
-			modview: true,
-
-			disabled: () => this._host_updating || this._host_error,
-
-			click: data => {
-				if ( data.channel )
-					this.sendHostUnhostCommand(data.channel.login);
-			},
-
-			popup: async (data, tip) => {
-				const vue = this.resolve('vue'),
-					_host_options_vue = import(/* webpackChunkName: "host-options" */ './host-options.vue'),
-					_autoHosts = this.fetchAutoHosts(),
-					_autoHostSettings = this.fetchAutoHostSettings();
-
-				const [, host_options_vue, autoHosts, autoHostSettings] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts, _autoHostSettings]);
-
-				this._auto_host_tip = tip;
-				tip.element.classList.remove('tw-pd-1');
-				tip.element.classList.add('tw-balloon--lg');
-				vue.component('host-options', host_options_vue.default);
-				return this.buildAutoHostMenu(vue, autoHosts, autoHostSettings, data.channel);
-			},
-
-			label: data => {
-				const ffz_user = this.site.getUser();
-
-				if ( ! this.settings.get('metadata.host-button') || ! ffz_user || ! data.channel || data.channel.login === ffz_user.login )
-					return;
-
-				if ( data.channel.video && ! this.isChannelHosted(data.channel.login) )
-					return;
-
-				if ( this._host_updating )
-					return this.i18n.t('metadata.host-button.updating', 'Updating...');
-
-				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login))
-					? this.i18n.t('metadata.host-button.unhost', 'Unhost')
-					: this.i18n.t('metadata.host-button.host', 'Host');
-			},
-
-			tooltip: () => {
-				if (this._host_error) {
-					return this.i18n.t(
-						`metadata.host-button.tooltip.error.${this._host_error.key}`,
-						this._host_error.text);
-				} else {
-					return this.i18n.t('metadata.host-button.tooltip',
-						'Currently hosting: {channel}',
-						{
-							channel: this._last_hosted_channel || this.i18n.t('metadata.host-button.tooltip.none', 'None')
-						});
-				}
-			}
-		};
 	}
 
 	isChannelHosted(channelLogin) {
@@ -197,6 +136,67 @@ export default class HostButton extends Module {
 
 	onEnable() {
 		this.on('i18n:update', () => this.metadata.updateMetadata('host'));
+
+		this.metadata.definitions.host = {
+			order: 150,
+			border: true,
+			button: true,
+			fade_in: true,
+			modview: true,
+
+			disabled: () => this._host_updating || this._host_error,
+
+			click: data => {
+				if ( data.channel )
+					this.sendHostUnhostCommand(data.channel.login);
+			},
+
+			popup: async (data, tip) => {
+				const vue = this.resolve('vue'),
+					_host_options_vue = import(/* webpackChunkName: "host-options" */ './host-options.vue'),
+					_autoHosts = this.fetchAutoHosts(),
+					_autoHostSettings = this.fetchAutoHostSettings();
+
+				const [, host_options_vue, autoHosts, autoHostSettings] = await Promise.all([vue.enable(), _host_options_vue, _autoHosts, _autoHostSettings]);
+
+				this._auto_host_tip = tip;
+				tip.element.classList.remove('tw-pd-1');
+				tip.element.classList.add('ffz-balloon--lg');
+				vue.component('host-options', host_options_vue.default);
+				return this.buildAutoHostMenu(vue, autoHosts, autoHostSettings, data.channel);
+			},
+
+			label: data => {
+				const ffz_user = this.site.getUser();
+
+				if ( ! this.settings.get('metadata.host-button') || ! ffz_user || ! data.channel || data.channel.login === ffz_user.login )
+					return;
+
+				if ( data.channel.video && ! this.isChannelHosted(data.channel.login) )
+					return;
+
+				if ( this._host_updating )
+					return this.i18n.t('metadata.host-button.updating', 'Updating...');
+
+				return (this._last_hosted_channel && this.isChannelHosted(data.channel && data.channel.login))
+					? this.i18n.t('metadata.host-button.unhost', 'Unhost')
+					: this.i18n.t('metadata.host-button.host', 'Host');
+			},
+
+			tooltip: () => {
+				if (this._host_error) {
+					return this.i18n.t(
+						`metadata.host-button.tooltip.error.${this._host_error.key}`,
+						this._host_error.text);
+				} else {
+					return this.i18n.t('metadata.host-button.tooltip',
+						'Currently hosting: {channel}',
+						{
+							channel: this._last_hosted_channel || this.i18n.t('metadata.host-button.tooltip.none', 'None')
+						});
+				}
+			}
+		};
 
 		this.metadata.updateMetadata('host');
 

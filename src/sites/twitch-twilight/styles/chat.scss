@@ -195,7 +195,7 @@
 	}
 
 	.ffz--action &,
-	.tw-interactable:hover &:not(.disabled),
+	.ffz-interactable:hover &:not(.disabled),
 	&:not(.disabled):hover {
 		.tw-root--theme-dark &, & {
 			&.tw-c-text-alt-2 {
@@ -335,7 +335,7 @@
 	}
 
 	.ffz--emoji-tone-picker {
-		.tw-balloon {
+		.ffz-balloon {
 			min-width: unset;
 		}
 

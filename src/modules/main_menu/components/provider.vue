@@ -1,5 +1,14 @@
 <template lang="html">
 	<div class="ffz--provider tw-pd-t-05">
+		<div v-if="not_www" class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
+			<h3 class="ffz-i-attention">
+				{{ t('setting.provider.warn-domain.title', 'You\'re far from home!') }}
+			</h3>
+			<div>
+				<markdown :source="t('setting.provider.warn-domain.desc', 'You are currently changing settings for a sub-domain of Twitch. Any changes here will only affect this sub-domain. You probably want to change this from Twitch\'s main website, and not here.')" />
+			</div>
+		</div>
+
 		<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
 			<h3 class="ffz-i-attention">
 				{{ t('setting.provider.warn.title', 'Be careful!') }}
@@ -14,18 +23,18 @@
 		</section>
 
 		<div class="ffz-options">
-			<div v-for="val of providers" :key="val.key" class="tw-pd-b-1 tw-radio ffz-radio-top">
+			<div v-for="val of providers" :key="val.key" class="tw-pd-b-1 ffz-radio ffz-radio-top">
 				<input
 					:id="'ffz--provider-opt-' + val.key"
 					v-model="selected"
 					:value="val.key"
 					name="ffz--provider-opt"
 					type="radio"
-					class="tw-radio__input"
+					class="ffz-radio__input"
 				>
 				<label
 					:for="'ffz--provider-opt-' + val.key"
-					class="tw-block tw-radio__label"
+					class="tw-block ffz-radio__label"
 				>
 					<div class="tw-mg-l-1">
 						<div>
@@ -51,20 +60,23 @@
 		</div>
 
 		<div class="tw-border-t tw-pd-t-1">
-			<div class="tw-flex tw-align-items-center tw-checkbox">
-				<input id="transfer" ref="transfer" checked type="checkbox" class="tw-checkbox__input">
-				<label for="transfer" class="tw-checkbox__label">
+			<div v-if="canTransfer" class="tw-flex tw-align-items-center ffz-checkbox">
+				<input id="transfer" ref="transfer" checked type="checkbox" class="ffz-checkbox__input">
+				<label for="transfer" class="ffz-checkbox__label">
 					<div class="tw-mg-l-1">
 						{{ t('setting.provider.transfer', 'Transfer my settings when switching provider.') }}
 					</div>
 				</label>
 			</div>
-			<section class="tw-c-text-alt-2" style="padding-left:2.5rem">
+			<section v-if="canTransfer" class="tw-c-text-alt-2 tw-pd-b-05" style="padding-left:2.5rem">
 				<markdown :source="t('setting.provider.transfer.desc', '**Note:** It is recommended to leave this enabled unless you know what you\'re doing.')" />
 			</section>
-			<div class="tw-mg-t-1 tw-flex tw-align-items-center tw-checkbox">
-				<input id="backup" ref="backup" v-model="backup" type="checkbox" class="tw-checkbox__input">
-				<label for="backup" class="tw-checkbox__label">
+			<div v-else class="tw-flex tw-align-items-center" style="padding-left:2.5rem">
+				{{ t('setting.provider.no-transfer', 'Automatically transfering settings from your current provider to the selected provider is not allowed. Please use Backup and Restore.') }}
+			</div>
+			<div class="tw-mg-t-1 tw-flex tw-align-items-center ffz-checkbox">
+				<input id="backup" ref="backup" v-model="backup" type="checkbox" class="ffz-checkbox__input">
+				<label for="backup" class="ffz-checkbox__label">
 					<div class="tw-mg-l-1">
 						{{ t('setting.provider.backup', 'Yes, I made a backup.') }}
 					</div>
@@ -97,18 +109,23 @@ export default {
 	data() {
 		const ffz = this.context.getFFZ(),
 			settings = ffz.resolve('settings'),
-			providers = [];
+			providers = [],
+			transfers = {};
 
 		for(const [key, val] of Object.entries(settings.getProviders())) {
 			const prov = {
 				key,
+				priority: val.priority || 0,
 				has_data: null,
 				has_blobs: val.supportsBlobs,
+				has_trans: val.allowTransfer,
 				i18n_key: `setting.provider.${key}.title`,
 				title: val.title || key,
 				desc_i18n_key: val.description ? `setting.provider.${key}.desc` : null,
 				description: val.description
 			};
+
+			transfers[key] = val.allowTransfer;
 
 			if ( val.supported() )
 				Promise.resolve(val.hasContent()).then(v => {
@@ -116,14 +133,17 @@ export default {
 				});
 
 			providers.push(prov);
-
 		}
+
+		providers.sort((a,b) => b.priority - a.priority);
 
 		const current = settings.getActiveProvider();
 
 		return {
 			backup: false,
+			not_www: window.location.host !== 'www.twitch.tv',
 			providers,
+			transfers,
 			current,
 			selected: current
 		}
@@ -132,6 +152,10 @@ export default {
 	computed: {
 		enabled() {
 			return this.selected !== this.current && this.backup
+		},
+
+		canTransfer() {
+			return this.transfers[this.selected] && this.transfers[this.current]
 		}
 	},
 

@@ -18,6 +18,7 @@ export default class MenuButton extends SiteModule {
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('site.fine');
+		this.inject('site.elemental');
 		//this.inject('addons');
 
 		this.should_enable = true;
@@ -44,10 +45,16 @@ export default class MenuButton extends SiteModule {
 			['mod-view']
 		);
 
-		this.SunlightDash = this.fine.define(
+		/*this.SunlightDash = this.fine.define(
 			'sunlight-dash',
 			n => n.getIsChannelEditor && n.getIsChannelModerator && n.getIsAdsEnabled && n.getIsSquadStreamsEnabled,
 			Twilight.SUNLIGHT_ROUTES
+		);*/
+
+		this.SunlightNav = this.elemental.define(
+			'sunlight-nav', '.sunlight-top-nav > .tw-flex > .tw-flex > .tw-justify-content-end > .tw-flex',
+			Twilight.SUNLIGHT_ROUTES,
+			{attributes: true}, 1
 		);
 
 		this.NavBar = this.fine.define(
@@ -195,8 +202,11 @@ export default class MenuButton extends SiteModule {
 		for(const inst of this.MultiController.instances)
 			this.updateButton(inst);
 
-		for(const inst of this.SunlightDash.instances)
-			this.updateButton(inst);
+		//for(const inst of this.SunlightDash.instances)
+		//	this.updateButton(inst);
+
+		for(const el of this.SunlightNav.instances)
+			this.updateButton(null, el, true);
 
 		for(const inst of this.ModBar.instances)
 			this.updateButton(inst);
@@ -216,9 +226,13 @@ export default class MenuButton extends SiteModule {
 		this.MultiController.on('mount', this.updateButton, this);
 		this.MultiController.on('update', this.updateButton, this);
 
-		this.SunlightDash.ready(() => this.update());
+		/*this.SunlightDash.ready(() => this.update());
 		this.SunlightDash.on('mount', this.updateButton, this);
-		this.SunlightDash.on('update', this.updateButton, this);
+		this.SunlightDash.on('update', this.updateButton, this);*/
+
+		this.SunlightNav.on('mount', el => this.updateButton(null, el, true));
+		this.SunlightNav.on('mutate', el => this.updateButton(null, el, true));
+		this.SunlightNav.each(el => this.updateButton(null, el, true));
 
 		this.ModBar.ready(() => this.update());
 		this.ModBar.on('mount', this.updateButton, this);
@@ -241,11 +255,13 @@ export default class MenuButton extends SiteModule {
 		});
 	}
 
-	updateButton(inst) {
+	updateButton(inst, container, is_sunlight) {
 		const root = this.fine.getChildNode(inst);
 		let is_squad = false,
-			is_sunlight = false,
-			is_mod = false,
+			//is_sunlight = false,
+			is_mod = false;
+
+		if ( ! container )
 			container = root && root.querySelector('.top-nav__menu');
 
 		if ( ! container ) {
@@ -265,7 +281,7 @@ export default class MenuButton extends SiteModule {
 		}
 
 		if ( ! container && inst.getIsAdsEnabled ) {
-			container = root && root.querySelector('.sunlight-top-nav > .tw-flex');
+			container = root && root.querySelector('.sunlight-top-nav > .tw-flex > .tw-flex > .tw-justify-content-end > .tw-flex');
 			if ( container )
 				is_sunlight = true;
 		}
@@ -279,7 +295,7 @@ export default class MenuButton extends SiteModule {
 		if ( ! container )
 			return;
 
-		if ( ! is_squad && ! is_mod ) {
+		if ( ! is_squad && ! is_mod && ! is_sunlight ) {
 			let user_stuff = null;
 			try {
 				user_stuff = container.querySelector(':scope > .tw-justify-content-end:last-child');
@@ -314,7 +330,7 @@ export default class MenuButton extends SiteModule {
 						</span>
 					</div>
 				</button>)}
-				{this.has_error && (<div class={`tw-absolute tw-balloon tw-balloon--lg tw-block ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
+				{this.has_error && (<div class={`tw-absolute ffz-balloon ffz-balloon--lg tw-block ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
 					<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4 tw-pd-1">
 						<div class="tw-flex tw-align-items-center">
 							<div class="tw-flex-grow-1">
@@ -377,8 +393,16 @@ export default class MenuButton extends SiteModule {
 
 		if ( is_mod )
 			container.insertBefore(el, container.firstElementChild);
-		else
-			container.insertBefore(el, container.lastElementChild);
+		else {
+			let before = container.lastElementChild;
+			if ( before && before.classList.contains('resize-detector') )
+				before = before.previousElementSibling;
+
+			if ( before )
+				container.insertBefore(el, before);
+			else
+				container.appendChild(el);
+		}
 
 		if ( this._ctx_open )
 			this.renderContext(null, btn);
@@ -476,7 +500,7 @@ export default class MenuButton extends SiteModule {
 
 
 		ctx = (<div class={`tw-absolute tw-attached ${is_mod ? 'tw-attached--up tw-attached--left' : 'tw-attached--down tw-attached--right'}`}>
-			<div class={`tw-balloon tw-balloon--lg tw-block ffz--menu-context`}>
+			<div class={`ffz-balloon ffz-balloon--lg tw-block ffz--menu-context`}>
 				<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
 					<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">

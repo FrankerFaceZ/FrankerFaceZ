@@ -9,7 +9,7 @@
 				:id="'edit_chat$' + id"
 				v-model="value.command"
 				:placeholder="defaults.command"
-				class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+				class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				@input="$emit('input', value)"
 			>
 
@@ -17,16 +17,16 @@
 				{{ t('setting.actions.variables', 'Available Variables: {vars}', {vars}) }}
 			</div>
 
-			<div class="tw-checkbox">
+			<div class="ffz-checkbox">
 				<input
 					:id="'chat-paste$' + id"
 					v-model="value.paste"
 					type="checkbox"
-					class="tw-checkbox__input"
+					class="ffz-checkbox__input"
 					@change="$emit('input', value)"
 				>
 
-				<label :for="'chat-paste$' + id" class="tw-checkbox__label">
+				<label :for="'chat-paste$' + id" class="ffz-checkbox__label">
 					<span class="tw-mg-l-1">
 						{{ t('setting.actions.set-chat', 'Paste this message into chat rather than sending it directly.') }}
 					</span>

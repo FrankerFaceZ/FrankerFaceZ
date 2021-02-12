@@ -8,7 +8,7 @@
 			<input
 				id="edit_reason"
 				v-model.trim="value.reason"
-				class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+				class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				@input="$emit('input', value)"
 			>
 		</div>

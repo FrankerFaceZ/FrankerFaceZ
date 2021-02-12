@@ -19,7 +19,7 @@
 					ref="json"
 					v-model="json"
 					readonly
-					class="tw-full-width tw-full-height tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+					class="tw-full-width tw-full-height tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 					@focus="$event.target.select()"
 				/>
 			</template>
@@ -34,7 +34,7 @@
 
 						<input
 							v-model="edit_data.appearance.tooltip"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 						>
 					</div>
 
@@ -47,7 +47,7 @@
 							id="renderer_type"
 							ref="renderer_type"
 							v-model="edit_data.appearance.type"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
 								v-for="(r, key) in data.renderers"
@@ -91,7 +91,7 @@
 						<select
 							id="vis_mod"
 							v-model="edit_data.display.mod"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -113,7 +113,7 @@
 						<select
 							id="vis_mod_icons"
 							v-model="edit_data.display.mod_icons"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -135,7 +135,7 @@
 						<select
 							id="vis_deleted"
 							v-model="edit_data.display.deleted"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -157,7 +157,7 @@
 						<select
 							id="vis_emote"
 							v-model="edit_data.display.emoteOnly"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -179,7 +179,7 @@
 						<select
 							id="vis_slow"
 							v-model="edit_data.display.slowMode"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -201,7 +201,7 @@
 						<select
 							id="vis_subs"
 							v-model="edit_data.display.followersOnly"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -223,7 +223,7 @@
 						<select
 							id="vis_subs"
 							v-model="edit_data.display.subsMode"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -245,7 +245,7 @@
 						<select
 							id="vis_r9k"
 							v-model="edit_data.display.r9kMode"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -266,80 +266,80 @@
 
 						<div>
 							<div class="ffz--inline tw-flex">
-								<div class="tw-pd-r-1 tw-checkbox">
+								<div class="tw-pd-r-1 ffz-checkbox">
 									<input
 										:id="'key_ctrl$' + id"
 										ref="key_ctrl"
 										:checked="edit_data.display.keys & 1"
 										type="checkbox"
-										class="tw-checkbox__input"
+										class="ffz-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label :for="'key_ctrl$' + id" class="tw-checkbox__label">
+									<label :for="'key_ctrl$' + id" class="ffz-checkbox__label">
 										<span class="tw-mg-l-1">
 											{{ t('setting.key.ctrl', 'Ctrl') }}
 										</span>
 									</label>
 								</div>
 
-								<div class="tw-pd-r-1 tw-checkbox">
+								<div class="tw-pd-r-1 ffz-checkbox">
 									<input
 										:id="'key_shift$' + id"
 										ref="key_shift"
 										:checked="edit_data.display.keys & 2"
 										type="checkbox"
-										class="tw-checkbox__input"
+										class="ffz-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label :for="'key_shift$' + id" class="tw-checkbox__label">
+									<label :for="'key_shift$' + id" class="ffz-checkbox__label">
 										<span class="tw-mg-l-1">
 											{{ t('setting.key.shift', 'Shift') }}
 										</span>
 									</label>
 								</div>
 
-								<div class="tw-pd-r-1 tw-checkbox">
+								<div class="tw-pd-r-1 ffz-checkbox">
 									<input
 										:id="'key_alt$' + id"
 										ref="key_alt"
 										:checked="edit_data.display.keys & 4"
 										type="checkbox"
-										class="tw-checkbox__input"
+										class="ffz-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label :for="'key_alt$' + id" class="tw-checkbox__label">
+									<label :for="'key_alt$' + id" class="ffz-checkbox__label">
 										<span class="tw-mg-l-1">
 											{{ t('setting.key.alt', 'Alt') }}
 										</span>
 									</label>
 								</div>
 
-								<div class="tw-pd-r-1 tw-checkbox">
+								<div class="tw-pd-r-1 ffz-checkbox">
 									<input
 										:id="'key_meta$' + id"
 										ref="key_meta"
 										:checked="edit_data.display.keys & 8"
 										type="checkbox"
-										class="tw-checkbox__input"
+										class="ffz-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label :for="'key_meta$' + id" class="tw-checkbox__label">
+									<label :for="'key_meta$' + id" class="ffz-checkbox__label">
 										<span class="tw-mg-l-1">
 											{{ t('setting.key.meta', 'Meta') }}
 										</span>
 									</label>
 								</div>
 
-								<div class="tw-pd-r-1 tw-checkbox">
+								<div class="tw-pd-r-1 ffz-checkbox">
 									<input
 										:id="'key_hover$' + id"
 										ref="key_hover"
 										:checked="edit_data.display.hover"
 										type="checkbox"
-										class="tw-checkbox__input"
+										class="ffz-checkbox__input"
 										@change="onChangeKeys"
 									>
-									<label :for="'key_hover$' + id" class="tw-checkbox__label">
+									<label :for="'key_hover$' + id" class="ffz-checkbox__label">
 										<span class="tw-mg-l-1">
 											{{ t('setting.key.hover', 'Hover') }}
 										</span>
@@ -361,7 +361,7 @@
 						<select
 							id="action_type"
 							v-model="edit_data.action"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
 								v-for="(a, key) in data.actions"

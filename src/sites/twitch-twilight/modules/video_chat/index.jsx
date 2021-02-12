@@ -126,19 +126,19 @@ export default class VideoChatHook extends Module {
 								<figure class="ffz-i-ellipsis-vert" />
 							</span>
 						</button>
-						<div class={`tw-absolute tw-balloon tw-balloon--down tw-balloon--right tw-balloon--sm ${is_open ? 'tw-block' : 'tw-hide'}`}>
-							<div class="tw-absolute tw-balloon__tail tw-overflow-hidden">
-								<div class="tw-absolute tw-balloon__tail-symbol tw-border-b tw-border-l tw-border-r tw-border-t tw-c-background-base" />
+						<div class={`tw-absolute ffz-balloon ffz-balloon--down ffz-balloon--right ffz-balloon--sm ${is_open ? 'tw-block' : 'tw-hide'}`}>
+							<div class="tw-absolute ffz-balloon__tail tw-overflow-hidden">
+								<div class="tw-absolute ffz-balloon__tail-symbol tw-border-b tw-border-l tw-border-r tw-border-t tw-c-background-base" />
 							</div>
 							<div class="tw-border-b tw-border-l tw-border-r tw-border-radius-medium tw-border-t tw-c-background-base tw-elevation-1 tw-pd-y-1">
-								<button class="tw-interactable tw-interactable--inverted tw-full-width tw-pd-y-05 tw-pd-x-1">{
+								<button class="ffz-interactable ffz-interactable--inverted tw-full-width tw-pd-y-05 tw-pd-x-1">{
 									t.i18n.t('video-chat.copy-link', 'Copy Link')
 								}</button>
-								<button class="tw-interactable tw-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
+								<button class="ffz-interactable ffz-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
 									t.i18n.t('video-chat.delete', 'Delete')
 								}</button>
 								<div class="tw-mg-1 tw-border-b" />
-								<button class="tw-interactable tw-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
+								<button class="ffz-interactable ffz-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
 									t.i18n.t('video-chat.ban', 'Ban User')
 								}</button>
 							</div>
@@ -302,7 +302,7 @@ export default class VideoChatHook extends Module {
 						{hide_timestamps || (<div data-test-selector="message-timestamp" class="tw-align-right tw-flex tw-flex-shrink-0 vod-message__header">
 							<div class="tw-mg-r-05">
 								<div class="tw-inline-flex tw-relative tw-tooltip__container">
-									<button class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive" onClick={this.onTimestampClickHandler}>
+									<button class="tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive" onClick={this.onTimestampClickHandler}>
 										<div class="tw-pd-x-05">
 											<p class="tw-font-size-7">{print_duration(context.comment.contentOffset)}</p>
 										</div>

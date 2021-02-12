@@ -7,7 +7,7 @@
 				v-model="color"
 				v-bind="$attrs"
 				type="text"
-				class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+				class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 				autocapitalize="off"
 				autocorrect="off"
 				autocomplete="off"
@@ -47,7 +47,7 @@
 				v-if="open"
 				v-on-clickaway="closePicker"
 				:class="{'ffz-bottom-100': openUp}"
-				class="tw-absolute tw-z-above tw-balloon--up tw-balloon--right"
+				class="tw-absolute tw-z-above ffz-balloon--up ffz-balloon--right"
 			>
 				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>

@@ -20,7 +20,7 @@
 			<input
 				id="user-name"
 				ref="name"
-				class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input tw-flex-grow-1"
+				class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input tw-flex-grow-1"
 				:value="name"
 				@change="updateName"
 			>

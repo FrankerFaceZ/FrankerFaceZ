@@ -42,8 +42,8 @@ export default class Twilight extends BaseSite {
 		this._dom_updates = [];
 	}
 
-	onLoad() {
-		this.populateModules();
+	async onLoad() {
+		await this.populateModules();
 
 		this.web_munch.known(Twilight.KNOWN_MODULES);
 

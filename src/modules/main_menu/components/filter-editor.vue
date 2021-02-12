@@ -21,7 +21,7 @@
 			<select
 				v-once
 				ref="add_box"
-				class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-select"
+				class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-select"
 			>
 				<option
 					v-for="(filter, key) in filters"

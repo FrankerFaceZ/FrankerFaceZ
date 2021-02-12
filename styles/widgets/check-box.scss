@@ -1,5 +1,5 @@
-.tw-checkbox__input {
-	&:indeterminate + .tw-checkbox__label {
+.ffz-checkbox__input {
+	&:indeterminate + .ffz-checkbox__label {
 		&:before {
 			background: var(--ffz-color-accent-8);
 			border: 1px solid var(--ffz-color-accent-8);

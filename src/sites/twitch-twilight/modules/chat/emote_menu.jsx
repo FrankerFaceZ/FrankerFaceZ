@@ -429,7 +429,7 @@ export default class EmoteMenu extends Module {
 				return (<button
 					key={data.code}
 					data-tone={tone}
-					class="tw-interactive tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-pd-y-05 tw-pd-x-2"
+					class="tw-interactive tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-pd-y-05 tw-pd-x-2"
 					onClick={this.clickTone}
 				>
 					{this.renderEmoji(data)}
@@ -446,7 +446,7 @@ export default class EmoteMenu extends Module {
 
 				const tones = Object.entries(emoji.variants).map(([tone, emoji]) => this.renderTone(emoji, tone));
 
-				return (<div class="tw-absolute tw-balloon tw-balloon--up tw-balloon--right tw-balloon tw-block">
+				return (<div class="tw-absolute ffz-balloon ffz-balloon--up ffz-balloon--right ffz-balloon tw-block">
 					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background-base tw-elevation-1">
 						{this.renderTone(emoji, null)}
 						{tones}
@@ -903,7 +903,7 @@ export default class EmoteMenu extends Module {
 					const padding = t.chat.context.get('chat.emote-menu.reduced-padding');
 
 					return (<div
-						class={`tw-balloon tw-balloon--md tw-balloon--up tw-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+						class={`ffz-balloon ffz-balloon--md ffz-balloon--up ffz-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
 						data-a-target="emote-picker"
 					>
 						<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
@@ -2092,7 +2092,7 @@ export default class EmoteMenu extends Module {
 				return (<div class="tw-block">
 					<div class="tw-absolute tw-attached tw-attached--right tw-attached--up">
 						<div
-							class={`tw-balloon tw-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+							class={`ffz-balloon ffz-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
 							data-a-target="emote-picker"
 							role="dialog"
 						>
@@ -2128,7 +2128,7 @@ export default class EmoteMenu extends Module {
 										<div class="tw-flex">
 											<input
 												type="text"
-												class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
+												class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 												placeholder={
 													is_emoji ?
 														t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
@@ -2170,7 +2170,7 @@ export default class EmoteMenu extends Module {
 									<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
 										{! visibility && <div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 											<button
-												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'fav' ? ' tw-interactable--selected' : ''}`}
+												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'fav' ? ' ffz-interactable--selected' : ''}`}
 												id="emote-picker__fav"
 												data-tab="fav"
 												data-tooltip-type="html"
@@ -2184,7 +2184,7 @@ export default class EmoteMenu extends Module {
 										</div>}
 										{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 											<button
-												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'channel' ? ' tw-interactable--selected' : ''}`}
+												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'channel' ? ' ffz-interactable--selected' : ''}`}
 												id="emote-picker__channel"
 												data-tab="channel"
 												data-tooltip-type="html"
@@ -2198,7 +2198,7 @@ export default class EmoteMenu extends Module {
 										</div>}
 										<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 											<button
-												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'all' ? ' tw-interactable--selected' : ''}`}
+												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'all' ? ' ffz-interactable--selected' : ''}`}
 												id="emote-picker__all"
 												data-tab="all"
 												data-tooltip-type="html"
@@ -2212,7 +2212,7 @@ export default class EmoteMenu extends Module {
 										</div>
 										{! visibility && this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 											<button
-												class={`ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive${tab === 'emoji' ? ' tw-interactable--selected' : ''}`}
+												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'emoji' ? ' ffz-interactable--selected' : ''}`}
 												id="emote-picker__emoji"
 												data-tab="emoji"
 												data-tooltip-type="html"
@@ -2227,7 +2227,7 @@ export default class EmoteMenu extends Module {
 										<div class="tw-flex-grow-1" />
 										<div class="emote-picker-tab-item tw-relative">
 											<button
-												class="ffz-tooltip tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
+												class="ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
 												data-tooltip-type="html"
 												data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
 												onClick={this.clickSettings}

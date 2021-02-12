@@ -46,6 +46,21 @@ export default class FeaturedFollow extends Module {
 			}
 		});
 
+		this.follow_data = {};
+
+		this.socket.on(':command:follow_buttons', data => {
+			for(const channel_login in data)
+				if ( has(data, channel_login) )
+					this.follow_data[channel_login] = data[channel_login];
+
+			if ( this.vueFeaturedFollow )
+				this.vueFeaturedFollow.data.hasUpdate = true;
+
+			this.metadata.updateMetadata('following');
+		});
+	}
+
+	onEnable() {
 		this.metadata.definitions.following = {
 			order: 150,
 			button: true,
@@ -60,7 +75,7 @@ export default class FeaturedFollow extends Module {
 
 				this._featured_follow_tip = tip;
 				tip.element.classList.remove('tw-pd-1');
-				tip.element.classList.add('tw-balloon--lg');
+				tip.element.classList.add('ffz-balloon--lg');
 				vue.component('featured-follow', featured_follows_vue.default);
 				return this.buildFeaturedFollowMenu(vue, data.channel.login, follows, add_callback);
 			},
@@ -82,18 +97,7 @@ export default class FeaturedFollow extends Module {
 			icon: 'ffz-i-heart'
 		};
 
-		this.follow_data = {};
-
-		this.socket.on(':command:follow_buttons', data => {
-			for(const channel_login in data)
-				if ( has(data, channel_login) )
-					this.follow_data[channel_login] = data[channel_login];
-
-			if ( this.vueFeaturedFollow )
-				this.vueFeaturedFollow.data.hasUpdate = true;
-
-			this.metadata.updateMetadata('following');
-		});
+		this.metadata.updateMetadata('following');
 	}
 
 	async getFollowsForLogin(login) {

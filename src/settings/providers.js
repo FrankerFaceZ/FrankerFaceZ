@@ -1,5 +1,6 @@
 'use strict';
 
+import { isValidBlob, deserializeBlob, serializeBlob } from 'src/utilities/blobs';
 // ============================================================================
 // Settings Providers
 // ============================================================================
@@ -7,12 +8,8 @@
 import {EventEmitter} from 'utilities/events';
 import {has} from 'utilities/object';
 
-const DB_VERSION = 1;
-
-
-export function isValidBlob(blob) {
-	return blob instanceof Blob || blob instanceof File || blob instanceof ArrayBuffer || blob instanceof Uint8Array;
-}
+const DB_VERSION = 1,
+	NOT_WWW = window.location.host !== 'www.twitch.tv';
 
 
 // ============================================================================
@@ -43,6 +40,7 @@ export class SettingsProvider extends EventEmitter {
 	}
 
 	static supportsBlobs = false;
+	static allowTransfer = true;
 
 	awaitReady() {
 		if ( this.ready )
@@ -50,6 +48,8 @@ export class SettingsProvider extends EventEmitter {
 
 		return Promise.reject(new Error('Not Implemented'));
 	}
+
+	get allowTransfer() { return this.constructor.allowTransfer; }
 
 	broadcastTransfer() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
 	disableEvents() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
@@ -932,4 +932,252 @@ export class IndexedDBProvider extends SettingsProvider {
 		});
 	}
 
+}
+
+
+// ============================================================================
+// CrossOriginStorageBridge
+// ============================================================================
+
+export class CrossOriginStorageBridge extends SettingsProvider {
+	constructor(manager) {
+		super(manager);
+
+		this._start_time = performance.now();
+
+		this._rpc = new Map;
+
+		this._cached = new Map;
+		this.resolved_ready = false;
+		this.ready = false;
+		this._ready_wait = null;
+
+		this._blobs = null;
+		this._last_id = 0;
+
+		const frame = this.frame = document.createElement('iframe');
+		frame.src = '//www.twitch.tv/p/ffz_bridge/';
+		frame.id = 'ffz-settings-bridge';
+		frame.style.width = 0;
+		frame.style.height = 0;
+
+		window.addEventListener('message', this.onMessage.bind(this));
+		document.body.appendChild(frame);
+	}
+
+
+	// Static Properties
+
+	static supported() { return NOT_WWW; }
+	static hasContent() { return NOT_WWW; }
+
+	static key = 'cosb';
+	static priority = 100;
+	static title = 'Cross-Origin Storage Bridge';
+	static description = 'This provider uses an `<iframe>` to synchronize storage across subdomains. Due to the `<iframe>`, this provider takes longer than others to load, but should perform roughly the same once loaded. You should be using this on non-www subdomains of Twitch unless you don\'t want your settings to automatically synchronize for some reason.';
+	static supportsBlobs = true;
+	static allowTransfer = false;
+
+	get supportsBlobs() {
+		return this._blobs;
+	}
+
+
+	// Initialization
+
+	_resolveReady(success, data) {
+		if ( this.manager )
+			this.manager.log.info(`COSB ready in ${(performance.now() - this._start_time).toFixed(5)}ms`);
+
+		this.resolved_ready = true;
+		this.ready = success;
+		const waiters = this._ready_wait;
+		this._ready_wait = null;
+		if ( waiters )
+			for(const pair of waiters)
+				pair[success ? 0 : 1](data);
+	}
+
+	awaitReady() {
+		if ( this.resolved_ready ) {
+			if ( this.ready )
+				return Promise.resolve();
+			return Promise.reject();
+		}
+
+		return new Promise((s,f) => {
+			const waiters = this._ready_wait = this._ready_wait || [];
+			waiters.push([s,f]);
+		})
+	}
+
+
+	// Provider Methods
+
+	get(key, default_value) {
+		return this._cached.has(key) ? this._cached.get(key) : default_value;
+	}
+
+	set(key, value) {
+		if ( value === undefined ) {
+			if ( this.has(key) )
+				this.delete(key);
+			return;
+		}
+
+		this._cached.set(key, value);
+		this.rpc({ffz_type: 'set', key, value}).catch(err => this.manager.log.error('Error setting value', err));
+		this.emit('set', key, value, false);
+	}
+
+	delete(key) {
+		this._cached.delete(key);
+		this.rpc({ffz_type: 'delete', key}).catch(err => this.manager.log.error('Error deleting value', err));
+		this.emit('set', key, undefined, true);
+	}
+
+	clear() {
+		const old_cache = this._cached;
+		this._cached = new Map;
+		for(const key of old_cache.keys())
+			this.emit('changed', key, undefined, true);
+
+		this.rpc('clear').catch(err => this.manager.log.error('Error clearing storage', err));
+	}
+
+	has(key) { return this._cached.has(key); }
+	keys() { return this._cached.keys(); }
+	entries() { return this._cached.entries(); }
+	get size() { return this._cached.size; }
+
+	async flush() {
+		await this.rpc('flush');
+	}
+
+
+	// Provider Methods: Blobs
+
+	async getBlob(key) {
+		const msg = await this.rpc({ffz_type: 'get-blob', key});
+		return msg.reply && deserializeBlob(msg.reply);
+	}
+
+	async setBlob(key, value) {
+		await this.rpc({
+			ffz_type: 'set-blob',
+			key,
+			value: await serializeBlob(value)
+		});
+	}
+
+	async deleteBlob(key) {
+		await this.rpc({
+			ffz_type: 'delete-blob',
+			key
+		});
+	}
+
+	async hasBlob(key) {
+		const msg = await this.rpc({ffz_type: 'has-blob', key});
+		return msg.reply;
+	}
+
+	async clearBlobs() {
+		await this.rpc('clear-blobs');
+	}
+
+	async blobKeys() {
+		const msg = await this.rpc('blob-keys');
+		return msg.reply;
+	}
+
+
+	// CORS Communication
+
+	send(msg, transfer) {
+		if ( typeof msg === 'string' )
+			msg = {ffz_type: msg};
+
+		try {
+			this.frame.contentWindow.postMessage(
+				msg,
+				'*',
+				transfer ? (Array.isArray(transfer) ? transfer : [transfer]) : undefined
+			);
+		} catch(err) {
+			this.manager.log.error('Error sending message to bridge.', err, msg, transfer);
+		}
+	}
+
+	rpc(msg, transfer) {
+		const id = ++this._last_id;
+
+		return new Promise((s,f) => {
+			this._rpc.set(id, [s,f]);
+
+			if ( typeof msg === 'string' )
+				msg = {ffz_type: msg};
+
+			msg.id = id;
+
+			this.send(msg, transfer);
+		});
+	}
+
+	onMessage(event) {
+		const msg = event.data;
+		if ( ! msg || ! msg.ffz_type )
+			return;
+
+		if ( msg.ffz_type === 'ready' )
+			this.rpc('init-load').then(msg => {
+				this._blobs = msg.reply.blobs;
+				for(const [key, value] of Object.entries(msg.reply.values))
+					this._cached.set(key, value);
+
+				this._resolveReady(true);
+			}).catch(err => {
+				this._resolveReady(false, err);
+			});
+
+		else if ( msg.ffz_type === 'change' )
+			this.onChange(msg);
+
+		else if ( msg.ffz_type === 'change-blob' )
+			this.emit('changed-blob', msg.key, msg.deleted);
+
+		else if ( msg.ffz_type === 'clear-blobs' )
+			this.emit('clear-blobs');
+
+		else if ( msg.ffz_type === 'reply' || msg.ffz_type === 'reply-error' )
+			this.onReply(msg);
+
+		else
+			this.log.warn('Unknown Message', msg.ffz_type, msg);
+	}
+
+	onChange(msg) {
+		const key = msg.key,
+			value = msg.value,
+			deleted = msg.deleted;
+
+		if ( deleted ) {
+			this._cached.delete(key);
+			this.emit('changed', key, undefined, true);
+		} else {
+			this._cached.set(key, value);
+			this.emit('changed', key, value, false);
+		}
+	}
+
+	onReply(msg) {
+		const id = msg.id,
+			success = msg.ffz_type === 'reply',
+			cbs = this._rpc.get(id);
+		if ( ! cbs )
+			return this.log.warn('Received reply for unknown ID', id);
+
+		this._rpc.delete(id);
+		cbs[success ? 0 : 1](msg);
+	}
 }

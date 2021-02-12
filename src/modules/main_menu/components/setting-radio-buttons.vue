@@ -1,5 +1,5 @@
 <template lang="html">
-	<div class="tw-input">
+	<div class="ffz-input">
 		<header>
 			{{ t(item.i18n_key, item.title) }}
 			<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
@@ -19,11 +19,11 @@
 				:name="item.full_key"
 				:value="i.value"
 				type="radio"
-				class="tw-radio__input"
+				class="ffz-radio__input"
 			>
 			<label
 				:for="item.full_key + idx"
-				class="tw-pd-y-05 tw-radio__label"
+				class="tw-pd-y-05 ffz-radio__label"
 			>
 				{{ t(i.i18n_key, i.title, i) }}
 			</label>

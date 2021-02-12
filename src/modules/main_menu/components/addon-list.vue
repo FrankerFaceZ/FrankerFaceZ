@@ -61,7 +61,7 @@
 							<input
 								ref="unlisted"
 								:placeholder="t('addon.unlisted.id', 'add-on id')"
-								class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+								class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 								@keydown.enter="addUnlisted"
 							>
 							<button

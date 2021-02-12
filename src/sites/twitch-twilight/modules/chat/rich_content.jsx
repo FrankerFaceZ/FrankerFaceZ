@@ -227,7 +227,7 @@ export default class RichContent extends Module {
 				const tooltip = this.props.card_tooltip && this.state.full && ! this.props.force_full;
 				if ( this.state.url ) {
 					content = (<a
-						class={`${tooltip ? 'ffz-tooltip ' : ''}${this.state.accent ? 'ffz-accent-card ' : ''}${this.state.error ? '': 'tw-interactable--hover-enabled '}tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--default tw-interactive`}
+						class={`${tooltip ? 'ffz-tooltip ' : ''}${this.state.accent ? 'ffz-accent-card ' : ''}${this.state.error ? '': 'ffz-interactable--hover-enabled '}tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--default tw-interactive`}
 						data-tooltip-type="link"
 						data-url={this.state.url}
 						data-is-mail={false}

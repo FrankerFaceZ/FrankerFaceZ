@@ -281,8 +281,8 @@ export default {
 				class: [
 					tooltip && 'ffz-tooltip',
 					this.accent && 'ffz-accent-card',
-					!this.error && 'tw-interactable--hover-enabled',
-					'tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--default tw-interactive'
+					!this.error && 'ffz-interactable--hover-enabled',
+					'tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--default tw-interactive'
 				],
 				attrs: {
 					'data-tooltip-type': 'link',

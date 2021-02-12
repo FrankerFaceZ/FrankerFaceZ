@@ -3,17 +3,17 @@
 		:class="{inherits: isInherited, default: isDefault}"
 		class="ffz--widget ffz--checkbox"
 	>
-		<div class="tw-flex tw-align-items-center tw-checkbox">
+		<div class="tw-flex tw-align-items-center ffz-checkbox">
 			<input
 				:id="item.full_key"
 				ref="control"
 				:checked="value"
 				type="checkbox"
-				class="tw-checkbox__input"
+				class="ffz-checkbox__input"
 				@change="onChange"
 			>
 
-			<label :for="item.full_key" class="tw-checkbox__label">
+			<label :for="item.full_key" class="ffz-checkbox__label">
 				<span class="tw-mg-l-1">
 					{{ t(item.i18n_key, item.title) }}
 					<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>

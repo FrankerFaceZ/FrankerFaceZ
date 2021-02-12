@@ -13,7 +13,7 @@
 			<div class="tw-flex tw-flex-column tw-full-height tw-full-width viewer-card__overlay">
 				<div class="tw-align-center tw-align-items-start tw-c-background-overlay tw-c-text-overlay tw-flex tw-flex-grow-1 tw-flex-row tw-full-width tw-justify-content-start tw-pd-05 tw-relative viewer-card__banner">
 					<div class="tw-mg-l-05 tw-mg-y-05 tw-inline-flex viewer-card-drag-cancel">
-						<figure class="tw-avatar tw-avatar--size-50">
+						<figure class="ffz-avatar ffz-avatar--size-50">
 							<img
 								v-if="loaded"
 								:src="user.profileImageURL"

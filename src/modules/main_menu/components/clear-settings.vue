@@ -16,16 +16,16 @@
 				<div
 					v-for="(type, key) in types"
 					:key="key"
-					class="tw-checkbox tw-relative tw-mg-y-05"
+					class="ffz-checkbox tw-relative tw-mg-y-05"
 				>
 					<input
 						:id="key"
 						:ref="key"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 					>
 
-					<label :for="key" class="tw-checkbox__label">
+					<label :for="key" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t(`setting.clear.opt.${key}`, type.label || key) }}
 						</span>
@@ -41,7 +41,7 @@
 				<input
 					v-model="entered"
 					type="text"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-input tw-pd-x-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 				>

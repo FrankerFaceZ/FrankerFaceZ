@@ -1,0 +1,232 @@
+/*
+ * Extracted styles for Twitch-like input elements
+ * because Twitch is stupid and removed their nice,
+ * standardized classes with nice standardized names
+ * in favor of procedural classes.
+ */
+
+
+// Input / Shared
+
+.ffz-input {
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+	border: var(--border-width-input) solid var(--color-border-input);
+	color: var(--color-text-input);
+	line-height: 1.5;
+
+	&[type=number] {
+		-moz-appearance: textfield;
+
+		&::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+		}
+
+		&::-webkit-outer-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+	}
+}
+
+.ffz-form-tag, .ffz-input, .ffz-select, .ffz-select-button, .ffz-textarea {
+	background-clip: padding-box;
+}
+
+.ffz-input, .ffz-select, .ffz-textarea {
+	font-family: inherit;
+	transition: box-shadow .1s ease-in, border .1s ease-in, background-color .1s ease-in;
+
+	//&::-webkit-input-placeholder,
+	//&:-ms-input-placeholder,
+	//&::-ms-input-placeholder,
+	&::placeholder {
+		color: var(--color-text-input-placeholder);
+	}
+
+	&::-ms-clear {
+		display: none;
+	}
+
+	&:-moz-focus-inner {
+		border: none;
+		padding: 0;
+	}
+
+	&:disabled {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+
+	&, &:hover {
+		background-color: var(--color-background-input);
+	}
+
+	&:hover {
+		border-color: var(--color-border-input-hover);
+		outline: 0;
+	}
+
+	&:focus, &:focus:hover {
+		background-color: var(--color-background-input-focus);
+		border: var(--border-width-input) solid var(--color-border-input-focus);
+		outline: 0;
+	}
+}
+
+.ffz-input--error, .ffz-select--error {
+	box-shadow: var(--shadow-input-error);
+
+	&, &:focus {
+		border: var(--border-width-input) solid var(--color-border-input-error);
+	}
+}
+
+.ffz-input--error:focus,
+.ffz-select--error:focus {
+	box-shadow: var(--shadow-input-error-focus);
+}
+
+.ffz-input--overlay,
+.ffz-select--overlay,
+.ffz-textarea--overlay {
+	background-color: var(--color-background-input-overlay);
+	border: none;
+	box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay);
+	color: var(--color-text-overlay);
+
+	&:hover {
+		background-color: var(--color-background-input-overlay);
+		box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay-hover);
+	}
+
+	&:focus, &:focus:hover {
+		background-color: var(--color-background-input-overlay-focus);
+		border: none;
+		box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay-focus);
+	}
+
+	//&::-webkit-input-placeholder,
+	//&:-ms-input-placeholder,
+	//&::-ms-input-placeholder,
+	&::placeholder {
+		color: var(--color-text-input-placeholder-overlay);
+	}
+
+	&.ffz-input--error,
+	&.ffz-select--error {
+		border: var(--border-width-input) solid var(--color-border-input-error);
+		box-shadow: var(--shadow-input-error);
+
+		&:focus {
+			border: var(--border-width-input) solid var(--color-border-input-error);
+			box-shadow: var(--shadow-input-error-focus);
+		}
+	}
+}
+
+.ffz-input--password {
+	font-family: sans-serif;
+}
+
+.ffz-input__icon {
+	min-width: 3rem;
+}
+
+.ffz-input__icon--overlay {
+	color: var(--color-text-input-placeholder-overlay);
+}
+
+.ffz-input--small,
+.ffz-select--small {
+	height: 2.4rem;
+	padding: .2rem 0
+}
+
+.ffz-input, .ffz-select {
+	height: 3rem;
+}
+
+.ffz-input--large,
+.ffz-select--large {
+	height: 3.6rem
+}
+
+
+// Select
+
+.ffz-select {
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%230e0e10' d='M10.5 13.683l2.85-2.442 1.3 1.518-3.337 2.86a1.25 1.25 0 01-1.626 0l-3.338-2.86 1.302-1.518 2.849 2.442zm0-7.366L7.65 8.76l-1.3-1.518 3.337-2.86a1.25 1.25 0 011.627 0l3.337 2.86-1.302 1.518L10.5 6.317z'/%3E%3C/svg%3E");
+	background-position: right .8rem center;
+	background-repeat: no-repeat;
+	background-size: 2rem;
+	border: var(--border-width-input) solid var(--color-border-input);
+	color: var(--color-text-input);
+	cursor: pointer;
+	line-height: 1.5;
+	line-height: normal;
+
+	.tw-root--theme-dark & {
+		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23efeff1' d='M10.5 13.683l2.85-2.442 1.3 1.518-3.337 2.86a1.25 1.25 0 01-1.626 0l-3.338-2.86 1.302-1.518 2.849 2.442zm0-7.366L7.65 8.76l-1.3-1.518 3.337-2.86a1.25 1.25 0 011.627 0l3.337 2.86-1.302 1.518L10.5 6.317z'/%3E%3C/svg%3E");
+	}
+
+	// option isn't scoped, unlike default Twitch, to avoid flicker
+	&[data-focus-visible-added], option {
+		background-color: var(--color-background-input-focus);
+		border-color: var(--color-border-input-focus)
+	}
+}
+
+.ffz-select--overlay {
+	&,
+	.tw-root--theme-dark &,
+	.tw-root--theme-light & {
+		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23fff' d='M10.5 13.683l2.85-2.442 1.3 1.518-3.337 2.86a1.25 1.25 0 01-1.626 0l-3.338-2.86 1.302-1.518 2.849 2.442zm0-7.366L7.65 8.76l-1.3-1.518 3.337-2.86a1.25 1.25 0 011.627 0l3.337 2.86-1.302 1.518L10.5 6.317z'/%3E%3C/svg%3E");
+	}
+
+	&[data-focus-visible-added] {
+		&, & option {
+			background-color: var(--color-background-input-overlay-focus);
+			box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay-focus);
+		}
+	}
+}
+
+.ffz-select--small {
+	background-size: 1.6rem;
+}
+
+.ffz-select--large {
+	background-size: 2.4rem;
+}
+
+
+// Textarea
+
+.ffz-textarea {
+	-moz-appearance: none;
+	-ms-overflow-style: none;
+	-webkit-appearance: none;
+	appearance: none;
+	border: var(--border-width-input) solid var(--color-border-input);
+	color: var(--color-text-input);
+	padding: .5rem 1rem;
+	resize: vertical;
+
+	&[cols] {
+		max-width: 100%;
+		width: auto;
+	}
+}
+
+.ffz-textarea--error:focus {
+	box-shadow: var(--shadow-input-error-focus);
+}
+
+.ffz-textarea--no-resize {
+	resize: none;
+}

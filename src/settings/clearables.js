@@ -61,10 +61,10 @@ export const Profiles = {
 
 export const Everything = {
 	label: 'Absolutely Everything',
-	clear(provider, settings) {
+	async clear(provider, settings) {
 		provider.clear();
-		if ( provider.supportsBlobs() )
-			provider.clearBlobs();
+		if ( provider.supportsBlobs )
+			await provider.clearBlobs();
 
 		settings.loadProfiles();
 	}

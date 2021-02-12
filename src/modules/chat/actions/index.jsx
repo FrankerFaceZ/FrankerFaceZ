@@ -263,7 +263,7 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-pd-05"
+						class="tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-pd-05"
 						onClick={click_fn(text)}
 					>
 						{text}
@@ -280,7 +280,7 @@ export default class Actions extends Module {
 				reason_elements.push(<li class="tw-full-width tw-relative">
 					<a
 						href="#"
-						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive tw-pd-05"
+						class="tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-pd-05"
 						onClick={click_fn(rule)}
 					>
 						{rule}
@@ -350,9 +350,9 @@ export default class Actions extends Module {
 				hover_events: true,
 				no_update: true,
 
-				tooltipClass: 'ffz-action-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
-				arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
-				arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
+				tooltipClass: 'ffz-action-balloon ffz-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
+				arrowClass: 'ffz-balloon__tail tw-overflow-hidden tw-absolute',
+				arrowInner: 'ffz-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base  tw-absolute',
 				innerClass: '',
 
 				popper: {

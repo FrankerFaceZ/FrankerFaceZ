@@ -3,6 +3,9 @@
 @import 'widgets';
 @import 'dialog';
 
+@import 'input/index';
+@import 'structure/index';
+
 @import 'chat';
 
 @keyframes ffz-rotateplane {
@@ -11,7 +14,6 @@
 	75% { transform: rotateY(0deg) rotateX(0deg) }
 	100% { transform: rotateY(90deg) rotateX(0deg) }
 }
-
 
 .ffz-i-t-reset.loading,
 .ffz-i-t-reset-clicked.loading,

@@ -10,7 +10,7 @@
 					<select
 						id="selector"
 						ref="selector"
-						class="tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+						class="tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 						@change="onSelectChange"
 					>
 						<option
@@ -27,7 +27,7 @@
 					<input
 						ref="text"
 						:disabled="! isCustomURL"
-						class="ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input"
+						class="ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 						@blur="updateText"
 						@input="onTextChange"
 					>
@@ -37,34 +37,34 @@
 		<div class="tw-flex tw-mg-b-1">
 			<div class="tw-flex-grow-1" />
 
-			<div class="tw-pd-x-1 tw-checkbox">
+			<div class="tw-pd-x-1 ffz-checkbox">
 				<input
 					id="force_media"
 					ref="force_media"
 					:checked="force_media"
 					type="checkbox"
-					class="tw-checkbox__input"
+					class="ffz-checkbox__input"
 					@change="onCheck"
 				>
 
-				<label for="force_media" class="tw-checkbox__label">
+				<label for="force_media" class="ffz-checkbox__label">
 					<span class="tw-mg-l-1">
 						{{ t('debug.link-provider.allow.media', 'Allow Media') }}
 					</span>
 				</label>
 			</div>
 
-			<div class="tw-pd-x-1 tw-checkbox">
+			<div class="tw-pd-x-1 ffz-checkbox">
 				<input
 					id="force_unsafe"
 					ref="force_unsafe"
 					:checked="force_unsafe"
 					type="checkbox"
-					class="tw-checkbox__input"
+					class="ffz-checkbox__input"
 					@change="onCheck"
 				>
 
-				<label for="force_unsafe" class="tw-checkbox__label">
+				<label for="force_unsafe" class="ffz-checkbox__label">
 					<span class="tw-mg-l-1">
 						{{ t('debug.link-provider.allow.unsafe', 'Allow NSFW') }}
 					</span>
@@ -104,17 +104,17 @@
 				</a>
 			</div>
 
-			<div class="tw-pd-x-1 tw-checkbox">
+			<div class="tw-pd-x-1 ffz-checkbox">
 				<input
 					id="force_tooltip"
 					ref="force_tooltip"
 					:checked="force_tooltip"
 					type="checkbox"
-					class="tw-checkbox__input"
+					class="ffz-checkbox__input"
 					@change="onTooltip"
 				>
 
-				<label for="force_tooltip" class="tw-checkbox__label">
+				<label for="force_tooltip" class="ffz-checkbox__label">
 					<span class="tw-mg-l-1">
 						{{ t('debug.link-provider.force-tooltip', 'Force Tooltip') }}
 					</span>

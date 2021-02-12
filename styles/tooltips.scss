@@ -20,41 +20,41 @@ body {
 }
 
 
-.tw-balloon {
-	&[x-placement^="bottom"] > .tw-balloon__tail {
+.ffz-balloon {
+	&[x-placement^="bottom"] > .ffz-balloon__tail {
 		bottom: 100%;
 
-		.tw-balloon__tail-symbol {
+		.ffz-balloon__tail-symbol {
 			top: auto;
 			bottom: -8px;
 			left: 8px;
 		}
 	}
 
-	&[x-placement^="top"] > .tw-balloon__tail {
+	&[x-placement^="top"] > .ffz-balloon__tail {
 		top: 100%;
 
-		.tw-balloon__tail-symbol {
+		.ffz-balloon__tail-symbol {
 			top: auto;
 			bottom: 8px;
 			left: 8px;
 		}
 	}
 
-	&[x-placement^="right"] > .tw-balloon__tail {
+	&[x-placement^="right"] > .ffz-balloon__tail {
 		right: 100%;
 
-		.tw-balloon__tail-symbol {
+		.ffz-balloon__tail-symbol {
 			left: auto;
 			right: -8px;
 			top: 8px;
 		}
 	}
 
-	&[x-placement^="left"] > .tw-balloon__tail {
+	&[x-placement^="left"] > .ffz-balloon__tail {
 		left: 100%;
 
-		.tw-balloon__tail-symbol {
+		.ffz-balloon__tail-symbol {
 			left: auto;
 			right: 8px;
 			top: 8px;

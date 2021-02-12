@@ -26,7 +26,7 @@
 								:data-id="host.id"
 								class="tw-border-t ffz--host-user"
 							>
-								<div class="tw-interactable tw-interactable--default">
+								<div class="ffz-interactable ffz-interactable--default">
 									<div class="tw-align-items-center tw-flex tw-flex-row tw-flex-nowrap tw-mg-x-1">
 										<figure class="ffz-i-ellipsis-vert handle" />
 										<div class="ffz-channel-avatar">
@@ -68,16 +68,16 @@
 						<div class="simplebar-content">
 							<div class="tw-pd-1">
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center tw-checkbox">
+									<div class="tw-flex tw-align-items-center ffz-checkbox">
 										<input
 											id="autoHostSettings:enabled"
 											:checked="autoHostSettings.enabled"
 											type="checkbox"
-											class="tw-checkbox__input"
+											class="ffz-checkbox__input"
 											data-setting="enabled"
 											@change="updateCheckbox"
 										>
-										<label for="autoHostSettings:enabled" class="tw-checkbox__label">
+										<label for="autoHostSettings:enabled" class="ffz-checkbox__label">
 											<span class="tw-mg-l-1">
 												{{ t('metadata.host.setting.auto-hosting.title', 'Auto Hosting') }}
 											</span>
@@ -88,16 +88,16 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center tw-checkbox">
+									<div class="tw-flex tw-align-items-center ffz-checkbox">
 										<input
 											id="autoHostSettings:teamHost"
 											:checked="autoHostSettings.teamHost"
 											type="checkbox"
-											class="tw-checkbox__input"
+											class="ffz-checkbox__input"
 											data-setting="teamHost"
 											@change="updateCheckbox"
 										>
-										<label for="autoHostSettings:teamHost" class="tw-checkbox__label">
+										<label for="autoHostSettings:teamHost" class="ffz-checkbox__label">
 											<span class="tw-mg-l-1">
 												{{ t('metadata.host.setting.team-hosting.title', 'Team Hosting') }}
 											</span>
@@ -108,16 +108,16 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center tw-checkbox">
+									<div class="tw-flex tw-align-items-center ffz-checkbox">
 										<input
 											id="autoHostSettings:deprioritizeVodcast"
 											:checked="autoHostSettings.deprioritizeVodcast"
 											type="checkbox"
-											class="tw-checkbox__input"
+											class="ffz-checkbox__input"
 											data-setting="deprioritizeVodcast"
 											@change="updateCheckbox"
 										>
-										<label for="autoHostSettings:deprioritizeVodcast" class="tw-checkbox__label">
+										<label for="autoHostSettings:deprioritizeVodcast" class="ffz-checkbox__label">
 											<span class="tw-mg-l-1">
 												{{ t('metadata.host.setting.vodcast-hosting.title', 'Host pre-recorded videos') }}
 											</span>
@@ -128,16 +128,16 @@
 									</section>
 								</div>
 								<div class="ffz--widget ffz--checkbox">
-									<div class="tw-flex tw-align-items-center tw-checkbox">
+									<div class="tw-flex tw-align-items-center ffz-checkbox">
 										<input
 											id="autoHostSettings:strategy"
 											:checked="autoHostSettings.strategy === 'RANDOM'"
 											type="checkbox"
-											class="tw-checkbox__input"
+											class="ffz-checkbox__input"
 											data-setting="strategy"
 											@change="updateCheckbox"
 										>
-										<label for="autoHostSettings:strategy" class="tw-checkbox__label">
+										<label for="autoHostSettings:strategy" class="ffz-checkbox__label">
 											<span class="tw-mg-l-1">
 												{{ t('metadata.host.setting.strategy.title', 'Randomize Host Order') }}
 											</span>

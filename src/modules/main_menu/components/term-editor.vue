@@ -22,7 +22,7 @@
 					v-model="edit_data.v"
 					:placeholder="adding ? t('setting.terms.add-placeholder', 'Add a new term') : edit_data.v"
 					type="text"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 				>
@@ -40,7 +40,7 @@
 				<select
 					v-else
 					v-model="edit_data.t"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
+					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
 				>
 					<option value="text">
 						{{ t('setting.terms.type.text', 'Text') }}

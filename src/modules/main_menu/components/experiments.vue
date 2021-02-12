@@ -16,7 +16,7 @@
 				<input
 					ref="code"
 					type="text"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 					@keydown.enter="enterCode"
@@ -31,7 +31,7 @@
 				</div>
 				<select
 					ref="sort_select"
-					class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+					class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 					@change="onSort"
 				>
 					<option :selected="sort_by === 0">
@@ -44,16 +44,16 @@
 			</div>
 			<div class="tw-mg-b-2 tw-flex tw-align-items-center">
 				<div class="tw-flex-grow-1" />
-				<div class="tw-checkbox tw-relative">
+				<div class="ffz-checkbox tw-relative">
 					<input
 						id="unused"
 						ref="unused"
 						v-model="unused"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 					>
 
-					<label for="unused" class="tw-checkbox__label">
+					<label for="unused" class="ffz-checkbox__label">
 						<span class="tw-mg-l-1">
 							{{ t('setting.experiments.show-unused', 'Display unused experiments.') }}
 						</span>
@@ -90,7 +90,7 @@
 						<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
 							<select
 								:data-key="key"
-								class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+								class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 								@change="onChange($event)"
 							>
 								<option
@@ -169,7 +169,7 @@
 						<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
 							<select
 								:data-key="key"
-								class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+								class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 								@change="onTwitchChange($event)"
 							>
 								<option

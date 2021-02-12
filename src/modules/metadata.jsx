@@ -210,7 +210,7 @@ export default class Metadata extends Module {
 					return false;
 				} : null;
 
-				tip.element.classList.add('tw-balloon--lg');
+				tip.element.classList.add('ffz-balloon--lg');
 
 				return (<div>
 					<div class="tw-pd-b-1 tw-mg-b-1 tw-border-b tw-semibold">
@@ -220,7 +220,7 @@ export default class Metadata extends Module {
 					</div>
 					<div class="tw-flex tw-align-items-center">
 						<input
-							class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-input tw-full-width"
+							class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input tw-full-width"
 							type="text"
 							value={url}
 							onFocus={e => e.target.select()}
@@ -737,10 +737,10 @@ export default class Metadata extends Module {
 									live: false,
 									html: true,
 
-									tooltipClass: 'ffz-metadata-balloon tw-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
+									tooltipClass: 'ffz-metadata-balloon ffz-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
 									// Hide the arrow for now, until we re-do our CSS to make it render correctly.
-									arrowClass: 'tw-balloon__tail tw-overflow-hidden tw-absolute',
-									arrowInner: 'tw-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base tw-absolute',
+									arrowClass: 'ffz-balloon__tail tw-overflow-hidden tw-absolute',
+									arrowInner: 'ffz-balloon__tail-symbol tw-border-t tw-border-r tw-border-b tw-border-l tw-border-radius-small tw-c-background-base tw-absolute',
 									innerClass: 'tw-pd-1',
 
 									popper: {

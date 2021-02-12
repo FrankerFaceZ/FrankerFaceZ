@@ -9,7 +9,7 @@
 				<div class="tw-search-input">
 					<label for="ffz-main-menu.search" class="tw-hide-accessible">{{ t('i18n.ui.search', 'Search Strings') }}</label>
 					<div class="tw-relative">
-						<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height tw-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
+						<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height ffz-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
 							<figure class="ffz-i-search" />
 						</div>
 						<input
@@ -17,7 +17,7 @@
 							v-model="query"
 							:placeholder="t('i18n.ui.search', 'Search Strings')"
 							type="search"
-							class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
+							class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
 							autocapitalize="off"
 							autocorrect="off"
 							autocomplete="off"
@@ -99,7 +99,7 @@
 					ref="pager"
 					:value="page"
 					:max="pages"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-input tw-pd-x-1 tw-pd-y-05"
 					type="number"
 					min="1"
 					@keydown.enter="closePage"

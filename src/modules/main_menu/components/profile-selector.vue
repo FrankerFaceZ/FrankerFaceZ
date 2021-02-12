@@ -4,7 +4,7 @@
 			ref="button"
 			:class="{active: opened}"
 			tabindex="0"
-			class="tw-c-background-alt tw-block tw-border tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+			class="tw-c-background-alt tw-block tw-border tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 			@keyup.up.stop.prevent="focusShow"
 			@keyup.left.stop.prevent="focusShow"
 			@keyup.down.stop.prevent="focusShow"
@@ -18,7 +18,7 @@
 		<div
 			v-if="opened"
 			v-on-clickaway="hide"
-			class="tw-balloon tw-block tw-balloon--lg tw-balloon--down tw-balloon--left tw-z-above"
+			class="ffz-balloon tw-block ffz-balloon--lg ffz-balloon--down ffz-balloon--left tw-z-above"
 		>
 			<div
 				class="ffz--profile-list tw-elevation-2 tw-c-background-alt"

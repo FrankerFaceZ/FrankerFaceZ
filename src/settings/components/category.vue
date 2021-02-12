@@ -11,7 +11,7 @@
 						v-if="current"
 						:alt="current.displayName || current.name"
 						:src="current.boxArtURL"
-						class="tw-avatar__img tw-image"
+						class="ffz-avatar__img tw-image"
 					>
 				</aspect>
 			</div>

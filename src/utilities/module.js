@@ -613,11 +613,11 @@ export class Module extends EventEmitter {
 	}
 
 
-	populate(ctx, log) {
+	async populate(ctx, log) {
 		log = log || this.log;
 		const added = {};
 		for(const raw_path of ctx.keys()) {
-			const raw_module = ctx(raw_path),
+			const raw_module = await ctx(raw_path), // eslint-disable-line no-await-in-loop
 				module = raw_module.module || raw_module.default,
 				lix = raw_path.lastIndexOf('.'),
 				trimmed = lix > 2 ? raw_path.slice(2, lix) : raw_path,

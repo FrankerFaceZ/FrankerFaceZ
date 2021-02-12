@@ -3,7 +3,7 @@
 		<div class="tw-search-input tw-full-width">
 			<label v-if="open" :for="'icon-search$' + id" class="tw-hide-accessible">{{ t('setting.icon.search', 'Search for Icon') }}</label>
 			<div class="tw-relative">
-				<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height tw-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
+				<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height ffz-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
 					<figure :class="[(isOpen || ! val || ! val.length) ? 'ffz-i-search' : val]" />
 				</div>
 				<input
@@ -13,7 +13,7 @@
 					:value="isOpen ? search : val"
 					:class="[clearable ? 'tw-pd-r-5' : 'tw-pd-r-1']"
 					type="text"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-3 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-3 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 					autocomplete="off"
@@ -46,9 +46,9 @@
 							v-for="i of visible"
 							:key="i[0]"
 							:aria-checked="val === i[0]"
-							:class="{'tw-interactable--selected': val === i[0]}"
+							:class="{'ffz-interactable--selected': val === i[0]}"
 							:data-title="i[1]"
-							class="ffz-tooltip ffz-icon tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
+							class="ffz-tooltip ffz-icon ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
 							role="radio"
 							tabindex="0"
 							@keydown.space.stop.prevent=""
@@ -156,7 +156,7 @@ export default {
 			this.$nextTick(() => {
 				if ( this.val ) {
 					const root = this.$refs.list,
-						el = root && root.querySelector('.tw-interactable--selected');
+						el = root && root.querySelector('.ffz-interactable--selected');
 
 					if ( el )
 						el.scrollIntoViewIfNeeded();

@@ -57,7 +57,7 @@ export default class SettingsMenu extends Module {
 					this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
 				val.props.children.push(<div class="tw-full-width tw-relative">
-					<button class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive" onClick={this.ffzSettingsClick}>
+					<button class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive" onClick={this.ffzSettingsClick}>
 						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
 							<div class="tw-flex-grow-1">
 								{t.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
@@ -85,7 +85,7 @@ export default class SettingsMenu extends Module {
 
 				val.props.children.push(<div class="tw-full-width tw-relative">
 					<button
-						class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
+						class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
 						onClick={this.ffzPauseClick}
 					>
 						<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
@@ -110,7 +110,7 @@ export default class SettingsMenu extends Module {
 						if ( ! this.ffzPauseClick )
 							this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
 
-						return (<div class="tw-absolute tw-balloon tw-balloon--auto tw-balloon--right tw-balloon--up tw-block" data-a-target="chat-settings-balloon" style={{marginRight: '-5.3rem'}}>
+						return (<div class="tw-absolute ffz-balloon ffz-balloon--auto ffz-balloon--right ffz-balloon--up tw-block" data-a-target="chat-settings-balloon" style={{marginRight: '-5.3rem'}}>
 							<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
 								<div class="chat-settings__popover">
 									<div class="chat-settings__header tw-align-items-center tw-c-background-base tw-flex tw-pd-x-1 tw-relative">
@@ -143,7 +143,7 @@ export default class SettingsMenu extends Module {
 													</p>
 												</div>
 												<button
-													class="tw-block tw-border-radius-medium tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
+													class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
 													data-page="chat.behavior"
 													onClick={this.ffzSettingsClick}
 												>

@@ -1,0 +1,115 @@
+.ffz-interactable {
+	color: inherit;
+
+	&:hover {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	&.ffz-interactable--hover-enabled:hover:active,
+	&:active {
+		background-color: var(--color-background-interactable-active);
+	}
+
+	&--selected, &:focus {
+		position: relative;
+	}
+
+	&--disabled, &:disabled {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+}
+
+.ffz-interactable--default {
+	&.ffz-interactable--hover-forced,
+	&[data-focus-visible-added],
+	.tw-root--hover &.ffz-interactable--hover-enabled:hover {
+		background-color: var(--color-background-interactable-hover);
+	}
+
+	&.ffz-interactable--active,
+	&.ffz-interactable--hover-enabled:hover:active,
+	&:active {
+		background-color: var(--color-background-interactable-active);
+	}
+
+	&.ffz-interactable--selected {
+		color: var(--color-text-interactable-selected);
+
+		&,
+		&.ffz-interactable--hover-enabled:hover:active,
+		&.ffz-interactable--hover-forced,
+		&:active,
+		&[data-focus-visible-added],
+		.tw-root &.ffz-interactable--hover-enabled:hover {
+			background-color: var(--color-background-interactable-selected);
+		}
+	}
+}
+
+.ffz-interactable--alert {
+	&, &:hover {
+		color: var(--color-text-alert);
+	}
+
+	&.ffz-interactable--hover-forced,
+	&[data-focus-visible-added],
+	.tw-root--hover &.ffz-interactable--hover-enabled:hover {
+		background-color: var(--color-background-interactable-destructive-hover);
+		color: var(--color-text-interactable-inverted);
+	}
+
+	&.ffz-interactable--active,
+	&.ffz-interactable--hover-enabled:hover:active,
+	&:active {
+		background-color: var(--color-background-interactable-destructive-active);
+	}
+}
+
+.ffz-interactable--overlay {
+	background-color: transparent;
+
+	&.ffz-interactable--hover-forced,
+	&[data-focus-visible-added],
+	.tw-root--hover &.ffz-interactable--hover-enabled:hover {
+		background-color: var(--color-background-interactable-overlay-hover);
+	}
+
+	&.ffz-interactable--active,
+	&.ffz-interactable--hover-enabled:hover:active,
+	&:active {
+		background-color: var(--color-background-interactable-overlay-active);
+	}
+
+	&.ffz-interactable--selected {
+		color: var(--color-text-interactable-overlay-selected);
+
+		&,
+		&.ffz-interactable--hover-enabled:hover:active,
+		&.ffz-interactable--hover-forced,
+		&:active,
+		&[data-focus-visible-added],
+		.tw-root &.ffz-interactable--hover-enabled:hover {
+			background: var(--color-background-interactable-overlay-selected);
+		}
+	}
+
+	&.ffz-interactable--border {
+		border-color: var(--color-border-overlay);
+	}
+}
+
+.ffz-interactable--border {
+	border: var(--border-width-default) solid var(--color-border-base);
+
+	&.ffz-interactable--selected {
+		border: var(--border-width-default) solid var(--color-border-interactable-selected);
+	}
+}
+
+.ffz-interactable--selectable-text {
+	-ms-user-select: text;
+	-webkit-user-select: text;
+	user-select: text
+}

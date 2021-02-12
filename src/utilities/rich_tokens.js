@@ -816,7 +816,7 @@ TOKEN_TYPES.link = function(token, createElement, ctx) {
 
 	const klass = [];
 	if ( token.interactive )
-		klass.push(`tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive`);
+		klass.push(`ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive`);
 
 	if ( token.tooltip !== false )
 		klass.push('ffz-tooltip');

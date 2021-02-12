@@ -366,9 +366,13 @@ export default class SettingsManager extends Module {
 	 * @returns {SettingsProvider} The provider to store everything.
 	 */
 	async _createProvider() {
-		let wanted = localStorage.ffzProvider;
+		// If we should be using Cross-Origin Storage Bridge, do so.
+		//if ( this.providers.cosb && this.providers.cosb.supported() )
+		//	return new this.providers.cosb(this);
+
+		let wanted = localStorage.ffzProviderv2;
 		if ( wanted == null )
-			wanted = localStorage.ffzProvider = await this.sniffProvider();
+			wanted = localStorage.ffzProviderv2 = await this.sniffProvider();
 
 		if ( this.providers[wanted] ) {
 			const provider = new this.providers[wanted](this);
@@ -434,31 +438,34 @@ export default class SettingsManager extends Module {
 		// Are we transfering settings?
 		if ( transfer ) {
 			const new_provider = new this.providers[key](this);
+			await new_provider.awaitReady();
 
-			old_provider.disableEvents();
+			if ( new_provider.allowTransfer && old_provider.allowTransfer ) {
+				old_provider.disableEvents();
 
-			// When transfering, we clear all existing settings.
-			await new_provider.clear();
-			if ( new_provider.supportsBlobs )
-				await new_provider.clearBlobs();
+				// When transfering, we clear all existing settings.
+				await new_provider.clear();
+				if ( new_provider.supportsBlobs )
+					await new_provider.clearBlobs();
 
-			for(const [key,val] of old_provider.entries())
-				new_provider.set(key, val);
+				for(const [key,val] of old_provider.entries())
+					new_provider.set(key, val);
 
-			if ( old_provider.supportsBlobs && new_provider.supportsBlobs ) {
-				for(const key of await old_provider.blobKeys() ) {
-					const blob = await old_provider.getBlob(key); // eslint-disable-line no-await-in-loop
-					if ( blob )
-						await new_provider.setBlob(key, blob); // eslint-disable-line no-await-in-loop
+				if ( old_provider.supportsBlobs && new_provider.supportsBlobs ) {
+					for(const key of await old_provider.blobKeys() ) {
+						const blob = await old_provider.getBlob(key); // eslint-disable-line no-await-in-loop
+						if ( blob )
+							await new_provider.setBlob(key, blob); // eslint-disable-line no-await-in-loop
+					}
+
+					await old_provider.clearBlobs();
 				}
 
-				await old_provider.clearBlobs();
+				old_provider.clear();
+
+				await old_provider.flush();
+				await new_provider.flush();
 			}
-
-			old_provider.clear();
-
-			await old_provider.flush();
-			await new_provider.flush();
 		}
 
 		// Change over.

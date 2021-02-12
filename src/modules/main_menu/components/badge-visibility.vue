@@ -32,20 +32,20 @@
 			<header
 				v-if="sec.id"
 				:class="{default: badgeDefault(sec.id)}"
-				class="tw-flex tw-checkbox"
+				class="tw-flex ffz-checkbox"
 			>
 				<input
 					:id="sec.id"
 					:checked="badgeChecked(sec.id)"
 					type="checkbox"
-					class="tw-checkbox__input"
+					class="ffz-checkbox__input"
 					@click="onChange(sec.id, $event)"
 					@contextmenu.prevent="reset(sec.id)"
 				>
 				<label
 					:for="sec.id"
 					:title="t('setting.right-click-reset', 'Right-Click to Reset')"
-					class="tw-checkbox__label"
+					class="ffz-checkbox__label"
 					@contextmenu.prevent="reset(sec.id)"
 				>
 					<span class="tw-mg-l-1">
@@ -61,17 +61,17 @@
 					v-for="i in sort(sec.badges)"
 					:key="i.id"
 					:class="{default: badgeDefault(i.id)}"
-					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex tw-checkbox"
+					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex ffz-checkbox"
 				>
 					<input
 						:id="i.id"
 						:checked="badgeChecked(i.id)"
 						type="checkbox"
-						class="tw-checkbox__input"
+						class="ffz-checkbox__input"
 						@click="onChange(i.id, $event)"
 					>
 
-					<label :for="i.id" class="tw-checkbox__label">
+					<label :for="i.id" class="ffz-checkbox__label">
 						<div class="tw-mg-l-1 tw-flex">
 							<div
 								:style="{backgroundColor: i.color, backgroundImage: i.styleImage }"

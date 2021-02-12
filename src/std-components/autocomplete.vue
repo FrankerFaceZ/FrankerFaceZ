@@ -3,7 +3,7 @@
 		<div class="tw-search-input" data-a-target="dropdown-search-input">
 			<label v-if="placeholder" :for="_id" class="tw-hide-accessible">{{ placeholder }}</label>
 			<div class="tw-relative">
-				<div v-if="hasIcon" class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height tw-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
+				<div v-if="hasIcon" class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height ffz-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
 					<figure :class="icon" />
 				</div>
 				<input
@@ -12,7 +12,7 @@
 					:placeholder="placeholder"
 					:class="[hasIcon ? 'tw-pd-l-3' : 'tw-pd-l-1']"
 					type="search"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-r-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-r-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 					autocomplete="off"
@@ -45,8 +45,8 @@
 						v-for="(item, idx) of filteredItems"
 						:id="'ffz-autocomplete-item-' + id + '-' + idx"
 						:key="has(item, 'id') ? item.id : idx"
-						:class="{'tw-interactable--hover' : idx === index}"
-						class="tw-block tw-full-width tw-interactable tw-interactable--hover-enabled tw-interactable--default tw-interactive"
+						:class="{'ffz-interactable--hover' : idx === index}"
+						class="tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
 						tabindex="-1"
 						data-selectable="true"
 						@mouseenter="index = idx"

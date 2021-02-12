@@ -160,7 +160,7 @@ export default class Following extends SiteModule {
 
 		// Hosted Channel Content
 		simplebarContentChildren.push(<a
-			class="tw-block tw-border-radius-small tw-full-width tw-interactable tw-interactable--default tw-interactable--hover-enabled tw-interactive"
+			class="tw-block tw-border-radius-small tw-full-width ffz-interactable ffz-interactable--default ffz-interactable--hover-enabled tw-interactive"
 			href={`/${inst.props.channelLogin}`}
 			onClick={e => this.parent.hijackUserClick(e, inst.props.channelLogin, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
 		>
@@ -182,7 +182,7 @@ export default class Following extends SiteModule {
 		// Hosting Channels Content
 		for (const channel of channels) {
 			simplebarContentChildren.push(<a
-				class="tw-block tw-border-radius-small tw-full-width tw-interactable tw-interactable--default tw-interactable--hover-enabled tw-interactive"
+				class="tw-block tw-border-radius-small tw-full-width ffz-interactable ffz-interactable--default ffz-interactable--hover-enabled tw-interactive"
 				href={`/${channel.login}`}
 				onClick={e => this.parent.hijackUserClick(e, channel.login, this.destroyHostMenu.bind(this))} // eslint-disable-line react/jsx-no-bind
 			>
@@ -197,7 +197,7 @@ export default class Following extends SiteModule {
 			</a>);
 		}
 
-		this.hostMenu = (<div class="ffz-host-menu tw-balloon tw-block">
+		this.hostMenu = (<div class="ffz-host-menu ffz-balloon tw-block">
 			<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base tw-pd-05">
 				<div class="scrollable-area" data-simplebar>
 					{simplebarContentChildren}

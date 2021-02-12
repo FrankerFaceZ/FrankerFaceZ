@@ -22,7 +22,7 @@
 				:id="'title$' + id"
 				v-model="value.data.title"
 				type="text"
-				class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-mg-x-1 tw-pd-x-1 tw-pd-y-05 tw-input"
+				class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-mg-x-1 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				autocapitalize="off"
 				autocorrect="off"
 			>
@@ -30,7 +30,7 @@
 			<select
 				:id="'mode$' + id"
 				v-model="value.data.mode"
-				class="tw-block tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
+				class="tw-block tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 ffz-min-width-unset"
 			>
 				<option value="text">
 					{{ t('setting.terms.type.text', 'Text') }}
@@ -43,14 +43,14 @@
 				</option>
 			</select>
 
-			<div class="tw-flex tw-align-items-center tw-checkbox tw-mg-l-1 tw-mg-y-05">
+			<div class="tw-flex tw-align-items-center ffz-checkbox tw-mg-l-1 tw-mg-y-05">
 				<input
 					:id="'sensitive$' + id"
 					v-model="value.data.sensitive"
 					type="checkbox"
-					class="ffz-min-width-unset tw-checkbox__input"
+					class="ffz-min-width-unset ffz-checkbox__input"
 				>
-				<label :for="'sensitive$' + id" class="tw-checkbox__label tw-relative tw-tooltip__container">
+				<label :for="'sensitive$' + id" class="ffz-checkbox__label tw-relative tw-tooltip__container">
 					<span class="tw-mg-l-05">
 						Aa
 						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">

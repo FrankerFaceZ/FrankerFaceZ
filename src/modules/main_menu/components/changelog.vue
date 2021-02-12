@@ -11,22 +11,22 @@
 
 		<div v-if=" ! addons" class="tw-mg-b-1 tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1" />
-			<div class="tw-checkbox tw-relative tw-tooltip__container">
+			<div class="ffz-checkbox tw-relative tw-tooltip__container">
 				<input
 					id="nonversioned"
 					ref="nonversioned"
 					v-model="nonversioned"
 					type="checkbox"
-					class="tw-checkbox__input"
+					class="ffz-checkbox__input"
 				>
 
-				<label for="nonversioned" class="tw-checkbox__label">
+				<label for="nonversioned" class="ffz-checkbox__label">
 					<span class="tw-mg-l-1">
 						{{ t('home.changelog.show-nonversioned', 'Include non-versioned commits.') }}
 					</span>
 				</label>
 
-				<div class="tw-tooltip tw-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-right">
+				<div class="tw-tooltip ffz-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-right">
 					{{ t('home.changelog.about-nonversioned', 'Non-versioned commits are commits to the FrankerFaceZ repository not associated with a release build. They typically represent maintenance or contributions from the community that will be included in a subsequent release.') }}
 				</div>
 			</div>
@@ -58,7 +58,7 @@
 								>
 									<figure
 										v-if="commit.author.avatar_url"
-										class="tw-avatar tw-avatar--size-20 tw-mg-r-05"
+										class="ffz-avatar ffz-avatar--size-20 tw-mg-r-05"
 									>
 										<img
 											:src="commit.author.avatar_url"

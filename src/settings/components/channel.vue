@@ -6,13 +6,13 @@
 			</label>
 
 			<div class="ffz--search-avatar tw-mg-x-05">
-				<figure class="tw-avatar tw-avatar--size-30">
+				<figure class="ffz-avatar ffz-avatar--size-30">
 					<div class="tw-border-radius-rounded tw-overflow-hidden">
 						<img
 							v-if="current"
 							:alt="current.displayName"
 							:src="current.profileImageURL"
-							class="tw-avatar__img tw-image"
+							class="ffz-avatar__img tw-image"
 						>
 					</div>
 				</figure>

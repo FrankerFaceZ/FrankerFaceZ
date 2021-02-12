@@ -18,7 +18,7 @@
 				<select
 					v-if="editing"
 					v-model="edit_data.v"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width tw-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				>
 					<optgroup
 						v-for="section in badges"

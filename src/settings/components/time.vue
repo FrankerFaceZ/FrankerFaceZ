@@ -13,7 +13,7 @@
 				:id="'start-time$' + id"
 				v-model="value.data[0]"
 				type="time"
-				class="ffz-min-width-unset tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-mg-x-1 tw-pd-x-1 tw-pd-y-05 tw-input"
+				class="ffz-min-width-unset tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-mg-x-1 tw-pd-x-1 tw-pd-y-05 ffz-input"
 			>
 
 			<label :for="'end-time$' + id" class="tw-mg-l-1">
@@ -24,7 +24,7 @@
 				:id="'end-time$' + id"
 				v-model="value.data[1]"
 				type="time"
-				class="ffz-min-width-unset tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-mg-x-1 tw-input"
+				class="ffz-min-width-unset tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-mg-x-1 ffz-input"
 			>
 		</div>
 	</section>

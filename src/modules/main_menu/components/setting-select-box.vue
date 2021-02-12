@@ -12,7 +12,7 @@
 			<select
 				:id="item.full_key"
 				ref="control"
-				class="tw-border-radius-medium tw-font-size-6 tw-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-05"
+				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-05"
 				@change="onChange"
 			>
 				<template v-for="i in nested_data">
