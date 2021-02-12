@@ -86,7 +86,7 @@ export default {
 			}
 
 			try {
-				return decodeURI(new URL(this.route.url(parts), location));
+				return decodeURI(new URL(this.route.url(parts), this.route.domain ? `https://${this.route.domain}` : location));
 			} catch(err) {
 				return '(unable to render url)';
 			}

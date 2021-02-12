@@ -1,0 +1,5 @@
+.video-player .extension-overlay__iframe,
+.video-player .extension-overlay,
+.video-player .extension-view__iframe {
+	pointer-events: none !important;
+}

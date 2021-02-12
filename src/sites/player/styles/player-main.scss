@@ -1,0 +1,50 @@
+@import 'styles/main.scss';
+
+.ffz--player-pip,
+.ffz--player-reset {
+	&:before {
+		font-size: 2rem;
+		margin-top: .7rem;
+	}
+
+	&:hover:before {
+		color: #a991d4;
+	}
+}
+
+.player-controls-bottom .player-tip {
+	top: auto;
+	bottom: 4rem;
+	height: auto;
+}
+
+div[data-a-target="player-settings-menu"] {
+	display: flex;
+	flex-direction: column;
+}
+
+.ffz--cc-button {
+	order: 999;
+}
+
+.ffz--player-meta-tray {
+	display: inline-flex;
+	color: var(--color-text-overlay);
+}
+
+.ffz-stat {
+	background-color: var(--color-background-pill);
+	color: var(--color-text-overlay);
+	display: inline-block;
+	position: relative;
+	line-height: 1;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 1000px;
+	padding: 0.3rem 0.5rem;
+	font-size: 75%;
+}
+
+.ffz-stat-text {
+	font-variant-numeric: tabular-nums;
+}

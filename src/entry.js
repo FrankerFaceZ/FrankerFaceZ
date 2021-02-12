@@ -2,11 +2,13 @@
 'use strict';
 (() => {
 	// Don't run on certain sub-domains.
-	if ( /^(?:localhost\.rig|blog|player|im|chatdepot|tmi|api|brand|dev)\./.test(location.hostname) )
+	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev)\./.test(location.hostname) )
 		return;
 
-	const DEBUG = localStorage.ffzDebugMode == 'true' && document.body.classList.contains('ffz-dev') && ! window.Ember,
-		FLAVOR = location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon',
+	const DEBUG = localStorage.ffzDebugMode == 'true' && document.body.classList.contains('ffz-dev'),
+		FLAVOR =
+			location.hostname.includes('player') ? 'player' :
+				(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon'),
 		SERVER = DEBUG ? '//localhost:8000' : '//cdn.frankerfacez.com',
 		CLIPS = /clips\.twitch\.tv/.test(location.hostname) ? 'clips/' : '',
 

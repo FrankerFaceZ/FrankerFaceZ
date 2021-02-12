@@ -32,8 +32,14 @@ export default class Clippy extends BaseSite {
 		//this.inject(Switchboard);
 	}
 
-	onLoad() {
-		this.populateModules();
+	async populateModules() {
+		const ctx = await require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/);
+		const modules = await this.populate(ctx, this.log);
+		this.log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
+	}
+
+	async onLoad() {
+		await this.populateModules();
 	}
 
 	onEnable() {

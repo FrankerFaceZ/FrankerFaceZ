@@ -117,12 +117,13 @@ export default {
 		},
 
 		onBeforeChange(current, new_item) {
-			for(const child of this.$refs.children)
-				if ( child && child.onBeforeChange ) {
-					const res = child.onBeforeChange(current, new_item);
-					if ( res !== undefined )
-						return res;
-				}
+			if ( this.$refs.children )
+				for(const child of this.$refs.children)
+					if ( child && child.onBeforeChange ) {
+						const res = child.onBeforeChange(current, new_item);
+						if ( res !== undefined )
+							return res;
+					}
 		}
 	}
 }

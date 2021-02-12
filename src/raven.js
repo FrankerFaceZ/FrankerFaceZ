@@ -131,7 +131,7 @@ export default class RavenLogger extends Module {
 			if ( munch )
 				munch.getRequire().then(() => {
 					const site = this.resolve('site'),
-						core = site.getCore(),
+						core = site?.getCore?.(),
 						logger = core?.logger;
 
 					if ( logger && ! logger.rootLogger ) {
@@ -151,7 +151,7 @@ export default class RavenLogger extends Module {
 			autoBreadcrumbs: {
 				console: false
 			},
-			release: (window.FrankerFaceZ || window.FFZBridge).version_info.toString(),
+			release: (window.FrankerFaceZ || window.FFZPlayer || window.FFZBridge).version_info.toString(),
 			environment: DEBUG ? 'development' : 'production',
 			captureUnhandledRejections: false,
 			ignoreErrors: [
@@ -380,7 +380,7 @@ export default class RavenLogger extends Module {
 
 
 	buildTags() {
-		const core = this.resolve('site')?.getCore(),
+		const core = this.resolve('site')?.getCore?.(),
 			out = {};
 
 		out.flavor = this.site?.constructor.name;

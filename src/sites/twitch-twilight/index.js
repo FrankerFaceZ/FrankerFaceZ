@@ -42,6 +42,12 @@ export default class Twilight extends BaseSite {
 		this._dom_updates = [];
 	}
 
+	async populateModules() {
+		const ctx = await require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/);
+		const modules = await this.populate(ctx, this.log);
+		this.log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
+	}
+
 	async onLoad() {
 		await this.populateModules();
 
@@ -54,6 +60,7 @@ export default class Twilight extends BaseSite {
 		this.router.route('user-home', '/:userName', null, state => state?.channelView === 'Home');
 
 		this.router.route(Twilight.DASH_ROUTES, 'dashboard.twitch.tv');
+		this.router.route(Twilight.PLAYER_ROUTES, 'player.twitch.tv');
 	}
 
 	onEnable() {
@@ -237,7 +244,8 @@ Twilight.ROUTE_NAMES = {
 	'dash': 'Dashboard',
 	'popout': 'Popout Chat',
 	'dash-chat': 'Dashboard Popout Chat',
-	'user-video': 'Channel Video'
+	'user-video': 'Channel Video',
+	'popout-player': 'Popout/Embed Player'
 };
 
 
@@ -260,6 +268,11 @@ Twilight.SUNLIGHT_ROUTES = [
 	'dash-extensions',
 	'dash-streaming-tools'
 ];
+
+
+Twilight.PLAYER_ROUTES = {
+	'popout-player': '/'
+};
 
 
 Twilight.DASH_ROUTES = {

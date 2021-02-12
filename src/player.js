@@ -1,16 +1,18 @@
 'use strict';
 
+import dayjs from 'dayjs';
 import RavenLogger from './raven';
 
 import Logger from 'utilities/logging';
 import Module from 'utilities/module';
-import { timeout } from 'utilities/object';
 
 import {DEBUG} from 'utilities/constants';
+import {timeout} from 'utilities/object';
 
 import SettingsManager from './settings/index';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
+import Site from './sites/player';
 
 class FFZPlayer extends Module {
 	constructor() {
@@ -46,7 +48,7 @@ class FFZPlayer extends Module {
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
-
+		this.inject('site', Site);
 
 		// ========================================================================
 		// Startup
@@ -106,11 +108,6 @@ class FFZPlayer extends Module {
 -------------------------------------------------------------------------------
 ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n');
 	}
-
-	async onEnable() {
-
-	}
-
 }
 
 
@@ -127,11 +124,11 @@ const VER = FFZPlayer.version_info = {
 		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
 }
 
-FFZPlayer.utilities = {
+// We don't support addons in the player right now, so
+/*FFZPlayer.utilities = {
 	addon: require('utilities/addon'),
 	color: require('utilities/color'),
 	constants: require('utilities/constants'),
-	dialog: require('utilities/dialog'),
 	dom: require('utilities/dom'),
 	events: require('utilities/events'),
 	fontAwesome: require('utilities/font-awesome'),
@@ -144,8 +141,8 @@ FFZPlayer.utilities = {
 	i18n: require('utilities/translation-core'),
 	dayjs: require('dayjs'),
 	popper: require('popper.js').default
-}
+}*/
 
 
 window.FFZPlayer = FFZPlayer;
-window.ffz_player = new FFZPlayer();
+window.ffz = new FFZPlayer();

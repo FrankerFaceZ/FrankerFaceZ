@@ -1,7 +1,7 @@
 'use strict';
 
 // ============================================================================
-// Channel Metadata
+// Player Metadata
 // ============================================================================
 
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
@@ -9,10 +9,8 @@ import {maybe_call} from 'utilities/object';
 
 import {duration_to_string, durationForURL} from 'utilities/time';
 
-import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
-
-const CLIP_URL = /^https:\/\/[^/]+\.(?:twitch\.tv|twitchcdn\.net)\/.+?\.mp4(?:\?.*)?$/;
+import Tooltip from 'utilities/tooltip';
 
 export default class Metadata extends Module {
 	constructor(...args) {
@@ -20,118 +18,23 @@ export default class Metadata extends Module {
 
 		this.inject('settings');
 		this.inject('i18n');
-		this.inject('tooltips');
+		this.inject('site.tooltips');
 
-		this.should_enable = true;
 		this.definitions = {};
-
-		this.settings.add('metadata.clip-download', {
-			default: true,
-
-			ui: {
-				path: 'Channel > Metadata >> Clips',
-				title: 'Add a Download button for editors to clip pages.',
-				description: 'This adds a download button beneath the player on clip pages (the main site, not on `clips.twitch.tv`) for broadcasters and their editors.',
-				component: 'setting-check-box'
-			},
-
-			changed: () => this.updateMetadata('clip-download')
-		});
 
 		this.settings.add('metadata.player-stats', {
 			default: false,
-
-			ui: {
-				path: 'Channel > Metadata >> Player',
-				title: 'Playback Statistics',
-				description: 'Show the current stream delay, with playback rate and dropped frames in the tooltip.',
-				component: 'setting-check-box'
-			},
-
 			changed: () => this.updateMetadata('player-stats')
 		});
 
 		this.settings.add('metadata.stream-delay-warning', {
-			default: 0,
-
-			ui: {
-				path: 'Channel > Metadata >> Player',
-				title: 'Stream Delay Warning',
-				description: 'When the current stream delay exceeds this number of seconds, display the stream delay in a warning color to draw attention to the large delay. Set to zero to disable.',
-
-				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val < 0 )
-						return 0;
-
-					return val;
-				},
-			}
+			default: 0
 		});
 
 		this.settings.add('metadata.uptime', {
 			default: 1,
-
-			ui: {
-				path: 'Channel > Metadata >> Player',
-				title: 'Stream Uptime',
-
-				component: 'setting-select-box',
-
-				data: [
-					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'Enabled'},
-					{value: 2, title: 'Enabled (with Seconds)'}
-				]
-			},
-
 			changed: () => this.updateMetadata('uptime')
 		});
-
-		this.settings.add('metadata.viewers', {
-			default: false,
-
-			ui: {
-				path: 'Channel > Metadata >> Player',
-				title: 'Alternative Viewer Count',
-				description: "This displays the current channel's viewer count without an animation when it changes.",
-
-				component: 'setting-check-box'
-			},
-
-			changed: () => this.updateMetadata('viewers')
-		});
-
-
-		this.definitions.viewers = {
-
-			refresh() { return this.settings.get('metadata.viewers') },
-
-			setup(data) {
-				return {
-					live: data.channel?.live && data.channel?.live_since != null,
-					count: data.getViewerCount()
-				}
-			},
-
-			order: 1,
-			icon: 'ffz-i-viewers',
-
-			label(data) {
-				if ( ! this.settings.get('metadata.viewers') || ! data.live )
-					return null;
-
-				return this.i18n.formatNumber(data.count)
-			},
-
-			tooltip() {
-				return this.i18n.t('metadata.viewers', 'Viewer Count');
-			},
-
-			color: 'var(--color-text-live)'
-		};
-
 
 		this.definitions.uptime = {
 			inherit: true,
@@ -140,17 +43,14 @@ export default class Metadata extends Module {
 			refresh() { return this.settings.get('metadata.uptime') > 0 },
 
 			setup(data) {
-				const socket = this.resolve('socket');
 				let created = data?.channel?.live_since;
-				if ( ! created ) {
-					const created_at = data?.meta?.createdAt;
-					if ( ! created_at )
-						return {};
+				if ( ! created )
+					return {};
 
-					created = new Date(created_at);
-				}
+				if ( !(created instanceof Date) )
+					created = new Date(created);
 
-				const now = Date.now() - socket._time_drift;
+				const now = Date.now();
 
 				return {
 					created,
@@ -189,102 +89,6 @@ export default class Metadata extends Module {
 						)}
 					</div>
 				];
-			},
-
-			async popup(data, tip) {
-				const [permission, broadcast_id] = await Promise.all([
-					navigator?.permissions?.query?.({name: 'clipboard-write'}).then(perm => perm?.state).catch(() => null),
-					data.getBroadcastID()
-				]);
-				if ( ! broadcast_id )
-					return (<div>
-						{ this.i18n.t('metadata.uptime-no-id', 'Sorry, we couldn\'t find an archived video for the current broadcast.') }
-					</div>);
-
-				const url = `https://www.twitch.tv/videos/${broadcast_id}${data.uptime > 0 ? `?t=${durationForURL(data.uptime)}` : ''}`,
-					can_copy = permission === 'granted' || permission === 'prompt';
-
-				const copy = can_copy ? e => {
-					navigator.clipboard.writeText(url);
-					e.preventDefault();
-					return false;
-				} : null;
-
-				tip.element.classList.add('ffz-balloon--lg');
-
-				return (<div>
-					<div class="tw-pd-b-1 tw-mg-b-1 tw-border-b tw-semibold">
-						{ this.i18n.t('metadata.uptime.link-to', 'Link to {time}', {
-							time: duration_to_string(data.uptime, false, false, false, false)
-						}) }
-					</div>
-					<div class="tw-flex tw-align-items-center">
-						<input
-							class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input tw-full-width"
-							type="text"
-							value={url}
-							onFocus={e => e.target.select()}
-						/>
-						{can_copy && <div class="tw-relative tw-tooltip__container tw-mg-l-1">
-							<button
-								class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-								aria-label={ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
-								onClick={copy}
-							>
-								<div class="tw-align-items-center tw-flex tw-flex-grow-0">
-									<span class="tw-button-icon__icon">
-										<figure class="ffz-i-docs" />
-									</span>
-								</div>
-							</button>
-							<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up">
-								{ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
-							</div>
-						</div>}
-					</div>
-				</div>);
-			}
-		}
-
-		this.definitions['clip-download'] = {
-			button: true,
-			inherit: true,
-
-			setup(data) {
-				if ( ! this.settings.get('metadata.clip-download') )
-					return;
-
-				const Player = this.resolve('site.player'),
-					player = Player.current;
-				if ( ! player )
-					return;
-
-				const sink = player.mediaSinkManager || player.core?.mediaSinkManager,
-					src = sink?.video?.src;
-
-				if ( ! src || ! CLIP_URL.test(src) )
-					return;
-
-				if ( this.settings.get('metadata.clip-download.force') )
-					return src;
-
-				const user = this.resolve('site').getUser?.(),
-					is_self = user?.id == data.channel.id;
-
-				if ( is_self || data.getUserSelfImmediate(data.refresh)?.isEditor )
-					return src;
-			},
-
-			label(src) {
-				if ( src )
-					return this.i18n.t('metadata.clip-download', 'Download');
-			},
-
-			icon: 'ffz-i-download',
-
-			click(src) {
-				const link = createElement('a', {target: '_blank', href: src});
-				link.click();
 			}
 		}
 
@@ -299,7 +103,6 @@ export default class Metadata extends Module {
 
 			setup() {
 				const Player = this.resolve('site.player'),
-					socket = this.resolve('socket'),
 					player = Player.current;
 
 				let stats;
@@ -355,7 +158,7 @@ export default class Metadata extends Module {
 					const url = player.core.state.path;
 					if ( url.includes('/api/channel/hls/') ) {
 						const data = JSON.parse(new URL(url).searchParams.get('token'));
-						tampered = data && data.player_type && data.player_type !== 'site' ? data.player_type : false;
+						tampered = data && data.player_type && (data.player_type !== 'site' && data.player_type !== 'popout' && data.player_type !== 'embed') ? data.player_type : false;
 					}
 				} catch(err) { /* no op */ }
 
@@ -363,14 +166,9 @@ export default class Metadata extends Module {
 				if ( ! stats || stats.hlsLatencyBroadcaster < -100 )
 					return {stats};
 
-				let drift = 0;
-
-				if ( socket && socket.connected )
-					drift = socket._time_drift;
-
 				return {
 					stats,
-					drift,
+					drift: 0,
 					rate: stats.rate == null ? 1 : stats.rate,
 					delay: stats.hlsLatencyBroadcaster,
 					old: stats.hlsLatencyBroadcaster > 180,
@@ -417,10 +215,10 @@ export default class Metadata extends Module {
 					return;
 
 				if ( data.delay > (setting * 2) )
-					return '#ec1313';
+					return '#f9b6b6'; //'#ec1313';
 
 				else if ( data.delay > setting )
-					return '#fc7835';
+					return '#fcb896'; //'#fc7835';
 			},
 
 			tooltip(data) {
@@ -537,7 +335,6 @@ export default class Metadata extends Module {
 		}
 	}
 
-
 	get keys() {
 		return Object.keys(this.definitions);
 	}
@@ -548,25 +345,13 @@ export default class Metadata extends Module {
 	}
 
 	updateMetadata(keys) {
-		const channel = this.resolve('site.channel');
-		if ( channel )
-			for(const el of channel.InfoBar.instances)
-				channel.updateMetadata(el, keys);
-
-		/*const bar = this.resolve('site.channel_bar');
-		if ( bar ) {
-			for(const inst of bar.ChannelBar.instances)
-				bar.updateMetadata(inst, keys);
-		}
-
-		const legacy_bar = this.resolve('site.legacy_channel_bar');
-		if ( legacy_bar ) {
-			for(const inst of legacy_bar.ChannelBar.instances)
-				legacy_bar.updateMetadata(inst, keys);
-		}*/
+		const player = this.resolve('site.player');
+		if ( player )
+			for(const inst of player.Player.instances)
+				player.updateMetadata(inst, keys);
 	}
 
-	async renderLegacy(key, data, container, timers, refresh_fn) {
+	async render(key, data, container, timers, refresh_fn) {
 		if ( timers[key] )
 			clearTimeout(timers[key]);
 
@@ -648,7 +433,7 @@ export default class Metadata extends Module {
 							tip_content={null}
 						>
 							{btn = (<button
-								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border-l tw-border-t tw-border-b' : 'tw-font-size-5 tw-regular'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-core-button tw-core-button--padded tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border-l tw-border-t tw-border-b' : 'tw-regular'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
 								data-tooltip-type="metadata"
 							>
 								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center tw-pd-x-1">
@@ -657,7 +442,7 @@ export default class Metadata extends Module {
 								</div>
 							</button>)}
 							{popup = (<button
-								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border' : 'tw-font-size-5 tw-regular'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+								class={`tw-align-items-center tw-align-middle tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ${border ? 'tw-border' : 'tw-regular'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
 								data-tooltip-type="metadata"
 							>
 								<div class="tw-align-items-center tw-flex tw-flex-grow-0 tw-justify-center">
@@ -670,7 +455,7 @@ export default class Metadata extends Module {
 
 					} else
 						btn = popup = el = (<button
-							class={`ffz-stat tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-top-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--text ${inherit ? 'ffz-c-text-inherit' : 'tw-c-text-base'} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative tw-pd-x-05 ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-font-size-5 tw-regular tw-mg-r-05 ffz-mg-l--05'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+							class={`ffz-stat tw-align-items-center tw-align-middle ${inherit ? 'ffz-c-text-inherit' : ''} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-regular tw-mg-r-05 ffz-mg-l--05'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
 							data-tooltip-type="metadata"
 							data-key={key}
 							tip_content={null}

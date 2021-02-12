@@ -4,8 +4,10 @@
 // Rich Content Providers
 // ============================================================================
 
-const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)(?:\/)?(\w+)?(?:\/edit)?/;
-const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/\w+\/clip\/(\w+)/;
+//const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)(?:\/)?(\w+)?(?:\/edit)?/;
+//const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/\w+\/clip\/(\w+)/;
+const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/([a-z0-9-]+)(?:\/)?(\w+)?(?:\/edit)?/i;
+const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/\w+\/clip\/([a-z0-9-]+)/i;
 const VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)/;
 const USER_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([^/]+)$/;
 
@@ -258,6 +260,7 @@ export const Clips = {
 
 				return {
 					url: token.url,
+					accent: '#6441a4',
 
 					short: {
 						type: 'header',
