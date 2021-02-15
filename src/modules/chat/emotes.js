@@ -84,6 +84,16 @@ export default class Emotes extends Module {
 		this._set_refs = {};
 		this._set_timers = {};
 
+		this.settings.add('chat.emotes.2x', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Emotes',
+				title: 'Larger Emotes',
+				description: 'This setting will make emotes appear twice as large in chat. It\'s good for use with larger fonts or just if you really like emotes.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.fix-bad-emotes', {
 			default: true,
 			ui: {
@@ -721,6 +731,14 @@ export default class Emotes extends Module {
 			if ( emote.urls[4] )
 				emote.srcSet += `, ${emote.urls[4]} 4x`;
 
+			if ( emote.urls[2] ) {
+				emote.can_big = true;
+				emote.src2 = emote.urls[2];
+				emote.srcSet2 = `${emote.urls[2]} 1x`;
+				if ( emote.urls[4] )
+					emote.srcSet2 += `, ${emote.urls[4]} 2x`;
+			}
+
 			emote.token = {
 				type: 'emote',
 				id: emote.id,
@@ -728,8 +746,12 @@ export default class Emotes extends Module {
 				provider: 'ffz',
 				src: emote.urls[1],
 				srcSet: emote.srcSet,
+				can_big: !! emote.urls[2],
+				src2: emote.src2,
+				srcSet2: emote.srcSet2,
 				text: emote.hidden ? '???' : emote.name,
-				length: emote.name.length
+				length: emote.name.length,
+				height: emote.height
 			};
 
 			if ( has(MODIFIERS, emote.id) )

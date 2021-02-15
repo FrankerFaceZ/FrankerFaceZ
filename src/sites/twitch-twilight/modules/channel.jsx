@@ -33,7 +33,7 @@ export default class Channel extends Module {
 
 
 		this.settings.add('channel.panel-tips', {
-			default: true,
+			default: false,
 			ui: {
 				path: 'Channel > Behavior >> Panels',
 				title: 'Display rich tool-tips for links in channel panels.',

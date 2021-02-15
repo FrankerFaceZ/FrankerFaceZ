@@ -66,8 +66,16 @@ export default class Switchboard extends Module {
 		this.log.info(`Found Route and Switch with ${da_switch.props.children.length} routes.`);
 		const location = router.props.location.pathname;
 
+		if ( ! this.loadRoute(da_switch, location, false) )
+			this.loadRoute(da_switch, location, true);
+	}
+
+	loadRoute(da_switch, location, with_params) {
 		for(const route of da_switch.props.children) {
 			if ( ! route.props || ! route.props.component )
+				continue;
+
+			if ( with_params !== null && with_params !== route.props.path.includes(':') )
 				continue;
 
 			try {
@@ -124,7 +132,9 @@ export default class Switchboard extends Module {
 				}
 			}
 
-			break;
+			return true;
 		}
+
+		return false;
 	}
 }

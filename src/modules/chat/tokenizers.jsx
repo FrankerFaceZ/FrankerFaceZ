@@ -12,6 +12,7 @@ import {CATEGORIES} from './emoji';
 
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
+	WHITESPACE = /^\s*$/,
 	LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
 	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
 	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
@@ -1057,9 +1058,10 @@ const render_emote = (token, createElement, wrapped) => {
 		emote = createElement('img', {
 			class: `${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
 			attrs: {
-				src: token.src,
-				srcSet: token.srcSet,
+				src: token.big && token.src2 || token.src,
+				srcSet: token.big && token.srcSet2 || token.srcSet,
 				alt: token.text,
+				height: (token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined,
 				'data-tooltip-type': 'emote',
 				'data-provider': token.provider,
 				'data-id': token.id,
@@ -1111,8 +1113,9 @@ export const AddonEmotes = {
 		const mods = token.modifiers || [], ml = mods.length,
 			emote = (<img
 				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
-				src={token.src}
-				srcSet={token.srcSet}
+				src={token.big && token.src2 || token.src}
+				srcSet={token.big && token.srcSet2 || token.srcSet}
+				height={(token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined}
 				alt={token.text}
 				data-tooltip-type="emote"
 				data-provider={token.provider}
@@ -1291,15 +1294,17 @@ export const AddonEmotes = {
 			return tokens;
 
 		const emotes = this.emotes.getEmotes(
-				msg.user.id,
-				msg.user.login,
-				msg.roomID,
-				msg.roomLogin
-			),
-			out = [];
+			msg.user.id,
+			msg.user.login,
+			msg.roomID,
+			msg.roomLogin
+		);
 
 		if ( ! emotes )
 			return tokens;
+
+		const big = this.context.get('chat.emotes.2x'),
+			out = [];
 
 		let last_token, emote;
 		for(const token of tokens) {
@@ -1307,8 +1312,10 @@ export const AddonEmotes = {
 				continue;
 
 			if ( token.type !== 'text' ) {
-				if ( token.type === 'emote' && ! token.modifiers )
-					token.modifiers = [];
+				if ( token.type === 'emote' ) {
+					if ( ! token.modifiers )
+						token.modifiers = [];
+				}
 
 				out.push(token);
 				last_token = token;
@@ -1323,8 +1330,14 @@ export const AddonEmotes = {
 
 					// Is this emote a modifier?
 					if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
-						if ( last_token.modifiers.indexOf(emote.token) === -1 )
-							last_token.modifiers.push(emote.token);
+						if ( last_token.modifiers.indexOf(emote.token) === -1 ) {
+							if ( big )
+								last_token.modifiers.push(Object.assign({
+									big
+								}, emote.token));
+							else
+								last_token.modifiers.push(emote.token);
+						}
 
 						continue;
 					}
@@ -1339,7 +1352,10 @@ export const AddonEmotes = {
 						text = [];
 					}
 
-					const t = Object.assign({modifiers: []}, emote.token);
+					const t = Object.assign({
+						modifiers: [],
+						big
+					}, emote.token);
 					out.push(t);
 					last_token = t;
 
@@ -1349,8 +1365,10 @@ export const AddonEmotes = {
 					text.push(segment);
 			}
 
-			if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
-				out.push({type: 'text', text: text.join(' ')});
+			if ( text.length > 1 || (text.length === 1 && text[0] !== '') ) {
+				const t = {type: 'text', text: text.join(' ')};
+				out.push(t);
+			}
 		}
 
 		return out;
@@ -1445,6 +1463,8 @@ export const TwitchEmotes = {
 			return tokens;
 
 		const data = msg.ffz_emotes,
+			big = this.context.get('chat.emotes.2x'),
+			use_replacements = this.context.get('chat.fix-bad-emotes'),
 			emotes = [];
 
 		for(const emote_id in data)
@@ -1516,15 +1536,21 @@ export const TwitchEmotes = {
 					});
 
 				let src, srcSet;
+				let src2, srcSet2;
 
 				const replacement = REPLACEMENTS[e_id];
-				if ( replacement && this.context.get('chat.fix-bad-emotes') ) {
+				if ( replacement && use_replacements ) {
 					src = `${REPLACEMENT_BASE}${replacement}`;
 					srcSet = '';
 
 				} else {
 					src = `${TWITCH_EMOTE_BASE}${e_id}/1.0`;
 					srcSet = `${TWITCH_EMOTE_BASE}${e_id}/1.0 1x, ${TWITCH_EMOTE_BASE}${e_id}/2.0 2x`;
+
+					if ( big ) {
+						src2 = `${TWITCH_EMOTE_BASE}${e_id}/2.0`;
+						srcSet2 = `${TWITCH_EMOTE_BASE}${e_id}/2.0 1x, ${TWITCH_EMOTE_BASE}${e_id}/3.0 2x`;
+					}
 				}
 
 				out.push({
@@ -1533,6 +1559,9 @@ export const TwitchEmotes = {
 					provider: 'twitch',
 					src,
 					srcSet,
+					src2,
+					srcSet2,
+					big,
 					text: text.slice(e_start - t_start, e_end - t_start).join(''),
 					modifiers: []
 				});

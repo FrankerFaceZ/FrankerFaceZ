@@ -3,8 +3,8 @@
 		"name": "New Link Tokenization",
 		"description": "Update to Twitch's latest link regex. Experiment while this is checked for bugs.",
 		"groups": [
-			{"value": true, "weight": 50},
-			{"value": false, "weight": 50}
+			{"value": true, "weight": 100},
+			{"value": false, "weight": 0}
 		]
 	},
 	"api_load": {
@@ -19,8 +19,8 @@
 		"name": "API-Based Link Lookups",
 		"description": "Use the new API to look up links instead of the socket cluster.",
 		"groups": [
-			{"value": true, "weight": 50},
-			{"value": false, "weight": 50}
+			{"value": true, "weight": 30},
+			{"value": false, "weight": 70}
 		]
 	}
 }

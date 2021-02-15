@@ -354,6 +354,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.prediction', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow Predictions to be displayed in chat.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.community-chest.show', {
 			default: true,
 			ui: {
@@ -773,6 +782,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.banners.hype-train', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.subs.gift-banner', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
@@ -1258,6 +1268,7 @@ export default class ChatHook extends Module {
 			'community_sub_gift': this.chat.context.get('chat.subs.gift-banner'),
 			'megacheer': this.chat.context.get('chat.bits.show'),
 			'hype_train': this.chat.context.get('chat.banners.hype-train'),
+			'prediction': this.chat.context.get('chat.banners.prediction'),
 			'poll': this.chat.context.get('chat.banners.polls')
 		};
 

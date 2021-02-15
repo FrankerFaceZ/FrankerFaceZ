@@ -6,8 +6,8 @@
 
 //const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/(\w+)(?:\/)?(\w+)?(?:\/edit)?/;
 //const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/\w+\/clip\/(\w+)/;
-const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/([a-z0-9-]+)(?:\/)?(\w+)?(?:\/edit)?/i;
-const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/\w+\/clip\/([a-z0-9-]+)/i;
+const CLIP_URL = /^(?:https?:\/\/)?clips\.twitch\.tv\/([a-z0-9-_=]+)(?:\/)?(\w+)?(?:\/edit)?/i;
+const NEW_CLIP_URL = /^(?:https?:\/\/)?(?:(?:www|m)\.)?twitch\.tv\/\w+\/clip\/([a-z0-9-_=]+)/i;
 const VIDEO_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:\w+\/v|videos)\/(\w+)/;
 const USER_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([^/]+)$/;
 
