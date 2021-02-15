@@ -54,6 +54,8 @@ const ERROR_STRINGS = [
 // ============================================================================
 
 export default class RavenLogger extends Module {
+	static construct_requires = null;
+
 	constructor(...args) {
 		super(...args);
 
@@ -62,7 +64,9 @@ export default class RavenLogger extends Module {
 		// Do these in an event handler because we're initialized before
 		// settings are even ready.
 		this.once('settings:enabled', () => {
-			this.settings.add('reports.error.enable', {
+			const settings = this.resolve('settings');
+
+			settings.add('reports.error.enable', {
 				default: true,
 				ui: {
 					path: 'Data Management > Reporting >> Error Reports',
@@ -71,7 +75,7 @@ export default class RavenLogger extends Module {
 				}
 			});
 
-			this.settings.add('reports.error.include-user', {
+			settings.add('reports.error.include-user', {
 				default: false,
 				ui: {
 					path: 'Data Management > Reporting >> Error Reports',
@@ -81,7 +85,7 @@ export default class RavenLogger extends Module {
 				}
 			});
 
-			this.settings.add('reports.error.include-settings', {
+			settings.add('reports.error.include-settings', {
 				default: true,
 				ui: {
 					path: 'Data Management > Reporting >> Error Reports',
@@ -91,7 +95,7 @@ export default class RavenLogger extends Module {
 				}
 			});
 
-			this.settings.addUI('reports.error.example', {
+			settings.addUI('reports.error.example', {
 				path: 'Data Management > Reporting >> Example Report',
 				component: 'async-text',
 

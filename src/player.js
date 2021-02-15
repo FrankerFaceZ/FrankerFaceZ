@@ -15,6 +15,8 @@ import {TranslationManager} from './i18n';
 import Site from './sites/player';
 
 class FFZPlayer extends Module {
+	static construct_requires = null;
+
 	constructor() {
 		super();
 		const start_time = performance.now(),

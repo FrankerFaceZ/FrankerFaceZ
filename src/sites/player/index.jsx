@@ -23,12 +23,15 @@ export default class PlayerSite extends BaseSite {
 	constructor(...args) {
 		super(...args);
 
+		this.inject('settings');
 		this.inject('i18n');
 		this.inject(Fine);
 		this.inject(Player);
 		this.inject('tooltips', Tooltips);
 		this.inject('css_tweaks', CSSTweaks);
+	}
 
+	onEnable() {
 		this.DataSource = this.fine.define(
 			'data-source',
 			n => n.consentMetadata && n.onPlaying && n.props && n.props.data
@@ -38,10 +41,6 @@ export default class PlayerSite extends BaseSite {
 			'player-menu',
 			n => n.closeSettingsMenu && n.state && n.state.activeMenu && n.getMaxMenuHeight
 		);
-	}
-
-	onEnable() {
-		this.settings = this.resolve('settings');
 
 		this.DataSource.on('mount', this.updateData, this);
 		this.DataSource.on('update', this.updateData, this);

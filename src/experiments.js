@@ -45,10 +45,10 @@ function sortExperimentLog(a,b) {
 // ============================================================================
 
 export default class ExperimentManager extends Module {
+	static construct_requires = ['settings'];
+
 	constructor(...args) {
 		super(...args);
-
-		this.inject('settings');
 
 		this.settings.addUI('experiments', {
 			path: 'Debugging > Experiments',
@@ -289,7 +289,7 @@ export default class ExperimentManager extends Module {
 			return window.__twilightSettings.experiments;
 
 		const core = this.resolve('site')?.getCore?.();
-		return core && core.experiments.experiments;
+		return core && core.experiments?.experiments;
 	}
 
 

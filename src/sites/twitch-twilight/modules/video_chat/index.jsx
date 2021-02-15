@@ -27,7 +27,7 @@ export default class VideoChatHook extends Module {
 		this.inject('site.web_munch');
 
 		this.inject('chat');
-		this.injectAs('site_chat', 'site.chat');
+		this.inject('site.chat', undefined, false, 'site_chat');
 		this.inject('site.chat.chat_line.rich_content');
 
 		this.VideoChatController = this.fine.define(

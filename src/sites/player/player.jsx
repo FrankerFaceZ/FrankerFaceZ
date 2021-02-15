@@ -23,7 +23,6 @@ export default class Player extends PlayerBase {
 			'player-source',
 			n => n.setSrc && n.setInitialPlaybackSettings
 		);
-	}
 
 	wantsMetadata() {
 		return this.settings.get('player.embed-metadata');

@@ -40,6 +40,8 @@ export const NO_SYNC_KEYS = ['session'];
  * @extends Module
  */
 export default class SettingsManager extends Module {
+	static construct_requires = null;
+
 	/**
 	 * Create a SettingsManager module.
 	 */

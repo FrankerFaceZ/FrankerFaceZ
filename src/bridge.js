@@ -11,6 +11,8 @@ import {serializeBlob, deserializeBlob} from 'utilities/blobs';
 import SettingsManager from './settings/index';
 
 class FFZBridge extends Module {
+	static construct_requires = null;
+
 	constructor() {
 		super();
 		const start_time = performance.now(),

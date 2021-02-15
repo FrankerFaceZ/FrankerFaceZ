@@ -22,20 +22,6 @@ export default class Metadata extends Module {
 
 		this.definitions = {};
 
-		this.settings.add('metadata.player-stats', {
-			default: false,
-			changed: () => this.updateMetadata('player-stats')
-		});
-
-		this.settings.add('metadata.stream-delay-warning', {
-			default: 0
-		});
-
-		this.settings.add('metadata.uptime', {
-			default: 1,
-			changed: () => this.updateMetadata('uptime')
-		});
-
 		this.definitions.uptime = {
 			inherit: true,
 			no_arrow: true,
@@ -353,6 +339,20 @@ export default class Metadata extends Module {
 	}
 
 	onEnable() {
+		this.settings.add('metadata.player-stats', {
+			default: false,
+			changed: () => this.updateMetadata('player-stats')
+		});
+
+		this.settings.add('metadata.stream-delay-warning', {
+			default: 0
+		});
+
+		this.settings.add('metadata.uptime', {
+			default: 1,
+			changed: () => this.updateMetadata('uptime')
+		});
+
 		const md = this.tooltips.types.metadata = target => {
 			let el = target;
 			if ( el._ffz_stat )
