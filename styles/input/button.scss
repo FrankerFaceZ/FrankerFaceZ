@@ -1,0 +1,223 @@
+.ffz-core-button {
+    font-size: var(--button-text-default);
+    font-weight: 600;
+    height: var(--button-size-default);
+    user-select: none;
+	white-space: nowrap;
+
+	&, &:hover {
+		text-decoration: none;
+	}
+
+	&--small {
+		font-size: var(--button-text-small);
+		height: var(--button-size-small);
+	}
+
+	&--large {
+		font-size: var(--button-text-large);
+		height: var(--button-size-large);
+	}
+
+	&--disabled {
+		opacity: 0.5;
+	}
+
+	&:disabled {
+		cursor: not-allowed;
+	}
+
+	&--primary {
+		background-color: var(--color-background-button-primary-default);
+		color: var(--color-text-button-primary);
+
+		&[data-focus-visible-added],
+		.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-button-primary-hover);
+			color: var(--color-text-button-primary);
+		}
+
+		&[data-focus-visible-added] {
+			box-shadow: var(--shadow-button-focus);
+		}
+
+		&:active:not(.ffz-core-button--disabled),
+		&:hover:active:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-button-primary-active);
+			color: var(--color-text-button-primary);
+		}
+
+		&.ffz-core-button--disabled {
+			background-color: var(--color-background-button-disabled);
+			color: var(--color-text-button-disabled);
+		}
+
+		&.ffz-core-button--overlay {
+			background-color: var(--color-background-button-overlay-primary-default);
+			color: var(--color-text-button-overlay-primary);
+
+			&[data-focus-visible-added],
+			.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+				background-color: var(--color-background-button-overlay-primary-hover);
+				color: var(--color-text-button-overlay-primary);
+			}
+
+			&[data-focus-visible-added] {
+				box-shadow: var(--shadow-button-overlay-focus);
+			}
+
+			&:active:not(.ffz-core-button--disabled),
+			&:hover:active:not(.ffz-core-button--disabled) {
+				background-color: var(--color-background-button-overlay-primary-active);
+				box-shadow: var(--shadow-button-overlay-active);
+				color: var(--color-text-button-overlay-primary);
+			}
+		}
+	}
+
+	&--secondary {
+		background-color: var(--color-background-button-secondary-default);
+		color: var(--color-text-button-secondary);
+
+		&[data-focus-visible-added],
+		.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-button-secondary-hover);
+			color: var(--color-text-button-secondary);
+		}
+
+		&[data-focus-visible-added] {
+			box-shadow: var(--shadow-button-focus);
+		}
+
+		&:active:not(.ffz-core-button--disabled),
+		&:hover:active:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-button-secondary-active);
+			color: var(--color-text-button-secondary);
+		}
+
+		&.ffz-core-button--disabled {
+			background-color: var(--color-background-button-disabled);
+			color: var(--color-text-button-disabled);
+		}
+
+		&.ffz-core-button--overlay {
+			background-color: var(--color-background-button-overlay-secondary-default);
+			color: var(--color-text-button-overlay-secondary);
+
+			&[data-focus-visible-added],
+			.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+				background-color: var(--color-background-button-overlay-secondary-hover);
+				color: var(--color-text-button-overlay-secondary);
+			}
+
+			&[data-focus-visible-added] {
+				box-shadow: var(--shadow-button-overlay-focus);
+			}
+
+			&:active:not(.ffz-core-button--disabled),
+			&:hover:active:not(.ffz-core-button--disabled) {
+				background-color: var(--color-background-button-overlay-secondary-active);
+				box-shadow: var(--shadow-button-overlay-active);
+				color: var(--color-text-button-overlay-secondary);
+			}
+		}
+	}
+
+	&--text {
+		background-color: var(--color-background-button-text-default);
+		color: var(--color-text-button-text);
+
+		&[data-focus-visible-added],
+		.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-button-text-hover);
+			color: var(--color-text-button-text);
+		}
+
+		&[data-focus-visible-added] {
+			box-shadow: var(--shadow-button-focus);
+		}
+
+		&:active:not(.ffz-core-button--disabled),
+		&:hover:active:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-button-text-active);
+			box-shadow: var(--shadow-button-active);
+			color: var(--color-text-button-text);
+		}
+
+		&.ffz-core-button--disabled {
+			background-color: var(--color-background-button-disabled);
+			color: var(--color-text-button-disabled);
+		}
+
+		&.ffz-core-button--overlay {
+			background-color: var(--color-background-button-overlay-text-default);
+			color: var(--color-text-button-overlay-text);
+
+			&[data-focus-visible-added],
+			.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+				background-color: var(--color-background-button-overlay-text-hover);
+				color: var(--color-text-button-overlay-text);
+			}
+
+			&[data-focus-visible-added] {
+				box-shadow: var(--shadow-button-overlay-focus);
+			}
+
+			&:active:not(.ffz-core-button--disabled),
+			&:hover:active:not(.ffz-core-button--disabled) {
+				background-color: var(--color-background-button-overlay-text-active);
+				box-shadow: var(--shadow-button-overlay-active);
+				color: var(--color-text-button-overlay-text);
+			}
+		}
+	}
+
+	&--destructive {
+		background-color: var(--color-background-button-destructive-default);
+		color: var(--color-text-button-destructive);
+
+		&[data-focus-visible-added],
+		.tw-root--hover &:hover:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-interactable-destructive-hover);
+			color: var(--color-text-button-destructive);
+		}
+
+		&[data-focus-visible-added] {
+			box-shadow: var(--shadow-button-focus);
+		}
+
+		&:active:not(.ffz-core-button--disabled),
+		&:hover:active:not(.ffz-core-button--disabled) {
+			background-color: var(--color-background-interactable-destructive-active);
+			box-shadow: var(--shadow-button-active);
+			color: var(--color-text-button-destructive)
+		}
+
+		&.ffz-core-button--disabled {
+			background-color: var(--color-background-button-disabled);
+			color: var(--color-text-button-disabled);
+		}
+
+		&.ffz-core-button--overlay.ffz-core-button--disabled {
+			background-color: var(--color-background-button-overlay-primary-default);
+			color: var(--color-text-button-overlay-primary);
+		}
+	}
+
+
+	&-label {
+		padding: 0 var(--button-padding-x);
+	}
+
+	&-label--icon {
+		padding-left: calc(var(--button-padding-x) - .2rem);
+	}
+
+	&-label--dropdown {
+		padding-right: calc(var(--button-padding-x) - .2rem);
+	}
+
+	&-icon { width: 2rem }
+	&-icon--small { width: 1.6rem }
+	&-icon--large { width: 2.4rem }
+}

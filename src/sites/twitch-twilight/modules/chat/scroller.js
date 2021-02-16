@@ -87,7 +87,7 @@ export default class Scroller extends Module {
 			ui: {
 				path: 'Chat > Behavior >> Scrolling',
 				title: 'Smooth Scrolling',
-				description: '**Note:** This setting has been disabled until such time as someone is able to fix major bugs with it.\n\nSmoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
+				description: '**Note:** This may not behave well depending on your browser. Disable this if you encounter issues.\n\nSmoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
@@ -145,9 +145,8 @@ export default class Scroller extends Module {
 				inst.ffzMaybeUnpause();
 		});
 
-		this.smooth_scroll = 0; // this.chat.context.get('chat.scroller.smooth-scroll');
+		this.smooth_scroll = this.chat.context.get('chat.scroller.smooth-scroll');
 		this.chat.context.on('changed:chat.scroller.smooth-scroll', val => {
-			val = 0;
 			this.smooth_scroll = val;
 
 			for(const inst of this.ChatScroller.instances)
@@ -245,6 +244,26 @@ export default class Scroller extends Module {
 				t.on('tooltips:mousemove', this.ffzTooltipHover, this);
 				t.on('tooltips:leave', this.ffzTooltipLeave, this);
 
+				inst.scrollToBottom = function() {
+					if ( inst._ffz_scroll_request )
+						return;
+
+					inst._ffz_scroll_request = requestAnimationFrame(inst._scrollToBottom);
+				}
+
+				inst._scrollToBottom = function() {
+					inst._ffz_scroll_request = null;
+					//inst._ffz_snapshot = null;
+					if ( ! inst.state.isPaused ) {
+						if ( inst.ffz_smooth_scroll && ! inst._ffz_one_fast_scroll )
+							inst.ffzSmoothScroll();
+						else {
+							inst._ffz_one_fast_scroll = false;
+							inst.ffz_oldScroll();
+						}
+					}
+				}
+
 				inst.handleScrollEvent = function(event) {
 					if ( ! inst.scrollRef?.scrollContent )
 						return;
@@ -312,6 +331,70 @@ export default class Scroller extends Module {
 				// event handlers for mouse enter / leave.
 				inst.forceUpdate();
 				t.emit('site:dom-update', 'chat-scroller', inst);
+			}
+
+			cls.prototype.ffzSmoothScroll = function() {
+				if ( this._ffz_smooth_animation )
+					cancelAnimationFrame(this._ffz_smooth_animation);
+
+				this.ffz_is_smooth_scrolling = true;
+
+				// Step setting value is # pixels to scroll per 10ms.
+				// 1 is pretty slow, 2 medium, 3 fast, 4 very fast.
+				let step = this.ffz_smooth_scroll,
+					old_time = performance.now();
+
+				const scroll_content = this.scrollRef?.scrollContent;
+				if ( ! scroll_content )
+					return;
+
+				const target_top = scroll_content.scrollHeight - scroll_content.clientHeight,
+					difference = target_top - scroll_content.scrollTop;
+
+				// If we are falling behind speed us up
+				if ( difference > scroll_content.clientHeight ) {
+					// we are a full scroll away, just jump there
+					step = difference;
+
+				} else if ( difference > 200 ) {
+					// we are starting to fall behind, speed it up a bit
+					step += step * Math.floor(difference / 200);
+				}
+
+				const smoothAnimation = () => {
+					if ( this.state.isPaused || ! this.state.isAutoScrolling )
+						return this.ffz_is_smooth_scrolling = false;
+
+					// See how much time has passed to get a step based off the delta
+					const current_time = performance.now(),
+						delta = current_time - old_time,
+						current_step = step * (delta / 10);
+
+					// we need to move at least one full pixel for scrollTop to do anything in this delta.
+					if ( current_step >= 1 ) {
+						const scroll_top = scroll_content.scrollTop,
+							next_top = scroll_top + current_step,
+							target_top = scroll_content.scrollHeight - scroll_content.clientHeight;
+
+						old_time = current_time;
+						if ( next_top < target_top ) {
+							scroll_content.scrollTop = scroll_top + current_step;
+							this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
+
+						} else {
+							// We've reached the bottom.
+							scroll_content.scrollTop = target_top;
+							this.ffz_is_smooth_scrolling = false;
+						}
+
+					} else {
+						// The frame happened so quick since last update that we haven't moved a full pixel.
+						// Just wait.
+						this._ffz_smooth_animation = requestAnimationFrame(smoothAnimation);
+					}
+				}
+
+				smoothAnimation();
 			}
 
 			cls.prototype.ffzSetSmoothScroll = function(value) {
@@ -566,11 +649,11 @@ export default class Scroller extends Module {
 				}, createElement('div', {
 					className: 'tw-absolute tw-border-radius-medium tw-bottom-0 tw-c-background-overlay tw-c-text-overlay tw-mg-b-1'
 				}, createElement('button', {
-					className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--overlay tw-core-button--text tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative',
+					className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium ffz-core-button ffz-core-button--overlay ffz-core-button--text tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative',
 					'data-a-target': 'chat-list-footer',
 					onClick: this.ffzFastResume
 				}, createElement('div', {
-					className: 'tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0'
+					className: 'tw-align-items-center ffz-core-button-label tw-flex tw-flex-grow-0'
 				}, createElement('div', {
 					className: 'tw-flex-grow-0'
 				}, msg)))));

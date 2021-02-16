@@ -320,7 +320,7 @@ export default class MenuButton extends SiteModule {
 		>
 			<div class="tw-inline-flex tw-relative tw-tooltip__container">
 				{btn = (<button
-					class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.loading ? ' loading' : ''}`}
+					class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.loading ? ' loading' : ''}`}
 					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
 					onContextMenu={e => this.renderContext(e, btn)} // eslint-disable-line react/jsx-no-bind
 				>
@@ -465,7 +465,7 @@ export default class MenuButton extends SiteModule {
 
 		for(const profile of this.settings.__profiles) {
 			const toggle = (<button
-				class="tw-flex-shrink-0 tw-mg-r-1 tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-relative ffz-tooltip ffz-tooltip--no-mouse"
+				class="tw-flex-shrink-0 tw-mg-r-1 tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-relative ffz-tooltip ffz-tooltip--no-mouse"
 				data-title={this.renderButtonTip(profile)}
 				onClick={e => {  // eslint-disable-line react/jsx-no-bind
 					profile.toggled = ! profile.toggled;
@@ -506,7 +506,7 @@ export default class MenuButton extends SiteModule {
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">
 							<div class="tw-inline-flex tw-relative tw-tooltip__container">
 								<button
-									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
+									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
 									onDblClick={() => {this.emit('site.player:reset'); destroy()}} // eslint-disable-line react/jsx-no-bind
 								>
 									<span class="tw-button-icon__icon">
@@ -526,7 +526,7 @@ export default class MenuButton extends SiteModule {
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
 							<div class="tw-inline-flex tw-relative tw-tooltip__container">
 								<button
-									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
+									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
 									onClick={e => {this.openSettings(e, btn); destroy()}} // eslint-disable-line react/jsx-no-bind
 								>
 									<span class="tw-button-icon__icon">
@@ -540,7 +540,7 @@ export default class MenuButton extends SiteModule {
 						</div>
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
 							<button
-								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 								onClick={destroy} // eslint-disable-line react/jsx-no-bind
 							>
 								<span class="tw-button-icon__icon">

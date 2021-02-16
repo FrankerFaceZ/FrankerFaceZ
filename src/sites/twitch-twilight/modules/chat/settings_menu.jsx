@@ -116,7 +116,7 @@ export default class SettingsMenu extends Module {
 									<div class="chat-settings__header tw-align-items-center tw-c-background-base tw-flex tw-pd-x-1 tw-relative">
 										<div class="chat-settings__back-icon-container tw-left-0 tw-mg-r-05">
 											<button
-												class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-core-button tw-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+												class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 												data-test-selector="chat-settings-back-button"
 												aria-label={t.i18n.t('chat.settings.back', 'Back')}
 												onClick={this.ffzPauseClick}

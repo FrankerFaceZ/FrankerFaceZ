@@ -117,7 +117,7 @@ export default class PlayerSite extends BaseSite {
 
 		const should_render = inst.state.activeMenu === 'settings-menu__main';
 
-		let lbl, cont = container.querySelector('.ffz--cc-button');
+		let lbl, btn, ver, cont = container.querySelector('.ffz--cc-button');
 		if ( ! cont ) {
 			if ( ! should_render )
 				return;
@@ -134,14 +134,15 @@ export default class PlayerSite extends BaseSite {
 			}
 
 			cont = (<div class="tw-mg-t-1 tw-border-t tw-pd-t-1 tw-full-width tw-relative ffz--cc-button">
-				<button
+				{btn = (<button
 					class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
 					onclick={handler}
 				>
 					<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
-						{lbl = <div class="tw-flex-grow-1" />}
+						{lbl = <div class="ffz--label tw-flex-grow-1 tw-ellipsis" />}
+						{ver = <div class="ffz--version tw-align-items-center tw-mg-l-05 tw-c-text-alt-2 tw-white-space-nowrap"></div>}
 					</div>
-				</button>
+				</button>)}
 			</div>);
 
 			container.appendChild(cont);
@@ -149,9 +150,13 @@ export default class PlayerSite extends BaseSite {
 		} else if ( ! should_render ) {
 			cont.remove();
 			return;
-		} else
-			lbl = cont.querySelector('button > div > div');
+		} else {
+			btn = cont.querySelector('button');
+			lbl = cont.querySelector('.ffz--label');
+			ver = cont.querySelector('.ffz--version');
+		}
 
-		lbl.textContent = this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center');
+		lbl.textContent = btn.title = this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center');
+		ver.textContent = this.resolve('core').constructor.version_info.toString();
 	}
 }

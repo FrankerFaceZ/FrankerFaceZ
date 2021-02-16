@@ -76,7 +76,7 @@
 		</header>
 		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-flex-column tw-overflow-hidden">
 			<header class="tw-border-b tw-pd-05 tw-c-background-base tw-flex tw-align-items-center">
-				<button class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip__container" @click="prevPage">
+				<button class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip__container" @click="prevPage">
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-left-dir" />
 					</span>
@@ -86,7 +86,7 @@
 				</button>
 				<button
 					v-if="! page_open"
-					class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-core-button--text tw-c-text-base tw-interactive"
+					class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive"
 					@click="openPage"
 				>
 					{{ t('i18n.ui.pages', 'Page {current,number} of {total,number}', {
@@ -105,7 +105,7 @@
 					@keydown.enter="closePage"
 					@blur="closePage"
 				>
-				<button class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip__container" @click="nextPage">
+				<button class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip__container" @click="nextPage">
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-right-dir" />
 					</span>
@@ -115,8 +115,8 @@
 				</button>
 				<div class="tw-flex-grow-1" />
 				<button
-					class="tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
-					:class="[mode === 0 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					class="tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					:class="[mode === 0 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 0"
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
@@ -131,8 +131,8 @@
 				</button>
 				<button
 					v-if="existing != total"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
-					:class="[mode === 1 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					:class="[mode === 1 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 1"
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
@@ -147,8 +147,8 @@
 				</button>
 				<button
 					v-if="added"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
-					:class="[mode === 2 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					:class="[mode === 2 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 2"
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
@@ -163,8 +163,8 @@
 				</button>
 				<button
 					v-if="changed"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
-					:class="[mode === 3 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					:class="[mode === 3 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 3"
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
@@ -179,8 +179,8 @@
 				</button>
 				<button
 					v-if="pending"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
-					:class="[mode === 4 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					:class="[mode === 4 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 4"
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
@@ -195,8 +195,8 @@
 				</button>
 				<button
 					v-if="invalid"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 tw-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
-					:class="[mode === 5 ? 'tw-core-button--primary' : 'tw-core-button--text']"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					:class="[mode === 5 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 5"
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">

@@ -75,7 +75,7 @@
 						<button
 							:data-title="t('viewer-card.close', 'Close')"
 							:aria-label="t('viewer-card.close', 'Close')"
-							class="viewer-card-drag-cancel tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
+							class="viewer-card-drag-cancel tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
 							@click="close"
 						>
 							<span class="tw-button-icon__icon">
@@ -86,7 +86,7 @@
 							v-if="! pinned"
 							:data-title="t('viewer-card.pin', 'Pin')"
 							:aria-label="t('viewer-card.pin', 'Pin')"
-							class="viewer-card-drag-cancel tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
+							class="viewer-card-drag-cancel tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
 							@click="pin"
 						>
 							<span class="tw-button-icon__icon">
