@@ -1,5 +1,40 @@
 <template lang="html">
 	<div class="ffz--widget ffz--profile-manager tw-border-t tw-pd-y-1">
+		<section v-if="context.exclusive" class="tw-pd-b-2">
+			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
+				<h3 class="ffz-i-info">
+					{{ t('setting.context-difference', 'Your Profiles might not match.') }}
+				</h3>
+
+				{{ t('setting.context-difference.description',
+					'Since the Control Center is open in a new window, profiles may match differently here than on other Twitch windows.')
+				}}
+
+				<div v-if="context.can_proxy" class="tw-flex tw-align-items-center tw-mg-t-1">
+					<div class="ffz-checkbox tw-relative tw-tooltip__container">
+						<input
+							id="proxied"
+							ref="proxied"
+							type="checkbox"
+							class="ffz-checkbox__input"
+							:checked="context.proxied"
+							@change="onProxyCheck"
+						>
+
+						<label for="proxied" class="ffz-checkbox__label">
+							<span class="tw-mg-l-1">
+								{{ t('setting.context-difference.use', 'Use Original Windows\'s Context') }}
+							</span>
+						</label>
+
+						<div class="tw-tooltip ffz-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-left">
+							{{ t('setting.context-difference.tip', 'Checking this will use the context from the original window, causing profiles and thier rules to match like they would in the window that opened this Control Center.') }}
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<div class="tw-flex tw-align-items-center tw-pd-b-05">
 			<div class="tw-flex-grow-1">
 				{{ t('setting.profiles.drag', 'Drag profiles to change their priority.') }}
@@ -237,6 +272,11 @@ export default {
 	},
 
 	methods: {
+		onProxyCheck() {
+			const val = this.$refs.proxied.checked;
+			this.context.setProxied(val);
+		},
+
 		edit(profile) {
 			const item = {
 				full_key: 'data_management.profiles.edit_profile',

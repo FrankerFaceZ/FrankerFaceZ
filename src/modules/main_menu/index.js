@@ -13,7 +13,7 @@ import Dialog from 'utilities/dialog';
 import SettingMixin from './setting-mixin';
 import ProviderMixin from './provider-mixin';
 
-import {parse_path} from 'src/settings';
+import {NO_SYNC_KEYS, parse_path} from 'src/settings';
 
 function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
@@ -48,6 +48,8 @@ export default class MainMenu extends Module {
 		this.has_update = false;
 		this.opened = false;
 		this.showing = false;
+
+		this.context = this.settings.context();
 
 		this.settings.addUI('profiles', {
 			path: 'Data Management @{"sort": 1000, "profile_warning": false} > Profiles @{"profile_warning": false}',
@@ -213,7 +215,64 @@ export default class MainMenu extends Module {
 		this.off('site.menu_button:clicked', this.dialog.toggleVisible, this.dialog);
 	}
 
+
+	updateContext(context) {
+		if ( ! context )
+			context = this._context;
+
+		this._context = context;
+
+		if ( this.use_context ) {
+			if ( ! this.context._updateContext ) {
+				this.context._updateContext = this.context.updateContext;
+				this.context.updateContext = function(context) {
+					const accepted = {};
+					for(const key of NO_SYNC_KEYS)
+						if ( has(context, key) )
+							accepted[key] = context[key];
+
+					this._updateContext(accepted);
+				}
+			}
+
+			this.context._context = {};
+			this.context._updateContext({
+				...context,
+				can_proxy: context?.proxied || false
+			});
+
+		} else {
+			if ( this.context._updateContext ) {
+				this.context.updateContext = this.context._updateContext;
+				this.context._updateContext = null;
+			}
+
+			this.context.setContext({can_proxy: context?.proxied || false});
+		}
+	}
+
+
 	openExclusive() {
+		window.addEventListener('message', event => {
+			const type = event.data?.ffz_type;
+
+			if ( type === 'context-update' )
+				this.updateContext({...event.data.ctx, proxied: true});
+
+			else if ( type === 'context-gone' ) {
+				this.log.info('Context proxy gone.');
+				this.updateContext({proxied: false});
+			}
+		});
+
+		try {
+			window.opener.postMessage({
+				ffz_type: 'request-context'
+			}, '*');
+		} catch(err) {
+			this.log.info('Unable to request settings context from opener.');
+		}
+
 		this.exclusive = true;
 		this.dialog.exclusive = true;
 		this.enable().then(() => this.dialog.show());
@@ -594,7 +653,7 @@ export default class MainMenu extends Module {
 		const profiles = [],
 			keys = {};
 
-		context = context || this.settings.main_context;
+		context = context || this.context;
 
 		for(const profile of this.settings.__profiles)
 			profiles.push(keys[profile.id] = this.getProfileProxy(profile, context));
@@ -648,7 +707,7 @@ export default class MainMenu extends Module {
 			Vue = this.vue.Vue,
 			settings = this.settings,
 			provider = settings.provider,
-			context = settings.main_context,
+			context = this.context,
 			[profiles, profile_keys] = this.getProfiles();
 
 		let currentProfile = profile_keys[0];
@@ -669,7 +728,15 @@ export default class MainMenu extends Module {
 			profile_keys,
 			currentProfile: profile_keys[0] || profiles[0],
 
+			exclusive: this.exclusive,
+			can_proxy: context._context.can_proxy,
+			proxied: context._context.proxied,
 			has_update: this.has_update,
+
+			setProxied: val => {
+				this.use_context = val;
+				this.updateContext();
+			},
 
 			createProfile: data => {
 				const profile = settings.createProfile(data);
@@ -760,6 +827,9 @@ export default class MainMenu extends Module {
 					this.context = deep_copy(context._context);
 					const profiles = context.manager.__profiles,
 						ids = this.profiles = context.__profiles.map(profile => profile.id);
+
+					this.proxied = this.context.proxied;
+					this.can_proxy = this.context.can_proxy;
 
 					for(let i=0; i < profiles.length; i++) {
 						const id = profiles[i].id,

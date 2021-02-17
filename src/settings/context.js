@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import {has, get as getter, array_equals, set_equals, map_equals} from 'utilities/object';
+import {has, get as getter, array_equals, set_equals, map_equals, deep_equals} from 'utilities/object';
 
 import * as DEFINITIONS from './types';
 
@@ -217,8 +217,17 @@ export default class SettingsContext extends EventEmitter {
 		let changed = false;
 
 		for(const key in context)
-			if ( has(context, key) && context[key] !== this._context[key] ) {
-				this._context[key] = context[key];
+			if ( has(context, key) ) {
+				const val = context[key];
+				try {
+					if ( deep_equals(val, this._context[key]) )
+						continue;
+				} catch(err) {
+					/* no-op */
+					// This can catch a recursive structure error.
+				}
+
+				this._context[key] = val;
 				changed = true;
 			}
 

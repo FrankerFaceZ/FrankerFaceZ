@@ -162,7 +162,7 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 		image,
 		image_set,
 		svg
-	})}`;
+	})}${data.css || ''}`;
 }
 
 
@@ -464,8 +464,11 @@ export default class Badges extends Module {
 		if ( ! container.dataset.roomId )
 			container = target.closest('[data-room-id]');
 
-		const room_id = container?.dataset?.roomId,
-			room_login = container?.dataset?.room,
+		const ds = container?.dataset,
+			room_id = ds?.roomId,
+			room_login = ds?.room,
+			user_id = ds?.userId,
+			user_login = ds?.user,
 			data = JSON.parse(target.dataset.badgeData);
 
 		if ( data == null )
@@ -494,6 +497,11 @@ export default class Badges extends Module {
 
 			} else if ( p === 'ffz' ) {
 				const badge = this.badges[target.dataset.badge];
+				if ( badge?.click_handler ) {
+					url = badge.click_handler(user_id, user_login, room_id, room_login, data, event);
+					break;
+				}
+
 				if ( badge?.click_url ) {
 					url = badge.click_url;
 					break;

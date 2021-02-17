@@ -16,6 +16,18 @@ import * as FILTERS from './filters';
 import * as CLEARABLES from './clearables';
 
 
+function postMessage(target, msg) {
+	try {
+		target.postMessage(msg, '*');
+		return true;
+	} catch(err) {
+		return false;
+	}
+}
+
+export const NO_SYNC_KEYS = ['session'];
+
+
 // ============================================================================
 // SettingsManager
 // ============================================================================
@@ -107,11 +119,45 @@ export default class SettingsManager extends Module {
 			this.emit(`:uses_changed:${key}`, new_uses, old_uses);
 		});
 
+		this.main_context.on('context_changed', () => this._updateContextProxies());
+		this._context_proxies = new Set;
+
+		window.addEventListener('message', event => {
+			const type = event.data?.ffz_type;
+
+			if ( type === 'request-context' ) {
+				this._context_proxies.add(event.source);
+				this._updateContextProxies(event.source);
+
+			}
+		});
+
+		window.addEventListener('beforeunload', () => {
+			for(const proxy of this._context_proxies)
+				postMessage(proxy, {ffz_type: 'context-gone'});
+		});
 
 		// Don't wait around to be required.
 		this._start_time = performance.now();
 		this.enable();
 	}
+
+	_updateContextProxies(proxy) {
+		if ( ! proxy && ! this._context_proxies.size )
+			return;
+
+		const ctx = JSON.parse(JSON.stringify(this.main_context._context));
+		for(const key of NO_SYNC_KEYS)
+			if ( has(ctx, key) )
+				delete ctx[key];
+
+		if ( proxy )
+			postMessage(proxy, {ffz_type: 'context-update', ctx});
+		else
+			for(const proxy of this._context_proxies)
+				postMessage(proxy, {ffz_type: 'context-update', ctx});
+	}
+
 
 
 	addFilter(key, data) {
