@@ -581,8 +581,14 @@ export class TranslationManager extends Module {
 			return;
 		}
 
-		if ( typeof ast === 'object' && ast.v )
-			out[ast.v] = shallow_copy(get(ast.v, options));
+		if ( typeof ast === 'object' && ast.v ) {
+			const val = get(ast.v, options);
+			// Skip React objects.
+			if ( val && val['$$typeof'] )
+				return;
+
+			out[ast.v] = shallow_copy(val);
+		}
 	}
 
 

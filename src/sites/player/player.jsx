@@ -359,8 +359,12 @@ export default class Player extends Module {
 				if ( ! this._ffz_click_handler )
 					this._ffz_click_handler = this.ffzClickHandler.bind(this);
 
+				if ( ! this._ffz_menu_handler )
+					this._ffz_menu_handler = this.ffzMenuHandler.bind(this);
+
 				on(cont, 'wheel', this._ffz_scroll_handler);
 				on(cont, 'mousedown', this._ffz_click_handler);
+				on(cont, 'contextmenu', this._ffz_menu_handler);
 			}
 
 			cls.prototype.ffzRemoveListeners = function() {
@@ -378,11 +382,24 @@ export default class Player extends Module {
 					this._ffz_click_handler = null;
 				}
 
+				if ( this._ffz_menu_handler ) {
+					off(cont, 'contextmenu', this._ffz_menu_handler);
+					this._ffz_menu_handler = null;
+				}
+
 				this._ffz_listeners = false;
 			}
 
 			cls.prototype.ffzClickHandler = function(event) {
-				if ( ! t.settings.get('player.mute-click') || ! event || event.button !== 1 )
+				if ( ! event )
+					return;
+
+				if ( t.settings.get('player.volume-scroll') === 2 && event.button === 2 ) {
+					this.ffz_rmb = true;
+					this.ffz_scrolled = false;
+				}
+
+				if ( ! t.settings.get('player.mute-click') || event.button !== 1 )
 					return;
 
 				const player = this.props?.mediaPlayerInstance;
@@ -396,8 +413,20 @@ export default class Player extends Module {
 				return false;
 			}
 
+			cls.prototype.ffzMenuHandler = function(event) {
+				this.ffz_rmb = false;
+				if ( this.ffz_scrolled ) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			}
+
 			cls.prototype.ffzScrollHandler = function(event) {
-				if ( ! t.settings.get('player.volume-scroll') )
+				const setting = t.settings.get('player.volume-scroll');
+				if ( ! setting )
+					return;
+
+				if ( setting === 2 && ! this.ffz_rmb )
 					return;
 
 				const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
@@ -406,6 +435,9 @@ export default class Player extends Module {
 
 				if ( ! player?.getVolume )
 					return;
+
+				if ( setting === 2 )
+					this.ffz_scrolled = true;
 
 				const amount = t.settings.get('player.volume-scroll-steps'),
 					old_volume = video?.volume ?? player.getVolume(),
