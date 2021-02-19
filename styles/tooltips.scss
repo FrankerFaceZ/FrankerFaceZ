@@ -19,6 +19,19 @@ body {
 	display: none !important;
 }
 
+.ffz-tooltip--markdown {
+	white-space: normal;
+
+	p {
+		font-size: unset;
+		line-height: unset;
+	}
+
+	p + p {
+		margin-top: 0.5rem;
+	}
+}
+
 
 .ffz-balloon {
 	&[x-placement^="bottom"] > .ffz-balloon__tail {
@@ -95,7 +108,6 @@ body {
 
 	&.html { white-space: normal }
 
-
 	.ffz__tooltip--arrow {
 		position: absolute;
 		width: 6px; height: 6px;
@@ -140,6 +152,18 @@ body {
 	max-width: 30rem;
 	padding: .3rem .6rem;
 	text-align: center;
+
+	&--align-left {
+		text-align: left;
+	}
+
+	&--align-justify {
+		text-align: justify;
+	}
+
+	&--align-right {
+		text-align: right;
+	}
 
 	.preview-image {
 		&.ffz-badge {

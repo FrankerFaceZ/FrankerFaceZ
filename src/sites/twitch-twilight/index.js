@@ -326,6 +326,7 @@ Twilight.ROUTES = {
 	'product': '/products/:productName',
 	'prime': '/prime',
 	'turbo': '/turbo',
+	'search': '/search',
 	//'user': '/:userName',
 	'squad': '/:userName/squad',
 	'command-center': '/:userName/commandcenter',
@@ -335,5 +336,5 @@ Twilight.ROUTES = {
 
 
 Twilight.DIALOG_EXCLUSIVE = '.moderation-root,.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root';
-Twilight.DIALOG_MAXIMIZED = '.moderation-view-page > div[data-highlight-selector="main-grid"],.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
+Twilight.DIALOG_MAXIMIZED = '.moderation-view-page > div[data-highlight-selector="main-grid"],.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area,.teams-page-body__outer-container .scrollable-area';
 Twilight.DIALOG_SELECTOR = '.moderation-root,.sunlight-root,#root>div,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';

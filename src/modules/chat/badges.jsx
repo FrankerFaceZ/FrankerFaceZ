@@ -152,10 +152,14 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 		fore = fg_fixer.process(fore) || fore;
 	}
 
-	if ( ! base_image && style > 3 )
-		style = 1;
+	if ( ! base_image ) {
+		if ( style > 4 )
+			style = 1;
+		else if ( style > 3 )
+			style = 2;
+	}
 
-	return `${clickable && (data.click_url || data.click_action) ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
+	return `${clickable && (data.click_handler || data.click_url || data.click_action) ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
 		scale: 1,
 		color,
 		fore,

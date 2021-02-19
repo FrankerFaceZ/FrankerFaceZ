@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {createElement, sanitize} from 'utilities/dom';
-import {has, maybe_call} from 'utilities/object';
+import {has, maybe_call, once} from 'utilities/object';
 
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
@@ -31,7 +31,7 @@ export default class TooltipProvider extends Module {
 					}
 				}, target.dataset.data)
 			]
-		}
+		};
 
 		this.types.child = target => {
 			const child = target.querySelector(':scope > .ffz-tooltip-child');
@@ -55,13 +55,61 @@ export default class TooltipProvider extends Module {
 					target.appendChild(child);
 				}
 			}
-		}
+		};
+
+		this.types.markdown = (target, tip) => {
+			tip.add_class = 'ffz-tooltip--markdown';
+
+			const md = this.getMarkdown();
+			if ( ! md )
+				return this.loadMarkdown().then(md => md.render(target.dataset.title));
+
+			return md.render(target.dataset.title);
+		};
 
 		this.types.text = target => sanitize(target.dataset.title);
 		this.types.html = target => target.dataset.title;
 
 		this.onFSChange = this.onFSChange.bind(this);
+
+		this.loadMarkdown = once(this.loadMarkdown);
+
 	}
+
+	getMarkdown(callback) {
+		if ( this._md )
+			return this._md;
+
+		if ( callback )
+			this.loadMarkdown().then(md => callback(md));
+	}
+
+	async loadMarkdown() { // eslint-disable-line class-methods-use-this
+		if ( this._md )
+			return this._md;
+
+		const [MD, MILA] = await Promise.all([
+			import(/* webpackChunkName: 'markdown' */ 'markdown-it'),
+			import(/* webpackChunkName: 'markdown' */ 'markdown-it-link-attributes')
+		]);
+
+		const md = this._md = new MD.default({
+			html: false,
+			linkify: true
+		});
+
+		md.use(MILA.default, {
+			attrs: {
+				class: 'ffz-tooltip',
+				target: '_blank',
+				rel: 'noopener',
+				'data-tooltip-type': 'link'
+			}
+		});
+
+		return md;
+	}
+
 
 	onEnable() {
 		const container = document.querySelector('.sunlight-root') || document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
@@ -77,7 +125,7 @@ export default class TooltipProvider extends Module {
 		this.on(':cleanup', this.cleanup);
 	}
 
-	_createInstance(container, klass = 'ffz-tooltip', default_type) {
+	_createInstance(container, klass = 'ffz-tooltip', default_type = 'text') {
 		return new Tooltip(container, klass, {
 			html: true,
 			i18n: this.i18n,
@@ -135,6 +183,9 @@ export default class TooltipProvider extends Module {
 	delegatePopperConfig(default_type, target, tip, pop_opts) {
 		const type = target.dataset.tooltipType || default_type,
 			handler = this.types[type];
+
+		if ( target.dataset.tooltipSide )
+			pop_opts.placement = target.dataset.tooltipSide;
 
 		if ( handler && handler.popperConfig )
 			return handler.popperConfig(target, tip, pop_opts);
@@ -200,7 +251,11 @@ export default class TooltipProvider extends Module {
 
 	process(default_type, target, tip) {
 		const type = target.dataset.tooltipType || default_type || 'text',
+			align = target.dataset.tooltipAlign,
 			handler = this.types[type];
+
+		if ( align )
+			tip.align = align;
 
 		if ( ! handler )
 			return [

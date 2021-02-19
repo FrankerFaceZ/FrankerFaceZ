@@ -269,8 +269,8 @@ export class Tooltip {
 		tip.hide = () => this.hide(tip);
 		tip.rerender = () => {
 			if ( tip.visible ) {
-				this.hide(tip);
-				this.show(tip);
+				tip.hide();
+				tip.show();
 			}
 		}
 
@@ -294,6 +294,9 @@ export class Tooltip {
 
 		if ( opts.arrowInner )
 			arrow.appendChild(createElement('div', opts.arrowInner));
+
+		if ( tip.align )
+			inner.classList.add(`${opts.innerClass}--align-${tip.align}`);
 
 		if ( tip.add_class ) {
 			inner.classList.add(tip.add_class);
